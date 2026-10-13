@@ -6,6 +6,7 @@ Existing SSH/SDK custody is reused; private startup bytes are never logged or st
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import shlex
 import signal
@@ -34,6 +35,12 @@ REMOTE = r'''
 import json,pathlib,os,stat,subprocess
 def require(condition):
  if not condition: raise RuntimeError('remote_binding_unqualified')
+bridge=pathlib.Path('/home/serveradmin/insignia-m5-verify-20261012-r2')
+if G.get('bridgeReuse') is not None:
+ s=bridge.lstat()
+ require(stat.S_ISDIR(s.st_mode) and s.st_uid==os.getuid() and stat.S_IMODE(s.st_mode)==0o700
+  and s.st_ino==G['bridgeReuse']['remoteInode'] and bridge.resolve()==bridge)
+ require(not list(bridge.iterdir()))
 v=json.loads(subprocess.check_output(['docker','inspect','insignia-rewrite-m5-019-web'],timeout=10))[0]
 require(v['Id'] == G['webContainer'] and v['Image'] == G['webImage'] and (v['State']['Health']['Status'] == 'healthy'))
 env=dict(item.split('=',1) for item in v['Config']['Env'])
@@ -43,9 +50,9 @@ require(db['State']['Health']['Status'] == 'healthy' and db['Image'] == G['datab
 p=pathlib.Path('/home/serveradmin/insignia-m5-runtime-resource-run-20261011-fb240660/schema-plan/credentials.json')
 s=p.lstat();require(stat.S_ISREG(s.st_mode) and s.st_uid==os.getuid() and s.st_mode&0o777==0o600 and s.st_size<=16384)
 credentials=json.loads(p.read_text())
-bridge=pathlib.Path('/home/serveradmin/insignia-m5-verify-20261012-r2')
-require(not bridge.exists());bridge.mkdir(mode=0o700)
-require(bridge.lstat().st_uid == os.getuid() and (not (bridge / 'collector.sock').exists()))
+if G.get('bridgeReuse') is None:
+ require(not bridge.exists());bridge.mkdir(mode=0o700)
+ require(bridge.lstat().st_uid==os.getuid() and not (bridge/'collector.sock').exists())
 print(json.dumps({'clientSecret':env['SHOPIFY_CLIENT_SECRET'],'databaseUrl':env['DATABASE_URL'],
  'appendPassword':credentials['releasePassword'],
  'databaseIp':db['NetworkSettings']['Networks']['insignia-rewrite-m5-019_private']['IPAddress']}))
@@ -66,7 +73,7 @@ def require_service():
     require(not values['DropInPaths'] and Path(values['FragmentPath']).read_bytes() == SERVICE.read_bytes())
 
 
-def private_json(path):
+def private_bytes(path):
     fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
     try:
         info = os.fstat(fd)
@@ -74,14 +81,53 @@ def private_json(path):
         require(info.st_size <= 1048576)
         data = os.read(fd, 1048577)
         require(len(data) <= 1048576)
-        return json.loads(data)
+        return data
     finally:
         os.close(fd)
 
 
+def private_json(path):
+    return json.loads(private_bytes(path))
+
+
+def qualify_bridge_reuse(reuse):
+    reason = 'bridge_reuse_unqualified'
+    require(isinstance(reuse, dict) and set(reuse) == {
+        'localInode', 'remoteInode', 'priorBindingIntentSha256', 'priorMainPid', 'priorInvocationId'}, reason)
+    for key in ['localInode', 'remoteInode', 'priorMainPid']:
+        require(type(reuse[key]) is int and reuse[key] > 0, reason)
+    require(isinstance(reuse['priorBindingIntentSha256'], str) and
+        re.fullmatch('[0-9a-f]{64}', reuse['priorBindingIntentSha256']), reason)
+    require(isinstance(reuse['priorInvocationId'], str) and
+        re.fullmatch('[0-9a-f]{32}', reuse['priorInvocationId']), reason)
+    info = DIRECTORY.lstat()
+    require(stat.S_ISDIR(info.st_mode) and info.st_uid == os.getuid() and
+        stat.S_IMODE(info.st_mode) == 0o700 and info.st_ino == reuse['localInode'] and
+        DIRECTORY.resolve() == DIRECTORY, reason)
+    # A live OR stale socket, unknown intent or prior handover requires explicit
+    # offline reconciliation. This bootstrap never unlinks or reclaims it.
+    require(set(item.name for item in DIRECTORY.iterdir()) == {'binding-intent.json'}, reason)
+    raw = private_bytes(DIRECTORY/'binding-intent.json')
+    require(hashlib.sha256(raw).hexdigest() == reuse['priorBindingIntentSha256'], reason)
+    intent = json.loads(raw)
+    require(set(intent) == {'version', 'head', 'tree', 'operation', 'retryAuthorized'} and
+        intent['version'] == 'm5-private-binding-intent-v1' and
+        intent['operation'] == 'CREATE_PRIVATE_METADATA_BRIDGE' and intent['retryAuthorized'] is False and
+        isinstance(intent['head'], str) and re.fullmatch('[0-9a-f]{40}', intent['head']) and
+        isinstance(intent['tree'], str) and re.fullmatch('[0-9a-f]{40}', intent['tree']), reason)
+    require(not Path('/proc', str(reuse['priorMainPid'])).exists(), reason)
+
+
+def qualify_stopped_invocation(reuse):
+    current = subprocess.check_output(['systemctl', '--user', 'show', UNIT,
+        '--property=InvocationID', '--value'], text=True, timeout=5).strip()
+    require(re.fullmatch('[0-9a-f]{32}', current) and current != reuse['priorInvocationId'],
+        'prior_service_not_stopped')
+
+
 def qualify_gate(gate):
     require(gate['version'] == 'm5-private-collector-binding-v1')
-    require(gate['spec'] == gate['security'] == 'CLEAR' and gate['exactHeadCiAttempt1'] is True)
+    require(gate['spec'] == gate['security'] == 'CLEAR' and gate['exactHeadCiPassed'] is True)
     require(gate['producerSha256'] == hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
     require(gate['userServiceCrashQualified'] is True and gate['serviceSha256'] == hashlib.sha256(SERVICE.read_bytes()).hexdigest())
     for ref, expected in [('HEAD', gate['head']), ('HEAD^{tree}', gate['tree'])]:
@@ -97,17 +143,37 @@ def qualify_gate(gate):
 
 
 def start(gate):
+    # Only exact reviewed source profiles; omission retains the historical
+    # receiver default. This changes expected observations, never authority.
+    profile = gate.get('releaseProfile')
+    require('releaseProfile' not in gate or profile in (
+        'm5-functions-9c2e56b42fbf', 'm8-read-orders-617057f'), 'release_profile_unqualified')
+    profile_arguments = [profile] if profile is not None else []
     qualify_gate(gate)
     require_service()
     for path in [DIRECTORY/'collector.sock', Path(REMOTE_DIRECTORY)/'collector.sock']:
         require(0 < len(os.fsencode(path)) <= 107, 'socket_path_unqualified')
-    require(not DIRECTORY.exists())
-    DIRECTORY.mkdir(mode=0o700)
-    intent = DIRECTORY/'binding-intent.json'
+    reuse = gate.get('bridgeReuse')
+    fence = None
+    if 'bridgeReuse' in gate:
+        qualify_bridge_reuse(reuse)
+        qualify_stopped_invocation(reuse)
+        fence = PARENT/'m5-trusted-release-launch-exclusive'
+        fence.mkdir(mode=0o700)  # Never reclaim an existing/crashed launcher.
+        code = "import {inspectPriorBridgeHandoverSettlement} from './scripts/m5-runtime/trusted-release-launch.mjs';await inspectPriorBridgeHandoverSettlement(" + json.dumps(str(PARENT)) + ");"
+        subprocess.run([NODE, '--input-type=module', '-e', code], cwd=REPOSITORY,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True, timeout=30)
+        qualify_bridge_reuse(reuse)
+        intent = DIRECTORY/('binding-handover-'+gate['head']+'.json')
+    else:
+        require(not DIRECTORY.exists())
+        DIRECTORY.mkdir(mode=0o700)
+        intent = DIRECTORY/'binding-intent.json'
     fd = os.open(intent, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(fd,'w') as output:
         json.dump({'version':'m5-private-binding-intent-v1','head':gate['head'],'tree':gate['tree'],
-            'operation':'CREATE_PRIVATE_METADATA_BRIDGE','retryAuthorized':False},output)
+            'operation':'REUSE_STOPPED_PRIVATE_METADATA_BRIDGE' if reuse is not None else 'CREATE_PRIVATE_METADATA_BRIDGE',
+            **({'bridgeReuse':reuse,'releaseProfile':profile} if reuse is not None else {}), 'retryAuthorized':False},output)
         output.flush(); os.fsync(output.fileno())
     descriptor = os.open(DIRECTORY, os.O_RDONLY | os.O_DIRECTORY)
     try: os.fsync(descriptor)
@@ -120,7 +186,7 @@ def start(gate):
     for name in [signal.SIGTERM, signal.SIGINT]: signal.signal(name, interrupted)
     config = {}; packet = {}
     try:
-        code = 'G=' + repr({k:gate[k] for k in ['webContainer','webImage','databaseContainer','databaseImage']}) + '\n' + REMOTE
+        code = 'G=' + repr({**{k:gate[k] for k in ['webContainer','webImage','databaseContainer','databaseImage']}, **({'bridgeReuse':reuse} if reuse is not None else {})}) + '\n' + REMOTE
         read = spawn(SSH + ['-o','ClearAllForwardings=yes',TARGET,'python3 -c ' + shlex.quote(code)], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         raw, _ = read.communicate(timeout=30)
         require(read.returncode == 0 and len(raw) <= 16384)
@@ -143,7 +209,7 @@ def start(gate):
         packet = {'recordId':str(uuid.uuid4()),'clientSecret':config['clientSecret'],'appendPassword':config['appendPassword'],
             'databaseUrl':urllib.parse.urlunsplit((address.scheme,address.netloc.rsplit('@',1)[0]+'@127.0.0.1:'+str(port),address.path,'sslmode=disable',''))}
         config.clear()
-        receiver = spawn([NODE,str(REPOSITORY/'scripts/m5-runtime/release-verification-native.mjs')],
+        receiver = spawn([NODE,str(REPOSITORY/'scripts/m5-runtime/release-verification-native.mjs'),*profile_arguments],
             cwd=REPOSITORY,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,
             env={'HOME':'/home/serveradmin','PATH':str(Path(NODE).parent)+':/usr/bin:/bin','LANG':'C.UTF-8','TERM':'dumb'})
         receiver.stdin.write(json.dumps(packet).encode()); receiver.stdin.close(); packet.clear()
@@ -159,6 +225,8 @@ def start(gate):
             require(chunk and len(line) + len(chunk) <= 4096)
             line.extend(chunk)
         require(json.loads(line)['classification'] == 'PRIVATE_COLLECTOR_LISTENING_NOT_NATIVE_QUALIFICATION')
+        if fence is not None:
+            fence.rmdir(); fence = None
         print('{"classification":"PRIVATE_BINDING_LISTENING_NO_PROVIDER_REQUEST"}',flush=True)
         while receiver.poll() is None:
             require(tunnel.poll() is None)
