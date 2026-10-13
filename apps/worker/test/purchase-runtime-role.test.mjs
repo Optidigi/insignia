@@ -251,6 +251,10 @@ test('actual queue-member login reconciles signed initial and renewed offers, pa
       return receipt.id;
     }
     const receipt = await deliver();
+    await assert.rejects(
+      restricted.query('SELECT trusted_record FROM public.trusted_release_records LIMIT 1'),
+      /permission denied/,
+    );
     // Missing M8 grants must fail at the real runtime seam (the baseline RED).
     if (!process.env.M8_RUNTIME_EXPECT_RED) {
       const grants = await Promise.all(
@@ -264,6 +268,17 @@ test('actual queue-member login reconciles signed initial and renewed offers, pa
       await owner.query('GRANT SELECT(original_key), UPDATE(expires_at) ON artwork_assets TO insignia_queue_consume');
       for (const script of grants) await owner.query(script);
       for (const script of [grants[2], grants[0], grants[1], grants[2]]) await owner.query(script);
+      assert.deepEqual(
+        (await restricted.query('SELECT trusted_record FROM public.trusted_release_records LIMIT 1')).rows,
+        [],
+      );
+      for (const query of [
+        'INSERT INTO trusted_release_records DEFAULT VALUES',
+        'UPDATE trusted_release_records SET trusted_record=trusted_record',
+        'DELETE FROM trusted_release_records',
+        'TRUNCATE trusted_release_records',
+      ])
+        await assert.rejects(restricted.query(query), /permission denied/);
       for (const table of ['signing_keys', 'buyer_sessions']) {
         const grant = table === 'signing_keys' ? 'SELECT(private_envelope)' : 'SELECT';
         await owner.query(`GRANT ${grant} ON ${table} TO insignia_artwork_inspect`);

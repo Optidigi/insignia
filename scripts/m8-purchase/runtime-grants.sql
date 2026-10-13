@@ -7,6 +7,16 @@ DO $$ BEGIN
     AND (rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls OR rolcanlogin)) THEN RAISE EXCEPTION 'unqualified_purchase_runtime_role'; END IF;
   IF EXISTS (SELECT 1 FROM pg_auth_members m JOIN pg_roles r ON r.oid=m.member
     WHERE r.rolname='insignia_queue_consume') THEN RAISE EXCEPTION 'unqualified_purchase_runtime_membership'; END IF;
+  -- Admission reads independently collected release evidence. This capability
+  -- cannot append or mutate it, including effective PUBLIC and column grants.
+  IF has_table_privilege('insignia_queue_consume','public.trusted_release_records','INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN') OR
+    EXISTS(SELECT 1 FROM pg_attribute a WHERE a.attrelid='public.trusted_release_records'::regclass
+      AND a.attnum>0 AND NOT a.attisdropped AND
+      (has_column_privilege('insignia_queue_consume',a.attrelid,a.attnum,'INSERT') OR
+       has_column_privilege('insignia_queue_consume',a.attrelid,a.attnum,'UPDATE') OR
+       has_column_privilege('insignia_queue_consume',a.attrelid,a.attnum,'REFERENCES'))) THEN
+    RAISE EXCEPTION 'unqualified_purchase_release_authority';
+  END IF;
   IF (SELECT proowner FROM pg_proc WHERE oid='public.cleanup_purchase_payloads(integer)'::regprocedure)
     <> (SELECT oid FROM pg_roles WHERE rolname=current_user) THEN RAISE EXCEPTION 'purchase_cleanup_function_owner_required'; END IF;
   IF EXISTS(SELECT 1 FROM pg_class WHERE oid IN ('public.purchase_orders'::regclass,'public.purchase_bindings'::regclass,'public.purchase_lines'::regclass,'public.purchase_design_payloads'::regclass,'public.purchase_observations'::regclass,'public.purchase_paid_facts'::regclass,'public.purchase_refund_facts'::regclass,'public.purchase_reconciliation_cursors'::regclass) AND relowner<>(SELECT oid FROM pg_roles WHERE rolname=current_user)) THEN RAISE EXCEPTION 'purchase_table_owner_required'; END IF;
@@ -20,6 +30,7 @@ DO $$ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.cleanup_purchase_payloads(integer) FROM PUBLIC, insignia_queue_consume;
 GRANT USAGE ON SCHEMA public TO insignia_queue_consume;
+GRANT SELECT ON public.trusted_release_records TO insignia_queue_consume;
 GRANT EXECUTE ON FUNCTION public.cleanup_purchase_payloads(integer) TO insignia_queue_consume;
 REVOKE ALL ON FUNCTION public.read_purchase_offer_history(text,bigint,uuid,uuid), public.read_purchase_revision_history(text,bigint,uuid,uuid,text,text) FROM PUBLIC, insignia_queue_consume;
 GRANT EXECUTE ON FUNCTION public.read_purchase_offer_history(text,bigint,uuid,uuid), public.read_purchase_revision_history(text,bigint,uuid,uuid,text,text) TO insignia_queue_consume;

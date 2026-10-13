@@ -38,6 +38,16 @@ test('owner purchase grant rejects privileged flags, inherited roles, ownership 
     await client.query('ROLLBACK');
     await client.query(`ALTER TABLE m8_role_owned_${role} OWNER TO CURRENT_USER`);
     await client.query(`DROP TABLE m8_role_owned_${role}`);
+    for (const privilege of ['INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'INSERT(record_id)', 'UPDATE(trusted_record)']) {
+      await client.query(`GRANT ${privilege} ON trusted_release_records TO ${role}`);
+      await assert.rejects(client.query(script), /unqualified_purchase_release_authority/);
+      await client.query('ROLLBACK');
+      await client.query(`REVOKE ${privilege} ON trusted_release_records FROM ${role}`);
+    }
+    await client.query('GRANT INSERT(record_id) ON trusted_release_records TO PUBLIC');
+    await assert.rejects(client.query(script), /unqualified_purchase_release_authority/);
+    await client.query('ROLLBACK');
+    await client.query('REVOKE INSERT(record_id) ON trusted_release_records FROM PUBLIC');
     await client.query(script);
     await client.query(`SET ROLE ${role}`);
     await client.query('SELECT * FROM purchase_orders LIMIT 1');
