@@ -7,6 +7,7 @@ import { lstat, mkdir, open, readdir, realpath, rmdir } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
+import { releaseProfile } from './release-profile.mjs';
 import { readPrivatePacket } from './trusted-release-input.mjs';
 
 export { readPrivatePacket } from './trusted-release-input.mjs';
@@ -188,10 +189,13 @@ export async function runBoundedCollectorProcess({
   spawnChild,
   timeoutMs = 300000,
   maximumBytes = 1048576,
+  profileName,
 }) {
+  releaseProfile(profileName);
   assert.ok(timeoutMs > 0 && timeoutMs <= 300000 && maximumBytes > 0 && maximumBytes <= 1048576);
   recordPhaseName(recordId);
-  if (verificationRequest) verificationRequest = parseReleaseVerificationRequest(verificationRequest);
+  if (verificationRequest)
+    verificationRequest = parseReleaseVerificationRequest(verificationRequest, releaseProfile(profileName).versionId);
   const childPhase = join(phaseRoot, recordPhaseName(recordId));
   const env = {
     HOME: '/home/serveradmin',
@@ -201,8 +205,8 @@ export async function runBoundedCollectorProcess({
     ...(verificationRequest ? { INSIGNIA_RELEASE_VERIFICATION_FD: '3' } : {}),
   };
   const child = spawnChild
-    ? spawnChild({ executable: EXECUTABLE, script: SCRIPT, env })
-    : spawn(EXECUTABLE, [SCRIPT], {
+    ? spawnChild({ executable: EXECUTABLE, script: SCRIPT, env, ...(profileName ? { profileName } : {}) })
+    : spawn(EXECUTABLE, [SCRIPT, ...(profileName ? [profileName] : [])], {
         cwd: REPOSITORY,
         env,
         detached: true,
@@ -325,6 +329,9 @@ const SOURCE_PATHS = [
     'owner-boundaries.test',
   ].map((name) => `scripts/m5-runtime/trusted-release-${name}.mjs`),
   'scripts/m5-runtime/release-append.mjs',
+  'scripts/m5-runtime/release-profile.mjs',
+  'deployment/m8-journey/release-module-baseline.json',
+  'deployment/m8-journey/release-binding.json',
   'deployment/m5-runtime/native-function-module-baseline.json',
   'deployment/m5-runtime/native-function-module-binding.json',
   'apps/web/package.json',
@@ -428,9 +435,10 @@ export async function qualifyLaunchInputs(qualification) {
   };
 }
 
-export async function launchQualifiedTrustedRelease(packetBytes, verificationRequest) {
+export async function launchQualifiedTrustedRelease(packetBytes, verificationRequest, profileName) {
+  releaseProfile(profileName);
   if (verificationRequest) {
-    verificationRequest = parseReleaseVerificationRequest(verificationRequest);
+    verificationRequest = parseReleaseVerificationRequest(verificationRequest, releaseProfile(profileName).versionId);
     assert.ok(verificationRequest.deadlineMs > Date.now() && verificationRequest.deadlineMs <= Date.now() + 300000);
   }
   assert.equal(process.execPath, EXECUTABLE, 'fixed_runtime_required');
@@ -481,6 +489,7 @@ export async function launchQualifiedTrustedRelease(packetBytes, verificationReq
       phaseRoot: ROOT,
       recordId,
       verificationRequest,
+      profileName,
       timeoutMs: verificationRequest
         ? Math.max(1, Math.min(300000, verificationRequest.deadlineMs - Date.now()))
         : 300000,
@@ -502,9 +511,11 @@ async function main() {
   for (const name of ['log', 'info', 'warn', 'error', 'debug', 'trace', 'dir']) console[name] = () => {};
   let packet;
   try {
-    assert.equal(process.argv.length, 2, 'stdin_only');
+    assert.ok(process.argv.length <= 3, 'stdin_and_reviewed_profile_only');
+    const profileName = process.argv[2];
+    releaseProfile(profileName);
     packet = await readPrivatePacket(process.stdin);
-    const receipt = await launchQualifiedTrustedRelease(packet);
+    const receipt = await launchQualifiedTrustedRelease(packet, undefined, profileName);
     emit(`${JSON.stringify(receipt)}\n`);
     if (receipt.classification !== 'TRUSTED_RELEASE_COLLECT_APPEND_ACK') process.exitCode = 1;
   } catch {

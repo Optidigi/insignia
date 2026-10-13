@@ -1,0 +1,189 @@
+{
+  "classification": "CAPABILITIES_OBSERVED_JOURNEY_NOT_QUALIFIED",
+  "installationFunctions": {
+    "classification": "EXACT_NATIVE_INSTALLATION_FUNCTION_READ",
+    "observedAt": "2026-10-13T14:04:44.616Z",
+    "installation": {
+      "shop": "insignia-rewrite-dev.myshopify.com",
+      "shopId": "gid://shopify/Shop/105501393179",
+      "installationId": "gid://shopify/AppInstallation/1054356963611",
+      "appId": "429028933633",
+      "appClientId": "1443cf6d03d39edae7c101a943c5c684",
+      "grants": [
+        "write_cart_transforms",
+        "write_validations",
+        "read_cart_transforms",
+        "read_validations",
+        "read_publications",
+        "read_product_listings",
+        "write_products",
+        "read_products"
+      ]
+    },
+    "readOrdersGranted": false,
+    "functions": [
+      {
+        "id": "01a1182f-15a0-74a3-a5ac-88800606d379",
+        "handle": "insignia-experimental-v2-validation",
+        "appKey": "1443cf6d03d39edae7c101a943c5c684",
+        "apiVersion": "2026-07",
+        "apiType": "cart_checkout_validation",
+        "inputQuerySha256": null
+      },
+      {
+        "id": "01a1182f-15a0-78e4-8d71-fb20283ef34e",
+        "handle": "insignia-experimental-v2-transform",
+        "appKey": "1443cf6d03d39edae7c101a943c5c684",
+        "apiVersion": "2026-07",
+        "apiType": "cart_transform",
+        "inputQuerySha256": null
+      }
+    ],
+    "transforms": [
+      {
+        "id": "gid://shopify/CartTransform/194838811",
+        "functionId": "01a1182f-15a0-78e4-8d71-fb20283ef34e",
+        "blockOnFailure": true
+      }
+    ],
+    "validations": [
+      {
+        "id": "gid://shopify/Validation/211222811",
+        "enabled": true,
+        "blockOnFailure": true,
+        "shopifyFunction": {
+          "id": "01a1182f-15a0-74a3-a5ac-88800606d379",
+          "handle": "insignia-experimental-v2-validation",
+          "appKey": "1443cf6d03d39edae7c101a943c5c684"
+        }
+      }
+    ],
+    "hasNextPage": {
+      "functions": false,
+      "transforms": false,
+      "validations": false
+    },
+    "oauthCalls": 1,
+    "adminCalls": 2
+  },
+  "baseline": {
+    "classification": "CURRENT_BASELINE_AND_LOCAL_BYTES_MATCH",
+    "observedAt": "2026-10-13T14:09:13.560Z",
+    "appId": "429028933633",
+    "appClientId": "1443cf6d03d39edae7c101a943c5c684",
+    "activeVersion": {
+      "versionId": "gid://shopify/Version/1163229200385",
+      "versionTag": "m5-functions-9c2e56b42fbf",
+      "status": "active"
+    },
+    "canonicalModulesSha256": "b04436bda3faad667ee70d00991572ae60949f5acd2cf0fef6b6075dac8f66d7",
+    "candidateBeforeMatches": true,
+    "prospectiveCandidateModulesSha256": "f997e56015c379966d29c0731128783f36375fd86bf05e6e83b60531598ea6b1",
+    "nativeWasmByteRead": "NOT_PROVIDED_BY_MANAGEMENT_API",
+    "mutations": 0
+  },
+  "inactiveScopeCandidate": {
+    "classification": "EXACT_INACTIVE_CANDIDATE_CONFIG_INVENTORY_PASS",
+    "observedAt": "2026-10-13T14:20:49.713Z",
+    "candidate": {
+      "versionId": "gid://shopify/Version/1165513097217",
+      "versionTag": "m8-read-orders-617057f",
+      "status": "inactive"
+    },
+    "active": [
+      {
+        "versionId": "gid://shopify/Version/1163229200385",
+        "versionTag": "m5-functions-9c2e56b42fbf",
+        "status": "active"
+      }
+    ],
+    "versions": [
+      {
+        "versionId": "gid://shopify/Version/1165513097217",
+        "versionTag": "m8-read-orders-617057f",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1163229200385",
+        "versionTag": "m5-functions-9c2e56b42fbf",
+        "status": "active"
+      },
+      {
+        "versionId": "gid://shopify/Version/1162611916801",
+        "versionTag": "m5-runtime-b673985e1e38",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1158986629121",
+        "versionTag": "m5-019r-9b94149272d1",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1158837927937",
+        "versionTag": "m5-019-a9717e1265ef",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1153019904001",
+        "versionTag": "insignia-3",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1152880803841",
+        "versionTag": "insignia-2",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1146748534785",
+        "versionTag": "insignia-1",
+        "status": "inactive"
+      }
+    ],
+    "inventoryExact": true,
+    "inactiveOnly": true,
+    "moduleCount": 6,
+    "modulesSha256": "f997e56015c379966d29c0731128783f36375fd86bf05e6e83b60531598ea6b1",
+    "expectedModulesSha256": "f997e56015c379966d29c0731128783f36375fd86bf05e6e83b60531598ea6b1",
+    "moduleDelta": [
+      {
+        "handle": "app_access",
+        "matchesExpected": true
+      },
+      {
+        "handle": "app_home",
+        "matchesExpected": true
+      },
+      {
+        "handle": "branding",
+        "matchesExpected": true
+      },
+      {
+        "handle": "insignia-experimental-v2-transform",
+        "matchesExpected": true
+      },
+      {
+        "handle": "insignia-experimental-v2-validation",
+        "matchesExpected": true
+      },
+      {
+        "handle": "webhooks",
+        "matchesExpected": true
+      }
+    ],
+    "appId": "429028933633",
+    "appClientId": "1443cf6d03d39edae7c101a943c5c684",
+    "managementReads": 4,
+    "appProxyPresent": false,
+    "releaseInvocations": 0
+  },
+  "ownerBrowser": "Owner reports existing designated Insignia app opens in normal local browser; no session data collected",
+  "externalWrites": {
+    "inactiveVersionCreations": 1,
+    "releases": 0,
+    "installationGrants": 0,
+    "productChanges": 0,
+    "ordersCreated": 0
+  },
+  "privateCaptureRetention": "Private captures from this run retained no later than2026-10-20; no automatic cleanup or deletion claimed",
+  "scope": "Current health/module configuration is not historical Function execution, native Wasm byte observation or original localization"
+}

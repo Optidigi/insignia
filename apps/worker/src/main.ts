@@ -10,6 +10,7 @@ import { loadCredentialKeys } from './config.js';
 import { runLocalDiagnostic } from './diagnostic.js';
 import { createDurableWorkerHandlers, credentialLifecycle } from './handlers.js';
 import { startWorkerProcess } from './process.js';
+import { createProductionPurchaseAdmission } from './purchase-admission.js';
 import { createPurchaseRunner } from './purchase-runner.js';
 import { createWorkerReconciliation } from './reconciliation.js';
 import { createPgBossRuntime } from './runtime.js';
@@ -66,6 +67,7 @@ if (process.argv.includes('--diagnostic')) {
     process.env.INSIGNIA_M8_PURCHASE_ENABLED === '1'
       ? createPurchaseRunner({
           core,
+          checkout: createProductionPurchaseAdmission({ core, credentials: purchaseCredentials }),
           orders: {
             read: (target) =>
               readShopifyOrder(target, {

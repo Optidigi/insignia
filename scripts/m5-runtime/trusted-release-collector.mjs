@@ -4,21 +4,11 @@ import assert from 'node:assert/strict';
 import { constants } from 'node:fs';
 import { lstat, mkdir, open, realpath } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join } from 'node:path';
-import baseline from '../../deployment/m5-runtime/native-function-module-baseline.json' with { type: 'json' };
 import { qualifyReleaseAppendInput } from './release-append.mjs';
+import { releaseProfile } from './release-profile.mjs';
 
 const APP = '1443cf6d03d39edae7c101a943c5c684';
 const SHOP = 'insignia-rewrite-dev.myshopify.com';
-const GRANTS = [
-  'write_products',
-  'read_products',
-  'read_publications',
-  'read_product_listings',
-  'read_cart_transforms',
-  'read_validations',
-  'write_cart_transforms',
-  'write_validations',
-];
 const bindingFields = [
   'shop',
   'tenantShopId',
@@ -27,15 +17,6 @@ const bindingFields = [
   'externalInstallationId',
   'authorizationGeneration',
   'authorizationEpoch',
-];
-const VERSION_IDS = [
-  '1163229200385',
-  '1162611916801',
-  '1158986629121',
-  '1158837927937',
-  '1153019904001',
-  '1152880803841',
-  '1146748534785',
 ];
 /** Fresh owner records use canonical UUIDv4, never a caller path. */
 export function recordPhaseName(recordId) {
@@ -57,7 +38,8 @@ function binding(value) {
   assert.ok(Number.isSafeInteger(value.authorizationEpoch) && value.authorizationEpoch >= 0);
   return { ...value };
 }
-function installation(value, expected) {
+function installation(value, expected, profile) {
+  const GRANTS = profile.grants;
   keys(value, ['shop', 'shopId', 'installationId', 'appId', 'appClientId', 'grants']);
   assert.equal(value.shop, expected.shop);
   assert.equal(value.shopId, expected.shopId);
@@ -67,30 +49,31 @@ function installation(value, expected) {
   assert.ok(Array.isArray(value.grants) && value.grants.length === GRANTS.length);
   assert.deepEqual([...value.grants].sort(), [...GRANTS].sort());
 }
-function managementOpening(value) {
+function managementOpening(value, profile) {
+  const VERSION_IDS = profile.versionIds;
   keys(value, ['versions', 'totalResults', 'moduleObservation']);
-  assert.equal(value.totalResults, 7);
-  assert.ok(Array.isArray(value.versions) && value.versions.length === 7);
+  assert.equal(value.totalResults, VERSION_IDS.length);
+  assert.ok(Array.isArray(value.versions) && value.versions.length === VERSION_IDS.length);
   assert.deepEqual(
     new Set(value.versions.map((v) => v.versionId)),
     new Set(VERSION_IDS.map((v) => `gid://shopify/Version/${v}`)),
   );
   for (const v of value.versions) {
     keys(v, ['versionId', 'versionTag', 'status']);
-    assert.equal(v.status, v.versionId === 'gid://shopify/Version/1163229200385' ? 'active' : 'inactive');
+    assert.equal(v.status, v.versionId === `gid://shopify/Version/${profile.versionId}` ? 'active' : 'inactive');
     assert.equal(typeof v.versionTag, 'string');
   }
-  assert.equal(value.versions.find((v) => v.status === 'active').versionTag, 'm5-functions-9c2e56b42fbf');
+  assert.equal(value.versions.find((v) => v.status === 'active').versionTag, profile.versionTag);
   const modules = value.moduleObservation;
   keys(modules, ['appId', 'appClientId', 'versionId', 'versionTag', 'observedAt', 'modules']);
   assert.equal(modules.appId, '429028933633');
   assert.equal(modules.appClientId, APP);
-  assert.equal(modules.versionId, '1163229200385');
-  assert.equal(modules.versionTag, 'm5-functions-9c2e56b42fbf');
+  assert.equal(modules.versionId, profile.versionId);
+  assert.equal(modules.versionTag, profile.versionTag);
   assert.ok(Array.isArray(modules.modules) && modules.modules.length === 6);
   assert.deepEqual(
     [...modules.modules].sort((a, b) => (a.handle < b.handle ? -1 : a.handle > b.handle ? 1 : 0)),
-    baseline,
+    profile.modules,
   );
 }
 async function persist(directory, name, value) {
@@ -121,7 +104,8 @@ const reply = (classification, appendAttempted = false, appendAcknowledged = fal
   deployedWasmServerDigest: 'UNAVAILABLE_NOT_ASSERTED',
 });
 
-export async function collectFreshTrustedRelease(config, ports) {
+export async function collectFreshTrustedRelease(config, ports, profileName) {
+  const profile = releaseProfile(profileName);
   let directory,
     phaseOwned = false,
     attempted = false,
@@ -200,11 +184,15 @@ export async function collectFreshTrustedRelease(config, ports) {
     const before = binding(await operation('READ_DURABLE_TENANT_OPEN', ports.readTenant));
     await operation('AUTHENTICATE_EXISTING_MANAGEMENT_SESSION', () => ports.management.authenticate());
     const opening = await ports.management.open(sdkReserve);
-    managementOpening(opening);
+    managementOpening(opening, profile);
     assert.equal(sdkOrdinal, 3);
     accessToken = await operation('CLIENT_CREDENTIALS_ONCE', ports.acquireToken);
     assert.ok(typeof accessToken === 'string' && /^[^\s]{1,4096}$/.test(accessToken));
-    installation(await operation('READ_NATIVE_INSTALLATION_OPEN', () => ports.readInstallation(accessToken)), before);
+    installation(
+      await operation('READ_NATIVE_INSTALLATION_OPEN', () => ports.readInstallation(accessToken)),
+      before,
+      profile,
+    );
     const functions = await operation('READ_ORIGINAL_FUNCTION_OWNERSHIP', () =>
       ports.readFunctions(accessToken, before),
     );
@@ -214,13 +202,17 @@ export async function collectFreshTrustedRelease(config, ports) {
     assert.equal(functions.runtimeIdentity, 'unverifiable');
     assert.equal(functions.readiness, 'unknown');
     assert.ok(functions.observation);
-    installation(await operation('READ_NATIVE_INSTALLATION_CLOSE', () => ports.readInstallation(accessToken)), before);
+    installation(
+      await operation('READ_NATIVE_INSTALLATION_CLOSE', () => ports.readInstallation(accessToken)),
+      before,
+      profile,
+    );
     const closing = await ports.management.close(sdkReserve);
     keys(closing, ['versions', 'totalResults', 'observedAt']);
     assert.equal(sdkOrdinal, 4);
-    assert.equal(closing.totalResults, 7);
+    assert.equal(closing.totalResults, profile.versionIds.length);
     assert.deepEqual(closing.versions, opening.versions);
-    assert.deepEqual(binding(await operation('READ_DURABLE_TENANT_CLOSE', ports.readTenant)), before);
+    assert.deepEqual(binding(await operation('READ_DURABLE_TENANT_CLOSE', ports.readTenant)), before, profile);
     const input = {
       recordId: config.recordId,
       operator: config.operator,
@@ -236,7 +228,7 @@ export async function collectFreshTrustedRelease(config, ports) {
         functions,
       },
     };
-    const q = qualifyReleaseAppendInput(input, live());
+    const q = qualifyReleaseAppendInput(input, live(), profileName);
     // Only original selected observations; no credential or raw provider object.
     await persist(directory, 'observations.json', {
       recordId: input.recordId,
@@ -249,7 +241,7 @@ export async function collectFreshTrustedRelease(config, ports) {
       (await reserve('APPEND_TRUSTED_RELEASE_ONCE', { recordId: config.recordId, inputDigest: q.digest })).durable,
       true,
     );
-    qualifyReleaseAppendInput(input, live());
+    qualifyReleaseAppendInput(input, live(), profileName);
     attempted = true;
     uncertain = true;
     const result = await ports.append(input);

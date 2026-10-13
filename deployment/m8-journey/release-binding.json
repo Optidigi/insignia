@@ -1,0 +1,19 @@
+{
+  "versionId": "1165513097217",
+  "versionTag": "m8-read-orders-617057f",
+  "versionIds": [
+    "1165513097217",
+    "1163229200385",
+    "1162611916801",
+    "1158986629121",
+    "1158837927937",
+    "1153019904001",
+    "1152880803841",
+    "1146748534785"
+  ],
+  "moduleHash": "f997e56015c379966d29c0731128783f36375fd86bf05e6e83b60531598ea6b1",
+  "nativeObservation": "INACTIVE_CANDIDATE_VERIFIED",
+  "observedAt": "2026-10-13T14:20:49.713Z",
+  "readOrdersGranted": false,
+  "note": "This target is not Active/granted authority. Actual activation, full inventory/module/native grant checks and independent release records remain required."
+}

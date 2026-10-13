@@ -7,20 +7,9 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { releaseProfile } from './release-profile.mjs';
 
 const APP = '1443cf6d03d39edae7c101a943c5c684';
-const VERSION = '1163229200385';
-const TAG = 'm5-functions-9c2e56b42fbf';
-const MODULE_HASH = 'b04436bda3faad667ee70d00991572ae60949f5acd2cf0fef6b6075dac8f66d7';
-const VERSION_IDS = [
-  VERSION,
-  '1162611916801',
-  '1158986629121',
-  '1158837927937',
-  '1153019904001',
-  '1152880803841',
-  '1146748534785',
-];
 const artifacts = {
   transform: {
     handle: 'insignia-experimental-v2-transform',
@@ -80,7 +69,12 @@ function time(value, now, fresh = true) {
 /** Pure, zero IO. Independent original Active/Function times determine expiry;
  * immutable module provenance is included in proof without restamping/expiring.
  * Operator-owned native receipts must be supplied through the private host path. */
-export function qualifyReleaseAppendInput(input, now) {
+export function qualifyReleaseAppendInput(input, now, profileName) {
+  const profile = releaseProfile(profileName);
+  const VERSION = profile.versionId,
+    TAG = profile.versionTag,
+    VERSION_IDS = profile.versionIds,
+    MODULE_HASH = profile.moduleHash;
   assert.ok(Number.isFinite(now));
   keys(input, ['recordId', 'operator', 'activeObservation', 'moduleObservation', 'readiness']);
   assert.match(input.recordId, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
@@ -90,7 +84,7 @@ export function qualifyReleaseAppendInput(input, now) {
   const active = input.activeObservation;
   keys(active, ['observedAt', 'versions']);
   const observedMs = time(active.observedAt, now);
-  assert.equal(active.versions.length, 7);
+  assert.equal(active.versions.length, VERSION_IDS.length);
   assert.deepEqual(
     new Set(active.versions.map((v) => v.versionId)),
     new Set(VERSION_IDS.map((v) => `gid://shopify/Version/${v}`)),
@@ -228,7 +222,7 @@ export function qualifyReleaseAppendInput(input, now) {
  * Executable below supplies fixed official runtime dependencies, never caller IO. */
 export async function appendTrustedRelease(
   input,
-  { Pool, createDurableCore, sha256CanonicalJson, databaseUrl, now = Date.now },
+  { Pool, createDurableCore, sha256CanonicalJson, databaseUrl, now = Date.now, profileName },
 ) {
   let recordId = null,
     writeAttempted = false,
@@ -240,7 +234,8 @@ export async function appendTrustedRelease(
     commitAttempted = false,
     rollbackAcknowledged = false;
   try {
-    const q = qualifyReleaseAppendInput(input, now());
+    const q = qualifyReleaseAppendInput(input, now(), profileName);
+    const VERSION = q.expected.appVersionRef;
     recordId = input.recordId;
     const { scope, expected, record, observations, digest } = q;
     assert.equal(sha256CanonicalJson(q.digestInput), digest);

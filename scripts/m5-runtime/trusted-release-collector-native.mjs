@@ -10,6 +10,7 @@ import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseReleaseVerificationRequest } from '../../apps/web/src/server/admin/release-verification.ts';
 import { appendTrustedRelease } from './release-append.mjs';
+import { releaseProfile } from './release-profile.mjs';
 import { collectFreshTrustedRelease, recordPhaseName } from './trusted-release-collector.mjs';
 import { readPrivatePacket } from './trusted-release-input.mjs';
 import { createManagementProcess } from './trusted-release-management-process.mjs';
@@ -61,6 +62,9 @@ async function main() {
   let core, management, packet;
   const chunks = [];
   try {
+    const profileName = process.argv[2];
+    assert.ok(process.argv.length <= 3);
+    releaseProfile(profileName);
     let size = 0;
     for await (const chunk of process.stdin) {
       size += chunk.length;
@@ -78,6 +82,7 @@ async function main() {
       process.env.INSIGNIA_RELEASE_VERIFICATION_FD === '3'
         ? parseReleaseVerificationRequest(
             JSON.parse((await readPrivatePacket(createReadStream('', { fd: 3, autoClose: true }))).toString('utf8')),
+            releaseProfile(profileName).versionId,
           )
         : undefined;
     const deadline = Math.min(Date.now() + 300000, verificationRequest?.deadlineMs ?? Infinity);
@@ -102,11 +107,12 @@ async function main() {
         options: '-c statement_timeout=30000ms -c lock_timeout=30000ms',
       }),
     );
-    management = createManagementProcess({ deadline });
+    management = createManagementProcess({ deadline, profileName });
     const provider = createOwnerHttps({
       request: privateHttpsRequest,
       functionQuery: FUNCTION_OWNERSHIP_QUERY,
       deadline,
+      profileName,
     });
     const result = await collectFreshTrustedRelease(
       {
@@ -177,8 +183,10 @@ async function main() {
             sha256CanonicalJson,
             databaseUrl: packet.databaseUrl,
             now: currentTime,
+            profileName,
           }),
       },
+      profileName,
     );
     emit(`${JSON.stringify(result)}\n`);
     if (result.classification !== 'TRUSTED_RELEASE_COLLECT_APPEND_ACK') process.exitCode = 1;

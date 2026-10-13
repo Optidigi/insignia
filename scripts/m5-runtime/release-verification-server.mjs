@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { parseReleaseVerificationRequest } from '../../apps/web/src/server/admin/release-verification.ts';
+import { releaseProfile } from './release-profile.mjs';
 
 /** Private request receiver for the existing qualified collector. Startup ports
  * hold custody; this protocol supplies no credentials, code or observation data.
  * The collector's existing exclusive intent/append journals fence crash/replay. */
-export function createReleaseVerificationServer({ readBinding, readRecord, collect, now = Date.now }) {
+export function createReleaseVerificationServer({ readBinding, readRecord, collect, now = Date.now, profileName }) {
+  const expectedVersion = releaseProfile(profileName).versionId;
   const collecting = new Map();
   async function current(request) {
     assert.ok(now() < request.deadlineMs, 'request_expired');
@@ -28,7 +30,7 @@ export function createReleaseVerificationServer({ readBinding, readRecord, colle
         chunks.push(chunk);
       }
       const text = new TextDecoder('utf-8', { fatal: true }).decode(Buffer.concat(chunks));
-      input = parseReleaseVerificationRequest(JSON.parse(text));
+      input = parseReleaseVerificationRequest(JSON.parse(text), expectedVersion);
       assert.equal(JSON.stringify(input), text, 'canonical_request_required');
       assert.ok(input.deadlineMs <= now() + 300_000, 'request_deadline_unqualified');
       await current(input);

@@ -5,18 +5,18 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { createInterface } from 'node:readline';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import binding from '../../deployment/m5-runtime/native-function-module-binding.json' with { type: 'json' };
+import { releaseProfile } from './release-profile.mjs';
 
 const BASE = '/home/serveradmin/insignia-milestone-autonomy-handoff/app-management-readonly-preparation-20261010';
 const APP = '1443cf6d03d39edae7c101a943c5c684';
-const VERSION = '1163229200385';
-const TAG = 'm5-functions-9c2e56b42fbf';
 const pins = [
   ['package/dist/chunk-MJ3WNVMQ.js', '29df2593b46ba4b7162ef703dfdbea2175e2e55d6824df2ade708eff35432fea'],
   ['package/dist/chunk-NYHGIWKZ.js', 'a89873a128c3044b0870f2a82788a7e4d8f8642e9bb4bfcb0c0f0d4abc380d7a'],
   ['existing-session-qualification/client.mjs', '0ef1b8bc8e073b7753d93ed2a912148d7c87de5c3804622607040cb414b4f641'],
 ];
-function selectedVersions(value, remote) {
+function selectedVersions(value, remote, profile) {
+  const VERSION = profile.versionId,
+    TAG = profile.versionTag;
   assert.equal(value.app.id, remote.id);
   const totalResults = value.app.appVersions.pageInfo.totalResults;
   const versions = value.app.appVersions.nodes.map(({ versionId, versionTag, status }) => ({
@@ -24,11 +24,11 @@ function selectedVersions(value, remote) {
     versionTag,
     status,
   }));
-  assert.equal(totalResults, binding.expectedVersionIds.length);
-  assert.equal(versions.length, binding.expectedVersionIds.length);
+  assert.equal(totalResults, profile.versionIds.length);
+  assert.equal(versions.length, profile.versionIds.length);
   assert.deepEqual(
     new Set(versions.map((v) => v.versionId)),
-    new Set(binding.expectedVersionIds.map((id) => `gid://shopify/Version/${id}`)),
+    new Set(profile.versionIds.map((id) => `gid://shopify/Version/${id}`)),
   );
   for (const version of versions)
     assert.equal(version.status, version.versionId === `gid://shopify/Version/${VERSION}` ? 'active' : 'inactive');
@@ -40,7 +40,17 @@ function selectedVersions(value, remote) {
 }
 
 /** Offline seam: fixed original method calls and closed selected projections. */
-export async function runManagementReads({ client, reserve, send, waitClose, now = () => new Date().toISOString() }) {
+export async function runManagementReads({
+  client,
+  reserve,
+  send,
+  waitClose,
+  now = () => new Date().toISOString(),
+  profileName,
+}) {
+  const profile = releaseProfile(profileName);
+  const VERSION = profile.versionId,
+    TAG = profile.versionTag;
   assert.equal((await reserve('ActiveAppReleaseFromApiKey')).durable, true);
   let raw = await client.activeAppVersionRawResult(APP);
   // Post-read private memory guard, not an HTTP/SDK allocation ceiling. The
@@ -56,7 +66,7 @@ export async function runManagementReads({ client, reserve, send, waitClose, now
   // Version ID from opaque Release.id; original AppVersions binds Active.
   raw = undefined;
   assert.equal((await reserve('AppVersions')).durable, true);
-  const opening = selectedVersions(await client.appVersions(remote), remote);
+  const opening = selectedVersions(await client.appVersions(remote), remote, profile);
   assert.equal((await reserve('AppVersionByTag')).durable, true);
   const version = await client.appVersionByTag(remote, TAG);
   const observedAt = now();
@@ -85,7 +95,7 @@ export async function runManagementReads({ client, reserve, send, waitClose, now
   });
   await waitClose();
   assert.equal((await reserve('AppVersions')).durable, true);
-  const closing = selectedVersions(await client.appVersions(remote), remote);
+  const closing = selectedVersions(await client.appVersions(remote), remote, profile);
   await send('CLOSE', { ...closing, observedAt: now() });
 }
 
@@ -100,6 +110,9 @@ async function main() {
     assert.ok(!line.done && line.value === expected);
   };
   try {
+    const profileName = process.argv[2];
+    assert.ok(process.argv.length <= 3);
+    releaseProfile(profileName);
     await next('AUTHENTICATE');
     for (const [file, sha] of pins)
       assert.equal(
@@ -116,6 +129,7 @@ async function main() {
     await next('OPEN');
     await runManagementReads({
       client,
+      profileName,
       reserve: async (operation) => {
         emit(`RESERVE ${operation}\n`);
         await next('DURABLE_ACK');

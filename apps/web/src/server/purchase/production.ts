@@ -6,6 +6,7 @@ import { loadArtworkStorageProfile } from '@insignia/storage';
 import { Pool } from 'pg';
 import { loadCredentialKeys } from '../../../../worker/src/config.ts';
 import { credentialLifecycle } from '../../../../worker/src/handlers.ts';
+import { createProductionPurchaseAdmission } from '../../../../worker/src/purchase-admission.ts';
 import { adminServices } from '../admin/runtime.ts';
 import { createPurchaseServices, type PurchaseServices } from './service.ts';
 /** An integrated source is not an activation grant. Missing native context remains an explicit binding exception. */
@@ -51,6 +52,7 @@ export async function createProductionPurchaseServices(
       : undefined;
     return createPurchaseServices({
       core,
+      checkout: createProductionPurchaseAdmission({ core, credentials }),
       appOrigin,
       authenticate: async (request) => (await adminServices()?.authenticate(request)) ?? null,
       orders: {

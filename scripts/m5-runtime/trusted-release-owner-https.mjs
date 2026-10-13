@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
+import { releaseProfile } from './release-profile.mjs';
 
 const require = createRequire(new URL('../../apps/web/package.json', import.meta.url));
 const { canonicalAdminAccessScopes } = await import(pathToFileURL(require.resolve('@insignia/shopify')));
@@ -15,19 +16,10 @@ export const INSTALLATION_BOUNDARY = `query M5027InstallationBoundary {
 }`;
 // Compare capabilities: OAuth omits redundant reads after their write scope is granted.
 // The installation connection separately returns the complete effective scope set.
-const GRANTS = [
-  'write_products',
-  'read_publications',
-  'read_product_listings',
-  'read_cart_transforms',
-  'read_validations',
-  'write_cart_transforms',
-  'write_validations',
-];
-
 /** Fixed TLS endpoint/documents; request is the captured original node:https
  * capability. The native entry denies every global fetch/HTTP fallback. */
-export function createOwnerHttps({ request, functionQuery, now = Date.now, deadline }) {
+export function createOwnerHttps({ request, functionQuery, now = Date.now, deadline, profileName }) {
+  const GRANTS = releaseProfile(profileName).grants;
   let oauthCalls = 0,
     adminCalls = 0;
   assert.ok(typeof request === 'function' && typeof functionQuery === 'string');
