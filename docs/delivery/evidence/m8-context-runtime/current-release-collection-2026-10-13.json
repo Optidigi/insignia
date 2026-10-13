@@ -1,0 +1,36 @@
+{
+  "source": "Frozen independent PR110 verifier selected M8; existing append custody/current authorized runtime resources",
+  "firstRequest": {
+    "requestId": "5e6f5699-40e6-4807-8d6e-e4e06500e5e7",
+    "httpStatus": 503,
+    "state": "UNCERTAIN",
+    "cause": "Root Python default JSON whitespace violated canonical bytes contract",
+    "bytes": 440,
+    "canonicalBytes": 422,
+    "bodySha256": "882f854faa939774a587b9dea6547da3bddce4dcc0e2a58fc181b40b36ac7542",
+    "reconciliation": "DEFINITELY_REJECTED before binding/database/collector/provider dispatch; source assertion ordering plus identical sent/journal bytes, unchanged closed journals and absent fence",
+    "independentReadOnlyDiagnosis": "/root/verifier_host_transition"
+  },
+  "correctedNewRequest": {
+    "requestId": "73574f35-ade5-4b3f-b63e-f48a3d2151d2",
+    "httpStatus": 200,
+    "state": "COMPLETE",
+    "newUUIDDeadlineAndIntent": true,
+    "exactEncodingValidatedByProductionParser": true,
+    "recordId": "88e59fd2-41b7-4e8b-9674-cc14f1524a56"
+  },
+  "independentDatabaseReadback": {
+    "recordId": "88e59fd2-41b7-4e8b-9674-cc14f1524a56",
+    "shopId": "db771bea-c585-4954-9f88-70771c9a0c89",
+    "installationGeneration": "1",
+    "appClientId": "1443cf6d03d39edae7c101a943c5c684",
+    "activeVersion": "1165513097217",
+    "observedAt": "2026-10-13T22:57:40.003Z",
+    "createdAt": "2026-10-13T22:57:40.536496Z",
+    "attestationExpiresAt": "2026-10-13T22:58:08.340Z",
+    "evidenceDigest": "1e6ea08560048382d749be06880d7ed626133116a5bc0406ca4b0f203e341e52",
+    "recordVersion": "m5-trusted-release-v1"
+  },
+  "limits": "New independent collection/append capability proven, immutable record now expires under unchanged semantics. No historical Function execution/country/Market, creator enforcement qualification, checkout or full gate inferred. Never restamp it.",
+  "remainingDependency": "Buyer bootstrap demand composition source correction under review/final CI; worker scoped demand remains pending with native admission disabled."
+}

@@ -100,8 +100,9 @@ function expectedFunctions(text: string, appKey: string): ExpectedFunctionOwners
   return value as unknown as ExpectedFunctionOwnership;
 }
 
-/** Runtime bootstrap has one explicit enable gate. It never provisions resources, manufactures a release
- * or upgrades stored evidence. Release demand is server-bound and independently collected. The caller owns one cached promise, including an unavailable result. */
+/** Explicit runtime enable gate; no provisioning or manufactured release evidence.
+ * Bound reads request independent collection and preserve durable timestamps.
+ * The caller owns one cached bootstrap promise, including an unavailable result. */
 export async function createBuyerBootstrap(
   env: NodeJS.ProcessEnv = process.env,
   seam: BootstrapSeam = {},

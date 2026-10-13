@@ -1,0 +1,84 @@
+{
+  "status": "OWNER_AUTHORIZED_PREPARED_NOT_APPLIED",
+  "appId": "429028933633",
+  "organizationId": "200969036",
+  "appClientId": "1443cf6d03d39edae7c101a943c5c684",
+  "designatedStore": "insignia-rewrite-dev.myshopify.com",
+  "designatedInstallation": "gid://shopify/AppInstallation/1054356963611",
+  "nativeReadOnlyBaseline": {
+    "observedAt": "2026-10-13T22:53:38.021Z",
+    "soleActiveVersion": "1165513097217",
+    "versions": 8,
+    "existingModules": 6,
+    "moduleDigest": "f997e56015c379966d29c0731128783f36375fd86bf05e6e83b60531598ea6b1",
+    "appProxyAbsent": true,
+    "installCount": 1,
+    "installCountObservedAt": "2026-10-13T22:54:15.099Z",
+    "managementQueries": 5,
+    "mutationQueriesRejectedByProbe": true
+  },
+  "changes": [
+    {
+      "existingModule": "app_access",
+      "before": {
+        "scopes": "",
+        "optional_scopes": [
+          "write_products",
+          "read_publications",
+          "read_product_listings",
+          "read_cart_transforms",
+          "read_validations",
+          "write_cart_transforms",
+          "write_validations",
+          "read_orders"
+        ],
+        "use_legacy_install_flow": false,
+        "redirect_url_allowlist": []
+      },
+      "after": {
+        "scopes": "write_app_proxy",
+        "optional_scopes": [
+          "write_products",
+          "read_publications",
+          "read_product_listings",
+          "read_cart_transforms",
+          "read_validations",
+          "write_cart_transforms",
+          "write_validations",
+          "read_orders"
+        ],
+        "use_legacy_install_flow": false,
+        "redirect_url_allowlist": []
+      }
+    },
+    {
+      "addSingletonModule": "app_proxy",
+      "config": {
+        "url": "https://insignia-app.optidigi.nl/api/artwork",
+        "prefix": "apps",
+        "subpath": "insignia"
+      },
+      "registrationUUID": "must be assigned by Shopify, never invented"
+    }
+  ],
+  "qualification": {
+    "liveSpecification": "app_proxy, CLI configuration experience, uidStrategy single, registrationLimit1, gated false",
+    "pinnedCLI": "4.8.2 forward transform emits exactly url/subpath/prefix",
+    "providerValidationSchema": null,
+    "serverCreationAcceptance": "UNPROVED; verify authorized inactive candidate before release",
+    "scopePlacement": "Required scope follows official documented setup; optional retroactive proxy activation not established"
+  },
+  "bounds": "One inactive candidate, independently compare seven modules and unchanged Functions/settings/optional scopes, one app-wide release, human required-scope consent on existing designated installation. No reinstall, other scope, payment/charge, product or publication effect. Store-local Customize URL only if separately needed and authorized.",
+  "sources": [
+    "https://shopify.dev/docs/apps/build/online-store/app-proxies",
+    "https://shopify.dev/docs/apps/build/authentication-authorization/manage-access-scopes"
+  ],
+  "noVersionOrScopeMutationYet": true,
+  "ownerGrant": {
+    "date": "2026-10-13",
+    "source": "Owner response in local delivery thread81292d0a-995f-4c06-8ce7-7d7cd419bc4a",
+    "instruction": "Authorize this bounded App Proxy change",
+    "effects": "requiredwrite_app_proxy, oneproxy route, oneinactiveverifiedversion preservingFunctions/settings/optionals, oneappwide release, consent onlyexistingrewrite-dev installation"
+  },
+  "transitionDependency": "New inactive version changes closed inventory; new active version needs reviewed closed runtime/verifier profile. Keep buyer/admission disabled; qualify consumers/profile before release, then verify exact grants and signed forwarding after human consent."
+}
