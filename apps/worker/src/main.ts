@@ -1,14 +1,16 @@
-import { createArtworkService } from '@insignia/application';
+import { createArtworkService, createM3AdminReadCredentialSource } from '@insignia/application';
+import { currencyExponent } from '@insignia/cart-authorization';
 import { createDurableCore } from '@insignia/database';
-import { createShopifyOfflineRefreshTransport } from '@insignia/shopify';
+import { createShopifyOfflineRefreshTransport, readShopifyOrder, readShopifyOrderChanges } from '@insignia/shopify';
 import { loadArtworkStorageProfile } from '@insignia/storage';
 import { Pool } from 'pg';
 import { inspectArtwork } from './artwork/inspection.js';
 import { createArtworkRunner } from './artwork-runner.js';
 import { loadCredentialKeys } from './config.js';
 import { runLocalDiagnostic } from './diagnostic.js';
-import { createDurableWorkerHandlers } from './handlers.js';
+import { createDurableWorkerHandlers, credentialLifecycle } from './handlers.js';
 import { startWorkerProcess } from './process.js';
+import { createPurchaseRunner } from './purchase-runner.js';
 import { createWorkerReconciliation } from './reconciliation.js';
 import { createPgBossRuntime } from './runtime.js';
 
@@ -55,15 +57,35 @@ if (process.argv.includes('--diagnostic')) {
         onError: (errorClass) => queue.observability.logger.error('queue_job_rejected', { errorClass }),
       })
     : undefined;
+  const purchaseCredentials = createM3AdminReadCredentialSource({
+    tenants: core.tenants,
+    credentials: credentialLifecycle(core),
+    refresh: transport,
+  });
+  const purchaseRunner =
+    process.env.INSIGNIA_M8_PURCHASE_ENABLED === '1'
+      ? createPurchaseRunner({
+          core,
+          orders: {
+            read: (target) =>
+              readShopifyOrder(target, {
+                credentials: purchaseCredentials,
+                currency: { exponent: (code) => currencyExponent(code) ?? null },
+              }),
+            changes: (target) => readShopifyOrderChanges(target, { credentials: purchaseCredentials }),
+          },
+          onError: (errorClass) => queue.observability.logger.error('queue_job_rejected', { errorClass }),
+        })
+      : undefined;
   const running = await startWorkerProcess({
     queue,
-    handlers: createDurableWorkerHandlers(core, transport),
+    handlers: createDurableWorkerHandlers(core, transport, purchaseRunner),
     port,
     artworkReadiness: () => artworkRunner?.readiness() ?? { ready: false },
   });
   if (artworkRunner) await artworkRunner.start();
   console.log(JSON.stringify({ url: running.url, durableReady: running.durableReady }));
-  const reconciliation = createWorkerReconciliation({ core, queue, artwork });
+  const reconciliation = createWorkerReconciliation({ core, queue, artwork, purchases: purchaseRunner });
   const recoveryTimer = setInterval(() => {
     void reconciliation.runOnce();
   }, 30_000);

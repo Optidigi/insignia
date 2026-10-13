@@ -413,6 +413,9 @@ export function createBuyerRepository(db: Kysely<Database>) {
               tx,
             );
           if (!own.rows.length) fail('CONFLICT');
+          await sql`INSERT INTO purchase_offer_payloads(shop_id,installation_generation,quote_id,collected_at,expires_at,payload) SELECT ${scope.shopId},${scope.installationGeneration}::bigint,${input.quoteId}::uuid,b.created_at,p.retain_private_until,p.desired_request FROM quote_proposals p JOIN buyer_sessions b ON b.session_id=p.session_id WHERE p.proposal_id=${input.proposalId}::uuid AND p.shop_id=${scope.shopId} AND p.installation_generation=${scope.installationGeneration}::bigint ON CONFLICT DO NOTHING`.execute(
+            tx,
+          );
         },
         false,
       );

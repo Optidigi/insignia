@@ -167,6 +167,11 @@ export function createAdminAuthenticator(
       canEdit,
       canReadArtwork: grant.accountOwner === true && canRead,
       canUploadArtwork: grant.accountOwner === true && canEdit,
+      canReadOrders:
+        grant.accountOwner === true &&
+        [grant.appScopes, grant.userScopes, installation.grantedScopes].every((scopes) =>
+          scopes.includes('read_orders'),
+        ),
     };
   };
 }

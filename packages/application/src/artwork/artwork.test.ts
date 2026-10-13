@@ -176,6 +176,29 @@ describe('private artwork lifecycle at the application seam', () => {
     );
     expect(result).not.toHaveProperty('capability');
   });
+  it.each(['merchant', 'guest'] as const)(
+    'records trusted %s upload provenance before signing a private upload',
+    async (kind) => {
+      let created: ArtworkRecord | undefined;
+      const service = createArtworkService({
+        store: {
+          create: async (row: ArtworkRecord) => {
+            created = row;
+            return row;
+          },
+        } as never,
+        storage: { presignUpload: async () => ({ url: 'https://storage.invalid/upload', headers: {} }) } as never,
+        inspect: async () => {
+          throw new Error('must not inspect');
+        },
+      });
+      await service.begin(
+        { shopId: 'shop', installationGeneration: '1', kind, ownerHash: 'a'.repeat(64) },
+        { contentType: 'image/png', byteLength: 10 },
+      );
+      expect(created).toHaveProperty('ownerKind', kind);
+    },
+  );
   it('allows explicit policy-authorized logo-later intents while refusing arbitrary deferred ids', async () => {
     const service = createArtworkService({
       clock: () => new Date('2026-10-12T12:00:00Z'),

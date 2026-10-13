@@ -14,6 +14,7 @@ on:
       - 'packages/storage/**'
       - 'scripts/m6-artwork/**'
       - 'scripts/m7-storefront/**'
+      - 'scripts/m8-purchase/**'
       - 'scripts/m5-002/**'
       - 'scripts/m5-native-inventory/**'
       - 'scripts/m5-host-inventory/**'
@@ -42,6 +43,7 @@ on:
       - 'packages/storage/**'
       - 'scripts/m6-artwork/**'
       - 'scripts/m7-storefront/**'
+      - 'scripts/m8-purchase/**'
       - 'scripts/m5-002/**'
       - 'scripts/m5-native-inventory/**'
       - 'scripts/m5-host-inventory/**'
@@ -114,9 +116,12 @@ jobs:
       - name: M7 buyer HTTP ownership, admission and immutable issuance with PostgreSQL
         working-directory: apps/web
         run: node --test test/buyer-http.test.mjs test/buyer-flow.test.mjs test/buyer-production.test.mjs test/buyer-bootstrap.test.mjs
+      - name: M8 independently verified purchase and merchant artwork HTTP with PostgreSQL
+        working-directory: apps/web
+        run: node --test test/purchase-flow.test.mjs
       - name: Historical schema20 owner lifecycle and fresh queue process controls
         # Each test allocates its own database from pinned PR97 schema20 inputs.
-        # Current check:database above qualifies schema25; the historical erasure guard stays exact20.
+        # Current check:database above qualifies schema29; the historical erasure guard stays exact20.
         run: |
           corepack pnpm exec biome check scripts/m5-owner-lifecycle
           M5_OWNER_LIFECYCLE_TEST_URL="$DATABASE_URL" corepack pnpm --filter @insignia/database exec vitest run test/owner-lifecycle.test.ts

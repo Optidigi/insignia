@@ -22,6 +22,8 @@ export interface AdminActor {
   /** Private artwork uses an explicit grant; product scopes alone never suffice. */
   canReadArtwork?: boolean;
   canUploadArtwork?: boolean;
+  /** Account-owner order access verified against online and installation grants. */
+  canReadOrders?: boolean;
 }
 
 export interface AdminServices {

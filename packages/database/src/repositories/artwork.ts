@@ -13,6 +13,7 @@ type Row = {
   shop_id: string;
   installation_generation: string;
   owner_hash: string | null;
+  owner_kind: 'merchant' | 'guest' | 'legacy_unknown';
   declared_mime: ArtworkRecord['declaredMime'];
   declared_bytes: number;
   state: ArtworkRecord['state'];
@@ -38,6 +39,7 @@ const map = (r: Row): ArtworkRecord => ({
   shopId: r.shop_id,
   installationGeneration: r.installation_generation,
   ownerHash: r.owner_hash ?? '',
+  ownerKind: r.owner_kind,
   declaredMime: r.declared_mime,
   declaredBytes: r.declared_bytes,
   state: r.state,
@@ -170,7 +172,7 @@ export function createArtworkRepository(pool: Pool): ArtworkStore {
         )
           fail('UNAVAILABLE');
         const r = await c.query<Row>(
-          `INSERT INTO artwork_assets(asset_id,shop_id,installation_generation,owner_hash,declared_mime,declared_bytes,state,quarantine_key,original_key,preview_key,collected_at,upload_until,expires_at) VALUES($1,$2,$3,$4,$5,$6,'UPLOADING',$7,$8,$9,$10,$11,$12) RETURNING *`,
+          `INSERT INTO artwork_assets(asset_id,shop_id,installation_generation,owner_hash,declared_mime,declared_bytes,state,quarantine_key,original_key,preview_key,collected_at,upload_until,expires_at,owner_kind) VALUES($1,$2,$3,$4,$5,$6,'UPLOADING',$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
           [
             input.assetId,
             input.shopId,
@@ -184,6 +186,7 @@ export function createArtworkRepository(pool: Pool): ArtworkStore {
             input.collectedAt,
             input.uploadUntil,
             input.expiresAt,
+            input.ownerKind ?? 'legacy_unknown',
           ],
         );
         return map(r.rows[0] ?? fail('CONFLICT'));

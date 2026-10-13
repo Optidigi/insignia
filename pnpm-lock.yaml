@@ -285,6 +285,9 @@ importers:
       '@insignia/application':
         specifier: workspace:*
         version: link:../../packages/application
+      '@insignia/cart-authorization':
+        specifier: workspace:*
+        version: link:../../packages/cart-authorization
       '@insignia/database':
         specifier: workspace:*
         version: link:../../packages/database
@@ -322,6 +325,9 @@ importers:
 
   packages/application:
     dependencies:
+      '@insignia/cart-authorization':
+        specifier: workspace:*
+        version: link:../cart-authorization
       '@insignia/contracts':
         specifier: workspace:*
         version: link:../contracts

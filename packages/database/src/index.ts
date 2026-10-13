@@ -14,6 +14,14 @@ export {
   type OwnerLifecycleDecision,
   type OwnerLifecycleResult,
 } from './repositories/owner-lifecycle.js';
+export {
+  type PurchaseDesignPayload,
+  type PurchaseRecord,
+  type PurchaseRepository,
+  type PurchaseScope,
+  PurchaseStateError,
+} from './repositories/purchase.js';
+export type { PurchaseDiscoveryClaim } from './repositories/purchase-cursors.js';
 export type {
   ClaimIdentity,
   CredentialAcquire,

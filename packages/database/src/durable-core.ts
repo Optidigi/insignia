@@ -32,6 +32,7 @@ import { PgInboxRepository } from './repositories/delivery/pg-inbox-repository.j
 import { PgOutboxRepository } from './repositories/delivery/pg-outbox-repository.js';
 import { createProductionActivation, type ProductionActivationOptions } from './repositories/production-activation.js';
 import { PgProductionPublication, type ProductionPublicationRemote } from './repositories/production-publication.js';
+import { createPurchaseRepository, type PurchaseRepository } from './repositories/purchase.js';
 import { PgQuoteRenewalRepository } from './repositories/quote-renewal.js';
 import {
   type ClaimIdentity,
@@ -74,6 +75,7 @@ export type ConfigInput = {
 };
 
 export interface DurableCore {
+  readonly purchases: PurchaseRepository;
   readonly buyers: BuyerRepository;
   readonly renewalQuotes: QuoteRenewalStore;
   readonly trustedReleaseRecords: ReturnType<typeof createTrustedReleaseReader>;
@@ -411,6 +413,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       : null;
   }
   return {
+    purchases: createPurchaseRepository(database),
     artwork: createArtworkRepository(pool),
     buyers: createBuyerRepository(database),
     renewalQuotes: new PgQuoteRenewalRepository(database),
