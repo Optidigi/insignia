@@ -39,7 +39,8 @@ export async function startArtworkInspectionProcess(input: {
     await server.listenArtworkSocket(input.socketPath);
     await input.runner.start();
     await input.runner.runOnce();
-    if (!input.runner.ready) throw new Error('Artwork inspection unavailable');
+    // A transient pending-file failure owns its durable retry/backoff. Keep
+    // readiness false while the qualified runner recovers; do not stop it.
     timer = setInterval(() => {
       void cleanup();
     }, 30000);

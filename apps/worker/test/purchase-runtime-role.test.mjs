@@ -8,6 +8,7 @@ import { createDurableCore } from '@insignia/database';
 import { Pool } from 'pg';
 import { createDatabase } from '../../../packages/database/dist/client/database.js';
 import { installQueue } from '../../../scripts/m5-024/install-queue.mjs';
+import { qualifyArtworkRuntimeRole } from '../dist/artwork-role.js';
 import { credentialLifecycle } from '../dist/handlers.js';
 import { createPurchaseRunner } from '../dist/purchase-runner.js';
 import { purchaseFixture } from './support/purchase-role-fixture.mjs';
@@ -270,7 +271,30 @@ test('actual queue-member login reconciles signed initial and renewed offers, pa
         await owner.query('ROLLBACK');
         await owner.query(`REVOKE ${grant} ON ${table} FROM insignia_artwork_inspect`);
       }
+      await owner.query(
+        'GRANT EXECUTE ON FUNCTION public.cleanup_purchase_payloads(integer) TO insignia_artwork_inspect',
+      );
+      await assert.rejects(owner.query(grants[0]), /unqualified_artwork_private_access/);
+      await owner.query('ROLLBACK');
+      await owner.query(
+        'REVOKE EXECUTE ON FUNCTION public.cleanup_purchase_payloads(integer) FROM insignia_artwork_inspect',
+      );
+      await owner.query('GRANT DELETE ON shops TO insignia_artwork_inspect');
+      await owner.query('GRANT UPDATE(generation) ON installation_generations TO insignia_artwork_inspect');
       await owner.query(grants[0]);
+      assert.equal(
+        (await owner.query("SELECT has_table_privilege('insignia_artwork_inspect','shops','DELETE') AS bad")).rows[0]
+          .bad,
+        false,
+      );
+      assert.equal(
+        (
+          await owner.query(
+            "SELECT has_column_privilege('insignia_artwork_inspect','installation_generations','generation','UPDATE') AS bad",
+          )
+        ).rows[0].bad,
+        false,
+      );
       assert.equal(
         (
           await restricted.query(
@@ -302,6 +326,42 @@ test('actual queue-member login reconciles signed initial and renewed offers, pa
         session_user: inspectorLogin,
         current_user: inspectorLogin,
       });
+      await qualifyArtworkRuntimeRole(inspector);
+      for (const grant of [
+        'EXECUTE ON FUNCTION public.cleanup_purchase_payloads(integer)',
+        'EXECUTE ON FUNCTION public.read_purchase_offer_history(text,bigint,uuid,uuid)',
+        'UPDATE(original_key) ON artwork_assets',
+        'INSERT ON artwork_assets',
+        'DELETE ON artwork_assets',
+        'DELETE ON shops',
+        'UPDATE(generation) ON installation_generations',
+      ]) {
+        await owner.query(`GRANT ${grant} TO ${inspectorLogin}`);
+        await assert.rejects(qualifyArtworkRuntimeRole(inspector), /Inspection database role unavailable/);
+        await owner.query(`REVOKE ${grant} FROM ${inspectorLogin}`);
+      }
+      const extraRole = `m6_extra_${randomUUID().replaceAll('-', '')}`;
+      await owner.query(`CREATE ROLE ${extraRole} NOLOGIN`);
+      try {
+        await owner.query(`GRANT ${extraRole} TO ${inspectorLogin}`);
+        await assert.rejects(qualifyArtworkRuntimeRole(inspector), /Inspection database role unavailable/);
+        await owner.query(`REVOKE ${extraRole} FROM ${inspectorLogin}`);
+        await owner.query(`GRANT ${extraRole} TO insignia_artwork_inspect`);
+        await assert.rejects(qualifyArtworkRuntimeRole(inspector), /Inspection database role unavailable/);
+        await owner.query(`REVOKE ${extraRole} FROM insignia_artwork_inspect`);
+        await owner.query(`GRANT insignia_artwork_inspect TO ${inspectorLogin} WITH ADMIN OPTION`);
+        await assert.rejects(qualifyArtworkRuntimeRole(inspector), /Inspection database role unavailable/);
+        await owner.query(`REVOKE ADMIN OPTION FOR insignia_artwork_inspect FROM ${inspectorLogin}`);
+      } finally {
+        await owner.query(`DROP ROLE ${extraRole}`);
+      }
+      await owner.query('ALTER ROLE insignia_artwork_inspect CREATEROLE');
+      await assert.rejects(qualifyArtworkRuntimeRole(inspector), /Inspection database role unavailable/);
+      await owner.query('ALTER ROLE insignia_artwork_inspect NOCREATEROLE');
+      await owner.query('REVOKE UPDATE(state) ON artwork_assets FROM insignia_artwork_inspect');
+      await assert.rejects(qualifyArtworkRuntimeRole(inspector), /Inspection database role unavailable/);
+      await owner.query(grants[0]);
+      await qualifyArtworkRuntimeRole(inspector);
       await assert.rejects(inspector.query('SET ROLE insignia_queue_consume'), /permission denied/);
       await inspector.query('SELECT original_key FROM artwork_assets LIMIT 1');
       for (const sql of [

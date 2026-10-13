@@ -5,6 +5,7 @@ import { loadArtworkStorageProfile } from '@insignia/storage';
 import { Pool } from 'pg';
 import { inspectArtwork } from './artwork/inspection.js';
 import { startArtworkInspectionProcess } from './artwork-process.js';
+import { qualifyArtworkRuntimeRole } from './artwork-role.js';
 import { createArtworkRunner } from './artwork-runner.js';
 
 /** Dedicated Linux host entrypoint, with inspection-only DB/storage credentials.
@@ -23,20 +24,7 @@ const pool = new Pool({
   statement_timeout: 10000,
 });
 try {
-  const role = await pool.query(`SELECT r.rolcanlogin AND NOT r.rolsuper AND NOT r.rolcreatedb
-    AND NOT r.rolcreaterole AND NOT r.rolreplication AND NOT r.rolbypassrls
-    AND pg_has_role(current_user,'insignia_artwork_inspect','USAGE')
-    AND NOT pg_has_role(current_user,'insignia_queue_consume','USAGE')
-    AND NOT has_schema_privilege(current_user,'public','CREATE')
-    AND NOT EXISTS(SELECT 1 FROM pg_class c WHERE c.relowner=r.oid)
-    AND NOT EXISTS(SELECT 1 FROM pg_proc p WHERE p.proowner=r.oid)
-    AND NOT EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
-      WHERE n.nspname='public' AND c.relkind IN ('r','p')
-        AND c.relname NOT IN ('artwork_assets','shops','installation_generations')
-        AND (has_any_column_privilege(current_user,c.oid,'SELECT, INSERT, UPDATE, REFERENCES')
-          OR has_table_privilege(current_user,c.oid,'DELETE, TRUNCATE, TRIGGER'))) AS qualified
-    FROM pg_roles r WHERE r.rolname=current_user`);
-  if (role.rows.length !== 1 || role.rows[0].qualified !== true) throw new Error('Inspection runtime role required');
+  await qualifyArtworkRuntimeRole(pool);
   const core = createDurableCore(pool);
   const observability = createObservability();
   const storage = await loadArtworkStorageProfile(required('ARTWORK_STORAGE_PROFILE'), {

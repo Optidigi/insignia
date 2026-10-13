@@ -26,6 +26,11 @@ DO $$ BEGIN
         OR has_table_privilege('insignia_artwork_inspect',c.oid,'DELETE, TRUNCATE, TRIGGER'))) THEN
     RAISE EXCEPTION 'unqualified_artwork_private_access';
   END IF;
+  IF EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+    WHERE n.nspname='public' AND p.prosecdef AND p.prorettype NOT IN ('trigger'::regtype,'event_trigger'::regtype)
+      AND has_function_privilege('insignia_artwork_inspect',p.oid,'EXECUTE')) THEN
+    RAISE EXCEPTION 'unqualified_artwork_private_access';
+  END IF;
   IF EXISTS(SELECT 1 FROM pg_class c JOIN pg_roles r ON r.oid=c.relowner WHERE r.rolname='insignia_artwork_inspect')
     OR EXISTS(SELECT 1 FROM pg_proc p JOIN pg_roles r ON r.oid=p.proowner WHERE r.rolname='insignia_artwork_inspect')
     OR has_schema_privilege('insignia_artwork_inspect','public','CREATE') THEN
@@ -38,6 +43,17 @@ DO $$ BEGIN
   END IF;
 END $$;
 GRANT USAGE ON SCHEMA public TO insignia_artwork_inspect;
+-- Close prior inspection-group tenant table/column privileges before rebuilding locks.
+DO $$ DECLARE relation text; columns text; privilege text; BEGIN
+  FOREACH relation IN ARRAY ARRAY['shops','installation_generations'] LOOP
+    EXECUTE format('REVOKE ALL ON public.%I FROM insignia_artwork_inspect',relation);
+    SELECT string_agg(quote_ident(attname),', ' ORDER BY attnum) INTO columns
+      FROM pg_attribute WHERE attrelid=format('public.%I',relation)::regclass AND attnum>0 AND NOT attisdropped;
+    FOREACH privilege IN ARRAY ARRAY['SELECT','INSERT','UPDATE','REFERENCES'] LOOP
+      EXECUTE format('REVOKE %s (%s) ON public.%I FROM insignia_artwork_inspect',privilege,columns,relation);
+    END LOOP;
+  END LOOP;
+END $$;
 -- Tenant/generation checks and FOR UPDATE tenant locks; identities cannot be rewritten.
 GRANT SELECT ON public.shops, public.installation_generations TO insignia_artwork_inspect;
 GRANT UPDATE(updated_at) ON public.shops TO insignia_artwork_inspect;
@@ -61,4 +77,19 @@ GRANT UPDATE(state, claim_id, claim_until, manifest, rejection, owner_hash,
 -- This is a table/column privilege boundary, not per-row or expiry-only SQL isolation.
 -- Scoped repositories and the immutable-identity trigger enforce the application contract.
 -- No INSERT, DELETE, tenant/key/size/collection/expiry UPDATE or sequence grants.
+-- Effective PUBLIC privileges must not survive the group's explicit rebuild.
+DO $$ BEGIN
+  IF EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+    JOIN pg_attribute a ON a.attrelid=c.oid AND a.attnum>0 AND NOT a.attisdropped
+    WHERE n.nspname='public' AND c.relname IN ('artwork_assets','shops','installation_generations') AND (
+      NOT has_column_privilege('insignia_artwork_inspect',c.oid,a.attnum,'SELECT')
+      OR has_column_privilege('insignia_artwork_inspect',c.oid,a.attnum,'INSERT, REFERENCES')
+      OR has_table_privilege('insignia_artwork_inspect',c.oid,'DELETE, TRUNCATE, TRIGGER')
+      OR has_column_privilege('insignia_artwork_inspect',c.oid,a.attnum,'UPDATE') IS DISTINCT FROM (
+        (c.relname='shops' AND a.attname='updated_at') OR
+        (c.relname='installation_generations' AND a.attname='deactivated_at') OR
+        (c.relname='artwork_assets' AND a.attname=ANY(ARRAY['state','claim_id','claim_until','manifest','rejection','owner_hash',
+          'quarantine_cleaned_at','retry_at','cleanup_attempt_at','quarantine_cleanup_attempt_at','updated_at']))
+      ))) THEN RAISE EXCEPTION 'unqualified_artwork_mutation_access'; END IF;
+END $$;
 COMMIT;
