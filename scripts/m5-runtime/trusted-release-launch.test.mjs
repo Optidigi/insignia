@@ -322,41 +322,74 @@ test('the fixed child receives only scoped metadata on its private descriptor se
   }
 });
 
-test('bridge handover requires closed launcher and collector receipts that agree, retaining journals', async () => {
-  const parent = await mkdtemp(join(tmpdir(), 'insignia-handover-'));
-  try {
-    const phase = await prior(parent, closed());
-    const intent = join(parent, `m5-trusted-release-launch-intent-${recordId}`);
-    await mkdir(intent, { mode: 0o700 });
-    await writeFile(
-      join(intent, 'intent.json'),
-      JSON.stringify({
-        version: 'm5-owner-trusted-release-launch-intent-v1',
-        recordId,
-        childPhase: phase.split('/').at(-1),
-        retryAuthorized: false,
-      }),
-      { mode: 0o600 },
+test('bridge handover accepts actual ACK and STOP launcher results only with matching closed child evidence', async () => {
+  const stopped = {
+    ...closed(),
+    classification: 'TRUSTED_RELEASE_COLLECT_STOPPED',
+    appendAttempted: false,
+    appendAcknowledged: false,
+  };
+  for (const collector of [closed(), stopped]) {
+    const c = await processControl(
+      reserveSource +
+        `
+      for await(const b of process.stdin){};
+      const receipt=${JSON.stringify(collector)};
+      await writeFile(join(phase,'receipt.json'),JSON.stringify(receipt),{mode:0o600});
+      console.log(JSON.stringify(receipt));process.exit(${collector === stopped ? 1 : 0});`,
     );
-    await assert.rejects(inspectPriorBridgeHandoverSettlement(parent), /prior_settlement_unknown/);
-    await writeFile(join(intent, 'receipt.json'), JSON.stringify(closed()), { mode: 0o600 });
-    const before = await readFile(join(intent, 'intent.json'));
-    await inspectPriorBridgeHandoverSettlement(parent);
-    assert.deepEqual(await readFile(join(intent, 'intent.json')), before);
-    await writeFile(
-      join(intent, 'receipt.json'),
-      JSON.stringify({
-        ...closed(),
-        classification: 'TRUSTED_RELEASE_COLLECT_STOPPED',
-        appendAttempted: false,
-        appendAcknowledged: false,
-      }),
-      { mode: 0o600 },
-    );
-    await assert.rejects(inspectPriorBridgeHandoverSettlement(parent), /prior_settlement_unknown/);
-    await writeFile(join(intent, 'receipt.json'), JSON.stringify(closed(true)), { mode: 0o600 });
-    await assert.rejects(inspectPriorBridgeHandoverSettlement(parent), /prior_settlement_unknown/);
-  } finally {
-    await rm(parent, { recursive: true, force: true });
+    try {
+      assert.equal(c.result.classification, collector.classification);
+      assert.equal(c.result.version, 'm5-owner-trusted-release-launch-v1');
+      const phase = join(c.parent, `m5-trusted-release-collector-native-run-20261011-${recordId}`);
+      const intent = join(c.parent, `m5-trusted-release-launch-intent-${recordId}`);
+      await mkdir(intent, { mode: 0o700 });
+      await writeFile(
+        join(intent, 'intent.json'),
+        JSON.stringify({
+          version: 'm5-owner-trusted-release-launch-intent-v1',
+          recordId,
+          childPhase: phase.split('/').at(-1),
+          retryAuthorized: false,
+        }),
+        { mode: 0o600 },
+      );
+      await assert.rejects(inspectPriorBridgeHandoverSettlement(c.parent), /prior_settlement_unknown/);
+      await writeFile(join(intent, 'receipt.json'), JSON.stringify(c.result), { mode: 0o600 });
+      const before = await Promise.all([
+        readFile(join(intent, 'intent.json')),
+        readFile(join(intent, 'receipt.json')),
+        readFile(join(phase, 'receipt.json')),
+      ]);
+      await inspectPriorBridgeHandoverSettlement(c.parent);
+      assert.deepEqual(
+        await Promise.all([
+          readFile(join(intent, 'intent.json')),
+          readFile(join(intent, 'receipt.json')),
+          readFile(join(phase, 'receipt.json')),
+        ]),
+        before,
+      );
+      for (const changed of [
+        collector, // The previous fabricated collector-shaped wrapper is rejected.
+        { ...c.result, extra: 'unknown' },
+        { ...c.result, retryAuthorized: true },
+        { ...c.result, ambiguousWrite: true },
+        { ...c.result, classification: 'PRIVATE_OWNER_COLLECTION_UNQUALIFIED' },
+        { ...c.result, appendAttempted: 'true' },
+        {
+          ...c.result,
+          classification:
+            collector === stopped ? 'TRUSTED_RELEASE_COLLECT_APPEND_ACK' : 'TRUSTED_RELEASE_COLLECT_STOPPED',
+          appendAttempted: collector === stopped,
+          appendAcknowledged: collector === stopped,
+        },
+      ]) {
+        await writeFile(join(intent, 'receipt.json'), JSON.stringify(changed), { mode: 0o600 });
+        await assert.rejects(inspectPriorBridgeHandoverSettlement(c.parent), /prior_settlement_unknown/);
+      }
+    } finally {
+      await rm(c.parent, { recursive: true, force: true });
+    }
   }
 });
