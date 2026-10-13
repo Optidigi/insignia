@@ -1,0 +1,23 @@
+# User-manager service for serveradmin (UID1000), matching the qualified web UID.
+# Substitute the two artifact paths only after verifying their source/hash/ownership.
+[Unit]
+Description=Insignia development artwork inspection
+
+[Service]
+Type=simple
+Environment=NODE_ENV=production
+EnvironmentFile=/home/serveradmin/insignia-m8-runtime-20261013-pr114/inspection.env
+ExecStart=/home/serveradmin/insignia-m8-inspection-qualification/node-v24.21.0-linux-x64/bin/node /home/serveradmin/insignia-m8-runtime-20261013-pr114/inspection-worker/dist/artwork-main.js
+NoNewPrivileges=yes
+MemoryMax=512M
+MemorySwapMax=0
+CPUQuota=100%
+TasksMax=64
+KillMode=control-group
+# Wait for bounded storage/DB work to settle instead of killing a cleanup batch.
+TimeoutStopSec=infinity
+# Existing socket means inspect/settle first; never blindly unlink or restart.
+Restart=no
+
+[Install]
+WantedBy=default.target
