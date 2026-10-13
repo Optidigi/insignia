@@ -179,6 +179,37 @@ export async function inspectPriorCollectorSettlement(parent) {
   return phases;
 }
 
+function launcherReceiptForCollector(collector) {
+  return {
+    version: 'm5-owner-trusted-release-launch-v1',
+    classification: collector.classification,
+    ambiguousWrite: collector.ambiguousWrite,
+    appendAttempted: collector.appendAttempted,
+    appendAcknowledged: collector.appendAcknowledged,
+    retryAuthorized: false,
+  };
+}
+function qualifyLauncherReceipt(value) {
+  assert.deepEqual(Object.keys(value).sort(), [
+    'ambiguousWrite',
+    'appendAcknowledged',
+    'appendAttempted',
+    'classification',
+    'retryAuthorized',
+    'version',
+  ]);
+  assert.equal(value.version, 'm5-owner-trusted-release-launch-v1');
+  assert.ok(['TRUSTED_RELEASE_COLLECT_APPEND_ACK', 'TRUSTED_RELEASE_COLLECT_STOPPED'].includes(value.classification));
+  for (const key of ['appendAttempted', 'appendAcknowledged', 'ambiguousWrite'])
+    assert.equal(typeof value[key], 'boolean');
+  assert.equal(value.retryAuthorized, false);
+  assert.ok(!value.ambiguousWrite);
+  assert.ok(!value.appendAcknowledged || value.appendAttempted);
+  if (value.classification === 'TRUSTED_RELEASE_COLLECT_APPEND_ACK')
+    assert.ok(value.appendAttempted && value.appendAcknowledged);
+  return value;
+}
+
 /** Stopped bridge transition only. Caller holds the existing exclusive launch
  * fence; every prior collector and launcher must have an unambiguous receipt. */
 export async function inspectPriorBridgeHandoverSettlement(parent) {
@@ -198,11 +229,12 @@ export async function inspectPriorBridgeHandoverSettlement(parent) {
       assert.equal(intent.retryAuthorized, false);
       assert.equal(intent.childPhase, recordPhaseName(recordId));
       assert.ok(phases.some((phase) => phase.phase === intent.childPhase));
-      const receipt = qualifyCollectorReceipt(await privateJson(join(path, 'receipt.json')));
-      assert.ok(!receipt.ambiguousWrite);
+      const receipt = qualifyLauncherReceipt(await privateJson(join(path, 'receipt.json')));
       assert.deepEqual(
         receipt,
-        qualifyCollectorReceipt(await privateJson(join(parent, intent.childPhase, 'receipt.json'), 16384, true)),
+        launcherReceiptForCollector(
+          qualifyCollectorReceipt(await privateJson(join(parent, intent.childPhase, 'receipt.json'), 16384, true)),
+        ),
       );
     }
     return phases;
@@ -314,15 +346,7 @@ export async function runBoundedCollectorProcess({
   }
   for (const chunk of chunks) chunk.fill(0);
   packet.fill(0);
-  if (selected)
-    return {
-      version: 'm5-owner-trusted-release-launch-v1',
-      classification: selected.classification,
-      ambiguousWrite: selected.ambiguousWrite,
-      appendAttempted: selected.appendAttempted,
-      appendAcknowledged: selected.appendAcknowledged,
-      retryAuthorized: false,
-    };
+  if (selected) return launcherReceiptForCollector(selected);
   let appendReserved = false;
   try {
     for (const name of await readdir(childPhase))
