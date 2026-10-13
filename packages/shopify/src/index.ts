@@ -10,6 +10,7 @@ export * from './function-ownership.js';
 export * from './function-provision.js';
 export * from './function-setup.js';
 export * from './open-exchange-rates.js';
+export * from './orders/checkout-admission.js';
 export * from './orders/read-order.js';
 export * from './publication-admin.js';
 export * from './refresh.js';
