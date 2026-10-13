@@ -1,0 +1,35 @@
+{
+  "pr": "https://github.com/Optidigi/insignia/pull/116",
+  "merge": "5b2afeaa838f764d64d2789026f713913d47dcc8",
+  "tree": "3d03b6a898b237b2b085504fe3da937cf30cdb50",
+  "base": "1e5d82bfaca7d4d69a0810052d910e1c4e1ebc28",
+  "head": "a97b8a0fa2bcfdb48b74e881beeb4e9267f9ee57",
+  "effectiveMergeBase": "1e5d82bfaca7d4d69a0810052d910e1c4e1ebc28",
+  "orderedParents": [
+    "1e5d82bfaca7d4d69a0810052d910e1c4e1ebc28",
+    "a97b8a0fa2bcfdb48b74e881beeb4e9267f9ee57"
+  ],
+  "workflows": [
+    {
+      "run": 38472634795,
+      "name": "foundation",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "run": 38472634886,
+      "name": "durable-core",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "run": 38472634791,
+      "name": "runtime",
+      "attempt": 2,
+      "result": "SUCCESS",
+      "previousFailure": "attempt1 ECR Data limit exceeded before checkout/source/tests; unchanged-head infrastructure rerun"
+    }
+  ],
+  "closingReceipt": "https://github.com/Optidigi/insignia/pull/116#issuecomment-6155996177",
+  "limits": "Prepared configuration qualification; not installed inspector or native journey acceptance."
+}
