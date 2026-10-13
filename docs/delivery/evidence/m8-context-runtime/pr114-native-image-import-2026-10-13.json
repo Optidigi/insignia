@@ -1,0 +1,28 @@
+{
+  "sourceTree": "ab419c076bc5a3bec85a6dddc8f1f4f75156a67a",
+  "ciSourceHead": "9aa067e08670d8737c86b74fd97e3598f20337f3",
+  "ciRun": 38464835744,
+  "hostDocker": "29.8.1",
+  "status": "BOTH_IMAGES_IMPORTED_AND_BYTE_IDENTITY_VERIFIED",
+  "serviceRecreation": false,
+  "images": [
+    {
+      "kind": "web",
+      "tarSha256": "66ae067bd156d47431e95b343a594a45997d45afdc46edaaca0500342305279c",
+      "ciConfigDigest": "sha256:665a3e279550b00c6710678dcdb249b8113a9fdd30d93457dc5ce470c7145890",
+      "hostManifestDigest": "sha256:355f91b5821a2347cc5dbe7455b5380e32783097ed166b2c66f1b3c287c92de7",
+      "layers": 7,
+      "layerBytesChecked": 455898624
+    },
+    {
+      "kind": "worker",
+      "tarSha256": "69f36fd84a490bffa3e03a8dff6e3219e78a218299bca8561ee19ef62b048ca9",
+      "ciConfigDigest": "sha256:8b23e6a1262af40b1bda5a0c712d2a28525293e94ebd5dd4de9b60a104b86c23",
+      "hostManifestDigest": "sha256:1bd12dc6cf01d8669afd196c412e224c90da778a4bf3003451d1010dfebacf06",
+      "layers": 7
+    }
+  ],
+  "identityEvidence": "Exact source archives verified before import; host-reexport manifest/config digests verified, all compressed blobs and uncompressed layer DiffIDs checked, runtime configuration/OS/architecture identical",
+  "failurePreserved": "Initial web comparator expected CI config digest as host image ID. Import acknowledged a distinct OCI manifest digest; stopped, inspected and reexported exact loaded image. No reimport; original failed comparison remains in private logs/intent.",
+  "limit": "Imported images are not running builds. No new web/worker/inspector deployment, native buyer/cart/checkout or purchase proof."
+}
