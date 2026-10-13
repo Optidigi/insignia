@@ -126,7 +126,7 @@ function HistoricalOriginal({
       <button type="button" disabled={busy} onClick={() => void download()}>
         Prepare historical original
       </button>
-      {link && (
+      {link && Date.parse(link.expiresAt) > Date.now() && (
         <a href={link.url} target="_blank" rel="noopener noreferrer">
           Download historical original
         </a>
@@ -154,12 +154,31 @@ function Placement({
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [retentionExpired, setRetentionExpired] = useState(placement.expired);
-  const [link, setLink] = useState<{ url: string; expiresAt: string } | null>(null);
-  const [preview, setPreview] = useState<{ url: string; expiresAt: string } | null>(null);
+  const [link, setLink] = useState<{ url: string; expiresAt: string; identity: string } | null>(null);
+  const [preview, setPreview] = useState<{ url: string; expiresAt: string; identity: string } | null>(null);
   const generation = useRef(0);
+  // A render may observe erasure before passive effects run. Bind every URL to
+  // the exact current selection and reject responses from an earlier selection.
+  const identity = JSON.stringify([
+    purchase.purchaseId,
+    purchase.artworkVersion,
+    placement.currentAssetId,
+    placement.currentExpiresAt,
+    placement.expired,
+    group.payloadExpiresAt,
+  ]);
+  const latestIdentity = useRef(identity);
+  latestIdentity.current = identity;
+  const assetUsable =
+    !!placement.currentAssetId &&
+    !placement.expired &&
+    !!placement.currentExpiresAt &&
+    Date.parse(placement.currentExpiresAt) > Date.now() &&
+    Date.parse(group.payloadExpiresAt) > Date.now();
   useEffect(() => {
     generation.current++;
     setSelected(null);
+    setBusy(false);
     setLink(null);
     setPreview(null);
     setRetentionExpired(
@@ -193,6 +212,8 @@ function Placement({
     return () => clearTimeout(timer);
   }, [link, preview, placement.currentExpiresAt]);
   async function access(kind: 'download' | 'preview') {
+    if (!assetUsable) return;
+    const requestedIdentity = identity;
     const current = generation.current;
     setBusy(true);
     try {
@@ -201,17 +222,17 @@ function Placement({
           `${endpoint(purchase.purchaseId)}/artwork/${encodeURIComponent(placement.currentAssetId!)}/${kind}`,
         ),
       );
-      if (current !== generation.current) return;
+      if (current !== generation.current || requestedIdentity !== latestIdentity.current) return;
       if (Date.parse(result.expiresAt) <= Date.now()) throw new Error('Artwork link expired');
-      if (kind === 'download') setLink(result);
-      else setPreview(result);
+      if (kind === 'download') setLink({ ...result, identity: requestedIdentity });
+      else setPreview({ ...result, identity: requestedIdentity });
     } catch (e) {
-      if (current === generation.current) {
+      if (current === generation.current && requestedIdentity === latestIdentity.current) {
         setMessage(e instanceof Error ? e.message : 'Artwork unavailable');
         deny(e);
       }
     } finally {
-      if (current === generation.current) setBusy(false);
+      if (current === generation.current && requestedIdentity === latestIdentity.current) setBusy(false);
     }
   }
   async function attach() {
@@ -278,7 +299,7 @@ function Placement({
               : ''}
         </p>
       )}
-      {placement.currentAssetId && !retentionExpired && (
+      {assetUsable && !retentionExpired && (
         <>
           <button type="button" disabled={busy || disabled} onClick={() => void access('preview')}>
             View safe preview
@@ -288,8 +309,10 @@ function Placement({
           </button>
         </>
       )}
-      {preview && <img src={preview.url} alt={`Verified PNG ${label}`} style={{ maxWidth: '200px' }} />}
-      {link && (
+      {assetUsable && preview?.identity === identity && Date.parse(preview.expiresAt) > Date.now() && (
+        <img src={preview.url} alt={`Verified PNG ${label}`} style={{ maxWidth: '200px' }} />
+      )}
+      {assetUsable && link?.identity === identity && Date.parse(link.expiresAt) > Date.now() && (
         <a href={link.url} target="_blank" rel="noopener noreferrer">
           Download verified original
         </a>
@@ -430,6 +453,13 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
         <>
           <h2>{purchase.orderId}</h2>
           <p>Order created: {purchase.orderCreatedAt}</p>
+          <p>
+            {purchase.isTest === true
+              ? 'Test order.'
+              : purchase.isTest === null
+                ? 'Test status unavailable.'
+                : 'Non-test order.'}
+          </p>
           <p>{exactPurchaseMoney(purchase.originalTotalMinor, purchase.exponent, purchase.currency)}</p>
           <p>
             Shopify payment status: {purchase.financialStatus}. First fully paid:{' '}
@@ -516,7 +546,8 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
                 )}
             </p>
           ))}
-          <h3>Shopify refunds</h3>
+          <h3>Shopify refund records</h3>
+          <p>Refund records do not prove that money has settled. Shopify remains the payment authority.</p>
           {purchase.refunds.length === 0 && <p>No refunds recorded.</p>}
           {purchase.refunds.map((refund) => (
             <p key={refund.refundId}>
@@ -525,7 +556,7 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
               {refund.lines.map((line) => (
                 <span key={line.lineId}>
                   {' '}
-                  · {line.lineId}: {line.quantity} refunded,{' '}
+                  · {line.lineId}: {line.quantity} recorded for refund,{' '}
                   {exactPurchaseMoney(line.amountMinor, purchase.exponent, refund.currency)}
                 </span>
               ))}

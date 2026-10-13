@@ -1,9 +1,14 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID, sign } from 'node:crypto';
 import type { PurchaseObservation } from '@insignia/application';
+import { decodeEnvelope, decodeMember, encodeHeader, wholeQuoteSignBytes } from '@insignia/cart-authorization';
+import { canonicalDesignIdentity } from '@insignia/domain';
 import { sql } from 'kysely';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { createDatabase } from '../src/client/database.js';
+import { sha256CanonicalJson } from '../src/hash/canonical.js';
 import { createDurableCore } from '../src/index.js';
+import { PgAcceptedQuoteRepository } from '../src/repositories/accepted-quote.js';
 import { createArtworkRepository } from '../src/repositories/artwork.js';
 import { createPurchaseRepository } from '../src/repositories/purchase.js';
 import { createTestShop, openTestDatabase } from './support/postgres.js';
@@ -715,5 +720,210 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
     expect(locked.artworkState).toBe('ARTWORK_LOCKED');
     expect(locked.artworkVersion).toBe(1000);
     expect(locked.artworkEvents).toHaveLength(1000);
+  });
+  it('returns one accepted historical group for identical designs split across reversed raw variant entries', async () => {
+    const fixture = await purchaseFixture(db),
+      repo = createPurchaseRepository(db),
+      now = new Date();
+    const design = {
+      placements: [
+        {
+          placementId: 'front',
+          methodId: 'method',
+          stepId: 'step',
+          artwork: { kind: 'revision' as const, revisionId: randomUUID() },
+        },
+      ],
+      options: [],
+    };
+    const group = {
+      version: 'm2-customization-group-v1' as const,
+      shopId: fixture.shopId,
+      productId: fixture.productId,
+      configRevisionId: fixture.revisionId,
+      revisionContentHash: fixture.contentHash,
+      design,
+      variants: [{ variantId: '2', quantity: 1 }],
+    };
+    const rawRequest = {
+      shopId: fixture.shopId,
+      installationGeneration: '1',
+      idempotencyKey: 'split-design',
+      country: 'US',
+      marketId: '42',
+      capacity: { ordinaryLineCount: 0, inputBytes: 1 },
+      groups: [{ group }, { group: { ...group, variants: [{ variantId: '1', quantity: 1 }] } }],
+    };
+    const quoteId = randomUUID(),
+      setId = randomUUID(),
+      quote = {
+        ...fixture.quote,
+        quoteId,
+        physicalGroups: [
+          {
+            ...fixture.quote.physicalGroups[0]!,
+            canonicalIdentitySha256: createHash('sha256').update(canonicalDesignIdentity(group)).digest('hex'),
+          },
+        ],
+      };
+    const header = {
+      ...decodeEnvelope(fixture.authorization.envelopeCarrier).header,
+      quoteHex: quoteId.replaceAll('-', ''),
+      setHex: setId.replaceAll('-', ''),
+    };
+    const members = fixture.authorization.members.map((member) =>
+      decodeMember(Buffer.from(member.carrier, 'base64url')),
+    );
+    const authorization = {
+      ...fixture.authorization,
+      setId,
+      envelopeCarrier: Buffer.concat([
+        encodeHeader(header),
+        sign(null, wholeQuoteSignBytes(header, members), fixture.keys.privateKey),
+      ]).toString('base64url'),
+    };
+    await new PgAcceptedQuoteRepository(db).accept(
+      {
+        shopId: fixture.shopId,
+        installationGeneration: '1',
+        authorizationGeneration: fixture.authorizationGeneration,
+        authorizationEpoch: fixture.authorizationEpoch,
+        idempotencyKey: 'split-design',
+        requestDigest: 'c'.repeat(64),
+        effectiveRevisions: quote.effectiveRevisions,
+      },
+      async () => ({ quote, authorization }),
+    );
+    const geometry = {
+      version: 'm5-geometry-v1',
+      views: [
+        {
+          id: 'front',
+          variantImages: [],
+          placements: [{ id: 'front', rect: { centerX: 0.5, centerY: 0.5, width: 0.3, height: 0.3 } }],
+        },
+      ],
+      steps: [{ id: 'step', widthFraction: 0.5, heightFraction: 0.5 }],
+    };
+    const presentation = {
+      version: 'm5-presentation-v1',
+      labels: { methods: { method: 'Method' }, placements: { front: 'Front' }, steps: { step: 'Step' } },
+    };
+    await sql`INSERT INTO config_revision_geometry(shop_id,config_id,revision_id,schema_version,mode,geometry_value,content_hash) VALUES(${fixture.shopId},${fixture.configId},${fixture.revisionId},'m5-geometry-v1','optional',${JSON.stringify(geometry)}::jsonb,${sha256CanonicalJson(geometry)})`.execute(
+      db,
+    );
+    await sql`INSERT INTO config_revision_presentation(shop_id,config_id,revision_id,schema_version,presentation_value,content_hash) VALUES(${fixture.shopId},${fixture.configId},${fixture.revisionId},'m5-presentation-v1',${JSON.stringify(presentation)}::jsonb,${sha256CanonicalJson(presentation)})`.execute(
+      db,
+    );
+    await sql`INSERT INTO purchase_offer_payloads(shop_id,installation_generation,quote_id,collected_at,expires_at,payload) VALUES(${fixture.shopId},1,${quoteId}::uuid,${now},${new Date(+now + 604800000)},${JSON.stringify(rawRequest)}::jsonb)`.execute(
+      db,
+    );
+    const offer = await repo.getOffer({
+      shopId: fixture.shopId,
+      installationGeneration: '1',
+      quoteId,
+      authorizationSetId: setId,
+    });
+    expect(offer).not.toBeNull();
+    const payload = offer?.designPayload as {
+      request: { groups: { group: { design: unknown; variants: unknown } }[] };
+      revisions: { revisionId: string }[];
+    };
+    expect(payload.request.groups).toHaveLength(1);
+    expect(payload.request.groups[0]?.group.variants).toEqual([
+      { variantId: '1', quantity: 1 },
+      { variantId: '2', quantity: 1 },
+    ]);
+    expect(payload.request.groups[0]?.group.design).toEqual(design);
+    expect(payload.revisions[0]?.revisionId).toBe(fixture.revisionId);
+    const original = (
+      await sql<{
+        payload: unknown;
+      }>`SELECT payload FROM purchase_offer_payloads WHERE quote_id=${quoteId}::uuid`.execute(db)
+    ).rows[0]?.payload;
+    expect(original).toEqual(rawRequest); // Historical read normalization does not rewrite collection evidence.
+    if (!offer) throw new Error('missing verified historical offer');
+    const observed = await observation();
+    observed.order = {
+      ...observed.order,
+      shopId: fixture.shopId,
+      currency: 'USD',
+      country: 'US',
+      marketId: '42',
+      totalPriceMinor: '2001',
+    };
+    observed.exception = null;
+    observed.bindings = [
+      {
+        quoteId,
+        authorizationSetId: setId,
+        quote: offer.quote,
+        designPayload: offer.designPayload,
+        payloadCollectedAt: offer.payloadCollectedAt,
+        payloadExpiresAt: offer.payloadExpiresAt,
+        lines: quote.economics.lines.map((line) => ({
+          orderLineId: `gid://shopify/LineItem/${55 + line.lineIndex}`,
+          lineIndex: line.lineIndex,
+          productId: fixture.productId,
+          variantId: line.variantId,
+          quantity: line.quantity,
+          unitPriceMinor: line.unitPriceMinor,
+        })),
+      },
+    ];
+    const purchase = await repo.reconcile(represented(observed));
+    if ('kind' in purchase) throw new Error('lost complete purchase');
+    expect(purchase.bindings[0]?.designPayload?.request.groups).toHaveLength(1);
+    expect(purchase.bindings[0]?.lines.map((line) => line.variantId)).toEqual(['1', '2']);
+  });
+  it('attaches and locks artwork through one PostgreSQL connection without acquiring a nested pool connection', async () => {
+    const { input, fixture, now } = await bound(),
+      setup = createPurchaseRepository(db),
+      purchase = await setup.reconcile(input);
+    if ('kind' in purchase) throw new Error('missing customized purchase');
+    const usable = await asset(fixture.shopId, 'merchant', now);
+    const single = createDatabase(
+        new Pool({ connectionString: process.env.DATABASE_URL, max: 1, connectionTimeoutMillis: 250 }),
+      ),
+      repo = createPurchaseRepository(single),
+      scope = { shopId: fixture.shopId, installationGeneration: '1', kind: 'merchant' as const };
+    try {
+      const attached = await repo.appendArtwork(scope, {
+        purchaseId: purchase.purchaseId,
+        expectedVersion: 0,
+        groupIndex: 0,
+        placementId: 'front',
+        assetId: usable,
+        ownerHash: 'b'.repeat(64),
+      });
+      expect(attached.artworkState).toBe('READY');
+      expect(attached.artworkVersion).toBe(1);
+      const locked = await repo.lockArtwork(scope, { purchaseId: purchase.purchaseId, expectedVersion: 1 });
+      expect(locked.artworkState).toBe('ARTWORK_LOCKED');
+      expect(locked.artworkVersion).toBe(2);
+    } finally {
+      await single.destroy();
+    }
+  });
+
+  it('preserves independently read non-test authority and flags later test-status drift without rewriting it', async () => {
+    const { input, fixture } = await bound(),
+      repo = createPurchaseRepository(db);
+    input.order.test = false;
+    const original = await repo.reconcile(input);
+    if ('kind' in original) throw new Error('missing customized purchase');
+    expect(original.isTest).toBe(false);
+    const changed = await repo.reconcile({
+      ...input,
+      order: { ...input.order, test: true, updatedAt: '2026-10-13T10:10:00.000Z' },
+    });
+    if ('kind' in changed) throw new Error('lost customized purchase');
+    expect(changed.isTest).toBe(false);
+    expect(changed.observations[0]?.exception).toBe('UNSUPPORTED_ORDER_EDIT');
+    const legacyId = randomUUID();
+    await sql`INSERT INTO purchase_orders(purchase_id,shop_id,installation_generation,order_id,order_created_at,currency,original_total_minor) VALUES(${legacyId}::uuid,${fixture.shopId},1,'gid://shopify/Order/99900999',clock_timestamp(),'EUR',9100)`.execute(
+      db,
+    );
+    expect((await repo.get({ shopId: fixture.shopId, installationGeneration: '1' }, legacyId))?.isTest).toBeNull();
   });
 });

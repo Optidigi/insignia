@@ -47,6 +47,7 @@ export const PurchaseViewSchema = z.strictObject({
   purchaseId: z.string().uuid(),
   orderId: id,
   orderCreatedAt: date,
+  isTest: z.boolean().nullable(),
   currency: z.string().regex(/^[A-Z]{3}$/),
   exponent: z.number().int().min(0).max(3),
   originalTotalMinor: minor,

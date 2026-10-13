@@ -56,6 +56,7 @@ export type PurchaseRecord = {
   orderCreatedAt: string;
   currency: string;
   originalTotalMinor: string;
+  isTest: boolean | null;
   bindings: readonly {
     quoteId: string;
     authorizationSetId: string;
@@ -212,8 +213,8 @@ export function createPurchaseRepository(db: Kysely<Database>) {
     };
   }
 
-  async function get(scope: Scope, id: string): Promise<PurchaseRecord | null> {
-    await active(db, scope);
+  async function get(scope: Scope, id: string, executor: Kysely<Database> = db): Promise<PurchaseRecord | null> {
+    await active(executor, scope);
     const order = (
       await sql<{
         purchase_id: string;
@@ -223,8 +224,9 @@ export function createPurchaseRepository(db: Kysely<Database>) {
         order_created_at: Date;
         currency: string;
         original_total_minor: string;
-      }>`SELECT purchase_id::text,shop_id,installation_generation::text,order_id,order_created_at,currency,original_total_minor::text FROM purchase_orders WHERE shop_id=${scope.shopId} AND purchase_id=${id}::uuid`.execute(
-        db,
+        is_test: boolean | null;
+      }>`SELECT purchase_id::text,shop_id,installation_generation::text,order_id,order_created_at,currency,original_total_minor::text,is_test FROM purchase_orders WHERE shop_id=${scope.shopId} AND purchase_id=${id}::uuid`.execute(
+        executor,
       )
     ).rows[0];
     if (!order) return null;
@@ -236,7 +238,7 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       expires_at: Date;
       erased_at: Date | null;
     }>`SELECT b.set_id::text,b.quote_id::text,b.economics,CASE WHEN p.expires_at>clock_timestamp() AND EXISTS(SELECT 1 FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=p.shop_id AND s.current_generation=p.installation_generation AND i.deactivated_at IS NULL) THEN p.payload ELSE NULL END AS payload,p.expires_at,p.erased_at FROM purchase_bindings b JOIN purchase_design_payloads p USING(purchase_id,set_id) WHERE b.purchase_id=${id}::uuid ORDER BY b.set_id`.execute(
-      db,
+      executor,
     );
     const lines = await sql<{
       set_id: string;
@@ -247,7 +249,7 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       quantity: number;
       unit_price_minor: string;
     }>`SELECT set_id::text,line_id,line_index,product_id,variant_id,quantity,unit_price_minor::text FROM purchase_lines WHERE purchase_id=${id}::uuid ORDER BY line_index`.execute(
-      db,
+      executor,
     );
     const observations = await sql<{
       source_updated_at: Date;
@@ -256,12 +258,12 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       cancelled_at: Date | null;
       exception: string | null;
     }>`SELECT source_updated_at,observed_at,financial_status,cancelled_at,exception FROM purchase_observations WHERE purchase_id=${id}::uuid ORDER BY source_updated_at DESC,observed_at DESC,observation_id DESC`.execute(
-      db,
+      executor,
     );
     const paid = (
       await sql<{
         occurred_at: Date;
-      }>`SELECT occurred_at FROM purchase_paid_facts WHERE purchase_id=${id}::uuid`.execute(db)
+      }>`SELECT occurred_at FROM purchase_paid_facts WHERE purchase_id=${id}::uuid`.execute(executor)
     ).rows[0];
     const refunds = await sql<{
       refund_id: string;
@@ -270,7 +272,7 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       amount_minor: string;
       lines: PurchaseObservation['order']['refunds'][number]['lines'];
     }>`SELECT refund_id,occurred_at,currency,amount_minor::text,lines FROM purchase_refund_facts WHERE purchase_id=${id}::uuid ORDER BY occurred_at,refund_id`.execute(
-      db,
+      executor,
     );
     const events = await sql<{
       event_id: string;
@@ -282,7 +284,7 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       expires_at: Date | null;
       erased_at: Date | null;
     }>`SELECT event_id::text,version,kind,CASE WHEN expires_at>clock_timestamp() AND EXISTS(SELECT 1 FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=purchase_artwork_events.shop_id AND s.current_generation=purchase_artwork_events.installation_generation AND i.deactivated_at IS NULL) THEN group_index END AS group_index,CASE WHEN expires_at>clock_timestamp() AND EXISTS(SELECT 1 FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=purchase_artwork_events.shop_id AND s.current_generation=purchase_artwork_events.installation_generation AND i.deactivated_at IS NULL) THEN placement_id END AS placement_id,CASE WHEN expires_at>clock_timestamp() AND EXISTS(SELECT 1 FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=purchase_artwork_events.shop_id AND s.current_generation=purchase_artwork_events.installation_generation AND i.deactivated_at IS NULL) THEN asset_id::text END AS asset_id,expires_at,erased_at FROM purchase_artwork_events WHERE purchase_id=${id}::uuid ORDER BY version`.execute(
-      db,
+      executor,
     );
     const artworkEvents = events.rows.map((e) => ({
       eventId: e.event_id,
@@ -302,6 +304,7 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       orderCreatedAt: order.order_created_at.toISOString(),
       currency: order.currency,
       originalTotalMinor: order.original_total_minor,
+      isTest: order.is_test,
       bindings: bindings.rows.map((b) => ({
         quoteId: b.quote_id,
         authorizationSetId: b.set_id,
@@ -343,14 +346,14 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       ? 'ARTWORK_LOCKED'
       : result.bindings.some((b) => !b.designPayload)
         ? 'ERASED'
-        : (await ready(result))
+        : (await ready(result, executor))
           ? 'READY'
           : artworkEvents.some((e) => e.kind === 'ATTACH' && e.assetId === null)
             ? 'ERASED'
             : 'PENDING_ARTWORK';
     return result;
   }
-  async function ready(record: PurchaseRecord) {
+  async function ready(record: PurchaseRecord, executor: Kysely<Database> = db) {
     if (!record.bindings.length) return false;
     // After attachment linkage erasure we cannot safely infer which old source should resume.
     // A merchant must explicitly recollect the working slots; never restore an earlier choice silently.
@@ -373,7 +376,7 @@ export function createPurchaseRepository(db: Kysely<Database>) {
           if (!assetId) return false;
           const found =
             await sql`SELECT 1 FROM artwork_assets WHERE asset_id=${assetId}::uuid AND shop_id=${record.shopId} AND state='USABLE' AND expires_at>clock_timestamp()`.execute(
-              db,
+              executor,
             );
           if (!found.rows.length) return false;
         }
@@ -389,6 +392,7 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       scopeValid(order);
       if (
         !order.complete ||
+        typeof order.test !== 'boolean' ||
         !/^gid:\/\/shopify\/Order\/[1-9][0-9]*$/.test(order.orderId) ||
         !/^[0-9]+$/.test(order.totalPriceMinor)
       )
@@ -411,7 +415,8 @@ export function createPurchaseRepository(db: Kysely<Database>) {
             installation_generation: string;
             currency: string;
             original_total_minor: string;
-          }>`SELECT purchase_id::text,installation_generation::text,currency,original_total_minor::text FROM purchase_orders WHERE shop_id=${order.shopId} AND order_id=${order.orderId} FOR UPDATE`.execute(
+            is_test: boolean | null;
+          }>`SELECT purchase_id::text,installation_generation::text,currency,original_total_minor::text,is_test FROM purchase_orders WHERE shop_id=${order.shopId} AND order_id=${order.orderId} FOR UPDATE`.execute(
             tx,
           )
         ).rows[0];
@@ -451,9 +456,11 @@ export function createPurchaseRepository(db: Kysely<Database>) {
         const purchaseId = previous?.purchase_id ?? randomUUID();
         const changedOrder =
           !!previous &&
-          (previous.currency !== order.currency || previous.original_total_minor !== order.totalPriceMinor);
+          (previous.currency !== order.currency ||
+            previous.original_total_minor !== order.totalPriceMinor ||
+            (previous.is_test !== null && previous.is_test !== order.test));
         if (!previous)
-          await sql`INSERT INTO purchase_orders(purchase_id,shop_id,installation_generation,order_id,order_created_at,currency,original_total_minor) VALUES(${purchaseId}::uuid,${order.shopId},${purchaseGeneration}::bigint,${order.orderId},${new Date(order.createdAt)},${order.currency},${order.totalPriceMinor}::numeric)`.execute(
+          await sql`INSERT INTO purchase_orders(purchase_id,shop_id,installation_generation,order_id,order_created_at,currency,original_total_minor,is_test) VALUES(${purchaseId}::uuid,${order.shopId},${purchaseGeneration}::bigint,${order.orderId},${new Date(order.createdAt)},${order.currency},${order.totalPriceMinor}::numeric,${order.test})`.execute(
             tx,
           );
         const originalGeneration = purchaseGeneration;
@@ -644,7 +651,7 @@ export function createPurchaseRepository(db: Kysely<Database>) {
         db,
       );
     },
-    get,
+    get: (scope: Scope, id: string) => get(scope, id),
     async list(scope: PurchaseScope, input: { limit?: number; before?: string } = {}) {
       await active(db, scope);
       const limit = input.limit ?? 25;
@@ -783,10 +790,10 @@ export function createPurchaseRepository(db: Kysely<Database>) {
           shopTimezone: result.shop_timezone ?? result.quote_value.shopTimezone,
         },
         designPayload:
-          retained && request
+          retained && historicalRequest
             ? ({
                 version: 'm8-purchase-design-v1',
-                request,
+                request: historicalRequest,
                 collectedAt: collectedAt.toISOString(),
                 revisions,
               } satisfies PurchaseDesignPayload)
@@ -826,7 +833,7 @@ export function createPurchaseRepository(db: Kysely<Database>) {
           )
         ).rows[0];
         if (!order) return fail('NOT_FOUND');
-        const record = await get(scope, input.purchaseId);
+        const record = await get(scope, input.purchaseId, tx);
         if (!record) return fail('NOT_FOUND');
         if (record.artworkVersion !== input.expectedVersion) fail('CONFLICT');
         if (record.artworkState === 'ARTWORK_LOCKED') fail('LOCKED');
@@ -863,7 +870,7 @@ export function createPurchaseRepository(db: Kysely<Database>) {
           )
         ).rows[0];
         if (!order) return fail('NOT_FOUND');
-        const record = await get(scope, input.purchaseId);
+        const record = await get(scope, input.purchaseId, tx);
         if (!record) return fail('NOT_FOUND');
         if (record.artworkVersion !== input.expectedVersion) fail('CONFLICT');
         if (record.artworkState === 'ARTWORK_LOCKED') return;

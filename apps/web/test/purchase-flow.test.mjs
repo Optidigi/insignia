@@ -153,6 +153,7 @@ test('actual quote/signing/PG purchase authority is independent from cart confir
   assert.equal(response.status, 200, await response.clone().text());
   const view = await response.json();
   assert.equal(view.originalTotalMinor, '9100');
+  assert.equal(view.isTest, false);
   assert.equal(view.groups[0].configRevisionId, f.group.configRevisionId);
   assert.equal(view.groups[0].variants[0].quantity, 3);
   assert.equal(
@@ -308,4 +309,52 @@ test('merchant HTTP rejects forged tenant/body/origin and foreign asset; verifie
   const edited = await f.http(result.purchaseId).then((r) => r.json());
   assert.ok(edited.exceptions.includes('UNSUPPORTED_ORDER_EDIT'));
   assert.deepEqual(edited.lines, before);
+});
+
+test('HTTP projection never restores original artwork when an expired replacement is masked before cleanup', {
+  skip: !database,
+}, async (t) => {
+  const f = await purchase(t);
+  const result = await reconcilePurchase(
+    { shopId: f.shopId, installationGeneration: '1', orderId: f.order.orderId },
+    f.ports,
+  );
+  const scope = { shopId: f.shopId, installationGeneration: '1', kind: 'merchant' };
+  const stored = await f.core.purchases.get(scope, result.purchaseId);
+  // Repository reads mask expired ATTACH identities before physical cleanup sets erasedAt.
+  const readback = {
+    ...stored,
+    artworkState: 'ERASED',
+    artworkVersion: 1,
+    artworkEvents: [
+      {
+        eventId: randomUUID(),
+        version: 1,
+        kind: 'ATTACH',
+        groupIndex: null,
+        placementId: null,
+        assetId: null,
+        expiresAt: new Date(+f.now() - 1).toISOString(),
+        erasedAt: null,
+      },
+    ],
+  };
+  const services = createPurchaseServices({
+    core: { ...f.core, purchases: { ...f.core.purchases, get: async () => readback } },
+    appOrigin: 'https://app.example.test',
+    authenticate: async () => f.actor,
+    orders: f.ports.orders,
+    clock: f.now,
+  });
+  const response = await handlePurchaseRequest(
+    new Request('https://app.example.test/api/purchases/v1/' + result.purchaseId, {
+      headers: { Authorization: 'Bearer verified' },
+    }),
+    services,
+    result.purchaseId,
+  );
+  assert.equal(response.status, 200, await response.clone().text());
+  const view = await response.json();
+  assert.equal(view.artworkState, 'ERASED');
+  assert.equal(view.groups[0].placements[0].currentAssetId, null);
 });

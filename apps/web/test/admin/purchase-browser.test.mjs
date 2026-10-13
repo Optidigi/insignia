@@ -8,6 +8,7 @@ const id = 'd841ee12-2075-4101-b3bc-429ad31a4059';
 function view(state = 'PENDING_ARTWORK') {
   return {
     version: 'm8-purchase-v1',
+    isTest: false,
     purchaseId: id,
     orderId: 'gid://shopify/Order/1',
     orderCreatedAt: '2026-10-12T12:00:00Z',
@@ -310,10 +311,28 @@ test('retention readback clears a displayed selected preview even when artwork v
   await page.route('**/api/purchases/v1/' + id + '/artwork/' + asset + '/preview', (r) =>
     r.fulfill({ json: { url: 'https://private.example/old.png', expiresAt: deadline } }),
   );
+  await page.route('**/api/purchases/v1/' + id + '/artwork/' + asset + '/download', (r) =>
+    r.fulfill({ json: { url: 'https://private.example/old.svg', expiresAt: deadline } }),
+  );
   await page.route('https://private.example/**', (r) => r.fulfill({ body: '' }));
   await page.goto(base + '/admin/orders/' + id);
+  await page.getByRole('button', { name: 'Prepare original download', exact: true }).click();
+  await page.getByRole('link', { name: 'Download verified original', exact: true }).waitFor();
   await page.getByRole('button', { name: 'View safe preview', exact: true }).click();
   await page.getByRole('img', { name: 'Verified PNG front', exact: true }).waitFor();
+  await page.evaluate(() => {
+    window.erasurePrivacyGap = false;
+    new MutationObserver(() => {
+      if (
+        document.body.textContent.includes(
+          'Selected artwork unavailable; explicitly replace within remaining detail retention.',
+        ) &&
+        (document.querySelector('img[alt="Verified PNG front"]') ||
+          Array.from(document.querySelectorAll('a')).some((link) => link.textContent === 'Download verified original'))
+      )
+        window.erasurePrivacyGap = true;
+    }).observe(document.body, { childList: true, subtree: true });
+  });
   current = {
     ...current,
     artworkState: 'ERASED',
@@ -327,4 +346,42 @@ test('retention readback clears a displayed selected preview even when artwork v
     .getByText('Selected artwork unavailable; explicitly replace within remaining detail retention.', { exact: true })
     .waitFor();
   assert.equal(await page.getByRole('img', { name: 'Verified PNG front', exact: true }).count(), 0);
+  assert.equal(await page.getByRole('link', { name: 'Download verified original', exact: true }).count(), 0);
+  assert.equal(
+    await page.evaluate(() => window.erasurePrivacyGap),
+    false,
+    'no render may show erased current artwork, including before passive effects',
+  );
+});
+test('Shopify refund records describe requested facts without claiming settled payment', {
+  timeout: 15000,
+}, async (t) => {
+  const { page, base } = await fixture(t);
+  let current = {
+    ...view(),
+    isTest: true,
+    refunds: [
+      {
+        refundId: 'refund-pending',
+        occurredAt: '2026-10-13T00:00:00Z',
+        currency: 'USD',
+        amountMinor: '4500',
+        lines: [{ lineId: 'line1', quantity: 1, amountMinor: '4500' }],
+      },
+    ],
+  };
+  await page.route('**/api/purchases/v1/' + id, (r) => r.fulfill({ json: current }));
+  await page.goto(base + '/admin/orders/' + id);
+  await page.getByRole('heading', { name: 'Shopify refund records', exact: true }).waitFor();
+  await page.getByText('Test order.', { exact: true }).waitFor();
+  await page
+    .getByText('Refund records do not prove that money has settled. Shopify remains the payment authority.', {
+      exact: true,
+    })
+    .waitFor();
+  await page.getByText('· line1: 1 recorded for refund, USD 45.00', { exact: true }).waitFor();
+  assert.equal(await page.getByText(/1 refunded/).count(), 0);
+  current = { ...current, isTest: null };
+  await page.getByRole('button', { name: 'Refresh purchase', exact: true }).click();
+  await page.getByText('Test status unavailable.', { exact: true }).waitFor();
 });

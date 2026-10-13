@@ -56,7 +56,7 @@ export function createPurchaseServices(input: {
         for (const placement of selected.design.placements) {
           const erasedVersion = Math.max(
             0,
-            ...events.filter((e) => e.kind === 'ATTACH' && e.erasedAt).map((e) => e.version),
+            ...events.filter((e) => e.kind === 'ATTACH' && (e.erasedAt || e.assetId === null)).map((e) => e.version),
           );
           const latest = [...events]
             .reverse()
@@ -108,6 +108,7 @@ export function createPurchaseServices(input: {
       purchaseId: purchase.purchaseId,
       orderId: purchase.orderId,
       orderCreatedAt: purchase.orderCreatedAt,
+      isTest: purchase.isTest,
       currency: purchase.currency,
       exponent,
       originalTotalMinor: purchase.originalTotalMinor,
