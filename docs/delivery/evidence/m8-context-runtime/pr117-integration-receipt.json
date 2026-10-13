@@ -1,0 +1,34 @@
+{
+  "pr": "https://github.com/Optidigi/insignia/pull/117",
+  "merge": "478d4c962825a804bdf94a29aa151cc58bf1cedf",
+  "tree": "aeb74cb670f189fb05437df67c1b7a896fa7c782",
+  "base": "5b2afeaa838f764d64d2789026f713913d47dcc8",
+  "head": "428da3cd7df5e06ce64174a55612122b83ed1ee1",
+  "effectiveMergeBase": "5b2afeaa838f764d64d2789026f713913d47dcc8",
+  "orderedParents": [
+    "5b2afeaa838f764d64d2789026f713913d47dcc8",
+    "428da3cd7df5e06ce64174a55612122b83ed1ee1"
+  ],
+  "workflows": [
+    {
+      "run": 38477391164,
+      "name": "foundation",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "run": 38477391162,
+      "name": "durable-core",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "run": 38477391167,
+      "name": "runtime",
+      "attempt": 1,
+      "result": "SUCCESS"
+    }
+  ],
+  "closingReceipt": "https://github.com/Optidigi/insignia/pull/117#issuecomment-6156660672",
+  "limits": "Static configuration integrated; stable native connection subsequently verified. Inspector start failure follows separately; no native journey acceptance."
+}

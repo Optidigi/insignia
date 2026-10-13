@@ -13,7 +13,7 @@ services:
       ARTWORK_STORAGE_PROFILE: /run/insignia/artwork-storage.json
       ARTWORK_R2_ENDPOINT: https://97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com
       ARTWORK_R2_BUCKET: insignia-demo
-      ARTWORK_R2_PREFIX: insignia-rewrite/m6/
+      ARTWORK_R2_PREFIX: insignia-rewrite/m6
       ARTWORK_WORKER_READY_SOCKET: /run/insignia/artwork-readiness/ready.sock
     volumes:
       - type: bind
