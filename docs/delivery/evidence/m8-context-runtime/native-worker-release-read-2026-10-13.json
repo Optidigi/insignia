@@ -1,0 +1,16 @@
+{
+  "source": "1e5d82bfaca7d4d69a0810052d910e1c4e1ebc28",
+  "status": "NATIVE_GRANTS_AND_WORKER_LOGIN_VERIFIED",
+  "sqlSha256": "a8d0d024883ac9f8f86c545a445bc01b7812d9eea2395848e7dc40fb5ec92ac1",
+  "atomicCommitAcknowledged": true,
+  "grants": "Existing reviewed M7 buyer cleanup plus corrected M8 SELECT-only release capability",
+  "actualLogin": "insignia_worker",
+  "database": "insignia_rewrite",
+  "releaseRead": true,
+  "releaseMutation": false,
+  "originalRead": false,
+  "buyerSessionRead": false,
+  "buyerCleanupExecute": true,
+  "recordValuesRead": 0,
+  "limit": "Read capability only, no fresh trusted record or qualified admission. Inspector LOGIN/service and current web/worker composition not deployed."
+}

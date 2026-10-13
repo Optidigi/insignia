@@ -1,0 +1,32 @@
+{
+  "pr": "https://github.com/Optidigi/insignia/pull/115",
+  "closingReceipt": "https://github.com/Optidigi/insignia/pull/115#issuecomment-6155414432",
+  "merge": "1e5d82bfaca7d4d69a0810052d910e1c4e1ebc28",
+  "tree": "238e2085826975e83d14a7cb00a0e6fda3d50b85",
+  "base": "fde2d2bf4f9625a80c3aea1644ff2bb2e1c85806",
+  "head": "a1997b14e5e495d7f1baa12c01618ce378e9403b",
+  "effectiveMergeBase": "fde2d2bf4f9625a80c3aea1644ff2bb2e1c85806",
+  "orderedParentsVerified": true,
+  "treeMatchesHead": true,
+  "remoteMainVerified": true,
+  "workflows": [
+    {
+      "name": "foundation",
+      "id": 38468359055,
+      "attempt": 1,
+      "result": "PASS"
+    },
+    {
+      "name": "durable-core",
+      "id": 38468359068,
+      "attempt": 1,
+      "result": "PASS"
+    },
+    {
+      "name": "runtime",
+      "id": 38468359024,
+      "attempt": 1,
+      "result": "PASS"
+    }
+  ]
+}

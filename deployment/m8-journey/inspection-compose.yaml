@@ -1,0 +1,26 @@
+# Append to the verified current canonical configuration; target database/web only.
+# Inspect the rendered configuration privately before any service recreation.
+services:
+  database:
+    ports:
+      - "127.0.0.1:${INSIGNIA_INSPECTION_DB_PORT:?Set the qualified unused loopback port}:5432"
+  web:
+    environment:
+      ARTWORK_STORAGE_PROFILE: /run/insignia/artwork-storage.json
+      ARTWORK_R2_ENDPOINT: https://97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com
+      ARTWORK_R2_BUCKET: insignia-demo
+      ARTWORK_R2_PREFIX: insignia-rewrite/m6/
+      ARTWORK_WORKER_READY_SOCKET: /run/insignia/artwork-readiness/ready.sock
+    volumes:
+      - type: bind
+        source: ${INSIGNIA_ARTWORK_STORAGE_PROFILE:?Set the existing private profile}
+        target: /run/insignia/artwork-storage.json
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${INSIGNIA_ARTWORK_READY_DIRECTORY:?Set the owned readiness directory}
+        target: /run/insignia/artwork-readiness
+        read_only: true
+        bind:
+          create_host_path: false
