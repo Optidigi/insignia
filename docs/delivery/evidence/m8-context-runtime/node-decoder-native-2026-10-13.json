@@ -1,0 +1,73 @@
+{
+  "exitCode": 0,
+  "stdout": "{\"status\":\"PASS\",\"sandboxInvocations\":4,\"units\":[\"insignia-artwork-8027e704-660d-4360-acf3-a63907aa2c41\",\"insignia-artwork-af67fc0d-e8d1-4f75-af1f-b1ad3721db1f\",\"insignia-artwork-d1275715-d1b8-4fca-90c8-db011116766b\",\"insignia-artwork-ed70ca4f-0299-4572-a347-a838aecd4b90\"],\"providerCalls\":0}\n",
+  "stderr": "",
+  "journal": [
+    {
+      "stage": "INTENT",
+      "scope": "Synthetic only; max4 sandbox units; no DB/R2/provider",
+      "node": "v24.21.0"
+    },
+    {
+      "stage": "UNIT_INTENT",
+      "unit": "insignia-artwork-8027e704-660d-4360-acf3-a63907aa2c41"
+    },
+    {
+      "stage": "ISOLATION_PASS"
+    },
+    {
+      "stage": "UNIT_INTENT",
+      "unit": "insignia-artwork-af67fc0d-e8d1-4f75-af1f-b1ad3721db1f"
+    },
+    {
+      "stage": "DECODE_PASS",
+      "name": "SVG",
+      "width": 40,
+      "height": 20,
+      "originalSha256": "66d0acad013a400ebf7744acf77c219c6739d15ff435ea359fa2154eea5e7a97",
+      "previewSha256": "6b2f78af1f08fea97c985664113aa3790cec1dfb271ac70124ad8d35e4a87bc7"
+    },
+    {
+      "stage": "UNIT_INTENT",
+      "unit": "insignia-artwork-d1275715-d1b8-4fca-90c8-db011116766b"
+    },
+    {
+      "stage": "DECODE_PASS",
+      "name": "PNG",
+      "width": 32,
+      "height": 16,
+      "originalSha256": "a9b2934bf585d8dde33b2c0507869cc9a3b6e88ab41cf030517e85af906d0b27",
+      "previewSha256": "a9b2934bf585d8dde33b2c0507869cc9a3b6e88ab41cf030517e85af906d0b27"
+    },
+    {
+      "stage": "UNIT_INTENT",
+      "unit": "insignia-artwork-ed70ca4f-0299-4572-a347-a838aecd4b90"
+    },
+    {
+      "stage": "HOSTILE_SVG_REJECTED"
+    },
+    {
+      "stage": "COMPLETE",
+      "sandboxInvocations": 4,
+      "units": [
+        "insignia-artwork-8027e704-660d-4360-acf3-a63907aa2c41",
+        "insignia-artwork-af67fc0d-e8d1-4f75-af1f-b1ad3721db1f",
+        "insignia-artwork-d1275715-d1b8-4fca-90c8-db011116766b",
+        "insignia-artwork-ed70ca4f-0299-4572-a347-a838aecd4b90"
+      ],
+      "providerCalls": 0,
+      "decoderQualified": "Representative PNG/SVG and external-reference rejection only"
+    }
+  ],
+  "classification": "NATIVE_REPRESENTATIVE_NODE_DECODER_QUALIFIED",
+  "sourceCommit": "a1e0cee2f4f93a207e08aeee5577e8328a49e0c2",
+  "sourceTree": "055b4d9fbe87970b1afc107b651f27b14ccf6230",
+  "scriptSha256": "7a18594401b5e92500b2498dc09e56a8aaf85e0690fde25b268cc108c1c89841",
+  "scope": "Synthetic isolation, validSVG/PNG identity/preview, externalSVG reference rejected",
+  "limits": [
+    "No JPEG/native resource stress matrix or actual uploaded artwork",
+    "No database/R2/browser/cart/order/purchase execution",
+    "No production service or globalNode replacement",
+    "All four recorded units positively inactive with emptycgroup; archive/journal retained privately through20October"
+  ]
+}
