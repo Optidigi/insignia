@@ -1,14 +1,14 @@
 # Insignia operating model
 
-Current owner policy: [simple delivery, 12 October 2026](authority/simple-delivery-2026-10-12.md). This is the single delivery policy. The complete implementation plan and decision ledger govern product, architecture, stack, observable contracts and actual permissions. Dated prompts/reports preserve past facts; skills provide techniques under project authority.
+Current owner policy: [autonomous delivery, 13 October 2026](authority/autonomous-delivery-2026-10-13.md), retaining the useful engineering conventions of the dated simple-delivery decision. This is the single delivery policy. The complete implementation plan and decision ledger govern product, architecture, stack, observable contracts and actual permissions. Dated prompts/reports preserve past facts; skills provide techniques under project authority.
 
 ## 1. Ownership and outcomes
 
-The local orchestrator owns implementation decisions, investigation, test seams, refactoring, research, tools, delegation, models/effort within account limits, local review and normal PR integration inside the active milestone. Choose task order and internal workflow by the useful outcome. Isolate conflicting writers, databases, ports and storage; coordinate shared contracts, migrations, lockfiles and external effects.
+The local orchestrator owns implementation decisions, investigation, test seams, refactoring, research, tools, delegation, models/effort within account limits, local review and normal PR integration through the approved implementation plan. Choose task order and internal workflow by the useful outcome. Isolate conflicting writers, databases, ports and storage; coordinate shared contracts, migrations, lockfiles and external effects.
 
-The principal reviews cumulative milestone engineering shape, not every slice. Return at engineering readiness with working behavior and relevant evidence, not after every PR. Preserve normal sequencing: subsequent milestone development needs principal authorization. Minimal prerequisite work is allowed; full M10/M11 privacy/operations scope does not become M5 implicitly. Actual effects and data created now still require safe handling.
+The lead assesses engineering readiness and gate results from evidence, owns substantive sequencing and continues across components/milestones without principal or routine owner permission. Supporting agents review and research; they do not authorize delivery. First complete the bounded real M5–M8 journey, then expand approved features in dependency order. Report cumulative working behavior at meaningful boundaries. Actual effects and data created now still require scoped permissions and safe handling.
 
-Track engineering delivery, native acceptance and deployment/rollout eligibility separately. ENGINEERING_READY / NATIVE_ACCEPTANCE_DEFERRED may carry named owner-dependent checks. Known code defects remain defects and must state dependency impact. The principal may accept engineering progression while authorizing independent later development with a supervised acceptance slice outstanding. No deferral is G7/M5 native PASS or merchant rollout approval.
+Track engineering delivery, native acceptance and deployment/rollout eligibility separately. ENGINEERING_READY / NATIVE_ACCEPTANCE_DEFERRED may carry named owner-dependent checks. Known code defects remain defects and must state dependency impact. Independent development may continue when its substantive dependencies qualify, with named outstanding native checks retained. No deferral is G7/M5 native PASS or merchant rollout approval.
 
 ## 2. TDD and proportionate verification
 
@@ -22,9 +22,9 @@ Run checks relevant to changed behavior and dependencies; comprehensive regressi
 
 Meaningful behavior changes receive independent review of affected implementation and interacting contracts. Security, identity, economics, privacy, concurrency, release-authority and destructive changes must cover correctness and security. Choose review depth/contexts appropriate to impact; two axes are useful, not mandatory full-source pairs for every edit. Prose/formatting can use local verification. Corrections need impact review, not automatic restart from zero. Preserve finding attribution; close material findings or identify the blocked behavior.
 
-Bind candidate acceptance to actual final code/base and inherited review scope. Preserve compact linkable candidate, important tests/reviews and resulting merge evidence. Normal merge commits are delegated. Repository protections remain binding: no fabricated approvals, bypass, forced history rewrite or direct protected-main overwrite. Verify actual merge parents/tree and remote main. Local acceptance is not principal milestone acceptance.
+Bind candidate acceptance to actual final code/base and inherited review scope. Preserve compact linkable candidate, important tests/reviews and resulting merge evidence. Normal merge commits are delegated. Repository protections remain binding: no fabricated approvals, bypass, forced history rewrite or direct protected-main overwrite. Verify actual merge parents/tree and remote main. Local acceptance does not establish unobserved native behavior or rollout permission.
 
-At milestone engineering review, qualify cumulative implementation and architecture drift, delivered features and meaningful remaining risks; freeze integrated refs. Present working/demo/test evidence, conventions/architecture changes, unresolved defects, deferred native observations, cleanup/retention obligations and safe next work. Full native and rollout review remain separately gated.
+At meaningful integration boundaries, qualify cumulative implementation/architecture drift and report integrated refs, working evidence, defects, native limits and cleanup obligations. Continue through the approved plan as dependencies qualify. Production rollout remains an owner decision.
 
 ## 4. Skills, research and agents
 
@@ -36,9 +36,9 @@ Use subagents when useful with clear scope, refs, ownership and permissions. The
 
 ## 5. Browser and native acceptance
 
-Use a supported owner-authorized autonomous browser route when available, including functioning host integration, project-local Playwright or an approved existing-session connection. Inspect capability when relevant; optional tool failure is not a project-wide blocker. Human verification remains human verification. Keep passwords/cookies/identity tokens out of public logs/chat and debugging endpoints private.
+The owner-reported server-browser CAPTCHA failure is an immediate human-only dependency: do not repeat equivalent login attempts or evade verification. Inspect only supported routes needed for a usable owner local-browser sequence; no private connection is assumed. Use a supported owner-authorized autonomous browser route when available, including functioning host integration, project-local Playwright or an approved existing-session connection. Inspect capability when relevant; optional tool failure is not a project-wide blocker. Human verification remains human verification. Keep passwords/cookies/identity tokens out of public logs/chat and debugging endpoints private.
 
-If native browser access is unavailable, name the exact observation DEFERRED_OWNER_BROWSER, prepare a compact supervised slice using the current fixture and continue independent implementation, local UI automation and permissioned non-browser checks. Avoid repeated login/Console/transport setup loops. A known authentication defect stays open until addressed; synthetic sessions cannot prove native success and never relax signatures, expiry, staff/tenant/generation checks.
+If affected native access is unavailable, promptly report blocked outcome, concrete observed failure, exact owner action/destination/private setup, verification afterward and useful independent work. Group known related needs once, retain the blocker and prepare a short owner-operated sequence using the current fixture. Continue bounded safe work that reduces the outcome. Avoid repeated login/Console/transport setup loops. A known authentication defect stays open until addressed; synthetic sessions cannot prove native success and never relax signatures, expiry, staff/tenant/generation checks.
 
 ## 6. Freshness and supportable operations
 
