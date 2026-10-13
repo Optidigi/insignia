@@ -11,7 +11,7 @@ Carry M7 unresolved-cart recovery gap; M5 auth/G7/lifecycle/privacy/verifier and
 
 ## Demonstrated progress / next boundary
 
-Runtime locallyqualified: migration31 purpose-scopedoffer/revisionhistory andnarrowcapabilitygrants; realmemberLOGIN +actualcredential-source/durable-runner composition passes initial/renewedpurchase/first-paid/replay/refunds. RootSCRAM authenticationRED28P01→GREEN1PASS0SKIP/all31/ownedDBremoved; staleartifactRED→freshFAILGREEN. Independent completed-source and correction reviews pass. Finalexact-headCI/integrationpending; no nativegrants/deployment.
+Runtime locallyqualified: migration31 purpose-scopedoffer/revisionhistory andnarrowcapabilitygrants; realmemberLOGIN +actualcredential-source/durable-runner composition passes initial/renewedpurchase/first-paid/replay/refunds. RootSCRAM authenticationRED28P01→GREEN1PASS0SKIP/all31/ownedDBremoved; staleartifactRED→freshFAILGREEN. Independent completed-source and correction reviews pass. Finalall-five exact-headCIandnormalPR101integrationverified:ea3d505be1ff35454adc2c3e299fb1e9bb2b8bfa/tree d0d4a89b051b3f40a5667b31d07f5a6ce7ae6b25. GitHub roleartifact1PASS0SKIP/all31hashes/ownedDBremovedverified. No nativegrants/deployment.
 
 Correlation reader contract/localguardqualified: pinnedOrder.checkoutToken extractedonlyasSHA256, stablecomplete readback, no rawtokenexport; contextremainsfalse. Initialresearch challenged and corrected: ServerPixel isdistinctsupportedcontrol-plane/eventcandidate, NOTQUALIFIEDpayload/auth/approval/coverage. No blanketplatformimpossibility or semanticreplacement.
 
