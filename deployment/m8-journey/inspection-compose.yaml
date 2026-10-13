@@ -2,6 +2,7 @@
 # Inspect the rendered configuration privately before any service recreation.
 services:
   database:
+    ports: !reset []
     # The VPS internal bridge does not activate published host ports. Reserve
     # the qualified database address on that same private network instead.
     networks:
