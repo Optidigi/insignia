@@ -1,0 +1,98 @@
+{
+  "classification": "ORDER_READ_AND_PROTECTED_ORDER_ACCESS_VERIFIED_JOURNEY_UNQUALIFIED",
+  "integration": {
+    "pr": 110,
+    "merge": "6a18715b7e6bd88e6bb32cf66a9a24105420195d",
+    "head": "fb7322b5fed208bf068e17e7bcfa6ee8c0b4a7a5",
+    "tree": "ea8fe44b7c2ae6d69e5068a027b60268169646a7",
+    "exactHeadPassingWorkflows": 3
+  },
+  "verifierHandover": {
+    "sourceHead": "fb7322b5fed208bf068e17e7bcfa6ee8c0b4a7a5",
+    "profile": "m8-read-orders-617057f",
+    "state": "active/running",
+    "gateSha256": "0758ecab9f514d9edf6f5bf155c759db1dcb14c9382c3666cab0c69d6f2f8d4b",
+    "bridgeDirectoryInodesPreserved": true,
+    "historicalJournalsUnchanged": true,
+    "stopInvocations": 1,
+    "startInvocations": 1,
+    "priorStopResult": "failed/exit-code; no surviving processes or cgroup; existing SIGTERM shutdown exits nonzero",
+    "startupRefusal": {
+      "localHttpStatus": 503,
+      "forwardedHttpStatus": 503,
+      "state": "UNCERTAIN",
+      "requestId": null,
+      "recordId": null
+    },
+    "freshTrustedReleaseRecord": "NOT_OBTAINED"
+  },
+  "release": {
+    "observedAt": "2026-10-13T16:30:04.570Z",
+    "appId": "429028933633",
+    "activeVersionId": "1165513097217",
+    "versionTag": "m8-read-orders-617057f",
+    "inventoryCount": 8,
+    "inventoryExact": true,
+    "moduleCount": 6,
+    "modulesSha256": "f997e56015c379966d29c0731128783f36375fd86bf05e6e83b60531598ea6b1",
+    "soleScopeDelta": "optional read_orders",
+    "logicalMutations": 1,
+    "httpMutationAttempts": 1,
+    "blockedMutationAttempts": 0,
+    "settled": true,
+    "retryAuthorized": false
+  },
+  "installationGrant": {
+    "observedAt": "2026-10-13T16:35:22.398Z",
+    "shopId": "gid://shopify/Shop/105501393179",
+    "installationId": "gid://shopify/AppInstallation/1054356963611",
+    "appId": "429028933633",
+    "readOrdersGranted": true,
+    "readAllOrdersGranted": false,
+    "effectiveScopeCount": 9,
+    "ownerConsent": "Owner reports Update button completed and existing app/store admin loaded; independent installation read verified grant"
+  },
+  "orderAccess": {
+    "observedAt": "2026-10-13T16:39:38.009Z",
+    "probe": "Known owned development order; minimal order { id } query",
+    "result": "ACCESS_DENIED",
+    "message": "This app is not approved to access the Order object. See https://shopify.dev/docs/apps/launch/protected-customer-data for more details.",
+    "orderDataReturned": false,
+    "contactFieldsRequested": false,
+    "protectedCustomerDataAccess": "PENDING_OWNER_DEVELOPMENT_SETTING",
+    "currentFunctions": "Owned complete Transform/Validation connections; enabled and fail-blocking; historical execution remains unknown"
+  },
+  "limitations": [
+    "No new order, checkout, product or publication mutation",
+    "No new web/worker deployment or schema migration",
+    "Native purchase admission remains disabled",
+    "Current function health does not establish historical function execution or localization"
+  ],
+  "privateEvidence": [
+    "m8-verifier-handover-siczmfnp",
+    "insignia-m8-order-release-prepared-7q_vch6w",
+    "m8-verifier-handover-siczmfnp/protected-data-after-owner-save.json"
+  ],
+  "retention": "Private captures retained no later than 2026-10-20; no automatic cleanup claimed",
+  "protectedDataAfterOwnerSave": {
+    "observedAt": "2026-10-13T17:06:06.834Z",
+    "ownerReport": "Saved baseline Protected customer data with App functionality; other fields untouched",
+    "classification": "PROTECTED_ORDER_ACCESS_VERIFIED",
+    "installationReverified": true,
+    "order": {
+      "id": "gid://shopify/Order/7487119458587",
+      "creatorAppId": "gid://shopify/App/580111",
+      "sourceName": "web",
+      "test": true,
+      "createdAt": "2026-09-29T01:18:25Z",
+      "financialStatus": "REFUNDED"
+    },
+    "errors": [],
+    "oauthCalls": 1,
+    "adminCalls": 2,
+    "orderReads": 1,
+    "externalMutations": 0,
+    "contactFieldsRequested": false,
+    "limits": "Old designated test order metadata qualifies this read only; creator is not Insignia app ID, historical Function execution and localization remain unknown. Owner credential route is not intended worker-role qualification."
+  }
+}

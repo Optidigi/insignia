@@ -12,7 +12,7 @@ const qualification = {
   },
   appId: '123',
   appClientId: 'synthetic-client',
-  activeVersionRef: 'synthetic-reviewed-release',
+  activeVersionRef: '1163229200385',
 };
 test('qualified server composition uses the existing scoped release reader and refuses missing authority', async () => {
   const reads = [];
@@ -58,7 +58,7 @@ test('qualified server composition uses the existing scoped release reader and r
   assert.deepEqual(reads, [
     {
       scope: { shopId: 'synthetic', installationGeneration: '1', appClientId: 'synthetic-client' },
-      expectedActiveAppVersionRef: 'synthetic-reviewed-release',
+      expectedActiveAppVersionRef: '1163229200385',
       now,
     },
   ]);
@@ -74,4 +74,65 @@ test('missing native qualification leaves admission absent without touching any 
   );
   assert.equal(createProductionPurchaseAdmission({ core, credentials: {}, qualification: null }), undefined);
   assert.equal(createProductionPurchaseAdmission({ core, credentials: {} }), undefined);
+});
+
+test('M8 admission release target must match native qualification and still independently read evidence', async () => {
+  const reads = [];
+  const core = {
+    tenants: {
+      getActiveProviderScope: async () => ({
+        shopId: 'synthetic',
+        installationGeneration: '1',
+        shopDomain: 'synthetic.myshopify.com',
+        shopifyShopId: '101',
+      }),
+    },
+    trustedReleaseRecords: {
+      read: async (request) => {
+        reads.push(request);
+        return null;
+      },
+    },
+  };
+  const credentials = {
+    acquire: async () => {
+      throw new Error('No provider authority');
+    },
+  };
+  assert.equal(
+    createProductionPurchaseAdmission({
+      core,
+      credentials,
+      qualification,
+      releaseProfile: 'm8-read-orders-617057f',
+      clock: () => now,
+    }),
+    undefined,
+  );
+  const port = createProductionPurchaseAdmission({
+    core,
+    credentials,
+    qualification: { ...qualification, activeVersionRef: '1165513097217' },
+    releaseProfile: 'm8-read-orders-617057f',
+    clock: () => now,
+  });
+  assert.ok(port);
+  assert.equal(
+    await port.admit({
+      order: {
+        shopId: 'synthetic',
+        installationGeneration: '1',
+        createdAt: '2026-10-13T11:30:00Z',
+        observedAt: now.toISOString(),
+        checkoutOrigin: {
+          creatorAppId: 'gid://shopify/App/77',
+          sourceName: 'web',
+          checkoutTokenDigest: 'a'.repeat(64),
+        },
+      },
+    }),
+    null,
+  );
+  assert.equal(reads.length, 1);
+  assert.equal(reads[0].expectedActiveAppVersionRef, '1165513097217');
 });

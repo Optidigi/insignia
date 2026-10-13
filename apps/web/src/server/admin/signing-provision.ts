@@ -9,7 +9,7 @@ import type {
   OnlineStaffGrant,
   PublicationTenant,
 } from '@insignia/shopify';
-import { hasAdminAccessScope } from '@insignia/shopify';
+import { hasAdminAccessScope, type RuntimeReleaseProfileName, resolveRuntimeReleaseProfile } from '@insignia/shopify';
 import binding from '../../../../../deployment/m5-runtime/native-function-module-binding.json' with { type: 'json' };
 export type SigningProvisionPlan = { keyId: number; firstDay: number; lastDay: number };
 export type SigningRuntimeIdentity = { appClientId: string; appId: string; appOrigin: string };
@@ -52,6 +52,7 @@ export interface SigningProvisionPorts {
   core: Pick<DurableCore, 'tenants' | 'signingKeys' | 'trustedReleaseRecords'>;
   identity: Pick<ReturnType<typeof createAdminOnlineIdentity>, 'verify' | 'exchangeOnline' | 'readInstallation'>;
   runtimeIdentity: SigningRuntimeIdentity;
+  releaseProfile?: RuntimeReleaseProfileName;
   ring: SigningApplication.SigningKeyRing;
   now(): Date;
   journal: SigningProvisionJournal;
@@ -178,7 +179,6 @@ export async function reserveSigningProvisionRun(
 const APP = binding.appClientId;
 const APP_ID = binding.appId;
 const SHOP = 'insignia-rewrite-dev.myshopify.com';
-const VERSION = '1163229200385';
 function sameScope(actual: SigningApplication.KeyScope | null, expected: SigningApplication.KeyScope) {
   assert.ok(actual);
   for (const field of ['shopId', 'installationGeneration', 'authorizationGeneration', 'authorizationEpoch'] as const)
@@ -193,6 +193,7 @@ export async function provisionSigningKey(
   idToken: string,
   ports: SigningProvisionPorts,
 ): Promise<SigningProvisionResult> {
+  const releaseProfile = resolveRuntimeReleaseProfile(ports.releaseProfile);
   const flags = {
     pendingCreateAttempted: false,
     pendingCreateAcknowledged: false,
@@ -326,12 +327,12 @@ export async function provisionSigningKey(
       };
       const trusted = await ports.core.trustedReleaseRecords.read({
         scope: artifactScope,
-        expectedActiveAppVersionRef: VERSION,
+        expectedActiveAppVersionRef: releaseProfile.activeVersionRef,
         now: ports.now(),
       });
       assert.ok(trusted);
-      assert.equal(trusted.expectedBuild.appVersionRef, VERSION);
-      assert.equal(trusted.expectedBuild.sourceCommit, '9b94149272d1b62c34f44dda3bde209e80b4ae22');
+      assert.equal(trusted.expectedBuild.appVersionRef, releaseProfile.activeVersionRef);
+      assert.equal(trusted.expectedBuild.sourceCommit, releaseProfile.functionsSourceCommit);
       const observed = await operation(name, () => observeFunctions(tenant, trusted.expectedBuild));
       await currentScope();
       dayCoverage();

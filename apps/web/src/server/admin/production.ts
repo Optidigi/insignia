@@ -21,6 +21,7 @@ import {
   createPublicationAdminHttpTransport,
   createShopifyAvailabilityHoldV3Port,
   type OnlineStaffGrant,
+  resolveRuntimeReleaseProfile,
   type CatalogProduct as ShopifyCatalogProduct,
 } from '@insignia/shopify';
 import { Pool } from 'pg';
@@ -84,6 +85,7 @@ export function createProductionAdminServices(
   signingOwnerConfiguration?: SigningOwnerConfiguration,
   releaseCollector?: ReleaseVerificationCollector,
 ): AdminServices {
+  const releaseProfile = resolveRuntimeReleaseProfile(env.INSIGNIA_RELEASE_PROFILE);
   const databaseUrl = required(env, 'DATABASE_URL');
   const apiKey = required(env, 'SHOPIFY_CLIENT_ID');
   const apiSecret = required(env, 'SHOPIFY_CLIENT_SECRET');
@@ -138,6 +140,7 @@ export function createProductionAdminServices(
       if (!scope) return false;
       const deadlineMs = Math.min(actor.expiresAtMs, online.expiresAtMs - 30_000, Date.now() + 300_000);
       reader = createDemandDrivenReleaseReader({
+        releaseProfile: releaseProfile.name,
         records: core.trustedReleaseRecords,
         collector: releaseCollector,
         binding: {
@@ -176,7 +179,7 @@ export function createProductionAdminServices(
     }
     const evidence = await reader.read({
       scope: { shopId: actor.tenantShopId, installationGeneration: actor.installationGeneration, appClientId: apiKey },
-      expectedActiveAppVersionRef: '1163229200385',
+      expectedActiveAppVersionRef: releaseProfile.activeVersionRef,
       now: new Date(),
     });
     if (evidence) verified.set(actor, evidence);
@@ -292,6 +295,7 @@ export function createProductionAdminServices(
       readiness:
         activationReadiness ??
         createBoundProductionActivationReadiness({
+          releaseProfile: releaseProfile.name,
           scope: {
             shopId: actor.tenantShopId,
             installationGeneration: actor.installationGeneration,
@@ -413,6 +417,7 @@ export function createProductionAdminServices(
   if (signingOwnerConfiguration && !appId) throw new Error('Signing configuration unavailable');
   const signingOwner = signingOwnerConfiguration
     ? createSigningOwnerAction(signingOwnerConfiguration, {
+        releaseProfile: releaseProfile.name,
         app: signingApplication,
         core,
         identity: shopify,
@@ -602,7 +607,7 @@ export function createProductionAdminServices(
       });
       const evidence = await core.trustedReleaseRecords.read({
         scope,
-        expectedActiveAppVersionRef: '1163229200385',
+        expectedActiveAppVersionRef: releaseProfile.activeVersionRef,
         now: new Date(),
       });
       // Reviewed local query fingerprints only guide collection. These are not

@@ -1,7 +1,12 @@
 import { createArtworkService, createM3AdminReadCredentialSource } from '@insignia/application';
 import { currencyExponent } from '@insignia/cart-authorization';
 import { createDurableCore } from '@insignia/database';
-import { createShopifyOfflineRefreshTransport, readShopifyOrder, readShopifyOrderChanges } from '@insignia/shopify';
+import {
+  createShopifyOfflineRefreshTransport,
+  readShopifyOrder,
+  readShopifyOrderChanges,
+  resolveRuntimeReleaseProfile,
+} from '@insignia/shopify';
 import { loadArtworkStorageProfile } from '@insignia/storage';
 import { Pool } from 'pg';
 import { inspectArtwork } from './artwork/inspection.js';
@@ -67,7 +72,11 @@ if (process.argv.includes('--diagnostic')) {
     process.env.INSIGNIA_M8_PURCHASE_ENABLED === '1'
       ? createPurchaseRunner({
           core,
-          checkout: createProductionPurchaseAdmission({ core, credentials: purchaseCredentials }),
+          checkout: createProductionPurchaseAdmission({
+            core,
+            credentials: purchaseCredentials,
+            releaseProfile: resolveRuntimeReleaseProfile(process.env.INSIGNIA_RELEASE_PROFILE).name,
+          }),
           orders: {
             read: (target) =>
               readShopifyOrder(target, {
