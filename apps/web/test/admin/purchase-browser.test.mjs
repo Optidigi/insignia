@@ -385,3 +385,26 @@ test('Shopify refund records describe requested facts without claiming settled p
   await page.getByRole('button', { name: 'Refresh purchase', exact: true }).click();
   await page.getByText('Test status unavailable.', { exact: true }).waitFor();
 });
+
+test('merchant requests independent reconciliation without claiming current facts changed', {
+  timeout: 20000,
+}, async (t) => {
+  const { page, base } = await fixture(t);
+  const current = view();
+  let requests = 0;
+  await page.route('**/api/purchases/v1/' + id, (r) => r.fulfill({ json: current }));
+  await page.route('**/api/purchases/v1/' + id + '/reconcile', (r) => {
+    requests++;
+    assert.deepEqual(r.request().postDataJSON(), {});
+    return r.fulfill({ status: 202, json: current });
+  });
+  await page.goto(base + '/admin/orders/' + id);
+  await page.getByText('USD 90071992547409.93', { exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Request reconciliation', exact: true }).click();
+  await page
+    .getByText('Reconciliation requested. Refresh later for independently read Shopify facts.', { exact: true })
+    .waitFor();
+  assert.equal(requests, 1);
+  assert.equal(await page.getByText('USD 90071992547409.93', { exact: true }).count(), 1);
+  assert.equal(await page.getByText('Shopify facts reconciled.', { exact: true }).count(), 0);
+});

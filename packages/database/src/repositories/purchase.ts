@@ -387,6 +387,20 @@ export function createPurchaseRepository(db: Kysely<Database>) {
   }
   return {
     ...createPurchaseCursorRepository(db),
+    /** Merchant requests advance only the existing current-installation schedule.
+     * Worker claims, windows and economic facts remain untouched. */
+    async requestReconciliation(scope: PurchaseScope, purchaseId: string): Promise<void> {
+      if (scope.kind !== 'merchant') fail('INVALID');
+      await db.transaction().execute(async (tx) => {
+        await active(tx, scope, true);
+        const result = await sql`UPDATE purchase_reconciliation_cursors p
+          SET next_attempt_at=LEAST(p.next_attempt_at,clock_timestamp())
+          WHERE p.shop_id=${scope.shopId} AND p.installation_generation=${scope.installationGeneration}::bigint
+          AND EXISTS(SELECT 1 FROM purchase_orders o WHERE o.shop_id=p.shop_id AND o.purchase_id=${purchaseId}::uuid)
+          RETURNING p.shop_id`.execute(tx);
+        if (!result.rows.length) fail('NOT_FOUND');
+      });
+    },
     async reconcile(input: PurchaseObservation & { inboxId?: string; claimToken?: string }) {
       const order = input.order;
       bounded(input);

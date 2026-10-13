@@ -1,16 +1,6 @@
-import { createM3AdminReadCredentialSource } from '@insignia/application';
-import { currencyExponent } from '@insignia/cart-authorization';
 import { createDurableCore } from '@insignia/database';
-import {
-  createShopifyOfflineRefreshTransport,
-  readShopifyOrder,
-  resolveRuntimeReleaseProfile,
-} from '@insignia/shopify';
 import { loadArtworkStorageProfile } from '@insignia/storage';
 import { Pool } from 'pg';
-import { loadCredentialKeys } from '../../../../worker/src/config.ts';
-import { credentialLifecycle } from '../../../../worker/src/handlers.ts';
-import { createProductionPurchaseAdmission } from '../../../../worker/src/purchase-admission.ts';
 import { adminServices } from '../admin/runtime.ts';
 import { createPurchaseServices, type PurchaseServices } from './service.ts';
 /** An integrated source is not an activation grant. Missing native context remains an explicit binding exception. */
@@ -28,9 +18,6 @@ export async function createProductionPurchaseServices(
   if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash)
     throw new Error('Purchase origin unavailable');
   const connectionString = required('DATABASE_URL');
-  const clientId = required('SHOPIFY_CLIENT_ID'),
-    clientSecret = required('SHOPIFY_CLIENT_SECRET');
-  const keys = loadCredentialKeys(env);
   const core = createDurableCore(
     new Pool({
       connectionString,
@@ -39,14 +26,8 @@ export async function createProductionPurchaseServices(
       query_timeout: 10000,
       statement_timeout: 10000,
     }),
-    { credentialKeys: keys },
   );
   try {
-    const credentials = createM3AdminReadCredentialSource({
-      tenants: core.tenants,
-      credentials: credentialLifecycle(core),
-      refresh: createShopifyOfflineRefreshTransport({ clientId, clientSecret }),
-    });
     const storage = env.ARTWORK_STORAGE_PROFILE
       ? await loadArtworkStorageProfile(env.ARTWORK_STORAGE_PROFILE, {
           endpoint: required('ARTWORK_R2_ENDPOINT'),
@@ -56,22 +37,12 @@ export async function createProductionPurchaseServices(
       : undefined;
     return createPurchaseServices({
       core,
-      checkout: createProductionPurchaseAdmission({
-        core,
-        credentials,
-        releaseProfile: resolveRuntimeReleaseProfile(env.INSIGNIA_RELEASE_PROFILE).name,
-      }),
       appOrigin,
       authenticate: async (request) => (await adminServices()?.authenticate(request)) ?? null,
-      orders: {
-        read: (target) =>
-          readShopifyOrder(target, { credentials, currency: { exponent: (code) => currencyExponent(code) ?? null } }),
-      },
       storage,
     });
   } catch (error) {
     await core.close();
-    for (const key of Object.values(keys.keys)) key.fill(0);
     throw error;
   }
 }
