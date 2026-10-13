@@ -130,9 +130,23 @@ for path, expected in pre_m8_purchase_proof_architecture.items():
     archived = subprocess.check_output(["git", "show", f"{PRE_M8_PURCHASE_PROOF_BASE}:{path}"], cwd=REPO)
     assert digest(archived) == expected, f"pre-M8-purchase-proof architecture mismatch: {path}"
 
-current_architecture = {
+# Preserve the exact governance/architecture before autonomous delivery; retain every older check.
+PRE_AUTONOMOUS_DELIVERY_BASE = "6d81bf7551dfa94caf77f88aa75130ab9da62103"
+pre_autonomous_delivery_architecture = {
     "docs/architecture/implementation-plan.md": "c0e4b8c41d4da5828eba152a8059f3a3e27722cb104c441daa3bdfe70cef22b6",
     "docs/architecture/decision-ledger.md": "d3db631464f7166599872277c3f5f0d88859230040742ce59f6e50429f5df568",
+    "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
+}
+for path, expected in pre_autonomous_delivery_architecture.items():
+    archived = subprocess.check_output(["git", "show", f"{PRE_AUTONOMOUS_DELIVERY_BASE}:{path}"], cwd=REPO)
+    assert digest(archived) == expected, f"pre-autonomous-delivery architecture mismatch: {path}"
+AUTONOMOUS_DELIVERY_OWNER_AUTHORITY = "docs/delivery/authority/autonomous-delivery-2026-10-13.md"
+AUTONOMOUS_DELIVERY_OWNER_AUTHORITY_SHA256 = "cb90231944c8476d695dcf8e8e656a3c58f2022e26ff4949f8f8de9e4ae431bf"
+assert digest((REPO / AUTONOMOUS_DELIVERY_OWNER_AUTHORITY).read_bytes()) == AUTONOMOUS_DELIVERY_OWNER_AUTHORITY_SHA256, "autonomous delivery owner authority mismatch"
+
+current_architecture = {
+    "docs/architecture/implementation-plan.md": "7eece50a8030a089e95e2a533a418e75c25d0024364e7a645268bb5c25bf27eb",
+    "docs/architecture/decision-ledger.md": "536576973a57d721a8af6155b709b368421ba08c98dbae70f391f21ad49589cc",
     "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
 }
 M8_PURCHASE_PROOF_OWNER_AUTHORITY = "docs/delivery/authority/m8-purchase-proof-ownership-2026-10-13.md"
@@ -200,6 +214,9 @@ print(json.dumps({
     "preM8PurchaseProofSha256": pre_m8_purchase_proof_architecture,
     "m8PurchaseProofOwnerAuthority": M8_PURCHASE_PROOF_OWNER_AUTHORITY,
     "m8PurchaseProofOwnerAuthoritySha256": M8_PURCHASE_PROOF_OWNER_AUTHORITY_SHA256,
-    "currentArchitectureVersion": "1.6 + owner simple-delivery and delegated M8 purchase-proof amendments (13 October 2026)",
+    "currentArchitectureVersion": "1.6 + autonomous delivery and delegated M8 purchase-proof amendments (13 October 2026)",
     "currentArchitectureSha256": current_architecture,
+    "preAutonomousDeliveryRef": PRE_AUTONOMOUS_DELIVERY_BASE,
+    "preAutonomousDeliverySha256": pre_autonomous_delivery_architecture,
+    "autonomousDeliveryOwnerAuthoritySha256": AUTONOMOUS_DELIVERY_OWNER_AUTHORITY_SHA256,
 }, sort_keys=True))
