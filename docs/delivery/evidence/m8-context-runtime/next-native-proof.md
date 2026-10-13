@@ -2,6 +2,8 @@
 
 This is a dependency-specific proof plan, not deployment or native acceptance. Current contextVerifiedfalse/CONTEXT_UNVERIFIED remains exact. Local worker roles/helper/history and correlation-reader guards qualify independently; provider/context doubles do not supply native facts.
 
+13 October follow-up supersedes the pending owner log probe below: the owner supplied ordinary successful Admin GraphQL reads, then reported no visible Function runs. Record OWNER_REPORTED_NO_VISIBLE_RUNS; do not infer that no Functions ever ran. This route yielded no required tuple/join and no further owner log search or new checkout is requested. [Server Pixel research](server-pixel-research.md) now establishes the exact public-contract gap; the next external input is the [prepared Shopify inquiry](provider-context-inquiry.md), currently unsent, rather than blind pixel registration. Original probe below remains the dated plan, not an observation claim.
+
 ## Existing-resource read probe
 
 The functioning T3 default-profile browser reaches Shopify sign-in, not an authenticated owner session. Owner sign-in to insignia-rewrite-dev or a supervised exact-app Function-log inspection was requested once; no login retry or credential/cookie export. Existing public /live returns200 and /admin/orders returns404, so current M8 native composition is not established. Canonical VPS metadata reads work; no SQL, credential export or service recreation occurred.
