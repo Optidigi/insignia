@@ -301,13 +301,11 @@ test('buyer release collection cannot survive authorization or installation drif
     };
     await createBuyerBootstrap(environment(), value.dependencies);
     await assert.rejects(
-      value
-        .getComposition()
-        .artifactPorts.expectedBuild.read({
-          shopId: 'tenant',
-          installationGeneration: '1',
-          appClientId: 'synthetic-app',
-        }),
+      value.getComposition().artifactPorts.expectedBuild.read({
+        shopId: 'tenant',
+        installationGeneration: '1',
+        appClientId: 'synthetic-app',
+      }),
       /Buyer release authority changed/,
     );
   }
