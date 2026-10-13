@@ -2,10 +2,8 @@ import type { ArtworkStorage } from '@insignia/application';
 import {
   attachPurchaseArtwork,
   lockPurchaseArtwork,
-  type PurchasePorts,
   purchaseArtworkDownload,
   purchaseArtworkPreview,
-  reconcilePurchase,
 } from '@insignia/application';
 import { currencyExponent } from '@insignia/cart-authorization';
 import { MerchantPresentationSchema, type PurchaseView, PurchaseViewSchema } from '@insignia/contracts';
@@ -25,19 +23,11 @@ export function createPurchaseServices(input: {
   core: DurableCore;
   appOrigin: string;
   authenticate(request: Request): Promise<AdminActor | null>;
-  orders: PurchasePorts['orders'];
-  checkout?: PurchasePorts['checkout'];
   storage?: Pick<ArtworkStorage, 'presignRead'>;
   clock?: () => Date;
 }) {
   const now = input.clock ?? (() => new Date());
   const store = input.core.purchases;
-  const ports: PurchasePorts = {
-    checkout: input.checkout,
-    orders: input.orders,
-    offers: { get: (target) => store.getOffer(target) },
-    store: { reconcile: (observation) => store.reconcile(observation) },
-  };
   async function view(actor: AdminActor, purchase: PurchaseRecord): Promise<PurchaseView> {
     const groups: PurchaseView['groups'] = [];
     const authorized = new Map<string, Awaited<ReturnType<typeof store.getAuthorizedArtwork>>>();
@@ -157,14 +147,7 @@ export function createPurchaseServices(input: {
     },
     lock: (actor: AdminActor, purchaseId: string, command: { expectedVersion: number }) =>
       lockPurchaseArtwork(scope(actor), { ...command, purchaseId }, store),
-    async reconcile(actor: AdminActor, purchaseId: string) {
-      const purchase = await store.get(scope(actor), purchaseId);
-      if (!purchase) throw new Error('NOT_FOUND');
-      return reconcilePurchase(
-        { shopId: actor.tenantShopId, installationGeneration: actor.installationGeneration, orderId: purchase.orderId },
-        ports,
-      );
-    },
+    reconcile: (actor: AdminActor, purchaseId: string) => store.requestReconciliation(scope(actor), purchaseId),
     async download(actor: AdminActor, purchaseId: string, assetId: string) {
       if (!input.storage) throw new Error('UNAVAILABLE');
       return purchaseArtworkDownload(

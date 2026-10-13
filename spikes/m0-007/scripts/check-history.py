@@ -141,7 +141,14 @@ for path, expected in pre_autonomous_delivery_architecture.items():
     archived = subprocess.check_output(["git", "show", f"{PRE_AUTONOMOUS_DELIVERY_BASE}:{path}"], cwd=REPO)
     assert digest(archived) == expected, f"pre-autonomous-delivery architecture mismatch: {path}"
 AUTONOMOUS_DELIVERY_OWNER_AUTHORITY = "docs/delivery/authority/autonomous-delivery-2026-10-13.md"
-AUTONOMOUS_DELIVERY_OWNER_AUTHORITY_SHA256 = "cb90231944c8476d695dcf8e8e656a3c58f2022e26ff4949f8f8de9e4ae431bf"
+# The later Insignia-only operational clarification appends to the current record;
+# preserve the original owner direction at the verified PR113 integration.
+PRE_INSIGNIA_ONLY_CLARIFICATION_BASE = "a1e0cee2f4f93a207e08aeee5577e8328a49e0c2"
+archived_owner_authority = subprocess.check_output(
+    ["git", "show", f"{PRE_INSIGNIA_ONLY_CLARIFICATION_BASE}:{AUTONOMOUS_DELIVERY_OWNER_AUTHORITY}"], cwd=REPO
+)
+assert digest(archived_owner_authority) == "cb90231944c8476d695dcf8e8e656a3c58f2022e26ff4949f8f8de9e4ae431bf", "original autonomous delivery owner authority mismatch"
+AUTONOMOUS_DELIVERY_OWNER_AUTHORITY_SHA256 = "5476ba61efe9d9aecc12fe3d63aa8d6ce5267ce38d0f43772a5182ea694f6e58"
 assert digest((REPO / AUTONOMOUS_DELIVERY_OWNER_AUTHORITY).read_bytes()) == AUTONOMOUS_DELIVERY_OWNER_AUTHORITY_SHA256, "autonomous delivery owner authority mismatch"
 
 current_architecture = {

@@ -401,7 +401,11 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
       );
       if (generation === current.current) {
         setPurchase(result);
-        setMessage(kind === 'lock' ? 'Artwork locked.' : 'Shopify facts reconciled.');
+        setMessage(
+          kind === 'lock'
+            ? 'Artwork locked.'
+            : 'Reconciliation requested. Refresh later for independently read Shopify facts.',
+        );
       }
     } catch (e) {
       if (generation === current.current) {
@@ -473,7 +477,7 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
             </p>
           ))}
           <button type="button" disabled={busy} onClick={() => void command('reconcile')}>
-            Reconcile Shopify facts
+            Request reconciliation
           </button>
           <h3>Purchased variants</h3>
           {purchase.lines.map((line) => (

@@ -1,0 +1,35 @@
+{
+  "status": "PREPARED_NOT_AUTHORIZED",
+  "host": "65.109.22.104",
+  "target": "/home/serveradmin/insignia-m8-inspection-qualification",
+  "sourceCommit": "a1e0cee2f4f93a207e08aeee5577e8328a49e0c2",
+  "sourceTree": "055b4d9fbe87970b1afc107b651f27b14ccf6230",
+  "workerArchiveSha256": "70e5b97b4d515fdf964d1289b3318fa070840e9f1ee54f46be79edacc7650eda",
+  "nodeArchiveSha256": "fd8e59d5a511510f6a298afb548f18c7d2b1be404d8b4a27d94fbe49f56cb2d6",
+  "effects": [
+    "Copy/extract exact two archives in new owned0700 private directory; no global Node substitution",
+    "At most4 recorded nonprivileged sandbox invocations for OS/validSVG/validPNG/externalSVG rejection",
+    "Synthetic bytes only; existing exact isolation/resource caps and no privileged policy changes",
+    "Copy exact qualification.mjs with the archives; bind its SHA before execution; owned ephemeral loopback listener closed in finally"
+  ],
+  "excluded": [
+    "App/worker production-service start or replacement",
+    "DB/migration/LOGIN/ACL operation",
+    "R2 credentials/upload/storage/provider/store/payment effects",
+    "Package/system configuration changes",
+    "Retry after unresolved execution"
+  ],
+  "rollback": "After reconciling all recorded units stopped, remove only this qualification directory; preserve required journals/receipts through20October",
+  "qualificationScriptSha256": "7a18594401b5e92500b2498dc09e56a8aaf85e0690fde25b268cc108c1c89841",
+  "localQualification": {
+    "source": "Exact integrated PR113 commit/tree",
+    "toolchain": "Node24.21.0/pnpm12.6.0",
+    "install": "Frozen offline; no dependency downloads",
+    "relocation": "Sharp0.35.4/libvips8.18.6 imports and eight dependency mounts internal",
+    "archiveRelativeSymlinks": 151,
+    "scriptSyntax": "node --check passed",
+    "cleanupGuard": "Positive state plus six command/state failure controls passed",
+    "independentImpactReview": "CLEAR at script SHA7a18594401b5e92500b2498dc09e56a8aaf85e0690fde25b268cc108c1c89841",
+    "limits": "No host deployment or production decoder execution; target qualification requires separate owner allocation"
+  }
+}

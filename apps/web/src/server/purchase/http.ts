@@ -104,7 +104,7 @@ export async function handlePurchaseRequest(
     else await services.reconcile(actor, id);
     const view = await services.get(actor, id);
     if (!view) throw new HttpError(404, 'NOT_FOUND');
-    return respond(PurchaseViewSchema.parse(view));
+    return respond(PurchaseViewSchema.parse(view), action === 'reconcile' ? 202 : 200);
   } catch (error) {
     if (error instanceof AdminOnlineIdentityError && error.stage === 'ONLINE_EXCHANGE_REFRESH_REQUIRED') {
       const response = respond({ code: 'UNAUTHORIZED', message: 'Fresh merchant identity required', requestId }, 401);
