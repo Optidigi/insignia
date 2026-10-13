@@ -97,7 +97,9 @@ describe('independent Shopify order reconciliation', () => {
   it('rejects missing or malformed checkout correlation fields without exporting raw tokens', async () => {
     for (const checkoutToken of [undefined, 42, '', 'x'.repeat(1025), 'invalid\u0000token']) {
       const d = fixture();
-      d.fetchImpl.mockImplementation(async () => new Response(JSON.stringify({ data: { order: { ...order(), checkoutToken } } })));
+      d.fetchImpl.mockImplementation(
+        async () => new Response(JSON.stringify({ data: { order: { ...order(), checkoutToken } } })),
+      );
       await expect(readShopifyOrder(target, d)).rejects.toThrow('invalid_provider_shape');
     }
   });
