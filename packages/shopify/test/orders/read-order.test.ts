@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { once } from 'node:events';
 import { createServer } from 'node:http';
 import { describe, expect, it, vi } from 'vitest';
@@ -32,6 +33,7 @@ const tx = {
 };
 const order = () => ({
   id: target.orderId,
+  checkoutToken: null as string | null,
   createdAt: '2026-10-12T12:00:00Z',
   processedAt: '2026-10-12T12:00:00Z',
   updatedAt: '2026-10-13T10:00:00Z',
@@ -62,6 +64,45 @@ function fixture() {
   return dependencies;
 }
 describe('independent Shopify order reconciliation', () => {
+  it('retains only authenticated order checkout correlation digest without granting context authority', async () => {
+    const d = fixture();
+    const token = 'synthetic-original-checkout-token';
+    d.fetchImpl.mockImplementation(
+      async () => new Response(JSON.stringify({ data: { order: { ...order(), checkoutToken: token } } })),
+    );
+    const result = await readShopifyOrder(target, d);
+    expect(result).toMatchObject({
+      checkoutTokenDigest: createHash('sha256').update(token).digest('hex'),
+      contextVerified: false,
+      country: null,
+      marketId: null,
+    });
+    expect(JSON.stringify(result)).not.toContain(token);
+    const query = JSON.parse((d.fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1].body as string).query;
+    expect(query).toMatch(/checkoutToken/);
+    let reads = 0;
+    d.fetchImpl.mockImplementation(
+      async () =>
+        new Response(
+          JSON.stringify({
+            data: { order: { ...order(), checkoutToken: reads++ === 0 ? token : 'different-checkout' } },
+          }),
+        ),
+    );
+    await expect(readShopifyOrder(target, d)).rejects.toThrow('order_changed');
+    d.fetchImpl.mockImplementation(async () => new Response(JSON.stringify({ data: { order: order() } })));
+    expect((await readShopifyOrder(target, d)).checkoutTokenDigest).toBeNull();
+  });
+
+  it('rejects missing or malformed checkout correlation fields without exporting raw tokens', async () => {
+    for (const checkoutToken of [undefined, 42, '', 'x'.repeat(1025), 'invalid\u0000token']) {
+      const d = fixture();
+      d.fetchImpl.mockImplementation(
+        async () => new Response(JSON.stringify({ data: { order: { ...order(), checkoutToken } } })),
+      );
+      await expect(readShopifyOrder(target, d)).rejects.toThrow('invalid_provider_shape');
+    }
+  });
   it('preserves original quantities, pre-discount economics and settled transaction timing without inventing Market context', async () => {
     const d = fixture();
     const result = await readShopifyOrder(target, d);

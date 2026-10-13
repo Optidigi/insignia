@@ -1,0 +1,11 @@
+# Completed-change Standards/security review
+
+Independent `/root/m8_runtime_security_review`; fixed0339a7e1000732d829459355514606113900663e/treea9ecb8c88022322bbd6706a82bc7a1480edf0a99 vsbase63447c32a7a0edda358d50ebf3ae090f8fbf8312. Source reviewonly, no tests/credentials/native; read-onlyinstructionnotisolation.
+
+P1: new restricted LOGIN had no password and cleared URLpassword; CI PostgreSQL service uses passwordauth. Trust-only localPASS didnotqualifyCI. Add freshsyntheticprivatepassword ratherthan weakenserviceauthentication.
+
+P2: qualifyRuntime validatedbefore artifactwritingtry/finally. Missing/rejected configonrepeatedinvocation left stalePASSci.json/log while workflowalwaysuploads. InitializecurrentFAILevidence beforevalidation, preserve sanitizedcurrentfailure receipt.
+
+Otherboundaries sound: helperfixedpg_catalog/qualifiedtables/PUBLICrevocation, currenttenant/generation and originalexpiry/tombstones; narrowgrant/drift guards preserve immutablefacts and deny privateenvelope/buyerownership/assetkeys/merchantwrites. Actualtest runtime pools/composedcredentialsource distinctownerfixtureseeding. Checkoutdigest suppliescorrelationonly, noauthoritycontext/rawtoken. Research separatesServerPixellead frompayload/auth/eligibility/nativeproof. NonblockingFowlerheuristics: fixtureduplication and longqualificationtest possibleDuplicatedCode/DivergentChange; no documentedbreach.
+
+Verdictrequiredclosurebothfindings beforeacceptingcandidate; cumulativegoalnativecontext/journey remainsincomplete, noM9/fullnative/rolloutgrant.

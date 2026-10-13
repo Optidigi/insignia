@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { Pool } from 'pg';
 
-test('owner cleanup grant rejects privileged flags and inherited roles before granting cleanup-only execution', {
+test('owner purchase grant rejects privileged flags, inherited roles, ownership and excessive private/mutation access', {
   skip: !process.env.DATABASE_URL,
 }, async () => {
   const role = `m8_cleanup_${randomUUID().replaceAll('-', '')}`,
@@ -16,17 +16,32 @@ test('owner cleanup grant rejects privileged flags and inherited roles before gr
   ).replaceAll('insignia_queue_consume', role);
   try {
     await client.query(`CREATE ROLE ${role} NOLOGIN CREATEROLE`);
-    await assert.rejects(client.query(script), /unqualified_purchase_cleanup_role/);
+    await assert.rejects(client.query(script), /unqualified_purchase_runtime_role/);
     await client.query('ROLLBACK');
     await client.query(`ALTER ROLE ${role} NOCREATEROLE`);
     await client.query(`CREATE ROLE ${parent} NOLOGIN`);
     await client.query(`GRANT ${parent} TO ${role}`);
-    await assert.rejects(client.query(script), /unqualified_purchase_cleanup_membership/);
+    await assert.rejects(client.query(script), /unqualified_purchase_runtime_membership/);
     await client.query('ROLLBACK');
     await client.query(`REVOKE ${parent} FROM ${role}`);
+    await client.query(`GRANT SELECT(private_envelope) ON signing_keys TO ${role}`);
+    await assert.rejects(client.query(script), /unqualified_purchase_private_access/);
+    await client.query('ROLLBACK');
+    await client.query(`REVOKE SELECT(private_envelope) ON signing_keys FROM ${role}`);
+    await client.query(`GRANT DELETE ON purchase_orders TO ${role}`);
+    await assert.rejects(client.query(script), /unqualified_purchase_runtime_mutation/);
+    await client.query('ROLLBACK');
+    await client.query(`REVOKE DELETE ON purchase_orders FROM ${role}`);
+    await client.query(`CREATE TABLE m8_role_owned_${role}(id integer)`);
+    await client.query(`ALTER TABLE m8_role_owned_${role} OWNER TO ${role}`);
+    await assert.rejects(client.query(script), /unqualified_purchase_runtime_ownership/);
+    await client.query('ROLLBACK');
+    await client.query(`ALTER TABLE m8_role_owned_${role} OWNER TO CURRENT_USER`);
+    await client.query(`DROP TABLE m8_role_owned_${role}`);
     await client.query(script);
     await client.query(`SET ROLE ${role}`);
-    await assert.rejects(client.query('SELECT * FROM purchase_orders LIMIT 1'), /permission denied/);
+    await client.query('SELECT * FROM purchase_orders LIMIT 1');
+    await assert.rejects(client.query('DELETE FROM purchase_orders'), /permission denied/);
     assert.equal(
       typeof (await client.query('SELECT public.cleanup_purchase_payloads(1) AS count')).rows[0].count,
       'number',

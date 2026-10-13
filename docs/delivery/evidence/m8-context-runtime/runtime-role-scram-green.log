@@ -1,0 +1,73 @@
+$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+Applying: 20260929000100_durable_core.sql
+Applied: 20260929000100_durable_core.sql in 24.240157ms
+Applying: 20260929000200_runtime_ingress_credentials.sql
+Applied: 20260929000200_runtime_ingress_credentials.sql in 6.923185ms
+Applying: 20260929000300_authorization_generation.sql
+Applied: 20260929000300_authorization_generation.sql in 3.54577ms
+Applying: 20260929000400_accepted_quote.sql
+Applied: 20260929000400_accepted_quote.sql in 8.565985ms
+Applying: 20260930000100_m4_key_lifecycle.sql
+Applied: 20260930000100_m4_key_lifecycle.sql in 7.788598ms
+Applying: 20260930000200_publication_progress.sql
+Applied: 20260930000200_publication_progress.sql in 3.421588ms
+Applying: 20260930000300_m5_revision_geometry.sql
+Applied: 20260930000300_m5_revision_geometry.sql in 2.338559ms
+Applying: 20260930000400_m5_revision_presentation.sql
+Applied: 20260930000400_m5_revision_presentation.sql in 3.403547ms
+Applying: 20260930000500_m5_publication_source_version.sql
+Applied: 20260930000500_m5_publication_source_version.sql in 752.896µs
+Applying: 20260930000600_m5_publication_intent_generation.sql
+Applied: 20260930000600_m5_publication_intent_generation.sql in 889.1µs
+Applying: 20260930000700_m5_publication_intent_lookup.sql
+Applied: 20260930000700_m5_publication_intent_lookup.sql in 930.154µs
+Applying: 20260930000800_m5_current_publication_pointer.sql
+Applied: 20260930000800_m5_current_publication_pointer.sql in 2.846224ms
+Applying: 20260930000900_m5_activation.sql
+Applied: 20260930000900_m5_activation.sql in 13.396555ms
+Applying: 20261006000100_m5_availability_v2.sql
+Applied: 20261006000100_m5_availability_v2.sql in 10.895317ms
+Applying: 20261007000100_m5_availability_v3.sql
+Applied: 20261007000100_m5_availability_v3.sql in 12.400395ms
+Applying: 20261008000100_m5_trusted_release.sql
+Applied: 20261008000100_m5_trusted_release.sql in 5.908595ms
+Applying: 20261009000100_m5_webhook_retention_handoff.sql
+Applied: 20261009000100_m5_webhook_retention_handoff.sql in 2.417122ms
+Applying: 20261009000200_m5_webhook_recovery_selection.sql
+Applied: 20261009000200_m5_webhook_recovery_selection.sql in 1.170358ms
+Applying: 20261011000100_m5_webhook_minimal_obligations.sql
+Applied: 20261011000100_m5_webhook_minimal_obligations.sql in 5.086322ms
+Applying: 20261011000200_m5_owner_lifecycle_decisions.sql
+Applied: 20261011000200_m5_owner_lifecycle_decisions.sql in 3.093442ms
+Applying: 20261012000100_m6_artwork.sql
+Applied: 20261012000100_m6_artwork.sql in 4.955762ms
+Applying: 20261012000200_m7_buyer_sessions.sql
+Applied: 20261012000200_m7_buyer_sessions.sql in 12.106391ms
+Applying: 20261012000300_m7_quote_renewal.sql
+Applied: 20261012000300_m7_quote_renewal.sql in 4.378804ms
+Applying: 20261012000400_m7_buyer_cleanup.sql
+Applied: 20261012000400_m7_buyer_cleanup.sql in 791.399µs
+Applying: 20261012000500_m7_buyer_commands.sql
+Applied: 20261012000500_m7_buyer_commands.sql in 3.577949ms
+Applying: 20261013000100_m8_purchases.sql
+Applied: 20261013000100_m8_purchases.sql in 18.493973ms
+Applying: 20261013000200_m8_purchase_guards.sql
+Applied: 20261013000200_m8_purchase_guards.sql in 2.526402ms
+Applying: 20261013000300_m8_reconciliation_cursors.sql
+Applied: 20261013000300_m8_reconciliation_cursors.sql in 2.492197ms
+Applying: 20261013000400_m8_retained_offer_history.sql
+Applied: 20261013000400_m8_retained_offer_history.sql in 8.524649ms
+Applying: 20261013000500_m8_purchase_test_authority.sql
+Applied: 20261013000500_m8_purchase_test_authority.sql in 947.952µs
+Applying: 20261013000600_m8_purchase_runtime_access.sql
+Applied: 20261013000600_m8_purchase_runtime_access.sql in 1.795645ms
+✔ actual queue-member login reconciles signed initial and renewed offers, paid/refund history, replay and tenant fences (678.990145ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1082.982576
+M8 actual runtime PASS; owned test database removed: true

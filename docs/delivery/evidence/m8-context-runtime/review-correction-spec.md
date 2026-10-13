@@ -1,0 +1,7 @@
+# Correction impact — spec
+
+Independent `/root/m8_context_source_challenge` inspected192fd346ddce1160faabb932b18f77aaed4262e9/tree3989db750cf25a64e7a8bc389db59441de8001c1 relativeprior0339a7e, originalbase63447c3 unchanged. Read-only source/evidenceimpact, not independenttestrerun; noedits/credentials/nativecalls. InstructionnotFS/connectorisolation.
+
+Bothfindingsclosed; nonewmaterialfinding. Random32bytehexpassword supplies restrictedLOGIN/privatein-processURL withoutauthweakening/privilegechanges. PreservedSCRAM RED28P01→GREEN actual1PASS0SKIP/all31/ownedDBremoved provesrootauthenticationcorrection. FreshFAIL artifactinitializationbeforeparsing prevents stalePASSonrejectedconfiguration; meaningfulregressionchecksJSONFAIL andoldtranscriptgone.
+
+PreviouslyreviewedSQL/history/retention/grants/correlationunchanged. Exact-headCIstillrequired. Sourcearchitectureboundaryremainsconsistent, no newnative/resourceauthority/M9/rollout. Contextproof andpermittednativejourneyunmet; localorder/contextdoubles notnativefacts. Minorqualificationprose lag notedbySpec and correctedto cite actualSCRAMGREEN in final evidence-only revision.
