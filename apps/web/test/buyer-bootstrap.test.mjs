@@ -178,3 +178,20 @@ test('bootstrap uses configured Partner transport and passes stored release evid
   assert.equal(await ports.artifactPorts.trustedEvidence.read(scope), attestation);
   assert.equal(attestation.observedAt, '2000-01-01T00:00:00.000Z');
 });
+
+test('M8 buyer bootstrap reads the selected release without enabling buyer mode or trusting arbitrary version text', async () => {
+  const controls = seam();
+  const env = { ...environment(), INSIGNIA_RELEASE_PROFILE: 'm8-read-orders-617057f' };
+  assert.equal(await createBuyerBootstrap(env, controls.dependencies), controls.services);
+  const input = controls.getComposition();
+  const scope = { shopId: 'synthetic-shop', installationGeneration: '1', appClientId: 'synthetic-app' };
+  assert.equal(await input.artifactPorts.expectedBuild.read(scope), null);
+  assert.equal(controls.readers.at(-1).expectedActiveAppVersionRef, '1165513097217');
+  await input.core.close();
+  const denied = seam();
+  assert.equal(
+    await createBuyerBootstrap({ ...environment(), INSIGNIA_RELEASE_PROFILE: '1165513097217' }, denied.dependencies),
+    undefined,
+  );
+  assert.equal(denied.stats().allocated, 0);
+});

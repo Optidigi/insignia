@@ -1,3 +1,4 @@
+import { resolveRuntimeReleaseProfile } from '@insignia/shopify';
 import type { AdminServices } from './contracts.js';
 import { createDiagnosticPreviewServices } from './preview.js';
 import { createProductionAdminServices } from './production.js';
@@ -24,7 +25,10 @@ export function adminServices(): AdminServices | undefined {
             undefined,
             undefined,
             signingOwnerConfiguration(process.env),
-            createReleaseVerificationClient(),
+            createReleaseVerificationClient(
+              undefined,
+              resolveRuntimeReleaseProfile(process.env.INSIGNIA_RELEASE_PROFILE).activeVersionRef,
+            ),
           );
   } catch {
     return undefined;

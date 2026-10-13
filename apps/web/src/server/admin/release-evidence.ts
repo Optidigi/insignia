@@ -8,6 +8,7 @@ import {
   type TrustedReleaseRecordSource,
 } from '@insignia/application';
 import type { DurableCore } from '@insignia/database';
+import { type RuntimeReleaseProfileName, resolveRuntimeReleaseProfile } from '@insignia/shopify';
 
 /** Server-only composition. Operator-owned immutable evidence supplies the
  * capability; HTTP controllers, browser payloads and environment JSON do not.
@@ -54,8 +55,6 @@ export function createTrustedMerchantCalendar(
   };
 }
 
-/** This reviewed runtime targets the accepted existing Active version; environment/browser values are not authority. */
-const acceptedActiveAppVersionRef = '1163229200385';
 export function createBoundProductionActivationReadiness(input: {
   scope: FunctionArtifactScope;
   ianaTimezone: string | null;
@@ -65,7 +64,9 @@ export function createBoundProductionActivationReadiness(input: {
     expected: ExpectedFunctionBuild,
   ) => ReturnType<ActivationReadinessPort['observeFunctions']>;
   now?: () => Date;
+  releaseProfile?: RuntimeReleaseProfileName;
 }): Omit<ActivationReadinessPort, 'observeProjection'> {
+  const acceptedActiveAppVersionRef = resolveRuntimeReleaseProfile(input.releaseProfile).activeVersionRef;
   const bound = Object.freeze({ ...input.scope });
   const matches = (scope: FunctionArtifactScope) =>
     scope.shopId === bound.shopId &&
@@ -128,8 +129,10 @@ export function createDemandDrivenReleaseReader(input: {
   isCurrent(): Promise<void>;
   deadline(): number;
   now?: () => Date;
+  releaseProfile?: RuntimeReleaseProfileName;
   inFlight?: Map<string, Promise<{ requestId: string; recordId: string | null; state: string }>>;
 }): DurableCore['trustedReleaseRecords'] {
+  const acceptedActiveAppVersionRef = resolveRuntimeReleaseProfile(input.releaseProfile).activeVersionRef;
   const binding = Object.freeze({ ...input.binding });
   const now = input.now ?? (() => new Date());
   const inFlight = input.inFlight ?? new Map();

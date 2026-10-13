@@ -4,6 +4,8 @@ import {
   type AdminCredentialSource,
   createShopifyCheckoutPurchaseAdmission,
   type QualifiedCheckoutOrigin,
+  type RuntimeReleaseProfileName,
+  resolveRuntimeReleaseProfile,
 } from '@insignia/shopify';
 
 /** Server composition after representative native qualification; never browser/env JSON. */
@@ -22,10 +24,13 @@ export function createProductionPurchaseAdmission(input: {
   credentials: AdminCredentialSource;
   qualification?: NativePurchaseQualification | null;
   clock?: () => Date;
+  releaseProfile?: RuntimeReleaseProfileName;
 }): SupportedCheckoutPurchasePort | undefined {
+  const releaseProfile = resolveRuntimeReleaseProfile(input.releaseProfile);
   const qualification = input.qualification === undefined ? nativePurchaseQualification : input.qualification;
   if (!qualification) return undefined;
-  const { appId, appClientId, activeVersionRef } = qualification;
+  if (qualification.activeVersionRef !== releaseProfile.activeVersionRef) return undefined;
+  const { appId, appClientId } = qualification;
   return createShopifyCheckoutPurchaseAdmission({
     appId,
     appClientId,
@@ -37,7 +42,7 @@ export function createProductionPurchaseAdmission(input: {
       async read({ scope, now }) {
         const evidence = await input.core.trustedReleaseRecords.read({
           scope,
-          expectedActiveAppVersionRef: activeVersionRef,
+          expectedActiveAppVersionRef: releaseProfile.activeVersionRef,
           now,
         });
         return evidence ? { expectedBuild: evidence.expectedBuild, attestation: evidence.record.attestation } : null;

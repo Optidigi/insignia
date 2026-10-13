@@ -1,7 +1,11 @@
 import { createM3AdminReadCredentialSource } from '@insignia/application';
 import { currencyExponent } from '@insignia/cart-authorization';
 import { createDurableCore } from '@insignia/database';
-import { createShopifyOfflineRefreshTransport, readShopifyOrder } from '@insignia/shopify';
+import {
+  createShopifyOfflineRefreshTransport,
+  readShopifyOrder,
+  resolveRuntimeReleaseProfile,
+} from '@insignia/shopify';
 import { loadArtworkStorageProfile } from '@insignia/storage';
 import { Pool } from 'pg';
 import { loadCredentialKeys } from '../../../../worker/src/config.ts';
@@ -52,7 +56,11 @@ export async function createProductionPurchaseServices(
       : undefined;
     return createPurchaseServices({
       core,
-      checkout: createProductionPurchaseAdmission({ core, credentials }),
+      checkout: createProductionPurchaseAdmission({
+        core,
+        credentials,
+        releaseProfile: resolveRuntimeReleaseProfile(env.INSIGNIA_RELEASE_PROFILE).name,
+      }),
       appOrigin,
       authenticate: async (request) => (await adminServices()?.authenticate(request)) ?? null,
       orders: {

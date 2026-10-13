@@ -30,6 +30,7 @@ import assert from 'node:assert/strict';
 import { constants } from 'node:fs';
 import { lstat, open } from 'node:fs/promises';
 import { join } from 'node:path';
+import { resolveRuntimeReleaseProfile } from '@insignia/shopify';
 import type { SigningProvisionJournal, SigningProvisionPorts, SigningProvisionResult } from './signing-provision.ts';
 import {
   provisionSigningKey,
@@ -132,6 +133,7 @@ export function createSigningOwnerAction(
   config: SigningOwnerConfiguration,
   ports: Omit<SigningProvisionPorts, 'journal' | 'ring'>,
 ): SigningOwnerAction {
+  const releaseProfile = resolveRuntimeReleaseProfile(ports.releaseProfile);
   const runtimeIdentity = qualifySigningRuntimeIdentity(ports.runtimeIdentity);
   assert.deepEqual(Object.keys(config).sort(), ['binding', 'directory', 'plan', 'ring']);
   const plan = qualifySigningProvisionPlan(config.plan);
@@ -160,7 +162,7 @@ export function createSigningOwnerAction(
     version: 'm5-signing-owner-binding-v1',
     binding,
     plan,
-    activeAppVersionRef: '1163229200385',
+    activeAppVersionRef: releaseProfile.activeVersionRef,
   };
   let execution: Promise<void> | undefined;
   let preparation: Promise<SigningOwnerStatus> | undefined;
@@ -220,13 +222,13 @@ export function createSigningOwnerAction(
             installationGeneration: binding.installationGeneration,
             appClientId: runtimeIdentity.appClientId,
           },
-          expectedActiveAppVersionRef: '1163229200385',
+          expectedActiveAppVersionRef: releaseProfile.activeVersionRef,
           now: time,
         });
         const attestation = trusted?.record?.attestation;
         if (
-          trusted?.expectedBuild?.appVersionRef !== '1163229200385' ||
-          trusted.expectedBuild?.sourceCommit !== '9b94149272d1b62c34f44dda3bde209e80b4ae22' ||
+          trusted?.expectedBuild?.appVersionRef !== releaseProfile.activeVersionRef ||
+          trusted.expectedBuild?.sourceCommit !== releaseProfile.functionsSourceCommit ||
           !(
             Date.parse(attestation?.observedAt ?? '') <= time.getTime() &&
             Date.parse(attestation?.expiresAt ?? '') > time.getTime()

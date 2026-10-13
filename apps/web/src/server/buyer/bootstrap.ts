@@ -5,6 +5,7 @@ import {
   createPartnerGraphqlTransport,
   createShopifyOfflineRefreshTransport,
   type ExpectedFunctionOwnership,
+  resolveRuntimeReleaseProfile,
 } from '@insignia/shopify';
 import { Pool, type PoolConfig } from 'pg';
 import { loadCredentialKeys } from '../../../../worker/src/config.ts';
@@ -12,8 +13,6 @@ import { credentialLifecycle } from '../../../../worker/src/handlers.ts';
 import { createProductionBuyerServices, type ProductionBuyerInputs } from './production.ts';
 import type { BuyerServices } from './service.ts';
 
-/** Existing accepted Active version from M5 production readiness, not environment-supplied release trust. */
-const acceptedActiveAppVersionRef = '1163229200385';
 type BootstrapSeam = {
   createCore?(options: PoolConfig, config: { credentialKeys: CredentialKeyRing }): DurableCore;
   createServices?(input: ProductionBuyerInputs): BuyerServices;
@@ -110,6 +109,7 @@ export async function createBuyerBootstrap(
   let credentialKeys: CredentialKeyRing | undefined;
   let ring: ProductionBuyerInputs['ring'] | undefined;
   try {
+    const releaseProfile = resolveRuntimeReleaseProfile(env.INSIGNIA_RELEASE_PROFILE);
     const required = (key: string, maximum = 8192) => {
       const value = env[key];
       if (!nonempty(value, maximum)) throw new Error('Buyer configuration unavailable');
@@ -180,7 +180,7 @@ export async function createBuyerBootstrap(
               installationGeneration: scope.installationGeneration,
               appClientId: clientId,
             },
-            expectedActiveAppVersionRef: acceptedActiveAppVersionRef,
+            expectedActiveAppVersionRef: releaseProfile.activeVersionRef,
             now: clock(),
           })
         : Promise.resolve(null);
