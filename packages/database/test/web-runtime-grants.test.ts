@@ -24,7 +24,8 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       queue = `synthetic_queue_${suffix}`,
       inspector = `synthetic_inspect_${suffix}`,
       extra = `synthetic_extra_${suffix}`,
-      worker = `synthetic_purchase_${suffix}`;
+      worker = `synthetic_purchase_${suffix}`,
+      enqueue = `synthetic_enqueue_${suffix}`;
     const admin = new Pool({ connectionString: address.href, max: 1 });
     const target = new URL(address);
     target.pathname = `/${name}`;
@@ -39,7 +40,7 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       created = true;
       owner = new Pool({ connectionString: target.href });
       await owner.query(
-        `CREATE ROLE ${login} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; CREATE ROLE ${queue} NOLOGIN; CREATE ROLE ${extra} NOLOGIN`,
+        `CREATE ROLE ${login} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; CREATE ROLE ${queue} NOLOGIN; CREATE ROLE ${extra} NOLOGIN; CREATE ROLE ${enqueue} NOLOGIN; GRANT ${enqueue} TO ${login}`,
       );
       const migrations = new URL('../migrations/', import.meta.url);
       const names = (await readdir(migrations)).filter((n) => n.endsWith('.sql')).sort();
@@ -103,7 +104,9 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       ).rejects.toMatchObject({ code: '42501' });
       const script = (
         await readFile(new URL('../../../deployment/m8-journey/web-runtime-grants.sql', import.meta.url), 'utf8')
-      ).replaceAll('insignia_runtime', login);
+      )
+        .replaceAll('insignia_runtime', login)
+        .replaceAll('insignia_queue_enqueue', enqueue);
       await owner.query(script);
       await owner.query(script); // Reapplication must retain the same bounded authority.
       expect((await web.query('SELECT current_user')).rows[0].current_user).toBe(login);
@@ -310,6 +313,57 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       await expect(owner.query(script)).rejects.toThrow('unqualified_web_cursor_access');
       await owner.query('ROLLBACK');
       await owner.query(`REVOKE SELECT(claim_token) ON purchase_reconciliation_cursors FROM ${login}`);
+      const payloadHazards = [
+        {
+          grant: `GRANT TRUNCATE ON purchase_artwork_events TO PUBLIC`,
+          revoke: `REVOKE TRUNCATE ON purchase_artwork_events FROM PUBLIC`,
+          probe: 'TRUNCATE purchase_artwork_events',
+        },
+        {
+          grant: `GRANT DELETE ON purchase_offer_payloads TO ${login}`,
+          revoke: `REVOKE DELETE ON purchase_offer_payloads FROM ${login}`,
+          probe: 'DELETE FROM purchase_offer_payloads WHERE false',
+        },
+        {
+          grant: `GRANT UPDATE(erased_at) ON purchase_artwork_events TO ${login}`,
+          revoke: `REVOKE UPDATE(erased_at) ON purchase_artwork_events FROM ${login}`,
+          probe: 'UPDATE purchase_artwork_events SET erased_at=clock_timestamp() WHERE false',
+        },
+        {
+          grant: `GRANT UPDATE(payload) ON purchase_offer_payloads TO ${login}`,
+          revoke: `REVOKE UPDATE(payload) ON purchase_offer_payloads FROM ${login}`,
+          probe: 'UPDATE purchase_offer_payloads SET payload=NULL WHERE false',
+        },
+        {
+          grant: `GRANT INSERT(erased_at) ON purchase_artwork_events TO ${login}`,
+          revoke: `REVOKE INSERT(erased_at) ON purchase_artwork_events FROM ${login}`,
+          probe: 'INSERT INTO purchase_artwork_events(erased_at) SELECT clock_timestamp() WHERE false',
+        },
+        {
+          grant: `GRANT INSERT(erased_at) ON purchase_offer_payloads TO ${login}`,
+          revoke: `REVOKE INSERT(erased_at) ON purchase_offer_payloads FROM ${login}`,
+          probe: 'INSERT INTO purchase_offer_payloads(erased_at) SELECT clock_timestamp() WHERE false',
+        },
+      ];
+      for (const hazard of payloadHazards) {
+        await owner.query(hazard.grant);
+        const actualLogin = await web.connect();
+        try {
+          await actualLogin.query('BEGIN');
+          await actualLogin.query(hazard.probe);
+        } finally {
+          await actualLogin.query('ROLLBACK');
+          actualLogin.release();
+        }
+        await expect.soft(owner.query(script)).rejects.toThrow('unqualified_web_payload_mutation');
+        await owner.query('ROLLBACK');
+        await owner.query(hazard.revoke);
+        await expect.soft(web.query(hazard.probe)).rejects.toMatchObject({ code: '42501' });
+      }
+      await owner.query(`ALTER ROLE ${enqueue} CREATEROLE`);
+      await expect.soft(owner.query(script)).rejects.toThrow('unqualified_web_enqueue_capability');
+      await owner.query('ROLLBACK');
+      await owner.query(`ALTER ROLE ${enqueue} NOCREATEROLE`);
       for (const path of [
         '../../../scripts/m6-artwork/runtime-grants.sql',
         '../../../scripts/m7-storefront/runtime-grants.sql',
@@ -349,7 +403,8 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       if (ownerDb) await ownerDb.destroy();
       else await owner?.end();
       if (created) await admin.query(`DROP DATABASE ${name}`);
-      for (const role of [worker, login, queue, inspector, extra]) await admin.query(`DROP ROLE IF EXISTS ${role}`);
+      for (const role of [worker, login, queue, inspector, extra, enqueue])
+        await admin.query(`DROP ROLE IF EXISTS ${role}`);
       await admin.end();
     }
   },

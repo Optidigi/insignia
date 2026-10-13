@@ -16,6 +16,10 @@ DO $$ BEGIN
     WHERE r.rolname='insignia_queue_enqueue') THEN
     RAISE EXCEPTION 'unqualified_web_enqueue_inheritance';
   END IF;
+  IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname='insignia_queue_enqueue'
+    AND (rolcanlogin OR rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls)) THEN
+    RAISE EXCEPTION 'unqualified_web_enqueue_capability';
+  END IF;
   IF has_schema_privilege('insignia_runtime','public','CREATE') OR
     EXISTS(SELECT 1 FROM pg_class WHERE relowner=(SELECT oid FROM pg_roles WHERE rolname='insignia_runtime')) OR
     EXISTS(SELECT 1 FROM pg_proc WHERE proowner=(SELECT oid FROM pg_roles WHERE rolname='insignia_runtime')) THEN
@@ -46,6 +50,18 @@ DO $$ BEGIN
              (c.oid='public.purchase_reconciliation_cursors'::regclass AND a.attname='next_attempt_at'))))))) THEN
     RAISE EXCEPTION 'unqualified_web_purchase_mutation';
   END IF;
+  IF EXISTS(SELECT 1 FROM pg_class c WHERE c.oid IN
+    ('public.purchase_artwork_events'::regclass,'public.purchase_offer_payloads'::regclass) AND
+    (has_table_privilege('insignia_runtime',c.oid,'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN') OR
+     EXISTS(SELECT 1 FROM pg_attribute a WHERE a.attrelid=c.oid AND a.attnum>0 AND NOT a.attisdropped AND
+       (has_column_privilege('insignia_runtime',c.oid,a.attnum,'UPDATE') OR
+        (has_column_privilege('insignia_runtime',c.oid,a.attnum,'INSERT') AND NOT
+         ((c.oid='public.purchase_offer_payloads'::regclass AND a.attname IN
+           ('shop_id','installation_generation','quote_id','collected_at','expires_at','payload')) OR
+          (c.oid='public.purchase_artwork_events'::regclass AND a.attname IN
+           ('event_id','shop_id','installation_generation','purchase_id','version','kind','group_index','placement_id','asset_id','expires_at')))))))) THEN
+    RAISE EXCEPTION 'unqualified_web_payload_mutation';
+  END IF;
   IF EXISTS(SELECT 1 FROM pg_attribute a WHERE a.attrelid='public.purchase_reconciliation_cursors'::regclass
     AND a.attnum>0 AND NOT a.attisdropped AND a.attname NOT IN ('shop_id','installation_generation','next_attempt_at')
     AND has_column_privilege('insignia_runtime',a.attrelid,a.attnum,'SELECT')) THEN
@@ -67,7 +83,9 @@ GRANT DELETE ON public.quote_proposals TO insignia_runtime;
 GRANT UPDATE(observed_fingerprint,status) ON public.cart_applications TO insignia_runtime;
 GRANT UPDATE(application_id) ON public.buyer_commands TO insignia_runtime;
 -- linkQuote preserves the original owned design before checkout; not an order/payment fact.
-GRANT SELECT, INSERT ON public.purchase_offer_payloads TO insignia_runtime;
+GRANT SELECT ON public.purchase_offer_payloads TO insignia_runtime;
+GRANT INSERT(shop_id,installation_generation,quote_id,collected_at,expires_at,payload)
+ ON public.purchase_offer_payloads TO insignia_runtime;
 GRANT SELECT ON public.purchase_orders,public.purchase_bindings,public.purchase_lines,
  public.purchase_design_payloads,public.purchase_observations,public.purchase_paid_facts,
  public.purchase_refund_facts,public.purchase_artwork_events TO insignia_runtime;
