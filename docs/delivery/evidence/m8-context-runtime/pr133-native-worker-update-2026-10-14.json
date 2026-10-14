@@ -1,0 +1,18 @@
+{
+  "classification": "EXACT_CURRENT_WORKER_NATIVE_UPDATE_PASS",
+  "sourceMerge": "49eed1b54558b0303c046a24d812c5578864457f",
+  "sourceTree": "a7e7814984831eba5f729cbc32ab3c289b9fed72",
+  "oldContainer": "430fc3b316215f5645a995462ef8d49041823b13f36f5a5f3cae6c189d31ff8a",
+  "container": "4cf4b7ed5e8725cbafe5e8bc698c6d069ead40df60066d3a258a9abcd4947a14",
+  "image": "sha256:4dd04d81069f909d6d1941f66d87a91cf05c0a0e5e400ec55de25e8ba96d182a",
+  "health": "healthy",
+  "environmentDeltaKeys": [],
+  "metadataSocketReadOnly": true,
+  "sameRoleWrappingAndShopifyCredentials": true,
+  "other33ContainersPreserved": true,
+  "inspectorPreserved": true,
+  "bridgeInodesPreserved": true,
+  "dispatchInvocations": 1,
+  "retryInvocations": 0,
+  "purchaseFactsQualified": false
+}

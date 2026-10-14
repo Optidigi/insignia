@@ -1,0 +1,9 @@
+{
+  "classification": "EXACT_CI_WORKER_IMAGE_IMPORT_PASS",
+  "imageId": "sha256:4dd04d81069f909d6d1941f66d87a91cf05c0a0e5e400ec55de25e8ba96d182a",
+  "runningWorkerUnchanged": true,
+  "configRootfsAndDescriptorExact": true,
+  "dispatchInvocations": 1,
+  "retryInvocations": 0,
+  "reconciliation": "Dockerload acknowledged; absent optional Entrypoint key caused closing receipt lookup failure; independently read-only reconciled, not reloaded"
+}

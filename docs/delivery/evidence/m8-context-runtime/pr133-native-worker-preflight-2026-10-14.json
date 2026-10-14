@@ -1,0 +1,27 @@
+{
+  "exitCode": 0,
+  "observations": [
+    {
+      "classification": "CI_WORKER_IMAGE_ROLE_RELEASE_AND_NATIVE_ADMISSION_PASS",
+      "identity": {
+        "current_user": "insignia_worker",
+        "session_user": "insignia_worker",
+        "current_database": "insignia_rewrite",
+        "readonly": "on"
+      },
+      "sourceTree": "a7e7814984831eba5f729cbc32ab3c289b9fed72",
+      "profile": "m8-cookie-91b35ab",
+      "creatorAppId": "gid://shopify/App/580111",
+      "enforcementObservedAt": "2026-10-14T21:46:44.460Z",
+      "orderId": "gid://shopify/Order/7518816403739",
+      "orderObservedAt": "2026-10-14T21:46:43.933Z",
+      "test": true,
+      "financialStatus": "PAID",
+      "country": null,
+      "marketId": null,
+      "historicalFunctionExecutionProven": false,
+      "databaseWritesByWorkerProbe": 0,
+      "credentialRefreshes": 0
+    }
+  ]
+}
