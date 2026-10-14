@@ -16,8 +16,10 @@
   ],
   "consumption": {
     "create": 1,
-    "release": 0,
+    "release": 1,
     "candidateVersionId": "1166710865921",
-    "verifiedInactive": true
-  }
+    "verifiedInactive": true,
+    "verifiedActive": true
+  },
+  "releaseEvidence": "cookie-native-runtime-qualification-2026-10-14.json"
 }
