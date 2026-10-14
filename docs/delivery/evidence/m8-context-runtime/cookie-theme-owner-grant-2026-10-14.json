@@ -1,0 +1,23 @@
+{
+  "classification": "OWNER_GRANTED_ONE_COOKIE_CORRECTION_VERSION_AND_RELEASE",
+  "ownerReply": "release grant? if you're waiting for my permission, you have it",
+  "appId": "429028933633",
+  "candidateTag": "m8-cookie-91b35ab",
+  "candidateBundleSha256": "0931e43bb90debf6a13c0b5f988ed973b61558d4d2fb6f72e9a17c5e4cee0212",
+  "authorized": [
+    "One inactive version for prepared cookie theme correction",
+    "Verify prior Functions/settings/scopes/proxy/installation unchanged",
+    "One app-wide release after exact readback"
+  ],
+  "notAuthorized": [
+    "Additional scopes/store/reinstall",
+    "Charge/production rollout",
+    "Ambiguous write retry"
+  ],
+  "consumption": {
+    "create": 1,
+    "release": 0,
+    "candidateVersionId": "1166710865921",
+    "verifiedInactive": true
+  }
+}

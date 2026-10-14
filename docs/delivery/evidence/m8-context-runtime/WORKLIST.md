@@ -2,7 +2,7 @@
 
 Authority: [autonomous delivery](../../authority/autonomous-delivery-2026-10-13.md). Deliver the approved merchant→configure/publish→buyer artwork/quote/cart→permitted test checkout→independent immutable purchase/first-paid→merchant original journey. No principal or routine owner checkpoints; no production rollout or real charge granted.
 
-Latest main: PR125 `1fb28bb8125640630e4bac51390d5b831ef862e7`, tree `98b5f9412e4103a9388b484efdc95d9c83c2ec73`; three final-head attempt1 workflows SUCCESS. [Full refs](pr125-integration-receipt.json). Actual web/verifier remain qualified PR124 code/treeD9; docs integration does not require source churn. Closed theme profile integrated; worker qualification remains null/admission disabled.
+Latest main: PR126 `070491c1c5b303d6f44b0d9101ccf63bbc031990`, tree `1340401e5dcbcc01ecf783eae6e5ed9a544a1773`; three exact-head attempt1 workflows SUCCESS. [Full refs](pr126-integration-receipt.json). Actual web/verifier/theme remain qualified PR124 code/treeD9; cookie correction is integrated and compiled, not deployed. Worker qualification remains null/admission disabled.
 
 | Journey capability | Current evidence and practical limit |
 | --- | --- |
@@ -33,3 +33,21 @@ Pending owner observation (asked once): is Insignia customization listed inside 
 Owner corrected block placement into product section and confirms button visible. Clicking in both editor and standalone storefront produces NetworkError twice (status and alert rendering), so editor-only failure is disproved. No native request/response capture yet. Confirmed local defect: buyer and guest-artwork transports omit same-origin storefront access cookies while rejecting redirects; cookie-gated browser regression reproduces Failed to fetch before correction and loads real customization controls after credentials same-origin. Signature/private capability checks and redirect rejection preserved; Shopify strips Cookie before app-proxy upstream forwarding. Fixed locally; released theme bundle remains unchanged and native fix is unqualified.
 
 Next qualify source/review/CI and prepare bounded theme-only correction preserving prior modules/settings/scopes. The earlier one-create/one-release grant is consumed; do not create/release another version without the specific new grant. Owner need not repeat the broken preview now. Once updated, independently qualify native signed forwarding; then existing merchant draft configuration/publication and artwork/quote/cart/order journey remain due.
+
+## Cookie correction integration and next native effect
+
+PR126 normal merge070491c1c5b303d6f44b0d9101ccf63bbc031990/tree1340401e5dcbcc01ecf783eae6e5ed9a544a1773 verified, parents1fb28bb +91b35ab; all3exact-head attempt1 workflows SUCCESS. [Receipt](pr126-integration-receipt.json). Source/reviews/regression CLOSED; live theme not updated.
+
+[Concrete compile-only candidate](cookie-theme-release-preparation-2026-10-14.json) CLOSED: actual CLI4.8.2 stopped before sourceURL/upload, seventeen sealed inputs/twelve bundle members; old seven modules/settings/scopes/proxy/packagedFunctions unchanged, existing theme registration retained, corrected entry/dependencies plus released cached dependencies only. No native write. Needs new bounded owner grant for one inactive version and one verified app-wide release of this exact Insignia correction. Do not reuse consumed prior grant or retry ambiguous effects. Then bind actual new profile/version evidence and qualify live browser fetch/configuration.
+
+## Authenticated browser dependency CLOSED — 14 October
+
+Owner allocated persistent server sessions and explicitly required exact README-headed/Xvfb verification, one instance, no logout. [Independent verification/native use](authenticated-browser-native-cookie-proof-2026-10-14.json): both required Admin Themes and exact Dev Dashboard URLs have no challenge/login signal, screenshots visually authenticated. Admin Preview store opened real fixture and reproduced fetch failure. Read-only native comparison: omit fails; same-origin reaches Insignia404NOT_FOUND. Exact merchant editor independently shows Draft only/version1 clean. Native cookie defect now confirmed, while corrected released bundle is still pending.
+
+Use `/home/serveradmin/agent-browser/README.md` route for further browser work; do not offload ordinary authenticated navigation to owner. Do not evade challenges or assume perpetual access. If login/challenge appears, stop browser operation and report screenshot, as owner explicitly required; no logout or credential request. Current remaining owner dependency is specific new version/release grant, already requested; no repeated request.
+
+## Cookie correction native creation CLOSED
+
+Owner granted the prepared correction create/release; request CLOSED, no reask. One sourceURL/upload/inactive version creation acknowledged and [exact independent readback](cookie-theme-inactive-creation-2026-10-14.json) passed:1166710865921/tagm8-cookie-91b35ab inactive, old116655 sole Active, eleven-version inventory/one install, unchanged seven non-theme modules and exact planned theme blocks/assets. Module hashd10f315d. First overstrict old-theme-config reader failure and correction preserved; no write retry. One release remains authorized.
+
+New closed profile selects actual observed candidate/module baseline without changing default/historical profiles or Function source9b94149. Meaningful unknown-profile RED; real-port16/runtime5/host19PASS1skip after rebuilding actual Shopify adapter. One stale-dist Unix-target failure preserved and corrected by build, not weakening assertions. Source custody includes both new JSON baseline/binding files. Final review/CI/integration and running verifier/web profile coordination remain before single release/native browser qualification. Purchase admission stays disabled.

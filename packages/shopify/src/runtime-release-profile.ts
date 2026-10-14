@@ -4,7 +4,8 @@ export type RuntimeReleaseProfileName =
   | 'm5-functions-9c2e56b42fbf'
   | 'm8-read-orders-617057f'
   | 'm8-app-proxy-3d2a02e'
-  | 'm8-theme-c8d8713';
+  | 'm8-theme-c8d8713'
+  | 'm8-cookie-91b35ab';
 const profiles = Object.freeze({
   'm5-functions-9c2e56b42fbf': Object.freeze({
     name: 'm5-functions-9c2e56b42fbf' as const,
@@ -14,6 +15,11 @@ const profiles = Object.freeze({
   'm8-read-orders-617057f': Object.freeze({
     name: 'm8-read-orders-617057f' as const,
     activeVersionRef: '1165513097217',
+    functionsSourceCommit: '9b94149272d1b62c34f44dda3bde209e80b4ae22',
+  }),
+  'm8-cookie-91b35ab': Object.freeze({
+    name: 'm8-cookie-91b35ab' as const,
+    activeVersionRef: '1166710865921',
     functionsSourceCommit: '9b94149272d1b62c34f44dda3bde209e80b4ae22',
   }),
   'm8-theme-c8d8713': Object.freeze({
