@@ -1,0 +1,56 @@
+{
+  "classification": "OWNER_SUPPLIED_BROWSER_SESSIONS_INDEPENDENTLY_VERIFIED_AND_USED",
+  "date": "2026-10-14",
+  "instructions": "/home/serveradmin/agent-browser/README.md",
+  "mode": "headed Chromium1243 under xvfb-run; Europe/Amsterdam; en-US; one persistent context at a time; closed after each task; no logout",
+  "verification": [
+    {
+      "url": "https://admin.shopify.com/store/insignia-rewrite-dev/themes",
+      "title": "Shopify",
+      "challenge": "no signal",
+      "login": "no signal",
+      "screenshot": "/home/serveradmin/agent-browser/insignia-admin-themes-verify-20261014.png",
+      "visualResult": "Authenticated rewrite-dev Online Store Themes/current Horizon visible"
+    },
+    {
+      "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633",
+      "title": "Overview \u00b7 Insignia \u00b7 Dev Dashboard",
+      "challenge": "no signal",
+      "login": "no signal",
+      "screenshot": "/home/serveradmin/agent-browser/insignia-dev-app-verify-20261014.png",
+      "visualResult": "Authenticated exact Insignia dashboard, one install, theme versionm8-theme-c8d8713 Active"
+    }
+  ],
+  "nativeBrowserTask": {
+    "route": "Admin Preview store \u2192 existing owned product handle",
+    "fixtureProductId": "10519322493211",
+    "button": "Customize this product visible",
+    "clickAlert": "Failed to fetch",
+    "failedPath": "/apps/insignia/v1/config",
+    "readOnlyComparison": [
+      {
+        "credentials": "omit",
+        "result": "Failed to fetch"
+      },
+      {
+        "credentials": "same-origin",
+        "status": 404,
+        "code": "NOT_FOUND"
+      }
+    ],
+    "screenshot": "/home/serveradmin/agent-browser/insignia-native-fetch-error-20261014.png",
+    "result": "Real storefront access-cookie defect confirmed; app JSON reachable when same-origin cookie sent. No client-only fix injected into live assets."
+  },
+  "merchantTask": {
+    "productList": "Authenticated app product list independently inspected",
+    "fixtureEditor": "Authenticated exact owned fixture editor independently inspected",
+    "publication": "Draft only",
+    "draftVersion": 1,
+    "draftState": "clean",
+    "screenshot": "/home/serveradmin/agent-browser/insignia-native-config-verify-20261014.png"
+  },
+  "nativeWrites": 0,
+  "scopeLimit": "No upload/session/quote/cart/checkout/theme/config/app-version changes; read-only browser fetches/navigation only",
+  "remaining": "Prepared corrected theme release still needs bounded new grant; then native requalification and merchant configure/publish journey can use this browser without routine human login steps.",
+  "sessionLifetime": "Unknown; reverify actual navigation, stop on login/challenge with screenshot, never log out or ask for chat credentials."
+}

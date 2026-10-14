@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import historicalModules from '../../deployment/m5-runtime/native-function-module-baseline.json' with { type: 'json' };
 import proxyModules from '../../deployment/m8-journey/app-proxy-module-baseline.json' with { type: 'json' };
 import proxyCandidate from '../../deployment/m8-journey/app-proxy-release-binding.json' with { type: 'json' };
+import cookieThemeModules from '../../deployment/m8-journey/cookie-theme-module-baseline.json' with { type: 'json' };
+import cookieThemeCandidate from '../../deployment/m8-journey/cookie-theme-release-binding.json' with { type: 'json' };
 import candidate from '../../deployment/m8-journey/release-binding.json' with { type: 'json' };
 import candidateModules from '../../deployment/m8-journey/release-module-baseline.json' with { type: 'json' };
 import themeModules from '../../deployment/m8-journey/theme-module-baseline.json' with { type: 'json' };
@@ -44,6 +46,14 @@ const profiles = {
     moduleHash: candidate.moduleHash,
     modules: candidateModules,
     grants: [...grants, 'read_orders'],
+  },
+  'm8-cookie-91b35ab': {
+    versionId: cookieThemeCandidate.versionId,
+    versionTag: cookieThemeCandidate.versionTag,
+    versionIds: cookieThemeCandidate.versionIds,
+    moduleHash: cookieThemeCandidate.moduleHash,
+    modules: cookieThemeModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy'],
   },
   'm8-theme-c8d8713': {
     versionId: themeCandidate.versionId,

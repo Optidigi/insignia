@@ -1,0 +1,34 @@
+{
+  "pr": "https://github.com/Optidigi/insignia/pull/126",
+  "state": "MERGED_NORMAL_VERIFIED",
+  "base": "1fb28bb8125640630e4bac51390d5b831ef862e7",
+  "head": "91b35ab97eaf20cb1a4c3c656a411db1cc667276",
+  "effectiveMergeBase": "1fb28bb8125640630e4bac51390d5b831ef862e7",
+  "merge": "070491c1c5b303d6f44b0d9101ccf63bbc031990",
+  "tree": "1340401e5dcbcc01ecf783eae6e5ed9a544a1773",
+  "parents": [
+    "1fb28bb8125640630e4bac51390d5b831ef862e7",
+    "91b35ab97eaf20cb1a4c3c656a411db1cc667276"
+  ],
+  "ci": [
+    {
+      "run": 38546680490,
+      "head": "91b35ab97eaf20cb1a4c3c656a411db1cc667276",
+      "attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "run": 38546680444,
+      "head": "91b35ab97eaf20cb1a4c3c656a411db1cc667276",
+      "attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "run": 38546680452,
+      "head": "91b35ab97eaf20cb1a4c3c656a411db1cc667276",
+      "attempt": 1,
+      "conclusion": "success"
+    }
+  ],
+  "nativeLimit": "Cookie correction source integrated; current Shopify theme version and live web remain prior build. Native correction unqualified."
+}
