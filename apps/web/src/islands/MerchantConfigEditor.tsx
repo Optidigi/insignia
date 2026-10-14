@@ -286,6 +286,24 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
   function syncPublication(data: ConfigView) {
     if (!productId) return;
     const terminal = ['RESTORATION_CONFLICT', 'ACTIVE', 'CONFLICT', 'OPERATOR_HOLD', 'FAILED'];
+    const owned = publicationPending.current ?? readPublicationRequest(productId);
+    const ownedBody = owned?.body as { action?: string; configId?: string; draftVersion?: string } | undefined;
+    if (
+      data.config &&
+      terminal.includes(data.config.publication.state) &&
+      owned?.method === 'POST' &&
+      ownedBody?.action === 'publish' &&
+      ownedBody.configId === data.config.configId &&
+      typeof ownedBody.draftVersion === 'string' &&
+      typeof owned.key === 'string' &&
+      owned.key.length > 0 &&
+      owned.installationGeneration === data.config.installationGeneration &&
+      (data.config.publication.requestKey !== owned.key ||
+        data.config.publication.sourceDraftVersion !== ownedBody.draftVersion)
+    ) {
+      publicationPending.current = owned;
+      return;
+    }
     if (data.config && !terminal.includes(data.config.publication.state)) {
       const stored = readPublicationRequest(productId);
       const body = stored?.body as { action?: string; configId?: string; draftVersion?: string } | undefined;
@@ -729,6 +747,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       current.config.draftVersion === view.config!.draftVersion
         ? {
             ...current,
+            product: { ...current.product, status: data.product.status },
             config: {
               ...current.config,
               publication: config.publication,
@@ -740,8 +759,9 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
           }
         : current,
     );
-    // Continuation refreshes durable progress only: local geometry, edits, CAS base,
+    // Continuation refreshes durable progress and product status only: local geometry, edits, CAS base,
     // conflict/latest view and the exact uncertain save request remain owned by save/load.
+    return config.publication;
   }
   async function publish() {
     if (!productId || !view?.config || operatorPublication(view.config.publication.state)) return;
@@ -783,8 +803,19 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       else setStatus('Publication state refreshed.');
     } catch (error) {
       if (epoch !== requestId.current || authorizationDenied(error)) return;
-      await refreshPublication().catch((refreshError) => authorizationDenied(refreshError));
+      const observed = await refreshPublication().catch((refreshError) => {
+        authorizationDenied(refreshError);
+        return undefined;
+      });
       if (epoch !== requestId.current) return;
+      if (
+        observed?.requestKey === request.key &&
+        observed.sourceDraftVersion === (request.body as { draftVersion?: string }).draftVersion &&
+        (observed.state === 'ACTIVE' || observed.state === 'FAILED' || operatorPublication(observed.state))
+      ) {
+        setStatus('Publication state refreshed.');
+        return;
+      }
       setStatus(
         error instanceof Error
           ? `${error.message}. Continue the same publication request after checking its current state.`
