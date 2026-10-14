@@ -26,6 +26,30 @@
   "grant": "Previous theme one-create/one-release grant consumed; no new native version effects authorized or dispatched",
   "localFailures": [
     "Initial regression syntax error corrected before behavioral RED",
-    "First behavioral probe timed out awaiting lazy renderer; tightened to three-second controls assertion showing actual Failed to fetch"
-  ]
+    "First behavioral probe timed out awaiting lazy renderer; tightened to three-second controls assertion showing actual Failed to fetch",
+    "Broad direct node invocation at repository root used wrong Vite fixture cwd; failed browser timeouts preserved, only that local process tree terminated. Normal package command rerun passed46/skip2 on unchanged source."
+  ],
+  "checks": {
+    "focusedBuyerBootstrapAndGuestClient": "14 PASS",
+    "normalStorefrontPackageSuite": {
+      "pass": 46,
+      "skip": 2,
+      "fail": 0,
+      "skipLimits": [
+        "PostgreSQL integrated purchase browser without DATABASE_URL",
+        "Native Function runner unavailable in local invocation"
+      ]
+    },
+    "storefrontBuild": "PASS",
+    "style": "PASS with existing warnings/infos",
+    "secretProvenance": "PASS",
+    "independentSecurityBoundaryRerun": "7 PASS"
+  },
+  "review": {
+    "sourceHead": "0d551a2a48ccdc88cdbf4aa6e80e586d18ea2f9e",
+    "base": "1fb28bb8125640630e4bac51390d5b831ef862e7",
+    "correctness": "CLEAR",
+    "security": "CLEAR",
+    "limits": "Read-only source reviews; security reviewer independently ran 7 local guest/HTTP tests; no provider/SSH/native observation"
+  }
 }
