@@ -1,0 +1,81 @@
+{
+  "classification": "ONE_RELEASE_ACK_AND_EXACT_NATIVE_READBACK_SETTLED",
+  "appId": "429028933633",
+  "versionId": "1166552825857",
+  "versionTag": "m8-theme-c8d8713",
+  "observedAt": "2026-10-14T09:29:19.971Z",
+  "active": true,
+  "previousVersionId": "1166090010625",
+  "previousActive": false,
+  "versions": 10,
+  "modules": 8,
+  "modulesSha256": "b55d0a368e72a8b16cccd6ff3a427fde38bdd0f2fc266aeb632591ab9f81550e",
+  "previousSevenModulesPreserved": true,
+  "dispatch": {
+    "classification": "CLI_RELEASE_ACK_INDEPENDENT_READBACK_REQUIRED",
+    "exitCode": 0,
+    "timedOut": false,
+    "outputLimitExceeded": false,
+    "logBytes": 980,
+    "logSha256": "50ce7d0047059dafaf85e5ce711cf17364159fef8b9bc38a6f868364222ff0c3",
+    "inputsUnchanged": true,
+    "releaseInvocations": 1,
+    "creationInvocations": 0,
+    "retryAuthorized": false,
+    "httpMutationAccounting": {
+      "logicalMutations": 1,
+      "httpMutationAttempts": 1,
+      "blockedMutationAttempts": 0,
+      "retryAuthorized": false
+    }
+  },
+  "settlement": {
+    "classification": "ACK_AND_FRESH_EXACT_NATIVE_READBACK_SETTLED",
+    "version": "1166552825857",
+    "retryAuthorized": false
+  },
+  "qualification": {
+    "reviews": {
+      "correctness": "CLEAR",
+      "security": "CLEAR"
+    },
+    "ciHead": "19f1e0002edbfc15bdb349777e024ae1f412bc0e",
+    "ci": [
+      {
+        "workflow": "foundation",
+        "runId": 38539733791,
+        "head": "19f1e0002edbfc15bdb349777e024ae1f412bc0e",
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      {
+        "workflow": "durable-core",
+        "runId": 38539733504,
+        "head": "19f1e0002edbfc15bdb349777e024ae1f412bc0e",
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      {
+        "workflow": "runtime",
+        "runId": 38539733490,
+        "head": "19f1e0002edbfc15bdb349777e024ae1f412bc0e",
+        "attempt": 1,
+        "conclusion": "success"
+      }
+    ],
+    "head": "902bc87a8d59c09c54afa44e308f3b2b0507c787",
+    "tree": "d9fee19565fdf6ac552f525e49e64a00ea1ba184",
+    "sourceParents": [
+      "c8d87136adc3b49cc22e025cba377ffb85184a62",
+      "19f1e0002edbfc15bdb349777e024ae1f412bc0e"
+    ],
+    "qualifiedManifestSha256": "518427232f68c9ae7b31cc627305adcda6f2c0a3577624f8e6793f0885c2396d"
+  },
+  "managementReadbackQueries": 6,
+  "limits": [
+    "No theme block activation or native buyer result yet",
+    "No production admission or gate acceptance",
+    "No new scopes/store/reinstall/theme-source edit/charge"
+  ],
+  "privateJournal": "/home/serveradmin/insignia-milestone-autonomy-handoff/insignia-m8-theme-release-hz6qzhj6"
+}

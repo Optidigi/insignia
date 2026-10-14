@@ -1,0 +1,101 @@
+{
+  "classification": "CI_WEB_ARTIFACT_QUALIFIED_NATIVE_COMPOSITION_PENDING",
+  "run": 38539733490,
+  "attempt": 1,
+  "ciHead": "19f1e0002edbfc15bdb349777e024ae1f412bc0e",
+  "buildHead": "d49c039525101cfbf477ce0acbb47109562dde5c",
+  "buildTree": "d9fee19565fdf6ac552f525e49e64a00ea1ba184",
+  "integratedHead": "902bc87a8d59c09c54afa44e308f3b2b0507c787",
+  "integratedTree": "d9fee19565fdf6ac552f525e49e64a00ea1ba184",
+  "archive": {
+    "file": "web-image.tar",
+    "sha256": "6370f7db4830300f5c80a9fb162521ae815ea70287ae77a0d99c14fa03685d27",
+    "sizeBytes": 455953920
+  },
+  "manifestDigest": "sha256:feae8c4033489974362628d8be09907b648560e0ccdeb60f079d2c63be026dd0",
+  "configDigest": "sha256:15804591c8156a71e6db5cee43733e6c56c513a05b2434714385c4170ab14421",
+  "allSevenLayerHashesVerified": true,
+  "runtimeConfigUser": "node",
+  "nativeCompositionDispatched": true,
+  "localFailure": "Initial import digest transcription failed local hash assertion before any SSH or reservation; corrected to sealed CI receipt digest.",
+  "next": "Owner theme editor activation and existing merchant configuration; storefront protected by password, use owner normal browser/private preview. Independently verify actual publication then native buyer evidence.",
+  "nativeImport": {
+    "classification": "EXACT_CI_NATIVE_IMAGE_IMPORT_PASS",
+    "resolutions": [
+      {
+        "ref": "sha256:feae8c4033489974362628d8be09907b648560e0ccdeb60f079d2c63be026dd0",
+        "id": "sha256:feae8c4033489974362628d8be09907b648560e0ccdeb60f079d2c63be026dd0",
+        "os": "linux",
+        "architecture": "amd64"
+      }
+    ],
+    "nativeImageId": "sha256:feae8c4033489974362628d8be09907b648560e0ccdeb60f079d2c63be026dd0",
+    "layersVerified": 7,
+    "containersUnchanged": true,
+    "serviceChanges": 0
+  },
+  "webUpdateCandidate": {
+    "operatorSha256": "a4a4c97e7ad21c78a721cadd294d908a7696fe1d2754c89d87832702aeb2953d",
+    "modelSha256": "db0e8cde8bb2714e1aa30a4de3a893667625dce53b8796419abe3d470a1c31c9",
+    "review": {
+      "correctness": "CLEAR",
+      "security": "CLEAR"
+    },
+    "dispatched": true
+  },
+  "nativeWebUpdate": {
+    "classification": "EXACT_WEB_BUYER_COMPOSITION_PASS",
+    "priorContainer": "7ce964baa1ab5cb3cfa49ef06c849c49ab2253d14f900056c0f7c67d1732330e",
+    "webContainer": "4f0f472f22b66173fe12204a47f94d1af0ec4bc18bb11494dd798ad4e1f56857",
+    "webImage": "sha256:feae8c4033489974362628d8be09907b648560e0ccdeb60f079d2c63be026dd0",
+    "databaseContainer": "19419eff11ef9c0b43e484f91ad97ba606c817df6604e7a6d08c5513473285a1",
+    "databaseImage": "sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d",
+    "profile": "m8-theme-c8d8713",
+    "healthy": true,
+    "othersPreserved": true,
+    "mountsSecurityEnvironmentPreserved": true,
+    "inspectorReady": true,
+    "buyerEnabled": true,
+    "workerAdmissionEnabled": false,
+    "retryAuthorized": false
+  },
+  "verifierRebinding": {
+    "stoppedBeforeWebReplacement": true,
+    "priorMainPid": 440200,
+    "allPriorPidsGone": true,
+    "ownedSocketInode": 6612266,
+    "removedOnceAfterNoListenerConfirmed": true,
+    "bridgeParentsPreserved": true,
+    "mainPid": 442426,
+    "invocation": "70c139f7cb1f4e12b8abdb580b8f6f77",
+    "startupClassification": "PRIVATE_BINDING_LISTENING_NO_PROVIDER_REQUEST"
+  },
+  "productionPortResponse": {
+    "classification": "PRODUCTION_PORT_RESPONSE",
+    "binding": {
+      "shopId": "db771bea-c585-4954-9f88-70771c9a0c89",
+      "installationGeneration": "1",
+      "appClientId": "1443cf6d03d39edae7c101a943c5c684",
+      "authorizationGeneration": "d79cc783-c5d4-4af9-881b-825129a74b1c",
+      "authorizationEpoch": 0,
+      "externalInstallationId": "gid://shopify/AppInstallation/1054356963611"
+    },
+    "requestId": "06fa4e7a-11b0-4a1d-bad9-619b307af43e",
+    "recordId": "bf03e8c4-17ec-4306-b377-bbd6ecd9a974",
+    "state": "COMPLETE"
+  },
+  "independentSelect": {
+    "classification": "INDEPENDENT_RUNTIME_SELECT_MATCH_BEFORE_EXPIRY",
+    "observedAt": "2026-10-14T09:38:48.105Z",
+    "recordId": "bf03e8c4-17ec-4306-b377-bbd6ecd9a974",
+    "activeAppVersionRef": "1166552825857"
+  },
+  "reviewFinding": "Verifier binds web identity only at startup: corrected operation order by quiescing before recreate and rebinding before collection. No claim of dynamic revalidation.",
+  "storefrontProbe": {
+    "url": "https://insignia-rewrite-dev.myshopify.com/apps/insignia/v1/config?productId=10519322493211",
+    "finalPath": "/password",
+    "status": 200,
+    "bodyKind": "HTML storefront password page",
+    "signedForwardingQualified": false
+  }
+}

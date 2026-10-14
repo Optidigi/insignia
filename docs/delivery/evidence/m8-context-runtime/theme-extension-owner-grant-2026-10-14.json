@@ -23,8 +23,8 @@
   "currentConsumption": {
     "inactiveVersionsCreated": 1,
     "verifiedVersionId": "1166552825857",
-    "releaseInvocations": 0,
-    "remainingAuthorizedRelease": 1,
-    "evidence": "theme-extension-inactive-creation-2026-10-14.json"
+    "releaseInvocations": 1,
+    "remainingAuthorizedRelease": 0,
+    "evidence": "theme-extension-active-release-2026-10-14.json"
   }
 }
