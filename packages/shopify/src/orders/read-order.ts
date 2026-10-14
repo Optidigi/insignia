@@ -437,7 +437,9 @@ export async function readShopifyOrder(
         const observedAt = clock();
         if (!Number.isFinite(+observedAt)) return fail('provider_unavailable');
         return {
-          ...target,
+          shopId: target.shopId,
+          installationGeneration: target.installationGeneration,
+          orderId: target.orderId,
           checkoutTokenDigest,
           checkoutOrigin,
           createdAt: date(initial.createdAt),

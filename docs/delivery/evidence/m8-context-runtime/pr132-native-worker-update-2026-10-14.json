@@ -1,0 +1,22 @@
+{
+  "classification": "EXACT_CURRENT_WORKER_NATIVE_UPDATE_PASS",
+  "sourceMerge": "629c453e83d1e1b10d44b6ab9270c71fa2c676d6",
+  "sourceTree": "3792e277de5b228720a85f7c983167929b97933f",
+  "oldContainer": "df35f508212cec3d0b4b4320ed0b5b1202244419681ab6f54d4905edcadd7a77",
+  "container": "430fc3b316215f5645a995462ef8d49041823b13f36f5a5f3cae6c189d31ff8a",
+  "image": "sha256:20f5c13c50d50012a442f0aa58119f8530c5e990f91dd631aa6b10f5fc0f4253",
+  "health": "healthy",
+  "environmentDeltaKeys": [
+    "INSIGNIA_SHOPIFY_APP_ID",
+    "INSIGNIA_RELEASE_PROFILE",
+    "INSIGNIA_M8_PURCHASE_ENABLED"
+  ],
+  "metadataSocketReadOnly": true,
+  "sameRoleWrappingAndShopifyCredentials": true,
+  "other33ContainersPreserved": true,
+  "inspectorPreserved": true,
+  "bridgeInodesPreserved": true,
+  "dispatchInvocations": 1,
+  "retryInvocations": 0,
+  "purchaseFactsQualified": false
+}

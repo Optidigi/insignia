@@ -68,6 +68,17 @@ function fixture() {
   return dependencies;
 }
 describe('independent Shopify order reconciliation', () => {
+  it('exports only provider order facts when discovery or inbox scheduling accompanies the lookup', async () => {
+    const expected = await readShopifyOrder(target, fixture());
+    for (const metadata of [
+      { since: '2026-10-01T00:00:00Z', until: '2026-10-13T12:00:00Z', cursor: 'page-2', claimToken: 'claim-a' },
+      { inboxId: 'inbox-a', attempts: 2, claimToken: 'claim-b' },
+    ]) {
+      const decorated = { ...target, ...metadata };
+      expect(await readShopifyOrder(decorated, fixture())).toEqual(expected);
+    }
+  });
+
   it('reads the associated native bundle parent envelope alongside child member without asserting execution or context', async () => {
     const d = fixture();
     const child = {
