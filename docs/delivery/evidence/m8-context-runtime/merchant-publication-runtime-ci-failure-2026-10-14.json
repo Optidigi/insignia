@@ -1,0 +1,28 @@
+{
+  "failedHead": "3d167b89f4834c22379ec982dcee40083fde313e",
+  "run": 38646941971,
+  "job": 116136009051,
+  "attempt": 1,
+  "step": "M5 Admin editor and publication with PostgreSQL",
+  "failedTest": "production composition uses signed staff SDK, current policy and trusted readiness: demand-success",
+  "observed": "HTTP403 instead of202;55 tests passed/1failed",
+  "ciAttribution": "NOT_PROVEN; log does not expose swallowed collector cause",
+  "sourceFinding": "Collector asserts all fixture DB idle transactions zero while sibling real authentication can be in installation-bootstrap transaction; overly broad concurrency assumption.",
+  "correctionCandidate": "896861812f6eefc3de51abc5448e0eeba3829be7",
+  "correction": "Only demand-success waits for both real authentications to commit before concurrent publication; zero-open-transaction, onecollector, identicalrevision, expiry/replay assertions retained. Bounded synthetic diagnostics added.",
+  "specCorrectness": "CLEAR",
+  "standardsSecurity": "CLEAR",
+  "productionChangesForThisCorrection": 0,
+  "expiryChanges": 0,
+  "removedAssertions": 0,
+  "localChecks": {
+    "nodeSyntax": "PASS",
+    "scopedStyle": "PASS",
+    "secrets": "PASS",
+    "diff": "PASS",
+    "postgresComposition": "NOT_RUN; local PostgreSQL/Docker binaries unavailable"
+  },
+  "actualPostgresVerification": "PENDING_FINAL_CI",
+  "originalLog": "Preserved privately in delivery handoff; no raw provider credentials or personal data",
+  "nativeDeployment": "NOT_PERFORMED"
+}

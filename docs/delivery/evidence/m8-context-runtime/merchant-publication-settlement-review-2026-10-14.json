@@ -25,6 +25,6 @@
   "actualWebVerifierSource": "08c3a578",
   "actualWorkerSource": "49eed1b54558b0303c046a24d812c5578864457f",
   "providerEffectsByThisSlice": 0,
-  "finalCandidateCi": "PENDING",
+  "finalCandidateCi": "Original3d167 runtime failed; test-only concurrency correction8968618 reviewed, final CI pending. See dedicated failure record.",
   "next": "Final CI/normal integration then actual new web artifact and coordinated independent verifier source/binding qualification; preserve current producer until matching deployed source."
 }
