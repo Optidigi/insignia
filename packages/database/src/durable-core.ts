@@ -264,6 +264,10 @@ export interface DurableCore {
     >;
   };
   readonly credentials: {
+    /** SELECT-only usable pair; insufficient validity never claims or refreshes. */
+    readUsable(
+      input: CredentialIdentity & { minimumRemainingMs: number },
+    ): Promise<Extract<CredentialAcquire, { kind: 'usable' }> | null>;
     reserveAcquisition(input: AcquisitionIdentity & { claimLeaseMs: number }): Promise<AcquisitionReservation>;
     dispatchAcquisition(input: AcquisitionAttempt): Promise<boolean>;
     completeAcquisition(

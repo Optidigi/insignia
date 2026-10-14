@@ -11,8 +11,11 @@ import {
   parseBuyerResponse,
 } from '@insignia/contracts';
 import { BuyerStateError } from '@insignia/database';
+import { type BuyerFailureDiagnostic, createObservability } from '@insignia/observability';
 import { buyerJsonBody } from './body.ts';
 import type { BuyerServices } from './service.ts';
+
+const logger = createObservability().logger;
 
 class HttpError extends Error {
   status: number;
@@ -27,6 +30,7 @@ export async function handleBuyerRequest(
   request: Request,
   services: BuyerServices | undefined,
   route: string,
+  diagnostic: (value: BuyerFailureDiagnostic) => void = (value) => logger.error('buyer_request_failed', value),
 ): Promise<Response> {
   const requestId = randomUUID();
   const respond = (body: unknown, status = 200) =>
@@ -97,6 +101,47 @@ export async function handleBuyerRequest(
     }
     throw new HttpError(404, 'NOT_FOUND');
   } catch (error) {
+    if (!(error instanceof HttpError) && !(error instanceof BuyerStateError)) {
+      const collection = route.split('/')[0] ?? 'request';
+      const buyerStage = [
+        'config',
+        'sessions',
+        'quote-proposals',
+        'quotes',
+        'designs',
+        'cart-applications',
+        'cart-state',
+      ].includes(collection)
+        ? (collection as BuyerFailureDiagnostic['buyerStage'])
+        : 'request';
+      const databaseCode = error && typeof error === 'object' && 'code' in error ? error.code : null;
+      const errorClass: BuyerFailureDiagnostic['errorClass'] =
+        databaseCode === '55P03'
+          ? 'DatabaseLockTimeout'
+          : databaseCode === '57014' || (error instanceof Error && error.message === 'Query read timeout')
+            ? 'DatabaseQueryTimeout'
+            : databaseCode === '42501'
+              ? 'DatabasePermissionDenied'
+              : error instanceof TypeError
+                ? 'TypeError'
+                : error instanceof Error && ['ShopContextError', 'CatalogContextError'].includes(error.name)
+                  ? 'ProviderReadUnavailable'
+                  : error instanceof Error &&
+                      [
+                        'Function artifact evidence invalid or mismatched',
+                        'Buyer acceptance release unavailable',
+                        'Trusted release source unavailable',
+                      ].includes(error.message)
+                    ? 'ReleaseEvidenceUnavailable'
+                    : 'UnexpectedFailure';
+      // Whitelisted classes/stages only: no exception message/stack, body, URL,
+      // capability or signed carriers enter diagnostics or the public response.
+      try {
+        diagnostic({ correlationId: requestId, buyerStage, errorClass });
+      } catch {
+        /* Diagnostics cannot change settlement. */
+      }
+    }
     const code =
       error instanceof HttpError
         ? error.code

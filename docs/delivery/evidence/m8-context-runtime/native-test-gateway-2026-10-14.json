@@ -1,0 +1,16 @@
+{
+  "classification": "EXISTING_TEST_ONLY_PROVIDER_ACTIVE_INDEPENDENTLY_OBSERVED",
+  "store": "insignia-rewrite-dev",
+  "providerRoute": "third-party-providers/24",
+  "provider": "Test payment gateway",
+  "activationOperation": "PaymentProviderUpdate",
+  "httpStatus": 200,
+  "activationInvocations": 1,
+  "independentSeparateBrowserRead": "Active",
+  "nativeUiNoTransactionFees": true,
+  "realPaymentProviderModified": false,
+  "ordersCreatedBySetup": 0,
+  "appScopeVersionChanges": false,
+  "limit": "Preparation only; test checkout and independent order.test/payment-history verification remain due",
+  "cleanup": "Reconcile test-provider state after qualification under existing scoped authority"
+}

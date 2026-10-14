@@ -43,8 +43,12 @@ export type ProductionBuyerInputs = {
   ring: SigningKeyRing;
   entitlementPolicy: EntitlementPolicyConfig;
   credentials: AdminCredentialSource;
+  /** SELECT-only credentials for final checks; no claim or refresh fallback. */
+  passiveCredentials?: AdminCredentialSource;
   readSubscription(target: { appId: string; shopId: string }): Promise<ActiveSubscriptionSnapshot>;
   artifactPorts: FunctionArtifactReadinessPorts;
+  /** Independent stored evidence only; never collect while acceptance owns locks. */
+  passiveArtifactPorts?: FunctionArtifactReadinessPorts;
   expectedFunctions: ExpectedFunctionOwnership;
   maxObservationAgeMs: number;
   /** Qualified server readiness authority, including current installed projections and release identity. */
@@ -124,13 +128,15 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       throw new Error('Buyer installation authority unavailable');
     return current;
   }
-  function credentials(scope: Scope): AdminCredentialSource {
+  function credentials(scope: Scope, passive: () => boolean = () => false): AdminCredentialSource {
     return {
       async acquire(target) {
         if (target.shopId !== scope.shopId || target.installationGeneration !== scope.installationGeneration)
           return { kind: 'inactive' };
         const before = await active(scope);
-        const credential = await input.credentials.acquire({
+        const source = passive() ? input.passiveCredentials : input.credentials;
+        if (!source) return { kind: 'temporarily_unavailable' };
+        const credential = await source.acquire({
           shopId: scope.shopId,
           installationGeneration: scope.installationGeneration,
         });
@@ -177,11 +183,12 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
     if (scope.kind !== 'guest' || !scope.ownerHash || !/^[a-f0-9]{64}$/.test(scope.ownerHash))
       throw new Error('Buyer resource ownership unavailable');
     const artwork = createArtworkUsabilityPort(input.core.artwork, clock, scope);
+    let acceptanceFenceHeld = false;
     let composed: QuoteAuthorityPorts | undefined, pending: Promise<QuoteAuthorityPorts> | undefined;
     const compose = () =>
       (pending ??= (async () => {
         const { keyScope, selected } = await selection(scope);
-        const credentialSource = credentials(scope);
+        const credentialSource = credentials(scope, () => acceptanceFenceHeld);
         const signer = new InjectedEd25519Signer({
           async getSigningKey(statement) {
             if (
@@ -222,7 +229,19 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
           expectedFunctions: input.expectedFunctions,
           transport: createPublicationAdminHttpTransport({ credentials: credentialSource, fetchImpl }),
           maxObservationAgeMs: input.maxObservationAgeMs,
-          artifactPorts: input.artifactPorts,
+          artifactPorts: {
+            expectedBuild: {
+              read: async (target) =>
+                (acceptanceFenceHeld ? input.passiveArtifactPorts : input.artifactPorts)?.expectedBuild.read(target) ??
+                null,
+            },
+            trustedEvidence: {
+              read: async (target) =>
+                (acceptanceFenceHeld ? input.passiveArtifactPorts : input.artifactPorts)?.trustedEvidence.read(
+                  target,
+                ) ?? null,
+            },
+          },
           clock,
         });
         composed = createQuoteAuthorityPorts({
@@ -278,7 +297,27 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       },
       store: {
         findCompleted: async (target) => (await compose()).store.findCompleted(target),
-        accept: async (target, commit) => (await compose()).store.accept(target, commit),
+        async accept(target, commit) {
+          const ports = await compose();
+          if (!input.passiveCredentials || !input.passiveArtifactPorts)
+            throw new Error('Passive buyer acceptance authority unavailable');
+          // Prepare writes before serialization; final callbacks still re-read provider
+          // facts, stored evidence and economics under the original acceptance fences.
+          const credential = await credentials(scope).acquire(scope);
+          if (credential.kind !== 'usable') throw new Error('Buyer acceptance credential unavailable');
+          const artifactScope = { ...scope, appClientId: apiKey };
+          const [build, evidence] = await Promise.all([
+            input.artifactPorts.expectedBuild.read(artifactScope),
+            input.artifactPorts.trustedEvidence.read(artifactScope),
+          ]);
+          if (!build || !evidence) throw new Error('Buyer acceptance release unavailable');
+          acceptanceFenceHeld = true;
+          try {
+            return await ports.store.accept(target, commit);
+          } finally {
+            acceptanceFenceHeld = false;
+          }
+        },
       },
     };
   }
@@ -349,8 +388,8 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       )
         throw new Error('Buyer readiness changed');
     },
-    async catalog(scope, productId) {
-      const source = await credentials(scope).acquire(scope);
+    async catalog(scope, productId, phase) {
+      const source = await credentials(scope, () => phase === 'final').acquire(scope);
       if (source.kind !== 'usable') throw new Error('Buyer catalog credential unavailable');
       const catalog = createCatalogReader(
         createCatalogTransport({ shop: source.shopDomain, accessToken: source.accessToken, fetchImpl }),
@@ -373,7 +412,11 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       };
       const inventory = input.readVariantAvailability
         ? await input.readVariantAvailability(target)
-        : await readAvailability(target, { credentials: credentials(scope), fetchImpl, clock });
+        : await readAvailability(target, {
+            credentials: credentials(scope, () => phase === 'final'),
+            fetchImpl,
+            clock,
+          });
       if (!inventory) throw new Error('Buyer inventory authority unavailable');
       const now = +clock(),
         observed = Date.parse(inventory.observedAt),
