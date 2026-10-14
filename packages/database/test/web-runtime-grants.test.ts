@@ -1,5 +1,6 @@
-import { randomBytes, randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID, sign } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
+import { encodeHeader, wholeQuoteSignBytes } from '@insignia/cart-authorization';
 import { Pool } from 'pg';
 import { expect, it } from 'vitest';
 import { createDatabase } from '../src/client/database.js';
@@ -124,6 +125,52 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       await owner.query(script);
       await owner.query(script); // Reapplication must retain the same bounded authority.
       expect((await web.query('SELECT current_user')).rows[0].current_user).toBe(login);
+      // Initial authorization inserts execute the renewal-aware trigger even when
+      // no renewal exists. Exercise it as the real restricted LOGIN, not the owner.
+      const initialSetId = randomUUID();
+      const initialHeader = {
+        keyId: fixture.authorization.keyId,
+        generationHex: fixture.authorizationGeneration.replaceAll('-', ''),
+        epoch: fixture.authorizationEpoch,
+        quoteHex: fixture.quote.quoteId.replaceAll('-', ''),
+        setHex: initialSetId.replaceAll('-', ''),
+        count: fixture.quote.economics.lines.length,
+        currency: fixture.quote.presentmentCurrency,
+        exponent: fixture.quote.presentmentExponent,
+        country: fixture.quote.country,
+        marketId: fixture.quote.marketId,
+        validThroughDay: fixture.quote.validThroughDay,
+        totalQuantity: fixture.quote.economics.customizedQuantity,
+        totalMinor: fixture.quote.economics.totalMinor,
+      };
+      const initialMembers = fixture.quote.economics.lines.map((line) => ({
+        index: line.lineIndex,
+        variantId: line.variantId,
+        quantity: line.quantity,
+        unitMinor: line.unitPriceMinor,
+      }));
+      const initialEnvelope = Buffer.concat([
+        encodeHeader(initialHeader),
+        sign(null, wholeQuoteSignBytes(initialHeader, initialMembers), fixture.keys.privateKey),
+      ]).toString('base64url');
+      expect(
+        (
+          await web.query(
+            `INSERT INTO quote_authorization_sets(set_id,quote_id,shop_id,installation_generation,
+              authorization_generation,authorization_epoch,key_id,public_key_fingerprint,first_valid_day,
+              last_valid_day,valid_through_day,envelope_carrier,member_carriers)
+            SELECT $1,quote_id,shop_id,installation_generation,authorization_generation,authorization_epoch,
+              key_id,public_key_fingerprint,first_valid_day,last_valid_day,valid_through_day,$2,member_carriers
+            FROM quote_authorization_sets WHERE set_id=$3 RETURNING set_id,envelope_carrier,member_carriers`,
+            [initialSetId, initialEnvelope, fixture.authorization.setId],
+          )
+        ).rows,
+      ).toEqual([
+        { set_id: initialSetId, envelope_carrier: initialEnvelope, member_carriers: fixture.authorization.members },
+      ]);
+      expect(
+        (await web.query('SELECT * FROM quote_authorization_renewals WHERE set_id=$1', [initialSetId])).rows,
+      ).toEqual([]);
       expect((await core.artwork.create(asset)).assetId).toBe(assetId);
       expect((await core.artwork.complete(authority, assetId, now)).state).toBe('QUEUED');
       expect((await core.artwork.get(authority, assetId))?.originalKey).toBe(asset.originalKey);
@@ -283,6 +330,10 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       });
       await web.query('SELECT * FROM purchase_orders WHERE purchase_id=$1 FOR UPDATE', [purchaseId]);
       const denied = [
+        'INSERT INTO quote_authorization_renewals DEFAULT VALUES',
+        'UPDATE quote_authorization_renewals SET material_hash=material_hash',
+        'DELETE FROM quote_authorization_renewals',
+        'TRUNCATE quote_authorization_renewals',
         'INSERT INTO trusted_release_records DEFAULT VALUES',
         'UPDATE trusted_release_records SET created_at=created_at',
         'DELETE FROM trusted_release_records',

@@ -82,6 +82,9 @@ GRANT UPDATE(version,payload,expires_at) ON public.design_drafts TO insignia_run
 GRANT DELETE ON public.quote_proposals TO insignia_runtime;
 GRANT UPDATE(observed_fingerprint,status) ON public.cart_applications TO insignia_runtime;
 GRANT UPDATE(application_id) ON public.buyer_commands TO insignia_runtime;
+-- Initial authorization INSERT also runs the renewal-aware trigger.
+-- Read existing renewal identity only; this correction adds no renewal-write permission.
+GRANT SELECT ON public.quote_authorization_renewals TO insignia_runtime;
 -- linkQuote preserves the original owned design before checkout; not an order/payment fact.
 GRANT SELECT ON public.purchase_offer_payloads TO insignia_runtime;
 GRANT INSERT(shop_id,installation_generation,quote_id,collected_at,expires_at,payload)

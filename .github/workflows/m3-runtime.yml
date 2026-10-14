@@ -69,8 +69,8 @@ jobs:
     timeout-minutes: 25
     services:
       postgres:
-        # Docker Official Images ECR mirror; same digest as the last successful Docker Hub pull.
-        image: public.ecr.aws/docker/library/postgres@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
+        # Official Docker Hub route; independently verified existing index digest remains unchanged.
+        image: docker.io/library/postgres@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
         env:
           POSTGRES_USER: synthetic_runtime_owner
           POSTGRES_PASSWORD: insignia_test
