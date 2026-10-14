@@ -16,8 +16,8 @@ function fixture() {
     epoch: 0,
   };
   const qualified = {
-    appId: '429028933633',
-    appClientId: '1443cf6d03d39edae7c101a943c5c684',
+    appId: '123',
+    appClientId: 'synthetic-client',
     activeVersionRef: '1166090010625',
     origin: {
       shopId: 'tenant',
@@ -43,7 +43,7 @@ function fixture() {
           ...target,
           authorizationGeneration: f.auth,
           authorizationEpoch: f.epoch,
-          shopDomain: 'insignia-rewrite-dev.myshopify.com',
+          shopDomain: 'synthetic.myshopify.com',
           shopifyShopId: '123',
         }),
         getManagedInstallationState: async () => ({
@@ -64,7 +64,7 @@ function fixture() {
     credentials: {
       acquire: async () => ({
         kind: 'usable',
-        shopDomain: 'insignia-rewrite-dev.myshopify.com',
+        shopDomain: 'synthetic.myshopify.com',
         accessToken: 'SYNTHETIC_NOT_TRANSMITTED',
         accessExpiresAt: new Date(f.expires),
       }),
