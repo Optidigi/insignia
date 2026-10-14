@@ -1,0 +1,31 @@
+{
+  "classification": "LOCAL_STOREFRONT_ACCESS_COOKIE_DEFECT_REPRODUCED_AND_CORRECTED_NATIVE_PENDING",
+  "ownerObservations": [
+    "Button visible after moving block into product section",
+    "Same NetworkError in editor and standalone storefront"
+  ],
+  "reproduction": "node --test apps/storefront/test/bootstrap.test.mjs",
+  "red": "Customization controls missing: Failed to fetch; synthetic unlocked browser cookie omitted, proxy gate redirects to/password, redirect:error rejects",
+  "green": "Actual built customizer reaches customization controls with same-origin cookie, retaining lazy renderer loading",
+  "change": [
+    "buyer.ts credentials same-origin",
+    "guest-artwork.ts credentials same-origin"
+  ],
+  "unchanged": [
+    "relative same-origin proxy URL validation",
+    "redirect error",
+    "signed App Proxy verification",
+    "private body capability",
+    "guest original-download denial",
+    "signed R2 upload credentials omitted"
+  ],
+  "nativeLimit": "Live released theme still prior bundle; native cause/fix awaits corrected release and real browser observation",
+  "sources": [
+    "https://shopify.dev/docs/apps/build/online-store/app-proxies/authenticate-app-proxies"
+  ],
+  "grant": "Previous theme one-create/one-release grant consumed; no new native version effects authorized or dispatched",
+  "localFailures": [
+    "Initial regression syntax error corrected before behavioral RED",
+    "First behavioral probe timed out awaiting lazy renderer; tightened to three-second controls assertion showing actual Failed to fetch"
+  ]
+}

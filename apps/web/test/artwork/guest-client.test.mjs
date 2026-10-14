@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createGuestArtworkApi } from '../../src/islands/guest-artwork.ts';
 
-test('guest calls carry their capability in a JSON body without cookies, URL secrets or original download access', async () => {
+test('guest calls carry their capability in a JSON body through the storefront gate without URL secrets or original download access', async () => {
   const calls = [];
   const token = 'synthetic.token';
   const api = createGuestArtworkApi({
@@ -23,7 +23,7 @@ test('guest calls carry their capability in a JSON body without cookies, URL sec
   for (const { url, init } of calls.slice(1)) {
     assert.equal(url.includes(token), false);
     assert.equal(init.method, 'POST');
-    assert.equal(init.credentials, 'omit');
+    assert.equal(init.credentials, 'same-origin');
     assert.equal(new Headers(init.headers).has('Authorization'), false);
     assert.equal(JSON.parse(init.body).capability, token);
   }

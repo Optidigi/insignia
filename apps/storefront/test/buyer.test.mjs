@@ -47,7 +47,7 @@ test('buyer and artwork API use one private capability and locale proxy prefix',
   assert.equal(calls[2][0], '/fr/apps/custom/guest/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/status');
   for (const [, init] of calls.slice(1)) {
     assert.equal(JSON.parse(init.body).capability, 'abc.def');
-    assert.equal(init.credentials, 'omit');
+    assert.equal(init.credentials, 'same-origin');
   }
 });
 test('private session survives another instance without persisting design or URLs', async () => {

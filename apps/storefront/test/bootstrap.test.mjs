@@ -9,7 +9,7 @@ import { build } from 'vite';
 import { copyThemeAssets } from '../scripts/copy-theme-asset.mjs';
 import config from '../vite.config.ts';
 
-test('theme build preserves interaction-lazy buyer and renderer chunks behind the classic CDN bootstrap', async () => {
+test('unlocked storefront loads buyer controls through its cookie-gated proxy and lazy classic CDN bootstrap', async () => {
   const temporary = await mkdtemp(join(tmpdir(), 'insignia-theme-build-'));
   try {
     await build({
@@ -63,6 +63,11 @@ test('theme build preserves interaction-lazy buyer and renderer chunks behind th
     try {
       browser = await chromium.launch({ headless: true });
       const page = await browser.newPage();
+      await page
+        .context()
+        .addCookies([
+          { name: 'synthetic_storefront_unlock', value: 'yes', url: `http://127.0.0.1:${server.address().port}` },
+        ]);
       const requested = [];
       page.on('request', (request) => {
         if (new URL(request.url()).pathname.split('/').at(-1).startsWith('insignia-'))
@@ -78,8 +83,10 @@ test('theme build preserves interaction-lazy buyer and renderer chunks behind th
         }),
       );
       await page.route('**/cart.js', (route) => route.fulfill({ json: { items: [], currency: 'EUR' } }));
-      await page.route('**/apps/insignia/v1/config*', (route) =>
-        route.fulfill({
+      await page.route('**/apps/insignia/v1/config*', (route) => {
+        if (!route.request().headers().cookie?.includes('synthetic_storefront_unlock=yes'))
+          return route.fulfill({ status: 302, headers: { Location: '/password' }, body: '' });
+        return route.fulfill({
           json: {
             version: 'm7-config-v1',
             productId: '111',
@@ -113,8 +120,8 @@ test('theme build preserves interaction-lazy buyer and renderer chunks behind th
             },
             imageUrls: { 'synthetic-image': 'https://synthetic.invalid/product.png' },
           },
-        }),
-      );
+        });
+      });
       await page.goto(`http://127.0.0.1:${server.address().port}/nl/products/example`);
       const host = page.locator('insignia-buyer');
       await host.getByRole('button', { name: 'Customize this product' }).waitFor();
@@ -126,10 +133,18 @@ test('theme build preserves interaction-lazy buyer and renderer chunks behind th
         requested.some((path) => path.includes('insignia-lib-')),
         false,
       );
-      const rendererLoad = page.waitForRequest((request) => /insignia-lib-.*\.js$/.test(request.url()));
+      const rendererLoad = page.waitForRequest((request) => /insignia-lib-.*\.js$/.test(request.url()), {
+        timeout: 5000,
+      });
+      void rendererLoad.catch(() => {});
       await host.getByRole('button', { name: 'Customize this product' }).click();
-      await rendererLoad;
       await host.getByRole('dialog').waitFor();
+      try {
+        await host.getByRole('list', { name: 'Customization steps' }).waitFor({ timeout: 3000 });
+      } catch {
+        assert.fail(`Customization controls missing: ${await host.getByRole('alert').textContent()}`);
+      }
+      await rendererLoad;
       assert.ok(requested.some((path) => path.startsWith('/cdn-assets/insignia-customizer-')));
       assert.ok(requested.some((path) => path.startsWith('/cdn-assets/insignia-lib-')));
       assert.ok(requested.every((path) => path.startsWith('/cdn-assets/')));

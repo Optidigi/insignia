@@ -2,7 +2,7 @@
 
 Authority: [autonomous delivery](../../authority/autonomous-delivery-2026-10-13.md). Deliver the approved merchant→configure/publish→buyer artwork/quote/cart→permitted test checkout→independent immutable purchase/first-paid→merchant original journey. No principal or routine owner checkpoints; no production rollout or real charge granted.
 
-Latest main: PR124 `902bc87a8d59c09c54afa44e308f3b2b0507c787`, tree `d9fee19565fdf6ac552f525e49e64a00ea1ba184`; three final-head attempt1 workflows SUCCESS. [Full refs](pr124-integration-receipt.json). Closed theme profile integrated; worker qualification remains null/admission disabled.
+Latest main: PR125 `1fb28bb8125640630e4bac51390d5b831ef862e7`, tree `98b5f9412e4103a9388b484efdc95d9c83c2ec73`; three final-head attempt1 workflows SUCCESS. [Full refs](pr125-integration-receipt.json). Actual web/verifier remain qualified PR124 code/treeD9; docs integration does not require source churn. Closed theme profile integrated; worker qualification remains null/admission disabled.
 
 | Journey capability | Current evidence and practical limit |
 | --- | --- |
@@ -23,3 +23,13 @@ Latest main: PR124 `902bc87a8d59c09c54afa44e308f3b2b0507c787`, tree `d9fee19565f
 5. Independently qualify actual creator/enforcement; compose intended worker with actual restricted role, process order and persist immutable purchase/first-paid; merchant retrieves matching original. Prove incomplete/altered-cart repair, duplicate/reordered/restart-safe facts and unauthorized artwork denial. Historical country/Market/Function execution remains unknown where unproved.
 
 Owner product-list and theme grant requests CLOSED; do not ask again. After runtime preparation, theme activation/configuration/test checkout still need human-only actions. Package/audit/profile/linger/S3 requests also CLOSED. Private journals/artifacts retain obligations through20October, S3 key rotation remains owed; no fictitious cleanup scheduler or rollout. Earlier index and dated failures/receipts remain available at commitc8d8713 and their linked evidence; no history rewritten.
+
+## Current native rendering investigation — 14 October
+
+Owner reports completing theme activation/save but no customization button in preview. Activation/rendering is not qualified. The button is mounted before any config fetch, so empty unpublished configuration alone does not explain invisibility. Exact classic-bootstrap browser regression passed (1 test), sealed seven native block/asset files still match creation hashes; local result is not native preview evidence. Supported collaborative preview opens but reaches the storefront password page, so native preview DOM/assets are inaccessible there. No repeated Shopify login/CAPTCHA, credential request, blind code change or app release.
+
+Pending owner observation (asked once): is Insignia customization listed inside product section, and is preview showing exact fixture Insignia M5 acceptance — 27c397e10c26? Next inspect actual rendered host/CDN errors if correctly placed, reproduce a confirmed loading defect at that boundary, then fix with meaningful regression and review. Preserve theme changes and existing fixture/configuration.
+
+Owner corrected block placement into product section and confirms button visible. Clicking in both editor and standalone storefront produces NetworkError twice (status and alert rendering), so editor-only failure is disproved. No native request/response capture yet. Confirmed local defect: buyer and guest-artwork transports omit same-origin storefront access cookies while rejecting redirects; cookie-gated browser regression reproduces Failed to fetch before correction and loads real customization controls after credentials same-origin. Signature/private capability checks and redirect rejection preserved; Shopify strips Cookie before app-proxy upstream forwarding. Fixed locally; released theme bundle remains unchanged and native fix is unqualified.
+
+Next qualify source/review/CI and prepare bounded theme-only correction preserving prior modules/settings/scopes. The earlier one-create/one-release grant is consumed; do not create/release another version without the specific new grant. Owner need not repeat the broken preview now. Once updated, independently qualify native signed forwarding; then existing merchant draft configuration/publication and artwork/quote/cart/order journey remain due.

@@ -16,7 +16,9 @@ export function createGuestArtworkApi(input: {
     const response = await transport(url, {
       ...init,
       cache: 'no-store',
-      credentials: 'omit',
+      // Shopify's storefront access gate needs its same-origin cookie.
+      // Proxy signature and private capability still authorize Insignia requests.
+      credentials: 'same-origin',
       redirect: 'error',
       signal: AbortSignal.timeout(10000),
     });
