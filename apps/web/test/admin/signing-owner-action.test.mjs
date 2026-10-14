@@ -375,42 +375,47 @@ test('concurrent authenticated publication preparation shares one settled signin
   }
 });
 
-test('M8 signing consumes only its selected trusted version and preserves exact dated owner binding', async () => {
-  const f = await bound();
-  try {
-    const originalRead = f.ports.core.trustedReleaseRecords.read;
-    const historical = await originalRead({});
-    const reads = [];
-    f.ports.core.trustedReleaseRecords.read = async (request) => {
-      reads.push(request);
-      return historical;
-    };
-    const action = createSigningOwnerAction(f.config, { ...f.ports, releaseProfile: 'm8-read-orders-617057f' });
-    assert.equal((await action.status(f.actor)).state, 'WAITING_FOR_VERIFICATION');
-    assert.equal(reads.at(-1).expectedActiveAppVersionRef, '1165513097217');
-    assert.equal(f.rows.length, 0);
-    assert.equal(f.requests.length, 0);
-    const selected = {
-      ...historical,
-      expectedBuild: { ...historical.expectedBuild, appVersionRef: '1165513097217' },
-      record: {
-        ...historical.record,
-        attestation: { ...historical.record.attestation, appVersionRef: '1165513097217' },
-      },
-    };
-    f.ports.core.trustedReleaseRecords.read = async (request) => {
-      reads.push(request);
-      return selected;
-    };
-    assert.equal((await action.prepare(f.actor, 'synthetic-token')).state, 'PROVISIONED');
-    assert.ok(reads.every((request) => request.expectedActiveAppVersionRef === '1165513097217'));
-    const path = join(f.config.directory, 'owner-binding.json');
-    const bytes = await readFile(path);
-    assert.equal(JSON.parse(bytes).activeAppVersionRef, '1165513097217');
-    const previousProfile = createSigningOwnerAction(f.config, f.ports);
-    assert.equal((await previousProfile.status(f.actor)).state, 'UNCERTAIN');
-    assert.deepEqual(await readFile(path), bytes);
-  } finally {
-    await f.close();
-  }
-});
+for (const [profile, version] of [
+  ['m8-read-orders-617057f', '1165513097217'],
+  ['m8-app-proxy-3d2a02e', '1166090010625'],
+]) {
+  test(`${profile} signing consumes only its selected trusted version and preserves exact dated owner binding`, async () => {
+    const f = await bound();
+    try {
+      const originalRead = f.ports.core.trustedReleaseRecords.read;
+      const historical = await originalRead({});
+      const reads = [];
+      f.ports.core.trustedReleaseRecords.read = async (request) => {
+        reads.push(request);
+        return historical;
+      };
+      const action = createSigningOwnerAction(f.config, { ...f.ports, releaseProfile: profile });
+      assert.equal((await action.status(f.actor)).state, 'WAITING_FOR_VERIFICATION');
+      assert.equal(reads.at(-1).expectedActiveAppVersionRef, version);
+      assert.equal(f.rows.length, 0);
+      assert.equal(f.requests.length, 0);
+      const selected = {
+        ...historical,
+        expectedBuild: { ...historical.expectedBuild, appVersionRef: version },
+        record: {
+          ...historical.record,
+          attestation: { ...historical.record.attestation, appVersionRef: version },
+        },
+      };
+      f.ports.core.trustedReleaseRecords.read = async (request) => {
+        reads.push(request);
+        return selected;
+      };
+      assert.equal((await action.prepare(f.actor, 'synthetic-token')).state, 'PROVISIONED');
+      assert.ok(reads.every((request) => request.expectedActiveAppVersionRef === version));
+      const path = join(f.config.directory, 'owner-binding.json');
+      const bytes = await readFile(path);
+      assert.equal(JSON.parse(bytes).activeAppVersionRef, version);
+      const previousProfile = createSigningOwnerAction(f.config, f.ports);
+      assert.equal((await previousProfile.status(f.actor)).state, 'UNCERTAIN');
+      assert.deepEqual(await readFile(path), bytes);
+    } finally {
+      await f.close();
+    }
+  });
+}

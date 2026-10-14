@@ -1,5 +1,5 @@
 {
-  "status": "EXACT_INACTIVE_CANDIDATE_VERIFIED_NOT_RELEASED",
+  "status": "EXACT_ACTIVE_VERSION_EXISTING_INSTALLATION_GRANT_PENDING",
   "appId": "429028933633",
   "organizationId": "200969036",
   "appClientId": "1443cf6d03d39edae7c101a943c5c684",
@@ -80,7 +80,7 @@
     "instruction": "Authorize this bounded App Proxy change",
     "effects": "requiredwrite_app_proxy, oneproxy route, oneinactiveverifiedversion preservingFunctions/settings/optionals, oneappwide release, consent onlyexistingrewrite-dev installation"
   },
-  "transitionDependency": "New inactive version changes closed inventory; new active version needs reviewed closed runtime/verifier profile. Keep buyer/admission disabled; qualify consumers/profile before release, then verify exact grants and signed forwarding after human consent.",
+  "transitionDependency": "Closed profile integrated PR120, actual CI web image and frozen private verifier select new profile; one release settled. Existinginstallation write_app_proxy grant awaits human update; fresh evidence/signed forwarding and current worker/buyer composition remain. No admission inferred.",
   "inactiveReadback": {
     "versionId": "1166090010625",
     "tag": "m8-app-proxy-3d2a02e",
@@ -88,5 +88,18 @@
     "modulesSha256": "00c5fec0329556eb1809d6f84de3c6cfe31fbfd7f5b004b56aae54e60e7a9652",
     "observedAt": "2026-10-13T23:47:34.896Z",
     "receipt": "../../docs/delivery/evidence/m8-context-runtime/app-proxy-inactive-2026-10-13.json"
+  },
+  "activeReadback": {
+    "versionId": "1166090010625",
+    "tag": "m8-app-proxy-3d2a02e",
+    "observedAt": "2026-10-14T00:21:37.587Z",
+    "status": "active",
+    "modulesSha256": "00c5fec0329556eb1809d6f84de3c6cfe31fbfd7f5b004b56aae54e60e7a9652",
+    "receipt": "../../docs/delivery/evidence/m8-context-runtime/app-proxy-release-and-runtime-2026-10-14.json"
+  },
+  "installationGrant": {
+    "observedAt": "2026-10-14T00:23:32.401Z",
+    "write_app_proxy": false,
+    "humanRequestOpen": true
   }
 }
