@@ -13,7 +13,7 @@ import { loadCredentialKeys } from './config.js';
 import { runLocalDiagnostic } from './diagnostic.js';
 import { createDurableWorkerHandlers, credentialLifecycle } from './handlers.js';
 import { startWorkerProcess } from './process.js';
-import { createProductionPurchaseAdmission } from './purchase-admission.js';
+import { createProductionPurchaseAdmission, resolveNativePurchaseQualification } from './purchase-admission.js';
 import { createPurchaseReleasePreparation } from './purchase-release.js';
 import { createPurchaseRunner } from './purchase-runner.js';
 import { createWorkerReconciliation } from './reconciliation.js';
@@ -52,10 +52,18 @@ if (process.argv.includes('--diagnostic')) {
     process.env.INSIGNIA_M8_PURCHASE_ENABLED === '1'
       ? resolveRuntimeReleaseProfile(process.env.INSIGNIA_RELEASE_PROFILE)
       : undefined;
+  const qualification = releaseProfile
+    ? resolveNativePurchaseQualification({
+        appId: required('INSIGNIA_SHOPIFY_APP_ID'),
+        appClientId: clientId,
+        releaseProfile: releaseProfile.name,
+      })
+    : null;
   const checkout = releaseProfile
     ? createProductionPurchaseAdmission({
         core,
         credentials: purchaseCredentials,
+        qualification,
         releaseProfile: releaseProfile.name,
       })
     : undefined;
@@ -64,6 +72,7 @@ if (process.argv.includes('--diagnostic')) {
       ? createPurchaseReleasePreparation({
           core,
           collector: createReleaseVerificationClient(undefined, releaseProfile.activeVersionRef),
+          qualification,
           releaseProfile: releaseProfile.name,
         })
       : undefined;

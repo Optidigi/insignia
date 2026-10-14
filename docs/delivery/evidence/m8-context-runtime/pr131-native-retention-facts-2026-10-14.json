@@ -1,0 +1,66 @@
+{
+  "classification": "POST_NATIVE_TEST_ORDER_RETENTION_AND_FACTS_READ",
+  "observedAt": "2026-10-14T20:12:35.058280+00:00",
+  "rows": [
+    {
+      "kind": "artwork",
+      "state": "USABLE",
+      "assetId": "bf5e68d1-2213-44df-a3da-5d9c155b749b",
+      "expiresAt": "2026-10-21T17:11:18.009+00:00",
+      "collectedAt": "2026-10-14T17:11:18.009+00:00",
+      "retryScheduled": false,
+      "quarantineCleaned": true
+    },
+    {
+      "kind": "artwork",
+      "state": "USABLE",
+      "assetId": "a4d401a0-1f50-4431-a9f0-19db938246b3",
+      "expiresAt": "2026-10-21T17:29:58.544+00:00",
+      "collectedAt": "2026-10-14T17:29:58.544+00:00",
+      "retryScheduled": false,
+      "quarantineCleaned": true
+    },
+    {
+      "kind": "artwork",
+      "state": "USABLE",
+      "assetId": "949a9e43-b3ee-4afc-b34d-f9a37ed099a3",
+      "expiresAt": "2026-10-21T18:30:57.729+00:00",
+      "collectedAt": "2026-10-14T18:30:57.729+00:00",
+      "retryScheduled": false,
+      "quarantineCleaned": true
+    },
+    {
+      "kind": "artwork",
+      "state": "USABLE",
+      "assetId": "a02c0a73-dd68-4144-8030-11324da9675c",
+      "expiresAt": "2026-10-21T19:13:36.526+00:00",
+      "collectedAt": "2026-10-14T19:13:36.526+00:00",
+      "retryScheduled": false,
+      "quarantineCleaned": true
+    },
+    {
+      "kind": "artwork",
+      "state": "USABLE",
+      "assetId": "7cb3c29b-a525-4e07-8631-bc8d8255f63d",
+      "expiresAt": "2026-10-21T19:53:52.426+00:00",
+      "collectedAt": "2026-10-14T19:53:52.426+00:00",
+      "retryScheduled": false,
+      "quarantineCleaned": true
+    },
+    {
+      "kind": "acceptedQuote",
+      "quoteId": "6d736006-db28-4eee-9d90-383a48d24a13",
+      "quantity": 1,
+      "acceptedAt": "2026-10-14T19:54:03.236+00:00",
+      "totalMinor": "1500",
+      "validThroughDay": 20742,
+      "presentmentCurrency": "USD"
+    },
+    {
+      "kind": "purchaseFacts",
+      "paidCount": 0,
+      "orderCount": 0
+    }
+  ],
+  "probeWrites": false
+}
