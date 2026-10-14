@@ -1,8 +1,16 @@
-# Only the private metadata socket crosses into web. Collector management auth,
+# Only the private metadata socket crosses into web/worker. Collector management auth,
 # client/append custody and executable stay outside the runtime. Host directory
 # and SSH stream-local forward must already be qualified; never auto-create.
 services:
   web:
+    volumes:
+      - type: bind
+        source: ${INSIGNIA_RELEASE_VERIFICATION_SOCKET_DIRECTORY:?Set the qualified private socket directory}
+        target: /run/insignia/release-verification
+        read_only: true
+        bind:
+          create_host_path: false
+  worker:
     volumes:
       - type: bind
         source: ${INSIGNIA_RELEASE_VERIFICATION_SOCKET_DIRECTORY:?Set the qualified private socket directory}

@@ -6,19 +6,29 @@ import type { ShopifyOrderChangesPage, ShopifyOrderChangesTarget } from '@insign
 export function createPurchaseRunner(input: {
   core: DurableCore;
   checkout?: PurchasePorts['checkout'];
+  prepareRelease?(target: { shopId: string; installationGeneration: string; orderId: string }): Promise<void>;
   orders: {
     read(target: { shopId: string; installationGeneration: string; orderId: string }): Promise<VerifiedOrder>;
     changes?(target: ShopifyOrderChangesTarget): Promise<ShopifyOrderChangesPage>;
   };
   onError?: (errorClass: string) => void;
 }) {
+  const orders = {
+    ...input.orders,
+    async read(target: { shopId: string; installationGeneration: string; orderId: string }) {
+      // Collection precedes the independent observation; admission keeps its
+      // existing fresh SELECT and enforcement checks afterward.
+      if (input.checkout) await input.prepareRelease?.(target);
+      return input.orders.read(target);
+    },
+  };
   async function processInbox(inboxId: string) {
     const hint = await input.core.purchases.claimPurchaseReconciliationHint(inboxId);
     if (!hint) return 'deferred' as const;
     try {
       await reconcilePurchase(hint, {
         checkout: input.checkout,
-        orders: input.orders,
+        orders,
         offers: { get: (target) => input.core.purchases.getOffer(target) },
         store: {
           reconcile: (observation) =>
@@ -56,7 +66,7 @@ export function createPurchaseRunner(input: {
               { ...claim, orderId: order.orderId },
               {
                 checkout: input.checkout,
-                orders: input.orders,
+                orders,
                 offers: { get: (target) => input.core.purchases.getOffer(target) },
                 store: { reconcile: (observation) => input.core.purchases.reconcile(observation) },
               },

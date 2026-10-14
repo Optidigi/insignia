@@ -196,7 +196,7 @@ for (const profile of ['m8-read-orders-617057f', 'm8-app-proxy-3d2a02e']) {
                 ? value.grants
                 : state === 'missing_proxy_grant'
                   ? [...value.grants, 'read_orders']
-                  : [...value.grants, 'read_orders', ...(proxy ? ['write_app_proxy'] : [])],
+                  : [...value.grants, 'read_orders', ...(proxy ? ['read_app_proxy', 'write_app_proxy'] : [])],
           };
         };
         f.ports.append = async (input) => {
@@ -227,7 +227,7 @@ for (const profile of ['m8-read-orders-617057f', 'm8-app-proxy-3d2a02e']) {
   );
 
   profileTest('M8 OAuth readback requires read_orders and refuses scope widening without retry', async () => {
-    const granted = proxy ? ',read_orders,write_app_proxy' : ',read_orders';
+    const granted = proxy ? ',read_orders,read_app_proxy,write_app_proxy' : ',read_orders';
     for (const extra of ['', granted, `${granted},write_orders`, ...(proxy ? [',read_orders'] : [])]) {
       let requests = 0;
       const provider = createOwnerHttps({

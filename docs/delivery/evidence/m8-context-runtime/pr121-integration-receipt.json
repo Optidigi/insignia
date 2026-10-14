@@ -1,0 +1,31 @@
+{
+  "pr": "https://github.com/Optidigi/insignia/pull/121",
+  "merge": "2fdeb7ed4a692b27f864f4a9b533946fcc035271",
+  "tree": "b34e8e4f52070c822ae228acdb40acfd10bc3f93",
+  "base": "239adfe30efa39e04f8d6c00a7555c6b7445664c",
+  "head": "86f0687ce894e0b8632ed5818d0d62e58a1f631e",
+  "effectiveMergeBase": "239adfe30efa39e04f8d6c00a7555c6b7445664c",
+  "orderedParents": ["239adfe30efa39e04f8d6c00a7555c6b7445664c", "86f0687ce894e0b8632ed5818d0d62e58a1f631e"],
+  "workflows": [
+    {
+      "run": 38491069939,
+      "name": "foundation",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "run": 38491069913,
+      "name": "durable-core",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "run": 38491070063,
+      "name": "runtime",
+      "attempt": 1,
+      "result": "SUCCESS"
+    }
+  ],
+  "limits": "Native transition/one exact release and signing regression integrated; later existinginstallation consent and observed11scope projection recorded separately. Full native journey/admission still unqualified.",
+  "closingReceipt": "https://github.com/Optidigi/insignia/pull/121#issuecomment-6158613713"
+}
