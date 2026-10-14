@@ -1,0 +1,43 @@
+{
+  "classification": "NATIVE_SAVE_AND_PUBLICATION_INDEPENDENTLY_SETTLED",
+  "productId": "10519322493211",
+  "variantId": "54211066986779",
+  "configId": "4dbbe8f6-8162-4271-9819-fd485f7d65f6",
+  "draftVersion": "2",
+  "mode": "optional",
+  "configuration": {
+    "method": "Print",
+    "placement": "Front",
+    "step": "Small",
+    "generalSetupUsd": "10.00",
+    "methodUnitUsd": "5.00",
+    "variantBaseUsd": "0.00",
+    "logoLaterAllowed": true
+  },
+  "operationId": "e6b79dfb-ce60-47b3-a5b3-f0d51a5cdb0e",
+  "requestKey": "m5pub_4dbbe8f6-8162-4271-9819-fd485f7d65f6_1_2",
+  "durableReadAt": "2026-10-14T11:57:55.252Z",
+  "phase": "active",
+  "status": "activated",
+  "activationKind": "RESTORED",
+  "providerReadAt": "2026-10-14T11:57:56.672Z",
+  "productStatus": "ACTIVE",
+  "effectivePublicationIds": [
+    "339456885019",
+    "339456950555",
+    "339456983323"
+  ],
+  "safeRecovery": "Initial request timed out in browser. Independent durable and provider reads proved HELD/DRAFT and activation pending. One UI continuation of the same durable key settled RESTORED/ACTIVE; no new publication command or blind provider mutation retry.",
+  "openDefects": [
+    "Merchant request timeout banner remains after durable progress; cached product status is stale.",
+    "Buyer config fails because the running buyer catalog source has no usable persisted offline credential. Normal web-role metadata independently confirms no credential record for the active generation; native proxy renders generic third-party HTTP500.",
+    "Merchant allowed-method/step choices display raw IDs."
+  ],
+  "privateJournals": [
+    "m8-native-merchant-save-20261014-r3",
+    "m8-native-merchant-publication-20261014",
+    "m8-native-merchant-publication-20261014-continuation1"
+  ],
+  "limits": "No artwork, accepted quote, cart, order, purchase, payment fact or merchant original retrieval yet. No gate pass or rollout.",
+  "diagnosticLimits": "Direct deployed config-service probe used a local resolver seam in a separate Node process; it is diagnostic only and proves no native authentication or buyer acceptance. Actual config/presentation/geometry SELECTs succeeded. No server configuration was changed."
+}

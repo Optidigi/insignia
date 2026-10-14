@@ -37,7 +37,7 @@ test('PostgreSQL claim retries the old refresh token after a lost response and f
         ...initial,
         accessToken: 'synthetic-access-new',
         refreshToken: 'synthetic-refresh-new',
-        accessExpiresAt: new Date(Date.now() + 86_400_000),
+        accessExpiresAt: new Date(Date.now() + 120_000),
       };
     },
   };
@@ -54,8 +54,16 @@ test('PostgreSQL claim retries the old refresh token after a lost response and f
     assert.ok(concurrent.some((outcome) => outcome.kind === 'refreshed'));
     assert.ok(concurrent.some((outcome) => outcome.kind === 'busy' || outcome.kind === 'usable'));
     assert.equal((await core.credentials.acquire({ ...input, minimumRemainingMs: 0 })).kind, 'usable');
-    await credentialLifecycle(core).install({ shopId, installationGeneration: '1', pair: initial });
-    const claimed = await core.credentials.acquire({ ...input, minimumRemainingMs: 100_000 });
+    // Acquisition cannot overwrite a usable pair. Claim the short-lived refreshed
+    // pair through the same lifecycle instead of reinstalling an old credential.
+    await assert.rejects(
+      () => credentialLifecycle(core).install({ shopId, installationGeneration: '1', pair: initial }),
+      /Credential already active or refreshing/,
+    );
+    const retained = await core.credentials.acquire({ ...input, minimumRemainingMs: 0 });
+    assert.equal(retained.kind, 'usable');
+    assert.equal(retained.accessToken, 'synthetic-access-new');
+    const claimed = await core.credentials.acquire({ ...input, minimumRemainingMs: 180_000 });
     assert.equal(claimed.kind, 'claimed');
     await core.transactions.run((tx) => core.tenants.deactivateCurrent(tx, shopId, '1'));
     assert.equal(

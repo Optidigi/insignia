@@ -25,6 +25,7 @@ export * from './quote/material.js';
 export * from './quote/renew-quote.js';
 export * from './shopify/admin-credential-bridge.js';
 export * from './shopify/ingress.js';
+export * from './shopify/offline-acquisition.js';
 export * from './shopify/offline-credentials.js';
 export * from './shopify/provider-scope.js';
 export * from './transactions/transaction.js';

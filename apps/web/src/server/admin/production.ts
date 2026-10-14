@@ -3,6 +3,7 @@ import * as signingApplication from '@insignia/application';
 import {
   type ActivationReadinessPort,
   bindProviderSubscription,
+  bootstrapExpiringOfflineCredentials,
   type EntitlementPolicyConfig,
   localDay,
   projectEntitlement,
@@ -11,6 +12,7 @@ import type { MerchantDraft } from '@insignia/contracts';
 import { createDurableCore, ManagedInstallationError, type ManagedInstallationIdentity } from '@insignia/database';
 import { type AdminAuthenticationStage, createObservability } from '@insignia/observability';
 import {
+  canonicalAdminAccessScopes,
   createActiveSubscriptionClient,
   createAdminOnlineIdentity,
   createCatalogReader,
@@ -25,6 +27,7 @@ import {
   type CatalogProduct as ShopifyCatalogProduct,
 } from '@insignia/shopify';
 import { Pool } from 'pg';
+import { loadCredentialKeys } from '../../../../worker/src/config.ts';
 import { createMerchantConfigService } from '../merchant-config.js';
 import { type AdminInstallation, AdminInstallationReconciliationError, createAdminAuthenticator } from './auth.js';
 import type { AdminActor, AdminServices, CatalogProduct } from './contracts.js';
@@ -92,8 +95,10 @@ export function createProductionAdminServices(
   const appOrigin = required(env, 'APP_URL');
   const appId = env.INSIGNIA_SHOPIFY_APP_ID;
   const appGid = appId && /^[1-9][0-9]*$/.test(appId) ? 'gid://shopify/App/' + appId : null;
-  const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
-  const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
+  const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host, fetchImpl: fetch });
+  const offlineBootstrap = env.INSIGNIA_M7_BUYER_ENABLED === '1';
+  const credentialKeys = offlineBootstrap ? loadCredentialKeys(env) : undefined;
+  const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }), { credentialKeys });
   const grants = new WeakMap<AdminActor, OnlineStaffGrant>();
   const requestTokens = new WeakMap<AdminActor, string>();
   const merchantTimezones = new WeakMap<AdminActor, string>();
@@ -577,6 +582,62 @@ export function createProductionAdminServices(
         grants.set(actor, online);
         requestTokens.set(actor, request.headers.get('Authorization')!.slice(7));
         if (merchantTimezone) merchantTimezones.set(actor, merchantTimezone);
+        if (offlineBootstrap && actor.canRead && online.accountOwner === true) {
+          const scope = await core.tenants.getActiveAuthorizationScope({
+            shopId: actor.tenantShopId,
+            installationGeneration: actor.installationGeneration,
+          });
+          if (!scope || scope.shopDomain !== actor.shop) throw new Error('Offline installation changed');
+          const sessionToken = requestTokens.get(actor);
+          if (!sessionToken) throw new Error('Offline session unavailable');
+          const currentGrantScopes = canonicalAdminAccessScopes(online.appScopes);
+          const identity = await shopify.verify(sessionToken);
+          const result = await bootstrapExpiringOfflineCredentials({
+            credentials: core.credentials,
+            identity: {
+              shopId: actor.tenantShopId,
+              installationGeneration: actor.installationGeneration,
+              authorizationGeneration: scope.authorizationGeneration,
+              authorizationEpoch: scope.authorizationEpoch,
+              externalInstallationId: actor.installationId,
+            },
+            async exchange(shopDomain) {
+              if (
+                shopDomain !== actor.shop ||
+                identity.staffId !== actor.staffId ||
+                identity.sessionId !== actor.sessionId
+              )
+                throw new Error('Offline identity changed');
+              const pair = await shopify.exchangeOffline(sessionToken, identity);
+              const observed = await shopify.readInstallation({ shop: shopDomain, accessToken: pair.accessToken });
+              if (
+                observed.shop !== actor.shop ||
+                observed.shopId !== actor.shopId ||
+                observed.installationId !== actor.installationId ||
+                JSON.stringify(canonicalAdminAccessScopes(observed.grantedScopes)) !==
+                  JSON.stringify(currentGrantScopes) ||
+                JSON.stringify(canonicalAdminAccessScopes((pair.scopes ?? '').split(',').filter(Boolean))) !==
+                  JSON.stringify(canonicalAdminAccessScopes(observed.grantedScopes))
+              )
+                throw new Error('Offline installation grant mismatch');
+              return pair;
+            },
+          });
+          diagnostic(
+            (
+              {
+                installed: 'OFFLINE_BOOTSTRAP_INSTALLED_SUCCEEDED',
+                existing: 'OFFLINE_BOOTSTRAP_EXISTING_SUCCEEDED',
+                busy: 'OFFLINE_BOOTSTRAP_BUSY',
+                unresolved: 'OFFLINE_BOOTSTRAP_UNRESOLVED',
+                inactive: 'OFFLINE_BOOTSTRAP_INACTIVE',
+                rejected: 'OFFLINE_BOOTSTRAP_REJECTED',
+              } as const
+            )[result],
+          );
+          if (result === 'unresolved' || result === 'rejected' || result === 'inactive')
+            throw new Error('Offline credential bootstrap unavailable');
+        }
       }
       return actor;
     },

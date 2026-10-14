@@ -1,7 +1,7 @@
 import { createHmac } from 'node:crypto';
 import { InvalidJwtError } from '@shopify/shopify-api';
 import { abstractFetch, setAbstractFetchFunc } from '@shopify/shopify-api/runtime';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   canonicalAdminAccessScopes,
   createAdminOnlineIdentity,
@@ -317,4 +317,194 @@ describe('production Shopify online staff adapter with synthetic transport', () 
       }),
     ).rejects.toMatchObject({ stage: 'INSTALLATION_PROVIDER_READ_FAILED' });
   });
+});
+
+describe('expiring offline acquisition on a verified embedded identity', () => {
+  it('uses the actual SDK exchange once, expiring=1, and preserves provider expiration', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-14T12:00:00Z'));
+    try {
+      const signed = token();
+      let calls = 0;
+      const provider = createAdminOnlineIdentity({
+        apiKey: key,
+        apiSecret: secret,
+        hostName: 'example.test',
+        fetchImpl: async (_url, init) => {
+          calls++;
+          const body = JSON.parse(String(init?.body));
+          expect(body.requested_token_type).toBe('urn:shopify:params:oauth:token-type:offline-access-token');
+          expect(body.expiring).toBe('1');
+          expect(body.subject_token).toBe(signed);
+          expect(init?.signal).toBeInstanceOf(AbortSignal);
+          await vi.advanceTimersByTimeAsync(100);
+          return Response.json({
+            access_token: 'synthetic-offline-access',
+            refresh_token: 'synthetic-offline-refresh',
+            expires_in: 3600,
+            refresh_token_expires_in: 86400,
+            scope: 'write_products',
+          });
+        },
+      });
+      const identity = await provider.verify(signed);
+      const pair = await provider.exchangeOffline(signed, identity);
+      expect(calls).toBe(1);
+      expect(pair.schemaVersion).toBe('m3-offline-credential-v1');
+      expect(pair.accessToken).toBe('synthetic-offline-access');
+      expect(pair.refreshToken).toBe('synthetic-offline-refresh');
+      expect(pair.accessExpiresAt).toEqual(new Date('2026-10-14T13:00:00Z'));
+      expect(pair.refreshExpiresAt).toEqual(new Date('2026-10-15T12:00:00Z'));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it('rejects a mismatched verified identity before HTTP', async () => {
+    let calls = 0;
+    const provider = createAdminOnlineIdentity({
+      apiKey: key,
+      apiSecret: secret,
+      hostName: 'example.test',
+      fetchImpl: async () => {
+        calls++;
+        throw Error('not expected');
+      },
+    });
+    const signed = token();
+    const identity = await provider.verify(signed);
+    await expect(provider.exchangeOffline(signed, { ...identity, shop: 'other.myshopify.com' })).rejects.toMatchObject({
+      name: 'OfflineAcquisitionRejectedError',
+    });
+    expect(calls).toBe(0);
+  });
+  it('does not retry, leak, or call a lost response a definite rejection', async () => {
+    let calls = 0;
+    const provider = createAdminOnlineIdentity({
+      apiKey: key,
+      apiSecret: secret,
+      hostName: 'example.test',
+      fetchImpl: async () => {
+        calls++;
+        throw Error('private body and token');
+      },
+    });
+    const signed = token();
+    const error = await provider.exchangeOffline(signed, await provider.verify(signed)).catch((e) => e);
+    expect(calls).toBe(1);
+    expect(String(error)).not.toContain('private');
+    expect(error.name).toBe('OfflineExchangeError');
+    expect(error).not.toHaveProperty('cause');
+  });
+  it('classifies only invalid_subject_token400 as definite provider rejection', async () => {
+    for (const [status, body, name] of [
+      [400, { error: 'invalid_subject_token' }, 'OfflineAcquisitionRejectedError'],
+      [500, { error: 'private' }, 'OfflineExchangeError'],
+      [200, { access_token: 'private' }, 'OfflineExchangeError'],
+    ] as const) {
+      let calls = 0;
+      const provider = createAdminOnlineIdentity({
+        apiKey: key,
+        apiSecret: secret,
+        hostName: 'example.test',
+        fetchImpl: async () => {
+          calls++;
+          return Response.json(body, { status });
+        },
+      });
+      const signed = token();
+      const error = await provider.exchangeOffline(signed, await provider.verify(signed)).catch((e) => e);
+      expect(error.name).toBe(name);
+      expect(calls).toBe(1);
+      expect(String(error)).not.toContain('private');
+    }
+  });
+});
+
+it('bounds offline parsing and cancels a stalled response without redispatch', async () => {
+  const signed = token();
+  let calls = 0,
+    cancelled = 0;
+  const provider = createAdminOnlineIdentity({
+    apiKey: key,
+    apiSecret: secret,
+    hostName: 'example.test',
+    fetchImpl: async () => {
+      calls++;
+      return new Response(
+        new ReadableStream({
+          start(c) {
+            c.enqueue(new TextEncoder().encode('{'));
+          },
+          cancel() {
+            cancelled++;
+          },
+        }),
+        { status: 200 },
+      );
+    },
+  });
+  const identity = await provider.verify(signed);
+  vi.useFakeTimers();
+  try {
+    const pending = provider.exchangeOffline(signed, identity).catch((e) => e);
+    await vi.advanceTimersByTimeAsync(10001);
+    const error = await pending;
+    expect(error.name).toBe('OfflineExchangeError');
+    expect(calls).toBe(1);
+    expect(cancelled).toBe(1);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+it('rejects an oversized offline success without exposing or installing its payload', async () => {
+  let calls = 0;
+  const provider = createAdminOnlineIdentity({
+    apiKey: key,
+    apiSecret: secret,
+    hostName: 'example.test',
+    fetchImpl: async () => {
+      calls++;
+      return new Response('private'.repeat(3000), { status: 200 });
+    },
+  });
+  const signed = token();
+  const error = await provider.exchangeOffline(signed, await provider.verify(signed)).catch((e) => e);
+  expect(error.name).toBe('OfflineExchangeError');
+  expect(String(error)).not.toContain('private');
+  expect(calls).toBe(1);
+});
+
+it('never forwards the offline access header when installation verification redirects', async () => {
+  const { createServer } = await import('node:http');
+  let received = 0;
+  const sink = createServer((_req, res) => {
+    received++;
+    res.end('{}');
+  });
+  const bind = (s) => new Promise((resolve) => s.listen(0, '127.0.0.1', resolve));
+  await bind(sink);
+  const sinkUrl = `http://127.0.0.1:${sink.address().port}/forbidden`;
+  const source = createServer((_req, res) => {
+    res.writeHead(302, { Location: sinkUrl });
+    res.end();
+  });
+  await bind(source);
+  try {
+    const url = `http://127.0.0.1:${source.address().port}/installation`;
+    const provider = createAdminOnlineIdentity({
+      apiKey: key,
+      apiSecret: secret,
+      hostName: 'example.test',
+      fetchImpl: async (target, init) => {
+        expect(new URL(String(target)).hostname).toBe(shop);
+        return fetch(url, init);
+      },
+    });
+    await expect(provider.readInstallation({ shop, accessToken: 'synthetic-offline-header' })).rejects.toMatchObject({
+      name: 'AdminOnlineIdentityError',
+    });
+    expect(received).toBe(0);
+  } finally {
+    await Promise.all([new Promise((resolve) => source.close(resolve)), new Promise((resolve) => sink.close(resolve))]);
+  }
 });

@@ -2,6 +2,11 @@
 import '@shopify/shopify-api/adapters/node';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import {
+  type ExpiringOfflineTokenPair,
+  OfflineAcquisitionRejectedError,
+  validateExpiringOfflineTokenPair,
+} from '@insignia/application';
+import {
   ApiVersion,
   AuthScopes,
   HttpResponseError,
@@ -126,6 +131,13 @@ function rejectedSessionStage(error: unknown, token: string): AdminOnlineIdentit
   return 'SESSION_TOKEN_REJECTED';
 }
 
+export class OfflineExchangeError extends Error {
+  constructor() {
+    super('Offline exchange unresolved');
+    this.name = 'OfflineExchangeError';
+  }
+}
+
 type OnlineSession = {
   isOnline: boolean;
   shop: string;
@@ -157,32 +169,33 @@ export function createAdminOnlineIdentity(input: {
     // Dedicated bounded diagnostics own logging; SDK messages/bodies are never logged.
     logger: { log: () => {} },
   });
+  const verify = async (token: string): Promise<VerifiedStaffIdentity> => {
+    if (!token || token.length > 8192) throw new AdminOnlineIdentityError('SESSION_TOKEN_REJECTED');
+    let payload: Awaited<ReturnType<typeof api.session.decodeSessionToken>>;
+    try {
+      payload = await api.session.decodeSessionToken(token);
+    } catch (error) {
+      throw new AdminOnlineIdentityError(rejectedSessionStage(error, token));
+    }
+    if (!Number.isFinite(payload.exp) || payload.exp * 1000 <= Date.now())
+      throw new AdminOnlineIdentityError('SESSION_TOKEN_TIME_REJECTED');
+    if (typeof payload.dest !== 'string' || !payload.dest.startsWith('https://'))
+      throw new AdminOnlineIdentityError('SESSION_IDENTITY_REJECTED');
+    const shop = payload.dest.slice(8);
+    if (
+      !shopDomain.test(shop) ||
+      payload.dest !== `https://${shop}` ||
+      payload.iss !== `https://${shop}/admin` ||
+      typeof payload.sub !== 'string' ||
+      !/^[1-9][0-9]*$/.test(payload.sub) ||
+      typeof payload.sid !== 'string' ||
+      payload.sid.length < 8
+    )
+      throw new AdminOnlineIdentityError('SESSION_IDENTITY_REJECTED');
+    return { shop, staffId: payload.sub, sessionId: payload.sid, expiresAtMs: payload.exp * 1000 };
+  };
   return {
-    async verify(token: string): Promise<VerifiedStaffIdentity> {
-      if (!token || token.length > 8192) throw new AdminOnlineIdentityError('SESSION_TOKEN_REJECTED');
-      let payload: Awaited<ReturnType<typeof api.session.decodeSessionToken>>;
-      try {
-        payload = await api.session.decodeSessionToken(token);
-      } catch (error) {
-        throw new AdminOnlineIdentityError(rejectedSessionStage(error, token));
-      }
-      if (!Number.isFinite(payload.exp) || payload.exp * 1000 <= Date.now())
-        throw new AdminOnlineIdentityError('SESSION_TOKEN_TIME_REJECTED');
-      if (typeof payload.dest !== 'string' || !payload.dest.startsWith('https://'))
-        throw new AdminOnlineIdentityError('SESSION_IDENTITY_REJECTED');
-      const shop = payload.dest.slice(8);
-      if (
-        !shopDomain.test(shop) ||
-        payload.dest !== `https://${shop}` ||
-        payload.iss !== `https://${shop}/admin` ||
-        typeof payload.sub !== 'string' ||
-        !/^[1-9][0-9]*$/.test(payload.sub) ||
-        typeof payload.sid !== 'string' ||
-        payload.sid.length < 8
-      )
-        throw new AdminOnlineIdentityError('SESSION_IDENTITY_REJECTED');
-      return { shop, staffId: payload.sub, sessionId: payload.sid, expiresAtMs: payload.exp * 1000 };
-    },
+    verify,
     async exchangeOnline(token: string, identity: VerifiedStaffIdentity): Promise<OnlineStaffGrant> {
       if (!shopDomain.test(identity.shop)) throw new Error('Invalid Shopify shop');
       let session: OnlineSession;
@@ -230,7 +243,97 @@ export function createAdminOnlineIdentity(input: {
         userScopes: scopes(session.onlineAccessInfo?.associated_user_scope),
       };
     },
-    async readInstallation(grant: OnlineStaffGrant): Promise<AdminInstallationRead> {
+    async exchangeOffline(token: string, identity: VerifiedStaffIdentity): Promise<ExpiringOfflineTokenPair> {
+      try {
+        const current = await verify(token);
+        if (
+          current.shop !== identity.shop ||
+          current.staffId !== identity.staffId ||
+          current.sessionId !== identity.sessionId ||
+          current.expiresAtMs !== identity.expiresAtMs
+        )
+          throw new Error('Identity mismatch');
+      } catch {
+        throw new OfflineAcquisitionRejectedError();
+      }
+      const startedAt = Date.now();
+      let offlineReader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+      try {
+        const session = await withAdminDeadline(
+          (signal) =>
+            onlineExchangeSignal.run(signal, () =>
+              onlineExchangeTransport.run(
+                async (url, init) => {
+                  const response = await (input.fetchImpl ?? nodeSdkFetch)(url, { ...init, redirect: 'error' });
+                  const reader = response.body?.getReader();
+                  if (!reader) throw new Error('Offline body unavailable');
+                  offlineReader = reader;
+                  if (init?.signal?.aborted) {
+                    await reader.cancel().catch(() => {});
+                    throw new Error('Offline exchange aborted');
+                  }
+                  init?.signal?.addEventListener(
+                    'abort',
+                    () => {
+                      void reader.cancel().catch(() => {});
+                    },
+                    { once: true },
+                  );
+                  const chunks: Uint8Array[] = [];
+                  let length = 0;
+                  try {
+                    for (;;) {
+                      const next = await reader.read();
+                      if (next.done) break;
+                      length += next.value.byteLength;
+                      if (length > 16384) {
+                        await reader.cancel().catch(() => {});
+                        throw new Error('Offline response too large');
+                      }
+                      chunks.push(next.value);
+                    }
+                  } finally {
+                    reader.releaseLock();
+                  }
+                  return new Response(Buffer.concat(chunks, length), {
+                    status: response.status,
+                    headers: response.headers,
+                  });
+                },
+                () =>
+                  api.auth.tokenExchange({
+                    shop: identity.shop,
+                    sessionToken: token,
+                    requestedTokenType: RequestedTokenType.OfflineAccessToken,
+                    expiring: true,
+                  }),
+              ),
+            ),
+          'Offline token exchange',
+          () => {
+            void offlineReader?.cancel().catch(() => {});
+          },
+        );
+        const elapsed = Math.max(0, Date.now() - startedAt);
+        if (session.session.isOnline || session.session.shop !== identity.shop)
+          throw new Error('Offline identity mismatch');
+        const acquired = session.session;
+        const pair: ExpiringOfflineTokenPair = {
+          schemaVersion: 'm3-offline-credential-v1',
+          accessToken: acquired.accessToken ?? '',
+          refreshToken: acquired.refreshToken ?? '',
+          accessExpiresAt: new Date((acquired.expires?.getTime() ?? NaN) - elapsed),
+          refreshExpiresAt: new Date((acquired.refreshTokenExpires?.getTime() ?? NaN) - elapsed),
+          scopes: acquired.scope ?? null,
+        };
+        validateExpiringOfflineTokenPair(pair, new Date());
+        return pair;
+      } catch (error) {
+        if (refreshableExchangeError(error)) throw new OfflineAcquisitionRejectedError();
+        throw new OfflineExchangeError();
+      }
+    },
+    async readInstallation(grant: Pick<OnlineStaffGrant, 'shop' | 'accessToken'>): Promise<AdminInstallationRead> {
       if (!shopDomain.test(grant.shop) || !grant.accessToken) throw new Error('Invalid online grant');
       let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
       return withAdminDeadline(
@@ -239,6 +342,7 @@ export function createAdminOnlineIdentity(input: {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': grant.accessToken },
             body: JSON.stringify({ query: ADMIN_STAFF_INSTALLATION_QUERY }),
+            redirect: 'error',
             signal,
           });
           if (!response.ok) throw new Error('Installation read denied');

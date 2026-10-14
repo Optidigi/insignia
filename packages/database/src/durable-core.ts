@@ -35,6 +35,9 @@ import { PgProductionPublication, type ProductionPublicationRemote } from './rep
 import { createPurchaseRepository, type PurchaseRepository } from './repositories/purchase.js';
 import { PgQuoteRenewalRepository } from './repositories/quote-renewal.js';
 import {
+  type AcquisitionAttempt,
+  type AcquisitionIdentity,
+  type AcquisitionReservation,
   type ClaimIdentity,
   type CredentialAcquire,
   type CredentialIdentity,
@@ -261,6 +264,12 @@ export interface DurableCore {
     >;
   };
   readonly credentials: {
+    reserveAcquisition(input: AcquisitionIdentity & { claimLeaseMs: number }): Promise<AcquisitionReservation>;
+    dispatchAcquisition(input: AcquisitionAttempt): Promise<boolean>;
+    completeAcquisition(
+      input: AcquisitionAttempt & { pair: ExpiringOfflinePair },
+    ): Promise<'installed' | 'stale' | 'inactive'>;
+    rejectAcquisition(input: AcquisitionAttempt): Promise<boolean>;
     install(input: CredentialIdentity & { pair: ExpiringOfflinePair }): Promise<string>;
     acquire(
       input: CredentialIdentity & { minimumRemainingMs: number; claimLeaseMs: number },
