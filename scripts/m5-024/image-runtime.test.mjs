@@ -18,7 +18,7 @@ import {
 
 const root = resolve(import.meta.dirname, '../..');
 const postgresImage =
-  'public.ecr.aws/docker/library/postgres@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336';
+  'docker.io/library/postgres@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336';
 const health = `/usr/local/bin/node -e "fetch('http://127.0.0.1:4301/ready').then(r=>process.exit(r.status===200?0:1)).catch(()=>process.exit(1))"`;
 
 // This script is sent over Docker exec stdin; no executable mount or image modification.
