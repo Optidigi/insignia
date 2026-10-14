@@ -71,6 +71,7 @@ export function createBuyerServices(input: {
   catalog(
     scope: { shopId: string; installationGeneration: string },
     productId: string,
+    phase?: 'final',
   ): Promise<{
     variants: { id: string; label: string; available: boolean }[];
     imageUrls: Record<string, string>;
@@ -98,12 +99,26 @@ export function createBuyerServices(input: {
   });
   function checkedPorts(scope: BuyerScope, groups: BuyerDesiredGroup[]): QuoteAuthorityPorts {
     const ports = input.ports({ ...scope, kind: 'guest' });
+    let finalCheck = false;
     return {
       ...ports,
+      store: {
+        ...ports.store,
+        findCompleted: (target) => ports.store.findCompleted(target),
+        accept: (target, commit) =>
+          ports.store.accept(target, async () => {
+            finalCheck = true;
+            try {
+              return await commit();
+            } finally {
+              finalCheck = false;
+            }
+          }),
+      },
       readiness: {
         async assertReady(target) {
           for (const productId of new Set(groups.map((group) => group.productId))) {
-            const current = await input.catalog(scope, productId);
+            const current = await input.catalog(scope, productId, finalCheck ? 'final' : undefined);
             const available = new Map(current.variants.map((variant) => [variant.id, variant.available]));
             if (
               current.variants.length !== available.size ||

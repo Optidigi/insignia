@@ -4,6 +4,7 @@ import { Counter, Gauge, Registry } from 'prom-client';
 
 const EVENTS = new Set([
   'admin_authentication',
+  'buyer_request_failed',
   'worker_started',
   'worker_stopped',
   'worker_start_failed',
@@ -17,6 +18,7 @@ const EVENTS = new Set([
 
 export type RuntimeEvent =
   | 'admin_authentication'
+  | 'buyer_request_failed'
   | 'worker_started'
   | 'worker_stopped'
   | 'worker_start_failed'
@@ -67,7 +69,33 @@ const ADMIN_AUTH_STAGES = [
 ] as const;
 export type AdminAuthenticationStage = (typeof ADMIN_AUTH_STAGES)[number];
 
+const BUYER_STAGES = [
+  'config',
+  'sessions',
+  'quote-proposals',
+  'quotes',
+  'designs',
+  'cart-applications',
+  'cart-state',
+  'request',
+] as const;
+const BUYER_FAILURES = [
+  'DatabaseLockTimeout',
+  'DatabaseQueryTimeout',
+  'DatabasePermissionDenied',
+  'ProviderReadUnavailable',
+  'ReleaseEvidenceUnavailable',
+  'TypeError',
+  'UnexpectedFailure',
+] as const;
+export type BuyerFailureDiagnostic = {
+  correlationId: string;
+  buyerStage: (typeof BUYER_STAGES)[number];
+  errorClass: (typeof BUYER_FAILURES)[number];
+};
+
 export interface RuntimeLogDetails {
+  buyerStage?: BuyerFailureDiagnostic['buyerStage'];
   authStage?: AdminAuthenticationStage;
   correlationId?: string;
   inboxId?: string;
@@ -112,6 +140,17 @@ function safeDetails(input: RuntimeLogDetails): RuntimeLogDetails {
 }
 
 function eventDetails(event: RuntimeEvent, input: RuntimeLogDetails) {
+  if (event === 'buyer_request_failed') {
+    if (
+      !input.buyerStage ||
+      !BUYER_STAGES.includes(input.buyerStage) ||
+      !BUYER_FAILURES.includes(input.errorClass as BuyerFailureDiagnostic['errorClass']) ||
+      typeof input.correlationId !== 'string' ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input.correlationId)
+    )
+      throw new Error('Invalid buyer failure diagnostic');
+    return { buyerStage: input.buyerStage, correlationId: input.correlationId, errorClass: input.errorClass };
+  }
   if (event !== 'admin_authentication') return safeDetails(input);
   if (
     !ADMIN_AUTH_STAGES.includes(input.authStage!) ||

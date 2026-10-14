@@ -237,6 +237,36 @@ export async function createBuyerBootstrap(
       ring,
       entitlementPolicy,
       credentials,
+      passiveCredentials: {
+        async acquire(scope) {
+          const current = await ownedCore.tenants.getActiveProviderScope(scope);
+          if (!current) return { kind: 'inactive' };
+          const pair = await ownedCore.credentials.readUsable({ ...scope, minimumRemainingMs: 30000 });
+          return pair ? { ...pair, shopDomain: current.shopDomain } : { kind: 'temporarily_unavailable' };
+        },
+      },
+      passiveArtifactPorts: {
+        expectedBuild: {
+          read: async (scope) =>
+            (
+              await ownedCore.trustedReleaseRecords.read({
+                scope,
+                expectedActiveAppVersionRef: releaseProfile.activeVersionRef,
+                now: clock(),
+              })
+            )?.expectedBuild ?? null,
+        },
+        trustedEvidence: {
+          read: async (scope) =>
+            (
+              await ownedCore.trustedReleaseRecords.read({
+                scope,
+                expectedActiveAppVersionRef: releaseProfile.activeVersionRef,
+                now: clock(),
+              })
+            )?.record.attestation ?? null,
+        },
+      },
       readSubscription: (target) => partner.read(target),
       expectedFunctions: functions,
       maxObservationAgeMs: 30000,
