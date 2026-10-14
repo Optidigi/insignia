@@ -10,11 +10,34 @@ import { Pool } from 'pg';
 import { expect, test } from 'vitest';
 import { OWNER_APP_CLIENT_ID } from '../../../scripts/m5-owner-lifecycle/private-operator.mjs';
 import { frozenSchema20Fixture } from '../../../scripts/m5-runtime/frozen-schema20-fixture.mjs';
+import { sealCredential } from '../src/credentials/envelope.js';
 import { createDurableCore } from '../src/index.js';
 import { applyOwnerLifecycleDecision, type OwnerLifecycleDecision } from '../src/repositories/owner-lifecycle.js';
 
 const hash = (b: Buffer) => createHash('sha256').update(b).digest('hex');
 const domain = 'stitchs-vat-verification-20261004.myshopify.com';
+/** Historical schema20 credential state is test setup, not current acquisition.
+ * Keep the frozen migrations/operator inputs exact; seed the original v1 encrypted
+ * row directly so today's schema32 installer is never used as a compatibility path. */
+async function seedHistoricalCredential(pool: Pool, shopId: string, generation: string) {
+  const keys = { currentKeyId: 'synthetic-k1', keys: { 'synthetic-k1': Buffer.alloc(32, 41) } };
+  await pool.query(
+    `INSERT INTO shop_credentials
+    (shop_id,installation_generation,schema_version,credential_version,state,
+     access_expires_at,refresh_expires_at,scopes,wrapping_key_id,access_envelope,refresh_envelope)
+    VALUES ($1,$2,1,1,'active',$3,$4,'read_products',$5,$6::jsonb,$7::jsonb)`,
+    [
+      shopId,
+      generation,
+      new Date(Date.now() + 60000),
+      new Date(Date.now() + 86400000),
+      keys.currentKeyId,
+      JSON.stringify(sealCredential(keys, shopId, generation, '1', 'access', `synthetic-g${generation}-access`)),
+      JSON.stringify(sealCredential(keys, shopId, generation, '1', 'refresh', `synthetic-g${generation}-refresh`)),
+    ],
+  );
+}
+
 test.skipIf(!process.env.M5_OWNER_LIFECYCLE_TEST_URL)(
   'explicit owner action is independent from generic metadata and fences old generation and exact privacy cutoff',
   async () => {
@@ -47,6 +70,10 @@ test.skipIf(!process.env.M5_OWNER_LIFECYCLE_TEST_URL)(
       pool = new Pool({ connectionString: url.href });
       expect((await pool.query('SELECT count(*)::integer AS n FROM schema_migrations')).rows[0].n).toBe(20);
       expect((await pool.query("SELECT to_regclass('public.artwork_assets') AS artwork")).rows[0].artwork).toBeNull();
+      expect(
+        (await pool.query("SELECT to_regclass('public.shop_credential_acquisitions') AS acquisition")).rows[0]
+          .acquisition,
+      ).toBeNull();
       core = createDurableCore(new Pool({ connectionString: url.href }), {
         credentialKeys: { currentKeyId: 'synthetic-k1', keys: { 'synthetic-k1': Buffer.alloc(32, 41) } },
       });
@@ -254,17 +281,7 @@ test.skipIf(!process.env.M5_OWNER_LIFECYCLE_TEST_URL)(
         native: absent,
       };
       delete deactivation.privacy;
-      await core.credentials.install({
-        shopId: shop,
-        installationGeneration: '1',
-        pair: {
-          accessToken: 'synthetic-g1-access',
-          refreshToken: 'synthetic-g1-refresh',
-          accessExpiresAt: new Date(Date.now() + 60000),
-          refreshExpiresAt: new Date(Date.now() + 86400000),
-          scopes: 'read_products',
-        },
-      });
+      await seedHistoricalCredential(pool, shop, '1');
       const generic = await core.webhooks.receive({
         shopDomain: domain,
         topic: 'app/uninstalled',
@@ -331,17 +348,7 @@ test.skipIf(!process.env.M5_OWNER_LIFECYCLE_TEST_URL)(
       await core.transactions.run((tx) =>
         activeCore.tenants.startInstallation(tx, shop, 'gid://shopify/AppInstallation/789'),
       );
-      await core.credentials.install({
-        shopId: shop,
-        installationGeneration: '2',
-        pair: {
-          accessToken: 'synthetic-g2-access',
-          refreshToken: 'synthetic-g2-refresh',
-          accessExpiresAt: new Date(Date.now() + 60000),
-          refreshExpiresAt: new Date(Date.now() + 86400000),
-          scopes: 'read_products',
-        },
-      });
+      await seedHistoricalCredential(pool, shop, '2');
       const replay = await core.webhooks.receive({
         shopDomain: domain,
         topic: 'app/uninstalled',
@@ -465,6 +472,10 @@ test.skipIf(!process.env.M5_OWNER_LIFECYCLE_TEST_URL)(
       pool = new Pool({ connectionString: url.href });
       expect((await pool.query('SELECT count(*)::integer AS n FROM schema_migrations')).rows[0].n).toBe(20);
       expect((await pool.query("SELECT to_regclass('public.artwork_assets') AS artwork")).rows[0].artwork).toBeNull();
+      expect(
+        (await pool.query("SELECT to_regclass('public.shop_credential_acquisitions') AS acquisition")).rows[0]
+          .acquisition,
+      ).toBeNull();
       core = createDurableCore(new Pool({ connectionString: url.href }), {
         credentialKeys: { currentKeyId: 'synthetic-k1', keys: { 'synthetic-k1': Buffer.alloc(32, 41) } },
       });
