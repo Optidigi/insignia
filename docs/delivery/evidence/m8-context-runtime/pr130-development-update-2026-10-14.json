@@ -1,0 +1,38 @@
+{
+  "version": "m8-development-update-v1",
+  "web": {
+    "classification": "EXACT_WEB_BUYER_COMPOSITION_PASS",
+    "priorContainer": "8d809c9f85b2e859e7e03c30b22b85a7847dc0fab2fc50932084fb3d46dab5a7",
+    "webContainer": "341b4bfe5de91b755a652786e5f75e6c3df2efe53f962aec40cfccf839a4cce8",
+    "webImage": "sha256:f130ca96fa2ee3aa237d1a59daf4ca8cd28be601d11472351c16877c35991b46",
+    "databaseContainer": "19419eff11ef9c0b43e484f91ad97ba606c817df6604e7a6d08c5513473285a1",
+    "databaseImage": "sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d",
+    "profile": "m8-cookie-91b35ab",
+    "healthy": true,
+    "othersPreserved": true,
+    "mountsSecurityEnvironmentPreserved": true,
+    "inspectorReady": true,
+    "buyerEnabled": true,
+    "workerAdmissionEnabled": false,
+    "retryAuthorized": false
+  },
+  "verifier": {
+    "classification": "EXACT_VERIFIER_NEW_WEB_BINDING_STARTUP_PASS_ONLY",
+    "state": {
+      "ActiveState": "active",
+      "InvocationID": "4caac767b7e3499e977d2bcfcaa86d63",
+      "MainPID": "636331"
+    },
+    "head": "08c3a578061c5561ce306f6e0f1efda8f8d11469",
+    "tree": "4cb5661673cb480519f3c010233c72300c71f4c4",
+    "qualifiedInputFiles": 3032,
+    "manifestSha256": "55bf75b4488ac31416eece3ea49527cf57e1f781e34cf019eca74234d9be5968",
+    "startupProviderRequests": 0,
+    "purchaseAdmissionEnabled": false
+  },
+  "schemaVersion": 32,
+  "applicationVersionChanged": false,
+  "providerScopeChanged": false,
+  "purchaseAdmissionEnabled": false,
+  "nativeAcceptance": "UNDER_ACTUAL_QUALIFICATION"
+}
