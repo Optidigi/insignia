@@ -1,0 +1,38 @@
+{
+  "fixture": {
+    "id": "gid://shopify/ProductVariant/54211066986779",
+    "inventoryQuantity": 1,
+    "inventoryPolicy": "DENY",
+    "inventoryItem": {
+      "tracked": true
+    },
+    "product": {
+      "id": "gid://shopify/Product/10519322493211",
+      "status": "ACTIVE",
+      "tags": [
+        "insignia-m5-acceptance-1f443da8-75c4-44d1-99be-27c397e10c26"
+      ]
+    }
+  },
+  "classification": "OWNED_FIXTURE_ENFORCEMENT_UNIT_READ",
+  "identity": {
+    "current_user": "insignia_worker",
+    "session_user": "insignia_worker",
+    "current_database": "insignia_rewrite",
+    "readonly": "on",
+    "rolsuper": false,
+    "rolcreatedb": false,
+    "rolcreaterole": false,
+    "rolbypassrls": false
+  },
+  "keyId": "m5-runtime-20261011",
+  "shopDomain": "insignia-rewrite-dev.myshopify.com",
+  "passiveCredentialUsable": true,
+  "accessExpiresAt": "2026-10-14T20:53:41.331Z",
+  "databaseWrites": 0,
+  "providerCalls": 1,
+  "executionContainer": "insignia-rewrite-m5-019-web",
+  "compiledReaderSource": "08c3a578061c5561ce306f6e0f1efda8f8d11469",
+  "databaseConnectionSource": "EXISTING_PRIVATE_WORKER_PROFILE",
+  "runningWorkerUpdated": false
+}

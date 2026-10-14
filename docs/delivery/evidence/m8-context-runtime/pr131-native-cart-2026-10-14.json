@@ -1,0 +1,67 @@
+{
+  "classification": "NATIVE_ACCEPTANCE_AND_REAL_CART_PASS",
+  "compiledWebSource": "08c3a578061c5561ce306f6e0f1efda8f8d11469",
+  "grantSource": "64994b124b5feab9c3602139d6bb35a0dd8a7a74",
+  "browserProbeLimitation": "Final visible-text locator resolved two insignia-buyer elements after successful application; no result replay. Independent database and fresh cart GET reconciled settlement.",
+  "reconciliation": {
+    "classification": "PR131_PROBE_READ_ONLY_RECONCILIATION",
+    "rows": [
+      {
+        "key": "m7:d8c8f50f-256d-4073-822b-9deb22a37cb1:d4569e6f-b0c2-4651-a635-aad141d039df",
+        "kind": "command",
+        "createdAt": "2026-10-14T19:54:02.066+00:00",
+        "commandKind": "accept",
+        "applicationId": "cf5c75ce-ef1b-441c-9d33-27904d190590"
+      },
+      {
+        "id": "cf5c75ce-ef1b-441c-9d33-27904d190590",
+        "kind": "application",
+        "status": "APPLIED",
+        "quoteId": "6d736006-db28-4eee-9d90-383a48d24a13",
+        "createdAt": "2026-10-14T19:54:07.847+00:00"
+      },
+      {
+        "id": "d8c8f50f-256d-4073-822b-9deb22a37cb1",
+        "kind": "proposal",
+        "createdAt": "2026-10-14T19:54:01.218+00:00",
+        "expiresAt": "2026-10-14T19:59:01.218+00:00"
+      },
+      {
+        "id": "7cb3c29b-a525-4e07-8631-bc8d8255f63d",
+        "kind": "artwork",
+        "state": "USABLE",
+        "expiresAt": "2026-10-21T19:53:52.426+00:00",
+        "collectedAt": "2026-10-14T19:53:52.426+00:00"
+      }
+    ],
+    "boundedDiagnostics": [],
+    "retryInvocations": 0
+  },
+  "shopifyCart": {
+    "classification": "NATIVE_CART_INDEPENDENT_READ",
+    "observedAt": "2026-10-14T19:55:25.109Z",
+    "cart": {
+      "currency": "USD",
+      "totalPrice": 1500,
+      "itemCount": 1,
+      "sharedCartEnvelopePresent": true,
+      "lines": [
+        {
+          "variantId": 54211066986779,
+          "quantity": 1,
+          "originalPrice": 1500,
+          "finalPrice": 1500,
+          "originalLinePrice": 1500,
+          "finalLinePrice": 1500,
+          "memberCarrierPresent": true,
+          "sharedEnvelopeOnLine": true
+        }
+      ]
+    },
+    "mutations": 0
+  },
+  "lineEnvelopeMeaning": "Retained on line for original-order transport; shared cart attribute also present for Functions.",
+  "acceptanceRetries": 0,
+  "purchaseAdmissionEnabled": false,
+  "merchantOriginalRetrievalQualified": false
+}

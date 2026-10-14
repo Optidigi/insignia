@@ -1,0 +1,27 @@
+{
+  "classification": "NATIVE_EXISTING_CART_REPAIR_UI_OBSERVATION",
+  "before": {
+    "currency": "USD",
+    "totalMinor": 0,
+    "sharedEnvelopePresent": true,
+    "otherAttributes": [],
+    "items": [
+      {
+        "variant": 54211066986779,
+        "quantity": 1,
+        "owned": true
+      }
+    ]
+  },
+  "after": {
+    "currency": "USD",
+    "totalMinor": 0,
+    "sharedEnvelopePresent": false,
+    "otherAttributes": [],
+    "items": []
+  },
+  "pass": true,
+  "manualJournalReset": false,
+  "clickInvocations": 1,
+  "retryInvocations": 0
+}

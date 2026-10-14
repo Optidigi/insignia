@@ -16,8 +16,37 @@ export type NativePurchaseQualification = Readonly<{
   activeVersionRef: string;
 }>;
 
-/** Native creator/representative-path proof is still missing. */
+/** No unscoped default; the production entrypoint supplies the observed origin explicitly. */
 export const nativePurchaseQualification: NativePurchaseQualification | null = null;
+
+/** Bounded rewrite-dev qualification from the independently read native test order
+ * and altered-member checkout rejection. This asserts no historical localization
+ * or Function execution. Server app identity still needs independent release and
+ * current Function ownership checks on every admission. */
+export function resolveNativePurchaseQualification(input: {
+  appId: string;
+  appClientId: string;
+  releaseProfile?: RuntimeReleaseProfileName;
+}): NativePurchaseQualification | null {
+  const profile = resolveRuntimeReleaseProfile(input.releaseProfile);
+  if (
+    profile.name !== 'm8-cookie-91b35ab' ||
+    !/^[1-9][0-9]{0,19}$/.test(input.appId) ||
+    !/^[A-Za-z0-9_-]{1,128}$/.test(input.appClientId)
+  )
+    return null;
+  return Object.freeze({
+    origin: Object.freeze({
+      shopId: 'db771bea-c585-4954-9f88-70771c9a0c89',
+      installationGeneration: '1',
+      creatorAppId: 'gid://shopify/App/580111',
+      supportedFrom: '2026-10-14T20:03:04Z',
+    }),
+    appId: input.appId,
+    appClientId: input.appClientId,
+    activeVersionRef: profile.activeVersionRef,
+  });
+}
 
 export function createProductionPurchaseAdmission(input: {
   core: Pick<DurableCore, 'tenants' | 'trustedReleaseRecords'>;
