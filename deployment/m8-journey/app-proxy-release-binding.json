@@ -1,0 +1,19 @@
+{
+  "versionId": "1166090010625",
+  "versionTag": "m8-app-proxy-3d2a02e",
+  "versionIds": [
+    "1166090010625",
+    "1165513097217",
+    "1163229200385",
+    "1162611916801",
+    "1158986629121",
+    "1158837927937",
+    "1153019904001",
+    "1152880803841",
+    "1146748534785"
+  ],
+  "moduleHash": "00c5fec0329556eb1809d6f84de3c6cfe31fbfd7f5b004b56aae54e60e7a9652",
+  "nativeObservation": "EXACT_INACTIVE_CANDIDATE_CONFIG_INVENTORY_PASS",
+  "observedAt": "2026-10-13T23:47:34.896Z",
+  "note": "Closed expected target only. Candidate observed inactive; release, write_app_proxy installation grant, fresh independent evidence and native purchase admission are not established by this profile."
+}

@@ -70,7 +70,7 @@ function managementOpening(value, profile) {
   assert.equal(modules.appClientId, APP);
   assert.equal(modules.versionId, profile.versionId);
   assert.equal(modules.versionTag, profile.versionTag);
-  assert.ok(Array.isArray(modules.modules) && modules.modules.length === 6);
+  assert.ok(Array.isArray(modules.modules) && modules.modules.length === profile.modules.length);
   assert.deepEqual(
     [...modules.modules].sort((a, b) => (a.handle < b.handle ? -1 : a.handle > b.handle ? 1 : 0)),
     profile.modules,

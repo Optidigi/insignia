@@ -1,0 +1,130 @@
+{
+  "classification": "EXACT_INACTIVE_CANDIDATE_CONFIG_INVENTORY_PASS",
+  "observedAt": "2026-10-13T23:47:34.896Z",
+  "candidate": {
+    "versionId": "gid://shopify/Version/1166090010625",
+    "versionTag": "m8-app-proxy-3d2a02e",
+    "status": "inactive"
+  },
+  "active": [
+    {
+      "versionId": "gid://shopify/Version/1165513097217",
+      "versionTag": "m8-read-orders-617057f",
+      "status": "active"
+    }
+  ],
+  "versions": [
+    {
+      "versionId": "gid://shopify/Version/1166090010625",
+      "versionTag": "m8-app-proxy-3d2a02e",
+      "status": "inactive"
+    },
+    {
+      "versionId": "gid://shopify/Version/1165513097217",
+      "versionTag": "m8-read-orders-617057f",
+      "status": "active"
+    },
+    {
+      "versionId": "gid://shopify/Version/1163229200385",
+      "versionTag": "m5-functions-9c2e56b42fbf",
+      "status": "inactive"
+    },
+    {
+      "versionId": "gid://shopify/Version/1162611916801",
+      "versionTag": "m5-runtime-b673985e1e38",
+      "status": "inactive"
+    },
+    {
+      "versionId": "gid://shopify/Version/1158986629121",
+      "versionTag": "m5-019r-9b94149272d1",
+      "status": "inactive"
+    },
+    {
+      "versionId": "gid://shopify/Version/1158837927937",
+      "versionTag": "m5-019-a9717e1265ef",
+      "status": "inactive"
+    },
+    {
+      "versionId": "gid://shopify/Version/1153019904001",
+      "versionTag": "insignia-3",
+      "status": "inactive"
+    },
+    {
+      "versionId": "gid://shopify/Version/1152880803841",
+      "versionTag": "insignia-2",
+      "status": "inactive"
+    },
+    {
+      "versionId": "gid://shopify/Version/1146748534785",
+      "versionTag": "insignia-1",
+      "status": "inactive"
+    }
+  ],
+  "inventoryExact": true,
+  "inactiveOnly": true,
+  "moduleCount": 7,
+  "modulesSha256": "00c5fec0329556eb1809d6f84de3c6cfe31fbfd7f5b004b56aae54e60e7a9652",
+  "expectedExistingModulesSha256": "3cbc80d37a1acda76b880d2ce8bbfcf08871c441409decd14a2ef71808fb82ea",
+  "moduleDelta": [
+    {
+      "handle": "app_access",
+      "matchesExpected": true
+    },
+    {
+      "handle": "app_home",
+      "matchesExpected": true
+    },
+    {
+      "handle": "app_proxy",
+      "matchesExpected": "NEW_EXACT_AUTHORIZED_PROXY"
+    },
+    {
+      "handle": "branding",
+      "matchesExpected": true
+    },
+    {
+      "handle": "insignia-experimental-v2-transform",
+      "matchesExpected": true
+    },
+    {
+      "handle": "insignia-experimental-v2-validation",
+      "matchesExpected": true
+    },
+    {
+      "handle": "webhooks",
+      "matchesExpected": true
+    }
+  ],
+  "appId": "429028933633",
+  "appClientId": "1443cf6d03d39edae7c101a943c5c684",
+  "managementReads": 4,
+  "appProxyPresent": true,
+  "releaseInvocations": 0,
+  "creation": {
+    "exitCode": 0,
+    "stage": "CreateAppVersion",
+    "stats": {
+      "forwarded": 2,
+      "blocked": 0,
+      "uploadForwarded": 1,
+      "uploadBlocked": 0
+    },
+    "inputsUnchanged": true,
+    "releaseInvocations": 0,
+    "classification": "CLI_ACK_REQUIRES_INDEPENDENT_READBACK"
+  },
+  "launcherSha256": "03700f90506a793f0262834830260e4143e839c53e794e146cde99df31a9b725",
+  "guardSha256": "da74bf54a6f555ad9de7af9462811dbc63659b5dccdac3c5bec1d395280d1aef",
+  "independentReviews": {
+    "correctness": "CLEAR exact launcher/guard/package, source only",
+    "security": "CLEAR after upload-helper and singleton corrections, source only"
+  },
+  "transportQualification": {
+    "tests": 13,
+    "result": "PASS",
+    "actualPinnedSDKAndUploadHelper": true,
+    "unguardedRetryControls": "RED reproduced 500 and redirect second requests; original failures retained"
+  },
+  "limits": "Inactive creation acknowledged once and independently reconciled; zero release calls. Current old profile closed inventory is stale after this additive inactive version and fails closed; new runtime/verifier profile must integrate before release. Existing buyer/admission remain disabled. No consent, native signed forwarding, checkout or purchase acceptance inferred.",
+  "localPreDispatchFailure": "First shell wrapper could not locate pinned Node in neutral subtree. Assertion before launcher/log creation/auth/network; corrected to verified local Node24.21.0. No retry of an external effect."
+}

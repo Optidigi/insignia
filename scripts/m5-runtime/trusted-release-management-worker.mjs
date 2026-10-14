@@ -72,7 +72,7 @@ export async function runManagementReads({
   const observedAt = now();
   assert.equal(version.uuid, `gid://shopify/Version/${VERSION}`);
   assert.equal(version.versionTag, TAG);
-  assert.ok(Array.isArray(version.appModuleVersions) && version.appModuleVersions.length === 6);
+  assert.ok(Array.isArray(version.appModuleVersions) && version.appModuleVersions.length === profile.modules.length);
   const modules = version.appModuleVersions.map((m) => ({
     registrationId: m.registrationId,
     registrationUuid: m.registrationUuid,
