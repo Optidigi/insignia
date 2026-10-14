@@ -38,6 +38,14 @@ function fixture() {
     releaseProfile: 'm8-app-proxy-3d2a02e',
     clock: () => new Date(f.time),
     core: {
+      credentials: {
+        metadata: async () => ({
+          shop_id: target.shopId,
+          installation_generation: '1',
+          state: 'active',
+          access_expires_at: new Date(f.expires),
+        }),
+      },
       tenants: {
         getActiveAuthorizationScope: async () => ({
           ...target,
@@ -60,14 +68,6 @@ function fixture() {
           return f.evidence;
         },
       },
-    },
-    credentials: {
-      acquire: async () => ({
-        kind: 'usable',
-        shopDomain: 'synthetic.myshopify.com',
-        accessToken: 'SYNTHETIC_NOT_TRANSMITTED',
-        accessExpiresAt: new Date(f.expires),
-      }),
     },
     collector: {
       collect: async (q) => {
@@ -158,4 +158,38 @@ test('concurrent preparation for the same bound installation shares one collecti
   assert.equal(f.collected.length, 1);
   finish();
   await Promise.all([a, b]);
+});
+
+test('stalled preparation reads and collection fail within budget without starting later effects', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  for (const held of ['identity', 'metadata', 'evidence', 'collector', 'short_expiry']) {
+    const f = fixture();
+    let finish;
+    const wait = () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      });
+    if (held === 'identity') f.input.core.tenants.getActiveAuthorizationScope = wait;
+    else if (held === 'metadata') f.input.core.credentials.metadata = wait;
+    else if (held === 'collector') f.input.collector.collect = wait;
+    else f.input.core.trustedReleaseRecords.read = wait;
+    if (held === 'short_expiry') f.expires = start + 35000;
+    let settled = false;
+    const outcome = createPurchaseReleasePreparation(f.input)(target).then(
+      () => {
+        settled = 'accepted';
+      },
+      () => {
+        settled = 'rejected';
+      },
+    );
+    await new Promise((resolve) => setImmediate(resolve));
+    t.mock.timers.tick(held === 'short_expiry' ? 5001 : 15001);
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(settled, 'rejected', held);
+    finish(null);
+    await outcome;
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(f.collected.length, 0, held);
+  }
 });

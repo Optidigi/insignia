@@ -63,7 +63,6 @@ if (process.argv.includes('--diagnostic')) {
     checkout && releaseProfile
       ? createPurchaseReleasePreparation({
           core,
-          credentials: purchaseCredentials,
           collector: createReleaseVerificationClient(undefined, releaseProfile.activeVersionRef),
           releaseProfile: releaseProfile.name,
         })
