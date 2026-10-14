@@ -2,12 +2,12 @@
  * access or attests that the candidate is Active. No caller supplied baseline. */
 import assert from 'node:assert/strict';
 import historicalModules from '../../deployment/m5-runtime/native-function-module-baseline.json' with { type: 'json' };
-import themeModules from '../../deployment/m8-journey/theme-module-baseline.json' with { type: 'json' };
-import themeCandidate from '../../deployment/m8-journey/theme-release-binding.json' with { type: 'json' };
 import proxyModules from '../../deployment/m8-journey/app-proxy-module-baseline.json' with { type: 'json' };
 import proxyCandidate from '../../deployment/m8-journey/app-proxy-release-binding.json' with { type: 'json' };
 import candidate from '../../deployment/m8-journey/release-binding.json' with { type: 'json' };
 import candidateModules from '../../deployment/m8-journey/release-module-baseline.json' with { type: 'json' };
+import themeModules from '../../deployment/m8-journey/theme-module-baseline.json' with { type: 'json' };
+import themeCandidate from '../../deployment/m8-journey/theme-release-binding.json' with { type: 'json' };
 
 const grants = [
   'write_products',
