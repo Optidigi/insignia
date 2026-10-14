@@ -1,0 +1,35 @@
+{
+  "pr": "https://github.com/Optidigi/insignia/pull/128",
+  "state": "MERGED_NORMAL_VERIFIED",
+  "base": "0fbcae18445b225781d8c1eadd60d7787fe07f58",
+  "head": "662caf79ee32077403e6235c5feeb68460175b61",
+  "effectiveMergeBase": "0fbcae18445b225781d8c1eadd60d7787fe07f58",
+  "merge": "640346e5ac6a120733a48ebb320900cbd146da68",
+  "tree": "17b287dd819f68b7b7a83bf5d844b7a2abd7e366",
+  "parents": [
+    "0fbcae18445b225781d8c1eadd60d7787fe07f58",
+    "662caf79ee32077403e6235c5feeb68460175b61"
+  ],
+  "ci": [
+    {
+      "run": 38599354630,
+      "head": "662caf79ee32077403e6235c5feeb68460175b61",
+      "attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "run": 38599354759,
+      "head": "662caf79ee32077403e6235c5feeb68460175b61",
+      "attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "run": 38599354626,
+      "head": "662caf79ee32077403e6235c5feeb68460175b61",
+      "attempt": 1,
+      "conclusion": "success"
+    }
+  ],
+  "reviews": "Spec/correctness CLEAR a3997b1; security finding corrected and independently CLEAR7dab5ca; workerfixture impact CLEARdd4e723; historical schema20setup impact CLEARabbd274; later changes test/docs only.",
+  "nativeLimit": "Bridge integrated; schema32/web deployment and actual credential issuance/persistence still unqualified."
+}

@@ -1,0 +1,67 @@
+{
+  "classification": "NATIVE_PRICE_REVIEW_PASS_ACCEPTANCE_TIMEOUT_RECONCILED",
+  "productId": "10519322493211",
+  "variantId": "54211066986779",
+  "artworkAssetId": "a4d401a0-1f50-4431-a9f0-19db938246b3",
+  "artworkExpiresAt": "2026-10-21T17:29:58.544Z",
+  "originalFileSha256": "2b9633afe3fd7743077d7d77931093a3ce96621cf395cac07d5b46c596992a0c",
+  "proposalId": "be720ca6-7f16-47d1-90c4-94b42076f1f5",
+  "price": {
+    "currency": "USD",
+    "quantity": 1,
+    "setupMinor": "1000",
+    "baseMinor": "0",
+    "customizationUnitMinor": "500",
+    "totalMinor": "1500"
+  },
+  "acceptance": {
+    "uiClicks": 1,
+    "observedError": "signal timed out",
+    "browserHttpResponseObserved": false,
+    "cart": {
+      "currency": "USD",
+      "totalPrice": 0,
+      "itemCount": 0,
+      "lines": []
+    },
+    "databaseReconciliation": {
+      "observedAt": "2026-10-14T17:32:35.920537+00:00",
+      "commands": [
+        {
+          "kind": "accept",
+          "applicationId": null,
+          "createdAt": "2026-10-14T17:30:11.12+00:00"
+        }
+      ],
+      "acceptedQuotes": [],
+      "applications": [],
+      "trustedReleaseRecordCount": 13
+    },
+    "readOnlyNativeActivityRecheck": "No non-idle runtime sessions/blockers remained; historical SQL wait not directly captured.",
+    "providerOrAcceptanceReplay": false
+  },
+  "trustedCollector": {
+    "recordId": "11b3958b-3960-49cf-a9f4-82abe4df2711",
+    "launcherReceipt": {
+      "version": "m5-owner-trusted-release-launch-v1",
+      "classification": "TRUSTED_RELEASE_COLLECT_APPEND_ACK",
+      "ambiguousWrite": false,
+      "appendAttempted": true,
+      "appendAcknowledged": true,
+      "retryAuthorized": false
+    },
+    "head": "640346e5ac6a120733a48ebb320900cbd146da68",
+    "limit": "Acknowledged journal is not fresh/current release evidence; independent runtime SELECT remains required at each dependent boundary."
+  },
+  "localDiagnosis": {
+    "red": "Real acceptance transaction/readiness callback/second real encrypted credential repository connection fails PostgreSQL lock_timeout500ms; separate statement timeout2s prevents test hang.",
+    "green": "Same regression passes after usable current-installation credential snapshot avoids exclusive refresh/acquisition locks.",
+    "confirmedCause": "Acceptance locks shop/generation, then readiness credential acquisition attempted the same locks through another connection.",
+    "nativeWaitLimit": "Historical native wait not captured; causal cycle confirmed by local real PostgreSQL regression."
+  },
+  "remaining": [
+    "Near-expiry refresh and missing/stale release collection inside acceptance callback remain composition dependencies. Complete their preflight/readonly-final-check transition without dropping serialized installation/config/key fences.",
+    "Acceptance/cart/checkout/purchase/first-paid/merchant artwork remain unproved.",
+    "Preserve both uploaded assets with distinct collection/expiry; no historic Function/localization claim, billable usage, gate pass or rollout."
+  ]
+}

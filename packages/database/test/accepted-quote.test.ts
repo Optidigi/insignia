@@ -462,9 +462,31 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
     ).rejects.toThrow(/inactive tenant/);
   });
 
-  it('prices a signed negative adjustment, signs its full allocation, and persists the exact carriers', async () => {
+  it('acquires catalog credentials during acceptance and persists the exact signed negative allocation', async () => {
     const value = await effectiveFixture();
-    const core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+    const credentialKeys = { currentKeyId: 'accept-test', keys: { 'accept-test': Buffer.alloc(32, 29) } };
+    const core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }), { credentialKeys });
+    // A separate real connection models the production catalog credential boundary.
+    // Bound lock waits so a cross-transaction lock cycle fails instead of hanging CI.
+    const catalogCore = createDurableCore(
+      new Pool({
+        connectionString: process.env.DATABASE_URL,
+        options: '-c lock_timeout=500ms -c statement_timeout=2000ms',
+      }),
+      { credentialKeys },
+    );
+    await catalogCore.credentials.install({
+      shopId: value.shopId,
+      installationGeneration: value.generation,
+      pair: {
+        accessToken: 'synthetic-catalog-access',
+        refreshToken: 'synthetic-catalog-refresh',
+        accessExpiresAt: new Date(Date.now() + 3600000),
+        refreshExpiresAt: new Date(Date.now() + 86400000),
+        scopes: 'read_products',
+      },
+    });
+    let credentialReads = 0;
     const now = new Date('2026-11-01T05:30:00.000Z');
     const keys = value.keys;
     const group = {
@@ -555,22 +577,24 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
         },
       },
       catalog: {
-        resolveVariantContext: async () => [
-          {
-            shopId: value.shopId,
-            installationGeneration: value.generation,
-            productId: value.productId,
-            variantId: '700',
-            productIdVerified: true as const,
-            context: { country: 'US' },
-            amount: '0.00',
-            currencyCode: 'USD',
-            sourceApiVersion: '2026-07',
-            observedAt: now.toISOString(),
-            freshUntil: new Date(now.getTime() + 300000).toISOString(),
-            correlation: { requestId: null },
-          },
-        ],
+        resolveVariantContext: async () => {
+          return [
+            {
+              shopId: value.shopId,
+              installationGeneration: value.generation,
+              productId: value.productId,
+              variantId: '700',
+              productIdVerified: true as const,
+              context: { country: 'US' },
+              amount: '0.00',
+              currencyCode: 'USD',
+              sourceApiVersion: '2026-07',
+              observedAt: now.toISOString(),
+              freshUntil: new Date(now.getTime() + 300000).toISOString(),
+              correlation: { requestId: null },
+            },
+          ];
+        },
       },
       currency: { exponent: (code: string) => currencyExponent(code) ?? null },
       fx: {
@@ -578,8 +602,20 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
           throw new Error('unexpected FX read');
         },
       },
-      // This isolated persistence fixture deliberately supplies synthetic READY evidence.
-      readiness: { assertReady: async () => {} },
+      // Release evidence remains synthetic in this persistence fixture, but readiness
+      // crosses the real catalog credential boundary used during production acceptance.
+      readiness: {
+        assertReady: async () => {
+          const credential = await catalogCore.credentials.acquire({
+            shopId: value.shopId,
+            installationGeneration: value.generation,
+            minimumRemainingMs: 0,
+            claimLeaseMs: 10000,
+          });
+          expect(credential).toMatchObject({ kind: 'usable', accessToken: 'synthetic-catalog-access' });
+          credentialReads++;
+        },
+      },
       authorization: {
         admit: ({
           economics,
@@ -691,6 +727,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
       expect(persisted.rows[0]?.member_carriers).toEqual(accepted.authorization.members);
       expect(await acceptQuote(request, ports)).toEqual(accepted);
       expect(signatures).toBe(1);
+      expect(credentialReads).toBeGreaterThan(0);
       if (process.env.M4_PERSISTED_VECTOR_OUTPUT) {
         const vector = {
           schemaVersion: 'm4-002-pg-persisted-vector-v1',
@@ -719,7 +756,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
         writeFileSync(process.env.M4_PERSISTED_VECTOR_OUTPUT, `${JSON.stringify(vector, null, 2)}\n`);
       }
     } finally {
-      await core.close();
+      await Promise.all([core.close(), catalogCore.close()]);
     }
   });
 });
