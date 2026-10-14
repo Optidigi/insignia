@@ -25,3 +25,12 @@ Both owner-allocated headed browser sessions were freshly checked at exact Admin
 After final-candidate CI and normal integration: qualify/apply only schema32 to the allocated Insignia database, import the actual qualified CI web image, quiesce/rebind the existing verifier around the exact web replacement, preserve other services and existing grants. Use the verified owner session to trigger one bounded native acquisition; independently verify encrypted metadata/credential reuse and buyer config. Stop on unresolved exchange, drift or renewed challenge. No new Shopify scope/version/reinstall is indicated by the researched direct-exchange contract; exact native eligibility remains untested.
 
 Then real original upload/inspection, exact quote/cart, permitted test checkout, independently qualified creator/enforcement, intended worker admission, purchase/first-paid and merchant original retrieval. Native purchase admission stays disabled. Merchant publication timeout/stale-status and raw-ID label defects remain in the worklist. No artwork/cart/order effects, charge, native acceptance or rollout claimed by this correction.
+
+
+## PR128 runtime CI correction
+
+Exact head ef7f16895a800a81e000d9af5c62f518e88c8585: foundation38596516124 and durable-core38596515818 passed; runtime38596516199 failed in the existing worker credential recovery test. Its fixture attempted to install the old pair over the active refreshed pair, which the new acquisition guard correctly rejects. The same error was reproduced against an isolated local PostgreSQL18/schema32 database.
+
+Correction dd4e723ca60a6c8da49768840d02049213da107c changes the fixture only. A synthetic refreshed pair has120s access validity; attempting old-pair overwrite must reject and leave the new access token intact. A180s minimum-validity request (within the existing300s bound) obtains the supported refresh claim, after which installation deactivation still rejects stale replacement. Lost-response retry using the same refresh token and cross-process single-flight assertions remain. No production guard, permission or expiry was changed.
+
+Focused test1pass and full worker suite79pass/2explicit skips (81total). Independent impact review CLEAR at dd4e723, with its own focused PostgreSQL1pass/0skip rerun. The failed workflow remains evidence; fresh final-head CI is required. Native acquisition/deployment remains pending. The disposable local test database was dropped after checks/review; the shared PostgreSQL cluster and other resources were preserved.
