@@ -117,7 +117,9 @@ export function createBuyerApi({
   async function request<T>(url: string, body?: unknown, signal?: AbortSignal): Promise<T> {
     const response = await fetchImpl(url, {
       method: body === undefined ? 'GET' : 'POST',
-      credentials: 'omit',
+      // Shopify's storefront access gate needs its same-origin cookie.
+      // Proxy signature and private capability still authorize Insignia requests.
+      credentials: 'same-origin',
       cache: 'no-store',
       redirect: 'error',
       signal: signal ?? AbortSignal.timeout(10000),
