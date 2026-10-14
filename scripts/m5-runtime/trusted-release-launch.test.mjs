@@ -393,3 +393,82 @@ test('bridge handover accepts actual ACK and STOP launcher results only with mat
     }
   }
 });
+
+test('bridge handover reconciles a real launcher timeout only with a closed no-append child', async () => {
+  const stopped = {
+    ...closed(),
+    classification: 'TRUSTED_RELEASE_COLLECT_STOPPED',
+    appendAttempted: false,
+    appendAcknowledged: false,
+  };
+  const source = reserveSource.replace(JSON.stringify(operations), JSON.stringify(operations.slice(0, 9)));
+  const c = await processControl(
+    source +
+      `for await(const b of process.stdin){};
+      await writeFile(join(phase,'receipt.json'),JSON.stringify(${JSON.stringify(stopped)}),{mode:0o600});
+      setInterval(()=>{},1000);`,
+    { timeoutMs: 500 },
+  );
+  try {
+    assert.deepEqual(c.result, {
+      version: 'm5-owner-trusted-release-launch-v1',
+      classification: 'OWNER_PROCESS_TIMEOUT',
+      ambiguousWrite: false,
+      appendAttempted: false,
+      appendAcknowledged: false,
+      retryAuthorized: false,
+    });
+    const phase = join(c.parent, `m5-trusted-release-collector-native-run-20261011-${recordId}`);
+    const intent = join(c.parent, `m5-trusted-release-launch-intent-${recordId}`);
+    await mkdir(intent, { mode: 0o700 });
+    await writeFile(
+      join(intent, 'intent.json'),
+      JSON.stringify({
+        version: 'm5-owner-trusted-release-launch-intent-v1',
+        recordId,
+        childPhase: phase.split('/').at(-1),
+        retryAuthorized: false,
+      }),
+      { mode: 0o600 },
+    );
+    await writeFile(join(intent, 'receipt.json'), JSON.stringify(c.result), { mode: 0o600 });
+    const before = await Promise.all([readFile(join(intent, 'receipt.json')), readFile(join(phase, 'receipt.json'))]);
+    const settled = await inspectPriorBridgeHandoverSettlement(c.parent);
+    assert.equal(settled.length, 1);
+    assert.equal(settled[0].appendReserved, false);
+    assert.deepEqual(
+      await Promise.all([readFile(join(intent, 'receipt.json')), readFile(join(phase, 'receipt.json'))]),
+      before,
+    );
+    for (const changed of [
+      null,
+      { ...stopped, appendAttempted: true },
+      { ...stopped, ambiguousWrite: true },
+      closed(),
+    ]) {
+      if (changed) await writeFile(join(phase, 'receipt.json'), JSON.stringify(changed), { mode: 0o600 });
+      else await rm(join(phase, 'receipt.json'));
+      await assert.rejects(inspectPriorBridgeHandoverSettlement(c.parent), /prior_settlement_unknown/);
+    }
+    await writeFile(join(phase, 'receipt.json'), JSON.stringify(stopped), { mode: 0o600 });
+    for (const changed of [
+      { ...c.result, appendAttempted: true },
+      { ...c.result, appendAcknowledged: true },
+      { ...c.result, ambiguousWrite: true },
+      { ...c.result, retryAuthorized: true },
+      { ...c.result, appendAttempted: 'false' },
+      { ...c.result, extra: 'unknown' },
+      { ...c.result, classification: 'OWNER_PROCESS_UNQUALIFIED' },
+    ]) {
+      await writeFile(join(intent, 'receipt.json'), JSON.stringify(changed), { mode: 0o600 });
+      await assert.rejects(inspectPriorBridgeHandoverSettlement(c.parent), /prior_settlement_unknown/);
+    }
+    await writeFile(join(intent, 'receipt.json'), JSON.stringify(c.result), { mode: 0o600 });
+    await rm(phase, { recursive: true });
+    await writeCollectorRecords(phase, recordId, operations);
+    await writeFile(join(phase, 'receipt.json'), JSON.stringify(stopped), { mode: 0o600 });
+    await assert.rejects(inspectPriorBridgeHandoverSettlement(c.parent), /prior_settlement_unknown/);
+  } finally {
+    await rm(c.parent, { recursive: true, force: true });
+  }
+});
