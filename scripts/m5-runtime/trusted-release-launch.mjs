@@ -199,7 +199,11 @@ function qualifyLauncherReceipt(value) {
     'version',
   ]);
   assert.equal(value.version, 'm5-owner-trusted-release-launch-v1');
-  assert.ok(['TRUSTED_RELEASE_COLLECT_APPEND_ACK', 'TRUSTED_RELEASE_COLLECT_STOPPED'].includes(value.classification));
+  assert.ok(
+    ['TRUSTED_RELEASE_COLLECT_APPEND_ACK', 'TRUSTED_RELEASE_COLLECT_STOPPED', 'OWNER_PROCESS_TIMEOUT'].includes(
+      value.classification,
+    ),
+  );
   for (const key of ['appendAttempted', 'appendAcknowledged', 'ambiguousWrite'])
     assert.equal(typeof value[key], 'boolean');
   assert.equal(value.retryAuthorized, false);
@@ -207,6 +211,7 @@ function qualifyLauncherReceipt(value) {
   assert.ok(!value.appendAcknowledged || value.appendAttempted);
   if (value.classification === 'TRUSTED_RELEASE_COLLECT_APPEND_ACK')
     assert.ok(value.appendAttempted && value.appendAcknowledged);
+  if (value.classification === 'OWNER_PROCESS_TIMEOUT') assert.ok(!value.appendAttempted && !value.appendAcknowledged);
   return value;
 }
 
@@ -230,12 +235,17 @@ export async function inspectPriorBridgeHandoverSettlement(parent) {
       assert.equal(intent.childPhase, recordPhaseName(recordId));
       assert.ok(phases.some((phase) => phase.phase === intent.childPhase));
       const receipt = qualifyLauncherReceipt(await privateJson(join(path, 'receipt.json')));
-      assert.deepEqual(
-        receipt,
-        launcherReceiptForCollector(
-          qualifyCollectorReceipt(await privateJson(join(parent, intent.childPhase, 'receipt.json'), 16384, true)),
-        ),
+      const collector = qualifyCollectorReceipt(
+        await privateJson(join(parent, intent.childPhase, 'receipt.json'), 16384, true),
       );
+      if (receipt.classification === 'OWNER_PROCESS_TIMEOUT') {
+        // The wrapper can time out after the child has durably closed without
+        // appending. Its timeout remains history; only that proven no-effect
+        // settlement permits handover, never replay of an unresolved append.
+        assert.equal(collector.classification, 'TRUSTED_RELEASE_COLLECT_STOPPED');
+        assert.ok(!collector.appendAttempted && !collector.appendAcknowledged && !collector.ambiguousWrite);
+        assert.ok(phases.some((phase) => phase.phase === intent.childPhase && !phase.appendReserved));
+      } else assert.deepEqual(receipt, launcherReceiptForCollector(collector));
     }
     return phases;
   } catch {
