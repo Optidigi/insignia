@@ -1,0 +1,24 @@
+{
+  "candidate": "987531481daeebdeedcc168311edfea4b9eb0130",
+  "base": "629c453e83d1e1b10d44b6ab9270c71fa2c676d6",
+  "specCorrectness": "CLEAR",
+  "standardsSecurity": "CLEAR",
+  "independence": "separate read-only reviewer turns; no claimed credential isolation",
+  "scope": "Application/provider reader identity projection and native evidence limits; source unchanged by later review receipt",
+  "tdd": {
+    "applicationRed": "one expected failure at reader lookup boundary",
+    "shopifyRed": "one expected failure exporting decorated lookup fields",
+    "applicationGreen": 30,
+    "shopifyReaderGreen": 18,
+    "shopifyDiscoveryAdmissionGreen": 20
+  },
+  "workerRegression": {
+    "pass": 62,
+    "skipped": 22,
+    "skipLimit": "PostgreSQL-dependent controls deferred to final CI; not native PASS"
+  },
+  "applicationAndShopifyBuildTypecheck": "PASS",
+  "nativeCorrectionDeployed": false,
+  "nativeRestartDispatched": false,
+  "finalCandidateCi": "PENDING"
+}

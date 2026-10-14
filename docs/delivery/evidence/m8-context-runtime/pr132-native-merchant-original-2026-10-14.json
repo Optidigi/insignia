@@ -1,0 +1,11 @@
+{
+  "classification": "AUTHENTICATED_MERCHANT_PURCHASE_ORIGINAL_BYTE_EXACT_PASS",
+  "purchaseId": "e3a74311-4323-4ea0-ba1a-154a9e65cd49",
+  "orderId": "gid://shopify/Order/7518816403739",
+  "assetId": "7cb3c29b-a525-4e07-8631-bc8d8255f63d",
+  "bytes": 265,
+  "sha256": "2b9633afe3fd7743077d7d77931093a3ce96621cf395cac07d5b46c596992a0c",
+  "unauthenticatedStatus": 401,
+  "originalAccess": "merchant UI prepared current original link; private S3 GET",
+  "sessionDataPublished": false
+}

@@ -1,0 +1,28 @@
+{
+  "classification": "NATIVE_WORKER_AUTOMATIC_RECONCILIATION_OBSERVED",
+  "runtimeContainer": "430fc3b316215f5645a995462ef8d49041823b13f36f5a5f3cae6c189d31ff8a",
+  "databaseObserver": "read-only owner SQL; writes performed by running worker LOGIN insignia_worker",
+  "purchaseId": "e3a74311-4323-4ea0-ba1a-154a9e65cd49",
+  "orderId": "gid://shopify/Order/7518816403739",
+  "isTest": true,
+  "currency": "USD",
+  "originalTotalMinor": "2300",
+  "merchandiseMinor": "1500",
+  "shippingMinor": "800",
+  "firstPaidAt": "2026-10-14T20:03:06Z",
+  "targetPaidFacts": 1,
+  "targetObservations": 1,
+  "targetException": null,
+  "allPurchaseOrders": 2,
+  "allPaidFacts": 1,
+  "olderTestOrder": {
+    "orderId": "gid://shopify/Order/7487119458587",
+    "exception": "UNSUPPORTED_ORDER_EDIT",
+    "financialStatus": "REFUNDED",
+    "paidFact": false
+  },
+  "discoveryLastError": null,
+  "historicalCountryMarketFunctionExecution": "UNKNOWN",
+  "billableUsageQualified": false,
+  "duplicateRestartQualification": "Duplicate acknowledged: immutable purchase/binding/line/design/paid/refund/artwork unchanged; observation1\u21922. Restart undispatched. See dedicated failure receipt."
+}

@@ -242,7 +242,11 @@ export async function reconcilePurchase(
   input: { shopId: string; installationGeneration: string; orderId: string },
   ports: PurchasePorts,
 ): Promise<unknown> {
-  const order = await ports.orders.read(input);
+  const order = await ports.orders.read({
+    shopId: input.shopId,
+    installationGeneration: input.installationGeneration,
+    orderId: input.orderId,
+  });
   if (
     order.shopId !== input.shopId ||
     order.installationGeneration !== input.installationGeneration ||

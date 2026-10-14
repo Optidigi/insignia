@@ -140,6 +140,22 @@ function fixture() {
   return { order, offer, ports };
 }
 describe('verified purchase reconciliation', () => {
+  it('passes only scoped order identity to independent readers for discovery and inbox reconciliation', async () => {
+    const { order, ports } = fixture();
+    const identity = {
+      shopId: order.shopId,
+      installationGeneration: order.installationGeneration,
+      orderId: order.orderId,
+    };
+    for (const metadata of [
+      { since: '2026-10-01T00:00:00Z', until: order.observedAt, cursor: 'page-2', claimToken: 'claim-a' },
+      { inboxId: 'inbox-a', attempts: 2, claimToken: 'claim-b' },
+    ]) {
+      await reconcilePurchase({ ...identity, ...metadata }, ports);
+      expect(ports.orders.read).toHaveBeenLastCalledWith(identity);
+    }
+  });
+
   it('binds a qualified checkout offer to actual merchandise without inventing observed localization', async () => {
     const { order, ports } = fixture();
     order.country = null;
