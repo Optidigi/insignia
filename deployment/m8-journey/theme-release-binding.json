@@ -1,0 +1,22 @@
+{
+  "versionId": "1166552825857",
+  "versionTag": "m8-theme-c8d8713",
+  "versionIds": [
+    "1166552825857",
+    "1166090010625",
+    "1165513097217",
+    "1163229200385",
+    "1162611916801",
+    "1158986629121",
+    "1158837927937",
+    "1153019904001",
+    "1152880803841",
+    "1146748534785"
+  ],
+  "moduleHash": "b55d0a368e72a8b16cccd6ff3a427fde38bdd0f2fc266aeb632591ab9f81550e",
+  "nativeObservation": "EXACT_INACTIVE_THEME_CANDIDATE_READ_PASS",
+  "observedAt": "2026-10-14T08:47:02.707Z",
+  "themeRegistrationId": "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97",
+  "themeRegistrationUuid": "01a13996-ce86-7b3c-9bac-1f2605986f7f",
+  "note": "Closed expected target only. Candidate independently observed inactive; release/theme activation/fresh evidence/native purchase admission remain separate."
+}

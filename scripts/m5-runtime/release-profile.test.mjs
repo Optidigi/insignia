@@ -8,6 +8,7 @@ import test from 'node:test';
 import { createReleaseVerificationClient } from '../../apps/web/src/server/admin/release-verification.ts';
 import proxyModules from '../../deployment/m8-journey/app-proxy-module-baseline.json' with { type: 'json' };
 import historicalM8Modules from '../../deployment/m8-journey/release-module-baseline.json' with { type: 'json' };
+import themeModules from '../../deployment/m8-journey/theme-module-baseline.json' with { type: 'json' };
 import { qualifyReleaseAppendInput } from './release-append.mjs';
 import { createReleaseVerificationServer } from './release-verification-server.mjs';
 import { collectFreshTrustedRelease } from './trusted-release-collector.mjs';
@@ -15,14 +16,24 @@ import { fixture } from './trusted-release-collector-fixture.mjs';
 import { runManagementReads } from './trusted-release-management-worker.mjs';
 import { createOwnerHttps } from './trusted-release-owner-https.mjs';
 
-for (const profile of ['m8-read-orders-617057f', 'm8-app-proxy-3d2a02e']) {
-  const proxy = profile === 'm8-app-proxy-3d2a02e';
-  const versionId = proxy ? '1166090010625' : '1165513097217';
-  const modules = proxy ? proxyModules : historicalM8Modules;
+for (const profile of ['m8-read-orders-617057f', 'm8-app-proxy-3d2a02e', 'm8-theme-c8d8713']) {
+  const theme = profile === 'm8-theme-c8d8713';
+  const proxy = profile !== 'm8-read-orders-617057f';
+  const versionId = theme ? '1166552825857' : proxy ? '1166090010625' : '1165513097217';
+  const modules = theme ? themeModules : proxy ? proxyModules : historicalM8Modules;
   const profileTest = (name, fn) => test(`${profile}: ${name}`, fn);
   const prior = (versions) =>
     proxy
       ? [
+          ...(theme
+            ? [
+                {
+                  versionId: 'gid://shopify/Version/1166090010625',
+                  versionTag: 'm8-app-proxy-3d2a02e',
+                  status: 'inactive',
+                },
+              ]
+            : []),
           {
             versionId: 'gid://shopify/Version/1165513097217',
             versionTag: 'm8-read-orders-617057f',
@@ -82,6 +93,17 @@ for (const profile of ['m8-read-orders-617057f', 'm8-app-proxy-3d2a02e']) {
         const foreign = structuredClone(input);
         foreign.activeObservation.versions[1].versionId = 'gid://shopify/Version/999';
         assert.throws(() => qualifyReleaseAppendInput(foreign, time, profile));
+        if (theme) {
+          const missingTheme = structuredClone(input);
+          missingTheme.moduleObservation.modules = missingTheme.moduleObservation.modules.filter(
+            (m) => m.type !== 'theme_app_extension',
+          );
+          assert.throws(() => qualifyReleaseAppendInput(missingTheme, time, profile));
+          const changedTheme = structuredClone(input);
+          changedTheme.moduleObservation.modules.find((m) => m.type === 'theme_app_extension').registrationUuid =
+            'foreign';
+          assert.throws(() => qualifyReleaseAppendInput(changedTheme, time, profile));
+        }
         if (proxy) {
           const changedProxy = structuredClone(input);
           changedProxy.moduleObservation.modules.find((m) => m.handle === 'app_proxy').config.url =
@@ -138,7 +160,7 @@ for (const profile of ['m8-read-orders-617057f', 'm8-app-proxy-3d2a02e']) {
           appVersions: async () => ({
             app: {
               id: 'gid://shopify/App/429028933633',
-              appVersions: { nodes: versions, pageInfo: { totalResults: proxy ? 9 : 8 } },
+              appVersions: { nodes: versions, pageInfo: { totalResults: theme ? 10 : proxy ? 9 : 8 } },
             },
           }),
           appVersionByTag: async (_remote, tag) => ({

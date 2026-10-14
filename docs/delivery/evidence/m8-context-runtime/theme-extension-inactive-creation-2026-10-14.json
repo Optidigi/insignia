@@ -1,0 +1,66 @@
+{
+  "classification": "ONE_INACTIVE_THEME_VERSION_CREATED_EXACT_READBACK_PASS_RELEASE_PENDING",
+  "appId": "429028933633",
+  "versionId": "1166552825857",
+  "versionTag": "m8-theme-c8d8713",
+  "sourceHead": "c8d87136adc3b49cc22e025cba377ffb85184a62",
+  "assetSourceHead": "ddc8afbb90129450652353cd6bd51061f390b402",
+  "activeVersionUnchanged": "1166090010625",
+  "creationExit": {
+    "exitCode": 0,
+    "stage": "CreateAppVersion",
+    "stats": {
+      "forwarded": 2,
+      "blocked": 0,
+      "uploadForwarded": 1,
+      "uploadBlocked": 0
+    },
+    "inputsUnchanged": true,
+    "releaseInvocations": 0,
+    "classification": "CLI_ACK_REQUIRES_INDEPENDENT_READBACK"
+  },
+  "independentCandidateRead": {
+    "classification": "EXACT_INACTIVE_THEME_CANDIDATE_READ_PASS",
+    "observedAt": "2026-10-14T08:47:02.707Z",
+    "appId": "429028933633",
+    "activeVersion": "1166090010625",
+    "candidateVersionId": "gid://shopify/Version/1166552825857",
+    "themeRegistrationId": "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97",
+    "themeRegistrationUuid": "01a13996-ce86-7b3c-9bac-1f2605986f7f",
+    "themeType": "theme_app_extension",
+    "versions": 10,
+    "installCount": 1,
+    "moduleCount": 8,
+    "modulesSha256": "b55d0a368e72a8b16cccd6ff3a427fde38bdd0f2fc266aeb632591ab9f81550e",
+    "themePresent": true,
+    "reads": 5,
+    "nativeWrites": 0
+  },
+  "existingSevenNativeModulesPreservedExactly": true,
+  "scopeStoreInstallationChange": false,
+  "functionInputsAndPackagedArtifactsPreserved": true,
+  "providerDownloadedWasmDigest": "UNAVAILABLE_NOT_ASSERTED",
+  "themeRegistrationId": "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97",
+  "themeRegistrationUuid": "01a13996-ce86-7b3c-9bac-1f2605986f7f",
+  "candidatePack": {
+    "files": 15,
+    "themeFiles": 7,
+    "blocks": [
+      "customize.liquid",
+      "cart-repair.liquid"
+    ],
+    "localPreviewExcluded": true,
+    "themeUidAssignedByCliAndSealedAfterCompileOnly": true
+  },
+  "initialFailure": "Raw wasm input digest was compared to CLI-packaged wasm and failed before effects. Corrected qualification separately verifies sealed original inputs and byte-identical packaged wasm against prior native-upload bundle.",
+  "archiveControls": "Changed archive payload reproduced RED; content/checksum/exact-membership/bounded validation GREEN; source/Function/extra-file/module drift controls PASS",
+  "review": {
+    "correctness": "CLEAR handover_correctness",
+    "security": "CLEAR handover_security",
+    "creatorSha256": "6e8e79a70aba59d36a2b54803ec2a030168308c916d3481ec0a7469ca8df24bc",
+    "qualifierSha256": "b9b5f02a50e39a697a6e26739cac42f059004f80c91ddaaf2d3050725fbd4b01",
+    "scope": "Source-only independent review, two checks rerun by correctness; no native observations by reviewers"
+  },
+  "releaseInvocations": 0,
+  "remaining": "Closed actual new release profile, independent review/final CI/integration and one guarded owner-authorized release; fresh native readback/runtime qualification before owner theme activation/checkout."
+}
