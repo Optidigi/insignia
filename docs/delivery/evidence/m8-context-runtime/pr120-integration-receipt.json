@@ -1,0 +1,31 @@
+{
+  "pr": "https://github.com/Optidigi/insignia/pull/120",
+  "merge": "239adfe30efa39e04f8d6c00a7555c6b7445664c",
+  "tree": "1fa388046b78c978f83f31852eb05cb33677f12f",
+  "base": "3d2a02e83ac63da647dc2e9eead0456d0bb5c423",
+  "head": "75e5b48d65b3a6c20d638d93c3b159ea09914f6a",
+  "effectiveMergeBase": "3d2a02e83ac63da647dc2e9eead0456d0bb5c423",
+  "orderedParents": ["3d2a02e83ac63da647dc2e9eead0456d0bb5c423", "75e5b48d65b3a6c20d638d93c3b159ea09914f6a"],
+  "workflows": [
+    {
+      "run": 38486997375,
+      "name": "foundation",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "run": 38486997328,
+      "name": "durable-core",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "run": 38486997298,
+      "name": "runtime",
+      "attempt": 1,
+      "result": "SUCCESS"
+    }
+  ],
+  "closingReceipt": "https://github.com/Optidigi/insignia/pull/120#issuecomment-6157848691",
+  "limits": "Closed App Proxy target integrated; later actual image/source transition and one release recorded separately. Installation grant and native signed journey still pending."
+}
