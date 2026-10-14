@@ -279,5 +279,19 @@
     "GET /api/purchases/v1": 401,
     "POST /api/artwork": 401,
     "limit": "Actual unauthenticated HTTP rejection on current container; not authorized native artwork retrieval or signed proxy proof."
+  },
+  "followThroughReview": {
+    "reviewedCommit": "200c62b6423581d50ff2a1316f3052961e365422",
+    "reviewedTree": "4c1276c379d4253f0bcf93179e18d738a90fbc68",
+    "result": "independent correctness/standards evidence impact CLEAR; receipts compared and17tests independently passed",
+    "correction": "README dated historical pending paragraphs explicitly labeled afterward; production behavior unchanged",
+    "limit": "Receipt comparison, not reviewer native re-observation/tool isolation"
+  },
+  "remainingWorkerDemand": {
+    "confirmed": "Existing SELECT-only reader cannot refresh expired evidence",
+    "timing": "Prepare bounded collection before independently reading order; preserve30s order/enforcement observation and60s inbox claim, real offline expiry\u221230s",
+    "newSQLPrivilegesNeeded": false,
+    "assessmentOnly": true,
+    "nativeQualificationNull": true
   }
 }
