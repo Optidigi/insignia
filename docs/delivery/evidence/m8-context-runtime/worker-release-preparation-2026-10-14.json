@@ -26,7 +26,8 @@
     "boundaries": "18 PASS",
     "secretProvenance": "PASS:196production/161fixtures/22browser/2synthetic seeds",
     "changedFilesStyle": "PASS",
-    "diff": "PASS"
+    "diff": "PASS",
+    "composeCorrection": "PASS actual Compose2.39.4 web and separate worker render; changed-file style/diff PASS"
   },
   "reviews": [
     {
@@ -51,5 +52,20 @@
     "Owner App Proxy consent independently verified; signed buyer forwarding, publication/quote/cart/test checkout/purchase/original native journey unproved.",
     "No app release, new scope, installation change, database privilege or native mutation in this slice."
   ],
-  "next": "Final candidate CI -> normal integration -> independently qualified frozen verifier source with eleven-scope expectation -> fresh release readback -> minimal buyer/proxy native composition and signed forwarding."
+  "next": "Final candidate CI -> normal integration -> independently qualified frozen verifier source with eleven-scope expectation -> fresh release readback -> minimal buyer/proxy native composition and signed forwarding.",
+  "ciFailure": {
+    "head": "92260ea44eb0d8bd690c52c1dcce84b91acf32fa",
+    "run": "38495534859",
+    "job": "115630332895",
+    "error": "service worker has neither an image nor a build context specified: invalid compose project",
+    "cause": "Combined metadata overlay introduced an undefined worker service into the independently rendered web-only project.",
+    "correction": "Separate web and worker socket overlays; real renderer checks each project and asserts unchanged services/network/config except exact read-only socket mount.",
+    "localRedGreen": "Reproduced failure with actual Compose2.39.4; corrected real-render control PASS. No service starts or native calls.",
+    "impactReview": {
+      "agent": "handover_security",
+      "result": "CLEAR",
+      "scope": "Separate project composition, exact read-only socket mount, no credentials/append/admission widening",
+      "limits": "Source inspection only; no independent renderer or native calls"
+    }
+  }
 }

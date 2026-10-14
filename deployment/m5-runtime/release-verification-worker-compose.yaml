@@ -1,0 +1,11 @@
+# Overlay only the separate worker project after its base and runtime overlays.
+# Read-only metadata socket; no collector management credentials or append custody.
+services:
+  worker:
+    volumes:
+      - type: bind
+        source: ${INSIGNIA_RELEASE_VERIFICATION_SOCKET_DIRECTORY:?Set the qualified private socket directory}
+        target: /run/insignia/release-verification
+        read_only: true
+        bind:
+          create_host_path: false
