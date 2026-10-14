@@ -1,0 +1,20 @@
+{
+  "reviewedCodeHead": "df690e83df874522499d5b470ce85b440c1f0890",
+  "base": "c8d87136adc3b49cc22e025cba377ffb85184a62",
+  "spec": "CLEAR handover_correctness;12profile tests rerun;exactold7native/hashindependentlychecked",
+  "security": "CLEAR handover_security;exactold7/hashindependentlychecked",
+  "corrections": [
+    "README priorgrant/version Current paragraphs marked dated/superseded",
+    "grant executionState explicitly at grant time; current onecreation/release0 consumption added"
+  ],
+  "limits": "Source/local evidence only, no independent native observations; release and native purchase remain unqualified",
+  "validation": {
+    "profileRealPorts": "12PASS afterunknownnewprofileRED",
+    "runtimeProfile": "4PASS",
+    "privateHost": "19PASS1SKIP",
+    "shopifyBuild": "PASS",
+    "boundaries": "18PASS",
+    "secretProvenance": "PASS"
+  },
+  "finalCi": "PENDING"
+}

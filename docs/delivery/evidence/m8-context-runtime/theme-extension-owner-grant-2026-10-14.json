@@ -19,5 +19,12 @@
     "ownerReply": "shows list of products",
     "scope": "Owner normal logged-in browser; no save/publication or buyer checkout claimed"
   },
-  "executionState": "PREPARED_NATIVE_WRITES_NOT_DISPATCHED"
+  "executionStateAtGrantTime": "PREPARED_NATIVE_WRITES_NOT_DISPATCHED",
+  "currentConsumption": {
+    "inactiveVersionsCreated": 1,
+    "verifiedVersionId": "1166552825857",
+    "releaseInvocations": 0,
+    "remainingAuthorizedRelease": 1,
+    "evidence": "theme-extension-inactive-creation-2026-10-14.json"
+  }
 }
