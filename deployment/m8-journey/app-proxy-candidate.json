@@ -1,5 +1,5 @@
 {
-  "status": "EXACT_ACTIVE_VERSION_EXISTING_INSTALLATION_GRANT_PENDING",
+  "status": "EXACT_ACTIVE_VERSION_INSTALLATION_GRANT_VERIFIED_RUNTIME_QUALIFICATION_PENDING",
   "appId": "429028933633",
   "organizationId": "200969036",
   "appClientId": "1443cf6d03d39edae7c101a943c5c684",
@@ -80,7 +80,7 @@
     "instruction": "Authorize this bounded App Proxy change",
     "effects": "requiredwrite_app_proxy, oneproxy route, oneinactiveverifiedversion preservingFunctions/settings/optionals, oneappwide release, consent onlyexistingrewrite-dev installation"
   },
-  "transitionDependency": "Closed profile integrated PR120, actual CI web image and frozen private verifier select new profile; one release settled. Existinginstallation write_app_proxy grant awaits human update; fresh evidence/signed forwarding and current worker/buyer composition remain. No admission inferred.",
+  "transitionDependency": "One authorized version/release and existing-installation update are settled; grant11 observed including impliedread_app_proxy. Current verifier profile must match exact11 native grants before fresh collection. Buyer/current-worker composition and native signed forwarding/journey remain; admission disabled.",
   "inactiveReadback": {
     "versionId": "1166090010625",
     "tag": "m8-app-proxy-3d2a02e",
@@ -98,8 +98,11 @@
     "receipt": "../../docs/delivery/evidence/m8-context-runtime/app-proxy-release-and-runtime-2026-10-14.json"
   },
   "installationGrant": {
-    "observedAt": "2026-10-14T00:23:32.401Z",
-    "write_app_proxy": false,
-    "humanRequestOpen": true
+    "observedAt": "2026-10-14T00:46:18.748Z",
+    "write_app_proxy": true,
+    "read_app_proxy": "implicit with write grant",
+    "read_orders": true,
+    "humanRequestOpen": false,
+    "receipt": "../../docs/delivery/evidence/m8-context-runtime/app-proxy-owner-grant-2026-10-14.json"
   }
 }

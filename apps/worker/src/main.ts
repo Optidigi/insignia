@@ -2,6 +2,7 @@ import { createM3AdminReadCredentialSource } from '@insignia/application';
 import { currencyExponent } from '@insignia/cart-authorization';
 import { createDurableCore } from '@insignia/database';
 import {
+  createReleaseVerificationClient,
   createShopifyOfflineRefreshTransport,
   readShopifyOrder,
   readShopifyOrderChanges,
@@ -13,6 +14,7 @@ import { runLocalDiagnostic } from './diagnostic.js';
 import { createDurableWorkerHandlers, credentialLifecycle } from './handlers.js';
 import { startWorkerProcess } from './process.js';
 import { createProductionPurchaseAdmission } from './purchase-admission.js';
+import { createPurchaseReleasePreparation } from './purchase-release.js';
 import { createPurchaseRunner } from './purchase-runner.js';
 import { createWorkerReconciliation } from './reconciliation.js';
 import { createPgBossRuntime } from './runtime.js';
@@ -46,15 +48,31 @@ if (process.argv.includes('--diagnostic')) {
     credentials: credentialLifecycle(core),
     refresh: transport,
   });
+  const releaseProfile =
+    process.env.INSIGNIA_M8_PURCHASE_ENABLED === '1'
+      ? resolveRuntimeReleaseProfile(process.env.INSIGNIA_RELEASE_PROFILE)
+      : undefined;
+  const checkout = releaseProfile
+    ? createProductionPurchaseAdmission({
+        core,
+        credentials: purchaseCredentials,
+        releaseProfile: releaseProfile.name,
+      })
+    : undefined;
+  const prepareRelease =
+    checkout && releaseProfile
+      ? createPurchaseReleasePreparation({
+          core,
+          collector: createReleaseVerificationClient(undefined, releaseProfile.activeVersionRef),
+          releaseProfile: releaseProfile.name,
+        })
+      : undefined;
   const purchaseRunner =
     process.env.INSIGNIA_M8_PURCHASE_ENABLED === '1'
       ? createPurchaseRunner({
           core,
-          checkout: createProductionPurchaseAdmission({
-            core,
-            credentials: purchaseCredentials,
-            releaseProfile: resolveRuntimeReleaseProfile(process.env.INSIGNIA_RELEASE_PROFILE).name,
-          }),
+          checkout,
+          prepareRelease,
           orders: {
             read: (target) =>
               readShopifyOrder(target, {

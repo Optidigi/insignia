@@ -13,10 +13,14 @@ test('owner overlay adds only fixed plan/journal mounts to the immutable ordinar
       ['ordinary.yaml', '../../deployment/m5-runtime/compose.yaml'],
       ['owner.yaml', '../../deployment/m5-runtime/signing-owner-compose.yaml'],
       ['collector.yaml', '../../deployment/m5-runtime/release-verification-compose.yaml'],
+      ['worker-base.yaml', '../m5-024/worker-compose.yaml'],
+      ['worker-runtime.yaml', '../../deployment/m5-runtime/worker-compose.yaml'],
+      ['worker-collector.yaml', '../../deployment/m5-runtime/release-verification-worker-compose.yaml'],
     ])
       await writeFile(join(directory, name), await readFile(new URL(relative, import.meta.url)));
     await writeFile(join(directory, 'runtime.env'), '');
     await writeFile(join(directory, 'database.env'), '');
+    await writeFile(join(directory, 'worker.env'), '');
     const standalone = process.env.INSIGNIA_TEST_COMPOSE_BIN;
     const render = (files) =>
       JSON.parse(
@@ -38,6 +42,7 @@ test('owner overlay adds only fixed plan/journal mounts to the immutable ordinar
               HOME: process.env.HOME,
               COMPOSE_DISABLE_ENV_FILE: '1',
               INSIGNIA_WEB_IMAGE: `sha256:${'a'.repeat(64)}`,
+              INSIGNIA_WORKER_IMAGE: `sha256:${'b'.repeat(64)}`,
               INSIGNIA_SIGNING_OWNER_PLAN: join(directory, 'plan.json'),
               INSIGNIA_SIGNING_OWNER_RUN_ROOT: join(directory, 'private-journal'),
               INSIGNIA_RELEASE_VERIFICATION_SOCKET_DIRECTORY: join(directory, 'private-collector-bridge'),
@@ -48,6 +53,25 @@ test('owner overlay adds only fixed plan/journal mounts to the immutable ordinar
     const ordinary = render(['base.yaml', 'ordinary.yaml']),
       owner = render(['base.yaml', 'ordinary.yaml', 'owner.yaml']);
     const coordinated = render(['base.yaml', 'ordinary.yaml', 'owner.yaml', 'collector.yaml']);
+    assert.deepEqual(Object.keys(coordinated.services).sort(), Object.keys(ordinary.services).sort());
+    const workerOrdinary = render(['worker-base.yaml', 'worker-runtime.yaml']);
+    const workerCoordinated = render(['worker-base.yaml', 'worker-runtime.yaml', 'worker-collector.yaml']);
+    assert.deepEqual(Object.keys(workerCoordinated.services), ['worker']);
+    const { volumes: workerVolumes, ...workerService } = workerCoordinated.services.worker;
+    assert.deepEqual(workerService, workerOrdinary.services.worker);
+    assert.deepEqual(workerCoordinated.networks, workerOrdinary.networks);
+    assert.deepEqual(workerCoordinated.volumes, workerOrdinary.volumes);
+    assert.deepEqual(workerVolumes, [
+      {
+        type: 'bind',
+        source: join(directory, 'private-collector-bridge'),
+        target: '/run/insignia/release-verification',
+        read_only: true,
+        bind: {},
+      },
+    ]);
+    const workerSource = await readFile(join(directory, 'worker-collector.yaml'), 'utf8');
+    assert.equal(workerSource.match(/create_host_path: false/g)?.length, 1);
     assert.deepEqual(coordinated.services.database, ordinary.services.database);
     assert.deepEqual(coordinated.networks, ordinary.networks);
     const { volumes: coordinatedVolumes, ...coordinatedWeb } = coordinated.services.web;

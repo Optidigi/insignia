@@ -1,0 +1,28 @@
+{
+  "classification": "EXACT_CURRENT_INSTALLATION_SCOPE_READ",
+  "observedAt": "2026-10-14T00:46:18.748Z",
+  "shopId": "gid://shopify/Shop/105501393179",
+  "installationId": "gid://shopify/AppInstallation/1054356963611",
+  "appId": "gid://shopify/App/429028933633",
+  "grants": [
+    "read_app_proxy",
+    "read_cart_transforms",
+    "read_orders",
+    "read_product_listings",
+    "read_products",
+    "read_publications",
+    "read_validations",
+    "write_app_proxy",
+    "write_cart_transforms",
+    "write_products",
+    "write_validations"
+  ],
+  "proxyGranted": true,
+  "requests": 2,
+  "retries": 0,
+  "contactFieldsRequested": false,
+  "ownerAction": "Owner saw update screen and clicked Update,14October, same delivery thread",
+  "effect": "Existing installation grant only; no new version/release/reinstall by this verification",
+  "nativeResult": "write_app_proxy and implicit read_app_proxy granted; read_orders preserved",
+  "remaining": "Current frozen verifier expects10 scopes, observed11 with implicit read_app_proxy; corrected expectation requires reviewed final CI/integration and frozen-source transition before fresh collection. Signed forwarding and full native buyer/purchase path remain unqualified."
+}

@@ -14,6 +14,8 @@ export * from './orders/checkout-admission.js';
 export * from './orders/read-order.js';
 export * from './publication-admin.js';
 export * from './refresh.js';
+export * from './release-evidence.js';
+export * from './release-verification.js';
 export * from './runtime-release-profile.js';
 export * from './shop-context.js';
 export * from './storefront/variant-availability.js';

@@ -49,7 +49,7 @@ const profiles = {
     versionIds: proxyCandidate.versionIds,
     moduleHash: proxyCandidate.moduleHash,
     modules: proxyModules,
-    grants: [...grants, 'read_orders', 'write_app_proxy'],
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy'],
   },
 };
 function freeze(value) {

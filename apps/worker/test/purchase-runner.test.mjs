@@ -2,6 +2,41 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createPurchaseRunner } from '../dist/purchase-runner.js';
 
+test('release preparation precedes the independent order read and preparation failure preserves claim recovery', async () => {
+  const calls = [];
+  const hint = { inboxId: 'inbox', shopId: 'shop', installationGeneration: '1', orderId: 'order', claimToken: 'claim' };
+  let unavailable = true;
+  const runner = createPurchaseRunner({
+    core: {
+      purchases: {
+        claimPurchaseReconciliationHint: async () => hint,
+        failPurchaseReconciliation: async (failure) => {
+          assert.equal(failure.claimToken, 'claim');
+          calls.push('recover');
+        },
+      },
+    },
+    checkout: { admit: async () => null },
+    prepareRelease: async (target) => {
+      assert.equal(target.orderId, 'order');
+      calls.push('prepare');
+      if (unavailable) throw Error('release unavailable');
+    },
+    orders: {
+      read: async () => {
+        calls.push('order');
+        throw Error('independent order unavailable');
+      },
+    },
+  });
+  await assert.rejects(runner.processInbox('inbox'), /PURCHASE_RECONCILIATION_UNAVAILABLE/);
+  assert.deepEqual(calls, ['prepare', 'recover']);
+  unavailable = false;
+  calls.length = 0;
+  await assert.rejects(runner.processInbox('inbox'), /PURCHASE_RECONCILIATION_UNAVAILABLE/);
+  assert.deepEqual(calls, ['prepare', 'order', 'recover']);
+});
+
 test('purchase webhook is processed only after an independent owned order read; failed read remains recoverable', async () => {
   const calls = [],
     hint = {
