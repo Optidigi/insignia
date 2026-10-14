@@ -298,7 +298,8 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       typeof owned.key === 'string' &&
       owned.key.length > 0 &&
       owned.installationGeneration === data.config.installationGeneration &&
-      data.config.publication.requestKey !== owned.key
+      (data.config.publication.requestKey !== owned.key ||
+        data.config.publication.sourceDraftVersion !== ownedBody.draftVersion)
     ) {
       publicationPending.current = owned;
       return;

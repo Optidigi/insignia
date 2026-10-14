@@ -1314,52 +1314,55 @@ test('settled publication read replaces a lost-response warning and stale produc
   assert.equal(await page.evaluate(() => sessionStorage.getItem('insignia:m5:publish:111')), null);
 });
 
-test('older active publication cannot settle a newer lost-response request', {
-  timeout: 25000,
-}, async (t) => {
-  const { source, server, browser } = await browserFixture(t);
-  const page = await browser.newPage();
-  await page.addInitScript(() => {
-    window.shopify = { idToken: async () => 'synthetic-publication-settlement' };
+for (const observedKey of ['m5pub_config-1_1_1', 'm5pub_config-1_1_2']) {
+  test(`older active publication cannot settle a newer lost-response request (${observedKey})`, {
+    timeout: 25000,
+  }, async (t) => {
+    const { source, server, browser } = await browserFixture(t);
+    const page = await browser.newPage();
+    await page.addInitScript(() => {
+      window.shopify = { idToken: async () => 'synthetic-publication-settlement' };
+    });
+    await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+    await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+      route.fulfill({ body: '', contentType: 'text/javascript' }),
+    );
+    let writes = 0;
+    await page.route('**/api/admin/products/111/config', (route) => {
+      if (route.request().method() === 'GET') {
+        const value = response(draft());
+        value.product.status = 'ACTIVE';
+        value.config.draftVersion = '2';
+        value.config.publishEligibility = { allowed: true, reason: null };
+        Object.assign(value.config.publication, {
+          state: 'ACTIVE',
+          revisionId: 'settled-revision',
+          activeRevisionId: 'settled-revision',
+          sourceDraftVersion: '1',
+          requestKey: observedKey,
+        });
+        return route.fulfill({ json: value });
+      }
+      writes++;
+      assert.equal(route.request().headers()['idempotency-key'], 'm5pub_config-1_1_2');
+      return route.abort('failed');
+    });
+    await page.goto(server.base + '/admin/products/111/config');
+    await page.getByText('Product status: Active', { exact: true }).waitFor();
+    await page.locator('s-button').filter({ hasText: 'Request publication' }).click();
+    await page.getByText(/Continue the same publication request after checking/).waitFor({ timeout: 5000 });
+    await page.getByText('Product status: Active', { exact: true }).waitFor({ timeout: 1000 });
+    assert.equal(writes, 1);
+    const pending = await page.evaluate(() => JSON.parse(sessionStorage.getItem('insignia:m5:publish:111')));
+    assert.ok(pending, 'original uncertain request must remain stored');
+    await page.locator('s-button').filter({ hasText: 'Continue publication' }).waitFor();
+    assert.equal(pending.key, 'm5pub_config-1_1_2');
+    assert.equal(pending.body.draftVersion, '2');
+    await page.reload();
+    await page.locator('s-button').filter({ hasText: 'Continue publication' }).waitFor();
+    assert.equal(writes, 1);
   });
-  await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
-  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
-    route.fulfill({ body: '', contentType: 'text/javascript' }),
-  );
-  let writes = 0;
-  await page.route('**/api/admin/products/111/config', (route) => {
-    if (route.request().method() === 'GET') {
-      const value = response(draft());
-      value.product.status = 'ACTIVE';
-      value.config.draftVersion = '2';
-      value.config.publishEligibility = { allowed: true, reason: null };
-      Object.assign(value.config.publication, {
-        state: 'ACTIVE',
-        revisionId: 'settled-revision',
-        activeRevisionId: 'settled-revision',
-        sourceDraftVersion: '1',
-        requestKey: 'm5pub_config-1_1_1',
-      });
-      return route.fulfill({ json: value });
-    }
-    writes++;
-    assert.equal(route.request().headers()['idempotency-key'], 'm5pub_config-1_1_2');
-    return route.abort('failed');
-  });
-  await page.goto(server.base + '/admin/products/111/config');
-  await page.getByText('Product status: Active', { exact: true }).waitFor();
-  await page.locator('s-button').filter({ hasText: 'Request publication' }).click();
-  await page.getByText(/Continue the same publication request after checking/).waitFor({ timeout: 5000 });
-  await page.getByText('Product status: Active', { exact: true }).waitFor({ timeout: 1000 });
-  assert.equal(writes, 1);
-  await page.locator('s-button').filter({ hasText: 'Continue publication' }).waitFor();
-  const pending = await page.evaluate(() => JSON.parse(sessionStorage.getItem('insignia:m5:publish:111')));
-  assert.equal(pending.key, 'm5pub_config-1_1_2');
-  assert.equal(pending.body.draftVersion, '2');
-  await page.reload();
-  await page.locator('s-button').filter({ hasText: 'Continue publication' }).waitFor();
-  assert.equal(writes, 1);
-});
+}
 
 test('publication retry keeps the original version after a newer draft edit when embedded storage is denied', {
   timeout: 30000,
