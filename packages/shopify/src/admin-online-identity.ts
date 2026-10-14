@@ -342,6 +342,7 @@ export function createAdminOnlineIdentity(input: {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': grant.accessToken },
             body: JSON.stringify({ query: ADMIN_STAFF_INSTALLATION_QUERY }),
+            redirect: 'error',
             signal,
           });
           if (!response.ok) throw new Error('Installation read denied');

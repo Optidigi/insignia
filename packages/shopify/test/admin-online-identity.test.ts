@@ -467,3 +467,38 @@ it('rejects an oversized offline success without exposing or installing its payl
   expect(String(error)).not.toContain('private');
   expect(calls).toBe(1);
 });
+
+it('never forwards the offline access header when installation verification redirects', async () => {
+  const { createServer } = await import('node:http');
+  let received = 0;
+  const sink = createServer((_req, res) => {
+    received++;
+    res.end('{}');
+  });
+  const bind = (s) => new Promise((resolve) => s.listen(0, '127.0.0.1', resolve));
+  await bind(sink);
+  const sinkUrl = `http://127.0.0.1:${sink.address().port}/forbidden`;
+  const source = createServer((_req, res) => {
+    res.writeHead(302, { Location: sinkUrl });
+    res.end();
+  });
+  await bind(source);
+  try {
+    const url = `http://127.0.0.1:${source.address().port}/installation`;
+    const provider = createAdminOnlineIdentity({
+      apiKey: key,
+      apiSecret: secret,
+      hostName: 'example.test',
+      fetchImpl: async (target, init) => {
+        expect(new URL(String(target)).hostname).toBe(shop);
+        return fetch(url, init);
+      },
+    });
+    await expect(provider.readInstallation({ shop, accessToken: 'synthetic-offline-header' })).rejects.toMatchObject({
+      name: 'AdminOnlineIdentityError',
+    });
+    expect(received).toBe(0);
+  } finally {
+    await Promise.all([new Promise((resolve) => source.close(resolve)), new Promise((resolve) => sink.close(resolve))]);
+  }
+});
