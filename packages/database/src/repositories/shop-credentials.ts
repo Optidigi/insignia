@@ -12,6 +12,16 @@ export type ExpiringOfflinePair = {
 };
 
 export type CredentialIdentity = { shopId: string; installationGeneration: string };
+export type AcquisitionIdentity = CredentialIdentity & {
+  authorizationGeneration: string;
+  authorizationEpoch: number;
+  externalInstallationId: string;
+};
+export type AcquisitionAttempt = CredentialIdentity & { attemptId: string };
+export type AcquisitionReservation =
+  | { kind: 'reserved'; attemptId: string; shopDomain: string }
+  | { kind: 'existing' | 'busy' | 'unresolved' | 'inactive' };
+
 export type ClaimIdentity = CredentialIdentity & { claimId: string; credentialVersion: string };
 
 export type CredentialAcquire =
@@ -59,17 +69,116 @@ async function activeInstallation(
   tx: Transaction<Database>,
   input: CredentialIdentity,
 ): Promise<{ shopDomain: string } | null> {
+  // Match installation lifecycle lock order: shop first, then its generation.
+  // The shop lock also serializes issuance when no credential row exists yet.
   const shop = await tx
     .selectFrom('shops')
-    .innerJoin('installation_generations as i', (join) =>
-      join.onRef('i.shop_id', '=', 'shops.shop_id').onRef('i.generation', '=', 'shops.current_generation'),
-    )
-    .select(['shops.shop_domain', 'shops.current_generation', 'i.deactivated_at'])
-    .where('shops.shop_id', '=', input.shopId)
-    .forUpdate('shops')
+    .select(['shop_domain', 'current_generation'])
+    .where('shop_id', '=', input.shopId)
+    .forUpdate()
     .executeTakeFirst();
-  if (!shop || shop.current_generation !== input.installationGeneration || shop.deactivated_at !== null) return null;
+  if (!shop || shop.current_generation !== input.installationGeneration) return null;
+  const installation = await tx
+    .selectFrom('installation_generations')
+    .select('deactivated_at')
+    .where('shop_id', '=', input.shopId)
+    .where('generation', '=', input.installationGeneration)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!installation || installation.deactivated_at !== null) return null;
   return { shopDomain: shop.shop_domain };
+}
+
+async function currentAcquisition(tx: Transaction<Database>, input: CredentialIdentity) {
+  return tx
+    .selectFrom('shop_credential_acquisitions')
+    .selectAll()
+    .where('shop_id', '=', input.shopId)
+    .where('installation_generation', '=', input.installationGeneration)
+    .where('state', 'in', ['reserved', 'dispatched'])
+    .executeTakeFirst();
+}
+
+async function acquisitionAuthority(tx: Transaction<Database>, input: AcquisitionIdentity): Promise<boolean> {
+  const row = await tx
+    .selectFrom('installation_generations')
+    .selectAll()
+    .where('shop_id', '=', input.shopId)
+    .where('generation', '=', input.installationGeneration)
+    .executeTakeFirst();
+  return (
+    !!row &&
+    row.deactivated_at === null &&
+    row.authorization_generation === input.authorizationGeneration &&
+    row.authorization_epoch === String(input.authorizationEpoch) &&
+    row.external_installation_id === input.externalInstallationId
+  );
+}
+
+async function writePair(
+  tx: Transaction<Database>,
+  keys: CredentialKeyRing | undefined,
+  input: CredentialIdentity & { pair: ExpiringOfflinePair },
+  now: Date,
+): Promise<string> {
+  validatePair(input.pair, now);
+  const existing = await tx
+    .selectFrom('shop_credentials')
+    .selectAll()
+    .where('shop_id', '=', input.shopId)
+    .where('installation_generation', '=', input.installationGeneration)
+    .forUpdate()
+    .executeTakeFirst();
+  if (existing && existing.state !== 'reauth-required') throw new Error('Credential already active or refreshing');
+  const version = existing ? (BigInt(existing.credential_version) + 1n).toString() : '1';
+  const access = sealCredential(
+    keys,
+    input.shopId,
+    input.installationGeneration,
+    version,
+    'access',
+    input.pair.accessToken,
+  );
+  const refresh = sealCredential(
+    keys,
+    input.shopId,
+    input.installationGeneration,
+    version,
+    'refresh',
+    input.pair.refreshToken,
+  );
+  const values = {
+    state: 'active' as const,
+    access_expires_at: input.pair.accessExpiresAt,
+    refresh_expires_at: input.pair.refreshExpiresAt,
+    scopes: input.pair.scopes,
+    wrapping_key_id: access.kid,
+    access_envelope: access,
+    refresh_envelope: refresh,
+    refresh_claim_id: null,
+    refresh_claim_until: null,
+    credential_version: version,
+    updated_at: now,
+  };
+  if (existing)
+    await tx
+      .updateTable('shop_credentials')
+      .set(values)
+      .where('shop_id', '=', input.shopId)
+      .where('installation_generation', '=', input.installationGeneration)
+      .execute();
+  else
+    await tx
+      .insertInto('shop_credentials')
+      .values({
+        ...values,
+        shop_id: input.shopId,
+        installation_generation: input.installationGeneration,
+        schema_version: 1,
+        created_at: now,
+      })
+      .execute();
+  return version;
 }
 
 export function createShopCredentialRepository(database: Kysely<Database>, keys?: CredentialKeyRing) {
@@ -77,65 +186,150 @@ export function createShopCredentialRepository(database: Kysely<Database>, keys?
     async install(input: CredentialIdentity & { pair: ExpiringOfflinePair }): Promise<string> {
       return database.transaction().execute(async (tx) => {
         if (!(await activeInstallation(tx, input))) throw new Error('Inactive installation cannot receive credentials');
+        if (await currentAcquisition(tx, input)) throw new Error('Credential acquisition pending');
+        return writePair(tx, keys, input, await databaseNow(tx));
+      });
+    },
+
+    async reserveAcquisition(input: AcquisitionIdentity & { claimLeaseMs: number }): Promise<AcquisitionReservation> {
+      if (!Number.isInteger(input.claimLeaseMs) || input.claimLeaseMs < 10_000 || input.claimLeaseMs > 300_000)
+        throw new TypeError('Invalid acquisition claim window');
+      return database.transaction().execute(async (tx) => {
+        const installation = await activeInstallation(tx, input);
+        if (!installation || !(await acquisitionAuthority(tx, input))) return { kind: 'inactive' };
         const now = await databaseNow(tx);
-        validatePair(input.pair, now);
-        const existing = await tx
+        const pending = await currentAcquisition(tx, input);
+        if (pending?.state === 'dispatched') return { kind: 'unresolved' };
+        if (pending && pending.reserved_until > now) return { kind: 'busy' };
+        if (pending)
+          await tx
+            .updateTable('shop_credential_acquisitions')
+            .set({ state: 'abandoned', completed_at: now })
+            .where('attempt_id', '=', pending.attempt_id)
+            .execute();
+        const credential = await tx
           .selectFrom('shop_credentials')
-          .select('credential_version')
+          .selectAll()
           .where('shop_id', '=', input.shopId)
           .where('installation_generation', '=', input.installationGeneration)
           .forUpdate()
           .executeTakeFirst();
-        const version = existing ? (BigInt(existing.credential_version) + 1n).toString() : '1';
-        const access = sealCredential(
-          keys,
-          input.shopId,
-          input.installationGeneration,
-          version,
-          'access',
-          input.pair.accessToken,
-        );
-        const refresh = sealCredential(
-          keys,
-          input.shopId,
-          input.installationGeneration,
-          version,
-          'refresh',
-          input.pair.refreshToken,
-        );
-        const values = {
-          state: 'active' as const,
-          access_expires_at: input.pair.accessExpiresAt,
-          refresh_expires_at: input.pair.refreshExpiresAt,
-          scopes: input.pair.scopes,
-          wrapping_key_id: access.kid,
-          access_envelope: access,
-          refresh_envelope: refresh,
-          refresh_claim_id: null,
-        };
-        if (existing) {
-          await tx
-            .updateTable('shop_credentials')
-            .set({ ...values, credential_version: version, refresh_claim_until: null, updated_at: now })
-            .where('shop_id', '=', input.shopId)
-            .where('installation_generation', '=', input.installationGeneration)
-            .executeTakeFirstOrThrow();
-        } else {
-          await tx
-            .insertInto('shop_credentials')
-            .values({
-              ...values,
-              shop_id: input.shopId,
-              installation_generation: input.installationGeneration,
-              schema_version: 1,
-              credential_version: version,
-              refresh_claim_until: null,
-              created_at: now,
-              updated_at: now,
-            })
-            .executeTakeFirstOrThrow();
-        }
-        return version;
+        if (credential && credential.state !== 'reauth-required') return { kind: 'existing' };
+        // Fail before dispatch if the actual current wrapping key is absent or invalid.
+        sealCredential(keys, input.shopId, input.installationGeneration, '1', 'access', 'key-check');
+        const attemptId = randomUUID();
+        await tx
+          .insertInto('shop_credential_acquisitions')
+          .values({
+            attempt_id: attemptId,
+            shop_id: input.shopId,
+            installation_generation: input.installationGeneration,
+            authorization_generation: input.authorizationGeneration,
+            authorization_epoch: String(input.authorizationEpoch),
+            external_installation_id: input.externalInstallationId,
+            state: 'reserved',
+            reserved_until: new Date(now.getTime() + input.claimLeaseMs),
+            dispatched_at: null,
+            completed_at: null,
+          })
+          .execute();
+        return { kind: 'reserved', attemptId, shopDomain: installation.shopDomain };
+      });
+    },
+
+    async dispatchAcquisition(input: AcquisitionAttempt): Promise<boolean> {
+      return database.transaction().execute(async (tx) => {
+        if (!(await activeInstallation(tx, input))) return false;
+        const row = await currentAcquisition(tx, input);
+        const now = await databaseNow(tx);
+        if (
+          !row ||
+          row.attempt_id !== input.attemptId ||
+          row.state !== 'reserved' ||
+          row.reserved_until <= now ||
+          !(await acquisitionAuthority(tx, {
+            ...input,
+            authorizationGeneration: row.authorization_generation,
+            authorizationEpoch: Number(row.authorization_epoch),
+            externalInstallationId: row.external_installation_id,
+          }))
+        )
+          return false;
+        const credential = await tx
+          .selectFrom('shop_credentials')
+          .select('state')
+          .where('shop_id', '=', input.shopId)
+          .where('installation_generation', '=', input.installationGeneration)
+          .executeTakeFirst();
+        if (credential && credential.state !== 'reauth-required') return false;
+        sealCredential(keys, input.shopId, input.installationGeneration, '1', 'access', 'key-check');
+        await tx
+          .updateTable('shop_credential_acquisitions')
+          .set({ state: 'dispatched', dispatched_at: now })
+          .where('attempt_id', '=', row.attempt_id)
+          .execute();
+        return true;
+      });
+    },
+
+    async completeAcquisition(
+      input: AcquisitionAttempt & { pair: ExpiringOfflinePair },
+    ): Promise<'installed' | 'stale' | 'inactive'> {
+      return database.transaction().execute(async (tx) => {
+        if (!(await activeInstallation(tx, input))) return 'inactive';
+        const row = await currentAcquisition(tx, input);
+        if (
+          !row ||
+          row.attempt_id !== input.attemptId ||
+          row.state !== 'dispatched' ||
+          !(await acquisitionAuthority(tx, {
+            ...input,
+            authorizationGeneration: row.authorization_generation,
+            authorizationEpoch: Number(row.authorization_epoch),
+            externalInstallationId: row.external_installation_id,
+          }))
+        )
+          return 'stale';
+        const credential = await tx
+          .selectFrom('shop_credentials')
+          .select('state')
+          .where('shop_id', '=', input.shopId)
+          .where('installation_generation', '=', input.installationGeneration)
+          .executeTakeFirst();
+        if (credential && credential.state !== 'reauth-required') return 'stale';
+        const now = await databaseNow(tx);
+        await writePair(tx, keys, input, now);
+        await tx
+          .updateTable('shop_credential_acquisitions')
+          .set({ state: 'installed', completed_at: now })
+          .where('attempt_id', '=', row.attempt_id)
+          .execute();
+        return 'installed';
+      });
+    },
+
+    async rejectAcquisition(input: AcquisitionAttempt): Promise<boolean> {
+      return database.transaction().execute(async (tx) => {
+        if (!(await activeInstallation(tx, input))) return false;
+        const row = await currentAcquisition(tx, input);
+        if (
+          !row ||
+          row.attempt_id !== input.attemptId ||
+          row.state !== 'dispatched' ||
+          !(await acquisitionAuthority(tx, {
+            ...input,
+            authorizationGeneration: row.authorization_generation,
+            authorizationEpoch: Number(row.authorization_epoch),
+            externalInstallationId: row.external_installation_id,
+          }))
+        )
+          return false;
+        await tx
+          .updateTable('shop_credential_acquisitions')
+          .set({ state: 'rejected', completed_at: await databaseNow(tx) })
+          .where('attempt_id', '=', row.attempt_id)
+          .execute();
+        return true;
       });
     },
 
@@ -154,6 +348,8 @@ export function createShopCredentialRepository(database: Kysely<Database>, keys?
       return database.transaction().execute(async (tx) => {
         const installation = await activeInstallation(tx, input);
         if (!installation) return { kind: 'inactive' };
+        const pending = await currentAcquisition(tx, input);
+        if (pending) return { kind: 'busy', retryAt: pending.reserved_until };
         const row = await tx
           .selectFrom('shop_credentials')
           .selectAll()

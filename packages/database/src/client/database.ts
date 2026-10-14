@@ -167,6 +167,20 @@ export interface OutboxEventsTable {
   created_at: GeneratedTimestamp;
 }
 
+export interface ShopCredentialAcquisitionsTable {
+  attempt_id: string;
+  shop_id: string;
+  installation_generation: Bigint;
+  authorization_generation: string;
+  authorization_epoch: Bigint;
+  external_installation_id: string;
+  state: 'reserved' | 'dispatched' | 'installed' | 'rejected' | 'abandoned';
+  reserved_until: Timestamp;
+  dispatched_at: NullableTimestamp;
+  completed_at: NullableTimestamp;
+  created_at: GeneratedTimestamp;
+}
+
 export interface Database {
   shops: ShopsTable;
   installation_generations: InstallationGenerationsTable;
@@ -177,6 +191,7 @@ export interface Database {
   inbox_messages: InboxMessagesTable;
   shopify_webhook_deliveries: ShopifyWebhookDeliveriesTable;
   shop_credentials: ShopCredentialsTable;
+  shop_credential_acquisitions: ShopCredentialAcquisitionsTable;
   outbox_events: OutboxEventsTable;
 }
 

@@ -137,7 +137,7 @@ jobs:
         run: node --test test/purchase-flow.test.mjs
       - name: Historical schema20 owner lifecycle and fresh queue process controls
         # Each test allocates its own database from pinned PR97 schema20 inputs.
-        # Current check:database above qualifies schema31; the historical erasure guard stays exact20.
+        # Current check:database above qualifies schema32; the historical erasure guard stays exact20.
         run: |
           corepack pnpm exec biome check scripts/m5-owner-lifecycle
           M5_OWNER_LIFECYCLE_TEST_URL="$DATABASE_URL" corepack pnpm --filter @insignia/database exec vitest run test/owner-lifecycle.test.ts

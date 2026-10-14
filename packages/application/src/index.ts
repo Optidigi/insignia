@@ -28,3 +28,4 @@ export * from './shopify/ingress.js';
 export * from './shopify/offline-credentials.js';
 export * from './shopify/provider-scope.js';
 export * from './transactions/transaction.js';
+export * from './shopify/offline-acquisition.js';
