@@ -131,6 +131,7 @@ for (const releaseMode of [
       signingConfiguration,
       ownerDirectory;
     let collected = 0;
+    let authenticationInFlight = 0;
     const role = 'm5022_runtime_' + randomUUID().replaceAll('-', '');
     try {
       await core.transactions.run((tx) =>
@@ -258,6 +259,14 @@ for (const releaseMode of [
               const open = await pool.query(
                 "SELECT count(*)::integer n FROM pg_stat_activity WHERE datname=current_database() AND state='idle in transaction'",
               );
+              if (open.rows[0].n !== 0)
+                console.error(
+                  'SYNTHETIC_COLLECTION_TRANSACTION_BOUNDARY',
+                  JSON.stringify({
+                    openTransactions: open.rows[0].n,
+                    authenticationInFlight,
+                  }),
+                );
               assert.equal(open.rows[0].n, 0);
               if (successful) {
                 const f = await collectorFixture({
@@ -669,6 +678,32 @@ for (const releaseMode of [
       }
       entitlementNow = '2026-09-30T23:59:59.999Z';
       providerMode = 'current';
+      if (releaseMode === 'demand-success') {
+        // Exercise concurrent publication after both real authentication transactions
+        // commit: a sibling bootstrap transaction is not the collector's caller.
+        const authenticated = Promise.withResolvers();
+        void authenticated.promise.catch(() => {});
+        const authenticate = services.authenticate.bind(services);
+        let completed = 0;
+        services = {
+          ...services,
+          async authenticate(request) {
+            authenticationInFlight++;
+            let actor;
+            try {
+              actor = await authenticate(request);
+            } catch (error) {
+              authenticated.reject(error);
+              throw error;
+            } finally {
+              authenticationInFlight--;
+            }
+            if (++completed === 2) authenticated.resolve();
+            await authenticated.promise;
+            return actor;
+          },
+        };
+      }
       const publishRequest = () =>
         handleAdminRequest(
           new Request(origin + '/api/admin/products/555/config', {
@@ -710,7 +745,7 @@ for (const releaseMode of [
         assert.equal(adminMutations, 0);
         return;
       }
-      assert.equal(publishResponse.status, 202);
+      assert.equal(publishResponse.status, 202, await publishResponse.clone().text());
       const published = await publishResponse.json();
       if (successful) {
         assert.equal(published.state, 'ACTIVE');
