@@ -1,0 +1,37 @@
+{
+  "pr": "https://github.com/Optidigi/insignia/pull/124",
+  "state": "MERGED_NORMAL_VERIFIED",
+  "base": "c8d87136adc3b49cc22e025cba377ffb85184a62",
+  "head": "19f1e0002edbfc15bdb349777e024ae1f412bc0e",
+  "effectiveMergeBase": "c8d87136adc3b49cc22e025cba377ffb85184a62",
+  "merge": "902bc87a8d59c09c54afa44e308f3b2b0507c787",
+  "tree": "d9fee19565fdf6ac552f525e49e64a00ea1ba184",
+  "parents": [
+    "c8d87136adc3b49cc22e025cba377ffb85184a62",
+    "19f1e0002edbfc15bdb349777e024ae1f412bc0e"
+  ],
+  "ci": [
+    {
+      "workflow": "foundation",
+      "runId": 38539733791,
+      "head": "19f1e0002edbfc15bdb349777e024ae1f412bc0e",
+      "attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "workflow": "durable-core",
+      "runId": 38539733504,
+      "head": "19f1e0002edbfc15bdb349777e024ae1f412bc0e",
+      "attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "workflow": "runtime",
+      "runId": 38539733490,
+      "head": "19f1e0002edbfc15bdb349777e024ae1f412bc0e",
+      "attempt": 1,
+      "conclusion": "success"
+    }
+  ],
+  "nativeLimit": "Closed profile integration is not native purchase acceptance."
+}
