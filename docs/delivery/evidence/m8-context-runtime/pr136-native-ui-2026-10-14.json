@@ -1,0 +1,22 @@
+{
+  "classification": "DEPLOYED_NATIVE_MERCHANT_UI_AND_CONTROLLED_STALE_STATUS_REFRESH_PASS",
+  "sourceMerge": "7611a335f011ec5f3f4ec3317367ee0cf27f328c",
+  "webContainer": "1898f97e5827779d99600a0c6648bddb48faeb157a1b9425263d89141bf8fe4e",
+  "initialNativeRead": {
+    "actualProductStatus": "ACTIVE",
+    "draftVersion": "2",
+    "publicationState": "ACTIVE",
+    "activeRevisionId": "e6b79dfb-ce60-47b3-a5b3-f0d51a5cdb0e"
+  },
+  "controlledInitialStatus": "DRAFT (browser-only substituted response)",
+  "subsequentStatus": "ACTIVE (unaltered authenticated application response)",
+  "nativeProductTransitionTested": false,
+  "unsavedLocalMethodLabelPreserved": true,
+  "localLabelRestored": true,
+  "configReads": 2,
+  "configWrites": 0,
+  "compiledClientSha256": "036221ee32a2fc9b35d9864a356b5be5b48635cc387be00a78018afc04d62bfd",
+  "shopifyReleaseCalls": 0,
+  "newOrderCalls": 0,
+  "sessionDataPublished": false
+}
