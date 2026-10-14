@@ -321,37 +321,43 @@ describe('production Shopify online staff adapter with synthetic transport', () 
 
 describe('expiring offline acquisition on a verified embedded identity', () => {
   it('uses the actual SDK exchange once, expiring=1, and preserves provider expiration', async () => {
-    const signed = token();
-    let calls = 0;
-    const provider = createAdminOnlineIdentity({
-      apiKey: key,
-      apiSecret: secret,
-      hostName: 'example.test',
-      fetchImpl: async (_url, init) => {
-        calls++;
-        const body = JSON.parse(String(init?.body));
-        expect(body.requested_token_type).toBe('urn:shopify:params:oauth:token-type:offline-access-token');
-        expect(body.expiring).toBe('1');
-        expect(body.subject_token).toBe(signed);
-        expect(init?.signal).toBeInstanceOf(AbortSignal);
-        return Response.json({
-          access_token: 'synthetic-offline-access',
-          refresh_token: 'synthetic-offline-refresh',
-          expires_in: 3600,
-          refresh_token_expires_in: 86400,
-          scope: 'write_products',
-        });
-      },
-    });
-    const identity = await provider.verify(signed);
-    const before = Date.now();
-    const pair = await provider.exchangeOffline(signed, identity);
-    expect(calls).toBe(1);
-    expect(pair.schemaVersion).toBe('m3-offline-credential-v1');
-    expect(pair.accessToken).toBe('synthetic-offline-access');
-    expect(pair.refreshToken).toBe('synthetic-offline-refresh');
-    expect(+pair.accessExpiresAt).toBeGreaterThanOrEqual(before + 3600000);
-    expect(+pair.accessExpiresAt).toBeLessThanOrEqual(Date.now() + 3600000);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-14T12:00:00Z'));
+    try {
+      const signed = token();
+      let calls = 0;
+      const provider = createAdminOnlineIdentity({
+        apiKey: key,
+        apiSecret: secret,
+        hostName: 'example.test',
+        fetchImpl: async (_url, init) => {
+          calls++;
+          const body = JSON.parse(String(init?.body));
+          expect(body.requested_token_type).toBe('urn:shopify:params:oauth:token-type:offline-access-token');
+          expect(body.expiring).toBe('1');
+          expect(body.subject_token).toBe(signed);
+          expect(init?.signal).toBeInstanceOf(AbortSignal);
+          await vi.advanceTimersByTimeAsync(100);
+          return Response.json({
+            access_token: 'synthetic-offline-access',
+            refresh_token: 'synthetic-offline-refresh',
+            expires_in: 3600,
+            refresh_token_expires_in: 86400,
+            scope: 'write_products',
+          });
+        },
+      });
+      const identity = await provider.verify(signed);
+      const pair = await provider.exchangeOffline(signed, identity);
+      expect(calls).toBe(1);
+      expect(pair.schemaVersion).toBe('m3-offline-credential-v1');
+      expect(pair.accessToken).toBe('synthetic-offline-access');
+      expect(pair.refreshToken).toBe('synthetic-offline-refresh');
+      expect(pair.accessExpiresAt).toEqual(new Date('2026-10-14T13:00:00Z'));
+      expect(pair.refreshExpiresAt).toEqual(new Date('2026-10-15T12:00:00Z'));
+    } finally {
+      vi.useRealTimers();
+    }
   });
   it('rejects a mismatched verified identity before HTTP', async () => {
     let calls = 0;
