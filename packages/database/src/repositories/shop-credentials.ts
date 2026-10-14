@@ -345,6 +345,40 @@ export function createShopCredentialRepository(database: Kysely<Database>, keys?
         input.claimLeaseMs > 300_000
       )
         throw new TypeError('Invalid credential validity or claim window');
+      // A usable pair is a read, not a refresh claim. In particular, quote
+      // acceptance already owns the installation fence on another connection.
+      // Read all eligibility from one snapshot; state-changing paths below
+      // retain the exclusive shop/generation locks and atomic pair replacement.
+      const usable = await sql<{
+        credential_version: string;
+        access_envelope: unknown;
+        access_expires_at: Date;
+      }>`
+        SELECT c.credential_version::text, c.access_envelope, c.access_expires_at
+        FROM shop_credentials c
+        JOIN shops s ON s.shop_id=c.shop_id AND s.current_generation=c.installation_generation
+        JOIN installation_generations i ON i.shop_id=c.shop_id AND i.generation=c.installation_generation
+        WHERE c.shop_id=${input.shopId} AND c.installation_generation=${input.installationGeneration}::bigint
+          AND i.deactivated_at IS NULL AND c.schema_version=1 AND c.state='active'
+          AND c.access_expires_at>clock_timestamp()+${input.minimumRemainingMs}*interval '1 millisecond'
+          AND c.refresh_expires_at>clock_timestamp()
+          AND NOT EXISTS (SELECT 1 FROM shop_credential_acquisitions a
+            WHERE a.shop_id=c.shop_id AND a.installation_generation=c.installation_generation
+              AND a.state IN ('reserved','dispatched'))`.execute(database);
+      const pair = usable.rows[0];
+      if (pair)
+        return {
+          kind: 'usable',
+          accessToken: openCredential(
+            keys,
+            input.shopId,
+            input.installationGeneration,
+            pair.credential_version,
+            'access',
+            pair.access_envelope,
+          ),
+          accessExpiresAt: pair.access_expires_at,
+        };
       return database.transaction().execute(async (tx) => {
         const installation = await activeInstallation(tx, input);
         if (!installation) return { kind: 'inactive' };

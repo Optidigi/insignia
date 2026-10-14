@@ -1,0 +1,125 @@
+{
+  "classification": "PR128_DEVELOPMENT_RUNTIME_AND_NATIVE_OFFLINE_BRIDGE_QUALIFIED",
+  "integratedHead": "640346e5ac6a120733a48ebb320900cbd146da68",
+  "integratedTree": "17b287dd819f68b7b7a83bf5d844b7a2abd7e366",
+  "schema": {
+    "classification": "EXACT_INSIGNIA_SCHEMA32_PASS",
+    "source": "640346e5ac6a120733a48ebb320900cbd146da68",
+    "sqlSha256": "f6f5a7693bcdb4cbde08ede239a7f827915033a3c2455a68fb8011e67b80b6cc",
+    "migrationCount": 32,
+    "newVersion": "20261014000100",
+    "acquisitionRows": 0,
+    "databaseContainer": "19419eff11ef9c0b43e484f91ad97ba606c817df6604e7a6d08c5513473285a1",
+    "databaseImage": "sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d",
+    "containersUnchanged": true,
+    "backup": {
+      "sha256": "79874988a39a0182903174fe997461d55ebcbfd34de5ca51cce5c034303647e4",
+      "size": 378107,
+      "verification": "PG_RESTORE_LIST_PASS_ONLY",
+      "restorationTested": false
+    },
+    "retryInvocations": 0
+  },
+  "imageImport": {
+    "classification": "EXACT_CI_IMAGE_READ_ONLY_RECONCILIATION_PASS",
+    "nativeImageId": "sha256:338f708f010a2b417f09f3831294beddf1179e5a8380220646212859c59369c0",
+    "manifestDigest": "sha256:338f708f010a2b417f09f3831294beddf1179e5a8380220646212859c59369c0",
+    "configDigest": "sha256:fe0c03490b6ce4c14febbfe59403d12175b85ede42d38fe48746be7bbcf3ab90",
+    "configAliasUnsupported": true,
+    "layersVerified": 7,
+    "originalOperatorPassed": false,
+    "originalFailure": "unnecessary config-alias availability assertion",
+    "serviceChanges": 0,
+    "reloadInvocations": 0,
+    "webDatabaseUnchanged": true,
+    "containerComparisonLimit": "Original command compared all in-memory preimages before its final alias assertion; reconciliation independently compares retained web/database identities."
+  },
+  "web": {
+    "classification": "EXACT_WEB_BUYER_COMPOSITION_PASS",
+    "priorContainer": "1538d8c26bb689c77d9327cc253927aa0cad4853f98c791a181bc0c47eb6e53b",
+    "webContainer": "b4f4dfd6d4b3483690b7d2589460d065150d9955889c1866c6ab824f45082e94",
+    "webImage": "sha256:338f708f010a2b417f09f3831294beddf1179e5a8380220646212859c59369c0",
+    "databaseContainer": "19419eff11ef9c0b43e484f91ad97ba606c817df6604e7a6d08c5513473285a1",
+    "databaseImage": "sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d",
+    "profile": "m8-cookie-91b35ab",
+    "healthy": true,
+    "othersPreserved": true,
+    "mountsSecurityEnvironmentPreserved": true,
+    "inspectorReady": true,
+    "buyerEnabled": true,
+    "workerAdmissionEnabled": false,
+    "retryAuthorized": false
+  },
+  "verifierStop": {
+    "classification": "EXACT_VERIFIER_QUIESCENCE_READ_ONLY_RECONCILED",
+    "originalPostconditionPassed": false,
+    "settlement": {
+      "ActiveState": "failed",
+      "SubState": "failed",
+      "InvocationID": "c03316ad4c60492399b6a99244b61396",
+      "MainPID": "0",
+      "Result": "exit-code",
+      "ExecMainStatus": "1"
+    },
+    "allPriorPidsGone": true,
+    "cgroupEmptyOrRemoved": true,
+    "stopRepeated": false
+  },
+  "verifierStart": {
+    "classification": "EXACT_VERIFIER_NEW_WEB_BINDING_STARTUP_PASS_ONLY",
+    "unit": "insignia-m5-release-verifier-r2.service",
+    "state": {
+      "ActiveState": "active",
+      "InvocationID": "3328c8e67f7b416cba9f2b15c5a85461",
+      "MainPID": "571670",
+      "ControlGroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/insignia-m5-release-verifier-r2.service"
+    },
+    "sourceHead": "640346e5ac6a120733a48ebb320900cbd146da68",
+    "sourceTree": "17b287dd819f68b7b7a83bf5d844b7a2abd7e366",
+    "qualifiedInputFiles": 3032,
+    "startupProviderRequests": 0,
+    "purchaseAdmissionEnabled": false
+  },
+  "offlineCredential": {
+    "acquisitions": [
+      {
+        "attemptId": "1259e593-dfcb-4668-9f65-45675766b8db",
+        "state": "installed",
+        "dispatchedAt": "2026-10-14T17:08:04.234+00:00",
+        "completedAt": "2026-10-14T17:08:04.927+00:00"
+      }
+    ],
+    "credentials": [
+      {
+        "state": "active",
+        "version": 1,
+        "accessExpiresAt": "2026-10-14T18:08:03.237+00:00",
+        "refreshExpiresAt": "2027-01-12T17:08:03.237+00:00",
+        "scopes": "write_app_proxy,write_products,read_publications,read_product_listings,write_cart_transforms,write_validations,read_orders",
+        "wrappingKeyId": "m5-runtime-20261011",
+        "bothEncryptedEnvelopesPresent": true
+      }
+    ]
+  },
+  "browser": {
+    "exactAdminThemes": "LOGGED_IN_SCREENSHOT_INSPECTED",
+    "exactDeveloperApp": "LOGGED_IN_SCREENSHOT_INSPECTED",
+    "challengeSignals": false,
+    "loginSignals": false,
+    "browser": "Chromium1243 Chrome153.0.8010.12 headed Xvfb",
+    "restoration": "Pinned Playwright1.63.0 no-remove/no-shell installation restored missing1243; unrelated1248 retained, profile unchanged. Cause not proved."
+  },
+  "buyer": {
+    "nativeControls": "READY",
+    "configSameOriginHttpStatus": 200,
+    "omitFetch": "FAILED_AS_PREVIOUSLY_OBSERVED",
+    "credentialsLogged": false
+  },
+  "limits": [
+    "Startup alone is not fresh provider release evidence.",
+    "Native artwork, quote/cart, order/first-paid/purchase/original retrieval pending.",
+    "Purchase admission remains disabled; historical country/Market/Function execution remain unknown.",
+    "Backup validated with pg_restore --list; restoration not tested."
+  ],
+  "cleanup": "Preserve private journals/artifacts through20October; exposed storage/runtime credential rotation remains owed."
+}
