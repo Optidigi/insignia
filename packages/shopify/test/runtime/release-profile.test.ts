@@ -13,6 +13,12 @@ describe('closed server release targets', () => {
     expect(selected.functionsSourceCommit).toBe('9b94149272d1b62c34f44dda3bde209e80b4ae22');
     expect(Object.isFrozen(selected)).toBe(true);
   });
+  it('selects the observed theme candidate without granting release authority or changing Function source', () => {
+    const selected = resolveRuntimeReleaseProfile('m8-theme-c8d8713');
+    expect(selected.activeVersionRef).toBe('1166552825857');
+    expect(selected.functionsSourceCommit).toBe('9b94149272d1b62c34f44dda3bde209e80b4ae22');
+    expect(Object.isFrozen(selected)).toBe(true);
+  });
   it('rejects arbitrary versions, JSON, inherited names and missing explicit values', () => {
     for (const value of ['1166090010625', '1165513097217', '{"version":"1165513097217"}', 'toString', '', null, {}])
       expect(() => resolveRuntimeReleaseProfile(value)).toThrow('Reviewed runtime release profile required');

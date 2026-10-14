@@ -13,7 +13,7 @@ export function parseReleaseVerificationRequest(
   expectedVersion = resolveRuntimeReleaseProfile().activeVersionRef,
 ): ReleaseVerificationRequest {
   assert.ok(
-    ['m5-functions-9c2e56b42fbf', 'm8-read-orders-617057f', 'm8-app-proxy-3d2a02e']
+    ['m5-functions-9c2e56b42fbf', 'm8-read-orders-617057f', 'm8-app-proxy-3d2a02e', 'm8-theme-c8d8713']
       .map((name) => resolveRuntimeReleaseProfile(name).activeVersionRef)
       .includes(expectedVersion),
     'reviewed_release_target_required',

@@ -1,0 +1,23 @@
+{
+  "classification": "OWNER_GRANTED_BOUNDED_THEME_EXTENSION_AND_PRODUCT_LIST_OBSERVED",
+  "observedDate": "2026-10-14",
+  "authority": "Direct owner reply same delivery thread81292d0a-995f-4c06-8ce7-7d7cd419bc4a",
+  "appId": "429028933633",
+  "ownerReply": "Authorize this bounded theme-extension addition and release",
+  "authorized": [
+    "Add only approved theme extension to exact existing app",
+    "Create and verify one inactive version preserving all seven existing modules/Functions/settings/scopes",
+    "Release once app-wide after exact candidate readback"
+  ],
+  "notAuthorized": [
+    "New scope/store/reinstall",
+    "Direct theme-source edits",
+    "Charge/production rollout",
+    "Ambiguous write retry"
+  ],
+  "merchantProbe": {
+    "ownerReply": "shows list of products",
+    "scope": "Owner normal logged-in browser; no save/publication or buyer checkout claimed"
+  },
+  "executionState": "PREPARED_NATIVE_WRITES_NOT_DISPATCHED"
+}

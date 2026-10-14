@@ -390,6 +390,8 @@ const SOURCE_PATHS = [
   'deployment/m8-journey/release-binding.json',
   'deployment/m8-journey/app-proxy-module-baseline.json',
   'deployment/m8-journey/app-proxy-release-binding.json',
+  'deployment/m8-journey/theme-module-baseline.json',
+  'deployment/m8-journey/theme-release-binding.json',
   'deployment/m5-runtime/native-function-module-baseline.json',
   'deployment/m5-runtime/native-function-module-binding.json',
   'apps/web/package.json',
