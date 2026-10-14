@@ -183,6 +183,22 @@ function canonical(value: unknown): string {
     );
   return JSON.stringify(value);
 }
+function disambiguateNames(names: readonly string[], kind: string): readonly string[] {
+  // Number the complete group when names collide, including labels that mimic
+  // a generated suffix. Distinct final suffixes keep every choice identifiable.
+  return new Set(names).size < names.length
+    ? names.map((name, index) => `${name} (${kind.toLowerCase()} ${index + 1})`)
+    : names;
+}
+function choiceName(
+  ids: readonly string[],
+  labels: Readonly<Record<string, string>> | undefined,
+  id: string,
+  kind: string,
+) {
+  const names = ids.map((choice, index) => labels?.[choice]?.trim() || `${kind} ${index + 1}`);
+  return disambiguateNames(names, kind)[ids.indexOf(id)] ?? `${kind} unavailable`;
+}
 function operatorPublication(state: PublicationState) {
   return ['OPERATOR_HOLD', 'RESTORATION_CONFLICT', 'CONFLICT'].includes(state);
 }
@@ -859,6 +875,34 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
   const selectedStep = geometry?.steps.find((item) => item.id === editor?.selectedStepId);
   type LabelKind = Exclude<keyof NonNullable<MerchantDraft['labels']>, 'values'>;
   const labelFor = (kind: LabelKind, id: string) => draft?.labels?.[kind]?.[id] ?? '';
+  const choiceLabel = (kind: LabelKind, id: string) => {
+    const groups = {
+      methods: { name: 'Method', items: draft?.methods ?? [] },
+      placements: { name: 'Placement', items: draft?.placements ?? [] },
+      steps: { name: 'Size step', items: geometry?.steps ?? [] },
+      views: { name: 'View', items: geometry?.views ?? [] },
+      options: { name: 'Option', items: draft?.productionOptions ?? [] },
+      prices: { name: 'Price', items: draft?.pricingRules ?? [] },
+    };
+    const group = groups[kind];
+    return choiceName(
+      group.items.map((item) => item.id),
+      draft?.labels?.[kind],
+      id,
+      group.name,
+    );
+  };
+  const stepScopes =
+    draft?.placements.flatMap((placement) =>
+      placement.allowedStepIds.map((stepId) => ({
+        scope: { kind: 'step' as const, placementId: placement.id, stepId },
+        name: `${choiceLabel('placements', placement.id)} / ${choiceLabel('steps', stepId)}`,
+      })),
+    ) ?? [];
+  const stepScopeNames = disambiguateNames(
+    stepScopes.map((item) => item.name),
+    'Size step scope',
+  );
   const setLabel = (kind: LabelKind, id: string, value: string) => {
     if (!draft) return;
     const labels = { ...draft.labels };
@@ -1045,7 +1089,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                   <h3>Decoration methods</h3>
                   {draft.methods.map((method) => (
                     <p key={method.id}>
-                      <code>{method.id}</code>{' '}
+                      <strong>{choiceLabel('methods', method.id)}</strong>{' '}
                       <label>
                         Method name{' '}
                         <input
@@ -1083,7 +1127,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                     >
                       {geometry.views.map((item) => (
                         <option key={item.id} value={item.id}>
-                          {labelFor('views', item.id) || item.id}
+                          {choiceLabel('views', item.id)}
                         </option>
                       ))}
                     </select>
@@ -1167,7 +1211,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                       <option value="">None</option>
                       {selectedView?.placements.map((item) => (
                         <option key={item.id} value={item.id}>
-                          {labelFor('placements', item.id) || item.id}
+                          {choiceLabel('placements', item.id)}
                         </option>
                       ))}
                     </select>
@@ -1199,7 +1243,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                   {selectedPlacement && selectedRect && (
                     <div>
                       <p>
-                        <code>{selectedPlacement.id}</code>
+                        <strong>{choiceLabel('placements', selectedPlacement.id)}</strong>
                       </p>
                       <label>
                         Placement name{' '}
@@ -1237,7 +1281,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                               }))
                             }
                           />
-                          {item.id}
+                          {choiceLabel('methods', item.id)}
                         </label>
                       ))}
                       <p>Allowed size steps</p>
@@ -1255,7 +1299,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                               }))
                             }
                           />
-                          {item.id}
+                          {choiceLabel('steps', item.id)}
                         </label>
                       ))}
                       {(['centerX', 'centerY', 'width', 'height'] as const).map((field) => (
@@ -1315,7 +1359,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                       <option value="">None</option>
                       {geometry.steps.map((item) => (
                         <option key={item.id} value={item.id}>
-                          {labelFor('steps', item.id) || item.id}
+                          {choiceLabel('steps', item.id)}
                         </option>
                       ))}
                     </select>
@@ -1397,7 +1441,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                   <h3>Production options</h3>
                   {draft.productionOptions.map((item) => (
                     <p key={item.id}>
-                      <code>{item.id}</code>{' '}
+                      <strong>{choiceLabel('options', item.id)}</strong>{' '}
                       <label>
                         Option name{' '}
                         <input
@@ -1406,9 +1450,9 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                           onInput={(event) => setLabel('options', item.id, event.currentTarget.value)}
                         />
                       </label>{' '}
-                      {item.allowedValueIds.map((id) => (
+                      {item.allowedValueIds.map((id, index) => (
                         <label key={id}>
-                          Value {id} name
+                          Value {index + 1} name
                           <input
                             maxLength={80}
                             value={valueLabel(item.id, id)}
@@ -1482,7 +1526,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                         : rule.rate.tiers.map((tier, index) => ({ amount: tier.amount, index }));
                     return (
                       <div key={rule.id}>
-                        <code>{rule.id}</code>
+                        <h4>{choiceLabel('prices', rule.id)}</h4>
                         <label>
                           Price name{' '}
                           <input
@@ -1524,26 +1568,33 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                             }}
                           >
                             <option value={JSON.stringify({ kind: 'general' })}>General setup</option>
-                            {draft.methods.map((item) => (
-                              <option key={item.id} value={JSON.stringify({ kind: 'method', methodId: item.id })}>
-                                Method {item.id}
-                              </option>
-                            ))}
-                            {draft.placements.map((item) => (
-                              <option key={item.id} value={JSON.stringify({ kind: 'placement', placementId: item.id })}>
-                                Placement {item.id}
-                              </option>
-                            ))}
-                            {draft.placements.flatMap((placement) =>
-                              placement.allowedStepIds.map((step) => (
-                                <option
-                                  key={JSON.stringify([placement.id, step])}
-                                  value={JSON.stringify({ kind: 'step', placementId: placement.id, stepId: step })}
-                                >
-                                  Step {placement.id}/{step}
+                            <optgroup label="Methods">
+                              {draft.methods.map((item) => (
+                                <option key={item.id} value={JSON.stringify({ kind: 'method', methodId: item.id })}>
+                                  {choiceLabel('methods', item.id)}
                                 </option>
-                              )),
-                            )}
+                              ))}
+                            </optgroup>
+                            <optgroup label="Placements">
+                              {draft.placements.map((item) => (
+                                <option
+                                  key={item.id}
+                                  value={JSON.stringify({ kind: 'placement', placementId: item.id })}
+                                >
+                                  {choiceLabel('placements', item.id)}
+                                </option>
+                              ))}
+                            </optgroup>
+                            <optgroup label="Size steps">
+                              {stepScopes.map((item, index) => (
+                                <option
+                                  key={JSON.stringify([item.scope.placementId, item.scope.stepId])}
+                                  value={JSON.stringify(item.scope)}
+                                >
+                                  {stepScopeNames[index]}
+                                </option>
+                              ))}
+                            </optgroup>
                           </select>
                         </label>
                         {selectedPlacement && (
@@ -1571,7 +1622,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                               <option value="">Any allowed method</option>
                               {selectedPlacement.allowedMethodIds.map((id) => (
                                 <option key={id} value={id}>
-                                  {id}
+                                  {choiceLabel('methods', id)}
                                 </option>
                               ))}
                             </select>

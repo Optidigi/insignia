@@ -2333,3 +2333,228 @@ test('product search has a usable responsive control, distinct catalog cards and
   assert.equal(await page.getByRole('article').count(), 0);
   assert.deepEqual(queries, ['', 'archived & blue', 'absent']);
 });
+
+test('merchant choices use names and numbered fallbacks while pricing saves the original identifiers', {
+  timeout: 25000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  const page = await browser.newPage();
+  await page.addInitScript(() => {
+    window.shopify = { idToken: async () => 'synthetic-choice-labels' };
+  });
+  await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+    route.fulfill({ body: '', contentType: 'text/javascript' }),
+  );
+  const current = JSON.parse(
+    JSON.stringify(draft())
+      .replaceAll('"print"', '"method_opaque"')
+      .replaceAll('"front"', '"placement_opaque"')
+      .replaceAll('"small"', '"step_opaque"')
+      .replaceAll('"large"', '"step_other"'),
+  );
+  current.methods.push({ id: 'method_other' });
+  current.placements[0].allowedMethodIds.push('method_other');
+  current.productionOptions = [{ id: 'option_opaque', allowedValueIds: ['value_opaque', 'value_other'] }];
+  current.pricingRules = [
+    {
+      id: 'price_opaque',
+      role: 'setup',
+      scope: { kind: 'general' },
+      rate: { kind: 'fixed', amount: { shopDecimal: '10', presentmentOverrides: [] } },
+    },
+  ];
+  current.labels = {
+    methods: { method_opaque: 'Screen print' },
+    placements: { placement_opaque: 'Front panel' },
+    steps: { step_opaque: 'Small' },
+    views: { 'front-view': 'Front view' },
+    options: { option_opaque: 'Finish' },
+    values: { option_opaque: { value_opaque: 'Matte' } },
+    prices: { price_opaque: 'Artwork setup' },
+  };
+  let saved;
+  await page.route('**/api/admin/products/111/config', (route) => {
+    if (route.request().method() === 'GET') return route.fulfill({ json: response(current) });
+    saved = route.request().postDataJSON();
+    return route.fulfill({ json: { kind: 'saved', draftVersion: '2' } });
+  });
+  await page.goto(server.base + '/admin/products/111/config');
+  await page.getByLabel('Placement').first().selectOption('placement_opaque');
+  await page.getByRole('checkbox', { name: 'Screen print', exact: true }).waitFor({ timeout: 1500 });
+  assert.equal(await page.getByRole('checkbox', { name: 'Method 2', exact: true }).isChecked(), true);
+  assert.equal(await page.getByRole('checkbox', { name: 'Small', exact: true }).isChecked(), true);
+  assert.equal(await page.getByRole('checkbox', { name: 'Size step 2', exact: true }).isChecked(), true);
+  assert.equal(await page.getByLabel('View').first().locator('option').last().textContent(), 'View 2');
+  assert.equal(await page.getByLabel('Value 1 name').inputValue(), 'Matte');
+  assert.equal(await page.getByLabel('Value 2 name').count(), 1);
+  const scope = page.getByLabel('Scope').first();
+  assert.deepEqual(
+    (await scope.locator('option').allTextContents()).map((x) => x.trim()),
+    ['General setup', 'Screen print', 'Method 2', 'Front panel', 'Front panel / Small', 'Front panel / Size step 2'],
+  );
+  await scope.selectOption(JSON.stringify({ kind: 'step', placementId: 'placement_opaque', stepId: 'step_opaque' }));
+  await page.getByLabel('Specific method').selectOption('method_opaque');
+  assert.equal(await page.getByLabel('Specific method').locator('option:checked').textContent(), 'Screen print');
+  await page.getByLabel('Method name').first().fill('Renamed print');
+  assert.equal(await scope.getByRole('option', { name: 'Renamed print', exact: true }).count(), 1);
+  for (const internalId of [
+    'method_opaque',
+    'placement_opaque',
+    'step_opaque',
+    'option_opaque',
+    'value_opaque',
+    'price_opaque',
+  ])
+    assert.ok(
+      !(await page.locator('body').innerText()).includes(internalId),
+      'Ordinary editor text must not expose ' + internalId,
+    );
+  await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
+  await page.getByText('Draft saved.').waitFor();
+  assert.deepEqual(saved.draft.pricingRules, [
+    {
+      id: 'price_opaque',
+      role: 'setup',
+      scope: { kind: 'step', placementId: 'placement_opaque', stepId: 'step_opaque', methodId: 'method_opaque' },
+      rate: { kind: 'fixed', amount: { shopDecimal: '10', presentmentOverrides: [] } },
+    },
+  ]);
+  assert.deepEqual(saved.draft.methods, current.methods);
+  assert.deepEqual(saved.draft.placements, current.placements);
+  assert.deepEqual(saved.draft.productionOptions, current.productionOptions);
+  assert.equal(saved.draft.labels.methods.method_opaque, 'Renamed print');
+});
+
+test('colliding choice names identify the intended method, size step and option value without rewriting labels', {
+  timeout: 25000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  for (const [methodLabels, expectedMethods] of [
+    [
+      { print: 'Print', second: 'Print', third: 'Print (method 1)' },
+      ['Print (method 1)', 'Print (method 2)', 'Print (method 1) (method 3)'],
+    ],
+    [{ print: 'Method 2' }, ['Method 2 (method 1)', 'Method 2 (method 2)']],
+  ]) {
+    const page = await browser.newPage();
+    try {
+      await page.addInitScript(() => {
+        window.shopify = { idToken: async () => 'synthetic-colliding-labels' };
+      });
+      await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+      await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+        route.fulfill({ body: '', contentType: 'text/javascript' }),
+      );
+      const current = draft();
+      current.methods.push({ id: 'second' });
+      current.placements[0].allowedMethodIds.push('second');
+      if (methodLabels.third) {
+        current.methods.push({ id: 'third' });
+        current.placements[0].allowedMethodIds.push('third');
+      }
+      current.productionOptions = [{ id: 'finish', allowedValueIds: ['matte', 'other'] }];
+      current.pricingRules = [
+        {
+          id: 'setup',
+          role: 'setup',
+          scope: { kind: 'general' },
+          rate: { kind: 'fixed', amount: { shopDecimal: '10', presentmentOverrides: [] } },
+        },
+      ];
+      current.labels = {
+        methods: methodLabels,
+        placements: { front: 'Front' },
+        steps: { small: 'Small', large: 'Small' },
+        values: { finish: { matte: 'Matte', other: 'Matte' } },
+      };
+      let saved;
+      await page.route('**/api/admin/products/111/config', (route) => {
+        if (route.request().method() === 'GET') return route.fulfill({ json: response(current) });
+        saved = route.request().postDataJSON();
+        return route.fulfill({ json: { kind: 'saved', draftVersion: '2' } });
+      });
+      await page.goto(server.base + '/admin/products/111/config');
+      const scope = page.getByLabel('Scope').first();
+      await scope
+        .getByRole('option', { name: expectedMethods[1], exact: true })
+        .waitFor({ state: 'attached', timeout: 1500 });
+      assert.deepEqual(
+        (await scope.locator('optgroup[label="Methods"] option').allTextContents()).map((x) => x.trim()),
+        expectedMethods,
+      );
+      await scope.selectOption({ label: 'Front / Small (size step 2)' });
+      await page.getByLabel('Specific method').selectOption({ label: expectedMethods[1] });
+      await page.getByLabel('Value 2 name').fill('Satin');
+      await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
+      await page.getByText('Draft saved.').waitFor();
+      assert.deepEqual(saved.draft.pricingRules[0].scope, {
+        kind: 'step',
+        placementId: 'front',
+        stepId: 'large',
+        methodId: 'second',
+      });
+      assert.deepEqual(saved.draft.pricingRules[0].rate, current.pricingRules[0].rate);
+      assert.deepEqual(saved.draft.methods, current.methods);
+      assert.deepEqual(saved.draft.placements, current.placements);
+      assert.deepEqual(saved.draft.productionOptions, current.productionOptions);
+      assert.deepEqual(saved.draft.labels.methods, methodLabels);
+      assert.deepEqual(saved.draft.labels.steps, { small: 'Small', large: 'Small' });
+      assert.deepEqual(saved.draft.labels.values, { finish: { matte: 'Matte', other: 'Satin' } });
+    } finally {
+      await page.close();
+    }
+  }
+});
+
+test('compound size-step names remain distinguishable and save the intended placement and step', {
+  timeout: 25000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  const page = await browser.newPage();
+  await page.addInitScript(() => {
+    window.shopify = { idToken: async () => 'synthetic-compound-labels' };
+  });
+  await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+    route.fulfill({ body: '', contentType: 'text/javascript' }),
+  );
+  const current = draft();
+  current.placements[0].allowedStepIds = ['small'];
+  current.placements.push({ ...current.placements[0], id: 'back', allowedStepIds: ['large'] });
+  current.geometry.views[1].placements[0].id = 'back';
+  current.labels = {
+    placements: { front: 'Front / Large', back: 'Front' },
+    steps: { small: 'Small', large: 'Large / Small' },
+  };
+  current.pricingRules = [
+    {
+      id: 'setup',
+      role: 'setup',
+      scope: { kind: 'general' },
+      rate: { kind: 'fixed', amount: { shopDecimal: '10', presentmentOverrides: [] } },
+    },
+  ];
+  let saved;
+  await page.route('**/api/admin/products/111/config', (route) => {
+    if (route.request().method() === 'GET') return route.fulfill({ json: response(current) });
+    saved = route.request().postDataJSON();
+    return route.fulfill({ json: { kind: 'saved', draftVersion: '2' } });
+  });
+  await page.goto(server.base + '/admin/products/111/config');
+  const scope = page.getByLabel('Scope').first();
+  await scope
+    .getByRole('option', { name: 'Front / Large / Small (size step scope 2)', exact: true })
+    .waitFor({ state: 'attached', timeout: 1500 });
+  assert.deepEqual(
+    (await scope.locator('optgroup[label="Size steps"] option').allTextContents()).map((x) => x.trim()),
+    ['Front / Large / Small (size step scope 1)', 'Front / Large / Small (size step scope 2)'],
+  );
+  await scope.selectOption({ label: 'Front / Large / Small (size step scope 2)' });
+  await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
+  await page.getByText('Draft saved.').waitFor();
+  assert.deepEqual(saved.draft.pricingRules[0].scope, { kind: 'step', placementId: 'back', stepId: 'large' });
+  assert.deepEqual(saved.draft.pricingRules[0].rate, current.pricingRules[0].rate);
+  assert.deepEqual(saved.draft.labels, current.labels);
+  assert.deepEqual(saved.draft.placements, current.placements);
+});

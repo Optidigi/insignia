@@ -1,0 +1,49 @@
+{
+  "classification": "NATIVE_FRESH_VISITOR_MALFORMED_CART_POINTER_AND_PRODUCTION_REPAIR_PASS",
+  "productId": "gid://shopify/Product/10519322493211",
+  "variantId": "gid://shopify/ProductVariant/54211066986779",
+  "webSource": "7611a335f011ec5f3f4ec3317367ee0cf27f328c",
+  "previewBarFrames": 0,
+  "staffSessionCookiesCopied": 0,
+  "addInvocations": 1,
+  "productionRemovalClicks": 1,
+  "finalCartEmpty": true,
+  "sharedEnvelopeAbsent": true,
+  "pendingJournalAbsent": true,
+  "noManualJournalReset": true,
+  "checkoutCalls": 0,
+  "newOrders": 0,
+  "charges": 0,
+  "productStatusWrites": 0,
+  "adminSettingsSaved": false,
+  "secretValuesPublished": false,
+  "scopeLimit": "One deliberately malformed member marker; no new valid accepted offer, checkout or historical Function-execution proof.",
+  "pointer": {
+    "classification": "NATIVE_FRESH_VISITOR_POINTER_AND_REPAIR_DIALOG_PASS",
+    "previewBarFrames": 0,
+    "staffSessionCookiesCopied": 0,
+    "cookiesCopied": 0,
+    "existingStorePasswordUsedPrivately": true,
+    "adminSettingsSaved": false,
+    "clickForced": false,
+    "boundingBox": {
+      "x": 0,
+      "y": 879,
+      "width": 156.734375,
+      "height": 21
+    },
+    "malformedMemberControl": true,
+    "completeEnvelopeAbsent": true
+  },
+  "probeSha256": "4b38f38f4ed65a373175f49591b62381b262a1e4130c66c32ee68bcd991ac743",
+  "independentReview": {
+    "reviewer": "offline_exchange_contract",
+    "result": "CLEAR after exact journal-key and rejection-state corrections",
+    "effectsPerformedByReviewer": false
+  },
+  "limitations": [
+    "Screenshot captures repair dialog while customization is loading; no completed customization controls claimed.",
+    "Malformed member control establishes pointer access and removal, not complete valid-offer admission or historical Function execution.",
+    "Private visitor session custody and mutation journals retained privately through 2026-10-20; no cookies or cart identifiers copied into repository."
+  ]
+}
