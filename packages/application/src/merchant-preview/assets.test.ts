@@ -17,6 +17,9 @@ function fixture() {
   const calls: string[] = [],
     objects = new Map<string, Uint8Array>();
   const store: MerchantPreviewStore = {
+    async getForRevision() {
+      throw Error('Read projection is outside capture fixture');
+    },
     async get() {
       return row;
     },

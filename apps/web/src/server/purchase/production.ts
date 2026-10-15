@@ -2,6 +2,7 @@ import { createDurableCore } from '@insignia/database';
 import { loadArtworkStorageProfile } from '@insignia/storage';
 import { Pool } from 'pg';
 import { adminServices } from '../admin/runtime.ts';
+import { createFrozenPreviewReader } from '../merchant-preview/read.ts';
 import { createPurchaseServices, type PurchaseServices } from './service.ts';
 /** An integrated source is not an activation grant. Missing native context remains an explicit binding exception. */
 export async function createProductionPurchaseServices(
@@ -40,6 +41,10 @@ export async function createProductionPurchaseServices(
       appOrigin,
       authenticate: async (request) => (await adminServices()?.authenticate(request)) ?? null,
       storage,
+      previewImages:
+        env.INSIGNIA_M8_MERCHANT_PREVIEWS_ENABLED === '1' && storage
+          ? createFrozenPreviewReader({ store: core.merchantPreviews, storage })
+          : undefined,
     });
   } catch (error) {
     await core.close();

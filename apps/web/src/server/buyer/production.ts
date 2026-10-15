@@ -25,7 +25,9 @@ import {
   readVariantAvailability as readAvailability,
   readShopContext,
 } from '@insignia/shopify';
+import { loadArtworkStorageProfile } from '@insignia/storage';
 import { createArtworkGuestAuthority } from '../artwork/guest.ts';
+import { createFrozenPreviewReader } from '../merchant-preview/read.ts';
 import { createProductionQuoteReadiness } from '../production-readiness.ts';
 import { createQuoteAuthorityPorts } from '../quote-composition.ts';
 import { createBuyerServices } from './service.ts';
@@ -327,6 +329,23 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
     guest,
     ports,
     clock,
+    previewImages:
+      input.env.INSIGNIA_M8_MERCHANT_PREVIEWS_ENABLED === '1'
+        ? createFrozenPreviewReader({
+            store: input.core.merchantPreviews,
+            clock,
+            storage: {
+              async presignRead(target) {
+                const storage = await loadArtworkStorageProfile(required('ARTWORK_STORAGE_PROFILE'), {
+                  endpoint: required('ARTWORK_R2_ENDPOINT'),
+                  bucket: required('ARTWORK_R2_BUCKET'),
+                  prefix: required('ARTWORK_R2_PREFIX'),
+                });
+                return storage.presignRead(target);
+              },
+            },
+          })
+        : undefined,
     async configurationReady(scope, productId) {
       const selected = await selection(scope);
       if (input.configurationReady) {

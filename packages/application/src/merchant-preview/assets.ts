@@ -19,6 +19,10 @@ export type MerchantPreviewRecord = {
 };
 /** No expired lease may turn an unresolved storage writer into a cleanup candidate. */
 export interface MerchantPreviewStore {
+  getForRevision(
+    scope: Pick<MerchantPreviewScope, 'shopId' | 'installationGeneration'>,
+    target: { productId: string; revisionId: string },
+  ): Promise<MerchantPreviewRecord[]>;
   get(scope: MerchantPreviewScope, assetId: string): Promise<MerchantPreviewRecord | null>;
   prepare(scope: MerchantPreviewScope, row: MerchantPreviewRecord): Promise<MerchantPreviewRecord>;
   beginCapture(scope: MerchantPreviewScope, assetId: string, claimId: string, now: Date): Promise<boolean>;

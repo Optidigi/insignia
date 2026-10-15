@@ -527,3 +527,23 @@ test('buyer geometry preserves numeric and non-editor selectors and rejects ambi
     assert.deepEqual(original, before, 'ambiguous projection never mutates historical geometry');
   }
 });
+
+test('production frozen-preview mode never fills an uncaptured revision from the current Shopify photo', async () => {
+  const { input } = catalogFixture();
+  input.env.INSIGNIA_M8_MERCHANT_PREVIEWS_ENABLED = '1';
+  const bindings = [];
+  input.core.merchantPreviews = {
+    async getForRevision(scope, target) {
+      bindings.push({ scope, target });
+      return [];
+    },
+  };
+  const config = await createProductionBuyerServices(input).config(new Request(signed()));
+  assert.deepEqual(config.imageUrls, {});
+  assert.deepEqual(bindings, [
+    {
+      scope: { shopId: 'tenant', installationGeneration: '1', productId: '111' },
+      target: { productId: '111', revisionId: 'revision' },
+    },
+  ]);
+});
