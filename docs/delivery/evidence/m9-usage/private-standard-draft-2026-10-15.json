@@ -1,0 +1,120 @@
+{
+  "classification": "OWNER_SAVE_ACK_AND_NATIVE_STORE_VISIBLE_DRAFT_NOT_SELECTED",
+  "appId": "gid://shopify/App/429028933633",
+  "shopId": "gid://shopify/Shop/105501393179",
+  "ownerAuthority": "../../authority/m9-private-pricing-draft-2026-10-15.md",
+  "ownerReport": {
+    "text": "saved it",
+    "context": "After the drafted form was reviewed and Charge as corrected from Dollar amount to Cost per unit.",
+    "source": "Owner conversation, not fabricated API receipt."
+  },
+  "routeResolution": {
+    "screenshotFinding": "Disabled Private Add belonged to Manual pricing legacy. Get started above it opened App Pricing draft setup.",
+    "legacyCounts": "0 public/0 private were legacy counts, not proof that the previously selected managed private plan was absent.",
+    "outcome": "Owner reached Add private plan, filled proposed values and reported one successful save. No save retry."
+  },
+  "formEvidence": {
+    "path": "/home/serveradmin/.t3/userdata/attachments/81292d0a-995f-4c06-8ce7-7d7cd419bc4a-79637363-136e-416a-a2c1-3ea4d1a94680.png",
+    "sha256": "1c4c1135d2b86aa9592603c8a59aea8d4b9480a75ee94bdff6ee9fdf3398c4c0",
+    "proposedHandle": "insignia-standard-20261015",
+    "scope": "One rewrite-dev store, broad developer access off, monthly49.99/trial14/Tiered graduated/1-100free/101+0.10.",
+    "limit": "Form was before save and before Charge as correction; full saved editor not independently read."
+  },
+  "nativeBrowser": {
+    "method": "Required exact Admin/Dev open.js verification, headed Chromium/Xvfb one profile instance at a time; screenshots inspected, no login/challenge, contexts closed, no logout. Then hosted plan page GET/read only.",
+    "url": "https://admin.shopify.com/store/insignia-rewrite-dev/charges/insignia-1/pricing_plans",
+    "plans": [
+      "Insignia $0 Test marked Current",
+      "Insignia Standard offered, not selected"
+    ],
+    "standardDisplay": {
+      "recurringNominal": "$49.99 /30days struck through",
+      "recurringEffective": "$0 /30days",
+      "trialLabel": "14 trial days",
+      "usageColumn": "Cost per unit",
+      "included": "First100 Test custom order Free",
+      "overage": "101+ Test custom order $0.10 struck through/effective$0",
+      "privateLabel": "Created for you"
+    },
+    "identityLimit": "Test with this plan is a BUTTON with no href; no click performed. Exact handle comes from owner form/save context, not an invented backend plan ID.",
+    "screenshots": {
+      "m9-draft-saved-admin.png": {
+        "path": "/home/serveradmin/agent-browser/m9-draft-saved-admin.png",
+        "sha256": "46a17b14b4c1f1a4f8563c3495a5526365f6e5aeae4cf73cc299c371ceb4ab41",
+        "inspected": true,
+        "privateRetentionDue": "2026-10-20"
+      },
+      "m9-draft-saved-dev.png": {
+        "path": "/home/serveradmin/agent-browser/m9-draft-saved-dev.png",
+        "sha256": "cfce4e81d5c4a34fcbbc5a3bb4d205ff5a74db7eea2968ebf1d3795999fcf80d",
+        "inspected": true,
+        "privateRetentionDue": "2026-10-20"
+      },
+      "m9-draft-saved-plans.png": {
+        "path": "/home/serveradmin/agent-browser/m9-draft-saved-plans.png",
+        "sha256": "41a1d4ca18073bb6a8c504cc20c06203c793d328b4278dd18e2f28097c814819",
+        "inspected": true,
+        "privateRetentionDue": "2026-10-20"
+      }
+    }
+  },
+  "currentSelectedSubscription": {
+    "observedAt": "2026-10-15T21:15:35.916Z",
+    "providerQueries": 1,
+    "providerMutations": 0,
+    "usageEventsSent": 0,
+    "comparisons": {
+      "schemaVersion": true,
+      "sourceApiVersion": true,
+      "appId": true,
+      "shopId": true,
+      "active": true,
+      "billingPeriod": true,
+      "cancelAtEndOfCycle": true,
+      "trialEndsAt": true,
+      "currentBillingCycle": true,
+      "items": true,
+      "pendingUpdate": true
+    },
+    "active": true,
+    "handles": [
+      "customized_order_paid",
+      "insignia-dev-zero-20260928"
+    ],
+    "trialEndsAt": null,
+    "currentBillingCycle": {
+      "startTime": "2026-09-28T16:53:01.000Z",
+      "endTime": "2026-10-28T16:53:01.000Z"
+    },
+    "pendingUpdate": null,
+    "limit": "Current selected subscription only, not draft catalog or persisted nominal pricing proof."
+  },
+  "nativeFeatureRead": {
+    "observedAt": "2026-10-15T21:16:55.835419+00:00",
+    "method": "Exact existing web container inspect; internally parse only entitlement policy, never print full environment.",
+    "container": "d2f926ec7d7c5c6ffcfd2970658262006b7df03b106d64c4fc077338d053cd75",
+    "image": "sha256:49dcacd88d8a7339459bafe5ff9ac5a8cdfe26c7bb35b3d81f7c4608e3cfbeb1",
+    "health": "healthy",
+    "buyerEnabled": true,
+    "policyVersion": "m5-existing-dev-contract-v1",
+    "recognizedPlanHandles": [
+      "insignia-dev-zero-20260928"
+    ],
+    "consequence": "New Standard subscription would currently be unrecognized for quoting; qualify scoped policy addition before selection."
+  },
+  "effects": {
+    "agentProviderMutations": 0,
+    "ownerReportedPrivateDraftSave": 1,
+    "subscriptionSelections": 0,
+    "usageEventsSent": 0,
+    "databaseWrites": 0,
+    "nativeDeployment": false,
+    "billingDispatchEnabled": false
+  },
+  "limits": [
+    "Current API read proves selected projection unchanged, not full pricing catalog or saved nominal configuration.",
+    "Native plan page corroborates saved draft visibility, trial label and nominal/effective per-unit preview; no activated trial or real-price invoice result.",
+    "Owner draft grant is fulfilled for this saved candidate only; selection/switch/migration/event/token actions remain ungranted.",
+    "Existing16/20/21/22October cleanup/rotation obligations remain."
+  ]
+}

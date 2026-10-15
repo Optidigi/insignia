@@ -1,0 +1,37 @@
+{
+  "pullRequest": "https://github.com/Optidigi/insignia/pull/178",
+  "classification": "VERIFIED_NORMAL_PROTECTED_EVIDENCE_MERGE",
+  "base": "a9dd27f09f8597aef186714fb0a6ba66e524bf3d",
+  "head": "55847e629b3f3ab93a186ddefdcf35217e34b4d3",
+  "effectiveMergeBase": "a9dd27f09f8597aef186714fb0a6ba66e524bf3d",
+  "merge": "5bf2bea4ea05cdf032096c405f1c07ee8ac7534f",
+  "tree": "9bc9d4c58a4877c11e386543bd1e31cc9a992294",
+  "parents": [
+    "a9dd27f09f8597aef186714fb0a6ba66e524bf3d",
+    "55847e629b3f3ab93a186ddefdcf35217e34b4d3"
+  ],
+  "checks": [
+    {
+      "name": "foundation",
+      "run": 38802144293,
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "name": "durable-core",
+      "run": 38802144422,
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "name": "runtime",
+      "run": 38802144316,
+      "attempt": 1,
+      "result": "SUCCESS"
+    }
+  ],
+  "ownerReadOnlyChecks": "BOTH_FULFILLED",
+  "nativeDeployment": false,
+  "providerMutations": 0,
+  "billingDispatchEnabled": false
+}
