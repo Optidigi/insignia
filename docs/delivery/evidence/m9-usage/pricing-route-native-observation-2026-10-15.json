@@ -1,5 +1,5 @@
 {
-  "classification": "PRIVATE_DEVELOPMENT_PLAN_VISIBLE_CONFIGURATION_ROUTE_UNRESOLVED",
+  "classification": "PRIVATE_EDITOR_OWNER_VERIFIED_COMMERCIAL_CONFIGURATION_NOT_YET_AUTHORIZED",
   "observedDate": "2026-10-15",
   "appId": "gid://shopify/App/429028933633",
   "providerShopId": "gid://shopify/Shop/105501393179",
@@ -38,7 +38,7 @@
     "approvedTerms": "USD49.99/30days,100 included thenUSD0.10/order,GRADUATED,14day trial; still unqualified.",
     "historicalMigrationState": "September report says Draft and test plans, App Pricing enabled not started, Manual pricing legacy present. This is dated evidence, not current migration state."
   },
-  "ownerDependency": "Original Partner access/listing check fulfilled. One precise existing private-editor read-only browser check requested; no new credential, access, listing completion or public-review submission requested.",
+  "ownerDependency": "Both read-only owner checks fulfilled. No pending browser request. Next is bounded impact research and a concrete proposed development-pricing change, not app submission or an inferred write grant.",
   "screenshots": {
     "admin": {
       "path": "/home/serveradmin/agent-browser/m9-pricing-admin-2011.png",
@@ -69,5 +69,50 @@
   "planApprovals": 0,
   "usageEventsSent": 0,
   "nativeDeployment": false,
-  "billingDispatchEnabled": false
+  "billingDispatchEnabled": false,
+  "ownerEditorFollowup": {
+    "source": "Owner pasted actual existing private-plan editor after read-only request; no screenshot or provider response invented.",
+    "planHandle": "insignia-dev-zero-20260928",
+    "appDisplay": "Insignia",
+    "banner": "This plan goes live to merchants when you switch from manual pricing to Shopify App Pricing.",
+    "storeAccess": [
+      "insignia-rewrite-dev.myshopify.com"
+    ],
+    "preview": "$0 / month plus Test custom order $0.01 per unit",
+    "usage": {
+      "eventHandle": "customized_order_paid",
+      "displayName": "Test custom order",
+      "pricingModel": "Flat rate",
+      "chargeAs": "Cost per unit",
+      "nominalUnitPrice": "0.01"
+    },
+    "unknowns": [
+      "Toggle checked states and unpasted input values are not invented.",
+      "No new independent full catalog/current Partner API observation.",
+      "Effect of a future draft edit on existing dev subscription/trial remains to be established before proposing a write."
+    ],
+    "changesReported": false,
+    "limit": "Owner-local access works; server HTTP422 remains a route/session limitation, not proof of missing owner permission."
+  },
+  "supersededHeadCI": {
+    "head": "47a858b6f3629b6786efff872863cd94ffa5450b",
+    "checks": [
+      {
+        "name": "foundation",
+        "run": 38800584073,
+        "result": "SUCCESS"
+      },
+      {
+        "name": "durable-core",
+        "run": 38800584086,
+        "result": "SUCCESS"
+      },
+      {
+        "name": "runtime",
+        "run": 38800584070,
+        "result": "SUCCESS"
+      }
+    ],
+    "limit": "Passing pre-followup head, not final updated-candidate acceptance."
+  }
 }
