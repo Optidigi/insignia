@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
+import { Writable } from 'node:stream';
 import { test } from 'node:test';
+import { createObservability } from '@insignia/observability';
 import { createWorkerReconciliation } from '../dist/reconciliation.js';
 
 test('buyer payload expiry runs independently when artwork erasure fails', async () => {
@@ -55,7 +57,7 @@ function fixture() {
       return {};
     },
     observability: {
-      metrics: { queue() {} },
+      metrics: { queue() {}, usageQualification() {} },
       logger: {
         error(event, metadata) {
           errors.push({ event, metadata });
@@ -285,5 +287,41 @@ test('returned usage failure summary is reported without blocking private cleanu
     input.errors.filter((entry) => entry.metadata.errorClass === 'USAGE_QUALIFICATION_UNAVAILABLE').length,
     1,
   );
+  await maintenance.stop();
+});
+
+test('usage maintenance exposes completed passes and failures without purchase data or suppressing cleanup', async () => {
+  const input = fixture();
+  input.queue.observability = createObservability({
+    stream: new Writable({
+      write(_chunk, _encoding, done) {
+        done();
+      },
+    }),
+  });
+  let pass = 0,
+    cleaned = 0;
+  input.usage = {
+    async runOnce() {
+      pass++;
+      if (pass === 3) throw new Error('private source');
+      return { processed: 0, staged: 0, held: 0, failed: pass === 2 ? 1 : 0 };
+    },
+    async stop() {},
+  };
+  input.core.purchases = {
+    async cleanupDue() {
+      cleaned++;
+    },
+  };
+  const maintenance = createWorkerReconciliation(input);
+  await maintenance.runOnce();
+  await maintenance.runOnce();
+  await maintenance.runOnce();
+  assert.equal(cleaned, 3);
+  const metrics = await input.queue.observability.registry.metrics();
+  assert.match(metrics, /insignia_usage_qualification_pass_total\{outcome="success"\} 1/);
+  assert.match(metrics, /insignia_usage_qualification_pass_total\{outcome="failure"\} 2/);
+  assert.doesNotMatch(metrics, /private source|purchaseId|shop_id/);
   await maintenance.stop();
 });

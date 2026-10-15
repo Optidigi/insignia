@@ -21,10 +21,15 @@ export function createWorkerUsageRuntime(input: {
     !/^[1-9][0-9]{0,18}$/.test(installationGeneration) ||
     BigInt(installationGeneration) > 9223372036854775807n ||
     !appId ||
-    !/^gid:\/\/shopify\/App\/[1-9][0-9]*$/.test(appId)
+    !/^[1-9][0-9]{0,19}$/.test(appId)
   )
     throw new Error('USAGE_RUNTIME_INVALID');
-  const source = createWorkerUsageSource({ appId, binding: null, transport: null, tenants: input.core.tenants });
+  const source = createWorkerUsageSource({
+    appId: `gid://shopify/App/${appId}`,
+    binding: null,
+    transport: null,
+    tenants: input.core.tenants,
+  });
   return createWorkerUsageReconciliation({
     scope: { shopId, installationGeneration },
     core: input.core,

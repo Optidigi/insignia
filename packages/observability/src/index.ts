@@ -173,6 +173,7 @@ function eventDetails(event: RuntimeEvent, input: RuntimeLogDetails) {
 export type WebhookOutcome = 'received' | 'duplicate' | 'rejected' | 'enqueue_failure';
 export type InboxOutcome = 'success' | 'failure' | 'deferred';
 export type QueueOutcome = 'retry' | 'failure';
+export type UsageQualificationOutcome = 'success' | 'failure';
 export type RefreshOutcome = 'success' | 'transient' | 'reauth_required';
 export type ResolutionOutcome = 'resolved' | 'unresolved' | 'failed';
 
@@ -251,6 +252,12 @@ export function createObservability(options: { stream?: Writable; level?: 'debug
     labelNames: ['outcome'],
     registers: [registry],
   });
+  const usageQualification = new Counter({
+    name: 'insignia_usage_qualification_pass_total',
+    help: 'Completed usage qualification passes, not billed usage',
+    labelNames: ['outcome'],
+    registers: [registry],
+  });
   const backlog = new Gauge({
     name: 'insignia_unresolved_inbox_backlog',
     help: 'Number of unresolved inbox rows',
@@ -258,6 +265,9 @@ export function createObservability(options: { stream?: Writable; level?: 'debug
   });
 
   const metrics = {
+    usageQualification(outcome: UsageQualificationOutcome) {
+      usageQualification.labels(checkedOutcome(['success', 'failure'], outcome)).inc();
+    },
     webhook(outcome: WebhookOutcome) {
       webhook.labels(checkedOutcome(['received', 'duplicate', 'rejected', 'enqueue_failure'], outcome)).inc();
     },
