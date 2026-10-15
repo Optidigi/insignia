@@ -44,6 +44,8 @@ export type MerchantPreviewCaptureInputs = {
   readImage(scope: MerchantPreviewScope, productId: string, imageRevisionId: string): Promise<Uint8Array | null>;
   inspect(bytes: Uint8Array): Promise<ArtworkInspection>;
   clock?: () => Date;
+  /** A host reporter enables independent per-row cleanup; unresolved rows retain custody. */
+  onCleanupError?: (code: 'MERCHANT_PREVIEW_CLEANUP_UNAVAILABLE') => void;
 };
 const hash = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
 function fail(code: ConstructorParameters<typeof MerchantPreviewError>[0]): never {
@@ -171,28 +173,37 @@ export function createMerchantPreviewCapture(input: MerchantPreviewCaptureInputs
       if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) fail('INVALID_INPUT');
       let deleted = 0;
       for (const assetId of await input.store.selectCleanup(limit, clock())) {
-        const row = await input.store.markDeleting(assetId, clock());
-        if (!row) {
-          const pending = await input.store.readDeleting(assetId);
-          if (!pending) continue;
-          // A previous crash/lost DELETE response only permits absence reconciliation, never redispatch.
-          await absent(pending);
+        try {
+          const row = await input.store.markDeleting(assetId, clock());
+          if (!row) {
+            const pending = await input.store.readDeleting(assetId);
+            if (!pending) continue;
+            // A previous crash/lost DELETE response only permits absence reconciliation, never redispatch.
+            await absent(pending);
+            await input.store.finishDeleting(assetId, clock());
+            deleted++;
+            continue;
+          }
+          const m = owned(row);
+          for (const [key, length, expected] of [
+            [row.originalKey, m.byteLength, m.sha256],
+            [row.previewKey, m.previewByteLength, m.previewSha256],
+          ] as const) {
+            const observed = await bytes(key, length);
+            if (observed && hash(observed) !== expected) fail('CONFLICT');
+            if (observed) await input.storage.remove({ key });
+          }
+          await absent(row);
           await input.store.finishDeleting(assetId, clock());
           deleted++;
-          continue;
+        } catch (error) {
+          if (!input.onCleanupError) throw error;
+          try {
+            input.onCleanupError('MERCHANT_PREVIEW_CLEANUP_UNAVAILABLE');
+          } catch {
+            /* Reporting cannot starve unrelated rows. */
+          }
         }
-        const m = owned(row);
-        for (const [key, length, expected] of [
-          [row.originalKey, m.byteLength, m.sha256],
-          [row.previewKey, m.previewByteLength, m.previewSha256],
-        ] as const) {
-          const observed = await bytes(key, length);
-          if (observed && hash(observed) !== expected) fail('CONFLICT');
-          if (observed) await input.storage.remove({ key });
-        }
-        await absent(row);
-        await input.store.finishDeleting(assetId, clock());
-        deleted++;
       }
       return deleted;
     },

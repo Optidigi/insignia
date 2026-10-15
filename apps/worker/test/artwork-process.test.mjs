@@ -158,3 +158,55 @@ test('first pending-file failure keeps readiness unavailable while the real runn
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test('merchant cleanup runs despite buyer cleanup failure and shutdown retains both maintenance custody', {
+  timeout: 5000,
+}, async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'insignia-merchant-cleanup-'));
+  await chmod(directory, 0o700);
+  let releases,
+    calls = 0,
+    stopped = false;
+  const pending = new Promise((resolve) => {
+    releases = resolve;
+  });
+  const errors = [];
+  const running = await startArtworkInspectionProcess({
+    runner: {
+      ready: true,
+      start: async () => {},
+      runOnce: async () => 0,
+      stop: async () => {
+        stopped = true;
+      },
+    },
+    socketPath: join(directory, 'ready.sock'),
+    observability: { logger: { error: (_event, value) => errors.push(value) } },
+    cleanup: async () => {
+      throw Error('private storage diagnostic');
+    },
+    cleanupMerchantPreviews: async () => {
+      calls++;
+      await pending;
+    },
+  });
+  try {
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(calls, 1);
+    assert.deepEqual(errors, [{ errorClass: 'ARTWORK_CLEANUP_UNAVAILABLE' }]);
+    let closed = false;
+    const closing = running.stop().then(() => {
+      closed = true;
+    });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(stopped, true);
+    assert.equal(closed, false);
+    releases();
+    await closing;
+    assert.equal(closed, true);
+  } finally {
+    releases();
+    await running.stop();
+    await rm(directory, { recursive: true, force: true });
+  }
+});

@@ -19,7 +19,13 @@ const updates: Readonly<Record<string, readonly string[]>> = {
 };
 /** Qualify the effective inspection LOGIN, including direct and inherited grants.
  * Capability membership alone cannot authorize storage/inspection custody. */
-export async function qualifyArtworkRuntimeRole(pool: Pool): Promise<void> {
+export async function qualifyArtworkRuntimeRole(
+  pool: Pool,
+  options: { merchantPreviews?: boolean } = {},
+): Promise<void> {
+  const expectedUpdates = options.merchantPreviews
+    ? { ...updates, merchant_preview_assets: ['state', 'manifest', 'updated_at'], config_revision_preview_assets: [] }
+    : updates;
   const denied = () => {
     throw new Error('Inspection database role unavailable');
   };
@@ -49,13 +55,13 @@ export async function qualifyArtworkRuntimeRole(pool: Pool): Promise<void> {
     has_column_privilege(current_user,c.oid,a.attnum,'INSERT') AS insertable,
     has_column_privilege(current_user,c.oid,a.attnum,'UPDATE') AS mutable,
     has_column_privilege(current_user,c.oid,a.attnum,'REFERENCES') AS referenceable,
-    has_table_privilege(current_user,c.oid,'DELETE, TRUNCATE, TRIGGER') AS destructive
+    has_table_privilege(current_user,c.oid,'DELETE, TRUNCATE, TRIGGER, MAINTAIN') AS destructive
     FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
     JOIN pg_attribute a ON a.attrelid=c.oid AND a.attnum>0 AND NOT a.attisdropped
     WHERE n.nspname='public' AND c.relkind IN ('r','p','v','m','f')`);
   const seen = new Set<string>();
   for (const column of columns.rows) {
-    const allowed = Object.hasOwn(updates, column.relname) ? updates[column.relname] : undefined;
+    const allowed = Object.hasOwn(expectedUpdates, column.relname) ? expectedUpdates[column.relname] : undefined;
     if (!allowed) {
       if (column.readable || column.insertable || column.mutable || column.referenceable || column.destructive)
         denied();
@@ -71,5 +77,5 @@ export async function qualifyArtworkRuntimeRole(pool: Pool): Promise<void> {
     )
       denied();
   }
-  if (seen.size !== 3) denied();
+  if (seen.size !== Object.keys(expectedUpdates).length) denied();
 }

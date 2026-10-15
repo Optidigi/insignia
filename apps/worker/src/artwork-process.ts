@@ -9,6 +9,7 @@ export async function startArtworkInspectionProcess(input: {
   socketPath: string;
   observability: Observability;
   cleanup(): Promise<unknown>;
+  cleanupMerchantPreviews?(): Promise<unknown>;
   inspectMerchantPreview?: typeof inspectArtwork;
 }) {
   let stopping = false;
@@ -22,19 +23,27 @@ export async function startArtworkInspectionProcess(input: {
   const cleanup = (): Promise<void> => {
     if (maintenance) return maintenance;
     if (stopping) return Promise.resolve();
-    maintenance = input
-      .cleanup()
-      .then(() => {})
-      .catch(() => {
+    maintenance = (async () => {
+      const tasks = [
+        { run: () => input.cleanup(), errorClass: 'ARTWORK_CLEANUP_UNAVAILABLE' },
+        ...(input.cleanupMerchantPreviews
+          ? [{ run: () => input.cleanupMerchantPreviews?.(), errorClass: 'MERCHANT_PREVIEW_CLEANUP_UNAVAILABLE' }]
+          : []),
+      ];
+      for (const task of tasks) {
         try {
-          input.observability.logger.error('queue_job_rejected', { errorClass: 'ARTWORK_CLEANUP_UNAVAILABLE' });
+          await task.run();
         } catch {
-          /* Logging cannot stop retention retries. */
+          try {
+            input.observability.logger.error('queue_job_rejected', { errorClass: task.errorClass });
+          } catch {
+            /* Logging cannot stop either retention path. */
+          }
         }
-      })
-      .finally(() => {
-        maintenance = undefined;
-      });
+      }
+    })().finally(() => {
+      maintenance = undefined;
+    });
     return maintenance;
   };
   let timer: NodeJS.Timeout | undefined;

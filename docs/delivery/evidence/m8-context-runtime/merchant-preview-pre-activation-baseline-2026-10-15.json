@@ -1,0 +1,20 @@
+{
+  "classification": "READ_ONLY_PRE_ACTIVATION_BASELINE",
+  "observedAt": "2026-10-15T03:47:45.874922+00:00",
+  "webId": "2a885a4043c770818e26114fea39d619a2ab5a19c869374b337e9d326eb637ef",
+  "webImage": "sha256:3c2d1ba04b2144382c0bae81381b0a54c46f614772f4d8279d40a3dae3e0ffa5",
+  "webState": "running",
+  "captureFlag": null,
+  "database": {
+    "currentUser": "insignia_rewrite",
+    "database": "insignia_rewrite",
+    "migrationCount": 32,
+    "merchantAssetTable": null,
+    "merchantBindingTable": null
+  },
+  "inspector": {
+    "MainPID": "3661497",
+    "ActiveState": "active"
+  },
+  "mutations": 0
+}

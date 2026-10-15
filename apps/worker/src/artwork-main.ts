@@ -1,4 +1,4 @@
-import { createArtworkService } from '@insignia/application';
+import { createArtworkService, createMerchantPreviewCapture } from '@insignia/application';
 import { createDurableCore } from '@insignia/database';
 import { createObservability } from '@insignia/observability';
 import { loadArtworkStorageProfile } from '@insignia/storage';
@@ -24,7 +24,8 @@ const pool = new Pool({
   statement_timeout: 10000,
 });
 try {
-  await qualifyArtworkRuntimeRole(pool);
+  const merchantPreviewsEnabled = process.env.INSIGNIA_M8_MERCHANT_PREVIEW_CLEANUP_ENABLED === '1';
+  await qualifyArtworkRuntimeRole(pool, { merchantPreviews: merchantPreviewsEnabled });
   const core = createDurableCore(pool);
   const observability = createObservability();
   const storage = await loadArtworkStorageProfile(required('ARTWORK_STORAGE_PROFILE'), {
@@ -39,6 +40,20 @@ try {
     onCleanupError: () =>
       observability.logger.error('queue_job_rejected', { errorClass: 'ARTWORK_CLEANUP_UNAVAILABLE' }),
   });
+  const merchantPreviews = merchantPreviewsEnabled
+    ? createMerchantPreviewCapture({
+        store: core.merchantPreviews,
+        onCleanupError: (errorClass) => observability.logger.error('queue_job_rejected', { errorClass }),
+        storage,
+        // Cleanup owns only existing durable rows. This process never reads Shopify.
+        readImage: async () => {
+          throw new Error('Merchant catalog access is unavailable in cleanup');
+        },
+        inspect: async () => {
+          throw new Error('Merchant capture is unavailable in cleanup');
+        },
+      })
+    : undefined;
   const runner = createArtworkRunner({
     store: core.artwork,
     service,
@@ -50,6 +65,7 @@ try {
     inspectMerchantPreview: inspectArtwork,
     socketPath: required('ARTWORK_WORKER_READY_SOCKET'),
     cleanup: () => service.cleanup(20),
+    cleanupMerchantPreviews: merchantPreviews ? () => merchantPreviews.cleanup(20) : undefined,
   });
   let stopping = false;
   const stop = () => {
