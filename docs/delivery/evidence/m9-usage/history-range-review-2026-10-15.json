@@ -1,0 +1,52 @@
+{
+  "classification": "BOUNDED_RANGE_IMPLEMENTATION_REVIEWED_CI_PENDING",
+  "base": "f3c1019979ab0dd95c7d3b7d98be6a511f237318",
+  "scope": "Fixed bounded event-range pagination only; exact historical normalization follows separately",
+  "sourceHashes": {
+    "packages/shopify/src/subscription-history.ts": "278d1cfbb1813e45de14675ab21873884733b3d313f1000ba74ec3c407382f4d",
+    "packages/shopify/test/subscription-history-range.test.ts": "c787eab78e2e9eceeef37e9aa9bef81b6d853098a2804bcef5076d79a3931486"
+  },
+  "behavior": [
+    "Canonical app/shop/from/through are copied before the first await and retained across all page requests.",
+    "At most four 250-event pages; EXHAUSTED means provider pagination ended for the requested range only. PAGE_LIMIT includes nextCursor and is explicitly incomplete.",
+    "Cross-page duplicate IDs/cursors reject; page failure propagates sanitized without retry or exhausted partial return.",
+    "All observations retain trustedEntitlementIntervals:false; no source word/date/current state becomes billing authority."
+  ],
+  "checks": {
+    "shopifyTestsPassed": 449,
+    "shopifyTestFiles": 27,
+    "focusedTestsPassed": 37,
+    "newRangeTests": 5,
+    "build": "PASS",
+    "typecheck": "PASS",
+    "biome": "PASS",
+    "gitDiffCheck": "PASS"
+  },
+  "testProvenance": [
+    "Missing readRange RED before implementation; happy pagination GREEN.",
+    "Cross-page duplicate ID resolved as exhausted RED before correction; then duplicate ID/cursor cases GREEN.",
+    "Caller-mutated through changed the second query/result RED; canonical scope snapshot corrected it to GREEN.",
+    "Four-page cap and later-page failure/no retry covered at public reader/transport seam."
+  ],
+  "independentReview": {
+    "agent": "/root/preview_native_transition_review",
+    "contexts": 1,
+    "axes": [
+      "correctness",
+      "security"
+    ],
+    "result": "CLEAR",
+    "scope": "New readRange/type and five tests only; existing verified readPage guards reused. Fixed scope, operation bounds, duplicate/cycle rejection, error propagation and observational trust distinction verified.",
+    "isolation": "Read-only/no-network/no-credential instructions; no enforced credential/network isolation claimed."
+  },
+  "offlineReplay": "history-range-offline-replay-2026-10-15.json",
+  "providerQueries": 0,
+  "providerMutations": 0,
+  "usageEventsSent": 0,
+  "limits": [
+    "No multi-page native response observed; multi-page behavior is synthetic boundary coverage.",
+    "Four-page budget is a bounded operation limit, not a merchant capacity or claim of complete subscription lifetime.",
+    "No native schema/grants/deployment, commercial mapping, historical intervals, sender or activation.",
+    "Required hosted final-candidate CI remains pending. Existing cleanup/rotation deadlines are preserved."
+  ]
+}

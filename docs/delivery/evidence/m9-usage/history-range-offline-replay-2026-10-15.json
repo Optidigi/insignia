@@ -1,0 +1,29 @@
+{
+  "classification": "OFFLINE_REPLAY_OF_PREVIOUSLY_CAPTURED_NATIVE_RESPONSE",
+  "input": {
+    "appId": "gid://shopify/App/429028933633",
+    "shopId": "gid://shopify/Shop/105501393179",
+    "from": "2026-09-27T00:00:00.000Z",
+    "through": "2026-10-15T14:34:55.377Z"
+  },
+  "sourceHashes": {
+    "packages/shopify/src/subscription-history.ts": "278d1cfbb1813e45de14675ab21873884733b3d313f1000ba74ec3c407382f4d",
+    "packages/shopify/test/subscription-history-range.test.ts": "c787eab78e2e9eceeef37e9aa9bef81b6d853098a2804bcef5076d79a3931486"
+  },
+  "providerQueries": 0,
+  "providerMutations": 0,
+  "usageEventsSent": 0,
+  "result": {
+    "pagination": "EXHAUSTED",
+    "pagesRead": 1,
+    "eventCount": 1,
+    "occurredAt": "2026-09-28T16:53:02.000Z",
+    "nextCursor": null,
+    "trustedEntitlementIntervals": false
+  },
+  "limits": [
+    "Reuses the exact unmodified raw response captured for PR164; no fresh provider observation.",
+    "One terminal event range is not exact trial/cycle or installation coverage.",
+    "Private replay source retains its existing 20 October cleanup deadline."
+  ]
+}
