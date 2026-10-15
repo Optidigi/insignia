@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import type { PurchaseObservation } from '@insignia/application';
 import type { PaidOrderUsageHistory } from '@insignia/domain';
+import { formatShopifyUsageEvent, parseShopifyUsageEventResponse } from '@insignia/shopify';
 import { sql } from 'kysely';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createPurchaseRepository } from '../src/repositories/purchase.js';
@@ -299,6 +300,49 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('permanent local billing deliv
     if (prepared.kind !== 'STAGED') throw new Error('Expected intent');
     return { ...f, intent: prepared.intent, bodySha256: 'a'.repeat(64) };
   }
+  it('preserves formatted financial bytes and synthetic transport receipt across a reopened pool', async () => {
+    const f = await attemptFixture(),
+      request = formatShopifyUsageEvent(f.intent),
+      input = { purchaseId: f.purchaseId, bodySha256: request.bodySha256 },
+      core = openTestDurableCore();
+    let settled: Awaited<ReturnType<typeof core.usageDeliveryAttempts.get>> = null;
+    try {
+      const started = await core.usageDeliveryAttempts.begin(f.scope, input);
+      expect(started.kind).toBe('STARTED');
+      expect(started.attempt.bodySha256).toBe(request.bodySha256);
+      // Synthetic response fixture only: no HTTP request or historical provider capture.
+      const outcome = parseShopifyUsageEventResponse({
+        url: request.url,
+        redirected: false,
+        status: 202,
+        body: JSON.stringify({ success: true }),
+      });
+      expect(outcome).toEqual({ kind: 'RECEIPT', httpStatus: 202 });
+      settled = await core.usageDeliveryAttempts.recordOutcome(f.scope, {
+        purchaseId: f.purchaseId,
+        attemptId: started.attempt.attemptId,
+        outcome,
+      });
+      expect(settled.status).toEqual({ state: 'TRANSPORT_ACCEPTED', reason: 'RECEIVED', httpStatus: 202 });
+    } finally {
+      await core.close();
+    }
+    const reopened = openTestDurableCore();
+    try {
+      const intent = await reopened.usageDeliveryIntents.get(f.scope, f.purchaseId);
+      expect(intent).toEqual(f.intent);
+      if (!intent) throw new Error('Expected permanent intent');
+      expect(formatShopifyUsageEvent(intent)).toEqual(request);
+      expect(JSON.parse(request.body)).toMatchObject({
+        idempotency_key: f.intent.idempotencyKey,
+        timestamp: f.intent.occurredAt,
+      });
+      expect(await reopened.usageDeliveryAttempts.get(f.scope, f.purchaseId)).toEqual(settled);
+      expect(await reopened.usageDeliveryAttempts.begin(f.scope, input)).toEqual({ kind: 'HELD', attempt: settled });
+    } finally {
+      await reopened.close();
+    }
+  });
   it('persists an unsettled dispatch fence across reopened pools and concurrent begin', async () => {
     const f = await attemptFixture(),
       core = openTestDurableCore();
