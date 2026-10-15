@@ -1,0 +1,39 @@
+{
+  "classification": "ATOMIC_INSIGNIA_SCHEMA34_AND_PREVIEW_GRANTS_PASS",
+  "observedAt": "2026-10-15T04:08:36.930105+00:00",
+  "source": "c604e4ed739bba174150fff8836f6bef9b48204f",
+  "tree": "f67e9347d5c1356b8e21f214ce57ecf81074edf1",
+  "sqlSha256": "d1658a6e46eccca155eb78ab590894a9d7d89c1cc2269ad5a0300b6fdb30f87f",
+  "migrationCount": 34,
+  "newVersions": [
+    "20261015000100",
+    "20261015000200"
+  ],
+  "transactionAttempts": 1,
+  "databaseContainer": "19419eff11ef9c0b43e484f91ad97ba606c817df6604e7a6d08c5513473285a1",
+  "databaseImage": "sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d",
+  "allContainerConfigurationsPreserved": true,
+  "containerCount": 34,
+  "inspectorPidPreserved": 3661497,
+  "immutablePurchaseFactHashesPreserved": true,
+  "merchantPreviewAssets": 0,
+  "merchantPreviewBindings": 0,
+  "captureEnabled": false,
+  "backup": {
+    "sha256": "05765f2eec469a23664113802d85158961d11512bb100ce9c753f39958669c0a",
+    "bytes": 398154,
+    "verification": "PG_RESTORE_LIST_PASS_ONLY",
+    "restorationTested": false,
+    "retainedPrivately": true
+  },
+  "actualLoginQualification": "PENDING exact new artifact actual LOGIN checks; SQL effective role/column checks passed in atomic transaction",
+  "limits": "No service update, storage write or capture activation. Existing inspector must not be blindly restarted with old three-table profile. No backup restoration rehearsal.",
+  "operatorSha256": "54d3be4682ed4d3733e4b09432a8494e324d969dd152f0956665caa751a2239f",
+  "operatorReviews": {
+    "correctness": "preview_transport_correctness CLEAR exact operator/SQL",
+    "security": "preview_transport_security CLEAR exact operator/SQL"
+  },
+  "privateBackupCleanupDue": "2026-10-20T00:00:00Z",
+  "privateJournal": "/home/serveradmin/insignia-m8-schema34-20261015-pr150",
+  "subsequentActualLoginQualification": "pr150-native-preview-logins-2026-10-15.json"
+}

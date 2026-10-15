@@ -1,0 +1,18 @@
+{
+  "classification": "EXACT_INSPECTOR_ARTIFACT_STAGED_IMPORTS_PASS_AFTER_CHECK_CORRECTION",
+  "source": "c604e4ed739bba174150fff8836f6bef9b48204f",
+  "tree": "f67e9347d5c1356b8e21f214ce57ecf81074edf1",
+  "archiveSha256": "9cfc3f3583295689032d34308c20d6c2ff8e45ad88a53740e7e7038434985d5e",
+  "imports": {
+    "node": "v24.21.0",
+    "sharp": "0.35.4",
+    "vips": "8.18.6",
+    "decoderPackages": 8
+  },
+  "priorFailure": "Expected32 mount arguments in first check; actual8 packages use3arguments each=24. Package not retransferred or re-extracted.",
+  "entrypointStarted": false,
+  "serviceChanges": 0,
+  "databaseWrites": 0,
+  "storageWrites": 0,
+  "privateArtifactsCleanupDue": "2026-10-20T00:00:00Z"
+}
