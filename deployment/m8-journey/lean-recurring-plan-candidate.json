@@ -1,0 +1,38 @@
+{
+  "classification": "PROSPECTIVE_RECURRING_ONLY_PLAN_CHANGE_NOT_EXECUTED",
+  "authority": "docs/delivery/authority/lean-v1-2026-10-15.md",
+  "appId": "429028933633",
+  "clientId": "1443cf6d03d39edae7c101a943c5c684",
+  "targetShop": "insignia-rewrite-dev.myshopify.com",
+  "existingUnselectedPlanHandle": "insignia-standard-20261015",
+  "editorUrl": "https://apps.shopify.com/services/pricing/1443cf6d03d39edae7c101a943c5c684/insignia-standard-20261015?billingSystem=managed",
+  "change": {
+    "removeUsageChargeHandle": "customized_order_paid",
+    "preserve": {
+      "subscriptionCurrency": "USD",
+      "nominalPrice": "49.99",
+      "intervalDays": 30,
+      "trialDays": 14,
+      "visibility": "PRIVATE",
+      "storeAccess": [
+        "insignia-rewrite-dev.myshopify.com"
+      ],
+      "otherFields": "unchanged; re-read actual editor before save"
+    }
+  },
+  "beforeWrite": "Fresh read verifies exact existing unselected plan, terms and access; stop on drift. No new plan or changes to currently selected old development plan.",
+  "afterSave": "Read editor and native merchant pricing; require exactly recurring-only Standard with no usage item, effective zero development price and existing old plan preserved.",
+  "selection": "Separate bounded authority required for amended recurring-only terms. Only proceed when provider explicitly identifies this as zero-cost development testing, exact handle/shop and no meter. Verify confirmation and independently read resulting current subscription, trial/cycle and items. Stop on ambiguity; no blind retry.",
+  "excludedEffects": [
+    "App Pricing switch/enable/migration",
+    "public listing submission",
+    "other store changes",
+    "real charge",
+    "usage events",
+    "reinstall",
+    "new scopes",
+    "new app version"
+  ],
+  "status": "NO_PLAN_EDIT_NO_SELECTION_NO_APPROVAL",
+  "knownRouteLimit": "Owner exact editor works; server editor returned HTTP422. Existing Admin/Dev sessions verified; do not repeat CAPTCHA/login attempts."
+}

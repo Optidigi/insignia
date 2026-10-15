@@ -60,3 +60,35 @@ The owner subsequently reached the pricing index: Private plans Add is grey/unre
 A bounded search of official documentation and first-hand Shopify developer threads found **no documented rule explaining exactly this private-Add-disabled/public-Add-enabled combination**. Quota, migration stage, permissions, or a required prior public plan remain unverified hypotheses. Current [official plans documentation](https://shopify.dev/docs/apps/launch/billing/shopify-app-pricing/plans) allows unlimited private plans and specifies an eight-private-plan access limit per store; that is not an explanation for disabling creation here. Shopify's [September22 announcement](https://community.shopify.dev/t/shopify-app-pricing-now-supports-unlimited-private-plans-and-stores/37883) says the earlier private-plan/store caps were removed. Its [September29 migration announcement](https://community.shopify.dev/t/shopify-app-pricing-migration-tooling-for-existing-billing-api-subscriptions-is-now-available/38114) reiterates preparing/testing plans before switching. None identifies a new public-plan prerequisite.
 
 The existing historical plan editor remains a readable alternative for inventory, **not an authorized edit alternative**: the current grant preserves that plan. Editing its economics would require a concrete replacement grant and an explicit assessment of the unresolved existing-contract effects above. Creating a public plan, activating App Pricing, migrating subscriptions, deleting plans to reset a quota, constructing an undocumented create URL, or force-clicking a disabled control is not justified. A supported reason exposed by the normal UI, or a legitimate supported private-create route, would resolve this specific blocker; this research establishes neither and authorizes no support contact.
+
+## Lean V1 prospective override and Market-read prerequisite — 15 October 2026
+
+The [approved Lean V1](../authority/lean-v1-2026-10-15.md) supersedes the earlier hybrid pricing target above prospectively: one recurring-only USD49.99/30-day plan and authoritative 14-day trial, without a meter, allowance or per-order charge. Preserve the earlier assessment and actual provider history. A saved hybrid draft or selected historical contract does not become flat-only by stopping sends; the exact flat-draft edit/selection remains a separately authorized operation.
+
+For the Lean qualified primary-Market path, the pinned Admin GraphQL 2026-07 API still exposes `primaryMarket: Market!`, but deprecates it in favor of `backupRegion`. The replacement returns a region rather than a Market identity, so it is not a silent semantic substitute. `Market.conditions.regionsCondition.regions` supplies paginated region membership; `MarketRegionCountry.code` supplies country codes. Market/region reads require `read_markets` and the relevant Markets access. [primaryMarket 2026-07](https://shopify.dev/docs/api/admin-graphql/2026-07/queries/primaryMarket), [Market](https://shopify.dev/docs/api/admin-graphql/2026-07/objects/market), [RegionsCondition](https://shopify.dev/docs/api/admin-graphql/2026-07/objects/RegionsCondition), [MarketRegionCountry](https://shopify.dev/docs/api/admin-graphql/2026-07/objects/MarketRegionCountry).
+
+The smallest proposed read, after verifying actual app/shop/installation scopes, is:
+
+```graphql
+query LeanPrimaryMarket($after: String) {
+  shop { id currencyCode }
+  primaryMarket {
+    id
+    status
+    conditions {
+      regionsCondition {
+        regions(first: 250, after: $after) {
+          nodes { __typename ... on MarketRegionCountry { code } }
+          pageInfo { hasNextPage endCursor }
+        }
+      }
+    }
+  }
+}
+```
+
+Follow pagination; null/unknown conditions or subdivision-only membership require qualification rather than treating a whole country as supported. Bind actual shop currency, primary Market ID and qualified country/contextual-price observations. EUR/USD/GBP are targets, not an automatically qualified list. The public schema research supports this proposed query; no native Market request has been executed here.
+
+Root independently observed the exact existing web application's installation scopes at **2026-10-15T22:18:14.394Z** through its actual read-only role: shop 105501393179/USD, app 429028933633, installation 1054356963611, eleven scopes and **no `read_markets`**. This section attributes that observation to root; attach its original receipt before execution. The eight-module version baseline independently omits that optional scope. The [prospective candidate](../../../deployment/m8-journey/lean-market-access-candidate.json) adds only optional `read_markets`, retaining all other app-access fields and complete other-seven-module hashes. It creates/releases nothing and grants no consent. Before any separately authorized operation, refresh the live active-version/module baseline, use the actual returned inactive-version ID and coordinate all release consumers/verifier bindings before one app-wide release. Do not reuse spent version/release grants.
+
+The official CLI's `shopify app execute` uses the installed app's available scopes; it cannot bypass the missing grant. Existing scoped management-read permission permits inspection, not adding a scope or changing Markets/currency. [Official CLI authentication and scope requirements](https://shopify.dev/docs/apps/build/apis/graphql-admin/api-exploration/admin-cli-app-execute).

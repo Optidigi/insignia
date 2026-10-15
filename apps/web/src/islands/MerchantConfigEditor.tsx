@@ -111,9 +111,6 @@ function initialEditor(draft: MerchantDraft): EditorState {
   const geometry = viewGeometry(draft);
   return { version: 0, geometry, viewId: geometry.views[0]?.id ?? 'front', artwork: { kind: 'logo-later' } };
 }
-function currencyAmount() {
-  return { shopDecimal: '0', presentmentOverrides: [] as { currency: string; decimal: string }[] };
-}
 function snapshotDraft(value: MerchantDraft): MerchantDraft {
   const copy = structuredClone(value);
   if (copy.labels)
@@ -143,32 +140,67 @@ function removeChoiceLabels(
   return next;
 }
 type PricingRule = MerchantDraft['pricingRules'][number];
-type PricingScope = PricingRule['scope'];
-function coherentRule(rule: PricingRule, role: PricingRule['role'], scope: PricingScope): PricingRule {
-  const { methodUnitMultiplicity: previousMultiplicity, ...base } = rule;
-  const methodUnitMultiplicity =
-    role === 'unit' && scope.kind === 'method' ? (previousMultiplicity ?? 'perGarment') : undefined;
-  const rate =
-    role === 'setup' && rule.rate.kind === 'allUnits'
-      ? { kind: 'fixed' as const, amount: rule.rate.tiers[0]?.amount ?? currencyAmount() }
-      : rule.rate;
-  return { ...base, role, scope, rate, ...(methodUnitMultiplicity ? { methodUnitMultiplicity } : {}) };
+const leanDecimal = (text: string) => /^(?:0|[1-9][0-9]*)(?:\.[0-9]{1,2})?$/.test(text);
+function leanPricing(draft: MerchantDraft): boolean {
+  const seen = new Set<string>();
+  return draft.pricingRules.every((rule) => {
+    if (
+      rule.role !== 'unit' ||
+      rule.scope.kind !== 'step' ||
+      !rule.scope.methodId ||
+      rule.rate.kind !== 'fixed' ||
+      rule.methodUnitMultiplicity !== undefined ||
+      rule.rate.amount.presentmentOverrides.length ||
+      !leanDecimal(rule.rate.amount.shopDecimal)
+    )
+      return false;
+    const scope = rule.scope;
+    const placement = draft.placements.find((item) => item.id === scope.placementId);
+    if (
+      !placement?.allowedMethodIds.includes(rule.scope.methodId) ||
+      !placement.allowedStepIds.includes(rule.scope.stepId)
+    )
+      return false;
+    const key = JSON.stringify([rule.scope.methodId, rule.scope.placementId, rule.scope.stepId]);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
-function withAmount(
-  rule: PricingRule,
-  index: number,
-  edit: (amount: ReturnType<typeof currencyAmount>) => ReturnType<typeof currencyAmount>,
-): PricingRule {
-  if (rule.rate.kind === 'fixed') return { ...rule, rate: { ...rule.rate, amount: edit(rule.rate.amount) } };
-  return {
-    ...rule,
-    rate: {
-      ...rule.rate,
-      tiers: rule.rate.tiers.map((tier, tierIndex) =>
-        tierIndex === index ? { ...tier, amount: edit(tier.amount) } : tier,
-      ),
-    },
-  };
+function LeanPriceInput({
+  value,
+  label,
+  onPrice,
+  onValidity,
+}: {
+  value: string;
+  label: string;
+  onPrice(value: string): void;
+  onValidity(valid: boolean): void;
+}) {
+  const [typed, setTyped] = useState<{ base: string; text: string } | null>(null);
+  const text = typed?.base === value ? typed.text : value;
+  const valid = text === '' || leanDecimal(text);
+  useEffect(() => onValidity(valid), [value, valid]);
+  return (
+    <>
+      <input
+        aria-label={label}
+        inputMode="decimal"
+        placeholder="Unavailable"
+        value={text}
+        aria-invalid={!valid}
+        onInput={(event) => {
+          const next = event.currentTarget.value;
+          setTyped({ base: value, text: next });
+          const allowed = next === '' || leanDecimal(next);
+          onValidity(allowed);
+          if (allowed) onPrice(next);
+        }}
+      />
+      {!valid && <p role="alert">Enter a nonnegative amount with at most two decimal places.</p>}
+    </>
+  );
 }
 function canonical(value: unknown): string {
   if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
@@ -249,6 +281,9 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
   const [advanced, setAdvanced] = useState(false);
   const [advancedText, setAdvancedText] = useState('');
   const [advancedError, setAdvancedError] = useState('');
+  const [priceErrors, setPriceErrors] = useState<Record<string, boolean>>({});
+  const [priceProposalStarted, setPriceProposalStarted] = useState(false);
+  const [priceRevision, setPriceRevision] = useState(0);
   const [previewStatus, setPreviewStatus] = useState('');
   const [validationIssues, setValidationIssues] = useState<{ path: string; message: string }[]>([]);
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
@@ -284,6 +319,8 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     setLatest(null);
     setAdvancedText('');
     setAdvancedError('');
+    setPriceErrors({});
+    setPriceProposalStarted(false);
     setCopyTarget('');
     setValidationIssues([]);
     setPreviewStatus('');
@@ -353,6 +390,8 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     setList(null);
     setDraft(null);
     setEditor(null);
+    setPriceErrors({});
+    setPriceProposalStarted(false);
     setValidationIssues([]);
     setStatus('Verifying Shopify Admin session…');
     try {
@@ -782,7 +821,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
   async function publish() {
     if (!productId || !view?.config || operatorPublication(view.config.publication.state)) return;
     const open = continuingPublication(view.config.publication.state);
-    if (!open && !publicationPending.current && !['clean', 'saved'].includes(saveState)) return;
+    if (!open && !publicationPending.current && (hasPriceErrors || !['clean', 'saved'].includes(saveState))) return;
     const sourceVersion = open ? view.config.publication.sourceDraftVersion : view.config.draftVersion;
     if (!publicationPending.current && !sourceVersion) {
       setStatus('The original publication request cannot be recovered. Contact an operator before retrying.');
@@ -842,6 +881,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     }
   }
   async function copy() {
+    if (hasPriceErrors) return;
     const target = copyTarget.trim();
     if (!/^[1-9][0-9]*$/.test(target)) {
       setStatus('Enter a Shopify product number.');
@@ -892,17 +932,54 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       group.name,
     );
   };
-  const stepScopes =
+  const legacyPricing = draft ? !leanPricing(draft) : false;
+  const priceCells =
     draft?.placements.flatMap((placement) =>
-      placement.allowedStepIds.map((stepId) => ({
-        scope: { kind: 'step' as const, placementId: placement.id, stepId },
-        name: `${choiceLabel('placements', placement.id)} / ${choiceLabel('steps', stepId)}`,
-      })),
+      placement.allowedMethodIds.flatMap((methodId) =>
+        placement.allowedStepIds.map((stepId) => ({
+          methodId,
+          placementId: placement.id,
+          stepId,
+          key: JSON.stringify([methodId, placement.id, stepId]),
+        })),
+      ),
     ) ?? [];
-  const stepScopeNames = disambiguateNames(
-    stepScopes.map((item) => item.name),
-    'Size step scope',
+  const priceCellNames = disambiguateNames(
+    priceCells.map(
+      (cell) =>
+        `${choiceLabel('methods', cell.methodId)} / ${choiceLabel('placements', cell.placementId)} / ${choiceLabel('steps', cell.stepId)}`,
+    ),
+    'Price choice',
   );
+  const hasPriceErrors = priceCells.some((cell) => priceErrors[cell.key]);
+  const updateLeanPrice = (cell: (typeof priceCells)[number], amount: string) => {
+    if (!draft || legacyPricing) return;
+    const existing = draft.pricingRules.find(
+      (rule) =>
+        rule.scope.kind === 'step' &&
+        rule.scope.methodId === cell.methodId &&
+        rule.scope.placementId === cell.placementId &&
+        rule.scope.stepId === cell.stepId,
+    );
+    const rules = draft.pricingRules.filter((rule) => rule !== existing);
+    if (amount !== '') {
+      const rule: PricingRule = {
+        id: existing?.id ?? freshId('price'),
+        role: 'unit',
+        scope: { kind: 'step', placementId: cell.placementId, stepId: cell.stepId, methodId: cell.methodId },
+        rate: { kind: 'fixed', amount: { shopDecimal: amount, presentmentOverrides: [] } },
+      };
+      change({
+        ...draft,
+        pricingRules: existing ? draft.pricingRules.map((item) => (item === existing ? rule : item)) : [...rules, rule],
+      });
+    } else
+      change({
+        ...draft,
+        pricingRules: rules,
+        labels: existing ? removeChoiceLabels(draft.labels, 'prices', existing.id) : draft.labels,
+      });
+  };
   const setLabel = (kind: LabelKind, id: string, value: string) => {
     if (!draft) return;
     const labels = { ...draft.labels };
@@ -1504,368 +1581,129 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                     Add production option
                   </button>
                   <h3>Pricing</h3>
-                  {draft.pricingRules.map((rule) => {
-                    const currentScope = rule.scope;
-                    const update = (edit: (item: PricingRule) => PricingRule) =>
-                      change({
-                        ...draft,
-                        pricingRules: draft.pricingRules.map((item) => (item.id === rule.id ? edit(item) : item)),
-                      });
-                    const scopeValue = JSON.stringify(
-                      currentScope.kind === 'placement' || currentScope.kind === 'step'
-                        ? (({ methodId: _methodId, ...scope }) => scope)(currentScope)
-                        : currentScope,
-                    );
-                    const selectedPlacement =
-                      currentScope.kind === 'placement' || currentScope.kind === 'step'
-                        ? draft.placements.find((item) => item.id === currentScope.placementId)
-                        : undefined;
-                    const amounts =
-                      rule.rate.kind === 'fixed'
-                        ? [{ amount: rule.rate.amount, index: 0 }]
-                        : rule.rate.tiers.map((tier, index) => ({ amount: tier.amount, index }));
-                    return (
-                      <div key={rule.id}>
-                        <h4>{choiceLabel('prices', rule.id)}</h4>
-                        <label>
-                          Price name{' '}
-                          <input
-                            maxLength={80}
-                            value={labelFor('prices', rule.id)}
-                            onInput={(event) => setLabel('prices', rule.id, event.currentTarget.value)}
-                          />
-                        </label>
-                        <label>
-                          Role{' '}
-                          <select
-                            value={rule.role}
-                            onChange={(event) => {
-                              const role = event.currentTarget.value as 'setup' | 'unit';
-                              const firstMethod = draft.methods[0];
-                              if (role === 'unit' && rule.scope.kind === 'general' && !firstMethod) return;
-                              const scope =
-                                role === 'unit' && rule.scope.kind === 'general' && firstMethod
-                                  ? { kind: 'method' as const, methodId: firstMethod.id }
-                                  : rule.scope;
-                              update((item) => coherentRule(item, role, scope));
-                            }}
-                          >
-                            <option value="setup">Setup once per design</option>
-                            <option value="unit" disabled={rule.scope.kind === 'general' && !draft.methods.length}>
-                              Unit
-                            </option>
-                          </select>
-                        </label>
-                        <label>
-                          Scope{' '}
-                          <select
-                            value={scopeValue}
-                            onChange={(event) => {
-                              const scope = JSON.parse(event.currentTarget.value) as PricingScope;
-                              update((item) =>
-                                coherentRule(item, scope.kind === 'general' ? 'setup' : item.role, scope),
-                              );
-                            }}
-                          >
-                            <option value={JSON.stringify({ kind: 'general' })}>General setup</option>
-                            <optgroup label="Methods">
-                              {draft.methods.map((item) => (
-                                <option key={item.id} value={JSON.stringify({ kind: 'method', methodId: item.id })}>
-                                  {choiceLabel('methods', item.id)}
-                                </option>
-                              ))}
-                            </optgroup>
-                            <optgroup label="Placements">
-                              {draft.placements.map((item) => (
-                                <option
-                                  key={item.id}
-                                  value={JSON.stringify({ kind: 'placement', placementId: item.id })}
-                                >
-                                  {choiceLabel('placements', item.id)}
-                                </option>
-                              ))}
-                            </optgroup>
-                            <optgroup label="Size steps">
-                              {stepScopes.map((item, index) => (
-                                <option
-                                  key={JSON.stringify([item.scope.placementId, item.scope.stepId])}
-                                  value={JSON.stringify(item.scope)}
-                                >
-                                  {stepScopeNames[index]}
-                                </option>
-                              ))}
-                            </optgroup>
-                          </select>
-                        </label>
-                        {selectedPlacement && (
-                          <label>
-                            Specific method{' '}
-                            <select
-                              value={
-                                rule.scope.kind === 'placement' || rule.scope.kind === 'step'
-                                  ? (rule.scope.methodId ?? '')
-                                  : ''
-                              }
-                              onChange={(event) =>
-                                update((item) => {
-                                  if (item.scope.kind !== 'placement' && item.scope.kind !== 'step') return item;
-                                  const { methodId: _removed, ...scope } = item.scope;
-                                  return {
-                                    ...item,
-                                    scope: event.currentTarget.value
-                                      ? { ...scope, methodId: event.currentTarget.value }
-                                      : scope,
-                                  };
-                                })
-                              }
-                            >
-                              <option value="">Any allowed method</option>
-                              {selectedPlacement.allowedMethodIds.map((id) => (
-                                <option key={id} value={id}>
-                                  {choiceLabel('methods', id)}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                        )}
-                        <label>
-                          Rate{' '}
-                          <select
-                            value={rule.rate.kind}
-                            onChange={(event) =>
-                              update((item) => {
-                                const amount =
-                                  item.rate.kind === 'fixed' ? item.rate.amount : item.rate.tiers[0]!.amount;
-                                return {
-                                  ...item,
-                                  rate:
-                                    event.currentTarget.value === 'allUnits'
-                                      ? { kind: 'allUnits', tiers: [{ minQuantity: 1, amount }] }
-                                      : { kind: 'fixed', amount },
-                                };
-                              })
-                            }
-                          >
-                            <option value="fixed">Fixed amount</option>
-                            {rule.role === 'unit' && <option value="allUnits">All-units quantity tiers</option>}
-                          </select>
-                        </label>
-                        {rule.rate.kind === 'allUnits' && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              update((item) =>
-                                item.rate.kind === 'allUnits'
-                                  ? {
-                                      ...item,
-                                      rate: {
-                                        ...item.rate,
-                                        tiers: [
-                                          ...item.rate.tiers,
-                                          {
-                                            minQuantity: item.rate.tiers.at(-1)!.minQuantity + 1,
-                                            amount: currencyAmount(),
-                                          },
-                                        ],
-                                      },
-                                    }
-                                  : item,
-                              )
-                            }
-                          >
-                            Add quantity tier
-                          </button>
-                        )}
-                        {amounts.map(({ amount, index }) => (
-                          <div key={index}>
-                            {rule.rate.kind === 'allUnits' && (
-                              <label>
-                                Minimum quantity{' '}
-                                <input
-                                  type="number"
-                                  min="1"
-                                  step="1"
-                                  value={rule.rate.tiers[index]!.minQuantity}
-                                  disabled={index === 0}
-                                  onChange={(event) =>
-                                    update((item) =>
-                                      item.rate.kind === 'allUnits'
-                                        ? {
-                                            ...item,
-                                            rate: {
-                                              ...item.rate,
-                                              tiers: item.rate.tiers.map((tier, tierIndex) =>
-                                                tierIndex === index
-                                                  ? { ...tier, minQuantity: Number(event.currentTarget.value) }
-                                                  : tier,
-                                              ),
-                                            },
-                                          }
-                                        : item,
-                                    )
-                                  }
-                                />
-                              </label>
-                            )}
-                            <label>
-                              Shop amount ({draft.shopCurrency}){' '}
-                              <input
-                                value={amount.shopDecimal}
-                                onInput={(event) =>
-                                  update((item) =>
-                                    withAmount(item, index, (current) => ({
-                                      ...current,
-                                      shopDecimal: event.currentTarget.value,
-                                    })),
+                  {legacyPricing ? (
+                    <section aria-label="Historical pricing">
+                      <p>
+                        This draft uses historical pricing that is unavailable for new offers. Existing prices are
+                        read-only; saved publications and purchases keep their original terms.
+                      </p>
+                      <ul>
+                        {draft.pricingRules.map((rule) => (
+                          <li key={rule.id}>
+                            {choiceLabel('prices', rule.id)}:{' '}
+                            {rule.role === 'setup'
+                              ? 'Setup'
+                              : rule.methodUnitMultiplicity === 'perPlacement'
+                                ? 'Per decorated placement'
+                                : 'Per garment'}{' '}
+                            —{' '}
+                            {rule.scope.kind === 'general'
+                              ? 'General'
+                              : rule.scope.kind === 'method'
+                                ? choiceLabel('methods', rule.scope.methodId)
+                                : `${choiceLabel('placements', rule.scope.placementId)}${rule.scope.kind === 'step' ? ' / ' + choiceLabel('steps', rule.scope.stepId) : ''}${rule.scope.methodId ? ' / ' + choiceLabel('methods', rule.scope.methodId) : ''}`}
+                            ;{' '}
+                            {rule.rate.kind === 'fixed'
+                              ? `${rule.rate.amount.shopDecimal} ${draft.shopCurrency}${rule.rate.amount.presentmentOverrides.map((entry) => `; ${entry.decimal} ${entry.currency}`).join('')}`
+                              : rule.rate.tiers
+                                  .map(
+                                    (tier) =>
+                                      `${tier.minQuantity}+ garments: ${tier.amount.shopDecimal} ${draft.shopCurrency}${tier.amount.presentmentOverrides.map((entry) => `; ${entry.decimal} ${entry.currency}`).join('')}`,
                                   )
-                                }
-                              />
-                            </label>
-                            {amount.presentmentOverrides.map((override, overrideIndex) => (
-                              <span key={`${override.currency}:${overrideIndex}`}>
-                                <label>
-                                  Presentment currency{' '}
-                                  <input
-                                    value={override.currency}
-                                    maxLength={3}
-                                    onInput={(event) =>
-                                      update((item) =>
-                                        withAmount(item, index, (current) => ({
-                                          ...current,
-                                          presentmentOverrides: current.presentmentOverrides.map((entry, entryIndex) =>
-                                            entryIndex === overrideIndex
-                                              ? { ...entry, currency: event.currentTarget.value.toUpperCase() }
-                                              : entry,
-                                          ),
-                                        })),
-                                      )
-                                    }
-                                  />
-                                </label>
-                                <label>
-                                  Presentment amount{' '}
-                                  <input
-                                    value={override.decimal}
-                                    onInput={(event) =>
-                                      update((item) =>
-                                        withAmount(item, index, (current) => ({
-                                          ...current,
-                                          presentmentOverrides: current.presentmentOverrides.map((entry, entryIndex) =>
-                                            entryIndex === overrideIndex
-                                              ? { ...entry, decimal: event.currentTarget.value }
-                                              : entry,
-                                          ),
-                                        })),
-                                      )
-                                    }
-                                  />
-                                </label>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    update((item) =>
-                                      withAmount(item, index, (current) => ({
-                                        ...current,
-                                        presentmentOverrides: current.presentmentOverrides.filter(
-                                          (_, entryIndex) => entryIndex !== overrideIndex,
-                                        ),
-                                      })),
-                                    )
-                                  }
-                                >
-                                  Remove presentment
-                                </button>
-                              </span>
-                            ))}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                update((item) =>
-                                  withAmount(item, index, (current) => ({
-                                    ...current,
-                                    presentmentOverrides: [
-                                      ...current.presentmentOverrides,
-                                      { currency: draft.shopCurrency === 'EUR' ? 'USD' : 'EUR', decimal: '0' },
-                                    ],
-                                  })),
-                                )
-                              }
-                            >
-                              Add presentment override
-                            </button>
-                            {rule.rate.kind === 'allUnits' && index > 0 && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  update((item) =>
-                                    item.rate.kind === 'allUnits'
-                                      ? {
-                                          ...item,
-                                          rate: {
-                                            ...item.rate,
-                                            tiers: item.rate.tiers.filter((_, tierIndex) => tierIndex !== index),
-                                          },
-                                        }
-                                      : item,
-                                  )
-                                }
-                              >
-                                Remove tier
-                              </button>
-                            )}
-                          </div>
+                                  .join('; ')}
+                          </li>
                         ))}
-                        {rule.role === 'unit' && rule.scope.kind === 'method' && (
-                          <label>
-                            Unit count{' '}
-                            <select
-                              value={rule.methodUnitMultiplicity ?? 'perGarment'}
-                              onChange={(event) =>
-                                update((item) => ({
-                                  ...item,
-                                  methodUnitMultiplicity: event.currentTarget.value as 'perGarment' | 'perPlacement',
-                                }))
-                              }
-                            >
-                              <option value="perGarment">Per garment</option>
-                              <option value="perPlacement">Per decorated placement</option>
-                            </select>
-                          </label>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            change({
-                              ...draft,
-                              pricingRules: draft.pricingRules.filter((item) => item.id !== rule.id),
-                              labels: removeChoiceLabels(draft.labels, 'prices', rule.id),
-                            })
-                          }
-                        >
-                          Remove price
-                        </button>
-                      </div>
-                    );
-                  })}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      change({
-                        ...draft,
-                        pricingRules: [
-                          ...draft.pricingRules,
-                          {
-                            id: freshId('price'),
-                            role: 'setup',
-                            scope: { kind: 'general' },
-                            rate: { kind: 'fixed', amount: currencyAmount() },
-                          },
-                        ],
-                      })
-                    }
-                  >
-                    Add fixed price
-                  </button>
+                      </ul>
+                      <p>
+                        Start a new local price proposal, enter and review every available choice, then save and publish
+                        a new revision. This does not convert or change a published revision.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPriceErrors({});
+                          setPriceProposalStarted(true);
+                          change({
+                            ...draft,
+                            pricingRules: [],
+                            labels: draft.labels ? { ...draft.labels, prices: {} } : draft.labels,
+                          });
+                        }}
+                      >
+                        Start Lean price proposal
+                      </button>
+                    </section>
+                  ) : (
+                    <>
+                      <p>
+                        Final decoration surcharge per garment, added to the garment price for each selected placement.
+                        Blank means unavailable; enter 0 only for an explicitly free choice.
+                      </p>
+                      {priceProposalStarted && (
+                        <p role="status">
+                          New local price proposal: review all choices before saving and publishing. Published history
+                          has not changed.
+                        </p>
+                      )}
+                      {priceCells.length ? (
+                        <table>
+                          <caption>Decoration prices ({draft.shopCurrency})</caption>
+                          <thead>
+                            <tr>
+                              <th>Method</th>
+                              <th>Placement</th>
+                              <th>Size</th>
+                              <th>Surcharge per garment</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {priceCells.map((cell, cellIndex) => {
+                              const rule = draft.pricingRules.find(
+                                (item) =>
+                                  item.scope.kind === 'step' &&
+                                  item.scope.methodId === cell.methodId &&
+                                  item.scope.placementId === cell.placementId &&
+                                  item.scope.stepId === cell.stepId,
+                              );
+                              const value = rule?.rate.kind === 'fixed' ? rule.rate.amount.shopDecimal : '';
+                              const names = priceCellNames[cellIndex];
+                              return (
+                                <tr key={cell.key}>
+                                  <td>{choiceLabel('methods', cell.methodId)}</td>
+                                  <td>{choiceLabel('placements', cell.placementId)}</td>
+                                  <td>{choiceLabel('steps', cell.stepId)}</td>
+                                  <td>
+                                    <LeanPriceInput
+                                      key={`${cell.key}:${priceRevision}`}
+                                      value={value}
+                                      label={`${names} — surcharge (${draft.shopCurrency})`}
+                                      onPrice={(amount) => updateLeanPrice(cell, amount)}
+                                      onValidity={(valid) => setPriceErrors((old) => ({ ...old, [cell.key]: !valid }))}
+                                    />
+                                    {rule ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setPriceErrors((old) => ({ ...old, [cell.key]: false }));
+                                          updateLeanPrice(cell, '');
+                                        }}
+                                      >
+                                        Make unavailable
+                                      </button>
+                                    ) : (
+                                      <span>Unavailable</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <p>Add a method, placement and allowed size to enter decoration prices.</p>
+                      )}
+                    </>
+                  )}
                   <button
                     type="button"
                     onClick={() => {
@@ -1905,7 +1743,10 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                     </div>
                   )}
                 </fieldset>
-                <s-button disabled={busy || !!advancedError || saveState !== 'dirty'} onClick={() => void save()}>
+                <s-button
+                  disabled={busy || !!advancedError || legacyPricing || hasPriceErrors || saveState !== 'dirty'}
+                  onClick={() => void save()}
+                >
                   Save draft
                 </s-button>
                 {saveState === 'ambiguous' && pending.current && (
@@ -1918,6 +1759,8 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                     onClick={() => {
                       if (isDraft(latest.draft)) {
                         setDraft(latest.draft);
+                        setPriceErrors({});
+                        setPriceRevision((old) => old + 1);
                         setEditor(initialEditor(latest.draft));
                         setView({ ...view, config: latest });
                         setLatest(null);
@@ -1945,7 +1788,9 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                     operatorPublication(view.config.publication.state) ||
                     (!publicationPending.current &&
                       !continuingPublication(view.config.publication.state) &&
-                      (!view.config.publishEligibility.allowed || !['clean', 'saved'].includes(saveState)))
+                      (hasPriceErrors ||
+                        !view.config.publishEligibility.allowed ||
+                        !['clean', 'saved'].includes(saveState)))
                   }
                   onClick={() => void publish()}
                 >
@@ -1959,7 +1804,10 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                   Target Shopify product number{' '}
                   <input value={copyTarget} onInput={(event) => setCopyTarget(event.currentTarget.value)} />
                 </label>
-                <s-button disabled={busy || !['clean', 'saved'].includes(saveState)} onClick={() => void copy()}>
+                <s-button
+                  disabled={busy || hasPriceErrors || !['clean', 'saved'].includes(saveState)}
+                  onClick={() => void copy()}
+                >
                   Copy independent draft
                 </s-button>
               </s-section>

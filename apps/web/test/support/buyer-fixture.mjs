@@ -56,24 +56,33 @@ export async function fixture(t, options = {}) {
         methods: [{ id: 'print' }],
         placements: [{ id: 'front', allowedMethodIds: ['print'], allowedStepIds: ['small'], logoLaterAllowed: true }],
         productionOptions: [],
-        pricingRules: [
-          ...(options.demo91
-            ? [
-                {
-                  id: 'unit',
-                  scope: { kind: 'placement', placementId: 'front' },
-                  role: 'unit',
-                  rate: { kind: 'fixed', amount: { shopDecimal: '10.00', presentmentOverrides: [] } },
-                },
-              ]
-            : []),
-          {
-            id: 'setup',
-            scope: { kind: 'general' },
-            role: 'setup',
-            rate: { kind: 'fixed', amount: { shopDecimal: '1.00', presentmentOverrides: [] } },
-          },
-        ],
+        pricingRules: options.lean
+          ? [
+              {
+                id: 'lean-unit',
+                scope: { kind: 'step', placementId: 'front', methodId: 'print', stepId: 'small' },
+                role: 'unit',
+                rate: { kind: 'fixed', amount: { shopDecimal: '1.00', presentmentOverrides: [] } },
+              },
+            ]
+          : [
+              ...(options.demo91
+                ? [
+                    {
+                      id: 'unit',
+                      scope: { kind: 'placement', placementId: 'front' },
+                      role: 'unit',
+                      rate: { kind: 'fixed', amount: { shopDecimal: '10.00', presentmentOverrides: [] } },
+                    },
+                  ]
+                : []),
+              {
+                id: 'setup',
+                scope: { kind: 'general' },
+                role: 'setup',
+                rate: { kind: 'fixed', amount: { shopDecimal: '1.00', presentmentOverrides: [] } },
+              },
+            ],
       },
       geometry: {
         version: 'm5-geometry-v1',
@@ -129,7 +138,8 @@ export async function fixture(t, options = {}) {
     amount = options.demo91 ? '20.00' : '10.00',
     signings = 0,
     catalogUnavailable = false,
-    available = true;
+    available = true,
+    qualified = true;
   const guest = createArtworkGuestAuthority({
     core,
     secret: 'synthetic-m7-http-private-capability',
@@ -168,6 +178,15 @@ export async function fixture(t, options = {}) {
     });
     return {
       ...value,
+      // Existing fixtures retain historical engine economics; Lean cases exercise the production profile explicitly.
+      pricingProfile: options.lean ? 'lean-v1' : undefined,
+      leanContext: options.lean
+        ? {
+            assertSupported: async () => {
+              if (!qualified) throw new Error('Lean context unqualified');
+            },
+          }
+        : undefined,
       shop: {
         getContext: async () => ({
           shopId,
@@ -183,8 +202,8 @@ export async function fixture(t, options = {}) {
           freshness: 'fresh',
           recognizedPolicyId: 'synthetic',
           policyVersion: 'test',
-          trial: true,
-          qualifyingUsageDisposition: 'WAIVE_TRIAL',
+          trial: !options.lean,
+          qualifyingUsageDisposition: options.lean ? 'NOT_METERED' : 'WAIVE_TRIAL',
         }),
       },
       catalog: {
@@ -335,6 +354,9 @@ export async function fixture(t, options = {}) {
     },
     advance: (ms) => {
       now = new Date(+now + ms);
+    },
+    qualification: (value) => {
+      qualified = value;
     },
     signings: () => signings,
     now: () => now,

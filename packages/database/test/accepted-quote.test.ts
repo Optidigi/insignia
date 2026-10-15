@@ -137,7 +137,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
     };
   }
 
-  it('stores one complete quote/set, replays the same key, and forbids mutation', async () => {
+  it('stores a non-metered quote, replays the same key, and forbids mutation', async () => {
     const value = await effectiveFixture();
     const quoteId = randomUUID();
     const setId = randomUUID();
@@ -170,8 +170,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
       presentmentExponent: 2,
       policyVersion: 'test',
       recognizedPolicyId: 'synthetic',
-      trial: true,
-      qualifyingUsageDisposition: 'WAIVE_TRIAL',
+      trial: false,
+      qualifyingUsageDisposition: 'NOT_METERED',
       effectiveRevisions,
       economics: {
         customizedQuantity: 2,

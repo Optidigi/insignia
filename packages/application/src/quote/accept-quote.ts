@@ -7,6 +7,7 @@ import {
   type ProposalEconomics,
   type PublishedConfig,
   parseMinor,
+  priceLeanProposal,
   priceProposal,
   ROUNDING_POLICY_VERSION,
 } from '@insignia/domain';
@@ -63,7 +64,7 @@ export type QuoteEntitlement = {
   recognizedPolicyId: string | null;
   policyVersion: string;
   trial: boolean;
-  qualifyingUsageDisposition: 'REQUIRES_EVENT_TIME' | 'WAIVE_TRIAL' | 'DENY';
+  qualifyingUsageDisposition: 'REQUIRES_EVENT_TIME' | 'WAIVE_TRIAL' | 'NOT_METERED' | 'DENY';
 };
 export type QuoteRequest = {
   shopId: string;
@@ -103,7 +104,7 @@ export type AcceptedQuote = {
   policyVersion: string;
   recognizedPolicyId: string;
   trial: boolean;
-  qualifyingUsageDisposition: 'REQUIRES_EVENT_TIME' | 'WAIVE_TRIAL';
+  qualifyingUsageDisposition: 'REQUIRES_EVENT_TIME' | 'WAIVE_TRIAL' | 'NOT_METERED';
   physicalGroups: readonly {
     productId: string;
     configRevisionId: string;
@@ -181,6 +182,18 @@ export interface CartAuthorizationPort {
 }
 
 export interface QuoteAuthorityPorts {
+  /** Production composition fixes Lean inputs; absent only for retained historical engine callers. */
+  pricingProfile?: 'lean-v1';
+  /** Independent server qualification, never buyer JSON or a currency-name allowlist. */
+  leanContext?: {
+    assertSupported(input: {
+      tenant: ActiveQuoteTenant;
+      country: string;
+      marketId: string;
+      currency: string;
+      shopCurrency: string;
+    }): Promise<void>;
+  };
   clock(): Date;
   ids: { quoteId(): string };
   tenant: { getActive(shopId: string, installationGeneration: string): Promise<ActiveQuoteTenant | null> };
@@ -214,7 +227,7 @@ function requireTenant(value: ActiveQuoteTenant | null, request: QuoteRequest): 
 
 function requireEntitlement(value: QuoteEntitlement): asserts value is QuoteEntitlement & {
   recognizedPolicyId: string;
-  qualifyingUsageDisposition: 'REQUIRES_EVENT_TIME' | 'WAIVE_TRIAL';
+  qualifyingUsageDisposition: 'REQUIRES_EVENT_TIME' | 'WAIVE_TRIAL' | 'NOT_METERED';
 } {
   if (
     !value.active ||
@@ -583,6 +596,16 @@ async function prepareValidatedQuote(
   const presentment = catalogSnapshots[0]?.currencyCode;
   if (!presentment || catalogSnapshots.some((snapshot) => snapshot.currencyCode !== presentment))
     throw new Error('mixed presentment currency');
+  if (ports.pricingProfile === 'lean-v1') {
+    if (!ports.leanContext) throw new Error('Lean primary-Market and currency qualification unavailable');
+    await ports.leanContext.assertSupported({
+      tenant,
+      country: request.country,
+      marketId,
+      currency: presentment,
+      shopCurrency: shop.currency,
+    });
+  }
   const exponent = ports.currency.exponent(presentment);
   const shopExponent = ports.currency.exponent(shop.currency);
   if (exponent === null || shopExponent === null || ![0, 2, 3].includes(exponent) || ![0, 2, 3].includes(shopExponent))
@@ -614,7 +637,7 @@ async function prepareValidatedQuote(
   let fxSnapshot: CustomizationFxSnapshot | null = null;
   let economics: ProposalEconomics;
   try {
-    economics = priceProposal(pricing);
+    economics = ports.pricingProfile === 'lean-v1' ? priceLeanProposal(pricing) : priceProposal(pricing);
   } catch (error) {
     if (shop.currency === presentment || !(error instanceof Error) || !error.message.startsWith('missing FX for '))
       throw error;

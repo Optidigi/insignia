@@ -4,8 +4,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, readdir, readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { crc32, deflateSync } from 'node:zlib';
-import { currencyExponent } from '@insignia/cart-authorization';
-import { priceProposal, validatePublishedConfig } from '@insignia/domain';
+import { validatePublishedConfig } from '@insignia/domain';
 import { chromium } from 'playwright';
 
 const polarisUrl = 'https://cdn.shopify.com/shopifycloud/polaris-1.1.js';
@@ -228,119 +227,72 @@ test('built picker refreshes once on 401; second 401, 403 and 503 stop without a
     await page.close();
   }
 });
-test('editor-generated fixed, override and tier defaults price through unchanged M2 in zero/two/three exponent currencies', {
-  timeout: 60000,
+test('historical advanced pricing stays read-only until an explicit local Lean proposal', {
+  timeout: 20000,
 }, async (t) => {
   const { source, server, browser } = await browserFixture(t);
-
-  for (const currency of ['USD', 'EUR', 'JPY', 'KWD']) {
-    const page = await browser.newPage();
-    await page.addInitScript(() => {
-      window.shopify = { idToken: async () => 'synthetic-money-token' };
-    });
-    await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
-    await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
-    await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
-      route.fulfill({ body: '', contentType: 'text/javascript' }),
+  const page = await browser.newPage();
+  await page.addInitScript(() => {
+    window.shopify = { idToken: async () => 'synthetic-lean-conversion' };
+  });
+  await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+    route.fulfill({ body: '', contentType: 'text/javascript' }),
+  );
+  const current = draft();
+  current.pricingRules = [
+    {
+      id: 'historical',
+      role: 'setup',
+      scope: { kind: 'general' },
+      rate: { kind: 'fixed', amount: { shopDecimal: '10', presentmentOverrides: [{ currency: 'EUR', decimal: '9' }] } },
+    },
+  ];
+  let writes = 0,
+    saved;
+  await page.route('**/api/admin/products/111/config', (route) => {
+    if (route.request().method() === 'GET') {
+      const view = response(current);
+      view.config.publication.activeRevisionId = 'historical-revision';
+      return route.fulfill({ json: view });
+    }
+    writes++;
+    saved = route.request().postDataJSON();
+    return route.fulfill({ json: { kind: 'saved', draftVersion: '2' } });
+  });
+  await page.goto(server.base + '/admin/products/111/config');
+  await page.getByRole('region', { name: 'Historical pricing' }).waitFor({ timeout: 1500 });
+  assert.match(await page.getByRole('region', { name: 'Historical pricing' }).innerText(), /10 USD; 9 EUR/);
+  for (const name of ['Add fixed price', 'Add quantity tier', 'Add presentment override'])
+    assert.equal(await page.getByRole('button', { name }).count(), 0);
+  assert.equal(writes, 0);
+  await page.getByRole('button', { name: 'Start Lean price proposal' }).click();
+  assert.equal(writes, 0, 'Starting a proposal changes local draft only');
+  assert.equal(current.pricingRules[0].role, 'setup');
+  await page.getByText('Effective revision: historical-revision', { exact: true }).waitFor();
+  const price = page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true });
+  assert.equal(await price.inputValue(), '');
+  for (const invalid of ['-1', '1.001']) {
+    await price.fill(invalid);
+    await page.getByRole('alert').filter({ hasText: 'Enter a nonnegative amount' }).waitFor();
+    assert.equal(
+      await page
+        .locator('s-button')
+        .filter({ hasText: 'Save draft' })
+        .evaluate((button) => button.disabled),
+      true,
     );
-    let current = { ...draft(), shopCurrency: currency };
-    let version = '1';
-    let saved;
-    await page.route('**/api/admin/products/111/config', (route) => {
-      if (route.request().method() === 'GET') {
-        const value = response(current);
-        value.config.currentShopCurrency = currency;
-        value.config.draftVersion = version;
-        return route.fulfill({ json: value });
-      }
-      assert.equal(route.request().method(), 'PUT');
-      saved = route.request().postDataJSON();
-      current = saved.draft;
-      version = String(Number(version) + 1);
-      return route.fulfill({ json: { kind: 'saved', draftVersion: version } });
-    });
-    await page.goto(server.base + '/admin/products/111/config');
-    await page.getByText('Draft version 1').waitFor();
-    await page.getByRole('button', { name: 'Add fixed price' }).click();
-    const price = (presentment = currency, quantity = 2) =>
-      priceProposal({
-        shopId: 'shop_1',
-        groups: [
-          {
-            version: 'm2-customization-group-v1',
-            shopId: 'shop_1',
-            productId: '111',
-            configRevisionId: 'revision_1',
-            revisionContentHash: 'a'.repeat(64),
-            design: {
-              placements: [
-                {
-                  placementId: 'front',
-                  methodId: 'print',
-                  stepId: 'small',
-                  artwork: { kind: 'deferred', intentId: 'synthetic-intent' },
-                },
-              ],
-              options: [],
-            },
-            variants: [{ variantId: '11', quantity }],
-          },
-        ],
-        configs: [
-          validatePublishedConfig({
-            version: 'm2-published-config-v1',
-            shopId: 'shop_1',
-            productId: '111',
-            revisionId: 'revision_1',
-            revisionContentHash: 'a'.repeat(64),
-            shopCurrency: currency,
-            methods: saved.draft.methods,
-            placements: saved.draft.placements,
-            productionOptions: saved.draft.productionOptions,
-            pricingRules: saved.draft.pricingRules,
-          }),
-        ],
-        bases: [
-          {
-            shopId: 'shop_1',
-            productId: '111',
-            variantId: '11',
-            currency: presentment,
-            minor: '100',
-            contextId: 'ctx',
-          },
-        ],
-        currency: {
-          version: 'm2-currency-resolution-v1',
-          presentmentCurrency: presentment,
-          exponents: { [currency]: currencyExponent(currency), [presentment]: currencyExponent(presentment) },
-        },
-        effectiveAt: '2026-09-30T12:00:00.000Z',
-        marketContext: 'synthetic',
-        roundingPolicy: 'm2-half-even-v1',
-      });
-    const save = async () => {
-      await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
-      await page.getByText('Draft saved.').waitFor();
-    };
-    await save();
-    assert.equal(price().totalMinor, '200', currency + ' fixed default must be usable');
-    await page.getByRole('button', { name: 'Add presentment override' }).click();
-    const override = currency === 'EUR' ? 'USD' : 'EUR';
-    await page.getByLabel('Presentment currency').fill(override);
-    await save();
-    assert.equal(price(override).totalMinor, '200', 'override default must be usable without FX');
-    await page.getByLabel('Role').selectOption('unit');
-    await page
-      .locator('select')
-      .filter({ has: page.locator('option[value="allUnits"]') })
-      .selectOption('allUnits');
-    await page.getByRole('button', { name: 'Add quantity tier' }).click();
-    await save();
-    assert.equal(price(currency, 1).totalMinor, '100', 'first tier must retain usable default');
-    assert.equal(price(currency, 2).totalMinor, '200', 'new tier must have usable default');
-    await page.close();
   }
+  await price.fill('2.50');
+  await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
+  await page.getByText('Draft saved.').waitFor();
+  assert.equal(writes, 1);
+  assert.equal(saved.draft.pricingRules.length, 1);
+  assert.equal(saved.draft.pricingRules[0].role, 'unit');
+  assert.deepEqual(saved.draft.pricingRules[0].rate, {
+    kind: 'fixed',
+    amount: { shopDecimal: '2.50', presentmentOverrides: [] },
+  });
 });
 test('real browser editor syncs typed view, variant and step controls with direct Konva canvas and saved draft', {
   timeout: 45000,
@@ -445,22 +397,7 @@ test('real browser editor syncs typed view, variant and step controls with direc
   await page.getByLabel('centerX').waitFor();
   const moved = Number(await page.getByLabel('centerX').inputValue());
   assert.ok(moved > 0.4 && moved < 0.6, 'Konva drag must update the typed placement field: ' + moved);
-  await page.getByRole('button', { name: 'Add fixed price' }).click();
-  assert.equal(await page.getByLabel('Role').inputValue(), 'setup');
-  assert.deepEqual(JSON.parse(await page.getByLabel('Scope').inputValue()), { kind: 'general' });
-  await page.getByLabel('Role').selectOption('unit');
-  assert.deepEqual(JSON.parse(await page.getByLabel('Scope').inputValue()), { kind: 'method', methodId: 'print' });
-  await page
-    .locator('select')
-    .filter({ has: page.locator('option[value="allUnits"]') })
-    .selectOption('allUnits');
-  await page.getByRole('button', { name: 'Add quantity tier' }).click();
-  await page.getByLabel('Minimum quantity').last().fill('12');
-  await page.getByLabel('Shop amount (USD)').first().fill('4.50');
-  await page.getByLabel('Shop amount (USD)').last().fill('3.00');
-  await page.getByRole('button', { name: 'Add presentment override' }).first().click();
-  await page.getByLabel('Presentment currency').fill('EUR');
-  await page.getByLabel('Presentment amount').fill('4.00');
+  await page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).fill('4.50');
   if (process.env.M5_CAPTURE_BROWSER === '1')
     await page.screenshot({ path: new URL('editor-edited.png', captureDir).pathname, fullPage: true });
   assert.equal(
@@ -488,7 +425,7 @@ test('real browser editor syncs typed view, variant and step controls with direc
       pricingRules: saved.draft.pricingRules,
     }),
   );
-  assert.equal(saved.draft.pricingRules[0].rate.tiers[1].minQuantity, 12);
+  assert.equal(saved.draft.pricingRules[0].rate.amount.shopDecimal, '4.50');
   assert.ok(saved.draft.geometry.views[0].placements[0].variantOverrides[0].rect.centerX > 0.4);
   assert.ok((await page.evaluate(() => window.__tokenCount)) >= 2);
   assert.deepEqual(errors, []);
@@ -554,18 +491,16 @@ test('removing named choices drops only their labels including nested option val
     .locator('..')
     .getByRole('button', { name: 'Remove', exact: true })
     .click();
-  await page.getByRole('button', { name: 'Add fixed price' }).click();
-  await page.getByLabel('Price name').fill('Keep setup');
-  await page.getByRole('button', { name: 'Add fixed price' }).click();
-  await page.getByLabel('Price name').last().fill('Remove setup');
-  await page.getByRole('button', { name: 'Remove price', exact: true }).last().click();
+  await page.getByLabel('Keep print / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).fill('2.00');
+  await page.getByRole('button', { name: 'Make unavailable' }).click();
   await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
   await page.getByText('Draft saved.').waitFor();
   assert.deepEqual(saved.draft.labels.methods, { print: 'Keep print' });
   const option = saved.draft.productionOptions[0];
   assert.deepEqual(saved.draft.labels.options, { [option.id]: 'Keep finish' });
   assert.deepEqual(saved.draft.labels.values, { [option.id]: { [option.allowedValueIds[0]]: 'Keep matte' } });
-  assert.deepEqual(saved.draft.labels.prices, { [saved.draft.pricingRules[0].id]: 'Keep setup' });
+  assert.deepEqual(saved.draft.pricingRules, []);
+  assert.deepEqual(saved.draft.labels.prices ?? {}, {});
   assert.doesNotThrow(() =>
     validatePublishedConfig({
       version: 'm2-published-config-v1',
@@ -707,9 +642,9 @@ test('merchant currency adoption refreshes saved publication eligibility and lat
   let current = draft();
   current.pricingRules = [
     {
-      id: 'setup-price',
-      role: 'setup',
-      scope: { kind: 'general' },
+      id: 'unit-price',
+      role: 'unit',
+      scope: { kind: 'step', placementId: 'front', stepId: 'small', methodId: 'print' },
       rate: { kind: 'fixed', amount: { shopDecimal: '4.50', presentmentOverrides: [] } },
     },
   ];
@@ -741,9 +676,15 @@ test('merchant currency adoption refreshes saved publication eligibility and lat
   await page.getByText('Current shop currency: EUR', { exact: false }).waitFor();
   const publicationButton = page.locator('s-button').filter({ hasText: 'Request publication' });
   assert.equal(await publicationButton.evaluate((button) => button.disabled), true);
-  assert.equal(await page.getByLabel('Shop amount (USD)').inputValue(), '4.50');
+  assert.equal(
+    await page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).inputValue(),
+    '4.50',
+  );
   await page.getByRole('button', { name: 'Use current shop currency' }).click();
-  assert.equal(await page.getByLabel('Shop amount (EUR)').inputValue(), '4.50');
+  assert.equal(
+    await page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (EUR)', { exact: true }).inputValue(),
+    '4.50',
+  );
   await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
   await page.getByText('Draft saved.').waitFor();
   assert.equal(saved.draft.shopCurrency, 'EUR');
@@ -760,7 +701,9 @@ test('merchant currency adoption refreshes saved publication eligibility and lat
   assert.equal(await page.getByText('Shop currency changed', { exact: true }).count(), 0);
   for (const outcome of ['failed', 'stale']) {
     refresh = outcome;
-    await page.getByLabel('Shop amount (EUR)').fill(outcome === 'failed' ? '5.000' : '6.000');
+    await page
+      .getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (EUR)', { exact: true })
+      .fill(outcome === 'failed' ? '5.00' : '6.00');
     await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
     await page
       .getByText('Draft saved. Publication eligibility could not be verified. Reload before publishing.')
@@ -769,7 +712,10 @@ test('merchant currency adoption refreshes saved publication eligibility and lat
     assert.equal(await publicationButton.evaluate((button) => button.disabled), true);
     assert.equal(await page.locator('s-button').filter({ hasText: 'Retry exact save' }).count(), 0);
     assert.equal(await page.locator('s-button').filter({ hasText: 'Review latest saved draft' }).count(), 0);
-    assert.equal(await page.getByLabel('Shop amount (EUR)').inputValue(), outcome === 'failed' ? '5.000' : '6.000');
+    assert.equal(
+      await page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (EUR)', { exact: true }).inputValue(),
+      outcome === 'failed' ? '5.00' : '6.00',
+    );
     assert.equal(await page.locator('fieldset').evaluate((element) => element.disabled), false);
   }
   assert.equal(readCalls, 4);
@@ -951,6 +897,71 @@ test('mobile deep link, cookie-free reload, interrupted save, stale conflict, an
   );
 });
 
+for (const invalidPrice of ['-1', '1.001']) {
+  test(`invalid Lean price ${invalidPrice} blocks new publication and copying until corrected`, {
+    timeout: 25000,
+  }, async (t) => {
+    const { source, server, browser } = await browserFixture(t);
+    const page = await browser.newPage();
+    await page.addInitScript(() => {
+      window.shopify = { idToken: async () => 'synthetic-price-gate' };
+    });
+    await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+    await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+      route.fulfill({ body: '', contentType: 'text/javascript' }),
+    );
+    let current = draft();
+    let version = '1';
+    const writes = [];
+    await page.route('**/api/admin/products/111/config', (route) => {
+      const request = route.request();
+      if (request.method() === 'GET') {
+        const view = response(current);
+        view.config.draftVersion = version;
+        view.config.publishEligibility = { allowed: true, reason: null };
+        return route.fulfill({ json: view });
+      }
+      const body = request.postDataJSON();
+      writes.push(body);
+      if (request.method() === 'PUT') {
+        current = body.draft;
+        version = '2';
+        return route.fulfill({ json: { kind: 'saved', draftVersion: version } });
+      }
+      return route.fulfill({ status: 202, json: { kind: 'accepted', state: 'ACTIVE' } });
+    });
+    await page.goto(server.base + '/admin/products/111/config');
+    await page.getByText('Draft version 1').waitFor();
+    const publish = page.locator('s-button').filter({ hasText: 'Request publication' });
+    const copy = page.locator('s-button').filter({ hasText: 'Copy independent draft' });
+    await page.getByLabel('Target Shopify product number').fill('222');
+    assert.equal(await publish.evaluate((button) => button.disabled), false);
+    assert.equal(await copy.evaluate((button) => button.disabled), false);
+    const price = page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)');
+    await price.fill(invalidPrice);
+    await page.getByText('Enter a nonnegative amount with at most two decimal places.', { exact: true }).waitFor();
+    assert.equal(await publish.evaluate((button) => button.disabled), true);
+    assert.equal(await copy.evaluate((button) => button.disabled), true);
+    // A synthetic event also exercises handler guards, independently of custom-element disabling.
+    await publish.evaluate((button) => button.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    await copy.evaluate((button) => button.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(resolve)));
+    assert.deepEqual(writes, []);
+    await price.fill('2.50');
+    await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
+    await page.getByText('Draft saved.', { exact: true }).waitFor();
+    assert.equal(await publish.evaluate((button) => button.disabled), false);
+    assert.equal(await copy.evaluate((button) => button.disabled), false);
+    await publish.click();
+    await page.getByText('Publication state refreshed.', { exact: true }).waitFor();
+    assert.equal(writes.filter((body) => body.action === 'publish').length, 1);
+    assert.equal(writes[0].draft.pricingRules[0].rate.amount.shopDecimal, '2.50');
+    await copy.click();
+    await page.waitForURL('**/admin/products/222/config');
+    assert.equal(writes.filter((body) => body.action === 'copy').length, 1);
+  });
+}
+
 test('interrupted publication resumes the identical request after reload and reaches a durable phase', {
   timeout: 30000,
 }, async (t) => {
@@ -1008,7 +1019,17 @@ test('interrupted publication resumes the identical request after reload and rea
   await page.getByText(/Continue the same publication request/).waitFor();
   assert.equal(writes, 1);
   await page.reload();
-  await page.locator('s-button').filter({ hasText: 'Continue publication' }).click();
+  await page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)').fill('-1');
+  const continuePublication = page.locator('s-button').filter({ hasText: 'Continue publication' });
+  assert.equal(await continuePublication.evaluate((button) => button.disabled), false);
+  assert.equal(
+    await page
+      .locator('s-button')
+      .filter({ hasText: 'Copy independent draft' })
+      .evaluate((button) => button.disabled),
+    true,
+  );
+  await continuePublication.click();
   await page.getByText('Remote ready; activation pending').waitFor();
   assert.equal(writes, 3);
   assert.equal(
@@ -1572,17 +1593,7 @@ test('concurrent editor refreshes share one App Bridge identity request', { time
   await page.getByText('Draft version 1').waitFor();
   assert.equal(await page.evaluate(() => window.__tokenCalls), 1);
   assert.equal(reads, 3);
-  await page.getByRole('button', { name: 'Add fixed price' }).click();
-  await page.getByLabel('Role').selectOption('unit');
-  await page.getByLabel('Scope').selectOption(
-    JSON.stringify({
-      kind: 'step',
-      placementId: 'front:chest',
-      stepId: 'size:small',
-    }),
-  );
-  await page.getByLabel('Specific method').selectOption('screen:print');
-  await page.getByLabel('Shop amount (USD)').fill('1.000');
+  await page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).fill('1.00');
   await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
   await page.getByText('Draft saved.').waitFor();
   assert.deepEqual(saved.draft.pricingRules[0].scope, {
@@ -1640,18 +1651,9 @@ test('empty merchant draft can be configured through typed controls and pass M2 
   });
   await page.goto(`${server.base}/admin/products/111/config`);
   await page.getByText('Draft version 1').waitFor();
-  await page.getByRole('button', { name: 'Add fixed price' }).click();
-  assert.equal(
-    await page
-      .getByLabel('Role')
-      .locator('option[value="unit"]')
-      .evaluate((option) => option.disabled),
-    true,
-  );
+  await page.getByText('Add a method, placement and allowed size to enter decoration prices.').waitFor();
   await page.getByRole('button', { name: 'Add method' }).click();
   await page.getByLabel('Method name').fill('Screen print');
-  await page.getByLabel('Role').selectOption('unit');
-  assert.equal(JSON.parse(await page.getByLabel('Scope').inputValue()).kind, 'method');
   await page.getByRole('button', { name: 'Add placement to view' }).click();
   await page.getByLabel('Placement name').fill('Front chest');
   await page.getByRole('button', { name: 'Add size step' }).click();
@@ -1662,7 +1664,7 @@ test('empty merchant draft can be configured through typed controls and pass M2 
   await page.getByRole('button', { name: 'Add production option' }).click();
   await page.getByLabel('Option name').fill('Thread color');
   await page.getByLabel(/^Value .* name$/).fill('Navy');
-  await page.getByLabel('Shop amount (USD)').fill('2.000');
+  await page.getByLabel('Screen print / Front chest / Small — surcharge (USD)', { exact: true }).fill('2.00');
   await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
   await page.getByText('Draft saved.').waitFor();
   assert.ok(saved.draft.methods.length === 1 && saved.draft.placements.length === 1);
@@ -1725,24 +1727,35 @@ test('mounted admin refreshes late activation and readiness without overwriting 
   await page.goto(`${server.base}/admin/products/111/config`);
   await page.getByText('Product held; activation pending', { exact: true }).waitFor();
   assert.equal(await page.getByText('Effective revision: requested-revision', { exact: true }).count(), 0);
-  await page.getByRole('button', { name: 'Add fixed price' }).click();
-  await page.getByLabel('Shop amount (USD)').fill('3.25');
+  await page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).fill('3.25');
   state = 'ACTIVE';
   await page.getByText('Active', { exact: true }).waitFor({ timeout: 8000 });
-  assert.equal(await page.getByLabel('Shop amount (USD)').inputValue(), '3.25');
+  assert.equal(
+    await page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).inputValue(),
+    '3.25',
+  );
   await page.getByText('Draft version 1 · dirty', { exact: false }).waitFor();
   await page.getByText('Effective revision: requested-revision', { exact: true }).waitFor();
   expired = true;
   await page.getByText('Authentication required', { exact: true }).waitFor({ timeout: 8000 });
-  assert.equal(await page.getByLabel('Shop amount (USD)').count(), 0);
+  assert.equal(
+    await page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).count(),
+    0,
+  );
   // Explicit recovery reauthorizes through GET only; denied private edits stay cleared.
   await page.getByRole('button', { name: 'Retry session', exact: true }).click({ timeout: 1500 });
   await page.getByText('Authentication required', { exact: true }).waitFor();
-  assert.equal(await page.getByLabel('Shop amount (USD)').count(), 0);
+  assert.equal(
+    await page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).count(),
+    0,
+  );
   expired = false;
   await page.getByRole('button', { name: 'Retry session', exact: true }).click();
   await page.getByText('Draft version 1 · clean', { exact: false }).waitFor();
-  assert.equal(await page.getByLabel('Shop amount (USD)').count(), 0);
+  assert.equal(
+    await page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).inputValue(),
+    '',
+  );
   await page.getByText('Effective revision: requested-revision', { exact: true }).waitFor();
   assert.equal(writes, 0);
 });
@@ -1765,8 +1778,8 @@ for (const staleAmount of ['9.00', '2.50'])
     current.pricingRules = [
       {
         id: 'shared-price',
-        role: 'setup',
-        scope: { kind: 'general' },
+        role: 'unit',
+        scope: { kind: 'step', placementId: 'front', stepId: 'small', methodId: 'print' },
         rate: { kind: 'fixed', amount: { shopDecimal: '0', presentmentOverrides: [] } },
       },
     ];
@@ -1797,8 +1810,10 @@ for (const staleAmount of ['9.00', '2.50'])
       await page.goto(`${server.base}/admin/products/111/config`);
       await page.getByText('Draft version 1', { exact: false }).waitFor();
     }
-    await first.getByLabel('Shop amount (USD)').fill('2.50');
-    await second.getByLabel('Shop amount (USD)').fill(staleAmount);
+    await first.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).fill('2.50');
+    await second
+      .getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true })
+      .fill(staleAmount);
     await first.locator('s-button').filter({ hasText: 'Save draft' }).click();
     await first.getByText('Draft saved.', { exact: true }).waitFor();
     await second.locator('s-button').filter({ hasText: 'Save draft' }).click();
@@ -1807,17 +1822,35 @@ for (const staleAmount of ['9.00', '2.50'])
       await second.getByText('Another editor changed this draft. Review the latest version.', { exact: true }).count(),
       1,
     );
-    assert.equal(await second.getByLabel('Shop amount (USD)').inputValue(), staleAmount);
+    assert.equal(
+      await second.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).inputValue(),
+      staleAmount,
+    );
     assert.equal(committed, 1);
     await first.goto(`${server.base}/admin/products`);
     await first.goBack();
     await first.getByText('Draft version 2', { exact: false }).waitFor();
-    assert.equal(await first.getByLabel('Shop amount (USD)').inputValue(), '2.50');
+    assert.equal(
+      await first.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).inputValue(),
+      '2.50',
+    );
     await first.reload();
     await first.getByText('Draft version 2', { exact: false }).waitFor();
+    await second.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).fill('1.001');
     await second.locator('s-button').filter({ hasText: 'Review latest saved draft' }).click();
-    assert.equal(await second.getByLabel('Shop amount (USD)').inputValue(), '2.50');
+    assert.equal(
+      await second.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).inputValue(),
+      '2.50',
+    );
     await second.getByText('Draft version 2 · clean', { exact: false }).waitFor();
+    await second.getByLabel('Method name').fill('Reviewed print');
+    assert.equal(
+      await second
+        .locator('s-button')
+        .filter({ hasText: 'Save draft' })
+        .evaluate((button) => button.disabled),
+      false,
+    );
   });
 
 test('authorization denial fences a save already in flight from repopulating private editor state', {
@@ -1865,21 +1898,26 @@ test('authorization denial fences a save already in flight from repopulating pri
     });
     await page.goto(`${server.base}/admin/products/111/config`);
     await page.getByText('Draft version 1', { exact: false }).waitFor();
-    await page.getByRole('button', { name: 'Add fixed price' }).click();
-    await page.getByLabel('Shop amount (USD)').fill('4.00');
+    await page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).fill('4.00');
     await readStarted;
     await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
     await saveStarted;
     releaseRead();
     await page.getByText('Authentication required', { exact: true }).waitFor({ timeout: 2000 });
-    assert.equal(await page.getByLabel('Shop amount (USD)').count(), 0);
+    assert.equal(
+      await page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).count(),
+      0,
+    );
     const saveResponse = page.waitForResponse((response) => response.request().method() === 'PUT');
     releaseSave();
     await saveResponse;
     await page.waitForTimeout(250);
     assert.ok(completed);
     assert.equal(await page.getByRole('button', { name: 'Retry session', exact: true }).count(), 1);
-    assert.equal(await page.getByLabel('Shop amount (USD)').count(), 0);
+    assert.equal(
+      await page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).count(),
+      0,
+    );
     assert.equal(await page.locator('s-section[heading="Synthetic shirt"]').count(), 0);
     assert.equal(await page.getByText(/Draft saved/).count(), 0);
   } finally {
@@ -2356,14 +2394,7 @@ test('merchant choices use names and numbered fallbacks while pricing saves the 
   current.methods.push({ id: 'method_other' });
   current.placements[0].allowedMethodIds.push('method_other');
   current.productionOptions = [{ id: 'option_opaque', allowedValueIds: ['value_opaque', 'value_other'] }];
-  current.pricingRules = [
-    {
-      id: 'price_opaque',
-      role: 'setup',
-      scope: { kind: 'general' },
-      rate: { kind: 'fixed', amount: { shopDecimal: '10', presentmentOverrides: [] } },
-    },
-  ];
+  current.pricingRules = [];
   current.labels = {
     methods: { method_opaque: 'Screen print' },
     placements: { placement_opaque: 'Front panel' },
@@ -2371,7 +2402,6 @@ test('merchant choices use names and numbered fallbacks while pricing saves the 
     views: { 'front-view': 'Front view' },
     options: { option_opaque: 'Finish' },
     values: { option_opaque: { value_opaque: 'Matte' } },
-    prices: { price_opaque: 'Artwork setup' },
   };
   let saved;
   await page.route('**/api/admin/products/111/config', (route) => {
@@ -2388,16 +2418,13 @@ test('merchant choices use names and numbered fallbacks while pricing saves the 
   assert.equal(await page.getByLabel('View').first().locator('option').last().textContent(), 'View 2');
   assert.equal(await page.getByLabel('Value 1 name').inputValue(), 'Matte');
   assert.equal(await page.getByLabel('Value 2 name').count(), 1);
-  const scope = page.getByLabel('Scope').first();
-  assert.deepEqual(
-    (await scope.locator('option').allTextContents()).map((x) => x.trim()),
-    ['General setup', 'Screen print', 'Method 2', 'Front panel', 'Front panel / Small', 'Front panel / Size step 2'],
-  );
-  await scope.selectOption(JSON.stringify({ kind: 'step', placementId: 'placement_opaque', stepId: 'step_opaque' }));
-  await page.getByLabel('Specific method').selectOption('method_opaque');
-  assert.equal(await page.getByLabel('Specific method').locator('option:checked').textContent(), 'Screen print');
+  const price = page.getByLabel('Screen print / Front panel / Small — surcharge (USD)', { exact: true });
+  await price.fill('10');
   await page.getByLabel('Method name').first().fill('Renamed print');
-  assert.equal(await scope.getByRole('option', { name: 'Renamed print', exact: true }).count(), 1);
+  assert.equal(
+    await page.getByLabel('Renamed print / Front panel / Small — surcharge (USD)', { exact: true }).count(),
+    1,
+  );
   for (const internalId of [
     'method_opaque',
     'placement_opaque',
@@ -2412,14 +2439,16 @@ test('merchant choices use names and numbered fallbacks while pricing saves the 
     );
   await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
   await page.getByText('Draft saved.').waitFor();
-  assert.deepEqual(saved.draft.pricingRules, [
-    {
-      id: 'price_opaque',
-      role: 'setup',
-      scope: { kind: 'step', placementId: 'placement_opaque', stepId: 'step_opaque', methodId: 'method_opaque' },
-      rate: { kind: 'fixed', amount: { shopDecimal: '10', presentmentOverrides: [] } },
-    },
-  ]);
+  assert.deepEqual(
+    saved.draft.pricingRules.map(({ id: _id, ...rule }) => rule),
+    [
+      {
+        role: 'unit',
+        scope: { kind: 'step', placementId: 'placement_opaque', stepId: 'step_opaque', methodId: 'method_opaque' },
+        rate: { kind: 'fixed', amount: { shopDecimal: '10', presentmentOverrides: [] } },
+      },
+    ],
+  );
   assert.deepEqual(saved.draft.methods, current.methods);
   assert.deepEqual(saved.draft.placements, current.placements);
   assert.deepEqual(saved.draft.productionOptions, current.productionOptions);
@@ -2454,14 +2483,7 @@ test('colliding choice names identify the intended method, size step and option 
         current.placements[0].allowedMethodIds.push('third');
       }
       current.productionOptions = [{ id: 'finish', allowedValueIds: ['matte', 'other'] }];
-      current.pricingRules = [
-        {
-          id: 'setup',
-          role: 'setup',
-          scope: { kind: 'general' },
-          rate: { kind: 'fixed', amount: { shopDecimal: '10', presentmentOverrides: [] } },
-        },
-      ];
+      current.pricingRules = [];
       current.labels = {
         methods: methodLabels,
         placements: { front: 'Front' },
@@ -2475,16 +2497,17 @@ test('colliding choice names identify the intended method, size step and option 
         return route.fulfill({ json: { kind: 'saved', draftVersion: '2' } });
       });
       await page.goto(server.base + '/admin/products/111/config');
-      const scope = page.getByLabel('Scope').first();
-      await scope
-        .getByRole('option', { name: expectedMethods[1], exact: true })
-        .waitFor({ state: 'attached', timeout: 1500 });
-      assert.deepEqual(
-        (await scope.locator('optgroup[label="Methods"] option').allTextContents()).map((x) => x.trim()),
-        expectedMethods,
-      );
-      await scope.selectOption({ label: 'Front / Small (size step 2)' });
-      await page.getByLabel('Specific method').selectOption({ label: expectedMethods[1] });
+      await page
+        .getByLabel(`${expectedMethods[0]} / Front / Small (size step 1) — surcharge (USD)`, { exact: true })
+        .waitFor({ timeout: 1500 });
+      for (const method of expectedMethods)
+        assert.equal(
+          await page.getByLabel(`${method} / Front / Small (size step 1) — surcharge (USD)`, { exact: true }).count(),
+          1,
+        );
+      await page
+        .getByLabel(`${expectedMethods[1]} / Front / Small (size step 2) — surcharge (USD)`, { exact: true })
+        .fill('10');
       await page.getByLabel('Value 2 name').fill('Satin');
       await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
       await page.getByText('Draft saved.').waitFor();
@@ -2494,7 +2517,10 @@ test('colliding choice names identify the intended method, size step and option 
         stepId: 'large',
         methodId: 'second',
       });
-      assert.deepEqual(saved.draft.pricingRules[0].rate, current.pricingRules[0].rate);
+      assert.deepEqual(saved.draft.pricingRules[0].rate, {
+        kind: 'fixed',
+        amount: { shopDecimal: '10', presentmentOverrides: [] },
+      });
       assert.deepEqual(saved.draft.methods, current.methods);
       assert.deepEqual(saved.draft.placements, current.placements);
       assert.deepEqual(saved.draft.productionOptions, current.productionOptions);
@@ -2527,14 +2553,7 @@ test('compound size-step names remain distinguishable and save the intended plac
     placements: { front: 'Front / Large', back: 'Front' },
     steps: { small: 'Small', large: 'Large / Small' },
   };
-  current.pricingRules = [
-    {
-      id: 'setup',
-      role: 'setup',
-      scope: { kind: 'general' },
-      rate: { kind: 'fixed', amount: { shopDecimal: '10', presentmentOverrides: [] } },
-    },
-  ];
+  current.pricingRules = [];
   let saved;
   await page.route('**/api/admin/products/111/config', (route) => {
     if (route.request().method() === 'GET') return route.fulfill({ json: response(current) });
@@ -2542,19 +2561,78 @@ test('compound size-step names remain distinguishable and save the intended plac
     return route.fulfill({ json: { kind: 'saved', draftVersion: '2' } });
   });
   await page.goto(server.base + '/admin/products/111/config');
-  const scope = page.getByLabel('Scope').first();
-  await scope
-    .getByRole('option', { name: 'Front / Large / Small (size step scope 2)', exact: true })
-    .waitFor({ state: 'attached', timeout: 1500 });
-  assert.deepEqual(
-    (await scope.locator('optgroup[label="Size steps"] option').allTextContents()).map((x) => x.trim()),
-    ['Front / Large / Small (size step scope 1)', 'Front / Large / Small (size step scope 2)'],
-  );
-  await scope.selectOption({ label: 'Front / Large / Small (size step scope 2)' });
+  const prices = page.getByRole('table').getByRole('textbox');
+  await prices.first().waitFor({ timeout: 1500 });
+  assert.deepEqual(await prices.evaluateAll((inputs) => inputs.map((input) => input.getAttribute('aria-label'))), [
+    'Method 1 / Front / Large / Small (price choice 1) — surcharge (USD)',
+    'Method 1 / Front / Large / Small (price choice 2) — surcharge (USD)',
+  ]);
+  await page
+    .getByLabel('Method 1 / Front / Large / Small (price choice 2) — surcharge (USD)', { exact: true })
+    .fill('10');
   await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
   await page.getByText('Draft saved.').waitFor();
-  assert.deepEqual(saved.draft.pricingRules[0].scope, { kind: 'step', placementId: 'back', stepId: 'large' });
-  assert.deepEqual(saved.draft.pricingRules[0].rate, current.pricingRules[0].rate);
+  assert.deepEqual(saved.draft.pricingRules[0].scope, {
+    kind: 'step',
+    placementId: 'back',
+    stepId: 'large',
+    methodId: 'print',
+  });
+  assert.deepEqual(saved.draft.pricingRules[0].rate, {
+    kind: 'fixed',
+    amount: { shopDecimal: '10', presentmentOverrides: [] },
+  });
   assert.deepEqual(saved.draft.labels, current.labels);
   assert.deepEqual(saved.draft.placements, current.placements);
+});
+
+test('Lean price table keeps blank unavailable, saves explicit zero and exact final per-garment surcharges', {
+  timeout: 20000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  const page = await browser.newPage();
+  await page.addInitScript(() => {
+    window.shopify = { idToken: async () => 'synthetic-lean-editor' };
+  });
+  await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+    route.fulfill({ body: '', contentType: 'text/javascript' }),
+  );
+  const current = draft();
+  current.labels = {
+    methods: { print: 'Print' },
+    placements: { front: 'Front' },
+    steps: { small: 'Small', large: 'Large' },
+  };
+  let saved;
+  await page.route('**/api/admin/products/111/config', (route) => {
+    if (route.request().method() === 'GET') return route.fulfill({ json: response(current) });
+    saved = route.request().postDataJSON();
+    return route.fulfill({ json: { kind: 'saved', draftVersion: '2' } });
+  });
+  await page.goto(server.base + '/admin/products/111/config');
+  const small = page.getByLabel('Print / Front / Small — surcharge (USD)', { exact: true });
+  await small.waitFor({ timeout: 1500 });
+  assert.equal(await small.inputValue(), '');
+  assert.equal(await page.getByRole('button', { name: 'Add fixed price' }).count(), 0);
+  assert.equal(await page.getByLabel('Role', { exact: true }).count(), 0);
+  await small.fill('3.00');
+  await page.getByLabel('Print / Front / Large — surcharge (USD)', { exact: true }).fill('0');
+  await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
+  await page.getByText('Draft saved.').waitFor();
+  assert.deepEqual(
+    saved.draft.pricingRules.map(({ id: _id, ...rule }) => rule),
+    [
+      {
+        role: 'unit',
+        scope: { kind: 'step', placementId: 'front', stepId: 'small', methodId: 'print' },
+        rate: { kind: 'fixed', amount: { shopDecimal: '3.00', presentmentOverrides: [] } },
+      },
+      {
+        role: 'unit',
+        scope: { kind: 'step', placementId: 'front', stepId: 'large', methodId: 'print' },
+        rate: { kind: 'fixed', amount: { shopDecimal: '0', presentmentOverrides: [] } },
+      },
+    ],
+  );
 });

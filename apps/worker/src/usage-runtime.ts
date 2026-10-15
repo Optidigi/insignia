@@ -2,11 +2,21 @@ import type { DurableCore } from '@insignia/database';
 import { createWorkerUsageReconciliation } from './usage-reconciliation.js';
 import { createWorkerUsageSource } from './usage-source.js';
 
-/** Qualification only. No commercial binding, provider credential or billing dispatch is configured here. */
-export function createWorkerUsageRuntime(input: {
+type WorkerUsageRuntimeInput = {
   env: Readonly<Record<string, string | undefined>>;
   core: Pick<DurableCore, 'tenants' | 'usageLedger' | 'usageDeliveryIntents'>;
-}): ReturnType<typeof createWorkerUsageReconciliation> | undefined {
+};
+
+/** Lean V1 is recurring-only. Inherited usage flags grant no new qualification, staging or dispatch. */
+export function createWorkerUsageRuntime(_input: WorkerUsageRuntimeInput): undefined {
+  return undefined;
+}
+
+/** Historical qualification/operator seam only; shipping main does not call this factory.
+ * No commercial binding, provider credential or billing dispatch is configured here. */
+export function createHistoricalWorkerUsageRuntime(
+  input: WorkerUsageRuntimeInput,
+): ReturnType<typeof createWorkerUsageReconciliation> | undefined {
   const flag = input.env.INSIGNIA_M9_QUALIFICATION_ENABLED;
   if (flag === undefined || flag === '0') return undefined;
   const shopId = input.env.INSIGNIA_M9_TENANT_SHOP_ID;

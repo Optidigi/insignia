@@ -6,7 +6,7 @@ import { acceptQuote } from '@insignia/application';
 import { decodeEnvelope, decodeMemberCarrier, wholeQuoteSignBytes } from '@insignia/cart-authorization';
 import { createQuoteAuthorityPorts } from '../src/server/quote-composition.ts';
 
-test('server composition binds trusted provider reads to one signed immutable quote candidate', async () => {
+test('production Lean rejects advanced offers while the historical evaluator preserves its frozen quote', async () => {
   const now = new Date('2026-11-01T05:30:00.000Z');
   const hash = 'a'.repeat(64);
   const productId = '42';
@@ -204,6 +204,16 @@ test('server composition binds trusted provider reads to one signed immutable qu
     groups: [{ group, sellingPlanId: null }],
     capacity: { ordinaryLineCount: 0, inputBytes: 1000 },
   };
+  assert.equal(ports.pricingProfile, 'lean-v1');
+  await assert.rejects(acceptQuote(request, ports), /Lean primary-Market and currency qualification unavailable/);
+  assert.equal(signatures, 0);
+  // Synthetic qualification isolates the separate advanced-price exclusion boundary.
+  ports.leanContext = { assertSupported: async () => {} };
+  await assert.rejects(acceptQuote(request, ports), /Lean prices require/);
+  assert.equal(signatures, 0);
+  // Only this frozen M4 characterization explicitly selects the retained historical evaluator.
+  ports.pricingProfile = undefined;
+  contextReads = catalogReads = subscriptionReads = artworkReads = 0;
   const result = await acceptQuote(request, ports);
   assert.equal(result.quote.economics.totalMinor, '1');
   assert.equal(result.quote.economics.groups[0].canonicalIdentitySha256.length, 64);
