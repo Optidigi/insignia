@@ -65,8 +65,8 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       );
       const migrations = new URL('../migrations/', import.meta.url);
       const names = (await readdir(migrations)).filter((n) => n.endsWith('.sql')).sort();
-      expect(names).toHaveLength(36);
-      expect(names.at(-1)).toBe('20261015000400_m9_usage_delivery_intent.sql');
+      expect(names).toHaveLength(37);
+      expect(names.at(-1)).toBe('20261015000500_m9_usage_delivery_attempt.sql');
       for (const file of names.slice(0, 20))
         await owner.query((await readFile(new URL(file, migrations), 'utf8')).split('-- migrate:down')[0]!);
       await owner.query('REVOKE CREATE ON SCHEMA public FROM PUBLIC');
@@ -661,6 +661,11 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       // The local ledger is not activated for any deployed runtime role.
       for (const runtime of [web, purchaseWorker, inspectionWorker])
         for (const query of [
+          'SELECT * FROM m9_usage_delivery_attempts',
+          'INSERT INTO m9_usage_delivery_attempts DEFAULT VALUES',
+          'UPDATE m9_usage_delivery_attempts SET outcome=outcome WHERE false',
+          'DELETE FROM m9_usage_delivery_attempts WHERE false',
+          'TRUNCATE m9_usage_delivery_attempts',
           'SELECT * FROM m9_usage_delivery_intents',
           'INSERT INTO m9_usage_delivery_intents DEFAULT VALUES',
           'UPDATE m9_usage_delivery_intents SET idempotency_key=idempotency_key WHERE false',
@@ -689,14 +694,14 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       await owner.query('ROLLBACK');
       await owner.query(`REVOKE ${extra} FROM ${queue}`);
       await owner.query('DELETE FROM schema_migrations WHERE version=$1', [names.at(-1)?.split('_')[0]]);
-      await expect(owner.query(usageScript)).rejects.toThrow('exact_usage_schema36_required');
+      await expect(owner.query(usageScript)).rejects.toThrow('exact_usage_schema37_required');
       await owner.query('ROLLBACK');
       await owner.query('INSERT INTO schema_migrations(version) VALUES($1)', [names.at(-1)?.split('_')[0]]);
       await owner.query('GRANT UPDATE(purchase_id) ON m9_order_usage TO PUBLIC');
       await expect(owner.query(usageScript)).rejects.toThrow('unqualified_usage_public_access');
       await owner.query('ROLLBACK');
       await owner.query('REVOKE UPDATE(purchase_id) ON m9_order_usage FROM PUBLIC');
-      for (const table of ['m9_order_usage', 'm9_usage_delivery_intents'])
+      for (const table of ['m9_order_usage', 'm9_usage_delivery_intents', 'm9_usage_delivery_attempts'])
         for (const privilege of ['SELECT', 'UPDATE(decision)'].filter(
           (p) => table === 'm9_order_usage' || p === 'SELECT',
         )) {
@@ -706,6 +711,15 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
           await owner.query(`REVOKE ${privilege} ON ${table} FROM PUBLIC`);
         }
       await owner.query(usageScript);
+      for (const runtime of [web, purchaseWorker, inspectionWorker])
+        for (const query of [
+          'SELECT * FROM m9_usage_delivery_attempts',
+          'INSERT INTO m9_usage_delivery_attempts DEFAULT VALUES',
+          'UPDATE m9_usage_delivery_attempts SET outcome=outcome WHERE false',
+          'DELETE FROM m9_usage_delivery_attempts WHERE false',
+          'TRUNCATE m9_usage_delivery_attempts',
+        ])
+          await expect(runtime.query(query)).rejects.toMatchObject({ code: '42501' });
       await owner.query(usageScript);
       await owner.query(
         'INSERT INTO purchase_paid_facts(shop_id,installation_generation,purchase_id,occurred_at) VALUES($1,1,$2,$3)',
@@ -732,6 +746,11 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
         0,
       );
       for (const query of [
+        'SELECT * FROM m9_usage_delivery_attempts',
+        'INSERT INTO m9_usage_delivery_attempts DEFAULT VALUES',
+        'UPDATE m9_usage_delivery_attempts SET outcome=outcome WHERE false',
+        'DELETE FROM m9_usage_delivery_attempts WHERE false',
+        'TRUNCATE m9_usage_delivery_attempts',
         'UPDATE m9_order_usage SET purchase_id=purchase_id',
         'DELETE FROM m9_order_usage',
         'TRUNCATE m9_order_usage',
