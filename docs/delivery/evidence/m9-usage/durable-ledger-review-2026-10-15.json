@@ -52,5 +52,22 @@
     "Production historical subscription normalizer, policy catalog and source authority qualification.",
     "Durable sender/permanent provider idempotency and allowance lifecycle remain unimplemented; local dedup is not provider duplicate-charge protection.",
     "No native billing activation or M9/G8/rollout acceptance."
-  ]
+  ],
+  "firstCandidateCi": {
+    "head": "b000f915131dc96f2385b939a24e8ec3f6341aeb",
+    "run": 38740467721,
+    "job": 116440529921,
+    "ledgerTestsPassed": 9,
+    "databaseTestsPassed": 298,
+    "databaseTestsSkipped": 5,
+    "failure": "Restricted LOGIN test expected34 migration files; ledger migration correctly adds35th. Failure occurred before restricted LOGIN qualification and empty migration rehearsal.",
+    "correction": "Pin exact35/new last migration; explicitly prove existing web, purchase worker and inspector LOGINs cannot SELECT/INSERT/UPDATE/DELETE/TRUNCATE the unactivated ledger. No grants or production source changed.",
+    "localChecks": "Exact migration-name/count assertion PASS; database typecheck PASS; Biome PASS with two inherited non-null assertion warnings; actual restricted LOGIN checks await corrected CI.",
+    "correctionReview": {
+      "agent": "/root/preview_verifier_transition",
+      "result": "CLEAR",
+      "scope": "Exact migration coverage maintained;15 expected42501 denial probes strengthen checks; no grants/production source changes",
+      "testSha256": "af831095eae01d28fda0d36b366549c35af987db59e896a1384198e337f88998"
+    }
+  }
 }
