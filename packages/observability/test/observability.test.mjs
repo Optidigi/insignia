@@ -43,6 +43,9 @@ test('metric labels are fixed outcomes and never contain tenant or delivery IDs'
   metrics.webhook('duplicate');
   metrics.webhook('rejected');
   metrics.webhook('enqueue_failure');
+  metrics.usageQualification('success');
+  metrics.usageQualification('failure');
+  assert.throws(() => metrics.usageQualification('private-shop-id'), /metric outcome/);
   metrics.inbox('success');
   metrics.inbox('failure');
   metrics.queue('retry');
@@ -57,6 +60,8 @@ test('metric labels are fixed outcomes and never contain tenant or delivery IDs'
   assert.throws(() => metrics.webhook('shop_105501393179'), /metric outcome/);
   assert.throws(() => metrics.unresolvedBacklog(-1), /backlog/);
   const text = await registry.metrics();
+  assert.match(text, /insignia_usage_qualification_pass_total\{outcome="success"\} 1/);
+  assert.match(text, /insignia_usage_qualification_pass_total\{outcome="failure"\} 1/);
   assert.match(text, /insignia_webhook_total\{outcome="enqueue_failure"\} 1/);
   assert.match(text, /insignia_unresolved_inbox_backlog 3/);
   assert.doesNotMatch(text, /105501393179|shop_id|domain|delivery_id/);

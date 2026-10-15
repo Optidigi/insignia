@@ -27,6 +27,7 @@ export function createWorkerReconciliation(input: {
           run: async () => {
             const summary = await input.usage?.runOnce();
             if (summary && summary.failed > 0) throw new Error('USAGE_QUALIFICATION_UNAVAILABLE');
+            if (summary) input.queue.observability.metrics.usageQualification('success');
           },
         },
         { errorClass: 'PURCHASE_PAYLOAD_CLEANUP_UNAVAILABLE', run: () => input.core.purchases?.cleanupDue(100) },
@@ -42,6 +43,10 @@ export function createWorkerReconciliation(input: {
           await operation.run();
         } catch {
           // Reporting failures cannot become another cross-operation barrier.
+          try {
+            if (operation.errorClass === 'USAGE_QUALIFICATION_UNAVAILABLE')
+              input.queue.observability.metrics.usageQualification('failure');
+          } catch {}
           try {
             input.queue.observability.logger.error('queue_job_rejected', { errorClass: operation.errorClass });
           } catch {}
