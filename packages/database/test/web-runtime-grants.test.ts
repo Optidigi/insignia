@@ -643,6 +643,10 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       await owner.query(
         `CREATE ROLE ${worker} LOGIN PASSWORD '${workerPassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; GRANT ${queue} TO ${worker}`,
       );
+      // Model the M5 worker baseline used by the usage ledger's installation read/row lock.
+      // Existing production grants: scripts/m5-024/queue-roles.sql; this fixture grants only the needed subset.
+      await owner.query(`GRANT SELECT ON public.shops,public.installation_generations TO ${queue}`);
+      await owner.query(`GRANT UPDATE(deactivated_at) ON public.installation_generations TO ${queue}`);
       const workerAddress = new URL(target);
       workerAddress.username = worker;
       workerAddress.password = workerPassword;
