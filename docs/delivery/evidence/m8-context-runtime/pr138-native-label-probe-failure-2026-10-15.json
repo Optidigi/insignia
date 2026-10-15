@@ -1,0 +1,9 @@
+{
+  "classification": "READONLY_NATIVE_PROBE_LOCATOR_FAILURE",
+  "reason": "PRICING_SCOPES_MISSING",
+  "cause": "Exact Scope label locator excludes nested native option text; existing browser regressions use non-exact getByLabel Scope.",
+  "originalProbeSha256": "3213b54fa76d00955e988eb049d501388c5460ae0207dfda63d960df98a6eefc",
+  "configWrites": 0,
+  "nativeAcceptanceClaimed": false,
+  "correction": "Use established non-exact Scope locator, then reload through actual App Bridge authentication for final configuration read. Direct unauthenticated fetch removed before reaching it; no observed 401 claim."
+}

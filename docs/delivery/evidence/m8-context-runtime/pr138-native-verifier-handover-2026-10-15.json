@@ -1,0 +1,137 @@
+{
+  "classification": "SCOPED_WEB_VERIFIER_HANDOVER_AND_FRESH_COLLECTION_PASS",
+  "sourceMerge": "2bce57d03da4ee82dfd61f52d0663820f89ad5ca",
+  "sourceTree": "235e527468695b82965288eb84ce0761234d7c07",
+  "priorSourcePreserved": "7611a335f011ec5f3f4ec3317367ee0cf27f328c",
+  "phases": {
+    "stop": {
+      "classification": "EXACT_VERIFIER_QUIESCENCE_PASS",
+      "priorMainPid": 784302,
+      "priorInvocationId": "4be93575ba4f48c8aadaa87c11b2f51f",
+      "pids": [
+        784302,
+        784367,
+        784372
+      ],
+      "allPriorPidsGone": true,
+      "cgroupEmptyOrRemoved": true,
+      "localSocketAbsent": true,
+      "localOrphanCleanupRequiredBeforeWeb": false,
+      "state": {
+        "ActiveState": "failed",
+        "InvocationID": "4be93575ba4f48c8aadaa87c11b2f51f",
+        "MainPID": "0",
+        "ControlGroup": ""
+      },
+      "stopRepeated": false,
+      "fenceHeld": true
+    },
+    "cleanup": {
+      "classification": "EXACT_OWNED_BRIDGE_CLEANUP_PASS",
+      "localRemovedSocketInode": null,
+      "remote": {
+        "remoteParentInode": 6611041,
+        "removedOwnedSocketInode": 6612266
+      },
+      "originalIntentSha256": "ba5457c90463e42ef254c7d7943e2ca52340118c696349cc6c7af02d346c342c",
+      "priorHandoverArchive": "/home/serveradmin/insignia-milestone-autonomy-handoff/m8-pr138-runtime-handover/binding-handover-7611a335f011ec5f3f4ec3317367ee0cf27f328c.json",
+      "priorHandoverSha256": "400c3de5393cf9aad475796f1b6ef028da6e60c83f5737a17a44d671d1e71617",
+      "fenceHeld": true
+    },
+    "source": {
+      "classification": "EXACT_FIXED_SOURCE_AND_FRESH_MANIFEST_PASS",
+      "qualification": {
+        "classification": "CODE_INPUT_QUALIFIER_PASS_NOT_NATIVE_AUTHORITY",
+        "head": "2bce57d03da4ee82dfd61f52d0663820f89ad5ca",
+        "tree": "235e527468695b82965288eb84ce0761234d7c07",
+        "files": 3032,
+        "sourcePathBoundTo": "/home/serveradmin/insignia-milestone-autonomy-handoff/m8-release-verifier-source",
+        "inputInventoryDigest": "142513acefd06281a09fb5205c873fe7aae346cd5f90a3c580028e3b8b01457c",
+        "manifestSha256": "b1b6772eb7953fba478abdae596573581076dd440ada57ede19bf8000a817105",
+        "sizeBytes": 759230,
+        "output": "/home/serveradmin/insignia-milestone-autonomy-handoff/m5-trusted-release-launch-qualified-inputs-2bce57d03da4ee82dfd61f52d0663820f89ad5ca.json",
+        "productionPackages": 35,
+        "optionalAbsent": [],
+        "originalArchiveFilesVerified": 604,
+        "nativeCalls": 0
+      },
+      "gitAdministrativePointersPreserved": true
+    },
+    "gate": {
+      "classification": "EXACT_NEW_GATE_BOUND",
+      "head": "2bce57d03da4ee82dfd61f52d0663820f89ad5ca",
+      "tree": "235e527468695b82965288eb84ce0761234d7c07",
+      "gateSha256": "82d775d87b3ce49003512429e33542f2a8eefaf61cc2a5015113e20520f307a8",
+      "sourceReviewRecordSha256": "1e50912ad2f6abbc8f775c5412fd9bafed6ae2a45348c7040f372f8d0aee3dd2",
+      "reviewedLauncherSha256": "3b8b8a0a9c3d1b6c8c143b67734078803ef3b19ddfc9306d09899a9bf7603678",
+      "reviewedTestSha256": "4eba468f5fd23f1f33912b50fcf5cfb66e357305b52ea174ab2e24ab5417dd18",
+      "webContainer": "e56981276e93486444f12d2a5e92ef609fea4f8b6e749a8c9e7dfc7086f979a8",
+      "webImage": "sha256:f9e0908a3377c5a762d9d460667b70b316f2029124860702223df10d6a01d671"
+    },
+    "start": {
+      "classification": "EXACT_VERIFIER_NEW_WEB_BINDING_STARTUP_PASS_ONLY",
+      "state": {
+        "ActiveState": "active",
+        "InvocationID": "2f252cafc17a41c89bae488b22e1f6d3",
+        "MainPID": "826097",
+        "ControlGroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/insignia-m5-release-verifier-r2.service"
+      },
+      "head": "2bce57d03da4ee82dfd61f52d0663820f89ad5ca",
+      "tree": "235e527468695b82965288eb84ce0761234d7c07",
+      "startupProviderRequests": 0,
+      "freshNativeCollectionRequired": true
+    }
+  },
+  "reviews": {
+    "handover": {
+      "reviewer": "handover_correctness",
+      "result": "CLEAR",
+      "operatorSha256": "986734980f7a90d25c25e2ee208dfe4094036207365327a70def766e8e6a79fe",
+      "helperSha256": "2e7fed0aa276a63e6f5e9a770abb519614384305c3d34dcae7a153fe4354773c",
+      "qualificationInputVerified": true,
+      "unchangedHistoricalLauncherReviewReused": true,
+      "nativeEffectsByReviewer": false
+    },
+    "imageUpdate": {
+      "classification": "FRESH_INDEPENDENT_DEPLOYMENT_IMPACT_REVIEWS_CLEAR",
+      "reviewer": "offline_exchange_contract",
+      "importSha256": "88685f0152a9bde9aebef02ecae030b129f8a0ca02f7976db3193eb40773837a",
+      "webUpdateSha256": "454dac169f0034e0a2cb5dbe08645654cb198a1ead0f995c08382ac97f5cc37a",
+      "findingClosed": "Use actual stronger reviewedMerchantSourceAndTestsUnchanged receipt field",
+      "reviewerNativeEffects": false
+    }
+  },
+  "freshCollection": {
+    "exitCode": 0,
+    "observations": [
+      {
+        "classification": "NEW_WEB_FRESH_CORRELATED_RELEASE_AND_INDEPENDENT_SELECT_PASS",
+        "requestId": "9c0b90bc-e8f1-406b-a1be-d03a61038f64",
+        "recordId": "7693fbf1-c4b3-4a3e-b100-aa1374f224a1",
+        "state": "COMPLETE",
+        "identity": {
+          "current_user": "insignia_runtime",
+          "session_user": "insignia_runtime",
+          "readonly": "on"
+        },
+        "appVersion": "1166710865921",
+        "functionsSourceCommit": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+        "historicalEvidenceRestamped": false,
+        "runtimeDatabaseWrites": 0,
+        "collectionCalls": 1,
+        "providerMutationCalls": 0
+      }
+    ]
+  },
+  "limits": [
+    "Startup alone was not native authority. A new correlated collection and independent runtime LOGIN SELECT matched the record before expiry.",
+    "Previous manifests, bridge intents, source and mutation journals retain their historical meaning; no evidence restamp.",
+    "No Shopify app release/scopes, provider product/config mutation, checkout/order/charge, worker/database restart or unrelated service change.",
+    "Actual historical country/Market and per-order Function execution remain unknown."
+  ],
+  "stopInvocations": 1,
+  "liveWebReplacements": 1,
+  "startInvocations": 1,
+  "blindRetries": 0,
+  "unresolvedEffects": false
+}
