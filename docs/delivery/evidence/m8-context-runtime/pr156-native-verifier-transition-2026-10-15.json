@@ -1,0 +1,71 @@
+{
+  "classification": "NEW_FROZEN_VERIFIER_SOURCE_AND_FRESH_NATIVE_COLLECTION_PASS",
+  "source": {
+    "classification": "EXACT_FIXED_SOURCE_AND_FRESH_MANIFEST_PASS",
+    "qualification": {
+      "classification": "CODE_INPUT_QUALIFIER_PASS_NOT_NATIVE_AUTHORITY",
+      "head": "b52fcf4c3a4307d1af3e08caa4ea5316447c2c7f",
+      "tree": "c4ce0d16f4d15bd757b66bc2c27d97cbeed7ac04",
+      "files": 3037,
+      "sourcePathBoundTo": "/home/serveradmin/insignia-milestone-autonomy-handoff/m8-release-verifier-source",
+      "inputInventoryDigest": "df076cf6df3a658ef7310129d6b15e226689fe6379b8ed22d6bee67ba7f012bf",
+      "manifestSha256": "5d9d888d25719e306b4749966df0dcd45762ca3825c35ff10cfa775a8c180d77",
+      "sizeBytes": 760272,
+      "output": "/home/serveradmin/insignia-milestone-autonomy-handoff/m5-trusted-release-launch-qualified-inputs-b52fcf4c3a4307d1af3e08caa4ea5316447c2c7f.json",
+      "productionPackages": 35,
+      "optionalAbsent": [],
+      "originalArchiveFilesVerified": 604,
+      "nativeCalls": 0
+    },
+    "gitAdministrativePointersPreserved": true
+  },
+  "startup": {
+    "classification": "EXACT_VERIFIER_NEW_WEB_BINDING_STARTUP_PASS_ONLY",
+    "state": {
+      "ActiveState": "active",
+      "InvocationID": "bd0a9310fa104be5be76bc22d07f0fd7",
+      "MainPID": "968905",
+      "ControlGroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/insignia-m5-release-verifier-r2.service"
+    },
+    "head": "b52fcf4c3a4307d1af3e08caa4ea5316447c2c7f",
+    "tree": "c4ce0d16f4d15bd757b66bc2c27d97cbeed7ac04",
+    "startupProviderRequests": 0,
+    "freshNativeCollectionRequired": true
+  },
+  "fresh": {
+    "exitCode": 0,
+    "observations": [
+      {
+        "classification": "NEW_WEB_FRESH_CORRELATED_RELEASE_AND_INDEPENDENT_SELECT_PASS",
+        "requestId": "6824a044-45d4-4dae-8d91-dedfe55113b0",
+        "recordId": "2c5307a8-b157-4ad4-9060-5832464323c9",
+        "state": "COMPLETE",
+        "identity": {
+          "current_user": "insignia_runtime",
+          "session_user": "insignia_runtime",
+          "readonly": "on"
+        },
+        "appVersion": "1168157736961",
+        "functionsSourceCommit": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+        "historicalEvidenceRestamped": false,
+        "runtimeDatabaseWrites": 0,
+        "collectionCalls": 1,
+        "providerMutationCalls": 0
+      }
+    ]
+  },
+  "oldSourceAndManifestArchivedUnchanged": true,
+  "oldPidsQuiesced": true,
+  "privateBridgeOwnershipPreserved": true,
+  "independentReview": {
+    "reviewer": "/root/preview_native_transition_review",
+    "correctness": "CLEAR",
+    "security": "CLEAR"
+  },
+  "pureControlsPassed": 10,
+  "limitations": [
+    "Startup alone was not native collection evidence",
+    "No historical evidence restamped",
+    "Temporary verifier remains an operational dependency"
+  ]
+}

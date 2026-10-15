@@ -1,0 +1,173 @@
+{
+  "classification": "ONE_TEST_CHECKOUT_AND_INDEPENDENT_PERSISTENCE_PASS",
+  "browser": {
+    "classification": "ONE_TEST_PAYMENT_DISPATCH_BROWSER_OBSERVATION_REQUIRES_INDEPENDENT_ORDER_RECONCILIATION",
+    "observedAt": "2026-10-15T10:31:17.626Z",
+    "host": "insignia-rewrite-dev.myshopify.com",
+    "thankYou": true,
+    "orderConfirmed": true,
+    "confirmationNumber": "06IKJECZJ",
+    "payButtonStillPresent": 0,
+    "quoteId": "8b7f2987-c299-44ce-b501-270c2c8ecb7b",
+    "setId": "c673faa7-8d57-4820-a218-6b76415cfa27",
+    "applicationId": "519cf47e-af43-4b13-aafe-a37406b920a1",
+    "payInvocations": 1,
+    "retryInvocations": 0
+  },
+  "independentWorkerRead": {
+    "classification": "INTENDED_WORKER_UNIQUE_QUOTE_SET_DISCOVERY_AND_PRODUCTION_ORDER_READ",
+    "identity": {
+      "current_user": "insignia_worker",
+      "session_user": "insignia_worker",
+      "current_database": "insignia_rewrite",
+      "readonly": "on",
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolbypassrls": false
+    },
+    "keyId": "m5-runtime-20261011",
+    "shopDomain": "insignia-rewrite-dev.myshopify.com",
+    "passiveCredentialUsable": true,
+    "accessExpiresAt": "2026-10-15T11:10:31.032Z",
+    "databaseWrites": 0,
+    "providerCalls": "BOUNDED_PRODUCTION_ORDER_READER",
+    "order": {
+      "orderId": "gid://shopify/Order/7519811207451",
+      "createdAt": "2026-10-15T10:31:01.000Z",
+      "observedAt": "2026-10-15T10:33:00.128Z",
+      "complete": true,
+      "test": true,
+      "financialStatus": "PAID",
+      "currency": "USD",
+      "totalPriceMinor": "2300",
+      "contextVerified": false,
+      "historicalCountry": null,
+      "historicalMarketId": null,
+      "creatorAppId": "gid://shopify/App/580111",
+      "sourceName": "web",
+      "lineCount": 1,
+      "variantId": "gid://shopify/ProductVariant/54211066986779",
+      "quantity": 1,
+      "originalUnitPriceMinor": "1500",
+      "quoteId": "8b7f2987-c299-44ce-b501-270c2c8ecb7b",
+      "setId": "c673faa7-8d57-4820-a218-6b76415cfa27",
+      "acceptedCarrierHashesMatched": true,
+      "transactionCount": 2,
+      "refundCount": 0
+    },
+    "privateFactsSaved": true
+  },
+  "purchase": {
+    "classification": "NATIVE_NEW_TEST_PURCHASE_QUALIFIED",
+    "purchaseId": "61065563-ab4b-4261-9fe6-0ad5a3d8b58e",
+    "orderId": "gid://shopify/Order/7519811207451",
+    "quoteId": "8b7f2987-c299-44ce-b501-270c2c8ecb7b",
+    "setId": "c673faa7-8d57-4820-a218-6b76415cfa27",
+    "originalAssetId": "75cbd361-d5c4-4b59-99b4-dab45bff9da1",
+    "revisionId": "645b57fd-0737-48d5-8d46-1c772fca1e44",
+    "previewAssetId": "1e3a659f-a3b3-6cb6-46f9-3d25578c882e",
+    "isTest": true,
+    "firstPaidFacts": 1,
+    "firstPaidAt": "2026-10-15T10:31:03+00:00",
+    "totalMinor": 2300,
+    "currency": "USD",
+    "designExpiresAt": "2026-10-22T10:23:38.381+00:00",
+    "designCollectedAt": "2026-10-15T10:23:38.384+00:00",
+    "purchaseException": null,
+    "merchantPreviewRetrieval": "QUALIFIED_SEPARATELY_IN_PR156_MERCHANT_ORIGINAL_PREVIEW_RECEIPT",
+    "historicalCountry": null,
+    "historicalMarket": null,
+    "historicalFunctionExecution": "UNKNOWN",
+    "databaseWritesByProbe": 0
+  },
+  "fixtureAfter": {
+    "fixture": {
+      "id": "gid://shopify/ProductVariant/54211066986779",
+      "inventoryQuantity": 0,
+      "inventoryPolicy": "DENY",
+      "inventoryItem": {
+        "tracked": true
+      },
+      "product": {
+        "id": "gid://shopify/Product/10519322493211",
+        "status": "ACTIVE",
+        "tags": [
+          "insignia-m5-acceptance-1f443da8-75c4-44d1-99be-27c397e10c26"
+        ]
+      }
+    },
+    "classification": "OWNED_FIXTURE_ENFORCEMENT_UNIT_READ",
+    "identity": {
+      "current_user": "insignia_worker",
+      "session_user": "insignia_worker",
+      "current_database": "insignia_rewrite",
+      "readonly": "on",
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolbypassrls": false
+    },
+    "keyId": "m5-runtime-20261011",
+    "shopDomain": "insignia-rewrite-dev.myshopify.com",
+    "passiveCredentialUsable": true,
+    "accessExpiresAt": "2026-10-15T11:10:31.032Z",
+    "databaseWrites": 0,
+    "providerCalls": 1
+  },
+  "immutableOldFactsPreserved": true,
+  "configRevisionAndImageBindingsUnchanged": true,
+  "beforeCounts": {
+    "purchase_lines": 1,
+    "purchase_orders": 2,
+    "purchase_bindings": 1,
+    "purchase_paid_facts": 1,
+    "purchase_refund_facts": 2,
+    "purchase_artwork_events": 2,
+    "purchase_design_payloads": 1
+  },
+  "afterCounts": {
+    "purchase_lines": 2,
+    "purchase_orders": 3,
+    "purchase_bindings": 2,
+    "purchase_paid_facts": 2,
+    "purchase_refund_facts": 2,
+    "purchase_artwork_events": 2,
+    "purchase_design_payloads": 2
+  },
+  "checkoutAllocationConsumed": true,
+  "noInventoryReplenishment": true,
+  "independentReview": {
+    "reviewer": "/root/preview_native_transition_review",
+    "correctness": "CLEAR",
+    "security": "CLEAR",
+    "scope": "address and one-Pay scripts, exact USD23 test gateway and durable no-retry reservation"
+  },
+  "limitations": [
+    "Test order is not billable usage",
+    "Historical country, Market and per-order Function execution remain unknown",
+    "Authorized quote context is not historical checkout context",
+    "Merchant retrieval recorded separately"
+  ],
+  "independentlyReadPaymentHistory": {
+    "edited": false,
+    "cancelledAt": null,
+    "transactions": [
+      {
+        "kind": "AUTHORIZATION",
+        "status": "SUCCESS",
+        "occurredAt": "2026-10-15T10:31:00.000Z",
+        "amountMinor": "2300",
+        "currency": "USD"
+      },
+      {
+        "kind": "CAPTURE",
+        "status": "SUCCESS",
+        "occurredAt": "2026-10-15T10:31:03.000Z",
+        "amountMinor": "2300",
+        "currency": "USD"
+      }
+    ],
+    "refundCount": 0
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "classification": "NATIVE_NEW_PURCHASE_MERCHANT_ORIGINAL_AND_FROZEN_PREVIEW_PASS",
+  "purchaseId": "61065563-ab4b-4261-9fe6-0ad5a3d8b58e",
+  "orderId": "gid://shopify/Order/7519811207451",
+  "quoteId": "8b7f2987-c299-44ce-b501-270c2c8ecb7b",
+  "setId": "c673faa7-8d57-4820-a218-6b76415cfa27",
+  "isTest": true,
+  "currency": "USD",
+  "totalMinor": 2300,
+  "firstPaidAt": "2026-10-15T10:31:03.000Z",
+  "artworkState": "READY",
+  "artworkVersion": 0,
+  "revisionId": "645b57fd-0737-48d5-8d46-1c772fca1e44",
+  "originalAssetId": "75cbd361-d5c4-4b59-99b4-dab45bff9da1",
+  "previewAssetId": "1e3a659f-a3b3-6cb6-46f9-3d25578c882e",
+  "original": {
+    "size": 265,
+    "sha256": "2b9633afe3fd7743077d7d77931093a3ce96621cf395cac07d5b46c596992a0c"
+  },
+  "frozenPreview": {
+    "size": 7516,
+    "sha256": "80e751f6f391253e8e0f8f019609551c6cb2d76db8da8a949a5d3ed6758c7fef"
+  },
+  "authenticatedPurchaseGet": true,
+  "authenticatedDownloadGet": true,
+  "actualBrowserImageResponse": true,
+  "historicalPreviewReady": true,
+  "canvasPresent": true,
+  "originalRetrieved": true,
+  "originalRetrievalTransport": "native-merchant-browser-download",
+  "nonGetAppAttempts": 0,
+  "signedURLsRecorded": false,
+  "sessionDataRecorded": false,
+  "mutationInvocations": 0,
+  "independentReview": {
+    "reviewer": "/root/preview_native_transition_review",
+    "correctness": "CLEAR",
+    "security": "CLEAR",
+    "finalDriverSha256": "ee90732fd82eea3eaaf6d69451cdac8c493984d2bb044759c7e3639b61c9e6ea"
+  },
+  "probeFailuresPreserved": [
+    {
+      "attempt": "initial",
+      "result": "Controlled read-only failure; initial helper lacked detailed diagnostics",
+      "applicationMutations": 0
+    },
+    {
+      "attempt": "r2",
+      "stage": "purchase-frozen-image-url",
+      "result": "Exact purchase/group/artwork matched; helper omitted configured insignia-rewrite/m6 prefix",
+      "applicationMutations": 0
+    },
+    {
+      "attempt": "r3",
+      "stage": "original-object-get",
+      "result": "Authenticated purchase/download GET200 and browser frozen-image response observed; Node fetch raised TypeError. Root cause of that transport error not established. Actual browser download subsequently qualified separately.",
+      "applicationMutations": 0
+    }
+  ],
+  "probeCorrections": [
+    "Exact configured storage prefix in URL guard and image-response listener; no bucket/policy change",
+    "Supported frame body screenshot API",
+    "Actual merchant browser download instead of probe Node fetch; exact authorized URL and bytes still required"
+  ],
+  "storageUrlPureControls": {
+    "correctPaths": 2,
+    "incorrectPrefixTenantGenerationAssetRejected": 10
+  },
+  "privateArtifactCleanupDue": "2026-10-20",
+  "limitations": [
+    "Historical country/Market/per-order Function execution unknown",
+    "Old purchases retain missing imagery; no backfill",
+    "No unauthenticated/cross-tenant retrieval claim added by this successful authenticated read; earlier401 evidence retains dated scope"
+  ]
+}
