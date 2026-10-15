@@ -84,6 +84,40 @@ export function createUsageLedgerRepository(db: Kysely<Database>) {
     return row ? map(row) : null;
   }
   return {
+    /** Read-only recovery index. Cursor is a scan hint, never a claim or durable completion marker. */
+    async selectPending(
+      callerScope: UsageLedgerScope,
+      page: { limit: number; afterPurchaseId: string | null },
+    ): Promise<{
+      purchases: readonly (UsageLedgerScope & { purchaseId: string })[];
+      nextCursor: string | null;
+      exhausted: boolean;
+    }> {
+      validate(
+        callerScope,
+        page?.afterPurchaseId === null ? '00000000-0000-0000-0000-000000000000' : page?.afterPurchaseId,
+      );
+      if (!page || !Number.isInteger(page.limit) || page.limit < 1 || page.limit > 100) return fail('INVALID');
+      const scope = { shopId: callerScope.shopId, installationGeneration: callerScope.installationGeneration },
+        limit = page.limit,
+        after = page.afterPurchaseId;
+      const rows = (
+        await sql<{ purchase_id: string }>`SELECT p.purchase_id::text FROM purchase_orders p
+        LEFT JOIN m9_order_usage u ON u.purchase_id=p.purchase_id
+        LEFT JOIN m9_usage_delivery_intents d ON d.purchase_id=p.purchase_id
+        WHERE p.shop_id=${scope.shopId} AND p.installation_generation=${scope.installationGeneration}::bigint
+        AND (${after}::uuid IS NULL OR p.purchase_id>${after}::uuid)
+        AND (u.purchase_id IS NULL OR u.qualification IN ('UNRESOLVED','PENDING_PAYMENT')
+          OR (u.qualification='ELIGIBLE' AND d.purchase_id IS NULL))
+        ORDER BY p.purchase_id LIMIT ${limit + 1}`.execute(db)
+      ).rows;
+      const selected = rows.slice(0, limit);
+      return {
+        purchases: selected.map((row) => ({ ...scope, purchaseId: row.purchase_id })),
+        nextCursor: selected.at(-1)?.purchase_id ?? null,
+        exhausted: rows.length <= limit,
+      };
+    },
     async get(scope: UsageLedgerScope, purchaseId: string): Promise<UsageLedgerRecord | null> {
       validate(scope, purchaseId);
       return get(db, scope, purchaseId);

@@ -1,0 +1,53 @@
+{
+  "classification": "BOUNDED_USAGE_RECOVERY_REVIEWED_POSTGRESQL_CI_PENDING",
+  "base": "55c9473cf62e7d177c57f5215bfcdcf61960e0e6",
+  "sourceHashes": {
+    "packages/database/src/repositories/usage-ledger.ts": "1a440e9db3d1c30a9b3ede38a6e7c42d879ade5b92fb2619aed20e9c3720bbf3",
+    "packages/database/test/usage-ledger.test.ts": "996e01f97cf3697e67a2ab833ec236d1e4710acc0f828f865ca263697d59d4c0",
+    "apps/worker/src/usage-reconciliation.ts": "961fc7ff41ae6faaa23c20c0dc784f4a45ba90d13a0fc94ff80d7b9691d3c77f",
+    "apps/worker/test/usage-reconciliation.test.mjs": "cdf2a2326aaad4b569a4d8b22359d733e904a9c8c05d0f75ea345a7ee5923ad5"
+  },
+  "scope": "Recover qualification and permanent intent staging from durable purchase facts, independently of purchase webhook acknowledgment. No sender, new migration, main/env wiring or native effects.",
+  "behavior": [
+    "Read-only keyset scan is exact tenant/original-generation scoped, limit1..100, plus one lookahead row. Only absent/unresolved/pending-payment decisions and eligible rows without intents are candidates. Excluded/waived/inactive/staged terminal facts stop.",
+    "Runner freezes scope/methods, preflights through the existing qualifier and stages eligible facts only with separately qualified binding. Test/unpaid facts skip source and binding reads. No current-installation authority is inferred for retained financial facts.",
+    "In-memory cursor advances across held/failed rows and wraps after exhaustion; restart safely replays durable identities. It is neither a claim nor a durable completion cursor.",
+    "Per-instance singleflight and stop wait for bounded in-flight work; no within-run source/staging retry. Sanitized counts expose processed/staged/held/failed without customer/provider payloads.",
+    "Two added PostgreSQL scenarios cover scoped pagination/non-mutating scans/terminal filtering and late first-paid\u2192eligible crash gap\u2192prepare\u2192reopened identity replay. Discarding a successful preparation response models replay; it is not actual connection-loss or native ambiguous transport qualification."
+  ],
+  "checks": {
+    "focusedWorkerRecovery": 4,
+    "relatedWorkerSource": 8,
+    "relatedWorkerMaintenance": 6,
+    "totalFocusedWorkerPassed": 18,
+    "databaseTestsDiscovered": 13,
+    "databaseTestsSkipped": 13,
+    "newDatabaseCases": 2,
+    "databaseBuild": "PASS",
+    "workerBuild": "PASS",
+    "fourFileBiome": "PASS",
+    "gitDiffCheck": "PASS",
+    "secretProvenance": "PASS:216 production source/178 test-fixture/22 browser artifacts/2 synthetic seeds",
+    "boundaries": "PASS:358 real modules/13 browser modules/19 negative source fixtures/2 rejected bundles;19 database compiler probes/4 deep-import rejects;18 domain checker tests"
+  },
+  "testProvenance": "New public worker seam initially failed ERR_MODULE_NOT_FOUND before implementation; missing-implementation RED, not semantic SQL RED. Actual PostgreSQL unavailable locally without DATABASE_URL; all13 are explicit skips. No broad missing-config database run.",
+  "independentReview": {
+    "agent": "/root/m9_source_review",
+    "contexts": 1,
+    "axes": [
+      "Spec/correctness",
+      "Standards/security"
+    ],
+    "result": "CLEAR",
+    "reviewerRecheck": "4 focused emitted worker cases PASS",
+    "isolation": "Read-only/no-network/no-credential instructions; no enforced connector/network credential isolation claimed."
+  },
+  "billingDispatchEnabled": false,
+  "nativeEffects": 0,
+  "limits": [
+    "Hosted final-candidate PostgreSQL and all required workflows must pass before merge.",
+    "No provider sends, native schema35/36 deployment, native runtime-role grants, commercial binding or worker-main/scheduler activation. Existing schema34 deployment is unchanged.",
+    "Next integration is intended scoped runtime composition/qualification; eventual dispatch needs actual provider lifecycle/contract/meter/idempotency qualification and scoped external-effect authorization.",
+    "Pending original incomplete-upload16October and private evidence20October/originals21-22October/credential rotation obligations remain active."
+  ]
+}

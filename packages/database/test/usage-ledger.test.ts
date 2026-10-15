@@ -190,6 +190,89 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable first-paid usage qual
     };
     return { ...f, source, firstPaidAt };
   }
+  it('selects bounded original-scope pages and revisits unresolved facts without rewriting timestamps', async () => {
+    const f = await fixture(),
+      repo = createUsageLedgerRepository(db);
+    await repo.record(f.scope, { purchaseId: f.purchaseId, policy, history: unavailable });
+    const held = await repo.get(f.scope, f.purchaseId);
+    const ids = [randomUUID(), randomUUID()];
+    for (const [index, id] of ids.entries())
+      await sql`INSERT INTO purchase_orders(purchase_id,shop_id,installation_generation,order_id,order_created_at,currency,original_total_minor,is_test)
+      VALUES(${id}::uuid,${f.scope.shopId},${f.scope.installationGeneration}::bigint,${`gid://shopify/Order/${91001 + index}`},${new Date(occurredAt)},'USD',2001,true)`.execute(
+        db,
+      );
+    await repo.record(f.scope, { purchaseId: ids[0] ?? '', policy, history: unavailable });
+    const expected = [ids[1] ?? '', f.purchaseId].sort();
+    const first = await repo.selectPending(f.scope, { limit: 1, afterPurchaseId: null });
+    expect(first).toEqual({
+      purchases: [{ ...f.scope, purchaseId: expected[0] }],
+      nextCursor: expected[0],
+      exhausted: false,
+    });
+    const second = await repo.selectPending(f.scope, { limit: 100, afterPurchaseId: first.nextCursor });
+    expect(second.purchases.map((row) => row.purchaseId)).toEqual(expected.slice(1));
+    expect(second.exhausted).toBe(true);
+    expect(
+      (await repo.selectPending({ ...f.scope, installationGeneration: '2' }, { limit: 100, afterPurchaseId: null }))
+        .purchases,
+    ).toEqual([]);
+    expect(
+      (await repo.selectPending({ ...f.scope, shopId: randomUUID() }, { limit: 100, afterPurchaseId: null })).purchases,
+    ).toEqual([]);
+    expect(await repo.get(f.scope, f.purchaseId)).toEqual(held);
+    for (const limit of [0, 101, 1.5])
+      await expect(repo.selectPending(f.scope, { limit, afterPurchaseId: null })).rejects.toMatchObject({
+        code: 'INVALID',
+      });
+  });
+  it('recovers eligibility after late first-paid and stages exactly once across a lost preparation response and reopened core', async () => {
+    const f = await fixture({ paid: false }),
+      repo = createUsageLedgerRepository(db);
+    expect((await repo.record(f.scope, { purchaseId: f.purchaseId, policy, history: unavailable })).decision.kind).toBe(
+      'PENDING_PAYMENT',
+    );
+    await createPurchaseRepository(db).reconcile({
+      ...f.input,
+      firstPaidAt: occurredAt,
+      order: { ...f.input.order, financialStatus: 'PAID' },
+    });
+    expect((await repo.selectPending(f.scope, { limit: 20, afterPurchaseId: null })).purchases).toEqual([
+      { ...f.scope, purchaseId: f.purchaseId },
+    ]);
+    await repo.record(f.scope, { purchaseId: f.purchaseId, policy, history: f.history });
+    // Crash boundary after qualification commits: no outbox/callback is needed to rediscover this row.
+    expect((await repo.selectPending(f.scope, { limit: 20, afterPurchaseId: null })).purchases).toHaveLength(1);
+    const provider = (
+      await sql<{ id: string }>`SELECT shopify_shop_id::text AS id FROM shops WHERE shop_id=${f.scope.shopId}`.execute(
+        db,
+      )
+    ).rows[0];
+    if (!provider) throw Error('Expected shop identity');
+    const binding = {
+      appId: 'gid://shopify/App/1234',
+      providerShopId: `gid://shopify/Shop/${provider.id}`,
+      meterHandle: 'qualified-meter',
+      policy,
+    };
+    const core = openTestDurableCore();
+    let first: Awaited<ReturnType<typeof core.usageDeliveryIntents.prepare>>;
+    try {
+      first = await core.usageDeliveryIntents.prepare(f.scope, { purchaseId: f.purchaseId, binding });
+    } finally {
+      await core.close();
+    }
+    const reopened = openTestDurableCore();
+    try {
+      expect(await reopened.usageDeliveryIntents.prepare(f.scope, { purchaseId: f.purchaseId, binding })).toEqual(
+        first,
+      );
+      expect(
+        (await reopened.usageLedger.selectPending(f.scope, { limit: 20, afterPurchaseId: null })).purchases,
+      ).toEqual([]);
+    } finally {
+      await reopened.close();
+    }
+  });
   it('composes normalization with immutable storage once across concurrency and terminal replay after reopening', async () => {
     const f = await compositionFixture(),
       core = openTestDurableCore();

@@ -1,0 +1,49 @@
+{
+  "pullRequest": "https://github.com/Optidigi/insignia/pull/169",
+  "classification": "VERIFIED_NORMAL_PROTECTED_MERGE",
+  "base": "815736bba5c404e86279bda5b21a2a506a9d758c",
+  "head": "8974407c15f64b85bc149959ed2a55924fac008b",
+  "effectiveMergeBase": "815736bba5c404e86279bda5b21a2a506a9d758c",
+  "merge": "55c9473cf62e7d177c57f5215bfcdcf61960e0e6",
+  "tree": "16cd2c2debdd14a05fd01dbab1cae579f46f1178",
+  "parents": [
+    "815736bba5c404e86279bda5b21a2a506a9d758c",
+    "8974407c15f64b85bc149959ed2a55924fac008b"
+  ],
+  "checks": [
+    {
+      "name": "foundation",
+      "run": 38768873562,
+      "attempt": 1,
+      "result": "SUCCESS",
+      "route": "full"
+    },
+    {
+      "name": "durable-core",
+      "run": 38768873351,
+      "attempt": 1,
+      "result": "SUCCESS",
+      "route": "full"
+    },
+    {
+      "name": "runtime",
+      "run": 38768873669,
+      "attempt": 1,
+      "result": "SUCCESS",
+      "route": "full"
+    }
+  ],
+  "actualPostgreSQL": {
+    "managedInstallationTestsPassed": 23,
+    "newOriginalGenerationWindowTestPassed": 1,
+    "databasePass": 308,
+    "skip": 5,
+    "restrictedLoginPass": 1
+  },
+  "reviewedFiveFileHashesMatch": true,
+  "protection": "foundation/durable-core/runtime checks bound to Actions app15368; enforced for admins; no bypass",
+  "nativeEffectsDuringMerge": 0,
+  "billingDispatchEnabled": false,
+  "nativeSchemaVersionLastObserved": 34,
+  "limits": "CI qualification is not native deployment or a qualified commercial binding. Existing private evidence20October and artwork16/21/22October/credential rotation obligations remain open."
+}
