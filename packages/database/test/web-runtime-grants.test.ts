@@ -65,8 +65,8 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       );
       const migrations = new URL('../migrations/', import.meta.url);
       const names = (await readdir(migrations)).filter((n) => n.endsWith('.sql')).sort();
-      expect(names).toHaveLength(35);
-      expect(names.at(-1)).toBe('20261015000300_m9_usage_ledger.sql');
+      expect(names).toHaveLength(36);
+      expect(names.at(-1)).toBe('20261015000400_m9_usage_delivery_intent.sql');
       for (const file of names.slice(0, 20))
         await owner.query((await readFile(new URL(file, migrations), 'utf8')).split('-- migrate:down')[0]!);
       await owner.query('REVOKE CREATE ON SCHEMA public FROM PUBLIC');
@@ -657,6 +657,11 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       // The local ledger is not activated for any deployed runtime role.
       for (const runtime of [web, purchaseWorker, inspectionWorker])
         for (const query of [
+          'SELECT * FROM m9_usage_delivery_intents',
+          'INSERT INTO m9_usage_delivery_intents DEFAULT VALUES',
+          'UPDATE m9_usage_delivery_intents SET idempotency_key=idempotency_key WHERE false',
+          'DELETE FROM m9_usage_delivery_intents WHERE false',
+          'TRUNCATE m9_usage_delivery_intents',
           'SELECT * FROM m9_order_usage',
           'INSERT INTO m9_order_usage DEFAULT VALUES',
           'UPDATE m9_order_usage SET history_policy_hash=history_policy_hash WHERE false',

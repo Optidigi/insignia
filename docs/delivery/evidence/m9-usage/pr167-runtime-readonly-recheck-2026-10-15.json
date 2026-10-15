@@ -1,0 +1,50 @@
+{
+  "observedAt": "2026-10-15T15:53:30.622832+00:00",
+  "containerCount": 34,
+  "web": {
+    "id": "d2f926ec7d7c5c6ffcfd2970658262006b7df03b106d64c4fc077338d053cd75",
+    "image": "sha256:49dcacd88d8a7339459bafe5ff9ac5a8cdfe26c7bb35b3d81f7c4608e3cfbeb1",
+    "healthy": "healthy",
+    "profile": "m8-preview-28443bd"
+  },
+  "worker": {
+    "id": "d98e6dc94ab3267cde8d0def012e8d27a252b742dac021a1cee3e0d0868f2da8",
+    "image": "sha256:b25548b328f35d996da0d0a964cde02e897561f299f7eb0ddd0c5f97328ae888",
+    "healthy": "healthy",
+    "profile": "m8-preview-28443bd"
+  },
+  "database": {
+    "id": "19419eff11ef9c0b43e484f91ad97ba606c817df6604e7a6d08c5513473285a1",
+    "image": "sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d"
+  },
+  "inspector": {
+    "MainPID": "3660118",
+    "ActiveState": "active"
+  },
+  "metadata": {
+    "failedAsset": {
+      "state": "UPLOADING",
+      "collectedAt": "2026-10-15T00:31:47.899+00:00",
+      "cleanupAttemptAt": null,
+      "quarantineCleanedAt": null,
+      "quarantineCleanupAttemptAt": null
+    },
+    "schemaCount": 34
+  },
+  "other32ContainerFingerprintsMatch": true,
+  "localVerifier": {
+    "ActiveState": "active",
+    "InvocationID": "bd0a9310fa104be5be76bc22d07f0fd7",
+    "MainPID": "968905"
+  },
+  "classification": "READ_ONLY_RUNTIME_AND_RETENTION_RECHECK_PASS",
+  "providerMutations": 0,
+  "databaseWrites": 0,
+  "storageWrites": 0,
+  "deployments": 0,
+  "limits": [
+    "Healthy existing runtime remains on schema34; M9 ledger/intent code is not deployed or granted.",
+    "Failed asset incomplete-cleanup deadline remains16October00:31:47.899Z; database metadata is not physical storage absence.",
+    "No restart, deletion or mutation was attempted."
+  ]
+}

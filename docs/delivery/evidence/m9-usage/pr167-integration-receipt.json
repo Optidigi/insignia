@@ -1,0 +1,43 @@
+{
+  "pullRequest": "https://github.com/Optidigi/insignia/pull/167",
+  "classification": "VERIFIED_NORMAL_PROTECTED_MERGE",
+  "base": "c83f6c7ab3ce93d66042d923498be98bd49e91c4",
+  "head": "4d9cd6f03b3bd0efd9969180c09af8f062a62290",
+  "effectiveMergeBase": "c83f6c7ab3ce93d66042d923498be98bd49e91c4",
+  "merge": "f26e49f6094957e276b1ed2f2a4fbd897edf90be",
+  "tree": "8959c6c467e3ca11fbf3465203e18951c7d35810",
+  "parents": [
+    "c83f6c7ab3ce93d66042d923498be98bd49e91c4",
+    "4d9cd6f03b3bd0efd9969180c09af8f062a62290"
+  ],
+  "checks": [
+    {
+      "run": 38761689595,
+      "attempt": 1,
+      "result": "SUCCESS",
+      "route": "full"
+    },
+    {
+      "run": 38761689856,
+      "attempt": 1,
+      "result": "SUCCESS",
+      "route": "full"
+    },
+    {
+      "run": 38761689241,
+      "attempt": 1,
+      "result": "SUCCESS",
+      "route": "full"
+    }
+  ],
+  "actualPostgreSQL": {
+    "usageLedgerPass": 11,
+    "newCompositionPass": 2,
+    "databasePass": 300,
+    "skip": 5,
+    "restrictedLoginPass": 1
+  },
+  "applicationTestsPassed": 306,
+  "nativeEffectsDuringMerge": 0,
+  "billingDispatchEnabled": false
+}
