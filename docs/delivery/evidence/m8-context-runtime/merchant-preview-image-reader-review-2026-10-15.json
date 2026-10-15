@@ -1,0 +1,52 @@
+{
+  "classification": "BOUNDED_CATALOG_IMAGE_READER_REVIEWED_NATIVE_READ_PASS_NOT_CAPTURE_COMPLETE",
+  "base": "285fbf7cec9e2ff4c3487a8214d40cc5954a1cd8",
+  "sourceHashes": {
+    "packages/shopify/src/catalog-image.ts": "9943aa73b3a7dce920a50652127db60969fb73e5e72b31ece3a38dfba6f33ee3",
+    "packages/shopify/src/index.ts": "d1638c461a206ef66055824920ae09337bbf22f9552c556ec374aeac3005f8bf",
+    "packages/shopify/test/catalog-image.test.ts": "419c59c5e23b0799d939283239f0f7bc4d3d2149dcc1c81cd9f098bca4b4dd83"
+  },
+  "compiledSha256": "c83deb8532c63e02cc729e1b381b4a3b2c7557ba597e17016d3293e3de675747",
+  "purpose": "Read the exact selected authenticated catalog image as bounded uninspected bytes; first prerequisite for future immutable merchant preview assets. No client-provided URL fetch authority.",
+  "limits": [
+    "Only exact cdn.shopify.com/public IPv4 and declared PNG/JPEG/SVG are supported initially; other Shopify CDN hosts/IPv6/WebP/AVIF fail explicitly. No URL rewrite or buyer-artwork policy change.",
+    "A successful read or supported MIME does not establish inspection, immutable storage, revision binding, merchant-owned reference/cleanup lifecycle or historical preview acceptance. Those paths are not composed yet.",
+    "Caller supplies a current authenticated tenant/product catalog result; this adapter does not authenticate a merchant by itself.",
+    "Native observation used the reviewed compiled candidate in an ephemeral Node process in the existing web container network, not a deployed application route or new image. No deployed composition claim.",
+    "Abort settles the caller and suppresses late dispatch; the outstanding OS DNS lookup itself cannot be cancelled."
+  ],
+  "tests": {
+    "red": "Initial missing module followed by executable reader returning null: expected exact selected bytes, got null. Implemented bounded reader; no historical fixtures changed.",
+    "green": "7 new catalog-image boundary tests; all 432 Shopify adapter tests PASS across25files; package build/type checks PASS; Biome3files0warnings; repository boundary/database/domain-effects and secret checks PASS.",
+    "doubles": "DNS and HTTP are explicit transport doubles; actual TLS/CDN format was separately observed on the existing web network.",
+    "corrections": "Initial TypeScript overloaded lookup inference and autoSelectFamily RequestOptions mismatch corrected before final build; fixed family4 is explicit, pinned lookup supplies validated address for either lookup callback form."
+  },
+  "reviews": [
+    {
+      "reviewer": "accept_read_spec",
+      "axis": "Spec/correctness",
+      "result": "CLEAR",
+      "sourceSha256": "9943aa73b3a7dce920a50652127db60969fb73e5e72b31ece3a38dfba6f33ee3",
+      "testSha256": "419c59c5e23b0799d939283239f0f7bc4d3d2149dcc1c81cd9f098bca4b4dd83",
+      "nativeEffectsByReviewer": false
+    },
+    {
+      "reviewer": "offline_bridge_security",
+      "axis": "Standards/security",
+      "result": "CLEAR",
+      "sourceSha256": "9943aa73b3a7dce920a50652127db60969fb73e5e72b31ece3a38dfba6f33ee3",
+      "testSha256": "419c59c5e23b0799d939283239f0f7bc4d3d2149dcc1c81cd9f098bca4b4dd83",
+      "nativeEffectsByReviewer": false
+    }
+  ],
+  "nativeSource": {
+    "browser": "Both exact Admin Themes/Dev App sessions verified with README open.js, no challenge/login signal, screenshots inspected. Single headed instance, closed contexts, no logout.",
+    "provenance": "Actual authenticated merchant config GET for owned product10519322493211, ACTIVE/draft2/revisione6b79dfb; exact product and provider image mapping retained privately, no browser URL input or session data captured.",
+    "sourceReadProbeSha256": "347de693ea986289adefabdd446639dbb25c8c315cab144fdba3432aaa759758",
+    "imageReadProbeSha256": "39a3621563f3daf28949ff0c11fcf82d752458e4d095e2428b3a552db396fe04",
+    "nativeReceipt": "merchant-preview-native-image-read-2026-10-15.json",
+    "closingRead": "merchant-preview-native-image-closing-read-2026-10-15.json"
+  },
+  "cleanup": "Private catalog snapshot, image bytes and probe journals due20October under existing journal obligation. No R2 asset created, no buyer-artwork retention changed.",
+  "next": "Inspect and persist merchant-owned preview versions with immutable storage/revision references and actual cleanup before buyer/purchase historical rendering. Do not backfill old purchases with current catalog imagery."
+}
