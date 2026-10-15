@@ -108,12 +108,16 @@ test('guest resource capability requires current signed routing, publication, ge
     ).ownerHash,
     scope.ownerHash,
   );
+  const [tokenBody, tokenSignature] = grant.token.split('.');
+  const alteredSignature = Buffer.from(tokenSignature, 'base64url');
+  // Change authenticated bytes, not unused base64url padding bits.
+  alteredSignature[0] ^= 1;
   assert.equal(
     await authority.verify(
       new Request(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ capability: grant.token.slice(0, -2) + 'aa' }),
+        body: JSON.stringify({ capability: `${tokenBody}.${alteredSignature.toString('base64url')}` }),
       }),
     ),
     null,

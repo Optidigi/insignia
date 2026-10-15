@@ -50,7 +50,13 @@ export type {
   ShopRecord,
 } from './repositories/tenant.js';
 export { ManagedInstallationError } from './repositories/tenant.js';
-
+export {
+  type UsageDeliveryBinding,
+  type UsageDeliveryIntent,
+  type UsageDeliveryIntentRepository,
+  UsageDeliveryIntentStateError,
+  type UsageDeliveryPreparation,
+} from './repositories/usage-delivery-intent.js';
 export {
   type UsageLedgerRecord,
   type UsageLedgerRepository,
