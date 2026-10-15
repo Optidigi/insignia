@@ -63,6 +63,29 @@ function vectorHash(vector: readonly Bucket[]): string {
     ),
   );
 }
+/** Editor selector names are local to geometry; cart/order variant IDs stay numeric. */
+function buyerGeometry(value: GeometryV1): GeometryV1 {
+  const geometry = validateGeometry(value);
+  const variant = (id: string) => /^variant_([1-9][0-9]{0,19})$/.exec(id)?.[1] ?? id;
+  return validateGeometry({
+    ...geometry,
+    views: geometry.views.map((view) => ({
+      ...view,
+      variantImages: view.variantImages.map((item) => ({ ...item, variantId: variant(item.variantId) })),
+      placements: view.placements.map((placement) => ({
+        ...placement,
+        ...(placement.variantOverrides
+          ? {
+              variantOverrides: placement.variantOverrides.map((item) => ({
+                ...item,
+                variantId: variant(item.variantId),
+              })),
+            }
+          : {}),
+      })),
+    })),
+  });
+}
 /** Server authority is injected once; client amounts, shop IDs and resource keys are never accepted. */
 export function createBuyerServices(input: {
   core: DurableCore;
@@ -182,7 +205,7 @@ export function createBuyerServices(input: {
       const geometryRecord = await input.core.configs.getRevisionGeometry(scope.shopId, revision.config.revisionId);
       const presentation = await input.core.configs.getRevisionPresentation(scope.shopId, revision.config.revisionId);
       if (!geometryRecord || !presentation) throw new Error('Published presentation missing');
-      const geometry = validateGeometry(geometryRecord.value as GeometryV1),
+      const geometry = buyerGeometry(geometryRecord.value as GeometryV1),
         config = revision.config;
       const catalog = await input.catalog(scope, scope.productId);
       if (catalog.variants.length > 250 || catalog.variants.some((v) => !/^[1-9][0-9]{0,19}$/.test(v.id)))
