@@ -235,7 +235,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('merchant-owned preview lifecy
     const unbound = await fixture();
     await usable(unbound);
     expect(await store.getForRevision(unbound.scope, target)).toEqual([]);
-    await pool.query('UPDATE installation_generations SET deactivated_at=$2 WHERE shop_id=$1', [f.scope.shopId, now]);
+    await pool.query('UPDATE installation_generations SET deactivated_at=clock_timestamp() WHERE shop_id=$1', [
+      f.scope.shopId,
+    ]);
     expect(await store.getForRevision(f.scope, target)).toEqual([]);
   });
   it('rejects direct SQL inactive capture/settlement, manufactured state and malformed manifests/timestamps', async () => {
