@@ -201,3 +201,89 @@ test('purchase discovery and storage failures never suppress purchase private cl
   assert.equal(cleaned, 1);
   assert.ok(input.errors.some((x) => x.metadata.errorClass === 'PURCHASE_DISCOVERY_UNAVAILABLE'));
 });
+
+test('usage failure cannot suppress private cleanup and shutdown drains usage', async () => {
+  const input = fixture();
+  let cleaned = 0,
+    stopped = 0;
+  input.usage = {
+    async runOnce() {
+      throw new Error('private usage source');
+    },
+    async stop() {
+      stopped++;
+    },
+  };
+  input.core.purchases = {
+    async cleanupDue() {
+      cleaned++;
+    },
+  };
+  const maintenance = createWorkerReconciliation(input);
+  await maintenance.runOnce();
+  assert.equal(cleaned, 1);
+  assert.ok(input.errors.some((entry) => entry.metadata.errorClass === 'USAGE_QUALIFICATION_UNAVAILABLE'));
+  await maintenance.stop();
+  assert.equal(stopped, 1);
+});
+
+test('shutdown awaits an active usage pass and prevents subsequent maintenance work', async () => {
+  const input = fixture();
+  let begin,
+    release,
+    active,
+    drained = false;
+  const began = new Promise((resolve) => {
+    begin = resolve;
+  });
+  const blocked = new Promise((resolve) => {
+    release = resolve;
+  });
+  input.usage = {
+    runOnce() {
+      active = (async () => {
+        begin();
+        await blocked;
+      })();
+      return active;
+    },
+    async stop() {
+      await active;
+      drained = true;
+    },
+  };
+  const maintenance = createWorkerReconciliation(input);
+  const pass = maintenance.runOnce();
+  await began;
+  const stopping = maintenance.stop();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(drained, false);
+  release();
+  await Promise.all([pass, stopping]);
+  assert.equal(drained, true);
+  assert.equal(input.seen.includes('artwork-cleanup'), false);
+});
+
+test('returned usage failure summary is reported without blocking private cleanup', async () => {
+  const input = fixture();
+  let cleaned = 0;
+  input.usage = {
+    async runOnce() {
+      return { failed: 1 };
+    },
+    async stop() {},
+  };
+  input.core.purchases = {
+    async cleanupDue() {
+      cleaned++;
+    },
+  };
+  const maintenance = createWorkerReconciliation(input);
+  await maintenance.runOnce();
+  assert.equal(cleaned, 1);
+  assert.equal(
+    input.errors.filter((entry) => entry.metadata.errorClass === 'USAGE_QUALIFICATION_UNAVAILABLE').length,
+    1,
+  );
+  await maintenance.stop();
+});
