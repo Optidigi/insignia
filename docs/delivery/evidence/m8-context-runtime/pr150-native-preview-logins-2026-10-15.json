@@ -1,0 +1,21 @@
+{
+  "classification": "ACTUAL_PREVIEW_WEB_AND_INSPECTION_LOGINS_READ_ONLY_PASS",
+  "inspection": {
+    "current_user": "insignia_artwork_worker",
+    "session_user": "insignia_artwork_worker",
+    "database": "insignia_rewrite"
+  },
+  "web": {
+    "current_user": "insignia_runtime",
+    "session_user": "insignia_runtime",
+    "database": "insignia_rewrite"
+  },
+  "inspectionProfile": "merchantPreviews:true/strict5tables",
+  "webColumnMatrix": "exact_capture_and_binding_columns",
+  "cleanupSelectionRows": 0,
+  "databaseWrites": 0,
+  "storageWrites": 0,
+  "serviceChanges": 0,
+  "route": "Existing authorized host private bridge to pinned DB; web credentials unchanged",
+  "limits": "Effective grants and read-only repository query only; no native capture, row mutation, cleanup DELETE or service start."
+}

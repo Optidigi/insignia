@@ -1,0 +1,51 @@
+{
+  "classification": "VERIFIED_NORMAL_MERGE",
+  "pullRequest": "https://github.com/Optidigi/insignia/pull/149",
+  "base": "46b277e7006198b4e3376a5962ad629eba1535bb",
+  "head": "fcf101ff7c1065d2e331500efaf8231e242a4630",
+  "effectiveMergeBase": "46b277e7006198b4e3376a5962ad629eba1535bb",
+  "merge": "c604e4ed739bba174150fff8836f6bef9b48204f",
+  "tree": "f67e9347d5c1356b8e21f214ce57ecf81074edf1",
+  "mergeParents": [
+    "46b277e7006198b4e3376a5962ad629eba1535bb",
+    "fcf101ff7c1065d2e331500efaf8231e242a4630"
+  ],
+  "checks": [
+    {
+      "run": 38678426489,
+      "headSha": "fcf101ff7c1065d2e331500efaf8231e242a4630",
+      "attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "run": 38678426728,
+      "headSha": "fcf101ff7c1065d2e331500efaf8231e242a4630",
+      "attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "run": 38678426576,
+      "headSha": "fcf101ff7c1065d2e331500efaf8231e242a4630",
+      "attempt": 1,
+      "conclusion": "success"
+    }
+  ],
+  "actualPostgreSQL": {
+    "previewLifecycleAndFairness": {
+      "passed": 8,
+      "skipped": 0
+    },
+    "dedicatedLoginGrantFixture": {
+      "passed": 1,
+      "skipped": 0
+    },
+    "inspectionProfileCounterexamples": "PASS runtime actual LOGIN",
+    "adminAndPublication": {
+      "passed": 56,
+      "skipped": 0
+    }
+  },
+  "deploymentAtMerge": false,
+  "captureActivated": false,
+  "runtimeSchemaAtMerge": 32
+}

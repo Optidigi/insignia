@@ -1,0 +1,14 @@
+{
+  "classification": "ACTUAL_WEB_EXISTING_PRIVATE_MOUNT_READINESS_PASS",
+  "uid": 1000,
+  "status": 200,
+  "ready": true,
+  "requests": 1,
+  "databaseWrites": 0,
+  "storageWrites": 0,
+  "decoderCalls": 0,
+  "immutablePurchaseFactHashesPreserved": true,
+  "webContainer": "2a885a4043c770818e26114fea39d619a2ab5a19c869374b337e9d326eb637ef",
+  "webImage": "sha256:3c2d1ba04b2144382c0bae81381b0a54c46f614772f4d8279d40a3dae3e0ffa5",
+  "limits": "Existing web private mount GET readiness only. No byte inspection/capture/storage mutation; new web capture composition is not yet deployed."
+}
