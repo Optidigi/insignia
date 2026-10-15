@@ -1,0 +1,156 @@
+{
+  "classification": "LOCAL_FROZEN_PREVIEW_WEB_ARTIFACT_PROVENANCE_PASS",
+  "artifactId": 11948847473,
+  "artifactZipDigest": "sha256:77ac3bd516193195f81059c7f07e9614b9f8eb464c61a48f60a1d0d6f8a315df",
+  "run": 38682401189,
+  "attempt": 1,
+  "workflowHead": "d8a3af017104143ed2dd9c6a327543d19af305bb",
+  "buildSourceHead": "edda7b69bdb0bb64b79780f21ca21f1938350098",
+  "buildParents": [
+    "03580f615b61fbb4734e85462eba91d22b64f8ce",
+    "d8a3af017104143ed2dd9c6a327543d19af305bb"
+  ],
+  "sourceTree": "833cc33c19ddef2526c2c355a1e28f6b86669cc9",
+  "integratedMerge": "d33c3cf568ae895d08a14b291a71980813b2c550",
+  "integratedTreeEqualsArtifact": true,
+  "tar": "/home/serveradmin/insignia-milestone-autonomy-handoff/m8-pr152-web-preparation/web-image.tar",
+  "tarSha256": "688ca21c7f618742b63cc37a6dda2a7b28e61a3157a63907397d200367c51bb1",
+  "tarSizeBytes": 456114688,
+  "nativeOciImageId": "sha256:a17492d25484a1b4679713655ab79967e8e25b100fb86e17c34ea228ac16ca45",
+  "configDigest": "sha256:0ee1c310095f9adbd2afc3c1124e42cb9c875b358f7542ccea4f445b77c196c9",
+  "blobsVerified": [
+    {
+      "sha256": "03be61f7b97d3f5ec232a9ecfd03e740e878e28f953af8ab22554b530b1819e7",
+      "size": 1074
+    },
+    {
+      "sha256": "0ee1c310095f9adbd2afc3c1124e42cb9c875b358f7542ccea4f445b77c196c9",
+      "size": 8033
+    },
+    {
+      "sha256": "282cd2c5543f76c339cae4e2de71e091fa3462c7c6d4a0aa877a26401bd7aab9",
+      "size": 2560
+    },
+    {
+      "sha256": "65d71716d250882cedd073ea8e6ab52eb8ce7372fb9eed886775d91dbf9b0f74",
+      "size": 150128640
+    },
+    {
+      "sha256": "898d31cb3ad19eafeeb3cc6da6f296025b2d2170e182bd542b13417c00b0d6af",
+      "size": 477
+    },
+    {
+      "sha256": "a17492d25484a1b4679713655ab79967e8e25b100fb86e17c34ea228ac16ca45",
+      "size": 1316
+    },
+    {
+      "sha256": "a4f7bd2372db93ba705355e0625bee70669069b694afdbd71b9d104f52aa050e",
+      "size": 401
+    },
+    {
+      "sha256": "a52fce3e2e53c15bee62149c2a83480bfc3000e19b253dba304220e3d487582f",
+      "size": 21504
+    },
+    {
+      "sha256": "ad789a6dbd17031313e86439382db7afc9b385e09e6fff53fe6b8b56b57349a6",
+      "size": 477
+    },
+    {
+      "sha256": "b6a146dc1aed9a3193cadd3aa94373029d72d93c212e59a42c5d0194b2157ab5",
+      "size": 3584
+    },
+    {
+      "sha256": "bdfbfbb03dafc1b269c0668c632ae06c04bff6bc9ae624c8a9cbb3ecb4ad1d3c",
+      "size": 7217664
+    },
+    {
+      "sha256": "e58989146fcec76699871403b9897b5c014af1ccd85f5a9300a215e7975525d7",
+      "size": 77936640
+    },
+    {
+      "sha256": "ec36510853a39061f33a6a92703ffac73000232761e3d71f31fcd80d944d036b",
+      "size": 477
+    },
+    {
+      "sha256": "f35c3645ae3e8dcd2fc97115ffb088423cf861334d84cb8651cf30051fe3c94e",
+      "size": 220774400
+    },
+    {
+      "sha256": "f74bc78b05b824e545c37b27d1d8e27d2441e34ac37c717fa0aa4c927857d4b1",
+      "size": 477
+    },
+    {
+      "sha256": "fdf6818627b3d8686616b68b0987aa6cc46be3a5dcee0d147f84c0259ed18246",
+      "size": 477
+    }
+  ],
+  "ociDescriptorSizesAndLayerOrderVerified": true,
+  "rootfsDiffIdsVerified": true,
+  "layerDiffIds": [
+    "sha256:e58989146fcec76699871403b9897b5c014af1ccd85f5a9300a215e7975525d7",
+    "sha256:a52fce3e2e53c15bee62149c2a83480bfc3000e19b253dba304220e3d487582f",
+    "sha256:65d71716d250882cedd073ea8e6ab52eb8ce7372fb9eed886775d91dbf9b0f74",
+    "sha256:bdfbfbb03dafc1b269c0668c632ae06c04bff6bc9ae624c8a9cbb3ecb4ad1d3c",
+    "sha256:b6a146dc1aed9a3193cadd3aa94373029d72d93c212e59a42c5d0194b2157ab5",
+    "sha256:282cd2c5543f76c339cae4e2de71e091fa3462c7c6d4a0aa877a26401bd7aab9",
+    "sha256:f35c3645ae3e8dcd2fc97115ffb088423cf861334d84cb8651cf30051fe3c94e"
+  ],
+  "runtimeConfigUnchangedFromPr143": true,
+  "runtimeConfigSha256": "610f2c0c3131664f7b9307d92cc90f49f4ae33e28632c4285f33b5d770dcba30",
+  "sourceHashes": {
+    "scripts/m5-runtime/Dockerfile.web": "f4d180d715e8ac425aeea3d4e3a67130d9430351c4119c133585f1cca429f2e7",
+    "apps/web/src/server/admin/merchant-previews.ts": "8648c19a5959c5c6862497b4a63a7f2da2f109ec36cfbc43a64371de1840d19c",
+    "apps/web/src/server/admin/production.ts": "8c722fdd74f0e90299e9b0bc16ee774a27fcd14ae8f86bca27498433d80962ec",
+    "packages/database/src/repositories/merchant-preview.ts": "d402b3fc81a8ad2683faeaffb287adb2ce8d05bd52c11df33997c07c8e1c1ca0",
+    "packages/application/src/merchant-preview/assets.ts": "ebf2e5e9f9f47241c061ee594dbade2f177a739d546a8efd50732a47dbc954c3",
+    "apps/worker/src/artwork/inspection-client.ts": "20e45bb34976dff58bfa898cf9bbad072a9ee161c9c423a13ca072b5d866bc95",
+    "apps/web/src/server/merchant-preview/read.ts": "a0c3d07136d32a17401b75b8de6235ad0cff4750bbd6aa970f2900bcade3e652",
+    "apps/web/src/server/merchant-preview/geometry.ts": "ab7c396d1cb328b8f2a139a0bf60e971040738fdcddc387d84562849c8b381d4",
+    "apps/web/src/server/buyer/production.ts": "c10730867e2a21086d7a61db8177056d34b1f7bd2fd9af1a2f8639af53f47742",
+    "apps/web/src/server/buyer/service.ts": "6264fec0d48c68b5fe75f6efb94355b34f336e220d22733325eeb231e3d387e2",
+    "apps/web/src/server/purchase/production.ts": "af0daf622b888db13fbbc28e2d35ee9796525088786cb0206d3616411d923c27",
+    "apps/web/src/server/purchase/service.ts": "e5333c1ebaa9927221f08fe6e10848879cc78366b679ef05612cd374638797b5"
+  },
+  "dockerLoaded": false,
+  "nativeEffects": false,
+  "runtimeQualification": "NOT_PERFORMED",
+  "limitations": [
+    "Integrated frozen buyer/purchase projection candidate; no native deployment or acceptance qualification.",
+    "No Docker import/start, native SSH/service/DB/storage/store changes.",
+    "Source binding is qualified CI receipt plus independently read build commit and actual merge tree; no claim of reproducible build or native acceptance."
+  ],
+  "compiled": [
+    {
+      "path": "srv/insignia/web/dist/server/chunks/geometry_tc5ux5bH.mjs",
+      "sha256": "92a62303485571ecdeade2321d5a27b32a215d6ec54983a9a536f0b4b359cb39",
+      "sizeBytes": 2608
+    },
+    {
+      "path": "srv/insignia/web/dist/server/chunks/production_BoATq7_j.mjs",
+      "sha256": "3454b0f293de076bb1106d466b287a489e7ca50671aaeabc67af338cb161c583",
+      "sizeBytes": 8073
+    },
+    {
+      "path": "srv/insignia/web/dist/server/chunks/runtime_CRchpUIJ.mjs",
+      "sha256": "39b2b40993b8a7b772e1d45cf97b6d5b52de5bac2fa744ecb68194427d713505",
+      "sizeBytes": 82031
+    },
+    {
+      "path": "srv/insignia/web/dist/server/chunks/runtime_DXaX1CD6.mjs",
+      "sha256": "2f66dc61a09a0257dfd8b63b071d135dc1a66fdc9641f52676a342fd3b954f5e",
+      "sizeBytes": 110535
+    }
+  ],
+  "compiledFrozenPreviewReaderPresent": true,
+  "compiledProductionFlagAndBuyerPurchaseCallersPresent": true,
+  "import": {
+    "classification": "EXACT_CI_WEB_IMAGE_IMPORT_PASS",
+    "nativeImageId": "sha256:a17492d25484a1b4679713655ab79967e8e25b100fb86e17c34ea228ac16ca45",
+    "configRootfsDescriptorExact": true,
+    "webUnchanged": true,
+    "other33ContainersPreserved": true,
+    "loadInvocations": 1,
+    "retryInvocations": 0
+  },
+  "privateArtifactCleanupDue": "2026-10-20T00:00:00Z"
+}

@@ -1,0 +1,38 @@
+{
+  "classification": "VERIFIED_NORMAL_MERGE",
+  "pullRequest": "https://github.com/Optidigi/insignia/pull/151",
+  "base": "03580f615b61fbb4734e85462eba91d22b64f8ce",
+  "head": "d8a3af017104143ed2dd9c6a327543d19af305bb",
+  "effectiveMergeBase": "03580f615b61fbb4734e85462eba91d22b64f8ce",
+  "merge": "d33c3cf568ae895d08a14b291a71980813b2c550",
+  "tree": "833cc33c19ddef2526c2c355a1e28f6b86669cc9",
+  "mergeParents": [
+    "03580f615b61fbb4734e85462eba91d22b64f8ce",
+    "d8a3af017104143ed2dd9c6a327543d19af305bb"
+  ],
+  "checks": [
+    {
+      "run": 38682401227,
+      "headSha": "d8a3af017104143ed2dd9c6a327543d19af305bb",
+      "attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "run": 38682401250,
+      "headSha": "d8a3af017104143ed2dd9c6a327543d19af305bb",
+      "attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "run": 38682401189,
+      "headSha": "d8a3af017104143ed2dd9c6a327543d19af305bb",
+      "attempt": 1,
+      "conclusion": "success"
+    }
+  ],
+  "actualPostgreSQLPreview": {
+    "passed": 9,
+    "skipped": 0,
+    "newScopedRead": "PASS"
+  }
+}

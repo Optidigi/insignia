@@ -1,0 +1,34 @@
+{
+  "classification": "EXACT_IMAGE_AND_PREVIEW_FLAG_WEB_UPDATE_PASS",
+  "sourceMerge": "d33c3cf568ae895d08a14b291a71980813b2c550",
+  "sourceTree": "833cc33c19ddef2526c2c355a1e28f6b86669cc9",
+  "priorContainer": "2a885a4043c770818e26114fea39d619a2ab5a19c869374b337e9d326eb637ef",
+  "webContainer": "b47e4ebd331e75f24f677db00d1abd280a27d427d6af75e5f7396a25f876bfac",
+  "webImage": "sha256:a17492d25484a1b4679713655ab79967e8e25b100fb86e17c34ea228ac16ca45",
+  "databaseContainer": "19419eff11ef9c0b43e484f91ad97ba606c817df6604e7a6d08c5513473285a1",
+  "databaseImage": "sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d",
+  "profile": "m8-cookie-91b35ab",
+  "healthy": true,
+  "environmentDeltaKeys": [
+    "INSIGNIA_M8_MERCHANT_PREVIEWS_ENABLED"
+  ],
+  "other33ContainersPreserved": true,
+  "workerAdmissionEnabled": true,
+  "inspectorAndBridgePreserved": true,
+  "dispatchInvocations": 1,
+  "retryInvocations": 0,
+  "nativeMerchantUIQualification": "NOT_PERFORMED",
+  "verifierRebinding": "PENDING",
+  "operatorReviews": {
+    "result": "CLEAR",
+    "operatorSha256": "62a905bc333e145a29dae1e55431b0681da540251d914c5b044ee3e99146f1d4",
+    "importSha256": "e132d534de4d5b478b20bfb4b63061dce3efe9db27d3ffe734d13eadee8d5a8b",
+    "webSha256": "6cd594125c600a4ddcacbc439c79f1f49e0de98380b7822352258cd7548efd37",
+    "freshCollectionSha256": "38e0811596d6606134c2f36c07caafa5af748c86ebf81eb38be0432d7dc134c2",
+    "specCorrectness": "preview_transport_correctness CLEAR",
+    "standardsSecurity": "preview_transport_security CLEAR",
+    "nativeEffectsByReviewer": false,
+    "limits": "Shared read-only review instructions, not credential/tool isolation. Source/image independence uses existing producer/consumer gate semantics; no historical evidence restamped."
+  },
+  "subsequentVerifierBinding": "pr152-native-frozen-verifier-rebind-2026-10-15.json"
+}

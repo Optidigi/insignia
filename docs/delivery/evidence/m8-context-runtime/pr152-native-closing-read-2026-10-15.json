@@ -1,0 +1,33 @@
+{
+  "classification": "NEW_WEB_NATIVE_CAPTURE_CLOSING_RUNTIME_PASS",
+  "webContainer": "b47e4ebd331e75f24f677db00d1abd280a27d427d6af75e5f7396a25f876bfac",
+  "webImage": "sha256:a17492d25484a1b4679713655ab79967e8e25b100fb86e17c34ea228ac16ca45",
+  "healthy": true,
+  "captureEnabled": true,
+  "other33ContainerFingerprintsPreserved": true,
+  "inspector": {
+    "MainPID": "3660118",
+    "ActiveState": "active",
+    "InvocationID": "d6b0c2df9b544729abf29df8c208bcdd"
+  },
+  "counts": {
+    "purchases": 2,
+    "paid": 1,
+    "cursor": 1,
+    "queue": 0
+  },
+  "operatorDatabaseWrites": 0,
+  "verifier": {
+    "ActiveState": "active",
+    "InvocationID": "b82fa6dafbcb4a59a48c9dcb9b7be934",
+    "MainPID": "897344"
+  },
+  "verifierProducerSourcePreserved": true,
+  "priorManifestPreserved": true,
+  "independentEvidenceAudit": {
+    "reviewer": "preview_transport_correctness",
+    "result": "CLEAR",
+    "scope": "Generated records matched primary deployment/verifier/capture/storage/buyer/closing journals; seven purchase hashes, old revision/zero bindings and identical draft digest confirmed; screenshot independently inspected.",
+    "nativeEffectsByReviewer": false
+  }
+}
