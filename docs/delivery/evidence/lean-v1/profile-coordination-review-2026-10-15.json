@@ -1,0 +1,44 @@
+{
+  "classification": "CLOSED_SCOPE_PROFILE_SOURCE_NOT_RUNTIME_INTEGRATION",
+  "versionId": "1169137696769",
+  "tag": "lean-markets-7b17cd9",
+  "actualProviderStatus": "INACTIVE at23:07:45.410Z",
+  "functionSourceCommit": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+  "changes": [
+    "Exact13-version/eight-map baseline; all historical profiles preserved",
+    "Closed runtime/collector/host selector recognizes actual candidate; collector requires Active and read_markets grant",
+    "Worker bounded qualified native-origin path selects new release identity without changing original merchandise/signature/history/payment checks"
+  ],
+  "localChecks": {
+    "shopify": "486 PASS full package, including new primary-Market reader32 and runtime profile7",
+    "collectorBoundaries": "24 PASS",
+    "workerAdmission": "4 PASS after synthetic app/client fixture correction",
+    "host": "22 tests run /1SKIP",
+    "build": "Shopify/worker PASS",
+    "style": "Targeted PASS",
+    "boundaries": "PASS",
+    "secretProvenance": "PASS after synthetic fixture correction; guard unchanged"
+  },
+  "meaningfulRedGreen": "New closed profile initially rejected, then7runtimeprofile tests PASS",
+  "review": {
+    "reviewer": "/root/m9_native_operation_review",
+    "result": "CLEAR after synthetic fixture impact correction; production profile review inherited unchanged",
+    "finding": "New test used real app/client identifiers prohibited by unchanged provenance checker; replaced with synthetic values, guard retained and passes",
+    "isolation": "Read-only instruction; no enforced connector/network credential isolation claimed"
+  },
+  "filesSha256": {
+    "deployment/m8-journey/lean-markets-module-baseline.json": "fb89546093ce2c2dcbb6952d89ad831cc4a8f31e752d3b994e94f69b4299718e",
+    "deployment/m8-journey/lean-markets-release-binding.json": "dc70c19a16a0b74abff8f3395bf276e62ec40ea583513acb346d55a7ac7f1f8e",
+    "packages/shopify/src/runtime-release-profile.ts": "8b9297729931474fbb051d5220e315a075444edebae8c6e87f8ca3761d919770",
+    "packages/shopify/src/release-verification.ts": "c5dbc91c2cf2a6b523737916ae2be2322ce8e72ba2c4e74a10aa8e8e9af2d881",
+    "scripts/m5-runtime/release-profile.mjs": "ad4dde037e7da4ffe1f258ae5ba4b6131d04b9780156989dae8f78bd9ea23834",
+    "scripts/m5-runtime/release-verification-host.py": "b165cac9246ae3450fb22dfc8b4b84da9ca0ff72c92500f612d93d826cf5d718",
+    "apps/worker/src/purchase-admission.ts": "d74712d100664d83d9a58e222234461bd3ad2f409a26551ca7242c965d1fb10a",
+    "apps/worker/test/purchase-admission.test.mjs": "5a5d4c5368e4af60f1881ab2afd7ebc05c87469ebad1584a8fa2e1e1f867876d"
+  },
+  "next": "Final CI/normal integration, exact CI runtime image deployment and new frozen verifier binding must precede one authorized release; scope consent and fresh independent reads remain separate",
+  "nativeDeployed": false,
+  "appReleased": false,
+  "readMarketsGranted": false,
+  "currencyEnabled": false
+}

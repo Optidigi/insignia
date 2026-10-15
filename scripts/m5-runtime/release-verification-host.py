@@ -147,7 +147,7 @@ def start(gate):
     # receiver default. This changes expected observations, never authority.
     profile = gate.get('releaseProfile')
     require('releaseProfile' not in gate or profile in (
-        'm5-functions-9c2e56b42fbf', 'm8-read-orders-617057f', 'm8-app-proxy-3d2a02e', 'm8-theme-c8d8713', 'm8-cookie-91b35ab', 'm8-preview-28443bd'), 'release_profile_unqualified')
+        'm5-functions-9c2e56b42fbf', 'm8-read-orders-617057f', 'm8-app-proxy-3d2a02e', 'm8-theme-c8d8713', 'm8-cookie-91b35ab', 'm8-preview-28443bd', 'lean-markets-7b17cd9'), 'release_profile_unqualified')
     profile_arguments = [profile] if profile is not None else []
     qualify_gate(gate)
     require_service()

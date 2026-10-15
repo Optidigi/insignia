@@ -8,6 +8,7 @@ import test from 'node:test';
 import { createReleaseVerificationClient } from '../../apps/web/src/server/admin/release-verification.ts';
 import proxyModules from '../../deployment/m8-journey/app-proxy-module-baseline.json' with { type: 'json' };
 import cookieThemeModules from '../../deployment/m8-journey/cookie-theme-module-baseline.json' with { type: 'json' };
+import leanMarketsModules from '../../deployment/m8-journey/lean-markets-module-baseline.json' with { type: 'json' };
 import previewThemeModules from '../../deployment/m8-journey/preview-theme-module-baseline.json' with { type: 'json' };
 import historicalM8Modules from '../../deployment/m8-journey/release-module-baseline.json' with { type: 'json' };
 import themeModules from '../../deployment/m8-journey/theme-module-baseline.json' with { type: 'json' };
@@ -24,33 +25,48 @@ for (const profile of [
   'm8-theme-c8d8713',
   'm8-cookie-91b35ab',
   'm8-preview-28443bd',
+  'lean-markets-7b17cd9',
 ]) {
-  const preview = profile === 'm8-preview-28443bd';
+  const lean = profile === 'lean-markets-7b17cd9';
+  const preview = lean || profile === 'm8-preview-28443bd';
   const cookie = preview || profile === 'm8-cookie-91b35ab';
   const theme = cookie || profile === 'm8-theme-c8d8713';
   const proxy = profile !== 'm8-read-orders-617057f';
-  const versionId = preview
-    ? '1168157736961'
-    : cookie
-      ? '1166710865921'
-      : theme
-        ? '1166552825857'
-        : proxy
-          ? '1166090010625'
-          : '1165513097217';
-  const modules = preview
-    ? previewThemeModules
-    : cookie
-      ? cookieThemeModules
-      : theme
-        ? themeModules
-        : proxy
-          ? proxyModules
-          : historicalM8Modules;
+  const versionId = lean
+    ? '1169137696769'
+    : preview
+      ? '1168157736961'
+      : cookie
+        ? '1166710865921'
+        : theme
+          ? '1166552825857'
+          : proxy
+            ? '1166090010625'
+            : '1165513097217';
+  const modules = lean
+    ? leanMarketsModules
+    : preview
+      ? previewThemeModules
+      : cookie
+        ? cookieThemeModules
+        : theme
+          ? themeModules
+          : proxy
+            ? proxyModules
+            : historicalM8Modules;
   const profileTest = (name, fn) => test(`${profile}: ${name}`, fn);
   const prior = (versions) =>
     proxy
       ? [
+          ...(lean
+            ? [
+                {
+                  versionId: 'gid://shopify/Version/1168157736961',
+                  versionTag: 'm8-preview-28443bd',
+                  status: 'inactive',
+                },
+              ]
+            : []),
           ...(preview
             ? [
                 {
@@ -173,7 +189,13 @@ for (const profile of [
   profileTest(
     'M8 collector verifies real-port selected inventory and order-read grants before its one append',
     async () => {
-      for (const state of ['active', 'inactive', 'missing_grant', ...(proxy ? ['missing_proxy_grant'] : [])]) {
+      for (const state of [
+        'active',
+        'inactive',
+        'missing_grant',
+        ...(proxy ? ['missing_proxy_grant'] : []),
+        ...(lean ? ['missing_markets_grant'] : []),
+      ]) {
         const time = Date.parse('2026-10-11T12:00:00.000Z');
         const f = await fixture({ time, recordId: randomUUID() });
         let appended = 0,
@@ -200,7 +222,7 @@ for (const profile of [
               id: 'gid://shopify/App/429028933633',
               appVersions: {
                 nodes: versions,
-                pageInfo: { totalResults: preview ? 12 : cookie ? 11 : theme ? 10 : proxy ? 9 : 8 },
+                pageInfo: { totalResults: lean ? 13 : preview ? 12 : cookie ? 11 : theme ? 10 : proxy ? 9 : 8 },
               },
             },
           }),
@@ -259,7 +281,12 @@ for (const profile of [
                 ? value.grants
                 : state === 'missing_proxy_grant'
                   ? [...value.grants, 'read_orders']
-                  : [...value.grants, 'read_orders', ...(proxy ? ['read_app_proxy', 'write_app_proxy'] : [])],
+                  : [
+                      ...value.grants,
+                      'read_orders',
+                      ...(proxy ? ['read_app_proxy', 'write_app_proxy'] : []),
+                      ...(lean && state !== 'missing_markets_grant' ? ['read_markets'] : []),
+                    ],
           };
         };
         f.ports.append = async (input) => {
@@ -290,7 +317,8 @@ for (const profile of [
   );
 
   profileTest('M8 OAuth readback requires read_orders and refuses scope widening without retry', async () => {
-    const granted = proxy ? ',read_orders,read_app_proxy,write_app_proxy' : ',read_orders';
+    const granted =
+      (proxy ? ',read_orders,read_app_proxy,write_app_proxy' : ',read_orders') + (lean ? ',read_markets' : '');
     for (const extra of ['', granted, `${granted},write_orders`, ...(proxy ? [',read_orders'] : [])]) {
       let requests = 0;
       const provider = createOwnerHttps({
