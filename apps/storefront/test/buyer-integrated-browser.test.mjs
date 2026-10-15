@@ -102,7 +102,7 @@ test('buyer purchases the EUR91 quote through actual HTTP, real signing and Post
     await host.getByRole('button', { name: 'Provide logo later' }).click();
     await host.getByRole('button', { name: 'Continue to Placement' }).click();
     await host.getByRole('checkbox', { name: 'Front', exact: true }).check();
-    await host.getByRole('button', { name: 'Continue to Preview' }).click();
+    await host.getByRole('button', { name: 'Continue to Decoration' }).click();
     await host.getByRole('button', { name: 'Continue to Review' }).click();
     await host.getByRole('spinbutton').fill('3');
     await host.getByRole('button', { name: 'Review complete customized cart' }).click();
