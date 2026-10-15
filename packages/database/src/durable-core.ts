@@ -4,6 +4,7 @@ import type {
   CommandRepository,
   EffectiveQuoteRevision,
   InboxRepository,
+  MerchantPreviewStore,
   OutboxRepository,
   QuoteAcceptanceStore,
   QuoteRenewalStore,
@@ -30,6 +31,7 @@ import {
 } from './repositories/config.js';
 import { PgInboxRepository } from './repositories/delivery/pg-inbox-repository.js';
 import { PgOutboxRepository } from './repositories/delivery/pg-outbox-repository.js';
+import { createMerchantPreviewRepository } from './repositories/merchant-preview.js';
 import { createProductionActivation, type ProductionActivationOptions } from './repositories/production-activation.js';
 import { PgProductionPublication, type ProductionPublicationRemote } from './repositories/production-publication.js';
 import { createPurchaseRepository, type PurchaseRepository } from './repositories/purchase.js';
@@ -145,6 +147,7 @@ export interface DurableCore {
         sourceInstallationGeneration: string;
         mode: 'required' | 'optional';
         createdByRef: string;
+        previewAssets?: { imageRevisionId: string; assetId: string }[];
       },
     ): Promise<RevisionRecord>;
     getRevisionGeometry(
@@ -203,6 +206,7 @@ export interface DurableCore {
     ): Promise<void>;
   };
   readonly artwork: ArtworkStore;
+  readonly merchantPreviews: MerchantPreviewStore;
   readonly tenants: {
     getManagedInstallationState(shopDomain: string): Promise<ManagedInstallationState | null>;
     ensureManagedInstallation(
@@ -428,6 +432,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
   return {
     purchases: createPurchaseRepository(database),
     artwork: createArtworkRepository(pool),
+    merchantPreviews: createMerchantPreviewRepository(pool),
     buyers: createBuyerRepository(database),
     renewalQuotes: new PgQuoteRenewalRepository(database),
     trustedReleaseRecords: createTrustedReleaseReader(database),
@@ -555,6 +560,26 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
           VALUES (${input.shopId}, ${input.configId}, ${input.revisionId}, ${presentation.version},
             ${JSON.stringify(presentation)}::jsonb, ${sha256CanonicalJson(presentation)},
             ${input.sourceDraftVersion}::bigint, ${input.sourceInstallationGeneration}::bigint)`.execute(tx);
+        const previewAssets = input.previewAssets ?? [];
+        const imageIds = new Set(
+          geometry.views.flatMap((view) => [
+            ...(view.image ? [view.image.revisionId] : []),
+            ...view.variantImages.map((item) => item.image.revisionId),
+          ]),
+        );
+        if (
+          previewAssets.length > imageIds.size ||
+          new Set(previewAssets.map((item) => item.imageRevisionId)).size !== previewAssets.length ||
+          previewAssets.some((item) => !imageIds.has(item.imageRevisionId))
+        )
+          throw new Error('Invalid preview asset geometry reference');
+        for (const preview of [...previewAssets].sort((a, b) => a.assetId.localeCompare(b.assetId))) {
+          await sql`INSERT INTO config_revision_preview_assets
+            (shop_id,config_id,revision_id,installation_generation,product_id,image_revision_id,asset_id)
+            SELECT ${input.shopId},${input.configId},${input.revisionId},${input.sourceInstallationGeneration}::bigint,
+              c.external_product_id,${preview.imageRevisionId},${preview.assetId}::uuid FROM product_configs c
+            WHERE c.shop_id=${input.shopId} AND c.config_id=${input.configId}`.execute(tx);
+        }
         return revision;
       },
       getRevisionGeometry: async (shopId, revisionId) => {

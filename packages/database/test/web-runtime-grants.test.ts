@@ -59,7 +59,8 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       );
       const migrations = new URL('../migrations/', import.meta.url);
       const names = (await readdir(migrations)).filter((n) => n.endsWith('.sql')).sort();
-      expect(names).toHaveLength(32);
+      expect(names).toHaveLength(33);
+      expect(names.at(-1)).toBe('20261015000100_merchant_preview_assets.sql');
       for (const file of names.slice(0, 20))
         await owner.query((await readFile(new URL(file, migrations), 'utf8')).split('-- migrate:down')[0]!);
       await owner.query('REVOKE CREATE ON SCHEMA public FROM PUBLIC');

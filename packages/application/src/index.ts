@@ -9,6 +9,7 @@ export * from './keys/lifecycle.js';
 export * from './keys/public-config.js';
 export * from './keys/readiness.js';
 export * from './keys/trusted-release.js';
+export * from './merchant-preview/assets.js';
 export * from './pricing/catalog-context.js';
 export * from './pricing/customization-fx.js';
 export * from './publication/activation.js';
