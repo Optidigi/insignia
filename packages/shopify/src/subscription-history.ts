@@ -36,6 +36,20 @@ export interface SubscriptionHistoryEvent {
     trialDaysRemaining: number | null;
   } | null;
 }
+export interface SubscriptionHistoryRange {
+  sourceApiVersion: typeof PARTNER_API_VERSION;
+  appId: string;
+  shopId: string;
+  from: string;
+  through: string;
+  observedAt: string;
+  events: SubscriptionHistoryEvent[];
+  pagesRead: number;
+  pagination: 'EXHAUSTED' | 'PAGE_LIMIT';
+  nextCursor: string | null;
+  /** Exhaustion concerns only the requested event range, never exact entitlement coverage. */
+  trustedEntitlementIntervals: false;
+}
 export interface SubscriptionHistoryPage {
   sourceApiVersion: typeof PARTNER_API_VERSION;
   appId: string;
@@ -89,7 +103,7 @@ const eventTypes = new Set([
 
 /** One bounded read only. Pagination and source words are observations, not trusted billing history. */
 export function createSubscriptionHistoryClient(config: { transport: PartnerGraphqlTransport; now?: () => Date }) {
-  return {
+  const client = {
     async readPage(input: SubscriptionHistoryPageInput): Promise<SubscriptionHistoryPage> {
       const variables = partnerHistoryVariables(input);
       const observedAt = (config.now ?? (() => new Date()))();
@@ -172,6 +186,44 @@ export function createSubscriptionHistoryClient(config: { transport: PartnerGrap
         pageInfo: { hasNextPage: pageInfo.hasNextPage, endCursor },
         trustedEntitlementIntervals: false,
       };
+    },
+  };
+  return {
+    ...client,
+    /** At most four pages / 1,000 events of one fixed range. No retry or interval inference. */
+    async readRange(input: Omit<SubscriptionHistoryPageInput, 'after'>): Promise<SubscriptionHistoryRange> {
+      const scope = partnerHistoryVariables({ ...input, after: null });
+      if (!scope) return fail('invalid_request');
+      const events: SubscriptionHistoryEvent[] = [];
+      const ids = new Set<string>(),
+        cursors = new Set<string>();
+      let after: string | null = null;
+      for (let pagesRead = 1; pagesRead <= 4; pagesRead++) {
+        const page = await client.readPage({ ...scope, after });
+        for (const event of page.events) {
+          if (ids.has(event.id) || cursors.has(event.cursor)) return fail('malformed_response');
+          ids.add(event.id);
+          cursors.add(event.cursor);
+          events.push(event);
+        }
+        if (!page.pageInfo.hasNextPage || pagesRead === 4) {
+          return {
+            sourceApiVersion: page.sourceApiVersion,
+            appId: page.appId,
+            shopId: page.shopId,
+            from: page.from,
+            through: page.through,
+            observedAt: page.observedAt,
+            events,
+            pagesRead,
+            pagination: page.pageInfo.hasNextPage ? 'PAGE_LIMIT' : 'EXHAUSTED',
+            nextCursor: page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null,
+            trustedEntitlementIntervals: false,
+          };
+        }
+        after = page.pageInfo.endCursor;
+      }
+      return fail('malformed_response');
     },
   };
 }
