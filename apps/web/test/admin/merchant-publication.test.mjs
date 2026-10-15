@@ -69,6 +69,7 @@ async function run(mode) {
   let remoteWrites = 0;
   let eligible = true;
   let preparations = 0;
+  let captures = 0;
   const remote = {
     async read(target) {
       if (target.field === 'public_config') readPublic++;
@@ -110,6 +111,24 @@ async function run(mode) {
         ready: mode !== 'setup-waiting',
         reason: mode === 'setup-waiting' ? 'Publication preparation unavailable' : null,
       };
+    },
+    async capturePublicationPreviews(staff, captured) {
+      captures++;
+      assert.equal(staff, actor);
+      assert.equal(captured.productId, productId);
+      assert.equal(captured.draftVersion, '2');
+      assert.deepEqual(captured.draft, draft());
+      // A separate real transaction must be able to lock the tenant/config while
+      // this hook runs. Capture must not hold the publication command's locks.
+      await core.transactions.run(async (tx) => {
+        await core.tenants.lockActiveAuthorizationScope(tx, {
+          shopId,
+          installationGeneration: actor.installationGeneration,
+        });
+        const row = await core.configs.getConfigForUpdate(tx, shopId, captured.configId);
+        assert.equal(row.draftVersion, captured.draftVersion);
+      });
+      return [];
     },
     publication() {
       return publication;
@@ -157,6 +176,7 @@ async function run(mode) {
       });
       assert.equal(rejected.kind, 'invalid');
       assert.equal(preparations, 0, 'An incomplete default draft cannot consume internal preparation');
+      assert.equal(captures, 0);
       assert.equal(await core.configs.getCurrentPublication(shopId, created.configId), null);
       assert.equal(remoteWrites, 0);
       return;
@@ -178,12 +198,14 @@ async function run(mode) {
     if (mode === 'setup-waiting') {
       assert.equal(published.kind, 'forbidden');
       assert.equal(preparations, 1);
+      assert.equal(captures, 0);
       assert.equal(await core.configs.getCurrentPublication(shopId, created.configId), null);
       assert.equal(remoteWrites, 0);
       return;
     }
     assert.equal(published.kind, 'accepted');
     assert.equal(preparations, 1);
+    assert.equal(captures, 1);
     assert.ok(await core.configs.getRevisionGeometry(shopId, published.revisionId));
     if (mode !== 'pending') {
       const identity = { shopId, configId: created.configId, operationId: published.revisionId };
@@ -235,6 +257,7 @@ async function run(mode) {
     assert.equal(replay.kind, mode === 'pending' ? 'forbidden' : 'accepted');
     assert.equal(remoteWrites, beforeReplayWrites, 'Revoked entitlement replay must not write remotely');
     assert.equal(preparations, 1, 'Immutable-request replay does not repeat preparation');
+    assert.equal(captures, 1, 'Immutable-request replay does not recapture images');
   } finally {
     await core.close();
   }

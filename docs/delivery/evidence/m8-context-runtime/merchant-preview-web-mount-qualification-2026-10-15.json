@@ -1,0 +1,70 @@
+{
+  "classification": "ACTUAL_WEB_PRIVATE_MOUNT_AND_REPRESENTATIVE_CONCURRENT_DECODER_CALLS_PASS",
+  "web": {
+    "uid": 1000,
+    "originalSha256": "2614c450a7d116d47c93f00fb7ae568667dfecf176e8ca2d88ecf8c4820ff72b",
+    "width": 600,
+    "height": 800,
+    "previewBytes": 7516,
+    "previewSha256": "80e751f6f391253e8e0f8f019609551c6cb2d76db8da8a949a5d3ed6758c7fef"
+  },
+  "decoderCalls": 2,
+  "peakConcurrentDecoderCalls": 2,
+  "parentOnlyLimits": {
+    "memory.max": "536870912",
+    "memory.swap.max": "0",
+    "pids.max": "64",
+    "cpu.max": "100000 100000"
+  },
+  "independentChildLimits": {
+    "memoryBytes": 268435456,
+    "swapBytes": 0,
+    "cpuQuotaCores": 1,
+    "tasks": 16,
+    "runtimeSeconds": 10,
+    "relationship": "Sibling transient user units; outside parent cgroup; not aggregate512MiB/CPU1 containment"
+  },
+  "parentMemoryPeakBytes": 33251328,
+  "buyerSimulation": {
+    "kind": "direct host inspection of same representative PNG; no durable buyer row or storage access",
+    "width": 600,
+    "height": 800,
+    "previewSha256": "80e751f6f391253e8e0f8f019609551c6cb2d76db8da8a949a5d3ed6758c7fef"
+  },
+  "databaseWrites": 0,
+  "storageWrites": 0,
+  "persistentServiceChanges": 0,
+  "hostEntrypointDeployed": false,
+  "limits": [
+    "Representative3990byte image only; no worst-case resource or real durable buyer processing acceptance.",
+    "Ephemeral candidate server on existing private mount; deployed ready.sock still readiness-only."
+  ],
+  "allContainerFingerprintsPreserved": true,
+  "containerCount": 34,
+  "candidateModuleHashes": {
+    "health.js": "585c852293f73dac040af11ee40f006d9bfa63e992563f9380b59356753e9d6e",
+    "artwork/inspection-client.js": "a4f7369ea1d66cfb5cd6ea850543fb96ad2ea001d113546b02fccd988179a9b8",
+    "artwork/inspection-transport.js": "f1cd40baaad2464910ec492ef4be2d50b63b67ff837413e744834f7fce478847",
+    "artwork/inspection-wire.js": "fdbefd69f7d3e4fc9f8b45df079eedd447d915411810a948a914b81fe745d050",
+    "artwork/errors.js": "7cdbe521bd512381974433a210f714154a49d71fe73d3f11e8d88fe8d7fb4d7d",
+    "probe.mjs": "7a238141166068d1135dacfc1b9a0a399da70f689011cccfbdfb4d3700368557",
+    "web-client.mjs": "be3f69f9c1321168b7a7a04b885fdf70708d9eae2c2013470bdf697141bf7c79",
+    "source.private.bin": "2614c450a7d116d47c93f00fb7ae568667dfecf176e8ca2d88ecf8c4820ff72b",
+    "package.json": "6dc1b06d6b093e9cccb20bee06a93836eee0420ae26803ca2ce4065d82f070d1"
+  },
+  "privateArtifactsCleanupDue": "2026-10-20T00:00:00Z",
+  "webContainerId": "2a885a4043c770818e26114fea39d619a2ab5a19c869374b337e9d326eb637ef",
+  "webImage": "sha256:3c2d1ba04b2144382c0bae81381b0a54c46f614772f4d8279d40a3dae3e0ffa5",
+  "operatorSha256": "5880937dc657b699791325d974f9c099754d681e522acfc291f4374331a08d7e",
+  "privateJournal": "/home/serveradmin/insignia-m8-pr148-web-inspection-qualification-20261015",
+  "operatorReviews": {
+    "correctness": "preview_transport_correctness CLEAR after corrections",
+    "security": "preview_transport_security CLEAR after corrections",
+    "corrections": [
+      "Assert pinned web ID/image/running/node user and exact existing read-only mount before execution by immutable ID.",
+      "Await both decoder settlements with allSettled before releasing the private handler.",
+      "Keep result provisional until successful process close, unchanged container fingerprints and socket absence.",
+      "State parent-only and independent sibling-child budgets separately; concurrent calls do not prove overlapping CPU or worst-case capacity."
+    ]
+  }
+}
