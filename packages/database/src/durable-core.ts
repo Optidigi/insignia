@@ -222,6 +222,10 @@ export interface DurableCore {
     ): Promise<ManagedInstallationResult>;
     getShop(shopId: string): Promise<ShopRecord | null>;
     getShopByDomain(shopDomain: string): Promise<ShopRecord | null>;
+    getUsageInstallationWindow(input: {
+      shopId: string;
+      installationGeneration: string;
+    }): ReturnType<ReturnType<typeof createTenantRepository>['getUsageInstallationWindow']>;
     getCurrentAdminInstallation(shopId: string): Promise<{
       generation: string;
       externalInstallationId: string | null;
@@ -667,6 +671,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       ensureManagedInstallation: (handle, input) => tenants.ensureManagedInstallation(resolve(handle), input),
       getShop: (shopId) => tenants.getShop(shopId),
       getShopByDomain: (shopDomain) => tenants.getShopByDomain(shopDomain),
+      getUsageInstallationWindow: (input) => tenants.getUsageInstallationWindow(input),
       getCurrentAdminInstallation: (shopId) => tenants.getCurrentAdminInstallation(shopId),
       getActiveAuthorizationScope: (input) => tenants.getActiveAuthorizationScope(input),
       lockActiveAuthorizationScope: (handle, input) =>

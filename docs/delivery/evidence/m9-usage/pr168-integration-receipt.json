@@ -1,0 +1,55 @@
+{
+  "pullRequest": "https://github.com/Optidigi/insignia/pull/168",
+  "classification": "VERIFIED_NORMAL_PROTECTED_MERGE",
+  "base": "f26e49f6094957e276b1ed2f2a4fbd897edf90be",
+  "head": "0b3abbb7ca72a0b4caf0cba72f9d54a08e859f8d",
+  "effectiveMergeBase": "f26e49f6094957e276b1ed2f2a4fbd897edf90be",
+  "merge": "815736bba5c404e86279bda5b21a2a506a9d758c",
+  "tree": "e70d92ed4dbce9754a0b49b5ddb1762cec23ea9e",
+  "parents": [
+    "f26e49f6094957e276b1ed2f2a4fbd897edf90be",
+    "0b3abbb7ca72a0b4caf0cba72f9d54a08e859f8d"
+  ],
+  "checks": [
+    {
+      "name": "foundation",
+      "run": 38766683207,
+      "attempt": 1,
+      "result": "SUCCESS",
+      "route": "full"
+    },
+    {
+      "name": "durable-core",
+      "run": 38766683114,
+      "attempt": 1,
+      "result": "SUCCESS",
+      "route": "full"
+    },
+    {
+      "name": "runtime",
+      "run": 38766683196,
+      "attempt": 1,
+      "result": "SUCCESS",
+      "route": "full"
+    }
+  ],
+  "actualPostgreSQL": {
+    "deliveryIntentPass": 7,
+    "databasePass": 307,
+    "skip": 5,
+    "restrictedLoginPass": 1
+  },
+  "reviewedSourcesUnchanged": true,
+  "composeRendersPassedMs": [
+    549.937119,
+    4398.400981
+  ],
+  "preservedFailedRuns": [
+    38765219231,
+    38765219515
+  ],
+  "failureResolution": "Guaranteed decoded signature-byte alteration corrects probabilistic test. Unchanged Compose render controls passed in new candidate without timeouts/assertions being weakened.",
+  "nativeEffectsDuringMerge": 0,
+  "billingDispatchEnabled": false,
+  "nativeSchemaVersionUnchanged": 34
+}
