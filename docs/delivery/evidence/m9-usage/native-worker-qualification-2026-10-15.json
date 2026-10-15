@@ -1,0 +1,52 @@
+{
+  "classification": "RESOLVED_IMAGE_TRANSIENT_ACTUAL_WORKER_ROLE_QUALIFICATION_RESTART_PASS",
+  "observedAt": "2026-10-15T17:34:18.344636+00:00",
+  "source": "ccead225bee4e5cdb5aef76b7e2d6245cfd7e762",
+  "tree": "1ceb9b26c57b169840abbc45c2b762146efbb6d7",
+  "image": "sha256:f0b03f0d9e3d8e0a417779f057295bd0df95b3f892d31b9a50ee08def38b85f1",
+  "ciConfigDigest": "sha256:734709b71a1133733ddf8dfb0fe53569c5c4f568560c5654399f11af2fbf8034",
+  "imageLoadInvocationsThisResume": 0,
+  "originalImportInvocations": 1,
+  "mutationRetries": 0,
+  "originalFailureAndJournalPreserved": true,
+  "targetPurchase": "61065563-ab4b-4261-9fe6-0ad5a3d8b58e",
+  "summaries": [
+    {
+      "processed": 3,
+      "staged": 0,
+      "held": 3,
+      "failed": 0
+    },
+    {
+      "processed": 0,
+      "staged": 0,
+      "held": 0,
+      "failed": 0
+    }
+  ],
+  "ledgerStableAcrossRestart": true,
+  "deliveryIntentRows": 0,
+  "billingDispatchEnabled": false,
+  "all34ContainerConfigurationsPreserved": true,
+  "immutableFactHashesPreserved": true,
+  "ownEphemeralContainerRemoved": true,
+  "ordinaryWorkerTimerQualified": false,
+  "limits": [
+    "Transient factory/runOnce only; no ordinary main/timer/deployment acceptance.",
+    "No provider or storage credentials supplied; no meter or commercial binding.",
+    "Image/archive/private journals retained for20October cleanup."
+  ],
+  "operatorSha256": "414fe8a30ee134b8ba704727b269bc997acb55b0759c1582b41ff790ccfb136f",
+  "independentReview": {
+    "agent": "/root/m9_native_operation_review",
+    "axes": [
+      "Spec/correctness",
+      "Standards/security"
+    ],
+    "result": "CLEAR before execution",
+    "correctedGuard": "Internal network preference strengthened to mandatory Internal=true; then OCI identity/import settlement correction reviewed without reloading.",
+    "isolation": "Read-only/no-network/no-credential review instructions; no enforced connector/network credential isolation claimed."
+  },
+  "privateJournal": "/home/serveradmin/insignia-m9-actual-worker-20261015-resolved-image",
+  "privateArtifactsCleanupDue": "2026-10-20; preserve unresolved phases and active dependencies"
+}

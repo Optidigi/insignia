@@ -1,0 +1,46 @@
+{
+  "pullRequest": "https://github.com/Optidigi/insignia/pull/171",
+  "classification": "VERIFIED_NORMAL_PROTECTED_MERGE",
+  "base": "7cdc1f9159f04cc03dd5a7195cc08a3df39de5a9",
+  "head": "4cc5d8fd96429e5fabea83b8c8a21969c30bec00",
+  "effectiveMergeBase": "7cdc1f9159f04cc03dd5a7195cc08a3df39de5a9",
+  "merge": "ccead225bee4e5cdb5aef76b7e2d6245cfd7e762",
+  "tree": "1ceb9b26c57b169840abbc45c2b762146efbb6d7",
+  "parents": [
+    "7cdc1f9159f04cc03dd5a7195cc08a3df39de5a9",
+    "4cc5d8fd96429e5fabea83b8c8a21969c30bec00"
+  ],
+  "checks": [
+    {
+      "name": "foundation",
+      "run": 38775019228,
+      "attempt": 1,
+      "result": "SUCCESS",
+      "route": "full"
+    },
+    {
+      "name": "durable-core",
+      "run": 38775019241,
+      "attempt": 1,
+      "result": "SUCCESS",
+      "route": "full"
+    },
+    {
+      "name": "runtime",
+      "run": 38775019211,
+      "attempt": 1,
+      "result": "SUCCESS",
+      "route": "full"
+    }
+  ],
+  "actualPostgreSQL": {
+    "databasePass": 310,
+    "skip": 5,
+    "restrictedLoginPass": 1,
+    "qualificationOnlyGrantAndReconnect": "PASS"
+  },
+  "reviewedHashesMatch": true,
+  "preservedFailedRun": 38774276553,
+  "protection": "All3 checks app15368/admin protections honored; no bypass",
+  "billingDispatchEnabled": false
+}
