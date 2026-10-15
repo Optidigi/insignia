@@ -2,6 +2,8 @@ import { chmod, lstat, realpath } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { dirname, isAbsolute } from 'node:path';
 import type { Observability } from '@insignia/observability';
+import type { inspectArtwork } from './artwork/inspection.js';
+import { createPrivateInspectionHandler } from './artwork/inspection-transport.js';
 
 /** Binds only loopback; network-facing metrics authorization belongs to deployment. */
 export function createWorkerHealthServer(input: {
@@ -9,6 +11,7 @@ export function createWorkerHealthServer(input: {
   isDurableReady: () => boolean;
   probeDurableReady?: () => Promise<boolean>;
   artworkReadiness?: () => { ready: boolean };
+  inspectMerchantPreview?: typeof inspectArtwork;
 }) {
   const server = createServer((request, response) => {
     response.setHeader('cache-control', 'no-store');
@@ -47,18 +50,26 @@ export function createWorkerHealthServer(input: {
     response.writeHead(404).end();
   });
 
-  // Only inspection readiness crosses the private mounted socket. Metrics and
+  const inspection = createPrivateInspectionHandler({
+    inspect: input.inspectMerchantPreview,
+    ready: () => input.artworkReadiness?.().ready === true,
+  });
+  // Only inspection readiness and bounded image bytes cross the private mounted socket. Metrics and
   // generic worker health remain on the existing loopback listener.
   const artworkServer = createServer((request, response) => {
     response.setHeader('cache-control', 'no-store');
     if (request.method !== 'GET' || request.url !== '/artwork-ready') {
-      response.writeHead(404).end();
+      inspection.handle(request, response);
       return;
     }
     const artwork = input.artworkReadiness?.() ?? { ready: false };
     response.writeHead(artwork.ready ? 200 : 503, { 'content-type': 'application/json' });
     response.end(JSON.stringify(artwork));
   });
+  artworkServer.maxConnections = 8;
+  artworkServer.headersTimeout = 3000;
+  artworkServer.requestTimeout = 12_000;
+  artworkServer.setTimeout(12_000, (socket) => socket.destroy());
   return {
     async listenArtworkSocket(socketPath: string): Promise<void> {
       if (!isAbsolute(socketPath)) throw new Error('Private artwork socket required');
@@ -106,6 +117,7 @@ export function createWorkerHealthServer(input: {
       return `http://127.0.0.1:${address.port}`;
     },
     async close(): Promise<void> {
+      await inspection.stop();
       for (const listener of [server, artworkServer]) {
         if (listener.listening)
           await new Promise<void>((resolve, reject) => listener.close((error) => (error ? reject(error) : resolve())));

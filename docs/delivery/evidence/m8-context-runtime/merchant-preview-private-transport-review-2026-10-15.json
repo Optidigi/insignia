@@ -1,0 +1,63 @@
+{
+  "classification": "PRIVATE_MERCHANT_PREVIEW_INSPECTION_TRANSPORT_REVIEWED_NATIVE_STAGED_PASS_FINAL_CI_PENDING",
+  "base": "cf4da9bb8e5c04ada810e6c1b6d8e5177b797eae",
+  "sourceHashes": {
+    "apps/worker/src/artwork/inspection-client.ts": "20e45bb34976dff58bfa898cf9bbad072a9ee161c9c423a13ca072b5d866bc95",
+    "apps/worker/src/artwork/inspection-transport.ts": "828b91ff2b3a6ff0065d92d04b80f034357584e9d18cbfb442917a93a4adc7ce",
+    "apps/worker/src/artwork/inspection-wire.ts": "6e07b58d772f2ce01a761e682a2f434d9ebff48f120ce41b6fc47762677c20a4",
+    "apps/worker/src/health.ts": "45db402144e0c585131452cb9e6f761fb50334932dbe64a50faebdd8255abcc9",
+    "apps/worker/src/artwork-process.ts": "a73d1ee94d8be9b35c4702809a86d7e601bb0aea00aaaebbf4915b75dba8c852",
+    "apps/worker/src/artwork-main.ts": "92a9d3d22f7278c16ec078c7946ed3976ee9a8663a2d97ab1908ce061f3808ae",
+    "apps/worker/src/runtime.ts": "bb97ceffa7fd50a81b58d2fb1b3ad944c97e1936da1488140d7e5bbe26385453",
+    "apps/worker/test/merchant-preview-transport.test.mjs": "dcc1beef90516acf59c7b9102afe66fceef99654636caff80f94bbe5a70f25e7"
+  },
+  "behavior": [
+    "Only private owner-controlled Unix socket accepts POST merchant-preview-inspect with length-framed raw image bytes; no URL, object key, tenant authority, credential or public route. Existing readiness/loopback metrics separation preserved.",
+    "5MiB input, 2MiB preview, 3MiB wire response, finite server/client deadlines and one private decoder slot. Source buffer captured before asynchronous access; result hash, format, dimensions and PNG checked against those bytes.",
+    "Disconnect/deadline aborts the isolated decoder, but its slot is never released until settlement. No retry, fallback, durable write or storage mutation. Shutdown waits for active decoder settlement.",
+    "Dedicated host entrypoint wires existing inspectArtwork; running deployed host has not been updated. Public server-side worker API exports inspectArtworkPrivately for future publication composition."
+  ],
+  "tdd": {
+    "red": "Real Unix POST returned404 instead of200 before transport implementation; preserved initial failure.",
+    "tests": "Seven actual Unix transport cases PASS: source buffer capture, private access/TCP rejection, readiness/framing bounds, single-flight cancellation/stop, malformed/error classification, hostile peer responses and actual12second deadline custody. Decoder boundary is an explicit double in local transport tests.",
+    "testCorrection": "Independent reviewer caught false-readiness test whose throwing decoder could also yield503 without admission. Corrected to valid decoder plus zero-call assertion; focused test passes.",
+    "build": "Worker TypeScript and web Astro/build PASS; zero web diagnostics. Boundary/database-API/domain-effects/secret checks PASS. Changed-file style PASS with one inherited non-null warning in runtime.ts.",
+    "workerRegression": {
+      "tests": 91,
+      "passed": 69,
+      "skipped": 22,
+      "failed": 0,
+      "limit": "Environment-dependent database/queue cases skipped locally; final CI required. Seven new transport cases all executed."
+    }
+  },
+  "reviews": [
+    {
+      "reviewer": "preview_transport_correctness",
+      "axis": "Spec/correctness",
+      "result": "CLEAR_AFTER_TEST_CORRECTION",
+      "sourceHashesUnchanged": true,
+      "finalTestSha256": "dcc1beef90516acf59c7b9102afe66fceef99654636caff80f94bbe5a70f25e7"
+    },
+    {
+      "reviewer": "preview_transport_security",
+      "axis": "Standards/security",
+      "result": "CLEAR",
+      "sourceHashesUnchanged": true,
+      "finalTestSha256": "dcc1beef90516acf59c7b9102afe66fceef99654636caff80f94bbe5a70f25e7",
+      "testExecution": "Seven transport tests PASS"
+    }
+  ],
+  "native": {
+    "receipt": "merchant-preview-private-transport-native-2026-10-15.json",
+    "result": "One staged exact compiled candidate Unix client/server call to the existing isolated decoder: PNG3990bytes\u2192600x800 PNG7516bytes; expected source/preview hashes; all34 container id/image/status fingerprints preserved.",
+    "effects": "No DB or object-storage writes, no persistent service changes. One transient bounded sandbox job; private staged source/code/journal only.",
+    "preDispatchFailure": "First staging attempt failed on absent remote directory parent before any staging or inspection; corrected to task-owned neutral path. Actual inspection invoked once."
+  },
+  "limits": [
+    "Socket authority is same-UID/root filesystem control, not per-process identity. Actual web-container UID/mount access remains unqualified.",
+    "Combined existing buyer inspection plus one private RPC resource usage must be qualified before deployment; no larger cgroup budget is authorized by this code.",
+    "No host entrypoint/service deployment, migration33, runtime grants, publication capture, asset storage or buyer/purchase preview composition in this slice.",
+    "Existing opaque transport errors cannot prove durable capture; publication integration must retain current tenant/generation and exact revision fences. Old historical previews remain unavailable."
+  ],
+  "cleanup": "Private staged source/probe/code journals join20October obligation; prior failed asset16October, original21/22October and rotation/gateway/fixture obligations remain open."
+}

@@ -1,4 +1,5 @@
 import type { Observability } from '@insignia/observability';
+import type { inspectArtwork } from './artwork/inspection.js';
 import type { createArtworkRunner } from './artwork-runner.js';
 import { createWorkerHealthServer } from './health.js';
 
@@ -8,12 +9,14 @@ export async function startArtworkInspectionProcess(input: {
   socketPath: string;
   observability: Observability;
   cleanup(): Promise<unknown>;
+  inspectMerchantPreview?: typeof inspectArtwork;
 }) {
   let stopping = false;
   let maintenance: Promise<void> | undefined;
   const server = createWorkerHealthServer({
     observability: input.observability,
     isDurableReady: () => false,
+    inspectMerchantPreview: input.inspectMerchantPreview,
     artworkReadiness: () => ({ ready: !stopping && input.runner.ready }),
   });
   const cleanup = (): Promise<void> => {

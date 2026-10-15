@@ -1,3 +1,5 @@
+export { inspectArtworkPrivately } from './artwork/inspection-client.js';
+
 import { randomUUID } from 'node:crypto';
 import type { DurableCore, WebhookQueueHandoffOutcome, WebhookQueueHandoffState } from '@insignia/database';
 import { createObservability, type Observability } from '@insignia/observability';
