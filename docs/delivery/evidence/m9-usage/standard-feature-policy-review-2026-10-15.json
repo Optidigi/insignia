@@ -1,0 +1,57 @@
+{
+  "classification": "SCOPED_STANDARD_FEATURE_POLICY_CANDIDATE_OFFLINE_CLEAR_NOT_DEPLOYED",
+  "config": "deployment/m8-journey/standard-entitlement-policy-candidate.json",
+  "purpose": "Preserve old fixture recognition and add exact rewrite-dev Standard current feature recognition before any future subscription selection.",
+  "productionSourceChanged": false,
+  "policyVersion": "m9-private-standard-feature-policy-v1",
+  "historicalEntry": "Verbatim preserved from deployment/m5-runtime/entitlement-policy.json and matches observed native policy values.",
+  "newEntry": {
+    "planHandle": "insignia-standard-20261015",
+    "policyId": "m9-standard-all-features-v1",
+    "shopId": "gid://shopify/Shop/105501393179",
+    "usageHandle": "customized_order_paid",
+    "includedUsage": 100,
+    "featureSet": "Same five existing features; no unallocated capability."
+  },
+  "tests": {
+    "meaningfulRed": "Old copied candidate denies Standard trial instead of WAIVE_TRIAL/features.",
+    "candidatePass": 3,
+    "providerPolicyAndCandidatePass": 15,
+    "quoteAndCompositionRegressionPass": 34,
+    "buyerBootstrapPass": 9,
+    "typecheck": "PASS",
+    "style": "PASS after formatter correction",
+    "syntheticLimit": "Future Standard paid/trial shapes are synthetic. No actual Standard subscription/trial/financial history is asserted.",
+    "fixtureProvenanceCorrection": "Existing guard rejected initial actual app ID in synthetic test. Replaced only app identity with synthetic App/123; no guard/exception changes. Candidate3 and secret provenance220source/181fixtures/22browser PASS."
+  },
+  "review": {
+    "agent": "/root/m9_native_operation_review",
+    "axes": [
+      "Spec/correctness",
+      "Standards/security"
+    ],
+    "result": "CLEAR",
+    "sha256": {
+      "deployment/m8-journey/standard-entitlement-policy-candidate.json": "28ff852b1224ce44cd220e6f3f4514899d7f0a139373c6eb8ba4c11548621182",
+      "packages/application/test/standard-entitlement-policy.test.ts": "98ca8b967142c63e0b6296ecf7ddd179ce0ddb5029ec59fecd28d7010feee93f"
+    },
+    "isolation": "Read-only/no-network/no-credentials instructions, no enforced isolation claimed.",
+    "impactCorrection": {
+      "scope": "Synthetic test app identity only, candidate unchanged.",
+      "testSha256": "fe93f147e8a6550426ddae3ce84adcf8936ff9bcb6f4a16627f8dd7c1f506638",
+      "result": "CLEAR",
+      "agent": "/root/m9_native_operation_review"
+    }
+  },
+  "integration": {
+    "finalCandidateCI": "PENDING",
+    "nativePolicyUnchanged": true,
+    "deploymentPrerequisite": "Same-image web recreation changes one env variable, preserves all other33 containers/inspector. Existing frozen verifier pins exact web ID; independently qualify quiescence/rebind and fresh correlated collection/SELECT.",
+    "catalogVersion": "New quote metadata uses new version after activation; accepted historical quote records remain unchanged. Existing acceptance rejects entitlement drift within acceptance."
+  },
+  "billingLimits": [
+    "Feature recognition only, not price validation/historical entitlement/financial meter binding/token/window or dispatch authority.",
+    "Worker financial binding/transport remains absent; no sender/runtime flag enabled.",
+    "No plan selection, provider mutation, credential/role/schema change or native deployment."
+  ]
+}
