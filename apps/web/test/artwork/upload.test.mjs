@@ -241,3 +241,86 @@ test('cancelling a pending resume prevents stale status from obtaining or exposi
   await assert.rejects(resumed, { name: 'AbortError' });
   assert.equal(previews, 0);
 });
+
+test('merchant upload and pending completion cross the HTTPS proxy origin gate without relaxing authentication or CSRF', async () => {
+  const { createRequire } = await import('node:module');
+  const { dirname, join } = await import('node:path');
+  const { pathToFileURL } = await import('node:url');
+  const { isForbiddenCrossOriginRequest } = await import(
+    pathToFileURL(
+      join(dirname(createRequire(import.meta.url).resolve('astro/package.json')), 'dist/core/app/origin-check.js'),
+    )
+  );
+  const { handleArtworkRequest } = await import('../../src/server/artwork/http.ts');
+  const id = '00000000-0000-4000-8000-000000000001';
+  const actor = {
+    shop: 'alpha.myshopify.com',
+    shopId: 'gid://shopify/Shop/1',
+    installationId: 'i',
+    tenantShopId: 'tenant-1',
+    installationGeneration: '4',
+    staffId: 's',
+    sessionId: 'ss',
+    expiresAtMs: Date.now() + 60000,
+    canRead: true,
+    canEdit: true,
+    canReadArtwork: true,
+    canUploadArtwork: true,
+  };
+  let completionHeaders,
+    completed = 0,
+    uploading = true;
+  const services = {
+    appOrigin: 'https://app.example.test',
+    authenticate: async () => actor,
+    artwork: {
+      complete: async () => {
+        completed++;
+        uploading = false;
+        return { state: 'QUEUED' };
+      },
+    },
+  };
+  const complete = async (headers, origin = services.appOrigin, authenticated = true) => {
+    const request = new Request(`http://app.example.test/api/artwork/${id}/complete`, {
+      method: 'POST',
+      headers: {
+        ...Object.fromEntries(new Headers(headers)),
+        Origin: origin,
+        ...(authenticated ? { Authorization: 'Bearer synthetic' } : {}),
+      },
+    });
+    assert.equal(await request.clone().text(), '');
+    if (isForbiddenCrossOriginRequest(request, new URL(request.url), false)) return new Response(null, { status: 403 });
+    return handleArtworkRequest(request, services, { kind: 'complete', audience: 'merchant', assetId: id });
+  };
+  const flow = createArtworkUpload({
+    api: async (path, init) => {
+      if (path === '/api/artwork')
+        return {
+          assetId: id,
+          upload: { url: 'https://private.example/quarantine', headers: {} },
+          expiresAt: '2099-01-01T00:00:00Z',
+        };
+      if (path.endsWith('/complete')) {
+        completionHeaders = init.headers;
+        const response = await complete(init.headers);
+        assert.equal(response.status, 202, 'empty JSON completion must reach the authenticated handler behind HTTPS');
+        return response.json();
+      }
+      if (path.endsWith('/status'))
+        return { state: uploading ? 'UPLOADING' : 'USABLE', expiresAt: '2099-01-01T00:00:00Z' };
+      return { url: 'https://private.example/preview.png', width: 20, height: 10, expiresAt: '2099-01-01T00:00:00Z' };
+    },
+    put: async () => new Response(null, { status: 200 }),
+    pause: async () => {},
+  });
+  await flow.upload(new File(['<svg/>'], 'logo.svg', { type: 'image/svg+xml' }), () => {});
+  assert.equal(completed, 1);
+  uploading = true;
+  await flow.resume({ assetId: id, assetExpiresAt: '2099-01-01T00:00:00Z' }, () => {});
+  assert.equal(completed, 2);
+  assert.equal((await complete(completionHeaders, 'https://foreign.example')).status, 403);
+  assert.equal((await complete(completionHeaders, services.appOrigin, false)).status, 401);
+  assert.equal(completed, 2, 'denied callers cannot complete an upload');
+});
