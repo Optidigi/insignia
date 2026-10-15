@@ -1,0 +1,24 @@
+{
+  "versionId": "1168157736961",
+  "versionTag": "m8-preview-28443bd",
+  "versionIds": [
+    "1168157736961",
+    "1166710865921",
+    "1166552825857",
+    "1166090010625",
+    "1165513097217",
+    "1163229200385",
+    "1162611916801",
+    "1158986629121",
+    "1158837927937",
+    "1153019904001",
+    "1152880803841",
+    "1146748534785"
+  ],
+  "moduleHash": "36f66b7710f17b1f03d274ea0ecb38ce68b0c6c4fdc94c6868a7fe070c1c0948",
+  "nativeObservation": "EXACT_INACTIVE_THEME_CANDIDATE_READ_PASS",
+  "observedAt": "2026-10-15T09:54:17.285Z",
+  "themeRegistrationId": "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97",
+  "themeRegistrationUuid": "01a13996-ce86-7b3c-9bac-1f2605986f7f",
+  "note": "Exact independently read inactive preview/upload-corrected theme candidate. Release/fresh evidence/native journey remain separate."
+}

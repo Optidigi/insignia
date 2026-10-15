@@ -39,6 +39,41 @@ test('observed native origin binds only the closed release profile and validated
   for (const appClientId of ['', 'bad client', 'x'.repeat(129)]) assert.equal(resolve({ appClientId }), null);
 });
 
+test('preview-only version transition keeps qualified origin but still requires independent release evidence', async () => {
+  const releaseProfile = 'm8-preview-28443bd';
+  const qualification = resolve({ releaseProfile });
+  assert.equal(qualification.activeVersionRef, '1168157736961');
+  assert.deepEqual(qualification.origin, resolve().origin);
+  const port = admission.createProductionPurchaseAdmission({
+    core: {
+      tenants: {
+        getActiveProviderScope: async (scope) => ({
+          ...scope,
+          shopDomain: 'synthetic.myshopify.com',
+          shopifyShopId: '101',
+        }),
+      },
+      trustedReleaseRecords: { read: async () => null },
+    },
+    credentials: untouched,
+    qualification,
+    releaseProfile,
+    clock: () => now,
+  });
+  assert.ok(port);
+  const order = {
+    ...qualification.origin,
+    createdAt: qualification.origin.supportedFrom,
+    observedAt: now.toISOString(),
+    checkoutOrigin: {
+      creatorAppId: qualification.origin.creatorAppId,
+      sourceName: 'web',
+      checkoutTokenDigest: 'a'.repeat(64),
+    },
+  };
+  assert.equal(await port.admit({ order }), null);
+});
+
 test('native origin qualification never supplies missing independent release authority', async () => {
   const qualification = resolve();
   const reads = [];

@@ -19,6 +19,7 @@ export function parseReleaseVerificationRequest(
       'm8-app-proxy-3d2a02e',
       'm8-theme-c8d8713',
       'm8-cookie-91b35ab',
+      'm8-preview-28443bd',
     ]
       .map((name) => resolveRuntimeReleaseProfile(name).activeVersionRef)
       .includes(expectedVersion),
