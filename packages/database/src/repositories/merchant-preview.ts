@@ -87,6 +87,19 @@ export function createMerchantPreviewRepository(pool: Pool): MerchantPreviewStor
     });
   }
   return {
+    async getForRevision(scope, target) {
+      const result = await pool.query<Row>(
+        `SELECT a.* FROM merchant_preview_assets a
+         JOIN config_revision_preview_assets r ON r.asset_id=a.asset_id
+           AND r.shop_id=a.shop_id AND r.installation_generation=a.installation_generation
+           AND r.product_id=a.product_id AND r.image_revision_id=a.image_revision_id
+         WHERE r.shop_id=$1 AND r.installation_generation=$2 AND r.product_id=$3 AND r.revision_id=$4
+           AND a.state='USABLE' AND ${active}
+         ORDER BY a.image_revision_id`,
+        [scope.shopId, scope.installationGeneration, target.productId, target.revisionId],
+      );
+      return result.rows.map(map);
+    },
     async get(scope, id) {
       return locked(
         id,

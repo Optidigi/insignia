@@ -20,8 +20,10 @@ import {
 import { type BuyerDesired, type BuyerDesiredGroup, BuyerDesiredSchema } from '@insignia/contracts';
 import { type BuyerScope, BuyerStateError, type DurableCore, sha256CanonicalJson } from '@insignia/database';
 import { normalizeCustomizationGroups } from '@insignia/domain';
-import { type GeometryV1, validateGeometry } from '@insignia/visualizer/geometry';
+import type { GeometryV1 } from '@insignia/visualizer/geometry';
 import type { createArtworkGuestAuthority } from '../artwork/guest.ts';
+import { buyerGeometry } from '../merchant-preview/geometry.ts';
+import type { FrozenPreviewReader } from '../merchant-preview/read.ts';
 
 type GuestAuthority = ReturnType<typeof createArtworkGuestAuthority>;
 type Bucket = { variantId: string; quantity: number; properties: Record<string, string> };
@@ -63,29 +65,6 @@ function vectorHash(vector: readonly Bucket[]): string {
     ),
   );
 }
-/** Editor selector names are local to geometry; cart/order variant IDs stay numeric. */
-function buyerGeometry(value: GeometryV1): GeometryV1 {
-  const geometry = validateGeometry(value);
-  const variant = (id: string) => /^variant_([1-9][0-9]{0,19})$/.exec(id)?.[1] ?? id;
-  return validateGeometry({
-    ...geometry,
-    views: geometry.views.map((view) => ({
-      ...view,
-      variantImages: view.variantImages.map((item) => ({ ...item, variantId: variant(item.variantId) })),
-      placements: view.placements.map((placement) => ({
-        ...placement,
-        ...(placement.variantOverrides
-          ? {
-              variantOverrides: placement.variantOverrides.map((item) => ({
-                ...item,
-                variantId: variant(item.variantId),
-              })),
-            }
-          : {}),
-      })),
-    })),
-  });
-}
 /** Server authority is injected once; client amounts, shop IDs and resource keys are never accepted. */
 export function createBuyerServices(input: {
   core: DurableCore;
@@ -99,6 +78,7 @@ export function createBuyerServices(input: {
     variants: { id: string; label: string; available: boolean }[];
     imageUrls: Record<string, string>;
   }>;
+  previewImages?: FrozenPreviewReader;
   configurationReady(scope: { shopId: string; installationGeneration: string }, productId: string): Promise<void>;
   clock?: () => Date;
 }) {
@@ -230,7 +210,9 @@ export function createBuyerServices(input: {
         })),
         variants: catalog.variants,
         geometry,
-        imageUrls: catalog.imageUrls,
+        imageUrls: input.previewImages
+          ? await input.previewImages(scope, { productId: scope.productId, revisionId: config.revisionId, geometry })
+          : catalog.imageUrls,
         ready: true,
       };
     },

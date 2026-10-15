@@ -163,6 +163,22 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('merchant-owned preview lifecy
     expect(refs.rows).toEqual([{ asset_id: f.row.assetId, image_revision_id: 'product_42' }]);
     expect(await store.markDeleting(f.row.assetId, later)).toBeNull();
   });
+  it('reads only usable exact immutable revision bindings for the active shop, generation and product', async () => {
+    const f = await fixture();
+    await usable(f);
+    const revision = await bind(f);
+    const target = { productId: '42', revisionId: revision.revisionId };
+    expect((await store.getForRevision(f.scope, target)).map((r) => r.assetId)).toEqual([f.row.assetId]);
+    expect(await store.getForRevision({ ...f.scope, shopId: randomUUID() }, target)).toEqual([]);
+    expect(await store.getForRevision({ ...f.scope, installationGeneration: '2' }, target)).toEqual([]);
+    expect(await store.getForRevision(f.scope, { ...target, productId: '99' })).toEqual([]);
+    expect(await store.getForRevision(f.scope, { ...target, revisionId: randomUUID() })).toEqual([]);
+    const unbound = await fixture();
+    await usable(unbound);
+    expect(await store.getForRevision(unbound.scope, target)).toEqual([]);
+    await pool.query('UPDATE installation_generations SET deactivated_at=$2 WHERE shop_id=$1', [f.scope.shopId, now]);
+    expect(await store.getForRevision(f.scope, target)).toEqual([]);
+  });
   it('rejects direct SQL inactive capture/settlement, manufactured state and malformed manifests/timestamps', async () => {
     const f = await fixture();
     async function insert(

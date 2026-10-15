@@ -1,0 +1,34 @@
+{
+  "classification": "VERIFIED_NORMAL_MERGE",
+  "pullRequest": "https://github.com/Optidigi/insignia/pull/150",
+  "base": "c604e4ed739bba174150fff8836f6bef9b48204f",
+  "head": "b7fe4de5695be6f1831313c48a2b66f4848280b9",
+  "effectiveMergeBase": "c604e4ed739bba174150fff8836f6bef9b48204f",
+  "merge": "03580f615b61fbb4734e85462eba91d22b64f8ce",
+  "tree": "b3f0f6216646faf02a835e814c646c50bac1f40d",
+  "mergeParents": [
+    "c604e4ed739bba174150fff8836f6bef9b48204f",
+    "b7fe4de5695be6f1831313c48a2b66f4848280b9"
+  ],
+  "checks": [
+    {
+      "run": 38680749638,
+      "attempt": 1,
+      "headSha": "b7fe4de5695be6f1831313c48a2b66f4848280b9",
+      "conclusion": "success"
+    },
+    {
+      "run": 38680749744,
+      "attempt": 1,
+      "headSha": "b7fe4de5695be6f1831313c48a2b66f4848280b9",
+      "conclusion": "success"
+    },
+    {
+      "run": 38680749634,
+      "attempt": 1,
+      "headSha": "b7fe4de5695be6f1831313c48a2b66f4848280b9",
+      "conclusion": "success"
+    }
+  ],
+  "scope": "Evidence/current work index only; prior qualified schema34 and inspector runtime effects retained with limits."
+}

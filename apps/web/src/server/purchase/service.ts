@@ -8,8 +8,10 @@ import {
 import { currencyExponent } from '@insignia/cart-authorization';
 import { MerchantPresentationSchema, type PurchaseView, PurchaseViewSchema } from '@insignia/contracts';
 import type { DurableCore, PurchaseRecord, PurchaseScope } from '@insignia/database';
-import { validateGeometry } from '@insignia/visualizer/geometry';
+import type { GeometryV1 } from '@insignia/visualizer/geometry';
 import type { AdminActor } from '../admin/contracts.js';
+import { buyerGeometry } from '../merchant-preview/geometry.ts';
+import type { FrozenPreviewReader } from '../merchant-preview/read.ts';
 
 const record = (value: unknown): Record<string, unknown> =>
   value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
@@ -24,6 +26,7 @@ export function createPurchaseServices(input: {
   appOrigin: string;
   authenticate(request: Request): Promise<AdminActor | null>;
   storage?: Pick<ArtworkStorage, 'presignRead'>;
+  previewImages?: FrozenPreviewReader;
   clock?: () => Date;
 }) {
   const now = input.clock ?? (() => new Date());
@@ -39,7 +42,7 @@ export function createPurchaseServices(input: {
         const revision = binding.designPayload.revisions.find((r) => r.revisionId === selected.configRevisionId);
         let geometry: unknown | null = revision ? value(revision.geometry) : null;
         try {
-          if (geometry) validateGeometry(geometry as Parameters<typeof validateGeometry>[0]);
+          if (geometry) geometry = buyerGeometry(geometry as GeometryV1);
         } catch {
           geometry = null;
         }
@@ -87,7 +90,15 @@ export function createPurchaseServices(input: {
           placements,
           geometry,
           presentation: presentation.success ? presentation.data : null,
-          imageUrls: {},
+          imageUrls:
+            geometry && input.previewImages
+              ? await input.previewImages(scope(actor), {
+                  productId: selected.productId,
+                  revisionId: selected.configRevisionId,
+                  geometry: geometry as GeometryV1,
+                  retainUntil: new Date(binding.payloadExpiresAt),
+                })
+              : {},
           payloadExpiresAt: binding.payloadExpiresAt,
         });
       }
