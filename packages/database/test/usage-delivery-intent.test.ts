@@ -5,6 +5,7 @@ import type { PaidOrderUsageHistory } from '@insignia/domain';
 import { sql } from 'kysely';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createPurchaseRepository } from '../src/repositories/purchase.js';
+import { createUsageDeliveryAttemptRepository } from '../src/repositories/usage-delivery-attempt.js';
 import {
   createUsageDeliveryIntentRepository,
   type UsageDeliveryPreparation,
@@ -247,7 +248,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('permanent local billing deliv
       sql`UPDATE m9_usage_delivery_intents SET idempotency_key=gen_random_uuid() WHERE purchase_id=${f.purchaseId}::uuid`,
       sql`UPDATE m9_usage_delivery_intents SET occurred_at=occurred_at+interval '1 second' WHERE purchase_id=${f.purchaseId}::uuid`,
       sql`DELETE FROM m9_usage_delivery_intents WHERE purchase_id=${f.purchaseId}::uuid`,
-      sql`TRUNCATE m9_usage_delivery_intents`,
+      sql`TRUNCATE m9_usage_delivery_intents,m9_usage_delivery_attempts`,
     ])
       await expect(query.execute(db)).rejects.toMatchObject({ code: '23514' });
     const source = await fixture('TEST');
@@ -288,5 +289,175 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('permanent local billing deliv
     await expect(
       db.transaction().execute((tx) => sql.raw(migration.split('-- migrate:down')[1] ?? '').execute(tx)),
     ).rejects.toThrow('persisted usage delivery intents prevent rollback');
+  });
+  async function attemptFixture() {
+    const f = await fixture();
+    const prepared = await createUsageDeliveryIntentRepository(db).prepare(f.scope, {
+      purchaseId: f.purchaseId,
+      binding: f.binding,
+    });
+    if (prepared.kind !== 'STAGED') throw new Error('Expected intent');
+    return { ...f, intent: prepared.intent, bodySha256: 'a'.repeat(64) };
+  }
+  it('persists an unsettled dispatch fence across reopened pools and concurrent begin', async () => {
+    const f = await attemptFixture(),
+      core = openTestDurableCore();
+    let first: Awaited<ReturnType<typeof core.usageDeliveryAttempts.get>> = null;
+    try {
+      const results = await Promise.all(Array.from({ length: 4 }, () => core.usageDeliveryAttempts.begin(f.scope, f)));
+      expect(results.filter((r) => r.kind === 'STARTED')).toHaveLength(1);
+      first = results[0]?.attempt ?? null;
+      expect(results.every((r) => r.attempt.attemptId === first?.attemptId)).toBe(true);
+      expect(first).toMatchObject({
+        ordinal: 1,
+        outcome: null,
+        settledAt: null,
+        status: { state: 'RECONCILIATION_REQUIRED', reason: 'OUTCOME_UNRECORDED' },
+      });
+    } finally {
+      await core.close();
+    }
+    const reopened = openTestDurableCore();
+    try {
+      expect(await reopened.usageDeliveryAttempts.begin(f.scope, f)).toEqual({ kind: 'HELD', attempt: first });
+      expect(await reopened.usageDeliveryAttempts.list(f.scope, f.purchaseId)).toEqual([first]);
+    } finally {
+      await reopened.close();
+    }
+  });
+  it('only definite non-dispatch allows another same-body attempt without rekeying or losing history', async () => {
+    const f = await attemptFixture(),
+      repo = createUsageDeliveryAttemptRepository(db),
+      first = await repo.begin(f.scope, f);
+    await repo.recordOutcome(f.scope, {
+      purchaseId: f.purchaseId,
+      attemptId: first.attempt.attemptId,
+      outcome: { kind: 'NOT_DISPATCHED' },
+    });
+    const second = await repo.begin(f.scope, f);
+    expect(second.kind).toBe('STARTED');
+    if (second.kind !== 'STARTED') throw new Error('Expected started');
+    expect(second.intent).toEqual(f.intent);
+    expect(second.attempt.ordinal).toBe(2);
+    expect(second.attempt.attemptId).not.toBe(first.attempt.attemptId);
+    expect((await repo.list(f.scope, f.purchaseId)).map((a) => a.outcome?.kind ?? null)).toEqual([
+      'NOT_DISPATCHED',
+      null,
+    ]);
+    await expect(repo.begin(f.scope, { ...f, bodySha256: 'b'.repeat(64) })).rejects.toMatchObject({ code: 'CONFLICT' });
+    expect(
+      await repo.recordOutcome(f.scope, {
+        purchaseId: f.purchaseId,
+        attemptId: first.attempt.attemptId,
+        outcome: { kind: 'NOT_DISPATCHED' },
+      }),
+    ).toMatchObject({ ordinal: 1 });
+    await expect(
+      repo.recordOutcome(f.scope, {
+        purchaseId: f.purchaseId,
+        attemptId: first.attempt.attemptId,
+        outcome: { kind: 'UNKNOWN' },
+      }),
+    ).rejects.toMatchObject({ code: 'CONFLICT' });
+  });
+  it('holds unknown, rejected, processing and unverified HTTP responses; validated202 is receipt only', async () => {
+    for (const outcome of [
+      { kind: 'UNKNOWN' } as const,
+      { kind: 'HTTP', httpStatus: 400 } as const,
+      { kind: 'HTTP', httpStatus: 409 } as const,
+      { kind: 'HTTP', httpStatus: 202 } as const,
+      { kind: 'RECEIPT', httpStatus: 202 } as const,
+    ]) {
+      const f = await attemptFixture(),
+        repo = createUsageDeliveryAttemptRepository(db),
+        started = await repo.begin(f.scope, f);
+      const input = { purchaseId: f.purchaseId, attemptId: started.attempt.attemptId, outcome };
+      const settled = await repo.recordOutcome(f.scope, input);
+      expect(settled.outcome).toEqual(outcome);
+      expect(settled.settledAt).toBeTruthy();
+      expect(settled.status.state).toBe(outcome.kind === 'RECEIPT' ? 'TRANSPORT_ACCEPTED' : 'RECONCILIATION_REQUIRED');
+      expect(await repo.recordOutcome(f.scope, input)).toEqual(settled);
+      expect(await repo.begin(f.scope, f)).toEqual({ kind: 'HELD', attempt: settled });
+      await expect(
+        repo.recordOutcome(f.scope, { ...input, outcome: { kind: 'NOT_DISPATCHED' } }),
+      ).rejects.toMatchObject({ code: 'CONFLICT' });
+    }
+  });
+  it('fences foreign financial scope and rejects invalid outcome shape or body before settlement', async () => {
+    const f = await attemptFixture(),
+      repo = createUsageDeliveryAttemptRepository(db),
+      started = await repo.begin(f.scope, f),
+      foreign = { ...f.scope, installationGeneration: '2' };
+    expect(await repo.get(foreign, f.purchaseId)).toBeNull();
+    expect(await repo.list(foreign, f.purchaseId)).toEqual([]);
+    await expect(repo.begin(foreign, f)).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    await expect(
+      repo.recordOutcome(foreign, {
+        purchaseId: f.purchaseId,
+        attemptId: started.attempt.attemptId,
+        outcome: { kind: 'UNKNOWN' },
+      }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    await expect(repo.begin(f.scope, { ...f, bodySha256: 'A'.repeat(64) })).rejects.toMatchObject({ code: 'INVALID' });
+    await expect(
+      repo.recordOutcome(f.scope, {
+        purchaseId: f.purchaseId,
+        attemptId: started.attempt.attemptId,
+        outcome: { kind: 'HTTP', httpStatus: 202, secret: 'forbidden' } as never,
+      }),
+    ).rejects.toMatchObject({ code: 'INVALID' });
+    expect((await repo.get(f.scope, f.purchaseId))?.outcome).toBeNull();
+  });
+  it('independently guards SQL attempt identity, body, unsettled fence, bounded outcome and populated rollback', async () => {
+    const f = await attemptFixture(),
+      repo = createUsageDeliveryAttemptRepository(db),
+      callerId = randomUUID();
+    await sql`INSERT INTO m9_usage_delivery_attempts(purchase_id,body_sha256,attempt_id,ordinal,created_at)
+      VALUES(${f.purchaseId}::uuid,${f.bodySha256},${callerId}::uuid,999,'2000-01-01')`.execute(db);
+    const first = await repo.get(f.scope, f.purchaseId);
+    expect(first?.attemptId).not.toBe(callerId);
+    expect(first?.ordinal).toBe(1);
+    for (const q of [
+      sql`INSERT INTO m9_usage_delivery_attempts(purchase_id,body_sha256) VALUES(${f.purchaseId}::uuid,${f.bodySha256})`,
+      sql`UPDATE m9_usage_delivery_attempts SET body_sha256=${'b'.repeat(64)} WHERE purchase_id=${f.purchaseId}::uuid`,
+      sql`UPDATE m9_usage_delivery_attempts SET ordinal=2 WHERE purchase_id=${f.purchaseId}::uuid`,
+      sql`UPDATE m9_usage_delivery_attempts SET created_at='2000-01-01' WHERE purchase_id=${f.purchaseId}::uuid`,
+      sql`UPDATE m9_usage_delivery_attempts SET outcome='{"kind":null}' WHERE purchase_id=${f.purchaseId}::uuid`,
+      sql`UPDATE m9_usage_delivery_attempts SET outcome='{"kind":"HTTP","httpStatus":202,"extra":"forbidden"}' WHERE purchase_id=${f.purchaseId}::uuid`,
+      sql`DELETE FROM m9_usage_delivery_attempts WHERE purchase_id=${f.purchaseId}::uuid`,
+      sql`TRUNCATE m9_usage_delivery_attempts`,
+    ])
+      await expect(q.execute(db)).rejects.toMatchObject({ code: '23514' });
+    if (!first) throw new Error('Expected attempt');
+    await repo.recordOutcome(f.scope, {
+      purchaseId: f.purchaseId,
+      attemptId: first.attemptId,
+      outcome: { kind: 'NOT_DISPATCHED' },
+    });
+    await expect(
+      sql`INSERT INTO m9_usage_delivery_attempts(purchase_id,body_sha256) VALUES(${f.purchaseId}::uuid,${'b'.repeat(64)})`.execute(
+        db,
+      ),
+    ).rejects.toMatchObject({ code: '23514' });
+    await expect(
+      sql`UPDATE m9_usage_delivery_attempts SET outcome='{"kind":"UNKNOWN"}' WHERE purchase_id=${f.purchaseId}::uuid`.execute(
+        db,
+      ),
+    ).rejects.toMatchObject({ code: '23514' });
+    const attemptMigration = readFileSync(
+      new URL('../migrations/20261015000500_m9_usage_delivery_attempt.sql', import.meta.url),
+      'utf8',
+    );
+    const empty = attemptMigration.replaceAll(
+      'm9_usage_delivery_attempts',
+      `empty_attempt_${randomUUID().replaceAll('-', '')}`,
+    );
+    await db.transaction().execute(async (tx) => {
+      await sql.raw(empty.split('-- migrate:down')[0] ?? '').execute(tx);
+      await sql.raw(empty.split('-- migrate:down')[1] ?? '').execute(tx);
+    });
+    await expect(
+      db.transaction().execute((tx) => sql.raw(attemptMigration.split('-- migrate:down')[1] ?? '').execute(tx)),
+    ).rejects.toThrow('persisted usage delivery attempts prevent rollback');
   });
 });

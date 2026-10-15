@@ -66,6 +66,10 @@ import {
 } from './repositories/tenant.js';
 import { createTrustedReleaseReader } from './repositories/trusted-release.js';
 import {
+  createUsageDeliveryAttemptRepository,
+  type UsageDeliveryAttemptRepository,
+} from './repositories/usage-delivery-attempt.js';
+import {
   createUsageDeliveryIntentRepository,
   type UsageDeliveryIntentRepository,
 } from './repositories/usage-delivery-intent.js';
@@ -87,6 +91,7 @@ export type ConfigInput = {
 export interface DurableCore {
   readonly usageLedger: UsageLedgerRepository;
   readonly usageDeliveryIntents: UsageDeliveryIntentRepository;
+  readonly usageDeliveryAttempts: UsageDeliveryAttemptRepository;
   readonly purchases: PurchaseRepository;
   readonly buyers: BuyerRepository;
   readonly renewalQuotes: QuoteRenewalStore;
@@ -444,6 +449,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
     purchases: createPurchaseRepository(database),
     usageLedger: createUsageLedgerRepository(database),
     usageDeliveryIntents: createUsageDeliveryIntentRepository(database),
+    usageDeliveryAttempts: createUsageDeliveryAttemptRepository(database),
     artwork: createArtworkRepository(pool),
     merchantPreviews: createMerchantPreviewRepository(pool),
     buyers: createBuyerRepository(database),
