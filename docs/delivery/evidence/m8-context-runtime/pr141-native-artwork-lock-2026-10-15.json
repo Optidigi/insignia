@@ -1,0 +1,74 @@
+{
+  "classification": "NATIVE_MERCHANT_LOCK_AND_LOCKED_REPLACEMENT_REJECTION_PASS",
+  "purchaseId": "e3a74311-4323-4ea0-ba1a-154a9e65cd49",
+  "orderId": "gid://shopify/Order/7518816403739",
+  "sourceMerge": "04e3a5a7f12d3f3146a1ddc4180cde0d9a2bfe93",
+  "versionBefore": 1,
+  "versionAfter": 2,
+  "artworkState": "ARTWORK_LOCKED",
+  "attachmentEvents": 1,
+  "lockEvents": 1,
+  "lockInvocations": 1,
+  "negativeReplacementRequests": 1,
+  "negativeRejection": {
+    "status": 409,
+    "code": "LOCKED"
+  },
+  "uiReplacementAbsent": true,
+  "uiFileInputAbsent": true,
+  "uiLockDisabled": true,
+  "current": {
+    "status": 200,
+    "bytes": 181,
+    "sha256": "3c87955b08389d868f76f20c918f34d35b49bf84fd15736bcd343a08cabcaade"
+  },
+  "historical": {
+    "status": 200,
+    "bytes": 265,
+    "sha256": "2b9633afe3fd7743077d7d77931093a3ce96621cf395cac07d5b46c596992a0c"
+  },
+  "immutablePurchaseViewPreserved": true,
+  "designExpiryPreserved": "2026-10-21T19:53:52.136Z",
+  "selectedAssetExpiryPreserved": "2026-10-22T00:53:38.690Z",
+  "unlockInvocations": 0,
+  "newAssets": 0,
+  "providerMutations": 0,
+  "newOrders": 0,
+  "charges": 0,
+  "secretValuesPublished": false,
+  "independentDatabaseSnapshotRequired": false,
+  "independentReadback": {
+    "immutableSixPurchaseTableHashesAndCountsPreserved": true,
+    "originalAndReplacementCollectionExpiryManifestsPreserved": true,
+    "artworkEventsBefore": {
+      "lockCount": 0,
+      "attachmentCount": 1,
+      "artworkEventCount": 1
+    },
+    "artworkEventsAfter": {
+      "lockCount": 1,
+      "attachmentCount": 1,
+      "artworkEventCount": 2
+    },
+    "all34ContainerFingerprintsPreserved": true
+  },
+  "reviews": {
+    "probeSha256": "0a3808a87bc6fcec0436e39aee1add4996f94c6c4bbb15e1f38aebe2ccc2a171",
+    "specCorrectness": {
+      "reviewer": "accept_read_spec",
+      "result": "CLEAR"
+    },
+    "standardsSecurity": {
+      "reviewer": "offline_bridge_security",
+      "result": "CLEAR"
+    },
+    "screenshotCondition": "Precreate exact screenshot0600 and verify after output; probe bytes unchanged.",
+    "nativeEffectsByReviewers": false
+  },
+  "screenshotPrivateMode": "0600 verified after capture",
+  "limits": [
+    "One native lock and one rejected replacement on the existing test purchase; no unlock/reset, new asset, provider order/refund/fulfillment mutation or charge.",
+    "Independent facts preserve historical unknown country/Market/per-order Function execution; lock does not make these known.",
+    "Original and current download checks prove bytes remain accessible after lock; existing retention deadlines are not extended."
+  ]
+}
