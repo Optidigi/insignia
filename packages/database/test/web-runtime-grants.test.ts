@@ -643,6 +643,10 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       await owner.query(
         `CREATE ROLE ${worker} LOGIN PASSWORD '${workerPassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; GRANT ${queue} TO ${worker}`,
       );
+      // Model the M5 worker baseline used by the usage ledger's installation read/row lock.
+      // Existing production grants: scripts/m5-024/queue-roles.sql; this fixture grants only the needed subset.
+      await owner.query(`GRANT SELECT ON public.shops,public.installation_generations TO ${queue}`);
+      await owner.query(`GRANT UPDATE(deactivated_at) ON public.installation_generations TO ${queue}`);
       const workerAddress = new URL(target);
       workerAddress.username = worker;
       workerAddress.password = workerPassword;
@@ -669,6 +673,78 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
           'TRUNCATE m9_order_usage',
         ])
           await expect(runtime.query(query)).rejects.toMatchObject({ code: '42501' });
+      // Optional M9 qualification grant: run only after the baseline deny probes above.
+      await owner.query('CREATE TABLE schema_migrations(version varchar(128) PRIMARY KEY)');
+      for (const file of names)
+        await owner.query('INSERT INTO schema_migrations(version) VALUES($1)', [file.split('_')[0]]);
+      const usageScript = (
+        await readFile(new URL('../../../scripts/m9-usage/runtime-grants.sql', import.meta.url), 'utf8')
+      ).replaceAll('insignia_queue_consume', queue);
+      await owner.query(`ALTER ROLE ${queue} CREATEROLE`);
+      await expect(owner.query(usageScript)).rejects.toThrow('unqualified_usage_runtime_role');
+      await owner.query('ROLLBACK');
+      await owner.query(`ALTER ROLE ${queue} NOCREATEROLE`);
+      await owner.query(`GRANT ${extra} TO ${queue}`);
+      await expect(owner.query(usageScript)).rejects.toThrow('unqualified_usage_runtime_membership');
+      await owner.query('ROLLBACK');
+      await owner.query(`REVOKE ${extra} FROM ${queue}`);
+      await owner.query('DELETE FROM schema_migrations WHERE version=$1', [names.at(-1)?.split('_')[0]]);
+      await expect(owner.query(usageScript)).rejects.toThrow('exact_usage_schema36_required');
+      await owner.query('ROLLBACK');
+      await owner.query('INSERT INTO schema_migrations(version) VALUES($1)', [names.at(-1)?.split('_')[0]]);
+      await owner.query('GRANT UPDATE(purchase_id) ON m9_order_usage TO PUBLIC');
+      await expect(owner.query(usageScript)).rejects.toThrow('unqualified_usage_public_access');
+      await owner.query('ROLLBACK');
+      await owner.query('REVOKE UPDATE(purchase_id) ON m9_order_usage FROM PUBLIC');
+      for (const table of ['m9_order_usage', 'm9_usage_delivery_intents'])
+        for (const privilege of ['SELECT', 'UPDATE(decision)'].filter(
+          (p) => table === 'm9_order_usage' || p === 'SELECT',
+        )) {
+          await owner.query(`GRANT ${privilege} ON ${table} TO PUBLIC`);
+          await expect(owner.query(usageScript)).rejects.toThrow('unqualified_usage_public_access');
+          await owner.query('ROLLBACK');
+          await owner.query(`REVOKE ${privilege} ON ${table} FROM PUBLIC`);
+        }
+      await owner.query(usageScript);
+      await owner.query(usageScript);
+      await owner.query(
+        'INSERT INTO purchase_paid_facts(shop_id,installation_generation,purchase_id,occurred_at) VALUES($1,1,$2,$3)',
+        [shopId, purchaseId, now],
+      );
+      const usageScope = { shopId, installationGeneration: generation };
+      const usageInput = { purchaseId, policy: null, history: { kind: 'UNVERIFIED' as const } };
+      const workerCore = createDurableCore(purchaseWorker);
+      expect(
+        (await workerCore.usageLedger.selectPending(usageScope, { limit: 20, afterPurchaseId: null })).purchases,
+      ).toContainEqual({ ...usageScope, purchaseId });
+      const usage = await workerCore.usageLedger.record(usageScope, usageInput);
+      expect(usage.decision).toEqual({ kind: 'EXCLUDED', units: 0, reason: 'TEST_ORDER' });
+      expect(await workerCore.usageLedger.record(usageScope, usageInput)).toEqual(usage);
+      await purchaseWorker.end();
+      purchaseWorker = new Pool({ connectionString: workerAddress.href, connectionTimeoutMillis: 5000 });
+      const reopenedWorker = createDurableCore(purchaseWorker);
+      expect(await reopenedWorker.usageLedger.record(usageScope, usageInput)).toEqual(usage);
+      expect(
+        (await reopenedWorker.usageLedger.selectPending(usageScope, { limit: 20, afterPurchaseId: null })).purchases,
+      ).not.toContainEqual({ ...usageScope, purchaseId });
+      expect((await purchaseWorker.query('SELECT count(*)::int AS n FROM m9_order_usage')).rows[0].n).toBe(1);
+      expect((await purchaseWorker.query('SELECT count(*)::int AS n FROM m9_usage_delivery_intents')).rows[0].n).toBe(
+        0,
+      );
+      for (const query of [
+        'UPDATE m9_order_usage SET purchase_id=purchase_id',
+        'DELETE FROM m9_order_usage',
+        'TRUNCATE m9_order_usage',
+        'INSERT INTO m9_usage_delivery_intents DEFAULT VALUES',
+      ])
+        await expect(purchaseWorker.query(query)).rejects.toMatchObject({ code: '42501' });
+      await expect(purchaseWorker.query('UPDATE m9_order_usage SET decision=decision')).rejects.toMatchObject({
+        code: '23514',
+      });
+      for (const runtime of [web, inspectionWorker]) {
+        await expect(runtime.query('SELECT * FROM m9_order_usage')).rejects.toMatchObject({ code: '42501' });
+        await expect(runtime.query('SELECT * FROM m9_usage_delivery_intents')).rejects.toMatchObject({ code: '42501' });
+      }
       expect(
         (
           await owner.query(

@@ -220,3 +220,11 @@ test('existing qualifier excludes a settled test purchase without invoking the c
   assert.equal(f.reads, 0);
   assert.equal(f.calls.length, 0);
 });
+
+test('absent provider transport fails closed before installation reads even with a binding', async () => {
+  const f = fixture();
+  const source = createWorkerUsageSource({ ...f.options, transport: null });
+  await assert.rejects(source.load(scope), /^Error: USAGE_SOURCE_UNAVAILABLE$/);
+  assert.equal(f.reads, 0);
+  assert.deepEqual(f.calls, []);
+});

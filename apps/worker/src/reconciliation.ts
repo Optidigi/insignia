@@ -8,6 +8,7 @@ export function createWorkerReconciliation(input: {
   core: DurableCore;
   queue: PgBossRuntime;
   artwork?: Pick<ReturnType<typeof createArtworkService>, 'cleanup'>;
+  usage?: { runOnce(): Promise<{ failed: number }>; stop(): Promise<void> };
   purchases?: { recover(): Promise<unknown>; discoverChanges(): Promise<unknown> };
 }) {
   let active: Promise<void> | undefined;
@@ -21,6 +22,13 @@ export function createWorkerReconciliation(input: {
         { errorClass: 'UNINSTALL_RECOVERY_UNAVAILABLE', run: () => recoverPendingUninstalls(input.core, input.queue) },
         { errorClass: 'PURCHASE_RECOVERY_UNAVAILABLE', run: () => input.purchases?.recover() },
         { errorClass: 'PURCHASE_DISCOVERY_UNAVAILABLE', run: () => input.purchases?.discoverChanges() },
+        {
+          errorClass: 'USAGE_QUALIFICATION_UNAVAILABLE',
+          run: async () => {
+            const summary = await input.usage?.runOnce();
+            if (summary && summary.failed > 0) throw new Error('USAGE_QUALIFICATION_UNAVAILABLE');
+          },
+        },
         { errorClass: 'PURCHASE_PAYLOAD_CLEANUP_UNAVAILABLE', run: () => input.core.purchases?.cleanupDue(100) },
         { errorClass: 'ARTWORK_CLEANUP_UNAVAILABLE', run: () => input.artwork?.cleanup(20) },
         {
@@ -48,6 +56,7 @@ export function createWorkerReconciliation(input: {
     runOnce,
     async stop() {
       stopped = true;
+      await input.usage?.stop();
       await active;
     },
   };

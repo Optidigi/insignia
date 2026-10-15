@@ -18,6 +18,7 @@ import { createPurchaseReleasePreparation } from './purchase-release.js';
 import { createPurchaseRunner } from './purchase-runner.js';
 import { createWorkerReconciliation } from './reconciliation.js';
 import { createPgBossRuntime } from './runtime.js';
+import { createWorkerUsageRuntime } from './usage-runtime.js';
 
 function required(name: string): string {
   const value = process.env[name];
@@ -41,6 +42,7 @@ if (process.argv.includes('--diagnostic')) {
     new Pool({ connectionString, connectionTimeoutMillis: 5000, query_timeout: 10000, statement_timeout: 10000 }),
     { credentialKeys: keys },
   );
+  const usage = createWorkerUsageRuntime({ env: process.env, core });
   const queue = createPgBossRuntime({ connectionString, credentialKeysReady: true, webhookHandoff: core.webhooks });
   const transport = createShopifyOfflineRefreshTransport({ clientId, clientSecret });
   const purchaseCredentials = createM3AdminReadCredentialSource({
@@ -99,7 +101,7 @@ if (process.argv.includes('--diagnostic')) {
     port,
   });
   console.log(JSON.stringify({ url: running.url, durableReady: running.durableReady }));
-  const reconciliation = createWorkerReconciliation({ core, queue, purchases: purchaseRunner });
+  const reconciliation = createWorkerReconciliation({ core, queue, purchases: purchaseRunner, usage });
   const recoveryTimer = setInterval(() => {
     void reconciliation.runOnce();
   }, 30_000);

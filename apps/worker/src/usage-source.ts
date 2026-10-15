@@ -30,16 +30,14 @@ export function createWorkerUsageSource(input: {
   appId: string;
   binding: CurrentCycleUsageHistoryInput['binding'];
   tenants: Pick<DurableCore['tenants'], 'getUsageInstallationWindow'>;
-  transport: PartnerGraphqlTransport;
+  transport: PartnerGraphqlTransport | null;
   now?: () => Date;
 }) {
   const appId = input.appId;
   const readInstallation = input.tenants.getUsageInstallationWindow.bind(input.tenants);
-  const transport = { query: input.transport.query.bind(input.transport) };
+  const transport = input.transport ? { query: input.transport.query.bind(input.transport) } : null;
   const now = input.now;
   const binding = input.binding ? { ...input.binding, policy: { ...input.binding.policy } } : null;
-  const currentReader = createActiveSubscriptionClient({ transport, now });
-  const historyReader = createSubscriptionHistoryClient({ transport, now });
   return {
     async load(caller: PurchaseUsageScope): Promise<CurrentCycleUsageHistoryInput> {
       try {
@@ -50,6 +48,7 @@ export function createWorkerUsageSource(input: {
           !/^[1-9][0-9]{0,18}$/.test(scope.installationGeneration) ||
           BigInt(scope.installationGeneration) > 9223372036854775807n ||
           !/^gid:\/\/shopify\/App\/[1-9][0-9]*$/.test(appId) ||
+          !transport ||
           !binding ||
           binding.appId !== appId ||
           !/^gid:\/\/shopify\/Shop\/[1-9][0-9]*$/.test(binding.shopId) ||
@@ -60,6 +59,9 @@ export function createWorkerUsageSource(input: {
           !text(binding.policy.version)
         )
           return unavailable();
+        if (!transport) return unavailable();
+        const currentReader = createActiveSubscriptionClient({ transport, now });
+        const historyReader = createSubscriptionHistoryClient({ transport, now });
         const row = await readInstallation({ ...scope });
         if (!matches(row, scope) || row.providerShopId !== binding.shopId) return unavailable();
         // Copy the baseline before provider awaits; external collaborators cannot restamp it.
