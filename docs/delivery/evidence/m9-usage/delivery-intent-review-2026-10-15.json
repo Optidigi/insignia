@@ -1,5 +1,5 @@
 {
-  "classification": "LOCAL_DELIVERY_INTENT_REVIEWED_POSTGRESQL_CI_PENDING",
+  "classification": "DELIVERY_INTENT_POSTGRESQL_QUALIFIED_FINAL_CANDIDATE_CI_PENDING",
   "base": "f26e49f6094957e276b1ed2f2a4fbd897edf90be",
   "sourceHashes": {
     "packages/database/migrations/20261015000400_m9_usage_delivery_intent.sql": "dbb691e55faeae88c3f3d5fcdb46828c924ac06ee97fa7d776f0cb0278ed18ae",
@@ -62,5 +62,67 @@
     "No native schema35/36, role grants, worker/source composition, sender, billing binding or activation.",
     "Native zero-dollar development contract is not treated as qualified commercial configuration.",
     "Actual PostgreSQL final-candidate CI, normal integration and future native qualifications remain required. Existing cleanup/rotation deadlines remain unchanged."
-  ]
+  ],
+  "preservedFirstHeadCI": {
+    "head": "641ef0c894076e2ec67760a60aa055ce4effcbd2",
+    "attempt": 1,
+    "foundation": {
+      "run": 38765219231,
+      "result": "FAILURE",
+      "cause": "Existing guest-capability tamper fixture replaced two base64url characters with aa; equivalent decoded HMAC bytes can remain valid. Real issue/verify repro reached same failure at attempt2945, original suffix aY -> aa."
+    },
+    "runtime": {
+      "run": 38765219515,
+      "result": "FAILURE",
+      "cause": "Both read-only Docker Compose config render tests failed spawnSync docker ETIMEDOUT at existing10000ms budget; no output/service mutation. No renderer/assertion/deadline changes. Fresh corrected-head CI required; transient infrastructure classification remains provisional."
+    },
+    "durableCore": {
+      "run": 38765219282,
+      "result": "SUCCESS",
+      "databasePassed": 307,
+      "databaseSkipped": 5,
+      "intentPassed": 7,
+      "restrictedLoginPassed": 1,
+      "meaning": "Actual hosted PostgreSQL qualified new migration36/SQL/concurrency/reopen/rollback and restricted LOGIN controls on original six reviewed files; final-head workflows still required."
+    },
+    "privateLogs": {
+      "foundation": {
+        "path": "/home/serveradmin/insignia-milestone-autonomy-handoff/pr168-first-head-foundation-20261015.log",
+        "sha256": "57d391591147eaab7cdd40548df3ce9df1508b1be5a72801f156a16a4706bb78"
+      },
+      "runtime": {
+        "path": "/home/serveradmin/insignia-milestone-autonomy-handoff/pr168-first-head-runtime-20261015.log",
+        "sha256": "2f9625cc1c4596e378db96f10b27649bd22bd081f6f9abbed4b9ae6d14e734aa"
+      },
+      "durable": {
+        "path": "/home/serveradmin/insignia-milestone-autonomy-handoff/pr168-first-head-durable-20261015.log",
+        "sha256": "636198fb9aaa33f93e0afaa2f49c544994032b790dc7867be608909594def5d9"
+      }
+    },
+    "privateLogsCleanup": "2026-10-20, alongside existing private evidence retention obligations; provider workflow remains linked by run ID."
+  },
+  "guestTestCorrection": {
+    "file": "apps/web/test/artwork/guest.test.mjs",
+    "sha256": "1061ef908886d72b4c8a4371260ce5bcec44be079256a99a2cdd268ef6ab1ac6",
+    "change": "Decode issued HMAC, XOR first byte with1, reencode; preserve body/length/request and real verifier rejection. Production authority unchanged.",
+    "focusedTests": "3PASS/0FAIL/0SKIP",
+    "style": "PASS; one inherited useTemplate informational note",
+    "independentReview": {
+      "agent": "/root/pr168_test_correction_review",
+      "axes": [
+        "Spec/correctness",
+        "Standards/security"
+      ],
+      "result": "CLEAR",
+      "scope": "Single test correction only; original six-file financial review unchanged. Read-only/no-network/no-credential instructions, no enforced isolation claimed."
+    },
+    "fullLocalWebSuite": {
+      "tests": 213,
+      "passed": 162,
+      "failed": 0,
+      "skipped": 51,
+      "durationMs": 88326.949119,
+      "meaning": "Existing web/browser suite; skipped cases remain unqualified locally."
+    }
+  }
 }
