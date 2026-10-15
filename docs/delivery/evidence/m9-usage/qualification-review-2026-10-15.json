@@ -1,0 +1,81 @@
+{
+  "classification": "PURE_FIRST_PAID_USAGE_QUALIFICATION_LOCALLY_VERIFIED_CI_PENDING",
+  "base": "9ffa1a9ba56709aa56836ef69eed313aced0384c",
+  "sourceSha256": {
+    "packages/domain/src/billing/paid-order-usage.ts": "ceaecc3d121ad2e049ad431ab44467b7ccc01d87320b004416c58b9779bc68e5",
+    "packages/domain/src/billing/paid-order-usage.test.ts": "9ef656f6c989ed117a8fe0d4fd9c3ebba69edac8aca71e66e6dca9862327b454",
+    "packages/domain/src/index.ts": "9289fb120a00a0696322c76c2bb72262cc59937275abdb43c184bd5a553075b1"
+  },
+  "behavior": [
+    "Explicit test/plain orders excluded",
+    "Unknown test/customization/payment/history held without usage",
+    "Trusted scoped nonoverlapping finite history and matching policy/cycle required",
+    "Half-open event-time trial waiver and paid cycle classification",
+    "One unit per eligible order, independent of garment quantity/groups and later refunds"
+  ],
+  "verification": {
+    "domainTests": {
+      "passed": 38,
+      "newQualificationCases": 12,
+      "failed": 0
+    },
+    "domainBuild": "PASS",
+    "domainTypecheck": "PASS",
+    "biomeChangedFiles": "PASS",
+    "moduleBoundaryCheck": "PASS",
+    "databasePublicApi": {
+      "compilerRejections": 19,
+      "runtimeDeepImportRejections": 4
+    },
+    "domainEffectScan": {
+      "modules": 7,
+      "result": "PASS"
+    },
+    "domainEffectRegressionTests": {
+      "passed": 18,
+      "failed": 0
+    },
+    "secretProvenance": "PASS",
+    "diffCheck": "PASS"
+  },
+  "tddProvenance": {
+    "writer": "/root/preview_runtime_artifacts",
+    "reportedRedCases": [
+      "Missing implementation module",
+      "Exclusions/payment cases",
+      "Historical scope/boundary/trial/inactive/overlap/policy cases",
+      "Invalid matching generation wrongly eligible before validation correction"
+    ],
+    "rootIndependentlyRanFinalDomainTests": true
+  },
+  "review": {
+    "specCorrectness": {
+      "reviewer": "/root/preview_native_transition_review",
+      "result": "CLEAR",
+      "reviewedSourceSha256": "bd882a55bd67e855b2e2da59cb631efdf4624b1e2f8d7ce08e066cdc373930e3"
+    },
+    "standardsSecurity": {
+      "reviewer": "/root/preview_verifier_transition",
+      "result": "CLEAR",
+      "reviewedSourceSha256": "bd882a55bd67e855b2e2da59cb631efdf4624b1e2f8d7ce08e066cdc373930e3"
+    }
+  },
+  "localBoundaryCorrection": {
+    "initialResult": "domain-no-ambient-api on the local identifier window",
+    "correction": "Rename only local binding/internal property to segment; public windows API and behavior unchanged",
+    "checkerChanged": false,
+    "followupIndependentImpactReview": {
+      "reviewer": "/root/preview_verifier_transition",
+      "result": "CLEAR_NARROW",
+      "proof": "Reversing only the private segment rename reconstructs exact previously reviewed source SHA bd882a55; tests/export byte-identical."
+    }
+  },
+  "currentAccess": "Existing fixed Partner current-contract read succeeded; actual development contract remains zero-dollar/usage3. Current state is not historical authority.",
+  "limits": [
+    "Pure rule only; not integrated into a running billing path",
+    "No durable uniqueness/ledger/outbox/sender or allowance counter",
+    "Trusted history must come from a separately qualified historical normalizer, not client labels/current subscription/quote/carriers",
+    "No current approved paid-plan configuration or exact2026-07 transport requalification",
+    "No live usage event, charge, scope/version/store/resource mutation or rollout"
+  ]
+}
