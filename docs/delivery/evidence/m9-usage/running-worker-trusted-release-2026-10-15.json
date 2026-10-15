@@ -1,0 +1,69 @@
+{
+  "classification": "FRESH_EXISTING_ACTIVE_AND_RUNNING_WORKER_READ_PASS",
+  "observations": [
+    {
+      "classification": "EXISTING_WEB_FRESH_ACTIVE_COLLECTION_AND_READONLY_SELECT_PASS",
+      "requestId": "74d31b5d-1920-4a78-a591-ef6a9206bc7f",
+      "recordId": "f5c1a861-c96a-4378-b3ba-d7edb2b21eba",
+      "identity": {
+        "current_user": "insignia_runtime",
+        "session_user": "insignia_runtime",
+        "readonly": "on"
+      },
+      "appVersion": "1168157736961",
+      "functionsSourceCommit": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+      "observedAt": "2026-10-15T18:15:29.835Z",
+      "expiresAt": "2026-10-15T18:15:57.924Z",
+      "activeVersionEvidenceSha256": "1b6a31301190b1a31c812e6ed54cce7a3bb2ef7bb986c065496b86e8ff0925c4",
+      "evidenceDigest": "b1d56f230e4f513f69d5b77d1157bbd253bfe433fabc249ff6b8d45326c61c2a",
+      "historicalEvidenceRestamped": false,
+      "runtimeDatabaseWrites": 0,
+      "collectionCalls": 1,
+      "providerMutationCalls": 0
+    },
+    {
+      "classification": "RUNNING_WORKER_READONLY_TRUSTED_RELEASE_CONSUMPTION_PASS",
+      "requestId": "74d31b5d-1920-4a78-a591-ef6a9206bc7f",
+      "recordId": "f5c1a861-c96a-4378-b3ba-d7edb2b21eba",
+      "identity": {
+        "current_user": "insignia_worker",
+        "session_user": "insignia_worker",
+        "readonly": "on"
+      },
+      "appVersion": "1168157736961",
+      "functionsSourceCommit": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+      "observedAt": "2026-10-15T18:15:29.835Z",
+      "expiresAt": "2026-10-15T18:15:57.924Z",
+      "activeVersionEvidenceSha256": "1b6a31301190b1a31c812e6ed54cce7a3bb2ef7bb986c065496b86e8ff0925c4",
+      "evidenceDigest": "b1d56f230e4f513f69d5b77d1157bbd253bfe433fabc249ff6b8d45326c61c2a",
+      "historicalEvidenceRestamped": false,
+      "runtimeDatabaseWrites": 0,
+      "collectionCalls": 0,
+      "providerMutationCalls": 0
+    }
+  ],
+  "collectionCalls": 1,
+  "all34ContainerConfigurationsPreserved": true,
+  "ordinaryPurchaseAdmissionExercised": false,
+  "appReleasePerformed": false,
+  "historicalGateConsumerBuildWorkerIsCurrentDeploymentEvidence": false,
+  "operatorSha256": "1eb03c900bec6b627f0ed6a9f8efa7f2cd98dceb337c89b0b83ff80364676681",
+  "independentReview": {
+    "result": "CLEAR",
+    "reviewer": "/root/m9_native_operation_review",
+    "axes": [
+      "Spec/correctness",
+      "Standards/security"
+    ],
+    "operatorSha256": "1eb03c900bec6b627f0ed6a9f8efa7f2cd98dceb337c89b0b83ff80364676681",
+    "nativeEffectsByReviewer": false,
+    "scope": "One existing-active fresh collection and actual web/worker readonly trusted-record reads; no ordinary purchase-admission claim"
+  },
+  "limits": [
+    "Fresh record accepted at recorded read times only; original expiry retained, not extended or restamped.",
+    "Web collection writes a new trusted record through the existing independent collector; both consumer sessions read-only.",
+    "Running-worker module and actual LOGIN prove trusted-reader compatibility, not a new ordinary purchase admission.",
+    "No verifier source/gate/service/socket change, app release, checkout, storage action or billing dispatch."
+  ],
+  "privateArtifactsCleanupDue": "2026-10-20; preserve active dependencies"
+}
