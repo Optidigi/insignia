@@ -450,6 +450,8 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       return {
         variants: product.variants.map((variant) => {
           const id = variant.id.slice('gid://shopify/ProductVariant/'.length);
+          const image = variant.image ?? product.image;
+          if (image) imageUrls[`variant_${id}`] = image.url;
           if (variant.image) {
             imageUrls[variant.id] = variant.image.url;
             imageUrls[id] = variant.image.url;

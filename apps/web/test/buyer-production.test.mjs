@@ -391,3 +391,139 @@ test('production default readiness derives actual shop context and refuses missi
   assert.equal(contextReads, 1);
   assert.equal(publicReads, 1);
 });
+
+test('published editor variant geometry reaches the buyer renderer with the selected image, fallback and placement', async () => {
+  const { buildBuyerScene } = await import('../../storefront/src/buyer.ts');
+  for (const imageCase of ['variant', 'fallback', 'missing']) {
+    const { input } = catalogFixture();
+    const publishedGeometry = {
+      version: 'm5-geometry-v1',
+      views: [
+        {
+          id: 'front',
+          image: { revisionId: 'product_111', width: 100, height: 100 },
+          variantImages: [{ variantId: 'variant_222', image: { revisionId: 'variant_222', width: 100, height: 200 } }],
+          placements: [
+            {
+              id: 'chest',
+              rect: { centerX: 0.5, centerY: 0.5, width: 0.4, height: 0.4 },
+              variantOverrides: [
+                { variantId: 'variant_222', rect: { centerX: 0.75, centerY: 0.5, width: 0.2, height: 0.2 } },
+              ],
+            },
+          ],
+        },
+      ],
+      steps: [{ id: 'small', widthFraction: 1, heightFraction: 1 }],
+    };
+    const original = structuredClone(publishedGeometry);
+    input.core.configs.getRevisionGeometry = async () => ({ value: publishedGeometry });
+    const read = input.fetchImpl;
+    input.fetchImpl = async (...args) => {
+      const data = await (await read(...args)).json();
+      data.data.product.variants.nodes[0].image =
+        imageCase === 'variant' ? { url: 'https://cdn.shopify.com/synthetic/blue.png', altText: null } : null;
+      if (imageCase === 'missing') data.data.product.featuredMedia = null;
+      return new Response(JSON.stringify(data), { status: 200 });
+    };
+    const config = await createProductionBuyerServices(input).config(new Request(signed()));
+    const scene = buildBuyerScene({
+      geometry: config.geometry,
+      viewId: 'front',
+      variantId: config.variants[0].id,
+      selectedPlacementId: 'chest',
+      placements: [{ placementId: 'chest', stepId: 'small', artwork: { kind: 'deferred', intentId: 'later' } }],
+      previews: {},
+      imageUrls: config.imageUrls,
+    });
+    assert.equal(
+      scene.image.revisionId,
+      'variant_222',
+      'the actual selected variant uses its configured image revision',
+    );
+    assert.equal(
+      scene.image.url,
+      imageCase === 'variant'
+        ? 'https://cdn.shopify.com/synthetic/blue.png'
+        : imageCase === 'fallback'
+          ? 'https://cdn.shopify.com/synthetic/product.png'
+          : undefined,
+    );
+    assert.deepEqual(scene.placements[0].bounds, { x: 251.25, y: 140, width: 35, height: 70 });
+    assert.deepEqual(scene.artworks[0].bounds, scene.placements[0].bounds);
+    assert.equal(config.contentHash, 'a'.repeat(64));
+    assert.equal(config.revisionId, 'revision');
+    assert.deepEqual(config.variants, [{ id: '222', label: 'Blue M', available: false }]);
+    assert.deepEqual(
+      publishedGeometry,
+      original,
+      'stored geometry, image references and placement coordinates are never rewritten',
+    );
+  }
+});
+
+test('buyer geometry preserves numeric and non-editor selectors and rejects ambiguous canonical aliases', async () => {
+  for (const selector of ['222', 'legacy_blue', 'variant_0222']) {
+    const { input } = catalogFixture();
+    const original = {
+      version: 'm5-geometry-v1',
+      views: [
+        {
+          id: 'front',
+          image: null,
+          variantImages: [{ variantId: selector, image: { revisionId: 'retained-image', width: 100, height: 200 } }],
+          placements: [
+            {
+              id: 'chest',
+              rect: { centerX: 0.5, centerY: 0.5, width: 0.4, height: 0.4 },
+              variantOverrides: [
+                { variantId: selector, rect: { centerX: 0.75, centerY: 0.5, width: 0.2, height: 0.2 } },
+              ],
+            },
+          ],
+        },
+      ],
+      steps: [],
+    };
+    input.core.configs.getRevisionGeometry = async () => ({ value: original });
+    const config = await createProductionBuyerServices(input).config(new Request(signed()));
+    assert.deepEqual(config.geometry, original);
+  }
+  for (const collision of ['image', 'placement']) {
+    const { input } = catalogFixture();
+    const original = {
+      version: 'm5-geometry-v1',
+      views: [
+        {
+          id: 'front',
+          image: null,
+          variantImages:
+            collision === 'image'
+              ? ['222', 'variant_222'].map((variantId) => ({
+                  variantId,
+                  image: { revisionId: variantId, width: 100, height: 100 },
+                }))
+              : [],
+          placements: [
+            {
+              id: 'chest',
+              rect: { centerX: 0.5, centerY: 0.5, width: 0.4, height: 0.4 },
+              variantOverrides:
+                collision === 'placement'
+                  ? ['222', 'variant_222'].map((variantId) => ({
+                      variantId,
+                      rect: { centerX: 0.5, centerY: 0.5, width: 0.2, height: 0.2 },
+                    }))
+                  : [],
+            },
+          ],
+        },
+      ],
+      steps: [],
+    };
+    const before = structuredClone(original);
+    input.core.configs.getRevisionGeometry = async () => ({ value: original });
+    await assert.rejects(createProductionBuyerServices(input).config(new Request(signed())), /variant ID/);
+    assert.deepEqual(original, before, 'ambiguous projection never mutates historical geometry');
+  }
+});
