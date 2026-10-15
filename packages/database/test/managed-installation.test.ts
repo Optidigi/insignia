@@ -645,3 +645,47 @@ test('bootstrap transaction failure leaves no partial durable tenant', async () 
     await core.close();
   }
 });
+
+test.skipIf(!connectionString)(
+  'usage baseline reads the exact original generation without substituting current activation',
+  async () => {
+    const core = createDurableCore(new Pool({ connectionString }));
+    const provider = identity();
+    const activatedAt = new Date('2026-10-01T01:02:03.000Z');
+    try {
+      const first = await core.transactions.run((tx) =>
+        core.tenants.ensureManagedInstallation(tx, {
+          ...provider,
+          expected: null,
+          observationStartedAt: activatedAt,
+        }),
+      );
+      const scope = { shopId: first.state.shopId, installationGeneration: '1' };
+      expect(await core.tenants.getUsageInstallationWindow(scope)).toEqual({
+        shopId: scope.shopId,
+        providerShopId: `gid://shopify/Shop/${provider.shopifyShopId}`,
+        currentGeneration: '1',
+        generation: '1',
+        activatedAt: activatedAt.toISOString(),
+        deactivatedAt: null,
+      });
+      await core.transactions.run((tx) => core.tenants.deactivateCurrent(tx, scope.shopId, '1'));
+      const historical = await core.tenants.getUsageInstallationWindow(scope);
+      expect(historical?.activatedAt).toBe(activatedAt.toISOString());
+      expect(historical?.deactivatedAt).not.toBeNull();
+      await core.transactions.run((tx) =>
+        core.tenants.startInstallation(tx, scope.shopId, `${provider.externalInstallationId}2`),
+      );
+      expect(await core.tenants.getUsageInstallationWindow(scope)).toEqual({ ...historical, currentGeneration: '2' });
+      expect(await core.tenants.getUsageInstallationWindow({ ...scope, installationGeneration: '999' })).toBeNull();
+      expect(
+        await core.tenants.getUsageInstallationWindow({ shopId: randomUUID(), installationGeneration: '1' }),
+      ).toBeNull();
+      await expect(core.tenants.getUsageInstallationWindow({ ...scope, installationGeneration: '0' })).rejects.toThrow(
+        'Invalid usage installation scope',
+      );
+    } finally {
+      await core.close();
+    }
+  },
+);

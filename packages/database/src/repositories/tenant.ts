@@ -323,6 +323,42 @@ export function createTenantRepository(executor: DatabaseExecutor) {
         .executeTakeFirst();
       return row ? mapShop(row) : null;
     },
+    async getUsageInstallationWindow(input: { shopId: string; installationGeneration: string }) {
+      if (
+        !input ||
+        typeof input.shopId !== 'string' ||
+        !input.shopId ||
+        input.shopId.length > 256 ||
+        typeof input.installationGeneration !== 'string' ||
+        !/^[1-9][0-9]{0,18}$/.test(input.installationGeneration) ||
+        BigInt(input.installationGeneration) > 9223372036854775807n
+      )
+        throw new Error('Invalid usage installation scope');
+      const row = await executor
+        .selectFrom('shops')
+        .innerJoin('installation_generations as i', 'i.shop_id', 'shops.shop_id')
+        .select([
+          'shops.shop_id',
+          'shops.shopify_shop_id',
+          'shops.current_generation',
+          'i.generation',
+          'i.activated_at',
+          'i.deactivated_at',
+        ])
+        .where('shops.shop_id', '=', input.shopId)
+        .where('i.generation', '=', input.installationGeneration)
+        .executeTakeFirst();
+      return row?.shopify_shop_id
+        ? {
+            shopId: row.shop_id,
+            providerShopId: `gid://shopify/Shop/${row.shopify_shop_id}`,
+            currentGeneration: row.current_generation,
+            generation: row.generation,
+            activatedAt: row.activated_at.toISOString(),
+            deactivatedAt: row.deactivated_at?.toISOString() ?? null,
+          }
+        : null;
+    },
     async getCurrentAdminInstallation(shopId: string): Promise<{
       generation: string;
       externalInstallationId: string | null;
