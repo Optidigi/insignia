@@ -1,0 +1,23 @@
+{
+  "classification": "DEPLOYED_NATIVE_MERCHANT_CHOICE_LABELS_AND_IDENTIFIER_MAPPING_PASS",
+  "sourceMerge": "2bce57d03da4ee82dfd61f52d0663820f89ad5ca",
+  "webContainer": "e56981276e93486444f12d2a5e92ef609fea4f8b6e749a8c9e7dfc7086f979a8",
+  "compiledClientSha256": "604b058dea25e2ae37c52309abd844f94683ff7c5da84ca9456716efe901ca0d",
+  "actualMethodName": "Print",
+  "actualScopeLabels": [
+    "Print",
+    "Front",
+    "Front / Small"
+  ],
+  "nativeScopeValuesMatchOriginalIdentifiers": true,
+  "draftVersion": "2",
+  "draftContentUnchanged": true,
+  "publicationPreserved": true,
+  "configReads": 2,
+  "configWrites": 0,
+  "substitutedResponses": 0,
+  "shopifyReleaseCalls": 0,
+  "newOrderCalls": 0,
+  "sessionDataPublished": false,
+  "limit": "One actual fixture exercises named controls; duplicate/fallback/compound collisions qualified by browser regressions, not changes to this native configuration."
+}
