@@ -372,3 +372,120 @@ test('shop restriction preserves provider binding, tenant generation, freshness 
     ).rejects.toThrow(/identity/);
   }
 });
+
+const recurring: EntitlementPolicyConfig = {
+  policyVersion: 'synthetic-recurring-v1',
+  maxAgeMs: 60000,
+  plans: [
+    {
+      billing: 'recurring-only',
+      planHandle: 'plan.flat-only',
+      policyId: 'flat-only',
+      features: ['quote', 'advanced-art'],
+      shopId: 'gid://shopify/Shop/456',
+    },
+  ],
+};
+
+test('explicit recurring-only current paid contract grants features without a usage obligation', () => {
+  expect(projectEntitlement(snapshot({ items: [flat('plan.flat-only')] }), recurring, context(at))).toMatchObject({
+    active: true,
+    recognizedPolicyId: 'flat-only',
+    trial: false,
+    features: ['quote', 'advanced-art'],
+    includedUsage: null,
+    observedUsageQuantity: null,
+    billableUsageAllowed: false,
+    qualifyingUsageDisposition: 'NOT_METERED',
+    freshness: 'fresh',
+  });
+});
+
+test('recurring-only live trial uses the provider boundary without an allowance or later usage charge', () => {
+  const result = projectEntitlement(
+    snapshot({
+      items: [flat('plan.flat-only', false)],
+      trialEndsAt: '2026-09-29T12:01:00.000Z',
+      currentBillingCycle: null,
+      cancelAtEndOfCycle: true,
+    }),
+    recurring,
+    context(at),
+  );
+  expect(result).toMatchObject({
+    recognizedPolicyId: 'flat-only',
+    trial: true,
+    features: ['quote', 'advanced-art'],
+    includedUsage: null,
+    observedUsageQuantity: null,
+    billableUsageAllowed: false,
+    qualifyingUsageDisposition: 'NOT_METERED',
+    scheduledCancellation: true,
+  });
+  expect(
+    projectEntitlement(snapshot({ items: [flat('plan.flat-only')] }), recurring, context(at))
+      .qualifyingUsageDisposition,
+  ).toBe('NOT_METERED');
+});
+
+test('recurring-only admission rejects extra or missing provider items, usage, foreign identity and unsupported time windows', () => {
+  for (const overrides of [
+    { items: [] },
+    { items: [flat('plan.flat-only'), meter()] },
+    { items: [flat('plan.flat-only'), flat('extra')] },
+    { items: [flat('plan.flat-only'), flat('plan.flat-only')] },
+    { items: [{ ...meter('plan.flat-only'), usage: null }] },
+    { items: [{ ...flat('plan.flat-only'), usage: { quantity: '1' } }] },
+    { items: [flat('other-plan')] },
+    { appId: 'gid://shopify/App/999' },
+    { shopId: 'gid://shopify/Shop/999' },
+    { tenantShopId: 'foreign' },
+    { installationGeneration: '8' },
+    { observedAt: '2026-09-29T11:59:00Z' },
+    { observedAt: '2026-09-29T12:01:00Z' },
+    { active: false },
+    { billingPeriod: 'ANNUAL' },
+    { trialEndsAt: '2026-09-29T12:00:30Z', currentBillingCycle: null },
+    { trialEndsAt: '2026-09-30T00:00:00Z' },
+    { currentBillingCycle: { startTime: '2026-09-30T00:00:00Z', endTime: '2026-10-01T00:00:00Z' } },
+    { currentBillingCycle: { startTime: '2026-09-01T00:00:00Z', endTime: '2026-09-29T12:00:30Z' } },
+  ]) {
+    expect(
+      projectEntitlement(snapshot({ items: [flat('plan.flat-only')], ...overrides }), recurring, context(at)),
+    ).toMatchObject({
+      recognizedPolicyId: null,
+      features: [],
+      includedUsage: null,
+      observedUsageQuantity: null,
+      billableUsageAllowed: false,
+      qualifyingUsageDisposition: 'DENY',
+    });
+  }
+});
+
+test('recurring-only policy cannot mix historical meter or allowance fields or silently infer billing mode', () => {
+  for (const fields of [
+    { usageHandle: 'meter.orders' },
+    { includedUsage: 100 },
+    { usageHandle: undefined },
+    { includedUsage: undefined },
+    { billing: 'unknown' },
+    { billing: undefined },
+  ]) {
+    const malformed = {
+      ...recurring,
+      plans: recurring.plans.map((plan) => ({ ...plan, ...fields })),
+    } as unknown as EntitlementPolicyConfig;
+    expect(() => projectEntitlement(snapshot({ items: [flat('plan.flat-only')] }), malformed, context(at))).toThrow(
+      'Invalid entitlement policy configuration',
+    );
+  }
+  const unmarked = { planHandle: 'plan.flat-only', policyId: 'flat-only', features: ['quote', 'advanced-art'] };
+  expect(() =>
+    projectEntitlement(
+      snapshot({ items: [flat('plan.flat-only')] }),
+      { ...recurring, plans: [unmarked] } as unknown as EntitlementPolicyConfig,
+      context(at),
+    ),
+  ).toThrow('Invalid entitlement policy configuration');
+});

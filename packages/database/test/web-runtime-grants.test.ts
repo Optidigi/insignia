@@ -65,8 +65,8 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       );
       const migrations = new URL('../migrations/', import.meta.url);
       const names = (await readdir(migrations)).filter((n) => n.endsWith('.sql')).sort();
-      expect(names).toHaveLength(37);
-      expect(names.at(-1)).toBe('20261015000500_m9_usage_delivery_attempt.sql');
+      expect(names).toHaveLength(38);
+      expect(names.at(-1)).toBe('20261015000600_lean_recurring_quote.sql');
       for (const file of names.slice(0, 20))
         await owner.query((await readFile(new URL(file, migrations), 'utf8')).split('-- migrate:down')[0]!);
       await owner.query('REVOKE CREATE ON SCHEMA public FROM PUBLIC');
@@ -694,7 +694,7 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       await owner.query('ROLLBACK');
       await owner.query(`REVOKE ${extra} FROM ${queue}`);
       await owner.query('DELETE FROM schema_migrations WHERE version=$1', [names.at(-1)?.split('_')[0]]);
-      await expect(owner.query(usageScript)).rejects.toThrow('exact_usage_schema37_required');
+      await expect(owner.query(usageScript)).rejects.toThrow('exact_usage_schema38_required');
       await owner.query('ROLLBACK');
       await owner.query('INSERT INTO schema_migrations(version) VALUES($1)', [names.at(-1)?.split('_')[0]]);
       await owner.query('GRANT UPDATE(purchase_id) ON m9_order_usage TO PUBLIC');

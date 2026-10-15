@@ -4,7 +4,7 @@ import { currencyExponent } from '@insignia/cart-authorization';
 import { type MerchantDraft, MerchantDraftSchema, PublishedConfigSchema } from '@insignia/contracts';
 import type { DurableTransaction } from '@insignia/database';
 import { CONFIG_DRAFT_STORAGE_VERSION, type DurableCore, sha256CanonicalJson } from '@insignia/database';
-import { parseSignedMinor, validatePublishedConfig } from '@insignia/domain';
+import { parseSignedMinor, validateLeanConfig, validatePublishedConfig } from '@insignia/domain';
 import { GEOMETRY_VERSION, type GeometryV1, validateGeometryBridge } from '@insignia/visualizer/geometry';
 import { projectActivationPublicationState } from './admin/activation-state.ts';
 import type { AdminActor as Actor, CatalogProduct } from './admin/contracts.js';
@@ -70,7 +70,12 @@ function invalidDraft(error: unknown): Outcome {
         : [{ path: 'configuration', message: 'Configuration choices, references or labels are invalid.' }],
   };
 }
-function validatedDraft(value: unknown, actor: Actor, productId: string): MerchantDraft & { geometry: GeometryV1 } {
+function validatedDraft(
+  value: unknown,
+  actor: Actor,
+  productId: string,
+  lean = true,
+): MerchantDraft & { geometry: GeometryV1 } {
   const parsed = MerchantDraftSchema.safeParse(value);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
@@ -109,6 +114,16 @@ function validatedDraft(value: unknown, actor: Actor, productId: string): Mercha
   const published = validatePublishedConfig(
     PublishedConfigSchema.parse(draftPublished(draft, actor, productId, 'draft')),
   );
+  if (lean) {
+    try {
+      validateLeanConfig(published);
+    } catch {
+      throw new DraftValidationError(
+        'pricingRules',
+        'Lean prices need final nonnegative per-garment method, placement and size amounts in shop currency.',
+      );
+    }
+  }
   try {
     validateGeometryBridge(geometry, published);
   } catch {
@@ -309,13 +324,20 @@ export function createMerchantConfigService(input: {
       let currentShopCurrency: string | null = null;
       try {
         currentShopCurrency = await input.catalog.shopCurrency(actor);
-        const draft = validatedDraft(config.draftValue, actor, productId);
+        const draft = validatedDraft(config.draftValue, actor, productId, false);
+        validateLeanConfig(PublishedConfigSchema.parse(draftPublished(draft, actor, productId, 'draft')));
         eligibility =
           draft.shopCurrency !== currentShopCurrency
             ? { allowed: false, reason: 'Shop currency changed. Review amounts and adopt the current shop currency.' }
             : await input.eligibility(actor, draft);
-      } catch {
-        eligibility = { allowed: false, reason: 'Draft or entitlement unavailable' };
+      } catch (error) {
+        eligibility = {
+          allowed: false,
+          reason:
+            error instanceof Error && error.message.startsWith('Lean')
+              ? 'This historical configuration needs a new Lean price proposal before publication.'
+              : 'Draft or entitlement unavailable',
+        };
       }
       const publicationState = projectActivationPublicationState({
         phase: progress?.phase ?? null,
@@ -480,13 +502,17 @@ export function createMerchantConfigService(input: {
             if (!source) return 'missing';
             let draft: MerchantDraft;
             try {
-              draft = validatedDraft(source.draftValue, actor, sourceProductId);
+              draft = validatedDraft(source.draftValue, actor, sourceProductId, false);
             } catch {
               return 'invalid';
             }
             const id = randomUUID();
             const targetDraft = cloneForProduct(draft, id);
-            validatedDraft(targetDraft, actor, targetProductId);
+            try {
+              validatedDraft(targetDraft, actor, targetProductId);
+            } catch {
+              return 'lean-review';
+            }
             await core.configs.createConfig(tx, {
               shopId: actor.tenantShopId,
               configId: id,
@@ -504,6 +530,11 @@ export function createMerchantConfigService(input: {
       if (result.resultRef === 'occupied')
         return { kind: 'conflict', message: 'Target product already has a configuration' };
       if (result.resultRef === 'missing') return { kind: 'invalid', message: 'Source configuration does not exist' };
+      if (result.resultRef === 'lean-review')
+        return {
+          kind: 'invalid',
+          message: 'Create and review a Lean price proposal before copying this historical configuration.',
+        };
       if (result.resultRef === 'invalid')
         return { kind: 'invalid', message: 'Source draft needs review before copying' };
       return { kind: 'created', configId: result.resultRef };

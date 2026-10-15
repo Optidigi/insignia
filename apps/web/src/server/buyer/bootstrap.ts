@@ -62,21 +62,32 @@ function policy(text: string): EntitlementPolicyConfig {
     ids = new Set<string>();
   for (const raw of value.plans) {
     const plan = record(raw);
-    exact(plan, ['planHandle', 'usageHandle', 'policyId', 'features', 'includedUsage'], ['shopId']);
+    const recurringOnly = plan.billing === 'recurring-only';
+    exact(
+      plan,
+      recurringOnly
+        ? ['billing', 'planHandle', 'policyId', 'features']
+        : ['planHandle', 'usageHandle', 'policyId', 'features', 'includedUsage'],
+      ['shopId'],
+    );
     if (
       !nonempty(plan.planHandle) ||
-      !nonempty(plan.usageHandle) ||
       !nonempty(plan.policyId) ||
-      plan.planHandle === plan.usageHandle ||
       handles.has(plan.planHandle) ||
       ids.has(plan.policyId) ||
       !Array.isArray(plan.features) ||
       plan.features.length > 32 ||
       plan.features.some((feature) => !nonempty(feature)) ||
-      !Number.isSafeInteger(plan.includedUsage) ||
-      Number(plan.includedUsage) < 0 ||
       ('shopId' in plan &&
         (typeof plan.shopId !== 'string' || !/^gid:\/\/shopify\/Shop\/[1-9][0-9]*$/.test(plan.shopId)))
+    )
+      throw new Error('Buyer configuration unavailable');
+    if (
+      !recurringOnly &&
+      (!nonempty(plan.usageHandle) ||
+        plan.planHandle === plan.usageHandle ||
+        !Number.isSafeInteger(plan.includedUsage) ||
+        Number(plan.includedUsage) < 0)
     )
       throw new Error('Buyer configuration unavailable');
     handles.add(plan.planHandle);

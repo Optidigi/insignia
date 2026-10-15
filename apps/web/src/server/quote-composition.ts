@@ -58,6 +58,7 @@ export function createQuoteAuthorityPorts(input: {
   core: DurableCore;
   appId: string;
   entitlementPolicy: EntitlementPolicyConfig;
+  leanContext?: QuoteAuthorityPorts['leanContext'];
   readSubscription: (target: { appId: string; shopId: string }) => Promise<ActiveSubscriptionSnapshot>;
   credentials: AdminCredentialSource;
   catalogTransport: AdminGraphqlReadTransport;
@@ -77,6 +78,8 @@ export function createQuoteAuthorityPorts(input: {
   const ids = input.ids ?? { quoteId: randomUUID, setId: randomUUID };
   return {
     clock,
+    pricingProfile: 'lean-v1',
+    leanContext: input.leanContext,
     ids: { quoteId: ids.quoteId },
     tenant: {
       async getActive(shopId, installationGeneration) {

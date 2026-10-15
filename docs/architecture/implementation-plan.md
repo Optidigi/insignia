@@ -1,10 +1,10 @@
 # Insignia — greenfield architecture and implementation plan
 
-**Record version:** 1.6 — 10 October 2026 (owner single-plan commercial amendment; other technical contracts retained)
+**Record version:** 1.7 — 15 October 2026 (owner-approved Lean V1 prospective amendment; unaffected contracts and historical evidence retained)
 
-**Status:** Product/architecture decision audit closed; Option A required-product trust boundary approved. No complete development gate accepted.
+**Status:** [Approved Lean V1](../delivery/authority/lean-v1-2026-10-15.md) governs current shipping work. Option A and unchanged v2/security/history contracts remain. This amendment is not implementation, native acceptance or a gate PASS.
 
-**Authority:** The user's pasted baseline, subsequent answers, final inactive-subscription/downgrade approval, [Option A approval](OPTION-A-APPROVED.md), [whole-quote v2 adoption](WHOLE-QUOTE-V2-ADOPTED.md), and the [single-plan owner decision](../delivery/authority/commercial-single-plan-2026-10-10.md). No missing `plan.md` dependency remains.
+**Authority:** The [15 October Lean V1 owner decision](../delivery/authority/lean-v1-2026-10-15.md) supersedes conflicting earlier pricing/scope/billing/acceptance requirements prospectively. Unaffected authority includes the user's pasted baseline, subsequent answers, final inactive-subscription/downgrade approval, [Option A approval](OPTION-A-APPROVED.md), [whole-quote v2 adoption](WHOLE-QUOTE-V2-ADOPTED.md), and the [single-plan owner decision](../delivery/authority/commercial-single-plan-2026-10-10.md). The exact pre-Lean v1.6 plan/ledger remain available at `0c3672e2f38a7c6421f9b4791a3830c2db5aaaf8`; dated decisions and receipts keep their original meaning. No missing `plan.md` dependency remains.
 
 **Delivery:** Consult the maintained [delivery state](../delivery/state.md) for current authorization, evidence and gate status. The v1.3 record remains available at fixed PR #25 merge `4209bb16a09cff95d5cbbc1bbcb082e8c1fa8899` with plan SHA-256 `b730c0dc274af8180a9aae3290189a8fd61b6b92e06681d345fe5d9aab22c06d` and ledger SHA-256 `d4297182b12978822dae124a040a0d47aafcdb7749f7ad8602f0626e964937e9`. The original v1.1 record remains at fixed PR #10 merge `0f2c80a316228bd69fdd2ff272e967ff14647b2b`; approved v1.2 remains at fixed PR #17 merge `662a78cd27507d8a2f1eaa976f1c644c93edd1be`.
 
@@ -20,7 +20,7 @@ Insignia is a public Shopify app for merchant-configured product customization. 
 
 There is **no migration/import work** in development: no importer, dual writes, compatibility views, old-ID mapping, legacy adapters, or migration milestones. Ordinary migrations of the *new application's own schema* are required and unrelated to importing legacy data.
 
-V1 commercial customization supports Online Store one-time purchases, including accelerated checkout paths that pass the acceptance tests. It does not offer negotiated Shopify B2B pricing, POS/headless integrations, subscription customization, an RFQ mode, or order-edit repricing. Shopify owns payments, fulfillment, cancellations, refunds, returns and inventory.
+Lean V1 supports ordinary non-Plus merchants through same-real-variant lineExpand and Online Store one-time ordinary cart → checkout. Separate Plus/lineUpdate, product-page express/Buy-now and broad third-party transform compatibility are deferred/not shipping; unsupported routes must not bypass required-product or economic enforcement. It does not offer negotiated Shopify B2B pricing, POS/headless integrations, subscription customization, an RFQ mode, or order-edit repricing. Shopify owns payments, fulfillment, cancellations, refunds, returns and inventory.
 
 ### 0.2 Evidence classification
 
@@ -29,7 +29,7 @@ V1 commercial customization supports Online Store one-time purchases, including 
 - **Product decision:** Approved in the conversation and summarized in section 17.
 - **Development hypothesis:** A candidate implementation that must pass an explicit gate before dependent work proceeds.
 
-The original decision audit is closed, including the joint-loss A/B choice by approved Option A. G1–G8 are DEVELOPMENT GATES; production publication/activation and other unaccepted criteria remain outstanding. Algorithms, interfaces, retries and initial resource budgets below are IMPLEMENTATION DETAIL defaults. Host implementation and unfinished commercial values are DEFERRED as explicitly described. A failed gate that invalidates a locked decision must be reported with evidence; agents must not silently substitute another architecture.
+Lean V1 is an approved prospective amendment to the closed baseline, including the unchanged Option A residual boundary. Section 14 narrows applicable gate criteria and closes work through five outcomes; deferred capabilities are not PASS or launch prerequisites. Reuse unchanged evidence and qualify changed boundaries. Algorithms/resource budgets remain reviewable engineering choices; actual expiry, independent authority and historical records do not. Report genuine product/security conflicts directly with evidence and alternatives.
 
 ### 0.3 Source reconciliation
 
@@ -92,7 +92,7 @@ Visualizer may depend on the pure geometry export, but domain never imports the 
 | Signing private keys | Insignia encrypted server-side storage only |
 | Verification public keys and product-required policy projections | App-owned Shopify metafields/configuration |
 | Plan subscription contract and invoice amounts | Shopify App Pricing |
-| Entitlement projection and qualifying usage ledger | Insignia, reconciled against Shopify subscription state |
+| Recurring entitlement projection; retained historical financial facts | Insignia, reconciled against authoritative Shopify subscription state; no new Lean usage staging/dispatch |
 | UI state and cart payloads | Untrusted browser proposals |
 
 Admin authentication is separate from authorization to perform a merchant action. App Proxy proves the signed shop/query context, not ownership of a buyer's artwork or an arbitrary request body. Use scoped guest capabilities and tenant checks. [S9]
@@ -105,9 +105,9 @@ Neither an unsigned hidden line property nor a Cart Transform marker is proof of
 
 **Buy:** Theme App Extension → load public configuration through App Proxy → establish guest capability → upload/inspect artwork → build desired *complete customized-cart subset* → backend quote proposal → buyer accepts → immutable quote + signed authorization set → browser applies real variant lines → independent Shopify validation → checkout.
 
-**Purchase:** verified order webhook → durable inbox → reconcile actual Shopify order → bind complete authorization set → immutable purchase facts and erasable design payload → artwork state → first fully paid qualifying order → one usage fact.
+**Purchase:** verified order webhook → durable inbox → reconcile actual Shopify order → bind complete authorization set → immutable purchase facts and erasable design payload → artwork state → immutable first-paid/payment facts; no Lean V1 usage charge.
 
-**Renew:** expired authorization → compare current permitted production specification, full quantity vector, context and economics → same values permit a new authorization set for the existing accepted quote; material change requires a replacement quote and review.
+**Renew:** expired authorization → first enforce current Lean scope and entitlement, then compare production specification, full quantity vector, context and economics. Compatible unchanged values permit a new set; incompatible advanced configuration or material change requires a new Lean proposal and buyer review. Existing valid old offers retain original terms/expiry.
 
 ## 2. Repository shape
 
@@ -179,9 +179,9 @@ Pin exact tested package versions in lockfiles, a Node 24 patch, pnpm and Rust t
 
 **ProductConfigDraft:** schema-versioned editable JSON, optimistic `draft_version`, edit timestamp/actor. Stable IDs identify views, placements, methods and steps; array index is never a long-lived business identifier.
 
-**ProductConfigRevision:** immutable schema-versioned publication with content hash, resolved pricing, production geometry, image revisions, allowed method/placement combinations, required/optional policy, logo-later permission, feature requirements and publication metadata. Resolve shared defaults and overrides *into the revision*. Editing a method catalog entry must not mutate an existing revision indirectly.
+**ProductConfigRevision:** immutable schema-versioned publication with content hash, resolved pricing, production geometry, image revisions, allowed method/placement combinations, required/optional policy, logo-later permission, feature requirements and publication metadata. New Lean revisions freeze the complete final method × placement × size price table. Historical revisions retain their resolved defaults/overrides. Editing a method catalog entry must not mutate an existing revision indirectly.
 
-**DecorationMethod:** stable merchant-defined label plus optional storefront labels, allowed artwork constraints and price defaults. One method per selected placement in v1. Several selected placements may use different methods when the revision permits it.
+**DecorationMethod:** stable merchant-defined label plus optional storefront labels and allowed artwork constraints. New Lean prices come from the final product price table. One method per selected placement in v1. Several selected placements may use different methods when the revision permits it.
 
 **Placement/View/Step:** a placement belongs to a product view; a step is a merchant-defined decoration-size choice with scale/dimensions and prices. Garment S/M/L variants are not decoration steps. Support default images, variant/color image overrides, shared geometry and explicit variant overrides needed for the storefront.
 
@@ -205,11 +205,11 @@ A selected step uses contain-fit scaling inside the placement rectangle. Resolve
 
 ### 3.4 Customization identity
 
-**CustomizationGroup:** one product, one revision, one production specification, plus a map of compatible variant quantities. The specification includes selected placement IDs, method per placement, selected step IDs, and artwork revision/intent per placement. Compatible colors/sizes do not produce additional setup charges.
+**CustomizationGroup:** one product, one revision, one production specification, plus a map of compatible variant quantities. The specification includes selected placement IDs, method per placement, selected step IDs, and artwork revision/intent per placement. Compatible colors/sizes share the design; new Lean configurations contain no setup charge.
 
 The canonical identity excludes quantity but includes everything that changes the production design. Resolve defaults, sort maps by stable IDs and hash canonical structured bytes/JSON with a fixed version; do not rely on incidental property order. A different image *chosen by the merchant for the same configured variant* does not by itself mean a different buyer design; its revision is nevertheless recorded for previews.
 
-Exactly recognized identical groups in the same cart may aggregate. Separate unknown logo-later designs must not auto-merge: give each independent deferred-design intent a nonce. Reusing an existing group explicitly preserves that intent. Do not deduplicate setup fees across products, artwork hashes alone, orders or separate carts.
+Exactly recognized identical groups in the same cart may aggregate. Separate unknown logo-later designs must not auto-merge: give each independent deferred-design intent a nonce. Reusing an existing group explicitly preserves that intent. Historical setup semantics remain only for old accepted records; Lean identity does not introduce a setup fee.
 
 **GarmentQuantityVector:** variant IDs with positive integer quantities; zero removes the variant. Shopify product membership and availability are verified by the adapter. Total physical quantity counts each garment once, regardless of placements or price-allocation buckets.
 
@@ -217,13 +217,13 @@ Exactly recognized identical groups in the same cart may aggregate. Separate unk
 
 **Money:** `{ currency, minor: bigint }`, paired with a versioned currency exponent table. Operations require matching currency. Never use floating point for pricing, signatures or sum equality. JSON DTOs represent integer amounts as decimal strings; PostgreSQL uses checked `bigint` for bounded minor amounts and decimal strings/NUMERIC for FX evidence. Shopify numeric IDs are never JS Number values.
 
-**PricingRule:** explicit scope, unit/setup role, amount or all-units schedule, optional currency overrides and stable identity. Setup amounts and final unit prices are nonnegative. Explicit signed placement/step adjustments are permitted only when the resulting valid customized unit is nonnegative; don't silently clamp to zero. Validate schedules and overflow at publication and quoting.
+**PricingRule:** new Lean authoring/publication/issuance permits one final nonnegative shop-currency unit surcharge per allowed method × placement × decoration-size choice. Missing is unavailable; explicit zero is a real price. Advanced rule roles/schedules/overrides remain historical reader/engine structures, not new-offer eligibility. Validate constrained inputs and overflow at backend boundaries as well as the editor.
 
 **QuoteProposal:** immutable short-lived review output with desired group vector, config versions, contextual price evidence, FX snapshot, pricing-engine version, totals and proposal hash. It is not yet authorization to purchase.
 
 **AcceptedQuote:** immutable buyer-accepted *complete customized subset of one cart context*. Ordinary cart lines are outside it. Holds economic details, physical group vector and exact materialization buckets. Acceptances may be superseded as the active cart choice without revoking historical offers.
 
-**QuoteLine:** one materialized price bucket for one real variant of one group. One logical variant quantity may become two price buckets because of setup allocation. Line index is quote-global. Do not charge setup again for the split.
+**QuoteLine:** one materialized price bucket for one real variant of one group. Historical allocation may retain two buckets for one variant; Lean issuance has no setup allocation. Line index is quote-global. Do not charge setup again for the split.
 
 **AuthorizationSet:** a distinct signed issue/renewal of one accepted quote with its own ID, numeric u16 key ID, expiry, epoch and protocol version. A v2 set contains one shared envelope and one member carrier per physical QuoteLine. One cart cannot combine authorizations from different sets.
 
@@ -237,7 +237,13 @@ Customization readiness is `PENDING_ARTWORK → READY → ARTWORK_LOCKED`. READY
 
 ## 4. Pricing engine
 
-### 4.1 Inputs and evaluation order
+**Current Lean profile:** reuse the existing exact-money engine with constrained authoring and backend issuance/renewal validation. For group g and variant v, `total = Σ(g,v) quantity[g,v] × (ShopifyBase[g,v] + Σ(selected placements p) finalDecorationPrice[g,p])`. Each garment contributes its actual contextual base once and each selected placement surcharge once. A missing table entry is unavailable; explicit zero is allowed. No setup, quantity tiers, signed adjustments, layered scopes/inheritance, FX or currency overrides enter new Lean offers. Ten garments at €20 base plus €3 front and €6 back total €290 before Shopify-owned discounts/tax/shipping.
+
+Use one currency equal to shop currency and its qualified primary Market; EUR/USD/GBP are targets, each qualified before enablement/advertising. Unsupported currency/Market contexts fail clearly with safe cart repair and ordinary unrelated lines preserved. Actual country/Market and contextual prices remain independently checked; same currency alone is insufficient. Merchant-wide settings remain untouched.
+
+**Historical engine reference (§§4.1–4.6):** the advanced algorithms/examples below retain meaning for historical readers and valid accepted offers. They are deferred/not shipping for new Lean configurations, not instructions to finish their former launch matrix. Preserve original terms/expiry and stored economics; new issuance/renewal is Lean-fenced. Any incompatible conversion creates an explicit draft/revision and reviewed buyer proposal. Do not replace the engine or rewrite golden fixtures to simulate acceptance.
+
+### 4.1 Historical Inputs and evaluation order
 
 Pure input includes all desired customization groups, resolved published revisions, current contextual Shopify garment prices, target country/market/currency context, FX/override evidence and a versioned rounding policy. Application resolves external data before calling pure pricing.
 
@@ -252,7 +258,7 @@ Pure input includes all desired customization groups, resolved published revisio
 
 Required Shopify price lookup failure means no quote. Never substitute zero, default shop pricing, browser-supplied price, or an old cached market merely to complete a quote.
 
-### 4.2 Explicit pricing scopes
+### 4.2 Historical Explicit pricing scopes
 
 | Component | Setup multiplicity within group | Unit multiplicity |
 |---|---|---|
@@ -263,9 +269,9 @@ Required Shopify price lookup failure means no quote. Never substitute zero, def
 
 Method-specific placement/step overrides resolve by replacement, including an explicit zero. Absence means inherit. Resolved method + placement + step components remain additive; an override replaces only its corresponding component, not unrelated pricing levels.
 
-For each setup component, use a deterministic applicability key such as `(ruleId, groupId, methodId?)` or `(ruleId, groupId, placementId, stepId?)` to prevent duplicate evaluation from colors/sizes. Merchant-configured component amounts do not multiply by garment quantity. Setup fees are not tiered in v1; the all-units decision applies to customization **unit** components.
+For each setup component, use a deterministic applicability key such as `(ruleId, groupId, methodId?)` or `(ruleId, groupId, placementId, stepId?)` to prevent duplicate evaluation from colors/sizes. Merchant-configured component amounts do not multiply by garment quantity. Under the historical advanced profile, setup fees were not tiered; all-units pricing applied to customization **unit** components.
 
-### 4.3 Formula
+### 4.3 Historical Formula
 
 For group g, variant v and selected placements p:
 
@@ -287,17 +293,17 @@ quoteTotal = Σg total[g]
 
 Never add Shopify discounts to this engine. The accepted price is customized **pre-discount merchandise**, not total checkout payment. Shipping, Shopify discounts, duties and tax adjustments remain Shopify-owned. The normal variant tax treatment applies to the entire customized price. Inclusive/exclusive-tax context and Function cost interpretation must pass G4.
 
-### 4.4 FX and contextual pricing
+### 4.4 Historical FX and contextual pricing
 
 The Shopify adapter retrieves contextual market pricing and verifies currency, country and variant applicability. No negotiated company-location/B2B pricing in v1. The contextual pricing API is a relevant surface; exact query inputs belong in adapter contracts. [S11]
 
-FX is an application port with a concrete provider selected during implementation. Require positive rate, supported currency pair, as-of timestamp, provider/source ID, rate version and maximum accepted staleness. Store the original decimal rate and rounding policy. An override wins only for the exact configured component/tier/currency; other components may convert normally. Fail quoting when required FX is unavailable/too stale.
+Historical FX was designed as an application port; selecting/implementing a new FX provider is deferred outside Lean V1. Require positive rate, supported currency pair, as-of timestamp, provider/source ID, rate version and maximum accepted staleness. Store the original decimal rate and rounding policy. An override wins only for the exact configured component/tier/currency; other components may convert normally. Fail quoting when required FX is unavailable/too stale.
 
 Accepted quotes freeze resolved presentment values. Functions receive the final presentment amount; they must **not convert it again**. Their documented fixed unit prices use presentment currency. [S1]
 
 Renewal can use current evidence to establish unchanged economics without overwriting the quote's original evidence. A changed output amount, material production specification, quantity or market requires a new quote/review. A refreshed FX rate alone does not mutate an existing valid authorization.
 
-### 4.5 Deterministic setup allocation
+### 4.5 Historical Deterministic setup allocation
 
 Use equal-per-physical-unit allocation within the group, not value-weighted allocation. Given total setup minor units S and physical quantity N:
 
@@ -310,7 +316,7 @@ Order logical variants by stable external-ID byte/numeric order defined in the a
 
 Keep the per-rule setup breakdown at group level. Allocate the aggregate setup once: independently distributing each rule's remainder can change the final per-unit allocation. Any optional per-unit rule breakdown must fit the already-fixed bucket allocations, not recalculate them. The group setup sum and all quote-line totals must match exactly. A capacity split cannot change fees, identity or tier counts.
 
-### 4.6 Worked examples
+### 4.6 Historical Worked examples
 
 **A — Setup across colors/sizes.** Ten red/small plus fifteen black/large share one design, product and revision. Both variants have €20 garment + €3 customization per unit. Applicable setup total is €35. Total is `25 × €23 + €35 = €610`. Setup allocation is €1.40 per garment, so both authorized unit prices are €24.40. Ten thousand identical-spec garments still incur €35 setup, not €35 per variant or garment.
 
@@ -378,13 +384,13 @@ Normalize actual physical priced items through the target-specific adapter; G1/G
 6. Checked-sum physical quantities and `quantity × unitMinor` using sufficiently wide intermediates; compare with signed totals.
 7. Validator additionally compares **actual materialized pre-discount economic amounts**, not just signature claims or a transform-generated marker.
 
-A buyer cannot preserve a 500-unit tier by submitting a quote for 500 and checking out only 10: completeness and quantity checks fail. Removing every marker on an optional product creates a plain purchase with no production customization, not an entitlement to free customization. Required products still reject unsigned purchases.
+For a historical tier-priced offer, a buyer cannot preserve a 500-unit tier by submitting a quote for 500 and checking out only 10: completeness and quantity checks fail. Removing every marker on an optional product creates a plain purchase with no production customization, not an entitlement to free customization. Required products still reject unsigned purchases.
 
 ### 5.4 Expiry, replay and renewal
 
 Three shop-local calendar days means issuance on local day D is valid through **D+2 inclusive**, expiring when shop-local date becomes D+3. It is not a rolling 72 hours. Store shop timezone and issuance/expiry evidence in PostgreSQL; Functions use Shopify's shop-local date. A timezone change triggers reconciliation and renewal review, and is included in boundary tests. [S2]
 
-A complete set is a reusable offer during that window, for the same signed vector and context. It may produce multiple separate orders and usage events. Issuing a replacement quote does not individually revoke older valid offers. No per-quote consumed flag is consulted offline.
+A complete set is a reusable offer during that window, for the same signed vector and context. It may produce multiple separate orders; Lean V1 emits no per-order billing event. Issuing a replacement quote does not individually revoke older valid offers. No per-quote consumed flag is consulted offline.
 
 An expired set can renew automatically only when the full economic/production/context comparison is unchanged, artwork still usable and retained, current plan permits issuance, and both Function configurations are healthy. Renewal gets a new set ID and signatures; the accepted quote is not mutated. Changed values require buyer review/new acceptance.
 
@@ -425,7 +431,7 @@ Shop/product app-owned projections contain only what Functions need: installatio
 
 Publication sequencing favors safe denial over transient unsigned required purchases. A mutation acknowledgement and exact Admin readback establish only their respective facts; one sampled Function invocation, repeated Admin reads or a fixed delay do not prove that every future Function input has the new revision. For stricter transitions, account for the previous effective policy and in-flight carts before exposing a product or enabling new quote issuance. If the needed activation/availability precondition is unverified, retain an explicit activation-pending state and the prior effective policy. Any temporary change to product availability is a separate, merchant-facing operation requiring its own reviewed precondition and effect; it is not automatic archival permission. Billing cancellation/downgrade never clears required flags or keys merely to ease checkout.
 
-There is no generic Cart Transform operation fallback. Plus uses a verified `lineUpdate` adapter. Non-Plus uses the G1 candidate: expand to one child with the same real variant, child quantity one relative to its parent, and the authorized fixed unit price. A failed G1 reopens that mechanism instead of enabling fee products behind the scenes.
+There is no generic Cart Transform fallback or separate Lean Plus branch. Retain and qualify the non-Plus G1 route: expand to one child with the same real variant, child quantity one relative to its parent, and the authorized fixed unit price. A failed G1 reopens that mechanism instead of enabling fee products behind the scenes.
 
 ### 6.3 Function behavior during cart mutations
 
@@ -435,7 +441,7 @@ Cart-wide replacement may require several Ajax operations. Do not demand complet
 - During ordinary cart interaction, allow removal/replacement of stale or malformed lines. The storefront marks such state as requiring review and does not display a base-price fallback as an accepted customization.
 - During checkout interaction and completion, the Validation Function enforces all authorization, required-product and economic checks. Unknown/missing journey context must not accidentally become a checkout bypass.
 
-The current Validation API exposes buyer journey steps; verify their actual behavior on every supported cart/accelerated path. G6 must prove both non-bypassability and recoverability. [S2]
+The current Validation API exposes buyer journey steps; verify their actual behavior on the supported ordinary cart → checkout route, with unsupported-entry bypass rejection. G6 must prove both non-bypassability and recoverability. [S2]
 
 ### 6.4 Context and cart integration
 
@@ -471,33 +477,23 @@ Deduplicate delivery on `(installation_id, webhook_delivery_id)` and make busine
 
 The [13 October owner-delegated M8 decision](../delivery/authority/m8-purchase-proof-ownership-2026-10-13.md) permits a distinct signed-offer/original-order matching proof for a qualified Online Store one-time flow. Preserve signature, complete physical members, actual merchandise/economics and historical authorization checks. Admit wholly unavailable actual localization only through trusted creator-origin/current-enforcement qualification; record it as unknown, with quote country/Market identified as authorized context. Independent provider context, when supplied, must still match. Production admission remains disabled until native qualification; no current-health observation becomes historical execution proof. Required-product enforcement and its incident limitations remain separate obligations.
 
-Record orders at creation, bind approved customizations, and maintain first-full-payment facts. Refund processing appends Shopify economic facts; it neither recalculates historical customization pricing nor reverses app usage. Unsupported merchant order edits are recorded as discrepancies for review, not treated as newly authorized customization changes.
+Record orders at creation, bind approved customizations, and maintain first-full-payment facts. Refund processing appends Shopify economic facts without recalculating historical customization pricing; Lean V1 has no per-order app charge. Unsupported merchant order edits are recorded as discrepancies for review, not treated as newly authorized customization changes.
 
-### 6.6 Commercial plan contract
+### 6.6 Recurring-only commercial contract
 
-One paid plan includes all released in-scope features at USD $49.99 per 30-day cycle, with 100 qualifying paid customized orders included and USD $0.10 per additional qualifying order. The [owner decision](../delivery/authority/commercial-single-plan-2026-10-10.md) supersedes the earlier three-plan direction; exact provider/display handles and native pricing configuration remain unqualified, not guessed in code. Keep a versioned catalog mapping Shopify plan handles to a typed set of supported features. Feature checks run server-side on publication, new quotes, acceptance and renewals; UI hiding is not enforcement.
+One plan includes all released Lean V1 features: USD $49.99 per 30-day cycle, with an authoritative 14-day trial. There is no usage meter, 100-order allowance, overage or per-order charge. Keep existing technical resource limits and disclose them honestly. The [Lean owner authority](../delivery/authority/lean-v1-2026-10-15.md) supersedes the historical 10 October hybrid target; saved provider drafts/current subscriptions remain actual facts, not automatically converted contracts.
 
-Use a **monthly Shopify App Pricing hybrid plan**. Current combined usage pricing is monthly, not yearly. Use Partner API `activeSubscription` plus historical events for lifecycle reconciliation, not an old `APP_SUBSCRIPTIONS_UPDATE`-only design. Redirect parameters trigger verification; they do not grant entitlement on their own. [S5, S6]
+Qualify actual recurring-only provider configuration and its supported billing-management/selection route before enabling it under a scoped effect grant. Adapt current flat-plus-meter entitlement recognition deliberately; switching off dispatch alone does not make that reader compatible. Read authoritative contract/trial/cancellation state through the supported Shopify adapter and keep a versioned feature mapping. Redirect parameters alone grant no entitlement. Server-side publication/new-offer/acceptance/renewal checks enforce supported features and Lean scope; UI hiding is insufficient.
 
-Use one `customized_order_paid` usage meter. Send a value of one for each qualifying non-trial paid order, including those within the included allowance; configure the allowance as a zero-cost initial **graduated** billing band and the remainder at the plan's overage rate. This billing meter is separate from the **all-units garment customization tiers**. Do not subtract allowances locally and have Shopify subtract them again. [S7]
+### 6.7 Trial, inactive contract and historical access
 
-Qualifying means a distinct non-test order with at least one verified Insignia customization when first fully paid. An order of 500 garments is one usage unit. Refund, restock, later cancellation or repeat webhooks do not reverse or duplicate it. Replaying an offer into another actual order does count separately. Use the first-full-payment event time to determine trial/contract qualification, not job execution time.
+The 14-day trial follows authoritative provider timestamps; do not reset it locally on selection, reinstall or restart. Qualify cancellation, stale/unknown state, reauthorization and new-action eligibility. Without a valid active trial/paid entitlement, stop new issuance/renewal while preserving valid old offers through their original expiry and authorized historical purchase/artwork access within retention. Required products never silently become plain purchases.
 
-### 6.7 Trial, inactive plan and downgrade
+Old advanced configurations remain readable, but new issuance/renewal requires Lean-compatible inputs. Conversion creates a new draft/revision and buyer-reviewed replacement, not mutation of historical prices. Shopify owns payment, refund and inventory operations.
 
-Trial is 14 days of the single paid plan from authoritative activation. Both subscription and order usage are free. Record trial-qualified orders in the local ledger with `WAIVED_TRIAL`; never emit them later to a paid meter. Provider contract/trial timestamps are authoritative. Do not invent local trial resets on plan change or reinstall.
+### 6.8 Historical usage work — deferred, not shipping
 
-Without an active trial or paid entitlement: no new quotes, acceptances or renewals. Existing valid authorizations remain usable until normal expiry, assuming Functions still exist and validate. Historical orders, merchant artwork attachment and downloads remain available within retention. Such already-promised purchases that have no billable active contract are recorded as unbillable rather than retroactively charged on reactivation.
-
-On downgrade, a published config requiring a removed feature becomes ineligible for **new** quotes until the merchant adjusts/republishes or restores a plan. Compatible configurations continue. No silent removal of a method, placement or required-customization rule. Existing accepted offers remain honored through their normal window. Billing loss is distinct from uninstall: an uninstalled app cannot guarantee Function enforcement or future authenticated access.
-
-### 6.8 Durable usage delivery
-
-Use a unique local usage fact `(shop_id, external_order_id, event_kind)`, plus an outbox delivery record with stable opaque idempotency key and actual occurrence time. No buyer or order-identifying attributes are sent to the meter; `value: 1` is enough. Billing idempotency is documented as permanent, but local uniqueness is still required. [S8]
-
-Delivery states distinguish `PENDING`, `TRANSPORT_ACCEPTED`, `RECONCILIATION_REQUIRED` and operator/aggregate-verified results. **HTTP 202 is not “billed successfully.”** Shopify documents asynchronous billing validation and no per-event failure webhook. Reconcile provider totals/contract history where exposed; use Dev Dashboard evidence where that is the only event-processing visibility. G8 is mandatory before billing goes live. [S8]
-
-Honor the original occurrence time on retries. Never relabel an event as current merely to force it into a later cycle. Closed-period or uninstalled-shop failures require review and may be uncollectible; do not charge a merchant twice or recreate a key to bypass a terminal validation. Prioritize pre-uninstall outstanding deliveries within Shopify's documented submission window. [S8]
+Prior M9 ledgers, immutable intent/attempt identities, response classifiers and failed/partial native evidence retain their exact meaning; they are not recurring-only acceptance. Inspect existing financial facts and unresolved operations before transition, reconcile any genuine merchant obligation and preserve retention. New usage staging/dispatch is disabled for Lean flat-plan operation. Trial and flat-plan purchases are never back-billed later. No new meter, sender, allowance or per-event processing subsystem is a Lean launch prerequisite. Archived hybrid provider contracts/tests stay available where historical recovery genuinely depends on them.
 
 ## 7. Admin application
 
@@ -515,13 +511,13 @@ Set frame-ancestors for Shopify admin and the verified shop, use no-store on pri
 
 **Installation/readiness:** plan status, scope/Function readiness, theme installation link, actionable errors; explicitly report conflict or required-product purchase restrictions.
 
-**Product configuration:** product selection, one config, draft editor, copy-to-product, methods/placements/steps, pricing/setup schedules, currency overrides, shared/variant images, visualizer geometry, optional/required and logo-later switches. Show charge-frequency wording (“once per design”, “per garment”, “per decorated placement”) rather than ambiguous “price”.
+**Product configuration:** product selection, one config, draft editor, copy-to-product, methods/placements/steps, final nonnegative price table (missing unavailable; explicit zero), shared/variant images, visualizer geometry, optional/required and logo-later switches. Show per-garment placement prices and their exact sum; retain useful imagery/geometry without setup/tier/layer/override controls.
 
 **Publication:** optimistic save with conflict feedback, validate, preview, explicit publish. Return immutable revision and projection-readiness state. A stale editor receives 409, not silent last-write-wins. Copying snapshots editable content into an independent draft; no hidden linked config inheritance.
 
 **Orders/artwork:** customized order overview, per-group historical preview and real-variant quantities, private originals, approved merchant-only post-order attachments, readiness/lock controls and retention expiry indicators. Shopify status is displayed as context, not reproduced as an Insignia fulfillment engine.
 
-**Billing/settings:** verified current contract, feature/allowance disclosure, chosen-plan trial dates, usage ledger and plan-change path. Commercial matrix labels must come from the same versioned catalog used by server authorization.
+**Billing/settings:** verified recurring-only contract/trial dates, all-released-feature and technical-limit disclosure, plus supported billing management. No usage dashboard or multi-plan comparison; labels and server authorization use the same qualified versioned contract.
 
 Do not automatically implement legacy RFQ, notes, CSV, reminder automation, QC or native order-block extensions. They are not scope through legacy inheritance.
 
@@ -535,7 +531,7 @@ Lazy-load the custom element/Vite bundle and Konva on interaction or when cart r
 
 Shadow DOM isolates styles. Explicitly manage dialog focus, focus return, scroll locking, keyboard/escape behavior, live error announcements, touch interaction and composed events. Shadow DOM is not a security boundary. Do not load Polaris into the buyer interface.
 
-Reference interactions: upload/logo-later, method selection, placement selection, per-placement step choice, conditional multi-view preview, review and garment quantity matrix. Preserve slider/card/placement-tab alternatives and graceful missing-preview states from the existing visual reference. Layout and copy must show new method scopes, setup-once fees and cart-wide tier updates accurately. [S24]
+Reference interactions: upload/logo-later, method selection, placement selection, per-placement step choice, conditional multi-view preview, review and garment quantity matrix. Preserve slider/card/placement-tab alternatives and graceful missing-preview states from the existing visual reference. Match actual legacy desktop/mobile layout, typography, color, spacing and interaction states. Only approved Lean per-garment price/review wording changes are permitted; cart grouping acceptance does not waive storefront fidelity. [S24]
 
 ### 8.2 State model
 
@@ -566,13 +562,13 @@ Admin contracts cover draft get/save/publish/copy, authorized artwork inspection
 
 ### 8.4 Acceptance and cart application
 
-Read the current cart, normalize its Insignia subset, and construct the *desired entire subset*, including the newly configured group. Retained groups contribute to Q; ordinary cart items stay untouched. The server verifies resources and current pricing independently of the browser's amounts.
+Read the current cart, normalize its Insignia subset, and construct the *desired entire subset*, including the newly configured group. Retained groups remain in the complete acceptance vector; ordinary cart items stay untouched. The server verifies resources and current pricing independently of the browser's amounts.
 
-On acceptance, recheck proposal expiry/hash, current publication pointers, entitlement, material pricing context and artwork status. Persist acceptance and issue metadata transactionally; sign only committed claims. If any relevant input changed, return a new proposal/review requirement. Repeated acceptance with the same idempotency key returns the original result, not another group/setup fee.
+On acceptance, recheck proposal expiry/hash, current publication pointers, entitlement, material pricing context and artwork status. Persist acceptance and issue metadata transactionally; sign only committed claims. If any relevant input changed, return a new proposal/review requirement. Repeated acceptance with the same idempotency key returns the original result, not another group or charge.
 
 Cart application uses actual current line keys. Update/remove only Insignia lines, then batch-add desired buckets with tokens, preserving ordinary lines. Do not assume Ajax provides a transaction across these steps. Refetch and verify after each mutation sequence; a failure remains visibly “cart needs review,” not “success.” Local/BroadcastChannel locking improves UX across tabs but the Function set checks are the security authority.
 
-For cart quantity/removal edits, fetch a replacement proposal for the full desired subset. No Shopify line may keep a lower-tier price after its qualifying siblings have gone. Theme cart changes outside Insignia must still be safe: the validation gate blocks checkout and the app embed supplies repair. Supported accelerated checkout launches only with a valid complete set; product-level buy buttons must not bypass required customization.
+For cart quantity/removal edits, fetch a replacement proposal for the full desired subset. Changed quantities/designs still require a complete valid vector; historical tier offers keep their original complete-set constraints. Theme cart changes outside Insignia must still be safe: the validation gate blocks checkout and the app embed supplies repair. Dedicated product-page express/Buy-now integration is deferred; unsupported entry points must reject safely and cannot bypass required customization.
 
 A config may be stale while an accepted offer remains valid. Only unaccepted sessions reload current publication before authoritative pricing. The UI distinguishes unaccepted-config refresh, expired-offer renewal and material reprice/review.
 
@@ -629,7 +625,7 @@ All tenant tables include `shop_id`. Composite foreign keys or equivalent enforc
 | `purchase_design_payloads`, `artwork_attachments` | Erasable production detail and append-only replacement links; current working attachment pointer and optimistic version; lock events. |
 | `refund_facts` | Unique external refund/detail identity, observed amounts/currency/time and purchase links. No fee recomputation. |
 | `plan_catalog_versions`, `subscription_observations` | Internal feature contract; external plan/contract/cycle/trial state with observation and effective times. |
-| `usage_facts`, `usage_deliveries` | Unique shop/order/event kind; occurred time, qualification/waiver reason, opaque idempotency key, provider request/status. |
+| Historical M9 usage/intent/attempt tables | Preserve existing immutable financial history and unresolved-effect fences; no new Lean usage staging or dispatch. |
 | `webhook_inbox`, `outbox` | Durable received raw payload with short retention; topic/version/delivery dedup; transactional work intents with retry/lease fields. |
 | `reconciliation_cursors`, `idempotency_records` | Tenant/topic watermarks; command key+request hash+result identity; same key/different body is conflict. |
 | `deletion_tasks`, `audit_facts` | Erasure progress/tombstones and minimal permitted audit metadata, separate from identifying payload. |
@@ -678,8 +674,8 @@ pg-boss supplies queue scheduling/retries on PostgreSQL. Its supported Node/Post
 | `reconcile-function-config` | Surface + desired configuration hash | Safe overlap/retry; suspend issuance until agreement; never clear security policy on error |
 | `refresh-shop-token` | Shop + credential generation | Serialized refresh; atomically persist pair; terminal auth response requires merchant reauthorization |
 | `reconcile-subscription` | Contract observation/effective version | Refresh at plan redirect and periodically; unknown/stale state blocks new issuance after freshness budget, not historical access |
-| `deliver-usage` | Stable usage delivery key | Retry transport safely; 202 means accepted transport; no arbitrary new keys or timestamp rewriting |
-| `reconcile-usage` | Contract/cycle cursor | Aggregate comparisons and review exceptions; do not invent unavailable per-event confirmation |
+| Historical usage delivery | Stable preserved financial identity | Deferred/not shipping; no new staging/sends or flat-period back-billing; reconcile any genuine existing obligation |
+| Historical usage reconciliation | Existing obligation identity | Run only where a genuine retained obligation requires it; not new Lean billing functionality |
 | `retention-warning` | Asset/deadline/notice type | Deduplicate; notice failure does not extend collection cap |
 | `delete-expired-data` | Deletion task/resource version | Retry until completed; verify missing objects is success; audit erasure without retaining erased content |
 
@@ -738,7 +734,7 @@ Post-order upload uses the same inspection pipeline. Once USABLE, an authenticat
 | Required product cannot be customized | Block rather than quietly sell it plain | Warn merchant; optional products can remain plain purchases |
 | Malformed or excessive artwork | Reject file with actionable safe error | Never serve original as inline recovery or silently mark it usable |
 | Partial/delayed webhook delivery | Recover by inbox retries and order reconciliation | Snapshot status remains reconciliation-required until verified |
-| Usage transport 202 but processing unknown | Do not report charge as confirmed | Reconcile contract/meter/Dev Dashboard evidence; no duplicate charge workaround |
+| Historical unresolved usage effect | Lean usage staging/dispatch remains disabled | Preserve/reconcile genuine prior obligations; never infer billed success or back-bill the flat-plan period |
 | Uninstall or Function removal | Stop backend commercial activity; enforcement cannot be guaranteed once removed | Privacy/uninstall policy applies; do not claim offline enforcement survives absent Functions |
 
 For a missing Function configuration, a cart with any Insignia marker or required-product flag fails closed at checkout. Healthy plain optional carts may pass without Insignia processing. Unknown protocol, currency/context, corrupt keys or unsupported quantity boundaries are errors, not free purchases.
@@ -747,7 +743,7 @@ For a missing Function configuration, a cart with any Insignia marker or require
 
 Pino uses structured events, request/attempt IDs, internal shop IDs and coarse error classes. Redact credentials, signatures/tokens, raw webhook bodies, artwork, buyer names/emails and presigned query strings. Do not use arbitrary user text as event names or metric labels.
 
-prom-client metrics include quote latency/result, acceptance conflicts, expired/rejected set categories observed by application/test telemetry, active Function projection age/status, webhook backlog/oldest age, worker retry/rejection rates, inspection duration/resource rejection, usage pending/transport-accepted/reconciliation discrepancy and deletion deadline/backlog. Avoid per-order/cart/quote labels and uncontrolled shop cardinality. Rust Function observability uses supported Shopify logs/fixtures; it does not call the application's metrics endpoint offline.
+prom-client metrics include quote latency/result, acceptance conflicts, expired/rejected set categories observed by application/test telemetry, active Function projection age/status, webhook backlog/oldest age, worker retry/rejection rates, inspection duration/resource rejection, recurring subscription freshness/state and deletion deadline/backlog; retain historical usage metrics only where they still serve recovery. Avoid per-order/cart/quote labels and uncontrolled shop cardinality. Rust Function observability uses supported Shopify logs/fixtures; it does not call the application's metrics endpoint offline.
 
 Health endpoints separate process liveness, DB readiness, worker freshness and integration readiness. A globally healthy process does not mean each merchant's Functions/plan are healthy. Initial application SLO indicators and bounded tracing belong in the build; host alert thresholds and notification infrastructure remain deferred.
 
@@ -755,63 +751,58 @@ Health endpoints separate process liveness, DB readiness, worker freshness and i
 
 ### 14.1 Testing layers
 
-**Domain/Vitest:** money/currency mismatch, overflow, deterministic identity, optional/required behavior, group setup dedup, method scopes, all-units tiers, normalization and retention eligibility. Property tests cover permutation invariance, setup independence from variant partitioning, exact allocated sum, every physical unit counted once and stale quantities changing economics. Use a property-testing library only where it materially improves these invariants; deterministic seeded generators are sufficient initially.
+**Domain/Vitest:** exact Lean unit totals, missing versus explicit-zero prices, method/placement/size eligibility, currency/context rejection, quantity/variant identity, overflow and retention. Test safe exclusion of advanced configuration at editor/backend issuance/renewal boundaries. Keep historical setup/tier/FX/protocol fixtures where retained readers or old offers depend on them; do not turn their old success matrix into a Lean launch prerequisite. Use independent expected results and representative interactions, not arbitrary coverage/test-count quotas.
 
 **Protocol:** shared positive/negative fixtures run in TS and Rust; real signature bytes, malformed inputs, overflow, strict verification, unknown versions, mixed shops/sets, date boundaries, duplicate/missing indices and transport roundtrips. Keep private fixture keys conspicuously test-only and never load them in production configuration.
 
-**Database integration:** real PostgreSQL 18 with new-schema migrations. Test optimistic draft conflicts, concurrent acceptance dedup, publish/inbox/outbox crash points, multiple worker races, credential refresh CAS, key propagation state, tenant isolation, unique billing usage and deletion replay. Mock databases cannot prove transaction invariants.
+**Database integration:** real PostgreSQL 18 with new-schema migrations. Test optimistic draft conflicts, concurrent acceptance dedup, publish/inbox/outbox crash points, multiple worker races, credential refresh CAS, key propagation state, tenant isolation, recurring-entitlement projections, immutable financial history and deletion replay. Mock databases cannot prove transaction invariants.
 
 **Shopify adapter contracts:** pinned GraphQL schemas and normalized recorded responses, missing/partial errors, throttling/timeouts, exact Money string conversion, pagination, context mismatch and current/offline credential recovery. Redacted fixtures must exclude original artwork, bearer tokens and buyer PII.
 
 **Browser/Playwright:** storefront reference states across desktop/mobile, keyboard/focus/accessibility, Shadow DOM/theme coexistence, variant-color preview switches, local UI↔canvas sync, upload states, price review, complete-cart replacement, arbitrary external cart edits, stale requests and expired renewal. Admin tests cover authenticated cold launch, draft/publish conflicts, entitlement restrictions and artwork lock.
 
-**Real stores/Functions:** deploy exact release-built Wasm and input queries, capture actual Transform/Validation inputs, cart/order/refund data and billing logs. Record Shopify plan, channel, API versions, app distribution mode, currency/tax settings, build hashes and test steps. A special development-store capability must not be mistaken for non-Plus production support.
+**Real stores/Functions:** deploy exact release-built Wasm and input queries, capture actual Transform/Validation inputs, cart/order/refund data and authoritative recurring contract/trial/cancellation observations. Record Shopify plan, channel, API versions, app distribution mode, currency/tax settings, build hashes and test steps. A special development-store capability must not be mistaken for non-Plus production support.
 
-### 14.2 Gate register
+### 14.2 Gate register — Lean V1 shipping criteria
 
-All gates began **NOT RUN**. The maintained [delivery evidence register](../delivery/state.md) records later partial observations and dated historical verdicts; no complete gate has been accepted. G7 and G8 have partial observed sub-results but remain incomplete. Each gate needs a test directory, machine-readable result manifest, captured evidence and an evidence-backed engineering conclusion with proportionate independent review. The plan's examples and source reads are not gate evidence.
+The [15 October owner amendment](../delivery/authority/lean-v1-2026-10-15.md) narrows these existing gates prospectively. Dated G1–G8 results, failures and fixtures keep their original claims; no deferred capability becomes PASS. Reuse valid unchanged observations and qualify changed boundaries. The maintained [delivery state](../delivery/state.md) records actual completion, limits and owner dependencies; this plan is not an acceptance receipt. Relevant final-candidate CI and proportionate independent correctness/security review remain required.
 
-| Gate | Prototype and executable acceptance | Failure and reopened boundary |
+| Gate | Lean executable acceptance | Deferred/history and failure boundary |
 |---|---|---|
-| **G1: real-variant non-Plus lifecycle** | `gates/nonplus-same-variant`: exact one-child same-variant expansion; quantities 1, 3, multiple variants/colors and large physical quantity; captured real IDs/prices; inventory decrements once; native fulfillment, partial/full refunds and restock correct; order properties retained; plain variants coexist. Test truly representative non-Plus/public-app capability. | Any failure of real-variant merchant operations reopens non-Plus materialization. Do not continue building on fee products or silently accept bundle-only semantics that violate the result. |
-| **G2: complete Wasm budget** | `gates/wasm-budget`: both Functions including exact-money adapter and Ed25519, measured binary/instructions/input/output/memory. Probe 1, 10, 32, 64 and larger signed bucket counts; near-max ordinary-cart coexistence; hostile bounded inputs. Test 10,000 physical units without expanding per-unit data structures. Establish and enforce a measured capacity with headroom. | Oversized/over-budget binaries or commercially inadequate capacity reopen verifier/protocol granularity or supported capacity. Never replace signatures with trusted unsigned claims. |
-| **G3: TS↔Rust/transport** | `gates/authorization-vectors`: fixed layout/signatures, date/epoch/rotation, malicious encodings and cart/order value preservation. Set integrity and identical renewal semantics agree across implementations. | Reopen byte layout/codec/signature implementation; no production protocol freeze until all vectors pass. |
-| **G4: economics/context** | `gates/markets-discounts`: contextual base prices, currency override/FX freeze, country/market changes, Shopify percentage/fixed/automatic/combined discounts, tax-inclusive/exclusive contexts, shipping/duties isolation, supported accelerated paths, unrelated subscription lines. Include zero/three-decimal currencies only where Shopify supports the store context. Capture actual pre-discount verification field. | Reopen target normalization, supported contexts or materialization if observed prices cannot satisfy the approved contract. Never repair by re-converting an already presentment-priced token. |
-| **G5: allocation and exact scalar boundary** | `gates/rounding`: €91 example, many variants, setup zero/one minor unit, different base prices, native partial refunds, pathological decimal values and SDK serialization. Price buckets retain identities/prices, sums exact; no float rounding/tolerance acceptance. | Reopen exact scalar adapter or allocation/materialization shape. User-visible total may not drift by a cent as a “tolerance.” |
-| **G6: economic fail-closed plus repair** | `gates/enforcement`: conflicting transform apps, missing/discarded/altered operations, malformed/mixed/partial tokens, required-policy tampering, runtime failure, stale projections and direct/accelerated checkout. Prove no underpriced customized checkout within the approved Option A trust boundary, including detectable incomplete policy and a safe publication/activation path. Prove removing/replacing invalid lines remains possible without a cart deadlock. The accepted unexpected joint-loss/coherent-rollback residual is an incident, not a passed stronger guarantee. | Reopen enforcement/repair boundary. This is an architecture-stopping failure, not an edge case to hide in UI. |
-| **G7: embedded Astro admin** | `gates/embedded-admin`: cold launch, deep link, reload, cookie-blocked/mobile, expired identity tokens, staff authorization, mutation CSRF controls, private SSR/fragments, Polaris/Preact events/hydration, native refresh concurrency and production SDK bundling. | Adjust the narrow auth/navigation integration; reconsider Astro only on demonstrated fundamental incompatibility. No private-data bootstrap bypass. |
-| **G8: hybrid billing lifecycle** | `gates/hybrid-billing`: the owner-approved single paid plan, 100-order allowance boundary,14-day free trial, first-paid event time, duplicate deliveries, refunds not reversing, plan changes/downgrade, cancellation, delayed/closed-period events, permanent billing idempotency and 202 processing failures. Verify actual meter/contract/Dev Dashboard outcomes, not just HTTP status. | Reopen billing adapter/meter representation/reconciliation mechanics. The subscription-plus-order business model stays locked unless platform evidence makes it impossible and the user approves a change. |
+| **G1: non-Plus real-variant lifecycle** | Existing same-real-variant lineExpand through ordinary Online Store cart → checkout; representative variants/quantities/designs, correct actual garment/price/quantity/order bindings, single inventory decrement and native refund/restock behavior. Qualify representative merchant eligibility beyond special development capability. Clear Shopify component/group presentation is acceptable. | Separate Plus/lineUpdate is not shipping. Real garment/economic failure reopens this route; no fee product, variant pool or replacement checkout fallback. |
+| **G2: measured Function capacity** | Release-built Transform and independent Validation include Ed25519/exact money; measure binary/instructions/input/output/memory with representative supported data and headroom, hostile bounded inputs and ordinary-cart coexistence. Explicitly reject beyond the qualified capacity. | Historical 1/10/32/64/larger and 10,000-unit probes remain evidence, not mandatory shipping promises or a universal cap. Never replace signatures with unsigned claims to pass a budget. |
+| **G3: TS↔Rust/protocol preservation** | Canonical v2 bytes/signatures, complete members, malformed/mixed/date/epoch/rotation rejection, real cart/order carrier preservation and unchanged historical verification. | Frozen protocol/golden fixtures stay exact. A Lean profile constrains new inputs without relabeling old bytes or discarding valid offers. |
+| **G4: supported prices/context/discounts** | Actual contextual base plus final selected-placement unit surcharges; qualified shop currency and primary-market path; EUR/USD/GBP enabled/advertised only individually after qualification. Preserve country/Market/currency checks. Qualify ordinary Shopify discounts on final merchandise and applicable tax/shipping/duties separation. Unsupported contexts give clear rejection/repair. | FX, per-currency overrides, extra Markets/currencies, dedicated product-page express and broad transform interoperability are not shipping. Unsupported routes/conflicts must still fail safely; no discount engine or merchant-wide setting changes. |
+| **G5: exact Lean totals/scalar boundary** | Base once per physical garment plus each selected placement surcharge once; mixed variants/quantities/designs, explicit zero, missing unavailable, nonnegative final entries, checked exact decimal serialization/sums and coherent refunds. The €290 Lean example is an independent expectation. | New setup/tier/layer/adjustment/override behavior is excluded. Retain historical allocation/FX readers and golden examples; their old successful-behavior matrix is not a Lean blocker. No cent tolerance or silent zero fallback. |
+| **G6: independent enforcement and recovery** | Required/optional modes; complete signed/economic verification; altered/incomplete/expired offers and unsupported entry points reject; missing/altered operations, detectable policy loss, current-enforcement drift and important publication failures remain safe within approved Option A. Lost mutation responses, line replacement/removal and ordinary cart edits reconcile/repair without blind retry or deadlock. | Broad third-party compatibility is deferred, not a bypass waiver. Approved unexpected joint-loss/coherent-rollback residual remains an incident; no stronger guarantee is invented. |
+| **G7: useful authenticated admin/storefront** | Native merchant authentication, publish/copy/conflicts, simple price table, geometry/images, installation/readiness, purchase/historical preview/original retrieval, permitted merchant replacement/lock and retention indicators. Verify staff/tenant/privacy boundaries, important cold/deep/reload/recovery and representative desktop/mobile legacy visual/interaction fidelity. | No unrelated redesign, legacy admin/RFQ/ERP inheritance, buyer post-order upload expansion, usage dashboard or multi-plan comparison. Known defects remain defects, not owner-browser deferrals. |
+| **G8: recurring-only subscription** | Actual USD $49.99/30-day single-plan contract, authoritative 14-day trial, cancellation/reauthorization/current entitlement, no-entitlement new-action restrictions, valid-old-offer handling and authorized retained artwork/history; usable merchant billing-management route. Qualify the flat-only reader against actual provider observations. | Hybrid meter/allowance/overage/sender/back-billing matrices are DEFERRED / NOT SHIPPING, not PASS. Preserve/reconcile genuine existing obligations and financial history. Disabling dispatch does not qualify recurring-only recognition. |
 
-G8 is added because the approved subscription-plus-order business model depends on provider billing lifecycle behavior beyond a flat subscription. It is not an excuse to reopen plan economics in every coding task.
+### 14.2.1 Current acceptance map — five owner-approved outcomes
 
-### 14.2.1 Gate evidence timing, approved v1.3 sequencing retained in v1.4
+Retain M0–M11/G1–G8 identifiers for traceability and useful existing dependency evidence. Delivery now closes the following five outcomes; there is no separate principal/milestone permission gate. An unchanged bounded feasibility result is not a new native PASS. Deferred features need exclusion tests, not completion of the historical matrix. New provider/store/deployment/test-checkout effects still require actual scoped grants; owner rollout and real-charge authority remain separate.
 
-**Delivery ownership update (13 October 2026):** The accountable lead qualifies technical sub-results, complete engineering outcomes and substantive dependencies through independent review and evidence and continues without principal checkpoints. This changes neither any criterion below nor its owning milestone, and grants no unallocated resource or rollout authority.
+| Outcome | Reused mechanisms/evidence | Remaining acceptance boundary |
+|---|---|---|
+| **1. Lean pricing/currency scope** | Existing exact-money engine, configuration/revision history, v2/cart/Function path (G1–G6; M2/M4/M5/M7). | Editor and backend constrain final nonnegative method × placement × size prices; missing unavailable/explicit zero; no setup/tier/FX/layer/override new offers. Qualified primary-market shop-currency contexts only. Old accepted terms/expiry remain exact; incompatible new issuance/renewal requires a Lean replacement and review. |
+| **2. Recurring subscription/entitlement/UI** | Existing installation/credential/current-provider readers and retained financial facts (G8; M4/M9). | Qualify actual recurring-only 49.99/30-day/14-day-trial contract, cancellation/reauthorization/new-action eligibility and merchant billing route. New usage staging/dispatch is disabled, no flat/trial-period back-billing; preserve/reconcile genuine prior effects. |
+| **3. Complete native purchase/artwork journey** | Proven unchanged artwork/cart/order/purchase/payment/storage components and source-bound evidence (G1/G3/G4/G6; M5–M8). | Authenticate merchant → configure/publish Lean → buyer uploads/customizes/reviews → actual cart/permitted test checkout → independent worker order/payment reconciliation → durable purchase/first-paid → authenticated original and historical-preview retrieval. Qualify changed boundaries plus important rejection/repair/duplicate/restart/concurrency behavior. Test checkout is not a billable usage or rollout proof. |
+| **4. Storefront/admin/privacy/recovery** | Actual legacy captures, shared visualizer, authentication, safe inspection/access, retained-record and cleanup controls (G6/G7; M5/M6/M8/M10). | Corresponding desktop/mobile appearance/interactions; complete usable Lean admin, historical previews, original downloads, merchant replacement/locking; privacy handling, actual object/payload retention/cleanup, credential rotation and important failure/restart behavior. Existing expiry/cleanup obligations continue throughout rescope. |
+| **5. Reproducible operation/public-app readiness** | Versioned artifacts, scoped roles, host isolation, independent release authority, migrations and recovery evidence (G2/G3/G7/G8; M10/M11). | Versioned Docker images + Compose on VPS + Traefik HTTPS include web/worker/inspector/verifier responsibilities without agent sessions/mutable checkout. Qualify explicit host prerequisites, readiness, stop/restart, compatible migrations, backup/restore with erasure reapplication, rollback and actionable monitoring. Explain any unavoidable host application-service exception for owner decision. Applicable Shopify/public-app approvals and owner-authorized rollout remain due. |
 
-Native criteria in the table above remain. Engineering review and authorized independent progression may carry named deferred native checks under the current operating model. A reviewed **feasibility basis** establishes only a bounded platform/interface contract; it is not a complete gate PASS. Dependent development requires its substantive entry evidence; separate milestone authorization is retired. A feature may be accepted only after its owning milestone's remaining criteria pass. Every G1–G8 criterion for the supported shipping scope must pass again on the release candidate before merchant rollout. A changed deadline is recorded here rather than treated as a waived requirement.
-
-| Gate | M0/next-dependent entry evidence | Remaining owner and blocking point |
-| --- | --- | --- |
-| G1 | Bounded same-real-variant, exact-price, native lifecycle proof on the designated Public app/Basic dev context, with distribution limits recorded, before the M1 readiness decision. | M7/M8 complete supported quantities 1/3, variants/colors, large physical quantity, real IDs/prices, single inventory decrement, fulfillment/refund/restock, retained order properties and plain-variant coexistence before their checkout/purchase path is accepted; representative merchant qualification before rollout. |
-| G2 | Full-path local two-Function measurements and explicit candidate admission/headroom; independent review qualifies the capacity basis before M1. | M2/M4 integrate the measured boundary; M7 exercises the adopted supported profile, near-max ordinary coexistence and hostile bounded inputs, and preserves 1/10/32/64-and-larger stress acceptance or rejection outcomes, exact-money/Ed25519 binaries, resource ceilings and 10,000 physical units. M10 repeats resource evidence on the release build. No merchant cap is inferred from an evaluation case. |
-| G3 | Shared canonical TS/Rust vectors, complete statement verification and transport feasibility for the chosen candidate before protocol adoption and M1. | M2/M4 integrate and freeze an approved version; M7 proves supported cart/order preservation, malformed/mixed-set rejection and identical key/epoch/renewal behavior; M10 repeats on release artifacts. |
-| G4 | Representative pre-discount/context evidence and explicit supported-path contract before M4 normalization is frozen. | M7 completes contextual prices, market/country/FX changes, currency overrides, percentage/fixed/automatic/combined discounts, inclusive/exclusive tax, shipping/duties isolation, supported accelerated paths and unrelated subscription lines before checkout acceptance; M10 repeats supported release contexts, including zero/three-decimal currencies where supported. |
-| G5 | Exact allocation/scalar agreement plus measured full-target output for the chosen candidate before M1 capacity reliance. | M2/M4 integrate exact money and SDK scalar serialization; M7/M8 close the €91 example, many variants, zero/one-minor setup, differing base prices, pathological decimals and native partial refunds before purchase acceptance; M10 repeats. |
-| G6 | Public-app wrong-economics rejection and a reviewed implementable Option A activation/consistency contract before publication depends on it. M1 foundation work must not rely on an unproved activator; completing the production publisher is not a prerequisite for generic foundation work. | M3 durable journal/installation fencing and M4/M5 readiness/activation; M7 proves independent fail-closed handling for conflicting apps, missing/altered operations, partial/mixed tokens, policy tampering, runtime failure, stale projections and direct/accelerated checkout, with invalid-line repair, before required-product publication is enabled or accepted. The approved unexpected joint-loss residual remains an incident to contain. |
-| G7 | Accepted real embedded identity/navigation/save feasibility supports an M1 foundation decision. | M5 implements and locally qualifies cold/deep/reload, expired-token, staff authorization, CSRF/private-fragment, Polaris/Preact, refresh concurrency, production bundle, grant-cache and ambiguous-save recovery; owner-dependent browser/native rows remain due for full acceptance, separately from engineering review; M10 repeats supported browser coverage. |
-| G8 | Accepted real provider access/current effective-zero metering is route evidence only; trial/allowance/plan/cancellation provider contracts must be established before M4 entitlement rules are accepted. | M3 implements durable records, M8 supplies verified first-paid facts, M9 closes the single-plan allowance/trial, duplicate/refund, plan transition/downgrade/cancellation, delayed/closed-period, permanent-key and 202-to-processing delivery/reconciliation against actual meter/contract/Dashboard evidence before billing acceptance; M10/M11 verify release-specific commercial terms. |
-
-Published Function resource ceilings at research time include a 256 kB binary and, for carts up to 200 lines, 11 million instructions, 128 kB input and 20 kB output. Measure against the current pinned platform and include input-query cost as well. A large garment quantity is not the same thing as a large signed-line count. [S4]
+Published historical Function resource ceilings remain reference evidence; qualify current pinned limits and measured headroom for the enabled profile. A physical garment count is not a signed-line count. [S4]
 
 ### 14.3 Release acceptance
 
-No paid launch before G1–G8 pass for the shipping scope, the supported-capacity/context matrix is explicit, required-product enforcement is active, recovery/retention tests pass, and the release candidate reproduces the visual reference. Obtain required Shopify review/scopes/protected-data approvals. Test installation, theme block/embed activation, scope revocation and uninstall as a merchant would experience them. [S23]
+A release-qualified Lean V1 satisfies all five outcomes above for its explicit enabled capacity/currency/Market/channel envelope, with meaningful tests, current evidence and no unresolved shipping defect. Deferred setup/tier/FX/Plus/express/usage capabilities are unavailable/not advertised; exclusion is verified without claiming their former gates passed. Reuse unchanged native evidence honestly; repeat affected boundaries on actual release artifacts.
 
-Visual parity is currently unverified. Capture representative legacy storefront screenshots and interactions using non-identifying fixtures; use those as review artifacts. Do not claim pixel parity from the modal markdown alone.
+Obtain applicable Shopify/public-app scope/protected-data/privacy/distribution approvals and owner rollout authorization. Test supported installation/theme activation, revocation/uninstall behavior, privacy and operational recovery under actual grants. Development-store success or a simulated test payment is not distribution approval or real-price invoice proof. [S23]
+
+Compare actual corresponding legacy screenshots/interactions on representative supported desktop/mobile states; synthetic schematics or modal markdown alone do not prove fidelity. Preserve exact originals/history/retention and the unchanged Option A/protocol/tenant/resource boundaries.
 
 ## 15. Dependency-aware implementation sequence
 
-**Predecessor:** Complete and review PF-001 documentation/tooling preflight before M0. Preflight does not scaffold the product or execute a development gate. The operating model groups M0–M11 into delivery phases without changing their prerequisites.
+**Historical sequence/current routing:** M0–M11 below retain dependency and evidence traceability; completed work is reused, not restarted. PF-001 and the original broad spike matrices remain historical entry records. Current shipping work closes the five Lean outcomes in §14; superseded capabilities are deferred/not shipping rather than still owed by their old milestone.
 
 Only the small scaffolding necessary for a spike precedes platform risk proof. The full workspace/domain/database/admin build does not precede the foundational pricing/authorization evidence in section 14.2.1. G7/G8 can run in parallel with the pricing spike where independent. Entry evidence, feature acceptance and release acceptance are separate decisions; a partial gate observation does not satisfy an unproved substantive dependency.
 
@@ -828,7 +819,7 @@ Only the small scaffolding necessary for a spike precedes platform risk proof. T
 ### M1 — Workspace and enforced boundaries
 
 **Goal:** A reproducible development/CI foundation, not a platform framework.  
-**Prerequisites:** Reviewed M0 feasibility/contracts, including measured candidate capacity, public-app same-variant/economic-protection basis and known compatible versions. Open original gate criteria remain assigned by section 14.2.1.
+**Prerequisites:** Reviewed M0 feasibility/contracts, including measured candidate capacity, public-app same-variant/economic-protection basis and known compatible versions. Applicable Lean criteria remain mapped by section 14.2.1.
 **Created:** `apps/*`, package exports, Cargo workspace, pnpm lockfile, toolchain pin, minimal CI, dependency-cruiser rules.  
 **Work:** Strict TS, browser/server entry boundaries, lint/type/test/build, versioned Shopify extension builds, secret scanning and immutable CI artifacts. Migrate proven spike code into narrow owned modules instead of copying everything.  
 **Tests:** Import-rule negative fixtures, Node/Preact/Astro build, both Wasm builds, native Sharp smoke test in worker build image.  
@@ -840,9 +831,9 @@ Only the small scaffolding necessary for a spike precedes platform risk proof. T
 **Goal:** Complete pure configuration, identity and pricing invariants.  
 **Prerequisites:** M0 normalization/capacity findings; M1.  
 **Created:** `domain`, `contracts`, application port skeleton, pricing/identity fixtures.  
-**Work:** Groups/variant vectors, configurable unit/setup scopes, all-units tiers, FX input model/overrides, exact Money, deterministic setup allocation, immutable proposal/quote construction and production readiness rules.  
-**Tests:** Every worked example, property tests, malformed configuration, late/current revision comparison and schema-version rejection.  
-**Acceptance:** Pricing is deterministic and browser-independent; variant partitions never add setup; order-wide Q is exact; no server/network imports in domain.  
+**Work:** Reuse groups/variant vectors, exact Money and existing engine/history; enforce the Lean final nonnegative per-placement unit-price profile at new authoring/issuance/renewal boundaries. Preserve immutable proposals/quotes and production readiness; advanced setup/tier/FX structures serve historical readers only.
+**Tests:** Lean independent totals/missing-zero cases, unsupported configuration rejection, qualified currency/context, late/current revision and schema-version boundaries; retain unaffected historical engine examples where readers depend on them.
+**Acceptance:** Lean pricing is deterministic and browser-independent; every garment/base/surcharge is counted exactly; historical economics stay unchanged; no server/network imports in domain.
 **Commitment afterward:** Identity/pricing semantics and serialized schema version. Any later change to accepted economics needs a new version.
 
 ### M3 — Persistence, installation and durable delivery skeleton
@@ -858,10 +849,10 @@ Only the small scaffolding necessary for a spike precedes platform risk proof. T
 ### M4 — Shopify pricing, authorization and entitlement adapter
 
 **Goal:** Replace spike fixtures with production ports for safe quoting.  
-**Prerequisites:** M2–M3; accepted M0 contract evidence and representative G4 context contract. Establish G8 provider trial/allowance/plan/cancellation contracts before accepting entitlement rules.
-**Created:** Catalog/context/FX adapters, server signer, key/Function reconciliation, subscription projections and feature-policy service.  
+**Prerequisites:** M2–M3; accepted M0 contract evidence and representative G4 context contract. Establish actual recurring-only G8 trial/contract/cancellation behavior before accepting the corresponding entitlement rules.
+**Created:** Catalog/context adapters (historical FX retained), server signer, key/Function reconciliation, subscription projections and feature-policy service.
 **Work:** Batch contextual lookups, freshness checks, exact decimal boundary, known-currency matrix, publication-readiness projection, stable per-plan feature catalog structure and issuance authorization. Implement Shopify App Pricing contract reads early because publication and quote eligibility depend on them.  
-**Tests:** Provider contract fixtures, expired/rotated credentials, unavailable context/FX, desired/observed drift, no-entitlement/downgrade rules and key overlap.  
+**Tests:** Provider contract fixtures, expired/rotated credentials, unavailable/unsupported context, desired/observed drift, no-entitlement/downgrade rules and key overlap.
 **Acceptance:** A programmatic immutable accepted quote yields the same validated prices as the spike; missing entitlement/pricing/config blocks issuance without affecting old valid offers.  
 **Commitment afterward:** External adapter contracts, the separately adopted versioned protocol and feature identifiers; future incompatible change is explicit/versioned.
 
@@ -870,7 +861,7 @@ Only the small scaffolding necessary for a spike precedes platform risk proof. T
 **Goal:** Merchant can configure, preview and publish a product.  
 **Prerequisites:** M2–M4 and accepted G7 embedded identity/navigation feasibility.
 **Created:** Visualizer package, page-local Preact editors, Astro routes and admin command endpoints.  
-**Work:** Pure geometry projection, direct Konva editor, variant/color images, price setup scopes/tier controls, copy-to-product, draft CAS and publish readiness. Capture storefront visual fixtures in parallel, without porting legacy backend.  
+**Work:** Pure geometry projection, direct Konva editor, variant/color images, simple final method × placement × size price table, copy-to-product, draft CAS and publish readiness. Capture storefront visual fixtures in parallel, without porting legacy backend.
 **Tests:** Geometry roundtrips/contain-fit, UI→canvas/canvas→UI, server/browser scene agreement, concurrent editing, missing preview fallbacks, required-feature errors.  
 **Acceptance:** A merchant publishes a correct revision; changing the draft or defaults leaves historical revision/prices unchanged. Engineering readiness requires the implemented usable flow and relevant local qualification, with defects and named deferred native/browser observations explicit. Full native acceptance still requires G7 staff/session/browser/grant-cache/save-recovery and Option A readiness/activation evidence; it remains distinct from engineering review and rollout.
 **Commitment afterward:** Serialized config/geometry contracts and merchant workflow; old published versions need readers, not mutation.
@@ -890,8 +881,8 @@ Only the small scaffolding necessary for a spike precedes platform risk proof. T
 **Goal:** A buyer customizes, reviews cart-wide economics and checks out safely.  
 **Prerequisites:** M4–M6 and accepted G1–G6 foundation contracts for the supported checkout path. Remaining G1–G6 criteria block M7 feature acceptance rather than the act of implementing the feature.
 **Created:** Theme block/embed, Custom Element/Shadow DOM, Preact state, App Proxy contracts, proposal/acceptance/cart-application use cases.  
-**Work:** Visual-reference flow, per-placement overrides/logo-later, size/color quantity vector, full-cart reprice, exact real-variant buckets, renewal, outside-cart mutation repair and accelerated checkout.  
-**Tests:** Playwright plus real-store acceptance, 500-tier removal, identical/different designs, split buckets, multi-tab race, discounts/Markets, pending/rejected files and required products.  
+**Work:** Visual-reference flow, per-placement artwork/logo-later, size/color quantity vector, complete-subset Lean review/pricing, exact real-variant buckets, Lean-fenced renewal and outside-cart mutation repair through ordinary checkout; unsupported express routes reject safely.
+**Tests:** Relevant browser/native acceptance, Lean prices and missing-zero exclusions, identical/different designs/variants/quantities, multi-tab/lost-response recovery, ordinary discounts and qualified primary-market contexts, pending/rejected files and required products; preserve historical split/tier fixtures without new scope.
 **Acceptance:** Accepted pre-discount quote equals materialized total exactly; no unsupported path silently falls back to base-price customization; visual reference review passes. Remaining G1–G6 supported-context, resource, transport and enforcement criteria pass for this checkout path before it is accepted.
 **Commitment afterward:** Storefront API v1, signed cart contract and buyer review behavior; backward compatibility for issued offers becomes necessary on deployment.
 
@@ -905,15 +896,13 @@ Only the small scaffolding necessary for a spike precedes platform risk proof. T
 **Acceptance:** Real product variants/quantities/prices are correctly visible and operable in Shopify; replacement artwork never overwrites purchase history.  
 **Commitment afterward:** Purchase/event identities and audit semantics; real order data would require compatible readers.
 
-### M9 — Usage billing and subscription lifecycle
+### M9 — Recurring-only subscription and entitlement lifecycle
 
-**Goal:** Charge one eligible order once, with correct plan features/allowances/trial policy.
-**Prerequisites:** M4 entitlement work, M8 paid facts and reviewed G8 provider feasibility/contracts. Real commercial plan configuration remains due before paid release; full integrated G8 cannot be an entry requirement for the milestone that implements it.
-**Created:** Usage ledger/outbox sender, subscription/usage reconciliation, billing/admin disclosure.  
-**Work:** One owner-approved provider paid plan, 100 included orders in a zero-cost graduated meter band then USD $0.10/order, trial waiver, occurred-at qualification, non-reversing refunds, cancellation/downgrade restrictions, 202 transport-vs-billing distinction and permanent idempotency.
-**Tests:** Duplicate paid events/replayed quotes, 500-item single usage, allowance boundary, trial-end delayed webhook, plan switch, cancellation/old authorization, billing validation failure and closed period.  
-**Acceptance:** Actual provider evidence matches expected charges and entitlements; no trial back-billing or duplicate usage; processing uncertainty is visible, not hidden as success. All remaining original G8 lifecycle criteria pass at M9 exit, with release-specific terms reverified before paid rollout.
-**Commitment afterward:** Meter handle, qualification rules and actual merchant contract. Rates/feature changes need versioned disclosures and provider contract handling.
+**Goal:** Qualify the single Lean recurring plan, authoritative trial/access behavior and useful merchant billing UI; prior usage work is deferred/not shipping.
+**Prerequisites:** Existing installation/current-provider readers and trustworthy purchase/history records; actual approved provider configuration/selection authority before effects. Old hybrid feasibility does not prove recurring-only recognition.
+**Work:** Adapt flat-only contract mapping for 49.99/30-day/14-day trial, cancellation/reauthorization/new-action eligibility, valid-old-offer and retained-artwork access. Disable new usage staging/dispatch for flat operation; preserve financial facts and resolve genuine prior obligations without retroactive charges.
+**Tests/acceptance:** Actual contract/trial/cancellation observations and supported billing management; stale/absent/inactive state rejects new actions, history remains authorized within retention, no trial/flat back-billing. Outcome2/G8 in §14 governs completion; no allowance/meter/sender matrix is owed for Lean launch.
+**Commitment afterward:** The actual recurring contract and versioned feature/access semantics. Owner terms, saved drafts and development effective-zero observations alone are not configured commercial acceptance.
 
 ### M10 — Recovery, retention, security and release qualification
 
@@ -922,15 +911,15 @@ Only the small scaffolding necessary for a spike precedes platform risk proof. T
 **Created:** Complete cleanup/reconciliation jobs, privacy export/redaction, fault-injection suites, operational readiness pages.  
 **Work:** Collection deadlines/warnings, end-to-end object/payload erasure, uninstall/reinstall isolation, no-PII logs/jobs, fault drills, bounded queues/metrics and final App Store scope/privacy checklist.  
 **Tests:** Kill workers around commits, drop webhook deliveries, rotate keys/tokens, simulate DB/Shopify/R2 failures, delete old artwork still referenced by unfinished orders, replay erasure after restore in a disposable environment.  
-**Acceptance:** Every failure in section 13 has an observed test; G1–G8 still pass on the release candidate; required public-app approvals and disclosures ready.  
+**Acceptance:** Every applicable supported failure in section 13 has an observed test; all applicable Lean §14 criteria are qualified on the release candidate; required public-app approvals and disclosures ready.
 **Commitment afterward:** External privacy promises, security guarantees and compatibility envelope; changes must be deliberate and documented.
 
 ### M11 — Production environment and controlled release
 
 **Goal:** Build the actual production environment using the proven application requirements.  
-**Prerequisites:** M10; production environment now being designed.  
+**Prerequisites:** Applicable Lean recovery/privacy/release evidence; close the remaining reproducible deployment outcome without restarting completed environment work.
 **Created:** Host-specific deployment/backup/restore/monitoring implementation and runbooks.  
-**Work:** Decide actual topology, secrets delivery, DB recovery, R2 restore/deletion handling, image-worker isolation, migrations/rolling compatibility and dashboards/alerts. These choices are not fixed here. Publish Shopify app/extensions and perform a controlled live merchant installation only with appropriate authorization.  
+**Work:** Deliver versioned Docker images/Compose on the VPS with Traefik public HTTPS, including web/worker/inspector/verifier responsibilities. Qualify secrets delivery, host security prerequisites, DB recovery, R2 erasure-aware restore, isolation, compatible migrations and actionable monitoring. Agent sessions and mutable development checkouts cannot be normal runtime dependencies; explain any unavoidable host-side application-service exception for owner decision. Publish Shopify app/extensions and perform a controlled live merchant installation only with appropriate authorization.
 **Tests:** Production-like restore, old/new Function/key/quote compatibility, readiness, rollback of code without rewriting accepted records, real merchant end-to-end acceptance.  
 **Acceptance:** Proven recovery and release procedure, compatible external versions, operational ownership and no outstanding release-blocking gate.  
 **Commitment afterward:** Live public contracts and merchant data. Rollback must preserve issued offers, purchase records and deletion commitments.
@@ -967,13 +956,13 @@ Some real-store tests and billing-log checks require controlled external credent
 
 Keep readers for historical config/quote/purchase versions needed during retention and operational audit. New writes use the latest explicit version; old snapshots are not silently rewritten. Never change a protocol field's meaning without a new version. Deploy verifier support before issuing a new protocol; keep old support through valid windows. Treat stored prices as records, not caches to recompute on library upgrade.
 
-Online deployment compatibility is an application requirement even though deployment mechanics are deferred. Use additive migrations/backfills and separately authorized destructive cleanup. A rollback cannot make the previous application unable to decode offers the new one has already issued.
+Online deployment compatibility is an application requirement under the reproducible Lean deployment target. Use additive migrations/backfills and separately authorized destructive cleanup. A rollback cannot make the previous application unable to decode offers the new one has already issued.
 
 ### 16.5 Stop/reopen rule
 
 If a gate fails, preserve fixtures and record the smallest violated invariant, actual platform result, realistic alternatives and recommendation. Reopen only the impacted boundary. Do not respond by rebuilding React, using synthetic fee products, removing signatures, overriding tax, widening retained PII or introducing legacy migration code without an explicit decision.
 
-Routine implementation tuning—indexes, retry intervals, resource budgets, FX adapter provider, file organization—does not require another architecture questionnaire. Material new business semantics or evidence that contradicts a lock does.
+Routine implementation tuning—indexes, retry intervals, resource budgets, file organization—does not require another architecture questionnaire. Material new business semantics or evidence that contradicts a lock does.
 
 ## 17. Decision ledger
 
@@ -981,41 +970,41 @@ This section mirrors `decision-ledger.md`; update both in the same reviewed chan
 
 ### LOCKED
 
-**Authority/scope:** Pasted baseline plus accepted answers, including final inactive/downgrade approval. Greenfield modular monolith. Legacy is a storefront UI/visual reference only. No migration/import concern or implementation work.
+**Authority/scope:** The [15 October owner-approved Lean V1](../delivery/authority/lean-v1-2026-10-15.md) prospectively amends pricing, supported surfaces, billing, deployment and release acceptance. Greenfield modular monolith; reuse the working rewrite. Legacy is the actual storefront appearance/interaction reference, with no legacy data migration/import.
 
 **Stack/boundaries:** Strict TypeScript; Node 24 LTS; pnpm + Cargo; Astro 7 Node SSR; Preact admin islands and Vite storefront; Polaris Web Components; Custom Element + Shadow DOM; direct Konva in a shared framework-independent visualizer; Zod 4; PostgreSQL 18 + pg/Kysely; dbmate SQL; pg-boss; private R2; Sharp/libvips; Pino/prom-client; Vitest/Playwright/dependency-cruiser/GitHub Actions. Shopify JS SDK only inside Shopify adapter. Pure domain independent of framework, renderer, platform and persistence.
 
 **Configuration:** One active ProductConfig per product, independent copy, mutable draft, immutable published revisions. New unaccepted pricing uses current permitted publication. Accepted quotes/orders retain historical revisions.
 
-**Pricing/identity:** Product/revision-bound customization groups aggregate compatible size/color variants. Different production design means different group. Merchant-configurable setup and unit components for method/placement/decoration step; general setup supported. Applicable setup charged once per group regardless of quantity or materialization splitting. Method unit multiplicity configurable. All-units customization unit tiers use total customized physical quantity across every group/product; unrelated plain items excluded. Reprice/reaccept complete customized subset on material changes. Exact accepted total after deterministic unit allocation; real variants, no synthetic fee architecture.
+**Pricing/identity:** Product/revision-bound customization groups aggregate compatible size/color variants; different production design means a different group. New Lean configurations select one final nonnegative per-garment surcharge for each allowed method × placement × decoration-size choice; missing entries are unavailable, explicit zero is allowed. Add selected placement surcharges to each real variant’s contextual Shopify base price exactly once. New authoring/issuance/renewal excludes setup fees, quantity tiers, signed adjustments, additive pricing layers, scope switches, inheritance and currency overrides. Reuse the engine behind constrained backend/editor inputs; old advanced revisions remain readable and accepted offers retain original terms/expiry. An incompatible renewal needs a new Lean proposal and buyer review. Real variants and exact money remain mandatory.
 
-**Checkout economics/security:** Customized accepted merchandise price is pre-discount; Shopify discounts act afterward on the whole price, with normal variant tax treatment. Contextual garment prices; shop-currency customization/automatic FX with explicit currency overrides and frozen accepted presentment values. Immutable accepted quotes. Installation-scoped Ed25519, compact binary/no JWT whole-quote v2 authorization, one shared envelope and one member carrier per physical line, offline complete-set verification, three shop-local calendar days, bounded reusable complete offer. Renew unchanged economics/context; otherwise review. Independent economic validation, fail closed. The v2 bytes and carrier semantics are frozen by the [principal adoption decision](WHOLE-QUOTE-V2-ADOPTED.md); an incompatible change needs a new protocol version and owner decision. There is no per-line runtime fallback.
+**Checkout economics/security:** Accepted customized merchandise price is pre-discount; Shopify applies ordinary supported discounts and owns tax/shipping/duties/payment. Lean issuance uses the qualified primary-market path in the shop currency; EUR/USD/GBP are targets, each enabled/advertised only after qualification. Preserve actual country/Market/currency/contextual-price checks; unqualified contexts reject with safe repair, without changing merchant settings. New Lean offers use neither FX nor per-currency overrides. Immutable accepted quotes retain frozen values. Installation-scoped Ed25519, compact binary/no JWT whole-quote v2, complete-set verification, three shop-local calendar days and independent fail-closed economic validation remain. The [adopted v2 bytes/carriers](WHOLE-QUOTE-V2-ADOPTED.md) are unchanged; incompatible protocol changes require a new version and owner decision. No per-line fallback.
 
-**Materialization/surfaces:** Plus lineUpdate; non-Plus same-real-variant one-child lineExpand is the intended gated mechanism. Online Store one-time purchases and supported accelerated paths. App Proxy for storefront/backend control; direct presigned R2 upload allowed. No paid customization with a selling plan. Required customization means required for all purchases; optional products may offer plain selling-plan purchases.
+**Materialization/surfaces:** Retain ordinary non-Plus eligibility and same-real-variant one-child lineExpand; qualify representative merchants, not only a development store. Shopify component/group presentation is acceptable when garment/quantity/price/order handling stays correct and clear. Online Store one-time ordinary cart → checkout, App Proxy control and direct private presigned uploads remain. A separate Plus/lineUpdate branch, product-page express/Buy-now integration and broad third-party-transform compatibility are deferred/not shipping. Unsupported routes cannot bypass required customization or economic checks. Required products remain required; optional plain purchases retain their configured behavior. No paid customization with a selling plan.
 
 **Required-product policy — approved Option A:** Within the supported enforcement conditions, v1 trusts correctly published, access-controlled app-owned Shopify policy and correctly operating Function inputs. Buyer-controlled markers are not policy authority. Reject unsigned or invalid authorization for identifiable required merchandise and detectable incomplete, malformed, pending, mismatched or wrong-installation policy; unrelated merchandise does not require a catalogue-wide authorization or outage. Unexpected complete loss or coherent rollback of *all* trusted product-policy evidence outside the supported publication contract may permit a formerly required unsigned plain purchase before detection. That residual risk is accepted as an incident to prevent, detect, contain and recover from; reconciliation cannot undo the purchase. Application-controlled unsafe publication remains a defect. The approved boundary and its limits are recorded in [OPTION-A-APPROVED.md](OPTION-A-APPROVED.md). Production publication, activation, reconciliation and gate evidence remain outstanding.
 
 **Artwork/orders:** Byte-exact private SVG/PNG/JPEG originals, verified before use, safe PNG/WebP previews, no arbitrary inline SVG. Merchant-controlled logo-later; merchant-only post-order attachment. Append-only replacements; PENDING_ARTWORK → READY → ARTWORK_LOCKED. Immutable order-time purchase facts. Shopify owns payment/fulfillment/refunds/returns/restock; no garment/customization refund split.
 
-**Billing/entitlements:** One paid plan with all released in-scope features, USD $49.99 per 30-day cycle, 100 qualifying paid customized orders included and USD $0.10 per additional qualifying order; adopted by the [10 October owner decision](../delivery/authority/commercial-single-plan-2026-10-10.md). One qualifying paid order, not quantity/groups; refunds do not reverse usage. Fourteen-day live chosen-plan trial from activation, subscription and usage waived, no retrospective trial billing and no separate demo system. No active entitlement means no new issuance/renewal; valid old offers honored until expiry. Historical order/artwork access remains within retention. Downgrade-incompatible configs stop new quoting until adjusted/republished or entitlement restored. Required purchases do not silently become plain purchases.
+**Billing/entitlements:** One recurring-only plan includes all released Lean V1 features: USD $49.99 per 30-day cycle and authoritative 14-day trial. No usage meter, included-order allowance, overage, per-order charge or retrospective billing for V1. Qualify actual recurring-only provider contract, trial, cancellation, reauthorization, entitlement and merchant billing-management route; disabling sends alone does not make the old flat-plus-meter reader compatible. No active entitlement means no new issuance/renewal; valid old offers retain normal expiry and authorized historical/artwork access remains within retention. Preserve prior financial facts and reconcile genuine obligations before transition; new usage staging/dispatch stays disabled. Technical resource limits remain; no unlimited-infrastructure promise.
 
 **Retention:** Buyer artwork/identifying customization payloads at most six months from collection; abandoned uploads shorter; reuse does not reset expiry; merchant warning/export opportunity. Permitted minimal pseudonymized financial/audit facts may persist separately. Privacy/uninstall erasure includes derivatives/payloads and does not rewrite purchase economics.
 
-**Delivery governance:** The [13 October autonomous-delivery direction](../delivery/authority/autonomous-delivery-2026-10-13.md) and [operating model](../delivery/operating-model.md) delegate investigation, implementation, proportionate independent review, relevant final-candidate CI, normal integration, permitted development deployment and continuation through substantive dependencies. External principal checkpoints and routine owner approvals are retired prospectively; the owner retains missing resources, human-only actions, material product/risk changes and production rollout. Engineering readiness, full native acceptance and rollout remain separate; resource and product/security/protocol contracts remain binding.
+**Delivery governance:** The [13 October autonomous direction](../delivery/authority/autonomous-delivery-2026-10-13.md), [approved Lean V1](../delivery/authority/lean-v1-2026-10-15.md) and [operating model](../delivery/operating-model.md) delegate useful implementation, proportionate review/testing, normal integration, permitted development deployment and continuation. The owner retains missing access/resources, human-only actions, new material product/risk decisions, unallocated effects and production rollout. Engineering completion, native qualification and rollout remain distinct. Versioned Docker images/Compose on the VPS with Traefik must reproducibly include web, worker, inspector and verification responsibilities; no agent session or mutable development checkout is a normal dependency. Preserve independent authority, real expiry/invalidation, host security prerequisites, retention and actual resource limits; explain any unavoidable host-side application-service exception to the owner.
 
 ### DEVELOPMENT GATES
 
-G1 same-variant non-Plus lifecycle; G2 complete Ed25519/Wasm/resource capacity; G3 TS/Rust golden vectors and transport; G4 discounts/Markets/tax/accelerated behavior; G5 setup allocation/exact decimal serialization; G6 independent fail-closed enforcement plus cart repair; G7 embedded Astro authentication/Polaris/Preact; G8 hybrid billing/trial/allowance/plan-change/delivery lifecycle.
+Applicable G1–G8 mechanisms now support the five Lean outcomes in plan §14: non-Plus lineExpand; measured Function capacity and TS/Rust protocol; qualified primary-market shop-currency prices/ordinary discounts; exact Lean unit totals; independent required-product enforcement/repair; useful authenticated admin; and recurring-only provider entitlement. Setup/tier/FX/Plus/express/usage matrices are DEFERRED / NOT SHIPPING, never PASS. Unchanged historical controls remain evidence for their actual dependencies.
 
 **Current state:** The maintained [delivery evidence register](../delivery/state.md) records partial observations, unresolved work and dated historical verdicts. No complete gate has been accepted; G7 and G8 have bounded observed sub-results but remain incomplete. Option A closes the joint-loss A/B owner decision but does not pass G6.
 
 ### ADOPTED PROTOCOL / UNQUALIFIED DEPLOYMENT
 
-Whole-quote v2 is the single production implementation protocol. Its domain `Insignia\0WholeQuoteAuthorization\0v2\0`, `ISG2` magic, version 2, flags 0, 92-byte header, 22-byte ordered member record, shared `_insignia_quote_v2` and per-physical-line `_insignia_member_v2` carriers, exact Ed25519 message and canonical unpadded base64url are frozen. The current 32-bucket, 200-line, 10,000-physical-unit profile and 16,000-byte Transform output target are engineering admission guards, not a universal merchant capacity. Stack peak remains unmeasured against Shopify's 512 kB stack limit; full supported-profile/live qualification and all original G1–G8 criteria remain at their existing blocking points. Protocol adoption does not authorize Function deployment, production key/FX activation, merchant publication or launch.
+Whole-quote v2 is the single production implementation protocol. Its domain `Insignia\0WholeQuoteAuthorization\0v2\0`, `ISG2` magic, version 2, flags 0, 92-byte header, 22-byte ordered member record, shared `_insignia_quote_v2` and per-physical-line `_insignia_member_v2` carriers, exact Ed25519 message and canonical unpadded base64url are frozen. The current 32-bucket, 200-line, 10,000-physical-unit profile and 16,000-byte Transform output target are engineering admission guards, not a universal merchant capacity. Stack peak remains unmeasured against Shopify's 512 kB stack limit; measured supported-profile/live qualification remains due under Lean §14, with safe rejection beyond the qualified capacity. Historical stress examples are not mandatory commercial capacity targets. Protocol adoption authorizes no deployment, key activation, merchant publication or rollout.
 
 ### DEFERRED
 
-Actual production/VPS topology, deployment procedure, Barman/R2 restore mechanics, host-specific alert thresholds and other host operations until M11. Exact FX provider/cadence remains an implementation-time selection under the defined reproducibility/freshness contract. One-plan economics and all-released-feature coverage are owner-approved; exact provider/display handles, versioned feature identifiers and actual pricing configuration/native qualification remain due before the corresponding paid release. Do not guess provider state or treat owner terms as configured billing. Migration/import is **excluded from this implementation**, not a hidden later milestone.
+Layered/setup/tier/FX/override pricing, usage billing, separate Plus implementation, dedicated express entry points and broad third-party interoperability are deferred/not shipping; qualify their safe exclusion rather than completing their old successful-behavior matrices. Keep historical readers/tests needed by valid offers, recovery and retention. Recurring-only provider configuration, reproducible deployment/recovery and applicable public-app approvals remain release work under Lean §14; owner terms are not provider evidence or effect permission. Legacy migration/import remains excluded.
 
 ---
 
@@ -1057,6 +1046,6 @@ Primary sources document the external behavior noted in the plan. Linked referen
 | S30 | Sharp constructor/decode limits/options. `https://sharp.pixelplumbing.com/api-constructor/` |
 | S31 | Shopify access scopes: least privilege, approval requirements and the default 60-day order access window. `https://shopify.dev/docs/api/usage/access-scopes` |
 
-### Owner single-plan commercial amendment — 10 October 2026
+### Historical owner single-plan commercial amendment — 10 October 2026 (prospectively superseded by Lean V1)
 
 The [owner decision](../delivery/authority/commercial-single-plan-2026-10-10.md) binds one all-released-feature paid plan, USD $49.99 per 30-day cycle, 100 included qualifying paid orders, USD $0.10 additional order fee and 14-day live trial with both fees waived. This prospectively changes current commercial configuration targets, not historical JSONB/receipts or old feature/downgrade/recovery semantics. G8 retains allowance/trial/first-paid/idempotency/cancellation/late-delivery/reconciliation requirements and historical plan-change compatibility controls; it no longer requires three new paid offers. Native pricing/development entitlement configuration and resource permissions are not fabricated. No M9/G8 execution, milestone completion or rollout is granted.

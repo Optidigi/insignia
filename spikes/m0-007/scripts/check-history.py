@@ -151,10 +151,23 @@ assert digest(archived_owner_authority) == "cb90231944c8476d695dcf8e8e656a3c58f2
 AUTONOMOUS_DELIVERY_OWNER_AUTHORITY_SHA256 = "5476ba61efe9d9aecc12fe3d63aa8d6ce5267ce38d0f43772a5182ea694f6e58"
 assert digest((REPO / AUTONOMOUS_DELIVERY_OWNER_AUTHORITY).read_bytes()) == AUTONOMOUS_DELIVERY_OWNER_AUTHORITY_SHA256, "autonomous delivery owner authority mismatch"
 
-current_architecture = {
+# Preserve the complete pre-Lean architecture and all earlier dated checks.
+PRE_LEAN_BASE = "0c3672e2f38a7c6421f9b4791a3830c2db5aaaf8"
+pre_lean_architecture = {
     "docs/architecture/implementation-plan.md": "7eece50a8030a089e95e2a533a418e75c25d0024364e7a645268bb5c25bf27eb",
     "docs/architecture/decision-ledger.md": "536576973a57d721a8af6155b709b368421ba08c98dbae70f391f21ad49589cc",
     "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
+}
+for path, expected in pre_lean_architecture.items():
+    archived = subprocess.check_output(["git", "show", f"{PRE_LEAN_BASE}:{path}"], cwd=REPO)
+    assert digest(archived) == expected, f"pre-Lean architecture mismatch: {path}"
+LEAN_OWNER_AUTHORITY = "docs/delivery/authority/lean-v1-2026-10-15.md"
+LEAN_OWNER_AUTHORITY_SHA256 = "f3b4ccc9514a55af046e8de9f57f2b29707fb572bc45130ad0e0390ae64d31de"
+assert digest((REPO / LEAN_OWNER_AUTHORITY).read_bytes()) == LEAN_OWNER_AUTHORITY_SHA256, "Lean owner authority mismatch"
+current_architecture = {
+    "docs/architecture/implementation-plan.md": "10b12aa5f9c007b94547f43581ded3d1f28ef2b0250a15592dd3cd8444b99371",
+    "docs/architecture/decision-ledger.md": "8cebe9f527727e73bb53b1313b8f0d1fa727b26bbb40909093bdaff8e6b09289",
+    "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209"
 }
 M8_PURCHASE_PROOF_OWNER_AUTHORITY = "docs/delivery/authority/m8-purchase-proof-ownership-2026-10-13.md"
 M8_PURCHASE_PROOF_OWNER_AUTHORITY_SHA256 = "b2b1a4f888473ae553d0d23dbf0a6affac9b83b43ad48d38325ceca58ed3fad9"
@@ -221,7 +234,10 @@ print(json.dumps({
     "preM8PurchaseProofSha256": pre_m8_purchase_proof_architecture,
     "m8PurchaseProofOwnerAuthority": M8_PURCHASE_PROOF_OWNER_AUTHORITY,
     "m8PurchaseProofOwnerAuthoritySha256": M8_PURCHASE_PROOF_OWNER_AUTHORITY_SHA256,
-    "currentArchitectureVersion": "1.6 + autonomous delivery and delegated M8 purchase-proof amendments (13 October 2026)",
+    "currentArchitectureVersion": "1.7 Lean V1 owner amendment (15 October 2026)",
+    "preLeanRef": PRE_LEAN_BASE,
+    "preLeanSha256": pre_lean_architecture,
+    "leanOwnerAuthoritySha256": LEAN_OWNER_AUTHORITY_SHA256,
     "currentArchitectureSha256": current_architecture,
     "preAutonomousDeliveryRef": PRE_AUTONOMOUS_DELIVERY_BASE,
     "preAutonomousDeliverySha256": pre_autonomous_delivery_architecture,

@@ -48,15 +48,18 @@ export async function bindProviderSubscription(
     throw new Error('Provider subscription tenant identity mismatch');
   return { ...snapshot, tenantShopId: scope.tenantShopId, installationGeneration: scope.installationGeneration };
 }
-export type PlanFeaturePolicy = {
+type PlanFeaturePolicyBase = {
   planHandle: string;
-  usageHandle: string;
   policyId: string;
   /** Optional exact authoritative provider Shop GID; restricts this policy's recognition. */
   shopId?: string;
   features: readonly string[];
-  includedUsage: number;
 };
+export type PlanFeaturePolicy = PlanFeaturePolicyBase &
+  (
+    | { billing: 'recurring-only'; usageHandle?: never; includedUsage?: never }
+    | { billing?: never; usageHandle: string; includedUsage: number }
+  );
 export type EntitlementPolicyConfig = {
   policyVersion: string;
   maxAgeMs: number;
@@ -71,8 +74,8 @@ export type EntitlementProjection = {
   includedUsage: number | null;
   observedUsageQuantity: string | null;
   billableUsageAllowed: boolean;
-  /** Current eligibility only. M9 must classify each order by its first full payment time. */
-  qualifyingUsageDisposition: 'REQUIRES_EVENT_TIME' | 'WAIVE_TRIAL' | 'DENY';
+  /** Current eligibility only. Historical metered policies still require first-paid event-time qualification. */
+  qualifyingUsageDisposition: 'REQUIRES_EVENT_TIME' | 'WAIVE_TRIAL' | 'NOT_METERED' | 'DENY';
   scheduledCancellation: boolean;
   pendingProviderUpdate: ProviderSubscriptionSnapshot['pendingUpdate'];
   freshness: 'fresh' | 'stale' | 'missing';
@@ -94,15 +97,21 @@ function validConfig(config: EntitlementPolicyConfig): boolean {
   for (const plan of config.plans) {
     if (
       !plan.planHandle ||
-      !plan.usageHandle ||
       !plan.policyId ||
       ('shopId' in plan &&
         (typeof plan.shopId !== 'string' || !/^gid:\/\/shopify\/Shop\/[1-9][0-9]*$/.test(plan.shopId))) ||
-      plan.planHandle === plan.usageHandle ||
-      !Number.isSafeInteger(plan.includedUsage) ||
-      plan.includedUsage < 0 ||
       !Array.isArray(plan.features) ||
       plan.features.some((feature: string) => !feature)
+    )
+      return false;
+    if (plan.billing === 'recurring-only') {
+      if ('usageHandle' in plan || 'includedUsage' in plan) return false;
+    } else if (
+      'billing' in plan ||
+      !plan.usageHandle ||
+      plan.planHandle === plan.usageHandle ||
+      !Number.isSafeInteger(plan.includedUsage) ||
+      plan.includedUsage < 0
     )
       return false;
     if (handles.has(plan.planHandle) || ids.has(plan.policyId)) return false;
@@ -176,14 +185,17 @@ export function projectEntitlement(
   if (matched.length !== 1) return base;
   const plan = matched[0];
   if (!plan || (plan.shopId !== undefined && plan.shopId !== snapshot.shopId)) return base;
+  const recurringOnly = plan.billing === 'recurring-only';
   if (
     snapshot.billingPeriod !== 'EVERY_30_DAYS' ||
-    snapshot.items.length !== 2 ||
+    snapshot.items.length !== (recurringOnly ? 1 : 2) ||
     snapshot.items.some((item) => item.handle !== plan.planHandle && item.handle !== plan.usageHandle)
   )
     return base;
   const usage = snapshot.items.find((item) => item.handle === plan.usageHandle);
-  if (
+  if (recurringOnly) {
+    if (snapshot.items[0]?.usage !== null) return base;
+  } else if (
     usage?.price.kind !== 'tiered' ||
     usage.usage === undefined ||
     (usage.usage !== null && !decimal(usage.usage.quantity))
@@ -204,9 +216,9 @@ export function projectEntitlement(
     recognizedPolicyId: plan.policyId,
     trial,
     features: [...plan.features],
-    includedUsage: plan.includedUsage,
-    observedUsageQuantity: usage.usage?.quantity ?? null,
-    billableUsageAllowed: paid,
-    qualifyingUsageDisposition: trial ? 'WAIVE_TRIAL' : 'REQUIRES_EVENT_TIME',
+    includedUsage: recurringOnly ? null : plan.includedUsage,
+    observedUsageQuantity: usage?.usage?.quantity ?? null,
+    billableUsageAllowed: !recurringOnly && paid,
+    qualifyingUsageDisposition: recurringOnly ? 'NOT_METERED' : trial ? 'WAIVE_TRIAL' : 'REQUIRES_EVENT_TIME',
   };
 }

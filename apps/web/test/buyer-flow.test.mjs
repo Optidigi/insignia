@@ -326,3 +326,29 @@ test('owned cart design restores from immutable historical revision after curren
   assert.deepEqual((await restored.json()).groups, [f.group]);
   assert.equal(f.signings(), 1);
 });
+
+test('Lean HTTP and PostgreSQL retain non-metered unit-price offers and replay without duplicate signing', {
+  skip: !connectionString,
+}, async (t) => {
+  const f = await fixture(t, { lean: true });
+  f.qualification(false);
+  assert.notEqual((await f.http('quote-proposals', f.body)).status, 200);
+  assert.equal(f.signings(), 0);
+  f.qualification(true);
+  const response = await f.http('quote-proposals', f.body);
+  assert.equal(response.status, 200, await response.clone().text());
+  const proposal = await response.json();
+  assert.equal(proposal.totalMinor, '2200');
+  const body = { capability: f.session.capability, hash: proposal.hash, idempotencyKey: randomUUID() };
+  const acceptedResponse = await f.http(`quote-proposals/${proposal.proposalId}/accept`, body);
+  assert.equal(acceptedResponse.status, 200, await acceptedResponse.clone().text());
+  const accepted = await acceptedResponse.json();
+  const facts = await f.pool.query('SELECT qualifying_usage_disposition FROM accepted_quotes WHERE shop_id=$1', [
+    f.shopId,
+  ]);
+  assert.deepEqual(facts.rows, [{ qualifying_usage_disposition: 'NOT_METERED' }]);
+  const repeated = await f.http(`quote-proposals/${proposal.proposalId}/accept`, body);
+  assert.equal(repeated.status, 200, await repeated.clone().text());
+  assert.equal((await repeated.json()).quoteId, accepted.quoteId);
+  assert.equal(f.signings(), 1);
+});

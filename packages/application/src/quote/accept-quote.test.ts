@@ -489,6 +489,43 @@ describe('acceptQuote', () => {
     expect(saved).toHaveLength(0);
   });
 
+  it('issues a Lean recurring-only quote without marking the order as metered', async () => {
+    const { ports, saved } = fixture();
+    ports.pricingProfile = 'lean-v1';
+    ports.leanContext = {
+      assertSupported: async (input) => {
+        expect(input).toMatchObject({ country: 'US', marketId: '42', currency: 'USD', shopCurrency: 'USD' });
+      },
+    };
+    vi.mocked(ports.publication.getEffective).mockResolvedValue({
+      config: {
+        ...config,
+        pricingRules: [
+          {
+            id: 'final-price',
+            role: 'unit',
+            scope: { kind: 'step', placementId: 'front', stepId: 'step', methodId: 'method' },
+            rate: { kind: 'fixed', amount: { shopDecimal: '0.01', presentmentOverrides: [] } },
+          },
+        ],
+      },
+      configId: 'cfg',
+      operationId: 'op',
+    });
+    vi.mocked(ports.entitlement.getFresh).mockResolvedValue({
+      active: true,
+      freshness: 'fresh',
+      recognizedPolicyId: 'lean-flat',
+      policyVersion: 'lean-v1',
+      trial: false,
+      qualifyingUsageDisposition: 'NOT_METERED',
+    });
+    const result = await acceptQuote(request, ports);
+    expect(result.quote.qualifyingUsageDisposition).toBe('NOT_METERED');
+    expect(result.quote.economics.totalMinor).toBe('2002');
+    expect(saved).toHaveLength(1);
+  });
+
   it('rejects a catalog change at the persistence fence and permits a fresh acceptance', async () => {
     const { ports, saved } = fixture();
     const tenant = await ports.tenant.getActive('shop', '1');

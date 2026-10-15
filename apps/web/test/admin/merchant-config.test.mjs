@@ -136,8 +136,8 @@ test('currency precision rejects invalid saved and legacy publication amounts wi
   try {
     for (const [currency, valid, invalid] of [
       ['USD', '1.23', '1.230'],
-      ['JPY', '1', '1.0'],
-      ['KWD', '1.234', '1.2345'],
+      ['EUR', '1.23', '1.230'],
+      ['GBP', '1.23', '1.230'],
     ]) {
       const shopId = randomUUID();
       const shop = 'm' + randomUUID().replaceAll('-', '') + '.myshopify.com';
@@ -173,16 +173,10 @@ test('currency precision rejects invalid saved and legacy publication amounts wi
         shopCurrency: currency,
         pricingRules: [
           {
-            id: 'setup',
-            role: 'setup',
-            scope: { kind: 'general' },
-            rate: { kind: 'fixed', amount: { shopDecimal: valid, presentmentOverrides: [] } },
-          },
-          {
-            id: 'signed-adjustment',
+            id: 'lean-unit',
             role: 'unit',
-            scope: { kind: 'placement', placementId: sharedId },
-            rate: { kind: 'fixed', amount: { shopDecimal: '-' + valid, presentmentOverrides: [] } },
+            scope: { kind: 'step', placementId: sharedId, methodId: sharedId, stepId: sharedId },
+            rate: { kind: 'fixed', amount: { shopDecimal: valid, presentmentOverrides: [] } },
           },
         ],
       };
@@ -735,4 +729,41 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
   } finally {
     await core.close();
   }
+});
+
+test('copy of historical advanced prices returns Lean review without creating a target', async () => {
+  const staff = actor('shop', 'fixture.myshopify.com', '123');
+  const scope = { shopDomain: staff.shop, shopifyShopId: '123' };
+  const legacy = baseDraft();
+  legacy.pricingRules = [
+    {
+      id: 'old-setup',
+      role: 'setup',
+      scope: { kind: 'general' },
+      rate: { kind: 'fixed', amount: { shopDecimal: '5.00', presentmentOverrides: [] } },
+    },
+  ];
+  let creates = 0;
+  const core = {
+    transactions: { run: (work) => work({}) },
+    commands: { reserve: async () => ({ kind: 'reserved' }), complete: async () => {} },
+    tenants: { getActiveAuthorizationScope: async () => scope, lockActiveAuthorizationScope: async () => scope },
+    configs: {
+      getByProductForUpdate: async (_tx, _shop, product) => (product === '111' ? { draftValue: legacy } : null),
+      createConfig: async () => {
+        creates++;
+      },
+    },
+  };
+  const service = createMerchantConfigService({
+    core,
+    catalog: { get: async (_actor, id) => item(id), shopCurrency: async () => 'USD' },
+    eligibility: async () => ({ allowed: true, reason: null }),
+    publication: () => ({}),
+  });
+  const result = await service.copy(staff, productA, productB, 'copy-legacy-lean');
+  assert.equal(result.kind, 'invalid');
+  assert.match(result.message, /Lean/);
+  assert.equal(creates, 0);
+  assert.equal(legacy.pricingRules[0].role, 'setup');
 });

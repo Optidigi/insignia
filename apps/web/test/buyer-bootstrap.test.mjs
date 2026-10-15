@@ -310,3 +310,40 @@ test('buyer release collection cannot survive authorization or installation drif
     );
   }
 });
+
+test('bootstrap admits an explicit recurring-only policy and rejects mixed meter or allowance configuration before allocation', async () => {
+  const policy = {
+    policyVersion: 'synthetic-recurring-v1',
+    maxAgeMs: 30000,
+    plans: [
+      {
+        billing: 'recurring-only',
+        planHandle: 'synthetic-flat-only',
+        policyId: 'synthetic-recurring',
+        shopId: 'gid://shopify/Shop/11',
+        features: ['base'],
+      },
+    ],
+  };
+  const value = seam();
+  assert.equal(
+    await createBuyerBootstrap(
+      { ...environment(), INSIGNIA_M5_ENTITLEMENT_POLICY_JSON: JSON.stringify(policy) },
+      value.dependencies,
+    ),
+    value.services,
+  );
+  assert.deepEqual(value.getComposition().entitlementPolicy, policy);
+  for (const fields of [{ usageHandle: 'meter' }, { includedUsage: 100 }, { billing: 'unknown' }]) {
+    const rejected = seam();
+    const invalid = { ...policy, plans: [{ ...policy.plans[0], ...fields }] };
+    assert.equal(
+      await createBuyerBootstrap(
+        { ...environment(), INSIGNIA_M5_ENTITLEMENT_POLICY_JSON: JSON.stringify(invalid) },
+        rejected.dependencies,
+      ),
+      undefined,
+    );
+    assert.deepEqual(rejected.stats(), { allocated: 0, closed: 0 });
+  }
+});
