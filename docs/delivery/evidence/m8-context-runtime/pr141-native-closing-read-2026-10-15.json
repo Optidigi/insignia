@@ -1,0 +1,15 @@
+{
+  "classification": "PR141_POSTQUALIFICATION_RUNTIME_AND_COUNTS_PRESERVED",
+  "webContainer": "131ecaba6cf59db2855d6b60e518d5e47f9b6b2477843356b3516786ec181a44",
+  "webImage": "sha256:879764b814aad9c86f640ce44794ffee5716edf6bd1a37b66b594b94edf97239",
+  "healthy": true,
+  "other33ContainerFingerprintsPreserved": true,
+  "databaseCounts": {
+    "queueJobs": 0,
+    "purchaseOrders": 2,
+    "purchasePaidFacts": 1,
+    "purchaseCursorRows": 1
+  },
+  "queriesReadOnly": true,
+  "unresolvedEffects": false
+}
