@@ -1,0 +1,85 @@
+{
+  "classification": "NATIVE_MERCHANT_REPLACEMENT_CURRENT_AND_HISTORICAL_ORIGINAL_PASS",
+  "purchaseId": "e3a74311-4323-4ea0-ba1a-154a9e65cd49",
+  "orderId": "gid://shopify/Order/7518816403739",
+  "sourceMerge": "04e3a5a7f12d3f3146a1ddc4180cde0d9a2bfe93",
+  "originalAssetId": "7cb3c29b-a525-4e07-8631-bc8d8255f63d",
+  "newAssetId": "b01c6980-c17d-409a-b1f9-4ae97ea0d0d8",
+  "newAssetExpiresAt": "2026-10-22T00:53:38.690Z",
+  "originalAssetExpiryPreserved": "2026-10-21T19:53:52.426Z",
+  "designExpiryPreserved": "2026-10-21T19:53:52.136Z",
+  "versionBefore": 0,
+  "versionAfter": 1,
+  "artworkState": "READY",
+  "appendEvents": 1,
+  "allocationInvocations": 1,
+  "storagePuts": 1,
+  "completionInvocations": 1,
+  "attachmentInvocations": 1,
+  "current": {
+    "sha256": "3c87955b08389d868f76f20c918f34d35b49bf84fd15736bcd343a08cabcaade",
+    "bytes": 181,
+    "status": 200
+  },
+  "historical": {
+    "sha256": "2b9633afe3fd7743077d7d77931093a3ce96621cf395cac07d5b46c596992a0c",
+    "bytes": 265,
+    "status": 200
+  },
+  "unauthenticatedOriginalStatus": 401,
+  "immutablePurchaseViewPreserved": true,
+  "lockInvocations": 0,
+  "providerMutations": 0,
+  "newOrders": 0,
+  "charges": 0,
+  "secretValuesPublished": false,
+  "independentDatabaseSnapshotRequired": false,
+  "independentReadback": {
+    "immutableSixTablesHashesAndCountsPreserved": true,
+    "originalCollectionExpiryAndManifestPreserved": true,
+    "artworkEventsBefore": {
+      "lockCount": 0,
+      "attachmentCount": 0,
+      "artworkEventCount": 0
+    },
+    "artworkEventsAfter": {
+      "lockCount": 0,
+      "attachmentCount": 1,
+      "artworkEventCount": 1
+    },
+    "newAsset": {
+      "state": "USABLE",
+      "sha256": "3c87955b08389d868f76f20c918f34d35b49bf84fd15736bcd343a08cabcaade",
+      "shopId": "db771bea-c585-4954-9f88-70771c9a0c89",
+      "expiresAt": "2026-10-22T00:53:38.69+00:00",
+      "ownerKind": "merchant",
+      "byteLength": "181",
+      "generation": 1,
+      "newAssetId": "b01c6980-c17d-409a-b1f9-4ae97ea0d0d8",
+      "collectedAt": "2026-10-15T00:53:38.69+00:00"
+    },
+    "all34ContainerFingerprintsPreserved": true
+  },
+  "completionResponseStatus": 202,
+  "attachmentResponseStatus": 200,
+  "probeReview": {
+    "reviewer": "accept_read_spec",
+    "result": "CLEAR",
+    "probeSha256": "782131a81572fcca54305a0b63f6b8c7e66f13b812b521ffb6689c3efa666f3a",
+    "inheritedSecurityReview": "Prior exact logic SHA06e5d764 reviewed CLEAR by offline_bridge_security; changes only fresh custody/preimage/source bindings.",
+    "nativeEffectsByReviewer": false
+  },
+  "limits": [
+    "One current native merchant replacement, no artwork lock or logo-later checkout in this probe.",
+    "No fabricated historical country/Market or per-order Function execution proof.",
+    "The previous b92a171d failed upload is distinct and remains due for actual incomplete cleanup16October; it was not retried."
+  ],
+  "cleanup": {
+    "newAssetId": "b01c6980-c17d-409a-b1f9-4ae97ea0d0d8",
+    "assetExpiresAt": "2026-10-22T00:53:38.690Z",
+    "quarantineCleanupEligibleAfter": "2026-10-15T00:58:38.690Z",
+    "quarantineCleanupObserved": false,
+    "originalAssetAndDesignDeadlinesUnchanged": true,
+    "privateCustody": "Existing private journals through20October remain; new original has its exact22October deadline and actual cleanup obligation."
+  }
+}
