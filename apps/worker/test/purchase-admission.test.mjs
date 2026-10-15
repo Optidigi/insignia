@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createProductionPurchaseAdmission } from '../dist/purchase-admission.js';
+import { createProductionPurchaseAdmission, resolveNativePurchaseQualification } from '../dist/purchase-admission.js';
 
 const now = new Date('2026-10-13T12:00:00.000Z');
 const qualification = {
@@ -135,4 +135,61 @@ test('M8 admission release target must match native qualification and still inde
   );
   assert.equal(reads.length, 1);
   assert.equal(reads[0].expectedActiveAppVersionRef, '1165513097217');
+});
+
+test('Lean scope-only profile preserves bounded native origin while independently requiring its release evidence', async () => {
+  const qualified = resolveNativePurchaseQualification({
+    appId: '123',
+    appClientId: 'synthetic-client',
+    releaseProfile: 'lean-markets-7b17cd9',
+  });
+  assert.equal(qualified.activeVersionRef, '1169137696769');
+  assert.equal(qualified.origin.creatorAppId, 'gid://shopify/App/580111');
+  assert.equal(qualified.origin.supportedFrom, '2026-10-14T20:03:04Z');
+  const reads = [];
+  const port = createProductionPurchaseAdmission({
+    core: {
+      tenants: {
+        getActiveProviderScope: async () => ({
+          shopId: qualified.origin.shopId,
+          installationGeneration: '1',
+          shopDomain: 'synthetic.myshopify.com',
+          shopifyShopId: '101',
+        }),
+      },
+      trustedReleaseRecords: {
+        read: async (input) => {
+          reads.push(input);
+          return null;
+        },
+      },
+    },
+    credentials: {
+      acquire: async () => {
+        throw new Error('No provider request without trusted release');
+      },
+    },
+    qualification: qualified,
+    releaseProfile: 'lean-markets-7b17cd9',
+    clock: () => new Date('2026-10-15T12:30:00Z'),
+  });
+  assert.ok(port);
+  assert.equal(
+    await port.admit({
+      order: {
+        shopId: qualified.origin.shopId,
+        installationGeneration: '1',
+        createdAt: '2026-10-15T12:00:00Z',
+        observedAt: '2026-10-15T12:30:00Z',
+        checkoutOrigin: {
+          creatorAppId: qualified.origin.creatorAppId,
+          sourceName: 'web',
+          checkoutTokenDigest: 'a'.repeat(64),
+        },
+      },
+    }),
+    null,
+  );
+  assert.equal(reads.length, 1);
+  assert.equal(reads[0].expectedActiveAppVersionRef, '1169137696769');
 });

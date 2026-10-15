@@ -6,8 +6,14 @@ export type RuntimeReleaseProfileName =
   | 'm8-app-proxy-3d2a02e'
   | 'm8-theme-c8d8713'
   | 'm8-cookie-91b35ab'
-  | 'm8-preview-28443bd';
+  | 'm8-preview-28443bd'
+  | 'lean-markets-7b17cd9';
 const profiles = Object.freeze({
+  'lean-markets-7b17cd9': Object.freeze({
+    name: 'lean-markets-7b17cd9' as const,
+    activeVersionRef: '1169137696769',
+    functionsSourceCommit: '9b94149272d1b62c34f44dda3bde209e80b4ae22',
+  }),
   'm5-functions-9c2e56b42fbf': Object.freeze({
     name: 'm5-functions-9c2e56b42fbf' as const,
     activeVersionRef: '1163229200385',

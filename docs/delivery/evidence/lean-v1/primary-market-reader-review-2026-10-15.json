@@ -1,0 +1,20 @@
+{
+  "classification": "PRIMARY_MARKET_READER_SOURCE_NOT_NATIVE_QUALIFICATION",
+  "scope": "Fixed Admin2026-07 read only; no automatic currency enablement",
+  "tests": "32 new/60 affected PASS; package build/style PASS",
+  "reviewFindings": [
+    "Capture validated tenant/generation/shop target and credential values before async operations",
+    "Recheck actual credential expiry and finite monotonic clock before each network dispatch",
+    "Require observed x-shopify-api-version2026-07, including each page"
+  ],
+  "meaningfulRedGreen": "Original pagination/complete-membership and final-expiry regressions; review6 cases RED then GREEN plus2 clock cases",
+  "finalSourceSha256": "0cb3f8ef0ee0c35c4505bdd882b3005137c9591015e88d68027d750bf54c7bf7",
+  "finalTestSha256": "554b54a8cd56e46aba3014bdc1c0eee35091c7c4b920aa51edfb25d306768ee0",
+  "finalImpactReview": "CLEAR by independent /root/m9_native_operation_review after all three corrections; no native effects/network/credential use by reviewer",
+  "nativeApiQuery": "NOT_RUN_PENDING_ACTUAL_SCOPE_GRANT",
+  "limits": [
+    "Snapshot is observed shop currency and complete primary-Market country membership; it is not cart/Function/native currency qualification",
+    "primaryMarket is deprecated but retained by pinned2026-07; no backupRegion identity substitution",
+    "Unknown/subdivision-only membership, expiry, incomplete pagination or API fallback reject without partial success"
+  ]
+}

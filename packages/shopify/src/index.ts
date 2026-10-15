@@ -13,6 +13,7 @@ export * from './function-setup.js';
 export * from './open-exchange-rates.js';
 export * from './orders/checkout-admission.js';
 export * from './orders/read-order.js';
+export * from './primary-market.js';
 export * from './publication-admin.js';
 export * from './refresh.js';
 export * from './release-evidence.js';

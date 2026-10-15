@@ -1,0 +1,74 @@
+{
+  "classification": "ONE_SCOPE_ONLY_INACTIVE_VERSION_ACK_AND_EXACT_READBACK_PASS",
+  "observedAt": "2026-10-15T23:07:45.410Z",
+  "appId": "429028933633",
+  "candidate": {
+    "versionId": "1169137696769",
+    "versionTag": "lean-markets-7b17cd9",
+    "status": "inactive"
+  },
+  "previousActive": {
+    "versionId": "1168157736961",
+    "versionTag": "m8-preview-28443bd",
+    "unchanged": true
+  },
+  "versionCount": 13,
+  "moduleCount": 8,
+  "moduleMapsSha256": "ff157c765e0ab830eea7ffeb25c26a4f8d5467baa764f5c7ffb475594e7c3365",
+  "nativeFullMapComparison": "Exact previous baseline with only app_access.optional_scopes append read_markets; seven other full maps unchanged",
+  "installCount": 1,
+  "creation": {
+    "appVersionCreateInvocations": 1,
+    "sourceUploadUrlInvocations": 1,
+    "registeredUploads": 1,
+    "httpMutationAttempts": 2,
+    "blockedAttempts": 0,
+    "uploadBlocked": 0,
+    "acknowledged": true,
+    "inputsUnchanged": true,
+    "releaseInvocations": 0,
+    "scopeConsents": 0,
+    "retryAfterExternalDispatch": 0
+  },
+  "preflightFailure": {
+    "classification": "LOCAL_NO_AUTH_NO_PROVIDER_EFFECT_PROVED",
+    "reason": "Restricted command environment omitted user-bus variables; quiescence check failed before SDK/auth import, guard setup or reservation",
+    "correction": "Preserved existing exact serveradmin XDG_RUNTIME_DIR/DBUS_SESSION_BUS_ADDRESS; no source/authority change",
+    "preserved": true
+  },
+  "verifier": {
+    "classification": "EXACT_VERIFIER_QUIESCENCE_PASS",
+    "priorPid": 1199195,
+    "priorInvocationId": "49e1af2617dd4fbdb3a90112ef1e1d9c",
+    "allPriorPidsGone": true,
+    "cgroupEmptyOrRemoved": true,
+    "localSocketAbsent": true,
+    "exclusiveFenceHeld": true,
+    "frozenSourceStillHistorical": "b52fcf4c3a4307d1af3e08caa4ea5316447c2c7f"
+  },
+  "compiledPackage": {
+    "onlyOptionalScopeDelta": true,
+    "unchangedSourceFiles": 18,
+    "moduleCount": 8,
+    "manifestSha256": "de65dc5961ab0e00b501aad1cdd2b0723b2fdc221c3e497981c43abf8b2a7d90",
+    "bundleSha256": "9d0ef193d1f2e6ba71c313ee3f22e8ee6d8c3829c432ebda65f99b5fabb12842",
+    "preparationFailure": "Duplicate qualifier declaration corrected; actual syntax and compiled preservation checks subsequently pass; original incorrect syntax-PASS claim preserved"
+  },
+  "review": {
+    "reviewer": "/root/m9_native_operation_review",
+    "quiescence": "CLEAR",
+    "inactiveCreate": "CLEAR after local qualifier correction",
+    "nativeEffectsByReviewer": false,
+    "networkCredentialIsolationEnforced": false
+  },
+  "next": "Integrate/qualify exact runtime+collector+host+worker profiles and build artifacts; coordinate deployment/frozen verifier before authorized one-time release. Then request only read_markets consent and independently verify actual grants/query. Never create again under consumed creation grant.",
+  "notClaimed": [
+    "Active candidate",
+    "read_markets installed",
+    "native primary-Market/currency qualification",
+    "Lean deployment",
+    "new subscription selection",
+    "new checkout or charge"
+  ],
+  "privateArtifactsDue": "20 October 2026; active/unresolved dependencies must be safely transitioned before cleanup"
+}

@@ -30,7 +30,7 @@ export function resolveNativePurchaseQualification(input: {
 }): NativePurchaseQualification | null {
   const profile = resolveRuntimeReleaseProfile(input.releaseProfile);
   if (
-    !['m8-cookie-91b35ab', 'm8-preview-28443bd'].includes(profile.name) ||
+    !['m8-cookie-91b35ab', 'm8-preview-28443bd', 'lean-markets-7b17cd9'].includes(profile.name) ||
     !/^[1-9][0-9]{0,19}$/.test(input.appId) ||
     !/^[A-Za-z0-9_-]{1,128}$/.test(input.appClientId)
   )

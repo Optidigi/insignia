@@ -1,0 +1,23 @@
+{
+  "versionId": "1169137696769",
+  "versionTag": "lean-markets-7b17cd9",
+  "versionIds": [
+    "1169137696769",
+    "1168157736961",
+    "1166710865921",
+    "1166552825857",
+    "1166090010625",
+    "1165513097217",
+    "1163229200385",
+    "1162611916801",
+    "1158986629121",
+    "1158837927937",
+    "1153019904001",
+    "1152880803841",
+    "1146748534785"
+  ],
+  "moduleHash": "ff157c765e0ab830eea7ffeb25c26a4f8d5467baa764f5c7ffb475594e7c3365",
+  "nativeObservation": "EXACT_INACTIVE_SCOPE_ONLY_CANDIDATE_PASS",
+  "observedAt": "2026-10-15T23:07:45.410Z",
+  "note": "Exact independently read inactive scope-only candidate; all eight complete module maps preserve the previous version except optional read_markets. Active release, installation consent and fresh trusted evidence remain separate."
+}
