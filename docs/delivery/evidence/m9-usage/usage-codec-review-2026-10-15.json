@@ -1,0 +1,88 @@
+{
+  "classification": "OFFLINE_USAGE_CODEC_REVIEW_CLEAR_CI_PENDING",
+  "base": "ea30da00c08bbf23ad111b203a526dc9c4714fc0",
+  "scope": "Immutable financial intent formatting and supplied response normalization; no HTTP/auth/sender authority",
+  "behavior": [
+    "Exact five-field request and fixed2026-07 POST endpoint; UUID/time/unit unchanged, only value1 attributes, deterministic body hash.",
+    "Exact origin, no redirects, bounded status and16KiB supplied UTF8 body. Valid202 object success:true gives transport RECEIPT only.",
+    "Malformed JSON or false/missing success with202 remains unverified HTTP202. Redirect/oversize/invalid metadata becomes UNKNOWN, never NOT_DISPATCHED.",
+    "One actual PG boundary case joins formatter/hash to attempt persistence/normalized synthetic receipt/closed and reopened pool."
+  ],
+  "tests": {
+    "shopifyPass": 453,
+    "newUnitCases": 4,
+    "redEvidence": "Missing formatter/parser followed by semantic failures for changed-unit validation and unsafe response acceptance; GREEN after correction.",
+    "databaseIntentCases": {
+      "discovered": 13,
+      "skip": 13,
+      "newBoundaryCases": 1,
+      "reason": "No local PostgreSQL/DATABASE_URL; actual hosted CI required"
+    },
+    "builds": "Shopify/database/worker PASS",
+    "style": "Changed files PASS",
+    "boundaries": "PASS including18 domain-effect controls",
+    "secrets": "PASS220 production/180 fixtures/22 browser artifacts"
+  },
+  "review": {
+    "agent": "/root/m9_native_operation_review",
+    "axes": [
+      "Spec/correctness",
+      "Standards/security"
+    ],
+    "result": "CLEAR",
+    "sha256": {
+      "packages/shopify/src/usage-event.ts": "6ff79148d7ca394918dfc5c16dd6efd5c50faac591a9e050a7f3f0192f05fbf8",
+      "packages/shopify/test/usage-event.test.ts": "a095d2a1fba2eebddd6f1e392f5aba14a5c53348bbeab5423f37135257ccb8b1",
+      "packages/shopify/src/index.ts": "d24e24f2f314cb427bafe638460c7dfc88541cbe16dbb9bd97c0187d6c382fab",
+      "packages/database/test/usage-delivery-intent.test.ts": "73f8b932dc78a234dc852effa23fe5fa97cc5a30f7216c9adcf1ceb55bc7a61e"
+    },
+    "isolation": "Read-only/no-network/no-credentials instructions; no enforced isolation claimed"
+  },
+  "limits": [
+    "M0 records retain normalized202/responseSuccess:true, not raw response bytes. Unit and PG JSONsuccess fixtures are synthetic semantic examples.",
+    "Native M0 keys were32hex; UUID acceptance remains native-unqualified. No current pinned2026-07 access/receipt proof is asserted.",
+    "Latest official docs select2026-10; no API version change. Original token scope/expiryUNKNOWN exception is not carried to production.",
+    "No credential acquisition, runtime integration, native migration, provider send/pricing/scope/version/store change or billing processing proof.",
+    "Partner pricing route currently requires separate login; owner read-only inventory request open."
+  ],
+  "nativeSchema": 36,
+  "billingDispatchEnabled": false,
+  "initialCandidateCI": {
+    "head": "0dc8a761bcfcab92b55210ae363879387e6583d3",
+    "foundation": {
+      "run": 38790945782,
+      "result": "FAILURE",
+      "cause": "Synthetic observer procfs read raced process exit: ProcessLookupError (ESRCH), followed by cleanup kill ESRCH. Failure preserved, not rerun."
+    },
+    "durable": {
+      "run": 38790945667,
+      "result": "SUCCESS",
+      "databasePass": 316,
+      "databaseSkip": 5,
+      "intentAttemptPass": 13,
+      "restrictedLoginPass": 1,
+      "disposableSchema37DownUp": "PASS"
+    },
+    "limits": "This is superseded-head evidence, not final-candidate acceptance."
+  },
+  "observerCorrection": {
+    "path": "scripts/m5-native-inventory/collector.test.mjs",
+    "sha256": "bf27e1c0efe79eaa6c19893f49408a6e0d2164113710a44e276bd01cbc2efdac",
+    "scope": "Test observer only; no production sandbox, service or billing changes.",
+    "red": "Added one-shot ESRCH case fails with exact ProcessLookupError before the narrow catch.",
+    "green": "Final focused SIGKILL observer test: 3 subcases plus parent PASS, actual EPIPE and actual terminal recheck within unchanged6s deadline.",
+    "broaderCheck": "pnpm test:m5-inventory PASS before final impact correction; final correction separately qualified by focused test and style. Final-candidate CI pending.",
+    "review": {
+      "agent": "/root/m9_native_operation_review",
+      "axes": [
+        "Spec/correctness",
+        "Standards/security"
+      ],
+      "finding": "Injected ABSENT could pair with EPIPE without independently observing actual termination.",
+      "resolution": "After EPIPE re-read actual state after consuming injection, continue unless actual Z/ABSENT.",
+      "result": "CLEAR",
+      "isolation": "Read-only/no-network/no-credentials instructions; no enforced isolation claimed"
+    },
+    "retention": "Private failure and local RED/GREEN logs due2026-10-20; public GitHub failed run retained."
+  }
+}

@@ -1023,7 +1023,7 @@ print(json.dumps({'timedOut':timed_out,'code':child.returncode,'stdout':stdout.d
 });
 
 test('private reader terminates and releases its pipe by an independent deadline after CLI SIGKILL', async (t) => {
-  for (const mode of ['normal', 'retained-zombie'])
+  for (const mode of ['normal', 'retained-zombie', 'proc-read-esrch'])
     await t.test(mode, async (st) => {
       const h = await harness(st, async ({ res }) => res.end(JSON.stringify(page())));
       const manifest = join(h.directory, '..', 'allocation.json');
@@ -1059,14 +1059,21 @@ time.sleep(0.25)
 assert fd_exists()
 child.kill()
 stdout,stderr=child.communicate(timeout=2)
+injected_esrch=False
 def state():
+ global injected_esrch
  try:
+  # Reproduce Linux ESRCH when a process exits during an open procfs read.
+  if sys.argv[6]=='proc-read-esrch' and not injected_esrch:
+   injected_esrch=True
+   raise ProcessLookupError(3,'No such process')
   return Path('/proc/'+str(reader)+'/stat').read_text().rsplit(')',1)[1].split()[0]
- except FileNotFoundError:
+ except (FileNotFoundError,ProcessLookupError):
   return 'ABSENT'
 limit=time.monotonic()+6
 observer_started=limit-6
 pipe_closed=False
+terminal='UNKNOWN'
 os.set_blocking(write_fd,False)
 try:
  while time.monotonic()<limit:
@@ -1075,8 +1082,11 @@ try:
    try:
     os.write(write_fd,b'p')
    except BrokenPipeError:
-    pipe_closed=True
-    break
+    # Confirm actual termination after the one-shot ESRCH simulation as well.
+    terminal=state()
+    if terminal in ('Z','ABSENT'):
+     pipe_closed=True
+     break
    except BlockingIOError:
     pass
   time.sleep(0.02)
@@ -1087,11 +1097,14 @@ try:
  fd_retained=not pipe_closed if terminal in ('Z','ABSENT') else fd_exists()
 finally:
  if terminal not in ('Z','ABSENT'):
-  os.kill(reader,signal.SIGKILL)
+  try:
+   os.kill(reader,signal.SIGKILL)
+  except ProcessLookupError:
+   pass
  os.close(write_fd)
  if retain_zombie:
   os.waitpid(reader,0)
-print(json.dumps({'observerElapsedMs':observer_ms,'closureWithinDeadline':closure_within_deadline,'pythonVersion':sys.version,'platform':CONTROL_RUNTIME['platform'],'retainedZombie':retain_zombie,'readerState':terminal,'fdRetained':fd_retained,'pipeClosed':pipe_closed,'code':child.returncode,'stdout':stdout.decode(),'stderr':stderr.decode()}))
+print(json.dumps({'observerElapsedMs':observer_ms,'closureWithinDeadline':closure_within_deadline,'pythonVersion':sys.version,'platform':CONTROL_RUNTIME['platform'],'injectedEsrch':injected_esrch,'retainedZombie':retain_zombie,'readerState':terminal,'fdRetained':fd_retained,'pipeClosed':pipe_closed,'code':child.returncode,'stdout':stdout.decode(),'stderr':stderr.decode()}))
 `;
       const observation = await localPythonControl(
         helper,
@@ -1122,6 +1135,7 @@ print(json.dumps({'observerElapsedMs':observer_ms,'closureWithinDeadline':closur
         'orphaned reader still executing beyond its independent deadline',
       );
       if (mode === 'retained-zombie') assert.equal(observation.readerState, 'Z');
+      assert.equal(observation.injectedEsrch, mode === 'proc-read-esrch');
       assert.equal(observation.fdRetained, false);
       assert.equal(observation.pipeClosed, true);
       assert.equal(observation.closureWithinDeadline, true);

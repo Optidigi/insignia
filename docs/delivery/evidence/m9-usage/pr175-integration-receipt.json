@@ -1,0 +1,45 @@
+{
+  "pullRequest": "https://github.com/Optidigi/insignia/pull/175",
+  "classification": "VERIFIED_NORMAL_PROTECTED_MERGE",
+  "base": "cb6436c673ef6270db63e9f00c77a0005c286b65",
+  "head": "927f28fda9bfa27ae64fd26cc94f41f9623b945a",
+  "effectiveMergeBase": "cb6436c673ef6270db63e9f00c77a0005c286b65",
+  "merge": "ea30da00c08bbf23ad111b203a526dc9c4714fc0",
+  "tree": "50e70b833a474db679bf7f476449c63f49caa063",
+  "parents": [
+    "cb6436c673ef6270db63e9f00c77a0005c286b65",
+    "927f28fda9bfa27ae64fd26cc94f41f9623b945a"
+  ],
+  "checks": [
+    {
+      "name": "foundation",
+      "run": 38787582718,
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "name": "durable-core",
+      "run": 38787582785,
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "name": "runtime",
+      "run": 38787582740,
+      "attempt": 1,
+      "result": "SUCCESS"
+    }
+  ],
+  "actualPostgreSQL": {
+    "databasePass": 315,
+    "skip": 5,
+    "intentAndAttemptCasesPass": 12,
+    "newLifecycleCasesPass": 5,
+    "restrictedLoginPass": 1,
+    "schema37DisposableDownUp": "PASS"
+  },
+  "reviewedHashesMatch": true,
+  "nativeSchema": 36,
+  "nativeDeployment": false,
+  "billingDispatchEnabled": false
+}

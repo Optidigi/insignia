@@ -1,0 +1,37 @@
+{
+  "classification": "ADMIN_DEV_AUTHENTICATED_PARTNER_PRICING_LOGIN_DEPENDENCY",
+  "method": "Owner-authorized open.js/headed Chromium/Xvfb, one instance at a time, contexts closed, no logout",
+  "admin": {
+    "url": "https://admin.shopify.com/store/insignia-rewrite-dev/themes",
+    "challengeSignal": false,
+    "loginSignal": false,
+    "screenshotInspected": true,
+    "screenshot": "/home/serveradmin/agent-browser/m9-pr176-admin-session.png",
+    "screenshotSha256": "0b0da8c16a4cb40bfc96598e76b07ba348ddc078e7e24789d450d4cd843a6733"
+  },
+  "developer": {
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633",
+    "challengeSignal": false,
+    "loginSignal": false,
+    "screenshotInspected": true,
+    "screenshot": "/home/serveradmin/agent-browser/m9-pr176-dev-session.png",
+    "screenshotSha256": "3c3f5c2e6e6c578adb9b66d008e865a62a3c5fab52258efe6bddf159e5222637"
+  },
+  "partner": {
+    "source": "Actual Manage Shopify App Store listing link read from exact Dev Dashboard",
+    "url": "https://partners.shopify.com/org/200969036/org_apps/429028933633/distribution_app_store",
+    "observedOriginPath": "https://accounts.shopify.com/select",
+    "title": "Log in \u2014 Partners",
+    "challengeSignal": false,
+    "loginSignal": true,
+    "screenshot": "/home/serveradmin/agent-browser/m9-pr176-partner-access.png",
+    "accountSelectionRepeated": false,
+    "screenshotSha256": "d072bcbb1b89dcf0c8afb782c6537d1f8bb67fe18fa659cd9b4b9b55f23aa5b6"
+  },
+  "ownerNeed": "One open read-only request: in normal local browser open exact app distribution route and report whether pricing opens plus existing plan names/terms, or error; no changes or credentials/session data.",
+  "equivalentRouteLimit": "Existing authorized Partner API supplies active subscription/history; no supported equivalent pricing catalog edit/inventory route was established in prior primary-source research.",
+  "afterward": "Compare inventory with actual existing subscription evidence and prepare a specific bounded next action if needed; no pricing grant inferred.",
+  "meanwhile": "Offline codec/persistence composition continues; live billing disabled.",
+  "explicitBusinessWrites": 0,
+  "privateScreenshotsCleanupDue": "2026-10-20"
+}

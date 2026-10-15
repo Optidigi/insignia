@@ -21,4 +21,5 @@ export * from './runtime-release-profile.js';
 export * from './shop-context.js';
 export * from './storefront/variant-availability.js';
 export * from './subscription-history.js';
+export * from './usage-event.js';
 export * from './webhook.js';
