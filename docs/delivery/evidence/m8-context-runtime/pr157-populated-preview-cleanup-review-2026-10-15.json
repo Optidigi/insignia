@@ -1,0 +1,46 @@
+{
+  "classification": "POPULATED_PREVIEW_CLEANUP_COMPOSITION_REGRESSION_REVIEWED_AWAITING_ACTUAL_PG_CI",
+  "base": "b5cd27d92e5a1262548232f6ae327a23abdd93e8",
+  "test": "packages/database/test/merchant-preview.test.ts",
+  "behavior": "Actual capture application and durable store remove both populated abandoned objects after the deadline while preserving the bound historical revision and its original/preview bytes.",
+  "boundaries": {
+    "application": "real",
+    "databaseRepository": "real PostgreSQL when DATABASE_URL is supplied",
+    "catalogReader": "local boundary double",
+    "inspection": "local boundary double",
+    "objectStorage": "in-memory boundary double"
+  },
+  "isolation": "Random fixture IDs; only abandoned fixture updated_at changed to make one-row global cleanup batch deterministic; no other fixture or production data edited.",
+  "localChecks": {
+    "databaseTypecheck": "PASS",
+    "biomeChangedTest": "PASS",
+    "applicationPreviewTests": {
+      "passed": 10,
+      "failed": 0
+    },
+    "databasePreviewTests": {
+      "skipped": 10,
+      "executed": 0,
+      "reason": "Host has neither Docker nor PostgreSQL executable and no supplied DATABASE_URL; final-candidate existing PostgreSQL CI required"
+    },
+    "diffCheck": "PASS"
+  },
+  "reviews": {
+    "specCorrectness": {
+      "reviewer": "/root/preview_native_transition_review",
+      "result": "CLEAR",
+      "findings": 0
+    },
+    "standardsSecurity": {
+      "reviewer": "/root/preview_verifier_transition",
+      "result": "CLEAR",
+      "findings": 0
+    }
+  },
+  "limits": [
+    "No production behavior change",
+    "No development R2 deletion or store mutation",
+    "Does not qualify physical provider deletion, native reordered processing, capacity or a complete gate",
+    "Prior ambiguous WRITING/DELETING effects cannot be reset or blindly retried"
+  ]
+}

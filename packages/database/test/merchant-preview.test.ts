@@ -163,6 +163,68 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('merchant-owned preview lifecy
     expect(refs.rows).toEqual([{ asset_id: f.row.assetId, image_revision_id: 'product_42' }]);
     expect(await store.markDeleting(f.row.assetId, later)).toBeNull();
   });
+  it('removes both populated abandoned objects while preserving a bound historical preview', async () => {
+    const bound = await fixture();
+    const abandoned = await fixture();
+    const png = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+    const objects = new Map<string, Uint8Array>();
+    const removals: string[] = [];
+    let clock = now;
+    // Real application and durable store; only catalog/inspection/storage ports are local doubles.
+    const capture = createMerchantPreviewCapture({
+      store,
+      clock: () => clock,
+      readImage: async () => png,
+      inspect: async () => ({
+        version: 'm6-inspection-v1',
+        mimeType: 'image/png',
+        width: 100,
+        height: 100,
+        originalSha256: '4c4b6a3be1314ab86138bef4314dde022e600960d8689a2c8f8631802d20dab6',
+        preview: png,
+        previewMimeType: 'image/png',
+      }),
+      storage: {
+        async read({ key }) {
+          const bytes = objects.get(key);
+          if (!bytes) throw new ArtworkError('NOT_FOUND');
+          return Uint8Array.from(bytes);
+        },
+        async putImmutable({ key, bytes }) {
+          if (objects.has(key)) throw new ArtworkError('CONFLICT');
+          objects.set(key, Uint8Array.from(bytes));
+        },
+        async remove({ key }) {
+          removals.push(key);
+          objects.delete(key);
+        },
+      },
+    });
+    for (const f of [bound, abandoned])
+      await capture.capture(f.scope, { assetId: f.row.assetId, productId: '42', imageRevisionId: 'product_42' });
+    const revision = await bind(bound);
+    expect(objects.size).toBe(4);
+    expect(await store.markDeleting(abandoned.row.assetId, clock)).toBeNull();
+    expect(removals).toEqual([]);
+    clock = later;
+    // Put this candidate first without touching other fixtures in the shared disposable database.
+    await pool.query('UPDATE merchant_preview_assets SET updated_at=$2 WHERE asset_id=$1', [
+      abandoned.row.assetId,
+      new Date('1800-01-01T00:00:00Z'),
+    ]);
+    expect(await store.selectCleanup(1, clock)).toEqual([abandoned.row.assetId]);
+    expect(await capture.cleanup(1)).toBe(1);
+    expect(removals).toEqual([abandoned.row.originalKey, abandoned.row.previewKey]);
+    expect(objects.has(abandoned.row.originalKey)).toBe(false);
+    expect(objects.has(abandoned.row.previewKey)).toBe(false);
+    expect(await store.get(abandoned.scope, abandoned.row.assetId)).toBeNull();
+    expect(await store.readDeleting(abandoned.row.assetId)).toBeNull();
+    const refs = await store.getForRevision(bound.scope, { productId: '42', revisionId: revision.revisionId });
+    expect(refs.map((row) => row.assetId)).toEqual([bound.row.assetId]);
+    expect(refs[0]?.state).toBe('USABLE');
+    expect(objects.get(bound.row.originalKey)).toEqual(png);
+    expect(objects.get(bound.row.previewKey)).toEqual(png);
+  });
   it('reads only usable exact immutable revision bindings for the active shop, generation and product', async () => {
     const f = await fixture();
     await usable(f);
