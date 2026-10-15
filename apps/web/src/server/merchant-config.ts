@@ -240,6 +240,18 @@ export function createMerchantConfigService(input: {
   /** Internal preparation on an eligible new publish command only. Reads, saves
    * and durable-request replay must never initialize technical resources. */
   preparePublication?(actor: Actor): Promise<{ ready: boolean; reason: string | null }>;
+  /** Capture outside command/tenant locks, then bind only to this exact draft.
+   * Completed durable intents bypass capture, including provider recovery. */
+  capturePublicationPreviews?(
+    actor: Actor,
+    request: {
+      productId: string;
+      configId: string;
+      draftVersion: string;
+      idempotencyKey: string;
+      draft: MerchantDraft;
+    },
+  ): Promise<{ imageRevisionId: string; assetId: string }[]>;
   publication(actor: Actor): Publication;
   activation?(actor: Actor): { advance(identity: ActivationIdentity): Promise<ActivationResult> };
 }) {
@@ -550,6 +562,16 @@ export function createMerchantConfigService(input: {
           if (!preparation.ready)
             return { kind: 'forbidden', message: preparation.reason ?? 'Publication preparation unavailable' };
         }
+        const capturedDraftDigest = sha256CanonicalJson(snapshot);
+        const previewAssets = input.capturePublicationPreviews
+          ? await input.capturePublicationPreviews(actor, {
+              productId,
+              configId: data.configId,
+              draftVersion: data.draftVersion,
+              idempotencyKey: data.idempotencyKey,
+              draft: structuredClone(snapshot),
+            })
+          : undefined;
         const result = await executeCommand(commandTransactions(actor), core.commands, identity, async (tx) => {
           const config = await core.configs.getConfigForUpdate(tx, actor.tenantShopId, data.configId);
           if (
@@ -570,6 +592,7 @@ export function createMerchantConfigService(input: {
           )
             return 'open';
           const draft = validatedDraft(config.draftValue, actor, productId);
+          if (sha256CanonicalJson(draft) !== capturedDraftDigest) return 'conflict';
           if (draft.shopCurrency !== shopCurrency) return 'currency';
           const geometry = draft.geometry as GeometryV1;
           if (geometry.views.length === 0 || draft.placements.length === 0 || draft.methods.length === 0)
@@ -584,6 +607,7 @@ export function createMerchantConfigService(input: {
             publishedValue: content,
             geometry: { version: GEOMETRY_VERSION, value: geometry },
             presentation: { version: 'm5-presentation-v1', labels: draft.labels ?? {} },
+            ...(previewAssets ? { previewAssets } : {}),
             sourceDraftVersion: data.draftVersion,
             sourceInstallationGeneration: actor.installationGeneration,
             mode: draft.mode,

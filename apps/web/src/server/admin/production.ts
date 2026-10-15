@@ -15,6 +15,7 @@ import {
   canonicalAdminAccessScopes,
   createActiveSubscriptionClient,
   createAdminOnlineIdentity,
+  createCatalogImageReader,
   createCatalogReader,
   createCatalogTransport,
   createFunctionOwnershipReconciler,
@@ -26,11 +27,14 @@ import {
   resolveRuntimeReleaseProfile,
   type CatalogProduct as ShopifyCatalogProduct,
 } from '@insignia/shopify';
+import { loadArtworkStorageProfile } from '@insignia/storage';
+import { inspectArtworkPrivately } from '@insignia/worker';
 import { Pool } from 'pg';
 import { loadCredentialKeys } from '../../../../worker/src/config.ts';
 import { createMerchantConfigService } from '../merchant-config.js';
 import { type AdminInstallation, AdminInstallationReconciliationError, createAdminAuthenticator } from './auth.js';
 import type { AdminActor, AdminServices, CatalogProduct } from './contracts.js';
+import { createMerchantPublicationCapture } from './merchant-previews.js';
 import {
   createBoundProductionActivationReadiness,
   createDemandDrivenReleaseReader,
@@ -365,6 +369,34 @@ export function createProductionAdminServices(
   const service = createMerchantConfigService({
     core,
     catalog,
+    // Enable only after native schema, scoped role, inspector and cleanup composition qualify.
+    capturePublicationPreviews:
+      env.INSIGNIA_M8_MERCHANT_PREVIEWS_ENABLED === '1'
+        ? createMerchantPublicationCapture({
+            store: core.merchantPreviews,
+            storage: () =>
+              loadArtworkStorageProfile(required(env, 'ARTWORK_STORAGE_PROFILE'), {
+                endpoint: required(env, 'ARTWORK_R2_ENDPOINT'),
+                bucket: required(env, 'ARTWORK_R2_BUCKET'),
+                prefix: required(env, 'ARTWORK_R2_PREFIX'),
+              }),
+            current: async (actor) => {
+              await active(actor);
+              grant(actor);
+            },
+            readProduct: async (actor, productId) => {
+              await active(actor);
+              const result = await createCatalogReader(
+                createCatalogTransport({ shop: actor.shop, accessToken: grant(actor).accessToken }),
+              ).get(productId);
+              await active(actor);
+              return result;
+            },
+            readImage: async (product, imageRevisionId) =>
+              (await createCatalogImageReader().read(product, imageRevisionId))?.bytes ?? null,
+            inspect: (bytes) => inspectArtworkPrivately(required(env, 'ARTWORK_WORKER_READY_SOCKET'), bytes),
+          })
+        : undefined,
     async eligibility(actor, draft: MerchantDraft) {
       if (!partner || !policy || !appGid) return { allowed: false, reason: 'Publication policy is not configured' };
       await active(actor);
