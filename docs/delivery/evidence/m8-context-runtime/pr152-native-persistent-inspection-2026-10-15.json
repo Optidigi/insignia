@@ -1,0 +1,34 @@
+{
+  "classification": "PERSISTENT_INSPECTOR_BYTE_RPC_THROUGH_ACTUAL_WEB_PRIVATE_MOUNT_PASS",
+  "observedAt": "2026-10-15T04:49:23.936645+00:00",
+  "webContainer": "2a885a4043c770818e26114fea39d619a2ab5a19c869374b337e9d326eb637ef",
+  "webImage": "sha256:3c2d1ba04b2144382c0bae81381b0a54c46f614772f4d8279d40a3dae3e0ffa5",
+  "inspectorPid": 3660118,
+  "inspectorInvocationId": "d6b0c2df9b544729abf29df8c208bcdd",
+  "inspection": {
+    "uid": 1000,
+    "version": "m6-inspection-v1",
+    "mimeType": "image/png",
+    "width": 600,
+    "height": 800,
+    "originalSha256": "2614c450a7d116d47c93f00fb7ae568667dfecf176e8ca2d88ecf8c4820ff72b",
+    "previewBytes": 7516,
+    "previewSha256": "80e751f6f391253e8e0f8f019609551c6cb2d76db8da8a949a5d3ed6758c7fef"
+  },
+  "clientModuleHashes": {
+    "errors.js": "7cdbe521bd512381974433a210f714154a49d71fe73d3f11e8d88fe8d7fb4d7d",
+    "inspection-wire.js": "fdbefd69f7d3e4fc9f8b45df079eedd447d915411810a948a914b81fe745d050",
+    "inspection-client.js": "a4f7369ea1d66cfb5cd6ea850543fb96ad2ea001d113546b02fccd988179a9b8"
+  },
+  "calls": 1,
+  "retryCalls": 0,
+  "allContainerConfigurationsPreserved": true,
+  "containerCount": 34,
+  "databaseWrites": 0,
+  "storageWrites": 0,
+  "serviceChanges": 0,
+  "captureEnabled": false,
+  "limits": "Memory-injected exact compiled client on existing web; persistent deployed inspector/sandbox. No new web artifact deployment, capture/object/binding, durable buyer concurrency or capacity acceptance. Existing original source retained through20October.",
+  "operatorSha256": "85889fb90d6939af489b8bce9c2294b2cf86850227d0349ef4313520e02a8166",
+  "review": "preview_transport_security CLEAR"
+}

@@ -1,0 +1,48 @@
+{
+  "classification": "NATIVE_BUYER_FROZEN_REVISION_IMAGE_NETWORK_AND_VISIBLE_CANVAS_PASS",
+  "source": "d33c3cf568ae895d08a14b291a71980813b2c550",
+  "revisionId": "645b57fd-0737-48d5-8d46-1c772fca1e44",
+  "assetId": "1e3a659f-a3b3-6cb6-46f9-3d25578c882e",
+  "variantId": "54211066986779",
+  "configReads": 1,
+  "image": {
+    "status": 200,
+    "bytes": 7516,
+    "sha256": "80e751f6f391253e8e0f8f019609551c6cb2d76db8da8a949a5d3ed6758c7fef",
+    "allowOrigin": null
+  },
+  "maximumSignedLifetimeSeconds": 60,
+  "cartWrites": 0,
+  "quoteAcceptances": 0,
+  "newOrders": 0,
+  "substitutedResponses": 0,
+  "limits": "Existing one-variant product, client-only logo-later/placement choices and visible preview canvas. Renderer uses a normal no-CORS image for display; canvas export/CORS is not qualified. No quote/cart/order writes or new order-time purchase proof.",
+  "visualInspection": "Actual browser screenshot inspected: garment, placement rectangle and LOGO placeholder visible on canvas",
+  "screenshotSha256": "e5341cf0235e45b7f9728959f4929bdd3085df4cf9ebca4f0d88d68ef584aa2e",
+  "preservedFailedChecks": {
+    "initial": "Read-only probe asserted CORS response header although renderer uses normal no-CORS image display. Failed predicate retained; no store write or publication replay.",
+    "diagnosedObservation": {
+      "classification": "STOP_READONLY_BUYER_FROZEN_PREVIEW",
+      "reason": "ACTUAL_BUYER_IMAGE_NETWORK_OR_CORS_FAILED",
+      "observed": {
+        "stage": "config-and-image",
+        "configRevision": "645b57fd-0737-48d5-8d46-1c772fca1e44",
+        "configReady": true,
+        "variant": "54211066986779",
+        "imageKeys": [
+          "product_10519322493211"
+        ],
+        "reads": 1,
+        "blockedWrites": 0,
+        "image": {
+          "status": 200,
+          "bytes": 7516,
+          "sha256": "80e751f6f391253e8e0f8f019609551c6cb2d76db8da8a949a5d3ed6758c7fef",
+          "allowOrigin": null
+        },
+        "imageError": false
+      }
+    },
+    "correction": "Require actual200/hash/exact asset URL/finite expiry and visible canvas; do not claim canvas export/CORS. No bucket policy or renderer change."
+  }
+}
