@@ -8,6 +8,7 @@ import test from 'node:test';
 import { createReleaseVerificationClient } from '../../apps/web/src/server/admin/release-verification.ts';
 import proxyModules from '../../deployment/m8-journey/app-proxy-module-baseline.json' with { type: 'json' };
 import cookieThemeModules from '../../deployment/m8-journey/cookie-theme-module-baseline.json' with { type: 'json' };
+import previewThemeModules from '../../deployment/m8-journey/preview-theme-module-baseline.json' with { type: 'json' };
 import historicalM8Modules from '../../deployment/m8-journey/release-module-baseline.json' with { type: 'json' };
 import themeModules from '../../deployment/m8-journey/theme-module-baseline.json' with { type: 'json' };
 import { qualifyReleaseAppendInput } from './release-append.mjs';
@@ -17,16 +18,48 @@ import { fixture } from './trusted-release-collector-fixture.mjs';
 import { runManagementReads } from './trusted-release-management-worker.mjs';
 import { createOwnerHttps } from './trusted-release-owner-https.mjs';
 
-for (const profile of ['m8-read-orders-617057f', 'm8-app-proxy-3d2a02e', 'm8-theme-c8d8713', 'm8-cookie-91b35ab']) {
-  const cookie = profile === 'm8-cookie-91b35ab';
+for (const profile of [
+  'm8-read-orders-617057f',
+  'm8-app-proxy-3d2a02e',
+  'm8-theme-c8d8713',
+  'm8-cookie-91b35ab',
+  'm8-preview-28443bd',
+]) {
+  const preview = profile === 'm8-preview-28443bd';
+  const cookie = preview || profile === 'm8-cookie-91b35ab';
   const theme = cookie || profile === 'm8-theme-c8d8713';
   const proxy = profile !== 'm8-read-orders-617057f';
-  const versionId = cookie ? '1166710865921' : theme ? '1166552825857' : proxy ? '1166090010625' : '1165513097217';
-  const modules = cookie ? cookieThemeModules : theme ? themeModules : proxy ? proxyModules : historicalM8Modules;
+  const versionId = preview
+    ? '1168157736961'
+    : cookie
+      ? '1166710865921'
+      : theme
+        ? '1166552825857'
+        : proxy
+          ? '1166090010625'
+          : '1165513097217';
+  const modules = preview
+    ? previewThemeModules
+    : cookie
+      ? cookieThemeModules
+      : theme
+        ? themeModules
+        : proxy
+          ? proxyModules
+          : historicalM8Modules;
   const profileTest = (name, fn) => test(`${profile}: ${name}`, fn);
   const prior = (versions) =>
     proxy
       ? [
+          ...(preview
+            ? [
+                {
+                  versionId: 'gid://shopify/Version/1166710865921',
+                  versionTag: 'm8-cookie-91b35ab',
+                  status: 'inactive',
+                },
+              ]
+            : []),
           ...(cookie
             ? [{ versionId: 'gid://shopify/Version/1166552825857', versionTag: 'm8-theme-c8d8713', status: 'inactive' }]
             : []),
@@ -165,7 +198,10 @@ for (const profile of ['m8-read-orders-617057f', 'm8-app-proxy-3d2a02e', 'm8-the
           appVersions: async () => ({
             app: {
               id: 'gid://shopify/App/429028933633',
-              appVersions: { nodes: versions, pageInfo: { totalResults: cookie ? 11 : theme ? 10 : proxy ? 9 : 8 } },
+              appVersions: {
+                nodes: versions,
+                pageInfo: { totalResults: preview ? 12 : cookie ? 11 : theme ? 10 : proxy ? 9 : 8 },
+              },
             },
           }),
           appVersionByTag: async (_remote, tag) => ({

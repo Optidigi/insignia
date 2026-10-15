@@ -404,6 +404,8 @@ const SOURCE_PATHS = [
   'deployment/m8-journey/theme-release-binding.json',
   'deployment/m8-journey/cookie-theme-module-baseline.json',
   'deployment/m8-journey/cookie-theme-release-binding.json',
+  'deployment/m8-journey/preview-theme-module-baseline.json',
+  'deployment/m8-journey/preview-theme-release-binding.json',
   'deployment/m5-runtime/native-function-module-baseline.json',
   'deployment/m5-runtime/native-function-module-binding.json',
   'apps/web/package.json',

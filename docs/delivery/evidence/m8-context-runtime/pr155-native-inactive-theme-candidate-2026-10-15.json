@@ -1,0 +1,101 @@
+{
+  "classification": "ONE_INACTIVE_VERSION_CREATION_ACK_AND_EXACT_INDEPENDENT_READBACK",
+  "appId": "429028933633",
+  "versionId": "1168157736961",
+  "versionTag": "m8-preview-28443bd",
+  "activeVersionUnchanged": "1166710865921",
+  "inactiveReadback": {
+    "classification": "EXACT_INACTIVE_THEME_CANDIDATE_READ_PASS",
+    "observedAt": "2026-10-15T09:54:17.285Z",
+    "appId": "429028933633",
+    "activeVersion": "1166710865921",
+    "candidateVersionId": "gid://shopify/Version/1168157736961",
+    "themeRegistrationId": "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97",
+    "themeRegistrationUuid": "01a13996-ce86-7b3c-9bac-1f2605986f7f",
+    "themeType": "theme_app_extension",
+    "versions": 12,
+    "installCount": 1,
+    "moduleCount": 8,
+    "modulesSha256": "36f66b7710f17b1f03d274ea0ecb38ce68b0c6c4fdc94c6868a7fe070c1c0948",
+    "themePresent": true,
+    "reads": 5,
+    "nativeWrites": 0
+  },
+  "dispatch": {
+    "exitCode": 0,
+    "stage": "CreateAppVersion",
+    "stats": {
+      "forwarded": 2,
+      "blocked": 0,
+      "uploadForwarded": 1,
+      "uploadBlocked": 0
+    },
+    "inputsUnchanged": true,
+    "releaseInvocations": 0,
+    "classification": "CLI_ACK_REQUIRES_INDEPENDENT_READBACK"
+  },
+  "actualUploadedPackaging": {
+    "classification": "COMPILED_PRESERVATION_AND_THEME_PASS",
+    "moduleCount": 8,
+    "themeUid": "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97",
+    "bundleSha256": "6a799001c7a4d4bb7b2b5551cf86c37f3c358dc37dd938ef89e28dbd59173506",
+    "manifestSha256": "7daa311af03196d8f87a0c89a0bccee25e28168494faffd8eadfc6aeb5dc7b1c",
+    "nativeWrites": 0
+  },
+  "sourceHead": "28443bd9ea14b9c63fa661adf5442a76a85c6de3",
+  "sourceTree": "eaee7662f4c9756e96d3f9009a82c89565f56dee",
+  "preservation": {
+    "sealedSourceInputs": 19,
+    "archiveMembers": 14,
+    "sevenNonThemeModules": "EXACT_UNCHANGED",
+    "functionsWasm": "EXACT_UNCHANGED",
+    "settingsScopesProxy": "EXACT_UNCHANGED",
+    "installations": 1
+  },
+  "effects": {
+    "sourceURLMutations": 1,
+    "ownedBundleUploads": 1,
+    "inactiveVersionCreations": 1,
+    "releaseInvocations": 0,
+    "testCheckoutSubmissions": 0,
+    "orderCreations": 0
+  },
+  "grant": "../../authority/m8-preview-release-and-checkout-2026-10-15.md",
+  "remainingAuthorizedEffects": {
+    "appWideRelease": 1,
+    "quantityOneTestCheckout": 1,
+    "checkoutSimulatedCapUsd": "23",
+    "inventoryReplenishment": 0
+  },
+  "preservedNoEffectFailure": {
+    "privateJournal": "/home/serveradmin/insignia-milestone-autonomy-handoff/m8-pr155-theme-create",
+    "mutationForwarded": 0,
+    "uploadForwarded": 0,
+    "sourceInputsUnchanged": true,
+    "independentAbsenceReadAt": "2026-10-15T09:52:11.869Z",
+    "cause": "Pinned CLI regenerates two Function config.module_id UUIDs; fixed initial packaging hashes correctly refused different generated metadata before sourceURL/upload.",
+    "correction": "Exact full manifest equality excluding only the two syntactically validated generated UUID fields; every other field/order/content/source/Function/module remains exact. Actual compiled archive captured before upload and unchanged before creation.",
+    "ambiguousMutationRetried": false
+  },
+  "independentReviews": {
+    "reviewer": "theme_preparation_review",
+    "v1CorrectnessSecurity": "CLEAR before first invocation; generated UUID overconstraint then preserved/corrected",
+    "r2CorrectnessSecurity": "CLEAR including UUID-only acceptance/unrelated drift rejection/complete package requalification",
+    "providerEffectsByReviewers": 0
+  },
+  "operatorSha256": "87a66e1c25586004e5bcdf1416150b6659a4e5c1be72d56764853aa379821314",
+  "pureControlsPassed": 14,
+  "browserReadiness": {
+    "exactAdminThemesSession": "PASS fresh no LOGIN/CHALLENGE signal, root visually inspected",
+    "exactDevAppSession": "PASS fresh no LOGIN/CHALLENGE signal, root visually inspected",
+    "privateScreenshotDirectory": "/home/serveradmin/insignia-milestone-autonomy-handoff/m8-pr155-browser-checks",
+    "loginLogoutActions": 0
+  },
+  "limits": [
+    "Candidate is INACTIVE, not released. No native correction-display or purchase-image qualification claim.",
+    "Existing verifier profile retains historical11-version expectation; new12-version inventory requires coordinated qualified profile/runtime transition before new issuance/publication. Do not restamp prior evidence.",
+    "Release and checkout grants remain unused; revalidate settlement, identities, quiescence, test gateway/inventory/quote and runtime roles before those operations.",
+    "Private journal/source/artifact copies retain20October deadline; preserve active runtime dependencies and exact existing artwork deadlines."
+  ],
+  "privateJournal": "/home/serveradmin/insignia-milestone-autonomy-handoff/m8-pr155-theme-create-r2"
+}

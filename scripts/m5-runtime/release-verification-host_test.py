@@ -114,6 +114,9 @@ class BindingControls(unittest.TestCase):
     def test_reviewed_theme_profile_reaches_real_receiver_without_changing_packet(self):
         self.run_private_startup('m8-theme-c8d8713')
 
+    def test_reviewed_preview_profile_reaches_real_receiver_without_changing_packet(self):
+        self.run_private_startup('m8-preview-28443bd')
+
     def test_stopped_bridge_reuse_keeps_inode_and_records_one_handover(self):
         self.run_private_startup('m8-read-orders-617057f', reuse=True)
 
