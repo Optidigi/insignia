@@ -1,0 +1,46 @@
+{
+  "pullRequest": "https://github.com/Optidigi/insignia/pull/166",
+  "classification": "VERIFIED_NORMAL_PROTECTED_MERGE",
+  "base": "59e09649a68adbe6114a690ea2cc0ac627a4b9c9",
+  "head": "7b28356b2dfd36d8028660c677db1f654f1df402",
+  "effectiveMergeBase": "59e09649a68adbe6114a690ea2cc0ac627a4b9c9",
+  "merge": "c83f6c7ab3ce93d66042d923498be98bd49e91c4",
+  "tree": "091d54701b88fc04942ae1e8437c18504e78f46c",
+  "parents": [
+    "59e09649a68adbe6114a690ea2cc0ac627a4b9c9",
+    "7b28356b2dfd36d8028660c677db1f654f1df402"
+  ],
+  "checks": [
+    {
+      "run": 38758693222,
+      "attempt": 1,
+      "result": "SUCCESS",
+      "route": "full"
+    },
+    {
+      "run": 38758693010,
+      "attempt": 1,
+      "result": "SUCCESS",
+      "route": "full"
+    },
+    {
+      "run": 38758692993,
+      "attempt": 1,
+      "result": "SUCCESS",
+      "route": "full"
+    }
+  ],
+  "actualPostgreSQL": {
+    "databasePass": 298,
+    "skip": 5,
+    "restrictedLoginPass": 1
+  },
+  "applicationTestsPassed": 298,
+  "shopifyTestsPassed": 449,
+  "nativeEffectsDuringMerge": 0,
+  "billingActivation": false,
+  "limits": [
+    "Native normalizer replay remains UNRECOGNIZED_POLICY; synthetic positive tests do not establish qualified native billing.",
+    "No schema35/grants/deployment or dispatch."
+  ]
+}

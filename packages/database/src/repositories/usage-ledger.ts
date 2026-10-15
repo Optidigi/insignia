@@ -90,7 +90,7 @@ export function createUsageLedgerRepository(db: Kysely<Database>) {
     },
     async record(
       scope: UsageLedgerScope,
-      input: { purchaseId: string; policy: UsagePolicyIdentity; history: PaidOrderUsageHistory },
+      input: { purchaseId: string; policy: UsagePolicyIdentity | null; history: PaidOrderUsageHistory },
     ): Promise<UsageLedgerRecord> {
       validate(scope, input?.purchaseId);
       return db.transaction().execute(async (tx) => {

@@ -87,7 +87,7 @@ function interval(value: UsageInterval | undefined): { start: number; end: numbe
   const end = instant(value.endsAt);
   return start !== null && end !== null && start < end ? { start, end } : null;
 }
-function validPolicy(value: UsagePolicyIdentity | undefined): value is UsagePolicyIdentity {
+function validPolicy(value: UsagePolicyIdentity | null | undefined): value is UsagePolicyIdentity {
   return (
     !!value && typeof value === 'object' && !Array.isArray(value) && identifier(value.id) && identifier(value.version)
   );
@@ -100,7 +100,7 @@ function contains(period: { start: number; end: number }, at: number): boolean {
  * Historical adapters must supply authoritative effective instants, never a date-only cancellation guess. */
 export function qualifyPaidOrderUsage(input: {
   readonly purchase: PaidOrderUsagePurchase;
-  readonly policy: UsagePolicyIdentity;
+  readonly policy: UsagePolicyIdentity | null;
   readonly history: PaidOrderUsageHistory;
 }): PaidOrderUsageQualification {
   if (!input || typeof input !== 'object' || Array.isArray(input)) return unresolved('INVALID_PURCHASE_FACTS');

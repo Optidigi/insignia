@@ -1,6 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import type { PurchaseObservation } from '@insignia/application';
+import {
+  type CurrentCycleUsageHistoryInput,
+  createPurchaseUsageQualifier,
+  type PurchaseObservation,
+} from '@insignia/application';
 import type { PaidOrderUsageHistory } from '@insignia/domain';
 import { sql } from 'kysely';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -107,6 +111,154 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable first-paid usage qual
     };
     return { scope, purchaseId: result.purchaseId, history, input, binding };
   }
+  async function compositionFixture(test = false) {
+    // Start unpaid so the actual first-paid fact is established after this fixture's installation.
+    const f = await fixture({ test, paid: false });
+    const identity = (
+      await sql<{ activated_at: Date; shopify_shop_id: string; paid_at: Date }>`
+      SELECT i.activated_at,s.shopify_shop_id::text,clock_timestamp() AS paid_at
+      FROM installation_generations i JOIN shops s USING(shop_id)
+      WHERE i.shop_id=${f.scope.shopId} AND i.generation=${f.scope.installationGeneration}::bigint`.execute(db)
+    ).rows[0];
+    if (!identity) throw new Error('Expected installation identity');
+    const activatedAt = identity.activated_at.toISOString(),
+      firstPaidAt = identity.paid_at.toISOString();
+    await createPurchaseRepository(db).reconcile({
+      ...f.input,
+      firstPaidAt,
+      order: { ...f.input.order, financialStatus: 'PAID', updatedAt: firstPaidAt, observedAt: firstPaidAt },
+    });
+    const appId = 'gid://shopify/App/1234',
+      shopId = `gid://shopify/Shop/${identity.shopify_shop_id}`;
+    const observedAt = new Date(+identity.paid_at + 1000).toISOString();
+    const through = new Date(+identity.paid_at + 2000).toISOString();
+    const source: CurrentCycleUsageHistoryInput = {
+      installation: {
+        tenantShopId: f.scope.shopId,
+        generation: f.scope.installationGeneration,
+        appId,
+        providerShopId: shopId,
+        activatedAt,
+        deactivatedAt: null,
+      },
+      binding: { appId, shopId, planHandle: 'qualified-plan', usageHandle: 'qualified-meter', policy },
+      current: {
+        schemaVersion: 'm4-active-subscription-v1',
+        sourceApiVersion: '2026-07',
+        appId,
+        shopId,
+        tenantShopId: f.scope.shopId,
+        installationGeneration: f.scope.installationGeneration,
+        observedAt,
+        active: true,
+        billingPeriod: 'EVERY_30_DAYS',
+        trialEndsAt: null,
+        pendingUpdate: null,
+        cancelAtEndOfCycle: false,
+        currentBillingCycle: {
+          startTime: activatedAt,
+          endTime: new Date(+identity.paid_at + 30 * 86400000).toISOString(),
+        },
+        items: [
+          { handle: 'qualified-plan', price: { kind: 'flat', active: true }, usage: null },
+          { handle: 'qualified-meter', price: { kind: 'tiered', active: true }, usage: { quantity: '0' } },
+        ],
+      },
+      range: {
+        sourceApiVersion: '2026-07',
+        appId,
+        shopId,
+        from: new Date(+identity.activated_at - 1000).toISOString(),
+        through,
+        observedAt: through,
+        pagesRead: 1,
+        pagination: 'EXHAUSTED',
+        nextCursor: null,
+        trustedEntitlementIntervals: false,
+        events: [
+          {
+            id: 'gid://partners/SubscriptionStatus/synthetic-created',
+            cursor: 'one',
+            occurredAt: activatedAt,
+            eventType: 'SUBSCRIPTION_CREATED',
+            state: 'CREATED',
+            cancelEffectiveOn: null,
+            plan: { handle: 'qualified-plan', billingPeriod: 'EVERY_30_DAYS', trialDays: 14, trialDaysRemaining: 0 },
+          },
+        ],
+      },
+    };
+    return { ...f, source, firstPaidAt };
+  }
+  it('composes normalization with immutable storage once across concurrency and terminal replay after reopening', async () => {
+    const f = await compositionFixture(),
+      core = openTestDurableCore();
+    let sourceReads = 0;
+    try {
+      const useCase = createPurchaseUsageQualifier({
+        ledger: core.usageLedger,
+        loadCurrentCycleInput: async () => {
+          sourceReads++;
+          return f.source;
+        },
+      });
+      const results = await Promise.all(
+        Array.from({ length: 4 }, () => useCase.qualify(f.scope, { purchaseId: f.purchaseId })),
+      );
+      expect(
+        results.every((result) => result.record.decision.kind === 'ELIGIBLE' && result.record.decision.units === 1),
+      ).toBe(true);
+      expect(results[0]?.record.decision).toMatchObject({ orderId: f.input.order.orderId, occurredAt: f.firstPaidAt });
+      expect(sourceReads).toBeGreaterThan(0);
+      expect(
+        (
+          await sql<{
+            count: string;
+          }>`SELECT count(*)::text FROM m9_order_usage WHERE purchase_id=${f.purchaseId}::uuid`.execute(db)
+        ).rows[0]?.count,
+      ).toBe('1');
+    } finally {
+      await core.close();
+    }
+    const reopened = openTestDurableCore();
+    let replayReads = 0;
+    try {
+      const replay = await createPurchaseUsageQualifier({
+        ledger: reopened.usageLedger,
+        loadCurrentCycleInput: async () => {
+          replayReads++;
+          throw new Error('source must not run');
+        },
+      }).qualify(f.scope, { purchaseId: f.purchaseId });
+      expect(replay.record.decision).toMatchObject({ kind: 'ELIGIBLE', units: 1, occurredAt: f.firstPaidAt });
+      expect(replayReads).toBe(0);
+    } finally {
+      await reopened.close();
+    }
+  });
+  it('excludes actual test orders without source and keeps real missing-policy facts unresolved', async () => {
+    const test = await compositionFixture(true),
+      actual = await compositionFixture(),
+      ledger = createUsageLedgerRepository(db);
+    let sourceReads = 0;
+    const useCase = createPurchaseUsageQualifier({
+      ledger,
+      loadCurrentCycleInput: async () => {
+        sourceReads++;
+        return { ...actual.source, binding: null };
+      },
+    });
+    expect((await useCase.qualify(test.scope, { purchaseId: test.purchaseId })).record.decision).toEqual({
+      kind: 'EXCLUDED',
+      reason: 'TEST_ORDER',
+      units: 0,
+    });
+    expect(sourceReads).toBe(0);
+    const result = await useCase.qualify(actual.scope, { purchaseId: actual.purchaseId });
+    expect(result.record.decision).toEqual({ kind: 'UNRESOLVED', reason: 'HISTORY_UNVERIFIED', units: 0 });
+    expect(sourceReads).toBe(1);
+    expect((await ledger.get(actual.scope, actual.purchaseId))?.firstPaidAt).toBe(actual.firstPaidAt);
+  });
   it('persists one identity across concurrent calls and a fresh facade/pool, ignoring quote trial policy', async () => {
     const f = await fixture(),
       core = openTestDurableCore();

@@ -1,0 +1,63 @@
+{
+  "classification": "LOCAL_SOURCE_LEDGER_COMPOSITION_REVIEWED_POSTGRESQL_CI_PENDING",
+  "base": "c83f6c7ab3ce93d66042d923498be98bd49e91c4",
+  "sourceHashes": {
+    "packages/application/src/entitlement/qualify-purchase-usage.ts": "10e25bbdabec2f69d85281173612b11451fb42cdb3285b25f9d2c5bbcac279ee",
+    "packages/application/src/entitlement/qualify-purchase-usage.test.ts": "eae8ec438582421fefcfba9ae212c693af4a88b5ce149f3e306096d222f13837",
+    "packages/application/src/index.ts": "ec8af9fbae736be45c59e89b29a296af870ec9867d4f00f5d296d781cdc10f6d",
+    "packages/domain/src/billing/paid-order-usage.ts": "377c164d990fb958f2d6dd0cd7fc6f717dc6f5dea428fb9b4c443496ed532d2e",
+    "packages/database/src/repositories/usage-ledger.ts": "831967fa46b1789f7192b2507a764a5698455dc59608c98fa5318cd90f532436",
+    "packages/database/test/usage-ledger.test.ts": "03bf6faf587cbd774138b69cd5db0261b244b91848c20e3ca556791302882af6"
+  },
+  "scope": "Backend application qualification use case with existing pure normalizer and durable financial ledger; no source-loader runtime composition or dispatch",
+  "behavior": [
+    "Preflight record derives actual immutable test/customization/first-paid facts from purchase storage. Caller supplies only scoped purchase identity.",
+    "Terminal decisions, test exclusion, unpaid and missing-fact holds return without provider-source reads.",
+    "Only HISTORY_UNVERIFIED loads authorized backend source once, checks tenant/generation, normalizes and records using existing repository locks/terminal permanence.",
+    "Copies scope/purchase before first await and per port call; verifies ledger-returned scope and identity.",
+    "Source failure/mismatch returns a sanitized result retaining the preflight; no automatic source retry or foreign final write.",
+    "Absent policy is explicitly null in domain/ledger interfaces; paid/trial history with null policy holds POLICY_MISMATCH rather than inventing identity or authorizing usage."
+  ],
+  "checks": {
+    "applicationTestsPassed": 306,
+    "applicationTestFiles": 24,
+    "newFocusedApplicationTestsPassed": 8,
+    "domainTestsPassed": 38,
+    "domainTestFiles": 6,
+    "domainApplicationDatabaseBuild": "PASS",
+    "domainApplicationDatabaseTypecheck": "PASS",
+    "biomeSixFiles": "PASS",
+    "gitDiffCheck": "PASS",
+    "postgresqlTestsDiscovered": 11,
+    "postgresqlTestsSkippedLocally": 11,
+    "newPostgresqlCompositionTests": 2,
+    "postgresqlLocalLimitation": "No DATABASE_URL/local PostgreSQL. Skips do not qualify migration/transactions/concurrency or native runtime. Existing hosted durable/runtime PostgreSQL checks are required.",
+    "boundariesAndSecretProvenance": "PASS:354 real modules/13 browser modules/19 negative fixtures/2 rejected browser bundles;19 database compiler probes/4 rejected deep imports;18 domain checker tests;213 production source/175 test-fixture files/22 browser artifacts/2 synthetic seeds. Delivery evidence JSON is outside this checker scope."
+  },
+  "testProvenance": [
+    "Initial normalized final-record/source-error/scope-mismatch assertions failed before source composition implementation.",
+    "Caller-mutated scope/purchase caused observed identity-mismatch RED; copying identity before await and each scope port call corrected it.",
+    "Application null-policy cases exercise the actual domain qualifier, including paid/trial rejection and test exclusion.",
+    "Two actual-PostgreSQL cases reuse real purchase/ledger repositories with installation and database-clock payment baseline: four concurrent qualifications/reopened terminal replay; test-order source skip and missing-policy hold. These were discovered but not run locally; no PostgreSQL RED/GREEN is claimed."
+  ],
+  "independentReview": {
+    "agent": "/root/preview_native_transition_review",
+    "contexts": 1,
+    "axes": [
+      "Spec/correctness",
+      "Standards/security"
+    ],
+    "result": "CLEAR",
+    "scope": "Frozen six files, preflight/source-skip rules, null-policy fail-closed semantics, identity across awaits, source errors/mismatch and meaningful PostgreSQL fixture/transaction interaction.",
+    "isolation": "Read-only/no-network/no-credential instructions; no enforced credential or network sandbox isolation claimed."
+  },
+  "nativeEffects": 0,
+  "usageEventsSent": 0,
+  "limits": [
+    "Source loader is an injected authorized backend port. Provider authentication, source/installation fencing and qualified commercial binding must be supplied by actual runtime composition, not inferred from this use case.",
+    "Current native schema34 has no ledger migration35/runtime grants. This PR does not apply or enable them.",
+    "Existing native test purchase remains test-only; no native positive billing qualification or dispatch.",
+    "No migration, grants, outbox/sender, provider configuration, plan/scope/version/store change or rollout.",
+    "Required final-candidate CI and normal integration remain pending; existing retention/rotation and Partner pricing-session limits persist."
+  ]
+}
