@@ -1,0 +1,206 @@
+{
+  "classification": "NATIVE_SAME_IMAGE_WEB_FEATURE_POLICY_AND_FROZEN_VERIFIER_PASS",
+  "configurationMerge": "ab3e19fb4466021fed0901d04aeae31046571456",
+  "configurationTree": "d7e67029e2c862505af83528a405908511d18e8a",
+  "configuration": "deployment/m8-journey/standard-entitlement-policy-candidate.json",
+  "web": {
+    "classification": "EXACT_SAME_IMAGE_WEB_POLICY_UPDATE_PASS",
+    "webContainer": "22b57a6cec99ef649e1d91f0540de9c74ff1e0980e020b89ba76cc757bfe6e06",
+    "priorWebContainer": "d2f926ec7d7c5c6ffcfd2970658262006b7df03b106d64c4fc077338d053cd75",
+    "webImage": "sha256:49dcacd88d8a7339459bafe5ff9ac5a8cdfe26c7bb35b3d81f7c4608e3cfbeb1",
+    "databaseContainer": "19419eff11ef9c0b43e484f91ad97ba606c817df6604e7a6d08c5513473285a1",
+    "databaseImage": "sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d",
+    "profile": "m8-preview-28443bd",
+    "healthy": true,
+    "other33ContainersPreserved": true,
+    "environmentDeltaKeys": [
+      "INSIGNIA_M5_ENTITLEMENT_POLICY_JSON"
+    ],
+    "dispatchInvocations": 1,
+    "retryInvocations": 0,
+    "policyConfigSha256": "28ff852b1224ce44cd220e6f3f4514899d7f0a139373c6eb8ba4c11548621182",
+    "inspectorPreserved": true,
+    "immutablePurchaseFactsPreserved": true,
+    "appVersionOrProviderSettingsChanged": false
+  },
+  "verifier": {
+    "priorMainPid": 968905,
+    "priorInvocationId": "bd0a9310fa104be5be76bc22d07f0fd7",
+    "current": {
+      "ActiveState": "active",
+      "InvocationID": "49e1af2617dd4fbdb3a90112ef1e1d9c",
+      "MainPID": "1199195",
+      "ControlGroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/insignia-m5-release-verifier-r2.service"
+    },
+    "source": "b52fcf4c3a4307d1af3e08caa4ea5316447c2c7f",
+    "tree": "c4ce0d16f4d15bd757b66bc2c27d97cbeed7ac04",
+    "sourceManifestServiceUnchanged": true,
+    "gate": {
+      "classification": "EXACT_SAME_SOURCE_WEB_POLICY_GATE_BOUND",
+      "gateSha256": "702d41f28534ededc5b18ae6b9d780535edf998134df5c94108b063f3184870c",
+      "webContainer": "22b57a6cec99ef649e1d91f0540de9c74ff1e0980e020b89ba76cc757bfe6e06",
+      "webImage": "sha256:49dcacd88d8a7339459bafe5ff9ac5a8cdfe26c7bb35b3d81f7c4608e3cfbeb1",
+      "profile": "m8-preview-28443bd",
+      "frozenSourceAndManifestPreserved": true,
+      "historicalConsumerBuildPreserved": true,
+      "historicalEvidenceRestamped": false
+    },
+    "historicalConsumerBuildPreserved": true,
+    "mixedWorker173ProvenanceReferencedSeparately": true,
+    "allPrior39PhasesSettledBeforeStop": true,
+    "launchFenceHeldThroughQuiescentUpdate": true,
+    "onlyCapturedRefusedRemoteSocketRemoved": true,
+    "priorHandoverArchivedUnchanged": true,
+    "startupProviderRequests": 0,
+    "freshCollection": {
+      "classification": "SAME_IMAGE_WEB_POLICY_FRESH_CORRELATED_RELEASE_AND_INDEPENDENT_SELECT_PASS",
+      "requestId": "5d69d6bb-92ee-4488-9dff-b4f2ce5e542a",
+      "recordId": "d0881347-56c3-4f1c-811b-bd979fdce392",
+      "state": "COMPLETE",
+      "identity": {
+        "current_user": "insignia_runtime",
+        "session_user": "insignia_runtime",
+        "readonly": "on"
+      },
+      "appVersion": "1168157736961",
+      "functionsSourceCommit": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+      "observedAt": "2026-10-15T21:45:30.659Z",
+      "expiresAt": "2026-10-15T21:45:59.065Z",
+      "historicalEvidenceRestamped": false,
+      "runtimeDatabaseWrites": 0,
+      "collectionCalls": 1,
+      "providerMutationCalls": 0
+    }
+  },
+  "actualCurrentPlanProjection": {
+    "classification": "ACTUAL_WEB_READONLY_CURRENT_PLAN_FEATURE_PROJECTION_PASS",
+    "identity": {
+      "current_user": "insignia_runtime",
+      "session_user": "insignia_runtime",
+      "readonly": "on"
+    },
+    "observedAt": "2026-10-15T21:45:36.993Z",
+    "checkedAt": "2026-10-15T21:45:37.880Z",
+    "policyVersion": "m9-private-standard-feature-policy-v1",
+    "recognizedPolicyId": "m5-existing-dev-all-features-v1",
+    "features": [
+      "m5.configure",
+      "m5.required",
+      "m5.logo-later",
+      "m5.production-options",
+      "m5.pricing"
+    ],
+    "includedUsage": 100,
+    "trial": false,
+    "currentHandles": [
+      "customized_order_paid",
+      "insignia-dev-zero-20260928"
+    ],
+    "currentBillingCycle": {
+      "startTime": "2026-09-28T16:53:01.000Z",
+      "endTime": "2026-10-28T16:53:01.000Z"
+    },
+    "trialEndsAt": null,
+    "pendingUpdate": null,
+    "providerQueries": 1,
+    "providerMutations": 0,
+    "databaseWrites": 0,
+    "quoteOrCartWrites": 0,
+    "usageEventsSent": 0,
+    "limits": "Current old development plan only. No Standard selection/trial/native positive commercial mapping or billing dispatch qualified."
+  },
+  "closingRead": {
+    "classification": "POST_UPDATE_OTHER33_RUNTIME_IDENTITIES_AND_IMMUTABLE_FACTS_PASS",
+    "observedAt": "2026-10-15T21:45:58Z",
+    "containerCount": 34,
+    "other33ConfigurationPreserved": true,
+    "other33PidsAndStartsPreserved": true,
+    "inspectorPreserved": true,
+    "databaseFacts": {
+      "schemaCount": 36,
+      "ledgerRows": 3,
+      "intentRows": 0,
+      "ledgerDigest": "f7b3417da69777acfa0119973d990607",
+      "purchaseDigest": "77b4be4662ce9345047a68672c0b544d",
+      "paidDigest": "1bcb21f22a3719a0013ba7dff017ff5f"
+    },
+    "webContainer": "22b57a6cec99ef649e1d91f0540de9c74ff1e0980e020b89ba76cc757bfe6e06",
+    "webImage": "sha256:49dcacd88d8a7339459bafe5ff9ac5a8cdfe26c7bb35b3d81f7c4608e3cfbeb1",
+    "healthy": true,
+    "mutations": 0
+  },
+  "review": {
+    "reviewer": "/root/m9_native_operation_review",
+    "axes": [
+      "Spec/correctness",
+      "Standards/security"
+    ],
+    "result": "CLEAR",
+    "web": {
+      "update-web.py": "8f88f29ca761b8357836dbea6c1d268d8ef9c7ea2755565a364e40098270a18d",
+      "operator-controls.py": "c98de305c0bf3af939f145f794daa3f723a3fa614e0b81f00e3d1e3e16411195",
+      "policy-candidate.json": "28ff852b1224ce44cd220e6f3f4514899d7f0a139373c6eb8ba4c11548621182",
+      "native-preimage.private.json": "0a7200a15942e05700792ecd04b9c3a85f5fd9230667b696d19c11ba0f8a9b05",
+      "native-readonly.private.json": "0773e373e97e3d30851380880913f38df55c5ba03a4ca353a2fdcd01409a60c5"
+    },
+    "verifier": {
+      "transition.py": "252be4923ad82720775de3c0bde94ee8727c556276f71c1e9867ee9e2f24d72f",
+      "fresh-release.py": "ddd48d72aa78ae52944daee4e41db3f196facf404f2abad7420eb33b3a25fa3e",
+      "controls.py": "f45f24fa8d33b46648477b5db797aff7809a11630c44dd97916df6e4fe0bf3bd"
+    },
+    "readOnlyProbeSha256": "6ffbac358fb0cbd038aa61c11e1e1ec6021374491a0aea51b69963f684c01a5d",
+    "quoteRegressionSha256": "66831d4df5b89b2de331f60fb29d1de008e8fa27b4aa9ccf0ec51f799cbe68df",
+    "corrections": [
+      "Probe now sends only appId/shopId as provider variables; internal tenant context stays local.",
+      "Fresh request intent/result entries directory-fsynced; no collection before durable intent."
+    ],
+    "isolation": "Read-only/no-effect review instructions; no enforced credential or network isolation claimed."
+  },
+  "tests": {
+    "webOperatorOfflineControls": 11,
+    "verifierOfflineControls": 13,
+    "quoteAcceptanceAndCandidate": 31,
+    "applicationTypecheck": "PASS",
+    "focusedStyle": "PASS after formatting",
+    "quoteCatalogTransition": "Existing guard rejects catalog drift before signing/persistence; fresh same-key acceptance succeeds. Characterization, no production source change."
+  },
+  "browser": {
+    "adminThemes": "LOGGED_IN screenshot inspected",
+    "devApp": "LOGGED_IN screenshot inspected",
+    "active": {
+      "classification": "EXACT_APP_CURRENT_ACTIVE_LINK_INDEPENDENTLY_VERIFIED",
+      "observedAt": "2026-10-15T21:44:37.224Z",
+      "app": "429028933633",
+      "profile": "m8-preview-28443bd",
+      "activeVersion": "1168157736961",
+      "providerMutations": 0,
+      "selectionActions": 0
+    },
+    "probeFailure": "First read-only link probe wrongly required Active badge inside anchor; screenshot showed sibling badge. Focused anchor inspection recovered exact profile href without writes."
+  },
+  "limits": [
+    "Standard remains unselected. Its paid/trial feature source shapes remain synthetic; no positive native Standard subscription or financial qualification.",
+    "Feature recognition is not commercial-price/history/meter/access/window validation. Worker binding/transport remains null; dispatch disabled.",
+    "Fresh release observation retains actual expiry above, not ongoing validity or restamping. No new app release/scope/store or provider mutation.",
+    "No new quote/cart/order, checkout, artwork upload or original expiry extension. Existing historical country/Market/per-order Function execution remain unknown."
+  ],
+  "nextOwnerDependency": {
+    "status": "OPEN_REQUEST_FOR_BOUNDED_ZERO_COST_DEVELOPMENT_SELECTION",
+    "purpose": "Select existing saved Standard draft only on rewrite-dev to independently qualify real subscription/trial fields.",
+    "scope": "Existing app429028933633, plan insignia-standard-20261015, store insignia-rewrite-dev.myshopify.com; approve only an explicitly zero-cost development test.",
+    "stopOn": "Any charge, different store/plan, pricing-method switch/migration or unexpected terms.",
+    "notIncluded": [
+      "App Pricing enable/switch",
+      "usage event",
+      "real charge",
+      "new token/scope/store/version",
+      "reinstall"
+    ]
+  },
+  "retention": {
+    "privatePreparationAndScreenshotsDue": "2026-10-20",
+    "activeDependencies": "Safely transition live compose/configuration and verifier/signing dependencies before removing their private copies.",
+    "incompleteUploadCleanupDue": "2026-10-16T00:31:47.899Z",
+    "status": "Not yet eligible; no early deletion/retry. Existing21/22October original/design deadlines and credential rotation persist."
+  }
+}

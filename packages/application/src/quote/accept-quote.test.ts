@@ -489,6 +489,23 @@ describe('acceptQuote', () => {
     expect(saved).toHaveLength(0);
   });
 
+  it('rejects a catalog change at the persistence fence and permits a fresh acceptance', async () => {
+    const { ports, saved } = fixture();
+    const tenant = await ports.tenant.getActive('shop', '1');
+    if (!tenant) throw new Error('fixture tenant missing');
+    const previous = await ports.entitlement.getFresh(tenant);
+    const updated = { ...previous, policyVersion: 'next-catalog' };
+    vi.mocked(ports.entitlement.getFresh).mockResolvedValueOnce(previous).mockResolvedValue(updated);
+
+    await expect(acceptQuote(request, ports)).rejects.toThrow(/entitlement changed during quote acceptance/);
+    expect(ports.authorization.issue).not.toHaveBeenCalled();
+    expect(saved).toHaveLength(0);
+
+    await acceptQuote(request, ports);
+    expect(ports.authorization.issue).toHaveBeenCalledTimes(1);
+    expect(saved).toHaveLength(1);
+  });
+
   it('does not sign contextual prices that expire while waiting for the persistence fence', async () => {
     const { ports } = fixture();
     let current = now;
