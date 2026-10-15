@@ -1,0 +1,28 @@
+{
+  "classification": "LOCAL_MERCHANT_COMPLETION_ORIGIN_FIX_REVIEWED_NATIVE_PENDING",
+  "base": "e04a0c273f8739addea5864a57cd2836f720aa4a",
+  "sourceSha256": "3d75933d8f1efaf00c38eef7e0b90d9db5bf5a9c4503dce888a74f13a815166e",
+  "testSha256": "b1127ba9c658df95b27da6548374cae7f9beb78384e34d37af9a931d67f512c0",
+  "problem": "Empty merchant completion POSTs omit content type; pinned Astro checkOrigin classifies them as form submissions and denies HTTPS Origin vs proxied HTTP before application handler.",
+  "change": "Declare application/json on both normal and resumed empty completion requests. No body/authentication/origin policy/storage or retry changes.",
+  "tests": {
+    "red": "Actual createArtworkUpload\u2192pinned Astro origin predicate\u2192actual artwork HTTP handler fails403 vs expected202 before correction.",
+    "green": "14 focused upload/HTTP/guest tests; 2 browser upload checks; Astro73files0errors/warnings/hints and build pass. Anonymous401 and foreign-origin403 remain enforced.",
+    "browserLimit": "Default headless-shell1243 absent on host; initial2checks failed to launch before product execution. Corrected local test launcher uses installed full Chromium1243 via channel chromium, without package or repository harness changes.",
+    "providerIdentityStorage": "Explicit synthetic doubles; no native success inferred."
+  },
+  "reviews": [
+    {
+      "reviewer": "accept_read_spec",
+      "axis": "Spec/correctness",
+      "result": "CLEAR"
+    },
+    {
+      "reviewer": "offline_bridge_security",
+      "axis": "Standards/security",
+      "result": "CLEAR",
+      "independentUploadSuite": "8/8 PASS"
+    }
+  ],
+  "nativeQualification": "Not deployed. Preserve failed asset and require fresh native upload after finalCI/integration/deployment; old completion window is not extended."
+}

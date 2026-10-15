@@ -81,7 +81,12 @@ export function createArtworkUpload(input: {
         throw new Error('Invalid artwork status');
       if (status.state === 'UPLOADING' && !completionAttempted) {
         completionAttempted = true;
-        await input.api(`/api/artwork/${asset.assetId}/complete`, { method: 'POST', signal });
+        await input.api(`/api/artwork/${asset.assetId}/complete`, {
+          method: 'POST',
+          // Empty JSON API requests must not be classified as form submissions behind HTTPS proxies.
+          headers: { 'Content-Type': 'application/json' },
+          signal,
+        });
       }
       onState('Processing artwork');
       await pause(2000, signal);
@@ -144,7 +149,12 @@ export function createArtworkUpload(input: {
       if (!response.ok) throw new Error('Private upload failed. Choose the file again to start a new upload.');
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
       input.onPending?.({ assetId: admitted.assetId, assetExpiresAt: admitted.expiresAt });
-      await input.api(`/api/artwork/${admitted.assetId}/complete`, { method: 'POST', signal });
+      await input.api(`/api/artwork/${admitted.assetId}/complete`, {
+        method: 'POST',
+        // Empty JSON API requests must not be classified as form submissions behind HTTPS proxies.
+        headers: { 'Content-Type': 'application/json' },
+        signal,
+      });
       return awaitPending({ assetId: admitted.assetId, assetExpiresAt: admitted.expiresAt }, onState, signal);
     },
   };

@@ -1,0 +1,103 @@
+{
+  "classification": "NATIVE_MERCHANT_COMPLETION_REJECTED_BEFORE_ATTACHMENT",
+  "probeSha256": "06e5d764b3eb719d6c47ed7163feaa901ae26ddb176563e37017fc87015a4a06",
+  "probeReview": {
+    "reviewer": "offline_bridge_security",
+    "result": "CLEAR",
+    "probeSha256": "06e5d764b3eb719d6c47ed7163feaa901ae26ddb176563e37017fc87015a4a06",
+    "closedFindings": [
+      "zero redirects/retries",
+      "exact allocated storage account/bucket/prefix/key",
+      "immediate assetUUID custody",
+      "independent original collection/expiry baseline"
+    ],
+    "nativeEffectsByReviewer": false
+  },
+  "purchaseId": "e3a74311-4323-4ea0-ba1a-154a9e65cd49",
+  "sourceMerge": "2bce57d03da4ee82dfd61f52d0663820f89ad5ca",
+  "allocationStatus": 201,
+  "completionStatus": 403,
+  "stop": {
+    "classification": "STOP_RECONCILE_MERCHANT_ARTWORK_NO_RETRY",
+    "reason": "APP_MUTATION_REJECTED_STOP",
+    "admittedAsset": {
+      "assetId": "b92a171d-e23e-4bad-a174-81e1d5edcad7",
+      "expiresAt": "2026-10-22T00:31:47.899Z"
+    },
+    "allocation": 1,
+    "puts": 1,
+    "completes": 1,
+    "attachments": 0,
+    "retryAuthorized": false
+  },
+  "independentQuarantineRead": {
+    "classification": "INDEPENDENT_OWNED_QUARANTINE_READ",
+    "assetId": "b92a171d-e23e-4bad-a174-81e1d5edcad7",
+    "bytes": 181,
+    "sha256": "3c87955b08389d868f76f20c918f34d35b49bf84fd15736bcd343a08cabcaade",
+    "writes": 0,
+    "credentialValuesPublished": false
+  },
+  "reconciliation": {
+    "immutableSixTablesHashesAndCountsPreserved": true,
+    "originalCollectionExpiryAndManifestPreserved": true,
+    "artworkEventCounts": {
+      "lockCount": 0,
+      "attachmentCount": 0,
+      "artworkEventCount": 0
+    },
+    "all34ContainerFingerprintsPreserved": true,
+    "newAsset": {
+      "state": "UPLOADING",
+      "sha256": null,
+      "shopId": "db771bea-c585-4954-9f88-70771c9a0c89",
+      "expiresAt": "2026-10-22T00:31:47.899+00:00",
+      "ownerKind": "merchant",
+      "byteLength": null,
+      "generation": 1,
+      "newAssetId": "b92a171d-e23e-4bad-a174-81e1d5edcad7",
+      "collectedAt": "2026-10-15T00:31:47.899+00:00"
+    }
+  },
+  "diagnosis": {
+    "classification": "NATIVE_ANONYMOUS_NONEXISTENT_ASSET_ORIGIN_GATE_DIAGNOSIS",
+    "results": [
+      {
+        "contentType": "ABSENT",
+        "status": 403,
+        "astroFormDenial": true,
+        "authenticationRequired": false
+      },
+      {
+        "contentType": "application/json",
+        "status": 401,
+        "astroFormDenial": false,
+        "authenticationRequired": true
+      }
+    ],
+    "bearerSupplied": false,
+    "resourceCreated": false,
+    "existingAssetMutation": false,
+    "priorDiagnosticFailure": "First anonymous non-existent-asset read of rejection response used Fetch Response.status as a function; logger failed after response, no authenticated or existing-asset mutation."
+  },
+  "limits": [
+    "Original completion response body was not retained; framework cause corroborated by actual anonymous nonexistent-asset diagnostics, pinned Astro source and failing client/HTTP regression.",
+    "No attachment or inspection completion succeeded. This is a failed native check, not replacement acceptance.",
+    "Existing purchased original and its deadline are unchanged. New quarantine custody remains explicit; no completion retry or second upload."
+  ],
+  "cleanup": {
+    "assetId": "b92a171d-e23e-4bad-a174-81e1d5edcad7",
+    "stateAtRead": "UPLOADING",
+    "uploadUntil": "2026-10-15T00:36:47.899Z",
+    "incompleteCleanupDue": "2026-10-16T00:31:47.899Z",
+    "recordExpiresAt": "2026-10-22T00:31:47.899Z",
+    "action": "Do not complete or extend the expired upload. Verify ordinary incomplete-asset cleanup and physical quarantine absence; owned cleanup remains due until observed.",
+    "privacy": "Synthetic static181byteSVG; credential and signing URLs not published.",
+    "deadlineObservation": "Independent read-only database SELECT confirmed collectedAt, uploadUntil, expiresAt and collectedAt+24h incomplete-cleanup due after the failed probe."
+  },
+  "providerMutations": 0,
+  "newOrders": 0,
+  "charges": 0,
+  "artworkLocks": 0,
+  "unresolvedMutation": false
+}
