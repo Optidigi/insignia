@@ -2,37 +2,10 @@ name: M3-002 local runtime and ingress
 
 on:
   pull_request:
-    paths:
-      - 'apps/web/**'
-      - 'apps/worker/**'
-      - 'packages/application/**'
-      - 'packages/database/**'
-      - 'packages/shopify/**'
-      - 'packages/visualizer/**'
-      - 'packages/contracts/**'
-      - 'packages/observability/**'
-      - 'packages/storage/**'
-      - 'scripts/m6-artwork/**'
-      - 'scripts/m7-storefront/**'
-      - 'scripts/m8-purchase/**'
-      - 'scripts/m5-002/**'
-      - 'scripts/m5-native-inventory/**'
-      - 'scripts/m5-host-inventory/**'
-      - 'scripts/m5-inventory-phase/**'
-      - 'scripts/m5-024/**'
-      - 'scripts/m5-runtime/**'
-      - 'scripts/m5-owner-lifecycle/**'
-      - 'deployment/m5-runtime/**'
-      - 'deployment/m8-journey/**'
-      - 'deployment/m5-019r/**'
-      - 'scripts/m5-callback-qualification/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - '.github/workflows/m3-runtime.yml'
-      - 'docs/delivery/**'
   push:
     branches: [main]
     paths:
+      - 'scripts/ci/**'
       - 'apps/web/**'
       - 'apps/worker/**'
       - 'packages/application/**'
@@ -92,35 +65,61 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24.21.0'
+      - name: Verify exact status-reference route
+        id: changes
+        env:
+          CI_BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          CI_HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          node --test scripts/ci/status-docs.test.mjs
+          node scripts/ci/status-docs.mjs
       - run: corepack pnpm install --frozen-lockfile
+        if: steps.changes.outputs.route == 'full'
       - run: corepack pnpm build
+        if: steps.changes.outputs.route == 'full'
       - name: M5 runtime owner-operator and immutable image controls style
+        if: steps.changes.outputs.route == 'full'
         run: corepack pnpm exec biome check scripts/m5-runtime
       - name: Owner trusted-release collector local accounting and process controls
+        if: steps.changes.outputs.route == 'full'
         run: node --test --test-concurrency=1 scripts/m5-runtime/trusted-release-collector.test.mjs scripts/m5-runtime/trusted-release-owner-boundaries.test.mjs scripts/m5-runtime/trusted-release-launch.test.mjs scripts/m5-runtime/release-profile.test.mjs
       - name: Private verifier host bootstrap controls (local processes only)
+        if: steps.changes.outputs.route == 'full'
         run: python3 -B scripts/m5-runtime/release-verification-host_test.py
       - name: Function setup durable admission and fresh-process crash control
+        if: steps.changes.outputs.route == 'full'
         run: node --test --test-concurrency=1 scripts/m5-runtime/function-setup-journal.test.mjs scripts/m5-runtime/function-setup-network.test.mjs scripts/m5-runtime/function-setup-native.test.mjs scripts/m5-runtime/owner-session-input.test.mjs
       - name: Frozen schema-owner operator and effective PostgreSQL18 roles (isolated database)
+        if: steps.changes.outputs.route == 'full'
         run: M5_SCHEMA_TEST_URL="$DATABASE_URL" M5_DB_ROTATION_TEST_URL="$DATABASE_URL" node --test --test-concurrency=1 scripts/m5-runtime/db-password-rotation.test.mjs scripts/m5-runtime/db-password-rotation-package.test.mjs scripts/m5-runtime/schema-provision.test.mjs scripts/m5-runtime/schema-provision-package.test.mjs scripts/m5-runtime/schema-forward19-package.test.mjs scripts/m5-runtime/schema-forward20-package.test.mjs scripts/m5-runtime/release-append.test.mjs scripts/m5-runtime/signing-provision.test.mjs scripts/m5-runtime/signing-provision-core.test.mjs
       - run: corepack pnpm check:style
+        if: steps.changes.outputs.route == 'full'
       - run: corepack pnpm check:boundaries
+        if: steps.changes.outputs.route == 'full'
       - name: Bounded read-only inventory controls (local processes only)
+        if: steps.changes.outputs.route == 'full'
         run: corepack pnpm test:m5-inventory
       - run: corepack pnpm check:secrets
+        if: steps.changes.outputs.route == 'full'
       - run: corepack pnpm check:database
+        if: steps.changes.outputs.route == 'full'
       - run: corepack pnpm --filter @insignia/storage test
+        if: steps.changes.outputs.route == 'full'
       - run: corepack pnpm --filter @insignia/shopify test
+        if: steps.changes.outputs.route == 'full'
       - run: corepack pnpm --filter @insignia/application test
+        if: steps.changes.outputs.route == 'full'
       - run: corepack pnpm --filter @insignia/observability test
+        if: steps.changes.outputs.route == 'full'
       - run: corepack pnpm --filter @insignia/worker test
+        if: steps.changes.outputs.route == 'full'
       - name: M8 actual queue-member purchase/history and first-paid qualification
+        if: steps.changes.outputs.route == 'full'
         run: |
           node --test scripts/m8-purchase/qualify-runtime.test.mjs
           node scripts/m8-purchase/qualify-runtime.mjs
       - name: Preserve M8 actual runtime-role qualification
-        if: always()
+        if: ${{ always() && steps.changes.outputs.route == 'full' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: m8-runtime-role-${{ github.run_id }}-${{ github.run_attempt }}
@@ -130,12 +129,15 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
       - name: M7 buyer HTTP ownership, admission and immutable issuance with PostgreSQL
+        if: steps.changes.outputs.route == 'full'
         working-directory: apps/web
         run: node --test test/buyer-http.test.mjs test/buyer-flow.test.mjs test/buyer-production.test.mjs test/buyer-bootstrap.test.mjs
       - name: M8 independently verified purchase and merchant artwork HTTP with PostgreSQL
+        if: steps.changes.outputs.route == 'full'
         working-directory: apps/web
         run: node --test test/purchase-flow.test.mjs
       - name: Historical schema20 owner lifecycle and fresh queue process controls
+        if: steps.changes.outputs.route == 'full'
         # Each test allocates its own database from pinned PR97 schema20 inputs.
         # Current check:database above qualifies schema34; the historical erasure guard stays exact20.
         run: |
@@ -143,8 +145,10 @@ jobs:
           M5_OWNER_LIFECYCLE_TEST_URL="$DATABASE_URL" corepack pnpm --filter @insignia/database exec vitest run test/owner-lifecycle.test.ts
           M5_OWNER_LIFECYCLE_TEST_URL="$DATABASE_URL" node --test --test-concurrency=1 apps/worker/test/owner-lifecycle.test.mjs scripts/m5-owner-lifecycle/package.test.mjs
       - name: M5-024 restricted queue roles and real process crash recovery
+        if: steps.changes.outputs.route == 'full'
         run: node --test --test-concurrency=1 scripts/m5-024/queue-privileges.test.mjs scripts/m5-024/crash-recovery.test.mjs
       - name: M5-024 offline portable worker and drift guards
+        if: steps.changes.outputs.route == 'full'
         run: |
           # Prepare policy metadata for the derived frozen lockfile using normal npm reads.
           # The actual candidate packaging below stays offline; no trust/policy bypass.
@@ -153,20 +157,23 @@ jobs:
           bash scripts/m5-024/build-worker.sh /tmp/insignia-m5-024-worker
           M5_WORKER_PACKAGE_ENTRY=/tmp/insignia-m5-024-worker/dist/main.js node --test scripts/m5-024/worker-guards.test.mjs scripts/m5-024/portable-process.test.mjs
       - name: M5-024 actual disposable worker image and OS controls
+        if: steps.changes.outputs.route == 'full'
         env:
           M5_WORKER_PACKAGE_ENTRY: /tmp/insignia-m5-024-worker/dist/main.js
           M5_IMAGE_EVIDENCE_DIR: ${{ runner.temp }}/m5-024-image-evidence
           M5_IMAGE_ARTIFACT_DIR: ${{ runner.temp }}/m5-024-worker-image
         run: node --test scripts/m5-024/image-artifact.test.mjs scripts/m5-024/image-observations.test.mjs scripts/m5-024/image-runtime.test.mjs
       - name: Frozen schema-owner code mount with qualified worker image (no network/startup)
+        if: steps.changes.outputs.route == 'full'
         env:
           M5_IMAGE_ARTIFACT_DIR: ${{ runner.temp }}/m5-024-worker-image
           M5_WORKER_PACKAGE_ENTRY: /tmp/insignia-m5-024-worker/dist/main.js
         run: node --test scripts/m5-runtime/image-identity.test.mjs scripts/m5-runtime/schema-provision-package.image.test.mjs
       - name: Ordinary canonical web and worker Compose rendering controls
+        if: steps.changes.outputs.route == 'full'
         run: node --test scripts/m5-runtime/web-compose.test.mjs scripts/m5-runtime/signing-owner-compose.test.mjs
       - name: Preserve M5-024 image qualification receipts and raw logs
-        if: always()
+        if: ${{ always() && steps.changes.outputs.route == 'full' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: m5-024-image-controls-${{ github.run_id }}-${{ github.run_attempt }}
@@ -174,6 +181,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
       - name: Preserve qualified ordinary worker deployment image
+        if: steps.changes.outputs.route == 'full'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: m5-024-worker-image-${{ github.run_id }}-${{ github.run_attempt }}
@@ -181,6 +189,7 @@ jobs:
           if-no-files-found: error
           retention-days: 3
       - name: Portable current web deployment package
+        if: steps.changes.outputs.route == 'full'
         run: |
           corepack pnpm exec biome check scripts/m5-runtime
           # Prime the legacy deployment's metadata in a fresh runner cache.
@@ -190,12 +199,13 @@ jobs:
           node --test scripts/m5-runtime/web-address.test.mjs scripts/m5-runtime/portable-web.test.mjs
           bash scripts/m5-runtime/build-web.sh /tmp/insignia-m5-web
       - name: Actual current web image startup restart and export
+        if: steps.changes.outputs.route == 'full'
         env:
           M5_WEB_PACKAGE: /tmp/insignia-m5-web
           M5_WEB_IMAGE_EVIDENCE_DIR: ${{ runner.temp }}/m5-web-image-evidence
         run: node --test scripts/m5-runtime/web-image.test.mjs
       - name: Preserve web image qualification receipts and logs
-        if: always()
+        if: ${{ always() && steps.changes.outputs.route == 'full' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: m5-web-image-evidence-${{ github.run_id }}-${{ github.run_attempt }}
@@ -205,6 +215,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
       - name: Preserve qualified ordinary web deployment image
+        if: steps.changes.outputs.route == 'full'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: m5-web-image-${{ github.run_id }}-${{ github.run_attempt }}
@@ -214,11 +225,13 @@ jobs:
           if-no-files-found: error
           retention-days: 3
       - name: Generic webhook quarantine through real HTTP and worker
+        if: steps.changes.outputs.route == 'full'
         env:
           M5_025_REQUIRE_SAFE_UNINSTALL: '1'
         working-directory: apps/web
         run: node --test test/webhook-metadata-boundary.test.mjs
       - name: Uninstall authority quarantine and unresolved obligation controls
+        if: steps.changes.outputs.route == 'full'
         env:
           DATABASE_URL: postgres://synthetic_runtime_owner:insignia_test@localhost:5432/insignia_m5_025_http?sslmode=disable
           M5_025_REQUIRE_SAFE_UNINSTALL: '1'
@@ -230,12 +243,15 @@ jobs:
           corepack pnpm db:migrate
           node --test apps/web/test/uninstall-authority.test.mjs
       - name: Built HTTP ingress with PostgreSQL and queue handoff
+        if: steps.changes.outputs.route == 'full'
         working-directory: apps/web
         run: node --test test/shopify-webhook.test.mjs
       - name: M5 Admin editor and publication with PostgreSQL
+        if: steps.changes.outputs.route == 'full'
         working-directory: apps/web
         run: node --test test/admin/merchant-config.test.mjs test/admin/merchant-publication.test.mjs test/admin/production-composition.test.mjs test/admin/preview-composition.test.mjs test/admin/activation-integration.test.mjs test/admin/activation-state.test.mjs test/admin/release-evidence.test.mjs
       - name: Rehearse disposable migration down and up
+        if: steps.changes.outputs.route == 'full'
         # V2 data cannot be downgraded into v1. Rehearse schema rollback in a separate,
         # empty disposable database; qualification rows and historical JSONB stay intact.
         env:

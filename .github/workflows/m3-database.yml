@@ -2,19 +2,11 @@ name: M3-001 PostgreSQL durable core
 
 on:
   pull_request:
-    paths:
-      - 'packages/application/**'
-      - 'packages/database/**'
-      - 'scripts/m6-artwork/**'
-      - 'scripts/m7-storefront/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - '.github/workflows/m3-database.yml'
-      - '.github/workflows/m1-foundation.yml'
-      - 'docs/delivery/**'
   push:
     branches: [main]
     paths:
+      - 'scripts/ci/**'
+      - 'scripts/m5-003/**'
       - 'packages/application/**'
       - 'packages/database/**'
       - 'scripts/m6-artwork/**'
@@ -54,19 +46,37 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24.21.0'
+      - name: Verify exact status-reference route
+        id: changes
+        env:
+          CI_BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          CI_HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          node --test scripts/ci/status-docs.test.mjs
+          node scripts/ci/status-docs.mjs
       - run: corepack pnpm install --frozen-lockfile
+        if: steps.changes.outputs.route == 'full'
       - name: Inspect migration state
+        if: steps.changes.outputs.route == 'full'
         run: corepack pnpm exec dbmate --migrations-dir packages/database/migrations status
       - run: corepack pnpm build
+        if: steps.changes.outputs.route == 'full'
       - run: corepack pnpm check:style
+        if: steps.changes.outputs.route == 'full'
       - run: corepack pnpm check:boundaries
+        if: steps.changes.outputs.route == 'full'
       - run: corepack pnpm check:secrets
+        if: steps.changes.outputs.route == 'full'
       - run: corepack pnpm check:database
+        if: steps.changes.outputs.route == 'full'
       - name: Qualify restricted web journey grants with actual LOGINs
+        if: steps.changes.outputs.route == 'full'
         run: WEB_RUNTIME_GRANTS_TEST_URL="$DATABASE_URL" corepack pnpm --filter @insignia/database exec vitest run test/web-runtime-grants.test.ts
       - name: M5 100k actual read-seam query plans
+        if: steps.changes.outputs.route == 'full'
         run: M5_QUERY_PLAN_OUTPUT=/tmp/m5-query-plan.json corepack pnpm test:m5-query-plan
       - name: Preserve actual M5 PostgreSQL plans and build hashes
+        if: steps.changes.outputs.route == 'full'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: m5-003-query-plans-${{ github.sha }}
@@ -75,6 +85,7 @@ jobs:
           retention-days: 14
           overwrite: false
       - name: Rehearse disposable down and up
+        if: steps.changes.outputs.route == 'full'
         # V2 data cannot be downgraded into v1. Rehearse schema rollback in a separate,
         # empty disposable database; qualification rows and historical JSONB stay intact.
         env:
