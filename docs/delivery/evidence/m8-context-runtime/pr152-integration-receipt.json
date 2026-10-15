@@ -1,0 +1,34 @@
+{
+  "classification": "VERIFIED_NORMAL_MERGE",
+  "pullRequest": "https://github.com/Optidigi/insignia/pull/152",
+  "base": "d33c3cf568ae895d08a14b291a71980813b2c550",
+  "head": "f3173ef1ffac90dc9ce755f2a4ff1333735a6ec3",
+  "effectiveMergeBase": "d33c3cf568ae895d08a14b291a71980813b2c550",
+  "merge": "49f0c5ce1dd4cef47c38c7455f184e1da03fd6aa",
+  "tree": "0afafcf12af3e1572d4f26fb5ea27b59374bcd73",
+  "mergeParents": [
+    "d33c3cf568ae895d08a14b291a71980813b2c550",
+    "f3173ef1ffac90dc9ce755f2a4ff1333735a6ec3"
+  ],
+  "checks": [
+    {
+      "run": 38685912861,
+      "headSha": "f3173ef1ffac90dc9ce755f2a4ff1333735a6ec3",
+      "attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "run": 38685912888,
+      "headSha": "f3173ef1ffac90dc9ce755f2a4ff1333735a6ec3",
+      "attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "run": 38685912897,
+      "headSha": "f3173ef1ffac90dc9ce755f2a4ff1333735a6ec3",
+      "attempt": 1,
+      "conclusion": "success"
+    }
+  ],
+  "scope": "Documentation/evidence only; native runtime unchanged by this merge"
+}

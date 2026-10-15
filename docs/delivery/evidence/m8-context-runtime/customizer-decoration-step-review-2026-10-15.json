@@ -1,0 +1,44 @@
+{
+  "classification": "LOCAL_CORRECTION_REVIEWED_NATIVE_DEPLOYMENT_PENDING",
+  "base": "49f0c5ce1dd4cef47c38c7455f184e1da03fd6aa",
+  "defect": "One-size decoration settings and separate product preview were both labelled Preview; without imagery the settings step still misleadingly promised Preview.",
+  "correction": "Label the one-size settings step Decoration and its heading Review decoration settings. Preserve Size for multi-size selections, the separate Preview step, all controls and navigation.",
+  "red": {
+    "command": "corepack pnpm --filter @insignia/storefront exec node --test --test-name-pattern=\"buyer reviews|one canvas view\" test/buyer-browser.test.mjs",
+    "result": "2 failed: expected Continue to Decoration absent before correction"
+  },
+  "preservedDiagnostic": {
+    "firstGreenAttempt": "7 pass, 1 fail, 1 skip: exact implicit label selector incorrectly excluded option text; replaced with role/name match and visible wait; no product code correction needed",
+    "formatCheck": "Test assertion wrapping required; formatter applied. Existing optional-chain warning unchanged."
+  },
+  "validation": {
+    "storefrontSuite": {
+      "passed": 46,
+      "failed": 0,
+      "skipped": 2,
+      "skipReasons": [
+        "PostgreSQL integrated HTTP/browser test requires DATABASE_URL",
+        "Actual Function vector test requires configured runner/artifacts"
+      ]
+    },
+    "build": "PASS: strict TypeScript/Vite/theme asset generation",
+    "style": "PASS with pre-existing optional-chain warning",
+    "diffCheck": "PASS",
+    "boundaries": "PASS",
+    "secretProvenance": "PASS: 206 production sources, 172 test/fixture sources, 27 browser artifacts, 2 synthetic seeds"
+  },
+  "independentReview": {
+    "agent": "preview_step_review",
+    "specCorrectness": "CLEAR",
+    "standardsSecurity": "CLEAR",
+    "followupLocatorCorrection": "CLEAR",
+    "readOnly": true,
+    "nativeEffects": 0
+  },
+  "limits": [
+    "Local browser tests use synthetic provider boundaries; no new native display claim.",
+    "No quote/cart/checkout/order writes, app release or runtime deployment in this slice.",
+    "Final-candidate CI remains required."
+  ],
+  "next": "Integrate after final CI; qualify exact theme candidate under actual app-release grant before native deployment. Resolve existing checkout allocation before a future purchase-image observation."
+}

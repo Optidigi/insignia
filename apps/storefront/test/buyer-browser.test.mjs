@@ -131,8 +131,15 @@ test('buyer reviews full retained cart, accepts exact price and keeps ordinary l
     await host.getByRole('button', { name: 'Provide logo later' }).click();
     await host.getByRole('button', { name: 'Continue to Placement' }).click();
     await host.getByRole('checkbox', { name: 'Front', exact: true }).check();
-    await host.getByRole('button', { name: 'Continue to Preview', exact: true }).click();
+    await host.getByRole('button', { name: 'Continue to Decoration', exact: true }).click();
     await host.getByText('This placement has one configured size. No size adjustment is needed.').waitFor();
+    assert.deepEqual(await host.locator('.wizard li').allTextContents(), [
+      'Upload',
+      'Placement',
+      'Decoration',
+      'Review',
+    ]);
+    assert.equal(await host.locator('.wizard [aria-current=step]').textContent(), 'Decoration');
     await host.getByRole('button', { name: 'Continue to Review' }).click();
     await host.getByRole('spinbutton').fill('3');
     await host.getByRole('button', { name: 'Review complete customized cart' }).click();
@@ -375,8 +382,18 @@ test('one canvas view displays both selected logo-later placements simultaneousl
     await host.getByRole('button', { name: 'Continue to Placement' }).click();
     await host.getByRole('checkbox', { name: 'Front', exact: true }).check();
     await host.getByRole('checkbox', { name: 'Right', exact: true }).check();
-    await host.getByRole('button', { name: 'Continue to Preview' }).click();
+    await host.getByRole('button', { name: 'Continue to Decoration' }).click();
     await host.locator('canvas').first().waitFor();
+    assert.deepEqual(await host.locator('.wizard li').allTextContents(), [
+      'Upload',
+      'Placement',
+      'Decoration',
+      'Preview',
+      'Review',
+    ]);
+    assert.equal(await host.locator('.wizard [aria-current=step]').textContent(), 'Decoration');
+    await host.getByRole('combobox', { name: /Placement decoration method/ }).waitFor({ state: 'visible' });
+    assert.equal(await host.getByRole('button', { name: 'Change logo for this placement' }).isVisible(), true);
     await page.waitForFunction(
       () => {
         const host = document.querySelector('insignia-buyer');
@@ -408,6 +425,15 @@ test('one canvas view displays both selected logo-later placements simultaneousl
       undefined,
       { timeout: 5000 },
     );
+    await host.getByRole('button', { name: 'Continue to Preview', exact: true }).click();
+    assert.equal(await host.locator('.wizard [aria-current=step]').textContent(), 'Preview');
+    await host.getByRole('button', { name: 'Continue to Review', exact: true }).click();
+    assert.equal(await host.locator('.wizard [aria-current=step]').textContent(), 'Review');
+    await host.getByRole('button', { name: '← Back', exact: true }).click();
+    assert.equal(await host.locator('.wizard [aria-current=step]').textContent(), 'Preview');
+    await host.getByRole('button', { name: '← Back', exact: true }).click();
+    assert.equal(await host.locator('.wizard [aria-current=step]').textContent(), 'Decoration');
+    assert.equal(await host.getByRole('button', { name: 'Change logo for this placement' }).isVisible(), true);
   } finally {
     await browser?.close();
     await server.close();

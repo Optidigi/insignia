@@ -634,7 +634,7 @@ export function BuyerCustomizer({
                 {[
                   'Upload',
                   'Placement',
-                  allOneSize ? 'Preview' : 'Size',
+                  allOneSize ? 'Decoration' : 'Size',
                   ...(hasPreview ? ['Preview'] : []),
                   'Review',
                 ].map((label, index) => (
@@ -716,7 +716,7 @@ export function BuyerCustomizer({
                     </label>
                   ))}
                   <button type="button" disabled={!state.group.design.placements.length} onClick={next}>
-                    Continue to {allOneSize ? 'Preview' : 'Size'}
+                    Continue to {allOneSize ? 'Decoration' : 'Size'}
                   </button>
                 </section>
                 <section
@@ -727,7 +727,7 @@ export function BuyerCustomizer({
                     {wizard === 3
                       ? 'Preview your selected placements'
                       : allOneSize
-                        ? 'Your decoration preview'
+                        ? 'Review decoration settings'
                         : 'Choose size for each placement'}
                   </h3>
                   {state.group.design.placements.length > 1 && (
