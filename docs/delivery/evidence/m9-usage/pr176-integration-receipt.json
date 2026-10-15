@@ -1,0 +1,53 @@
+{
+  "pullRequest": "https://github.com/Optidigi/insignia/pull/176",
+  "classification": "VERIFIED_NORMAL_PROTECTED_MERGE",
+  "base": "ea30da00c08bbf23ad111b203a526dc9c4714fc0",
+  "head": "5213bb74fb6db6e862203042b94baf72733d54b7",
+  "effectiveMergeBase": "ea30da00c08bbf23ad111b203a526dc9c4714fc0",
+  "merge": "2fff82190a2a5be69e17e2fe3d7b56c43abb877f",
+  "tree": "7844b2c5d991017bbdca7cdba152cd9476cfc0e7",
+  "parents": [
+    "ea30da00c08bbf23ad111b203a526dc9c4714fc0",
+    "5213bb74fb6db6e862203042b94baf72733d54b7"
+  ],
+  "checks": [
+    {
+      "name": "foundation",
+      "run": 38792016313,
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "name": "durable-core",
+      "run": 38792016789,
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "name": "runtime",
+      "run": 38792016607,
+      "attempt": 1,
+      "result": "SUCCESS"
+    }
+  ],
+  "actualPostgreSQL": {
+    "databasePass": 316,
+    "skip": 5,
+    "intentAndAttemptCasesPass": 13,
+    "newCodecBoundaryCasesPass": 1,
+    "restrictedLoginPass": 1,
+    "schema37DisposableDownUp": "PASS"
+  },
+  "observerRegression": "Actual CI Python3.12.3/Linux6.17: normal, retained-zombie and injected proc-read-esrch PASS; real EPIPE and actual terminal state within unchanged6s deadline.",
+  "negativeControl": "Intentional missing-renderer failure is expected and explicitly asserted by test:m5-renderer-control; preceding100-case stress passes.",
+  "reviewedHashesMatch": true,
+  "preservedFailure": {
+    "head": "0dc8a761bcfcab92b55210ae363879387e6583d3",
+    "run": 38790945782,
+    "cause": "Synthetic process observer ESRCH race; reviewed regression correction, no production sandbox change."
+  },
+  "nativeSchema": 36,
+  "nativeDeployment": false,
+  "billingDispatchEnabled": false,
+  "privateLogsRetentionDue": "2026-10-20"
+}
