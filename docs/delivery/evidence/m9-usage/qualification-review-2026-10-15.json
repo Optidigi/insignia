@@ -77,5 +77,37 @@
     "Trusted history must come from a separately qualified historical normalizer, not client labels/current subscription/quote/carriers",
     "No current approved paid-plan configuration or exact2026-07 transport requalification",
     "No live usage event, charge, scope/version/store/resource mutation or rollout"
-  ]
+  ],
+  "firstCandidateCiFailure": {
+    "head": "c8c3c5ec15415e7cc3d310ef482dde2aa5915ffc",
+    "run": 38737005782,
+    "job": 116428751119,
+    "attempt": 1,
+    "result": "failure",
+    "databaseTests": {
+      "passed": 288,
+      "failed": 1,
+      "skipped": 5
+    },
+    "location": "packages/database/test/merchant-preview.test.ts:238",
+    "constraint": "installation_generations_check",
+    "cause": "Existing test used fixed 2026-10-15T12:00:00Z deactivation after the database had activated the installation at 12:46:39Z; deactivated_at >= activated_at correctly rejected the setup.",
+    "correction": "Use database clock_timestamp() for this installation transition, matching the two other deactivation controls in the same test file. Domain billing rule and production guards unchanged.",
+    "rerunWithoutCorrection": false,
+    "correctedHeadCi": "PENDING",
+    "correctionReview": {
+      "reviewer": "/root/preview_native_transition_review",
+      "result": "CLEAR",
+      "scope": "Database-clock deactivation satisfies actual activation constraint; inactive revision-read assertions remain unchanged"
+    },
+    "localCorrectionChecks": {
+      "domainTestsPassed": 38,
+      "databaseTypecheck": "PASS",
+      "changedTestStyle": "PASS",
+      "databasePreviewTestsSkipped": 10,
+      "databasePreviewTestsExecuted": 0,
+      "secretProvenance": "PASS",
+      "diffCheck": "PASS"
+    }
+  }
 }
