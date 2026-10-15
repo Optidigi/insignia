@@ -1,5 +1,7 @@
 /** Shopify Partner API 2026-07 activeSubscription read contract; the access token is injected at runtime. */
 import { randomUUID } from 'node:crypto';
+import { PARTNER_HISTORY_QUERY, partnerHistoryVariables } from './partner-history-query.js';
+import { partnerInstant } from './partner-instant.js';
 export const PARTNER_API_VERSION = '2026-07' as const;
 export const ACTIVE_SUBSCRIPTION_SCHEMA_VERSION = 'm4-active-subscription-v1' as const;
 
@@ -56,7 +58,10 @@ export type ActiveSubscriptionSnapshot = {
   pendingUpdate: { billingPeriod: 'ANNUAL' | 'EVERY_30_DAYS'; itemHandles: string[] } | null;
 };
 export interface PartnerGraphqlTransport {
-  query(input: { query: string; variables: { appId: string; shopId: string } }): Promise<string>;
+  query(input: {
+    query: string;
+    variables: { appId: string; shopId: string; from?: string; through?: string; after?: string | null };
+  }): Promise<string>;
 }
 
 export const ACTIVE_SUBSCRIPTION_QUERY = `query ActiveSubscription($appId: ID!, $shopId: ID!) {
@@ -143,20 +148,7 @@ function optionalInteger(value: unknown): number | null {
   return value == null ? null : integer(value);
 }
 function timestamp(value: unknown): string {
-  if (typeof value !== 'string' || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)$/.test(value))
-    return malformed();
-  const day = new Date(`${value.slice(0, 10)}T00:00:00Z`);
-  if (
-    !Number.isFinite(day.getTime()) ||
-    day.toISOString().slice(0, 10) !== value.slice(0, 10) ||
-    Number(value.slice(11, 13)) > 23 ||
-    Number(value.slice(14, 16)) > 59 ||
-    Number(value.slice(17, 19)) > 59
-  )
-    return malformed();
-  const date = new Date(value);
-  if (!Number.isFinite(date.getTime())) return malformed();
-  return date.toISOString();
+  return partnerInstant(value) ?? malformed();
 }
 function optionalTimestamp(value: unknown): string | null {
   return value == null ? null : timestamp(value);
@@ -443,10 +435,13 @@ export function createPartnerGraphqlTransport(config: {
   const fetchImpl = config.fetchImpl ?? fetch;
   return {
     async query(input) {
+      const historyVariables = input.query === PARTNER_HISTORY_QUERY ? partnerHistoryVariables(input.variables) : null;
       if (
-        input.query !== ACTIVE_SUBSCRIPTION_QUERY ||
-        !/^gid:\/\/shopify\/App\/[0-9]+$/.test(input.variables.appId) ||
-        !/^gid:\/\/shopify\/Shop\/[0-9]+$/.test(input.variables.shopId)
+        input.query === PARTNER_HISTORY_QUERY
+          ? !historyVariables
+          : input.query !== ACTIVE_SUBSCRIPTION_QUERY ||
+            !/^gid:\/\/shopify\/App\/[0-9]+$/.test(input.variables.appId) ||
+            !/^gid:\/\/shopify\/Shop\/[0-9]+$/.test(input.variables.shopId)
       )
         throw new PartnerSubscriptionError('invalid_request');
       const controller = new AbortController();
@@ -457,7 +452,7 @@ export function createPartnerGraphqlTransport(config: {
           {
             method: 'POST',
             headers: { 'content-type': 'application/json', 'x-shopify-access-token': config.accessToken },
-            body: JSON.stringify(input),
+            body: JSON.stringify(historyVariables ? { query: input.query, variables: historyVariables } : input),
             signal: controller.signal,
             redirect: 'error',
           },

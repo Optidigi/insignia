@@ -1,0 +1,53 @@
+{
+  "classification": "LOCAL_SOURCE_REVIEWED_NATIVE_ONE_PAGE_QUALIFIED_CI_PENDING",
+  "base": "a6a1419a4b20e977c3c7e83246c41d72ae5f0386",
+  "sourceHashes": {
+    "packages/shopify/src/subscription-history.ts": "4186cbabde05ac7046112eeb603087139da14ba08adae70691d8617ea8948b21",
+    "packages/shopify/src/partner-history-query.ts": "4567dbfd956a71f94fd00d3bec9f0a82e6d2b61c06a99590e93916b54351df5c",
+    "packages/shopify/src/partner-instant.ts": "7659af34abb5566610e8167f34ef72cc37b2d70a9ef0a4434b25a77b1f9a28ae",
+    "packages/shopify/src/active-subscription.ts": "be236fa96a37bcbbc5ed7f44dffeaafd9c50b739ae60a4389c4d9a67c19d3575",
+    "packages/shopify/src/index.ts": "754cd82d07cc136a18b76cea2a08f7315a0cd62c613173cec88c91032edc099c",
+    "packages/shopify/test/subscription-history.test.ts": "70b31b745da0641fcb4697d6ccacb1a7708297f2299813ba7b05d8d9e75fe8d2",
+    "packages/shopify/test/active-subscription.test.ts": "a431de392ab0b3ac6763c63d4ca5ec979d91404fb63ecea1d1b870dd2b43a343"
+  },
+  "scope": "One production Partner history page, exact timestamp normalization and existing transport exact-read allowlist; no trusted interval normalizer, runtime composition or provider mutations",
+  "testProvenance": {
+    "history": "Happy-path implementation followed by five observed behavioral RED cases covering factory compatibility, precision, partial errors, pagination and bounds; corrected to nine passing cases.",
+    "activePrecision": "Regression reproduced lossy .123001 timestamp truncation before shared normalization correction.",
+    "localBuildPrerequisite": "Initial broad package run failed absent application dist/types in the new checkout; dependency-ordered build restored imports without source workaround. Boundary check could not resolve unbuilt database root, then passed after all-package build. Secret artifact check initially lacked storefront dist; web artifact build also required worker dist. Dependency-ordered application build supplies those real outputs before the final artifact recheck. These were local build prerequisites, not candidate behavioral failures."
+  },
+  "localChecks": {
+    "shopifyTestsPassed": 444,
+    "shopifyTestFiles": 26,
+    "focusedTestsPassed": 32,
+    "focusedCases": "history9 plus active23",
+    "dependencyOrderedPackageBuild": "PASS",
+    "shopifyTypecheck": "PASS",
+    "biomeSevenFiles": "PASS",
+    "gitDiffCheck": "PASS",
+    "boundariesAndSecretProvenance": "PASS",
+    "boundaries": "PASS:346 modules/13 browser modules/19 negative source fixtures/2 rejected browser bundles; database API19 compiler probes/4 rejected deep imports;7 pure domain modules and18 checker tests",
+    "secretProvenance": "209 production source files/174 test-fixture files/22 browser artifacts/2 synthetic seeds; lazy chunk rejection test PASS. Delivery evidence JSON is outside this checker scope.",
+    "webWorkerAndStorefrontBuild": "PASS after dependency-ordered build; no deployment"
+  },
+  "independentReview": {
+    "agent": "/root/preview_native_transition_review",
+    "contexts": 1,
+    "axes": [
+      "Spec/correctness",
+      "Standards/security"
+    ],
+    "result": "CLEAR",
+    "scope": "Exact precision, scope/range/page/cursor/errors, bounded factory allowlist, preserved credential/destination/timeout/body/no-retry guards, and no event-page promotion to historical authority.",
+    "impactCheck": "Final query import relocation only; reverse relocation reproduces prior reviewed file hash exactly. Query literal unchanged. Native receipt limitations reviewed CLEAR.",
+    "isolation": "Read-only/no-network/no-credential instructions; no enforced credential or network sandbox isolation claimed."
+  },
+  "nativeEvidence": "production-history-reader-native-2026-10-15.json",
+  "limits": [
+    "Terminal page is not exact historical installation/trial/cycle coverage.",
+    "Date-only cancellation, source state and plan metadata remain observations.",
+    "No policy catalog mapping, historical normalizer, schema/grant deployment, outbox/sender, usage dispatch or billing activation.",
+    "Existing zero-dollar development plan does not establish approved paid commercial terms.",
+    "Required final-candidate hosted CI remains pending; cleanup and native G8 obligations remain open."
+  ]
+}

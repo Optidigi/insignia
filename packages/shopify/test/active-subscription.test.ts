@@ -256,3 +256,25 @@ describe('Partner activeSubscription normalization', () => {
     await expect(client('{bad json').read({ appId, shopId })).rejects.toMatchObject({ kind: 'malformed_response' });
   });
 });
+
+describe('exact Partner timestamp precision at the active subscription boundary', () => {
+  test('accepts six-fraction zero extension without changing the instant', async () => {
+    const value = contract({
+      currentBillingCycle: { startTime: '2026-09-01T00:00:00.123000Z', endTime: '2026-10-01T00:00:00.000000Z' },
+    });
+    expect((await client(response(value)).read({ appId, shopId })).currentBillingCycle).toEqual({
+      startTime: '2026-09-01T00:00:00.123Z',
+      endTime: '2026-10-01T00:00:00.000Z',
+    });
+  });
+  test('refuses sub-millisecond information loss and unknown timezone offsets', async () => {
+    for (const startTime of ['2026-09-01T00:00:00.123001Z', '2026-09-01T00:00:00-00:00']) {
+      await expect(
+        client(response(contract({ currentBillingCycle: { startTime, endTime: '2026-10-01T00:00:00Z' } }))).read({
+          appId,
+          shopId,
+        }),
+      ).rejects.toMatchObject({ kind: 'malformed_response' });
+    }
+  });
+});
