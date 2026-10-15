@@ -50,3 +50,10 @@ export type {
   ShopRecord,
 } from './repositories/tenant.js';
 export { ManagedInstallationError } from './repositories/tenant.js';
+
+export {
+  type UsageLedgerRecord,
+  type UsageLedgerRepository,
+  type UsageLedgerScope,
+  UsageLedgerStateError,
+} from './repositories/usage-ledger.js';

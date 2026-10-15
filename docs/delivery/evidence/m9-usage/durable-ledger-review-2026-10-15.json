@@ -1,0 +1,73 @@
+{
+  "classification": "LOCAL_IMPLEMENTATION_REVIEWED_POSTGRESQL_CI_PENDING",
+  "base": "b15e2473da3be3487a7ccf0c11310c43a38eaddb",
+  "scope": "Durable local order-usage qualification only; no native migration, runtime grants, sender, outbox or provider effects",
+  "files": {
+    "packages/database/migrations/20261015000300_m9_usage_ledger.sql": "f6c54eeb0697594d2a1f500f4cdfe23cd5cfbea9454657c95d49c893c4a0a921",
+    "packages/database/src/repositories/usage-ledger.ts": "ee4aae267f9afa1445eed546f121beb7ba718ef844a5a33d3100f2c820d710f8",
+    "packages/database/test/usage-ledger.test.ts": "939a22b5266566556e112921a0615129ac2c3a8e76647dc47c9fda330027fc52",
+    "packages/database/src/durable-core.ts": "c65ea1cd79d861f27bb05fcb8738c251757996c8941caea8e30ef680426907cf",
+    "packages/database/src/index.ts": "6e0f41617da79934587552da20c30a667e5025e026d7fe596141d35d5e852a71"
+  },
+  "behavior": [
+    "Source is_test, customization binding existence and immutable first-paid time are derived transactionally from purchase storage, never caller flags.",
+    "Missing customization binding remains unresolved, permitting later proof.",
+    "One purchase identity and unique shop/order survive concurrent replay, reopened pools and reinstall.",
+    "Terminal test exclusion, trial waiver, inactive unbillable and eligible decisions are immutable; unresolved/pending rows may reevaluate.",
+    "Historical original generation is retained without creating current entitlement.",
+    "Source-validation and closed financial JSON guards prohibit identity/terminal/first-paid rewrites, deletion and populated rollback.",
+    "Only canonical history/policy digest is stored; digest is not provider authority."
+  ],
+  "localChecks": {
+    "databaseBuild": "PASS",
+    "databaseTypecheck": "PASS",
+    "biomeChangedFiles": "PASS",
+    "domainTestsPassed": 38,
+    "databaseLedgerTestsSkipped": 9,
+    "reasonSkipped": "No DATABASE_URL or local PostgreSQL/Docker capability; actual database behavior awaits existing durable-core CI PostgreSQL service.",
+    "sourceBoundaryChecks": "PASS",
+    "databasePublicApi": "19 negative compiler probes and 4 runtime deep imports rejected",
+    "domainEffects": "7 production modules clean; 18 checker tests passed",
+    "secretProvenance": "PASS",
+    "gitDiffCheck": "PASS"
+  },
+  "testProvenance": "Tests authored before implementation; missing-module failure observed, but actual PostgreSQL behavioral RED/GREEN was not executed locally and is not claimed.",
+  "independentReviews": [
+    {
+      "agent": "/root/preview_native_transition_review",
+      "axis": "Spec/correctness",
+      "result": "CLEAR",
+      "scope": "Source facts, transaction lock ordering, shop/order identity, late facts, terminal permanence, SQL guards and fixture compatibility"
+    },
+    {
+      "agent": "/root/preview_verifier_transition",
+      "axis": "Standards/security",
+      "result": "CLEAR",
+      "scope": "Tenant/original-generation boundaries, SQL/locks, immutable financial facts, financial-only retention, sealed API and absence of runtime/provider authority widening"
+    }
+  ],
+  "reviewIsolation": "Reviewers were instructed read-only/no network/credentials/native effects; no credential/network sandbox isolation is claimed.",
+  "remaining": [
+    "Actual PostgreSQL migration, concurrency, guards and empty rollback qualification in CI.",
+    "Production historical subscription normalizer, policy catalog and source authority qualification.",
+    "Durable sender/permanent provider idempotency and allowance lifecycle remain unimplemented; local dedup is not provider duplicate-charge protection.",
+    "No native billing activation or M9/G8/rollout acceptance."
+  ],
+  "firstCandidateCi": {
+    "head": "b000f915131dc96f2385b939a24e8ec3f6341aeb",
+    "run": 38740467721,
+    "job": 116440529921,
+    "ledgerTestsPassed": 9,
+    "databaseTestsPassed": 298,
+    "databaseTestsSkipped": 5,
+    "failure": "Restricted LOGIN test expected34 migration files; ledger migration correctly adds35th. Failure occurred before restricted LOGIN qualification and empty migration rehearsal.",
+    "correction": "Pin exact35/new last migration; explicitly prove existing web, purchase worker and inspector LOGINs cannot SELECT/INSERT/UPDATE/DELETE/TRUNCATE the unactivated ledger. No grants or production source changed.",
+    "localChecks": "Exact migration-name/count assertion PASS; database typecheck PASS; Biome PASS with two inherited non-null assertion warnings; actual restricted LOGIN checks await corrected CI.",
+    "correctionReview": {
+      "agent": "/root/preview_verifier_transition",
+      "result": "CLEAR",
+      "scope": "Exact migration coverage maintained;15 expected42501 denial probes strengthen checks; no grants/production source changes",
+      "testSha256": "af831095eae01d28fda0d36b366549c35af987db59e896a1384198e337f88998"
+    }
+  }
+}

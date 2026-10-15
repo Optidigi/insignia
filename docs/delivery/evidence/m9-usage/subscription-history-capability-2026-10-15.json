@@ -1,0 +1,39 @@
+{
+  "classification": "SCOPED_READ_AND_OFFLINE_SHAPE_DIAGNOSIS",
+  "appId": "gid://shopify/App/429028933633",
+  "shopId": "gid://shopify/Shop/105501393179",
+  "apiVersion": "2026-07",
+  "querySha256": "be6053318dfb479b3a07fca085a004ab78d1d4c30ed6c6130c3578e2498e8706",
+  "from": "2026-09-27T00:00:00.000Z",
+  "through": "2026-10-15T13:04:26.279Z",
+  "observedAt": "2026-10-15T13:04:26.615Z",
+  "providerQueries": 2,
+  "providerMutations": 0,
+  "usageEventsSent": 0,
+  "response": {
+    "httpStatus": 200,
+    "graphqlErrors": 0,
+    "events": 1,
+    "hasNextPage": false,
+    "eventType": "SUBSCRIPTION_CREATED",
+    "state": "CREATED",
+    "occurredAtRepresentation": "2026-09-28T16:53:02.000000Z",
+    "planHandle": "insignia-dev-zero-20260928",
+    "billingPeriod": "EVERY_30_DAYS",
+    "trialDays": 0,
+    "trialDaysRemaining": 0,
+    "cancelEffectiveOn": null
+  },
+  "parserObservation": {
+    "historicalSpikeParser": "UNAVAILABLE",
+    "cause": "canonicalInstant accepts at most three fractional digits; provider returned six with exact millisecond precision",
+    "offlineReplay": "Converting .000000Z to equivalent .000Z makes the unchanged parser return PAGE, one event, hasNextPage=false, exactHistoricalTrialInterval=false",
+    "productionCodeChanged": false
+  },
+  "limits": [
+    "Scoped event page is available through existing credentials; no new access grant needed for this read.",
+    "One CREATED event for the existing zero-dollar development plan does not establish the approved commercial plan or exact normalized historical trial/cycle coverage.",
+    "Production history normalizer remains unimplemented. It must preserve exactness, reject nonrepresentable precision, and qualify coverage rather than treating page availability as authority.",
+    "Private raw diagnostic and initial failed parse retained under existing 20 October private-evidence cleanup obligation."
+  ]
+}

@@ -65,6 +65,7 @@ import {
   type ShopRecord,
 } from './repositories/tenant.js';
 import { createTrustedReleaseReader } from './repositories/trusted-release.js';
+import { createUsageLedgerRepository, type UsageLedgerRepository } from './repositories/usage-ledger.js';
 
 const transactionBrand: unique symbol = Symbol('insignia durable transaction');
 
@@ -80,6 +81,7 @@ export type ConfigInput = {
 };
 
 export interface DurableCore {
+  readonly usageLedger: UsageLedgerRepository;
   readonly purchases: PurchaseRepository;
   readonly buyers: BuyerRepository;
   readonly renewalQuotes: QuoteRenewalStore;
@@ -431,6 +433,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
   }
   return {
     purchases: createPurchaseRepository(database),
+    usageLedger: createUsageLedgerRepository(database),
     artwork: createArtworkRepository(pool),
     merchantPreviews: createMerchantPreviewRepository(pool),
     buyers: createBuyerRepository(database),
