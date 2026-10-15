@@ -1,0 +1,108 @@
+{
+  "classification": "PAIRED_PRODUCTION_CURRENT_AND_HISTORY_READ_WITH_NATIVE_INSTALLATION_BASELINE",
+  "sourceBase": "59e09649a68adbe6114a690ea2cc0ac627a4b9c9",
+  "sourceHashes": {
+    "active-subscription.ts": "be236fa96a37bcbbc5ed7f44dffeaafd9c50b739ae60a4389c4d9a67c19d3575",
+    "subscription-history.ts": "278d1cfbb1813e45de14675ab21873884733b3d313f1000ba74ec3c407382f4d"
+  },
+  "providerQueries": 2,
+  "providerMutations": 0,
+  "usageEventsSent": 0,
+  "databaseWrites": 0,
+  "baseline": {
+    "shopId": "db771bea-c585-4954-9f88-70771c9a0c89",
+    "generation": "1",
+    "observedAt": "2026-10-15T15:06:03.151614+00:00",
+    "shopDomain": "insignia-rewrite-dev.myshopify.com",
+    "activatedAt": "2026-10-11T10:46:18.777+00:00",
+    "deactivatedAt": null,
+    "shopifyShopId": "105501393179",
+    "currentGeneration": "1"
+  },
+  "active": {
+    "schemaVersion": "m4-active-subscription-v1",
+    "sourceApiVersion": "2026-07",
+    "appId": "gid://shopify/App/429028933633",
+    "shopId": "gid://shopify/Shop/105501393179",
+    "observedAt": "2026-10-15T15:06:37.785Z",
+    "active": true,
+    "billingPeriod": "EVERY_30_DAYS",
+    "cancelAtEndOfCycle": false,
+    "trialEndsAt": null,
+    "currentBillingCycle": {
+      "startTime": "2026-09-28T16:53:01.000Z",
+      "endTime": "2026-10-28T16:53:01.000Z"
+    },
+    "items": [
+      {
+        "handle": "customized_order_paid",
+        "price": {
+          "kind": "tiered",
+          "providerTypename": "TieredPrice",
+          "active": false,
+          "currency": "USD",
+          "tiersMode": "VOLUME",
+          "tiers": [
+            {
+              "upTo": null,
+              "amountPerUnit": "0.0",
+              "amount": "0.0"
+            }
+          ]
+        },
+        "discount": null,
+        "usage": {
+          "quantity": "3.0",
+          "cost": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        }
+      },
+      {
+        "handle": "insignia-dev-zero-20260928",
+        "price": {
+          "kind": "flat",
+          "providerTypename": "FlatRatePrice",
+          "active": false,
+          "currency": "USD",
+          "amount": "0.0"
+        },
+        "discount": null,
+        "usage": null
+      }
+    ],
+    "pendingUpdate": null
+  },
+  "range": {
+    "appId": "gid://shopify/App/429028933633",
+    "shopId": "gid://shopify/Shop/105501393179",
+    "from": "2026-09-27T00:00:00.000Z",
+    "through": "2026-10-15T15:06:38.589Z",
+    "observedAt": "2026-10-15T15:06:38.590Z",
+    "pagesRead": 1,
+    "pagination": "EXHAUSTED",
+    "eventCount": 1,
+    "events": [
+      {
+        "occurredAt": "2026-09-28T16:53:02.000Z",
+        "eventType": "SUBSCRIPTION_CREATED",
+        "state": "CREATED",
+        "plan": {
+          "handle": "insignia-dev-zero-20260928",
+          "billingPeriod": "EVERY_30_DAYS",
+          "trialDays": 0,
+          "trialDaysRemaining": 0
+        },
+        "cancelEffectiveOn": null
+      }
+    ],
+    "trustedEntitlementIntervals": false
+  },
+  "limits": [
+    "Native exact source facts only; historical normalizer and policy mapping are not implemented or qualified by this read.",
+    "Existing zero-dollar development subscription is not approved paid commercial configuration.",
+    "No provider mutation, database write, usage dispatch, native deployment or billing activation.",
+    "Private response/normalized artifacts join existing 20 October cleanup obligation."
+  ]
+}

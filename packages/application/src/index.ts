@@ -2,6 +2,7 @@ export * from './artwork/artwork.js';
 export * from './delivery/inbox.js';
 export * from './delivery/outbox.js';
 export * from './entitlement/provider-policy.js';
+export * from './entitlement/usage-history.js';
 export * from './idempotency/command.js';
 export * from './keys/artifact-attestation.js';
 export * from './keys/crypto.js';

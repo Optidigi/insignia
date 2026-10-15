@@ -1,0 +1,58 @@
+{
+  "classification": "LOCAL_CURRENT_CYCLE_NORMALIZER_REVIEWED_NATIVE_POLICY_UNQUALIFIED_CI_PENDING",
+  "base": "59e09649a68adbe6114a690ea2cc0ac627a4b9c9",
+  "sourceHashes": {
+    "packages/application/src/entitlement/usage-history.ts": "ff030f2ac863ec03a578651edf9cfa0d66a7571743ea3301ab93b0def54e7558",
+    "packages/application/src/entitlement/usage-history.test.ts": "8b2017422259018222ce721a48d59f25eb9cac14e8fc771e6e7f9adeb9e2a6a2",
+    "packages/application/src/index.ts": "8e48e92a69618464a9bf589fffdcaea0befb78eba5b2f43750f9fc10c7c624b6"
+  },
+  "scope": "Pure same-current-cycle application normalization into existing domain history; no runtime composition or billing-policy allocation",
+  "behavior": [
+    "Checks exact provider/app/tenant/generation and a separately qualified versioned billing-policy binding. M5 feature recognition is not that binding.",
+    "Supported source subset is a single CREATED transition, exhausted scoped range, unchanged active monthly paid cycle; configured trial days may be nonzero when the provider returns a paid cycle.",
+    "Finite half-open window starts at max(cycle start, CREATED, installation baseline, range start), ends at min(observation, range end, cycle end). No future or prior-cycle inference.",
+    "Current trials, unknown old trial boundaries, additional transitions, scheduled/actual cancellations, incomplete coverage and invalid sources remain unresolved.",
+    "Local normalization does not authenticate provider DTOs or establish policy provenance: caller must obtain verified reads, authoritative installation and qualified backend mapping."
+  ],
+  "testProvenance": [
+    "Observed initial qualifying case RED returned unresolved/0 before implementation.",
+    "Subsequent scope/history guard tests failed before corrections; five malformed/transition cases RED before final guards.",
+    "Eleven positive/rejection tests exercise the public normalizer through the existing domain qualifier. No artificial prose RED or separate harness."
+  ],
+  "localChecks": {
+    "applicationTestsPassed": 298,
+    "testFiles": 23,
+    "newFocusedTestsPassed": 11,
+    "build": "PASS",
+    "typecheck": "PASS",
+    "biome": "PASS",
+    "gitDiffCheck": "PASS",
+    "boundariesAndSecretProvenance": "PASS:352 real modules/13 browser modules/19 negative source fixtures/2 rejected browser bundles; database19 compiler probes/4 rejected imports;18 domain checker tests;211 production source/175 test-fixture files/22 browser artifacts/2 synthetic seeds"
+  },
+  "independentReview": {
+    "agent": "/root/preview_native_transition_review",
+    "contexts": 1,
+    "axes": [
+      "Spec/correctness",
+      "Standards/security"
+    ],
+    "result": "CLEAR",
+    "scope": "New function/test/export and interacting domain/provider contracts; exact scope, qualified policy, finite observed current-cycle coverage and unresolved unsupported cases.",
+    "isolation": "Read-only/no-network/no-credential instructions; no enforced network or credential sandbox claimed."
+  },
+  "nativeSource": "paired-current-history-native-2026-10-15.json",
+  "nativeReplay": "current-cycle-native-source-replay-2026-10-15.json",
+  "nativeLimits": [
+    "Two scoped Partner reads and a read-only database baseline transaction succeeded; sequential reads do not establish an atomic provider/database snapshot.",
+    "Native replay correctly remains UNRESOLVED/UNRECOGNIZED_POLICY. No native positive TRUSTED history result is established.",
+    "Recorded native test purchase is EXCLUDED/TEST_ORDER/0; no new order, ledger write or usage event.",
+    "Current paid positive cases use explicitly synthetic qualified bindings, not fabricated native billing authority.",
+    "Existing zero-dollar volume-meter development contract is distinct from adopted commercial graduated allowance/overage and trial."
+  ],
+  "remaining": [
+    "Required final-candidate CI and normal integration.",
+    "Versioned billing policy/tariff qualification, runtime source/ledger composition, durable outbox/sender and provider lifecycle qualification.",
+    "No native schema/grants/deployment, paid-plan changes, trial transitions, sends or rollout allocated by this slice.",
+    "Prior retention/rotation deadlines remain active; new private source copies/screenshots due20October."
+  ]
+}
