@@ -1,0 +1,38 @@
+{
+  "pullRequest": "https://github.com/Optidigi/insignia/pull/179",
+  "classification": "VERIFIED_NORMAL_PROTECTED_FEATURE_CONFIGURATION_MERGE",
+  "base": "5bf2bea4ea05cdf032096c405f1c07ee8ac7534f",
+  "head": "3d306a562342722b2e7a744e36a89bf712f1bf69",
+  "effectiveMergeBase": "5bf2bea4ea05cdf032096c405f1c07ee8ac7534f",
+  "merge": "ab3e19fb4466021fed0901d04aeae31046571456",
+  "tree": "d7e67029e2c862505af83528a405908511d18e8a",
+  "parents": [
+    "5bf2bea4ea05cdf032096c405f1c07ee8ac7534f",
+    "3d306a562342722b2e7a744e36a89bf712f1bf69"
+  ],
+  "checks": [
+    {
+      "name": "foundation",
+      "run": 38809853086,
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "name": "durable-core",
+      "run": 38809853317,
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "name": "runtime",
+      "run": 38809853016,
+      "attempt": 1,
+      "result": "SUCCESS"
+    }
+  ],
+  "productionSourceChanged": false,
+  "nativeDeployment": false,
+  "providerMutations": 0,
+  "billingDispatchEnabled": false,
+  "next": "Qualify same-image web one-env update and unchanged-source verifier rebinding before any separate subscription selection grant."
+}
