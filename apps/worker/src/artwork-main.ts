@@ -47,6 +47,7 @@ try {
   const running = await startArtworkInspectionProcess({
     runner,
     observability,
+    inspectMerchantPreview: inspectArtwork,
     socketPath: required('ARTWORK_WORKER_READY_SOCKET'),
     cleanup: () => service.cleanup(20),
   });

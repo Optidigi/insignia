@@ -1,0 +1,39 @@
+{
+  "classification": "CANDIDATE_PRIVATE_UNIX_TRANSPORT_TO_EXISTING_ISOLATED_INSPECTOR_PASS",
+  "sourceBytes": 3990,
+  "sourceSha256": "2614c450a7d116d47c93f00fb7ae568667dfecf176e8ca2d88ecf8c4820ff72b",
+  "version": "m6-inspection-v1",
+  "mimeType": "image/png",
+  "width": 600,
+  "height": 800,
+  "previewBytes": 7516,
+  "previewSha256": "80e751f6f391253e8e0f8f019609551c6cb2d76db8da8a949a5d3ed6758c7fef",
+  "calls": 1,
+  "databaseWrites": 0,
+  "storageWrites": 0,
+  "serviceChanges": 0,
+  "productionMountAccessQualified": false,
+  "newHostEntrypointDeployed": false,
+  "combinedBuyerRpcResourceBudgetQualified": false,
+  "preDispatchFailure": "Initial staging stopped before writes/inspection because local handoff parent was absent on VPS; corrected to neutral task directory",
+  "allContainerFingerprintsPreserved": true,
+  "containerCount": 34,
+  "candidateModuleHashes": {
+    "health.js": "585c852293f73dac040af11ee40f006d9bfa63e992563f9380b59356753e9d6e",
+    "artwork/inspection-client.js": "a4f7369ea1d66cfb5cd6ea850543fb96ad2ea001d113546b02fccd988179a9b8",
+    "artwork/inspection-transport.js": "f1cd40baaad2464910ec492ef4be2d50b63b67ff837413e744834f7fce478847",
+    "artwork/inspection-wire.js": "fdbefd69f7d3e4fc9f8b45df079eedd447d915411810a948a914b81fe745d050",
+    "artwork/errors.js": "7cdbe521bd512381974433a210f714154a49d71fe73d3f11e8d88fe8d7fb4d7d",
+    "probe.mjs": "adbfe13e29c1b1ba8a6a0c120e1f617f27f3ab50e8594a8321f3bb7f4b70cbc2",
+    "package.json": "6dc1b06d6b093e9cccb20bee06a93836eee0420ae26803ca2ce4065d82f070d1",
+    "source.private.bin": "2614c450a7d116d47c93f00fb7ae568667dfecf176e8ca2d88ecf8c4820ff72b"
+  },
+  "privateArtifactsCleanupDue": "2026-10-20T00:00:00Z",
+  "operatorSha256": "db804e62ac1c50f6fbd2c5e96e59a76cc7a01f54a2826c0df00f786e5a9cbcef",
+  "privateJournal": "/home/serveradmin/insignia-m8-pr147-private-inspection-20261015",
+  "limits": [
+    "Ephemeral same-UID private server, exact candidate compiled modules, existing qualified isolated decoder. No new entrypoint/service deployment.",
+    "No actual web-container mount/UID test, no concurrent buyer/RPC resource test, no capture/store/publication/buyer/purchase composition.",
+    "Private copied source/probe files due20October; no R2 object or purchase created."
+  ]
+}
