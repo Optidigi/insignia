@@ -10,7 +10,7 @@
     "inspection": "local boundary double",
     "objectStorage": "in-memory boundary double"
   },
-  "isolation": "Random fixture IDs; only abandoned fixture updated_at changed to make one-row global cleanup batch deterministic; no other fixture or production data edited.",
+  "isolation": "Random fixture IDs; early synthetic capture clock establishes oldest queue priority through normal PREPARING -> WRITING -> USABLE transitions. No direct SQL timestamp update or changes to other fixtures.",
   "localChecks": {
     "databaseTypecheck": "PASS",
     "biomeChangedTest": "PASS",
@@ -42,5 +42,31 @@
     "No development R2 deletion or store mutation",
     "Does not qualify physical provider deletion, native reordered processing, capacity or a complete gate",
     "Prior ambiguous WRITING/DELETING effects cannot be reset or blindly retried"
-  ]
+  ],
+  "priorReviewLimit": "Initial review cleared the original setup but missed the same-state SQL update guard; the actual CI failure is preserved below.",
+  "failedCandidate": {
+    "head": "3325588783c4583215a587a400acb223b4805c98",
+    "run": 38723803893,
+    "job": 116384589945,
+    "attempt": 1,
+    "conclusion": "failure",
+    "errorCode": "23514",
+    "error": "invalid merchant preview state transition",
+    "location": "test/merchant-preview.test.ts:211",
+    "cause": "Test setup attempted a same-state USABLE updated_at update, which the production trigger correctly rejects.",
+    "actualDatabaseResults": {
+      "passed": 288,
+      "failed": 1,
+      "skipped": 5
+    },
+    "correction": "Establish deterministic priority using the application capture clock and existing valid state transitions; production source/migrations/guards unchanged.",
+    "rerunWithoutCorrection": false
+  },
+  "correctionReview": {
+    "reviewer": "/root/preview_native_transition_review",
+    "result": "CLEAR",
+    "scope": "Supported clock-driven lifecycle, trigger/repository compatibility, bound reference preservation and shared-fixture isolation",
+    "actualPostgreSQLQualification": "PENDING_CORRECTED_HEAD_CI",
+    "productionChanges": false
+  }
 }

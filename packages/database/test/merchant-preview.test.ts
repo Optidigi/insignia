@@ -169,7 +169,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('merchant-owned preview lifecy
     const png = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
     const objects = new Map<string, Uint8Array>();
     const removals: string[] = [];
-    let clock = now;
+    // An early synthetic capture clock gives these fixtures queue priority through valid state transitions.
+    const capturedAt = new Date('1800-01-01T00:00:00Z');
+    let clock = capturedAt;
     // Real application and durable store; only catalog/inspection/storage ports are local doubles.
     const capture = createMerchantPreviewCapture({
       store,
@@ -206,12 +208,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('merchant-owned preview lifecy
     expect(objects.size).toBe(4);
     expect(await store.markDeleting(abandoned.row.assetId, clock)).toBeNull();
     expect(removals).toEqual([]);
-    clock = later;
-    // Put this candidate first without touching other fixtures in the shared disposable database.
-    await pool.query('UPDATE merchant_preview_assets SET updated_at=$2 WHERE asset_id=$1', [
-      abandoned.row.assetId,
-      new Date('1800-01-01T00:00:00Z'),
-    ]);
+    clock = new Date(+capturedAt + 8 * 86400000);
     expect(await store.selectCleanup(1, clock)).toEqual([abandoned.row.assetId]);
     expect(await capture.cleanup(1)).toBe(1);
     expect(removals).toEqual([abandoned.row.originalKey, abandoned.row.previewKey]);
