@@ -1,0 +1,48 @@
+{
+  "classification": "NATIVE_NEW_ARTWORK_EXACT_QUOTE_AND_CART_PASS_NO_CHECKOUT",
+  "rootProofSha256": "77885e84bc718af4d796e3a9c00c12bbc30d4b15bf600493636ad919af65df3b",
+  "sourceMerge": "b52fcf4c3a4307d1af3e08caa4ea5316447c2c7f",
+  "activeVersion": "1168157736961",
+  "revisionId": "645b57fd-0737-48d5-8d46-1c772fca1e44",
+  "frozenAssetId": "1e3a659f-a3b3-6cb6-46f9-3d25578c882e",
+  "frozenImage": {
+    "status": 200,
+    "bytes": 7516,
+    "sha256": "80e751f6f391253e8e0f8f019609551c6cb2d76db8da8a949a5d3ed6758c7fef"
+  },
+  "assetId": "75cbd361-d5c4-4b59-99b4-dab45bff9da1",
+  "assetExpiresAt": "2026-10-22T10:23:38.721Z",
+  "originalSha256": "2b9633afe3fd7743077d7d77931093a3ce96621cf395cac07d5b46c596992a0c",
+  "proposalId": "ccf6ddeb-d62b-44ad-81cd-119bf73b9142",
+  "proposalHash": "a5962d032d1164081fa0f16315d553633cd457c9401827adb65c41c87c2fb412",
+  "proposalExpiresAt": "2026-10-15T10:28:47.744Z",
+  "quoteId": "8b7f2987-c299-44ce-b501-270c2c8ecb7b",
+  "setId": "c673faa7-8d57-4820-a218-6b76415cfa27",
+  "applicationId": "519cf47e-af43-4b13-aafe-a37406b920a1",
+  "validThroughDay": 20743,
+  "currency": "USD",
+  "totalMinor": "1500",
+  "quantity": 1,
+  "sharedEnvelopeSha256": "67ce49e3d0362b07498eb8afa703e33cfb0b53ed909ab3f0c70dd31b93899e1d",
+  "lineEnvelopeSha256": "67ce49e3d0362b07498eb8afa703e33cfb0b53ed909ab3f0c70dd31b93899e1d",
+  "memberCarrierSha256": "b0c05ee32f4cd7cc46923b3224f81cd819ae1bd6abffbd9339d3df2859ef337a",
+  "completeMemberSet": true,
+  "sharedAndLineEqualAccepted": true,
+  "signatureVerification": "NOT_ASSERTED_BY_BROWSER_DRIVER",
+  "ordinaryLines": 0,
+  "checkoutInvocations": 0,
+  "retryInvocations": 0,
+  "independentReview": {
+    "reviewer": "/root/preview_native_transition_review",
+    "correctness": "CLEAR",
+    "security": "CLEAR"
+  },
+  "nativeWizardSteps": [
+    "Placement",
+    "Decoration",
+    "Preview",
+    "Review"
+  ],
+  "newOriginalExpiry": "2026-10-22T10:23:38.721Z",
+  "originalBytes": 265
+}

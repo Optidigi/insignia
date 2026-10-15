@@ -1,0 +1,42 @@
+{
+  "classification": "ONE_AUTHORIZED_RELEASE_ACK_AND_EXACT_ACTIVE_READBACK_PASS",
+  "observedAt": "2026-10-15T10:22:01.335Z",
+  "appId": "429028933633",
+  "active": [
+    {
+      "versionId": "gid://shopify/Version/1168157736961",
+      "versionTag": "m8-preview-28443bd",
+      "status": "active"
+    }
+  ],
+  "versionCount": 12,
+  "moduleCount": 8,
+  "modulesSha256": "36f66b7710f17b1f03d274ea0ecb38ce68b0c6c4fdc94c6868a7fe070c1c0948",
+  "previousSevenNonThemeModulesSettingsScopesFunctionsPreserved": true,
+  "dispatch": {
+    "classification": "CLI_RELEASE_ACK_INDEPENDENT_READBACK_REQUIRED",
+    "exitCode": 0,
+    "timedOut": false,
+    "outputLimitExceeded": false,
+    "logBytes": 980,
+    "logSha256": "8f428434aecdd366b5f934a2cfb14896f27ef9a41ecd75c887066ec12f63bc64",
+    "inputsUnchanged": true,
+    "releaseInvocations": 1,
+    "creationInvocations": 0,
+    "retryAuthorized": false,
+    "httpMutationAccounting": {
+      "logicalMutations": 1,
+      "httpMutationAttempts": 1,
+      "blockedMutationAttempts": 0,
+      "retryAuthorized": false
+    }
+  },
+  "releaseAllocationConsumed": true,
+  "independentReview": {
+    "reviewer": "/root/preview_native_transition_review",
+    "correctness": "CLEAR",
+    "security": "CLEAR"
+  },
+  "retryInvocations": 0,
+  "pureControlsPassed": 5
+}
