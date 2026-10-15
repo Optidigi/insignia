@@ -1,0 +1,53 @@
+{
+  "classification": "CI_ARTIFACT_AND_NATIVE_BUYER_PREVIEW_BINDING",
+  "artifactId": 11942470218,
+  "workflowRun": 38665953243,
+  "workflowHead": "76c877f09c959e6aa832f3bf664638a2b3ee06ec",
+  "attempt": 1,
+  "ciBuildSourceHead": "3cfa2f0903a4efa7c0c07ec1b6750ba805a056df",
+  "sourceTree": "cb19b2a81f525801adc019907af66e11536c312a",
+  "integratedMerge": "106ed264b57ac14e28bd0c89cd4cb28931c5606d",
+  "artifact": {
+    "tarSha256": "d5b9e0a1bf8202ad4da099c4b6d1bea9453e3b67ff52ad224e1ac3029c872c87",
+    "tarSizeBytes": 456009216,
+    "nativeOciImageId": "sha256:3c2d1ba04b2144382c0bae81381b0a54c46f614772f4d8279d40a3dae3e0ffa5",
+    "configDigest": "sha256:4b55440ad316baedd689eec32f734beb30e59e9453c0a9ee267e4694a16ec3f0",
+    "sourceHashes": {
+      "apps/web/src/server/buyer/service.ts": "4610dd0c777c77740d46b461d40afb5a7a75d6249f46f7d960622337b8daf908",
+      "apps/web/src/server/buyer/production.ts": "08ba04e76d1fff80da17fde8c70cd261cd79c71cb7c36d289ecb90ae8db26640",
+      "apps/web/test/buyer-production.test.mjs": "fef5f566425b1227defaf925e38248fea42ee98f92eaf473bdf8d8cf924c15aa"
+    },
+    "compiled": [
+      {
+        "path": "srv/insignia/web/dist/server/chunks/runtime_HnxXxKH5.mjs",
+        "sha256": "449db1a15a29a32c06a841a784f90877ab22a7845c95bb6d58adc4b047f489d9",
+        "sizeBytes": 82066
+      }
+    ]
+  },
+  "allOciBlobsDescriptorsRootfsAndRuntimeConfigVerified": true,
+  "reviews": {
+    "handover": {
+      "reviewer": "accept_read_spec",
+      "result": "CLEAR",
+      "operatorSha256": "176c538ce38b995acfefb5e1389376e5f3ac26710f103a7e1a6ec2763ff5e699",
+      "helperSha256": "c0d8c0f23fba422ac60ac9f9f786f5a6c0177e646f93588225f669b0ca46dcb4",
+      "prerequisitesVerified": true,
+      "nativeEffectsByReviewer": false
+    },
+    "webUpdate": {
+      "reviewer": "offline_bridge_security",
+      "result": "CLEAR",
+      "importSha256": "0ed2ece4fc1c5c5bd7ffe2e239b7be72997f26defe4e93de9e9d44adf942d9f2",
+      "webUpdateSha256": "85edf59e0959e125012a3c3177e7d985a07b2d0ff52d3effea30f7ed0ad8f4c8",
+      "nativeEffectsByReviewer": false
+    }
+  },
+  "probeReview": {
+    "reviewer": "accept_read_spec",
+    "result": "CLEAR",
+    "sha256": "91c5345927cfea50f7ca45a31689725697918f0d621dc5436664404d93fe9d53"
+  },
+  "browserSessions": "Both exact Admin Themes and Dev App verified through README-headed open.js, no challenge/login signals; screenshots visually inspected. One profile instance at a time, contexts closed, no logout.",
+  "nativeLimit": "One existing variant/configuration dialog, no override selectors. Production-to-renderer regression tests qualify variant override/fallback; native variant-specific visual parity remains unobserved. No historical capture claim."
+}
