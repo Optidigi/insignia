@@ -1,5 +1,6 @@
 import { randomBytes, randomUUID, sign } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
+import { ArtworkError, createMerchantPreviewCapture } from '@insignia/application';
 import { encodeHeader, wholeQuoteSignBytes } from '@insignia/cart-authorization';
 import { Pool } from 'pg';
 import { expect, it } from 'vitest';
@@ -32,19 +33,24 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
     )
       throw new Error('Allocated synthetic PostgreSQL qualification required');
     const webPassword = randomBytes(32).toString('hex'),
-      workerPassword = randomBytes(32).toString('hex');
+      workerPassword = randomBytes(32).toString('hex'),
+      inspectorPassword = randomBytes(32).toString('hex');
     const suffix = randomUUID().replaceAll('-', '');
     const name = `synthetic_web_acl_${suffix}`,
       login = `synthetic_web_${suffix}`,
       queue = `synthetic_queue_${suffix}`,
       inspector = `synthetic_inspect_${suffix}`,
+      inspectorLogin = `synthetic_inspect_login_${suffix}`,
       extra = `synthetic_extra_${suffix}`,
       worker = `synthetic_purchase_${suffix}`,
       enqueue = `synthetic_enqueue_${suffix}`;
     const admin = new Pool({ connectionString: address.href, max: 1, connectionTimeoutMillis: 5000 });
     const target = new URL(address);
     target.pathname = `/${name}`;
-    let owner: Pool | undefined, web: Pool | undefined, purchaseWorker: Pool | undefined;
+    let owner: Pool | undefined,
+      web: Pool | undefined,
+      purchaseWorker: Pool | undefined,
+      inspectionWorker: Pool | undefined;
     let ownerDb: ReturnType<typeof createDatabase> | undefined;
     let created = false;
     try {
@@ -59,8 +65,8 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       );
       const migrations = new URL('../migrations/', import.meta.url);
       const names = (await readdir(migrations)).filter((n) => n.endsWith('.sql')).sort();
-      expect(names).toHaveLength(33);
-      expect(names.at(-1)).toBe('20261015000100_merchant_preview_assets.sql');
+      expect(names).toHaveLength(34);
+      expect(names.at(-1)).toBe('20261015000200_merchant_preview_cleanup_fairness.sql');
       for (const file of names.slice(0, 20))
         await owner.query((await readFile(new URL(file, migrations), 'utf8')).split('-- migrate:down')[0]!);
       await owner.query('REVOKE CREATE ON SCHEMA public FROM PUBLIC');
@@ -440,6 +446,200 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
           .replaceAll('insignia_artwork_inspect', inspector);
         await owner.query(other);
       }
+      // Merchant preview permissions are additive only after qualified existing capabilities.
+      const previewScript = (
+        await readFile(
+          new URL('../../../deployment/m8-journey/merchant-preview-runtime-grants.sql', import.meta.url),
+          'utf8',
+        )
+      )
+        .replaceAll('insignia_runtime', login)
+        .replaceAll('insignia_queue_enqueue', enqueue)
+        .replaceAll('insignia_artwork_inspect', inspector);
+      await expect(web.query('SELECT * FROM merchant_preview_assets')).rejects.toMatchObject({ code: '42501' });
+      await owner.query(
+        `CREATE ROLE ${inspectorLogin} LOGIN PASSWORD '${inspectorPassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; GRANT ${inspector} TO ${inspectorLogin}`,
+      );
+      const inspectorAddress = new URL(target);
+      inspectorAddress.username = inspectorLogin;
+      inspectorAddress.password = inspectorPassword;
+      inspectionWorker = new Pool({ connectionString: inspectorAddress.href, connectionTimeoutMillis: 5000 });
+      await expect(inspectionWorker.query('SELECT * FROM merchant_preview_assets')).rejects.toMatchObject({
+        code: '42501',
+      });
+      await owner.query(previewScript);
+      await owner.query(previewScript);
+      expect((await inspectionWorker.query('SELECT current_user')).rows[0].current_user).toBe(inspectorLogin);
+      const previewId = randomUUID(),
+        previewConfigId = randomUUID(),
+        previewRevisionId = randomUUID();
+      await core.transactions.run((tx) =>
+        core.configs.createConfig(tx, {
+          shopId,
+          configId: previewConfigId,
+          externalProductId: '42',
+          draftSchemaVersion: 'm3-config-draft-v1',
+          draftValue: {},
+        }),
+      );
+      const png = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+      const objects = new Map<string, Uint8Array>();
+      // Only provider storage/decoding are doubles; capture, LOGIN, triggers and revision binding are real.
+      const capture = createMerchantPreviewCapture({
+        store: core.merchantPreviews,
+        clock: () => now,
+        readImage: async () => png,
+        inspect: async () => ({
+          version: 'm6-inspection-v1',
+          mimeType: 'image/png',
+          width: 100,
+          height: 100,
+          originalSha256: '4c4b6a3be1314ab86138bef4314dde022e600960d8689a2c8f8631802d20dab6',
+          preview: png,
+          previewMimeType: 'image/png',
+        }),
+        storage: {
+          async read({ key }) {
+            const bytes = objects.get(key);
+            if (!bytes) throw new ArtworkError('NOT_FOUND');
+            return bytes;
+          },
+          async putImmutable({ key, bytes }) {
+            if (objects.has(key)) throw new ArtworkError('CONFLICT');
+            objects.set(key, Uint8Array.from(bytes));
+          },
+          async remove({ key }) {
+            objects.delete(key);
+          },
+        },
+      });
+      expect(
+        (await capture.capture(authority, { assetId: previewId, productId: '42', imageRevisionId: 'product_42' }))
+          ?.state,
+      ).toBe('USABLE');
+      expect(objects.size).toBe(2);
+      await core.transactions.run((tx) =>
+        core.configs.createValidatedRevision(tx, {
+          shopId,
+          configId: previewConfigId,
+          revisionId: previewRevisionId,
+          mode: 'optional',
+          sourceDraftVersion: '1',
+          sourceInstallationGeneration: generation,
+          createdByRef: 'synthetic',
+          publishedValue: {
+            version: 'm2-published-config-v1',
+            shopId,
+            productId: '42',
+            revisionId: previewRevisionId,
+            shopCurrency: 'USD',
+            methods: [],
+            placements: [],
+            productionOptions: [],
+            pricingRules: [],
+          },
+          geometry: {
+            version: 'm5-geometry-v1',
+            value: {
+              version: 'm5-geometry-v1',
+              views: [
+                {
+                  id: 'front',
+                  image: { revisionId: 'product_42', width: 100, height: 100 },
+                  variantImages: [],
+                  placements: [],
+                },
+              ],
+              steps: [],
+            },
+          },
+          presentation: { version: 'm5-presentation-v1', labels: {} },
+          previewAssets: [{ imageRevisionId: 'product_42', assetId: previewId }],
+        }),
+      );
+      expect(
+        (
+          await web.query('SELECT asset_id FROM config_revision_preview_assets WHERE revision_id=$1', [
+            previewRevisionId,
+          ])
+        ).rows,
+      ).toEqual([{ asset_id: previewId }]);
+      const cleanup = createDurableCore(inspectionWorker).merchantPreviews;
+      const later = new Date(+now + 8 * 86400000);
+      expect(await cleanup.markDeleting(previewId, later)).toBeNull(); // Referenced current assets do not expire.
+      const abandonedId = randomUUID();
+      await capture.capture(authority, { assetId: abandonedId, productId: '42', imageRevisionId: 'product_42' });
+      expect((await cleanup.markDeleting(abandonedId, later))?.state).toBe('DELETING');
+      await cleanup.finishDeleting(abandonedId, later);
+      expect(
+        (
+          await inspectionWorker.query('SELECT state,manifest FROM merchant_preview_assets WHERE asset_id=$1', [
+            abandonedId,
+          ])
+        ).rows,
+      ).toEqual([{ state: 'DELETED', manifest: null }]);
+      for (const query of [
+        'UPDATE merchant_preview_assets SET manifest=manifest WHERE false',
+        'UPDATE merchant_preview_assets SET collected_at=collected_at WHERE false',
+        'UPDATE merchant_preview_assets SET abandon_at=abandon_at WHERE false',
+        'UPDATE merchant_preview_assets SET original_key=original_key WHERE false',
+        'INSERT INTO merchant_preview_assets(claim_id) SELECT NULL WHERE false',
+        'DELETE FROM merchant_preview_assets WHERE false',
+        'TRUNCATE merchant_preview_assets',
+        'UPDATE config_revision_preview_assets SET asset_id=asset_id WHERE false',
+        'DELETE FROM config_revision_preview_assets WHERE false',
+      ])
+        await expect(web.query(query)).rejects.toMatchObject({ code: '42501' });
+      for (const query of [
+        'INSERT INTO merchant_preview_assets DEFAULT VALUES',
+        'UPDATE merchant_preview_assets SET claim_id=claim_id WHERE false',
+        'UPDATE merchant_preview_assets SET original_key=original_key WHERE false',
+        'UPDATE merchant_preview_assets SET abandon_at=abandon_at WHERE false',
+        'DELETE FROM merchant_preview_assets WHERE false',
+        'TRUNCATE merchant_preview_assets',
+        'INSERT INTO config_revision_preview_assets DEFAULT VALUES',
+        'UPDATE config_revision_preview_assets SET asset_id=asset_id WHERE false',
+        'DELETE FROM config_revision_preview_assets WHERE false',
+      ])
+        await expect(inspectionWorker.query(query)).rejects.toMatchObject({ code: '42501' });
+      // Unexpected effective privileges abort the entire additive grant transaction; none are silently revoked.
+      for (const hazard of [
+        {
+          grant: 'GRANT SELECT ON merchant_preview_assets TO PUBLIC',
+          revoke: 'REVOKE SELECT ON merchant_preview_assets FROM PUBLIC',
+          error: 'unqualified_preview_public_access',
+        },
+        {
+          grant: `GRANT UPDATE(manifest) ON merchant_preview_assets TO ${login}`,
+          revoke: `REVOKE UPDATE(manifest) ON merchant_preview_assets FROM ${login}`,
+          error: 'unqualified_preview_column_access',
+        },
+        {
+          grant: `GRANT INSERT(claim_id) ON merchant_preview_assets TO ${login}`,
+          revoke: `REVOKE INSERT(claim_id) ON merchant_preview_assets FROM ${login}`,
+          error: 'unqualified_preview_column_access',
+        },
+        {
+          grant: `GRANT UPDATE(claim_id) ON merchant_preview_assets TO ${inspector}`,
+          revoke: `REVOKE UPDATE(claim_id) ON merchant_preview_assets FROM ${inspector}`,
+          error: 'unqualified_preview_column_access',
+        },
+        {
+          grant: `GRANT INSERT ON config_revision_preview_assets TO ${inspector}`,
+          revoke: `REVOKE INSERT ON config_revision_preview_assets FROM ${inspector}`,
+          error: 'unqualified_preview_column_access',
+        },
+        {
+          grant: `GRANT TRUNCATE ON merchant_preview_assets TO ${login}`,
+          revoke: `REVOKE TRUNCATE ON merchant_preview_assets FROM ${login}`,
+          error: 'unqualified_preview_column_access',
+        },
+      ]) {
+        await owner.query(hazard.grant);
+        await expect(owner.query(previewScript)).rejects.toThrow(hazard.error);
+        await owner.query('ROLLBACK');
+        await owner.query(hazard.revoke);
+      }
       await owner.query(
         `CREATE ROLE ${worker} LOGIN PASSWORD '${workerPassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; GRANT ${queue} TO ${worker}`,
       );
@@ -464,12 +664,13 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       ).toEqual({ original: false, buyer: false, signing: false });
       expect(session.sessionId).toBeTruthy();
     } finally {
+      await inspectionWorker?.end();
       await purchaseWorker?.end();
       await web?.end();
       if (ownerDb) await ownerDb.destroy();
       else await owner?.end();
       if (created) await admin.query(`DROP DATABASE ${name}`);
-      for (const role of [worker, login, queue, inspector, extra, enqueue])
+      for (const role of [worker, inspectorLogin, login, queue, inspector, extra, enqueue])
         await admin.query(`DROP ROLE IF EXISTS ${role}`);
       await admin.end();
     }

@@ -276,3 +276,40 @@ it('does not delete mismatched object bytes or accept a DELETE acknowledgment as
   expect(retained.calls).not.toContain('deleted');
   expect(retained.row()?.state).toBe('DELETING');
 });
+
+it('cleanup reporting preserves unresolved custody while continuing unrelated due assets', async () => {
+  const blocked = fixture(),
+    due = fixture();
+  await createMerchantPreviewCapture(blocked.input).capture(scope, request);
+  const second = { ...request, assetId: 'c386ec26-eb34-4c57-8dab-f80d29f3ff91' };
+  await createMerchantPreviewCapture(due.input).capture(scope, second);
+  const row = blocked.row();
+  if (!row) throw Error('missing');
+  row.state = 'DELETING'; // Explicit store-boundary double: a previous ambiguous deletion still has objects.
+  const choose = (id: string) => (id === request.assetId ? blocked : due);
+  const errors: string[] = [];
+  const cleanup = createMerchantPreviewCapture({
+    ...blocked.input,
+    onCleanupError: (code) => {
+      errors.push(code);
+    },
+    store: {
+      ...blocked.input.store,
+      selectCleanup: async () => [request.assetId, second.assetId],
+      markDeleting: (id, at) => choose(id).input.store.markDeleting(id, at),
+      readDeleting: (id) => choose(id).input.store.readDeleting(id),
+      finishDeleting: (id, at) => choose(id).input.store.finishDeleting(id, at),
+    },
+    storage: {
+      ...blocked.input.storage,
+      read: (input) => (input.key.includes(second.assetId) ? due : blocked).input.storage.read(input),
+      remove: (input) => (input.key.includes(second.assetId) ? due : blocked).input.storage.remove(input),
+    },
+  });
+  expect(await cleanup.cleanup()).toBe(1);
+  expect(errors).toEqual(['MERCHANT_PREVIEW_CLEANUP_UNAVAILABLE']);
+  expect(blocked.row()?.state).toBe('DELETING');
+  expect(blocked.calls).not.toContain('remove');
+  expect(due.row()?.state).toBe('DELETED');
+  expect(due.objects.size).toBe(0);
+});

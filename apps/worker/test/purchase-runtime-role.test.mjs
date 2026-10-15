@@ -388,6 +388,7 @@ test('actual queue-member login reconciles signed initial and renewed offers, pa
       ])
         await assert.rejects(inspector.query(sql), /permission denied/);
       await qualifyInspectionLifecycle(seed, inspectionCore, inspector, other.shopId);
+      await qualifyMerchantPreviewProfile(owner, inspector, inspectorLogin);
     }
     const retained = await runtime.purchases.getOffer({
       shopId: other.shopId,
@@ -675,4 +676,50 @@ async function qualifyInspectionLifecycle(owner, inspection, restricted, shopId)
   ])
     await assert.rejects(restricted.query(sql, [assetId]), /permission denied/);
   await assert.rejects(inspection.artwork.create({ ...record, assetId: randomUUID() }), /permission denied/);
+}
+
+async function qualifyMerchantPreviewProfile(owner, inspector, login) {
+  const profile = { merchantPreviews: true };
+  await assert.rejects(qualifyArtworkRuntimeRole(inspector, profile), /Inspection database role unavailable/);
+  await owner.query(
+    'GRANT SELECT ON merchant_preview_assets,config_revision_preview_assets TO insignia_artwork_inspect',
+  );
+  await owner.query('GRANT UPDATE(state,manifest,updated_at) ON merchant_preview_assets TO insignia_artwork_inspect');
+  try {
+    await qualifyArtworkRuntimeRole(inspector, profile);
+    await assert.rejects(qualifyArtworkRuntimeRole(inspector), /Inspection database role unavailable/);
+    for (const grant of [
+      'MAINTAIN ON merchant_preview_assets',
+      'MAINTAIN ON shop_credentials',
+      'INSERT ON merchant_preview_assets',
+      'DELETE ON merchant_preview_assets',
+      'UPDATE(original_key) ON merchant_preview_assets',
+      'UPDATE(abandon_at) ON merchant_preview_assets',
+      'UPDATE(claim_id) ON merchant_preview_assets',
+      'INSERT ON config_revision_preview_assets',
+      'UPDATE(asset_id) ON config_revision_preview_assets',
+    ]) {
+      await owner.query(`GRANT ${grant} TO ${login}`);
+      await assert.rejects(qualifyArtworkRuntimeRole(inspector, profile), /Inspection database role unavailable/);
+      await owner.query(`REVOKE ${grant} FROM ${login}`);
+    }
+    await owner.query('REVOKE UPDATE(manifest) ON merchant_preview_assets FROM insignia_artwork_inspect');
+    await assert.rejects(qualifyArtworkRuntimeRole(inspector, profile), /Inspection database role unavailable/);
+    await owner.query('GRANT UPDATE(manifest) ON merchant_preview_assets TO insignia_artwork_inspect');
+    await qualifyArtworkRuntimeRole(inspector, profile);
+    await inspector.query('SELECT original_key FROM merchant_preview_assets LIMIT 1');
+    await assert.rejects(inspector.query('DELETE FROM merchant_preview_assets'), /permission denied/);
+    await assert.rejects(
+      inspector.query('UPDATE merchant_preview_assets SET original_key=original_key'),
+      /permission denied/,
+    );
+  } finally {
+    await owner.query(
+      'REVOKE SELECT ON merchant_preview_assets,config_revision_preview_assets FROM insignia_artwork_inspect',
+    );
+    await owner.query(
+      'REVOKE UPDATE(state,manifest,updated_at) ON merchant_preview_assets FROM insignia_artwork_inspect',
+    );
+  }
+  await qualifyArtworkRuntimeRole(inspector);
 }

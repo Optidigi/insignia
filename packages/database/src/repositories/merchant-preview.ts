@@ -206,7 +206,14 @@ export function createMerchantPreviewRepository(pool: Pool): MerchantPreviewStor
             ])
           ).rows[0];
           if (!candidate) return null;
-          if (row.state === 'DELETING') return null;
+          if (row.state === 'DELETING') {
+            // Rotate attempted reads behind unvisited rows. This is never a new DELETE claim.
+            await c.query(
+              "UPDATE merchant_preview_assets SET updated_at=GREATEST(updated_at + interval '1 microsecond',$2::timestamptz,clock_timestamp()) WHERE asset_id=$1",
+              [id, now],
+            );
+            return null;
+          }
           return map(
             (
               await c.query<Row>(

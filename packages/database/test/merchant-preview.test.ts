@@ -334,4 +334,69 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('merchant-owned preview lifecy
       ]),
     ).rejects.toMatchObject({ code: '23514' });
   });
+  it('rotates more unresolved deletions than the batch limit without starving later absence reconciliation', async () => {
+    const rows: MerchantPreviewRecord[] = [];
+    for (let index = 0; index < 4; index++) {
+      const f = await fixture();
+      await store.prepare(f.scope, f.row);
+      await store.markDeleting(f.row.assetId, later);
+      rows.push(f.row);
+    }
+    const blocked = new Set(rows.slice(0, 3).map((r) => r.assetId));
+    // Isolate deterministic queue ordering from other fixtures in this shared disposable test DB.
+    for (let index = 0; index < rows.length; index++)
+      await pool.query('UPDATE merchant_preview_assets SET updated_at=$2 WHERE asset_id=$1', [
+        rows[index]?.assetId,
+        new Date(index < 3 ? '1900-01-01T00:00:00Z' : '1901-01-01T00:00:00Z'),
+      ]);
+    const clock = () => new Date(+later + 10000);
+    expect((await store.selectCleanup(2, clock())).every((id) => blocked.has(id))).toBe(true);
+    let mutations = 0,
+      reports = 0;
+    const service = createMerchantPreviewCapture({
+      store,
+      clock,
+      readImage: async () => {
+        throw Error('not used');
+      },
+      inspect: async () => {
+        throw Error('not used');
+      },
+      storage: {
+        read: async ({ key }) => {
+          if ([...blocked].some((id) => key.includes(id))) return new Uint8Array([1]);
+          throw new ArtworkError('NOT_FOUND');
+        },
+        putImmutable: async () => {
+          mutations++;
+          throw Error('not used');
+        },
+        remove: async () => {
+          mutations++;
+          throw Error('must not retry');
+        },
+      },
+      onCleanupError: () => {
+        reports++;
+      },
+    });
+    expect(await service.cleanup(2)).toBe(0);
+    expect(await service.cleanup(2)).toBe(1);
+    expect(
+      (await pool.query('SELECT state FROM merchant_preview_assets WHERE asset_id=$1', [rows[3]?.assetId])).rows[0]
+        .state,
+    ).toBe('DELETED');
+    expect(reports).toBe(3);
+    expect(mutations).toBe(0);
+    expect(
+      Number(
+        (
+          await pool.query(
+            "SELECT count(*) FROM merchant_preview_assets WHERE asset_id=ANY($1::uuid[]) AND state='DELETING'",
+            [[...blocked]],
+          )
+        ).rows[0].count,
+      ),
+    ).toBe(3);
+  });
 });
