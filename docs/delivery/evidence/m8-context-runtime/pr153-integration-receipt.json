@@ -1,0 +1,47 @@
+{
+  "classification": "VERIFIED_NORMAL_MERGE",
+  "pullRequest": "https://github.com/Optidigi/insignia/pull/153",
+  "base": "49f0c5ce1dd4cef47c38c7455f184e1da03fd6aa",
+  "head": "28443bd9ea14b9c63fa661adf5442a76a85c6de3",
+  "effectiveMergeBase": "49f0c5ce1dd4cef47c38c7455f184e1da03fd6aa",
+  "merge": "906835a2771ff2cbf8949fb0646924d7f1f6b20d",
+  "tree": "eaee7662f4c9756e96d3f9009a82c89565f56dee",
+  "mergeParents": [
+    "49f0c5ce1dd4cef47c38c7455f184e1da03fd6aa",
+    "28443bd9ea14b9c63fa661adf5442a76a85c6de3"
+  ],
+  "checks": [
+    {
+      "run": 38686991047,
+      "headSha": "28443bd9ea14b9c63fa661adf5442a76a85c6de3",
+      "attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "run": 38686990996,
+      "headSha": "28443bd9ea14b9c63fa661adf5442a76a85c6de3",
+      "attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "run": 38686991020,
+      "headSha": "28443bd9ea14b9c63fa661adf5442a76a85c6de3",
+      "attempt": 1,
+      "conclusion": "success"
+    }
+  ],
+  "configuredFunctionBoundary": {
+    "run": 38686991047,
+    "result": "PASS: dedicated actual-production-Function Ajax carrier check"
+  },
+  "postIntegrationLocalPostgres": {
+    "command": "python3 -I -B /home/serveradmin/insignia-milestone-autonomy-handoff/m8-pr154-integrated-browser-pg-run.py pr153-integrated-browser",
+    "test": "Buyer EUR91 actual HTTP, real signing and PostgreSQL, ordinary cart exact",
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "isolation": "Ephemeral local PostgreSQL18, random loopback port, random synthetic owner credential, schema migrations then one browser test; cluster stopped and temporary data removed",
+    "nativeProviderEvidence": false
+  },
+  "runtimeDeployment": "UNCHANGED: deployed PR151 web; active cookie theme not updated by this merge"
+}
