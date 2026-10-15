@@ -2,37 +2,12 @@ name: M1-001 foundation and boundaries
 
 on:
   pull_request:
-    paths:
-      - 'apps/**'
-      - 'packages/**'
-      - 'crates/**'
-      - 'extensions/insignia-*/**'
-      - 'scripts/boundaries/**'
-      - 'scripts/m1-functions/**'
-      - 'scripts/m4-002/**'
-      - '.dependency-cruiser.cjs'
-      - 'biome.json'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'rust-toolchain.toml'
-      - 'scripts/m5-002/**'
-      - 'scripts/m5-native-inventory/**'
-      - 'scripts/m5-host-inventory/**'
-      - 'scripts/m5-inventory-phase/**'
-      - 'scripts/m5-004/**'
-      - 'scripts/m5-005/**'
-      - 'scripts/m5-009/**'
-      - 'scripts/m5-010/**'
-      - 'scripts/m5-011/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - '.github/workflows/m1-foundation.yml'
-      - 'docs/delivery/**'
-      - 'AGENTS.md'
   push:
     branches: [main]
     paths:
+      - 'scripts/ci/**'
+      - 'scripts/m4-003/**'
+      - 'scripts/m5-017/**'
       - 'apps/**'
       - 'packages/**'
       - 'crates/**'
@@ -70,20 +45,34 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24.21.0'
+      - name: Verify exact status-reference route
+        id: changes
+        env:
+          CI_BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          CI_HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          node --test scripts/ci/status-docs.test.mjs
+          node scripts/ci/status-docs.mjs
       - name: Install pinned Rust and browser dependencies
+        if: steps.changes.outputs.route == 'full'
         run: |
           rustup toolchain install 1.98.1 --profile minimal --component rustfmt,clippy --target wasm32-unknown-unknown
           corepack pnpm install --frozen-lockfile
           corepack pnpm --filter @insignia/web exec playwright install --with-deps chromium
       - name: Build and check actual workspace
+        if: steps.changes.outputs.route == 'full'
         run: corepack pnpm check
       - name: Qualify Ajax carriers against actual production Functions
+        if: steps.changes.outputs.route == 'full'
         run: M1_FUNCTION_RUNNER="$PWD/.m1-artifacts/tools/function-runner-9.2.2" node --test apps/storefront/test/cart-function-contract.test.mjs
       - name: M5 publication geometry stress (100 cases, no retries)
+        if: steps.changes.outputs.route == 'full'
         run: corepack pnpm test:m5-stress && corepack pnpm test:m5-renderer-control
       - name: Bind current source and build outputs
+        if: steps.changes.outputs.route == 'full'
         run: python3 -B scripts/m1-functions/artifact-manifest.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: steps.changes.outputs.route == 'full'
         with:
           name: m1-001-foundation-${{ github.sha }}
           if-no-files-found: error

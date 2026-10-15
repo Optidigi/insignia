@@ -1,0 +1,20 @@
+{
+  "schema": "insignia-milestone-progress-v1",
+  "milestone": "M5",
+  "status": "ENGINEERING_IN_PROGRESS",
+  "authority": "docs/delivery/authority/simple-delivery-2026-10-12.md",
+  "entryCommit": null,
+  "currentIntegratedCommit": null,
+  "currentTree": null,
+  "acceptanceRows": [],
+  "mergedPrs": [],
+  "openFindings": [],
+  "resourceGrants": [],
+  "ownerInputs": [],
+  "nextSafeAction": null,
+  "nextPrincipalCheckpoint": "M5 engineering readiness",
+  "principalAcceptance": null,
+  "nextMilestoneStarted": false,
+  "nativeAcceptance": "NOT_PASSED",
+  "deferredNativeChecks": []
+}
