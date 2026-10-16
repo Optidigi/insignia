@@ -22,6 +22,7 @@ import {
   createShopifyAdminGraphqlReadTransport,
   type ExpectedFunctionOwnership,
   readVariantAvailability as readAvailability,
+  readPrimaryMarketContext,
   readShopContext,
 } from '@insignia/shopify';
 import { loadArtworkStorageProfile } from '@insignia/storage';
@@ -43,7 +44,7 @@ export type ProductionBuyerInputs = {
   env: NodeJS.ProcessEnv;
   ring: SigningKeyRing;
   entitlementPolicy: EntitlementPolicyConfig;
-  /** Independently qualified server context; absent keeps new Lean offers unavailable. */
+  /** Server-owned alternative for qualified deployments; default reads the current primary Market. */
   leanContext?: QuoteAuthorityPorts['leanContext'];
   credentials: AdminCredentialSource;
   /** SELECT-only credentials for final checks; no claim or refresh fallback. */
@@ -186,11 +187,41 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       throw new Error('Buyer resource ownership unavailable');
     const artwork = createArtworkUsabilityPort(input.core.artwork, clock, scope);
     let acceptanceFenceHeld = false;
+    const credentialSource = credentials(scope, () => acceptanceFenceHeld);
+    const leanContext: NonNullable<QuoteAuthorityPorts['leanContext']> = input.leanContext ?? {
+      async assertSupported(target) {
+        // USD is the initial implementation target. EUR/GBP need their own qualification
+        // before being enabled; a target currency name is never context authority.
+        if (target.currency !== 'USD' || target.shopCurrency !== target.currency)
+          throw new Error('Lean primary-Market context unavailable');
+        const matches = (current: Awaited<ReturnType<typeof active>>) =>
+          target.tenant.shopId === scope.shopId &&
+          target.tenant.installationGeneration === scope.installationGeneration &&
+          target.tenant.shopifyShopGid === `gid://shopify/Shop/${current.shopifyShopId}` &&
+          target.tenant.authorizationGeneration === current.authorizationGeneration &&
+          target.tenant.authorizationEpoch === current.authorizationEpoch;
+        const before = await active(scope);
+        if (!matches(before)) throw new Error('Buyer Lean context authority changed');
+        const observed = await readPrimaryMarketContext(
+          { ...scope, shopifyShopId: before.shopifyShopId },
+          { credentials: credentialSource, fetchImpl, now: clock },
+        );
+        const after = await active(scope);
+        if (!matches(after)) throw new Error('Buyer Lean context authority changed');
+        if (
+          observed.shopCurrency !== target.currency ||
+          observed.primaryMarketId !== `gid://shopify/Market/${target.marketId}` ||
+          !observed.countryCodes.includes(target.country) ||
+          +clock() < Date.parse(observed.observedAt) ||
+          +clock() >= Date.parse(observed.freshUntil)
+        )
+          throw new Error('Lean primary-Market context unavailable');
+      },
+    };
     let composed: QuoteAuthorityPorts | undefined, pending: Promise<QuoteAuthorityPorts> | undefined;
     const compose = () =>
       (pending ??= (async () => {
         const { keyScope, selected } = await selection(scope);
-        const credentialSource = credentials(scope, () => acceptanceFenceHeld);
         const signer = new InjectedEd25519Signer({
           async getSigningKey(statement) {
             if (
@@ -250,7 +281,7 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
           core: input.core,
           appId: `gid://shopify/App/${appId}`,
           entitlementPolicy: input.entitlementPolicy,
-          leanContext: input.leanContext,
+          leanContext,
           readSubscription: input.readSubscription,
           credentials: credentialSource,
           catalogTransport: createShopifyAdminGraphqlReadTransport({
@@ -268,7 +299,7 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       })());
     return {
       clock,
-      leanContext: input.leanContext,
+      leanContext,
       ids: {
         quoteId: () => {
           if (!composed) throw new Error('Buyer quote preparation incomplete');
