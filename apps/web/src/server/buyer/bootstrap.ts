@@ -62,15 +62,9 @@ function policy(text: string): EntitlementPolicyConfig {
     ids = new Set<string>();
   for (const raw of value.plans) {
     const plan = record(raw);
-    const recurringOnly = plan.billing === 'recurring-only';
-    exact(
-      plan,
-      recurringOnly
-        ? ['billing', 'planHandle', 'policyId', 'features']
-        : ['planHandle', 'usageHandle', 'policyId', 'features', 'includedUsage'],
-      ['shopId'],
-    );
+    exact(plan, ['billing', 'planHandle', 'policyId', 'features'], ['shopId']);
     if (
+      plan.billing !== 'recurring-only' ||
       !nonempty(plan.planHandle) ||
       !nonempty(plan.policyId) ||
       handles.has(plan.planHandle) ||
@@ -80,14 +74,6 @@ function policy(text: string): EntitlementPolicyConfig {
       plan.features.some((feature) => !nonempty(feature)) ||
       ('shopId' in plan &&
         (typeof plan.shopId !== 'string' || !/^gid:\/\/shopify\/Shop\/[1-9][0-9]*$/.test(plan.shopId)))
-    )
-      throw new Error('Buyer configuration unavailable');
-    if (
-      !recurringOnly &&
-      (!nonempty(plan.usageHandle) ||
-        plan.planHandle === plan.usageHandle ||
-        !Number.isSafeInteger(plan.includedUsage) ||
-        Number(plan.includedUsage) < 0)
     )
       throw new Error('Buyer configuration unavailable');
     handles.add(plan.planHandle);

@@ -9,7 +9,7 @@ import {
 const load = (path: string): EntitlementPolicyConfig =>
   JSON.parse(readFileSync(new URL(`../../../deployment/${path}`, import.meta.url), 'utf8'));
 const candidate = load('m8-journey/standard-entitlement-policy-candidate.json');
-const previous = load('m5-runtime/entitlement-policy.json');
+const runtime = load('m5-runtime/entitlement-policy.json');
 const now = new Date('2026-10-15T21:15:35.916Z');
 const identity = {
   appId: 'gid://shopify/App/123',
@@ -30,36 +30,36 @@ function source(planHandle: string, trial = false): ProviderSubscriptionSnapshot
     cancelAtEndOfCycle: false,
     trialEndsAt: trial ? '2026-10-29T21:15:35.916Z' : null,
     currentBillingCycle: trial ? null : { startTime: '2026-09-28T16:53:01.000Z', endTime: '2026-10-28T16:53:01.000Z' },
-    items: [
-      { handle: planHandle, price: { kind: 'flat', active: false }, usage: null },
-      { handle: 'customized_order_paid', price: { kind: 'tiered', active: false }, usage: null },
-    ],
+    items: [{ handle: planHandle, price: { kind: 'flat', active: false }, usage: null }],
     pendingUpdate: null,
   };
 }
 
-test('candidate preserves the historical plan projection apart from the new catalog version', () => {
-  const input = source('insignia-dev-zero-20260928');
-  const { policyVersion: _oldVersion, ...oldProjection } = projectEntitlement(input, previous, context);
-  const { policyVersion: _newVersion, ...newProjection } = projectEntitlement(input, candidate, context);
-  expect(oldProjection.recognizedPolicyId).toBe('m5-existing-dev-all-features-v1');
-  expect(newProjection).toEqual(oldProjection);
+test('current runtime policy equals the one recurring-only Standard candidate and rejects the selected old contract', () => {
+  expect(runtime).toEqual(candidate);
+  expect(candidate.plans).toHaveLength(1);
+  expect(projectEntitlement(source('insignia-dev-zero-20260928'), candidate, context)).toMatchObject({
+    recognizedPolicyId: null,
+    features: [],
+    qualifyingUsageDisposition: 'DENY',
+    billableUsageAllowed: false,
+  });
 });
 
-test('exact private Standard plan enables existing features during trial while waiving usage', () => {
+test('exact private Standard plan enables all released features without metered obligations in trial and paid cycles', () => {
   expect(projectEntitlement(source('insignia-standard-20261015', true), candidate, context)).toMatchObject({
-    recognizedPolicyId: 'm9-standard-all-features-v1',
+    recognizedPolicyId: 'lean-v1-standard-all-features',
     trial: true,
     features: ['m5.configure', 'm5.required', 'm5.logo-later', 'm5.production-options', 'm5.pricing'],
-    includedUsage: 100,
+    includedUsage: null,
     billableUsageAllowed: false,
-    qualifyingUsageDisposition: 'WAIVE_TRIAL',
+    qualifyingUsageDisposition: 'NOT_METERED',
   });
-  // End of trial admits event-time qualification only; it is not dispatch authority.
+  // A paid cycle is also flat-only; neither period creates a usage obligation.
   expect(projectEntitlement(source('insignia-standard-20261015'), candidate, context)).toMatchObject({
-    recognizedPolicyId: 'm9-standard-all-features-v1',
+    recognizedPolicyId: 'lean-v1-standard-all-features',
     trial: false,
-    qualifyingUsageDisposition: 'REQUIRES_EVENT_TIME',
+    qualifyingUsageDisposition: 'NOT_METERED',
   });
 });
 
@@ -74,7 +74,7 @@ test('candidate keeps shop, generation, freshness and complete subscription memb
     [valid, { ...context, installationGeneration: '2' }],
     [valid, { ...context, now: new Date(now.getTime() + 30_001) }],
     [source('unrecognized-plan', true), context],
-    [{ ...valid, items: valid.items.slice(0, 1) }, context],
+    [{ ...valid, items: [] }, context],
     [
       { ...valid, items: [...valid.items, { handle: 'extra', price: { kind: 'flat', active: true }, usage: null }] },
       context,

@@ -21,10 +21,9 @@ function environment() {
       plans: [
         {
           planHandle: 'synthetic-flat',
-          usageHandle: 'synthetic-usage',
+          billing: 'recurring-only',
           policyId: 'synthetic-exact-policy',
           features: ['base'],
-          includedUsage: 100,
         },
       ],
     }),
@@ -346,4 +345,16 @@ test('bootstrap admits an explicit recurring-only policy and rejects mixed meter
     );
     assert.deepEqual(rejected.stats(), { allocated: 0, closed: 0 });
   }
+});
+
+test('Lean buyer rejects a hybrid commercial policy before allocating runtime resources', async () => {
+  const value = seam();
+  const env = environment();
+  const policy = JSON.parse(env.INSIGNIA_M5_ENTITLEMENT_POLICY_JSON);
+  delete policy.plans[0].billing;
+  policy.plans[0].usageHandle = 'synthetic-usage';
+  policy.plans[0].includedUsage = 100;
+  env.INSIGNIA_M5_ENTITLEMENT_POLICY_JSON = JSON.stringify(policy);
+  assert.equal(await createBuyerBootstrap(env, value.dependencies), undefined);
+  assert.deepEqual(value.stats(), { allocated: 0, closed: 0 });
 });
