@@ -91,7 +91,7 @@ test('buyer HTTP qualifies real durable proposal, acceptance replay, owned resto
   const response = await f.http('quote-proposals', f.body);
   assert.equal(response.status, 200, await response.clone().text());
   const proposal = await response.json();
-  assert.equal(proposal.totalMinor, '2100');
+  assert.equal(proposal.totalMinor, '2200');
   assert.equal(f.signings(), 0);
   const acceptBody = { capability: f.session.capability, hash: proposal.hash, idempotencyKey: randomUUID() };
   const acceptedResponse = await f.http(`quote-proposals/${proposal.proposalId}/accept`, acceptBody);
@@ -330,7 +330,7 @@ test('owned cart design restores from immutable historical revision after curren
 test('Lean HTTP and PostgreSQL retain non-metered unit-price offers and replay without duplicate signing', {
   skip: !connectionString,
 }, async (t) => {
-  const f = await fixture(t, { lean: true });
+  const f = await fixture(t);
   f.qualification(false);
   assert.notEqual((await f.http('quote-proposals', f.body)).status, 200);
   assert.equal(f.signings(), 0);

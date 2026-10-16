@@ -16,9 +16,9 @@ const config = {
   productionOptions: [],
   pricingRules: [
     {
-      id: 'setup',
-      scope: { kind: 'general' as const },
-      role: 'setup' as const,
+      id: 'final-price',
+      scope: { kind: 'step' as const, placementId: 'front', stepId: 'step', methodId: 'method' },
+      role: 'unit' as const,
       rate: { kind: 'fixed' as const, amount: { shopDecimal: '0.01', presentmentOverrides: [] } },
     },
   ],
@@ -82,7 +82,7 @@ function fixture() {
         recognizedPolicyId: 'synthetic',
         policyVersion: 'test',
         trial: true,
-        qualifyingUsageDisposition: 'WAIVE_TRIAL' as const,
+        qualifyingUsageDisposition: 'NOT_METERED' as const,
       })),
     },
     publication: { getEffective: vi.fn(async () => ({ config, configId: 'cfg', operationId: 'op' })) },
@@ -117,7 +117,7 @@ function fixture() {
       ]),
     },
     currency: { exponent: () => 2 },
-    fx: { resolve: vi.fn() },
+    leanContext: { assertSupported: vi.fn(async () => {}) },
     readiness: { assertReady: vi.fn(async () => {}) },
     authorization: {
       admit: vi.fn(),
@@ -148,38 +148,9 @@ function fixture() {
   return { ports, saved };
 }
 
-async function renewalFixture(withFx = false) {
+async function renewalFixture() {
   const { ports } = fixture();
   ports.artwork.replayBinding = () => 'b'.repeat(64);
-  let rateDecimal = '1.1000',
-    sourceVersion = 'initial',
-    source = 'trusted-synthetic-provider';
-  if (withFx) {
-    vi.mocked(ports.shop.getContext).mockImplementation(async (tenant) => ({
-      ...tenant,
-      currency: 'EUR',
-      timezone: 'America/New_York',
-    }));
-    vi.mocked(ports.publication.getEffective).mockResolvedValue({
-      config: { ...config, shopCurrency: 'EUR' },
-      configId: 'cfg',
-      operationId: 'op',
-    });
-    vi.mocked(ports.fx.resolve).mockImplementation(async () => ({
-      version: 'm4-customization-fx-v1',
-      shopId: 'shop',
-      installationGeneration: '1',
-      shopCurrency: 'EUR',
-      presentmentCurrency: 'USD',
-      rateDecimal,
-      source,
-      sourceVersion,
-      provenance: 'synthetic-boundary-observation',
-      observedAt: ports.clock().toISOString(),
-      effectiveAt: ports.clock().toISOString(),
-      expiresAt: new Date(+ports.clock() + 300000).toISOString(),
-    }));
-  }
   const accepted = await acceptQuote(request, ports);
   const original = structuredClone(accepted.quote);
   const later = new Date(+now + 3 * 86400000);
@@ -212,17 +183,18 @@ async function renewalFixture(withFx = false) {
     renewalStore,
     later,
     initialSetId: accepted.authorization.setId,
-    setFx: (value: { rateDecimal: string; sourceVersion: string; source?: string }) => {
-      rateDecimal = value.rateDecimal;
-      sourceVersion = value.sourceVersion;
-      source = value.source ?? 'trusted-synthetic-provider';
-    },
   };
 }
 describe('immutable quote renewal', () => {
-  it('does not renew a historical offer using a legacy usage entitlement after the Lean transition', async () => {
+  it('rejects renewal after entitlement changes to a usage contract', async () => {
     const { ports, original, renewalStore } = await renewalFixture();
-    ports.pricingProfile = 'lean-v1';
+    const tenant = await ports.tenant.getActive('shop', '1');
+    if (!tenant) throw new Error('fixture tenant missing');
+    const entitlement = await ports.entitlement.getFresh(tenant);
+    vi.mocked(ports.entitlement.getFresh).mockResolvedValue({
+      ...entitlement,
+      qualifyingUsageDisposition: 'REQUIRES_EVENT_TIME',
+    });
     vi.mocked(ports.authorization.issue).mockClear();
     await expect(
       renewQuote({ quoteId: original.quoteId, desired: request }, {
@@ -234,43 +206,24 @@ describe('immutable quote renewal', () => {
     expect(renewalStore.renew).not.toHaveBeenCalled();
   });
 
-  it('renews identical resolved prices with fresh valid FX while preserving original evidence, but reviews changed outputs', async () => {
-    const { ports, original, renewalStore, setFx, initialSetId } = await renewalFixture(true);
-    const oldEvidence = structuredClone(original.fxSnapshot);
-    expect(original.economics.totalMinor).toBe('2001');
-    expect(oldEvidence?.rateDecimal).toBe('1.1000');
-    setFx({ rateDecimal: '1.1001', sourceVersion: 'new-observation', source: 'another-configured-test-source' });
-    const result = await renewQuote(
-      { quoteId: original.quoteId, desired: { ...request, idempotencyKey: 'same-rounded-fx' } },
-      { ...ports, renewalStore } as QuoteRenewalPorts,
+  it('rejects a renewal when contextual currency differs from shop currency', async () => {
+    const { ports, original, renewalStore, later } = await renewalFixture();
+    vi.mocked(ports.authorization.issue).mockClear();
+    vi.mocked(ports.catalog.resolveVariantContext).mockResolvedValue(
+      original.catalogSnapshots.map((row) => ({
+        ...row,
+        currencyCode: 'EUR',
+        observedAt: later.toISOString(),
+        freshUntil: new Date(+later + 300000).toISOString(),
+      })),
     );
-    expect(result.quote).toEqual(original);
-    expect(result.quote.fxSnapshot).toEqual(oldEvidence);
-    expect(result.authorization.setId).not.toBe(initialSetId);
-    expect(result.quote.economics.totalMinor).toBe('2001');
-    expect(result.authorization.validThroughDay).toBe(original.validThroughDay + 3);
-    setFx({ rateDecimal: '2.0000', sourceVersion: 'changed-output' });
-    renewalStore.findCompleted.mockResolvedValueOnce(result as never);
-    expect(
-      await renewQuote({ quoteId: original.quoteId, desired: { ...request, idempotencyKey: 'same-rounded-fx' } }, {
-        ...ports,
-        renewalStore,
-      } as QuoteRenewalPorts),
-    ).toEqual(result);
     await expect(
-      renewQuote({ quoteId: original.quoteId, desired: { ...request, idempotencyKey: 'changed-fx-output' } }, {
-        ...ports,
-        renewalStore,
-      } as QuoteRenewalPorts),
-    ).rejects.toThrow('REVIEW_REQUIRED');
-    setFx({ rateDecimal: '1.1001', sourceVersion: '', source: '' });
-    await expect(
-      renewQuote({ quoteId: original.quoteId, desired: { ...request, idempotencyKey: 'invalid-source' } }, {
-        ...ports,
-        renewalStore,
-      } as QuoteRenewalPorts),
-    ).rejects.toThrow('FX unavailable');
+      renewQuote({ quoteId: original.quoteId, desired: request }, { ...ports, renewalStore } as QuoteRenewalPorts),
+    ).rejects.toThrow(/Lean|lean|currency/);
+    expect(ports.authorization.issue).not.toHaveBeenCalled();
+    expect(renewalStore.renew).not.toHaveBeenCalled();
   });
+
   it('issues a new window for unchanged facts without changing original acceptance', async () => {
     const { ports, original, renewalStore, later } = await renewalFixture();
     const result = await renewQuote({ quoteId: original.quoteId, desired: { ...request, idempotencyKey: 'renew' } }, {
@@ -327,7 +280,6 @@ describe('immutable quote renewal', () => {
       renewalStore,
     } as QuoteRenewalPorts);
     renewalStore.findCompleted.mockResolvedValue(result as never);
-    ports.pricingProfile = 'lean-v1';
     vi.mocked(ports.authorization.issue).mockClear();
     vi.mocked(ports.entitlement.getFresh).mockClear();
     expect(

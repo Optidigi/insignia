@@ -8,13 +8,13 @@ import { fixture } from './support/buyer-fixture.mjs';
 
 const database = process.env.DATABASE_URL;
 async function purchase(t) {
-  const f = await fixture(t, { demo91: true, clock: () => new Date() });
+  const f = await fixture(t, { representativePricing: true, clock: () => new Date() });
   const body = structuredClone(f.body);
   body.groups[0].variants[0].quantity = 3;
   const proposed = await f.http('quote-proposals', body);
   assert.equal(proposed.status, 200, await proposed.clone().text());
   const proposal = await proposed.json();
-  assert.equal(proposal.totalMinor, '9100');
+  assert.equal(proposal.totalMinor, '9000');
   const acceptedResponse = await f.http(`quote-proposals/${proposal.proposalId}/accept`, {
     capability: f.session.capability,
     hash: proposal.hash,
@@ -43,7 +43,7 @@ async function purchase(t) {
     sourceApiVersion: '2026-07',
     complete: true,
     edited: false,
-    totalPriceMinor: '9100',
+    totalPriceMinor: '9000',
     test: false,
     financialStatus: 'PAID',
     cancelledAt: null,
@@ -63,7 +63,7 @@ async function purchase(t) {
         kind: 'SALE',
         status: 'SUCCESS',
         occurredAt: new Date(+f.now() + 1500).toISOString(),
-        amountMinor: '9100',
+        amountMinor: '9000',
         currency: 'EUR',
       },
     ],
@@ -152,13 +152,13 @@ test('actual quote/signing/PG purchase authority is independent from cart confir
   const response = await f.http(result.purchaseId);
   assert.equal(response.status, 200, await response.clone().text());
   const view = await response.json();
-  assert.equal(view.originalTotalMinor, '9100');
+  assert.equal(view.originalTotalMinor, '9000');
   assert.equal(view.isTest, false);
   assert.equal(view.groups[0].configRevisionId, f.group.configRevisionId);
   assert.equal(view.groups[0].variants[0].quantity, 3);
   assert.equal(
     view.lines.reduce((sum, line) => sum + BigInt(line.unitPriceMinor) * BigInt(line.quantity), 0n),
-    9100n,
+    9000n,
   );
   assert.equal(view.artworkState, 'READY');
   assert.equal(
@@ -180,8 +180,8 @@ test('actual quote/signing/PG purchase authority is independent from cart confir
       refundId: 'gid://shopify/Refund/999',
       occurredAt: new Date(+f.now() + 3500).toISOString(),
       currency: 'EUR',
-      amountMinor: '3033',
-      lines: [{ lineId: f.order.lines[0].lineId, quantity: 1, amountMinor: '3033' }],
+      amountMinor: '3000',
+      lines: [{ lineId: f.order.lines[0].lineId, quantity: 1, amountMinor: '3000' }],
     },
   ];
   const refunded = await reconcilePurchase(
@@ -189,8 +189,8 @@ test('actual quote/signing/PG purchase authority is independent from cart confir
     f.ports,
   );
   assert.equal(refunded.firstPaidAt, second.firstPaidAt);
-  assert.equal(refunded.refunds[0].amountMinor, '3033');
-  assert.equal(refunded.bindings[0].economics.economics.totalMinor, '9100');
+  assert.equal(refunded.refunds[0].amountMinor, '3000');
+  assert.equal(refunded.bindings[0].economics.economics.totalMinor, '9000');
   const original = await f.http(
     `${result.purchaseId}/artwork/${f.group.design.placements[0].artwork.revisionId}/download`,
   );

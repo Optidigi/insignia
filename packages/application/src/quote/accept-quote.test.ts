@@ -18,9 +18,9 @@ const config = {
   productionOptions: [],
   pricingRules: [
     {
-      id: 'setup',
-      scope: { kind: 'general' as const },
-      role: 'setup' as const,
+      id: 'final-price',
+      scope: { kind: 'step' as const, placementId: 'front', stepId: 'step', methodId: 'method' },
+      role: 'unit' as const,
       rate: { kind: 'fixed' as const, amount: { shopDecimal: '0.01', presentmentOverrides: [] } },
     },
   ],
@@ -83,7 +83,7 @@ function fixture() {
         recognizedPolicyId: 'synthetic',
         policyVersion: 'test',
         trial: true,
-        qualifyingUsageDisposition: 'WAIVE_TRIAL' as const,
+        qualifyingUsageDisposition: 'NOT_METERED' as const,
       })),
     },
     publication: { getEffective: vi.fn(async () => ({ config, configId: 'cfg', operationId: 'op' })) },
@@ -118,7 +118,7 @@ function fixture() {
       ]),
     },
     currency: { exponent: () => 2 },
-    fx: { resolve: vi.fn() },
+    leanContext: { assertSupported: vi.fn(async () => {}) },
     readiness: { assertReady: vi.fn(async () => {}) },
     authorization: {
       admit: vi.fn(),
@@ -149,42 +149,38 @@ function fixture() {
   return { ports, saved };
 }
 
-function leanFixture() {
-  const value = fixture();
-  const { ports } = value;
-  ports.pricingProfile = 'lean-v1';
-  ports.leanContext = {
-    assertSupported: async (input) => {
-      expect(input).toMatchObject({ country: 'US', marketId: '42', currency: 'USD', shopCurrency: 'USD' });
-    },
-  };
-  vi.mocked(ports.publication.getEffective).mockResolvedValue({
-    config: {
-      ...config,
-      pricingRules: [
-        {
-          id: 'final-price',
-          role: 'unit',
-          scope: { kind: 'step', placementId: 'front', stepId: 'step', methodId: 'method' },
-          rate: { kind: 'fixed', amount: { shopDecimal: '0.01', presentmentOverrides: [] } },
-        },
-      ],
-    },
-    configId: 'cfg',
-    operationId: 'op',
-  });
-  vi.mocked(ports.entitlement.getFresh).mockResolvedValue({
-    active: true,
-    freshness: 'fresh',
-    recognizedPolicyId: 'lean-flat',
-    policyVersion: 'lean-v1',
-    trial: false,
-    qualifyingUsageDisposition: 'NOT_METERED',
-  });
-  return value;
-}
-
 describe('acceptQuote', () => {
+  it('default issuance rejects advanced setup pricing without a profile switch', async () => {
+    const { ports, saved } = fixture();
+    const rule = config.pricingRules[0];
+    if (!rule) throw new Error('fixture rule missing');
+    vi.mocked(ports.publication.getEffective).mockResolvedValue({
+      config: {
+        ...config,
+        pricingRules: [{ ...rule, id: 'setup', scope: { kind: 'general' }, role: 'setup' }],
+      },
+      configId: 'cfg',
+      operationId: 'op',
+    });
+    await expect(acceptQuote(request, ports)).rejects.toThrow(/Lean|lean/);
+    expect(ports.authorization.issue).not.toHaveBeenCalled();
+    expect(saved).toHaveLength(0);
+  });
+
+  it('default issuance rejects usage billing without a profile switch', async () => {
+    const { ports, saved } = fixture();
+    const tenant = await ports.tenant.getActive('shop', '1');
+    if (!tenant) throw new Error('fixture tenant missing');
+    const entitlement = await ports.entitlement.getFresh(tenant);
+    vi.mocked(ports.entitlement.getFresh).mockResolvedValue({
+      ...entitlement,
+      qualifyingUsageDisposition: 'REQUIRES_EVENT_TIME',
+    });
+    await expect(acceptQuote(request, ports)).rejects.toThrow(/recurring-only entitlement required/);
+    expect(ports.authorization.issue).not.toHaveBeenCalled();
+    expect(saved).toHaveLength(0);
+  });
+
   it('material comparison ignores refreshed evidence but detects changed allocation at the same total', async () => {
     const { ports } = fixture();
     const original = (await prepareQuote(request, ports)).quote;
@@ -217,11 +213,18 @@ describe('acceptQuote', () => {
     const changed = structuredClone(refreshed);
     changed.economics = {
       ...changed.economics,
-      lines: changed.economics.lines.map((line, index) => ({
-        ...line,
-        unitPriceMinor: index === 0 ? '999' : '1002',
-        lineTotalMinor: index === 0 ? '999' : '1002',
-      })),
+      lines: changed.economics.lines.flatMap((line) => [
+        { ...line, quantity: 1, unitOrdinalEnd: 1, unitPriceMinor: '1000', lineTotalMinor: '1000' },
+        {
+          ...line,
+          lineIndex: 1,
+          quantity: 1,
+          unitOrdinalStart: 2,
+          unitOrdinalEnd: 2,
+          unitPriceMinor: '1002',
+          lineTotalMinor: '1002',
+        },
+      ]),
     };
     expect(changed.economics.totalMinor).toBe(original.economics.totalMinor);
     expect(materialHash(changed)).not.toBe(materialHash(original));
@@ -231,7 +234,7 @@ describe('acceptQuote', () => {
   it('prepares authoritative pricing without issuing or persisting an accepted offer', async () => {
     const { ports, saved } = fixture();
     const candidate = await prepareQuote(request, ports);
-    expect(candidate.quote.economics.totalMinor).toBe('2001');
+    expect(candidate.quote.economics.totalMinor).toBe('2002');
     expect(candidate.requestDigest).toMatch(/^[a-f0-9]{64}$/);
     expect(candidate.quote.artworkChecks).toHaveLength(1);
     expect(ports.readiness.assertReady).toHaveBeenCalledWith({ quote: candidate.quote });
@@ -407,8 +410,8 @@ describe('acceptQuote', () => {
   it('accepts one complete subset using contextual money and a local three-day window', async () => {
     const { ports, saved } = fixture();
     const result = await acceptQuote(request, ports);
-    expect(result.quote.economics.totalMinor).toBe('2001');
-    expect(result.quote.economics.lines.map((line) => line.unitPriceMinor)).toEqual(['1001', '1000']);
+    expect(result.quote.economics.totalMinor).toBe('2002');
+    expect(result.quote.economics.lines.map((line) => line.unitPriceMinor)).toEqual(['1001']);
     expect(result.quote.economics.groups[0]?.canonicalIdentitySha256).toMatch(/^[0-9a-f]{64}$/);
     expect(result.quote.economics.lines[0]?.canonicalIdentitySha256).toBe(
       result.quote.economics.groups[0]?.canonicalIdentitySha256,
@@ -420,7 +423,6 @@ describe('acceptQuote', () => {
     expect(result.quote.artworkChecks).toHaveLength(1);
     expect(result.quote.artworkChecks[0]?.choiceSha256).toMatch(/^[0-9a-f]{64}$/);
     expect(saved).toHaveLength(1);
-    expect(ports.fx.resolve).not.toHaveBeenCalled();
   });
 
   it('replays a completed set without new provider reads or signing', async () => {
@@ -509,7 +511,7 @@ describe('acceptQuote', () => {
         recognizedPolicyId: 'synthetic',
         policyVersion: 'test',
         trial: true,
-        qualifyingUsageDisposition: 'WAIVE_TRIAL',
+        qualifyingUsageDisposition: 'NOT_METERED',
       })
       .mockResolvedValueOnce({
         active: true,
@@ -517,7 +519,7 @@ describe('acceptQuote', () => {
         recognizedPolicyId: 'synthetic',
         policyVersion: 'test',
         trial: true,
-        qualifyingUsageDisposition: 'WAIVE_TRIAL',
+        qualifyingUsageDisposition: 'NOT_METERED',
       });
     await expect(acceptQuote(request, ports)).rejects.toThrow(/fresh recognized entitlement/);
     expect(ports.authorization.issue).not.toHaveBeenCalled();
@@ -527,7 +529,7 @@ describe('acceptQuote', () => {
   it.each(['WAIVE_TRIAL', 'REQUIRES_EVENT_TIME'] as const)(
     'does not issue a new Lean offer under a legacy %s usage contract',
     async (qualifyingUsageDisposition) => {
-      const { ports, saved } = leanFixture();
+      const { ports, saved } = fixture();
       const tenant = await ports.tenant.getActive('shop', '1');
       if (!tenant) throw new Error('fixture tenant missing');
       const entitlement = await ports.entitlement.getFresh(tenant);
@@ -540,23 +542,22 @@ describe('acceptQuote', () => {
     },
   );
 
-  it('replays a previously accepted advanced offer under Lean without extending or rewriting it', async () => {
+  it('replays an accepted offer without extending or rewriting it', async () => {
     const { ports, saved } = fixture();
     const original = await acceptQuote(request, ports);
     vi.mocked(ports.store.findCompleted).mockResolvedValue(original);
     vi.mocked(ports.entitlement.getFresh).mockClear();
     vi.mocked(ports.authorization.issue).mockClear();
-    ports.pricingProfile = 'lean-v1';
     const replayed = await acceptQuote(request, ports);
     expect(replayed).toBe(original);
-    expect(replayed.quote.qualifyingUsageDisposition).toBe('WAIVE_TRIAL');
+    expect(replayed.quote.qualifyingUsageDisposition).toBe('NOT_METERED');
     expect(ports.entitlement.getFresh).not.toHaveBeenCalled();
     expect(ports.authorization.issue).not.toHaveBeenCalled();
     expect(saved).toHaveLength(1);
   });
 
   it('issues a Lean recurring-only quote without marking the order as metered', async () => {
-    const { ports, saved } = leanFixture();
+    const { ports, saved } = fixture();
     const result = await acceptQuote(request, ports);
     expect(result.quote.qualifyingUsageDisposition).toBe('NOT_METERED');
     expect(result.quote.economics.totalMinor).toBe('2002');
@@ -564,7 +565,7 @@ describe('acceptQuote', () => {
   });
 
   it('does not sign when the qualified Lean context changes while waiting for acceptance', async () => {
-    const { ports, saved } = leanFixture();
+    const { ports, saved } = fixture();
     const assertSupported = vi.fn(async () => {});
     ports.leanContext = { assertSupported };
     ports.store.accept = async (_target, commit) => {
@@ -657,7 +658,7 @@ describe('acceptQuote', () => {
     expect('desiredGroups' in accepted.quote).toBe(false);
   });
 
-  it('fails closed without a configured FX rate for cross-currency customization', async () => {
+  it('rejects cross-currency customization without conversion', async () => {
     const { ports, saved } = fixture();
     vi.mocked(ports.catalog.resolveVariantContext).mockResolvedValueOnce([
       {
@@ -675,21 +676,21 @@ describe('acceptQuote', () => {
         correlation: { requestId: 'synthetic' },
       },
     ]);
-    await expect(acceptQuote(request, ports)).rejects.toThrow(/FX unavailable: missing/);
+    await expect(acceptQuote(request, ports)).rejects.toThrow(/Lean|lean|currency/);
     expect(ports.authorization.issue).not.toHaveBeenCalled();
     expect(saved).toHaveLength(0);
   });
 
-  it('uses a presentment override without fetching FX', async () => {
-    const { ports } = fixture();
-    const setupRule = config.pricingRules[0];
-    if (!setupRule) throw new Error('synthetic setup rule missing');
-    vi.mocked(ports.publication.getEffective).mockResolvedValueOnce({
+  it('rejects presentment price overrides rather than issuing an alternate-currency offer', async () => {
+    const { ports, saved } = fixture();
+    const rule = config.pricingRules[0];
+    if (!rule) throw new Error('fixture rule missing');
+    vi.mocked(ports.publication.getEffective).mockResolvedValue({
       config: {
         ...config,
         pricingRules: [
           {
-            ...setupRule,
+            ...rule,
             rate: {
               kind: 'fixed',
               amount: { shopDecimal: '0.01', presentmentOverrides: [{ currency: 'EUR', decimal: '0.02' }] },
@@ -700,63 +701,9 @@ describe('acceptQuote', () => {
       configId: 'cfg',
       operationId: 'op',
     });
-    vi.mocked(ports.catalog.resolveVariantContext).mockResolvedValueOnce([
-      {
-        shopId: 'shop',
-        installationGeneration: '1',
-        productId: 'product',
-        variantId: 'variant',
-        productIdVerified: true,
-        context: { country: 'US' },
-        amount: '10.00',
-        currencyCode: 'EUR',
-        sourceApiVersion: '2026-07',
-        observedAt: '2026-11-01T05:29:00.000Z',
-        freshUntil: '2026-11-01T05:34:00.000Z',
-        correlation: { requestId: 'synthetic' },
-      },
-    ]);
-    const result = await acceptQuote(request, ports);
-    expect(result.quote.economics.totalMinor).toBe('2002');
-    expect(result.quote.fxSnapshot).toBeNull();
-    expect(ports.fx.resolve).not.toHaveBeenCalled();
-  });
-
-  it('freezes a fresh exact FX snapshot when an applicable component requires conversion', async () => {
-    const { ports } = fixture();
-    vi.mocked(ports.catalog.resolveVariantContext).mockResolvedValueOnce([
-      {
-        shopId: 'shop',
-        installationGeneration: '1',
-        productId: 'product',
-        variantId: 'variant',
-        productIdVerified: true,
-        context: { country: 'US' },
-        amount: '10.00',
-        currencyCode: 'EUR',
-        sourceApiVersion: '2026-07',
-        observedAt: '2026-11-01T05:29:00.000Z',
-        freshUntil: '2026-11-01T05:34:00.000Z',
-        correlation: { requestId: 'synthetic' },
-      },
-    ]);
-    vi.mocked(ports.fx.resolve).mockResolvedValueOnce({
-      version: 'm4-customization-fx-v1',
-      shopId: 'shop',
-      installationGeneration: '1',
-      shopCurrency: 'USD',
-      presentmentCurrency: 'EUR',
-      rateDecimal: '2',
-      source: 'synthetic',
-      sourceVersion: '1',
-      provenance: 'fixture',
-      observedAt: '2026-11-01T05:29:00.000Z',
-      effectiveAt: '2026-11-01T05:29:00.000Z',
-      expiresAt: '2026-11-01T05:34:00.000Z',
-    });
-    const result = await acceptQuote(request, ports);
-    expect(result.quote.economics.totalMinor).toBe('2002');
-    expect(result.quote.fxSnapshot?.provenance).toBe('fixture');
+    await expect(acceptQuote(request, ports)).rejects.toThrow(/Lean|lean/);
+    expect(ports.authorization.issue).not.toHaveBeenCalled();
+    expect(saved).toHaveLength(0);
   });
 
   it('rejects two provider currencies across products before authorization', async () => {
@@ -812,7 +759,7 @@ describe('acceptQuote', () => {
       lastValidDay: quote.validThroughDay,
       validThroughDay: quote.validThroughDay,
       envelopeCarrier: 'envelope',
-      members: [{ lineIndex: 0, carrier: 'only-one' }],
+      members: [],
     }));
     await expect(acceptQuote(request, ports)).rejects.toThrow(/incomplete or invalid/);
     expect(saved).toHaveLength(0);
@@ -837,7 +784,7 @@ describe('acceptQuote', () => {
   it('enforces customized quantity and relevant-line candidate bounds before signing', async () => {
     const { ports } = fixture();
     await expect(
-      acceptQuote({ ...request, capacity: { ordinaryLineCount: 199, inputBytes: 100 } }, ports),
+      acceptQuote({ ...request, capacity: { ordinaryLineCount: 200, inputBytes: 100 } }, ports),
     ).rejects.toThrow(/candidate capacity/);
     expect(ports.authorization.issue).not.toHaveBeenCalled();
     await expect(

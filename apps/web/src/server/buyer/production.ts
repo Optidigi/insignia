@@ -1,7 +1,6 @@
 import { createPrivateKey } from 'node:crypto';
 import {
   type ArtworkScope,
-  type CustomizationFxProvider,
   createArtworkUsabilityPort,
   type EntitlementPolicyConfig,
   type FunctionArtifactReadinessPorts,
@@ -61,7 +60,6 @@ export type ProductionBuyerInputs = {
   readVariantAvailability?(
     target: Scope & { productId: string; variantIds: readonly string[] },
   ): Promise<BuyerVariantAvailability>;
-  fx?: CustomizationFxProvider;
   clock?: () => Date;
   fetchImpl?: typeof fetch;
 };
@@ -261,7 +259,6 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
             now: clock,
           }),
           artwork,
-          fx: input.fx,
           signing: { keyId: selected.id, signer },
           readiness,
           clock,
@@ -271,9 +268,6 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       })());
     return {
       clock,
-      // Keep the production profile across this lazy wrapper; historical replay is
-      // handled by the application before new-offer qualification.
-      pricingProfile: 'lean-v1',
       leanContext: input.leanContext,
       ids: {
         quoteId: () => {
@@ -295,7 +289,6 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       artwork,
       catalog: { resolveVariantContext: async (target) => (await compose()).catalog.resolveVariantContext(target) },
       currency: { exponent: (code) => currencyExponent(code) ?? null },
-      fx: { resolve: async (target) => (await compose()).fx.resolve(target) },
       readiness: { assertReady: async (target) => (await compose()).readiness.assertReady(target) },
       authorization: {
         admit: (target) => {
