@@ -1,0 +1,67 @@
+{
+  "classification": "LEAN_RECURRING_ONLY_RECOGNITION_REVIEWED",
+  "base": "cc53400f92592f7350930c6fde24fe9935e9a045",
+  "authority": "../../../architecture/decision-ledger.md#owner-first-version-direction--16-october-2026",
+  "change": [
+    "Remove hybrid policy/entitlement recognition rather than retaining earlier billing-version compatibility.",
+    "Use one recurring-only Standard source policy for the candidate and runtime configuration; not a native/provider mutation.",
+    "Strict buyer parser and shared admin validation reject hybrid configuration.",
+    "Remove the executable historical worker qualification factory and its compatibility-only tests; shipping usage gate remains inert under inherited flags.",
+    "Preserve actual provider observations, immutable financial data and current tenant/generation/freshness/trial/cancellation/reauthorization/recovery behavior."
+  ],
+  "meaningfulRed": [
+    "Application configured hybrid policy unexpectedly remained valid: expected exception absent.",
+    "Buyer hybrid configuration unexpectedly allocated services: expected undefined instead returned services."
+  ],
+  "independentReview": {
+    "reviewer": "/root/lean_recurring_review",
+    "correctness": "CLEAR",
+    "standardsSecurity": "CLEAR",
+    "reviewedProductionConfigDiffSha256": "7e49b106c7ff20b4b62259b336c1ecb4a7c2ae718364536bf4bb4176d1e8041e",
+    "nativeOrProviderEffectsByReviewer": 0,
+    "isolation": "Read-only instructions; no credential/network isolation claimed."
+  },
+  "changedCodeSha256": {
+    "apps/web/src/server/admin/production.ts": "3fc2dfa8a734b3090fc35686bfe40ea6ee173b99115a352a78fb73d4ec012815",
+    "apps/web/src/server/buyer/bootstrap.ts": "b3745616ee343993555d9730793fa2fccc3c4e61367250a4f335956e019d1a93",
+    "apps/web/test/buyer-bootstrap.test.mjs": "363345513fc5b114008ea2627aa0c2997341ff6d7c194a229b38bab989a83159",
+    "apps/worker/src/usage-runtime.ts": "d94d12b25e3698b03c5a1c4f8b9f0339a8ae164685d44282cf9eda993e16a39b",
+    "apps/worker/test/usage-runtime.test.mjs": "155f33d3606c2b22c77efbcef21db21a1a1075a9b9ffdffa353adb299997318b",
+    "deployment/m5-runtime/entitlement-policy.json": "2d0ee70e6f2ac1e3bc593501f0703920126280fb9343822853e7e525168fc46b",
+    "deployment/m8-journey/standard-entitlement-policy-candidate.json": "2d0ee70e6f2ac1e3bc593501f0703920126280fb9343822853e7e525168fc46b",
+    "packages/application/src/entitlement/provider-policy.ts": "fcd9ff57a79117328ad8c8b0e90e9f737b831bd1828e8d31571f5100af24934b",
+    "packages/application/test/provider-composition.test.ts": "867eb759917a0b899d2dd7add57fe6de21d4b9c86d13c57d18cf1b985bd05445",
+    "packages/application/test/provider-policy.test.ts": "154e65f52fb11baf9aaef88c323b75ead33ce5c47d3988fcb2fe0956c2685e1a",
+    "packages/application/test/standard-entitlement-policy.test.ts": "079d74a070d2b5fcf14a1a7909263af70292327e6b4fc951707861e4ae8f9521"
+  },
+  "localChecks": {
+    "application": "311 PASS /24 files",
+    "providerPolicyCompositionCandidate": "14 PASS",
+    "focusedBuyerQuoteComposition": "13 PASS /9 SKIP",
+    "worker": "90 PASS /22 SKIP",
+    "web": "169 PASS /52 SKIP /0 FAIL",
+    "builds": "Application/worker/web PASS",
+    "style": "PASS with existing warnings/infos",
+    "boundaries": "PASS including18 effect controls",
+    "secrets": "PASS",
+    "architectureHistory": "PASS"
+  },
+  "preservedFailure": {
+    "phase": "First full local web run",
+    "result": "121 PASS /48 FAIL /52 SKIP",
+    "cause": "Pinned Playwright1.63.0 requires Chromium1243; cache contained1248 and executable1243 was absent.",
+    "logSha256": "2305e33dc177362a79a181341631b620de5c89cfd278f591a1e1a1f299348963",
+    "correction": "Install exact pinned browser using existing Playwright CLI; synthetic launch PASS; no source/security/policy change or Shopify session involved.",
+    "retryBasis": "Proved local missing executable, no native/provider effects or behavioral defect retry."
+  },
+  "finalCandidateCI": "PENDING",
+  "nativeEffectsThisSourceSlice": 0,
+  "nativeState": "PR184 exact deployment/collection is a separately recorded completed operation; current candidate not deployed.",
+  "deploymentRequirements": [
+    "Update image and recurring-only policy together; old native hybrid config is intentionally invalid for this source.",
+    "Old selected Test subscription remains unrecognized for new actions. Separately authorize and settle exact effective-zero Standard selection after runtime/context qualification.",
+    "Production primary-Market composition and new Lean native journey remain incomplete.",
+    "No usage staging/dispatch, plan mutation, release, inventory, checkout or rollout allocation inferred."
+  ],
+  "cleanup": "Existing private copies/journals/SDK recovery due20Oct with active dependency transition; originals/designs retain21/22Oct deadlines; rotation remains owed."
+}

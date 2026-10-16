@@ -1,11 +1,10 @@
 {
-  "policyVersion": "m5-existing-dev-contract-v1",
+  "policyVersion": "lean-v1-recurring-only",
   "maxAgeMs": 30000,
   "plans": [
     {
-      "planHandle": "insignia-dev-zero-20260928",
-      "usageHandle": "customized_order_paid",
-      "policyId": "m5-existing-dev-all-features-v1",
+      "planHandle": "insignia-standard-20261015",
+      "policyId": "lean-v1-standard-all-features",
       "shopId": "gid://shopify/Shop/105501393179",
       "features": [
         "m5.configure",
@@ -14,7 +13,7 @@
         "m5.production-options",
         "m5.pricing"
       ],
-      "includedUsage": 100
+      "billing": "recurring-only"
     }
   ]
 }

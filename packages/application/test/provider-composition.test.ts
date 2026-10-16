@@ -27,18 +27,6 @@ describe('cross-package provider composition', () => {
               discount: null,
               usage: null,
             },
-            {
-              handle: 'meter.orders',
-              price: {
-                __typename: 'TieredPrice',
-                active: false,
-                currency: 'USD',
-                tiersMode: 'VOLUME',
-                tiers: [{ upTo: null, amountPerUnit: '0.0', amount: '0.0' }],
-              },
-              discount: null,
-              usage: { quantity: 3.0, cost: { amount: '0.0', currencyCode: 'USD' } },
-            },
           ],
           pendingUpdate: null,
         },
@@ -63,10 +51,9 @@ describe('cross-package provider composition', () => {
         plans: [
           {
             planHandle: 'plan.alpha',
-            usageHandle: 'meter.orders',
+            billing: 'recurring-only',
             policyId: 'alpha',
             features: ['quote'],
-            includedUsage: 10,
           },
         ],
       },
@@ -74,9 +61,9 @@ describe('cross-package provider composition', () => {
     );
     expect(result).toMatchObject({
       features: ['quote'],
-      observedUsageQuantity: '3',
-      billableUsageAllowed: true,
-      qualifyingUsageDisposition: 'REQUIRES_EVENT_TIME',
+      observedUsageQuantity: null,
+      billableUsageAllowed: false,
+      qualifyingUsageDisposition: 'NOT_METERED',
     });
     await expect(
       bindProviderSubscription(raw, { appId, shopId, tenantShopId, installationGeneration: '8' }, tenants),

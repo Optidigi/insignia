@@ -7,6 +7,7 @@ import {
   type EntitlementPolicyConfig,
   localDay,
   projectEntitlement,
+  validEntitlementPolicy,
 } from '@insignia/application';
 import type { MerchantDraft } from '@insignia/contracts';
 import { createDurableCore, ManagedInstallationError, type ManagedInstallationIdentity } from '@insignia/database';
@@ -71,7 +72,7 @@ function featurePolicy(env: NodeJS.ProcessEnv): { catalog: EntitlementPolicyConf
   const features = JSON.parse(env.INSIGNIA_M5_FEATURES_JSON) as FeatureRules;
   if (
     !catalog ||
-    !Array.isArray(catalog.plans) ||
+    !validEntitlementPolicy(catalog) ||
     !features ||
     ['base', 'required', 'logoLater', 'options', 'pricing'].some(
       (key) => typeof features[key as keyof FeatureRules] !== 'string' || !features[key as keyof FeatureRules],

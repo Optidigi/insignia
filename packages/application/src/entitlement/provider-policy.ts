@@ -48,18 +48,14 @@ export async function bindProviderSubscription(
     throw new Error('Provider subscription tenant identity mismatch');
   return { ...snapshot, tenantShopId: scope.tenantShopId, installationGeneration: scope.installationGeneration };
 }
-type PlanFeaturePolicyBase = {
+export type PlanFeaturePolicy = {
+  billing: 'recurring-only';
   planHandle: string;
   policyId: string;
   /** Optional exact authoritative provider Shop GID; restricts this policy's recognition. */
   shopId?: string;
   features: readonly string[];
 };
-export type PlanFeaturePolicy = PlanFeaturePolicyBase &
-  (
-    | { billing: 'recurring-only'; usageHandle?: never; includedUsage?: never }
-    | { billing?: never; usageHandle: string; includedUsage: number }
-  );
 export type EntitlementPolicyConfig = {
   policyVersion: string;
   maxAgeMs: number;
@@ -74,8 +70,7 @@ export type EntitlementProjection = {
   includedUsage: number | null;
   observedUsageQuantity: string | null;
   billableUsageAllowed: boolean;
-  /** Current eligibility only. Historical metered policies still require first-paid event-time qualification. */
-  qualifyingUsageDisposition: 'REQUIRES_EVENT_TIME' | 'WAIVE_TRIAL' | 'NOT_METERED' | 'DENY';
+  qualifyingUsageDisposition: 'NOT_METERED' | 'DENY';
   scheduledCancellation: boolean;
   pendingProviderUpdate: ProviderSubscriptionSnapshot['pendingUpdate'];
   freshness: 'fresh' | 'stale' | 'missing';
@@ -83,8 +78,9 @@ export type EntitlementProjection = {
   sourceApiVersion: string | null;
 };
 
-function validConfig(config: EntitlementPolicyConfig): boolean {
+export function validEntitlementPolicy(config: EntitlementPolicyConfig): boolean {
   if (
+    !config ||
     !config.policyVersion ||
     !Number.isSafeInteger(config.maxAgeMs) ||
     config.maxAgeMs <= 0 ||
@@ -96,6 +92,7 @@ function validConfig(config: EntitlementPolicyConfig): boolean {
   const ids = new Set<string>();
   for (const plan of config.plans) {
     if (
+      !plan ||
       !plan.planHandle ||
       !plan.policyId ||
       ('shopId' in plan &&
@@ -104,32 +101,20 @@ function validConfig(config: EntitlementPolicyConfig): boolean {
       plan.features.some((feature: string) => !feature)
     )
       return false;
-    if (plan.billing === 'recurring-only') {
-      if ('usageHandle' in plan || 'includedUsage' in plan) return false;
-    } else if (
-      'billing' in plan ||
-      !plan.usageHandle ||
-      plan.planHandle === plan.usageHandle ||
-      !Number.isSafeInteger(plan.includedUsage) ||
-      plan.includedUsage < 0
-    )
-      return false;
+    if (plan.billing !== 'recurring-only' || 'usageHandle' in plan || 'includedUsage' in plan) return false;
     if (handles.has(plan.planHandle) || ids.has(plan.policyId)) return false;
     handles.add(plan.planHandle);
     ids.add(plan.policyId);
   }
   return true;
 }
-const decimal = (value: unknown): value is string =>
-  typeof value === 'string' && /^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(value);
-
 /** Fail closed for stale, malformed or unrecognized current provider state. */
 export function projectEntitlement(
   snapshot: ProviderSubscriptionSnapshot | null,
   config: EntitlementPolicyConfig,
   context: { appId: string; shopId: string; tenantShopId: string; installationGeneration: string; now: Date },
 ): EntitlementProjection {
-  if (!validConfig(config)) throw new Error('Invalid entitlement policy configuration');
+  if (!validEntitlementPolicy(config)) throw new Error('Invalid entitlement policy configuration');
   if (
     !context.tenantShopId ||
     !/^[1-9][0-9]*$/.test(context.installationGeneration) ||
@@ -185,20 +170,11 @@ export function projectEntitlement(
   if (matched.length !== 1) return base;
   const plan = matched[0];
   if (!plan || (plan.shopId !== undefined && plan.shopId !== snapshot.shopId)) return base;
-  const recurringOnly = plan.billing === 'recurring-only';
   if (
     snapshot.billingPeriod !== 'EVERY_30_DAYS' ||
-    snapshot.items.length !== (recurringOnly ? 1 : 2) ||
-    snapshot.items.some((item) => item.handle !== plan.planHandle && item.handle !== plan.usageHandle)
-  )
-    return base;
-  const usage = snapshot.items.find((item) => item.handle === plan.usageHandle);
-  if (recurringOnly) {
-    if (snapshot.items[0]?.usage !== null) return base;
-  } else if (
-    usage?.price.kind !== 'tiered' ||
-    usage.usage === undefined ||
-    (usage.usage !== null && !decimal(usage.usage.quantity))
+    snapshot.items.length !== 1 ||
+    snapshot.items[0]?.handle !== plan.planHandle ||
+    snapshot.items[0]?.usage !== null
   )
     return base;
   const trial =
@@ -216,9 +192,9 @@ export function projectEntitlement(
     recognizedPolicyId: plan.policyId,
     trial,
     features: [...plan.features],
-    includedUsage: recurringOnly ? null : plan.includedUsage,
-    observedUsageQuantity: usage?.usage?.quantity ?? null,
-    billableUsageAllowed: !recurringOnly && paid,
-    qualifyingUsageDisposition: recurringOnly ? 'NOT_METERED' : trial ? 'WAIVE_TRIAL' : 'REQUIRES_EVENT_TIME',
+    includedUsage: null,
+    observedUsageQuantity: null,
+    billableUsageAllowed: false,
+    qualifyingUsageDisposition: 'NOT_METERED',
   };
 }
