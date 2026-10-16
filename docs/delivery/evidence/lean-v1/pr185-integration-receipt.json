@@ -1,0 +1,46 @@
+{
+  "classification": "VERIFIED_NORMAL_PROTECTED_RECURRING_ONLY_MERGE",
+  "pullRequest": "https://github.com/Optidigi/insignia/pull/185",
+  "base": "cc53400f92592f7350930c6fde24fe9935e9a045",
+  "effectiveMergeBase": "cc53400f92592f7350930c6fde24fe9935e9a045",
+  "head": "373ff3ce44991ba132483d8d734e58ea46b07732",
+  "merge": "dae67f12cc4ce5aefb2727c4ac04fabd29a25f50",
+  "tree": "5abe576ebd256df6d7b457e94ae1e65055b28a23",
+  "parents": [
+    "cc53400f92592f7350930c6fde24fe9935e9a045",
+    "373ff3ce44991ba132483d8d734e58ea46b07732"
+  ],
+  "mergedAt": "2026-10-16T23:04:52Z",
+  "checks": [
+    {
+      "name": "foundation",
+      "run": 38978485919,
+      "head": "373ff3ce44991ba132483d8d734e58ea46b07732",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "name": "durable-core",
+      "run": 38978485838,
+      "head": "373ff3ce44991ba132483d8d734e58ea46b07732",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "name": "runtime",
+      "run": 38978485875,
+      "head": "373ff3ce44991ba132483d8d734e58ea46b07732",
+      "attempt": 1,
+      "result": "SUCCESS"
+    }
+  ],
+  "reviewedProductionConfigDiffSha256": "7e49b106c7ff20b4b62259b336c1ecb4a7c2ae718364536bf4bb4176d1e8041e",
+  "actualPostgres": "316 PASS /5 SKIP",
+  "restrictedLogin": "1 PASS",
+  "nativeDeployment": false,
+  "limits": [
+    "Source integration only; native pair/verifier still PR184.",
+    "Deploy new image and recurring-only policy together; no old-contract compatibility.",
+    "No subscription selection, native Lean journey or rollout acceptance."
+  ]
+}

@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 import { test } from 'node:test';
-import { materialHash, publicKeyFingerprint, publicKeyFromSeed } from '@insignia/application';
+import {
+  buildPublicConfig,
+  materialHash,
+  publicKeyFingerprint,
+  publicKeyFromSeed,
+  sealSigningSeed,
+} from '@insignia/application';
+import { decodeEnvelope } from '@insignia/cart-authorization';
 import { createProductionBuyerServices } from '../src/server/buyer/production.ts';
 
 const secret = 'synthetic-m7-private-capability';
@@ -93,6 +100,328 @@ test('production factory requires server-owned resource, commercial and readines
   assert.throws(() => createProductionBuyerServices({ ...input, credentials: undefined }), /configuration/i);
   assert.throws(() => createProductionBuyerServices({ ...input, artifactPorts: undefined }), /configuration/i);
   assert.throws(() => createProductionBuyerServices({ ...input, readVariantAvailability: true }), /configuration/i);
+});
+
+test('valid Lean acceptance uses passive primary reads under its lock and rejects final context drift without a fact', async () => {
+  for (const drift of [false, true]) {
+    const { input } = catalogFixture(),
+      now = input.clock();
+    const scope = { shopId: 'tenant', installationGeneration: '1', ownerHash: 'f'.repeat(64) };
+    const keyScope = {
+      shopId: 'tenant',
+      installationGeneration: '1',
+      authorizationGeneration: '11111111-1111-4111-8111-111111111111',
+      authorizationEpoch: 1,
+    };
+    const seed = Buffer.alloc(32, 2),
+      publicKey = publicKeyFromSeed(seed);
+    const key = {
+      ...keyScope,
+      id: 7,
+      keyId: 7,
+      state: 'active',
+      publicKey,
+      publicKeyFingerprint: publicKeyFingerprint(publicKey),
+      firstDay: 20000,
+      lastDay: 23000,
+      privateEnvelope: sealSigningSeed(input.ring, keyScope, 7, seed),
+      wrappingKeyId: input.ring.currentKeyId,
+    };
+    input.core.signingKeys.getActiveScope = async () => keyScope;
+    input.core.signingKeys.list = async () => [key];
+    const publicConfig = buildPublicConfig({ scope: keyScope, keys: [key] });
+    const config = {
+      version: 'm2-published-config-v1',
+      shopId: 'tenant',
+      productId: '111',
+      revisionId: 'revision',
+      revisionContentHash: 'a'.repeat(64),
+      shopCurrency: 'USD',
+      methods: [{ id: 'print' }],
+      placements: [{ id: 'front', allowedMethodIds: ['print'], allowedStepIds: ['small'], logoLaterAllowed: true }],
+      productionOptions: [],
+      pricingRules: [
+        {
+          id: 'unit',
+          scope: { kind: 'step', placementId: 'front', methodId: 'print', stepId: 'small' },
+          role: 'unit',
+          rate: { kind: 'fixed', amount: { shopDecimal: '3.00', presentmentOverrides: [] } },
+        },
+      ],
+    };
+    let insideLock = false,
+      facts = 0,
+      passivePrimaryReads = 0,
+      refreshReadsInsideLock = 0,
+      proposal;
+    const originalCredential = input.credentials.acquire;
+    input.credentials.acquire = async (target) => {
+      if (insideLock) refreshReadsInsideLock++;
+      assert.equal(insideLock, false, 'refresh-capable credential lifecycle must never run under acceptance locks');
+      return originalCredential(target);
+    };
+    input.passiveCredentials = {
+      acquire: async (target) => {
+        assert.equal(insideLock, true);
+        return { ...(await originalCredential(target)), accessToken: 'synthetic-passive-token' };
+      },
+    };
+    input.core.acceptedQuotes = {
+      getEffective: async () => ({ config, configId: 'config', operationId: 'publication' }),
+      findCompleted: async () => null,
+      accept: async (_target, commit) => {
+        insideLock = true;
+        try {
+          const result = await commit();
+          facts++;
+          return result;
+        } finally {
+          insideLock = false;
+        }
+      },
+    };
+    input.core.tenants.getActiveProviderScope = async () => ({
+      shopId: 'tenant',
+      installationGeneration: '1',
+      shopifyShopId: '9',
+    });
+    input.core.artwork.readUsability = async (_scope, ids) => {
+      assert.deepEqual(ids, []);
+      return [];
+    };
+    input.core.buyers = {
+      getSession: async () => ({ expiresAt: new Date(+now + 7 * 86400000) }),
+      putProposal: async (_scope, value) => {
+        proposal = value;
+      },
+      getLatestOwnedQuote: async () => null,
+      getProposal: async () => proposal,
+      reserveCommand: async () => {},
+      linkQuote: async () => {},
+      finishApplication: async () => ({ applicationId: 'application' }),
+    };
+    input.entitlementPolicy = {
+      policyVersion: 'synthetic-flat',
+      maxAgeMs: 300000,
+      plans: [{ billing: 'recurring-only', planHandle: 'flat', policyId: 'lean', features: [] }],
+    };
+    input.readSubscription = async () => ({
+      schemaVersion: 'm4-active-subscription-v1',
+      sourceApiVersion: '2026-07',
+      appId: 'gid://shopify/App/7',
+      shopId: 'gid://shopify/Shop/9',
+      observedAt: now.toISOString(),
+      active: true,
+      billingPeriod: 'EVERY_30_DAYS',
+      cancelAtEndOfCycle: false,
+      trialEndsAt: new Date(+now + 86400000).toISOString(),
+      currentBillingCycle: null,
+      pendingUpdate: null,
+      items: [{ handle: 'flat', price: { kind: 'flat', active: false }, usage: null }],
+    });
+    const build = {
+      schemaVersion: 2,
+      shopId: 'tenant',
+      installationGeneration: '1',
+      appClientId: 'synthetic-app-key',
+      sourceCommit: 'a'.repeat(40),
+      appVersionRef: '100',
+      devPreviewRef: null,
+      transform: {
+        functionId: 'transform',
+        handle: 'insignia-experimental-v2-transform',
+        apiType: 'cart_transform',
+        apiVersion: '2026-07',
+        inputQuerySha256: 'a'.repeat(64),
+        wasmSha256: 'c'.repeat(64),
+      },
+      validation: {
+        functionId: 'validation',
+        handle: 'insignia-experimental-v2-validation',
+        apiType: 'cart_checkout_validation',
+        apiVersion: '2026-07',
+        inputQuerySha256: 'b'.repeat(64),
+        wasmSha256: 'd'.repeat(64),
+      },
+      targetModules: {
+        transform: { moduleId: 'module-t', target: 'cart.transform.run', export: 'cart_transform_run' },
+        validation: {
+          moduleId: 'module-v',
+          target: 'cart.validations.generate.run',
+          export: 'cart_validations_generate_run',
+        },
+      },
+    };
+    const attestation = {
+      ...build,
+      evidenceKind: 'RELEASE_BOUND',
+      observedAt: now.toISOString(),
+      targetObservedAt: now.toISOString(),
+      expiresAt: new Date(+now + 30000).toISOString(),
+    };
+    input.artifactPorts = {
+      expectedBuild: {
+        read: async () => {
+          assert.equal(insideLock, false);
+          return build;
+        },
+      },
+      trustedEvidence: {
+        read: async () => {
+          assert.equal(insideLock, false);
+          return attestation;
+        },
+      },
+    };
+    input.passiveArtifactPorts = {
+      expectedBuild: {
+        read: async () => {
+          assert.equal(insideLock, true);
+          return build;
+        },
+      },
+      trustedEvidence: {
+        read: async () => {
+          assert.equal(insideLock, true);
+          return attestation;
+        },
+      },
+    };
+    const originalAvailability = input.readVariantAvailability;
+    input.readVariantAvailability = async (target) => {
+      const result = await originalAvailability(target);
+      result.variants[0].available = true;
+      return result;
+    };
+    input.fetchImpl = async (_url, options) => {
+      assert.equal(
+        new Headers(options.headers).get('x-shopify-access-token'),
+        insideLock ? 'synthetic-passive-token' : 'synthetic-offline-token',
+      );
+      const { query } = JSON.parse(options.body);
+      assert.ok(query.trimStart().startsWith('query'));
+      let data;
+      if (query.includes('LeanPrimaryMarket')) {
+        if (insideLock) passivePrimaryReads++;
+        data = {
+          shop: { id: 'gid://shopify/Shop/9', currencyCode: 'USD' },
+          primaryMarket: {
+            id: `gid://shopify/Market/${insideLock && drift ? '43' : '42'}`,
+            status: 'ACTIVE',
+            conditions: {
+              regionsCondition: {
+                regions: {
+                  nodes: [{ __typename: 'MarketRegionCountry', code: 'US' }],
+                  pageInfo: { hasNextPage: false, endCursor: null },
+                },
+              },
+            },
+          },
+        };
+      } else if (query.includes('InsigniaShopContext'))
+        data = { shop: { id: 'gid://shopify/Shop/9', currencyCode: 'USD', ianaTimezone: 'UTC' } };
+      else if (query.includes('InsigniaReadPublicConfig'))
+        data = {
+          shop: {
+            id: 'gid://shopify/Shop/9',
+            field: {
+              owner: { id: 'gid://shopify/Shop/9' },
+              namespace: 'app--7',
+              key: 'insignia_public_config_v2',
+              type: 'json',
+              value: publicConfig.value,
+              compareDigest: '1'.repeat(64),
+            },
+          },
+        };
+      else if (query.includes('InsigniaOwnedFunctions')) {
+        const functions = [build.transform, build.validation].map(
+          ({ functionId: id, inputQuerySha256: _q, wasmSha256: _w, ...value }) => ({
+            ...value,
+            id,
+            appKey: 'synthetic-app-key',
+            inputQuery: null,
+          }),
+        );
+        data = {
+          shop: { id: 'gid://shopify/Shop/9' },
+          shopifyFunctions: { nodes: functions, pageInfo: { hasNextPage: false } },
+          cartTransforms: {
+            nodes: [{ id: 'transform-deployment', functionId: 'transform', blockOnFailure: true }],
+            pageInfo: { hasNextPage: false },
+          },
+          validations: {
+            nodes: [
+              { id: 'validation-deployment', enabled: true, blockOnFailure: true, shopifyFunction: functions[1] },
+            ],
+            pageInfo: { hasNextPage: false },
+          },
+        };
+      } else if (query.includes('M5001Product'))
+        data = {
+          product: {
+            id: 'gid://shopify/Product/111',
+            title: 'Owned',
+            status: 'ACTIVE',
+            featuredMedia: null,
+            variants: {
+              nodes: [{ id: 'gid://shopify/ProductVariant/222', title: 'Blue M', selectedOptions: [], image: null }],
+              pageInfo: { hasNextPage: false },
+            },
+          },
+        };
+      else if (query.includes('contextualPricing'))
+        data = {
+          nodes: [
+            {
+              __typename: 'ProductVariant',
+              id: 'gid://shopify/ProductVariant/222',
+              product: { id: 'gid://shopify/Product/111' },
+              contextualPricing: { price: { amount: '10.00', currencyCode: 'USD' } },
+            },
+          ],
+        };
+      else assert.fail(`Unexpected boundary query: ${query}`);
+      return new Response(JSON.stringify({ data }), { headers: { 'x-shopify-api-version': '2026-07' } });
+    };
+    const services = createProductionBuyerServices(input);
+    const result = await services.propose(scope, {
+      country: 'US',
+      marketId: '42',
+      capacity: { ordinaryLineCount: 0, inputBytes: 100 },
+      groups: [
+        {
+          productId: '111',
+          configRevisionId: 'revision',
+          revisionContentHash: 'a'.repeat(64),
+          design: {
+            placements: [
+              {
+                placementId: 'front',
+                methodId: 'print',
+                stepId: 'small',
+                artwork: { kind: 'deferred', intentId: 'later' },
+              },
+            ],
+            options: [],
+          },
+          variants: [{ variantId: '222', quantity: 1 }],
+        },
+      ],
+    });
+    assert.equal(result.totalMinor, '1300');
+    const accept = () => services.accept(scope, result.proposalId, { hash: result.hash, idempotencyKey: 'accept' });
+    if (drift) {
+      await assert.rejects(accept, /Lean primary-Market context unavailable/);
+      assert.equal(facts, 0);
+    } else {
+      const accepted = await accept();
+      assert.equal(facts, 1);
+      assert.equal(decodeEnvelope(accepted.buckets[0].properties._insignia_quote_v2).header.totalMinor, '1300');
+    }
+    assert.ok(passivePrimaryReads >= 1);
+    assert.equal(refreshReadsInsideLock, 0);
+  }
 });
 
 test('real SDK proxy and shared HMAC guest authority provide seven days without cookie or synthetic auth fallback', async () => {
@@ -550,8 +879,19 @@ test('production frozen-preview mode never fills an uncaptured revision from the
 
 // Exercise production composition through the same public proposal/acceptance boundary used by HTTP.
 // Only the external provider and durable repositories are synthetic; no quote ports are replaced.
-test('production buyer refuses new offers without independent Lean qualification, including saved advanced proposals', async () => {
-  for (const operation of ['propose', 'accept', 'renew', 'completed-replay']) {
+test('production buyer reads actual primary context before Lean pricing on propose, accept and renew', async () => {
+  for (const scenario of [
+    'propose',
+    'accept',
+    'renew',
+    'completed-replay',
+    'propose:other-market',
+    'propose:other-country',
+    'propose:currency',
+    'propose:provider-error',
+    'propose:reauthorized',
+  ]) {
+    const [operation, contextCase = 'primary'] = scenario.split(':');
     const { input } = catalogFixture();
     const now = input.clock();
     const scope = { shopId: 'tenant', installationGeneration: '1', ownerHash: 'f'.repeat(64) };
@@ -704,6 +1044,15 @@ test('production buyer refuses new offers without independent Lean qualification
         items: [{ handle: 'flat', price: { kind: 'flat', active: false }, usage: null }],
       };
     };
+    if (contextCase === 'other-market') desired.marketId = request.marketId = '43';
+    if (contextCase === 'other-country') desired.country = request.country = 'GB';
+    let reauthorized = false;
+    const getActive = input.core.tenants.getActiveAuthorizationScope;
+    input.core.tenants.getActiveAuthorizationScope = async (target) => {
+      const current = await getActive(target);
+      return current ? { ...current, authorizationEpoch: reauthorized ? 2 : 1 } : null;
+    };
+    let primaryReads = 0;
     input.fetchImpl = async (_url, options) => {
       const body = JSON.parse(options.body);
       assert.ok(body.query.trimStart().startsWith('query'), 'the production probe performs reads only');
@@ -715,8 +1064,33 @@ test('production buyer refuses new offers without independent Lean qualification
             },
           }),
         );
+      if (body.query.includes('LeanPrimaryMarket')) {
+        primaryReads++;
+        if (contextCase === 'provider-error') return new Response('{}', { status: 503 });
+        if (contextCase === 'reauthorized') reauthorized = true;
+        return new Response(
+          JSON.stringify({
+            data: {
+              shop: { id: 'gid://shopify/Shop/9', currencyCode: 'USD' },
+              primaryMarket: {
+                id: 'gid://shopify/Market/42',
+                status: 'ACTIVE',
+                conditions: {
+                  regionsCondition: {
+                    regions: {
+                      nodes: [{ __typename: 'MarketRegionCountry', code: 'US' }],
+                      pageInfo: { hasNextPage: false, endCursor: null },
+                    },
+                  },
+                },
+              },
+            },
+          }),
+          { headers: { 'x-shopify-api-version': '2026-07' } },
+        );
+      }
       catalogReads++;
-      assert.deepEqual(body.variables, { ids: ['gid://shopify/ProductVariant/222'], country: 'US' });
+      assert.deepEqual(body.variables, { ids: ['gid://shopify/ProductVariant/222'], country: desired.country });
       return new Response(
         JSON.stringify({
           data: {
@@ -725,7 +1099,9 @@ test('production buyer refuses new offers without independent Lean qualification
                 __typename: 'ProductVariant',
                 id: 'gid://shopify/ProductVariant/222',
                 product: { id: 'gid://shopify/Product/111' },
-                contextualPricing: { price: { amount: '10.00', currencyCode: 'USD' } },
+                contextualPricing: {
+                  price: { amount: '10.00', currencyCode: contextCase === 'currency' ? 'EUR' : 'USD' },
+                },
               },
             ],
           },
@@ -739,7 +1115,16 @@ test('production buyer refuses new offers without independent Lean qualification
         : operation === 'accept'
           ? () => services.accept(scope, 'proposal', { hash, idempotencyKey: 'accept' })
           : () => services.renew(scope, original.quoteId, { ...desired, idempotencyKey: 'renew' });
-    await assert.rejects(act, /Lean primary-Market and currency qualification unavailable/, operation);
+    const expected =
+      contextCase === 'primary'
+        ? /Lean prices require one final nonnegative/
+        : contextCase === 'provider-error'
+          ? /Primary Market unavailable: provider_error/
+          : contextCase === 'reauthorized'
+            ? /Buyer Lean context authority changed/
+            : /Lean primary-Market context unavailable/;
+    await assert.rejects(act, expected, scenario);
+    assert.equal(primaryReads, contextCase === 'currency' ? 0 : 1, scenario);
     assert.equal(subscriptionReads, 1, operation);
     assert.equal(catalogReads, 1, operation);
     assert.equal(quoteWrites, 0, operation);
