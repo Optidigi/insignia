@@ -20,7 +20,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
   ] as const) {
     it(`qualifies reviewed proposal acceptance with ${mode}`, async () => {
       const cleanup: (() => Promise<void>)[] = [];
-      const f = await fixture({ after: (fn: () => Promise<void>) => cleanup.push(fn) }, { clock: () => new Date() });
+      const f = await fixture(
+        { after: (fn: () => Promise<void>) => cleanup.push(fn) },
+        { clock: () => new Date(), lean: true },
+      );
       const keys = { currentKeyId: 'composition', keys: { composition: Buffer.alloc(32, 23) } };
       const core = createDurableCore(
         new Pool({
@@ -191,12 +194,23 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
             plans: [
               {
                 planHandle: 'synthetic-plan',
-                usageHandle: 'synthetic-usage',
+                billing: 'recurring-only',
                 policyId: 'synthetic',
                 features: [],
-                includedUsage: 100,
               },
             ],
+          },
+          // Synthetic qualification isolates actual PostgreSQL acceptance/lock behavior;
+          // it does not enable EUR or claim a native primary-Market observation.
+          leanContext: {
+            async assertSupported(target) {
+              expect(target.tenant.shopId).toBe(f.shopId);
+              expect(target.tenant.installationGeneration).toBe('1');
+              expect(target.country).toBe('NL');
+              expect(target.marketId).toBe('42');
+              expect(target.currency).toBe('EUR');
+              expect(target.shopCurrency).toBe('EUR');
+            },
           },
           credentials,
           passiveCredentials: {
@@ -246,10 +260,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
             trialEndsAt: new Date(Date.now() + 86400000).toISOString(),
             currentBillingCycle: null,
             pendingUpdate: null,
-            items: [
-              { handle: 'synthetic-plan', price: { kind: 'flat', active: false }, usage: null },
-              { handle: 'synthetic-usage', price: { kind: 'tiered', active: false }, usage: { quantity: '0' } },
-            ],
+            items: [{ handle: 'synthetic-plan', price: { kind: 'flat', active: false }, usage: null }],
           }),
           readVariantAvailability: async (target) => {
             const observedAt = Date.now();
