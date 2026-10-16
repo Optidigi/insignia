@@ -30,7 +30,9 @@
     "quoteCompositionCorrection": "2 PASS after synthetic recurring-only input for new offers; original hybrid fixture retained for exact historical characterization",
     "boundaries": "PASS including18 effect-boundary tests",
     "style": "PASS; existing informational/style warnings retained",
-    "databaseAcceptanceCorrection": "6 SKIP locally; final CI must prove actual PostgreSQL results"
+    "databaseAcceptanceCorrection": "6 SKIP locally; final CI must prove actual PostgreSQL results",
+    "currentArchitectureHistory": "PASS after approved16October current checksum update; historical assertions unchanged",
+    "liveSetupIntegrity": "PASS"
   },
   "independentReview": {
     "reviewer": "/root/lean_issuance_review",
@@ -79,6 +81,17 @@
       "result": "FAILURE",
       "cause": "Added admin fixture recreated the service but reused an actor whose online staff grant belongs to the original service WeakMap; all9 cases failed Online staff grant unavailable.",
       "correction": "Keep original authenticated service/actor; test recurring-only denial of an unexpected provider usage item without constructing a hybrid policy or recreating service."
+    },
+    {
+      "head": "33933c56cf57c06fd8446e9f092c3819d8367489",
+      "workflow": "foundation",
+      "run": 38884703526,
+      "attempt": 1,
+      "result": "FAILURE",
+      "cause": "Current architecture integrity pins still expected pre16October plan/ledger bytes after the approved first-version direction was recorded.",
+      "correction": "Update only current plan/ledger SHA256 literals and current version label; preserve all historical fixed-ref and owner-authority checks.",
+      "precedingTests": "Web168 PASS/52 SKIP; storefront46 PASS/2 SKIP.",
+      "localVerification": "Architecture/history and live-setup integrity PASS. Local artifact-manifest cannot complete because generated m4-003 replay artifact is absent; final CI remains required."
     }
   ],
   "qualifiedPriorCandidate": {
