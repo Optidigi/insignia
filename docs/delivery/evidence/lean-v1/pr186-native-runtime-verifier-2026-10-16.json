@@ -1,0 +1,143 @@
+{
+  "classification": "EXACT_PR186_RUNTIME_POLICY_VERIFIER_AND_INDEPENDENT_READ_PASS",
+  "pair": {
+    "classification": "EXACT_POLICY_AND_IMAGE_RUNTIME_PAIR_UPDATE_PASS",
+    "webPolicySha256": "2d0ee70e6f2ac1e3bc593501f0703920126280fb9343822853e7e525168fc46b",
+    "webEnvironmentDeltaKeys": [
+      "INSIGNIA_M5_ENTITLEMENT_POLICY_JSON"
+    ],
+    "workerEnvironmentDeltaKeys": [],
+    "sourceMerge": "c8519fc113071fabbe84a1492dd2ed1fbdbeb039",
+    "sourceTree": "e7ea7bb572372b38a178de73b4b2140e427dc3d2",
+    "webContainer": "480cbb24ebb7bf72c0e3f7a7d9ff01b8f703f93e2525d39569736cebcf4d6956",
+    "webImage": "sha256:4bd596e27892b7b94e6b7a601e2d9cfa16f673390f866f3ca13d3abfab9cb671",
+    "workerContainer": "2db1ff88ec7d11a32cfa826b554db09a96e9d278dfe07e48eaf00c3fae0b588b",
+    "workerImage": "sha256:e2b8a544f5aa48d7d41e5b8adf8b651facfaa1789e0cb097e9c4b0338c41bafc",
+    "databaseContainer": "19419eff11ef9c0b43e484f91ad97ba606c817df6604e7a6d08c5513473285a1",
+    "databaseImage": "sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d",
+    "healthy": true,
+    "other32ContainersPreserved": true,
+    "profile": "lean-markets-7b17cd9",
+    "merchantCaptureEnabled": true,
+    "purchaseAdmissionEnabled": true,
+    "inspectorAndBridgePreserved": true,
+    "dispatchInvocations": 2,
+    "retryInvocations": 0,
+    "verifierRebinding": "PENDING"
+  },
+  "verifier": {
+    "classification": "EXACT_VERIFIER_NEW_WEB_BINDING_STARTUP_PASS_ONLY",
+    "state": {
+      "ActiveState": "active",
+      "InvocationID": "1cf6aabc2d6e4ac8896c655445bfb317",
+      "MainPID": "1410858",
+      "ControlGroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/insignia-m5-release-verifier-r2.service"
+    },
+    "head": "c8519fc113071fabbe84a1492dd2ed1fbdbeb039",
+    "tree": "e7ea7bb572372b38a178de73b4b2140e427dc3d2",
+    "startupProviderRequests": 0,
+    "freshNativeCollectionRequired": true
+  },
+  "freshWebObservation": {
+    "classification": "LEAN186_FRESH_CORRELATED_RELEASE_AND_INDEPENDENT_SELECT_PASS",
+    "requestId": "dc529e24-e6b7-43ce-b6af-dce779b3f5bf",
+    "recordId": "c3685be0-b97b-4251-aaf1-37d6c21528bb",
+    "state": "COMPLETE",
+    "identity": {
+      "current_user": "insignia_runtime",
+      "session_user": "insignia_runtime",
+      "readonly": "on"
+    },
+    "appVersion": "1169137696769",
+    "functionsSourceCommit": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+    "observedAt": "2026-10-16T23:31:56.076Z",
+    "expiresAt": "2026-10-16T23:32:24.128Z",
+    "historicalEvidenceRestamped": false,
+    "runtimeDatabaseWrites": 0,
+    "collectionCalls": 1,
+    "providerMutationCalls": 0
+  },
+  "freshWorkerObservation": {
+    "classification": "LEAN186_FRESH_CORRELATED_RELEASE_AND_INDEPENDENT_SELECT_PASS",
+    "requestId": "dc529e24-e6b7-43ce-b6af-dce779b3f5bf",
+    "recordId": "c3685be0-b97b-4251-aaf1-37d6c21528bb",
+    "state": "COMPLETE",
+    "identity": {
+      "current_user": "insignia_worker",
+      "session_user": "insignia_worker",
+      "readonly": "on"
+    },
+    "appVersion": "1169137696769",
+    "functionsSourceCommit": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+    "observedAt": "2026-10-16T23:31:56.076Z",
+    "expiresAt": "2026-10-16T23:32:24.128Z",
+    "historicalEvidenceRestamped": false,
+    "runtimeDatabaseWrites": 0,
+    "collectionCalls": 0,
+    "providerMutationCalls": 0
+  },
+  "operationReview": {
+    "result": "CLEAR",
+    "reviewer": "/root/lean186_native_review",
+    "correctness": "CLEAR",
+    "security": "CLEAR",
+    "operatorSha256": "8b6d2708edf852e775579491cfaff44944e617db550d90c835f8ef23e660c4b3",
+    "quiesceSha256": "c71b1d6cce874de2cdc94eb63a2eab117aab6db6fd28ce4bd8264539e6da5228",
+    "helperSha256": "6c96b0a2be177f2e6fdaf06cab644d97d3714204ae4c30786ca93e58ed5a7b78",
+    "pairOperatorSha256": {
+      "runtime-common.py": "3ddd815adab77ec52df0a8e2a81f5aa395a00e60764d3d11718c722734615cdc",
+      "import-images.py": "861d9cf06e6550cb0e6eabf95bd9c9bad63a14f059d9c98b8b55ab08489d73fe",
+      "execute-pair-update.py": "7885764d1a51384eb32d26592f8aa8c02c68d048260e40d78e4f12df09a71757",
+      "operator-controls.py": "22511bc79dbd6da594598fa9b88740ccbfa891c79ac5e6e4fab561f85fd65192"
+    },
+    "prerequisitesVerified": true,
+    "nativeEffectsByReviewer": false,
+    "cumulativeReviewPinsVerified": 32,
+    "inputArchiveMembersVerified": 604,
+    "scope": "Exact PR186 images, web-only pinned recurring policy, unchanged worker environment, fenced verifier rebind; no plan selection/version/checkout effect."
+  },
+  "artifacts": {
+    "web": {
+      "artifactId": 12080503072,
+      "artifactZipDigest": "sha256:becb6f3bf2bb5240c6b30955060a2a59dbeb298aa2dd54b2687ff6de07e37d99",
+      "run": 38980237449,
+      "attempt": 1,
+      "workflowHead": "465ccef2a2b07f5c3d6e99f22437cb8d0a40d4a2",
+      "buildSourceHead": "12eeceba4c6e1fe59b77c0fe218067c58a787675",
+      "sourceTree": "e7ea7bb572372b38a178de73b4b2140e427dc3d2",
+      "integratedTreeEqualsArtifact": true,
+      "tarSha256": "c59ca9dcf83a56660d310b7c37e325d4fe35ea0e94a5f6e024da0c3281f14258",
+      "tarSizeBytes": 456277504,
+      "nativeOciImageId": "sha256:4bd596e27892b7b94e6b7a601e2d9cfa16f673390f866f3ca13d3abfab9cb671",
+      "configDigest": "sha256:052d8fba546cc7ad54fde1483ef5a17cc6e7b282e3a34fcd2343b86fcd585e1d"
+    },
+    "worker": {
+      "artifactId": 12081246121,
+      "artifactZipDigest": "sha256:ac8ca0392a77a60776645dfdd0c923fe27a3ee18d2f31ffa6ee2a947fc23dcc4",
+      "run": 38980237449,
+      "attempt": 1,
+      "workflowHead": "465ccef2a2b07f5c3d6e99f22437cb8d0a40d4a2",
+      "buildSourceHead": "12eeceba4c6e1fe59b77c0fe218067c58a787675",
+      "sourceTree": "e7ea7bb572372b38a178de73b4b2140e427dc3d2",
+      "integratedTreeEqualsArtifact": true,
+      "tarSha256": "ecc0c831c540cdeff65a68e95b56aac928f5d7d78a25a7d8b3a295c2920c6321",
+      "tarSizeBytes": 315186688,
+      "nativeOciImageId": "sha256:e2b8a544f5aa48d7d41e5b8adf8b651facfaa1789e0cb097e9c4b0338c41bafc",
+      "configDigest": "sha256:c81b97facb7ad25436991b16293b17ca14b7d21eb9c33357d3578d0a396e2b64"
+    }
+  },
+  "finalOutcome": {
+    "verifierRebinding": "COMPLETE after the image/policy-update phase receipt",
+    "freshNativeCollection": "FULFILLED by both correlated observations in this receipt",
+    "unresolvedExternalWrites": 0
+  },
+  "phaseHistoryPreserved": true,
+  "limits": [
+    "Original observedAt/expiry retained; the collected record is now historical, not ongoing authority.",
+    "No app release, subscription selection, inventory/publication/checkout, usage dispatch or rollout.",
+    "Production primary-Market reader is connected and readable; native Lean quote/cart/purchase is not yet qualified.",
+    "Database, financial facts, inspector/bridge and other32 containers preserved.",
+    "Exact prior SDK code recovery remains PR184 evidence; original collector freeze was not recovered, and the new qualified inventory is not that missing freeze."
+  ],
+  "cleanupDate": "2026-10-20"
+}
