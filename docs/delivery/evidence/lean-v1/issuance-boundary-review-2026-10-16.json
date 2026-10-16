@@ -1,0 +1,60 @@
+{
+  "classification": "LEAN_NEW_ACTION_BOUNDARY_CORRECTIONS_REVIEWED",
+  "base": "9f9bfe96ecc7bcfa2dc52bbae206f103faa57b1a",
+  "requirements": "../../authority/lean-v1-2026-10-15.md",
+  "defects": [
+    "Production buyer lazy wrapper omitted the inner Lean pricing profile.",
+    "New Lean issuance accepted legacy metered/waived-trial entitlement.",
+    "Primary-Market qualification was not rechecked inside final acceptance.",
+    "New publication eligibility did not distinguish historical hybrid entitlement from recurring-only entitlement."
+  ],
+  "behavior": [
+    "New proposals/acceptance/renewal preserve the fixed Lean profile; absent production context remains unavailable.",
+    "New Lean prepare/accept/renew and publication require NOT_METERED; historical projection/readers remain intact.",
+    "Independent context is checked again in serialized acceptance before signing.",
+    "Completed accept/renew replay returns original terms and carriers without new provider qualification or signing."
+  ],
+  "red": [
+    "Production buyer public seam reached advanced setup pricing/artwork checks instead of refusing absent Lean qualification.",
+    "Both legacy WAIVE_TRIAL and REQUIRES_EVENT_TIME prepared Lean offers instead of rejecting.",
+    "Acceptance signed after the independent context port changed during persistence wait."
+  ],
+  "localChecks": {
+    "application": "320 PASS across25 files",
+    "quoteAcceptanceRenewal": "39 PASS",
+    "productionBuyer": "11 PASS",
+    "webBuild": "PASS; zero errors/warnings/hints",
+    "adminActualPostgres": "9 local SKIP; actual CI required",
+    "secrets": "PASS",
+    "fullWebInitial": "167 PASS / 1 FAIL / 52 SKIP; old hybrid fixture failed at the new recurring-only guard before its intended context test",
+    "quoteCompositionCorrection": "2 PASS after synthetic recurring-only input for new offers; original hybrid fixture retained for exact historical characterization",
+    "boundaries": "PASS including18 effect-boundary tests",
+    "style": "PASS; existing informational/style warnings retained"
+  },
+  "independentReview": {
+    "reviewer": "/root/lean_issuance_review",
+    "correctnessSecurity": "CLEAR",
+    "standards": "CLEAR",
+    "readOnly": true,
+    "providerEffects": 0,
+    "credentialIsolationClaimed": false,
+    "scope": "Eight changed code/test files and interacting renewal/replay/provider-policy wrappers; focused fixture impact followup CLEAR."
+  },
+  "reviewedFiles": {
+    "apps/web/src/server/admin/production.ts": "4e9621eb908fecd4d6dc9b9ff33ef4ff3224b9490ca6e5be7787d95b0488767a",
+    "apps/web/src/server/buyer/production.ts": "818c490103621b3e416eceb037a6b368428edb9e1cedc5400b32b5b4fda02d26",
+    "apps/web/test/admin/production-composition.test.mjs": "d208dba9279d0c9138d80f6a705210607b066af1e23e17a92ced33d76a7692cc",
+    "apps/web/test/buyer-production.test.mjs": "e6e0192b353b48f42dc90c042beef1ca784753bee0ad0ac2e4388c91578f15f6",
+    "packages/application/src/quote/accept-quote.ts": "f7dd358edcf9de395f4af562dcd64c0b3da705f8be8eab2d133bf2b471097c6e",
+    "packages/application/src/quote/accept-quote.test.ts": "3953fc08d2cce3fba11710f90dd74e777e892a9d720701fe0f3ede2ed5dd12fa",
+    "packages/application/src/quote/renew-quote.test.ts": "cbe372ad1d4497dc786221b0ff46ce5fdbbe441704058ecadb3ced3514ddaef3",
+    "apps/web/test/quote-composition.test.mjs": "df0bf226c0bcbfa217dfe1a26cd7bc5aa1a84dbd6ad3ce518c9c5fc75590c065"
+  },
+  "finalCandidateCI": "PENDING",
+  "nativeCorrectionDeployment": false,
+  "limits": [
+    "No production primary-Market composition or currency enabled by this change.",
+    "Actual recurring-only Standard subscription remains unselected and unqualified.",
+    "No provider mutation, new checkout/publication/inventory effect, usage dispatch or rollout."
+  ]
+}

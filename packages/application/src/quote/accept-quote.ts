@@ -225,7 +225,10 @@ function requireTenant(value: ActiveQuoteTenant | null, request: QuoteRequest): 
   return value;
 }
 
-function requireEntitlement(value: QuoteEntitlement): asserts value is QuoteEntitlement & {
+function requireEntitlement(
+  value: QuoteEntitlement,
+  pricingProfile: QuoteAuthorityPorts['pricingProfile'],
+): asserts value is QuoteEntitlement & {
   recognizedPolicyId: string;
   qualifyingUsageDisposition: 'REQUIRES_EVENT_TIME' | 'WAIVE_TRIAL' | 'NOT_METERED';
 } {
@@ -237,6 +240,8 @@ function requireEntitlement(value: QuoteEntitlement): asserts value is QuoteEnti
     value.qualifyingUsageDisposition === 'DENY'
   )
     throw new Error('fresh recognized entitlement required');
+  if (pricingProfile === 'lean-v1' && value.qualifyingUsageDisposition !== 'NOT_METERED')
+    throw new Error('Lean recurring-only entitlement required');
 }
 
 export function normalizeMarketId(value: string): string {
@@ -540,7 +545,7 @@ async function prepareValidatedQuote(
   requestDigest: string,
 ) {
   const entitlement = await ports.entitlement.getFresh(tenant);
-  requireEntitlement(entitlement);
+  requireEntitlement(entitlement, ports.pricingProfile);
   const shop = await ports.shop.getContext(tenant);
   if (
     shop.shopId !== tenant.shopId ||
@@ -757,7 +762,7 @@ async function prepareValidatedQuote(
       if (localDay(ports.clock(), shop.timezone).ordinal !== quote.acceptedDay)
         throw new Error('shop-local acceptance day changed before signing');
       const currentEntitlement = await ports.entitlement.getFresh(current);
-      requireEntitlement(currentEntitlement);
+      requireEntitlement(currentEntitlement, ports.pricingProfile);
       if (
         currentEntitlement.policyVersion !== entitlement.policyVersion ||
         currentEntitlement.recognizedPolicyId !== entitlement.recognizedPolicyId ||
@@ -797,6 +802,16 @@ async function prepareValidatedQuote(
           now: ports.clock().toISOString(),
           maxAgeMs: 5 * 60 * 1000,
         });
+      if (ports.pricingProfile === 'lean-v1') {
+        if (!ports.leanContext) throw new Error('Lean primary-Market and currency qualification unavailable');
+        await ports.leanContext.assertSupported({
+          tenant: finalTenant,
+          country: request.country,
+          marketId,
+          currency: presentment,
+          shopCurrency: shop.currency,
+        });
+      }
       await ports.readiness.assertReady({ quote });
       const authorization = await ports.authorization.issue({ quote });
       validAuthorization(quote, authorization);

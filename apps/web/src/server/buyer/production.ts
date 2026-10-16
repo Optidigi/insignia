@@ -268,6 +268,9 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       })());
     return {
       clock,
+      // Keep the production profile across this lazy wrapper; historical replay is
+      // handled by the application before new-offer qualification.
+      pricingProfile: 'lean-v1',
       ids: {
         quoteId: () => {
           if (!composed) throw new Error('Buyer quote preparation incomplete');

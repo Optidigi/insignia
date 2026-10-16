@@ -1,0 +1,29 @@
+{
+  "classification": "DUE_INCOMPLETE_ASSET_METADATA_AND_PHYSICAL_ABSENCE_PASS",
+  "observedAt": "2026-10-16T09:24:59.321Z",
+  "identity": {
+    "current_user": "insignia_runtime",
+    "readonly": "on"
+  },
+  "asset": {
+    "asset_id": "b92a171d-e23e-4bad-a174-81e1d5edcad7",
+    "state": "DELETED",
+    "collected_at": "2026-10-15T00:31:47.899Z",
+    "upload_until": "2026-10-15T00:36:47.899Z",
+    "expires_at": "2026-10-22T00:31:47.899Z",
+    "updated_at": "2026-10-16T09:24:43.654Z",
+    "cleanup_attempt_at": "2026-10-16T09:24:43.235Z",
+    "quarantine_cleaned_at": null,
+    "quarantine_cleanup_attempt_at": null
+  },
+  "physical": {
+    "quarantine_key": "NOT_FOUND",
+    "original_key": "NOT_FOUND",
+    "preview_key": "NOT_FOUND"
+  },
+  "storageReads": 3,
+  "manualDeletes": 0,
+  "databaseWrites": 0,
+  "probeFailurePreserved": "First read mapped error.kind instead of error.code; classified unknown rather than claiming physical absence. Corrected read makes only GETs, no mutation retry.",
+  "limit": "Tombstone retains original expiry; no original lifetime extension or original deletion is implied."
+}

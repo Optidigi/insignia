@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 import { test } from 'node:test';
-import { publicKeyFingerprint, publicKeyFromSeed } from '@insignia/application';
+import { materialHash, publicKeyFingerprint, publicKeyFromSeed } from '@insignia/application';
 import { createProductionBuyerServices } from '../src/server/buyer/production.ts';
 
 const secret = 'synthetic-m7-private-capability';
@@ -546,4 +546,205 @@ test('production frozen-preview mode never fills an uncaptured revision from the
       target: { productId: '111', revisionId: 'revision' },
     },
   ]);
+});
+
+// Exercise production composition through the same public proposal/acceptance boundary used by HTTP.
+// Only the external provider and durable repositories are synthetic; no quote ports are replaced.
+test('production buyer refuses new offers without independent Lean qualification, including saved advanced proposals', async () => {
+  for (const operation of ['propose', 'accept', 'renew', 'completed-replay']) {
+    const { input } = catalogFixture();
+    const now = input.clock();
+    const scope = { shopId: 'tenant', installationGeneration: '1', ownerHash: 'f'.repeat(64) };
+    const hash = 'a'.repeat(64);
+    const config = {
+      version: 'm2-published-config-v1',
+      shopId: 'tenant',
+      productId: '111',
+      revisionId: 'revision',
+      revisionContentHash: hash,
+      shopCurrency: 'USD',
+      methods: [{ id: 'print' }],
+      placements: [{ id: 'front', allowedMethodIds: ['print'], allowedStepIds: ['small'], logoLaterAllowed: false }],
+      productionOptions: [],
+      pricingRules: [
+        {
+          id: 'advanced-setup',
+          scope: { kind: 'general' },
+          role: 'setup',
+          rate: { kind: 'fixed', amount: { shopDecimal: '3.00', presentmentOverrides: [] } },
+        },
+      ],
+    };
+    const group = {
+      productId: '111',
+      configRevisionId: 'revision',
+      revisionContentHash: hash,
+      design: {
+        placements: [
+          {
+            placementId: 'front',
+            methodId: 'print',
+            stepId: 'small',
+            artwork: { kind: 'revision', revisionId: 'original-art' },
+          },
+        ],
+        options: [],
+      },
+      variants: [{ variantId: '222', quantity: 1 }],
+    };
+    const desired = {
+      country: 'US',
+      marketId: '42',
+      capacity: { ordinaryLineCount: 0, inputBytes: 100 },
+      groups: [group],
+    };
+    const request = {
+      ...desired,
+      ...scope,
+      idempotencyKey: 'saved',
+      groups: [{ group: { ...group, shopId: 'tenant', version: 'm2-customization-group-v1' } }],
+    };
+    let catalogReads = 0,
+      subscriptionReads = 0,
+      quoteWrites = 0,
+      proposalWrites = 0,
+      artworkReads = 0;
+    input.core.tenants.getActiveProviderScope = async () => ({ ...scope, shopifyShopId: '9' });
+    input.core.acceptedQuotes.getEffective = async () => ({ config, configId: 'config', operationId: 'publication' });
+    input.core.acceptedQuotes.findCompleted = async () => null;
+    input.core.acceptedQuotes.accept = async () => {
+      quoteWrites++;
+      throw new Error('Unexpected acceptance write');
+    };
+    input.core.buyers = {
+      getProposal: async () => ({ materialHash: hash, request, expiresAt: new Date(+now + 300000) }),
+      reserveCommand: async () => {},
+      putProposal: async () => {
+        proposalWrites++;
+        throw new Error('Unexpected proposal write');
+      },
+    };
+    const original = {
+      quoteId: '22222222-2222-4222-8222-222222222222',
+      ...scope,
+      authorizationGeneration: '11111111-1111-4111-8111-111111111111',
+      authorizationEpoch: 1,
+      economics: { groups: [{ setupMinor: '300', variants: [] }], lines: [{ variantId: '222', quantity: 1 }] },
+      artworkChecks: [],
+      effectiveRevisions: [],
+      catalogSnapshots: [],
+    };
+    if (operation === 'completed-replay') {
+      const completed = {
+        quote: original,
+        authorization: {
+          setId: 'old-set',
+          validThroughDay: 23000,
+          envelopeCarrier: 'old-signed-envelope',
+          members: [{ lineIndex: 0, carrier: 'old-signed-member' }],
+        },
+      };
+      input.core.acceptedQuotes.findCompleted = async () => completed;
+      input.core.buyers.getProposal = async () => ({
+        materialHash: materialHash(original),
+        request,
+        expiresAt: new Date(+now - 1000),
+      });
+      input.core.buyers.linkQuote = async () => {};
+      input.core.buyers.finishApplication = async () => ({ applicationId: 'old-application' });
+      const result = await createProductionBuyerServices(input).accept(scope, 'proposal', {
+        hash: materialHash(original),
+        idempotencyKey: 'accept',
+      });
+      assert.equal(result.quoteId, original.quoteId);
+      assert.deepEqual(result.buckets, [
+        {
+          variantId: '222',
+          quantity: 1,
+          properties: { _insignia_quote_v2: 'old-signed-envelope', _insignia_member_v2: 'old-signed-member' },
+        },
+      ]);
+      assert.equal(original.economics.groups[0].setupMinor, '300');
+      assert.equal(quoteWrites, 0);
+      assert.equal(proposalWrites, 0);
+      assert.equal(artworkReads, 0);
+      continue;
+    }
+    input.core.renewalQuotes = {
+      getOwned: async () => original,
+      findCompleted: async () => null,
+      renew: async () => {
+        quoteWrites++;
+        throw new Error('Unexpected renewal write');
+      },
+    };
+    input.core.artwork.readUsability = async () => {
+      artworkReads++;
+      throw new Error('New advanced pricing reached artwork acceptance');
+    };
+    input.entitlementPolicy = {
+      policyVersion: 'synthetic-flat',
+      maxAgeMs: 300000,
+      plans: [{ planHandle: 'flat', billing: 'recurring-only', policyId: 'lean', features: [] }],
+    };
+    input.readSubscription = async () => {
+      subscriptionReads++;
+      return {
+        schemaVersion: 'm4-active-subscription-v1',
+        sourceApiVersion: '2026-07',
+        appId: 'gid://shopify/App/7',
+        shopId: 'gid://shopify/Shop/9',
+        observedAt: now.toISOString(),
+        active: true,
+        billingPeriod: 'EVERY_30_DAYS',
+        cancelAtEndOfCycle: false,
+        trialEndsAt: new Date(+now + 86400000).toISOString(),
+        currentBillingCycle: null,
+        pendingUpdate: null,
+        items: [{ handle: 'flat', price: { kind: 'flat', active: false }, usage: null }],
+      };
+    };
+    input.fetchImpl = async (_url, options) => {
+      const body = JSON.parse(options.body);
+      assert.ok(body.query.trimStart().startsWith('query'), 'the production probe performs reads only');
+      if (body.query.includes('InsigniaShopContext'))
+        return new Response(
+          JSON.stringify({
+            data: {
+              shop: { id: 'gid://shopify/Shop/9', currencyCode: 'USD', ianaTimezone: 'UTC' },
+            },
+          }),
+        );
+      catalogReads++;
+      assert.deepEqual(body.variables, { ids: ['gid://shopify/ProductVariant/222'], country: 'US' });
+      return new Response(
+        JSON.stringify({
+          data: {
+            nodes: [
+              {
+                __typename: 'ProductVariant',
+                id: 'gid://shopify/ProductVariant/222',
+                product: { id: 'gid://shopify/Product/111' },
+                contextualPricing: { price: { amount: '10.00', currencyCode: 'USD' } },
+              },
+            ],
+          },
+        }),
+      );
+    };
+    const services = createProductionBuyerServices(input);
+    const act =
+      operation === 'propose'
+        ? () => services.propose(scope, desired)
+        : operation === 'accept'
+          ? () => services.accept(scope, 'proposal', { hash, idempotencyKey: 'accept' })
+          : () => services.renew(scope, original.quoteId, { ...desired, idempotencyKey: 'renew' });
+    await assert.rejects(act, /Lean primary-Market and currency qualification unavailable/, operation);
+    assert.equal(subscriptionReads, 1, operation);
+    assert.equal(catalogReads, 1, operation);
+    assert.equal(quoteWrites, 0, operation);
+    assert.equal(proposalWrites, 0, operation);
+    assert.equal(artworkReads, 0, operation);
+    assert.equal(config.pricingRules[0].role, 'setup', 'historical advanced revision remains untouched');
+  }
 });

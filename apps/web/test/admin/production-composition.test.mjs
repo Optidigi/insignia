@@ -118,6 +118,7 @@ for (const releaseMode of [
     const origin = signing ? 'https://insignia-app.optidigi.nl' : 'https://synthetic.example';
     const shop = signing ? 'insignia-rewrite-dev.myshopify.com' : `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
     let providerMode = 'current';
+    let legacyUsageContract = false;
     let entitlementNow = '2026-09-30T23:59:59.999Z';
     let adminMutations = 0;
     let partnerReads = 0;
@@ -404,18 +405,22 @@ for (const releaseMode of [
                     discount: null,
                     usage: null,
                   },
-                  {
-                    handle: 'meter.m5',
-                    price: {
-                      __typename: 'TieredPrice',
-                      active,
-                      currency: 'USD',
-                      tiersMode: 'GRADUATED',
-                      tiers: [{ upTo: null, amountPerUnit: '0.00', amount: '0.00' }],
-                    },
-                    discount: null,
-                    usage: { quantity: 0, cost: { amount: '0.00', currencyCode: 'USD' } },
-                  },
+                  ...(legacyUsageContract
+                    ? [
+                        {
+                          handle: 'meter.m5',
+                          price: {
+                            __typename: 'TieredPrice',
+                            active,
+                            currency: 'USD',
+                            tiersMode: 'GRADUATED',
+                            tiers: [{ upTo: null, amountPerUnit: '0.00', amount: '0.00' }],
+                          },
+                          discount: null,
+                          usage: { quantity: 0, cost: { amount: '0.00', currencyCode: 'USD' } },
+                        },
+                      ]
+                    : []),
                 ],
                 pendingUpdate:
                   providerMode === 'pending'
@@ -604,10 +609,9 @@ for (const releaseMode of [
         plans: [
           {
             planHandle: 'plan.m5',
-            usageHandle: 'meter.m5',
+            billing: 'recurring-only',
             policyId: 'synthetic-plan',
             features: ['base', 'required', 'logo', 'options', 'pricing'],
-            includedUsage: 0,
           },
         ],
       };
@@ -653,6 +657,24 @@ for (const releaseMode of [
         idempotencyKey: 'composition-save',
       });
       assert.equal(saved.kind, 'saved');
+      // Historical hybrid contracts remain recognizable for retained readers,
+      // but do not authorize a new Lean publication, even during a waived trial.
+      legacyUsageContract = true;
+      policy.plans[0].usageHandle = 'meter.m5';
+      policy.plans[0].includedUsage = 0;
+      delete policy.plans[0].billing;
+      services = compose();
+      const legacyRead = await services.configs.read(actor, productId);
+      assert.equal(
+        legacyRead.config.publishEligibility.allowed,
+        false,
+        'legacy usage contract denies new Lean publish',
+      );
+      legacyUsageContract = false;
+      delete policy.plans[0].usageHandle;
+      delete policy.plans[0].includedUsage;
+      policy.plans[0].billing = 'recurring-only';
+      services = compose();
       for (const [mode, allowed] of [
         ['current', true],
         ['pending', true],
