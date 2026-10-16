@@ -47,8 +47,7 @@ export function quoteMaterial(quote: AcceptedQuote) {
         ...group,
         variants: variants.map(({ contextId: _contextId, ...variant }) => variant),
       })),
-      // Fresh FX provenance/rate is separately qualified by preparation. Renewal compares
-      // resolved components and exact buckets above; the original evidence remains frozen.
+      // Retain the economic record shape; current Lean issuance always has no FX.
       fx: fx
         ? {
             version: fx.version,

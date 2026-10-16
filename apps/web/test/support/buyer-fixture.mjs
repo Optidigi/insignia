@@ -56,33 +56,17 @@ export async function fixture(t, options = {}) {
         methods: [{ id: 'print' }],
         placements: [{ id: 'front', allowedMethodIds: ['print'], allowedStepIds: ['small'], logoLaterAllowed: true }],
         productionOptions: [],
-        pricingRules: options.lean
-          ? [
-              {
-                id: 'lean-unit',
-                scope: { kind: 'step', placementId: 'front', methodId: 'print', stepId: 'small' },
-                role: 'unit',
-                rate: { kind: 'fixed', amount: { shopDecimal: '1.00', presentmentOverrides: [] } },
-              },
-            ]
-          : [
-              ...(options.demo91
-                ? [
-                    {
-                      id: 'unit',
-                      scope: { kind: 'placement', placementId: 'front' },
-                      role: 'unit',
-                      rate: { kind: 'fixed', amount: { shopDecimal: '10.00', presentmentOverrides: [] } },
-                    },
-                  ]
-                : []),
-              {
-                id: 'setup',
-                scope: { kind: 'general' },
-                role: 'setup',
-                rate: { kind: 'fixed', amount: { shopDecimal: '1.00', presentmentOverrides: [] } },
-              },
-            ],
+        pricingRules: [
+          {
+            id: 'lean-unit',
+            scope: { kind: 'step', placementId: 'front', methodId: 'print', stepId: 'small' },
+            role: 'unit',
+            rate: {
+              kind: 'fixed',
+              amount: { shopDecimal: options.representativePricing ? '10.00' : '1.00', presentmentOverrides: [] },
+            },
+          },
+        ],
       },
       geometry: {
         version: 'm5-geometry-v1',
@@ -135,7 +119,7 @@ export async function fixture(t, options = {}) {
     [shopId, identity.authorizationGeneration, publicKey, fingerprint],
   );
   let now = options.clock ? options.clock() : new Date('2026-10-12T12:00:00Z'),
-    amount = options.demo91 ? '20.00' : '10.00',
+    amount = options.representativePricing ? '20.00' : '10.00',
     signings = 0,
     catalogUnavailable = false,
     available = true,
@@ -178,15 +162,11 @@ export async function fixture(t, options = {}) {
     });
     return {
       ...value,
-      // Existing fixtures retain historical engine economics; Lean cases exercise the production profile explicitly.
-      pricingProfile: options.lean ? 'lean-v1' : undefined,
-      leanContext: options.lean
-        ? {
-            assertSupported: async () => {
-              if (!qualified) throw new Error('Lean context unqualified');
-            },
-          }
-        : undefined,
+      leanContext: {
+        assertSupported: async () => {
+          if (!qualified) throw new Error('Lean context unqualified');
+        },
+      },
       shop: {
         getContext: async () => ({
           shopId,
@@ -202,8 +182,8 @@ export async function fixture(t, options = {}) {
           freshness: 'fresh',
           recognizedPolicyId: 'synthetic',
           policyVersion: 'test',
-          trial: !options.lean,
-          qualifyingUsageDisposition: options.lean ? 'NOT_METERED' : 'WAIVE_TRIAL',
+          trial: false,
+          qualifyingUsageDisposition: 'NOT_METERED',
         }),
       },
       catalog: {

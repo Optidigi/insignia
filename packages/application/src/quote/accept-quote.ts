@@ -2,13 +2,10 @@ import { createHash } from 'node:crypto';
 import {
   CURRENCY_RESOLUTION_VERSION,
   type CustomizationGroup,
-  FX_RESOLUTION_VERSION,
-  type FxResolution,
   type ProposalEconomics,
   type PublishedConfig,
   parseMinor,
   priceLeanProposal,
-  priceProposal,
   ROUNDING_POLICY_VERSION,
 } from '@insignia/domain';
 import {
@@ -16,11 +13,6 @@ import {
   type CatalogVariantContextSnapshot,
   resolveFreshCatalogContext,
 } from '../pricing/catalog-context.js';
-import {
-  type CustomizationFxProvider,
-  type CustomizationFxSnapshot,
-  requireUsableCustomizationFx,
-} from '../pricing/customization-fx.js';
 
 export type ActiveQuoteTenant = {
   shopId: string;
@@ -126,7 +118,7 @@ export type AcceptedQuote = {
     contentHash: string;
   }[];
   catalogSnapshots: readonly CatalogVariantContextSnapshot[];
-  fxSnapshot: CustomizationFxSnapshot | null;
+  fxSnapshot: null;
   economics: AcceptedQuoteEconomics;
 };
 export type QuoteAuthorizationSet = {
@@ -182,8 +174,6 @@ export interface CartAuthorizationPort {
 }
 
 export interface QuoteAuthorityPorts {
-  /** Production composition fixes Lean inputs; absent only for retained historical engine callers. */
-  pricingProfile?: 'lean-v1';
   /** Independent server qualification, never buyer JSON or a currency-name allowlist. */
   leanContext?: {
     assertSupported(input: {
@@ -203,7 +193,6 @@ export interface QuoteAuthorityPorts {
   artwork: QuoteArtworkPort;
   catalog: CatalogContextPort;
   currency: { exponent(code: string): number | null };
-  fx: CustomizationFxProvider;
   /** Trusted publication/key/Function observation, checked in the serialized signing window. */
   readiness: { assertReady(input: { quote: AcceptedQuote }): Promise<void> };
   authorization: CartAuthorizationPort;
@@ -225,10 +214,7 @@ function requireTenant(value: ActiveQuoteTenant | null, request: QuoteRequest): 
   return value;
 }
 
-function requireEntitlement(
-  value: QuoteEntitlement,
-  pricingProfile: QuoteAuthorityPorts['pricingProfile'],
-): asserts value is QuoteEntitlement & {
+function requireEntitlement(value: QuoteEntitlement): asserts value is QuoteEntitlement & {
   recognizedPolicyId: string;
   qualifyingUsageDisposition: 'REQUIRES_EVENT_TIME' | 'WAIVE_TRIAL' | 'NOT_METERED';
 } {
@@ -240,8 +226,7 @@ function requireEntitlement(
     value.qualifyingUsageDisposition === 'DENY'
   )
     throw new Error('fresh recognized entitlement required');
-  if (pricingProfile === 'lean-v1' && value.qualifyingUsageDisposition !== 'NOT_METERED')
-    throw new Error('Lean recurring-only entitlement required');
+  if (value.qualifyingUsageDisposition !== 'NOT_METERED') throw new Error('Lean recurring-only entitlement required');
 }
 
 export function normalizeMarketId(value: string): string {
@@ -545,7 +530,7 @@ async function prepareValidatedQuote(
   requestDigest: string,
 ) {
   const entitlement = await ports.entitlement.getFresh(tenant);
-  requireEntitlement(entitlement, ports.pricingProfile);
+  requireEntitlement(entitlement);
   const shop = await ports.shop.getContext(tenant);
   if (
     shop.shopId !== tenant.shopId ||
@@ -601,23 +586,21 @@ async function prepareValidatedQuote(
   const presentment = catalogSnapshots[0]?.currencyCode;
   if (!presentment || catalogSnapshots.some((snapshot) => snapshot.currencyCode !== presentment))
     throw new Error('mixed presentment currency');
-  if (ports.pricingProfile === 'lean-v1') {
-    if (!ports.leanContext) throw new Error('Lean primary-Market and currency qualification unavailable');
-    await ports.leanContext.assertSupported({
-      tenant,
-      country: request.country,
-      marketId,
-      currency: presentment,
-      shopCurrency: shop.currency,
-    });
-  }
+  if (!ports.leanContext) throw new Error('Lean primary-Market and currency qualification unavailable');
+  await ports.leanContext.assertSupported({
+    tenant,
+    country: request.country,
+    marketId,
+    currency: presentment,
+    shopCurrency: shop.currency,
+  });
   const exponent = ports.currency.exponent(presentment);
   const shopExponent = ports.currency.exponent(shop.currency);
   if (exponent === null || shopExponent === null || ![0, 2, 3].includes(exponent) || ![0, 2, 3].includes(shopExponent))
     throw new Error('unsupported currency exponent');
   if (revisions.some((revision) => revision.config.shopCurrency !== shop.currency))
     throw new Error('published shop currency mismatch');
-  // Resolve FX only when at least one applicable source amount lacks a presentment override.
+  // Price only the qualified shop-currency context with final per-garment surcharges.
   const pricing = {
     shopId: request.shopId,
     groups,
@@ -639,41 +622,7 @@ async function prepareValidatedQuote(
     marketContext: `${request.country}:${marketId}`,
     roundingPolicy: ROUNDING_POLICY_VERSION as typeof ROUNDING_POLICY_VERSION,
   };
-  let fxSnapshot: CustomizationFxSnapshot | null = null;
-  let economics: ProposalEconomics;
-  try {
-    economics = ports.pricingProfile === 'lean-v1' ? priceLeanProposal(pricing) : priceProposal(pricing);
-  } catch (error) {
-    if (shop.currency === presentment || !(error instanceof Error) || !error.message.startsWith('missing FX for '))
-      throw error;
-    fxSnapshot = requireUsableCustomizationFx(
-      await ports.fx.resolve({
-        shopId: request.shopId,
-        installationGeneration: request.installationGeneration,
-        shopCurrency: shop.currency,
-        presentmentCurrency: presentment,
-      }),
-      {
-        shopId: request.shopId,
-        installationGeneration: request.installationGeneration,
-        shopCurrency: shop.currency,
-        presentmentCurrency: presentment,
-        now: ports.clock().toISOString(),
-        maxAgeMs: 5 * 60 * 1000,
-      },
-    );
-    const fx: FxResolution = {
-      version: FX_RESOLUTION_VERSION,
-      fromCurrency: shop.currency,
-      toCurrency: presentment,
-      rateDecimal: fxSnapshot.rateDecimal,
-      sourceId: fxSnapshot.source,
-      rateVersion: fxSnapshot.sourceVersion,
-      asOf: new Date(fxSnapshot.effectiveAt).toISOString(),
-      validUntil: new Date(fxSnapshot.expiresAt).toISOString(),
-    };
-    economics = priceProposal({ ...pricing, fx });
-  }
+  const economics = priceLeanProposal(pricing);
   if (
     economics.lines.length > 32 ||
     economics.customizedQuantity > 10000 ||
@@ -733,7 +682,7 @@ async function prepareValidatedQuote(
       contentHash: config.revisionContentHash,
     })),
     catalogSnapshots,
-    fxSnapshot,
+    fxSnapshot: null,
     economics: acceptedEconomics(economics),
   };
   return {
@@ -762,7 +711,7 @@ async function prepareValidatedQuote(
       if (localDay(ports.clock(), shop.timezone).ordinal !== quote.acceptedDay)
         throw new Error('shop-local acceptance day changed before signing');
       const currentEntitlement = await ports.entitlement.getFresh(current);
-      requireEntitlement(currentEntitlement, ports.pricingProfile);
+      requireEntitlement(currentEntitlement);
       if (
         currentEntitlement.policyVersion !== entitlement.policyVersion ||
         currentEntitlement.recognizedPolicyId !== entitlement.recognizedPolicyId ||
@@ -793,25 +742,14 @@ async function prepareValidatedQuote(
           ports.clock,
         );
       }
-      if (fxSnapshot)
-        requireUsableCustomizationFx(fxSnapshot, {
-          shopId: request.shopId,
-          installationGeneration: request.installationGeneration,
-          shopCurrency: shop.currency,
-          presentmentCurrency: presentment,
-          now: ports.clock().toISOString(),
-          maxAgeMs: 5 * 60 * 1000,
-        });
-      if (ports.pricingProfile === 'lean-v1') {
-        if (!ports.leanContext) throw new Error('Lean primary-Market and currency qualification unavailable');
-        await ports.leanContext.assertSupported({
-          tenant: finalTenant,
-          country: request.country,
-          marketId,
-          currency: presentment,
-          shopCurrency: shop.currency,
-        });
-      }
+      if (!ports.leanContext) throw new Error('Lean primary-Market and currency qualification unavailable');
+      await ports.leanContext.assertSupported({
+        tenant: finalTenant,
+        country: request.country,
+        marketId,
+        currency: presentment,
+        shopCurrency: shop.currency,
+      });
       await ports.readiness.assertReady({ quote });
       const authorization = await ports.authorization.issue({ quote });
       validAuthorization(quote, authorization);

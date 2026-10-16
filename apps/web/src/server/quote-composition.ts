@@ -3,7 +3,6 @@ import {
   type AcceptedQuote,
   type ArtworkScope,
   bindProviderSubscription,
-  type CustomizationFxProvider,
   createArtworkUsabilityPort,
   type EntitlementPolicyConfig,
   projectEntitlement,
@@ -65,7 +64,6 @@ export function createQuoteAuthorityPorts(input: {
   artwork?: QuoteArtworkPort;
   /** Current verified resource authority; bind per request, never from quote JSON or a shared cache. */
   artworkAuthority?: ArtworkScope;
-  fx?: CustomizationFxProvider;
   signing: { keyId: number; signer: AuthorizationSigner };
   readiness: { assertReady(input: { quote: AcceptedQuote }): Promise<void> };
   clock?: () => Date;
@@ -78,7 +76,6 @@ export function createQuoteAuthorityPorts(input: {
   const ids = input.ids ?? { quoteId: randomUUID, setId: randomUUID };
   return {
     clock,
-    pricingProfile: 'lean-v1',
     leanContext: input.leanContext,
     ids: { quoteId: ids.quoteId },
     tenant: {
@@ -160,11 +157,6 @@ export function createQuoteAuthorityPorts(input: {
     },
     currency: { exponent: (code) => currencyExponent(code) ?? null },
     artwork,
-    fx: input.fx ?? {
-      resolve: async () => {
-        throw new Error('approved FX source is not configured');
-      },
-    },
     readiness: input.readiness,
     authorization: {
       admit({ economics, capacity }) {

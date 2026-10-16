@@ -63,16 +63,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
         productionOptions: [],
         pricingRules: [
           {
-            id: 'negative-placement',
-            scope: { kind: 'placement', placementId: 'front' },
+            id: 'final-unit',
+            scope: { kind: 'step', placementId: 'front', methodId: 'method', stepId: 'step' },
             role: 'unit',
-            rate: { kind: 'fixed', amount: { shopDecimal: '-0.01', presentmentOverrides: [] } },
-          },
-          {
-            id: 'setup',
-            scope: { kind: 'general' },
-            role: 'setup',
-            rate: { kind: 'fixed', amount: { shopDecimal: '0.03', presentmentOverrides: [] } },
+            rate: { kind: 'fixed', amount: { shopDecimal: '0.01', presentmentOverrides: [] } },
           },
         ],
       },
@@ -462,7 +456,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
     ).rejects.toThrow(/inactive tenant/);
   });
 
-  it('acquires catalog credentials during acceptance and persists the exact signed negative allocation', async () => {
+  it('acquires catalog credentials during acceptance and persists the exact signed Lean unit price', async () => {
     const value = await effectiveFixture();
     const credentialKeys = { currentKeyId: 'accept-test', keys: { 'accept-test': Buffer.alloc(32, 29) } };
     const core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }), { credentialKeys });
@@ -551,7 +545,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
           recognizedPolicyId: 'synthetic',
           policyVersion: 'synthetic-v1',
           trial: true,
-          qualifyingUsageDisposition: 'WAIVE_TRIAL' as const,
+          qualifyingUsageDisposition: 'NOT_METERED' as const,
         }),
       },
       publication: { getEffective: core.acceptedQuotes.getEffective },
@@ -597,9 +591,14 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
         },
       },
       currency: { exponent: (code: string) => currencyExponent(code) ?? null },
-      fx: {
-        resolve: async () => {
-          throw new Error('unexpected FX read');
+      leanContext: {
+        assertSupported: async (target: {
+          country: string;
+          marketId: string;
+          currency: string;
+          shopCurrency: string;
+        }) => {
+          expect(target).toMatchObject({ country: 'US', marketId: '42', currency: 'USD', shopCurrency: 'USD' });
         },
       },
       // Release evidence remains synthetic in this persistence fixture, but readiness
@@ -707,9 +706,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
     };
     try {
       const accepted = await acceptQuote(request, ports);
-      expect(accepted.quote.economics.groups[0]?.customizationUnitMinor).toBe('-1');
-      expect(accepted.quote.economics.totalMinor).toBe('1');
-      expect(accepted.quote.economics.lines.map((line) => line.unitPriceMinor)).toEqual(['1', '0']);
+      expect(accepted.quote.economics.groups[0]?.customizationUnitMinor).toBe('1');
+      expect(accepted.quote.economics.totalMinor).toBe('2');
+      expect(accepted.quote.economics.lines.map((line) => line.unitPriceMinor)).toEqual(['1']);
       const envelope = decodeEnvelope(accepted.authorization.envelopeCarrier);
       const members = accepted.authorization.members.map((item) => decodeMemberCarrier(item.carrier));
       expect(verify(null, wholeQuoteSignBytes(envelope.header, members), keys.publicKey, envelope.signature)).toBe(
@@ -741,7 +740,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
           totalMinor: accepted.quote.economics.totalMinor,
           lineUnitMinor: accepted.quote.economics.lines.map((line) => line.unitPriceMinor),
           functionVector: {
-            name: 'pg_persisted_negative_adjustment',
+            name: 'pg_persisted_lean_unit_price',
             header: envelope.header,
             members,
             envelope: accepted.authorization.envelopeCarrier,

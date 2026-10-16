@@ -20,10 +20,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
   ] as const) {
     it(`qualifies reviewed proposal acceptance with ${mode}`, async () => {
       const cleanup: (() => Promise<void>)[] = [];
-      const f = await fixture(
-        { after: (fn: () => Promise<void>) => cleanup.push(fn) },
-        { clock: () => new Date(), lean: true },
-      );
+      const f = await fixture({ after: (fn: () => Promise<void>) => cleanup.push(fn) }, { clock: () => new Date() });
       const keys = { currentKeyId: 'composition', keys: { composition: Buffer.alloc(32, 23) } };
       const core = createDurableCore(
         new Pool({

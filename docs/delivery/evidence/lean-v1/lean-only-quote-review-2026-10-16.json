@@ -1,0 +1,83 @@
+{
+  "classification": "LEAN_ONLY_QUOTE_AUTHORITY_REVIEWED",
+  "base": "10c8a8265b0d86f8e1ae3caaa1f6ef06f1fb6948",
+  "ownerDirection": "../../../architecture/decision-ledger.md#owner-first-version-direction--16-october-2026",
+  "change": [
+    "Remove optional pricing profile/historical evaluator route from application and web quote composition.",
+    "Require recurring-only entitlement and independent primary context for every prepare/accept/renew.",
+    "Use only constrained final unit-price evaluation; no new-offer FX provider, port, fallback or currency override.",
+    "Delete unused application FX capability and Shopify exchange-rate adapter/exports/tests; current artifact provenance binds Lean validator and primary-Market reader instead.",
+    "Use intended unit-price fixtures for signing, actual PostgreSQL acceptance, HTTP/cart/purchase/payment/refund and renewal recovery.",
+    "Preserve archived evidence, actual stored financial facts, whole-quote v2 and current replay/authorization/retention controls."
+  ],
+  "red": [
+    "Without a profile flag the old default path accepted advanced setup configuration.",
+    "Without a profile flag the old default path accepted a usage-based entitlement."
+  ],
+  "independentReview": {
+    "reviewer": "/root/lean_only_authority_review",
+    "correctnessSecurity": "CLEAR after stale database unit expectation correction",
+    "standards": "CLEAR after removing obsolete FX comment",
+    "findingsPreserved": [
+      {
+        "path": "packages/database/test/accepted-quote.test.ts",
+        "finding": "Negative customizationUnitMinor expectation -1 survived conversion to positive0.01 unit fixture.",
+        "correction": "Expected1 minor perunit and2 minor total; actualPGawaitCI.",
+        "state": "RESOLVED"
+      },
+      {
+        "path": "packages/application/src/quote/accept-quote.ts",
+        "finding": "Obsolete FX-resolution comment after code removal.",
+        "correction": "Describe qualified shop-currency final surcharge pricing.",
+        "state": "RESOLVED"
+      }
+    ],
+    "impactFollowup": "Refund literals now3000 each for oneEUR30garment, immutableEUR90order/first-paid assertions retained; CLEAR.",
+    "independentlyExecuted": "Focused40quote/renewtests anddiffcheck PASS",
+    "providerEffects": 0,
+    "isolation": "Read-only instructions; no credential/network isolation claimed."
+  },
+  "localChecks": {
+    "application": "318 PASS / 24 files",
+    "quoteAcceptanceRenewal": "40 PASS",
+    "shopify": "480 PASS / 28 files",
+    "web": "168 PASS / 52 SKIP / 0 FAIL",
+    "builds": "Application, Shopify and web PASS",
+    "style": "Affected files PASS; existing warnings retained",
+    "boundaries": "PASS including18 tests",
+    "secrets": "PASS",
+    "architectureHistory": "PASS",
+    "actualPostgres": "8 targeted local SKIP; final hostedCI required"
+  },
+  "changedCodeSha256": {
+    "apps/web/src/server/buyer/production.ts": "274fae7bb54db124be84bf7c44fea31e7d2382717d17ecca616d74a00db1b4cf",
+    "apps/web/src/server/quote-composition.ts": "95ea5b9845dfa1fde64e25787ae29e942d681633e186061a79af771e6fe0552d",
+    "apps/web/test/buyer-flow.test.mjs": "7469ceac8f7a4cc773aa2f303707621f6db2d3ac0c68682f83c33a3ba788b20a",
+    "apps/web/test/purchase-flow.test.mjs": "05547b7d0de01ca2187d7b1cf4701b16ccd5e33d2fccee8463aecd3a076e509b",
+    "apps/web/test/quote-composition.test.mjs": "dfc4886491fe0cfaf41647a6faed20e6899a8ca9f3dbce62ce369d78e7db55a1",
+    "apps/web/test/support/buyer-fixture.mjs": "768adffa9c5d809112f641d2faf11730256169926c7e5feba0069d3937884717",
+    "packages/application/src/index.ts": "1f0464460f4950258b553afcbacafe418d870012935c777e5ff982460fb19410",
+    "packages/application/src/pricing/customization-fx.ts": "DELETED",
+    "packages/application/src/quote/accept-quote.test.ts": "be9767236209bb18b15f1894d8fb22b9af418b54f42769b49f6725f2ca7dad78",
+    "packages/application/src/quote/accept-quote.ts": "ee247e2cabe5abbfbaee039bb46c476224bc9b88a8776eb052bcaca1fa1b0a30",
+    "packages/application/src/quote/material.ts": "4e2b798313a58a73fe84e52a5fcb0db8e84aafb0d78f9e27a20c44542042b4f4",
+    "packages/application/src/quote/renew-quote.test.ts": "16ffb2d9f017a9a30f939ae0bff09f4ca94aaca26605a933a1a9ec3491757abc",
+    "packages/application/test/customization-fx.test.ts": "DELETED",
+    "packages/database/test/accepted-quote.test.ts": "07379976e9b0b88fc5c5389e0addc76ab8b0fb37f4ec195c3765c8425225c01a",
+    "packages/database/test/buyer-acceptance-composition.test.ts": "53fd425569cfbcc9cec2904f5cb7ed1e2e97b5ec0cddb28472f48e086a857b1e",
+    "packages/shopify/src/index.ts": "1d2d2c4caa1c5d1861c9f345fb87488f256ae5d1cd2968e7fa3a538d76ce1743",
+    "packages/shopify/src/open-exchange-rates.ts": "DELETED",
+    "packages/shopify/test/open-exchange-rates.test.ts": "DELETED",
+    "scripts/m1-functions/artifact-manifest.py": "12f426ac5db7549fcd4b081b211980b256cfa1515e62a03eeb7928ae9cb59468"
+  },
+  "finalCandidateCI": "PENDING",
+  "nativeEffects": 0,
+  "nativeDeployment": false,
+  "remaining": [
+    "Production primary-context composition/native Lean path remains unqualified.",
+    "Hybrid entitlement policy recognition and usage-only code are separate explicit cleanup work; this slice removes quote compatibility/FX routing.",
+    "Exact recurring-only Standard subscription remains unselected; no selection/charge/checkout allocation implied.",
+    "No native gate, universal currency/merchant eligibility or rollout claim."
+  ],
+  "cleanup": "No new provider/storage data; existing private-copy20Oct/original21\u201322Oct/rotation obligations remain."
+}

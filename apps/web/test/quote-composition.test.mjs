@@ -1,12 +1,11 @@
 import assert from 'node:assert/strict';
 import { createHash, createPrivateKey, createPublicKey, sign, verify } from 'node:crypto';
-import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { acceptQuote } from '@insignia/application';
 import { decodeEnvelope, decodeMemberCarrier, wholeQuoteSignBytes } from '@insignia/cart-authorization';
 import { createQuoteAuthorityPorts } from '../src/server/quote-composition.ts';
 
-test('production Lean rejects advanced offers while the historical evaluator preserves its frozen quote', async () => {
+test('production quote composition rejects unsupported prices and signs complete Lean offers', async () => {
   const now = new Date('2026-11-01T05:30:00.000Z');
   const hash = 'a'.repeat(64);
   const productId = '42';
@@ -83,7 +82,6 @@ test('production Lean rejects advanced offers while the historical evaluator pre
       },
     },
   };
-  let historicalBilling = false;
   const entitlementPolicy = {
     policyVersion: 'synthetic-v1',
     maxAgeMs: 300000,
@@ -109,12 +107,7 @@ test('production Lean rejects advanced offers while the historical evaluator pre
         trialEndsAt: '2026-11-05T00:00:00.000Z',
         currentBillingCycle: null,
         pendingUpdate: null,
-        items: [
-          { handle: 'synthetic-plan', price: { kind: 'flat', active: false }, usage: null },
-          ...(historicalBilling
-            ? [{ handle: 'synthetic-usage', price: { kind: 'tiered', active: false }, usage: { quantity: '0' } }]
-            : []),
-        ],
+        items: [{ handle: 'synthetic-plan', price: { kind: 'flat', active: false }, usage: null }],
       };
     },
     credentials: {
@@ -200,28 +193,36 @@ test('production Lean rejects advanced offers while the historical evaluator pre
     groups: [{ group, sellingPlanId: null }],
     capacity: { ordinaryLineCount: 0, inputBytes: 1000 },
   };
-  assert.equal(ports.pricingProfile, 'lean-v1');
   await assert.rejects(acceptQuote(request, ports), /Lean primary-Market and currency qualification unavailable/);
   assert.equal(signatures, 0);
   // Synthetic qualification isolates the separate advanced-price exclusion boundary.
   ports.leanContext = { assertSupported: async () => {} };
   await assert.rejects(acceptQuote(request, ports), /Lean prices require/);
   assert.equal(signatures, 0);
-  // Only this frozen M4 characterization explicitly selects the retained historical evaluator.
-  ports.pricingProfile = undefined;
-  historicalBilling = true;
-  delete entitlementPolicy.plans[0].billing;
-  entitlementPolicy.plans[0].usageHandle = 'synthetic-usage';
-  entitlementPolicy.plans[0].includedUsage = 3;
+  // The only supported issuance shape is one nonnegative final unit surcharge.
+  config.pricingRules = [
+    {
+      id: 'decoration-unit',
+      scope: { kind: 'step', placementId: 'front', methodId: 'method', stepId: 'step' },
+      role: 'unit',
+      rate: { kind: 'fixed', amount: { shopDecimal: '0.01', presentmentOverrides: [] } },
+    },
+  ];
+  contextReads = catalogReads = subscriptionReads = artworkReads = 0;
+  config.pricingRules[0].rate.amount.shopDecimal = '-0.01';
+  await assert.rejects(acceptQuote(request, ports), /nonnegative/);
+  assert.equal(signatures, 0);
+  assert.equal(saved, null);
+  config.pricingRules[0].rate.amount.shopDecimal = '0.01';
   contextReads = catalogReads = subscriptionReads = artworkReads = 0;
   const result = await acceptQuote(request, ports);
-  assert.equal(result.quote.economics.totalMinor, '1');
+  assert.equal(result.quote.economics.totalMinor, '2');
   assert.equal(result.quote.economics.groups[0].canonicalIdentitySha256.length, 64);
   assert.ok(!JSON.stringify(result.quote).includes('"art"'));
-  assert.equal(result.quote.economics.groups[0].customizationUnitMinor, '-1');
+  assert.equal(result.quote.economics.groups[0].customizationUnitMinor, '1');
   assert.deepEqual(
     result.quote.economics.lines.map((line) => line.unitPriceMinor),
-    ['1', '0'],
+    ['1'],
   );
   assert.equal(result.quote.acceptedDate, '2026-11-01');
   assert.equal(result.quote.validThroughDay - result.quote.acceptedDay, 2);
@@ -230,30 +231,12 @@ test('production Lean rejects advanced offers while the historical evaluator pre
   assert.equal(envelope.header.marketId, '42');
   assert.equal(envelope.header.generationHex, '11111111111141118111111111111111');
   assert.ok(verify(null, wholeQuoteSignBytes(envelope.header, members), publicKey, envelope.signature));
-  const example = {
-    schemaVersion: 'm4-002-synthetic-quote-example-v1',
-    context: 'synthetic provider, synthetic plan, deterministic synthetic test key; no live quote or Shopify write',
-    publicKeyHex: publicKey.export({ format: 'der', type: 'spki' }).subarray(-32).toString('hex'),
-    quote: result.quote,
-    authorization: result.authorization,
-    functionVector: {
-      name: 'accepted_negative_adjustment',
-      header: envelope.header,
-      members,
-      envelope: result.authorization.envelopeCarrier,
-      memberCarriers: result.authorization.members.map((item) => item.carrier),
-      ordinaryLines: 0,
-      acceptedDate: result.quote.acceptedDate,
-      firstValidDay: result.authorization.firstValidDay,
-      lastValidDay: result.authorization.lastValidDay,
-    },
-  };
-  const evidencePath = new URL('../../../docs/delivery/evidence/m4-002/synthetic-accepted-quote.json', import.meta.url);
-  const historical = JSON.parse(readFileSync(evidencePath, 'utf8'));
-  // The M4-002 evidence is frozen with a text key ID; v1.4 uses numeric u16 metadata.
-  assert.equal(historical.authorization.keyId, '7');
-  historical.authorization.keyId = 7;
-  assert.deepEqual(historical, example);
+  assert.equal(envelope.header.totalMinor, '2');
+  assert.equal(envelope.header.totalQuantity, 2);
+  assert.deepEqual(
+    members.map(({ variantId, quantity, unitMinor }) => ({ variantId, quantity, unitMinor })),
+    [{ variantId, quantity: 2, unitMinor: '1' }],
+  );
   assert.equal(signatures, 1);
   assert.deepEqual(await acceptQuote(request, ports), result);
   assert.deepEqual([contextReads, catalogReads, subscriptionReads, artworkReads, signatures], [1, 1, 2, 2, 1]);

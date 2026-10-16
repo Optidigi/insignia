@@ -13,7 +13,6 @@ export * from './keys/readiness.js';
 export * from './keys/trusted-release.js';
 export * from './merchant-preview/assets.js';
 export * from './pricing/catalog-context.js';
-export * from './pricing/customization-fx.js';
 export * from './publication/activation.js';
 export * from './publication/availability.js';
 export * from './publication/availability-recovery.js';
