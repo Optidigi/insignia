@@ -83,24 +83,18 @@ test('production Lean rejects advanced offers while the historical evaluator pre
       },
     },
   };
+  let historicalBilling = false;
+  const entitlementPolicy = {
+    policyVersion: 'synthetic-v1',
+    maxAgeMs: 300000,
+    plans: [{ planHandle: 'synthetic-plan', billing: 'recurring-only', policyId: 'synthetic', features: [] }],
+  };
   const ports = createQuoteAuthorityPorts({
     core,
     appId: 'gid://shopify/App/1',
     clock: () => now,
     ids: { quoteId: () => '22222222-2222-4222-8222-222222222222', setId: () => '33333333-3333-4333-8333-333333333333' },
-    entitlementPolicy: {
-      policyVersion: 'synthetic-v1',
-      maxAgeMs: 300000,
-      plans: [
-        {
-          planHandle: 'synthetic-plan',
-          usageHandle: 'synthetic-usage',
-          policyId: 'synthetic',
-          features: [],
-          includedUsage: 3,
-        },
-      ],
-    },
+    entitlementPolicy,
     readSubscription: async () => {
       subscriptionReads++;
       return {
@@ -117,7 +111,9 @@ test('production Lean rejects advanced offers while the historical evaluator pre
         pendingUpdate: null,
         items: [
           { handle: 'synthetic-plan', price: { kind: 'flat', active: false }, usage: null },
-          { handle: 'synthetic-usage', price: { kind: 'tiered', active: false }, usage: { quantity: '0' } },
+          ...(historicalBilling
+            ? [{ handle: 'synthetic-usage', price: { kind: 'tiered', active: false }, usage: { quantity: '0' } }]
+            : []),
         ],
       };
     },
@@ -213,6 +209,10 @@ test('production Lean rejects advanced offers while the historical evaluator pre
   assert.equal(signatures, 0);
   // Only this frozen M4 characterization explicitly selects the retained historical evaluator.
   ports.pricingProfile = undefined;
+  historicalBilling = true;
+  delete entitlementPolicy.plans[0].billing;
+  entitlementPolicy.plans[0].usageHandle = 'synthetic-usage';
+  entitlementPolicy.plans[0].includedUsage = 3;
   contextReads = catalogReads = subscriptionReads = artworkReads = 0;
   const result = await acceptQuote(request, ports);
   assert.equal(result.quote.economics.totalMinor, '1');

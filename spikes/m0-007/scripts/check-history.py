@@ -164,9 +164,11 @@ for path, expected in pre_lean_architecture.items():
 LEAN_OWNER_AUTHORITY = "docs/delivery/authority/lean-v1-2026-10-15.md"
 LEAN_OWNER_AUTHORITY_SHA256 = "f3b4ccc9514a55af046e8de9f57f2b29707fb572bc45130ad0e0390ae64d31de"
 assert digest((REPO / LEAN_OWNER_AUTHORITY).read_bytes()) == LEAN_OWNER_AUTHORITY_SHA256, "Lean owner authority mismatch"
+# Current documents include the owner first-version direction of16October2026;
+# earlier fixed-ref records and the original Lean authority above remain exact.
 current_architecture = {
-    "docs/architecture/implementation-plan.md": "10b12aa5f9c007b94547f43581ded3d1f28ef2b0250a15592dd3cd8444b99371",
-    "docs/architecture/decision-ledger.md": "8cebe9f527727e73bb53b1313b8f0d1fa727b26bbb40909093bdaff8e6b09289",
+    "docs/architecture/implementation-plan.md": "82ca1b0be57048d2ddcb3e33236a3ceb36702d6fda9af907b9df20c5cc9a4054",
+    "docs/architecture/decision-ledger.md": "9e2dc910417c942b8aa3ca5e6428f084ed065063ecef7aed76d1179f6d6d41b9",
     "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209"
 }
 M8_PURCHASE_PROOF_OWNER_AUTHORITY = "docs/delivery/authority/m8-purchase-proof-ownership-2026-10-13.md"
@@ -234,7 +236,7 @@ print(json.dumps({
     "preM8PurchaseProofSha256": pre_m8_purchase_proof_architecture,
     "m8PurchaseProofOwnerAuthority": M8_PURCHASE_PROOF_OWNER_AUTHORITY,
     "m8PurchaseProofOwnerAuthoritySha256": M8_PURCHASE_PROOF_OWNER_AUTHORITY_SHA256,
-    "currentArchitectureVersion": "1.7 Lean V1 owner amendment (15 October 2026)",
+    "currentArchitectureVersion": "1.7 Lean V1 with first-version owner direction (16 October 2026)",
     "preLeanRef": PRE_LEAN_BASE,
     "preLeanSha256": pre_lean_architecture,
     "leanOwnerAuthoritySha256": LEAN_OWNER_AUTHORITY_SHA256,

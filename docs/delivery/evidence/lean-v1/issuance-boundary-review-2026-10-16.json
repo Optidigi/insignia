@@ -1,0 +1,113 @@
+{
+  "classification": "LEAN_NEW_ACTION_BOUNDARY_CORRECTIONS_REVIEWED",
+  "base": "9f9bfe96ecc7bcfa2dc52bbae206f103faa57b1a",
+  "requirements": "../../authority/lean-v1-2026-10-15.md",
+  "defects": [
+    "Production buyer lazy wrapper omitted the inner Lean pricing profile.",
+    "New Lean issuance accepted legacy metered/waived-trial entitlement.",
+    "Primary-Market qualification was not rechecked inside final acceptance.",
+    "New publication eligibility did not distinguish historical hybrid entitlement from recurring-only entitlement."
+  ],
+  "behavior": [
+    "New proposals/acceptance/renewal preserve the fixed Lean profile; absent production context remains unavailable.",
+    "New Lean prepare/accept/renew and publication require NOT_METERED; historical projection/readers remain intact.",
+    "Independent context is checked again in serialized acceptance before signing.",
+    "Completed accept/renew replay returns original terms and carriers without new provider qualification or signing."
+  ],
+  "red": [
+    "Production buyer public seam reached advanced setup pricing/artwork checks instead of refusing absent Lean qualification.",
+    "Both legacy WAIVE_TRIAL and REQUIRES_EVENT_TIME prepared Lean offers instead of rejecting.",
+    "Acceptance signed after the independent context port changed during persistence wait."
+  ],
+  "localChecks": {
+    "application": "320 PASS across25 files",
+    "quoteAcceptanceRenewal": "39 PASS",
+    "productionBuyer": "11 PASS",
+    "webBuild": "PASS; zero errors/warnings/hints",
+    "adminActualPostgres": "9 local SKIP; actual CI required",
+    "secrets": "PASS",
+    "fullWebInitial": "167 PASS / 1 FAIL / 52 SKIP; old hybrid fixture failed at the new recurring-only guard before its intended context test",
+    "quoteCompositionCorrection": "2 PASS after synthetic recurring-only input for new offers; original hybrid fixture retained for exact historical characterization",
+    "boundaries": "PASS including18 effect-boundary tests",
+    "style": "PASS; existing informational/style warnings retained",
+    "databaseAcceptanceCorrection": "6 SKIP locally; final CI must prove actual PostgreSQL results",
+    "currentArchitectureHistory": "PASS after approved16October current checksum update; historical assertions unchanged",
+    "liveSetupIntegrity": "PASS"
+  },
+  "independentReview": {
+    "reviewer": "/root/lean_issuance_review",
+    "correctnessSecurity": "CLEAR",
+    "standards": "CLEAR",
+    "readOnly": true,
+    "providerEffects": 0,
+    "credentialIsolationClaimed": false,
+    "scope": "Original eight code/test files and interacting paths; focused impact review CLEAR for optional trusted server-context forwarding and corrected database fixture. No native EUR enablement.",
+    "runtimeFixtureCorrection": "Focused impact review CLEAR: original actor/service pairing preserved, unexpected-meter rejection retained, no production guard weakened. Current state wording narrowed to actual retained facts under16October first-version direction."
+  },
+  "reviewedFiles": {
+    "apps/web/src/server/admin/production.ts": "4e9621eb908fecd4d6dc9b9ff33ef4ff3224b9490ca6e5be7787d95b0488767a",
+    "apps/web/src/server/buyer/production.ts": "f3c7f3ac1e4136fdbce5ffc402607d78c05fb721544335268e90c4da47e4d313",
+    "apps/web/test/admin/production-composition.test.mjs": "d93be8d95fcc7b93d05d890ad70f90e3f5e1a4dd8a849721d561af488483f4a4",
+    "apps/web/test/buyer-production.test.mjs": "e6e0192b353b48f42dc90c042beef1ca784753bee0ad0ac2e4388c91578f15f6",
+    "packages/application/src/quote/accept-quote.ts": "f7dd358edcf9de395f4af562dcd64c0b3da705f8be8eab2d133bf2b471097c6e",
+    "packages/application/src/quote/accept-quote.test.ts": "3953fc08d2cce3fba11710f90dd74e777e892a9d720701fe0f3ede2ed5dd12fa",
+    "packages/application/src/quote/renew-quote.test.ts": "cbe372ad1d4497dc786221b0ff46ce5fdbbe441704058ecadb3ced3514ddaef3",
+    "apps/web/test/quote-composition.test.mjs": "df0bf226c0bcbfa217dfe1a26cd7bc5aa1a84dbd6ad3ce518c9c5fc75590c065",
+    "packages/database/test/buyer-acceptance-composition.test.ts": "26de7875834af58a1b1128875689090f3aef5b66c0ccb35c946872efdb83aaa1"
+  },
+  "finalCandidateCI": "PENDING",
+  "nativeCorrectionDeployment": false,
+  "limits": [
+    "No production primary-Market composition or currency enabled by this change.",
+    "Actual recurring-only Standard subscription remains unselected and unqualified.",
+    "No provider mutation, new checkout/publication/inventory effect, usage dispatch or rollout."
+  ],
+  "ciFailures": [
+    {
+      "head": "158abde5cf77e3ba7f892ad18c725f42f6603117",
+      "workflow": "durable-core",
+      "run": 38883030782,
+      "attempt": 1,
+      "result": "FAILURE",
+      "database": "310 PASS / 6 FAIL / 5 SKIP",
+      "cause": "Production buyer database acceptance fixture still used a hybrid subscription and advanced pricing; recurring-only guard rejected before intended lock/credential/release assertions.",
+      "correction": "Use existing Lean fixture, a synthetic recurring-only contract and explicitly injected server qualification; production default remains absent/fail-closed."
+    },
+    {
+      "head": "ce1365be9265d86a8a92b7e207f00482e4802fe0",
+      "workflow": "runtime",
+      "run": 38883541144,
+      "attempt": 1,
+      "result": "FAILURE",
+      "cause": "Added admin fixture recreated the service but reused an actor whose online staff grant belongs to the original service WeakMap; all9 cases failed Online staff grant unavailable.",
+      "correction": "Keep original authenticated service/actor; test recurring-only denial of an unexpected provider usage item without constructing a hybrid policy or recreating service."
+    },
+    {
+      "head": "33933c56cf57c06fd8446e9f092c3819d8367489",
+      "workflow": "foundation",
+      "run": 38884703526,
+      "attempt": 1,
+      "result": "FAILURE",
+      "cause": "Current architecture integrity pins still expected pre16October plan/ledger bytes after the approved first-version direction was recorded.",
+      "correction": "Update only current plan/ledger SHA256 literals and current version label; preserve all historical fixed-ref and owner-authority checks.",
+      "precedingTests": "Web168 PASS/52 SKIP; storefront46 PASS/2 SKIP.",
+      "localVerification": "Architecture/history and live-setup integrity PASS. Local artifact-manifest cannot complete because generated m4-003 replay artifact is absent; final CI remains required."
+    }
+  ],
+  "qualifiedPriorCandidate": {
+    "head": "ce1365be9265d86a8a92b7e207f00482e4802fe0",
+    "foundation": {
+      "run": 38883541048,
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    "durableCore": {
+      "run": 38883540932,
+      "attempt": 1,
+      "result": "SUCCESS",
+      "actualPostgres": "316 PASS / 5 SKIP",
+      "restrictedLogin": "1 PASS"
+    },
+    "limit": "Prior-candidate results; corrected final head still requires fresh CI."
+  }
+}

@@ -2,7 +2,7 @@
 
 **Record version:** 1.7 — 15 October 2026 (owner-approved Lean V1 prospective amendment; unaffected contracts and historical evidence retained)
 
-**Status:** [Approved Lean V1](../delivery/authority/lean-v1-2026-10-15.md) governs current shipping work. Option A and unchanged v2/security/history contracts remain. This amendment is not implementation, native acceptance or a gate PASS.
+**Status:** [Approved Lean V1](../delivery/authority/lean-v1-2026-10-15.md) governs current shipping work. Option A and unchanged v2/security/history contracts remain. This amendment is not implementation, native acceptance or a gate PASS. The [16 October first-version direction](decision-ledger.md#owner-first-version-direction--16-october-2026) supersedes earlier development-version compatibility requirements: ship only Lean V1 and remove compatibility-only paths/tests; preserve actual immutable records, current purchase/preview integrity and safe cleanup.
 
 **Authority:** The [15 October Lean V1 owner decision](../delivery/authority/lean-v1-2026-10-15.md) supersedes conflicting earlier pricing/scope/billing/acceptance requirements prospectively. Unaffected authority includes the user's pasted baseline, subsequent answers, final inactive-subscription/downgrade approval, [Option A approval](OPTION-A-APPROVED.md), [whole-quote v2 adoption](WHOLE-QUOTE-V2-ADOPTED.md), and the [single-plan owner decision](../delivery/authority/commercial-single-plan-2026-10-10.md). The exact pre-Lean v1.6 plan/ledger remain available at `0c3672e2f38a7c6421f9b4791a3830c2db5aaaf8`; dated decisions and receipts keep their original meaning. No missing `plan.md` dependency remains.
 

@@ -118,6 +118,7 @@ for (const releaseMode of [
     const origin = signing ? 'https://insignia-app.optidigi.nl' : 'https://synthetic.example';
     const shop = signing ? 'insignia-rewrite-dev.myshopify.com' : `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
     let providerMode = 'current';
+    let unexpectedUsageItem = false;
     let entitlementNow = '2026-09-30T23:59:59.999Z';
     let adminMutations = 0;
     let partnerReads = 0;
@@ -404,18 +405,22 @@ for (const releaseMode of [
                     discount: null,
                     usage: null,
                   },
-                  {
-                    handle: 'meter.m5',
-                    price: {
-                      __typename: 'TieredPrice',
-                      active,
-                      currency: 'USD',
-                      tiersMode: 'GRADUATED',
-                      tiers: [{ upTo: null, amountPerUnit: '0.00', amount: '0.00' }],
-                    },
-                    discount: null,
-                    usage: { quantity: 0, cost: { amount: '0.00', currencyCode: 'USD' } },
-                  },
+                  ...(unexpectedUsageItem
+                    ? [
+                        {
+                          handle: 'meter.m5',
+                          price: {
+                            __typename: 'TieredPrice',
+                            active,
+                            currency: 'USD',
+                            tiersMode: 'GRADUATED',
+                            tiers: [{ upTo: null, amountPerUnit: '0.00', amount: '0.00' }],
+                          },
+                          discount: null,
+                          usage: { quantity: 0, cost: { amount: '0.00', currencyCode: 'USD' } },
+                        },
+                      ]
+                    : []),
                 ],
                 pendingUpdate:
                   providerMode === 'pending'
@@ -604,10 +609,9 @@ for (const releaseMode of [
         plans: [
           {
             planHandle: 'plan.m5',
-            usageHandle: 'meter.m5',
+            billing: 'recurring-only',
             policyId: 'synthetic-plan',
             features: ['base', 'required', 'logo', 'options', 'pricing'],
-            includedUsage: 0,
           },
         ],
       };
@@ -653,6 +657,11 @@ for (const releaseMode of [
         idempotencyKey: 'composition-save',
       });
       assert.equal(saved.kind, 'saved');
+      // Recurring-only entitlement rejects an unexpected provider usage item.
+      unexpectedUsageItem = true;
+      const meteredRead = await services.configs.read(actor, productId);
+      assert.equal(meteredRead.config.publishEligibility.allowed, false, 'an added meter denies Lean publication');
+      unexpectedUsageItem = false;
       for (const [mode, allowed] of [
         ['current', true],
         ['pending', true],

@@ -44,6 +44,8 @@ export type ProductionBuyerInputs = {
   env: NodeJS.ProcessEnv;
   ring: SigningKeyRing;
   entitlementPolicy: EntitlementPolicyConfig;
+  /** Independently qualified server context; absent keeps new Lean offers unavailable. */
+  leanContext?: QuoteAuthorityPorts['leanContext'];
   credentials: AdminCredentialSource;
   /** SELECT-only credentials for final checks; no claim or refresh fallback. */
   passiveCredentials?: AdminCredentialSource;
@@ -250,6 +252,7 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
           core: input.core,
           appId: `gid://shopify/App/${appId}`,
           entitlementPolicy: input.entitlementPolicy,
+          leanContext: input.leanContext,
           readSubscription: input.readSubscription,
           credentials: credentialSource,
           catalogTransport: createShopifyAdminGraphqlReadTransport({
@@ -268,6 +271,10 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       })());
     return {
       clock,
+      // Keep the production profile across this lazy wrapper; historical replay is
+      // handled by the application before new-offer qualification.
+      pricingProfile: 'lean-v1',
+      leanContext: input.leanContext,
       ids: {
         quoteId: () => {
           if (!composed) throw new Error('Buyer quote preparation incomplete');

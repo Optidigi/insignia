@@ -220,6 +220,20 @@ async function renewalFixture(withFx = false) {
   };
 }
 describe('immutable quote renewal', () => {
+  it('does not renew a historical offer using a legacy usage entitlement after the Lean transition', async () => {
+    const { ports, original, renewalStore } = await renewalFixture();
+    ports.pricingProfile = 'lean-v1';
+    vi.mocked(ports.authorization.issue).mockClear();
+    await expect(
+      renewQuote({ quoteId: original.quoteId, desired: request }, {
+        ...ports,
+        renewalStore,
+      } as QuoteRenewalPorts),
+    ).rejects.toThrow(/recurring-only entitlement required/);
+    expect(ports.authorization.issue).not.toHaveBeenCalled();
+    expect(renewalStore.renew).not.toHaveBeenCalled();
+  });
+
   it('renews identical resolved prices with fresh valid FX while preserving original evidence, but reviews changed outputs', async () => {
     const { ports, original, renewalStore, setFx, initialSetId } = await renewalFixture(true);
     const oldEvidence = structuredClone(original.fxSnapshot);
@@ -313,6 +327,7 @@ describe('immutable quote renewal', () => {
       renewalStore,
     } as QuoteRenewalPorts);
     renewalStore.findCompleted.mockResolvedValue(result as never);
+    ports.pricingProfile = 'lean-v1';
     vi.mocked(ports.authorization.issue).mockClear();
     vi.mocked(ports.entitlement.getFresh).mockClear();
     expect(

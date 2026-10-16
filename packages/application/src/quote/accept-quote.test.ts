@@ -149,6 +149,41 @@ function fixture() {
   return { ports, saved };
 }
 
+function leanFixture() {
+  const value = fixture();
+  const { ports } = value;
+  ports.pricingProfile = 'lean-v1';
+  ports.leanContext = {
+    assertSupported: async (input) => {
+      expect(input).toMatchObject({ country: 'US', marketId: '42', currency: 'USD', shopCurrency: 'USD' });
+    },
+  };
+  vi.mocked(ports.publication.getEffective).mockResolvedValue({
+    config: {
+      ...config,
+      pricingRules: [
+        {
+          id: 'final-price',
+          role: 'unit',
+          scope: { kind: 'step', placementId: 'front', stepId: 'step', methodId: 'method' },
+          rate: { kind: 'fixed', amount: { shopDecimal: '0.01', presentmentOverrides: [] } },
+        },
+      ],
+    },
+    configId: 'cfg',
+    operationId: 'op',
+  });
+  vi.mocked(ports.entitlement.getFresh).mockResolvedValue({
+    active: true,
+    freshness: 'fresh',
+    recognizedPolicyId: 'lean-flat',
+    policyVersion: 'lean-v1',
+    trial: false,
+    qualifyingUsageDisposition: 'NOT_METERED',
+  });
+  return value;
+}
+
 describe('acceptQuote', () => {
   it('material comparison ignores refreshed evidence but detects changed allocation at the same total', async () => {
     const { ports } = fixture();
@@ -489,41 +524,56 @@ describe('acceptQuote', () => {
     expect(saved).toHaveLength(0);
   });
 
-  it('issues a Lean recurring-only quote without marking the order as metered', async () => {
+  it.each(['WAIVE_TRIAL', 'REQUIRES_EVENT_TIME'] as const)(
+    'does not issue a new Lean offer under a legacy %s usage contract',
+    async (qualifyingUsageDisposition) => {
+      const { ports, saved } = leanFixture();
+      const tenant = await ports.tenant.getActive('shop', '1');
+      if (!tenant) throw new Error('fixture tenant missing');
+      const entitlement = await ports.entitlement.getFresh(tenant);
+      vi.mocked(ports.entitlement.getFresh).mockResolvedValue({ ...entitlement, qualifyingUsageDisposition });
+      await expect(prepareQuote(request, ports)).rejects.toThrow(/recurring-only entitlement required/);
+      await expect(acceptQuote(request, ports)).rejects.toThrow(/recurring-only entitlement required/);
+      expect(ports.publication.getEffective).not.toHaveBeenCalled();
+      expect(ports.authorization.issue).not.toHaveBeenCalled();
+      expect(saved).toHaveLength(0);
+    },
+  );
+
+  it('replays a previously accepted advanced offer under Lean without extending or rewriting it', async () => {
     const { ports, saved } = fixture();
+    const original = await acceptQuote(request, ports);
+    vi.mocked(ports.store.findCompleted).mockResolvedValue(original);
+    vi.mocked(ports.entitlement.getFresh).mockClear();
+    vi.mocked(ports.authorization.issue).mockClear();
     ports.pricingProfile = 'lean-v1';
-    ports.leanContext = {
-      assertSupported: async (input) => {
-        expect(input).toMatchObject({ country: 'US', marketId: '42', currency: 'USD', shopCurrency: 'USD' });
-      },
-    };
-    vi.mocked(ports.publication.getEffective).mockResolvedValue({
-      config: {
-        ...config,
-        pricingRules: [
-          {
-            id: 'final-price',
-            role: 'unit',
-            scope: { kind: 'step', placementId: 'front', stepId: 'step', methodId: 'method' },
-            rate: { kind: 'fixed', amount: { shopDecimal: '0.01', presentmentOverrides: [] } },
-          },
-        ],
-      },
-      configId: 'cfg',
-      operationId: 'op',
-    });
-    vi.mocked(ports.entitlement.getFresh).mockResolvedValue({
-      active: true,
-      freshness: 'fresh',
-      recognizedPolicyId: 'lean-flat',
-      policyVersion: 'lean-v1',
-      trial: false,
-      qualifyingUsageDisposition: 'NOT_METERED',
-    });
+    const replayed = await acceptQuote(request, ports);
+    expect(replayed).toBe(original);
+    expect(replayed.quote.qualifyingUsageDisposition).toBe('WAIVE_TRIAL');
+    expect(ports.entitlement.getFresh).not.toHaveBeenCalled();
+    expect(ports.authorization.issue).not.toHaveBeenCalled();
+    expect(saved).toHaveLength(1);
+  });
+
+  it('issues a Lean recurring-only quote without marking the order as metered', async () => {
+    const { ports, saved } = leanFixture();
     const result = await acceptQuote(request, ports);
     expect(result.quote.qualifyingUsageDisposition).toBe('NOT_METERED');
     expect(result.quote.economics.totalMinor).toBe('2002');
     expect(saved).toHaveLength(1);
+  });
+
+  it('does not sign when the qualified Lean context changes while waiting for acceptance', async () => {
+    const { ports, saved } = leanFixture();
+    const assertSupported = vi.fn(async () => {});
+    ports.leanContext = { assertSupported };
+    ports.store.accept = async (_target, commit) => {
+      assertSupported.mockRejectedValue(new Error('primary Market changed'));
+      return commit();
+    };
+    await expect(acceptQuote(request, ports)).rejects.toThrow('primary Market changed');
+    expect(ports.authorization.issue).not.toHaveBeenCalled();
+    expect(saved).toHaveLength(0);
   });
 
   it('rejects a catalog change at the persistence fence and permits a fresh acceptance', async () => {

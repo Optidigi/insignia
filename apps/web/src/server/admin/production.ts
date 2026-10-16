@@ -427,6 +427,7 @@ export function createProductionAdminServices(
         entitlement.freshness === 'fresh' &&
         entitlement.active &&
         entitlement.recognizedPolicyId !== null &&
+        entitlement.qualifyingUsageDisposition === 'NOT_METERED' &&
         needed.every((feature) => entitlement.features.includes(feature));
       return { allowed, reason: allowed ? null : 'Current subscription does not grant every configured feature' };
     },
