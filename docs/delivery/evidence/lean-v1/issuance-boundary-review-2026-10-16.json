@@ -39,12 +39,13 @@
     "readOnly": true,
     "providerEffects": 0,
     "credentialIsolationClaimed": false,
-    "scope": "Original eight code/test files and interacting paths; focused impact review CLEAR for optional trusted server-context forwarding and corrected database fixture. No native EUR enablement."
+    "scope": "Original eight code/test files and interacting paths; focused impact review CLEAR for optional trusted server-context forwarding and corrected database fixture. No native EUR enablement.",
+    "runtimeFixtureCorrection": "Focused impact review CLEAR: original actor/service pairing preserved, unexpected-meter rejection retained, no production guard weakened. Current state wording narrowed to actual retained facts under16October first-version direction."
   },
   "reviewedFiles": {
     "apps/web/src/server/admin/production.ts": "4e9621eb908fecd4d6dc9b9ff33ef4ff3224b9490ca6e5be7787d95b0488767a",
     "apps/web/src/server/buyer/production.ts": "f3c7f3ac1e4136fdbce5ffc402607d78c05fb721544335268e90c4da47e4d313",
-    "apps/web/test/admin/production-composition.test.mjs": "d208dba9279d0c9138d80f6a705210607b066af1e23e17a92ced33d76a7692cc",
+    "apps/web/test/admin/production-composition.test.mjs": "d93be8d95fcc7b93d05d890ad70f90e3f5e1a4dd8a849721d561af488483f4a4",
     "apps/web/test/buyer-production.test.mjs": "e6e0192b353b48f42dc90c042beef1ca784753bee0ad0ac2e4388c91578f15f6",
     "packages/application/src/quote/accept-quote.ts": "f7dd358edcf9de395f4af562dcd64c0b3da705f8be8eab2d133bf2b471097c6e",
     "packages/application/src/quote/accept-quote.test.ts": "3953fc08d2cce3fba11710f90dd74e777e892a9d720701fe0f3ede2ed5dd12fa",
@@ -69,6 +70,31 @@
       "database": "310 PASS / 6 FAIL / 5 SKIP",
       "cause": "Production buyer database acceptance fixture still used a hybrid subscription and advanced pricing; recurring-only guard rejected before intended lock/credential/release assertions.",
       "correction": "Use existing Lean fixture, a synthetic recurring-only contract and explicitly injected server qualification; production default remains absent/fail-closed."
+    },
+    {
+      "head": "ce1365be9265d86a8a92b7e207f00482e4802fe0",
+      "workflow": "runtime",
+      "run": 38883541144,
+      "attempt": 1,
+      "result": "FAILURE",
+      "cause": "Added admin fixture recreated the service but reused an actor whose online staff grant belongs to the original service WeakMap; all9 cases failed Online staff grant unavailable.",
+      "correction": "Keep original authenticated service/actor; test recurring-only denial of an unexpected provider usage item without constructing a hybrid policy or recreating service."
     }
-  ]
+  ],
+  "qualifiedPriorCandidate": {
+    "head": "ce1365be9265d86a8a92b7e207f00482e4802fe0",
+    "foundation": {
+      "run": 38883541048,
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    "durableCore": {
+      "run": 38883540932,
+      "attempt": 1,
+      "result": "SUCCESS",
+      "actualPostgres": "316 PASS / 5 SKIP",
+      "restrictedLogin": "1 PASS"
+    },
+    "limit": "Prior-candidate results; corrected final head still requires fresh CI."
+  }
 }

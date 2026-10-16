@@ -8,7 +8,7 @@ Latest main: [PR182](https://github.com/Optidigi/insignia/pull/182), merge `9f9b
 
 ## Current Lean V1 acceptance and next work
 
-[Approved scope](../../authority/lean-v1-2026-10-15.md) supersedes older next/pending paragraphs. Deferred setup/tier/FX/Plus/express/usage capabilities are not passed or launch prerequisites. No new usage staging/dispatch or retrospective charge.
+[Approved scope](../../authority/lean-v1-2026-10-15.md) supersedes older next/pending paragraphs. The [16 October first-version direction](../../../architecture/decision-ledger.md#owner-first-version-direction--16-october-2026) makes Lean V1 the only supported shape; earlier development-version compatibility is no longer a product requirement. Deferred setup/tier/FX/Plus/express/usage capabilities are not passed or launch prerequisites. No new usage staging/dispatch or retrospective charge.
 
 | Outcome | Current result and next dependency |
 | --- | --- |
@@ -20,7 +20,7 @@ Latest main: [PR182](https://github.com/Optidigi/insignia/pull/182), merge `9f9b
 
 [Native16October receipt](../lean-v1/native-market-scope-transition-2026-10-16.json): scope-only Active1169137696769/taglean-markets-7b17cd9/13versions/eight exact module maps; only optional read_markets added, old Functions/settings preserved. One release and one HTTP attempt, one Update click on existing installation; actual12-scope read verifies only added grant. Fresh request5f6244e0/record8e75e4eb COMPLETE, actual readonly app role independently matches; original09:37:40.092Z expiry retained, not ongoing authority. Create/release/consent allocations closed and consumed. No unresolved write or repeat operation.
 
-Next independent work: finish reviewed source correction CI/integration, wire and qualify primary context, prepare recurring-only deployment policy and exact zero-cost subscription selection. One focused correctness/security review CLEAR on candidate; real PostgreSQL publication fixture cases require final CI (locally SKIP). Do not call the existing production profile fail-closed until corrected source is deployed. No routine owner checkpoint.
+Next independent work: finish reviewed source correction CI/integration, wire and qualify primary context, prepare recurring-only deployment policy and exact zero-cost subscription selection. Remove the optional historical-pricing application route and hybrid billing recognition from the shipping path; replace compatibility-only tests with current Lean behavior/recovery tests. Preserve actual purchase/preview data, dated evidence and cleanup obligations; no migration or compatibility layer for earlier development versions. One focused correctness/security review CLEAR on candidate; real PostgreSQL publication fixture cases require final CI (locally SKIP). Do not call the existing production profile fail-closed until corrected source is deployed. No routine owner checkpoint.
 
 Remaining unallocated effects: amended recurring-only subscription selection/approval, any new inventory/publication/test checkout and later app release. Request only when exact safe preparation is reviewable. Server pricing editorHTTP422 remains known; Admin/Dev authenticated browser sessions work, no repeated CAPTCHA/login.
 

@@ -118,7 +118,7 @@ for (const releaseMode of [
     const origin = signing ? 'https://insignia-app.optidigi.nl' : 'https://synthetic.example';
     const shop = signing ? 'insignia-rewrite-dev.myshopify.com' : `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
     let providerMode = 'current';
-    let legacyUsageContract = false;
+    let unexpectedUsageItem = false;
     let entitlementNow = '2026-09-30T23:59:59.999Z';
     let adminMutations = 0;
     let partnerReads = 0;
@@ -405,7 +405,7 @@ for (const releaseMode of [
                     discount: null,
                     usage: null,
                   },
-                  ...(legacyUsageContract
+                  ...(unexpectedUsageItem
                     ? [
                         {
                           handle: 'meter.m5',
@@ -657,24 +657,11 @@ for (const releaseMode of [
         idempotencyKey: 'composition-save',
       });
       assert.equal(saved.kind, 'saved');
-      // Historical hybrid contracts remain recognizable for retained readers,
-      // but do not authorize a new Lean publication, even during a waived trial.
-      legacyUsageContract = true;
-      policy.plans[0].usageHandle = 'meter.m5';
-      policy.plans[0].includedUsage = 0;
-      delete policy.plans[0].billing;
-      services = compose();
-      const legacyRead = await services.configs.read(actor, productId);
-      assert.equal(
-        legacyRead.config.publishEligibility.allowed,
-        false,
-        'legacy usage contract denies new Lean publish',
-      );
-      legacyUsageContract = false;
-      delete policy.plans[0].usageHandle;
-      delete policy.plans[0].includedUsage;
-      policy.plans[0].billing = 'recurring-only';
-      services = compose();
+      // Recurring-only entitlement rejects an unexpected provider usage item.
+      unexpectedUsageItem = true;
+      const meteredRead = await services.configs.read(actor, productId);
+      assert.equal(meteredRead.config.publishEligibility.allowed, false, 'an added meter denies Lean publication');
+      unexpectedUsageItem = false;
       for (const [mode, allowed] of [
         ['current', true],
         ['pending', true],
