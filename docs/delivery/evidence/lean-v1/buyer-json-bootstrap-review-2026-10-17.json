@@ -1,0 +1,37 @@
+{
+  "classification": "BUYER_FORMATTED_JSON_BOOTSTRAP_DEFECT_REPRODUCED_AND_CORRECTED_IN_SOURCE",
+  "sourceBase": "9e094a6",
+  "nativeReproduction": {
+    "shop": "insignia-rewrite-dev.myshopify.com",
+    "productId": "10519322493211",
+    "revisionId": "9215185d-3109-4f07-b93b-d7e25b9bd7f5",
+    "proxyStatus": 500,
+    "proxyBody": "Shopify themed HTML: There was an error in the third-party application.",
+    "directUpstreamStatus": 503,
+    "code": "UNAVAILABLE",
+    "artworkUploads": 0,
+    "cartWrites": 0,
+    "checkouts": 0
+  },
+  "cause": "Buyer bootstrap single-line reader rejected normal LF whitespace in valid formatted entitlement JSON. Admin reader accepted that same policy.",
+  "red": "New public bootstrap regression returnedundefined instead of concrete service with formatted JSON. Actual-env constructor-only diagnostic rejects at required entitlementJSON.",
+  "fix": "Separate bounded JSON reader for two structured documents; exact schemas/limits/preallocation denial unchanged. IDs and credentials retain single-line validation.",
+  "green": {
+    "bootstrap": "12 PASS/0SKIP; independent reviewer reran12PASS",
+    "bootstrapHTTP": "16 PASS/0SKIP",
+    "actualEnvironmentConstructorOnly": {
+      "available": true,
+      "providerCalls": 0,
+      "databaseCalls": 0,
+      "note": "Private probe copy, not a deployment or buyer-success claim."
+    }
+  },
+  "independentReview": {
+    "reviewer": "/root/lean_selection_review",
+    "correctnessSecurity": "CLEAR",
+    "bootstrapSha256": "b128c5f9e34c3980e6344af38452243f9334ae22e662cfb1442741fbe412d479",
+    "testSha256": "1f1b659e924acfeace9881bfb187f96c80113f9e555efb817e21a13bd06af8e7"
+  },
+  "nativeQualification": "PENDING finalCI/integration/exactartifact deployment and fresh original browser probe",
+  "retention": "Private captures/probes due20October; earlier original/design/credential rotation obligations unchanged."
+}

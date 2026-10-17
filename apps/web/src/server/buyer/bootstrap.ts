@@ -116,6 +116,15 @@ export async function createBuyerBootstrap(
       if (!nonempty(value, maximum)) throw new Error('Buyer configuration unavailable');
       return value;
     };
+    // Structured JSON permits its normal whitespace; identifiers and credentials
+    // still use the stricter single-line reader above. The parsers below retain
+    // their exact schemas and document-size bounds before allocating resources.
+    const jsonConfiguration = (key: string, maximum: number) => {
+      const value = env[key];
+      if (typeof value !== 'string' || value.length === 0 || value.length > maximum)
+        throw new Error('Buyer configuration unavailable');
+      return value;
+    };
     const connectionString = required('DATABASE_URL');
     const databaseUrl = new URL(connectionString);
     if (!['postgres:', 'postgresql:'].includes(databaseUrl.protocol) || !databaseUrl.hostname)
@@ -131,8 +140,8 @@ export async function createBuyerBootstrap(
       !/^[1-9][0-9]*$/.test(required('INSIGNIA_SHOPIFY_APP_ID'))
     )
       throw new Error('Buyer configuration unavailable');
-    const entitlementPolicy = policy(required('INSIGNIA_M5_ENTITLEMENT_POLICY_JSON', 16384));
-    const functions = expectedFunctions(required('INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON', 4096), clientId);
+    const entitlementPolicy = policy(jsonConfiguration('INSIGNIA_M5_ENTITLEMENT_POLICY_JSON', 16384));
+    const functions = expectedFunctions(jsonConfiguration('INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON', 4096), clientId);
     const organizationId = required('INSIGNIA_PARTNER_ORGANIZATION_ID', 128),
       accessToken = required('INSIGNIA_PARTNER_ACCESS_TOKEN');
     if (!/^[1-9][0-9]*$/.test(organizationId) || (env.INSIGNIA_CREDENTIAL_PREVIOUS_KEYS_JSON?.length ?? 0) > 8192)
