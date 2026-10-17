@@ -1,0 +1,37 @@
+{
+  "classification": "NORMAL_PROTECTED_MERGE_VERIFIED",
+  "pr": 193,
+  "base": "fcf042ff67a0bd885ec60ebbaaa9f396f4c54ed6",
+  "effectiveMergeBase": "fcf042ff67a0bd885ec60ebbaaa9f396f4c54ed6",
+  "head": "6596979a11bd1c6d7cecbe22603d832caa9a3677",
+  "merge": "5f74f7bceec0fea19a0151395b0daf818f35a654",
+  "parents": [
+    "fcf042ff67a0bd885ec60ebbaaa9f396f4c54ed6",
+    "6596979a11bd1c6d7cecbe22603d832caa9a3677"
+  ],
+  "tree": "7981dfc55358ad47db101cccd509aef50b645006",
+  "reviewedSourceHashesMatched": 23,
+  "reviews": "Recorded completed-change correctness/security and focused final runtime-impact review CLEAR; inherited source hashes match",
+  "workflows": [
+    {
+      "id": 39072846534,
+      "attempt": 1,
+      "head": "6596979a11bd1c6d7cecbe22603d832caa9a3677",
+      "conclusion": "SUCCESS"
+    },
+    {
+      "id": 39072846492,
+      "attempt": 1,
+      "head": "6596979a11bd1c6d7cecbe22603d832caa9a3677",
+      "conclusion": "SUCCESS"
+    },
+    {
+      "id": 39072846529,
+      "attempt": 1,
+      "head": "6596979a11bd1c6d7cecbe22603d832caa9a3677",
+      "conclusion": "SUCCESS"
+    }
+  ],
+  "nativeEffects": false,
+  "releaseAllocationConsumed": false
+}

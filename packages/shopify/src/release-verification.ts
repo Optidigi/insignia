@@ -21,6 +21,7 @@ export function parseReleaseVerificationRequest(
       'm8-cookie-91b35ab',
       'm8-preview-28443bd',
       'lean-markets-7b17cd9',
+      'lean-privacy-theme-23fd116',
     ]
       .map((name) => resolveRuntimeReleaseProfile(name).activeVersionRef)
       .includes(expectedVersion),
