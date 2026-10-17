@@ -10,12 +10,15 @@ test('actual restricted merchant LOGIN has only scoped privacy exports and no re
 }, async () => {
   const owner = new Pool({ connectionString: process.env.DATABASE_URL });
   const name = `privacy_merchant_${randomUUID().replaceAll('-', '')}`;
+  const password = randomUUID().replaceAll('-', '');
   const core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
   const shopId = randomUUID();
   const providerShop = String(BigInt(`0x${shopId.replaceAll('-', '').slice(0, 15)}`));
   let merchant;
   try {
-    await owner.query(`CREATE ROLE ${name} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS`);
+    await owner.query(
+      `CREATE ROLE ${name} LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS`,
+    );
     await core.transactions.run((tx) =>
       core.tenants.createShop(tx, { shopId, shopDomain: `${shopId}.myshopify.com`, shopifyShopId: providerShop }),
     );
@@ -34,7 +37,7 @@ test('actual restricted merchant LOGIN has only scoped privacy exports and no re
     await core.customerPrivacy.processInbox(receipt.id);
     const url = new URL(process.env.DATABASE_URL);
     url.username = name;
-    url.password = '';
+    url.password = password;
     merchant = new Pool({ connectionString: url.href });
     const identity = (
       await merchant.query('SELECT current_user,rolsuper,rolbypassrls FROM pg_roles WHERE rolname=current_user')

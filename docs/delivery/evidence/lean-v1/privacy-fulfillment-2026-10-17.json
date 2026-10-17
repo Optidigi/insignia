@@ -28,6 +28,13 @@
         "Metadata plus bounded individual design export",
         "Expired attachment identifiers suppressed before asynchronous cleanup"
       ]
+    },
+    {
+      "reviewer": "/root/privacy_runtime_impact_review",
+      "correctness": "CLEAR",
+      "standardsSecurity": "CLEAR",
+      "scope": "Separate privacy maintenance failure boundary; exact schema41 fixture and preserved schema38 rejection; synthetic SCRAM role password",
+      "independentChecks": "Reconciliation11PASS; diff whitespace clean"
     }
   ],
   "localChecks": {
@@ -58,7 +65,23 @@
     "builds": "Database/worker TypeScript and Astro build PASS",
     "boundaries": "PASS after rebuilding dependent declarations; earlier stale-dist type failure preserved",
     "secrets": "PASS after staging every new path",
-    "style": "PASS with existing repository warning/info diagnostics"
+    "style": "PASS with existing repository warning/info diagnostics",
+    "broadWeb": {
+      "passed": 188,
+      "skipped": 53,
+      "failed": 0,
+      "scope": "Complete local web suite; environment-dependent PostgreSQL/native cases remain explicit skips"
+    },
+    "scramRoles": {
+      "passed": 3,
+      "failed": 0,
+      "scope": "Actual TCP/SCRAM web runtime grant qualification plus restricted merchant and worker privacy LOGINs in new owned PostgreSQL18 cluster"
+    },
+    "reconciliation": {
+      "passed": 11,
+      "failed": 0,
+      "redGreen": "A failing privacy capability initially suppressed ordinary transport expiry; the new isolated maintenance operation preserves independent retention, cleanup and shutdown."
+    }
   },
   "nativeBaseline": {
     "classification": "EXACT_ACTIVE_SCOPE_BASELINE_PASS",
@@ -205,18 +228,54 @@
     "apps/web/src/server/purchase/service.ts": "746b210fb963bf945b61280b7864be768ec1c1757ca5e0657d8c9a0619381ae1",
     "apps/web/test/admin/privacy-browser.test.mjs": "6812873e0216a9773dc0cd07f95fc89aa587c32d12be13bf7c66d4071fedc12c",
     "apps/web/test/privacy-request.test.mjs": "aefabb3c406e38bb5154d9bd206e61e207879f5a1b4e89788ae42b6cd0a5284c",
-    "apps/web/test/privacy-role.test.mjs": "07eb0704e9f23b6c54154591ec3b845cc1ed57c049b76e8ed8f687177f01989b",
-    "apps/worker/src/handlers.ts": "a113b8025415ff45ae9109645cd30d5aeddf8d5def9acccbdd613aa9a877ddbf",
+    "apps/web/test/privacy-role.test.mjs": "672233c3eeaa49e5329421b7ec9d96ee5a87a54e11a624bbf87fd1148c9fcc05",
+    "apps/worker/src/handlers.ts": "d9e494639045a351876d3c6e728d8f606297e5f179d64866c92f86235237eeb5",
+    "apps/worker/src/reconciliation.ts": "8989fcc3c344d336a9dc61ac29ff9cbfb5a4e7612d54b31a0b5f2675383a3de5",
     "apps/worker/test/customer-privacy-handler.test.mjs": "4224dc8aa4c557417b3edd733ef54903a5b2ddbdf611efeb782b58ea12752116",
+    "apps/worker/test/reconciliation.test.mjs": "bd338b6e7ec4c057886fd3d51b7f0b8daa8029e89f54f736a2a1aaabf63c6aa1",
     "apps/worker/test/webhook-retention.test.mjs": "82b8a1a7b9a3532f696a8b5719aa467b52f16e650ed14f12f4cd261435241f2d",
     "packages/database/migrations/20261017000200_privacy_merchant_export.sql": "804600de06be732e9b069b928d0d3d089dbb0087dd9633f431ee5e9938a2fe82",
     "packages/database/migrations/20261017000300_shop_privacy_staging.sql": "b99b7f513713524c4b42736aefcf998898a401ada4b9685a5ec7e858159372a5",
     "packages/database/src/repositories/customer-privacy.ts": "99b8d0fc15700a79868729df4736f2e7846312b3460516dc223a6c7c7b93e063",
     "packages/database/test/customer-privacy.test.ts": "dda748401cea1085cdca585681c9a5f73cd8f3dbdd10d99c44d535470f1f4455",
     "packages/database/test/privacy-restore.test.ts": "0de44f68ab3515be28fc563b42fb03c3f82a8f3fd9269e2fa37375725528a9c0",
+    "packages/database/test/web-runtime-grants.test.ts": "1f58c6b3118e2463510b6bb563b324abe9b6d2a8ce6734b7c17cc5d6930318ea",
     "scripts/privacy/merchant-runtime-grants.sql": "8c2c590dc357e8cca48f4f3308d526711d429d2c30b7454976eda6acff17cb91",
     "scripts/privacy/restore-exclusions.md": "b621c254c334e6ff19be53a5d6993097126492194e8a6e9877c136b65165471c",
     "scripts/privacy/restore-exclusions.mjs": "ed91580f7370311a21c38a68dd2671854dc786c118add2517b905d6ccc710626",
     "scripts/privacy/runtime-grants.sql": "b8cf24ef3f9066e61caf6ec26029f9a3a1dd72b08489a469947aa04ff6fad11f"
+  },
+  "nativeRelationshipRead": {
+    "classification": "NATIVE_SCOPED_RELATIONSHIP_HISTORY_ONLY",
+    "scope": {
+      "appId": "gid://shopify/App/429028933633",
+      "shopId": "gid://shopify/Shop/105501393179",
+      "from": "2026-09-27T00:00:00.000Z",
+      "through": "2026-10-17T21:50:46.166Z"
+    },
+    "observedAt": "2026-10-17T21:50:46.169Z",
+    "apiVersion": "2026-07",
+    "pagesRead": 1,
+    "events": [
+      {
+        "occurredAt": "2026-09-28T12:39:12.000Z",
+        "state": "INSTALLED",
+        "eventType": "RELATIONSHIP_INSTALLED"
+      }
+    ],
+    "pagination": "EXHAUSTED",
+    "installationAuthority": false,
+    "providerMutations": 0,
+    "providerReads": 1,
+    "limits": "Historical event observations do not establish current installation generation or atomically prove absence; no deactivation/erasure authority inferred.",
+    "localImportFailure": "First attempt stopped before IO because local adapter dist was stale; rebuilt unchanged reviewed source and used a separate qualified run. No provider attempt occurred before the rebuild."
+  },
+  "preservedCandidateFailures": {
+    "head": "d5eb60769cc9704685d7dd7a063e1f4f14a3c920",
+    "durableWorkflow": 39072389376,
+    "failure": "Exact migration fixture still pinned39; corrected to41 including both new named migrations. Optional historical usage fixture now removes all three later privacy metadata IDs; production grant guard unchanged.",
+    "runtimeWorkflow": 39072389369,
+    "localBroadWorker": "Earlier full worker had two failed reconciliation expectations and one hanging test child; stopped only the owned hung child and preserved result. New explicit regression RED then GREEN; privacy failure now cannot suppress ordinary retention.",
+    "additionalTestFix": "Merchant LOGIN now has generated synthetic password, independently qualified under actual TCP/SCRAM."
   }
 }

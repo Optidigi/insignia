@@ -24,6 +24,14 @@ function fixture() {
   const seen = [],
     errors = [];
   const core = {
+    customerPrivacy: {
+      async cleanupInboxes() {
+        return 0;
+      },
+      async blockedShopErasureCount() {
+        return 0;
+      },
+    },
     webhooks: {
       async eraseExpiredPayloads(limit) {
         assert.equal(limit, 100);
@@ -74,6 +82,18 @@ function fixture() {
   };
   return { core, queue, artwork, seen, errors };
 }
+
+test('privacy cleanup failure cannot suppress ordinary transport retention or independent artwork work', async () => {
+  const input = fixture();
+  input.core.customerPrivacy.cleanupInboxes = async () => {
+    throw new Error('privacy capability unavailable');
+  };
+  input.queue.removeExpiredWebhookJob = async () => true;
+  await createWorkerReconciliation(input).runOnce();
+  assert.ok(input.seen.includes('payload-erasure'));
+  assert.ok(input.seen.includes('artwork-cleanup'));
+  assert.ok(input.errors.some((entry) => entry.metadata.errorClass === 'CUSTOMER_PRIVACY_CLEANUP_UNAVAILABLE'));
+});
 
 test('persistent expired-job removal failure never blocks independent uninstall recovery or artwork erasure', async () => {
   const input = fixture(),

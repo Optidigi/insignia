@@ -87,8 +87,9 @@ export async function recoverPendingUninstalls(core: DurableCore, queue: PgBossR
   return confirmed;
 }
 
-/** Source-owned bounded transient cleanup, not privacy request fulfillment. */
-export async function maintainWebhookRetention(core: DurableCore, queue: PgBossRuntime) {
+/** Separate failure boundary: privacy capability failure cannot suspend ordinary
+ * transport expiration, economic reconciliation or isolated object cleanup. */
+export async function maintainCustomerPrivacy(core: DurableCore, queue: PgBossRuntime) {
   await core.customerPrivacy.cleanupInboxes(100);
   const blockedShopErasures = await core.customerPrivacy.blockedShopErasureCount();
   if (blockedShopErasures) {
@@ -98,6 +99,10 @@ export async function maintainWebhookRetention(core: DurableCore, queue: PgBossR
       count: blockedShopErasures,
     });
   }
+}
+
+/** Source-owned bounded transient cleanup, not privacy request fulfillment. */
+export async function maintainWebhookRetention(core: DurableCore, queue: PgBossRuntime) {
   const result = await core.webhooks.eraseExpiredPayloads(100);
   for (const [category, count] of [
     ['TransientPayloadExpiredUnresolved', result.unresolvedExpiredCount],
