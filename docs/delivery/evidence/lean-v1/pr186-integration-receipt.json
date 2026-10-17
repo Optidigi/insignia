@@ -1,0 +1,43 @@
+{
+  "classification": "VERIFIED_NORMAL_PROTECTED_PRIMARY_CONTEXT_MERGE",
+  "pullRequest": "https://github.com/Optidigi/insignia/pull/186",
+  "base": "dae67f12cc4ce5aefb2727c4ac04fabd29a25f50",
+  "effectiveMergeBase": "dae67f12cc4ce5aefb2727c4ac04fabd29a25f50",
+  "head": "465ccef2a2b07f5c3d6e99f22437cb8d0a40d4a2",
+  "merge": "c8519fc113071fabbe84a1492dd2ed1fbdbeb039",
+  "tree": "e7ea7bb572372b38a178de73b4b2140e427dc3d2",
+  "parents": [
+    "dae67f12cc4ce5aefb2727c4ac04fabd29a25f50",
+    "465ccef2a2b07f5c3d6e99f22437cb8d0a40d4a2"
+  ],
+  "mergedAt": "2026-10-16T23:23:10Z",
+  "checks": [
+    {
+      "name": "foundation",
+      "run": 38980237541,
+      "head": "465ccef2a2b07f5c3d6e99f22437cb8d0a40d4a2",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "name": "durable-core",
+      "run": 38980237470,
+      "head": "465ccef2a2b07f5c3d6e99f22437cb8d0a40d4a2",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "name": "runtime",
+      "run": 38980237449,
+      "head": "465ccef2a2b07f5c3d6e99f22437cb8d0a40d4a2",
+      "attempt": 1,
+      "result": "SUCCESS"
+    }
+  ],
+  "sourceReview": "primary-context-composition-review-2026-10-16.json",
+  "nativeReceipt": "pr186-native-runtime-verifier-2026-10-16.json",
+  "limits": [
+    "Final CI/integration does not itself qualify native Lean quotes, recurring-only subscription or checkout.",
+    "Synthetic CI build source is separately identified in the native receipt; it is not the reviewed head."
+  ]
+}
