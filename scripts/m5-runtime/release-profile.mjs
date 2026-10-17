@@ -6,6 +6,8 @@ import proxyModules from '../../deployment/m8-journey/app-proxy-module-baseline.
 import proxyCandidate from '../../deployment/m8-journey/app-proxy-release-binding.json' with { type: 'json' };
 import cookieThemeModules from '../../deployment/m8-journey/cookie-theme-module-baseline.json' with { type: 'json' };
 import cookieThemeCandidate from '../../deployment/m8-journey/cookie-theme-release-binding.json' with { type: 'json' };
+import privacyModules from '../../deployment/m8-journey/lean-privacy-module-baseline.json' with { type: 'json' };
+import privacyCandidate from '../../deployment/m8-journey/lean-privacy-release-binding.json' with { type: 'json' };
 import leanMarketsModules from '../../deployment/m8-journey/lean-markets-module-baseline.json' with { type: 'json' };
 import leanMarketsCandidate from '../../deployment/m8-journey/lean-markets-release-binding.json' with { type: 'json' };
 import previewThemeModules from '../../deployment/m8-journey/preview-theme-module-baseline.json' with { type: 'json' };
@@ -37,6 +39,14 @@ const oldIds = [
   '1146748534785',
 ];
 const profiles = {
+  'lean-privacy-theme-23fd116': {
+    versionId: privacyCandidate.versionId,
+    versionTag: privacyCandidate.versionTag,
+    versionIds: privacyCandidate.versionIds,
+    moduleHash: privacyCandidate.moduleHash,
+    modules: privacyModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+  },
   'lean-markets-7b17cd9': {
     versionId: leanMarketsCandidate.versionId,
     versionTag: leanMarketsCandidate.versionTag,

@@ -7,8 +7,14 @@ export type RuntimeReleaseProfileName =
   | 'm8-theme-c8d8713'
   | 'm8-cookie-91b35ab'
   | 'm8-preview-28443bd'
-  | 'lean-markets-7b17cd9';
+  | 'lean-markets-7b17cd9'
+  | 'lean-privacy-theme-23fd116';
 const profiles = Object.freeze({
+  'lean-privacy-theme-23fd116': Object.freeze({
+    name: 'lean-privacy-theme-23fd116' as const,
+    activeVersionRef: '1171218169857',
+    functionsSourceCommit: '9b94149272d1b62c34f44dda3bde209e80b4ae22',
+  }),
   'lean-markets-7b17cd9': Object.freeze({
     name: 'lean-markets-7b17cd9' as const,
     activeVersionRef: '1169137696769',

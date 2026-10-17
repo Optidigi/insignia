@@ -1,5 +1,7 @@
 # Active journey acceptance/work index
 
+Current combined release: PR193 integrated3/3 exact-head attempt1 checks. Owner accepted documented uninstall/shop-erasure hold and required read_orders. Corrected candidate1171218169857 verified INACTIVE/14 exact maps; original Active preserved. Privacy39/40/41+narrow grants settled,40 versions/absent37/all34containers and old data/ACLs preserved; failed creation and rolled-back SQL preserved. Candidate-bound source/CI, runtime/verifier, receiver and consent qualification still precede one release. [Evidence](../lean-v1/combined-release-operator-hold-2026-10-17.json).
+
 Current routing: this is the single active acceptance/work index, linked from [delivery state](../../state.md). Other milestone worklists and `milestone-progress.json` retain dated evidence and must not override current refs, owner authority or verified closing receipts. Earlier pending/next-slice paragraphs below describe their recorded stage; the later closing result and current candidate take precedence. PR159 integrates the local ledger; this index does not authorize native billing or declare full gate acceptance.
 
 Authority: [autonomous delivery](../../authority/autonomous-delivery-2026-10-13.md). Complete merchant→configuration/publication→artwork→quote/cart→permitted test checkout→independent immutable purchase/first-paid→merchant original. No principal/routine owner checkpoints; no real charge or rollout.

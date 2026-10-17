@@ -1,0 +1,249 @@
+{
+  "classification": "INACTIVE_COMBINED_CANDIDATE_AND_NATIVE_PRIVACY_SCHEMA_QUALIFIED_RUNTIME_PENDING",
+  "authority": "../../authority/combined-theme-webhook-release-2026-10-17.json",
+  "sourceMerge": "5f74f7bceec0fea19a0151395b0daf818f35a654",
+  "ownerDecision": "Permit bounded release with operator hold",
+  "operatorHold": "Uninstall generation and subsequent shop erasure need independent operator authority; not completed automatic lifecycle or rollout acceptance",
+  "package": {
+    "classification": "OFFLINE_PRESERVED_COMPLETE_BUNDLE",
+    "moduleCount": 14,
+    "filesSha256": {
+      "552059da-2dc1-47f8-8fc0-14a5ccb6f665/dist/index.wasm": "2330d0fec362e8ecf7185fa1f7cd2fbe1ec8b5b223b575606c93dbe38289a621",
+      "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97/assets/insignia-GuestArtworkUpload-CWIYD8VH.js": "2c2c38e295b16383f5d1282d048c1d93db71c4324de3fd6ba9ca3fe6c559523e",
+      "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97/assets/insignia-customizer-CoccJu3b.js": "540af1752951ea3dea6e2999a9385bc1a0a180b3e0eab5145d9befff18838b39",
+      "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97/assets/insignia-element.js": "f2eefe96c64ac20772fa52484d23554113c72704011ad5ffd1e39392f2686b8a",
+      "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97/assets/insignia-lib-EAJaMn8S.js": "84e5da9c3269fc8d2f992d31b1edf0f496bd795b147981fead1998f81317c36b",
+      "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97/assets/insignia-storefront.js": "6e85265484ddac9bf9b2ec2f8f518fc969089cef0ec5e6a42acefdefc95741aa",
+      "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97/blocks/cart-repair.liquid": "13f305c35be3559971c697799ed5b023aeec050c806fac7ce243d3a58726300b",
+      "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97/blocks/customize.liquid": "a7146ce0d049b5030417e91f9b1dc359f0a280615eb6d69d68d14b4d684951d6",
+      "c56038d4-146a-405e-b47d-a055249eeeb3/dist/index.wasm": "5c6434b6e626cf85825e0e142c27dea56a27a83f64b9d848fc5aee9c76ed536b",
+      "manifest.json": "483f7f4762d637b0bbf95a8eaac46c5d4156f3f5847ef61a822679c5895c48eb"
+    },
+    "manifestSha256": "483f7f4762d637b0bbf95a8eaac46c5d4156f3f5847ef61a822679c5895c48eb",
+    "themeAssets": 5,
+    "themeBlocks": 2,
+    "localPreviewExcluded": true,
+    "providerMutations": 0,
+    "retentionDue": "2026-10-20",
+    "preservedPreparationFailure": "First local assembly incorrectly compared native base64 SHA against hex; stopped before IO. Corrected to exact base64 digest; no native operation occurred."
+  },
+  "frozenBundleSha256": "42ac0ade4f95602b57f65a39821041a69e5eb38e37c0ab4bdfc17d97e8eb14b3",
+  "independentPreparationReview": {
+    "reviewer": "/root/bounded_release_preflight_review",
+    "verdict": "CLEAR for exact complete archive and one guarded inactive creation; handler/schema/candidate-bound runtime remains release prerequisite"
+  },
+  "creation": {
+    "sourceUrlMutationHttpAttempts": 1,
+    "uploadHttpAttempts": 1,
+    "createMutationHttpAttempts": 1,
+    "releaseAttempts": 0,
+    "classification": "PROVIDER_REJECTED_NO_VERSION_OBSERVED",
+    "errors": [
+      {
+        "field": [
+          "webhook_subscription"
+        ],
+        "message": "Missing scope for webhook topic: orders/create (read_orders or read_marketplace_orders)",
+        "code": "INVALID"
+      },
+      {
+        "field": [
+          "webhook_subscription"
+        ],
+        "message": "Missing scope for webhook topic: orders/paid (read_orders or read_marketplace_orders)",
+        "code": "INVALID"
+      },
+      {
+        "field": [
+          "webhook_subscription"
+        ],
+        "message": "Missing scope for webhook topic: orders/updated (read_orders or read_marketplace_orders or read_buyer_membership_orders)",
+        "code": "INVALID"
+      },
+      {
+        "field": [
+          "webhook_subscription"
+        ],
+        "message": "Missing scope for webhook topic: refunds/create (read_orders or read_marketplace_orders or read_buyer_membership_orders)",
+        "code": "INVALID"
+      }
+    ],
+    "reconciliation": {
+      "classification": "CREATE_REJECTED_RELEASE_UNATTEMPTED_RECONCILIATION",
+      "observedAt": "2026-10-17T22:58:48.633Z",
+      "count": 13,
+      "total": 13,
+      "active": [
+        {
+          "versionId": "gid://shopify/Version/1169137696769",
+          "versionTag": "lean-markets-7b17cd9",
+          "status": "active"
+        }
+      ],
+      "candidateMatches": [],
+      "allOriginalModuleMapsPreserved": true,
+      "installations": 1,
+      "releaseAttempts": 0
+    },
+    "retryAttempts": 0
+  },
+  "releaseAllocation": "Single release remains unused; failed and corrected signed uploads/creation attempts preserved separately. Corrected native version1171218169857 remains inactive.",
+  "blocker": {
+    "classification": "RESOLVED_BY_AUTHORIZED_REQUIRED_READ_ORDERS",
+    "current": "read_orders is optional and granted on existing store; provider rejects app-specific order/refund topics in current required scope configuration",
+    "ownerRequest": "Move only existing read_orders from optional to required and prepare corrected candidate under same one-time release grant; installation update consent may be needed",
+    "authorization": "Owner explicitly authorized required read_orders and corrected candidate; fulfilled by separate r2 creation",
+    "sources": [
+      "https://shopify.dev/docs/apps/build/webhooks/subscribe",
+      "https://community.shopify.dev/t/orders-paid-webhook-declared-in-shopify-app-toml-not-registering-managed-installation-protected-data-approved/33582/2"
+    ]
+  },
+  "databaseAttempt": {
+    "classification": "TRANSACTION_FAILED_AND_ROLLED_BACK",
+    "versionsBefore": 37,
+    "versionsAfter": 37,
+    "privacyRelationAfter": null,
+    "error": "excessive role authority",
+    "diagnosis": "Harness incorrectly denied merchant original_key SELECT already explicitly granted by web-runtime-grants.sql; current source roles must be preserved, not weakened to satisfy harness",
+    "correctedRun": "PENDING separate qualified preparation; original failed run sealed"
+  },
+  "nativeDeployment": false,
+  "actualUninstall": false,
+  "publicRollout": false,
+  "privateEvidence": "/home/serveradmin/insignia-combined-release-execution-20261017",
+  "privateCopiesDue": "2026-10-20",
+  "correctedCandidate": {
+    "authority": "Owner Authorize required read_orders and corrected candidate",
+    "readback": {
+      "classification": "EXACT_INACTIVE_14_MODULE_CANDIDATE_PASS",
+      "observedAt": "2026-10-17T23:01:06.677Z",
+      "versionId": "gid://shopify/Version/1171218169857",
+      "versionTag": "lean-privacy-theme-23fd116",
+      "versionIds": [
+        "gid://shopify/Version/1171218169857",
+        "gid://shopify/Version/1169137696769",
+        "gid://shopify/Version/1168157736961",
+        "gid://shopify/Version/1166710865921",
+        "gid://shopify/Version/1166552825857",
+        "gid://shopify/Version/1166090010625",
+        "gid://shopify/Version/1165513097217",
+        "gid://shopify/Version/1163229200385",
+        "gid://shopify/Version/1162611916801",
+        "gid://shopify/Version/1158986629121",
+        "gid://shopify/Version/1158837927937",
+        "gid://shopify/Version/1153019904001",
+        "gid://shopify/Version/1152880803841",
+        "gid://shopify/Version/1146748534785"
+      ],
+      "moduleHash": "bf515d29121a58848733edef8454bc81295fed7d3927fd5c89919d622d610600",
+      "moduleCount": 14,
+      "allExistingRegistrationsPreserved": true,
+      "sixNonThemeMapsPreserved": true,
+      "accessMapDelta": "Only read_orders moved optional to required under explicit owner amendment",
+      "themeAssets": 5,
+      "themeBlocks": 2,
+      "installCount": 1,
+      "managementReads": 10,
+      "providerMutations": 0,
+      "bundle": {
+        "classification": "EXACT_COMPLETE_PRESERVED_BUNDLE_PASS",
+        "manifestSha256": "cec8270a17886514f267e7c2f412035c08160aa888bb433ecd49f70020a10e1b",
+        "bundleSha256": "3fa051610382444f1061db08939c871da51d756d6a7d0c4561694e8b08281d60",
+        "members": [
+          "552059da-2dc1-47f8-8fc0-14a5ccb6f665/dist/index.wasm",
+          "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97/assets/insignia-GuestArtworkUpload-CWIYD8VH.js",
+          "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97/assets/insignia-customizer-CoccJu3b.js",
+          "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97/assets/insignia-element.js",
+          "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97/assets/insignia-lib-EAJaMn8S.js",
+          "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97/assets/insignia-storefront.js",
+          "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97/blocks/cart-repair.liquid",
+          "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97/blocks/customize.liquid",
+          "c56038d4-146a-405e-b47d-a055249eeeb3/dist/index.wasm",
+          "manifest.json"
+        ],
+        "moduleCount": 14
+      },
+      "activation": "NOT_RELEASED"
+    },
+    "creation": {
+      "classification": "INACTIVE_CREATION_ACK_REQUIRES_READBACK",
+      "versionId": "gid://shopify/Version/1171218169857",
+      "tag": "lean-privacy-theme-23fd116",
+      "stats": {
+        "forwarded": 2,
+        "blocked": 0,
+        "uploadForwarded": 1,
+        "uploadBlocked": 0
+      }
+    },
+    "priorFailurePreserved": true,
+    "runtimeDeployment": false,
+    "activation": "INACTIVE_ONLY"
+  },
+  "databaseCorrection": {
+    "classification": "NATIVE_SETTLED_AFTER_PROVED_ROLLBACK",
+    "receipt": {
+      "classification": "ATOMIC_PRIVACY193_QUEUE_MERCHANT_GRANTS_SETTLED",
+      "observedAt": "2026-10-17T22:59:51.631632+00:00",
+      "merge": "5f74f7bceec0fea19a0151395b0daf818f35a654",
+      "tree": "7981dfc55358ad47db101cccd509aef50b645006",
+      "sqlSha256": "567b51095b3f858b6314e09fd60e451c7069eb5cc1a9d80ad20f622a3b058133",
+      "migrationCount": 40,
+      "newVersions": [
+        "20261017000100",
+        "20261017000200",
+        "20261017000300"
+      ],
+      "intentionallyAbsentVersions": [
+        "20261015000500"
+      ],
+      "transactionAttempts": 1,
+      "all34ContainerConfigurationsPreserved": true,
+      "inspectorPreserved": true,
+      "existingBusinessRowsAndExpiriesPreservedInLockedTransaction": true,
+      "preexistingTableAndRoutineACLsPreserved": true,
+      "newQueueAuthority": [
+        "process_customer_privacy_inbox(uuid)",
+        "cleanup_customer_privacy_inboxes(integer)",
+        "blocked_shop_privacy_count()"
+      ],
+      "newMerchantAuthority": [
+        "read_customer_privacy_requests(text,bigint,uuid,uuid)",
+        "read_customer_privacy_order_links(text,bigint,uuid)",
+        "export_customer_privacy_order(text,bigint,uuid,uuid,uuid)"
+      ],
+      "privacyRowsCreated": 0,
+      "privilegeProofFunctionInvocations": 0,
+      "providerMutations": 0,
+      "storageWrites": 0,
+      "backup": {
+        "sha256": "67c983e3a00fc2f67ae08b82eacedda0f2de95d5565558850d7745ecbfb07a99",
+        "bytes": 456667,
+        "verification": "PG_RESTORE_LIST_ONLY",
+        "restoreRehearsal": false,
+        "privateCopyDue": "2026-10-20"
+      },
+      "readiness": "HOLD_RUNTIME_COMPOSITION_AND_NATIVE_PRIVACY_EFFECT_QUALIFICATION",
+      "retryAuthorized": false
+    },
+    "localNativeShapedRedGreen": "Actual prior merchant original SELECT preserved; prior failed postcondition reproduced and corrected independently reviewed r2 transaction passed. Queue remains denied.",
+    "noRetryOfOldRun": true
+  },
+  "currentReleasePrerequisites": [
+    "Final candidate-bound runtime/profile source review and exact-head CI",
+    "Deploy exact web/worker CI images and rebind verifier",
+    "Qualify receiver and actual role/worker behavior",
+    "Verify live candidate and installation consent before one separately fenced release"
+  ],
+  "sourceChecks": {
+    "profileTdd": "Closed-profile rejection RED; source binding GREEN. Parameterized14-version pageInfo fixture initially stale13; corrected independently expected14, no source guard weakened.",
+    "collectorProfile": "28PASS including actual private Unix request, inactive/no grants/drift rejection and webhook drift/missing privacy",
+    "shopifyProfile": "8PASS",
+    "workerPurchaseAdmission": "4PASS",
+    "hostReceiver": "23tests,1explicitSkip,0failure",
+    "sourceLaunch": "14PASS",
+    "shopifyWorkerBuild": "PASS",
+    "fullCI": "PENDING"
+  },
+  "privateCorrectedEvidence": "/home/serveradmin/insignia-combined-release-execution-r2-20261017"
+}

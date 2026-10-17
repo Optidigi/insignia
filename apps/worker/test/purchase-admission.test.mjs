@@ -138,6 +138,13 @@ test('M8 admission release target must match native qualification and still inde
 });
 
 test('Lean scope-only profile preserves bounded native origin while independently requiring its release evidence', async () => {
+  const privacy = resolveNativePurchaseQualification({
+    appId: '123',
+    appClientId: 'synthetic-client',
+    releaseProfile: 'lean-privacy-theme-23fd116',
+  });
+  assert.equal(privacy.activeVersionRef, '1171218169857');
+  assert.equal(privacy.origin.creatorAppId, 'gid://shopify/App/580111');
   const qualified = resolveNativePurchaseQualification({
     appId: '123',
     appClientId: 'synthetic-client',

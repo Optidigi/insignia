@@ -1,0 +1,24 @@
+{
+  "versionTag": "lean-privacy-theme-23fd116",
+  "moduleHash": "bf515d29121a58848733edef8454bc81295fed7d3927fd5c89919d622d610600",
+  "observedAt": "2026-10-17T23:01:06.677Z",
+  "versionId": "1171218169857",
+  "versionIds": [
+    "1171218169857",
+    "1169137696769",
+    "1168157736961",
+    "1166710865921",
+    "1166552825857",
+    "1166090010625",
+    "1165513097217",
+    "1163229200385",
+    "1162611916801",
+    "1158986629121",
+    "1158837927937",
+    "1153019904001",
+    "1152880803841",
+    "1146748534785"
+  ],
+  "nativeObservation": "EXACT_INACTIVE_14_MODULE_CANDIDATE_PASS",
+  "note": "Exact inactive fourteen-module candidate under owner operator-hold and required-read_orders amendments; activation, runtime deployment and installation consent qualification remain separate."
+}

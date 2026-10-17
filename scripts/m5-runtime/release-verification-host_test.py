@@ -117,6 +117,9 @@ class BindingControls(unittest.TestCase):
     def test_reviewed_lean_markets_profile_reaches_receiver(self):
         self.run_private_startup('lean-markets-7b17cd9')
 
+    def test_reviewed_privacy_theme_profile_reaches_receiver(self):
+        self.run_private_startup('lean-privacy-theme-23fd116')
+
     def test_reviewed_preview_profile_reaches_real_receiver_without_changing_packet(self):
         self.run_private_startup('m8-preview-28443bd')
 

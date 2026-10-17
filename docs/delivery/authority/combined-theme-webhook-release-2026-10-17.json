@@ -1,5 +1,5 @@
 {
-  "classification": "OWNER_AUTHORIZED_CONDITIONAL_COMBINED_BOUNDED_RELEASE",
+  "classification": "OWNER_AUTHORIZED_BOUNDED_COMBINED_RELEASE_WITH_OPERATOR_HOLD",
   "date": "2026-10-17",
   "source": "Owner message in current thread: Authorize the combined bounded release",
   "appId": "429028933633",
@@ -10,11 +10,32 @@
   "preserve": "Existing eight module identities, Functions, scopes and settings, except previously authorized pending theme assets",
   "payloadBoundary": "Minimized order/refund lookup identifiers and timestamps; prepared uninstall identity fields; standard Shopify mandatory privacy-request payloads",
   "prerequisites": [
-    "Complete and qualify handlers and cleanup checks before release",
+    "Qualify implemented handlers and cleanup checks; owner explicitly accepts documented uninstall-generation and subsequent shop-erasure operator hold for this bounded development release",
     "Qualify complete final theme assets and combined candidate",
     "Retain required independent reviews and exact-head CI",
     "Verify exact live identity, unchanged baseline and unused allocation before mutation"
   ],
-  "excluded": ["New scope", "New store", "Actual uninstall", "Charge", "Public rollout"],
-  "executionStatus": "AUTHORITY_RECORDED_ONLY_NO_RELEASE_PERFORMED"
+  "excluded": [
+    "New scope",
+    "New store",
+    "Actual uninstall",
+    "Charge",
+    "Public rollout"
+  ],
+  "executionStatus": "AUTHORITY_RECORDED_ONLY_NO_RELEASE_PERFORMED",
+  "operatorHoldAmendment": {
+    "source": "Owner response in delivery thread81292d0a-995f-4c06-8ce7-7d7cd419bc4a after PR193 merge: Permit bounded release with operator hold",
+    "decision": "Permit the existing one-time bounded development release despite unqualified uninstall installation-generation authority and subsequent operator-held shop erasure.",
+    "limits": "Accept the documented operational hold for this development release only; no automatic generation authority, handler-completion claim, actual uninstall, public rollout, extra release, scope or store grant.",
+    "preservedRequirements": "Qualify implemented handler source/cleanup, complete final theme packaging, independent review, exact CI assets, live baseline and unused allocation before inactive creation. Native handler/schema deployment and candidate-bound final CI/runtime qualification remain mandatory before release activates subscriptions.",
+    "sequencingInterpretation": "Inert inactive creation is staging needed to obtain the actual provider version ID for the closed runtime profile; it never activates subscriptions. Existing one-time allocation covers one candidate and one release, with no extra candidate or release allocation."
+  },
+  "requiredOrdersScopeAmendment": {
+    "source": "Owner response in delivery thread81292d0a-995f-4c06-8ce7-7d7cd419bc4a: Authorize required read_orders and corrected candidate",
+    "decision": "Move only existing read_orders from optional_scopes to required scopes and prepare one corrected inactive candidate under same one-time release grant, retaining uninstall/shop-erasure operator hold.",
+    "scopeDelta": "Required write_app_proxy,read_orders; remove only read_orders from optional list. All other scopes and config maps unchanged.",
+    "reason": "Provider rejected four app-specific order/refund webhook topics; first creation failed and no version persisted.",
+    "installation": "Verify native consent/update behavior; owner installation update consent may be necessary.",
+    "allocation": "No additional release allocation. Preserve first signed URL/upload and rejected create; distinct corrected reservation, no ambiguous retry."
+  }
 }

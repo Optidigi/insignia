@@ -8,6 +8,7 @@ import test from 'node:test';
 import { createReleaseVerificationClient } from '../../apps/web/src/server/admin/release-verification.ts';
 import proxyModules from '../../deployment/m8-journey/app-proxy-module-baseline.json' with { type: 'json' };
 import cookieThemeModules from '../../deployment/m8-journey/cookie-theme-module-baseline.json' with { type: 'json' };
+import privacyModules from '../../deployment/m8-journey/lean-privacy-module-baseline.json' with { type: 'json' };
 import leanMarketsModules from '../../deployment/m8-journey/lean-markets-module-baseline.json' with { type: 'json' };
 import previewThemeModules from '../../deployment/m8-journey/preview-theme-module-baseline.json' with { type: 'json' };
 import historicalM8Modules from '../../deployment/m8-journey/release-module-baseline.json' with { type: 'json' };
@@ -26,38 +27,53 @@ for (const profile of [
   'm8-cookie-91b35ab',
   'm8-preview-28443bd',
   'lean-markets-7b17cd9',
+  'lean-privacy-theme-23fd116',
 ]) {
-  const lean = profile === 'lean-markets-7b17cd9';
+  const privacy = profile === 'lean-privacy-theme-23fd116';
+  const lean = privacy || profile === 'lean-markets-7b17cd9';
   const preview = lean || profile === 'm8-preview-28443bd';
   const cookie = preview || profile === 'm8-cookie-91b35ab';
   const theme = cookie || profile === 'm8-theme-c8d8713';
   const proxy = profile !== 'm8-read-orders-617057f';
-  const versionId = lean
-    ? '1169137696769'
-    : preview
-      ? '1168157736961'
-      : cookie
-        ? '1166710865921'
-        : theme
-          ? '1166552825857'
-          : proxy
-            ? '1166090010625'
-            : '1165513097217';
-  const modules = lean
-    ? leanMarketsModules
-    : preview
-      ? previewThemeModules
-      : cookie
-        ? cookieThemeModules
-        : theme
-          ? themeModules
-          : proxy
-            ? proxyModules
-            : historicalM8Modules;
+  const versionId = privacy
+    ? '1171218169857'
+    : lean
+      ? '1169137696769'
+      : preview
+        ? '1168157736961'
+        : cookie
+          ? '1166710865921'
+          : theme
+            ? '1166552825857'
+            : proxy
+              ? '1166090010625'
+              : '1165513097217';
+  const modules = privacy
+    ? privacyModules
+    : lean
+      ? leanMarketsModules
+      : preview
+        ? previewThemeModules
+        : cookie
+          ? cookieThemeModules
+          : theme
+            ? themeModules
+            : proxy
+              ? proxyModules
+              : historicalM8Modules;
   const profileTest = (name, fn) => test(`${profile}: ${name}`, fn);
   const prior = (versions) =>
     proxy
       ? [
+          ...(privacy
+            ? [
+                {
+                  versionId: 'gid://shopify/Version/1169137696769',
+                  versionTag: 'lean-markets-7b17cd9',
+                  status: 'inactive',
+                },
+              ]
+            : []),
           ...(lean
             ? [
                 {
@@ -144,6 +160,17 @@ for (const profile of [
           .find((m) => m.handle === 'app_access')
           .config.optional_scopes.push('write_orders');
         assert.throws(() => qualifyReleaseAppendInput(drift, time, profile));
+        if (privacy) {
+          const webhookDrift = structuredClone(input);
+          webhookDrift.moduleObservation.modules.find((m) => m.type === 'webhook_subscription').config.uri =
+            'https://foreign.invalid';
+          assert.throws(() => qualifyReleaseAppendInput(webhookDrift, time, profile));
+          const missingPrivacy = structuredClone(input);
+          missingPrivacy.moduleObservation.modules = missingPrivacy.moduleObservation.modules.filter(
+            (m) => m.handle !== 'privacy_compliance_webhooks',
+          );
+          assert.throws(() => qualifyReleaseAppendInput(missingPrivacy, time, profile));
+        }
         const foreign = structuredClone(input);
         foreign.activeObservation.versions[1].versionId = 'gid://shopify/Version/999';
         assert.throws(() => qualifyReleaseAppendInput(foreign, time, profile));
@@ -222,7 +249,9 @@ for (const profile of [
               id: 'gid://shopify/App/429028933633',
               appVersions: {
                 nodes: versions,
-                pageInfo: { totalResults: lean ? 13 : preview ? 12 : cookie ? 11 : theme ? 10 : proxy ? 9 : 8 },
+                pageInfo: {
+                  totalResults: privacy ? 14 : lean ? 13 : preview ? 12 : cookie ? 11 : theme ? 10 : proxy ? 9 : 8,
+                },
               },
             },
           }),
