@@ -65,8 +65,8 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       );
       const migrations = new URL('../migrations/', import.meta.url);
       const names = (await readdir(migrations)).filter((n) => n.endsWith('.sql')).sort();
-      expect(names).toHaveLength(38);
-      expect(names.at(-1)).toBe('20261015000600_lean_recurring_quote.sql');
+      expect(names).toHaveLength(39);
+      expect(names.at(-1)).toBe('20261017000100_customer_privacy.sql');
       for (const file of names.slice(0, 20))
         await owner.query((await readFile(new URL(file, migrations), 'utf8')).split('-- migrate:down')[0]!);
       await owner.query('REVOKE CREATE ON SCHEMA public FROM PUBLIC');
@@ -362,6 +362,9 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
         'DELETE FROM artwork_assets',
         'SELECT public.cleanup_buyer_payloads(1)',
         'SELECT public.cleanup_purchase_payloads(1)',
+        `SELECT public.process_customer_privacy_inbox('${randomUUID()}')`,
+        'SELECT * FROM customer_privacy_receipts',
+        'DELETE FROM customer_order_erasure_fences',
         `SELECT public.read_purchase_offer_history('${shopId}',1,'${randomUUID()}','${randomUUID()}')`,
       ];
       for (const query of denied) await expect(web.query(query)).rejects.toMatchObject({ code: '42501' });

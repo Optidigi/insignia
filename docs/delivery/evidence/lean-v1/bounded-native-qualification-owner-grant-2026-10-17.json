@@ -1,0 +1,17 @@
+{
+  "classification": "OWNER_GRANTED_THREE_BOUNDED_LEAN_QUALIFICATION_DECISIONS",
+  "effectiveDate": "2026-10-17",
+  "threadId": "81292d0a-995f-4c06-8ce7-7d7cd419bc4a",
+  "ownerResponse": "Authorize all three bounded decisions",
+  "allocation": {
+    "billing": "One exact existing rewrite-dev Standard cancellation atUSD0 and one same meter-free Standard reapproval atUSD0; provider may change remaining trial. Preserve installation/history.",
+    "theme": "Create and verify one app version and release once; change only reviewed storefront theme assets, preserve all eight modules/Functions/settings/scopes.",
+    "inspector": "Explicit Docker exception for existing Insignia-only host artwork-inspection service; immutable reviewedCIpackage replaces development checkout, same sandbox/permissions/limits."
+  },
+  "conditions": [
+    "Passing CI and exact live preflight before operations.",
+    "No uninstall, actualcharge, newplan/scope, other-service change or productionrollout.",
+    "Stop ambiguous effects; no retry."
+  ],
+  "authorityOnly": "Not an execution, external outcome or readiness receipt."
+}

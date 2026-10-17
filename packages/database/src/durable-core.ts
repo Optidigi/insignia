@@ -29,6 +29,7 @@ import {
   createConfigRepositoryInternal,
   type RevisionRecord,
 } from './repositories/config.js';
+import { type CustomerPrivacyRepository, createCustomerPrivacyRepository } from './repositories/customer-privacy.js';
 import { PgInboxRepository } from './repositories/delivery/pg-inbox-repository.js';
 import { PgOutboxRepository } from './repositories/delivery/pg-outbox-repository.js';
 import { createMerchantPreviewRepository } from './repositories/merchant-preview.js';
@@ -89,6 +90,7 @@ export type ConfigInput = {
 };
 
 export interface DurableCore {
+  readonly customerPrivacy: CustomerPrivacyRepository;
   readonly usageLedger: UsageLedgerRepository;
   readonly usageDeliveryIntents: UsageDeliveryIntentRepository;
   readonly usageDeliveryAttempts: UsageDeliveryAttemptRepository;
@@ -446,6 +448,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       : null;
   }
   return {
+    customerPrivacy: createCustomerPrivacyRepository(database),
     purchases: createPurchaseRepository(database),
     usageLedger: createUsageLedgerRepository(database),
     usageDeliveryIntents: createUsageDeliveryIntentRepository(database),

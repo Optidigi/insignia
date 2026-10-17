@@ -34,6 +34,14 @@ export function createDurableWorkerHandlers(
       if (state.resolution === 'expired') return 'expired';
       if (state.resolution === 'exhausted') return 'exhausted';
       if (state.state === 'processed') return;
+      if (state.topic === 'customers/data_request' || state.topic === 'customers/redact') {
+        // Topic is routing only. The durable function rederives the operation,
+        // shop and order identities from the retained authenticated raw body.
+        const privacy = await core.customerPrivacy.processInbox(inboxId);
+        // Staging drives existing isolated artwork cleanup; it does not claim
+        // physical deletion. A lookup receipt is still awaiting export delivery.
+        return privacy.kind === 'ERASURE_STAGED' ? undefined : 'deferred';
+      }
       if (['orders/create', 'orders/paid', 'orders/updated', 'refunds/create'].includes(state.topic))
         return purchaseRunner ? purchaseRunner.processInbox(inboxId) : 'deferred';
       if (state.topic !== 'app/uninstalled') return 'deferred';
