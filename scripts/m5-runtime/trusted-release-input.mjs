@@ -17,3 +17,38 @@ export async function readPrivatePacket(stream, timeoutMs = 10000) {
     for (const chunk of chunks) chunk.fill(0);
   }
 }
+
+/** The pipe retains this Buffer until its end callback; erase only after settlement. */
+export async function writePrivatePacket(stream, packet, timeoutMs = 10000) {
+  try {
+    assert.ok(Buffer.isBuffer(packet) && packet.length <= 16384);
+    assert.ok(timeoutMs > 0 && timeoutMs <= 10000);
+    await new Promise((resolve, reject) => {
+      let settled = false;
+      const finish = (error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        if (error) {
+          stream.destroy();
+          reject(new Error('private_packet_write_failed'));
+        } else resolve();
+      };
+      const onError = () => finish(new Error('private_packet_write_failed'));
+      const onClose = () => {
+        finish(new Error('private_packet_write_closed'));
+        stream.removeListener('error', onError);
+      };
+      const timer = setTimeout(() => finish(new Error('private_packet_write_timeout')), timeoutMs);
+      stream.on('error', onError);
+      stream.once('close', onClose);
+      try {
+        stream.end(packet, finish);
+      } catch {
+        onError();
+      }
+    });
+  } finally {
+    packet.fill(0);
+  }
+}

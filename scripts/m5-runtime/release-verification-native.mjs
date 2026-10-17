@@ -10,8 +10,9 @@ import { createReleaseVerificationServer } from './release-verification-server.m
 import { parseOwnerPrivatePacket } from './trusted-release-collector-native.mjs';
 import { readPrivatePacket } from './trusted-release-input.mjs';
 import { launchQualifiedTrustedRelease } from './trusted-release-launch.mjs';
+import { VERIFIER_SOCKET_DIRECTORY } from './verifier-runtime.mjs';
 
-const DIRECTORY = '/home/serveradmin/insignia-milestone-autonomy-handoff/m5-release-verification-r2';
+const DIRECTORY = VERIFIER_SOCKET_DIRECTORY;
 const SOCKET = `${DIRECTORY}/collector.sock`;
 async function main() {
   // Original SDK and append authority stay solely with this process and its
@@ -31,7 +32,7 @@ async function main() {
     );
     privateInput = await readPrivatePacket(process.stdin);
     const packet = parseOwnerPrivatePacket(new TextDecoder('utf-8', { fatal: true }).decode(privateInput));
-    const require = createRequire(new URL('../../apps/web/package.json', import.meta.url));
+    const require = createRequire(new URL('../../worker/package.json', import.meta.url));
     const { Pool } = require('pg');
     const { createDurableCore } = await import(pathToFileURL(require.resolve('@insignia/database')));
     core = createDurableCore(

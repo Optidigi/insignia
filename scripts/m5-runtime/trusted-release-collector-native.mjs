@@ -1,5 +1,5 @@
 /** NOT_RUN source. One fixed private owner process, outside the ordinary web.
- * Root qualifies localhost-only forwarding, producer, exact source/deps/runtime
+ * Root qualifies fixed private-container transport or local forwarding, producer, exact source/deps/runtime
  * and the outer 300s/1MiB process-group boundary before any future invocation. */
 import assert from 'node:assert/strict';
 import { createReadStream } from 'node:fs';
@@ -15,8 +15,9 @@ import { collectFreshTrustedRelease, recordPhaseName } from './trusted-release-c
 import { readPrivatePacket } from './trusted-release-input.mjs';
 import { createManagementProcess } from './trusted-release-management-process.mjs';
 import { createOwnerHttps } from './trusted-release-owner-https.mjs';
+import { VERIFIER_STATE } from './verifier-runtime.mjs';
 
-const NATIVE_PARENT = '/home/serveradmin/insignia-milestone-autonomy-handoff';
+const NATIVE_PARENT = VERIFIER_STATE;
 export const ownerPhaseForRecord = (recordId) => join(NATIVE_PARENT, recordPhaseName(recordId));
 const SHOP = 'insignia-rewrite-dev.myshopify.com';
 const APP = '1443cf6d03d39edae7c101a943c5c684';
@@ -32,7 +33,13 @@ export function parseOwnerPrivatePacket(text) {
   assert.match(packet.appendPassword, /^[0-9a-f]{64}$/);
   assert.match(packet.clientSecret, /^[^\r\n\0]{1,4096}$/);
   const address = new URL(packet.databaseUrl);
-  assert.ok(['postgres:', 'postgresql:'].includes(address.protocol) && address.hostname === '127.0.0.1');
+  assert.ok(
+    ['postgres:', 'postgresql:'].includes(address.protocol) &&
+      (address.hostname === '127.0.0.1' ||
+        (address.hostname === 'insignia-rewrite-m5-019-database' &&
+          address.port === '5432' &&
+          address.pathname === '/insignia_rewrite')),
+  );
   assert.equal(address.username, 'insignia_runtime');
   assert.ok(
     address.port &&
@@ -91,7 +98,7 @@ async function main() {
       assert.ok(time < deadline);
       return time;
     };
-    const require = createRequire(new URL('../../apps/web/package.json', import.meta.url));
+    const require = createRequire(new URL('../../worker/package.json', import.meta.url));
     const { Pool } = require('pg');
     const { createDurableCore, sha256CanonicalJson } = await import(
       pathToFileURL(require.resolve('@insignia/database'))

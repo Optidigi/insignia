@@ -1,0 +1,157 @@
+{
+  "classification": "NATIVE_ZERO_COST_CANCELLATION_REAUTHORIZATION_AND_RETAINED_ACCESS_QUALIFIED_WITH_BROWSER_LIMIT",
+  "ownerAuthorization": "../../notes/lean-billing-lifecycle-allocation-20261017.md; exact bounded cancellation and same-plan reauthorization authorized on 2026-10-17",
+  "runtimeSourceMerge": "ac189eddde9e1474e51cf9c7235b906ca8c757bb",
+  "appId": "gid://shopify/App/429028933633",
+  "shop": "insignia-rewrite-dev.myshopify.com",
+  "planHandle": "insignia-standard-20261015",
+  "cancellation": {
+    "providerMutationInvocations": 1,
+    "retries": 0,
+    "dispatchResult": "STOP_CANCELLATION_RECONCILE_NO_RETRY",
+    "originalMutationAcknowledgment": "UNKNOWN_RESPONSE_SHAPE; original reply was not retained before strict validation",
+    "independentlyObservedCanceledAt": "2026-10-17T10:34:52.000Z",
+    "currentObservedAt": "2026-10-17T10:35:46.676Z",
+    "active": false,
+    "features": [],
+    "newActionDisposition": "DENY",
+    "settlement": "Confirmed by independent scoped provider history and actual runtime read; not by recovery of the original acknowledgment"
+  },
+  "reauthorization": {
+    "selectionClicks": 1,
+    "approvalClicks": 1,
+    "mutationRetries": 0,
+    "preservedPreclickFailure": "Initial selection stopped before intent/click because the exact Standard card had not hydrated. A bounded readiness wait corrected this; the original failure remains retained.",
+    "createdAt": "2026-10-17T10:57:49.000Z",
+    "providerHistoryPages": 1,
+    "providerHistoryPagination": "EXHAUSTED",
+    "observedAt": "2026-10-17T10:59:03.356Z",
+    "active": true,
+    "billingPeriod": "EVERY_30_DAYS",
+    "effectiveRecurringPrice": {
+      "currency": "USD",
+      "amount": "0.0"
+    },
+    "trialEndsAt": "2026-10-31T10:57:49.000Z",
+    "currentBillingCycle": null,
+    "recognizedPolicyId": "lean-v1-standard-all-features",
+    "features": [
+      "m5.configure",
+      "m5.required",
+      "m5.logo-later",
+      "m5.production-options",
+      "m5.pricing"
+    ],
+    "usageDisposition": "NOT_METERED",
+    "usageItemPresent": false,
+    "usageEventsSent": 0,
+    "billingDispatchEnabled": false,
+    "pendingUpdate": null,
+    "scheduledCancellation": false,
+    "trialInterpretation": "Provider created a fresh 14-day trial after reapproval. Earlier 08:54 trial evidence is preserved unchanged; no local trial extension was applied."
+  },
+  "merchantBillingUi": {
+    "httpStatus": 200,
+    "observedAt": "2026-10-17T11:00:29.776Z",
+    "status": "trial",
+    "newActionsAllowed": true,
+    "nominalStandardPrice": {
+      "amount": "49.99",
+      "currency": "USD",
+      "intervalDays": 30
+    },
+    "actualRecurringPrice": {
+      "amount": "0.0",
+      "currency": "USD"
+    },
+    "developmentTerms": true,
+    "trialEndsAt": "2026-10-31T10:57:49.000Z",
+    "supportedManagementRoutePresent": true
+  },
+  "retainedPurchaseAndOriginal": {
+    "purchaseId": "675e9dfa-d81a-4aa1-a17b-3faf98a97be8",
+    "originalAssetId": "f56527e5-480e-4509-be38-693c11d0ce97",
+    "beforeCancellation": "Actual merchant browser download and frozen preview passed; see native-lean-purchase-original-2026-10-17.json",
+    "afterCancellation": {
+      "authenticatedPurchaseHttpStatus": 200,
+      "scopedDownloadApiHttpStatus": 200,
+      "frozenImageObserved": true,
+      "independentAuthorizedOriginalHttpStatus": 200,
+      "originalBytes": 265,
+      "originalSha256": "2b9633afe3fd7743077d7d77931093a3ce96621cf395cac07d5b46c596992a0c",
+      "originalMatches": true,
+      "browserDownload": "FAILED: Target page, context or browser has been closed",
+      "browserFailureCause": "UNPROVED; separate from successful authorization and physical original retrieval",
+      "nonGetAppAttempts": 0
+    }
+  },
+  "independentReconciliation": {
+    "providerApiVersion": "2026-07",
+    "databaseRole": "insignia_runtime",
+    "readOnly": true,
+    "databaseWrites": 0,
+    "providerMutations": 0
+  },
+  "effects": {
+    "installationPreserved": true,
+    "uninstall": false,
+    "newPlan": false,
+    "scopeChange": false,
+    "realCharge": false,
+    "cancelAndReauthorizeAllocations": "CONSUMED_AND_SETTLED; no repeat authorized"
+  },
+  "privateEvidenceRoot": "/home/serveradmin/insignia-milestone-autonomy-handoff/lean-native-journey-20261017",
+  "privateEvidence": [
+    {
+      "path": "billing-lifecycle-readonly/cancellation-dispatch-result.private.json",
+      "sha256": "7522cd66a59fced498d40fa3e0ef3873b2957229f971042f0050d0b143076e12"
+    },
+    {
+      "path": "after-cancellation/subscription-read-result.private.json",
+      "sha256": "5382206698ac8445af384d7ef0dd2efd0a7fc6e0850575e149c5233d6e137860"
+    },
+    {
+      "path": "after-cancellation/subscription-history-read.private.json",
+      "sha256": "3778fd2dd3f223874cf899065f1714ba763effd2200c38c5b9581cc361b347d6"
+    },
+    {
+      "path": "reapproval/selection-failure.json",
+      "sha256": "c12b291b5ae1a0299a421bcdd4358b5cd5d0f3754210c7899a3257fc62a53e61"
+    },
+    {
+      "path": "reapproval-r2/selection-click-result.json",
+      "sha256": "749f42c2465ece7aadef18b553a70db32cc81a84b8fc673fd8e57fb9e3620c49"
+    },
+    {
+      "path": "reapproval-r2/approval-click-result.json",
+      "sha256": "5c8e640ab792c7fc0a1db172aeae25c800b343ec1a38a77896f8bd083d072399"
+    },
+    {
+      "path": "reapproval-r2/after-approval/subscription-read-result.private.json",
+      "sha256": "91d1a210d171a9cbcd653d860ff181ac16ca31213d9df1066a07ab082dc93cd9"
+    },
+    {
+      "path": "reapproval-r2/after-approval/subscription-history-read.private.json",
+      "sha256": "4da9842c6410b21bf2d88d4c4cd7c4ffbbdd7fb6fbc0a4fcb55f467e9c7aaf26"
+    },
+    {
+      "path": "reapproval-r2/billing-ui/merchant-billing-read.json",
+      "sha256": "f5a91ef8971d4bba384ef6d6f63cf95d7e305d99e8918a13b4aa7a354e489295"
+    },
+    {
+      "path": "buyer/merchant-read-675e9dfa-d81a-4aa1-a17b-3faf98a97be8-lean-20261017/receipt.json",
+      "sha256": "de8f5467d503f81ba04c37653717b476128b1226f7f676905f08c6f739ee2560"
+    },
+    {
+      "path": "buyer/merchant-read-675e9dfa-d81a-4aa1-a17b-3faf98a97be8-after-cancel-r3-20261017/failure.json",
+      "sha256": "567ce420e77de53d558d42c3e5843bceb8a4751f35ba5584f3b28220cd2c9ba5"
+    }
+  ],
+  "limits": [
+    "Effective USD0 development terms do not qualify a real USD49.99 charge, invoice, natural trial-to-paid transition or public merchant eligibility.",
+    "Current provider snapshots and scoped history are observations, not trusted historical entitlement intervals.",
+    "Post-cancellation browser download failure remains preserved; it is not relabeled PASS or attributed to billing.",
+    "No credentials, customer contact data, signed URLs or session data are included."
+  ],
+  "privateProbeCopiesDue": "2026-10-20"
+}

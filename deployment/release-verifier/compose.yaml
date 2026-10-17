@@ -1,0 +1,49 @@
+# Independent collector only. Existing web/worker get the metadata socket, never these secrets.
+name: insignia-release-verifier
+services:
+  verifier:
+    image: ${INSIGNIA_VERIFIER_IMAGE:?Set independently qualified immutable image digest}
+    pull_policy: never
+    user: "1000:1000"
+    init: true
+    restart: "no"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: 1
+    pids_limit: 64
+    stop_grace_period: 320s
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    command: [--manifest-sha256, "${INSIGNIA_VERIFIER_MANIFEST_SHA256:?Set digest from independently reviewed CI artifact}", lean-markets-7b17cd9]
+    volumes:
+      - type: bind
+        source: ${INSIGNIA_VERIFIER_STARTUP_FILE:?Set separately provisioned owned0600 startup file}
+        target: /run/insignia/verifier-startup.json
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${INSIGNIA_VERIFIER_STATE_DIRECTORY:?Set owned0700 journal custody directory}
+        target: /var/lib/insignia/verifier
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${INSIGNIA_VERIFIER_AUTH_DIRECTORY:?Set dedicated owned0700 official SDK auth directory}
+        target: /var/lib/insignia/verifier-auth
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${INSIGNIA_RELEASE_VERIFICATION_SOCKET_DIRECTORY:?Set existing owned0700 socket directory}
+        target: /run/insignia/release-verification
+        bind:
+          create_host_path: false
+    networks: [private, egress]
+networks:
+  private:
+    external: true
+    name: insignia-rewrite-m5-019_private
+  egress:
+    driver: bridge

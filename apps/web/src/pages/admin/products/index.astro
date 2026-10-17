@@ -23,7 +23,6 @@ if (!apiKey || !/^[A-Za-z0-9_-]{1,128}$/.test(apiKey))
     <script is:inline src="https://cdn.shopify.com/shopifycloud/polaris-1.1.js"></script>
   </head>
   <body>
-    <nav aria-label="Insignia"><a href="/admin/orders">Orders and artwork</a> · <a href="/admin/billing">Billing</a></nav>
     {process.env.INSIGNIA_M5_002_DIAGNOSTIC === '1' && <p role="status">Development preview: draft saves are local. Publication is disabled.</p>}
     <MerchantConfigEditor mode="picker" client:load />
   </body>

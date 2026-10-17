@@ -39,7 +39,7 @@ test('merchant billing separates development terms and trial, links Shopify mana
   assert.equal((await shell.text()).includes('2026-10-31'), false, 'bare shell has no private provider facts');
   const browser = await chromium.launch();
   t.after(() => browser.close());
-  const page = await browser.newPage();
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   page.setDefaultTimeout(5000);
   await page.addInitScript(() => {
     window.shopify = { idToken: async () => 'synthetic-billing-actor' };
@@ -75,6 +75,19 @@ test('merchant billing separates development terms and trial, links Shopify mana
   });
   await page.goto(`${base}/admin/billing`);
   await page.getByText('Billing status could not be verified. Try again.').waitFor();
+  const navigation = page.getByRole('navigation', { name: 'Insignia' });
+  assert.equal(
+    await navigation.getByRole('link', { name: 'Products', exact: true }).getAttribute('href'),
+    '/admin/products',
+  );
+  assert.equal(
+    await navigation.getByRole('link', { name: 'Orders and artwork', exact: true }).getAttribute('href'),
+    '/admin/orders',
+  );
+  assert.equal(
+    await navigation.getByRole('link', { name: 'Billing', exact: true }).getAttribute('href'),
+    '/admin/billing',
+  );
   assert.equal(await page.locator('time').count(), 0);
   failing = false;
   await page.getByRole('button', { name: 'Refresh billing status' }).click();
@@ -86,6 +99,15 @@ test('merchant billing separates development terms and trial, links Shopify mana
   assert.equal(await manage.getAttribute('href'), view.managementUrl);
   assert.equal(await manage.getAttribute('target'), '_top');
   assert.equal(await page.getByText(/unlimited/i).count(), 0);
+  await page.screenshot({ path: '/tmp/insignia-lean-local-billing-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.equal(
+    await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    true,
+    'billing fits a narrow merchant viewport',
+  );
+  await page.screenshot({ path: '/tmp/insignia-lean-local-billing-mobile.png', fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 900 });
   view.status = 'inactive';
   view.trialEndsAt = null;
   view.recurringPrice = null;

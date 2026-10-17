@@ -27,6 +27,8 @@ on:
       - 'scripts/m5-owner-lifecycle/**'
       - 'deployment/m5-runtime/**'
       - 'deployment/m8-journey/**'
+      - 'deployment/artwork-inspector/**'
+      - 'deployment/release-verifier/**'
       - 'deployment/m5-019r/**'
       - 'scripts/m5-callback-qualification/**'
       - 'package.json'
@@ -156,6 +158,54 @@ jobs:
           corepack pnpm install --offline --frozen-lockfile --ignore-scripts --prod=false
           bash scripts/m5-024/build-worker.sh /tmp/insignia-m5-024-worker
           M5_WORKER_PACKAGE_ENTRY=/tmp/insignia-m5-024-worker/dist/main.js node --test scripts/m5-024/worker-guards.test.mjs scripts/m5-024/portable-process.test.mjs
+      - name: Versioned inspector host artifact qualification (no inspection or provider effects)
+        if: steps.changes.outputs.route == 'full'
+        env:
+          M5_WORKER_PACKAGE_ENTRY: /tmp/insignia-m5-024-worker/dist/main.js
+        run: |
+          corepack pnpm exec biome check scripts/ci/package-artwork-inspector.mjs scripts/ci/artwork-inspector-package.test.mjs deployment/artwork-inspector/start.mjs
+          node --test scripts/ci/artwork-inspector-package.test.mjs
+          node scripts/ci/package-artwork-inspector.mjs /tmp/insignia-m5-024-worker "$RUNNER_TEMP/insignia-inspector-package"
+          mkdir -m 700 "$RUNNER_TEMP/insignia-inspector-artifact"
+          tar --sort=name --owner=0 --group=0 --numeric-owner -cf "$RUNNER_TEMP/insignia-inspector-artifact/inspector.tar" -C "$RUNNER_TEMP/insignia-inspector-package" .
+          cp "$RUNNER_TEMP/insignia-inspector-package/receipt.json" "$RUNNER_TEMP/insignia-inspector-artifact/receipt.json"
+          sha256sum "$RUNNER_TEMP/insignia-inspector-artifact/inspector.tar" > "$RUNNER_TEMP/insignia-inspector-artifact/inspector.tar.sha256"
+      - name: Preserve versioned inspector host artifact (native handover remains unqualified)
+        if: steps.changes.outputs.route == 'full'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: artwork-inspector-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/insignia-inspector-artifact
+          if-no-files-found: error
+          retention-days: 3
+      - name: Independent immutable verifier package and offline image qualification
+        if: steps.changes.outputs.route == 'full'
+        env:
+          M5_WORKER_PACKAGE_ENTRY: /tmp/insignia-m5-024-worker/dist/main.js
+          INSIGNIA_VERIFIER_SDK_ARCHIVE: ${{ runner.temp }}/shopify-cli-4.8.2.tgz
+        run: |
+          curl --fail --location --retry 0 --output "$INSIGNIA_VERIFIER_SDK_ARCHIVE" https://registry.npmjs.org/@shopify/cli/-/cli-4.8.2.tgz
+          echo "0b1c01d1ebf1f1265826a4ffa78ea94bc4c2eb8a36beb9b2f5fb305ef30231ff  $INSIGNIA_VERIFIER_SDK_ARCHIVE" | sha256sum --check --strict
+          corepack pnpm exec biome check deployment/release-verifier/artifact.mjs deployment/release-verifier/bootstrap.mjs scripts/ci/package-release-verifier.mjs scripts/ci/release-verifier-artifact.test.mjs scripts/ci/release-verifier-compose.test.mjs scripts/ci/verifier-private-input.test.mjs
+          node --test scripts/ci/release-verifier-artifact.test.mjs scripts/ci/release-verifier-compose.test.mjs scripts/ci/verifier-private-input.test.mjs
+          mkdir -m 700 "$RUNNER_TEMP/insignia-verifier-context" "$RUNNER_TEMP/insignia-verifier-artifact"
+          node scripts/ci/package-release-verifier.mjs /tmp/insignia-m5-024-worker "$INSIGNIA_VERIFIER_SDK_ARCHIVE" "$RUNNER_TEMP/insignia-verifier-context/verifier-package"
+          cp deployment/release-verifier/Dockerfile "$RUNNER_TEMP/insignia-verifier-context/Dockerfile"
+          docker build --network none --iidfile "$RUNNER_TEMP/insignia-verifier-artifact/image.id" "$RUNNER_TEMP/insignia-verifier-context"
+          image_id=$(cat "$RUNNER_TEMP/insignia-verifier-artifact/image.id")
+          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --pids-limit 64 --memory 512m --entrypoint /srv/insignia/verifier/bin/node "$image_id" --input-type=module -e "import {readFile} from 'node:fs/promises';import {qualifyLaunchInputs} from './scripts/m5-runtime/trusted-release-launch.mjs';const result=await qualifyLaunchInputs(JSON.parse(await readFile('identity.json','utf8')));console.log(JSON.stringify({classification:'OFFLINE_IMAGE_CODE_QUALIFIED_NOT_NATIVE',...result,providerCalls:0}));" > "$RUNNER_TEMP/insignia-verifier-artifact/offline-image-probe.json"
+          cp "$RUNNER_TEMP/insignia-verifier-context/verifier-package/receipt.json" "$RUNNER_TEMP/insignia-verifier-artifact/receipt.json"
+          docker image inspect "$image_id" > "$RUNNER_TEMP/insignia-verifier-artifact/image-inspect.json"
+          docker save --output "$RUNNER_TEMP/insignia-verifier-artifact/verifier-image.tar" "$image_id"
+          sha256sum "$RUNNER_TEMP/insignia-verifier-artifact/verifier-image.tar" > "$RUNNER_TEMP/insignia-verifier-artifact/verifier-image.tar.sha256"
+      - name: Preserve independent verifier immutable image (native handover remains unqualified)
+        if: steps.changes.outputs.route == 'full'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-verifier-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/insignia-verifier-artifact
+          if-no-files-found: error
+          retention-days: 3
       - name: M5-024 actual disposable worker image and OS controls
         if: steps.changes.outputs.route == 'full'
         env:
