@@ -1,0 +1,69 @@
+{
+  "classification": "ONE_AVAILABLE_UNIT_SETTLED_BY_INDEPENDENT_PROVIDER_AND_UI_READS",
+  "ownerGrant": "lean-native-journey-2026-10-17",
+  "productId": "10519322493211",
+  "variantId": "54211066986779",
+  "inventoryItemId": "56299571249435",
+  "location": "Shop location",
+  "before": {
+    "available": 0,
+    "committed": 2,
+    "onHand": 2
+  },
+  "after": {
+    "available": 1,
+    "committed": 2,
+    "onHand": 3
+  },
+  "tracked": true,
+  "inventoryPolicy": "DENY",
+  "providerRead": {
+    "fixture": {
+      "id": "gid://shopify/ProductVariant/54211066986779",
+      "inventoryQuantity": 1,
+      "inventoryPolicy": "DENY",
+      "inventoryItem": {
+        "id": "gid://shopify/InventoryItem/56299571249435",
+        "tracked": true
+      },
+      "product": {
+        "id": "gid://shopify/Product/10519322493211",
+        "status": "ACTIVE",
+        "tags": [
+          "insignia-m5-acceptance-1f443da8-75c4-44d1-99be-27c397e10c26"
+        ],
+        "variants": {
+          "nodes": [
+            {
+              "id": "gid://shopify/ProductVariant/54211066986779"
+            }
+          ]
+        }
+      }
+    },
+    "classification": "OWNED_FIXTURE_ENFORCEMENT_UNIT_READ",
+    "identity": {
+      "current_user": "insignia_worker",
+      "session_user": "insignia_worker",
+      "current_database": "insignia_rewrite",
+      "readonly": "on",
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolbypassrls": false
+    },
+    "keyId": "m5-runtime-20261011",
+    "shopDomain": "insignia-rewrite-dev.myshopify.com",
+    "passiveCredentialUsable": true,
+    "accessExpiresAt": "2026-10-17T10:33:05.581Z",
+    "databaseWrites": 0,
+    "providerCalls": 1
+  },
+  "browserRow": "Shop location\n0\n2\n1\n3",
+  "saveClicks": 1,
+  "writeRetries": 0,
+  "initialReadFailure": "Immediate first browser reload returned old0/2 values; stopped and reconciled by independent API and later browser reads. No repeat mutation.",
+  "preIntentFailures": "Ownership marker was absent from initial body text during async UI render; strengthened provider unique-variant/item/marker evidence used instead. Both failures before intent/save.",
+  "independentReview": "/root/lean_selection_review CLEAR after exact identity/Available-column correction; actual source hash/history private",
+  "remainingAllocation": "One test checkout remains unexecuted; inventory allocation consumed."
+}

@@ -91,6 +91,29 @@ test('retention alerts carry only fixed categories and bounded counts', () => {
   assert.doesNotMatch(output, /SECRET|customerId|rawBody/);
 });
 
+test('running cleanup failures retain actionable categories without arbitrary error details', () => {
+  let output = '';
+  const { logger } = createObservability({
+    stream: new Writable({
+      write(chunk, _encoding, callback) {
+        output += chunk;
+        callback();
+      },
+    }),
+  });
+  for (const errorClass of [
+    'ARTWORK_CLEANUP_UNAVAILABLE',
+    'MERCHANT_PREVIEW_CLEANUP_UNAVAILABLE',
+    'BUYER_PAYLOAD_CLEANUP_UNAVAILABLE',
+  ]) {
+    logger.error('queue_job_rejected', { errorClass, error: new Error('SECRET'), rawBody: 'SECRET' });
+    assert.equal(JSON.parse(output.trim().split('\n').at(-1)).errorClass, errorClass);
+  }
+  logger.error('queue_job_rejected', { errorClass: 'UNTRUSTED_SECRET', error: new Error('SECRET') });
+  assert.equal(JSON.parse(output.trim().split('\n').at(-1)).errorClass, undefined);
+  assert.doesNotMatch(output, /SECRET|rawBody/);
+});
+
 test('admin auth diagnostics emit only a bounded stage and independent correlation, never identity or secrets', () => {
   let output = '';
   const { logger } = createObservability({

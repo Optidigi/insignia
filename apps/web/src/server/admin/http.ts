@@ -6,6 +6,7 @@ export type AdminRoute =
   | { kind: 'list' }
   | { kind: 'config'; productId: string }
   | { kind: 'readiness' }
+  | { kind: 'billing' }
   | { kind: 'signing' };
 const PRODUCT_ID = /^gid:\/\/shopify\/Product\/[1-9][0-9]*$/;
 const CONFIG_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
@@ -137,6 +138,12 @@ export async function handleAdminRequest(
   if (!actor.canRead) return adminJson(403, { error: 'Read permission required' });
 
   try {
+    if (route.kind === 'billing') {
+      if (request.method !== 'GET') return adminJson(405, { error: 'Method not allowed' });
+      return services.billing
+        ? adminJson(200, await services.billing(actor))
+        : adminJson(503, { error: 'Billing status unavailable' });
+    }
     if (route.kind === 'signing') {
       if (!services.signingOwner) return adminJson(503, { error: 'Signing setup unavailable' });
       if (!actor.canEdit) return adminJson(403, { error: 'Edit permission required' });

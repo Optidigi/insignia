@@ -358,3 +358,21 @@ test('Lean buyer rejects a hybrid commercial policy before allocating runtime re
   assert.equal(await createBuyerBootstrap(env, value.dependencies), undefined);
   assert.deepEqual(value.stats(), { allocated: 0, closed: 0 });
 });
+
+test('buyer bootstrap accepts bounded formatted JSON configuration used by the deployed merchant policy', async () => {
+  const value = seam();
+  const env = environment();
+  for (const key of ['INSIGNIA_M5_ENTITLEMENT_POLICY_JSON', 'INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON'])
+    env[key] = `\n${JSON.stringify(JSON.parse(env[key]), null, 2)}\n`;
+  assert.equal(await createBuyerBootstrap(env, value.dependencies), value.services);
+  assert.deepEqual(value.getComposition().entitlementPolicy, JSON.parse(env.INSIGNIA_M5_ENTITLEMENT_POLICY_JSON));
+  assert.deepEqual(value.getComposition().expectedFunctions, JSON.parse(env.INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON));
+  for (const invalid of ['\n', '\nnot-json\n', '[{}]', ' '.repeat(16385)]) {
+    const denied = seam();
+    assert.equal(
+      await createBuyerBootstrap({ ...env, INSIGNIA_M5_ENTITLEMENT_POLICY_JSON: invalid }, denied.dependencies),
+      undefined,
+    );
+    assert.deepEqual(denied.stats(), { allocated: 0, closed: 0 });
+  }
+});
