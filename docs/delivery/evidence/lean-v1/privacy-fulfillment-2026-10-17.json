@@ -1,0 +1,179 @@
+{
+  "classification": "PRIVACY_IMPLEMENTATION_LOCALLY_QUALIFIED_RELEASE_BLOCKED_LIFECYCLE_AUTHORITY",
+  "base": "fcf042ff67a0bd885ec60ebbaaa9f396f4c54ed6",
+  "scope": [
+    "Authenticated merchant request manifest and exact-money order/per-set exports",
+    "Contact-bearing request bytes erased after durable minimal receipt",
+    "Customer-related settled transport cleanup; pending financial notifications untouched",
+    "Shop privacy stages only independently inactive generations; ambiguous active requests remain operator-held",
+    "Erasure-aware isolated restore v2 including shop fences and completed transport tombstones"
+  ],
+  "reviews": [
+    {
+      "reviewer": "/root/privacy_correctness_security_review",
+      "initialFindings": [
+        "P1 pending refund handoff loss",
+        "P2 numeric money precision",
+        "P2 whole-order export size",
+        "P2 expired attachment identifiers"
+      ]
+    },
+    {
+      "reviewer": "/root/privacy_final_review",
+      "correctness": "CLEAR",
+      "standardsSecurity": "CLEAR",
+      "reconciliation": [
+        "Only processed financial transport is erased",
+        "All top-level numeric money fields exported as decimal strings",
+        "Metadata plus bounded individual design export",
+        "Expired attachment identifiers suppressed before asynchronous cleanup"
+      ]
+    }
+  ],
+  "localChecks": {
+    "database": {
+      "passed": 324,
+      "skipped": 6,
+      "filesPassed": 28,
+      "filesSkipped": 5,
+      "source": "Fresh owned PostgreSQL18.6 Unix-socket cluster; default environment-dependent qualification cases remain skipped"
+    },
+    "restrictedRolesAndWorker": {
+      "passed": 16,
+      "skipped": 0,
+      "scope": "Actual merchant and worker LOGIN grants, pg-boss retention/retry/cleanup and privacy dispatch"
+    },
+    "httpAndBrowser": {
+      "passed": 3,
+      "skipped": 0,
+      "scope": "Merchant authentication/isolation/large design boundary and actual local Chromium download/error recovery"
+    },
+    "isolatedRestore": {
+      "passed": 1,
+      "skipped": 0,
+      "scope": "Root actual pg_dump into separate owned database; pending requests, inactive shop staging, blocked active scope, tombstones, foreign authority denial, immutable economics and deadlines",
+      "authorIndependentRun": "Also passed by /root/privacy_contract_audit before subsequent processed-transport-only correction",
+      "preservedFailure": "Root first rerun correctly rejected an unprocessed financial fixture; fixture now explicitly models already-settled transport. Local restart first omitted socket/port and stopped before DB use; corrected explicit private socket successful."
+    },
+    "builds": "Database/worker TypeScript and Astro build PASS",
+    "boundaries": "PASS after rebuilding dependent declarations; earlier stale-dist type failure preserved",
+    "secrets": "PASS; final tracked-path scan required before commit",
+    "style": "PASS with existing repository warning/info diagnostics"
+  },
+  "nativeBaseline": {
+    "classification": "EXACT_ACTIVE_SCOPE_BASELINE_PASS",
+    "observedAt": "2026-10-17T21:39:37.563Z",
+    "appId": "429028933633",
+    "active": [
+      {
+        "versionId": "gid://shopify/Version/1169137696769",
+        "versionTag": "lean-markets-7b17cd9",
+        "status": "active"
+      }
+    ],
+    "versionCount": 13,
+    "versions": [
+      {
+        "versionId": "gid://shopify/Version/1169137696769",
+        "versionTag": "lean-markets-7b17cd9",
+        "status": "active"
+      },
+      {
+        "versionId": "gid://shopify/Version/1168157736961",
+        "versionTag": "m8-preview-28443bd",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1166710865921",
+        "versionTag": "m8-cookie-91b35ab",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1166552825857",
+        "versionTag": "m8-theme-c8d8713",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1166090010625",
+        "versionTag": "m8-app-proxy-3d2a02e",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1165513097217",
+        "versionTag": "m8-read-orders-617057f",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1163229200385",
+        "versionTag": "m5-functions-9c2e56b42fbf",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1162611916801",
+        "versionTag": "m5-runtime-b673985e1e38",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1158986629121",
+        "versionTag": "m5-019r-9b94149272d1",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1158837927937",
+        "versionTag": "m5-019-a9717e1265ef",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1153019904001",
+        "versionTag": "insignia-3",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1152880803841",
+        "versionTag": "insignia-2",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1146748534785",
+        "versionTag": "insignia-1",
+        "status": "inactive"
+      }
+    ],
+    "moduleCount": 8,
+    "modulesSha256": "ff157c765e0ab830eea7ffeb25c26a4f8d5467baa764f5c7ffb475594e7c3365",
+    "fullMapsMatchReviewedBaseline": true,
+    "installCount": 1,
+    "managementReads": 5,
+    "providerMutations": 0
+  },
+  "release": {
+    "authority": "../../authority/combined-theme-webhook-release-2026-10-17.json",
+    "allocation": "Existing one-time combined grant unused",
+    "nativeMutations": 0,
+    "uploadCalls": 0,
+    "creationOrReleaseAttempts": 0,
+    "runtimeDeployment": false,
+    "conditionalPrerequisite": "Complete handlers and cleanup before release; not satisfied by generic uninstall quarantine",
+    "proposal": "Fourteen compiled modules; complete CI theme assets available. No native acceptance or full handler completion claim."
+  },
+  "blocker": {
+    "classification": "UNINSTALL_GENERATION_AND_ABSENCE_AUTHORITY_UNQUALIFIED",
+    "evidence": [
+      "packages/database/src/repositories/shopify-webhooks.ts processUninstall deliberately returns unqualified without deactivation",
+      "packages/shopify/src/partner-relationship.ts returns installationAuthority:false",
+      "Pinned CLI exposes aggregate installCount, not qualified exact app/store generation absence",
+      "Generic uninstall therefore leaves current generation active and ensuing shop redaction operator-held"
+    ],
+    "primarySources": [
+      "https://shopify.dev/docs/api/partner/2026-07/historical-events",
+      "https://shopify.dev/docs/apps/build/compliance/privacy-law-compliance"
+    ],
+    "inference": "Paginated relationship history is evidence of historical events; inspected API contract does not establish atomic current absence or an installation-generation binding. Preserve explicit limitation rather than converting a last-event observation into erasure authority.",
+    "next": "Qualify supported independent current-state/generation authority, or obtain an explicit bounded registration exception accepting the operational hold. Current grant is not silently expanded."
+  },
+  "privateEvidence": {
+    "path": "/home/serveradmin/insignia-combined-release-prep-20261017",
+    "logs": "/tmp/insignia-combined-privacy-current and /tmp/insignia-combined-privacy-restore-current identify synthetic local logs",
+    "retention": "New private operational copies/compile journals due20October2026 with prior obligations unchanged; no original artwork/customer payload copied by these new native reads."
+  }
+}

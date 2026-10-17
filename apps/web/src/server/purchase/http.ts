@@ -29,9 +29,9 @@ export async function handlePurchaseRequest(
   route = '',
 ): Promise<Response> {
   const requestId = randomUUID();
-  const respond = (data: unknown, status = 200) => {
+  const respond = (data: unknown, status = 200, maximumBytes = 1048576) => {
     const text = JSON.stringify(data);
-    if (Buffer.byteLength(text) > 1048576) throw new HttpError(503, 'RESPONSE_TOO_LARGE');
+    if (Buffer.byteLength(text) > maximumBytes) throw new HttpError(503, 'RESPONSE_TOO_LARGE');
     return new Response(text, {
       status,
       headers: {
@@ -51,6 +51,26 @@ export async function handlePurchaseRequest(
     const url = new URL(request.url);
     if (url.searchParams.has('shop') && url.searchParams.get('shop') !== actor.shop)
       throw new HttpError(403, 'SHOP_MISMATCH');
+    if (route === 'privacy' || route.startsWith('privacy/')) {
+      if (request.method !== 'GET') throw new HttpError(405, 'METHOD_NOT_ALLOWED');
+      if (route === 'privacy') {
+        const after = url.searchParams.get('after');
+        if (after && !UUID.test(after)) throw new HttpError(400, 'INVALID_REQUEST');
+        return respond(await services.privacyRequests(actor, after));
+      }
+      const [, inboxId, kind, purchaseId, setKind, setId, ...remaining] = route.split('/');
+      if (!inboxId || !UUID.test(inboxId) || remaining.length) throw new HttpError(404, 'NOT_FOUND');
+      let value: unknown;
+      if (!kind && !purchaseId) value = await services.privacyRequest(actor, inboxId);
+      else if (kind === 'orders' && purchaseId && UUID.test(purchaseId)) {
+        if (!setKind && !setId) value = await services.privacyOrder(actor, inboxId, purchaseId);
+        else if (setKind === 'sets' && setId && UUID.test(setId))
+          value = await services.privacyOrder(actor, inboxId, purchaseId, setId);
+        else throw new HttpError(404, 'NOT_FOUND');
+      } else throw new HttpError(404, 'NOT_FOUND');
+      if (!value) throw new HttpError(404, 'NOT_FOUND');
+      return respond(value, 200, 4194304);
+    }
     const [id, action, assetId, purpose, ...extra] = route.split('/');
     if (extra.length || (id && !UUID.test(id))) throw new HttpError(404, 'NOT_FOUND');
     if (request.method === 'GET') {

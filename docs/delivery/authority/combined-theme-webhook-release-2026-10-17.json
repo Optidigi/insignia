@@ -1,0 +1,20 @@
+{
+  "classification": "OWNER_AUTHORIZED_CONDITIONAL_COMBINED_BOUNDED_RELEASE",
+  "date": "2026-10-17",
+  "source": "Owner message in current thread: Authorize the combined bounded release",
+  "appId": "429028933633",
+  "allocation": "Amends the existing unused one-time theme release; does not allocate a second release",
+  "permittedDelta": "Qualified pending theme assets plus five order/refund/uninstall webhook subscription modules and one mandatory privacy compliance module with three endpoints",
+  "proposalManifestSha256": "be1f88ca0dd1c4e8f874f260c6d3e41959086a68100d1bd063aab0086bb8e4c5",
+  "proposalUse": "Webhook configuration delta only; copied old theme package is not authorized for release",
+  "preserve": "Existing eight module identities, Functions, scopes and settings, except previously authorized pending theme assets",
+  "payloadBoundary": "Minimized order/refund lookup identifiers and timestamps; prepared uninstall identity fields; standard Shopify mandatory privacy-request payloads",
+  "prerequisites": [
+    "Complete and qualify handlers and cleanup checks before release",
+    "Qualify complete final theme assets and combined candidate",
+    "Retain required independent reviews and exact-head CI",
+    "Verify exact live identity, unchanged baseline and unused allocation before mutation"
+  ],
+  "excluded": ["New scope", "New store", "Actual uninstall", "Charge", "Public rollout"],
+  "executionStatus": "AUTHORITY_RECORDED_ONLY_NO_RELEASE_PERFORMED"
+}

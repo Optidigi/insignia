@@ -34,13 +34,18 @@ export function createDurableWorkerHandlers(
       if (state.resolution === 'expired') return 'expired';
       if (state.resolution === 'exhausted') return 'exhausted';
       if (state.state === 'processed') return;
-      if (state.topic === 'customers/data_request' || state.topic === 'customers/redact') {
+      if (
+        state.topic === 'customers/data_request' ||
+        state.topic === 'customers/redact' ||
+        state.topic === 'shop/redact'
+      ) {
         // Topic is routing only. The durable function rederives the operation,
         // shop and order identities from the retained authenticated raw body.
-        const privacy = await core.customerPrivacy.processInbox(inboxId);
-        // Staging drives existing isolated artwork cleanup; it does not claim
-        // physical deletion. A lookup receipt is still awaiting export delivery.
-        return privacy.kind === 'ERASURE_STAGED' ? undefined : 'deferred';
+        const result = await core.customerPrivacy.processInbox(inboxId);
+        // Both paths have durable handoffs: erasure to isolated cleanup, data
+        // requests to authenticated merchant export. Neither claims customer
+        // delivery or physical object deletion from a successful queue attempt.
+        return result.kind === 'SHOP_ERASURE_BLOCKED' ? 'deferred' : undefined;
       }
       if (['orders/create', 'orders/paid', 'orders/updated', 'refunds/create'].includes(state.topic))
         return purchaseRunner ? purchaseRunner.processInbox(inboxId) : 'deferred';
@@ -84,6 +89,15 @@ export async function recoverPendingUninstalls(core: DurableCore, queue: PgBossR
 
 /** Source-owned bounded transient cleanup, not privacy request fulfillment. */
 export async function maintainWebhookRetention(core: DurableCore, queue: PgBossRuntime) {
+  await core.customerPrivacy.cleanupInboxes(100);
+  const blockedShopErasures = await core.customerPrivacy.blockedShopErasureCount();
+  if (blockedShopErasures) {
+    queue.observability.metrics.queue('failure');
+    queue.observability.logger.error('queue_job_rejected', {
+      errorClass: 'ShopPrivacyAuthorityRequired',
+      count: blockedShopErasures,
+    });
+  }
   const result = await core.webhooks.eraseExpiredPayloads(100);
   for (const [category, count] of [
     ['TransientPayloadExpiredUnresolved', result.unresolvedExpiredCount],

@@ -754,6 +754,7 @@ test('restricted consumer grants permit only required retention and queue metada
       await readFile(new URL('../../../scripts/m5-024/queue-roles.sql', import.meta.url), 'utf8')
     ).replaceAll('pgboss', f.schema);
     await f.pool.query(grants);
+    await f.pool.query(await readFile(new URL('../../../scripts/privacy/runtime-grants.sql', import.meta.url), 'utf8'));
     await f.pool.query(`CREATE ROLE ${role} LOGIN PASSWORD '${testPassword}'; GRANT insignia_queue_consume TO ${role}`);
     const url = new URL(f.connectionString);
     url.username = role;

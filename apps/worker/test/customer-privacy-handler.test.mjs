@@ -38,12 +38,12 @@ test('customer privacy dispatch uses only durable inbox identity and reports sta
     assert.equal(await erasure.handlers.processInbox('durable-inbox'), undefined);
     assert.deepEqual(erasure.calls, ['durable-inbox']);
     const request = fixture(topic, 'DATA_REQUEST_PENDING_EXPORT');
-    assert.equal(await request.handlers.processInbox('durable-inbox'), 'deferred');
+    assert.equal(await request.handlers.processInbox('durable-inbox'), undefined);
     assert.deepEqual(request.calls, ['durable-inbox']);
   }
 });
 
-test('privacy unavailable remains a failed queue attempt; shop erasure is not inferred from customer processing', async () => {
+test('privacy unavailable remains a failed queue attempt; ambiguous active shop erasure remains deferred', async () => {
   const f = fixture('customers/redact');
   f.handlers = createDurableWorkerHandlers(
     {
@@ -61,7 +61,7 @@ test('privacy unavailable remains a failed queue attempt; shop erasure is not in
     {},
   );
   await assert.rejects(f.handlers.processInbox('durable-inbox'), /retained body unavailable/);
-  const shop = fixture('shop/redact');
+  const shop = fixture('shop/redact', 'SHOP_ERASURE_BLOCKED');
   assert.equal(await shop.handlers.processInbox('durable-inbox'), 'deferred');
-  assert.deepEqual(shop.calls, []);
+  assert.deepEqual(shop.calls, ['durable-inbox']);
 });

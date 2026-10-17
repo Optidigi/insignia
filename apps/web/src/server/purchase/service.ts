@@ -130,6 +130,13 @@ export function createPurchaseServices(input: {
   return {
     appOrigin: input.appOrigin,
     authenticate: input.authenticate,
+    async privacyRequests(actor: AdminActor, after: string | null = null) {
+      return { items: await input.core.customerPrivacy.listDataRequests(scope(actor), after) };
+    },
+    privacyRequest: (actor: AdminActor, inboxId: string) =>
+      input.core.customerPrivacy.readDataRequest(scope(actor), inboxId),
+    privacyOrder: (actor: AdminActor, inboxId: string, purchaseId: string, setId: string | null = null) =>
+      input.core.customerPrivacy.exportOrder(scope(actor), inboxId, purchaseId, setId),
     async list(actor: AdminActor, query: { limit: number; before: string | null }) {
       const rows = await store.list(scope(actor), {
         limit: query.limit + 1,
