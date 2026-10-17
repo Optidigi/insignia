@@ -97,14 +97,36 @@
     "correctionTestAndDeploymentInstructions": "CLEAR againstfb4e723",
     "scope": "One focused reviewer; native operators and then correction deltas, no recursive full review.",
     "nativeEffectsByReviewer": 0,
-    "changedCompositionTestSha256": "29db6b9b5d96f0ea5c49f2e02fc4334d43c9c849fa084251bf3f4b4270fa9d9d"
+    "changedCompositionTestSha256": "29db6b9b5d96f0ea5c49f2e02fc4334d43c9c849fa084251bf3f4b4270fa9d9d",
+    "testCorrectionImpact": "CLEAR: obtain current signed-staff actor after service recomposition; no grant/expiry bypass",
+    "correctedCompositionTestSha256": "49ffb3c3fdac9f9b0873fb2b0fdaeb8c236fc44b2885ea2014e83e0258798ec1"
   },
   "candidateChecks": {
     "startupActionAndConfiguration": "18 PASS /0 SKIP",
     "ordinaryPublicationComposition": "localSKIP: noDATABASE_URL/docker; actualPG required from final CI",
     "style": "PASS /20 pre-existing informational suggestions; no automatic unrelated formatting",
     "secrets": "PASS",
-    "finalCI": "PENDING"
+    "finalCI": "PENDING",
+    "initialCI": {
+      "head": "d5bb0d1928c31ffaf0315153d87c123aef496ecd",
+      "foundation": {
+        "run": 39019893648,
+        "result": "SUCCESS"
+      },
+      "durableCore": {
+        "run": 39019893644,
+        "result": "SUCCESS"
+      },
+      "runtime": {
+        "run": 39019893655,
+        "result": "FAILURE",
+        "step": "M5 Admin editor and publication with PostgreSQL",
+        "test": "demand-success",
+        "resultCounts": "56 PASS /1 FAIL /0 SKIP",
+        "reason": "Test recomposed services but later reused old process-local authenticated actor for a direct save; its online grant is correctly absent in the new service.",
+        "correction": "Authenticate a current actor through the recomposed service before direct save; production grant checks and actual expiry unchanged."
+      }
+    }
   },
   "limits": [
     "Billing positive/trial is separately proven; cancellation/reauthorization and real invoice remain unqualified.",

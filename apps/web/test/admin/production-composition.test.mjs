@@ -810,7 +810,12 @@ for (const releaseMode of [
         assert.equal(adminMutations, 4);
         // The next immutable revision needs fresh authority even though the key is already provisioned.
         await new Promise((resolve) => verificationServer.listen(join(socketDirectory, 'collector.sock'), resolve));
-        const nextDraft = await services.configs.save(actor, productId, {
+        const currentActor = await services.authenticate(
+          new Request(origin + '/api/admin/products', {
+            headers: { Authorization: `Bearer ${staffToken(shop)}` },
+          }),
+        );
+        const nextDraft = await services.configs.save(currentActor, productId, {
           configId: created.configId,
           draftVersion: saved.draftVersion,
           draft: validDraft(),
