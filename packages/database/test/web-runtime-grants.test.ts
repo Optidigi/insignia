@@ -688,6 +688,11 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       const usageScript = (
         await readFile(new URL('../../../scripts/m9-usage/runtime-grants.sql', import.meta.url), 'utf8')
       ).replaceAll('insignia_queue_consume', queue);
+      // Deferred usage capability remains pinned to its historical schema38.
+      // The actual current schema must be rejected, not silently admitted.
+      await expect(owner.query(usageScript)).rejects.toThrow('exact_usage_schema38_required');
+      await owner.query('ROLLBACK');
+      await owner.query('DELETE FROM schema_migrations WHERE version=$1', ['20261017000100']);
       await owner.query(`ALTER ROLE ${queue} CREATEROLE`);
       await expect(owner.query(usageScript)).rejects.toThrow('unqualified_usage_runtime_role');
       await owner.query('ROLLBACK');
@@ -696,10 +701,13 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       await expect(owner.query(usageScript)).rejects.toThrow('unqualified_usage_runtime_membership');
       await owner.query('ROLLBACK');
       await owner.query(`REVOKE ${extra} FROM ${queue}`);
-      await owner.query('DELETE FROM schema_migrations WHERE version=$1', [names.at(-1)?.split('_')[0]]);
+      // This optional historical usage grant requires its fixed schema38 input,
+      // not whichever unrelated migration was added most recently.
+      const usageRequiredVersion = '20261015000600';
+      await owner.query('DELETE FROM schema_migrations WHERE version=$1', [usageRequiredVersion]);
       await expect(owner.query(usageScript)).rejects.toThrow('exact_usage_schema38_required');
       await owner.query('ROLLBACK');
-      await owner.query('INSERT INTO schema_migrations(version) VALUES($1)', [names.at(-1)?.split('_')[0]]);
+      await owner.query('INSERT INTO schema_migrations(version) VALUES($1)', [usageRequiredVersion]);
       await owner.query('GRANT UPDATE(purchase_id) ON m9_order_usage TO PUBLIC');
       await expect(owner.query(usageScript)).rejects.toThrow('unqualified_usage_public_access');
       await owner.query('ROLLBACK');

@@ -11,14 +11,14 @@
     "apps/worker/test/customer-privacy-handler.test.mjs": "2736a022cacf5d62fbe6aa3c01743097311476b917a125f4c96d06849c61c39f",
     "apps/worker/test/customer-privacy-role.test.mjs": "3301f6f9324a59fd36bf0cc273756a097a25e25791998103f2ed7d763679ecff",
     "scripts/privacy/runtime-grants.sql": "f0ac28229db54d3b3e3279c1db8ee651e45d49e3b907ae35c7656222476b95d1",
-    "packages/database/test/web-runtime-grants.test.ts": "b5e27fd8677213882d27e6b050043527ed0c4bd97670d8f1f80c9da229fd5042"
+    "packages/database/test/web-runtime-grants.test.ts": "47b8d04a8a9bf409ee6a946b13d2c074d23e17c3c8502efb3cdffaaa9bc53528"
   },
   "tests": {
     "databaseAuthor": "6new+24purchase/artwork=30PASS; fresh isolatedPG18, empty rollback/reapplyPASS",
     "databaseIndependent": "/root/lean_selection_review reran6PASS0SKIP on isolatedPG18",
     "workerComposition": "Meaningful2RED defer/missingerror beforedispatch correction; then2PASS",
     "actualLogin": "3PASS0SKIP with freshUnix-onlyPG18/SCRAM-SHA256 authentication, LOGIN denied beforegrant; staged signed-body purpose aftergrant/replay; helper/table/originalkey denials",
-    "webRoles": "Migrationpin39/newwebdenials sourceupdated; localfullwebrole suite1SKIP because exact allocated CI endpoint unavailable; requiredCI pending",
+    "webRoles": "Actual restricted web/purchase/inspection LOGIN composition1PASS0SKIP on fresh ownedPG18 at supportedlocalhost58199 withSCRAM; fixturecluster stopped/removed.",
     "opaqueDatabaseApi": "19compiler/4runtimeprobesPASS",
     "typecheckStyle": "PASS; existingwebrole advisorywarnings retained"
   },
@@ -39,5 +39,16 @@
     "Restored pre-request backups lack receipt/inbox FKtargets: must not fabricate newauthenticatedingress to restorefences.",
     "Actualstorage originalexpiry/deadlines and immutableeconomicfacts unchanged."
   ],
-  "localCleanup": "Each newownedPGcluster stopped/removed; logs preserved, existingPGdata untouched."
+  "localCleanup": "Each newownedPGcluster stopped/removed; logs preserved, existingPGdata untouched.",
+  "correction": {
+    "failedHead": "0d6e27f625426af2bc575dbc1d8b0a8b58a7c84c",
+    "failedRun": 39025872521,
+    "failure": "Optional deferredusage38 fixture deleted newlatest39, correctly restoringexact38 and making a supposednegativegrant succeed.",
+    "firstLocalCorrection": "Explicitremove38 hitexpectedrefusal but metadata39 also blockedsubsequenthazardchecks; preserved localRED.",
+    "finalCorrection": "Explicitly assertactual39refuses unchangedusagegrant, isolatefixed38metadata onlyforhistoricalguardhazards, delete/reinsert explicitrequired38ID.",
+    "previousWebRoleTestSha256": "b5e27fd8677213882d27e6b050043527ed0c4bd97670d8f1f80c9da229fd5042",
+    "independentImpactReview": "/root/lean_fidelity_reference CLEAR; no productiongrantchange/usageactivation",
+    "localFinal": "1PASS0SKIP actualLOGIN; unchangedexistingrolehazards/newprivacydenials retained",
+    "limit": "Historical38metadata over newerfixtureDDL qualifiesfixedgrantguards, notschema39usageeligibility; actual39refusal explicit."
+  }
 }
