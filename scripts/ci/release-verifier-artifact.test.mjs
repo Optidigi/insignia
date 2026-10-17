@@ -92,13 +92,22 @@ test('actual packaged collector relocates with pinned SDK and production depende
       [
         '--input-type=module',
         '-e',
-        `import {readFile} from 'node:fs/promises';
+        `import assert from 'node:assert/strict';
+         import {readFile} from 'node:fs/promises';
          import http from 'node:http';
          import https from 'node:https';
          import {syncBuiltinESMExports} from 'node:module';
          const deny=()=>{throw Error('offline SDK import cannot access network')};
-         globalThis.fetch=deny;http.request=deny;http.get=deny;https.request=deny;https.get=deny;
+         // The pinned SDK loads its embedded Yoga WASM through a data URI.
+         // Decode those local bytes ourselves; every actual network URL stays denied.
+         globalThis.fetch=(url)=>{
+           if(typeof url!=='string'||!/^data:application\\/octet-stream;base64,[A-Za-z0-9+/]+={0,2}$/.test(url))return deny();
+           return Promise.resolve(new Response(Buffer.from(url.slice(url.indexOf(',')+1),'base64')));
+         };
+         http.request=deny;http.get=deny;https.request=deny;https.get=deny;
          syncBuiltinESMExports();
+         for(const url of ['https://example.invalid','http://example.invalid','file:///etc/passwd',new URL('https://example.invalid')])
+           assert.throws(()=>fetch(url),/cannot access network/);
          const {qualifyLaunchInputs}=await import('./scripts/m5-runtime/trusted-release-launch.mjs');
          const identity=JSON.parse(await readFile('identity.json','utf8'));
          const result=await qualifyLaunchInputs(identity);

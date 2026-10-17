@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const dockerAvailable = spawnSync('docker', ['compose', 'version'], { stdio: 'ignore' }).status === 0;
@@ -34,9 +35,16 @@ test('independent verifier Compose exposes only a private metadata socket and ke
   assert.deepEqual(service.command, ['--manifest-sha256', 'b'.repeat(64), 'lean-markets-7b17cd9']);
   assert.equal(service.volumes.length, 4);
   assert.equal(service.volumes.find((v) => v.target === '/run/insignia/verifier-startup.json').read_only, true);
+  // compose-go versions using json:",omitempty" omit the false bool. Keep the
+  // explicit source policy as well, so serialization cannot hide missing authority guards.
+  const source = readFileSync('deployment/release-verifier/compose.yaml', 'utf8');
+  assert.equal([...source.matchAll(/^\s+create_host_path: false\s*$/gm)].length, 4);
   assert.ok(
     service.volumes.every(
-      (v) => v.bind.create_host_path === false && !/docker.sock|\.ssh|wrapping|artwork-storage/.test(v.source),
+      (v) =>
+        v.type === 'bind' &&
+        (v.bind?.create_host_path === false || v.bind?.create_host_path === undefined) &&
+        !/docker.sock|\.ssh|wrapping|artwork-storage/.test(v.source),
     ),
   );
   assert.deepEqual(Object.keys(service.networks).sort(), ['egress', 'private']);
