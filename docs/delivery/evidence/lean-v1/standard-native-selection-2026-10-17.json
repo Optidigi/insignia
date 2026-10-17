@@ -1,0 +1,102 @@
+{
+  "classification": "NATIVE_STANDARD_RECURRING_ONLY_AND_AUTHORITATIVE_TRIAL_PASS",
+  "ownerAuthorization": "Owner2026-10-17 explicitly approved bounded proposal after PR186 response",
+  "proposal": "../../notes/lean-native-journey-allocation-20261016.md",
+  "app": "429028933633",
+  "shop": "insignia-rewrite-dev.myshopify.com",
+  "selectionClicks": 1,
+  "approvalClicks": 1,
+  "zeroCostApprovalText": [
+    "This plan is free. You will not be billed.",
+    "You will not be billed for this test charge."
+  ],
+  "observedSubscription": {
+    "schemaVersion": "m4-active-subscription-v1",
+    "sourceApiVersion": "2026-07",
+    "appId": "gid://shopify/App/429028933633",
+    "shopId": "gid://shopify/Shop/105501393179",
+    "observedAt": "2026-10-17T08:54:54.781Z",
+    "active": true,
+    "billingPeriod": "EVERY_30_DAYS",
+    "cancelAtEndOfCycle": false,
+    "trialEndsAt": "2026-10-31T08:54:46.000Z",
+    "currentBillingCycle": null,
+    "items": [
+      {
+        "handle": "insignia-standard-20261015",
+        "price": {
+          "kind": "flat",
+          "providerTypename": "FlatRatePrice",
+          "active": false,
+          "currency": "USD",
+          "amount": "0.0"
+        },
+        "discount": null,
+        "usage": null
+      }
+    ],
+    "pendingUpdate": null
+  },
+  "actualRuntimeProjection": {
+    "policyVersion": "lean-v1-recurring-only",
+    "active": true,
+    "recognizedPolicyId": "lean-v1-standard-all-features",
+    "trial": true,
+    "features": [
+      "m5.configure",
+      "m5.required",
+      "m5.logo-later",
+      "m5.production-options",
+      "m5.pricing"
+    ],
+    "includedUsage": null,
+    "observedUsageQuantity": null,
+    "billableUsageAllowed": false,
+    "qualifyingUsageDisposition": "NOT_METERED",
+    "scheduledCancellation": false,
+    "pendingProviderUpdate": null,
+    "freshness": "fresh",
+    "observedAt": "2026-10-17T08:54:54.781Z",
+    "sourceApiVersion": "2026-07"
+  },
+  "identity": {
+    "current_user": "insignia_runtime",
+    "session_user": "insignia_runtime",
+    "readonly": "on"
+  },
+  "allRequiredFeaturesPresent": true,
+  "independentRead": {
+    "providerQueries": 1,
+    "databaseWrites": 0,
+    "providerMutations": 0,
+    "usageEventsSent": 0
+  },
+  "reviews": {
+    "reviewer": "/root/lean_selection_review",
+    "correctnessSecurity": "CLEAR after whole-card usage-guard correction and redundant body-heading correction",
+    "selectionSha256": "b7cb208f3234450a64fe4395b54173fa2d02d4e3ea2b054279005224e249e6c5",
+    "approvalSha256": "10153fcdd013f1aaa74c74a1e5fb9e4bc5ab71434513902a1e6b7519c9511d0f",
+    "readSha256": "9af49ca741187ab070f18887d3bb13d54a2b30b13edcc28ecd3fd4fdde0e8a40"
+  },
+  "preservedFailures": [
+    {
+      "stage": "confirmation first attempt",
+      "classification": "STOP_BEFORE_CLICK",
+      "reason": "The custom heading was absent from body.innerText after fresh navigation; all actual economic terms unchanged.",
+      "approvalIntents": 0,
+      "approvalClicks": 0
+    },
+    {
+      "stage": "read after selection before approval",
+      "classification": "OLD_TEST_CONTRACT_NEW_ACTIONS_DENIED_PASS",
+      "interpretation": "Actual old contract unchanged, confirmation still pending; not unknown selection or accepted Standard."
+    }
+  ],
+  "limits": [
+    "Actual development contract amountUSD0; nominal49.99 terms separately attributed to pricing readback, not a real invoice or charge proof.",
+    "Trial end is actual provider2026-10-31T08:54:46Z; not inferred or extended.",
+    "Cancellation, reauthorization, trial expiry and live billing are not qualified by this positive observation.",
+    "No app release, scope, pricing-method switch, usage event or real charge."
+  ],
+  "cleanupDate": "2026-10-20"
+}
