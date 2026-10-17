@@ -1,0 +1,40 @@
+{
+  "classification": "VERIFIED_NORMAL_PROTECTED_PR188_MERGE",
+  "pullRequest": "https://github.com/Optidigi/insignia/pull/188",
+  "base": "fb4e723d9f09bed2f61650af1b456df473e90ff4",
+  "effectiveMergeBase": "fb4e723d9f09bed2f61650af1b456df473e90ff4",
+  "head": "53c5b25e0f8c4b8b70418235c28982ca1e6e2ff5",
+  "merge": "4e1a7b4a14551a647cbfcc6d8efdc9ef2d5a3461",
+  "tree": "b9147f6004c1e6a416928cadf38c43d00b5ead43",
+  "parents": [
+    "fb4e723d9f09bed2f61650af1b456df473e90ff4",
+    "53c5b25e0f8c4b8b70418235c28982ca1e6e2ff5"
+  ],
+  "mergedAt": "2026-10-17T09:27:04Z",
+  "checks": [
+    {
+      "name": "foundation",
+      "run": 39020542220,
+      "head": "53c5b25e0f8c4b8b70418235c28982ca1e6e2ff5",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "name": "durable-core",
+      "run": 39020542259,
+      "head": "53c5b25e0f8c4b8b70418235c28982ca1e6e2ff5",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "name": "runtime",
+      "run": 39020542286,
+      "head": "53c5b25e0f8c4b8b70418235c28982ca1e6e2ff5",
+      "attempt": 1,
+      "result": "SUCCESS"
+    }
+  ],
+  "actualPostgresComposition": "57 PASS /0 FAIL /0 SKIP; demand-success no-bootstrap/new-publication case PASS",
+  "nativeCorrection": false,
+  "sourceImageReuse": "No executable production code drift from integrated186; test/docs change only. Current web/workerimages remain186."
+}

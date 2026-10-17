@@ -1,0 +1,116 @@
+{
+  "classification": "CONSUMED_STARTUP_MOUNTS_RETIRED_VERIFIER_REBOUND_LEAN_PUBLICATION_VERIFIED",
+  "configurationReviewMerge": "4e1a7b4a14551a647cbfcc6d8efdc9ef2d5a3461",
+  "mountRetirementPhase": {
+    "classification": "EXACT_CONSUMED_STARTUP_MOUNTS_RETIRED_PASS",
+    "sourceMerge": "c8519fc113071fabbe84a1492dd2ed1fbdbeb039",
+    "sourceTree": "e7ea7bb572372b38a178de73b4b2140e427dc3d2",
+    "configurationReviewMerge": "4e1a7b4a14551a647cbfcc6d8efdc9ef2d5a3461",
+    "oldWebContainer": "480cbb24ebb7bf72c0e3f7a7d9ff01b8f703f93e2525d39569736cebcf4d6956",
+    "webContainer": "b7ccbe7ab4787c5790a2089555f463072983c49d16830e7835f53c845cc0c750",
+    "webImage": "sha256:4bd596e27892b7b94e6b7a601e2d9cfa16f673390f866f3ca13d3abfab9cb671",
+    "workerContainer": "2db1ff88ec7d11a32cfa826b554db09a96e9d278dfe07e48eaf00c3fae0b588b",
+    "workerImage": "sha256:e2b8a544f5aa48d7d41e5b8adf8b651facfaa1789e0cb097e9c4b0338c41bafc",
+    "databaseContainer": "19419eff11ef9c0b43e484f91ad97ba606c817df6604e7a6d08c5513473285a1",
+    "databaseImage": "sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d",
+    "retiredDestinations": [
+      "/run/insignia/signing-owner-plan.json",
+      "/var/lib/insignia/signing-owner"
+    ],
+    "environmentDeltaKeys": [],
+    "imagesChanged": false,
+    "healthy": true,
+    "otherConfigUnchanged": true,
+    "other33ContainersPreserved": true,
+    "inspectorAndBridgePreserved": true,
+    "financialFactsPreserved": true,
+    "hostBootstrapRecordsPreserved": true,
+    "dispatchInvocations": 1,
+    "retryInvocations": 0,
+    "verifierRebinding": "PENDING"
+  },
+  "verifierRebinding": "COMPLETE; unchanged frozen source/manifest, new web binding, no receipt restamping",
+  "freshActualRoleRead": {
+    "exitCode": 0,
+    "observations": [
+      {
+        "classification": "LEAN188_FRESH_CORRELATED_RELEASE_AND_INDEPENDENT_SELECT_PASS",
+        "requestId": "216f2c73-5c64-4ee1-8903-c571594f08f6",
+        "recordId": "3c0e4355-e02f-46b5-b19a-efdc2101739e",
+        "state": "COMPLETE",
+        "identity": {
+          "current_user": "insignia_runtime",
+          "session_user": "insignia_runtime",
+          "readonly": "on"
+        },
+        "appVersion": "1169137696769",
+        "functionsSourceCommit": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+        "observedAt": "2026-10-17T09:31:48.237Z",
+        "expiresAt": "2026-10-17T09:32:16.493Z",
+        "historicalEvidenceRestamped": false,
+        "runtimeDatabaseWrites": 0,
+        "collectionCalls": 1,
+        "providerMutationCalls": 0
+      }
+    ],
+    "workerExitCode": 0,
+    "workerObservations": [
+      {
+        "classification": "LEAN188_FRESH_CORRELATED_RELEASE_AND_INDEPENDENT_SELECT_PASS",
+        "requestId": "216f2c73-5c64-4ee1-8903-c571594f08f6",
+        "recordId": "3c0e4355-e02f-46b5-b19a-efdc2101739e",
+        "state": "COMPLETE",
+        "identity": {
+          "current_user": "insignia_worker",
+          "session_user": "insignia_worker",
+          "readonly": "on"
+        },
+        "appVersion": "1169137696769",
+        "functionsSourceCommit": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+        "observedAt": "2026-10-17T09:31:48.237Z",
+        "expiresAt": "2026-10-17T09:32:16.493Z",
+        "historicalEvidenceRestamped": false,
+        "runtimeDatabaseWrites": 0,
+        "collectionCalls": 0,
+        "providerMutationCalls": 0
+      }
+    ]
+  },
+  "publication": {
+    "observedAt": "2026-10-17T09:36:39.299Z",
+    "testedSource": "c8519fc113071fabbe84a1492dd2ed1fbdbeb039",
+    "webContainer": "b7ccbe7ab4787c5790a2089555f463072983c49d16830e7835f53c845cc0c750",
+    "productId": "gid://shopify/Product/10519322493211",
+    "productStatus": "ACTIVE",
+    "draftVersion": "4",
+    "publication": {
+      "state": "ACTIVE",
+      "revisionId": "9215185d-3109-4f07-b93b-d7e25b9bd7f5",
+      "sourceDraftVersion": "4",
+      "requestKey": "m5pub_4dbbe8f6-8162-4271-9819-fd485f7d65f6_1_4",
+      "activeRevisionId": "9215185d-3109-4f07-b93b-d7e25b9bd7f5",
+      "reason": null,
+      "requiresAllChannelHold": false,
+      "functionReadiness": "RELEASE_BOUND"
+    },
+    "configReads": 1,
+    "configWrites": 0,
+    "screenshotSha256": "c49c34ec478923a09d7e051df94678b72798dd66852ae7ff2f39d5b9569482f1"
+  },
+  "publicationCommands": 1,
+  "publicationHttpResponse": 202,
+  "priorFailure": "403 before command capture, preserved in native-lean-publication-blocker-2026-10-17.json",
+  "independentReview": {
+    "reviewer": "/root/lean_selection_review",
+    "mountOperator": "CLEAR",
+    "verifierOperator": "CLEAR",
+    "freshProbe": "CLEAR",
+    "publicationDelta": "CLEAR; exact202 acknowledgment continuation; no ambiguous retry"
+  },
+  "limits": [
+    "Native image/source remains186; PR188 tests/docs only.",
+    "Fresh evidence retains actual expiry; no ongoing validity asserted.",
+    "Inventory/checkout and new Lean purchase/artwork remain unexecuted at this receipt.",
+    "Private operator/journal/screenshots due20October; original retention and credential rotation unchanged."
+  ]
+}

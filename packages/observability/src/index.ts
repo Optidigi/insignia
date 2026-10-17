@@ -130,7 +130,16 @@ function safeDetails(input: RuntimeLogDetails): RuntimeLogDetails {
     input.errorClass === 'UninstallPayloadRetentionBlocked' ||
     input.errorClass === 'UnknownPayloadRetentionBlocked' ||
     input.errorClass === 'UnsupportedPayloadRetentionBlocked' ||
-    input.errorClass === 'UninstallRecoveryUnresolved'
+    input.errorClass === 'UninstallRecoveryUnresolved' ||
+    input.errorClass === 'WEBHOOK_RETENTION_UNAVAILABLE' ||
+    input.errorClass === 'UNINSTALL_RECOVERY_UNAVAILABLE' ||
+    input.errorClass === 'PURCHASE_RECOVERY_UNAVAILABLE' ||
+    input.errorClass === 'PURCHASE_DISCOVERY_UNAVAILABLE' ||
+    input.errorClass === 'PURCHASE_RECONCILIATION_UNAVAILABLE' ||
+    input.errorClass === 'PURCHASE_PAYLOAD_CLEANUP_UNAVAILABLE' ||
+    input.errorClass === 'ARTWORK_CLEANUP_UNAVAILABLE' ||
+    input.errorClass === 'MERCHANT_PREVIEW_CLEANUP_UNAVAILABLE' ||
+    input.errorClass === 'BUYER_PAYLOAD_CLEANUP_UNAVAILABLE'
   )
     result.errorClass = input.errorClass;
   if (Number.isSafeInteger(input.count) && (input.count ?? -1) >= 0) result.count = input.count;

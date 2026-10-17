@@ -34,6 +34,7 @@ import { Pool } from 'pg';
 import { loadCredentialKeys } from '../../../../worker/src/config.ts';
 import { createMerchantConfigService } from '../merchant-config.js';
 import { type AdminInstallation, AdminInstallationReconciliationError, createAdminAuthenticator } from './auth.js';
+import { createMerchantBillingReader } from './billing.js';
 import type { AdminActor, AdminServices, CatalogProduct } from './contracts.js';
 import { createMerchantPublicationCapture } from './merchant-previews.js';
 import {
@@ -206,6 +207,33 @@ export function createProductionAdminServices(
       actor.expiresAtMs > at && Number.isFinite(observed) && observed <= at && at - observed <= 30_000 && at < expires
     );
   }
+
+  const billing =
+    partner && policy && appGid
+      ? createMerchantBillingReader({
+          appId: appGid,
+          policy: policy.catalog,
+          now: entitlementClock,
+          async current(actor) {
+            await active(actor);
+            grant(actor);
+          },
+          async read(actor) {
+            const raw = await partner.read({ appId: appGid, shopId: actor.shopId });
+            const bound = await bindProviderSubscription(
+              raw,
+              {
+                appId: appGid,
+                shopId: actor.shopId,
+                tenantShopId: actor.tenantShopId,
+                installationGeneration: actor.installationGeneration,
+              },
+              core.tenants,
+            );
+            return { ...raw, tenantShopId: bound.tenantShopId, installationGeneration: bound.installationGeneration };
+          },
+        })
+      : undefined;
 
   const catalog = {
     async list(actor: AdminActor, input: { query: string; cursor: string | null; limit: number }) {
@@ -501,6 +529,7 @@ export function createProductionAdminServices(
       })
     : undefined;
   return {
+    billing,
     appOrigin,
     ...(signingOwner
       ? {
