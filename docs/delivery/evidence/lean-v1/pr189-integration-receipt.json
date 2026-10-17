@@ -1,0 +1,40 @@
+{
+  "classification": "VERIFIED_NORMAL_PROTECTED_PR189_MERGE",
+  "pullRequest": "https://github.com/Optidigi/insignia/pull/189",
+  "base": "4e1a7b4a14551a647cbfcc6d8efdc9ef2d5a3461",
+  "effectiveMergeBase": "4e1a7b4a14551a647cbfcc6d8efdc9ef2d5a3461",
+  "head": "8b472639ec3fcc56f4551c7301eab850c392e15a",
+  "merge": "ac189eddde9e1474e51cf9c7235b906ca8c757bb",
+  "tree": "4041e3f3d05b3064e30ebb4c9a984a993c5a52a4",
+  "parents": [
+    "4e1a7b4a14551a647cbfcc6d8efdc9ef2d5a3461",
+    "8b472639ec3fcc56f4551c7301eab850c392e15a"
+  ],
+  "mergedAt": "2026-10-17T09:57:26Z",
+  "checks": [
+    {
+      "name": "foundation",
+      "run": 39022503673,
+      "head": "8b472639ec3fcc56f4551c7301eab850c392e15a",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "name": "durable-core",
+      "run": 39022503660,
+      "head": "8b472639ec3fcc56f4551c7301eab850c392e15a",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "name": "runtime",
+      "run": 39022503792,
+      "head": "8b472639ec3fcc56f4551c7301eab850c392e15a",
+      "attempt": 1,
+      "result": "SUCCESS"
+    }
+  ],
+  "scope": "Billing display/read-only endpoint, sanitized fixed log categories and buyer formatted-JSON startup correction.",
+  "nativeQualification": "PENDING exact CI-artifact deployment and fresh buyer/billing checks; CI or constructor-only probe does not prove new journey.",
+  "priorAllocations": "Standard, publication and stock settled; one test checkout remains unused."
+}

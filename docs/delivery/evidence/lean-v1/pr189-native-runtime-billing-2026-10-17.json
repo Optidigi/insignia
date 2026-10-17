@@ -1,0 +1,69 @@
+{
+  "classification": "EXACT_CI_RUNTIME_PAIR_AND_NATIVE_BILLING_QUALIFIED",
+  "runtime": {
+    "classification": "EXACT_IMAGE_ONLY_RUNTIME_PAIR_UPDATE_PASS",
+    "webPolicySha256": "2d0ee70e6f2ac1e3bc593501f0703920126280fb9343822853e7e525168fc46b",
+    "webEnvironmentDeltaKeys": [],
+    "workerEnvironmentDeltaKeys": [],
+    "sourceMerge": "ac189eddde9e1474e51cf9c7235b906ca8c757bb",
+    "sourceTree": "4041e3f3d05b3064e30ebb4c9a984a993c5a52a4",
+    "webContainer": "de150c7986289feccf4d0e29fc0d45e24af85f39a6b4f041b833ed8f8ad61273",
+    "webImage": "sha256:ca9bc08242bc3e731436a0c72e1a0798fb3cd4e796ac28c06b699226394e8fbc",
+    "workerContainer": "e26311056bd2a2801b35ab6c6b1ef81af1a43a395d044c87a2cceeffb5769bff",
+    "workerImage": "sha256:f025c6f73d7e7c1370649a8b1b1fc4c6505b0c669ce846e944b3f0e8c4acb342",
+    "databaseContainer": "19419eff11ef9c0b43e484f91ad97ba606c817df6604e7a6d08c5513473285a1",
+    "databaseImage": "sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d",
+    "healthy": true,
+    "other32ContainersPreserved": true,
+    "profile": "lean-markets-7b17cd9",
+    "merchantCaptureEnabled": true,
+    "purchaseAdmissionEnabled": true,
+    "inspectorAndBridgePreserved": true,
+    "dispatchInvocations": 2,
+    "retryInvocations": 0,
+    "verifierRebinding": "PENDING"
+  },
+  "verifier": {
+    "collectorSource": "c8519fc113071fabbe84a1492dd2ed1fbdbeb039",
+    "manifestSha256": "d9acc0381c0709539b77be96a94f4deff3eb9b3ce7b92c915da9ec8247b37f41",
+    "unchangedInputsRehashed": 3004,
+    "mismatches": 0,
+    "compatibilityAssessmentSha256": "5fb5a6859b98b89448078edd85587ce057d97990b035b8e094f0eeddf1aa65c5",
+    "independentReview": "/root/lean_selection_review: CLEAR",
+    "rebindResult": "COMPLETE; subsequent actual-role fresh collection and independently matching readonly web/worker SELECT",
+    "requestId": "1ee9e035-9b61-47c6-afd1-8297f4f07189",
+    "recordId": "25e5d8fd-598c-40a4-a5cb-15621cd9b842",
+    "observedAt": "2026-10-17T10:04:33.861Z",
+    "expiresAt": "2026-10-17T10:05:02.183Z",
+    "expiryMeaning": "Historical, never extended; running system collects fresh on demand"
+  },
+  "billing": {
+    "status": 200,
+    "body": {
+      "status": "trial",
+      "observedAt": "2026-10-17T10:04:34.146Z",
+      "trialEndsAt": "2026-10-31T08:54:46.000Z",
+      "currentCycle": null,
+      "scheduledCancellation": false,
+      "pendingChange": false,
+      "newActionsAllowed": true,
+      "standardPrice": {
+        "amount": "49.99",
+        "currency": "USD",
+        "intervalDays": 30
+      },
+      "recurringPrice": {
+        "amount": "0.0",
+        "currency": "USD"
+      },
+      "developmentTerms": true,
+      "managementUrl": "https://admin.shopify.com/store/insignia-rewrite-dev/charges/insignia-1/pricing_plans"
+    },
+    "observedAt": "2026-10-17T10:04:34.859Z"
+  },
+  "limits": [
+    "Original runtime pair receipt reports its intermediate verifier-pending stage; the subsequent independent proof above closes that stage.",
+    "Native trial/zero-dollar development status and supported management route observed; cancellation/reauthorization and commercial billing remain unqualified.",
+    "No provider plan change, usage event or real charge."
+  ]
+}

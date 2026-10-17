@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, useRef, useState } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'preact/hooks';
 import type { projectScene } from '../../../packages/visualizer/src/geometry';
 import { createVisualizer, type Visualizer } from '../../../packages/visualizer/src/renderer';
 import type { ArtworkPreview, ArtworkSelection } from '../../web/src/islands/artwork-upload';
@@ -19,6 +19,7 @@ import {
   sizeControlKind,
 } from './buyer';
 import { type CartSnapshot, createAjaxCartAdapter } from './cart';
+import { customizerCss as css } from './customizer-style';
 
 type State = {
   config?: BuyerConfig;
@@ -108,7 +109,30 @@ export function buyerReducer(state: State, action: Action): State {
       return { ...state, phase: 'repair', error: action.message };
   }
 }
-const css = `:host{font:16px system-ui;color:#17212b}button,select,input{font:inherit;padding:.6rem;border:1px solid #bbc1c6;border-radius:6px}button{cursor:pointer;background:white}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #146cce}dialog{max-width:1050px;width:calc(100% - 40px);max-height:90dvh;border:0;border-radius:12px;padding:24px}dialog::backdrop{background:#0008}.layout{display:grid;grid-template-columns:minmax(220px,1fr) minmax(240px,1fr);gap:24px}.preview{height:350px;background:#f3f4f5}.row{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}label{display:block;margin:10px 0}input[type=number]{width:75px;margin-left:12px}table{width:100%;border-collapse:collapse}td,th{padding:8px;text-align:left;border-bottom:1px solid #ddd}.error{color:#962020}.wizard{display:flex;gap:14px;padding:0;list-style:none;flex-wrap:wrap}.wizard [aria-current=step]{font-weight:bold;color:#146cce}.card{padding:15px;border:1px solid #ccd1d6;border-radius:8px;display:block}.badge{color:#795700;background:#fff4cd;padding:6px;border-radius:5px}.reassurance{background:#f1f4f8;padding:20px}.total{background:linear-gradient(120deg,#1E3A8A,#2563EB);color:white;padding:20px;border-radius:8px}.add-cart{background:#16803d;color:white;border:0}.back{border:0;text-decoration:underline}.or{text-align:center}input[type=range]{width:90%;touch-action:pan-y}button:disabled{opacity:.5;cursor:wait}@media(max-width:650px){.layout{grid-template-columns:1fr}dialog{padding:15px}.preview{height:230px}}`;
+function StepIcon({ kind }: { kind: string }) {
+  const paths: Record<string, string> = {
+    Upload: 'M7 17H5a4 4 0 0 1-1-8 8 8 0 0 1 15-1 5 5 0 0 1 0 10h-2M12 21V10m-4 4 4-4 4 4',
+    Placement: 'M12 22s8-7 8-13a8 8 0 1 0-16 0c0 6 8 13 8 13Zm0-10a3 3 0 1 0 0-6 3 3 0 0 0 0 6',
+    Size: 'M4 8 8 4l12 12-4 4Zm3-1 3 3m0-6 3 3m0 3 3 3',
+    Preview: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Zm10 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6',
+    Review: 'M6 5H4v17h16V5h-2M8 2h8v6H8Zm0 12 3 3 5-6',
+    Close: 'm6 6 12 12M6 18 18 6',
+    Complete: 'm4 12 5 5L20 5',
+  };
+  return (
+    <svg
+      aria-hidden="true"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.6"
+    >
+      <path d={paths[kind] ?? paths.Preview} />
+    </svg>
+  );
+}
 export function BuyerCustomizer({
   productId,
   proxyBase,
@@ -127,6 +151,14 @@ export function BuyerCustomizer({
   triggerLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
+  const keepEditing = useRef<HTMLButtonElement>(null);
+  const [previewSheet, setPreviewSheet] = useState(false);
+  const [zoomed, setZoomed] = useState(true);
+  const previewClose = useRef<HTMLButtonElement>(null);
+  const previewTrigger = useRef<HTMLButtonElement>(null);
+  const swipeStart = useRef<{ x: number; y: number }>();
+  const sheetDrag = useRef<number>();
   const [state, dispatch] = useReducer(buyerReducer, { viewId: '', placementId: '', phase: 'loading' });
   const [wizard, setWizard] = useState(0);
   const [defaultArtwork, setDefaultArtwork] = useState<DesiredGroup['design']['placements'][number]['artwork']>();
@@ -234,13 +266,14 @@ export function BuyerCustomizer({
       geometry: state.config.geometry,
       viewId: state.viewId,
       variantId: state.variantId,
-      selectedPlacementId: state.placementId,
+      selectedPlacementId: wizard === 0 ? undefined : state.placementId,
       placements: state.group?.design.placements ?? [],
       previews: artworkPreviews,
       imageUrls: state.config.imageUrls,
     });
-    latestScene.current = scene;
-    renderer.current?.update(scene);
+    const display = { ...scene, placements: [] };
+    latestScene.current = display;
+    renderer.current?.update(display);
   }, [state.config, state.group, state.viewId, state.variantId, state.placementId, artworkPreviews, wizard]);
   function edit(group: DesiredGroup) {
     lane.cancel();
@@ -329,7 +362,7 @@ export function BuyerCustomizer({
         .map((p) => p.placementId),
     );
     if (first) dispatch({ kind: 'placement', id: first.placementId });
-    setWizard(4);
+    setWizard(3);
     edit(structuredClone(group));
   }
   function desired() {
@@ -411,7 +444,7 @@ export function BuyerCustomizer({
         request.signal,
       );
       if (lane.current(request.id)) {
-        setWizard(4);
+        setWizard(3);
         dispatch({ kind: 'proposal', proposal });
       }
     } catch (error) {
@@ -522,6 +555,42 @@ export function BuyerCustomizer({
       dispatch({ kind: 'error', message: error instanceof Error ? error.message : 'Renewal needs a new price review' });
     }
   }
+  function requestClose() {
+    if (state.phase === 'authorizing' || state.phase === 'applying') return;
+    if (previewSheet) {
+      setPreviewSheet(false);
+      return;
+    }
+    if (confirmClose) {
+      setConfirmClose(false);
+      return;
+    }
+    if (
+      state.phase !== 'applied' &&
+      (defaultArtwork || state.group?.design.placements.length || state.group?.variants.length)
+    )
+      setConfirmClose(true);
+    else setOpen(false);
+  }
+  useLayoutEffect(() => {
+    if (confirmClose) keepEditing.current?.focus();
+    else if (open) dialog.current?.querySelector<HTMLButtonElement>('.close-customizer')?.focus();
+  }, [confirmClose]);
+  useLayoutEffect(() => {
+    if (previewSheet) previewClose.current?.focus();
+    else if (open) previewTrigger.current?.focus();
+  }, [previewSheet]);
+  function quantity(variantId: string, value: number) {
+    if (!state.group || !Number.isSafeInteger(value) || value < 0 || value > 10000) return;
+    dispatch({ kind: 'variant', id: variantId });
+    edit({
+      ...state.group,
+      variants: [
+        ...state.group.variants.filter((variant) => variant.variantId !== variantId),
+        ...(value ? [{ variantId, quantity: value }] : []),
+      ],
+    });
+  }
   const busy = state.phase === 'authorizing' || state.phase === 'applying';
   const config = state.config;
   const proposalCurrency = state.proposal?.currency ?? 'XXX';
@@ -543,13 +612,39 @@ export function BuyerCustomizer({
     !!config?.geometry.views
       .find((view) => view.id === state.viewId)
       ?.placements.some((p) => p.id === state.placementId);
+  const previewView = config?.geometry.views.find((view) => view.id === state.viewId);
+  const previewPlacement = previewView?.placements.find((value) => value.id === state.placementId);
+  const zoomRect =
+    previewPlacement?.variantOverrides?.find(
+      (value) => value.variantId.replace('gid://shopify/ProductVariant/', '') === state.variantId,
+    )?.rect ?? previewPlacement?.rect;
+  const zoomImage =
+    previewView?.variantImages.find(
+      (value) => value.variantId.replace('gid://shopify/ProductVariant/', '') === state.variantId,
+    )?.image ?? previewView?.image;
+  const imageAspect = zoomImage ? zoomImage.width / zoomImage.height : 1;
+  const imageWidth = Math.min(1, imageAspect),
+    imageHeight = Math.min(1, 1 / imageAspect);
+  const zoomScale = zoomRect ? Math.max(1, Math.min(4, 0.2 / (zoomRect.width * imageWidth))) : 1;
+  const previewTransform =
+    zoomed && wizard > 0 && zoomRect && zoomImage && zoomScale > 1.001
+      ? `translate(${(0.5 - (0.5 + (zoomRect.centerX - 0.5) * imageWidth) * zoomScale) * 100}%, ${(0.5 - (0.5 + (zoomRect.centerY - 0.5) * imageHeight) * zoomScale) * 100}%) scale(${zoomScale})`
+      : undefined;
+  function changeView(direction: number) {
+    const index = availableViews.findIndex((view) => view.id === state.viewId);
+    if (availableViews.length > 1)
+      dispatch({
+        kind: 'view',
+        id: availableViews[(index + direction + availableViews.length) % availableViews.length].id,
+      });
+  }
   function next() {
     if (wizard === 1 && state.group?.design.placements[0])
       dispatch({ kind: 'placement', id: state.group.design.placements[0].placementId });
-    setWizard(wizard === 2 && !hasPreview ? 4 : wizard + 1);
+    setWizard(wizard === 2 ? 3 : wizard + 1);
   }
   function back() {
-    setWizard(wizard === 4 && !hasPreview ? 2 : wizard - 1);
+    setWizard(wizard === 3 ? 2 : wizard - 1);
   }
   return (
     <>
@@ -563,499 +658,807 @@ export function BuyerCustomizer({
           aria-label="Customize and review your cart"
           onCancel={(event) => {
             event.preventDefault();
-            if (!busy) setOpen(false);
+            requestClose();
           }}
         >
-          <button type="button" disabled={busy} onClick={() => setOpen(false)}>
-            Close customization
-          </button>
-          <h2>Customize your product</h2>
-          {retained.current.length > 0 && state.group && (
-            <label>
-              Edit retained design
-              <select
-                disabled={busy}
-                value={editingIndex.current === undefined ? 'new' : String(editingIndex.current)}
-                onChange={(event) => {
-                  const index = Number(event.currentTarget.value);
-                  if (event.currentTarget.value === 'new') {
-                    editingIndex.current = undefined;
-                    if (state.config) dispatch({ kind: 'loaded', config: state.config });
-                  } else if (retained.current[index]?.productId === state.config?.productId) {
-                    editingIndex.current = index;
-                    loadExistingGroup(retained.current[index]);
-                  } else {
-                    const request = lane.next();
-                    void api
-                      .config(request.signal, retained.current[index].productId)
-                      .then((config) => {
-                        if (!lane.current(request.id)) return;
-                        editingIndex.current = index;
-                        dispatch({ kind: 'loaded', config });
-                        loadExistingGroup(retained.current[index]);
-                      })
-                      .catch((error) => {
-                        if (lane.current(request.id)) dispatch({ kind: 'error', message: error.message });
-                      });
-                  }
-                }}
-              >
-                <option value="new">New design</option>
-                {retained.current.map((_group, index) => (
-                  <option value={String(index)}>Design {index + 1}</option>
-                ))}
-              </select>
-            </label>
-          )}
-          {editingIndex.current !== undefined && retained.current.length > 1 && (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void review(retained.current.filter((_, index) => index !== editingIndex.current))}
-            >
-              Remove this design and review remaining cart
-            </button>
-          )}
-          <p role="status" aria-live="polite">
-            {state.phase === 'loading'
-              ? 'Loading customization…'
-              : state.phase === 'applied'
-                ? 'Customized cart updated.'
-                : (state.error ?? '')}
-          </p>
-          {state.error && (
-            <p class="error" role="alert">
-              {state.error}
-            </p>
-          )}
-          {config && state.group && (
-            <>
+          <header class="modal-header" inert={confirmClose || previewSheet}>
+            <h2>Customize your product</h2>
+            {config && state.group && (
               <ol class="wizard" aria-label="Customization steps">
-                {[
-                  'Upload',
-                  'Placement',
-                  allOneSize ? 'Decoration' : 'Size',
-                  ...(hasPreview ? ['Preview'] : []),
-                  'Review',
-                ].map((label, index) => (
-                  <li aria-current={index === (wizard === 4 && !hasPreview ? 3 : wizard) ? 'step' : undefined}>
-                    {label}
+                {['Upload', 'Placement', allOneSize ? 'Preview' : 'Size', 'Review'].map((label, index) => (
+                  <li data-completed={index < wizard} aria-current={index === wizard ? 'step' : undefined}>
+                    <StepIcon kind={index < wizard ? 'Complete' : label} />
+                    <span>{label}</span>
                   </li>
                 ))}
               </ol>
-              <fieldset disabled={busy}>
-                <section hidden={wizard !== 0} aria-label="Upload artwork">
-                  <h3>Upload your logo</h3>
-                  <p>SVG, PNG or JPEG, up to 5 MiB. Files are inspected before use.</p>
-                  <GuestArtworkUpload
-                    proxyBase={proxyBase}
-                    productId={config.productId}
-                    injectedJsonApi={api.artwork}
-                    onPreview={(value) => receivePreview(value, asset?.assetId)}
-                    onAssetChange={(value) => {
-                      setAsset(value);
-                      if (value) setDefaultChoice({ kind: 'revision', revisionId: value.assetId });
-                      else if (asset && defaultArtwork?.kind === 'revision') {
-                        setDefaultArtwork(undefined);
-                        if (state.group)
-                          edit({
-                            ...state.group,
-                            design: {
-                              ...state.group.design,
-                              placements: state.group.design.placements.filter((p) =>
-                                overridePlacements.includes(p.placementId),
-                              ),
-                            },
+            )}
+            <button
+              class="close-customizer"
+              type="button"
+              aria-label="Close customization"
+              disabled={busy}
+              onClick={requestClose}
+            >
+              <StepIcon kind="Close" />
+            </button>
+          </header>
+          <div class="modal-layout" inert={confirmClose}>
+            {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: the same preview has dialog role only while its modal sheet is open. */}
+            <aside
+              class="preview-panel"
+              role={previewSheet ? 'dialog' : 'complementary'}
+              aria-label="Product preview"
+              aria-modal={previewSheet ? 'true' : undefined}
+              data-sheet-open={previewSheet}
+              data-mobile-visible={wizard === 1 || wizard === 2}
+              onKeyDown={(event) => {
+                if (!previewSheet || event.key !== 'Tab') return;
+                const buttons = event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not([disabled])');
+                const first = buttons[0],
+                  last = buttons[buttons.length - 1];
+                const active = (event.currentTarget.getRootNode() as ShadowRoot).activeElement;
+                if (event.shiftKey && active === first) {
+                  event.preventDefault();
+                  last?.focus();
+                } else if (!event.shiftKey && active === last) {
+                  event.preventDefault();
+                  first?.focus();
+                }
+              }}
+            >
+              {previewSheet && (
+                <div class="sheet-header">
+                  <button
+                    class="sheet-handle"
+                    type="button"
+                    aria-label="Drag down to close preview"
+                    onClick={() => setPreviewSheet(false)}
+                    onPointerDown={(event) => {
+                      sheetDrag.current = event.clientY;
+                      event.currentTarget.setPointerCapture(event.pointerId);
+                    }}
+                    onPointerUp={(event) => {
+                      if (sheetDrag.current !== undefined && event.clientY - sheetDrag.current > 80)
+                        setPreviewSheet(false);
+                      sheetDrag.current = undefined;
+                    }}
+                    onPointerCancel={() => {
+                      sheetDrag.current = undefined;
+                    }}
+                  />
+                  <h3>Product preview</h3>
+                  <button ref={previewClose} type="button" onClick={() => setPreviewSheet(false)}>
+                    Close preview
+                  </button>
+                </div>
+              )}
+              {hasPreview ? (
+                <div
+                  class="preview"
+                  onTouchStart={(event) => {
+                    const point = event.touches[0];
+                    if (point) swipeStart.current = { x: point.clientX, y: point.clientY };
+                  }}
+                  onTouchEnd={(event) => {
+                    const first = swipeStart.current,
+                      last = event.changedTouches[0];
+                    swipeStart.current = undefined;
+                    if (
+                      first &&
+                      last &&
+                      Math.abs(last.clientX - first.x) > 50 &&
+                      Math.abs(last.clientX - first.x) > Math.abs(last.clientY - first.y) * 2
+                    )
+                      changeView(last.clientX < first.x ? 1 : -1);
+                  }}
+                >
+                  <div class="preview-canvas" style={{ transform: previewTransform }} ref={canvas} />
+                </div>
+              ) : (
+                <p class="reassurance">Your decoration choices will be shown here when product images are available.</p>
+              )}
+              {hasPreview && (availableViews.length > 1 || (zoomScale > 1.001 && wizard > 0)) && (
+                <fieldset class="row view-controls">
+                  <legend>Product views</legend>
+                  {availableViews.length > 1 && (
+                    <button type="button" aria-label="Previous product view" onClick={() => changeView(-1)}>
+                      ‹
+                    </button>
+                  )}
+                  {availableViews.length > 1 &&
+                    availableViews.map((view) => (
+                      <button
+                        type="button"
+                        aria-pressed={view.id === state.viewId}
+                        onClick={() => dispatch({ kind: 'view', id: view.id })}
+                      >
+                        {view.id}
+                      </button>
+                    ))}
+                  {availableViews.length > 1 && (
+                    <button type="button" aria-label="Next product view" onClick={() => changeView(1)}>
+                      ›
+                    </button>
+                  )}
+                  {zoomRect && zoomScale > 1.001 && wizard > 0 && (
+                    <button type="button" aria-pressed={zoomed} onClick={() => setZoomed(!zoomed)}>
+                      {zoomed ? 'Show full garment' : 'Focus selected placement'}
+                    </button>
+                  )}
+                </fieldset>
+              )}
+            </aside>
+            <main class="customization-content" inert={previewSheet}>
+              {retained.current.length > 0 && state.group && (
+                <label>
+                  Edit retained design
+                  <select
+                    disabled={busy}
+                    value={editingIndex.current === undefined ? 'new' : String(editingIndex.current)}
+                    onChange={(event) => {
+                      const index = Number(event.currentTarget.value);
+                      if (event.currentTarget.value === 'new') {
+                        editingIndex.current = undefined;
+                        if (state.config) dispatch({ kind: 'loaded', config: state.config });
+                      } else if (retained.current[index]?.productId === state.config?.productId) {
+                        editingIndex.current = index;
+                        loadExistingGroup(retained.current[index]);
+                      } else {
+                        const request = lane.next();
+                        void api
+                          .config(request.signal, retained.current[index].productId)
+                          .then((config) => {
+                            if (!lane.current(request.id)) return;
+                            editingIndex.current = index;
+                            dispatch({ kind: 'loaded', config });
+                            loadExistingGroup(retained.current[index]);
+                          })
+                          .catch((error) => {
+                            if (lane.current(request.id)) dispatch({ kind: 'error', message: error.message });
                           });
                       }
                     }}
-                  />
-                  {!asset && (
-                    <>
-                      <p class="or">or</p>
-                      {config.placements.some((p) => p.logoLaterAllowed) && (
-                        <button
-                          type="button"
-                          class="card"
-                          aria-pressed={defaultArtwork?.kind === 'deferred'}
-                          onClick={() => setDefaultChoice({ kind: 'deferred', intentId: deferred.current })}
-                        >
-                          Provide logo later
-                        </button>
-                      )}
-                      <p>For placements that allow logo later, the merchant can attach artwork after purchase.</p>
-                    </>
-                  )}
-                  <label>
-                    Decoration method
-                    <select value={defaultMethod} onChange={(event) => setDefaultMethod(event.currentTarget.value)}>
-                      {config.methods.map((method) => (
-                        <option value={method.id}>{method.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <button type="button" disabled={!defaultArtwork} onClick={next}>
-                    Continue to Placement
-                  </button>
-                </section>
-                <section hidden={wizard !== 1} aria-label="Placement selection">
-                  <h3>Choose decoration placements</h3>
-                  <p class="badge">{config.methods.find((method) => method.id === defaultMethod)?.label}</p>
-                  {config.placements.map((policy) => (
-                    <label class="card">
-                      <input
-                        type="checkbox"
-                        checked={state.group?.design.placements.some((value) => value.placementId === policy.id)}
-                        disabled={defaultArtwork?.kind === 'deferred' && !policy.logoLaterAllowed}
-                        onChange={(event) => choosePlacement(policy.id, event.currentTarget.checked)}
-                      />
-                      {policy.label}
-                      {defaultArtwork?.kind === 'deferred' && !policy.logoLaterAllowed
-                        ? ' — verified artwork required'
-                        : ''}
-                    </label>
-                  ))}
-                  <button type="button" disabled={!state.group.design.placements.length} onClick={next}>
-                    Continue to {allOneSize ? 'Decoration' : 'Size'}
-                  </button>
-                </section>
-                <section
-                  hidden={wizard !== 2 && wizard !== 3}
-                  aria-label={wizard === 3 ? 'Product preview' : 'Decoration sizing'}
-                >
-                  <h3>
-                    {wizard === 3
-                      ? 'Preview your selected placements'
-                      : allOneSize
-                        ? 'Review decoration settings'
-                        : 'Choose size for each placement'}
-                  </h3>
-                  {state.group.design.placements.length > 1 && (
-                    <fieldset class="row">
-                      <legend>Selected placements</legend>
-                      {state.group.design.placements.map((value) => (
-                        <button
-                          type="button"
-                          aria-pressed={value.placementId === state.placementId}
-                          onClick={() => dispatch({ kind: 'placement', id: value.placementId })}
-                        >
-                          {config.placements.find((p) => p.id === value.placementId)?.label} —{' '}
-                          {value.stepId ? 'done' : 'pending'}
-                        </button>
-                      ))}
-                    </fieldset>
-                  )}
-                  {hasPreview && (
-                    <fieldset class="row">
-                      <legend>Product views</legend>
-                      {availableViews.map((view) => (
-                        <button
-                          type="button"
-                          aria-pressed={view.id === state.viewId}
-                          onClick={() => dispatch({ kind: 'view', id: view.id })}
-                        >
-                          {view.id}
-                        </button>
-                      ))}
-                    </fieldset>
-                  )}
-                  {previewAvailable ? (
-                    <div class="preview" ref={canvas} />
-                  ) : (
-                    <p class="reassurance">
-                      Preview unavailable for this placement/view. Your size selections remain available.
-                    </p>
-                  )}
-                  {selected?.artwork.kind === 'deferred' && <p class="badge">LOGO — Merchant attaches later</p>}
-                  {wizard === 2 && selected && (
-                    <>
-                      <label>
-                        Placement decoration method
-                        <select
-                          value={selected.methodId}
-                          onChange={(event) => placement({ methodId: event.currentTarget.value })}
-                        >
-                          {config.methods
-                            .filter((m) => currentPolicy?.allowedMethodIds.includes(m.id))
-                            .map((m) => (
-                              <option value={m.id}>{m.label}</option>
-                            ))}
-                        </select>
-                      </label>
-                      {sizeControlKind(activeSteps.length) === 'slider' ? (
-                        <label>
-                          Decoration size
-                          <input
-                            type="range"
-                            min="0"
-                            max={activeSteps.length - 1}
-                            step="1"
-                            value={Math.max(
-                              0,
-                              activeSteps.findIndex((step) => step.id === selected.stepId),
-                            )}
-                            aria-valuetext={activeSteps.find((step) => step.id === selected.stepId)?.label}
-                            list="insignia-size-ticks"
-                            onInput={(event) =>
-                              placement({ stepId: activeSteps[Number(event.currentTarget.value)].id })
-                            }
-                          />
-                          <datalist id="insignia-size-ticks">
-                            {activeSteps.map((step, index) => (
-                              <option value={index} label={step.label} />
-                            ))}
-                          </datalist>
-                          <span>{activeSteps.find((step) => step.id === selected.stepId)?.label}</span>
-                        </label>
-                      ) : sizeControlKind(activeSteps.length) === 'cards' ? (
-                        <fieldset>
-                          <legend>Decoration size</legend>
-                          {activeSteps.map((step) => (
-                            <label class="card">
-                              <input
-                                type="radio"
-                                name={`size-${state.placementId}`}
-                                checked={selected.stepId === step.id}
-                                onChange={() => placement({ stepId: step.id })}
-                              />
-                              {step.label}
-                              {config.geometry.steps.find((s) => s.id === step.id)?.physicalMm && (
-                                <span>
-                                  {' '}
-                                  — {config.geometry.steps.find((s) => s.id === step.id)?.physicalMm?.width} ×{' '}
-                                  {config.geometry.steps.find((s) => s.id === step.id)?.physicalMm?.height} mm
-                                </span>
-                              )}
-                            </label>
-                          ))}
-                        </fieldset>
-                      ) : (
-                        <p class="reassurance">This placement has one configured size. No size adjustment is needed.</p>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setOverridePlacements((ids) =>
-                            ids.includes(state.placementId) ? ids : [...ids, state.placementId],
-                          )
-                        }
-                      >
-                        Change logo for this placement
-                      </button>
-                    </>
-                  )}
-                  <p>
-                    Review each selected placement across the available views. Prices are confirmed in the complete cart
-                    review.
-                  </p>
-                  <button type="button" onClick={next}>
-                    Continue to {wizard === 2 && hasPreview ? 'Preview' : 'Review'}
-                  </button>
-                </section>
-                {overridePlacements.map((id) => (
-                  <section
-                    hidden={wizard !== 2 || state.placementId !== id}
-                    aria-label={`Artwork override ${config.placements.find((p) => p.id === id)?.label}`}
                   >
-                    <h4>Logo for {config.placements.find((p) => p.id === id)?.label}</h4>
-                    <GuestArtworkUpload
-                      proxyBase={proxyBase}
-                      productId={config.productId}
-                      injectedJsonApi={api.artwork}
-                      onPreview={(value) => receivePreview(value, overrideAssets.current[id])}
-                      onAssetChange={(value) => {
-                        if (!state.group) return;
-                        const current = state.group.design.placements.find((p) => p.placementId === id);
-                        if (!current) return;
-                        if (value) {
-                          overrideAssets.current[id] = value.assetId;
-                          setInvalidOverrides((ids) => ids.filter((value) => value !== id));
-                        } else if (overrideAssets.current[id]) {
-                          delete overrideAssets.current[id];
-                          setInvalidOverrides((ids) => (ids.includes(id) ? ids : [...ids, id]));
-                          edit({ ...state.group });
-                        }
-                        if (value)
-                          edit({
-                            ...state.group,
-                            design: {
-                              ...state.group.design,
-                              placements: state.group.design.placements.map((p) =>
-                                p.placementId === id
-                                  ? { ...p, artwork: { kind: 'revision', revisionId: value.assetId } }
-                                  : p,
-                              ),
-                            },
-                          });
-                      }}
-                    />
-                    {config.placements.find((p) => p.id === id)?.logoLaterAllowed && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setInvalidOverrides((ids) => ids.filter((value) => value !== id));
-                          placement({ artwork: { kind: 'deferred', intentId: crypto.randomUUID() } });
-                        }}
-                      >
-                        Logo later for this placement
-                      </button>
-                    )}
-                  </section>
-                ))}
-                <section hidden={wizard !== 4} aria-label="Garment quantity review">
-                  {invalidOverrides.length > 0 && (
-                    <p role="alert">
-                      Finish uploading a verified logo for each changed placement before reviewing prices.
-                    </p>
-                  )}
-                  <h3>Review your design and garment quantities</h3>
-                  <ul>
-                    {state.group.design.placements.map((p) => (
-                      <li>
-                        {config.placements.find((policy) => policy.id === p.placementId)?.label} —{' '}
-                        {config.methods.find((m) => m.id === p.methodId)?.label} —{' '}
-                        {config.steps.find((step) => step.id === p.stepId)?.label}
-                        {p.artwork.kind === 'deferred' ? (
-                          <span class="badge"> Merchant attaches later</span>
-                        ) : (
-                          <span> Verified artwork</span>
-                        )}
-                      </li>
+                    <option value="new">New design</option>
+                    {retained.current.map((_group, index) => (
+                      <option value={String(index)}>Design {index + 1}</option>
                     ))}
-                  </ul>
-                  {config.options.map((option) => (
-                    <label>
-                      {option.label}
-                      <select
-                        value={state.group?.design.options.find((v) => v.optionId === option.id)?.valueId ?? ''}
-                        onChange={(event) => {
-                          if (state.group)
+                  </select>
+                </label>
+              )}
+              {editingIndex.current !== undefined && retained.current.length > 1 && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void review(retained.current.filter((_, index) => index !== editingIndex.current))}
+                >
+                  Remove this design and review remaining cart
+                </button>
+              )}
+              <p role="status" aria-live="polite">
+                {state.phase === 'loading'
+                  ? 'Loading customization…'
+                  : state.phase === 'applied'
+                    ? 'Customized cart updated.'
+                    : (state.error ?? '')}
+              </p>
+              {state.error && (
+                <p class="error" role="alert">
+                  {state.error}
+                </p>
+              )}
+              {config && state.group && (
+                <fieldset disabled={busy}>
+                  <section hidden={wizard !== 0 || !!state.proposal} aria-label="Upload artwork">
+                    <h3>Upload your logo</h3>
+                    <p>SVG, PNG or JPEG, up to 5 MiB. Files are inspected before use.</p>
+                    <fieldset
+                      class="artwork-upload"
+                      onDragOver={(event) => {
+                        if (event.dataTransfer?.types.includes('Files')) event.preventDefault();
+                      }}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        const file = event.dataTransfer?.files[0];
+                        const input = event.currentTarget.querySelector<HTMLInputElement>('input[type=file]');
+                        if (busy || !file || !input || input.matches(':disabled')) return;
+                        const transfer = new DataTransfer();
+                        transfer.items.add(file);
+                        input.files = transfer.files;
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                      }}
+                    >
+                      <GuestArtworkUpload
+                        proxyBase={proxyBase}
+                        productId={config.productId}
+                        injectedJsonApi={api.artwork}
+                        onPreview={(value) => receivePreview(value, asset?.assetId)}
+                        onAssetChange={(value) => {
+                          setAsset(value);
+                          if (value) setDefaultChoice({ kind: 'revision', revisionId: value.assetId });
+                          else if (asset && defaultArtwork?.kind === 'revision') {
+                            setDefaultArtwork(undefined);
+                            if (state.group)
+                              edit({
+                                ...state.group,
+                                design: {
+                                  ...state.group.design,
+                                  placements: state.group.design.placements.filter((p) =>
+                                    overridePlacements.includes(p.placementId),
+                                  ),
+                                },
+                              });
+                          }
+                        }}
+                      />
+                    </fieldset>
+                    {!asset && (
+                      <>
+                        <p class="or">or</p>
+                        {config.placements.some((p) => p.logoLaterAllowed) && (
+                          <button
+                            type="button"
+                            class="card"
+                            aria-pressed={defaultArtwork?.kind === 'deferred'}
+                            onClick={() => setDefaultChoice({ kind: 'deferred', intentId: deferred.current })}
+                          >
+                            <span class="later-icon" aria-hidden="true">
+                              ?
+                            </span>
+                            Provide logo later
+                            <span class="later-chevron" aria-hidden="true">
+                              ›
+                            </span>
+                          </button>
+                        )}
+                        <p>For placements that allow logo later, the merchant can attach artwork after purchase.</p>
+                      </>
+                    )}
+                    <fieldset class="method-choices">
+                      <legend>Decoration method</legend>
+                      {config.methods.map((method) => (
+                        <label class="card method-card">
+                          <input
+                            type="radio"
+                            name="default-method"
+                            value={method.id}
+                            checked={defaultMethod === method.id}
+                            onChange={() => setDefaultMethod(method.id)}
+                          />
+                          <span>{method.label}</span>
+                        </label>
+                      ))}
+                    </fieldset>
+                  </section>
+                  <section hidden={wizard !== 1 || !!state.proposal} aria-label="Placement selection">
+                    <h3>Choose decoration placements</h3>
+                    <p class="badge">{config.methods.find((method) => method.id === defaultMethod)?.label}</p>
+                    {config.placements.map((policy) => (
+                      <label class="card">
+                        <input
+                          type="checkbox"
+                          checked={state.group?.design.placements.some((value) => value.placementId === policy.id)}
+                          disabled={defaultArtwork?.kind === 'deferred' && !policy.logoLaterAllowed}
+                          onChange={(event) => choosePlacement(policy.id, event.currentTarget.checked)}
+                        />
+                        {policy.label}
+                        {defaultArtwork?.kind === 'deferred' && !policy.logoLaterAllowed
+                          ? ' — verified artwork required'
+                          : ''}
+                      </label>
+                    ))}
+                  </section>
+                  <section hidden={wizard !== 2 || !!state.proposal} aria-label="Decoration sizing">
+                    <h3>{allOneSize ? 'Review decoration settings' : 'Choose size for each placement'}</h3>
+                    {state.group.design.placements.length > 1 && (
+                      <fieldset class="row placement-tabs">
+                        <legend>Selected placements</legend>
+                        {state.group.design.placements.map((value) => (
+                          <button
+                            type="button"
+                            aria-pressed={value.placementId === state.placementId}
+                            onClick={() => dispatch({ kind: 'placement', id: value.placementId })}
+                          >
+                            {config.placements.find((p) => p.id === value.placementId)?.label} —{' '}
+                            {value.stepId ? 'done' : 'pending'}
+                          </button>
+                        ))}
+                      </fieldset>
+                    )}
+                    {!previewAvailable && (
+                      <p class="reassurance">
+                        Preview unavailable for this placement/view. Your size selections remain available.
+                      </p>
+                    )}
+                    {wizard === 2 && selected && (
+                      <>
+                        <h4 class="placement-title">{currentPolicy?.label}</h4>
+                        {config.methods.filter((method) => currentPolicy?.allowedMethodIds.includes(method.id)).length >
+                        1 ? (
+                          <label class="control-card method-setting">
+                            Placement decoration method
+                            <select
+                              value={selected.methodId}
+                              onChange={(event) => placement({ methodId: event.currentTarget.value })}
+                            >
+                              {config.methods
+                                .filter((m) => currentPolicy?.allowedMethodIds.includes(m.id))
+                                .map((m) => (
+                                  <option value={m.id}>{m.label}</option>
+                                ))}
+                            </select>
+                          </label>
+                        ) : (
+                          <p class="method-setting-single">
+                            {config.methods.find((method) => method.id === selected.methodId)?.label}
+                          </p>
+                        )}
+
+                        {sizeControlKind(activeSteps.length) === 'slider' ? (
+                          <label class="control-card size-setting">
+                            <span class="size-label">
+                              Decoration size
+                              <strong>{activeSteps.find((step) => step.id === selected.stepId)?.label}</strong>
+                            </span>
+                            <input
+                              type="range"
+                              min="0"
+                              max={activeSteps.length - 1}
+                              step="1"
+                              value={Math.max(
+                                0,
+                                activeSteps.findIndex((step) => step.id === selected.stepId),
+                              )}
+                              aria-valuetext={activeSteps.find((step) => step.id === selected.stepId)?.label}
+                              list="insignia-size-ticks"
+                              onInput={(event) =>
+                                placement({ stepId: activeSteps[Number(event.currentTarget.value)].id })
+                              }
+                            />
+                            <datalist id="insignia-size-ticks">
+                              {activeSteps.map((step, index) => (
+                                <option value={index} label={step.label} />
+                              ))}
+                            </datalist>
+                            <span class="range-labels" aria-hidden="true">
+                              {activeSteps.map((step) => (
+                                <span data-selected={step.id === selected.stepId}>{step.label}</span>
+                              ))}
+                            </span>
+                          </label>
+                        ) : sizeControlKind(activeSteps.length) === 'cards' ? (
+                          <fieldset class="size-cards">
+                            <legend>Decoration size</legend>
+                            {activeSteps.map((step) => (
+                              <label class="card size-card">
+                                <input
+                                  type="radio"
+                                  name={`size-${state.placementId}`}
+                                  checked={selected.stepId === step.id}
+                                  onChange={() => placement({ stepId: step.id })}
+                                />
+                                {step.label}
+                                {config.geometry.steps.find((s) => s.id === step.id)?.physicalMm && (
+                                  <span>
+                                    {' '}
+                                    — {config.geometry.steps.find((s) => s.id === step.id)?.physicalMm?.width} ×{' '}
+                                    {config.geometry.steps.find((s) => s.id === step.id)?.physicalMm?.height} mm
+                                  </span>
+                                )}
+                              </label>
+                            ))}
+                          </fieldset>
+                        ) : (
+                          <p class="reassurance">
+                            This placement has one configured size. No size adjustment is needed.
+                          </p>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setOverridePlacements((ids) =>
+                              ids.includes(state.placementId) ? ids : [...ids, state.placementId],
+                            )
+                          }
+                        >
+                          Change logo for this placement
+                        </button>
+                      </>
+                    )}
+                    <p>Exact prices are confirmed in cart review.</p>
+                  </section>
+                  {overridePlacements.map((id) => (
+                    <section
+                      hidden={wizard !== 2 || state.placementId !== id}
+                      aria-label={`Artwork override ${config.placements.find((p) => p.id === id)?.label}`}
+                    >
+                      <h4>Logo for {config.placements.find((p) => p.id === id)?.label}</h4>
+                      <GuestArtworkUpload
+                        proxyBase={proxyBase}
+                        productId={config.productId}
+                        injectedJsonApi={api.artwork}
+                        onPreview={(value) => receivePreview(value, overrideAssets.current[id])}
+                        onAssetChange={(value) => {
+                          if (!state.group) return;
+                          const current = state.group.design.placements.find((p) => p.placementId === id);
+                          if (!current) return;
+                          if (value) {
+                            overrideAssets.current[id] = value.assetId;
+                            setInvalidOverrides((ids) => ids.filter((value) => value !== id));
+                          } else if (overrideAssets.current[id]) {
+                            delete overrideAssets.current[id];
+                            setInvalidOverrides((ids) => (ids.includes(id) ? ids : [...ids, id]));
+                            edit({ ...state.group });
+                          }
+                          if (value)
                             edit({
                               ...state.group,
                               design: {
                                 ...state.group.design,
-                                options: state.group.design.options.map((value) =>
-                                  value.optionId === option.id
-                                    ? { ...value, valueId: event.currentTarget.value }
-                                    : value,
+                                placements: state.group.design.placements.map((p) =>
+                                  p.placementId === id
+                                    ? { ...p, artwork: { kind: 'revision', revisionId: value.assetId } }
+                                    : p,
                                 ),
                               },
                             });
                         }}
-                      >
-                        {option.values.map((value) => (
-                          <option value={value.id}>{value.label}</option>
-                        ))}
-                      </select>
-                    </label>
+                      />
+                      {config.placements.find((p) => p.id === id)?.logoLaterAllowed && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setInvalidOverrides((ids) => ids.filter((value) => value !== id));
+                            placement({ artwork: { kind: 'deferred', intentId: crypto.randomUUID() } });
+                          }}
+                        >
+                          Logo later for this placement
+                        </button>
+                      )}
+                    </section>
                   ))}
-                  <fieldset>
-                    <legend>Garment quantities</legend>
-                    {config.variants.map((variant) => (
+                  <section hidden={wizard !== 3 || !!state.proposal} aria-label="Garment quantity review">
+                    {invalidOverrides.length > 0 && (
+                      <p role="alert">
+                        Finish uploading a verified logo for each changed placement before reviewing prices.
+                      </p>
+                    )}
+                    <h3>Review your design and garment quantities</h3>
+                    <section class="design-summary" aria-label="Design summary">
+                      <div class="summary-artwork">
+                        <span class="artwork-mark" aria-hidden="true">
+                          {state.group.design.placements.some((value) => value.artwork.kind === 'deferred') ? '?' : '✓'}
+                        </span>
+                        <div>
+                          <strong>Artwork</strong>
+                          <span>
+                            {state.group.design.placements.some((value) => value.artwork.kind === 'deferred')
+                              ? 'Merchant attaches artwork after purchase'
+                              : 'Verified original selected'}
+                          </span>
+                        </div>
+                      </div>
+                      <div class="summary-row">
+                        <span>Garment selection</span>
+                        <strong>
+                          {state.group.variants.length
+                            ? state.group.variants
+                                .map(
+                                  (value) => config.variants.find((variant) => variant.id === value.variantId)?.label,
+                                )
+                                .join(', ')
+                            : 'Choose quantities below'}
+                        </strong>
+                      </div>
+                      <div class="summary-row">
+                        <span>
+                          <StepIcon kind="Placement" />
+                          {[
+                            ...new Set(
+                              state.group.design.placements.map(
+                                (value) => config.methods.find((method) => method.id === value.methodId)?.label,
+                              ),
+                            ),
+                          ].join(', ')}
+                        </span>
+                        <span>Decoration method</span>
+                      </div>
+                      <div class="summary-section">
+                        <strong>Customizations</strong>
+                        <span>
+                          {state.group.design.placements.length} placement
+                          {state.group.design.placements.length === 1 ? '' : 's'}
+                        </span>
+                      </div>
+                      {state.group.design.placements.map((value) => (
+                        <div class="summary-row">
+                          <span>
+                            <StepIcon kind="Placement" />
+                            {config.placements.find((policy) => policy.id === value.placementId)?.label} ·{' '}
+                            {config.steps.find((step) => step.id === value.stepId)?.label}
+                          </span>
+                          <span>{value.artwork.kind === 'deferred' ? 'Logo later' : 'Verified artwork'}</span>
+                        </div>
+                      ))}
+                      <div class="summary-row summary-final">
+                        <strong>Per-garment price</strong>
+                        <span>Confirmed at price review</span>
+                      </div>
+                    </section>
+                    {state.group.design.placements.some((value) => value.artwork.kind === 'deferred') && (
+                      <p class="artwork-note">
+                        <strong>Logo later</strong>Arrange artwork with the merchant. The merchant attaches it after
+                        purchase.
+                      </p>
+                    )}
+                    {config.options.map((option) => (
                       <label>
-                        {variant.label}
-                        <input
-                          type="number"
-                          min="0"
-                          max="10000"
-                          step="1"
-                          disabled={!variant.available}
-                          value={state.group?.variants.find((v) => v.variantId === variant.id)?.quantity ?? 0}
-                          onFocus={() => dispatch({ kind: 'variant', id: variant.id })}
-                          onInput={(event) => {
-                            const quantity = Number(event.currentTarget.value);
-                            if (state.group && Number.isSafeInteger(quantity) && quantity >= 0 && quantity <= 10000)
+                        {option.label}
+                        <select
+                          value={state.group?.design.options.find((v) => v.optionId === option.id)?.valueId ?? ''}
+                          onChange={(event) => {
+                            if (state.group)
                               edit({
                                 ...state.group,
-                                variants: [
-                                  ...state.group.variants.filter((v) => v.variantId !== variant.id),
-                                  ...(quantity ? [{ variantId: variant.id, quantity }] : []),
-                                ],
+                                design: {
+                                  ...state.group.design,
+                                  options: state.group.design.options.map((value) =>
+                                    value.optionId === option.id
+                                      ? { ...value, valueId: event.currentTarget.value }
+                                      : value,
+                                  ),
+                                },
                               });
                           }}
-                        />
-                        {!variant.available ? ' Sold out' : ''}
+                        >
+                          {option.values.map((value) => (
+                            <option value={value.id}>{value.label}</option>
+                          ))}
+                        </select>
                       </label>
                     ))}
-                  </fieldset>
+                    <fieldset class="quantity-grid">
+                      <legend>Garment quantities</legend>
+                      {config.variants.map((variant) => (
+                        <div
+                          class="quantity-card"
+                          data-selected={
+                            (state.group?.variants.find((value) => value.variantId === variant.id)?.quantity ?? 0) > 0
+                          }
+                        >
+                          <label for={`quantity-${variant.id}`}>
+                            {variant.label}
+                            {!variant.available ? ' — Sold out' : ''}
+                          </label>
+                          <div class="quantity-stepper">
+                            <button
+                              type="button"
+                              aria-label={`Decrease ${variant.label} quantity`}
+                              disabled={
+                                !variant.available ||
+                                !state.group?.variants.find((v) => v.variantId === variant.id)?.quantity
+                              }
+                              onClick={() =>
+                                quantity(
+                                  variant.id,
+                                  (state.group?.variants.find((v) => v.variantId === variant.id)?.quantity ?? 0) - 1,
+                                )
+                              }
+                            >
+                              −
+                            </button>
+                            <input
+                              id={`quantity-${variant.id}`}
+                              type="number"
+                              min="0"
+                              max="10000"
+                              step="1"
+                              disabled={!variant.available}
+                              value={state.group?.variants.find((v) => v.variantId === variant.id)?.quantity ?? 0}
+                              onFocus={() => dispatch({ kind: 'variant', id: variant.id })}
+                              onInput={(event) => quantity(variant.id, Number(event.currentTarget.value))}
+                            />
+                            <button
+                              type="button"
+                              aria-label={`Increase ${variant.label} quantity`}
+                              disabled={
+                                !variant.available ||
+                                (state.group?.variants.find((v) => v.variantId === variant.id)?.quantity ?? 0) >= 10000
+                              }
+                              onClick={() =>
+                                quantity(
+                                  variant.id,
+                                  (state.group?.variants.find((v) => v.variantId === variant.id)?.quantity ?? 0) + 1,
+                                )
+                              }
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </fieldset>
+                  </section>
+                  <footer class="step-footer" role="contentinfo" aria-label="Customization navigation">
+                    {wizard > 0 && (
+                      <button
+                        class="back"
+                        type="button"
+                        onClick={() => {
+                          if (state.proposal && state.group) edit({ ...state.group });
+                          else back();
+                        }}
+                      >
+                        ← Back
+                      </button>
+                    )}
+                    {wizard === 3 && hasPreview && (
+                      <button
+                        class="preview-trigger"
+                        aria-label="Preview your design"
+                        ref={previewTrigger}
+                        type="button"
+                        onClick={() => setPreviewSheet(true)}
+                      >
+                        <StepIcon kind="Preview" />
+                      </button>
+                    )}
+                    {wizard < 3 && !state.proposal && (
+                      <button
+                        class="next-step"
+                        type="button"
+                        disabled={
+                          (wizard === 0 && !defaultArtwork) || (wizard === 1 && !state.group.design.placements.length)
+                        }
+                        onClick={next}
+                      >
+                        Continue to{' '}
+                        {wizard === 0 ? 'Placement' : wizard === 1 ? (allOneSize ? 'Preview' : 'Size') : 'Review'}
+                      </button>
+                    )}
+                    {wizard === 3 && !state.proposal && (
+                      <button
+                        class="next-step"
+                        type="button"
+                        disabled={
+                          busy ||
+                          invalidOverrides.some((id) =>
+                            state.group?.design.placements.some((p) => p.placementId === id),
+                          ) ||
+                          !state.group.variants.length ||
+                          !state.group.design.placements.length
+                        }
+                        onClick={() => void review()}
+                      >
+                        Review complete customized cart
+                      </button>
+                    )}
+                    {state.proposal && (
+                      <button
+                        class="add-cart"
+                        type="button"
+                        disabled={busy || state.phase === 'applied'}
+                        onClick={() => void accept()}
+                      >
+                        Add to Cart —{' '}
+                        {formatMinor(state.proposal.totalMinor, state.proposal.currency, state.proposal.exponent)}
+                      </button>
+                    )}
+                  </footer>
+                </fieldset>
+              )}
+              {state.proposal && (
+                <section aria-label="Customized cart price review">
+                  <h3>Complete customized cart review</h3>
+                  <p>{state.proposal.customizedQuantity} customized garments, including retained designs.</p>
+                  <div class="price-summaries">
+                    {state.proposal.groups.map((group, index) => (
+                      <section class="design-summary" aria-label={`Design ${index + 1} prices`}>
+                        <div class="summary-section">
+                          <strong>Design {index + 1}</strong>
+                          <span>
+                            {group.quantity} garment{group.quantity === 1 ? '' : 's'}
+                          </span>
+                        </div>
+                        <dl>
+                          <div class="summary-row">
+                            <dt>Garment base total</dt>
+                            <dd>{formatMinor(group.baseTotalMinor, proposalCurrency, proposalExponent)}</dd>
+                          </div>
+                          <div class="summary-row">
+                            <dt>Decoration per garment</dt>
+                            <dd>{formatMinor(group.customizationUnitMinor, proposalCurrency, proposalExponent)}</dd>
+                          </div>
+                          <div class="summary-row summary-final">
+                            <dt>Design total</dt>
+                            <dd>{formatMinor(group.totalMinor, proposalCurrency, proposalExponent)}</dd>
+                          </div>
+                        </dl>
+                      </section>
+                    ))}
+                  </div>
+                  <p class="total">
+                    Total:{' '}
+                    <strong>
+                      {formatMinor(state.proposal.totalMinor, state.proposal.currency, state.proposal.exponent)}
+                    </strong>
+                  </p>
+                  {state.proposal.changedGroups.length > 0 && (
+                    <p>Updated prices affect {state.proposal.changedGroups.length} design groups.</p>
+                  )}
+                  <p>Review expires {new Date(state.proposal.expiresAt).toLocaleTimeString()}.</p>
+                </section>
+              )}
+              {(state.phase === 'repair' || retained.current.length > 0 || state.accepted) && (
+                <button type="button" disabled={busy} onClick={() => void removeCustomized()}>
+                  Remove all customized items from cart
+                </button>
+              )}
+              {(state.accepted || restoredQuoteId.current) && (
+                <button type="button" disabled={busy} onClick={() => void renew()}>
+                  Renew accepted cart offer
+                </button>
+              )}
+              {state.phase === 'applied' && <a href={`${cartRoot}cart`}>Go to cart</a>}
+            </main>
+          </div>
+          {previewSheet && (
+            <button
+              class="preview-backdrop"
+              type="button"
+              aria-label="Dismiss product preview"
+              onClick={() => setPreviewSheet(false)}
+            />
+          )}
+          {confirmClose && (
+            <div class="confirm-backdrop">
+              <section
+                class="confirm-close"
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="discard-title"
+                aria-describedby="discard-detail"
+                onKeyDown={(event) => {
+                  if (event.key === 'Tab') {
+                    const buttons = event.currentTarget.querySelectorAll<HTMLButtonElement>('button');
+                    const first = buttons[0];
+                    const last = buttons[buttons.length - 1];
+                    const active =
+                      event.currentTarget.getRootNode() instanceof ShadowRoot
+                        ? (event.currentTarget.getRootNode() as ShadowRoot).activeElement
+                        : document.activeElement;
+                    if (event.shiftKey && active === first) {
+                      event.preventDefault();
+                      last.focus();
+                    } else if (!event.shiftKey && active === last) {
+                      event.preventDefault();
+                      first.focus();
+                    }
+                  }
+                }}
+              >
+                <h3 id="discard-title">Discard customization?</h3>
+                <p id="discard-detail">
+                  Your current design selections will be discarded. Items already in your cart will stay there.
+                </p>
+                <div class="row">
+                  <button ref={keepEditing} type="button" onClick={() => setConfirmClose(false)}>
+                    Keep editing
+                  </button>
                   <button
                     type="button"
-                    disabled={
-                      busy ||
-                      invalidOverrides.some((id) => state.group?.design.placements.some((p) => p.placementId === id)) ||
-                      !state.group.variants.length ||
-                      !state.group.design.placements.length
-                    }
-                    onClick={() => void review()}
+                    onClick={() => {
+                      setConfirmClose(false);
+                      setOpen(false);
+                    }}
                   >
-                    Review complete customized cart
+                    Discard design
                   </button>
-                </section>
-                {wizard > 0 && (
-                  <button class="back" type="button" onClick={back}>
-                    ← Back
-                  </button>
-                )}
-              </fieldset>
-            </>
+                </div>
+              </section>
+            </div>
           )}
-          {state.proposal && (
-            <section aria-label="Customized cart price review">
-              <h3>Complete customized cart review</h3>
-              <p>{state.proposal.customizedQuantity} customized garments, including retained designs.</p>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Design</th>
-                    <th>Quantity</th>
-                    <th>Setup once</th>
-                    <th>Garment base total</th>
-                    <th>Customization per garment</th>
-                    <th>Group total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {state.proposal.groups.map((group, index) => (
-                    <tr>
-                      <td>Design {index + 1}</td>
-                      <td>{group.quantity}</td>
-                      <td>{formatMinor(group.setupMinor, proposalCurrency, proposalExponent)}</td>
-                      <td>{formatMinor(group.baseTotalMinor, proposalCurrency, proposalExponent)}</td>
-                      <td>{formatMinor(group.customizationUnitMinor, proposalCurrency, proposalExponent)}</td>
-                      <td>{formatMinor(group.totalMinor, proposalCurrency, proposalExponent)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <p class="total">
-                Total:{' '}
-                <strong>
-                  {formatMinor(state.proposal.totalMinor, state.proposal.currency, state.proposal.exponent)}
-                </strong>
-              </p>
-              {state.proposal.changedGroups.length > 0 && (
-                <p>Updated prices affect {state.proposal.changedGroups.length} design groups.</p>
-              )}
-              <p>Review expires {new Date(state.proposal.expiresAt).toLocaleTimeString()}.</p>
-              <button
-                class="add-cart"
-                type="button"
-                disabled={busy || state.phase === 'applied'}
-                onClick={() => void accept()}
-              >
-                Add to Cart — {formatMinor(state.proposal.totalMinor, state.proposal.currency, state.proposal.exponent)}
-              </button>
-            </section>
-          )}
-          <button type="button" disabled={busy} onClick={() => void removeCustomized()}>
-            Remove all customized items from cart
-          </button>
-          {(state.accepted || restoredQuoteId.current) && (
-            <button type="button" disabled={busy} onClick={() => void renew()}>
-              Renew accepted cart offer
-            </button>
-          )}
-          {state.phase === 'applied' && <a href={`${cartRoot}cart`}>Go to cart</a>}
         </dialog>
       )}
     </>
