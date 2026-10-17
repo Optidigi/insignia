@@ -6,10 +6,10 @@ import proxyModules from '../../deployment/m8-journey/app-proxy-module-baseline.
 import proxyCandidate from '../../deployment/m8-journey/app-proxy-release-binding.json' with { type: 'json' };
 import cookieThemeModules from '../../deployment/m8-journey/cookie-theme-module-baseline.json' with { type: 'json' };
 import cookieThemeCandidate from '../../deployment/m8-journey/cookie-theme-release-binding.json' with { type: 'json' };
-import privacyModules from '../../deployment/m8-journey/lean-privacy-module-baseline.json' with { type: 'json' };
-import privacyCandidate from '../../deployment/m8-journey/lean-privacy-release-binding.json' with { type: 'json' };
 import leanMarketsModules from '../../deployment/m8-journey/lean-markets-module-baseline.json' with { type: 'json' };
 import leanMarketsCandidate from '../../deployment/m8-journey/lean-markets-release-binding.json' with { type: 'json' };
+import privacyModules from '../../deployment/m8-journey/lean-privacy-module-baseline.json' with { type: 'json' };
+import privacyCandidate from '../../deployment/m8-journey/lean-privacy-release-binding.json' with { type: 'json' };
 import previewThemeModules from '../../deployment/m8-journey/preview-theme-module-baseline.json' with { type: 'json' };
 import previewThemeCandidate from '../../deployment/m8-journey/preview-theme-release-binding.json' with {
   type: 'json',

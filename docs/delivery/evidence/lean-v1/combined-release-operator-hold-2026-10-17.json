@@ -245,5 +245,13 @@
     "shopifyWorkerBuild": "PASS",
     "fullCI": "PENDING"
   },
-  "privateCorrectedEvidence": "/home/serveradmin/insignia-combined-release-execution-r2-20261017"
+  "privateCorrectedEvidence": "/home/serveradmin/insignia-combined-release-execution-r2-20261017",
+  "preservedPr194CiFailure": {
+    "head": "5e735f38948b1a343d13676f635a1ac04c45fc23",
+    "runtimeRun": 39077538087,
+    "attempt": 1,
+    "failure": "Runtime-specific Biome organizeImports rejected import ordering in release-profile.mjs and release-profile.test.mjs. Root check:style excludes this separate workflow directory, so its earlier PASS did not qualify the runtime-specific check.",
+    "correction": "Biome safe import ordering in exactly those two files; no profile values, guards or behavior changed. Exact biome check scripts/m5-runtime passes61files; complete release-profile suite28PASS. Original run is not rerun.",
+    "nativeEffects": false
+  }
 }
