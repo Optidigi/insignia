@@ -1,8 +1,9 @@
-type Area = 'products' | 'orders' | 'billing';
+type Area = 'products' | 'orders' | 'billing' | 'privacy';
 const destinations: { area: Area; href: string; label: string }[] = [
   { area: 'products', href: '/admin/products', label: 'Products' },
   { area: 'orders', href: '/admin/orders', label: 'Orders and artwork' },
   { area: 'billing', href: '/admin/billing', label: 'Billing' },
+  { area: 'privacy', href: '/admin/privacy', label: 'Privacy requests' },
 ];
 
 export default function AdminNavigation({ current }: { current: Area }) {

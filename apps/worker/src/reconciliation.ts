@@ -1,6 +1,6 @@
 import type { createArtworkService } from '@insignia/application';
 import type { DurableCore } from '@insignia/database';
-import { maintainWebhookRetention, recoverPendingUninstalls } from './handlers.js';
+import { maintainCustomerPrivacy, maintainWebhookRetention, recoverPendingUninstalls } from './handlers.js';
 import type { PgBossRuntime } from './runtime.js';
 
 /** Production maintenance composition; facade/queue implementations own durable effects. */
@@ -18,6 +18,10 @@ export function createWorkerReconciliation(input: {
     if (active) return active;
     active = (async () => {
       const operations = [
+        {
+          errorClass: 'CUSTOMER_PRIVACY_CLEANUP_UNAVAILABLE',
+          run: () => maintainCustomerPrivacy(input.core, input.queue),
+        },
         { errorClass: 'WEBHOOK_RETENTION_UNAVAILABLE', run: () => maintainWebhookRetention(input.core, input.queue) },
         { errorClass: 'UNINSTALL_RECOVERY_UNAVAILABLE', run: () => recoverPendingUninstalls(input.core, input.queue) },
         { errorClass: 'PURCHASE_RECOVERY_UNAVAILABLE', run: () => input.purchases?.recover() },

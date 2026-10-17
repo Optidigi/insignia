@@ -65,8 +65,11 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       );
       const migrations = new URL('../migrations/', import.meta.url);
       const names = (await readdir(migrations)).filter((n) => n.endsWith('.sql')).sort();
-      expect(names).toHaveLength(39);
-      expect(names.at(-1)).toBe('20261017000100_customer_privacy.sql');
+      expect(names).toHaveLength(41);
+      expect(names.slice(-2)).toEqual([
+        '20261017000200_privacy_merchant_export.sql',
+        '20261017000300_shop_privacy_staging.sql',
+      ]);
       for (const file of names.slice(0, 20))
         await owner.query((await readFile(new URL(file, migrations), 'utf8')).split('-- migrate:down')[0]!);
       await owner.query('REVOKE CREATE ON SCHEMA public FROM PUBLIC');
@@ -692,7 +695,9 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       // The actual current schema must be rejected, not silently admitted.
       await expect(owner.query(usageScript)).rejects.toThrow('exact_usage_schema38_required');
       await owner.query('ROLLBACK');
-      await owner.query('DELETE FROM schema_migrations WHERE version=$1', ['20261017000100']);
+      await owner.query('DELETE FROM schema_migrations WHERE version=ANY($1::text[])', [
+        ['20261017000100', '20261017000200', '20261017000300'],
+      ]);
       await owner.query(`ALTER ROLE ${queue} CREATEROLE`);
       await expect(owner.query(usageScript)).rejects.toThrow('unqualified_usage_runtime_role');
       await owner.query('ROLLBACK');

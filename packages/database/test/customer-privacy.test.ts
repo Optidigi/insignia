@@ -75,9 +75,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('body-bound customer privacy p
       shopId: f.shopId,
       requestedOrderCount: 1,
     });
-    expect(await repo.lookupDataRequest(receipt)).toEqual([
-      { purchaseId, orderId: `gid://shopify/Order/${id}`, hasPrivateDesign: false },
-    ]);
+    expect(await repo.readDataRequest({ shopId: f.shopId, installationGeneration: '1' }, receipt)).toMatchObject({
+      orders: [{ purchaseId, orderId: `gid://shopify/Order/${id}` }],
+    });
     expect(
       (await sql`SELECT 1 FROM customer_order_erasure_fences WHERE shop_id=${f.shopId}`.execute(db)).rows,
     ).toHaveLength(0);
@@ -87,7 +87,55 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('body-bound customer privacy p
           erasure_state: string;
         }>`SELECT erasure_state FROM inbox_messages WHERE id=${receipt}::uuid`.execute(db)
       ).rows[0]?.erasure_state,
-    ).toBe('retained');
+    ).toBe('erased');
+  });
+  it('makes requested records available only to the current merchant of the signed shop, including retained design and exact money', async () => {
+    const f = await purchaseFixture(db),
+      other = await purchaseFixture(db);
+    const purchaseId = await order(f, '909'),
+      assetId = await asset(f.shopId);
+    await bind(f, purchaseId, assetId);
+    await sql`INSERT INTO purchase_lines VALUES(${f.shopId},1,${purchaseId}::uuid,${f.authorization.setId}::uuid,'gid://shopify/LineItem/909',0,'p','v',1,9007199254740993)`.execute(
+      db,
+    );
+    await sql`INSERT INTO purchase_refund_facts VALUES(${f.shopId},1,${purchaseId}::uuid,'gid://shopify/Refund/909',clock_timestamp(),'USD',9007199254740993,'[]')`.execute(
+      db,
+    );
+    await sql`INSERT INTO purchase_artwork_events(event_id,shop_id,installation_generation,purchase_id,version,kind,group_index,placement_id,asset_id,expires_at) VALUES(${randomUUID()}::uuid,${f.shopId},1,${purchaseId}::uuid,1,'ATTACH',0,'expired-private-placement',${assetId}::uuid,clock_timestamp()-interval '1 second')`.execute(
+      db,
+    );
+    const inbox = await receive(f.shopifyShopId, ['909'], 'request');
+    const repo = createCustomerPrivacyRepository(db);
+    await repo.processInbox(inbox);
+    const scope = { shopId: f.shopId, installationGeneration: '1' };
+    expect(await repo.listDataRequests(scope)).toMatchObject([
+      { inboxId: inbox, requestId: '42', requestedOrderCount: 1 },
+    ]);
+    const manifest = await repo.readDataRequest(scope, inbox);
+    expect(manifest).toMatchObject({ inboxId: inbox, orders: [{ orderId: 'gid://shopify/Order/909', purchaseId }] });
+    const record = await repo.exportOrder(scope, inbox, purchaseId, f.authorization.setId);
+    expect(record).toMatchObject({
+      order: { orderId: 'gid://shopify/Order/909', originalTotalMinor: '2001' },
+      lines: [{ unit_price_minor: '9007199254740993' }],
+      refunds: [{ amount_minor: '9007199254740993' }],
+      artworkEvents: [{ asset_id: null, placement_id: null, group_index: null }],
+      designs: [
+        {
+          payload: {
+            request: {
+              groups: [{ group: { design: { placements: [{ artwork: { revisionId: assetId } }] } } }],
+            },
+          },
+        },
+      ],
+    });
+    expect(await repo.exportOrder(scope, inbox, purchaseId)).toMatchObject({
+      designs: [{ payload: null, hasRetainedPayload: true }],
+    });
+    expect(JSON.stringify(record)).not.toMatch(/fixture@example|original_key|preview_key|owner_hash|envelope/);
+    expect(await repo.readDataRequest({ shopId: other.shopId, installationGeneration: '1' }, inbox)).toBeNull();
+    expect(await repo.exportOrder(scope, inbox, randomUUID())).toBeNull();
+    expect(await repo.readDataRequest({ ...scope, installationGeneration: '2' }, inbox)).toBeNull();
   });
   it('redacts exact purchase/offer and ATTACH assets, stages existing cleanup without changing deadlines or economics, and replays safely', async () => {
     const f = await purchaseFixture(db),
@@ -103,6 +151,20 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('body-bound customer privacy p
     const before = (
       await sql<{ expires_at: Date }>`SELECT expires_at FROM artwork_assets WHERE asset_id=${primary}::uuid`.execute(db)
     ).rows[0]?.expires_at;
+    const related = await receive(
+      f.shopifyShopId,
+      [],
+      'redact',
+      'orders/updated',
+      '{"id":101,"admin_graphql_api_id":"gid://shopify/Order/101","customer":{"email":"remove@example.invalid"}}',
+    );
+    const foreign = await receive(
+      other.shopifyShopId,
+      [],
+      'redact',
+      'orders/updated',
+      '{"id":999,"admin_graphql_api_id":"gid://shopify/Order/999","customer":{"email":"keep@example.invalid"}}',
+    );
     const receipt = await receive(f.shopifyShopId, ['101'], 'redact', 'customers/data_request');
     const repo = createCustomerPrivacyRepository(db),
       result = await repo.processInbox(receipt);
@@ -113,6 +175,37 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('body-bound customer privacy p
       matchedPurchaseCount: 1,
     });
     expect(await repo.processInbox(receipt)).toEqual(result);
+    await sql`UPDATE inbox_messages SET state='processed' WHERE id=${related}::uuid`.execute(db);
+    const pendingRefund = await receive(
+      f.shopifyShopId,
+      [],
+      'redact',
+      'refunds/create',
+      '{"id":88,"admin_graphql_api_id":"gid://shopify/Refund/88","order_id":101}',
+    );
+    await repo.cleanupInboxes(100);
+    expect(
+      (
+        await sql<{
+          state: string;
+          erasure_state: string;
+        }>`SELECT state,erasure_state FROM inbox_messages WHERE id=${pendingRefund}::uuid`.execute(db)
+      ).rows[0],
+    ).toEqual({ state: 'pending', erasure_state: 'retained' });
+    expect(
+      (
+        await sql<{
+          erasure_state: string;
+        }>`SELECT erasure_state FROM inbox_messages WHERE id=${related}::uuid`.execute(db)
+      ).rows[0]?.erasure_state,
+    ).toBe('erased');
+    expect(
+      (
+        await sql<{
+          erasure_state: string;
+        }>`SELECT erasure_state FROM inbox_messages WHERE id=${foreign}::uuid`.execute(db)
+      ).rows[0]?.erasure_state,
+    ).toBe('retained');
     expect(
       (
         await sql<{
@@ -219,6 +312,61 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('body-bound customer privacy p
     expect(
       (await sql`SELECT 1 FROM customer_order_erasure_fences WHERE shop_id=${f.shopId}`.execute(db)).rows,
     ).toHaveLength(0);
+  });
+  it('stages shop erasure only for an independently inactive current generation and never erases an active installation', async () => {
+    const active = await purchaseFixture(db),
+      inactive = await purchaseFixture(db);
+    const keep = await asset(active.shopId),
+      remove = await asset(inactive.shopId);
+    await sql`UPDATE shops SET shop_domain=shop_id||'.myshopify.com' WHERE shop_id IN (${active.shopId},${inactive.shopId})`.execute(
+      db,
+    );
+    const blocked = await receive(
+      active.shopifyShopId,
+      [],
+      'redact',
+      'shop/redact',
+      `{"shop_id":${active.shopifyShopId},"shop_domain":"${active.shopId}.myshopify.com"}`,
+    );
+    const repo = createCustomerPrivacyRepository(db);
+    expect(await repo.processInbox(blocked)).toMatchObject({ kind: 'SHOP_ERASURE_BLOCKED', shopId: active.shopId });
+    expect(
+      (await sql<{ state: string }>`SELECT state FROM artwork_assets WHERE asset_id=${keep}::uuid`.execute(db)).rows[0]
+        ?.state,
+    ).toBe('UPLOADING');
+    await sql`UPDATE installation_generations SET deactivated_at=clock_timestamp() WHERE shop_id=${inactive.shopId}`.execute(
+      db,
+    );
+    const inbox = await receive(
+      inactive.shopifyShopId,
+      [],
+      'redact',
+      'shop/redact',
+      `{"shop_id":${inactive.shopifyShopId},"shop_domain":"${inactive.shopId}.myshopify.com"}`,
+    );
+    expect(await repo.processInbox(inbox)).toMatchObject({ kind: 'SHOP_ERASURE_STAGED', shopId: inactive.shopId });
+    expect(await repo.processInbox(inbox)).toMatchObject({ kind: 'SHOP_ERASURE_STAGED' });
+    expect(
+      (await sql<{ state: string }>`SELECT state FROM artwork_assets WHERE asset_id=${remove}::uuid`.execute(db))
+        .rows[0]?.state,
+    ).toBe('DELETING');
+    expect(
+      (
+        await sql`SELECT 1 FROM shop_privacy_fences WHERE shop_id=${inactive.shopId} AND installation_generation=1`.execute(
+          db,
+        )
+      ).rows,
+    ).toHaveLength(1);
+    // A request captured during an active installation never becomes retrospective
+    // authority merely because that installation later deactivates.
+    await sql`UPDATE installation_generations SET deactivated_at=clock_timestamp() WHERE shop_id=${active.shopId}`.execute(
+      db,
+    );
+    expect(await repo.processInbox(blocked)).toMatchObject({ kind: 'SHOP_ERASURE_BLOCKED' });
+    expect(
+      (await sql<{ state: string }>`SELECT state FROM artwork_assets WHERE asset_id=${keep}::uuid`.execute(db)).rows[0]
+        ?.state,
+    ).toBe('UPLOADING');
   });
   it('uses signed-body shape and resolved shop consistently; public callers cannot forge fences or helper authority', async () => {
     const f = await purchaseFixture(db),

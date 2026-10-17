@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const FORMAT = 'insignia-customer-erasure-exclusions-v1';
+const FORMAT = 'insignia-privacy-erasure-exclusions-v2';
 const MAX_BYTES = 64 * 1024 * 1024;
 const keys = {
   receipts: [
@@ -19,6 +19,7 @@ const keys = {
     'staged_at',
   ],
   links: ['inbox_id', 'order_id'],
+  shopFences: ['shop_id', 'installation_generation', 'source_inbox_id', 'created_at'],
   orderFences: ['shop_id', 'order_id', 'source_inbox_id', 'created_at'],
   quoteFences: ['shop_id', 'quote_id', 'source_inbox_id', 'created_at'],
   assetFences: ['shop_id', 'asset_id', 'source_inbox_id', 'created_at'],
@@ -42,12 +43,13 @@ const keys = {
     'erasure_state',
   ],
   shops: ['shop_id', 'shopify_shop_id', 'current_generation'],
-  generations: ['shop_id', 'generation', 'authorization_generation', 'external_installation_id'],
+  generations: ['shop_id', 'generation', 'authorization_generation', 'external_installation_id', 'deactivated_at'],
 };
 const copies = [
   ['inboxes', 'inbox_messages', ['id']],
   ['receipts', 'customer_privacy_receipts', ['inbox_id']],
   ['links', 'customer_privacy_order_links', ['inbox_id', 'order_id']],
+  ['shopFences', 'shop_privacy_fences', ['shop_id', 'installation_generation']],
   ['orderFences', 'customer_order_erasure_fences', ['shop_id', 'order_id']],
   ['quoteFences', 'customer_quote_erasure_fences', ['shop_id', 'quote_id']],
   ['assetFences', 'customer_asset_erasure_fences', ['shop_id', 'asset_id']],
@@ -65,6 +67,9 @@ const tables = [
   'quote_proposals',
   'design_drafts',
   'buyer_quote_ownership',
+  'buyer_sessions',
+  'shopify_webhook_deliveries',
+  'webhook_obligation_facts',
 ];
 const functions = [
   'customer_privacy_payload_assets',
@@ -72,8 +77,16 @@ const functions = [
   'customer_privacy_fence_payload',
   'customer_privacy_fence_quote',
   'process_customer_privacy_inbox',
+  'stage_customer_privacy_inbox',
+  'stage_shop_privacy_inbox',
+  'cleanup_customer_privacy_inboxes',
+  'privacy_webhook_identity',
+  'read_customer_privacy_requests',
+  'read_customer_privacy_order_links',
+  'export_customer_privacy_order',
   'guard_customer_private_ingestion',
   'enforce_payload_collection_time',
+  'guard_webhook_obligation_facts',
 ];
 const hash = (value) =>
   createHash('sha256')
@@ -118,6 +131,20 @@ async function schemaIdentity(client) {
       [tables],
     )
   ).rows;
+  // pg_dump reparses this existing nested AND check into its equivalent flat
+  // form. Normalize only these two known expressions, never arbitrary checks.
+  for (const row of constraints) {
+    if (
+      row.relname === 'shopify_webhook_deliveries' &&
+      row.conname === 'shopify_webhook_deliveries_shop_domain_check'
+    ) {
+      const flat =
+        "CHECK (((length(shop_domain) >= 16) AND (length(shop_domain) <= 253) AND (shop_domain = lower(shop_domain)) AND (shop_domain ~~ '%.myshopify.com'::text)))";
+      const nested =
+        "CHECK ((((length(shop_domain) >= 16) AND (length(shop_domain) <= 253)) AND (shop_domain = lower(shop_domain)) AND (shop_domain ~~ '%.myshopify.com'::text)))";
+      if (row.definition === nested) row.definition = flat;
+    }
+  }
   const definitions = (
     await client.query(
       `SELECT p.proname,pg_get_functiondef(p.oid) AS definition FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname=ANY($1::text[]) ORDER BY p.proname`,
@@ -140,7 +167,10 @@ async function rows(client, query, parameters = []) {
     )
   ).rows[0].rows;
 }
-const staged = "SELECT inbox_id FROM public.customer_privacy_receipts WHERE operation='ERASURE_STAGED'";
+const receiptIds = 'SELECT inbox_id FROM public.customer_privacy_receipts';
+const emptyShopify =
+  "SELECT id FROM public.inbox_messages WHERE source='shopify' AND retention_class='shopify-webhook' AND erasure_state='erased' AND octet_length(payload)=0";
+const coveredShops = `SELECT shop_id FROM public.customer_privacy_receipts UNION SELECT shop_id FROM public.inbox_messages WHERE id IN (${emptyShopify}) AND shop_id IS NOT NULL`;
 
 /** Private owner export of already committed erasures. Never retained bodies or customer fields. */
 export async function exportErasureExclusions(pool) {
@@ -152,43 +182,58 @@ export async function exportErasureExclusions(pool) {
     if (
       (
         await client.query(
-          `SELECT 1 FROM public.customer_privacy_receipts r JOIN public.inbox_messages i ON i.id=r.inbox_id WHERE r.operation='ERASURE_STAGED' AND (r.request_id IS NOT NULL OR i.source<>'shopify' OR i.retention_class<>'shopify-webhook' OR i.erasure_state<>'erased' OR octet_length(i.payload)<>0 OR i.state<>'processed' OR i.payload_sha256<>r.raw_body_sha256 OR i.lease_owner IS NOT NULL OR i.lease_until IS NOT NULL OR i.last_error_class IS NOT NULL OR (i.shop_id IS NOT NULL AND i.shop_id<>r.shop_id)) LIMIT 1`,
+          `SELECT 1 FROM public.customer_privacy_receipts r JOIN public.inbox_messages i ON i.id=r.inbox_id WHERE (i.source<>'shopify' OR i.retention_class<>'shopify-webhook' OR i.erasure_state<>'erased' OR octet_length(i.payload)<>0 OR i.state<>'processed' OR i.payload_sha256<>r.raw_body_sha256 OR i.lease_owner IS NOT NULL OR i.lease_until IS NOT NULL OR i.last_error_class IS NOT NULL OR (i.shop_id IS NOT NULL AND i.shop_id<>r.shop_id)) LIMIT 1`,
         )
       ).rowCount
     )
       fail('source is not a verified erased tombstone');
+    // Transport exclusion is not permission to discard a pending obligation.
+    // Legacy expiration retains minimal facts; require separate qualification
+    // rather than copying a tombstone that would erase those facts on restore.
+    if (
+      (
+        await client.query(
+          `SELECT 1 FROM public.webhook_obligation_facts WHERE inbox_id IN (${emptyShopify}) AND (facts_erased_at IS NULL OR captured_fields<>'{}'::jsonb) LIMIT 1`,
+        )
+      ).rowCount
+    )
+      fail('unresolved transport obligation requires separate restore qualification');
     const data = {
       schemaIdentity: await schemaIdentity(client),
       exportedAt: (await client.query('SELECT transaction_timestamp()::text AS at')).rows[0].at,
     };
-    data.receipts = await rows(client, `${staged.replace('SELECT inbox_id', 'SELECT *')} ORDER BY inbox_id`);
+    data.receipts = await rows(client, 'SELECT * FROM public.customer_privacy_receipts ORDER BY inbox_id');
     data.inboxes = await rows(
       client,
-      `SELECT i.id,i.source,i.external_delivery_id,i.shop_id,i.installation_generation::text,i.payload,i.payload_sha256,i.received_at,i.collected_at,i.state,i.attempts,i.last_error_class,i.lease_owner,i.lease_until,i.retention_class,i.purge_after,i.erasure_state FROM public.inbox_messages i WHERE i.id IN (${staged}) ORDER BY i.id`,
+      `SELECT i.id,i.source,i.external_delivery_id,i.shop_id,i.installation_generation::text,i.payload,i.payload_sha256,i.received_at,i.collected_at,i.state,i.attempts,i.last_error_class,i.lease_owner,i.lease_until,i.retention_class,i.purge_after,i.erasure_state FROM public.inbox_messages i WHERE i.id IN (${emptyShopify}) ORDER BY i.id`,
     );
     data.links = await rows(
       client,
-      `SELECT * FROM public.customer_privacy_order_links WHERE inbox_id IN (${staged}) ORDER BY inbox_id,order_id`,
+      `SELECT * FROM public.customer_privacy_order_links WHERE inbox_id IN (${receiptIds}) ORDER BY inbox_id,order_id`,
+    );
+    data.shopFences = await rows(
+      client,
+      `SELECT shop_id,installation_generation::text,source_inbox_id,created_at FROM public.shop_privacy_fences WHERE source_inbox_id IN (${receiptIds}) ORDER BY shop_id,installation_generation`,
     );
     data.orderFences = await rows(
       client,
-      `SELECT * FROM public.customer_order_erasure_fences WHERE source_inbox_id IN (${staged}) ORDER BY shop_id,order_id`,
+      `SELECT * FROM public.customer_order_erasure_fences WHERE source_inbox_id IN (${receiptIds}) ORDER BY shop_id,order_id`,
     );
     data.quoteFences = await rows(
       client,
-      `SELECT * FROM public.customer_quote_erasure_fences WHERE source_inbox_id IN (${staged}) ORDER BY shop_id,quote_id`,
+      `SELECT * FROM public.customer_quote_erasure_fences WHERE source_inbox_id IN (${receiptIds}) ORDER BY shop_id,quote_id`,
     );
     data.assetFences = await rows(
       client,
-      `SELECT * FROM public.customer_asset_erasure_fences WHERE source_inbox_id IN (${staged}) ORDER BY shop_id,asset_id`,
+      `SELECT * FROM public.customer_asset_erasure_fences WHERE source_inbox_id IN (${receiptIds}) ORDER BY shop_id,asset_id`,
     );
     data.shops = await rows(
       client,
-      `SELECT shop_id,shopify_shop_id,current_generation::text FROM public.shops WHERE shop_id IN (SELECT shop_id FROM public.customer_privacy_receipts WHERE operation='ERASURE_STAGED') ORDER BY shop_id`,
+      `SELECT shop_id,shopify_shop_id,current_generation::text FROM public.shops WHERE shop_id IN (${coveredShops}) ORDER BY shop_id`,
     );
     data.generations = await rows(
       client,
-      `SELECT shop_id,generation::text,authorization_generation::text,external_installation_id FROM public.installation_generations WHERE shop_id IN (SELECT shop_id FROM public.customer_privacy_receipts WHERE operation='ERASURE_STAGED') ORDER BY shop_id,generation`,
+      `SELECT shop_id,generation::text,authorization_generation::text,external_installation_id,deactivated_at FROM public.installation_generations WHERE shop_id IN (${coveredShops}) ORDER BY shop_id,generation`,
     );
     const envelope = { format: FORMAT, sha256: hash(data), data };
     validate(envelope);
@@ -225,13 +270,17 @@ function validate(envelope) {
   if (
     receipts.size !== data.receipts.length ||
     shops.size !== data.shops.length ||
-    data.inboxes.length !== receipts.size
+    new Set(data.inboxes.map((r) => r.id)).size !== data.inboxes.length
   )
     fail('duplicate or missing source identity');
   for (const receipt of data.receipts) {
     if (
-      receipt.operation !== 'ERASURE_STAGED' ||
-      receipt.request_id !== null ||
+      !['ERASURE_STAGED', 'DATA_REQUEST_PENDING_EXPORT', 'SHOP_ERASURE_STAGED', 'SHOP_ERASURE_BLOCKED'].includes(
+        receipt.operation,
+      ) ||
+      (receipt.operation === 'DATA_REQUEST_PENDING_EXPORT'
+        ? !/^[1-9][0-9]{0,19}$/.test(receipt.request_id ?? '')
+        : receipt.request_id !== null) ||
       !shops.has(receipt.shop_id) ||
       !/^[a-f0-9]{64}$/.test(receipt.raw_body_sha256)
     )
@@ -239,21 +288,13 @@ function validate(envelope) {
     const inbox = data.inboxes.find((row) => row.id === receipt.inbox_id);
     if (
       !inbox ||
-      inbox.source !== 'shopify' ||
-      inbox.retention_class !== 'shopify-webhook' ||
-      inbox.erasure_state !== 'erased' ||
-      inbox.payload !== '\\x' ||
-      inbox.state !== 'processed' ||
       inbox.payload_sha256 !== receipt.raw_body_sha256 ||
-      inbox.lease_owner !== null ||
-      inbox.lease_until !== null ||
-      inbox.last_error_class !== null ||
       (inbox.shop_id !== null && inbox.shop_id !== receipt.shop_id)
     )
       fail('not an actual erased inbox tombstone');
     if (
       new Set(data.links.filter((row) => row.inbox_id === receipt.inbox_id).map((row) => row.order_id)).size !==
-      receipt.requested_order_count
+      (receipt.operation === 'SHOP_ERASURE_STAGED' ? receipt.matched_purchase_count : receipt.requested_order_count)
     )
       fail('incomplete order exclusions');
   }
@@ -262,13 +303,45 @@ function validate(envelope) {
     if (
       !receipt ||
       !/^gid:\/\/shopify\/Order\/[1-9][0-9]{0,19}$/.test(link.order_id) ||
-      !data.orderFences.some((row) => row.shop_id === receipt.shop_id && row.order_id === link.order_id)
+      (receipt.operation !== 'DATA_REQUEST_PENDING_EXPORT' &&
+        !data.orderFences.some((row) => row.shop_id === receipt.shop_id && row.order_id === link.order_id)) ||
+      receipt.operation === 'SHOP_ERASURE_BLOCKED'
     )
       fail('unbound order exclusion');
   }
-  for (const collection of ['orderFences', 'quoteFences', 'assetFences'])
+  for (const inbox of data.inboxes) {
+    if (
+      inbox.source !== 'shopify' ||
+      inbox.retention_class !== 'shopify-webhook' ||
+      inbox.erasure_state !== 'erased' ||
+      inbox.payload !== '\\x' ||
+      inbox.state !== 'processed' ||
+      !/^[a-f0-9]{64}$/.test(inbox.payload_sha256) ||
+      inbox.lease_owner !== null ||
+      inbox.lease_until !== null ||
+      inbox.last_error_class !== null ||
+      (inbox.shop_id !== null && !shops.has(inbox.shop_id))
+    )
+      fail('not an actual erased inbox tombstone');
+  }
+  for (const collection of ['shopFences', 'orderFences', 'quoteFences', 'assetFences'])
     for (const fence of data[collection])
-      if (receipts.get(fence.source_inbox_id)?.shop_id !== fence.shop_id) fail('foreign erasure fence');
+      if (
+        receipts.get(fence.source_inbox_id)?.shop_id !== fence.shop_id ||
+        !['ERASURE_STAGED', 'SHOP_ERASURE_STAGED'].includes(receipts.get(fence.source_inbox_id)?.operation)
+      )
+        fail('foreign erasure fence');
+  for (const fence of data.shopFences) {
+    const generation = data.generations.find(
+      (g) => g.shop_id === fence.shop_id && g.generation === fence.installation_generation,
+    );
+    if (
+      receipts.get(fence.source_inbox_id)?.operation !== 'SHOP_ERASURE_STAGED' ||
+      !generation ||
+      !generation.deactivated_at
+    )
+      fail('unbound shop erasure fence');
+  }
   for (const generation of data.generations) if (!shops.has(generation.shop_id)) fail('foreign installation identity');
 }
 async function copyRows(client, table, primary, values) {
@@ -319,7 +392,7 @@ export async function importErasureExclusions(pool, envelope) {
       if (!found || hash(found) !== hash(shop)) fail('missing tenant or shop/generation drift');
       const generations = await rows(
         client,
-        `SELECT shop_id,generation::text,authorization_generation::text,external_installation_id FROM public.installation_generations WHERE shop_id=$1 ORDER BY generation`,
+        `SELECT shop_id,generation::text,authorization_generation::text,external_installation_id,deactivated_at FROM public.installation_generations WHERE shop_id=$1 ORDER BY generation`,
         [shop.shop_id],
       );
       if (hash(generations) !== hash(data.generations.filter((row) => row.shop_id === shop.shop_id)))
@@ -329,7 +402,7 @@ export async function importErasureExclusions(pool, envelope) {
     if (
       (
         await client.query(
-          "SELECT 1 FROM public.customer_privacy_receipts WHERE operation='ERASURE_STAGED' AND NOT(inbox_id=ANY($1::uuid[])) LIMIT 1",
+          'SELECT 1 FROM public.customer_privacy_receipts WHERE NOT(inbox_id=ANY($1::uuid[])) LIMIT 1',
           [sourceIds],
         )
       ).rowCount
@@ -337,6 +410,15 @@ export async function importErasureExclusions(pool, envelope) {
       fail('target has exclusions absent from source copy');
     // A backup may already contain the original pending inbox. Its immutable
     // source identity/hash/deadline must match before copying the actual erased state.
+    if (
+      (
+        await client.query(
+          `SELECT 1 FROM public.inbox_messages WHERE id IN (${emptyShopify}) AND NOT(id=ANY($1::uuid[])) LIMIT 1`,
+          [data.inboxes.map((r) => r.id)],
+        )
+      ).rowCount
+    )
+      fail('target has transport exclusions absent from source copy');
     const mutable = ['payload', 'state', 'attempts', 'last_error_class', 'lease_owner', 'lease_until', 'erasure_state'];
     if (
       (
@@ -366,6 +448,57 @@ export async function importErasureExclusions(pool, envelope) {
     await client.query('ALTER TABLE public.inbox_messages ENABLE TRIGGER inbox_collection_guard');
     for (const [collection, table, primary] of copies.slice(1))
       await copyRows(client, table, primary, data[collection]);
+    // Transport tombstones also cover erased order receipts without privacy receipts.
+    await client.query(
+      `UPDATE public.webhook_obligation_facts SET captured_fields='{}',facts_erased_at=coalesce(facts_erased_at,clock_timestamp()) WHERE inbox_id=ANY($1::uuid[])`,
+      [data.inboxes.map((r) => r.id)],
+    );
+    await client.query(
+      'UPDATE public.shopify_webhook_deliveries SET queue_cleanup_pending=true WHERE inbox_id=ANY($1::uuid[])',
+      [data.inboxes.map((r) => r.id)],
+    );
+    // Only an actual staged receipt backs a shop fence; blocked receipts never
+    // become authority, even if the restored installation later becomes inactive.
+    for (const fence of data.shopFences) {
+      const parameters = [fence.shop_id, fence.installation_generation];
+      const quotes = (
+        await client.query(
+          'SELECT quote_id FROM public.accepted_quotes WHERE shop_id=$1 AND installation_generation=$2 ORDER BY quote_id',
+          parameters,
+        )
+      ).rows;
+      for (const row of quotes)
+        await client.query('SELECT public.customer_privacy_fence_quote($1,$2,$3)', [
+          fence.shop_id,
+          row.quote_id,
+          fence.source_inbox_id,
+        ]);
+      const assets = (
+        await client.query(
+          'SELECT asset_id FROM public.artwork_assets WHERE shop_id=$1 AND installation_generation=$2 ORDER BY asset_id',
+          parameters,
+        )
+      ).rows;
+      for (const row of assets)
+        await client.query('SELECT public.customer_privacy_fence_asset($1,$2,$3)', [
+          fence.shop_id,
+          row.asset_id,
+          fence.source_inbox_id,
+        ]);
+      for (const table of ['purchase_design_payloads', 'purchase_offer_payloads'])
+        await client.query(
+          `UPDATE public.${table} SET payload=NULL,erased_at=clock_timestamp() WHERE shop_id=$1 AND installation_generation=$2 AND erased_at IS NULL`,
+          parameters,
+        );
+      await client.query(
+        "UPDATE public.purchase_artwork_events SET asset_id=NULL,placement_id=NULL,group_index=NULL,erased_at=clock_timestamp() WHERE shop_id=$1 AND installation_generation=$2 AND kind='ATTACH' AND erased_at IS NULL",
+        parameters,
+      );
+      await client.query(
+        'DELETE FROM public.buyer_sessions WHERE shop_id=$1 AND installation_generation=$2',
+        parameters,
+      );
+    }
     // Reapply against the restored old private payloads. Helpers preserve exact expiry/economics.
     const bound = (
       await client.query(

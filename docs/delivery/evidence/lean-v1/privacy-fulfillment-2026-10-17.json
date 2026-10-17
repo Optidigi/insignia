@@ -1,0 +1,281 @@
+{
+  "classification": "PRIVACY_IMPLEMENTATION_LOCALLY_QUALIFIED_RELEASE_BLOCKED_LIFECYCLE_AUTHORITY",
+  "base": "fcf042ff67a0bd885ec60ebbaaa9f396f4c54ed6",
+  "scope": [
+    "Authenticated merchant request manifest and exact-money order/per-set exports",
+    "Contact-bearing request bytes erased after durable minimal receipt",
+    "Customer-related settled transport cleanup; pending financial notifications untouched",
+    "Shop privacy stages only independently inactive generations; ambiguous active requests remain operator-held",
+    "Erasure-aware isolated restore v2 including shop fences and completed transport tombstones"
+  ],
+  "reviews": [
+    {
+      "reviewer": "/root/privacy_correctness_security_review",
+      "initialFindings": [
+        "P1 pending refund handoff loss",
+        "P2 numeric money precision",
+        "P2 whole-order export size",
+        "P2 expired attachment identifiers"
+      ]
+    },
+    {
+      "reviewer": "/root/privacy_final_review",
+      "correctness": "CLEAR",
+      "standardsSecurity": "CLEAR",
+      "reconciliation": [
+        "Only processed financial transport is erased",
+        "All top-level numeric money fields exported as decimal strings",
+        "Metadata plus bounded individual design export",
+        "Expired attachment identifiers suppressed before asynchronous cleanup"
+      ]
+    },
+    {
+      "reviewer": "/root/privacy_runtime_impact_review",
+      "correctness": "CLEAR",
+      "standardsSecurity": "CLEAR",
+      "scope": "Separate privacy maintenance failure boundary; exact schema41 fixture and preserved schema38 rejection; synthetic SCRAM role password",
+      "independentChecks": "Reconciliation11PASS; diff whitespace clean"
+    }
+  ],
+  "localChecks": {
+    "database": {
+      "passed": 324,
+      "skipped": 6,
+      "filesPassed": 28,
+      "filesSkipped": 5,
+      "source": "Fresh owned PostgreSQL18.6 Unix-socket cluster; default environment-dependent qualification cases remain skipped"
+    },
+    "restrictedRolesAndWorker": {
+      "passed": 16,
+      "skipped": 0,
+      "scope": "Actual merchant and worker LOGIN grants, pg-boss retention/retry/cleanup and privacy dispatch"
+    },
+    "httpAndBrowser": {
+      "passed": 3,
+      "skipped": 0,
+      "scope": "Merchant authentication/isolation/large design boundary and actual local Chromium download/error recovery"
+    },
+    "isolatedRestore": {
+      "passed": 1,
+      "skipped": 0,
+      "scope": "Root actual pg_dump into separate owned database; pending requests, inactive shop staging, blocked active scope, tombstones, foreign authority denial, immutable economics and deadlines",
+      "authorIndependentRun": "Also passed by /root/privacy_contract_audit before subsequent processed-transport-only correction",
+      "preservedFailure": "Root first rerun correctly rejected an unprocessed financial fixture; fixture now explicitly models already-settled transport. Local restart first omitted socket/port and stopped before DB use; corrected explicit private socket successful."
+    },
+    "builds": "Database/worker TypeScript and Astro build PASS",
+    "boundaries": "PASS after rebuilding dependent declarations; earlier stale-dist type failure preserved",
+    "secrets": "PASS after staging every new path",
+    "style": "PASS with existing repository warning/info diagnostics",
+    "broadWeb": {
+      "passed": 188,
+      "skipped": 53,
+      "failed": 0,
+      "scope": "Complete local web suite; environment-dependent PostgreSQL/native cases remain explicit skips"
+    },
+    "scramRoles": {
+      "passed": 3,
+      "failed": 0,
+      "scope": "Actual TCP/SCRAM web runtime grant qualification plus restricted merchant and worker privacy LOGINs in new owned PostgreSQL18 cluster"
+    },
+    "reconciliation": {
+      "passed": 11,
+      "failed": 0,
+      "redGreen": "A failing privacy capability initially suppressed ordinary transport expiry; the new isolated maintenance operation preserves independent retention, cleanup and shutdown."
+    }
+  },
+  "nativeBaseline": {
+    "classification": "EXACT_ACTIVE_SCOPE_BASELINE_PASS",
+    "observedAt": "2026-10-17T21:39:37.563Z",
+    "appId": "429028933633",
+    "active": [
+      {
+        "versionId": "gid://shopify/Version/1169137696769",
+        "versionTag": "lean-markets-7b17cd9",
+        "status": "active"
+      }
+    ],
+    "versionCount": 13,
+    "versions": [
+      {
+        "versionId": "gid://shopify/Version/1169137696769",
+        "versionTag": "lean-markets-7b17cd9",
+        "status": "active"
+      },
+      {
+        "versionId": "gid://shopify/Version/1168157736961",
+        "versionTag": "m8-preview-28443bd",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1166710865921",
+        "versionTag": "m8-cookie-91b35ab",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1166552825857",
+        "versionTag": "m8-theme-c8d8713",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1166090010625",
+        "versionTag": "m8-app-proxy-3d2a02e",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1165513097217",
+        "versionTag": "m8-read-orders-617057f",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1163229200385",
+        "versionTag": "m5-functions-9c2e56b42fbf",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1162611916801",
+        "versionTag": "m5-runtime-b673985e1e38",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1158986629121",
+        "versionTag": "m5-019r-9b94149272d1",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1158837927937",
+        "versionTag": "m5-019-a9717e1265ef",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1153019904001",
+        "versionTag": "insignia-3",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1152880803841",
+        "versionTag": "insignia-2",
+        "status": "inactive"
+      },
+      {
+        "versionId": "gid://shopify/Version/1146748534785",
+        "versionTag": "insignia-1",
+        "status": "inactive"
+      }
+    ],
+    "moduleCount": 8,
+    "modulesSha256": "ff157c765e0ab830eea7ffeb25c26a4f8d5467baa764f5c7ffb475594e7c3365",
+    "fullMapsMatchReviewedBaseline": true,
+    "installCount": 1,
+    "managementReads": 5,
+    "providerMutations": 0
+  },
+  "release": {
+    "authority": "../../authority/combined-theme-webhook-release-2026-10-17.json",
+    "allocation": "Existing one-time combined grant unused",
+    "nativeMutations": 0,
+    "uploadCalls": 0,
+    "creationOrReleaseAttempts": 0,
+    "runtimeDeployment": false,
+    "conditionalPrerequisite": "Complete handlers and cleanup before release; not satisfied by generic uninstall quarantine",
+    "proposal": "Fourteen compiled modules; complete CI theme assets available. No native acceptance or full handler completion claim.",
+    "compileQualification": {
+      "classification": "COMPILED_REVIEW_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "compiledManifestSha256": "2429b2c7c3fdb253b4c1eb29176df8c9b63c8771611f418ff695002036119ff3",
+      "preservedFunctionModuleIds": true,
+      "themeRegistrationPreserved": true,
+      "moduleCount": 14,
+      "uploadCalls": 0,
+      "providerMutations": 0,
+      "limits": "Guarded CLI compile proves fourteen modules before URL/upload, but theme files are not assembled at that stop. Complete local static proposal explicitly combines unchanged seven config maps, original native theme registration/Liquid blocks and all five CI assets. Final native packaging/create/readback remains unqualified; no release allowed on this local proposal alone.",
+      "preservedManifestSha256": "a366ee60740937a408b785e95ad8c99fe0c3f7d16ca14a9792fa5a3589baad60",
+      "sevenNonThemeConfigMapsEqualNativeBaseline": true,
+      "originalLiquidBlocksPreservedFromNativeBaseline": true,
+      "completeThemeAssets": 5,
+      "staticCompleteCandidateManifestSha256": "5088c779c21061d84687eb447bf848399154e79b5f875d08f6a40069ac8bc7d5",
+      "sourceThemeArtifact": {
+        "workflow": 39070943887,
+        "workflowHead": "23fd116cd1d198edf5a23b7b7140d8a51a48b98e",
+        "checkoutArtifactRef": "c973a5081883586cae5be1abae61ebb932c1b8e5"
+      },
+      "preservedPreparationFailures": "First guarded attempt used repository local-preview theme registration. Separate second preparation restores actual registration; CLI-generated Function IDs are explicitly replaced by exact native configs in static preservation proposal. Compiler theme config was empty at its early upload guard; current repo Liquid source also differs from native, so the static proposal retains the actual native blocks and changes only permitted assets. No native writes/uploads occurred in either attempt."
+    }
+  },
+  "blocker": {
+    "classification": "UNINSTALL_GENERATION_AND_ABSENCE_AUTHORITY_UNQUALIFIED",
+    "evidence": [
+      "packages/database/src/repositories/shopify-webhooks.ts processUninstall deliberately returns unqualified without deactivation",
+      "packages/shopify/src/partner-relationship.ts returns installationAuthority:false",
+      "Pinned CLI exposes aggregate installCount, not qualified exact app/store generation absence",
+      "Generic uninstall therefore leaves current generation active and ensuing shop redaction operator-held"
+    ],
+    "primarySources": [
+      "https://shopify.dev/docs/api/partner/2026-07/historical-events",
+      "https://shopify.dev/docs/apps/build/compliance/privacy-law-compliance"
+    ],
+    "inference": "Paginated relationship history is evidence of historical events; inspected API contract does not establish atomic current absence or an installation-generation binding. Preserve explicit limitation rather than converting a last-event observation into erasure authority.",
+    "next": "Qualify supported independent current-state/generation authority, or obtain an explicit bounded registration exception accepting the operational hold. Current grant is not silently expanded."
+  },
+  "privateEvidence": {
+    "path": "/home/serveradmin/insignia-combined-release-prep-20261017",
+    "logs": "/tmp/insignia-combined-privacy-current and /tmp/insignia-combined-privacy-restore-current identify synthetic local logs",
+    "retention": "New private operational copies/compile journals due20October2026 with prior obligations unchanged; no original artwork/customer payload copied by these new native reads."
+  },
+  "reviewedSourceSha256": {
+    "apps/web/src/islands/AdminNavigation.tsx": "8679e9609c447ba56cc64ae42b636efa35f3104f57c3f1fb38fdd4448cdcbb2e",
+    "apps/web/src/islands/MerchantPrivacy.tsx": "07b72414fe2eb96cff84084eed3ea5ecc314c65fa83722ed45fe0306bbff4e06",
+    "apps/web/src/pages/admin/privacy.astro": "498674296dedda3ea0f1df07ac9b82a2bb0f2aedf62d8d93f86e09f39cb5b6dd",
+    "apps/web/src/server/purchase/http.ts": "02c5ee4d5e64e5d637244d0bfbb365a1c43effad2ad3018ed2ec8f6009272c4b",
+    "apps/web/src/server/purchase/service.ts": "746b210fb963bf945b61280b7864be768ec1c1757ca5e0657d8c9a0619381ae1",
+    "apps/web/test/admin/privacy-browser.test.mjs": "6812873e0216a9773dc0cd07f95fc89aa587c32d12be13bf7c66d4071fedc12c",
+    "apps/web/test/privacy-request.test.mjs": "aefabb3c406e38bb5154d9bd206e61e207879f5a1b4e89788ae42b6cd0a5284c",
+    "apps/web/test/privacy-role.test.mjs": "672233c3eeaa49e5329421b7ec9d96ee5a87a54e11a624bbf87fd1148c9fcc05",
+    "apps/worker/src/handlers.ts": "d9e494639045a351876d3c6e728d8f606297e5f179d64866c92f86235237eeb5",
+    "apps/worker/src/reconciliation.ts": "8989fcc3c344d336a9dc61ac29ff9cbfb5a4e7612d54b31a0b5f2675383a3de5",
+    "apps/worker/test/customer-privacy-handler.test.mjs": "4224dc8aa4c557417b3edd733ef54903a5b2ddbdf611efeb782b58ea12752116",
+    "apps/worker/test/reconciliation.test.mjs": "bd338b6e7ec4c057886fd3d51b7f0b8daa8029e89f54f736a2a1aaabf63c6aa1",
+    "apps/worker/test/webhook-retention.test.mjs": "82b8a1a7b9a3532f696a8b5719aa467b52f16e650ed14f12f4cd261435241f2d",
+    "packages/database/migrations/20261017000200_privacy_merchant_export.sql": "804600de06be732e9b069b928d0d3d089dbb0087dd9633f431ee5e9938a2fe82",
+    "packages/database/migrations/20261017000300_shop_privacy_staging.sql": "b99b7f513713524c4b42736aefcf998898a401ada4b9685a5ec7e858159372a5",
+    "packages/database/src/repositories/customer-privacy.ts": "99b8d0fc15700a79868729df4736f2e7846312b3460516dc223a6c7c7b93e063",
+    "packages/database/test/customer-privacy.test.ts": "dda748401cea1085cdca585681c9a5f73cd8f3dbdd10d99c44d535470f1f4455",
+    "packages/database/test/privacy-restore.test.ts": "0de44f68ab3515be28fc563b42fb03c3f82a8f3fd9269e2fa37375725528a9c0",
+    "packages/database/test/web-runtime-grants.test.ts": "1f58c6b3118e2463510b6bb563b324abe9b6d2a8ce6734b7c17cc5d6930318ea",
+    "scripts/privacy/merchant-runtime-grants.sql": "8c2c590dc357e8cca48f4f3308d526711d429d2c30b7454976eda6acff17cb91",
+    "scripts/privacy/restore-exclusions.md": "b621c254c334e6ff19be53a5d6993097126492194e8a6e9877c136b65165471c",
+    "scripts/privacy/restore-exclusions.mjs": "ed91580f7370311a21c38a68dd2671854dc786c118add2517b905d6ccc710626",
+    "scripts/privacy/runtime-grants.sql": "b8cf24ef3f9066e61caf6ec26029f9a3a1dd72b08489a469947aa04ff6fad11f"
+  },
+  "nativeRelationshipRead": {
+    "classification": "NATIVE_SCOPED_RELATIONSHIP_HISTORY_ONLY",
+    "scope": {
+      "appId": "gid://shopify/App/429028933633",
+      "shopId": "gid://shopify/Shop/105501393179",
+      "from": "2026-09-27T00:00:00.000Z",
+      "through": "2026-10-17T21:50:46.166Z"
+    },
+    "observedAt": "2026-10-17T21:50:46.169Z",
+    "apiVersion": "2026-07",
+    "pagesRead": 1,
+    "events": [
+      {
+        "occurredAt": "2026-09-28T12:39:12.000Z",
+        "state": "INSTALLED",
+        "eventType": "RELATIONSHIP_INSTALLED"
+      }
+    ],
+    "pagination": "EXHAUSTED",
+    "installationAuthority": false,
+    "providerMutations": 0,
+    "providerReads": 1,
+    "limits": "Historical event observations do not establish current installation generation or atomically prove absence; no deactivation/erasure authority inferred.",
+    "localImportFailure": "First attempt stopped before IO because local adapter dist was stale; rebuilt unchanged reviewed source and used a separate qualified run. No provider attempt occurred before the rebuild."
+  },
+  "preservedCandidateFailures": {
+    "head": "d5eb60769cc9704685d7dd7a063e1f4f14a3c920",
+    "durableWorkflow": 39072389376,
+    "failure": "Exact migration fixture still pinned39; corrected to41 including both new named migrations. Optional historical usage fixture now removes all three later privacy metadata IDs; production grant guard unchanged.",
+    "runtimeWorkflow": 39072389369,
+    "localBroadWorker": "Earlier full worker had two failed reconciliation expectations and one hanging test child; stopped only the owned hung child and preserved result. New explicit regression RED then GREEN; privacy failure now cannot suppress ordinary retention.",
+    "additionalTestFix": "Merchant LOGIN now has generated synthetic password, independently qualified under actual TCP/SCRAM."
+  }
+}

@@ -37,7 +37,9 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
     const temporary = await mkdtemp(join(tmpdir(), 'insignia-erasure-restore-test-'));
     let target: Pool | undefined;
     const f = await purchaseFixture(db),
-      late = await purchaseFixture(db);
+      late = await purchaseFixture(db),
+      blocked = await purchaseFixture(db),
+      staged = await purchaseFixture(db);
     async function assetOffer(f: Awaited<ReturnType<typeof purchaseFixture>>) {
       const assetId = randomUUID(),
         sessionId = randomUUID(),
@@ -60,7 +62,13 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
     }
     const existing = await assetOffer(f),
       later = await assetOffer(late),
-      purchaseId = randomUUID();
+      purchaseId = randomUUID(),
+      blockedAsset = await assetOffer(blocked),
+      stagedAsset = await assetOffer(staged);
+    await source.query(
+      'UPDATE installation_generations SET deactivated_at=clock_timestamp() WHERE shop_id=$1 AND generation=1',
+      [staged.shopId],
+    );
     await source.query(
       "INSERT INTO purchase_orders(purchase_id,shop_id,installation_generation,order_id,order_created_at,currency,original_total_minor) VALUES($1,$2,1,'gid://shopify/Order/101',clock_timestamp(),'USD',2001)",
       [purchaseId, f.shopId],
@@ -91,6 +99,22 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
     try {
       const economicBefore = await economics(source),
         deadlinesBefore = await deadlines(source);
+      // Related order transport can be erased without its own privacy receipt.
+      const orderReceipt = await createShopifyWebhookRepository(db).receive({
+        shopDomain: 'untrusted-routing.myshopify.com',
+        topic: 'orders/create',
+        apiVersion: '2026-07',
+        deliveryId: randomUUID(),
+        triggeredAt: new Date(),
+        eventId: null,
+        name: null,
+        rawBody: Buffer.from(
+          '{"id":101,"admin_graphql_api_id":"gid://shopify/Order/101","updated_at":"2026-10-17T00:00:00Z"}',
+        ),
+      });
+      // Only independently settled economic transport is eligible for early
+      // privacy cleanup. Pending notifications keep their reconciliation job.
+      await source.query("UPDATE inbox_messages SET state='processed' WHERE id=$1", [orderReceipt.id]);
       const backup = join(temporary, 'before-erasure.dump');
       execFileSync(join(tools, 'pg_dump'), ['--format=custom', '--file', backup, '--dbname', address], {
         env: process.env,
@@ -114,7 +138,43 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
         });
         await createCustomerPrivacyRepository(db).processInbox(receipt.id);
       }
+      const request = await createShopifyWebhookRepository(db).receive({
+        shopDomain: 'untrusted-routing.myshopify.com',
+        topic: 'customers/data_request',
+        apiVersion: '2026-07',
+        deliveryId: randomUUID(),
+        triggeredAt: new Date(),
+        eventId: null,
+        name: null,
+        rawBody: Buffer.from(
+          `{"shop_id":${f.shopifyShopId},"customer":{"id":1,"email":"pending-private@example.invalid"},"data_request":{"id":99},"orders_requested":[101]}`,
+        ),
+      });
+      await createCustomerPrivacyRepository(db).processInbox(request.id);
+      for (const fixture of [blocked, staged]) {
+        const receipt = await createShopifyWebhookRepository(db).receive({
+          shopDomain: 'untrusted-routing.myshopify.com',
+          topic: 'shop/redact',
+          apiVersion: '2026-07',
+          deliveryId: randomUUID(),
+          triggeredAt: new Date(),
+          eventId: null,
+          name: null,
+          rawBody: Buffer.from(`{"shop_id":${fixture.shopifyShopId},"shop_domain":"${fixture.shopId}.test.example"}`),
+        });
+        await createCustomerPrivacyRepository(db).processInbox(receipt.id);
+      }
+      await source.query('SELECT public.cleanup_customer_privacy_inboxes(100)');
       const exclusions = await exportErasureExclusions(source);
+      expect(exclusions.data.receipts.map((r: { operation: string }) => r.operation).sort()).toEqual([
+        'DATA_REQUEST_PENDING_EXPORT',
+        'ERASURE_STAGED',
+        'ERASURE_STAGED',
+        'SHOP_ERASURE_BLOCKED',
+        'SHOP_ERASURE_STAGED',
+      ]);
+      expect(exclusions.data.inboxes.some((r: { id: string }) => r.id === orderReceipt.id)).toBe(true);
+      expect(JSON.stringify(exclusions)).not.toContain('pending-private@example.invalid');
       expect(JSON.stringify(exclusions)).not.toContain('do-not-export@example.invalid');
       expect(JSON.stringify(exclusions)).not.toContain(existing.assetId + '/o');
       const exclusionPath = join(temporary, 'exclusions.json');
@@ -199,6 +259,17 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
         await worker.end();
         await source.query(`DROP ROLE ${login}`);
       }
+      const promoted = structuredClone(exclusions);
+      const blockedReceipt = promoted.data.receipts.find(
+        (r: { operation: string }) => r.operation === 'SHOP_ERASURE_BLOCKED',
+      );
+      promoted.data.shopFences.push({
+        shop_id: blocked.shopId,
+        installation_generation: '1',
+        source_inbox_id: blockedReceipt.inbox_id,
+        created_at: blockedReceipt.staged_at,
+      });
+      await expect(importErasureExclusions(target, reseal(promoted))).rejects.toThrow('foreign erasure fence');
       const result = await importErasureExclusions(target, exclusions);
       expect(await guardState()).toBe('O');
       expect(
@@ -231,13 +302,48 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
       expect(await deadlines(target)).toEqual(deadlinesBefore);
       expect(result.readiness).toBe('HOLD_STORAGE_AND_AUTHORITY_REQUALIFICATION');
       expect(
+        (await target.query('SELECT operation FROM customer_privacy_receipts WHERE inbox_id=$1', [request.id])).rows[0]
+          .operation,
+      ).toBe('DATA_REQUEST_PENDING_EXPORT');
+      expect(
+        (await target.query('SELECT octet_length(payload) AS bytes FROM inbox_messages WHERE id=$1', [orderReceipt.id]))
+          .rows[0].bytes,
+      ).toBe(0);
+      expect(
+        (await target.query('SELECT 1 FROM customer_privacy_order_links WHERE inbox_id=$1', [request.id])).rowCount,
+      ).toBe(1);
+      expect(
+        (await target.query('SELECT state FROM artwork_assets WHERE asset_id=$1', [stagedAsset.assetId])).rows[0].state,
+      ).toBe('DELETING');
+      expect(
+        (await target.query('SELECT payload FROM purchase_offer_payloads WHERE quote_id=$1', [staged.quote.quoteId]))
+          .rows[0].payload,
+      ).toBeNull();
+      expect(
+        (await target.query('SELECT 1 FROM design_drafts WHERE design_id=$1', [stagedAsset.draftId])).rowCount,
+      ).toBe(0);
+      expect(
+        (await target.query('SELECT state FROM artwork_assets WHERE asset_id=$1', [blockedAsset.assetId])).rows[0]
+          .state,
+      ).toBe('UPLOADING');
+      expect(
+        (
+          await target.query('SELECT payload IS NOT NULL AS retained FROM purchase_offer_payloads WHERE quote_id=$1', [
+            blocked.quote.quoteId,
+          ])
+        ).rows[0].retained,
+      ).toBe(true);
+      expect(
+        (await target.query('SELECT 1 FROM shop_privacy_fences WHERE shop_id=$1', [blocked.shopId])).rowCount,
+      ).toBe(0);
+      expect(
         (
           await target.query(
             'SELECT count(*)::integer AS n FROM customer_privacy_receipts WHERE shop_id=ANY($1::text[])',
             [[f.shopId, late.shopId]],
           )
         ).rows[0].n,
-      ).toBe(2);
+      ).toBe(3);
       const latePurchase = randomUUID();
       await target.query(
         "INSERT INTO purchase_orders(purchase_id,shop_id,installation_generation,order_id,order_created_at,currency,original_total_minor) VALUES($1,$2,1,'gid://shopify/Order/202',clock_timestamp(),'USD',2001)",
@@ -271,6 +377,24 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
         'conflicting copied erasure identity',
       );
       expect(await guardState()).toBe('O');
+      await target.query(
+        'UPDATE installation_generations SET deactivated_at=clock_timestamp() WHERE shop_id=$1 AND generation=1',
+        [blocked.shopId],
+      );
+      const retried = (
+        await target.query('SELECT public.process_customer_privacy_inbox($1) AS result', [blockedReceipt.inbox_id])
+      ).rows[0].result;
+      expect(retried.kind).toBe('SHOP_ERASURE_BLOCKED');
+      await source.query(
+        `INSERT INTO webhook_obligation_facts(inbox_id,raw_body_sha256,collected_at,fulfill_by,forget_after,captured_fields)
+        SELECT id,payload_sha256,collected_at,collected_at+interval '30 days',collected_at+interval '180 days','{"unresolved":true}'::jsonb FROM inbox_messages WHERE id=$1`,
+        [orderReceipt.id],
+      );
+      await expect(exportErasureExclusions(source)).rejects.toThrow('unresolved transport obligation');
+      expect(
+        (await target.query('SELECT state FROM artwork_assets WHERE asset_id=$1', [blockedAsset.assetId])).rows[0]
+          .state,
+      ).toBe('UPLOADING');
     } finally {
       await target?.end();
       await source.query(`DROP DATABASE IF EXISTS ${restoredName}`);

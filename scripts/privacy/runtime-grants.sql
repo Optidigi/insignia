@@ -17,4 +17,5 @@ DO $$ BEGIN
 END $$;
 GRANT USAGE ON SCHEMA public TO insignia_queue_consume;
 GRANT EXECUTE ON FUNCTION public.process_customer_privacy_inbox(uuid) TO insignia_queue_consume;
+GRANT EXECUTE ON FUNCTION public.blocked_shop_privacy_count(),public.cleanup_customer_privacy_inboxes(integer) TO insignia_queue_consume;
 COMMIT;
