@@ -1,0 +1,63 @@
+{
+  "classification": "BODY_BOUND_CUSTOMER_PRIVACY_SOURCE_REVIEW_CLEAR",
+  "base": "26a62386aef0ef454cea48f69b64caf526c4b72e",
+  "sourceSha256": {
+    "packages/database/migrations/20261017000100_customer_privacy.sql": "8cff66ee1e8986ac22631ff80c3852905a92be42b24b467ff9b67168ba3022a4",
+    "packages/database/src/repositories/customer-privacy.ts": "8354c94ea23c97a6b1377e6a8f280ae8114f669662c2cf31e5dd9be733b76c51",
+    "packages/database/test/customer-privacy.test.ts": "e61958cbc089df9eac147339c1ee054d8ea81b4d787cc914fa28ddb3dac50469",
+    "packages/database/src/durable-core.ts": "7694f54c52c26a318524411294e845655b8d3c92a8b84aaa7373b3145eaf79b9",
+    "packages/database/src/index.ts": "9d317c51ea0d258fb989f4e89f669c3f80b0bfa6520fa1aa9673794de439c5d6",
+    "apps/worker/src/handlers.ts": "0096a0f36a2b992efa5bd48b23450b8f881e44009689e588d74da7989d7ce98e",
+    "apps/worker/test/customer-privacy-handler.test.mjs": "2736a022cacf5d62fbe6aa3c01743097311476b917a125f4c96d06849c61c39f",
+    "apps/worker/test/customer-privacy-role.test.mjs": "3301f6f9324a59fd36bf0cc273756a097a25e25791998103f2ed7d763679ecff",
+    "scripts/privacy/runtime-grants.sql": "f0ac28229db54d3b3e3279c1db8ee651e45d49e3b907ae35c7656222476b95d1",
+    "packages/database/test/web-runtime-grants.test.ts": "47b8d04a8a9bf409ee6a946b13d2c074d23e17c3c8502efb3cdffaaa9bc53528"
+  },
+  "tests": {
+    "databaseAuthor": "6new+24purchase/artwork=30PASS; fresh isolatedPG18, empty rollback/reapplyPASS",
+    "databaseIndependent": "/root/lean_selection_review reran6PASS0SKIP on isolatedPG18",
+    "workerComposition": "Meaningful2RED defer/missingerror beforedispatch correction; then2PASS",
+    "actualLogin": "3PASS0SKIP with freshUnix-onlyPG18/SCRAM-SHA256 authentication, LOGIN denied beforegrant; staged signed-body purpose aftergrant/replay; helper/table/originalkey denials",
+    "webRoles": "Actual restricted web/purchase/inspection LOGIN composition1PASS0SKIP on fresh ownedPG18 at supportedlocalhost58199 withSCRAM; fixturecluster stopped/removed.",
+    "opaqueDatabaseApi": "19compiler/4runtimeprobesPASS",
+    "typecheckStyle": "PASS; existingwebrole advisorywarnings retained"
+  },
+  "reviews": {
+    "database": "/root/lean_selection_review CLEAR correctness/security",
+    "worker": "/root/lean_ops_retention_audit CLEAR after syntheticLOGINpassword correction, focused impactreviewCLEAR",
+    "testFailurePreservation": [
+      "Clock fixture initial failure corrected with statement_timestamp, guardunchanged.",
+      "Delayed binding left draft artworkreference: meaningful5PASS1FAIL; moved draft/proposal cleanup into assetfence;30PASS.",
+      "Independentreview found passwordlessLOGIN that localtrustauthmissed; actualSCRAMfixture aftercorrection3PASS."
+    ]
+  },
+  "runtime": "NOT_DEPLOYED; no native migration/grants/storage effects",
+  "limits": [
+    "HTTP HMAC verification is existing ingress responsibility; newDB tests accept its preverifiedreceipt facade, not a fresh HTTP signature qualification.",
+    "Erasure is staged, physical inspector deletion not complete; datarequests remain exportpending.",
+    "Shop/uninstall erasure, export delivery, financial retention policy and erasure-aware backup/reapply remain open.",
+    "Restored pre-request backups lack receipt/inbox FKtargets: must not fabricate newauthenticatedingress to restorefences.",
+    "Actualstorage originalexpiry/deadlines and immutableeconomicfacts unchanged."
+  ],
+  "localCleanup": "Each newownedPGcluster stopped/removed; logs preserved, existingPGdata untouched.",
+  "correction": {
+    "failedHead": "0d6e27f625426af2bc575dbc1d8b0a8b58a7c84c",
+    "failedRun": 39025872521,
+    "failure": "Optional deferredusage38 fixture deleted newlatest39, correctly restoringexact38 and making a supposednegativegrant succeed.",
+    "firstLocalCorrection": "Explicitremove38 hitexpectedrefusal but metadata39 also blockedsubsequenthazardchecks; preserved localRED.",
+    "finalCorrection": "Explicitly assertactual39refuses unchangedusagegrant, isolatefixed38metadata onlyforhistoricalguardhazards, delete/reinsert explicitrequired38ID.",
+    "previousWebRoleTestSha256": "b5e27fd8677213882d27e6b050043527ed0c4bd97670d8f1f80c9da229fd5042",
+    "independentImpactReview": "/root/lean_fidelity_reference CLEAR; no productiongrantchange/usageactivation",
+    "localFinal": "1PASS0SKIP actualLOGIN; unchangedexistingrolehazards/newprivacydenials retained",
+    "limit": "Historical38metadata over newerfixtureDDL qualifiesfixedgrantguards, notschema39usageeligibility; actual39refusal explicit."
+  },
+  "authorityIntegrityCorrection": {
+    "failedHead": "b98e4b76d7ac6c432585cc34b8a449d4ecf80999",
+    "failedRun": 39026300464,
+    "failure": "Current ledger hash still expected pre-exception bytes after owner-approved additive host-exception paragraph.",
+    "correction": "Preserve exact oldledger atPR190 normalmerge, bind exactownergrant digest, updatecurrentledgerexpectedhash/versiondescription; earlierhistoricalfixtures/checksunchanged.",
+    "localCheck": "python3 -B spikes/m0-007/scripts/check-history.py PASS",
+    "independentImpactReview": "/root/lean_selection_review CLEAR",
+    "guardSha256": "27c58948800d3a13bd2b6d32ffc75359d42e7959dba6d055fd70fa49f176eec5"
+  }
+}

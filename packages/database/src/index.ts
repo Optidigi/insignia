@@ -9,6 +9,7 @@ export { createDurableCore, type DurableCore, type DurableTransaction } from './
 export { canonicalJson, revisionContentHash, sha256CanonicalJson } from './hash/canonical.js';
 export { type BuyerProposal, type BuyerRepository, type BuyerScope, BuyerStateError } from './repositories/buyer.js';
 export { CONFIG_DRAFT_STORAGE_VERSION, type ConfigRecord, type RevisionRecord } from './repositories/config.js';
+export type { CustomerPrivacyProcessing, CustomerPrivacyRepository } from './repositories/customer-privacy.js';
 export { createMerchantPreviewRepository } from './repositories/merchant-preview.js';
 export {
   applyOwnerLifecycleDecision,

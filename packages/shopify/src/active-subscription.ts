@@ -2,6 +2,7 @@
 import { randomUUID } from 'node:crypto';
 import { PARTNER_HISTORY_QUERY, partnerHistoryVariables } from './partner-history-query.js';
 import { partnerInstant } from './partner-instant.js';
+import { PARTNER_RELATIONSHIP_QUERY } from './partner-relationship-query.js';
 export const PARTNER_API_VERSION = '2026-07' as const;
 export const ACTIVE_SUBSCRIPTION_SCHEMA_VERSION = 'm4-active-subscription-v1' as const;
 
@@ -435,9 +436,12 @@ export function createPartnerGraphqlTransport(config: {
   const fetchImpl = config.fetchImpl ?? fetch;
   return {
     async query(input) {
-      const historyVariables = input.query === PARTNER_HISTORY_QUERY ? partnerHistoryVariables(input.variables) : null;
+      const historyVariables =
+        input.query === PARTNER_HISTORY_QUERY || input.query === PARTNER_RELATIONSHIP_QUERY
+          ? partnerHistoryVariables(input.variables)
+          : null;
       if (
-        input.query === PARTNER_HISTORY_QUERY
+        input.query === PARTNER_HISTORY_QUERY || input.query === PARTNER_RELATIONSHIP_QUERY
           ? !historyVariables
           : input.query !== ACTIVE_SUBSCRIPTION_QUERY ||
             !/^gid:\/\/shopify\/App\/[0-9]+$/.test(input.variables.appId) ||

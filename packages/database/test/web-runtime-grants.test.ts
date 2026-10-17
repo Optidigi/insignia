@@ -65,8 +65,8 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       );
       const migrations = new URL('../migrations/', import.meta.url);
       const names = (await readdir(migrations)).filter((n) => n.endsWith('.sql')).sort();
-      expect(names).toHaveLength(38);
-      expect(names.at(-1)).toBe('20261015000600_lean_recurring_quote.sql');
+      expect(names).toHaveLength(39);
+      expect(names.at(-1)).toBe('20261017000100_customer_privacy.sql');
       for (const file of names.slice(0, 20))
         await owner.query((await readFile(new URL(file, migrations), 'utf8')).split('-- migrate:down')[0]!);
       await owner.query('REVOKE CREATE ON SCHEMA public FROM PUBLIC');
@@ -362,6 +362,9 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
         'DELETE FROM artwork_assets',
         'SELECT public.cleanup_buyer_payloads(1)',
         'SELECT public.cleanup_purchase_payloads(1)',
+        `SELECT public.process_customer_privacy_inbox('${randomUUID()}')`,
+        'SELECT * FROM customer_privacy_receipts',
+        'DELETE FROM customer_order_erasure_fences',
         `SELECT public.read_purchase_offer_history('${shopId}',1,'${randomUUID()}','${randomUUID()}')`,
       ];
       for (const query of denied) await expect(web.query(query)).rejects.toMatchObject({ code: '42501' });
@@ -685,6 +688,11 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       const usageScript = (
         await readFile(new URL('../../../scripts/m9-usage/runtime-grants.sql', import.meta.url), 'utf8')
       ).replaceAll('insignia_queue_consume', queue);
+      // Deferred usage capability remains pinned to its historical schema38.
+      // The actual current schema must be rejected, not silently admitted.
+      await expect(owner.query(usageScript)).rejects.toThrow('exact_usage_schema38_required');
+      await owner.query('ROLLBACK');
+      await owner.query('DELETE FROM schema_migrations WHERE version=$1', ['20261017000100']);
       await owner.query(`ALTER ROLE ${queue} CREATEROLE`);
       await expect(owner.query(usageScript)).rejects.toThrow('unqualified_usage_runtime_role');
       await owner.query('ROLLBACK');
@@ -693,10 +701,13 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       await expect(owner.query(usageScript)).rejects.toThrow('unqualified_usage_runtime_membership');
       await owner.query('ROLLBACK');
       await owner.query(`REVOKE ${extra} FROM ${queue}`);
-      await owner.query('DELETE FROM schema_migrations WHERE version=$1', [names.at(-1)?.split('_')[0]]);
+      // This optional historical usage grant requires its fixed schema38 input,
+      // not whichever unrelated migration was added most recently.
+      const usageRequiredVersion = '20261015000600';
+      await owner.query('DELETE FROM schema_migrations WHERE version=$1', [usageRequiredVersion]);
       await expect(owner.query(usageScript)).rejects.toThrow('exact_usage_schema38_required');
       await owner.query('ROLLBACK');
-      await owner.query('INSERT INTO schema_migrations(version) VALUES($1)', [names.at(-1)?.split('_')[0]]);
+      await owner.query('INSERT INTO schema_migrations(version) VALUES($1)', [usageRequiredVersion]);
       await owner.query('GRANT UPDATE(purchase_id) ON m9_order_usage TO PUBLIC');
       await expect(owner.query(usageScript)).rejects.toThrow('unqualified_usage_public_access');
       await owner.query('ROLLBACK');
