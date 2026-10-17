@@ -782,6 +782,11 @@ for (const releaseMode of [
         );
         assert.equal(adminMutations, 4);
         if (lostAcknowledgement) return;
+        // Completed startup allocation is not part of ordinary publication.
+        // Recompose without it; retained keys and current M4 evidence must suffice.
+        signingConfiguration = undefined;
+        services = compose();
+        assert.equal(services.signingOwner, undefined);
         // Idempotent settled replay must not depend on a collector after evidence expires.
         await new Promise((resolve) => setTimeout(resolve, 31_000));
         await new Promise((resolve) => verificationServer.close(resolve));

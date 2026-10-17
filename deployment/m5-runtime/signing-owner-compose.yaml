@@ -1,6 +1,9 @@
 # Explicit owner action allocation only; add after the ordinary canonical overlays.
 # Plan contains nonsecret exact target/validity metadata. Existing wrapping-key
 # custody remains in runtime.env. No command, NODE_* override or code mount.
+# Retire this overlay after independently verified provisioning: ordinary web
+# deployment must omit both mounts below. Preserve the host plan/journal as dated
+# evidence; never rewrite its release binding or repeat a consumed allocation.
 services:
   web:
     volumes:

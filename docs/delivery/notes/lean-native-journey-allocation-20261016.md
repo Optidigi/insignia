@@ -1,6 +1,6 @@
 # Next native Lean journey: bounded effects proposal
 
-Status: prepared, **not authorized or executed**. The earlier hybrid selection grant was superseded unused; previous publication/inventory/checkout allocations are consumed. This proposal requests only the missing effects below, not routine engineering approval.
+Status updated17October: **owner authorized the exact bounded proposal** in the next reply: “yes, you have full permission.” This authorizes only the listed effects, not real charges/rollout or arbitrary changes. The earlier hybrid selection grant was superseded unused; previous test allocations remain consumed. The PR187 prepared proposal is dated history; current settlement follows below.
 
 ## Verified starting point
 
@@ -24,3 +24,7 @@ Check rejection/repair without creating extra orders: altered/incomplete cart, u
 No app version/release/scope change, public plan/listing submission, pricing-method migration, usage event, real charge, other-service change or production rollout is included. Existing private-copy20October and original/design21–22October cleanup/rotation obligations remain; new artifacts receive real collection/retention metadata, never restamped old expiry.
 
 After authorization: first verify Standard's actual recurring-only entitlement and authoritative trial, then execute the bounded fixture/journey effects. Record build, revision, quote/cart/order/purchase and retrieved-artifact linkage without personal/session data. USD qualification remains limited to the observed primary Market106410115355/US; EUR/GBP and representative ordinary non-Plus eligibility remain unqualified.
+
+## Execution update — 17 October
+
+[Standard selection and approval](../evidence/lean-v1/standard-native-selection-2026-10-17.json) are settled once: actual running readonly projection recognizes oneUSD0flat item, all5features, NOT_METERED, authoritative trial ending31October08:54:46Z and no pending update. The explicit Lean draft4 is saved and independently equal to the intended body. [Publication returned403 before command capture](../evidence/lean-v1/native-lean-publication-blocker-2026-10-17.json): consumed signing-startup allocation names an older app version. Product/old publication are unchanged; inventory and checkout have not run. This is a configuration-lifecycle defect to correct under delegated engineering authority, not a renewed owner-grant request. Retire only the consumed setup mounts, preserve their history and current admission gates, qualify the resulting runtime/verifier binding, then resume this same bounded journey after state recheck.
