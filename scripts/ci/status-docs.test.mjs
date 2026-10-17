@@ -148,16 +148,33 @@ function steps(text) {
 function ungated(step) {
   return step.replace(/^ {8}if:.*\n/gm, '');
 }
-test('workflow integration preserves every original full step and gates always-artifacts correctly', () => {
+// The fixed original workflows remain historical evidence. These reviewed additions
+// extend full-route artifact qualification without changing existing suite bodies.
+const addedSteps = {
+  'm1-foundation.yml': ['Complete storefront artifact inventory controls'],
+  'm3-database.yml': [],
+  'm3-runtime.yml': [
+    'Versioned inspector host artifact qualification (no inspection or provider effects)',
+    'Preserve versioned inspector host artifact (native handover remains unqualified)',
+    'Independent immutable verifier package and offline image qualification',
+    'Preserve independent verifier immutable image (native handover remains unqualified)',
+  ],
+};
+test('workflow integration preserves original suites, reviewed artifact additions and full-route gates', () => {
   for (const file of ['m1-foundation.yml', 'm3-database.yml', 'm3-runtime.yml']) {
     const name = `.github/workflows/${file}`;
     const old = execFileSync('git', ['show', `${baseline}:${name}`], { cwd: root, encoding: 'utf8' });
     const current = readFileSync(join(root, name), 'utf8');
     assert.match(current, /^ {2}pull_request:\s*\n {2}push:/m, 'all PRs must produce the existing check context');
     assert.match(current, /^ {6}- 'scripts\/ci\/\*\*'$/m);
-    const actual = steps(current),
+    const all = steps(current),
       prior = steps(old);
-    assert.equal(actual.length, prior.length + 1, 'one classifier step, no extra gate jobs');
+    const additions = addedSteps[file];
+    const extra = all.filter((step) => additions.some((name) => step.startsWith(`      - name: ${name}\n`)));
+    assert.equal(extra.length, additions.length, 'every reviewed artifact step remains present');
+    for (const step of extra) assert.match(step, /if: steps\.changes\.outputs\.route == 'full'/);
+    const actual = all.filter((step) => !extra.includes(step));
+    assert.equal(actual.length, prior.length + 1, 'one classifier step plus reviewed full-route additions');
     const classifier = actual[2];
     assert.match(classifier, /id: changes/);
     assert.match(classifier, /node --test scripts\/ci\/status-docs\.test\.mjs/);
@@ -168,7 +185,14 @@ test('workflow integration preserves every original full step and gates always-a
     assert.equal(actual[1], prior[1]);
     for (let i = 2; i < prior.length; i++) {
       const added = actual[i + 1];
-      assert.equal(ungated(added), ungated(prior[i]), 'full step body/env/action inputs remain exact');
+      let expected = ungated(prior[i]);
+      if (file === 'm1-foundation.yml' && expected.includes('name: m1-001-foundation-${{ github.sha }}')) {
+        // Complete the existing owned storefront payload; no broader upload paths.
+        expected = expected
+          .replace('extensions/insignia-theme/assets/insignia-storefront.js', 'extensions/insignia-theme/assets/insignia-*.js\n            extensions/insignia-theme/assets/insignia-*.css')
+          .replace('apps/storefront/dist/insignia-storefront.js', 'apps/storefront/dist/insignia-*.js\n            apps/storefront/dist/insignia-*.css');
+      }
+      assert.equal(ungated(added), expected, 'original suite bodies and reviewed artifact paths remain exact');
       assert.match(
         added,
         prior[i].includes('if: always()')

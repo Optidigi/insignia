@@ -1,0 +1,58 @@
+{
+  "classification": "VERIFIED_NORMAL_PROTECTED_PR191_MERGE",
+  "pullRequest": "https://github.com/Optidigi/insignia/pull/191",
+  "base": "26a62386aef0ef454cea48f69b64caf526c4b72e",
+  "effectiveMergeBase": "26a62386aef0ef454cea48f69b64caf526c4b72e",
+  "head": "1dd8ea51187d0f12dfc03d8d49229cd5eca782ef",
+  "merge": "ebb7158a0470a8fdb1a8d382205e84e5a2bca870",
+  "tree": "d7d4af1876f0b6e083f76a3ffbef3efabe857b79",
+  "parents": [
+    "26a62386aef0ef454cea48f69b64caf526c4b72e",
+    "1dd8ea51187d0f12dfc03d8d49229cd5eca782ef"
+  ],
+  "checks": [
+    {
+      "name": "foundation",
+      "run": 39026815011,
+      "head": "1dd8ea51187d0f12dfc03d8d49229cd5eca782ef",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "name": "durable-core",
+      "run": 39026815020,
+      "head": "1dd8ea51187d0f12dfc03d8d49229cd5eca782ef",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "name": "runtime",
+      "run": 39026815025,
+      "head": "1dd8ea51187d0f12dfc03d8d49229cd5eca782ef",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "name": "local-proof",
+      "run": 39026815013,
+      "head": "1dd8ea51187d0f12dfc03d8d49229cd5eca782ef",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "name": "publication-local",
+      "run": 39026815021,
+      "head": "1dd8ea51187d0f12dfc03d8d49229cd5eca782ef",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "name": "local-candidate",
+      "run": 39026815012,
+      "head": "1dd8ea51187d0f12dfc03d8d49229cd5eca782ef",
+      "attempt": 1,
+      "result": "SUCCESS"
+    }
+  ],
+  "nativeQualification": "Privacy SQL/grants and source not deployed. No physical erasure or export-delivery claim. Running web/worker remain PR189; consumed native effects unchanged."
+}

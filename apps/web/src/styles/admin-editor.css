@@ -216,3 +216,72 @@ fieldset button:hover {
     grid-column: 2;
   }
 }
+
+/* Ordinary merchant navigation and retained-record presentation. */
+.admin-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding-block: 4px 12px;
+}
+
+.admin-navigation s-link[aria-current="page"] {
+  font-weight: 650;
+}
+
+.admin-record-id {
+  overflow-wrap: anywhere;
+  color: #616161;
+}
+
+.purchase-customization + .purchase-customization,
+.purchase-placement {
+  border-top: 1px solid #e3e3e3;
+  padding-block-start: 16px;
+  margin-block-start: 16px;
+}
+
+.purchase-placement s-button,
+.purchase-placement a {
+  margin-inline-end: 8px;
+  margin-block: 4px;
+}
+
+.purchase-placement > img {
+  display: block;
+  margin-block: 12px;
+}
+
+.billing-status {
+  margin-block: 16px;
+}
+
+.purchase-placement input[type="file"] {
+  display: block;
+  max-width: 100%;
+  margin-block: 8px;
+  font: inherit;
+}
+
+.purchase-placement input[type="file"]::file-selector-button {
+  border: 1px solid #b5b5b5;
+  border-radius: 8px;
+  padding: 6px 12px;
+  margin-inline-end: 10px;
+  background: #fff;
+  color: #202223;
+  font: inherit;
+  cursor: pointer;
+}
+
+.historical-preview-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-block-end: 12px;
+}
+
+.historical-preview-controls s-select {
+  flex: 1 1 180px;
+  min-width: 0;
+}

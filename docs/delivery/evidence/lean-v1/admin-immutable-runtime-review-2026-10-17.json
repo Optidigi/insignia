@@ -1,0 +1,73 @@
+{
+  "classification": "REVIEWED_SOURCE_NATIVE_DEPLOYMENT_PENDING",
+  "base": "ebb7158a0470a8fdb1a8d382205e84e5a2bca870",
+  "sourceSha256": {
+    "apps/web/src/islands/AdminNavigation.tsx": "6a54e3786babcf24bf0049a45d5deaa9811456b9c01d54dd425f6e28d8ebb936",
+    "apps/web/src/islands/PurchaseHistoricalPreview.tsx": "8b31c63e1e6d386f161443e461c20f7d6455164d9b64c85be16664448b420a87",
+    "apps/web/src/islands/PurchaseArtwork.tsx": "ede04440304cf7be607569fa2bf476110a7f3b6b06483d5deec6f346adf84122",
+    "apps/web/src/islands/MerchantBilling.tsx": "f39fb141e8cda3aea7617c1ccbe824879f254a993ec12104e3eef145900753cc",
+    "apps/web/src/islands/MerchantConfigEditor.tsx": "74bf6c29ac1fc6cc1e699ccdf69644bd868f16028f4a9241e341060af42c71a2",
+    "apps/web/src/styles/admin-editor.css": "a7b356b0183da0620a091efad3dac916055be9dfd40e71384f80091e2367a010",
+    "apps/web/test/admin/purchase-browser.test.mjs": "1696079edcc4a80e576d96cf14c613d3704f34efe728b0c86951950b23cbe7b3",
+    "scripts/ci/package-artwork-inspector.mjs": "8a40ae825219a0237d9f463f52a66be12b4dd46c955d0c5075976a9ea921e143",
+    "scripts/ci/package-release-verifier.mjs": "905c764539856b6472604063d7e117a3f901fa7ec6c46599ff05c036c79ca74b",
+    "scripts/m5-runtime/trusted-release-input.mjs": "9893b76d55a53c5abbf1167b4f72c7d258624f614c6f4c8fdcb196fa948799f6",
+    "deployment/release-verifier/bootstrap.mjs": "9c4b4172c541ff49de9b16718d1b4b7c5249d858ac186b99764f7a6a8a8f4cae",
+    "scripts/m1-functions/theme_artifacts.py": "e7151acb469cb2e4d76a7e0326b01b896777b42fc811caa4bb9fe6610204b2e3",
+    "scripts/m1-functions/artifact-manifest.py": "24777cd04e165166c78ac21c552b3b572d3e1223b947223b306fe2489030f808",
+    "scripts/privacy/restore-exclusions.mjs": "ba5d1a9588d8510748e5c6eeac6e8e54eb7e6a9f7890b1eed6b4749f1859b547",
+    "scripts/privacy/restore-exclusions.md": "da351b8d0118c9da6dd0a9ab769d6722e7b6bd561461ad2cd27d420bdc6bb564",
+    "packages/database/test/privacy-restore.test.ts": "5d051e5bbdef41df8878fa67cdcccb38ad8a74658987a04902954278cf92bee2"
+  },
+  "admin": {
+    "review": "Independent correctness/security review CLEAR; shared navigation and presentation reviewed separately from historical composition.",
+    "checks": "13 focused presentation browser tests PASS; 13 purchase/billing browser tests PASS, nine HTTP/frozen-image cases PASS; Astro build PASS.",
+    "historicalComposition": "Frozen purchase geometry plus purchase-scoped verified PNG, not current replacement/catalog; original-artwork canvas pixels, stale erasure, expiry and deferred/missing handling qualified locally.",
+    "redGreen": "Expiry during pending asset lookup painted after expiry; post-await checks now reject and clear.",
+    "nativeLimit": "Existing native receipt proves exact original and frozen garment image, not new composed artwork. Fresh authenticated read after deployment required."
+  },
+  "inspector": {
+    "review": "Independent root correctness/security review CLEAR; preserve existing host sandbox/limits under explicit owner exception.",
+    "checks": "Digest-bound relocation/tamper and private-file/escaping-dependency tests PASS. Actual portable package/decoder requires CI.",
+    "limits": "No native package handover or new sandbox pass yet."
+  },
+  "verifier": {
+    "review": "Independent root correctness/security review CLEAR after correcting async private-pipe buffer lifetime.",
+    "redGreen": "Delayed Writable reproduced zeroed private bytes; bounded end-callback/error/close handling now preserves frame until flush and erases afterward.",
+    "checks": "Root relevant artifact/private-input tests six PASS, three explicit environment skips; prior author focused source tests PASS. Actual portable SDK import, Compose and Docker image probe require CI.",
+    "limits": "Offline code identity does not prove authenticated collector/append/native role. Frozen existing verifier preserved."
+  },
+  "themeArtifact": {
+    "finding": "PR190 foundation archive contained bootstrap only, omitting lazy UI assets. No theme candidate created/released against incomplete evidence.",
+    "correction": "Inventory every owned flat JS/CSS chunk, compare dist bytes with theme copies, include complete owned assets in CI manifest and archive.",
+    "review": "Independent reviewer CLEAR; three unit tests and twelve current source paths PASS.",
+    "limits": "Local full manifest not run because existing replay artifact absent; full CI must produce final complete artifact."
+  },
+  "restore": {
+    "review": "Independent correctness/security CLEAR after adding parent-directory fsync following file fsync/close.",
+    "checks": "Author and independent actual isolated PostgreSQL18 pg_dump to new database restore/import regression each PASS, zero skipped; owned cluster stopped/removed.",
+    "coverage": [
+      "Actual tombstones and original collection/purge times",
+      "Delayed order-binding erasure exclusions",
+      "Tenant/generation/schema/conflict denial",
+      "Owner-only import and offline-session denial",
+      "Collection trigger identity and transactional rollback",
+      "Unchanged immutable financial facts and expiry",
+      "Idempotent replay and durable private output"
+    ],
+    "classification": "HOLD_STORAGE_AND_AUTHORITY_REQUALIFICATION",
+    "limits": "No native restore, storage erasure or privacy-export delivery claim."
+  },
+  "nativeEffects": false,
+  "preservedCiFailures": {
+    "head": "0bb04d89e5c0dc7a7626734b5072f7d880c0b788",
+    "runs": [
+      39027575324,
+      39027575326,
+      39027575301
+    ],
+    "failure": "Existing workflow preservation guard rejected new artifact steps/paths before build; all three failures preserved.",
+    "correction": "Keep original suite bodies against fixed historical baseline; explicitly enumerate reviewed artifact additions, require full-route gates and allow only exact owned storefront path expansion. Original manifest binding remains its own unchanged step.",
+    "localCheck": "All ten status-route tests PASS; focused independent impact review requested."
+  }
+}

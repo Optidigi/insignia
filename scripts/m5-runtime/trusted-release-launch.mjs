@@ -1,14 +1,15 @@
 /** Owner-only outer boundary. This source is NOT native qualification. */
 import assert from 'node:assert/strict';
-import { execFile, spawn } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { spawn } from 'node:child_process';
 import { constants } from 'node:fs';
 import { lstat, mkdir, open, readdir, realpath, rmdir } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { promisify } from 'node:util';
+import { qualifyVerifierArtifact } from '../../deployment/release-verifier/artifact.mjs';
 import { releaseProfile } from './release-profile.mjs';
 import { readPrivatePacket } from './trusted-release-input.mjs';
+import { VERIFIER_AUTH_HOME, VERIFIER_CODE, VERIFIER_NODE, VERIFIER_SDK, VERIFIER_STATE } from './verifier-runtime.mjs';
 
 export { readPrivatePacket } from './trusted-release-input.mjs';
 
@@ -16,13 +17,12 @@ import { parseReleaseVerificationRequest } from '../../apps/web/src/server/admin
 import { recordPhaseName } from './trusted-release-collector.mjs';
 import { ownerPhaseForRecord, parseOwnerPrivatePacket } from './trusted-release-collector-native.mjs';
 
-const ROOT = '/home/serveradmin/insignia-milestone-autonomy-handoff';
+const ROOT = VERIFIER_STATE;
 const PREFIX = 'm5-trusted-release-collector-native-run-20261011';
-const REPOSITORY = resolve(fileURLToPath(new URL('../../', import.meta.url)));
+const REPOSITORY = VERIFIER_CODE;
 const SCRIPT = fileURLToPath(new URL('./trusted-release-collector-native.mjs', import.meta.url));
-const EXECUTABLE = '/home/serveradmin/.local/opt/node-v24.21.0-linux-x64/bin/node';
+const EXECUTABLE = VERIFIER_NODE;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const replyKeys = [
   'version',
   'classification',
@@ -272,7 +272,7 @@ export async function runBoundedCollectorProcess({
     verificationRequest = parseReleaseVerificationRequest(verificationRequest, releaseProfile(profileName).versionId);
   const childPhase = join(phaseRoot, recordPhaseName(recordId));
   const env = {
-    HOME: '/home/serveradmin',
+    HOME: VERIFIER_AUTH_HOME,
     PATH: `${dirname(EXECUTABLE)}:/usr/bin:/bin`,
     LANG: 'C.UTF-8',
     TERM: 'dumb',
@@ -377,8 +377,8 @@ export async function runBoundedCollectorProcess({
   };
 }
 
-const ORIGINAL_SDK = `${ROOT}/app-management-readonly-preparation-20261010`;
-const SOURCE_PATHS = [
+const ORIGINAL_SDK = VERIFIER_SDK;
+export const SOURCE_PATHS = [
   'scripts/m5-runtime/trusted-release-launch.mjs',
   'scripts/m5-runtime/trusted-release-launch.test.mjs',
   'scripts/m5-runtime/trusted-release-input.mjs',
@@ -425,18 +425,6 @@ const sdkPins = new Map([
     '0ef1b8bc8e073b7753d93ed2a912148d7c87de5c3804622607040cb414b4f641',
   ],
 ]);
-const stable = (value) => {
-  if (value === null || typeof value !== 'object') return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map(stable).join(',')}]`;
-  return (
-    '{' +
-    Object.keys(value)
-      .sort()
-      .map((key) => `${JSON.stringify(key)}:${stable(value[key])}`)
-      .join(',') +
-    '}'
-  );
-};
 export function qualifyCodeInputPath(path) {
   assert.equal(resolve(path), path, 'input_path_unqualified');
   assert.ok(
@@ -452,60 +440,27 @@ export function qualifyCodeInputPath(path) {
 /** The fixed private qualification is owner-frozen AFTER source/build review.
  * No caller executable/path is accepted by the production stdin protocol. */
 export async function qualifyLaunchInputs(qualification) {
-  assert.deepEqual(Object.keys(qualification).sort(), [
-    'files',
-    'inputInventoryDigest',
-    'reviewedHead',
-    'reviewedTree',
-    'version',
-  ]);
-  assert.equal(qualification.version, 'm5-owner-trusted-release-qualified-inputs-v1');
-  assert.match(qualification.reviewedHead, /^[0-9a-f]{40}$/);
-  assert.match(qualification.reviewedTree, /^[0-9a-f]{40}$/);
-  assert.match(qualification.inputInventoryDigest, /^[0-9a-f]{64}$/);
-  assert.equal(hash(stable(qualification.files)), qualification.inputInventoryDigest, 'input_inventory_digest_changed');
-  const git = await promisify(execFile)('/usr/bin/git', ['rev-parse', 'HEAD', 'HEAD^{tree}'], {
-    cwd: REPOSITORY,
-    env: { PATH: '/usr/bin:/bin' },
-    timeout: 5000,
-  });
-  assert.deepEqual(
-    git.stdout.trim().split('\n'),
-    [qualification.reviewedHead, qualification.reviewedTree],
-    'reviewed_source_changed',
-  );
-  const status = await promisify(execFile)('/usr/bin/git', ['status', '--porcelain'], {
-    cwd: REPOSITORY,
-    env: { PATH: '/usr/bin:/bin' },
-    timeout: 5000,
-  });
-  assert.equal(status.stdout, '', 'reviewed_source_not_frozen');
-  const required = [...SOURCE_PATHS.map((path) => join(REPOSITORY, path)), ...sdkPins.keys(), EXECUTABLE];
-  for (const path of required) assert.ok(Object.hasOwn(qualification.files, path), 'required_source_input_missing');
-  // Complete deployed compilation/dependency inventory is separately qualified
-  // by the orchestrator. Require original import entrypoints, not source alone.
-  for (const name of ['database', 'shopify'])
+  assert.deepEqual(Object.keys(qualification).sort(), ['manifestSha256', 'version']);
+  assert.equal(qualification.version, 'insignia-release-verifier-identity-v1');
+  const manifest = await qualifyVerifierArtifact(REPOSITORY, qualification.manifestSha256);
+  for (const path of SOURCE_PATHS) assert.ok(Object.hasOwn(manifest.files, path), 'required_source_input_missing');
+  for (const [path, expected] of sdkPins) {
+    const relativePath = path.slice(REPOSITORY.length + 1);
+    assert.equal(manifest.files[relativePath]?.sha256, expected, 'original_sdk_changed');
+  }
+  assert.ok(manifest.files['bin/node'], 'fixed_runtime_missing');
+  const require = createRequire(new URL('../../worker/package.json', import.meta.url));
+  for (const name of ['database', 'shopify']) {
+    const entry = await realpath(require.resolve(`@insignia/${name}`));
     assert.ok(
-      Object.hasOwn(qualification.files, join(REPOSITORY, `packages/${name}/dist/index.js`)),
+      entry.startsWith(`${REPOSITORY}/`) && manifest.files[entry.slice(REPOSITORY.length + 1)],
       'built_runtime_missing',
     );
-  for (const [path, expected] of Object.entries(qualification.files)) {
-    qualifyCodeInputPath(path);
-    assert.match(expected, /^[0-9a-f]{64}$/);
-    if (sdkPins.has(path)) assert.equal(expected, sdkPins.get(path), 'original_sdk_changed');
-    const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
-    try {
-      const info = await handle.stat();
-      assert.ok(info.isFile() && info.size <= 268435456, 'regular_code_input_required');
-      assert.equal(hash(await handle.readFile()), expected, 'frozen_input_changed');
-    } finally {
-      await handle.close();
-    }
   }
   return {
-    reviewedHead: qualification.reviewedHead,
-    reviewedTree: qualification.reviewedTree,
-    inputInventoryDigest: qualification.inputInventoryDigest,
+    reviewedHead: manifest.sourceHead,
+    reviewedTree: manifest.sourceTree,
+    inputInventoryDigest: qualification.manifestSha256,
   };
 }
 
@@ -534,17 +489,7 @@ export async function launchQualifiedTrustedRelease(packetBytes, verificationReq
     } catch (error) {
       if (error.code !== 'ENOENT') throw error;
     }
-    const currentHead = (
-      await promisify(execFile)('/usr/bin/git', ['rev-parse', 'HEAD'], {
-        cwd: REPOSITORY,
-        env: { PATH: '/usr/bin:/bin' },
-        timeout: 5000,
-      })
-    ).stdout.trim();
-    assert.match(currentHead, /^[0-9a-f]{40}$/);
-    const qualified = await qualifyLaunchInputs(
-      await privateJson(join(ROOT, `m5-trusted-release-launch-qualified-inputs-${currentHead}.json`), 1048576),
-    );
+    const qualified = await qualifyLaunchInputs(await privateJson(join(REPOSITORY, 'identity.json'), 16384));
     intent = join(ROOT, `m5-trusted-release-launch-intent-${recordId}`);
     await mkdir(intent, { mode: 0o700 });
     await durable(join(intent, 'intent.json'), {

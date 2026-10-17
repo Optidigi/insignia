@@ -5,78 +5,17 @@ import {
   type PurchaseView,
   PurchaseViewSchema,
 } from '@insignia/contracts';
-import { type GeometryV1, projectScene, validateGeometry } from '@insignia/visualizer/geometry';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { authenticatedJson } from '../shared/admin-request';
 import { exactPurchaseMoney } from '../shared/purchase-view';
+import AdminNavigation from './AdminNavigation';
 import ArtworkUpload from './ArtworkUpload';
+import PurchaseHistoricalPreview from './PurchaseHistoricalPreview';
 
-const endpoint = (id: string) => `/api/purchases/v1/${encodeURIComponent(id)}`;
-function HistoricalPreview({ group }: { group: PurchaseGroup }) {
-  const element = useRef<HTMLDivElement>(null);
-  const [message, setMessage] = useState('Historical preview unavailable.');
-  useEffect(() => {
-    let ended = false;
-    let renderer: import('@insignia/visualizer').Visualizer | undefined;
-    try {
-      if (!group.geometry || !element.current) return;
-      const geometry = group.geometry as GeometryV1;
-      validateGeometry(geometry);
-      const first = geometry.views[0];
-      if (!first?.image || !group.imageUrls[first.image.revisionId]) return;
-      void import('@insignia/visualizer')
-        .then(async ({ createVisualizer }) => {
-          if (ended || !element.current) return;
-          renderer = await createVisualizer({
-            element: element.current,
-            onCommand: () => {},
-            onStatus: (status) => {
-              if (!ended)
-                setMessage(status === 'ready' ? 'Historical geometry preview.' : 'Historical preview unavailable.');
-            },
-          });
-          if (ended) {
-            renderer.destroy();
-            return;
-          }
-          renderer.setMode('preview');
-          renderer.update(
-            projectScene(
-              {
-                version: 0,
-                geometry,
-                viewId: first.id,
-                variantId: group.variants[0]?.variantId,
-                artwork: { kind: 'none' },
-              },
-              { width: 560, height: 320, pixelRatio: 1 },
-              group.imageUrls,
-            ),
-          );
-        })
-        .catch(() => {
-          if (!ended) setMessage('Historical preview unavailable.');
-        });
-    } catch {}
-    return () => {
-      ended = true;
-      renderer?.destroy();
-    };
-  }, [group]);
-  return (
-    <>
-      <div
-        ref={element}
-        style={{
-          width: '100%',
-          maxWidth: '560px',
-          height: message === 'Historical preview unavailable.' ? '0' : '320px',
-        }}
-      />
-      <p>{message}</p>
-    </>
-  );
+function recordDate(value: string) {
+  return `${new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }).format(new Date(value))} UTC`;
 }
+const endpoint = (id: string) => `/api/purchases/v1/${encodeURIComponent(id)}`;
 function HistoricalOriginal({
   purchaseId,
   assetId,
@@ -123,9 +62,9 @@ function HistoricalOriginal({
   return (
     <span>
       {' '}
-      <button type="button" disabled={busy} onClick={() => void download()}>
+      <s-button type="button" disabled={busy} onClick={() => void download()}>
         Prepare historical original
-      </button>
+      </s-button>
       {link && Date.parse(link.expiresAt) > Date.now() && (
         <a href={link.url} target="_blank" rel="noopener noreferrer">
           Download historical original
@@ -270,7 +209,7 @@ function Placement({
   }
   const label = group.presentation?.labels.placements?.[placement.id] ?? placement.id;
   return (
-    <section aria-label={`Artwork ${label}`}>
+    <section class="purchase-placement" aria-label={`Artwork ${label}`}>
       <h4>
         {label} · {group.presentation?.labels.methods?.[placement.methodId] ?? placement.methodId} ·{' '}
         {group.presentation?.labels.steps?.[placement.stepId] ?? placement.stepId}
@@ -289,7 +228,8 @@ function Placement({
         )}
       {placement.currentExpiresAt && (
         <p>
-          Original collection deadline: {placement.currentExpiresAt}.{' '}
+          Original collection deadline:{' '}
+          <time dateTime={placement.currentExpiresAt}>{recordDate(placement.currentExpiresAt)}</time>.{' '}
           {retentionExpired
             ? 'Artwork expired.'
             : Date.parse(placement.currentExpiresAt) - Date.now() <= 30 * 86400000
@@ -301,12 +241,12 @@ function Placement({
       )}
       {assetUsable && !retentionExpired && (
         <>
-          <button type="button" disabled={busy || disabled} onClick={() => void access('preview')}>
+          <s-button type="button" disabled={busy || disabled} onClick={() => void access('preview')}>
             View safe preview
-          </button>
-          <button type="button" disabled={busy || disabled} onClick={() => void access('download')}>
+          </s-button>
+          <s-button type="button" disabled={busy || disabled} onClick={() => void access('download')}>
             Prepare original download
-          </button>
+          </s-button>
         </>
       )}
       {assetUsable && preview?.identity === identity && Date.parse(preview.expiresAt) > Date.now() && (
@@ -329,9 +269,9 @@ function Placement({
               disabled={disabled || busy}
               allowOriginalDownload={false}
             />
-            <button type="button" disabled={!selected || disabled || busy} onClick={() => void attach()}>
+            <s-button type="button" disabled={!selected || disabled || busy} onClick={() => void attach()}>
               {placement.currentAssetId || purchase.artworkState === 'ERASED' ? 'Replace artwork' : 'Attach artwork'}
-            </button>
+            </s-button>
           </>
         )}
       <p role="status">{message}</p>
@@ -424,25 +364,24 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
   }
   return (
     <s-page heading="Orders and artwork">
-      <nav>
-        <a href="/admin/products">Products</a> · <a href="/admin/orders">Orders and artwork</a>
-      </nav>
-      <p role="status" aria-live="polite">
-        {message}
-      </p>
+      <AdminNavigation current="orders" />
+      {message && (
+        <p class="admin-status" role="status" aria-live="polite">
+          {message}
+        </p>
+      )}
       {!denied && (
-        <button type="button" disabled={busy} onClick={() => void load()}>
+        <s-button type="button" disabled={busy} onClick={() => void load()}>
           {purchaseId ? 'Refresh purchase' : 'Refresh orders'}
-        </button>
+        </s-button>
       )}
       {!purchaseId && !denied && (
-        <section>
-          <h2>Customized orders</h2>
+        <s-section heading="Customized orders">
           {items.length === 0 && !busy && <p>No customized orders recorded.</p>}
           {nextCursor && (
-            <button type="button" disabled={busy} onClick={() => void load(nextCursor)}>
+            <s-button type="button" disabled={busy} onClick={() => void load(nextCursor)}>
               Load older orders
-            </button>
+            </s-button>
           )}
           {items.map((item) => (
             <p key={item.purchaseId}>
@@ -451,121 +390,149 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
               {exactPurchaseMoney(item.originalTotalMinor, item.exponent, item.currency)}
             </p>
           ))}
-        </section>
+        </s-section>
       )}
       {purchase && (
         <>
-          <h2>{purchase.orderId}</h2>
-          <p>Order created: {purchase.orderCreatedAt}</p>
-          <p>
-            {purchase.isTest === true
-              ? 'Test order.'
-              : purchase.isTest === null
-                ? 'Test status unavailable.'
-                : 'Non-test order.'}
-          </p>
-          <p>{exactPurchaseMoney(purchase.originalTotalMinor, purchase.exponent, purchase.currency)}</p>
-          <p>
-            Shopify payment status: {purchase.financialStatus}. First fully paid:{' '}
-            {purchase.firstPaidAt ?? 'Not recorded'}.
-          </p>
-          {purchase.cancelledAt && <p>Shopify cancellation: {purchase.cancelledAt}</p>}
-          <p>Shopify owns payment, fulfillment, refunds, returns and restock.</p>
-          {purchase.exceptions.map((exception, index) => (
-            <p role="alert" key={index}>
-              Reconciliation exception: {exception}
+          <s-section heading="Order summary">
+            <p class="admin-record-id">{purchase.orderId}</p>
+            <p>
+              Order created: <time dateTime={purchase.orderCreatedAt}>{recordDate(purchase.orderCreatedAt)}</time>
             </p>
-          ))}
-          <button type="button" disabled={busy} onClick={() => void command('reconcile')}>
-            Request reconciliation
-          </button>
-          <h3>Purchased variants</h3>
-          {purchase.lines.map((line) => (
-            <p key={line.orderLineId}>
-              {line.productId} / {line.variantId}: {line.quantity} ×{' '}
-              {exactPurchaseMoney(line.unitPriceMinor, purchase.exponent, purchase.currency)}
+            <p>
+              {purchase.isTest === true
+                ? 'Test order.'
+                : purchase.isTest === null
+                  ? 'Test status unavailable.'
+                  : 'Non-test order.'}
             </p>
-          ))}
-          {purchase.lines.length > 0 && <p>Artwork state: {purchase.artworkState}</p>}
-          {purchase.lines.length === 0 ? (
-            <p>Customization binding requires reconciliation. No production authorization is established.</p>
-          ) : purchase.artworkState === 'ERASED' &&
-            !purchase.groups.some((group) => Date.parse(group.payloadExpiresAt) > Date.now()) ? (
-            <p>Production detail erased. Historical economics remain.</p>
-          ) : (
-            <>
-              {purchase.artworkState === 'ERASED' && purchase.groups.length > 0 && (
-                <p>
-                  {purchase.artworkEvents.some((event) => event.kind === 'LOCK')
-                    ? 'Selected artwork unavailable. Artwork lock remains in force.'
-                    : 'Selected artwork unavailable; explicitly replace within remaining detail retention.'}
-                </p>
+            <p>{exactPurchaseMoney(purchase.originalTotalMinor, purchase.exponent, purchase.currency)}</p>
+            <p>
+              Shopify payment status: {purchase.financialStatus}. First fully paid:{' '}
+              {purchase.firstPaidAt ? (
+                <time dateTime={purchase.firstPaidAt}>{recordDate(purchase.firstPaidAt)}</time>
+              ) : (
+                'Not recorded'
               )}
-              {purchase.groups.map((group) => (
-                <section key={group.index}>
-                  <h3>
-                    Customization {group.index + 1} · historical revision {group.configRevisionId}
-                  </h3>
-                  <p>Design retention deadline: {group.payloadExpiresAt}</p>
-                  <HistoricalPreview group={group} />
-                  {group.placements.map((placement) => (
-                    <Placement
-                      key={placement.id}
-                      purchase={purchase}
-                      group={group}
-                      placement={placement}
-                      changed={setPurchase}
-                      deny={deny}
-                      disabled={busy || denied}
-                    />
-                  ))}
-                </section>
-              ))}
-              <button
-                type="button"
-                disabled={
-                  busy ||
-                  purchase.artworkState !== 'READY' ||
-                  purchase.artworkEvents.some((event) => event.kind === 'LOCK') ||
-                  purchase.groups.length === 0 ||
-                  purchase.groups.some((group) => Date.parse(group.payloadExpiresAt) <= Date.now())
-                }
-                onClick={() => void command('lock')}
-              >
-                Lock artwork
-              </button>
-            </>
-          )}
-          <h3>Attachment history</h3>
-          {purchase.artworkEvents.map((event) => (
-            <p key={event.eventId}>
-              Version {event.version}: {event.kind} {event.erasedAt ? '— artwork detail erased' : (event.assetId ?? '')}
-              {event.expiresAt ? ` · original deadline ${event.expiresAt}` : ''}
-              {event.kind === 'ATTACH' &&
-                event.assetId &&
-                !event.erasedAt &&
-                event.expiresAt &&
-                Date.parse(event.expiresAt) > Date.now() && (
-                  <HistoricalOriginal purchaseId={purchase.purchaseId} assetId={event.assetId} deny={deny} />
+              .
+            </p>
+            {purchase.cancelledAt && (
+              <p>
+                Shopify cancellation: <time dateTime={purchase.cancelledAt}>{recordDate(purchase.cancelledAt)}</time>
+              </p>
+            )}
+            <p>Shopify owns payment, fulfillment, refunds, returns and restock.</p>
+            {purchase.exceptions.map((exception, index) => (
+              <p role="alert" key={index}>
+                Reconciliation exception: {exception}
+              </p>
+            ))}
+            <s-button type="button" disabled={busy} onClick={() => void command('reconcile')}>
+              Request reconciliation
+            </s-button>
+          </s-section>
+          <s-section heading="Purchased variants">
+            {purchase.lines.map((line) => (
+              <p key={line.orderLineId}>
+                {line.productId} / {line.variantId}: {line.quantity} ×{' '}
+                {exactPurchaseMoney(line.unitPriceMinor, purchase.exponent, purchase.currency)}
+              </p>
+            ))}
+          </s-section>
+          <s-section heading="Artwork and customization">
+            {purchase.lines.length > 0 && <p>Artwork state: {purchase.artworkState}</p>}
+            {purchase.lines.length === 0 ? (
+              <p>Customization binding requires reconciliation. No production authorization is established.</p>
+            ) : purchase.artworkState === 'ERASED' &&
+              !purchase.groups.some((group) => Date.parse(group.payloadExpiresAt) > Date.now()) ? (
+              <p>Production detail erased. Historical economics remain.</p>
+            ) : (
+              <>
+                {purchase.artworkState === 'ERASED' && purchase.groups.length > 0 && (
+                  <p>
+                    {purchase.artworkEvents.some((event) => event.kind === 'LOCK')
+                      ? 'Selected artwork unavailable. Artwork lock remains in force.'
+                      : 'Selected artwork unavailable; explicitly replace within remaining detail retention.'}
+                  </p>
                 )}
-            </p>
-          ))}
-          <h3>Shopify refund records</h3>
-          <p>Refund records do not prove that money has settled. Shopify remains the payment authority.</p>
-          {purchase.refunds.length === 0 && <p>No refunds recorded.</p>}
-          {purchase.refunds.map((refund) => (
-            <p key={refund.refundId}>
-              {refund.refundId}: {exactPurchaseMoney(refund.amountMinor, purchase.exponent, refund.currency)} ·{' '}
-              {refund.occurredAt}
-              {refund.lines.map((line) => (
-                <span key={line.lineId}>
-                  {' '}
-                  · {line.lineId}: {line.quantity} recorded for refund,{' '}
-                  {exactPurchaseMoney(line.amountMinor, purchase.exponent, refund.currency)}
-                </span>
-              ))}
-            </p>
-          ))}
+                {purchase.groups.map((group) => (
+                  <section key={group.index} class="purchase-customization">
+                    <h3>
+                      Customization {group.index + 1} · historical revision {group.configRevisionId}
+                    </h3>
+                    <p>
+                      Design retention deadline:{' '}
+                      <time dateTime={group.payloadExpiresAt}>{recordDate(group.payloadExpiresAt)}</time>
+                    </p>
+                    <PurchaseHistoricalPreview purchaseId={purchase.purchaseId} group={group} deny={deny} />
+                    {group.placements.map((placement) => (
+                      <Placement
+                        key={placement.id}
+                        purchase={purchase}
+                        group={group}
+                        placement={placement}
+                        changed={setPurchase}
+                        deny={deny}
+                        disabled={busy || denied}
+                      />
+                    ))}
+                  </section>
+                ))}
+                <s-button
+                  type="button"
+                  disabled={
+                    busy ||
+                    purchase.artworkState !== 'READY' ||
+                    purchase.artworkEvents.some((event) => event.kind === 'LOCK') ||
+                    purchase.groups.length === 0 ||
+                    purchase.groups.some((group) => Date.parse(group.payloadExpiresAt) <= Date.now())
+                  }
+                  onClick={() => void command('lock')}
+                >
+                  Lock artwork
+                </s-button>
+              </>
+            )}
+          </s-section>
+          <s-section heading="Attachment history">
+            {purchase.artworkEvents.map((event) => (
+              <p key={event.eventId}>
+                Version {event.version}: {event.kind}{' '}
+                {event.erasedAt ? '— artwork detail erased' : (event.assetId ?? '')}
+                {event.expiresAt && (
+                  <>
+                    {' '}
+                    · original deadline <time dateTime={event.expiresAt}>{recordDate(event.expiresAt)}</time>
+                  </>
+                )}
+                {event.kind === 'ATTACH' &&
+                  event.assetId &&
+                  !event.erasedAt &&
+                  event.expiresAt &&
+                  Date.parse(event.expiresAt) > Date.now() && (
+                    <HistoricalOriginal purchaseId={purchase.purchaseId} assetId={event.assetId} deny={deny} />
+                  )}
+              </p>
+            ))}
+            {purchase.artworkEvents.length === 0 && <p>No artwork replacements or locks recorded.</p>}
+          </s-section>
+          <s-section heading="Shopify refund records">
+            <p>Refund records do not prove that money has settled. Shopify remains the payment authority.</p>
+            {purchase.refunds.length === 0 && <p>No refunds recorded.</p>}
+            {purchase.refunds.map((refund) => (
+              <p key={refund.refundId}>
+                {refund.refundId}: {exactPurchaseMoney(refund.amountMinor, purchase.exponent, refund.currency)} ·{' '}
+                <time dateTime={refund.occurredAt}>{recordDate(refund.occurredAt)}</time>
+                {refund.lines.map((line) => (
+                  <span key={line.lineId}>
+                    {' '}
+                    · {line.lineId}: {line.quantity} recorded for refund,{' '}
+                    {exactPurchaseMoney(line.amountMinor, purchase.exponent, refund.currency)}
+                  </span>
+                ))}
+              </p>
+            ))}
+          </s-section>
         </>
       )}
     </s-page>

@@ -13,6 +13,7 @@ import {
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { authenticatedJson } from '../shared/admin-request';
 import type { CatalogProduct, ConfigView, PublicationState } from '../shared/admin-view.js';
+import AdminNavigation from './AdminNavigation';
 import ArtworkUpload from './ArtworkUpload';
 import ReadinessPermissions from './ReadinessPermissions';
 
@@ -1010,9 +1011,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
   };
   return (
     <s-page heading={mode === 'picker' ? 'Choose a product' : 'Product configuration'}>
-      <nav class="admin-navigation" aria-label="Admin navigation">
-        <s-link href="/admin/products">Products</s-link>
-      </nav>
+      <AdminNavigation current="products" />
       {status && (
         <p class="admin-status" role="status">
           {status}

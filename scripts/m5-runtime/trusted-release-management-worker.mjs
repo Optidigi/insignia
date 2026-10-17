@@ -6,8 +6,9 @@ import { readFile } from 'node:fs/promises';
 import { createInterface } from 'node:readline';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { releaseProfile } from './release-profile.mjs';
+import { VERIFIER_SDK } from './verifier-runtime.mjs';
 
-const BASE = '/home/serveradmin/insignia-milestone-autonomy-handoff/app-management-readonly-preparation-20261010';
+const BASE = VERIFIER_SDK;
 const APP = '1443cf6d03d39edae7c101a943c5c684';
 const pins = [
   ['package/dist/chunk-MJ3WNVMQ.js', '29df2593b46ba4b7162ef703dfdbea2175e2e55d6824df2ade708eff35432fea'],

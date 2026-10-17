@@ -112,11 +112,29 @@ test('merchant sees exact historical economics and erased detail never offers ne
     assert.equal(r.request().headers().authorization, 'Bearer synthetic-purchase-actor');
     return r.fulfill({ json: current });
   });
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(base + '/admin/orders/' + id);
   await page.getByText('USD 90071992547409.93', { exact: true }).waitFor();
+  const navigation = page.getByRole('navigation', { name: 'Insignia' });
+  await navigation.getByRole('link', { name: 'Products', exact: true }).waitFor();
+  await navigation.getByRole('link', { name: 'Orders and artwork', exact: true }).waitFor();
+  assert.equal(
+    await navigation.getByRole('link', { name: 'Billing', exact: true }).getAttribute('href'),
+    '/admin/billing',
+  );
+  await page.getByRole('heading', { name: 'Order summary', exact: true }).waitFor();
+  assert.equal(await page.locator('time[datetime="2026-10-19T12:00:00Z"]').innerText(), 'Oct 19, 2026, 12:00 PM UTC');
   await page.getByText('Historical preview unavailable.', { exact: true }).waitFor();
   assert.equal(await page.getByRole('button', { name: 'Lock artwork', exact: true }).isEnabled(), false);
   await page.screenshot({ path: '/tmp/insignia-m8-local-order-demo.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.equal(
+    await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    true,
+    'purchase fits a narrow merchant viewport',
+  );
+  await page.screenshot({ path: '/tmp/insignia-lean-local-order-mobile.png', fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 900 });
   current = view('ERASED');
   await page.getByRole('button', { name: 'Refresh purchase', exact: true }).click();
   await page.getByText('Production detail erased. Historical economics remain.', { exact: true }).waitFor();
@@ -407,4 +425,297 @@ test('merchant requests independent reconciliation without claiming current fact
   assert.equal(requests, 1);
   assert.equal(await page.getByText('USD 90071992547409.93', { exact: true }).count(), 1);
   assert.equal(await page.getByText('Shopify facts reconciled.', { exact: true }).count(), 0);
+});
+
+function historicalView() {
+  const original = '0829a06c-e8c5-40aa-9167-4fb47e443231';
+  const replacement = 'e3e03d15-0be4-44cd-a3cc-98f5474b44fa';
+  const current = view('READY');
+  const group = current.groups[0];
+  group.geometry = {
+    version: 'm5-geometry-v1',
+    views: [
+      {
+        id: 'front',
+        image: { revisionId: 'frozen', width: 100, height: 100 },
+        variantImages: [],
+        placements: [{ id: 'front', rect: { centerX: 0.5, centerY: 0.5, width: 0.5, height: 0.5 } }],
+      },
+    ],
+    steps: [{ id: 'small', widthFraction: 0.5, heightFraction: 0.5 }],
+  };
+  group.geometry.views.push({
+    id: 'back',
+    image: { revisionId: 'frozen-back', width: 100, height: 100 },
+    variantImages: [],
+    placements: [{ id: 'back', rect: { centerX: 0.5, centerY: 0.5, width: 0.5, height: 0.5 } }],
+  });
+  group.variants.push({ variantId: '12', quantity: 1 });
+  group.placements.push({
+    ...group.placements[0],
+    id: 'back',
+    originalArtwork: { kind: 'deferred', intentId: 'back-later' },
+  });
+  group.imageUrls = {
+    frozen: 'https://private.example/frozen.png',
+    'frozen-back': 'https://private.example/frozen-back.png',
+  };
+  group.placements[0].originalArtwork = { kind: 'revision', revisionId: original };
+  group.placements[0].currentAssetId = replacement;
+  group.placements[0].currentExpiresAt = new Date(Date.now() + 60000).toISOString();
+  return { original, replacement, current, group };
+}
+
+test('historical canvas composes the purchased original PNG at its frozen placement and does not substitute a replacement', {
+  timeout: 20000,
+}, async (t) => {
+  const { page, base } = await fixture(t);
+  const { original, current, group } = historicalView();
+  const seen = [];
+  await page.route('**/api/purchases/v1/' + id, (route) => route.fulfill({ json: current }));
+  await page.route('**/api/purchases/v1/' + id + '/artwork/*/preview', (route) => {
+    assert.equal(route.request().method(), 'GET');
+    assert.equal(route.request().headers().authorization, 'Bearer synthetic-purchase-actor');
+    seen.push(route.request().url().split('/').at(-2));
+    return route.fulfill({
+      json: {
+        url: 'https://private.example/purchased-original.png',
+        aspectRatio: 1,
+        expiresAt: new Date(Date.now() + 60000).toISOString(),
+      },
+    });
+  });
+  await page.route('https://private.example/**', (route) =>
+    route.fulfill({
+      contentType: 'image/png',
+      body: Buffer.from(
+        route.request().url().endsWith('purchased-original.png')
+          ? 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGO4IycHAALyARlzRAvLAAAAAElFTkSuQmCC'
+          : 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC',
+        'base64',
+      ),
+    }),
+  );
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(base + '/admin/orders/' + id);
+  await page.getByText('Historical purchased artwork preview.', { exact: true }).waitFor();
+  assert.deepEqual(seen, [original]);
+  const canvas = page.getByRole('region', { name: 'Purchased design preview' }).locator('canvas').nth(1);
+  const centerColor = async () => {
+    const screenshot = await canvas.screenshot();
+    return page.evaluate(async (png) => {
+      const image = new Image();
+      image.src = 'data:image/png;base64,' + png;
+      await image.decode();
+      const scratch = document.createElement('canvas');
+      scratch.width = image.width;
+      scratch.height = image.height;
+      const context = scratch.getContext('2d');
+      context.drawImage(image, 0, 0);
+      return Array.from(
+        context.getImageData(Math.floor(image.width / 2), Math.floor(image.height / 2), 1, 1).data,
+      ).slice(0, 3);
+    }, screenshot.toString('base64'));
+  };
+  assert.deepEqual(
+    await centerColor(),
+    [220, 30, 30],
+    'actual canvas paints the verified original inside the purchased placement',
+  );
+  await page.screenshot({ path: '/tmp/insignia-lean-local-historical-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+  await page.screenshot({ path: '/tmp/insignia-lean-local-historical-mobile.png', fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  current.artworkVersion++;
+  group.placements[0].currentAssetId = 'e365cfa1-bab9-42e6-b4c2-319baae86e69';
+  const refreshedOriginal = page.waitForResponse((response) => response.url().endsWith('/' + original + '/preview'));
+  await page.getByRole('button', { name: 'Refresh purchase', exact: true }).click();
+  await (await refreshedOriginal).finished();
+  await page.getByText('Historical purchased artwork preview.', { exact: true }).waitFor();
+  assert.deepEqual(seen, [original, original]);
+  assert.deepEqual(await centerColor(), [220, 30, 30]);
+  const backImage = page.waitForResponse('https://private.example/frozen-back.png');
+  await page.getByLabel('Preview view', { exact: true }).selectOption('back');
+  await (await backImage).finished();
+  await page.getByText('Historical purchased artwork preview.', { exact: true }).waitFor();
+  assert.notDeepEqual(
+    await centerColor(),
+    [220, 30, 30],
+    'another purchased view must not keep the previous placement artwork',
+  );
+  const frontOriginal = page.waitForResponse((response) => response.url().endsWith('/' + original + '/preview'));
+  await page.getByLabel('Preview view', { exact: true }).selectOption('front');
+  await (await frontOriginal).finished();
+  await page.getByText('Historical purchased artwork preview.', { exact: true }).waitFor();
+  const variantOriginal = page.waitForResponse((response) => response.url().endsWith('/' + original + '/preview'));
+  await page.getByLabel('Purchased variant', { exact: true }).selectOption('12');
+  await (await variantOriginal).finished();
+  await page.getByText('Historical purchased artwork preview.', { exact: true }).waitFor();
+  assert.deepEqual(await centerColor(), [220, 30, 30]);
+});
+
+test('historical preview never fetches or paints an original when its retained payload expires during access lookup', {
+  timeout: 15000,
+}, async (t) => {
+  const { page, base } = await fixture(t);
+  const { original, current, group } = historicalView();
+  group.payloadExpiresAt = new Date(Date.now() + 1500).toISOString();
+  let release;
+  const pending = new Promise((resolve) => {
+    release = resolve;
+  });
+  let requested;
+  const started = new Promise((resolve) => {
+    requested = resolve;
+  });
+  const imageRequests = [];
+  page.on('request', (request) => {
+    if (request.url().startsWith('https://private.example/')) imageRequests.push(request.url());
+  });
+  await page.route('**/api/purchases/v1/' + id, (route) => route.fulfill({ json: current }));
+  await page.route('**/api/purchases/v1/' + id + '/artwork/' + original + '/preview', async (route) => {
+    requested();
+    await pending;
+    await route.fulfill({
+      json: {
+        url: 'https://private.example/expired-original.png',
+        aspectRatio: 1,
+        expiresAt: new Date(Date.now() + 60000).toISOString(),
+      },
+    });
+  });
+  await page.route('https://private.example/**', (route) =>
+    route.fulfill({
+      contentType: 'image/png',
+      body: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC',
+        'base64',
+      ),
+    }),
+  );
+  await page.goto(base + '/admin/orders/' + id);
+  await started;
+  await new Promise((resolve) => setTimeout(resolve, 1600));
+  release();
+  await page.getByText('Historical preview expired. Refresh to check current access.', { exact: true }).waitFor();
+  assert.deepEqual(
+    imageRequests,
+    [],
+    'expiry is checked again before renderer or PNG requests, not cleared only after a transient paint',
+  );
+  assert.equal(await page.getByRole('region', { name: 'Purchased design preview' }).locator('canvas').count(), 0);
+});
+
+test('missing historical originals remain explicit and permission loss clears all private purchase work', {
+  timeout: 15000,
+}, async (t) => {
+  const { page, base } = await fixture(t);
+  const { original, current } = historicalView();
+  let denied = false;
+  const seen = [];
+  await page.route('**/api/purchases/v1/' + id, (route) => route.fulfill({ json: current }));
+  await page.route('**/api/purchases/v1/' + id + '/artwork/*/preview', (route) => {
+    seen.push(route.request().url().split('/').at(-2));
+    return route.fulfill({ status: denied ? 403 : 404, json: { error: 'ARTWORK_UNAVAILABLE' } });
+  });
+  await page.route('https://private.example/**', (route) =>
+    route.fulfill({
+      contentType: 'image/png',
+      body: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC',
+        'base64',
+      ),
+    }),
+  );
+  await page.goto(base + '/admin/orders/' + id);
+  await page.getByText('Historical preview: some original artwork is unavailable.', { exact: true }).waitFor();
+  assert.deepEqual(seen, [original]);
+  assert.equal(await page.getByText('Historical purchased artwork preview.', { exact: true }).count(), 0);
+  denied = true;
+  await page.getByRole('button', { name: 'Refresh historical preview', exact: true }).click();
+  await page
+    .getByText('Your Shopify identity or permission could not be verified. Reopen from Shopify Admin.', { exact: true })
+    .waitFor();
+  assert.equal(await page.locator('canvas').count(), 0);
+  assert.equal(await page.getByText('USD 90071992547409.93', { exact: true }).count(), 0);
+  assert.deepEqual(seen, [original, original]);
+});
+
+test('a late historical PNG lookup cannot restore a design after a same-version erasure readback', {
+  timeout: 15000,
+}, async (t) => {
+  const { page, base } = await fixture(t);
+  const { original, current, group } = historicalView();
+  let release;
+  const pending = new Promise((resolve) => {
+    release = resolve;
+  });
+  let requested;
+  const started = new Promise((resolve) => {
+    requested = resolve;
+  });
+  const imageRequests = [];
+  page.on('request', (request) => {
+    if (request.url().startsWith('https://private.example/')) imageRequests.push(request.url());
+  });
+  await page.route('**/api/purchases/v1/' + id, (route) => route.fulfill({ json: current }));
+  await page.route('**/api/purchases/v1/' + id + '/artwork/' + original + '/preview', async (route) => {
+    requested();
+    await pending;
+    await route.fulfill({
+      json: {
+        url: 'https://private.example/late-original.png',
+        aspectRatio: 1,
+        expiresAt: new Date(Date.now() + 60000).toISOString(),
+      },
+    });
+  });
+  await page.goto(base + '/admin/orders/' + id);
+  await started;
+  group.geometry = null;
+  await page.getByRole('button', { name: 'Refresh purchase', exact: true }).click();
+  await page.getByText('Historical preview unavailable.', { exact: true }).waitFor();
+  const response = page.waitForResponse((request) => request.url().endsWith('/' + original + '/preview'));
+  release();
+  await (await response).finished();
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  assert.equal(await page.locator('canvas').count(), 0);
+  assert.deepEqual(imageRequests, []);
+});
+
+test('displayed historical artwork clears at its real preview expiry and refresh requires a new scoped read', {
+  timeout: 15000,
+}, async (t) => {
+  const { page, base } = await fixture(t);
+  const { original, current } = historicalView();
+  let lookups = 0;
+  await page.route('**/api/purchases/v1/' + id, (route) => route.fulfill({ json: current }));
+  await page.route('**/api/purchases/v1/' + id + '/artwork/' + original + '/preview', (route) => {
+    lookups++;
+    return route.fulfill({
+      json: {
+        url: 'https://private.example/short-original.png',
+        aspectRatio: 1,
+        expiresAt: new Date(Date.now() + 1500).toISOString(),
+      },
+    });
+  });
+  await page.route('https://private.example/**', (route) =>
+    route.fulfill({
+      contentType: 'image/png',
+      body: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC',
+        'base64',
+      ),
+    }),
+  );
+  await page.goto(base + '/admin/orders/' + id);
+  await page.getByText('Historical purchased artwork preview.', { exact: true }).waitFor();
+  await page.getByText('Historical preview expired. Refresh to check current access.', { exact: true }).waitFor();
+  assert.equal(await page.getByRole('region', { name: 'Purchased design preview' }).locator('canvas').count(), 0);
+  assert.equal(lookups, 1);
+  await page.getByRole('button', { name: 'Refresh historical preview', exact: true }).click();
+  await page.getByText('Historical purchased artwork preview.', { exact: true }).waitFor();
+  assert.equal(lookups, 2);
 });

@@ -3,6 +3,7 @@
 import hashlib
 import json
 from pathlib import Path
+from theme_artifacts import collect_theme_artifacts
 
 root = Path(__file__).resolve().parents[2]
 required = [
@@ -51,6 +52,7 @@ for pattern in ['apps/web/dist/client/**/*.js']:
     required.extend(str(path.relative_to(root)) for path in matches)
 
 records = {}
+required.extend(collect_theme_artifacts(root))
 for relative in sorted(set(required)):
     path = root / relative
     if not path.is_file() or path.stat().st_size == 0:

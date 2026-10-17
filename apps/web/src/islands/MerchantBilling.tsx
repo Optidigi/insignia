@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { authenticatedJson } from '../shared/admin-request.js';
 import type { BillingView } from '../shared/billing-view.js';
+import AdminNavigation from './AdminNavigation';
 
 function date(value: string): string {
   return `${new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }).format(
@@ -32,24 +33,29 @@ export default function MerchantBilling() {
   }, []);
   return (
     <s-page heading="Billing">
+      <AdminNavigation current="billing" />
       <s-section heading="Insignia Standard">
         <p>Standard commercial price: USD 49.99 per 30 days.</p>
         <p>
           All released Lean V1 features. No per-order charges. Artwork size, retention and other technical limits still
           apply.
         </p>
+      </s-section>
+      <s-section heading="Current subscription">
         {busy && <p role="status">Checking current Shopify subscription…</p>}
         {failed && <p role="alert">Billing status could not be verified. Try again.</p>}
         {view && (
           <>
-            <p role="status">
-              {view.status === 'trial'
-                ? 'Trial active'
-                : view.status === 'active'
-                  ? 'Subscription active'
-                  : view.status === 'inactive'
-                    ? 'No active subscription'
-                    : 'Current subscription could not be verified'}
+            <p class="billing-status" role="status">
+              <s-badge tone={view.status === 'active' || view.status === 'trial' ? 'success' : 'neutral'}>
+                {view.status === 'trial'
+                  ? 'Trial active'
+                  : view.status === 'active'
+                    ? 'Subscription active'
+                    : view.status === 'inactive'
+                      ? 'No active subscription'
+                      : 'Current subscription could not be verified'}
+              </s-badge>
             </p>
             {view.recurringPrice && (
               <p>
@@ -87,9 +93,9 @@ export default function MerchantBilling() {
             )}
             {view.managementUrl ? (
               <p>
-                <a href={view.managementUrl} target="_top" rel="noreferrer">
+                <s-button href={view.managementUrl} target="_top" variant="primary">
                   Manage billing in Shopify
-                </a>
+                </s-button>
               </p>
             ) : (
               <p>Billing management is unavailable. Contact support.</p>

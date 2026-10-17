@@ -2331,6 +2331,19 @@ test('product search has a usable responsive control, distinct catalog cards and
   });
   await page.goto(server.base + '/admin/products');
   await page.getByRole('heading', { name: 'Historical archived shirt with a long catalog title' }).waitFor();
+  const navigation = page.getByRole('navigation', { name: 'Insignia' });
+  assert.equal(
+    await navigation.getByRole('link', { name: 'Products', exact: true }).getAttribute('href'),
+    '/admin/products',
+  );
+  assert.equal(
+    await navigation.getByRole('link', { name: 'Orders and artwork', exact: true }).getAttribute('href'),
+    '/admin/orders',
+  );
+  assert.equal(
+    await navigation.getByRole('link', { name: 'Billing', exact: true }).getAttribute('href'),
+    '/admin/billing',
+  );
   const search = page.getByRole('searchbox', { name: 'Search products', exact: true });
   assert.ok(await search.isVisible());
   await search.focus();

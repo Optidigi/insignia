@@ -251,7 +251,7 @@ test('installation boundary accepts the original optional GraphQL envelope metad
   await assert.rejects(provider.readInstallation('SYNTHETIC_TOKEN'));
 });
 
-test('private owner packet accepts only the qualified runtime loopback forwarding profile without duplicate fields', () => {
+test('private owner packet accepts only qualified runtime loopback or fixed container transport without duplicate fields', () => {
   const packet = {
     databaseUrl: 'postgresql://insignia_runtime:SYNTHETIC_PASSWORD@127.0.0.1:55484/synthetic_rewrite?sslmode=disable',
     clientSecret: 'SYNTHETIC_PRIVATE_SECRET',
@@ -259,7 +259,15 @@ test('private owner packet accepts only the qualified runtime loopback forwardin
     recordId: '11111111-1111-4111-8111-111111111111',
   };
   assert.deepEqual(nativeEntry.parseOwnerPrivatePacket(JSON.stringify(packet)), packet);
+  const containerUrl =
+    'postgresql://insignia_runtime:SYNTHETIC_PASSWORD@insignia-rewrite-m5-019-database:5432/insignia_rewrite?sslmode=disable';
+  assert.equal(
+    nativeEntry.parseOwnerPrivatePacket(JSON.stringify({ ...packet, databaseUrl: containerUrl })).databaseUrl,
+    containerUrl,
+  );
   for (const databaseUrl of [
+    containerUrl.replace(':5432/', ':5433/'),
+    containerUrl.replace('/insignia_rewrite?', '/other?'),
     packet.databaseUrl.replace('127.0.0.1', '0.0.0.0'),
     packet.databaseUrl.replace('insignia_runtime', 'insignia_release_append'),
     packet.databaseUrl.replace('?sslmode=disable', ''),
@@ -275,7 +283,7 @@ test('private owner packet accepts only the qualified runtime loopback forwardin
   assert.throws(() => nativeEntry.parseOwnerPrivatePacket(JSON.stringify({ ...packet, clientSecret: undefined })));
   assert.equal(
     nativeEntry.ownerPhaseForRecord(packet.recordId),
-    '/home/serveradmin/insignia-milestone-autonomy-handoff/m5-trusted-release-collector-native-run-20261011-11111111-1111-4111-8111-111111111111',
+    '/var/lib/insignia/verifier/m5-trusted-release-collector-native-run-20261011-11111111-1111-4111-8111-111111111111',
   );
   for (const recordId of [
     '../escape',
