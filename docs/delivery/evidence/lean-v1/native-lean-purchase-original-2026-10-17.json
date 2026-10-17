@@ -1,0 +1,158 @@
+{
+  "classification": "NATIVE_LEAN_TEST_JOURNEY_ORIGINAL_AND_HISTORICAL_PREVIEW_PASS",
+  "runtimeSourceMerge": "ac189eddde9e1474e51cf9c7235b906ca8c757bb",
+  "appVersion": "1169137696769",
+  "profile": "lean-markets-7b17cd9",
+  "fixture": {
+    "productId": "gid://shopify/Product/10519322493211",
+    "variantId": "gid://shopify/ProductVariant/54211066986779",
+    "draftVersion": 4,
+    "revisionId": "9215185d-3109-4f07-b93b-d7e25b9bd7f5",
+    "surchargeMinor": 300,
+    "contextualBaseMinor": 0,
+    "quantity": 1,
+    "country": "US",
+    "primaryMarketId": "gid://shopify/Market/106410115355",
+    "currency": "USD"
+  },
+  "cart": {
+    "quoteId": "2ed14123-ac4a-4819-b368-bcf11c7caf3c",
+    "setId": "dea65925-f75e-45a6-8bbb-aa1319d2ca2c",
+    "applicationId": "1912209d-75ea-4340-9a7c-0a479894a010",
+    "completeSharedAndLineCarrierMatch": true,
+    "envelopeSha256": "8ea345d6a06eefce7a2182a6a6b1a50c025e1e3101164e905fcb87f5530791cb",
+    "memberSha256": "bb395db0ed0ec12baf1059a5438e2f02233e2ad7b852c9769afaa4e46c1ac8ed"
+  },
+  "order": {
+    "orderId": "gid://shopify/Order/7523719512347",
+    "isTest": true,
+    "status": "PAID",
+    "merchandiseMinor": 300,
+    "shippingMinor": 800,
+    "totalMinor": 1100,
+    "currency": "USD",
+    "creatorAppId": "gid://shopify/App/580111",
+    "source": "web",
+    "createdAt": "2026-10-17T10:11:40.000Z",
+    "captureAt": "2026-10-17T10:11:41.000Z",
+    "independentReaderRole": "insignia_worker",
+    "readOnly": true,
+    "historicalCountry": null,
+    "historicalMarketId": null,
+    "contextVerified": false
+  },
+  "persistence": {
+    "purchaseId": "675e9dfa-d81a-4aa1-a17b-3faf98a97be8",
+    "ordinaryWorkerScheduledReconciliation": true,
+    "forcedHandlerInvocations": 0,
+    "firstPaidFacts": 1,
+    "ordersBefore": 3,
+    "ordersAfter": 4,
+    "paidFactsBefore": 2,
+    "paidFactsAfter": 3,
+    "bindings": {
+      "lines": [
+        {
+          "quantity": 1,
+          "productId": "10519322493211",
+          "variantId": "54211066986779",
+          "unitPriceMinor": 300
+        }
+      ],
+      "isTest": true,
+      "designs": [
+        {
+          "erasedAt": null,
+          "expiresAt": "2026-10-24T10:07:20.206+00:00",
+          "artworkRefs": [
+            "f56527e5-480e-4509-be38-693c11d0ce97"
+          ],
+          "previewRefs": [],
+          "revisionIds": [
+            "9215185d-3109-4f07-b93b-d7e25b9bd7f5"
+          ]
+        }
+      ],
+      "orderId": "gid://shopify/Order/7523719512347",
+      "bindings": [
+        {
+          "setId": "dea65925-f75e-45a6-8bbb-aa1319d2ca2c",
+          "quoteId": "2ed14123-ac4a-4819-b368-bcf11c7caf3c"
+        }
+      ],
+      "currency": "USD",
+      "generation": 1,
+      "purchaseId": "675e9dfa-d81a-4aa1-a17b-3faf98a97be8",
+      "totalMinor": 1100,
+      "firstPaidAt": "2026-10-17T10:11:41+00:00",
+      "firstPaidFacts": 1
+    }
+  },
+  "merchant": {
+    "classification": "NATIVE_NEW_PURCHASE_MERCHANT_ORIGINAL_AND_FROZEN_PREVIEW_PASS",
+    "purchaseId": "675e9dfa-d81a-4aa1-a17b-3faf98a97be8",
+    "orderId": "gid://shopify/Order/7523719512347",
+    "quoteId": "2ed14123-ac4a-4819-b368-bcf11c7caf3c",
+    "setId": "dea65925-f75e-45a6-8bbb-aa1319d2ca2c",
+    "isTest": true,
+    "currency": "USD",
+    "totalMinor": 1100,
+    "firstPaidAt": "2026-10-17T10:11:41.000Z",
+    "artworkState": "READY",
+    "artworkVersion": 0,
+    "revisionId": "9215185d-3109-4f07-b93b-d7e25b9bd7f5",
+    "originalAssetId": "f56527e5-480e-4509-be38-693c11d0ce97",
+    "previewAssetId": "d833f2d6-4cb8-8147-571d-1cbf28a339ee",
+    "original": {
+      "size": 265,
+      "sha256": "2b9633afe3fd7743077d7d77931093a3ce96621cf395cac07d5b46c596992a0c"
+    },
+    "frozenPreview": {
+      "size": 7516,
+      "sha256": "80e751f6f391253e8e0f8f019609551c6cb2d76db8da8a949a5d3ed6758c7fef"
+    },
+    "authenticatedPurchaseGet": true,
+    "authenticatedDownloadGet": true,
+    "actualBrowserImageResponse": true,
+    "historicalPreviewReady": true,
+    "canvasPresent": true,
+    "originalRetrieved": true,
+    "originalRetrievalTransport": "native-merchant-browser-download",
+    "nonGetAppAttempts": 0,
+    "signedURLsRecorded": false,
+    "sessionDataRecorded": false,
+    "mutationInvocations": 0
+  },
+  "unauthenticatedOriginal": {
+    "classification": "UNAUTHENTICATED_ORIGINAL_ACCESS_DENIED",
+    "status": 403,
+    "locationPresent": false,
+    "signedURLPresent": false,
+    "observedAt": "2026-10-17T10:22:57.827413+00:00"
+  },
+  "retention": {
+    "originalExpiresAt": "2026-10-24T10:07:20.522Z",
+    "designExpiresAt": "2026-10-24T10:07:20.206Z",
+    "privateProbeCopiesDue": "2026-10-20",
+    "oldDeadlinesUnchanged": true
+  },
+  "review": {
+    "artworkQuoteCart": "/root/lean_selection_review CLEAR, 0e63814735c095d1744fa906f513ee7180bf34dda060b5becf2061fb298af76a",
+    "payment": "/root/lean_selection_review CLEAR, 094289b68b4d8841507e376df65f8e975110ae2bbb64fd040708efa3a33acbae",
+    "merchantRead": "/root/lean_selection_review CLEAR, cc944ede40d3ef5a233ebc7aa49a21be9b2ec2172ba9c8bcbb841e3385fec9f4"
+  },
+  "effects": {
+    "testPaymentInvocations": 1,
+    "checkoutRetries": 0,
+    "realCharge": false,
+    "newPlanOrRelease": false,
+    "allocations": "Standard selection, publication, stock and single test checkout are settled and consumed; do not repeat"
+  },
+  "limits": [
+    "Narrow USD/US primary-Market development fixture, not universal merchant/currency eligibility.",
+    "Historical country/Market and per-order Function execution remain unknown; current enforcement/creator metadata do not prove them.",
+    "Test order is not billable usage or commercial qualification.",
+    "Merchant screen is functional; complete admin usability/visual polish remains.",
+    "Existing duplicate/restart and rejection evidence is reused only for unchanged boundaries; not rerun in this receipt."
+  ]
+}

@@ -41,6 +41,19 @@ test('buyer reviews full retained cart, accepts exact price and keeps ordinary l
     let proposalBody;
     let acceptedBody;
     let sessionCalls = 0;
+    let artworkCalls = 0;
+    await page.route('**/apps/insignia/guest**', (route) => {
+      artworkCalls++;
+      return route.fulfill({ status: 400, json: { error: 'must not allocate during commerce' } });
+    });
+    let releaseCartAdd;
+    const cartAddGate = new Promise((resolve) => {
+      releaseCartAdd = resolve;
+    });
+    let cartAddStarted;
+    const adding = new Promise((resolve) => {
+      cartAddStarted = resolve;
+    });
     const attributes = {};
     await page.route('**/cart*.js', (route) => route.fulfill({ json: { items, attributes, currency: 'EUR' } }));
     await page.route('**/cart/update.js', (route) => {
@@ -49,7 +62,7 @@ test('buyer reviews full retained cart, accepts exact price and keeps ordinary l
       Object.assign(attributes, body.attributes ?? {});
       return route.fulfill({ json: { items, attributes, currency: 'EUR' } });
     });
-    await page.route('**/cart/add.js', (route) => {
+    await page.route('**/cart/add.js', async (route) => {
       const body = route.request().postDataJSON();
       items = [
         ...items,
@@ -60,10 +73,13 @@ test('buyer reviews full retained cart, accepts exact price and keeps ordinary l
           properties: i.properties,
         })),
       ];
+      cartAddStarted();
+      await cartAddGate;
       return route.fulfill({ json: { items } });
     });
     await page.route('**/apps/insignia/v1/**', (route) => {
       const path = new URL(route.request().url()).pathname;
+      if (path.includes('/uploads') || path.includes('/assets')) artworkCalls++;
       const body = route.request().postData() ? route.request().postDataJSON() : null;
       if (path.endsWith('/config')) return route.fulfill({ json: config });
       if (path.endsWith('/sessions')) {
@@ -131,22 +147,30 @@ test('buyer reviews full retained cart, accepts exact price and keeps ordinary l
     await host.getByRole('button', { name: 'Provide logo later' }).click();
     await host.getByRole('button', { name: 'Continue to Placement' }).click();
     await host.getByRole('checkbox', { name: 'Front', exact: true }).check();
-    await host.getByRole('button', { name: 'Continue to Decoration', exact: true }).click();
+    await host.getByRole('button', { name: 'Continue to Preview', exact: true }).click();
     await host.getByText('This placement has one configured size. No size adjustment is needed.').waitFor();
-    assert.deepEqual(await host.locator('.wizard li').allTextContents(), [
-      'Upload',
-      'Placement',
-      'Decoration',
-      'Review',
-    ]);
-    assert.equal(await host.locator('.wizard [aria-current=step]').textContent(), 'Decoration');
+    assert.deepEqual(await host.locator('.wizard li').allTextContents(), ['Upload', 'Placement', 'Preview', 'Review']);
+    assert.equal(await host.locator('.wizard [aria-current=step]').textContent(), 'Preview');
     await host.getByRole('button', { name: 'Continue to Review' }).click();
     await host.getByRole('spinbutton').fill('3');
     await host.getByRole('button', { name: 'Review complete customized cart' }).click();
     await host.getByText('EUR 91.00', { exact: true }).first().waitFor();
+    assert.equal(await host.getByRole('columnheader', { name: 'Setup once' }).count(), 0);
     assert.equal(proposalBody.groups[0].variants[0].quantity, 3);
     assert.equal(proposalBody.capacity.ordinaryLineCount, 1);
     await host.getByRole('button', { name: 'Add to Cart — EUR 91.00' }).click();
+    await adding;
+    await host.locator('.artwork-upload').evaluate((el) => {
+      const transfer = new DataTransfer();
+      transfer.items.add(
+        new File(['<svg xmlns="http://www.w3.org/2000/svg"/>'], 'logo.svg', { type: 'image/svg+xml' }),
+      );
+      el.dispatchEvent(new DragEvent('drop', { bubbles: true, dataTransfer: transfer }));
+    });
+    await page.waitForTimeout(50);
+    assert.equal(artworkCalls, 0, 'disabled commerce fieldset must not start an artwork upload');
+    assert.equal(await host.getByRole('button', { name: 'Add to Cart — EUR 91.00' }).isDisabled(), true);
+    releaseCartAdd();
     await host.getByText('Customized cart updated.').waitFor();
     assert.equal(items[0].key, 'ordinary');
     assert.deepEqual(items[0].properties, { gift: true });
@@ -333,8 +357,6 @@ test('usable views expose the shared canvas and missing view geometry keeps size
     await host.getByRole('radio', { name: 'Large', exact: true }).check();
     await host.getByRole('button', { name: 'front', exact: true }).click();
     await host.locator('canvas').first().waitFor();
-    await host.getByRole('button', { name: 'Continue to Preview' }).click();
-    assert.equal(await host.getByRole('heading', { name: 'Preview your selected placements' }).count(), 1);
     await host.getByRole('button', { name: 'Continue to Review' }).click();
     assert.equal(await host.getByRole('spinbutton').isVisible(), true);
   } finally {
@@ -382,17 +404,11 @@ test('one canvas view displays both selected logo-later placements simultaneousl
     await host.getByRole('button', { name: 'Continue to Placement' }).click();
     await host.getByRole('checkbox', { name: 'Front', exact: true }).check();
     await host.getByRole('checkbox', { name: 'Right', exact: true }).check();
-    await host.getByRole('button', { name: 'Continue to Decoration' }).click();
+    await host.getByRole('button', { name: 'Continue to Preview' }).click();
     await host.locator('canvas').first().waitFor();
-    assert.deepEqual(await host.locator('.wizard li').allTextContents(), [
-      'Upload',
-      'Placement',
-      'Decoration',
-      'Preview',
-      'Review',
-    ]);
-    assert.equal(await host.locator('.wizard [aria-current=step]').textContent(), 'Decoration');
-    await host.getByRole('combobox', { name: /Placement decoration method/ }).waitFor({ state: 'visible' });
+    assert.deepEqual(await host.locator('.wizard li').allTextContents(), ['Upload', 'Placement', 'Preview', 'Review']);
+    assert.equal(await host.locator('.wizard [aria-current=step]').textContent(), 'Preview');
+    await host.locator('.method-setting-single').getByText('Print', { exact: true }).waitFor();
     assert.equal(await host.getByRole('button', { name: 'Change logo for this placement' }).isVisible(), true);
     await page.waitForFunction(
       () => {
@@ -425,14 +441,10 @@ test('one canvas view displays both selected logo-later placements simultaneousl
       undefined,
       { timeout: 5000 },
     );
-    await host.getByRole('button', { name: 'Continue to Preview', exact: true }).click();
-    assert.equal(await host.locator('.wizard [aria-current=step]').textContent(), 'Preview');
     await host.getByRole('button', { name: 'Continue to Review', exact: true }).click();
     assert.equal(await host.locator('.wizard [aria-current=step]').textContent(), 'Review');
     await host.getByRole('button', { name: '← Back', exact: true }).click();
     assert.equal(await host.locator('.wizard [aria-current=step]').textContent(), 'Preview');
-    await host.getByRole('button', { name: '← Back', exact: true }).click();
-    assert.equal(await host.locator('.wizard [aria-current=step]').textContent(), 'Decoration');
     assert.equal(await host.getByRole('button', { name: 'Change logo for this placement' }).isVisible(), true);
   } finally {
     await browser?.close();
@@ -645,6 +657,7 @@ test('explicit full-cart review rebases compatible historical designs to each pr
       await host.getByRole('combobox', { name: 'Edit retained design' }).selectOption('0');
       await host.getByRole('button', { name: 'Review complete customized cart' }).click();
       await host.getByText('EUR 91.00', { exact: true }).first().waitFor();
+      assert.equal(await host.getByRole('columnheader', { name: 'Setup once' }).count(), 0);
       assert.deepEqual(
         proposals[0].groups.map((value) => [value.productId, value.configRevisionId, value.revisionContentHash]),
         [
@@ -673,4 +686,151 @@ test('incompatible republish needs explicit design repair and cannot silently dr
     assert.equal(proposals.length, 0);
     assert.equal(group.design.placements[0].artwork.kind, 'deferred');
   });
+});
+
+test('desktop and mobile customizer keeps the preview and navigation usable and confirms discarding a design', async () => {
+  const server = await createServer({ server: { host: '127.0.0.1', port: 0, strictPort: true } });
+  let browser;
+  try {
+    await server.listen();
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.route('**/cart.js', (route) => route.fulfill({ json: { items: [], currency: 'USD' } }));
+    await page.route('**/apps/insignia/v1/**', (route) => route.fulfill({ json: config }));
+    await page.goto(`http://127.0.0.1:${server.httpServer.address().port}`);
+    await page.evaluate(() => {
+      const host = document.createElement('insignia-buyer');
+      host.setAttribute('product-id', '111');
+      document.body.append(host);
+    });
+    const host = page.locator('insignia-buyer');
+    await host.getByRole('button', { name: 'Customize this product' }).click();
+    await host.getByRole('button', { name: 'Provide logo later' }).waitFor();
+    const dialog = await host.getByRole('dialog').boundingBox();
+    assert.equal(dialog.width, 1440);
+    assert.equal(dialog.height, 900);
+    const preview = await host.getByRole('complementary', { name: 'Product preview' }).boundingBox();
+    assert.equal(Math.round(preview.width), 864);
+    await host.getByRole('button', { name: 'Provide logo later' }).click();
+    await host.getByRole('button', { name: 'Close customization' }).click();
+    await host.getByRole('alertdialog', { name: 'Discard customization?' }).waitFor();
+    await page.keyboard.press('Shift+Tab');
+    assert.equal(
+      await host
+        .getByRole('button', { name: 'Discard design' })
+        .evaluate((el) => el === el.getRootNode().activeElement),
+      true,
+    );
+    await page.keyboard.press('Tab');
+    assert.equal(
+      await host.getByRole('button', { name: 'Keep editing' }).evaluate((el) => el === el.getRootNode().activeElement),
+      true,
+    );
+    await host.getByRole('button', { name: 'Keep editing' }).click();
+    assert.equal(await host.getByRole('button', { name: 'Provide logo later' }).getAttribute('aria-pressed'), 'true');
+    await host.getByRole('button', { name: 'Continue to Placement' }).click();
+    await host.getByRole('checkbox', { name: 'Front', exact: true }).check();
+    await host.getByRole('button', { name: 'Continue to Preview', exact: true }).click();
+    await host.getByRole('button', { name: 'Continue to Review' }).click();
+    await host.getByRole('button', { name: 'Increase Blue / M quantity' }).click();
+    assert.equal(await host.getByRole('spinbutton').inputValue(), '1');
+    await host.getByRole('button', { name: 'Decrease Blue / M quantity' }).click();
+    assert.equal(await host.getByRole('spinbutton').inputValue(), '0');
+    await page.setViewportSize({ width: 390, height: 844 });
+    const footer = await host.getByRole('contentinfo', { name: 'Customization navigation' }).boundingBox();
+    assert.equal(Math.round(footer.y + footer.height), 844);
+    assert.equal(await host.getByRole('dialog').evaluate((el) => el.scrollWidth <= el.clientWidth), true);
+    await page.keyboard.press('Escape');
+    await host.getByRole('alertdialog').waitFor();
+    await host.getByRole('button', { name: 'Discard design' }).click();
+    await host.getByRole('dialog').waitFor({ state: 'detached' });
+  } finally {
+    await browser?.close();
+    await server.close();
+  }
+});
+
+test('four-step mobile flow previews the current design in a dismissible sheet and swipes real product views', async () => {
+  const server = await createServer({ server: { host: '127.0.0.1', port: 0, strictPort: true } });
+  let browser;
+  try {
+    await server.listen();
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true });
+    const cfg = structuredClone(config);
+    cfg.geometry.views[0].image = { revisionId: 'image', width: 100, height: 100 };
+    cfg.geometry.views.push({ ...structuredClone(cfg.geometry.views[0]), id: 'back' });
+    cfg.imageUrls = { image: 'https://preview.example/fixture.png' };
+    await page.route('https://preview.example/**', (route) =>
+      route.fulfill({
+        contentType: 'image/png',
+        body: Buffer.from(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=',
+          'base64',
+        ),
+      }),
+    );
+    await page.route('**/cart.js', (route) => route.fulfill({ json: { items: [], currency: 'USD' } }));
+    let privateRequests = 0;
+    await page.route('**/apps/insignia/v1/**', (route) => {
+      if (route.request().method() !== 'GET') privateRequests++;
+      return route.fulfill({ json: cfg });
+    });
+    await page.goto(`http://127.0.0.1:${server.httpServer.address().port}`);
+    await page.evaluate(() => {
+      const host = document.createElement('insignia-buyer');
+      host.setAttribute('product-id', '111');
+      document.body.append(host);
+    });
+    const host = page.locator('insignia-buyer');
+    await host.getByRole('button', { name: 'Customize this product' }).click();
+    await host.locator('.artwork-upload').evaluate((el) => {
+      const transfer = new DataTransfer();
+      transfer.items.add(new File(['unsupported'], 'notes.txt', { type: 'text/plain' }));
+      el.dispatchEvent(new DragEvent('drop', { bubbles: true, dataTransfer: transfer }));
+    });
+    await host.getByText('Choose an SVG, PNG or JPEG up to 5 MiB.', { exact: true }).waitFor();
+    assert.equal(privateRequests, 0);
+    await host.getByRole('button', { name: 'Provide logo later' }).click();
+    await host.getByRole('button', { name: 'Continue to Placement' }).click();
+    await host.getByRole('checkbox', { name: 'Front', exact: true }).check();
+    await host.getByRole('button', { name: 'Continue to Preview', exact: true }).click();
+    assert.deepEqual(await host.locator('.wizard li').allTextContents(), ['Upload', 'Placement', 'Preview', 'Review']);
+    await host.getByRole('button', { name: 'Continue to Review' }).click();
+    await host.getByRole('button', { name: 'Preview your design', exact: true }).click();
+    const sheet = host.getByRole('dialog', { name: 'Product preview', exact: true });
+    await sheet.waitFor();
+    const preview = sheet.locator('.preview');
+    await preview.evaluate((el) =>
+      el.dispatchEvent(
+        new TouchEvent('touchstart', {
+          bubbles: true,
+          touches: [new Touch({ identifier: 1, target: el, clientX: 300, clientY: 100 })],
+        }),
+      ),
+    );
+    await preview.evaluate((el) =>
+      el.dispatchEvent(
+        new TouchEvent('touchend', {
+          bubbles: true,
+          changedTouches: [new Touch({ identifier: 1, target: el, clientX: 120, clientY: 110 })],
+        }),
+      ),
+    );
+    assert.equal(await sheet.getByRole('button', { name: 'back', exact: true }).getAttribute('aria-pressed'), 'true');
+    await page.keyboard.press('Escape');
+    await sheet.waitFor({ state: 'hidden' });
+    assert.equal(await host.getByRole('spinbutton').isVisible(), true);
+    await host.getByRole('button', { name: 'Preview your design', exact: true }).click();
+    await sheet.getByRole('button', { name: 'Close preview', exact: true }).click();
+    assert.equal(
+      await host
+        .getByRole('button', { name: 'Preview your design' })
+        .evaluate((el) => el === el.getRootNode().activeElement),
+      true,
+    );
+  } finally {
+    await browser?.close();
+    await server.close();
+  }
 });

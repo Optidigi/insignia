@@ -1,0 +1,132 @@
+{
+  "classification": "CURRENT_LEAN_STOREFRONT_LOCAL_FIXTURE_RENDER_NOT_NATIVE_PARITY",
+  "sourceFileSha256": {
+    "apps/storefront/src/customizer.tsx": "a6e2d2003fc96fe3f576059dab85369f791b7b5cfdbff307cac0c5ee50f1431b",
+    "apps/storefront/src/customizer-style.ts": "7bded6e89c14f20c0bd04293002e0304f349cbf5bdfe2162accf789b32ee59a7",
+    "apps/storefront/test/buyer-browser.test.mjs": "7a12bea54fc48460fafce18d6feaeefb7e4d60a56ffca4213f3e1efa09deb674",
+    "apps/storefront/test/buyer-integrated-browser.test.mjs": "0b394c512eb5bc018962c73f89508424c55e2fae040cf4fdb466ab097c0915d1"
+  },
+  "sourceReferenceCommit": "1a2d94bedb7e8a01f1ce65b748deaddce9dd83c3",
+  "limits": [
+    "Actual current and legacy components rendered separately with corresponding inert fixtures; no native acceptance",
+    "No theme release/provider/account/cart/upload/order effects",
+    "Garment/placement/step fixtures aligned; current quote/cart economics not exercised by captures",
+    "Current config contains no authoritative garment/decorating prices before proposal: pending summary says Confirmed at price review; accepted-price amounts only come from actual quote-proposal response. No invented estimates.",
+    "Public legacy standard configured product still unverified; one observed RFQ tuple config read403. Reference captures are local actual React with fixture, never native parity."
+  ],
+  "tests": {
+    "meaningfulRED": [
+      "Desktop1098 vs1440",
+      "Footer510 vs844",
+      "Missing4stepPreview navigation",
+      "Disabled applying fieldset permitted1guestartwork allocation; busy/:disabled correction gives0"
+    ],
+    "affectedBrowser": "10PASS after cards and guarded drop; final tsc/biome/diff checks PASS",
+    "allStorefront": "48PASS/2existing environmentSKIP after busy regression and review/size cards, before final shortened text/zoom epsilon/presentation",
+    "typescript": "PASS",
+    "viteProductionBuild": "PASS",
+    "biome": "PASS; preexisting optionalchain warning"
+  },
+  "captures": [
+    {
+      "name": "desktop-placement.png",
+      "pixels": [
+        1440,
+        900
+      ],
+      "sha256": "22065ac68e8835273069c43b065805bf5113b743d8572e3cd673c7915e2ac315"
+    },
+    {
+      "name": "desktop-price-review.png",
+      "pixels": [
+        1440,
+        900
+      ],
+      "sha256": "2825201fec3abacfbd26c32bc016bc2d5809181e554ef068539cf521855b081e"
+    },
+    {
+      "name": "desktop-review.png",
+      "pixels": [
+        1440,
+        900
+      ],
+      "sha256": "0238ddf3257f260177b369b4be17b297a282d405352eec0a9bc39c946a009100"
+    },
+    {
+      "name": "desktop-size.png",
+      "pixels": [
+        1440,
+        900
+      ],
+      "sha256": "dd4a541a6d8b12304915168d68a5552b4e7c022f7cfe37dc6ff42dafd521429c"
+    },
+    {
+      "name": "desktop-upload.png",
+      "pixels": [
+        1440,
+        900
+      ],
+      "sha256": "c2c7e07aec78d2c6cad7a762bb625effedfc9e9e4953036ad712d35d851cad08"
+    },
+    {
+      "name": "mobile-placement.png",
+      "pixels": [
+        390,
+        844
+      ],
+      "sha256": "ccd8afbb62c881dcc8745a901e1ffa2c4921316fc5f36f125ee53d9c17b8917e"
+    },
+    {
+      "name": "mobile-preview-sheet.png",
+      "pixels": [
+        390,
+        844
+      ],
+      "sha256": "76de754a25c2c0d05ad411b0afb1ce00c856ee8449cf873b49b7d0365502510b"
+    },
+    {
+      "name": "mobile-price-review.png",
+      "pixels": [
+        390,
+        844
+      ],
+      "sha256": "29e2f233530b671e7330c1e72bba137f67aa3561afc5b2ac9150e1dad31c7a26"
+    },
+    {
+      "name": "mobile-review.png",
+      "pixels": [
+        390,
+        844
+      ],
+      "sha256": "79ab4e13ed60a77f88c7a6bf84a624b8e388202c3cac3fbe1968a5d8b84d1aee"
+    },
+    {
+      "name": "mobile-size.png",
+      "pixels": [
+        390,
+        844
+      ],
+      "sha256": "9c53d2c4a00a326b7a6337d72589b5a108691b669d91281fc951c8a54ef8e954"
+    },
+    {
+      "name": "mobile-upload.png",
+      "pixels": [
+        390,
+        844
+      ],
+      "sha256": "170097853a1621f1ce71498cbf2df5120f8a250919f7c2ce57a38d4a10e8e110"
+    }
+  ],
+  "validationAtFinalSource": {
+    "storefrontTests": {
+      "total": 50,
+      "pass": 48,
+      "fail": 0,
+      "skip": 2
+    },
+    "command": "pnpm --filter @insignia/storefront test",
+    "reviewer": "/root/lean_ops_retention_audit",
+    "review": "CLEAR correctness/security and actual corresponding capture inspection; busy-drop finding fixed",
+    "nativeThemeRelease": "NOT_PERFORMED; new exact bounded release grant required"
+  }
+}
