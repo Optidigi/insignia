@@ -164,11 +164,17 @@ for path, expected in pre_lean_architecture.items():
 LEAN_OWNER_AUTHORITY = "docs/delivery/authority/lean-v1-2026-10-15.md"
 LEAN_OWNER_AUTHORITY_SHA256 = "f3b4ccc9514a55af046e8de9f57f2b29707fb572bc45130ad0e0390ae64d31de"
 assert digest((REPO / LEAN_OWNER_AUTHORITY).read_bytes()) == LEAN_OWNER_AUTHORITY_SHA256, "Lean owner authority mismatch"
-# Current documents include the owner first-version direction of16October2026;
-# earlier fixed-ref records and the original Lean authority above remain exact.
+# Preserve the pre-exception ledger while binding the exact17October owner grant.
+PRE_INSPECTOR_EXCEPTION_BASE = "26a62386aef0ef454cea48f69b64caf526c4b72e"
+archived_ledger = subprocess.check_output(["git", "show", f"{PRE_INSPECTOR_EXCEPTION_BASE}:docs/architecture/decision-ledger.md"], cwd=REPO)
+assert digest(archived_ledger) == "9e2dc910417c942b8aa3ca5e6428f084ed065063ecef7aed76d1179f6d6d41b9", "pre-inspector-exception ledger mismatch"
+BOUNDED_QUALIFICATION_AUTHORITY = "docs/delivery/evidence/lean-v1/bounded-native-qualification-owner-grant-2026-10-17.json"
+assert digest((REPO / BOUNDED_QUALIFICATION_AUTHORITY).read_bytes()) == "5919b0b53f06abbed6ab30c6a99feb442215ecc091ac52cdea07334dca0f3e41", "bounded qualification owner authority mismatch"
+# Current documents include the17October explicit inspector host exception;
+# earlier fixed-ref records and original owner authorities remain exact.
 current_architecture = {
     "docs/architecture/implementation-plan.md": "82ca1b0be57048d2ddcb3e33236a3ceb36702d6fda9af907b9df20c5cc9a4054",
-    "docs/architecture/decision-ledger.md": "9e2dc910417c942b8aa3ca5e6428f084ed065063ecef7aed76d1179f6d6d41b9",
+    "docs/architecture/decision-ledger.md": "dbc2391a4384538ac4d6f9eadc3eda2fd47ed85b169f4ce8a0cb0cc724af9933",
     "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209"
 }
 M8_PURCHASE_PROOF_OWNER_AUTHORITY = "docs/delivery/authority/m8-purchase-proof-ownership-2026-10-13.md"
@@ -236,7 +242,7 @@ print(json.dumps({
     "preM8PurchaseProofSha256": pre_m8_purchase_proof_architecture,
     "m8PurchaseProofOwnerAuthority": M8_PURCHASE_PROOF_OWNER_AUTHORITY,
     "m8PurchaseProofOwnerAuthoritySha256": M8_PURCHASE_PROOF_OWNER_AUTHORITY_SHA256,
-    "currentArchitectureVersion": "1.7 Lean V1 with first-version owner direction (16 October 2026)",
+    "currentArchitectureVersion": "1.7 Lean V1 with first-version direction and scoped host exception (17 October 2026)",
     "preLeanRef": PRE_LEAN_BASE,
     "preLeanSha256": pre_lean_architecture,
     "leanOwnerAuthoritySha256": LEAN_OWNER_AUTHORITY_SHA256,

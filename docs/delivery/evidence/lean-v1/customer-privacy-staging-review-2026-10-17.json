@@ -50,5 +50,14 @@
     "independentImpactReview": "/root/lean_fidelity_reference CLEAR; no productiongrantchange/usageactivation",
     "localFinal": "1PASS0SKIP actualLOGIN; unchangedexistingrolehazards/newprivacydenials retained",
     "limit": "Historical38metadata over newerfixtureDDL qualifiesfixedgrantguards, notschema39usageeligibility; actual39refusal explicit."
+  },
+  "authorityIntegrityCorrection": {
+    "failedHead": "b98e4b76d7ac6c432585cc34b8a449d4ecf80999",
+    "failedRun": 39026300464,
+    "failure": "Current ledger hash still expected pre-exception bytes after owner-approved additive host-exception paragraph.",
+    "correction": "Preserve exact oldledger atPR190 normalmerge, bind exactownergrant digest, updatecurrentledgerexpectedhash/versiondescription; earlierhistoricalfixtures/checksunchanged.",
+    "localCheck": "python3 -B spikes/m0-007/scripts/check-history.py PASS",
+    "independentImpactReview": "/root/lean_selection_review CLEAR",
+    "guardSha256": "27c58948800d3a13bd2b6d32ffc75359d42e7959dba6d055fd70fa49f176eec5"
   }
 }
