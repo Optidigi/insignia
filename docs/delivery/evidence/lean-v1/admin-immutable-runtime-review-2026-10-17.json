@@ -58,5 +58,16 @@
     "classification": "HOLD_STORAGE_AND_AUTHORITY_REQUALIFICATION",
     "limits": "No native restore, storage erasure or privacy-export delivery claim."
   },
-  "nativeEffects": false
+  "nativeEffects": false,
+  "preservedCiFailures": {
+    "head": "0bb04d89e5c0dc7a7626734b5072f7d880c0b788",
+    "runs": [
+      39027575324,
+      39027575326,
+      39027575301
+    ],
+    "failure": "Existing workflow preservation guard rejected new artifact steps/paths before build; all three failures preserved.",
+    "correction": "Keep original suite bodies against fixed historical baseline; explicitly enumerate reviewed artifact additions, require full-route gates and allow only exact owned storefront path expansion. Original manifest binding remains its own unchanged step.",
+    "localCheck": "All ten status-route tests PASS; focused independent impact review requested."
+  }
 }
