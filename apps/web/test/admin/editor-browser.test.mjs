@@ -3179,7 +3179,7 @@ test('internal merchant navigation shows silent placeholders until destination d
     assert.equal(await page.getByRole('button', { name: 'Refresh requests', exact: true }).isVisible(), false);
     release();
     await page.getByText('No data requests are currently available.', { exact: true }).waitFor({ timeout: 8000 });
-    assert.equal(await shell.isVisible(), false);
+    await shell.waitFor({ state: 'hidden' });
   } finally {
     release();
   }

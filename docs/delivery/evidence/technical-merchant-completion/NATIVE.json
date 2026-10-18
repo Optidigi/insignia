@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-18",
+  "sourceCandidate": "acf61a97eeb755c0e316f8754d3b1b7d7e502cc7",
+  "alertQualification": {
+    "worker": "insignia-alerts-qualification-20261018",
+    "sourceSha256": "43e8056ae5231f43838713e849136b3e140459347f355ebad9a6ed5905df2fc2",
+    "submissions": 4,
+    "inboxOwnerConfirmed": [
+      "backup problem",
+      "backup recovery"
+    ],
+    "availabilityInbox": "PENDING_OWNER_RESPONSE",
+    "authenticationHeaders": "NOT_VERIFIED",
+    "replay": "same messageId, no additional attempt",
+    "conflictingEvent": 409,
+    "unauthorized": 401,
+    "watchdog": "scheduled missing heartbeat and subsequent recovery acknowledged",
+    "productionMonitoring": "NOT_QUALIFIED_NO_INSTALLED_PRODUCER",
+    "cleanup": {
+      "workerDelete": "ACKNOWLEDGED200_WITHOUT_FORCE",
+      "workerReadback": "Provider10007 Worker does not exist",
+      "ownedNamespaceStillListed": false,
+      "cron": "ABSENT",
+      "publicExposure": "ABSENT",
+      "previews": "ABSENT",
+      "recordedAt": "2026-10-18T19:52:25.860251+00:00",
+      "retiredPrivateKeysRemoved": [
+        "relay-secret",
+        "relay-secret.sealed",
+        "transport-identity.pem"
+      ]
+    }
+  },
+  "callbackRouting": {
+    "candidateConfig": "EXACT_SEVEN_LABEL_RENDER_DELTA",
+    "classification": "CALLBACK_ACCESS_LOG_SUPPRESSION_QUALIFIED",
+    "container": "e4165910059b1ab2c8bdd9d5775abaa91e4ecdb240c1fae3442ccfe86b3fed83",
+    "environmentCommandMounts": "UNCHANGED_SOURCE_IMAGE_ENV_VALUES;EXACT_PRIOR_COMMAND_HASH_AND_MOUNT_METADATA",
+    "image": "sha256:05ddc8877500eefa7cf10c60b35c8cd5a8820a01b772ef9bddc9d25e4779b3cf",
+    "limits": "Original foreground Compose command timed out; no redispatch. Full old Docker HostConfig byte comparison was not retained; current source/security/environment/command/mount/network contracts independently requalified. Tracing flag configured, no active trace exporter exercise. No lifecycle registration or new image deployment.",
+    "ordinaryCount": 2,
+    "privateCount": 0,
+    "protectedCount": 34,
+    "statuses": [
+      404,
+      404,
+      404
+    ],
+    "windowBytes": 408,
+    "windowSha256": "b15f0d42893feb93637466af519528302deb0ad284654249f7a457bad63781da"
+  },
+  "operatorFailure": {
+    "initial": "Foreground Compose omitted --detach; client timed out120s; replacement independently observed healthy",
+    "redispatches": 0,
+    "reconciliationGuardStops": "Two pre-probe no-effect metadata comparisons corrected from actual producer schema and Compose alias semantics",
+    "limits": "Full old HostConfig byte comparison unavailable; current source/security/environment/command/mount/network contracts independently qualified. No trace-export or real native callback delivery qualification."
+  },
+  "localTestCleanup": "Both owned isolated PostgreSQL18 clusters stopped and deleted; older unrelated continuation cluster untouched",
+  "privateRawEvidence": {
+    "path": "/tmp/insignia-native-lifecycle-prep",
+    "cleanupBy": "2026-10-20T00:00:00Z",
+    "secrets": "No raw logs/configuration/secrets published; retired relay/RSA private keys removed"
+  }
+}
