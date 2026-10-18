@@ -33,6 +33,7 @@ import { type CustomerPrivacyRepository, createCustomerPrivacyRepository } from 
 import { PgInboxRepository } from './repositories/delivery/pg-inbox-repository.js';
 import { PgOutboxRepository } from './repositories/delivery/pg-outbox-repository.js';
 import { createMerchantPreviewRepository } from './repositories/merchant-preview.js';
+import { createMethodCatalogRepository, type MethodTemplate } from './repositories/method-catalog.js';
 import { createProductionActivation, type ProductionActivationOptions } from './repositories/production-activation.js';
 import { PgProductionPublication, type ProductionPublicationRemote } from './repositories/production-publication.js';
 import { createPurchaseRepository, type PurchaseRepository } from './repositories/purchase.js';
@@ -90,6 +91,18 @@ export type ConfigInput = {
 };
 
 export interface DurableCore {
+  readonly methodCatalog: {
+    list(transaction: DurableTransaction, shopId: string): Promise<MethodTemplate[]>;
+    create(transaction: DurableTransaction, shopId: string, id: string, name: string): Promise<MethodTemplate | null>;
+    rename(
+      transaction: DurableTransaction,
+      shopId: string,
+      id: string,
+      version: string,
+      name: string,
+    ): Promise<MethodTemplate | null>;
+    delete(transaction: DurableTransaction, shopId: string, id: string, version: string): Promise<boolean>;
+  };
   readonly customerPrivacy: CustomerPrivacyRepository;
   readonly usageLedger: UsageLedgerRepository;
   readonly usageDeliveryIntents: UsageDeliveryIntentRepository;
@@ -448,6 +461,13 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       : null;
   }
   return {
+    methodCatalog: {
+      list: (tx, shopId) => createMethodCatalogRepository(resolve(tx)).list(shopId),
+      create: (tx, shopId, id, name) => createMethodCatalogRepository(resolve(tx)).create(shopId, id, name),
+      rename: (tx, shopId, id, version, name) =>
+        createMethodCatalogRepository(resolve(tx)).rename(shopId, id, version, name),
+      delete: (tx, shopId, id, version) => createMethodCatalogRepository(resolve(tx)).delete(shopId, id, version),
+    },
     customerPrivacy: createCustomerPrivacyRepository(database),
     purchases: createPurchaseRepository(database),
     usageLedger: createUsageLedgerRepository(database),

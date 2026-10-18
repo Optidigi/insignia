@@ -1,0 +1,74 @@
+{
+  "date": "2026-10-18",
+  "classification": "GUIDED_ADMIN_SOURCE_QUALIFIED_FINAL_CI_AND_NATIVE_PENDING",
+  "base": "6013390a34971c15d2dd6bd0d75ec6c4cf91a0b3",
+  "ownerRequest": "Settings parent for Billing/Privacy; useful shop settings, global reusable methods, storefront setup guidance, staged product configuration, visuals and loading skeletons. Legacy is visual reference only.",
+  "changes": [
+    "Shopify sidebar has Products, Orders and Settings. Settings sections are General, Decoration methods, Storefront setup, Billing and Privacy. Historical Billing/Privacy paths redirect privately while preserving the launch query.",
+    "Product configuration defaults to four stages: product rules, images/print areas, prices and review/publish. Unsaved state and live preview remain mounted; Back/Continue, browser history, anchors and explicit View all settings preserve editing state. Navigation never saves/publishes.",
+    "Authenticated shop method library supports bounded names, up to100 templates, create/rename/remove with optimistic versions and deduplicated commands. Import creates a fresh product-local method ID/name; no prices, geometry, placements or live template reference is inherited. Existing drafts/revisions/orders remain unchanged.",
+    "Storefront setup explains configuration publication, app-block placement/button text, cart-repair embed and explicit Shopify Save. Links use actual customize/cart-repair handles and validated public app/shop identifiers; guidance never reads/mutates theme or asserts enabled state.",
+    "Accessible skeletons reserve content space for initial product/configuration/order/artwork/billing/privacy/library loads. Reduced-motion preference suppresses animation. New merchant islands are included in the Polaris native-control CI guard."
+  ],
+  "privacyAndIdentity": [
+    "Independent UI review found missing authorization clearing/late-response fencing and duplicate UI rows after lost library create response. Corrected with shared editor epoch/denial fences, private cache removal, retained exact pending commands, blocked alternate changes, explicit same-key retry and by-ID merge.",
+    "Backend review found missing mutable method-template erasure. Guarded current-generation newly inserted shop privacy fence now clears templates and method-only dedup metadata only for the existing exact inactive-before-collection staged decision. Active/delayed holds and historical drafts/revisions are preserved. Command namespaces include installation/authorization generation; persisted dedup results omit freeform names and reconstruct only matching live id/version, else409."
+  ],
+  "localChecks": {
+    "browserRegression": "PASS62,0FAIL on corrected final UI",
+    "newFocusedBrowser": "PASS5,0FAIL; both authorization/retry regressions demonstrated RED before correction",
+    "webBuild": "PASS final corrected source: Astro check/build zero errors/warnings/hints",
+    "database": "PASS fresh isolatedPG18: all42 migrations up/no-op/down/up; HTTP2+service1; service rerun1; actualLOGIN1; privacy8+pg_dumprestore1. Tenant/CAS/dedup/concurrent100cap, qualifiederasure/active+delayedhold/reinstall/history/restore checks.",
+    "boundaries": "PASS, including native-control guard for new islands and domain-effects18PASS",
+    "secrets": "PASS",
+    "style": "PASS with existing repository warnings/informational diagnostics",
+    "restore": "PASS actualpg_dump/import: pre-erasure template+legacydedup name cleared by replayed erasure; blocked shop template retained. No native restore/erasure."
+  },
+  "reviews": {
+    "UI": {
+      "agent": "/root/guided_ui_review",
+      "initialFindings": [
+        "P1 authorization cache/epoch",
+        "P2 lost-response duplicate/command replacement"
+      ],
+      "impact": "CLEAR/CLEAR",
+      "scope": "UI and browser tests, read-only instructions; no OS/network isolation claim"
+    },
+    "backend": {
+      "agent": "/root/library_backend_review",
+      "initialFinding": "P2 new mutable shop-data erasure lifecycle",
+      "impact": "CLEAR/CLEAR after lifecycle, generation-scoped dedup/name-free receipts and narrow403 correction; HTTP2 independently PASS"
+    }
+  },
+  "reference": {
+    "nativeLegacy": "Correct stitchs-nl and superfunny-kleding stores reached Shopify human-verification challenge; stopped with no challenge interaction/login/cookie import. Earlier guessed handles produced technical error, not app observations.",
+    "retained": "Read legacy docs/admin/dashboard-spec.md for navigation, task grouping and responsive visual direction. No legacy code or product decisions copied.",
+    "officialThemeContract": "https://shopify.dev/docs/apps/build/online-store/theme-app-extensions/configuration",
+    "pinnedPolaris": "polaris-1.1.js snapshot SHA256912455ad068713e7595f5a506fb7433a078554c327cf0fd30ce86ccb214818fe; synthetic App Bridge/CDN icons in local browser tests are not native proof"
+  },
+  "preservedFailures": [
+    "ExpectedRED for hierarchy, skeleton, guided flow, library route, uncertain retry and late-response epoch.",
+    "A local broad test overlapped root dist rebuild and lost server entry artifact; rerun serially. No success inferred.",
+    "Redirect helper dropped response headers; private302 Response correction qualified at browser/HTTP boundary.",
+    "Initial exact-text assertion on Polaris banner did not match slotted composition; banner host text locator verifies error plus cleared private inputs.",
+    "Final backend compile exposed structural stored-outcome union narrowing; corrected without changing runtime behavior, final Astro check/build PASS."
+  ],
+  "nativeNext": [
+    "Normal merge only after final exact-head CI and completed correction review.",
+    "Before deployment reconcile actual native migration versions against repository; latest recorded native has40 whereas repository baseline has41. Do not assume only one forward migration. Qualify complete missing migration set and exact web-only grants with rollback preimages and actual intended LOGIN.",
+    "Use exact final CI image, preserve other services/security/resources/mounts/sockets and immutable economic/purchase facts, actual existing-session desktop/mobile reads. No native theme block changes, library mutation fixture or shop erasure granted by this source record.",
+    "Historical current native source remains PR200 until new deployment evidence. Existing owner shop-erasure/uninstall hold, no merchant rollout and20October cleanup/credential rotation remain."
+  ],
+  "priorIntegration": {
+    "pr": 201,
+    "base": "281e1ee9b3c12026df01e897c50d52576cedb49e",
+    "head": "96b9b47b6c44e771a69819566f1b5fbbeca3b697",
+    "merge": "6013390a34971c15d2dd6bd0d75ec6c4cf91a0b3",
+    "tree": "5ce190bbb54f9b367dcecd88a555c6c91763fe29",
+    "orderedParents": [
+      "281e1ee9b3c12026df01e897c50d52576cedb49e",
+      "96b9b47b6c44e771a69819566f1b5fbbeca3b697"
+    ],
+    "checks": "All3 exacthead attempt1PASS:39132201457/39132201559/39132201460; actualremote main mergeparents/tree verified"
+  }
+}

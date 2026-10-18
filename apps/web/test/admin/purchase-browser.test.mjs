@@ -122,8 +122,8 @@ test('merchant sees exact historical economics and erased detail never offers ne
   await navigation.getByRole('link', { name: 'Products', exact: true }).waitFor();
   await navigation.getByRole('link', { name: 'Orders', exact: true }).waitFor();
   assert.equal(
-    await navigation.getByRole('link', { name: 'Billing', exact: true }).getAttribute('href'),
-    '/admin/billing',
+    await navigation.getByRole('link', { name: 'Settings', exact: true }).getAttribute('href'),
+    '/admin/settings',
   );
   await page.getByRole('heading', { name: 'Order summary', exact: true }).waitFor();
   assert.equal(await page.locator('time[datetime="2026-10-19T12:00:00Z"]').innerText(), 'Oct 19, 2026, 12:00 PM UTC');

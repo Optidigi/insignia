@@ -27,7 +27,19 @@ export interface AdminActor {
   canReadOrders?: boolean;
 }
 
+export type MethodTemplate = { id: string; name: string; version: string };
+export type MethodOutcome =
+  | { kind: 'created' | 'saved'; method: MethodTemplate }
+  | { kind: 'deleted' }
+  | { kind: 'conflict'; message: string };
+export interface MethodLibrary {
+  list(actor: AdminActor): Promise<{ methods: MethodTemplate[] }>;
+  create(actor: AdminActor, name: string, key: string): Promise<MethodOutcome>;
+  rename(actor: AdminActor, id: string, version: string, name: string, key: string): Promise<MethodOutcome>;
+  delete(actor: AdminActor, id: string, version: string, key: string): Promise<MethodOutcome>;
+}
 export interface AdminServices {
+  methods?: MethodLibrary;
   appOrigin: string;
   /** Read-only authoritative subscription observation; never creates or changes a plan. */
   billing?(actor: AdminActor): Promise<BillingView>;

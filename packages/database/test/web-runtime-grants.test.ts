@@ -65,10 +65,11 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       );
       const migrations = new URL('../migrations/', import.meta.url);
       const names = (await readdir(migrations)).filter((n) => n.endsWith('.sql')).sort();
-      expect(names).toHaveLength(41);
-      expect(names.slice(-2)).toEqual([
+      expect(names).toHaveLength(42);
+      expect(names.slice(-3)).toEqual([
         '20261017000200_privacy_merchant_export.sql',
         '20261017000300_shop_privacy_staging.sql',
+        '20261018000100_method_catalog.sql',
       ]);
       for (const file of names.slice(0, 20))
         await owner.query((await readFile(new URL(file, migrations), 'utf8')).split('-- migrate:down')[0]!);
@@ -93,6 +94,26 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       ownerDb = createDatabase(owner);
       const fixture = await purchaseFixture(ownerDb);
       const { shopId, generation } = fixture;
+      // New tables are denied until an explicit narrowly scoped web-only grant.
+      await expect(web.query('SELECT * FROM method_catalog')).rejects.toMatchObject({ code: '42501' });
+      const methodGrant = (
+        await readFile(new URL('../../../scripts/admin-methods/runtime-grants.sql', import.meta.url), 'utf8')
+      ).replaceAll('insignia_runtime', login);
+      await owner.query(methodGrant);
+      const templateId = randomUUID();
+      const template = await core.transactions.run((tx) =>
+        core.methodCatalog.create(tx, shopId, templateId, 'Embroidery'),
+      );
+      expect(template).toEqual({ id: templateId, name: 'Embroidery', version: '1' });
+      expect(
+        await core.transactions.run((tx) =>
+          core.methodCatalog.rename(tx, shopId, templateId, '1', 'Thread embroidery'),
+        ),
+      ).toEqual({ id: templateId, name: 'Thread embroidery', version: '2' });
+      expect(await core.transactions.run((tx) => core.methodCatalog.delete(tx, shopId, templateId, '1'))).toBe(false);
+      expect(await core.transactions.run((tx) => core.methodCatalog.delete(tx, shopId, templateId, '2'))).toBe(true);
+      await expect(web.query('TRUNCATE method_catalog')).rejects.toMatchObject({ code: '42501' });
+
       const now = new Date(),
         assetId = randomUUID(),
         ownerHash = 'a'.repeat(64);
@@ -696,7 +717,7 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       await expect(owner.query(usageScript)).rejects.toThrow('exact_usage_schema38_required');
       await owner.query('ROLLBACK');
       await owner.query('DELETE FROM schema_migrations WHERE version=ANY($1::text[])', [
-        ['20261017000100', '20261017000200', '20261017000300'],
+        ['20261017000100', '20261017000200', '20261017000300', '20261018000100'],
       ]);
       await owner.query(`ALTER ROLE ${queue} CREATEROLE`);
       await expect(owner.query(usageScript)).rejects.toThrow('unqualified_usage_runtime_role');

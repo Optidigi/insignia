@@ -33,7 +33,7 @@ test('merchant can recover a failed privacy lookup and download exact requested 
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
   assert.ok(base, log);
-  const shell = await fetch(`${base}/admin/privacy`);
+  const shell = await fetch(`${base}/admin/settings/privacy`);
   assert.equal(shell.status, 200);
   assert.equal(shell.headers.get('cache-control'), 'private, no-store');
   assert.equal((await shell.text()).includes('2026-10-31'), false, 'bare shell has no private provider facts');
@@ -71,7 +71,7 @@ test('merchant can recover a failed privacy lookup and download exact requested 
       json: { ...receipt, orders: [{ orderId: 'gid://shopify/Order/909', purchaseId: purchase }] },
     });
   });
-  await page.goto(`${base}/admin/privacy`);
+  await page.goto(`${base}/admin/settings/privacy`);
   await page.getByRole('alert').waitFor();
   failing = false;
   await page.getByRole('button', { name: 'Refresh requests' }).click();

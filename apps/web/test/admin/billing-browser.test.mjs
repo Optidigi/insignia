@@ -33,7 +33,7 @@ test('merchant billing separates development terms and trial, links Shopify mana
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
   assert.ok(base, log);
-  const shell = await fetch(`${base}/admin/billing`);
+  const shell = await fetch(`${base}/admin/settings/billing`);
   assert.equal(shell.status, 200);
   assert.equal(shell.headers.get('cache-control'), 'private, no-store');
   assert.equal((await shell.text()).includes('2026-10-31'), false, 'bare shell has no private provider facts');
@@ -73,7 +73,7 @@ test('merchant billing separates development terms and trial, links Shopify mana
       ? route.fulfill({ status: 503, json: { error: 'Billing status unavailable' } })
       : route.fulfill({ json: view });
   });
-  await page.goto(`${base}/admin/billing`);
+  await page.goto(`${base}/admin/settings/billing`);
   await page.getByText('Billing status could not be verified. Try again.').waitFor();
   const navigation = page.locator('s-app-nav');
   assert.equal(
@@ -85,8 +85,8 @@ test('merchant billing separates development terms and trial, links Shopify mana
     '/admin/orders',
   );
   assert.equal(
-    await navigation.getByRole('link', { name: 'Billing', exact: true }).getAttribute('href'),
-    '/admin/billing',
+    await navigation.getByRole('link', { name: 'Settings', exact: true }).getAttribute('href'),
+    '/admin/settings',
   );
   assert.equal(await page.locator('time').count(), 0);
   failing = false;

@@ -321,6 +321,24 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('body-bound customer privacy p
     await sql`UPDATE shops SET shop_domain=shop_id||'.myshopify.com' WHERE shop_id IN (${active.shopId},${inactive.shopId})`.execute(
       db,
     );
+    const historyBefore = (
+      await sql`SELECT revision_id,published_value,content_hash FROM config_revisions WHERE shop_id=${inactive.shopId} ORDER BY revision_id`.execute(
+        db,
+      )
+    ).rows;
+    const activeTemplate = randomUUID(),
+      inactiveTemplate = randomUUID();
+    for (const [shopId, id] of [
+      [active.shopId, activeTemplate],
+      [inactive.shopId, inactiveTemplate],
+    ]) {
+      await sql`INSERT INTO method_catalog(shop_id,method_id,name) VALUES(${shopId},${id}::uuid,'Private shop label')`.execute(
+        db,
+      );
+      await sql`INSERT INTO idempotency_records(shop_id,namespace,idempotency_key,request_digest,status,result_ref,completed_at) VALUES(${shopId},'merchant-method-create:1:old','legacy-method-key',${'d'.repeat(64)},'completed','{"kind":"created","method":{"name":"Private shop label"}}',clock_timestamp())`.execute(
+        db,
+      );
+    }
     const blocked = await receive(
       active.shopifyShopId,
       [],
@@ -346,6 +364,40 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('body-bound customer privacy p
     );
     expect(await repo.processInbox(inbox)).toMatchObject({ kind: 'SHOP_ERASURE_STAGED', shopId: inactive.shopId });
     expect(await repo.processInbox(inbox)).toMatchObject({ kind: 'SHOP_ERASURE_STAGED' });
+    expect((await sql`SELECT name FROM method_catalog WHERE shop_id=${inactive.shopId}`.execute(db)).rows).toHaveLength(
+      0,
+    );
+    expect(
+      JSON.stringify(
+        (await sql`SELECT result_ref FROM idempotency_records WHERE shop_id=${inactive.shopId}`.execute(db)).rows,
+      ),
+    ).not.toContain('Private shop label');
+    expect((await sql`SELECT name FROM method_catalog WHERE shop_id=${active.shopId}`.execute(db)).rows).toEqual([
+      { name: 'Private shop label' },
+    ]);
+    expect(
+      JSON.stringify(
+        (await sql`SELECT result_ref FROM idempotency_records WHERE shop_id=${active.shopId}`.execute(db)).rows,
+      ),
+    ).toContain('Private shop label');
+    expect(
+      (
+        await sql`SELECT revision_id,published_value,content_hash FROM config_revisions WHERE shop_id=${inactive.shopId} ORDER BY revision_id`.execute(
+          db,
+        )
+      ).rows,
+    ).toEqual(historyBefore);
+    // A settled old receipt cannot erase names created by a new installation.
+    await sql`INSERT INTO installation_generations(shop_id,generation) VALUES(${inactive.shopId},2)`.execute(db);
+    await sql`UPDATE shops SET current_generation=current_generation+1 WHERE shop_id=${inactive.shopId}`.execute(db);
+    await sql`INSERT INTO method_catalog(shop_id,method_id,name) VALUES(${inactive.shopId},${randomUUID()}::uuid,'New install label')`.execute(
+      db,
+    );
+    expect(await repo.processInbox(inbox)).toMatchObject({ kind: 'SHOP_ERASURE_STAGED' });
+    expect((await sql`SELECT name FROM method_catalog WHERE shop_id=${inactive.shopId}`.execute(db)).rows).toEqual([
+      { name: 'New install label' },
+    ]);
+
     expect(
       (await sql<{ state: string }>`SELECT state FROM artwork_assets WHERE asset_id=${remove}::uuid`.execute(db))
         .rows[0]?.state,
@@ -357,12 +409,24 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('body-bound customer privacy p
         )
       ).rows,
     ).toHaveLength(1);
+    const delayed = await receive(
+      active.shopifyShopId,
+      [],
+      'redact',
+      'shop/redact',
+      `{"shop_id":${active.shopifyShopId},"shop_domain":"${active.shopId}.myshopify.com"}`,
+    );
     // A request captured during an active installation never becomes retrospective
     // authority merely because that installation later deactivates.
     await sql`UPDATE installation_generations SET deactivated_at=clock_timestamp() WHERE shop_id=${active.shopId}`.execute(
       db,
     );
     expect(await repo.processInbox(blocked)).toMatchObject({ kind: 'SHOP_ERASURE_BLOCKED' });
+    expect(await repo.processInbox(delayed)).toMatchObject({ kind: 'SHOP_ERASURE_BLOCKED' });
+    expect((await sql`SELECT name FROM method_catalog WHERE shop_id=${active.shopId}`.execute(db)).rows).toEqual([
+      { name: 'Private shop label' },
+    ]);
+
     expect(
       (await sql<{ state: string }>`SELECT state FROM artwork_assets WHERE asset_id=${keep}::uuid`.execute(db)).rows[0]
         ?.state,

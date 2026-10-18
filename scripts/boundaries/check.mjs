@@ -41,6 +41,8 @@ function assertPolarisControls(path, source) {
 const merchantIslands = [
   'MerchantConfigEditor',
   'MerchantSettings',
+  'MethodLibrary',
+  'StorefrontSetup',
   'MerchantBilling',
   'MerchantPrivacy',
   'PurchaseArtwork',

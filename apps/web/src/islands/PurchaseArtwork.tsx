@@ -6,6 +6,7 @@ import {
   PurchaseViewSchema,
 } from '@insignia/contracts';
 import { useEffect, useRef, useState } from 'preact/hooks';
+import AdminSkeleton from '../components/AdminSkeleton';
 import { authenticatedJson } from '../shared/admin-request';
 import { exactPurchaseMoney } from '../shared/purchase-view';
 import ArtworkUpload from './ArtworkUpload';
@@ -290,7 +291,7 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [purchase, setPurchase] = useState<PurchaseView | null>(null);
   const [message, setMessage] = useState('Loading orders…');
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(true);
   const [denied, setDenied] = useState(false);
   const current = useRef(0);
   function deny(error: unknown) {
@@ -390,6 +391,7 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
       )}
       {!purchaseId && !denied && (
         <s-section heading="Customized orders">
+          {busy && items.length === 0 && <AdminSkeleton label="Loading orders" />}
           {items.length === 0 && !busy && <p>No customized orders recorded.</p>}
           {nextCursor && (
             <s-button type="button" disabled={busy} onClick={() => void load(nextCursor)}>
@@ -454,6 +456,11 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
             !items.some((item) => artworkFilter === 'all' || item.artworkState === artworkFilter) && (
               <s-paragraph>No loaded orders match this artwork status.</s-paragraph>
             )}
+        </s-section>
+      )}
+      {purchaseId && !purchase && busy && (
+        <s-section>
+          <AdminSkeleton label="Loading order and artwork" rows={4} />
         </s-section>
       )}
       {purchase && (

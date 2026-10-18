@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
+import AdminSkeleton from '../components/AdminSkeleton';
+import SettingsNavigation from '../components/SettingsNavigation';
 import { authenticatedJson } from '../shared/admin-request.js';
 import type { BillingView } from '../shared/billing-view.js';
 
@@ -9,7 +11,7 @@ function date(value: string): string {
 }
 export default function MerchantBilling() {
   const [view, setView] = useState<BillingView | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(true);
   const [failed, setFailed] = useState(false);
   const inFlight = useRef(false);
   async function refresh() {
@@ -32,6 +34,10 @@ export default function MerchantBilling() {
   }, []);
   return (
     <s-page heading="Billing">
+      <s-link slot="breadcrumb-actions" href="/admin/settings">
+        Settings
+      </s-link>
+      <SettingsNavigation current="billing" />
       <s-section heading="Insignia Standard">
         <p>Subscription price: USD 49.99 per 30 days.</p>
         <p>
@@ -40,7 +46,7 @@ export default function MerchantBilling() {
         </p>
       </s-section>
       <s-section heading="Current subscription">
-        {busy && <p role="status">Checking current Shopify subscription…</p>}
+        {busy && <AdminSkeleton label="Checking current Shopify subscription" />}
         {failed && <p role="alert">Billing status could not be verified. Try again.</p>}
         {view && (
           <>
