@@ -3,6 +3,7 @@
   "project": "insignia-production",
   "containers": [
     {
+      "project": "insignia-production",
       "service": "web",
       "name": "insignia-production-web-1",
       "id": "REPLACE_WITH_EXACT_64_HEX_CONTAINER_ID",
@@ -11,6 +12,13 @@
       "healthRequired": true
     }
   ],
+  "hostInspector": {
+    "unit": "insignia-artwork-inspection.service",
+    "configSha256": "REPLACE_WITH_INDEPENDENTLY_FROZEN_INSPECTOR_IDENTITY",
+    "startupFile": "/home/serveradmin/.config/insignia/artwork-inspection.env",
+    "storageFile": "REPLACE_WITH_ACTUAL_OWNED_INSPECTOR_STORAGE_PROFILE",
+    "readinessSocket": "REPLACE_WITH_ACTUAL_OWNED_READINESS_DIRECTORY/ready.sock"
+  },
   "runtimeDirectory": "/run/insignia-backup",
   "receiptDirectory": "/var/lib/insignia-backup-runs",
   "windowSeconds": 900,
