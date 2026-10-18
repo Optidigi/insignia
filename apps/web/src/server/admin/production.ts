@@ -20,16 +20,18 @@ import {
   createCatalogReader,
   createCatalogTransport,
   createFunctionOwnershipReconciler,
+  createOrderPresentationTransport,
   createPartnerGraphqlTransport,
   createPublicationAdminAdapter,
   createPublicationAdminHttpTransport,
   createShopifyAvailabilityHoldV3Port,
   type OnlineStaffGrant,
+  readOrderPresentation,
   resolveRuntimeReleaseProfile,
   type CatalogProduct as ShopifyCatalogProduct,
 } from '@insignia/shopify';
 import { loadArtworkStorageProfile } from '@insignia/storage';
-import { inspectArtworkPrivately } from '@insignia/worker';
+import { createAutomaticUninstallEnrollment, inspectArtworkPrivately } from '@insignia/worker';
 import { Pool } from 'pg';
 import { loadCredentialKeys } from '../../../../worker/src/config.ts';
 import { createMerchantConfigService } from '../merchant-config.js';
@@ -106,6 +108,12 @@ export function createProductionAdminServices(
   const offlineBootstrap = env.INSIGNIA_M7_BUYER_ENABLED === '1';
   const credentialKeys = offlineBootstrap ? loadCredentialKeys(env) : undefined;
   const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }), { credentialKeys });
+  const enrollUninstall = createAutomaticUninstallEnrollment({
+    core,
+    appOrigin,
+    appClientId: apiKey,
+    appSecret: apiSecret,
+  });
   const grants = new WeakMap<AdminActor, OnlineStaffGrant>();
   const requestTokens = new WeakMap<AdminActor, string>();
   const merchantTimezones = new WeakMap<AdminActor, string>();
@@ -532,6 +540,12 @@ export function createProductionAdminServices(
   return {
     billing,
     appOrigin,
+    async assertPurchaseAccess(actor) {
+      await active(actor);
+      grant(actor);
+      if (!actor.canReadOrders || !actor.canReadArtwork || actor.expiresAtMs <= Date.now())
+        throw new Error('Current merchant access required');
+    },
     ...(signingOwner
       ? {
           signingOwner: {
@@ -626,6 +640,12 @@ export function createProductionAdminServices(
               REINSTALLED: 'INSTALLATION_BOOTSTRAP_REINSTALLED_SUCCEEDED',
             } as const;
             diagnostic(outcomes[installed.outcome]);
+            await enrollUninstall(online, {
+              shopId: installed.state.shopId,
+              installationGeneration: installed.state.currentGeneration,
+              externalInstallationId: provider.installationId,
+              providerShopId: provider.shopId,
+            });
             return {
               shop: provider.shop,
               shopId: provider.shopId,
@@ -785,6 +805,46 @@ export function createProductionAdminServices(
         publicConfigPresent: publicConfig !== null,
         commercialConfigured: partner !== null && policy !== null && appGid !== null,
       };
+    },
+    async orderNames(actor, orderIds) {
+      await active(actor);
+      if (
+        !actor.canReadOrders ||
+        actor.expiresAtMs <= Date.now() ||
+        orderIds.length > 100 ||
+        orderIds.some((id) => !/^gid:\/\/shopify\/Order\/[1-9][0-9]*$/.test(id))
+      )
+        throw new Error('Order access unavailable');
+      const online = grant(actor);
+      const result = await createOrderPresentationTransport({
+        shop: actor.shop,
+        accessToken: online.accessToken,
+      }).read<{ nodes: ({ id: string; name: unknown } | null)[] }>({ ids: [...new Set(orderIds)] });
+      await active(actor);
+      grant(actor);
+      if (actor.expiresAtMs <= Date.now() || !Array.isArray(result.nodes) || result.nodes.length > 100)
+        throw new Error('Order access unavailable');
+      const names: Record<string, string | null> = {};
+      for (const node of result.nodes) {
+        if (!node) continue;
+        if (!orderIds.includes(node.id) || node.id in names) throw new Error('Order identity mismatch');
+        names[node.id] =
+          typeof node.name === 'string' && node.name.trim() && node.name.length <= 512 ? node.name : null;
+      }
+      return names;
+    },
+    async orderPresentation(actor, target) {
+      await active(actor);
+      if (!actor.canReadOrders || actor.expiresAtMs <= Date.now()) throw new Error('Order access unavailable');
+      const online = grant(actor);
+      const result = await readOrderPresentation(
+        createOrderPresentationTransport({ shop: actor.shop, accessToken: online.accessToken }),
+        target,
+      );
+      await active(actor);
+      grant(actor);
+      if (!actor.canReadOrders || actor.expiresAtMs <= Date.now()) throw new Error('Order access unavailable');
+      return result;
     },
     catalog: { list: catalog.list, get: catalog.get },
     configs: service,

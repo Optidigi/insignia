@@ -8,6 +8,15 @@ import { pathToFileURL } from 'node:url';
 const FORMAT = 'insignia-privacy-erasure-exclusions-v2';
 const MAX_BYTES = 64 * 1024 * 1024;
 const keys = {
+  uninstallRecoveries: [
+    'privacy_inbox_id',
+    'shop_id',
+    'installation_generation',
+    'uninstall_inbox_id',
+    'capability_digest',
+    'external_installation_id',
+    'decided_at',
+  ],
   receipts: [
     'inbox_id',
     'shop_id',
@@ -48,6 +57,7 @@ const keys = {
 const copies = [
   ['inboxes', 'inbox_messages', ['id']],
   ['receipts', 'customer_privacy_receipts', ['inbox_id']],
+  ['uninstallRecoveries', 'uninstall_privacy_recoveries', ['privacy_inbox_id', 'shop_id', 'installation_generation']],
   ['links', 'customer_privacy_order_links', ['inbox_id', 'order_id']],
   ['shopFences', 'shop_privacy_fences', ['shop_id', 'installation_generation']],
   ['orderFences', 'customer_order_erasure_fences', ['shop_id', 'order_id']],
@@ -85,6 +95,10 @@ const functions = [
   'read_customer_privacy_order_links',
   'export_customer_privacy_order',
   'guard_customer_private_ingestion',
+  'recover_uninstall_privacy',
+  'recover_pending_uninstall_privacy',
+  'uninstall_privacy_status',
+  'erase_method_catalog_for_shop_privacy',
   'enforce_payload_collection_time',
   'guard_webhook_obligation_facts',
 ];
@@ -203,6 +217,10 @@ export async function exportErasureExclusions(pool) {
       exportedAt: (await client.query('SELECT transaction_timestamp()::text AS at')).rows[0].at,
     };
     data.receipts = await rows(client, 'SELECT * FROM public.customer_privacy_receipts ORDER BY inbox_id');
+    data.uninstallRecoveries = await rows(
+      client,
+      `SELECT privacy_inbox_id,shop_id,installation_generation::text,uninstall_inbox_id,capability_digest,external_installation_id,decided_at FROM public.uninstall_privacy_recoveries ORDER BY privacy_inbox_id,shop_id,installation_generation`,
+    );
     data.inboxes = await rows(
       client,
       `SELECT i.id,i.source,i.external_delivery_id,i.shop_id,i.installation_generation::text,i.payload,i.payload_sha256,i.received_at,i.collected_at,i.state,i.attempts,i.last_error_class,i.lease_owner,i.lease_until,i.retention_class,i.purge_after,i.erasure_state FROM public.inbox_messages i WHERE i.id IN (${emptyShopify}) ORDER BY i.id`,
@@ -215,17 +233,19 @@ export async function exportErasureExclusions(pool) {
       client,
       `SELECT shop_id,installation_generation::text,source_inbox_id,created_at FROM public.shop_privacy_fences WHERE source_inbox_id IN (${receiptIds}) ORDER BY shop_id,installation_generation`,
     );
+    // A BLOCKED receipt gains no arbitrary order/quote/asset authority from a
+    // recovery. Its exact-generation shop fence rederives those targets on import.
     data.orderFences = await rows(
       client,
-      `SELECT * FROM public.customer_order_erasure_fences WHERE source_inbox_id IN (${receiptIds}) ORDER BY shop_id,order_id`,
+      `SELECT * FROM public.customer_order_erasure_fences WHERE source_inbox_id IN (${receiptIds}) AND source_inbox_id NOT IN (SELECT inbox_id FROM public.customer_privacy_receipts WHERE operation='SHOP_ERASURE_BLOCKED') ORDER BY shop_id,order_id`,
     );
     data.quoteFences = await rows(
       client,
-      `SELECT * FROM public.customer_quote_erasure_fences WHERE source_inbox_id IN (${receiptIds}) ORDER BY shop_id,quote_id`,
+      `SELECT * FROM public.customer_quote_erasure_fences WHERE source_inbox_id IN (${receiptIds}) AND source_inbox_id NOT IN (SELECT inbox_id FROM public.customer_privacy_receipts WHERE operation='SHOP_ERASURE_BLOCKED') ORDER BY shop_id,quote_id`,
     );
     data.assetFences = await rows(
       client,
-      `SELECT * FROM public.customer_asset_erasure_fences WHERE source_inbox_id IN (${receiptIds}) ORDER BY shop_id,asset_id`,
+      `SELECT * FROM public.customer_asset_erasure_fences WHERE source_inbox_id IN (${receiptIds}) AND source_inbox_id NOT IN (SELECT inbox_id FROM public.customer_privacy_receipts WHERE operation='SHOP_ERASURE_BLOCKED') ORDER BY shop_id,asset_id`,
     );
     data.shops = await rows(
       client,
@@ -256,12 +276,21 @@ function validate(envelope) {
     fail('exclusion format or checksum');
   const data = envelope.data;
   if (
-    !exactKeys(data, ['schemaIdentity', 'exportedAt', ...Object.keys(keys)]) ||
+    !(
+      exactKeys(data, ['schemaIdentity', 'exportedAt', ...Object.keys(keys)]) ||
+      (data.uninstallRecoveries === undefined &&
+        exactKeys(data, [
+          'schemaIdentity',
+          'exportedAt',
+          ...Object.keys(keys).filter((key) => key !== 'uninstallRecoveries'),
+        ]))
+    ) ||
     !/^[a-f0-9]{64}$/.test(data.schemaIdentity) ||
     !Number.isFinite(Date.parse(data.exportedAt))
   )
     fail('source metadata');
   for (const [collection, fields] of Object.entries(keys)) {
+    if (collection === 'uninstallRecoveries' && data[collection] === undefined) continue;
     if (!Array.isArray(data[collection]) || data[collection].some((row) => !exactKeys(row, fields)))
       fail('non-minimal record shape');
   }
@@ -324,11 +353,40 @@ function validate(envelope) {
     )
       fail('not an actual erased inbox tombstone');
   }
+  const recoveries = data.uninstallRecoveries ?? [];
+  for (const recovery of recoveries) {
+    const generation = data.generations.find(
+      (g) => g.shop_id === recovery.shop_id && g.generation === recovery.installation_generation,
+    );
+    if (
+      !generation?.deactivated_at ||
+      generation.external_installation_id !== recovery.external_installation_id ||
+      !['SHOP_ERASURE_BLOCKED', 'SHOP_ERASURE_STAGED'].includes(receipts.get(recovery.privacy_inbox_id)?.operation) ||
+      receipts.get(recovery.privacy_inbox_id)?.shop_id !== recovery.shop_id ||
+      !/^[a-f0-9]{64}$/.test(recovery.capability_digest) ||
+      !/^[a-f0-9-]{36}$/.test(recovery.uninstall_inbox_id) ||
+      !Number.isFinite(Date.parse(recovery.decided_at)) ||
+      Date.parse(recovery.decided_at) < Date.parse(generation.deactivated_at)
+    )
+      fail('unbound uninstall recovery');
+  }
+  const recovered = (inbox, shop, generation) =>
+    recoveries.some(
+      (r) =>
+        r.privacy_inbox_id === inbox &&
+        r.shop_id === shop &&
+        (generation === undefined || r.installation_generation === generation),
+    );
   for (const collection of ['shopFences', 'orderFences', 'quoteFences', 'assetFences'])
     for (const fence of data[collection])
       if (
         receipts.get(fence.source_inbox_id)?.shop_id !== fence.shop_id ||
-        !['ERASURE_STAGED', 'SHOP_ERASURE_STAGED'].includes(receipts.get(fence.source_inbox_id)?.operation)
+        (!['ERASURE_STAGED', 'SHOP_ERASURE_STAGED'].includes(receipts.get(fence.source_inbox_id)?.operation) &&
+          !(
+            collection === 'shopFences' &&
+            receipts.get(fence.source_inbox_id)?.operation === 'SHOP_ERASURE_BLOCKED' &&
+            recovered(fence.source_inbox_id, fence.shop_id, fence.installation_generation)
+          ))
       )
         fail('foreign erasure fence');
   for (const fence of data.shopFences) {
@@ -336,7 +394,8 @@ function validate(envelope) {
       (g) => g.shop_id === fence.shop_id && g.generation === fence.installation_generation,
     );
     if (
-      receipts.get(fence.source_inbox_id)?.operation !== 'SHOP_ERASURE_STAGED' ||
+      (receipts.get(fence.source_inbox_id)?.operation !== 'SHOP_ERASURE_STAGED' &&
+        !recovered(fence.source_inbox_id, fence.shop_id, fence.installation_generation)) ||
       !generation ||
       !generation.deactivated_at
     )
@@ -357,7 +416,7 @@ async function copyRows(client, table, primary, values) {
   )
     fail('conflicting copied erasure identity');
   await client.query(`INSERT INTO public.${table} SELECT * FROM ${expected} ON CONFLICT DO NOTHING`, [
-    JSON.stringify(values),
+    JSON.stringify(values ?? []),
   ]);
 }
 
@@ -447,7 +506,7 @@ export async function importErasureExclusions(pool, envelope) {
     await copyRows(client, 'inbox_messages', ['id'], data.inboxes);
     await client.query('ALTER TABLE public.inbox_messages ENABLE TRIGGER inbox_collection_guard');
     for (const [collection, table, primary] of copies.slice(1))
-      await copyRows(client, table, primary, data[collection]);
+      await copyRows(client, table, primary, data[collection] ?? []);
     // Transport tombstones also cover erased order receipts without privacy receipts.
     await client.query(
       `UPDATE public.webhook_obligation_facts SET captured_fields='{}',facts_erased_at=coalesce(facts_erased_at,clock_timestamp()) WHERE inbox_id=ANY($1::uuid[])`,
@@ -457,8 +516,8 @@ export async function importErasureExclusions(pool, envelope) {
       'UPDATE public.shopify_webhook_deliveries SET queue_cleanup_pending=true WHERE inbox_id=ANY($1::uuid[])',
       [data.inboxes.map((r) => r.id)],
     );
-    // Only an actual staged receipt backs a shop fence; blocked receipts never
-    // become authority, even if the restored installation later becomes inactive.
+    // Only staged receipt authority or a separately copied exact-generation
+    // recovery decision backs a fence. The original BLOCKED receipt stays blocked.
     for (const fence of data.shopFences) {
       const parameters = [fence.shop_id, fence.installation_generation];
       const quotes = (

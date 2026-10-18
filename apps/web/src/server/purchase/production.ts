@@ -40,6 +40,13 @@ export async function createProductionPurchaseServices(
       core,
       appOrigin,
       authenticate: async (request) => (await adminServices()?.authenticate(request)) ?? null,
+      assertCurrentAccess: async (actor) => {
+        const assertAccess = adminServices()?.assertPurchaseAccess;
+        if (!assertAccess) throw new Error('Current merchant authority unavailable');
+        await assertAccess(actor);
+      },
+      orderNames: async (actor, orderIds) => (await adminServices()?.orderNames?.(actor, orderIds)) ?? {},
+      orderPresentation: async (actor, target) => (await adminServices()?.orderPresentation?.(actor, target)) ?? null,
       storage,
       previewImages:
         env.INSIGNIA_M8_MERCHANT_PREVIEWS_ENABLED === '1' && storage

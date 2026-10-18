@@ -11,14 +11,21 @@ export default function SettingsNavigation({
     ['privacy', 'Privacy', '/admin/settings/privacy'],
   ] as const;
   return (
-    <nav aria-label="Settings sections">
-      <s-stack direction="inline" gap="base">
-        {sections.map(([id, label, href]) => (
-          <s-link key={id} href={href} aria-current={current === id ? 'page' : undefined}>
-            {label}
-          </s-link>
-        ))}
-      </s-stack>
-    </nav>
+    <s-box paddingBlockEnd="base">
+      <nav aria-label="Settings sections">
+        <s-stack direction="inline" gap="base">
+          {sections.map(([id, label, href]) => (
+            <s-button
+              key={id}
+              href={href}
+              variant={current === id ? 'primary' : 'tertiary'}
+              aria-current={current === id ? 'page' : undefined}
+            >
+              {label}
+            </s-button>
+          ))}
+        </s-stack>
+      </nav>
+    </s-box>
   );
 }

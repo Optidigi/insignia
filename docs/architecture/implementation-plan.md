@@ -471,6 +471,8 @@ These are illustrative domain-neutral signatures; concrete DTOs must include tim
 
 Declare app-wide subscriptions in TOML. Required business topics include orders/create, orders/paid, orders/updated where needed for reconciliation, refunds/create, app/uninstalled and app/scopes_update; subscribe to necessary product/shop changes for configuration validity and timezone/currency changes. Select exact supported topics and scopes from the pinned schema; avoid an indiscriminate all-events subscription.
 
+Uninstall additionally uses a private generation-specific APP_UNINSTALLED subscription destination, enrolled from verified current installation identity. Its exclusive destination plus raw HMAC binds purpose and generation; generic app-wide headers/body do not. Dispatch/unknown outcomes, exact readback, repair, old-generation fencing and separate immutable privacy recovery are required. Generic cleanup accounting is non-authorizing and never qualifies uninstall. See deployment/lifecycle/README.md for runtime limits and required native qualification.
+
 Mandatory privacy topics are customers/data_request, customers/redact and shop/redact. Verify raw request HMAC before parsing/trusting payloads. Acknowledge only after durable receipt. [S21, S22]
 
 Deduplicate delivery on `(installation_id, webhook_delivery_id)` and make business processing idempotent independently. Track event ID/topic/API version/received time. An out-of-order event triggers reconciliation from Shopify rather than rolling back newer facts. Reconciliation paginates all order lines and refunds; never assume the first GraphQL connection page is complete.
@@ -658,7 +660,7 @@ Warn merchants before deletion (initial schedule: 30 and 7 days) and provide aut
 
 Customer/shop redaction can require earlier deletion. Handle exports and identity lookup using minimal Shopify mappings; do not collect an extra guest email just for deletion. Strip unnecessary webhook PII quickly. Keep only permitted pseudonymized economic/audit records under a separately documented retention basis; no invented universal financial retention period. [S22, S23]
 
-Deletion is idempotent across DB and R2, with tombstones and retryable tasks. Backup restores must reapply erasure tombstones before public service resumes; detailed host/backup implementation remains deferred. Merchant config/product mockups are not automatically subject to the buyer-artwork collection rule, but buyer-supplied artwork cannot be reclassified to evade it.
+Deletion is idempotent across DB and R2, with tombstones and retryable tasks. Backup restores must reapply erasure tombstones and actual expiry cleanup before public service resumes. The 18 October owner clarification permits encrypted isolated backups for seven days, capped by original collection plus six calendar months and any already-promised cleanup deadline. Preserve original payload deadlines inside the archive and never extend existing receipts. Off-host copies retain the same archive expiry. Restores remain isolated/HOLD until current erasure/expiry replay, object cleanup and authority requalification complete. Merchant config/product mockups are not automatically subject to the buyer-artwork collection rule, but buyer-supplied artwork cannot be reclassified to evade it.
 
 ## 11. Worker and job method
 

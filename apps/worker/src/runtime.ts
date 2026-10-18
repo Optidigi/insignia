@@ -341,3 +341,4 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions): PgBossRuntim
     observability,
   };
 }
+export { createAutomaticUninstallEnrollment } from './uninstall-enrollment.js';

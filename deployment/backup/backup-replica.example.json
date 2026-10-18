@@ -1,0 +1,16 @@
+{
+  "format": "insignia-backup-replica-config-v1",
+  "endpoint": "https://REPLACE_WITH_ALLOCATED_ACCOUNT_ID.r2.cloudflarestorage.com/",
+  "bucket": "replace-with-authorized-backup-bucket",
+  "prefix": "insignia-encrypted-backups",
+  "profile": "/etc/insignia/backup-replica-credentials.json",
+  "exclusiveNamespace": true,
+  "source": {
+    "endpoint": "https://REPLACE_WITH_SOURCE_ACCOUNT_ID.r2.cloudflarestorage.com/",
+    "bucket": "insignia-public",
+    "prefix": "replace-with-qualified-source-prefix"
+  },
+  "store": "/var/lib/insignia-backup",
+  "journalDirectory": "/var/lib/insignia-backup-replica-runs",
+  "maxBytes": 1073741824
+}

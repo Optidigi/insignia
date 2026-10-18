@@ -1,6 +1,11 @@
 import type { createArtworkService } from '@insignia/application';
 import type { DurableCore } from '@insignia/database';
-import { maintainCustomerPrivacy, maintainWebhookRetention, recoverPendingUninstalls } from './handlers.js';
+import {
+  maintainCustomerPrivacy,
+  maintainWebhookRetention,
+  recoverPendingUninstalls,
+  recoverUninstallPrivacy,
+} from './handlers.js';
 import type { PgBossRuntime } from './runtime.js';
 
 /** Production maintenance composition; facade/queue implementations own durable effects. */
@@ -10,6 +15,7 @@ export function createWorkerReconciliation(input: {
   artwork?: Pick<ReturnType<typeof createArtworkService>, 'cleanup'>;
   usage?: { runOnce(): Promise<{ failed: number }>; stop(): Promise<void> };
   purchases?: { recover(): Promise<unknown>; discoverChanges(): Promise<unknown> };
+  lifecycle?: { runOnce(): Promise<void> };
 }) {
   let active: Promise<void> | undefined;
   let stopped = false;
@@ -18,6 +24,7 @@ export function createWorkerReconciliation(input: {
     if (active) return active;
     active = (async () => {
       const operations = [
+        { errorClass: 'UNINSTALL_PRIVACY_RECOVERY_UNAVAILABLE', run: () => recoverUninstallPrivacy(input.core) },
         {
           errorClass: 'CUSTOMER_PRIVACY_CLEANUP_UNAVAILABLE',
           run: () => maintainCustomerPrivacy(input.core, input.queue),
@@ -40,6 +47,7 @@ export function createWorkerReconciliation(input: {
           errorClass: 'BUYER_PAYLOAD_CLEANUP_UNAVAILABLE',
           run: () => input.core.buyers?.cleanupDue(100),
         },
+        { errorClass: 'UNINSTALL_ENROLLMENT_UNAVAILABLE', run: () => input.lifecycle?.runOnce() },
       ];
       for (const operation of operations) {
         if (stopped) break;

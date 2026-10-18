@@ -1,0 +1,13 @@
+{
+  "databaseStartupFile": "/run/insignia/monitor-database.json",
+  "backupStore": "/run/insignia/backup-store",
+  "outputDirectory": "/run/insignia/aggregates",
+  "stalledAfterSeconds": 900,
+  "replicaRequired": true,
+  "replicaJournalDirectory": "/run/insignia/replica-journal",
+  "replicaRemoteIdentity": {
+    "endpoint": "https://00000000000000000000000000000000.r2.cloudflarestorage.com/",
+    "bucket": "replace-approved-backup-bucket",
+    "prefix": "replace-approved-exclusive-prefix"
+  }
+}

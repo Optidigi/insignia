@@ -239,6 +239,8 @@ test('actual built worker image qualifies OS isolation, frozen inventory, readin
       '--env',
       'DATABASE_URL=postgres://image_worker:synthetic-worker@fixture-db:5432/insignia_image_test?sslmode=disable',
       '--env',
+      'APP_URL=https://synthetic.example',
+      '--env',
       'SHOPIFY_CLIENT_ID=synthetic-client',
       '--env',
       'SHOPIFY_CLIENT_SECRET=synthetic-secret',

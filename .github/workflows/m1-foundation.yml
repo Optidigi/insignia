@@ -6,6 +6,9 @@ on:
     branches: [main]
     paths:
       - 'scripts/ci/**'
+      - 'scripts/operations/**'
+      - 'deployment/alerts/**'
+      - 'deployment/backup/**'
       - 'scripts/m4-003/**'
       - 'scripts/m5-017/**'
       - 'apps/**'

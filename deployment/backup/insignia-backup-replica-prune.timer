@@ -1,0 +1,8 @@
+[Unit]
+Description=Check off-host Insignia archive retention each minute
+[Timer]
+OnCalendar=*-*-* *:*:00 UTC
+Persistent=true
+Unit=insignia-backup-replica-prune.service
+[Install]
+WantedBy=timers.target

@@ -1,4 +1,4 @@
-import type { PurchaseGroup } from '@insignia/contracts';
+import type { PurchaseGroup, PurchaseView } from '@insignia/contracts';
 import { PurchasePrivateUrlSchema } from '@insignia/contracts';
 import { type GeometryV1, projectScene, validateGeometry } from '@insignia/visualizer/geometry';
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
@@ -9,10 +9,12 @@ import { authenticatedJson } from '../shared/admin-request';
 export default function PurchaseHistoricalPreview({
   purchaseId,
   group,
+  lines = [],
   deny,
 }: {
   purchaseId: string;
   group: PurchaseGroup;
+  lines?: PurchaseView['lines'];
   deny: (error: unknown) => void;
 }) {
   const element = useRef<HTMLDivElement>(null);
@@ -175,7 +177,7 @@ export default function PurchaseHistoricalPreview({
   }, [group, purchaseId, refresh, viewId, variantId]);
   return (
     <section aria-label="Purchased design preview">
-      <div class="historical-preview-controls">
+      <s-grid gridTemplateColumns="repeat(auto-fit, minmax(180px, 1fr))" gap="base">
         {geometry && geometry.views.length > 1 && (
           <s-select
             label="Preview view"
@@ -201,11 +203,11 @@ export default function PurchaseHistoricalPreview({
               <s-option
                 key={variant.variantId}
                 value={variant.variantId}
-              >{`Variant ${index + 1} · ${variant.quantity} purchased`}</s-option>
+              >{`${lines.find((line) => line.productId === group.productId && line.variantId === variant.variantId)?.variantTitle ?? `Variant ${index + 1} (name unavailable)`} · ${variant.quantity} purchased`}</s-option>
             ))}
           </s-select>
         )}
-      </div>
+      </s-grid>
       <div style={{ position: 'relative', width: '100%', maxWidth: '560px' }}>
         <div
           ref={element}

@@ -2781,6 +2781,12 @@ test('editor keeps the live preview beside settings on desktop and fits mobile w
   const preview = page.getByRole('img', { name: 'Product placement preview', exact: true });
   await page.getByText('All changes saved', { exact: true }).waitFor();
   await preview.waitFor();
+  const editorArea = await page.getByRole('combobox', { name: 'Customization mode', exact: true }).boundingBox();
+  const previewArea = await preview.boundingBox();
+  assert.ok(
+    editorArea && previewArea && editorArea.width + previewArea.width > 1200,
+    'editor uses the available desktop width',
+  );
   const rules = page.getByRole('combobox', { name: 'Customization mode', exact: true });
   const previewBox = await preview.boundingBox(),
     rulesBox = await rules.boundingBox();
@@ -2827,6 +2833,22 @@ test('configuration loading reserves space with an accessible skeleton until aut
   const skeleton = page.getByRole('status', { name: 'Page content', exact: true });
   await skeleton.waitFor({ timeout: 2000 });
   assert.ok((await skeleton.boundingBox()).height > 200, 'reserve the form area during loading');
+  assert.equal(
+    await page.locator('#admin-route-skeleton s-section[slot=aside]').count(),
+    1,
+    'loading matches the editor side preview',
+  );
+  await page.waitForFunction(() => customElements.get('s-box'));
+  const previewPaint = await page
+    .locator('#admin-route-skeleton .admin-skeleton-preview s-box')
+    .first()
+    .evaluate((box) => box.shadowRoot.querySelector('.box').getBoundingClientRect().height);
+  assert.equal(previewPaint, 420, 'preview placeholder paints the real canvas height');
+  const fieldPaint = await page
+    .locator('#admin-route-skeleton .admin-skeleton-form .admin-skeleton-row s-stack s-box')
+    .nth(1)
+    .evaluate((box) => box.shadowRoot.querySelector('.box').getBoundingClientRect().height);
+  assert.equal(fieldPaint, 36, 'form placeholder paints an input rather than a text line');
   assert.equal(await page.getByRole('button', { name: 'Save draft', exact: true }).count(), 0);
   release();
   await page.getByText('All changes saved', { exact: true }).waitFor();
@@ -3211,7 +3233,7 @@ test('cancelled merchant navigation keeps the current page usable without a stuc
   await page.goto(server.base + '/admin/settings');
   await page.getByRole('link', { name: 'Privacy', exact: true }).waitFor();
   await page
-    .locator('s-link[href="/admin/settings/privacy"]')
+    .locator('s-button[href="/admin/settings/privacy"]')
     .evaluate((node) => node.addEventListener('click', (event) => event.preventDefault(), { once: true }));
   await page.getByRole('link', { name: 'Privacy', exact: true }).click();
   await page.getByRole('link', { name: 'General', exact: true }).waitFor();

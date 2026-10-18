@@ -18,6 +18,7 @@ import { createPurchaseReleasePreparation } from './purchase-release.js';
 import { createPurchaseRunner } from './purchase-runner.js';
 import { createWorkerReconciliation } from './reconciliation.js';
 import { createPgBossRuntime } from './runtime.js';
+import { createAutomaticUninstallEnrollment, createUninstallEnrollmentReconciliation } from './uninstall-enrollment.js';
 import { createWorkerUsageRuntime } from './usage-runtime.js';
 
 function required(name: string): string {
@@ -101,7 +102,17 @@ if (process.argv.includes('--diagnostic')) {
     port,
   });
   console.log(JSON.stringify({ url: running.url, durableReady: running.durableReady }));
-  const reconciliation = createWorkerReconciliation({ core, queue, purchases: purchaseRunner, usage });
+  const lifecycle = createUninstallEnrollmentReconciliation({
+    core,
+    credentials: purchaseCredentials,
+    enroll: createAutomaticUninstallEnrollment({
+      core,
+      appOrigin: required('APP_URL'),
+      appClientId: clientId,
+      appSecret: clientSecret,
+    }),
+  });
+  const reconciliation = createWorkerReconciliation({ core, queue, purchases: purchaseRunner, usage, lifecycle });
   const recoveryTimer = setInterval(() => {
     void reconciliation.runOnce();
   }, 30_000);

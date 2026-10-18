@@ -1,0 +1,12 @@
+[Unit]
+Description=Prune Insignia expired encrypted snapshots
+[Service]
+Type=oneshot
+User=insignia-backup
+Group=insignia-backup
+UMask=0077
+ExecStart=/usr/bin/python3 /opt/insignia/scripts/operations/backup.py prune --store /var/lib/insignia-backup
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/insignia-backup

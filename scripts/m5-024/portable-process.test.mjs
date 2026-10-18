@@ -36,6 +36,7 @@ test('portable production entry boots in a fresh process, denies JS filesystem w
       DATABASE_URL: process.env.DATABASE_URL,
       INSIGNIA_CREDENTIAL_KEY_ID: 'synthetic-k1',
       INSIGNIA_CREDENTIAL_KEY_BASE64: Buffer.alloc(32, 7).toString('base64'),
+      APP_URL: 'https://synthetic.example',
       SHOPIFY_CLIENT_ID: 'synthetic-client',
       SHOPIFY_CLIENT_SECRET: 'synthetic-secret',
     },

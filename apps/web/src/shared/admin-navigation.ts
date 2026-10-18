@@ -1,3 +1,5 @@
+import { adminRoute, adminSkeletonDimensions } from './admin-route';
+
 /** Full-document routes retain their security boundaries while sharing transition feedback. */
 export function installAdminNavigation() {
   let navigating = false;
@@ -20,7 +22,28 @@ export function installAdminNavigation() {
     if (content) content.inert = false;
     hostLoading(false);
   }
-  function transition() {
+  function transition(pathname?: string) {
+    if (pathname) {
+      const { heading, layout } = adminRoute(pathname);
+      const page = shell?.querySelector('[data-skeleton-layout]');
+      page?.setAttribute('aria-label', heading);
+      page?.setAttribute('data-skeleton-layout', layout);
+      const preview = shell?.querySelector<HTMLElement>('[data-skeleton-preview]');
+      if (preview) {
+        preview.hidden = layout !== 'editor';
+        if (layout === 'editor') preview.setAttribute('slot', 'aside');
+        else preview.removeAttribute('slot');
+      }
+      const placeholders = shell?.querySelector('[aria-label="Page content"]');
+      if (placeholders) {
+        const variant = layout === 'editor' ? 'form' : layout;
+        placeholders.className = `admin-skeleton admin-skeleton-${variant}`;
+        const dimensions = adminSkeletonDimensions(variant);
+        for (const part of ['leading', 'label', 'value'] as const)
+          for (const box of placeholders.querySelectorAll(`[data-skeleton-part="${part}"]`))
+            Object.assign(box, dimensions[part]);
+      }
+    }
     navigating = true;
     document.documentElement.dataset.adminReady = 'false';
     if (content) content.inert = true;
@@ -52,12 +75,12 @@ export function installAdminNavigation() {
         (url.pathname !== location.pathname || url.search !== location.search)
       )
         window.setTimeout(() => {
-          if (!event.defaultPrevented) transition();
+          if (!event.defaultPrevented) transition(url.pathname);
         }, 0);
     },
     true,
   );
-  window.addEventListener('beforeunload', transition);
+  window.addEventListener('beforeunload', () => transition());
   window.addEventListener('pageshow', (event) => {
     // Revalidate authenticated data when returning from a frozen document.
     if (event.persisted) location.reload();

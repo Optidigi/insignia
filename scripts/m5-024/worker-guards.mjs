@@ -3,6 +3,7 @@ import { loadCredentialKeys } from '../../apps/worker/dist/config.js';
 import { workerInventoryMatches } from '../../docs/delivery/evidence/m5-023/operators/worker-inventory.mjs';
 
 const ENV_KEYS = [
+  'APP_URL',
   'DATABASE_URL',
   'SHOPIFY_CLIENT_ID',
   'SHOPIFY_CLIENT_SECRET',
@@ -144,6 +145,15 @@ export function qualifyWorkerCandidate({
     ))
       if (!environment[key]) return false;
     if (environment.SHOPIFY_CLIENT_SECRET !== environment.SHOPIFY_WEBHOOK_SECRET) return false;
+    const callbackOrigin = new URL(environment.APP_URL);
+    if (
+      callbackOrigin.protocol !== 'https:' ||
+      callbackOrigin.origin !== environment.APP_URL ||
+      callbackOrigin.username ||
+      callbackOrigin.password
+    )
+      return false;
+    if (environment.APP_URL !== webEnvironment.APP_URL) return false;
     for (const key of [
       'SHOPIFY_CLIENT_ID',
       'SHOPIFY_CLIENT_SECRET',

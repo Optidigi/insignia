@@ -1,0 +1,22 @@
+# Template: enable only with reviewed immutable paths and exact allocated identities.
+[Unit]
+Description=Insignia writer exclusion and encrypted daily snapshot
+[Service]
+Type=oneshot
+User=insignia-backup
+Group=insignia-backup
+UMask=0077
+EnvironmentFile=/etc/insignia/backup.env
+ExecStart=/usr/bin/python3 /opt/insignia/scripts/operations/backup-run.py /etc/insignia/backup-run.json
+RuntimeDirectory=insignia-backup
+RuntimeDirectoryMode=0700
+TimeoutStartSec=75min
+TimeoutStopSec=150s
+KillMode=mixed
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/insignia-backup /var/lib/insignia-backup-runs /var/lib/insignia-backup-replica-runs /run/insignia-backup
+# Dedicated maintenance OS account needs the Docker control socket. Never mount it into the app.
+# Exact IDs/config/image allowlist and scoped start/stop are enforced by backup-run.py.

@@ -39,7 +39,13 @@ export interface MethodLibrary {
   delete(actor: AdminActor, id: string, version: string, key: string): Promise<MethodOutcome>;
 }
 export interface AdminServices {
+  assertPurchaseAccess?(actor: AdminActor): Promise<void>;
   methods?: MethodLibrary;
+  orderNames?(actor: AdminActor, orderIds: string[]): Promise<Record<string, string | null>>;
+  orderPresentation?(
+    actor: AdminActor,
+    target: import('@insignia/shopify').OrderPresentationTarget,
+  ): Promise<import('@insignia/shopify').OrderPresentation | null>;
   appOrigin: string;
   /** Read-only authoritative subscription observation; never creates or changes a plan. */
   billing?(actor: AdminActor): Promise<BillingView>;

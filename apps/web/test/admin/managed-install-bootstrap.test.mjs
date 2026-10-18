@@ -6,6 +6,7 @@ import { createDurableCore } from '@insignia/database';
 import { abstractFetch, setAbstractFetchFunc } from '@shopify/shopify-api/runtime';
 import { build } from 'esbuild';
 import { Pool } from 'pg';
+import { uninstallSubscriptionFixture } from '../support/uninstall-subscription.mjs';
 
 const database = process.env.DATABASE_URL;
 const client = 'synthetic-bootstrap-client';
@@ -83,10 +84,18 @@ async function fixture(run) {
         associated_user: { id: 23 },
       });
     });
+    const lifecycle = uninstallSubscriptionFixture(() => ({
+      shop: model.domain,
+      shopId: model.shopId,
+      installationId: model.install,
+      appClientId: client,
+    }));
     globalThis.fetch = async (url, init) => {
       assert.equal(String(url), `https://${shop}/admin/api/2026-07/graphql.json`);
-      const { query } = JSON.parse(String(init.body));
-      assert.ok(query.startsWith('query '), 'no provider mutation is allowed in bootstrap');
+      const { query, variables } = JSON.parse(String(init.body));
+      const enrolled = lifecycle(query, variables);
+      if (enrolled) return enrolled;
+      assert.ok(query.startsWith('query '), 'only explicit lifecycle enrollment may mutate in bootstrap');
       if (query.includes('M5001StaffInstallation')) {
         model.installationReads++;
         if (model.providerFailed) return Response.json({ errors: [{ message: 'synthetic secret body' }] });

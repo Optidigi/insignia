@@ -9,6 +9,8 @@ const minor = z
   .max(20);
 const line = z.strictObject({
   orderLineId: id,
+  title: z.string().min(1).max(512).nullable().optional(),
+  variantTitle: z.string().min(1).max(512).nullable().optional(),
   productId: id,
   variantId: id,
   quantity: z.number().int().positive(),
@@ -46,6 +48,7 @@ export const PurchaseViewSchema = z.strictObject({
   version: z.literal('m8-purchase-v1'),
   purchaseId: z.string().uuid(),
   orderId: id,
+  orderName: z.string().min(1).max(512).nullable().optional(),
   orderCreatedAt: date,
   isTest: z.boolean().nullable(),
   currency: z.string().regex(/^[A-Z]{3}$/),

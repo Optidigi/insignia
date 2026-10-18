@@ -9,112 +9,24 @@ body {
   border-radius: 6px;
 }
 
-.admin-description {
-  margin-block: 0 16px;
-  color: #616161;
-}
-
-.product-search {
-  display: flex;
-  align-items: end;
-  gap: 12px;
-}
-
-.product-search s-search-field {
-  flex: 1;
+.admin-editor-controls,
+.admin-editor-preview {
   min-width: 0;
 }
-
-.product-result-count {
-  margin-block: 16px 12px;
-  color: #616161;
+@container product-editor (inline-size > 1000px) {
+  .admin-editor-preview {
+    position: sticky;
+    top: 16px;
+  }
 }
-
-.product-image {
-  display: grid;
-  place-items: center;
-  width: 72px;
-  height: 72px;
-  overflow: hidden;
-  border-radius: 6px;
-  background: #f1f1f1;
-  color: #616161;
-  font-size: 12px;
-}
-
-.product-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.product-variants {
-  margin: 8px 0 0;
-  color: #616161;
-}
-
-.product-empty {
-  padding: 24px 16px;
-  text-align: center;
-  background: #f6f6f7;
-  border-radius: 8px;
+@container product-editor (inline-size <= 1000px) {
+  .admin-editor-preview {
+    order: -1;
+  }
 }
 
 .admin-record-id {
   overflow-wrap: anywhere;
-  color: #616161;
-}
-
-.purchase-customization + .purchase-customization,
-.purchase-placement {
-  border-top: 1px solid #e3e3e3;
-  padding-block-start: 16px;
-  margin-block-start: 16px;
-}
-
-.purchase-placement s-button,
-.purchase-placement a {
-  margin-inline-end: 8px;
-  margin-block: 4px;
-}
-
-.purchase-placement > img {
-  display: block;
-  margin-block: 12px;
-}
-
-.billing-status {
-  margin-block: 16px;
-}
-
-.purchase-placement input[type="file"] {
-  display: block;
-  max-width: 100%;
-  margin-block: 8px;
-  font: inherit;
-}
-
-.purchase-placement input[type="file"]::file-selector-button {
-  border: 1px solid #b5b5b5;
-  border-radius: 8px;
-  padding: 6px 12px;
-  margin-inline-end: 10px;
-  background: #fff;
-  color: #202223;
-  font: inherit;
-  cursor: pointer;
-}
-
-.historical-preview-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-block-end: 12px;
-}
-
-.historical-preview-controls s-select {
-  flex: 1 1 180px;
-  min-width: 0;
 }
 
 /* Anchor navigation keeps the same mounted draft and canvas. */
@@ -195,15 +107,97 @@ html[data-admin-ready="true"] #admin-route-skeleton {
   margin-block: 8px;
 }
 
+/* These are placeholder geometry, including the time before Polaris upgrades. */
+.admin-skeleton-form .admin-skeleton-row,
+.admin-skeleton-detail .admin-skeleton-row {
+  grid-template-columns: minmax(0, 1fr);
+  padding-block: 12px;
+}
+.admin-skeleton-form .admin-skeleton-row > s-box,
+.admin-skeleton-detail .admin-skeleton-row > s-box {
+  display: none;
+}
+.admin-skeleton-form .admin-skeleton-row s-stack > s-box:last-child {
+  min-height: 36px;
+  width: 100%;
+}
+.admin-skeleton-settings .admin-skeleton-row {
+  padding: 16px;
+  border: 1px solid #e3e3e3;
+  border-radius: 8px;
+}
+.admin-skeleton-preview {
+  min-height: 0;
+}
+.admin-skeleton-inline {
+  min-height: 0;
+}
+.admin-skeleton-inline .admin-skeleton-row {
+  grid-template-columns: minmax(0, 1fr);
+}
+.admin-skeleton-inline .admin-skeleton-row > s-box {
+  display: none;
+}
+.admin-skeleton-preview .admin-skeleton-row {
+  display: block;
+}
+.admin-skeleton-preview .admin-skeleton-row > s-box {
+  display: block;
+  width: 100%;
+  height: 420px;
+}
+.admin-skeleton-preview .admin-skeleton-row > s-stack {
+  display: none;
+}
+.admin-page-placeholder {
+  display: grid;
+  gap: 16px;
+  padding: 24px 32px;
+}
+[data-placeholder-heading] {
+  grid-column: 1 / -1;
+}
+[data-placeholder-heading]:not(:defined) {
+  display: block;
+  width: 220px;
+  height: 28px;
+  background: #e5e7eb;
+  border-radius: 6px;
+}
+#admin-route-skeleton s-section:not(:defined) {
+  display: block;
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+}
+#admin-route-skeleton s-stack:not(:defined) {
+  display: grid;
+  gap: 16px;
+}
+#admin-route-skeleton [data-skeleton-layout]:not([data-skeleton-layout="editor"]) [data-skeleton-preview] {
+  display: none;
+}
+@media (min-width: 1000px) {
+  #admin-route-skeleton [data-skeleton-layout="editor"] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 24px;
+  }
+  #admin-route-skeleton [data-skeleton-preview] {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}
+
 .admin-save-toolbar {
   position: sticky;
   top: 0;
   z-index: 3;
 }
-.admin-save-toolbar > s-paragraph {
+.admin-save-toolbar s-paragraph {
   margin: 0;
 }
-.admin-save-toolbar > [role="alert"] {
+.admin-save-toolbar [role="alert"] {
   flex-basis: 100%;
 }
 [hidden] {

@@ -89,22 +89,22 @@ export default function ReadinessPermissions({ inspect }: { inspect: () => Promi
   }
   return (
     <s-section heading="Publication readiness">
-      <div class="admin-description">
+      <s-stack gap="base">
         <s-paragraph>Check the permissions and current setup needed for publication.</s-paragraph>
-      </div>
-      <s-button disabled={busy} onClick={() => void check()}>
-        Check readiness
-      </s-button>
-      {missing.length > 0 && (
-        <s-button disabled={busy} onClick={() => void allow()}>
-          Allow readiness checks
+        <s-button disabled={busy} onClick={() => void check()}>
+          Check readiness
         </s-button>
-      )}
-      {status && (
-        <div role="status">
-          <s-paragraph>{status}</s-paragraph>
-        </div>
-      )}
+        {missing.length > 0 && (
+          <s-button disabled={busy} onClick={() => void allow()}>
+            Allow readiness checks
+          </s-button>
+        )}
+        {status && (
+          <div role="status">
+            <s-paragraph>{status}</s-paragraph>
+          </div>
+        )}
+      </s-stack>
     </s-section>
   );
 }

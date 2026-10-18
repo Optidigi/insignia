@@ -25,6 +25,7 @@ test('candidate guards reject source, Compose, image, endpoint and private parit
   const composeBytes = Buffer.from('synthetic reviewed worker compose');
   const environment = {
     DATABASE_URL: 'postgres://synthetic_worker@database:5432/synthetic_db?sslmode=disable',
+    APP_URL: 'https://synthetic.example',
     SHOPIFY_CLIENT_ID: 'synthetic-client',
     SHOPIFY_CLIENT_SECRET: 'synthetic-hmac',
     SHOPIFY_WEBHOOK_SECRET: 'synthetic-hmac',
