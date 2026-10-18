@@ -13,6 +13,12 @@
     ],
     "availabilityInbox": "OWNER_CONFIRMED_2026_10_18",
     "authenticationHeaders": "NOT_VERIFIED",
+    "authenticationLogCheck20261018": {
+      "scope": "Owner-authorized read-only ONLYOFFICE production log check; no mailbox credentials, configuration changes, database queries or new alert sends",
+      "observed": "Current mail-aggregator.log contains four lines matching the alert sender; matching aggregator and SQL log entries expose no Authentication-Results or SPF/DKIM/DMARC verdicts. Current local maillog contains no alert-sender match; dashboard and dashboard-mail Docker stdout/stderr for19:25-19:50UTC are empty.",
+      "limits": "Only sanitized counts and result summaries returned; no message contents or unrelated log lines exported. This bounded log check does not establish that original headers are absent from every mailbox storage location.",
+      "decision": "Owner defers receiver-side authentication evidence to final production gate; continue other work. All four inbox deliveries remain confirmed."
+    },
     "replay": "same messageId, no additional attempt",
     "conflictingEvent": 409,
     "unauthorized": 401,
