@@ -94,7 +94,17 @@ test('ordinary runtime overlays preserve canonical web boundaries and restrict w
     assert.equal(web.privileged ?? false, false);
     assert.equal(web.ports, undefined);
     assert.equal(web.volumes, undefined);
-    assert.deepEqual(web.labels, base.services.web.labels);
+    assert.deepEqual(web.labels, {
+      ...base.services.web.labels,
+      'traefik.http.routers.insignia-uninstall-private.entrypoints': 'websecure',
+      'traefik.http.routers.insignia-uninstall-private.rule':
+        'Host(`insignia-app.optidigi.nl`) && PathPrefix(`/api/webhooks/uninstall/`)',
+      'traefik.http.routers.insignia-uninstall-private.priority': '1100',
+      'traefik.http.routers.insignia-uninstall-private.tls.certresolver': 'letsencrypt',
+      'traefik.http.routers.insignia-uninstall-private.service': 'insignia-rewrite-m5-019',
+      'traefik.http.routers.insignia-uninstall-private.observability.accesslogs': 'false',
+      'traefik.http.routers.insignia-uninstall-private.observability.tracing': 'false',
+    });
     assert.equal(web.labels['traefik.enable'], 'true');
     assert.equal(
       web.labels['traefik.http.routers.insignia-canonical-m5-019r.rule'],
@@ -110,6 +120,7 @@ test('ordinary runtime overlays preserve canonical web boundaries and restrict w
       'cap_drop',
       'security_opt',
       'pull_policy',
+      'labels',
     ]);
     const inherited = (service) => Object.fromEntries(Object.entries(service).filter(([key]) => !intentional.has(key)));
     assert.deepEqual(inherited(web), inherited(base.services.web));

@@ -10,5 +10,13 @@ services:
     command: [/usr/local/bin/node, /srv/insignia/web/dist/server/entry.mjs]
     stop_grace_period: 40s
     read_only: true
+    labels:
+      traefik.http.routers.insignia-uninstall-private.entrypoints: websecure
+      traefik.http.routers.insignia-uninstall-private.rule: Host(`insignia-app.optidigi.nl`) && PathPrefix(`/api/webhooks/uninstall/`)
+      traefik.http.routers.insignia-uninstall-private.priority: "1100"
+      traefik.http.routers.insignia-uninstall-private.tls.certresolver: letsencrypt
+      traefik.http.routers.insignia-uninstall-private.service: insignia-rewrite-m5-019
+      traefik.http.routers.insignia-uninstall-private.observability.accesslogs: "false"
+      traefik.http.routers.insignia-uninstall-private.observability.tracing: "false"
     # cap_drop and security_opt inherit unchanged from the canonical base.
     # Repeating sequence values in an overlay can fail Compose validation.
