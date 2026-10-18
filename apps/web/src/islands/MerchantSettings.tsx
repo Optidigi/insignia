@@ -1,6 +1,5 @@
 import { useState } from 'preact/hooks';
 import AdminDisclosure from '../components/AdminDisclosure';
-import SettingsNavigation from '../components/SettingsNavigation';
 import { useAdminPageReady } from '../shared/admin-page-ready';
 import { authenticatedJson } from '../shared/admin-request';
 import ReadinessPermissions from './ReadinessPermissions';
@@ -45,18 +44,17 @@ export default function MerchantSettings() {
   const [denied, setDenied] = useState('');
   useAdminPageReady(true);
   return (
-    <s-page inlineSize="large" heading="Settings">
-      <SettingsNavigation current="general" />
+    <s-page inlineSize="small" heading="Settings">
       <s-paragraph>
         Manage store-wide setup. Product-specific rules, images and prices live with each product.
       </s-paragraph>
       {groups.map((group) => (
-        <s-section key={group.title} heading={group.title}>
+        <s-section key={group.title} heading={group.title} padding="none">
           <s-stack gap="base">
-            <s-stack gap="small">
+            <s-stack gap="none">
               {group.rows.map((row) => (
-                <s-clickable key={row.href} href={row.href} aria-label={row.title}>
-                  <s-box padding="base" border="base" borderRadius="base">
+                <s-clickable key={row.href} href={row.href} accessibilityLabel={row.title}>
+                  <s-box padding="base">
                     <s-grid gridTemplateColumns="auto 1fr auto" gap="base" alignItems="center">
                       <s-icon type={row.icon} />
                       <s-stack gap="small">

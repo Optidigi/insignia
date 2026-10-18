@@ -20,7 +20,7 @@ export default function StorefrontSetup() {
     });
   }, []);
   return (
-    <s-page inlineSize="large" heading="Storefront setup">
+    <s-page inlineSize="small" heading="Storefront setup">
       <s-link slot="breadcrumb-actions" href="/admin/settings">
         Settings
       </s-link>

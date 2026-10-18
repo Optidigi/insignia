@@ -328,7 +328,7 @@ test('historical advanced pricing stays read-only until an explicit local Lean p
   assert.equal(await price.inputValue(), '');
   for (const invalid of ['-1', '1.001']) {
     await price.fill(invalid);
-    await page.getByRole('alert').filter({ hasText: 'Enter a nonnegative amount' }).waitFor();
+    await page.getByText('Enter a nonnegative amount with at most two decimal places.', { exact: true }).waitFor();
     assert.equal(
       await page
         .locator('s-button')
@@ -441,8 +441,8 @@ test('real browser editor syncs typed view, variant and step controls with direc
   await stage.scrollIntoViewIfNeeded();
   const box = await stage.boundingBox();
   assert.ok(box && box.width > 200 && box.height > 200);
-  const x = box.x + box.width / 2 - 42;
-  const y = box.y + box.height / 2 - 42;
+  const x = box.x + box.width / 2 - Math.min(box.width, box.height) * 0.1;
+  const y = box.y + box.height / 2 - Math.min(box.width, box.height) * 0.1;
   await page.mouse.move(x, y);
   await page.mouse.down();
   await page.mouse.move(x + 25, y + 15, { steps: 8 });
@@ -2756,7 +2756,10 @@ test('editor guides configuration through prices to publication while keeping di
     await page.screenshot({ path: '/tmp/insignia-admin-workflow-editor.png', fullPage: true });
   assert.equal(
     await page.evaluate(
-      () => document.querySelectorAll('table,input:not([type="file"]),select,textarea,button').length,
+      () =>
+        Array.from(document.querySelectorAll('table,input:not([type="file"]),select,textarea,button')).filter(
+          (node) => !node.closest('ui-save-bar'),
+        ).length,
     ),
     0,
     'ordinary admin controls use Polaris; shadow internals are excluded',
@@ -2785,8 +2788,8 @@ test('editor keeps the live preview beside settings on desktop and fits mobile w
   const editorArea = await page.getByRole('combobox', { name: 'Customization mode', exact: true }).boundingBox();
   const previewArea = await preview.boundingBox();
   assert.ok(
-    editorArea && previewArea && editorArea.width + previewArea.width > 1200,
-    'editor uses the available desktop width',
+    editorArea && previewArea && editorArea.width >= 400 && previewArea.width >= 240,
+    'default Polaris details columns reserve usable settings and preview space',
   );
   const rules = page.getByRole('combobox', { name: 'Customization mode', exact: true });
   const previewBox = await preview.boundingBox(),
@@ -2835,19 +2838,19 @@ test('configuration loading reserves space with an accessible skeleton until aut
   await skeleton.waitFor({ timeout: 2000 });
   assert.ok((await skeleton.boundingBox()).height > 200, 'reserve the form area during loading');
   assert.equal(
-    await page.locator('#admin-route-skeleton s-section[slot=aside]').count(),
+    await page.locator('#admin-route-skeleton [data-skeleton-preview]').count(),
     1,
     'loading matches the editor side preview',
   );
   await page.waitForFunction(() => customElements.get('s-box'));
   const previewPaint = await page
-    .locator('#admin-route-skeleton .admin-skeleton-preview s-box')
+    .locator('#admin-route-skeleton [data-skeleton-variant=preview] [data-skeleton-part=leading]')
     .first()
     .evaluate((box) => box.shadowRoot.querySelector('.box').getBoundingClientRect().height);
-  assert.equal(previewPaint, 420, 'preview placeholder paints the real canvas height');
+  assert.equal(previewPaint, 360, 'preview placeholder paints the real canvas height');
   const fieldPaint = await page
-    .locator('#admin-route-skeleton .admin-skeleton-form .admin-skeleton-row s-stack s-box')
-    .nth(1)
+    .locator('#admin-route-skeleton [data-skeleton-variant=form] [data-skeleton-part=value]')
+    .first()
     .evaluate((box) => box.shadowRoot.querySelector('.box').getBoundingClientRect().height);
   assert.equal(fieldPaint, 36, 'form placeholder paints an input rather than a text line');
   assert.equal(await page.getByRole('button', { name: 'Save draft', exact: true }).count(), 0);
@@ -3137,10 +3140,16 @@ test('every merchant route paints silent placeholders before Polaris and hydrati
       release();
       await skeleton.waitFor({ state: 'hidden', timeout: 10000 });
       assert.equal(await page.locator('s-page').last().isVisible(), true, path);
+      assert.equal(await page.locator('s-page').count(), 1, 'Only the live view owns a Page instance');
       assert.equal(
         await page
           .locator('body')
-          .evaluate((b) => Array.from(b.querySelectorAll('button,input,select,textarea,a,details,summary')).length),
+          .evaluate(
+            (b) =>
+              Array.from(b.querySelectorAll('button,input,select,textarea,a,details,summary')).filter(
+                (node) => !node.closest('ui-save-bar'),
+              ).length,
+          ),
         0,
         path + ' has only Polaris controls in light DOM',
       );
@@ -3214,7 +3223,12 @@ test('configurator leads with editable product rules and Polaris actions rather 
   assert.equal(
     await page
       .locator('body')
-      .evaluate((b) => b.querySelectorAll('button,input,select,textarea,a,details,summary,p,h1,h2,h3,strong').length),
+      .evaluate(
+        (b) =>
+          Array.from(b.querySelectorAll('button,input,select,textarea,a,details,summary,p,h1,h2,h3,strong')).filter(
+            (node) => !node.closest('ui-save-bar'),
+          ).length,
+      ),
     0,
     'shared controls and typography use Polaris',
   );
@@ -3234,10 +3248,10 @@ test('cancelled merchant navigation keeps the current page usable without a stuc
   await page.goto(server.base + '/admin/settings');
   await page.getByRole('link', { name: 'Privacy', exact: true }).waitFor();
   await page
-    .locator('s-button[href="/admin/settings/privacy"]')
+    .locator('s-clickable[href="/admin/settings/privacy"]')
     .evaluate((node) => node.addEventListener('click', (event) => event.preventDefault(), { once: true }));
   await page.getByRole('link', { name: 'Privacy', exact: true }).click();
-  await page.getByRole('link', { name: 'General', exact: true }).waitFor();
+  await page.getByRole('link', { name: 'Privacy', exact: true }).waitFor();
   assert.equal(new URL(page.url()).pathname, '/admin/settings');
   assert.equal(await page.getByRole('status', { name: 'Page content', exact: true }).isVisible(), false);
 });
@@ -3275,3 +3289,131 @@ test('late authenticated read replaces the bootstrap timeout notice with the set
     release();
   }
 });
+
+test('library removal uses an accessible Polaris confirmation and cancel never dispatches', {
+  timeout: 20000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  const page = await browser.newPage();
+  page.setDefaultTimeout(2500);
+  await page.addInitScript(() => {
+    window.shopify = { idToken: async () => 'synthetic-modal-actor' };
+  });
+  await routePolaris(page, source);
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
+  const method = { id: '52915e17-8104-4ef2-beb8-e99efc2914ec', name: 'Embroidery', version: '1' };
+  let writes = 0;
+  await page.route('**/api/admin/methods', (r) => r.fulfill({ json: { methods: [method] } }));
+  await page.route('**/api/admin/methods/' + method.id, (r) => {
+    writes++;
+    return r.fulfill({ json: { kind: 'removed' } });
+  });
+  await page.goto(server.base + '/admin/settings/methods');
+  await page.getByRole('button', { name: 'Remove', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Remove decoration method?', exact: true });
+  await dialog.waitFor();
+  const modal = page.locator('#remove-method');
+  await modal.getByText('Embroidery', { exact: true }).waitFor();
+  assert.equal(writes, 0);
+  await modal.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await dialog.waitFor({ state: 'hidden' });
+  assert.equal(writes, 0);
+  await page.getByRole('button', { name: 'Remove', exact: true }).click();
+  await modal.getByRole('button', { name: 'Confirm removal', exact: true }).click();
+  await page.getByText('Removed from library. Existing products are unchanged.', { exact: true }).waitFor();
+  assert.equal(writes, 1);
+  assert.equal(await page.getByLabel('Library method name', { exact: true }).count(), 0);
+});
+
+test('unsaved editor changes use Shopify save state and confirmed discard restores without a write', {
+  timeout: 20000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  const page = await browser.newPage();
+  page.setDefaultTimeout(2500);
+  await page.addInitScript(() => {
+    window.saveBarEvents = [];
+    window.shopify = {
+      idToken: async () => 'synthetic-savebar-actor',
+      saveBar: {
+        show: async (id) => window.saveBarEvents.push(['show', id]),
+        hide: async (id) => window.saveBarEvents.push(['hide', id]),
+      },
+    };
+  });
+  await routePolaris(page, source);
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
+  let writes = 0;
+  await page.route('**/api/admin/products/111/config', (r) => {
+    if (r.request().method() !== 'GET') writes++;
+    return r.fulfill({ json: response(draft()) });
+  });
+  await page.goto(server.base + '/admin/products/111/config');
+  const name = page.getByLabel('Method name', { exact: true });
+  await name.waitFor();
+  const original = await name.inputValue();
+  await name.fill('Changed locally');
+  await page.waitForFunction(() => window.saveBarEvents.some(([kind]) => kind === 'show'));
+  await page.getByRole('button', { name: 'Discard changes', exact: true }).click();
+  const modal = page.locator('#discard-product-changes');
+  await page.getByRole('dialog', { name: 'Discard unsaved changes?', exact: true }).waitFor();
+  await modal.getByRole('button', { name: 'Keep editing', exact: true }).click();
+  assert.equal(await name.inputValue(), 'Changed locally');
+  await page.getByRole('button', { name: 'Discard changes', exact: true }).click();
+  await modal.getByRole('button', { name: 'Discard', exact: true }).click();
+  await page.getByText('All changes saved', { exact: true }).waitFor();
+  assert.equal(await name.inputValue(), original);
+  assert.equal(writes, 0);
+  assert.equal(await page.getByRole('button', { name: 'Save draft', exact: true }).isEnabled(), false);
+});
+
+for (const settlementRead of ['failed', 'unchanged']) {
+  test(`uncertain saves fence edits and discard with ${settlementRead} settlement read and preserve exact retry`, {
+    timeout: 20000,
+  }, async (t) => {
+    const { source, server, browser } = await browserFixture(t);
+    const page = await browser.newPage();
+    page.setDefaultTimeout(2500);
+    await page.addInitScript(() => {
+      window.shopify = { idToken: async () => 'synthetic-uncertain-draft' };
+    });
+    await routePolaris(page, source);
+    await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
+    const writes = [];
+    await page.route('**/api/admin/products/111/config', (r) => {
+      if (r.request().method() === 'GET') {
+        if (writes.length === 1 && settlementRead === 'failed')
+          return r.fulfill({ status: 503, json: { error: 'Settlement unavailable' } });
+        const value = response(writes.length > 1 ? writes[0].body.draft : draft());
+        if (writes.length > 1) value.config.draftVersion = '2';
+        return r.fulfill({ json: value });
+      }
+      writes.push({ key: r.request().headers()['idempotency-key'], body: r.request().postDataJSON() });
+      return writes.length === 1 ? r.abort('failed') : r.fulfill({ json: { kind: 'saved', draftVersion: '2' } });
+    });
+    await page.goto(server.base + '/admin/products/111/config');
+    const name = page.getByLabel('Method name', { exact: true });
+    await name.fill('One intended change');
+    await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+    await page.getByText('Save result is uncertain. Retry the exact request or reload.', { exact: true }).waitFor();
+    assert.equal(await name.isEnabled(), false, 'unknown save cannot be displaced by another edit');
+    for (const action of ['Review latest saved draft', 'Reload current draft']) {
+      const button = page.getByRole('button', { name: action, exact: true });
+      if (await button.count())
+        assert.equal(await button.isEnabled(), false, action + ' cannot erase an unresolved request');
+    }
+    assert.equal(await page.getByRole('button', { name: 'Discard changes', exact: true }).isEnabled(), false);
+    const field = page
+      .locator('s-text-field')
+      .filter({ has: page.getByRole('textbox', { name: 'Method name', exact: true }) });
+    await field.evaluate((n) => {
+      n.value = 'Must not replace pending';
+      n.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await page.getByRole('button', { name: 'Retry saving', exact: true }).click();
+    await page.getByText('Draft saved.', { exact: true }).waitFor();
+    assert.equal(writes.length, 2);
+    assert.deepEqual(writes[1], writes[0], 'recovery uses the original key and immutable payload');
+    assert.equal(await name.inputValue(), 'One intended change');
+  });
+}

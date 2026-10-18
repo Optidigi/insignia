@@ -382,8 +382,30 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
       if (generation === current.current) setBusy(false);
     }
   }
+  const orderFilters = (
+    <s-box padding="base">
+      <s-stack gap="small">
+        <s-select
+          label="Artwork status"
+          value={artworkFilter}
+          onChange={(event) => setArtworkFilter(event.currentTarget.value)}
+        >
+          <s-option value="all">All artwork statuses</s-option>
+          <s-option value="PENDING_ARTWORK">Artwork needed</s-option>
+          <s-option value="READY">Artwork complete</s-option>
+          <s-option value="ARTWORK_LOCKED">Artwork locked</s-option>
+          <s-option value="ERASED">Artwork no longer retained</s-option>
+        </s-select>
+        <s-paragraph>Filters apply to loaded orders. Load older orders to include them.</s-paragraph>
+        <s-paragraph>
+          {items.filter((item) => artworkFilter === 'all' || item.artworkState === artworkFilter).length} of{' '}
+          {items.length} loaded orders
+        </s-paragraph>
+      </s-stack>
+    </s-box>
+  );
   return (
-    <s-page inlineSize="large" heading="Orders and artwork">
+    <s-page inlineSize="base" heading="Orders and artwork">
       {purchaseId && (
         <s-link slot="breadcrumb-actions" href="/admin/orders">
           Orders
@@ -402,33 +424,26 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
         </s-button>
       )}
       {!purchaseId && !denied && (
-        <s-section heading="Customized orders">
+        <s-section accessibilityLabel="Customized orders" padding="none">
           <s-stack gap="base">
             {busy && items.length === 0 && <AdminSkeleton label="Loading orders" />}
-            {items.length === 0 && !busy && <s-paragraph>No customized orders recorded.</s-paragraph>}
+            {items.length === 0 && !busy && (
+              <s-empty-state heading="No customized orders yet">
+                <s-paragraph slot="subheading">No customized orders recorded.</s-paragraph>
+                <s-button slot="primary-action" variant="primary" href="/admin/products">
+                  Configure products
+                </s-button>
+              </s-empty-state>
+            )}
             {nextCursor && (
               <s-button type="button" disabled={busy} onClick={() => void load(nextCursor)}>
                 Load older orders
               </s-button>
             )}
-            <s-select
-              label="Artwork status"
-              value={artworkFilter}
-              onChange={(event) => setArtworkFilter(event.currentTarget.value)}
-            >
-              <s-option value="all">All artwork statuses</s-option>
-              <s-option value="PENDING_ARTWORK">Artwork needed</s-option>
-              <s-option value="READY">Artwork complete</s-option>
-              <s-option value="ARTWORK_LOCKED">Artwork locked</s-option>
-              <s-option value="ERASED">Artwork no longer retained</s-option>
-            </s-select>
-            <s-paragraph>Filters apply to loaded orders. Load older orders to include them.</s-paragraph>
-            <s-paragraph>
-              {items.filter((item) => artworkFilter === 'all' || item.artworkState === artworkFilter).length} of{' '}
-              {items.length} loaded orders
-            </s-paragraph>
+            {items.length === 0 && orderFilters}
             {items.length > 0 && (
               <s-table loading={busy}>
+                <s-box slot="filters">{orderFilters}</s-box>
                 <s-table-header-row>
                   <s-table-header listSlot="primary">Order</s-table-header>
                   <s-table-header listSlot="secondary">Created</s-table-header>

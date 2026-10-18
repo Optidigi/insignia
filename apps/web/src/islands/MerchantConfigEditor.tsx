@@ -12,6 +12,7 @@ import {
 } from '@insignia/visualizer/geometry';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import AdminDisclosure from '../components/AdminDisclosure';
+import AdminSaveBar from '../components/AdminSaveBar';
 import AdminSkeleton from '../components/AdminSkeleton';
 import { useAdminPageReady } from '../shared/admin-page-ready';
 import { authenticatedJson } from '../shared/admin-request';
@@ -210,7 +211,7 @@ function LeanPriceInput({
       <s-text-field
         placeholder="Unavailable"
         value={text}
-        aria-invalid={!valid}
+        error={valid ? undefined : 'Enter a nonnegative amount with at most two decimal places.'}
         onInput={(event) => {
           const next = event.currentTarget.value;
           setTyped({ base: value, text: next });
@@ -221,11 +222,6 @@ function LeanPriceInput({
         label={label}
         disabled={disabled}
       />
-      {!valid && (
-        <div role="alert">
-          <s-paragraph>Enter a nonnegative amount with at most two decimal places.</s-paragraph>
-        </div>
-      )}
     </>
   );
 }
@@ -404,7 +400,24 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       document.getElementById('editor-flow')?.scrollIntoView({ block: 'start' });
     });
   }
-  const [status, setStatus] = useState('Verifying Shopify Admin session…');
+  const [status, setStatusText] = useState('Verifying Shopify Admin session…');
+  const [statusTone, setStatusTone] = useState<'info' | 'critical' | 'success' | 'warning'>('info');
+  function setStatus(text: string) {
+    setStatusText(text);
+    setStatusTone('info');
+  }
+  function setFailure(text: string) {
+    setStatusText(text);
+    setStatusTone('critical');
+  }
+  function setWarning(text: string) {
+    setStatusText(text);
+    setStatusTone('warning');
+  }
+  function setSuccess(text: string) {
+    setStatusText(text);
+    setStatusTone('success');
+  }
   const [loading, setLoading] = useState(true);
   useAdminPageReady(!loading);
   const [list, setList] = useState<List | null>(null);
@@ -446,6 +459,14 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
   const projectRef = useRef(project);
   const viewRef = useRef(view);
   const refreshRef = useRef(refreshPublication);
+  // Publication operates on its immutable saved revision; local draft editing remains independent.
+  // An unresolved save, however, must retain its original request until reconciliation.
+  const editLocked = busy || !!pending.current;
+  const editLockedRef = useRef(editLocked);
+  editLockedRef.current = editLocked;
+  useEffect(() => {
+    visualizerRef.current?.setMode(editLocked ? 'preview' : 'edit-placement');
+  }, [editLocked]);
   busyRef.current = busy;
   saveStateRef.current = saveState;
   editorRef.current = editor;
@@ -490,7 +511,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     )?.status;
     if (status !== 401 && status !== 403) return false;
     clearPrivate();
-    setStatus(error instanceof Error ? error.message : 'Current authorization required');
+    setFailure(error instanceof Error ? error.message : 'Current authorization required');
     return true;
   }
   function syncPublication(data: ConfigView) {
@@ -587,7 +608,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
         }
       }
     } catch (error) {
-      if (seq === requestId.current) setStatus(error instanceof Error ? error.message : 'Admin data unavailable');
+      if (seq === requestId.current) setFailure(error instanceof Error ? error.message : 'Admin data unavailable');
     } finally {
       if (seq === requestId.current) setLoading(false);
     }
@@ -648,7 +669,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
               : current,
           );
         }
-        setStatus(error instanceof Error ? error.message : 'Current Admin state unavailable');
+        setFailure(error instanceof Error ? error.message : 'Current Admin state unavailable');
       } finally {
         refreshing = false;
       }
@@ -660,7 +681,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
   }, [mode, productId]);
   function apply(command: GeometryCommand) {
     const current = editorRef.current;
-    if (!current || busyRef.current) return;
+    if (!current || editLockedRef.current) return;
     try {
       const next = applyGeometryCommand(current, command);
       editorRef.current = next;
@@ -704,8 +725,8 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     if (current) apply({ ...command, baseVersion: current.version } as GeometryCommand);
   }
   function change(next: MerchantDraft) {
+    if (editLockedRef.current) return;
     setValidationIssues([]);
-    if (busyRef.current) return;
     setDraft(next);
     setSaveState('dirty');
     pending.current = null;
@@ -725,7 +746,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     try {
       change({ ...draft, geometry: validateGeometry(update(viewGeometry(draft))) });
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Geometry change rejected');
+      setFailure(error instanceof Error ? error.message : 'Geometry change rejected');
     }
   }
   const selectedImage = editor?.variantId
@@ -755,7 +776,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
           renderer.destroy();
           return;
         }
-        renderer.setMode('edit-placement');
+        renderer.setMode(editLockedRef.current ? 'preview' : 'edit-placement');
         visualizerRef.current = renderer;
         const current = editorRef.current;
         if (current) updateRenderer(current);
@@ -772,7 +793,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
   function project(current: EditorState) {
     const viewport: Viewport = {
       width: Math.max(1, document.getElementById('insignia-visualizer')?.clientWidth ?? 600),
-      height: 420,
+      height: Math.max(1, document.getElementById('insignia-visualizer')?.clientHeight ?? 360),
       pixelRatio: Math.max(1, devicePixelRatio || 1),
     };
     const images: Record<string, string> = {};
@@ -815,13 +836,21 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       await load();
     } catch (error) {
       if (epoch !== requestId.current || authorizationDenied(error)) return;
-      setStatus(error instanceof Error ? error.message : 'Create failed');
+      setFailure(error instanceof Error ? error.message : 'Create failed');
     } finally {
       setBusy(false);
     }
   }
   async function save(retry = false) {
-    if (!productId || !view?.config || !draft || (!retry && (saveState !== 'dirty' || advancedError))) return;
+    if (
+      busyRef.current ||
+      (!retry && editLockedRef.current) ||
+      !productId ||
+      !view?.config ||
+      !draft ||
+      (!retry && (saveState !== 'dirty' || advancedError))
+    )
+      return;
     const request =
       retry && pending.current
         ? pending.current
@@ -870,7 +899,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       });
       setDraft(saved);
       setSaveState('saved');
-      setStatus('Draft saved.');
+      setSuccess('Draft saved.');
       pending.current = null;
       try {
         const refreshed = await authenticatedJson<ConfigView>(endpoint(productId));
@@ -911,7 +940,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
         setValidationIssues(Array.isArray(issues) ? issues.slice(0, 20) : []);
         pending.current = null;
         setSaveState('dirty');
-        setStatus(error instanceof Error ? error.message : 'Save denied');
+        setFailure(error instanceof Error ? error.message : 'Save denied');
         return;
       }
       const body = request.body as {
@@ -938,7 +967,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
         pending.current = null;
         setLatest(result?.config ?? null);
         setSaveState('conflict');
-        setStatus('Another editor changed this draft. Review the latest version.');
+        setWarning('Another editor changed this draft. Review the latest version.');
         return;
       }
       if (
@@ -953,7 +982,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
         setView(result);
         setDraft(result.config.draft as MerchantDraft);
         setSaveState('saved');
-        setStatus('Draft saved; verified after an interrupted response.');
+        setSuccess('Draft saved; verified after an interrupted response.');
         pending.current = null;
       } else {
         setLatest(result?.config ?? null);
@@ -1100,7 +1129,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       if (epoch === requestId.current) setCopyCandidates(result);
     } catch (error) {
       if (epoch !== requestId.current || authorizationDenied(error)) return;
-      setStatus(error instanceof Error ? error.message : 'Destination products could not be loaded.');
+      setFailure(error instanceof Error ? error.message : 'Destination products could not be loaded.');
     } finally {
       if (epoch === requestId.current) setBusy(false);
     }
@@ -1131,7 +1160,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       window.location.assign(`/admin/products/${target}/config`);
     } catch (error) {
       if (epoch !== requestId.current || authorizationDenied(error)) return;
-      setStatus(error instanceof Error ? error.message : 'Copy failed');
+      setFailure(error instanceof Error ? error.message : 'Copy failed');
     } finally {
       setBusy(false);
     }
@@ -1239,9 +1268,22 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
   ) => {
     if (draft) change({ ...draft, placements: draft.placements.map((item) => (item.id === id ? update(item) : item)) });
   };
+  const productFilters = (
+    <s-grid padding="base" gridTemplateColumns="1fr auto" gap="base" alignItems="end">
+      <s-search-field
+        label="Search products"
+        placeholder="Search your catalog"
+        value={query}
+        onInput={(event) => setQuery(event.currentTarget.value)}
+      />
+      <s-button loading={loading} disabled={loading} onClick={() => void load(null, query)}>
+        Search
+      </s-button>
+    </s-grid>
+  );
   return (
     <s-page
-      inlineSize="large"
+      inlineSize="base"
       heading={
         mode === 'picker' ? 'Products' : view?.product.title ? `Customize ${view.product.title}` : 'Customize product'
       }
@@ -1256,8 +1298,8 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
         </s-link>
       )}
       {status && !loading && (
-        <s-banner tone="info">
-          <div role="status">
+        <s-banner tone={statusTone} slot="supplemental-start">
+          <div role={statusTone === 'critical' ? 'alert' : 'status'}>
             <s-paragraph>{status}</s-paragraph>
           </div>
         </s-banner>
@@ -1268,90 +1310,106 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
         </s-button>
       )}
       {mode === 'picker' && (
-        <s-section heading="Shopify products">
-          <s-stack gap="base">
-            <s-paragraph>Choose a product to configure its customization options and preview.</s-paragraph>
-            <s-grid gridTemplateColumns="1fr auto" gap="base" alignItems="end">
-              <s-search-field
-                label="Search products"
-                placeholder="Search your catalog"
-                value={query}
-                onInput={(event) => setQuery(event.currentTarget.value)}
-              />
-              <s-button variant="primary" disabled={loading} onClick={() => void load(null, query)}>
-                Search
-              </s-button>
-            </s-grid>
-            {loading && <AdminSkeleton label="Loading products" />}
-            {list && (
-              <div role="status">
-                <s-paragraph>{list.products.length} products on this page</s-paragraph>
-              </div>
-            )}
-            {list && list.products.length > 0 && (
-              <s-table loading={loading}>
-                <s-table-header-row>
-                  <s-table-header listSlot="primary">Product</s-table-header>
-                  <s-table-header listSlot="inline">Status</s-table-header>
-                  <s-table-header listSlot="secondary">Variants</s-table-header>
-                  <s-table-header listSlot="labeled">Action</s-table-header>
-                </s-table-header-row>
-                <s-table-body>
-                  {list.products.map((product) => (
-                    <s-table-row key={product.id}>
-                      <s-table-cell>
-                        <s-stack direction="inline" gap="base" alignItems="center">
-                          <s-box inlineSize="72px">
-                            {product.imageUrl ? (
-                              <s-thumbnail src={product.imageUrl} size="large" alt="" />
-                            ) : (
-                              <s-text>No image</s-text>
-                            )}
-                          </s-box>
-                          <s-link href={`/admin/products/${numberOf(product.id)}/config`}>{product.title}</s-link>
-                        </s-stack>
-                      </s-table-cell>
-                      <s-table-cell>
-                        <s-badge tone={product.status === 'ACTIVE' ? 'success' : 'neutral'}>
-                          {product.status === 'ACTIVE'
-                            ? 'Active'
-                            : product.status === 'ARCHIVED'
-                              ? 'Archived'
-                              : product.status === 'DRAFT'
-                                ? 'Draft'
-                                : product.status}
-                        </s-badge>
-                      </s-table-cell>
-                      <s-table-cell>
-                        {product.variants.length > 0 && (
-                          <s-paragraph>
-                            {product.variants
-                              .slice(0, 5)
-                              .map((variant) => variant.title)
-                              .join(', ')}
-                          </s-paragraph>
-                        )}
-                      </s-table-cell>
-                      <s-table-cell>
-                        {numberOf(product.id) && (
-                          <s-text>
-                            <s-link href={`/admin/products/${numberOf(product.id)}/config`}>Configure product</s-link>
-                          </s-text>
-                        )}
-                      </s-table-cell>
-                    </s-table-row>
-                  ))}
-                </s-table-body>
-              </s-table>
-            )}
-            {list && list.products.length === 0 && (
-              <s-box padding="large" background="subdued" borderRadius="base">
-                <s-paragraph>No products found.</s-paragraph>
-              </s-box>
-            )}
-            {list?.nextCursor && <s-button onClick={() => void load(list.nextCursor, query)}>Next page</s-button>}
-          </s-stack>
-        </s-section>
+        <>
+          <s-paragraph>Choose a product to configure its customization options and preview.</s-paragraph>
+          <s-section padding="none" accessibilityLabel="Shopify products">
+            <s-stack gap="none">
+              {(!list || list.products.length === 0) && productFilters}
+
+              {loading && <AdminSkeleton label="Loading products" />}
+              {list && (
+                <div role="status">
+                  <s-paragraph>{list.products.length} products on this page</s-paragraph>
+                </div>
+              )}
+              {list && list.products.length > 0 && (
+                <s-table
+                  loading={loading}
+                  paginate={!!list?.nextCursor}
+                  hasNextPage={!!list?.nextCursor}
+                  onNextPage={() => {
+                    if (!loading && list?.nextCursor) void load(list.nextCursor, query);
+                  }}
+                >
+                  <s-box slot="filters">{productFilters}</s-box>
+                  <s-table-header-row>
+                    <s-table-header listSlot="primary">Product</s-table-header>
+                    <s-table-header listSlot="inline">Status</s-table-header>
+                    <s-table-header listSlot="secondary">Variants</s-table-header>
+                    <s-table-header listSlot="labeled">Action</s-table-header>
+                  </s-table-header-row>
+                  <s-table-body>
+                    {list.products.map((product) => (
+                      <s-table-row key={product.id}>
+                        <s-table-cell>
+                          <s-stack direction="inline" gap="base" alignItems="center">
+                            <s-box inlineSize="40px">
+                              {product.imageUrl ? (
+                                <s-thumbnail src={product.imageUrl} alt="" />
+                              ) : (
+                                <s-text>No image</s-text>
+                              )}
+                            </s-box>
+                            <s-link href={`/admin/products/${numberOf(product.id)}/config`}>{product.title}</s-link>
+                          </s-stack>
+                        </s-table-cell>
+                        <s-table-cell>
+                          <s-badge tone={product.status === 'ACTIVE' ? 'success' : 'neutral'}>
+                            {product.status === 'ACTIVE'
+                              ? 'Active'
+                              : product.status === 'ARCHIVED'
+                                ? 'Archived'
+                                : product.status === 'DRAFT'
+                                  ? 'Draft'
+                                  : product.status}
+                          </s-badge>
+                        </s-table-cell>
+                        <s-table-cell>
+                          {product.variants.length > 0 && (
+                            <s-paragraph>
+                              {product.variants
+                                .slice(0, 5)
+                                .map((variant) => variant.title)
+                                .join(', ')}
+                            </s-paragraph>
+                          )}
+                        </s-table-cell>
+                        <s-table-cell>
+                          {numberOf(product.id) && (
+                            <s-text>
+                              <s-link href={`/admin/products/${numberOf(product.id)}/config`}>Configure product</s-link>
+                            </s-text>
+                          )}
+                        </s-table-cell>
+                      </s-table-row>
+                    ))}
+                  </s-table-body>
+                </s-table>
+              )}
+              {list && list.products.length === 0 && (
+                <s-empty-state heading="No products found.">
+                  <s-paragraph slot="subheading">
+                    {query
+                      ? 'Try a different product name or clear your search.'
+                      : 'Products from your Shopify catalog appear here. Add a product in Shopify to begin customization.'}
+                  </s-paragraph>
+                  {query && (
+                    <s-button
+                      slot="primary-action"
+                      variant="primary"
+                      onClick={() => {
+                        setQuery('');
+                        void load(null, '');
+                      }}
+                    >
+                      Clear search
+                    </s-button>
+                  )}
+                </s-empty-state>
+              )}
+            </s-stack>
+          </s-section>
+        </>
       )}
       {mode === 'config' && loading && (
         <s-section>
@@ -1379,7 +1437,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                   <s-thumbnail src={view.product.imageUrl} size="large" alt="Product preview" />
                 )}
                 {!view.config && (
-                  <s-button disabled={busy} onClick={() => void create()}>
+                  <s-button variant="primary" loading={busy} disabled={busy} onClick={() => void create()}>
                     Create configuration
                   </s-button>
                 )}
@@ -1387,150 +1445,186 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
             </s-section>
           )}
           {view.config && draft && geometry && editor && (
-            <s-query-container containerName="product-editor">
-              <s-grid
-                gridTemplateColumns="@container product-editor (inline-size > 1000px) 1fr 360px, 1fr"
-                gap="base"
-                alignItems="start"
-              >
-                <div class="admin-editor-controls">
-                  <s-stack gap="base">
-                    <s-section id="editor-flow" heading="Configure this product">
-                      <s-stack gap="base">
-                        <s-paragraph>
-                          Configure your product, check its preview, then save and publish. Step changes keep your
-                          unsaved work.
-                        </s-paragraph>
-                        <nav aria-label="Product setup steps">
-                          <s-stack direction="inline" gap="base">
-                            {setupSteps.map((step, index) => (
-                              <s-button
-                                variant={setupStep === step.id ? 'primary' : 'secondary'}
-                                icon={step.icon}
-                                key={step.id}
-                                href={'#' + step.anchor}
-                                aria-current={setupStep === step.id ? 'step' : undefined}
-                                onClick={(event) => {
-                                  event.preventDefault();
-                                  selectSetupStep(step.id);
-                                }}
-                              >
-                                {index + 1}. {step.label}
-                              </s-button>
-                            ))}
-                            <s-button href="#product-preview" variant="tertiary" icon="image">
-                              Preview
-                            </s-button>
-                          </s-stack>
-                        </nav>
-                        <div id="setup-stage-heading" tabIndex={-1}>
-                          <s-stack direction="inline" gap="small">
-                            <s-icon type={currentSetup?.icon ?? 'settings'} />
-                            <s-heading>
-                              {currentSetup
-                                ? `Step ${setupIndex + 1} of 4 · ${currentSetup.label}`
-                                : 'All product settings'}
-                            </s-heading>
-                          </s-stack>
-                        </div>
-                        <s-button onClick={() => selectSetupStep(setupStep === 'all' ? 'rules' : 'all')}>
-                          {setupStep === 'all' ? 'Use guided setup' : 'View all settings'}
-                        </s-button>
-                      </s-stack>
-                    </s-section>
-                    <div class="admin-save-toolbar">
-                      <s-box padding="base" background="base" border="base" borderRadius="base">
-                        <s-stack direction="inline" alignItems="center" gap="base">
-                          {setupStep !== 'review' && setupStep !== 'all' && (
-                            <PublicationStatus config={view.config} compact />
-                          )}
-                          {validationIssues.length > 0 && (
-                            <div role="alert">
-                              {validationIssues.map((issue) => (
-                                <s-paragraph key={issue.path}>
-                                  {issue.path}: {issue.message}
-                                </s-paragraph>
-                              ))}
-                            </div>
-                          )}
-                          <s-stack gap="small">
-                            <s-badge
-                              tone={
-                                saveState === 'conflict' || saveState === 'ambiguous'
-                                  ? 'warning'
-                                  : saveState === 'dirty'
-                                    ? 'info'
-                                    : 'success'
-                              }
-                            >
-                              {
-                                {
-                                  clean: 'All changes saved',
-                                  dirty: 'Unsaved changes',
-                                  saving: 'Saving changes…',
-                                  saved: 'All changes saved',
-                                  conflict: 'Newer changes found',
-                                  ambiguous: 'Save could not be confirmed',
-                                }[saveState]
-                              }
-                            </s-badge>
-                            <s-stack direction="inline" gap="base">
-                              <s-text color="subdued">Draft version {view.config.draftVersion}</s-text>
-                              <s-text color="subdued">
-                                Product status:{' '}
-                                {view.product.status === 'ACTIVE'
-                                  ? 'Active'
-                                  : view.product.status === 'ARCHIVED'
-                                    ? 'Archived'
-                                    : view.product.status === 'DRAFT'
-                                      ? 'Draft'
-                                      : view.product.status}
-                              </s-text>
-                            </s-stack>
-                          </s-stack>
-                          <s-button
-                            variant="primary"
-                            disabled={
-                              busy || !!advancedError || legacyPricing || hasPriceErrors || saveState !== 'dirty'
-                            }
-                            onClick={() => void save()}
-                          >
-                            Save draft
-                          </s-button>
-
-                          {saveState === 'ambiguous' && pending.current && (
-                            <s-button disabled={busy} onClick={() => void save(true)}>
-                              Retry saving
-                            </s-button>
-                          )}
-                          {latest && (
+            <>
+              <s-box minInlineSize="0">
+                <s-stack gap="base">
+                  <s-section id="editor-flow" heading="Configure this product">
+                    <s-stack gap="base">
+                      <nav aria-label="Product setup steps">
+                        <s-stack direction="inline" gap="base">
+                          {setupSteps.map((step, index) => (
                             <s-button
-                              onClick={() => {
-                                if (isDraft(latest.draft)) {
-                                  setDraft(latest.draft);
-                                  setPriceErrors({});
-                                  setPriceRevision((old) => old + 1);
-                                  setEditor(initialEditor(latest.draft));
-                                  setView({ ...view, config: latest });
-                                  setLatest(null);
-                                  setSaveState('clean');
-                                  pending.current = null;
-                                }
+                              variant={setupStep === step.id ? 'secondary' : 'tertiary'}
+                              icon={step.icon}
+                              key={step.id}
+                              href={'#' + step.anchor}
+                              aria-current={setupStep === step.id ? 'step' : undefined}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                selectSetupStep(step.id);
                               }}
                             >
-                              Review latest saved draft
+                              {index + 1}. {step.label}
                             </s-button>
-                          )}
-                          {(saveState === 'conflict' || saveState === 'ambiguous') && (
-                            <s-button disabled={busy} onClick={() => void load()}>
-                              Reload current draft
-                            </s-button>
-                          )}
+                          ))}
+                          <s-button href="#product-preview" variant="tertiary" icon="image">
+                            Preview
+                          </s-button>
                         </s-stack>
-                      </s-box>
-                    </div>
-                    <s-stack gap="base">
-                      <section class="admin-setup-panel" aria-label="Product rules" hidden={!visibleStage('rules')}>
+                      </nav>
+                      <div id="setup-stage-heading" tabIndex={-1}>
+                        <s-stack direction="inline" gap="small">
+                          <s-icon type={currentSetup?.icon ?? 'settings'} />
+                          <s-heading>
+                            {currentSetup
+                              ? `Step ${setupIndex + 1} of 4 · ${currentSetup.label}`
+                              : 'All product settings'}
+                          </s-heading>
+                        </s-stack>
+                      </div>
+                      <s-button onClick={() => selectSetupStep(setupStep === 'all' ? 'rules' : 'all')}>
+                        {setupStep === 'all' ? 'Use guided setup' : 'View all settings'}
+                      </s-button>
+                    </s-stack>
+                  </s-section>
+                  <s-section accessibilityLabel="Draft status">
+                    <s-stack direction="inline" alignItems="center" gap="base">
+                      {setupStep !== 'review' && setupStep !== 'all' && (
+                        <PublicationStatus config={view.config} compact />
+                      )}
+                      {validationIssues.length > 0 && (
+                        <div role="alert">
+                          {validationIssues.map((issue) => (
+                            <s-paragraph key={issue.path}>
+                              {issue.path}: {issue.message}
+                            </s-paragraph>
+                          ))}
+                        </div>
+                      )}
+                      <s-stack gap="small">
+                        <s-badge
+                          tone={
+                            saveState === 'conflict' || saveState === 'ambiguous'
+                              ? 'warning'
+                              : saveState === 'dirty'
+                                ? 'info'
+                                : 'success'
+                          }
+                        >
+                          {
+                            {
+                              clean: 'All changes saved',
+                              dirty: 'Unsaved changes',
+                              saving: 'Saving changes…',
+                              saved: 'All changes saved',
+                              conflict: 'Newer changes found',
+                              ambiguous: 'Save could not be confirmed',
+                            }[saveState]
+                          }
+                        </s-badge>
+                        <s-stack direction="inline" gap="base">
+                          <s-text color="subdued">Draft version {view.config.draftVersion}</s-text>
+                          <s-text color="subdued">
+                            Product status:{' '}
+                            {view.product.status === 'ACTIVE'
+                              ? 'Active'
+                              : view.product.status === 'ARCHIVED'
+                                ? 'Archived'
+                                : view.product.status === 'DRAFT'
+                                  ? 'Draft'
+                                  : view.product.status}
+                          </s-text>
+                        </s-stack>
+                      </s-stack>
+
+                      {saveState === 'ambiguous' && pending.current && (
+                        <s-paragraph>
+                          Retry saving to reconcile this request before editing, discarding or loading another draft.
+                        </s-paragraph>
+                      )}
+                      {saveState === 'ambiguous' && pending.current && (
+                        <s-button loading={busy} disabled={busy} onClick={() => void save(true)}>
+                          Retry saving
+                        </s-button>
+                      )}
+                      {latest && (
+                        <s-button
+                          disabled={editLocked}
+                          onClick={() => {
+                            if (!editLockedRef.current && isDraft(latest.draft)) {
+                              setDraft(latest.draft);
+                              setPriceErrors({});
+                              setPriceRevision((old) => old + 1);
+                              setEditor(initialEditor(latest.draft));
+                              setView({ ...view, config: latest });
+                              setLatest(null);
+                              setSaveState('clean');
+                              pending.current = null;
+                            }
+                          }}
+                        >
+                          Review latest saved draft
+                        </s-button>
+                      )}
+                      {(saveState === 'conflict' || saveState === 'ambiguous') && (
+                        <s-button
+                          disabled={editLocked}
+                          onClick={() => {
+                            if (!editLockedRef.current) void load();
+                          }}
+                        >
+                          Reload current draft
+                        </s-button>
+                      )}
+                    </s-stack>
+                    <s-stack direction="inline" gap="base">
+                      {' '}
+                      <s-button
+                        loading={saveState === 'saving'}
+                        variant="primary"
+                        disabled={
+                          editLocked || !!advancedError || legacyPricing || hasPriceErrors || saveState !== 'dirty'
+                        }
+                        onClick={() => void save()}
+                      >
+                        Save draft
+                      </s-button>
+                      <AdminSaveBar
+                        dirty={
+                          ['dirty', 'saving', 'ambiguous', 'conflict'].includes(saveState) ||
+                          hasPriceErrors ||
+                          !!advancedError ||
+                          editLocked
+                        }
+                        saving={busy}
+                        canSave={
+                          !editLocked && !advancedError && !legacyPricing && !hasPriceErrors && saveState === 'dirty'
+                        }
+                        canDiscard={!editLocked && isDraft(view.config.draft)}
+                        onSave={() => void save()}
+                        onDiscard={() => {
+                          if (editLockedRef.current || !view?.config || !isDraft(view.config.draft)) return;
+                          const saved = structuredClone(view.config.draft);
+                          const restored = initialEditor(saved);
+                          setDraft(saved);
+                          setEditor(restored);
+                          editorRef.current = restored;
+                          setPriceErrors({});
+                          setPriceRevision((old) => old + 1);
+                          setPriceProposalStarted(false);
+                          setAdvancedText('');
+                          setAdvancedError('');
+                          setValidationIssues([]);
+                          setLatest(null);
+                          setSaveState('clean');
+                          setStatus('');
+                        }}
+                      />
+                    </s-stack>
+                  </s-section>
+                  <s-stack gap="base">
+                    <section class="admin-setup-panel" aria-label="Product rules" hidden={!visibleStage('rules')}>
+                      <s-stack gap="base">
                         <s-section id="customization-rules" heading="Customization rules">
                           <s-stack gap="base">
                             <s-select
@@ -1539,7 +1633,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                 change({ ...draft, mode: event.currentTarget.value as MerchantDraft['mode'] })
                               }
                               label={'Customization mode'}
-                              disabled={busy}
+                              disabled={editLocked}
                             >
                               <s-option value="optional">Optional</s-option>
                               <s-option value="required">Required for all purchases</s-option>
@@ -1558,7 +1652,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                       const currency = view.config?.currentShopCurrency;
                                       if (currency) change({ ...draft, shopCurrency: currency });
                                     }}
-                                    disabled={busy}
+                                    disabled={editLocked}
                                     icon="check"
                                   >
                                     Use current shop currency
@@ -1574,7 +1668,10 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                               prices and allowed print areas in the following steps.
                             </s-paragraph>
                             <s-stack direction="inline" gap="base">
-                              <s-button disabled={busy || libraryLoading} onClick={() => void loadMethodLibrary()}>
+                              <s-button
+                                disabled={editLocked || libraryLoading}
+                                onClick={() => void loadMethodLibrary()}
+                              >
                                 Choose from library
                               </s-button>
                               <s-link href="/admin/settings/methods" target="_blank">
@@ -1591,7 +1688,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                       label="Library method"
                                       value={libraryChoice}
                                       onChange={(event) => setLibraryChoice(event.currentTarget.value)}
-                                      disabled={busy}
+                                      disabled={editLocked}
                                     >
                                       {library.map((method) => (
                                         <s-option key={method.id} value={method.id}>
@@ -1600,7 +1697,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                       ))}
                                     </s-select>
                                     <s-button
-                                      disabled={busy || !libraryChoice}
+                                      disabled={editLocked || !libraryChoice}
                                       onClick={() => {
                                         const source = library.find((method) => method.id === libraryChoice);
                                         if (!source) return;
@@ -1638,7 +1735,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                   value={labelFor('methods', method.id)}
                                   onInput={(event) => setLabel('methods', method.id, event.currentTarget.value)}
                                   label={'Method name'}
-                                  disabled={busy}
+                                  disabled={editLocked}
                                 />{' '}
                                 <s-button
                                   type="button"
@@ -1649,7 +1746,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                       labels: removeChoiceLabels(draft.labels, 'methods', method.id),
                                     })
                                   }
-                                  disabled={busy}
+                                  disabled={editLocked}
                                   icon="delete"
                                 >
                                   Remove method
@@ -1661,26 +1758,28 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                               onClick={() =>
                                 change({ ...draft, methods: [...draft.methods, { id: freshId('method') }] })
                               }
-                              disabled={busy}
+                              disabled={editLocked}
                               icon="plus"
                             >
                               Add method
                             </s-button>
                           </s-stack>
                         </s-section>
-                      </section>
-                      <section
-                        class="admin-setup-panel"
-                        aria-label="Images and print areas"
-                        hidden={!visibleStage('design')}
-                      >
+                      </s-stack>
+                    </section>
+                    <section
+                      class="admin-setup-panel"
+                      aria-label="Images and print areas"
+                      hidden={!visibleStage('design')}
+                    >
+                      <s-stack gap="base">
                         <s-section id="product-images" heading="Product images">
                           <s-stack gap="base">
                             <s-select
                               value={editor.viewId}
                               onChange={(event) => choose({ kind: 'select-view', viewId: event.currentTarget.value })}
                               label={'View'}
-                              disabled={busy}
+                              disabled={editLocked}
                             >
                               {geometry.views.map((item) => (
                                 <s-option key={item.id} value={item.id}>
@@ -1693,7 +1792,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                               value={labelFor('views', editor.viewId)}
                               onInput={(event) => setLabel('views', editor.viewId, event.currentTarget.value)}
                               label={'View name'}
-                              disabled={busy}
+                              disabled={editLocked}
                             />
                             <s-button
                               type="button"
@@ -1703,7 +1802,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                   views: [...value.views, { id: freshId('view'), variantImages: [], placements: [] }],
                                 }))
                               }
-                              disabled={busy}
+                              disabled={editLocked}
                               icon="plus"
                             >
                               Add view
@@ -1714,7 +1813,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                 choose({ kind: 'select-variant', variantId: event.currentTarget.value || undefined })
                               }
                               label={'Product variant'}
-                              disabled={busy}
+                              disabled={editLocked}
                             >
                               <s-option value="">Featured image</s-option>
                               {view.product.variants.map((item) => (
@@ -1733,7 +1832,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                             )}
                             <s-button
                               type="button"
-                              disabled={busy || !selectedImage || !imageSize}
+                              disabled={editLocked || !selectedImage || !imageSize}
                               onClick={() => {
                                 if (!selectedImage || !imageSize || !selectedView) return;
                                 const ref = { revisionId: editor.variantId ?? `product_${productId}`, ...imageSize };
@@ -1777,7 +1876,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                 })
                               }
                               label="Print area"
-                              disabled={busy}
+                              disabled={editLocked}
                             >
                               <s-option value="">None</s-option>
                               {selectedView?.placements.map((item) => (
@@ -1807,7 +1906,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                 });
                                 choose({ kind: 'select-placement', placementId: id });
                               }}
-                              disabled={busy}
+                              disabled={editLocked}
                               icon="plus"
                             >
                               Add placement to view
@@ -1824,7 +1923,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                     setLabel('placements', selectedPlacement.id, event.currentTarget.value)
                                   }
                                   label={'Placement name'}
-                                  disabled={busy}
+                                  disabled={editLocked}
                                 />
                                 <s-checkbox
                                   checked={selectedPlacement.logoLaterAllowed}
@@ -1835,7 +1934,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                     }))
                                   }
                                   label={'Allow logo later'}
-                                  disabled={busy}
+                                  disabled={editLocked}
                                 />
                                 <s-paragraph>Allowed methods</s-paragraph>
                                 {draft.methods.map((item) => (
@@ -1850,7 +1949,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                       }))
                                     }
                                     label={choiceLabel('methods', item.id)}
-                                    disabled={busy}
+                                    disabled={editLocked}
                                     key={item.id}
                                   />
                                 ))}
@@ -1867,7 +1966,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                       }))
                                     }
                                     label={choiceLabel('steps', item.id)}
-                                    disabled={busy}
+                                    disabled={editLocked}
                                     key={item.id}
                                   />
                                 ))}
@@ -1918,7 +2017,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                           height: 'Print area height',
                                         }[field]
                                       }
-                                      disabled={busy}
+                                      disabled={editLocked}
                                     />
                                   ))}
                                 </s-grid>
@@ -1938,7 +2037,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                 choose({ kind: 'select-step', stepId: event.currentTarget.value || undefined })
                               }
                               label="Print size"
-                              disabled={busy}
+                              disabled={editLocked}
                             >
                               <s-option value="">None</s-option>
                               {geometry.steps.map((item) => (
@@ -1953,7 +2052,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                 value={labelFor('steps', selectedStep.id)}
                                 onInput={(event) => setLabel('steps', selectedStep.id, event.currentTarget.value)}
                                 label={'Size step name'}
-                                disabled={busy}
+                                disabled={editLocked}
                               />
                             )}
                             <s-button
@@ -1967,7 +2066,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                   ],
                                 }))
                               }
-                              disabled={busy}
+                              disabled={editLocked}
                               icon="plus"
                             >
                               Add size step
@@ -1994,18 +2093,20 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                       heightFraction: 'Height relative to print area',
                                     }[field]
                                   }
-                                  disabled={busy}
+                                  disabled={editLocked}
                                   key={field}
                                 />
                               ))}
                           </s-stack>
                         </s-section>
-                      </section>
-                      <section
-                        class="admin-setup-panel"
-                        aria-label="Prices and customer options"
-                        hidden={!visibleStage('prices')}
-                      >
+                      </s-stack>
+                    </section>
+                    <section
+                      class="admin-setup-panel"
+                      aria-label="Prices and customer options"
+                      hidden={!visibleStage('prices')}
+                    >
+                      <s-stack gap="base">
                         <s-section heading="Customer options">
                           <s-stack gap="base">
                             {draft.productionOptions.map((item) => (
@@ -2016,7 +2117,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                   value={labelFor('options', item.id)}
                                   onInput={(event) => setLabel('options', item.id, event.currentTarget.value)}
                                   label={'Option name'}
-                                  disabled={busy}
+                                  disabled={editLocked}
                                 />{' '}
                                 {item.allowedValueIds.map((id, index) => (
                                   <s-text-field
@@ -2024,7 +2125,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                     value={valueLabel(item.id, id)}
                                     onInput={(event) => setValueLabel(item.id, id, event.currentTarget.value)}
                                     label={['Value', index + 1, 'name'].join(' ')}
-                                    disabled={busy}
+                                    disabled={editLocked}
                                     key={id}
                                   />
                                 ))}{' '}
@@ -2039,7 +2140,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                       labels: removeChoiceLabels(draft.labels, 'options', item.id),
                                     })
                                   }
-                                  disabled={busy}
+                                  disabled={editLocked}
                                   icon="delete"
                                 >
                                   Remove option
@@ -2059,7 +2160,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                       ),
                                     })
                                   }
-                                  disabled={busy}
+                                  disabled={editLocked}
                                   icon="plus"
                                 >
                                   Add value
@@ -2077,7 +2178,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                   ],
                                 })
                               }
-                              disabled={busy}
+                              disabled={editLocked}
                               icon="plus"
                             >
                               Add production option
@@ -2134,7 +2235,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                       labels: draft.labels ? { ...draft.labels, prices: {} } : draft.labels,
                                     });
                                   }}
-                                  disabled={busy}
+                                  disabled={editLocked}
                                 >
                                   Set decoration prices
                                 </s-button>
@@ -2189,7 +2290,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                                 onValidity={(valid) =>
                                                   setPriceErrors((old) => ({ ...old, [cell.key]: !valid }))
                                                 }
-                                                disabled={busy}
+                                                disabled={editLocked}
                                               />
                                               {rule ? (
                                                 <s-button
@@ -2198,7 +2299,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                                     setPriceErrors((old) => ({ ...old, [cell.key]: false }));
                                                     updateLeanPrice(cell, '');
                                                   }}
-                                                  disabled={busy}
+                                                  disabled={editLocked}
                                                 >
                                                   Make unavailable
                                                 </s-button>
@@ -2225,7 +2326,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                 setAdvancedText(JSON.stringify(draft, null, 2));
                                 setAdvancedError('');
                               }}
-                              disabled={busy}
+                              disabled={editLocked}
                             >
                               Advanced configuration (JSON)
                             </s-button>
@@ -2233,7 +2334,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                               <div>
                                 <s-text-area
                                   label="Advanced JSON"
-                                  disabled={busy}
+                                  disabled={editLocked}
                                   rows={16}
                                   value={advancedText}
                                   onInput={(event) => setAdvancedText(event.currentTarget.value)}
@@ -2250,7 +2351,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                       setAdvancedError('Invalid draft JSON or geometry');
                                     }
                                   }}
-                                  disabled={busy}
+                                  disabled={editLocked}
                                 >
                                   Apply JSON
                                 </s-button>
@@ -2263,9 +2364,11 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                             )}
                           </s-stack>
                         </s-section>
-                      </section>
-                    </s-stack>
-                    <section class="admin-setup-panel" aria-label="Review and publish" hidden={!visibleStage('review')}>
+                      </s-stack>
+                    </section>
+                  </s-stack>
+                  <section class="admin-setup-panel" aria-label="Review and publish" hidden={!visibleStage('review')}>
+                    <s-stack gap="base">
                       <PublicationStatus config={view.config} />
                       <s-section heading="Review your choices">
                         <s-stack gap="base">
@@ -2373,34 +2476,36 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                           <s-link href="/admin/settings/storefront">Open storefront setup</s-link>
                         </s-stack>
                       </s-section>
-                    </section>
-                    {setupStep !== 'all' && (
-                      <s-section>
-                        <s-stack gap="base">
-                          <s-stack direction="inline" gap="base">
-                            {previousSetup && (
-                              <s-button onClick={() => selectSetupStep(previousSetup.id)}>
-                                Back to {previousSetup.label.toLowerCase()}
-                              </s-button>
-                            )}
-                            {nextSetup && (
-                              <s-button variant="primary" onClick={() => selectSetupStep(nextSetup.id)}>
-                                Continue to {setupIndex === 2 ? 'review' : nextSetup.label.toLowerCase()}
-                              </s-button>
-                            )}
-                          </s-stack>
+                    </s-stack>
+                  </section>
+                  {setupStep !== 'all' && (
+                    <s-section>
+                      <s-stack gap="base">
+                        <s-stack direction="inline" gap="base">
+                          {previousSetup && (
+                            <s-button onClick={() => selectSetupStep(previousSetup.id)}>
+                              Back to {previousSetup.label.toLowerCase()}
+                            </s-button>
+                          )}
+                          {nextSetup && (
+                            <s-button variant="primary" onClick={() => selectSetupStep(nextSetup.id)}>
+                              Continue to {setupIndex === 2 ? 'review' : nextSetup.label.toLowerCase()}
+                            </s-button>
+                          )}
                         </s-stack>
-                      </s-section>
-                    )}
-                  </s-stack>
-                </div>
-                <div class="admin-editor-preview">
-                  <s-section id="product-preview" heading="Live preview">
-                    <s-stack gap="base">
-                      <s-paragraph>
-                        Check the selected product image, print area and sample artwork. Preview uploads do not change
-                        customer orders.
-                      </s-paragraph>
+                      </s-stack>
+                    </s-section>
+                  )}
+                </s-stack>
+              </s-box>
+              <s-box slot="aside" minInlineSize="0">
+                <s-section id="product-preview" heading="Live preview">
+                  <s-stack gap="base">
+                    <s-paragraph>
+                      Check the selected product image, print area and sample artwork. Preview uploads do not change
+                      customer orders.
+                    </s-paragraph>
+                    <s-box border="base" borderRadius="base" overflow="hidden" background="subdued">
                       <div
                         role="img"
                         id="insignia-visualizer"
@@ -2411,36 +2516,35 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                           revisionId: view.config.publication.revisionId,
                           sourceDraftVersion: view.config.publication.sourceDraftVersion,
                         })}
-                        style="width:100%;height:420px"
                         aria-label="Product placement preview"
                       ></div>
-                      {previewStatus && (
-                        <div role="status">
-                          <s-paragraph>Preview: {previewStatus}</s-paragraph>
-                        </div>
-                      )}
-                      <ArtworkUpload
-                        disabled={busy}
-                        onAuthenticationDenied={authorizationDenied}
-                        onPreview={(preview) => {
-                          const current = editorRef.current;
-                          if (!current) return;
-                          const next: EditorState = {
-                            ...current,
-                            artwork: preview
-                              ? { kind: 'raster', url: preview.url, aspectRatio: preview.aspectRatio }
-                              : { kind: 'logo-later' },
-                          };
-                          editorRef.current = next;
-                          setEditor(next);
-                          updateRenderer(next);
-                        }}
-                      />
-                    </s-stack>
-                  </s-section>
-                </div>
-              </s-grid>
-            </s-query-container>
+                    </s-box>
+                    {previewStatus && (
+                      <div role="status">
+                        <s-paragraph>Preview: {previewStatus}</s-paragraph>
+                      </div>
+                    )}
+                    <ArtworkUpload
+                      disabled={busy}
+                      onAuthenticationDenied={authorizationDenied}
+                      onPreview={(preview) => {
+                        const current = editorRef.current;
+                        if (!current) return;
+                        const next: EditorState = {
+                          ...current,
+                          artwork: preview
+                            ? { kind: 'raster', url: preview.url, aspectRatio: preview.aspectRatio }
+                            : { kind: 'logo-later' },
+                        };
+                        editorRef.current = next;
+                        setEditor(next);
+                        updateRenderer(next);
+                      }}
+                    />
+                  </s-stack>
+                </s-section>
+              </s-box>
+            </>
           )}
         </>
       )}

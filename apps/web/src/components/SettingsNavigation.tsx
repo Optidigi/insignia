@@ -15,14 +15,9 @@ export default function SettingsNavigation({
       <nav aria-label="Settings sections">
         <s-stack direction="inline" gap="base">
           {sections.map(([id, label, href]) => (
-            <s-button
-              key={id}
-              href={href}
-              variant={current === id ? 'primary' : 'tertiary'}
-              aria-current={current === id ? 'page' : undefined}
-            >
+            <s-link key={id} href={href} aria-current={current === id ? 'page' : undefined}>
               {label}
-            </s-button>
+            </s-link>
           ))}
         </s-stack>
       </nav>

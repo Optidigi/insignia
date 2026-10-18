@@ -24,20 +24,44 @@ export function installAdminNavigation() {
   }
   function transition(pathname?: string) {
     if (pathname) {
-      const { heading, layout } = adminRoute(pathname);
+      const { heading, layout, inlineSize } = adminRoute(pathname);
       const page = shell?.querySelector('[data-skeleton-layout]');
       page?.setAttribute('aria-label', heading);
       page?.setAttribute('data-skeleton-layout', layout);
+      page?.setAttribute('data-skeleton-width', inlineSize);
+      if (page) Object.assign(page, { maxInlineSize: inlineSize === 'small' ? '662px' : '998px' });
+      const grid = shell?.querySelector('[data-skeleton-grid]');
+      if (grid)
+        Object.assign(grid, {
+          gridTemplateColumns:
+            layout === 'editor'
+              ? '@container admin-page-skeleton (inline-size >= 784px) minmax(0, 1fr) 312px, minmax(0, 1fr)'
+              : 'minmax(0, 1fr)',
+        });
       const preview = shell?.querySelector<HTMLElement>('[data-skeleton-preview]');
       if (preview) {
-        preview.hidden = layout !== 'editor';
-        if (layout === 'editor') preview.setAttribute('slot', 'aside');
-        else preview.removeAttribute('slot');
+        Object.assign(preview, { display: layout === 'editor' ? 'auto' : 'none' });
+      }
+      for (const extra of shell?.querySelectorAll<HTMLElement>('[data-skeleton-extra]') ?? []) {
+        const role = extra.dataset.skeletonExtra;
+        const visible =
+          role === 'editor'
+            ? layout === 'editor'
+            : role === 'settings'
+              ? layout === 'settings'
+              : role === 'plan'
+                ? pathname.includes('/billing')
+                : pathname.includes('/storefront');
+        Object.assign(extra, { display: visible ? 'auto' : 'none' });
       }
       const placeholders = shell?.querySelector('[aria-label="Page content"]');
       if (placeholders) {
         const variant = layout === 'editor' ? 'form' : layout;
-        placeholders.className = `admin-skeleton admin-skeleton-${variant}`;
+        placeholders.setAttribute('data-skeleton-variant', variant);
+        for (const leading of placeholders.querySelectorAll('[data-skeleton-part=leading]'))
+          Object.assign(leading, { display: variant === 'table' ? 'auto' : 'none' });
+        for (const row of placeholders.querySelectorAll('[data-skeleton-row]'))
+          Object.assign(row, { gridTemplateColumns: variant === 'table' ? '40px minmax(0, 1fr)' : 'minmax(0, 1fr)' });
         const dimensions = adminSkeletonDimensions(variant);
         for (const part of ['leading', 'label', 'value'] as const)
           for (const box of placeholders.querySelectorAll(`[data-skeleton-part="${part}"]`))
@@ -80,7 +104,6 @@ export function installAdminNavigation() {
     },
     true,
   );
-  window.addEventListener('beforeunload', () => transition());
   window.addEventListener('pageshow', (event) => {
     // Revalidate authenticated data when returning from a frozen document.
     if (event.persisted) location.reload();
