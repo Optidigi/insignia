@@ -1,0 +1,206 @@
+{
+  "date": "2026-10-18",
+  "classification": "DEPLOYED_POLARIS_ADMIN_AND_NATIVE_READONLY_LAYOUT_QUALIFIED",
+  "integration": {
+    "pr": 200,
+    "merge": "281e1ee9b3c12026df01e897c50d52576cedb49e",
+    "head": "1ecc0c5130dd2ce95817cbf0bbb5dd6413617b6a",
+    "tree": "c38ae6572a4f1f3e736beb73fec3056eb7228ab7",
+    "base": "2f0c5ba1ae526f289841d04bb389357f196acee4",
+    "effectiveMergeBase": "2f0c5ba1ae526f289841d04bb389357f196acee4",
+    "orderedParents": [
+      "2f0c5ba1ae526f289841d04bb389357f196acee4",
+      "1ecc0c5130dd2ce95817cbf0bbb5dd6413617b6a"
+    ],
+    "checks": [
+      {
+        "name": "foundation",
+        "run": 39130768534,
+        "head": "1ecc0c5130dd2ce95817cbf0bbb5dd6413617b6a",
+        "attempt": 1,
+        "conclusion": "SUCCESS"
+      },
+      {
+        "name": "durable-core",
+        "run": 39130768569,
+        "head": "1ecc0c5130dd2ce95817cbf0bbb5dd6413617b6a",
+        "attempt": 1,
+        "conclusion": "SUCCESS"
+      },
+      {
+        "name": "runtime",
+        "run": 39130768531,
+        "head": "1ecc0c5130dd2ce95817cbf0bbb5dd6413617b6a",
+        "attempt": 1,
+        "conclusion": "SUCCESS"
+      }
+    ]
+  },
+  "artifact": {
+    "head": "1ecc0c5130dd2ce95817cbf0bbb5dd6413617b6a",
+    "merge": "281e1ee9b3c12026df01e897c50d52576cedb49e",
+    "tree": "c38ae6572a4f1f3e736beb73fec3056eb7228ab7",
+    "buildSource": "c72f3f0ad68463385943037243466f856337ba9c",
+    "run": 39130768531,
+    "attempt": 1,
+    "artifactId": 12137813739,
+    "artifactZipSha256": "sha256:299f6a186a5e91f7631f5f70912c1219d4e1be72b199caed2dca9f165d20db15",
+    "image": "sha256:866b1e535908b783a4357e6c063a4d6ddf8c75e0540a3a751b8affbb98704c56",
+    "configDigest": "sha256:4452fb516f7e2c394564bf683963d0f04c5d5d2da5ffce0b3ab831b2c34c648b",
+    "tarSha256": "f0c2280845fa46aa2e21f747934bc087e30f5c90158b5520784c162e42089854",
+    "tarSize": 456435712,
+    "nativeSidebarInCompiledSource": true
+  },
+  "deployment": {
+    "classification": "EXACT_CI_WEB_ONLY_ADMIN_DEPLOYMENT_PASS",
+    "merge": "281e1ee9b3c12026df01e897c50d52576cedb49e",
+    "tree": "c38ae6572a4f1f3e736beb73fec3056eb7228ab7",
+    "head": "1ecc0c5130dd2ce95817cbf0bbb5dd6413617b6a",
+    "run": 39130768531,
+    "attempt": 1,
+    "oldContainer": "b18042c3210f743f381ac7aeacfcd07940b50856e8adbe9cf8eb78e41966e1d0",
+    "container": "b875f3c1271d26bdf91d602234e1427ebd2bc796349a5cba23e7d157fc59b4ab",
+    "image": "sha256:866b1e535908b783a4357e6c063a4d6ddf8c75e0540a3a751b8affbb98704c56",
+    "healthy": true,
+    "onlyMaterialDelta": "web image",
+    "environmentUnchanged": true,
+    "mountsNetworksSecurityResourcesUnchanged": true,
+    "other34ContainersUnchanged": true,
+    "inspectorAndVerifierSocketsUnchanged": true,
+    "schemaAndPurchasePaidFactsUnchanged": true,
+    "providerMutations": 0,
+    "databaseWrites": 0,
+    "dispatches": 1,
+    "retries": 0
+  },
+  "nativeBrowser": {
+    "source": "Existing repository-documented headed Shopify profile; no login or challenge interaction",
+    "pages": [
+      {
+        "route": "orders",
+        "heading": "Orders and artwork",
+        "polarisPageDefined": true,
+        "observedAt": "2026-10-18T13:28:55.545Z"
+      },
+      {
+        "route": "products",
+        "heading": "Products",
+        "polarisPageDefined": true,
+        "observedAt": "2026-10-18T13:29:00.775Z"
+      },
+      {
+        "route": "billing",
+        "heading": "Billing",
+        "polarisPageDefined": true,
+        "observedAt": "2026-10-18T13:29:06.276Z"
+      },
+      {
+        "route": "privacy",
+        "heading": "Customer privacy requests",
+        "polarisPageDefined": true,
+        "observedAt": "2026-10-18T13:29:11.198Z"
+      },
+      {
+        "route": "settings",
+        "heading": "Settings",
+        "polarisPageDefined": true,
+        "observedAt": "2026-10-18T13:29:16.228Z"
+      },
+      {
+        "route": "products/10519322493211/config",
+        "heading": "Customize Insignia M5 acceptance \u2014 27c397e10c26",
+        "polarisPageDefined": true,
+        "observedAt": "2026-10-18T13:29:24.101Z"
+      }
+    ],
+    "sidebar": [
+      "Products",
+      "Orders",
+      "Billing",
+      "Privacy",
+      "Settings"
+    ],
+    "authenticatedApiReads": [
+      {
+        "path": "/api/purchases/v1",
+        "status": 200,
+        "observedAt": "2026-10-18T13:28:55.311Z",
+        "bodySha256": "83fa9d7c4ad11802483a4f6f1cdde66f929a89c6a1c642dd2eacd93202ba9fb2"
+      },
+      {
+        "path": "/api/admin/products",
+        "status": 200,
+        "observedAt": "2026-10-18T13:29:00.611Z",
+        "bodySha256": "c307646a909b7bfe9f018a27bb12c7a8739573d88a6fa22f2b4d24eaad35cc57"
+      },
+      {
+        "path": "/api/admin/billing",
+        "status": 200,
+        "observedAt": "2026-10-18T13:29:06.043Z",
+        "bodySha256": "237ba1d47ac697191e9377e06b5ba77858ec7becca9d30ea52b0da48a8a72d20"
+      },
+      {
+        "path": "/api/purchases/v1/privacy",
+        "status": 200,
+        "observedAt": "2026-10-18T13:29:10.932Z",
+        "bodySha256": "eef46741adfc3a9f76294d3b78f37a45f113092ac9d44ee77c7a038a88ff09a1"
+      },
+      {
+        "path": "/api/admin/products/10519322493211/config",
+        "status": 200,
+        "observedAt": "2026-10-18T13:29:22.827Z",
+        "bodySha256": "dc92c8b1cdc38f2a1c1fed224a7e273414f37819f8ed233f4e0e89d3bd287029"
+      }
+    ],
+    "applicationNonGetRequests": 0,
+    "loginActions": 0,
+    "cookieTransfer": 0,
+    "desktopEditor": "PASS: actual preview beside mode control and Save present",
+    "mobileEditor": "PASS: actual preview visible and app frame fits390px",
+    "console": "Six blocked Cloudflare analytics/CSP errors; no weakening and no error-free-console claim"
+  },
+  "nativeOrderRead": {
+    "classification": "NATIVE_ORDER_DETAIL_SETTLED_ORIGINAL_PREVIEW_AND_RESPONSIVE_LIST_READONLY_PASS",
+    "observedAt": "2026-10-18T13:32:53.811Z",
+    "appApiReadCount": 3,
+    "applicationNonGetRequests": 0,
+    "originalPreview": "Historical purchased artwork preview reached settled success; the verified preview of originally purchased artwork is visible at its frozen placement. No original-download action was repeated.",
+    "mobile": "Order list link usable; list and detail fit390px",
+    "priorCapture": "Initial detail screenshot taken while preview was loading is preserved; settled read captured separately, no mutation retry"
+  },
+  "postBrowserReadback": {
+    "classification": "POST_BROWSER_RUNTIME_AND_PROTECTED_FACTS_READONLY_PASS",
+    "webHealthy": true,
+    "containerCount": 35,
+    "other34ContainersUnchanged": true,
+    "schemaPurchasePaidFactsUnchanged": true,
+    "inspectorAndSocketsUnchanged": true,
+    "databaseWrites": 0,
+    "providerMutations": 0,
+    "observedAt": "2026-10-18T13:33:16.533995+00:00"
+  },
+  "independentOperationReview": {
+    "session": "/root/admin200_deploy_review",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "correctness": "CLEAR",
+    "security": "CLEAR",
+    "completedReceiptReview": "CLEAR for deployment, six-page browser receipt and initial post-check; additional order/settled-preview reads and final post-check verified inline",
+    "boundary": "Read-only instructions, no OS isolation claim",
+    "limits": "Checked-time configuration/identity fingerprints and named DB invariants; not continuous availability or every-row immutability. Zero writes/mutations describes explicit operator SQL/provider actions and recorded browser requests, not all possible background effects."
+  },
+  "publicHttp": {
+    "live": 200,
+    "privateUnauthenticated": 401
+  },
+  "remaining": [
+    "Human order numbers and product/variant display names remain unavailable in current purchase DTO; numeric references and raw purchased-variant IDs still need deliberate presentation work. Do not invent names or rewrite historical economics.",
+    "Continue order-detail action placement/clarity and remaining admin UX; this is page/read-only native evidence, not complete UX or save/copy/publication/checkout acceptance.",
+    "Operational alerts/delivery/outage, recovery/storage/privacy and20October cleanup/rotation remain open. No new Shopify version/scopes/release, purchase/billing effect or rollout."
+  ],
+  "privateEvidence": {
+    "directory": "/home/serveradmin/insignia-milestone-autonomy-handoff/admin200-native-20261018",
+    "manifestSha256": "f0ad058d6ea732f6c065fa0102872c2d8cf4b460a790e7b1e45b3194d8287c1f",
+    "retention": "Temporary local archives/operators/preimages/screenshots and remote image TAR due20October2026. Active VPS Compose /home/serveradmin/insignia-admin200-20261018/web-only.private.json and running image are dependencies: transition configuration to permanent custody before deleting temporary copies; never remove active configuration/image during cleanup."
+  }
+}
