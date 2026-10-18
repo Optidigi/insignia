@@ -1,7 +1,7 @@
 {
   "date": "2026-10-18",
   "base": "ab2a71356d816a79dc859a472a64458f2dc020e5",
-  "priorCandidate": "b213b18ff8b019e20a4538129bfb38e3c9ebc0a0",
+  "priorCandidate": "71666cc34fb8c691ea5cd81c371afc0fd0018032",
   "reviewMethod": "Independent native agents; procedural read-only review, unrestricted runtime capability; no provider or deployment effects. Both Spec/correctness and Standards/security covered.",
   "reviews": [
     {
@@ -14,9 +14,10 @@
         "Definite enrollment rejection retry",
         "Independent registration readback",
         "Confirmed subscription drift repair",
-        "Expiry/hash/body revalidation after generic scope lock wait"
+        "Expiry/hash/body revalidation after generic scope lock wait",
+        "Concurrent verified sessions share in-flight confirmed enrollment without duplicate dispatch"
       ],
-      "checks": "Independent UI8/service13; adapter10. Root real DB/enrollment/HTTP evidence recorded separately; reviewer does not claim skipped worker tests passed."
+      "checks": "Independent UI8/service13; adapter10. Root real DB/enrollment/HTTP evidence recorded separately; reviewer does not claim skipped worker tests passed. Focused independent singleflight correctness/security review CLEAR; new actual PostgreSQL24-caller RED\u2192GREEN and9enrollmentPASS."
     },
     {
       "reviewer": "operations_review",
@@ -32,6 +33,12 @@
         "Processed blocked privacy remains visible to restricted monitoring"
       ],
       "checks": "Operations27Node+7backup+3wrapper+10portable; final privacy/recovery/restore/accounting18 actual PostgreSQL18; heartbeat10; restricted-role positive/negative proof."
+    },
+    {
+      "reviewer": "completion_audit",
+      "scope": "History checker owner-authorized amendment binding and preservation of all historical pins",
+      "result": "CLEAR",
+      "checks": "Fixedab2 oldplan/newplan/ownerJSON hashes independently matched;120retainedreceipts/41historicalsources remain verified."
     }
   ],
   "reviewedFileSha256": {
@@ -42,7 +49,7 @@
     "packages/database/src/repositories/uninstall-lifecycle.ts": "c7e5b718e137edfb9f5bb2ecdf719e5fa4f32552e22fcc09f4f3c538b80ac161",
     "packages/database/src/repositories/uninstall-privacy.ts": "e0fb085e5431bc81e1256a29b417840358a5335c1146913c3ed27bf4ddd1dd95",
     "packages/database/src/repositories/shopify-webhooks.ts": "6d3d98e48ed835dbac9a40c9ee0d637b69af7f90bf599d6d97381b9cd6126c21",
-    "apps/worker/src/uninstall-enrollment.ts": "078ff38b112465527b59ea02e677bdd0c75b768fa3cad3f907a49e043143c1d8",
+    "apps/worker/src/uninstall-enrollment.ts": "3a7f90074f97e795348dbb76f37e01010716c49f0c0169208d73da59ea30aa68",
     "apps/worker/src/handlers.ts": "3b3f5a8bf8513b3e195d208d64a23c2d3ef1cfef4727ffb16c43f68429e6789e",
     "apps/worker/src/reconciliation.ts": "807ae44ae1ba09436becffde9924c5935d3a6d939da18243b28d0f8a61577547",
     "apps/web/src/server/admin/production.ts": "3b1d1e067ea4f3322a91bc6c53e6688440819bdba48c9178ec6e6750982b2bf3",

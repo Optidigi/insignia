@@ -20,6 +20,7 @@ export function createAutomaticUninstallEnrollment(input: {
 }) {
   const origin = new URL(input.appOrigin).origin;
   const client = input.client ?? createUninstallSubscriptionClient({ expectedOrigin: origin });
+  const pending = new Map<string, Promise<void>>();
   const enroll = async (grant: UninstallSubscriptionGrant, scope: Scope, repairs = 0): Promise<void> => {
     const repairVersion = await input.core.uninstallLifecycle.repairVersion(scope);
     const capability = createHmac('sha256', input.appSecret)
@@ -78,7 +79,27 @@ export function createAutomaticUninstallEnrollment(input: {
     if (result.kind === 'rejected') await input.core.uninstallLifecycle.settle(binding, null);
     throw new Error('Automatic lifecycle enrollment unavailable');
   };
-  return (grant: UninstallSubscriptionGrant, scope: Scope) => enroll(grant, scope);
+  return async (grant: UninstallSubscriptionGrant, scope: Scope): Promise<void> => {
+    // Verified sessions for the same installation share in-flight enrollment.
+    // Readiness still requires confirmed settlement; other processes retain the
+    // durable dispatch fence and must reconcile rather than recreate a write.
+    const key = JSON.stringify([
+      grant.shop,
+      scope.shopId,
+      scope.installationGeneration,
+      scope.externalInstallationId,
+      scope.providerShopId,
+    ]);
+    const existing = pending.get(key);
+    if (existing) return existing;
+    const operation = enroll(grant, scope);
+    pending.set(key, operation);
+    try {
+      await operation;
+    } finally {
+      pending.delete(key);
+    }
+  };
 }
 
 /** One tenant per pass; advance before IO so an unavailable shop cannot starve others. */

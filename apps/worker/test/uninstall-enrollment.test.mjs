@@ -179,6 +179,42 @@ test(
   },
 );
 
+test(
+  'concurrent enrollment waits for the same confirmed subscription without duplicate dispatch',
+  options,
+  async (t) => {
+    const f = await fixture(t),
+      shop = await f.shop();
+    let releaseCreate,
+      uri,
+      creates = 0;
+    const released = new Promise((resolve) => {
+      releaseCreate = resolve;
+    });
+    const enroll = f.enroll({
+      create: async (_grant, _scope, callback) => {
+        creates++;
+        uri = callback;
+        await released;
+        return { kind: 'acknowledged', subscription: subscription(88, uri) };
+      },
+      read: async () => subscription(88, uri),
+      reconcile: async () => null,
+    });
+    const pending = Promise.all(Array.from({ length: 24 }, () => enroll(shop.grant, shop.scope)));
+    // A provider create remains pending while competing verified sessions enroll.
+    const timer = setTimeout(() => releaseCreate(), 100);
+    try {
+      await pending;
+      assert.equal(creates, 1);
+      assert.equal((await f.rows())[0].state, 'registered');
+    } finally {
+      clearTimeout(timer);
+      releaseCreate();
+    }
+  },
+);
+
 test('create acknowledgement remains dispatched until independent readback qualifies it', options, async (t) => {
   const f = await fixture(t),
     shop = await f.shop();

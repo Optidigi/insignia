@@ -67,6 +67,12 @@ test('separate owner installation and restricted queue roles preserve messages a
     await pool.query(
       `create role ${role} login password '${testPassword}'; create role ${workerRole} login password '${testPassword}'; grant insignia_queue_enqueue to ${role}; grant insignia_queue_consume to ${workerRole}`,
     );
+    // Lifecycle privileges are a separate deployment layer from queue transport.
+    await pool.query(
+      (await readFile(new URL('../../deployment/lifecycle/runtime-grants.sql', import.meta.url), 'utf8'))
+        .replaceAll(':"web_role"', `"${role}"`)
+        .replaceAll(':"worker_role"', `"${workerRole}"`),
+    );
     // Disposable synthetic passwords support both SCRAM CI and local trust authentication.
     // Production login provisioning remains a separate owner-private operation.
     url.username = role;
@@ -146,6 +152,8 @@ test('separate owner installation and restricted queue roles preserve messages a
         'truncate pgboss.job',
         'update pgboss.queue set retry_limit=999',
         'update pgboss.version set version=42',
+        'delete from public.uninstall_delivery_authority',
+        'select public.recover_uninstall_privacy(null::uuid,null::uuid)',
       ])
         await assert.rejects(consumerPool.query(sql), { code: '42501' });
     } finally {

@@ -131,6 +131,7 @@ test('M5-025 generic replay and identical later uninstall remain pending without
         env: {
           ...process.env,
           DATABASE_URL: connectionString,
+          APP_URL: 'https://synthetic.example',
           INSIGNIA_CREDENTIAL_KEY_ID: 'synthetic-k1',
           INSIGNIA_CREDENTIAL_KEY_BASE64: Buffer.alloc(32, 7).toString('base64'),
           SHOPIFY_CLIENT_ID: 'synthetic-client-id',
