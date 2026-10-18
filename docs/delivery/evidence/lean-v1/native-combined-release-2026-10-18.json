@@ -1,0 +1,502 @@
+{
+  "classification": "NATIVE_EXACT_CI_RUNTIME_IMMUTABLE_VERIFIER_AND_RECONCILED_COMBINED_RELEASE_PASS",
+  "date": "2026-10-18",
+  "authority": "../../authority/combined-theme-webhook-release-2026-10-17.json",
+  "scope": "App-wide release of the existing designated development app; one independently observed development installation; owner uninstall-generation/subsequent-shop-erasure operator hold retained",
+  "integration": {
+    "classification": "VERIFIED_NORMAL_MERGE",
+    "merge": "c455b8e45c6b7cd23148aee85485d6dad2857c12",
+    "head": "b7b8589c4236dfc5ce30719ee9bc9740902d2f8d",
+    "tree": "2942c44f62f4951d1af8981d25457a814d9a0a28",
+    "checks": [
+      {
+        "name": "foundation",
+        "run": 39077746249,
+        "head": "b7b8589c4236dfc5ce30719ee9bc9740902d2f8d",
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      {
+        "name": "durable-core",
+        "run": 39077746261,
+        "head": "b7b8589c4236dfc5ce30719ee9bc9740902d2f8d",
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      {
+        "name": "runtime",
+        "run": 39077746221,
+        "head": "b7b8589c4236dfc5ce30719ee9bc9740902d2f8d",
+        "attempt": 1,
+        "conclusion": "success"
+      }
+    ],
+    "orderedParents": [
+      "5f74f7bceec0fea19a0151395b0daf818f35a654",
+      "b7b8589c4236dfc5ce30719ee9bc9740902d2f8d"
+    ],
+    "base": "5f74f7bceec0fea19a0151395b0daf818f35a654",
+    "effectiveMergeBase": "5f74f7bceec0fea19a0151395b0daf818f35a654",
+    "integratedTreeMatchesReviewedTree": true
+  },
+  "buildSource": "42de456cc8940c86cfc54775b061b35563b8b828",
+  "sourceHead": "b7b8589c4236dfc5ce30719ee9bc9740902d2f8d",
+  "sourceMerge": "c455b8e45c6b7cd23148aee85485d6dad2857c12",
+  "sourceTree": "2942c44f62f4951d1af8981d25457a814d9a0a28",
+  "artifacts": {
+    "web": {
+      "artifactId": 12117927062,
+      "nativeOciImageId": "sha256:1e7e9f6a32f7d71755829a8231920c27e3b6349f2ef898a25dc3a2419200dffd",
+      "configDigest": "sha256:4be4e49736379e2e90be8010dd5cfaadac86d9af89ffb6c0ed47181ce25f49b2",
+      "tarSha256": "e054a6cdfe779c93150cd243b18e5445239922ad1bb2861d49517a63c686dc69",
+      "tarSizeBytes": 456420352,
+      "receiptSha256": "23ec83e90d19b765d1f5667cf7cda494c9fa66d45948d4ee5d272eac1bd03016"
+    },
+    "worker": {
+      "artifactId": 12117667940,
+      "nativeOciImageId": "sha256:b56fc60bc0b2e89ad80af4c3d5f0235108bd3f32eee9b4c1b55ac8584f674455",
+      "configDigest": "sha256:c41389167e13e86cbfc6b5f849d625e7cc4cd009aedebb83df5c2260d2a62072",
+      "tarSha256": "7d92ee0efc0b0ebe896e29f1d96ba091c3e4491c3052e3e76432ccce11bb3643",
+      "tarSizeBytes": 315267584,
+      "receiptSha256": "20084ffc5e11530b2e2d4241659eb1ef4fffb2f025fd4eb6265148c2c61e938f"
+    },
+    "verifier": {
+      "artifactId": 12117812403,
+      "nativeOciImageId": "sha256:42b94d5357081f774de1fc9d6d94b63fc1da523108b388430cbf5f12ee74c264",
+      "configDigest": "sha256:9903f1bc6bf096b0f84cc4a44345bf12a776d63f7c424555b4a243939d635ee1",
+      "tarSha256": "4327d22b37c20977238a834add6bfe9f130565f87c7265043d48b6adf010548b",
+      "tarSizeBytes": 472498688,
+      "receiptSha256": "fafba996790b1d4bce75e346ccb18255c06ceff56b07de06ca9a07fa3e173644",
+      "manifestSha256": "e2a9f547e6fc8be89c83adeb668fb4b215c3e31b38addd99eb663fcabb664336"
+    }
+  },
+  "runtime": {
+    "classification": "EXACT_IMAGE_AND_RELEASE_PROFILE_PAIR_UPDATE_PASS",
+    "webPolicySha256": "2d0ee70e6f2ac1e3bc593501f0703920126280fb9343822853e7e525168fc46b",
+    "webEnvironmentDeltaKeys": [
+      "INSIGNIA_RELEASE_PROFILE"
+    ],
+    "workerEnvironmentDeltaKeys": [
+      "INSIGNIA_RELEASE_PROFILE"
+    ],
+    "sourceMerge": "c455b8e45c6b7cd23148aee85485d6dad2857c12",
+    "sourceTree": "2942c44f62f4951d1af8981d25457a814d9a0a28",
+    "webContainer": "e956aa7922cf81f4ae2cb3c2a1d4b5cc5561aee7c65bcd35ca3243ed6493ac0d",
+    "webImage": "sha256:1e7e9f6a32f7d71755829a8231920c27e3b6349f2ef898a25dc3a2419200dffd",
+    "workerContainer": "37d4cc1105c173276b387a3a5dafa74559bfa33acec54e183d8d5021c82391a7",
+    "workerImage": "sha256:b56fc60bc0b2e89ad80af4c3d5f0235108bd3f32eee9b4c1b55ac8584f674455",
+    "databaseContainer": "19419eff11ef9c0b43e484f91ad97ba606c817df6604e7a6d08c5513473285a1",
+    "databaseImage": "sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d",
+    "healthy": true,
+    "other32ContainersPreserved": true,
+    "profile": "lean-privacy-theme-23fd116",
+    "merchantCaptureEnabled": true,
+    "purchaseAdmissionEnabled": true,
+    "inspectorAndBridgePreserved": true,
+    "dispatchInvocations": 2,
+    "retryInvocations": 0,
+    "verifierRebinding": "COMPLETE_SEPARATE_IMMUTABLE_VERIFIER_RECEIPT"
+  },
+  "verifier": {
+    "classification": "IMMUTABLE_VERIFIER_STARTED_FENCED_NOT_NATIVE_ACCEPTANCE",
+    "container": "afa112bd43ccda90aed6e93bce0a25c538464379c8b8d2384ffb41a7b0c70874",
+    "image": "sha256:42b94d5357081f774de1fc9d6d94b63fc1da523108b388430cbf5f12ee74c264",
+    "manifestSha256": "e2a9f547e6fc8be89c83adeb668fb4b215c3e31b38addd99eb663fcabb664336",
+    "sourceMerge": "c455b8e45c6b7cd23148aee85485d6dad2857c12",
+    "sourceTree": "2942c44f62f4951d1af8981d25457a814d9a0a28",
+    "sourceHead": "b7b8589c4236dfc5ce30719ee9bc9740902d2f8d",
+    "ciBuildSource": "42de456cc8940c86cfc54775b061b35563b8b828",
+    "run": 39077746221,
+    "attempt": 1,
+    "profile": "lean-privacy-theme-23fd116",
+    "journalFiles": 829,
+    "journalFilesByteExact": true,
+    "settlementPhases": 49,
+    "auth": "SELECTED_EXISTING_OFFICIAL_SESSION_ONLY",
+    "startup": "EXISTING_APP_READROLE_AND_SEPARATE_APPEND_CUSTODY",
+    "oldReceiverStopped": true,
+    "newFenceHeld": true,
+    "other34ContainersPreserved": true,
+    "socketParentInode": 6611041,
+    "socketInode": 6613962,
+    "providerCalls": 0,
+    "rollout": false,
+    "qualificationSupersededBy": "nativeTrustedRelease and postRuntime; startup-only classification remains historical"
+  },
+  "rolesAndReceiver": {
+    "roles": {
+      "web": {
+        "role": "insignia_runtime",
+        "process": false,
+        "cleanup": false,
+        "blocked_count": false,
+        "original_read": true
+      },
+      "worker": {
+        "role": "insignia_worker",
+        "process": true,
+        "cleanup": true,
+        "blocked_count": true,
+        "original_read": false
+      }
+    },
+    "providerMutations": 0,
+    "classification": "DEPLOYED_ACTUAL_ROLES_AND_PUBLIC_HTTPS_REJECTION_PASS",
+    "observedAt": "2026-10-18T00:15:56.547888+00:00",
+    "webhookChecks": [
+      {
+        "hmac": "missing",
+        "status": 401,
+        "body": "{\"error\":\"invalid_webhook\"}"
+      },
+      {
+        "hmac": "invalid",
+        "status": 401,
+        "body": "{\"error\":\"invalid_webhook\"}"
+      }
+    ],
+    "live": 200,
+    "signedDeliveries": 0,
+    "privacyFulfillment": "NOT_EXERCISED",
+    "priorProbe": "Remote Python urllib403 retained; independent canonical public HTTPS curl401. Cause unconfirmed, no source/security modification."
+  },
+  "release": {
+    "classification": "ONE_UNACKNOWLEDGED_HTTP_EFFECT_SETTLED_BY_INDEPENDENT_EXACT_ACTIVE_READBACK",
+    "originalStop": {
+      "classification": "STOP_RELEASE_RECONCILE_NO_RETRY",
+      "stage": "RELEASE",
+      "dispatchReserved": true,
+      "httpMutationAccounting": {
+        "logicalMutations": 1,
+        "httpMutationAttempts": 1,
+        "blockedMutationAttempts": 0,
+        "retryAuthorized": false
+      },
+      "newFenceHeld": true,
+      "retryAuthorized": false
+    },
+    "reconciliation": {
+      "classification": "RELEASE_EFFECT_READONLY_RECONCILIATION",
+      "state": {
+        "classification": "EXACT_ACTIVE_RELEASE_READBACK_PASS",
+        "observedAt": "2026-10-18T00:19:47.353Z",
+        "version": "1171218169857",
+        "tag": "lean-privacy-theme-23fd116",
+        "activeVersion": "1171218169857",
+        "versionCount": 14,
+        "moduleCount": 14,
+        "moduleHash": "bf515d29121a58848733edef8454bc81295fed7d3927fd5c89919d622d610600",
+        "previousModulesPreserved": true,
+        "installations": 1
+      },
+      "managementReads": 7,
+      "releaseInvocations": 0,
+      "httpMutationAttempts": 0,
+      "retryAuthorized": false
+    },
+    "releaseInvocations": 1,
+    "httpMutationAttempts": 1,
+    "mutationRetries": 0,
+    "creationInvocations": 0,
+    "allocation": "One combined release consumed; no additional release or version creation allocated",
+    "causeOfMissingSdkAcknowledgment": "UNKNOWN; no response object returned or archived; do not relabel as ACK",
+    "productPublishUnpublishMutations": 0
+  },
+  "nativeTrustedRelease": {
+    "classification": "ONE_FRESH_COLLECTION_AND_INDEPENDENT_ACTUAL_WEB_WORKER_AGREEMENT_PASS",
+    "web": {
+      "classification": "LEAN194_FRESH_CORRELATED_RELEASE_AND_INDEPENDENT_SELECT_PASS",
+      "requestId": "accdaebf-2930-48a1-a34d-9c8cdf1778c1",
+      "recordId": "a27c8479-28a9-492a-93a0-d495900e87d0",
+      "state": "COMPLETE",
+      "identity": {
+        "current_user": "insignia_runtime",
+        "session_user": "insignia_runtime",
+        "readonly": "on"
+      },
+      "appVersion": "1171218169857",
+      "functionsSourceCommit": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+      "observedAt": "2026-10-18T00:22:03.138Z",
+      "expiresAt": "2026-10-18T00:22:31.353Z",
+      "historicalEvidenceRestamped": false,
+      "runtimeDatabaseWrites": 0,
+      "collectionCalls": 1,
+      "providerMutationCalls": 0
+    },
+    "worker": {
+      "classification": "LEAN194_FRESH_CORRELATED_RELEASE_AND_INDEPENDENT_SELECT_PASS",
+      "requestId": "accdaebf-2930-48a1-a34d-9c8cdf1778c1",
+      "recordId": "a27c8479-28a9-492a-93a0-d495900e87d0",
+      "state": "COMPLETE",
+      "identity": {
+        "current_user": "insignia_worker",
+        "session_user": "insignia_worker",
+        "readonly": "on"
+      },
+      "appVersion": "1171218169857",
+      "functionsSourceCommit": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+      "observedAt": "2026-10-18T00:22:03.138Z",
+      "expiresAt": "2026-10-18T00:22:31.353Z",
+      "historicalEvidenceRestamped": false,
+      "runtimeDatabaseWrites": 0,
+      "collectionCalls": 0,
+      "providerMutationCalls": 0
+    },
+    "historicalEvidenceRestamped": false,
+    "providerMutationCalls": 0,
+    "requestCalls": 1,
+    "nativeJournalProof": {
+      "classification": "EXACT_NEW_REQUEST_CORRELATED_NATIVE_APPEND_ACK_PASS",
+      "requestId": "accdaebf-2930-48a1-a34d-9c8cdf1778c1",
+      "recordId": "a27c8479-28a9-492a-93a0-d495900e87d0",
+      "oldPhaseCount": 49,
+      "newPhaseCount": 50,
+      "oldJournalFilesRehashed": 829,
+      "oldJournalFilesPreserved": true,
+      "actualNativeCollections": 1,
+      "actualAcknowledgedAppends": 1,
+      "retryCalls": 0
+    },
+    "retryCalls": 0
+  },
+  "postRuntime": {
+    "classification": "POST_COLLECTION_RUNTIME_AND_DATA_PRESERVATION_PASS",
+    "containerCount": 35,
+    "other32Unchanged": true,
+    "allThreeRuntimeMembersRunning": true,
+    "databaseContainer": "19419eff11ef9c0b43e484f91ad97ba606c817df6604e7a6d08c5513473285a1",
+    "databaseVersions": [
+      "20260929000100",
+      "20260929000200",
+      "20260929000300",
+      "20260929000400",
+      "20260930000100",
+      "20260930000200",
+      "20260930000300",
+      "20260930000400",
+      "20260930000500",
+      "20260930000600",
+      "20260930000700",
+      "20260930000800",
+      "20260930000900",
+      "20261006000100",
+      "20261007000100",
+      "20261008000100",
+      "20261009000100",
+      "20261009000200",
+      "20261011000100",
+      "20261011000200",
+      "20261012000100",
+      "20261012000200",
+      "20261012000300",
+      "20261012000400",
+      "20261012000500",
+      "20261013000100",
+      "20261013000200",
+      "20261013000300",
+      "20261013000400",
+      "20261013000500",
+      "20261013000600",
+      "20261014000100",
+      "20261015000100",
+      "20261015000200",
+      "20261015000300",
+      "20261015000400",
+      "20261015000600",
+      "20261017000100",
+      "20261017000200",
+      "20261017000300"
+    ],
+    "privacyReceipts": 0,
+    "shopPrivacyFences": 0,
+    "oldEconomicFactsUnchanged": true,
+    "newDispatchFenceAbsent": true,
+    "inspectorSocketInodes": [
+      6708350,
+      6724179
+    ],
+    "providerCalls": 0,
+    "databaseWrites": 0
+  },
+  "merchantPages": {
+    "classification": "ACTUAL_EXISTING_SESSION_ORDERS_AND_PRIVACY_UI_PASS",
+    "observedAt": "2026-10-18T00:23:23.931Z",
+    "captures": [
+      {
+        "path": "/api/purchases/v1",
+        "status": 200,
+        "observedAt": "2026-10-18T00:23:18.729Z",
+        "bodySha256": "ed0242eafd7124649e432a963064e67ee8353e0647321304700368b74a0d716c",
+        "itemCount": 4
+      },
+      {
+        "path": "/api/purchases/v1/privacy",
+        "status": 200,
+        "observedAt": "2026-10-18T00:23:23.541Z",
+        "bodySha256": "eef46741adfc3a9f76294d3b78f37a45f113092ac9d44ee77c7a038a88ff09a1",
+        "itemCount": 0
+      }
+    ],
+    "applicationNonGetRequests": 0,
+    "cookieTransfer": 0,
+    "loginActions": 0,
+    "source": "Existing repository-documented headed profile; no session copying, login, or challenge interaction",
+    "screenshots": "Private evidence due2026-10-20"
+  },
+  "reviews": {
+    "deployment": {
+      "reviewer": "/root/deployment_operator_review",
+      "correctness": "CLEAR",
+      "security": "CLEAR",
+      "reportSha256": "6899caa46e821570355b9e1ccb9058f04152e9a6d811f149ea8a3fe74cfe53ac",
+      "resolvedFindings": [
+        {
+          "axis": "correctness_spec",
+          "file": "handover-verifier.py",
+          "finding": "Existing web DB URL uses database alias but immutable startup requires canonical container hostname.",
+          "resolution": "Only hostname normalized; role/encoded auth/5432/path/query preserved. Network-disabled startup/settlement probe precedes old socket unlink."
+        },
+        {
+          "axis": "standards_security",
+          "file": "runtime-common.py",
+          "finding": "Review binding omitted template, bindings, seal and integration inputs.",
+          "resolution": "All nine files checked in common provenance and before quiesce effects."
+        }
+      ]
+    },
+    "release": {
+      "reviewer": "/root/deployment_operator_review",
+      "correctness": "CLEAR",
+      "security": "CLEAR",
+      "reportSha256": "9b6c6c7d2e0c8c469e17227ef64d0e1a6a8c32027fc8f1a38b8fda8fccb3b6b3"
+    },
+    "collection": {
+      "reviewer": "/root/verifier_transition_analysis",
+      "correctness": "CLEAR",
+      "security": "CLEAR",
+      "reportSha256": "b6507e328a8f47ac2fca9e1610687880ec94cd0e1ce60119ca331279f8e90f52",
+      "resolvedFinding": "Existing cached COMPLETE is not fresh native proof: require exactly one new request-correlated native/launcher phase and both append ACK receipts; old829 journal files rehashed"
+    },
+    "enforcement": "Fresh independent contexts under read-only instructions; connector/network/OS isolation was not independently enforced; reviewers performed no native effects"
+  },
+  "qualificationControls": {
+    "classification": "PINNED_SDK_RELEASE_GUARD_CONTROLS_PASS",
+    "commands": "node qualify-http-fence.mjs <scenario>; node qualify-release-ack-mapping.mjs",
+    "source": "Actual execution outputs retained in thread; no controls rerun",
+    "scenarios": [
+      {
+        "scenario": "baseline-socket",
+        "syntheticHttpRequests": 2,
+        "actualProviderRequests": 0,
+        "externalAttempts": 0,
+        "rejected": true
+      },
+      {
+        "scenario": "guard-socket",
+        "syntheticHttpRequests": 1,
+        "logicalMutations": 1,
+        "httpMutationAttempts": 1,
+        "blockedMutationAttempts": 0
+      },
+      {
+        "scenario": "guard-throttle",
+        "syntheticHttpRequests": 1,
+        "logicalMutations": 1,
+        "httpMutationAttempts": 1,
+        "blockedMutationAttempts": 1
+      },
+      {
+        "scenario": "guard-graphql-throttle",
+        "syntheticHttpRequests": 1,
+        "logicalMutations": 1,
+        "httpMutationAttempts": 1,
+        "blockedMutationAttempts": 1
+      },
+      {
+        "scenario": "guard-wrong-target",
+        "syntheticHttpRequests": 0,
+        "logicalMutations": 0,
+        "httpMutationAttempts": 0,
+        "blockedMutationAttempts": 0
+      }
+    ],
+    "ackMapping": "PASS",
+    "actualProviderRequests": 0
+  },
+  "preservedFailures": [
+    {
+      "operation": "Native role/receiver probe1",
+      "result": "Actual-role assertions passed; VPS Python urllib public HTTPS request returned403; no signed request or application data mutation",
+      "cause": "UNKNOWN edge/route/client difference; independent canonical public curl missing+invalid HMAC each401; no security/source correction"
+    },
+    {
+      "operation": "SDK release",
+      "result": "One logical/HTTP mutation attempt then STOP without acknowledgment; no response object returned; independent seven-read exactActive reconciliation settled actual effect; no repeat"
+    },
+    {
+      "operation": "Shared T3 browser",
+      "result": "Shopify login; no login/challenge interaction. Existing repository-documented profile then qualified both authenticated pages without copying cookies or changing data"
+    },
+    {
+      "operation": "Prepared collection operator review",
+      "result": "Reviewer rejected cache-as-fresh-proof gap before effects; corrected journal correlation then CLEAR; actual49\u219250 phases/one ACKed append"
+    },
+    {
+      "operation": "Initial merchant route probe",
+      "result": "Incorrect /admin/purchases URL404; actual /admin/orders and /admin/privacy public shells200 and later authenticated APIs200; no application fix"
+    }
+  ],
+  "notClaimed": [
+    "Public rollout or public-app distribution approval",
+    "Actual uninstall or automatic uninstall generation authority",
+    "Actual customer/shop erasure or export fulfillment from an empty request list",
+    "New product/upload/cart/test-checkout/billing/charge",
+    "Current validity of expired trusted observations; timestamps and expiry remain historical",
+    "Inspector immutable-image handover; existing host inspector remains unchanged",
+    "Full Lean V1/G1\u2013G8 completion"
+  ],
+  "remaining": [
+    "Qualify released storefront corresponding desktop/mobile states without replaying consumed purchase allocations",
+    "Complete separately allocated immutable inspector handover and monitoring/recovery qualification",
+    "Required real privacy fulfillment and independent uninstall/shop-erasure operator authority remain outside this bounded release",
+    "Retain EUR/GBP and representative non-development eligibility as unqualified",
+    "Credential rotation and fixture/test-gateway cleanup; safely transition active dependencies before private-copy/backup cleanup due20October"
+  ],
+  "custody": {
+    "privateEvidence": "/home/serveradmin/insignia-milestone-autonomy-handoff/lean194-runtime-execution-20261018",
+    "nativeDeployment": "/home/serveradmin/insignia-lean-runtime-update-20261018-pr194",
+    "rawEvidenceAndBackupCopyDue": "2026-10-20",
+    "privateScreenshotsDue": "2026-10-20",
+    "historicalOriginalDesignDeadlines": "Existing21/22/24October unchanged",
+    "oldHostVerifier": "Stopped; original source/gate/unit/history retained; old exclusive fence held and not transferred back",
+    "newVerifier": "Independent immutable image; dedicated official-session HOME/state; production consumers receive only read-only metadata socket mount",
+    "managementSession": "Use dedicated verifier custody for future scoped management operations; no uncoordinated refresh from archived local session copy",
+    "activeCustodyRule": "Do not delete active Compose configuration, verifier state/auth or unresolved journals as temporary evidence; transition safely under existing cleanup policy"
+  },
+  "preReleaseInstallation": {
+    "classification": "CURRENT_INSTALLATION_SCOPES_READ_PASS",
+    "observedAt": "2026-10-18T00:16:49.039Z",
+    "shop": "insignia-rewrite-dev.myshopify.com",
+    "shopId": "gid://shopify/Shop/105501393179",
+    "installationId": "gid://shopify/AppInstallation/1054356963611",
+    "appId": "429028933633",
+    "appClientId": "1443cf6d03d39edae7c101a943c5c684",
+    "grants": [
+      "write_app_proxy",
+      "read_markets",
+      "write_products",
+      "read_publications",
+      "read_product_listings",
+      "write_cart_transforms",
+      "write_validations",
+      "read_orders",
+      "read_app_proxy",
+      "read_products",
+      "read_cart_transforms",
+      "read_validations"
+    ],
+    "oauthRequests": 1,
+    "adminReads": 1,
+    "mutations": 0
+  }
+}
