@@ -12,6 +12,14 @@ destination as a credential incident. Never expose subscription URIs through
 merchant DTOs, telemetry, support output or public evidence. Only its digest is
 stored locally; the provider subscription necessarily retains the private URI.
 
+The ordinary web overlay `deployment/m5-runtime/compose.yaml` adds an exclusive
+canonical-host `/api/webhooks/uninstall/` router with priority1100, the existing
+web service/TLS resolver, and access logs/tracing disabled for that router.
+The base canonical router and global proxy settings remain unchanged. Apply and
+verify the rendered overlay, then prove suppression with a non-secret sentinel
+on the actual route before registering any private destination. A parsed Compose
+PASS does not prove the native proxy or upstream logging configuration.
+
 Use `runtime-grants.sql` with explicit existing role identifiers. The web role
 receives authenticated webhook bytes and binds immutable destination authority;
 the worker performs expected-generation deactivation and bounded erasure
