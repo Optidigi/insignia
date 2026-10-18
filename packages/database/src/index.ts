@@ -52,12 +52,6 @@ export type {
 } from './repositories/tenant.js';
 export { ManagedInstallationError } from './repositories/tenant.js';
 export {
-  type UsageDeliveryAttempt,
-  type UsageDeliveryAttemptBegin,
-  type UsageDeliveryAttemptRepository,
-  UsageDeliveryAttemptStateError,
-} from './repositories/usage-delivery-attempt.js';
-export {
   type UsageDeliveryBinding,
   type UsageDeliveryIntent,
   type UsageDeliveryIntentRepository,

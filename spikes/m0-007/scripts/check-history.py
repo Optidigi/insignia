@@ -180,9 +180,19 @@ assert digest(archived_plan) == "82ca1b0be57048d2ddcb3e33236a3ceb36702d6fda9af90
 TECHNICAL_COMPLETION_AUTHORITY = "docs/delivery/authority/technical-merchant-completion-2026-10-18.json"
 assert digest((REPO / TECHNICAL_COMPLETION_AUTHORITY).read_bytes()) == "59ec251dd86af559aac07ab07dcf5a3c4cc3c838729644d0977547d4982aee2a", "technical completion owner authority mismatch"
 # Current documents include only those explicit amendments.
-current_architecture = {
+# Preserve the pre-stabilization active guidance; completed receipts and the
+# first-version owner direction correct current wording without rewriting history.
+PRE_STABILIZATION_BASE = "23d65c0159a952c923aca5d907ebe04e0c20c292"
+pre_stabilization_architecture = {
     "docs/architecture/implementation-plan.md": "9200937b9b39d5ed7915c8aeea9eb899689470b500b3e7229541c584fbc1371e",
     "docs/architecture/decision-ledger.md": "dbc2391a4384538ac4d6f9eadc3eda2fd47ed85b169f4ce8a0cb0cc724af9933",
+}
+for path, expected in pre_stabilization_architecture.items():
+    archived = subprocess.check_output(["git", "show", f"{PRE_STABILIZATION_BASE}:{path}"], cwd=REPO)
+    assert digest(archived) == expected, f"pre-stabilization architecture mismatch: {path}"
+current_architecture = {
+    "docs/architecture/implementation-plan.md": "7ffed3434c05add9d114a4d4c29e87b61353b92dc8af13f1588a7ff79c18e89f",
+    "docs/architecture/decision-ledger.md": "44a3095aa07d8ceea9b836ddf810c020433ffbed8128dfa308d898f1e9b144b1",
     "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209"
 }
 M8_PURCHASE_PROOF_OWNER_AUTHORITY = "docs/delivery/authority/m8-purchase-proof-ownership-2026-10-13.md"

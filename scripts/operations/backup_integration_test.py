@@ -35,6 +35,21 @@ class PostgreSQLRecovery(unittest.TestCase):
                         run([tools/'psql', '-X', '-v', 'ON_ERROR_STOP=1', '--single-transaction'], input=sql.encode())
                     except subprocess.CalledProcessError as error:
                         raise AssertionError(migration.name + ': ' + error.stderr.decode()) from error
+                # Populate genuine v3 activation evidence through the existing production repository seam.
+                # The former empty dump could not exercise validators invoked by COPY during recovery.
+                url = 'postgresql://serveradmin@localhost/backup_source?host=' + str(socket)
+                activation_env = {**env, 'DATABASE_URL': url}
+                activation = subprocess.run([str(ROOT/'packages/database/node_modules/.bin/vitest'), 'run',
+                    'test/activation.test.ts', '-t', 'v3 hold/evidence/restoration audit JSONB roundtrips'],
+                    cwd=ROOT/'packages/database', env=activation_env, capture_output=True)
+                self.assertEqual(activation.returncode, 0, activation.stdout.decode()+activation.stderr.decode())
+                historical_rows_sql = "SELECT jsonb_build_object('evidence',(SELECT jsonb_agg(to_jsonb(e) ORDER BY shop_id,config_id,operation_id) FROM m5_activation_evidence e),'states',(SELECT jsonb_agg(to_jsonb(s) ORDER BY shop_id,config_id,operation_id) FROM m5_activation_state s))::text"
+                historical_rows = run([tools/'psql', '-X', '-Atc', historical_rows_sql]).stdout
+                helper_bodies_sql = "SELECT jsonb_object_agg(oid::regprocedure::text,md5(prosrc))::text FROM pg_proc WHERE pronamespace='public'::regnamespace AND proname LIKE 'm5_v3_%'"
+                helper_bodies = run([tools/'psql','-X','-Atc',helper_bodies_sql]).stdout
+                self.assertTrue(json.loads(historical_rows)['evidence'], 'populated activation evidence required')
+                # Emulate an already sealed pre-fix snapshot even when this test runs on newer migrations.
+                run([tools/'psql', '-X', '-v', 'ON_ERROR_STOP=1', '-c', "DO $$ DECLARE f record; BEGIN FOR f IN SELECT oid::regprocedure AS signature FROM pg_proc WHERE pronamespace='public'::regnamespace AND proname LIKE 'm5_v3_%' LOOP EXECUTE format('ALTER FUNCTION %s RESET search_path',f.signature); END LOOP; END $$"])
                 # Actual read-only snapshot producer queries against the full current PostgreSQL schema.
                 module = (ROOT/'scripts/operations/backup-snapshot.mjs').as_uri()
                 run(['node', '--input-type=module', '-e', f"import {{createRequire}} from 'node:module'; import {{databaseSnapshot}} from '{module}'; const {{Pool}}=createRequire('{ROOT}/apps/worker/package.json')('pg'); const pool=new Pool(); const c=await pool.connect();try{{const s=await databaseSnapshot(c);if(s.references.length)throw Error('expected empty fixture')}}finally{{c.release();await pool.end()}}"])
@@ -64,16 +79,48 @@ await import('{module}');
                 self.assertEqual(dt.datetime.fromisoformat(produced['promisedCleanupAt'].replace('Z','+00:00')),dt.datetime.fromisoformat(promised))
                 self.assertGreater(dt.datetime.fromisoformat(produced['absoluteExpiresAt'].replace('Z','+00:00')),now+dt.timedelta(days=7))
                 result = json.loads(run(['python3', '-B', ROOT/'scripts/operations/backup.py', 'create', '--store', stage/'store', '--scratch', stage/'scratch', '--objects', objects, '--object-manifest', manifest, '--recipient', cert, '--pg-dump', tools/'pg_dump']).stdout)
+                # The sealed dump remains historical; new ordinary backups should also work without a recovery patch.
+                namespace_fix = (ROOT/'packages/database/migrations/20261018000500_restore_validation_namespace.sql').read_text().split('-- migrate:up', 1)[1].split('-- migrate:down', 1)[0]
+                run([tools/'psql', '-X', '-v', 'ON_ERROR_STOP=1', '-c', namespace_fix])
                 # Recovery requires independently fresh source exclusions exported after backup completion.
                 exclusions.unlink()
                 env['DATABASE_URL'] = url
                 run(['node', ROOT/'scripts/privacy/restore-exclusions.mjs', 'export', exclusions])
                 del env['DATABASE_URL']
                 env['PGDATABASE'] = 'insignia_recovery_qualification'
-                restored = json.loads(run(['python3', '-B', ROOT/'scripts/operations/backup.py', 'restore', '--artifact', stage/'store'/(result['id']+'.cms'), '--receipt', stage/'store'/(result['id']+'.json'), '--identity', key, '--destination', stage/'restored', '--exclusions', exclusions, '--createdb', tools/'createdb', '--pg-restore', tools/'pg_restore']).stdout)
+                restored = json.loads(run(['python3', '-B', ROOT/'scripts/operations/backup.py', 'restore', '--artifact', stage/'store'/(result['id']+'.cms'), '--receipt', stage/'store'/(result['id']+'.json'), '--identity', key, '--destination', stage/'restored', '--exclusions', exclusions, '--createdb', tools/'createdb', '--pg-restore', tools/'pg_restore', '--psql', tools/'psql']).stdout)
                 self.assertEqual(restored['readiness'], 'HOLD_STORAGE_ERASURE_AND_AUTHORITY_REQUALIFICATION')
                 self.assertTrue(restored['erasureImportCompleted'])
                 self.assertTrue(restored['databaseExpiryReplayed'])
+                self.assertEqual(run([tools/'psql', '-X', '-Atc', historical_rows_sql]).stdout, historical_rows)
+                # Resolution remains correct under the restore caller's deliberately empty global namespace.
+                validation = run([tools/'psql', '-X', '-Atc', "SET search_path=''; SELECT bool_and(public.m5_v3_held(evidence#>'{hold,held}',evidence#>'{hold,before}')) FROM public.m5_activation_evidence WHERE evidence->'hold'<>'null'; SELECT public.m5_v3_held('{}','{}')"]).stdout.decode().splitlines()
+                self.assertEqual(validation[-2:], ['t', 'f'])
+                configured = run([tools/'psql', '-X', '-Atc', "SELECT count(*) FROM pg_proc WHERE pronamespace='public'::regnamespace AND proname LIKE 'm5_v3_%' AND proconfig=ARRAY['search_path=pg_catalog, public, pg_temp']"]).stdout
+                self.assertEqual(int(configured), 12)
+                self.assertEqual(run([tools/'psql','-X','-Atc',helper_bodies_sql]).stdout,helper_bodies)
+                malformed_sql = "INSERT INTO public.m5_activation_evidence SELECT (jsonb_populate_record(NULL::public.m5_activation_evidence, to_jsonb(e) || jsonb_build_object('evidence',jsonb_set(e.evidence,'{hold,held,anchorDigest}',to_jsonb(repeat('0',64)))))).* FROM public.m5_activation_evidence e WHERE evidence->'hold'<>'null' LIMIT 1"
+                malformed = subprocess.run([str(tools/'psql'),'-X','-v','ON_ERROR_STOP=1','-c',malformed_sql],env=env,capture_output=True)
+                self.assertNotEqual(malformed.returncode,0)
+                self.assertIn('m5_017_evidence_v3_hold',malformed.stderr.decode())
+
+                for name in ['restore-pre.sql','restore-data.sql','restore-post.sql','restore-fix.sql']:
+                    self.assertFalse((stage/'restored'/name).exists())
+                # A real psql failure after all four restore inputs must roll back schema AND data,
+                # erase decrypted scratch and retain only the isolated recovery HOLD.
+                env['PGDATABASE'] = 'insignia_recovery_rollback'
+                failing_psql = stage/'failing-psql.py'
+                failing_psql.write_text('#!/usr/bin/env python3\nimport subprocess,sys\nraise SystemExit(subprocess.run(['+repr(str(tools/'psql'))+']+sys.argv[1:]+["--command","SELECT 1/0"]).returncode)\n')
+                failing_psql.chmod(0o700)
+                failed = subprocess.run(['python3','-B',str(ROOT/'scripts/operations/backup.py'),'restore',
+                    '--artifact',str(stage/'store'/(result['id']+'.cms')),'--receipt',str(stage/'store'/(result['id']+'.json')),
+                    '--identity',str(key),'--destination',str(stage/'failed-restore'),'--exclusions',str(exclusions),
+                    '--createdb',str(tools/'createdb'),'--pg-restore',str(tools/'pg_restore'),'--psql',str(failing_psql)],env=env,capture_output=True)
+                self.assertEqual(failed.returncode,1)
+                self.assertEqual(int(run([tools/'psql','-X','-Atc',"SELECT count(*) FROM pg_class WHERE relnamespace='public'::regnamespace"]).stdout),0)
+                self.assertEqual(sorted(path.name for path in (stage/'failed-restore').iterdir()), ['HOLD.json'])
+                env['PGDATABASE'] = 'insignia_recovery_qualification'
+
                 self.assertFalse((stage/'restored/snapshot.tar').exists())
                 self.assertFalse((stage/'restored/database.dump').exists())
                 count = int(run([tools/'psql', '-X', '-Atc', 'SELECT count(*) FROM schema_migrations']).stdout)

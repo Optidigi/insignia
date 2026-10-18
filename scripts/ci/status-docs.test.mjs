@@ -162,59 +162,126 @@ const addedSteps = {
     'Preserve independent verifier immutable image (native handover remains unqualified)',
   ],
 };
-test('workflow integration preserves original suites, reviewed artifact additions and full-route gates', () => {
-  for (const file of ['m1-foundation.yml', 'm3-database.yml', 'm3-runtime.yml']) {
-    const name = `.github/workflows/${file}`;
-    const old = execFileSync('git', ['show', `${baseline}:${name}`], { cwd: root, encoding: 'utf8' });
-    const current = readFileSync(join(root, name), 'utf8');
-    assert.match(current, /^ {2}pull_request:\s*\n {2}push:/m, 'all PRs must produce the existing check context');
-    assert.match(current, /^ {6}- 'scripts\/ci\/\*\*'$/m);
-    const all = steps(current),
-      prior = steps(old);
-    const additions = addedSteps[file];
-    const extra = all.filter((step) => additions.some((name) => step.startsWith(`      - name: ${name}\n`)));
-    assert.equal(extra.length, additions.length, 'every reviewed artifact step remains present');
-    for (const step of extra) assert.match(step, /if: steps\.changes\.outputs\.route == 'full'/);
-    const actual = all.filter((step) => !extra.includes(step));
-    assert.equal(actual.length, prior.length + 1, 'one classifier step plus reviewed full-route additions');
-    const classifier = actual[2];
-    assert.match(classifier, /id: changes/);
-    assert.match(classifier, /node --test scripts\/ci\/status-docs\.test\.mjs/);
-    assert.match(classifier, /node scripts\/ci\/status-docs\.mjs/);
-    assert.match(classifier, /CI_BASE_SHA:/);
-    assert.match(classifier, /CI_HEAD_SHA:/);
-    assert.equal(actual[0], prior[0]);
-    assert.equal(actual[1], prior[1]);
-    for (let i = 2; i < prior.length; i++) {
-      const added = actual[i + 1];
-      let expected = ungated(prior[i]);
-      if (file === 'm1-foundation.yml' && expected.includes('name: m1-001-foundation-${{ github.sha }}')) {
-        // Complete the existing owned storefront payload; no broader upload paths.
-        expected = expected
-          .replace(
-            'extensions/insignia-theme/assets/insignia-storefront.js',
-            'extensions/insignia-theme/assets/insignia-*.js\n            extensions/insignia-theme/assets/insignia-*.css',
-          )
-          .replace(
-            'apps/storefront/dist/insignia-storefront.js',
-            'apps/storefront/dist/insignia-*.js\n            apps/storefront/dist/insignia-*.css',
-          );
-      }
-      assert.equal(ungated(added), expected, 'original suite bodies and reviewed artifact paths remain exact');
-      assert.match(
-        added,
-        prior[i].includes('if: always()')
-          ? /if: \$\{\{ always\(\) && steps\.changes\.outputs\.route == 'full' \}\}/
-          : /if: steps\.changes\.outputs\.route == 'full'/,
+// Exact runtime repetitions retired after tracing their mandatory equivalent coverage:
+// foundation check -> test:unit keeps these complete suites; durable-core keeps
+// check:database on the same PostgreSQL18 image. Runtime's DB-specific worker,
+// HTTP, LOGIN, crash, packaging and image checks remain unchanged.
+const retiredRuntimeSteps = ['storage', 'shopify', 'application', 'observability'].map(
+  (name) => `      - run: corepack pnpm --filter @insignia/${name} test\n`,
+);
+const runtimeMigrationStep = `      - name: Initialize runtime schema and verify migration idempotence
+        # The required durable-core job runs the full database suite on the same pinned PostgreSQL18 image.
+        # This job retains actual worker/HTTP/LOGIN/process/image qualification below.
+        run: |
+          corepack pnpm db:migrate
+          corepack pnpm db:migrate
+`;
+function reviewedOriginalSteps(file, prior) {
+  if (file !== 'm3-runtime.yml') return prior;
+  for (const retired of retiredRuntimeSteps)
+    assert.equal(prior.filter((step) => step === retired).length, 1, 'retire only the exact reviewed repetition');
+  return prior
+    .filter((step) => !retiredRuntimeSteps.includes(step))
+    .map((step) => {
+      if (step === '      - run: corepack pnpm check:database\n') return runtimeMigrationStep;
+      return step.replace(
+        '# Current check:database above qualifies schema34; the historical erasure guard stays exact20.',
+        '# The required durable-core job qualifies the full current schema; this erasure guard stays exact20.',
       );
+    });
+}
+function assertWorkflowIntegration(file, current) {
+  const name = `.github/workflows/${file}`;
+  const old = execFileSync('git', ['show', `${baseline}:${name}`], { cwd: root, encoding: 'utf8' });
+  assert.match(current, /^ {2}pull_request:\s*\n {2}push:/m, 'all PRs must produce the existing check context');
+  assert.match(current, /^ {6}- 'scripts\/ci\/\*\*'$/m);
+  const all = steps(current),
+    prior = reviewedOriginalSteps(file, steps(old));
+  const additions = addedSteps[file];
+  const extra = all.filter((step) => additions.some((name) => step.startsWith(`      - name: ${name}\n`)));
+  assert.equal(extra.length, additions.length, 'every reviewed artifact step remains present');
+  for (const step of extra) assert.match(step, /if: steps\.changes\.outputs\.route == 'full'/);
+  const actual = all.filter((step) => !extra.includes(step));
+  assert.equal(actual.length, prior.length + 1, 'one classifier step plus reviewed full-route additions');
+  const classifier = actual[2];
+  assert.match(classifier, /id: changes/);
+  assert.match(classifier, /node --test scripts\/ci\/status-docs\.test\.mjs/);
+  assert.match(classifier, /node scripts\/ci\/status-docs\.mjs/);
+  assert.match(classifier, /CI_BASE_SHA:/);
+  assert.match(classifier, /CI_HEAD_SHA:/);
+  assert.equal(actual[0], prior[0]);
+  assert.equal(actual[1], prior[1]);
+  for (let i = 2; i < prior.length; i++) {
+    const added = actual[i + 1];
+    let expected = ungated(prior[i]);
+    if (file === 'm1-foundation.yml' && expected.includes('name: m1-001-foundation-${{ github.sha }}')) {
+      // Complete the existing owned storefront payload; no broader upload paths.
+      expected = expected
+        .replace(
+          'extensions/insignia-theme/assets/insignia-storefront.js',
+          'extensions/insignia-theme/assets/insignia-*.js\n            extensions/insignia-theme/assets/insignia-*.css',
+        )
+        .replace(
+          'apps/storefront/dist/insignia-storefront.js',
+          'apps/storefront/dist/insignia-*.js\n            apps/storefront/dist/insignia-*.css',
+        );
     }
-    for (const [needle, target] of [
-      ['scripts/m4-003/**', 'm1-foundation.yml'],
-      ['scripts/m5-017/**', 'm1-foundation.yml'],
-      ['scripts/m5-003/**', 'm3-database.yml'],
-    ])
-      if (file === target) assert(current.includes(`      - '${needle}'`));
+    assert.equal(ungated(added), expected, 'original suite bodies and reviewed artifact paths remain exact');
+    assert.match(
+      added,
+      prior[i].includes('if: always()')
+        ? /if: \$\{\{ always\(\) && steps\.changes\.outputs\.route == 'full' \}\}/
+        : /if: steps\.changes\.outputs\.route == 'full'/,
+    );
   }
+  for (const [needle, target] of [
+    ['scripts/m4-003/**', 'm1-foundation.yml'],
+    ['scripts/m5-017/**', 'm1-foundation.yml'],
+    ['scripts/m5-003/**', 'm3-database.yml'],
+  ])
+    if (file === target) assert(current.includes(`      - '${needle}'`));
+}
+
+test('workflow integration preserves retained suites, explicit consolidation and full-route gates', () => {
+  for (const file of ['m1-foundation.yml', 'm3-database.yml', 'm3-runtime.yml'])
+    assertWorkflowIntegration(file, readFileSync(join(root, '.github/workflows', file), 'utf8'));
+});
+
+test('consolidated suites remain mandatory under the same pinned runner, Node and PostgreSQL', () => {
+  const workflow = (file) => readFileSync(join(root, '.github/workflows', file), 'utf8');
+  const foundation = workflow('m1-foundation.yml');
+  const durable = workflow('m3-database.yml');
+  const runtime = workflow('m3-runtime.yml');
+  const scripts = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).scripts;
+  assert(foundation.includes('run: corepack pnpm check\n'));
+  assert(scripts.check.split(' && ').includes('corepack pnpm test:unit'));
+  for (const name of ['storage', 'shopify', 'application', 'observability'])
+    assert(scripts['test:unit'].split(' && ').includes(`corepack pnpm --filter @insignia/${name} test`));
+  assert(durable.includes('run: corepack pnpm check:database\n'));
+  assert.equal(
+    scripts['check:database'],
+    'corepack pnpm db:migrate && corepack pnpm db:migrate && corepack pnpm test:database',
+  );
+  assert.equal(scripts['test:database'], 'corepack pnpm --filter @insignia/database test');
+  for (const current of [foundation, durable, runtime]) {
+    assert.match(current, /runs-on: ubuntu-24\.04/);
+    assert.match(current, /node-version: '24\.21\.0'/);
+  }
+  const image =
+    'image: docker.io/library/postgres@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336';
+  assert(durable.includes(image));
+  assert(runtime.includes(image));
+});
+
+test('explicit consolidation cannot remove worker database checks or skip runtime migration setup', () => {
+  const current = readFileSync(join(root, '.github/workflows/m3-runtime.yml'), 'utf8');
+  for (const altered of [
+    current.replace(/ {6}- run: corepack pnpm --filter @insignia\/worker test\n {8}if:.*\n/, ''),
+    current.replace('          corepack pnpm db:migrate\n          corepack pnpm db:migrate', '          true'),
+    current.replace('run: node --test test/shopify-webhook.test.mjs', 'run: true'),
+    current.replace('run: corepack pnpm check:boundaries', 'run: true'),
+  ])
+    assert.throws(() => assertWorkflowIntegration('m3-runtime.yml', altered));
 });
 
 test('the real CLI records explicit docs-only scope without emitting document contents', () =>

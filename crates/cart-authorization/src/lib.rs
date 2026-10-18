@@ -1,4 +1,6 @@
-//! Isolated whole-quote v2 authorization prototype.
+//! Whole-quote v2 authorization and app-owned product-policy classification.
+pub mod capacity;
+pub mod product_policy;
 mod whole;
 pub use whole::*;
 

@@ -67,13 +67,14 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       const migrations = new URL('../migrations/', import.meta.url);
       const names = (await readdir(migrations)).filter((n) => n.endsWith('.sql')).sort();
       expect(names).toHaveLength(45);
-      expect(names.slice(-6)).toEqual([
+      expect(names.slice(-7)).toEqual([
         '20261017000200_privacy_merchant_export.sql',
         '20261017000300_shop_privacy_staging.sql',
         '20261018000100_method_catalog.sql',
         '20261018000200_uninstall_destinations.sql',
         '20261018000300_uninstall_privacy_recovery.sql',
         '20261018000400_generic_uninstall_cleanup_accounting.sql',
+        '20261018000500_restore_validation_namespace.sql',
       ]);
       for (const file of names.slice(0, 20))
         await owner.query((await readFile(new URL(file, migrations), 'utf8')).split('-- migrate:down')[0]!);
@@ -795,14 +796,12 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
         'SELECT private_envelope FROM signing_keys',
       ])
         await expect(purchaseWorker.query(query)).rejects.toMatchObject({ code: '42501' });
+      expect(
+        (await owner.query("SELECT to_regclass('public.m9_usage_delivery_attempts') AS relation")).rows[0].relation,
+      ).toBeNull();
       // The local ledger is not activated for any deployed runtime role.
       for (const runtime of [web, purchaseWorker, inspectionWorker])
         for (const query of [
-          'SELECT * FROM m9_usage_delivery_attempts',
-          'INSERT INTO m9_usage_delivery_attempts DEFAULT VALUES',
-          'UPDATE m9_usage_delivery_attempts SET outcome=outcome WHERE false',
-          'DELETE FROM m9_usage_delivery_attempts WHERE false',
-          'TRUNCATE m9_usage_delivery_attempts',
           'SELECT * FROM m9_usage_delivery_intents',
           'INSERT INTO m9_usage_delivery_intents DEFAULT VALUES',
           'UPDATE m9_usage_delivery_intents SET idempotency_key=idempotency_key WHERE false',
@@ -815,110 +814,6 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
           'TRUNCATE m9_order_usage',
         ])
           await expect(runtime.query(query)).rejects.toMatchObject({ code: '42501' });
-      // Optional M9 qualification grant: run only after the baseline deny probes above.
-      await owner.query('CREATE TABLE schema_migrations(version varchar(128) PRIMARY KEY)');
-      for (const file of names)
-        await owner.query('INSERT INTO schema_migrations(version) VALUES($1)', [file.split('_')[0]]);
-      const usageScript = (
-        await readFile(new URL('../../../scripts/m9-usage/runtime-grants.sql', import.meta.url), 'utf8')
-      ).replaceAll('insignia_queue_consume', queue);
-      // Deferred usage capability remains pinned to its historical schema38.
-      // The actual current schema must be rejected, not silently admitted.
-      await expect(owner.query(usageScript)).rejects.toThrow('exact_usage_schema38_required');
-      await owner.query('ROLLBACK');
-      await owner.query('DELETE FROM schema_migrations WHERE version=ANY($1::text[])', [
-        [
-          '20261017000100',
-          '20261017000200',
-          '20261017000300',
-          '20261018000100',
-          '20261018000200',
-          '20261018000300',
-          '20261018000400',
-        ],
-      ]);
-      await owner.query(`ALTER ROLE ${queue} CREATEROLE`);
-      await expect(owner.query(usageScript)).rejects.toThrow('unqualified_usage_runtime_role');
-      await owner.query('ROLLBACK');
-      await owner.query(`ALTER ROLE ${queue} NOCREATEROLE`);
-      await owner.query(`GRANT ${extra} TO ${queue}`);
-      await expect(owner.query(usageScript)).rejects.toThrow('unqualified_usage_runtime_membership');
-      await owner.query('ROLLBACK');
-      await owner.query(`REVOKE ${extra} FROM ${queue}`);
-      // This optional historical usage grant requires its fixed schema38 input,
-      // not whichever unrelated migration was added most recently.
-      const usageRequiredVersion = '20261015000600';
-      await owner.query('DELETE FROM schema_migrations WHERE version=$1', [usageRequiredVersion]);
-      await expect(owner.query(usageScript)).rejects.toThrow('exact_usage_schema38_required');
-      await owner.query('ROLLBACK');
-      await owner.query('INSERT INTO schema_migrations(version) VALUES($1)', [usageRequiredVersion]);
-      await owner.query('GRANT UPDATE(purchase_id) ON m9_order_usage TO PUBLIC');
-      await expect(owner.query(usageScript)).rejects.toThrow('unqualified_usage_public_access');
-      await owner.query('ROLLBACK');
-      await owner.query('REVOKE UPDATE(purchase_id) ON m9_order_usage FROM PUBLIC');
-      for (const table of ['m9_order_usage', 'm9_usage_delivery_intents', 'm9_usage_delivery_attempts'])
-        for (const privilege of ['SELECT', 'UPDATE(decision)'].filter(
-          (p) => table === 'm9_order_usage' || p === 'SELECT',
-        )) {
-          await owner.query(`GRANT ${privilege} ON ${table} TO PUBLIC`);
-          await expect(owner.query(usageScript)).rejects.toThrow('unqualified_usage_public_access');
-          await owner.query('ROLLBACK');
-          await owner.query(`REVOKE ${privilege} ON ${table} FROM PUBLIC`);
-        }
-      await owner.query(usageScript);
-      for (const runtime of [web, purchaseWorker, inspectionWorker])
-        for (const query of [
-          'SELECT * FROM m9_usage_delivery_attempts',
-          'INSERT INTO m9_usage_delivery_attempts DEFAULT VALUES',
-          'UPDATE m9_usage_delivery_attempts SET outcome=outcome WHERE false',
-          'DELETE FROM m9_usage_delivery_attempts WHERE false',
-          'TRUNCATE m9_usage_delivery_attempts',
-        ])
-          await expect(runtime.query(query)).rejects.toMatchObject({ code: '42501' });
-      await owner.query(usageScript);
-      await owner.query(
-        'INSERT INTO purchase_paid_facts(shop_id,installation_generation,purchase_id,occurred_at) VALUES($1,1,$2,$3)',
-        [shopId, purchaseId, now],
-      );
-      const usageScope = { shopId, installationGeneration: generation };
-      const usageInput = { purchaseId, policy: null, history: { kind: 'UNVERIFIED' as const } };
-      const workerCore = createDurableCore(purchaseWorker);
-      expect(
-        (await workerCore.usageLedger.selectPending(usageScope, { limit: 20, afterPurchaseId: null })).purchases,
-      ).toContainEqual({ ...usageScope, purchaseId });
-      const usage = await workerCore.usageLedger.record(usageScope, usageInput);
-      expect(usage.decision).toEqual({ kind: 'EXCLUDED', units: 0, reason: 'TEST_ORDER' });
-      expect(await workerCore.usageLedger.record(usageScope, usageInput)).toEqual(usage);
-      await purchaseWorker.end();
-      purchaseWorker = new Pool({ connectionString: workerAddress.href, connectionTimeoutMillis: 5000 });
-      const reopenedWorker = createDurableCore(purchaseWorker);
-      expect(await reopenedWorker.usageLedger.record(usageScope, usageInput)).toEqual(usage);
-      expect(
-        (await reopenedWorker.usageLedger.selectPending(usageScope, { limit: 20, afterPurchaseId: null })).purchases,
-      ).not.toContainEqual({ ...usageScope, purchaseId });
-      expect((await purchaseWorker.query('SELECT count(*)::int AS n FROM m9_order_usage')).rows[0].n).toBe(1);
-      expect((await purchaseWorker.query('SELECT count(*)::int AS n FROM m9_usage_delivery_intents')).rows[0].n).toBe(
-        0,
-      );
-      for (const query of [
-        'SELECT * FROM m9_usage_delivery_attempts',
-        'INSERT INTO m9_usage_delivery_attempts DEFAULT VALUES',
-        'UPDATE m9_usage_delivery_attempts SET outcome=outcome WHERE false',
-        'DELETE FROM m9_usage_delivery_attempts WHERE false',
-        'TRUNCATE m9_usage_delivery_attempts',
-        'UPDATE m9_order_usage SET purchase_id=purchase_id',
-        'DELETE FROM m9_order_usage',
-        'TRUNCATE m9_order_usage',
-        'INSERT INTO m9_usage_delivery_intents DEFAULT VALUES',
-      ])
-        await expect(purchaseWorker.query(query)).rejects.toMatchObject({ code: '42501' });
-      await expect(purchaseWorker.query('UPDATE m9_order_usage SET decision=decision')).rejects.toMatchObject({
-        code: '23514',
-      });
-      for (const runtime of [web, inspectionWorker]) {
-        await expect(runtime.query('SELECT * FROM m9_order_usage')).rejects.toMatchObject({ code: '42501' });
-        await expect(runtime.query('SELECT * FROM m9_usage_delivery_intents')).rejects.toMatchObject({ code: '42501' });
-      }
       expect(
         (
           await owner.query(

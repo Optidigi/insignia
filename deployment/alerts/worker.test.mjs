@@ -105,6 +105,31 @@ test('claims durably before send, deduplicates across concurrency/restart, and r
   assert.deepEqual(f.messages[0].from, { email: 'insignia-alerts@optidigi.nl', name: 'Insignia Alerts' });
 });
 
+test('exposes acknowledged provider references to the authenticated operator for delivery reconciliation', async () => {
+  const f = fixture();
+  const submitted = await (await f.request('/v1/alerts', alert())).json();
+  assert.equal(submitted.messageId, 'provider-id');
+  f.restart();
+  const duplicate = await (await f.request('/v1/alerts', alert())).json();
+  assert.equal(duplicate.messageId, 'provider-id');
+  const status = await (
+    await worker.fetch(
+      new Request('https://alerts.example/v1/status', { headers: { authorization: `Bearer ${secret}` } }),
+      f.env,
+    )
+  ).json();
+  assert.equal(status.lastSubmission.messageId, 'provider-id');
+  assert.equal(f.messages.length, 1);
+  f.advance(604_800_000);
+  const expired = await (
+    await worker.fetch(
+      new Request('https://alerts.example/v1/status', { headers: { authorization: `Bearer ${secret}` } }),
+      f.env,
+    )
+  ).json();
+  assert.equal(expired.lastSubmission, null);
+});
+
 test('stays unarmed until first heartbeat, detects outage independently, persists reminders and sends one recovery', async () => {
   const f = fixture();
   await f.tick();
@@ -150,6 +175,14 @@ test('ambiguous email submission and a crash after durable claim are never autom
   assert.equal(hanging.messages.length, 1);
   release({ messageId: 'accepted' });
   await first;
+});
+
+test('empty provider references remain unknown and cannot authorize an automatic resend', async () => {
+  const f = fixture(async () => ({ messageId: '' }));
+  assert.equal((await (await f.request('/v1/alerts', alert())).json()).state, 'unknown');
+  f.restart();
+  assert.equal((await (await f.request('/v1/alerts', alert())).json()).state, 'unknown');
+  assert.equal(f.messages.length, 1);
 });
 
 test('bounds total mail across alert classes and preserves capped and suppressed identities', async () => {
