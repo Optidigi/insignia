@@ -1,21 +1,12 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createHash, createHmac, randomBytes, randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { createDurableCore } from '@insignia/database';
 import { Pool } from 'pg';
 import { installQueue } from '../../../scripts/m5-024/install-queue.mjs';
 import { isolatedDatabase } from './support/isolated-database.mjs';
-
-if (!process.env.DATABASE_URL) {
-  try {
-    process.env.DATABASE_URL = JSON.parse(readFileSync('/tmp/insignia-lifecycle-pg.json', 'utf8')).url;
-  } catch {
-    /* A database is required; no native/default target is inferred. */
-  }
-}
 
 test('built exclusive uninstall callback authenticates its bound generation, settles through queue before create acknowledgement and cannot deactivate a reinstall', {
   skip: !process.env.DATABASE_URL && process.env.INSIGNIA_REQUIRE_POSTGRES_TEST !== '1',

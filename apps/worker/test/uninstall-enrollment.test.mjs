@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { createDurableCore } from '@insignia/database';
+import { createUninstallSubscriptionClient } from '@insignia/shopify';
 import { Pool } from 'pg';
 import { isolatedDatabase } from '../../web/test/support/isolated-database.mjs';
 import {
@@ -10,13 +10,6 @@ import {
   createUninstallEnrollmentReconciliation,
 } from '../src/uninstall-enrollment.ts';
 
-if (!process.env.DATABASE_URL) {
-  try {
-    process.env.DATABASE_URL = JSON.parse(readFileSync('/tmp/insignia-lifecycle-pg.json', 'utf8')).url;
-  } catch {
-    /* Explicit database opt-in remains required in other environments. */
-  }
-}
 const options = {
   skip: !process.env.DATABASE_URL && process.env.INSIGNIA_REQUIRE_POSTGRES_TEST !== '1',
   timeout: 30_000,
@@ -70,6 +63,50 @@ async function fixture(t) {
   };
 }
 const subscription = (id, uri) => ({ id: `gid://shopify/WebhookSubscription/${id}`, topic: 'APP_UNINSTALLED', uri });
+
+test(
+  'real Shopify adapter observes foreign-origin drift and enrollment replaces only that immutable binding',
+  options,
+  async (t) => {
+    const f = await fixture(t),
+      shop = await f.shop(),
+      remote = new Map();
+    let creates = 0;
+    const client = createUninstallSubscriptionClient({
+      expectedOrigin: origin,
+      fetchImpl: async (url, init) => {
+        assert.equal(url, `https://${shop.grant.shop}/admin/api/2026-07/graphql.json`);
+        const { query, variables } = JSON.parse(init.body);
+        if (query.includes('LifecycleIdentity'))
+          return Response.json({
+            data: {
+              shop: { id: shop.scope.providerShopId, myshopifyDomain: shop.grant.shop },
+              currentAppInstallation: { id: shop.scope.externalInstallationId, app: { apiKey: 'synthetic-client' } },
+            },
+          });
+        if (query.includes('LifecycleSubscribe')) {
+          const value = subscription(++creates, variables.uri);
+          remote.set(value.id, value);
+          return Response.json({ data: { webhookSubscriptionCreate: { webhookSubscription: value, userErrors: [] } } });
+        }
+        if (query.includes('LifecycleReadback'))
+          return Response.json({ data: { webhookSubscription: remote.get(variables.id) ?? null } });
+        throw Error('Unexpected injected provider operation');
+      },
+    });
+    const enroll = f.enroll(client);
+    await enroll(shop.grant, shop.scope);
+    const original = remote.get('gid://shopify/WebhookSubscription/1');
+    remote.set(original.id, { ...original, uri: 'https://old-app.example/webhooks' });
+    await enroll(shop.grant, shop.scope);
+    assert.equal(creates, 2);
+    assert.deepEqual(
+      (await f.rows()).map((row) => row.state),
+      ['retired', 'registered'],
+    );
+    assert.notEqual(remote.get('gid://shopify/WebhookSubscription/2').uri, original.uri);
+  },
+);
 
 test(
   'definite no-dispatch rejection can retry the same durable destination and register only after readback',

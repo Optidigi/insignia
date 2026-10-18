@@ -121,6 +121,17 @@ test('read checks returned subscription ID and rechecks owner after nullable abs
   );
 });
 
+test('read observes definitive destination drift only after a second positive installation check', async () => {
+  const drifted = { ...subscription, uri: 'https://old-app.example/webhooks' };
+  const f = fixture([identity, { webhookSubscription: drifted }, identity]);
+  expect(await f.client.read(grant, context, subscription.id)).toEqual(drifted);
+  expect(f.calls).toHaveLength(3);
+  const uncertain = fixture([identity, { webhookSubscription: drifted }, new Error('provider unavailable')]);
+  await expect(uncertain.client.read(grant, context, subscription.id)).rejects.toThrow(
+    'Uninstall subscription unavailable',
+  );
+});
+
 test('malformed/provider-error/oversized bodies cannot acknowledge a mutation or expose provider errors', async () => {
   for (const response of [
     new Response('secret malformed'),

@@ -131,13 +131,24 @@ export function createUninstallSubscriptionClient(input: { expectedOrigin: strin
     )
       fail();
   }
-  function project(raw: unknown, expectedUri?: string): UninstallSubscription {
+  function observed(raw: unknown): UninstallSubscription {
     const value = record(raw);
-    if (!gid('WebhookSubscription', value.id) || value.topic !== 'APP_UNINSTALLED' || typeof value.uri !== 'string')
+    if (
+      !gid('WebhookSubscription', value.id) ||
+      value.topic !== 'APP_UNINSTALLED' ||
+      typeof value.uri !== 'string' ||
+      value.uri.length < 1 ||
+      value.uri.length > 2048 ||
+      /[\u0000-\u0020\u007f]/.test(value.uri)
+    )
       return fail();
+    return { id: value.id, topic: 'APP_UNINSTALLED', uri: value.uri };
+  }
+  function project(raw: unknown, expectedUri?: string): UninstallSubscription {
+    const value = observed(raw);
     callback(value.uri);
     if (expectedUri !== undefined && value.uri !== expectedUri) return fail();
-    return { id: value.id, topic: 'APP_UNINSTALLED', uri: value.uri };
+    return value;
   }
   return {
     async create(
@@ -188,7 +199,10 @@ export function createUninstallSubscriptionClient(input: { expectedOrigin: strin
       if (!gid('WebhookSubscription', id)) return fail();
       await identity(grant, expected);
       const data = await query(grant, readQuery, { id });
-      const result = data.webhookSubscription === null ? null : project(data.webhookSubscription);
+      // Observing an exact saved subscription is different from authorizing a
+      // destination. Return definitive URI drift only after owner revalidation;
+      // callers never fetch/log this URI and can retire the old capability.
+      const result = data.webhookSubscription === null ? null : observed(data.webhookSubscription);
       if (result && result.id !== id) return fail();
       await identity(grant, expected);
       return result;

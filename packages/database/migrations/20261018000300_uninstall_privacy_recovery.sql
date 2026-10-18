@@ -129,4 +129,3 @@ BEGIN
  WHERE shop_id=NEW.shop_id AND namespace LIKE 'merchant-method-%' AND status='completed';
  RETURN NEW;
 END $$;
-
