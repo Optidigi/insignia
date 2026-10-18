@@ -1137,19 +1137,11 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       <s-button slot="secondary-actions" href="/admin/settings" icon="settings">
         Settings
       </s-button>
-      {mode === 'config' && view?.config && draft && (
-        <s-button
-          variant="primary"
-          disabled={busy || !!advancedError || legacyPricing || hasPriceErrors || saveState !== 'dirty'}
-          onClick={() => void save()}
-        >
-          Save draft
-        </s-button>
-      )}
+
       {mode === 'config' && (
-        <s-button slot="breadcrumb-actions" href="/admin/products" icon="arrow-left">
+        <s-link slot="breadcrumb-actions" href="/admin/products">
           Products
-        </s-button>
+        </s-link>
       )}
       {status && (
         <s-banner tone="info">
@@ -1270,6 +1262,43 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
           </s-section>
           {view.config && draft && geometry && editor && (
             <>
+              <s-section slot="aside" id="product-preview" heading="Live preview">
+                <s-paragraph>
+                  Check the selected product image, print area and sample artwork. Preview uploads do not change
+                  customer orders.
+                </s-paragraph>
+                <div
+                  role="img"
+                  id="insignia-visualizer"
+                  data-editor-version={editor.version}
+                  data-selected-placement={editor.selectedPlacementId ?? ''}
+                  data-publication-state={JSON.stringify({
+                    state: view.config.publication.state,
+                    revisionId: view.config.publication.revisionId,
+                    sourceDraftVersion: view.config.publication.sourceDraftVersion,
+                  })}
+                  style="width:100%;height:420px"
+                  aria-label="Product placement preview"
+                ></div>
+                {previewStatus && <p role="status">Preview: {previewStatus}</p>}
+                <ArtworkUpload
+                  disabled={busy}
+                  onAuthenticationDenied={authorizationDenied}
+                  onPreview={(preview) => {
+                    const current = editorRef.current;
+                    if (!current) return;
+                    const next: EditorState = {
+                      ...current,
+                      artwork: preview
+                        ? { kind: 'raster', url: preview.url, aspectRatio: preview.aspectRatio }
+                        : { kind: 'logo-later' },
+                    };
+                    editorRef.current = next;
+                    setEditor(next);
+                    updateRenderer(next);
+                  }}
+                />
+              </s-section>
               <s-section heading="Configure this product">
                 <s-paragraph>
                   Work through the setup, save your draft, then review and publish. Saving alone does not change
@@ -1278,12 +1307,13 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                 <s-stack direction="inline" gap="small">
                   <s-link href="#customization-rules">1. Product rules</s-link>
                   <s-link href="#product-images">2. Images and print areas</s-link>
+                  <s-link href="#product-preview">Preview</s-link>
                   <s-link href="#decoration-prices">3. Prices</s-link>
                   <s-link href="#publish-changes">4. Review and publish</s-link>
                 </s-stack>
               </s-section>
               <PublicationStatus config={view.config} />
-              <s-section heading="Customization settings">
+              <s-section heading="Draft changes">
                 {validationIssues.length > 0 && (
                   <div role="alert">
                     {validationIssues.map((issue) => (
@@ -1320,654 +1350,13 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                     use them.
                   </s-text>
                 </p>
-                <s-stack gap="base">
-                  <s-section id="customization-rules" heading="Customization rules">
-                    <s-select
-                      value={draft.mode}
-                      onChange={(event) =>
-                        change({ ...draft, mode: event.currentTarget.value as MerchantDraft['mode'] })
-                      }
-                      label={'Customization mode'}
-                      disabled={busy}
-                    >
-                      <s-option value="optional">Optional</s-option>
-                      <s-option value="required">Required for all purchases</s-option>
-                    </s-select>
-                    <p>Draft shop currency: {draft.shopCurrency}</p>
-                    {view.config.currentShopCurrency && view.config.currentShopCurrency !== draft.shopCurrency && (
-                      <div role="alert">
-                        <p>
-                          Current shop currency: {view.config.currentShopCurrency}. Existing amounts are not converted.
-                          Review every price before saving or publishing.
-                        </p>
-                        <s-button
-                          type="button"
-                          onClick={() => {
-                            const currency = view.config?.currentShopCurrency;
-                            if (currency) change({ ...draft, shopCurrency: currency });
-                          }}
-                          disabled={busy}
-                          icon="check"
-                        >
-                          Use current shop currency
-                        </s-button>
-                      </div>
-                    )}
-                  </s-section>
-                  <s-section heading="Decoration methods">
-                    {draft.methods.map((method) => (
-                      <p key={method.id}>
-                        <strong>{choiceLabel('methods', method.id)}</strong>{' '}
-                        <s-text-field
-                          maxLength={80}
-                          value={labelFor('methods', method.id)}
-                          onInput={(event) => setLabel('methods', method.id, event.currentTarget.value)}
-                          label={'Method name'}
-                          disabled={busy}
-                        />{' '}
-                        <s-button
-                          type="button"
-                          onClick={() =>
-                            change({
-                              ...draft,
-                              methods: draft.methods.filter((item) => item.id !== method.id),
-                              labels: removeChoiceLabels(draft.labels, 'methods', method.id),
-                            })
-                          }
-                          disabled={busy}
-                          icon="delete"
-                        >
-                          Remove method
-                        </s-button>
-                      </p>
-                    ))}
-                    <s-button
-                      type="button"
-                      onClick={() => change({ ...draft, methods: [...draft.methods, { id: freshId('method') }] })}
-                      disabled={busy}
-                      icon="plus"
-                    >
-                      Add method
-                    </s-button>
-                  </s-section>
-                  <s-section id="product-images" heading="Product images">
-                    <s-select
-                      value={editor.viewId}
-                      onChange={(event) => choose({ kind: 'select-view', viewId: event.currentTarget.value })}
-                      label={'View'}
-                      disabled={busy}
-                    >
-                      {geometry.views.map((item) => (
-                        <s-option key={item.id} value={item.id}>
-                          {choiceLabel('views', item.id)}
-                        </s-option>
-                      ))}
-                    </s-select>
-                    <s-text-field
-                      maxLength={80}
-                      value={labelFor('views', editor.viewId)}
-                      onInput={(event) => setLabel('views', editor.viewId, event.currentTarget.value)}
-                      label={'View name'}
-                      disabled={busy}
-                    />
-                    <s-button
-                      type="button"
-                      onClick={() =>
-                        updateGeometry((value) => ({
-                          ...value,
-                          views: [...value.views, { id: freshId('view'), variantImages: [], placements: [] }],
-                        }))
-                      }
-                      disabled={busy}
-                      icon="plus"
-                    >
-                      Add view
-                    </s-button>
-                    <s-select
-                      value={editor.variantId ?? ''}
-                      onChange={(event) =>
-                        choose({ kind: 'select-variant', variantId: event.currentTarget.value || undefined })
-                      }
-                      label={'Product variant'}
-                      disabled={busy}
-                    >
-                      <s-option value="">Featured image</s-option>
-                      {view.product.variants.map((item) => (
-                        <s-option key={item.id} value={'variant_' + numberOf(item.id)}>
-                          {item.title}
-                        </s-option>
-                      ))}
-                    </s-select>
-                    {view.product.variantsTruncated && (
-                      <p role="alert">
-                        This product has more than 500 variants. Only the first 500 are available here; review the full
-                        catalog before saving variant-specific geometry.
-                      </p>
-                    )}
-                    <s-button
-                      type="button"
-                      disabled={busy || !selectedImage || !imageSize}
-                      onClick={() => {
-                        if (!selectedImage || !imageSize || !selectedView) return;
-                        const ref = { revisionId: editor.variantId ?? `product_${productId}`, ...imageSize };
-                        updateGeometry((value) => ({
-                          ...value,
-                          views: value.views.map((item) =>
-                            item.id !== editor.viewId
-                              ? item
-                              : editor.variantId
-                                ? {
-                                    ...item,
-                                    variantImages: [
-                                      ...item.variantImages.filter((entry) => entry.variantId !== editor.variantId),
-                                      { variantId: editor.variantId!, image: ref },
-                                    ],
-                                  }
-                                : { ...item, image: ref },
-                          ),
-                        }));
-                      }}
-                      icon="check"
-                    >
-                      Use selected product image
-                    </s-button>
-                  </s-section>
-                  <s-section heading="Print areas">
-                    <p>
-                      Choose where customers can add artwork. Position and dimensions use fractions of the product
-                      image: 0.5 is halfway across or half its size.
-                    </p>
-                    <s-select
-                      value={editor.selectedPlacementId ?? ''}
-                      onChange={(event) =>
-                        choose({ kind: 'select-placement', placementId: event.currentTarget.value || undefined })
-                      }
-                      label="Print area"
-                      disabled={busy}
-                    >
-                      <s-option value="">None</s-option>
-                      {selectedView?.placements.map((item) => (
-                        <s-option key={item.id} value={item.id}>
-                          {choiceLabel('placements', item.id)}
-                        </s-option>
-                      ))}
-                    </s-select>
-                    <s-button
-                      type="button"
-                      onClick={() => {
-                        const id = freshId('place');
-                        change({
-                          ...draft,
-                          placements: [
-                            ...draft.placements,
-                            { id, allowedMethodIds: [], allowedStepIds: [], logoLaterAllowed: true },
-                          ],
-                          geometry: {
-                            ...geometry,
-                            views: geometry.views.map((item) =>
-                              item.id === editor.viewId
-                                ? { ...item, placements: [...item.placements, { id, rect: defaultRect() }] }
-                                : item,
-                            ),
-                          },
-                        });
-                        choose({ kind: 'select-placement', placementId: id });
-                      }}
-                      disabled={busy}
-                      icon="plus"
-                    >
-                      Add placement to view
-                    </s-button>
-                    {selectedPlacement && selectedRect && (
-                      <div>
-                        <p>
-                          <strong>{choiceLabel('placements', selectedPlacement.id)}</strong>
-                        </p>
-                        <s-text-field
-                          maxLength={80}
-                          value={labelFor('placements', selectedPlacement.id)}
-                          onInput={(event) => setLabel('placements', selectedPlacement.id, event.currentTarget.value)}
-                          label={'Placement name'}
-                          disabled={busy}
-                        />
-                        <s-checkbox
-                          checked={selectedPlacement.logoLaterAllowed}
-                          onChange={(event) =>
-                            setPlacement(selectedPlacement.id, (item) => ({
-                              ...item,
-                              logoLaterAllowed: event.currentTarget.checked,
-                            }))
-                          }
-                          label={'Allow logo later'}
-                          disabled={busy}
-                        />
-                        <p>Allowed methods</p>
-                        {draft.methods.map((item) => (
-                          <s-checkbox
-                            checked={selectedPlacement.allowedMethodIds.includes(item.id)}
-                            onChange={(event) =>
-                              setPlacement(selectedPlacement.id, (placement) => ({
-                                ...placement,
-                                allowedMethodIds: event.currentTarget.checked
-                                  ? [...placement.allowedMethodIds, item.id]
-                                  : placement.allowedMethodIds.filter((id) => id !== item.id),
-                              }))
-                            }
-                            label={choiceLabel('methods', item.id)}
-                            disabled={busy}
-                            key={item.id}
-                          />
-                        ))}
-                        <p>Allowed size steps</p>
-                        {geometry.steps.map((item) => (
-                          <s-checkbox
-                            checked={selectedPlacement.allowedStepIds.includes(item.id)}
-                            onChange={(event) =>
-                              setPlacement(selectedPlacement.id, (placement) => ({
-                                ...placement,
-                                allowedStepIds: event.currentTarget.checked
-                                  ? [...placement.allowedStepIds, item.id]
-                                  : placement.allowedStepIds.filter((id) => id !== item.id),
-                              }))
-                            }
-                            label={choiceLabel('steps', item.id)}
-                            disabled={busy}
-                            key={item.id}
-                          />
-                        ))}
-                        {(['centerX', 'centerY', 'width', 'height'] as const).map((field) => (
-                          <RectNumberInput
-                            id={`placement-rect-${field}`}
-                            key={JSON.stringify([
-                              productId,
-                              editor.viewId,
-                              editor.variantId,
-                              selectedPlacement.id,
-                              field,
-                            ])}
-                            value={selectedRect[field]}
-                            onInput={(value) => {
-                              if (!Number.isFinite(value)) return;
-                              const rect = { ...selectedRect, [field]: value };
-                              try {
-                                validateRect(rect);
-                              } catch {
-                                // Keep incomplete typing in the DOM; it is not geometry authority.
-                                return;
-                              }
-                              choose({
-                                kind: 'set-placement-rect',
-                                viewId: editor.viewId,
-                                variantId: editor.variantId,
-                                placementId: selectedPlacement.id,
-                                rect,
-                              });
-                            }}
-                            onChange={(value) => {
-                              if (Number.isFinite(value) && value !== selectedRect[field])
-                                choose({
-                                  kind: 'set-placement-rect',
-                                  viewId: editor.viewId,
-                                  variantId: editor.variantId,
-                                  placementId: selectedPlacement.id,
-                                  rect: { ...selectedRect, [field]: value },
-                                });
-                            }}
-                            label={
-                              {
-                                centerX: 'Horizontal position',
-                                centerY: 'Vertical position',
-                                width: 'Print area width',
-                                height: 'Print area height',
-                              }[field]
-                            }
-                            disabled={busy}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </s-section>
-                  <s-section heading="Print sizes">
-                    <p>
-                      Define the artwork sizes customers can choose. Width and height are fractions of the selected
-                      print area; 1 fills it.
-                    </p>
-                    <s-select
-                      value={editor.selectedStepId ?? ''}
-                      onChange={(event) =>
-                        choose({ kind: 'select-step', stepId: event.currentTarget.value || undefined })
-                      }
-                      label="Print size"
-                      disabled={busy}
-                    >
-                      <s-option value="">None</s-option>
-                      {geometry.steps.map((item) => (
-                        <s-option key={item.id} value={item.id}>
-                          {choiceLabel('steps', item.id)}
-                        </s-option>
-                      ))}
-                    </s-select>
-                    {selectedStep && (
-                      <s-text-field
-                        maxLength={80}
-                        value={labelFor('steps', selectedStep.id)}
-                        onInput={(event) => setLabel('steps', selectedStep.id, event.currentTarget.value)}
-                        label={'Size step name'}
-                        disabled={busy}
-                      />
-                    )}
-                    <s-button
-                      type="button"
-                      onClick={() =>
-                        updateGeometry((value) => ({
-                          ...value,
-                          steps: [...value.steps, { id: freshId('step'), widthFraction: 0.5, heightFraction: 0.5 }],
-                        }))
-                      }
-                      disabled={busy}
-                      icon="plus"
-                    >
-                      Add size step
-                    </s-button>
-                    {selectedStep &&
-                      (['widthFraction', 'heightFraction'] as const).map((field) => (
-                        <s-number-field
-                          min={0.01}
-                          max={1}
-                          step={0.01}
-                          value={String(selectedStep[field])}
-                          onChange={(event) => {
-                            const value = Number(event.currentTarget.value);
-                            updateGeometry((current) => ({
-                              ...current,
-                              steps: current.steps.map((item) =>
-                                item.id === selectedStep.id ? { ...item, [field]: value } : item,
-                              ),
-                            }));
-                          }}
-                          label={
-                            {
-                              widthFraction: 'Width relative to print area',
-                              heightFraction: 'Height relative to print area',
-                            }[field]
-                          }
-                          disabled={busy}
-                          key={field}
-                        />
-                      ))}
-                    <div
-                      role="img"
-                      id="insignia-visualizer"
-                      data-editor-version={editor.version}
-                      data-selected-placement={editor.selectedPlacementId ?? ''}
-                      data-publication-state={JSON.stringify({
-                        state: view.config.publication.state,
-                        revisionId: view.config.publication.revisionId,
-                        sourceDraftVersion: view.config.publication.sourceDraftVersion,
-                      })}
-                      style="width:100%;height:420px"
-                      aria-label="Product placement preview"
-                    ></div>
-                    {previewStatus && <p role="status">Preview: {previewStatus}</p>}
-                    <ArtworkUpload
-                      disabled={busy}
-                      onAuthenticationDenied={authorizationDenied}
-                      onPreview={(preview) => {
-                        const current = editorRef.current;
-                        if (!current) return;
-                        const next: EditorState = {
-                          ...current,
-                          artwork: preview
-                            ? { kind: 'raster', url: preview.url, aspectRatio: preview.aspectRatio }
-                            : { kind: 'logo-later' },
-                        };
-                        editorRef.current = next;
-                        setEditor(next);
-                        updateRenderer(next);
-                      }}
-                    />
-                  </s-section>
-                  <s-section heading="Customer options">
-                    {draft.productionOptions.map((item) => (
-                      <p key={item.id}>
-                        <strong>{choiceLabel('options', item.id)}</strong>{' '}
-                        <s-text-field
-                          maxLength={80}
-                          value={labelFor('options', item.id)}
-                          onInput={(event) => setLabel('options', item.id, event.currentTarget.value)}
-                          label={'Option name'}
-                          disabled={busy}
-                        />{' '}
-                        {item.allowedValueIds.map((id, index) => (
-                          <s-text-field
-                            maxLength={80}
-                            value={valueLabel(item.id, id)}
-                            onInput={(event) => setValueLabel(item.id, id, event.currentTarget.value)}
-                            label={['Value', index + 1, 'name'].join(' ')}
-                            disabled={busy}
-                            key={id}
-                          />
-                        ))}{' '}
-                        <s-button
-                          type="button"
-                          onClick={() =>
-                            change({
-                              ...draft,
-                              productionOptions: draft.productionOptions.filter((option) => option.id !== item.id),
-                              labels: removeChoiceLabels(draft.labels, 'options', item.id),
-                            })
-                          }
-                          disabled={busy}
-                          icon="delete"
-                        >
-                          Remove option
-                        </s-button>
-                        <s-button
-                          type="button"
-                          onClick={() =>
-                            change({
-                              ...draft,
-                              productionOptions: draft.productionOptions.map((option) =>
-                                option.id === item.id
-                                  ? { ...option, allowedValueIds: [...option.allowedValueIds, freshId('value')] }
-                                  : option,
-                              ),
-                            })
-                          }
-                          disabled={busy}
-                          icon="plus"
-                        >
-                          Add value
-                        </s-button>
-                      </p>
-                    ))}
-                    <s-button
-                      type="button"
-                      onClick={() =>
-                        change({
-                          ...draft,
-                          productionOptions: [
-                            ...draft.productionOptions,
-                            { id: freshId('option'), allowedValueIds: [freshId('value')] },
-                          ],
-                        })
-                      }
-                      disabled={busy}
-                      icon="plus"
-                    >
-                      Add production option
-                    </s-button>
-                  </s-section>
-                  <s-section id="decoration-prices" heading="Decoration prices">
-                    {legacyPricing ? (
-                      <section aria-label="Historical pricing">
-                        <p>
-                          This draft uses historical pricing that is unavailable for new offers. Existing prices are
-                          read-only; saved publications and purchases keep their original terms.
-                        </p>
-                        <ul>
-                          {draft.pricingRules.map((rule) => (
-                            <li key={rule.id}>
-                              {choiceLabel('prices', rule.id)}:{' '}
-                              {rule.role === 'setup'
-                                ? 'Setup'
-                                : rule.methodUnitMultiplicity === 'perPlacement'
-                                  ? 'Per decorated placement'
-                                  : 'Per garment'}{' '}
-                              —{' '}
-                              {rule.scope.kind === 'general'
-                                ? 'General'
-                                : rule.scope.kind === 'method'
-                                  ? choiceLabel('methods', rule.scope.methodId)
-                                  : `${choiceLabel('placements', rule.scope.placementId)}${rule.scope.kind === 'step' ? ' / ' + choiceLabel('steps', rule.scope.stepId) : ''}${rule.scope.methodId ? ' / ' + choiceLabel('methods', rule.scope.methodId) : ''}`}
-                              ;{' '}
-                              {rule.rate.kind === 'fixed'
-                                ? `${rule.rate.amount.shopDecimal} ${draft.shopCurrency}${rule.rate.amount.presentmentOverrides.map((entry) => `; ${entry.decimal} ${entry.currency}`).join('')}`
-                                : rule.rate.tiers
-                                    .map(
-                                      (tier) =>
-                                        `${tier.minQuantity}+ garments: ${tier.amount.shopDecimal} ${draft.shopCurrency}${tier.amount.presentmentOverrides.map((entry) => `; ${entry.decimal} ${entry.currency}`).join('')}`,
-                                    )
-                                    .join('; ')}
-                            </li>
-                          ))}
-                        </ul>
-                        <p>
-                          Start a new local price proposal, enter and review every available choice, then save and
-                          publish a new revision. This does not convert or change a published revision.
-                        </p>
-                        <s-button
-                          type="button"
-                          onClick={() => {
-                            setPriceErrors({});
-                            setPriceProposalStarted(true);
-                            change({
-                              ...draft,
-                              pricingRules: [],
-                              labels: draft.labels ? { ...draft.labels, prices: {} } : draft.labels,
-                            });
-                          }}
-                          disabled={busy}
-                        >
-                          Set decoration prices
-                        </s-button>
-                      </section>
-                    ) : (
-                      <>
-                        <p>
-                          Final decoration surcharge per garment, added to the garment price for each selected
-                          placement. Blank means unavailable; enter 0 only for an explicitly free choice.
-                        </p>
-                        {priceProposalStarted && (
-                          <p role="status">
-                            New local price proposal: review all choices before saving and publishing. Published history
-                            has not changed.
-                          </p>
-                        )}
-                        {priceCells.length ? (
-                          <s-table>
-                            <s-table-header-row>
-                              <s-table-header listSlot="primary">Method</s-table-header>
-                              <s-table-header listSlot="secondary">Placement</s-table-header>
-                              <s-table-header listSlot="inline">Size</s-table-header>
-                              <s-table-header listSlot="labeled" format="currency">
-                                Surcharge per garment ({draft.shopCurrency})
-                              </s-table-header>
-                            </s-table-header-row>
-
-                            <s-table-body>
-                              {priceCells.map((cell, cellIndex) => {
-                                const rule = draft.pricingRules.find(
-                                  (item) =>
-                                    item.scope.kind === 'step' &&
-                                    item.scope.methodId === cell.methodId &&
-                                    item.scope.placementId === cell.placementId &&
-                                    item.scope.stepId === cell.stepId,
-                                );
-                                const value = rule?.rate.kind === 'fixed' ? rule.rate.amount.shopDecimal : '';
-                                const names = priceCellNames[cellIndex];
-                                return (
-                                  <s-table-row key={cell.key}>
-                                    <s-table-cell>{choiceLabel('methods', cell.methodId)}</s-table-cell>
-                                    <s-table-cell>{choiceLabel('placements', cell.placementId)}</s-table-cell>
-                                    <s-table-cell>{choiceLabel('steps', cell.stepId)}</s-table-cell>
-                                    <s-table-cell>
-                                      <LeanPriceInput
-                                        key={`${cell.key}:${priceRevision}`}
-                                        value={value}
-                                        label={`${names} — surcharge (${draft.shopCurrency})`}
-                                        onPrice={(amount) => updateLeanPrice(cell, amount)}
-                                        onValidity={(valid) =>
-                                          setPriceErrors((old) => ({ ...old, [cell.key]: !valid }))
-                                        }
-                                        disabled={busy}
-                                      />
-                                      {rule ? (
-                                        <s-button
-                                          type="button"
-                                          onClick={() => {
-                                            setPriceErrors((old) => ({ ...old, [cell.key]: false }));
-                                            updateLeanPrice(cell, '');
-                                          }}
-                                          disabled={busy}
-                                        >
-                                          Make unavailable
-                                        </s-button>
-                                      ) : (
-                                        <span>Unavailable</span>
-                                      )}
-                                    </s-table-cell>
-                                  </s-table-row>
-                                );
-                              })}
-                            </s-table-body>
-                          </s-table>
-                        ) : (
-                          <p>Add a method, placement and allowed size to enter decoration prices.</p>
-                        )}
-                      </>
-                    )}
-                    <s-button
-                      type="button"
-                      onClick={() => {
-                        setAdvanced(!advanced);
-                        setAdvancedText(JSON.stringify(draft, null, 2));
-                        setAdvancedError('');
-                      }}
-                      disabled={busy}
-                    >
-                      Advanced configuration (JSON)
-                    </s-button>
-                    {advanced && (
-                      <div>
-                        <s-text-area
-                          label="Advanced JSON"
-                          disabled={busy}
-                          rows={16}
-                          value={advancedText}
-                          onInput={(event) => setAdvancedText(event.currentTarget.value)}
-                        />
-                        <s-button
-                          type="button"
-                          onClick={() => {
-                            try {
-                              const parsed = JSON.parse(advancedText) as MerchantDraft;
-                              if (!isDraft(parsed)) throw new Error('Invalid draft geometry');
-                              change(parsed);
-                              setAdvancedError('');
-                            } catch {
-                              setAdvancedError('Invalid draft JSON or geometry');
-                            }
-                          }}
-                          disabled={busy}
-                        >
-                          Apply JSON
-                        </s-button>
-                        {advancedError && <p role="alert">{advancedError}</p>}
-                      </div>
-                    )}
-                  </s-section>
-                </s-stack>
+                <s-button
+                  variant="primary"
+                  disabled={busy || !!advancedError || legacyPricing || hasPriceErrors || saveState !== 'dirty'}
+                  onClick={() => void save()}
+                >
+                  Save draft
+                </s-button>
 
                 {saveState === 'ambiguous' && pending.current && (
                   <s-button disabled={busy} onClick={() => void save(true)}>
@@ -1998,6 +1387,619 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                   </s-button>
                 )}
               </s-section>
+              <s-stack gap="base">
+                <s-section id="customization-rules" heading="Customization rules">
+                  <s-select
+                    value={draft.mode}
+                    onChange={(event) => change({ ...draft, mode: event.currentTarget.value as MerchantDraft['mode'] })}
+                    label={'Customization mode'}
+                    disabled={busy}
+                  >
+                    <s-option value="optional">Optional</s-option>
+                    <s-option value="required">Required for all purchases</s-option>
+                  </s-select>
+                  <p>Draft shop currency: {draft.shopCurrency}</p>
+                  {view.config.currentShopCurrency && view.config.currentShopCurrency !== draft.shopCurrency && (
+                    <div role="alert">
+                      <p>
+                        Current shop currency: {view.config.currentShopCurrency}. Existing amounts are not converted.
+                        Review every price before saving or publishing.
+                      </p>
+                      <s-button
+                        type="button"
+                        onClick={() => {
+                          const currency = view.config?.currentShopCurrency;
+                          if (currency) change({ ...draft, shopCurrency: currency });
+                        }}
+                        disabled={busy}
+                        icon="check"
+                      >
+                        Use current shop currency
+                      </s-button>
+                    </div>
+                  )}
+                </s-section>
+                <s-section heading="Decoration methods">
+                  {draft.methods.map((method) => (
+                    <p key={method.id}>
+                      <strong>{choiceLabel('methods', method.id)}</strong>{' '}
+                      <s-text-field
+                        maxLength={80}
+                        value={labelFor('methods', method.id)}
+                        onInput={(event) => setLabel('methods', method.id, event.currentTarget.value)}
+                        label={'Method name'}
+                        disabled={busy}
+                      />{' '}
+                      <s-button
+                        type="button"
+                        onClick={() =>
+                          change({
+                            ...draft,
+                            methods: draft.methods.filter((item) => item.id !== method.id),
+                            labels: removeChoiceLabels(draft.labels, 'methods', method.id),
+                          })
+                        }
+                        disabled={busy}
+                        icon="delete"
+                      >
+                        Remove method
+                      </s-button>
+                    </p>
+                  ))}
+                  <s-button
+                    type="button"
+                    onClick={() => change({ ...draft, methods: [...draft.methods, { id: freshId('method') }] })}
+                    disabled={busy}
+                    icon="plus"
+                  >
+                    Add method
+                  </s-button>
+                </s-section>
+                <s-section id="product-images" heading="Product images">
+                  <s-select
+                    value={editor.viewId}
+                    onChange={(event) => choose({ kind: 'select-view', viewId: event.currentTarget.value })}
+                    label={'View'}
+                    disabled={busy}
+                  >
+                    {geometry.views.map((item) => (
+                      <s-option key={item.id} value={item.id}>
+                        {choiceLabel('views', item.id)}
+                      </s-option>
+                    ))}
+                  </s-select>
+                  <s-text-field
+                    maxLength={80}
+                    value={labelFor('views', editor.viewId)}
+                    onInput={(event) => setLabel('views', editor.viewId, event.currentTarget.value)}
+                    label={'View name'}
+                    disabled={busy}
+                  />
+                  <s-button
+                    type="button"
+                    onClick={() =>
+                      updateGeometry((value) => ({
+                        ...value,
+                        views: [...value.views, { id: freshId('view'), variantImages: [], placements: [] }],
+                      }))
+                    }
+                    disabled={busy}
+                    icon="plus"
+                  >
+                    Add view
+                  </s-button>
+                  <s-select
+                    value={editor.variantId ?? ''}
+                    onChange={(event) =>
+                      choose({ kind: 'select-variant', variantId: event.currentTarget.value || undefined })
+                    }
+                    label={'Product variant'}
+                    disabled={busy}
+                  >
+                    <s-option value="">Featured image</s-option>
+                    {view.product.variants.map((item) => (
+                      <s-option key={item.id} value={'variant_' + numberOf(item.id)}>
+                        {item.title}
+                      </s-option>
+                    ))}
+                  </s-select>
+                  {view.product.variantsTruncated && (
+                    <p role="alert">
+                      This product has more than 500 variants. Only the first 500 are available here; review the full
+                      catalog before saving variant-specific geometry.
+                    </p>
+                  )}
+                  <s-button
+                    type="button"
+                    disabled={busy || !selectedImage || !imageSize}
+                    onClick={() => {
+                      if (!selectedImage || !imageSize || !selectedView) return;
+                      const ref = { revisionId: editor.variantId ?? `product_${productId}`, ...imageSize };
+                      updateGeometry((value) => ({
+                        ...value,
+                        views: value.views.map((item) =>
+                          item.id !== editor.viewId
+                            ? item
+                            : editor.variantId
+                              ? {
+                                  ...item,
+                                  variantImages: [
+                                    ...item.variantImages.filter((entry) => entry.variantId !== editor.variantId),
+                                    { variantId: editor.variantId!, image: ref },
+                                  ],
+                                }
+                              : { ...item, image: ref },
+                        ),
+                      }));
+                    }}
+                    icon="check"
+                  >
+                    Use selected product image
+                  </s-button>
+                </s-section>
+                <s-section heading="Print areas">
+                  <p>
+                    Choose where customers can add artwork. Position and dimensions use fractions of the product image:
+                    0.5 is halfway across or half its size.
+                  </p>
+                  <s-select
+                    value={editor.selectedPlacementId ?? ''}
+                    onChange={(event) =>
+                      choose({ kind: 'select-placement', placementId: event.currentTarget.value || undefined })
+                    }
+                    label="Print area"
+                    disabled={busy}
+                  >
+                    <s-option value="">None</s-option>
+                    {selectedView?.placements.map((item) => (
+                      <s-option key={item.id} value={item.id}>
+                        {choiceLabel('placements', item.id)}
+                      </s-option>
+                    ))}
+                  </s-select>
+                  <s-button
+                    type="button"
+                    onClick={() => {
+                      const id = freshId('place');
+                      change({
+                        ...draft,
+                        placements: [
+                          ...draft.placements,
+                          { id, allowedMethodIds: [], allowedStepIds: [], logoLaterAllowed: true },
+                        ],
+                        geometry: {
+                          ...geometry,
+                          views: geometry.views.map((item) =>
+                            item.id === editor.viewId
+                              ? { ...item, placements: [...item.placements, { id, rect: defaultRect() }] }
+                              : item,
+                          ),
+                        },
+                      });
+                      choose({ kind: 'select-placement', placementId: id });
+                    }}
+                    disabled={busy}
+                    icon="plus"
+                  >
+                    Add placement to view
+                  </s-button>
+                  {selectedPlacement && selectedRect && (
+                    <div>
+                      <p>
+                        <strong>{choiceLabel('placements', selectedPlacement.id)}</strong>
+                      </p>
+                      <s-text-field
+                        maxLength={80}
+                        value={labelFor('placements', selectedPlacement.id)}
+                        onInput={(event) => setLabel('placements', selectedPlacement.id, event.currentTarget.value)}
+                        label={'Placement name'}
+                        disabled={busy}
+                      />
+                      <s-checkbox
+                        checked={selectedPlacement.logoLaterAllowed}
+                        onChange={(event) =>
+                          setPlacement(selectedPlacement.id, (item) => ({
+                            ...item,
+                            logoLaterAllowed: event.currentTarget.checked,
+                          }))
+                        }
+                        label={'Allow logo later'}
+                        disabled={busy}
+                      />
+                      <p>Allowed methods</p>
+                      {draft.methods.map((item) => (
+                        <s-checkbox
+                          checked={selectedPlacement.allowedMethodIds.includes(item.id)}
+                          onChange={(event) =>
+                            setPlacement(selectedPlacement.id, (placement) => ({
+                              ...placement,
+                              allowedMethodIds: event.currentTarget.checked
+                                ? [...placement.allowedMethodIds, item.id]
+                                : placement.allowedMethodIds.filter((id) => id !== item.id),
+                            }))
+                          }
+                          label={choiceLabel('methods', item.id)}
+                          disabled={busy}
+                          key={item.id}
+                        />
+                      ))}
+                      <p>Allowed size steps</p>
+                      {geometry.steps.map((item) => (
+                        <s-checkbox
+                          checked={selectedPlacement.allowedStepIds.includes(item.id)}
+                          onChange={(event) =>
+                            setPlacement(selectedPlacement.id, (placement) => ({
+                              ...placement,
+                              allowedStepIds: event.currentTarget.checked
+                                ? [...placement.allowedStepIds, item.id]
+                                : placement.allowedStepIds.filter((id) => id !== item.id),
+                            }))
+                          }
+                          label={choiceLabel('steps', item.id)}
+                          disabled={busy}
+                          key={item.id}
+                        />
+                      ))}
+                      {(['centerX', 'centerY', 'width', 'height'] as const).map((field) => (
+                        <RectNumberInput
+                          id={`placement-rect-${field}`}
+                          key={JSON.stringify([
+                            productId,
+                            editor.viewId,
+                            editor.variantId,
+                            selectedPlacement.id,
+                            field,
+                          ])}
+                          value={selectedRect[field]}
+                          onInput={(value) => {
+                            if (!Number.isFinite(value)) return;
+                            const rect = { ...selectedRect, [field]: value };
+                            try {
+                              validateRect(rect);
+                            } catch {
+                              // Keep incomplete typing in the DOM; it is not geometry authority.
+                              return;
+                            }
+                            choose({
+                              kind: 'set-placement-rect',
+                              viewId: editor.viewId,
+                              variantId: editor.variantId,
+                              placementId: selectedPlacement.id,
+                              rect,
+                            });
+                          }}
+                          onChange={(value) => {
+                            if (Number.isFinite(value) && value !== selectedRect[field])
+                              choose({
+                                kind: 'set-placement-rect',
+                                viewId: editor.viewId,
+                                variantId: editor.variantId,
+                                placementId: selectedPlacement.id,
+                                rect: { ...selectedRect, [field]: value },
+                              });
+                          }}
+                          label={
+                            {
+                              centerX: 'Horizontal position',
+                              centerY: 'Vertical position',
+                              width: 'Print area width',
+                              height: 'Print area height',
+                            }[field]
+                          }
+                          disabled={busy}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </s-section>
+                <s-section heading="Print sizes">
+                  <p>
+                    Define the artwork sizes customers can choose. Width and height are fractions of the selected print
+                    area; 1 fills it.
+                  </p>
+                  <s-select
+                    value={editor.selectedStepId ?? ''}
+                    onChange={(event) =>
+                      choose({ kind: 'select-step', stepId: event.currentTarget.value || undefined })
+                    }
+                    label="Print size"
+                    disabled={busy}
+                  >
+                    <s-option value="">None</s-option>
+                    {geometry.steps.map((item) => (
+                      <s-option key={item.id} value={item.id}>
+                        {choiceLabel('steps', item.id)}
+                      </s-option>
+                    ))}
+                  </s-select>
+                  {selectedStep && (
+                    <s-text-field
+                      maxLength={80}
+                      value={labelFor('steps', selectedStep.id)}
+                      onInput={(event) => setLabel('steps', selectedStep.id, event.currentTarget.value)}
+                      label={'Size step name'}
+                      disabled={busy}
+                    />
+                  )}
+                  <s-button
+                    type="button"
+                    onClick={() =>
+                      updateGeometry((value) => ({
+                        ...value,
+                        steps: [...value.steps, { id: freshId('step'), widthFraction: 0.5, heightFraction: 0.5 }],
+                      }))
+                    }
+                    disabled={busy}
+                    icon="plus"
+                  >
+                    Add size step
+                  </s-button>
+                  {selectedStep &&
+                    (['widthFraction', 'heightFraction'] as const).map((field) => (
+                      <s-number-field
+                        min={0.01}
+                        max={1}
+                        step={0.01}
+                        value={String(selectedStep[field])}
+                        onChange={(event) => {
+                          const value = Number(event.currentTarget.value);
+                          updateGeometry((current) => ({
+                            ...current,
+                            steps: current.steps.map((item) =>
+                              item.id === selectedStep.id ? { ...item, [field]: value } : item,
+                            ),
+                          }));
+                        }}
+                        label={
+                          {
+                            widthFraction: 'Width relative to print area',
+                            heightFraction: 'Height relative to print area',
+                          }[field]
+                        }
+                        disabled={busy}
+                        key={field}
+                      />
+                    ))}
+                </s-section>
+                <s-section heading="Customer options">
+                  {draft.productionOptions.map((item) => (
+                    <p key={item.id}>
+                      <strong>{choiceLabel('options', item.id)}</strong>{' '}
+                      <s-text-field
+                        maxLength={80}
+                        value={labelFor('options', item.id)}
+                        onInput={(event) => setLabel('options', item.id, event.currentTarget.value)}
+                        label={'Option name'}
+                        disabled={busy}
+                      />{' '}
+                      {item.allowedValueIds.map((id, index) => (
+                        <s-text-field
+                          maxLength={80}
+                          value={valueLabel(item.id, id)}
+                          onInput={(event) => setValueLabel(item.id, id, event.currentTarget.value)}
+                          label={['Value', index + 1, 'name'].join(' ')}
+                          disabled={busy}
+                          key={id}
+                        />
+                      ))}{' '}
+                      <s-button
+                        type="button"
+                        onClick={() =>
+                          change({
+                            ...draft,
+                            productionOptions: draft.productionOptions.filter((option) => option.id !== item.id),
+                            labels: removeChoiceLabels(draft.labels, 'options', item.id),
+                          })
+                        }
+                        disabled={busy}
+                        icon="delete"
+                      >
+                        Remove option
+                      </s-button>
+                      <s-button
+                        type="button"
+                        onClick={() =>
+                          change({
+                            ...draft,
+                            productionOptions: draft.productionOptions.map((option) =>
+                              option.id === item.id
+                                ? { ...option, allowedValueIds: [...option.allowedValueIds, freshId('value')] }
+                                : option,
+                            ),
+                          })
+                        }
+                        disabled={busy}
+                        icon="plus"
+                      >
+                        Add value
+                      </s-button>
+                    </p>
+                  ))}
+                  <s-button
+                    type="button"
+                    onClick={() =>
+                      change({
+                        ...draft,
+                        productionOptions: [
+                          ...draft.productionOptions,
+                          { id: freshId('option'), allowedValueIds: [freshId('value')] },
+                        ],
+                      })
+                    }
+                    disabled={busy}
+                    icon="plus"
+                  >
+                    Add production option
+                  </s-button>
+                </s-section>
+                <s-section id="decoration-prices" heading="Decoration prices">
+                  {legacyPricing ? (
+                    <section aria-label="Historical pricing">
+                      <p>
+                        This draft uses historical pricing that is unavailable for new offers. Existing prices are
+                        read-only; saved publications and purchases keep their original terms.
+                      </p>
+                      <ul>
+                        {draft.pricingRules.map((rule) => (
+                          <li key={rule.id}>
+                            {choiceLabel('prices', rule.id)}:{' '}
+                            {rule.role === 'setup'
+                              ? 'Setup'
+                              : rule.methodUnitMultiplicity === 'perPlacement'
+                                ? 'Per decorated placement'
+                                : 'Per garment'}{' '}
+                            —{' '}
+                            {rule.scope.kind === 'general'
+                              ? 'General'
+                              : rule.scope.kind === 'method'
+                                ? choiceLabel('methods', rule.scope.methodId)
+                                : `${choiceLabel('placements', rule.scope.placementId)}${rule.scope.kind === 'step' ? ' / ' + choiceLabel('steps', rule.scope.stepId) : ''}${rule.scope.methodId ? ' / ' + choiceLabel('methods', rule.scope.methodId) : ''}`}
+                            ;{' '}
+                            {rule.rate.kind === 'fixed'
+                              ? `${rule.rate.amount.shopDecimal} ${draft.shopCurrency}${rule.rate.amount.presentmentOverrides.map((entry) => `; ${entry.decimal} ${entry.currency}`).join('')}`
+                              : rule.rate.tiers
+                                  .map(
+                                    (tier) =>
+                                      `${tier.minQuantity}+ garments: ${tier.amount.shopDecimal} ${draft.shopCurrency}${tier.amount.presentmentOverrides.map((entry) => `; ${entry.decimal} ${entry.currency}`).join('')}`,
+                                  )
+                                  .join('; ')}
+                          </li>
+                        ))}
+                      </ul>
+                      <p>
+                        Start a new local price proposal, enter and review every available choice, then save and publish
+                        a new revision. This does not convert or change a published revision.
+                      </p>
+                      <s-button
+                        type="button"
+                        onClick={() => {
+                          setPriceErrors({});
+                          setPriceProposalStarted(true);
+                          change({
+                            ...draft,
+                            pricingRules: [],
+                            labels: draft.labels ? { ...draft.labels, prices: {} } : draft.labels,
+                          });
+                        }}
+                        disabled={busy}
+                      >
+                        Set decoration prices
+                      </s-button>
+                    </section>
+                  ) : (
+                    <>
+                      <p>
+                        Final decoration surcharge per garment, added to the garment price for each selected placement.
+                        Blank means unavailable; enter 0 only for an explicitly free choice.
+                      </p>
+                      {priceProposalStarted && (
+                        <p role="status">
+                          New local price proposal: review all choices before saving and publishing. Published history
+                          has not changed.
+                        </p>
+                      )}
+                      {priceCells.length ? (
+                        <s-table>
+                          <s-table-header-row>
+                            <s-table-header listSlot="primary">Method</s-table-header>
+                            <s-table-header listSlot="secondary">Placement</s-table-header>
+                            <s-table-header listSlot="inline">Size</s-table-header>
+                            <s-table-header listSlot="labeled" format="currency">
+                              Surcharge per garment ({draft.shopCurrency})
+                            </s-table-header>
+                          </s-table-header-row>
+
+                          <s-table-body>
+                            {priceCells.map((cell, cellIndex) => {
+                              const rule = draft.pricingRules.find(
+                                (item) =>
+                                  item.scope.kind === 'step' &&
+                                  item.scope.methodId === cell.methodId &&
+                                  item.scope.placementId === cell.placementId &&
+                                  item.scope.stepId === cell.stepId,
+                              );
+                              const value = rule?.rate.kind === 'fixed' ? rule.rate.amount.shopDecimal : '';
+                              const names = priceCellNames[cellIndex];
+                              return (
+                                <s-table-row key={cell.key}>
+                                  <s-table-cell>{choiceLabel('methods', cell.methodId)}</s-table-cell>
+                                  <s-table-cell>{choiceLabel('placements', cell.placementId)}</s-table-cell>
+                                  <s-table-cell>{choiceLabel('steps', cell.stepId)}</s-table-cell>
+                                  <s-table-cell>
+                                    <LeanPriceInput
+                                      key={`${cell.key}:${priceRevision}`}
+                                      value={value}
+                                      label={`${names} — surcharge (${draft.shopCurrency})`}
+                                      onPrice={(amount) => updateLeanPrice(cell, amount)}
+                                      onValidity={(valid) => setPriceErrors((old) => ({ ...old, [cell.key]: !valid }))}
+                                      disabled={busy}
+                                    />
+                                    {rule ? (
+                                      <s-button
+                                        type="button"
+                                        onClick={() => {
+                                          setPriceErrors((old) => ({ ...old, [cell.key]: false }));
+                                          updateLeanPrice(cell, '');
+                                        }}
+                                        disabled={busy}
+                                      >
+                                        Make unavailable
+                                      </s-button>
+                                    ) : (
+                                      <span>Unavailable</span>
+                                    )}
+                                  </s-table-cell>
+                                </s-table-row>
+                              );
+                            })}
+                          </s-table-body>
+                        </s-table>
+                      ) : (
+                        <p>Add a method, placement and allowed size to enter decoration prices.</p>
+                      )}
+                    </>
+                  )}
+                  <s-button
+                    type="button"
+                    onClick={() => {
+                      setAdvanced(!advanced);
+                      setAdvancedText(JSON.stringify(draft, null, 2));
+                      setAdvancedError('');
+                    }}
+                    disabled={busy}
+                  >
+                    Advanced configuration (JSON)
+                  </s-button>
+                  {advanced && (
+                    <div>
+                      <s-text-area
+                        label="Advanced JSON"
+                        disabled={busy}
+                        rows={16}
+                        value={advancedText}
+                        onInput={(event) => setAdvancedText(event.currentTarget.value)}
+                      />
+                      <s-button
+                        type="button"
+                        onClick={() => {
+                          try {
+                            const parsed = JSON.parse(advancedText) as MerchantDraft;
+                            if (!isDraft(parsed)) throw new Error('Invalid draft geometry');
+                            change(parsed);
+                            setAdvancedError('');
+                          } catch {
+                            setAdvancedError('Invalid draft JSON or geometry');
+                          }
+                        }}
+                        disabled={busy}
+                      >
+                        Apply JSON
+                      </s-button>
+                      {advancedError && <p role="alert">{advancedError}</p>}
+                    </div>
+                  )}
+                </s-section>
+              </s-stack>
               <s-section id="publish-changes" heading="Publish changes">
                 <s-paragraph>
                   Review the preview and all decoration prices before publishing. Save any unsaved changes first.

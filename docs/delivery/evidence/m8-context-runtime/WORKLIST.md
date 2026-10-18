@@ -1,6 +1,6 @@
 # Active journey acceptance/work index
 
-Current UX: [admin workflow](../lean-v1/admin-workflow-2026-10-18.json) source-qualified; final CI/integration/deployment pending. Continue editor layout/action clarity and representative native/mobile checks after integration. Settings is store-wide setup; product rules/prices stay product-local. Operations/privacy/storage/recovery/cleanup remain active.
+Current UX: [editor layout](../lean-v1/admin-editor-layout-2026-10-18.json), following normal PR199 merge. Responsive preview, separate cards/grouped save/recovery, supported breadcrumbs;54 local editor/order cases PASS and independent CLEAR. Final layout CI/integration then one combined exact-CI web deployment/native mobile/read-only admin qualification. Continue remaining admin clarity and operations/privacy/storage/recovery/cleanup. No owner checkpoint or rollout.
 
 Latest admin/runtime: [PR197 native qualification](../lean-v1/admin197-native-2026-10-18.json) establishes exact CI web image, real Shopify sidebar and authenticated four-route/editor reads with no application writes; other34containers/schema/economics preserved. Order/revision ID copy and release jargon remain UX work. Cloudflare admin@ destination is now verified; restricted alert Worker/delivery/outage drill, production storage/recovery/privacy and20October cleanup/rotation remain open. Storefront visual pass is deferred by owner.
 

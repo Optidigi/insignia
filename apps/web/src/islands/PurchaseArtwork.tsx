@@ -372,9 +372,9 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
   return (
     <s-page heading="Orders and artwork">
       {purchaseId && (
-        <s-button slot="breadcrumb-actions" href="/admin/orders" icon="arrow-left">
+        <s-link slot="breadcrumb-actions" href="/admin/orders">
           Orders
-        </s-button>
+        </s-link>
       )}
       {message && (
         <s-banner tone="info">
