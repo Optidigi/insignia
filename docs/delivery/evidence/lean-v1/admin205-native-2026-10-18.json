@@ -1,0 +1,207 @@
+{
+  "date": "2026-10-18",
+  "classification": "NATIVE_POLARIS_ROUTES_AND_GUIDED_FLOW_READONLY_PASS",
+  "integration": {
+    "pr": "https://github.com/Optidigi/insignia/pull/205",
+    "base": "0de681159d4bcdd2d10a60a88b099db429c9af9c",
+    "effectiveMergeBase": "0de681159d4bcdd2d10a60a88b099db429c9af9c",
+    "head": "13fb66d5567eff11d0ea1669024243ff63a33576",
+    "merge": "f25bcc90abf05bb7fdfa3287844d40f3622528b6",
+    "tree": "25173f89d6048d43484f0adcd84d10b94387526f",
+    "parents": [
+      "0de681159d4bcdd2d10a60a88b099db429c9af9c",
+      "13fb66d5567eff11d0ea1669024243ff63a33576"
+    ],
+    "exactHeadAttempt1Checks": {
+      "foundation": 39141074888,
+      "durable-core": 39141074923,
+      "runtime": 39141074851
+    },
+    "result": "All3PASS; normal merge exactparents/tree verified. Earlier e954foundation timeout retained in admin204-native-bootstrap record."
+  },
+  "artifact": {
+    "buildSource": "1327dda78a1f23908aac73d44d51818d79753942",
+    "artifactId": 12142130749,
+    "artifactZipSha256": "sha256:084dfee9c23205358c2e1d34d820a8b6a2920a4183bd634588dd2fe017e05b01",
+    "image": "sha256:05ddc8877500eefa7cf10c60b35c8cd5a8820a01b772ef9bddc9d25e4779b3cf",
+    "configDigest": "sha256:a3dfa08cf91b59285c658baef5f689c82beb4b19c34625bf0be8b329b3e9384d",
+    "tarSha256": "1144915dc064a309d2585c649479da252021e3844475e0232066616e2f07d0bd",
+    "tarSize": 456553984
+  },
+  "deployment": {
+    "classification": "EXACT_CI_WEB_ONLY_ADMIN_DEPLOYMENT_PASS",
+    "merge": "f25bcc90abf05bb7fdfa3287844d40f3622528b6",
+    "tree": "25173f89d6048d43484f0adcd84d10b94387526f",
+    "head": "13fb66d5567eff11d0ea1669024243ff63a33576",
+    "run": 39141074851,
+    "attempt": 1,
+    "oldContainer": "959eacd3fa95dd7ecc31d2d01a1220ee45eb28c3d2a8e9145ca1a58eae142c29",
+    "container": "afe381d6657eeadc9b1f7fb0db4a14e91aaf888b00f1bf64be6b35bfb0a16798",
+    "image": "sha256:05ddc8877500eefa7cf10c60b35c8cd5a8820a01b772ef9bddc9d25e4779b3cf",
+    "healthy": true,
+    "onlyMaterialDelta": "web image",
+    "environmentUnchanged": true,
+    "mountsNetworksSecurityResourcesUnchanged": true,
+    "other34ContainersUnchanged": true,
+    "inspectorAndVerifierSocketsUnchanged": true,
+    "schemaAndPurchasePaidFactsUnchanged": true,
+    "providerMutations": 0,
+    "databaseWrites": 0,
+    "dispatches": 1,
+    "retries": 0
+  },
+  "native": {
+    "routes": [
+      {
+        "area": "products",
+        "polarisPageDefined": true
+      },
+      {
+        "area": "orders",
+        "polarisPageDefined": true
+      },
+      {
+        "area": "settings",
+        "polarisPageDefined": true
+      },
+      {
+        "area": "settings/methods",
+        "polarisPageDefined": true
+      },
+      {
+        "area": "settings/storefront",
+        "polarisPageDefined": true
+      },
+      {
+        "area": "settings/billing",
+        "polarisPageDefined": true
+      },
+      {
+        "area": "settings/privacy",
+        "polarisPageDefined": true
+      },
+      {
+        "area": "products/10519322493211/config",
+        "polarisPageDefined": true
+      }
+    ],
+    "authenticatedGETs": [
+      {
+        "path": "/api/admin/products",
+        "status": 200,
+        "observedAt": "2026-10-18T15:50:40.558Z",
+        "bodySha256": "c307646a909b7bfe9f018a27bb12c7a8739573d88a6fa22f2b4d24eaad35cc57"
+      },
+      {
+        "path": "/api/purchases/v1",
+        "status": 200,
+        "observedAt": "2026-10-18T15:50:46.545Z",
+        "bodySha256": "ea6e9e66743a6c8136d81abdedb39c34756e249d9a80063f1a6d3b3a659069bf"
+      },
+      {
+        "path": "/api/admin/methods",
+        "status": 200,
+        "observedAt": "2026-10-18T15:50:57.327Z",
+        "bodySha256": "12b075d6cc7d142a4abe22c6c30f9d04d0f32f9e6c49feea459f3fc80110b0f1"
+      },
+      {
+        "path": "/api/admin/billing",
+        "status": 200,
+        "observedAt": "2026-10-18T15:51:09.195Z",
+        "bodySha256": "b1040af1b407397873fc232b7bd0bf34ea2a115986ec212ad34ccc19fc632b2d"
+      },
+      {
+        "path": "/api/purchases/v1/privacy",
+        "status": 200,
+        "observedAt": "2026-10-18T15:51:14.866Z",
+        "bodySha256": "eef46741adfc3a9f76294d3b78f37a45f113092ac9d44ee77c7a038a88ff09a1"
+      },
+      {
+        "path": "/api/admin/products/10519322493211/config",
+        "status": 200,
+        "observedAt": "2026-10-18T15:51:28.317Z",
+        "bodySha256": "dc92c8b1cdc38f2a1c1fed224a7e273414f37819f8ed233f4e0e89d3bd287029"
+      },
+      {
+        "path": "/api/admin/methods",
+        "status": 200,
+        "observedAt": "2026-10-18T15:51:29.984Z",
+        "bodySha256": "12b075d6cc7d142a4abe22c6c30f9d04d0f32f9e6c49feea459f3fc80110b0f1"
+      },
+      {
+        "path": "/api/admin/products/10519322493211/config",
+        "status": 200,
+        "observedAt": "2026-10-18T15:51:31.720Z",
+        "bodySha256": "dc92c8b1cdc38f2a1c1fed224a7e273414f37819f8ed233f4e0e89d3bd287029"
+      }
+    ],
+    "applicationNonGetRequests": 0,
+    "features": [
+      "Native Shopify Products/Orders/Settings sidebar and Settings subsections General/Decoration methods/Storefront setup/Billing/Privacy.",
+      "Every checked route ready with Polaris components; merchant lightDOM has no native controls, links, disclosures, ordinary typography or images. Polaris shadow implementation elements are permitted.",
+      "Four editor stages, existing empty method library guidance, first editable field in initial viewport, side preview on desktop, rules/preview mobile without overflow.",
+      "Actual configGET held6s: silent page skeleton. Real Settings\u2192Privacy click held actualGET6s: silent placeholder and inert pending content then API200/ready, skeleton hidden. No artificial delay added to product behavior.",
+      "Theme button/embed URLs inspected only; no theme action, save, publish, upload, checkout or product mutation."
+    ],
+    "internalNavigation": {
+      "classification": "NATIVE_INTERNAL_PRIVACY_TRANSITION_PASS",
+      "steps": [
+        "SETTINGS_READY",
+        "SILENT_SKELETON_AND_INERT",
+        "AUTHENTICATED_PRIVACY_READY"
+      ],
+      "responses": [
+        {
+          "path": "/api/purchases/v1/privacy",
+          "status": 200
+        }
+      ],
+      "errors": [],
+      "blocked": 0
+    },
+    "transport": "Existing repository-documented headed Shopify profile;0login/0cookie transfer. T3 collaborative preview separately proves publiclive200, curl without credentials privateAPI401.",
+    "console": {
+      "count": 16,
+      "classification": "8Cloudflare analytics scripts correctly blocked by existing appCSP;4Shopify-host icon CORS errors and4corresponding resource errors from admin.shopify.com. NoCSP widening or host workaround. Dedicated transition pageerrors0.",
+      "limit": "No claim of zeroconsoleerrors; host-origin icon failures retained."
+    },
+    "receiptSha256": "204e725932e89d56c9e4fd7d23db137dc582533f330665f54d182b253e2451ce",
+    "transitionReceiptSha256": "a08cfdceab953ae9806a41742c295f4c0730b7508871ccf2826378af4a2acd53"
+  },
+  "protectedPostRead": {
+    "classification": "POST_BROWSER_RUNTIME_AND_PROTECTED_FACTS_READONLY_PASS",
+    "webHealthy": true,
+    "containerCount": 35,
+    "other34ContainersUnchanged": true,
+    "schemaPurchasePaidFactsUnchanged": true,
+    "inspectorAndSocketsUnchanged": true,
+    "databaseWrites": 0,
+    "providerMutations": 0,
+    "observedAt": "2026-10-18T15:52:10.507455+00:00"
+  },
+  "checksAndLimitations": [
+    "Exact CI OCI bytes/config/layers and compiled synchronous first AppBridge script independently verified.",
+    "No migrations or database mutation in deployment; schema41 preserved, intentionally absent usage migration remains absent. Purchase/paid digest unchanged at checkedtimes.",
+    "Other34 container/config fingerprints, mounts/security/resources/networks, inspector and verifier sockets preserved at checkedtimes; no continuousuptime or whole-database immutability claim.",
+    "Initial native harness falsely counted Polaris shadowDOM using Playwright CSS; stopped102count retained. Corrected DOM-nativequerySelectorAll enforces app-authored lightDOM; reviewerCLEAR.",
+    "Long v2process ended143 before finalJSON; screenshots retained as incomplete, not PASS. Split bounded route/transition runs completed with incremental receipts and explicit finalPASS. No ambiguous write retry.",
+    "Parser-blocking AppBridge can delay initial body/skeleton parsing on a cold slow AppBridge fetch; required synchronous bootstrap retained.",
+    "This is scoped read-only UI acceptance, not repeat qualification of publication/checkout/privacy erasure/uninstall or milestone/launch/rollout acceptance. Prior holds unchanged."
+  ],
+  "review": {
+    "agent": "/root/admin202_operator_review",
+    "operator": "CLEAR before effects, exact hashes bound; readonly split-harness impact CLEAR",
+    "completedReceipt": "CLEAR correctness/security and evidence scope after independent comparison of exact OCI, native deployment, completed split browser receipts and final protected read. Original failures/limits retained.",
+    "isolation": "Read-only instructions; no OS/network credential isolation claim."
+  },
+  "remaining": [
+    "Improve historical order/variant labels and order-detail action clarity without current-catalog substitution for immutable history.",
+    "Separate compact editor draftversion/productstatus copy visually; native screenshot exposes adjacent inline text.",
+    "Remaining operations/storage/recovery/privacy/cleanup acceptance and owner-held rollout/uninstall/shop-erasure conditions remain."
+  ],
+  "cleanup": {
+    "privateRecordsArtifactsScreenshotsDue": "2026-10-20",
+    "activeCompose": "/home/serveradmin/insignia-admin205-20261018/web-only.private.json",
+    "condition": "Active Compose is a runtime dependency; transition custody before temporary deletion. Prior rollback/204/202 Compose journals are historical. Existing credential rotation and other cleanup dates remain."
+  }
+}
