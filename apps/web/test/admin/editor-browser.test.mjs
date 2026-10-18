@@ -45,6 +45,7 @@ test('every merchant route declares the same native Shopify sidebar before priva
     '/admin/orders/d841ee12-2075-4101-b3bc-429ad31a4059',
     '/admin/billing',
     '/admin/privacy',
+    '/admin/settings',
   ]) {
     const response = await page.goto(server.base + path);
     assert.equal(response.status(), 200);
@@ -57,6 +58,7 @@ test('every merchant route declares the same native Shopify sidebar before priva
       ['Orders', '/admin/orders'],
       ['Billing', '/admin/billing'],
       ['Privacy', '/admin/privacy'],
+      ['Settings', '/admin/settings'],
     ]) {
       assert.equal(
         await navigation
@@ -87,7 +89,7 @@ test('merchant product screens expose no technical signing setup or setup reques
     return route.fulfill({ status: 503 });
   });
   await page.goto(server.base + '/admin/products');
-  await page.getByRole('button', { name: 'Check readiness', exact: true }).waitFor();
+  await page.getByText('No products found.', { exact: true }).waitFor();
   assert.equal(await page.getByRole('button', { name: 'Check signing setup', exact: true }).count(), 0);
   assert.equal(await page.getByRole('button', { name: 'Set up signing', exact: true }).count(), 0);
   assert.deepEqual(signingRequests, []);
@@ -322,7 +324,7 @@ test('historical advanced pricing stays read-only until an explicit local Lean p
   await page.getByRole('button', { name: 'Set decoration prices' }).click();
   assert.equal(writes, 0, 'Starting a proposal changes local draft only');
   assert.equal(current.pricingRules[0].role, 'setup');
-  await page.getByText('Effective revision: historical-revision', { exact: true }).waitFor();
+  await page.getByText('Effective revision: historical-revision', { exact: true }).waitFor({ state: 'attached' });
   const price = page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true });
   assert.equal(await price.inputValue(), '');
   for (const invalid of ['-1', '1.001']) {
@@ -970,7 +972,25 @@ for (const invalidPrice of ['-1', '1.001']) {
     await page.getByText('Draft version 1').waitFor();
     const publish = page.locator('s-button').filter({ hasText: 'Publish saved changes' });
     const copy = page.locator('s-button').filter({ hasText: 'Copy configuration' });
-    await page.getByLabel('Shopify product ID').fill('222');
+    await page.getByText('Copy to another product', { exact: true }).click();
+    await page.route('**/api/admin/products?*', (route) =>
+      route.fulfill({
+        json: {
+          products: [
+            {
+              id: 'gid://shopify/Product/222',
+              title: 'Destination shirt',
+              status: 'DRAFT',
+              variants: [],
+              imageUrl: null,
+            },
+          ],
+          nextCursor: null,
+        },
+      }),
+    );
+    await page.getByRole('button', { name: 'Find destination products', exact: true }).click({ timeout: 2000 });
+    await page.getByRole('combobox', { name: 'Destination product', exact: true }).selectOption('222');
     assert.equal(await publish.evaluate((button) => button.disabled), false);
     assert.equal(await copy.evaluate((button) => button.disabled), false);
     const price = page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)');
@@ -1760,7 +1780,7 @@ test('mounted admin refreshes late activation and readiness without overwriting 
   );
   await page.getByText('Draft version 1.', { exact: false }).waitFor();
   await page.getByText('Unsaved changes', { exact: true }).waitFor();
-  await page.getByText('Effective revision: requested-revision', { exact: true }).waitFor();
+  await page.getByText('Effective revision: requested-revision', { exact: true }).waitFor({ state: 'attached' });
   expired = true;
   await page.getByText('Authentication required', { exact: true }).waitFor({ timeout: 8000 });
   assert.equal(
@@ -1782,7 +1802,7 @@ test('mounted admin refreshes late activation and readiness without overwriting 
     await page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).inputValue(),
     '',
   );
-  await page.getByText('Effective revision: requested-revision', { exact: true }).waitFor();
+  await page.getByText('Effective revision: requested-revision', { exact: true }).waitFor({ state: 'attached' });
   assert.equal(writes, 0);
 });
 for (const staleAmount of ['9.00', '2.50'])
@@ -2006,7 +2026,7 @@ test('a pre-command passive observation cannot overwrite a newer pending publica
     await page.getByText('Active', { exact: true }).waitFor();
     await started;
     await page.locator('s-button').filter({ hasText: 'Publish saved changes' }).click();
-    await page.getByText('Latest revision: revision-B', { exact: true }).waitFor();
+    await page.getByText('Latest revision: revision-B', { exact: true }).waitFor({ state: 'attached' });
     releaseRead();
     await page.waitForTimeout(300);
     assert.equal(await page.getByText('Latest revision: revision-B', { exact: true }).count(), 1);
@@ -2100,8 +2120,9 @@ test('readiness permissions require an explicit gesture and refresh server ident
     assert.equal(route.request().headers().cookie, undefined);
     return route.fulfill({ json: { version: 'm5-admin-technical-readiness-v1' } });
   });
-  await page.goto(server.base + '/admin/products');
-  await page.getByText('No products found.').waitFor();
+  await page.goto(server.base + '/admin/settings');
+  await page.getByRole('button', { name: 'Check readiness', exact: true }).waitFor();
+  await page.locator('astro-island:not([ssr])').waitFor();
   assert.equal(await page.evaluate(() => window.scopeQueries), 0);
   assert.deepEqual(await page.evaluate(() => window.scopeRequests), []);
   assert.deepEqual(readinessTokens, []);
@@ -2227,8 +2248,9 @@ test('readiness permission decline, failure and existing grants never broaden or
           : { version: 'm5-admin-technical-readiness-v1' },
       });
     });
-    await page.goto(server.base + '/admin/products');
-    await page.getByRole('heading', { name: 'Synthetic private catalog' }).waitFor();
+    await page.goto(server.base + '/admin/settings');
+    await page.getByRole('button', { name: 'Check readiness', exact: true }).waitFor();
+    await page.locator('astro-island:not([ssr])').waitFor();
     assert.deepEqual(readinessTokens, [], 'No readiness request on page boot');
     await page.getByRole('button', { name: 'Check readiness', exact: true }).click();
     if (scenario.requests.length) {
@@ -2250,7 +2272,7 @@ test('readiness permission decline, failure and existing grants never broaden or
       assert.equal(await page.getByRole('button', { name: 'Check signing setup', exact: true }).count(), 0);
       await page.getByText(scenario.status, { exact: true }).waitFor();
     } else {
-      assert.equal(await page.getByRole('heading', { name: 'Synthetic private catalog' }).count(), 1);
+      assert.equal(await page.getByRole('heading', { name: 'Publication readiness', exact: true }).count(), 1);
       assert.equal(await page.getByRole('button', { name: 'Check signing setup', exact: true }).count(), 0);
     }
     if (scenario.requests.length && !scenario.denied) {
@@ -2300,13 +2322,13 @@ test('both admin pages admit the pinned Polaris CDN font without broadening othe
     ]);
     assert.deepEqual(directives['frame-ancestors'], ['https://admin.shopify.com', 'https://*.myshopify.com']);
     assert.ok(!directives['script-src'].some((value) => value.includes('cloudflare')));
-    await page.getByRole('button', { name: 'Check readiness', exact: true }).waitFor();
+    await page.locator('s-page').waitFor();
     await page.evaluate(() => document.fonts.ready);
     assert.ok(fontRequests > 0, 'Polaris font request reaches the CDN boundary instead of being blocked by CSP');
     await page.close();
   }
 });
-test('product search has a usable responsive control, distinct catalog cards and status without technical IDs', {
+test('product search uses the responsive Polaris table with actionable rows and no technical IDs', {
   timeout: 20000,
 }, async (t) => {
   const { source, server, browser } = await browserFixture(t);
@@ -2346,7 +2368,7 @@ test('product search has a usable responsive control, distinct catalog cards and
     });
   });
   await page.goto(server.base + '/admin/products');
-  await page.getByRole('heading', { name: 'Historical archived shirt with a long catalog title' }).waitFor();
+  await page.getByRole('link', { name: 'Historical archived shirt with a long catalog title' }).waitFor();
   const navigation = page.locator('s-app-nav');
   assert.equal(
     await navigation.getByRole('link', { name: 'Products', exact: true }).getAttribute('href'),
@@ -2364,11 +2386,9 @@ test('product search has a usable responsive control, distinct catalog cards and
   assert.ok(await search.isVisible());
   await search.focus();
   assert.ok(await search.evaluate((element) => element.matches(':focus')));
-  const card = page.getByRole('article');
-  assert.ok(
-    await card.evaluate((element) => parseFloat(getComputedStyle(element).borderTopWidth) > 0),
-    'Catalog entries need a visible card boundary',
-  );
+  const card = page.locator('s-table-row');
+  assert.equal(await page.locator('s-table').count(), 1);
+  await page.getByRole('grid').waitFor({ timeout: 3000 });
   await card.getByText('Archived', { exact: true }).waitFor();
   assert.equal(await card.getByText('Blue / Large', { exact: true }).count(), 1);
   assert.equal(await page.getByText(/gid:\/\/shopify\//).count(), 0);
@@ -2378,7 +2398,7 @@ test('product search has a usable responsive control, distinct catalog cards and
   );
   await search.fill('archived & blue');
   await page.getByRole('button', { name: 'Search', exact: true }).click();
-  await page.getByRole('heading', { name: 'Historical archived shirt with a long catalog title' }).waitFor();
+  await page.getByRole('link', { name: 'Historical archived shirt with a long catalog title' }).waitFor();
   assert.deepEqual(queries, ['', 'archived & blue'], 'Typing does not introduce extra requests');
   for (const width of [1280, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
@@ -2388,16 +2408,17 @@ test('product search has a usable responsive control, distinct catalog cards and
       await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
       `Picker must fit a ${width}px viewport`,
     );
-    const cardBox = await card.boundingBox();
-    assert.ok(cardBox && cardBox.x >= 0 && cardBox.x + cardBox.width <= width);
+
     const configure = card.getByRole('link', { name: 'Configure product', exact: true });
     await configure.scrollIntoViewIfNeeded();
     assert.ok(await configure.isVisible());
+    const actionBox = await configure.boundingBox();
+    assert.ok(actionBox && actionBox.x >= 0 && actionBox.x + actionBox.width <= width);
   }
   await search.fill('absent');
   await page.getByRole('button', { name: 'Search', exact: true }).click();
   await page.getByText('No products found.', { exact: true }).waitFor();
-  assert.equal(await page.getByRole('article').count(), 0);
+  assert.equal(await page.locator('s-table-row').count(), 0);
   assert.deepEqual(queries, ['', 'archived & blue', 'absent']);
 });
 test('merchant choices use names and numbered fallbacks while pricing saves the original identifiers', {
@@ -2587,7 +2608,7 @@ test('compound size-step names remain distinguishable and save the intended plac
     return route.fulfill({ json: { kind: 'saved', draftVersion: '2' } });
   });
   await page.goto(server.base + '/admin/products/111/config');
-  const prices = page.getByRole('table').getByRole('textbox');
+  const prices = page.getByRole('textbox', { name: /price choice [12]\) — surcharge \(USD\)$/ });
   await prices.first().waitFor({ timeout: 1500 });
   assert.equal(await prices.count(), 2);
   for (const name of [
@@ -2661,5 +2682,52 @@ test('Lean price table keeps blank unavailable, saves explicit zero and exact fi
         rate: { kind: 'fixed', amount: { shopDecimal: '0', presentmentOverrides: [] } },
       },
     ],
+  );
+});
+
+test('editor guides configuration through prices to publication while keeping diagnostics collapsed', {
+  timeout: 20000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  const page = await browser.newPage();
+  await page.addInitScript(() => {
+    window.shopify = { idToken: async () => 'synthetic-editor-flow' };
+  });
+  await routePolaris(page, source);
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+    route.fulfill({ body: '', contentType: 'text/javascript' }),
+  );
+  await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
+  const current = response(draft());
+  current.config.publication = {
+    ...current.config.publication,
+    state: 'ACTIVE',
+    activeRevisionId: 'technical-revision',
+    functionReadiness: 'RELEASE_BOUND',
+  };
+  await page.route('**/api/admin/products/111/config', (route) => route.fulfill({ json: current }));
+  await page.goto(server.base + '/admin/products/111/config');
+  await page.getByText('All changes saved', { exact: true }).waitFor();
+  const prices = page.getByRole('link', { name: '3. Prices', exact: true });
+  await prices.waitFor({ timeout: 2000 });
+  await prices.click();
+  assert.equal(new URL(page.url()).hash, '#decoration-prices');
+  assert.equal(await page.getByText('Function readiness: RELEASE_BOUND', { exact: true }).isVisible(), false);
+  await page.getByText('Technical publication details', { exact: true }).click();
+  await page.getByText('Effective revision: technical-revision', { exact: true }).waitFor({ state: 'attached' });
+  assert.equal(
+    await page.locator('s-button[variant="primary"]').filter({ hasText: 'Save draft' }).innerText(),
+    'Save draft',
+  );
+  await page.getByRole('link', { name: '4. Review and publish', exact: true }).click();
+  await page.getByRole('button', { name: 'Publish saved changes', exact: true }).waitFor();
+  if (process.env.M5_CAPTURE_BROWSER === '1')
+    await page.screenshot({ path: '/tmp/insignia-admin-workflow-editor.png', fullPage: true });
+  assert.equal(
+    await page.evaluate(
+      () => document.querySelectorAll('table,input:not([type="file"]),select,textarea,button').length,
+    ),
+    0,
+    'ordinary admin controls use Polaris; shadow internals are excluded',
   );
 });

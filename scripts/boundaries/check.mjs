@@ -30,6 +30,29 @@ function cruise(paths = entries, type = 'err', expected = 0) {
   return run('corepack', [...depcruise, '--output-type', type, ...paths], expected);
 }
 
+// Ordinary merchant controls use the pinned Polaris implementation. Native
+// canvas/file input remain in shared specialized visualizer/upload components.
+function assertPolarisControls(path, source) {
+  assert.ok(
+    !/<(?:button|input|select|textarea|table)\b/.test(source),
+    `${path}: use Polaris for ordinary admin controls`,
+  );
+}
+const merchantIslands = [
+  'MerchantConfigEditor',
+  'MerchantSettings',
+  'MerchantBilling',
+  'MerchantPrivacy',
+  'PurchaseArtwork',
+  'PurchaseHistoricalPreview',
+  'ReadinessPermissions',
+];
+for (const name of merchantIslands) {
+  const path = `apps/web/src/islands/${name}.tsx`;
+  assertPolarisControls(path, readFileSync(resolve(root, path), 'utf8'));
+}
+assert.throws(() => assertPolarisControls('negative control', '<button>Save</button>'), /use Polaris/);
+
 const green = cruise();
 assert.match(green, /no dependency violations found/);
 const graph = JSON.parse(cruise(entries, 'json'));

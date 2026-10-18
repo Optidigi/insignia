@@ -222,7 +222,7 @@ function Placement({
       </h4>
       <p>
         Purchased artwork:{' '}
-        {placement.originalArtwork.kind === 'deferred' ? 'Logo later' : placement.originalArtwork.revisionId}
+        {placement.originalArtwork.kind === 'deferred' ? 'Logo later' : 'Original file supplied at purchase'}
       </p>
       {placement.originalArtwork.kind === 'revision' &&
         placement.originalArtwork.revisionId !== placement.currentAssetId && (
@@ -286,6 +286,7 @@ function Placement({
 }
 export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string }) {
   const [items, setItems] = useState<PurchaseView[]>([]);
+  const [artworkFilter, setArtworkFilter] = useState('all');
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [purchase, setPurchase] = useState<PurchaseView | null>(null);
   const [message, setMessage] = useState('Loading orders…');
@@ -376,9 +377,11 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
         </s-button>
       )}
       {message && (
-        <p class="admin-status" role="status" aria-live="polite">
-          {message}
-        </p>
+        <s-banner tone="info">
+          <p role="status" aria-live="polite">
+            {message}
+          </p>
+        </s-banner>
       )}
       {!denied && (
         <s-button type="button" disabled={busy} onClick={() => void load()}>
@@ -393,19 +396,70 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
               Load older orders
             </s-button>
           )}
-          {items.map((item) => (
-            <p key={item.purchaseId}>
-              <a href={`/admin/orders/${item.purchaseId}`}>{item.orderId}</a> ·{' '}
-              {item.lines.length ? artworkLabel(item.artworkState) : 'Order customization needs verification'} ·{' '}
-              {exactPurchaseMoney(item.originalTotalMinor, item.exponent, item.currency)}
-            </p>
-          ))}
+          <s-select
+            label="Artwork status"
+            value={artworkFilter}
+            onChange={(event) => setArtworkFilter(event.currentTarget.value)}
+          >
+            <s-option value="all">All artwork statuses</s-option>
+            <s-option value="PENDING_ARTWORK">Artwork needed</s-option>
+            <s-option value="READY">Artwork complete</s-option>
+            <s-option value="ARTWORK_LOCKED">Artwork locked</s-option>
+            <s-option value="ERASED">Artwork no longer retained</s-option>
+          </s-select>
+          <s-paragraph>Filters apply to loaded orders. Load older orders to include them.</s-paragraph>
+          <s-paragraph>
+            {items.filter((item) => artworkFilter === 'all' || item.artworkState === artworkFilter).length} of{' '}
+            {items.length} loaded orders
+          </s-paragraph>
+          {items.length > 0 && (
+            <s-table loading={busy}>
+              <s-table-header-row>
+                <s-table-header listSlot="primary">Order</s-table-header>
+                <s-table-header listSlot="secondary">Created</s-table-header>
+                <s-table-header listSlot="inline">Artwork</s-table-header>
+                <s-table-header listSlot="labeled" format="currency">
+                  Total
+                </s-table-header>
+              </s-table-header-row>
+              <s-table-body>
+                {items
+                  .filter((item) => artworkFilter === 'all' || item.artworkState === artworkFilter)
+                  .map((item) => (
+                    <s-table-row key={item.purchaseId}>
+                      <s-table-cell>
+                        <s-link href={`/admin/orders/${item.purchaseId}`}>
+                          Order {item.orderId.replace('gid://shopify/Order/', '')}
+                        </s-link>
+                      </s-table-cell>
+                      <s-table-cell>
+                        <time dateTime={item.orderCreatedAt}>{recordDate(item.orderCreatedAt)}</time>
+                      </s-table-cell>
+                      <s-table-cell>
+                        <s-badge tone={item.artworkState === 'PENDING_ARTWORK' ? 'warning' : 'neutral'}>
+                          {item.lines.length
+                            ? artworkLabel(item.artworkState)
+                            : 'Order customization needs verification'}
+                        </s-badge>
+                      </s-table-cell>
+                      <s-table-cell>
+                        {exactPurchaseMoney(item.originalTotalMinor, item.exponent, item.currency)}
+                      </s-table-cell>
+                    </s-table-row>
+                  ))}
+              </s-table-body>
+            </s-table>
+          )}
+          {items.length > 0 &&
+            !items.some((item) => artworkFilter === 'all' || item.artworkState === artworkFilter) && (
+              <s-paragraph>No loaded orders match this artwork status.</s-paragraph>
+            )}
         </s-section>
       )}
       {purchase && (
         <>
           <s-section heading="Order summary">
-            <p class="admin-record-id">{purchase.orderId}</p>
+            <s-heading>Order {purchase.orderId.replace('gid://shopify/Order/', '')}</s-heading>
             <p>
               Order created: <time dateTime={purchase.orderCreatedAt}>{recordDate(purchase.orderCreatedAt)}</time>
             </p>
@@ -469,9 +523,11 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
                 )}
                 {purchase.groups.map((group) => (
                   <section key={group.index} class="purchase-customization">
-                    <h3>
-                      Customization {group.index + 1} · historical revision {group.configRevisionId}
-                    </h3>
+                    <h3>Customization {group.index + 1}</h3>
+                    <details>
+                      <summary>Saved production reference</summary>
+                      <p>Historical revision: {group.configRevisionId}</p>
+                    </details>
                     <p>
                       Design retention deadline:{' '}
                       <time dateTime={group.payloadExpiresAt}>{recordDate(group.payloadExpiresAt)}</time>
