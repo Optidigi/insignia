@@ -1,0 +1,126 @@
+{
+  "date": "2026-10-18",
+  "classification": "PR204_INTEGRATED_NATIVE_BOOTSTRAP_FAILURE_ROLLED_BACK",
+  "integration": {
+    "pr": "https://github.com/Optidigi/insignia/pull/204",
+    "base": "adeeffe02a300b0e578db9ed9e453104332702ab",
+    "effectiveMergeBase": "adeeffe02a300b0e578db9ed9e453104332702ab",
+    "head": "52891bfe7b595d4bfca0a742517d87f7a50cfce0",
+    "merge": "0de681159d4bcdd2d10a60a88b099db429c9af9c",
+    "tree": "e5a36a9b4f8e23c72b7b664a853daa5247d940fb",
+    "parents": [
+      "adeeffe02a300b0e578db9ed9e453104332702ab",
+      "52891bfe7b595d4bfca0a742517d87f7a50cfce0"
+    ],
+    "exactHeadAttempt1Checks": {
+      "foundation": 39138978678,
+      "durable-core": 39138978665,
+      "runtime": 39138978676
+    },
+    "result": "All3PASS; normal merge exactparents/tree verified. CI is source evidence, not native acceptance."
+  },
+  "artifact": {
+    "buildSource": "beba6b7c48b7a37208960d0b95827cbd116f3bc7",
+    "artifactId": 12140468632,
+    "artifactZipSha256": "sha256:b8077f7defe433d2ea8dcc16eac6394b0bedde6510e73bccfcc73e77297a0860",
+    "image": "sha256:a491addee2251b9d92606ddaa2ab0a53377c748d5cc1fc23cb7270c17035243e",
+    "configDigest": "sha256:3d1f7111cf307f5f96e945060107b174103842f5911bb104ab6274db199bc1c7",
+    "tarSha256": "2c70d93ec7bc648eb6b23611e029b74b0b333c14e0f727eccb8ec40482e135bd",
+    "tarSize": 456553984
+  },
+  "deployment": {
+    "classification": "EXACT_CI_WEB_ONLY_ADMIN_DEPLOYMENT_PASS",
+    "merge": "0de681159d4bcdd2d10a60a88b099db429c9af9c",
+    "tree": "e5a36a9b4f8e23c72b7b664a853daa5247d940fb",
+    "head": "52891bfe7b595d4bfca0a742517d87f7a50cfce0",
+    "run": 39138978676,
+    "attempt": 1,
+    "oldContainer": "ec2daf2df1efdd6b462b019bf68b61c989f401afbcbb87671885d44281f5c24c",
+    "container": "14f59985b047b1044dbdd95a2f42c6496480251f4c3272d381f18c0c0d94d0ea",
+    "image": "sha256:a491addee2251b9d92606ddaa2ab0a53377c748d5cc1fc23cb7270c17035243e",
+    "healthy": true,
+    "onlyMaterialDelta": "web image",
+    "environmentUnchanged": true,
+    "mountsNetworksSecurityResourcesUnchanged": true,
+    "other34ContainersUnchanged": true,
+    "inspectorAndVerifierSocketsUnchanged": true,
+    "schemaAndPurchasePaidFactsUnchanged": true,
+    "providerMutations": 0,
+    "databaseWrites": 0,
+    "dispatches": 1,
+    "retries": 0
+  },
+  "nativeFailure": {
+    "classification": "APP_BRIDGE_BOOTSTRAP_ABORT",
+    "initial": "Expected authenticated Products API result missing; stopped first acceptance run.",
+    "diagnosis": "One read-only browser diagnostic observed current App Bridge rejecting defer on its first CDN script and aborting. Island hydration and route data gate settled in denial; no authenticated Products API dispatched.",
+    "contractSource": "https://shopify.dev/docs/api/app-bridge/migration-guide#step-1-add-the-app-bridgejs-script-tag",
+    "observedRuntimeSha256": "962faac5322b05678eb88159fa7c0a9c0a46fa70cde3a4688794410edb1428b5",
+    "testGap": "Existing tests stubbed App Bridge to exercise identity boundaries; they missed actual runtime script-tag self-validation.",
+    "writes": "Acceptance and diagnostic browser routes blocked application non-GET requests; no save, publish, theme action, login, cookie transfer or provider mutation."
+  },
+  "rollback": {
+    "classification": "DELIBERATE_KNOWN_WORKING_PR202_WEB_ROLLBACK_PASS",
+    "merge": "c78918f68f1d986b70d7cd40e8a0b13fc6691215",
+    "tree": "4f8eedab5f28700a9d09a12deaee27146f0aad46",
+    "head": "6d0c049488c54eaf061d135479ceca0203f0b1ed",
+    "run": 39134221986,
+    "attempt": 1,
+    "oldContainer": "14f59985b047b1044dbdd95a2f42c6496480251f4c3272d381f18c0c0d94d0ea",
+    "container": "959eacd3fa95dd7ecc31d2d01a1220ee45eb28c3d2a8e9145ca1a58eae142c29",
+    "image": "sha256:8ef72c5d5c01a2fdeb5278dd2dd22b5cb862621b9f9fbea8125b9e837a97cf1c",
+    "healthy": true,
+    "onlyMaterialDelta": "web image",
+    "environmentUnchanged": true,
+    "mountsNetworksSecurityResourcesUnchanged": true,
+    "other34ContainersUnchanged": true,
+    "inspectorAndVerifierSocketsUnchanged": true,
+    "schemaAndPurchasePaidFactsUnchanged": true,
+    "providerMutations": 0,
+    "databaseWrites": 0,
+    "dispatches": 1,
+    "retries": 0,
+    "nativeReadback": {
+      "productsAPI": 200,
+      "appBridgePageErrors": 0,
+      "source": "Existing documented headed Shopify profile; diagnostic response metadata, no login/cookie transfer or application non-GET"
+    },
+    "finalProtectedReadback": {
+      "classification": "POST_BROWSER_RUNTIME_AND_PROTECTED_FACTS_READONLY_PASS",
+      "webHealthy": true,
+      "containerCount": 35,
+      "other34ContainersUnchanged": true,
+      "schemaPurchasePaidFactsUnchanged": true,
+      "inspectorAndSocketsUnchanged": true,
+      "databaseWrites": 0,
+      "providerMutations": 0,
+      "observedAt": "2026-10-18T15:22:59.606585+00:00"
+    }
+  },
+  "fix": {
+    "change": "Remove defer only from first App Bridge CDN script. Retain deferred Polaris and existing CSP, identity/security/data boundaries.",
+    "red": "Built-page browser assertion failed App Bridge forbids defer before correction.",
+    "green": "Web Astro check/build PASS; focused5 browser PASS including script contract, all-eight-route slow Polaris, navigation, cancellation and late settlement. Style/secrets PASS.",
+    "review": "Independent /root/polaris_completion_review Spec/correctness and Standards/security CLEAR.",
+    "limitation": "Parser-blocking App Bridge can delay initial body/skeleton parsing on a cold slow App Bridge download. Host navigation feedback and subsequent Polaris/data skeletons remain; no claim of painting before App Bridge.",
+    "ciFollowup": {
+      "failedHead": "e954bb9f677a883eee7572063ed15f49d2d0b6fc",
+      "foundationAttempt1": 39140315425,
+      "observedFailure": "Interrupted publication recovery test exceeded its30s deadline; no specific operation stack. Other206 web tests PASS,54 environment SKIP.",
+      "diagnosis": "Unchanged focused test passed8 consecutive local runs. Holding a real font-CDN response at the boundary reproduced page.goto waiting for load and a bounded navigation timeout. This demonstrates an uncontrolled external dependency, not the unobserved exact cause of the CI stall.",
+      "testOnlyCorrection": "Stub font-CDN bytes within this publication test, matching existing browser boundary fixtures; set5s per-operation timeout for actionable failures. Keep30s whole-test deadline and every identity/key/body/reload/write-count/durable-state/invalid-price assertion.",
+      "checks": "Corrected focused test8consecutivePASS; independent /root/polaris_completion_review CLEAR both axes. No production changes. Final corrected-head CI pending.",
+      "runtime": "WorkingPR202web/schema41 remains deployed; no native operation in this CI followup."
+    }
+  },
+  "operationReview": {
+    "agent": "/root/admin202_operator_review",
+    "result": "Independent deployment and distinct deliberate rollback operator reviews CLEAR; root inspected rollback adaptation before execution. No ambiguous operation retry.",
+    "enforcement": "Read-only instructions for reviews; no claimed OS/network credential isolation."
+  },
+  "cleanup": {
+    "privateOperatorsArtifactsScreenshots": "Retain through2026-10-20 cleanup obligation; no secret material published.",
+    "activeCompose": "/home/serveradmin/insignia-admin204-rollback-20261018/web-only.private.json is active; exclude until custody is transitioned. Earlier202/204 Compose journals are historical after rollback."
+  },
+  "continuation": "Qualify corrective final-head CI, normal merge and exact CI web-only redeployment; repeat native eight-route/stage/mobile/silent-skeleton acceptance. No milestone/rollout pass inferred. Preserve rollout/uninstall/shop-erasure holds and existing cleanup/rotation obligations."
+}

@@ -1029,6 +1029,9 @@ test('interrupted publication resumes the identical request after reload and rea
     window.shopify = { idToken: async () => 'synthetic-publish-token' };
   });
   await routePolaris(page, source);
+  page.setDefaultTimeout(5000);
+  // Font CDN latency is unrelated to publication identity and must not block page load.
+  await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
   await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
     route.fulfill({ body: '', contentType: 'text/javascript' }),
   );
@@ -2313,6 +2316,11 @@ test('both admin pages admit the pinned Polaris CDN font without broadening othe
     await page.route('**/api/admin/products?*', (route) => route.fulfill({ json: { products: [], nextCursor: null } }));
     await page.route('**/api/admin/products/111/config', (route) => route.fulfill({ json: response(draft()) }));
     const document = await page.goto(server.base + path);
+    const appBridge = page.locator('script').first();
+    assert.equal(await appBridge.getAttribute('src'), 'https://cdn.shopify.com/shopifycloud/app-bridge.js');
+    for (const forbidden of ['defer', 'async', 'type']) {
+      assert.equal(await appBridge.getAttribute(forbidden), null, `App Bridge forbids ${forbidden}`);
+    }
     const directives = Object.fromEntries(
       document
         .headers()

@@ -17,7 +17,7 @@ const { title, apiKey } = Astro.props;
     <meta name="referrer" content="no-referrer" />
     <meta name="shopify-api-key" content={apiKey} />
     <title>{title} · Insignia</title>
-    <script is:inline defer src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
+    <script is:inline src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
     <script is:inline defer src="https://cdn.shopify.com/shopifycloud/polaris-1.1.js"></script>
   </head>
   <body>
