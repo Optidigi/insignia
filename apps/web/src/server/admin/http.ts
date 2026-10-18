@@ -1,12 +1,15 @@
 import { CommandDigestConflictError } from '@insignia/application';
 import { AdminOnlineIdentityError } from '@insignia/shopify';
 import type { AdminActor, AdminServices, CommandOutcome } from './contracts.js';
+import { MethodAuthorizationError } from './methods.ts';
 
 export type AdminRoute =
   | { kind: 'list' }
   | { kind: 'config'; productId: string }
   | { kind: 'readiness' }
   | { kind: 'billing' }
+  | { kind: 'methods' }
+  | { kind: 'method'; methodId: string }
   | { kind: 'signing' };
 const PRODUCT_ID = /^gid:\/\/shopify\/Product\/[1-9][0-9]*$/;
 const CONFIG_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
@@ -138,6 +141,39 @@ export async function handleAdminRequest(
   if (!actor.canRead) return adminJson(403, { error: 'Read permission required' });
 
   try {
+    if (route.kind === 'methods' || route.kind === 'method') {
+      if (!services.methods) return adminJson(503, { error: 'Method library unavailable' });
+      if (route.kind === 'methods' && request.method === 'GET')
+        return adminJson(200, await services.methods.list(actor));
+      const item = route.kind === 'method';
+      if ((item && !['PUT', 'DELETE'].includes(request.method)) || (!item && request.method !== 'POST'))
+        return adminJson(405, { error: 'Method not allowed' });
+      if (item && !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(route.methodId))
+        return adminJson(404, { error: 'Method not found' });
+      if (!actor.canEdit) return adminJson(403, { error: 'Edit permission required' });
+      if (!mutationOrigin(request, services.appOrigin)) return adminJson(403, { error: 'Origin denied' });
+      const key = request.headers.get('Idempotency-Key') ?? '';
+      if (!KEY.test(key)) return adminJson(422, { error: 'Idempotency key required' });
+      const body = await bodyObject(request);
+      const deleting = request.method === 'DELETE';
+      const name = typeof body?.name === 'string' ? body.name.trim() : '';
+      if (
+        !body ||
+        Object.keys(body).sort().join(',') !== (item ? (deleting ? 'version' : 'name,version') : 'name') ||
+        (!deleting &&
+          (!name ||
+            name.length > 80 ||
+            Array.from(name).some((character) => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127))) ||
+        (item && (typeof body.version !== 'string' || !/^[1-9][0-9]{0,17}$/.test(body.version)))
+      )
+        return adminJson(422, { error: 'Invalid method command' });
+      const result = item
+        ? deleting
+          ? await services.methods.delete(actor, route.methodId, body.version as string, key)
+          : await services.methods.rename(actor, route.methodId, body.version as string, name, key)
+        : await services.methods.create(actor, name, key);
+      return adminJson(result.kind === 'conflict' ? 409 : result.kind === 'created' ? 201 : 200, result);
+    }
     if (route.kind === 'billing') {
       if (request.method !== 'GET') return adminJson(405, { error: 'Method not allowed' });
       return services.billing
@@ -237,6 +273,8 @@ export async function handleAdminRequest(
       );
     return adminJson(422, { error: 'Invalid command' });
   } catch (error) {
+    if (error instanceof MethodAuthorizationError)
+      return adminJson(403, { error: 'Current tenant installation required' });
     if (error instanceof CommandDigestConflictError)
       return adminJson(409, { kind: 'conflict', message: 'Command key was used for a different request' });
     return adminJson(503, { error: 'Admin service unavailable' });

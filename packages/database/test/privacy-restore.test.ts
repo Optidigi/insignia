@@ -84,6 +84,21 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
       "INSERT INTO purchase_design_payloads VALUES($1,1,$2,$3,statement_timestamp(),statement_timestamp()+interval '7 days',$4,NULL)",
       [f.shopId, purchaseId, f.authorization.setId, { request: existing.request }],
     );
+    for (const fixture of [blocked, staged]) {
+      await source.query('INSERT INTO method_catalog(shop_id,method_id,name) VALUES($1,$2,$3)', [
+        fixture.shopId,
+        randomUUID(),
+        'Private method template',
+      ]);
+      await source.query(
+        "INSERT INTO idempotency_records(shop_id,namespace,idempotency_key,request_digest,status,result_ref,completed_at) VALUES($1,'merchant-method-create:1:old','restore-method-key',$2,'completed',$3,clock_timestamp())",
+        [
+          fixture.shopId,
+          'e'.repeat(64),
+          JSON.stringify({ kind: 'created', method: { name: 'Private method template' } }),
+        ],
+      );
+    }
     const economics = async (pool: Pool) =>
       (
         await pool.query(
@@ -271,6 +286,18 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
       });
       await expect(importErasureExclusions(target, reseal(promoted))).rejects.toThrow('foreign erasure fence');
       const result = await importErasureExclusions(target, exclusions);
+      expect((await target.query('SELECT name FROM method_catalog WHERE shop_id=$1', [staged.shopId])).rows).toEqual(
+        [],
+      );
+      expect(
+        JSON.stringify(
+          (await target.query('SELECT result_ref FROM idempotency_records WHERE shop_id=$1', [staged.shopId])).rows,
+        ),
+      ).not.toContain('Private method template');
+      expect((await target.query('SELECT name FROM method_catalog WHERE shop_id=$1', [blocked.shopId])).rows).toEqual([
+        { name: 'Private method template' },
+      ]);
+
       expect(await guardState()).toBe('O');
       expect(
         (

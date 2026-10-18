@@ -37,6 +37,7 @@ import { type AdminInstallation, AdminInstallationReconciliationError, createAdm
 import { createMerchantBillingReader } from './billing.js';
 import type { AdminActor, AdminServices, CatalogProduct } from './contracts.js';
 import { createMerchantPublicationCapture } from './merchant-previews.js';
+import { createMethodLibrary } from './methods.js';
 import {
   createBoundProductionActivationReadiness,
   createDemandDrivenReleaseReader,
@@ -787,5 +788,6 @@ export function createProductionAdminServices(
     },
     catalog: { list: catalog.list, get: catalog.get },
     configs: service,
+    methods: createMethodLibrary(core),
   };
 }

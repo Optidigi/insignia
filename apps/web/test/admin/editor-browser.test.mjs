@@ -43,8 +43,8 @@ test('every merchant route declares the same native Shopify sidebar before priva
     '/admin/products/111/config',
     '/admin/orders',
     '/admin/orders/d841ee12-2075-4101-b3bc-429ad31a4059',
-    '/admin/billing',
-    '/admin/privacy',
+    '/admin/settings/billing',
+    '/admin/settings/privacy',
     '/admin/settings',
   ]) {
     const response = await page.goto(server.base + path);
@@ -56,8 +56,6 @@ test('every merchant route declares the same native Shopify sidebar before priva
     for (const [label, destination] of [
       ['Products', '/admin/products'],
       ['Orders', '/admin/orders'],
-      ['Billing', '/admin/billing'],
-      ['Privacy', '/admin/privacy'],
       ['Settings', '/admin/settings'],
     ]) {
       assert.equal(
@@ -68,6 +66,7 @@ test('every merchant route declares the same native Shopify sidebar before priva
         destination,
       );
     }
+    assert.equal(await navigation.locator('s-link').count(), 4, 'Billing and Privacy belong under Settings');
     assert.equal(await page.locator('s-page .admin-navigation').count(), 0, 'No duplicate iframe navigation');
   }
 });
@@ -315,7 +314,7 @@ test('historical advanced pricing stays read-only until an explicit local Lean p
     saved = route.request().postDataJSON();
     return route.fulfill({ json: { kind: 'saved', draftVersion: '2' } });
   });
-  await page.goto(server.base + '/admin/products/111/config');
+  await page.goto(server.base + '/admin/products/111/config?view=all');
   await page.getByRole('region', { name: 'Historical pricing' }).waitFor({ timeout: 1500 });
   assert.match(await page.getByRole('region', { name: 'Historical pricing' }).innerText(), /10 USD; 9 EUR/);
   for (const name of ['Add fixed price', 'Add quantity tier', 'Add presentment override'])
@@ -393,7 +392,7 @@ test('real browser editor syncs typed view, variant and step controls with direc
     version = '2';
     return route.fulfill({ json: { kind: 'saved', draftVersion: '2' } });
   });
-  const opened = await page.goto(server.base + '/admin/products/111/config');
+  const opened = await page.goto(server.base + '/admin/products/111/config?view=all');
   assert.equal(opened?.status(), 200);
   await page.getByText('Draft version 1').waitFor({ timeout: 5000 });
   await page.waitForFunction(() => document.querySelector('#insignia-visualizer canvas'));
@@ -514,7 +513,7 @@ test('removing named choices drops only their labels including nested option val
     version = '2';
     return route.fulfill({ json: { kind: 'saved', draftVersion: version } });
   });
-  await page.goto(server.base + '/admin/products/111/config');
+  await page.goto(server.base + '/admin/products/111/config?view=all');
   await page.getByText('Draft version 1').waitFor();
   await page.waitForFunction(() => document.querySelector('#insignia-visualizer canvas'));
   await page.getByLabel('Method name').fill('Keep print');
@@ -593,7 +592,7 @@ test('variant without a saved image override retains the portrait default until 
     version = String(Number(version) + 1);
     return route.fulfill({ json: { kind: 'saved', draftVersion: version } });
   });
-  await page.goto(server.base + '/admin/products/111/config');
+  await page.goto(server.base + '/admin/products/111/config?view=all');
   await page.getByText('Draft version 1').waitFor();
   const waitForColor = (red, blue) =>
     page.waitForFunction(
@@ -709,7 +708,7 @@ test('merchant currency adoption refreshes saved publication eligibility and lat
     version = String(Number(version) + 1);
     return route.fulfill({ json: { kind: 'saved', draftVersion: version } });
   });
-  await page.goto(server.base + '/admin/products/111/config');
+  await page.goto(server.base + '/admin/products/111/config?view=all');
   await page.getByText('Current shop currency: EUR', { exact: false }).waitFor();
   const publicationButton = page.locator('s-button').filter({ hasText: 'Publish saved changes' });
   assert.equal(await publicationButton.evaluate((button) => button.disabled), true);
@@ -847,7 +846,7 @@ test('mobile deep link, cookie-free reload, interrupted save, stale conflict, an
     version = '3';
     return route.fulfill({ status: 409, json: { error: 'stale draft version' } });
   });
-  await page.goto(server.base + '/admin/products/111/config?id_token=synthetic-url-token');
+  await page.goto(server.base + '/admin/products/111/config?view=all&id_token=synthetic-url-token');
   await page.getByText('Draft version 1').waitFor();
   assert.ok(!(await page.url()).includes('id_token='), 'Launch token must be removed from URL');
   await page.getByLabel('Method name').fill('  Screen print  ');
@@ -924,7 +923,7 @@ test('mobile deep link, cookie-free reload, interrupted save, stale conflict, an
     route.fulfill({ body: '', contentType: 'text/javascript' }),
   );
   await missingPage.route('**/api/admin/products/111/config', (route) => route.fulfill({ json: response(draft()) }));
-  await missingPage.goto(server.base + '/admin/products/111/config');
+  await missingPage.goto(server.base + '/admin/products/111/config?view=all');
   await missingPage.getByText('Draft version 1').waitFor();
   assert.equal(await missingPage.evaluate(() => !!customElements.get('s-button')), false);
   assert.equal(
@@ -968,7 +967,7 @@ for (const invalidPrice of ['-1', '1.001']) {
       }
       return route.fulfill({ status: 202, json: { kind: 'accepted', state: 'ACTIVE' } });
     });
-    await page.goto(server.base + '/admin/products/111/config');
+    await page.goto(server.base + '/admin/products/111/config?view=all');
     await page.getByText('Draft version 1').waitFor();
     const publish = page.locator('s-button').filter({ hasText: 'Publish saved changes' });
     const copy = page.locator('s-button').filter({ hasText: 'Copy configuration' });
@@ -1067,7 +1066,7 @@ test('interrupted publication resumes the identical request after reload and rea
       json: { kind: 'accepted', state: phase, revisionId: 'same-immutable-revision' },
     });
   });
-  await page.goto(server.base + '/admin/products/111/config');
+  await page.goto(server.base + '/admin/products/111/config?view=all');
   await page.getByText('Draft version 1').waitFor();
   await page.locator('s-button').filter({ hasText: 'Publish saved changes' }).click();
   await page.getByText(/Continue the same publication request/).waitFor();
@@ -1118,7 +1117,7 @@ test('numeric placement input reaches owner state before blur and survives an ow
     version = String(BigInt(version) + 1n);
     return route.fulfill({ json: { kind: 'saved', draftVersion: version } });
   });
-  await page.goto(server.base + '/admin/products/111/config');
+  await page.goto(server.base + '/admin/products/111/config?view=all');
   await page.getByLabel('Print area', { exact: true }).selectOption('front');
   await page.getByText('Preview: ready', { exact: true }).waitFor();
   await page.getByLabel('Horizontal position', { exact: true }).fill('0.6');
@@ -1261,7 +1260,7 @@ for (let iteration = 1; iteration <= stressIterations; iteration++) {
             version = '3';
             return route.fulfill({ json: { kind: 'saved', draftVersion: version } });
           });
-          await page.goto(server.base + '/admin/products/111/config');
+          await page.goto(server.base + '/admin/products/111/config?view=all');
           await page.getByText('Draft version 2').waitFor();
           await page.getByLabel('Method name').fill('Unsaved name');
           await page.getByLabel('Print area', { exact: true }).selectOption('front');
@@ -1382,7 +1381,7 @@ test('settled publication read replaces a lost-response warning and stale produc
     settled = true;
     return route.abort('failed');
   });
-  await page.goto(server.base + '/admin/products/111/config');
+  await page.goto(server.base + '/admin/products/111/config?view=all');
   await page.getByText('Product status: Draft', { exact: true }).waitFor();
   await page.locator('s-button').filter({ hasText: 'Publish saved changes' }).click();
   await page.getByText('Publication state refreshed.', { exact: true }).waitFor({ timeout: 5000 });
@@ -1424,7 +1423,7 @@ for (const observedKey of ['m5pub_config-1_1_1', 'm5pub_config-1_1_2']) {
       assert.equal(route.request().headers()['idempotency-key'], 'm5pub_config-1_1_2');
       return route.abort('failed');
     });
-    await page.goto(server.base + '/admin/products/111/config');
+    await page.goto(server.base + '/admin/products/111/config?view=all');
     await page.getByText('Product status: Active', { exact: true }).waitFor();
     await page.locator('s-button').filter({ hasText: 'Publish saved changes' }).click();
     await page.getByText(/Continue the same publication request after checking/).waitFor({ timeout: 5000 });
@@ -1482,7 +1481,7 @@ test('publication retry keeps the original version after a newer draft edit when
     state = 'REMOTE_READY_ACTIVATION_PENDING';
     return route.fulfill({ status: 202, json: { kind: 'accepted', state, revisionId: 'same-immutable-revision' } });
   });
-  await page.goto(server.base + '/admin/products/111/config');
+  await page.goto(server.base + '/admin/products/111/config?view=all');
   await page.locator('s-button').filter({ hasText: 'Continue publication' }).click();
   await page.getByText(/Continue the same publication request/).waitFor();
   await page.reload();
@@ -1535,7 +1534,7 @@ test('stale stored publication is replaced by the current immutable intent despi
       }),
     ),
   );
-  await page.goto(server.base + '/admin/products/111/config');
+  await page.goto(server.base + '/admin/products/111/config?view=all');
   await page.getByText('Newer draft feature unavailable').waitFor();
   await page.locator('s-button').filter({ hasText: 'Continue publication' }).click();
   await page.getByText('Shopify settings updated; activation is pending').waitFor();
@@ -1582,7 +1581,7 @@ test('reinstalled Admin discards prior-generation browser request and publishes 
       }),
     ),
   );
-  await page.goto(server.base + '/admin/products/111/config');
+  await page.goto(server.base + '/admin/products/111/config?view=all');
   await page.getByText('Draft version 1').waitFor();
   await page.locator('s-button').filter({ hasText: 'Publish saved changes' }).click();
   await page.getByText('Shopify settings updated; activation is pending').waitFor();
@@ -1630,7 +1629,7 @@ test('concurrent editor refreshes share one App Bridge identity request', { time
     value.config.draftVersion = saved ? '2' : '1';
     return route.fulfill({ json: value });
   });
-  await page.goto(`${server.base}/admin/products/111/config`);
+  await page.goto(`${server.base}/admin/products/111/config?view=all`);
   await page.waitForFunction(() => typeof window.__releaseInitialToken === 'function');
   assert.equal(reads, 0, 'the initial identity remains pending until all refreshes have joined');
   await page.evaluate(() => {
@@ -1695,7 +1694,7 @@ test('empty merchant draft can be configured through typed controls and pass M2 
     value.config.draftVersion = saved ? '2' : '1';
     return route.fulfill({ json: value });
   });
-  await page.goto(`${server.base}/admin/products/111/config`);
+  await page.goto(`${server.base}/admin/products/111/config?view=all`);
   await page.getByText('Draft version 1').waitFor();
   await page.getByText('Add a method, placement and allowed size to enter decoration prices.').waitFor();
   await page.getByRole('button', { name: 'Add method' }).click();
@@ -1768,7 +1767,7 @@ test('mounted admin refreshes late activation and readiness without overwriting 
     };
     return route.fulfill({ json: value });
   });
-  await page.goto(`${server.base}/admin/products/111/config`);
+  await page.goto(`${server.base}/admin/products/111/config?view=all`);
   await page.getByText('Product temporarily unavailable while changes activate', { exact: true }).waitFor();
   assert.equal(await page.getByText('Effective revision: requested-revision', { exact: true }).count(), 0);
   await page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).fill('3.25');
@@ -1851,7 +1850,7 @@ for (const staleAmount of ['9.00', '2.50'])
     const first = await context.newPage();
     const second = await context.newPage();
     for (const page of [first, second]) {
-      await page.goto(`${server.base}/admin/products/111/config`);
+      await page.goto(`${server.base}/admin/products/111/config?view=all`);
       await page.getByText('Draft version 1', { exact: false }).waitFor();
     }
     await first.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).fill('2.50');
@@ -1940,7 +1939,7 @@ test('authorization denial fences a save already in flight from repopulating pri
       await readGate;
       return route.fulfill({ status: 401, json: { error: 'Authentication required' } });
     });
-    await page.goto(`${server.base}/admin/products/111/config`);
+    await page.goto(`${server.base}/admin/products/111/config?view=all`);
     await page.getByText('Draft version 1', { exact: false }).waitFor();
     await page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).fill('4.00');
     await readStarted;
@@ -2022,7 +2021,7 @@ test('a pre-command passive observation cannot overwrite a newer pending publica
       }
       return route.fulfill({ json: published ? current : old });
     });
-    await page.goto(`${server.base}/admin/products/111/config`);
+    await page.goto(`${server.base}/admin/products/111/config?view=all`);
     await page.getByText('Active', { exact: true }).waitFor();
     await started;
     await page.locator('s-button').filter({ hasText: 'Publish saved changes' }).click();
@@ -2065,7 +2064,7 @@ test('operator and restoration conflicts cannot initiate another publication fro
   });
   for (const next of ['OPERATOR_HOLD', 'RESTORATION_CONFLICT', 'CONFLICT']) {
     state = next;
-    await page.goto(`${server.base}/admin/products/111/config`);
+    await page.goto(`${server.base}/admin/products/111/config?view=all`);
     await page.getByText('Draft version 1', { exact: false }).waitFor();
     const button = page.locator('s-button').filter({ hasText: 'Publish saved changes' });
     assert.equal(await button.evaluate((element) => element.disabled), true, next);
@@ -2379,8 +2378,8 @@ test('product search uses the responsive Polaris table with actionable rows and 
     '/admin/orders',
   );
   assert.equal(
-    await navigation.getByRole('link', { name: 'Billing', exact: true }).getAttribute('href'),
-    '/admin/billing',
+    await navigation.getByRole('link', { name: 'Settings', exact: true }).getAttribute('href'),
+    '/admin/settings',
   );
   const search = page.getByRole('searchbox', { name: 'Search products', exact: true });
   assert.ok(await search.isVisible());
@@ -2458,7 +2457,7 @@ test('merchant choices use names and numbered fallbacks while pricing saves the 
     saved = route.request().postDataJSON();
     return route.fulfill({ json: { kind: 'saved', draftVersion: '2' } });
   });
-  await page.goto(server.base + '/admin/products/111/config');
+  await page.goto(server.base + '/admin/products/111/config?view=all');
   await page.getByLabel('Print area', { exact: true }).selectOption('placement_opaque');
   await page.getByRole('checkbox', { name: 'Screen print', exact: true }).waitFor({ timeout: 1500 });
   assert.equal(await page.getByRole('checkbox', { name: 'Method 2', exact: true }).isChecked(), true);
@@ -2544,7 +2543,7 @@ test('colliding choice names identify the intended method, size step and option 
         saved = route.request().postDataJSON();
         return route.fulfill({ json: { kind: 'saved', draftVersion: '2' } });
       });
-      await page.goto(server.base + '/admin/products/111/config');
+      await page.goto(server.base + '/admin/products/111/config?view=all');
       await page
         .getByLabel(`${expectedMethods[0]} / Front / Small (size step 1) — surcharge (USD)`, { exact: true })
         .waitFor({ timeout: 1500 });
@@ -2607,7 +2606,7 @@ test('compound size-step names remain distinguishable and save the intended plac
     saved = route.request().postDataJSON();
     return route.fulfill({ json: { kind: 'saved', draftVersion: '2' } });
   });
-  await page.goto(server.base + '/admin/products/111/config');
+  await page.goto(server.base + '/admin/products/111/config?view=all');
   const prices = page.getByRole('textbox', { name: /price choice [12]\) — surcharge \(USD\)$/ });
   await prices.first().waitFor({ timeout: 1500 });
   assert.equal(await prices.count(), 2);
@@ -2658,7 +2657,7 @@ test('Lean price table keeps blank unavailable, saves explicit zero and exact fi
     saved = route.request().postDataJSON();
     return route.fulfill({ json: { kind: 'saved', draftVersion: '2' } });
   });
-  await page.goto(server.base + '/admin/products/111/config');
+  await page.goto(server.base + '/admin/products/111/config?view=all');
   const small = page.getByLabel('Print / Front / Small — surcharge (USD)', { exact: true });
   await small.waitFor({ timeout: 1500 });
   assert.equal(await small.inputValue(), '');
@@ -2706,7 +2705,7 @@ test('editor guides configuration through prices to publication while keeping di
     functionReadiness: 'RELEASE_BOUND',
   };
   await page.route('**/api/admin/products/111/config', (route) => route.fulfill({ json: current }));
-  await page.goto(server.base + '/admin/products/111/config');
+  await page.goto(server.base + '/admin/products/111/config?view=all');
   await page.getByText('All changes saved', { exact: true }).waitFor();
   const prices = page.getByRole('link', { name: '3. Prices', exact: true });
   await prices.waitFor({ timeout: 2000 });
@@ -2747,7 +2746,7 @@ test('editor keeps the live preview beside settings on desktop and fits mobile w
   );
   await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
   await page.route('**/api/admin/products/111/config', (route) => route.fulfill({ json: response(draft()) }));
-  await page.goto(server.base + '/admin/products/111/config');
+  await page.goto(server.base + '/admin/products/111/config?view=all');
   const preview = page.getByRole('img', { name: 'Product placement preview', exact: true });
   await page.getByText('All changes saved', { exact: true }).waitFor();
   await preview.waitFor();
@@ -2773,4 +2772,273 @@ test('editor keeps the live preview beside settings on desktop and fits mobile w
   await page.setViewportSize({ width: 1440, height: 1000 });
   if (process.env.M5_CAPTURE_BROWSER === '1')
     await page.screenshot({ path: '/tmp/insignia-admin-editor-layout-desktop.png', fullPage: true });
+});
+
+test('configuration loading reserves space with an accessible skeleton until authenticated data arrives', {
+  timeout: 15000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  const page = await browser.newPage();
+  await page.addInitScript(() => {
+    window.shopify = { idToken: async () => 'synthetic-skeleton' };
+  });
+  await routePolaris(page, source);
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
+  let release;
+  const pending = new Promise((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/admin/products/111/config', async (r) => {
+    await pending;
+    return r.fulfill({ json: response(draft()) });
+  });
+  await page.goto(server.base + '/admin/products/111/config');
+  const skeleton = page.getByRole('status', { name: 'Loading product configuration' });
+  await skeleton.waitFor({ timeout: 2000 });
+  assert.ok((await skeleton.boundingBox()).height > 200, 'reserve the form area during loading');
+  assert.equal(await page.getByRole('button', { name: 'Save draft', exact: true }).count(), 0);
+  release();
+  await page.getByText('All changes saved', { exact: true }).waitFor();
+  assert.equal(await skeleton.count(), 0);
+});
+
+test('guided product setup shows one stage at a time and keeps unsaved choices without writes', {
+  timeout: 20000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  const page = await browser.newPage();
+  page.setDefaultTimeout(3000);
+  await page.addInitScript(() => {
+    window.shopify = { idToken: async () => 'synthetic-guided-setup' };
+  });
+  await routePolaris(page, source);
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
+  let writes = 0;
+  await page.route('**/api/admin/products/111/config', (r) => {
+    if (r.request().method() !== 'GET') writes++;
+    return r.fulfill({ json: response(draft()) });
+  });
+  await page.goto(server.base + '/admin/products/111/config');
+  await page.getByText('Step 1 of 4 · Product rules', { exact: true }).waitFor();
+  assert.equal(await page.getByLabel('Method name').isVisible(), true);
+  assert.equal(await page.getByLabel('View name').isVisible(), false);
+  await page.getByLabel('Method name').fill('Embroidery');
+  await page.getByRole('button', { name: 'Continue to images and print areas', exact: true }).click();
+  await page.getByText('Step 2 of 4 · Images and print areas', { exact: true }).waitFor();
+  assert.equal(await page.getByLabel('Method name').isVisible(), false);
+  assert.equal(await page.getByLabel('View name').isVisible(), true);
+  await page.getByRole('button', { name: 'Continue to prices', exact: true }).click();
+  await page.getByLabel('Embroidery / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).fill('2.50');
+  await page.getByRole('button', { name: 'Continue to review', exact: true }).click();
+  await page.getByText('Step 4 of 4 · Review and publish', { exact: true }).waitFor();
+  if (process.env.M5_CAPTURE_BROWSER === '1')
+    await page.screenshot({ path: '/tmp/insignia-guided-review.png', fullPage: true });
+  await page.getByRole('button', { name: 'Back to prices', exact: true }).click();
+  assert.equal(
+    await page.getByLabel('Embroidery / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).inputValue(),
+    '2.50',
+  );
+  assert.equal(writes, 0, 'step navigation never saves or publishes implicitly');
+  await page.getByRole('button', { name: 'View all settings', exact: true }).click();
+  assert.equal(await page.getByLabel('Method name').isVisible(), true);
+  assert.equal(await page.getByLabel('View name').isVisible(), true);
+  await page.goBack();
+  await page.getByText('Step 3 of 4 · Prices', { exact: true }).waitFor();
+  assert.equal(await page.getByLabel('Method name').isVisible(), false);
+  await page.getByRole('link', { name: '1. Product rules', exact: true }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  if (process.env.M5_CAPTURE_BROWSER === '1')
+    await page.screenshot({ path: '/tmp/insignia-guided-mobile.png', fullPage: true });
+});
+
+test('settings method library saves reusable names and editor imports an independent unsaved copy', {
+  timeout: 20000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  const page = await browser.newPage();
+  page.setDefaultTimeout(2500);
+  await page.addInitScript(() => {
+    window.shopify = { idToken: async () => 'synthetic-library' };
+  });
+  await routePolaris(page, source);
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
+  const methods = [];
+  let writes = 0;
+  await page.route('**/api/admin/methods', async (r) => {
+    assert.equal(r.request().headers().authorization, 'Bearer synthetic-library');
+    if (r.request().method() === 'POST') {
+      assert.ok(r.request().headers()['idempotency-key']);
+      methods.push({ id: '52915e17-8104-4ef2-beb8-e99efc2914ec', name: r.request().postDataJSON().name, version: '1' });
+      return r.fulfill({ status: 201, json: { kind: 'created', method: methods[0] } });
+    }
+    return r.fulfill({ json: { methods } });
+  });
+  await page.route('**/api/admin/products/111/config', (r) => {
+    if (r.request().method() !== 'GET') writes++;
+    return r.fulfill({ json: response(draft()) });
+  });
+  await page.goto(server.base + '/admin/settings/methods');
+  await page.getByLabel('New method name', { exact: true }).fill('Embroidery');
+  await page.getByRole('button', { name: 'Add to library', exact: true }).click();
+  await page.getByLabel('Library method name', { exact: true }).waitFor();
+  await page.goto(server.base + '/admin/products/111/config');
+  await page.getByRole('button', { name: 'Choose from library', exact: true }).click();
+  await page.getByLabel('Library method', { exact: true }).selectOption(methods[0].id);
+  await page.getByRole('button', { name: 'Add selected method', exact: true }).click();
+  assert.equal(await page.getByLabel('Method name', { exact: true }).nth(1).inputValue(), 'Embroidery');
+  await page.getByText('Unsaved changes', { exact: true }).waitFor();
+  methods[0].name = 'Later library name';
+  assert.equal(await page.getByLabel('Method name', { exact: true }).nth(1).inputValue(), 'Embroidery');
+  assert.equal(writes, 0, 'import only changes the local draft');
+});
+
+test('settings owns billing and privacy and storefront guidance opens exact unsaved Shopify theme links', {
+  timeout: 15000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  for (const section of ['billing', 'privacy']) {
+    const response = await fetch(server.base + '/admin/' + section + '?host=synthetic', { redirect: 'manual' });
+    assert.equal(response.status, 302);
+    assert.equal(response.headers.get('location'), '/admin/settings/' + section + '?host=synthetic');
+    assert.equal(response.headers.get('cache-control'), 'private, no-store');
+  }
+  const page = await browser.newPage();
+  await page.addInitScript(() => {
+    window.shopify = { config: { shop: 'example.myshopify.com' }, idToken: async () => 'synthetic-theme-guidance' };
+  });
+  await routePolaris(page, source);
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
+  const requests = [];
+  page.on('request', (r) => {
+    if (new URL(r.url()).pathname.startsWith('/api/')) requests.push(r.method());
+  });
+  await page.goto(server.base + '/admin/settings/storefront');
+  const navigation = page.getByRole('navigation', { name: 'Settings sections' });
+  for (const title of ['General', 'Decoration methods', 'Storefront setup', 'Billing', 'Privacy'])
+    assert.equal(await navigation.getByRole('link', { name: title, exact: true }).count(), 1);
+  const button = page.locator('s-button').filter({ hasText: 'Add customization button' });
+  await button.waitFor();
+  const link = new URL(await button.getAttribute('href'));
+  assert.equal(link.origin, 'https://example.myshopify.com');
+  assert.equal(link.pathname, '/admin/themes/current/editor');
+  assert.deepEqual(Object.fromEntries(link.searchParams), {
+    template: 'product',
+    addAppBlockId: '11111111111111111111111111111111/customize',
+    target: 'mainSection',
+  });
+  const repair = new URL(
+    await page.locator('s-button').filter({ hasText: 'Set up cart repair embed' }).getAttribute('href'),
+  );
+  assert.deepEqual(Object.fromEntries(repair.searchParams), {
+    context: 'apps',
+    template: 'product',
+    activateAppId: '11111111111111111111111111111111/cart-repair',
+  });
+  assert.deepEqual(requests, [], 'guidance does not mutate or inspect themes');
+});
+
+test('method library fences authorization loss and reconciles a lost create response without duplicate rows', {
+  timeout: 20000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  const page = await browser.newPage();
+  page.setDefaultTimeout(2000);
+  await page.addInitScript(() => {
+    window.shopify = { idToken: async () => 'synthetic-method-fence' };
+  });
+  await routePolaris(page, source);
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
+  let saved = null,
+    first = true,
+    denied = false;
+  const keys = [];
+  await page.route('**/api/admin/methods', (r) => {
+    if (denied) return r.fulfill({ status: 403, json: { error: 'Current authorization required' } });
+    if (r.request().method() === 'GET') return r.fulfill({ json: { methods: saved ? [saved] : [] } });
+    keys.push(r.request().headers()['idempotency-key']);
+    saved = { id: '52915e17-8104-4ef2-beb8-e99efc2914ec', name: 'Embroidery', version: '1' };
+    if (first) {
+      first = false;
+      return r.abort('failed');
+    }
+    return r.fulfill({ status: 201, json: { kind: 'created', method: saved } });
+  });
+  await page.goto(server.base + '/admin/settings/methods');
+  await page.getByLabel('New method name', { exact: true }).fill('Embroidery');
+  await page.getByRole('button', { name: 'Add to library', exact: true }).click();
+  const retry = page.getByRole('button', { name: 'Retry last change', exact: true });
+  await retry.waitFor();
+  assert.equal(await page.getByRole('button', { name: 'Add to library', exact: true }).isEnabled(), false);
+  await page.getByRole('button', { name: 'Refresh library', exact: true }).click();
+  await page.getByLabel('Library method name', { exact: true }).waitFor();
+  await retry.click();
+  await page.getByText('Library saved. Existing products are unchanged.', { exact: true }).waitFor();
+  assert.equal(await page.getByLabel('Library method name', { exact: true }).count(), 1);
+  assert.equal(keys.length, 2);
+  assert.equal(keys[0], keys[1]);
+  denied = true;
+  await page.getByRole('button', { name: 'Refresh library', exact: true }).click();
+  await page.locator('s-banner').filter({ hasText: 'Current authorization required' }).waitFor();
+  assert.equal(await page.getByLabel('Library method name', { exact: true }).count(), 0);
+  assert.equal(await page.getByLabel('New method name', { exact: true }).count(), 0);
+});
+
+test('editor library requests share authorization clearing and discard pre-denial responses', {
+  timeout: 20000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  const page = await browser.newPage();
+  page.setDefaultTimeout(2500);
+  await page.addInitScript(() => {
+    window.shopify = { idToken: async () => 'synthetic-library-epoch' };
+  });
+  await routePolaris(page, source);
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
+  await page.route('**/api/admin/products/111/config', (r) =>
+    r.request().method() === 'GET'
+      ? r.fulfill({ json: response(draft()) })
+      : r.fulfill({ status: 403, json: { error: 'Current authorization required' } }),
+  );
+  let release;
+  const pending = new Promise((resolve) => {
+    release = resolve;
+  });
+  let started;
+  const requested = new Promise((resolve) => {
+    started = resolve;
+  });
+  let deny = false;
+  await page.route('**/api/admin/methods', async (r) => {
+    if (deny) return r.fulfill({ status: 403, json: { error: 'Library authorization denied' } });
+    started();
+    await pending;
+    return r.fulfill({
+      json: { methods: [{ id: '52915e17-8104-4ef2-beb8-e99efc2914ec', name: 'Stale private method', version: '1' }] },
+    });
+  });
+  try {
+    await page.goto(server.base + '/admin/products/111/config');
+    await page.getByRole('button', { name: 'Choose from library', exact: true }).click();
+    await requested;
+    await page.getByLabel('Method name', { exact: true }).fill('Local change');
+    await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+    await page.getByRole('button', { name: 'Retry session', exact: true }).waitFor();
+    assert.equal(await page.getByLabel('Method name', { exact: true }).count(), 0);
+    await page.getByRole('button', { name: 'Retry session', exact: true }).click();
+    await page.getByText('All changes saved', { exact: true }).waitFor();
+    release();
+    await page.waitForTimeout(100);
+    assert.equal(
+      await page.getByLabel('Library method', { exact: true }).count(),
+      0,
+      'late library data cannot enter the new authorization epoch',
+    );
+    deny = true;
+    await page.getByRole('button', { name: 'Choose from library', exact: true }).click();
+    await page.getByText('Library authorization denied', { exact: true }).waitFor();
+    assert.equal(await page.getByRole('button', { name: 'Save draft', exact: true }).count(), 0);
+  } finally {
+    release();
+  }
 });

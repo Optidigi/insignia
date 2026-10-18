@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
+import AdminSkeleton from '../components/AdminSkeleton';
+import SettingsNavigation from '../components/SettingsNavigation';
 import { authenticatedJson } from '../shared/admin-request.js';
 
 type RequestView = {
@@ -23,6 +25,7 @@ export default function MerchantPrivacy() {
   const [requests, setRequests] = useState<RequestView[]>([]);
   const [manifest, setManifest] = useState<Manifest | null>(null);
   const [designExports, setDesignExports] = useState<{ purchaseId: string; setId: string }[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   async function run(operation: () => Promise<void>) {
@@ -34,6 +37,7 @@ export default function MerchantPrivacy() {
     } catch {
       setError(true);
     } finally {
+      setLoaded(true);
       setBusy(false);
     }
   }
@@ -44,6 +48,10 @@ export default function MerchantPrivacy() {
   }, []);
   return (
     <s-page heading="Customer privacy requests">
+      <s-link slot="breadcrumb-actions" href="/admin/settings">
+        Settings
+      </s-link>
+      <SettingsNavigation current="privacy" />
       <s-section heading="Provide requested customer data">
         <s-button
           disabled={busy}
@@ -62,9 +70,9 @@ export default function MerchantPrivacy() {
           through your store’s privacy process. Downloading here does not confirm delivery to the customer.
         </p>
         <p>Exports use currently retained records. Erased or expired artwork stays unavailable.</p>
-        {busy && <p role="status">Loading privacy records…</p>}
+        {(!loaded || (busy && !requests.length)) && <AdminSkeleton label="Loading privacy requests" />}
         {error && <p role="alert">Privacy records could not be loaded. Try again.</p>}
-        {!busy && !requests.length && <p>No data requests are currently available.</p>}
+        {loaded && !busy && !error && !requests.length && <p>No data requests are currently available.</p>}
         {requests.map((request) => (
           <p key={request.inboxId}>
             Request {request.requestId} · {request.requestedOrderCount} requested orders · Due{' '}
