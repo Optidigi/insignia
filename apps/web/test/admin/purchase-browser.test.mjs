@@ -105,7 +105,10 @@ test('merchant sees exact historical economics and erased detail never offers ne
   const shell = await fetch(base + '/admin/orders/' + id);
   assert.equal(shell.status, 200);
   assert.equal(shell.headers.get('cache-control'), 'private, no-store');
-  assert.match(shell.headers.get('content-security-policy'), /connect-src 'self' https:\/\/private\.example;/);
+  assert.match(
+    shell.headers.get('content-security-policy'),
+    /connect-src 'self' https:\/\/cdn\.shopify\.com\/shopifycloud\/admin-ui-foundations\/icons\/ https:\/\/private\.example;/,
+  );
   assert.equal((await shell.text()).includes('9007199254740993'), false, 'SSR does not load private order economics');
   let current = view();
   await page.route('**/api/purchases/v1/' + id, (r) => {
@@ -115,9 +118,9 @@ test('merchant sees exact historical economics and erased detail never offers ne
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(base + '/admin/orders/' + id);
   await page.getByText('USD 90071992547409.93', { exact: true }).waitFor();
-  const navigation = page.getByRole('navigation', { name: 'Insignia' });
+  const navigation = page.locator('s-app-nav');
   await navigation.getByRole('link', { name: 'Products', exact: true }).waitFor();
-  await navigation.getByRole('link', { name: 'Orders and artwork', exact: true }).waitFor();
+  await navigation.getByRole('link', { name: 'Orders', exact: true }).waitFor();
   assert.equal(
     await navigation.getByRole('link', { name: 'Billing', exact: true }).getAttribute('href'),
     '/admin/billing',
@@ -208,10 +211,10 @@ test('merchant attaches verified upload, locks exact version, and permission los
     .setInputFiles({ name: 'safe.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg/>') });
   await page.getByRole('img', { name: 'Verified artwork preview', exact: true }).waitFor();
   await page.getByRole('button', { name: 'Attach artwork', exact: true }).click();
-  await page.getByText('Artwork state: READY', { exact: true }).waitFor();
+  await page.getByText('Artwork status: Artwork complete', { exact: true }).waitFor();
   assert.deepEqual(attachment, { expectedVersion: 0, groupIndex: 0, placementId: 'front', assetId: asset });
   await page.getByRole('button', { name: 'Lock artwork', exact: true }).click();
-  await page.getByText('Artwork state: ARTWORK_LOCKED', { exact: true }).waitFor();
+  await page.getByText('Artwork status: Artwork locked', { exact: true }).waitFor();
   assert.equal(await page.getByLabel('Upload artwork').count(), 0);
   await page.getByRole('button', { name: 'Prepare original download', exact: true }).click();
   await page.getByRole('link', { name: 'Download verified original', exact: true }).waitFor();
@@ -241,11 +244,11 @@ test('stale lock stays READY and asks refresh without optimistic lock or fulfill
     return r.fulfill({ status: 409, json: { error: 'CONFLICT' } });
   });
   await page.goto(base + '/admin/orders/' + id);
-  await page.getByText('Artwork state: READY', { exact: true }).waitFor();
+  await page.getByText('Artwork status: Artwork complete', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Lock artwork', exact: true }).click();
   await page.getByText('Artwork changed. Refresh the purchase before continuing.', { exact: true }).waitFor();
   assert.equal(calls, 1);
-  assert.equal(await page.getByText('Artwork state: READY', { exact: true }).count(), 1);
+  assert.equal(await page.getByText('Artwork status: Artwork complete', { exact: true }).count(), 1);
   assert.equal(await page.getByRole('button', { name: /fulfill|refund|unlock/i }).count(), 0);
 });
 test('erased selected artwork permits explicit replacement only while bound design detail remains and is unlocked', {
@@ -281,7 +284,7 @@ test('erased selected artwork permits explicit replacement only while bound desi
     .getByText('Selected artwork unavailable; explicitly replace within remaining detail retention.', { exact: true })
     .waitFor();
   assert.equal(await page.getByLabel('Upload artwork').count(), 1);
-  assert.equal(await page.getByRole('button', { name: 'View safe preview', exact: true }).count(), 0);
+  assert.equal(await page.getByRole('button', { name: 'Preview artwork', exact: true }).count(), 0);
   current = {
     ...current,
     artworkEvents: [
@@ -305,13 +308,13 @@ test('erased selected artwork permits explicit replacement only while bound desi
   current = { ...view(), groups: [], lines: [], exceptions: ['CONTEXT_UNVERIFIED'] };
   await page.getByRole('button', { name: 'Refresh purchase', exact: true }).click();
   await page
-    .getByText('Customization binding requires reconciliation. No production authorization is established.', {
+    .getByText('Order customization needs verification. Do not begin production until its details have been checked.', {
       exact: true,
     })
     .waitFor();
   assert.equal(await page.getByLabel('Upload artwork').count(), 0);
   assert.equal(await page.getByRole('button', { name: 'Lock artwork', exact: true }).count(), 0);
-  assert.equal(await page.getByText('Artwork state: PENDING_ARTWORK', { exact: true }).count(), 0);
+  assert.equal(await page.getByText('Artwork status: Artwork needed', { exact: true }).count(), 0);
 });
 test('retention readback clears a displayed selected preview even when artwork version is unchanged', {
   timeout: 15000,
@@ -336,7 +339,7 @@ test('retention readback clears a displayed selected preview even when artwork v
   await page.goto(base + '/admin/orders/' + id);
   await page.getByRole('button', { name: 'Prepare original download', exact: true }).click();
   await page.getByRole('link', { name: 'Download verified original', exact: true }).waitFor();
-  await page.getByRole('button', { name: 'View safe preview', exact: true }).click();
+  await page.getByRole('button', { name: 'Preview artwork', exact: true }).click();
   await page.getByRole('img', { name: 'Verified PNG front', exact: true }).waitFor();
   await page.evaluate(() => {
     window.erasurePrivacyGap = false;
@@ -418,7 +421,7 @@ test('merchant requests independent reconciliation without claiming current fact
   });
   await page.goto(base + '/admin/orders/' + id);
   await page.getByText('USD 90071992547409.93', { exact: true }).waitFor();
-  await page.getByRole('button', { name: 'Request reconciliation', exact: true }).click();
+  await page.getByRole('button', { name: 'Check order updates in Shopify', exact: true }).click();
   await page
     .getByText('Reconciliation requested. Refresh later for independently read Shopify facts.', { exact: true })
     .waitFor();

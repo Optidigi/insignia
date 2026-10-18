@@ -8,13 +8,19 @@ import {
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { authenticatedJson } from '../shared/admin-request';
 import { exactPurchaseMoney } from '../shared/purchase-view';
-import AdminNavigation from './AdminNavigation';
 import ArtworkUpload from './ArtworkUpload';
 import PurchaseHistoricalPreview from './PurchaseHistoricalPreview';
 
 function recordDate(value: string) {
   return `${new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }).format(new Date(value))} UTC`;
 }
+const artworkLabel = (state: PurchaseView['artworkState']): string =>
+  ({
+    PENDING_ARTWORK: 'Artwork needed',
+    READY: 'Artwork complete',
+    ARTWORK_LOCKED: 'Artwork locked',
+    ERASED: 'Artwork no longer retained',
+  })[state];
 const endpoint = (id: string) => `/api/purchases/v1/${encodeURIComponent(id)}`;
 function HistoricalOriginal({
   purchaseId,
@@ -63,7 +69,7 @@ function HistoricalOriginal({
     <span>
       {' '}
       <s-button type="button" disabled={busy} onClick={() => void download()}>
-        Prepare historical original
+        Get original uploaded file
       </s-button>
       {link && Date.parse(link.expiresAt) > Date.now() && (
         <a href={link.url} target="_blank" rel="noopener noreferrer">
@@ -228,7 +234,7 @@ function Placement({
         )}
       {placement.currentExpiresAt && (
         <p>
-          Original collection deadline:{' '}
+          Artwork available until:{' '}
           <time dateTime={placement.currentExpiresAt}>{recordDate(placement.currentExpiresAt)}</time>.{' '}
           {retentionExpired
             ? 'Artwork expired.'
@@ -242,7 +248,7 @@ function Placement({
       {assetUsable && !retentionExpired && (
         <>
           <s-button type="button" disabled={busy || disabled} onClick={() => void access('preview')}>
-            View safe preview
+            Preview artwork
           </s-button>
           <s-button type="button" disabled={busy || disabled} onClick={() => void access('download')}>
             Prepare original download
@@ -364,7 +370,11 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
   }
   return (
     <s-page heading="Orders and artwork">
-      <AdminNavigation current="orders" />
+      {purchaseId && (
+        <s-button slot="breadcrumb-actions" href="/admin/orders" icon="arrow-left">
+          Orders
+        </s-button>
+      )}
       {message && (
         <p class="admin-status" role="status" aria-live="polite">
           {message}
@@ -386,7 +396,7 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
           {items.map((item) => (
             <p key={item.purchaseId}>
               <a href={`/admin/orders/${item.purchaseId}`}>{item.orderId}</a> ·{' '}
-              {item.lines.length ? item.artworkState : 'Binding requires reconciliation'} ·{' '}
+              {item.lines.length ? artworkLabel(item.artworkState) : 'Order customization needs verification'} ·{' '}
               {exactPurchaseMoney(item.originalTotalMinor, item.exponent, item.currency)}
             </p>
           ))}
@@ -428,7 +438,7 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
               </p>
             ))}
             <s-button type="button" disabled={busy} onClick={() => void command('reconcile')}>
-              Request reconciliation
+              Check order updates in Shopify
             </s-button>
           </s-section>
           <s-section heading="Purchased variants">
@@ -440,9 +450,11 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
             ))}
           </s-section>
           <s-section heading="Artwork and customization">
-            {purchase.lines.length > 0 && <p>Artwork state: {purchase.artworkState}</p>}
+            {purchase.lines.length > 0 && <p>Artwork status: {artworkLabel(purchase.artworkState)}</p>}
             {purchase.lines.length === 0 ? (
-              <p>Customization binding requires reconciliation. No production authorization is established.</p>
+              <p>
+                Order customization needs verification. Do not begin production until its details have been checked.
+              </p>
             ) : purchase.artworkState === 'ERASED' &&
               !purchase.groups.some((group) => Date.parse(group.payloadExpiresAt) > Date.now()) ? (
               <p>Production detail erased. Historical economics remain.</p>
