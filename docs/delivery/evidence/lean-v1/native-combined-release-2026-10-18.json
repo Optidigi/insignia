@@ -2,7 +2,7 @@
   "classification": "NATIVE_EXACT_CI_RUNTIME_IMMUTABLE_VERIFIER_AND_RECONCILED_COMBINED_RELEASE_PASS",
   "date": "2026-10-18",
   "authority": "../../authority/combined-theme-webhook-release-2026-10-17.json",
-  "scope": "Existing designated development app only; owner uninstall-generation/subsequent-shop-erasure operator hold retained",
+  "scope": "App-wide release of the existing designated development app; one independently observed development installation; owner uninstall-generation/subsequent-shop-erasure operator hold retained",
   "integration": {
     "classification": "VERIFIED_NORMAL_MERGE",
     "merge": "c455b8e45c6b7cd23148aee85485d6dad2857c12",
@@ -198,9 +198,9 @@
     "httpMutationAttempts": 1,
     "mutationRetries": 0,
     "creationInvocations": 0,
-    "publicationMutations": 0,
     "allocation": "One combined release consumed; no additional release or version creation allocated",
-    "causeOfMissingSdkAcknowledgment": "UNKNOWN; no response object returned or archived; do not relabel as ACK"
+    "causeOfMissingSdkAcknowledgment": "UNKNOWN; no response object returned or archived; do not relabel as ACK",
+    "productPublishUnpublishMutations": 0
   },
   "nativeTrustedRelease": {
     "classification": "ONE_FRESH_COLLECTION_AND_INDEPENDENT_ACTUAL_WEB_WORKER_AGREEMENT_PASS",
