@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-18",
+  "classification": "ADMIN_POLARIS_WORKFLOW_SOURCE_QUALIFIED_NATIVE_DEPLOYMENT_PENDING",
+  "scope": "Owner asks autonomous continuation with Polaris enforcement, useful tables, editor flow, settings and logical action placement.",
+  "base": "2823c94e0b8b7a43454efaea4c27d8de9e61fef8",
+  "changes": [
+    "Shared Shopify sidebar adds Settings. Settings owns explicit readiness/permission checks and links current Billing, Privacy and product configuration; no new global product defaults or inferred provider settings.",
+    "Product catalog and decoration-price matrix use pinned Polaris responsive tables; ordinary merchant entry controls are guarded by CI boundary check with negative control. Native file input and specialized canvas remain in shared components.",
+    "Editor has setup navigation, visible primary Save draft, saved/unsaved feedback, review/publish instructions and separate technical publication disclosure. Draft/copy/publication authorization and generation fences remain.",
+    "Copy saved configuration selects a destination through existing authenticated catalog search; no numeric ID entry. Destination must differ, be selected from current results and still pass unchanged server-side ownership/existing-configuration checks.",
+    "Orders use responsive Polaris table with artwork-status triage explicitly restricted to loaded records, exact money and original purchase routes. Raw order GID prefixes and prominent revision IDs are removed from ordinary labels; support references remain available."
+  ],
+  "tests": {
+    "webBuild": "PASS: astro check/build, zero errors/warnings/hints",
+    "editorBroadRegression": {
+      "pass": 39,
+      "fail": 1,
+      "failure": "Old HTML table locator no longer scoped Polaris slotted inputs. Initial grid descendant locator also failed; accessible named price controls replace the container-coupled lookup. Exact compound-choice save assertions unchanged."
+    },
+    "correctedCompoundChoiceRegression": "PASS,1 test on final implementation",
+    "focusedWorkflowCatalog": "PASS,2 tests on final implementation; compound locator failure preserved separately",
+    "focusedPermissionCopyAndEditor": "PASS,7 prior focused cases; final wording/thumbnail changes reviewed and focused workflow rerun",
+    "purchaseBillingPrivacy": "PASS,15 browser cases including retention/auth/attachment/lock/historical-preview and loaded-order filter",
+    "boundaries": "PASS,including native-control negative guard",
+    "secrets": "PASS",
+    "style": "PASS with existing repository warnings/informational diagnostics",
+    "preservedEarlierFailures": [
+      "Initial expected RED: missing catalog table, Settings navigation, guided editor links, destination search and readable order link.",
+      "Early broad run exposed hidden primary-action slot under synthetic App Bridge; Save remains in visible Polaris page content.",
+      "A local test invocation overlapped an unfinished build and found no entry artifact; corrected after build completion, no success inferred from that run."
+    ]
+  },
+  "review": {
+    "session": "/root/admin_workflow_review",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "correctnessSecurity": "CLEAR",
+    "standards": "CLEAR",
+    "impact": "CLEAR for publication copy/thumbnail/grid test change; subsequent final locator uses the same independently expected price labels and save payload",
+    "boundary": "Read-only instructions only; no OS/network isolation claim"
+  },
+  "limits": [
+    "No native deployment or native save/publication/copy/checkout repetition in this source slice; existing native receipt describes prior build only.",
+    "Browser checks use actual pinned Polaris runtime with synthetic App Bridge and external HTTP fixtures; native sidebar, icons, staff grant and provider evidence remain separate.",
+    "Editor still uses a continuous form with setup navigation. Continue staged layout/action clarity, representative native/mobile inspection and remaining admin UX after integration.",
+    "Order labels use existing Shopify numeric order identity, not an invented human order number; missing catalog names in historical records remain an explicit presentation limit.",
+    "Monitoring, delivery/outage qualification, recovery/storage/privacy and20October cleanup/rotation continue. No rollout."
+  ],
+  "references": {
+    "polarisTable": "https://shopify.dev/docs/api/app-home/latest/web-components/layout-and-structure/table",
+    "pinnedRuntime": "polaris-1.1; existing snapshot SHA912455ad068713e7595f5a506fb7433a078554c327cf0fd30ce86ccb214818fe"
+  },
+  "finalCi": "PENDING; qualify exact candidate before normal integration"
+}

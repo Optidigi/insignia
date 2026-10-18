@@ -722,3 +722,31 @@ test('displayed historical artwork clears at its real preview expiry and refresh
   await page.getByText('Historical purchased artwork preview.', { exact: true }).waitFor();
   assert.equal(lookups, 2);
 });
+
+test('orders table supports artwork triage on the loaded page and opens the exact purchase', {
+  timeout: 20000,
+}, async (t) => {
+  const { page, base } = await fixture(t);
+  const readyId = 'ae39ae2a-8a58-4d3a-ae40-42dcdf0e91c7';
+  await page.route('**/api/purchases/v1', (route) =>
+    route.fulfill({
+      json: {
+        version: 'm8-purchase-list-v1',
+        items: [view(), { ...view('READY'), purchaseId: readyId, orderId: 'gid://shopify/Order/2' }],
+        nextCursor: null,
+      },
+    }),
+  );
+  await page.goto(base + '/admin/orders');
+  const first = page.getByRole('link', { name: 'Order 1', exact: true });
+  await first.waitFor();
+  assert.equal(await first.getAttribute('href'), '/admin/orders/' + id);
+  await page.getByRole('combobox', { name: 'Artwork status', exact: true }).selectOption('PENDING_ARTWORK');
+  assert.equal(await page.getByRole('link', { name: 'Order 2', exact: true }).count(), 0);
+  await page.getByText('1 of 2 loaded orders', { exact: true }).waitFor();
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.ok(await first.isVisible());
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  await page.getByRole('combobox', { name: 'Artwork status', exact: true }).selectOption('all');
+  await page.getByRole('link', { name: 'Order 2', exact: true }).waitFor();
+});
