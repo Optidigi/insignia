@@ -35,5 +35,25 @@
   ],
   "research": "../../notes/admin-polaris-ux-2026-10-18.md",
   "native": "Not yet deployed. Existing PR202 native image/schema41 remains current; no migration, provider/product/theme mutation or merchant rollout in this source slice. Native web-only qualification follows exact-head CI/normal integration.",
-  "continuation": "Merge under delegated authority after final exact-head CI, deploy exact CI web image within existing bounded dev grant and verify native routes read-only. Preserve other services, schema41, intentional missing usage migration, immutable facts and cleanup/custody obligations."
+  "continuation": "Merge under delegated authority after final exact-head CI, deploy exact CI web image within existing bounded dev grant and verify native routes read-only. Preserve other services, schema41, intentional missing usage migration, immutable facts and cleanup/custody obligations.",
+  "ciCorrection": {
+    "failedHead": "ef666bee86cfc6f0ee1f8e8e6788dba2c44f4f54",
+    "failedAttempt1": {
+      "foundation": 39138620190,
+      "durable-core": 39138620160,
+      "runtime": 39138620256
+    },
+    "cause": "All three failed workspace storefront TypeScript build. GuestArtworkUpload reused ArtworkUpload; converting merchant shared view to Polaris pulled merchant components into storefront, whose runtime/types intentionally exclude Polaris. Earlier local web-only build and admin regressions did not cover this dependency.",
+    "localRed": "corepack pnpm --filter @insignia/storefront build reproduced missing Polaris JSX definitions.",
+    "correction": "Extract exact existing upload/lease lifecycle into useArtworkUpload; merchant keeps Polaris controls, storefront consumes the same hook through native controls. No Polaris runtime/types added to storefront and no lifecycle behavior duplicated. Guest PNG explicitly omits referrer.",
+    "qualification": {
+      "fullWorkspaceBuild": "PASS all packages/apps",
+      "storefront": "48PASS/2SKIP/0FAIL; skips are PostgreSQL+signing purchase and actual production Function vector environment checks, not runtime upload checks",
+      "uploads": "4PASS/0FAIL; actual merchant Polaris upload/attach/download, bounded private PNG and expiry/pending recovery",
+      "review": "Independent /root/polaris_completion_review CLEAR both axes; lifecycle body comparison exactly unchanged; native storefront no-Polaris browser assertion added",
+      "finalCI": "Pending corrected head",
+      "guards": "Boundaries PASS including actual negative probes and domain-effects18; secrets PASS; style PASS after running sequentially after temporary boundary probes (a concurrent style run correctly rejected the transient probe fixture)."
+    },
+    "native": "Unchanged PR202 image; no new deployment or provider effects."
+  }
 }

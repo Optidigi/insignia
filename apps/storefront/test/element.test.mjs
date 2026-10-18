@@ -119,6 +119,13 @@ test('guest artwork selection event survives derivative renewal and carries no p
       document.body.append(host);
     });
     const host = page.locator('insignia-artwork-upload');
+    await host.locator('input[type=file]').waitFor();
+    assert.equal(
+      await host.locator('s-drop-zone,s-button,s-image').count(),
+      0,
+      'storefront upload is usable without the merchant Polaris runtime',
+    );
+    assert.equal(await page.evaluate(() => !!customElements.get('s-drop-zone')), false);
     await host
       .locator('input[type=file]')
       .setInputFiles({ name: 'logo.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg/>') });
