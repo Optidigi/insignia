@@ -2688,6 +2688,7 @@ test('Lean price table keeps blank unavailable, saves explicit zero and exact fi
     return route.fulfill({ json: { kind: 'saved', draftVersion: '2' } });
   });
   await page.goto(server.base + '/admin/products/111/config?view=all');
+  await page.getByText('Draft version 1', { exact: false }).waitFor();
   const small = page.getByLabel('Print / Front / Small — surcharge (USD)', { exact: true });
   await small.waitFor({ timeout: 1500 });
   assert.equal(await small.inputValue(), '');
