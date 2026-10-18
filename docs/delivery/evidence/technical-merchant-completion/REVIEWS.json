@@ -56,8 +56,65 @@
     "scripts/privacy/restore-exclusions.mjs": "672e38417c8c083e6212279f0f17cc62027fce45d8e86318b89ee5bcc67232ac",
     "scripts/operations/heartbeat-snapshot.mjs": "007a76655a279aa88864da5c9987cab1b5267c990ec676e2e9a3e9ea1cdeef7e",
     "deployment/alerts/monitor-grants.sql": "4725db2413bd02c9647ed7878af833f2dabf7ae974f9fa242f43b0e5b6897d6b",
-    "packages/database/test/web-runtime-grants.test.ts": "ea0e0d33673e57b06c1171a2ebf8574e2340dae8e59e426babd4285a4f7bd173"
+    "packages/database/test/web-runtime-grants.test.ts": "1689b5b02d132c6844a413420e84d9186850f5340a72542a5f8d8184ea0e6ab8",
+    "scripts/operations/backup.py": "3f96e84c01b00835c73f2f0ddb82146ecec4117c568e99250ab176d2bf412d14",
+    "packages/database/migrations/20261018000500_restore_validation_namespace.sql": "225b8081461a579e7250c9c9129d006b1d0317b76bd1e91f28fc619b3905c27d",
+    "scripts/ci/package-operations.mjs": "c39d4b95dee44695ef1cf9c08bb14ced978925fc43c13eb0e335765f02c1ca91",
+    "scripts/ci/status-docs.test.mjs": "fb674ccc65bd8f962c0ef3ecd5ad6d7ee44d4dfeeba81342e42d3d777d3b2417",
+    "crates/cart-authorization/src/product_policy.rs": "c3d56f4f60f74f00e1523a30fc057db580ba44631b0aaa9d757172f4d206bfc1",
+    "crates/cart-authorization/src/capacity.rs": "df0cd375a5dc203e4b3f208b5127f23cfea2e4ddb384ad58765575f4baf8bfde",
+    "crates/cart-transform/src/main.rs": "ac63354c3d659ebd66d80b70b347def89f248ed4a75f77c92738c26a0f35f077",
+    "crates/cart-validation/src/main.rs": "0d8a378dafbf22e49c5ed9133bc74f70ef96c6211d2fd01ecaf839130222f326",
+    "apps/storefront/src/element.tsx": "b6484880eed49ee140dd57d7058232d733a4db314ad2272e1dc8d43484f3402b",
+    ".github/workflows/m3-runtime.yml": "0a96a0a622ae601cab434cc8ed292fab4a05d19a5489e666318f2945d9e1592b",
+    "deployment/alerts/worker.mjs": "43e8056ae5231f43838713e849136b3e140459347f355ebad9a6ed5905df2fc2"
   },
   "nativeAcceptance": "NOT_ESTABLISHED",
-  "rollout": "NOT_AUTHORIZED"
+  "rollout": "NOT_AUTHORIZED",
+  "stabilization": {
+    "base": "67475c93aa59883c616f1dea1d913b4e3fc6356f",
+    "spec": "Owner six-area implementation/stabilization direction; existing Lean V1 contracts and permissions",
+    "reviews": [
+      {
+        "reviewer": "frontend_completion",
+        "scope": "Other-author populated restore/migration/packaging/46-schema ACL and shared Rust policy/capacity",
+        "specCorrectness": "CLEAR",
+        "standardsSecurity": "CLEAR"
+      },
+      {
+        "reviewer": "restore_correction",
+        "scope": "Other-author frontend/demo retirement, exact CI equivalence consolidation and current documentation",
+        "specCorrectness": "CLEAR",
+        "standardsSecurity": "CLEAR"
+      },
+      {
+        "reviewer": "current_docs_cleanup",
+        "scope": "Root state/work index/existing evidence and browser entry instructions",
+        "specCorrectness": "CLEAR",
+        "standardsSecurity": "CLEAR"
+      },
+      {
+        "reviewer": "completion_audit_resumed",
+        "requestedModel": "gpt-6.1-sol",
+        "requestedEffort": "low",
+        "executionIdentity": "Native launcher accepted explicit model/effort; child did not independently expose them",
+        "boundary": "Procedural read-only; no credential/external access or shared DB/build work",
+        "specCorrectness": "CLEAR",
+        "standardsSecurity": "CLEAR",
+        "scope": "Final restore namespace/atomic rollback and cleanup, usage-attempt retirement, identical Rust modules and distinct Function entrypoints, mandatory CI consolidation",
+        "checks": "12 status/consolidation guards PASS; existing integration receipts inspected, not repeated"
+      },
+      {
+        "reviewer": "merchant_review_resumed",
+        "requestedModel": "gpt-6.1-sol",
+        "requestedEffort": "low",
+        "boundary": "Procedural read-only, no external effects, secrets, DB or file edits",
+        "specCorrectness": "CLEAR",
+        "standardsSecurity": "CLEAR",
+        "scope": "Final storefront/demo retirement, alert ack/reference auth/dedupe/concurrency/expiry/no-redispatch, current status accuracy",
+        "checks": "10 alert tests and 1 actualChromium artwork-element PASS; diff check clean"
+      }
+    ],
+    "nativeLimits": "No source-runtime replacement or Function/theme release. Native DB-only isolated restore and expiry qualified; object recovery/lifecycle/logging/mail/storage/RPO remain separate."
+  }
 }

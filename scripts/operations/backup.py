@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import tarfile
 import tempfile
@@ -240,6 +241,25 @@ def restore(args):
     if list(stage.iterdir()):
         raise ValueError('empty recovery destination required')
     receipt(stage / 'HOLD.json', {'readiness': HOLD, 'startedAt': dt.datetime.now(UTC).isoformat()})
+    completed = False
+    try:
+        value = restore_snapshot(args, stage, host, database)
+        completed = True
+        return value
+    finally:
+        # The seven-day exception covers ciphertext, never interrupted decrypted scratch.
+        for name in ['snapshot.tar', 'database.dump', 'expiry-replay.json',
+                     'restore-pre.sql', 'restore-data.sql', 'restore-post.sql', 'restore-fix.sql']:
+            (stage / name).unlink(missing_ok=True)
+        if not completed:
+            if (stage / 'objects').exists():
+                shutil.rmtree(stage / 'objects')
+            (stage / 'objects.json').unlink(missing_ok=True)
+            (stage / 'objects.sanitized.json').unlink(missing_ok=True)
+        sync_directory(stage)
+
+
+def restore_snapshot(args, stage, host, database):
     metadata = json.loads(Path(args.receipt).read_text())
     if (metadata.get('format') != 'insignia-encrypted-backup-v1' or
             not re.fullmatch('[a-f0-9-]{36}', metadata.get('id', '')) or
@@ -281,8 +301,21 @@ def restore(args):
     environment.update({k: os.environ[k] for k in ['PGHOST', 'PGPORT', 'PGUSER', 'PGPASSFILE', 'PGPASSWORD'] if k in os.environ})
     # createdb rejects existing targets; never clean/overwrite another database.
     run([args.createdb, '--no-password', database], env=environment)
-    run([args.pg_restore, '--no-password', '--exit-on-error', '--single-transaction', '--dbname', database,
-         str(stage / 'database.dump')], env=environment)
+    # Render separately so old sealed schemas receive the bounded helper correction BEFORE COPY.
+    # psql owns ONE transaction across schema, correction, data and post-data constraints/indexes.
+    sections = [('pre-data', 'restore-pre.sql'), ('data', 'restore-data.sql'), ('post-data', 'restore-post.sql')]
+    for section, name in sections:
+        path = stage / name
+        os.close(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600))
+        run([args.pg_restore, '--no-password', '--exit-on-error', '--section', section,
+             '--file', str(path), str(stage / 'database.dump')], env=environment)
+    migration = Path(__file__).resolve().parents[2] / 'packages/database/migrations/20261018000500_restore_validation_namespace.sql'
+    correction = migration.read_text().split('-- migrate:up', 1)[1].split('-- migrate:down', 1)[0]
+    with os.fdopen(os.open(stage / 'restore-fix.sql', os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600), 'w') as output:
+        output.write(correction)
+    run([args.psql, '--no-password', '-X', '--set', 'ON_ERROR_STOP=1', '--single-transaction', '--dbname', database,
+         '--file', str(stage / 'restore-pre.sql'), '--file', str(stage / 'restore-fix.sql'),
+         '--file', str(stage / 'restore-data.sql'), '--file', str(stage / 'restore-post.sql')], env=environment)
     # Caller supplies explicit isolated URL only to the existing owner-only import subprocess.
     from urllib.parse import quote
     environment['DATABASE_URL'] = 'postgresql:///' + database + '?host=' + quote(host, safe='')
@@ -320,7 +353,7 @@ def main():
     recover = sub.add_parser('restore')
     for option in ['artifact', 'receipt', 'identity', 'destination', 'exclusions']:
         recover.add_argument('--' + option, required=True)
-    for option in ['createdb', 'pg-restore', 'node']:
+    for option in ['createdb', 'pg-restore', 'psql', 'node']:
         recover.add_argument('--' + option, default=option.replace('-', '_') if option == 'pg-restore' else option)
     recover.add_argument('--exclusion-script', default=str(Path(__file__).resolve().parents[1] / 'privacy/restore-exclusions.mjs'))
     args = parser.parse_args()

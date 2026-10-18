@@ -28,6 +28,7 @@ const runtimeFiles = [
   'scripts/operations/backup-replica.mjs',
   'scripts/operations/backup-expiry.mjs',
   'scripts/privacy/restore-exclusions.mjs',
+  'packages/database/migrations/20261018000500_restore_validation_namespace.sql',
 ];
 
 /** Offline relocatable operations package. No credential, native DB or provider input. */

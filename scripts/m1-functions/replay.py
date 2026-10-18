@@ -108,7 +108,6 @@ for target in ("transform", "validation"):
             p.relative_to(ROOT).as_posix().encode() + b"\0" + p.read_bytes()
             for p in sorted((ROOT / "crates/cart-authorization/src").glob("*.rs"))
             + sorted((ROOT / f"crates/cart-{target}/src").glob("*.rs"))
-            + [ROOT / f"crates/cart-{target}/policy.rs", ROOT / f"crates/cart-{target}/capacity.rs"]
         )).hexdigest(),
         "querySha256": hashlib.sha256((extension / "src" / ("cart_transform_run.graphql" if target == "transform" else "cart_validations_generate_run.graphql")).read_bytes()).hexdigest(),
         "schemaSha256": hashlib.sha256((extension / "schema.graphql").read_bytes()).hexdigest(),

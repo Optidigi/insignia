@@ -151,6 +151,7 @@ export class AlertMonitor {
         suppressed: 0,
         duplicates: 0,
       };
+      if (state.lastSubmission && now - state.lastSubmission.submittedAt >= SEVEN_DAYS) delete state.lastSubmission;
       const day = new Date(now).toISOString().slice(0, 10);
       if (state.day !== day) {
         state.day = day;
@@ -181,7 +182,10 @@ export class AlertMonitor {
       if (existing) {
         if (existing.digest !== digest) return persist({ error: 'event_id_conflict' }, 409);
         state.duplicates++;
-        return persist({ state: existing.state === 'claimed' ? 'unknown' : existing.state });
+        return persist({
+          state: existing.state === 'claimed' ? 'unknown' : existing.state,
+          ...(existing.state === 'submitted' ? { messageId: existing.messageId } : {}),
+        });
       }
       if (eventKey && state.eventCount >= MAX_EVENTS - 32) return persist({ error: 'dedup_capacity' }, 429);
       const claim = async (id, details) => {
@@ -241,6 +245,7 @@ export class AlertMonitor {
           capped: state.suppressed,
           duplicates: state.duplicates,
           retainedEvents: state.eventCount,
+          lastSubmission: state.lastSubmission ?? null,
         });
       if (path === '/v1/heartbeat') {
         if (state.heartbeat && payload.timestamp <= state.heartbeat.timestamp)
@@ -298,7 +303,7 @@ export class AlertMonitor {
           subject: `[Insignia production] ${details.component} ${details.event}`,
           text: `Automated operational notice.\nComponent: ${details.component}\nEvent: ${details.event}\nIncident: ${details.incidentId}\nEvidence: ${details.evidence}\nSeverity: ${details.severity}\nAggregate count: ${details.count}\nObserved at: ${new Date(now).toISOString()}\nThis notice does not establish application or merchant readiness.`,
         });
-        if (typeof sent?.messageId === 'string' && sent.messageId.length <= 256)
+        if (typeof sent?.messageId === 'string' && sent.messageId.trim().length > 0 && sent.messageId.length <= 256)
           outcome = { state: 'submitted', messageId: sent.messageId };
       } catch {
         /* A thrown send can have an unresolved effect. Never automatically redispatch. */
@@ -307,10 +312,17 @@ export class AlertMonitor {
         const record = await tx.get(`event:${id}`);
         Object.assign(record, outcome);
         await tx.put(`event:${id}`, record);
+        if (outcome.state === 'submitted') {
+          const state = await tx.get('monitor');
+          state.lastSubmission = { messageId: outcome.messageId, submittedAt: this.clock() };
+          await tx.put('monitor', state);
+        }
       });
     }
     if (result.claims.length && payload) {
-      result.value.state = (await this.storage.get(`event:e:${payload.eventId}`)).state;
+      const record = await this.storage.get(`event:e:${payload.eventId}`);
+      result.value.state = record.state;
+      if (record.state === 'submitted') result.value.messageId = record.messageId;
     }
     return json(result.value, result.status);
   }

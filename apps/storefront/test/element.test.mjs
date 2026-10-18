@@ -3,46 +3,6 @@ import { test } from 'node:test';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 
-test('custom element mounts, unmounts, and contains DOM, state and events', async () => {
-  // Bind an OS-assigned port on the server itself: no random-port collision or
-  // gap between probing an unused port and taking ownership of it.
-  const server = await createServer({ server: { host: '127.0.0.1', port: 0, strictPort: true } });
-  let browser;
-  try {
-    await server.listen();
-    const address = server.httpServer.address();
-    assert.ok(address && typeof address === 'object');
-    const port = address.port;
-    browser = await chromium.launch({ headless: true });
-    const page = await browser.newPage();
-    await page.goto(`http://127.0.0.1:${port}`);
-    await page.getByRole('button', { name: 'Mount', exact: true }).click();
-    const first = page.locator('insignia-local-preview').first();
-    await first.locator('button').click();
-    assert.equal(await first.locator('output').textContent(), '1');
-    assert.equal(await page.locator('#preview-slot > button').count(), 0);
-    const observed = await page.evaluate(() => {
-      const host = document.querySelector('insignia-local-preview');
-      let onHost = 0;
-      let onDocument = 0;
-      host.addEventListener('insignia-local-change', () => onHost++);
-      document.addEventListener('insignia-local-change', () => onDocument++);
-      host.shadowRoot.querySelector('button').click();
-      return { onHost, onDocument };
-    });
-    assert.deepEqual(observed, { onHost: 1, onDocument: 0 });
-    await page.getByRole('button', { name: 'Mount', exact: true }).click();
-    const second = page.locator('insignia-local-preview').nth(1);
-    assert.equal(await second.locator('output').textContent(), '0');
-    await page.getByRole('button', { name: 'Unmount' }).click();
-    assert.equal(await page.locator('insignia-local-preview').count(), 1);
-    assert.equal(await page.locator('insignia-local-preview output').count(), 1);
-  } finally {
-    await browser?.close();
-    await server.close();
-  }
-});
-
 test('guest artwork selection event survives derivative renewal and carries no private URL or capability', async () => {
   const server = await createServer({ server: { host: '127.0.0.1', port: 0, strictPort: true } });
   let browser;
@@ -113,6 +73,8 @@ test('guest artwork selection event survives derivative renewal and carries no p
     });
     await page.evaluate(() => {
       window.selections = [];
+      window.leakedSelections = [];
+      document.addEventListener('insignia-artwork-change', (event) => window.leakedSelections.push(event.detail));
       const host = document.createElement('insignia-artwork-upload');
       host.setAttribute('product-id', '111');
       host.addEventListener('insignia-artwork-change', (e) => window.selections.push(e.detail));
@@ -146,6 +108,21 @@ test('guest artwork selection event survives derivative renewal and carries no p
     await host.getByText('Artwork request unavailable').waitFor();
     assert.equal(await page.evaluate(() => window.selections.at(-1)), null);
     assert.equal(await host.getByRole('button', { name: 'Prepare original download' }).count(), 0);
+    assert.deepEqual(
+      await page.evaluate(() => window.leakedSelections),
+      [],
+      'private selection events stay on the host',
+    );
+    await page.evaluate(() => {
+      const host = document.querySelector('insignia-artwork-upload');
+      window.detachedArtwork = host;
+      host.remove();
+    });
+    assert.equal(await page.evaluate(() => window.detachedArtwork.shadowRoot.childElementCount), 0);
+    await page.evaluate(() => document.body.append(window.detachedArtwork));
+    await host.locator('input[type=file]').waitFor();
+    assert.equal(await host.getByRole('img').count(), 0, 'remount starts without the retired preview');
+    assert.equal(await host.getByRole('button', { name: 'Retry artwork preview' }).count(), 0);
   } finally {
     await browser?.close();
     await server.close();

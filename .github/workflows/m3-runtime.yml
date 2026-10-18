@@ -106,16 +106,13 @@ jobs:
         run: corepack pnpm test:m5-inventory
       - run: corepack pnpm check:secrets
         if: steps.changes.outputs.route == 'full'
-      - run: corepack pnpm check:database
+      - name: Initialize runtime schema and verify migration idempotence
         if: steps.changes.outputs.route == 'full'
-      - run: corepack pnpm --filter @insignia/storage test
-        if: steps.changes.outputs.route == 'full'
-      - run: corepack pnpm --filter @insignia/shopify test
-        if: steps.changes.outputs.route == 'full'
-      - run: corepack pnpm --filter @insignia/application test
-        if: steps.changes.outputs.route == 'full'
-      - run: corepack pnpm --filter @insignia/observability test
-        if: steps.changes.outputs.route == 'full'
+        # The required durable-core job runs the full database suite on the same pinned PostgreSQL18 image.
+        # This job retains actual worker/HTTP/LOGIN/process/image qualification below.
+        run: |
+          corepack pnpm db:migrate
+          corepack pnpm db:migrate
       - run: corepack pnpm --filter @insignia/worker test
         if: steps.changes.outputs.route == 'full'
       - name: M8 actual queue-member purchase/history and first-paid qualification
@@ -144,7 +141,7 @@ jobs:
       - name: Historical schema20 owner lifecycle and fresh queue process controls
         if: steps.changes.outputs.route == 'full'
         # Each test allocates its own database from pinned PR97 schema20 inputs.
-        # Current check:database above qualifies schema34; the historical erasure guard stays exact20.
+        # The required durable-core job qualifies the full current schema; this erasure guard stays exact20.
         run: |
           corepack pnpm exec biome check scripts/m5-owner-lifecycle
           M5_OWNER_LIFECYCLE_TEST_URL="$DATABASE_URL" corepack pnpm --filter @insignia/database exec vitest run test/owner-lifecycle.test.ts

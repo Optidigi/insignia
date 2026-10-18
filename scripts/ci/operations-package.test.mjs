@@ -233,6 +233,7 @@ test('operations package relocates with its complete module paths, executable No
       'scripts/operations/backup-run.py',
       'scripts/operations/backup-replica.mjs',
       'scripts/privacy/restore-exclusions.mjs',
+      'packages/database/migrations/20261018000500_restore_validation_namespace.sql',
       'apps/worker/node_modules/pg/index.cjs',
     ]) {
       assert.equal(

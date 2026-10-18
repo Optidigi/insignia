@@ -32,7 +32,7 @@ or email delivery.
 `wrangler.toml` configures one SQLite-backed Durable Object and minute cron.
 Authenticated `POST /v1/heartbeat` records evidence without sending mail;
 `POST /v1/alerts` handles component incidents. Authenticated `GET /v1/status`
-reports arming, latest aggregate observations and duplicate/cap counters. It always
+reports arming, latest aggregate observations, duplicate/cap counters and the latest acknowledged provider message reference. Successful explicit-alert responses and exact duplicates also return that opaque reference so an authenticated operator can query actual provider delivery; acknowledgement still does not establish inbox receipt. The latest reference expires after seven days. It always
 reports readiness unqualified; a live heartbeat is not application acceptance.
 The configured route must terminate HTTPS. There is no public tick endpoint.
 

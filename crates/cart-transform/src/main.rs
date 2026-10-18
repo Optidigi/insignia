@@ -5,12 +5,9 @@ use cart_authorization::{
 use shopify_function::prelude::*;
 use shopify_function::Result;
 
-#[path = "../policy.rs"]
-mod product_policy;
-use product_policy::PlainPolicy;
+use cart_authorization::product_policy::{self, PlainPolicy};
 
-#[path = "../capacity.rs"]
-mod capacity;
+use cart_authorization::capacity;
 
 #[typegen("schema.graphql")]
 mod schema {
