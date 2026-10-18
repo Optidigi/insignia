@@ -34,7 +34,7 @@
     "Late-read RED proved stale timeout notice, corrected."
   ],
   "research": "../../notes/admin-polaris-ux-2026-10-18.md",
-  "native": "Not yet deployed. Existing PR202 native image/schema41 remains current; no migration, provider/product/theme mutation or merchant rollout in this source slice. Native web-only qualification follows exact-head CI/normal integration.",
+  "native": "See admin204-native-bootstrap-2026-10-18.json. Exact CI deployment healthy but native App Bridge rejected defer; restored workingPR202web/schema41. Narrow fix/native requalification required; no native UI PASS.",
   "continuation": "Merge under delegated authority after final exact-head CI, deploy exact CI web image within existing bounded dev grant and verify native routes read-only. Preserve other services, schema41, intentional missing usage migration, immutable facts and cleanup/custody obligations.",
   "ciCorrection": {
     "failedHead": "ef666bee86cfc6f0ee1f8e8e6788dba2c44f4f54",
@@ -51,7 +51,7 @@
       "storefront": "48PASS/2SKIP/0FAIL; skips are PostgreSQL+signing purchase and actual production Function vector environment checks, not runtime upload checks",
       "uploads": "4PASS/0FAIL; actual merchant Polaris upload/attach/download, bounded private PNG and expiry/pending recovery",
       "review": "Independent /root/polaris_completion_review CLEAR both axes; lifecycle body comparison exactly unchanged; native storefront no-Polaris browser assertion added",
-      "finalCI": "Pending corrected head",
+      "finalCI": "All3 exact-head attempt1 PASS on52891bfe7b595d4bfca0a742517d87f7a50cfce0; normal merge0de681159d4bcdd2d10a60a88b099db429c9af9c. Native bootstrap failure and deliberate rollback recorded separately.",
       "guards": "Boundaries PASS including actual negative probes and domain-effects18; secrets PASS; style PASS after running sequentially after temporary boundary probes (a concurrent style run correctly rejected the transient probe fixture)."
     },
     "native": "Unchanged PR202 image; no new deployment or provider effects."

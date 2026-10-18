@@ -2313,6 +2313,11 @@ test('both admin pages admit the pinned Polaris CDN font without broadening othe
     await page.route('**/api/admin/products?*', (route) => route.fulfill({ json: { products: [], nextCursor: null } }));
     await page.route('**/api/admin/products/111/config', (route) => route.fulfill({ json: response(draft()) }));
     const document = await page.goto(server.base + path);
+    const appBridge = page.locator('script').first();
+    assert.equal(await appBridge.getAttribute('src'), 'https://cdn.shopify.com/shopifycloud/app-bridge.js');
+    for (const forbidden of ['defer', 'async', 'type']) {
+      assert.equal(await appBridge.getAttribute(forbidden), null, `App Bridge forbids ${forbidden}`);
+    }
     const directives = Object.fromEntries(
       document
         .headers()
