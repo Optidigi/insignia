@@ -7,10 +7,18 @@
     "submissions": 4,
     "inboxOwnerConfirmed": [
       "backup problem",
-      "backup recovery"
+      "backup recovery",
+      "availability problem",
+      "availability recovery"
     ],
-    "availabilityInbox": "PENDING_OWNER_RESPONSE",
+    "availabilityInbox": "OWNER_CONFIRMED_2026_10_18",
     "authenticationHeaders": "NOT_VERIFIED",
+    "authenticationLogCheck20261018": {
+      "scope": "Owner-authorized read-only ONLYOFFICE production log check; no mailbox credentials, configuration changes, database queries or new alert sends",
+      "observed": "Current mail-aggregator.log contains four lines matching the alert sender; matching aggregator and SQL log entries expose no Authentication-Results or SPF/DKIM/DMARC verdicts. Current local maillog contains no alert-sender match; dashboard and dashboard-mail Docker stdout/stderr for19:25-19:50UTC are empty.",
+      "limits": "Only sanitized counts and result summaries returned; no message contents or unrelated log lines exported. This bounded log check does not establish that original headers are absent from every mailbox storage location.",
+      "decision": "Owner defers receiver-side authentication evidence to final production gate; continue other work. All four inbox deliveries remain confirmed."
+    },
     "replay": "same messageId, no additional attempt",
     "conflictingEvent": 409,
     "unauthorized": 401,
@@ -60,5 +68,102 @@
     "path": "/tmp/insignia-native-lifecycle-prep",
     "cleanupBy": "2026-10-20T00:00:00Z",
     "secrets": "No raw logs/configuration/secrets published; retired relay/RSA private keys removed"
+  },
+  "runtimeHandover20261018": {
+    "classification": "DEVELOPMENT_RUNTIME209_AND_PERMANENT_CUSTODY_QUALIFIED",
+    "financial": {
+      "paid": "5cb7c84083d258b0474ca86fc95c7d35d365a047c4d947968058892ae7b0ca04",
+      "purchase": "1ec605c89737b0e1c3e2906b04f0ce087694dd197662e45609412a9495c067bd"
+    },
+    "lifecycleDestinations": [
+      {
+        "generation": "1",
+        "installation": "gid://shopify/AppInstallation/1054356963611",
+        "shopId": "db771bea-c585-4954-9f88-70771c9a0c89",
+        "state": "registered",
+        "subscriptionId": "gid://shopify/WebhookSubscription/2160123379995"
+      }
+    ],
+    "limits": "No fresh verifier collection, native lifecycle PASS, Function/app version/scope/release, checkout, charge or rollout. Original mount-order STOP retained; original operator not replayed; verifier not recreated twice.",
+    "preservedOtherContainers": 32,
+    "schemaVersions": 45,
+    "services": {
+      "verifier": {
+        "container": "6077686eb2dd9b86bad5e9fc67ef9b2a6d416449619b20aa485c986a40fa1f0c",
+        "custodyBytesInodesPreserved": true,
+        "image": "sha256:42b94d5357081f774de1fc9d6d94b63fc1da523108b388430cbf5f12ee74c264",
+        "receiver": "MALFORMED_GET_REJECTED_NOT_FRESH_NATIVE_PROOF"
+      },
+      "web": {
+        "container": "1bdb5f1b0aa843be6f6f9f02cd63f72b879eef14cb4b7be256a3df1b81139d0d",
+        "health": "healthy",
+        "image": "sha256:efa7b87b04ef5546aac299f2ac301a8235131e965e3e00b0f4edfad39cd6b3ab"
+      },
+      "worker": {
+        "container": "6dd2260969112d6b0547da30373dc2ad25d2e04517aa14a27b8b6d56ac0a588c",
+        "health": "healthy",
+        "image": "sha256:816357d4f6a1371c9f6fde54dd8acb670eb3ef4c09ded7df35ac4aa3b69a7e7a"
+      }
+    },
+    "sourceMerge": "b3d9b062cedd3a0109bffd63660527a7d4cfceee",
+    "acceptedHead": "e3985bfa51ea8736721bd5c3f3fe9348bf71e75f",
+    "tree": "5db15fefb151007f5af70e9cbf895cb610d15ad8",
+    "ciArtifactSource": "64d7f18b38fdebd1d625be33141b87d1a8e48b53",
+    "ciArtifactProvenance": "Synthetic merge parents equal accepted base/head; tree equals final accepted head and actual merge tree",
+    "permanentCustody": "/home/serveradmin/.local/share/insignia/runtime",
+    "originalStop": "Verifier recreated once; complete frozen configuration hash differed solely due HostConfig.Mounts list order. Exact hash matched after permutation of disjoint targets; original journal preserved, no original-operator replay.",
+    "continuationReview": "Independent correctness/security CLEAR;6 local checks PASS including original guard mismatch, whole-hash permutation match and rejected secret/privilege/mount drift",
+    "remainingRetiredConfigCleanup": "Exact3retired private Compose files removed after active mount/label/process and owner cron/unit reference checks, all35container configurations unchanged. Other bounded evidence/archives remain due20October; permanent active auth/state remain operational dependencies without any data/credential expiry extension."
+  },
+  "schema45Admission20261018": {
+    "classification": "ACKNOWLEDGED_ONCE",
+    "versionsBefore": 41,
+    "versionsAfter": 45,
+    "migrations": [
+      "20261018000200",
+      "20261018000300",
+      "20261018000400",
+      "20261018000500"
+    ],
+    "sqlSha256": "345ea2306f6d8ae101d1809cd0bea5b4aa658cb6ae1e9ca2beea7515468ca1d7",
+    "preservedContainers": 35,
+    "financialUnchanged": true,
+    "limits": "Historical usage-attempt migration absent; no schema rollback or provider mutation"
+  },
+  "postHandoverVerifier20261018": {
+    "classification": "POST_HANDOVER_VERIFIER_COMPLETE",
+    "at": "2026-10-18T21:33:56.459Z",
+    "beforeFreshRecord": null,
+    "result": {
+      "requestId": "51d6dbdb-b7fd-428f-8ede-c40824c9bb9a",
+      "recordId": "5e7f35bd-dbad-4be7-8893-03355a17b618",
+      "state": "COMPLETE"
+    },
+    "afterFreshRecord": "5e7f35bd-dbad-4be7-8893-03355a17b618",
+    "expectedVersion": "1171218169857",
+    "limits": "Read-only provider observation and trusted local append only; not uninstall, publication, app release or rollout acceptance."
+  },
+  "postHandoverNativeUI20261018": {
+    "classification": "POST_HANDOVER_AUTHENTICATED_PRODUCTS_TABLE_VISIBLE",
+    "at": "2026-10-18T21:36:07.000Z",
+    "appPath": "/store/insignia-rewrite-dev/apps/insignia-1/admin/products",
+    "frameOrigin": "https://insignia-app.optidigi.nl",
+    "framePath": "/admin/products",
+    "loginOrChallenge": false,
+    "errorVisible": false,
+    "mutations": "No user edit, purchase, publication or provider action; ordinary authenticated navigation can reconcile app-owned enrollment",
+    "products": 7,
+    "initialProbe": "Expected heading Insignia timed out; inspected actual /admin/products rendered table, no application defect established"
+  },
+  "retiredPrivateConfigCleanup20261018": {
+    "activeManagement": "permanent private custody unchanged",
+    "all35ContainerConfigsPreserved": true,
+    "classification": "THREE_RETIRED_PRIVATE_COMPOSE_FILES_REMOVED",
+    "files": [
+      "/home/serveradmin/insignia-admin205-20261018/web-only.private.json",
+      "/home/serveradmin/insignia-lean-runtime-update-20261018-pr194/worker-only.private.json",
+      "/home/serveradmin/insignia-lean-runtime-update-20261018-pr194/verifier-compose.private.json"
+    ],
+    "limits": "Exact3files only; no parent-directory, active credentials/state, historical evidence, backup or unrelated-service deletion. Active mount/label/process and owner cron/unit references checked."
   }
 }
