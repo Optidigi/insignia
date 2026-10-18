@@ -1,5 +1,44 @@
 {
   "date": "2026-10-18",
+  "remainingWorkReadback20261018": {
+    "subscription": {
+      "classification": "EXACT_UNINSTALL_SUBSCRIPTION_NATIVE_READBACK",
+      "observedAt": "2026-10-18T21:51:19.898Z",
+      "subscriptionId": "gid://shopify/WebhookSubscription/2160123379995",
+      "installation": "gid://shopify/AppInstallation/1054356963611",
+      "generation": "1",
+      "topic": "APP_UNINSTALLED",
+      "privateDestinationMatches": true,
+      "identityStable": true,
+      "databaseReadOnly": true,
+      "providerMutations": 0,
+      "limits": "No callback delivery, uninstall or privacy erasure proof"
+    },
+    "backupInspectorAdapter": {
+      "classification": "READ_ONLY_ARTIFACT_AND_SERVICE_QUALIFIED",
+      "operatorSourceSha256": "1aba87c1de65eb0b7e3c54eba2afc0974462f67cb11af2f02be20b811fc3d100",
+      "identitySha256": "a3ded383c995f63e38895066abc77675bfcc68fa0560f7e188fd1f59d2b0c249",
+      "artifactBytesVerified": true,
+      "serviceState": "running",
+      "ready": true,
+      "sandboxJobs": false,
+      "mutations": 0,
+      "limits": "Read-only inspect/artifact/readiness methods qualified; subsequent execute-order and Docker-drain corrections use local regression and review. No native backup drain/resume or full recovery proof."
+    },
+    "disposableStore": {
+      "store": "stitchs-vat-verification-20261004.myshopify.com",
+      "appsReadAt": "2026-10-18T21:51:38.287Z",
+      "insigniaInstalled": false,
+      "existingApp": "Shopify CLI Connector App",
+      "installConsentReadAt": "2026-10-18T22:00:54.187Z",
+      "installDispatched": false,
+      "limits": "Read-only store/apps and existing developer install-link consent inspection; no install, uninstall, plan, product or store setting action"
+    },
+    "privateRawEvidence": {
+      "path": "/tmp/insignia-remaining-20261018",
+      "cleanupBy": "2026-10-20T00:00:00Z"
+    }
+  },
   "sourceCandidate": "acf61a97eeb755c0e316f8754d3b1b7d7e502cc7",
   "alertQualification": {
     "worker": "insignia-alerts-qualification-20261018",

@@ -1,5 +1,20 @@
 {
   "date": "2026-10-18",
+  "backupTopologyContinuation": {
+    "reviewer": "backup_topology_review",
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "low",
+    "boundary": "Procedural read-only static correctness/security review; no native calls, credentials, tests or edits; backend model identity not independently exposed",
+    "initialVerdict": "CHANGES_REQUESTED",
+    "findings": [
+      "Manifest-only check did not independently verify bootstrap/runtime before execution",
+      "Inspector invocation/process replacement during container drain lacked immediate pre-stop fence"
+    ],
+    "resolution": "Both reproduced RED, then corrected. Independent complete artifact inventory/bytes verification precedes final process/invocation checks before stop and restart. Docker drains without SIGKILL escalation; timeout/unclean exit remains uncertain HOLD.",
+    "impactReview": "CLEAR_NO_MATERIAL_FINDING",
+    "rootValidation": "7 Python wrapper methods PASS, including split projects,9 inspector states,4 process-interruption modes, actual filesystem artifact tamper and Docker subprocess no-kill/unclean-exit controls.7 encryption tests and9 snapshot/replica tests PASS. Relocated operations package3PASS/0SKIP using actual PR209 CI portable worker; source package now includes changed wrapper.",
+    "nativeLimits": "Read-only inspector service/artifact/readiness checks only; native drain/resume and complete object disaster recovery remain unqualified"
+  },
   "base": "ab2a71356d816a79dc859a472a64458f2dc020e5",
   "priorCandidate": "71666cc34fb8c691ea5cd81c371afc0fd0018032",
   "reviewMethod": "Independent native agents; procedural read-only review, unrestricted runtime capability; no provider or deployment effects. Both Spec/correctness and Standards/security covered.",
