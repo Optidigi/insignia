@@ -1,0 +1,439 @@
+{
+  "classification": "BOUNDED_RELEASED_STOREFRONT_AND_IMMUTABLE_INSPECTOR_NATIVE_QUALIFICATION_PASS",
+  "date": "2026-10-18",
+  "baseIntegration": {
+    "pr": 195,
+    "merge": "6affa8ba1c844ad65b7b600ae06c82cfb21bbb72",
+    "head": "a6ef7db15b5dd91090c0b72a2cb6431d46774ea7",
+    "tree": "bfb7cd16f83d10f2aba8c5ee1ea6a6553fca92b4",
+    "normalMergeParentsVerified": true,
+    "exactHeadAttempt1SuccessRuns": [
+      39082701992,
+      39082702002,
+      39082701988
+    ]
+  },
+  "authority": "bounded-native-qualification-owner-grant-2026-10-17.json",
+  "storefront": {
+    "classification": "NATIVE_LOCAL_STATE_VISUAL_AND_SOLD_OUT_CONTROL_PASS_NOT_FULL_LEGACY_PARITY",
+    "observedAt": "2026-10-18T08:41:41.607Z",
+    "appVersion": "1171218169857",
+    "releaseProfile": "lean-privacy-theme-23fd116",
+    "config": {
+      "path": "/apps/insignia/v1/config",
+      "status": 200,
+      "revisionId": "9215185d-3109-4f07-b93b-d7e25b9bd7f5",
+      "contentHash": "89d4a96b92069d1b99551459c84751eaa1d87646521d7c50a44ade646da9cff0",
+      "variants": [
+        {
+          "id": "54211066986779",
+          "label": "Default Title",
+          "available": false
+        }
+      ],
+      "logoLaterAllowed": [
+        true
+      ]
+    },
+    "captures": [
+      {
+        "name": "desktop-upload",
+        "sha256": "e4201893a8eea0109e6a9c7b3a0c8d148e28e891208df55791d83b66df0c4773",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "dialog": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "canvases": 3,
+        "documentHorizontalOverflow": false
+      },
+      {
+        "name": "desktop-placement",
+        "sha256": "6c35e9966c1a0f2ca1d237bcc7a157cee510fc0c5c0f85ba687d5476952a3d61",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "dialog": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "canvases": 3,
+        "documentHorizontalOverflow": false
+      },
+      {
+        "name": "desktop-size-preview",
+        "sha256": "2d198fec80028c92871b6efd44e72b9dcf9f2e23799af51608994839ce4fee1f",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "dialog": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "canvases": 3,
+        "documentHorizontalOverflow": false
+      },
+      {
+        "name": "desktop-review",
+        "sha256": "7a5b7235c0766d4b83b83e40905fed78917d46e8f3fe346decbfd96c4897f93b",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "dialog": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "canvases": 3,
+        "documentHorizontalOverflow": false
+      },
+      {
+        "name": "mobile-review",
+        "sha256": "33d4159fe8d6d1be377f64d9a1510eb5575ea5d5bbfa88e913d6fdef7310cb9f",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "dialog": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844
+        },
+        "canvases": 3,
+        "documentHorizontalOverflow": false
+      },
+      {
+        "name": "mobile-size-preview",
+        "sha256": "ba19c5cb5274ce55920b1182d5ead7dd648cd0c6536e46b7816a9a5035ea0aa2",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "dialog": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844
+        },
+        "canvases": 3,
+        "documentHorizontalOverflow": false
+      },
+      {
+        "name": "mobile-placement",
+        "sha256": "c44162923f2142ca75c3b2b703398291dd616e34a06ea61e5e13e3f69b2a77e9",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "dialog": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844
+        },
+        "canvases": 3,
+        "documentHorizontalOverflow": false
+      },
+      {
+        "name": "mobile-upload",
+        "sha256": "7c09ee3fe2465e45003810af98720ab998f99a019f13783a2cb830f3c2640cfb",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "dialog": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844
+        },
+        "canvases": 3,
+        "documentHorizontalOverflow": false
+      }
+    ],
+    "loadedAssets": [
+      {
+        "path": "/extensions/01a14c18-b90e-7bf6-8b3f-10ac76e92c17/lean-privacy-theme-23fd116/assets/insignia-storefront.js",
+        "status": 200,
+        "bytes": 393,
+        "sha256": "6e85265484ddac9bf9b2ec2f8f518fc969089cef0ec5e6a42acefdefc95741aa"
+      },
+      {
+        "path": "/extensions/01a14c18-b90e-7bf6-8b3f-10ac76e92c17/lean-privacy-theme-23fd116/assets/insignia-element.js",
+        "status": 200,
+        "bytes": 5110,
+        "sha256": "f2eefe96c64ac20772fa52484d23554113c72704011ad5ffd1e39392f2686b8a"
+      },
+      {
+        "path": "/extensions/01a14c18-b90e-7bf6-8b3f-10ac76e92c17/lean-privacy-theme-23fd116/assets/insignia-GuestArtworkUpload-CWIYD8VH.js",
+        "status": 200,
+        "bytes": 31823,
+        "sha256": "2c2c38e295b16383f5d1282d048c1d93db71c4324de3fd6ba9ca3fe6c559523e"
+      },
+      {
+        "path": "/extensions/01a14c18-b90e-7bf6-8b3f-10ac76e92c17/lean-privacy-theme-23fd116/assets/insignia-customizer-CoccJu3b.js",
+        "status": 200,
+        "bytes": 226517,
+        "sha256": "540af1752951ea3dea6e2999a9385bc1a0a180b3e0eab5145d9befff18838b39"
+      },
+      {
+        "path": "/extensions/01a14c18-b90e-7bf6-8b3f-10ac76e92c17/lean-privacy-theme-23fd116/assets/insignia-lib-EAJaMn8S.js",
+        "status": 200,
+        "bytes": 241299,
+        "sha256": "84e5da9c3269fc8d2f992d31b1edf0f496bd795b147981fead1998f81317c36b"
+      }
+    ],
+    "allFiveLoadedAssetsMatchReviewedSource": true,
+    "pageErrors": 0,
+    "initialCartItems": 0,
+    "applicationNonGetAttempts": 0,
+    "blockedShopifyPlatformPostAttempts": 44,
+    "effects": "No new Insignia session/artwork upload/quote/cart/checkout action; local logo-later wizard state only. Shopify platform telemetry/GraphQL POST attempts were blocked by probe.",
+    "loginActions": 0,
+    "cookieTransfer": 0,
+    "review": {
+      "reviewer": "/root/inspector_readiness",
+      "result": "CLEAR_FOR_BOUNDED_CLAIMS",
+      "receiptSha256": "d30b89208f95086fada4a867e9bb04882483add34af37718179b098732a1cb97",
+      "imagesAndAssetHashesInspected": true
+    },
+    "limits": [
+      "No uploaded-artwork, accepted-price, cart, checkout, alternative-variant or full corresponding legacy-parity acceptance",
+      "Mobile preview-sheet interaction not exercised",
+      "Single unavailable variant card is visibly cramped; enabled-control usability failure/legacy regression not established",
+      "First blank capture preceded async renderer completion; later actual canvases populated without source correction"
+    ]
+  },
+  "inspectorArtifact": {
+    "artifactId": 12117872099,
+    "name": "artwork-inspector-39077746221-1",
+    "run": 39077746221,
+    "attempt": 1,
+    "workflowHead": "b7b8589c4236dfc5ce30719ee9bc9740902d2f8d",
+    "buildSource": "42de456cc8940c86cfc54775b061b35563b8b828",
+    "sourceMerge": "c455b8e45c6b7cd23148aee85485d6dad2857c12",
+    "sourceTree": "2942c44f62f4951d1af8981d25457a814d9a0a28",
+    "zipSha256": "1ed6adbd338897d44856b5b64a18b250b22e89957cb5bc712f571b96c52d8e68",
+    "tarSha256": "780f4dcc84fe791e8abd5b542dd1f25b561769020365edf923dcfac10c0581d0",
+    "manifestSha256": "8842e65e25947af8692e4f8b5556e419c27efd47b9086f683fde6637bd988bd5",
+    "serviceSha256": "5068bd27d883663e128d7ff302ac5f220498d4a52b5eabbd2da5a6b5b65556f4",
+    "files": 9560,
+    "runtime": "Node24.21.0/Linux/x64",
+    "localIntegrityRelocationAndDecoderImports": "PASS",
+    "nativeArtifactIntegrity": "PASS",
+    "sourceUnchangedSinceArtifact": true,
+    "permanentReleaseDirectory": "/home/serveradmin/insignia-artwork-releases/2942c44f62f4951d1af8981d25457a814d9a0a28"
+  },
+  "syntheticSandbox": {
+    "classification": "EXACT_IMMUTABLE_INSPECTOR_SYNTHETIC_SANDBOX_AND_FORMATS_PASS",
+    "boundaries": {
+      "hostFileVisible": false,
+      "network": false,
+      "writable": false,
+      "noNewPrivileges": true,
+      "noCapabilities": true,
+      "cpuSeconds": [
+        8,
+        9
+      ]
+    },
+    "images": [
+      {
+        "mime": "image/svg+xml",
+        "originalSha256": "60d440ad75f93cd4efb1724cf4d380d3b6ec3eb594cc3939af0eb66082d3c5c1",
+        "previewSha256": "ed366bd091fdfd8bccacf7e8b88531d86efe63cf3d2e540238f728c510ed80c4",
+        "width": 8,
+        "height": 8
+      },
+      {
+        "mime": "image/png",
+        "originalSha256": "e937b4ee0f72ba72c0c6df50566876835fbe6bbaf2267a52a186b3962d30335e",
+        "previewSha256": "e937b4ee0f72ba72c0c6df50566876835fbe6bbaf2267a52a186b3962d30335e",
+        "width": 8,
+        "height": 8
+      },
+      {
+        "mime": "image/jpeg",
+        "originalSha256": "28d2715a6734c7c58a46769d9c04af335085c208437ca2157b50e2d658166bc2",
+        "previewSha256": "b4e4eac7c24149633514b52b3a956dbd030f880c708481883602396835deed3b",
+        "width": 8,
+        "height": 8
+      }
+    ],
+    "limits": [
+      {
+        "mode": "memory",
+        "errorKind": "REJECTED",
+        "durationMs": 249
+      },
+      {
+        "mode": "hang",
+        "errorKind": "REJECTED",
+        "durationMs": 10019
+      }
+    ],
+    "dbCalls": 0,
+    "storageCalls": 0,
+    "serviceChanges": 0,
+    "providerCalls": 0
+  },
+  "handover": {
+    "classification": "IMMUTABLE_INSPECTOR_SINGLE_HANDOVER_AND_ACTUAL_WEB_READINESS_PASS",
+    "observedAt": "2026-10-18T08:47:51.783590+00:00",
+    "oldState": {
+      "MainPID": "3660118",
+      "ActiveState": "active",
+      "SubState": "running",
+      "InvocationID": "d6b0c2df9b544729abf29df8c208bcdd"
+    },
+    "newState": {
+      "MainPID": "1827434",
+      "ActiveState": "active",
+      "SubState": "running",
+      "InvocationID": "07dcc739bcde44a79eccc6d9a8644776"
+    },
+    "stopAttempts": 1,
+    "startAttempts": 1,
+    "socketDirectoryInodePreserved": true,
+    "socketInodeChanged": false,
+    "all35ContainerConfigurationsPreserved": true,
+    "protectedDataAndExpiryDigestsUnchanged": true,
+    "storageProfileByteExact": true,
+    "privateConfigurationMoved": true,
+    "web": {
+      "uid": 1000,
+      "status": 200,
+      "ready": true
+    },
+    "resourceLimits": {
+      "Restart": "no",
+      "TimeoutStopUSec": "infinity",
+      "CPUQuotaPerSecUSec": "1s",
+      "MemoryMax": "536870912",
+      "MemorySwapMax": "0",
+      "TasksMax": "64",
+      "NoNewPrivileges": "yes",
+      "KillMode": "control-group"
+    },
+    "newUploads": 0,
+    "providerCalls": 0,
+    "socketIdentity": "Old process exit and socket absence were established before new start; filesystem reused socket inode. No inode-change claim.",
+    "privateConfiguration": "Same effective scoped values/storage JSON moved to owner-only ~/.config/insignia/artwork-inspection.env and artwork-inspector-storage.json; no secrets in artifact or repository.",
+    "maintenance": {
+      "changedRows": 3,
+      "changedFields": [
+        "quarantine_cleaned_at",
+        "quarantine_cleanup_attempt_at",
+        "updated_at"
+      ],
+      "allowed": "Only state-specific monotonic existing quarantine/tombstone timestamps; protected row fields/state/expiry unchanged",
+      "storageCalls": "NOT_INSTRUMENTED_EXISTING_SCOPED_LIFECYCLE_ONLY"
+    },
+    "retainedCounts": {
+      "schema_migrations": 40,
+      "shops": 1,
+      "installation_generations": 1,
+      "merchant_preview_assets": 2,
+      "config_revision_preview_assets": 2,
+      "purchase_orders": 4,
+      "purchase_paid_facts": 3,
+      "purchase_design_payloads": 3,
+      "artworkProtected": 9
+    },
+    "postStartReadOnly": {
+      "classification": "POST_HANDOVER_RUNNING_READONLY_QUALIFICATION_PASS",
+      "samePidAndInvocation": true,
+      "automaticRestarts": 0,
+      "journalErrors": 0,
+      "protectedDataUnchanged": true,
+      "all35ContainerFingerprintsMatchPreflight": true
+    },
+    "receiptSha256": "93bbaabc26e6394f0be844313c996a3bdf65f5c758a62a461b3068a4636bb250"
+  },
+  "reviews": {
+    "stage": {
+      "classification": "CLEAR",
+      "reviewer": "/root/inspector_stage_review",
+      "model": "gpt-6.1-sol",
+      "effort": "low",
+      "stageSha256": "bfaa7de1b0600e8aa3781cf239f59d01c4dfe5b1a0441569f5363a1dfaa4fb27",
+      "probeSha256": "44736e49c1d261ee51347b561832563b9e732bd9aba72e5e9d9a6bf232dea555",
+      "correctness": "CLEAR",
+      "security": "CLEAR",
+      "nativeEffectsByReviewer": false,
+      "limits": "Read-only instructions; no OS/network isolation claim; staging/probes only"
+    },
+    "stageCorrection": {
+      "classification": "CLEAR",
+      "reviewer": "/root/inspector_stage_review",
+      "operatorSha256": "a877bb53f0f846c61fda2e8dec8f9cb093a264c184ee09bc748c73e040323743",
+      "probeSha256": "b4c8f41c55e094df5814ef175014d33f0b76aaf5963b153f4d2933efda367379",
+      "correctness": "CLEAR",
+      "security": "CLEAR",
+      "nativeEffectsByReviewer": false,
+      "originalReviewMiss": "hardcoded Sharp import"
+    },
+    "handover": {
+      "classification": "CLEAR",
+      "correctness": "CLEAR",
+      "security": "CLEAR",
+      "reviewer": "/root/inspector_handover_review",
+      "model": "gpt-6.1-sol",
+      "effort": "low",
+      "remoteSha256": "388a8df4b30f45bb686cbd4840569fc9e82e97141653c1dd3ebe8cff033e5c58",
+      "launcherSha256": "59e5a6e75a2ef383cd545efcd876ea61e97b369bfb0c7e0c7e2f17a8fbbd303b",
+      "nativeEffectsByReviewer": false,
+      "closedFinding": "Original incomplete cleanup guard; revised live/protected data and explicitly accounted monotonic periodic maintenance",
+      "isolation": "Read-only instructions; OS/network isolation not enforced"
+    },
+    "enforcement": "Independent read-only contexts; no native effects by reviewers; OS/network credential isolation not enforced or claimed"
+  },
+  "preservedFailures": [
+    {
+      "operation": "Local artifact extraction validation",
+      "result": "Initial quadratic archive-parent validation stopped locally; indexed symlink validation completed on same original archive. No native effect."
+    },
+    {
+      "operation": "Initial synthetic native probe",
+      "result": "Integrity passed; probe failed before expected sandbox qualification. Hardcoded Sharp lib/index.js absent in actual0.35.4. Existing inspector independently reconciled unchanged/no active sibling jobs. Package-export resolution correction independently reviewed; only new probe transferred/run; no archive transfer/service retry."
+    },
+    {
+      "operation": "Initial handover review",
+      "result": "Material cleanup guard finding before effects. Corrected near-term/live-state guard and explicit operational-metadata accounting; root actual SQL/read-only preconditions and impact review CLEAR. Runtime retention source unchanged."
+    },
+    {
+      "operation": "Storefront probes",
+      "result": "Fetch Response.status property error and obsolete step/back accessible-label timeouts retained. Read-only corrections; no Insignia mutation. Immediate blank preview resolved with renderer completion; no product correction claimed."
+    }
+  ],
+  "custody": {
+    "privatePacket": "/home/serveradmin/insignia-milestone-autonomy-handoff/lean195-followthrough-20261018",
+    "nativePacket": "/home/serveradmin/insignia-inspector-handover-20261018",
+    "rawCopiesAndScreenshotsDue": "2026-10-20",
+    "activeDependencies": "Permanent immutable release and ~/.config/insignia startup/storage files are active runtime custody; exclude from temporary-copy deletion. Old package/env/profile retained for reviewed rollback/cleanup.",
+    "originalDesignDeadlines": "Existing21/22/24October unchanged",
+    "credentials": "Rotation remains owed; new active consumers must be included"
+  },
+  "remaining": [
+    "Full corresponding legacy fidelity and other supported storefront states",
+    "Additional inspector restart/rollback/recovery and monitoring qualification",
+    "Actual privacy export/erasure fulfillment and independent uninstall/shop-erasure authority; protected store must not be uninstalled",
+    "EUR/GBP and representative non-development merchant eligibility remain unqualified",
+    "Safe20October private-copy/backup cleanup and credential rotation; fixture/test-gateway cleanup",
+    "No public rollout, new purchase or new release allocation"
+  ]
+}
