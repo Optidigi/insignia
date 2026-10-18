@@ -3,6 +3,63 @@ import { Pool } from 'pg';
 import { expect, test } from 'vitest';
 import { createDurableCore } from '../src/index.js';
 
+test.each([false, true])(
+  'generic scope cannot become fresh after expiry during a shop lock wait (erased=%s)',
+  async (erased) => {
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+    const shopId = randomUUID(),
+      shopDomain = `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
+    const provider = (BigInt(`0x${randomUUID().replaceAll('-', '').slice(0, 12)}`) + 1n).toString();
+    const receipt = await core.webhooks.receive({
+      shopDomain,
+      topic: 'app/uninstalled',
+      apiVersion: '2026-07',
+      deliveryId: randomUUID(),
+      triggeredAt: new Date(),
+      eventId: null,
+      name: null,
+      rawBody: Buffer.from(JSON.stringify({ id: provider, myshopify_domain: shopDomain })),
+    });
+    const blocker = await pool.connect();
+    let snapshot: Promise<unknown> | undefined;
+    try {
+      await core.transactions.run((tx) => core.tenants.createShop(tx, { shopId, shopDomain, shopifyShopId: provider }));
+      await blocker.query('BEGIN');
+      await blocker.query('SELECT shop_id FROM shops WHERE shop_id=$1 FOR UPDATE', [shopId]);
+      snapshot = pool.query('SELECT public.snapshot_generic_uninstall_scope($1)', [receipt.id]);
+      let waiting = false;
+      for (let attempt = 0; attempt < 100; attempt++) {
+        const result = await pool.query(
+          "SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE '%SELECT public.snapshot_generic_uninstall_scope%') AS waiting",
+        );
+        if (result.rows[0].waiting) {
+          waiting = true;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+      expect(waiting).toBe(true);
+      await pool.query('UPDATE inbox_messages SET purge_after=clock_timestamp() WHERE id=$1', [receipt.id]);
+      if (erased)
+        await pool.query("UPDATE inbox_messages SET payload=''::bytea,erasure_state='erased' WHERE id=$1", [
+          receipt.id,
+        ]);
+      await blocker.query('COMMIT');
+      await snapshot;
+      expect(
+        (await pool.query('SELECT 1 FROM generic_uninstall_scopes WHERE inbox_id=$1', [receipt.id])).rowCount,
+      ).toBe(0);
+    } finally {
+      await blocker.query('ROLLBACK');
+      blocker.release();
+      if (snapshot) await snapshot;
+      await core.close();
+      await pool.end();
+    }
+  },
+);
+
 test('generic cleanup accounting freezes its local ceiling and cannot use an old callback to cover an active reinstall', async () => {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   const core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));

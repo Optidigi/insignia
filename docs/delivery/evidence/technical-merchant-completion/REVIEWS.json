@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-18",
+  "base": "ab2a71356d816a79dc859a472a64458f2dc020e5",
+  "priorCandidate": "b213b18ff8b019e20a4538129bfb38e3c9ebc0a0",
+  "reviewMethod": "Independent native agents; procedural read-only review, unrestricted runtime capability; no provider or deployment effects. Both Spec/correctness and Standards/security covered.",
+  "reviews": [
+    {
+      "reviewer": "merchant_review",
+      "scope": "Merchant UI/order labels and current lifecycle adapter, enrollment, callback routing, generation fences, generic accounting and grants",
+      "result": "CLEAR",
+      "corrections": [
+        "Late merchant authority after optional provider labels",
+        "Painted skeleton dimensions",
+        "Definite enrollment rejection retry",
+        "Independent registration readback",
+        "Confirmed subscription drift repair",
+        "Expiry/hash/body revalidation after generic scope lock wait"
+      ],
+      "checks": "Independent UI8/service13; adapter10. Root real DB/enrollment/HTTP evidence recorded separately; reviewer does not claim skipped worker tests passed."
+    },
+    {
+      "reviewer": "operations_review",
+      "scope": "Operations/packaging; exact-generation privacy scope/recovery and restore; coarse monitoring integration",
+      "result": "CLEAR",
+      "corrections": [
+        "Required replica freshness/retention observation",
+        "Source libpq authority mismatch",
+        "Alert expiry counter persistence",
+        "Absolute and promised retention bounds",
+        "Complete restore expiry replay and plaintext removal",
+        "Receipt scope excludes later reinstall from status/recovery",
+        "Processed blocked privacy remains visible to restricted monitoring"
+      ],
+      "checks": "Operations27Node+7backup+3wrapper+10portable; final privacy/recovery/restore/accounting18 actual PostgreSQL18; heartbeat10; restricted-role positive/negative proof."
+    }
+  ],
+  "reviewedFileSha256": {
+    "packages/shopify/src/uninstall-subscription.ts": "bfc011b9c67af84a0504b458696b72d79112d282463b33a869f7f7ac8900918b",
+    "packages/database/migrations/20261018000200_uninstall_destinations.sql": "74ea16ef0e250bfac0ace0e90463fcccaab2b886caba1d3e3886007f1774739b",
+    "packages/database/migrations/20261018000300_uninstall_privacy_recovery.sql": "7de1406303e4a96c499afbaa183e9e73b4d9334c970e4d5e698acb8b3c3abec6",
+    "packages/database/migrations/20261018000400_generic_uninstall_cleanup_accounting.sql": "503fa47da03a22f1a286306972489000f6acac623e3ab8619a04c8fd93b50f8a",
+    "packages/database/src/repositories/uninstall-lifecycle.ts": "c7e5b718e137edfb9f5bb2ecdf719e5fa4f32552e22fcc09f4f3c538b80ac161",
+    "packages/database/src/repositories/uninstall-privacy.ts": "e0fb085e5431bc81e1256a29b417840358a5335c1146913c3ed27bf4ddd1dd95",
+    "packages/database/src/repositories/shopify-webhooks.ts": "6d3d98e48ed835dbac9a40c9ee0d637b69af7f90bf599d6d97381b9cd6126c21",
+    "apps/worker/src/uninstall-enrollment.ts": "078ff38b112465527b59ea02e677bdd0c75b768fa3cad3f907a49e043143c1d8",
+    "apps/worker/src/handlers.ts": "3b3f5a8bf8513b3e195d208d64a23c2d3ef1cfef4727ffb16c43f68429e6789e",
+    "apps/worker/src/reconciliation.ts": "807ae44ae1ba09436becffde9924c5935d3a6d939da18243b28d0f8a61577547",
+    "apps/web/src/server/admin/production.ts": "3b1d1e067ea4f3322a91bc6c53e6688440819bdba48c9178ec6e6750982b2bf3",
+    "scripts/privacy/restore-exclusions.mjs": "672e38417c8c083e6212279f0f17cc62027fce45d8e86318b89ee5bcc67232ac",
+    "scripts/operations/heartbeat-snapshot.mjs": "007a76655a279aa88864da5c9987cab1b5267c990ec676e2e9a3e9ea1cdeef7e",
+    "deployment/alerts/monitor-grants.sql": "4725db2413bd02c9647ed7878af833f2dabf7ae974f9fa242f43b0e5b6897d6b"
+  },
+  "nativeAcceptance": "NOT_ESTABLISHED",
+  "rollout": "NOT_AUTHORIZED"
+}

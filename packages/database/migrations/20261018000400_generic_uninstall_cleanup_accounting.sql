@@ -32,6 +32,11 @@ BEGIN
  SELECT * INTO target FROM public.shops WHERE shopify_shop_id=body->>'id'
   AND (body->>'myshopify_domain' IS NULL OR shop_domain=body->>'myshopify_domain') FOR UPDATE;
  IF NOT FOUND THEN RETURN; END IF;
+ SELECT * INTO receipt FROM public.inbox_messages WHERE id=p_inbox FOR UPDATE NOWAIT;
+ IF NOT FOUND OR receipt.erasure_state<>'retained'
+  OR NOT coalesce(receipt.purge_after>clock_timestamp() AND isfinite(receipt.purge_after),false)
+  OR encode(sha256(receipt.payload),'hex')<>receipt.payload_sha256 THEN RETURN; END IF;
+ IF convert_from(receipt.payload,'UTF8')::jsonb IS DISTINCT FROM body THEN RETURN; END IF;
  INSERT INTO public.generic_uninstall_scopes(inbox_id,shop_id,generation_ceiling)
  VALUES(p_inbox,target.shop_id,target.current_generation) ON CONFLICT DO NOTHING;
 END $$;

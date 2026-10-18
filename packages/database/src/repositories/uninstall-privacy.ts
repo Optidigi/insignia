@@ -7,6 +7,7 @@ export type UninstallPrivacyRecovery = {
 };
 export type UninstallPrivacyStatus = {
   blockedReceiptCount: number;
+  legacyScopeReceiptCount: number;
   recoveryDecisionCount: number;
   activeGenerationHoldCount: number;
   unrecoveredBlockedReceiptCount: number;

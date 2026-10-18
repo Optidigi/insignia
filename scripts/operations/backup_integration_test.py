@@ -78,6 +78,8 @@ await import('{module}');
                 self.assertFalse((stage/'restored/database.dump').exists())
                 count = int(run([tools/'psql', '-X', '-Atc', 'SELECT count(*) FROM schema_migrations']).stdout)
                 self.assertEqual(count, len(list((ROOT/'packages/database/migrations').glob('*.sql'))))
+                # Keep rich restore fixtures separate from telemetry's deliberate privacy HOLD.
+                run([tools/'createdb','--template','backup_source','privacy_restore_source'])
                 # Qualify the alert agent's real aggregate SQL, including a naturally expired synthetic inbox.
                 heartbeat = (ROOT/'scripts/operations/heartbeat-snapshot.mjs').as_uri()
                 env['PGDATABASE'] = 'backup_source'
@@ -105,14 +107,19 @@ VALUES('11111111-1111-1111-1111-111111111111',encode(sha256('fixture'::bytea),'h
 INSERT INTO public.buyer_sessions(session_id,shop_id,installation_generation,owner_hash,created_at,expires_at,write_window)
 VALUES(gen_random_uuid(),'heartbeat-inactive',1,repeat('b',64),clock_timestamp(),clock_timestamp()+interval '1 day',clock_timestamp());
 UPDATE public.installation_generations SET deactivated_at=clock_timestamp() WHERE shop_id='heartbeat-inactive';`);
+await c.query(`INSERT INTO public.inbox_messages(id,source,payload,payload_sha256,received_at,state,retention_class,purge_after,erasure_state)
+VALUES('33333333-3333-3333-3333-333333333333','shopify',''::bytea,encode(sha256(''::bytea),'hex'),clock_timestamp(),'processed','shopify-webhook',clock_timestamp()+interval '1 day','erased');
+INSERT INTO public.customer_privacy_receipts(inbox_id,shop_id,raw_body_sha256,operation,requested_order_count,matched_purchase_count)
+VALUES('33333333-3333-3333-3333-333333333333','heartbeat-artwork',encode(sha256(''::bytea),'hex'),'SHOP_ERASURE_BLOCKED',0,0);`);
 const review=await collectDatabaseSnapshot(c,Date.now(),900);
+if(review.processing.stalledCount!==2)throw Error('unresolved privacy hold absent from processing signal');
 if(review.deletion.overdueCount!==6)throw Error('review cleanup mismatch: '+review.deletion.overdueCount);
 await c.query('CREATE ROLE heartbeat_monitor NOLOGIN');
 const {{readFile}}=await import('node:fs/promises');
 const grants=(await readFile('{ROOT}/deployment/alerts/monitor-grants.sql','utf8')).replaceAll(':"monitor_role"','"heartbeat_monitor"');
 await c.query(grants);await c.query('SET ROLE heartbeat_monitor');
 const restricted=await collectDatabaseSnapshot(c,Date.now(),900);
-if(restricted.deletion.overdueCount!==6)throw Error('restricted aggregate mismatch');
+if(restricted.processing.stalledCount!==2||restricted.deletion.overdueCount!==6)throw Error('restricted aggregate mismatch');
 for(const sql of ['SELECT payload FROM public.inbox_messages LIMIT 0','UPDATE public.inbox_messages SET state=state WHERE false']){{
 let denied=false;try{{await c.query(sql)}}catch(error){{denied=error.code==='42501'}}if(!denied)throw Error('monitor privilege boundary failed');
 }}
@@ -123,11 +130,12 @@ console.log(JSON.stringify({{empty,populated,review,restricted}}));
                 self.assertEqual(telemetry.returncode, 0, telemetry.stderr.decode())
                 print('Actual PostgreSQL heartbeat aggregates:', telemetry.stdout.decode().strip())
                 # Existing rich erasure-replay regression now runs on this same owned cluster/source.
-                env.update(DATABASE_URL=url, PRIVACY_RESTORE_TEST_URL=url, PRIVACY_PG_TOOLS=str(tools))
+                restore_source_url=url.replace('/backup_source?', '/privacy_restore_source?')
+                env.update(DATABASE_URL=restore_source_url, PRIVACY_RESTORE_TEST_URL=restore_source_url, PRIVACY_PG_TOOLS=str(tools))
                 subprocess.run([str(ROOT/'packages/database/node_modules/.bin/vitest'), 'run', 'test/privacy-restore.test.ts'], cwd=ROOT/'packages/database', env=env, check=True)
                 # Actual expiry execution against a new offline clone preserves purchased economics/history.
                 env.pop('DATABASE_URL',None)
-                run([tools/'createdb','--template','backup_source','insignia_recovery_expiry_fixture'])
+                run([tools/'createdb','--template','privacy_restore_source','insignia_recovery_expiry_fixture'])
                 env['PGDATABASE']='insignia_recovery_expiry_fixture'
                 expiry_module=(ROOT/'scripts/operations/backup-expiry.mjs').as_uri()
                 replay=run(['node','--input-type=module','-e',f"""

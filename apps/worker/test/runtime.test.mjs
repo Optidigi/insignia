@@ -14,6 +14,7 @@ test('configured worker serves liveness and durable readiness, then closes on SI
   const child = spawn(process.execPath, [entry.pathname, '--port=0'], {
     env: {
       ...process.env,
+      APP_URL: 'https://synthetic.example',
       INSIGNIA_CREDENTIAL_KEY_ID: 'synthetic-k1',
       INSIGNIA_CREDENTIAL_KEY_BASE64: Buffer.alloc(32, 7).toString('base64'),
       SHOPIFY_CLIENT_ID: 'synthetic-client-id',

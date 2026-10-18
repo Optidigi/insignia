@@ -1,6 +1,29 @@
 -- migrate:up
 -- A new decision links an actual privacy receipt to independent exact-generation
 -- uninstall authority. It never changes the historical BLOCKED receipt.
+-- Receipt-local trusted coverage is accounting only, never erasure authority.
+CREATE TABLE uninstall_privacy_scopes (
+ privacy_inbox_id uuid PRIMARY KEY REFERENCES customer_privacy_receipts(inbox_id),
+ shop_id text NOT NULL, generation_ceiling bigint NOT NULL,
+ observed_at timestamptz NOT NULL DEFAULT clock_timestamp() CHECK(isfinite(observed_at)),
+ observation_kind text NOT NULL CHECK(observation_kind IN ('original_processing','legacy_recovery')),
+ FOREIGN KEY(shop_id,generation_ceiling) REFERENCES installation_generations(shop_id,generation)
+);
+REVOKE ALL ON uninstall_privacy_scopes FROM PUBLIC;
+CREATE TRIGGER uninstall_privacy_scope_immutable BEFORE UPDATE OR DELETE ON uninstall_privacy_scopes
+ FOR EACH ROW EXECUTE FUNCTION reject_quote_mutation();
+CREATE FUNCTION public.snapshot_uninstall_privacy_scope(p_privacy uuid,p_kind text) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+DECLARE receipt public.customer_privacy_receipts%ROWTYPE; ceiling bigint;
+BEGIN
+ IF p_kind NOT IN ('original_processing','legacy_recovery') THEN RAISE EXCEPTION 'invalid privacy scope observation'; END IF;
+ SELECT * INTO receipt FROM public.customer_privacy_receipts WHERE inbox_id=p_privacy;
+ IF NOT FOUND OR receipt.operation NOT IN ('SHOP_ERASURE_BLOCKED','SHOP_ERASURE_STAGED') THEN RAISE EXCEPTION 'shop privacy receipt required'; END IF;
+ SELECT current_generation INTO ceiling FROM public.shops WHERE shop_id=receipt.shop_id FOR UPDATE;
+ INSERT INTO public.uninstall_privacy_scopes(privacy_inbox_id,shop_id,generation_ceiling,observation_kind)
+ VALUES(p_privacy,receipt.shop_id,ceiling,p_kind) ON CONFLICT DO NOTHING;
+END $$;
+REVOKE ALL ON FUNCTION public.snapshot_uninstall_privacy_scope(uuid,text) FROM PUBLIC;
 CREATE TABLE uninstall_privacy_recoveries (
  privacy_inbox_id uuid NOT NULL REFERENCES customer_privacy_receipts(inbox_id),
  shop_id text NOT NULL,
@@ -33,6 +56,9 @@ BEGIN
  SELECT * INTO privacy FROM public.customer_privacy_receipts WHERE inbox_id=p_privacy;
  IF NOT FOUND OR privacy.shop_id<>destination.shop_id OR privacy.operation NOT IN ('SHOP_ERASURE_BLOCKED','SHOP_ERASURE_STAGED')
  THEN RAISE EXCEPTION 'actual same-shop privacy receipt required'; END IF;
+ PERFORM public.snapshot_uninstall_privacy_scope(p_privacy,'legacy_recovery');
+ IF destination.installation_generation>(SELECT generation_ceiling FROM public.uninstall_privacy_scopes WHERE privacy_inbox_id=p_privacy)
+ THEN RAISE EXCEPTION 'uninstall generation exceeds frozen privacy scope'; END IF;
  -- The late-authority decision says inactive NOW; it never asserts that the
  -- generation was already inactive at the original receipt collection time.
  INSERT INTO public.uninstall_privacy_recoveries(privacy_inbox_id,shop_id,installation_generation,uninstall_inbox_id,capability_digest,external_installation_id)
@@ -62,6 +88,7 @@ BEGIN
   JOIN public.installation_generations i ON i.shop_id=d.shop_id AND i.generation=d.installation_generation
   WHERE r.operation IN ('SHOP_ERASURE_BLOCKED','SHOP_ERASURE_STAGED') AND d.state IN ('dispatched','registered','retired')
    AND i.deactivated_at IS NOT NULL AND i.external_installation_id=d.external_installation_id
+   AND (NOT EXISTS(SELECT 1 FROM public.uninstall_privacy_scopes scope WHERE scope.privacy_inbox_id=r.inbox_id) OR d.installation_generation<=(SELECT scope.generation_ceiling FROM public.uninstall_privacy_scopes scope WHERE scope.privacy_inbox_id=r.inbox_id))
    AND NOT EXISTS(SELECT 1 FROM public.uninstall_privacy_recoveries done WHERE done.privacy_inbox_id=r.inbox_id AND done.shop_id=d.shop_id AND done.installation_generation=d.installation_generation)
   ORDER BY r.inbox_id,d.shop_id,d.installation_generation,a.inbox_id LIMIT p_limit
  LOOP PERFORM public.recover_uninstall_privacy(item.privacy_id,item.uninstall_id); recovered:=recovered+1; END LOOP;
@@ -73,11 +100,13 @@ LANGUAGE sql SECURITY DEFINER SET search_path=pg_catalog AS $$
  SELECT jsonb_build_object(
   'blockedReceiptCount',(SELECT count(*) FROM public.customer_privacy_receipts WHERE operation='SHOP_ERASURE_BLOCKED'),
   'recoveryDecisionCount',(SELECT count(*) FROM public.uninstall_privacy_recoveries),
-  'activeGenerationHoldCount',(SELECT count(*) FROM public.customer_privacy_receipts r JOIN public.shops s USING(shop_id)
-    JOIN public.installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation
-    WHERE r.operation='SHOP_ERASURE_BLOCKED' AND i.deactivated_at IS NULL),
-  'unrecoveredBlockedReceiptCount',(SELECT count(*) FROM public.customer_privacy_receipts r WHERE r.operation='SHOP_ERASURE_BLOCKED'
-    AND NOT EXISTS(SELECT 1 FROM public.uninstall_privacy_recoveries done WHERE done.privacy_inbox_id=r.inbox_id)))
+  'legacyScopeReceiptCount',(SELECT count(*) FROM public.uninstall_privacy_scopes scope JOIN public.customer_privacy_receipts r ON r.inbox_id=scope.privacy_inbox_id WHERE r.operation='SHOP_ERASURE_BLOCKED' AND scope.observation_kind='legacy_recovery'),
+  'activeGenerationHoldCount',(SELECT count(*) FROM public.customer_privacy_receipts r JOIN public.uninstall_privacy_scopes scope ON scope.privacy_inbox_id=r.inbox_id
+    WHERE r.operation='SHOP_ERASURE_BLOCKED' AND EXISTS(SELECT 1 FROM public.installation_generations i WHERE i.shop_id=r.shop_id AND i.generation<=scope.generation_ceiling AND i.deactivated_at IS NULL)),
+  'unrecoveredBlockedReceiptCount',(SELECT count(*) FROM public.customer_privacy_receipts r LEFT JOIN public.uninstall_privacy_scopes scope ON scope.privacy_inbox_id=r.inbox_id
+    WHERE r.operation='SHOP_ERASURE_BLOCKED' AND (scope.privacy_inbox_id IS NULL OR scope.observation_kind='legacy_recovery'
+      OR EXISTS(SELECT 1 FROM public.installation_generations i WHERE i.shop_id=r.shop_id AND i.generation<=scope.generation_ceiling
+        AND NOT EXISTS(SELECT 1 FROM public.shop_privacy_fences f WHERE f.shop_id=i.shop_id AND f.installation_generation=i.generation)))))
 $$;
 REVOKE ALL ON FUNCTION public.uninstall_privacy_status() FROM PUBLIC;
 
@@ -103,12 +132,56 @@ BEGIN
  RETURN NEW;
 END $$;
 
+CREATE OR REPLACE FUNCTION public.process_customer_privacy_inbox(p_inbox uuid) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+DECLARE result jsonb; body jsonb; operation text; new_receipt boolean;
+BEGIN
+ new_receipt:=NOT EXISTS(SELECT 1 FROM public.customer_privacy_receipts WHERE inbox_id=p_inbox);
+ SELECT r.operation INTO operation FROM public.customer_privacy_receipts r WHERE inbox_id=p_inbox;
+ IF operation IN ('SHOP_ERASURE_STAGED','SHOP_ERASURE_BLOCKED') THEN result:=public.stage_shop_privacy_inbox(p_inbox);
+ ELSIF operation IS NOT NULL THEN result:=public.stage_customer_privacy_inbox(p_inbox);
+ ELSE
+  SELECT convert_from(payload,'UTF8')::jsonb INTO body FROM public.inbox_messages WHERE id=p_inbox;
+  IF body ? 'customer' OR body ? 'orders_requested' OR body ? 'orders_to_redact' THEN result:=public.stage_customer_privacy_inbox(p_inbox);
+  ELSE result:=public.stage_shop_privacy_inbox(p_inbox); END IF;
+ END IF;
+ IF new_receipt AND result->>'kind' IN ('SHOP_ERASURE_STAGED','SHOP_ERASURE_BLOCKED') THEN PERFORM public.snapshot_uninstall_privacy_scope(p_inbox,'original_processing'); END IF;
+ UPDATE public.inbox_messages SET payload=''::bytea,erasure_state='erased',state='processed',last_error_class=NULL,lease_owner=NULL,lease_until=NULL WHERE id=p_inbox;
+ UPDATE public.webhook_obligation_facts SET captured_fields='{}',facts_erased_at=coalesce(facts_erased_at,clock_timestamp()) WHERE inbox_id=p_inbox;
+ UPDATE public.shopify_webhook_deliveries SET queue_cleanup_pending=true WHERE inbox_id=p_inbox;
+ RETURN result;
+END $$;
+
+
+
 -- migrate:down
-DO $$ BEGIN IF EXISTS(SELECT 1 FROM uninstall_privacy_recoveries) THEN RAISE EXCEPTION 'uninstall privacy decisions prevent rollback'; END IF; END $$;
+DO $$ BEGIN IF EXISTS(SELECT 1 FROM uninstall_privacy_recoveries) OR EXISTS(SELECT 1 FROM uninstall_privacy_scopes) THEN RAISE EXCEPTION 'uninstall privacy decisions prevent rollback'; END IF; END $$;
 DROP FUNCTION public.uninstall_privacy_status();
 DROP FUNCTION public.recover_pending_uninstall_privacy(integer);
 DROP FUNCTION public.recover_uninstall_privacy(uuid,uuid);
 DROP TABLE uninstall_privacy_recoveries;
+CREATE OR REPLACE FUNCTION public.process_customer_privacy_inbox(p_inbox uuid) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+DECLARE result jsonb; body jsonb; operation text;
+BEGIN
+ SELECT r.operation INTO operation FROM public.customer_privacy_receipts r WHERE inbox_id=p_inbox;
+ IF operation IN ('SHOP_ERASURE_STAGED','SHOP_ERASURE_BLOCKED') THEN result:=public.stage_shop_privacy_inbox(p_inbox);
+ ELSIF operation IS NOT NULL THEN result:=public.stage_customer_privacy_inbox(p_inbox);
+ ELSE
+  SELECT convert_from(payload,'UTF8')::jsonb INTO body FROM public.inbox_messages WHERE id=p_inbox;
+  IF body ? 'customer' OR body ? 'orders_requested' OR body ? 'orders_to_redact' THEN result:=public.stage_customer_privacy_inbox(p_inbox);
+  ELSE result:=public.stage_shop_privacy_inbox(p_inbox); END IF;
+ END IF;
+ UPDATE public.inbox_messages SET payload=''::bytea,erasure_state='erased',state='processed',last_error_class=NULL,lease_owner=NULL,lease_until=NULL WHERE id=p_inbox;
+ UPDATE public.webhook_obligation_facts SET captured_fields='{}',facts_erased_at=coalesce(facts_erased_at,clock_timestamp()) WHERE inbox_id=p_inbox;
+ UPDATE public.shopify_webhook_deliveries SET queue_cleanup_pending=true WHERE inbox_id=p_inbox;
+ RETURN result;
+END $$;
+
+
+
+DROP FUNCTION public.snapshot_uninstall_privacy_scope(uuid,text);
+DROP TABLE uninstall_privacy_scopes;
 CREATE OR REPLACE FUNCTION public.erase_method_catalog_for_shop_privacy() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
 DECLARE target public.shops%ROWTYPE; installed public.installation_generations%ROWTYPE;

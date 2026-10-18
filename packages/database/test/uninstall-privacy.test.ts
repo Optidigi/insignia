@@ -15,7 +15,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('independent generation-only u
   afterAll(async () => {
     await db?.destroy();
   });
-  async function fixture() {
+  async function fixture(legacy = false) {
     const shopId = randomUUID(),
       shopDomain = `p${randomBytes(12).toString('hex')}.myshopify.com`,
       shopifyShopId = BigInt('0x' + randomBytes(6).toString('hex')).toString();
@@ -48,16 +48,21 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('independent generation-only u
       name: null,
       rawBody: Buffer.from(JSON.stringify({ shop_id: shopifyShopId, shop_domain: shopDomain })),
     });
-    await createCustomerPrivacyRepository(db).processInbox(privacy.id);
+    if (legacy) await sql`SELECT public.stage_shop_privacy_inbox(${privacy.id}::uuid)`.execute(db);
+    else await createCustomerPrivacyRepository(db).processInbox(privacy.id);
     const asset = randomUUID();
     await sql`INSERT INTO artwork_assets(asset_id,shop_id,installation_generation,owner_hash,owner_kind,declared_mime,declared_bytes,state,quarantine_key,original_key,preview_key,collected_at,upload_until,expires_at) VALUES(${asset}::uuid,${shopId},1,${'a'.repeat(64)},'guest','image/svg+xml',10,'UPLOADING',${asset + '/q'},${asset + '/o'},${asset + '/p'},statement_timestamp(),statement_timestamp()+interval '5 minutes',statement_timestamp()+interval '7 days')`.execute(
       db,
     );
-    return { shopId, uninstall: uninstall.id, privacy: privacy.id, asset };
+    return { shopId, shopDomain, shopifyShopId, uninstall: uninstall.id, privacy: privacy.id, asset };
   }
-  async function qualify(f: Awaited<ReturnType<typeof fixture>>) {
+  async function qualify(
+    f: Awaited<ReturnType<typeof fixture>>,
+    generation = '1',
+    installationId = 'gid://shopify/AppInstallation/7',
+  ) {
     const digest = randomBytes(32).toString('hex');
-    await sql`INSERT INTO uninstall_destinations(capability_digest,shop_id,installation_generation,external_installation_id,state) VALUES(${digest},${f.shopId},1,'gid://shopify/AppInstallation/7','prepared')`.execute(
+    await sql`INSERT INTO uninstall_destinations(capability_digest,shop_id,installation_generation,external_installation_id,state) VALUES(${digest},${f.shopId},${generation}::bigint,${installationId},'prepared')`.execute(
       db,
     );
     await sql`UPDATE uninstall_destinations SET state='dispatched',dispatched_at=clock_timestamp() WHERE capability_digest=${digest}`.execute(
@@ -178,5 +183,71 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('independent generation-only u
       await sql.raw(`DROP OWNED BY ${role}`).execute(db);
       await sql.raw(`DROP ROLE ${role}`).execute(db);
     }
+  });
+  it('receipt-local coverage closes old holds without hiding a newer unfenced generation', async () => {
+    const repo = createUninstallPrivacyRepository(db),
+      baseline = await repo.status();
+    const f = await fixture();
+    await qualify(f);
+    await db.transaction().execute((tx) => createTenantRepository(tx).deactivateCurrent(tx, f.shopId, '1'));
+    await repo.recover(f.privacy, f.uninstall);
+    await db
+      .transaction()
+      .execute((tx) => createTenantRepository(tx).startInstallation(tx, f.shopId, 'gid://shopify/AppInstallation/8'));
+    expect((await repo.status()).activeGenerationHoldCount).toBe(baseline.activeGenerationHoldCount);
+    expect((await repo.status()).unrecoveredBlockedReceiptCount).toBe(baseline.unrecoveredBlockedReceiptCount);
+    const second = await createShopifyWebhookRepository(db).receive({
+      shopDomain: f.shopDomain,
+      topic: 'shop/redact',
+      apiVersion: '2026-07',
+      deliveryId: randomUUID(),
+      triggeredAt: new Date(),
+      eventId: null,
+      name: null,
+      rawBody: Buffer.from(JSON.stringify({ shop_id: f.shopifyShopId, shop_domain: f.shopDomain })),
+    });
+    await createCustomerPrivacyRepository(db).processInbox(second.id);
+    await repo.recover(second.id, f.uninstall);
+    expect((await repo.status()).activeGenerationHoldCount).toBe(baseline.activeGenerationHoldCount + 1);
+    expect((await repo.status()).unrecoveredBlockedReceiptCount).toBe(baseline.unrecoveredBlockedReceiptCount + 1);
+    await db.transaction().execute((tx) => createTenantRepository(tx).deactivateCurrent(tx, f.shopId, '2'));
+    expect((await repo.status()).activeGenerationHoldCount).toBe(baseline.activeGenerationHoldCount);
+    expect((await repo.status()).unrecoveredBlockedReceiptCount).toBe(baseline.unrecoveredBlockedReceiptCount + 1);
+    const next = await createShopifyWebhookRepository(db).receive({
+      shopDomain: f.shopDomain,
+      topic: 'app/uninstalled',
+      apiVersion: '2026-07',
+      deliveryId: randomUUID(),
+      triggeredAt: new Date(),
+      eventId: null,
+      name: null,
+      rawBody: Buffer.from(JSON.stringify({ id: f.shopifyShopId, myshopify_domain: f.shopDomain })),
+    });
+    await qualify({ ...f, uninstall: next.id }, '2', 'gid://shopify/AppInstallation/8');
+    await expect(repo.recover(f.privacy, next.id)).rejects.toThrow('exceeds frozen privacy scope');
+    await repo.recover(second.id, next.id);
+    expect((await repo.status()).unrecoveredBlockedReceiptCount).toBe(baseline.unrecoveredBlockedReceiptCount);
+  });
+  it('legacy first recovery snapshots NOW without clearing unknown historical coverage', async () => {
+    const repo = createUninstallPrivacyRepository(db),
+      baseline = await repo.status();
+    const f = await fixture(true);
+    await qualify(f);
+    await db.transaction().execute((tx) => createTenantRepository(tx).deactivateCurrent(tx, f.shopId, '1'));
+    await repo.recover(f.privacy, f.uninstall);
+    expect((await repo.status()).legacyScopeReceiptCount).toBe(baseline.legacyScopeReceiptCount + 1);
+    expect((await repo.status()).unrecoveredBlockedReceiptCount).toBe(baseline.unrecoveredBlockedReceiptCount + 1);
+    expect(
+      (
+        await sql<{
+          observation_kind: string;
+        }>`SELECT observation_kind FROM uninstall_privacy_scopes WHERE privacy_inbox_id=${f.privacy}::uuid`.execute(db)
+      ).rows[0]?.observation_kind,
+    ).toBe('legacy_recovery');
+    await expect(
+      sql`UPDATE uninstall_privacy_scopes SET generation_ceiling=2 WHERE privacy_inbox_id=${f.privacy}::uuid`.execute(
+        db,
+      ),
+    ).rejects.toThrow();
   });
 });

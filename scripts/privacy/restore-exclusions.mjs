@@ -8,6 +8,7 @@ import { pathToFileURL } from 'node:url';
 const FORMAT = 'insignia-privacy-erasure-exclusions-v2';
 const MAX_BYTES = 64 * 1024 * 1024;
 const keys = {
+  uninstallScopes: ['privacy_inbox_id', 'shop_id', 'generation_ceiling', 'observed_at', 'observation_kind'],
   uninstallRecoveries: [
     'privacy_inbox_id',
     'shop_id',
@@ -57,6 +58,7 @@ const keys = {
 const copies = [
   ['inboxes', 'inbox_messages', ['id']],
   ['receipts', 'customer_privacy_receipts', ['inbox_id']],
+  ['uninstallScopes', 'uninstall_privacy_scopes', ['privacy_inbox_id']],
   ['uninstallRecoveries', 'uninstall_privacy_recoveries', ['privacy_inbox_id', 'shop_id', 'installation_generation']],
   ['links', 'customer_privacy_order_links', ['inbox_id', 'order_id']],
   ['shopFences', 'shop_privacy_fences', ['shop_id', 'installation_generation']],
@@ -95,6 +97,7 @@ const functions = [
   'read_customer_privacy_order_links',
   'export_customer_privacy_order',
   'guard_customer_private_ingestion',
+  'snapshot_uninstall_privacy_scope',
   'recover_uninstall_privacy',
   'recover_pending_uninstall_privacy',
   'uninstall_privacy_status',
@@ -217,6 +220,10 @@ export async function exportErasureExclusions(pool) {
       exportedAt: (await client.query('SELECT transaction_timestamp()::text AS at')).rows[0].at,
     };
     data.receipts = await rows(client, 'SELECT * FROM public.customer_privacy_receipts ORDER BY inbox_id');
+    data.uninstallScopes = await rows(
+      client,
+      'SELECT privacy_inbox_id,shop_id,generation_ceiling::text,observed_at,observation_kind FROM public.uninstall_privacy_scopes ORDER BY privacy_inbox_id',
+    );
     data.uninstallRecoveries = await rows(
       client,
       `SELECT privacy_inbox_id,shop_id,installation_generation::text,uninstall_inbox_id,capability_digest,external_installation_id,decided_at FROM public.uninstall_privacy_recoveries ORDER BY privacy_inbox_id,shop_id,installation_generation`,
@@ -276,21 +283,19 @@ function validate(envelope) {
     fail('exclusion format or checksum');
   const data = envelope.data;
   if (
-    !(
-      exactKeys(data, ['schemaIdentity', 'exportedAt', ...Object.keys(keys)]) ||
-      (data.uninstallRecoveries === undefined &&
-        exactKeys(data, [
-          'schemaIdentity',
-          'exportedAt',
-          ...Object.keys(keys).filter((key) => key !== 'uninstallRecoveries'),
-        ]))
-    ) ||
+    !exactKeys(data, [
+      'schemaIdentity',
+      'exportedAt',
+      ...Object.keys(keys).filter(
+        (key) => !['uninstallRecoveries', 'uninstallScopes'].includes(key) || data[key] !== undefined,
+      ),
+    ]) ||
     !/^[a-f0-9]{64}$/.test(data.schemaIdentity) ||
     !Number.isFinite(Date.parse(data.exportedAt))
   )
     fail('source metadata');
   for (const [collection, fields] of Object.entries(keys)) {
-    if (collection === 'uninstallRecoveries' && data[collection] === undefined) continue;
+    if (['uninstallRecoveries', 'uninstallScopes'].includes(collection) && data[collection] === undefined) continue;
     if (!Array.isArray(data[collection]) || data[collection].some((row) => !exactKeys(row, fields)))
       fail('non-minimal record shape');
   }
@@ -353,8 +358,35 @@ function validate(envelope) {
     )
       fail('not an actual erased inbox tombstone');
   }
+  const scopes = data.uninstallScopes ?? [];
+  if (new Set(scopes.map((scope) => scope.privacy_inbox_id)).size !== scopes.length) fail('duplicate privacy scope');
+  for (const scope of scopes) {
+    const receipt = receipts.get(scope.privacy_inbox_id);
+    if (
+      receipt?.shop_id !== scope.shop_id ||
+      !['SHOP_ERASURE_BLOCKED', 'SHOP_ERASURE_STAGED'].includes(receipt?.operation) ||
+      !['original_processing', 'legacy_recovery'].includes(scope.observation_kind) ||
+      typeof scope.generation_ceiling !== 'string' ||
+      !/^[1-9][0-9]{0,18}$/.test(scope.generation_ceiling) ||
+      !data.generations.some((g) => g.shop_id === scope.shop_id && g.generation === scope.generation_ceiling) ||
+      !Number.isFinite(Date.parse(scope.observed_at)) ||
+      Date.parse(scope.observed_at) < Date.parse(receipt.staged_at)
+    )
+      fail('unbound privacy scope');
+  }
   const recoveries = data.uninstallRecoveries ?? [];
   for (const recovery of recoveries) {
+    if (
+      typeof recovery.installation_generation !== 'string' ||
+      !/^[1-9][0-9]{0,18}$/.test(recovery.installation_generation)
+    )
+      fail('invalid recovery generation');
+    const scope = scopes.find((scope) => scope.privacy_inbox_id === recovery.privacy_inbox_id);
+    if (
+      data.uninstallScopes !== undefined &&
+      (!scope || BigInt(recovery.installation_generation) > BigInt(scope.generation_ceiling))
+    )
+      fail('recovery exceeds privacy scope');
     const generation = data.generations.find(
       (g) => g.shop_id === recovery.shop_id && g.generation === recovery.installation_generation,
     );
@@ -457,6 +489,15 @@ export async function importErasureExclusions(pool, envelope) {
       if (hash(generations) !== hash(data.generations.filter((row) => row.shop_id === shop.shop_id)))
         fail('installation identity drift');
     }
+    if (
+      (
+        await client.query(
+          'SELECT 1 FROM public.uninstall_privacy_scopes WHERE NOT(privacy_inbox_id=ANY($1::uuid[])) LIMIT 1',
+          [(data.uninstallScopes ?? []).map((scope) => scope.privacy_inbox_id)],
+        )
+      ).rowCount
+    )
+      fail('target privacy scopes absent from source');
     const sourceIds = data.receipts.map((row) => row.inbox_id);
     if (
       (

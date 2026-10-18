@@ -2,6 +2,7 @@
 -- Supply psql -v monitor_role=<dedicated existing SELECT-only role>.
 -- Never grant runtime/owner membership, INSERT/UPDATE/DELETE, or payload columns.
 GRANT USAGE ON SCHEMA public TO :"monitor_role";
+GRANT EXECUTE ON FUNCTION public.uninstall_privacy_status() TO :"monitor_role";
 GRANT SELECT (state,available_at,lease_until,purge_after,erasure_state) ON public.outbox_events TO :"monitor_role";
 GRANT SELECT (state,received_at,lease_until,purge_after,erasure_state) ON public.inbox_messages TO :"monitor_role";
 GRANT SELECT (state,expires_at,retry_at,collected_at,claim_until,quarantine_cleaned_at,upload_until,shop_id,installation_generation) ON public.artwork_assets TO :"monitor_role";

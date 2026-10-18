@@ -536,11 +536,31 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
       const exclusions = await exportErasureExclusions(source);
       expect(exclusions.format).toBe('insignia-privacy-erasure-exclusions-v2');
       expect(exclusions.data.uninstallRecoveries).toHaveLength(1);
+      expect(exclusions.data.uninstallScopes).toMatchObject([
+        { generation_ceiling: '1', observation_kind: 'original_processing' },
+      ]);
       expect(exclusions.data.receipts[0].operation).toBe('SHOP_ERASURE_BLOCKED');
       execFileSync(join(tools, 'pg_restore'), ['--no-owner', '--exit-on-error', '--dbname', targetUrl.href, backup], {
         stdio: 'pipe',
       });
       target = new Pool({ connectionString: targetUrl.href });
+      const reseal = (copy: typeof exclusions) => {
+        copy.sha256 = createHash('sha256')
+          .update(
+            JSON.stringify(copy.data, (_key, value) =>
+              value && typeof value === 'object' && !Array.isArray(value)
+                ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)))
+                : value,
+            ),
+          )
+          .digest('hex');
+        return copy;
+      };
+      const widenedScope = structuredClone(exclusions);
+      widenedScope.data.uninstallScopes[0].generation_ceiling = '2';
+      await expect(importErasureExclusions(target, reseal(widenedScope))).rejects.toThrow(
+        'conflicting copied erasure identity',
+      );
       const widened = structuredClone(exclusions);
       widened.data.assetFences.push({
         shop_id: shopId,

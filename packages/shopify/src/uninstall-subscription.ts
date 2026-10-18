@@ -139,7 +139,7 @@ export function createUninstallSubscriptionClient(input: { expectedOrigin: strin
       typeof value.uri !== 'string' ||
       value.uri.length < 1 ||
       value.uri.length > 2048 ||
-      /[\u0000-\u0020\u007f]/.test(value.uri)
+      Array.from(value.uri).some((character) => character.charCodeAt(0) <= 32 || character.charCodeAt(0) === 127)
     )
       return fail();
     return { id: value.id, topic: 'APP_UNINSTALLED', uri: value.uri };

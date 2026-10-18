@@ -16,6 +16,7 @@ stalled AS (
  AND coalesce(retry_at,collected_at)<at-$1*interval '1 second' AND (claim_until IS NULL OR claim_until<at)
  UNION ALL SELECT count(state) FROM public.merchant_preview_assets,clock
  WHERE state='WRITING' AND updated_at<at-$1*interval '1 second'
+ UNION ALL SELECT (public.uninstall_privacy_status()->>'unrecoveredBlockedReceiptCount')::bigint
 ), overdue AS (
  SELECT count(state) AS n FROM public.inbox_messages,clock WHERE erasure_state<>'erased' AND purge_after<=at
  UNION ALL SELECT count(state) FROM public.outbox_events,clock WHERE erasure_state<>'erased' AND purge_after<=at
