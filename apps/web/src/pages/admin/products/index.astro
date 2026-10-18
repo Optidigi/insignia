@@ -12,6 +12,6 @@ if (!apiKey || !/^[A-Za-z0-9_-]{1,128}$/.test(apiKey))
   return new Response('Admin configuration unavailable', { status: 503, headers: Astro.response.headers });
 ---
 <AdminLayout title="Products" apiKey={apiKey}>
-{process.env.INSIGNIA_M5_002_DIAGNOSTIC === '1' && <p role="status">Development preview: draft saves are local. Publication is disabled.</p>}
+{process.env.INSIGNIA_M5_002_DIAGNOSTIC === '1' && <s-banner tone="info">Development preview: draft saves are local. Publication is disabled.</s-banner>}
     <MerchantConfigEditor mode="picker" client:load />
 </AdminLayout>

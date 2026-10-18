@@ -2,7 +2,6 @@
 export default function AdminSkeleton({ label, rows = 3 }: { label: string; rows?: number }) {
   return (
     <div role="status" aria-label={label} aria-busy="true" class="admin-skeleton">
-      <s-paragraph>{label}…</s-paragraph>
       <div aria-hidden="true">
         <s-stack gap="base">
           {Array.from({ length: rows }, (_, index) => (

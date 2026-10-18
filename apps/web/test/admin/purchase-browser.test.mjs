@@ -119,10 +119,19 @@ test('merchant sees exact historical economics and erased detail never offers ne
   await page.goto(base + '/admin/orders/' + id);
   await page.getByText('USD 90071992547409.93', { exact: true }).waitFor();
   const navigation = page.locator('s-app-nav');
-  await navigation.getByRole('link', { name: 'Products', exact: true }).waitFor();
-  await navigation.getByRole('link', { name: 'Orders', exact: true }).waitFor();
+  await navigation
+    .locator('s-link')
+    .filter({ hasText: /^Products$/ })
+    .waitFor({ state: 'attached' });
+  await navigation
+    .locator('s-link')
+    .filter({ hasText: /^Orders$/ })
+    .waitFor({ state: 'attached' });
   assert.equal(
-    await navigation.getByRole('link', { name: 'Settings', exact: true }).getAttribute('href'),
+    await navigation
+      .locator('s-link')
+      .filter({ hasText: /^Settings$/ })
+      .getAttribute('href'),
     '/admin/settings',
   );
   await page.getByRole('heading', { name: 'Order summary', exact: true }).waitFor();
@@ -141,7 +150,7 @@ test('merchant sees exact historical economics and erased detail never offers ne
   current = view('ERASED');
   await page.getByRole('button', { name: 'Refresh purchase', exact: true }).click();
   await page.getByText('Production detail erased. Historical economics remain.', { exact: true }).waitFor();
-  assert.equal(await page.getByLabel('Upload artwork').count(), 0);
+  assert.equal(await page.locator('s-drop-zone input[type=file]').count(), 0);
 });
 test('merchant attaches verified upload, locks exact version, and permission loss removes private work', {
   timeout: 20000,
@@ -157,7 +166,15 @@ test('merchant attaches verified upload, locks exact version, and permission los
     r.fulfill({ json: { assetId: asset, expiresAt, upload: { url: 'https://private.example/q', headers: {} } } }),
   );
   await page.route('https://private.example/**', (r) =>
-    r.fulfill({ status: 200, body: '', headers: { 'Access-Control-Allow-Origin': '*' } }),
+    r.fulfill({
+      status: 200,
+      body: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=',
+        'base64',
+      ),
+      contentType: 'image/png',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+    }),
   );
   await page.route('**/api/artwork/' + asset + '/**', (r) =>
     r.fulfill({
@@ -207,7 +224,7 @@ test('merchant attaches verified upload, locks exact version, and permission los
   );
   await page.goto(base + '/admin/orders/' + id);
   await page
-    .getByLabel('Upload artwork')
+    .locator('s-drop-zone input[type=file]')
     .setInputFiles({ name: 'safe.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg/>') });
   await page.getByRole('img', { name: 'Verified artwork preview', exact: true }).waitFor();
   await page.getByRole('button', { name: 'Attach artwork', exact: true }).click();
@@ -215,7 +232,7 @@ test('merchant attaches verified upload, locks exact version, and permission los
   assert.deepEqual(attachment, { expectedVersion: 0, groupIndex: 0, placementId: 'front', assetId: asset });
   await page.getByRole('button', { name: 'Lock artwork', exact: true }).click();
   await page.getByText('Artwork status: Artwork locked', { exact: true }).waitFor();
-  assert.equal(await page.getByLabel('Upload artwork').count(), 0);
+  assert.equal(await page.locator('s-drop-zone input[type=file]').count(), 0);
   await page.getByRole('button', { name: 'Prepare original download', exact: true }).click();
   await page.getByRole('link', { name: 'Download verified original', exact: true }).waitFor();
   denied = true;
@@ -283,7 +300,7 @@ test('erased selected artwork permits explicit replacement only while bound desi
   await page
     .getByText('Selected artwork unavailable; explicitly replace within remaining detail retention.', { exact: true })
     .waitFor();
-  assert.equal(await page.getByLabel('Upload artwork').count(), 1);
+  assert.equal(await page.locator('s-drop-zone input[type=file]').count(), 1);
   assert.equal(await page.getByRole('button', { name: 'Preview artwork', exact: true }).count(), 0);
   current = {
     ...current,
@@ -304,7 +321,7 @@ test('erased selected artwork permits explicit replacement only while bound desi
   };
   await page.getByRole('button', { name: 'Refresh purchase', exact: true }).click();
   await page.getByText('Version 2: LOCK', { exact: true }).waitFor();
-  assert.equal(await page.getByLabel('Upload artwork').count(), 0);
+  assert.equal(await page.locator('s-drop-zone input[type=file]').count(), 0);
   current = { ...view(), groups: [], lines: [], exceptions: ['CONTEXT_UNVERIFIED'] };
   await page.getByRole('button', { name: 'Refresh purchase', exact: true }).click();
   await page
@@ -312,7 +329,7 @@ test('erased selected artwork permits explicit replacement only while bound desi
       exact: true,
     })
     .waitFor();
-  assert.equal(await page.getByLabel('Upload artwork').count(), 0);
+  assert.equal(await page.locator('s-drop-zone input[type=file]').count(), 0);
   assert.equal(await page.getByRole('button', { name: 'Lock artwork', exact: true }).count(), 0);
   assert.equal(await page.getByText('Artwork status: Artwork needed', { exact: true }).count(), 0);
 });
@@ -335,7 +352,16 @@ test('retention readback clears a displayed selected preview even when artwork v
   await page.route('**/api/purchases/v1/' + id + '/artwork/' + asset + '/download', (r) =>
     r.fulfill({ json: { url: 'https://private.example/old.svg', expiresAt: deadline } }),
   );
-  await page.route('https://private.example/**', (r) => r.fulfill({ body: '' }));
+  await page.route('https://private.example/**', (r) =>
+    r.fulfill({
+      body: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=',
+        'base64',
+      ),
+      contentType: 'image/png',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+    }),
+  );
   await page.goto(base + '/admin/orders/' + id);
   await page.getByRole('button', { name: 'Prepare original download', exact: true }).click();
   await page.getByRole('link', { name: 'Download verified original', exact: true }).waitFor();

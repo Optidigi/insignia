@@ -153,3 +153,66 @@ s-section[id] {
 #setup-stage-heading {
   margin-block: 20px 12px;
 }
+
+/* The host owns sidebar navigation; never show its unupgraded declarations. */
+s-app-nav {
+  display: none;
+}
+#admin-route-skeleton {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: #f1f1f1;
+  min-height: 100vh;
+}
+#admin-route-content {
+  visibility: hidden;
+  pointer-events: none;
+}
+html[data-admin-ready="true"] #admin-route-content {
+  visibility: visible;
+  pointer-events: auto;
+}
+html[data-admin-ready="true"] #admin-route-skeleton {
+  display: none;
+}
+#admin-route-failure[hidden],
+#admin-route-skeleton[hidden] {
+  display: none !important;
+}
+.admin-skeleton s-box:not(:defined) {
+  display: block;
+  background: #e5e7eb;
+  border-radius: 6px;
+}
+.admin-skeleton-row > s-box:not(:defined) {
+  width: 72px;
+  height: 56px;
+}
+.admin-skeleton-row s-stack > s-box:not(:defined) {
+  width: 90%;
+  height: 16px;
+  margin-block: 8px;
+}
+
+.admin-save-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+.admin-save-toolbar > s-paragraph {
+  margin: 0;
+}
+.admin-save-toolbar > [role="alert"] {
+  flex-basis: 100%;
+}
+[hidden] {
+  display: none !important;
+}
+s-button:not(:defined),
+s-link:not(:defined),
+s-select:not(:defined),
+s-text-field:not(:defined),
+s-drop-zone:not(:defined) {
+  visibility: hidden;
+}

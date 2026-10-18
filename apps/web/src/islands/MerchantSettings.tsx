@@ -1,62 +1,97 @@
 import { useState } from 'preact/hooks';
+import AdminDisclosure from '../components/AdminDisclosure';
 import SettingsNavigation from '../components/SettingsNavigation';
+import { useAdminPageReady } from '../shared/admin-page-ready';
 import { authenticatedJson } from '../shared/admin-request';
 import ReadinessPermissions from './ReadinessPermissions';
 
+const groups = [
+  {
+    title: 'Store configuration',
+    rows: [
+      {
+        title: 'Decoration methods',
+        description: 'Reusable method names for your products. Each product keeps its own prices and print areas.',
+        icon: 'paint-brush-round',
+        href: '/admin/settings/methods',
+      },
+      {
+        title: 'Storefront setup',
+        description: 'Connect product configuration, the customization button and cart repair in your theme.',
+        icon: 'store',
+        href: '/admin/settings/storefront',
+      },
+    ],
+  },
+  {
+    title: 'Account and data',
+    rows: [
+      {
+        title: 'Billing',
+        description: 'Your subscription, trial and Shopify billing management.',
+        icon: 'credit-card',
+        href: '/admin/settings/billing',
+      },
+      {
+        title: 'Privacy',
+        description: 'Customer data requests, retained order exports and original artwork.',
+        icon: 'lock',
+        href: '/admin/settings/privacy',
+      },
+    ],
+  },
+] as const;
 export default function MerchantSettings() {
   const [denied, setDenied] = useState('');
+  useAdminPageReady(true);
   return (
     <s-page heading="Settings">
       <SettingsNavigation current="general" />
       <s-paragraph>
-        Manage store-wide setup here. Product rules, images and decoration prices belong in each product’s
-        configuration.
+        Manage store-wide setup. Product-specific rules, images and prices live with each product.
       </s-paragraph>
-      {denied ? (
-        <s-banner tone="critical" heading="Reopen Insignia from Shopify Admin">
-          <p>{denied}</p>
-        </s-banner>
-      ) : (
-        <ReadinessPermissions
-          inspect={() =>
-            authenticatedJson('/api/admin/readiness', {}, true).catch((error) => {
-              if ([401, 403].includes((error as { status?: number }).status ?? 0)) setDenied(error.message);
-              throw error;
-            })
-          }
-        />
-      )}
-      <s-section heading="Subscription and access">
-        <s-paragraph>Review your current plan, trial and access. Shopify manages subscription changes.</s-paragraph>
-        <s-link href="/admin/settings/billing">Manage billing</s-link>
-      </s-section>
-      <s-section heading="Customer data">
-        <s-paragraph>
-          Review privacy requests, export retained order data and find original artwork. Expired or erased files stay
-          unavailable.
-        </s-paragraph>
-        <s-link href="/admin/settings/privacy">View customer privacy requests</s-link>
-      </s-section>
-      <s-section heading="Storefront setup">
-        <s-paragraph>
-          Connect your published product configuration to the customization button in your theme. Review the app block,
-          button label and cart-repair embed in Shopify’s theme editor.
-        </s-paragraph>
-        <s-link href="/admin/settings/storefront">Set up your storefront</s-link>
-      </s-section>
-      <s-section heading="Decoration methods">
-        <s-paragraph>
-          Maintain your store’s reusable method names, then add independent copies to product configurations. Prices and
-          print areas remain product-specific.
-        </s-paragraph>
-        <s-link href="/admin/settings/methods">Manage method library</s-link>
-      </s-section>
+      {groups.map((group) => (
+        <s-section key={group.title} heading={group.title}>
+          <s-stack gap="small">
+            {group.rows.map((row) => (
+              <s-clickable key={row.href} href={row.href} aria-label={row.title}>
+                <s-box padding="base" border="base" borderRadius="base">
+                  <s-grid gridTemplateColumns="auto 1fr auto" gap="base" alignItems="center">
+                    <s-icon type={row.icon} />
+                    <s-stack gap="small">
+                      <s-text type="strong">{row.title}</s-text>
+                      <s-text color="subdued">{row.description}</s-text>
+                    </s-stack>
+                    <s-icon type="chevron-right" />
+                  </s-grid>
+                </s-box>
+              </s-clickable>
+            ))}
+          </s-stack>
+        </s-section>
+      ))}
       <s-section heading="Product customization">
-        <s-paragraph>
-          Choose a product, configure its options and preview, save your draft, then publish reviewed changes.
-        </s-paragraph>
-        <s-link href="/admin/products">Configure products</s-link>
+        <s-paragraph>Choose a product to configure its methods, images, print areas and prices.</s-paragraph>
+        <s-button href="/admin/products" icon="product">
+          Configure products
+        </s-button>
       </s-section>
+      <AdminDisclosure label="App permissions and publication checks">
+        {denied ? (
+          <s-banner tone="critical" heading="Reopen Insignia from Shopify Admin">
+            <s-paragraph>{denied}</s-paragraph>
+          </s-banner>
+        ) : (
+          <ReadinessPermissions
+            inspect={() =>
+              authenticatedJson('/api/admin/readiness', {}, true).catch((error) => {
+                if ([401, 403].includes((error as { status?: number }).status ?? 0)) setDenied(error.message);
+                throw error;
+              })
+            }
+          />
+        )}
+      </AdminDisclosure>
     </s-page>
   );
 }

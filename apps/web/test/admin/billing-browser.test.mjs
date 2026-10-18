@@ -77,15 +77,24 @@ test('merchant billing separates development terms and trial, links Shopify mana
   await page.getByText('Billing status could not be verified. Try again.').waitFor();
   const navigation = page.locator('s-app-nav');
   assert.equal(
-    await navigation.getByRole('link', { name: 'Products', exact: true }).getAttribute('href'),
+    await navigation
+      .locator('s-link')
+      .filter({ hasText: /^Products$/ })
+      .getAttribute('href'),
     '/admin/products',
   );
   assert.equal(
-    await navigation.getByRole('link', { name: 'Orders', exact: true }).getAttribute('href'),
+    await navigation
+      .locator('s-link')
+      .filter({ hasText: /^Orders$/ })
+      .getAttribute('href'),
     '/admin/orders',
   );
   assert.equal(
-    await navigation.getByRole('link', { name: 'Settings', exact: true }).getAttribute('href'),
+    await navigation
+      .locator('s-link')
+      .filter({ hasText: /^Settings$/ })
+      .getAttribute('href'),
     '/admin/settings',
   );
   assert.equal(await page.locator('time').count(), 0);
