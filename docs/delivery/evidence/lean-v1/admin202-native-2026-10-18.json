@@ -1,0 +1,288 @@
+{
+  "date": "2026-10-18",
+  "classification": "DEPLOYED_GUIDED_SETTINGS_AND_METHOD_LIBRARY_NATIVE_READONLY_QUALIFIED",
+  "integration": {
+    "pr": 202,
+    "url": "https://github.com/Optidigi/insignia/pull/202",
+    "base": "6013390a34971c15d2dd6bd0d75ec6c4cf91a0b3",
+    "effectiveMergeBase": "6013390a34971c15d2dd6bd0d75ec6c4cf91a0b3",
+    "head": "6d0c049488c54eaf061d135479ceca0203f0b1ed",
+    "merge": "c78918f68f1d986b70d7cd40e8a0b13fc6691215",
+    "tree": "4f8eedab5f28700a9d09a12deaee27146f0aad46",
+    "orderedParents": [
+      "6013390a34971c15d2dd6bd0d75ec6c4cf91a0b3",
+      "6d0c049488c54eaf061d135479ceca0203f0b1ed"
+    ],
+    "checks": [
+      {
+        "name": "foundation",
+        "run": 39134221959,
+        "head": "6d0c049488c54eaf061d135479ceca0203f0b1ed",
+        "attempt": 1,
+        "conclusion": "SUCCESS"
+      },
+      {
+        "name": "durable-core",
+        "run": 39134221955,
+        "head": "6d0c049488c54eaf061d135479ceca0203f0b1ed",
+        "attempt": 1,
+        "conclusion": "SUCCESS"
+      },
+      {
+        "name": "runtime",
+        "run": 39134221986,
+        "head": "6d0c049488c54eaf061d135479ceca0203f0b1ed",
+        "attempt": 1,
+        "conclusion": "SUCCESS"
+      }
+    ]
+  },
+  "artifact": {
+    "run": 39134221986,
+    "attempt": 1,
+    "artifactId": 12139317799,
+    "artifactZipSha256": "sha256:917aa0127832aabd23fecfb458a5c43100d32b24e12a299a07cfecd6248f1bd1",
+    "image": "sha256:8ef72c5d5c01a2fdeb5278dd2dd22b5cb862621b9f9fbea8125b9e837a97cf1c",
+    "configDigest": "sha256:383e2dac23af9ac4a2fee0c0fb1c5ec53e2ad33677eeba08c5b1686c406d3357",
+    "tarSha256": "c5b326a291d52901dd1b7df0a58bef37c4855f08e86f047101d3954a3588c297",
+    "tarSize": 456525824,
+    "buildSource": "0c64f5e7376338d023215afb276f758f2af15075"
+  },
+  "artifactVerification": "GitHub artifact ZIP digest; receipt/tar; everyOCIblob/config/layer+decompressedrootfs; CI synthetic merge tree and parents equal accepted candidate; compilednative sidebar verified.",
+  "schema": {
+    "classification": "ATOMIC_METHOD_CATALOG_SCHEMA41_AND_RUNTIME_GRANTS_SETTLED",
+    "observedAt": "2026-10-18T14:16:05.277612+00:00",
+    "merge": "c78918f68f1d986b70d7cd40e8a0b13fc6691215",
+    "tree": "4f8eedab5f28700a9d09a12deaee27146f0aad46",
+    "sqlSha256": "04f2fd4419901f4b0467859cccc70a1aee056e66906b78775789a8f4aa52fa94",
+    "migrationCountBefore": 40,
+    "migrationCountAfter": 41,
+    "repositoryMigrationFiles": 42,
+    "newVersions": [
+      "20261018000100"
+    ],
+    "intentionallyAbsentVersions": [
+      "20261015000500"
+    ],
+    "transactionAttempts": 1,
+    "existingBusinessRowsAndExpiriesPreservedInLockedTransaction": true,
+    "existingRelationsColumnsRoutinesRolesAndSchemaACLsPreserved": true,
+    "allContainerConfigurationsPreserved": true,
+    "inspectorPreserved": true,
+    "actualRuntimeLoginBefore": {
+      "authenticated": true,
+      "identity": {
+        "user": "insignia_runtime",
+        "sessionUser": "insignia_runtime",
+        "database": "insignia_rewrite",
+        "login": true,
+        "createSchema": false
+      },
+      "catalogEmptyRead": false,
+      "catalogWritePrivilegesMetadataOnly": false,
+      "writeProbeInvocations": 0,
+      "privacyFunctionInvocations": 0
+    },
+    "actualRuntimeLoginAfter": {
+      "authenticated": true,
+      "identity": {
+        "user": "insignia_runtime",
+        "sessionUser": "insignia_runtime",
+        "database": "insignia_rewrite",
+        "login": true,
+        "createSchema": false
+      },
+      "catalogEmptyRead": true,
+      "catalogWritePrivilegesMetadataOnly": true,
+      "writeProbeInvocations": 0,
+      "privacyFunctionInvocations": 0
+    },
+    "methodTemplatesInserted": 0,
+    "privacyFunctionInvocations": 0,
+    "providerMutations": 0,
+    "serviceChanges": 0,
+    "backup": {
+      "sha256": "cfa15bad80265e29cc613fd331f2b129d03279ac0743c7bf377f10743ac48dd0",
+      "bytes": 517618,
+      "verification": "PG_RESTORE_LIST_ONLY",
+      "restoreRehearsal": false,
+      "privateCopyDue": "2026-10-20"
+    },
+    "retryAuthorized": false,
+    "limits": "Catalog write grants verified through metadata; no native write probes, privacy effects, erasure fixtures or restoration test."
+  },
+  "deployment": {
+    "classification": "EXACT_CI_WEB_ONLY_ADMIN_DEPLOYMENT_PASS",
+    "merge": "c78918f68f1d986b70d7cd40e8a0b13fc6691215",
+    "tree": "4f8eedab5f28700a9d09a12deaee27146f0aad46",
+    "head": "6d0c049488c54eaf061d135479ceca0203f0b1ed",
+    "run": 39134221986,
+    "attempt": 1,
+    "oldContainer": "b875f3c1271d26bdf91d602234e1427ebd2bc796349a5cba23e7d157fc59b4ab",
+    "container": "ec2daf2df1efdd6b462b019bf68b61c989f401afbcbb87671885d44281f5c24c",
+    "image": "sha256:8ef72c5d5c01a2fdeb5278dd2dd22b5cb862621b9f9fbea8125b9e837a97cf1c",
+    "healthy": true,
+    "onlyMaterialDelta": "web image",
+    "environmentUnchanged": true,
+    "mountsNetworksSecurityResourcesUnchanged": true,
+    "other34ContainersUnchanged": true,
+    "inspectorAndVerifierSocketsUnchanged": true,
+    "schemaAndPurchasePaidFactsUnchanged": true,
+    "providerMutations": 0,
+    "databaseWrites": 0,
+    "dispatches": 1,
+    "retries": 0
+  },
+  "browser": {
+    "classification": "NATIVE_GUIDED_SETTINGS_READONLY_PASS",
+    "pages": [
+      {
+        "area": "products",
+        "heading": "Products",
+        "polarisPageDefined": true,
+        "observedAt": "2026-10-18T14:18:17.766Z"
+      },
+      {
+        "area": "orders",
+        "heading": "Orders and artwork",
+        "polarisPageDefined": true,
+        "observedAt": "2026-10-18T14:18:24.047Z"
+      },
+      {
+        "area": "settings",
+        "heading": "Settings",
+        "polarisPageDefined": true,
+        "observedAt": "2026-10-18T14:18:28.098Z"
+      },
+      {
+        "area": "settings/methods",
+        "heading": "Decoration method library",
+        "polarisPageDefined": true,
+        "observedAt": "2026-10-18T14:18:35.173Z"
+      },
+      {
+        "area": "settings/storefront",
+        "heading": "Storefront setup",
+        "polarisPageDefined": true,
+        "observedAt": "2026-10-18T14:18:39.315Z"
+      },
+      {
+        "area": "settings/billing",
+        "heading": "Billing",
+        "polarisPageDefined": true,
+        "observedAt": "2026-10-18T14:18:45.641Z"
+      },
+      {
+        "area": "settings/privacy",
+        "heading": "Customer privacy requests",
+        "polarisPageDefined": true,
+        "observedAt": "2026-10-18T14:18:51.669Z"
+      },
+      {
+        "area": "products/10519322493211/config",
+        "heading": "Customize Insignia M5 acceptance \u2014 27c397e10c26",
+        "polarisPageDefined": true,
+        "observedAt": "2026-10-18T14:19:04.069Z"
+      }
+    ],
+    "authenticatedReads": [
+      {
+        "path": "/api/admin/products",
+        "status": 200,
+        "observedAt": "2026-10-18T14:18:16.669Z"
+      },
+      {
+        "path": "/api/purchases/v1",
+        "status": 200,
+        "observedAt": "2026-10-18T14:18:23.098Z"
+      },
+      {
+        "path": "/api/admin/methods",
+        "status": 200,
+        "observedAt": "2026-10-18T14:18:32.838Z"
+      },
+      {
+        "path": "/api/admin/billing",
+        "status": 200,
+        "observedAt": "2026-10-18T14:18:44.623Z"
+      },
+      {
+        "path": "/api/purchases/v1/privacy",
+        "status": 200,
+        "observedAt": "2026-10-18T14:18:50.578Z"
+      },
+      {
+        "path": "/api/admin/products/10519322493211/config",
+        "status": 200,
+        "observedAt": "2026-10-18T14:19:00.506Z"
+      },
+      {
+        "path": "/api/admin/methods",
+        "status": 200,
+        "observedAt": "2026-10-18T14:19:02.136Z"
+      }
+    ],
+    "nativeSidebar": "Products, Orders, Settings; Billing/Privacy are Settings sections. Five Settings subsection links checked on all Settings routes.",
+    "assertedInteractions": [
+      "Method-library real authenticated read, empty state and desktop/mobile fit; no create/rename/delete.",
+      "Storefront button and cart-repair embed hrefs use exact existing appKey/customize andappKey/cart-repair on designatedshop; links never followed.",
+      "Four staged product views and Back/Continue navigation; live side preview desktop/mobile, no horizontal iframe overflow; no Save/Publish/import.",
+      "Skeleton visible before actual authenticated configGET delayed2.5seconds locally; no mockeddata or claim of native service latency."
+    ],
+    "applicationNonGetRequests": 0,
+    "loginActions": 0,
+    "cookieTransfer": 0,
+    "consoleErrorCount": 8,
+    "consoleErrors": "All8 are blocked Cloudflare analytics script/CSP errors. No error-free-console claim.",
+    "sessionRoute": "T3previewdefaultprofile reachesShopifylogin. Used documented existing headed hostprofile under operating-model\u00a75; no login/challenge/cookieimport. Legacy stores remain human-verification blocked.",
+    "screenshots": "Private screenshot/bodyhash receipts retained until20October; not copied into public repository."
+  },
+  "publicReadChecks": {
+    "defaultCurlLive": 200,
+    "defaultCurlUnauthenticatedMethods": 401,
+    "initialPythonClient": "403/body errorcode1010 on bothchecks and boundedconfirmation; retained failure, no success inferred. Defaultcurl and actual authenticatedbrowser succeeded.",
+    "diagnosis": "Consistent with Cloudflare client-signature rejection; no edge/security settings changed.",
+    "officialSource": "https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-1xxx-errors/error-1010/"
+  },
+  "postBrowser": {
+    "classification": "POST_BROWSER_RUNTIME_AND_PROTECTED_FACTS_READONLY_PASS",
+    "webHealthy": true,
+    "containerCount": 35,
+    "other34ContainersUnchanged": true,
+    "schemaPurchasePaidFactsUnchanged": true,
+    "inspectorAndSocketsUnchanged": true,
+    "databaseWrites": 0,
+    "providerMutations": 0,
+    "observedAt": "2026-10-18T14:19:33.778205+00:00"
+  },
+  "independentReview": {
+    "reviewer": "/root/admin202_operator_review",
+    "artifactOperatorsSchemaCompletedReceipts": "CLEAR",
+    "completedNativeBrowserAndPostChecks": "CLEAR",
+    "operatorHashes": {
+      "prepare.py": "072f948786a967384c3c9e71f01e5119d86add6150c512a9ab0470b27880b052",
+      "capture-after-schema.py": "59874127a80e7687e8469d1ca3e99422c07fc84e3a1e57c233ff4992abf2099e",
+      "deploy.py": "08ba08d4ad6100450b01437514cfb85a2e8fb800cb447be15b2169f53dec18db",
+      "post-readonly.py": "b9d5166ee8224bc2ff17991ec8bac6c0c0215b8287b55782481c987ff379ec0d",
+      "read-admin.cjs": "fff6afcc7087913a87d814b74768e965efae720b2d078a517d76e1fd4f2fb127"
+    },
+    "schemaOperatorSha256": "d815f94ffc66ee763d9b102ef54960a56c8eafe193b6f133af5244765328e1d2",
+    "schemaSqlSha256": "04f2fd4419901f4b0467859cccc70a1aee056e66906b78775789a8f4aa52fa94",
+    "localExactSqlRehearsal": "PASS fresh isolatedPG18 native40\u219241 + syntheticshop/generation + distinctruntimeLOGIN; tempcluster removed",
+    "boundary": "Read-only reviewer instructions, no OS/network/credential isolation claim; review grants no new resource authority."
+  },
+  "limitations": [
+    "No live method-library mutation or draft import/save/publication/copy/checkout repeated; those source behaviors retain local/CI qualification.",
+    "No theme block/embed mutation or storefront activation; deep links inspected only.",
+    "No native privacy/erasure/uninstall operation or nativebackup restoration; existing operatorhold retained. Backup pg_restore--list proves readablecatalog, not restoredservice.",
+    "Schema transaction compares all existing rows/expiries and ACL/functions/roles while locked. Subsequent snapshots compare purchase/paid aggregates and migration versions; no continuous all-row immutability or other-service uptime claim.",
+    "Full adminUX acceptance, human order/variant labels/actionplacement, alerts/delivery/outage/recovery/private-storage/privacy/cleanup remain open; no merchantrollout."
+  ],
+  "cleanup": {
+    "temporaryPrivateCopiesDue": "2026-10-20",
+    "includes": "LocalCIZIP/tar/preimages/operators/browsercaptures; remoteschemajournal/privatebackup and webstagingtar/temporarylogs. Preserve receipts per existing retention policy.",
+    "activeDependency": "/home/serveradmin/insignia-admin202-20261018/web-only.private.json and running image are active configuration, excluded from automatic temporary deletion. Transition custody before deleting directory. Old admin200 Compose is no longer active for newweb but remains rollbackmaterial until deliberatecleanup.",
+    "unchangedObligations": "Prior originals retention/deletion and credential rotation obligations continue."
+  },
+  "next": "Continue human order/variant labels and order-detail actions, production alerts/recovery/storage/privacy/cleanup. Source merge and read-only native evidence do not declare completeUX/milestone/rollout acceptance."
+}
