@@ -3,11 +3,13 @@
 Description=Insignia writer exclusion and encrypted daily snapshot
 [Service]
 Type=oneshot
-User=insignia-backup
-Group=insignia-backup
+# The approved host inspector is owned by this existing UID1000 user manager.
+User=serveradmin
+Group=serveradmin
 UMask=0077
 EnvironmentFile=/etc/insignia/backup.env
-ExecStart=/usr/bin/python3 /opt/insignia/scripts/operations/backup-run.py /etc/insignia/backup-run.json
+Environment=XDG_RUNTIME_DIR=/run/user/1000 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+ExecStart=/usr/bin/python3 /opt/insignia/runtime/scripts/operations/backup-run.py /etc/insignia/backup-run.json
 RuntimeDirectory=insignia-backup
 RuntimeDirectoryMode=0700
 TimeoutStartSec=75min
@@ -16,7 +18,7 @@ KillMode=mixed
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
-ProtectHome=true
+ProtectHome=read-only
 ReadWritePaths=/var/lib/insignia-backup /var/lib/insignia-backup-runs /var/lib/insignia-backup-replica-runs /run/insignia-backup
-# Dedicated maintenance OS account needs the Docker control socket. Never mount it into the app.
+# Host maintenance needs the Docker socket and its own inspector user bus. Never mount either into the app.
 # Exact IDs/config/image allowlist and scoped start/stop are enforced by backup-run.py.

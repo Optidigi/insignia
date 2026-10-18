@@ -7,6 +7,7 @@ on:
     paths:
       - 'scripts/ci/**'
       - 'scripts/operations/**'
+      - 'spikes/m0-007/scripts/check-history.py'
       - 'deployment/alerts/**'
       - 'deployment/backup/**'
       - 'scripts/m4-003/**'

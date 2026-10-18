@@ -1,5 +1,16 @@
 {
   "date": "2026-10-18",
+  "nativeContinuationAndRouting": {
+    "reviewer": "operations_next_boundary / backup_topology_review",
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "low",
+    "boundary": "Procedural read-only source/operator and claim review; no effects or independent native reproduction; backend execution identity not independently exposed",
+    "installReview": "Finite freshness and exact developer-link binding findings corrected; single bounded VAT install CLEAR",
+    "uninstallReview": "Exact fresh generation/provider/subscription, zero owned data and exclusive single-action intent CLEAR; click receipt explicitly requires subsequent settlement",
+    "uninstallOutcomeReview": "Generic failure cannot prove non-dispatch; current presence/absent callback cannot clear it. Preserve UNRESOLVED; no retry or reinstall.",
+    "routingAndDocsReview": "CLEAR_NO_MATERIAL_FINDING: retain all historical invocations and actual spike triggers; route checker-only main pushes to foundation; factual custody updates and native limits remain explicit",
+    "rootChecks": "12 existing status/CI integration controls and full historical-integrity checker PASS; prior source/code/artifact qualification reused by provenance"
+  },
   "backupTopologyContinuation": {
     "reviewer": "backup_topology_review",
     "requestedModel": "gpt-6.1-sol",
@@ -163,5 +174,15 @@
     "continuationSha256": "0c5d38a447012ca2ee8f03d514f176905f4d746e5908dc9c7f22d60e668ad0b8",
     "scope": "Exact frozen runtime/custody handover and subsequent mount-order-only reconciliation; acknowledged verifier never recreated twice; web/worker attempts remain separately fenced",
     "limits": "Static procedural read-only review, no enforced credential/network isolation; native receipts inspected, not independently executed; no provider/lifecycle acceptance inferred"
+  },
+  "backupServiceConfiguration": {
+    "reviewer": "backup_topology_review",
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "low",
+    "specCorrectness": "CLEAR_NO_MATERIAL_FINDING",
+    "standardsSecurity": "CLEAR_NO_MATERIAL_FINDING",
+    "scope": "Final three backup service templates and README against merged PR211 wrapper: UID1000 inspector owner, explicit user bus, read-only home visibility and consistent immutable artifact prefix",
+    "limits": "Static procedural read-only review; no service installation/execution, credential qualification or native backup/recovery validation; backend identity not independently exposed",
+    "rootChecks": "Native read-only missing-bus negative/exact-inspector positive controls; all three CLI paths verified in exact CI artifact;7 wrapper methods,12 status/CI controls, historical-integrity and secret checks PASS"
   }
 }

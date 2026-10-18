@@ -4,14 +4,12 @@ on:
   pull_request:
     paths:
       - "spikes/m0-008/**"
-      - "spikes/m0-007/scripts/check-history.py"
       - "docs/delivery/prompts/M0-008-publication-contract-and-recovery.md"
       - ".github/workflows/m0-008-local.yml"
   push:
     branches: [main]
     paths:
       - "spikes/m0-008/**"
-      - "spikes/m0-007/scripts/check-history.py"
       - ".github/workflows/m0-008-local.yml"
 
 permissions:

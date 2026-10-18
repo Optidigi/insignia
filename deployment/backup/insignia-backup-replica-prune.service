@@ -2,12 +2,12 @@
 Description=Prune owned expired Insignia encrypted off-host snapshots
 [Service]
 Type=oneshot
-User=insignia-backup
-Group=insignia-backup
+User=serveradmin
+Group=serveradmin
 UMask=0077
-ExecStart=/opt/insignia/runtime/bin/node /opt/insignia/scripts/operations/backup-replica.mjs prune /etc/insignia/backup-replica.json
+ExecStart=/opt/insignia/runtime/bin/node /opt/insignia/runtime/scripts/operations/backup-replica.mjs prune /etc/insignia/backup-replica.json
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
-ProtectHome=true
+ProtectHome=read-only
 ReadWritePaths=/var/lib/insignia-backup-replica-runs
