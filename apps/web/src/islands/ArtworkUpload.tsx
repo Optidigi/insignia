@@ -249,19 +249,19 @@ export default function ArtworkUpload({
         />
       )}
       {pending && (
-        <button type="button" disabled={busy} onClick={() => void resumeUploaded()}>
+        <s-button type="button" disabled={disabled || busy} onClick={() => void resumeUploaded()}>
           Retry uploaded artwork
-        </button>
+        </s-button>
       )}
       {asset && !preview && (
-        <button type="button" disabled={busy} onClick={() => void renewPreview()}>
+        <s-button type="button" disabled={disabled || busy} onClick={() => void renewPreview()}>
           Retry artwork preview
-        </button>
+        </s-button>
       )}
       {asset && allowOriginalDownload && (
-        <button type="button" onClick={() => void download()}>
+        <s-button type="button" disabled={disabled || busy} onClick={() => void download()}>
           Prepare original download
-        </button>
+        </s-button>
       )}
       {asset && downloadLink && (
         <a href={downloadLink.url} target="_blank" rel="noopener noreferrer">

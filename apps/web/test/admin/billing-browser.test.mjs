@@ -75,13 +75,13 @@ test('merchant billing separates development terms and trial, links Shopify mana
   });
   await page.goto(`${base}/admin/billing`);
   await page.getByText('Billing status could not be verified. Try again.').waitFor();
-  const navigation = page.getByRole('navigation', { name: 'Insignia' });
+  const navigation = page.locator('s-app-nav');
   assert.equal(
     await navigation.getByRole('link', { name: 'Products', exact: true }).getAttribute('href'),
     '/admin/products',
   );
   assert.equal(
-    await navigation.getByRole('link', { name: 'Orders and artwork', exact: true }).getAttribute('href'),
+    await navigation.getByRole('link', { name: 'Orders', exact: true }).getAttribute('href'),
     '/admin/orders',
   );
   assert.equal(
@@ -92,7 +92,7 @@ test('merchant billing separates development terms and trial, links Shopify mana
   failing = false;
   await page.getByRole('button', { name: 'Refresh billing status' }).click();
   await page.getByText('Development test terms: USD 0.00 per 30 days.').waitFor();
-  await page.getByText('Standard commercial price: USD 49.99 per 30 days.').waitFor();
+  await page.getByText('Subscription price: USD 49.99 per 30 days.').waitFor();
   await page.getByText('Trial active').waitFor();
   assert.equal(await page.locator('time').first().getAttribute('datetime'), view.trialEndsAt);
   const manage = page.getByRole('link', { name: 'Manage billing in Shopify' });

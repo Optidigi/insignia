@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { authenticatedJson } from '../shared/admin-request.js';
 import type { BillingView } from '../shared/billing-view.js';
-import AdminNavigation from './AdminNavigation';
 
 function date(value: string): string {
   return `${new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }).format(
@@ -33,12 +32,11 @@ export default function MerchantBilling() {
   }, []);
   return (
     <s-page heading="Billing">
-      <AdminNavigation current="billing" />
       <s-section heading="Insignia Standard">
-        <p>Standard commercial price: USD 49.99 per 30 days.</p>
+        <p>Subscription price: USD 49.99 per 30 days.</p>
         <p>
-          All released Lean V1 features. No per-order charges. Artwork size, retention and other technical limits still
-          apply.
+          All available Insignia features. No per-order charges. Artwork size, retention and other technical limits
+          still apply.
         </p>
       </s-section>
       <s-section heading="Current subscription">
@@ -59,7 +57,7 @@ export default function MerchantBilling() {
             </p>
             {view.recurringPrice && (
               <p>
-                {view.developmentTerms ? 'Development test terms' : 'Current provider recurring price'}:{' '}
+                {view.developmentTerms ? 'Development test terms' : 'Current Shopify subscription price'}:{' '}
                 {view.recurringPrice.currency} {view.recurringPrice.amount} per 30 days.
               </p>
             )}

@@ -1,0 +1,26 @@
+---
+import '../styles/admin-editor.css';
+import AdminNavigation from '../components/AdminNavigation.astro';
+
+interface Props {
+  title: string;
+  apiKey: string;
+}
+const { title, apiKey } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="shopify-api-key" content={apiKey} />
+    <title>{title} · Insignia</title>
+    <script is:inline src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
+    <script is:inline src="https://cdn.shopify.com/shopifycloud/polaris-1.1.js"></script>
+  </head>
+  <body>
+    <AdminNavigation />
+    <slot />
+  </body>
+</html>

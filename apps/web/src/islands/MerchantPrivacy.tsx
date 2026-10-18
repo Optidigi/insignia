@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
 import { authenticatedJson } from '../shared/admin-request.js';
-import AdminNavigation from './AdminNavigation';
 
 type RequestView = {
   inboxId: string;
@@ -45,7 +44,6 @@ export default function MerchantPrivacy() {
   }, []);
   return (
     <s-page heading="Customer privacy requests">
-      <AdminNavigation current="privacy" />
       <s-section heading="Provide requested customer data">
         <s-button
           disabled={busy}
@@ -108,7 +106,7 @@ export default function MerchantPrivacy() {
       {manifest && (
         <s-section heading={`Request ${manifest.requestId}`}>
           <s-button disabled={busy} onClick={() => download(manifest, `insignia-request-${manifest.requestId}.json`)}>
-            Download request manifest
+            Download request summary (JSON)
           </s-button>
           {!manifest.orders.length && (
             <p>No orders were requested. Insignia does not hold a separate customer contact profile.</p>
