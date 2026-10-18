@@ -1,80 +1,27 @@
 body {
   margin: 0;
 }
-
+/* Konva owns only the drawing surface; Polaris owns surrounding UI. */
 #insignia-visualizer {
-  max-width: 100%;
+  width: 100%;
+  height: 360px;
   overflow: hidden;
-  border: 1px solid #d5d8dc;
-  border-radius: 6px;
 }
-
-.admin-editor-controls,
-.admin-editor-preview {
-  min-width: 0;
-}
-@container product-editor (inline-size > 1000px) {
-  .admin-editor-preview {
-    position: sticky;
-    top: 16px;
-  }
-}
-@container product-editor (inline-size <= 1000px) {
-  .admin-editor-preview {
-    order: -1;
-  }
-}
-
 .admin-record-id {
   overflow-wrap: anywhere;
 }
-
-/* Anchor navigation keeps the same mounted draft and canvas. */
 s-section[id] {
   scroll-margin-block-start: 24px;
 }
-
-.admin-skeleton {
-  min-height: 260px;
-}
-.admin-skeleton-row {
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
-  gap: 16px;
-  align-items: center;
-  animation: admin-skeleton-pulse 1.6s ease-in-out infinite alternate;
-}
-@keyframes admin-skeleton-pulse {
-  from {
-    opacity: 0.5;
-  }
-  to {
-    opacity: 1;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .admin-skeleton-row {
-    animation: none;
-  }
-}
-
-.admin-setup-panel:not([hidden]) {
-  display: grid;
-  gap: 16px;
-}
-#setup-stage-heading {
-  margin-block: 20px 12px;
-}
-
-/* The host owns sidebar navigation; never show its unupgraded declarations. */
-s-app-nav {
+/* App Bridge consumes these declarations in the host, never in the iframe. */
+s-app-nav,
+ui-save-bar {
   display: none;
 }
 #admin-route-skeleton {
   position: absolute;
   inset: 0;
   z-index: 5;
-  background: #f1f1f1;
   min-height: 100vh;
 }
 #admin-route-content {
@@ -89,119 +36,66 @@ html[data-admin-ready="true"] #admin-route-skeleton {
   display: none;
 }
 #admin-route-failure[hidden],
-#admin-route-skeleton[hidden] {
+#admin-route-skeleton[hidden],
+[hidden] {
   display: none !important;
 }
-.admin-skeleton s-box:not(:defined) {
-  display: block;
-  background: #e5e7eb;
-  border-radius: 6px;
-}
-.admin-skeleton-row > s-box:not(:defined) {
-  width: 72px;
-  height: 56px;
-}
-.admin-skeleton-row s-stack > s-box:not(:defined) {
-  width: 90%;
-  height: 16px;
-  margin-block: 8px;
-}
-
-/* These are placeholder geometry, including the time before Polaris upgrades. */
-.admin-skeleton-form .admin-skeleton-row,
-.admin-skeleton-detail .admin-skeleton-row {
-  grid-template-columns: minmax(0, 1fr);
-  padding-block: 12px;
-}
-.admin-skeleton-form .admin-skeleton-row > s-box,
-.admin-skeleton-detail .admin-skeleton-row > s-box {
-  display: none;
-}
-.admin-skeleton-form .admin-skeleton-row s-stack > s-box:last-child {
-  min-height: 36px;
-  width: 100%;
-}
-.admin-skeleton-settings .admin-skeleton-row {
-  padding: 16px;
-  border: 1px solid #e3e3e3;
-  border-radius: 8px;
-}
-.admin-skeleton-preview {
-  min-height: 0;
-}
-.admin-skeleton-inline {
-  min-height: 0;
-}
-.admin-skeleton-inline .admin-skeleton-row {
-  grid-template-columns: minmax(0, 1fr);
-}
-.admin-skeleton-inline .admin-skeleton-row > s-box {
-  display: none;
-}
-.admin-skeleton-preview .admin-skeleton-row {
-  display: block;
-}
-.admin-skeleton-preview .admin-skeleton-row > s-box {
-  display: block;
-  width: 100%;
-  height: 420px;
-}
-.admin-skeleton-preview .admin-skeleton-row > s-stack {
-  display: none;
-}
-.admin-page-placeholder {
+/* First-paint placeholders before the CDN upgrades Polaris. No override survives definition. */
+#admin-route-skeleton [data-skeleton-layout]:not(:defined) {
   display: grid;
   gap: 16px;
-  padding: 24px 32px;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 998px;
+  padding: 16px;
+  margin-inline: auto;
 }
-[data-placeholder-heading] {
-  grid-column: 1 / -1;
-}
-[data-placeholder-heading]:not(:defined) {
-  display: block;
-  width: 220px;
-  height: 28px;
-  background: #e5e7eb;
-  border-radius: 6px;
+#admin-route-skeleton [data-skeleton-width="small"]:not(:defined) {
+  max-width: 662px;
 }
 #admin-route-skeleton s-section:not(:defined) {
   display: block;
-  background: white;
+  background: #fff;
   border-radius: 8px;
   padding: 20px;
 }
-#admin-route-skeleton s-stack:not(:defined) {
+#admin-route-skeleton s-stack:not(:defined),
+#admin-route-skeleton s-grid:not(:defined) {
   display: grid;
   gap: 16px;
 }
-#admin-route-skeleton [data-skeleton-layout]:not([data-skeleton-layout="editor"]) [data-skeleton-preview] {
-  display: none;
+#admin-route-skeleton s-box:not(:defined) {
+  display: block;
 }
-@media (min-width: 1000px) {
-  #admin-route-skeleton [data-skeleton-layout="editor"] {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 360px;
-    gap: 24px;
-  }
-  #admin-route-skeleton [data-skeleton-preview] {
-    grid-column: 2;
-    grid-row: 2;
-  }
+#admin-route-skeleton [data-placeholder-heading]:not(:defined),
+[data-admin-skeleton] [data-skeleton-part]:not(:defined) {
+  display: block;
+  background: #e5e7eb;
+  border-radius: 6px;
 }
-
-.admin-save-toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 3;
+[data-placeholder-heading]:not(:defined) {
+  width: 220px;
+  height: 28px;
 }
-.admin-save-toolbar s-paragraph {
-  margin: 0;
+[data-admin-skeleton] [data-skeleton-part="leading"]:not(:defined) {
+  width: 40px;
+  height: 40px;
 }
-.admin-save-toolbar [role="alert"] {
-  flex-basis: 100%;
+[data-admin-skeleton] [data-skeleton-part="label"]:not(:defined) {
+  width: 65%;
+  height: 16px;
 }
-[hidden] {
-  display: none !important;
+[data-admin-skeleton] [data-skeleton-part="value"]:not(:defined) {
+  width: 90%;
+  height: 12px;
+}
+[data-skeleton-variant="form"] [data-skeleton-part="value"]:not(:defined) {
+  width: 100%;
+  height: 36px;
+}
+[data-skeleton-variant="preview"] [data-skeleton-part="leading"]:not(:defined) {
+  width: 100%;
+  height: 360px;
 }
 s-button:not(:defined),
 s-link:not(:defined),
@@ -209,4 +103,17 @@ s-select:not(:defined),
 s-text-field:not(:defined),
 s-drop-zone:not(:defined) {
   visibility: hidden;
+}
+
+[data-admin-skeleton]:has(> s-box:not(:defined)) {
+  min-height: 260px;
+}
+#admin-route-skeleton [display="none"]:not(:defined) {
+  display: none !important;
+}
+
+[data-skeleton-container] {
+  container-type: inline-size;
+  container-name: admin-page-skeleton;
+  width: 100%;
 }

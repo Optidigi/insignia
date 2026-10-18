@@ -49,7 +49,7 @@ export default function MerchantPrivacy() {
     );
   }, []);
   return (
-    <s-page inlineSize="large" heading="Customer privacy requests">
+    <s-page inlineSize="base" heading="Customer privacy requests">
       <s-link slot="breadcrumb-actions" href="/admin/settings">
         Settings
       </s-link>
@@ -77,30 +77,53 @@ export default function MerchantPrivacy() {
           </s-paragraph>
           {(!loaded || (busy && !requests.length)) && <AdminSkeleton label="Loading privacy requests" />}
           {error && (
-            <div role="alert">
-              <s-paragraph>Privacy records could not be loaded. Try again.</s-paragraph>
-            </div>
+            <s-banner tone="critical" heading="Privacy requests unavailable">
+              Privacy records could not be loaded. Try again.
+            </s-banner>
           )}
           {loaded && !busy && !error && !requests.length && (
-            <s-paragraph>No data requests are currently available.</s-paragraph>
+            <s-empty-state heading="No open data requests">
+              <s-paragraph slot="subheading">No data requests are currently available.</s-paragraph>
+            </s-empty-state>
           )}
-          {requests.map((request) => (
-            <s-paragraph key={request.inboxId}>
-              Request {request.requestId} · {request.requestedOrderCount} requested orders · Due{' '}
-              {new Date(request.fulfillBy).toUTCString()}{' '}
-              <s-button
-                disabled={busy}
-                onClick={() =>
-                  void run(async () => {
-                    setDesignExports([]);
-                    setManifest(await authenticatedJson(`/api/purchases/v1/privacy/${request.inboxId}`));
-                  })
-                }
-              >
-                Open request
-              </s-button>
-            </s-paragraph>
-          ))}
+          {requests.length > 0 && (
+            <s-table loading={busy}>
+              <s-table-header-row>
+                <s-table-header listSlot="primary">Request</s-table-header>
+                <s-table-header listSlot="labeled">Due</s-table-header>
+                <s-table-header listSlot="secondary" format="numeric">
+                  Requested orders
+                </s-table-header>
+                <s-table-header listSlot="inline">Action</s-table-header>
+              </s-table-header-row>
+              <s-table-body>
+                {requests.map((request) => (
+                  <s-table-row key={request.inboxId}>
+                    <s-table-cell>
+                      <s-text>{request.requestId}</s-text>
+                    </s-table-cell>
+                    <s-table-cell>
+                      <time dateTime={request.fulfillBy}>{new Date(request.fulfillBy).toUTCString()}</time>
+                    </s-table-cell>
+                    <s-table-cell>{request.requestedOrderCount}</s-table-cell>
+                    <s-table-cell>
+                      <s-button
+                        disabled={busy}
+                        onClick={() =>
+                          void run(async () => {
+                            setDesignExports([]);
+                            setManifest(await authenticatedJson(`/api/purchases/v1/privacy/${request.inboxId}`));
+                          })
+                        }
+                      >
+                        Open request
+                      </s-button>
+                    </s-table-cell>
+                  </s-table-row>
+                ))}
+              </s-table-body>
+            </s-table>
+          )}
           {requests.length === 100 && (
             <s-button
               disabled={busy}

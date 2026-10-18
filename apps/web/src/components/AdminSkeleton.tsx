@@ -12,20 +12,36 @@ export default function AdminSkeleton({
 }) {
   const dimensions = adminSkeletonDimensions(variant);
   return (
-    <div role="status" aria-label={label} aria-busy="true" class={`admin-skeleton admin-skeleton-${variant}`}>
-      <div aria-hidden="true">
-        <s-stack gap="base">
-          {Array.from({ length: rows }, (_, index) => (
-            <div class="admin-skeleton-row" key={index}>
-              <s-box data-skeleton-part="leading" background="subdued" borderRadius="base" {...dimensions.leading} />
-              <s-stack gap="small">
-                <s-box data-skeleton-part="label" background="subdued" borderRadius="base" {...dimensions.label} />
-                <s-box data-skeleton-part="value" background="subdued" borderRadius="base" {...dimensions.value} />
-              </s-stack>
-            </div>
-          ))}
-        </s-stack>
-      </div>
+    <div role="status" aria-label={label} aria-busy="true" data-admin-skeleton data-skeleton-variant={variant}>
+      <s-box minBlockSize={variant === 'preview' ? '360px' : variant === 'inline' ? '0' : '260px'}>
+        <div aria-hidden="true">
+          <s-stack gap="base">
+            {Array.from({ length: rows }, (_, index) => (
+              <s-grid
+                gridTemplateColumns={variant === 'table' ? '40px minmax(0, 1fr)' : 'minmax(0, 1fr)'}
+                gap="base"
+                alignItems="center"
+                data-skeleton-row
+                key={index}
+              >
+                <s-box
+                  display={variant === 'table' || variant === 'preview' ? 'auto' : 'none'}
+                  data-skeleton-part="leading"
+                  background="subdued"
+                  borderRadius="base"
+                  {...dimensions.leading}
+                />
+                <s-box display={variant === 'preview' ? 'none' : 'auto'} data-skeleton-labels>
+                  <s-stack gap="small">
+                    <s-box data-skeleton-part="label" background="subdued" borderRadius="base" {...dimensions.label} />
+                    <s-box data-skeleton-part="value" background="subdued" borderRadius="base" {...dimensions.value} />
+                  </s-stack>
+                </s-box>
+              </s-grid>
+            ))}
+          </s-stack>
+        </div>
+      </s-box>
     </div>
   );
 }

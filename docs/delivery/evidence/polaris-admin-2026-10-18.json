@@ -1,0 +1,73 @@
+{
+  "date": "2026-10-18",
+  "scope": "Owner requested strict current Polaris web components/patterns throughout merchant admin, correct page widths/actions/states/dialogs, cohesive layout loading, usable canvas framing and a read-only comparison with the existing Stitchs app",
+  "baseline": {
+    "pr": 212,
+    "merge": "198bca7624841c484b6ea7057f027ff1770e5e6b",
+    "tree": "95295bc8e2a170023619d5ee2c36eb061aa1d2ec",
+    "parents": [
+      "353dfd0c0d6002ca5067f5a5b5bfa32f8723af09",
+      "92bb9fa2893e5a524112b019d91887bdce77c669"
+    ],
+    "checks": "All6 natural exact-head attempt1 workflows PASS; normal merge parents/tree verified. Prior work is preserved."
+  },
+  "references": [
+    "https://shopify.dev/docs/api/app-home/latest/patterns",
+    "https://shopify.dev/docs/api/app-home/latest/patterns/templates/resource-index",
+    "https://shopify.dev/docs/api/app-home/latest/patterns/templates/details",
+    "https://shopify.dev/docs/api/app-home/latest/patterns/templates/settings",
+    "https://shopify.dev/docs/api/app-home/latest/web-components/layout-and-structure/page",
+    "https://shopify.dev/docs/api/app-home/latest/web-components/actions/button-group",
+    "https://shopify.dev/docs/api/app-home/latest/web-components/overlays/modal",
+    "https://shopify.dev/docs/api/app-home/latest/web-components/forms/text-field",
+    "https://shopify.dev/docs/api/app-home/latest/app-bridge-web-components/save-bar"
+  ],
+  "referenceAccess": {
+    "status": "PASS_READ_ONLY",
+    "at": "2026-10-18T23:16:44Z",
+    "route": "https://admin.shopify.com/store/stitchs-nl/apps/insignia-custom/app",
+    "observed": "Homepage, product index, settings and an existing detail view; no controls saved or provider resources mutated",
+    "transport": "Collaborative preview default profile reached email login. Repository-authorized existing local Shopify profile under Xvfb reached the existing authenticated session; no login/verification attempt needed",
+    "limits": "Visual/task hierarchy reference only. No legacy code/data migration, quote-request/analytics or other product expansion. Private screenshots/operator copies due20October.",
+    "diagnosticCorrection": "An exploratory frame listing emitted a short-lived iframe authentication query in tool output. It expired by23:13UTC; subsequent output strips all query/hash values. No such URL or credential is stored in this record or committed; no persistent credential change performed."
+  },
+  "implementation": [
+    "Default base page width for resource indexes/details; small for focused settings/billing/storefront, with the existing native Shopify sidebar",
+    "Documented page aside for the product canvas, Polaris framing and actual mounted dimensions for projection; renderer is read-only while writes are unsettled",
+    "Ordinary Polaris save/discard controls in a normal draft-status section, plus the documented App Bridge ui-save-bar declarations; no custom sticky save toolbar. Shopify consumes native page header actions; mocked iframe fixtures do not pretend to reproduce that host.",
+    "Named destructive method-removal modal; discard confirmation; guarded navigation and accessible pending/error/empty states",
+    "Polaris table filters/pagination and compact thumbnails; structured privacy request table, meaningful empty states, contextual settings links",
+    "Native field errors and pending buttons; semantic error/success/warning presentation",
+    "Loading uses Polaris Box/Grid/Section primitives matching pinned page widths/aside/card composition, with one actual s-page. Stable destination nodes update before navigation. A structural CSS container avoids a reproduced pinned-runtime SSR QueryContainer constructor error (globalStylesApplied before class assignment); first-paint fallback styling applies only before custom-element definition. No SkeletonPage/Text web tags or alternative UI library."
+  ],
+  "review": {
+    "reviewer": "polaris_conventions_audit",
+    "boundary": "Procedural read-only static Spec/correctness and Standards/security review; no tests, native effects or enforced credential/network isolation; backend model not independently exposed",
+    "findings": [
+      "Uncertain save could be displaced by editing, Review latest or Reload before its result settled",
+      "Unsupported un-slotted button-group actions",
+      "Destination placeholders retained source-only cards and thumbnails"
+    ],
+    "resolution": "Unresolved SAVE lock covers fields, geometry/controller changes, renderer mode, new saves, discard, Review latest and Reload; exact-key immutable retry remains available. Group removed in favor of ordinary supported section actions and native Save Bar. Stable destination nodes/width/columns and all thumbnails update. Modal awaits definition. Blanket background-publication locking was rejected when regression demonstrated the existing independent local-draft contract: frozen publication key/payload remains unchanged in sessionStorage. New local drafts do not alter or cancel that command. Final focused Spec/correctness and Standards/security review CLEAR; reviewer inspected the existing independent-publication tests and withdrew blanket publication locking. No independent native execution claimed."
+  },
+  "validation": {
+    "webBuild": "PASS with pinned Polaris1.1 types,0 errors/0 warnings; no API type widening",
+    "browserRegression": "Initial completed full web run270:212PASS/3FAIL/55PostgreSQL-environmentSKIP. Two assertions reflected the deliberate width/AppBridge contract changes; the third exposed hidden duplicate modal errors on authorization loss. All three corrected cases plus four new save/modal controls PASS in a7-case impact run. Final complete editor/browser file is running; final-head CI remains mandatory.",
+    "nativeHostSaveBar": "NOT_YET_QUALIFIED",
+    "failuresPreserved": [
+      "Modal RED: no accessible confirmation before implementation; corrected cancellation/one-dispatch passes",
+      "Unknown-save RED: failed/unchanged readback exposed enabled Reload/Review latest; fenced before further testing",
+      "Initial full web run stopped after failures: filter slot hid empty-list Search, native field error changed accessible presentation, and SSR query-container initialization threw. Source/test corrections retain the underlying auth, decimal and Konva assertions. No timeout expansion.",
+      "Unchanged publication regression exposed overbroad UI locking; preserve independent editing/recovery of immutable saved publication instead.",
+      "Full run final3 failures: old full-width assertion, native App Bridge declaration buttons counted as ordinary iframe UI, and hidden duplicate modal error. Corrected assertions preserve minimum usable columns/mobile no-overflow and exclude only official hidden App Bridge declarations; source removes stale hidden errors. Seven impact cases pass."
+    ],
+    "additionalControls": "Style/secret provenance and module/domain/database boundary checks PASS. Existing integrity and other unchanged source/runtime evidence retained with scope.",
+    "developmentDeployment": "NOT_YET_PERFORMED"
+  },
+  "limits": [
+    "All existing final production gates and VAT UNRESOLVED/no-retry control remain intact",
+    "No Shopify scope/version/release, theme, product, purchase, charge, uninstall/privacy mutation, backup drain or production rollout",
+    "Local fixture browser tests do not establish native App Bridge host rendering; qualify current development artifact separately",
+    "Original private-copy/data/credential expiry and cleanup obligations remain binding"
+  ]
+}

@@ -17,6 +17,18 @@ export default function MethodLibrary() {
   const [denied, setDenied] = useState(false);
   const [uncertain, setUncertain] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const removal = useRef<HTMLElementTagNameMap['s-modal']>(null);
+  useEffect(() => {
+    let active = true;
+    void customElements.whenDefined('s-modal').then(() => {
+      if (!active) return;
+      if (deleting) removal.current?.showOverlay();
+      else removal.current?.hideOverlay();
+    });
+    return () => {
+      active = false;
+    };
+  }, [deleting]);
   const inFlight = useRef(false);
   // Retain each command key through an uncertain response. Explicit refresh reconciles state.
   const pending = useRef<{
@@ -113,11 +125,49 @@ export default function MethodLibrary() {
     }
   }
   return (
-    <s-page inlineSize="large" heading="Decoration method library">
+    <s-page heading="Decoration method library">
       <s-link slot="breadcrumb-actions" href="/admin/settings">
         Settings
       </s-link>
       <SettingsNavigation current="methods" />
+      <s-modal
+        ref={removal}
+        id="remove-method"
+        heading="Remove decoration method?"
+        onAfterHide={() => setDeleting(null)}
+      >
+        <s-stack gap="base">
+          <s-paragraph>Remove this method from your reusable library?</s-paragraph>
+          <s-text type="strong">{methods.find((m) => m.id === deleting)?.name}</s-text>
+          <s-paragraph>Existing product configurations and orders will stay unchanged.</s-paragraph>
+          {error && deleting && (
+            <s-banner tone="critical" heading="Method could not be removed">
+              {error}
+            </s-banner>
+          )}
+          {uncertain && deleting && (
+            <s-banner tone="warning">
+              Removal could not be confirmed. Close this dialog and refresh the library before continuing.
+            </s-banner>
+          )}
+        </s-stack>
+        <s-button
+          slot="primary-action"
+          variant="primary"
+          tone="critical"
+          loading={busy}
+          disabled={busy || uncertain || !deleting}
+          onClick={() => {
+            const method = methods.find((m) => m.id === deleting);
+            if (method) void write('DELETE', method.id, { version: method.version });
+          }}
+        >
+          Confirm removal
+        </s-button>
+        <s-button slot="secondary-actions" commandFor="remove-method" command="--hide" disabled={busy}>
+          Cancel
+        </s-button>
+      </s-modal>
       <s-section heading="Reusable methods for your store">
         <s-stack gap="base">
           <s-paragraph>
@@ -171,8 +221,8 @@ export default function MethodLibrary() {
                 {methods.length > 0 && (
                   <s-table>
                     <s-table-header-row>
-                      <s-table-header>Name</s-table-header>
-                      <s-table-header>Actions</s-table-header>
+                      <s-table-header listSlot="primary">Name</s-table-header>
+                      <s-table-header listSlot="labeled">Actions</s-table-header>
                     </s-table-header-row>
                     <s-table-body>
                       {methods.map((m) => (
@@ -199,21 +249,6 @@ export default function MethodLibrary() {
                               <s-button tone="critical" disabled={busy || uncertain} onClick={() => setDeleting(m.id)}>
                                 Remove
                               </s-button>
-                              {deleting === m.id && (
-                                <>
-                                  <s-text>Remove “{m.name}” from the library?</s-text>
-                                  <s-button
-                                    tone="critical"
-                                    disabled={busy || uncertain}
-                                    onClick={() => void write('DELETE', m.id, { version: m.version })}
-                                  >
-                                    Confirm removal
-                                  </s-button>
-                                  <s-button disabled={busy || uncertain} onClick={() => setDeleting(null)}>
-                                    Cancel
-                                  </s-button>
-                                </>
-                              )}
                             </s-stack>
                           </s-table-cell>
                         </s-table-row>

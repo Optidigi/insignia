@@ -35,10 +35,13 @@ export default function MerchantBilling() {
     void refresh();
   }, []);
   return (
-    <s-page inlineSize="large" heading="Billing">
+    <s-page inlineSize="small" heading="Billing">
       <s-link slot="breadcrumb-actions" href="/admin/settings">
         Settings
       </s-link>
+      <s-button loading={busy} disabled={busy} onClick={() => void refresh()}>
+        Refresh billing status
+      </s-button>
       <SettingsNavigation current="billing" />
       <s-section heading="Insignia Standard">
         <s-stack gap="base">
@@ -53,9 +56,9 @@ export default function MerchantBilling() {
         <s-stack gap="base">
           {busy && <AdminSkeleton variant="detail" label="Checking current Shopify subscription" />}
           {failed && (
-            <div role="alert">
-              <s-paragraph>Billing status could not be verified. Try again.</s-paragraph>
-            </div>
+            <s-banner tone="critical" heading="Billing status unavailable">
+              Billing status could not be verified. Try again.
+            </s-banner>
           )}
           {view && (
             <>
@@ -121,9 +124,6 @@ export default function MerchantBilling() {
               )}
             </>
           )}
-          <s-button disabled={busy} onClick={() => void refresh()}>
-            Refresh billing status
-          </s-button>
         </s-stack>
       </s-section>
     </s-page>
