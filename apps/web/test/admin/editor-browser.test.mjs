@@ -2853,7 +2853,7 @@ test('configuration loading reserves space with an accessible skeleton until aut
   assert.equal(await page.getByRole('button', { name: 'Save draft', exact: true }).count(), 0);
   release();
   await page.getByText('All changes saved', { exact: true }).waitFor();
-  assert.equal(await skeleton.isVisible(), false);
+  await skeleton.waitFor({ state: 'hidden' });
 });
 
 test('guided product setup shows one stage at a time and keeps unsaved choices without writes', {
@@ -2968,11 +2968,11 @@ test('settings owns billing and privacy and storefront guidance opens exact unsa
     if (new URL(r.url()).pathname.startsWith('/api/')) requests.push(r.method());
   });
   await page.goto(server.base + '/admin/settings/storefront');
+  const button = page.locator('s-button').filter({ hasText: 'Add customization button' });
+  await button.waitFor();
   const navigation = page.getByRole('navigation', { name: 'Settings sections' });
   for (const title of ['General', 'Decoration methods', 'Storefront setup', 'Billing', 'Privacy'])
     assert.equal(await navigation.getByRole('link', { name: title, exact: true }).count(), 1);
-  const button = page.locator('s-button').filter({ hasText: 'Add customization button' });
-  await button.waitFor();
   const link = new URL(await button.getAttribute('href'));
   assert.equal(link.origin, 'https://example.myshopify.com');
   assert.equal(link.pathname, '/admin/themes/current/editor');
@@ -3269,7 +3269,7 @@ test('late authenticated read replaces the bootstrap timeout notice with the set
     await page.locator('#admin-route-failure').waitFor();
     release();
     await page.getByText('No data requests are currently available.', { exact: true }).waitFor();
-    assert.equal(await page.locator('#admin-route-failure').isVisible(), false);
+    await page.locator('#admin-route-failure').waitFor({ state: 'hidden' });
     assert.equal(await page.locator('#admin-route-content').evaluate((element) => element.inert), false);
   } finally {
     release();
