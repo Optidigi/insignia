@@ -2756,7 +2756,10 @@ test('editor guides configuration through prices to publication while keeping di
     await page.screenshot({ path: '/tmp/insignia-admin-workflow-editor.png', fullPage: true });
   assert.equal(
     await page.evaluate(
-      () => Array.from(document.querySelectorAll('table,input:not([type="file"]),select,textarea,button')).filter(node => !node.closest('ui-save-bar')).length,
+      () =>
+        Array.from(document.querySelectorAll('table,input:not([type="file"]),select,textarea,button')).filter(
+          (node) => !node.closest('ui-save-bar'),
+        ).length,
     ),
     0,
     'ordinary admin controls use Polaris; shadow internals are excluded',
