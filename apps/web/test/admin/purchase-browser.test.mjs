@@ -111,6 +111,9 @@ test('merchant sees exact historical economics and erased detail never offers ne
   );
   assert.equal((await shell.text()).includes('9007199254740993'), false, 'SSR does not load private order economics');
   let current = view();
+  current.orderName = '#1001';
+  current.lines[0].title = 'Purchased cotton shirt';
+  current.lines[0].variantTitle = 'Blue / Large';
   await page.route('**/api/purchases/v1/' + id, (r) => {
     assert.equal(r.request().headers().authorization, 'Bearer synthetic-purchase-actor');
     return r.fulfill({ json: current });
@@ -135,6 +138,11 @@ test('merchant sees exact historical economics and erased detail never offers ne
     '/admin/settings',
   );
   await page.getByRole('heading', { name: 'Order summary', exact: true }).waitFor();
+  await page.getByText('#1001', { exact: true }).waitFor();
+  await page.getByText(/Purchased cotton shirt · Blue \/ Large/).waitFor();
+  assert.equal(await page.getByText('gid://shopify/Order/1', { exact: true }).isVisible(), false);
+  await page.getByRole('button', { name: 'Show order and variant references', exact: true }).click();
+  await page.getByText('gid://shopify/Order/1', { exact: true }).waitFor();
   assert.equal(await page.locator('time[datetime="2026-10-19T12:00:00Z"]').innerText(), 'Oct 19, 2026, 12:00 PM UTC');
   await page.getByText('Historical preview unavailable.', { exact: true }).waitFor();
   assert.equal(await page.getByRole('button', { name: 'Lock artwork', exact: true }).isEnabled(), false);
@@ -150,6 +158,7 @@ test('merchant sees exact historical economics and erased detail never offers ne
   current = view('ERASED');
   await page.getByRole('button', { name: 'Refresh purchase', exact: true }).click();
   await page.getByText('Production detail erased. Historical economics remain.', { exact: true }).waitFor();
+  await page.getByText('Order name unavailable', { exact: true }).waitFor();
   assert.equal(await page.locator('s-drop-zone input[type=file]').count(), 0);
 });
 test('merchant attaches verified upload, locks exact version, and permission loss removes private work', {
@@ -758,21 +767,24 @@ test('orders table supports artwork triage on the loaded page and opens the exac
     route.fulfill({
       json: {
         version: 'm8-purchase-list-v1',
-        items: [view(), { ...view('READY'), purchaseId: readyId, orderId: 'gid://shopify/Order/2' }],
+        items: [
+          { ...view(), orderName: '#1001' },
+          { ...view('READY'), purchaseId: readyId, orderId: 'gid://shopify/Order/2', orderName: '#1002' },
+        ],
         nextCursor: null,
       },
     }),
   );
   await page.goto(base + '/admin/orders');
-  const first = page.getByRole('link', { name: 'Order 1', exact: true });
+  const first = page.getByRole('link', { name: '#1001', exact: true });
   await first.waitFor();
   assert.equal(await first.getAttribute('href'), '/admin/orders/' + id);
   await page.getByRole('combobox', { name: 'Artwork status', exact: true }).selectOption('PENDING_ARTWORK');
-  assert.equal(await page.getByRole('link', { name: 'Order 2', exact: true }).count(), 0);
+  assert.equal(await page.getByRole('link', { name: '#1002', exact: true }).count(), 0);
   await page.getByText('1 of 2 loaded orders', { exact: true }).waitFor();
   await page.setViewportSize({ width: 390, height: 844 });
   assert.ok(await first.isVisible());
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await page.getByRole('combobox', { name: 'Artwork status', exact: true }).selectOption('all');
-  await page.getByRole('link', { name: 'Order 2', exact: true }).waitFor();
+  await page.getByRole('link', { name: '#1002', exact: true }).waitFor();
 });

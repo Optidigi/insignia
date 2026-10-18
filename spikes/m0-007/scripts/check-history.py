@@ -170,10 +170,18 @@ archived_ledger = subprocess.check_output(["git", "show", f"{PRE_INSPECTOR_EXCEP
 assert digest(archived_ledger) == "9e2dc910417c942b8aa3ca5e6428f084ed065063ecef7aed76d1179f6d6d41b9", "pre-inspector-exception ledger mismatch"
 BOUNDED_QUALIFICATION_AUTHORITY = "docs/delivery/evidence/lean-v1/bounded-native-qualification-owner-grant-2026-10-17.json"
 assert digest((REPO / BOUNDED_QUALIFICATION_AUTHORITY).read_bytes()) == "5919b0b53f06abbed6ab30c6a99feb442215ecc091ac52cdea07334dca0f3e41", "bounded qualification owner authority mismatch"
-# Current documents include the17October explicit inspector host exception;
-# earlier fixed-ref records and original owner authorities remain exact.
+# Preserve the plan before the18October owner-authorized unattended lifecycle
+# and seven-day isolated-backup clarification; dated records remain exact.
+PRE_TECHNICAL_COMPLETION_BASE = "ab2a71356d816a79dc859a472a64458f2dc020e5"
+archived_plan = subprocess.check_output(
+    ["git", "show", f"{PRE_TECHNICAL_COMPLETION_BASE}:docs/architecture/implementation-plan.md"], cwd=REPO
+)
+assert digest(archived_plan) == "82ca1b0be57048d2ddcb3e33236a3ceb36702d6fda9af907b9df20c5cc9a4054", "pre-technical-completion plan mismatch"
+TECHNICAL_COMPLETION_AUTHORITY = "docs/delivery/authority/technical-merchant-completion-2026-10-18.json"
+assert digest((REPO / TECHNICAL_COMPLETION_AUTHORITY).read_bytes()) == "59ec251dd86af559aac07ab07dcf5a3c4cc3c838729644d0977547d4982aee2a", "technical completion owner authority mismatch"
+# Current documents include only those explicit amendments.
 current_architecture = {
-    "docs/architecture/implementation-plan.md": "82ca1b0be57048d2ddcb3e33236a3ceb36702d6fda9af907b9df20c5cc9a4054",
+    "docs/architecture/implementation-plan.md": "9200937b9b39d5ed7915c8aeea9eb899689470b500b3e7229541c584fbc1371e",
     "docs/architecture/decision-ledger.md": "dbc2391a4384538ac4d6f9eadc3eda2fd47ed85b169f4ce8a0cb0cc724af9933",
     "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209"
 }

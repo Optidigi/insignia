@@ -1,0 +1,81 @@
+# Template only. Linux host networking reaches the existing private worker /ready endpoint.
+name: insignia-heartbeat
+services:
+  heartbeat:
+    image: ${INSIGNIA_HEARTBEAT_IMAGE:?Set qualified immutable image digest}
+    pull_policy: never
+    user: "1000:1000"
+    init: true
+    restart: unless-stopped
+    network_mode: host
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    memswap_limit: 128m
+    cpus: 0.25
+    pids_limit: 32
+    volumes:
+      - type: bind
+        source: ${INSIGNIA_HEARTBEAT_CONFIG:?Set owned heartbeat configuration file}
+        target: /run/insignia/heartbeat.json
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${INSIGNIA_HEARTBEAT_SECRET:?Set UID1000 mode0600 relay secret file}
+        target: /run/insignia/relay-secret
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${INSIGNIA_HEARTBEAT_AGGREGATES:?Set protected aggregate snapshot directory}
+        target: /run/insignia/aggregates
+        read_only: true
+        bind:
+          create_host_path: false
+  snapshot:
+    image: ${INSIGNIA_HEARTBEAT_IMAGE:?Set qualified immutable image digest}
+    pull_policy: never
+    entrypoint: [/srv/insignia/bin/node, /srv/insignia/scripts/operations/heartbeat-snapshot.mjs, --loop]
+    user: "1000:1000"
+    init: true
+    restart: unless-stopped
+    network_mode: host
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    memswap_limit: 128m
+    cpus: 0.25
+    pids_limit: 32
+    volumes:
+      - type: bind
+        source: ${INSIGNIA_HEARTBEAT_SNAPSHOT_CONFIG:?Set UID1000 mode0600 snapshot config}
+        target: /run/insignia/heartbeat-snapshot.json
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${INSIGNIA_MONITOR_DATABASE_STARTUP:?Set UID1000 mode0600 SELECT-only monitor database JSON}
+        target: /run/insignia/monitor-database.json
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${INSIGNIA_BACKUP_STORE:?Set UID1000 mode0700 encrypted backup store}
+        target: /run/insignia/backup-store
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${INSIGNIA_BACKUP_REPLICA_JOURNAL:?Set UID1000 mode0700 off-host completion and retention journal}
+        target: /run/insignia/replica-journal
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${INSIGNIA_HEARTBEAT_AGGREGATES:?Set UID1000 mode0700 aggregate directory}
+        target: /run/insignia/aggregates
+        bind:
+          create_host_path: false

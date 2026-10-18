@@ -24,6 +24,19 @@ function fixture() {
   const seen = [],
     errors = [];
   const core = {
+    uninstallLifecycle: {
+      async coverGenericCleanup() {
+        return 0;
+      },
+    },
+    uninstallPrivacy: {
+      async recoverPending() {
+        return 0;
+      },
+      async status() {
+        return { activeGenerationHoldCount: 0, unrecoveredBlockedReceiptCount: 0 };
+      },
+    },
     customerPrivacy: {
       async cleanupInboxes() {
         return 0;

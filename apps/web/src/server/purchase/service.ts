@@ -25,13 +25,43 @@ export function createPurchaseServices(input: {
   core: DurableCore;
   appOrigin: string;
   authenticate(request: Request): Promise<AdminActor | null>;
+  assertCurrentAccess?: (actor: AdminActor) => Promise<void>;
+  orderNames?: (actor: AdminActor, orderIds: string[]) => Promise<Record<string, string | null>>;
+  orderPresentation?: (
+    actor: AdminActor,
+    target: import('@insignia/shopify').OrderPresentationTarget,
+  ) => Promise<import('@insignia/shopify').OrderPresentation | null>;
   storage?: Pick<ArtworkStorage, 'presignRead'>;
   previewImages?: FrozenPreviewReader;
   clock?: () => Date;
 }) {
   const now = input.clock ?? (() => new Date());
   const store = input.core.purchases;
-  async function view(actor: AdminActor, purchase: PurchaseRecord): Promise<PurchaseView> {
+  async function currentAccess(actor: AdminActor) {
+    try {
+      if (actor.expiresAtMs <= now().getTime() || !actor.canReadOrders || !actor.canReadArtwork)
+        throw new Error('Current merchant access required');
+      await input.assertCurrentAccess?.(actor);
+      if (actor.expiresAtMs <= now().getTime()) throw new Error('Current merchant access required');
+    } catch {
+      throw Object.assign(new Error('Current merchant access required'), { code: 'MERCHANT_REQUIRED' });
+    }
+  }
+  async function view(
+    actor: AdminActor,
+    purchase: PurchaseRecord,
+    names?: Record<string, string | null>,
+  ): Promise<PurchaseView> {
+    const lines = purchase.bindings.flatMap((b) => b.lines.map(({ lineIndex, ...line }) => line));
+    let presentation: import('@insignia/shopify').OrderPresentation | null = null;
+    if (names) presentation = { orderName: names[purchase.orderId] ?? null, lines: [] };
+    if (!names && actor.canReadOrders && actor.expiresAtMs > now().getTime()) {
+      try {
+        presentation = (await input.orderPresentation?.(actor, { orderId: purchase.orderId, lines })) ?? null;
+      } catch {
+        /* Optional labels never hide durable purchase/artwork. */
+      }
+    }
     const groups: PurchaseView['groups'] = [];
     const authorized = new Map<string, Awaited<ReturnType<typeof store.getAuthorizedArtwork>>>();
     const events = purchase.artworkEvents;
@@ -110,6 +140,7 @@ export function createPurchaseServices(input: {
       version: 'm8-purchase-v1',
       purchaseId: purchase.purchaseId,
       orderId: purchase.orderId,
+      orderName: presentation?.orderName ?? null,
       orderCreatedAt: purchase.orderCreatedAt,
       isTest: purchase.isTest,
       currency: purchase.currency,
@@ -122,7 +153,10 @@ export function createPurchaseServices(input: {
       artworkVersion: purchase.artworkVersion,
       artworkState: purchase.artworkState,
       refunds: purchase.refunds,
-      lines: purchase.bindings.flatMap((b) => b.lines.map(({ lineIndex, ...line }) => line)),
+      lines: lines.map((line) => {
+        const label = presentation?.lines.find((item) => item.orderLineId === line.orderLineId);
+        return { ...line, title: label?.title ?? null, variantTitle: label?.variantTitle ?? null };
+      }),
       groups,
       artworkEvents: events,
     });
@@ -138,20 +172,38 @@ export function createPurchaseServices(input: {
     privacyOrder: (actor: AdminActor, inboxId: string, purchaseId: string, setId: string | null = null) =>
       input.core.customerPrivacy.exportOrder(scope(actor), inboxId, purchaseId, setId),
     async list(actor: AdminActor, query: { limit: number; before: string | null }) {
+      await currentAccess(actor);
       const rows = await store.list(scope(actor), {
         limit: query.limit + 1,
         ...(query.before ? { before: query.before } : {}),
       });
       const page = rows.slice(0, query.limit).filter((row): row is PurchaseRecord => row !== null);
+      let names: Record<string, string | null> = {};
+      if (page.length > 0 && actor.canReadOrders && actor.expiresAtMs > now().getTime()) {
+        try {
+          names =
+            (await input.orderNames?.(
+              actor,
+              page.map((row) => row.orderId),
+            )) ?? {};
+        } catch {
+          /* Labels are optional. */
+        }
+      }
+      const items = await Promise.all(page.map((row) => view(actor, row, names)));
+      await currentAccess(actor);
       return {
         version: 'm8-purchase-list-v1' as const,
-        items: await Promise.all(page.map((row) => view(actor, row))),
+        items,
         nextCursor: rows.length > query.limit ? page.at(-1)!.purchaseId : null,
       };
     },
     async get(actor: AdminActor, id: string) {
+      await currentAccess(actor);
       const purchase = await store.get(scope(actor), id);
-      return purchase ? view(actor, purchase) : null;
+      const result = purchase ? await view(actor, purchase) : null;
+      await currentAccess(actor);
+      return result;
     },
     async attach(
       actor: AdminActor,

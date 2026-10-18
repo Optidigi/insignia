@@ -1,0 +1,21 @@
+# Configuration template only. No account/route/secret is committed.
+name = "insignia-alerts"
+main = "worker.mjs"
+compatibility_date = "2026-10-18"
+workers_dev = false
+preview_urls = false
+
+[triggers]
+crons = ["* * * * *"]
+
+[[durable_objects.bindings]]
+name = "MONITOR"
+class_name = "AlertMonitor"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["AlertMonitor"]
+
+[[send_email]]
+name = "ALERT_EMAIL"
+destination_address = "admin@optidigi.nl"

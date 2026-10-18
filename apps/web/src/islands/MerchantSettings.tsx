@@ -45,36 +45,40 @@ export default function MerchantSettings() {
   const [denied, setDenied] = useState('');
   useAdminPageReady(true);
   return (
-    <s-page heading="Settings">
+    <s-page inlineSize="large" heading="Settings">
       <SettingsNavigation current="general" />
       <s-paragraph>
         Manage store-wide setup. Product-specific rules, images and prices live with each product.
       </s-paragraph>
       {groups.map((group) => (
         <s-section key={group.title} heading={group.title}>
-          <s-stack gap="small">
-            {group.rows.map((row) => (
-              <s-clickable key={row.href} href={row.href} aria-label={row.title}>
-                <s-box padding="base" border="base" borderRadius="base">
-                  <s-grid gridTemplateColumns="auto 1fr auto" gap="base" alignItems="center">
-                    <s-icon type={row.icon} />
-                    <s-stack gap="small">
-                      <s-text type="strong">{row.title}</s-text>
-                      <s-text color="subdued">{row.description}</s-text>
-                    </s-stack>
-                    <s-icon type="chevron-right" />
-                  </s-grid>
-                </s-box>
-              </s-clickable>
-            ))}
+          <s-stack gap="base">
+            <s-stack gap="small">
+              {group.rows.map((row) => (
+                <s-clickable key={row.href} href={row.href} aria-label={row.title}>
+                  <s-box padding="base" border="base" borderRadius="base">
+                    <s-grid gridTemplateColumns="auto 1fr auto" gap="base" alignItems="center">
+                      <s-icon type={row.icon} />
+                      <s-stack gap="small">
+                        <s-text type="strong">{row.title}</s-text>
+                        <s-text color="subdued">{row.description}</s-text>
+                      </s-stack>
+                      <s-icon type="chevron-right" />
+                    </s-grid>
+                  </s-box>
+                </s-clickable>
+              ))}
+            </s-stack>
           </s-stack>
         </s-section>
       ))}
       <s-section heading="Product customization">
-        <s-paragraph>Choose a product to configure its methods, images, print areas and prices.</s-paragraph>
-        <s-button href="/admin/products" icon="product">
-          Configure products
-        </s-button>
+        <s-stack gap="base">
+          <s-paragraph>Choose a product to configure its methods, images, print areas and prices.</s-paragraph>
+          <s-button href="/admin/products" icon="product">
+            Configure products
+          </s-button>
+        </s-stack>
       </s-section>
       <AdminDisclosure label="App permissions and publication checks">
         {denied ? (

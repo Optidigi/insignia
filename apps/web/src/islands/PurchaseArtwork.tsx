@@ -221,74 +221,77 @@ function Placement({
   }
   const label = group.presentation?.labels.placements?.[placement.id] ?? placement.id;
   return (
-    <section class="purchase-placement" aria-label={`Artwork ${label}`}>
-      <s-heading>
-        {label} · {group.presentation?.labels.methods?.[placement.methodId] ?? placement.methodId} ·{' '}
-        {group.presentation?.labels.steps?.[placement.stepId] ?? placement.stepId}
-      </s-heading>
-      <s-paragraph>
-        Purchased artwork:{' '}
-        {placement.originalArtwork.kind === 'deferred' ? 'Logo later' : 'Original file supplied at purchase'}
-      </s-paragraph>
-      {placement.originalArtwork.kind === 'revision' &&
-        placement.originalArtwork.revisionId !== placement.currentAssetId && (
-          <HistoricalOriginal
-            purchaseId={purchase.purchaseId}
-            assetId={placement.originalArtwork.revisionId}
-            deny={deny}
-          />
-        )}
-      {placement.currentExpiresAt && (
+    <section aria-label={`Artwork ${label}`}>
+      <s-stack gap="base">
+        <s-divider />
+        <s-heading>
+          {label} · {group.presentation?.labels.methods?.[placement.methodId] ?? placement.methodId} ·{' '}
+          {group.presentation?.labels.steps?.[placement.stepId] ?? placement.stepId}
+        </s-heading>
         <s-paragraph>
-          Artwork available until:{' '}
-          <time dateTime={placement.currentExpiresAt}>{recordDate(placement.currentExpiresAt)}</time>.{' '}
-          {retentionExpired
-            ? 'Artwork expired.'
-            : Date.parse(placement.currentExpiresAt) - Date.now() <= 30 * 86400000
-              ? Date.parse(placement.currentExpiresAt) - Date.now() <= 7 * 86400000
-                ? 'Deletion within 7 days. Download before deletion.'
-                : 'Retention expiry within 30 days. Download before deletion.'
-              : ''}
+          Purchased artwork:{' '}
+          {placement.originalArtwork.kind === 'deferred' ? 'Logo later' : 'Original file supplied at purchase'}
         </s-paragraph>
-      )}
-      {assetUsable && !retentionExpired && (
-        <>
-          <s-button type="button" disabled={busy || disabled} onClick={() => void access('preview')}>
-            Preview artwork
-          </s-button>
-          <s-button type="button" disabled={busy || disabled} onClick={() => void access('download')}>
-            Prepare original download
-          </s-button>
-        </>
-      )}
-      {assetUsable && preview?.identity === identity && Date.parse(preview.expiresAt) > Date.now() && (
-        <PrivatePreviewImage src={preview.url} alt={`Verified PNG ${label}`} maxWidth={200} maxHeight={200} />
-      )}
-      {assetUsable && link?.identity === identity && Date.parse(link.expiresAt) > Date.now() && (
-        <s-link href={link.url} target="_blank">
-          Download verified original
-        </s-link>
-      )}
-      {purchase.lines.length > 0 &&
-        purchase.artworkState !== 'ARTWORK_LOCKED' &&
-        !purchase.artworkEvents.some((event) => event.kind === 'LOCK') &&
-        Date.parse(group.payloadExpiresAt) > Date.now() && (
-          <>
-            <ArtworkUpload
-              onPreview={() => {}}
-              onAssetChange={(asset) => setSelected(asset?.assetId ?? null)}
-              onAuthenticationDenied={deny}
-              disabled={disabled || busy}
-              allowOriginalDownload={false}
+        {placement.originalArtwork.kind === 'revision' &&
+          placement.originalArtwork.revisionId !== placement.currentAssetId && (
+            <HistoricalOriginal
+              purchaseId={purchase.purchaseId}
+              assetId={placement.originalArtwork.revisionId}
+              deny={deny}
             />
-            <s-button type="button" disabled={!selected || disabled || busy} onClick={() => void attach()}>
-              {placement.currentAssetId || purchase.artworkState === 'ERASED' ? 'Replace artwork' : 'Attach artwork'}
+          )}
+        {placement.currentExpiresAt && (
+          <s-paragraph>
+            Artwork available until:{' '}
+            <time dateTime={placement.currentExpiresAt}>{recordDate(placement.currentExpiresAt)}</time>.{' '}
+            {retentionExpired
+              ? 'Artwork expired.'
+              : Date.parse(placement.currentExpiresAt) - Date.now() <= 30 * 86400000
+                ? Date.parse(placement.currentExpiresAt) - Date.now() <= 7 * 86400000
+                  ? 'Deletion within 7 days. Download before deletion.'
+                  : 'Retention expiry within 30 days. Download before deletion.'
+                : ''}
+          </s-paragraph>
+        )}
+        {assetUsable && !retentionExpired && (
+          <>
+            <s-button type="button" disabled={busy || disabled} onClick={() => void access('preview')}>
+              Preview artwork
+            </s-button>
+            <s-button type="button" disabled={busy || disabled} onClick={() => void access('download')}>
+              Prepare original download
             </s-button>
           </>
         )}
-      <div role="status">
-        <s-paragraph>{message}</s-paragraph>
-      </div>
+        {assetUsable && preview?.identity === identity && Date.parse(preview.expiresAt) > Date.now() && (
+          <PrivatePreviewImage src={preview.url} alt={`Verified PNG ${label}`} maxWidth={200} maxHeight={200} />
+        )}
+        {assetUsable && link?.identity === identity && Date.parse(link.expiresAt) > Date.now() && (
+          <s-link href={link.url} target="_blank">
+            Download verified original
+          </s-link>
+        )}
+        {purchase.lines.length > 0 &&
+          purchase.artworkState !== 'ARTWORK_LOCKED' &&
+          !purchase.artworkEvents.some((event) => event.kind === 'LOCK') &&
+          Date.parse(group.payloadExpiresAt) > Date.now() && (
+            <>
+              <ArtworkUpload
+                onPreview={() => {}}
+                onAssetChange={(asset) => setSelected(asset?.assetId ?? null)}
+                onAuthenticationDenied={deny}
+                disabled={disabled || busy}
+                allowOriginalDownload={false}
+              />
+              <s-button type="button" disabled={!selected || disabled || busy} onClick={() => void attach()}>
+                {placement.currentAssetId || purchase.artworkState === 'ERASED' ? 'Replace artwork' : 'Attach artwork'}
+              </s-button>
+            </>
+          )}
+        <div role="status">
+          <s-paragraph>{message}</s-paragraph>
+        </div>
+      </s-stack>
     </section>
   );
 }
@@ -380,7 +383,7 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
     }
   }
   return (
-    <s-page heading="Orders and artwork">
+    <s-page inlineSize="large" heading="Orders and artwork">
       {purchaseId && (
         <s-link slot="breadcrumb-actions" href="/admin/orders">
           Orders
@@ -400,229 +403,264 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
       )}
       {!purchaseId && !denied && (
         <s-section heading="Customized orders">
-          {busy && items.length === 0 && <AdminSkeleton label="Loading orders" />}
-          {items.length === 0 && !busy && <s-paragraph>No customized orders recorded.</s-paragraph>}
-          {nextCursor && (
-            <s-button type="button" disabled={busy} onClick={() => void load(nextCursor)}>
-              Load older orders
-            </s-button>
-          )}
-          <s-select
-            label="Artwork status"
-            value={artworkFilter}
-            onChange={(event) => setArtworkFilter(event.currentTarget.value)}
-          >
-            <s-option value="all">All artwork statuses</s-option>
-            <s-option value="PENDING_ARTWORK">Artwork needed</s-option>
-            <s-option value="READY">Artwork complete</s-option>
-            <s-option value="ARTWORK_LOCKED">Artwork locked</s-option>
-            <s-option value="ERASED">Artwork no longer retained</s-option>
-          </s-select>
-          <s-paragraph>Filters apply to loaded orders. Load older orders to include them.</s-paragraph>
-          <s-paragraph>
-            {items.filter((item) => artworkFilter === 'all' || item.artworkState === artworkFilter).length} of{' '}
-            {items.length} loaded orders
-          </s-paragraph>
-          {items.length > 0 && (
-            <s-table loading={busy}>
-              <s-table-header-row>
-                <s-table-header listSlot="primary">Order</s-table-header>
-                <s-table-header listSlot="secondary">Created</s-table-header>
-                <s-table-header listSlot="inline">Artwork</s-table-header>
-                <s-table-header listSlot="labeled" format="currency">
-                  Total
-                </s-table-header>
-              </s-table-header-row>
-              <s-table-body>
-                {items
-                  .filter((item) => artworkFilter === 'all' || item.artworkState === artworkFilter)
-                  .map((item) => (
-                    <s-table-row key={item.purchaseId}>
-                      <s-table-cell>
-                        <s-link href={`/admin/orders/${item.purchaseId}`}>
-                          Order {item.orderId.replace('gid://shopify/Order/', '')}
-                        </s-link>
-                      </s-table-cell>
-                      <s-table-cell>
-                        <time dateTime={item.orderCreatedAt}>{recordDate(item.orderCreatedAt)}</time>
-                      </s-table-cell>
-                      <s-table-cell>
-                        <s-badge tone={item.artworkState === 'PENDING_ARTWORK' ? 'warning' : 'neutral'}>
-                          {item.lines.length
-                            ? artworkLabel(item.artworkState)
-                            : 'Order customization needs verification'}
-                        </s-badge>
-                      </s-table-cell>
-                      <s-table-cell>
-                        {exactPurchaseMoney(item.originalTotalMinor, item.exponent, item.currency)}
-                      </s-table-cell>
-                    </s-table-row>
-                  ))}
-              </s-table-body>
-            </s-table>
-          )}
-          {items.length > 0 &&
-            !items.some((item) => artworkFilter === 'all' || item.artworkState === artworkFilter) && (
-              <s-paragraph>No loaded orders match this artwork status.</s-paragraph>
+          <s-stack gap="base">
+            {busy && items.length === 0 && <AdminSkeleton label="Loading orders" />}
+            {items.length === 0 && !busy && <s-paragraph>No customized orders recorded.</s-paragraph>}
+            {nextCursor && (
+              <s-button type="button" disabled={busy} onClick={() => void load(nextCursor)}>
+                Load older orders
+              </s-button>
             )}
+            <s-select
+              label="Artwork status"
+              value={artworkFilter}
+              onChange={(event) => setArtworkFilter(event.currentTarget.value)}
+            >
+              <s-option value="all">All artwork statuses</s-option>
+              <s-option value="PENDING_ARTWORK">Artwork needed</s-option>
+              <s-option value="READY">Artwork complete</s-option>
+              <s-option value="ARTWORK_LOCKED">Artwork locked</s-option>
+              <s-option value="ERASED">Artwork no longer retained</s-option>
+            </s-select>
+            <s-paragraph>Filters apply to loaded orders. Load older orders to include them.</s-paragraph>
+            <s-paragraph>
+              {items.filter((item) => artworkFilter === 'all' || item.artworkState === artworkFilter).length} of{' '}
+              {items.length} loaded orders
+            </s-paragraph>
+            {items.length > 0 && (
+              <s-table loading={busy}>
+                <s-table-header-row>
+                  <s-table-header listSlot="primary">Order</s-table-header>
+                  <s-table-header listSlot="secondary">Created</s-table-header>
+                  <s-table-header listSlot="inline">Artwork</s-table-header>
+                  <s-table-header listSlot="labeled" format="currency">
+                    Total
+                  </s-table-header>
+                </s-table-header-row>
+                <s-table-body>
+                  {items
+                    .filter((item) => artworkFilter === 'all' || item.artworkState === artworkFilter)
+                    .map((item) => (
+                      <s-table-row key={item.purchaseId}>
+                        <s-table-cell>
+                          <s-link href={`/admin/orders/${item.purchaseId}`}>
+                            {item.orderName ?? 'Order name unavailable'}
+                          </s-link>
+                        </s-table-cell>
+                        <s-table-cell>
+                          <time dateTime={item.orderCreatedAt}>{recordDate(item.orderCreatedAt)}</time>
+                        </s-table-cell>
+                        <s-table-cell>
+                          <s-badge tone={item.artworkState === 'PENDING_ARTWORK' ? 'warning' : 'neutral'}>
+                            {item.lines.length
+                              ? artworkLabel(item.artworkState)
+                              : 'Order customization needs verification'}
+                          </s-badge>
+                        </s-table-cell>
+                        <s-table-cell>
+                          {exactPurchaseMoney(item.originalTotalMinor, item.exponent, item.currency)}
+                        </s-table-cell>
+                      </s-table-row>
+                    ))}
+                </s-table-body>
+              </s-table>
+            )}
+            {items.length > 0 &&
+              !items.some((item) => artworkFilter === 'all' || item.artworkState === artworkFilter) && (
+                <s-paragraph>No loaded orders match this artwork status.</s-paragraph>
+              )}
+          </s-stack>
         </s-section>
       )}
       {purchaseId && !purchase && busy && (
         <s-section>
-          <AdminSkeleton label="Loading order and artwork" rows={4} />
+          <s-stack gap="base">
+            <AdminSkeleton label="Loading order and artwork" rows={4} />
+          </s-stack>
         </s-section>
       )}
       {purchase && (
         <>
           <s-section heading="Order summary">
-            <s-heading>Order {purchase.orderId.replace('gid://shopify/Order/', '')}</s-heading>
-            <s-paragraph>
-              Order created: <time dateTime={purchase.orderCreatedAt}>{recordDate(purchase.orderCreatedAt)}</time>
-            </s-paragraph>
-            <s-paragraph>
-              {purchase.isTest === true
-                ? 'Test order.'
-                : purchase.isTest === null
-                  ? 'Test status unavailable.'
-                  : 'Non-test order.'}
-            </s-paragraph>
-            <s-paragraph>
-              {exactPurchaseMoney(purchase.originalTotalMinor, purchase.exponent, purchase.currency)}
-            </s-paragraph>
-            <s-paragraph>
-              Shopify payment status: {purchase.financialStatus}. First fully paid:{' '}
-              {purchase.firstPaidAt ? (
-                <time dateTime={purchase.firstPaidAt}>{recordDate(purchase.firstPaidAt)}</time>
-              ) : (
-                'Not recorded'
-              )}
-              .
-            </s-paragraph>
-            {purchase.cancelledAt && (
+            <s-stack gap="base">
+              <s-heading>{purchase.orderName ?? 'Order name unavailable'}</s-heading>
               <s-paragraph>
-                Shopify cancellation: <time dateTime={purchase.cancelledAt}>{recordDate(purchase.cancelledAt)}</time>
+                Order created: <time dateTime={purchase.orderCreatedAt}>{recordDate(purchase.orderCreatedAt)}</time>
               </s-paragraph>
-            )}
-            <s-paragraph>Shopify owns payment, fulfillment, refunds, returns and restock.</s-paragraph>
-            {purchase.exceptions.map((exception, index) => (
-              <div role="alert" key={index}>
-                <s-paragraph>Reconciliation exception: {exception}</s-paragraph>
-              </div>
-            ))}
-            <s-button type="button" disabled={busy} onClick={() => void command('reconcile')}>
-              Check order updates in Shopify
-            </s-button>
+              <s-paragraph>
+                {purchase.isTest === true
+                  ? 'Test order.'
+                  : purchase.isTest === null
+                    ? 'Test status unavailable.'
+                    : 'Non-test order.'}
+              </s-paragraph>
+              <s-paragraph>
+                {exactPurchaseMoney(purchase.originalTotalMinor, purchase.exponent, purchase.currency)}
+              </s-paragraph>
+              <s-paragraph>
+                Shopify payment status: {purchase.financialStatus}. First fully paid:{' '}
+                {purchase.firstPaidAt ? (
+                  <time dateTime={purchase.firstPaidAt}>{recordDate(purchase.firstPaidAt)}</time>
+                ) : (
+                  'Not recorded'
+                )}
+                .
+              </s-paragraph>
+              {purchase.cancelledAt && (
+                <s-paragraph>
+                  Shopify cancellation: <time dateTime={purchase.cancelledAt}>{recordDate(purchase.cancelledAt)}</time>
+                </s-paragraph>
+              )}
+              <s-paragraph>Shopify owns payment, fulfillment, refunds, returns and restock.</s-paragraph>
+              {purchase.exceptions.map((exception, index) => (
+                <div role="alert" key={index}>
+                  <s-paragraph>Reconciliation exception: {exception}</s-paragraph>
+                </div>
+              ))}
+              <s-button type="button" disabled={busy} onClick={() => void command('reconcile')}>
+                Check order updates in Shopify
+              </s-button>
+            </s-stack>
           </s-section>
           <s-section heading="Purchased variants">
-            {purchase.lines.map((line) => (
-              <s-paragraph key={line.orderLineId}>
-                {line.productId} / {line.variantId}: {line.quantity} ×{' '}
-                {exactPurchaseMoney(line.unitPriceMinor, purchase.exponent, purchase.currency)}
-              </s-paragraph>
-            ))}
+            <s-stack gap="base">
+              {purchase.lines.map((line) => (
+                <s-paragraph key={line.orderLineId}>
+                  {line.title ?? 'Purchased item name unavailable'}
+                  {line.variantTitle ? ` · ${line.variantTitle}` : ''}: {line.quantity} ×{' '}
+                  {exactPurchaseMoney(line.unitPriceMinor, purchase.exponent, purchase.currency)}
+                </s-paragraph>
+              ))}
+            </s-stack>
+          </s-section>
+          <s-section heading="Technical references">
+            <s-stack gap="base">
+              <AdminDisclosure label="Show order and variant references">
+                <s-paragraph>{purchase.orderId}</s-paragraph>
+                {purchase.lines.map((line) => (
+                  <s-paragraph key={line.orderLineId}>
+                    {line.productId} / {line.variantId}
+                  </s-paragraph>
+                ))}
+              </AdminDisclosure>
+            </s-stack>
           </s-section>
           <s-section heading="Artwork and customization">
-            {purchase.lines.length > 0 && (
-              <s-paragraph>Artwork status: {artworkLabel(purchase.artworkState)}</s-paragraph>
-            )}
-            {purchase.lines.length === 0 ? (
-              <s-paragraph>
-                Order customization needs verification. Do not begin production until its details have been checked.
-              </s-paragraph>
-            ) : purchase.artworkState === 'ERASED' &&
-              !purchase.groups.some((group) => Date.parse(group.payloadExpiresAt) > Date.now()) ? (
-              <s-paragraph>Production detail erased. Historical economics remain.</s-paragraph>
-            ) : (
-              <>
-                {purchase.artworkState === 'ERASED' && purchase.groups.length > 0 && (
-                  <s-paragraph>
-                    {purchase.artworkEvents.some((event) => event.kind === 'LOCK')
-                      ? 'Selected artwork unavailable. Artwork lock remains in force.'
-                      : 'Selected artwork unavailable; explicitly replace within remaining detail retention.'}
-                  </s-paragraph>
-                )}
-                {purchase.groups.map((group) => (
-                  <section key={group.index} class="purchase-customization">
-                    <s-heading>Customization {group.index + 1}</s-heading>
-                    <AdminDisclosure label="Saved production reference">
-                      <s-paragraph>Historical revision: {group.configRevisionId}</s-paragraph>
-                    </AdminDisclosure>
+            <s-stack gap="base">
+              {purchase.lines.length > 0 && (
+                <s-paragraph>Artwork status: {artworkLabel(purchase.artworkState)}</s-paragraph>
+              )}
+              {purchase.lines.length === 0 ? (
+                <s-paragraph>
+                  Order customization needs verification. Do not begin production until its details have been checked.
+                </s-paragraph>
+              ) : purchase.artworkState === 'ERASED' &&
+                !purchase.groups.some((group) => Date.parse(group.payloadExpiresAt) > Date.now()) ? (
+                <s-paragraph>Production detail erased. Historical economics remain.</s-paragraph>
+              ) : (
+                <>
+                  {purchase.artworkState === 'ERASED' && purchase.groups.length > 0 && (
                     <s-paragraph>
-                      Design retention deadline:{' '}
-                      <time dateTime={group.payloadExpiresAt}>{recordDate(group.payloadExpiresAt)}</time>
+                      {purchase.artworkEvents.some((event) => event.kind === 'LOCK')
+                        ? 'Selected artwork unavailable. Artwork lock remains in force.'
+                        : 'Selected artwork unavailable; explicitly replace within remaining detail retention.'}
                     </s-paragraph>
-                    <PurchaseHistoricalPreview purchaseId={purchase.purchaseId} group={group} deny={deny} />
-                    {group.placements.map((placement) => (
-                      <Placement
-                        key={placement.id}
-                        purchase={purchase}
-                        group={group}
-                        placement={placement}
-                        changed={setPurchase}
-                        deny={deny}
-                        disabled={busy || denied}
-                      />
-                    ))}
-                  </section>
-                ))}
-                <s-button
-                  type="button"
-                  disabled={
-                    busy ||
-                    purchase.artworkState !== 'READY' ||
-                    purchase.artworkEvents.some((event) => event.kind === 'LOCK') ||
-                    purchase.groups.length === 0 ||
-                    purchase.groups.some((group) => Date.parse(group.payloadExpiresAt) <= Date.now())
-                  }
-                  onClick={() => void command('lock')}
-                >
-                  Lock artwork
-                </s-button>
-              </>
-            )}
+                  )}
+                  {purchase.groups.map((group) => (
+                    <section key={group.index}>
+                      <s-stack gap="base">
+                        <s-divider />
+                        <s-heading>Customization {group.index + 1}</s-heading>
+                        <AdminDisclosure label="Saved production reference">
+                          <s-paragraph>Historical revision: {group.configRevisionId}</s-paragraph>
+                        </AdminDisclosure>
+                        <s-paragraph>
+                          Design retention deadline:{' '}
+                          <time dateTime={group.payloadExpiresAt}>{recordDate(group.payloadExpiresAt)}</time>
+                        </s-paragraph>
+                        <PurchaseHistoricalPreview
+                          purchaseId={purchase.purchaseId}
+                          group={group}
+                          lines={purchase.lines}
+                          deny={deny}
+                        />
+                        {group.placements.map((placement) => (
+                          <Placement
+                            key={placement.id}
+                            purchase={purchase}
+                            group={group}
+                            placement={placement}
+                            changed={setPurchase}
+                            deny={deny}
+                            disabled={busy || denied}
+                          />
+                        ))}
+                      </s-stack>
+                    </section>
+                  ))}
+                  <s-button
+                    type="button"
+                    disabled={
+                      busy ||
+                      purchase.artworkState !== 'READY' ||
+                      purchase.artworkEvents.some((event) => event.kind === 'LOCK') ||
+                      purchase.groups.length === 0 ||
+                      purchase.groups.some((group) => Date.parse(group.payloadExpiresAt) <= Date.now())
+                    }
+                    onClick={() => void command('lock')}
+                  >
+                    Lock artwork
+                  </s-button>
+                </>
+              )}
+            </s-stack>
           </s-section>
           <s-section heading="Attachment history">
-            {purchase.artworkEvents.map((event) => (
-              <s-paragraph key={event.eventId}>
-                Version {event.version}: {event.kind}{' '}
-                {event.erasedAt ? '— artwork detail erased' : (event.assetId ?? '')}
-                {event.expiresAt && (
-                  <>
-                    {' '}
-                    · original deadline <time dateTime={event.expiresAt}>{recordDate(event.expiresAt)}</time>
-                  </>
-                )}
-                {event.kind === 'ATTACH' &&
-                  event.assetId &&
-                  !event.erasedAt &&
-                  event.expiresAt &&
-                  Date.parse(event.expiresAt) > Date.now() && (
-                    <HistoricalOriginal purchaseId={purchase.purchaseId} assetId={event.assetId} deny={deny} />
+            <s-stack gap="base">
+              {purchase.artworkEvents.map((event) => (
+                <s-paragraph key={event.eventId}>
+                  Version {event.version}: {event.kind}{' '}
+                  {event.erasedAt ? '— artwork detail erased' : (event.assetId ?? '')}
+                  {event.expiresAt && (
+                    <>
+                      {' '}
+                      · original deadline <time dateTime={event.expiresAt}>{recordDate(event.expiresAt)}</time>
+                    </>
                   )}
-              </s-paragraph>
-            ))}
-            {purchase.artworkEvents.length === 0 && (
-              <s-paragraph>No artwork replacements or locks recorded.</s-paragraph>
-            )}
+                  {event.kind === 'ATTACH' &&
+                    event.assetId &&
+                    !event.erasedAt &&
+                    event.expiresAt &&
+                    Date.parse(event.expiresAt) > Date.now() && (
+                      <HistoricalOriginal purchaseId={purchase.purchaseId} assetId={event.assetId} deny={deny} />
+                    )}
+                </s-paragraph>
+              ))}
+              {purchase.artworkEvents.length === 0 && (
+                <s-paragraph>No artwork replacements or locks recorded.</s-paragraph>
+              )}
+            </s-stack>
           </s-section>
           <s-section heading="Shopify refund records">
-            <s-paragraph>
-              Refund records do not prove that money has settled. Shopify remains the payment authority.
-            </s-paragraph>
-            {purchase.refunds.length === 0 && <s-paragraph>No refunds recorded.</s-paragraph>}
-            {purchase.refunds.map((refund) => (
-              <s-paragraph key={refund.refundId}>
-                {refund.refundId}: {exactPurchaseMoney(refund.amountMinor, purchase.exponent, refund.currency)} ·{' '}
-                <time dateTime={refund.occurredAt}>{recordDate(refund.occurredAt)}</time>
-                {refund.lines.map((line) => (
-                  <s-text key={line.lineId}>
-                    {' '}
-                    · {line.lineId}: {line.quantity} recorded for refund,{' '}
-                    {exactPurchaseMoney(line.amountMinor, purchase.exponent, refund.currency)}
-                  </s-text>
-                ))}
+            <s-stack gap="base">
+              <s-paragraph>
+                Refund records do not prove that money has settled. Shopify remains the payment authority.
               </s-paragraph>
-            ))}
+              {purchase.refunds.length === 0 && <s-paragraph>No refunds recorded.</s-paragraph>}
+              {purchase.refunds.map((refund) => (
+                <s-paragraph key={refund.refundId}>
+                  {refund.refundId}: {exactPurchaseMoney(refund.amountMinor, purchase.exponent, refund.currency)} ·{' '}
+                  <time dateTime={refund.occurredAt}>{recordDate(refund.occurredAt)}</time>
+                  {refund.lines.map((line) => (
+                    <s-text key={line.lineId}>
+                      {' '}
+                      · {line.lineId}: {line.quantity} recorded for refund,{' '}
+                      {exactPurchaseMoney(line.amountMinor, purchase.exponent, refund.currency)}
+                    </s-text>
+                  ))}
+                </s-paragraph>
+              ))}
+            </s-stack>
           </s-section>
         </>
       )}

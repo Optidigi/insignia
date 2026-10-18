@@ -67,6 +67,8 @@ import {
   type ShopRecord,
 } from './repositories/tenant.js';
 import { createTrustedReleaseReader } from './repositories/trusted-release.js';
+import { createUninstallLifecycleRepository } from './repositories/uninstall-lifecycle.js';
+import { createUninstallPrivacyRepository } from './repositories/uninstall-privacy.js';
 import {
   createUsageDeliveryAttemptRepository,
   type UsageDeliveryAttemptRepository,
@@ -91,6 +93,8 @@ export type ConfigInput = {
 };
 
 export interface DurableCore {
+  readonly uninstallLifecycle: ReturnType<typeof createUninstallLifecycleRepository>;
+  readonly uninstallPrivacy: ReturnType<typeof createUninstallPrivacyRepository>;
   readonly methodCatalog: {
     list(transaction: DurableTransaction, shopId: string): Promise<MethodTemplate[]>;
     create(transaction: DurableTransaction, shopId: string, id: string, name: string): Promise<MethodTemplate | null>;
@@ -295,7 +299,16 @@ export interface DurableCore {
     processUninstall(
       id: string,
     ): Promise<
-      'unqualified' | 'unverified' | 'already_processed' | 'unresolved' | 'not_found' | 'expired' | 'exhausted'
+      | 'deactivated'
+      | 'already_inactive'
+      | 'stale'
+      | 'unqualified'
+      | 'unverified'
+      | 'already_processed'
+      | 'unresolved'
+      | 'not_found'
+      | 'expired'
+      | 'exhausted'
     >;
   };
   readonly credentials: {
@@ -713,6 +726,8 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
         tenants.deactivateCurrent(resolve(handle), shopId, generation),
     },
     webhooks,
+    uninstallLifecycle: createUninstallLifecycleRepository(database),
+    uninstallPrivacy: createUninstallPrivacyRepository(database),
     credentials,
     close: () => database.destroy(),
   };

@@ -136,6 +136,7 @@ test('built HTTP ingress authenticates raw bytes and durably deduplicates throug
         env: {
           ...process.env,
           DATABASE_URL: connectionString,
+          APP_URL: 'https://synthetic.example',
           INSIGNIA_CREDENTIAL_KEY_ID: 'synthetic-k1',
           INSIGNIA_CREDENTIAL_KEY_BASE64: Buffer.alloc(32, 7).toString('base64'),
           SHOPIFY_CLIENT_ID: 'synthetic-client-id',

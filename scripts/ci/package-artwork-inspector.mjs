@@ -1,15 +1,13 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { chmod, copyFile, cp, lstat, mkdir, readdir, readFile, readlink, realpath, writeFile } from 'node:fs/promises';
+import { chmod, copyFile, lstat, mkdir, readdir, readFile, readlink, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { copyPortableWorker, validatePortableWorker } from './portable-worker.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
-const privateName =
-  /(?:^\.env(?:\.|$)|\.env$|^(?:auth|session|context|credentials|inspection|m6-r2)\.json$|\.pem$|\.key$)/i;
-
 /** Offline packaging of the existing portable worker; never starts inspection or reads credentials. */
 export async function packageInspector({ workerPackage, destination, sourceHead, sourceTree }) {
   assert.equal(process.version, 'v24.21.0');
@@ -17,23 +15,9 @@ export async function packageInspector({ workerPackage, destination, sourceHead,
   assert.equal(process.arch, 'x64');
   assert.match(sourceHead, /^[a-f0-9]{40}$/);
   assert.match(sourceTree, /^[a-f0-9]{40}$/);
-  const worker = await realpath(workerPackage);
+  const worker = await validatePortableWorker(workerPackage);
   const output = resolve(destination);
   assert.ok(!output.startsWith(`${worker}/`) && output !== worker, 'New separate destination required');
-  assert.equal(JSON.parse(await readFile(join(worker, 'package.json'))).name, '@insignia/worker');
-  async function validate(directory) {
-    for (const name of await readdir(directory)) {
-      assert.ok(!privateName.test(name), 'Private file cannot enter inspector artifact');
-      const path = join(directory, name),
-        info = await lstat(path);
-      if (info.isSymbolicLink()) {
-        assert.ok((await realpath(path)).startsWith(`${worker}/`), 'Worker dependency escaped portable package');
-        assert.ok(!(await readlink(path)).startsWith('/'), 'Absolute worker dependency escaped relocation');
-      } else if (info.isDirectory()) await validate(path);
-      else assert.ok(info.isFile(), 'Only regular runtime files are supported');
-    }
-  }
-  for (const item of ['dist', 'node_modules']) await validate(join(worker, item));
   for (const name of [
     'artwork-main.js',
     'artwork/sandbox.js',
@@ -44,14 +28,7 @@ export async function packageInspector({ workerPackage, destination, sourceHead,
     assert.ok((await lstat(join(worker, 'dist', name))).isFile(), 'Built inspector entrypoint and sandbox required');
   await mkdir(output, { mode: 0o700 });
   await mkdir(join(output, 'worker'), { mode: 0o700 });
-  for (const name of ['dist', 'node_modules', 'package.json'])
-    await cp(join(worker, name), join(output, 'worker', name), {
-      recursive: true,
-      dereference: false,
-      verbatimSymlinks: true,
-      force: false,
-      errorOnExist: true,
-    });
+  await copyPortableWorker(worker, join(output, 'worker'));
   await mkdir(join(output, 'bin'), { mode: 0o700 });
   await copyFile(process.execPath, join(output, 'bin/node'));
   await copyFile(resolve(dirname(process.execPath), '../LICENSE'), join(output, 'NODE-LICENSE'));

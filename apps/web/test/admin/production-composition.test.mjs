@@ -16,6 +16,7 @@ import { fixture as collectorFixture } from '../../../../scripts/m5-runtime/trus
 import { handleAdminRequest } from '../../src/server/admin/http.ts';
 import { createReleaseVerificationClient } from '../../src/server/admin/release-verification.ts';
 import { isolatedDatabase } from '../support/isolated-database.mjs';
+import { uninstallSubscriptionFixture } from '../support/uninstall-subscription.mjs';
 
 const database = process.env.DATABASE_URL;
 const client = binding.appClientId;
@@ -380,9 +381,17 @@ for (const releaseMode of [
       });
       let publicConfig = null;
       const productFields = new Map();
+      const lifecycle = uninstallSubscriptionFixture(() => ({
+        shop,
+        shopId,
+        installationId: 'gid://shopify/AppInstallation/9',
+        appClientId: client,
+      }));
       globalThis.fetch = async (url, init) => {
         const address = String(url);
         const { query, variables } = JSON.parse(String(init.body));
+        const enrolled = lifecycle(query, variables);
+        if (enrolled) return enrolled;
         if (address.startsWith('https://partners.shopify.com/')) {
           partnerReads++;
           assert.match(query, /^query ActiveSubscription/);

@@ -30,49 +30,51 @@ export default function ArtworkUpload({
   } = useArtworkUpload({ ...props, api });
   return (
     <section aria-label="Private artwork">
-      <s-heading>Artwork preview</s-heading>
-      <s-drop-zone
-        label="Upload artwork"
-        accessibilityLabel="Upload artwork"
-        accept="image/svg+xml,image/png,image/jpeg"
-        disabled={disabled || busy}
-        onChange={(event) => {
-          const file = event.currentTarget.files[0];
-          event.currentTarget.value = '';
-          void selected(file);
-        }}
-        onDropRejected={() => setMessage('Choose an SVG, PNG or JPEG up to 5 MiB.')}
-      />
-      {busy ? (
-        <AdminSkeleton label="Processing artwork" rows={1} />
-      ) : (
-        <div role="status" aria-live="polite">
-          <s-paragraph>{message}</s-paragraph>
-        </div>
-      )}
-      {preview && (
-        <PrivatePreviewImage src={preview.url} alt="Verified artwork preview" aspectRatio={preview.aspectRatio} />
-      )}
-      {pending && (
-        <s-button disabled={disabled || busy} onClick={() => void resumeUploaded()}>
-          Retry uploaded artwork
-        </s-button>
-      )}
-      {asset && !preview && (
-        <s-button disabled={disabled || busy} onClick={() => void renewPreview()}>
-          Retry artwork preview
-        </s-button>
-      )}
-      {asset && allowOriginalDownload && (
-        <s-button disabled={disabled || busy} onClick={() => void download()}>
-          Prepare original download
-        </s-button>
-      )}
-      {asset && downloadLink && (
-        <s-link href={downloadLink.url} target="_blank">
-          Download verified original
-        </s-link>
-      )}
+      <s-stack gap="base">
+        <s-heading>Artwork preview</s-heading>
+        <s-drop-zone
+          label="Upload artwork"
+          accessibilityLabel="Upload artwork"
+          accept="image/svg+xml,image/png,image/jpeg"
+          disabled={disabled || busy}
+          onChange={(event) => {
+            const file = event.currentTarget.files[0];
+            event.currentTarget.value = '';
+            void selected(file);
+          }}
+          onDropRejected={() => setMessage('Choose an SVG, PNG or JPEG up to 5 MiB.')}
+        />
+        {busy ? (
+          <AdminSkeleton variant="inline" label="Processing artwork" rows={1} />
+        ) : (
+          <div role="status" aria-live="polite">
+            <s-paragraph>{message}</s-paragraph>
+          </div>
+        )}
+        {preview && (
+          <PrivatePreviewImage src={preview.url} alt="Verified artwork preview" aspectRatio={preview.aspectRatio} />
+        )}
+        {pending && (
+          <s-button disabled={disabled || busy} onClick={() => void resumeUploaded()}>
+            Retry uploaded artwork
+          </s-button>
+        )}
+        {asset && !preview && (
+          <s-button disabled={disabled || busy} onClick={() => void renewPreview()}>
+            Retry artwork preview
+          </s-button>
+        )}
+        {asset && allowOriginalDownload && (
+          <s-button disabled={disabled || busy} onClick={() => void download()}>
+            Prepare original download
+          </s-button>
+        )}
+        {asset && downloadLink && (
+          <s-link href={downloadLink.url} target="_blank">
+            Download verified original
+          </s-link>
+        )}
+      </s-stack>
     </section>
   );
 }

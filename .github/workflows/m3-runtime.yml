@@ -6,6 +6,9 @@ on:
     branches: [main]
     paths:
       - 'scripts/ci/**'
+      - 'scripts/operations/**'
+      - 'deployment/alerts/**'
+      - 'deployment/backup/**'
       - 'apps/web/**'
       - 'apps/worker/**'
       - 'packages/application/**'
@@ -158,6 +161,34 @@ jobs:
           corepack pnpm install --offline --frozen-lockfile --ignore-scripts --prod=false
           bash scripts/m5-024/build-worker.sh /tmp/insignia-m5-024-worker
           M5_WORKER_PACKAGE_ENTRY=/tmp/insignia-m5-024-worker/dist/main.js node --test scripts/m5-024/worker-guards.test.mjs scripts/m5-024/portable-process.test.mjs
+      - name: Operations source and relocated offline runtime qualification
+        if: steps.changes.outputs.route == 'full'
+        env:
+          M5_WORKER_PACKAGE_ENTRY: /tmp/insignia-m5-024-worker/dist/main.js
+        run: |
+          corepack pnpm test:operations
+          corepack pnpm exec biome check scripts/ci/package-operations.mjs scripts/ci/portable-worker.mjs scripts/ci/operations-package.test.mjs
+          node --test scripts/ci/operations-package.test.mjs
+          node scripts/ci/package-operations.mjs /tmp/insignia-m5-024-worker "$RUNNER_TEMP/insignia-operations-package"
+          mkdir -m 700 "$RUNNER_TEMP/insignia-operations-artifact"
+          tar --sort=name --owner=0 --group=0 --numeric-owner -cf "$RUNNER_TEMP/insignia-operations-artifact/operations.tar" -C "$RUNNER_TEMP/insignia-operations-package" .
+          sha256sum "$RUNNER_TEMP/insignia-operations-artifact/operations.tar" > "$RUNNER_TEMP/insignia-operations-artifact/operations.tar.sha256"
+          cp "$RUNNER_TEMP/insignia-operations-package/receipt.json" "$RUNNER_TEMP/insignia-operations-artifact/receipt.json"
+          mkdir -m 700 "$RUNNER_TEMP/insignia-operations-context"
+          cp -a "$RUNNER_TEMP/insignia-operations-package" "$RUNNER_TEMP/insignia-operations-context/operations-package"
+          docker build --file deployment/alerts/Dockerfile.heartbeat --iidfile "$RUNNER_TEMP/insignia-operations-artifact/image.id" "$RUNNER_TEMP/insignia-operations-context"
+          image_id=$(cat "$RUNNER_TEMP/insignia-operations-artifact/image.id")
+          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --pids-limit 32 --memory 128m --entrypoint /srv/insignia/bin/node "$image_id" --input-type=module -e "import {createRequire} from 'node:module';import {collectDatabaseSnapshot} from './scripts/operations/heartbeat-snapshot.mjs';import {databaseSnapshot} from './scripts/operations/backup-snapshot.mjs';import {createR2ArtworkStorage} from './packages/storage/dist/index.js';const require=createRequire(new URL('./apps/worker/package.json',import.meta.url));require('pg');if(typeof collectDatabaseSnapshot!=='function'||typeof databaseSnapshot!=='function'||typeof createR2ArtworkStorage!=='function')throw Error('Operations dependency closure missing');console.log(JSON.stringify({classification:'OFFLINE_IMAGE_IMPORTS_QUALIFIED_NOT_NATIVE',providerCalls:0}));" > "$RUNNER_TEMP/insignia-operations-artifact/offline-image-probe.json"
+          docker save --output "$RUNNER_TEMP/insignia-operations-artifact/heartbeat-image.tar" "$image_id"
+          sha256sum "$RUNNER_TEMP/insignia-operations-artifact/heartbeat-image.tar" > "$RUNNER_TEMP/insignia-operations-artifact/heartbeat-image.tar.sha256"
+      - name: Preserve operations runtime for later gated deployment
+        if: steps.changes.outputs.route == 'full'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: operations-runtime-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/insignia-operations-artifact
+          if-no-files-found: error
+          retention-days: 3
       - name: Versioned inspector host artifact qualification (no inspection or provider effects)
         if: steps.changes.outputs.route == 'full'
         env:

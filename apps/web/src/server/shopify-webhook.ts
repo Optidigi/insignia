@@ -49,6 +49,8 @@ export async function handleShopifyWebhook(
   request: Request,
   dependencies: {
     secrets: readonly string[];
+    /** Exclusive-purpose private destination; generic route never supplies this. */
+    fixedTopic?: 'app/uninstalled';
     ingress?: ShopifyWebhookIngressPort;
     queue?: ShopifyWebhookQueuePort;
     getHandoff?: () => Promise<{ ingress: ShopifyWebhookIngressPort; queue: ShopifyWebhookQueuePort }>;
@@ -60,6 +62,7 @@ export async function handleShopifyWebhook(
   try {
     const raw = await readBoundedWebhookBody(request);
     const verified = verifyShopifyWebhook(raw, request.headers, dependencies.secrets);
+    if (dependencies.fixedTopic) verified.topic = dependencies.fixedTopic;
     const handoff = dependencies.getHandoff ? await dependencies.getHandoff() : dependencies;
     if (!handoff.ingress || !handoff.queue) throw new Error('Webhook handoff unavailable');
     const receipt = await receiveVerifiedShopifyWebhook(handoff.ingress, handoff.queue, verified);

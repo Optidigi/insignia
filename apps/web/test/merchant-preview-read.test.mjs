@@ -141,7 +141,16 @@ test('merchant purchase projection reads the purchased revision and caps URLs at
       return { product_42: 'https://private.example/purchased.png' };
     },
   });
-  const view = await services.get({ tenantShopId: 'tenant-a', installationGeneration: '1' }, purchase.purchaseId);
+  const view = await services.get(
+    {
+      tenantShopId: 'tenant-a',
+      installationGeneration: '1',
+      expiresAtMs: now.getTime() + 60_000,
+      canReadOrders: true,
+      canReadArtwork: true,
+    },
+    purchase.purchaseId,
+  );
   assert.deepEqual(view.groups[0].imageUrls, { product_42: 'https://private.example/purchased.png' });
   assert.equal(seen[0].target.revisionId, 'revision-a');
   assert.equal(seen[0].target.retainUntil.toISOString(), '2026-10-15T05:00:30.000Z');
@@ -325,7 +334,13 @@ test('an optional preview lookup failure degrades through buyer and purchase pro
     clock: () => now,
   });
   const view = await purchase.get(
-    { tenantShopId: 'tenant-a', installationGeneration: '1' },
+    {
+      tenantShopId: 'tenant-a',
+      installationGeneration: '1',
+      expiresAtMs: now.getTime() + 60_000,
+      canReadOrders: true,
+      canReadArtwork: true,
+    },
     'd841ee12-2075-4101-b3bc-429ad31a4059',
   );
   assert.deepEqual(view.groups[0].imageUrls, {});

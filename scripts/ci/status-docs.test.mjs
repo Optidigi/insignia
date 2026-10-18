@@ -154,6 +154,8 @@ const addedSteps = {
   'm1-foundation.yml': ['Complete storefront artifact inventory controls'],
   'm3-database.yml': [],
   'm3-runtime.yml': [
+    'Operations source and relocated offline runtime qualification',
+    'Preserve operations runtime for later gated deployment',
     'Versioned inspector host artifact qualification (no inspection or provider effects)',
     'Preserve versioned inspector host artifact (native handover remains unqualified)',
     'Independent immutable verifier package and offline image qualification',
@@ -189,8 +191,14 @@ test('workflow integration preserves original suites, reviewed artifact addition
       if (file === 'm1-foundation.yml' && expected.includes('name: m1-001-foundation-${{ github.sha }}')) {
         // Complete the existing owned storefront payload; no broader upload paths.
         expected = expected
-          .replace('extensions/insignia-theme/assets/insignia-storefront.js', 'extensions/insignia-theme/assets/insignia-*.js\n            extensions/insignia-theme/assets/insignia-*.css')
-          .replace('apps/storefront/dist/insignia-storefront.js', 'apps/storefront/dist/insignia-*.js\n            apps/storefront/dist/insignia-*.css');
+          .replace(
+            'extensions/insignia-theme/assets/insignia-storefront.js',
+            'extensions/insignia-theme/assets/insignia-*.js\n            extensions/insignia-theme/assets/insignia-*.css',
+          )
+          .replace(
+            'apps/storefront/dist/insignia-storefront.js',
+            'apps/storefront/dist/insignia-*.js\n            apps/storefront/dist/insignia-*.css',
+          );
       }
       assert.equal(ungated(added), expected, 'original suite bodies and reviewed artifact paths remain exact');
       assert.match(

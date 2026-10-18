@@ -49,135 +49,141 @@ export default function MerchantPrivacy() {
     );
   }, []);
   return (
-    <s-page heading="Customer privacy requests">
+    <s-page inlineSize="large" heading="Customer privacy requests">
       <s-link slot="breadcrumb-actions" href="/admin/settings">
         Settings
       </s-link>
       <SettingsNavigation current="privacy" />
       <s-section heading="Provide requested customer data">
-        <s-button
-          disabled={busy}
-          onClick={() =>
-            void run(async () => {
-              setManifest(null);
-              setDesignExports([]);
-              setRequests((await authenticatedJson<{ items: RequestView[] }>('/api/purchases/v1/privacy')).items);
-            })
-          }
-        >
-          Refresh requests
-        </s-button>
-        <s-paragraph>
-          Download each available order record and its original artwork, then provide them to the requesting customer
-          through your store’s privacy process. Downloading here does not confirm delivery to the customer.
-        </s-paragraph>
-        <s-paragraph>Exports use currently retained records. Erased or expired artwork stays unavailable.</s-paragraph>
-        {(!loaded || (busy && !requests.length)) && <AdminSkeleton label="Loading privacy requests" />}
-        {error && (
-          <div role="alert">
-            <s-paragraph>Privacy records could not be loaded. Try again.</s-paragraph>
-          </div>
-        )}
-        {loaded && !busy && !error && !requests.length && (
-          <s-paragraph>No data requests are currently available.</s-paragraph>
-        )}
-        {requests.map((request) => (
-          <s-paragraph key={request.inboxId}>
-            Request {request.requestId} · {request.requestedOrderCount} requested orders · Due{' '}
-            {new Date(request.fulfillBy).toUTCString()}{' '}
-            <s-button
-              disabled={busy}
-              onClick={() =>
-                void run(async () => {
-                  setDesignExports([]);
-                  setManifest(await authenticatedJson(`/api/purchases/v1/privacy/${request.inboxId}`));
-                })
-              }
-            >
-              Open request
-            </s-button>
-          </s-paragraph>
-        ))}
-        {requests.length === 100 && (
+        <s-stack gap="base">
           <s-button
             disabled={busy}
             onClick={() =>
               void run(async () => {
                 setManifest(null);
                 setDesignExports([]);
-                setRequests(
-                  (
-                    await authenticatedJson<{ items: RequestView[] }>(
-                      `/api/purchases/v1/privacy?after=${requests[requests.length - 1]?.inboxId}`,
-                    )
-                  ).items,
-                );
+                setRequests((await authenticatedJson<{ items: RequestView[] }>('/api/purchases/v1/privacy')).items);
               })
             }
           >
-            Next requests
+            Refresh requests
           </s-button>
-        )}
-      </s-section>
-      {manifest && (
-        <s-section heading={`Request ${manifest.requestId}`}>
-          <s-button disabled={busy} onClick={() => download(manifest, `insignia-request-${manifest.requestId}.json`)}>
-            Download request summary (JSON)
-          </s-button>
-          {!manifest.orders.length && (
-            <s-paragraph>
-              No orders were requested. Insignia does not hold a separate customer contact profile.
-            </s-paragraph>
+          <s-paragraph>
+            Download each available order record and its original artwork, then provide them to the requesting customer
+            through your store’s privacy process. Downloading here does not confirm delivery to the customer.
+          </s-paragraph>
+          <s-paragraph>
+            Exports use currently retained records. Erased or expired artwork stays unavailable.
+          </s-paragraph>
+          {(!loaded || (busy && !requests.length)) && <AdminSkeleton label="Loading privacy requests" />}
+          {error && (
+            <div role="alert">
+              <s-paragraph>Privacy records could not be loaded. Try again.</s-paragraph>
+            </div>
           )}
-          {manifest.orders.map((order) => (
-            <s-paragraph key={order.orderId}>
-              {order.orderId}{' '}
-              {order.purchaseId ? (
-                <>
-                  <s-button
-                    disabled={busy}
-                    onClick={() =>
-                      void run(async () => {
-                        const value = await authenticatedJson<{
-                          designs: { setId: string; hasRetainedPayload: boolean }[];
-                        }>(`/api/purchases/v1/privacy/${manifest.inboxId}/orders/${order.purchaseId}`);
-                        download(value, `insignia-order-${order.purchaseId}.json`);
-                        setDesignExports(
-                          value.designs
-                            .filter((d) => d.hasRetainedPayload)
-                            .map((d) => ({ purchaseId: order.purchaseId as string, setId: d.setId })),
-                        );
-                      })
-                    }
-                  >
-                    Download order data
-                  </s-button>{' '}
-                  <s-link href={`/admin/orders/${order.purchaseId}`}>Original artwork and retained preview</s-link>
-                </>
-              ) : (
-                'No matching Insignia purchase is held.'
-              )}
-            </s-paragraph>
-          ))}
-          {designExports.map((design, index) => (
-            <s-paragraph key={design.setId}>
+          {loaded && !busy && !error && !requests.length && (
+            <s-paragraph>No data requests are currently available.</s-paragraph>
+          )}
+          {requests.map((request) => (
+            <s-paragraph key={request.inboxId}>
+              Request {request.requestId} · {request.requestedOrderCount} requested orders · Due{' '}
+              {new Date(request.fulfillBy).toUTCString()}{' '}
               <s-button
                 disabled={busy}
                 onClick={() =>
-                  void run(async () =>
-                    download(
-                      await authenticatedJson(
-                        `/api/purchases/v1/privacy/${manifest.inboxId}/orders/${design.purchaseId}/sets/${design.setId}`,
-                      ),
-                      `insignia-design-${design.setId}.json`,
-                    ),
-                  )
+                  void run(async () => {
+                    setDesignExports([]);
+                    setManifest(await authenticatedJson(`/api/purchases/v1/privacy/${request.inboxId}`));
+                  })
                 }
               >
-                Download retained design {index + 1}
+                Open request
               </s-button>
             </s-paragraph>
           ))}
+          {requests.length === 100 && (
+            <s-button
+              disabled={busy}
+              onClick={() =>
+                void run(async () => {
+                  setManifest(null);
+                  setDesignExports([]);
+                  setRequests(
+                    (
+                      await authenticatedJson<{ items: RequestView[] }>(
+                        `/api/purchases/v1/privacy?after=${requests[requests.length - 1]?.inboxId}`,
+                      )
+                    ).items,
+                  );
+                })
+              }
+            >
+              Next requests
+            </s-button>
+          )}
+        </s-stack>
+      </s-section>
+      {manifest && (
+        <s-section heading={`Request ${manifest.requestId}`}>
+          <s-stack gap="base">
+            <s-button disabled={busy} onClick={() => download(manifest, `insignia-request-${manifest.requestId}.json`)}>
+              Download request summary (JSON)
+            </s-button>
+            {!manifest.orders.length && (
+              <s-paragraph>
+                No orders were requested. Insignia does not hold a separate customer contact profile.
+              </s-paragraph>
+            )}
+            {manifest.orders.map((order) => (
+              <s-paragraph key={order.orderId}>
+                {order.orderId}{' '}
+                {order.purchaseId ? (
+                  <>
+                    <s-button
+                      disabled={busy}
+                      onClick={() =>
+                        void run(async () => {
+                          const value = await authenticatedJson<{
+                            designs: { setId: string; hasRetainedPayload: boolean }[];
+                          }>(`/api/purchases/v1/privacy/${manifest.inboxId}/orders/${order.purchaseId}`);
+                          download(value, `insignia-order-${order.purchaseId}.json`);
+                          setDesignExports(
+                            value.designs
+                              .filter((d) => d.hasRetainedPayload)
+                              .map((d) => ({ purchaseId: order.purchaseId as string, setId: d.setId })),
+                          );
+                        })
+                      }
+                    >
+                      Download order data
+                    </s-button>{' '}
+                    <s-link href={`/admin/orders/${order.purchaseId}`}>Original artwork and retained preview</s-link>
+                  </>
+                ) : (
+                  'No matching Insignia purchase is held.'
+                )}
+              </s-paragraph>
+            ))}
+            {designExports.map((design, index) => (
+              <s-paragraph key={design.setId}>
+                <s-button
+                  disabled={busy}
+                  onClick={() =>
+                    void run(async () =>
+                      download(
+                        await authenticatedJson(
+                          `/api/purchases/v1/privacy/${manifest.inboxId}/orders/${design.purchaseId}/sets/${design.setId}`,
+                        ),
+                        `insignia-design-${design.setId}.json`,
+                      ),
+                    )
+                  }
+                >
+                  Download retained design {index + 1}
+                </s-button>
+              </s-paragraph>
+            ))}
+          </s-stack>
         </s-section>
       )}
     </s-page>

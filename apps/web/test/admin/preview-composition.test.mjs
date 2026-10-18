@@ -6,6 +6,7 @@ import { test } from 'node:test';
 import { abstractFetch, setAbstractFetchFunc } from '@shopify/shopify-api/runtime';
 import { build } from 'esbuild';
 import { Pool } from 'pg';
+import { uninstallSubscriptionFixture } from '../support/uninstall-subscription.mjs';
 
 const database = process.env.DATABASE_URL;
 const client = '22222222222222222222222222222222',
@@ -117,9 +118,17 @@ test('live-style SDK identity, local PG create/save/reload/CAS/exact ambiguous r
         { status: 200 },
       );
     });
+    const lifecycle = uninstallSubscriptionFixture(() => ({
+      shop,
+      shopId: 'gid://shopify/Shop/501',
+      installationId: active ? 'gid://shopify/AppInstallation/61' : 'gid://shopify/AppInstallation/999',
+      appClientId: client,
+    }));
     globalThis.fetch = async (url, init) => {
       assert.equal(String(url), `https://${shop}/admin/api/2026-07/graphql.json`);
-      const { query } = JSON.parse(init.body);
+      const { query, variables } = JSON.parse(init.body);
+      const enrolled = lifecycle(query, variables);
+      if (enrolled) return enrolled;
       if (/\bmutation\b/.test(query)) {
         mutations++;
         throw new Error('Forbidden');

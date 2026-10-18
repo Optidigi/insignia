@@ -91,7 +91,8 @@ export async function recoverPendingUninstalls(core: DurableCore, queue: PgBossR
  * transport expiration, economic reconciliation or isolated object cleanup. */
 export async function maintainCustomerPrivacy(core: DurableCore, queue: PgBossRuntime) {
   await core.customerPrivacy.cleanupInboxes(100);
-  const blockedShopErasures = await core.customerPrivacy.blockedShopErasureCount();
+  const status = await core.uninstallPrivacy.status();
+  const blockedShopErasures = Math.max(status.activeGenerationHoldCount, status.unrecoveredBlockedReceiptCount);
   if (blockedShopErasures) {
     queue.observability.metrics.queue('failure');
     queue.observability.logger.error('queue_job_rejected', {
@@ -99,6 +100,12 @@ export async function maintainCustomerPrivacy(core: DurableCore, queue: PgBossRu
       count: blockedShopErasures,
     });
   }
+}
+
+/** Independent from unrelated transport expiry failures. */
+export async function recoverUninstallPrivacy(core: DurableCore) {
+  await core.uninstallPrivacy.recoverPending(100);
+  await core.uninstallLifecycle.coverGenericCleanup(100);
 }
 
 /** Source-owned bounded transient cleanup, not privacy request fulfillment. */

@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { type Kysely, sql, type Transaction } from 'kysely';
 import type { Database } from '../client/database.js';
+import { createTenantRepository } from './tenant.js';
 
 const WEBHOOK_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 const SHOP_DOMAIN = /^[a-z0-9][a-z0-9-]{0,61}\.myshopify\.com$/;
@@ -33,6 +34,8 @@ export type VerifiedShopifyDelivery = {
   eventId: string | null;
   name: string | null;
   rawBody: Uint8Array;
+  /** Private dedicated-destination route only; never parsed from webhook JSON/headers. */
+  uninstallCapabilityDigest?: string;
 };
 
 export type ShopifyWebhookReceipt = {
@@ -98,6 +101,43 @@ function signedUninstallShop(body: Uint8Array, headerDomain: string): { id: stri
   )
     throw new TypeError('Uninstall body has no valid Shop domain');
   return { id, domainMatches: shop.myshopify_domain === null || shop.myshopify_domain === headerDomain };
+}
+
+async function bindUninstallAuthority(tx: Transaction<Database>, inboxId: string, input: VerifiedShopifyDelivery) {
+  if (input.uninstallCapabilityDigest === undefined) return;
+  if (input.topic !== 'app/uninstalled' || !/^[a-f0-9]{64}$/.test(input.uninstallCapabilityDigest))
+    throw new Error('Invalid uninstall destination');
+  const signed = signedUninstallShop(input.rawBody, input.shopDomain);
+  const destination = (
+    await sql<{ shop_id: string; installation_generation: string }>`
+    SELECT d.shop_id,d.installation_generation FROM uninstall_destinations d JOIN shops s ON s.shop_id=d.shop_id
+    WHERE d.capability_digest=${input.uninstallCapabilityDigest} AND d.state IN ('dispatched','registered','retired')
+      AND s.shop_domain=${input.shopDomain} AND s.shopify_shop_id=${signed.id}`.execute(tx)
+  ).rows[0];
+  if (!signed.domainMatches || !destination) throw new Error('Unqualified uninstall destination');
+  await sql`INSERT INTO uninstall_delivery_authority(inbox_id,capability_digest)
+    VALUES(${inboxId}::uuid,${input.uninstallCapabilityDigest}) ON CONFLICT DO NOTHING`.execute(tx);
+  const bound = (
+    await sql<{ capability_digest: string }>`SELECT capability_digest FROM uninstall_delivery_authority
+    WHERE inbox_id=${inboxId}::uuid`.execute(tx)
+  ).rows[0];
+  if (bound?.capability_digest !== input.uninstallCapabilityDigest) throw new ShopifyDeliveryConflictError();
+  await tx
+    .updateTable('inbox_messages')
+    .set({ shop_id: destination.shop_id, installation_generation: destination.installation_generation })
+    .where('id', '=', inboxId)
+    .execute();
+}
+
+async function snapshotGenericScope(tx: Transaction<Database>, id: string) {
+  // Historical migration rehearsals retain the generic fail-closed contract.
+  // Missing lifecycle schema grants no authority or enrollment readiness.
+  const available = (
+    await sql<{
+      available: boolean;
+    }>`SELECT to_regprocedure('public.snapshot_generic_uninstall_scope(uuid)') IS NOT NULL AS available`.execute(tx)
+  ).rows[0]?.available;
+  if (available) await sql`SELECT public.snapshot_generic_uninstall_scope(${id}::uuid)`.execute(tx);
 }
 
 type Locked = {
@@ -224,6 +264,25 @@ async function resolveLocked(
     const signed = signedUninstallShop(locked.inbox.payload, locked.routing.shop_domain);
     if (current.shopify_shop_id === null || !signed.domainMatches || current.shopify_shop_id !== signed.id)
       return { shopId: null, generation: null, resolution: 'unverified' };
+    const lifecycleAvailable = (
+      await sql<{
+        available: boolean;
+      }>`SELECT to_regclass('public.uninstall_delivery_authority') IS NOT NULL AS available`.execute(tx)
+    ).rows[0]?.available;
+    const authority = lifecycleAvailable
+      ? (
+          await sql<{ installation_generation: string }>`SELECT d.installation_generation
+      FROM uninstall_delivery_authority a JOIN uninstall_destinations d USING(capability_digest)
+      WHERE a.inbox_id=${locked.inbox.id}::uuid AND d.shop_id=${current.shop_id}
+      AND d.state IN ('dispatched','registered','retired')`.execute(tx)
+        ).rows[0]
+      : undefined;
+    if (authority)
+      return {
+        shopId: current.shop_id,
+        generation: authority.installation_generation,
+        resolution: authority.installation_generation === current.current_generation ? 'resolved' : 'stale',
+      };
     // Generic HMAC authenticates this Shop body, not the claimed topic/time or
     // app installation. This also excludes old pending header-derived bindings;
     // preserve their stored evidence without treating it as current authority.
@@ -553,9 +612,12 @@ export function createShopifyWebhookRepository(database: Kysely<Database>) {
             .returning('inbox_id')
             .executeTakeFirst();
           if (indexed) {
+            await bindUninstallAuthority(tx, id, input);
             const locked = await lockById(tx, id);
             if (!locked) throw new Error('Committed Shopify inbox row has no identity');
             const resolved = await resolveLocked(tx, locked);
+            if (input.topic === 'app/uninstalled' && input.uninstallCapabilityDigest === undefined)
+              await snapshotGenericScope(tx, id);
             return {
               kind: resolved.resolution === 'expired' ? 'expired' : 'received',
               id,
@@ -575,7 +637,10 @@ export function createShopifyWebhookRepository(database: Kysely<Database>) {
         const locked = await lockById(tx, existing.inbox_id);
         if (!locked) throw new Error('Shopify delivery identity lost its inbox row');
         assertSame(locked, input, hash, body);
+        await bindUninstallAuthority(tx, locked.inbox.id, input);
         const resolved = await resolveLocked(tx, locked);
+        if (input.topic === 'app/uninstalled' && input.uninstallCapabilityDigest === undefined)
+          await snapshotGenericScope(tx, locked.inbox.id);
         return {
           kind:
             resolved.resolution === 'expired'
@@ -618,7 +683,16 @@ export function createShopifyWebhookRepository(database: Kysely<Database>) {
     async processUninstall(
       id: string,
     ): Promise<
-      'unqualified' | 'unverified' | 'already_processed' | 'unresolved' | 'not_found' | 'expired' | 'exhausted'
+      | 'deactivated'
+      | 'already_inactive'
+      | 'stale'
+      | 'unqualified'
+      | 'unverified'
+      | 'already_processed'
+      | 'unresolved'
+      | 'not_found'
+      | 'expired'
+      | 'exhausted'
     > {
       return database.transaction().execute(async (tx) => {
         const locked = await lockById(tx, id);
@@ -637,6 +711,26 @@ export function createShopifyWebhookRepository(database: Kysely<Database>) {
             .where('id', '=', id)
             .executeTakeFirstOrThrow();
           return 'unverified';
+        }
+        if (
+          (resolved.resolution === 'resolved' || resolved.resolution === 'stale') &&
+          resolved.shopId &&
+          resolved.generation
+        ) {
+          const outcome = await createTenantRepository(tx).deactivateCurrent(
+            tx,
+            resolved.shopId,
+            resolved.generation,
+            async () => {
+              if (!(await payloadUsable(tx, id))) throw new Error('Uninstall authority expired before settlement');
+            },
+          );
+          await tx
+            .updateTable('inbox_messages')
+            .set({ state: 'processed', last_error_class: null })
+            .where('id', '=', id)
+            .execute();
+          return outcome;
         }
         // No generic receipt may deactivate, revoke credentials, clear effective
         // publication pointers, or become processed/stale from unsigned headers.

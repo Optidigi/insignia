@@ -1,7 +1,7 @@
 ---
 import '../styles/admin-editor.css';
 import AdminNavigation from '../components/AdminNavigation.astro';
-import AdminSkeleton from '../components/AdminSkeleton';
+import AdminPageSkeleton from '../components/AdminPageSkeleton';
 
 interface Props {
   title: string;
@@ -23,9 +23,7 @@ const { title, apiKey } = Astro.props;
   <body>
     <AdminNavigation />
     <div id="admin-route-skeleton">
-      <s-box padding="large"><s-stack gap="base"><s-heading>{title}</s-heading>
-        <s-section><AdminSkeleton label="Page content" rows={6} /></s-section>
-      </s-stack></s-box>
+      <AdminPageSkeleton pathname={Astro.url.pathname} />
     </div>
     <div id="admin-route-failure" hidden>
       <s-banner tone="critical" heading="Interface unavailable">Reopen Insignia from Shopify Admin to try again.</s-banner>

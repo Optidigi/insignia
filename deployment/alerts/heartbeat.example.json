@@ -1,0 +1,11 @@
+{
+  "endpoint": "https://alerts.example.invalid",
+  "secretFile": "/run/insignia/relay-secret",
+  "backupMaxAgeSeconds": 86400,
+  "availabilityProbe": "http://127.0.0.1:9464/ready",
+  "aggregateFiles": {
+    "backup": "/run/insignia/aggregates/backup.json",
+    "processing": "/run/insignia/aggregates/processing.json",
+    "deletion": "/run/insignia/aggregates/deletion.json"
+  }
+}

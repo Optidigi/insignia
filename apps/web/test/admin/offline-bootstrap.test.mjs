@@ -9,6 +9,7 @@ import { abstractFetch, setAbstractFetchFunc } from '@shopify/shopify-api/runtim
 import { build } from 'esbuild';
 import { Pool } from 'pg';
 import { isolatedDatabase } from '../support/isolated-database.mjs';
+import { uninstallSubscriptionFixture } from '../support/uninstall-subscription.mjs';
 
 const key = 'synthetic-offline-app',
   secret = 'synthetic-offline-secret';
@@ -69,6 +70,7 @@ for (const mode of ['success', 'lost-response', 'non-owner', 'wrong-installation
           externalInstallationId: installationId,
         }),
       );
+      const lifecycle = uninstallSubscriptionFixture(() => ({ shop, shopId, installationId, appClientId: key }));
       globalThis.fetch = async (url, init) => {
         if (String(url).endsWith('/admin/oauth/access_token')) {
           const body = JSON.parse(String(init.body));
@@ -94,6 +96,9 @@ for (const mode of ['success', 'lost-response', 'non-owner', 'wrong-installation
           });
         }
         assert.equal(new URL(url).host, shop);
+        const { query, variables } = JSON.parse(String(init.body));
+        const enrolled = lifecycle(query, variables);
+        if (enrolled) return enrolled;
         if (init.headers['X-Shopify-Access-Token'] === 'synthetic-offline-access') offlineReads++;
         return Response.json({
           data: {

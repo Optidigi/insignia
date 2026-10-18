@@ -101,3 +101,105 @@ test('authenticated known-purchase request responds202 with unchanged view; deni
   assert.equal((await handlePurchaseRequest(request(), services, `${id}/reconcile`)).status, 403);
   assert.equal(calls, 1);
 });
+
+test('retained order labels tolerate provider failure while expired or missing merchant access denies history', async () => {
+  const record = { ...view, bindings: [], observations: [], artworkEvents: [] };
+  let calls = 0;
+  const services = createPurchaseServices({
+    core: { purchases: { get: async () => record } },
+    appOrigin: 'https://insignia.example',
+    authenticate: async () => actor,
+    orderPresentation: async () => {
+      calls++;
+      return { orderName: '#1001', lines: [] };
+    },
+  });
+  assert.equal((await services.get(actor, id)).orderName, '#1001');
+  await assert.rejects(services.get({ ...actor, canReadOrders: false }, id), { code: 'MERCHANT_REQUIRED' });
+  await assert.rejects(services.get({ ...actor, expiresAtMs: 0 }, id), { code: 'MERCHANT_REQUIRED' });
+  assert.equal(calls, 1);
+  const unavailable = createPurchaseServices({
+    core: { purchases: { get: async () => record } },
+    appOrigin: 'https://insignia.example',
+    authenticate: async () => actor,
+    orderPresentation: async () => {
+      throw Error('Provider unavailable');
+    },
+  });
+  assert.equal((await unavailable.get(actor, id)).purchaseId, id);
+  assert.equal((await unavailable.get(actor, id)).orderName, null);
+});
+
+test('purchase listing batches optional order names once and never performs per-purchase detail reads', async () => {
+  const record = { ...view, bindings: [], observations: [], artworkEvents: [] };
+  let batches = 0;
+  const services = createPurchaseServices({
+    core: { purchases: { list: async () => [record, record] } },
+    appOrigin: 'https://insignia.example',
+    authenticate: async () => actor,
+    orderNames: async (_actor, ids) => {
+      batches++;
+      assert.deepEqual(ids, [record.orderId, record.orderId]);
+      return { [record.orderId]: '#1001' };
+    },
+    orderPresentation: async () => {
+      throw Error('No per-row lookup');
+    },
+  });
+  const result = await services.list(actor, { limit: 10, before: null });
+  assert.equal(batches, 1);
+  assert.deepEqual(
+    result.items.map((item) => item.orderName),
+    ['#1001', '#1001'],
+  );
+});
+
+test('expiry or installation/grant loss during optional label reads cannot return private purchase data', async () => {
+  const record = { ...view, bindings: [], observations: [], artworkEvents: [] };
+  for (const list of [false, true]) {
+    for (const failure of ['expired', 'installation']) {
+      const current = { ...actor, expiresAtMs: Date.now() + 60_000 };
+      let active = true;
+      const loseAccess = async () => {
+        if (failure === 'expired') current.expiresAtMs = Date.now() - 1;
+        else active = false;
+        throw Error('Optional read failed');
+      };
+      const services = createPurchaseServices({
+        core: { purchases: { get: async () => record, list: async () => [record] } },
+        appOrigin: 'https://insignia.example',
+        authenticate: async () => current,
+        assertCurrentAccess: async () => {
+          if (!active) throw Error('Current installation is inactive');
+        },
+        orderNames: loseAccess,
+        orderPresentation: loseAccess,
+      });
+      const response = await handlePurchaseRequest(
+        new Request(`https://insignia.example/api/purchases/v1/${list ? '' : id}`, {
+          headers: { Authorization: 'Bearer synthetic' },
+        }),
+        services,
+        list ? '' : id,
+      );
+      assert.equal(response.status, 403);
+      const text = await response.text();
+      assert.ok(!text.includes('originalTotalMinor') && !text.includes('purchaseId'));
+    }
+  }
+});
+
+test('empty retained order list does not query Shopify for labels', async () => {
+  let calls = 0;
+  const services = createPurchaseServices({
+    core: { purchases: { list: async () => [] } },
+    appOrigin: 'https://insignia.example',
+    authenticate: async () => actor,
+    orderNames: async () => {
+      calls++;
+      return {};
+    },
+  });
+  assert.deepEqual((await services.list(actor, { limit: 10, before: null })).items, []);
+  assert.equal(calls, 0);
+});

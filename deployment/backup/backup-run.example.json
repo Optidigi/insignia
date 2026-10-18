@@ -1,0 +1,25 @@
+{
+  "format": "insignia-backup-run-v1",
+  "project": "insignia-production",
+  "containers": [
+    {
+      "service": "web",
+      "name": "insignia-production-web-1",
+      "id": "REPLACE_WITH_EXACT_64_HEX_CONTAINER_ID",
+      "imageId": "sha256:REPLACE_WITH_EXACT_64_HEX_IMAGE_ID",
+      "configSha256": "REPLACE_WITH_REVIEWED_FINGERPRINT",
+      "healthRequired": true
+    }
+  ],
+  "runtimeDirectory": "/run/insignia-backup",
+  "receiptDirectory": "/var/lib/insignia-backup-runs",
+  "windowSeconds": 900,
+  "store": "/var/lib/insignia-backup",
+  "recipient": "/etc/insignia/backup-recipient.pem",
+  "docker": "/usr/bin/docker",
+  "node": "/opt/insignia/runtime/bin/node",
+  "pgDump": "/usr/bin/pg_dump",
+  "replicaRequired": true,
+  "replicaConfig": "/etc/insignia/backup-replica.json",
+  "promisedCleanupAt": "REPLACE_WITH_EXISTING_PROMISED_CUTOFF_OR_NULL_AFTER_REVIEW"
+}

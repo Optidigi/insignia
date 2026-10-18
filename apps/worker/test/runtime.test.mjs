@@ -2,18 +2,23 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { test } from 'node:test';
 import { installQueue } from '../../../scripts/m5-024/install-queue.mjs';
+import { isolatedDatabase } from '../../web/test/support/isolated-database.mjs';
 
 const entry = new URL('../dist/main.js', import.meta.url);
 
 test('configured worker serves liveness and durable readiness, then closes on SIGTERM', {
   skip: !process.env.DATABASE_URL && process.env.INSIGNIA_REQUIRE_POSTGRES_TEST !== '1',
   timeout: 30_000,
-}, async () => {
+}, async (t) => {
   assert.ok(process.env.DATABASE_URL, 'DATABASE_URL is required for the worker startup test');
-  await installQueue(process.env.DATABASE_URL);
+  const database = await isolatedDatabase('worker_startup');
+  t.after(() => database.close());
+  await installQueue(database.connectionString);
   const child = spawn(process.execPath, [entry.pathname, '--port=0'], {
     env: {
       ...process.env,
+      DATABASE_URL: database.connectionString,
+      APP_URL: 'https://synthetic.example',
       INSIGNIA_CREDENTIAL_KEY_ID: 'synthetic-k1',
       INSIGNIA_CREDENTIAL_KEY_BASE64: Buffer.alloc(32, 7).toString('base64'),
       SHOPIFY_CLIENT_ID: 'synthetic-client-id',

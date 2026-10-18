@@ -432,3 +432,187 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
   },
   30000,
 );
+
+it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
+  'exact-generation uninstall recovery survives actual restore without promoting the original blocked receipt',
+  async () => {
+    const address = process.env.PRIVACY_RESTORE_TEST_URL!;
+    if (
+      address !== process.env.DATABASE_URL ||
+      !new URL(address).searchParams.get('host')?.startsWith('/tmp/insignia-restore-pg-')
+    )
+      throw Error('Fresh private restore cluster required');
+    const tools = process.env.PRIVACY_PG_TOOLS!;
+    const { createDatabase } = await import('../src/client/database.js');
+    const { createTenantRepository } = await import('../src/repositories/tenant.js');
+    const { createUninstallPrivacyRepository } = await import('../src/repositories/uninstall-privacy.js');
+    const admin = new Pool({ connectionString: address });
+    const suffix = randomUUID().replaceAll('-', '');
+    const sourceName = 'uninstall_source_' + suffix,
+      targetName = 'uninstall_target_' + suffix;
+    const sourceUrl = new URL(address);
+    sourceUrl.pathname = '/' + sourceName;
+    const targetUrl = new URL(address);
+    targetUrl.pathname = '/' + targetName;
+    const temporary = await mkdtemp(join(tmpdir(), 'insignia-uninstall-restore-'));
+    let source: Pool | undefined, target: Pool | undefined, db: ReturnType<typeof createDatabase> | undefined;
+    try {
+      const schema = join(temporary, 'schema.dump');
+      execFileSync(
+        join(tools, 'pg_dump'),
+        ['--schema-only', '--format=custom', '--file', schema, '--dbname', address],
+        { stdio: 'pipe' },
+      );
+      await admin.query('CREATE DATABASE ' + sourceName);
+      await admin.query('CREATE DATABASE ' + targetName);
+      execFileSync(join(tools, 'pg_restore'), ['--no-owner', '--exit-on-error', '--dbname', sourceUrl.href, schema], {
+        stdio: 'pipe',
+      });
+      source = new Pool({ connectionString: sourceUrl.href });
+      await source.query(
+        'INSERT INTO schema_migrations(version) SELECT version FROM jsonb_to_recordset($1::jsonb) AS rows(version text)',
+        [JSON.stringify((await admin.query('SELECT version FROM schema_migrations')).rows)],
+      );
+      db = createDatabase(new Pool({ connectionString: sourceUrl.href }));
+      const shopId = randomUUID(),
+        domain = 'r' + suffix + '.myshopify.com',
+        provider = '987654321' + Math.floor(Math.random() * 10000);
+      await db.transaction().execute((tx) =>
+        createTenantRepository(tx).createShop(tx, {
+          shopId,
+          shopDomain: domain,
+          shopifyShopId: provider,
+          externalInstallationId: 'gid://shopify/AppInstallation/777',
+        }),
+      );
+      const assetId = randomUUID();
+      await source.query(
+        "INSERT INTO artwork_assets(asset_id,shop_id,installation_generation,owner_hash,owner_kind,declared_mime,declared_bytes,state,quarantine_key,original_key,preview_key,collected_at,upload_until,expires_at) VALUES($1,$2,1,$3,'guest','image/svg+xml',10,'UPLOADING',$4,$5,$6,statement_timestamp(),statement_timestamp()+interval '5 minutes',statement_timestamp()+interval '7 days')",
+        [assetId, shopId, 'a'.repeat(64), assetId + '/q', assetId + '/o', assetId + '/p'],
+      );
+      const hooks = createShopifyWebhookRepository(db);
+      const privacy = await hooks.receive({
+        shopDomain: domain,
+        topic: 'shop/redact',
+        apiVersion: '2026-07',
+        deliveryId: randomUUID(),
+        triggeredAt: new Date(),
+        eventId: null,
+        name: null,
+        rawBody: Buffer.from(JSON.stringify({ shop_id: provider, shop_domain: domain })),
+      });
+      await createCustomerPrivacyRepository(db).processInbox(privacy.id);
+      const uninstall = await hooks.receive({
+        shopDomain: domain,
+        topic: 'app/uninstalled',
+        apiVersion: '2026-07',
+        deliveryId: randomUUID(),
+        triggeredAt: new Date(),
+        eventId: null,
+        name: null,
+        rawBody: Buffer.from(JSON.stringify({ id: provider, myshopify_domain: domain })),
+      });
+      const digest = createHash('sha256').update(suffix).digest('hex');
+      await source.query(
+        "INSERT INTO uninstall_destinations(capability_digest,shop_id,installation_generation,external_installation_id,state) VALUES($1,$2,1,'gid://shopify/AppInstallation/777','prepared')",
+        [digest, shopId],
+      );
+      await source.query(
+        "UPDATE uninstall_destinations SET state='dispatched',dispatched_at=clock_timestamp() WHERE capability_digest=$1",
+        [digest],
+      );
+      await source.query('INSERT INTO uninstall_delivery_authority VALUES($1,$2,clock_timestamp())', [
+        uninstall.id,
+        digest,
+      ]);
+      await db.transaction().execute((tx) => createTenantRepository(tx).deactivateCurrent(tx, shopId, '1'));
+      await db.transaction().execute((tx) => createTenantRepository(tx).startInstallation(tx, shopId));
+      const backup = join(temporary, 'before-recovery.dump');
+      execFileSync(join(tools, 'pg_dump'), ['--format=custom', '--file', backup, '--dbname', sourceUrl.href], {
+        stdio: 'pipe',
+      });
+      await createUninstallPrivacyRepository(db).recover(privacy.id, uninstall.id);
+      await source.query('SELECT public.cleanup_customer_privacy_inboxes(100)');
+      const exclusions = await exportErasureExclusions(source);
+      expect(exclusions.format).toBe('insignia-privacy-erasure-exclusions-v2');
+      expect(exclusions.data.uninstallRecoveries).toHaveLength(1);
+      expect(exclusions.data.uninstallScopes).toMatchObject([
+        { generation_ceiling: '1', observation_kind: 'original_processing' },
+      ]);
+      expect(exclusions.data.receipts[0].operation).toBe('SHOP_ERASURE_BLOCKED');
+      execFileSync(join(tools, 'pg_restore'), ['--no-owner', '--exit-on-error', '--dbname', targetUrl.href, backup], {
+        stdio: 'pipe',
+      });
+      target = new Pool({ connectionString: targetUrl.href });
+      const reseal = (copy: typeof exclusions) => {
+        copy.sha256 = createHash('sha256')
+          .update(
+            JSON.stringify(copy.data, (_key, value) =>
+              value && typeof value === 'object' && !Array.isArray(value)
+                ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)))
+                : value,
+            ),
+          )
+          .digest('hex');
+        return copy;
+      };
+      const widenedScope = structuredClone(exclusions);
+      widenedScope.data.uninstallScopes[0].generation_ceiling = '2';
+      await expect(importErasureExclusions(target, reseal(widenedScope))).rejects.toThrow(
+        'conflicting copied erasure identity',
+      );
+      const widened = structuredClone(exclusions);
+      widened.data.assetFences.push({
+        shop_id: shopId,
+        asset_id: randomUUID(),
+        source_inbox_id: privacy.id,
+        created_at: new Date().toISOString(),
+      });
+      widened.sha256 = createHash('sha256')
+        .update(
+          JSON.stringify(widened.data, (_key, value) =>
+            value && typeof value === 'object' && !Array.isArray(value)
+              ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)))
+              : value,
+          ),
+        )
+        .digest('hex');
+      await expect(importErasureExclusions(target, widened)).rejects.toThrow('foreign erasure fence');
+      expect(await importErasureExclusions(target, exclusions)).toMatchObject({
+        readiness: 'HOLD_STORAGE_AND_AUTHORITY_REQUALIFICATION',
+      });
+      expect((await target.query('SELECT state FROM artwork_assets WHERE asset_id=$1', [assetId])).rows[0].state).toBe(
+        'DELETING',
+      );
+      expect(
+        (await target.query('SELECT installation_generation::text FROM shop_privacy_fences WHERE shop_id=$1', [shopId]))
+          .rows,
+      ).toEqual([{ installation_generation: '1' }]);
+      expect(
+        (
+          await target.query('SELECT deactivated_at FROM installation_generations WHERE shop_id=$1 AND generation=2', [
+            shopId,
+          ])
+        ).rows[0].deactivated_at,
+      ).toBe(null);
+      expect(
+        (await target.query('SELECT operation FROM customer_privacy_receipts WHERE inbox_id=$1', [privacy.id])).rows[0]
+          .operation,
+      ).toBe('SHOP_ERASURE_BLOCKED');
+      expect(
+        (await target.query('SELECT count(*)::integer AS count FROM uninstall_privacy_recoveries')).rows[0].count,
+      ).toBe(1);
+      expect(await importErasureExclusions(target, exclusions)).toMatchObject({
+        readiness: 'HOLD_STORAGE_AND_AUTHORITY_REQUALIFICATION',
+      });
+    } finally {
+      await db?.destroy();
+      await source?.end();
+      await target?.end();
+      await admin.query('DROP DATABASE IF EXISTS ' + targetName);
+      await admin.query('DROP DATABASE IF EXISTS ' + sourceName);
+      await admin.end();
+      await rm(temporary, { recursive: true, force: true });
+    }
+  },
+);

@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-18",
+  "source": "Direct owner instruction in the current Insignia delivery conversation, confirmed and followed by perfect, proceed",
+  "scope": "Complete remaining approved Lean V1 application logic, technical work and merchant UI autonomously through review, tests and normal integration.",
+  "merchantUI": [
+    "Cohesive loading skeletons matching each actual layout",
+    "Use available screen width responsively",
+    "Polaris web components throughout UI, navigation and spacing",
+    "Complete product configuration and canvas with appropriate custom Konva styling"
+  ],
+  "gatedLater": [
+    "Storefront UI review",
+    "Full production deployment",
+    "Public-app review and rollout"
+  ],
+  "preserved": "Existing product/security/history/resource contracts and actual scoped effects remain binding. No new checkout, product, release, scope/version, real charge or destructive native effect is inferred. A substantive safety/authority conflict requires one concrete owner decision while independent work continues.",
+  "additionalOwnerDecisions": {
+    "unattendedLifecycle": "Unattended uninstall and shop erasure handling is required before technical completion. Failed API calls do not establish uninstall; existing guards remain until a qualified replacement exists.",
+    "backupRetention": "Encrypted isolated backups may remain seven days with mandatory erasure and expiry replay before restored access. Absolute retention limits and already-promised cleanup deadlines still apply; no retrospective extension of existing records."
+  }
+}

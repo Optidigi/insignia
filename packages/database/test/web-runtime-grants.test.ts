@@ -1,7 +1,8 @@
-import { randomBytes, randomUUID, sign } from 'node:crypto';
+import { createHmac, randomBytes, randomUUID, sign } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 import { ArtworkError, createMerchantPreviewCapture } from '@insignia/application';
 import { encodeHeader, wholeQuoteSignBytes } from '@insignia/cart-authorization';
+import { verifyShopifyWebhook } from '@insignia/shopify';
 import { Pool } from 'pg';
 import { expect, it } from 'vitest';
 import { createDatabase } from '../src/client/database.js';
@@ -65,11 +66,14 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       );
       const migrations = new URL('../migrations/', import.meta.url);
       const names = (await readdir(migrations)).filter((n) => n.endsWith('.sql')).sort();
-      expect(names).toHaveLength(42);
-      expect(names.slice(-3)).toEqual([
+      expect(names).toHaveLength(45);
+      expect(names.slice(-6)).toEqual([
         '20261017000200_privacy_merchant_export.sql',
         '20261017000300_shop_privacy_staging.sql',
         '20261018000100_method_catalog.sql',
+        '20261018000200_uninstall_destinations.sql',
+        '20261018000300_uninstall_privacy_recovery.sql',
+        '20261018000400_generic_uninstall_cleanup_accounting.sql',
       ]);
       for (const file of names.slice(0, 20))
         await owner.query((await readFile(new URL(file, migrations), 'utf8')).split('-- migrate:down')[0]!);
@@ -678,13 +682,119 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       workerAddress.username = worker;
       workerAddress.password = workerPassword;
       purchaseWorker = new Pool({ connectionString: workerAddress.href, connectionTimeoutMillis: 5000 });
+      await owner.query(script); // Requalify baseline before the separately additive lifecycle grant.
+      // Qualify the additive lifecycle grant on actual LOGINs. Keep the
+      // intentionally narrow worker baseline; these definers need no raw PII grants.
+      const lifecycleShopId = randomUUID(),
+        lifecycleDomain = `l${suffix}.myshopify.com`;
+      const lifecycleProviderShopId = (BigInt(`0x${suffix.slice(0, 12)}`) + 1n).toString();
+      const lifecycleInstallationId = 'gid://shopify/AppInstallation/771';
+      await core.transactions.run((tx) =>
+        core.tenants.createShop(tx, {
+          shopId: lifecycleShopId,
+          shopDomain: lifecycleDomain,
+          shopifyShopId: lifecycleProviderShopId,
+          externalInstallationId: lifecycleInstallationId,
+        }),
+      );
+      const lifecycleScope = {
+        shopId: lifecycleShopId,
+        installationGeneration: '1',
+        externalInstallationId: lifecycleInstallationId,
+        capabilityDigest: randomBytes(32).toString('hex'),
+      };
+      await expect(core.uninstallLifecycle.reserve(lifecycleScope)).rejects.toMatchObject({ code: '42501' });
+      await expect(purchaseWorker.query('SELECT * FROM uninstall_destinations')).rejects.toMatchObject({
+        code: '42501',
+      });
+      const lifecycleGrant = (
+        await readFile(new URL('../../../deployment/lifecycle/runtime-grants.sql', import.meta.url), 'utf8')
+      )
+        .replaceAll(':"web_role"', login)
+        .replaceAll(':"worker_role"', worker);
+      await owner.query(lifecycleGrant);
+      expect(await core.uninstallLifecycle.reserve(lifecycleScope)).toEqual({
+        state: 'prepared',
+        subscriptionId: null,
+      });
+      expect(await core.uninstallLifecycle.dispatch(lifecycleScope)).toBe(true);
+      await core.uninstallLifecycle.settle(lifecycleScope, 'gid://shopify/WebhookSubscription/772');
+      expect(
+        (
+          await owner.query(
+            'SELECT previous_state,next_state FROM uninstall_destination_events WHERE capability_digest=$1 ORDER BY event_id',
+            [lifecycleScope.capabilityDigest],
+          )
+        ).rows,
+      ).toEqual([
+        { previous_state: 'prepared', next_state: 'dispatched' },
+        { previous_state: 'dispatched', next_state: 'registered' },
+      ]);
+      const lifecycleBody = Buffer.from(
+        JSON.stringify({ id: lifecycleProviderShopId, myshopify_domain: lifecycleDomain }),
+      );
+      const lifecycleSecret = 'synthetic-lifecycle-acl-secret';
+      const lifecycleDelivery = verifyShopifyWebhook(
+        lifecycleBody,
+        {
+          'x-shopify-topic': 'app/uninstalled',
+          'x-shopify-shop-domain': lifecycleDomain,
+          'x-shopify-api-version': '2026-07',
+          'x-shopify-webhook-id': randomUUID(),
+          'x-shopify-triggered-at': new Date().toISOString(),
+          'x-shopify-hmac-sha256': createHmac('sha256', lifecycleSecret).update(lifecycleBody).digest('base64'),
+        },
+        [lifecycleSecret],
+      );
+      const lifecycleReceipt = await core.webhooks.receive({
+        ...lifecycleDelivery,
+        uninstallCapabilityDigest: lifecycleScope.capabilityDigest,
+      });
+      expect(
+        (
+          await owner.query('SELECT capability_digest FROM uninstall_delivery_authority WHERE inbox_id=$1', [
+            lifecycleReceipt.id,
+          ])
+        ).rows,
+      ).toEqual([{ capability_digest: lifecycleScope.capabilityDigest }]);
+      const lifecycleWorkerCore = createDurableCore(purchaseWorker);
+      expect(await lifecycleWorkerCore.uninstallPrivacy.status()).toMatchObject({
+        blockedReceiptCount: 0,
+        recoveryDecisionCount: 0,
+      });
+      expect(await lifecycleWorkerCore.uninstallPrivacy.recoverPending(1)).toBe(0);
+      expect(await lifecycleWorkerCore.uninstallLifecycle.coverGenericCleanup(1)).toBe(0);
+      for (const query of [
+        'SELECT public.uninstall_privacy_status()',
+        'SELECT public.recover_pending_uninstall_privacy(1)',
+        'SELECT public.cover_generic_uninstall_cleanup(1)',
+      ])
+        await expect(web.query(query)).rejects.toMatchObject({ code: '42501' });
+      for (const runtime of [web, purchaseWorker])
+        for (const query of [
+          'UPDATE uninstall_destinations SET shop_id=shop_id WHERE false',
+          'UPDATE uninstall_destinations SET capability_digest=capability_digest WHERE false',
+          'DELETE FROM uninstall_destinations WHERE false',
+          'INSERT INTO uninstall_destination_events DEFAULT VALUES',
+          'UPDATE uninstall_destination_events SET next_state=next_state WHERE false',
+          'DELETE FROM uninstall_destination_events WHERE false',
+          'UPDATE uninstall_delivery_authority SET capability_digest=capability_digest WHERE false',
+          'DELETE FROM uninstall_delivery_authority WHERE false',
+          'INSERT INTO uninstall_privacy_scopes DEFAULT VALUES',
+          'UPDATE uninstall_privacy_scopes SET generation_ceiling=generation_ceiling WHERE false',
+          'INSERT INTO uninstall_privacy_recoveries DEFAULT VALUES',
+        ])
+          await expect(runtime.query(query)).rejects.toMatchObject({ code: '42501' });
+      await expect(
+        purchaseWorker.query('INSERT INTO uninstall_delivery_authority DEFAULT VALUES'),
+      ).rejects.toMatchObject({ code: '42501' });
+
       for (const query of [
         'SELECT original_key FROM artwork_assets',
         'SELECT * FROM buyer_sessions',
         'SELECT private_envelope FROM signing_keys',
       ])
         await expect(purchaseWorker.query(query)).rejects.toMatchObject({ code: '42501' });
-      await owner.query(script);
       // The local ledger is not activated for any deployed runtime role.
       for (const runtime of [web, purchaseWorker, inspectionWorker])
         for (const query of [
@@ -717,7 +827,15 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       await expect(owner.query(usageScript)).rejects.toThrow('exact_usage_schema38_required');
       await owner.query('ROLLBACK');
       await owner.query('DELETE FROM schema_migrations WHERE version=ANY($1::text[])', [
-        ['20261017000100', '20261017000200', '20261017000300', '20261018000100'],
+        [
+          '20261017000100',
+          '20261017000200',
+          '20261017000300',
+          '20261018000100',
+          '20261018000200',
+          '20261018000300',
+          '20261018000400',
+        ],
       ]);
       await owner.query(`ALTER ROLE ${queue} CREATEROLE`);
       await expect(owner.query(usageScript)).rejects.toThrow('unqualified_usage_runtime_role');
