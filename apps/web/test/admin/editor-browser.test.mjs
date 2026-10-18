@@ -609,7 +609,7 @@ test('variant without a saved image override retains the portrait default until 
   await page.getByLabel('Product variant').selectOption('variant_11');
   await page.waitForFunction(
     () =>
-      ![...document.querySelectorAll('button')].find(
+      ![...document.querySelectorAll('s-button')].find(
         (button) => button.textContent.trim() === 'Use selected product image',
       )?.disabled,
   );
@@ -751,7 +751,11 @@ test('merchant currency adoption refreshes saved publication eligibility and lat
       await page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (EUR)', { exact: true }).inputValue(),
       outcome === 'failed' ? '5.00' : '6.00',
     );
-    assert.equal(await page.locator('fieldset').evaluate((element) => element.disabled), false);
+    assert.equal(await page.getByLabel('Method name', { exact: true }).isEnabled(), true);
+    assert.equal(
+      await page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (EUR)', { exact: true }).isEnabled(),
+      true,
+    );
   }
   assert.equal(readCalls, 4);
 });
@@ -1303,9 +1307,7 @@ for (let iteration = 1; iteration <= stressIterations; iteration++) {
             ? await page
                 .evaluate(() => {
                   const preview = document.querySelector('#insignia-visualizer');
-                  const center = [...document.querySelectorAll('label')]
-                    .find((node) => node.textContent.trim() === 'centerX')
-                    ?.querySelector('input');
+                  const center = document.querySelector('s-number-field[label="Horizontal position"]');
                   return {
                     ownerVersion: preview?.getAttribute('data-editor-version'),
                     selectedPlacement: preview?.getAttribute('data-selected-placement'),
@@ -2441,7 +2443,7 @@ test('merchant choices use names and numbered fallbacks while pricing saves the 
   assert.equal(await page.getByRole('checkbox', { name: 'Method 2', exact: true }).isChecked(), true);
   assert.equal(await page.getByRole('checkbox', { name: 'Small', exact: true }).isChecked(), true);
   assert.equal(await page.getByRole('checkbox', { name: 'Size step 2', exact: true }).isChecked(), true);
-  assert.equal(await page.getByLabel('View').first().locator('option').last().textContent(), 'View 2');
+  assert.equal(await page.locator('s-select[label="View"] > s-option').last().textContent(), 'View 2');
   assert.equal(await page.getByLabel('Value 1 name').inputValue(), 'Matte');
   assert.equal(await page.getByLabel('Value 2 name').count(), 1);
   const price = page.getByLabel('Screen print / Front panel / Small — surcharge (USD)', { exact: true });
@@ -2587,10 +2589,12 @@ test('compound size-step names remain distinguishable and save the intended plac
   await page.goto(server.base + '/admin/products/111/config');
   const prices = page.getByRole('table').getByRole('textbox');
   await prices.first().waitFor({ timeout: 1500 });
-  assert.deepEqual(await prices.evaluateAll((inputs) => inputs.map((input) => input.getAttribute('aria-label'))), [
+  assert.equal(await prices.count(), 2);
+  for (const name of [
     'Method 1 / Front / Large / Small (price choice 1) — surcharge (USD)',
     'Method 1 / Front / Large / Small (price choice 2) — surcharge (USD)',
-  ]);
+  ])
+    assert.equal(await page.getByRole('textbox', { name, exact: true }).count(), 1);
   await page
     .getByLabel('Method 1 / Front / Large / Small (price choice 2) — surcharge (USD)', { exact: true })
     .fill('10');

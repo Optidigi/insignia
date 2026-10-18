@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-18",
+  "base": "538783ec94d03b1f1cffdfc7a54a17a1272d2d80",
+  "scope": [
+    "Shared SSR Shopify app navigation on all six merchant routes",
+    "Pinned Polaris web controls, explicit busy state and preserved typed money/geometry",
+    "Clearer grouped configuration, billing/privacy/artwork copy and saved-state badges",
+    "Narrow Shopify icon CDN connect-src allowance",
+    "Owner production destination/alerts/recovery choices and Cloudflare research"
+  ],
+  "localChecks": {
+    "webBuild": "PASS: Astro check and production SSR build",
+    "adminSuite": {
+      "pass": 126,
+      "skip": 37,
+      "fail": 0,
+      "cancelled": 0,
+      "reasonForSkips": "PostgreSQL-dependent checks not enabled locally; hosted CI required"
+    },
+    "style": "PASS, existing warnings/info retained",
+    "boundaries": "PASS, including18 domain-effect tests",
+    "secrets": "PASS",
+    "visual": "Actual local built editor inspected using pinned Polaris with synthetic external-boundary data; no native App Bridge rendering claim"
+  },
+  "review": {
+    "reviewer": "independent admin_polaris_completed_review",
+    "candidate": "b806925d4d84cb5b1794b290561880b91b1f9dc3 plus described working corrections",
+    "specCorrectness": "CLEAR after READY label narrowed to Artwork complete",
+    "standardsSecurity": "CLEAR",
+    "openFindings": 0
+  },
+  "failuresRetained": {
+    "initialIconProbe": "Browser CSP blocked real Polaris icon fetch; narrowed allowed path and retained browser console failure assertions",
+    "initialBroadRegression": "121 PASS,37 SKIP,2 FAIL,3 CANCELLED; stale native control/label/fieldset assertions corrected without removing money, publication, authorization or concurrency checks; corrected full suite126 PASS"
+  },
+  "limits": [
+    "Final exact-head hosted CI pending",
+    "Native embedded sidebar and real icon artwork require qualified runtime/browser readback",
+    "Local screenshot uses synthetic product; no merchant data/configuration writes",
+    "Admin improvements are an integration slice, not complete production readiness or storefront acceptance",
+    "Cloudflare email account readback and dry-run only; no email sender deployed or message sent",
+    "Public rollout not authorized"
+  ]
+}

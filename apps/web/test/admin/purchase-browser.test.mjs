@@ -211,7 +211,7 @@ test('merchant attaches verified upload, locks exact version, and permission los
     .setInputFiles({ name: 'safe.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg/>') });
   await page.getByRole('img', { name: 'Verified artwork preview', exact: true }).waitFor();
   await page.getByRole('button', { name: 'Attach artwork', exact: true }).click();
-  await page.getByText('Artwork status: Ready for production', { exact: true }).waitFor();
+  await page.getByText('Artwork status: Artwork complete', { exact: true }).waitFor();
   assert.deepEqual(attachment, { expectedVersion: 0, groupIndex: 0, placementId: 'front', assetId: asset });
   await page.getByRole('button', { name: 'Lock artwork', exact: true }).click();
   await page.getByText('Artwork status: Artwork locked', { exact: true }).waitFor();
@@ -244,11 +244,11 @@ test('stale lock stays READY and asks refresh without optimistic lock or fulfill
     return r.fulfill({ status: 409, json: { error: 'CONFLICT' } });
   });
   await page.goto(base + '/admin/orders/' + id);
-  await page.getByText('Artwork status: Ready for production', { exact: true }).waitFor();
+  await page.getByText('Artwork status: Artwork complete', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Lock artwork', exact: true }).click();
   await page.getByText('Artwork changed. Refresh the purchase before continuing.', { exact: true }).waitFor();
   assert.equal(calls, 1);
-  assert.equal(await page.getByText('Artwork status: Ready for production', { exact: true }).count(), 1);
+  assert.equal(await page.getByText('Artwork status: Artwork complete', { exact: true }).count(), 1);
   assert.equal(await page.getByRole('button', { name: /fulfill|refund|unlock/i }).count(), 0);
 });
 test('erased selected artwork permits explicit replacement only while bound design detail remains and is unlocked', {
@@ -308,7 +308,7 @@ test('erased selected artwork permits explicit replacement only while bound desi
   current = { ...view(), groups: [], lines: [], exceptions: ['CONTEXT_UNVERIFIED'] };
   await page.getByRole('button', { name: 'Refresh purchase', exact: true }).click();
   await page
-    .getByText('Customization binding requires reconciliation. No production authorization is established.', {
+    .getByText('Order customization needs verification. Do not begin production until its details have been checked.', {
       exact: true,
     })
     .waitFor();

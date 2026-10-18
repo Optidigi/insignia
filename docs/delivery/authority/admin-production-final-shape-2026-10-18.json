@@ -6,7 +6,11 @@
     "decision": "Keep the current rewrite app",
     "appId": "429028933633",
     "clientId": "1443cf6d03d39edae7c101a943c5c684",
-    "qualificationRequired": ["distribution", "billing", "release settings"]
+    "qualificationRequired": [
+      "distribution",
+      "billing",
+      "release settings"
+    ]
   },
   "storage": {
     "bucket": "insignia-public",
@@ -25,7 +29,10 @@
   "alerts": {
     "recipient": "admin@optidigi.nl",
     "purpose": "Actionable production failures, including availability, backups, stalled processing and overdue deletion",
-    "deliveryStatus": "Transport and actual delivery remain to be qualified"
+    "deliveryStatus": "Read-only account API reports existing optidigi.nl sending domain ready and quota 200/day. No DNS, mail setting, credential, Worker or email-send mutation performed; actual delivery remains unqualified.",
+    "provider": "Cloudflare Email Service, selected by owner",
+    "recommendedSender": "Insignia Alerts <insignia-alerts@optidigi.nl>",
+    "recommendedTransport": "Fixed-recipient Cloudflare Worker email binding and authenticated VPS heartbeat; recommendation pending technical qualification"
   },
   "recovery": {
     "backupSchedule": "daily",

@@ -17,7 +17,7 @@ function recordDate(value: string) {
 const artworkLabel = (state: PurchaseView['artworkState']): string =>
   ({
     PENDING_ARTWORK: 'Artwork needed',
-    READY: 'Ready for production',
+    READY: 'Artwork complete',
     ARTWORK_LOCKED: 'Artwork locked',
     ERASED: 'Artwork no longer retained',
   })[state];
