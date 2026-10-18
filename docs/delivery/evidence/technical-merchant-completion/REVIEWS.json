@@ -32,7 +32,7 @@
         "Receipt scope excludes later reinstall from status/recovery",
         "Processed blocked privacy remains visible to restricted monitoring"
       ],
-      "checks": "Operations27Node+7backup+3wrapper+10portable; final privacy/recovery/restore/accounting18 actual PostgreSQL18; heartbeat10; restricted-role positive/negative proof."
+      "checks": "Operations27Node+7backup+3wrapper+10portable; final privacy/recovery/restore/accounting18 actual PostgreSQL18; heartbeat10; restricted-role positive/negative proof. Independent final actual LOGIN grant delta review CLEAR at27133,1PASS against allocated TCP/SCRAM PostgreSQL18. Compose synthetic APP_URL fixture is a public-origin-only correction."
     },
     {
       "reviewer": "completion_audit",
@@ -55,7 +55,8 @@
     "apps/web/src/server/admin/production.ts": "3b1d1e067ea4f3322a91bc6c53e6688440819bdba48c9178ec6e6750982b2bf3",
     "scripts/privacy/restore-exclusions.mjs": "672e38417c8c083e6212279f0f17cc62027fce45d8e86318b89ee5bcc67232ac",
     "scripts/operations/heartbeat-snapshot.mjs": "007a76655a279aa88864da5c9987cab1b5267c990ec676e2e9a3e9ea1cdeef7e",
-    "deployment/alerts/monitor-grants.sql": "4725db2413bd02c9647ed7878af833f2dabf7ae974f9fa242f43b0e5b6897d6b"
+    "deployment/alerts/monitor-grants.sql": "4725db2413bd02c9647ed7878af833f2dabf7ae974f9fa242f43b0e5b6897d6b",
+    "packages/database/test/web-runtime-grants.test.ts": "ea0e0d33673e57b06c1171a2ebf8574e2340dae8e59e426babd4285a4f7bd173"
   },
   "nativeAcceptance": "NOT_ESTABLISHED",
   "rollout": "NOT_AUTHORIZED"
