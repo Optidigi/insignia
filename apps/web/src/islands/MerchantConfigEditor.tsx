@@ -11,7 +11,9 @@ import {
   validateRect,
 } from '@insignia/visualizer/geometry';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
+import AdminDisclosure from '../components/AdminDisclosure';
 import AdminSkeleton from '../components/AdminSkeleton';
+import { useAdminPageReady } from '../shared/admin-page-ready';
 import { authenticatedJson } from '../shared/admin-request';
 import type { CatalogProduct, ConfigView, PublicationState } from '../shared/admin-view.js';
 import ArtworkUpload from './ArtworkUpload';
@@ -219,7 +221,11 @@ function LeanPriceInput({
         label={label}
         disabled={disabled}
       />
-      {!valid && <p role="alert">Enter a nonnegative amount with at most two decimal places.</p>}
+      {!valid && (
+        <div role="alert">
+          <s-paragraph>Enter a nonnegative amount with at most two decimal places.</s-paragraph>
+        </div>
+      )}
     </>
   );
 }
@@ -255,7 +261,13 @@ function choiceName(
 function operatorPublication(state: PublicationState) {
   return ['OPERATOR_HOLD', 'RESTORATION_CONFLICT', 'CONFLICT'].includes(state);
 }
-function PublicationStatus({ config }: { config: NonNullable<ConfigView['config']> }) {
+function PublicationStatus({
+  config,
+  compact = false,
+}: {
+  config: NonNullable<ConfigView['config']>;
+  compact?: boolean;
+}) {
   const publication = config.publication;
   const labels: Record<typeof publication.state, string> = {
     DRAFT: 'Draft only',
@@ -272,9 +284,28 @@ function PublicationStatus({ config }: { config: NonNullable<ConfigView['config'
     OPERATOR_HOLD: 'Publishing paused; support is required',
     FAILED: 'Publishing failed; the previous published settings are unchanged',
   };
+  if (compact)
+    return (
+      <s-stack gap="small">
+        <s-badge
+          tone={
+            publication.state === 'ACTIVE' ? 'success' : operatorPublication(publication.state) ? 'warning' : 'neutral'
+          }
+        >
+          {labels[publication.state]}
+        </s-badge>
+        {operatorPublication(publication.state) && (
+          <s-banner tone="warning" heading="Publication needs attention">
+            Contact support before retrying. Product availability must be checked before continuing.
+          </s-banner>
+        )}
+      </s-stack>
+    );
   return (
     <s-section heading="Publication">
-      <p role="status">{labels[publication.state]}</p>
+      <div role="status">
+        <s-paragraph>{labels[publication.state]}</s-paragraph>
+      </div>
       <s-paragraph>
         {publication.activeRevisionId
           ? 'Draft edits do not replace the last active publication until saved changes finish publishing.'
@@ -285,16 +316,17 @@ function PublicationStatus({ config }: { config: NonNullable<ConfigView['config'
           Contact support before retrying. Product availability must be checked before continuing.
         </s-banner>
       )}
-      <details>
-        <summary>Technical publication details</summary>
-        {publication.revisionId && <p>Latest revision: {publication.revisionId}</p>}
-        {publication.activeRevisionId && <p>Effective revision: {publication.activeRevisionId}</p>}
-        {publication.reason && <p>{publication.reason}</p>}
+      <AdminDisclosure label="Technical publication details">
+        {publication.revisionId && <s-paragraph>Latest revision: {publication.revisionId}</s-paragraph>}
+        {publication.activeRevisionId && <s-paragraph>Effective revision: {publication.activeRevisionId}</s-paragraph>}
+        {publication.reason && <s-paragraph>{publication.reason}</s-paragraph>}
         {publication.requiresAllChannelHold !== null && (
-          <p>All-channel hold required: {publication.requiresAllChannelHold ? 'Yes' : 'No'}</p>
+          <s-paragraph>All-channel hold required: {publication.requiresAllChannelHold ? 'Yes' : 'No'}</s-paragraph>
         )}
-        {publication.functionReadiness && <p>Function readiness: {publication.functionReadiness}</p>}
-      </details>
+        {publication.functionReadiness && (
+          <s-paragraph>Function readiness: {publication.functionReadiness}</s-paragraph>
+        )}
+      </AdminDisclosure>
     </s-section>
   );
 }
@@ -370,6 +402,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
   }
   const [status, setStatus] = useState('Verifying Shopify Admin session…');
   const [loading, setLoading] = useState(true);
+  useAdminPageReady(!loading);
   const [list, setList] = useState<List | null>(null);
   const [view, setView] = useState<ConfigView | null>(null);
   const [query, setQuery] = useState('');
@@ -1219,7 +1252,9 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       )}
       {status && !loading && (
         <s-banner tone="info">
-          <p role="status">{status}</p>
+          <div role="status">
+            <s-paragraph>{status}</s-paragraph>
+          </div>
         </s-banner>
       )}
       {mode === 'config' && view === null && !loading && (
@@ -1229,7 +1264,9 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       )}
       {mode === 'picker' && (
         <s-section heading="Shopify products">
-          <p class="admin-description">Choose a product to configure its customization options and preview.</p>
+          <div class="admin-description">
+            <s-paragraph>Choose a product to configure its customization options and preview.</s-paragraph>
+          </div>
           <div class="product-search">
             <s-search-field
               label="Search products"
@@ -1243,9 +1280,9 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
           </div>
           {loading && <AdminSkeleton label="Loading products" />}
           {list && (
-            <p class="product-result-count" role="status">
-              {list.products.length} products on this page
-            </p>
+            <div class="product-result-count" role="status">
+              <s-paragraph>{list.products.length} products on this page</s-paragraph>
+            </div>
           )}
           {list && list.products.length > 0 && (
             <s-table loading={loading}>
@@ -1262,9 +1299,9 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                       <s-stack direction="inline" gap="base" alignItems="center">
                         <div class="product-image">
                           {product.imageUrl ? (
-                            <img src={product.imageUrl} width="72" height="72" alt="" />
+                            <s-thumbnail src={product.imageUrl} size="large" alt="" />
                           ) : (
-                            <span>No image</span>
+                            <s-text>No image</s-text>
                           )}
                         </div>
                         <s-link href={`/admin/products/${numberOf(product.id)}/config`}>{product.title}</s-link>
@@ -1283,19 +1320,21 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                     </s-table-cell>
                     <s-table-cell>
                       {product.variants.length > 0 && (
-                        <p class="product-variants">
-                          {product.variants
-                            .slice(0, 5)
-                            .map((variant) => variant.title)
-                            .join(', ')}
-                        </p>
+                        <div class="product-variants">
+                          <s-paragraph>
+                            {product.variants
+                              .slice(0, 5)
+                              .map((variant) => variant.title)
+                              .join(', ')}
+                          </s-paragraph>
+                        </div>
                       )}
                     </s-table-cell>
                     <s-table-cell>
                       {numberOf(product.id) && (
-                        <span>
+                        <s-text>
                           <s-link href={`/admin/products/${numberOf(product.id)}/config`}>Configure product</s-link>
-                        </span>
+                        </s-text>
                       )}
                     </s-table-cell>
                   </s-table-row>
@@ -1303,7 +1342,11 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
               </s-table-body>
             </s-table>
           )}
-          {list && list.products.length === 0 && <p class="product-empty">No products found.</p>}
+          {list && list.products.length === 0 && (
+            <div class="product-empty">
+              <s-paragraph>No products found.</s-paragraph>
+            </div>
+          )}
           {list?.nextCursor && <s-button onClick={() => void load(list.nextCursor, query)}>Next page</s-button>}
         </s-section>
       )}
@@ -1314,32 +1357,26 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       )}
       {mode === 'config' && view && (
         <>
-          <s-section heading={view.product.title}>
-            <p>
-              Product status:{' '}
-              {view.product.status === 'ACTIVE'
-                ? 'Active'
-                : view.product.status === 'ARCHIVED'
-                  ? 'Archived'
-                  : view.product.status === 'DRAFT'
-                    ? 'Draft'
-                    : view.product.status}
-            </p>
-            {view.product.imageUrl && (
-              <img
-                src={view.product.imageUrl}
-                width="64"
-                height="64"
-                style="object-fit:contain"
-                alt="Product preview"
-              />
-            )}
-            {!view.config && (
-              <s-button disabled={busy} onClick={() => void create()}>
-                Create configuration
-              </s-button>
-            )}
-          </s-section>
+          {!view.config && (
+            <s-section heading={view.product.title}>
+              <s-paragraph>
+                Product status:{' '}
+                {view.product.status === 'ACTIVE'
+                  ? 'Active'
+                  : view.product.status === 'ARCHIVED'
+                    ? 'Archived'
+                    : view.product.status === 'DRAFT'
+                      ? 'Draft'
+                      : view.product.status}
+              </s-paragraph>
+              {view.product.imageUrl && <s-thumbnail src={view.product.imageUrl} size="large" alt="Product preview" />}
+              {!view.config && (
+                <s-button disabled={busy} onClick={() => void create()}>
+                  Create configuration
+                </s-button>
+              )}
+            </s-section>
+          )}
           {view.config && draft && geometry && editor && (
             <>
               <s-section slot="aside" id="product-preview" heading="Live preview">
@@ -1360,7 +1397,11 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                   style="width:100%;height:420px"
                   aria-label="Product placement preview"
                 ></div>
-                {previewStatus && <p role="status">Preview: {previewStatus}</p>}
+                {previewStatus && (
+                  <div role="status">
+                    <s-paragraph>Preview: {previewStatus}</s-paragraph>
+                  </div>
+                )}
                 <ArtworkUpload
                   disabled={busy}
                   onAuthenticationDenied={authorizationDenied}
@@ -1381,13 +1422,14 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
               </s-section>
               <s-section id="editor-flow" heading="Configure this product">
                 <s-paragraph>
-                  Set up one part at a time. Your unsaved changes stay here as you move between steps; only Save draft
-                  writes them.
+                  Configure your product, check its preview, then save and publish. Step changes keep your unsaved work.
                 </s-paragraph>
                 <nav aria-label="Product setup steps">
                   <s-stack direction="inline" gap="base">
                     {setupSteps.map((step, index) => (
-                      <s-link
+                      <s-button
+                        variant={setupStep === step.id ? 'primary' : 'secondary'}
+                        icon={step.icon}
                         key={step.id}
                         href={'#' + step.anchor}
                         aria-current={setupStep === step.id ? 'step' : undefined}
@@ -1397,9 +1439,11 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                         }}
                       >
                         {index + 1}. {step.label}
-                      </s-link>
+                      </s-button>
                     ))}
-                    <s-link href="#product-preview">Preview</s-link>
+                    <s-button href="#product-preview" variant="tertiary" icon="image">
+                      Preview
+                    </s-button>
                   </s-stack>
                 </nav>
                 <div id="setup-stage-heading" tabIndex={-1}>
@@ -1414,81 +1458,93 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                   {setupStep === 'all' ? 'Use guided setup' : 'View all settings'}
                 </s-button>
               </s-section>
-              <PublicationStatus config={view.config} />
-              <s-section heading="Draft changes">
-                {validationIssues.length > 0 && (
-                  <div role="alert">
-                    {validationIssues.map((issue) => (
-                      <p key={issue.path}>
-                        {issue.path}: {issue.message}
-                      </p>
-                    ))}
-                  </div>
-                )}
-                <p>
-                  <s-badge
-                    tone={
-                      saveState === 'conflict' || saveState === 'ambiguous'
-                        ? 'warning'
-                        : saveState === 'dirty'
-                          ? 'info'
-                          : 'success'
-                    }
-                  >
-                    {
-                      {
-                        clean: 'All changes saved',
-                        dirty: 'Unsaved changes',
-                        saving: 'Saving changes…',
-                        saved: 'All changes saved',
-                        conflict: 'Newer changes found',
-                        ambiguous: 'Save could not be confirmed',
-                      }[saveState]
-                    }
-                  </s-badge>
-                  <s-text color="subdued">
-                    {' '}
-                    Draft version {view.config.draftVersion}. Publish saved changes when you are ready for customers to
-                    use them.
-                  </s-text>
-                </p>
-                <s-button
-                  variant="primary"
-                  disabled={busy || !!advancedError || legacyPricing || hasPriceErrors || saveState !== 'dirty'}
-                  onClick={() => void save()}
-                >
-                  Save draft
-                </s-button>
+              <div class="admin-save-toolbar">
+                <s-box padding="base" background="base" border="base" borderRadius="base">
+                  <s-stack direction="inline" alignItems="center" gap="base">
+                    {setupStep !== 'review' && setupStep !== 'all' && (
+                      <PublicationStatus config={view.config} compact />
+                    )}
+                    {validationIssues.length > 0 && (
+                      <div role="alert">
+                        {validationIssues.map((issue) => (
+                          <s-paragraph key={issue.path}>
+                            {issue.path}: {issue.message}
+                          </s-paragraph>
+                        ))}
+                      </div>
+                    )}
+                    <s-paragraph>
+                      <s-badge
+                        tone={
+                          saveState === 'conflict' || saveState === 'ambiguous'
+                            ? 'warning'
+                            : saveState === 'dirty'
+                              ? 'info'
+                              : 'success'
+                        }
+                      >
+                        {
+                          {
+                            clean: 'All changes saved',
+                            dirty: 'Unsaved changes',
+                            saving: 'Saving changes…',
+                            saved: 'All changes saved',
+                            conflict: 'Newer changes found',
+                            ambiguous: 'Save could not be confirmed',
+                          }[saveState]
+                        }
+                      </s-badge>
+                      <s-text color="subdued"> Draft version {view.config.draftVersion}</s-text>
+                      <s-text color="subdued">
+                        Product status:{' '}
+                        {view.product.status === 'ACTIVE'
+                          ? 'Active'
+                          : view.product.status === 'ARCHIVED'
+                            ? 'Archived'
+                            : view.product.status === 'DRAFT'
+                              ? 'Draft'
+                              : view.product.status}
+                      </s-text>
+                    </s-paragraph>
+                    <s-button
+                      variant="primary"
+                      disabled={busy || !!advancedError || legacyPricing || hasPriceErrors || saveState !== 'dirty'}
+                      onClick={() => void save()}
+                    >
+                      Save draft
+                    </s-button>
 
-                {saveState === 'ambiguous' && pending.current && (
-                  <s-button disabled={busy} onClick={() => void save(true)}>
-                    Retry saving
-                  </s-button>
-                )}
-                {latest && (
-                  <s-button
-                    onClick={() => {
-                      if (isDraft(latest.draft)) {
-                        setDraft(latest.draft);
-                        setPriceErrors({});
-                        setPriceRevision((old) => old + 1);
-                        setEditor(initialEditor(latest.draft));
-                        setView({ ...view, config: latest });
-                        setLatest(null);
-                        setSaveState('clean');
-                        pending.current = null;
-                      }
-                    }}
-                  >
-                    Review latest saved draft
-                  </s-button>
-                )}
-                {(saveState === 'conflict' || saveState === 'ambiguous') && (
-                  <s-button disabled={busy} onClick={() => void load()}>
-                    Reload current draft
-                  </s-button>
-                )}
-              </s-section>
+                    {saveState === 'ambiguous' && pending.current && (
+                      <s-button disabled={busy} onClick={() => void save(true)}>
+                        Retry saving
+                      </s-button>
+                    )}
+                    {latest && (
+                      <s-button
+                        onClick={() => {
+                          if (isDraft(latest.draft)) {
+                            setDraft(latest.draft);
+                            setPriceErrors({});
+                            setPriceRevision((old) => old + 1);
+                            setEditor(initialEditor(latest.draft));
+                            setView({ ...view, config: latest });
+                            setLatest(null);
+                            setSaveState('clean');
+                            pending.current = null;
+                          }
+                        }}
+                      >
+                        Review latest saved draft
+                      </s-button>
+                    )}
+                    {(saveState === 'conflict' || saveState === 'ambiguous') && (
+                      <s-button disabled={busy} onClick={() => void load()}>
+                        Reload current draft
+                      </s-button>
+                    )}
+                  </s-stack>
+                </s-box>
+              </div>
               <s-stack gap="base">
                 <section class="admin-setup-panel" aria-label="Product rules" hidden={!visibleStage('rules')}>
                   <s-section id="customization-rules" heading="Customization rules">
@@ -1503,13 +1559,13 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                       <s-option value="optional">Optional</s-option>
                       <s-option value="required">Required for all purchases</s-option>
                     </s-select>
-                    <p>Draft shop currency: {draft.shopCurrency}</p>
+                    <s-paragraph>Draft shop currency: {draft.shopCurrency}</s-paragraph>
                     {view.config.currentShopCurrency && view.config.currentShopCurrency !== draft.shopCurrency && (
                       <div role="alert">
-                        <p>
+                        <s-paragraph>
                           Current shop currency: {view.config.currentShopCurrency}. Existing amounts are not converted.
                           Review every price before saving or publishing.
-                        </p>
+                        </s-paragraph>
                         <s-button
                           type="button"
                           onClick={() => {
@@ -1584,8 +1640,8 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                     )}
 
                     {draft.methods.map((method) => (
-                      <p key={method.id}>
-                        <strong>{choiceLabel('methods', method.id)}</strong>{' '}
+                      <s-paragraph key={method.id}>
+                        <s-text type="strong">{choiceLabel('methods', method.id)}</s-text>{' '}
                         <s-text-field
                           maxLength={80}
                           value={labelFor('methods', method.id)}
@@ -1607,7 +1663,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                         >
                           Remove method
                         </s-button>
-                      </p>
+                      </s-paragraph>
                     ))}
                     <s-button
                       type="button"
@@ -1669,10 +1725,12 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                       ))}
                     </s-select>
                     {view.product.variantsTruncated && (
-                      <p role="alert">
-                        This product has more than 500 variants. Only the first 500 are available here; review the full
-                        catalog before saving variant-specific geometry.
-                      </p>
+                      <div role="alert">
+                        <s-paragraph>
+                          This product has more than 500 variants. Only the first 500 are available here; review the
+                          full catalog before saving variant-specific geometry.
+                        </s-paragraph>
+                      </div>
                     )}
                     <s-button
                       type="button"
@@ -1703,10 +1761,10 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                     </s-button>
                   </s-section>
                   <s-section heading="Print areas">
-                    <p>
+                    <s-paragraph>
                       Choose where customers can add artwork. Position and dimensions use fractions of the product
                       image: 0.5 is halfway across or half its size.
-                    </p>
+                    </s-paragraph>
                     <s-select
                       value={editor.selectedPlacementId ?? ''}
                       onChange={(event) =>
@@ -1750,9 +1808,9 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                     </s-button>
                     {selectedPlacement && selectedRect && (
                       <div>
-                        <p>
-                          <strong>{choiceLabel('placements', selectedPlacement.id)}</strong>
-                        </p>
+                        <s-paragraph>
+                          <s-text type="strong">{choiceLabel('placements', selectedPlacement.id)}</s-text>
+                        </s-paragraph>
                         <s-text-field
                           maxLength={80}
                           value={labelFor('placements', selectedPlacement.id)}
@@ -1771,7 +1829,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                           label={'Allow logo later'}
                           disabled={busy}
                         />
-                        <p>Allowed methods</p>
+                        <s-paragraph>Allowed methods</s-paragraph>
                         {draft.methods.map((item) => (
                           <s-checkbox
                             checked={selectedPlacement.allowedMethodIds.includes(item.id)}
@@ -1788,7 +1846,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                             key={item.id}
                           />
                         ))}
-                        <p>Allowed size steps</p>
+                        <s-paragraph>Allowed size steps</s-paragraph>
                         {geometry.steps.map((item) => (
                           <s-checkbox
                             checked={selectedPlacement.allowedStepIds.includes(item.id)}
@@ -1858,10 +1916,10 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                     )}
                   </s-section>
                   <s-section heading="Print sizes">
-                    <p>
+                    <s-paragraph>
                       Define the artwork sizes customers can choose. Width and height are fractions of the selected
                       print area; 1 fills it.
-                    </p>
+                    </s-paragraph>
                     <s-select
                       value={editor.selectedStepId ?? ''}
                       onChange={(event) =>
@@ -1934,8 +1992,8 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                 >
                   <s-section heading="Customer options">
                     {draft.productionOptions.map((item) => (
-                      <p key={item.id}>
-                        <strong>{choiceLabel('options', item.id)}</strong>{' '}
+                      <s-paragraph key={item.id}>
+                        <s-text type="strong">{choiceLabel('options', item.id)}</s-text>{' '}
                         <s-text-field
                           maxLength={80}
                           value={labelFor('options', item.id)}
@@ -1984,7 +2042,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                         >
                           Add value
                         </s-button>
-                      </p>
+                      </s-paragraph>
                     ))}
                     <s-button
                       type="button"
@@ -2006,13 +2064,13 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                   <s-section id="decoration-prices" heading="Decoration prices">
                     {legacyPricing ? (
                       <section aria-label="Historical pricing">
-                        <p>
+                        <s-paragraph>
                           This draft uses historical pricing that is unavailable for new offers. Existing prices are
                           read-only; saved publications and purchases keep their original terms.
-                        </p>
-                        <ul>
+                        </s-paragraph>
+                        <s-unordered-list>
                           {draft.pricingRules.map((rule) => (
-                            <li key={rule.id}>
+                            <s-list-item key={rule.id}>
                               {choiceLabel('prices', rule.id)}:{' '}
                               {rule.role === 'setup'
                                 ? 'Setup'
@@ -2034,13 +2092,13 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                         `${tier.minQuantity}+ garments: ${tier.amount.shopDecimal} ${draft.shopCurrency}${tier.amount.presentmentOverrides.map((entry) => `; ${entry.decimal} ${entry.currency}`).join('')}`,
                                     )
                                     .join('; ')}
-                            </li>
+                            </s-list-item>
                           ))}
-                        </ul>
-                        <p>
+                        </s-unordered-list>
+                        <s-paragraph>
                           Start a new local price proposal, enter and review every available choice, then save and
                           publish a new revision. This does not convert or change a published revision.
-                        </p>
+                        </s-paragraph>
                         <s-button
                           type="button"
                           onClick={() => {
@@ -2059,15 +2117,17 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                       </section>
                     ) : (
                       <>
-                        <p>
+                        <s-paragraph>
                           Final decoration surcharge per garment, added to the garment price for each selected
                           placement. Blank means unavailable; enter 0 only for an explicitly free choice.
-                        </p>
+                        </s-paragraph>
                         {priceProposalStarted && (
-                          <p role="status">
-                            New local price proposal: review all choices before saving and publishing. Published history
-                            has not changed.
-                          </p>
+                          <div role="status">
+                            <s-paragraph>
+                              New local price proposal: review all choices before saving and publishing. Published
+                              history has not changed.
+                            </s-paragraph>
+                          </div>
                         )}
                         {priceCells.length ? (
                           <s-table>
@@ -2119,7 +2179,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                           Make unavailable
                                         </s-button>
                                       ) : (
-                                        <span>Unavailable</span>
+                                        <s-text>Unavailable</s-text>
                                       )}
                                     </s-table-cell>
                                   </s-table-row>
@@ -2128,7 +2188,9 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                             </s-table-body>
                           </s-table>
                         ) : (
-                          <p>Add a method, placement and allowed size to enter decoration prices.</p>
+                          <s-paragraph>
+                            Add a method, placement and allowed size to enter decoration prices.
+                          </s-paragraph>
                         )}
                       </>
                     )}
@@ -2168,13 +2230,18 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                         >
                           Apply JSON
                         </s-button>
-                        {advancedError && <p role="alert">{advancedError}</p>}
+                        {advancedError && (
+                          <div role="alert">
+                            <s-paragraph>{advancedError}</s-paragraph>
+                          </div>
+                        )}
                       </div>
                     )}
                   </s-section>
                 </section>
               </s-stack>
               <section class="admin-setup-panel" aria-label="Review and publish" hidden={!visibleStage('review')}>
+                <PublicationStatus config={view.config} />
                 <s-section heading="Review your choices">
                   <s-paragraph>
                     Methods: {draft.methods.map((method) => choiceLabel('methods', method.id)).join(', ') || 'None yet'}
@@ -2193,9 +2260,12 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                   </s-paragraph>
                   <s-link href="/admin/settings">Check store setup in Settings</s-link>
                   {!view.config.publishEligibility.allowed && (
-                    <p role="alert">
-                      {view.config.publishEligibility.reason ?? 'Publication is not available for this configuration.'}
-                    </p>
+                    <div role="alert">
+                      <s-paragraph>
+                        {view.config.publishEligibility.reason ??
+                          'Publication is not available for this configuration.'}
+                      </s-paragraph>
+                    </div>
                   )}
                   <s-button
                     disabled={
@@ -2218,8 +2288,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                   <s-paragraph>
                     Copy the saved draft to another product. The destination must be reviewed and published separately.
                   </s-paragraph>
-                  <details>
-                    <summary>Copy to another product</summary>
+                  <AdminDisclosure label="Copy to another product">
                     <s-search-field
                       value={copyQuery}
                       onInput={(event) => setCopyQuery(event.currentTarget.value)}
@@ -2258,7 +2327,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                     >
                       Copy configuration
                     </s-button>
-                  </details>
+                  </AdminDisclosure>
                 </s-section>
                 <s-section heading="Next: storefront button">
                   <s-paragraph>

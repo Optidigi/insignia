@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import AdminSkeleton from '../components/AdminSkeleton';
 import SettingsNavigation from '../components/SettingsNavigation';
+import { useAdminPageReady } from '../shared/admin-page-ready';
 import { authenticatedJson } from '../shared/admin-request.js';
 
 type RequestView = {
@@ -26,6 +27,7 @@ export default function MerchantPrivacy() {
   const [manifest, setManifest] = useState<Manifest | null>(null);
   const [designExports, setDesignExports] = useState<{ purchaseId: string; setId: string }[]>([]);
   const [loaded, setLoaded] = useState(false);
+  useAdminPageReady(loaded);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   async function run(operation: () => Promise<void>) {
@@ -65,16 +67,22 @@ export default function MerchantPrivacy() {
         >
           Refresh requests
         </s-button>
-        <p>
+        <s-paragraph>
           Download each available order record and its original artwork, then provide them to the requesting customer
           through your store’s privacy process. Downloading here does not confirm delivery to the customer.
-        </p>
-        <p>Exports use currently retained records. Erased or expired artwork stays unavailable.</p>
+        </s-paragraph>
+        <s-paragraph>Exports use currently retained records. Erased or expired artwork stays unavailable.</s-paragraph>
         {(!loaded || (busy && !requests.length)) && <AdminSkeleton label="Loading privacy requests" />}
-        {error && <p role="alert">Privacy records could not be loaded. Try again.</p>}
-        {loaded && !busy && !error && !requests.length && <p>No data requests are currently available.</p>}
+        {error && (
+          <div role="alert">
+            <s-paragraph>Privacy records could not be loaded. Try again.</s-paragraph>
+          </div>
+        )}
+        {loaded && !busy && !error && !requests.length && (
+          <s-paragraph>No data requests are currently available.</s-paragraph>
+        )}
         {requests.map((request) => (
-          <p key={request.inboxId}>
+          <s-paragraph key={request.inboxId}>
             Request {request.requestId} · {request.requestedOrderCount} requested orders · Due{' '}
             {new Date(request.fulfillBy).toUTCString()}{' '}
             <s-button
@@ -88,7 +96,7 @@ export default function MerchantPrivacy() {
             >
               Open request
             </s-button>
-          </p>
+          </s-paragraph>
         ))}
         {requests.length === 100 && (
           <s-button
@@ -117,10 +125,12 @@ export default function MerchantPrivacy() {
             Download request summary (JSON)
           </s-button>
           {!manifest.orders.length && (
-            <p>No orders were requested. Insignia does not hold a separate customer contact profile.</p>
+            <s-paragraph>
+              No orders were requested. Insignia does not hold a separate customer contact profile.
+            </s-paragraph>
           )}
           {manifest.orders.map((order) => (
-            <p key={order.orderId}>
+            <s-paragraph key={order.orderId}>
               {order.orderId}{' '}
               {order.purchaseId ? (
                 <>
@@ -147,10 +157,10 @@ export default function MerchantPrivacy() {
               ) : (
                 'No matching Insignia purchase is held.'
               )}
-            </p>
+            </s-paragraph>
           ))}
           {designExports.map((design, index) => (
-            <p key={design.setId}>
+            <s-paragraph key={design.setId}>
               <s-button
                 disabled={busy}
                 onClick={() =>
@@ -166,7 +176,7 @@ export default function MerchantPrivacy() {
               >
                 Download retained design {index + 1}
               </s-button>
-            </p>
+            </s-paragraph>
           ))}
         </s-section>
       )}

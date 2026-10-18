@@ -666,6 +666,7 @@ test('merchant currency adoption refreshes saved publication eligibility and lat
 }, async (t) => {
   const { source, server, browser } = await browserFixture(t);
   const page = await browser.newPage();
+  page.setDefaultTimeout(5000);
   await page.addInitScript(() => {
     window.shopify = { idToken: async () => 'synthetic-currency-token' };
   });
@@ -744,7 +745,7 @@ test('merchant currency adoption refreshes saved publication eligibility and lat
     await page
       .getByText('Draft saved. Publication eligibility could not be verified. Reload before publishing.')
       .waitFor();
-    await page.getByText(`Draft version ${outcome === 'failed' ? '3' : '4'}.`).waitFor();
+    await page.getByText(`Draft version ${outcome === 'failed' ? '3' : '4'}`).waitFor();
     assert.equal(await publicationButton.evaluate((button) => button.disabled), true);
     assert.equal(await page.locator('s-button').filter({ hasText: 'Retry saving' }).count(), 0);
     assert.equal(await page.locator('s-button').filter({ hasText: 'Review latest saved draft' }).count(), 0);
@@ -924,7 +925,10 @@ test('mobile deep link, cookie-free reload, interrupted save, stale conflict, an
   );
   await missingPage.route('**/api/admin/products/111/config', (route) => route.fulfill({ json: response(draft()) }));
   await missingPage.goto(server.base + '/admin/products/111/config?view=all');
-  await missingPage.getByText('Draft version 1').waitFor();
+  await missingPage
+    .getByText('Reopen Insignia from Shopify Admin to try again.', { exact: true })
+    .waitFor({ timeout: 20000 });
+  assert.equal(await missingPage.locator('#admin-route-content').evaluate((element) => element.inert), true);
   assert.equal(await missingPage.evaluate(() => !!customElements.get('s-button')), false);
   assert.equal(
     await missingPage
@@ -1301,7 +1305,7 @@ for (let iteration = 1; iteration <= stressIterations; iteration++) {
             await page.getByText('Shopify settings updated; activation is pending').waitFor();
           else await page.getByText(/Continue the same publication request after checking/).waitFor();
           assert.equal(await page.getByLabel('Method name').inputValue(), 'Unsaved name');
-          await page.getByText('Draft version 2.').waitFor();
+          await page.getByText('Draft version 2').waitFor();
           await page
             .getByText(saveMode === 'ambiguous' ? 'Save could not be confirmed' : 'Unsaved changes', { exact: true })
             .waitFor();
@@ -1316,7 +1320,7 @@ for (let iteration = 1; iteration <= stressIterations; iteration++) {
           assert.equal(publications.length, 1);
           const action = saveMode === 'ambiguous' ? 'Retry saving' : 'Save draft';
           await page.locator('s-button').filter({ hasText: action }).click();
-          await page.getByText('Draft version 3.').waitFor();
+          await page.getByText('Draft version 3').waitFor();
           await page.getByText('All changes saved', { exact: true }).waitFor();
           assert.equal(saves.at(-1).body.draft.labels.methods.print, 'Unsaved name');
           assert.equal(saves.at(-1).body.draft.geometry.views[0].placements[0].rect.centerX, 0.6);
@@ -1777,7 +1781,7 @@ test('mounted admin refreshes late activation and readiness without overwriting 
     await page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).inputValue(),
     '3.25',
   );
-  await page.getByText('Draft version 1.', { exact: false }).waitFor();
+  await page.getByText('Draft version 1', { exact: false }).waitFor();
   await page.getByText('Unsaved changes', { exact: true }).waitFor();
   await page.getByText('Effective revision: requested-revision', { exact: true }).waitFor({ state: 'attached' });
   expired = true;
@@ -1795,7 +1799,7 @@ test('mounted admin refreshes late activation and readiness without overwriting 
   );
   expired = false;
   await page.getByRole('button', { name: 'Retry session', exact: true }).click();
-  await page.getByText('Draft version 1.', { exact: false }).waitFor();
+  await page.getByText('Draft version 1', { exact: false }).waitFor();
   await page.getByText('All changes saved', { exact: true }).waitFor();
   assert.equal(
     await page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).inputValue(),
@@ -1885,7 +1889,7 @@ for (const staleAmount of ['9.00', '2.50'])
       await second.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true }).inputValue(),
       '2.50',
     );
-    await second.getByText('Draft version 2.', { exact: false }).waitFor();
+    await second.getByText('Draft version 2', { exact: false }).waitFor();
     await second.getByText('All changes saved', { exact: true }).waitFor();
     await second.getByLabel('Method name').fill('Reviewed print');
     assert.equal(
@@ -2120,6 +2124,7 @@ test('readiness permissions require an explicit gesture and refresh server ident
     return route.fulfill({ json: { version: 'm5-admin-technical-readiness-v1' } });
   });
   await page.goto(server.base + '/admin/settings');
+  await page.getByRole('button', { name: 'App permissions and publication checks', exact: true }).click();
   await page.getByRole('button', { name: 'Check readiness', exact: true }).waitFor();
   await page.locator('astro-island:not([ssr])').waitFor();
   assert.equal(await page.evaluate(() => window.scopeQueries), 0);
@@ -2197,6 +2202,7 @@ test('readiness permission decline, failure and existing grants never broaden or
     },
   ]) {
     const page = await browser.newPage();
+    page.setDefaultTimeout(5000);
     await page.addInitScript((scenario) => {
       window.scopeRequests = [];
       window.syntheticTokenCount = 0;
@@ -2248,6 +2254,7 @@ test('readiness permission decline, failure and existing grants never broaden or
       });
     });
     await page.goto(server.base + '/admin/settings');
+    await page.getByRole('button', { name: 'App permissions and publication checks', exact: true }).click();
     await page.getByRole('button', { name: 'Check readiness', exact: true }).waitFor();
     await page.locator('astro-island:not([ssr])').waitFor();
     assert.deepEqual(readinessTokens, [], 'No readiness request on page boot');
@@ -2321,6 +2328,11 @@ test('both admin pages admit the pinned Polaris CDN font without broadening othe
     ]);
     assert.deepEqual(directives['frame-ancestors'], ['https://admin.shopify.com', 'https://*.myshopify.com']);
     assert.ok(!directives['script-src'].some((value) => value.includes('cloudflare')));
+    assert.ok(!directives['script-src'].includes("'unsafe-inline'"));
+    assert.ok(
+      await page.locator('script[src^="/_astro/"]').count(),
+      'compiled navigation bootstrap stays external under CSP',
+    );
     await page.locator('s-page').waitFor();
     await page.evaluate(() => document.fonts.ready);
     assert.ok(fontRequests > 0, 'Polaris font request reaches the CDN boundary instead of being blocked by CSP');
@@ -2332,6 +2344,7 @@ test('product search uses the responsive Polaris table with actionable rows and 
 }, async (t) => {
   const { source, server, browser } = await browserFixture(t);
   const page = await browser.newPage();
+  page.setDefaultTimeout(5000);
   await page.addInitScript(() => {
     window.shopify = { idToken: async () => 'synthetic-picker-token' };
   });
@@ -2370,15 +2383,24 @@ test('product search uses the responsive Polaris table with actionable rows and 
   await page.getByRole('link', { name: 'Historical archived shirt with a long catalog title' }).waitFor();
   const navigation = page.locator('s-app-nav');
   assert.equal(
-    await navigation.getByRole('link', { name: 'Products', exact: true }).getAttribute('href'),
+    await navigation
+      .locator('s-link')
+      .filter({ hasText: /^Products$/ })
+      .getAttribute('href'),
     '/admin/products',
   );
   assert.equal(
-    await navigation.getByRole('link', { name: 'Orders', exact: true }).getAttribute('href'),
+    await navigation
+      .locator('s-link')
+      .filter({ hasText: /^Orders$/ })
+      .getAttribute('href'),
     '/admin/orders',
   );
   assert.equal(
-    await navigation.getByRole('link', { name: 'Settings', exact: true }).getAttribute('href'),
+    await navigation
+      .locator('s-link')
+      .filter({ hasText: /^Settings$/ })
+      .getAttribute('href'),
     '/admin/settings',
   );
   const search = page.getByRole('searchbox', { name: 'Search products', exact: true });
@@ -2712,6 +2734,7 @@ test('editor guides configuration through prices to publication while keeping di
   await prices.click();
   assert.equal(new URL(page.url()).hash, '#decoration-prices');
   assert.equal(await page.getByText('Function readiness: RELEASE_BOUND', { exact: true }).isVisible(), false);
+  await page.getByRole('link', { name: '4. Review and publish', exact: true }).click();
   await page.getByText('Technical publication details', { exact: true }).click();
   await page.getByText('Effective revision: technical-revision', { exact: true }).waitFor({ state: 'attached' });
   assert.equal(
@@ -2793,13 +2816,13 @@ test('configuration loading reserves space with an accessible skeleton until aut
     return r.fulfill({ json: response(draft()) });
   });
   await page.goto(server.base + '/admin/products/111/config');
-  const skeleton = page.getByRole('status', { name: 'Loading product configuration' });
+  const skeleton = page.getByRole('status', { name: 'Page content', exact: true });
   await skeleton.waitFor({ timeout: 2000 });
   assert.ok((await skeleton.boundingBox()).height > 200, 'reserve the form area during loading');
   assert.equal(await page.getByRole('button', { name: 'Save draft', exact: true }).count(), 0);
   release();
   await page.getByText('All changes saved', { exact: true }).waitFor();
-  assert.equal(await skeleton.count(), 0);
+  assert.equal(await skeleton.isVisible(), false);
 });
 
 test('guided product setup shows one stage at a time and keeps unsaved choices without writes', {
@@ -3038,6 +3061,185 @@ test('editor library requests share authorization clearing and discard pre-denia
     await page.getByRole('button', { name: 'Choose from library', exact: true }).click();
     await page.getByText('Library authorization denied', { exact: true }).waitFor();
     assert.equal(await page.getByRole('button', { name: 'Save draft', exact: true }).count(), 0);
+  } finally {
+    release();
+  }
+});
+
+test('every merchant route paints silent placeholders before Polaris and hydration, including static Settings', {
+  timeout: 30000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  const page = await browser.newPage();
+  page.setDefaultTimeout(2500);
+  await page.addInitScript(() => {
+    window.shopify = { idToken: async () => 'synthetic-route-shell' };
+  });
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
+  let release;
+  let pending;
+  await page.route(polarisUrl, async (r) => {
+    await pending;
+    return r.fulfill({ body: source, contentType: 'text/javascript' });
+  });
+  await page.route('**/api/**', (r) => r.fulfill({ status: 403, json: { error: 'Reopen from Shopify Admin' } }));
+  for (const path of [
+    '/admin/products',
+    '/admin/orders',
+    '/admin/settings',
+    '/admin/settings/methods',
+    '/admin/settings/storefront',
+    '/admin/settings/billing',
+    '/admin/settings/privacy',
+    '/admin/products/111/config',
+  ]) {
+    pending = new Promise((resolve) => {
+      release = resolve;
+    });
+    try {
+      await page.goto(server.base + path, { waitUntil: 'commit' });
+      const skeleton = page.getByRole('status', { name: 'Page content', exact: true });
+      await skeleton.waitFor();
+      assert.ok((await skeleton.boundingBox()).height > 200, path);
+      assert.equal((await skeleton.innerText()).trim(), '', 'placeholders have no visible loading copy');
+      assert.equal(await page.locator('s-app-nav').isVisible(), false, 'never flash raw sidebar links');
+      release();
+      await skeleton.waitFor({ state: 'hidden', timeout: 10000 });
+      assert.equal(await page.locator('s-page').last().isVisible(), true, path);
+      assert.equal(
+        await page
+          .locator('body')
+          .evaluate((b) => Array.from(b.querySelectorAll('button,input,select,textarea,a,details,summary')).length),
+        0,
+        path + ' has only Polaris controls in light DOM',
+      );
+    } finally {
+      release();
+    }
+  }
+});
+
+test('internal merchant navigation shows silent placeholders until destination data settles', {
+  timeout: 15000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  const page = await browser.newPage();
+  page.setDefaultTimeout(2500);
+  await page.addInitScript(() => {
+    window.shopify = { idToken: async () => 'synthetic-transition' };
+  });
+  await routePolaris(page, source);
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
+  let release;
+  const pending = new Promise((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/purchases/v1/privacy', async (r) => {
+    await pending;
+    return r.fulfill({ json: { items: [] } });
+  });
+  try {
+    await page.goto(server.base + '/admin/settings');
+    await page.getByRole('link', { name: 'Privacy', exact: true }).click();
+    const shell = page.getByRole('status', { name: 'Page content', exact: true });
+    await shell.waitFor();
+    assert.equal(new URL(page.url()).pathname, '/admin/settings/privacy');
+    assert.equal((await shell.innerText()).trim(), '');
+    assert.equal(await page.getByRole('button', { name: 'Refresh requests', exact: true }).isVisible(), false);
+    release();
+    await page.getByText('No data requests are currently available.', { exact: true }).waitFor({ timeout: 8000 });
+    assert.equal(await shell.isVisible(), false);
+  } finally {
+    release();
+  }
+});
+
+test('configurator leads with editable product rules and Polaris actions rather than stacked status cards', {
+  timeout: 15000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  page.setDefaultTimeout(2500);
+  await page.addInitScript(() => {
+    window.shopify = { idToken: async () => 'synthetic-compact-editor' };
+  });
+  await routePolaris(page, source);
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
+  await page.route('**/api/admin/products/111/config', (r) => r.fulfill({ json: response(draft()) }));
+  await page.goto(server.base + '/admin/products/111/config');
+  const mode = page.getByRole('combobox', { name: 'Customization mode', exact: true });
+  await mode.waitFor();
+  assert.ok((await mode.boundingBox()).y < 650, 'first editable field is in the initial desktop viewport');
+  if (process.env.M5_CAPTURE_POLISH === '1') {
+    await page.screenshot({ path: '/tmp/insignia-polaris-editor-desktop.png', fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({ path: '/tmp/insignia-polaris-editor-mobile.png', fullPage: true });
+  }
+  assert.equal(
+    await page.getByRole('heading', { name: 'Publication', exact: true }).isVisible(),
+    false,
+    'detailed publication belongs to review',
+  );
+  assert.equal(
+    await page
+      .locator('body')
+      .evaluate((b) => b.querySelectorAll('button,input,select,textarea,a,details,summary,p,h1,h2,h3,strong').length),
+    0,
+    'shared controls and typography use Polaris',
+  );
+});
+
+test('cancelled merchant navigation keeps the current page usable without a stuck skeleton', {
+  timeout: 15000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  const page = await browser.newPage();
+  page.setDefaultTimeout(1800);
+  await page.addInitScript(() => {
+    window.shopify = { idToken: async () => 'synthetic-cancel' };
+  });
+  await routePolaris(page, source);
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
+  await page.goto(server.base + '/admin/settings');
+  await page.getByRole('link', { name: 'Privacy', exact: true }).waitFor();
+  await page
+    .locator('s-link[href="/admin/settings/privacy"]')
+    .evaluate((node) => node.addEventListener('click', (event) => event.preventDefault(), { once: true }));
+  await page.getByRole('link', { name: 'Privacy', exact: true }).click();
+  await page.getByRole('link', { name: 'General', exact: true }).waitFor();
+  assert.equal(new URL(page.url()).pathname, '/admin/settings');
+  assert.equal(await page.getByRole('status', { name: 'Page content', exact: true }).isVisible(), false);
+});
+
+test('late authenticated read replaces the bootstrap timeout notice with the settled page', {
+  timeout: 15000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  const page = await browser.newPage();
+  page.setDefaultTimeout(2500);
+  await page.clock.install();
+  await page.addInitScript(() => {
+    window.shopify = { idToken: async () => 'synthetic-late-read' };
+  });
+  await routePolaris(page, source);
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
+  let release;
+  const pending = new Promise((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/purchases/v1/privacy', async (r) => {
+    await pending;
+    return r.fulfill({ json: { items: [] } });
+  });
+  try {
+    await page.goto(server.base + '/admin/settings/privacy');
+    await page.getByRole('status', { name: 'Page content', exact: true }).waitFor();
+    await page.clock.fastForward(16000);
+    await page.locator('#admin-route-failure').waitFor();
+    release();
+    await page.getByText('No data requests are currently available.', { exact: true }).waitFor();
+    assert.equal(await page.locator('#admin-route-failure').isVisible(), false);
+    assert.equal(await page.locator('#admin-route-content').evaluate((element) => element.inert), false);
   } finally {
     release();
   }

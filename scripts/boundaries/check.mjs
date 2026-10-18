@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { builtinModules } from 'node:module';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '../..');
 const entries = ['apps', 'packages', 'extensions'].flatMap((parent) =>
@@ -30,30 +30,42 @@ function cruise(paths = entries, type = 'err', expected = 0) {
   return run('corepack', [...depcruise, '--output-type', type, ...paths], expected);
 }
 
-// Ordinary merchant controls use the pinned Polaris implementation. Native
-// canvas/file input remain in shared specialized visualizer/upload components.
+// Merchant routes and their entire local import closure use the pinned Polaris
+// controls and typography. Semantic layout and specialized renderer canvases
+// carry no native interactive-control exception.
 function assertPolarisControls(path, source) {
   assert.ok(
-    !/<(?:button|input|select|textarea|table)\b/.test(source),
-    `${path}: use Polaris for ordinary admin controls`,
+    !/<(?:button|input|select|textarea|table|a|details|summary|label|p|h[1-6]|strong|img|ul|ol|li|span)\b/.test(source),
+    `${path}: use Polaris web components throughout merchant UI`,
   );
 }
-const merchantIslands = [
-  'MerchantConfigEditor',
-  'MerchantSettings',
-  'MethodLibrary',
-  'StorefrontSetup',
-  'MerchantBilling',
-  'MerchantPrivacy',
-  'PurchaseArtwork',
-  'PurchaseHistoricalPreview',
-  'ReadinessPermissions',
-];
-for (const name of merchantIslands) {
-  const path = `apps/web/src/islands/${name}.tsx`;
-  assertPolarisControls(path, readFileSync(resolve(root, path), 'utf8'));
+const merchantFiles = new Set();
+function visitMerchant(path) {
+  if (merchantFiles.has(path) || !existsSync(path)) return;
+  merchantFiles.add(path);
+  const source = readFileSync(path, 'utf8');
+  if (/\.(tsx|astro)$/.test(path)) assertPolarisControls(path, source);
+  for (const match of source.matchAll(/(?:from\s*|import\s*)['"](\.[^'"]+)['"]/g)) {
+    const base = resolve(dirname(path), match[1]);
+    const candidates = /\.(?:js|ts)$/.test(base)
+      ? [base, base.replace(/\.js$/, '.ts'), base.replace(/\.js$/, '.tsx')]
+      : [base, ...['.tsx', '.ts', '.astro'].map((extension) => base + extension)];
+    const dependency = candidates.find((candidate) => existsSync(candidate) && /\.(tsx|ts|astro)$/.test(candidate));
+    if (dependency) visitMerchant(dependency);
+  }
 }
-assert.throws(() => assertPolarisControls('negative control', '<button>Save</button>'), /use Polaris/);
+for (const file of readdirSync(resolve(root, 'apps/web/src/pages/admin'), { recursive: true })) {
+  if (file.endsWith('.astro')) visitMerchant(resolve(root, 'apps/web/src/pages/admin', file));
+}
+assert.ok(
+  [...merchantFiles].some((path) => path.endsWith('/ArtworkUpload.tsx')),
+  'shared upload must remain inside merchant enforcement',
+);
+for (const tag of ['button', 'input', 'a', 'details', 'summary', 'p'])
+  assert.throws(
+    () => assertPolarisControls('negative shared control', '<' + tag + '>native</' + tag + '>'),
+    /Polaris web/,
+  );
 
 const green = cruise();
 assert.match(green, /no dependency violations found/);

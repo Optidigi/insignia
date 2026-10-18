@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import AdminSkeleton from '../components/AdminSkeleton';
 import SettingsNavigation from '../components/SettingsNavigation';
+import { useAdminPageReady } from '../shared/admin-page-ready';
 import { authenticatedJson } from '../shared/admin-request.js';
 import type { BillingView } from '../shared/billing-view.js';
 
@@ -12,6 +13,7 @@ function date(value: string): string {
 export default function MerchantBilling() {
   const [view, setView] = useState<BillingView | null>(null);
   const [busy, setBusy] = useState(true);
+  useAdminPageReady(!busy);
   const [failed, setFailed] = useState(false);
   const inFlight = useRef(false);
   async function refresh() {
@@ -39,70 +41,78 @@ export default function MerchantBilling() {
       </s-link>
       <SettingsNavigation current="billing" />
       <s-section heading="Insignia Standard">
-        <p>Subscription price: USD 49.99 per 30 days.</p>
-        <p>
+        <s-paragraph>Subscription price: USD 49.99 per 30 days.</s-paragraph>
+        <s-paragraph>
           All available Insignia features. No per-order charges. Artwork size, retention and other technical limits
           still apply.
-        </p>
+        </s-paragraph>
       </s-section>
       <s-section heading="Current subscription">
         {busy && <AdminSkeleton label="Checking current Shopify subscription" />}
-        {failed && <p role="alert">Billing status could not be verified. Try again.</p>}
+        {failed && (
+          <div role="alert">
+            <s-paragraph>Billing status could not be verified. Try again.</s-paragraph>
+          </div>
+        )}
         {view && (
           <>
-            <p class="billing-status" role="status">
-              <s-badge tone={view.status === 'active' || view.status === 'trial' ? 'success' : 'neutral'}>
-                {view.status === 'trial'
-                  ? 'Trial active'
-                  : view.status === 'active'
-                    ? 'Subscription active'
-                    : view.status === 'inactive'
-                      ? 'No active subscription'
-                      : 'Current subscription could not be verified'}
-              </s-badge>
-            </p>
+            <div class="billing-status" role="status">
+              <s-paragraph>
+                <s-badge tone={view.status === 'active' || view.status === 'trial' ? 'success' : 'neutral'}>
+                  {view.status === 'trial'
+                    ? 'Trial active'
+                    : view.status === 'active'
+                      ? 'Subscription active'
+                      : view.status === 'inactive'
+                        ? 'No active subscription'
+                        : 'Current subscription could not be verified'}
+                </s-badge>
+              </s-paragraph>
+            </div>
             {view.recurringPrice && (
-              <p>
+              <s-paragraph>
                 {view.developmentTerms ? 'Development test terms' : 'Current Shopify subscription price'}:{' '}
                 {view.recurringPrice.currency} {view.recurringPrice.amount} per 30 days.
-              </p>
+              </s-paragraph>
             )}
             {view.trialEndsAt && (
-              <p>
+              <s-paragraph>
                 Trial ends <time dateTime={view.trialEndsAt}>{date(view.trialEndsAt)}</time>.
-              </p>
+              </s-paragraph>
             )}
             {view.currentCycle && (
-              <p>
+              <s-paragraph>
                 Current cycle: <time dateTime={view.currentCycle.startTime}>{date(view.currentCycle.startTime)}</time>{' '}
                 to <time dateTime={view.currentCycle.endTime}>{date(view.currentCycle.endTime)}</time>.
-              </p>
+              </s-paragraph>
             )}
             {view.scheduledCancellation && (
-              <p>Cancellation is scheduled. Current access lasts only until Shopify’s current trial or cycle ends.</p>
+              <s-paragraph>
+                Cancellation is scheduled. Current access lasts only until Shopify’s current trial or cycle ends.
+              </s-paragraph>
             )}
             {view.pendingChange && (
-              <p>A subscription change is pending in Shopify. Pending terms do not grant access.</p>
+              <s-paragraph>A subscription change is pending in Shopify. Pending terms do not grant access.</s-paragraph>
             )}
             {!view.newActionsAllowed && (
-              <p>
+              <s-paragraph>
                 New customization offers and publication are unavailable. Existing authorized purchases and artwork
                 remain available within their original limits.
-              </p>
+              </s-paragraph>
             )}
             {view.observedAt && (
-              <p>
+              <s-paragraph>
                 Last checked <time dateTime={view.observedAt}>{date(view.observedAt)}</time>.
-              </p>
+              </s-paragraph>
             )}
             {view.managementUrl ? (
-              <p>
+              <s-paragraph>
                 <s-button href={view.managementUrl} target="_top" variant="primary">
                   Manage billing in Shopify
                 </s-button>
-              </p>
+              </s-paragraph>
             ) : (
-              <p>Billing management is unavailable. Contact support.</p>
+              <s-paragraph>Billing management is unavailable. Contact support.</s-paragraph>
             )}
           </>
         )}

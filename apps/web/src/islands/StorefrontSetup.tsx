@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'preact/hooks';
 import SettingsNavigation from '../components/SettingsNavigation';
+import { useAdminPageReady } from '../shared/admin-page-ready';
 
 export default function StorefrontSetup() {
   const [links, setLinks] = useState<{ button: string; editor: string; repair: string } | null>(null);
+  const [initialized, setInitialized] = useState(false);
+  useAdminPageReady(initialized);
   useEffect(() => {
+    setInitialized(true);
     const shop = (window as unknown as { shopify?: { config?: { shop?: string } } }).shopify?.config?.shop;
     const apiKey = document.querySelector<HTMLMetaElement>('meta[name="shopify-api-key"]')?.content;
     if (!shop || !/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(shop) || !apiKey || !/^[a-f0-9]{32}$/.test(apiKey))

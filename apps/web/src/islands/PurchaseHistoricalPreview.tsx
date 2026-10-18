@@ -2,6 +2,7 @@ import type { PurchaseGroup } from '@insignia/contracts';
 import { PurchasePrivateUrlSchema } from '@insignia/contracts';
 import { type GeometryV1, projectScene, validateGeometry } from '@insignia/visualizer/geometry';
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
+import AdminSkeleton from '../components/AdminSkeleton';
 import { authenticatedJson } from '../shared/admin-request';
 
 /** The purchased design always uses its original artwork, never a later replacement. */
@@ -58,7 +59,6 @@ export default function PurchaseHistoricalPreview({
         const image = view.variantImages.find((image) => image.variantId === variantId)?.image ?? view.image;
         if (!image || !group.imageUrls[image.revisionId]) return unavailable();
         setVisible(true);
-        setMessage('Loading historical artwork preview…');
         const placements = group.placements.filter((placement) =>
           view.placements.some((rect) => rect.id === placement.id),
         );
@@ -206,11 +206,22 @@ export default function PurchaseHistoricalPreview({
           </s-select>
         )}
       </div>
-      <div
-        ref={element}
-        style={{ width: '100%', maxWidth: '560px', height: visible ? '320px' : '0', overflow: 'hidden' }}
-      />
-      <p role="status">{message}</p>
+      <div style={{ position: 'relative', width: '100%', maxWidth: '560px' }}>
+        <div
+          ref={element}
+          style={{ height: visible ? '320px' : '0', overflow: 'hidden', visibility: busy ? 'hidden' : 'visible' }}
+        />
+        {busy && (
+          <div style={{ position: 'absolute', inset: '0' }}>
+            <AdminSkeleton label="Loading purchased design preview" rows={2} />
+          </div>
+        )}
+      </div>
+      {!busy && (
+        <div role="status" aria-live="polite">
+          <s-paragraph>{message}</s-paragraph>
+        </div>
+      )}
       {group.geometry && (
         <s-button disabled={busy} onClick={() => setRefresh((value) => value + 1)}>
           Refresh historical preview

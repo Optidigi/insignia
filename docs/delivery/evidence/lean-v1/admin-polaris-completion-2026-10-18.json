@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-18",
+  "base": "adeeffe02a300b0e578db9ed9e453104332702ab",
+  "scope": "Polaris web components across merchant route import closure, silent route skeletons and clearer product setup/settings",
+  "behavior": [
+    "Removed shared upload native controls/links, native disclosures and typography; private derivatives render through s-image with bounded credential-free fetch/object URLs and retirement fences. Specialized canvas remains the renderer.",
+    "Every full-document merchant route masks content until pinned runtime and initial authenticated read settle, including denial. Same-origin navigation uses silent skeletons; cancellation stays usable, BFCache return revalidates, bootstrap failure and late settlement recover.",
+    "Four-stage configurator starts with editable rules below compact save/status bar; full publication details belong to Review. Product Shopify status remains visible, separate from publication. Settings groups store configuration and account/data; optional permissions are disclosed.",
+    "CI guard traverses all merchant routes and their local imports; shared controls have no exemption. Compiled navigation stays external under existing script CSP; private preview consumers add blob images and only configured exact storage origin."
+  ],
+  "checks": {
+    "broadBrowser": "70 PASS,0 FAIL,0 SKIP on build7; editor, purchase, billing, privacy, shared uploads, image transport and retention",
+    "finalDelta": "PASS final build8: Astro check/build zero errors/warnings/hints; focused6PASS covering eight-route runtime/read masks, internal navigation, cancellation, late settlement, configurator and external CSP bootstrap",
+    "boundaries": "PASS, negative controls plus domain effects18 PASS",
+    "secrets": "PASS",
+    "style": "PASS; repository190 warnings/257 informational diagnostics",
+    "visual": "Synthetic desktop1440x900 and mobile390x844 screenshots inspected; icons stubbed at CDN, canvas1px synthetic image. Native visual proof remains pending."
+  },
+  "reviews": {
+    "agent": "/root/polaris_completion_review",
+    "result": "CLEAR Spec/correctness and Standards/security after impact review",
+    "findingsClosed": [
+      "Cancelled capture-phase navigation could lock page; defer transition until full event dispatch and inspect defaultPrevented.",
+      "Native visible spans bypassed guard; convert and guard span.",
+      "Impact reviewed restored Shopify status, Polaris denial paragraph and late-response timeout retirement."
+    ],
+    "isolation": "Read-only instructions; no claimed OS/network credential isolation"
+  },
+  "failuresRetained": [
+    "Initial missing route skeleton/compact editor expected REDs.",
+    "Navigation inline script blocked by CSP; external compiled asset correction, no unsafe-inline relaxation.",
+    "Old tests relied on hidden sidebar declarations, Draft version punctuation and empty invalid PNG stubs; assertions now preserve declaration/data/transport behavior through revised presentation.",
+    "Regression found lost product-status label and nonrendered raw banner text; corrected.",
+    "Late-read RED proved stale timeout notice, corrected."
+  ],
+  "research": "../../notes/admin-polaris-ux-2026-10-18.md",
+  "native": "Not yet deployed. Existing PR202 native image/schema41 remains current; no migration, provider/product/theme mutation or merchant rollout in this source slice. Native web-only qualification follows exact-head CI/normal integration.",
+  "continuation": "Merge under delegated authority after final exact-head CI, deploy exact CI web image within existing bounded dev grant and verify native routes read-only. Preserve other services, schema41, intentional missing usage migration, immutable facts and cleanup/custody obligations."
+}

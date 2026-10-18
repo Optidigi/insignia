@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import AdminSkeleton from '../components/AdminSkeleton';
 import SettingsNavigation from '../components/SettingsNavigation';
+import { useAdminPageReady } from '../shared/admin-page-ready';
 import { authenticatedJson } from '../shared/admin-request';
 
 type Method = { id: string; name: string; version: string };
@@ -9,6 +10,7 @@ export default function MethodLibrary() {
   const [names, setNames] = useState<Record<string, string>>({});
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(true);
+  useAdminPageReady(!loading);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');

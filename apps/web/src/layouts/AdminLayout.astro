@@ -1,6 +1,7 @@
 ---
 import '../styles/admin-editor.css';
 import AdminNavigation from '../components/AdminNavigation.astro';
+import AdminSkeleton from '../components/AdminSkeleton';
 
 interface Props {
   title: string;
@@ -9,18 +10,30 @@ interface Props {
 const { title, apiKey } = Astro.props;
 ---
 <!doctype html>
-<html lang="en">
+<html lang="en" data-admin-ready="false">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="referrer" content="no-referrer" />
     <meta name="shopify-api-key" content={apiKey} />
     <title>{title} · Insignia</title>
-    <script is:inline src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
-    <script is:inline src="https://cdn.shopify.com/shopifycloud/polaris-1.1.js"></script>
+    <script is:inline defer src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
+    <script is:inline defer src="https://cdn.shopify.com/shopifycloud/polaris-1.1.js"></script>
   </head>
   <body>
     <AdminNavigation />
-    <slot />
+    <div id="admin-route-skeleton">
+      <s-box padding="large"><s-stack gap="base"><s-heading>{title}</s-heading>
+        <s-section><AdminSkeleton label="Page content" rows={6} /></s-section>
+      </s-stack></s-box>
+    </div>
+    <div id="admin-route-failure" hidden>
+      <s-banner tone="critical" heading="Interface unavailable">Reopen Insignia from Shopify Admin to try again.</s-banner>
+    </div>
+    <div id="admin-route-content" inert><slot /></div>
+    <script>
+      import { installAdminNavigation } from '../shared/admin-navigation';
+      installAdminNavigation();
+    </script>
   </body>
 </html>

@@ -1,4 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
+import AdminSkeleton from '../components/AdminSkeleton';
+import PrivatePreviewImage from '../components/PrivatePreviewImage';
 import { authenticatedJson } from '../shared/admin-request';
 import { type ArtworkPreview, type ArtworkSelection, createArtworkUpload, type JsonApi } from './artwork-upload';
 
@@ -223,50 +225,48 @@ export default function ArtworkUpload({
   }
   return (
     <section aria-label="Private artwork">
-      <h3>Artwork preview</h3>
-      <label>
-        Upload artwork{' '}
-        <input
-          type="file"
-          accept="image/svg+xml,image/png,image/jpeg"
-          disabled={disabled || busy}
-          onChange={(event) => {
-            const file = event.currentTarget.files?.[0];
-            event.currentTarget.value = '';
-            void selected(file);
-          }}
-        />
-      </label>
-      <p role="status" aria-live="polite">
-        {message}
-      </p>
+      <s-heading>Artwork preview</s-heading>
+      <s-drop-zone
+        label="Upload artwork"
+        accessibilityLabel="Upload artwork"
+        accept="image/svg+xml,image/png,image/jpeg"
+        disabled={disabled || busy}
+        onChange={(event) => {
+          const file = event.currentTarget.files[0];
+          event.currentTarget.value = '';
+          void selected(file);
+        }}
+        onDropRejected={() => setMessage('Choose an SVG, PNG or JPEG up to 5 MiB.')}
+      />
+      {busy ? (
+        <AdminSkeleton label="Processing artwork" rows={1} />
+      ) : (
+        <div role="status" aria-live="polite">
+          <s-paragraph>{message}</s-paragraph>
+        </div>
+      )}
       {preview && (
-        <img
-          src={preview.url}
-          crossOrigin="anonymous"
-          alt="Verified artwork preview"
-          style={{ maxWidth: '160px', maxHeight: '160px' }}
-        />
+        <PrivatePreviewImage src={preview.url} alt="Verified artwork preview" aspectRatio={preview.aspectRatio} />
       )}
       {pending && (
-        <button type="button" disabled={disabled || busy} onClick={() => void resumeUploaded()}>
+        <s-button disabled={disabled || busy} onClick={() => void resumeUploaded()}>
           Retry uploaded artwork
-        </button>
+        </s-button>
       )}
       {asset && !preview && (
-        <button type="button" disabled={disabled || busy} onClick={() => void renewPreview()}>
+        <s-button disabled={disabled || busy} onClick={() => void renewPreview()}>
           Retry artwork preview
-        </button>
+        </s-button>
       )}
       {asset && allowOriginalDownload && (
-        <button type="button" disabled={disabled || busy} onClick={() => void download()}>
+        <s-button disabled={disabled || busy} onClick={() => void download()}>
           Prepare original download
-        </button>
+        </s-button>
       )}
       {asset && downloadLink && (
-        <a href={downloadLink.url} target="_blank" rel="noopener noreferrer">
+        <s-link href={downloadLink.url} target="_blank">
           Download verified original
-        </a>
+        </s-link>
       )}
     </section>
   );

@@ -6,7 +6,10 @@ import {
   PurchaseViewSchema,
 } from '@insignia/contracts';
 import { useEffect, useRef, useState } from 'preact/hooks';
+import AdminDisclosure from '../components/AdminDisclosure';
 import AdminSkeleton from '../components/AdminSkeleton';
+import PrivatePreviewImage from '../components/PrivatePreviewImage';
+import { useAdminPageReady } from '../shared/admin-page-ready';
 import { authenticatedJson } from '../shared/admin-request';
 import { exactPurchaseMoney } from '../shared/purchase-view';
 import ArtworkUpload from './ArtworkUpload';
@@ -67,18 +70,20 @@ function HistoricalOriginal({
     }
   }
   return (
-    <span>
+    <s-text>
       {' '}
       <s-button type="button" disabled={busy} onClick={() => void download()}>
         Get original uploaded file
       </s-button>
       {link && Date.parse(link.expiresAt) > Date.now() && (
-        <a href={link.url} target="_blank" rel="noopener noreferrer">
+        <s-link href={link.url} target="_blank">
           Download historical original
-        </a>
+        </s-link>
       )}
-      <span role="status">{message}</span>
-    </span>
+      <div role="status">
+        <s-text>{message}</s-text>
+      </div>
+    </s-text>
   );
 }
 function Placement({
@@ -217,14 +222,14 @@ function Placement({
   const label = group.presentation?.labels.placements?.[placement.id] ?? placement.id;
   return (
     <section class="purchase-placement" aria-label={`Artwork ${label}`}>
-      <h4>
+      <s-heading>
         {label} · {group.presentation?.labels.methods?.[placement.methodId] ?? placement.methodId} ·{' '}
         {group.presentation?.labels.steps?.[placement.stepId] ?? placement.stepId}
-      </h4>
-      <p>
+      </s-heading>
+      <s-paragraph>
         Purchased artwork:{' '}
         {placement.originalArtwork.kind === 'deferred' ? 'Logo later' : 'Original file supplied at purchase'}
-      </p>
+      </s-paragraph>
       {placement.originalArtwork.kind === 'revision' &&
         placement.originalArtwork.revisionId !== placement.currentAssetId && (
           <HistoricalOriginal
@@ -234,7 +239,7 @@ function Placement({
           />
         )}
       {placement.currentExpiresAt && (
-        <p>
+        <s-paragraph>
           Artwork available until:{' '}
           <time dateTime={placement.currentExpiresAt}>{recordDate(placement.currentExpiresAt)}</time>.{' '}
           {retentionExpired
@@ -244,7 +249,7 @@ function Placement({
                 ? 'Deletion within 7 days. Download before deletion.'
                 : 'Retention expiry within 30 days. Download before deletion.'
               : ''}
-        </p>
+        </s-paragraph>
       )}
       {assetUsable && !retentionExpired && (
         <>
@@ -257,12 +262,12 @@ function Placement({
         </>
       )}
       {assetUsable && preview?.identity === identity && Date.parse(preview.expiresAt) > Date.now() && (
-        <img src={preview.url} alt={`Verified PNG ${label}`} style={{ maxWidth: '200px' }} />
+        <PrivatePreviewImage src={preview.url} alt={`Verified PNG ${label}`} maxWidth={200} maxHeight={200} />
       )}
       {assetUsable && link?.identity === identity && Date.parse(link.expiresAt) > Date.now() && (
-        <a href={link.url} target="_blank" rel="noopener noreferrer">
+        <s-link href={link.url} target="_blank">
           Download verified original
-        </a>
+        </s-link>
       )}
       {purchase.lines.length > 0 &&
         purchase.artworkState !== 'ARTWORK_LOCKED' &&
@@ -281,7 +286,9 @@ function Placement({
             </s-button>
           </>
         )}
-      <p role="status">{message}</p>
+      <div role="status">
+        <s-paragraph>{message}</s-paragraph>
+      </div>
     </section>
   );
 }
@@ -290,14 +297,16 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
   const [artworkFilter, setArtworkFilter] = useState('all');
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [purchase, setPurchase] = useState<PurchaseView | null>(null);
-  const [message, setMessage] = useState('Loading orders…');
+  const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(true);
+  useAdminPageReady(!busy);
   const [denied, setDenied] = useState(false);
   const current = useRef(0);
   function deny(error: unknown) {
     if ([401, 403].includes((error as { status?: number }).status ?? 0)) {
       current.current++;
       setDenied(true);
+      setBusy(false);
       setPurchase(null);
       setItems([]);
       setMessage('Your Shopify identity or permission could not be verified. Reopen from Shopify Admin.');
@@ -379,9 +388,9 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
       )}
       {message && (
         <s-banner tone="info">
-          <p role="status" aria-live="polite">
-            {message}
-          </p>
+          <div role="status" aria-live="polite">
+            <s-paragraph>{message}</s-paragraph>
+          </div>
         </s-banner>
       )}
       {!denied && (
@@ -392,7 +401,7 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
       {!purchaseId && !denied && (
         <s-section heading="Customized orders">
           {busy && items.length === 0 && <AdminSkeleton label="Loading orders" />}
-          {items.length === 0 && !busy && <p>No customized orders recorded.</p>}
+          {items.length === 0 && !busy && <s-paragraph>No customized orders recorded.</s-paragraph>}
           {nextCursor && (
             <s-button type="button" disabled={busy} onClick={() => void load(nextCursor)}>
               Load older orders
@@ -467,18 +476,20 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
         <>
           <s-section heading="Order summary">
             <s-heading>Order {purchase.orderId.replace('gid://shopify/Order/', '')}</s-heading>
-            <p>
+            <s-paragraph>
               Order created: <time dateTime={purchase.orderCreatedAt}>{recordDate(purchase.orderCreatedAt)}</time>
-            </p>
-            <p>
+            </s-paragraph>
+            <s-paragraph>
               {purchase.isTest === true
                 ? 'Test order.'
                 : purchase.isTest === null
                   ? 'Test status unavailable.'
                   : 'Non-test order.'}
-            </p>
-            <p>{exactPurchaseMoney(purchase.originalTotalMinor, purchase.exponent, purchase.currency)}</p>
-            <p>
+            </s-paragraph>
+            <s-paragraph>
+              {exactPurchaseMoney(purchase.originalTotalMinor, purchase.exponent, purchase.currency)}
+            </s-paragraph>
+            <s-paragraph>
               Shopify payment status: {purchase.financialStatus}. First fully paid:{' '}
               {purchase.firstPaidAt ? (
                 <time dateTime={purchase.firstPaidAt}>{recordDate(purchase.firstPaidAt)}</time>
@@ -486,17 +497,17 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
                 'Not recorded'
               )}
               .
-            </p>
+            </s-paragraph>
             {purchase.cancelledAt && (
-              <p>
+              <s-paragraph>
                 Shopify cancellation: <time dateTime={purchase.cancelledAt}>{recordDate(purchase.cancelledAt)}</time>
-              </p>
+              </s-paragraph>
             )}
-            <p>Shopify owns payment, fulfillment, refunds, returns and restock.</p>
+            <s-paragraph>Shopify owns payment, fulfillment, refunds, returns and restock.</s-paragraph>
             {purchase.exceptions.map((exception, index) => (
-              <p role="alert" key={index}>
-                Reconciliation exception: {exception}
-              </p>
+              <div role="alert" key={index}>
+                <s-paragraph>Reconciliation exception: {exception}</s-paragraph>
+              </div>
             ))}
             <s-button type="button" disabled={busy} onClick={() => void command('reconcile')}>
               Check order updates in Shopify
@@ -504,41 +515,42 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
           </s-section>
           <s-section heading="Purchased variants">
             {purchase.lines.map((line) => (
-              <p key={line.orderLineId}>
+              <s-paragraph key={line.orderLineId}>
                 {line.productId} / {line.variantId}: {line.quantity} ×{' '}
                 {exactPurchaseMoney(line.unitPriceMinor, purchase.exponent, purchase.currency)}
-              </p>
+              </s-paragraph>
             ))}
           </s-section>
           <s-section heading="Artwork and customization">
-            {purchase.lines.length > 0 && <p>Artwork status: {artworkLabel(purchase.artworkState)}</p>}
+            {purchase.lines.length > 0 && (
+              <s-paragraph>Artwork status: {artworkLabel(purchase.artworkState)}</s-paragraph>
+            )}
             {purchase.lines.length === 0 ? (
-              <p>
+              <s-paragraph>
                 Order customization needs verification. Do not begin production until its details have been checked.
-              </p>
+              </s-paragraph>
             ) : purchase.artworkState === 'ERASED' &&
               !purchase.groups.some((group) => Date.parse(group.payloadExpiresAt) > Date.now()) ? (
-              <p>Production detail erased. Historical economics remain.</p>
+              <s-paragraph>Production detail erased. Historical economics remain.</s-paragraph>
             ) : (
               <>
                 {purchase.artworkState === 'ERASED' && purchase.groups.length > 0 && (
-                  <p>
+                  <s-paragraph>
                     {purchase.artworkEvents.some((event) => event.kind === 'LOCK')
                       ? 'Selected artwork unavailable. Artwork lock remains in force.'
                       : 'Selected artwork unavailable; explicitly replace within remaining detail retention.'}
-                  </p>
+                  </s-paragraph>
                 )}
                 {purchase.groups.map((group) => (
                   <section key={group.index} class="purchase-customization">
-                    <h3>Customization {group.index + 1}</h3>
-                    <details>
-                      <summary>Saved production reference</summary>
-                      <p>Historical revision: {group.configRevisionId}</p>
-                    </details>
-                    <p>
+                    <s-heading>Customization {group.index + 1}</s-heading>
+                    <AdminDisclosure label="Saved production reference">
+                      <s-paragraph>Historical revision: {group.configRevisionId}</s-paragraph>
+                    </AdminDisclosure>
+                    <s-paragraph>
                       Design retention deadline:{' '}
                       <time dateTime={group.payloadExpiresAt}>{recordDate(group.payloadExpiresAt)}</time>
-                    </p>
+                    </s-paragraph>
                     <PurchaseHistoricalPreview purchaseId={purchase.purchaseId} group={group} deny={deny} />
                     {group.placements.map((placement) => (
                       <Placement
@@ -571,7 +583,7 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
           </s-section>
           <s-section heading="Attachment history">
             {purchase.artworkEvents.map((event) => (
-              <p key={event.eventId}>
+              <s-paragraph key={event.eventId}>
                 Version {event.version}: {event.kind}{' '}
                 {event.erasedAt ? '— artwork detail erased' : (event.assetId ?? '')}
                 {event.expiresAt && (
@@ -587,25 +599,29 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
                   Date.parse(event.expiresAt) > Date.now() && (
                     <HistoricalOriginal purchaseId={purchase.purchaseId} assetId={event.assetId} deny={deny} />
                   )}
-              </p>
+              </s-paragraph>
             ))}
-            {purchase.artworkEvents.length === 0 && <p>No artwork replacements or locks recorded.</p>}
+            {purchase.artworkEvents.length === 0 && (
+              <s-paragraph>No artwork replacements or locks recorded.</s-paragraph>
+            )}
           </s-section>
           <s-section heading="Shopify refund records">
-            <p>Refund records do not prove that money has settled. Shopify remains the payment authority.</p>
-            {purchase.refunds.length === 0 && <p>No refunds recorded.</p>}
+            <s-paragraph>
+              Refund records do not prove that money has settled. Shopify remains the payment authority.
+            </s-paragraph>
+            {purchase.refunds.length === 0 && <s-paragraph>No refunds recorded.</s-paragraph>}
             {purchase.refunds.map((refund) => (
-              <p key={refund.refundId}>
+              <s-paragraph key={refund.refundId}>
                 {refund.refundId}: {exactPurchaseMoney(refund.amountMinor, purchase.exponent, refund.currency)} ·{' '}
                 <time dateTime={refund.occurredAt}>{recordDate(refund.occurredAt)}</time>
                 {refund.lines.map((line) => (
-                  <span key={line.lineId}>
+                  <s-text key={line.lineId}>
                     {' '}
                     · {line.lineId}: {line.quantity} recorded for refund,{' '}
                     {exactPurchaseMoney(line.amountMinor, purchase.exponent, refund.currency)}
-                  </span>
+                  </s-text>
                 ))}
-              </p>
+              </s-paragraph>
             ))}
           </s-section>
         </>
