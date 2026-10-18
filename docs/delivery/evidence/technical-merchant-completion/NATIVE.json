@@ -1,5 +1,73 @@
 {
   "date": "2026-10-18",
+  "maintenanceServiceClosure20261018": {
+    "classification": "READ_ONLY_NATIVE_USER_BUS_AND_ARTIFACT_PATH_QUALIFICATION",
+    "negative": "systemctl user observation without XDG_RUNTIME_DIR/DBUS_SESSION_BUS_ADDRESS rejected with connect-to-bus error",
+    "positive": "Explicit /run/user/1000 environment reads original inspector PID1827434 and invocation07dcc739bcde44a79eccc6d9a8644776",
+    "sourceCorrection": "Templates use existing UID1000/serveradmin, explicit user bus, read-only home visibility and one /opt/insignia/runtime artifact root; all3service entrypoints resolve in the qualified artifact inventory",
+    "accountServiceDatabaseProviderMutations": 0,
+    "limits": "No service or timer installed, enabled or started. Full snapshot/recovery and deployed-service qualification remain with final production cutover."
+  },
+  "vatLifecycle20261018": {
+    "authority": "../../authority/m5-runtime-resource-execution-2026-10-10.md",
+    "store": "stitchs-vat-verification-20261004.myshopify.com",
+    "providerShopId": "98697478468",
+    "shopId": "579501c7-5849-44d3-93df-4b17af804d9e",
+    "generation": "1",
+    "installation": "gid://shopify/AppInstallation/998524223812",
+    "subscription": "gid://shopify/WebhookSubscription/2237661086020",
+    "install": {
+      "clickAcknowledgedAt": "2026-10-18T22:10:55.592Z",
+      "settledNativeIdentityAt": "2026-10-18T22:13:22.148Z",
+      "freshPreuninstallIdentityAt": "2026-10-18T22:19:50.862Z",
+      "privateDestinationMatches": true,
+      "scopes": ["write_app_proxy", "read_orders", "read_app_proxy"],
+      "planSelection": false,
+      "optionalScopeRequest": false,
+      "ownedConfigsArtworkPreviewsPurchases": [0, 0, 0, 0]
+    },
+    "uninstall": {
+      "intentAt": "2026-10-18T22:19:55.728Z",
+      "operatorSha256": "d669b850520211e1dfa9ea101a8b00dede15bd8883179c2efff6a5f0100cb5c6",
+      "onlineReaderSha256": "0f90ca7ef4f0056cb3f6361ba4b75090a01b37bf336c9e5a6e4d5d897d5682e1",
+      "classification": "UNRESOLVED_DISPATCH_NO_RETRY",
+      "failure": "Operator retained generic STOP only; exact failing stage/dispatch detail unavailable. No result or post-action capture exists.",
+      "sqlObserved": "Generation1 remains active; inbox and independent authority counts zero; protected rewrite-dev generation1 remains active and original purchase/paid hashes match",
+      "supportedAppHistoryAt": "2026-10-18T22:36:00.492Z",
+      "supportedAppHistory": "Insignia remains Installed, with its original installation event; no removal event observed",
+      "limits": "Current presence and absent callbacks cannot prove the original uninstall was not dispatched. No retry, reinstall, artificial webhook or receipt erasure performed. Native callback/deactivation/privacy qualification is not passed."
+    },
+    "review": "Independent read-only correctness/security review cleared each exact single-action operator after correcting freshness and app-link binding. Click completion was never installation/uninstall settlement authority.",
+    "retainedObligations": "Preserve canonical generic/private/compliance receiver and worker plus immutable generation/capability authority for genuine delayed delivery. Raw private operator packet remains due20October; compact audit scope/hash/UNRESOLVED fence is retained here. No data or credential expiry extension.",
+    "ownerDecision": "Owner answered Preserve it; final production gate. Keep installation and unresolved no-retry control; genuine uninstall/privacy qualification is deferred, not passed. See authority/final-production-gates-2026-10-18.json."
+  },
+  "pr211OperationsArtifact20261018": {
+    "sourceMerge": "353dfd0c0d6002ca5067f5a5b5bfa32f8723af09",
+    "sourceHead": "d10b4f05ba6dbd257511cdea95cfcdecfbc89f66",
+    "sourceTree": "5183eaa6a159185a250c848d1b4884152ccfa109",
+    "ciCheckout": "76cecd882d3f688eea90a04e75747cb7ccb82787",
+    "ciRun": 39170946235,
+    "ciAttempt": 1,
+    "artifactId": 12152402285,
+    "manifestSha256": "9428348a9e44e1d28c6167fbdcef99a0e82424891e7e1906b423c8c8ce4a0110",
+    "wrapperSha256": "70250a2075071e70e8a658c6b89bf6a1280e0ddb9a45b5acffa2bd9ab0f324c4",
+    "classification": "EXACT_CI_NATIVE_IMPORT_AND_READ_ONLY_ADAPTER_PASS",
+    "inventoryFiles": 9580,
+    "inspectorArtifactVerifiedUnchangedAndReady": true,
+    "extractionCorrection": "Python data filter adds owner-write bits; full byte/link/inventory qualification precedes restoration of pinned immutable modes. Initial local mode comparison failure retained.",
+    "effects": "Private staging only; no service stop/start, database/provider mutation, backup, restore or cutover",
+    "stagingCleanupBy": "2026-10-20T00:00:00Z"
+  },
+  "pr209EditorNativeRead20261018": {
+    "observedAt": "2026-10-18T22:28:16.450Z",
+    "productId": "10519322493211",
+    "classification": "DESKTOP_MOBILE_CONFIG_PRICE_CANVAS_READ_PASS",
+    "desktop": {"frameWidth":1142,"documentWidth":1127,"previewWidth":330,"canvasLayers":3,"priceFields":1},
+    "mobile": {"frameWidth":379,"documentWidth":364,"previewWidth":334,"canvasLayers":3,"priceFields":1},
+    "publicationStateUnchanged": true,
+    "mutations": "Only local View all settings and viewport changes; no save, price/geometry edit, upload or publication. Normal authentication may reconcile the existing installation/subscription.",
+    "limits": "Existing owned configuration rendering; no storefront visual, purchase or rollout proof"
+  },
   "remainingWorkReadback20261018": {
     "subscription": {
       "classification": "EXACT_UNINSTALL_SUBSCRIPTION_NATIVE_READBACK",
@@ -40,6 +108,7 @@
     }
   },
   "sourceCandidate": "acf61a97eeb755c0e316f8754d3b1b7d7e502cc7",
+  "sourceCandidateScope": "Original alert/routing candidate only; subsequent continuation fields bind their own reviewed source and native observations",
   "alertQualification": {
     "worker": "insignia-alerts-qualification-20261018",
     "sourceSha256": "43e8056ae5231f43838713e849136b3e140459347f355ebad9a6ed5905df2fc2",
