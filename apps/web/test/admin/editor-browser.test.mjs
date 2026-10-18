@@ -2731,3 +2731,46 @@ test('editor guides configuration through prices to publication while keeping di
     'ordinary admin controls use Polaris; shadow internals are excluded',
   );
 });
+
+test('editor keeps the live preview beside settings on desktop and fits mobile without losing the draft', {
+  timeout: 20000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  page.setDefaultTimeout(3000);
+  await page.addInitScript(() => {
+    window.shopify = { idToken: async () => 'synthetic-editor-layout' };
+  });
+  await routePolaris(page, source);
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+    route.fulfill({ body: '', contentType: 'text/javascript' }),
+  );
+  await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
+  await page.route('**/api/admin/products/111/config', (route) => route.fulfill({ json: response(draft()) }));
+  await page.goto(server.base + '/admin/products/111/config');
+  const preview = page.getByRole('img', { name: 'Product placement preview', exact: true });
+  await page.getByText('All changes saved', { exact: true }).waitFor();
+  await preview.waitFor();
+  const rules = page.getByRole('combobox', { name: 'Customization mode', exact: true });
+  const previewBox = await preview.boundingBox(),
+    rulesBox = await rules.boundingBox();
+  assert.ok(
+    previewBox && rulesBox && previewBox.x >= rulesBox.x + rulesBox.width,
+    'Live preview sits beside, rather than far below, configuration controls',
+  );
+  const price = page.getByLabel('Method 1 / Placement 1 / Size step 1 — surcharge (USD)', { exact: true });
+  await price.fill('3.25');
+  await page.getByRole('link', { name: 'Preview', exact: true }).click();
+  assert.equal(await price.inputValue(), '3.25');
+  await page.getByText('Unsaved changes', { exact: true }).waitFor();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await preview.scrollIntoViewIfNeeded();
+  assert.ok(await preview.isVisible());
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  assert.equal(await price.inputValue(), '3.25');
+  if (process.env.M5_CAPTURE_BROWSER === '1')
+    await page.screenshot({ path: '/tmp/insignia-admin-editor-layout-mobile.png', fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  if (process.env.M5_CAPTURE_BROWSER === '1')
+    await page.screenshot({ path: '/tmp/insignia-admin-editor-layout-desktop.png', fullPage: true });
+});
