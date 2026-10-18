@@ -137,5 +137,16 @@
       }
     ],
     "nativeLimits": "No source-runtime replacement or Function/theme release. Native DB-only isolated restore and expiry qualified; object recovery/lifecycle/logging/mail/storage/RPO remain separate."
+  },
+  "runtimeHandover20261018": {
+    "reviewer": "runtime209_handover_review",
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "low",
+    "specCorrectness": "CLEAR",
+    "standardsSecurity": "CLEAR",
+    "operatorSha256": "0e7d71d36e1698bda30bdbd36dfac3160e6b375fe5b6b6f54ce7f03cca9ff662",
+    "continuationSha256": "0c5d38a447012ca2ee8f03d514f176905f4d746e5908dc9c7f22d60e668ad0b8",
+    "scope": "Exact frozen runtime/custody handover and subsequent mount-order-only reconciliation; acknowledged verifier never recreated twice; web/worker attempts remain separately fenced",
+    "limits": "Static procedural read-only review, no enforced credential/network isolation; native receipts inspected, not independently executed; no provider/lifecycle acceptance inferred"
   }
 }
