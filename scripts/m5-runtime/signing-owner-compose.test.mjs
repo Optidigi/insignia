@@ -50,6 +50,14 @@ test('owner overlay adds only fixed plan/journal mounts to the immutable ordinar
           },
         ),
       );
+    // Compose2 omits false; Compose5 retains it. Both must preserve the
+    // explicit source prohibition and may not introduce any extra bind key.
+    const normalizedBinds = (volumes) =>
+      volumes.map(({ bind, ...volume }) => {
+        assert.ok(bind && Object.keys(bind).every((key) => key === 'create_host_path'));
+        assert.equal(bind.create_host_path ?? false, false);
+        return { ...volume, bind: { create_host_path: false } };
+      });
     const ordinary = render(['base.yaml', 'ordinary.yaml']),
       owner = render(['base.yaml', 'ordinary.yaml', 'owner.yaml']);
     const coordinated = render(['base.yaml', 'ordinary.yaml', 'owner.yaml', 'collector.yaml']);
@@ -61,15 +69,17 @@ test('owner overlay adds only fixed plan/journal mounts to the immutable ordinar
     assert.deepEqual(workerService, workerOrdinary.services.worker);
     assert.deepEqual(workerCoordinated.networks, workerOrdinary.networks);
     assert.deepEqual(workerCoordinated.volumes, workerOrdinary.volumes);
-    assert.deepEqual(workerVolumes, [
+    assert.deepEqual(normalizedBinds(workerVolumes), [
       {
         type: 'bind',
         source: join(directory, 'private-collector-bridge'),
         target: '/run/insignia/release-verification',
         read_only: true,
-        bind: {},
+        bind: { create_host_path: false },
       },
     ]);
+    const collectorSource = await readFile(join(directory, 'collector.yaml'), 'utf8');
+    assert.equal(collectorSource.match(/create_host_path: false/g)?.length, 1);
     const workerSource = await readFile(join(directory, 'worker-collector.yaml'), 'utf8');
     assert.equal(workerSource.match(/create_host_path: false/g)?.length, 1);
     assert.deepEqual(coordinated.services.database, ordinary.services.database);
@@ -78,12 +88,12 @@ test('owner overlay adds only fixed plan/journal mounts to the immutable ordinar
     const { volumes: ownerVolumes, ...ownerWeb } = owner.services.web;
     assert.deepEqual(coordinatedWeb, ownerWeb);
     assert.deepEqual(coordinatedVolumes.slice(0, ownerVolumes.length), ownerVolumes);
-    assert.deepEqual(coordinatedVolumes.at(-1), {
+    assert.deepEqual(normalizedBinds([coordinatedVolumes.at(-1)])[0], {
       type: 'bind',
       source: join(directory, 'private-collector-bridge'),
       target: '/run/insignia/release-verification',
       read_only: true,
-      bind: {},
+      bind: { create_host_path: false },
     });
     assert.deepEqual(owner.services.database, ordinary.services.database);
     assert.deepEqual(owner.networks, ordinary.networks);
@@ -93,11 +103,7 @@ test('owner overlay adds only fixed plan/journal mounts to the immutable ordinar
     // Check explicit source plus renderer semantics; never accept true/extra keys.
     const ownerSource = await readFile(join(directory, 'owner.yaml'), 'utf8');
     assert.equal(ownerSource.match(/create_host_path: false/g)?.length, 2);
-    const normalized = volumes.map(({ bind, ...volume }) => {
-      assert.ok(bind && Object.keys(bind).every((key) => key === 'create_host_path'));
-      assert.equal(bind.create_host_path ?? false, false);
-      return { ...volume, bind: { create_host_path: false } };
-    });
+    const normalized = normalizedBinds(volumes);
     assert.deepEqual(normalized, [
       {
         type: 'bind',
