@@ -102,7 +102,16 @@
     "red": "Built-page browser assertion failed App Bridge forbids defer before correction.",
     "green": "Web Astro check/build PASS; focused5 browser PASS including script contract, all-eight-route slow Polaris, navigation, cancellation and late settlement. Style/secrets PASS.",
     "review": "Independent /root/polaris_completion_review Spec/correctness and Standards/security CLEAR.",
-    "limitation": "Parser-blocking App Bridge can delay initial body/skeleton parsing on a cold slow App Bridge download. Host navigation feedback and subsequent Polaris/data skeletons remain; no claim of painting before App Bridge."
+    "limitation": "Parser-blocking App Bridge can delay initial body/skeleton parsing on a cold slow App Bridge download. Host navigation feedback and subsequent Polaris/data skeletons remain; no claim of painting before App Bridge.",
+    "ciFollowup": {
+      "failedHead": "e954bb9f677a883eee7572063ed15f49d2d0b6fc",
+      "foundationAttempt1": 39140315425,
+      "observedFailure": "Interrupted publication recovery test exceeded its30s deadline; no specific operation stack. Other206 web tests PASS,54 environment SKIP.",
+      "diagnosis": "Unchanged focused test passed8 consecutive local runs. Holding a real font-CDN response at the boundary reproduced page.goto waiting for load and a bounded navigation timeout. This demonstrates an uncontrolled external dependency, not the unobserved exact cause of the CI stall.",
+      "testOnlyCorrection": "Stub font-CDN bytes within this publication test, matching existing browser boundary fixtures; set5s per-operation timeout for actionable failures. Keep30s whole-test deadline and every identity/key/body/reload/write-count/durable-state/invalid-price assertion.",
+      "checks": "Corrected focused test8consecutivePASS; independent /root/polaris_completion_review CLEAR both axes. No production changes. Final corrected-head CI pending.",
+      "runtime": "WorkingPR202web/schema41 remains deployed; no native operation in this CI followup."
+    }
   },
   "operationReview": {
     "agent": "/root/admin202_operator_review",

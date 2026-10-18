@@ -1029,6 +1029,9 @@ test('interrupted publication resumes the identical request after reload and rea
     window.shopify = { idToken: async () => 'synthetic-publish-token' };
   });
   await routePolaris(page, source);
+  page.setDefaultTimeout(5000);
+  // Font CDN latency is unrelated to publication identity and must not block page load.
+  await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
   await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
     route.fulfill({ body: '', contentType: 'text/javascript' }),
   );
