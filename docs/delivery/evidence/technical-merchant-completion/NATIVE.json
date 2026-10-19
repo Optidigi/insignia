@@ -1250,7 +1250,7 @@
   },
   "canonicalTypedDeployment20261019": {
     "ownerAuthorization": "Direct owner request: ok, deploy latest changes; existing development composition only. Production/native owner gates unchanged.",
-    "classification": "PARTIAL_DEPLOYMENT_WEB_ROLLED_BACK_PENDING_RUNTIME_DEPENDENCY_FIX",
+    "classification": "CURRENT_DEVELOPMENT_RUNTIME_DEPLOYMENT_AND_NATIVE_READS_PASS",
     "source": {
       "merge": "7175908041cc9ebd7e8e667fc535ac6741b1998d",
       "reviewedHead": "68527fb257cfde3f6f0ec2b19427d65d0e04e5ab",
@@ -1258,17 +1258,20 @@
       "tree": "824cf04099d43bb18aaccd5293cf2d027e04b309",
       "runtimeRun": 39241035248,
       "attempt": 1,
-      "syntheticAndNormalMergeParentsAndTreeVerified": true
+      "syntheticAndNormalMergeParentsAndTreeVerified": true,
+      "scope": "PR216 initial update and unchanged worker/verifier/inspector; corrected web source is recorded below."
     },
     "current": {
-      "web": "sha256:d138d0ad1c354a476fee235ff1fa7843c08b5a227026a0f59e8dbbb31b3c8fdd",
+      "web": "sha256:40e5c06abb018923a2b9db714ae5c140e6b3d1958ef9c5d8bfde2adc537ac8f5",
       "worker": "sha256:fae3bfac3f671174711b63a4e10f546d27510ddb87f613f9df4e8ac261e60f45",
       "verifier": "sha256:6ff86f4f01da369f67256bc57d28624a04ee0bf31d5c250a9815f4c1b7b84322",
       "inspectorTree": "824cf04099d43bb18aaccd5293cf2d027e04b309",
       "inspectorManifest": "fb83410116c30bdf852aea23873ea7a8d11c3a92b6cd098829fb42dca8db58a7",
       "inspectorServiceSha256": "d81c280d94363e8b9ed691c30533f8f5d834766194f7a6ea4b174d9171df4b30",
       "allFourRunning": true,
-      "webWorkerDockerHealthy": true
+      "webWorkerDockerHealthy": true,
+      "webSourceTree": "eaa21061e4397ac9fcb33de68dafbbb84b26a25d",
+      "workerVerifierInspectorSourceTree": "824cf04099d43bb18aaccd5293cf2d027e04b309"
     },
     "qualification": {
       "immutableArchivesBlobsLayersConfigHashesVerified": true,
@@ -1293,7 +1296,9 @@
       "inspectorPrivateEnvironmentStorageAndSocketDirectoryPreserved": true,
       "unrelatedContainerConfigurationsPidsAndStartTimesUnchanged": 32,
       "purchasePaidGenerationDestinationAndSchemaFactsUnchanged": true,
-      "currentQueueCredentialFenceSelectOnly": true
+      "currentQueueCredentialFenceSelectOnly": true,
+      "protectedFactsUnchangedAfterFinalNativeReads": true,
+      "temporaryBrowserDisplayStopped": true
     },
     "freshIndependentRelease": {
       "requestId": "f0846261-8fb2-44a7-a14b-42b2537d6c26",
@@ -1327,8 +1332,94 @@
       "VAT": "998524223812 generation1 UNRESOLVED_NO_RETRY; preserve receivers/worker and immutable authority.",
       "productionRollout": false,
       "installedMonitoringOrFullObjectRecovery": false,
-      "nativeUi": "Latest web did not qualify; failed native API observation retained. Prior UI evidence stays source-bound.",
+      "nativeUi": "Latest corrected web seven sections/editor desktop/mobile and six authenticated reads qualified; prior UI receipts retain their separate source-bound scope.",
       "retention": "Private backup/staging/log copies due20October; original artwork/design21/22/24October unchanged; permanent artifacts/config/auth/journals and unresolved authority are active custody, not temporary cleanup."
+    },
+    "initialClassification": "PARTIAL_DEPLOYMENT_WEB_ROLLED_BACK_PENDING_RUNTIME_DEPENDENCY_FIX",
+    "correctedWebDeployment": {
+      "pr": 217,
+      "merge": "8b5eb58a2212892bde5b6cc3a3c3bf8cb0ea7ec2",
+      "reviewedHead": "56b0ee6ed1706c0a48b8a72a0bfd2124fb8d68d8",
+      "tree": "eaa21061e4397ac9fcb33de68dafbbb84b26a25d",
+      "ciBuildHead": "3793effbc0c7de8a01d5cc7b11a2e2f167d14c2f",
+      "runtimeRun": 39247174182,
+      "attempt": 1,
+      "artifactId": 12184660834,
+      "archiveSha256": "ffaf448f682eaf993ac5b45f83e3097451aa8318b18ddd4f84dac2eaa3a414cc",
+      "archiveBytes": 455567360,
+      "ociImageManifest": "sha256:40e5c06abb018923a2b9db714ae5c140e6b3d1958ef9c5d8bfde2adc537ac8f5",
+      "configDigest": "sha256:31d498dfd44b5e74799cddb4b901e65aa462fe910b6adc6836afd2968367b207",
+      "at": "2026-10-19T12:02:31.667Z",
+      "container": "aaf003eb7f069ed32b5da252c69889917cafdaa69d4007d104cb39d79a057242",
+      "other34ContainersAndPidsUnchanged": true,
+      "imageOnlyConfigurationParity": true,
+      "gracefulStopAttempts": 1,
+      "upAttempts": 1,
+      "retries": 0,
+      "allFinalHeadChecksPassed": {
+        "foundation": 39247174190,
+        "durableCore": 39247174239,
+        "runtime": 39247174182
+      },
+      "coldApiRegression": "Observed500 before correction; actual relocated minimal-config API503 guard passes. Native unsigned API401 and authenticated API200 after deployment."
+    },
+    "nativeUiVerification": {
+      "at": "2026-10-19T12:08:14.374Z",
+      "scope": "Existing authorized owner session; seven admin sections plus existing product10519322493211 editor; desktop/mobile read-only navigation. No persisted edit, upload, save, publication, purchase or method mutation.",
+      "sections": [
+        "products",
+        "orders",
+        "settings",
+        "settings/methods",
+        "settings/storefront",
+        "settings/billing",
+        "settings/privacy"
+      ],
+      "editor": "products/10519322493211/config",
+      "editorCanvasLayers": 3,
+      "polarisDefinedAllViews": true,
+      "desktopMobileNoHorizontalOverflow": true,
+      "apiReads": [
+        {
+          "path": "/api/admin/products",
+          "status": 200,
+          "sha256": "c307646a909b7bfe9f018a27bb12c7a8739573d88a6fa22f2b4d24eaad35cc57"
+        },
+        {
+          "path": "/api/purchases/v1",
+          "status": 200,
+          "sha256": "17360f2914f98b986b4f5d832c8dcac3ab49c38e24e542922030b9ff40addd0f"
+        },
+        {
+          "path": "/api/admin/methods",
+          "status": 200,
+          "sha256": "12b075d6cc7d142a4abe22c6c30f9d04d0f32f9e6c49feea459f3fc80110b0f1"
+        },
+        {
+          "path": "/api/admin/billing",
+          "status": 200,
+          "sha256": "e48011a88016582e74dd26d04f20058c544585d5100f901c25c3fef679aa3e4c"
+        },
+        {
+          "path": "/api/purchases/v1/privacy",
+          "status": 200,
+          "sha256": "eef46741adfc3a9f76294d3b78f37a45f113092ac9d44ee77c7a038a88ff09a1"
+        },
+        {
+          "path": "/api/admin/products/10519322493211/config",
+          "status": 200,
+          "sha256": "dc92c8b1cdc38f2a1c1fed224a7e273414f37819f8ed233f4e0e89d3bd287029"
+        }
+      ],
+      "apiReadCount": 6,
+      "applicationMutationRequests": 0,
+      "pageErrors": 0,
+      "staticRoutes": "Settings overview and storefront setup require no API request. Expected authenticated paths were derived from actual source, then awaited explicitly; no arbitrary seven-request count.",
+      "retainedProbeLimits": [
+        "Earlier display99 had no live X server; headless probe lacked app frame. Owned display105 provided the existing approved session without login/cookie transfer.",
+        "Two initial completed-view probes failed only an incorrect minimum-seven-response harness assertion. Source-mapped final probe requires all six actual dynamic API paths200 and retains all observed responses; prior attempts are not claimed PASS."
+      ],
+      "privateScreenshotRetention": "20October2026; no screenshots, tokens or raw response bodies committed."
     }
   }
 }
