@@ -1235,5 +1235,17 @@
       "independentDiagnosis": "/root/technical_completion_audit read-only source/stage analysis: no exact cause or deterministic code defect established; preserve original503, qualify current reads, add typed sanitized stage diagnostics only if it recurs.",
       "recurrenceAction": "Investigate exact lifecycle stage with sanitized typed diagnostics before claiming a fix; never weaken auth/enrollment or retry an unknown mutation."
     }
+  },
+  "pr215LateReadFixtureCorrection": {
+    "classification": "LOCAL_FIXTURE_CORRECTION_PASS_FINAL_CI_PENDING",
+    "failedHead": "d9819b65dfa11c528219fcce8be809a23d44457a",
+    "failedFoundationRun": 39184428571,
+    "failure": "Late privacy empty state did not appear within2500ms; originalfixtureadvanced16sthrougha10sauthenticatedrequestdeadline.214PASS/1FAIL/55environmentSKIP fullweb.",
+    "red": "Awaiting actualreadstartbeforethe16sadvance reproduces originaltimeout.",
+    "correction": "Gate actual emittedMerchantPrivacy HTTPchunk for12s ofbootstrap time, release hydration andawait actualAPIreadstart, thenadvance4s. Totalbootstrap16s exceeds15swatchdog whilevalidreadremainsinsideunchanged10sdeadline. Release response; originalempty/failurehidden/contentusable assertions and2500msdeadline retained.",
+    "productionRuntimeChanged": false,
+    "localFocusedChecks": "3PASS loading/cancellednavigation/latevalidread; full56editorfile running.",
+    "independentReview": "/root/completion_evidence_review correctness/securityCLEAR; proceduralread-only, no execution/isolation/modelidentity claim",
+    "retainedLogSha256": "a79623a7caecb57df2565cfd1a4bb179525b36f6e7ea60025b48789e13e18c05"
   }
 }
