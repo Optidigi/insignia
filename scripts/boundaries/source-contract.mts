@@ -49,6 +49,10 @@ const retiredRoots = [
     `scripts/${name}/`,
     'scripts/runtime/, scripts/worker/ and scripts/release/',
   ]),
+  ...['m5-callback-qualification', 'm5-owner-lifecycle'].map((name) => [
+    `scripts/${name}/`,
+    'retired feasibility prototype; original bytes remain in Git, current runtime is under deployment/lifecycle/',
+  ]),
   ...[
     'm5-002',
     'm5-004',

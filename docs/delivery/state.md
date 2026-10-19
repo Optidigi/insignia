@@ -6,7 +6,7 @@ Observed 19 October 2026. **Merchant UI is owner-unaccepted and assigned to the 
 
 The current specification is [implementation-plan.md](../architecture/implementation-plan.md); it includes the Lean behavior/architecture map and merchant route/API/DTO/test inventory. [Delivery and permissions](operating-model.md) owns the engineering process and actual resource scope. Current source is the fetched Git ref, not a historic receipt's SHA: use `git fetch origin`, `git rev-parse HEAD origin/main` and preserve newer work before editing.
 
-A prior transient native authentication503 has an unconfirmed cause; later successful reads do not establish a code fix. Preserve that observation and diagnose it if it recurs during authorized UI work.
+A prior transient native authentication 503 has an unconfirmed cause; later successful reads do not establish a code fix. Preserve that observation and diagnose it if it recurs during authorized UI work.
 
 The implemented Lean path covers configuration/publication, exact per-garment surcharges, signed whole-quote authorization, recurring-only entitlement, private artwork processing, purchase reconciliation and original/historical-preview access. A bounded USD/US development test journey and zero-cost subscription/cancel/reauthorization have native evidence. That does not establish commercial charging, every merchant/currency/context, visual fidelity, production recovery or rollout. Synthetic/current-source tests remain distinct from native results. A prior post-cancellation browser-download failure has an unproved cause; successful scoped authorization/physical retrieval was narrower evidence, not a fabricated browser PASS.
 

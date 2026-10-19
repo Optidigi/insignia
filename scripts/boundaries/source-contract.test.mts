@@ -88,6 +88,17 @@ test('current routing documents reject broken local links without scanning histo
   assert.doesNotThrow(() => inspectMaintainedSources(root, policy));
 });
 
+test('retired callback feasibility aliases remain blocked after prototype retirement', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'insignia-retired-callback-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  execFileSync('git', ['init', '-q', root]);
+  for (const name of ['m5-callback-qualification', 'm5-owner-lifecycle']) {
+    const retired = ['scripts', name, 'operator.mts'].join('/');
+    writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: { qualify: `node ${retired}` } }));
+    assert.throws(() => inspectMaintainedSources(root, { projects: [] }), /RETIRED_EXECUTABLE_REFERENCE/);
+  }
+});
+
 test('CLI discovery rejects deleted web directories and maintained docs reject missing command targets', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'insignia-command-targets-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
