@@ -158,7 +158,18 @@ test('current compiled web package survives relocation and serves HTTP on the co
         assert.ok(
           required(page.headers.get('content-security-policy')).includes('frame-ancestors https://admin.shopify.com'),
         );
-        assert.equal(await page.text(), 'Admin configuration unavailable');
+        assert.match(required(page.headers.get('content-type')), /^text\/html/);
+        const html = await page.text();
+        assert.match(html, /<s-page[^>]*heading="Application unavailable"/);
+        assert.match(html, /<s-banner[^>]*tone="critical"[^>]*heading="Insignia could not open"/);
+        assert.match(
+          html,
+          /<s-link href="https:\/\/admin\.shopify\.com" target="_top">Return to Shopify Admin<\/s-link>/,
+        );
+        assert.match(html, /shopifycloud\/polaris-1\.1\.js/);
+        assert.match(html, /data-admin-ready="true"/);
+        assert.doesNotMatch(html, /shopify-api-key|shopifycloud\/app-bridge|<s-app-nav|id="admin-route-skeleton"/);
+        assert.ok(!html.includes('22222222222222222222222222222222'), 'Browser input must not supply a client key');
       }
     }
   } finally {

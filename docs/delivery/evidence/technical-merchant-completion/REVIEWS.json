@@ -240,6 +240,21 @@
       "redGreen": "Original test reproduced RED with synthetic unreachable DATABASE_URL. Same poisoned parent environment now passes full operations suite62pass/0fail/1integration skip; real backup integration was qualified separately.",
       "review": "behavior_review independent bounded impact CLEAR: absolute Node, local files/socket, injected Docker/inspector and OS flock only; minimal PATH supplies actual dependencies.",
       "validation": "Operations strict compiler, targeted Biome, source inventory and diff checks PASS. Final updated-head CI required."
+    },
+    "postCiPortableWebRecovery": {
+      "failedHead": "cdc85ac8b48863fbda46e8bc0b4501715fada7a1",
+      "run": "https://github.com/Optidigi/insignia/actions/runs/39239589157",
+      "cause": "Portable web test retained the obsolete plain-text missing-configuration expectation after the intentional Polaris recovery implementation.",
+      "correction": "Check actual Polaris page/banner/recovery link, pinned runtime and ready state; reject App Bridge/nav/skeleton/metakey and browser-supplied key. Existing503/cache/CSP/binding/restart/relocation controls remain.",
+      "localChecks": "Observed same RED after priming pnpm metadata without changing lockfile/pins, then5 actual portable-web/address/app-entry tests PASS without skips. Tooling strict compiler, Biome, source/reference and diff checks PASS.",
+      "review": "behavior_review independent bounded correctness/security impact CLEAR; no production change or weakened acceptance.",
+      "inheritedRuntimeEvidence": "Run39239589157 passed operations image, inspector packaging, independent verifier offline image, worker image/OS, image identity and Compose stages before this web test failure. Source-specific CI observations, no deployment/native acceptance.",
+      "limit": "Final updated-head CI remains required.",
+      "lateLocalRuntimeQualification": {
+        "checks": "Fresh PG18: webhook metadata quarantine1/1 and uninstall-authority quarantine1/1 with required safety flag, zero skips; separate empty database all45up/latestrollback/reup PASS.",
+        "limits": "Synthetic local HTTP/worker quarantine only,0provider actions. Genuine native uninstall/privacy remains blocked; VAT unresolved authority preserved.",
+        "cleanup": "Owned fixture stopped and removed including generated credentials/data; redacted logs retained."
+      }
     }
   }
 }
