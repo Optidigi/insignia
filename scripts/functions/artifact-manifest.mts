@@ -45,6 +45,9 @@ const requiredInputs: string[] = [
   '.m1-artifacts/m4-003-public-config-replay.json',
   'packages/cart-authorization/fixtures/currency-matrix-v1.json',
   'packages/cart-authorization/fixtures/whole-quote-v2.json',
+  'packages/cart-authorization/fixtures/accepted-quote-example.json',
+  'packages/cart-authorization/fixtures/persisted-negative-vector.json',
+  'packages/cart-authorization/fixtures/QUOTE-PROVENANCE.json',
 ];
 export function artifactManifest(root = ROOT): number {
   const required = [

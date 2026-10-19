@@ -98,6 +98,23 @@ for (const top of ['apps', 'packages', 'crates']) {
     }
   }
 }
+// Sealed provider-response records preserve public identities and exact hashes.
+// Unlike synthetic package fixtures, these offline records may contain public IDs, never credentials.
+const recordedCredential =
+  /_insignia_fixture_role|shpat_|shpss_|BEGIN (?:RSA |EC )?PRIVATE KEY|SHOPIFY_PARTNER_API_TOKEN|SHOPIFY_APP_CLIENT_SECRET|SHOPIFY_API_SECRET|"(?:seedHex|privateKey|clientSecret)"\s*:/i;
+function scanRecordedFixture(relative: string) {
+  const full = resolve(root, relative);
+  if (statSync(full).isDirectory()) {
+    for (const child of readdirSync(full)) scanRecordedFixture(`${relative}/${child}`);
+    return;
+  }
+  assert.ok(
+    !recordedCredential.test(readFileSync(full, 'utf8')),
+    `recorded fixture contains credential material: ${relative}`,
+  );
+  fixtureFiles.push(relative);
+}
+scanRecordedFixture('fixtures');
 scanFixture('packages/domain/src/money.test.ts');
 scanFixture('scripts/functions/generate-fixtures.mts');
 scanFixture('scripts/functions/replay.mts');

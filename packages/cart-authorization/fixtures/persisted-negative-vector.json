@@ -1,0 +1,245 @@
+{
+  "schemaVersion": "m4-002-pg-persisted-vector-v1",
+  "provenance": "synthetic PostgreSQL 18 accepted-quote test; exact persisted carriers and signed allocation verified",
+  "quoteId": "dc2be543-a6c3-4ff2-864d-31a3e616462f",
+  "setId": "a200c550-4bb5-43eb-a81f-db642c38840a",
+  "quoteSha256": "0ea38e0e00e04f588946bf96df13e8cb3ff589c1c95b009f08e895c54fd3afd2",
+  "quote": {
+    "schemaVersion": "m4-accepted-quote-v1",
+    "quoteId": "dc2be543-a6c3-4ff2-864d-31a3e616462f",
+    "shopId": "6a5e9e92-8b75-43f4-b601-eb742c2c79b6",
+    "installationGeneration": "1",
+    "authorizationGeneration": "b60e4145-474a-47c4-a09e-c4800c6b2224",
+    "authorizationEpoch": 0,
+    "acceptedAt": "2026-11-01T05:30:00.000Z",
+    "acceptedDate": "2026-11-01",
+    "acceptedDay": 20758,
+    "validThroughDay": 20760,
+    "country": "US",
+    "marketId": "42",
+    "shopCurrency": "USD",
+    "shopTimezone": "America/New_York",
+    "presentmentCurrency": "USD",
+    "presentmentExponent": 2,
+    "policyVersion": "synthetic-v1",
+    "recognizedPolicyId": "synthetic",
+    "trial": true,
+    "qualifyingUsageDisposition": "WAIVE_TRIAL",
+    "physicalGroups": [
+      {
+        "productId": "1ab54fd5-48fd-4542-a57f-9593a351c9ec",
+        "configRevisionId": "edb2835e-3f26-458d-8760-4eb59dea5097",
+        "revisionContentHash": "7de94598c38e879b44fdd281a06969742950b17191cda31f571633c7388c3fb2",
+        "canonicalIdentitySha256": "35717b5988fbd6e7a1616b143000f46d546a61c7f94a1fc490899c3b896a56b7",
+        "variants": [
+          {
+            "variantId": "700",
+            "quantity": 2
+          }
+        ]
+      }
+    ],
+    "artworkChecks": [
+      {
+        "choiceSha256": "e4c04a61908db61c66955e801f4f297c272c4eb7ec7db9a675cfab5f6680a16b",
+        "kind": "revision",
+        "lastFullyUsableLocalDay": 20760,
+        "observedAt": "2026-11-01T05:30:00.000Z"
+      }
+    ],
+    "effectiveRevisions": [
+      {
+        "configId": "444b8cfb-58e7-4863-ad33-aa3811bcce26",
+        "operationId": "6d96e5f8-a0de-4224-93c9-d4fc17496707",
+        "productId": "1ab54fd5-48fd-4542-a57f-9593a351c9ec",
+        "revisionId": "edb2835e-3f26-458d-8760-4eb59dea5097",
+        "contentHash": "7de94598c38e879b44fdd281a06969742950b17191cda31f571633c7388c3fb2"
+      }
+    ],
+    "catalogSnapshots": [
+      {
+        "shopId": "6a5e9e92-8b75-43f4-b601-eb742c2c79b6",
+        "installationGeneration": "1",
+        "productId": "1ab54fd5-48fd-4542-a57f-9593a351c9ec",
+        "variantId": "700",
+        "productIdVerified": true,
+        "context": {
+          "country": "US"
+        },
+        "amount": "0.00",
+        "currencyCode": "USD",
+        "sourceApiVersion": "2026-07",
+        "observedAt": "2026-11-01T05:30:00.000Z",
+        "freshUntil": "2026-11-01T05:35:00.000Z",
+        "correlation": {
+          "requestId": null
+        }
+      }
+    ],
+    "fxSnapshot": null,
+    "economics": {
+      "version": "m4-quote-economics-v1",
+      "shopId": "6a5e9e92-8b75-43f4-b601-eb742c2c79b6",
+      "pricingEngineVersion": "m2-pricing-v1",
+      "roundingPolicy": "m2-half-even-v1",
+      "currency": {
+        "version": "m2-currency-resolution-v1",
+        "presentmentCurrency": "USD",
+        "exponents": {
+          "USD": 2
+        }
+      },
+      "fx": null,
+      "effectiveAt": "2026-11-01T05:30:00.000Z",
+      "marketContext": "US:42",
+      "customizedQuantity": 2,
+      "totalMinor": "1",
+      "groups": [
+        {
+          "shopId": "6a5e9e92-8b75-43f4-b601-eb742c2c79b6",
+          "productId": "1ab54fd5-48fd-4542-a57f-9593a351c9ec",
+          "configRevisionId": "edb2835e-3f26-458d-8760-4eb59dea5097",
+          "revisionContentHash": "7de94598c38e879b44fdd281a06969742950b17191cda31f571633c7388c3fb2",
+          "quantity": 2,
+          "setupComponents": [
+            {
+              "ruleId": "setup",
+              "applicabilityKey": "general",
+              "role": "setup",
+              "selectedMinQuantity": null,
+              "multiplicity": 1,
+              "sourceDecimal": "0.03",
+              "resolvedMinor": "3",
+              "resolution": "shop-currency"
+            }
+          ],
+          "unitComponents": [
+            {
+              "ruleId": "negative-placement",
+              "applicabilityKey": "placement:front",
+              "role": "unit",
+              "selectedMinQuantity": null,
+              "multiplicity": 1,
+              "sourceDecimal": "-0.01",
+              "resolvedMinor": "-1",
+              "resolution": "shop-currency"
+            }
+          ],
+          "setupMinor": "3",
+          "customizationUnitMinor": "-1",
+          "baseTotalMinor": "0",
+          "totalMinor": "1",
+          "variants": [
+            {
+              "variantId": "700",
+              "quantity": 2,
+              "contextualBaseMinor": "0",
+              "contextId": "US:42:2026-11-01T05:30:00.000Z:",
+              "buckets": [
+                {
+                  "variantId": "700",
+                  "quantity": 1,
+                  "unitOrdinalStart": 1,
+                  "unitOrdinalEnd": 1,
+                  "setupPerUnitMinor": "2",
+                  "unitPriceMinor": "1",
+                  "lineTotalMinor": "1"
+                },
+                {
+                  "variantId": "700",
+                  "quantity": 1,
+                  "unitOrdinalStart": 2,
+                  "unitOrdinalEnd": 2,
+                  "setupPerUnitMinor": "1",
+                  "unitPriceMinor": "0",
+                  "lineTotalMinor": "0"
+                }
+              ]
+            }
+          ],
+          "canonicalIdentitySha256": "35717b5988fbd6e7a1616b143000f46d546a61c7f94a1fc490899c3b896a56b7"
+        }
+      ],
+      "lines": [
+        {
+          "variantId": "700",
+          "quantity": 1,
+          "unitOrdinalStart": 1,
+          "unitOrdinalEnd": 1,
+          "setupPerUnitMinor": "2",
+          "unitPriceMinor": "1",
+          "lineTotalMinor": "1",
+          "lineIndex": 0,
+          "shopId": "6a5e9e92-8b75-43f4-b601-eb742c2c79b6",
+          "productId": "1ab54fd5-48fd-4542-a57f-9593a351c9ec",
+          "configRevisionId": "edb2835e-3f26-458d-8760-4eb59dea5097",
+          "revisionContentHash": "7de94598c38e879b44fdd281a06969742950b17191cda31f571633c7388c3fb2",
+          "canonicalIdentitySha256": "35717b5988fbd6e7a1616b143000f46d546a61c7f94a1fc490899c3b896a56b7"
+        },
+        {
+          "variantId": "700",
+          "quantity": 1,
+          "unitOrdinalStart": 2,
+          "unitOrdinalEnd": 2,
+          "setupPerUnitMinor": "1",
+          "unitPriceMinor": "0",
+          "lineTotalMinor": "0",
+          "lineIndex": 1,
+          "shopId": "6a5e9e92-8b75-43f4-b601-eb742c2c79b6",
+          "productId": "1ab54fd5-48fd-4542-a57f-9593a351c9ec",
+          "configRevisionId": "edb2835e-3f26-458d-8760-4eb59dea5097",
+          "revisionContentHash": "7de94598c38e879b44fdd281a06969742950b17191cda31f571633c7388c3fb2",
+          "canonicalIdentitySha256": "35717b5988fbd6e7a1616b143000f46d546a61c7f94a1fc490899c3b896a56b7"
+        }
+      ]
+    }
+  },
+  "quoteEconomicsVersion": "m4-quote-economics-v1",
+  "totalMinor": "1",
+  "lineUnitMinor": [
+    "1",
+    "0"
+  ],
+  "functionVector": {
+    "name": "pg_persisted_negative_adjustment",
+    "header": {
+      "keyId": 7,
+      "generationHex": "b60e4145474a47c4a09ec4800c6b2224",
+      "epoch": 0,
+      "quoteHex": "dc2be543a6c34ff2864d31a3e616462f",
+      "setHex": "a200c5504bb543eba81fdb642c38840a",
+      "count": 2,
+      "currency": "USD",
+      "exponent": 2,
+      "country": "US",
+      "marketId": "42",
+      "validThroughDay": 20760,
+      "totalQuantity": 2,
+      "totalMinor": "1"
+    },
+    "members": [
+      {
+        "index": 0,
+        "variantId": "700",
+        "quantity": 1,
+        "unitMinor": "1"
+      },
+      {
+        "index": 1,
+        "variantId": "700",
+        "quantity": 1,
+        "unitMinor": "0"
+      }
+    ],
+    "envelope": "SVNHMgIAAAe2DkFFR0pHxKCexIAMayIkAAAAANwr5UOmw0_yhk0xo-YWRi-iAMVQS7VD66gf22QsOIQKAAJVU0QCVVMAAAAAAAAAKgAAURgAAAACAAAAAAAAAAE1mBDnBX4DRebjlnFe_34jBQq7SVguI9pgVg9wS-xzSgnB4lVPy12qWwr5dwr3PgnX4BLI2ETcJZRzxVC74rwM",
+    "memberCarriers": [
+      "AAAAAAAAAAACvAAAAAEAAAAAAAAAAQ",
+      "AAEAAAAAAAACvAAAAAEAAAAAAAAAAA"
+    ],
+    "publicHex": "e830a613ff89f3b105931df5b5459f8b2b19c2cf64d8300861092694d421e46d",
+    "ordinaryLines": 0,
+    "acceptedDate": "2026-11-01",
+    "firstValidDay": 20758,
+    "lastValidDay": 20760
+  }
+}

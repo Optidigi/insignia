@@ -1,0 +1,76 @@
+{
+  "purpose": "Offline memory replay of sealed acknowledged restore responses and complete canonical-run hash membership. Original STOPPED/CONFLICT outcome and acknowledgement timestamps are retained; no provider transport, credentials, retry or new grant.",
+  "originalRecords": "Retained unchanged at sourcePath and fixed sourceCommit; these byte-identical copies are maintained test/replay inputs, not executable historical workflows.",
+  "files": [
+    {
+      "fixture": "canonical-run-manifest.json",
+      "sourcePath": "docs/delivery/evidence/m5-017/canonical-run-manifest.json",
+      "sourceCommit": "eea0dc1beb6f3dabb4395421302faed642be1094",
+      "sha256": "0eb6c0006ad414d9b327f87581b3f3f35fef0ac09c4f67d096f9aa1102d544f2",
+      "bytes": 1142
+    },
+    {
+      "fixture": "live-run/binding.json",
+      "sourcePath": "docs/delivery/evidence/m5-017/live-run/binding.json",
+      "sourceCommit": "eea0dc1beb6f3dabb4395421302faed642be1094",
+      "sha256": "eb973f98220b324d865472b30a38650c4ed80d953f40d0c072d432bff7abe84e",
+      "bytes": 454504
+    },
+    {
+      "fixture": "live-run/gate.json",
+      "sourcePath": "docs/delivery/evidence/m5-017/live-run/gate.json",
+      "sourceCommit": "eea0dc1beb6f3dabb4395421302faed642be1094",
+      "sha256": "6c229cbf1a386eb51fa6ef01035051d12cd892208f80328b65ee1792d3e6a87a",
+      "bytes": 5937
+    },
+    {
+      "fixture": "live-run/held.json",
+      "sourcePath": "docs/delivery/evidence/m5-017/live-run/held.json",
+      "sourceCommit": "eea0dc1beb6f3dabb4395421302faed642be1094",
+      "sha256": "b90a977a2a757d16e9890ee04831ef32f119a11ac7cbbcf46f176a91c0d99495",
+      "bytes": 2823
+    },
+    {
+      "fixture": "live-run/hold-intent.json",
+      "sourcePath": "docs/delivery/evidence/m5-017/live-run/hold-intent.json",
+      "sourceCommit": "eea0dc1beb6f3dabb4395421302faed642be1094",
+      "sha256": "c52e2ae6d070a2d8013603bedc5f1897043a844769619ba3b23d4fb822ad112b",
+      "bytes": 1583
+    },
+    {
+      "fixture": "live-run/initialized.once",
+      "sourcePath": "docs/delivery/evidence/m5-017/live-run/initialized.once",
+      "sourceCommit": "eea0dc1beb6f3dabb4395421302faed642be1094",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "fixture": "live-run/qualification.json",
+      "sourcePath": "docs/delivery/evidence/m5-017/live-run/qualification.json",
+      "sourceCommit": "eea0dc1beb6f3dabb4395421302faed642be1094",
+      "sha256": "0bcacd3b8ca45288a9332a1812f69cb05c36f1e8ba71face9bdf93bb25c3588d",
+      "bytes": 29866
+    },
+    {
+      "fixture": "live-run/register.json",
+      "sourcePath": "docs/delivery/evidence/m5-017/live-run/register.json",
+      "sourceCommit": "eea0dc1beb6f3dabb4395421302faed642be1094",
+      "sha256": "5d6f936407bd09bc8acbb8b7d9dd87de3781dac81ec600c766e31236dc2f22fa",
+      "bytes": 573144
+    },
+    {
+      "fixture": "live-run/restore-intent.json",
+      "sourcePath": "docs/delivery/evidence/m5-017/live-run/restore-intent.json",
+      "sourceCommit": "eea0dc1beb6f3dabb4395421302faed642be1094",
+      "sha256": "adf8478c04c054b417b2ad6d4d263e37216942808efd97819a45157f84e173e0",
+      "bytes": 4062
+    },
+    {
+      "fixture": "live-run/resume.once",
+      "sourcePath": "docs/delivery/evidence/m5-017/live-run/resume.once",
+      "sourceCommit": "eea0dc1beb6f3dabb4395421302faed642be1094",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}

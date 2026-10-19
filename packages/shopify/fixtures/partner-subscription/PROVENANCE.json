@@ -1,0 +1,28 @@
+{
+  "purpose": "Recorded sanitized Partner response normalization, including price.active versus subscription state. Not a new native or recurring-only provider acceptance claim.",
+  "originalRecords": "Retained unchanged at sourcePath and fixed sourceCommit. Maintained response-shape fixtures replace app/shop/domain/subscription identities with synthetic values; price, usage, status and original observation times remain unchanged. These are not native acceptance records.",
+  "files": [
+    {
+      "fixture": "partner-response.json",
+      "sourcePath": "docs/delivery/evidence/m4-001/sanitized-live-partner-fixture.json",
+      "sourceCommit": "eea0dc1beb6f3dabb4395421302faed642be1094",
+      "sourceSha256": "0aa94942eddd60fb916d7e37877c434afddb25af8ee4edef65d9604f2a8fd1fc",
+      "sourceBytes": 1599,
+      "sha256": "eca10ab2b5ed99e2fdae560b4c0b1eaf4f2ca4143243384ee43968a673a0d08a",
+      "bytes": 1596
+    },
+    {
+      "fixture": "expected-snapshot.json",
+      "sourcePath": "docs/delivery/evidence/m4-001/normalized-live-partner-snapshot.json",
+      "sourceCommit": "eea0dc1beb6f3dabb4395421302faed642be1094",
+      "sourceSha256": "ed2d751da48b81092ccce526de645f68fd109ed8679246395efc51f02bb8cf17",
+      "sourceBytes": 1588,
+      "sha256": "4acc9b2d58895a8d00bd830f3bb6e16e01710241afc5323e7a9c7415b1f82328",
+      "bytes": 1574
+    }
+  ],
+  "transformations": [
+    "App, shop, domain and subscription IDs replaced with synthetic fixture identities.",
+    "Expected metadata reconstructedFrom and sourceRawResponseSha256 bind the maintained response fixture; normalized provider shape unchanged otherwise."
+  ]
+}

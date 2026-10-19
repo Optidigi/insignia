@@ -1,0 +1,891 @@
+{
+  "outcome": "STOPPED",
+  "cleanup": {
+    "outcome": "FINAL_ARCHIVED_UNPUBLISHED",
+    "acknowledgement": {
+      "__typename": "Product",
+      "id": "gid://shopify/Product/10496636387611",
+      "handle": "insignia-m5-017-8f834f0f-71b3-426e-a4cf-181048902f36",
+      "title": "insignia-m5-017-8f834f0f-71b3-426e-a4cf-181048902f36",
+      "tags": [
+        "insignia-m5-017-8f834f0f-71b3-426e-a4cf-181048902f36"
+      ],
+      "createdAt": "2026-10-07T12:08:23Z",
+      "status": "ARCHIVED",
+      "updatedAt": "2026-10-07T12:10:14Z"
+    },
+    "timestamps": {
+      "acknowledgedUpdatedAt": "2026-10-07T12:10:14Z",
+      "readbackUpdatedAt": "2026-10-07T12:10:14.000Z",
+      "deltaMilliseconds": 0
+    }
+  },
+  "credentialMetadata": {
+    "uid": 1000,
+    "mode": "600",
+    "route": "existing own-organization Admin client_credentials; server.env"
+  },
+  "identity": {
+    "shop": {
+      "id": "gid://shopify/Shop/105501393179",
+      "myshopifyDomain": "insignia-rewrite-dev.myshopify.com",
+      "plan": {
+        "partnerDevelopment": true
+      }
+    },
+    "currentAppInstallation": {
+      "id": "gid://shopify/AppInstallation/1054356963611",
+      "app": {
+        "id": "gid://shopify/App/429028933633",
+        "apiKey": "1443cf6d03d39edae7c101a943c5c684"
+      },
+      "accessScopes": [
+        {
+          "handle": "read_publications"
+        },
+        {
+          "handle": "read_product_listings"
+        },
+        {
+          "handle": "write_products"
+        },
+        {
+          "handle": "read_products"
+        }
+      ]
+    }
+  },
+  "create": {
+    "__typename": "Product",
+    "id": "gid://shopify/Product/10496636387611",
+    "handle": "insignia-m5-017-8f834f0f-71b3-426e-a4cf-181048902f36",
+    "title": "insignia-m5-017-8f834f0f-71b3-426e-a4cf-181048902f36",
+    "tags": [
+      "insignia-m5-017-8f834f0f-71b3-426e-a4cf-181048902f36"
+    ],
+    "createdAt": "2026-10-07T12:08:23Z",
+    "status": "DRAFT",
+    "updatedAt": "2026-10-07T12:08:24Z"
+  },
+  "latestOwnership": {
+    "shop": {
+      "id": "gid://shopify/Shop/105501393179",
+      "myshopifyDomain": "insignia-rewrite-dev.myshopify.com",
+      "plan": {
+        "partnerDevelopment": true
+      }
+    },
+    "currentAppInstallation": {
+      "id": "gid://shopify/AppInstallation/1054356963611",
+      "app": {
+        "id": "gid://shopify/App/429028933633",
+        "apiKey": "1443cf6d03d39edae7c101a943c5c684"
+      },
+      "accessScopes": [
+        {
+          "handle": "read_publications"
+        },
+        {
+          "handle": "read_product_listings"
+        },
+        {
+          "handle": "write_products"
+        },
+        {
+          "handle": "read_products"
+        }
+      ]
+    },
+    "product": {
+      "__typename": "Product",
+      "id": "gid://shopify/Product/10496636387611",
+      "handle": "insignia-m5-017-8f834f0f-71b3-426e-a4cf-181048902f36",
+      "title": "insignia-m5-017-8f834f0f-71b3-426e-a4cf-181048902f36",
+      "tags": [
+        "insignia-m5-017-8f834f0f-71b3-426e-a4cf-181048902f36"
+      ],
+      "createdAt": "2026-10-07T12:08:23Z",
+      "status": "ARCHIVED",
+      "updatedAt": "2026-10-07T12:10:14Z"
+    }
+  },
+  "draft": {
+    "version": "m5-product-availability-snapshot-v3",
+    "scope": {
+      "shopId": "m5_017_fixture_only",
+      "installationGeneration": "1",
+      "shopifyShopId": "gid://shopify/Shop/105501393179",
+      "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+    },
+    "productId": "gid://shopify/Product/10496636387611",
+    "state": "unavailable",
+    "providerUpdatedAt": "2026-10-07T12:08:26.000Z",
+    "effectiveVisibility": {
+      "publishedPublicationIds": [],
+      "onlineStore": {
+        "publishedAtPresent": false,
+        "urlPresent": false
+      },
+      "publicationEvidence": [],
+      "publishedAt": null,
+      "onlineStoreUrl": null
+    },
+    "effectiveAnchors": [],
+    "visibleScheduledOrStaged": [],
+    "effectiveDigest": "0bcfa96aee0883f6cef8a95c673080105759b704ccc98b5f6897b9e7299ead6c",
+    "anchorDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "observedAt": "2026-10-07T12:08:25.961Z",
+    "receivedAt": "2026-10-07T12:08:28.156Z"
+  },
+  "futureCapability": {
+    "flag": "FUTURE_CAPABILITY_NOT_OBSERVED",
+    "count": 0,
+    "effectiveAnchors": [
+      {
+        "publicationId": "gid://shopify/Publication/339456917787",
+        "resolved": true,
+        "productIncluded": true,
+        "autoPublish": true,
+        "supportsFuturePublishing": false
+      }
+    ]
+  },
+  "setup": {
+    "__typename": "Product",
+    "id": "gid://shopify/Product/10496636387611",
+    "handle": "insignia-m5-017-8f834f0f-71b3-426e-a4cf-181048902f36",
+    "title": "insignia-m5-017-8f834f0f-71b3-426e-a4cf-181048902f36",
+    "tags": [
+      "insignia-m5-017-8f834f0f-71b3-426e-a4cf-181048902f36"
+    ],
+    "createdAt": "2026-10-07T12:08:23Z",
+    "status": "ACTIVE",
+    "updatedAt": "2026-10-07T12:08:29Z"
+  },
+  "before": {
+    "version": "m5-product-availability-snapshot-v3",
+    "scope": {
+      "shopId": "m5_017_fixture_only",
+      "installationGeneration": "1",
+      "shopifyShopId": "gid://shopify/Shop/105501393179",
+      "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+    },
+    "productId": "gid://shopify/Product/10496636387611",
+    "state": "available",
+    "providerUpdatedAt": "2026-10-07T12:08:29.000Z",
+    "effectiveVisibility": {
+      "publishedPublicationIds": [
+        "gid://shopify/Publication/339456917787"
+      ],
+      "onlineStore": {
+        "publishedAtPresent": false,
+        "urlPresent": false
+      },
+      "publicationEvidence": [
+        {
+          "publicationId": "gid://shopify/Publication/339456917787",
+          "isPublished": true,
+          "publishDate": "2026-10-07T12:08:29.000Z"
+        }
+      ],
+      "publishedAt": null,
+      "onlineStoreUrl": null
+    },
+    "effectiveAnchors": [
+      {
+        "publicationId": "gid://shopify/Publication/339456917787",
+        "resolved": true,
+        "productIncluded": true,
+        "autoPublish": true,
+        "supportsFuturePublishing": false
+      }
+    ],
+    "visibleScheduledOrStaged": [],
+    "effectiveDigest": "73ce3fefa5bc71cb80123d65c7193466e005e71ad6bd3ce3486dcd04b687d8a7",
+    "anchorDigest": "009090ab58316e848450b2e17dcd17ffe0a8fdd7bbaf8fbb987fa27cf65ceecc",
+    "observedAt": "2026-10-07T12:08:30.798Z",
+    "receivedAt": "2026-10-07T12:08:37.666Z"
+  },
+  "hiddenPublicationCoverage": {
+    "historicalDirectOnlyTarget": "gid://shopify/Publication/339456917787",
+    "observed": true
+  },
+  "intent": {
+    "version": "m5-availability-hold-v3",
+    "operationId": "d96162c6-a176-42de-b640-057e11625105",
+    "before": {
+      "version": "m5-product-availability-snapshot-v3",
+      "scope": {
+        "shopId": "m5_017_fixture_only",
+        "installationGeneration": "1",
+        "shopifyShopId": "gid://shopify/Shop/105501393179",
+        "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+      },
+      "productId": "gid://shopify/Product/10496636387611",
+      "state": "available",
+      "providerUpdatedAt": "2026-10-07T12:08:29.000Z",
+      "effectiveVisibility": {
+        "publishedPublicationIds": [
+          "gid://shopify/Publication/339456917787"
+        ],
+        "onlineStore": {
+          "publishedAtPresent": false,
+          "urlPresent": false
+        },
+        "publicationEvidence": [
+          {
+            "publicationId": "gid://shopify/Publication/339456917787",
+            "isPublished": true,
+            "publishDate": "2026-10-07T12:08:29.000Z"
+          }
+        ],
+        "publishedAt": null,
+        "onlineStoreUrl": null
+      },
+      "effectiveAnchors": [
+        {
+          "publicationId": "gid://shopify/Publication/339456917787",
+          "resolved": true,
+          "productIncluded": true,
+          "autoPublish": true,
+          "supportsFuturePublishing": false
+        }
+      ],
+      "visibleScheduledOrStaged": [],
+      "effectiveDigest": "73ce3fefa5bc71cb80123d65c7193466e005e71ad6bd3ce3486dcd04b687d8a7",
+      "anchorDigest": "009090ab58316e848450b2e17dcd17ffe0a8fdd7bbaf8fbb987fa27cf65ceecc",
+      "observedAt": "2026-10-07T12:08:30.798Z",
+      "receivedAt": "2026-10-07T12:08:37.666Z"
+    },
+    "held": null
+  },
+  "acquire": {
+    "kind": "HELD",
+    "hold": {
+      "version": "m5-availability-hold-v3",
+      "operationId": "d96162c6-a176-42de-b640-057e11625105",
+      "before": {
+        "version": "m5-product-availability-snapshot-v3",
+        "scope": {
+          "shopId": "m5_017_fixture_only",
+          "installationGeneration": "1",
+          "shopifyShopId": "gid://shopify/Shop/105501393179",
+          "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+        },
+        "productId": "gid://shopify/Product/10496636387611",
+        "state": "available",
+        "providerUpdatedAt": "2026-10-07T12:08:29.000Z",
+        "effectiveVisibility": {
+          "publishedPublicationIds": [
+            "gid://shopify/Publication/339456917787"
+          ],
+          "onlineStore": {
+            "publishedAtPresent": false,
+            "urlPresent": false
+          },
+          "publicationEvidence": [
+            {
+              "publicationId": "gid://shopify/Publication/339456917787",
+              "isPublished": true,
+              "publishDate": "2026-10-07T12:08:29.000Z"
+            }
+          ],
+          "publishedAt": null,
+          "onlineStoreUrl": null
+        },
+        "effectiveAnchors": [
+          {
+            "publicationId": "gid://shopify/Publication/339456917787",
+            "resolved": true,
+            "productIncluded": true,
+            "autoPublish": true,
+            "supportsFuturePublishing": false
+          }
+        ],
+        "visibleScheduledOrStaged": [],
+        "effectiveDigest": "73ce3fefa5bc71cb80123d65c7193466e005e71ad6bd3ce3486dcd04b687d8a7",
+        "anchorDigest": "009090ab58316e848450b2e17dcd17ffe0a8fdd7bbaf8fbb987fa27cf65ceecc",
+        "observedAt": "2026-10-07T12:08:30.798Z",
+        "receivedAt": "2026-10-07T12:08:37.666Z"
+      },
+      "held": {
+        "version": "m5-product-availability-snapshot-v3",
+        "scope": {
+          "shopId": "m5_017_fixture_only",
+          "installationGeneration": "1",
+          "shopifyShopId": "gid://shopify/Shop/105501393179",
+          "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+        },
+        "productId": "gid://shopify/Product/10496636387611",
+        "state": "unavailable",
+        "providerUpdatedAt": "2026-10-07T12:08:46.000Z",
+        "effectiveVisibility": {
+          "publishedPublicationIds": [],
+          "onlineStore": {
+            "publishedAtPresent": false,
+            "urlPresent": false
+          },
+          "publicationEvidence": [],
+          "publishedAt": null,
+          "onlineStoreUrl": null
+        },
+        "effectiveAnchors": [
+          {
+            "publicationId": "gid://shopify/Publication/339456917787",
+            "resolved": true,
+            "productIncluded": true,
+            "autoPublish": true,
+            "supportsFuturePublishing": false
+          }
+        ],
+        "visibleScheduledOrStaged": [],
+        "effectiveDigest": "0bcfa96aee0883f6cef8a95c673080105759b704ccc98b5f6897b9e7299ead6c",
+        "anchorDigest": "009090ab58316e848450b2e17dcd17ffe0a8fdd7bbaf8fbb987fa27cf65ceecc",
+        "observedAt": "2026-10-07T12:08:47.203Z",
+        "receivedAt": "2026-10-07T12:08:54.059Z"
+      },
+      "acquisitionAcknowledgement": {
+        "version": "m5-availability-mutation-ack-v3",
+        "scope": {
+          "shopId": "m5_017_fixture_only",
+          "installationGeneration": "1",
+          "shopifyShopId": "gid://shopify/Shop/105501393179",
+          "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+        },
+        "productId": "gid://shopify/Product/10496636387611",
+        "state": "unavailable",
+        "providerUpdatedAt": "2026-10-07T12:08:46.000Z",
+        "effectiveVisibility": {
+          "publishedPublicationIds": [],
+          "onlineStore": {
+            "publishedAtPresent": false,
+            "urlPresent": false
+          },
+          "publicationEvidence": [],
+          "publishedAt": null,
+          "onlineStoreUrl": null
+        },
+        "observedAt": "2026-10-07T12:08:44.636Z",
+        "receivedAt": "2026-10-07T12:08:47.202Z"
+      }
+    },
+    "current": {
+      "version": "m5-product-availability-snapshot-v3",
+      "scope": {
+        "shopId": "m5_017_fixture_only",
+        "installationGeneration": "1",
+        "shopifyShopId": "gid://shopify/Shop/105501393179",
+        "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+      },
+      "productId": "gid://shopify/Product/10496636387611",
+      "state": "unavailable",
+      "providerUpdatedAt": "2026-10-07T12:08:46.000Z",
+      "effectiveVisibility": {
+        "publishedPublicationIds": [],
+        "onlineStore": {
+          "publishedAtPresent": false,
+          "urlPresent": false
+        },
+        "publicationEvidence": [],
+        "publishedAt": null,
+        "onlineStoreUrl": null
+      },
+      "effectiveAnchors": [
+        {
+          "publicationId": "gid://shopify/Publication/339456917787",
+          "resolved": true,
+          "productIncluded": true,
+          "autoPublish": true,
+          "supportsFuturePublishing": false
+        }
+      ],
+      "visibleScheduledOrStaged": [],
+      "effectiveDigest": "0bcfa96aee0883f6cef8a95c673080105759b704ccc98b5f6897b9e7299ead6c",
+      "anchorDigest": "009090ab58316e848450b2e17dcd17ffe0a8fdd7bbaf8fbb987fa27cf65ceecc",
+      "observedAt": "2026-10-07T12:08:47.203Z",
+      "receivedAt": "2026-10-07T12:08:54.059Z"
+    }
+  },
+  "acquireTimestamps": {
+    "acknowledgedUpdatedAt": "2026-10-07T12:08:46.000Z",
+    "readbackUpdatedAt": "2026-10-07T12:08:46.000Z",
+    "deltaMilliseconds": 0
+  },
+  "persistedHold": {
+    "sha256": "b90a977a2a757d16e9890ee04831ef32f119a11ac7cbbcf46f176a91c0d99495",
+    "bytes": 2823
+  },
+  "accounting": {
+    "auth": 2,
+    "graphql": 36,
+    "create": 1,
+    "directUpdate": 2,
+    "adapterMutation": 2
+  },
+  "transportAccounting": {
+    "invocations": 38,
+    "denials": 0,
+    "mismatch": false,
+    "reserved": 38,
+    "dispatched": 38,
+    "denied": 0,
+    "matches": true
+  },
+  "processGuard": {
+    "immutable": true
+  },
+  "pendingAtClose": null,
+  "settlements": [
+    {
+      "operation": "create",
+      "invoked": true,
+      "settlement": "ACKNOWLEDGED"
+    },
+    {
+      "operation": "setup",
+      "invoked": true,
+      "settlement": "ACKNOWLEDGED"
+    },
+    {
+      "operation": "acquire",
+      "invoked": true,
+      "settlement": "ACKNOWLEDGED"
+    },
+    {
+      "operation": "restore",
+      "invoked": true,
+      "settlement": "ACKNOWLEDGED"
+    },
+    {
+      "operation": "cleanup",
+      "invoked": true,
+      "settlement": "ACKNOWLEDGED"
+    }
+  ],
+  "freshProcess": {
+    "initialPid": 1322883,
+    "resumePid": 1325112,
+    "different": true,
+    "persistedHoldHash": "b90a977a2a757d16e9890ee04831ef32f119a11ac7cbbcf46f176a91c0d99495"
+  },
+  "observe": {
+    "kind": "HELD",
+    "hold": {
+      "version": "m5-availability-hold-v3",
+      "operationId": "d96162c6-a176-42de-b640-057e11625105",
+      "before": {
+        "version": "m5-product-availability-snapshot-v3",
+        "scope": {
+          "shopId": "m5_017_fixture_only",
+          "installationGeneration": "1",
+          "shopifyShopId": "gid://shopify/Shop/105501393179",
+          "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+        },
+        "productId": "gid://shopify/Product/10496636387611",
+        "state": "available",
+        "providerUpdatedAt": "2026-10-07T12:08:29.000Z",
+        "effectiveVisibility": {
+          "publishedPublicationIds": [
+            "gid://shopify/Publication/339456917787"
+          ],
+          "onlineStore": {
+            "publishedAtPresent": false,
+            "urlPresent": false
+          },
+          "publicationEvidence": [
+            {
+              "publicationId": "gid://shopify/Publication/339456917787",
+              "isPublished": true,
+              "publishDate": "2026-10-07T12:08:29.000Z"
+            }
+          ],
+          "publishedAt": null,
+          "onlineStoreUrl": null
+        },
+        "effectiveAnchors": [
+          {
+            "publicationId": "gid://shopify/Publication/339456917787",
+            "resolved": true,
+            "productIncluded": true,
+            "autoPublish": true,
+            "supportsFuturePublishing": false
+          }
+        ],
+        "visibleScheduledOrStaged": [],
+        "effectiveDigest": "73ce3fefa5bc71cb80123d65c7193466e005e71ad6bd3ce3486dcd04b687d8a7",
+        "anchorDigest": "009090ab58316e848450b2e17dcd17ffe0a8fdd7bbaf8fbb987fa27cf65ceecc",
+        "observedAt": "2026-10-07T12:08:30.798Z",
+        "receivedAt": "2026-10-07T12:08:37.666Z"
+      },
+      "held": {
+        "version": "m5-product-availability-snapshot-v3",
+        "scope": {
+          "shopId": "m5_017_fixture_only",
+          "installationGeneration": "1",
+          "shopifyShopId": "gid://shopify/Shop/105501393179",
+          "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+        },
+        "productId": "gid://shopify/Product/10496636387611",
+        "state": "unavailable",
+        "providerUpdatedAt": "2026-10-07T12:08:46.000Z",
+        "effectiveVisibility": {
+          "publishedPublicationIds": [],
+          "onlineStore": {
+            "publishedAtPresent": false,
+            "urlPresent": false
+          },
+          "publicationEvidence": [],
+          "publishedAt": null,
+          "onlineStoreUrl": null
+        },
+        "effectiveAnchors": [
+          {
+            "publicationId": "gid://shopify/Publication/339456917787",
+            "resolved": true,
+            "productIncluded": true,
+            "autoPublish": true,
+            "supportsFuturePublishing": false
+          }
+        ],
+        "visibleScheduledOrStaged": [],
+        "effectiveDigest": "0bcfa96aee0883f6cef8a95c673080105759b704ccc98b5f6897b9e7299ead6c",
+        "anchorDigest": "009090ab58316e848450b2e17dcd17ffe0a8fdd7bbaf8fbb987fa27cf65ceecc",
+        "observedAt": "2026-10-07T12:08:47.203Z",
+        "receivedAt": "2026-10-07T12:08:54.059Z"
+      },
+      "acquisitionAcknowledgement": {
+        "version": "m5-availability-mutation-ack-v3",
+        "scope": {
+          "shopId": "m5_017_fixture_only",
+          "installationGeneration": "1",
+          "shopifyShopId": "gid://shopify/Shop/105501393179",
+          "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+        },
+        "productId": "gid://shopify/Product/10496636387611",
+        "state": "unavailable",
+        "providerUpdatedAt": "2026-10-07T12:08:46.000Z",
+        "effectiveVisibility": {
+          "publishedPublicationIds": [],
+          "onlineStore": {
+            "publishedAtPresent": false,
+            "urlPresent": false
+          },
+          "publicationEvidence": [],
+          "publishedAt": null,
+          "onlineStoreUrl": null
+        },
+        "observedAt": "2026-10-07T12:08:44.636Z",
+        "receivedAt": "2026-10-07T12:08:47.202Z"
+      }
+    },
+    "current": {
+      "version": "m5-product-availability-snapshot-v3",
+      "scope": {
+        "shopId": "m5_017_fixture_only",
+        "installationGeneration": "1",
+        "shopifyShopId": "gid://shopify/Shop/105501393179",
+        "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+      },
+      "productId": "gid://shopify/Product/10496636387611",
+      "state": "unavailable",
+      "providerUpdatedAt": "2026-10-07T12:09:17.000Z",
+      "effectiveVisibility": {
+        "publishedPublicationIds": [],
+        "onlineStore": {
+          "publishedAtPresent": false,
+          "urlPresent": false
+        },
+        "publicationEvidence": [],
+        "publishedAt": null,
+        "onlineStoreUrl": null
+      },
+      "effectiveAnchors": [
+        {
+          "publicationId": "gid://shopify/Publication/339456917787",
+          "resolved": true,
+          "productIncluded": true,
+          "autoPublish": true,
+          "supportsFuturePublishing": false
+        }
+      ],
+      "visibleScheduledOrStaged": [],
+      "effectiveDigest": "0bcfa96aee0883f6cef8a95c673080105759b704ccc98b5f6897b9e7299ead6c",
+      "anchorDigest": "009090ab58316e848450b2e17dcd17ffe0a8fdd7bbaf8fbb987fa27cf65ceecc",
+      "observedAt": "2026-10-07T12:09:40.234Z",
+      "receivedAt": "2026-10-07T12:09:46.965Z"
+    }
+  },
+  "restoreIntent": {
+    "version": "m5-availability-hold-v3",
+    "operationId": "d96162c6-a176-42de-b640-057e11625105",
+    "before": {
+      "version": "m5-product-availability-snapshot-v3",
+      "scope": {
+        "shopId": "m5_017_fixture_only",
+        "installationGeneration": "1",
+        "shopifyShopId": "gid://shopify/Shop/105501393179",
+        "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+      },
+      "productId": "gid://shopify/Product/10496636387611",
+      "state": "available",
+      "providerUpdatedAt": "2026-10-07T12:08:29.000Z",
+      "effectiveVisibility": {
+        "publishedPublicationIds": [
+          "gid://shopify/Publication/339456917787"
+        ],
+        "onlineStore": {
+          "publishedAtPresent": false,
+          "urlPresent": false
+        },
+        "publicationEvidence": [
+          {
+            "publicationId": "gid://shopify/Publication/339456917787",
+            "isPublished": true,
+            "publishDate": "2026-10-07T12:08:29.000Z"
+          }
+        ],
+        "publishedAt": null,
+        "onlineStoreUrl": null
+      },
+      "effectiveAnchors": [
+        {
+          "publicationId": "gid://shopify/Publication/339456917787",
+          "resolved": true,
+          "productIncluded": true,
+          "autoPublish": true,
+          "supportsFuturePublishing": false
+        }
+      ],
+      "visibleScheduledOrStaged": [],
+      "effectiveDigest": "73ce3fefa5bc71cb80123d65c7193466e005e71ad6bd3ce3486dcd04b687d8a7",
+      "anchorDigest": "009090ab58316e848450b2e17dcd17ffe0a8fdd7bbaf8fbb987fa27cf65ceecc",
+      "observedAt": "2026-10-07T12:08:30.798Z",
+      "receivedAt": "2026-10-07T12:08:37.666Z"
+    },
+    "held": {
+      "version": "m5-product-availability-snapshot-v3",
+      "scope": {
+        "shopId": "m5_017_fixture_only",
+        "installationGeneration": "1",
+        "shopifyShopId": "gid://shopify/Shop/105501393179",
+        "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+      },
+      "productId": "gid://shopify/Product/10496636387611",
+      "state": "unavailable",
+      "providerUpdatedAt": "2026-10-07T12:08:46.000Z",
+      "effectiveVisibility": {
+        "publishedPublicationIds": [],
+        "onlineStore": {
+          "publishedAtPresent": false,
+          "urlPresent": false
+        },
+        "publicationEvidence": [],
+        "publishedAt": null,
+        "onlineStoreUrl": null
+      },
+      "effectiveAnchors": [
+        {
+          "publicationId": "gid://shopify/Publication/339456917787",
+          "resolved": true,
+          "productIncluded": true,
+          "autoPublish": true,
+          "supportsFuturePublishing": false
+        }
+      ],
+      "visibleScheduledOrStaged": [],
+      "effectiveDigest": "0bcfa96aee0883f6cef8a95c673080105759b704ccc98b5f6897b9e7299ead6c",
+      "anchorDigest": "009090ab58316e848450b2e17dcd17ffe0a8fdd7bbaf8fbb987fa27cf65ceecc",
+      "observedAt": "2026-10-07T12:08:47.203Z",
+      "receivedAt": "2026-10-07T12:08:54.059Z"
+    },
+    "acquisitionAcknowledgement": {
+      "version": "m5-availability-mutation-ack-v3",
+      "scope": {
+        "shopId": "m5_017_fixture_only",
+        "installationGeneration": "1",
+        "shopifyShopId": "gid://shopify/Shop/105501393179",
+        "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+      },
+      "productId": "gid://shopify/Product/10496636387611",
+      "state": "unavailable",
+      "providerUpdatedAt": "2026-10-07T12:08:46.000Z",
+      "effectiveVisibility": {
+        "publishedPublicationIds": [],
+        "onlineStore": {
+          "publishedAtPresent": false,
+          "urlPresent": false
+        },
+        "publicationEvidence": [],
+        "publishedAt": null,
+        "onlineStoreUrl": null
+      },
+      "observedAt": "2026-10-07T12:08:44.636Z",
+      "receivedAt": "2026-10-07T12:08:47.202Z"
+    },
+    "restorationClaim": {
+      "version": "m5-availability-restoration-claim-v3",
+      "operationId": "d96162c6-a176-42de-b640-057e11625105",
+      "scope": {
+        "shopId": "m5_017_fixture_only",
+        "installationGeneration": "1",
+        "shopifyShopId": "gid://shopify/Shop/105501393179",
+        "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+      },
+      "productId": "gid://shopify/Product/10496636387611",
+      "restoreReserved": true,
+      "compensationReserved": true
+    }
+  },
+  "restore": {
+    "kind": "CONFLICT",
+    "current": {
+      "version": "m5-product-availability-snapshot-v3",
+      "scope": {
+        "shopId": "m5_017_fixture_only",
+        "installationGeneration": "1",
+        "shopifyShopId": "gid://shopify/Shop/105501393179",
+        "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+      },
+      "productId": "gid://shopify/Product/10496636387611",
+      "state": "available",
+      "providerUpdatedAt": "2026-10-07T12:09:57.000Z",
+      "effectiveVisibility": {
+        "publishedPublicationIds": [
+          "gid://shopify/Publication/339456917787"
+        ],
+        "onlineStore": {
+          "publishedAtPresent": false,
+          "urlPresent": false
+        },
+        "publicationEvidence": [
+          {
+            "publicationId": "gid://shopify/Publication/339456917787",
+            "isPublished": true,
+            "publishDate": "2026-10-07T12:09:56.000Z"
+          }
+        ],
+        "publishedAt": null,
+        "onlineStoreUrl": null
+      },
+      "effectiveAnchors": [
+        {
+          "publicationId": "gid://shopify/Publication/339456917787",
+          "resolved": true,
+          "productIncluded": true,
+          "autoPublish": true,
+          "supportsFuturePublishing": false
+        }
+      ],
+      "visibleScheduledOrStaged": [],
+      "effectiveDigest": "73ce3fefa5bc71cb80123d65c7193466e005e71ad6bd3ce3486dcd04b687d8a7",
+      "anchorDigest": "009090ab58316e848450b2e17dcd17ffe0a8fdd7bbaf8fbb987fa27cf65ceecc",
+      "observedAt": "2026-10-07T12:09:57.978Z",
+      "receivedAt": "2026-10-07T12:10:04.814Z"
+    },
+    "acknowledgement": {
+      "version": "m5-availability-mutation-ack-v3",
+      "scope": {
+        "shopId": "m5_017_fixture_only",
+        "installationGeneration": "1",
+        "shopifyShopId": "gid://shopify/Shop/105501393179",
+        "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+      },
+      "productId": "gid://shopify/Product/10496636387611",
+      "state": "available",
+      "providerUpdatedAt": "2026-10-07T12:09:56.000Z",
+      "effectiveVisibility": {
+        "publishedPublicationIds": [
+          "gid://shopify/Publication/339456917787"
+        ],
+        "onlineStore": {
+          "publishedAtPresent": false,
+          "urlPresent": false
+        },
+        "publicationEvidence": [
+          {
+            "publicationId": "gid://shopify/Publication/339456917787",
+            "isPublished": true,
+            "publishDate": "2026-10-07T12:09:56.000Z"
+          }
+        ],
+        "publishedAt": null,
+        "onlineStoreUrl": null
+      },
+      "observedAt": "2026-10-07T12:09:54.968Z",
+      "receivedAt": "2026-10-07T12:09:57.978Z"
+    }
+  },
+  "stop": "restore_not_exact",
+  "cleanupPrestate": {
+    "version": "m5-product-availability-snapshot-v3",
+    "scope": {
+      "shopId": "m5_017_fixture_only",
+      "installationGeneration": "1",
+      "shopifyShopId": "gid://shopify/Shop/105501393179",
+      "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+    },
+    "productId": "gid://shopify/Product/10496636387611",
+    "state": "available",
+    "providerUpdatedAt": "2026-10-07T12:09:57.000Z",
+    "effectiveVisibility": {
+      "publishedPublicationIds": [
+        "gid://shopify/Publication/339456917787"
+      ],
+      "onlineStore": {
+        "publishedAtPresent": false,
+        "urlPresent": false
+      },
+      "publicationEvidence": [
+        {
+          "publicationId": "gid://shopify/Publication/339456917787",
+          "isPublished": true,
+          "publishDate": "2026-10-07T12:09:56.000Z"
+        }
+      ],
+      "publishedAt": null,
+      "onlineStoreUrl": null
+    },
+    "effectiveAnchors": [
+      {
+        "publicationId": "gid://shopify/Publication/339456917787",
+        "resolved": true,
+        "productIncluded": true,
+        "autoPublish": true,
+        "supportsFuturePublishing": false
+      }
+    ],
+    "visibleScheduledOrStaged": [],
+    "effectiveDigest": "73ce3fefa5bc71cb80123d65c7193466e005e71ad6bd3ce3486dcd04b687d8a7",
+    "anchorDigest": "009090ab58316e848450b2e17dcd17ffe0a8fdd7bbaf8fbb987fa27cf65ceecc",
+    "observedAt": "2026-10-07T12:10:06.067Z",
+    "receivedAt": "2026-10-07T12:10:12.971Z"
+  },
+  "final": {
+    "version": "m5-product-availability-snapshot-v3",
+    "scope": {
+      "shopId": "m5_017_fixture_only",
+      "installationGeneration": "1",
+      "shopifyShopId": "gid://shopify/Shop/105501393179",
+      "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+    },
+    "productId": "gid://shopify/Product/10496636387611",
+    "state": "archived",
+    "providerUpdatedAt": "2026-10-07T12:10:14.000Z",
+    "effectiveVisibility": {
+      "publishedPublicationIds": [],
+      "onlineStore": {
+        "publishedAtPresent": false,
+        "urlPresent": false
+      },
+      "publicationEvidence": [],
+      "publishedAt": null,
+      "onlineStoreUrl": null
+    },
+    "effectiveAnchors": [],
+    "visibleScheduledOrStaged": [],
+    "effectiveDigest": "0bcfa96aee0883f6cef8a95c673080105759b704ccc98b5f6897b9e7299ead6c",
+    "anchorDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "observedAt": "2026-10-07T12:10:15.664Z",
+    "receivedAt": "2026-10-07T12:10:18.000Z"
+  }
+}

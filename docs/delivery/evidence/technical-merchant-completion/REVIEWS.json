@@ -43,7 +43,7 @@
         "Expiry/hash/body revalidation after generic scope lock wait",
         "Concurrent verified sessions share in-flight confirmed enrollment without duplicate dispatch"
       ],
-      "checks": "Independent UI8/service13; adapter10. Root real DB/enrollment/HTTP evidence recorded separately; reviewer does not claim skipped worker tests passed. Focused independent singleflight correctness/security review CLEAR; new actual PostgreSQL24-caller RED\u2192GREEN and9enrollmentPASS."
+      "checks": "Independent UI8/service13; adapter10. Root real DB/enrollment/HTTP evidence recorded separately; reviewer does not claim skipped worker tests passed. Focused independent singleflight correctness/security review CLEAR; new actual PostgreSQL24-caller RED→GREEN and9enrollmentPASS."
     },
     {
       "reviewer": "operations_review",
@@ -276,5 +276,59 @@
     "redGreen": "Observed local stale-lock disabled-button failure before correction, then15/15 affected browser tests PASS with zero skips.",
     "review": "deployment_review216 independent read-only impact CLEAR; no assertions removed/relaxed, runtime change or real record/private-copy deadline extension.",
     "validation": "Admin test strict compiler, targeted Biome, source/current-link inventory and diff checks PASS; updated-head CI required. Deployed services unchanged."
+  },
+  "canonicalAppCompletion20261019": {
+    "base": "9989d7d3af85efe771c6332f9e886099f25f60e5",
+    "initialCandidate": "aa905eebf20bdf3c7ff4af7fa35e027430d33337",
+    "correctedRuntimeCandidate": "272de9589f2fc0af4c7e24b2cdde86b3c7047e2a",
+    "provider": "codex",
+    "model": "gpt-6.1-sol",
+    "method": "Fresh read-only independent contexts; no credential/connector isolation claimed.",
+    "implementation": {
+      "initialFindings": [
+        "Outgoing-navigation loading expression still unquoted",
+        "Preview dropped redirect destinations",
+        "Isolated launcher inherited auxiliary database target",
+        "Command-target checker missed apps/packages"
+      ],
+      "resolution": "Shared initial/transition expression and real-link regression; validated local redirects; poisoned-target sentinel0connections; real preview-target negative.",
+      "impactReview": {
+        "standardsFindings": 0,
+        "specFindings": 0
+      }
+    },
+    "deployment": {
+      "initialFindings": [
+        "Successful recovery capture not required by handover",
+        "Concurrent configuration drift could be overwritten",
+        "Captured container/config baselines not enforced"
+      ],
+      "resolution": "Completion hashes, original recovery identity/expiry/integrity and fresh protected facts; exclusive private lock plus post-stop inode/content check; captured all-container/model comparison.",
+      "impactFinding": "Move single fact query and minimum recovery headroom check immediately before dispatch",
+      "mechanicalClosure": "Applied exact requested ordering; strict operator compilation and actual single-stop/single-recreation parity qualification passed. No additional full-review verdict invented."
+    },
+    "visual": {
+      "initialImagesActuallyViewed": 16,
+      "initialFinding": "Mobile right clipping versus capture crop unresolved",
+      "diagnosis": "Tall iframe-body capture cropped evidence; fixed outer viewport and scroll photos show readable live content without CSS changes.",
+      "correctedImagesActuallyViewed": 16,
+      "remainingMaterialVisibleDefects": 0,
+      "ownerVisualAcceptance": "PENDING_OWNER_JUDGMENT"
+    },
+    "productionEligibility": "OWNER_GATES_OPEN",
+    "fixtureAndEvidenceClosure": {
+      "base": "eea0dc1beb6f3dabb4395421302faed642be1094",
+      "candidate": "6053293",
+      "method": "Fresh independent read-only T3 review of the final 14 tracked changes and 17 new files, including final host receipt and credential-scanner additions.",
+      "standardsFindings": 0,
+      "specFindings": 0,
+      "fixtures": {
+        "byteIdentical": 12,
+        "identitySanitizedPartnerDerivatives": 2,
+        "originalRecordsUnchanged": true
+      },
+      "checks": "Reviewer independently verified provenance, all nine availability manifest entries, required quote inputs, five quote/availability tests, Partner normalization and read-only credential scan. Root additionally ran all230 Function replay rows and the actual scanner RED/GREEN.",
+      "limit": "No repeated provider/browser operations; previous native and visual receipts retained at their original scope. This appended review summary is a prose record, not separately rereviewed."
+    }
   }
 }

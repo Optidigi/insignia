@@ -1,0 +1,20 @@
+{
+  "purpose": "Versioned persisted quote/signature/exact-economics regression and actual TS-to-Rust Function replay. Historical record versions and bytes are unchanged; not new issuance.",
+  "originalRecords": "Retained unchanged at sourcePath and fixed sourceCommit; these byte-identical copies are maintained test/replay inputs, not executable historical workflows.",
+  "files": [
+    {
+      "fixture": "persisted-negative-vector.json",
+      "sourcePath": "docs/delivery/evidence/m4-002/pg-persisted-negative-vector.json",
+      "sourceCommit": "eea0dc1beb6f3dabb4395421302faed642be1094",
+      "sha256": "5c0f68f0833c1cdbc5894988a238de268cfea266972234c875117fffe7d466a3",
+      "bytes": 8431
+    },
+    {
+      "fixture": "accepted-quote-example.json",
+      "sourcePath": "docs/delivery/evidence/m4-002/synthetic-accepted-quote.json",
+      "sourceCommit": "eea0dc1beb6f3dabb4395421302faed642be1094",
+      "sha256": "cd9a835ef95787bfd7d7dd4b712f98017b0559dc6a4ccfce198c1f80cc5ad490",
+      "bytes": 8187
+    }
+  ]
+}
