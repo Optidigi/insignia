@@ -63,7 +63,7 @@ jobs:
         if: steps.changes.outputs.route == 'full'
       - name: Qualify restricted web journey grants with actual LOGINs
         if: steps.changes.outputs.route == 'full'
-        run: WEB_RUNTIME_GRANTS_TEST_URL="$DATABASE_URL" corepack pnpm --filter @insignia/database exec vitest run test/web-runtime-grants.test.ts
+        run: WEB_RUNTIME_GRANTS_TEST_URL="$DATABASE_URL" CREDENTIAL_RECONNECT_TEST=1 corepack pnpm --filter @insignia/database exec vitest run test/web-runtime-grants.test.ts
       - name: 100k actual read-seam query plans
         if: steps.changes.outputs.route == 'full'
         run: M5_QUERY_PLAN_OUTPUT=/tmp/m5-query-plan.json corepack pnpm test:database-query-plan

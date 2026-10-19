@@ -39,6 +39,9 @@ test('local preview uses synthetic reads and never forwards commands or producti
   assert.equal((await fetch(`${origin}/api/admin/products/111/config`, { method: 'PUT', body: '{}' })).status, 405);
   assert.equal((await fetch(`${origin}/api/webhooks/orders`, { method: 'POST', body: '{}' })).status, 405);
   assert.equal((await fetch(`${origin}/proxy/v1/config`)).status, 404);
+  const legacy = await fetch(`${origin}/admin/billing`, { redirect: 'manual' });
+  assert.equal(legacy.status, 302);
+  assert.equal(legacy.headers.get('location'), '/admin/settings/billing');
   const page = await fetch(`${origin}/admin/products`);
   const html = await page.text();
   assert.match(html, /\/__preview\/bridge.js/);

@@ -1,4 +1,4 @@
-import { adminRoute, adminSkeletonDimensions } from './admin-route';
+import { adminRoute, adminSkeletonColumns, adminSkeletonDimensions } from './admin-route';
 
 /** Full-document routes retain their security boundaries while sharing transition feedback. */
 export function installAdminNavigation() {
@@ -33,10 +33,7 @@ export function installAdminNavigation() {
       const grid = shell?.querySelector('[data-skeleton-grid]');
       if (grid)
         Object.assign(grid, {
-          gridTemplateColumns:
-            layout === 'editor'
-              ? '@container admin-page-skeleton (inline-size >= 784px) minmax(0, 1fr) 312px, minmax(0, 1fr)'
-              : 'minmax(0, 1fr)',
+          gridTemplateColumns: adminSkeletonColumns(layout),
         });
       const preview = shell?.querySelector<HTMLElement>('[data-skeleton-preview]');
       if (preview) {

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { test } from 'node:test';
 import {
   checkTypeProjects,
@@ -110,4 +110,22 @@ test('CLI discovery rejects deleted web directories and maintained docs reject m
   mkdirSync(join(root, 'scripts'), { recursive: true });
   writeFileSync(join(root, 'scripts/orphan.go'), 'package main\n');
   assert.throws(() => inspectMaintainedSources(root, policy), /UNAPPROVED_UNTYPED_SOURCE/);
+});
+
+test('the real local admin preview command cannot reference a deleted app entrypoint', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'insignia-preview-command-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  execFileSync('git', ['init', '-q', root]);
+  const manifest = JSON.parse(readFileSync(resolve(import.meta.dirname, '../../package.json'), 'utf8'));
+  assert.equal(manifest.scripts['dev:admin'], 'node apps/web/test/admin/preview.mts');
+  writeFileSync(
+    join(root, 'package.json'),
+    JSON.stringify({ scripts: { 'dev:admin': manifest.scripts['dev:admin'] } }),
+  );
+  assert.throws(() => inspectMaintainedSources(root, { projects: [] }), /MISSING_CURRENT_COMMAND_TARGET.*preview\.mts/);
+  writeFileSync(
+    join(root, 'package.json'),
+    JSON.stringify({ scripts: { qualify: 'node packages/domain/test/removed.mts' } }),
+  );
+  assert.throws(() => inspectMaintainedSources(root, { projects: [] }), /MISSING_CURRENT_COMMAND_TARGET.*removed\.mts/);
 });

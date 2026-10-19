@@ -21,9 +21,23 @@ if (args[0] === '--help') {
   const socket = join(root, 'socket');
   const data = join(root, 'data');
   const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
-  // Ignore every ambient connection selector, including libpq service/options.
+  // The default suite also has separately admitted role/restore targets. Never
+  // inherit those targets or opt-ins into an owned-cluster invocation. A custom
+  // command can explicitly configure its own extra test environment if intended.
+  const auxiliarySelectors = new Set([
+    'DATABASE_URL',
+    'WEB_RUNTIME_GRANTS_TEST_URL',
+    'PRIVACY_RESTORE_TEST_URL',
+    'M5_SCHEMA_TEST_URL',
+    'M6_RUNTIME_GRANTS',
+    'M6_INSPECTION_INTEGRATION',
+    'CREDENTIAL_RECONNECT_TEST',
+    'M4_PERSISTED_VECTOR_OUTPUT',
+    'M5_RECOVERY_EXAMPLE_PATH',
+    'M5_BOOTSTRAP_STRESS_SESSIONS',
+  ]);
   const env: NodeJS.ProcessEnv = Object.fromEntries(
-    Object.entries(process.env).filter(([key]) => !key.startsWith('PG') && key !== 'DATABASE_URL'),
+    Object.entries(process.env).filter(([key]) => !key.startsWith('PG') && !auxiliarySelectors.has(key)),
   );
   Object.assign(env, { PGHOST: socket, PGPORT: '5432', PGUSER: 'insignia_local', PGDATABASE: 'insignia_local' });
   let interrupted = false;

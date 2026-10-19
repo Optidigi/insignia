@@ -105,6 +105,13 @@ const server = createServer(async (request, reply) => {
     const result = await fetch(origin + url.pathname + url.search, { redirect: 'manual' });
     const type = result.headers.get('content-type') ?? '';
     reply.statusCode = result.status;
+    const location = result.headers.get('location');
+    if (location) {
+      const destination = new URL(location, origin);
+      if (destination.origin !== origin || !destination.pathname.startsWith('/admin/'))
+        throw new Error('Preview redirect must stay within local merchant routes');
+      reply.setHeader('location', destination.pathname + destination.search + destination.hash);
+    }
     reply.setHeader('content-type', type);
     if (type.includes('text/html')) {
       const html = (await result.text())

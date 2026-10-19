@@ -86,7 +86,7 @@ const currentDocuments = new Set([
 ]);
 function inspectCommandTargets(root: string, path: string, text: string): void {
   for (const command of text.matchAll(
-    /\b(?:node(?: --[A-Za-z-]+(?:=[A-Za-z0-9_.:-]+)?)*|bash|python3(?: -[A-Za-z]+)?)\s+((?:scripts|deployment)\/[A-Za-z0-9_./-]+\.(?:[cm]?[jt]sx?|py|sh|go))\b/g,
+    /\b(?:node(?: --[A-Za-z-]+(?:=[A-Za-z0-9_.:-]+)?)*|bash|python3(?: -[A-Za-z]+)?)\s+((?:apps|packages|scripts|deployment)\/[A-Za-z0-9_./-]+\.(?:[cm]?[jt]sx?|py|sh|go))\b/g,
   ))
     assert(existsSync(resolve(root, command[1] ?? '')), `MISSING_CURRENT_COMMAND_TARGET ${path}: ${command[1]}`);
 }

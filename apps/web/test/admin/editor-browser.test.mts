@@ -353,7 +353,7 @@ test('real browser editor syncs typed view, variant and step controls with direc
       .digest('hex');
   const frontPixels = await pixels(2);
   const initialImagePixels = await pixels(0);
-  const viewSelect = page.locator('select').nth(1);
+  const viewSelect = page.getByRole('combobox', { name: 'View', exact: true });
   await viewSelect.selectOption('back-view');
   assert.equal(await viewSelect.inputValue(), 'back-view');
   await page.waitForTimeout(100);
@@ -361,16 +361,16 @@ test('real browser editor syncs typed view, variant and step controls with direc
   await viewSelect.selectOption('front-view');
   await page.waitForTimeout(100);
   assert.equal(await pixels(0), initialImagePixels, 'Cached image must remain in the initial and reprojected canvas');
-  const variantSelect = page.locator('select').nth(2);
+  const variantSelect = page.getByRole('combobox', { name: 'Product variant', exact: true });
   await variantSelect.selectOption('variant_11');
   assert.equal(await variantSelect.inputValue(), 'variant_11');
   await page.waitForTimeout(100);
   assert.notEqual(await pixels(2), frontPixels, 'Variant override must change Konva placement pixels');
-  await page.locator('select').nth(3).selectOption('front');
-  await page.locator('select').nth(4).selectOption('small');
+  await page.getByRole('combobox', { name: 'Print area', exact: true }).selectOption('front');
+  await page.getByRole('combobox', { name: 'Print size', exact: true }).selectOption('small');
   await page.waitForTimeout(100);
   const smallPixels = await pixels(1);
-  await page.locator('select').nth(4).selectOption('large');
+  await page.getByRole('combobox', { name: 'Print size', exact: true }).selectOption('large');
   await page.waitForTimeout(100);
   assert.notEqual(await pixels(1), smallPixels, 'Size step must change Konva artwork pixels');
   assert.equal(Number(await page.getByLabel('Horizontal position', { exact: true }).inputValue()), 0.4);
@@ -2492,10 +2492,12 @@ test('product search uses the responsive Polaris table with actionable rows and 
   assert.equal(await page.locator('s-table').count(), 1);
   await page.getByRole('grid').waitFor({ timeout: 3000 });
   await card.getByText('Archived', { exact: true }).waitFor();
-  assert.equal(await card.getByText('Blue / Large', { exact: true }).count(), 1);
+  assert.equal(await card.getByText('1 variant', { exact: true }).count(), 1);
   assert.equal(await page.getByText(/gid:\/\/shopify\//).count(), 0);
   assert.equal(
-    await card.getByRole('link', { name: 'Configure product', exact: true }).getAttribute('href'),
+    await card
+      .getByRole('link', { name: 'Historical archived shirt with a long catalog title', exact: true })
+      .getAttribute('href'),
     '/admin/products/111/config',
   );
   await search.fill('archived & blue');
@@ -2511,7 +2513,10 @@ test('product search uses the responsive Polaris table with actionable rows and 
       `Picker must fit a ${width}px viewport`,
     );
 
-    const configure = card.getByRole('link', { name: 'Configure product', exact: true });
+    const configure = card.getByRole('link', {
+      name: 'Historical archived shirt with a long catalog title',
+      exact: true,
+    });
     await configure.scrollIntoViewIfNeeded();
     assert.ok(await configure.isVisible());
     const actionBox = await configure.boundingBox();
@@ -3622,4 +3627,45 @@ test('loading editor reserves the real two-column layout and stacks its preview 
   } finally {
     required(release)();
   }
+});
+
+test('merchant navigation feedback reserves the editor preview before replacing the document', {
+  timeout: 15000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  await page.addInitScript(() => {
+    window.shopify = { idToken: async () => 'synthetic-navigation-layout' };
+  });
+  await routePolaris(page, source);
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
+  await page.route('**/api/admin/products?*', (r) =>
+    r.fulfill({ json: { products: [response(draft()).product], nextCursor: null } }),
+  );
+  await page.goto(`${server.base}/admin/products`);
+  await page.getByRole('link', { name: 'Synthetic shirt', exact: true }).waitFor();
+  // Hold the browser transport so the actual link's outgoing-document feedback is observable.
+  await page.evaluate(() =>
+    window.navigation.addEventListener('navigate', (event) => {
+      if (event.canIntercept) event.intercept({ handler: () => new Promise<void>(() => {}) });
+    }),
+  );
+  await page.getByRole('link', { name: 'Synthetic shirt', exact: true }).click();
+  await page.waitForFunction(
+    () =>
+      document.documentElement.dataset.adminReady === 'false' &&
+      document.querySelector('[data-skeleton-layout]')?.getAttribute('data-skeleton-layout') === 'editor',
+    undefined,
+    { timeout: 2500 },
+  );
+  const content = page.locator('#admin-route-skeleton [aria-label="Page content"]');
+  const preview = page.locator('#admin-route-skeleton [aria-label="Preview placeholder"]');
+  await preview.waitFor();
+  await page.waitForTimeout(100);
+  const a = required(await content.boundingBox()),
+    b = required(await preview.boundingBox());
+  assert.ok(
+    a.width >= 400 && b.width >= 240 && b.x >= a.x + a.width,
+    'navigation feedback uses the same responsive editor composition as cold loading',
+  );
 });

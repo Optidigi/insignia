@@ -33,3 +33,10 @@ export function adminRoute(pathname: string) {
       return { heading: 'Settings', layout: 'settings', inlineSize: 'small' } as const;
   }
 }
+
+/** Multi-token responsive values must be quoted for the pinned Polaris parser. */
+export function adminSkeletonColumns(layout: ReturnType<typeof adminRoute>['layout']) {
+  return layout === 'editor'
+    ? '@container admin-page-skeleton (inline-size >= 784px) "minmax(0, 1fr) 312px", "minmax(0, 1fr)"'
+    : 'minmax(0, 1fr)';
+}

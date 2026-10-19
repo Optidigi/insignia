@@ -3,6 +3,14 @@ export {};
 
 declare global {
   interface Window {
+    /** Browser navigation transport is held only by the loading-state regression. */
+    navigation: {
+      addEventListener(
+        type: 'navigate',
+        listener: (event: { canIntercept: boolean; intercept(options: { handler(): Promise<void> }): void }) => void,
+      ): void;
+    };
+
     shopify: {
       idToken(): Promise<string>;
       config?: { shop: string };

@@ -13,7 +13,7 @@ corepack pnpm build
 node scripts/database/isolated.mts
 ```
 
-The launcher ignores ambient libpq selectors and `DATABASE_URL`, creates an owned temporary cluster with a private Unix socket and TCP disabled, runs `corepack pnpm check:database` (migration twice plus database regression), then stops and removes that cluster. It never selects a native database. On a system where binaries are outside PATH, set `INSIGNIA_PG_BIN` to their installed directory. `INSIGNIA_PG_SHARE` optionally selects that installation's PostgreSQL18 share directory; no private server-specific path is required. Normal dynamic-library prerequisites remain those of the installation. Shutdown failure retains the fixture and prints its path for diagnosis.
+The launcher ignores ambient libpq selectors, `DATABASE_URL`, auxiliary role/restore targets, opt-in fixture controls and fixture-output paths, creates an owned temporary cluster with a private Unix socket and TCP disabled, runs `corepack pnpm check:database` (migration twice plus database regression), then stops and removes that cluster. It never selects a native database. On a system where binaries are outside PATH, set `INSIGNIA_PG_BIN` to their installed directory. `INSIGNIA_PG_SHARE` optionally selects that installation's PostgreSQL18 share directory; no private server-specific path is required. Normal dynamic-library prerequisites remain those of the installation. Shutdown failure retains the fixture and prints its path for diagnosis.
 
 A focused command may run inside the same isolated fixture; migrate first if it needs the schema:
 
@@ -22,3 +22,5 @@ node scripts/database/isolated.mts -- corepack pnpm check:database
 ```
 
 For an already owned disposable target, `DATABASE_URL=... corepack pnpm check:database` remains available. Never reuse a native/production endpoint. PostgreSQL-role, real queue/process, and populated dump/restore controls have additional explicit fixture admissions; their skips in the ordinary suite are not passes. CI retains those separate boundaries. The local SQL fixture and object-store doubles do not prove production object recovery, real uninstall/privacy delivery or rollout eligibility.
+
+The real launcher isolation regression is `node --test scripts/database/isolated.test.mts` with `INSIGNIA_PG_BIN` set to installed PostgreSQL18 tools. It owns the role test's synthetic loopback58199 address as a connection sentinel, poisons auxiliary target/output selectors and runs the actual default migrated database suite; the sentinel must receive no connection. It requires that local port to be free. The optional SCRAM reconnect rehearsal in `web-runtime-grants.test.ts` uses its existing explicitly admitted disposable fixture plus `CREDENTIAL_RECONNECT_TEST=1`; it is never enabled implicitly by the isolated default command.

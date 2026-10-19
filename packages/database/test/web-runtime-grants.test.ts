@@ -827,6 +827,132 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
         ).rows[0],
       ).toEqual({ original: false, buyer: false, signing: false });
       expect(session.sessionId).toBeTruthy();
+      // Explicit extra qualification on an owned SCRAM fixture, never a native
+      // rotation command. Wrong-password rejection prevents trust-auth false proof.
+      if (process.env.CREDENTIAL_RECONNECT_TEST === '1') {
+        const credentialOwner = owner;
+        const authority = async () =>
+          (
+            await credentialOwner.query(`SELECT jsonb_build_object(
+              'roles',(SELECT jsonb_agg(to_jsonb(r) ORDER BY rolname) FROM pg_roles r),
+              'memberships',(SELECT jsonb_agg(to_jsonb(m) ORDER BY roleid,member) FROM pg_auth_members m),
+              'tables',(SELECT jsonb_agg(jsonb_build_array(oid,relowner,relacl) ORDER BY oid) FROM pg_class WHERE relnamespace='public'::regnamespace),
+              'columns',(SELECT jsonb_agg(jsonb_build_array(attrelid,attnum,attacl) ORDER BY attrelid,attnum) FROM pg_attribute WHERE attrelid IN (SELECT oid FROM pg_class WHERE relnamespace='public'::regnamespace)),
+              'functions',(SELECT jsonb_agg(jsonb_build_array(oid,proowner,proacl,proconfig) ORDER BY oid) FROM pg_proc WHERE pronamespace='public'::regnamespace)
+            ) AS value`)
+          ).rows[0].value;
+        const retained = async () => {
+          const values: unknown[] = [];
+          for (const table of [
+            'shops',
+            'installation_generations',
+            'accepted_quotes',
+            'config_revisions',
+            'purchase_orders',
+            'purchase_bindings',
+            'purchase_lines',
+            'purchase_paid_facts',
+            'uninstall_destinations',
+            'uninstall_delivery_authority',
+          ])
+            values.push(
+              (
+                await credentialOwner.query(
+                  `SELECT jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text) AS value FROM public.${table} t`,
+                )
+              ).rows[0].value,
+            );
+          return values;
+        };
+        const beforeRights = await authority(),
+          beforeFacts = await retained();
+        for (const consumer of [
+          {
+            role: login,
+            password: webPassword,
+            runtime: web,
+            drained: () => {
+              web = undefined;
+            },
+            read: async (pool: Pool) => {
+              const fresh = createDurableCore(pool);
+              return fresh.transactions.run((tx) => fresh.methodCatalog.list(tx, shopId));
+            },
+          },
+          {
+            role: worker,
+            password: workerPassword,
+            runtime: purchaseWorker,
+            drained: () => {
+              purchaseWorker = undefined;
+            },
+            read: (pool: Pool) => createDurableCore(pool).uninstallPrivacy.status(),
+          },
+          {
+            role: inspectorLogin,
+            password: inspectorPassword,
+            runtime: inspectionWorker,
+            drained: () => {
+              inspectionWorker = undefined;
+            },
+            read: (pool: Pool) => createDurableCore(pool).artwork.selectPending(1, now),
+          },
+        ]) {
+          const addressFor = (password: string) => {
+            const address = new URL(target);
+            address.username = consumer.role;
+            address.password = password;
+            return address.href;
+          };
+          const rejected = async (password: string) => {
+            const fresh = new Pool({ connectionString: addressFor(password), connectionTimeoutMillis: 1500 });
+            try {
+              await expect(fresh.query('SELECT current_user')).rejects.toMatchObject({ code: '28P01' });
+            } finally {
+              await fresh.end();
+            }
+          };
+          await rejected(randomBytes(32).toString('hex'));
+          const originalRead = await consumer.read(consumer.runtime);
+          const established = await consumer.runtime.connect();
+          const originalPid = (await established.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;
+          const replacement = randomBytes(32).toString('hex');
+          let held = true;
+          try {
+            await owner.query(`ALTER ROLE ${consumer.role} PASSWORD '${replacement}'`);
+            // Password replacement does not revoke already authenticated sessions:
+            // a real cutover must drain/restart them, not infer revocation.
+            expect((await established.query('SELECT pg_backend_pid() AS pid')).rows[0].pid).toBe(originalPid);
+            await rejected(consumer.password);
+            established.release(true);
+            held = false;
+            await consumer.runtime.end(); // Drain every old-auth connection before replacement.
+            consumer.drained();
+            const fresh = new Pool({ connectionString: addressFor(replacement), connectionTimeoutMillis: 1500 });
+            try {
+              expect((await fresh.query('SELECT current_user')).rows[0].current_user).toBe(consumer.role);
+              expect(await consumer.read(fresh)).toEqual(originalRead);
+              await expect(fresh.query('TRUNCATE public.trusted_release_records')).rejects.toMatchObject({
+                code: '42501',
+              });
+            } finally {
+              await fresh.end();
+            }
+          } finally {
+            if (held) established.release(true);
+            await owner.query(`ALTER ROLE ${consumer.role} PASSWORD '${consumer.password}'`);
+          }
+          await rejected(replacement);
+          const rollback = new Pool({ connectionString: addressFor(consumer.password), connectionTimeoutMillis: 1500 });
+          try {
+            expect(await consumer.read(rollback)).toEqual(originalRead);
+          } finally {
+            await rollback.end();
+          }
+          expect(await authority()).toEqual(beforeRights);
+          expect(await retained()).toEqual(beforeFacts);
+        }
+      }
     } finally {
       await inspectionWorker?.end();
       await purchaseWorker?.end();
