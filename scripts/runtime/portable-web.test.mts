@@ -169,7 +169,7 @@ test('current compiled web package survives relocation and serves HTTP on the co
         assert.match(html, /<s-banner[^>]*tone="critical"[^>]*heading="Insignia could not open"/);
         assert.match(
           html,
-          /<s-link href="https:\/\/admin\.shopify\.com" target="_top">Return to Shopify Admin<\/s-link>/,
+          /<s-button\b[^>]*href="https:\/\/admin\.shopify\.com"[^>]*target="_top"[^>]*>Return to Shopify Admin<\/s-button>/,
         );
         assert.match(html, /shopifycloud\/polaris-1\.1\.js/);
         assert.match(html, /data-admin-ready="true"/);

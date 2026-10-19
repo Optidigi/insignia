@@ -112,6 +112,7 @@ s-drop-zone:not(:defined) {
   display: none !important;
 }
 
+/* App-owned containment for the loading layout; controls remain Polaris. */
 [data-skeleton-container] {
   container-type: inline-size;
   container-name: admin-page-skeleton;

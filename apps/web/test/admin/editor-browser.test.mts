@@ -1,4 +1,4 @@
-import type { ConfigView, PublicationState } from '../../src/shared/admin-view.js';
+import type { PublicationState } from '../../src/shared/admin-view.js';
 import {
   type EditorCommand,
   type EditorDraft,
@@ -8,6 +8,7 @@ import {
   fixedRate,
 } from './support/editor-commands.mts';
 import { record, required } from './support/fixtures.mts';
+import { draft, response } from './support/product-fixture.mts';
 import './support/browser-state.mts';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -33,8 +34,6 @@ async function routePolaris(target: Page | BrowserContext, source: Buffer) {
   );
 }
 
-const png =
-  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
 const id = 'gid://shopify/Product/111';
 const variant = 'gid://shopify/ProductVariant/11';
 test('every merchant route declares the same native Shopify sidebar before private data loads', {
@@ -106,7 +105,6 @@ test('merchant product screens expose no technical signing setup or setup reques
   assert.equal(await page.getByRole('button', { name: 'Set up signing', exact: true }).count(), 0);
   assert.deepEqual([...signingRequests], []);
 });
-const rect = { centerX: 0.5, centerY: 0.5, width: 0.3, height: 0.3 };
 function solidPng(width: number, height: number, color: readonly number[]) {
   const chunk = (name: string, data: Buffer) => {
     const type = Buffer.from(name);
@@ -132,79 +130,6 @@ function solidPng(width: number, height: number, color: readonly number[]) {
       chunk('IEND', Buffer.alloc(0)),
     ]).toString('base64')
   );
-}
-function draft(): EditorDraft {
-  return {
-    version: 'm5-merchant-draft-v1',
-    mode: 'optional',
-    shopCurrency: 'USD',
-    methods: [{ id: 'print' }],
-    placements: [
-      { id: 'front', allowedMethodIds: ['print'], allowedStepIds: ['small', 'large'], logoLaterAllowed: true },
-    ],
-    productionOptions: [],
-    pricingRules: [],
-    geometry: {
-      version: 'm5-geometry-v1',
-      views: [
-        {
-          id: 'front-view',
-          image: { revisionId: 'product_111', width: 1, height: 1 },
-          variantImages: [{ variantId: 'variant_11', image: { revisionId: 'variant_11', width: 1, height: 1 } }],
-          placements: [
-            {
-              id: 'front',
-              rect,
-              variantOverrides: [
-                { variantId: 'variant_11', rect: { ...rect, centerX: 0.4, centerY: 0.4, width: 0.2, height: 0.2 } },
-              ],
-            },
-          ],
-        },
-        {
-          id: 'back-view',
-          image: { revisionId: 'product_111', width: 1, height: 1 },
-          variantImages: [],
-          placements: [{ id: 'front', rect: { ...rect, centerY: 0.6 } }],
-        },
-      ],
-      steps: [
-        { id: 'small', widthFraction: 0.5, heightFraction: 0.5 },
-        { id: 'large', widthFraction: 0.8, heightFraction: 0.8 },
-      ],
-    },
-  };
-}
-function response(
-  config: EditorDraft,
-): Omit<ConfigView, 'config'> & { config: NonNullable<ConfigView['config']> & { draft: EditorDraft } } {
-  return {
-    product: {
-      id,
-      title: 'Synthetic shirt',
-      status: 'ACTIVE',
-      imageUrl: png,
-      variants: [{ id: variant, title: 'Blue', imageUrl: png, selectedOptions: [] }],
-    },
-    config: {
-      configId: 'config-1',
-      installationGeneration: '1',
-      draftVersion: '1',
-      draft: config,
-      currentShopCurrency: 'USD',
-      publication: {
-        state: 'DRAFT',
-        revisionId: null,
-        sourceDraftVersion: null,
-        requestKey: null,
-        activeRevisionId: null,
-        reason: null,
-        requiresAllChannelHold: null,
-        functionReadiness: null,
-      },
-      publishEligibility: { allowed: false, reason: 'Synthetic policy unavailable' },
-    },
-  };
 }
 async function browserFixture(t: TestContext) {
   const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
@@ -428,7 +353,7 @@ test('real browser editor syncs typed view, variant and step controls with direc
       .digest('hex');
   const frontPixels = await pixels(2);
   const initialImagePixels = await pixels(0);
-  const viewSelect = page.locator('select').nth(1);
+  const viewSelect = page.getByRole('combobox', { name: 'View', exact: true });
   await viewSelect.selectOption('back-view');
   assert.equal(await viewSelect.inputValue(), 'back-view');
   await page.waitForTimeout(100);
@@ -436,16 +361,16 @@ test('real browser editor syncs typed view, variant and step controls with direc
   await viewSelect.selectOption('front-view');
   await page.waitForTimeout(100);
   assert.equal(await pixels(0), initialImagePixels, 'Cached image must remain in the initial and reprojected canvas');
-  const variantSelect = page.locator('select').nth(2);
+  const variantSelect = page.getByRole('combobox', { name: 'Product variant', exact: true });
   await variantSelect.selectOption('variant_11');
   assert.equal(await variantSelect.inputValue(), 'variant_11');
   await page.waitForTimeout(100);
   assert.notEqual(await pixels(2), frontPixels, 'Variant override must change Konva placement pixels');
-  await page.locator('select').nth(3).selectOption('front');
-  await page.locator('select').nth(4).selectOption('small');
+  await page.getByRole('combobox', { name: 'Print area', exact: true }).selectOption('front');
+  await page.getByRole('combobox', { name: 'Print size', exact: true }).selectOption('small');
   await page.waitForTimeout(100);
   const smallPixels = await pixels(1);
-  await page.locator('select').nth(4).selectOption('large');
+  await page.getByRole('combobox', { name: 'Print size', exact: true }).selectOption('large');
   await page.waitForTimeout(100);
   assert.notEqual(await pixels(1), smallPixels, 'Size step must change Konva artwork pixels');
   assert.equal(Number(await page.getByLabel('Horizontal position', { exact: true }).inputValue()), 0.4);
@@ -2567,10 +2492,12 @@ test('product search uses the responsive Polaris table with actionable rows and 
   assert.equal(await page.locator('s-table').count(), 1);
   await page.getByRole('grid').waitFor({ timeout: 3000 });
   await card.getByText('Archived', { exact: true }).waitFor();
-  assert.equal(await card.getByText('Blue / Large', { exact: true }).count(), 1);
+  assert.equal(await card.getByText('1 variant', { exact: true }).count(), 1);
   assert.equal(await page.getByText(/gid:\/\/shopify\//).count(), 0);
   assert.equal(
-    await card.getByRole('link', { name: 'Configure product', exact: true }).getAttribute('href'),
+    await card
+      .getByRole('link', { name: 'Historical archived shirt with a long catalog title', exact: true })
+      .getAttribute('href'),
     '/admin/products/111/config',
   );
   await search.fill('archived & blue');
@@ -2586,7 +2513,10 @@ test('product search uses the responsive Polaris table with actionable rows and 
       `Picker must fit a ${width}px viewport`,
     );
 
-    const configure = card.getByRole('link', { name: 'Configure product', exact: true });
+    const configure = card.getByRole('link', {
+      name: 'Historical archived shirt with a long catalog title',
+      exact: true,
+    });
     await configure.scrollIntoViewIfNeeded();
     assert.ok(await configure.isVisible());
     const actionBox = await configure.boundingBox();
@@ -2886,19 +2816,19 @@ test('editor guides configuration through prices to publication while keeping di
   await page.route('**/api/admin/products/111/config', (route) => route.fulfill({ json: current }));
   await page.goto(`${server.base}/admin/products/111/config?view=all`);
   await page.getByText('All changes saved', { exact: true }).waitFor();
-  const prices = page.getByRole('link', { name: '3. Prices', exact: true });
-  await prices.waitFor({ timeout: 2000 });
-  await prices.click();
+  const sections = page.getByLabel('Configuration section', { exact: true });
+  await sections.waitFor({ timeout: 2000 });
+  await sections.selectOption('prices');
   assert.equal(new URL(page.url()).hash, '#decoration-prices');
   assert.equal(await page.getByText('Function readiness: RELEASE_BOUND', { exact: true }).isVisible(), false);
-  await page.getByRole('link', { name: '4. Review and publish', exact: true }).click();
+  await page.getByLabel('Configuration section', { exact: true }).selectOption('review');
   await page.getByText('Technical publication details', { exact: true }).click();
   await page.getByText('Effective revision: technical-revision', { exact: true }).waitFor({ state: 'attached' });
   assert.equal(
     await page.locator('s-button[variant="primary"]').filter({ hasText: 'Save draft' }).innerText(),
     'Save draft',
   );
-  await page.getByRole('link', { name: '4. Review and publish', exact: true }).click();
+  await page.getByLabel('Configuration section', { exact: true }).selectOption('review');
   await page.getByRole('button', { name: 'Publish saved changes', exact: true }).waitFor();
   if (process.env.M5_CAPTURE_BROWSER === '1')
     await page.screenshot({ path: '/tmp/insignia-admin-workflow-editor.png', fullPage: true });
@@ -3056,13 +2986,13 @@ test('guided product setup shows one stage at a time and keeps unsaved choices w
     '2.50',
   );
   assert.equal(writes, 0, 'step navigation never saves or publishes implicitly');
-  await page.getByRole('button', { name: 'View all settings', exact: true }).click();
+  await page.getByLabel('Configuration section', { exact: true }).selectOption('all');
   assert.equal(await page.getByLabel('Method name').isVisible(), true);
   assert.equal(await page.getByLabel('View name').isVisible(), true);
   await page.goBack();
   await page.getByText('Step 3 of 4 · Prices', { exact: true }).waitFor();
   assert.equal(await page.getByLabel('Method name').isVisible(), false);
-  await page.getByRole('link', { name: '1. Product rules', exact: true }).click();
+  await page.getByLabel('Configuration section', { exact: true }).selectOption('rules');
   await page.setViewportSize({ width: 390, height: 844 });
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   if (process.env.M5_CAPTURE_BROWSER === '1')
@@ -3096,9 +3026,10 @@ test('settings method library saves reusable names and editor imports an indepen
     return r.fulfill({ json: response(draft()) });
   });
   await page.goto(`${server.base}/admin/settings/methods`);
+  await page.getByRole('button', { name: 'Add method', exact: true }).click();
   await page.getByLabel('New method name', { exact: true }).fill('Embroidery');
   await page.getByRole('button', { name: 'Add to library', exact: true }).click();
-  await page.getByLabel('Library method name', { exact: true }).waitFor();
+  await page.getByText('Embroidery', { exact: true }).waitFor();
   await page.goto(`${server.base}/admin/products/111/config`);
   await page.getByRole('button', { name: 'Choose from library', exact: true }).click();
   await page.getByLabel('Library method', { exact: true }).selectOption(required(methods[0]).id);
@@ -3133,9 +3064,15 @@ test('settings owns billing and privacy and storefront guidance opens exact unsa
   await page.goto(`${server.base}/admin/settings/storefront`);
   const button = page.locator('s-button').filter({ hasText: 'Add customization button' });
   await button.waitFor();
-  const navigation = page.getByRole('navigation', { name: 'Settings sections' });
-  for (const title of ['General', 'Decoration methods', 'Storefront setup', 'Billing', 'Privacy'])
-    assert.equal(await navigation.getByRole('link', { name: title, exact: true }).count(), 1);
+  assert.equal(
+    await page.locator('s-page > s-link[slot="breadcrumb-actions"]').getAttribute('href'),
+    '/admin/settings',
+  );
+  assert.equal(
+    await page.getByRole('navigation', { name: 'Settings sections' }).count(),
+    0,
+    'subpages retain one host breadcrumb rather than repeating settings navigation',
+  );
   const link = new URL(required(await button.getAttribute('href')));
   assert.equal(link.origin, 'https://example.myshopify.com');
   assert.equal(link.pathname, '/admin/themes/current/editor');
@@ -3182,22 +3119,24 @@ test('method library fences authorization loss and reconciles a lost create resp
     return r.fulfill({ status: 201, json: { kind: 'created', method: saved } });
   });
   await page.goto(`${server.base}/admin/settings/methods`);
+  await page.getByRole('button', { name: 'Add method', exact: true }).click();
   await page.getByLabel('New method name', { exact: true }).fill('Embroidery');
   await page.getByRole('button', { name: 'Add to library', exact: true }).click();
   const retry = page.getByRole('button', { name: 'Retry last change', exact: true });
-  await retry.waitFor();
+  await page.locator('#edit-method').getByText('The result is not confirmed.', { exact: false }).waitFor();
   assert.equal(await page.getByRole('button', { name: 'Add to library', exact: true }).isEnabled(), false);
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await page.getByRole('button', { name: 'Refresh library', exact: true }).click();
-  await page.getByLabel('Library method name', { exact: true }).waitFor();
+  await page.getByText('Embroidery', { exact: true }).waitFor();
   await retry.click();
   await page.getByText('Library saved. Existing products are unchanged.', { exact: true }).waitFor();
-  assert.equal(await page.getByLabel('Library method name', { exact: true }).count(), 1);
+  assert.equal(await page.getByText('Embroidery', { exact: true }).count(), 1);
   assert.equal(keys.length, 2);
   assert.equal(keys[0], keys[1]);
   denied = true;
   await page.getByRole('button', { name: 'Refresh library', exact: true }).click();
   await page.locator('s-banner').filter({ hasText: 'Current authorization required' }).waitFor();
-  assert.equal(await page.getByLabel('Library method name', { exact: true }).count(), 0);
+  assert.equal(await page.getByText('Embroidery', { exact: true }).count(), 0);
   assert.equal(await page.getByLabel('New method name', { exact: true }).count(), 0);
 });
 
@@ -3369,7 +3308,10 @@ test('configurator leads with editable product rules and Polaris actions rather 
   await page.goto(`${server.base}/admin/products/111/config`);
   const mode = page.getByRole('combobox', { name: 'Customization mode', exact: true });
   await mode.waitFor();
-  assert.ok(required(await mode.boundingBox()).y < 650, 'first editable field is in the initial desktop viewport');
+  assert.ok(
+    required(await mode.boundingBox()).y < 300,
+    'editable content precedes secondary status and setup guidance',
+  );
   if (process.env.M5_CAPTURE_POLISH === '1') {
     await page.screenshot({ path: '/tmp/insignia-polaris-editor-desktop.png', fullPage: true });
     await page.setViewportSize({ width: 390, height: 844 });
@@ -3538,7 +3480,7 @@ test('library removal uses an accessible Polaris confirmation and cancel never d
   await modal.getByRole('button', { name: 'Confirm removal', exact: true }).click();
   await page.getByText('Removed from library. Existing products are unchanged.', { exact: true }).waitFor();
   assert.equal(writes, 1);
-  assert.equal(await page.getByLabel('Library method name', { exact: true }).count(), 0);
+  assert.equal(await page.getByText('Embroidery', { exact: true }).count(), 0);
 });
 
 test('unsaved editor changes use Shopify save state and confirmed discard restores without a write', {
@@ -3570,17 +3512,29 @@ test('unsaved editor changes use Shopify save state and confirmed discard restor
   const original = await name.inputValue();
   await name.fill('Changed locally');
   await page.waitForFunction(() => window.saveBarEvents.some(([kind]) => kind === 'show'));
-  await page.getByRole('button', { name: 'Discard changes', exact: true }).click();
+  assert.equal(
+    await page.getByRole('button', { name: 'Save draft', exact: true }).count(),
+    0,
+    'host owns save actions',
+  );
+  assert.equal(await page.getByRole('button', { name: 'Discard changes', exact: true }).count(), 0);
+  await page
+    .locator('ui-save-bar button')
+    .nth(1)
+    .evaluate((button: HTMLButtonElement) => button.click());
   const modal = page.locator('#discard-product-changes');
   await page.getByRole('dialog', { name: 'Discard unsaved changes?', exact: true }).waitFor();
   await modal.getByRole('button', { name: 'Keep editing', exact: true }).click();
   assert.equal(await name.inputValue(), 'Changed locally');
-  await page.getByRole('button', { name: 'Discard changes', exact: true }).click();
+  await page
+    .locator('ui-save-bar button')
+    .nth(1)
+    .evaluate((button: HTMLButtonElement) => button.click());
   await modal.getByRole('button', { name: 'Discard', exact: true }).click();
   await page.getByText('All changes saved', { exact: true }).waitFor();
   assert.equal(await name.inputValue(), original);
   assert.equal(writes, 0);
-  assert.equal(await page.getByRole('button', { name: 'Save draft', exact: true }).isEnabled(), false);
+  assert.equal(await page.locator('ui-save-bar button').first().isDisabled(), true);
 });
 
 for (const settlementRead of ['failed', 'unchanged']) {
@@ -3633,3 +3587,85 @@ for (const settlementRead of ['failed', 'unchanged']) {
     assert.equal(await name.inputValue(), 'One intended change');
   });
 }
+
+test('loading editor reserves the real two-column layout and stacks its preview on mobile', {
+  timeout: 15000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  await page.addInitScript(() => {
+    window.shopify = { idToken: async () => 'synthetic-loading-layout' };
+  });
+  await routePolaris(page, source);
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
+  let release: (() => void) | undefined;
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/admin/products/111/config', async (r) => {
+    await pending;
+    await r.fulfill({ json: response(draft()) });
+  });
+  try {
+    await page.goto(`${server.base}/admin/products/111/config`);
+    await page.evaluate(() => customElements.whenDefined('s-grid'));
+    const content = page.locator('#admin-route-skeleton [aria-label="Page content"]');
+    const preview = page.locator('#admin-route-skeleton [aria-label="Preview placeholder"]');
+    await content.waitFor();
+    await page.waitForTimeout(100);
+    const a = required(await content.boundingBox()),
+      b = required(await preview.boundingBox());
+    assert.ok(
+      b.x >= a.x + a.width,
+      `wide loading state reserves the preview beside editable content: ${JSON.stringify({ a, b })}`,
+    );
+    await page.setViewportSize({ width: 390, height: 844 });
+    const mobileContent = required(await content.boundingBox()),
+      mobilePreview = required(await preview.boundingBox());
+    assert.ok(mobilePreview.y >= mobileContent.y + mobileContent.height, 'narrow loading state stacks preview');
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  } finally {
+    required(release)();
+  }
+});
+
+test('merchant navigation feedback reserves the editor preview before replacing the document', {
+  timeout: 15000,
+}, async (t) => {
+  const { source, server, browser } = await browserFixture(t);
+  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  await page.addInitScript(() => {
+    window.shopify = { idToken: async () => 'synthetic-navigation-layout' };
+  });
+  await routePolaris(page, source);
+  await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
+  await page.route('**/api/admin/products?*', (r) =>
+    r.fulfill({ json: { products: [response(draft()).product], nextCursor: null } }),
+  );
+  await page.goto(`${server.base}/admin/products`);
+  await page.getByRole('link', { name: 'Synthetic shirt', exact: true }).waitFor();
+  // Hold the browser transport so the actual link's outgoing-document feedback is observable.
+  await page.evaluate(() =>
+    window.navigation.addEventListener('navigate', (event) => {
+      if (event.canIntercept) event.intercept({ handler: () => new Promise<void>(() => {}) });
+    }),
+  );
+  await page.getByRole('link', { name: 'Synthetic shirt', exact: true }).click();
+  await page.waitForFunction(
+    () =>
+      document.documentElement.dataset.adminReady === 'false' &&
+      document.querySelector('[data-skeleton-layout]')?.getAttribute('data-skeleton-layout') === 'editor',
+    undefined,
+    { timeout: 2500 },
+  );
+  const content = page.locator('#admin-route-skeleton [aria-label="Page content"]');
+  const preview = page.locator('#admin-route-skeleton [aria-label="Preview placeholder"]');
+  await preview.waitFor();
+  await page.waitForTimeout(100);
+  const a = required(await content.boundingBox()),
+    b = required(await preview.boundingBox());
+  assert.ok(
+    a.width >= 400 && b.width >= 240 && b.x >= a.x + a.width,
+    'navigation feedback uses the same responsive editor composition as cold loading',
+  );
+});

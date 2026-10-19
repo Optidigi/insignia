@@ -1,4 +1,4 @@
-import { adminRoute } from '../shared/admin-route';
+import { adminRoute, adminSkeletonColumns } from '../shared/admin-route';
 import AdminSkeleton from './AdminSkeleton';
 
 /** Match the pinned Page composition with Polaris primitives; only the live view owns s-page. */
@@ -15,22 +15,8 @@ export default function AdminPageSkeleton({ pathname }: { pathname: string }) {
           inlineSize="100%"
           padding="base"
         >
-          <s-grid
-            data-skeleton-grid
-            gridTemplateColumns={
-              layout === 'editor'
-                ? '@container admin-page-skeleton (inline-size >= 784px) minmax(0, 1fr) 312px, minmax(0, 1fr)'
-                : 'minmax(0, 1fr)'
-            }
-            gap="base"
-            alignItems="start"
-          >
+          <s-grid data-skeleton-grid gridTemplateColumns={adminSkeletonColumns(layout)} gap="base" alignItems="start">
             <s-stack gap="base">
-              <s-box data-skeleton-extra="editor" display={layout === 'editor' ? 'auto' : 'none'}>
-                <s-section>
-                  <AdminSkeleton label="Setup navigation placeholder" rows={2} variant="inline" />
-                </s-section>
-              </s-box>
               <s-box data-skeleton-extra="plan" display={pathname.includes('/billing') ? 'auto' : 'none'}>
                 <s-section>
                   <AdminSkeleton label="Plan placeholder" rows={2} variant="inline" />

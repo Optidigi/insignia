@@ -1,0 +1,362 @@
+{
+  "/api/admin/methods": {
+    "methods": [
+      {
+        "id": "52915e17-8104-4ef2-beb8-e99efc2914ec",
+        "name": "Embroidery",
+        "version": "1"
+      },
+      {
+        "id": "2ea4e646-fd82-46aa-b9ef-6b80bca2b0c8",
+        "name": "Screen printing",
+        "version": "1"
+      }
+    ]
+  },
+  "/api/admin/billing": {
+    "status": "trial",
+    "observedAt": "2026-10-19T10:00:00Z",
+    "trialEndsAt": "2026-10-31T08:54:46Z",
+    "currentCycle": null,
+    "scheduledCancellation": false,
+    "pendingChange": false,
+    "newActionsAllowed": true,
+    "standardPrice": {
+      "amount": "49.99",
+      "currency": "USD",
+      "intervalDays": 30
+    },
+    "recurringPrice": {
+      "amount": "0.00",
+      "currency": "USD"
+    },
+    "developmentTerms": true,
+    "managementUrl": null
+  },
+  "/api/purchases/v1": {
+    "version": "m8-purchase-list-v1",
+    "items": [
+      {
+        "version": "m8-purchase-v1",
+        "purchaseId": "d841ee12-2075-4101-b3bc-429ad31a4059",
+        "orderId": "gid://shopify/Order/1",
+        "orderName": "#1001 \u2014 Synthetic preview",
+        "orderCreatedAt": "2026-10-19T10:00:00Z",
+        "isTest": true,
+        "currency": "USD",
+        "exponent": 2,
+        "originalTotalMinor": "9000",
+        "firstPaidAt": "2026-10-19T10:01:00Z",
+        "financialStatus": "PAID",
+        "cancelledAt": null,
+        "exceptions": [],
+        "artworkVersion": 0,
+        "artworkState": "PENDING_ARTWORK",
+        "refunds": [],
+        "lines": [
+          {
+            "orderLineId": "line1",
+            "title": "Cotton crewneck",
+            "variantTitle": "Navy / Medium",
+            "productId": "111",
+            "variantId": "11",
+            "quantity": 2,
+            "unitPriceMinor": "4500"
+          }
+        ],
+        "groups": [
+          {
+            "index": 0,
+            "productId": "111",
+            "configRevisionId": "synthetic-preview-revision",
+            "variants": [
+              {
+                "variantId": "11",
+                "quantity": 2
+              }
+            ],
+            "placements": [
+              {
+                "id": "front",
+                "methodId": "print",
+                "stepId": "small",
+                "originalArtwork": {
+                  "kind": "deferred",
+                  "intentId": "synthetic-intent"
+                },
+                "currentAssetId": null,
+                "currentExpiresAt": null,
+                "expired": false
+              }
+            ],
+            "geometry": null,
+            "presentation": {
+              "version": "m5-presentation-v1",
+              "labels": {
+                "methods": {
+                  "print": "Screen printing"
+                },
+                "placements": {
+                  "front": "Front chest"
+                },
+                "steps": {
+                  "small": "Small"
+                }
+              }
+            },
+            "imageUrls": {},
+            "payloadExpiresAt": "2030-01-01T00:00:00Z"
+          }
+        ],
+        "artworkEvents": []
+      },
+      {
+        "version": "m8-purchase-v1",
+        "purchaseId": "ae39ae2a-8a58-4d3a-ae40-42dcdf0e91c7",
+        "orderId": "gid://shopify/Order/2",
+        "orderName": "#1002 \u2014 Synthetic preview",
+        "orderCreatedAt": "2026-10-19T10:00:00Z",
+        "isTest": true,
+        "currency": "USD",
+        "exponent": 2,
+        "originalTotalMinor": "9000",
+        "firstPaidAt": "2026-10-19T10:01:00Z",
+        "financialStatus": "PAID",
+        "cancelledAt": null,
+        "exceptions": [],
+        "artworkVersion": 1,
+        "artworkState": "READY",
+        "refunds": [],
+        "lines": [
+          {
+            "orderLineId": "line1",
+            "title": "Cotton crewneck",
+            "variantTitle": "Navy / Medium",
+            "productId": "111",
+            "variantId": "11",
+            "quantity": 2,
+            "unitPriceMinor": "4500"
+          }
+        ],
+        "groups": [
+          {
+            "index": 0,
+            "productId": "111",
+            "configRevisionId": "synthetic-preview-revision",
+            "variants": [
+              {
+                "variantId": "11",
+                "quantity": 2
+              }
+            ],
+            "placements": [
+              {
+                "id": "front",
+                "methodId": "print",
+                "stepId": "small",
+                "originalArtwork": {
+                  "kind": "deferred",
+                  "intentId": "synthetic-intent"
+                },
+                "currentAssetId": "0829a06c-e8c5-40aa-9167-4fb47e443231",
+                "currentExpiresAt": "2030-01-01T00:00:00Z",
+                "expired": false
+              }
+            ],
+            "geometry": null,
+            "presentation": {
+              "version": "m5-presentation-v1",
+              "labels": {
+                "methods": {
+                  "print": "Screen printing"
+                },
+                "placements": {
+                  "front": "Front chest"
+                },
+                "steps": {
+                  "small": "Small"
+                }
+              }
+            },
+            "imageUrls": {},
+            "payloadExpiresAt": "2030-01-01T00:00:00Z"
+          }
+        ],
+        "artworkEvents": []
+      }
+    ],
+    "nextCursor": null
+  },
+  "/api/purchases/v1/d841ee12-2075-4101-b3bc-429ad31a4059": {
+    "version": "m8-purchase-v1",
+    "purchaseId": "d841ee12-2075-4101-b3bc-429ad31a4059",
+    "orderId": "gid://shopify/Order/1",
+    "orderName": "#1001 \u2014 Synthetic preview",
+    "orderCreatedAt": "2026-10-19T10:00:00Z",
+    "isTest": true,
+    "currency": "USD",
+    "exponent": 2,
+    "originalTotalMinor": "9000",
+    "firstPaidAt": "2026-10-19T10:01:00Z",
+    "financialStatus": "PAID",
+    "cancelledAt": null,
+    "exceptions": [],
+    "artworkVersion": 0,
+    "artworkState": "PENDING_ARTWORK",
+    "refunds": [],
+    "lines": [
+      {
+        "orderLineId": "line1",
+        "title": "Cotton crewneck",
+        "variantTitle": "Navy / Medium",
+        "productId": "111",
+        "variantId": "11",
+        "quantity": 2,
+        "unitPriceMinor": "4500"
+      }
+    ],
+    "groups": [
+      {
+        "index": 0,
+        "productId": "111",
+        "configRevisionId": "synthetic-preview-revision",
+        "variants": [
+          {
+            "variantId": "11",
+            "quantity": 2
+          }
+        ],
+        "placements": [
+          {
+            "id": "front",
+            "methodId": "print",
+            "stepId": "small",
+            "originalArtwork": {
+              "kind": "deferred",
+              "intentId": "synthetic-intent"
+            },
+            "currentAssetId": null,
+            "currentExpiresAt": null,
+            "expired": false
+          }
+        ],
+        "geometry": null,
+        "presentation": {
+          "version": "m5-presentation-v1",
+          "labels": {
+            "methods": {
+              "print": "Screen printing"
+            },
+            "placements": {
+              "front": "Front chest"
+            },
+            "steps": {
+              "small": "Small"
+            }
+          }
+        },
+        "imageUrls": {},
+        "payloadExpiresAt": "2030-01-01T00:00:00Z"
+      }
+    ],
+    "artworkEvents": []
+  },
+  "/api/purchases/v1/ae39ae2a-8a58-4d3a-ae40-42dcdf0e91c7": {
+    "version": "m8-purchase-v1",
+    "purchaseId": "ae39ae2a-8a58-4d3a-ae40-42dcdf0e91c7",
+    "orderId": "gid://shopify/Order/2",
+    "orderName": "#1002 \u2014 Synthetic preview",
+    "orderCreatedAt": "2026-10-19T10:00:00Z",
+    "isTest": true,
+    "currency": "USD",
+    "exponent": 2,
+    "originalTotalMinor": "9000",
+    "firstPaidAt": "2026-10-19T10:01:00Z",
+    "financialStatus": "PAID",
+    "cancelledAt": null,
+    "exceptions": [],
+    "artworkVersion": 1,
+    "artworkState": "READY",
+    "refunds": [],
+    "lines": [
+      {
+        "orderLineId": "line1",
+        "title": "Cotton crewneck",
+        "variantTitle": "Navy / Medium",
+        "productId": "111",
+        "variantId": "11",
+        "quantity": 2,
+        "unitPriceMinor": "4500"
+      }
+    ],
+    "groups": [
+      {
+        "index": 0,
+        "productId": "111",
+        "configRevisionId": "synthetic-preview-revision",
+        "variants": [
+          {
+            "variantId": "11",
+            "quantity": 2
+          }
+        ],
+        "placements": [
+          {
+            "id": "front",
+            "methodId": "print",
+            "stepId": "small",
+            "originalArtwork": {
+              "kind": "deferred",
+              "intentId": "synthetic-intent"
+            },
+            "currentAssetId": "0829a06c-e8c5-40aa-9167-4fb47e443231",
+            "currentExpiresAt": "2030-01-01T00:00:00Z",
+            "expired": false
+          }
+        ],
+        "geometry": null,
+        "presentation": {
+          "version": "m5-presentation-v1",
+          "labels": {
+            "methods": {
+              "print": "Screen printing"
+            },
+            "placements": {
+              "front": "Front chest"
+            },
+            "steps": {
+              "small": "Small"
+            }
+          }
+        },
+        "imageUrls": {},
+        "payloadExpiresAt": "2030-01-01T00:00:00Z"
+      }
+    ],
+    "artworkEvents": []
+  },
+  "/api/purchases/v1/privacy": {
+    "items": [
+      {
+        "inboxId": "83cec3c3-6010-4941-9743-99ea655a9999",
+        "requestId": "19",
+        "receivedAt": "2026-10-19T10:00:00Z",
+        "fulfillBy": "2026-11-18T10:00:00Z",
+        "requestedOrderCount": 1
+      }
+    ]
+  },
+  "/api/purchases/v1/privacy/83cec3c3-6010-4941-9743-99ea655a9999": {
+    "inboxId": "83cec3c3-6010-4941-9743-99ea655a9999",
+    "requestId": "19",
+    "receivedAt": "2026-10-19T10:00:00Z",
+    "fulfillBy": "2026-11-18T10:00:00Z",
+    "requestedOrderCount": 1,
+    "orders": [
+      {
+        "orderId": "gid://shopify/Order/1",
+        "purchaseId": "d841ee12-2075-4101-b3bc-429ad31a4059"
+      }
+    ]
+  }
+}

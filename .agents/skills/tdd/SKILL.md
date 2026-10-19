@@ -21,7 +21,7 @@ A **seam** is the public boundary you test at: the interface where you observe b
 
 Choose a meaningful public seam under delegated project authority. State the expected behavior and select the smallest test that can distinguish the contract failure; user confirmation is unnecessary when existing requirements supply the intended behavior.
 
-When the shape of that interface is itself in question (how deep the module is, where the seam belongs, what the interface should expose), call the Skill tool with "codebase-design" for the vocabulary. It is the shared source of the module, interface, depth, seam, adapter, leverage and locality terms, and it is a reference to consult, not a session to run.
+When interface shape is in question, identify its actual caller, responsibility and external effects first. Keep the public boundary small and exercise the invariant through it; use the architecture plan and nearby application ports as the project vocabulary.
 
 ## Anti-patterns
 

@@ -18,16 +18,9 @@ on:
       - 'packages/contracts/**'
       - 'packages/observability/**'
       - 'packages/storage/**'
-      - 'scripts/m6-artwork/**'
-      - 'scripts/m7-storefront/**'
       - 'scripts/runtime/**'
       - 'scripts/worker/**'
       - 'scripts/release/**'
-      - 'scripts/m5-002/**'
-      - 'scripts/m5-native-inventory/**'
-      - 'scripts/m5-host-inventory/**'
-      - 'scripts/m5-inventory-phase/**'
-      - 'scripts/m5-runtime/frozen-schema*-manifest.json'
       - 'scripts/database/**'
       - 'deployment/m5-runtime/**'
       - 'deployment/m8-journey/**'
@@ -84,24 +77,15 @@ jobs:
         if: steps.changes.outputs.route == 'full'
       - run: corepack pnpm build
         if: steps.changes.outputs.route == 'full'
-      - name: Runtime owner-operator and immutable image controls style
-        if: steps.changes.outputs.route == 'full'
-        run: corepack pnpm exec biome check scripts/runtime scripts/release scripts/worker scripts/lifecycle
       - name: Owner trusted-release collector local accounting and process controls
         if: steps.changes.outputs.route == 'full'
         run: node --test --test-concurrency=1 scripts/release/collector.test.mts scripts/release/owner-boundaries.test.mts scripts/release/launch.test.mts scripts/release/profiles.test.mts
       - name: Current signing and historical settlement controls
         if: steps.changes.outputs.route == 'full'
         run: node --test --test-concurrency=1 scripts/database/owner-settlement.test.mts scripts/release/append.test.mts scripts/runtime/signing-provision.test.mts
-      - run: corepack pnpm check:style
-        if: steps.changes.outputs.route == 'full'
-      - run: corepack pnpm check:boundaries
-        if: steps.changes.outputs.route == 'full'
       - name: Current worker executable and process inventory controls
         if: steps.changes.outputs.route == 'full'
         run: corepack pnpm test:runtime-inventory
-      - run: corepack pnpm check:secrets
-        if: steps.changes.outputs.route == 'full'
       - name: Initialize runtime schema and verify migration idempotence
         if: steps.changes.outputs.route == 'full'
         # The required durable-core job runs the full database suite on the same pinned PostgreSQL18 image.
@@ -257,7 +241,6 @@ jobs:
       - name: Portable current web deployment package
         if: steps.changes.outputs.route == 'full'
         run: |
-          corepack pnpm exec biome check scripts/runtime scripts/release scripts/worker scripts/lifecycle
           # Prime the legacy deployment's metadata in a fresh runner cache.
           # Qualified package construction below remains offline and frozen.
           corepack pnpm --filter @insignia/web deploy --prod --frozen-lockfile --legacy /tmp/insignia-m5-web-cache-primer

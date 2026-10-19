@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import ts from 'typescript';
@@ -84,8 +84,24 @@ const currentDocuments = new Set([
   'docs/delivery/state.md',
   'docs/delivery/evidence/m8-context-runtime/WORKLIST.md',
 ]);
+function inspectCommandTargets(root: string, path: string, text: string): void {
+  for (const command of text.matchAll(
+    /\b(?:node(?: --[A-Za-z-]+(?:=[A-Za-z0-9_.:-]+)?)*|bash|python3(?: -[A-Za-z]+)?)\s+((?:apps|packages|scripts|deployment)\/[A-Za-z0-9_./-]+\.(?:[cm]?[jt]sx?|py|sh|go))\b/g,
+  ))
+    assert(existsSync(resolve(root, command[1] ?? '')), `MISSING_CURRENT_COMMAND_TARGET ${path}: ${command[1]}`);
+}
+
 function inspectCurrentReferences(root: string, files: string[]): void {
   for (const path of files) {
+    if (/^shopify\.app(?:\.[^/]+)?\.toml$/.test(path)) {
+      const text = readFileSync(resolve(root, path), 'utf8');
+      for (const list of text.matchAll(/^\s*web_directories\s*=\s*\[([^\]]*)\]/gm))
+        for (const entry of (list[1] ?? '').matchAll(/["']([^"']+)["']/g))
+          assert(
+            existsSync(resolve(root, entry[1] ?? '')) && statSync(resolve(root, entry[1] ?? '')).isDirectory(),
+            `MISSING_CLI_DIRECTORY ${path}: ${entry[1]}`,
+          );
+    }
     assert(
       !(/\.(?:[cm]?[jt]sx?|py|sh)$/.test(path) && retiredExecutable.test(path)),
       `RETIRED_EXECUTABLE_PATH ${path}`,
@@ -96,7 +112,6 @@ function inspectCurrentReferences(root: string, files: string[]): void {
       /^(?:apps|packages|scripts|deployment|\.github)\//.test(path) &&
       !path.startsWith('packages/database/migrations/') &&
       path !== 'scripts/lifecycle/SERVICE-PROPOSAL.json' &&
-      !/^scripts\/m5-runtime\/frozen-schema(?:18|19)-manifest\.json$/.test(path) &&
       /\.(?:[cm]?[jt]sx?|astro|json|ya?ml|toml|sh|sql|service|in)$/.test(path)
     ) {
       assert(
@@ -109,8 +124,16 @@ function inspectCurrentReferences(root: string, files: string[]): void {
         `RETIRED_EXECUTABLE_REFERENCE ${path}`,
       );
     }
-    if (!currentDocuments.has(path) && !/^(?:scripts|deployment)\/[^/]+\/README\.md$/.test(path)) continue;
+    if (path === 'package.json' || /^\.github\/workflows\/[^/]+\.ya?ml$/.test(path))
+      inspectCommandTargets(root, path, readFileSync(resolve(root, path), 'utf8'));
+    if (
+      !currentDocuments.has(path) &&
+      !/^\.agents\/skills\/.*\.md$/.test(path) &&
+      !/^(?:scripts|deployment)\/[^/]+\/README\.md$/.test(path)
+    )
+      continue;
     const text = readFileSync(resolve(root, path), 'utf8');
+    inspectCommandTargets(root, path, text);
     for (const match of text.matchAll(/\[[^\]]*\]\((?:<([^>]+)>|([^\s)]+))(?:\s+"[^"]*")?\)/g)) {
       const target = (match[1] ?? match[2] ?? '').split('#')[0]?.split('?')[0];
       if (!target || /^[a-z][a-z0-9+.-]*:/i.test(target) || target.startsWith('//')) continue;
@@ -128,7 +151,7 @@ export function inspectMaintainedSources(root: string, policy: SourcePolicy) {
   const covered = new Set(
     policy.projects.flatMap((path) => project(root, path).fileNames.map((file) => normalized(relative(root, file)))),
   );
-  const untyped = files.filter((path) => /\.(?:jsx?|mjs|cjs|py)$/.test(path));
+  const untyped = files.filter((path) => /\.(?:jsx?|mjs|cjs|py|go)$/.test(path));
   const uncheckedTypeScript = files.filter((path) => /\.(?:tsx?|mts|cts|astro)$/.test(path) && !covered.has(path));
   assert.equal(untyped.length, 0, `UNAPPROVED_UNTYPED_SOURCE ${untyped[0]}`);
   assert.equal(uncheckedTypeScript.length, 0, `UNCHECKED_TYPESCRIPT ${uncheckedTypeScript[0]}`);

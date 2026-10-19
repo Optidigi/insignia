@@ -228,5 +228,48 @@ test('missing app configuration renders stable Polaris recovery without bootstra
   assert.equal(await link.isVisible(), true);
   assert.equal(await page.getByText('Interface unavailable', { exact: true }).count(), 0);
   assert.equal(await page.locator('[inert], #admin-route-skeleton').count(), 0);
+  await page.screenshot({ path: '/tmp/insignia-canonical-unavailable-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: '/tmp/insignia-canonical-unavailable-mobile.png', fullPage: true });
   assert.deepEqual([...apiRequests], []);
+});
+
+test('method library keeps resource names scannable and edits in a cancellable focused dialog', {
+  timeout: 20000,
+}, async (t) => {
+  const { page, base } = await fixture(t);
+  const method = { id: '52915e17-8104-4ef2-beb8-e99efc2914ec', name: 'Embroidery', version: '1' };
+  let writes = 0;
+  await page.route('**/api/admin/methods', (route) => route.fulfill({ json: { methods: [method] } }));
+  await page.route(`**/api/admin/methods/${method.id}`, (route) => {
+    writes++;
+    assert.deepEqual(route.request().postDataJSON(), { name: 'Screen printing', version: '1' });
+    assert.ok(route.request().headers()['idempotency-key']);
+    return route.fulfill({ json: { method: { ...method, name: 'Screen printing', version: '2' } } });
+  });
+  await page.goto(`${base}/admin/settings/methods`);
+  await page.getByText('Embroidery', { exact: true }).waitFor();
+  assert.equal(await page.getByRole('textbox').count(), 0, 'resource list is readable before choosing an edit');
+  await page.getByRole('button', { name: 'Edit', exact: true }).click();
+  const dialog = page.locator('#edit-method');
+  await page.getByRole('dialog', { name: 'Edit decoration method', exact: true }).waitFor();
+  await dialog.getByLabel('Library method name', { exact: true }).fill('Cancelled name');
+  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit', exact: true }).click();
+  await dialog.waitFor();
+  assert.equal(await dialog.getByLabel('Library method name', { exact: true }).inputValue(), 'Embroidery');
+  assert.equal(writes, 0);
+  await dialog.getByLabel('Library method name', { exact: true }).fill('Screen printing');
+  await dialog.getByRole('button', { name: 'Save name', exact: true }).click();
+  await page.getByText('Screen printing', { exact: true }).waitFor();
+  assert.equal(writes, 1);
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+  await page.screenshot({ path: '/tmp/insignia-canonical-methods-mobile.png', fullPage: true, animations: 'disabled' });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.screenshot({
+    path: '/tmp/insignia-canonical-methods-desktop.png',
+    fullPage: true,
+    animations: 'disabled',
+  });
 });

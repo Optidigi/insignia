@@ -1,14 +1,25 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import AdminSkeleton from '../components/AdminSkeleton';
-import SettingsNavigation from '../components/SettingsNavigation';
 import { useAdminPageReady } from '../shared/admin-page-ready';
 import { authenticatedJson } from '../shared/admin-request';
 
 type Method = { id: string; name: string; version: string };
 export default function MethodLibrary() {
   const [methods, setMethods] = useState<Method[]>([]);
-  const [names, setNames] = useState<Record<string, string>>({});
   const [name, setName] = useState('');
+  const [editing, setEditing] = useState<{ method: Method | null } | null>(null);
+  const editor = useRef<HTMLElementTagNameMap['s-modal']>(null);
+  useEffect(() => {
+    let active = true;
+    void customElements.whenDefined('s-modal').then(() => {
+      if (!active) return;
+      if (editing) editor.current?.showOverlay();
+      else editor.current?.hideOverlay();
+    });
+    return () => {
+      active = false;
+    };
+  }, [editing]);
   const [loading, setLoading] = useState(true);
   useAdminPageReady(!loading);
   const [busy, setBusy] = useState(false);
@@ -42,7 +53,7 @@ export default function MethodLibrary() {
   function clearDenied(error: unknown) {
     if (![401, 403].includes((error as { status?: number }).status ?? 0)) return false;
     setMethods([]);
-    setNames({});
+    setEditing(null);
     setName('');
     setNotice('');
     setDeleting(null);
@@ -60,7 +71,7 @@ export default function MethodLibrary() {
       const result = await authenticatedJson<{ methods: Method[] }>('/api/admin/methods');
       setDenied(false);
       setMethods(result.methods);
-      setNames(Object.fromEntries(result.methods.map((m) => [m.id, m.name])));
+      setEditing(null);
       setDeleting(null);
     } catch (e) {
       clearDenied(e);
@@ -99,12 +110,12 @@ export default function MethodLibrary() {
             ? [...items.filter((item) => item.id !== saved.id), saved]
             : items.map((m) => (m.id === saved.id ? saved : m)),
         );
-        setNames((values) => ({ ...values, [saved.id]: saved.name }));
       }
       pending.current = null;
       setUncertain(false);
       setDeleting(null);
-      if (method === 'POST') setName('');
+      setEditing(null);
+      setName('');
       setNotice(
         method === 'DELETE'
           ? 'Removed from library. Existing products are unchanged.'
@@ -130,7 +141,6 @@ export default function MethodLibrary() {
       <s-link slot="breadcrumb-actions" href="/admin/settings">
         Settings
       </s-link>
-      <SettingsNavigation current="methods" />
       <s-modal ref={removal} id="remove-method" heading="Remove decoration method?" onHide={() => setDeleting(null)}>
         <s-stack gap="base">
           <s-paragraph>Remove this method from your reusable library?</s-paragraph>
@@ -164,20 +174,82 @@ export default function MethodLibrary() {
           Cancel
         </s-button>
       </s-modal>
-      <s-section heading="Reusable methods for your store">
+      <s-stack direction="inline" gap="base">
+        <s-button
+          variant="primary"
+          disabled={busy || loading || denied || uncertain}
+          onClick={() => {
+            setName('');
+            setEditing({ method: null });
+          }}
+        >
+          Add method
+        </s-button>
+        <s-button onClick={() => void load()} disabled={busy || loading}>
+          Refresh library
+        </s-button>
+      </s-stack>
+      <s-modal
+        ref={editor}
+        id="edit-method"
+        heading={editing?.method ? 'Edit decoration method' : 'Add decoration method'}
+        onHide={() => setEditing(null)}
+      >
         <s-stack gap="base">
-          <s-paragraph>
-            Add methods such as embroidery or screen printing once, then choose them when configuring a product. Each
-            product gets its own copy; renaming or removing a library entry never changes an existing draft, published
-            product or order.
-          </s-paragraph>
-          <s-paragraph>Prices, print areas and available sizes are configured separately for each product.</s-paragraph>
-          {error && (
-            <s-banner tone="critical" heading="Library could not be updated">
+          {editing && !denied && (
+            <s-text-field
+              label={editing?.method ? 'Library method name' : 'New method name'}
+              value={name}
+              maxLength={80}
+              disabled={busy || uncertain}
+              onInput={(event) => setName(event.currentTarget.value)}
+            />
+          )}
+          <s-paragraph>Use a name your team recognizes, such as embroidery or screen printing.</s-paragraph>
+          {error && editing && (
+            <s-banner tone="critical" heading="Method could not be saved">
               {error}
             </s-banner>
           )}
-          {uncertain && (
+          {uncertain && editing && (
+            <s-banner tone="warning">
+              The result is not confirmed. Cancel to return to the library, then refresh before retrying the same
+              change.
+            </s-banner>
+          )}
+        </s-stack>
+        <s-button
+          slot="primary-action"
+          variant="primary"
+          loading={busy}
+          disabled={busy || uncertain || !name.trim() || name.trim() === editing?.method?.name}
+          onClick={() => {
+            if (editing)
+              void write(
+                editing.method ? 'PUT' : 'POST',
+                editing.method?.id ?? null,
+                editing.method ? { name: name.trim(), version: editing.method.version } : { name: name.trim() },
+              );
+          }}
+        >
+          {editing?.method ? 'Save name' : 'Add to library'}
+        </s-button>
+        <s-button slot="secondary-actions" commandFor="edit-method" command="--hide" disabled={busy}>
+          Cancel
+        </s-button>
+      </s-modal>
+      {error && (
+        <s-banner tone="critical" heading="Library could not be updated">
+          {error}
+        </s-banner>
+      )}
+      {uncertain && (
+        <s-banner tone="warning" heading="Check the last change">
+          <s-stack gap="base">
+            <s-paragraph>
+              Refresh the library to check its current state. Retrying uses the same command and cannot create a second
+              copy.
+            </s-paragraph>
             <s-button
               disabled={busy || loading}
               onClick={() => {
@@ -187,78 +259,70 @@ export default function MethodLibrary() {
             >
               Retry last change
             </s-button>
-          )}
-          {notice && <s-banner tone="success">{notice}</s-banner>}
-          <s-button onClick={() => void load()} disabled={busy || loading}>
-            Refresh library
-          </s-button>
-          {loading ? (
-            <AdminSkeleton variant="form" label="Loading decoration methods" />
+          </s-stack>
+        </s-banner>
+      )}
+      {notice && <s-banner tone="success">{notice}</s-banner>}
+      <s-section padding="none" accessibilityLabel="Decoration methods">
+        {loading ? (
+          <s-box padding="base">
+            <AdminSkeleton variant="table" label="Loading decoration methods" />
+          </s-box>
+        ) : (
+          !denied &&
+          (methods.length ? (
+            <s-table>
+              <s-table-header-row>
+                <s-table-header listSlot="primary">Method</s-table-header>
+                <s-table-header listSlot="inline">Actions</s-table-header>
+              </s-table-header-row>
+              <s-table-body>
+                {methods.map((method) => (
+                  <s-table-row key={method.id}>
+                    <s-table-cell>{method.name}</s-table-cell>
+                    <s-table-cell>
+                      <s-stack direction="inline" gap="small">
+                        <s-button
+                          disabled={busy || uncertain}
+                          onClick={() => {
+                            setName(method.name);
+                            setEditing({ method });
+                          }}
+                        >
+                          Edit
+                        </s-button>
+                        <s-button
+                          tone="critical"
+                          disabled={busy || uncertain}
+                          onClick={() => setDeleting({ methodId: method.id })}
+                        >
+                          Remove
+                        </s-button>
+                      </s-stack>
+                    </s-table-cell>
+                  </s-table-row>
+                ))}
+              </s-table-body>
+            </s-table>
           ) : (
-            !denied && (
-              <>
-                <s-text-field
-                  label="New method name"
-                  value={name}
-                  maxLength={80}
-                  disabled={busy || uncertain}
-                  onInput={(e) => setName(e.currentTarget.value)}
-                />
-                <s-button
-                  variant="primary"
-                  disabled={busy || uncertain || !name.trim()}
-                  onClick={() => void write('POST', null, { name: name.trim() })}
-                >
-                  Add to library
-                </s-button>
-                {!methods.length && !error && (
-                  <s-paragraph>No methods yet. Add the decoration services your store offers.</s-paragraph>
-                )}
-                {methods.length > 0 && (
-                  <s-table>
-                    <s-table-header-row>
-                      <s-table-header listSlot="primary">Name</s-table-header>
-                      <s-table-header listSlot="labeled">Actions</s-table-header>
-                    </s-table-header-row>
-                    <s-table-body>
-                      {methods.map((m) => (
-                        <s-table-row key={m.id}>
-                          <s-table-cell>
-                            <s-text-field
-                              label="Library method name"
-                              value={names[m.id] ?? m.name}
-                              maxLength={80}
-                              disabled={busy || uncertain}
-                              onInput={(e) => setNames({ ...names, [m.id]: e.currentTarget.value })}
-                            />
-                          </s-table-cell>
-                          <s-table-cell>
-                            <s-stack direction="inline" gap="base">
-                              <s-button
-                                disabled={busy || uncertain || !names[m.id]?.trim() || names[m.id]?.trim() === m.name}
-                                onClick={() =>
-                                  void write('PUT', m.id, { name: names[m.id]?.trim(), version: m.version })
-                                }
-                              >
-                                Save name
-                              </s-button>
-                              <s-button
-                                tone="critical"
-                                disabled={busy || uncertain}
-                                onClick={() => setDeleting({ methodId: m.id })}
-                              >
-                                Remove
-                              </s-button>
-                            </s-stack>
-                          </s-table-cell>
-                        </s-table-row>
-                      ))}
-                    </s-table-body>
-                  </s-table>
-                )}
-              </>
+            !error && (
+              <s-empty-state heading="Build your decoration library">
+                <s-paragraph slot="subheading">
+                  Add the decoration services your store offers, then reuse them when configuring a product.
+                </s-paragraph>
+              </s-empty-state>
             )
-          )}
+          ))
+        )}
+      </s-section>
+      <s-section slot="aside" heading="About your library">
+        <s-stack gap="base">
+          <s-paragraph>
+            Each product gets its own copy of a method. Library changes never update existing drafts, published
+            configurations or orders.
+          </s-paragraph>
+          <s-paragraph>Set prices, print areas and sizes in the product configuration.</s-paragraph>
+          <s-link href="/admin/products">Configure a product</s-link>
         </s-stack>
       </s-section>
     </s-page>

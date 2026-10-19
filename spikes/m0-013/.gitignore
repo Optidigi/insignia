@@ -1,5 +1,0 @@
-node_modules/
-.shopify/
-**/target/
-.env
-.env.*

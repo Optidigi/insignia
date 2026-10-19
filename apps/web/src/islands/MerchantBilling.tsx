@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import AdminSkeleton from '../components/AdminSkeleton';
-import SettingsNavigation from '../components/SettingsNavigation';
 import { useAdminPageReady } from '../shared/admin-page-ready';
 import { authenticatedJson } from '../shared/admin-request.js';
 import type { BillingView } from '../shared/billing-view.js';
@@ -35,15 +34,14 @@ export default function MerchantBilling() {
     void refresh();
   }, []);
   return (
-    <s-page inlineSize="small" heading="Billing">
+    <s-page inlineSize="base" heading="Billing">
       <s-link slot="breadcrumb-actions" href="/admin/settings">
         Settings
       </s-link>
       <s-button loading={busy} disabled={busy} onClick={() => void refresh()}>
         Refresh billing status
       </s-button>
-      <SettingsNavigation current="billing" />
-      <s-section heading="Insignia Standard">
+      <s-section slot="aside" heading="Insignia Standard">
         <s-stack gap="base">
           <s-paragraph>Subscription price: USD 49.99 per 30 days.</s-paragraph>
           <s-paragraph>

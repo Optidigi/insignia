@@ -1,7 +1,0 @@
-query M0003RCancellation($id: ID!) {
-  order(id: $id) {
-    id name cancelledAt cancelReason
-    displayFinancialStatus displayFulfillmentStatus
-    totalRefundedSet { shopMoney { amount currencyCode } }
-  }
-}

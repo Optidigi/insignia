@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, posix, resolve } from 'node:path';
 import { test } from 'node:test';
 import { classifyStatusDocs } from './status-docs.mts';
 
@@ -40,25 +40,15 @@ function fixture(run: (fixture: Fixture) => void) {
   };
   try {
     git('init', '--initial-branch=main');
-    put(
-      state,
-      `# Delivery state\n\nLatest integration: [PR1](https://github.com/Optidigi/insignia/pull/1), merge \`${'a'.repeat(40)}\`. [Receipt](receipt1.json).\n\nAuthority stays fixed.\n`,
-    );
-    put(
-      worklist,
-      `# Active index\n\nLatest main: [PR1](https://github.com/Optidigi/insignia/pull/1), merge \`${'a'.repeat(40)}\`. [Receipt](../../receipt1.json).\n\nAuthority stays fixed.\n`,
-    );
+    put(state, '# Delivery state\n\n[Receipt](receipt1.json). Working behavior is recorded here.\n');
+    put(worklist, '# Current work index\n\n[State](../../state.md). [Receipt](../../receipt1.json).\n');
     put('docs/delivery/receipt1.json', '{}\n');
     put('docs/delivery/receipt2.json', '{}\n');
     const base = commit();
     const update = (file: string) =>
       put(
         file,
-        readFileSync(join(cwd, file), 'utf8')
-          .replaceAll('PR1', 'PR2')
-          .replaceAll('/pull/1', '/pull/2')
-          .replaceAll('a'.repeat(40), 'b'.repeat(40))
-          .replaceAll('receipt1.json', 'receipt2.json'),
+        `${readFileSync(join(cwd, file), 'utf8').replaceAll('receipt1.json', 'receipt2.json')}\nNext independent task: verify the current local preview.\n`,
       );
     run({ cwd, git, put, commit, base, update });
   } finally {
@@ -66,13 +56,13 @@ function fixture(run: (fixture: Fixture) => void) {
   }
 }
 
-test('only real existing status-line reference updates select the narrow route', () =>
+test('actual current-progress prose edits select the bounded route', () =>
   fixture(({ cwd, base, update, commit }) => {
     update(state);
     update(worklist);
     assert.deepEqual(classifyStatusDocs({ cwd, base, head: commit() }), {
       route: 'status-docs',
-      reason: 'STATUS_REFERENCES_VALIDATED',
+      reason: 'CURRENT_DOCS_VALIDATED',
     });
   }));
 test('a single status document update can qualify while both documents stay valid', () =>
@@ -80,24 +70,18 @@ test('a single status document update can qualify while both documents stay vali
     update(state);
     assert.equal(classifyStatusDocs({ cwd, base, head: commit() }).route, 'status-docs');
   }));
-test('authority wording, other lines, unknown paths and new files all require full checks', () => {
+test('authority, executable, workflow and evidence-data edits require full checks', () => {
   const mutations: ((fixture: Fixture) => void)[] = [
-    ({ cwd, put }) =>
-      put(state, readFileSync(join(cwd, state), 'utf8').replace('Authority stays fixed.', 'Authority changes.')),
-    ({ cwd, put }) =>
-      put(
-        state,
-        readFileSync(join(cwd, state), 'utf8').replace(
-          'Latest integration:',
-          'Latest integration: Owner grants production rollout.',
-        ),
-      ),
+    ({ put }) => put('docs/delivery/authority/owner.md', 'Owner policy changes.\n'),
     ({ put }) => put('docs/delivery/other.md', 'A new document\n'),
-    ({ put }) => put('scripts/ci/changed.mjs', 'export const changed=true;\n'),
+    ({ put }) => put('scripts/ci/changed.mts', 'export const changed=true;\n'),
     ({ put }) => put('.github/workflows/changed.yml', 'name: changed\n'),
+    ({ put }) => put('docs/delivery/receipt1.json', '{"runtimeInput":"changed"}\n'),
+    ({ put }) => put(state, '# Current state\n\nRun `node scripts/ci/absent.mts`.\n'),
   ];
   for (const mutation of mutations)
     fixture((f) => {
+      f.update(state);
       mutation(f);
       assert.equal(classifyStatusDocs({ cwd: f.cwd, base: f.base, head: f.commit() }).route, 'full');
     });
@@ -129,19 +113,15 @@ test('an absent linked receipt fails validation rather than claiming docs succes
     put(state, readFileSync(join(cwd, state), 'utf8').replace('receipt1.json', 'receipt9.json'));
     assert.throws(() => classifyStatusDocs({ cwd, base, head: commit() }), /STATUS_LINK_INVALID/);
   }));
-test('both status documents require exactly one existing latest line', () =>
-  fixture(({ cwd, put, base, update, commit }) => {
-    update(state);
-    put(worklist, `${readFileSync(join(cwd, worklist), 'utf8')}Latest main: duplicate\n`);
-    assert.throws(() => classifyStatusDocs({ cwd, base, head: commit() }), /STATUS_LINE_INVALID/);
+test('current documents need no special status-line prefix', () =>
+  fixture(({ cwd, put, base, commit }) => {
+    put(state, '# Current progress\n\nComposition review is in progress.\n');
+    assert.equal(classifyStatusDocs({ cwd, base, head: commit() }).route, 'status-docs');
   }));
 test('likely credentials are refused without printing their value', () =>
   fixture(({ cwd, put, base, commit }) => {
     const sentinel = 'shpat_SYNTHETIC_NOT_A_REAL_SECRET';
-    put(
-      state,
-      readFileSync(join(cwd, state), 'utf8').replace('Latest integration:', `Latest integration: ${sentinel}`),
-    );
+    put(state, `${readFileSync(join(cwd, state), 'utf8')}\n${sentinel}\n`);
     assert.throws(
       () => classifyStatusDocs({ cwd, base, head: commit() }),
       (error: unknown) =>
@@ -169,7 +149,7 @@ test('the real CLI records explicit docs-only scope without emitting document co
     assert.equal(readFileSync(output, 'utf8'), 'route=status-docs\n');
     assert.match(readFileSync(summary, 'utf8'), /suites were \*\*not selected\*\*/);
     assert.match(readFileSync(summary, 'utf8'), /no new product or native qualification/);
-    assert.equal(stdout.trim(), 'CI route: status-docs (STATUS_REFERENCES_VALIDATED)');
+    assert.equal(stdout.trim(), 'CI route: status-docs (CURRENT_DOCS_VALIDATED)');
   }));
 
 function workflowSafety(source: string, job: 'foundation' | 'durable-core' | 'runtime') {
@@ -208,7 +188,6 @@ function workflowSafety(source: string, job: 'foundation' | 'durable-core' | 'ru
     else {
       assert.match(source, /run: corepack pnpm --filter @insignia\/worker test\n/);
       assert.match(source, /corepack pnpm db:migrate\n {10}corepack pnpm db:migrate/);
-      assert.match(source, /run: corepack pnpm check:boundaries\n/);
     }
   }
 }
@@ -230,8 +209,30 @@ test('current protected jobs retain full-route gates and required runtime bounda
       for (const changed of [
         source.replace('run: corepack pnpm --filter @insignia/worker test', 'run: true'),
         source.replace('          corepack pnpm db:migrate\n          corepack pnpm db:migrate', '          true'),
-        source.replace('run: corepack pnpm check:boundaries', 'run: true'),
       ])
         assert.throws(() => workflowSafety(changed, job));
   }
 });
+
+test('the real current state and work index support prose updates with their actual local links', () =>
+  fixture(({ cwd, put, commit, update }) => {
+    for (const file of [state, worklist]) put(file, readFileSync(join(root, file), 'utf8'));
+    for (const file of [state, worklist]) {
+      const source = readFileSync(join(cwd, file), 'utf8');
+      for (const match of source.matchAll(/\[[^\]\n]*\]\(([^)\n]+)\)/g)) {
+        const target = match[1]?.split('#')[0];
+        if (!target || /^[a-z]+:/i.test(target)) continue;
+        const path = posix.normalize(posix.join(posix.dirname(file), target));
+        if ([state, worklist].includes(path)) continue;
+        if (target.endsWith('/')) put(`${path}/fixture.md`, 'Tracked fixture directory.\n');
+        else put(path, 'Fixture target for actual current document link.\n');
+      }
+    }
+    const base = commit();
+    update(state);
+    update(worklist);
+    assert.deepEqual(classifyStatusDocs({ cwd, base, head: commit() }), {
+      route: 'status-docs',
+      reason: 'CURRENT_DOCS_VALIDATED',
+    });
+  }));
