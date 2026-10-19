@@ -231,6 +231,15 @@
       "ciNaming": "Active step labels use current responsibilities; required job contexts, commands, external artifact names and permissions unchanged.",
       "cleanup": "Fresh cluster stopped and removed including generated credentials/data; older cluster and native/permanent custody untouched.",
       "limit": "Final updated-head CI remains required, including Docker/image controls unavailable locally."
+    },
+    "postCiOfflineFixtureIsolation": {
+      "failedHead": "1ac0c9ac0c1ae552105fbe5f427b584408027f6b",
+      "run": "https://github.com/Optidigi/insignia/actions/runs/39238819322",
+      "cause": "Offline truncated-readiness child inherited unrelated CI DATABASE_URL and production sourceEnvironment correctly refused it before the intended resume-HOLD seam.",
+      "fix": "Child receives only PATH for its real local OS tools. Production authority guard, resume handling and all assertions unchanged.",
+      "redGreen": "Original test reproduced RED with synthetic unreachable DATABASE_URL. Same poisoned parent environment now passes full operations suite62pass/0fail/1integration skip; real backup integration was qualified separately.",
+      "review": "behavior_review independent bounded impact CLEAR: absolute Node, local files/socket, injected Docker/inspector and OS flock only; minimal PATH supplies actual dependencies.",
+      "validation": "Operations strict compiler, targeted Biome, source inventory and diff checks PASS. Final updated-head CI required."
     }
   }
 }

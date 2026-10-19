@@ -67,7 +67,13 @@ test('large sparse payload hashing is byte-exact with bounded resident memory', 
 test('truncated Unix readiness HTTP enters durable resume HOLD instead of crashing or restarting containers', () => {
   const root = mkdtempSync('/dev/shm/insignia-truncated-ready-');
   try {
-    const child = spawnSync(process.execPath, [fixture, 'readiness', root], { encoding: 'utf8', timeout: 10000 });
+    const child = spawnSync(process.execPath, [fixture, 'readiness', root], {
+      // This offline readiness fixture has no database authority. CI's unrelated
+      // PostgreSQL configuration must not reach the production authority guard.
+      env: { PATH: '/usr/bin:/bin' },
+      encoding: 'utf8',
+      timeout: 10000,
+    });
     assert.equal(child.status, 0, child.stderr);
     assert.deepEqual(JSON.parse(child.stdout), { held: true, containerStarts: 0, windowClosed: true });
   } finally {
