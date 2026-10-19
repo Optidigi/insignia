@@ -84,7 +84,7 @@ jobs:
         if: steps.changes.outputs.route == 'full'
       - run: corepack pnpm build
         if: steps.changes.outputs.route == 'full'
-      - name: M5 runtime owner-operator and immutable image controls style
+      - name: Runtime owner-operator and immutable image controls style
         if: steps.changes.outputs.route == 'full'
         run: corepack pnpm exec biome check scripts/runtime scripts/release scripts/worker scripts/lifecycle
       - name: Owner trusted-release collector local accounting and process controls
@@ -111,12 +111,12 @@ jobs:
           corepack pnpm db:migrate
       - run: corepack pnpm --filter @insignia/worker test
         if: steps.changes.outputs.route == 'full'
-      - name: M8 actual queue-member purchase/history and first-paid qualification
+      - name: Actual queue-member purchase/history and first-paid qualification
         if: steps.changes.outputs.route == 'full'
         run: |
           node --test scripts/runtime/qualify-purchases.test.mts
           node scripts/runtime/qualify-purchases.mts
-      - name: Preserve M8 actual runtime-role qualification
+      - name: Preserve actual runtime-role qualification
         if: ${{ always() && steps.changes.outputs.route == 'full' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -126,18 +126,18 @@ jobs:
             docs/delivery/evidence/m8-context-runtime/runtime-role-ci.json
           if-no-files-found: ignore
           retention-days: 7
-      - name: M7 buyer HTTP ownership, admission and immutable issuance with PostgreSQL
+      - name: Buyer HTTP ownership, admission and immutable issuance with PostgreSQL
         if: steps.changes.outputs.route == 'full'
         working-directory: apps/web
         run: node --test test/buyer-http.test.mts test/buyer-flow.test.mts test/buyer-production.test.mts test/buyer-bootstrap.test.mts
-      - name: M8 independently verified purchase and merchant artwork HTTP with PostgreSQL
+      - name: Independently verified purchase and merchant artwork HTTP with PostgreSQL
         if: steps.changes.outputs.route == 'full'
         working-directory: apps/web
         run: node --test test/purchase-flow.test.mts
-      - name: M5-024 restricted queue roles and real process crash recovery
+      - name: Restricted queue roles and real process crash recovery
         if: steps.changes.outputs.route == 'full'
         run: node --test --test-concurrency=1 scripts/worker/queue-privileges.test.mts scripts/worker/crash-recovery.test.mts
-      - name: M5-024 offline portable worker and drift guards
+      - name: Offline portable worker and drift guards
         if: steps.changes.outputs.route == 'full'
         run: |
           # Prepare policy metadata for the derived frozen lockfile using normal npm reads.
@@ -222,7 +222,7 @@ jobs:
           path: ${{ runner.temp }}/insignia-verifier-artifact
           if-no-files-found: error
           retention-days: 3
-      - name: M5-024 actual disposable worker image and OS controls
+      - name: Actual disposable worker image and OS controls
         if: steps.changes.outputs.route == 'full'
         env:
           M5_WORKER_PACKAGE_ENTRY: /tmp/insignia-m5-024-worker/dist/main.js
@@ -238,7 +238,7 @@ jobs:
       - name: Ordinary canonical web and worker Compose rendering controls
         if: steps.changes.outputs.route == 'full'
         run: node --test scripts/runtime/web-compose.test.mts scripts/runtime/signing-owner-compose.test.mts
-      - name: Preserve M5-024 image qualification receipts and raw logs
+      - name: Preserve image qualification receipts and raw logs
         if: ${{ always() && steps.changes.outputs.route == 'full' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -312,7 +312,7 @@ jobs:
         if: steps.changes.outputs.route == 'full'
         working-directory: apps/web
         run: node --test test/shopify-webhook.test.mts
-      - name: M5 Admin editor and publication with PostgreSQL
+      - name: Admin editor and publication with PostgreSQL
         if: steps.changes.outputs.route == 'full'
         working-directory: apps/web
         run: node --test test/admin/merchant-config.test.mts test/admin/merchant-publication.test.mts test/admin/production-composition.test.mts test/admin/merchant-preview-composition.test.mts test/admin/merchant-preview-publication.test.mts test/admin/activation-integration.test.mts test/admin/activation-state.test.mts test/admin/release-evidence.test.mts

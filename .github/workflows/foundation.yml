@@ -71,7 +71,7 @@ jobs:
       - name: Qualify Ajax carriers against actual production Functions
         if: steps.changes.outputs.route == 'full'
         run: INSIGNIA_FUNCTION_RUNNER="$PWD/.m1-artifacts/tools/function-runner-9.2.2" node --test apps/storefront/test/cart-function-contract.test.mts
-      - name: M5 publication geometry stress (100 cases, no retries)
+      - name: Publication geometry stress (100 cases, no retries)
         if: steps.changes.outputs.route == 'full'
         run: corepack pnpm test:publication-stress && corepack pnpm test:renderer-control
       - name: Complete storefront artifact inventory controls

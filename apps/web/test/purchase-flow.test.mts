@@ -291,6 +291,7 @@ test('merchant HTTP rejects forged tenant/body/origin and foreign asset; verifie
     assetId,
     shopId: f.shopId,
     installationGeneration: '1',
+    ownerKind: 'merchant',
     ownerHash: 'a'.repeat(64),
     declaredMime: 'image/png',
     declaredBytes: 68,

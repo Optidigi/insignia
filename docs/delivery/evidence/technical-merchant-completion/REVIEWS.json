@@ -220,6 +220,17 @@
         "review": "behavior_review independent correctness/security impact CLEAR; source/log review only, no native or production effects."
       },
       "localActualChecks": "Fresh PG18 actual CLI and queue transport controls PASS; final updated-head CI remains required."
+    },
+    "postCiMerchantFixtureCorrection": {
+      "failedHead": "7b334cbd3a66d29c3c6a1376993df02311c8eef4",
+      "run": "https://github.com/Optidigi/insignia/actions/runs/39238012353",
+      "cause": "Typed purchase-flow fixture omitted original ownerKind merchant. Repository correctly stored unknown provenance and unchanged merchant service correctly returned410.",
+      "correction": "Restore original fixture ownerKind merchant. No production code, type contract or assertion changed.",
+      "review": "behavior_review independent impact CLEAR: restored field exactly matches original JS fixture; six denied write privileges and all provenance guards remain.",
+      "localChecks": "Fresh owned PostgreSQL18 fixture with all45 migrations:104tests PASS,0fail/skip (purchase3, webhook1, admin63, buyer37). HTTP test compiler, targeted Biome, source controls and10CI routing controls PASS.",
+      "ciNaming": "Active step labels use current responsibilities; required job contexts, commands, external artifact names and permissions unchanged.",
+      "cleanup": "Fresh cluster stopped and removed including generated credentials/data; older cluster and native/permanent custody untouched.",
+      "limit": "Final updated-head CI remains required, including Docker/image controls unavailable locally."
     }
   }
 }
