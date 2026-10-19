@@ -256,5 +256,16 @@
         "cleanup": "Owned fixture stopped and removed including generated credentials/data; redacted logs retained."
       }
     }
+  },
+  "webRuntimeDependencyClosure20261019": {
+    "base": "7175908041cc9ebd7e8e667fc535ac6741b1998d",
+    "reviewer": "deployment_review216",
+    "method": "Independent procedural read-only correctness/security source impact review; no native effects or edits by reviewer.",
+    "verdict": "CLEAR",
+    "finding": "Native admin API cold import exposed missing production runtime dependency binding after PR216; web-only rollback performed before correction.",
+    "correction": "Declare exact existing aws4fetch1.0.20 and pg-boss12.35.0 web production roots; validate contained pinned runtime bindings. Retain the adapter-owned SDK and existing qualified packager binding.",
+    "regression": "Actual relocated web cold GET/api/admin/products observed500 RED; corrected package reaches existing503 Admin service unavailable guard. No fabricated staff/session or API assertions weakened.",
+    "validation": "Tooling strict compiler, Astro checks/build, source controls, Biome and5 actual portable/address/app-entry cases PASS. Final exact-head CI and corrected-image native unsigned/authenticated reads remain required.",
+    "boundaryCorrection": "Initial proposed SDK production declaration was rejected by the unchanged runtime dependency boundary. It was reverted; no checker was weakened. Updated independent impact CLEAR supersedes the initial proposal review."
   }
 }

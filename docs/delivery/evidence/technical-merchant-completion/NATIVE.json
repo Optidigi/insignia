@@ -1247,5 +1247,88 @@
     "localFocusedChecks": "3PASS loading/cancellednavigation/latevalidread; full56editorfile running.",
     "independentReview": "/root/completion_evidence_review correctness/securityCLEAR; proceduralread-only, no execution/isolation/modelidentity claim",
     "retainedLogSha256": "a79623a7caecb57df2565cfd1a4bb179525b36f6e7ea60025b48789e13e18c05"
+  },
+  "canonicalTypedDeployment20261019": {
+    "ownerAuthorization": "Direct owner request: ok, deploy latest changes; existing development composition only. Production/native owner gates unchanged.",
+    "classification": "PARTIAL_DEPLOYMENT_WEB_ROLLED_BACK_PENDING_RUNTIME_DEPENDENCY_FIX",
+    "source": {
+      "merge": "7175908041cc9ebd7e8e667fc535ac6741b1998d",
+      "reviewedHead": "68527fb257cfde3f6f0ec2b19427d65d0e04e5ab",
+      "ciBuildHead": "120744047b0e1b6697464048b3bd05d77cd5abb6",
+      "tree": "824cf04099d43bb18aaccd5293cf2d027e04b309",
+      "runtimeRun": 39241035248,
+      "attempt": 1,
+      "syntheticAndNormalMergeParentsAndTreeVerified": true
+    },
+    "current": {
+      "web": "sha256:d138d0ad1c354a476fee235ff1fa7843c08b5a227026a0f59e8dbbb31b3c8fdd",
+      "worker": "sha256:fae3bfac3f671174711b63a4e10f546d27510ddb87f613f9df4e8ac261e60f45",
+      "verifier": "sha256:6ff86f4f01da369f67256bc57d28624a04ee0bf31d5c250a9815f4c1b7b84322",
+      "inspectorTree": "824cf04099d43bb18aaccd5293cf2d027e04b309",
+      "inspectorManifest": "fb83410116c30bdf852aea23873ea7a8d11c3a92b6cd098829fb42dca8db58a7",
+      "inspectorServiceSha256": "d81c280d94363e8b9ed691c30533f8f5d834766194f7a6ea4b174d9171df4b30",
+      "allFourRunning": true,
+      "webWorkerDockerHealthy": true
+    },
+    "qualification": {
+      "immutableArchivesBlobsLayersConfigHashesVerified": true,
+      "privateDatabaseBackupCaptured": true,
+      "schemaMigrations": 45,
+      "oldVerifierPhasesSettledByCurrentReader": 61,
+      "inspectorSyntheticFormats": [
+        "SVG",
+        "PNG",
+        "JPEG"
+      ],
+      "inspectorSandbox": [
+        "host-file exclusion",
+        "network denial",
+        "read-only filesystem",
+        "no-new-privileges",
+        "zero capabilities",
+        "memory rejection",
+        "timeout rejection"
+      ],
+      "verifierStateAuthStartupAndSocketDirectoryPreserved": true,
+      "inspectorPrivateEnvironmentStorageAndSocketDirectoryPreserved": true,
+      "unrelatedContainerConfigurationsPidsAndStartTimesUnchanged": 32,
+      "purchasePaidGenerationDestinationAndSchemaFactsUnchanged": true,
+      "currentQueueCredentialFenceSelectOnly": true
+    },
+    "freshIndependentRelease": {
+      "requestId": "f0846261-8fb2-44a7-a14b-42b2537d6c26",
+      "recordId": "e3011c67-d8cc-4204-849b-899d31d6e5ce",
+      "observedAt": "2026-10-19T11:30:55.809Z",
+      "expiresAt": "2026-10-19T11:31:24.104Z",
+      "newAcknowledgedAppends": 1,
+      "actualWebDatabaseRole": "insignia_runtime",
+      "actualWorkerDatabaseRole": "insignia_worker",
+      "readOnlyConsumersAgreed": true,
+      "oldJournalsPreserved": true,
+      "fenceReleased": true,
+      "actualPurchaseAdmission": "NOT_ASSERTED",
+      "limit": "Source-bound observation with original finite expiry, not a perpetual readiness or new purchase qualification."
+    },
+    "webFailureAndRollback": {
+      "failedImage": "sha256:e6461096b9d3f49e6ecc7a3b1af7faeefb4adaa92342d561dcdce036e5a79418",
+      "publicLiveAndShellPassed": true,
+      "nativeProductsApiStatus": 500,
+      "responseBody": "empty",
+      "rootCause": "ERR_MODULE_NOT_FOUND aws4fetch imported by a flattened Astro server chunk; the production web package lacked a required runtime-root dependency binding. Shell-only packaging checks missed the lazy API graph.",
+      "action": "One graceful web-only rollback to exact prior qualified PR214 image; other34 containers/PIDs unchanged. Unsigned admin API returned401 afterward. No application write or provider mutation was dispatched by the failed API module import.",
+      "followup": "Declare exact existing aws4fetch and pg-boss runtime roots in the web production manifest, validate contained pinned bindings and require actual relocated cold API503 guard; retain the existing adapter-owned Shopify SDK packaging binding. Correction must pass exact-head CI then be redeployed before latest-web completion."
+    },
+    "operatorContinuations": [
+      "Compose create rejected unsupported --no-deps before dispatch; reconciled stopped old receiver and continued create without repeating stop/configuration writes.",
+      "Created receiver remained stopped at strict HostConfig parity check: old OomKillDisable null versus explicit false. Official Docker default keeps OOM killer enabled; normalized only null/false after asserting both, preserving every other host constraint, then started existing created receiver once."
+    ],
+    "limits": {
+      "providerMutationCalls": 0,
+      "VAT": "998524223812 generation1 UNRESOLVED_NO_RETRY; preserve receivers/worker and immutable authority.",
+      "productionRollout": false,
+      "installedMonitoringOrFullObjectRecovery": false,
+      "nativeUi": "Latest web did not qualify; failed native API observation retained. Prior UI evidence stays source-bound.",
+      "retention": "Private backup/staging/log copies due20October; original artwork/design21/22/24October unchanged; permanent artifacts/config/auth/journals and unresolved authority are active custody, not temporary cleanup."
+    }
   }
 }

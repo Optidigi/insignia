@@ -21,17 +21,19 @@
     "@insignia/domain": "workspace:*",
     "@insignia/observability": "workspace:*",
     "@insignia/shopify": "workspace:*",
+    "@insignia/storage": "workspace:*",
     "@insignia/visualizer": "workspace:*",
     "@insignia/worker": "workspace:*",
     "astro": "7.3.5",
+    "aws4fetch": "1.0.20",
     "pg": "8.23.0",
-    "preact": "10.29.8",
-    "@insignia/storage": "workspace:*"
+    "pg-boss": "12.35.0",
+    "preact": "10.29.8"
   },
   "devDependencies": {
-    "@shopify/shopify-api": "15.0.0",
     "@astrojs/check": "0.9.6",
     "@shopify/polaris-types": "1.1.0",
+    "@shopify/shopify-api": "15.0.0",
     "@types/node": "24.10.0",
     "@types/pg": "8.23.1",
     "playwright": "1.63.0",
