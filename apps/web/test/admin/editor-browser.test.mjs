@@ -3268,24 +3268,48 @@ test('late authenticated read replaces the bootstrap timeout notice with the set
   });
   await routePolaris(page, source);
   await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
+  let hydrate;
+  const hydration = new Promise((resolve) => {
+    hydrate = resolve;
+  });
+  let signalComponent;
+  const componentRequested = new Promise((resolve) => {
+    signalComponent = resolve;
+  });
+  await page.route('**/_astro/MerchantPrivacy.*.js', async (route) => {
+    signalComponent();
+    await hydration;
+    await route.continue();
+  });
+  let signalRead;
+  const readStarted = new Promise((resolve) => {
+    signalRead = resolve;
+  });
   let release;
   const pending = new Promise((resolve) => {
     release = resolve;
   });
   await page.route('**/api/purchases/v1/privacy', async (r) => {
+    signalRead();
     await pending;
     return r.fulfill({ json: { items: [] } });
   });
   try {
-    await page.goto(server.base + '/admin/settings/privacy');
+    await page.goto(server.base + '/admin/settings/privacy', { waitUntil: 'domcontentloaded' });
+    await componentRequested;
     await page.getByRole('status', { name: 'Page content', exact: true }).waitFor();
-    await page.clock.fastForward(16000);
+    // Delay hydration first; the authenticated read remains inside its real10second deadline.
+    await page.clock.fastForward(12000);
+    hydrate();
+    await readStarted;
+    await page.clock.fastForward(4000);
     await page.locator('#admin-route-failure').waitFor();
     release();
     await page.getByText('No data requests are currently available.', { exact: true }).waitFor();
     await page.locator('#admin-route-failure').waitFor({ state: 'hidden' });
     assert.equal(await page.locator('#admin-route-content').evaluate((element) => element.inert), false);
   } finally {
+    hydrate();
     release();
   }
 });
