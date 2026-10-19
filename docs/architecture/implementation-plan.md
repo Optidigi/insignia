@@ -724,7 +724,7 @@ These primary-source pointers explain platform choices. They are a reference ind
 | S21 | Webhook HMAC verification. `https://shopify.dev/docs/apps/build/webhooks/verify-deliveries` |
 | S22 | Shopify privacy compliance topics and handling. `https://shopify.dev/docs/apps/build/compliance/privacy-law-compliance` |
 | S23 | Shopify public-app requirements, privacy/security and protected-data review requirements. `https://shopify.dev/docs/apps/launch/shopify-app-store/app-store-requirements` |
-| S24 | Insignia legacy storefront visual/interaction specification, GitHub blob SHA `58c82f5cc79faa0f12d2b35afe587732a2a58088`, retrieved through connected GitHub. `https://github.com/Optidigi/insignia/blob/main/docs/storefront/modal-spec.md` |
+| S24 | Historical legacy storefront reference identifier: Git blob `58c82f5cc79faa0f12d2b35afe587732a2a58088`. It is absent from this clone, and the connected repository blob lookup returned 404 during closeout. The [buyer visual action](../delivery/state.md#owneroperator-checklist) owns obtaining the approved source/captures; this identifier is not currently retrievable visual evidence. |
 | S25 | Shopify Rust SDK exact source: `Decimal(pub f64)` and serialization, commit `9172367f54ab54eb631d82a0cdbea4601297886b`, retrieved through connected GitHub. `https://github.com/Shopify/shopify-function-rust/blob/9172367f54ab54eb631d82a0cdbea4601297886b/shopify_function/src/scalars/decimal.rs` |
 | S26 | Node.js release/LTS schedule. `https://nodejs.org/en/about/previous-releases` |
 | S27 | Zod 4 release and validation library baseline. `https://zod.dev/v4` |
