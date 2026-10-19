@@ -726,5 +726,404 @@
       "modal-reopen-green.log": "131d3e656980e9a3165bfb031419ff2ec0f75d27ec814e9adac1306a95c85c2b",
       "modal-impact.log": "732fe827adff35ac7bf7f253d742ccb275b222fdabcf8d0ebbf1c9f3beb3602a"
     }
+  },
+  "pr214CorrectedNativeClosure20261019": {
+    "classification": "ENGINEERING_READY_NATIVE_ACCEPTANCE_DEFERRED",
+    "source": {
+      "head": "d25ed54d1c0536eb3b3e9d2ea924355f5727acf9",
+      "base": "506993a8264bae4f595b615022490f6f073f8478",
+      "merge": "7ece16e25743c9484054f503a00e12c25b95e858",
+      "tree": "3b0580c326a20c92206adb4d5d8b70f18880baa0",
+      "run": 39182885917,
+      "attempt": 1,
+      "artifactId": 12157366304
+    },
+    "correctedCI": [
+      {
+        "run": 39182885890,
+        "head": "d25ed54d1c0536eb3b3e9d2ea924355f5727acf9",
+        "attempt": 1,
+        "conclusion": "SUCCESS"
+      },
+      {
+        "run": 39182885924,
+        "head": "d25ed54d1c0536eb3b3e9d2ea924355f5727acf9",
+        "attempt": 1,
+        "conclusion": "SUCCESS"
+      },
+      {
+        "run": 39182885917,
+        "head": "d25ed54d1c0536eb3b3e9d2ea924355f5727acf9",
+        "attempt": 1,
+        "conclusion": "SUCCESS"
+      }
+    ],
+    "localEditorRegression": {
+      "pass": 56,
+      "fail": 0,
+      "skip": 0,
+      "durationMs": 146828.564248,
+      "sourceHead": "d25ed54d1c0536eb3b3e9d2ea924355f5727acf9"
+    },
+    "correction": "MethodLibrary clears selected deletion on synchronous hide rather than delayed afterhide. Real500msclosing animation reproduced the original2500mstimeout before the fix and passes after; cancellation remains0writes/confirmation1write. No timeout/assertion weakened.",
+    "reviews": {
+      "correctiveImpact": "/root/completion_evidence_review CLEAR Spec/correctness and Standards/security",
+      "operator": "/root/technical_completion_audit CLEAR correctness/security for distinct frozen one-image deployment and bounded app-method operator",
+      "boundary": "Procedural read-only static independent reviews; no claimed OS/credential/network isolation, independent native execution or independently exposed backend model identity"
+    },
+    "deployment": {
+      "classification": "EXACT_CI_WEB_ONLY_DEVELOPMENT_DEPLOYMENT_PASS",
+      "at": "2026-10-19T01:05:18.669148+00:00",
+      "merge": "7ece16e25743c9484054f503a00e12c25b95e858",
+      "head": "d25ed54d1c0536eb3b3e9d2ea924355f5727acf9",
+      "tree": "3b0580c326a20c92206adb4d5d8b70f18880baa0",
+      "run": 39182885917,
+      "attempt": 1,
+      "artifactId": 12157366304,
+      "image": "sha256:d138d0ad1c354a476fee235ff1fa7843c08b5a227026a0f59e8dbbb31b3c8fdd",
+      "imageId": "sha256:d138d0ad1c354a476fee235ff1fa7843c08b5a227026a0f59e8dbbb31b3c8fdd",
+      "oldContainer": "e16984d3da1b58269b373f07126e98fe705f15a0852367380b534b12372649a4",
+      "container": "ac9e486eaeb79bceb9ec20c428e5cabd1479a3053602b36567e851247f7630cb",
+      "healthy": true,
+      "configParity": true,
+      "other34ContainersUnchanged": true,
+      "inspectorAndVerifierSocketsUnchanged": true,
+      "schemaPurchasePaidFactsUnchanged": true,
+      "providerMutationCalls": 0,
+      "databaseWrites": 0,
+      "dispatches": 1,
+      "retries": 0,
+      "cleanupBy": "2026-10-20T00:00:00Z"
+    },
+    "readOnlyAndLocalUI": {
+      "classification": "NATIVE_PR214_CORRECTED_POLARIS_UI_PASS",
+      "at": "2026-10-19T01:06:50.039Z",
+      "pages": [
+        {
+          "area": "products",
+          "width": 1216,
+          "documentWidth": 1216,
+          "pageCount": 1,
+          "polarisDefined": true,
+          "inlineSize": null,
+          "mobile": {
+            "width": 379,
+            "documentWidth": 379
+          },
+          "heading": "Products",
+          "bodySha256": "4705adc5f8ff69664235b3e269d22b42a2093b841a2f1786f0f6e66a9ff366ff"
+        },
+        {
+          "area": "orders",
+          "width": 1216,
+          "documentWidth": 1216,
+          "pageCount": 1,
+          "polarisDefined": true,
+          "inlineSize": null,
+          "mobile": {
+            "width": 379,
+            "documentWidth": 364
+          },
+          "heading": "Orders and artwork",
+          "bodySha256": "6f351f0185b6b48deff42eae358f8c1d067dc363ce2daf5b5a55f4a421571ce1"
+        },
+        {
+          "area": "settings",
+          "width": 1216,
+          "documentWidth": 1216,
+          "pageCount": 1,
+          "polarisDefined": true,
+          "inlineSize": null,
+          "mobile": {
+            "width": 379,
+            "documentWidth": 364
+          },
+          "heading": "Settings",
+          "bodySha256": "b7a7de7d1da73901ed14c744e15cb5e501e3261e770e517e723ac8be634225c9"
+        },
+        {
+          "area": "settings/methods",
+          "width": 1216,
+          "documentWidth": 1216,
+          "pageCount": 1,
+          "polarisDefined": true,
+          "inlineSize": null,
+          "mobile": {
+            "width": 379,
+            "documentWidth": 379
+          },
+          "heading": "Decoration method library",
+          "bodySha256": "46503dd636c5fcf1f3d0f3875d83ce1e9aaadbf28620850013c36d1aeb42b320"
+        },
+        {
+          "area": "settings/storefront",
+          "width": 1216,
+          "documentWidth": 1216,
+          "pageCount": 1,
+          "polarisDefined": true,
+          "inlineSize": null,
+          "mobile": {
+            "width": 379,
+            "documentWidth": 364
+          },
+          "heading": "Storefront setup",
+          "bodySha256": "632cca96b13be6887171d7d941c510ac50c82048673f1a12f180904120096f42"
+        },
+        {
+          "area": "settings/billing",
+          "width": 1216,
+          "documentWidth": 1216,
+          "pageCount": 1,
+          "polarisDefined": true,
+          "inlineSize": null,
+          "mobile": {
+            "width": 379,
+            "documentWidth": 379
+          },
+          "heading": "Billing",
+          "bodySha256": "3b634a64104a1a152d8f38ffefde4c94a1a348f95beef3fc1931933ae9262e2c"
+        },
+        {
+          "area": "settings/privacy",
+          "width": 1216,
+          "documentWidth": 1216,
+          "pageCount": 1,
+          "polarisDefined": true,
+          "inlineSize": null,
+          "mobile": {
+            "width": 379,
+            "documentWidth": 379
+          },
+          "heading": "Customer privacy requests",
+          "bodySha256": "5aed3653c0ca7d0b18fe160fd3b827770e950871ac8b32ca36d45b03fe03d163"
+        }
+      ],
+      "editor": [
+        {
+          "name": "desktop",
+          "width": 1216,
+          "documentWidth": 1201,
+          "pageCount": 1,
+          "canvasLayers": 3,
+          "previewWidth": 278,
+          "aside": 1,
+          "publicationState": "{\"state\":\"ACTIVE\",\"revisionId\":\"9215185d-3109-4f07-b93b-d7e25b9bd7f5\",\"sourceDraftVersion\":\"4\"}"
+        },
+        {
+          "name": "mobile",
+          "width": 379,
+          "documentWidth": 364,
+          "pageCount": 1,
+          "canvasLayers": 3,
+          "previewWidth": 330,
+          "aside": 1,
+          "publicationState": "{\"state\":\"ACTIVE\",\"revisionId\":\"9215185d-3109-4f07-b93b-d7e25b9bd7f5\",\"sourceDraftVersion\":\"4\"}"
+        }
+      ],
+      "methodRemoval": {
+        "classification": "NOT_RUN_EMPTY_NATIVE_LIBRARY"
+      },
+      "saveBar": {
+        "nativeHostSaveAndDiscardVisible": true,
+        "cancelPreservesLocalEdit": true,
+        "confirmedDiscardRestoresOriginal": true,
+        "hostBarHidesAfterDiscard": true,
+        "publicationStateUnchanged": true,
+        "applicationMutationRequests": 0
+      },
+      "loading": {
+        "silent": true,
+        "inertWhilePending": true,
+        "settled": true,
+        "artificialReadDelayMs": 3000
+      },
+      "apiReads": [
+        {
+          "path": "/api/admin/products",
+          "status": 503,
+          "sha256": "6b99f83b0f93064824e6f5d9b60cd90647b26f79c2d343646986428e47bb6b50"
+        },
+        {
+          "path": "/api/purchases/v1",
+          "status": 200,
+          "sha256": "8c59bc9a759bc0dfaae61aa0d8ff0b6e7335e60890148767d96c4003e2056c41"
+        },
+        {
+          "path": "/api/admin/methods",
+          "status": 200,
+          "sha256": "12b075d6cc7d142a4abe22c6c30f9d04d0f32f9e6c49feea459f3fc80110b0f1"
+        },
+        {
+          "path": "/api/admin/billing",
+          "status": 200,
+          "sha256": "71fe881a704a62db5551a570542cbd6cf22b299a441be25895e40df17717834f"
+        },
+        {
+          "path": "/api/purchases/v1/privacy",
+          "status": 200,
+          "sha256": "eef46741adfc3a9f76294d3b78f37a45f113092ac9d44ee77c7a038a88ff09a1"
+        },
+        {
+          "path": "/api/admin/products/10519322493211/config",
+          "status": 200,
+          "sha256": "dc92c8b1cdc38f2a1c1fed224a7e273414f37819f8ed233f4e0e89d3bd287029"
+        },
+        {
+          "path": "/api/purchases/v1/privacy",
+          "status": 200,
+          "sha256": "eef46741adfc3a9f76294d3b78f37a45f113092ac9d44ee77c7a038a88ff09a1"
+        }
+      ],
+      "pageErrors": [],
+      "cookieTransfer": 0,
+      "loginActions": 0,
+      "scope": "Existing owned fixture; local method-name edit and discard only, no persisted configuration/publication/provider mutation",
+      "cleanupBy": "2026-10-20T00:00:00Z"
+    },
+    "nativeMethodQualification": {
+      "classification": "NATIVE_METHOD_LIBRARY_CANCEL_REOPEN_AND_OWNED_CLEANUP_PASS",
+      "at": "2026-10-19T01:07:32.641Z",
+      "store": "insignia-rewrite-dev.myshopify.com",
+      "methodId": "aaa749db-b308-4927-9124-7e4669ddbcf5",
+      "temporaryMethodName": "Insignia UI qualification 20261019 f1d3e054-4152-4b62-920c-5b5e57cde727",
+      "createdMethods": 1,
+      "cancelledDialogs": 2,
+      "confirmedOwnedRemovals": 1,
+      "unrelatedMethodListUnchanged": true,
+      "finalListDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "originalListDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "blockedUnexpectedAppMutations": 0,
+      "providerProductPublicationPurchasePlanReleaseActions": 0,
+      "retries": 0,
+      "loginActions": 0,
+      "cookieTransfer": 0,
+      "cleanupBy": "2026-10-20T00:00:00Z"
+    },
+    "nativeMethodEffectBoundary": "One temporary app-owned tenant method created then deleted by acknowledged exactID/version after2cancel/reopen cycles. Normal UI/idempotency/authentication used; baseline restored. SQL-only method catalog; existing product configs retain independent copies. No Shopify resource/product/configuration/publication/purchase/plan/release/uninstall action. Separate UI sweep had0nonGETAPIrequests; method run had exactly2acknowledged app catalog writes. No ambiguous retry.",
+    "privateManifest": {
+      "prepare.py": {
+        "sha256": "1f25d62ff8e528a30a43864cab90fd65a352a79eff7430e31ebd5213b79d92f7",
+        "bytes": 3426
+      },
+      "capture.py": {
+        "sha256": "449bd552843a908aabddb458bcf9d05b222fa2a7c0f675783e0a74bddac9dfaf",
+        "bytes": 3318
+      },
+      "deploy-web.py": {
+        "sha256": "5824c98c1caa4f43d7474e806e660a76da9eb6d2bd8ce817542704bfc2286dbf",
+        "bytes": 10788
+      },
+      "native-ui.cjs": {
+        "sha256": "fcd1200a4870722be91db755efedca6a03b5a71eb822544532c73e18930f551c",
+        "bytes": 8800
+      },
+      "native-method.cjs": {
+        "sha256": "7525df8ceda7760cbb49c5ca642b09e4d7b89284fe1c8ff308d2b79680c78df1",
+        "bytes": 7797
+      },
+      "operator-review.json": {
+        "sha256": "85f8f5173b95be6a13e0c526e158a1391b75de1cc80e23711d2cc1d0a044f2a1",
+        "bytes": 2072
+      },
+      "native-method-review.json": {
+        "sha256": "e6ec6ae2eb62f9771e0dcdb8cd9654c8c623dccca0990e7ff364644655932b00",
+        "bytes": 838
+      },
+      "native-ui/desktop-orders.png": {
+        "sha256": "e2ec9c87332f8336bd90abd70d3358dc1897efca1ac17766bfe3c245b46109bd",
+        "bytes": 89679
+      },
+      "native-ui/desktop-products.png": {
+        "sha256": "ecf8fb8d1d274bfeea52cb3fdb30a7bfede860f0bda1ab7569ccf2f618429e14",
+        "bytes": 65053
+      },
+      "native-ui/desktop-settings-billing.png": {
+        "sha256": "4c88097cc83d26080cf623b1bbecda82644df23fc8282505a1a2e551e0228fd0",
+        "bytes": 84173
+      },
+      "native-ui/desktop-settings-methods.png": {
+        "sha256": "a54130e047f710b6208575714ef8c825eabf5b010c06415c151f6ff984e2f6a7",
+        "bytes": 83254
+      },
+      "native-ui/desktop-settings-privacy.png": {
+        "sha256": "a77a862e8027090479fb0bd38f993e1d5545271f63a26473657c802c9d1df70d",
+        "bytes": 79345
+      },
+      "native-ui/desktop-settings-storefront.png": {
+        "sha256": "90ca19cdafd4931c4f69c804d9225e0fd86cab8be9b748614e9c7a691744d69a",
+        "bytes": 141867
+      },
+      "native-ui/desktop-settings.png": {
+        "sha256": "1e6bcbe3a470889656c159a9750ff1d6e254aa9729c2feebef226342df3c5cbd",
+        "bytes": 93379
+      },
+      "native-ui/editor-desktop.png": {
+        "sha256": "22af5bbeaba52f9d89d06820933425d2355b30e7571f2726488b92c0852cc7e9",
+        "bytes": 137631
+      },
+      "native-ui/editor-mobile.png": {
+        "sha256": "ad292c1e29ac782d4a0a584599fe9261f580907256c063d3f9b2efc7f6afbfa0",
+        "bytes": 45508
+      },
+      "native-ui/mobile-orders.png": {
+        "sha256": "f1d424e438620635cb6895252275834909055010c01c27f34b2ec440078fb73d",
+        "bytes": 45010
+      },
+      "native-ui/mobile-products.png": {
+        "sha256": "fb14c054e1a861fb3fdbc5b32e7ce718814e8271b17466a226ca5a49c43c11f2",
+        "bytes": 24341
+      },
+      "native-ui/mobile-settings-billing.png": {
+        "sha256": "7466d6eaa1c91244cae6b09bf452cb233132074ce2cd984874b3963543f05ed6",
+        "bytes": 40607
+      },
+      "native-ui/mobile-settings-methods.png": {
+        "sha256": "598c5639453210eaeb759d1c6dc38c7c68c285019163c25d818098b703bf7d20",
+        "bytes": 40408
+      },
+      "native-ui/mobile-settings-privacy.png": {
+        "sha256": "c9fba88e51daa2e7027c9c56b8e087e4703d81a466da7a82ac7a1b106c4abea7",
+        "bytes": 36754
+      },
+      "native-ui/mobile-settings-storefront.png": {
+        "sha256": "139ab596085a50860a578ecf5f2a2b76532418f97a6f09b8c788a3465046a399",
+        "bytes": 58680
+      },
+      "native-ui/mobile-settings.png": {
+        "sha256": "372d6ba05f20ee5b07c27762013fb7be962ef7a57560545ee71359346f11a8c2",
+        "bytes": 44938
+      },
+      "native-ui/native-discard-confirmation.png": {
+        "sha256": "a2cd12433f3dc153b477561943fc32d1650e1fa200cdaaadb58456d328dbdcd5",
+        "bytes": 165630
+      },
+      "native-ui/native-discard-restored.png": {
+        "sha256": "cb6a2ac39f889f3483272a801418d51cd9943f5e2cc3747496dee9b478ddb344",
+        "bytes": 138143
+      },
+      "native-ui/native-host-savebar.png": {
+        "sha256": "23aabc280ead37e7259ea0f174836a8a53cfcedb43fa4c943d0cc51898ff63e1",
+        "bytes": 151296
+      },
+      "native-ui/navigation-loading.png": {
+        "sha256": "8c66906e7f92c681d913c614670129e4a74461275b063ba76a7dc30d103f01fb",
+        "bytes": 55076
+      }
+    },
+    "retainedFailure": "Evidence-head839be4f foundation39182120307 attempt1 failed; actual source correctiond25ed54 and meaningful RED/GREEN followed. Earlier PR213 native/probe history remains unchanged. No rerun laundering or retrospective native correction claim.",
+    "remaining": "All named owner final production/native gates, VAT998524223812UNRESOLVED_NO_RETRY,20Octoberprivate-copy cleanup,21/22/24Octoberoriginal/design retention, credential rotation and exact owned fixture/test-gateway cleanup remain. Current-schema45 credential consumer cutover/reconnect rehearsal is unqualified; never run/relax historical18migrationhelper.",
+    "privateRawEvidence": {
+      "directory": "/tmp/insignia-modal214-native-20261019",
+      "cleanupBy": "2026-10-20T00:00:00Z",
+      "retrieval": "Private local frozen operators, intentions, acknowledgments and screenshots; public compact receipts/hashes retained in this record."
+    },
+    "postNativeProtectedRuntime": {
+      "classification": "POST_NATIVE_UI_PROTECTED_RUNTIME_READONLY_PASS",
+      "at": "2026-10-19T01:07:59.836950+00:00",
+      "healthy": true,
+      "other34Unchanged": true,
+      "schemaPurchasePaidFactsUnchanged": true,
+      "inspectorSocketsUnchanged": true
+    }
   }
 }

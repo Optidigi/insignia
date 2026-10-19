@@ -63,7 +63,10 @@
     ],
     "additionalControls": "Style (including final test formatting), secret provenance and module/domain/database boundary checks PASS. Existing baseline style warnings/infos remain; no threshold weakened. Independent final static impact review CLEAR. Natural final-head CI required before merge.",
     "developmentDeployment": "PASS19October: exactPR213 runtimeCI image deployed once, healthy; configuration, other34containers, inspector/verifier sockets, schema45 and financial facts preserved.",
-    "finalCI": "All3 final-head workflows39177736259/39177736136/39177736247 SUCCESS attempt1 onac1ce4582b7932a374f3da02998da7b8463f9085. Normal merge506993a8264bae4f595b615022490f6f073f8478, ordered parents and tree25f503ed3db7e20235826b0311918d90038bc381 verified."
+    "finalCI": "All3 final-head workflows39177736259/39177736136/39177736247 SUCCESS attempt1 onac1ce4582b7932a374f3da02998da7b8463f9085. Normal merge506993a8264bae4f595b615022490f6f073f8478, ordered parents and tree25f503ed3db7e20235826b0311918d90038bc381 verified.",
+    "correctiveFinalCI": "PR214 d25ed54d1c0536eb3b3e9d2ea924355f5727acf9: workflows39182885890/39182885924/39182885917 SUCCESS attempt1; merge7ece16e25743c9484054f503a00e12c25b95e858 tree3b0580c326a20c92206adb4d5d8b70f18880baa0 ordered parents verified. Prior failure39182120307 retained; actual source correction and RED/GREEN, not a rerun.",
+    "correctedBrowserRegression": "56PASS/0FAIL/0SKIP146828.564ms on corrected source; real500msclosing animation exposes original2500mscancel/reopen failure and passes after onHide selection cleanup. Typed build, style, secrets and independent corrective impact review CLEAR.",
+    "correctedDevelopmentNative": "ExactPR214CIimage sha256:d138d0ad1c354a476fee235ff1fa7843c08b5a227026a0f59e8dbbb31b3c8fdd healthy; native7routes+editor desktop/mobile, actual host SaveBar/discard/loading PASS; temporary method create and exact owned deletion after2cancel/reopen cycles restore baseline. No existing product/provider mutation. Details technical-merchant-completion/NATIVE.json pr214CorrectedNativeClosure20261019."
   },
   "limits": [
     "All existing final production gates and VAT UNRESOLVED/no-retry control remain intact",
