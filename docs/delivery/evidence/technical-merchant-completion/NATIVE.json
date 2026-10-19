@@ -21,10 +21,19 @@
       "settledNativeIdentityAt": "2026-10-18T22:13:22.148Z",
       "freshPreuninstallIdentityAt": "2026-10-18T22:19:50.862Z",
       "privateDestinationMatches": true,
-      "scopes": ["write_app_proxy", "read_orders", "read_app_proxy"],
+      "scopes": [
+        "write_app_proxy",
+        "read_orders",
+        "read_app_proxy"
+      ],
       "planSelection": false,
       "optionalScopeRequest": false,
-      "ownedConfigsArtworkPreviewsPurchases": [0, 0, 0, 0]
+      "ownedConfigsArtworkPreviewsPurchases": [
+        0,
+        0,
+        0,
+        0
+      ]
     },
     "uninstall": {
       "intentAt": "2026-10-18T22:19:55.728Z",
@@ -62,8 +71,20 @@
     "observedAt": "2026-10-18T22:28:16.450Z",
     "productId": "10519322493211",
     "classification": "DESKTOP_MOBILE_CONFIG_PRICE_CANVAS_READ_PASS",
-    "desktop": {"frameWidth":1142,"documentWidth":1127,"previewWidth":330,"canvasLayers":3,"priceFields":1},
-    "mobile": {"frameWidth":379,"documentWidth":364,"previewWidth":334,"canvasLayers":3,"priceFields":1},
+    "desktop": {
+      "frameWidth": 1142,
+      "documentWidth": 1127,
+      "previewWidth": 330,
+      "canvasLayers": 3,
+      "priceFields": 1
+    },
+    "mobile": {
+      "frameWidth": 379,
+      "documentWidth": 364,
+      "previewWidth": 334,
+      "canvasLayers": 3,
+      "priceFields": 1
+    },
     "publicationStateUnchanged": true,
     "mutations": "Only local View all settings and viewport changes; no save, price/geometry edit, upload or publication. Normal authentication may reconcile the existing installation/subscription.",
     "limits": "Existing owned configuration rendering; no storefront visual, purchase or rollout proof"
@@ -273,5 +294,420 @@
       "/home/serveradmin/insignia-lean-runtime-update-20261018-pr194/verifier-compose.private.json"
     ],
     "limits": "Exact3files only; no parent-directory, active credentials/state, historical evidence, backup or unrelated-service deletion. Active mount/label/process and owner cron/unit references checked."
+  },
+  "pr213Completion20261019": {
+    "classification": "ENGINEERING_READY_NATIVE_ACCEPTANCE_DEFERRED",
+    "scope": "Approved Lean V1 technical implementation and merchant UI; production/native gates retain original scope",
+    "source": {
+      "base": "198bca7624841c484b6ea7057f027ff1770e5e6b",
+      "head": "ac1ce4582b7932a374f3da02998da7b8463f9085",
+      "merge": "506993a8264bae4f595b615022490f6f073f8478",
+      "tree": "25f503ed3db7e20235826b0311918d90038bc381",
+      "orderedParents": [
+        "198bca7624841c484b6ea7057f027ff1770e5e6b",
+        "ac1ce4582b7932a374f3da02998da7b8463f9085"
+      ]
+    },
+    "sourceCI": [
+      {
+        "run": 39177736259,
+        "attempt": 1,
+        "head": "ac1ce4582b7932a374f3da02998da7b8463f9085",
+        "conclusion": "SUCCESS"
+      },
+      {
+        "run": 39177736136,
+        "attempt": 1,
+        "head": "ac1ce4582b7932a374f3da02998da7b8463f9085",
+        "conclusion": "SUCCESS"
+      },
+      {
+        "run": 39177736247,
+        "attempt": 1,
+        "head": "ac1ce4582b7932a374f3da02998da7b8463f9085",
+        "conclusion": "SUCCESS"
+      }
+    ],
+    "deployment": {
+      "classification": "EXACT_CI_WEB_ONLY_DEVELOPMENT_DEPLOYMENT_PASS",
+      "at": "2026-10-19T00:36:16.210201+00:00",
+      "merge": "506993a8264bae4f595b615022490f6f073f8478",
+      "head": "ac1ce4582b7932a374f3da02998da7b8463f9085",
+      "tree": "25f503ed3db7e20235826b0311918d90038bc381",
+      "run": 39177736247,
+      "attempt": 1,
+      "artifactId": 12155416449,
+      "image": "sha256:c892ddeff0811acc90f4d9ab29b06f5b4c2a9cb9389b68674393ff9eb11b8eb8",
+      "imageId": "sha256:c892ddeff0811acc90f4d9ab29b06f5b4c2a9cb9389b68674393ff9eb11b8eb8",
+      "oldContainer": "1bdb5f1b0aa843be6f6f9f02cd63f72b879eef14cb4b7be256a3df1b81139d0d",
+      "container": "e16984d3da1b58269b373f07126e98fe705f15a0852367380b534b12372649a4",
+      "healthy": true,
+      "configParity": true,
+      "other34ContainersUnchanged": true,
+      "inspectorAndVerifierSocketsUnchanged": true,
+      "schemaPurchasePaidFactsUnchanged": true,
+      "providerMutationCalls": 0,
+      "databaseWrites": 0,
+      "dispatches": 1,
+      "retries": 0,
+      "cleanupBy": "2026-10-20T00:00:00Z"
+    },
+    "postDeploymentReadOnly": {
+      "classification": "POST_DEPLOYMENT_PROTECTED_RUNTIME_READONLY_PASS",
+      "at": "2026-10-19T00:37:32.686869+00:00",
+      "healthy": true,
+      "other34Unchanged": true,
+      "schemaPurchasePaidFactsUnchanged": true,
+      "inspectorSocketsUnchanged": true
+    },
+    "nativeUI": {
+      "classification": "NATIVE_PR213_POLARIS_AND_HOST_SAVEBAR_PASS",
+      "at": "2026-10-19T00:42:58.664Z",
+      "pages": [
+        {
+          "area": "products",
+          "width": 1216,
+          "documentWidth": 1216,
+          "pageCount": 1,
+          "polarisDefined": true,
+          "inlineSize": null,
+          "mobile": {
+            "width": 379,
+            "documentWidth": 364
+          },
+          "heading": "Products",
+          "bodySha256": "3bfb247830480d3222fec7426b42c8d6a4827784354f910d29e93a53ff5521d4"
+        },
+        {
+          "area": "orders",
+          "width": 1216,
+          "documentWidth": 1216,
+          "pageCount": 1,
+          "polarisDefined": true,
+          "inlineSize": null,
+          "mobile": {
+            "width": 379,
+            "documentWidth": 364
+          },
+          "heading": "Orders and artwork",
+          "bodySha256": "6f351f0185b6b48deff42eae358f8c1d067dc363ce2daf5b5a55f4a421571ce1"
+        },
+        {
+          "area": "settings",
+          "width": 1216,
+          "documentWidth": 1216,
+          "pageCount": 1,
+          "polarisDefined": true,
+          "inlineSize": null,
+          "mobile": {
+            "width": 379,
+            "documentWidth": 364
+          },
+          "heading": "Settings",
+          "bodySha256": "b7a7de7d1da73901ed14c744e15cb5e501e3261e770e517e723ac8be634225c9"
+        },
+        {
+          "area": "settings/methods",
+          "width": 1216,
+          "documentWidth": 1216,
+          "pageCount": 1,
+          "polarisDefined": true,
+          "inlineSize": null,
+          "mobile": {
+            "width": 379,
+            "documentWidth": 379
+          },
+          "heading": "Decoration method library",
+          "bodySha256": "46503dd636c5fcf1f3d0f3875d83ce1e9aaadbf28620850013c36d1aeb42b320"
+        },
+        {
+          "area": "settings/storefront",
+          "width": 1216,
+          "documentWidth": 1216,
+          "pageCount": 1,
+          "polarisDefined": true,
+          "inlineSize": null,
+          "mobile": {
+            "width": 379,
+            "documentWidth": 364
+          },
+          "heading": "Storefront setup",
+          "bodySha256": "632cca96b13be6887171d7d941c510ac50c82048673f1a12f180904120096f42"
+        },
+        {
+          "area": "settings/billing",
+          "width": 1216,
+          "documentWidth": 1216,
+          "pageCount": 1,
+          "polarisDefined": true,
+          "inlineSize": null,
+          "mobile": {
+            "width": 379,
+            "documentWidth": 379
+          },
+          "heading": "Billing",
+          "bodySha256": "764f320729e118e2430d9180a0e200b0073fac05dc551e82d9d45f9e0f376591"
+        },
+        {
+          "area": "settings/privacy",
+          "width": 1216,
+          "documentWidth": 1216,
+          "pageCount": 1,
+          "polarisDefined": true,
+          "inlineSize": null,
+          "mobile": {
+            "width": 379,
+            "documentWidth": 379
+          },
+          "heading": "Customer privacy requests",
+          "bodySha256": "5aed3653c0ca7d0b18fe160fd3b827770e950871ac8b32ca36d45b03fe03d163"
+        }
+      ],
+      "editor": [
+        {
+          "name": "desktop",
+          "width": 1216,
+          "documentWidth": 1201,
+          "pageCount": 1,
+          "canvasLayers": 3,
+          "previewWidth": 278,
+          "aside": 1,
+          "publicationState": "{\"state\":\"ACTIVE\",\"revisionId\":\"9215185d-3109-4f07-b93b-d7e25b9bd7f5\",\"sourceDraftVersion\":\"4\"}"
+        },
+        {
+          "name": "mobile",
+          "width": 379,
+          "documentWidth": 364,
+          "pageCount": 1,
+          "canvasLayers": 3,
+          "previewWidth": 330,
+          "aside": 1,
+          "publicationState": "{\"state\":\"ACTIVE\",\"revisionId\":\"9215185d-3109-4f07-b93b-d7e25b9bd7f5\",\"sourceDraftVersion\":\"4\"}"
+        }
+      ],
+      "saveBar": {
+        "nativeHostSaveAndDiscardVisible": true,
+        "cancelPreservesLocalEdit": true,
+        "confirmedDiscardRestoresOriginal": true,
+        "hostBarHidesAfterDiscard": true,
+        "publicationStateUnchanged": true,
+        "applicationMutationRequests": 0
+      },
+      "loading": {
+        "silent": true,
+        "inertWhilePending": true,
+        "settled": true,
+        "artificialReadDelayMs": 3000
+      },
+      "apiReads": [
+        {
+          "path": "/api/admin/products",
+          "status": 200,
+          "sha256": "c307646a909b7bfe9f018a27bb12c7a8739573d88a6fa22f2b4d24eaad35cc57"
+        },
+        {
+          "path": "/api/purchases/v1",
+          "status": 200,
+          "sha256": "2b7f4ce64c4419c0c8354a0094b388a025920ca1e927e355f3be7503f69f4dca"
+        },
+        {
+          "path": "/api/admin/methods",
+          "status": 200,
+          "sha256": "12b075d6cc7d142a4abe22c6c30f9d04d0f32f9e6c49feea459f3fc80110b0f1"
+        },
+        {
+          "path": "/api/admin/billing",
+          "status": 200,
+          "sha256": "8ce90c8504b1a67fe5a5ca089616b0da8febb84229ef09704b93507b51303e57"
+        },
+        {
+          "path": "/api/purchases/v1/privacy",
+          "status": 200,
+          "sha256": "eef46741adfc3a9f76294d3b78f37a45f113092ac9d44ee77c7a038a88ff09a1"
+        },
+        {
+          "path": "/api/admin/products/10519322493211/config",
+          "status": 200,
+          "sha256": "dc92c8b1cdc38f2a1c1fed224a7e273414f37819f8ed233f4e0e89d3bd287029"
+        },
+        {
+          "path": "/api/purchases/v1/privacy",
+          "status": 200,
+          "sha256": "eef46741adfc3a9f76294d3b78f37a45f113092ac9d44ee77c7a038a88ff09a1"
+        }
+      ],
+      "pageErrors": [],
+      "cookieTransfer": 0,
+      "loginActions": 0,
+      "scope": "Existing owned fixture; local method-name edit and discard only, no persisted configuration/publication/provider mutation",
+      "cleanupBy": "2026-10-20T00:00:00Z"
+    },
+    "retiredNativePacketCleanup": {
+      "classification": "THREE_RETIRED_NATIVE_PACKETS_REMOVED",
+      "at": "2026-10-19T00:39:15.916182+00:00",
+      "paths": [
+        {
+          "path": "/home/serveradmin/insignia-lifecycle-schema-backup-20261018",
+          "exists": true,
+          "references": [],
+          "files": 4,
+          "bytes": 467282,
+          "inventorySha256": "e0f8105576ecc980e4e19671134497338ae3760453b27a4edf9b58dbb6ded144"
+        },
+        {
+          "path": "/home/serveradmin/insignia-operations-qualification-20261018",
+          "exists": true,
+          "references": [],
+          "files": 9433,
+          "bytes": 415148479,
+          "inventorySha256": "2744e1aaed84e42964297625f23b0e1a7ed13ac49ead5f2f3f73c278e0b030b6"
+        },
+        {
+          "path": "/home/serveradmin/insignia-native-runtime-209-20261018",
+          "exists": true,
+          "references": [],
+          "files": 30,
+          "bytes": 772155374,
+          "inventorySha256": "b9122c1997ceb1ec7df32dd235f2491d4f2696388140ceb21bea5a16aef93b5e"
+        }
+      ],
+      "all35ContainerConfigsPreserved": true,
+      "permanentCustodyExcluded": true,
+      "databaseProviderMutations": 0,
+      "limits": "Filesystem temporary-copy cleanup only. No original application artwork/financial facts, live config, inspector/verifier artifact/socket or unresolved generation authority deleted."
+    },
+    "privateArtifactManifest": {
+      "prepare.py": {
+        "sha256": "903fe5dc505d133f03e9a0fc6dc73bbd1d74368b6de512edf1c134036b301a12",
+        "bytes": 3474
+      },
+      "capture.py": {
+        "sha256": "3b183b3b06d4663224391a4899f577800f578b02645215e92c237ae602286570",
+        "bytes": 3318
+      },
+      "deploy-web.py": {
+        "sha256": "f906c8087e71e31615dac4f613a5559de59e31fb08e4b05ca05156b640477d22",
+        "bytes": 10782
+      },
+      "native-ui.cjs": {
+        "sha256": "eb1a33218659d3efe9f360643589b90d5e872e2de9fc467e548ac2b2fe19d27f",
+        "bytes": 7932
+      },
+      "native-ui-v4.cjs": {
+        "sha256": "cbe6212ec714469f86c6a2bfd5fc3a6e1cde49ba4145bd3ffc4a0c1155ce0411",
+        "bytes": 8156
+      },
+      "cleanup-retired.py": {
+        "sha256": "edc2aed3ec54c6c59eced797daf4ad60fb10efa7c433ef88e3266ecbb3bcb592",
+        "bytes": 4381
+      },
+      "probe-v4/desktop-orders.png": {
+        "sha256": "e2ec9c87332f8336bd90abd70d3358dc1897efca1ac17766bfe3c245b46109bd",
+        "bytes": 89679
+      },
+      "probe-v4/desktop-products.png": {
+        "sha256": "46028d8935ec4e56def892d0201dc9145ba529b2720310f60c59f03516c8784e",
+        "bytes": 128798
+      },
+      "probe-v4/desktop-settings-billing.png": {
+        "sha256": "be2eaa07b22d3e6b50705e8d8399143b030b6afe1ce59650ff0a030d612587cb",
+        "bytes": 84251
+      },
+      "probe-v4/desktop-settings-methods.png": {
+        "sha256": "a54130e047f710b6208575714ef8c825eabf5b010c06415c151f6ff984e2f6a7",
+        "bytes": 83254
+      },
+      "probe-v4/desktop-settings-privacy.png": {
+        "sha256": "a77a862e8027090479fb0bd38f993e1d5545271f63a26473657c802c9d1df70d",
+        "bytes": 79345
+      },
+      "probe-v4/desktop-settings-storefront.png": {
+        "sha256": "82ba741211c2fc009a4c5250100864069264d63968310200d7ac5fe8a5dab0d0",
+        "bytes": 141866
+      },
+      "probe-v4/desktop-settings.png": {
+        "sha256": "9b8449ac32f8ff437e38661ab31dbc8313dd5be4e8fb42fbe0005a416e904a4b",
+        "bytes": 93413
+      },
+      "probe-v4/editor-desktop.png": {
+        "sha256": "22af5bbeaba52f9d89d06820933425d2355b30e7571f2726488b92c0852cc7e9",
+        "bytes": 137631
+      },
+      "probe-v4/editor-mobile.png": {
+        "sha256": "43cc9058abd84e2965db719e681c3d7b1a3ac89261db084561142496c6326410",
+        "bytes": 45506
+      },
+      "probe-v4/mobile-orders.png": {
+        "sha256": "fb4c7c3125c006d6bebc1edc24b7c0e7acbf522060d41a4a98a5d65d35cf2958",
+        "bytes": 44886
+      },
+      "probe-v4/mobile-products.png": {
+        "sha256": "412ed370753ddae14a65d1f0766de50c986b9748edc60254acd02bb238c11ecc",
+        "bytes": 49071
+      },
+      "probe-v4/mobile-settings-billing.png": {
+        "sha256": "57da61f49114131535af1ce858accde0928dbde8d7fbd5b98b81e4c4aa611c7b",
+        "bytes": 40610
+      },
+      "probe-v4/mobile-settings-methods.png": {
+        "sha256": "4620bb4e776fc1a1bec523553f9f86bfd051481e10d4a8bdb62fa481b6ef2f91",
+        "bytes": 40343
+      },
+      "probe-v4/mobile-settings-privacy.png": {
+        "sha256": "79eb518a705d71429d075efc1ea9b0be3205635665821a15872fc188222ea297",
+        "bytes": 36747
+      },
+      "probe-v4/mobile-settings-storefront.png": {
+        "sha256": "863150e76e631f2edcd8be19e84a7744b3fb8bef9d59d172d3d4f82ce205e226",
+        "bytes": 58777
+      },
+      "probe-v4/mobile-settings.png": {
+        "sha256": "ff480f2867fca9513309b0a14665e8e0c87f234e21b08e787990717706c02189",
+        "bytes": 44921
+      },
+      "probe-v4/native-discard-confirmation.png": {
+        "sha256": "3be20895fe6896791fb87c54a2df43b5cbb930d94625c745373e2ffc8bf494b5",
+        "bytes": 163623
+      },
+      "probe-v4/native-discard-restored.png": {
+        "sha256": "2b914ba88b71ebada43590548525f736236a23ff8f96a4b6bfebcd8f0146b61d",
+        "bytes": 138126
+      },
+      "probe-v4/native-host-savebar.png": {
+        "sha256": "7284a931345465bc5add7940b5b64eaa869e6571fd92ba403fcf6baf91d03e2f",
+        "bytes": 152271
+      },
+      "probe-v4/navigation-loading.png": {
+        "sha256": "8c66906e7f92c681d913c614670129e4a74461275b063ba76a7dc30d103f01fb",
+        "bytes": 55076
+      }
+    },
+    "failuresRetained": [
+      "First probe found native dialog but scoped slotted buttons under its internal dialog role; timed out. Corrected probe uses the s-modal host, matching the existing fixture test. No production source correction.",
+      "T3 restart left old run360 executing beside resumed361; an extra launch refused the occupied profile before navigation. Old cancelled app-server was terminated to consolidate execution; its round2 was interrupted. No extra deployment or provider mutation dispatched.",
+      "Corrected probe passed native discard, then sought Settings sections navigation on the overview, which uses cards. Final probe targets the actual Privacy link and qualifies the delayed read. Original diagnostics preserved privately until20October."
+    ],
+    "review": {
+      "reviewer": "/root/technical_completion_audit",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedEffort": "low",
+      "specCorrectness": "No demonstrated missing application implementation or new code defect in the bounded completion audit",
+      "standardsSecurity": "Retain native claims, VAT unknown/no-retry and dated cleanup/rotation; no release-ready claim",
+      "boundary": "Independent procedural read-only source/evidence audit; no claimed OS/credential/network isolation; no independent native execution"
+    },
+    "operationalObligations": {
+      "privateCopiesDue": "2026-10-20T00:00:00Z",
+      "originalDesignDeadlines": "Original21/22/24October deadlines remain exact",
+      "rotation": "Current-schema45 credential consumer/cutover/reconnect rehearsal and actual rotation are unqualified. Historical18-migration helper must not be run or have its pin relaxed. Requalify roles/secrets before final production/recovery exposure.",
+      "fixtureTestGatewayCleanup": "Still owed within exact owned scope and existing authority; preserve current working fixture, history and unsettled VAT authority.",
+      "activeCustody": "Permanent verifier/inspector/configuration and unresolved authority remain live dependencies, excluded from temporary-packet deletion"
+    },
+    "remainingOwnerGates": "authority/final-production-gates-2026-10-18.json; no storefront visual, genuine uninstall/privacy, full recovery/RPO/RTO, installed monitoring, alert-authentication, commercial/distribution/general-merchant or rollout PASS",
+    "rawEvidence": {
+      "directory": "/tmp/insignia-ui213-native-20261019",
+      "cleanupBy": "2026-10-20T00:00:00Z",
+      "retrieval": "Private local operator receipts and screenshots; compact digests/observations retained here after temporary-copy cleanup"
+    },
+    "mutationBoundary": "One exact-image development web replacement only; nativeUI blocked/counts non-GET application API requests and observed zero. Normal authenticated navigation can reconcile app-owned installation/subscription state. No persistent edit, upload, publication, purchase, plan, release/scope/version or VAT retry."
   }
 }
