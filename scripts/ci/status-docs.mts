@@ -3,27 +3,15 @@ import { appendFileSync } from 'node:fs';
 import { posix, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const documents = new Map([
-  ['docs/delivery/state.md', 'Latest integration:'],
-  ['docs/delivery/evidence/m8-context-runtime/WORKLIST.md', 'Latest main:'],
-]);
+// These two mutable progress documents have no executable/data consumers.
+// Expanding this set requires tracing consumers; evidence JSON and authority stay full-route.
+const documents = new Set(['docs/delivery/state.md', 'docs/delivery/evidence/m8-context-runtime/WORKLIST.md']);
 const full = (reason: string) => ({ route: 'full', reason });
 function refuse(code: string): never {
   throw new Error(code);
 }
 const likelySecret =
   /shpat_|shpss_|cfat_|\b(?:AKIA|ASIA)[A-Z0-9]{16}\b|BEGIN (?:RSA |EC )?PRIVATE KEY|\bBearer\s|[?&](?:token|secret|signature|X-Amz-Signature)=/i;
-// Keep all prose/punctuation fixed. Only hashes and numeric status/reference identifiers may vary.
-const skeleton = (line: string) =>
-  line.replace(/(?<![A-Za-z0-9])[a-f0-9]{7,40}(?![A-Za-z0-9])/gi, '<sha>').replace(/\d+/g, '<n>');
-function latest(text: string, prefix: string) {
-  const lines = text.split('\n');
-  const matches = lines.filter((line) => line.startsWith(prefix));
-  if (matches.length !== 1) refuse('STATUS_LINE_INVALID');
-  const line = matches[0];
-  if (!line) refuse('STATUS_LINE_INVALID');
-  return { line, rest: lines.filter((line) => !line.startsWith(prefix)).join('\n') };
-}
 function linksValid(line: string, file: string, head: string, git: (...args: string[]) => string) {
   for (const match of line.matchAll(/\[[^\]\n]*\]\(([^)\n]+)\)/g)) {
     const target = match[1];
@@ -48,7 +36,7 @@ function linksValid(line: string, file: string, head: string, git: (...args: str
       refuse('STATUS_LINK_INVALID');
     }
     if (/[\p{Cc}]/u.test(relative)) refuse('STATUS_LINK_INVALID');
-    const normalized = relative ? posix.normalize(posix.join(posix.dirname(file), relative)) : file;
+    const normalized = relative ? posix.normalize(posix.join(posix.dirname(file), relative)).replace(/\/$/, '') : file;
     if (normalized.startsWith('../') || normalized.startsWith('/')) refuse('STATUS_LINK_INVALID');
     try {
       git('cat-file', '-e', `${head}:${normalized}`);
@@ -107,8 +95,7 @@ export function classifyStatusDocs({
   }
   if (!changes.length || changes.some((change) => change.status !== 'M' || !documents.has(change.file)))
     return full('UNRECOGNIZED_CHANGE');
-  const changed = new Set(changes.map((change) => change.file));
-  for (const [file, prefix] of documents) {
+  for (const { file } of changes) {
     let before: string, after: string;
     try {
       for (const ref of [base, head])
@@ -120,14 +107,11 @@ export function classifyStatusDocs({
     }
     if (Buffer.byteLength(after) > 262144 || Buffer.byteLength(before) > 262144) return full('UNRECOGNIZED_CHANGE');
     if (likelySecret.test(after)) refuse('STATUS_SECRET_REFUSED');
-    const prior = latest(before, prefix),
-      current = latest(after, prefix);
-    if (!changed.has(file)) continue;
-    if (prior.rest !== current.rest || skeleton(prior.line) !== skeleton(current.line))
-      return full('SUBSTANTIVE_DOC_CHANGE');
-    linksValid(current.line, file, head, git);
+    // Command instructions need the comprehensive source/command-target controls.
+    if (/\b(?:node|bash|python3|(?:corepack\s+)?pnpm)\s+[A-Za-z./-]/.test(after)) return full('COMMAND_DOC_CHANGE');
+    linksValid(after, file, head, git);
   }
-  return { route: 'status-docs', reason: 'STATUS_REFERENCES_VALIDATED' };
+  return { route: 'status-docs', reason: 'CURRENT_DOCS_VALIDATED' };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
@@ -142,8 +126,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       appendFileSync(
         process.env.GITHUB_STEP_SUMMARY,
         result.route === 'status-docs'
-          ? '### Status documentation validation\n\nOnly existing integration-reference lines changed; document structure and changed links validated. Full behavior, PostgreSQL, browser, process and Wasm suites were **not selected**. This is no new product or native qualification.\n'
-          : '### Full verification selected\n\nThe change is outside the narrow status-reference route, or exact refs were unavailable. Existing full checks and failure semantics apply; classification does not report their outcome.\n',
+          ? '### Status documentation validation\n\nOnly the two supported current-progress documents changed; Git file scope, links and secret checks validated. Full behavior, PostgreSQL, browser, process and Wasm suites were **not selected**. This is no new product or native qualification.\n'
+          : '### Full verification selected\n\nThe change is outside the bounded current-document route, or exact refs were unavailable. Existing full checks and failure semantics apply; classification does not report their outcome.\n',
       );
     console.log(`CI route: ${result.route} (${result.reason})`);
   } catch {

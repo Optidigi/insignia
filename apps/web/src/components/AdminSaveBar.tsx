@@ -26,9 +26,11 @@ export default function AdminSaveBar({
   const destination = useRef<string | null>(null);
   const leaving = useRef(false);
   const [confirming, setConfirming] = useState(false);
+  const [hostAvailable, setHostAvailable] = useState(false);
   useEffect(() => {
     const bridge = (window as unknown as { shopify?: Bridge }).shopify?.saveBar;
-    void (dirty ? bridge?.show(barId) : bridge?.hide(barId))?.catch(() => {});
+    setHostAvailable(!!bridge);
+    void (dirty ? bridge?.show(barId) : bridge?.hide(barId))?.catch(() => setHostAvailable(false));
     return () => {
       void bridge?.hide(barId).catch(() => {});
     };
@@ -104,9 +106,16 @@ export default function AdminSaveBar({
         ),
         createElement('button', { disabled: !canDiscard || saving, onClick: ask }, 'Discard'),
       )}
-      <s-button disabled={!dirty || !canDiscard || saving} onClick={ask}>
-        Discard changes
-      </s-button>
+      {!hostAvailable && (
+        <s-stack direction="inline" gap="base">
+          <s-button variant="primary" disabled={!canSave || saving} loading={saving} onClick={onSave}>
+            Save draft
+          </s-button>
+          <s-button disabled={!dirty || !canDiscard || saving} onClick={ask}>
+            Discard changes
+          </s-button>
+        </s-stack>
+      )}
       <s-modal
         ref={modal}
         id="discard-product-changes"

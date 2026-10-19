@@ -1283,7 +1283,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
   );
   return (
     <s-page
-      inlineSize="base"
+      inlineSize={mode === 'picker' ? 'large' : 'base'}
       heading={
         mode === 'picker' ? 'Products' : view?.product.title ? `Customize ${view.product.title}` : 'Customize product'
       }
@@ -1319,7 +1319,9 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
               {loading && <AdminSkeleton label="Loading products" />}
               {list && (
                 <div role="status">
-                  <s-paragraph>{list.products.length} products on this page</s-paragraph>
+                  <s-paragraph>
+                    {list.products.length} {list.products.length === 1 ? 'product' : 'products'} on this page
+                  </s-paragraph>
                 </div>
               )}
               {list && list.products.length > 0 && (
@@ -1336,16 +1338,15 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                     <s-table-header listSlot="primary">Product</s-table-header>
                     <s-table-header listSlot="inline">Status</s-table-header>
                     <s-table-header listSlot="secondary">Variants</s-table-header>
-                    <s-table-header listSlot="labeled">Action</s-table-header>
                   </s-table-header-row>
                   <s-table-body>
                     {list.products.map((product) => (
                       <s-table-row key={product.id}>
                         <s-table-cell>
                           <s-stack direction="inline" gap="base" alignItems="center">
-                            <s-box inlineSize="40px">
+                            <s-box>
                               {product.imageUrl ? (
-                                <s-thumbnail src={product.imageUrl} alt="" />
+                                <s-thumbnail src={product.imageUrl} size="small" alt="" />
                               ) : (
                                 <s-text>No image</s-text>
                               )}
@@ -1367,18 +1368,8 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                         <s-table-cell>
                           {product.variants.length > 0 && (
                             <s-paragraph>
-                              {product.variants
-                                .slice(0, 5)
-                                .map((variant) => variant.title)
-                                .join(', ')}
+                              {product.variants.length} {product.variants.length === 1 ? 'variant' : 'variants'}
                             </s-paragraph>
-                          )}
-                        </s-table-cell>
-                        <s-table-cell>
-                          {numberOf(product.id) && (
-                            <s-text>
-                              <s-link href={`/admin/products/${numberOf(product.id)}/config`}>Configure product</s-link>
-                            </s-text>
                           )}
                         </s-table-cell>
                       </s-table-row>
@@ -1448,180 +1439,34 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
             <>
               <s-box minInlineSize="0">
                 <s-stack gap="base">
-                  <s-section id="editor-flow" heading="Configure this product">
-                    <s-stack gap="base">
-                      <nav aria-label="Product setup steps">
-                        <s-stack direction="inline" gap="base">
-                          {setupSteps.map((step, index) => (
-                            <s-button
-                              variant={setupStep === step.id ? 'secondary' : 'tertiary'}
-                              icon={step.icon}
-                              key={step.id}
-                              href={'#' + step.anchor}
-                              aria-current={setupStep === step.id ? 'step' : undefined}
-                              onClick={(event) => {
-                                event.preventDefault();
-                                selectSetupStep(step.id);
-                              }}
-                            >
-                              {index + 1}. {step.label}
-                            </s-button>
-                          ))}
-                          <s-button href="#product-preview" variant="tertiary" icon="image">
-                            Preview
-                          </s-button>
-                        </s-stack>
-                      </nav>
-                      <div id="setup-stage-heading" tabIndex={-1}>
-                        <s-stack direction="inline" gap="small">
-                          <s-icon type={currentSetup?.icon ?? 'settings'} />
-                          <s-heading>
-                            {currentSetup
-                              ? `Step ${setupIndex + 1} of 4 · ${currentSetup.label}`
-                              : 'All product settings'}
-                          </s-heading>
-                        </s-stack>
-                      </div>
-                      <s-button onClick={() => selectSetupStep(setupStep === 'all' ? 'rules' : 'all')}>
-                        {setupStep === 'all' ? 'Use guided setup' : 'View all settings'}
-                      </s-button>
-                    </s-stack>
-                  </s-section>
-                  <s-section accessibilityLabel="Draft status">
-                    <s-stack direction="inline" alignItems="center" gap="base">
-                      {setupStep !== 'review' && setupStep !== 'all' && (
-                        <PublicationStatus config={view.config} compact />
-                      )}
-                      {validationIssues.length > 0 && (
-                        <div role="alert">
-                          {validationIssues.map((issue) => (
-                            <s-paragraph key={issue.path}>
-                              {issue.path}: {issue.message}
-                            </s-paragraph>
-                          ))}
-                        </div>
-                      )}
-                      <s-stack gap="small">
-                        <s-badge
-                          tone={
-                            saveState === 'conflict' || saveState === 'ambiguous'
-                              ? 'warning'
-                              : saveState === 'dirty'
-                                ? 'info'
-                                : 'success'
-                          }
-                        >
-                          {
-                            {
-                              clean: 'All changes saved',
-                              dirty: 'Unsaved changes',
-                              saving: 'Saving changes…',
-                              saved: 'All changes saved',
-                              conflict: 'Newer changes found',
-                              ambiguous: 'Save could not be confirmed',
-                            }[saveState]
-                          }
-                        </s-badge>
-                        <s-stack direction="inline" gap="base">
-                          <s-text color="subdued">Draft version {view.config.draftVersion}</s-text>
-                          <s-text color="subdued">
-                            Product status:{' '}
-                            {view.product.status === 'ACTIVE'
-                              ? 'Active'
-                              : view.product.status === 'ARCHIVED'
-                                ? 'Archived'
-                                : view.product.status === 'DRAFT'
-                                  ? 'Draft'
-                                  : view.product.status}
-                          </s-text>
-                        </s-stack>
-                      </s-stack>
-
-                      {saveState === 'ambiguous' && pending.current && (
-                        <s-paragraph>
-                          Retry saving to reconcile this request before editing, discarding or loading another draft.
-                        </s-paragraph>
-                      )}
-                      {saveState === 'ambiguous' && pending.current && (
-                        <s-button loading={busy} disabled={busy} onClick={() => void save(true)}>
-                          Retry saving
-                        </s-button>
-                      )}
-                      {latest && (
-                        <s-button
-                          disabled={editLocked}
-                          onClick={() => {
-                            if (!editLockedRef.current && isDraft(latest.draft)) {
-                              setDraft(latest.draft);
-                              setPriceErrors({});
-                              setPriceRevision((old) => old + 1);
-                              setEditor(initialEditor(latest.draft));
-                              setView({ ...view, config: latest });
-                              setLatest(null);
-                              setSaveState('clean');
-                              pending.current = null;
-                            }
-                          }}
-                        >
-                          Review latest saved draft
-                        </s-button>
-                      )}
-                      {(saveState === 'conflict' || saveState === 'ambiguous') && (
-                        <s-button
-                          disabled={editLocked}
-                          onClick={() => {
-                            if (!editLockedRef.current) void load();
-                          }}
-                        >
-                          Reload current draft
-                        </s-button>
-                      )}
-                    </s-stack>
-                    <s-stack direction="inline" gap="base">
-                      {' '}
-                      <s-button
-                        loading={saveState === 'saving'}
-                        variant="primary"
-                        disabled={
-                          editLocked || !!advancedError || legacyPricing || hasPriceErrors || saveState !== 'dirty'
-                        }
-                        onClick={() => void save()}
-                      >
-                        Save draft
-                      </s-button>
-                      <AdminSaveBar
-                        dirty={
-                          ['dirty', 'saving', 'ambiguous', 'conflict'].includes(saveState) ||
-                          hasPriceErrors ||
-                          !!advancedError ||
-                          editLocked
-                        }
-                        saving={busy}
-                        canSave={
-                          !editLocked && !advancedError && !legacyPricing && !hasPriceErrors && saveState === 'dirty'
-                        }
-                        canDiscard={!editLocked && isDraft(view.config.draft)}
-                        onSave={() => void save()}
-                        onDiscard={() => {
-                          if (editLockedRef.current || !view?.config || !isDraft(view.config.draft)) return;
-                          const saved = structuredClone(view.config.draft);
-                          const restored = initialEditor(saved);
-                          setDraft(saved);
-                          setEditor(restored);
-                          editorRef.current = restored;
-                          setPriceErrors({});
-                          setPriceRevision((old) => old + 1);
-                          setPriceProposalStarted(false);
-                          setAdvancedText('');
-                          setAdvancedError('');
-                          setValidationIssues([]);
-                          setLatest(null);
-                          setSaveState('clean');
-                          setStatus('');
+                  <s-box id="editor-flow">
+                    <s-grid gridTemplateColumns="1fr auto" gap="base" alignItems="end">
+                      <s-select
+                        label="Configuration section"
+                        value={setupStep}
+                        onChange={(event) => {
+                          const selected = event.currentTarget.value;
+                          const step = setupSteps.find((item) => item.id === selected);
+                          if (step || selected === 'all') selectSetupStep(step?.id ?? 'all');
                         }}
-                      />
-                    </s-stack>
-                  </s-section>
+                      >
+                        {setupSteps.map((step, index) => (
+                          <s-option key={step.id} value={step.id}>
+                            {index + 1}. {step.label}
+                          </s-option>
+                        ))}
+                        <s-option value="all">All settings</s-option>
+                      </s-select>
+                      <s-button href="#product-preview" variant="tertiary" icon="image">
+                        Preview
+                      </s-button>
+                    </s-grid>
+                    <div id="setup-stage-heading" tabIndex={-1}>
+                      <s-text color="subdued">
+                        {currentSetup ? `Step ${setupIndex + 1} of 4 · ${currentSetup.label}` : 'All product settings'}
+                      </s-text>
+                    </div>
+                  </s-box>
                   <s-stack gap="base">
                     <section class="admin-setup-panel" aria-label="Product rules" hidden={!visibleStage('rules')}>
                       <s-stack gap="base">
@@ -2539,6 +2384,131 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                         editorRef.current = next;
                         setEditor(next);
                         updateRenderer(next);
+                      }}
+                    />
+                  </s-stack>
+                </s-section>
+                <s-section accessibilityLabel="Draft status">
+                  <s-stack direction="inline" alignItems="center" gap="base">
+                    {setupStep !== 'review' && setupStep !== 'all' && (
+                      <PublicationStatus config={view.config} compact />
+                    )}
+                    {validationIssues.length > 0 && (
+                      <div role="alert">
+                        {validationIssues.map((issue) => (
+                          <s-paragraph key={issue.path}>
+                            {issue.path}: {issue.message}
+                          </s-paragraph>
+                        ))}
+                      </div>
+                    )}
+                    <s-stack gap="small">
+                      <s-badge
+                        tone={
+                          saveState === 'conflict' || saveState === 'ambiguous'
+                            ? 'warning'
+                            : saveState === 'dirty'
+                              ? 'info'
+                              : 'success'
+                        }
+                      >
+                        {
+                          {
+                            clean: 'All changes saved',
+                            dirty: 'Unsaved changes',
+                            saving: 'Saving changes…',
+                            saved: 'All changes saved',
+                            conflict: 'Newer changes found',
+                            ambiguous: 'Save could not be confirmed',
+                          }[saveState]
+                        }
+                      </s-badge>
+                      <s-stack direction="inline" gap="base">
+                        <s-text color="subdued">Draft version {view.config.draftVersion}</s-text>
+                        <s-text color="subdued">
+                          Product status:{' '}
+                          {view.product.status === 'ACTIVE'
+                            ? 'Active'
+                            : view.product.status === 'ARCHIVED'
+                              ? 'Archived'
+                              : view.product.status === 'DRAFT'
+                                ? 'Draft'
+                                : view.product.status}
+                        </s-text>
+                      </s-stack>
+                    </s-stack>
+
+                    {saveState === 'ambiguous' && pending.current && (
+                      <s-paragraph>
+                        Retry saving to reconcile this request before editing, discarding or loading another draft.
+                      </s-paragraph>
+                    )}
+                    {saveState === 'ambiguous' && pending.current && (
+                      <s-button loading={busy} disabled={busy} onClick={() => void save(true)}>
+                        Retry saving
+                      </s-button>
+                    )}
+                    {latest && (
+                      <s-button
+                        disabled={editLocked}
+                        onClick={() => {
+                          if (!editLockedRef.current && isDraft(latest.draft)) {
+                            setDraft(latest.draft);
+                            setPriceErrors({});
+                            setPriceRevision((old) => old + 1);
+                            setEditor(initialEditor(latest.draft));
+                            setView({ ...view, config: latest });
+                            setLatest(null);
+                            setSaveState('clean');
+                            pending.current = null;
+                          }
+                        }}
+                      >
+                        Review latest saved draft
+                      </s-button>
+                    )}
+                    {(saveState === 'conflict' || saveState === 'ambiguous') && (
+                      <s-button
+                        disabled={editLocked}
+                        onClick={() => {
+                          if (!editLockedRef.current) void load();
+                        }}
+                      >
+                        Reload current draft
+                      </s-button>
+                    )}
+                  </s-stack>
+                  <s-stack direction="inline" gap="base">
+                    {' '}
+                    <AdminSaveBar
+                      dirty={
+                        ['dirty', 'saving', 'ambiguous', 'conflict'].includes(saveState) ||
+                        hasPriceErrors ||
+                        !!advancedError ||
+                        editLocked
+                      }
+                      saving={busy}
+                      canSave={
+                        !editLocked && !advancedError && !legacyPricing && !hasPriceErrors && saveState === 'dirty'
+                      }
+                      canDiscard={!editLocked && isDraft(view.config.draft)}
+                      onSave={() => void save()}
+                      onDiscard={() => {
+                        if (editLockedRef.current || !view?.config || !isDraft(view.config.draft)) return;
+                        const saved = structuredClone(view.config.draft);
+                        const restored = initialEditor(saved);
+                        setDraft(saved);
+                        setEditor(restored);
+                        editorRef.current = restored;
+                        setPriceErrors({});
+                        setPriceRevision((old) => old + 1);
+                        setPriceProposalStarted(false);
+                        setAdvancedText('');
+                        setAdvancedError('');
+                        setValidationIssues([]);
+                        setLatest(null);
+                        setSaveState('clean');
+                        setStatus('');
                       }}
                     />
                   </s-stack>

@@ -45,9 +45,6 @@ export default function MerchantSettings() {
   useAdminPageReady(true);
   return (
     <s-page inlineSize="small" heading="Settings">
-      <s-paragraph>
-        Manage store-wide setup. Product-specific rules, images and prices live with each product.
-      </s-paragraph>
       {groups.map((group) => (
         <s-section key={group.title} heading={group.title} padding="none">
           <s-stack gap="base">
@@ -70,14 +67,6 @@ export default function MerchantSettings() {
           </s-stack>
         </s-section>
       ))}
-      <s-section heading="Product customization">
-        <s-stack gap="base">
-          <s-paragraph>Choose a product to configure its methods, images, print areas and prices.</s-paragraph>
-          <s-button href="/admin/products" icon="product">
-            Configure products
-          </s-button>
-        </s-stack>
-      </s-section>
       <AdminDisclosure label="App permissions and publication checks">
         {denied ? (
           <s-banner tone="critical" heading="Reopen Insignia from Shopify Admin">

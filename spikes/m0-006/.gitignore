@@ -1,6 +1,0 @@
-node_modules/
-.shopify/
-.env
-.env.*
-evidence/ci-manifest.json
-evidence/ci-preview-replay.json

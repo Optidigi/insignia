@@ -117,7 +117,7 @@ test('merchant sees exact historical economics and erased detail never offers ne
   assert.equal((await shell.text()).includes('9007199254740993'), false, 'SSR does not load private order economics');
   let current = view();
   // A fixed historical deadline keeps the explicit UTC-format assertion stable.
-  required(current.groups[0]).payloadExpiresAt = '2026-10-19T12:00:00Z';
+  required(current.groups[0]).payloadExpiresAt = '2030-01-01T12:00:00Z';
   current.orderName = '#1001';
   required(current.lines[0]).title = 'Purchased cotton shirt';
   required(current.lines[0]).variantTitle = 'Blue / Large';
@@ -145,14 +145,18 @@ test('merchant sees exact historical economics and erased detail never offers ne
     '/admin/settings',
   );
   await page.getByRole('heading', { name: 'Order summary', exact: true }).waitFor();
+  const primary = await page.getByRole('heading', { name: 'Artwork and customization', exact: true }).boundingBox();
+  const summary = await page.getByRole('heading', { name: 'Order summary', exact: true }).boundingBox();
+  assert.ok(primary && summary && summary.x > primary.x, 'artwork task is primary; order metadata sits beside it');
+  assert.ok(primary && primary.y < 240, 'artwork starts in the initial desktop fold');
   await page.getByText('#1001', { exact: true }).waitFor();
   await page.getByText(/Purchased cotton shirt · Blue \/ Large/).waitFor();
   assert.equal(await page.getByText('gid://shopify/Order/1', { exact: true }).isVisible(), false);
   await page.getByRole('button', { name: 'Show order and variant references', exact: true }).click();
   await page.getByText('gid://shopify/Order/1', { exact: true }).waitFor();
   assert.equal(
-    await page.locator('s-text[data-date-time="2026-10-19T12:00:00Z"]').innerText(),
-    'Oct 19, 2026, 12:00 PM UTC',
+    await page.locator('s-text[data-date-time="2030-01-01T12:00:00Z"]').innerText(),
+    'Jan 1, 2030, 12:00 PM UTC',
   );
   await page.getByText('Historical preview unavailable.', { exact: true }).waitFor();
   assert.equal(await page.getByRole('button', { name: 'Lock artwork', exact: true }).isEnabled(), false);
@@ -798,8 +802,10 @@ test('orders table supports artwork triage on the loaded page and opens the exac
   await page.getByRole('combobox', { name: 'Artwork status', exact: true }).selectOption('PENDING_ARTWORK');
   assert.equal(await page.getByRole('link', { name: '#1002', exact: true }).count(), 0);
   await page.getByText('1 of 2 loaded orders', { exact: true }).waitFor();
+  await page.screenshot({ path: '/tmp/insignia-canonical-orders-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   assert.ok(await first.isVisible());
+  await page.screenshot({ path: '/tmp/insignia-canonical-orders-mobile.png', fullPage: true });
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await page.getByRole('combobox', { name: 'Artwork status', exact: true }).selectOption('all');
   await page.getByRole('link', { name: '#1002', exact: true }).waitFor();

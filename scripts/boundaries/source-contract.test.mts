@@ -65,11 +65,12 @@ test('current entrypoints reject retired source commands while preserving inert 
   writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: { start: 'node dist/server/entry.mjs' } }));
   mkdirSync(join(root, 'deployment'));
   writeFileSync(join(root, 'deployment/compose.yaml'), 'name: insignia-uninstall-m5-024\n');
-  mkdirSync(join(root, 'scripts/m5-runtime'), { recursive: true });
-  writeFileSync(join(root, 'scripts/m5-runtime/frozen-schema18-manifest.json'), JSON.stringify({ original: retired }));
-  mkdirSync(join(root, 'scripts/lifecycle'));
+  mkdirSync(join(root, 'docs/history'), { recursive: true });
+  writeFileSync(join(root, 'docs/history/frozen-schema18-manifest.json'), JSON.stringify({ original: retired }));
+  mkdirSync(join(root, 'scripts/lifecycle'), { recursive: true });
   writeFileSync(join(root, 'scripts/lifecycle/SERVICE-PROPOSAL.json'), JSON.stringify({ historical: retired }));
   assert.doesNotThrow(() => inspectMaintainedSources(root, policy));
+  mkdirSync(join(root, 'scripts/m5-runtime'), { recursive: true });
   writeFileSync(join(root, 'scripts', 'm5-runtime', 'revived.sh'), '#!/bin/sh\n');
   assert.throws(() => inspectMaintainedSources(root, policy), /RETIRED_EXECUTABLE_PATH/);
 });
@@ -87,4 +88,26 @@ test('current routing documents reject broken local links without scanning histo
   mkdirSync(join(root, 'docs/archive'));
   writeFileSync(join(root, 'docs/archive/old.md'), '[historical](missing.md)\n');
   assert.doesNotThrow(() => inspectMaintainedSources(root, policy));
+});
+
+test('CLI discovery rejects deleted web directories and maintained docs reject missing command targets', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'insignia-command-targets-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  execFileSync('git', ['init', '-q', root]);
+  const policy: SourcePolicy = { projects: [] };
+  writeFileSync(join(root, 'shopify.app.preview.toml'), 'web_directories = ["scripts/deleted-preview"]\n');
+  assert.throws(() => inspectMaintainedSources(root, policy), /MISSING_CLI_DIRECTORY/);
+  mkdirSync(join(root, 'scripts/deleted-preview'), { recursive: true });
+  assert.doesNotThrow(() => inspectMaintainedSources(root, policy));
+  rmSync(join(root, 'shopify.app.preview.toml'));
+  writeFileSync(join(root, 'README.md'), 'Run `node --test scripts/operations/deleted.mts` to recover.\n');
+  assert.throws(() => inspectMaintainedSources(root, policy), /MISSING_CURRENT_COMMAND_TARGET/);
+  writeFileSync(join(root, 'README.md'), 'Runtime output is `dist/server/entry.mjs`.\n');
+  assert.doesNotThrow(() => inspectMaintainedSources(root, policy));
+  writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: { qualify: 'node scripts/ci/absent.mts' } }));
+  assert.throws(() => inspectMaintainedSources(root, policy), /MISSING_CURRENT_COMMAND_TARGET/);
+  rmSync(join(root, 'package.json'));
+  mkdirSync(join(root, 'scripts'), { recursive: true });
+  writeFileSync(join(root, 'scripts/orphan.go'), 'package main\n');
+  assert.throws(() => inspectMaintainedSources(root, policy), /UNAPPROVED_UNTYPED_SOURCE/);
 });

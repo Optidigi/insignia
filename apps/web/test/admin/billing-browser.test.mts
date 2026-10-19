@@ -76,6 +76,7 @@ test('merchant billing separates development terms and trial, links Shopify mana
   });
   await page.goto(`${base}/admin/settings/billing`);
   await page.getByText('Billing status could not be verified. Try again.').waitFor();
+  await page.screenshot({ path: '/tmp/insignia-canonical-billing-unavailable.png', fullPage: true });
   const navigation = page.locator('s-app-nav');
   assert.equal(
     await navigation

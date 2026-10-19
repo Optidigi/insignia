@@ -115,9 +115,10 @@ Neither an unsigned hidden line property nor a Cart Transform marker is proof of
 apps/
   web/                         # Astro standalone SSR and composition root
     src/pages/admin/           # File-based merchant pages
-    src/pages/api/admin/v1/    # Authenticated command/query endpoints
-    src/pages/proxy/v1/        # App Proxy upstream routes
-    src/pages/webhooks/        # Raw-body ingress
+    src/pages/api/admin/       # Authenticated merchant command/query endpoints
+    src/pages/api/artwork/v1/  # Buyer/App Proxy upstream contracts
+    src/pages/api/purchases/v1/ # Purchase/history/artwork contracts
+    src/pages/api/webhooks/    # Raw-body Shopify/uninstall ingress
     src/islands/               # Preact only where interaction warrants it
     src/server/                # Server composition and transport boundaries
   worker/                      # Job registry, outbox dispatcher, composition
@@ -154,7 +155,8 @@ pnpm-lock.yaml
 Cargo.toml
 Cargo.lock
 rust-toolchain.toml
-shopify.app.toml
+# No default root Shopify CLI app config is checked in.
+# Scoped deployment TOMLs retain exact external identity; never infer a release grant.
 ```
 
 Use explicit package exports. Client bundling must reject server exports of database, Shopify, artwork, signer and observability. Only `packages/shopify` imports `@shopify/shopify-api`; official Rust Function SDK dependencies belong inside Rust Functions. Framework-specific component types remain outside domain/contracts.
@@ -632,6 +634,8 @@ Health endpoints separate process liveness, DB readiness, worker freshness and i
 
 ## 14. Testing strategy and executable gates
 
+The 19 October canonical-app completion direction replaces the earlier typed-cleanup execution packet, retaining these conventions and contracts. Complete the actual repository/contributor loop and each merchant page composition, with reviewed rendered desktop/mobile states; component tags and native smoke alone do not establish visual acceptance. One current state index routes working behavior, deployed artifacts, defects and owner gates. Remove obsolete active configs/commands with consumers, preserve necessary fixture bytes and applied records, measure verification consolidation, and qualify a fresh clone/session. This is independently executable engineering work under the operating model, separate from production rollout or unallocated provider effects.
+
 The 19 October owner cleanup revision requires one strict typed implementation across maintained application, tests, fixtures, build/release/deployment/monitoring/recovery code: TypeScript/TSX/MTS/CTS or Rust. Compiler projects must include test and tooling source; runtime stripping alone is insufficient. Generated JavaScript and third-party dependencies retain provenance. SQL, Liquid, CSS, HTML and declarative infrastructure keep their appropriate formats; shell launchers remain thin. Retire superseded executable experiments and compatibility machinery with their consumers, preserving applied migrations, current protocol/persisted identities, immutable evidence and recovery readers needed by actual records. Responsibility-based names govern maintained code and commands. The source/type/rendered controls must enforce actual Shopify App Home Polaris Web Components through shared merchant views and loading/error/empty/recovery states, with supported App Bridge host controls, the Konva renderer and separate buyer storefront boundaries preserved.
 
 ### 14.1 Testing layers
@@ -811,7 +815,7 @@ Only the small scaffolding necessary for a spike precedes platform risk proof. T
 
 ## 16. Implementation method for coding agents
 
-The authoritative delivery procedure is `../delivery/operating-model.md`. This section retains architecture-specific implementation requirements. Read both before implementation; task/role templates and the tooling register are linked by the operating model.
+The authoritative delivery procedure is `../delivery/operating-model.md`. This section retains architecture-specific implementation requirements. Read both before implementation. The [tooling register](../delivery/tooling-register.md) records observed tool capabilities; the [agent-role reference](../delivery/agent-roles.md) provides optional task-brief context under that policy.
 
 ### 16.0 Milestone engineering and native acceptance
 

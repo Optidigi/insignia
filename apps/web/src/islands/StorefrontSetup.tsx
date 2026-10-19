@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'preact/hooks';
-import SettingsNavigation from '../components/SettingsNavigation';
 import { useAdminPageReady } from '../shared/admin-page-ready';
 
 export default function StorefrontSetup() {
@@ -24,23 +23,6 @@ export default function StorefrontSetup() {
       <s-link slot="breadcrumb-actions" href="/admin/settings">
         Settings
       </s-link>
-      <SettingsNavigation current="storefront" />
-      <s-section heading="Connect your product to the storefront">
-        <s-stack gap="base">
-          <s-paragraph>
-            Publishing a configuration and adding the customization button are separate steps. Use a compatible product
-            template and review your changes in Shopify before saving.
-          </s-paragraph>
-          <s-stack direction="inline" gap="base">
-            <s-icon type="product" />
-            <s-text>Configure product</s-text>
-            <s-icon type="arrow-right" />
-            <s-text>Publish</s-text>
-            <s-icon type="arrow-right" />
-            <s-text>Add theme block</s-text>
-          </s-stack>
-        </s-stack>
-      </s-section>
       <s-section heading="1. Configure and publish a product">
         <s-stack gap="base">
           <s-paragraph>

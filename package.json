@@ -18,7 +18,7 @@
     "test:runtime": "node --test scripts/runtime/availability-replay.test.mts scripts/runtime/app-entry.test.mts",
     "test:publication-stress": "INSIGNIA_PUBLICATION_STRESS_ITERATIONS=25 corepack pnpm --filter @insignia/web exec node --test --test-name-pattern=\"publication (success|failed) preserves\" test/admin/editor-browser.test.mts",
     "test:browser": "corepack pnpm --filter @insignia/web test && corepack pnpm --filter @insignia/storefront test",
-    "check:style": "biome check .dependency-cruiser.mts apps/storefront/src apps/storefront/test apps/storefront/scripts apps/storefront/vite.config.ts apps/web/src/islands apps/web/src/pages/live.ts apps/web/src/pages/api apps/web/src/server apps/web/src/shared apps/web/src/styles apps/web/test apps/web/astro.config.ts apps/worker/src apps/worker/test packages/storage/src packages/storage/test packages/contracts/src packages/domain/src packages/cart-authorization/src packages/cart-authorization/test packages/cart-authorization/fixtures/*.mts packages/application/src packages/database/src packages/database/test packages/shopify/src packages/shopify/test packages/visualizer/src packages/observability/src packages/observability/test scripts/boundaries scripts/functions scripts/worker scripts/release scripts/lifecycle scripts/ci apps/web/src/components/AdminSkeleton.tsx apps/web/src/components/AdminPageSkeleton.tsx apps/web/src/components/SettingsNavigation.tsx scripts/operations deployment/alerts/*.mts scripts/runtime scripts/database",
+    "check:style": "biome check .dependency-cruiser.mts apps/storefront/src apps/storefront/test apps/storefront/scripts apps/storefront/vite.config.ts apps/web/src/islands apps/web/src/pages/live.ts apps/web/src/pages/api apps/web/src/server apps/web/src/shared apps/web/src/styles apps/web/test apps/web/astro.config.ts apps/worker/src apps/worker/test packages/storage/src packages/storage/test packages/contracts/src packages/domain/src packages/cart-authorization/src packages/cart-authorization/test packages/cart-authorization/fixtures/*.mts packages/application/src packages/database/src packages/database/test packages/shopify/src packages/shopify/test packages/visualizer/src packages/observability/src packages/observability/test scripts/boundaries scripts/functions scripts/worker scripts/release scripts/lifecycle scripts/ci apps/web/src/components/AdminSkeleton.tsx apps/web/src/components/AdminPageSkeleton.tsx scripts/operations deployment/alerts/*.mts scripts/runtime scripts/database",
     "check:boundaries": "node scripts/boundaries/check.mts && node scripts/boundaries/check-database-api.mts && node scripts/boundaries/check-domain-effects.mts && node --test scripts/boundaries/domain-effects.test.mts && node --test scripts/boundaries/source-contract.test.mts scripts/boundaries/polaris.test.mts && corepack pnpm check:source",
     "check:secrets": "node --test scripts/boundaries/check-secrets.test.mts && node scripts/boundaries/check-secrets.mts",
     "check:rust": "node scripts/functions/check.mts",
@@ -27,7 +27,9 @@
     "test:operations": "node --test deployment/alerts/worker.test.mts scripts/operations/*.test.mts scripts/privacy/*.test.mts",
     "check:types": "node scripts/boundaries/source-contract.mts --check-types",
     "check:source": "node scripts/boundaries/source-contract.mts",
-    "test:runtime-inventory": "node --test scripts/runtime/worker-inventory.test.mts"
+    "test:runtime-inventory": "node --test scripts/runtime/worker-inventory.test.mts",
+    "dev:admin": "node apps/web/test/admin/preview.mts",
+    "test:database:isolated": "node scripts/database/isolated.mts"
   },
   "devDependencies": {
     "@astrojs/compiler-rs": "0.5.1",

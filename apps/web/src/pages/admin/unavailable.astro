@@ -11,6 +11,11 @@ Astro.response.headers.set('Content-Security-Policy', "default-src 'none'; scrip
     <s-banner tone="critical" heading="Insignia could not open">
       Application configuration is unavailable. Contact app support to recover access.
     </s-banner>
-    <s-link href="https://admin.shopify.com" target="_top">Return to Shopify Admin</s-link>
+    <s-section heading="Recover access">
+      <s-stack gap="base">
+        <s-paragraph>Return to Shopify Admin and reopen Insignia. If the problem continues, contact app support. No changes have been made from this page.</s-paragraph>
+        <s-button variant="primary" href="https://admin.shopify.com" target="_top">Return to Shopify Admin</s-button>
+      </s-stack>
+    </s-section>
   </s-page>
 </AdminLayout>

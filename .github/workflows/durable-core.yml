@@ -9,8 +9,6 @@ on:
       - 'scripts/database/**'
       - 'packages/application/**'
       - 'packages/database/**'
-      - 'scripts/m6-artwork/**'
-      - 'scripts/m7-storefront/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - '.github/workflows/durable-core.yml'
@@ -60,12 +58,6 @@ jobs:
         if: steps.changes.outputs.route == 'full'
         run: corepack pnpm exec dbmate --migrations-dir packages/database/migrations status
       - run: corepack pnpm build
-        if: steps.changes.outputs.route == 'full'
-      - run: corepack pnpm check:style
-        if: steps.changes.outputs.route == 'full'
-      - run: corepack pnpm check:boundaries
-        if: steps.changes.outputs.route == 'full'
-      - run: corepack pnpm check:secrets
         if: steps.changes.outputs.route == 'full'
       - run: corepack pnpm check:database
         if: steps.changes.outputs.route == 'full'

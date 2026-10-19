@@ -61,9 +61,11 @@ test('merchant can recover a failed privacy lookup and download exact requested 
     requestedOrderCount: 1,
   };
   let failing = true;
+  let denied = false;
   await page.route('**/api/purchases/v1/privacy**', (route) => {
     assert.equal(route.request().headers().authorization, 'Bearer synthetic-privacy-actor');
     const path = new URL(route.request().url()).pathname;
+    if (denied) return route.fulfill({ status: 403, json: { code: 'FORBIDDEN' } });
     if (failing) return route.fulfill({ status: 503, json: { code: 'UNAVAILABLE' } });
     if (path.endsWith('/privacy')) return route.fulfill({ json: { items: [receipt] } });
     if (path.endsWith(`/orders/${purchase}`))
@@ -78,6 +80,7 @@ test('merchant can recover a failed privacy lookup and download exact requested 
   await page.getByRole('button', { name: 'Refresh requests' }).click();
   await page.getByRole('button', { name: 'Open request' }).click();
   await page.getByRole('link', { name: 'Original artwork and retained preview' }).waitFor();
+  await page.screenshot({ path: '/tmp/insignia-canonical-privacy-desktop.png', fullPage: true });
   assert.equal(
     await page.getByRole('link', { name: 'Original artwork and retained preview' }).getAttribute('href'),
     `/admin/orders/${purchase}`,
@@ -93,4 +96,15 @@ test('merchant can recover a failed privacy lookup and download exact requested 
   });
   await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+  await page.screenshot({ path: '/tmp/insignia-canonical-privacy-mobile.png', fullPage: true });
+  denied = true;
+  await page.getByRole('button', { name: 'Open request', exact: true }).click();
+  await page
+    .locator('s-banner')
+    .filter({ hasText: 'Reopen Insignia from Shopify Admin to verify your access.' })
+    .waitFor();
+  await page.screenshot({ path: '/tmp/insignia-canonical-privacy-denied-mobile.png', fullPage: true });
+  assert.equal(await page.getByRole('button', { name: 'Open request', exact: true }).count(), 0);
+  assert.equal(await page.getByRole('button', { name: 'Download request summary (JSON)', exact: true }).count(), 0);
+  assert.equal(await page.getByRole('link', { name: 'Original artwork and retained preview', exact: true }).count(), 0);
 });

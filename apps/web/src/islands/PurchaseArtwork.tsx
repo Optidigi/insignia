@@ -224,10 +224,11 @@ function Placement({
     <section aria-label={`Artwork ${label}`}>
       <s-stack gap="base">
         <s-divider />
-        <s-heading>
-          {label} · {group.presentation?.labels.methods?.[placement.methodId] ?? placement.methodId} ·{' '}
+        <s-heading>{label}</s-heading>
+        <s-text color="subdued">
+          Method: {group.presentation?.labels.methods?.[placement.methodId] ?? placement.methodId} · Size:{' '}
           {group.presentation?.labels.steps?.[placement.stepId] ?? placement.stepId}
-        </s-heading>
+        </s-text>
         <s-paragraph>
           Purchased artwork:{' '}
           {placement.originalArtwork.kind === 'deferred' ? 'Logo later' : 'Original file supplied at purchase'}
@@ -405,7 +406,7 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
     </s-box>
   );
   return (
-    <s-page inlineSize="base" heading="Orders and artwork">
+    <s-page inlineSize="base" heading={purchaseId ? (purchase?.orderName ?? 'Order details') : 'Orders and artwork'}>
       {purchaseId && (
         <s-link slot="breadcrumb-actions" href="/admin/orders">
           Orders
@@ -440,7 +441,6 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
                 Load older orders
               </s-button>
             )}
-            {items.length === 0 && orderFilters}
             {items.length > 0 && (
               <s-table loading={busy}>
                 <s-box slot="filters">{orderFilters}</s-box>
@@ -496,7 +496,7 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
       )}
       {purchase && (
         <>
-          <s-section heading="Order summary">
+          <s-section slot="aside" heading="Order summary">
             <s-stack gap="base">
               <s-heading>{purchase.orderName ?? 'Order name unavailable'}</s-heading>
               <s-paragraph>
@@ -514,7 +514,7 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
                 {exactPurchaseMoney(purchase.originalTotalMinor, purchase.exponent, purchase.currency)}
               </s-paragraph>
               <s-paragraph>
-                Shopify payment status: {purchase.financialStatus}. First fully paid:{' '}
+                Shopify payment status: {purchase.financialStatus.toLowerCase().replaceAll('_', ' ')}. First fully paid:{' '}
                 {purchase.firstPaidAt ? (
                   <s-text data-date-time={purchase.firstPaidAt}>{recordDate(purchase.firstPaidAt)}</s-text>
                 ) : (
@@ -534,24 +534,7 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
                   <s-paragraph>Reconciliation exception: {exception}</s-paragraph>
                 </div>
               ))}
-              <s-button type="button" disabled={busy} onClick={() => void command('reconcile')}>
-                Check order updates in Shopify
-              </s-button>
-            </s-stack>
-          </s-section>
-          <s-section heading="Purchased variants">
-            <s-stack gap="base">
-              {purchase.lines.map((line) => (
-                <s-paragraph key={line.orderLineId}>
-                  {line.title ?? 'Purchased item name unavailable'}
-                  {line.variantTitle ? ` · ${line.variantTitle}` : ''}: {line.quantity} ×{' '}
-                  {exactPurchaseMoney(line.unitPriceMinor, purchase.exponent, purchase.currency)}
-                </s-paragraph>
-              ))}
-            </s-stack>
-          </s-section>
-          <s-section heading="Technical references">
-            <s-stack gap="base">
+
               <AdminDisclosure label="Show order and variant references">
                 <s-paragraph>{purchase.orderId}</s-paragraph>
                 {purchase.lines.map((line) => (
@@ -560,6 +543,10 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
                   </s-paragraph>
                 ))}
               </AdminDisclosure>
+
+              <s-button type="button" disabled={busy} onClick={() => void command('reconcile')}>
+                Check order updates in Shopify
+              </s-button>
             </s-stack>
           </s-section>
           <s-section heading="Artwork and customization">
@@ -630,6 +617,17 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
                   </s-button>
                 </>
               )}
+            </s-stack>
+          </s-section>
+          <s-section heading="Purchased variants">
+            <s-stack gap="base">
+              {purchase.lines.map((line) => (
+                <s-paragraph key={line.orderLineId}>
+                  {line.title ?? 'Purchased item name unavailable'}
+                  {line.variantTitle ? ` · ${line.variantTitle}` : ''}: {line.quantity} ×{' '}
+                  {exactPurchaseMoney(line.unitPriceMinor, purchase.exponent, purchase.currency)}
+                </s-paragraph>
+              ))}
             </s-stack>
           </s-section>
           <s-section heading="Attachment history">

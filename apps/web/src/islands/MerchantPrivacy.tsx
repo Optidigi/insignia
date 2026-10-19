@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
+import AdminDisclosure from '../components/AdminDisclosure';
 import AdminSkeleton from '../components/AdminSkeleton';
-import SettingsNavigation from '../components/SettingsNavigation';
 import { useAdminPageReady } from '../shared/admin-page-ready';
 import { authenticatedJson } from '../shared/admin-request.js';
 
@@ -30,13 +30,21 @@ export default function MerchantPrivacy() {
   useAdminPageReady(loaded);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
+  const [denied, setDenied] = useState(false);
   async function run(operation: () => Promise<void>) {
     if (busy) return;
     setBusy(true);
     setError(false);
     try {
       await operation();
-    } catch {
+      setDenied(false);
+    } catch (error) {
+      if ([401, 403].includes((error as { status?: number }).status ?? 0)) {
+        setRequests([]);
+        setManifest(null);
+        setDesignExports([]);
+        setDenied(true);
+      }
       setError(true);
     } finally {
       setLoaded(true);
@@ -53,21 +61,20 @@ export default function MerchantPrivacy() {
       <s-link slot="breadcrumb-actions" href="/admin/settings">
         Settings
       </s-link>
-      <SettingsNavigation current="privacy" />
-      <s-section heading="Provide requested customer data">
+      <s-button
+        disabled={busy}
+        onClick={() =>
+          void run(async () => {
+            setManifest(null);
+            setDesignExports([]);
+            setRequests((await authenticatedJson<{ items: RequestView[] }>('/api/purchases/v1/privacy')).items);
+          })
+        }
+      >
+        Refresh requests
+      </s-button>
+      <s-section heading="Data requests">
         <s-stack gap="base">
-          <s-button
-            disabled={busy}
-            onClick={() =>
-              void run(async () => {
-                setManifest(null);
-                setDesignExports([]);
-                setRequests((await authenticatedJson<{ items: RequestView[] }>('/api/purchases/v1/privacy')).items);
-              })
-            }
-          >
-            Refresh requests
-          </s-button>
           <s-paragraph>
             Download each available order record and its original artwork, then provide them to the requesting customer
             through your store’s privacy process. Downloading here does not confirm delivery to the customer.
@@ -78,7 +85,9 @@ export default function MerchantPrivacy() {
           {(!loaded || (busy && !requests.length)) && <AdminSkeleton label="Loading privacy requests" />}
           {error && (
             <s-banner tone="critical" heading="Privacy requests unavailable">
-              Privacy records could not be loaded. Try again.
+              {denied
+                ? 'Reopen Insignia from Shopify Admin to verify your access.'
+                : 'Privacy records could not be loaded. Try again.'}
             </s-banner>
           )}
           {loaded && !busy && !error && !requests.length && (
@@ -100,10 +109,17 @@ export default function MerchantPrivacy() {
                 {requests.map((request) => (
                   <s-table-row key={request.inboxId}>
                     <s-table-cell>
-                      <s-text>{request.requestId}</s-text>
+                      <s-text>Request {request.requestId}</s-text>
                     </s-table-cell>
                     <s-table-cell>
-                      <s-text data-date-time={request.fulfillBy}>{new Date(request.fulfillBy).toUTCString()}</s-text>
+                      <s-text data-date-time={request.fulfillBy}>
+                        {new Intl.DateTimeFormat('en', {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                          timeZone: 'UTC',
+                        }).format(new Date(request.fulfillBy))}{' '}
+                        UTC
+                      </s-text>
                     </s-table-cell>
                     <s-table-cell>{request.requestedOrderCount}</s-table-cell>
                     <s-table-cell>
@@ -157,9 +173,10 @@ export default function MerchantPrivacy() {
                 No orders were requested. Insignia does not hold a separate customer contact profile.
               </s-paragraph>
             )}
-            {manifest.orders.map((order) => (
-              <s-paragraph key={order.orderId}>
-                {order.orderId}{' '}
+            {manifest.orders.map((order, index) => (
+              <s-stack key={order.orderId} gap="base">
+                <s-divider />
+                <s-heading>Requested order {index + 1}</s-heading>
                 {order.purchaseId ? (
                   <>
                     <s-button
@@ -179,13 +196,16 @@ export default function MerchantPrivacy() {
                       }
                     >
                       Download order data
-                    </s-button>{' '}
+                    </s-button>
                     <s-link href={`/admin/orders/${order.purchaseId}`}>Original artwork and retained preview</s-link>
                   </>
                 ) : (
-                  'No matching Insignia purchase is held.'
+                  <s-paragraph>No matching Insignia purchase is held.</s-paragraph>
                 )}
-              </s-paragraph>
+                <AdminDisclosure label="Shopify order reference">
+                  <s-paragraph>{order.orderId}</s-paragraph>
+                </AdminDisclosure>
+              </s-stack>
             ))}
             {designExports.map((design, index) => (
               <s-paragraph key={design.setId}>
