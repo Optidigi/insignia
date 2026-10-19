@@ -130,12 +130,7 @@ export default function MethodLibrary() {
         Settings
       </s-link>
       <SettingsNavigation current="methods" />
-      <s-modal
-        ref={removal}
-        id="remove-method"
-        heading="Remove decoration method?"
-        onAfterHide={() => setDeleting(null)}
-      >
+      <s-modal ref={removal} id="remove-method" heading="Remove decoration method?" onHide={() => setDeleting(null)}>
         <s-stack gap="base">
           <s-paragraph>Remove this method from your reusable library?</s-paragraph>
           <s-text type="strong">{methods.find((m) => m.id === deleting)?.name}</s-text>
