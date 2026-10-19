@@ -37,7 +37,7 @@ PostgreSQL qualification is separate. Install PostgreSQL18 server/client tools (
 - [Current state and action checklist](docs/delivery/state.md): deployed components, next assignment, defects and exact owner/operator obligations.
 - [Runtime/deployment procedure](deployment/m5-runtime/README.md): current image/Compose/recovery responsibilities and real resource gates.
 
-Maintained tools live under responsibility-named `scripts/{boundaries,ci,database,functions,lifecycle,operations,privacy,release,runtime,worker}`. Project skills live in `.agents/skills`; select their project paths explicitly when the host also advertises generic account skills. A fresh session should confirm its intended checkout/base and project skill paths before editing. Preserve other dirty worktrees and actual service dependencies.
+Maintained tools live under responsibility-named `scripts/{boundaries,ci,database,functions,operations,privacy,release,runtime,worker}`. Project skills live in `.agents/skills`; select their project paths explicitly when the host also advertises generic account skills. A fresh session should confirm its intended checkout/base and project skill paths before editing. Preserve other dirty worktrees and actual service dependencies.
 
 Merchant UI is **owner-unaccepted** and assigned to the fresh UI agent for presentation rebuild. Current component/runtime checks and earlier internal visual observations do not establish owner acceptance. The source inventory is in the specification; the action checklist owns the assignment.
 

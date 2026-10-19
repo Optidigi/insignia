@@ -32,7 +32,6 @@
     "packages/visualizer/tsconfig.test.json",
     "scripts/ci/tsconfig.json",
     "scripts/functions/tsconfig.json",
-    "scripts/lifecycle/tsconfig.json",
     "scripts/operations/tsconfig.json",
     "scripts/privacy/tsconfig.json",
     "scripts/release/tsconfig.json",

@@ -49,7 +49,6 @@ const retiredRoots = [
     `scripts/${name}/`,
     'scripts/runtime/, scripts/worker/ and scripts/release/',
   ]),
-  ...['m5-callback-qualification', 'm5-owner-lifecycle'].map((name) => [`scripts/${name}/`, 'scripts/lifecycle/']),
   ...[
     'm5-002',
     'm5-004',

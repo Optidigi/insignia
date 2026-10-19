@@ -27,7 +27,6 @@ on:
       - 'deployment/artwork-inspector/**'
       - 'deployment/release-verifier/**'
       - 'deployment/m5-019r/**'
-      - 'scripts/lifecycle/**'
       - 'scripts/privacy/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
