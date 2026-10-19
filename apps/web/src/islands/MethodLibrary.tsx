@@ -16,7 +16,8 @@ export default function MethodLibrary() {
   const [notice, setNotice] = useState('');
   const [denied, setDenied] = useState(false);
   const [uncertain, setUncertain] = useState(false);
-  const [deleting, setDeleting] = useState<string | null>(null);
+  // Each opening has its own identity, including a same-method reopen batched with hide.
+  const [deleting, setDeleting] = useState<{ methodId: string } | null>(null);
   const removal = useRef<HTMLElementTagNameMap['s-modal']>(null);
   useEffect(() => {
     let active = true;
@@ -133,7 +134,7 @@ export default function MethodLibrary() {
       <s-modal ref={removal} id="remove-method" heading="Remove decoration method?" onHide={() => setDeleting(null)}>
         <s-stack gap="base">
           <s-paragraph>Remove this method from your reusable library?</s-paragraph>
-          <s-text type="strong">{methods.find((m) => m.id === deleting)?.name}</s-text>
+          <s-text type="strong">{methods.find((m) => m.id === deleting?.methodId)?.name}</s-text>
           <s-paragraph>Existing product configurations and orders will stay unchanged.</s-paragraph>
           {error && deleting && (
             <s-banner tone="critical" heading="Method could not be removed">
@@ -153,7 +154,7 @@ export default function MethodLibrary() {
           loading={busy}
           disabled={busy || uncertain || !deleting}
           onClick={() => {
-            const method = methods.find((m) => m.id === deleting);
+            const method = methods.find((m) => m.id === deleting?.methodId);
             if (method) void write('DELETE', method.id, { version: method.version });
           }}
         >
@@ -241,7 +242,11 @@ export default function MethodLibrary() {
                               >
                                 Save name
                               </s-button>
-                              <s-button tone="critical" disabled={busy || uncertain} onClick={() => setDeleting(m.id)}>
+                              <s-button
+                                tone="critical"
+                                disabled={busy || uncertain}
+                                onClick={() => setDeleting({ methodId: m.id })}
+                              >
                                 Remove
                               </s-button>
                             </s-stack>

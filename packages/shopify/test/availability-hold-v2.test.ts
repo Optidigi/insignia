@@ -1,6 +1,14 @@
+import { isAvailabilityV2 } from '@insignia/application';
+
+function v2Snapshot(value: Parameters<typeof isAvailabilityV2>[0]): ProductAvailabilitySnapshotV2 {
+  if (!isAvailabilityV2(value)) throw new Error('Expected v2 snapshot');
+  return value;
+}
+
 import type { AvailabilityHoldV2, AvailabilityScope, ProductAvailabilitySnapshotV2 } from '@insignia/application';
 import { expect, test, vi } from 'vitest';
 import { createShopifyAvailabilityHoldV2Port } from '../src/availability-hold-v2.js';
+import { graphqlRequest, record, required, string } from './fixture-assertions.js';
 
 const scope: AvailabilityScope = {
   shopId: 'synthetic-shop',
@@ -17,8 +25,8 @@ const product = (status = 'ACTIVE', updatedAt = '2026-10-01T11:00:00Z') => ({
   id: productId,
   status,
   updatedAt,
-  publishedAt: null,
-  onlineStoreUrl: null,
+  publishedAt: null as string | null,
+  onlineStoreUrl: null as string | null,
   resourcePublications: {
     nodes:
       status === 'DRAFT'
@@ -45,7 +53,7 @@ const page = (node = product()) => ({
           includedProducts: { nodes: [{ id: productId }], pageInfo: complete },
         },
       ],
-      pageInfo: { ...complete, endCursor: null },
+      pageInfo: { ...complete, endCursor: null as string | null },
     },
   },
 });
@@ -54,7 +62,7 @@ const update = (node = product('DRAFT', '2026-10-01T11:01:00Z')) => ({
 });
 function fixture(steps: unknown[], options: { now?: () => Date; timeoutMs?: number } = {}) {
   const queue = [...steps];
-  const fetchImpl = vi.fn(async (_url: unknown, _init?: RequestInit) => {
+  const fetchImpl = vi.fn<typeof fetch>(async (_url: unknown, _init?: RequestInit) => {
     const next = queue.shift();
     if (next instanceof Error) throw next;
     if (typeof next === 'function') return next();
@@ -72,7 +80,7 @@ function fixture(steps: unknown[], options: { now?: () => Date; timeoutMs?: numb
       }),
     },
     isCurrent: async () => true,
-    fetchImpl: fetchImpl as typeof fetch,
+    fetchImpl,
     now: options.now ?? now,
     // Success cases test settlement semantics, not a loaded host’s 100 ms scheduling budget.
     // Explicit deadline tests below keep their 100 ms budgets.
@@ -82,12 +90,12 @@ function fixture(steps: unknown[], options: { now?: () => Date; timeoutMs?: numb
     port,
     fetchImpl,
     writes: () =>
-      fetchImpl.mock.calls.map((c) => JSON.parse(String(c[1]?.body))).filter((r) => r.query.startsWith('mutation')),
+      fetchImpl.mock.calls.map((c) => graphqlRequest(String(c[1]?.body))).filter((r) => r.query.startsWith('mutation')),
   };
 }
 const onlineStorePage = (node = product(), supportsFuturePublishing = true) => {
   const response = page(node);
-  response.data.publications.nodes[0]!.supportsFuturePublishing = supportsFuturePublishing;
+  required(response.data.publications.nodes[0]).supportsFuturePublishing = supportsFuturePublishing;
   return {
     data: {
       ...response.data,
@@ -106,7 +114,7 @@ test('unscheduled future-capable Online Store intent acquires HELD across one-se
     update(),
     onlineStorePage(product('DRAFT', '2026-10-01T11:01:01Z')),
   ]);
-  const before = (await f.port.snapshot(scope, productId)) as ProductAvailabilitySnapshotV2;
+  const before = v2Snapshot(await f.port.snapshot(scope, productId));
   expect(before).toMatchObject({
     state: 'available',
     configuredIntent: {
@@ -142,7 +150,7 @@ test('unscheduled future-capable Online Store intent acquires HELD across one-se
 
 test('v2 keeps configured auto-publish intent while DRAFT loses effective membership and ACK metadata advances one second', async () => {
   const f = fixture([page(), page(), update(), page(product('DRAFT', '2026-10-01T11:01:01Z'))]);
-  const before = (await f.port.snapshot(scope, productId)) as ProductAvailabilitySnapshotV2;
+  const before = v2Snapshot(await f.port.snapshot(scope, productId));
   expect(before.version).toBe('m5-product-availability-snapshot-v2');
   const hold: AvailabilityHoldV2 = { version: 'm5-availability-hold-v2', operationId: 'op-1', before, held: null };
   const acquired = await f.port.acquire(scope, hold);
@@ -169,7 +177,7 @@ test('an ambiguous acquire cannot reserve another status update even if original
     update(),
     page(product('DRAFT')),
   ]);
-  const before = (await f.port.snapshot(scope, productId)) as ProductAvailabilitySnapshotV2;
+  const before = v2Snapshot(await f.port.snapshot(scope, productId));
   const hold: AvailabilityHoldV2 = { version: 'm5-availability-hold-v2', operationId: 'ambiguous', before, held: null };
   expect((await f.port.acquire(scope, hold)).kind).toBe('NOT_HELD');
   await expect(f.port.acquire(scope, hold)).rejects.toMatchObject({ kind: 'ambiguous_write' });
@@ -183,7 +191,7 @@ const intent = (before: ProductAvailabilitySnapshotV2, operationId = 'op-1'): Av
   held: null,
 });
 const requireHeld = async (f: ReturnType<typeof fixture>) => {
-  const before = (await f.port.snapshot(scope, productId)) as ProductAvailabilitySnapshotV2;
+  const before = v2Snapshot(await f.port.snapshot(scope, productId));
   const result = await f.port.acquire(scope, intent(before));
   if (result.kind !== 'HELD' || result.hold.version !== 'm5-availability-hold-v2')
     throw new Error('expected exact v2 hold');
@@ -213,9 +221,9 @@ test('complete forward publication pagination retains every exact included produ
   const last = addIncluded(page(), 'gid://shopify/Publication/304');
   last.data.publications.nodes.shift();
   const f = fixture([first, last]);
-  const snapshot = (await f.port.snapshot(scope, productId)) as ProductAvailabilitySnapshotV2;
+  const snapshot = v2Snapshot(await f.port.snapshot(scope, productId));
   expect(snapshot.configuredIntent.includedPublicationIds).toEqual([publicationId, 'gid://shopify/Publication/304']);
-  expect(f.fetchImpl.mock.calls.map((c) => JSON.parse(String(c[1]?.body)).variables)).toEqual([
+  expect(f.fetchImpl.mock.calls.map((c) => graphqlRequest(String(c[1]?.body)).variables)).toEqual([
     { productId, productQuery: 'id:202', after: null },
     { productId, productQuery: 'id:202', after: 'cursor-1' },
   ]);
@@ -240,7 +248,7 @@ test('both ACK and settled read diagnostic timestamps are retained without toler
     acquisitionAcknowledgement: { providerUpdatedAt: '2026-10-01T11:01:00.000Z' },
     held: { providerUpdatedAt: '2026-10-01T11:01:01.000Z' },
   });
-  const result = await f.port.restore(scope, hold, hold.held!);
+  const result = await f.port.restore(scope, hold, required(hold.held));
   expect(result).toMatchObject({
     kind: 'RESTORED',
     acknowledgement: { providerUpdatedAt: '2026-10-01T11:03:00.000Z' },
@@ -274,26 +282,26 @@ test('metadata advance while held preserves the exact persisted held snapshot', 
 test('same timestamp does not hide changed configured intent', async () => {
   const changed = addIncluded(page(product('DRAFT', '2026-10-01T11:01:00Z')), 'gid://shopify/Publication/304');
   const f = fixture([page(), page(), update(), changed]);
-  const before = (await f.port.snapshot(scope, productId)) as ProductAvailabilitySnapshotV2;
+  const before = v2Snapshot(await f.port.snapshot(scope, productId));
   expect((await f.port.acquire(scope, intent(before))).kind).toBe('CONFLICT');
   expect(f.writes()).toHaveLength(1);
 });
 test('ACK effective publication contradicting held-safe readback is conflict', async () => {
   const f = fixture([page(), page(), update(withMembership('DRAFT')), page(product('DRAFT'))]);
-  const before = (await f.port.snapshot(scope, productId)) as ProductAvailabilitySnapshotV2;
+  const before = v2Snapshot(await f.port.snapshot(scope, productId));
   expect((await f.port.acquire(scope, intent(before))).kind).toBe('CONFLICT');
 });
 test('ACK staged publication evidence cannot be discarded when the final legacy view is empty', async () => {
   const staged = withMembership('DRAFT');
-  staged.resourcePublications.nodes[0]!.isPublished = false;
+  required(staged.resourcePublications.nodes[0]).isPublished = false;
   const f = fixture([page(), page(), update(staged), page(product('DRAFT'))]);
-  const before = (await f.port.snapshot(scope, productId)) as ProductAvailabilitySnapshotV2;
+  const before = v2Snapshot(await f.port.snapshot(scope, productId));
   expect((await f.port.acquire(scope, intent(before))).kind).toBe('CONFLICT');
 });
 test('original DRAFT acquires and restores without a status mutation', async () => {
   const f = fixture([page(product('DRAFT')), page(product('DRAFT')), page(product('DRAFT'))]);
   const hold = await requireHeld(f);
-  expect((await f.port.restore(scope, hold, hold.held!)).kind).toBe('RESTORED');
+  expect((await f.port.restore(scope, hold, required(hold.held))).kind).toBe('RESTORED');
   expect(f.writes()).toHaveLength(0);
 });
 test.each(['ARCHIVED', 'UNLISTED'])('retains existing %s -> DRAFT -> original status policy', async (status) => {
@@ -309,15 +317,15 @@ test.each(['ARCHIVED', 'UNLISTED'])('retains existing %s -> DRAFT -> original st
     page(original),
   ]);
   const hold = await requireHeld(f);
-  expect((await f.port.restore(scope, hold, hold.held!)).kind).toBe('RESTORED');
-  expect(f.writes().map((r) => r.variables.product.status)).toEqual(['DRAFT', status]);
+  expect((await f.port.restore(scope, hold, required(hold.held))).kind).toBe('RESTORED');
+  expect(f.writes().map((r) => string(record(r.variables.product).status))).toEqual(['DRAFT', status]);
 });
 test('V2 and association emptiness cannot erase includedProducts intent', async () => {
   const response = Object.assign(page(), { association: [], resourcePublicationsV2: [] });
   const f = fixture([response]);
-  const snapshot = (await f.port.snapshot(scope, productId)) as ProductAvailabilitySnapshotV2;
+  const snapshot = v2Snapshot(await f.port.snapshot(scope, productId));
   expect(snapshot.configuredIntent.includedPublicationIds).toEqual([publicationId]);
-  const query = JSON.parse(String(f.fetchImpl.mock.calls[0]![1]?.body)).query;
+  const query = graphqlRequest(String(required(f.fetchImpl.mock.calls[0])[1]?.body)).query;
   expect(query).not.toContain('publication_ids');
   expect(query).not.toContain('resourcePublicationsV2');
 });
@@ -334,11 +342,14 @@ test.each([
   'errors-false',
 ])('incomplete or inconsistent %s observation fails before any mutation', async (defect) => {
   const response = page();
-  if (defect === 'duplicate') response.data.publications.nodes.push(response.data.publications.nodes[0]!);
+  if (defect === 'duplicate') response.data.publications.nodes.push(required(response.data.publications.nodes[0]));
   if (defect === 'nested-truncated')
-    response.data.publications.nodes[0]!.includedProducts.pageInfo = { hasNextPage: true, hasPreviousPage: false };
+    required(response.data.publications.nodes[0]).includedProducts.pageInfo = {
+      hasNextPage: true,
+      hasPreviousPage: false,
+    };
   if (defect === 'nested-other-product')
-    response.data.publications.nodes[0]!.includedProducts.nodes = [{ id: 'gid://shopify/Product/999' }];
+    required(response.data.publications.nodes[0]).includedProducts.nodes = [{ id: 'gid://shopify/Product/999' }];
   if (defect === 'effective-truncated')
     response.data.node.resourcePublications.pageInfo = { hasNextPage: true, hasPreviousPage: false };
   if (defect === 'effective-outside-included') response.data.publications.nodes = [];
@@ -354,13 +365,15 @@ test.each([true, false])(
   'actual scheduled intent fails closed before acquire when supportsFuturePublishing=%s',
   async (supportsFuturePublishing) => {
     const response = page();
-    response.data.publications.nodes[0]!.supportsFuturePublishing = supportsFuturePublishing;
-    response.data.node.resourcePublications.nodes[0]!.isPublished = false;
-    response.data.node.resourcePublications.nodes[0]!.publishDate = '2026-10-02T11:00:00Z';
+    required(response.data.publications.nodes[0]).supportsFuturePublishing = supportsFuturePublishing;
+    required(response.data.node.resourcePublications.nodes[0]).isPublished = false;
+    required(response.data.node.resourcePublications.nodes[0]).publishDate = '2026-10-02T11:00:00Z';
     const f = fixture([response, response]);
-    const before = (await f.port.snapshot(scope, productId)) as ProductAvailabilitySnapshotV2;
+    const before = v2Snapshot(await f.port.snapshot(scope, productId));
     expect(before.configuredIntent.scheduled).toEqual([{ publicationId, publishDate: '2026-10-02T11:00:00.000Z' }]);
-    expect(before.configuredIntent.publicationSettings[0]!.supportsFuturePublishing).toBe(supportsFuturePublishing);
+    expect(required(before.configuredIntent.publicationSettings[0]).supportsFuturePublishing).toBe(
+      supportsFuturePublishing,
+    );
     expect((await f.port.acquire(scope, intent(before))).kind).toBe('CONFLICT');
     expect(f.writes()).toHaveLength(0);
   },
@@ -374,7 +387,7 @@ test.each(['acquire', 'observe', 'restore'])(
         ? [onlineStorePage(), changed]
         : [onlineStorePage(), onlineStorePage(), update(), onlineStorePage(product('DRAFT')), changed],
     );
-    const before = (await f.port.snapshot(scope, productId)) as ProductAvailabilitySnapshotV2;
+    const before = v2Snapshot(await f.port.snapshot(scope, productId));
     const acquired = await f.port.acquire(scope, intent(before));
     const result =
       operation === 'acquire'
@@ -391,7 +404,9 @@ test.each(['acquire', 'observe', 'restore'])(
         configuredIntent: { publicationSettings: [{ supportsFuturePublishing: false }] },
       },
     });
-    expect(result?.current?.intentDigest).not.toBe(before.intentDigest);
+    const current = result?.current;
+    if (!current || !('intentDigest' in current)) throw new Error('Expected v2 current snapshot');
+    expect(current.intentDigest).not.toBe(before.intentDigest);
     expect(f.writes()).toHaveLength(operation === 'acquire' ? 0 : 1);
   },
 );
@@ -412,7 +427,7 @@ test('unscheduled future-capable Online Store restores original semantic visibil
     finalPage,
   ]);
   const hold = await requireHeld(f);
-  const result = await f.port.restore(scope, hold, hold.held!);
+  const result = await f.port.restore(scope, hold, required(hold.held));
   expect(result).toMatchObject({
     kind: 'RESTORED',
     acknowledgement: { providerUpdatedAt: '2026-10-01T11:03:00.000Z' },
@@ -440,7 +455,9 @@ test.each(['observe', 'restore'])('actual schedule appearing while held conflict
   const f = fixture([onlineStorePage(), onlineStorePage(), update(), onlineStorePage(product('DRAFT')), scheduled]);
   const hold = await requireHeld(f);
   const result =
-    operation === 'observe' ? await f.port.observe(scope, hold) : await f.port.restore(scope, hold, hold.held!);
+    operation === 'observe'
+      ? await f.port.observe(scope, hold)
+      : await f.port.restore(scope, hold, required(hold.held));
   expect(result).toMatchObject({
     kind: 'CONFLICT',
     current: { configuredIntent: { scheduled: [{ publicationId, publishDate: '2026-10-02T11:00:00.000Z' }] } },
@@ -454,7 +471,7 @@ test.each(['missing', 'extra'])('restore rejects %s effective publication member
   const after = onlineStorePage(withMembership('ACTIVE', mode === 'missing' ? [] : [publicationId, id]));
   const f = fixture([original, original, update(), draft, draft, update(after.data.node), addIncluded(after, id)]);
   const hold = await requireHeld(f);
-  expect((await f.port.restore(scope, hold, hold.held!)).kind).toBe('CONFLICT');
+  expect((await f.port.restore(scope, hold, required(hold.held))).kind).toBe('CONFLICT');
   expect(f.writes()).toHaveLength(2);
 });
 test('lost restore ACK remains pending even when a later read matches original semantics; no replay', async () => {
@@ -468,11 +485,11 @@ test('lost restore ACK remains pending even when a later read matches original s
     page(),
   ]);
   const hold = await requireHeld(f);
-  expect(await f.port.restore(scope, hold, hold.held!)).toMatchObject({
+  expect(await f.port.restore(scope, hold, required(hold.held))).toMatchObject({
     kind: 'RESTORATION_PENDING',
     current: { state: 'available' },
   });
-  await expect(f.port.restore(scope, hold, hold.held!)).rejects.toMatchObject({ kind: 'ambiguous_write' });
+  await expect(f.port.restore(scope, hold, required(hold.held))).rejects.toMatchObject({ kind: 'ambiguous_write' });
   expect(f.writes()).toHaveLength(2);
 });
 test('one snapshot deadline spans all pages and blocks a later request', async () => {
@@ -536,14 +553,14 @@ test('unsettled timed-out transport is quarantined and cannot dispatch a later o
   await expect(f.port.snapshot(scope, productId)).rejects.toMatchObject({ kind: 'network_or_timeout' });
   await expect(f.port.snapshot(scope, productId)).rejects.toMatchObject({ kind: 'ambiguous_write' });
   expect(f.fetchImpl).toHaveBeenCalledTimes(1);
-  finish!(new Response(JSON.stringify(page())));
+  required(finish)(new Response(JSON.stringify(page())));
   await new Promise((resolve) => setTimeout(resolve, 0));
   expect(f.fetchImpl).toHaveBeenCalledTimes(1);
 });
 
 test('a settled ACK survives an incomplete final acquire read without granting hold ownership', async () => {
   const f = fixture([page(), page(), update(), new Error('synthetic final read unavailable')]);
-  const before = (await f.port.snapshot(scope, productId)) as ProductAvailabilitySnapshotV2;
+  const before = v2Snapshot(await f.port.snapshot(scope, productId));
   expect(await f.port.acquire(scope, intent(before))).toMatchObject({
     kind: 'CONFLICT',
     current: null,
@@ -582,8 +599,8 @@ test('a body over the 128KiB bound is rejected before parsing/provider work can 
 
 test('scheduled intent changing between pages fails consistency even with identical provider updatedAt', async () => {
   const first = page();
-  first.data.node.resourcePublications.nodes[0]!.isPublished = false;
-  first.data.node.resourcePublications.nodes[0]!.publishDate = '2026-10-02T11:00:00Z';
+  required(first.data.node.resourcePublications.nodes[0]).isPublished = false;
+  required(first.data.node.resourcePublications.nodes[0]).publishDate = '2026-10-02T11:00:00Z';
   first.data.publications.pageInfo = {
     hasNextPage: true,
     hasPreviousPage: false,
@@ -591,8 +608,8 @@ test('scheduled intent changing between pages fails consistency even with identi
   } as typeof first.data.publications.pageInfo;
   const second = addIncluded(page(), 'gid://shopify/Publication/304');
   second.data.publications.nodes.shift();
-  second.data.node.resourcePublications.nodes[0]!.isPublished = false;
-  second.data.node.resourcePublications.nodes[0]!.publishDate = '2026-10-02T11:01:00Z';
+  required(second.data.node.resourcePublications.nodes[0]).isPublished = false;
+  required(second.data.node.resourcePublications.nodes[0]).publishDate = '2026-10-02T11:01:00Z';
   const f = fixture([first, second]);
   await expect(f.port.snapshot(scope, productId)).rejects.toMatchObject({ kind: 'readback_mismatch' });
   expect(f.writes()).toHaveLength(0);

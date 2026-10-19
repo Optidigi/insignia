@@ -1,6 +1,7 @@
 import { createHash, generateKeyPairSync, sign } from 'node:crypto';
 import { encodeHeader, encodeMember, wholeQuoteSignBytes } from '@insignia/cart-authorization';
 import { describe, expect, it, vi } from 'vitest';
+import { required } from '../../test/fixture-assertions.js';
 import type { AcceptedQuote } from '../quote/accept-quote.js';
 import { localDay } from '../quote/accept-quote.js';
 import type { HistoricalPurchaseOffer, VerifiedOrder } from './model.js';
@@ -38,7 +39,19 @@ function fixture() {
     sign(null, wholeQuoteSignBytes(header, members), pair.privateKey),
   ]).toString('base64url');
   const carriers = members.map((member) => encodeMember(member).toString('base64url'));
-  const quote = {
+  const quote: AcceptedQuote = {
+    schemaVersion: 'm4-accepted-quote-v1',
+    acceptedDate: '2026-10-01',
+    shopCurrency: 'EUR',
+    policyVersion: 'fixture',
+    recognizedPolicyId: 'fixture',
+    trial: false,
+    qualifyingUsageDisposition: 'NOT_METERED',
+    physicalGroups: [],
+    artworkChecks: [],
+    effectiveRevisions: [],
+    catalogSnapshots: [],
+    fxSnapshot: null,
     quoteId,
     shopId: 'shop',
     installationGeneration: '1',
@@ -53,17 +66,34 @@ function fixture() {
     country: 'DE',
     marketId: '42',
     economics: {
+      version: 'm4-quote-economics-v1',
+      shopId: 'shop',
+      pricingEngineVersion: 'm2-pricing-v1',
+      roundingPolicy: 'm2-half-even-v1',
+      currency: { version: 'm2-currency-resolution-v1', presentmentCurrency: 'EUR', exponents: { EUR: 2 } },
+      fx: null,
+      effectiveAt: '2026-10-01T10:00:00Z',
+      marketContext: '42',
+      groups: [],
       customizedQuantity: 3,
       totalMinor: '9100',
       lines: members.map((member) => ({
         lineIndex: member.index,
+        shopId: 'shop',
+        configRevisionId: 'revision',
+        revisionContentHash: 'a'.repeat(64),
+        canonicalIdentitySha256: 'b'.repeat(64),
+        unitOrdinalStart: member.index === 0 ? 0 : 1,
+        unitOrdinalEnd: member.index === 0 ? 1 : 3,
+        setupPerUnitMinor: '0',
+        lineTotalMinor: (BigInt(member.unitMinor) * BigInt(member.quantity)).toString(),
         productId: '7',
         variantId: member.variantId,
         quantity: member.quantity,
         unitPriceMinor: member.unitMinor,
       })),
     },
-  } as unknown as AcceptedQuote;
+  };
   const offer: HistoricalPurchaseOffer = {
     quote,
     authorization: {
@@ -117,7 +147,7 @@ function fixture() {
       sellingPlanId: null,
       attributes: [
         { key: '_insignia_quote_v2', value: envelope },
-        { key: '_insignia_member_v2', value: carriers[member.index]! },
+        { key: '_insignia_member_v2', value: required(carriers[member.index]) },
       ],
     })),
     transactions: [
@@ -166,7 +196,7 @@ describe('verified purchase reconciliation', () => {
       sourceName: 'web',
       checkoutTokenDigest: 'a'.repeat(64),
     };
-    const providerOrder = { ...order, checkoutOrigin: origin };
+    const providerOrder: VerifiedOrder = { ...order, checkoutOrigin: origin };
     const checkout = {
       admit: vi.fn(async () => ({ creatorAppId: origin.creatorAppId, enforcementObservedAt: order.observedAt })),
     };
@@ -213,12 +243,18 @@ describe('verified purchase reconciliation', () => {
     ]) {
       const { order, ports } = fixture();
       const origin = { creatorAppId: 'gid://shopify/App/77', sourceName: 'web', checkoutTokenDigest: 'a'.repeat(64) };
-      const providerOrder = { ...order, country: null, marketId: null, contextVerified: false, checkoutOrigin: origin };
-      if (problem === 'missing_origin') providerOrder.checkoutOrigin = undefined as unknown as typeof origin;
+      const providerOrder: VerifiedOrder = {
+        ...order,
+        country: null,
+        marketId: null,
+        contextVerified: false,
+        checkoutOrigin: origin,
+      };
+      if (problem === 'missing_origin') providerOrder.checkoutOrigin = undefined;
       if (problem === 'pos') origin.sourceName = 'pos';
       if (problem === 'missing_token') origin.checkoutTokenDigest = '';
       if (problem === 'other_creator') origin.creatorAppId = 'gid://shopify/App/88';
-      if (problem === 'partial_context') providerOrder.country = 'DE' as unknown as null;
+      if (problem === 'partial_context') providerOrder.country = 'DE';
       const checkout = {
         admit: async () =>
           problem === 'refused'
@@ -239,10 +275,10 @@ describe('verified purchase reconciliation', () => {
   it('checkout admission cannot replace signature, merchandise or observed-context verification', async () => {
     for (const problem of ['quantity', 'price', 'signature', 'provider_context', 'currency']) {
       const { order, ports } = fixture();
-      const providerOrder = {
+      const providerOrder: VerifiedOrder = {
         ...order,
-        country: null as string | null,
-        marketId: null as string | null,
+        country: null,
+        marketId: null,
         contextVerified: false,
         checkoutOrigin: {
           creatorAppId: 'gid://shopify/App/77',
@@ -250,9 +286,9 @@ describe('verified purchase reconciliation', () => {
           checkoutTokenDigest: 'a'.repeat(64),
         },
       };
-      if (problem === 'quantity') providerOrder.lines[0]!.quantity = 2;
-      if (problem === 'price') providerOrder.lines[0]!.originalUnitPriceMinor = '3000';
-      if (problem === 'signature') providerOrder.lines[0]!.attributes[0]!.value = 'invalid';
+      if (problem === 'quantity') required(providerOrder.lines[0]).quantity = 2;
+      if (problem === 'price') required(providerOrder.lines[0]).originalUnitPriceMinor = '3000';
+      if (problem === 'signature') required(required(providerOrder.lines[0]).attributes[0]).value = 'invalid';
       if (problem === 'provider_context') {
         providerOrder.contextVerified = true;
         providerOrder.country = 'US';
@@ -337,7 +373,7 @@ describe('verified purchase reconciliation', () => {
     [
       'duplicate physical index',
       (order: VerifiedOrder) => {
-        order.lines = order.lines.map((line) => ({ ...line, attributes: order.lines[0]!.attributes }));
+        order.lines = order.lines.map((line) => ({ ...line, attributes: required(order.lines[0]).attributes }));
       },
       'ORDER_LINE_MISMATCH',
     ],
@@ -411,7 +447,7 @@ describe('verified purchase reconciliation', () => {
   });
   it('does not infer missing successful payment timestamps', () => {
     const { order } = fixture();
-    order.transactions = [{ ...order.transactions[0]!, occurredAt: null }];
+    order.transactions = [{ ...required(order.transactions[0]), occurredAt: null }];
     expect(() => firstFullyPaid(order)).toThrow('PAYMENT_TIME_UNAVAILABLE');
   });
   it('does not invent a fully-paid event when partial payment was refunded before the balance settled', () => {
@@ -475,7 +511,7 @@ describe('verified purchase reconciliation', () => {
     const { order, ports, offer } = fixture();
     offer.designPayload = null;
     offer.payloadExpiresAt = '2026-10-28T10:00:00.000Z';
-    order.transactions = [{ ...order.transactions[0]!, occurredAt: '2026-12-01T10:00:00.000Z' }];
+    order.transactions = [{ ...required(order.transactions[0]), occurredAt: '2026-12-01T10:00:00.000Z' }];
     await reconcilePurchase({ shopId: 'shop', installationGeneration: '1', orderId: order.orderId }, ports);
     expect(ports.store.reconcile).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -507,7 +543,7 @@ describe('verified purchase reconciliation', () => {
   it('binds a prior-installation order and delayed payment under a currently authenticated reinstall without restoring private detail', async () => {
     const { order, ports, offer } = fixture();
     order.installationGeneration = '2';
-    order.transactions = [{ ...order.transactions[0]!, occurredAt: '2026-12-01T10:00:00.000Z' }];
+    order.transactions = [{ ...required(order.transactions[0]), occurredAt: '2026-12-01T10:00:00.000Z' }];
     offer.installationWindow.deactivatedAt = '2026-10-21T00:00:00.000Z';
     await reconcilePurchase({ shopId: 'shop', installationGeneration: '2', orderId: order.orderId }, ports);
     expect(ports.offers.get).toHaveBeenCalledWith(expect.objectContaining({ installationGeneration: '2' }));
@@ -540,7 +576,7 @@ describe('verified purchase reconciliation', () => {
   it('rejects a forged signature even if all copied economics and carriers agree', async () => {
     const { order, ports, offer } = fixture();
     const bytes = Buffer.from(offer.authorization.envelopeCarrier, 'base64url');
-    bytes[100] = bytes[100]! ^ 1;
+    bytes[100] = required(bytes[100]) ^ 1;
     const forged = bytes.toString('base64url');
     offer.authorization.envelopeCarrier = forged;
     order.lines = order.lines.map((line) => ({
@@ -573,7 +609,7 @@ describe('verified purchase reconciliation', () => {
   });
   it('records payment-time uncertainty without discarding a verified immutable purchase binding', async () => {
     const { order, ports } = fixture();
-    order.transactions = [{ ...order.transactions[0]!, occurredAt: null }];
+    order.transactions = [{ ...required(order.transactions[0]), occurredAt: null }];
     await reconcilePurchase({ shopId: 'shop', installationGeneration: '1', orderId: order.orderId }, ports);
     expect(ports.store.reconcile).toHaveBeenCalledWith(
       expect.objectContaining({

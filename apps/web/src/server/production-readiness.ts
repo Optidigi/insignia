@@ -4,6 +4,7 @@ import {
   type FunctionArtifactReadinessPorts,
   SigningKeyLifecycle,
   type SigningKeyRing,
+  type SigningKeyStore,
 } from '@insignia/application';
 import type { DurableCore } from '@insignia/database';
 import {
@@ -26,7 +27,20 @@ export type QuoteReadinessTarget = Pick<
 
 /** No default deployment trust: Admin object observations alone cannot attest deployed Wasm identity. */
 export function createProductionQuoteReadiness(input: {
-  core: DurableCore;
+  core: {
+    tenants: Pick<DurableCore['tenants'], 'getActiveAuthorizationScope'>;
+    signingKeys: SigningKeyStore;
+    acceptedQuotes: {
+      getEffective(
+        shopId: string,
+        productId: string,
+      ): Promise<{
+        configId: string;
+        operationId: string;
+        config: { revisionId: string; revisionContentHash: string };
+      } | null>;
+    };
+  };
   ring: SigningKeyRing;
   selectedKeyId: number;
   appId: string;

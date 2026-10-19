@@ -9,7 +9,7 @@ Group=serveradmin
 UMask=0077
 EnvironmentFile=/etc/insignia/backup.env
 Environment=XDG_RUNTIME_DIR=/run/user/1000 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
-ExecStart=/usr/bin/python3 /opt/insignia/runtime/scripts/operations/backup-run.py /etc/insignia/backup-run.json
+ExecStart=/opt/insignia/runtime/bin/node /opt/insignia/runtime/scripts/operations/backup-run.mts /etc/insignia/backup-run.json
 RuntimeDirectory=insignia-backup
 RuntimeDirectoryMode=0700
 TimeoutStartSec=75min
@@ -21,4 +21,4 @@ ProtectSystem=strict
 ProtectHome=read-only
 ReadWritePaths=/var/lib/insignia-backup /var/lib/insignia-backup-runs /var/lib/insignia-backup-replica-runs /run/insignia-backup
 # Host maintenance needs the Docker socket and its own inspector user bus. Never mount either into the app.
-# Exact IDs/config/image allowlist and scoped start/stop are enforced by backup-run.py.
+# Exact IDs/config/image allowlist and scoped start/stop are enforced by backup-run.mts.

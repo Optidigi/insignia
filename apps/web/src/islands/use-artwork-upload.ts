@@ -190,7 +190,16 @@ export function useArtworkUpload({ onPreview, onAssetChange, onAuthenticationDen
     if (!asset) return;
     const id = asset.assetId;
     try {
-      const result = await api<{ url: string; expiresAt: string }>(`/api/artwork/${asset.assetId}/download`);
+      const result = await api(`/api/artwork/${asset.assetId}/download`);
+      if (
+        result === null ||
+        typeof result !== 'object' ||
+        !('url' in result) ||
+        typeof result.url !== 'string' ||
+        !('expiresAt' in result) ||
+        typeof result.expiresAt !== 'string'
+      )
+        throw new Error('Invalid download');
       const url = new URL(result.url);
       if (url.protocol !== 'https:') throw new Error('Invalid download');
       if (!Number.isFinite(Date.parse(result.expiresAt)) || Date.parse(result.expiresAt) <= Date.now())

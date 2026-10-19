@@ -1,19 +1,14 @@
 import assert from 'node:assert/strict';
 import { createHash, createPublicKey, verify } from 'node:crypto';
-import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import persisted from '../../../docs/delivery/evidence/m4-002/pg-persisted-negative-vector.json' with { type: 'json' };
+import matrix from '../fixtures/currency-matrix-v1.json' with { type: 'json' };
+// Static JSON imports retain the exact immutable fixture values and expose their real DTO shapes to tsc.
+import vector from '../fixtures/whole-quote-v2.json' with { type: 'json' };
 import { issueAdmittedQuote } from '../src/admission.ts';
 import { CURRENCY_EXPONENTS, CURRENCY_MATRIX_VERSION, currencyExponent } from '../src/currency.ts';
 import { DOMAIN, decodeEnvelope, decodeMemberCarrier, encodeHeader, encodeMember } from '../src/whole-quote.ts';
 
-const vector = JSON.parse(readFileSync(new URL('../fixtures/whole-quote-v2.json', import.meta.url), 'utf8'));
-const matrix = JSON.parse(readFileSync(new URL('../fixtures/currency-matrix-v1.json', import.meta.url), 'utf8'));
-const persisted = JSON.parse(
-  readFileSync(
-    new URL('../../../docs/delivery/evidence/m4-002/pg-persisted-negative-vector.json', import.meta.url),
-    'utf8',
-  ),
-);
 test('every admitted code matches the versioned matrix and unknown/digital values reject', () => {
   assert.equal(matrix.version, CURRENCY_MATRIX_VERSION);
   assert.deepEqual(
@@ -37,7 +32,10 @@ test('production-generated carriers decode, conserve and verify for every comple
     const message = Buffer.concat([DOMAIN, encodeHeader(entry.header), ...entry.members.map(encodeMember)]);
     assert.equal(verify(null, message, key, decoded.signature), true, entry.name);
     const mutated = Buffer.from(message);
-    mutated[mutated.length - 1] ^= 1;
+    const last = mutated[mutated.length - 1];
+    assert.notEqual(last, undefined);
+    if (last === undefined) throw new Error('Empty signed message');
+    mutated[mutated.length - 1] = last ^ 1;
     assert.equal(verify(null, mutated, key, decoded.signature), false, entry.name);
   }
 });

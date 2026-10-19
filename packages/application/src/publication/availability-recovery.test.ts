@@ -74,7 +74,7 @@ describe('trusted observation-only availability recovery', () => {
     expect(() => validateAvailabilityRecoveryDecision(value, context, now, 1000)).toThrow(),
   );
   it.each([
-    { state: 'unavailable' },
+    { state: 'unavailable' as const },
     { visibilityDigest: 'b'.repeat(64) },
     { productId: 'gid://shopify/Product/43' },
     { scope: { ...scope, shopId: 'other' } },
@@ -82,7 +82,7 @@ describe('trusted observation-only availability recovery', () => {
     expect(() =>
       assertOriginalAvailabilityObserved({
         ...context,
-        observed: { ...context.observed, ...change } as typeof context.observed,
+        observed: { ...context.observed, ...change },
       }),
     ).toThrow(),
   );

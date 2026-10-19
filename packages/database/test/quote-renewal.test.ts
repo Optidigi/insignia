@@ -137,7 +137,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('immutable owned quote renewal
         contentHash: value.contentHash,
       },
     ];
-    const quote = {
+    const quote: AcceptedQuote = {
       quoteId,
       schemaVersion: 'm4-accepted-quote-v1',
       shopId: value.shopId,
@@ -169,9 +169,43 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('immutable owned quote renewal
         fx: null,
         customizedQuantity: 2,
         totalMinor: '2001',
+        shopId: value.shopId,
+        pricingEngineVersion: 'm2-pricing-v1',
+        roundingPolicy: 'm2-half-even-v1',
+        currency: { version: 'm2-currency-resolution-v1', presentmentCurrency: 'USD', exponents: { USD: 2 } },
+        effectiveAt: '2026-09-29T12:00:00.000Z',
+        marketContext: '42',
         lines: [
-          { lineIndex: 0, variantId: '1', quantity: 1, unitPriceMinor: '1001', lineTotalMinor: '1001' },
-          { lineIndex: 1, variantId: '2', quantity: 1, unitPriceMinor: '1000', lineTotalMinor: '1000' },
+          {
+            lineIndex: 0,
+            unitOrdinalStart: 1,
+            unitOrdinalEnd: 1,
+            setupPerUnitMinor: '2',
+            shopId: value.shopId,
+            productId: value.productId,
+            configRevisionId: value.revisionId,
+            revisionContentHash: value.contentHash,
+            canonicalIdentitySha256: 'a'.repeat(64),
+            variantId: '1',
+            quantity: 1,
+            unitPriceMinor: '1001',
+            lineTotalMinor: '1001',
+          },
+          {
+            lineIndex: 1,
+            unitOrdinalStart: 1,
+            unitOrdinalEnd: 1,
+            setupPerUnitMinor: '1',
+            shopId: value.shopId,
+            productId: value.productId,
+            configRevisionId: value.revisionId,
+            revisionContentHash: value.contentHash,
+            canonicalIdentitySha256: 'a'.repeat(64),
+            variantId: '2',
+            quantity: 1,
+            unitPriceMinor: '1000',
+            lineTotalMinor: '1000',
+          },
         ],
       },
     };
@@ -233,7 +267,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('immutable owned quote renewal
       quoteId,
       ownerBinding,
       idempotencyKey: 'renew',
-      materialHash: materialHash(quote as unknown as AcceptedQuote),
+      materialHash: materialHash(quote),
       requestDigest: 'c'.repeat(64),
     };
     const issuance = {
@@ -249,7 +283,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('immutable owned quote renewal
       validThroughDay: issuance.validThroughDay,
     };
     const result = {
-      quote: quote as unknown as AcceptedQuote,
+      quote: quote,
       issuance,
       authorization: {
         ...authorization,

@@ -1,17 +1,5 @@
 ---
-if (process.env.INSIGNIA_M5_002_DIAGNOSTIC === '1') {
-  const destination = new URL('/admin/products', Astro.url);
-  destination.search = Astro.url.search;
-  return Astro.redirect(destination.pathname + destination.search);
-}
+const destination = new URL('/admin/products', Astro.url);
+destination.search = Astro.url.search;
+return Astro.redirect(destination.pathname + destination.search);
 ---
-<!doctype html>
-<html lang="en">
-  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width" /><title>Insignia</title></head>
-  <body>
-    <main>
-      <h1>Insignia</h1>
-      <p>Local foundation shell. Merchant access is not available in this build.</p>
-    </main>
-  </body>
-</html>

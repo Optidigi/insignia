@@ -1,3 +1,0 @@
-roles = ["frontend", "backend"]
-[commands]
-dev = "node preview-server.mjs"

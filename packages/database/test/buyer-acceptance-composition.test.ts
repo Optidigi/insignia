@@ -1,11 +1,12 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { createM3AdminReadCredentialSource, SigningKeyLifecycle } from '@insignia/application';
+import { createAdminReadCredentialSource, SigningKeyLifecycle } from '@insignia/application';
 import { createDemandDrivenReleaseReader } from '@insignia/shopify';
 import { Pool } from 'pg';
 import { describe, expect, it } from 'vitest';
 import { createProductionBuyerServices } from '../../../apps/web/src/server/buyer/production.ts';
-import { fixture } from '../../../apps/web/test/support/buyer-fixture.mjs';
-import { createDurableCore } from '../src/durable-core.js';
+import { fixture } from '../../../apps/web/test/support/buyer-fixture.mts';
+import { credentialLifecycle } from '../../../apps/worker/src/handlers.ts';
+import { createDurableCore } from '../dist/durable-core.js';
 
 // Diagnostic only: real PostgreSQL repositories and production buyer composition;
 // all Shopify/provider facts and release identity are explicitly synthetic.
@@ -64,9 +65,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
             throw error;
           }
         };
-        const credentials = createM3AdminReadCredentialSource({
+        const credentials = createAdminReadCredentialSource({
           tenants: core.tenants,
-          credentials: core.credentials,
+          credentials: credentialLifecycle(core),
           refresh: {
             refresh: async () => {
               refreshes++;
@@ -257,7 +258,20 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
             trialEndsAt: new Date(Date.now() + 86400000).toISOString(),
             currentBillingCycle: null,
             pendingUpdate: null,
-            items: [{ handle: 'synthetic-plan', price: { kind: 'flat', active: false }, usage: null }],
+            items: [
+              {
+                handle: 'synthetic-plan',
+                price: {
+                  kind: 'flat',
+                  providerTypename: 'FlatRatePrice',
+                  active: false,
+                  currency: 'USD',
+                  amount: '0.00',
+                },
+                usage: null,
+                discount: null,
+              },
+            ],
           }),
           readVariantAvailability: async (target) => {
             const observedAt = Date.now();

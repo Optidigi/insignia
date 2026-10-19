@@ -14,9 +14,10 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "node --test test/*.test.mjs",
+    "test": "node --test test/*.test.mts",
     "diagnostic": "node dist/main.js --diagnostic",
-    "start": "node dist/main.js"
+    "start": "node dist/main.js",
+    "typecheck:test": "tsc -p tsconfig.test.json"
   },
   "dependencies": {
     "@insignia/application": "workspace:*",

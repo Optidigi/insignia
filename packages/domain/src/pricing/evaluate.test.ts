@@ -5,6 +5,12 @@ import { type PricingInput, priceProposal } from './evaluate.js';
 
 const at = '2026-09-29T12:00:00.000Z';
 const revisionContentHash = 'a'.repeat(64);
+// Fixture builders are editable; the pricing API still receives its readonly DTO.
+type Mutable<T> = T extends readonly (infer Item)[]
+  ? Mutable<Item>[]
+  : T extends object
+    ? { -readonly [K in keyof T]: Mutable<T[K]> }
+    : T;
 function required<T>(value: T | undefined): T {
   if (value === undefined) throw new Error('incomplete test fixture');
   return value;
@@ -84,7 +90,7 @@ function group(
     variants,
   };
 }
-function input(groups: CustomizationGroup[], configs: PublishedConfig[], base = '2000'): PricingInput {
+function input(groups: CustomizationGroup[], configs: PublishedConfig[], base = '2000'): Mutable<PricingInput> {
   const bases = [...new Set(groups.flatMap((g) => g.variants.map((v) => `${g.productId}\u0000${v.variantId}`)))].map(
     (key) => {
       const [productId, variantId] = key.split('\u0000');

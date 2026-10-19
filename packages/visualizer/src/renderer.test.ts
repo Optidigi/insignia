@@ -78,7 +78,12 @@ describe('imperative renderer boundary', () => {
   it('renders two independently bounded LOGO placeholders and an empty array hides the legacy artwork', () => {
     let stage: FakeNode | undefined;
     const renderer = createVisualizerWithKonva(
-      { element: { clientWidth: 500, clientHeight: 300 } as HTMLElement, onCommand: () => {}, onStatus: () => {} },
+      {
+        // @ts-expect-error Node-only fixture supplies the element dimensions consumed by the renderer.
+        element: { clientWidth: 500, clientHeight: 300 },
+        onCommand: () => {},
+        onStatus: () => {},
+      },
       {
         ...konva,
         Stage: class extends FakeNode {
@@ -87,7 +92,7 @@ describe('imperative renderer boundary', () => {
             stage = this;
           }
         },
-      } as never,
+      },
     );
     const left = { x: 40, y: 50, width: 120, height: 80 };
     const right = { x: 230, y: 70, width: 90, height: 60 };
@@ -139,11 +144,13 @@ describe('imperative renderer boundary', () => {
     const images: HTMLImageElement[] = [];
     const renderer = createVisualizerWithKonva(
       {
-        element: { clientWidth: 500, clientHeight: 300 } as HTMLElement,
+        // @ts-expect-error Node-only fixture supplies only the renderer's measured dimensions.
+        element: { clientWidth: 500, clientHeight: 300 },
         onCommand: () => {},
         onStatus: () => {},
         imageFactory: () => {
-          const candidate = { onload: null, onerror: null, src: '' } as unknown as HTMLImageElement;
+          // @ts-expect-error This deterministic image transport double deliberately omits unrelated DOM methods.
+          const candidate: HTMLImageElement = { onload: null, onerror: null, src: '' };
           images.push(candidate);
           return candidate;
         },
@@ -156,7 +163,7 @@ describe('imperative renderer boundary', () => {
             stage = this;
           }
         },
-      } as never,
+      },
     );
     const bounds = { x: 40, y: 50, width: 120, height: 80 };
     const logo = { placementId: 'logo', kind: 'logo-later' as const, bounds };
@@ -212,7 +219,12 @@ describe('imperative renderer boundary', () => {
   it('resizes every placement from original bounds without mutating the scene', () => {
     let stage: FakeNode | undefined;
     const renderer = createVisualizerWithKonva(
-      { element: { clientWidth: 500, clientHeight: 300 } as HTMLElement, onCommand: () => {}, onStatus: () => {} },
+      {
+        // @ts-expect-error Node-only fixture supplies the element dimensions consumed by the renderer.
+        element: { clientWidth: 500, clientHeight: 300 },
+        onCommand: () => {},
+        onStatus: () => {},
+      },
       {
         ...konva,
         Stage: class extends FakeNode {
@@ -221,7 +233,7 @@ describe('imperative renderer boundary', () => {
             stage = this;
           }
         },
-      } as never,
+      },
     );
     const scene = {
       version: 1,
@@ -249,7 +261,12 @@ describe('imperative renderer boundary', () => {
   it('shows bounded LOGO text for logo-later and removes it when the artwork choice changes', () => {
     let stage: FakeNode | undefined;
     const renderer = createVisualizerWithKonva(
-      { element: { clientWidth: 500, clientHeight: 300 } as HTMLElement, onCommand: () => {}, onStatus: () => {} },
+      {
+        // @ts-expect-error Node-only fixture supplies the element dimensions consumed by the renderer.
+        element: { clientWidth: 500, clientHeight: 300 },
+        onCommand: () => {},
+        onStatus: () => {},
+      },
       {
         ...konva,
         Stage: class extends FakeNode {
@@ -258,7 +275,7 @@ describe('imperative renderer boundary', () => {
             stage = this;
           }
         },
-      } as never,
+      },
     );
     const bounds = { x: 40, y: 50, width: 120, height: 80 };
     renderer.update({ version: 1, status: 'ready', placements: [], artwork: { kind: 'logo-later', bounds } });
@@ -298,7 +315,8 @@ describe('imperative renderer boundary', () => {
     let actualStage: FakeNode | undefined;
     const renderer = createVisualizerWithKonva(
       {
-        element: { clientWidth: 500, clientHeight: 300 } as HTMLElement,
+        // @ts-expect-error Node-only fixture supplies only the renderer's measured dimensions.
+        element: { clientWidth: 500, clientHeight: 300 },
         onCommand: (command) => commands.push(command),
         onStatus: () => {},
       },
@@ -311,7 +329,7 @@ describe('imperative renderer boundary', () => {
             stage.children = this.children;
           }
         },
-      } as never,
+      },
     );
     renderer.setMode('edit-placement');
     renderer.update(projectScene(state, { width: 500, height: 300, pixelRatio: 1 }));

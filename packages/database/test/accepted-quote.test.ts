@@ -1,6 +1,6 @@
 import { createHash, generateKeyPairSync, randomUUID, sign, verify } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
-import { acceptQuote } from '@insignia/application';
+import { acceptQuote, type QuoteAuthorityPorts } from '@insignia/application';
 import {
   admitCandidate,
   currencyExponent,
@@ -616,13 +616,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
         },
       },
       authorization: {
-        admit: ({
-          economics,
-          capacity,
-        }: {
-          economics: { lines: { lineIndex: number; variantId: string; quantity: number; unitPriceMinor: string }[] };
-          capacity: { ordinaryLineCount: number };
-        }) => {
+        admit: ({ economics, capacity }: Parameters<QuoteAuthorityPorts['authorization']['admit']>[0]) => {
           const members = economics.lines.map((line) => ({
             index: line.lineIndex,
             variantId: line.variantId,
@@ -632,26 +626,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
           const decision = admitCandidate(members, { ordinaryLineHint: capacity.ordinaryLineCount });
           if (decision.status !== 'ADMIT') throw new Error(`candidate rejected: ${decision.reason}`);
         },
-        issue: async ({
-          quote,
-        }: {
-          quote: {
-            quoteId: string;
-            authorizationGeneration: string;
-            authorizationEpoch: number;
-            acceptedDay: number;
-            validThroughDay: number;
-            presentmentCurrency: string;
-            presentmentExponent: number;
-            country: string;
-            marketId: string;
-            economics: {
-              lines: { lineIndex: number; variantId: string; quantity: number; unitPriceMinor: string }[];
-              customizedQuantity: number;
-              totalMinor: string;
-            };
-          };
-        }) => {
+        issue: async ({ quote }: Parameters<QuoteAuthorityPorts['authorization']['issue']>[0]) => {
           const setId = randomUUID();
           const members = quote.economics.lines.map((line) => ({
             index: line.lineIndex,

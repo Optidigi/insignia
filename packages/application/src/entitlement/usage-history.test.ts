@@ -312,9 +312,11 @@ describe('same-current-cycle historical usage qualification', () => {
         required(i.range.events[0]).occurredAt = '2026-10-16T00:00:00.000Z';
       },
       (i) => {
+        // Missing provider snapshot is deliberate malformed runtime input.
         i.current = null as never;
       },
       (i) => {
+        // Missing history range is deliberate malformed runtime input.
         i.range = null as never;
       },
     ];

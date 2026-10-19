@@ -9,8 +9,14 @@ review and storefront visual review are outside this change.
 Run local behavioral checks from the repository root:
 
 ```sh
-node --test deployment/alerts/worker.test.mjs scripts/operations/heartbeat*.test.mjs
+node node_modules/typescript/bin/tsc -p deployment/alerts/tsconfig.json
+node --test deployment/alerts/worker.test.mts
 ```
+
+The strict compiler project covers the Worker and its tests. Node24 executes the
+erasable test source; it does not replace the separate compiler check. Wrangler's
+`main` points to `worker.mts` and produces the deployment JavaScript from typed
+source. No handwritten JavaScript Worker entrypoint is maintained.
 
 The Node tests exercise public HTTP, scheduled monitor transitions and producer
 contracts with a transactional storage double and email-binding double. The owned
@@ -88,7 +94,7 @@ resolve persistent faults; this is a small single-installation monitor.
 Create the immutable operations package from the existing built portable worker:
 
 ```sh
-node scripts/ci/package-operations.mjs WORKER_PACKAGE NEW_BUILD_CONTEXT/operations-package
+node scripts/ci/package-operations.mts WORKER_PACKAGE NEW_BUILD_CONTEXT/operations-package
 ```
 
 This packages the validated portable worker at `apps/worker`, allowlisted operation

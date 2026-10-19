@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict';
 import { createHash, randomUUID, sign } from 'node:crypto';
 import type { PurchaseObservation } from '@insignia/application';
 import { decodeEnvelope, decodeMember, encodeHeader, wholeQuoteSignBytes } from '@insignia/cart-authorization';
@@ -13,6 +14,11 @@ import { createArtworkRepository } from '../src/repositories/artwork.js';
 import { createPurchaseRepository } from '../src/repositories/purchase.js';
 import { createTestShop, openTestDatabase } from './support/postgres.js';
 import { purchaseFixture } from './support/purchase-fixture.js';
+
+function requirePurchase(value: Awaited<ReturnType<ReturnType<typeof createPurchaseRepository>['reconcile']>>) {
+  assert('purchaseId' in value, 'Expected materialized purchase');
+  return value;
+}
 
 describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases', () => {
   let db: Awaited<ReturnType<typeof openTestDatabase>>;
@@ -70,14 +76,16 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
   it('records incomplete orders distinctly, deduplicates observations and refuses stale tenant writes', async () => {
     const input = await observation(),
       repo = createPurchaseRepository(db);
-    const first = await repo.reconcile(input),
-      again = await repo.reconcile(input);
+    const first = requirePurchase(await repo.reconcile(input)),
+      again = requirePurchase(await repo.reconcile(input));
     expect(again.purchaseId).toBe(first.purchaseId);
     expect((await repo.get(input.order, first.purchaseId))?.observations).toHaveLength(1);
-    const second = await repo.reconcile({
-      ...input,
-      order: { ...input.order, orderId: `gid://shopify/Order/999${input.order.orderId.split('/').at(-1)}` },
-    });
+    const second = requirePurchase(
+      await repo.reconcile({
+        ...input,
+        order: { ...input.order, orderId: `gid://shopify/Order/999${input.order.orderId.split('/').at(-1)}` },
+      }),
+    );
     expect(second.purchaseId).not.toBe(first.purchaseId);
     const page = await repo.list({ ...input.order, kind: 'merchant' }, { limit: 1 });
     expect(page[0]?.purchaseId).toBe(second.purchaseId);
@@ -101,7 +109,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
       {
         quoteId: fixture.quote.quoteId,
         authorizationSetId: fixture.authorization.setId,
-        quote: fixture.quote as never,
+        quote: fixture.quote,
         lines: [
           {
             orderLineId: 'gid://shopify/LineItem/55',
@@ -140,12 +148,14 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
         lines: [{ lineId: 'gid://shopify/LineItem/55', quantity: 1, amountMinor: '500' }],
       },
     ];
-    const result = await repo.reconcile(represented(input));
-    await repo.reconcile({
-      ...input,
-      firstPaidAt: null,
-      order: { ...input.order, updatedAt: '2026-10-13T09:59:00.000Z', financialStatus: 'PENDING', refunds: [] },
-    });
+    const result = requirePurchase(await repo.reconcile(represented(input)));
+    requirePurchase(
+      await repo.reconcile({
+        ...input,
+        firstPaidAt: null,
+        order: { ...input.order, updatedAt: '2026-10-13T09:59:00.000Z', financialStatus: 'PENDING', refunds: [] },
+      }),
+    );
     const view = await repo.get(input.order, result.purchaseId);
     expect(view?.firstPaidAt).toBe('2026-10-13T10:00:00.000Z');
     expect(view?.refunds).toEqual(input.order.refunds);
@@ -169,7 +179,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
       {
         quoteId: fixture.quote.quoteId,
         authorizationSetId: fixture.authorization.setId,
-        quote: fixture.quote as never,
+        quote: fixture.quote,
         lines: [
           {
             orderLineId: 'gid://shopify/LineItem/55',
@@ -263,7 +273,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
     const { input, fixture, now } = await bound(),
       repo = createPurchaseRepository(db),
       scope = { shopId: fixture.shopId, installationGeneration: '1', kind: 'merchant' as const };
-    const purchase = await repo.reconcile(input),
+    const purchase = requirePurchase(await repo.reconcile(input)),
       guest = await asset(fixture.shopId, 'guest', now),
       first = await asset(fixture.shopId, 'merchant', now),
       second = await asset(fixture.shopId, 'merchant', now);
@@ -358,12 +368,14 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
   it('honors original collection deadlines and records edited-order exceptions without replacing purchase economics', async () => {
     const { input, fixture, now } = await bound(),
       repo = createPurchaseRepository(db);
-    const p = await repo.reconcile(input);
-    const changed = await repo.reconcile({
-      ...input,
-      order: { ...input.order, totalPriceMinor: '9200', updatedAt: '2026-10-13T10:02:00.000Z' },
-      bindings: [{ ...input.bindings[0]!, lines: [{ ...input.bindings[0]!.lines[0]!, quantity: 9 }] }],
-    });
+    const p = requirePurchase(await repo.reconcile(input));
+    const changed = requirePurchase(
+      await repo.reconcile({
+        ...input,
+        order: { ...input.order, totalPriceMinor: '9200', updatedAt: '2026-10-13T10:02:00.000Z' },
+        bindings: [{ ...input.bindings[0]!, lines: [{ ...input.bindings[0]!.lines[0]!, quantity: 9 }] }],
+      }),
+    );
     expect(changed.originalTotalMinor).toBe('9100');
     expect(changed.bindings).toEqual(p.bindings);
     expect(changed.observations[0]?.exception).toBe('UNSUPPORTED_ORDER_EDIT');
@@ -397,11 +409,13 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
       },
     ];
     input.firstPaidAt = '2026-10-13T10:00:00.000Z';
-    const record = await repo.reconcile(input);
-    const other = await repo.reconcile({
-      ...input,
-      order: { ...input.order, orderId: `gid://shopify/Order/8${input.order.orderId.split('/').at(-1)}` },
-    });
+    const record = requirePurchase(await repo.reconcile(input));
+    const other = requirePurchase(
+      await repo.reconcile({
+        ...input,
+        order: { ...input.order, orderId: `gid://shopify/Order/8${input.order.orderId.split('/').at(-1)}` },
+      }),
+    );
     expect(other.purchaseId).not.toBe(record.purchaseId);
     expect(other.bindings[0]?.authorizationSetId).toBe(record.bindings[0]?.authorizationSetId);
     expect(record.artworkState).toBe('ERASED');
@@ -493,7 +507,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
           claimToken: final!.claimToken,
         }),
       ).rejects.toMatchObject({ code: 'CONFLICT' });
-      await repo.reconcile({ ...input, inboxId: receipt.id, claimToken: final!.claimToken });
+      requirePurchase(await repo.reconcile({ ...input, inboxId: receipt.id, claimToken: final!.claimToken }));
       expect((await core.webhooks.getById(receipt.id))?.state).toBe('processed');
       expect(await repo.getPurchaseReconciliationHint(receipt.id)).toBeNull();
       expect(await repo.claimPurchaseReconciliationHint(receipt.id)).toBeNull();
@@ -511,7 +525,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
       request: { groups: { group: { design: { placements: { artwork: unknown }[] } } }[] };
     };
     payload.request.groups[0]!.group.design.placements[0]!.artwork = { kind: 'revision', revisionId: original };
-    const p = await repo.reconcile(input);
+    const p = requirePurchase(await repo.reconcile(input));
     expect(p.artworkState).toBe('READY');
     await sql`INSERT INTO purchase_artwork_events(event_id,shop_id,installation_generation,purchase_id,version,kind,group_index,placement_id,asset_id,expires_at) VALUES(${randomUUID()}::uuid,${fixture.shopId},1,${p.purchaseId}::uuid,1,'ATTACH',0,'front',${expired}::uuid,clock_timestamp()-interval '1 day')`.execute(
       db,
@@ -581,25 +595,27 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
     );
     const { input, fixture } = await bound();
     input.firstPaidAt = '2026-10-13T10:00:00.000Z';
-    const original = await repo.reconcile(input);
-    const result = await repo.reconcile({
-      ...input,
-      bindings: [],
-      order: {
-        ...input.order,
-        updatedAt: '2026-10-13T10:05:00.000Z',
-        lines: input.order.lines.map((line) => ({ ...line, attributes: [] })),
-        refunds: [
-          {
-            refundId: 'gid://shopify/Refund/99',
-            occurredAt: '2026-10-13T10:06:00.000Z',
-            currency: 'EUR',
-            amountMinor: '200',
-            lines: [],
-          },
-        ],
-      },
-    });
+    const original = requirePurchase(await repo.reconcile(input));
+    const result = requirePurchase(
+      await repo.reconcile({
+        ...input,
+        bindings: [],
+        order: {
+          ...input.order,
+          updatedAt: '2026-10-13T10:05:00.000Z',
+          lines: input.order.lines.map((line) => ({ ...line, attributes: [] })),
+          refunds: [
+            {
+              refundId: 'gid://shopify/Refund/99',
+              occurredAt: '2026-10-13T10:06:00.000Z',
+              currency: 'EUR',
+              amountMinor: '200',
+              lines: [],
+            },
+          ],
+        },
+      }),
+    );
     if ('kind' in result) throw new Error('lost customized purchase');
     expect(result.purchaseId).toBe(original.purchaseId);
     expect(result.bindings).toEqual(original.bindings);
@@ -693,7 +709,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
     const { input, fixture, now } = await bound(),
       repo = createPurchaseRepository(db),
       scope = { shopId: fixture.shopId, installationGeneration: '1', kind: 'merchant' as const };
-    const p = await repo.reconcile(input);
+    const p = requirePurchase(await repo.reconcile(input));
     if ('kind' in p) throw new Error('missing customized purchase');
     const usable = await asset(fixture.shopId, 'merchant', now);
     await sql`INSERT INTO purchase_artwork_events(event_id,shop_id,installation_generation,purchase_id,version,kind,group_index,placement_id,asset_id,expires_at)
@@ -871,7 +887,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
         })),
       },
     ];
-    const purchase = await repo.reconcile(represented(observed));
+    const purchase = requirePurchase(await repo.reconcile(represented(observed)));
     if ('kind' in purchase) throw new Error('lost complete purchase');
     expect(purchase.bindings[0]?.designPayload?.request.groups).toHaveLength(1);
     expect(purchase.bindings[0]?.lines.map((line) => line.variantId)).toEqual(['1', '2']);
@@ -879,7 +895,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
   it('attaches and locks artwork through one PostgreSQL connection without acquiring a nested pool connection', async () => {
     const { input, fixture, now } = await bound(),
       setup = createPurchaseRepository(db),
-      purchase = await setup.reconcile(input);
+      purchase = requirePurchase(await setup.reconcile(input));
     if ('kind' in purchase) throw new Error('missing customized purchase');
     const usable = await asset(fixture.shopId, 'merchant', now);
     const single = createDatabase(
@@ -910,13 +926,15 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
     const { input, fixture } = await bound(),
       repo = createPurchaseRepository(db);
     input.order.test = false;
-    const original = await repo.reconcile(input);
+    const original = requirePurchase(await repo.reconcile(input));
     if ('kind' in original) throw new Error('missing customized purchase');
     expect(original.isTest).toBe(false);
-    const changed = await repo.reconcile({
-      ...input,
-      order: { ...input.order, test: true, updatedAt: '2026-10-13T10:10:00.000Z' },
-    });
+    const changed = requirePurchase(
+      await repo.reconcile({
+        ...input,
+        order: { ...input.order, test: true, updatedAt: '2026-10-13T10:10:00.000Z' },
+      }),
+    );
     if ('kind' in changed) throw new Error('lost customized purchase');
     expect(changed.isTest).toBe(false);
     expect(changed.observations[0]?.exception).toBe('UNSUPPORTED_ORDER_EDIT');

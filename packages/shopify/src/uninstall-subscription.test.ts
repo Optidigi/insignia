@@ -1,4 +1,5 @@
 import { expect, test, vi } from 'vitest';
+import { graphqlRequest } from '../test/fixture-assertions.js';
 import { createUninstallSubscriptionClient } from './uninstall-subscription.js';
 
 const grant = { shop: 'fixture.myshopify.com', accessToken: 'synthetic' };
@@ -7,7 +8,7 @@ const context = {
   installationId: 'gid://shopify/AppInstallation/2',
   appClientId: 'synthetic-client',
 };
-const uri = 'https://app.example/api/webhooks/uninstall/' + 'a'.repeat(64);
+const uri = `https://app.example/api/webhooks/uninstall/${'a'.repeat(64)}`;
 const identity = {
   shop: { id: context.shopId, myshopifyDomain: grant.shop },
   currentAppInstallation: { id: context.installationId, app: { apiKey: context.appClientId } },
@@ -19,7 +20,7 @@ function fixture(responses: unknown[]) {
     expectedOrigin: 'https://app.example',
     fetchImpl: async (url, init) => {
       expect(url).toBe('https://fixture.myshopify.com/admin/api/2026-07/graphql.json');
-      const body = JSON.parse(String(init?.body));
+      const body = graphqlRequest(String(init?.body));
       calls.push(body);
       const next = responses.shift();
       if (next instanceof Error) throw next;
@@ -70,8 +71,8 @@ test('lost response remains unknown; explicit null-subscription user error is re
 
 test('capability URLs are exact HTTPS same-origin paths and never dispatched otherwise', async () => {
   for (const bad of [
-    uri + '?x=1',
-    uri + '#secret',
+    `${uri}?x=1`,
+    `${uri}#secret`,
     uri.replace('app.example', 'evil.example'),
     uri.replace('https:', 'http:'),
     uri.replace('/uninstall/', '/uninstall/../uninstall/'),

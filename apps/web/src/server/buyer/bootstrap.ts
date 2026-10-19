@@ -1,4 +1,4 @@
-import { createM3AdminReadCredentialSource, type EntitlementPolicyConfig } from '@insignia/application';
+import { createAdminReadCredentialSource, type EntitlementPolicyConfig } from '@insignia/application';
 import { type CredentialKeyRing, createDurableCore, type DurableCore } from '@insignia/database';
 import {
   createActiveSubscriptionClient,
@@ -176,7 +176,7 @@ export async function createBuyerBootstrap(
       core = createDurableCore(pool, { credentialKeys });
     }
     const ownedCore = core;
-    const credentials = createM3AdminReadCredentialSource({
+    const credentials = createAdminReadCredentialSource({
       tenants: core.tenants,
       credentials: credentialLifecycle(core),
       refresh,

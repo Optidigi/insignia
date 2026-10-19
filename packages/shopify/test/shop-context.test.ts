@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { readShopContext, type ShopContextError } from '../src/shop-context.js';
+import { jsonRecord } from './fixture-assertions.js';
 
 const target = { shopId: 'tenant-1', installationGeneration: '7', shopifyShopId: '105501393179' };
 const credential = {
@@ -16,7 +17,7 @@ function fixture(shop: unknown) {
 describe('read-only Shopify shop context', () => {
   it('fences acquisition and returns exact trusted shop identity, currency and IANA zone', async () => {
     const acquire = vi.fn().mockResolvedValue(credential);
-    const fetchImpl = vi.fn().mockResolvedValue(
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
       fixture({
         id: `gid://shopify/Shop/${target.shopifyShopId}`,
         currencyCode: 'USD',
@@ -29,7 +30,7 @@ describe('read-only Shopify shop context', () => {
     const [url, options] = fetchImpl.mock.calls[0] as [string, RequestInit];
     expect(url).toBe('https://synthetic.myshopify.com/admin/api/2026-07/graphql.json');
     expect(options.redirect).toBe('error');
-    expect(JSON.parse(String(options.body))).toEqual({
+    expect(jsonRecord(String(options.body))).toEqual({
       query: 'query InsigniaShopContext { shop { id currencyCode ianaTimezone } }',
     });
     expect(result).toMatchObject({

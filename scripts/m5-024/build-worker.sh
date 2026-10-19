@@ -8,5 +8,5 @@ cd "$repo"
 corepack pnpm build
 corepack pnpm --filter @insignia/worker deploy --offline --frozen-lockfile --prod --config.inject-workspace-packages=true "$1"
 corepack pnpm install --offline --frozen-lockfile --ignore-scripts --prod=false
-node scripts/m5-024/copy-built-workspaces.mjs "$1"
-node docs/delivery/evidence/m5-023/operators/worker-inventory.mjs --collect "$1/dist/main.js" > "$1/worker-inventory.json"
+node scripts/worker/copy-built-workspaces.mts "$1"
+node scripts/runtime/worker-inventory.mts --collect "$1/dist/main.js" > "$1/worker-inventory.json"

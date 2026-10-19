@@ -5,4 +5,4 @@ packages:
 allowBuilds:
   esbuild: true
 
-# Archived spikes intentionally keep their own independent lockfiles.
+# Historical spike evidence is inert; maintained packages belong to this workspace.

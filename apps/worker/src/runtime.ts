@@ -10,10 +10,21 @@ import { assertQueueContract, QUEUE_SCHEMA_VERSION, REFRESH_QUEUE, WEBHOOK_QUEUE
 export { REFRESH_QUEUE, WEBHOOK_QUEUE } from './queue-contract.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-type Boss = Pick<
-  PgBoss,
-  'start' | 'stop' | 'getQueue' | 'send' | 'findJobs' | 'deleteJob' | 'work' | 'offWork' | 'schemaVersion'
->;
+/** Queue boundary carries untrusted payloads; the runtime validates them before use.
+ * SDK-only metadata stays in pg-boss rather than becoming an application contract. */
+export type QueueJob = Pick<JobWithMetadata<unknown>, 'id' | 'name' | 'data' | 'state'>;
+export type QueueAttempt = QueueJob & Pick<JobWithMetadata<unknown>, 'signal' | 'retryCount' | 'retryLimit'>;
+export interface QueueAdapter extends Pick<PgBoss, 'stop' | 'send' | 'offWork' | 'schemaVersion'> {
+  start(): Promise<unknown>;
+  getQueue(name: string): Promise<unknown>;
+  deleteJob(name: string, id: string): Promise<unknown>;
+  findJobs(name: string, options: { id: string }): Promise<QueueJob[]>;
+  work(
+    name: string,
+    options: { batchSize: 1; includeMetadata: true },
+    handler: (jobs: QueueAttempt[]) => Promise<void>,
+  ): Promise<string>;
+}
 
 export interface JobContext {
   jobId: string;
@@ -37,7 +48,7 @@ export interface PgBossRuntimeOptions {
   connectionString?: string;
   schema?: string;
   /** Test seam. Production constructs its own pg-boss instance. */
-  boss?: Boss;
+  boss?: QueueAdapter;
   webhookHandoff: Pick<DurableCore['webhooks'], 'withQueueHandoff'>;
   observability?: Observability;
   /** Validated by the server composition from the credential wrapping-key ring. */
@@ -51,7 +62,7 @@ export interface PgBossRuntime {
   enqueueRefresh(shopId: string, installationGeneration: number): Promise<string>;
   work(handlers: WorkerHandlers): Promise<void>;
   stop(): Promise<void>;
-  schemaVersion(): ReturnType<Boss['schemaVersion']>;
+  schemaVersion(): ReturnType<QueueAdapter['schemaVersion']>;
   checkDurableReady(): Promise<boolean>;
   readonly durableReady: boolean;
   readonly observability: Observability;
@@ -77,26 +88,31 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions): PgBossRuntim
   if (!options.boss && !options.connectionString) throw new Error('Missing worker database connection');
   const schema = options.schema ?? 'pgboss';
   if (!/^[a-z_][a-z0-9_]{0,62}$/.test(schema)) throw new Error('Invalid queue schema');
-  const boss =
-    options.boss ??
-    new PgBoss({
-      connectionString: options.connectionString,
-      schema,
-      migrate: false,
-      createSchema: false,
-      schedule: false,
-      supervise: options.credentialKeysReady === true,
-      persistQueueStats: false,
-      monitorVacuum: false,
-      reindex: false,
-    });
+  const nativeBoss = options.boss
+    ? undefined
+    : new PgBoss({
+        connectionString: options.connectionString,
+        schema,
+        migrate: false,
+        createSchema: false,
+        schedule: false,
+        supervise: options.credentialKeysReady === true,
+        persistQueueStats: false,
+        monitorVacuum: false,
+        reindex: false,
+      });
+  function requireAdapter(adapter: QueueAdapter | undefined): QueueAdapter {
+    if (!adapter) throw new Error('Missing queue adapter');
+    return adapter;
+  }
+  const boss = requireAdapter(options.boss ?? nativeBoss);
   const observability = options.observability ?? createObservability();
   let started = false;
   let workersStarted = false;
   let stopped = false;
   let faulted = false;
-  if (!options.boss)
-    (boss as PgBoss).on('error', () => {
+  if (nativeBoss)
+    nativeBoss.on('error', () => {
       faulted = true;
       observability.logger.error('worker_start_failed', { errorClass: 'QueueRuntimeError' });
     });
@@ -109,10 +125,10 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions): PgBossRuntim
   async function checkContract() {
     if ((await boss.schemaVersion()) !== QUEUE_SCHEMA_VERSION) throw new Error('pg-boss schema version differs');
     for (const name of [WEBHOOK_QUEUE, REFRESH_QUEUE]) assertQueueContract(name, await boss.getQueue(name));
-    if (!options.boss) {
+    if (nativeBoss) {
       // Read-only privilege/clock probes also detect revoked grants after startup.
       const worker = options.credentialKeysReady === true;
-      const { rows } = await (boss as PgBoss).getDb().executeSql(`SELECT ${schema}.job_now(),
+      const { rows } = await nativeBoss.getDb().executeSql(`SELECT ${schema}.job_now(),
         has_table_privilege(current_user, '${schema}.job', 'INSERT') AND has_table_privilege(current_user, '${schema}.job', 'UPDATE') AND
         has_table_privilege(current_user, '${schema}.job_common', 'INSERT') AND has_table_privilege(current_user, '${schema}.job_common', 'UPDATE') AND
         (${
@@ -150,13 +166,13 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions): PgBossRuntim
     requireStarted();
     assertUuid(inboxId, 'inbox ID');
     async function confirm(state: WebhookQueueHandoffState): Promise<WebhookQueueHandoffOutcome> {
-      let existing = await boss.findJobs<{ inboxId: string }>(WEBHOOK_QUEUE, { id: inboxId });
+      let existing = await boss.findJobs(WEBHOOK_QUEUE, { id: inboxId });
       if (existing.length === 0 && state === 'unconfirmed') {
         const sent = await boss.send(WEBHOOK_QUEUE, { inboxId }, { id: inboxId });
         if (sent === inboxId) return 'enqueued';
         if (sent !== null) throw new Error('Queue returned mismatched inbox job ID');
         // A null ACK is not absence: resolve the pinned exact singleton.
-        existing = await boss.findJobs<{ inboxId: string }>(WEBHOOK_QUEUE, { id: inboxId });
+        existing = await boss.findJobs(WEBHOOK_QUEUE, { id: inboxId });
       }
       if (existing.length === 0) return 'missing';
       if (existing.length !== 1 || existing[0]?.id !== inboxId) throw new Error('Queue handoff not confirmed');
@@ -183,10 +199,10 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions): PgBossRuntim
     requireStarted();
     if (options.credentialKeysReady !== true) throw new Error('Webhook cleanup requires worker privileges');
     assertUuid(inboxId, 'inbox ID');
-    const existing = await boss.findJobs<{ inboxId: string }>(WEBHOOK_QUEUE, { id: inboxId });
+    const existing = await boss.findJobs(WEBHOOK_QUEUE, { id: inboxId });
     if (existing.length > 1) throw new Error('Queue cleanup identity is ambiguous');
-    if (existing.length) {
-      const job = existing[0]!;
+    const job = existing[0];
+    if (job) {
       assertJobPayload(job.data, ['inboxId']);
       if (job.id !== inboxId || job.name !== WEBHOOK_QUEUE || job.data.inboxId !== inboxId)
         throw new Error('Queue cleanup identity mismatch');
@@ -214,7 +230,7 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions): PgBossRuntim
     const webhookWorkerId = await boss.work(
       WEBHOOK_QUEUE,
       { batchSize: 1, includeMetadata: true },
-      async (jobs: JobWithMetadata<{ inboxId: string }>[]) => {
+      async (jobs: QueueAttempt[]) => {
         const job = jobs[0];
         if (!job || jobs.length !== 1) throw new Error('Unexpected webhook job batch');
         try {
@@ -258,17 +274,19 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions): PgBossRuntim
       const refreshWorkerId = await boss.work(
         REFRESH_QUEUE,
         { batchSize: 1, includeMetadata: true },
-        async (jobs: JobWithMetadata<{ shopId: string; installationGeneration: number }>[]) => {
+        async (jobs: QueueAttempt[]) => {
           const job = jobs[0];
           if (!job || jobs.length !== 1) throw new Error('Unexpected refresh job batch');
           try {
             assertJobPayload(job.data, ['shopId', 'installationGeneration']);
-            assertUuid(job.data.shopId as string, 'shop ID');
+            const shopId = job.data.shopId;
+            if (typeof shopId !== 'string') throw new Error('Invalid shop ID');
+            assertUuid(shopId, 'shop ID');
             const generation = job.data.installationGeneration;
-            if (!Number.isSafeInteger(generation) || (generation as number) < 1)
+            if (typeof generation !== 'number' || !Number.isSafeInteger(generation) || generation < 1)
               throw new Error('Invalid installation generation');
             if (job.signal.aborted) throw new Error('Queue job attempt expired');
-            const outcome = await handlers.refreshCredential(job.data.shopId as string, generation as number, {
+            const outcome = await handlers.refreshCredential(shopId, generation, {
               jobId: job.id,
               attempt: job.retryCount,
               signal: job.signal,
@@ -279,7 +297,7 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions): PgBossRuntim
             }
             observability.metrics.refresh(outcome === 'reauth_required' ? 'reauth_required' : 'success');
             observability.logger.info('refresh_process_ok', {
-              shopId: job.data.shopId as string,
+              shopId,
               attempt: job.retryCount,
             });
           } catch (error) {

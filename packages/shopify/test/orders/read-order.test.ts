@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { type HistoricalPurchaseOffer, type PurchaseObservation, reconcilePurchase } from '@insignia/application';
 import { describe, expect, it, vi } from 'vitest';
 import { readShopifyOrder } from '../../src/orders/read-order.js';
+import { array, graphqlRequest, integer, jsonRecord, record, required, string } from '../fixture-assertions.js';
 
 const now = new Date('2026-10-13T12:00:00Z');
 const target = { shopId: 'tenant', installationGeneration: '1', orderId: 'gid://shopify/Order/100' };
@@ -30,7 +31,7 @@ const tx = {
   id: 'gid://shopify/OrderTransaction/500',
   kind: 'SALE',
   status: 'SUCCESS',
-  processedAt: '2026-10-12T12:05:00Z',
+  processedAt: '2026-10-12T12:05:00Z' as string | null,
   amountSet: money('91.00'),
 };
 const order = () => ({
@@ -63,7 +64,7 @@ function fixture() {
     credentials: { acquire: vi.fn(async () => credential) },
     currency: { exponent: (code: string) => (code === 'EUR' ? 2 : null) },
     clock: () => now,
-    fetchImpl: vi.fn(async () => new Response(JSON.stringify({ data: { order: order() } }))),
+    fetchImpl: vi.fn<typeof fetch>(async () => new Response(JSON.stringify({ data: { order: order() } }))),
   };
   return dependencies;
 }
@@ -136,43 +137,87 @@ describe('independent Shopify order reconciliation', () => {
   });
 
   it('provider-read parent/child carriers reach unchanged whole-quote purchase verification with original economics and unknown context', async () => {
-    const vectors = JSON.parse(
+    const vectors = jsonRecord(
       await readFile(new URL('../../../cart-authorization/fixtures/whole-quote-v2.json', import.meta.url), 'utf8'),
     );
-    const c = vectors.cases.find((value: { name: string }) => value.name === 'one_bucket');
-    const h = c.header,
+    const c = required(
+      array(vectors.cases)
+        .map(record)
+        .find((value) => value.name === 'one_bucket'),
+    );
+    const h = record(c.header),
       date = '2026-12-13T12:00:00.000Z',
       observed = '2026-12-13T14:00:00.000Z';
     const uuid = (hex: string) => hex.replace(/^(........)(....)(....)(....)(............)$/, '$1-$2-$3-$4-$5');
-    const publicKey = Buffer.from(vectors.publicHex, 'hex');
-    const quote = {
-      quoteId: uuid(h.quoteHex),
+    const publicKey = Buffer.from(string(vectors.publicHex), 'hex');
+    const quote: HistoricalPurchaseOffer['quote'] = {
+      schemaVersion: 'm4-accepted-quote-v1',
+      acceptedAt: date,
+      acceptedDate: '2026-12-13',
+      acceptedDay: 20800,
+      validThroughDay: 20802,
+      shopCurrency: 'EUR',
+      policyVersion: 'fixture',
+      recognizedPolicyId: 'fixture',
+      trial: false,
+      qualifyingUsageDisposition: 'NOT_METERED',
+      physicalGroups: [],
+      artworkChecks: [],
+      effectiveRevisions: [],
+      catalogSnapshots: [],
+      fxSnapshot: null,
+      quoteId: uuid(string(h.quoteHex)),
       shopId: target.shopId,
       installationGeneration: '1',
-      authorizationGeneration: uuid(h.generationHex),
-      authorizationEpoch: h.epoch,
+      authorizationGeneration: uuid(string(h.generationHex)),
+      authorizationEpoch: integer(h.epoch),
       shopTimezone: 'UTC',
       presentmentCurrency: 'EUR',
       presentmentExponent: 2,
       country: 'DE',
       marketId: '42',
       economics: {
+        version: 'm4-quote-economics-v1',
+        shopId: target.shopId,
+        pricingEngineVersion: 'm2-pricing-v1',
+        roundingPolicy: 'm2-half-even-v1',
+        currency: { version: 'm2-currency-resolution-v1', presentmentCurrency: 'EUR', exponents: { EUR: 2 } },
+        fx: null,
+        effectiveAt: date,
+        marketContext: '42',
+        groups: [],
         customizedQuantity: 1,
         totalMinor: '1999',
-        lines: [{ lineIndex: 0, productId: '42', variantId: '101', quantity: 1, unitPriceMinor: '1999' }],
+        lines: [
+          {
+            lineIndex: 0,
+            shopId: target.shopId,
+            productId: '42',
+            variantId: '101',
+            quantity: 1,
+            unitPriceMinor: '1999',
+            configRevisionId: 'fixture-revision',
+            revisionContentHash: 'a'.repeat(64),
+            canonicalIdentitySha256: 'b'.repeat(64),
+            unitOrdinalStart: 0,
+            unitOrdinalEnd: 1,
+            setupPerUnitMinor: '0',
+            lineTotalMinor: '1999',
+          },
+        ],
       },
     };
-    const offer = {
+    const offer: HistoricalPurchaseOffer = {
       quote,
       authorization: {
-        setId: uuid(h.setHex),
-        keyId: h.keyId,
+        setId: uuid(string(h.setHex)),
+        keyId: integer(h.keyId),
         publicKeyFingerprint: createHash('sha256').update(publicKey).digest('hex'),
         firstValidDay: 20800,
         lastValidDay: 20802,
         validThroughDay: 20802,
-        envelopeCarrier: c.envelope,
-        members: [{ carrier: c.memberCarriers[0], lineIndex: 0 }],
+        envelopeCarrier: string(c.envelope),
+        members: [{ carrier: string(required(array(c.memberCarriers)[0])), lineIndex: 0 }],
       },
       issuance: { issuedAt: '2026-12-13T11:00:00Z', issuedDay: 20800, validThroughDay: 20802, shopTimezone: 'UTC' },
       publicKey,
@@ -181,7 +226,7 @@ describe('independent Shopify order reconciliation', () => {
       designPayload: { syntheticHistoricalArtwork: 'retained' },
       payloadCollectedAt: '2026-12-13T11:00:00Z',
       payloadExpiresAt: '2027-06-13T11:00:00Z',
-    } as unknown as HistoricalPurchaseOffer;
+    };
     const provider = {
       ...order(),
       createdAt: date,
@@ -199,10 +244,10 @@ describe('independent Shopify order reconciliation', () => {
           quantity: 1,
           currentQuantity: 1,
           originalUnitPriceSet: money('19.99'),
-          customAttributes: [{ key: '_insignia_member_v2', value: c.memberCarriers[0] }],
+          customAttributes: [{ key: '_insignia_member_v2', value: string(required(array(c.memberCarriers)[0])) }],
           lineItemGroup: {
             id: 'gid://shopify/LineItemGroup/700',
-            customAttributes: [{ key: '_insignia_quote_v2', value: c.envelope }],
+            customAttributes: [{ key: '_insignia_quote_v2', value: string(c.envelope) }],
           },
         },
       ]),
@@ -232,9 +277,14 @@ describe('independent Shopify order reconciliation', () => {
     expect(bound.order.country).toBeNull();
     expect(bound.bindings[0]?.evidence).toMatchObject({ kind: 'signed_offer_order_match', checkoutContext: null });
     for (const changed of [
-      { ...facts, lines: [{ ...facts.lines[0]!, quantity: 2 }] },
-      { ...facts, lines: [{ ...facts.lines[0]!, originalUnitPriceMinor: '2000' }] },
-      { ...facts, lines: [{ ...facts.lines[0]!, attributes: [{ key: '_insignia_quote_v2', value: c.envelope }] }] },
+      { ...facts, lines: [{ ...required(facts.lines[0]), quantity: 2 }] },
+      { ...facts, lines: [{ ...required(facts.lines[0]), originalUnitPriceMinor: '2000' }] },
+      {
+        ...facts,
+        lines: [
+          { ...required(facts.lines[0]), attributes: [{ key: '_insignia_quote_v2', value: string(c.envelope) }] },
+        ],
+      },
     ]) {
       const rejected = (await reconcilePurchase(target, {
         ...ports,
@@ -300,7 +350,7 @@ describe('independent Shopify order reconciliation', () => {
       marketId: null,
     });
     expect(JSON.stringify(result)).not.toContain(token);
-    const query = JSON.parse((d.fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1].body as string).query;
+    const query = graphqlRequest(String(required(d.fetchImpl.mock.calls[0])[1]?.body)).query;
     expect(query).toMatch(/checkoutToken/);
     let reads = 0;
     d.fetchImpl.mockImplementation(
@@ -341,15 +391,16 @@ describe('independent Shopify order reconciliation', () => {
       transactions: [{ kind: 'SALE', status: 'SUCCESS', amountMinor: '9100', occurredAt: '2026-10-12T12:05:00.000Z' }],
     });
     expect(d.credentials.acquire).toHaveBeenCalledWith({ shopId: 'tenant', installationGeneration: '1' });
-    const [url, init] = d.fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    const [url, rawInit] = required(d.fetchImpl.mock.calls[0]);
+    const init = required(rawInit);
     expect(url).toBe('https://owned.myshopify.com/admin/api/2026-07/graphql.json');
     expect(init.redirect).toBe('error');
-    expect(JSON.parse(init.body as string).query).not.toMatch(/email|customer|shippingAddress|billingAddress/);
+    expect(graphqlRequest(String(init.body)).query).not.toMatch(/email|customer|shippingAddress|billingAddress/);
   });
   it('follows line connection cursors and rejects duplicate, stalled or changing pages', async () => {
     const d = fixture();
     d.fetchImpl.mockImplementation(async (_url?: unknown, init?: RequestInit) => {
-      const after = JSON.parse(init!.body as string).variables.after;
+      const after = graphqlRequest(String(init?.body)).variables.after;
       const o = order();
       if (after === null) o.lineItems = connection([line()], true, 'next');
       else if (after === 'next') o.lineItems = connection([line('gid://shopify/LineItem/201')]);
@@ -359,14 +410,14 @@ describe('independent Shopify order reconciliation', () => {
     expect(result.lines.map((l) => l.lineId)).toEqual(['gid://shopify/LineItem/200', 'gid://shopify/LineItem/201']);
     expect(d.fetchImpl).toHaveBeenCalledTimes(3);
     d.fetchImpl.mockImplementation(async (_url?: unknown, init?: RequestInit) => {
-      const after = JSON.parse(init!.body as string).variables.after;
+      const after = graphqlRequest(String(init?.body)).variables.after;
       const o = order();
       o.lineItems = after === null ? connection([line()], true, 'next') : connection([line()]);
       return new Response(JSON.stringify({ data: { order: o } }));
     });
     await expect(readShopifyOrder(target, d)).rejects.toThrow('incomplete_order');
     d.fetchImpl.mockImplementation(async (_url?: unknown, init?: RequestInit) => {
-      const after = JSON.parse(init!.body as string).variables.after;
+      const after = graphqlRequest(String(init?.body)).variables.after;
       const o = order();
       o.lineItems = connection([line()], true, 'next');
       if (after === 'next') o.updatedAt = '2026-10-13T11:00:00Z';
@@ -386,7 +437,7 @@ describe('independent Shopify order reconciliation', () => {
       amountSet: money('30.00'),
     };
     d.fetchImpl.mockImplementation(async (_url?: unknown, init?: RequestInit) => {
-      const request = JSON.parse(init!.body as string);
+      const request = graphqlRequest(String(init?.body));
       if (request.query.includes('InsigniaPurchaseRefund')) {
         const base = {
           id: refundId,
@@ -441,23 +492,24 @@ describe('independent Shopify order reconciliation', () => {
   it('never treats inaccessible, truncated, malformed or edited provider order data as a verified purchase', async () => {
     const d = fixture();
     for (const mutation of [
-      (o: any) => {
+      (o: ReturnType<typeof order> & { lines?: unknown[] }) => {
         o.transactionsCount.count = 2;
       },
-      (o: any) => {
+      (o: ReturnType<typeof order> & { lines?: unknown[] }) => {
         o.transactionsCount.precision = 'AT_LEAST';
       },
-      (o: any) => {
+      (o: ReturnType<typeof order> & { lines?: unknown[] }) => {
         o.lines = [];
-        o.lineItems.nodes[0].originalUnitPriceSet = money('30.001');
+        record(required(o.lineItems.nodes[0])).originalUnitPriceSet = money('30.001');
       },
-      (o: any) => {
-        o.lineItems.nodes[0].customAttributes.push({ ...o.lineItems.nodes[0].customAttributes[0] });
+      (o: ReturnType<typeof order> & { lines?: unknown[] }) => {
+        const attributes = array(record(required(o.lineItems.nodes[0])).customAttributes);
+        attributes.push({ ...record(required(attributes[0])) });
       },
-      (o: any) => {
+      (o: ReturnType<typeof order> & { lines?: unknown[] }) => {
         o.id = 'gid://shopify/Order/999';
       },
-      (o: any) => {
+      (o: ReturnType<typeof order> & { lines?: unknown[] }) => {
         o.originalTotalPriceSet = money('1e3');
       },
     ]) {
@@ -488,7 +540,7 @@ describe('independent Shopify order reconciliation', () => {
   it('preserves unavailable pending transaction timing without substituting creation or observation time', async () => {
     const d = fixture();
     const o = order();
-    o.transactions = [{ ...tx, status: 'PENDING', processedAt: null } as typeof tx];
+    o.transactions = [{ ...tx, status: 'PENDING', processedAt: null }];
     d.fetchImpl.mockImplementation(async () => new Response(JSON.stringify({ data: { order: o } })));
     expect((await readShopifyOrder(target, d)).transactions[0]).toMatchObject({ status: 'PENDING', occurredAt: null });
   });
@@ -513,7 +565,9 @@ describe('independent Shopify order reconciliation', () => {
       },
     ];
     d.fetchImpl.mockImplementation(async () => new Response(JSON.stringify({ data: { order: o } })));
-    expect((await readShopifyOrder(target, d)).lines[1]!.attributes[0]!.value).toBe('Happy birthday!\nLove from us');
+    expect(required(required((await readShopifyOrder(target, d)).lines[1]).attributes[0]).value).toBe(
+      'Happy birthday!\nLove from us',
+    );
   });
   it('reads through a real HTTP wire with the fixed pinned query, credentials and final coherence read', async () => {
     let reads = 0;
@@ -523,7 +577,7 @@ describe('independent Shopify order reconciliation', () => {
       expect(req.headers['x-shopify-access-token']).toBe('synthetic-private-token');
       const chunks = [];
       for await (const chunk of req) chunks.push(chunk);
-      const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+      const body = graphqlRequest(Buffer.concat(chunks).toString('utf8'));
       expect(body.variables.id).toBe(target.orderId);
       expect(body.query).not.toMatch(/mutation|customer|email/);
       reads++;

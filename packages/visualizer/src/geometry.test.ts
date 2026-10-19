@@ -70,6 +70,7 @@ describe('geometry boundary', () => {
         ],
       }),
     ).toThrow();
+    // @ts-expect-error Deliberately exercise the runtime rejection of an unknown stored version.
     expect(() => validateGeometry({ ...geometry, version: 'future' })).toThrow();
     expect(() => validateGeometry({ ...geometry, views: [] })).toThrow();
     expect(() =>
@@ -78,19 +79,23 @@ describe('geometry boundary', () => {
   });
 
   it('rejects stored URL/markup fields and accepts one placement projected in two views', () => {
-    expect(() => validateGeometry({ ...geometry, artworkSvg: '<svg />' } as typeof geometry)).toThrow();
+    // @ts-expect-error Deliberately pass forbidden markup through the runtime boundary.
+    expect(() => validateGeometry({ ...geometry, artworkSvg: '<svg />' })).toThrow();
     expect(() =>
       validateGeometry({
         ...geometry,
+        // @ts-expect-error Stored image DTOs must reject arbitrary URLs at runtime too.
         views: [{ ...front, image: { ...front.image, url: 'https://outside.example/art' } }],
-      } as typeof geometry),
+      }),
     ).toThrow();
+    const back = geometry.views[1];
+    if (!back) throw new Error('Missing back-view fixture');
     const twoViews = {
       ...geometry,
       views: [
         front,
         {
-          ...geometry.views[1]!,
+          ...back,
           placements: [{ ...chest, rect: { ...chest.rect, centerY: 0.6 } }],
         },
       ],

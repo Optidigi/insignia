@@ -6,8 +6,43 @@ export type ArtworkPreview = {
   assetExpiresAt: string;
 };
 export type ArtworkSelection = Pick<ArtworkPreview, 'assetId' | 'assetExpiresAt'>;
-export type JsonApi = <T>(path: string, init?: RequestInit) => Promise<T>;
-type Status = { state: string; expiresAt: string };
+export type JsonApi = (path: string, init?: RequestInit) => Promise<unknown>;
+function object(value: unknown, message: string): Record<string, unknown> {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) throw new Error(message);
+  return Object.fromEntries(Object.entries(value));
+}
+function statusResponse(value: unknown) {
+  const status = object(value, 'Invalid artwork status');
+  if (typeof status.state !== 'string') throw new Error('Invalid artwork status');
+  return { state: status.state, expiresAt: status.expiresAt };
+}
+function admissionResponse(value: unknown) {
+  const invalid = 'Invalid private upload';
+  const admission = object(value, invalid);
+  const upload = object(admission.upload, invalid);
+  const headers = object(upload.headers, invalid);
+  if (
+    typeof admission.assetId !== 'string' ||
+    !admission.assetId ||
+    typeof admission.expiresAt !== 'string' ||
+    !Number.isFinite(Date.parse(admission.expiresAt)) ||
+    Date.parse(admission.expiresAt) <= Date.now() ||
+    typeof upload.url !== 'string'
+  )
+    throw new Error(invalid);
+  const url = new URL(upload.url);
+  if (url.protocol !== 'https:') throw new Error(invalid);
+  const entries: [string, string][] = [];
+  for (const [name, value] of Object.entries(headers)) {
+    if (typeof value !== 'string') throw new Error(invalid);
+    entries.push([name, value]);
+  }
+  return {
+    assetId: admission.assetId,
+    expiresAt: admission.expiresAt,
+    upload: { url: upload.url, headers: Object.fromEntries(entries) },
+  };
+}
 export function createArtworkUpload(input: {
   api: JsonApi;
   onPending?: (asset: ArtworkSelection) => void;
@@ -31,11 +66,15 @@ export function createArtworkUpload(input: {
         if (signal?.aborted) abort();
       }));
   async function readPreview(assetId: string, assetExpiresAt: string, signal?: AbortSignal): Promise<ArtworkPreview> {
-    const preview = await input.api<{ url: string; width: number; height: number; expiresAt: string }>(
-      `/api/artwork/${assetId}/preview`,
-      { signal },
-    );
+    const preview = object(await input.api(`/api/artwork/${assetId}/preview`, { signal }), 'Invalid artwork preview');
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+    if (
+      typeof preview.url !== 'string' ||
+      typeof preview.width !== 'number' ||
+      typeof preview.height !== 'number' ||
+      typeof preview.expiresAt !== 'string'
+    )
+      throw new Error('Invalid artwork preview');
     const url = new URL(preview.url);
     if (
       url.protocol !== 'https:' ||
@@ -67,15 +106,20 @@ export function createArtworkUpload(input: {
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
       if (Date.parse(asset.assetExpiresAt) <= Date.now())
         throw Object.assign(new Error('Artwork expired. Upload it again.'), { status: 410 });
-      const status = await input.api<Status>(`/api/artwork/${asset.assetId}/status`, { signal });
+      const status = statusResponse(await input.api(`/api/artwork/${asset.assetId}/status`, { signal }));
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
       if (status.state === 'REJECTED')
         throw Object.assign(new Error('Artwork was rejected by inspection. Choose a supported, static image.'), {
           status: 422,
         });
-      if (status.state === 'DELETED' || status.state === 'DELETING' || Date.parse(status.expiresAt) <= Date.now())
+      if (
+        status.state === 'DELETED' ||
+        status.state === 'DELETING' ||
+        (typeof status.expiresAt === 'string' && Date.parse(status.expiresAt) <= Date.now())
+      )
         throw Object.assign(new Error('Artwork expired. Upload it again.'), { status: 410 });
-      if (!Number.isFinite(Date.parse(status.expiresAt))) throw new Error('Invalid artwork status');
+      if (typeof status.expiresAt !== 'string' || !Number.isFinite(Date.parse(status.expiresAt)))
+        throw new Error('Invalid artwork status');
       if (status.state === 'USABLE') return readPreview(asset.assetId, status.expiresAt, signal);
       if (!['UPLOADING', 'QUEUED', 'INSPECTING', 'PROMOTING'].includes(status.state))
         throw new Error('Invalid artwork status');
@@ -105,10 +149,11 @@ export function createArtworkUpload(input: {
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
       if (Date.parse(asset.assetExpiresAt) <= Date.now())
         throw Object.assign(new Error('Artwork expired. Upload it again.'), { status: 410 });
-      const status = await input.api<Status>(`/api/artwork/${asset.assetId}/status`, { signal });
+      const status = statusResponse(await input.api(`/api/artwork/${asset.assetId}/status`, { signal }));
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
       if (
         status.state !== 'USABLE' ||
+        typeof status.expiresAt !== 'string' ||
         !Number.isFinite(Date.parse(status.expiresAt)) ||
         Date.parse(status.expiresAt) <= Date.now()
       )
@@ -124,16 +169,14 @@ export function createArtworkUpload(input: {
         throw new Error('Choose an SVG, PNG or JPEG up to 5 MiB.');
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
       onState('Allocating private upload');
-      const admitted = await input.api<{
-        assetId: string;
-        upload: { url: string; headers: Record<string, string> };
-        expiresAt: string;
-      }>('/api/artwork', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contentType: file.type, byteLength: file.size }),
-        signal,
-      });
+      const admitted = admissionResponse(
+        await input.api('/api/artwork', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contentType: file.type, byteLength: file.size }),
+          signal,
+        }),
+      );
       onState('Uploading');
       const deadline = AbortSignal.timeout(30_000);
       const uploadSignal = signal ? AbortSignal.any([signal, deadline]) : deadline;

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { acceptQuote, type QuoteAuthorityPorts } from './accept-quote.js';
-import { type QuoteRenewalPorts, renewQuote } from './renew-quote.js';
+import { type QuoteRenewalStore, renewQuote } from './renew-quote.js';
 
 const hash = 'a'.repeat(64);
 const now = new Date('2026-11-01T05:30:00.000Z');
@@ -87,7 +87,7 @@ function fixture() {
     },
     publication: { getEffective: vi.fn(async () => ({ config, configId: 'cfg', operationId: 'op' })) },
     artwork: {
-      readUsability: vi.fn(async (input) =>
+      readUsability: vi.fn<QuoteAuthorityPorts['artwork']['readUsability']>(async (input) =>
         input.choices.map((choice) => ({
           ...choice,
           shopId: input.shopId,
@@ -136,7 +136,7 @@ function fixture() {
       })),
     },
     store: {
-      findCompleted: vi.fn(async () => null),
+      findCompleted: vi.fn<QuoteRenewalStore['findCompleted']>(async () => null),
       accept: vi.fn(async (_input, commit) => {
         const value = await commit();
         saved.push(value);
@@ -173,9 +173,9 @@ async function renewalFixture() {
     })),
   );
   const renewalStore = {
-    getOwned: vi.fn(async () => original),
-    findCompleted: vi.fn(async () => null),
-    renew: vi.fn(async (_input, commit) => commit()),
+    getOwned: vi.fn<QuoteRenewalStore['getOwned']>(async () => original),
+    findCompleted: vi.fn<QuoteRenewalStore['findCompleted']>(async () => null),
+    renew: vi.fn<QuoteRenewalStore['renew']>(async (_input, commit) => commit()),
   };
   return {
     ports,
@@ -197,10 +197,13 @@ describe('immutable quote renewal', () => {
     });
     vi.mocked(ports.authorization.issue).mockClear();
     await expect(
-      renewQuote({ quoteId: original.quoteId, desired: request }, {
-        ...ports,
-        renewalStore,
-      } as QuoteRenewalPorts),
+      renewQuote(
+        { quoteId: original.quoteId, desired: request },
+        {
+          ...ports,
+          renewalStore,
+        },
+      ),
     ).rejects.toThrow(/recurring-only entitlement required/);
     expect(ports.authorization.issue).not.toHaveBeenCalled();
     expect(renewalStore.renew).not.toHaveBeenCalled();
@@ -218,7 +221,7 @@ describe('immutable quote renewal', () => {
       })),
     );
     await expect(
-      renewQuote({ quoteId: original.quoteId, desired: request }, { ...ports, renewalStore } as QuoteRenewalPorts),
+      renewQuote({ quoteId: original.quoteId, desired: request }, { ...ports, renewalStore }),
     ).rejects.toThrow(/Lean|lean|currency/);
     expect(ports.authorization.issue).not.toHaveBeenCalled();
     expect(renewalStore.renew).not.toHaveBeenCalled();
@@ -226,10 +229,13 @@ describe('immutable quote renewal', () => {
 
   it('issues a new window for unchanged facts without changing original acceptance', async () => {
     const { ports, original, renewalStore, later } = await renewalFixture();
-    const result = await renewQuote({ quoteId: original.quoteId, desired: { ...request, idempotencyKey: 'renew' } }, {
-      ...ports,
-      renewalStore,
-    } as QuoteRenewalPorts);
+    const result = await renewQuote(
+      { quoteId: original.quoteId, desired: { ...request, idempotencyKey: 'renew' } },
+      {
+        ...ports,
+        renewalStore,
+      },
+    );
     expect(result.quote).toEqual(original);
     expect(result.authorization.validThroughDay).toBe(original.validThroughDay + 3);
     expect(result.issuance.issuedDay).toBe(original.acceptedDay + 3);
@@ -243,10 +249,13 @@ describe('immutable quote renewal', () => {
       })),
     );
     await expect(
-      renewQuote({ quoteId: original.quoteId, desired: { ...request, idempotencyKey: 'changed' } }, {
-        ...ports,
-        renewalStore,
-      } as QuoteRenewalPorts),
+      renewQuote(
+        { quoteId: original.quoteId, desired: { ...request, idempotencyKey: 'changed' } },
+        {
+          ...ports,
+          renewalStore,
+        },
+      ),
     ).rejects.toThrow('REVIEW_REQUIRED');
   });
   it('checks changed facts again inside serialized signing and denies foreign ownership', async () => {
@@ -261,32 +270,41 @@ describe('immutable quote renewal', () => {
       return commit();
     });
     await expect(
-      renewQuote({ quoteId: original.quoteId, desired: { ...request, idempotencyKey: 'race' } }, {
-        ...ports,
-        renewalStore,
-      } as QuoteRenewalPorts),
+      renewQuote(
+        { quoteId: original.quoteId, desired: { ...request, idempotencyKey: 'race' } },
+        {
+          ...ports,
+          renewalStore,
+        },
+      ),
     ).rejects.toThrow('REVIEW_REQUIRED');
     expect(ports.authorization.issue).not.toHaveBeenCalled();
-    renewalStore.getOwned.mockResolvedValue(null as never);
+    renewalStore.getOwned.mockResolvedValue(null);
     await expect(
-      renewQuote({ quoteId: original.quoteId, desired: request }, { ...ports, renewalStore } as QuoteRenewalPorts),
+      renewQuote({ quoteId: original.quoteId, desired: request }, { ...ports, renewalStore }),
     ).rejects.toThrow('ownership');
   });
 
   it('returns the exact completed renewal without new issuance or repricing', async () => {
     const { ports, original, renewalStore } = await renewalFixture();
-    const result = await renewQuote({ quoteId: original.quoteId, desired: { ...request, idempotencyKey: 'cached' } }, {
-      ...ports,
-      renewalStore,
-    } as QuoteRenewalPorts);
-    renewalStore.findCompleted.mockResolvedValue(result as never);
+    const result = await renewQuote(
+      { quoteId: original.quoteId, desired: { ...request, idempotencyKey: 'cached' } },
+      {
+        ...ports,
+        renewalStore,
+      },
+    );
+    renewalStore.findCompleted.mockResolvedValue(result);
     vi.mocked(ports.authorization.issue).mockClear();
     vi.mocked(ports.entitlement.getFresh).mockClear();
     expect(
-      await renewQuote({ quoteId: original.quoteId, desired: { ...request, idempotencyKey: 'cached' } }, {
-        ...ports,
-        renewalStore,
-      } as QuoteRenewalPorts),
+      await renewQuote(
+        { quoteId: original.quoteId, desired: { ...request, idempotencyKey: 'cached' } },
+        {
+          ...ports,
+          renewalStore,
+        },
+      ),
     ).toEqual(result);
     expect(ports.authorization.issue).not.toHaveBeenCalled();
     expect(ports.entitlement.getFresh).not.toHaveBeenCalled();
@@ -295,10 +313,13 @@ describe('immutable quote renewal', () => {
     const { ports, original, renewalStore } = await renewalFixture();
     vi.mocked(ports.tenant.getActive).mockClear();
     await expect(
-      renewQuote({ quoteId: original.quoteId, desired: { ...request, groups: Array(4097).fill(null) } }, {
-        ...ports,
-        renewalStore,
-      } as QuoteRenewalPorts),
+      renewQuote(
+        { quoteId: original.quoteId, desired: { ...request, groups: Array(4097).fill(null) } },
+        {
+          ...ports,
+          renewalStore,
+        },
+      ),
     ).rejects.toThrow('invalid renewal request');
     expect(ports.tenant.getActive).not.toHaveBeenCalled();
     expect(renewalStore.getOwned).not.toHaveBeenCalled();

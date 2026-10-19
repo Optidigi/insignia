@@ -5,6 +5,12 @@ import { type PricingInput, priceProposal } from './evaluate.js';
 
 const amount = (shopDecimal: string) => ({ shopDecimal, presentmentOverrides: [] });
 const revisionContentHash = 'a'.repeat(64);
+// Fixture builders are editable; the pricing API still receives its readonly DTO.
+type Mutable<T> = T extends readonly (infer Item)[]
+  ? Mutable<Item>[]
+  : T extends object
+    ? { -readonly [K in keyof T]: Mutable<T[K]> }
+    : T;
 function required<T>(value: T | undefined): T {
   if (value === undefined) throw new Error('incomplete test fixture');
   return value;
@@ -65,7 +71,7 @@ function input(
   groups: CustomizationGroup[],
   rules: PricingRule[],
   bases?: { variantId: string; minor: string }[],
-): PricingInput {
+): Mutable<PricingInput> {
   return {
     shopId: 'shop',
     groups,
@@ -275,7 +281,7 @@ describe('pricing invariants', () => {
     proposal.effectiveAt = '2026-02-29T12:00:00.000Z';
     expect(() => priceProposal(proposal)).toThrow(/valid fixed-width UTC/);
     proposal.effectiveAt = '2026-09-29T12:00:00.000Z';
-    proposal.fx.asOf = '2026-13-01T11:00:00.000Z';
+    required(proposal.fx).asOf = '2026-13-01T11:00:00.000Z';
     expect(() => priceProposal(proposal)).toThrow(/FX outside/);
   });
 });

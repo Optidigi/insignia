@@ -1,6 +1,7 @@
 import { expect, test, vi } from 'vitest';
 import { createFunctionProvisioningPort } from '../src/function-provision.js';
 import { createPublicationAdminHttpTransport, FUNCTION_TRANSFORM_CREATE } from '../src/publication-admin.js';
+import { graphqlRequest } from './fixture-assertions.js';
 
 const tenant = {
   shopId: 'synthetic-shop',
@@ -60,7 +61,7 @@ test.each(['transform', 'validation'] as const)(
       id: kind === 'transform' ? 'gid://shopify/CartTransform/101' : 'gid://shopify/Validation/102',
     });
     expect(outbound).toHaveBeenCalledTimes(1);
-    const body = JSON.parse(String(outbound.mock.calls[0]?.[1]?.body));
+    const body = graphqlRequest(String(outbound.mock.calls[0]?.[1]?.body));
     expect(body.query).toContain('blockOnFailure: true');
     expect(body.query).toContain('functionHandle: "insignia-experimental-v2-');
     expect(body.variables).toEqual({});

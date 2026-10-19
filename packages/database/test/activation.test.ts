@@ -576,8 +576,12 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       set restoreMismatch(value: boolean) {
         restoreMismatch = value;
       },
-      restartWithAvailability: (port: ProductAvailabilityHoldPort) =>
-        core.productionActivations.create({ ...options, availability: port, recoveryAuthority }),
+      restartWithAvailability: (port: Pick<ProductAvailabilityHoldPort, 'snapshot'>) =>
+        core.productionActivations.create({
+          ...options,
+          availability: { ...availability, snapshot: port.snapshot },
+          recoveryAuthority,
+        }),
       prepareHold,
       publish,
       createRevision,

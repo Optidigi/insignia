@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto';
 import { describe, expect, test } from 'vitest';
 import { InvalidShopifyWebhookError, verifyShopifyWebhook } from '../src/webhook.js';
+import { required } from './fixture-assertions.js';
 
 const secret = 'synthetic-current-client-secret';
 const body = Buffer.from('{"order":1,"raw":"é"}', 'utf8');
@@ -46,7 +47,7 @@ describe('Shopify raw webhook verification', () => {
 
   test('one-byte mutation, missing and malformed signatures reject', () => {
     const changed = Buffer.from(body);
-    changed[4] ^= 1;
+    changed[4] = required(changed[4]) ^ 1;
     expect(() => verifyShopifyWebhook(changed, headers(), [secret])).toThrow(InvalidShopifyWebhookError);
     const missing = headers();
     delete missing['X-Shopify-Hmac-Sha256'];

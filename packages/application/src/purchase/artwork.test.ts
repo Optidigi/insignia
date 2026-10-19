@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { ArtworkRecord } from '../artwork/artwork.js';
+import { artworkManifest, artworkRow } from '../../test/artwork-fixtures.js';
 import {
   attachPurchaseArtwork,
   lockPurchaseArtwork,
@@ -31,6 +31,7 @@ describe('merchant-only purchased artwork work', () => {
     const appendArtwork = vi.fn();
     await expect(
       attachPurchaseArtwork(
+        // Deliberately violate the merchant-only compile-time input to exercise runtime capability rejection.
         { ...merchant, kind: 'guest' } as never,
         { purchaseId, expectedVersion: 1, groupIndex: 0, placementId: 'front', assetId },
         { appendArtwork },
@@ -47,15 +48,15 @@ describe('merchant-only purchased artwork work', () => {
   it('downloads only an exact purchase-owned usable original with a lifetime capped by its original expiry', async () => {
     const clock = () => new Date('2026-10-20T10:00:00.000Z');
     const expiresAt = new Date('2026-10-20T10:02:00.000Z');
-    const asset = {
+    const asset = artworkRow({
       assetId,
       shopId: 'shop',
       installationGeneration: '1',
       state: 'USABLE',
       expiresAt,
       originalKey: 'private/original',
-      manifest: { mimeType: 'image/svg+xml', sha256: 'b'.repeat(64), byteLength: 123 },
-    } as ArtworkRecord;
+      manifest: { ...artworkManifest, mimeType: 'image/svg+xml', sha256: 'b'.repeat(64), byteLength: 123 },
+    });
     const getAuthorizedArtwork = vi.fn(async () => asset);
     const presignRead = vi.fn(async () => 'https://private.example/signed');
     const result = await purchaseArtworkDownload(
@@ -88,7 +89,7 @@ describe('merchant-only purchased artwork work', () => {
     expect(presignRead).not.toHaveBeenCalled();
   });
   it('previews only the purchase-owned safe PNG derivative and never the original SVG', async () => {
-    const asset = {
+    const asset = artworkRow({
       assetId,
       shopId: 'shop',
       state: 'USABLE',
@@ -96,13 +97,14 @@ describe('merchant-only purchased artwork work', () => {
       originalKey: 'private/original.svg',
       previewKey: 'private/preview.png',
       manifest: {
+        ...artworkManifest,
         mimeType: 'image/svg+xml',
         previewSha256: 'c'.repeat(64),
         previewByteLength: 456,
         width: 200,
         height: 100,
       },
-    } as ArtworkRecord;
+    });
     const presignRead = vi.fn(async () => 'https://private.example/preview');
     const result = await purchaseArtworkPreview(
       merchant,
@@ -127,14 +129,14 @@ describe('merchant-only purchased artwork work', () => {
     });
   });
   it('refuses a corrupt preview geometry before exposing a signed derivative URL', async () => {
-    const asset = {
+    const asset = artworkRow({
       assetId,
       shopId: 'shop',
       state: 'USABLE',
       expiresAt: new Date('2026-10-20T10:02:00.000Z'),
       previewKey: 'private/preview.png',
-      manifest: { width: 200, height: 0 },
-    } as ArtworkRecord;
+      manifest: { ...artworkManifest, width: 200, height: 0 },
+    });
     const presignRead = vi.fn();
     await expect(
       purchaseArtworkPreview(

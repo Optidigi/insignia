@@ -30,7 +30,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable first-paid usage qual
     const binding: PurchaseObservation['bindings'][number] = {
       quoteId: f.quote.quoteId,
       authorizationSetId: f.authorization.setId,
-      quote: f.quote as never,
+      quote: f.quote,
       lines: [
         {
           orderLineId: 'gid://shopify/LineItem/55',
@@ -93,7 +93,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable first-paid usage qual
       firstPaidAt: options.paid === false ? null : occurredAt,
     };
     const result = await createPurchaseRepository(db).reconcile(input);
-    if (!result.purchaseId) throw new Error('expected customized purchase');
+    if (!('purchaseId' in result)) throw new Error('expected customized purchase');
     const scope = { shopId: f.shopId, installationGeneration: f.generation };
     const history: PaidOrderUsageHistory = {
       kind: 'TRUSTED',

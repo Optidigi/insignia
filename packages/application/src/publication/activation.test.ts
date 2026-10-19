@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { required } from '../../test/fixture-assertions.js';
 import { classifyPublicationAdmission } from './activation.js';
 
 describe('publication admission', () => {
@@ -37,6 +38,12 @@ import type {
   ProductAvailabilitySnapshotV3 as ProductAvailabilitySnapshot,
 } from './availability-v3.js';
 
+function record(value: unknown): Record<string, unknown> {
+  const isRecord = (input: unknown): input is Record<string, unknown> =>
+    input !== null && typeof input === 'object' && !Array.isArray(input);
+  if (!isRecord(value)) throw new Error('Expected synthetic attestation object');
+  return value;
+}
 const now = new Date('2026-10-01T12:00:00.000Z');
 function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'required' | 'optional' = 'required') {
   let clock = now;
@@ -135,6 +142,7 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
   const availability: ProductAvailabilityHoldPort = {
     snapshot: async () => current,
     acquire: async (_scope, hold) => {
+      if (hold.version !== 'm5-availability-hold-v3') throw new Error('synthetic operation requires v3');
       if (crashBeforeAcquire) {
         crashBeforeAcquire = false;
         throw new Error('crash before provider dispatch');
@@ -166,6 +174,7 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
       };
     },
     observe: async (_scope, hold) => {
+      if (hold.version !== 'm5-availability-hold-v3') throw new Error('synthetic operation requires v3');
       observations++;
       return current.state === 'unavailable'
         ? {
@@ -472,7 +481,7 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
       clock = new Date('2026-10-01T23:59:59.999Z');
       current = { ...current, observedAt: clock.toISOString(), receivedAt: clock.toISOString() };
       observation = { ...observation, observedAt: clock.toISOString() };
-      attestation = { ...(attestation as Record<string, unknown>), observedAt: clock.toISOString() };
+      attestation = { ...record(attestation), observedAt: clock.toISOString() };
       candidate = {
         ...candidate,
         publicConfig: {
@@ -515,7 +524,7 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
       candidate = { ...candidate, phase };
     },
     mismatchArtifact: (field: 'sourceCommit' | 'appVersionRef' | 'inputQuerySha256' | 'wasmSha256') => {
-      const value = attestation as Record<string, unknown>;
+      const value = record(attestation);
       attestation =
         field === 'sourceCommit' || field === 'appVersionRef'
           ? { ...value, [field]: field === 'sourceCommit' ? 'f'.repeat(40) : 'synthetic-other-release' }
@@ -952,7 +961,7 @@ it.each(['activation', 'restoration'] as const)(
         // key check was valid at its captured instant; crossing before that check
         // leaves it claimed/pending with no provider call.
         expect(f.stateAtRestore?.kind).toBe('RESTORATION_CLAIMED');
-        expect(20729).toBeGreaterThanOrEqual(Math.floor(f.restoreClock!.getTime() / 86400000) + 2);
+        expect(20729).toBeGreaterThanOrEqual(Math.floor(required(f.restoreClock).getTime() / 86400000) + 2);
       }
     }
   },

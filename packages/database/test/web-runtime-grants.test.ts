@@ -323,10 +323,14 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
         asset.originalKey,
       );
       expect(await core.purchases.getAuthorizedArtwork(authority, { purchaseId, assetId: randomUUID() })).toBeNull();
-      await core.purchases.appendArtwork(
-        { ...authority, ownerHash },
-        { purchaseId, expectedVersion: 0, groupIndex: 0, placementId: 'front', assetId, ownerHash },
-      );
+      await core.purchases.appendArtwork(authority, {
+        purchaseId,
+        expectedVersion: 0,
+        groupIndex: 0,
+        placementId: 'front',
+        assetId,
+        ownerHash,
+      });
       await core.purchases.lockArtwork(authority, { purchaseId, expectedVersion: 1 });
       expect((await core.purchases.get(authority, purchaseId))?.artworkState).toBe('ARTWORK_LOCKED');
 

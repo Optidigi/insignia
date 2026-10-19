@@ -119,7 +119,8 @@ it('reconciles an uncertain immutable write by actual bytes without redispatch',
   const storage = createR2ArtworkStorage({
     ...config,
     fetchImpl: async (input) => {
-      const request = input as Request;
+      if (!(input instanceof Request)) throw new Error('Expected signed Request at storage boundary');
+      const request = input;
       if (request.method === 'PUT') {
         puts++;
         throw new Error('lost acknowledgment');

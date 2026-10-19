@@ -1,0 +1,16 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+Astro.response.status = 503;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+Astro.response.headers.set('Content-Security-Policy', "default-src 'none'; script-src 'self' https://cdn.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; font-src https://cdn.shopify.com; connect-src https://cdn.shopify.com/shopifycloud/admin-ui-foundations/icons/; frame-ancestors https://admin.shopify.com https://*.myshopify.com; base-uri 'none'; form-action 'none'");
+---
+<AdminLayout title="Application unavailable" ready>
+  <s-page heading="Application unavailable" inlineSize="small">
+    <s-banner tone="critical" heading="Insignia could not open">
+      Application configuration is unavailable. Contact app support to recover access.
+    </s-banner>
+    <s-link href="https://admin.shopify.com" target="_top">Return to Shopify Admin</s-link>
+  </s-page>
+</AdminLayout>

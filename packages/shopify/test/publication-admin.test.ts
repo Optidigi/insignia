@@ -5,6 +5,7 @@ import {
   PublicationAdminError,
   type PublicationAdminRequest,
 } from '../src/publication-admin.js';
+import { array, graphqlRequest, record, required } from './fixture-assertions.js';
 
 const tenant = {
   shopId: 'shop-internal-1',
@@ -182,14 +183,14 @@ describe('2026-07 app-owned publication Admin adapter', () => {
   });
 
   test('HTTP transport fences stale credentials and never sends arbitrary query', async () => {
-    const fetchImpl = vi.fn(async () => {
+    const fetchImpl = vi.fn<typeof fetch>(async () => {
       throw new Error('should not call');
     });
     const transport = createPublicationAdminHttpTransport({
       credentials: {
         acquire: async () => ({ kind: 'inactive' as const }),
       },
-      fetchImpl: fetchImpl as unknown as typeof fetch,
+      fetchImpl,
     });
     await expect(
       transport.execute({
@@ -203,7 +204,7 @@ describe('2026-07 app-owned publication Admin adapter', () => {
   });
 
   test('HTTP transport uses the fenced installation token, exact version and bounded response', async () => {
-    const fetchImpl = vi.fn(
+    const fetchImpl = vi.fn<typeof fetch>(
       async (_url: string | URL | Request, _init?: RequestInit) =>
         new Response(JSON.stringify(productRead(metafield('insignia_registration_v2')).body), { status: 200 }),
     );
@@ -215,7 +216,7 @@ describe('2026-07 app-owned publication Admin adapter', () => {
     }));
     const transport = createPublicationAdminHttpTransport({
       credentials: { acquire },
-      fetchImpl: fetchImpl as unknown as typeof fetch,
+      fetchImpl,
     });
     await createPublicationAdminAdapter({ transport }).read({ ...tenant, field: 'registration', productId });
     expect(acquire).toHaveBeenCalledWith({
@@ -225,12 +226,10 @@ describe('2026-07 app-owned publication Admin adapter', () => {
     expect(fetchImpl.mock.calls[0]?.[0]).toBe('https://test-store.myshopify.com/admin/api/2026-07/graphql.json');
     const init = fetchImpl.mock.calls[0]?.[1] as RequestInit | undefined;
     expect(init?.headers).toMatchObject({ 'x-shopify-access-token': 'synthetic-token' });
-    expect(JSON.parse(String(init?.body))).toMatchObject({ variables: { productId } });
+    expect(graphqlRequest(String(init?.body))).toMatchObject({ variables: { productId } });
     const tooLarge = createPublicationAdminHttpTransport({
       credentials: { acquire },
-      fetchImpl: vi.fn(
-        async () => new Response('x'.repeat(128 * 1024 + 1), { status: 200 }),
-      ) as unknown as typeof fetch,
+      fetchImpl: vi.fn(async () => new Response('x'.repeat(128 * 1024 + 1), { status: 200 })),
     });
     await expect(
       createPublicationAdminAdapter({ transport: tooLarge }).read({ ...tenant, field: 'registration', productId }),
@@ -280,17 +279,17 @@ describe('2026-07 app-owned publication Admin adapter', () => {
           accessExpiresAt: new Date('2099-01-01T00:00:00Z'),
         }),
       },
-      fetchImpl: (async (_url, init) => {
-        const request = JSON.parse(String(init?.body));
+      fetchImpl: async (_url, init) => {
+        const request = graphqlRequest(String(init?.body));
         expect(Object.keys(request).sort()).toEqual(['query', 'variables']);
         if (request.query.startsWith('mutation')) {
           mutations++;
-          expect(request.variables.metafields[0].compareDigest).toBe(null);
+          expect(record(required(array(request.variables.metafields)[0])).compareDigest).toBe(null);
           throw new Error('Synthetic committed response loss');
         }
         reads++;
         return Response.json(productRead(metafield('insignia_registration_v2', value, 'b'.repeat(64))).body);
-      }) as typeof fetch,
+      },
     });
     await expect(
       createPublicationAdminAdapter({ transport }).set(
@@ -303,7 +302,7 @@ describe('2026-07 app-owned publication Admin adapter', () => {
   });
 
   test('actual HTTP pre-send refusal is not ambiguity and never enters provider JSON', async () => {
-    const fetchImpl = vi.fn();
+    const fetchImpl = vi.fn<typeof fetch>();
     const transport = createPublicationAdminHttpTransport({
       credentials: {
         acquire: async () => ({
@@ -341,7 +340,7 @@ describe('2026-07 app-owned publication Admin adapter', () => {
     const transport = createPublicationAdminHttpTransport({
       credentials,
       timeoutMs: 100,
-      fetchImpl: (async () => new Response(stalled, { status: 200 })) as typeof fetch,
+      fetchImpl: async () => new Response(stalled, { status: 200 }),
     });
     await expect(
       createPublicationAdminAdapter({ transport }).read({ ...tenant, field: 'registration', productId }),

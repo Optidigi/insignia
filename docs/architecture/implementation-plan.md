@@ -64,7 +64,7 @@ Astro provides Node SSR and Preact integrations; Node 24 is an LTS release. Thes
 apps/web (server) ──┬──> application ──> domain
                    ├──> database ─────> application ports + domain
                    ├──> shopify ──────> application ports + domain
-                   ├──> artwork ──────> application ports + domain
+                   ├──> storage ──────> application ports + domain
                    ├──> cart-authorization (server)
                    └──> observability
 
@@ -119,7 +119,7 @@ apps/
     src/pages/proxy/v1/        # App Proxy upstream routes
     src/pages/webhooks/        # Raw-body ingress
     src/islands/               # Preact only where interaction warrants it
-    src/composition/
+    src/server/                # Server composition and transport boundaries
   worker/                      # Job registry, outbox dispatcher, composition
   storefront/                  # Vite + Preact, custom element, theme/cart bridge
 packages/
@@ -128,7 +128,7 @@ packages/
   contracts/                   # Zod 4 request/response schemas; browser-safe DTOs
   database/                    # pg/Kysely repositories, inbox/outbox, migrations
   shopify/                     # SDK boundary, auth, Admin/Partner/App Events clients
-  artwork/                     # R2, upload inspection and derivative adapters
+  storage/                     # Private R2 storage adapter
   visualizer/                  # Renderer-neutral API, direct Konva implementation
   cart-authorization/          # TS binary codec, server signer, fixtures helpers
   observability/               # Pino config, prom-client registry, correlation
@@ -145,18 +145,10 @@ fixtures/
   pricing/
   shopify/                     # Redacted real Function/cart/order captures
   storefront-reference/       # Screenshots and interaction records; no buyer artwork
-spikes/
-  platform/                   # G1–G6; later replace fixtures/stubs with production adapters
-  embedded-admin/             # G7
-  billing/                    # G8
-  evidence/                   # Gate results, versions, steps, captures, failure reports
-scripts/                       # Build extensions, dependency checks, contract validation
-architecture/
-  implementation-plan.md
-  decision-ledger.md
-  protocol-v1.md
-  api-contracts.md
-  feature-entitlements.json   # Commercial values set separately before release
+scripts/                       # Typed build, verification, release and recovery tools
+deployment/                    # Compose, service declarations and typed operations
+docs/architecture/             # This plan, decision ledger and adopted protocol
+docs/delivery/                 # Current state, operations and dated inert evidence
 pnpm-workspace.yaml
 pnpm-lock.yaml
 Cargo.toml
@@ -751,6 +743,8 @@ Health endpoints separate process liveness, DB readiness, worker freshness and i
 
 ## 14. Testing strategy and executable gates
 
+The 19 October owner cleanup revision requires one strict typed implementation across maintained application, tests, fixtures, build/release/deployment/monitoring/recovery code: TypeScript/TSX/MTS/CTS or Rust. Compiler projects must include test and tooling source; runtime stripping alone is insufficient. Generated JavaScript and third-party dependencies retain provenance. SQL, Liquid, CSS, HTML and declarative infrastructure keep their appropriate formats; shell launchers remain thin. Retire superseded executable experiments and compatibility machinery with their consumers, preserving applied migrations, current protocol/persisted identities, immutable evidence and recovery readers needed by actual records. Responsibility-based names govern maintained code and commands. The source/type/rendered controls must enforce actual Shopify App Home Polaris Web Components through shared merchant views and loading/error/empty/recovery states, with supported App Bridge host controls, the Konva renderer and separate buyer storefront boundaries preserved.
+
 ### 14.1 Testing layers
 
 **Domain/Vitest:** exact Lean unit totals, missing versus explicit-zero prices, method/placement/size eligibility, currency/context rejection, quantity/variant identity, overflow and retention. Test safe exclusion of advanced configuration at editor/backend issuance/renewal boundaries. Keep historical protocol/economic fixtures where actual retained records or unexpired offers depend on them; retire compatibility-only checks for unsupported development versions; do not turn their old success matrix into a Lean launch prerequisite. Use independent expected results and representative interactions, not arbitrary coverage/test-count quotas.
@@ -968,49 +962,7 @@ Routine implementation tuning—indexes, retry intervals, resource budgets, file
 
 ## 17. Decision ledger
 
-This section mirrors `decision-ledger.md`; update both in the same reviewed change.
-
-### LOCKED
-
-**Authority/scope:** The [15 October owner-approved Lean V1](../delivery/authority/lean-v1-2026-10-15.md) prospectively amends pricing, supported surfaces, billing, deployment and release acceptance. Greenfield modular monolith; reuse the working rewrite. Legacy is the actual storefront appearance/interaction reference, with no legacy data migration/import.
-
-**Stack/boundaries:** Strict TypeScript; Node 24 LTS; pnpm + Cargo; Astro 7 Node SSR; Preact admin islands and Vite storefront; Polaris Web Components; Custom Element + Shadow DOM; direct Konva in a shared framework-independent visualizer; Zod 4; PostgreSQL 18 + pg/Kysely; dbmate SQL; pg-boss; private R2; Sharp/libvips; Pino/prom-client; Vitest/Playwright/dependency-cruiser/GitHub Actions. Shopify JS SDK only inside Shopify adapter. Pure domain independent of framework, renderer, platform and persistence.
-
-**Configuration:** One active ProductConfig per product, independent copy, mutable draft, immutable published revisions. New unaccepted pricing uses current permitted publication. Accepted quotes/orders retain historical revisions.
-
-**Pricing/identity:** Product/revision-bound customization groups aggregate compatible size/color variants; different production design means a different group. New Lean configurations select one final nonnegative per-garment surcharge for each allowed method × placement × decoration-size choice; missing entries are unavailable, explicit zero is allowed. Add selected placement surcharges to each real variant’s contextual Shopify base price exactly once. New authoring/issuance/renewal excludes setup fees, quantity tiers, signed adjustments, additive pricing layers, scope switches, inheritance and currency overrides. Reuse current Lean engine behavior behind constrained backend/editor inputs. Earlier development revisions do not require compatibility support; actual retained purchase/preview records and still-valid accepted offers retain original terms/expiry. An incompatible renewal needs a new Lean proposal and buyer review. Real variants and exact money remain mandatory.
-
-**Checkout economics/security:** Accepted customized merchandise price is pre-discount; Shopify applies ordinary supported discounts and owns tax/shipping/duties/payment. Lean issuance uses the qualified primary-market path in the shop currency; EUR/USD/GBP are targets, each enabled/advertised only after qualification. Preserve actual country/Market/currency/contextual-price checks; unqualified contexts reject with safe repair, without changing merchant settings. New Lean offers use neither FX nor per-currency overrides. Immutable accepted quotes retain frozen values. Installation-scoped Ed25519, compact binary/no JWT whole-quote v2, complete-set verification, three shop-local calendar days and independent fail-closed economic validation remain. The [adopted v2 bytes/carriers](WHOLE-QUOTE-V2-ADOPTED.md) are unchanged; incompatible protocol changes require a new version and owner decision. No per-line fallback.
-
-**Materialization/surfaces:** Retain ordinary non-Plus eligibility and same-real-variant one-child lineExpand; qualify representative merchants, not only a development store. Shopify component/group presentation is acceptable when garment/quantity/price/order handling stays correct and clear. Online Store one-time ordinary cart → checkout, App Proxy control and direct private presigned uploads remain. A separate Plus/lineUpdate branch, product-page express/Buy-now integration and broad third-party-transform compatibility are deferred/not shipping. Unsupported routes cannot bypass required customization or economic checks. Required products remain required; optional plain purchases retain their configured behavior. No paid customization with a selling plan.
-
-**Required-product policy — approved Option A:** Within the supported enforcement conditions, v1 trusts correctly published, access-controlled app-owned Shopify policy and correctly operating Function inputs. Buyer-controlled markers are not policy authority. Reject unsigned or invalid authorization for identifiable required merchandise and detectable incomplete, malformed, pending, mismatched or wrong-installation policy; unrelated merchandise does not require a catalogue-wide authorization or outage. Unexpected complete loss or coherent rollback of *all* trusted product-policy evidence outside the supported publication contract may permit a formerly required unsigned plain purchase before detection. That residual risk is accepted as an incident to prevent, detect, contain and recover from; reconciliation cannot undo the purchase. Application-controlled unsafe publication remains a defect. The approved boundary and its limits are recorded in [OPTION-A-APPROVED.md](OPTION-A-APPROVED.md). Production publication, activation, reconciliation and gate evidence remain outstanding.
-
-**Artwork/orders:** Byte-exact private SVG/PNG/JPEG originals, verified before use, safe PNG/WebP previews, no arbitrary inline SVG. Merchant-controlled logo-later; merchant-only post-order attachment. Append-only replacements; PENDING_ARTWORK → READY → ARTWORK_LOCKED. Immutable order-time purchase facts. Shopify owns payment/fulfillment/refunds/returns/restock; no garment/customization refund split.
-
-**Billing/entitlements:** One recurring-only plan includes all released Lean V1 features: USD $49.99 per 30-day cycle and authoritative 14-day trial. No usage meter, included-order allowance, overage, per-order charge or retrospective billing for V1. Qualify actual recurring-only provider contract, trial, cancellation, reauthorization, entitlement and merchant billing-management route; disabling sends alone does not make the old flat-plus-meter reader compatible. No active entitlement means no new issuance/renewal; valid old offers retain normal expiry and authorized historical/artwork access remains within retention. Preserve prior financial facts and reconcile genuine obligations before transition; new usage staging/dispatch stays disabled. Technical resource limits remain; no unlimited-infrastructure promise.
-
-**Retention:** Buyer artwork/identifying customization payloads at most six months from collection; abandoned uploads shorter; reuse does not reset expiry; merchant warning/export opportunity. Permitted minimal pseudonymized financial/audit facts may persist separately. Privacy/uninstall erasure includes derivatives/payloads and does not rewrite purchase economics.
-
-**Delivery governance:** The [13 October autonomous direction](../delivery/authority/autonomous-delivery-2026-10-13.md), [approved Lean V1](../delivery/authority/lean-v1-2026-10-15.md) and [operating model](../delivery/operating-model.md) delegate useful implementation, proportionate review/testing, normal integration, permitted development deployment and continuation. The owner retains missing access/resources, human-only actions, new material product/risk decisions, unallocated effects and production rollout. Engineering completion, native qualification and rollout remain distinct. Versioned Docker images/Compose on the VPS with Traefik must reproducibly include web, worker, inspector and verification responsibilities; no agent session or mutable development checkout is a normal dependency. Preserve independent authority, real expiry/invalidation, host security prerequisites, retention and actual resource limits; explain any unavoidable host-side application-service exception to the owner.
-
-**Qualified development composition:** The [18 October immutable-inspector receipt](../delivery/evidence/lean-v1/native-storefront-inspector-2026-10-18.json) closes the scoped host artifact/sandbox/handover step under the 17 October exception. The [18 October combined-runtime receipt](../delivery/evidence/lean-v1/native-combined-release-2026-10-18.json) qualifies immutable verifier startup, selected reads, append and consumer agreement. The [later runtime/custody receipt](../delivery/evidence/technical-merchant-completion/NATIVE.json) qualifies PR209 development web/worker deployment, native schema45, permanent verifier startup/auth/state and management Compose custody, fresh correlated collection and unchanged protected facts/services. These do not close recovery/monitoring, native uninstall/privacy or production rollout. Other bounded copies remain due20October; permanent custody does not extend actual credential/data expiry. Current remaining outcomes belong in the [work index](../delivery/evidence/m8-context-runtime/WORKLIST.md).
-
-### DEVELOPMENT GATES
-
-Applicable G1–G8 mechanisms now support the five Lean outcomes in plan §14: non-Plus lineExpand; measured Function capacity and TS/Rust protocol; qualified primary-market shop-currency prices/ordinary discounts; exact Lean unit totals; independent required-product enforcement/repair; useful authenticated admin; and recurring-only provider entitlement. Setup/tier/FX/Plus/express/usage matrices are DEFERRED / NOT SHIPPING, never PASS. Unchanged historical controls remain evidence for their actual dependencies.
-
-**Current state:** The maintained [delivery evidence register](../delivery/state.md) records partial observations, unresolved work and dated historical verdicts. No complete gate has been accepted; G7 and G8 have bounded observed sub-results but remain incomplete. Option A closes the joint-loss A/B owner decision but does not pass G6.
-
-### ADOPTED PROTOCOL / UNQUALIFIED DEPLOYMENT
-
-Whole-quote v2 is the single production implementation protocol. Its domain `Insignia\0WholeQuoteAuthorization\0v2\0`, `ISG2` magic, version 2, flags 0, 92-byte header, 22-byte ordered member record, shared `_insignia_quote_v2` and per-physical-line `_insignia_member_v2` carriers, exact Ed25519 message and canonical unpadded base64url are frozen. The current 32-bucket, 200-line, 10,000-physical-unit profile and 16,000-byte Transform output target are engineering admission guards, not a universal merchant capacity. Stack peak remains unmeasured against Shopify's 512 kB stack limit; measured supported-profile/live qualification remains due under Lean §14, with safe rejection beyond the qualified capacity. Historical stress examples are not mandatory commercial capacity targets. Protocol adoption authorizes no deployment, key activation, merchant publication or rollout.
-
-### DEFERRED
-
-Layered/setup/tier/FX/override pricing, usage billing, separate Plus implementation, dedicated express entry points and broad third-party interoperability are deferred/not shipping; qualify their safe exclusion rather than completing their old successful-behavior matrices. Keep readers/tests only where actual valid offers, current recovery or retained records require them; unsupported development-version compatibility is retired by the 16 October direction. Recurring-only provider configuration, reproducible deployment/recovery and applicable public-app approvals remain release work under Lean §14; owner terms are not provider evidence or effect permission. Legacy migration/import remains excluded.
-
----
+The [decision ledger](decision-ledger.md) is the single current decision record. This plan defines implementation and acceptance; it does not maintain a second copy of the locks. Historical plan versions remain recoverable from their recorded commits.
 
 ## Source register — checked 24 September 2026
 

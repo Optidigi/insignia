@@ -6,5 +6,5 @@
     "types": ["astro/client", "@shopify/polaris-types", "node"],
     "noUncheckedIndexedAccess": true
   },
-  "include": ["src", "astro.config.mjs"]
+  "include": ["src", "astro.config.ts"]
 }

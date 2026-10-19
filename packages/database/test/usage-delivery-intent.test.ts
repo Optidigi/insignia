@@ -76,7 +76,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('permanent local billing deliv
         {
           quoteId: f.quote.quoteId,
           authorizationSetId: f.authorization.setId,
-          quote: f.quote as never,
+          quote: f.quote,
           lines,
           designPayload: null,
           payloadCollectedAt: occurredAt,
@@ -87,7 +87,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('permanent local billing deliv
       firstPaidAt: kind === 'UNPAID' ? null : occurredAt,
     };
     const purchase = await createPurchaseRepository(db).reconcile(observation);
-    if (!purchase.purchaseId) throw new Error('Expected purchase');
+    if (!('purchaseId' in purchase)) throw new Error('Expected purchase');
     const interval = { startsAt: new Date(+at - 1000).toISOString(), endsAt: new Date(+at + 86400000).toISOString() };
     const history: PaidOrderUsageHistory =
       kind === 'UNRESOLVED'
@@ -131,7 +131,6 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('permanent local billing deliv
       orderId: f.orderId,
       occurredAt: f.occurredAt,
       units: 1,
-      policy,
       cycleId: 'original-cycle',
       ...f.binding,
     });

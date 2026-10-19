@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash, createPrivateKey, createPublicKey, verify } from 'node:crypto';
-import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import literal from '../../../crates/cart-authorization/fixtures/vectors.json' with { type: 'json' };
 import {
   DOMAIN,
   decodeEnvelope,
@@ -13,9 +13,6 @@ import {
   wholeQuoteSignBytes,
 } from '../src/whole-quote.ts';
 
-const literal = JSON.parse(
-  readFileSync(new URL('../../../crates/cart-authorization/fixtures/vectors.json', import.meta.url), 'utf8'),
-);
 const header = literal.expected;
 const members = header.members;
 const { members: _members, ...claims } = header;
