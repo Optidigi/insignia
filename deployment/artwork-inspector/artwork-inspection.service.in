@@ -7,7 +7,7 @@ WorkingDirectory=%h/insignia-artwork-releases/@SOURCE_TREE@
 Environment=NODE_ENV=production
 EnvironmentFile=%h/.config/insignia/artwork-inspection.env
 UnsetEnvironment=SHOPIFY_CLIENT_ID SHOPIFY_CLIENT_SECRET SHOPIFY_WEBHOOK_SECRET INSIGNIA_CREDENTIAL_KEY_BASE64 INSIGNIA_CREDENTIAL_KEY_ID INSIGNIA_CREDENTIAL_PREVIOUS_KEYS_JSON INSIGNIA_PARTNER_ACCESS_TOKEN INSIGNIA_M8_PURCHASE_ENABLED INSIGNIA_ARTWORK_HOST_RUNNER NODE_OPTIONS LD_PRELOAD LD_LIBRARY_PATH HTTP_PROXY HTTPS_PROXY ALL_PROXY
-ExecStart=%h/insignia-artwork-releases/@SOURCE_TREE@/bin/node %h/insignia-artwork-releases/@SOURCE_TREE@/start.mjs --manifest-sha256 @MANIFEST_SHA256@
+ExecStart=%h/insignia-artwork-releases/@SOURCE_TREE@/bin/node %h/insignia-artwork-releases/@SOURCE_TREE@/start.mts --manifest-sha256 @MANIFEST_SHA256@
 NoNewPrivileges=yes
 MemoryMax=512M
 MemorySwapMax=0

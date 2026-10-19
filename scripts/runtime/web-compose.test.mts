@@ -44,7 +44,7 @@ test('ordinary runtime overlays preserve canonical web boundaries and restrict w
     );
     await writeFile(
       join(directory, 'worker-base.yaml'),
-      await readFile(new URL('../m5-024/worker-compose.yaml', import.meta.url)),
+      await readFile(new URL('../worker/worker-compose.yaml', import.meta.url)),
     );
     await writeFile(
       join(directory, 'worker-overlay.yaml'),
@@ -87,7 +87,7 @@ test('ordinary runtime overlays preserve canonical web boundaries and restrict w
     assert.equal(web.read_only, true);
     assert.equal(web.pull_policy, 'never');
     assert.deepEqual(web.command, ['/usr/local/bin/node', '/srv/insignia/web/dist/server/entry.mjs']);
-    const dockerfile = await readFile(new URL('../m5-runtime/Dockerfile.web', import.meta.url), 'utf8');
+    const dockerfile = await readFile(new URL('../runtime/Dockerfile.web', import.meta.url), 'utf8');
     const imageCommand = dockerfile.match(/^CMD (\[.+\])$/m);
     assert.ok(imageCommand, 'qualified Dockerfile must retain its direct JSON Node command');
     assert.deepEqual(web.command, JSON.parse(required(imageCommand[1])));

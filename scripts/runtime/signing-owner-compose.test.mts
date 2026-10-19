@@ -14,7 +14,7 @@ test('owner overlay adds only fixed plan/journal mounts to the immutable ordinar
       ['ordinary.yaml', '../../deployment/m5-runtime/compose.yaml'],
       ['owner.yaml', '../../deployment/m5-runtime/signing-owner-compose.yaml'],
       ['collector.yaml', '../../deployment/m5-runtime/release-verification-compose.yaml'],
-      ['worker-base.yaml', '../m5-024/worker-compose.yaml'],
+      ['worker-base.yaml', '../worker/worker-compose.yaml'],
       ['worker-runtime.yaml', '../../deployment/m5-runtime/worker-compose.yaml'],
       ['worker-collector.yaml', '../../deployment/m5-runtime/release-verification-worker-compose.yaml'],
     ] as const)

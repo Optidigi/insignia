@@ -8,5 +8,5 @@ cd "$repo"
 [[ -f apps/web/dist/server/entry.mjs ]] || { echo 'Build the current web workspace first' >&2; exit 1; }
 corepack pnpm --filter @insignia/web deploy --prod --offline --frozen-lockfile --legacy "$1"
 corepack pnpm install --offline --frozen-lockfile --ignore-scripts --prod=false
-node scripts/m5-024/copy-built-workspaces.mjs "$1"
-node scripts/m5-runtime/package-web.mjs "$1"
+node scripts/worker/copy-built-workspaces.mts "$1"
+node scripts/runtime/package-web.mts "$1"

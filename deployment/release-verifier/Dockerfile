@@ -5,5 +5,5 @@ RUN chown node:node /srv/insignia/verifier && chmod 0700 /srv/insignia/verifier
 COPY --chown=node:node verifier-package/ ./
 USER node
 ENV NODE_ENV=production
-ENTRYPOINT ["/srv/insignia/verifier/bin/node", "/srv/insignia/verifier/deployment/release-verifier/bootstrap.mjs"]
+ENTRYPOINT ["/srv/insignia/verifier/bin/node", "/srv/insignia/verifier/deployment/release-verifier/bootstrap.mts"]
 CMD []

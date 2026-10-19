@@ -77,13 +77,13 @@ test('actual disposable web image serves HTTP, stops, restarts and exports exact
     receipt.sourceHead = await run('git', ['rev-parse', 'HEAD']);
     receipt.sourceTree = await run('git', ['rev-parse', 'HEAD^{tree}']);
     receipt.dockerfileSha256 = createHash('sha256')
-      .update(await readFile(join(root, 'scripts/m5-runtime/Dockerfile.web')))
+      .update(await readFile(join(root, 'scripts/runtime/Dockerfile.web')))
       .digest('hex');
     await cp(resolve(process.env.M5_WEB_PACKAGE), join(context, 'web-package'), {
       recursive: true,
       verbatimSymlinks: true,
     });
-    await cp(join(root, 'scripts/m5-runtime/Dockerfile.web'), join(context, 'Dockerfile'));
+    await cp(join(root, 'scripts/runtime/Dockerfile.web'), join(context, 'Dockerfile'));
     cleanup.push(['image', 'rm', '--force', imageTag]);
     await docker(['build', '--network=none', '--tag', imageTag, context], { timeout: 180_000 });
     const image = object(required(array(JSON.parse(await docker(['image', 'inspect', imageTag])))[0]));

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { Writable } from 'node:stream';
 import test from 'node:test';
-import { writePrivatePacket } from './runtime-boundaries.mts';
+import { writePrivatePacket } from '../release/private-pipe.mts';
 
 test('bootstrap private frame remains intact until delayed pipe flush then is erased', async () => {
   const packet = Buffer.from('{"clientSecret":"SYNTHETIC_PRIVATE","databaseUrl":"SYNTHETIC"}');

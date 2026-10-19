@@ -184,5 +184,25 @@
     "scope": "Final three backup service templates and README against merged PR211 wrapper: UID1000 inspector owner, explicit user bus, read-only home visibility and consistent immutable artifact prefix",
     "limits": "Static procedural read-only review; no service installation/execution, credential qualification or native backup/recovery validation; backend identity not independently exposed",
     "rootChecks": "Native read-only missing-bus negative/exact-inspector positive controls; all three CLI paths verified in exact CI artifact;7 wrapper methods,12 status/CI controls, historical-integrity and secret checks PASS"
+  },
+  "canonicalTypedCleanup20261019": {
+    "base": "aad221e583e3a0938cd4704a9c2d593bdfcf4d63",
+    "candidateBinding": "refactor/canonical-typed-source final PR head; reviews cover checkpoint294bbe6 plus completed pending implementation and bounded corrections. Final code/CI/merge identities recorded by the PR and delivery state.",
+    "method": "Independent native agents, procedural read-only source/log reviews with unrestricted runtime capability; no claim of connector or credential isolation. Requested gpt-6.1-sol/low; backend execution identity not independently exposed.",
+    "priorIndependentReviews": [
+      "behavior_review: UI/upload/error recovery, operations/retention/privacy/inspector correctness and security; material findings corrected with observed RED/GREEN; final bounded impacts CLEAR",
+      "lifecycle_review: typed lifecycle/immutable reader/generation/callback expiry controls CLEAR;74 actual local lifecycle controls and reordered Git-base writer replay passed",
+      "consumer_closure: root compiler/AST/boundary/security drift review; excluded own CI/config changes",
+      "behavior_review: final independent Spec review of CI/config/build/package consumer closure; excluded own prose"
+    ],
+    "finalFindingsAndResolution": [
+      "CI retired preview test reference replaced by actual merchant-preview-composition/publication tests.",
+      "37 actual strict compiler projects; current records corrected from39.",
+      "Explicit retired-root/non-import reference/current-link guard added,4 controls pass; immutable proposal/frozen manifests/applied migrations preserved.",
+      "Polaris structural controls and literal/unknown JSX/factory role expressions rejected;7 controls and actual416-module graph pass; impact CLEAR.",
+      "Actual PostgreSQL backup restore rejected valid +00 offset; exact regression RED/GREEN, actual CLI integration1PASS,48 release append cases in fresh cluster, impact CLEAR."
+    ],
+    "acceptance": "No unresolved material source finding in reviewed scope; final frozen-head CI and normal integration still required.",
+    "limits": "No native provider effect, production rollout, installed monitoring/object recovery, credential rotation, public-app/commercial or genuine uninstall/privacy PASS. VAT998524223812 remains UNRESOLVED_NO_RETRY; original retention deadlines remain."
   }
 }

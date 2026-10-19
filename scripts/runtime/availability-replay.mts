@@ -1,10 +1,10 @@
-import {object,array,text,number,required} from './validation.mts';
-import type {ProductAvailabilitySnapshotV3,AvailabilityHoldV3} from '../../packages/application/dist/index.js';
 // Offline-only derived replay. Never imports the live entrypoint, operator, transport or credentials.
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import type { AvailabilityHoldV3, ProductAvailabilitySnapshotV3 } from '../../packages/application/dist/index.js';
+import { array, number, object, required, text } from './validation.mts';
 
 let ambientFetchAttempts = 0;
 Object.defineProperty(globalThis, 'fetch', {
@@ -21,49 +21,118 @@ const { availabilityV3AcknowledgementQualified, sameAvailabilityV3 } = await imp
 );
 const root = resolve(import.meta.dirname, '../..');
 const evidence = resolve(root, 'docs/delivery/evidence/m5-017');
-const bytes = (name:string) => readFileSync(resolve(evidence, name));
-const hash = (data:string|Uint8Array) => createHash('sha256').update(data).digest('hex');
-const json = (name:string) => object(JSON.parse(bytes(name).toString('utf8')));
-const boolean = (value:unknown):boolean => { assert(typeof value==='boolean');return value; };
-const nullableText = (value:unknown) => value===null?null:text(value);
-function observation(value:unknown) {
-  const raw=object(value), scope=object(raw.scope), visibility=object(raw.effectiveVisibility), online=object(visibility.onlineStore);
-  const state=raw.state;
-  assert(state==='available'||state==='unavailable'||state==='archived'||state==='unlisted');
-  const publications=(value:unknown)=>array(value).map(value=>{const row=object(value);return {publicationId:text(row.publicationId),isPublished:boolean(row.isPublished),publishDate:text(row.publishDate)};});
+const bytes = (name: string) => readFileSync(resolve(evidence, name));
+const hash = (data: string | Uint8Array) => createHash('sha256').update(data).digest('hex');
+const json = (name: string) => object(JSON.parse(bytes(name).toString('utf8')));
+const boolean = (value: unknown): boolean => {
+  assert(typeof value === 'boolean');
+  return value;
+};
+const nullableText = (value: unknown) => (value === null ? null : text(value));
+function observation(
+  value: unknown,
+): Omit<import('../../packages/application/dist/index.js').AvailabilityMutationAcknowledgementV3, 'version'> {
+  const raw = object(value),
+    scope = object(raw.scope),
+    visibility = object(raw.effectiveVisibility),
+    online = object(visibility.onlineStore);
+  const state = raw.state;
+  assert(state === 'available' || state === 'unavailable' || state === 'archived' || state === 'unlisted');
+  const publications = (value: unknown) =>
+    array(value).map((value) => {
+      const row = object(value);
+      return {
+        publicationId: text(row.publicationId),
+        isPublished: boolean(row.isPublished),
+        publishDate: text(row.publishDate),
+      };
+    });
   return {
-    scope:{shopId:text(scope.shopId),installationGeneration:text(scope.installationGeneration),shopifyShopId:text(scope.shopifyShopId),appClientId:text(scope.appClientId)},
-    productId:text(raw.productId),state,providerUpdatedAt:text(raw.providerUpdatedAt),
-    effectiveVisibility:{publishedPublicationIds:array(visibility.publishedPublicationIds).map(text),onlineStore:{publishedAtPresent:boolean(online.publishedAtPresent),urlPresent:boolean(online.urlPresent)},publicationEvidence:publications(visibility.publicationEvidence),publishedAt:nullableText(visibility.publishedAt),onlineStoreUrl:nullableText(visibility.onlineStoreUrl)},
-    observedAt:text(raw.observedAt),receivedAt:text(raw.receivedAt),
+    scope: {
+      shopId: text(scope.shopId),
+      installationGeneration: text(scope.installationGeneration),
+      shopifyShopId: text(scope.shopifyShopId),
+      appClientId: text(scope.appClientId),
+    },
+    productId: text(raw.productId),
+    state,
+    providerUpdatedAt: text(raw.providerUpdatedAt),
+    effectiveVisibility: {
+      publishedPublicationIds: array(visibility.publishedPublicationIds).map(text),
+      onlineStore: { publishedAtPresent: boolean(online.publishedAtPresent), urlPresent: boolean(online.urlPresent) },
+      publicationEvidence: publications(visibility.publicationEvidence),
+      publishedAt: nullableText(visibility.publishedAt),
+      onlineStoreUrl: nullableText(visibility.onlineStoreUrl),
+    },
+    observedAt: text(raw.observedAt),
+    receivedAt: text(raw.receivedAt),
   };
 }
-function snapshot(value:unknown):ProductAvailabilitySnapshotV3 {
-  const raw=object(value);
-  assert.equal(raw.version,'m5-product-availability-snapshot-v3');
-  return {...observation(raw),version:'m5-product-availability-snapshot-v3',
-    visibleScheduledOrStaged:array(raw.visibleScheduledOrStaged).map(value=>{const row=object(value);return {publicationId:text(row.publicationId),isPublished:boolean(row.isPublished),publishDate:text(row.publishDate)};}),
-    effectiveAnchors:array(raw.effectiveAnchors).map(value=>{const row=object(value);assert.equal(row.resolved,true);assert.equal(row.productIncluded,true);return {publicationId:text(row.publicationId),resolved:true,productIncluded:true,autoPublish:boolean(row.autoPublish),supportsFuturePublishing:boolean(row.supportsFuturePublishing)};}),
-    effectiveDigest:text(raw.effectiveDigest),anchorDigest:text(raw.anchorDigest),
+function snapshot(value: unknown): ProductAvailabilitySnapshotV3 {
+  const raw = object(value);
+  assert.equal(raw.version, 'm5-product-availability-snapshot-v3');
+  return {
+    ...observation(raw),
+    version: 'm5-product-availability-snapshot-v3',
+    visibleScheduledOrStaged: array(raw.visibleScheduledOrStaged).map((value) => {
+      const row = object(value);
+      return {
+        publicationId: text(row.publicationId),
+        isPublished: boolean(row.isPublished),
+        publishDate: text(row.publishDate),
+      };
+    }),
+    effectiveAnchors: array(raw.effectiveAnchors).map((value) => {
+      const row = object(value);
+      assert.equal(row.resolved, true);
+      assert.equal(row.productIncluded, true);
+      return {
+        publicationId: text(row.publicationId),
+        resolved: true,
+        productIncluded: true,
+        autoPublish: boolean(row.autoPublish),
+        supportsFuturePublishing: boolean(row.supportsFuturePublishing),
+      };
+    }),
+    effectiveDigest: text(raw.effectiveDigest),
+    anchorDigest: text(raw.anchorDigest),
   };
 }
 
 const qualification = json('live-run/qualification.json');
 const register = json('live-run/register.json');
 const rawHold = json('live-run/restore-intent.json');
-assert.equal(rawHold.version,'m5-availability-hold-v3');
-const claim=object(rawHold.restorationClaim), claimScope=object(claim.scope), acquisition=object(rawHold.acquisitionAcknowledgement);
-assert.equal(claim.version,'m5-availability-restoration-claim-v3');
-assert.equal(claim.restoreReserved,true);
-assert.equal(claim.compensationReserved,true);
-assert.equal(acquisition.version,'m5-availability-mutation-ack-v3');
-const hold:AvailabilityHoldV3 = {version:'m5-availability-hold-v3',operationId:text(rawHold.operationId),before:snapshot(rawHold.before),held:rawHold.held===null?null:snapshot(rawHold.held),
- acquisitionAcknowledgement:{...observation(acquisition),version:'m5-availability-mutation-ack-v3'},
- restorationClaim:{version:'m5-availability-restoration-claim-v3',operationId:text(claim.operationId),scope:{shopId:text(claimScope.shopId),installationGeneration:text(claimScope.installationGeneration),shopifyShopId:text(claimScope.shopifyShopId),appClientId:text(claimScope.appClientId)},productId:text(claim.productId),restoreReserved:true,compensationReserved:true},
+assert.equal(rawHold.version, 'm5-availability-hold-v3');
+const claim = object(rawHold.restorationClaim),
+  claimScope = object(claim.scope),
+  acquisition = object(rawHold.acquisitionAcknowledgement);
+assert.equal(claim.version, 'm5-availability-restoration-claim-v3');
+assert.equal(claim.restoreReserved, true);
+assert.equal(claim.compensationReserved, true);
+assert.equal(acquisition.version, 'm5-availability-mutation-ack-v3');
+const hold: AvailabilityHoldV3 = {
+  version: 'm5-availability-hold-v3',
+  operationId: text(rawHold.operationId),
+  before: snapshot(rawHold.before),
+  held: rawHold.held === null ? null : snapshot(rawHold.held),
+  acquisitionAcknowledgement: { ...observation(acquisition), version: 'm5-availability-mutation-ack-v3' },
+  restorationClaim: {
+    version: 'm5-availability-restoration-claim-v3',
+    operationId: text(claim.operationId),
+    scope: {
+      shopId: text(claimScope.shopId),
+      installationGeneration: text(claimScope.installationGeneration),
+      shopifyShopId: text(claimScope.shopifyShopId),
+      appClientId: text(claimScope.appClientId),
+    },
+    productId: text(claim.productId),
+    restoreReserved: true,
+    compensationReserved: true,
+  },
 };
-assert.deepEqual(hold,rawHold,'decoded sealed hold retains every historical field');
-const restore=object(qualification.restore);
-const observe=object(qualification.observe);
+assert.deepEqual(hold, rawHold, 'decoded sealed hold retains every historical field');
+const restore = object(qualification.restore);
+const observe = object(qualification.observe);
 const manifest = json('canonical-run-manifest.json');
 for (const [name, entry] of Object.entries(manifest)) {
   assert.equal(hash(bytes(`live-run/${name}`)), object(entry).sha256);
@@ -71,19 +140,21 @@ for (const [name, entry] of Object.entries(manifest)) {
 assert.equal(register.phase, 'CLOSED');
 assert.equal(qualification.outcome, 'STOPPED');
 assert.equal(restore.kind, 'CONFLICT');
-const captured = array(register.events).map(object).filter((e) => ['restore-read', 'restore-anchor', 'restore'].includes(text(e.operation)));
+const captured = array(register.events)
+  .map(object)
+  .filter((e) => ['restore-read', 'restore-anchor', 'restore'].includes(text(e.operation)));
 assert.equal(captured.length, 7);
 assert.equal(captured.filter((e) => e.mutation).length, 1);
 const historicalAck = object(restore.acknowledgement);
 assert.equal(historicalAck.observedAt, '2026-10-07T12:09:54.968Z');
 assert.equal(historicalAck.receivedAt, '2026-10-07T12:09:57.978Z');
-let clock = new Date(text(required(captured[0]).observationOrigin));
+let clock = new Date(number(required(captured[0]).observationOrigin));
 let cursor = 0;
 let compensationAttempts = 0;
 let restorationAttempts = 0;
-const replayedEvents:{index:number;operation:string;responseSha256:string}[] = [];
-const fetchImpl:typeof fetch = async (_url, init) => {
-  const request = object(JSON.parse(text(required(init).body))); 
+const replayedEvents: { index: number; operation: string; responseSha256: string }[] = [];
+const fetchImpl: typeof fetch = async (_url, init) => {
+  const request = object(JSON.parse(text(required(init).body)));
   if (text(request.query).startsWith('mutation')) {
     if (object(object(request.variables).product).status === 'DRAFT') compensationAttempts++;
     else restorationAttempts++;
@@ -129,7 +200,9 @@ const port = createShopifyAvailabilityHoldV3Port({
 });
 const result = await port.restore(hold.before.scope, hold, snapshot(observe.current), () => true);
 assert.equal(result.kind, 'RESTORED');
-assert(result.current && 'version' in result.current && result.current.version==='m5-product-availability-snapshot-v3');
+assert(
+  result.current && 'version' in result.current && result.current.version === 'm5-product-availability-snapshot-v3',
+);
 assert(result.acknowledgement);
 assert.ok(sameAvailabilityV3(result.current, hold.before));
 assert.ok(availabilityV3AcknowledgementQualified(result.acknowledgement));
@@ -138,7 +211,8 @@ assert.equal(cursor, captured.length);
 assert.equal(restorationAttempts, 1);
 assert.equal(compensationAttempts, 0);
 assert.equal(ambientFetchAttempts, 0);
-for (const [name, entry] of Object.entries(manifest)) assert.equal(hash(bytes(`live-run/${name}`)), object(entry).sha256);
+for (const [name, entry] of Object.entries(manifest))
+  assert.equal(hash(bytes(`live-run/${name}`)), object(entry).sha256);
 const sourceFiles = [
   'packages/application/src/publication/availability-v3.ts',
   'packages/shopify/src/availability-hold-v3.ts',

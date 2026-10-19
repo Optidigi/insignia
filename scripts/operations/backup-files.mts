@@ -40,7 +40,9 @@ export function array(value: unknown): unknown[] {
 }
 export function timestamp(value: unknown): number {
   const input = text(value);
-  check(/(?:Z|[+-]\d\d:\d\d)$/.test(input), 'timezone required');
+  // PostgreSQL timestamptz::text uses hour-only offsets such as +00.
+  // Require a time as well, so a date's trailing -DD cannot count as an offset.
+  check(/[T ]\d\d:\d\d(?::\d\d(?:\.\d+)?)?(?:Z|[+-]\d\d(?::?\d\d)?)$/.test(input), 'timezone required');
   const result = Date.parse(input);
   check(Number.isFinite(result), 'Invalid timestamp');
   return result;

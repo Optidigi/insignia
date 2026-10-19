@@ -1,4 +1,3 @@
-import {object,array,text,number,required} from '../runtime/validation.mts';
 /** Synthetic PostgreSQL 18 benchmark. Runs the actual built public read seams and
  * EXPLAINs the SQL captured from their pg client, rather than hand-copying queries.
  * Run only against a disposable DATABASE_URL; no Shopify calls or credentials.
@@ -8,14 +7,17 @@ import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
+import { array, number, object, required, text } from '../runtime/validation.mts';
 
 const require = createRequire(resolve(import.meta.dirname, '../../packages/database/package.json'));
-const { Pool }:typeof import('pg') = require('pg');
+const { Pool }: typeof import('pg') = require('pg');
 const { createDurableCore, revisionContentHash } = await import('../../packages/database/dist/index.js');
 const connectionString = process.env.DATABASE_URL;
 assert(connectionString, 'disposable DATABASE_URL required');
 const setup = new Pool({ connectionString });
-const version = required((await setup.query<{server_version_num:string}>('SHOW server_version_num')).rows[0]).server_version_num;
+const version = required(
+  (await setup.query<{ server_version_num: string }>('SHOW server_version_num')).rows[0],
+).server_version_num;
 assert.equal(Math.floor(Number(version) / 10000), 18);
 const shopId = randomUUID(),
   configId = randomUUID(),
@@ -48,7 +50,7 @@ const revisionBase = {
   productionOptions: [],
   pricingRules: [],
 };
-const value={...revisionBase,revisionContentHash:revisionContentHash(revisionBase)};
+const value = { ...revisionBase, revisionContentHash: revisionContentHash(revisionBase) };
 // Synthetic retained rows exercise actual FK/index/history cardinality and payload width.
 // Only the selected revision is a validated economic revision; old rows are not pricing evidence.
 await setup.query(
@@ -170,19 +172,23 @@ for (const table of [
   'config_revision_geometry',
 ])
   await setup.query(`ANALYZE ${table}`);
-const queries:{text:string;values:unknown[]|undefined}[] = [];
+const queries: { text: string; values: unknown[] | undefined }[] = [];
 const readPool = new Pool({ connectionString });
 readPool.on('connect', (client) => {
   const original = client.query;
   // Preserve every pg overload and receiver; only inspect the actual read seam's SQL.
-  Object.defineProperty(client, 'query', {configurable:true,writable:true,value:(...args:unknown[]):unknown=>{
-    const arg=args[0];
-    const queryText=typeof arg==='string'?arg:text(object(arg).text);
-    const rawValues=typeof arg==='string'?args[1]:object(arg).values;
-    const values=rawValues===undefined?undefined:array(rawValues);
-    queries.push({text:queryText,values});
-    return Reflect.apply(original,client,args);
-  }});
+  Object.defineProperty(client, 'query', {
+    configurable: true,
+    writable: true,
+    value: (...args: unknown[]): unknown => {
+      const arg = args[0];
+      const queryText = typeof arg === 'string' ? arg : text(object(arg).text);
+      const rawValues = typeof arg === 'string' ? args[1] : object(arg).values;
+      const values = rawValues === undefined ? undefined : array(rawValues);
+      queries.push({ text: queryText, values });
+      return Reflect.apply(original, client, args);
+    },
+  });
 });
 const reader = createDurableCore(readPool);
 assert.equal(required(await reader.configs.getCurrentPublication(shopId, configId)).revisionId, finalRevision);
@@ -202,24 +208,46 @@ await setup.query(
   `INSERT INTO m5_current_publication_pointer(shop_id,config_id,revision_id,installation_generation,source_draft_version,idempotency_key) VALUES($1,$2,$3,2,1,'benchmark-request-1')`,
   [shopId, configId, finalRevision],
 );
-interface ExplainNode { 'Node Type':string; 'Actual Rows'?:number; 'Relation Name'?:string; 'Index Name'?:string; Plans?:ExplainNode[] }
-function explainNode(value:unknown):ExplainNode {
-  const raw=object(value);
-  return {'Node Type':text(raw['Node Type']), ...('Actual Rows' in raw?{'Actual Rows':number(raw['Actual Rows'])}:{}), ...('Relation Name' in raw?{'Relation Name':text(raw['Relation Name'])}:{}), ...('Index Name' in raw?{'Index Name':text(raw['Index Name'])}:{}), ...(raw.Plans===undefined?{}:{Plans:array(raw.Plans).map(explainNode)})};
+interface ExplainNode {
+  'Node Type': string;
+  'Actual Rows'?: number;
+  'Relation Name'?: string;
+  'Index Name'?: string;
+  Plans?: ExplainNode[];
 }
-const plans:Record<string,{query:string;parameterRoles:string[];plan:Record<string,unknown>;summary:{planningMs:number;executionMs:number;rows:number|undefined;indexes:string[]}}> = {};
-function flatten(node:ExplainNode):ExplainNode[] {
+function explainNode(value: unknown): ExplainNode {
+  const raw = object(value);
+  return {
+    'Node Type': text(raw['Node Type']),
+    ...('Actual Rows' in raw ? { 'Actual Rows': number(raw['Actual Rows']) } : {}),
+    ...('Relation Name' in raw ? { 'Relation Name': text(raw['Relation Name']) } : {}),
+    ...('Index Name' in raw ? { 'Index Name': text(raw['Index Name']) } : {}),
+    ...(raw.Plans === undefined ? {} : { Plans: array(raw.Plans).map(explainNode) }),
+  };
+}
+const plans: Record<
+  string,
+  {
+    query: string;
+    parameterRoles: string[];
+    plan: Record<string, unknown>;
+    summary: { planningMs: number; executionMs: number; rows: number | undefined; indexes: string[] };
+  }
+> = {};
+function flatten(node: ExplainNode): ExplainNode[] {
   return [node, ...(node.Plans ?? []).flatMap(flatten)];
 }
 for (const [name, query] of Object.entries({ pointer, fallback, adminEffective })) {
   assert(query, `${name} actual query captured`);
   const result = await setup.query(`EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${query.text}`, query.values);
   const plan = object(required(array(object(required(result.rows[0]))['QUERY PLAN'])[0]));
-  const planRoot=explainNode(plan.Plan);
+  const planRoot = explainNode(plan.Plan);
   const nodes = flatten(planRoot);
   assert.equal(planRoot['Actual Rows'], 1, `${name} must return exactly one`);
   for (const node of nodes)
-    if (['publication_operations', 'config_revisions', 'm4_publication_progress'].includes(node['Relation Name']??'')) {
+    if (
+      ['publication_operations', 'config_revisions', 'm4_publication_progress'].includes(node['Relation Name'] ?? '')
+    ) {
       assert(!['Seq Scan', 'Parallel Seq Scan'].includes(node['Node Type']), `${name} scans history`);
       assert((node['Actual Rows'] ?? 0) <= 2, `${name} unbounded history rows`);
     }
@@ -255,11 +283,11 @@ for (const [name, query] of Object.entries({ pointer, fallback, adminEffective }
       planningMs: number(plan['Planning Time']),
       executionMs: number(plan['Execution Time']),
       rows: planRoot['Actual Rows'],
-      indexes: nodes.flatMap((n) => n['Index Name']===undefined?[]:[n['Index Name']]),
+      indexes: nodes.flatMap((n) => (n['Index Name'] === undefined ? [] : [n['Index Name']])),
     },
   };
 }
-const hashes:Record<string,string> = {};
+const hashes: Record<string, string> = {};
 for (const path of [
   'scripts/database/query-plan.mts',
   'packages/database/dist/durable-core.js',

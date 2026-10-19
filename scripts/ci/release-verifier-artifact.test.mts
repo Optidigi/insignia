@@ -4,7 +4,7 @@ import { chmod, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { qualifyVerifierArtifact, readVerifierStartup } from './runtime-boundaries.mts';
+import { qualifyVerifierArtifact, readVerifierStartup } from '../../deployment/release-verifier/artifact.mts';
 import { jsonRecord, requiredEnv } from './validation.mts';
 
 const sha = (bytes: string | Uint8Array) => createHash('sha256').update(bytes).digest('hex');
@@ -109,7 +109,7 @@ test('actual packaged collector relocates with pinned SDK and production depende
          syncBuiltinESMExports();
          for(const url of ['https://example.invalid','http://example.invalid','file:///etc/passwd',new URL('https://example.invalid')])
            assert.throws(()=>fetch(url),/cannot access network/);
-         const {qualifyLaunchInputs}=await import('./scripts/m5-runtime/trusted-release-launch.mjs');
+         const {qualifyLaunchInputs}=await import('./scripts/release/launch.mts');
          const identity=JSON.parse(await readFile('identity.json','utf8'));
          const result=await qualifyLaunchInputs(identity);
          const sdk = await import('./sdk/package/dist/chunk-MJ3WNVMQ.js');
@@ -125,7 +125,7 @@ test('actual packaged collector relocates with pinned SDK and production depende
          });
          assert.equal(authenticationCalls,1);
          assert.equal(sdk.z(),seeded);
-         await import('./scripts/m5-runtime/trusted-release-management-worker.mjs');
+         await import('./scripts/release/management-worker.mts');
          console.log(JSON.stringify({sourceTree:result.reviewedTree,sdkImports:'OFFLINE_IMPORT_ONLY_NOT_AUTHENTICATED'}));`,
       ],
       {

@@ -4,7 +4,12 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { checkTypeProjects, inspectMaintainedSources, type SourcePolicy } from './source-contract.mts';
+import {
+  checkTypeProjects,
+  inspectMaintainedSources,
+  readSourcePolicy,
+  type SourcePolicy,
+} from './source-contract.mts';
 
 test('maintained source rejects unapproved JavaScript and compiler coverage gaps', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'insignia-source-contract-'));
@@ -18,7 +23,7 @@ test('maintained source rejects unapproved JavaScript and compiler coverage gaps
     include: ['src/**/*.ts'],
   };
   writeFileSync(join(root, 'tsconfig.json'), JSON.stringify(project));
-  const policy: SourcePolicy = { projects: ['tsconfig.json'], migration: { untyped: [], uncheckedTypeScript: [] } };
+  const policy: SourcePolicy = { projects: ['tsconfig.json'] };
   assert.deepEqual(inspectMaintainedSources(root, policy), { untyped: [], uncheckedTypeScript: [] });
   writeFileSync(join(root, 'src/unchecked.mjs'), 'export const price = 0;\n');
   assert.throws(() => inspectMaintainedSources(root, policy), /UNAPPROVED_UNTYPED_SOURCE.*unchecked\.mjs/);
@@ -33,16 +38,53 @@ test('maintained source rejects unapproved JavaScript and compiler coverage gaps
   assert.doesNotThrow(() => checkTypeProjects(root, policy));
 });
 
-test('migration entries admit only the exact existing file and cannot excuse a new source', (t) => {
-  const root = mkdtempSync(join(tmpdir(), 'insignia-source-migration-'));
+test('permanent source policy cannot reintroduce migration exemptions', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'insignia-source-policy-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   execFileSync('git', ['init', '-q', root]);
-  writeFileSync(join(root, 'existing.mjs'), 'export const existing = true;\n');
-  const policy: SourcePolicy = {
-    projects: [],
-    migration: { untyped: ['existing.mjs'], uncheckedTypeScript: [] },
-  };
-  assert.deepEqual(inspectMaintainedSources(root, policy), { untyped: ['existing.mjs'], uncheckedTypeScript: [] });
-  writeFileSync(join(root, 'new.mjs'), 'export const introduced = true;\n');
-  assert.throws(() => inspectMaintainedSources(root, policy), /UNAPPROVED_UNTYPED_SOURCE.*new\.mjs/);
+  const file = join(root, 'policy.json');
+  writeFileSync(
+    file,
+    JSON.stringify({ projects: [], migration: { untyped: ['existing.mjs'], uncheckedTypeScript: [] } }),
+  );
+  assert.throws(() => readSourcePolicy(file), /INVALID_SOURCE_POLICY/);
+  writeFileSync(file, JSON.stringify({ projects: [] }));
+  const policy = readSourcePolicy(file);
+  writeFileSync(join(root, 'existing.mjs'), 'export const existing = true;');
+  assert.throws(() => inspectMaintainedSources(root, policy), /UNAPPROVED_UNTYPED_SOURCE.*existing\.mjs/);
+});
+
+test('current entrypoints reject retired source commands while preserving inert identities and generated artifacts', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'insignia-current-references-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  execFileSync('git', ['init', '-q', root]);
+  const policy: SourcePolicy = { projects: [] };
+  const retired = ['scripts', 'm5-runtime', 'package-web.mts'].join('/');
+  writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: { package: `node ${retired}` } }));
+  assert.throws(() => inspectMaintainedSources(root, policy), /RETIRED_EXECUTABLE_REFERENCE/);
+  writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: { start: 'node dist/server/entry.mjs' } }));
+  mkdirSync(join(root, 'deployment'));
+  writeFileSync(join(root, 'deployment/compose.yaml'), 'name: insignia-uninstall-m5-024\n');
+  mkdirSync(join(root, 'scripts/m5-runtime'), { recursive: true });
+  writeFileSync(join(root, 'scripts/m5-runtime/frozen-schema18-manifest.json'), JSON.stringify({ original: retired }));
+  mkdirSync(join(root, 'scripts/lifecycle'));
+  writeFileSync(join(root, 'scripts/lifecycle/SERVICE-PROPOSAL.json'), JSON.stringify({ historical: retired }));
+  assert.doesNotThrow(() => inspectMaintainedSources(root, policy));
+  writeFileSync(join(root, 'scripts', 'm5-runtime', 'revived.sh'), '#!/bin/sh\n');
+  assert.throws(() => inspectMaintainedSources(root, policy), /RETIRED_EXECUTABLE_PATH/);
+});
+
+test('current routing documents reject broken local links without scanning historical archives', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'insignia-current-links-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  execFileSync('git', ['init', '-q', root]);
+  const policy: SourcePolicy = { projects: [] };
+  writeFileSync(join(root, 'README.md'), '[plan](docs/missing.md)\n');
+  assert.throws(() => inspectMaintainedSources(root, policy), /BROKEN_CURRENT_LINK/);
+  mkdirSync(join(root, 'docs'));
+  writeFileSync(join(root, 'docs/plan.md'), '# Plan\n');
+  writeFileSync(join(root, 'README.md'), '[plan](docs/plan.md#acceptance) [external](https://example.com/missing)\n');
+  mkdirSync(join(root, 'docs/archive'));
+  writeFileSync(join(root, 'docs/archive/old.md'), '[historical](missing.md)\n');
+  assert.doesNotThrow(() => inspectMaintainedSources(root, policy));
 });

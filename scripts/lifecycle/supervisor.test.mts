@@ -222,7 +222,10 @@ test('owned process stop bounds an unfinished HTTP header and confirms the liste
     socket.on('error', () => {});
     await once(socket, 'connect');
     socket.write('POST /private-status HTTP/1.1\r\nHost: localhost\r\n');
-    const closed = once(socket, 'close');
+    // A forced shutdown may reset the unfinished request before close.
+    // The socket error is handled above; completion means its close event.
+    const closingSocket = socket;
+    const closed = new Promise<void>((resolve) => closingSocket.once('close', () => resolve()));
     const start = performance.now();
     assert.deepEqual(await running.stop(), { status: 'STOPPED' });
     assert.ok(performance.now() - start < 2200);

@@ -6,7 +6,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/ci/**'
-      - 'scripts/m5-003/**'
+      - 'scripts/database/**'
       - 'packages/application/**'
       - 'packages/database/**'
       - 'scripts/m6-artwork/**'
@@ -74,7 +74,7 @@ jobs:
         run: WEB_RUNTIME_GRANTS_TEST_URL="$DATABASE_URL" corepack pnpm --filter @insignia/database exec vitest run test/web-runtime-grants.test.ts
       - name: M5 100k actual read-seam query plans
         if: steps.changes.outputs.route == 'full'
-        run: M5_QUERY_PLAN_OUTPUT=/tmp/m5-query-plan.json corepack pnpm test:m5-query-plan
+        run: M5_QUERY_PLAN_OUTPUT=/tmp/m5-query-plan.json corepack pnpm test:database-query-plan
       - name: Preserve actual M5 PostgreSQL plans and build hashes
         if: steps.changes.outputs.route == 'full'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

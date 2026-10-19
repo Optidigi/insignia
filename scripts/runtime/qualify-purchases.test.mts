@@ -1,8 +1,8 @@
-import {required,errorCode,object} from './validation.mts';
 import assert from 'node:assert/strict';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { qualificationTarget, qualifyRuntime } from './qualify-purchases.mts';
+import { errorCode, object, required } from './validation.mts';
 
 test('CI qualification creates only a unique owned loopback database and rejects remote or caller-selected identifiers', () => {
   const suffix = 'a'.repeat(32);

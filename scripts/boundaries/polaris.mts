@@ -67,6 +67,36 @@ export async function inspectPolarisPresentation(
       return;
     report(file, `merchant presentation requires supported Polaris component: ${name}`);
   }
+  const controlRoles = new Set([
+    'button',
+    'link',
+    'checkbox',
+    'radio',
+    'switch',
+    'textbox',
+    'combobox',
+    'listbox',
+    'option',
+    'slider',
+    'spinbutton',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'tab',
+    'treeitem',
+    'gridcell',
+  ]);
+  function structuralAttribute(file: string, element: string, name: string, value: string | undefined) {
+    if (!structural.has(element)) return;
+    const attribute = name.toLowerCase();
+    if (
+      (attribute === 'role' && (value === undefined || value.split(/\s+/).some((role) => controlRoles.has(role)))) ||
+      /^on(?:click|dblclick|pointer|mouse|key|input|change|submit|touch)/.test(attribute) ||
+      (attribute === 'tabindex' && value !== '-1') ||
+      (attribute === 'contenteditable' && value !== 'false')
+    )
+      report(file, `structural merchant control requires supported Polaris component: ${element}.${name}`);
+  }
   function dependency(file: string, specifier: string): string | undefined {
     const resolutionHost: ts.ModuleResolutionHost = {
       ...ts.sys,
@@ -138,6 +168,24 @@ export async function inspectPolarisPresentation(
       function inspectTs(text: string) {
         const ast = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
         const factories = new Set(['createElement', 'h', 'jsx', 'jsxs', 'jsxDEV']);
+        function staticAttribute(node: ts.Expression | undefined): string | undefined {
+          if (!node) return undefined;
+          if (ts.isStringLiteralLike(node) || ts.isNumericLiteral(node)) return node.text;
+          if (
+            ts.isPrefixUnaryExpression(node) &&
+            node.operator === ts.SyntaxKind.MinusToken &&
+            ts.isNumericLiteral(node.operand)
+          )
+            return `-${node.operand.text}`;
+          if (node.kind === ts.SyntaxKind.TrueKeyword) return 'true';
+          if (node.kind === ts.SyntaxKind.FalseKeyword) return 'false';
+          if (ts.isConditionalExpression(node)) {
+            const yes = staticAttribute(node.whenTrue),
+              no = staticAttribute(node.whenFalse);
+            if (yes !== undefined && no !== undefined) return yes === no ? yes : `${yes} ${no}`;
+          }
+          return undefined;
+        }
         function downloadTransport(call: ts.CallExpression): boolean {
           if (
             !ts.isPropertyAccessExpression(call.expression) ||
@@ -283,10 +331,36 @@ export async function inspectPolarisPresentation(
                 ts.isStringLiteralLike(parent.arguments[0]) &&
                 parent.arguments[0].text === 'ui-save-bar';
               if (!(first.text === 'a' && downloadTransport(node))) tag(file, first.text, Boolean(saveBarChild));
+              const properties = node.arguments[1];
+              if (properties && ts.isObjectLiteralExpression(properties))
+                for (const property of properties.properties)
+                  if (ts.isPropertyAssignment(property))
+                    structuralAttribute(
+                      file,
+                      first.text,
+                      property.name.getText(ast).replace(/^['"]|['"]$/g, ''),
+                      staticAttribute(property.initializer),
+                    );
             }
           }
-          if (merchant && (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)))
-            tag(file, node.tagName.getText(ast));
+          if (merchant && (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node))) {
+            const element = node.tagName.getText(ast);
+            tag(file, element);
+            for (const attribute of node.attributes.properties)
+              if (ts.isJsxAttribute(attribute)) {
+                const value = attribute.initializer;
+                structuralAttribute(
+                  file,
+                  element,
+                  attribute.name.getText(ast),
+                  value && ts.isStringLiteral(value)
+                    ? value.text
+                    : value && ts.isJsxExpression(value)
+                      ? staticAttribute(value.expression)
+                      : undefined,
+                );
+              }
+          }
           if (!merchant && (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node))) {
             const name = node.tagName.getText(ast);
             if (supported.has(name) || name === 'ui-save-bar' || name === 's-app-nav')
@@ -329,8 +403,20 @@ export async function inspectPolarisPresentation(
             return;
           }
           if (value.type === 'JSXOpeningElement' && record(value.name) && typeof value.name.name === 'string') {
-            if (merchant) tag(file, value.name.name);
-            else if (
+            if (merchant) {
+              tag(file, value.name.name);
+              if (Array.isArray(value.attributes))
+                for (const attribute of value.attributes)
+                  if (record(attribute) && record(attribute.name) && typeof attribute.name.name === 'string')
+                    structuralAttribute(
+                      file,
+                      value.name.name,
+                      attribute.name.name,
+                      record(attribute.value) && typeof attribute.value.value === 'string'
+                        ? attribute.value.value
+                        : undefined,
+                    );
+            } else if (
               supported.has(value.name.name) ||
               value.name.name === 'ui-save-bar' ||
               value.name.name === 's-app-nav'

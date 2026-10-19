@@ -242,14 +242,17 @@ export function prune(store: string, now: number): void {
     ...entries.filter((name) => name.endsWith('.json')),
   ]) {
     const intent = name.endsWith('.intent.json');
-    if (
-      !(intent ? /^[a-f0-9-]{36}\.intent\.json$/ : /^[a-f0-9-]{36}\.json$/).test(name) ||
-      !existsSync(join(store, name))
-    )
-      continue;
+    if (!(intent ? /^[a-f0-9-]{36}\.intent\.json$/ : /^[a-f0-9-]{36}\.json$/).test(name)) continue;
     const path = join(store, name);
     try {
-      check(!lstatSync(path).isSymbolicLink(), 'unsafe retention sidecar');
+      let info: ReturnType<typeof lstatSync>;
+      try {
+        info = lstatSync(path);
+      } catch (error) {
+        if (error instanceof Error && 'code' in error && error.code === 'ENOENT') continue;
+        throw error;
+      }
+      check(!info.isSymbolicLink(), 'unsafe retention sidecar');
       const value = record(jsonFile(path)),
         suffix = intent ? '.intent.json' : '.json';
       check(

@@ -19,18 +19,18 @@ if (mode === 'produce') {
     );
     return new Response('<ListBucketResult><IsTruncated>false</IsTruncated></ListBucketResult>');
   };
-  const path = new URL('./backup-snapshot.mjs', import.meta.url).pathname;
+  const path = new URL('./backup-snapshot.mts', import.meta.url).pathname;
   process.argv = [process.execPath, path, ...process.argv.slice(3)];
-  await import(new URL('./backup-snapshot.mjs', import.meta.url).href);
+  await import(new URL('./backup-snapshot.mts', import.meta.url).href);
 } else {
   const pool = new Pool(),
     client = await pool.connect();
   try {
     if (mode === 'snapshot-read') {
-      const snapshot = await operation('./backup-snapshot.mjs', 'databaseSnapshot');
+      const snapshot = await operation('./backup-snapshot.mts', 'databaseSnapshot');
       assert.equal(array(record(await snapshot(client)).references).length, 0, 'expected empty object fixture');
     } else if (mode === 'telemetry') {
-      const collect = await operation('./heartbeat-snapshot.mjs', 'collectDatabaseSnapshot');
+      const collect = await operation('./heartbeat-snapshot.mts', 'collectDatabaseSnapshot');
       const counts = (value: unknown) => {
         const snapshot = record(value);
         return {

@@ -26,7 +26,7 @@ test('current compiled web package survives relocation and serves HTTP on the co
   let server: import('node:child_process').ChildProcess | undefined;
   try {
     const destination = join(scratch, 'original');
-    const packaged = spawnSync('bash', ['scripts/m5-runtime/build-web.sh', destination], {
+    const packaged = spawnSync('bash', ['scripts/runtime/build-web.sh', destination], {
       cwd: root,
       encoding: 'utf8',
       timeout: 120_000,

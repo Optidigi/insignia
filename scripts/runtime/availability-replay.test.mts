@@ -1,10 +1,15 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { test } from 'node:test';
+import { object } from './validation.mts';
 
 test('sealed live restore responses replay as RESTORED in a network-denied fresh process without compensation', () => {
-  const replay = JSON.parse(
-    execFileSync(process.execPath, [new URL('./availability-replay.mts', import.meta.url).pathname], { encoding: 'utf8' }),
+  const replay = object(
+    JSON.parse(
+      execFileSync(process.execPath, [new URL('./availability-replay.mts', import.meta.url).pathname], {
+        encoding: 'utf8',
+      }),
+    ),
   );
   assert.equal(replay.kind, 'RESTORED');
   assert.equal(replay.exactSemanticReadbackEqualToBefore, true);

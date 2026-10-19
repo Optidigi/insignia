@@ -1,21 +1,22 @@
-import type { ChildProcess } from 'node:child_process';
 import { spawn } from 'node:child_process';
 import crypto from 'node:crypto';
 import { constants, fstatSync, writeSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { Readable } from 'node:stream';
+import type { Readable, Writable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import { errorCode, required } from './types.mts';
 
 const self = fileURLToPath(import.meta.url);
 const fixedService = fileURLToPath(new URL('./service.mts', import.meta.url));
 const pins = new Map([
-  ['service.mts', '3bb15248eb1a100e12795b3bcf3c17f727bc41bc54f42942b071aa081d910c21'],
-  ['receiver.mts', '4d7d38619271d5250437eb707cdac863c0f4455b9b70a85fb758db5a972185e4'],
-  ['operator.mts', '7f346a74dca05cb41c50cc90815599cdd4699b8191a4ead4ee10b72e0945de77'],
-  ['store.mts', 'b1c185a465b5a57eded64de0d1491fcdfa0135514bd589db6cffa19400f1666c'],
-  ['network-guard.mts', 'f8b411bca1d1f6c50c401ae5bed08328058826ebaf1eda0be5e7f2a635af958a'],
+  ['process-guard.mts', '5768193dda5685b137875fe4e55fe95f92f2ed86ac4f2e9545e47ba54b95c514'],
+  ['types.mts', 'fd29c0ca402a2de1f2905db13e3b5265c0fcf1a027956a99654841847032e385'],
+  ['service.mts', '652c009598575d6dbb99769c4fe94a210d439d651ab631335c54229506fb4085'],
+  ['receiver.mts', '47714e60f802961d2e5add54d4b92fe8a77251a7d6f26e559ee158e70c6d4418'],
+  ['operator.mts', '3419488807121867e37f382a63d6c7364e8a89550aa51a7108f02eedb306e657'],
+  ['store.mts', '64de057ab6f6c34a2b7e0c425862a13567d8d46dbccd2d9acdde37e2ead83826'],
+  ['network-guard.mts', '529da450dbe0cdaf8109632f581cebfdc4fb505e900724650c409cdccc622220'],
   ['../../packages/shopify/src/webhook.ts', 'c44d188a2c6db0a023f5ed42f989c1757faf8c1b7cb45aa8c46a3ab5410a8f3f'],
 ]);
 type Refused = { status: 'REFUSED' };

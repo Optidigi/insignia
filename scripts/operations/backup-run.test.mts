@@ -385,6 +385,27 @@ test('changed inspector bootstrap and runtime reject even when the manifest is u
   }
 });
 
+test('inspector command selects exactly one manifest-bound current or retained bootstrap', () => {
+  for (const entries of [['start.mts'], ['start.mjs'], ['start.mts', 'start.mjs']]) {
+    const root = directory();
+    try {
+      const files: Record<string, { kind: string; mode: number; sha256: string }> = {};
+      for (const name of entries) {
+        const content = `qualified ${name}`;
+        writeFileSync(join(root, name), content, { mode: 0o400 });
+        files[name] = { kind: 'file', mode: 0o400, sha256: createHash('sha256').update(content).digest('hex') };
+      }
+      const raw = JSON.stringify({ version: 'insignia-artwork-inspector-artifact-v1', files });
+      writeFileSync(join(root, 'manifest.json'), raw, { mode: 0o600 });
+      const hash = createHash('sha256').update(raw).digest('hex');
+      if (entries.length === 1) assert.equal(verifyInspectorArtifact(root, hash), entries[0]);
+      else assert.throws(() => verifyInspectorArtifact(root, hash), /bootstrap/);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  }
+});
+
 test('alternate libpq authority rejects before any Docker read or effect', async () => {
   const restore = cleanEnvironment();
   try {

@@ -64,7 +64,7 @@ test('separate owner installation and restricted queue roles preserve messages a
   let worker: ReturnType<typeof createPgBossRuntime> | undefined;
   try {
     assert.deepEqual(await installQueue(connectionString), await installQueue(connectionString));
-    await pool.query(await readFile(new URL('../m5-024/queue-roles.sql', import.meta.url), 'utf8'));
+    await pool.query(await readFile(new URL('../worker/queue-roles.sql', import.meta.url), 'utf8'));
     await pool.query(
       `create role ${role} login password '${testPassword}'; create role ${workerRole} login password '${testPassword}'; grant insignia_queue_enqueue to ${role}; grant insignia_queue_consume to ${workerRole}`,
     );
@@ -224,7 +224,7 @@ test('separate owner installation and restricted queue roles preserve messages a
 
     const before = await pool.query('select id,state,data from pgboss.job where id=$1', [id]);
     await installQueue(connectionString);
-    await pool.query(await readFile(new URL('../m5-024/queue-roles.sql', import.meta.url), 'utf8'));
+    await pool.query(await readFile(new URL('../worker/queue-roles.sql', import.meta.url), 'utf8'));
     assert.deepEqual((await pool.query('select id,state,data from pgboss.job where id=$1', [id])).rows, before.rows);
   } finally {
     await worker?.stop();

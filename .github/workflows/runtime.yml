@@ -20,20 +20,22 @@ on:
       - 'packages/storage/**'
       - 'scripts/m6-artwork/**'
       - 'scripts/m7-storefront/**'
-      - 'scripts/m8-purchase/**'
+      - 'scripts/runtime/**'
+      - 'scripts/worker/**'
+      - 'scripts/release/**'
       - 'scripts/m5-002/**'
       - 'scripts/m5-native-inventory/**'
       - 'scripts/m5-host-inventory/**'
       - 'scripts/m5-inventory-phase/**'
-      - 'scripts/m5-024/**'
-      - 'scripts/m5-runtime/**'
+      - 'scripts/m5-runtime/frozen-schema*-manifest.json'
       - 'scripts/database/**'
       - 'deployment/m5-runtime/**'
       - 'deployment/m8-journey/**'
       - 'deployment/artwork-inspector/**'
       - 'deployment/release-verifier/**'
       - 'deployment/m5-019r/**'
-      - 'scripts/m5-callback-qualification/**'
+      - 'scripts/lifecycle/**'
+      - 'scripts/privacy/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - '.github/workflows/runtime.yml'
@@ -84,13 +86,13 @@ jobs:
         if: steps.changes.outputs.route == 'full'
       - name: M5 runtime owner-operator and immutable image controls style
         if: steps.changes.outputs.route == 'full'
-        run: corepack pnpm exec biome check scripts/m5-runtime
+        run: corepack pnpm exec biome check scripts/runtime scripts/release scripts/worker scripts/lifecycle
       - name: Owner trusted-release collector local accounting and process controls
         if: steps.changes.outputs.route == 'full'
-        run: node --test --test-concurrency=1 scripts/m5-runtime/trusted-release-collector.test.mjs scripts/m5-runtime/trusted-release-owner-boundaries.test.mjs scripts/m5-runtime/trusted-release-launch.test.mjs scripts/m5-runtime/release-profile.test.mjs
+        run: node --test --test-concurrency=1 scripts/release/collector.test.mts scripts/release/owner-boundaries.test.mts scripts/release/launch.test.mts scripts/release/profiles.test.mts
       - name: Current signing and historical settlement controls
         if: steps.changes.outputs.route == 'full'
-        run: node --test --test-concurrency=1 scripts/database/owner-settlement.test.mts scripts/m5-runtime/release-append.test.mts scripts/runtime/signing-provision.test.mts
+        run: node --test --test-concurrency=1 scripts/database/owner-settlement.test.mts scripts/release/append.test.mts scripts/runtime/signing-provision.test.mts
       - run: corepack pnpm check:style
         if: steps.changes.outputs.route == 'full'
       - run: corepack pnpm check:boundaries
@@ -112,8 +114,8 @@ jobs:
       - name: M8 actual queue-member purchase/history and first-paid qualification
         if: steps.changes.outputs.route == 'full'
         run: |
-          node --test scripts/m8-purchase/qualify-runtime.test.mjs
-          node scripts/m8-purchase/qualify-runtime.mjs
+          node --test scripts/runtime/qualify-purchases.test.mts
+          node scripts/runtime/qualify-purchases.mts
       - name: Preserve M8 actual runtime-role qualification
         if: ${{ always() && steps.changes.outputs.route == 'full' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -127,14 +129,14 @@ jobs:
       - name: M7 buyer HTTP ownership, admission and immutable issuance with PostgreSQL
         if: steps.changes.outputs.route == 'full'
         working-directory: apps/web
-        run: node --test test/buyer-http.test.mjs test/buyer-flow.test.mjs test/buyer-production.test.mjs test/buyer-bootstrap.test.mjs
+        run: node --test test/buyer-http.test.mts test/buyer-flow.test.mts test/buyer-production.test.mts test/buyer-bootstrap.test.mts
       - name: M8 independently verified purchase and merchant artwork HTTP with PostgreSQL
         if: steps.changes.outputs.route == 'full'
         working-directory: apps/web
-        run: node --test test/purchase-flow.test.mjs
+        run: node --test test/purchase-flow.test.mts
       - name: M5-024 restricted queue roles and real process crash recovery
         if: steps.changes.outputs.route == 'full'
-        run: node --test --test-concurrency=1 scripts/m5-024/queue-privileges.test.mjs scripts/m5-024/crash-recovery.test.mjs
+        run: node --test --test-concurrency=1 scripts/worker/queue-privileges.test.mts scripts/worker/crash-recovery.test.mts
       - name: M5-024 offline portable worker and drift guards
         if: steps.changes.outputs.route == 'full'
         run: |
@@ -142,8 +144,8 @@ jobs:
           # The actual candidate packaging below stays offline; no trust/policy bypass.
           corepack pnpm --filter @insignia/worker deploy --prod --frozen-lockfile --config.inject-workspace-packages=true /tmp/insignia-m5-024-cache-primer
           corepack pnpm install --offline --frozen-lockfile --ignore-scripts --prod=false
-          bash scripts/m5-024/build-worker.sh /tmp/insignia-m5-024-worker
-          M5_WORKER_PACKAGE_ENTRY=/tmp/insignia-m5-024-worker/dist/main.js node --test scripts/m5-024/worker-guards.test.mjs scripts/m5-024/portable-process.test.mjs
+          bash scripts/worker/build-worker.sh /tmp/insignia-m5-024-worker
+          M5_WORKER_PACKAGE_ENTRY=/tmp/insignia-m5-024-worker/dist/main.js node --test scripts/worker/worker-guards.test.mts scripts/worker/portable-process.test.mts
       - name: Operations source and relocated offline runtime qualification
         if: steps.changes.outputs.route == 'full'
         env:
@@ -161,7 +163,7 @@ jobs:
           cp -a "$RUNNER_TEMP/insignia-operations-package" "$RUNNER_TEMP/insignia-operations-context/operations-package"
           docker build --file deployment/alerts/Dockerfile.heartbeat --iidfile "$RUNNER_TEMP/insignia-operations-artifact/image.id" "$RUNNER_TEMP/insignia-operations-context"
           image_id=$(cat "$RUNNER_TEMP/insignia-operations-artifact/image.id")
-          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --pids-limit 32 --memory 128m --entrypoint /srv/insignia/bin/node "$image_id" --input-type=module -e "import {createRequire} from 'node:module';import {collectDatabaseSnapshot} from './scripts/operations/heartbeat-snapshot.mjs';import {databaseSnapshot} from './scripts/operations/backup-snapshot.mjs';import {createR2ArtworkStorage} from './packages/storage/dist/index.js';const require=createRequire(new URL('./apps/worker/package.json',import.meta.url));require('pg');if(typeof collectDatabaseSnapshot!=='function'||typeof databaseSnapshot!=='function'||typeof createR2ArtworkStorage!=='function')throw Error('Operations dependency closure missing');console.log(JSON.stringify({classification:'OFFLINE_IMAGE_IMPORTS_QUALIFIED_NOT_NATIVE',providerCalls:0}));" > "$RUNNER_TEMP/insignia-operations-artifact/offline-image-probe.json"
+          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --pids-limit 32 --memory 128m --entrypoint /srv/insignia/bin/node "$image_id" --input-type=module -e "import {createRequire} from 'node:module';import {collectDatabaseSnapshot} from './scripts/operations/heartbeat-snapshot.mts';import {databaseSnapshot} from './scripts/operations/backup-snapshot.mts';import {createR2ArtworkStorage} from './packages/storage/dist/index.js';const require=createRequire(new URL('./apps/worker/package.json',import.meta.url));require('pg');if(typeof collectDatabaseSnapshot!=='function'||typeof databaseSnapshot!=='function'||typeof createR2ArtworkStorage!=='function')throw Error('Operations dependency closure missing');console.log(JSON.stringify({classification:'OFFLINE_IMAGE_IMPORTS_QUALIFIED_NOT_NATIVE',providerCalls:0}));" > "$RUNNER_TEMP/insignia-operations-artifact/offline-image-probe.json"
           docker save --output "$RUNNER_TEMP/insignia-operations-artifact/heartbeat-image.tar" "$image_id"
           sha256sum "$RUNNER_TEMP/insignia-operations-artifact/heartbeat-image.tar" > "$RUNNER_TEMP/insignia-operations-artifact/heartbeat-image.tar.sha256"
       - name: Preserve operations runtime for later gated deployment
@@ -177,7 +179,7 @@ jobs:
         env:
           M5_WORKER_PACKAGE_ENTRY: /tmp/insignia-m5-024-worker/dist/main.js
         run: |
-          corepack pnpm exec biome check scripts/ci/package-artwork-inspector.mts scripts/ci/artwork-inspector-package.test.mts deployment/artwork-inspector/start.mjs
+          corepack pnpm exec biome check scripts/ci/package-artwork-inspector.mts scripts/ci/artwork-inspector-package.test.mts deployment/artwork-inspector/start.mts
           node --test scripts/ci/artwork-inspector-package.test.mts
           node scripts/ci/package-artwork-inspector.mts /tmp/insignia-m5-024-worker "$RUNNER_TEMP/insignia-inspector-package"
           mkdir -m 700 "$RUNNER_TEMP/insignia-inspector-artifact"
@@ -200,14 +202,14 @@ jobs:
         run: |
           curl --fail --location --retry 0 --output "$INSIGNIA_VERIFIER_SDK_ARCHIVE" https://registry.npmjs.org/@shopify/cli/-/cli-4.8.2.tgz
           echo "0b1c01d1ebf1f1265826a4ffa78ea94bc4c2eb8a36beb9b2f5fb305ef30231ff  $INSIGNIA_VERIFIER_SDK_ARCHIVE" | sha256sum --check --strict
-          corepack pnpm exec biome check deployment/release-verifier/artifact.mjs deployment/release-verifier/bootstrap.mjs scripts/ci/package-release-verifier.mts scripts/ci/release-verifier-artifact.test.mts scripts/ci/release-verifier-compose.test.mts scripts/ci/verifier-private-input.test.mts
+          corepack pnpm exec biome check deployment/release-verifier/artifact.mts deployment/release-verifier/bootstrap.mts scripts/ci/package-release-verifier.mts scripts/ci/release-verifier-artifact.test.mts scripts/ci/release-verifier-compose.test.mts scripts/ci/verifier-private-input.test.mts
           node --test scripts/ci/release-verifier-artifact.test.mts scripts/ci/release-verifier-compose.test.mts scripts/ci/verifier-private-input.test.mts
           mkdir -m 700 "$RUNNER_TEMP/insignia-verifier-context" "$RUNNER_TEMP/insignia-verifier-artifact"
           node scripts/ci/package-release-verifier.mts /tmp/insignia-m5-024-worker "$INSIGNIA_VERIFIER_SDK_ARCHIVE" "$RUNNER_TEMP/insignia-verifier-context/verifier-package"
           cp deployment/release-verifier/Dockerfile "$RUNNER_TEMP/insignia-verifier-context/Dockerfile"
           docker build --network none --iidfile "$RUNNER_TEMP/insignia-verifier-artifact/image.id" "$RUNNER_TEMP/insignia-verifier-context"
           image_id=$(cat "$RUNNER_TEMP/insignia-verifier-artifact/image.id")
-          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --pids-limit 64 --memory 512m --entrypoint /srv/insignia/verifier/bin/node "$image_id" --input-type=module -e "import {readFile} from 'node:fs/promises';import {qualifyLaunchInputs} from './scripts/m5-runtime/trusted-release-launch.mjs';const result=await qualifyLaunchInputs(JSON.parse(await readFile('identity.json','utf8')));console.log(JSON.stringify({classification:'OFFLINE_IMAGE_CODE_QUALIFIED_NOT_NATIVE',...result,providerCalls:0}));" > "$RUNNER_TEMP/insignia-verifier-artifact/offline-image-probe.json"
+          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --pids-limit 64 --memory 512m --entrypoint /srv/insignia/verifier/bin/node "$image_id" --input-type=module -e "import {readFile} from 'node:fs/promises';import {qualifyLaunchInputs} from './scripts/release/launch.mts';const result=await qualifyLaunchInputs(JSON.parse(await readFile('identity.json','utf8')));console.log(JSON.stringify({classification:'OFFLINE_IMAGE_CODE_QUALIFIED_NOT_NATIVE',...result,providerCalls:0}));" > "$RUNNER_TEMP/insignia-verifier-artifact/offline-image-probe.json"
           cp "$RUNNER_TEMP/insignia-verifier-context/verifier-package/receipt.json" "$RUNNER_TEMP/insignia-verifier-artifact/receipt.json"
           docker image inspect "$image_id" > "$RUNNER_TEMP/insignia-verifier-artifact/image-inspect.json"
           docker save --output "$RUNNER_TEMP/insignia-verifier-artifact/verifier-image.tar" "$image_id"
@@ -226,16 +228,16 @@ jobs:
           M5_WORKER_PACKAGE_ENTRY: /tmp/insignia-m5-024-worker/dist/main.js
           M5_IMAGE_EVIDENCE_DIR: ${{ runner.temp }}/m5-024-image-evidence
           M5_IMAGE_ARTIFACT_DIR: ${{ runner.temp }}/m5-024-worker-image
-        run: node --test scripts/m5-024/image-artifact.test.mjs scripts/m5-024/image-observations.test.mjs scripts/m5-024/image-runtime.test.mjs
+        run: node --test scripts/worker/image-artifact.test.mts scripts/worker/image-observations.test.mts scripts/worker/image-runtime.test.mts
       - name: Immutable worker image identity controls
         if: steps.changes.outputs.route == 'full'
         env:
           M5_IMAGE_ARTIFACT_DIR: ${{ runner.temp }}/m5-024-worker-image
           M5_WORKER_PACKAGE_ENTRY: /tmp/insignia-m5-024-worker/dist/main.js
-        run: node --test scripts/m5-runtime/image-identity.test.mjs
+        run: node --test scripts/runtime/image-identity.test.mts
       - name: Ordinary canonical web and worker Compose rendering controls
         if: steps.changes.outputs.route == 'full'
-        run: node --test scripts/m5-runtime/web-compose.test.mjs scripts/m5-runtime/signing-owner-compose.test.mjs
+        run: node --test scripts/runtime/web-compose.test.mts scripts/runtime/signing-owner-compose.test.mts
       - name: Preserve M5-024 image qualification receipts and raw logs
         if: ${{ always() && steps.changes.outputs.route == 'full' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -255,19 +257,19 @@ jobs:
       - name: Portable current web deployment package
         if: steps.changes.outputs.route == 'full'
         run: |
-          corepack pnpm exec biome check scripts/m5-runtime
+          corepack pnpm exec biome check scripts/runtime scripts/release scripts/worker scripts/lifecycle
           # Prime the legacy deployment's metadata in a fresh runner cache.
           # Qualified package construction below remains offline and frozen.
           corepack pnpm --filter @insignia/web deploy --prod --frozen-lockfile --legacy /tmp/insignia-m5-web-cache-primer
           corepack pnpm install --offline --frozen-lockfile --ignore-scripts --prod=false
-          node --test scripts/m5-runtime/web-address.test.mjs scripts/m5-runtime/portable-web.test.mjs
-          bash scripts/m5-runtime/build-web.sh /tmp/insignia-m5-web
+          node --test scripts/runtime/web-address.test.mts scripts/runtime/portable-web.test.mts
+          bash scripts/runtime/build-web.sh /tmp/insignia-m5-web
       - name: Actual current web image startup restart and export
         if: steps.changes.outputs.route == 'full'
         env:
           M5_WEB_PACKAGE: /tmp/insignia-m5-web
           M5_WEB_IMAGE_EVIDENCE_DIR: ${{ runner.temp }}/m5-web-image-evidence
-        run: node --test scripts/m5-runtime/web-image.test.mjs
+        run: node --test scripts/runtime/web-image.test.mts
       - name: Preserve web image qualification receipts and logs
         if: ${{ always() && steps.changes.outputs.route == 'full' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -293,7 +295,7 @@ jobs:
         env:
           M5_025_REQUIRE_SAFE_UNINSTALL: '1'
         working-directory: apps/web
-        run: node --test test/webhook-metadata-boundary.test.mjs
+        run: node --test test/webhook-metadata-boundary.test.mts
       - name: Uninstall authority quarantine and unresolved obligation controls
         if: steps.changes.outputs.route == 'full'
         env:
@@ -305,15 +307,15 @@ jobs:
         run: |
           corepack pnpm exec dbmate create
           corepack pnpm db:migrate
-          node --test apps/web/test/uninstall-authority.test.mjs
+          node --test apps/web/test/uninstall-authority.test.mts
       - name: Built HTTP ingress with PostgreSQL and queue handoff
         if: steps.changes.outputs.route == 'full'
         working-directory: apps/web
-        run: node --test test/shopify-webhook.test.mjs
+        run: node --test test/shopify-webhook.test.mts
       - name: M5 Admin editor and publication with PostgreSQL
         if: steps.changes.outputs.route == 'full'
         working-directory: apps/web
-        run: node --test test/admin/merchant-config.test.mjs test/admin/merchant-publication.test.mjs test/admin/production-composition.test.mjs test/admin/preview-composition.test.mjs test/admin/activation-integration.test.mjs test/admin/activation-state.test.mjs test/admin/release-evidence.test.mjs
+        run: node --test test/admin/merchant-config.test.mts test/admin/merchant-publication.test.mts test/admin/production-composition.test.mts test/admin/merchant-preview-composition.test.mts test/admin/merchant-preview-publication.test.mts test/admin/activation-integration.test.mts test/admin/activation-state.test.mts test/admin/release-evidence.test.mts
       - name: Rehearse disposable migration down and up
         if: steps.changes.outputs.route == 'full'
         # V2 data cannot be downgraded into v1. Rehearse schema rollback in a separate,

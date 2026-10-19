@@ -2,8 +2,7 @@
 
 This candidate sends only `Insignia Alerts <insignia-alerts@optidigi.nl>` to
 `admin@optidigi.nl`. No Worker, DNS, destination verification, credential, image,
-container or message has been created by adding these files. Alert delivery and
-application readiness remain **unqualified**. Production deployment, public-app
+container or message has been created by adding these files. Four bounded drill messages have recorded delivery evidence; installed production producer/monitor wiring, receiver SPF/DKIM/DMARC and application readiness remain **unqualified**. Do not resend a drill merely because header qualification is deferred. Production deployment, public-app
 review and storefront visual review are outside this change.
 
 Run local behavioral checks from the repository root:
@@ -141,7 +140,7 @@ It follows no redirects, sends only to the configured HTTPS origin's fixed
 heartbeat path and emits only fixed acknowledgement/configuration log codes.
 The producer reads no database, customer payloads or provider account credentials.
 
-`scripts/operations/heartbeat-snapshot.mjs` is the implemented aggregate exporter.
+`scripts/operations/heartbeat-snapshot.mts` is the implemented aggregate exporter.
 The separate snapshot container uses the existing pinned pg8.23 dependency from
 the qualified application runtime and a dedicated SELECT-only role. Its protected
 startup JSON has exactly the operational connection setting

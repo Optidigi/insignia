@@ -10,7 +10,7 @@ test('restricted worker erases only due buyer payloads without private-data or f
     const role = await client.query("SELECT 1 FROM pg_roles WHERE rolname='insignia_queue_consume'");
     if (!role.rowCount) await client.query('CREATE ROLE insignia_queue_consume NOLOGIN');
     await client.query(
-      await readFile(new URL('../../../scripts/m7-storefront/runtime-grants.sql', import.meta.url), 'utf8'),
+      await readFile(new URL('../../../scripts/database/buyer-cleanup-grants.sql', import.meta.url), 'utf8'),
     );
     const shopId = randomUUID(),
       live = randomUUID(),

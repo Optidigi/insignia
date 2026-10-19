@@ -35,7 +35,7 @@ test('digest-bound inspector package relocates and verifies without starting ins
     const verify = () =>
       spawnSync(
         join(relocated, 'bin/node'),
-        [join(relocated, 'start.mjs'), '--manifest-sha256', receipt.manifestSha256, '--verify-only'],
+        [join(relocated, 'start.mts'), '--manifest-sha256', receipt.manifestSha256, '--verify-only'],
         { encoding: 'utf8', env: { PATH: '/usr/bin:/bin' } },
       );
     const result = verify();
@@ -97,7 +97,7 @@ test('actual existing portable worker inspector and decoder survive packaging wi
     const receipt = await packageInspector({ workerPackage: worker, destination: artifact, ...identity });
     const result = spawnSync(
       join(artifact, 'bin/node'),
-      [join(artifact, 'start.mjs'), '--manifest-sha256', receipt.manifestSha256, '--verify-only'],
+      [join(artifact, 'start.mts'), '--manifest-sha256', receipt.manifestSha256, '--verify-only'],
       { encoding: 'utf8', env: { PATH: '/usr/bin:/bin' } },
     );
     assert.equal(result.status, 0, result.stderr);

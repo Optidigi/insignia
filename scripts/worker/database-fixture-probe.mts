@@ -18,7 +18,7 @@ try {
     (await pool.query<{ server_version_num: string }>('show server_version_num')).rows[0],
   ).server_version_num;
   assert.equal(Math.floor(Number(serverVersion) / 10000), 18);
-  await pool.query(await readFile('scripts/m5-024/queue-roles.sql', 'utf8'));
+  await pool.query(await readFile('scripts/worker/queue-roles.sql', 'utf8'));
   await pool.query(
     "create role image_worker login password 'synthetic-worker' nosuperuser nocreatedb nocreaterole noreplication nobypassrls; grant insignia_queue_consume to image_worker",
   );

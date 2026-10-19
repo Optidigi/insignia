@@ -3,9 +3,9 @@ import { spawnSync } from 'node:child_process';
 
 const result = spawnSync(
   process.execPath,
-  ['--test', '--test-name-pattern=publication success preserves dirty', 'apps/web/test/admin/editor-browser.test.mjs'],
+  ['--test', '--test-name-pattern=publication success preserves dirty', 'apps/web/test/admin/editor-browser.test.mts'],
   {
-    env: { ...process.env, M5_STRESS_BLOCK_VISUALIZER: '1', M5_PUBLICATION_STRESS_ITERATIONS: '1' },
+    env: { ...process.env, INSIGNIA_STRESS_BLOCK_VISUALIZER: '1', INSIGNIA_PUBLICATION_STRESS_ITERATIONS: '1' },
     encoding: 'utf8',
     timeout: 20000,
   },

@@ -43,7 +43,7 @@ export async function openTlsEdge(options: {
   let stopping = false,
     closing: Promise<void> | undefined;
   const sockets = new Set<Socket>(),
-    handlers = new Set<Promise<undefined | Socket>>(),
+    handlers = new Set<Promise<void>>(),
     upstreams = new Set<http.ClientRequest>(),
     headerTimers = new Map<Socket, NodeJS.Timeout>();
   const admittedSockets = new WeakSet<Socket>();
@@ -206,7 +206,9 @@ export async function openTlsEdge(options: {
       },
     },
     (req, res) => {
-      const handler = serve(req, res).catch(() => req.socket.destroy());
+      const handler = serve(req, res).catch(() => {
+        req.socket.destroy();
+      });
       handlers.add(handler);
       handler.finally(() => handlers.delete(handler));
     },

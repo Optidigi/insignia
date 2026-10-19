@@ -252,7 +252,7 @@ export class Docker implements DockerBoundary {
     await capture(this.executable, ['container', 'start', item.id], 30000);
   }
 }
-export function verifyInspectorArtifact(release: string, expected: string): void {
+export function verifyInspectorArtifact(release: string, expected: string): 'start.mts' | 'start.mjs' {
   const raw = readFileSync(join(release, 'manifest.json'));
   check(
     raw.length <= 4 * 1024 * 1024 && createHash('sha256').update(raw).digest('hex') === expected,
@@ -262,6 +262,12 @@ export function verifyInspectorArtifact(release: string, expected: string): void
   check(manifest.version === 'insignia-artwork-inspector-artifact-v1', 'inspector artifact format drift');
   const files = record(manifest.files),
     remaining = new Set(Object.keys(files));
+  // The existing installed immutable artifact has a generated JS bootstrap;
+  // new artifacts use checked TypeScript. Only the reviewed manifest selects it.
+  const bootstrap = ['start.mts', 'start.mjs'].filter((name) => Object.hasOwn(files, name));
+  check(bootstrap.length === 1, 'ambiguous inspector bootstrap');
+  const entry = bootstrap[0];
+  check(entry === 'start.mts' || entry === 'start.mjs', 'inspector bootstrap missing');
   let total = 0;
   function walk(directory: string) {
     const info = lstatSync(directory);
@@ -307,6 +313,7 @@ export function verifyInspectorArtifact(release: string, expected: string): void
   }
   walk(release);
   check(remaining.size === 0, 'inspector artifact files missing');
+  return entry;
 }
 export class InspectorService implements InspectorBoundary {
   static readonly UNIT = 'insignia-artwork-inspection.service';
@@ -412,7 +419,8 @@ export class InspectorService implements InspectorBoundary {
       'immutable inspector command required',
     );
     const manifest = InspectorService.fileHash(join(release, 'manifest.json')),
-      expected = `${release}/bin/node ${release}/start.mjs --manifest-sha256 ${manifest}`;
+      bootstrap = verifyInspectorArtifact(release, manifest),
+      expected = `${release}/bin/node ${release}/${bootstrap} --manifest-sha256 ${manifest}`;
     check(loaded[1] === join(release, 'bin/node') && loaded[2] === expected, 'inspector artifact binding drift');
     props.ExecStart = expected;
     this.artifact = { release, manifest };
@@ -927,7 +935,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       const manifest = join(runtime, 'objects.json'),
         node = text(raw.node);
       for (const argv of [
-        [node, new URL('./backup-snapshot.mjs', import.meta.url).pathname, objects, manifest, window],
+        [node, new URL('./backup-snapshot.mts', import.meta.url).pathname, objects, manifest, window],
         [
           node,
           new URL('./backup.mts', import.meta.url).pathname,
@@ -956,7 +964,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       await runOffhostReplica(
         [
           text(raw.node),
-          new URL('./backup-replica.mjs', import.meta.url).pathname,
+          new URL('./backup-replica.mts', import.meta.url).pathname,
           'replicate',
           text(raw.replicaConfig),
         ],

@@ -27,7 +27,7 @@ The one-shot executable supports invocation after a missed deadline or reboot wi
 Run the four public control suites with pinned Node 24.21.0:
 
 ```sh
-node --test --test-concurrency=1 scripts/m5-callback-qualification/{receiver,supervisor,cleanup,tls-edge}.test.mjs
+node --test --test-concurrency=1 scripts/lifecycle/{receiver,supervisor,cleanup,tls-edge}.test.mts
 ```
 
 The startup controls retain the real read-only signing FIFO replacement RED and exercise strict bound options, correct real HTTP receipts, private FD4 validation and process argv/environment/output privacy. The supervisor controls use real inherited FD3, local HTTP/socket listeners, FIFO EOF/metadata stalls, real synthetic child streams, standalone TERM during startup, original acceptance expiry and confirmed refusal after shutdown. The erasure controls cover original deadlines with an independent runtime-clock check, private path/export refusal, fresh-process catch-up, blocked metadata, an unfinished-body durable reservation surviving a serving-child crash, active/live unrelated PID refusal and a real critical-section SIGKILL leaving an untouched stale guard. Fixture teardown removes only private `mkdtemp` roots after owned children exit.

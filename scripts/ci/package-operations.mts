@@ -24,14 +24,14 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const hash = (bytes: string | Uint8Array) => createHash('sha256').update(bytes).digest('hex');
 const runtimeFiles = [
   'scripts/operations/heartbeat.mts',
-  'scripts/operations/heartbeat-snapshot.mjs',
+  'scripts/operations/heartbeat-snapshot.mts',
   'scripts/operations/backup.mts',
   'scripts/operations/backup-run.mts',
   'scripts/operations/backup-files.mts',
   'scripts/operations/backup-archive.mts',
   'scripts/operations/backup-lock.mts',
-  'scripts/operations/backup-snapshot.mjs',
-  'scripts/operations/backup-replica.mjs',
+  'scripts/operations/backup-snapshot.mts',
+  'scripts/operations/backup-replica.mts',
   'scripts/operations/backup-expiry.mts',
   'scripts/privacy/restore-exclusions.mts',
   'packages/database/migrations/20261018000500_restore_validation_namespace.sql',
@@ -208,7 +208,7 @@ export async function packageOperations({
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  assert.equal(process.argv.length, 4, 'Usage: package-operations.mjs WORKER_PACKAGE NEW_DESTINATION');
+  assert.equal(process.argv.length, 4, 'Usage: package-operations.mts WORKER_PACKAGE NEW_DESTINATION');
   const sourceHead = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
   const sourceTree = execFileSync('git', ['rev-parse', 'HEAD^{tree}'], { cwd: root, encoding: 'utf8' }).trim();
   assert.ok(process.argv[2] && process.argv[3]);

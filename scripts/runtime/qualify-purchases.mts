@@ -1,15 +1,15 @@
-import {required} from './validation.mts';
 import { spawn } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { required } from './validation.mts';
 
-const { Pool }:typeof import('pg') = createRequire(new URL('../../apps/worker/package.json', import.meta.url))('pg');
+const { Pool }: typeof import('pg') = createRequire(new URL('../../apps/worker/package.json', import.meta.url))('pg');
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const evidence = new URL('../../docs/delivery/evidence/m8-context-runtime/', import.meta.url);
 
-export function qualificationTarget(value:unknown, suffix = randomUUID().replaceAll('-', '')) {
+export function qualificationTarget(value: unknown, suffix = randomUUID().replaceAll('-', '')) {
   if (typeof value !== 'string' || !value) throw new Error('local_owner_database_url_required');
   const owner = new URL(value);
   if (
@@ -27,7 +27,7 @@ export function qualificationTarget(value:unknown, suffix = randomUUID().replace
   return { owner, target, database };
 }
 
-export async function qualifyRuntime(ownerValue:string|undefined) {
+export async function qualifyRuntime(ownerValue: string | undefined) {
   // Replace any prior invocation's evidence before parsing configuration or connecting.
   await mkdir(evidence, { recursive: true });
   await writeFile(
@@ -50,13 +50,23 @@ export async function qualifyRuntime(ownerValue:string|undefined) {
     target.toString(),
     owner.password,
     decodeURIComponent(owner.password),
-  ].filter((value):value is string => typeof value === 'string' && value.length > 0);
-  const safe = (value:string) =>
+  ].filter((value): value is string => typeof value === 'string' && value.length > 0);
+  const safe = (value: string) =>
     secrets.reduce((text, secret) => text.replaceAll(secret, '[private-database-configuration]'), value);
   let transcript = '',
     created = false;
-  const result = { database, migrations: Array<{name:string;sha256:string}>(), status: 'FAIL', databaseRemoved: false };
-  async function run(command:string, args:string[], env:NodeJS.ProcessEnv) {
+  const result: {
+    database: string;
+    migrations: { name: string; sha256: string }[];
+    status: string;
+    databaseRemoved: boolean;
+  } = {
+    database,
+    migrations: [],
+    status: 'FAIL',
+    databaseRemoved: false,
+  };
+  async function run(command: string, args: string[], env: NodeJS.ProcessEnv) {
     const child = spawn(command, args, {
       cwd: root,
       env: { ...process.env, ...env, PGCONNECT_TIMEOUT: '10', PGOPTIONS: '-c statement_timeout=30000' },
@@ -79,7 +89,7 @@ export async function qualifyRuntime(ownerValue:string|undefined) {
         }
       }
     }
-    function collect(chunk:unknown) {
+    function collect(chunk: unknown) {
       if (limited) return;
       if (!Buffer.isBuffer(chunk)) throw new Error('runtime_qualification_output_invalid');
       outputBytes += chunk.length;
@@ -92,9 +102,9 @@ export async function qualifyRuntime(ownerValue:string|undefined) {
     child.stdout.on('data', collect);
     child.stderr.on('data', collect);
     const deadline = setTimeout(terminate, 5 * 60 * 1000);
-    let code:number|null;
+    let code: number | null;
     try {
-      code = await new Promise<number|null>((resolve, reject) => {
+      code = await new Promise<number | null>((resolve, reject) => {
         child.once('error', () => reject(new Error('runtime_qualification_command_failed')));
         child.once('close', resolve);
       });
@@ -112,7 +122,9 @@ export async function qualifyRuntime(ownerValue:string|undefined) {
     return sanitized;
   }
   try {
-    const version = required((await ownerPool.query<{server_version_num:string}>('SHOW server_version_num')).rows[0]).server_version_num;
+    const version = required(
+      (await ownerPool.query<{ server_version_num: string }>('SHOW server_version_num')).rows[0],
+    ).server_version_num;
     if (Math.floor(Number(version) / 10000) !== 18) throw new Error('postgresql18_required');
     const migrationDirectory = new URL('../../packages/database/migrations/', import.meta.url);
     for (const name of (await readdir(migrationDirectory)).filter((name) => name.endsWith('.sql')).sort()) {

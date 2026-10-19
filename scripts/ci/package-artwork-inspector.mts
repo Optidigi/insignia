@@ -44,7 +44,7 @@ export async function packageInspector({
   await copyFile(resolve(dirname(process.execPath), '../LICENSE'), join(output, 'NODE-LICENSE'));
   await chmod(join(output, 'bin/node'), 0o500);
   const template = await readFile(join(root, 'deployment/artwork-inspector/artwork-inspection.service.in'), 'utf8');
-  await copyFile(join(root, 'deployment/artwork-inspector/start.mjs'), join(output, 'start.mjs'));
+  await copyFile(join(root, 'deployment/artwork-inspector/start.mts'), join(output, 'start.mts'));
   await writeFile(join(output, 'service.template'), template, { mode: 0o400 });
   const files: Record<string, { kind: 'link'; target: string } | { kind: 'file'; mode: number; sha256: string }> = {};
   async function inventory(directory: string) {
@@ -92,7 +92,7 @@ export async function packageInspector({
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  assert.equal(process.argv.length, 4, 'Usage: package-artwork-inspector.mjs WORKER_PACKAGE NEW_DESTINATION');
+  assert.equal(process.argv.length, 4, 'Usage: package-artwork-inspector.mts WORKER_PACKAGE NEW_DESTINATION');
   const sourceHead = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
   const sourceTree = execFileSync('git', ['rev-parse', 'HEAD^{tree}'], { cwd: root, encoding: 'utf8' }).trim();
   assert.ok(process.argv[2] && process.argv[3]);

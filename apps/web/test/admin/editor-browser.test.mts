@@ -1258,7 +1258,7 @@ test('numeric placement input reaches owner state before blur and survives an ow
   await page.getByLabel('Print area', { exact: true }).selectOption('front');
   assert.equal(await page.getByLabel('Horizontal position', { exact: true }).inputValue(), '0.605');
 });
-const stressIterations = Number(process.env.M5_PUBLICATION_STRESS_ITERATIONS ?? '1');
+const stressIterations = Number(process.env.INSIGNIA_PUBLICATION_STRESS_ITERATIONS ?? '1');
 if (!Number.isInteger(stressIterations) || stressIterations < 1 || stressIterations > 100)
   throw new Error('Invalid publication stress iteration count');
 for (let iteration = 1; iteration <= stressIterations; iteration++) {
@@ -1280,7 +1280,7 @@ for (let iteration = 1; iteration <= stressIterations; iteration++) {
           await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
             route.fulfill({ body: '', contentType: 'text/javascript' }),
           );
-          if (process.env.M5_STRESS_BLOCK_VISUALIZER === '1') {
+          if (process.env.INSIGNIA_STRESS_BLOCK_VISUALIZER === '1') {
             const directory = new URL('../../dist/client/_astro/', import.meta.url);
             let blocked = 0;
             for (const name of await readdir(directory)) {

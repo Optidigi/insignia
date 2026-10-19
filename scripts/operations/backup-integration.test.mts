@@ -41,7 +41,17 @@ test('real populated dump restores atomically with erasure/expiry replay, unchan
   };
   const run = (argv: string[], options: Partial<SpawnSyncOptionsWithStringEncoding> = {}) => {
     const result = invoke(argv, options);
-    assert.equal(result.status, 0, `Isolated command failed: ${result.stderr}`);
+    const sensitive = Object.entries(options.env ?? env)
+      .filter(([key]) => /PASSWORD|SECRET|TOKEN|DATABASE_URL/.test(key))
+      .map(([, value]) => value)
+      .filter((value): value is string => Boolean(value));
+    const redact = (value: string) =>
+      sensitive.reduce((output, secret) => output.replaceAll(secret, '<REDACTED>'), value);
+    assert.equal(
+      result.status,
+      0,
+      `Isolated command failed: stdout=${redact(result.stdout ?? '').slice(-8192)} stderr=${redact(result.stderr ?? '').slice(-8192)}`,
+    );
     return result.stdout;
   };
   const psql = (sql: string) => run([join(tools, 'psql'), '-X', '-v', 'ON_ERROR_STOP=1', '-c', sql]);

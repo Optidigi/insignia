@@ -192,3 +192,43 @@ test('merchant templates cannot bypass components through raw HTML sinks', async
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('structural containers cannot become replacement merchant controls', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'polaris-structural-'));
+  try {
+    await writeFile(join(root, 'tsconfig.json'), '{}');
+    const inspect = () =>
+      inspectPolarisPresentation({
+        root,
+        tsconfig: 'tsconfig.json',
+        merchantEntries: ['view.tsx', 'page.astro'],
+        buyerEntries: [],
+      });
+    await writeFile(join(root, 'page.astro'), '<div role="status"><s-text>Ready</s-text></div>');
+    await writeFile(
+      join(root, 'view.tsx'),
+      'export const view = <div role="status" tabIndex={-1}><s-text>Ready</s-text></div>;',
+    );
+    assert.deepEqual((await inspect()).violations, []);
+    for (const source of [
+      'export const view = <div role="button" tabIndex={0} onClick={save}>Save</div>;',
+      'export const view = createElement("section", { role: "checkbox", onKeyDown: save }, "Save");',
+      'export const view = <div tabIndex={0}>Save</div>;',
+      "export const view = <div role={'button'}>Save</div>;",
+      'export const view = <div role={controlRole}>Save</div>;',
+      'export const view = createElement("div", {role: controlRole}, "Save");',
+      'export const view = <div onClick={save}>Save</div>;',
+    ]) {
+      await writeFile(join(root, 'view.tsx'), source);
+      assert.ok(
+        (await inspect()).violations.some((v) => v.includes('structural merchant control')),
+        source,
+      );
+    }
+    await writeFile(join(root, 'view.tsx'), 'export const view = <s-button onClick={save}>Save</s-button>;');
+    await writeFile(join(root, 'page.astro'), '<section role="button" onclick="save()">Save</section>');
+    assert.ok((await inspect()).violations.some((v) => v.includes('structural merchant control')));
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

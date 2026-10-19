@@ -96,3 +96,26 @@ test('dangling expired artifact symlink retains its receipt and intent while ind
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('dangling receipt and intent sidecars retain damaged identities while other expired archives prune', () => {
+  for (const suffix of ['.json', '.intent.json']) {
+    const root = mkdtempSync('/dev/shm/insignia-retention-sidecar-');
+    try {
+      const bad = '11111111-1111-1111-1111-111111111111';
+      const good = '22222222-2222-2222-2222-222222222222';
+      const dangling = join(root, bad + suffix);
+      symlinkSync(join(root, 'missing-target'), dangling);
+      writeFileSync(
+        join(root, `${good}.json`),
+        JSON.stringify({ format: 'insignia-encrypted-backup-v1', id: good, expiresAt: '2000-01-01T00:00:00Z' }),
+      );
+      writeFileSync(join(root, `${good}.cms`), 'expired owned ciphertext');
+      assert.throws(() => prune(root, Date.now()), /damaged identities/);
+      assert(lstatSync(dangling).isSymbolicLink());
+      assert(!existsSync(join(root, `${good}.cms`)));
+      assert(!existsSync(join(root, `${good}.json`)));
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  }
+});

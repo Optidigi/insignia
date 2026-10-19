@@ -12,7 +12,7 @@ test('owner purchase grant rejects privileged flags, inherited roles, ownership 
   const pool = new Pool({ connectionString: process.env.DATABASE_URL }),
     client = await pool.connect();
   const script = (
-    await readFile(new URL('../../../scripts/m8-purchase/runtime-grants.sql', import.meta.url), 'utf8')
+    await readFile(new URL('../../../scripts/database/purchase-runtime-grants.sql', import.meta.url), 'utf8')
   ).replaceAll('insignia_queue_consume', role);
   try {
     await client.query(`CREATE ROLE ${role} NOLOGIN CREATEROLE`);

@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "astro check && astro build",
-    "test": "node --test test/*.test.mjs test/admin/*.test.mjs test/artwork/*.test.mjs",
+    "test": "node --test test/*.test.mts test/admin/*.test.mts test/artwork/*.test.mts",
     "start": "node dist/server/entry.mjs"
   },
   "dependencies": {

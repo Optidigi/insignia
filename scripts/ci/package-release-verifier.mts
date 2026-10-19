@@ -17,9 +17,9 @@ import {
 import { stripTypeScriptTypes } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { SOURCE_PATHS } from '../release/launch.mts';
 import { SESSION_CLIENT_SHA256 } from '../release/paths.mts';
 import { prepareVerifierSdk } from './prepare-verifier-sdk.mts';
-import { verifierSourcePaths } from './runtime-boundaries.mts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const hash = (bytes: string | Uint8Array) => createHash('sha256').update(bytes).digest('hex');
@@ -56,10 +56,10 @@ export async function packageVerifier({
     });
   await symlink('worker/node_modules', join(output, 'node_modules'));
   const sources = new Set([
-    ...(await verifierSourcePaths()),
+    ...SOURCE_PATHS,
     'package.json',
     'deployment/release-verifier/artifact.mts',
-    'deployment/release-verifier/bootstrap.mjs',
+    'deployment/release-verifier/bootstrap.mts',
     'scripts/release/paths.mts',
     'scripts/release/private-pipe.mts',
     'deployment/release-verifier/client.mts',

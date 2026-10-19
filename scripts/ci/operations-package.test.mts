@@ -51,10 +51,10 @@ if(typeof createR2ArtworkStorage!=='function'||typeof AwsClient!=='function'||ty
 await import('./scripts/operations/backup.mts');
 await import('./scripts/operations/backup-run.mts');
 await import('./scripts/operations/heartbeat.mts');
-await import('./scripts/operations/heartbeat-snapshot.mjs');
-const backup=await import('./scripts/operations/backup-snapshot.mjs');
+await import('./scripts/operations/heartbeat-snapshot.mts');
+const backup=await import('./scripts/operations/backup-snapshot.mts');
 if(backup.objectReferences([],[]).length!==0)throw Error('copied backup helper failed');
-const replica=await import('./scripts/operations/backup-replica.mjs');
+const replica=await import('./scripts/operations/backup-replica.mts');
 if(typeof replica.replicateStore!=='function')throw Error('replica closure missing');
 await import('./scripts/privacy/restore-exclusions.mts');
 `,
@@ -83,7 +83,7 @@ async function verifyCollector(artifact: string, scratch: string) {
     }),
     { mode: 0o600 },
   );
-  const result = spawnSync(join(artifact, 'bin/node'), [join(artifact, 'scripts/operations/heartbeat-snapshot.mjs')], {
+  const result = spawnSync(join(artifact, 'bin/node'), [join(artifact, 'scripts/operations/heartbeat-snapshot.mts')], {
     cwd: '/',
     env: { PATH: '/usr/bin:/bin', INSIGNIA_HEARTBEAT_SNAPSHOT_CONFIG: config },
     encoding: 'utf8',
@@ -128,7 +128,7 @@ globalThis.fetch=()=>{throw Error('Provider calls prohibited')};
       [
         '--import',
         preload,
-        join(artifact, 'scripts/operations/backup-snapshot.mjs'),
+        join(artifact, 'scripts/operations/backup-snapshot.mts'),
         objects,
         join(scratch, 'manifest.json'),
         window,
@@ -194,7 +194,7 @@ async function verifyReplicaCli(artifact: string) {
     );
     const result = spawnSync(
       join(artifact, 'bin/node'),
-      ['--import', preload, join(artifact, 'scripts/operations/backup-replica.mjs'), 'prune', config],
+      ['--import', preload, join(artifact, 'scripts/operations/backup-replica.mts'), 'prune', config],
       { cwd: '/', env: { PATH: '/usr/bin:/bin' }, encoding: 'utf8', timeout: 10_000 },
     );
     assert.equal(result.status, 1);
@@ -246,7 +246,7 @@ test('operations package relocates with its complete module paths, executable No
       'NODE-LICENSE',
       'scripts/operations/backup.mts',
       'scripts/operations/backup-run.mts',
-      'scripts/operations/backup-replica.mjs',
+      'scripts/operations/backup-replica.mts',
       'scripts/privacy/restore-exclusions.mts',
       'packages/database/migrations/20261018000500_restore_validation_namespace.sql',
       'apps/worker/node_modules/pg/index.cjs',

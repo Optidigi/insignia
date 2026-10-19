@@ -55,7 +55,7 @@ test('actual queue-member login reconciles signed initial and renewed offers, pa
       18,
     );
     await installQueue(ownerUrl);
-    await owner.query(await readFile(new URL('../../../scripts/m5-024/queue-roles.sql', import.meta.url), 'utf8'));
+    await owner.query(await readFile(new URL('../../../scripts/worker/queue-roles.sql', import.meta.url), 'utf8'));
     // Qualification uses a new real session login, inheriting the actual intended capability role.
     await owner.query(
       // CREATE ROLE cannot bind parameters; generated hex contains no SQL quote characters.

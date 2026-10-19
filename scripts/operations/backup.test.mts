@@ -41,6 +41,28 @@ const emptyRestore: RestoreOptions = {
   exclusionScript: '',
 };
 
+test('backup deadlines preserve PostgreSQL text offsets and require an explicit valid timezone', () => {
+  const expected = Date.UTC(2026, 9, 19, 10, 15, 0, 123);
+  for (const value of [
+    '2026-10-19 10:15:00.123456+00',
+    '2026-10-19 12:15:00.123456+02',
+    '2026-10-19 08:15:00.123456-02',
+    '2026-10-19T10:15:00.123Z',
+    '2026-10-19T12:15:00.123+02:00',
+    '2026-10-19T12:15:00.123+0200',
+  ])
+    assert.equal(timestamp(value), expected);
+  for (const value of [
+    '2026-10-19',
+    '2026-10-19T10:15:00',
+    '2026-10-19 10:15:00.123456',
+    'not-a-timestamp+00',
+    '2026-10-19T10:15:00+25',
+    '2026-10-19T10:15:00+00:99',
+  ])
+    assert.throws(() => timestamp(value));
+});
+
 test('archive source rejects missing originals, traversal and symlink identities', () => {
   const directory = temporary();
   try {

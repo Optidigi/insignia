@@ -804,7 +804,7 @@ test('restricted consumer grants permit only required retention and queue metada
       }),
     );
     const grants = required(
-      await readFile(new URL('../../../scripts/m5-024/queue-roles.sql', import.meta.url), 'utf8'),
+      await readFile(new URL('../../../scripts/worker/queue-roles.sql', import.meta.url), 'utf8'),
     ).replaceAll('pgboss', f.schema);
     await f.pool.query(grants);
     await f.pool.query(await readFile(new URL('../../../scripts/privacy/runtime-grants.sql', import.meta.url), 'utf8'));
@@ -934,7 +934,7 @@ test(
     try {
       await f.pool.query(
         required(
-          await readFile(new URL('../../../scripts/m5-024/queue-roles.sql', import.meta.url), 'utf8'),
+          await readFile(new URL('../../../scripts/worker/queue-roles.sql', import.meta.url), 'utf8'),
         ).replaceAll('pgboss', f.schema),
       );
       await f.pool.query(

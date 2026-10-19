@@ -122,13 +122,13 @@ test('actual built worker image qualifies OS isolation, frozen inventory, readin
     receipt.sourceHead = await run('git', ['rev-parse', 'HEAD']);
     receipt.sourceTree = await run('git', ['rev-parse', 'HEAD^{tree}']);
     receipt.dockerfileSha256 = createHash('sha256')
-      .update(await readFile(join(root, 'scripts/m5-024/Dockerfile')))
+      .update(await readFile(join(root, 'scripts/worker/Dockerfile')))
       .digest('hex');
     context = await mkdtemp(join(tmpdir(), `${prefix}-context-`));
     // Preserve portable pnpm relative links; fs.cp's default resolves link targets.
     await cp(packageRoot, join(context, 'worker-package'), { recursive: true, verbatimSymlinks: true });
     assert.deepEqual(collectWorkerInventory(join(context, 'worker-package/dist/main.js')), expectedInventory);
-    await cp(join(root, 'scripts/m5-024/Dockerfile'), join(context, 'Dockerfile'));
+    await cp(join(root, 'scripts/worker/Dockerfile'), join(context, 'Dockerfile'));
     const iid = join(context, 'image-id');
     owned.image = true;
     await docker(['build', '--network=none', '--iidfile', iid, '--tag', imageTag, context], { timeout: 180_000 });

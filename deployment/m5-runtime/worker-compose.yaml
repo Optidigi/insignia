@@ -1,4 +1,4 @@
-# Overlay on scripts/m5-024/worker-compose.yaml; same separate worker project.
+# Overlay on scripts/worker/worker-compose.yaml; same separate worker project.
 # Outbound bridge only; no host ports, proxy network, mounts or provider changes.
 name: insignia-uninstall-m5-024
 services:
