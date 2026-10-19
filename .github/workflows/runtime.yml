@@ -27,7 +27,6 @@ on:
       - 'deployment/artwork-inspector/**'
       - 'deployment/release-verifier/**'
       - 'deployment/m5-019r/**'
-      - 'scripts/lifecycle/**'
       - 'scripts/privacy/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
@@ -106,8 +105,8 @@ jobs:
         with:
           name: m8-runtime-role-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            docs/delivery/evidence/m8-context-runtime/runtime-role-ci.log
-            docs/delivery/evidence/m8-context-runtime/runtime-role-ci.json
+            .m1-artifacts/runtime-role-ci.log
+            .m1-artifacts/runtime-role-ci.json
           if-no-files-found: ignore
           retention-days: 7
       - name: Buyer HTTP ownership, admission and immutable issuance with PostgreSQL

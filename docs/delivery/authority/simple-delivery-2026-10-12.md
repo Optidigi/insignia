@@ -1,7 +1,0 @@
-# Owner direction — simple delivery, 12 October 2026
-
-Source: direct owner instruction with insignia-simple-delivery-2026-10-12.zip after the PR96 pause. Package integrity was verified against every supplied SHA256SUMS entry. The [original package](../history/simple-delivery-2026-10-12/00-START-HERE.md) is dated evidence; the current delivery policy is maintained once in the [operating model](../operating-model.md).
-
-The owner releases the pause and delegates M5 implementation, test seams, investigation/refactoring/research, tools/subagents, model/effort selection, proportionate review and normal merges. The old test-code ceiling, attempt-one-only CI, fixed role/model/effort policy, universal full-review restarts and browser-dependent engineering stop are superseded. The combined 30-second release evidence policy and temporary verifier composition are reviewable engineering choices; authentication expiry and independent authority remain requirements.
-
-Engineering readiness, native acceptance and deployment/rollout eligibility are distinct. The principal may review ENGINEERING_READY / NATIVE_ACCEPTANCE_DEFERRED and authorize independent next-milestone development with named supervised checks outstanding. Known application defects remain explicit. Full native acceptance and rollout require their original evidence. Existing product/architecture/protocol/history/resource contracts remain except for these explicit delivery/acceptance amendments. No additional resource allocation is created.

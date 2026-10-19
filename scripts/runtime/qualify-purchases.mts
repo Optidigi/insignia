@@ -7,7 +7,7 @@ import { required } from './validation.mts';
 
 const { Pool }: typeof import('pg') = createRequire(new URL('../../apps/worker/package.json', import.meta.url))('pg');
 const root = fileURLToPath(new URL('../../', import.meta.url));
-const evidence = new URL('../../docs/delivery/evidence/m8-context-runtime/', import.meta.url);
+const evidence = new URL('../../.m1-artifacts/', import.meta.url);
 
 export function qualificationTarget(value: unknown, suffix = randomUUID().replaceAll('-', '')) {
   if (typeof value !== 'string' || !value) throw new Error('local_owner_database_url_required');

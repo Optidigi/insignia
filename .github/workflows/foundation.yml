@@ -12,7 +12,6 @@ on:
       - 'scripts/runtime/**'
       - 'scripts/release/**'
       - 'scripts/worker/**'
-      - 'scripts/lifecycle/**'
       - 'scripts/database/**'
       - 'scripts/privacy/**'
       - 'apps/**'

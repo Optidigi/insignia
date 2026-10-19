@@ -337,7 +337,7 @@ test('real browser editor syncs typed view, variant and step controls with direc
   await page.getByText('Draft version 1').waitFor({ timeout: 5000 });
   await page.waitForFunction(() => document.querySelector<HTMLCanvasElement>('#insignia-visualizer canvas'));
   assert.ok((await page.locator('#insignia-visualizer canvas').count()) >= 3);
-  const captureDir = new URL('../../../../docs/delivery/evidence/m5-001-admin-browser/', import.meta.url);
+  const captureDir = new URL('../../../../.m1-artifacts/admin-browser/', import.meta.url);
   if (process.env.M5_CAPTURE_BROWSER === '1') {
     await mkdir(captureDir, { recursive: true });
     await page.screenshot({ path: new URL('editor-initial.png', captureDir).pathname, fullPage: true });

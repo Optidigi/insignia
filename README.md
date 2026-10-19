@@ -1,6 +1,6 @@
 # Insignia
 
-Shopify product customization: a merchant App Home editor, separate buyer storefront, signed whole-quote authorization and independent checkout validation. [Lean V1](docs/delivery/authority/lean-v1-2026-10-15.md) is the shipping scope. [Current state](docs/delivery/state.md) distinguishes integrated source, deployed artifacts, known defects and owner-held production gates.
+Shopify product customization: a merchant App Home editor, separate buyer storefront, signed whole-quote authorization and independent checkout validation. The [current specification](docs/architecture/implementation-plan.md) defines Lean V1. [Current state](docs/delivery/state.md) distinguishes integrated source, deployed artifacts, known defects and owner-held production gates.
 
 ## Start locally
 
@@ -32,10 +32,13 @@ PostgreSQL qualification is separate. Install PostgreSQL18 server/client tools (
 ## Find the current responsibility
 
 - [AGENTS](AGENTS.md): engineering entry, contracts and scoped skills.
-- [Full implementation plan](docs/architecture/implementation-plan.md) and [decision ledger](docs/architecture/decision-ledger.md): app shape, technical contracts and rationale.
-- [Operating model](docs/delivery/operating-model.md): autonomous delivery, TDD, review and normal integration.
+- [Current specification](docs/architecture/implementation-plan.md): complete Lean behavior, architecture, contracts, rationale and merchant source inventory.
+- [Operating model](docs/delivery/operating-model.md): delivery conventions and effective resource permissions.
+- [Current state and action checklist](docs/delivery/state.md): deployed components, next assignment, defects and exact owner/operator obligations.
 - [Runtime/deployment procedure](deployment/m5-runtime/README.md): current image/Compose/recovery responsibilities and real resource gates.
 
-Maintained tools live under responsibility-named `scripts/{boundaries,ci,database,functions,lifecycle,operations,privacy,release,runtime,worker}`. Project skills live in `.agents/skills`; select their project paths explicitly when the host also advertises generic account skills. A fresh session should confirm its intended checkout/base and project skill paths before editing. Preserve other dirty worktrees and actual service dependencies.
+Maintained tools live under responsibility-named `scripts/{boundaries,ci,database,functions,operations,privacy,release,runtime,worker}`. Project skills live in `.agents/skills`; select their project paths explicitly when the host also advertises generic account skills. A fresh session should confirm its intended checkout/base and project skill paths before editing. Preserve other dirty worktrees and actual service dependencies.
 
-[Historical records](docs/delivery/history/README.md) preserve fixed provenance outside routine execution; currently consumed fixtures remain maintained.
+Merchant UI is **owner-unaccepted** and assigned to the fresh UI agent for presentation rebuild. Current component/runtime checks and earlier internal visual observations do not establish owner acceptance. The source inventory is in the specification; the action checklist owns the assignment.
+
+Superseded development records remain in Git history. Necessary current effect/retention records and curated fixtures retain their explicit purpose; no historical prompt needs to be replayed to start work.

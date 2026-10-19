@@ -1,7 +1,0 @@
-{
-  "schema": "insignia-delivery-pointer-v1",
-  "status": "SUPERSEDED_SNAPSHOT",
-  "currentState": "docs/delivery/state.md",
-  "currentWorkIndex": "docs/delivery/evidence/m8-context-runtime/WORKLIST.md",
-  "historicalSnapshot": "docs/delivery/history/milestone-progress-m5-snapshot-20261015.json"
-}

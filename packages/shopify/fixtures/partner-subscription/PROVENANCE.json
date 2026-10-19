@@ -1,6 +1,6 @@
 {
   "purpose": "Recorded sanitized Partner response normalization, including price.active versus subscription state. Not a new native or recurring-only provider acceptance claim.",
-  "originalRecords": "Retained unchanged at sourcePath and fixed sourceCommit. Maintained response-shape fixtures replace app/shop/domain/subscription identities with synthetic values; price, usage, status and original observation times remain unchanged. These are not native acceptance records.",
+  "originalRecords": "Original records are retained in Git history at sourceCommit:sourcePath. Maintained response-shape fixtures replace app/shop/domain/subscription identities with synthetic values; price, usage, status and original observation times remain unchanged. These are not native acceptance records.",
   "files": [
     {
       "fixture": "partner-response.json",

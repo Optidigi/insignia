@@ -7,7 +7,6 @@ import { test } from 'node:test';
 import { classifyStatusDocs } from './status-docs.mts';
 
 const state = 'docs/delivery/state.md';
-const worklist = 'docs/delivery/evidence/m8-context-runtime/WORKLIST.md';
 const root = resolve(import.meta.dirname, '../..');
 type Fixture = {
   cwd: string;
@@ -41,7 +40,6 @@ function fixture(run: (fixture: Fixture) => void) {
   try {
     git('init', '--initial-branch=main');
     put(state, '# Delivery state\n\n[Receipt](receipt1.json). Working behavior is recorded here.\n');
-    put(worklist, '# Current work index\n\n[State](../../state.md). [Receipt](../../receipt1.json).\n');
     put('docs/delivery/receipt1.json', '{}\n');
     put('docs/delivery/receipt2.json', '{}\n');
     const base = commit();
@@ -59,13 +57,12 @@ function fixture(run: (fixture: Fixture) => void) {
 test('actual current-progress prose edits select the bounded route', () =>
   fixture(({ cwd, base, update, commit }) => {
     update(state);
-    update(worklist);
     assert.deepEqual(classifyStatusDocs({ cwd, base, head: commit() }), {
       route: 'status-docs',
       reason: 'CURRENT_DOCS_VALIDATED',
     });
   }));
-test('a single status document update can qualify while both documents stay valid', () =>
+test('a single status document update can qualify', () =>
   fixture(({ cwd, base, update, commit }) => {
     update(state);
     assert.equal(classifyStatusDocs({ cwd, base, head: commit() }).route, 'status-docs');
@@ -74,6 +71,7 @@ test('authority, executable, workflow and evidence-data edits require full check
   const mutations: ((fixture: Fixture) => void)[] = [
     ({ put }) => put('docs/delivery/authority/owner.md', 'Owner policy changes.\n'),
     ({ put }) => put('docs/delivery/other.md', 'A new document\n'),
+    ({ put }) => put('docs/delivery/evidence/m8-context-runtime/WORKLIST.md', 'Retired competing status\n'),
     ({ put }) => put('scripts/ci/changed.mts', 'export const changed=true;\n'),
     ({ put }) => put('.github/workflows/changed.yml', 'name: changed\n'),
     ({ put }) => put('docs/delivery/receipt1.json', '{"runtimeInput":"changed"}\n'),
@@ -214,23 +212,22 @@ test('current protected jobs retain full-route gates and required runtime bounda
   }
 });
 
-test('the real current state and work index support prose updates with their actual local links', () =>
+test('the real current state supports prose updates with its actual local links', () =>
   fixture(({ cwd, put, commit, update }) => {
-    for (const file of [state, worklist]) put(file, readFileSync(join(root, file), 'utf8'));
-    for (const file of [state, worklist]) {
+    for (const file of [state]) put(file, readFileSync(join(root, file), 'utf8'));
+    for (const file of [state]) {
       const source = readFileSync(join(cwd, file), 'utf8');
       for (const match of source.matchAll(/\[[^\]\n]*\]\(([^)\n]+)\)/g)) {
         const target = match[1]?.split('#')[0];
         if (!target || /^[a-z]+:/i.test(target)) continue;
         const path = posix.normalize(posix.join(posix.dirname(file), target));
-        if ([state, worklist].includes(path)) continue;
+        if ([state].includes(path)) continue;
         if (target.endsWith('/')) put(`${path}/fixture.md`, 'Tracked fixture directory.\n');
         else put(path, 'Fixture target for actual current document link.\n');
       }
     }
     const base = commit();
     update(state);
-    update(worklist);
     assert.deepEqual(classifyStatusDocs({ cwd, base, head: commit() }), {
       route: 'status-docs',
       reason: 'CURRENT_DOCS_VALIDATED',
