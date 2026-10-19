@@ -1421,5 +1421,423 @@
       ],
       "privateScreenshotRetention": "20October2026; no screenshots, tokens or raw response bodies committed."
     }
+  },
+  "canonicalAppCompletion20261019": {
+    "runtimeSource": {
+      "implementationPullRequest": 219,
+      "head": "272de9589f2fc0af4c7e24b2cdde86b3c7047e2a",
+      "base": "9989d7d3af85efe771c6332f9e886099f25f60e5",
+      "merge": "eea0dc1beb6f3dabb4395421302faed642be1094",
+      "tree": "06492da45c88020520f2b2fc02aec54f611aec3b",
+      "ciCheckout": "5306a4785b361a1a6ae1e11561c4dbe8571bdda6",
+      "ciParents": [
+        "9989d7d3af85efe771c6332f9e886099f25f60e5",
+        "272de9589f2fc0af4c7e24b2cdde86b3c7047e2a"
+      ]
+    },
+    "webImage": {
+      "manifest": "sha256:df1bb4e0fa24f5f602232775f9e450de631d9cc7f1d53392e2513bd823b7f7aa",
+      "config": "sha256:e5802da165a0fc2b676c4c1abcbb1232d51098ca57109f70fe7f42221e3bc1d5",
+      "archiveSha256": "1cfd2b7901ae6e4d019645670f2a6891c592516e6baec4dd8e9fa15a8f05c52a",
+      "archiveBytes": 455564288
+    },
+    "handover": {
+      "at": "2026-10-19T14:38:58.086Z",
+      "stopAttempts": 1,
+      "upAttempts": 1,
+      "retries": 0,
+      "other34ContainersAndPidsUnchanged": true,
+      "configParity": true,
+      "schema45ProtectedFactsUnchangedBeforeAndAfterCollection": true,
+      "receiverRecreated": false,
+      "recoverySnapshot": "Existing qualified private snapshot revalidated by original expiry/hash/size and protected facts; no new plaintext dump or production recovery claim."
+    },
+    "readOnlyNativeSmoke": {
+      "classification": "CANONICAL_NATIVE_EIGHT_VIEW_READONLY_PASS_NOT_OWNER_VISUAL_ACCEPTANCE",
+      "sourceTree": "06492da45c88020520f2b2fc02aec54f611aec3b",
+      "image": "sha256:df1bb4e0fa24f5f602232775f9e450de631d9cc7f1d53392e2513bd823b7f7aa",
+      "at": "2026-10-19T14:43:24.562Z",
+      "pages": [
+        {
+          "area": "products",
+          "layout": {
+            "width": 1216,
+            "documentWidth": 1216,
+            "pages": 1,
+            "polarisDefined": true
+          },
+          "mobile": {
+            "width": 379,
+            "documentWidth": 364
+          },
+          "apiReads": [
+            {
+              "path": "/api/admin/products",
+              "status": 200,
+              "sha256": "c307646a909b7bfe9f018a27bb12c7a8739573d88a6fa22f2b4d24eaad35cc57"
+            }
+          ]
+        },
+        {
+          "area": "orders",
+          "layout": {
+            "width": 1216,
+            "documentWidth": 1216,
+            "pages": 1,
+            "polarisDefined": true
+          },
+          "mobile": {
+            "width": 379,
+            "documentWidth": 364
+          },
+          "apiReads": [
+            {
+              "path": "/api/purchases/v1",
+              "status": 200,
+              "sha256": "0a1552d990e7025fa2e5ea50e283743e513d991074a07b6dbdd3cf798c9313e7"
+            }
+          ]
+        },
+        {
+          "area": "settings",
+          "layout": {
+            "width": 1216,
+            "documentWidth": 1216,
+            "pages": 1,
+            "polarisDefined": true
+          },
+          "mobile": {
+            "width": 379,
+            "documentWidth": 379
+          },
+          "apiReads": []
+        },
+        {
+          "area": "settings/methods",
+          "layout": {
+            "width": 1216,
+            "documentWidth": 1216,
+            "pages": 1,
+            "polarisDefined": true
+          },
+          "mobile": {
+            "width": 379,
+            "documentWidth": 379
+          },
+          "apiReads": [
+            {
+              "path": "/api/admin/methods",
+              "status": 200,
+              "sha256": "12b075d6cc7d142a4abe22c6c30f9d04d0f32f9e6c49feea459f3fc80110b0f1"
+            }
+          ]
+        },
+        {
+          "area": "settings/storefront",
+          "layout": {
+            "width": 1216,
+            "documentWidth": 1216,
+            "pages": 1,
+            "polarisDefined": true
+          },
+          "mobile": {
+            "width": 379,
+            "documentWidth": 364
+          },
+          "apiReads": []
+        },
+        {
+          "area": "settings/billing",
+          "layout": {
+            "width": 1216,
+            "documentWidth": 1216,
+            "pages": 1,
+            "polarisDefined": true
+          },
+          "mobile": {
+            "width": 379,
+            "documentWidth": 379
+          },
+          "apiReads": [
+            {
+              "path": "/api/admin/billing",
+              "status": 200,
+              "sha256": "cb5d85adb072941521828e0292eaafb6ab82b0979e02f0ad0e1ca43d1c5153f9"
+            }
+          ]
+        },
+        {
+          "area": "settings/privacy",
+          "layout": {
+            "width": 1216,
+            "documentWidth": 1216,
+            "pages": 1,
+            "polarisDefined": true
+          },
+          "mobile": {
+            "width": 379,
+            "documentWidth": 379
+          },
+          "apiReads": [
+            {
+              "path": "/api/purchases/v1/privacy",
+              "status": 200,
+              "sha256": "eef46741adfc3a9f76294d3b78f37a45f113092ac9d44ee77c7a038a88ff09a1"
+            }
+          ]
+        },
+        {
+          "area": "products/10519322493211/config",
+          "layout": {
+            "width": 1216,
+            "documentWidth": 1201,
+            "pages": 1,
+            "polarisDefined": true
+          },
+          "mobile": {
+            "width": 379,
+            "documentWidth": 364
+          },
+          "apiReads": [
+            {
+              "path": "/api/admin/products/10519322493211/config",
+              "status": 200,
+              "sha256": "dc92c8b1cdc38f2a1c1fed224a7e273414f37819f8ed233f4e0e89d3bd287029"
+            }
+          ]
+        }
+      ],
+      "api": [
+        {
+          "path": "/api/admin/products",
+          "status": 200,
+          "sha256": "c307646a909b7bfe9f018a27bb12c7a8739573d88a6fa22f2b4d24eaad35cc57"
+        },
+        {
+          "path": "/api/purchases/v1",
+          "status": 200,
+          "sha256": "0a1552d990e7025fa2e5ea50e283743e513d991074a07b6dbdd3cf798c9313e7"
+        },
+        {
+          "path": "/api/admin/methods",
+          "status": 200,
+          "sha256": "12b075d6cc7d142a4abe22c6c30f9d04d0f32f9e6c49feea459f3fc80110b0f1"
+        },
+        {
+          "path": "/api/admin/billing",
+          "status": 200,
+          "sha256": "cb5d85adb072941521828e0292eaafb6ab82b0979e02f0ad0e1ca43d1c5153f9"
+        },
+        {
+          "path": "/api/purchases/v1/privacy",
+          "status": 200,
+          "sha256": "eef46741adfc3a9f76294d3b78f37a45f113092ac9d44ee77c7a038a88ff09a1"
+        },
+        {
+          "path": "/api/admin/products/10519322493211/config",
+          "status": 200,
+          "sha256": "dc92c8b1cdc38f2a1c1fed224a7e273414f37819f8ed233f4e0e89d3bd287029"
+        }
+      ],
+      "blockedWrites": 0,
+      "applicationWrites": 0,
+      "pageErrors": 0
+    },
+    "mobileComposition": {
+      "classification": "INITIAL_BODY_CAPTURE_CLIPPING_DISPROVED_BY_FIXED_VIEWPORT",
+      "cause": "Tall iframe-body capture cropped evidence; fixed outer viewport and actual scroll observations show readable content. No application style patch was applied.",
+      "geometry": [
+        {
+          "route": "orders",
+          "innerWidth": 379,
+          "clientWidth": 364,
+          "scrollWidth": 364,
+          "note": null,
+          "outlyingRawControlBoxes": 0,
+          "paintedControlSpillObserved": false
+        },
+        {
+          "route": "products-10519322493211-config",
+          "innerWidth": 379,
+          "clientWidth": 364,
+          "scrollWidth": 364,
+          "note": "Only a visually-hidden clipped native file input has an outlying bounding box.",
+          "outlyingRawControlBoxes": 1,
+          "paintedControlSpillObserved": false
+        },
+        {
+          "route": "products",
+          "innerWidth": 379,
+          "clientWidth": 364,
+          "scrollWidth": 364,
+          "note": null,
+          "outlyingRawControlBoxes": 0,
+          "paintedControlSpillObserved": false
+        },
+        {
+          "route": "settings-billing",
+          "innerWidth": 379,
+          "clientWidth": 379,
+          "scrollWidth": 379,
+          "note": null,
+          "outlyingRawControlBoxes": 0,
+          "paintedControlSpillObserved": false
+        },
+        {
+          "route": "settings",
+          "innerWidth": 379,
+          "clientWidth": 379,
+          "scrollWidth": 379,
+          "note": null,
+          "outlyingRawControlBoxes": 0,
+          "paintedControlSpillObserved": false
+        },
+        {
+          "route": "settings-methods",
+          "innerWidth": 379,
+          "clientWidth": 379,
+          "scrollWidth": 379,
+          "note": null,
+          "outlyingRawControlBoxes": 0,
+          "paintedControlSpillObserved": false
+        },
+        {
+          "route": "settings-privacy",
+          "innerWidth": 379,
+          "clientWidth": 379,
+          "scrollWidth": 379,
+          "note": null,
+          "outlyingRawControlBoxes": 0,
+          "paintedControlSpillObserved": false
+        },
+        {
+          "route": "settings-storefront",
+          "innerWidth": 379,
+          "clientWidth": 364,
+          "scrollWidth": 364,
+          "note": null,
+          "outlyingRawControlBoxes": 0,
+          "paintedControlSpillObserved": false
+        }
+      ],
+      "imagesActuallyViewedByIndependentReviewer": 16,
+      "remainingMaterialVisibleDefects": 0,
+      "ownerVisualAcceptance": "PENDING_OWNER_JUDGMENT",
+      "captures": [
+        {
+          "file": "orders-actual-viewport.png",
+          "sha256": "84d3c100c3718696e93348c992d56e1377a1c657c4e3a85a011d5aa5d1bb3c11",
+          "bytes": 46364
+        },
+        {
+          "file": "orders-scrolled.png",
+          "sha256": "a52a699ad35add3a23a25c7758568a092f8e74fd23c25e4b56357f2d53519d47",
+          "bytes": 46422
+        },
+        {
+          "file": "products-10519322493211-config-actual-viewport.png",
+          "sha256": "9e2f933e88e59fd3cbb26702e6390d2dd1d52961a40e5ddc8fdc28602e13ee63",
+          "bytes": 48466
+        },
+        {
+          "file": "products-10519322493211-config-scrolled.png",
+          "sha256": "32ad10c389edf4ee8a6fbb5245f12486f1041e45b9610ac83a7ecad4f372b5cb",
+          "bytes": 37347
+        },
+        {
+          "file": "products-actual-viewport.png",
+          "sha256": "e5412ee7e3932b1aa835bb445299bbc9a401f603a9fb3859d99d54f5fb256f50",
+          "bytes": 49446
+        },
+        {
+          "file": "products-scrolled.png",
+          "sha256": "2cf76354f57f242a3f3cfe9ef0a06c54636fb47649804864127ef304090155ce",
+          "bytes": 51328
+        },
+        {
+          "file": "settings-actual-viewport.png",
+          "sha256": "8a6d534561e94c192ac95d3861fc2abe9cb4ab8f35b77989da96705d461593f4",
+          "bytes": 39320
+        },
+        {
+          "file": "settings-billing-actual-viewport.png",
+          "sha256": "a6800beed113b8c1ce6010a8b890e1db14668de1359d4801f5e1bfc5ff6c863d",
+          "bytes": 36835
+        },
+        {
+          "file": "settings-billing-scrolled.png",
+          "sha256": "a6800beed113b8c1ce6010a8b890e1db14668de1359d4801f5e1bfc5ff6c863d",
+          "bytes": 36835
+        },
+        {
+          "file": "settings-methods-actual-viewport.png",
+          "sha256": "8e1669b61ed15f33330343195f3cf8dc933aa82a114d9d00e2e804cb42ae870e",
+          "bytes": 35855
+        },
+        {
+          "file": "settings-methods-scrolled.png",
+          "sha256": "8e1669b61ed15f33330343195f3cf8dc933aa82a114d9d00e2e804cb42ae870e",
+          "bytes": 35855
+        },
+        {
+          "file": "settings-privacy-actual-viewport.png",
+          "sha256": "46bc5c8766a2b762dd409d0367d26f0e26cd3ebea89f7039af6c380ec5e6b97d",
+          "bytes": 32470
+        },
+        {
+          "file": "settings-privacy-scrolled.png",
+          "sha256": "46bc5c8766a2b762dd409d0367d26f0e26cd3ebea89f7039af6c380ec5e6b97d",
+          "bytes": 32470
+        },
+        {
+          "file": "settings-scrolled.png",
+          "sha256": "8a6d534561e94c192ac95d3861fc2abe9cb4ab8f35b77989da96705d461593f4",
+          "bytes": 39320
+        },
+        {
+          "file": "settings-storefront-actual-viewport.png",
+          "sha256": "792f161ad37b5aaf99896dc0b25aa1353d702fdf000de52c94cee2f6ec21f9e2",
+          "bytes": 61085
+        },
+        {
+          "file": "settings-storefront-scrolled.png",
+          "sha256": "d058ddf8fc56379b02ca6d4452a82fc58a6d36fe27bb0b2de45764a027d58dcb",
+          "bytes": 59308
+        }
+      ],
+      "privateCaptureRetention": "Original temporary-copy deadline remains 20 October; no restamping."
+    },
+    "freshConsumerAgreement": {
+      "requestId": "a33fe402-a305-4304-93a9-48ad721f90a4",
+      "recordId": "718eb083-d14f-4eac-8ae8-769eb356018b",
+      "observedAt": "2026-10-19T14:43:35.835Z",
+      "expiresAt": "2026-10-19T14:44:04.099Z",
+      "newAcknowledgedAppends": 1,
+      "webAndWorkerRecordAgreement": true,
+      "priorPhasesPreserved": true,
+      "providerMutationCalls": 0,
+      "actualPurchaseAdmission": "NOT_ASSERTED",
+      "expiryMeaning": "Bounded observation at original expiry, not present-time admission or extended validity."
+    },
+    "productionEligibility": "OWNER_GATES_OPEN",
+    "VAT": "UNRESOLVED_NO_RETRY",
+    "finalHostRead": {
+      "classification": "FOUR_CURRENT_RESPONSIBILITIES_DEPLOYED_AND_HEALTHY",
+      "webSourceTree": "06492da45c88020520f2b2fc02aec54f611aec3b",
+      "otherRuntimeSourceTree": "824cf04099d43bb18aaccd5293cf2d027e04b309",
+      "containerCount": 35,
+      "unrelatedContainersAndPidsUnchanged": 34,
+      "images": {
+        "/insignia-rewrite-m5-019-web": "sha256:df1bb4e0fa24f5f602232775f9e450de631d9cc7f1d53392e2513bd823b7f7aa",
+        "/insignia-uninstall-m5-024-worker-1": "sha256:fae3bfac3f671174711b63a4e10f546d27510ddb87f613f9df4e8ac261e60f45",
+        "/insignia-release-verifier-verifier-1": "sha256:6ff86f4f01da369f67256bc57d28624a04ee0bf31d5c250a9815f4c1b7b84322"
+      },
+      "inspectorActive": true,
+      "verifierFenceReleased": true,
+      "credentialFenceSelectOnly": true,
+      "providerMutationCalls": 0,
+      "observedAt": "2026-10-19T15:07:56.211Z",
+      "operatorSha256": "36ecb7c9611337eaec834865a3028b4d75ca0b445bc972e4e2ffeb9b831b4402"
+    }
   }
 }

@@ -276,5 +276,45 @@
     "redGreen": "Observed local stale-lock disabled-button failure before correction, then15/15 affected browser tests PASS with zero skips.",
     "review": "deployment_review216 independent read-only impact CLEAR; no assertions removed/relaxed, runtime change or real record/private-copy deadline extension.",
     "validation": "Admin test strict compiler, targeted Biome, source/current-link inventory and diff checks PASS; updated-head CI required. Deployed services unchanged."
+  },
+  "canonicalAppCompletion20261019": {
+    "base": "9989d7d3af85efe771c6332f9e886099f25f60e5",
+    "initialCandidate": "aa905eebf20bdf3c7ff4af7fa35e027430d33337",
+    "correctedRuntimeCandidate": "272de9589f2fc0af4c7e24b2cdde86b3c7047e2a",
+    "provider": "codex",
+    "model": "gpt-6.1-sol",
+    "method": "Fresh read-only independent contexts; no credential/connector isolation claimed.",
+    "implementation": {
+      "initialFindings": [
+        "Outgoing-navigation loading expression still unquoted",
+        "Preview dropped redirect destinations",
+        "Isolated launcher inherited auxiliary database target",
+        "Command-target checker missed apps/packages"
+      ],
+      "resolution": "Shared initial/transition expression and real-link regression; validated local redirects; poisoned-target sentinel0connections; real preview-target negative.",
+      "impactReview": {
+        "standardsFindings": 0,
+        "specFindings": 0
+      }
+    },
+    "deployment": {
+      "initialFindings": [
+        "Successful recovery capture not required by handover",
+        "Concurrent configuration drift could be overwritten",
+        "Captured container/config baselines not enforced"
+      ],
+      "resolution": "Completion hashes, original recovery identity/expiry/integrity and fresh protected facts; exclusive private lock plus post-stop inode/content check; captured all-container/model comparison.",
+      "impactFinding": "Move single fact query and minimum recovery headroom check immediately before dispatch",
+      "mechanicalClosure": "Applied exact requested ordering; strict operator compilation and actual single-stop/single-recreation parity qualification passed. No additional full-review verdict invented."
+    },
+    "visual": {
+      "initialImagesActuallyViewed": 16,
+      "initialFinding": "Mobile right clipping versus capture crop unresolved",
+      "diagnosis": "Tall iframe-body capture cropped evidence; fixed outer viewport and scroll photos show readable live content without CSS changes.",
+      "correctedImagesActuallyViewed": 16,
+      "remainingMaterialVisibleDefects": 0,
+      "ownerVisualAcceptance": "PENDING_OWNER_JUDGMENT"
+    },
+    "productionEligibility": "OWNER_GATES_OPEN"
   }
 }

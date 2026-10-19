@@ -3,12 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { createActiveSubscriptionClient } from '../src/active-subscription.js';
 import { jsonRecord, record, string } from './fixture-assertions.js';
 
-const evidenceRoot = new URL('../../../docs/delivery/evidence/m4-001/', import.meta.url);
+const fixtureRoot = new URL('../fixtures/partner-subscription/', import.meta.url);
 
 describe('designated read-only Partner response shape', () => {
-  it('normalizes the sanitized live shape without treating price.active false as cancellation', async () => {
-    const fixture = readFileSync(new URL('sanitized-live-partner-fixture.json', evidenceRoot), 'utf8');
-    const expected = jsonRecord(readFileSync(new URL('normalized-live-partner-snapshot.json', evidenceRoot), 'utf8'));
+  it('normalizes the identity-sanitized recorded shape without treating price.active false as cancellation', async () => {
+    const fixture = readFileSync(new URL('partner-response.json', fixtureRoot), 'utf8');
+    const expected = jsonRecord(readFileSync(new URL('expected-snapshot.json', fixtureRoot), 'utf8'));
     const client = createActiveSubscriptionClient({
       transport: { query: async () => fixture },
       now: () => new Date(string(record(expected.normalized).observedAt)),

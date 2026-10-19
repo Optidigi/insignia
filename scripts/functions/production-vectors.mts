@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import persisted from '../../docs/delivery/evidence/m4-002/pg-persisted-negative-vector.json' with { type: 'json' };
-import accepted from '../../docs/delivery/evidence/m4-002/synthetic-accepted-quote.json' with { type: 'json' };
+import accepted from '../../packages/cart-authorization/fixtures/accepted-quote-example.json' with { type: 'json' };
+import persisted from '../../packages/cart-authorization/fixtures/persisted-negative-vector.json' with { type: 'json' };
 import vectors from '../../packages/cart-authorization/fixtures/whole-quote-v2.json' with { type: 'json' };
 import { calculatedQueryCost } from './query-cost.mts';
 import {
@@ -284,10 +284,10 @@ export function productionVectors(runner: string) {
     version: 1,
     sourceVectorsSha256: hash(readFileSync(join(ROOT, 'packages/cart-authorization/fixtures/whole-quote-v2.json'))),
     acceptedQuoteExampleSha256: hash(
-      readFileSync(join(ROOT, 'docs/delivery/evidence/m4-002/synthetic-accepted-quote.json')),
+      readFileSync(join(ROOT, 'packages/cart-authorization/fixtures/accepted-quote-example.json')),
     ),
     pgPersistedQuoteVectorSha256: hash(
-      readFileSync(join(ROOT, 'docs/delivery/evidence/m4-002/pg-persisted-negative-vector.json')),
+      readFileSync(join(ROOT, 'packages/cart-authorization/fixtures/persisted-negative-vector.json')),
     ),
     runnerSha256: hash(readFileSync(runner)),
     rows,

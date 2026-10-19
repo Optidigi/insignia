@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { createHash, createPublicKey, verify } from 'node:crypto';
 import { test } from 'node:test';
-import persisted from '../../../docs/delivery/evidence/m4-002/pg-persisted-negative-vector.json' with { type: 'json' };
 import matrix from '../fixtures/currency-matrix-v1.json' with { type: 'json' };
+import persisted from '../fixtures/persisted-negative-vector.json' with { type: 'json' };
 // Static JSON imports retain the exact immutable fixture values and expose their real DTO shapes to tsc.
 import vector from '../fixtures/whole-quote-v2.json' with { type: 'json' };
 import { issueAdmittedQuote } from '../src/admission.ts';

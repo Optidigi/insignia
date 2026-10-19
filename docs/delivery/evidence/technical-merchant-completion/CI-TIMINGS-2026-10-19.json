@@ -543,6 +543,502 @@
     ]
   },
   "localComparisonLimitation": "Pre-build boundary/secrets failures are prerequisite observations, not comparable passing timings. Concurrent UI style errors and absent Function replay made style/manifest incomplete. Never report these as faster successful checks. Final candidate CI/local verification remains required.",
-  "finalCandidateJobs": null,
-  "claims": "Consolidation removes 73 baseline job-seconds of explicitly repeated static work (not 73 wall seconds). Foundation was already the critical path; no overall speedup is claimed until comparable final workflow observations."
+  "finalCandidateJobs": [
+    {
+      "run": 39267397426,
+      "job": "foundation",
+      "head": "272de9589f2fc0af4c7e24b2cdde86b3c7047e2a",
+      "conclusion": "success",
+      "queueSeconds": 4.0,
+      "runSeconds": 605.0,
+      "createdAt": "2026-10-19T14:16:01Z",
+      "startedAt": "2026-10-19T14:16:05Z",
+      "completedAt": "2026-10-19T14:26:10Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "seconds": 2.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+          "seconds": 2.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "seconds": 3.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify exact status-reference route",
+          "seconds": 1.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Install pinned Rust and browser dependencies",
+          "seconds": 39.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Build and check actual workspace",
+          "seconds": 364.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Qualify Ajax carriers against actual production Functions",
+          "seconds": 1.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Publication geometry stress (100 cases, no retries)",
+          "seconds": 188.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "seconds": 2.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "seconds": 0.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+          "seconds": 0.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "seconds": 0.0,
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "run": 39267397636,
+      "job": "runtime",
+      "head": "272de9589f2fc0af4c7e24b2cdde86b3c7047e2a",
+      "conclusion": "success",
+      "queueSeconds": 4.0,
+      "runSeconds": 509.0,
+      "createdAt": "2026-10-19T14:16:01Z",
+      "startedAt": "2026-10-19T14:16:05Z",
+      "completedAt": "2026-10-19T14:24:34Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "seconds": 1.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Initialize containers",
+          "seconds": 13.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+          "seconds": 2.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "seconds": 1.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify exact status-reference route",
+          "seconds": 1.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Run corepack pnpm install --frozen-lockfile",
+          "seconds": 5.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Run corepack pnpm build",
+          "seconds": 29.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Owner trusted-release collector local accounting and process controls",
+          "seconds": 4.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Current signing and historical settlement controls",
+          "seconds": 2.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Current worker executable and process inventory controls",
+          "seconds": 4.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Initialize runtime schema and verify migration idempotence",
+          "seconds": 0.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Run corepack pnpm --filter @insignia/worker test",
+          "seconds": 29.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Actual queue-member purchase/history and first-paid qualification",
+          "seconds": 12.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Preserve actual runtime-role qualification",
+          "seconds": 1.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Buyer HTTP ownership, admission and immutable issuance with PostgreSQL",
+          "seconds": 4.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Independently verified purchase and merchant artwork HTTP with PostgreSQL",
+          "seconds": 1.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Restricted queue roles and real process crash recovery",
+          "seconds": 23.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Offline portable worker and drift guards",
+          "seconds": 48.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Operations source and relocated offline runtime qualification",
+          "seconds": 38.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Preserve operations runtime for later gated deployment",
+          "seconds": 20.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Versioned inspector host artifact qualification (no inspection or provider effects)",
+          "seconds": 21.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Preserve versioned inspector host artifact (native handover remains unqualified)",
+          "seconds": 7.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Independent immutable verifier package and offline image qualification",
+          "seconds": 35.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Preserve independent verifier immutable image (native handover remains unqualified)",
+          "seconds": 15.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Actual disposable worker image and OS controls",
+          "seconds": 33.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Immutable worker image identity controls",
+          "seconds": 1.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Ordinary canonical web and worker Compose rendering controls",
+          "seconds": 6.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Preserve image qualification receipts and raw logs",
+          "seconds": 2.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Preserve qualified ordinary worker deployment image",
+          "seconds": 10.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Portable current web deployment package",
+          "seconds": 5.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Actual current web image startup restart and export",
+          "seconds": 31.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Preserve web image qualification receipts and logs",
+          "seconds": 1.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Preserve qualified ordinary web deployment image",
+          "seconds": 14.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Generic webhook quarantine through real HTTP and worker",
+          "seconds": 13.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Uninstall authority quarantine and unresolved obligation controls",
+          "seconds": 19.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Built HTTP ingress with PostgreSQL and queue handoff",
+          "seconds": 8.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Admin editor and publication with PostgreSQL",
+          "seconds": 42.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Rehearse disposable migration down and up",
+          "seconds": 1.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "seconds": 0.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+          "seconds": 1.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Stop containers",
+          "seconds": 0.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "seconds": 0.0,
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "run": 39267397688,
+      "job": "durable-core",
+      "head": "272de9589f2fc0af4c7e24b2cdde86b3c7047e2a",
+      "conclusion": "success",
+      "queueSeconds": 4.0,
+      "runSeconds": 126.0,
+      "createdAt": "2026-10-19T14:16:01Z",
+      "startedAt": "2026-10-19T14:16:05Z",
+      "completedAt": "2026-10-19T14:18:11Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "seconds": 1.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Initialize containers",
+          "seconds": 20.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+          "seconds": 2.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "seconds": 4.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify exact status-reference route",
+          "seconds": 1.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Run corepack pnpm install --frozen-lockfile",
+          "seconds": 5.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Inspect migration state",
+          "seconds": 0.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Run corepack pnpm build",
+          "seconds": 20.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Run corepack pnpm check:database",
+          "seconds": 41.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Qualify restricted web journey grants with actual LOGINs",
+          "seconds": 3.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "100k actual read-seam query plans",
+          "seconds": 24.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Preserve actual PostgreSQL plans and build hashes",
+          "seconds": 1.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Rehearse disposable down and up",
+          "seconds": 0.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "seconds": 1.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+          "seconds": 0.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Stop containers",
+          "seconds": 1.0,
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "seconds": 0.0,
+          "conclusion": "success"
+        }
+      ]
+    }
+  ],
+  "claims": "Consolidation removes 73 baseline job-seconds of explicitly repeated static work (not 73 wall seconds). Foundation was already the critical path; no overall speedup is claimed until comparable final workflow observations.",
+  "finalCandidateSource": "272de9589f2fc0af4c7e24b2cdde86b3c7047e2a",
+  "finalCriticalPathSeconds": 609,
+  "observedComparison": {
+    "foundationSeconds": [
+      618,
+      605
+    ],
+    "runtimeSeconds": [
+      414,
+      509
+    ],
+    "durableSeconds": [
+      185,
+      126
+    ],
+    "criticalPathSeconds": [
+      622,
+      609
+    ],
+    "interpretation": "One successful candidate per side. Removed identical invocations; runtime was slower, so no general or causal speedup claim."
+  },
+  "localFinalQualification": {
+    "source": "272de9589f2fc0af4c7e24b2cdde86b3c7047e2a",
+    "command": "pnpm check",
+    "seconds": 420.296,
+    "exitCode": 0
+  },
+  "freshClone": {
+    "source": "272de9589f2fc0af4c7e24b2cdde86b3c7047e2a",
+    "environment": "allowlisted toolchain/user locale only; no application/database/provider credential selectors",
+    "seconds": 95.047,
+    "results": [
+      {
+        "command": [
+          "git",
+          "clone",
+          "--no-local",
+          "--single-branch",
+          "--branch",
+          "feat/canonical-app-completion",
+          "<source>",
+          "<fresh-clone>"
+        ],
+        "seconds": 1.973,
+        "exitCode": 0
+      },
+      {
+        "command": [
+          "corepack",
+          "pnpm",
+          "install",
+          "--frozen-lockfile"
+        ],
+        "seconds": 0.282,
+        "exitCode": 0
+      },
+      {
+        "command": [
+          "corepack",
+          "pnpm",
+          "build"
+        ],
+        "seconds": 28.491,
+        "exitCode": 0
+      },
+      {
+        "command": [
+          "corepack",
+          "pnpm",
+          "check:types"
+        ],
+        "seconds": 61.559,
+        "exitCode": 0
+      },
+      {
+        "command": [
+          "corepack",
+          "pnpm",
+          "--filter",
+          "@insignia/domain",
+          "test"
+        ],
+        "seconds": 1.812,
+        "exitCode": 0
+      },
+      {
+        "command": [
+          "corepack",
+          "pnpm",
+          "--filter",
+          "@insignia/web",
+          "exec",
+          "node",
+          "--test",
+          "test/admin/preview.test.mts"
+        ],
+        "seconds": 0.927,
+        "exitCode": 0
+      }
+    ]
+  }
 }

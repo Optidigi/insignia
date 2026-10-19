@@ -20,8 +20,8 @@ const { availabilityV3AcknowledgementQualified, sameAvailabilityV3 } = await imp
   '../../packages/application/dist/index.js'
 );
 const root = resolve(import.meta.dirname, '../..');
-const evidence = resolve(root, 'docs/delivery/evidence/m5-017');
-const bytes = (name: string) => readFileSync(resolve(evidence, name));
+const fixtureRoot = resolve(root, 'fixtures/shopify/availability-restore-v3');
+const bytes = (name: string) => readFileSync(resolve(fixtureRoot, name));
 const hash = (data: string | Uint8Array) => createHash('sha256').update(data).digest('hex');
 const json = (name: string) => object(JSON.parse(bytes(name).toString('utf8')));
 const boolean = (value: unknown): boolean => {
