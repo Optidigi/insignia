@@ -51,7 +51,7 @@ function view(state: PurchaseView['artworkState'] = 'PENDING_ARTWORK'): Purchase
               geometry: null,
               presentation: null,
               imageUrls: {},
-              payloadExpiresAt: '2026-10-19T12:00:00Z',
+              payloadExpiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
             },
           ],
     artworkEvents: [],
@@ -116,6 +116,8 @@ test('merchant sees exact historical economics and erased detail never offers ne
   );
   assert.equal((await shell.text()).includes('9007199254740993'), false, 'SSR does not load private order economics');
   let current = view();
+  // A fixed historical deadline keeps the explicit UTC-format assertion stable.
+  required(current.groups[0]).payloadExpiresAt = '2026-10-19T12:00:00Z';
   current.orderName = '#1001';
   required(current.lines[0]).title = 'Purchased cotton shirt';
   required(current.lines[0]).variantTitle = 'Blue / Large';

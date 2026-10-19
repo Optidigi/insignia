@@ -267,5 +267,14 @@
     "regression": "Actual relocated web cold GET/api/admin/products observed500 RED; corrected package reaches existing503 Admin service unavailable guard. No fabricated staff/session or API assertions weakened.",
     "validation": "Tooling strict compiler, Astro checks/build, source controls, Biome and5 actual portable/address/app-entry cases PASS. Final exact-head CI and corrected-image native unsigned/authenticated reads remain required.",
     "boundaryCorrection": "Initial proposed SDK production declaration was rejected by the unchanged runtime dependency boundary. It was reverted; no checker was weakened. Updated independent impact CLEAR supersedes the initial proposal review."
+  },
+  "syntheticRetentionFixtureClock20261019": {
+    "failedHead": "3ab8d63936832932193caacd791a285e6b5f1458",
+    "workflow": "https://github.com/Optidigi/insignia/actions/runs/39250312523",
+    "cause": "Two synthetic purchase-view factories had a fixed payload deadline2026-10-19T12:00Z; once CI passed noon the unchanged retention UI correctly disabled expired artwork controls.",
+    "correction": "Use relative seven-day deadlines only for normal usable synthetic fixtures. Preserve original fixed historical deadline explicitly in the UTC rendering case; explicit short expiry, erasure, race and permission scenarios retain their original controls.",
+    "redGreen": "Observed local stale-lock disabled-button failure before correction, then15/15 affected browser tests PASS with zero skips.",
+    "review": "deployment_review216 independent read-only impact CLEAR; no assertions removed/relaxed, runtime change or real record/private-copy deadline extension.",
+    "validation": "Admin test strict compiler, targeted Biome, source/current-link inventory and diff checks PASS; updated-head CI required. Deployed services unchanged."
   }
 }
