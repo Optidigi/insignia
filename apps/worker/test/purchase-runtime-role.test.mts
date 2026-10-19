@@ -55,7 +55,12 @@ test('actual queue-member login reconciles signed initial and renewed offers, pa
       18,
     );
     await installQueue(ownerUrl);
-    await owner.query(await readFile(new URL('../../../scripts/worker/queue-roles.sql', import.meta.url), 'utf8'));
+    const queueGrants = await readFile(new URL('../../../scripts/worker/queue-roles.sql', import.meta.url), 'utf8');
+    await owner.query(queueGrants);
+    // Fresh installs create the role after migrations; reapplication must supply the
+    // same read-only issuance fence instead of relying on preexisting cluster roles.
+    await owner.query('REVOKE SELECT ON public.shop_credential_acquisitions FROM insignia_queue_consume');
+    await owner.query(queueGrants);
     // Qualification uses a new real session login, inheriting the actual intended capability role.
     await owner.query(
       // CREATE ROLE cannot bind parameters; generated hex contains no SQL quote characters.
@@ -83,6 +88,25 @@ test('actual queue-member login reconciles signed initial and renewed offers, pa
       rolcanlogin: true,
     });
     await assert.rejects(restricted.query(`SET ROLE ${isolatedUrl.username}`), /permission denied/);
+
+    assert.equal(
+      required(
+        await restricted.query(
+          "SELECT has_table_privilege(current_user, 'public.shop_credential_acquisitions', 'SELECT') AS allowed",
+        ),
+      ).rows[0].allowed,
+      true,
+    );
+    for (const privilege of ['INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER'])
+      assert.equal(
+        required(
+          await restricted.query('SELECT has_table_privilege(current_user, $1, $2) AS allowed', [
+            'public.shop_credential_acquisitions',
+            privilege,
+          ]),
+        ).rows[0].allowed,
+        false,
+      );
 
     const fixture = await purchaseFixture(db);
     const other = await purchaseFixture(db);
@@ -277,8 +301,8 @@ test('actual queue-member login reconciles signed initial and renewed offers, pa
     // Missing M8 grants must fail at the real runtime seam (the baseline RED).
     if (!process.env.M8_RUNTIME_EXPECT_RED) {
       const grants = await Promise.all(
-        ['m6-artwork', 'm7-storefront', 'm8-purchase'].map((name) =>
-          readFile(new URL(`../../../scripts/${name}/runtime-grants.sql`, import.meta.url), 'utf8'),
+        ['artwork-runtime-grants.sql', 'buyer-cleanup-grants.sql', 'purchase-runtime-grants.sql'].map((name) =>
+          readFile(new URL(`../../../scripts/database/${name}`, import.meta.url), 'utf8'),
         ),
       );
       // Actual sequential application must preserve both independently scoped capabilities.

@@ -203,6 +203,23 @@
       "Actual PostgreSQL backup restore rejected valid +00 offset; exact regression RED/GREEN, actual CLI integration1PASS,48 release append cases in fresh cluster, impact CLEAR."
     ],
     "acceptance": "No unresolved material source finding in reviewed scope; final frozen-head CI and normal integration still required.",
-    "limits": "No native provider effect, production rollout, installed monitoring/object recovery, credential rotation, public-app/commercial or genuine uninstall/privacy PASS. VAT998524223812 remains UNRESOLVED_NO_RETRY; original retention deadlines remain."
+    "limits": "No native provider effect, production rollout, installed monitoring/object recovery, credential rotation, public-app/commercial or genuine uninstall/privacy PASS. VAT998524223812 remains UNRESOLVED_NO_RETRY; original retention deadlines remain.",
+    "postCiImpact": {
+      "failedHead": "8df67973bd431ee68d0916f20c6878862ac266b0",
+      "run": "https://github.com/Optidigi/insignia/actions/runs/39237136919",
+      "cause": "Actual queue-member purchase qualification constructed three retired SQL paths dynamically after the byte-identical grant files moved; direct SQL consumers had passed but did not cover this dynamic caller.",
+      "correction": "Use the three current scripts/database grant filenames in original order; repeat-application, privileges and economic assertions unchanged.",
+      "independentReview": "behavior_review CLEAR: all three SQL files equal original base bytes; inspected two-line path correction; actual local PG CLI and updated CI required.",
+      "localStaticChecks": "Worker test strict compiler, targeted Biome, permanent source inventory and diff check PASS.",
+      "freshInstallGrantCorrection": {
+        "cause": "A role created after all migrations missed the credential acquisition fence SELECT. Earlier CI worker setup precreated the role and masked this ordering dependency.",
+        "fix": "Current queue-roles.sql supplies exactly the SELECT capability already intended by the applied credential migration. Applied migrations remain unchanged.",
+        "regression": "Actual restricted LOGIN: revoke SELECT, reapply queue SQL, require SELECT restored and six write privileges denied, then retain actual credential acquisition and full purchase lifecycle controls.",
+        "red": "Fresh PG18 actual CLI0pass/1fail/0skip at restored SELECT assertion before SQL fix.",
+        "green": "Fresh PG18 actual CLI1pass/0fail/0skip in11.76s; actual queue transport privileges1pass in5.82s; owned databases removed.",
+        "review": "behavior_review independent correctness/security impact CLEAR; source/log review only, no native or production effects."
+      },
+      "localActualChecks": "Fresh PG18 actual CLI and queue transport controls PASS; final updated-head CI remains required."
+    }
   }
 }

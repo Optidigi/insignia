@@ -50,6 +50,9 @@ GRANT USAGE ON SCHEMA public TO insignia_queue_consume;
 GRANT SELECT ON public.shops, public.installation_generations, public.shop_credentials,
   public.inbox_messages, public.shopify_webhook_deliveries, public.product_configs,
   public.publication_operations TO insignia_queue_consume;
+-- Credential acquisition checks the issuance fence even on a fresh install where
+-- this capability role was created after the credential migration. Read only.
+GRANT SELECT ON public.shop_credential_acquisitions TO insignia_queue_consume;
 GRANT UPDATE(updated_at) ON public.shops TO insignia_queue_consume;
 GRANT UPDATE(deactivated_at) ON public.installation_generations TO insignia_queue_consume;
 GRANT UPDATE ON public.shop_credentials TO insignia_queue_consume;
