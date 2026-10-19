@@ -73,6 +73,7 @@ async function expire(pool: Pool, id: string) {
 // DDL test hooks require their own relation: CREATE/DROP TRIGGER locks must not
 // block other files' intentional installation/receipt transaction races.
 async function isolatedHandoffFixture() {
+  if (!connectionString) throw new Error('DATABASE_URL required');
   const admin = new Pool({ connectionString });
   const name = `m5handoff_${randomUUID().replaceAll('-', '')}`;
   const url = new URL(connectionString);

@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { chmod, mkdtemp, rm, stat } from 'node:fs/promises';
@@ -11,11 +12,16 @@ import {
   importErasureExclusions,
   readExclusions,
   writeExclusions,
-} from '../../../scripts/privacy/restore-exclusions.mjs';
+} from '../../../scripts/privacy/restore-exclusions.mts';
 import { createCustomerPrivacyRepository } from '../src/repositories/customer-privacy.js';
 import { createShopifyWebhookRepository } from '../src/repositories/shopify-webhooks.js';
 import { openTestDatabase } from './support/postgres.js';
 import { purchaseFixture } from './support/purchase-fixture.js';
+
+function required<T>(value: T | undefined): T {
+  assert(value !== undefined, 'Expected retained fixture record');
+  return value;
+}
 
 // Explicit disposable-cluster grant: never inherit a native/default database target.
 it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
@@ -240,12 +246,13 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
       const missing = JSON.parse(JSON.stringify(exclusions).replaceAll(f.shopId, randomUUID()));
       await expect(importErasureExclusions(target, reseal(missing))).rejects.toThrow('missing tenant');
       const drift = structuredClone(exclusions);
-      drift.data.generations.find((row: { shop_id: string }) => row.shop_id === f.shopId).authorization_generation =
-        randomUUID();
+      drift.data.generations = drift.data.generations.map((row) =>
+        row.shop_id === f.shopId ? { ...row, authorization_generation: randomUUID() } : row,
+      );
       await expect(importErasureExclusions(target, reseal(drift))).rejects.toThrow('installation identity drift');
       const corrupt = structuredClone(exclusions);
-      const receiptId = corrupt.data.receipts.find((row: { shop_id: string }) => row.shop_id === f.shopId).inbox_id;
-      corrupt.data.inboxes.find((row: { id: string }) => row.id === receiptId).attempts = -1;
+      const receiptId = required(corrupt.data.receipts.find((row) => row.shop_id === f.shopId)).inbox_id;
+      corrupt.data.inboxes = corrupt.data.inboxes.map((row) => (row.id === receiptId ? { ...row, attempts: -1 } : row));
       await expect(importErasureExclusions(target, reseal(corrupt))).rejects.toMatchObject({ code: '23514' });
       expect(await guardState()).toBe('O');
       expect(
@@ -275,9 +282,7 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
         await source.query(`DROP ROLE ${login}`);
       }
       const promoted = structuredClone(exclusions);
-      const blockedReceipt = promoted.data.receipts.find(
-        (r: { operation: string }) => r.operation === 'SHOP_ERASURE_BLOCKED',
-      );
+      const blockedReceipt = required(promoted.data.receipts.find((r) => r.operation === 'SHOP_ERASURE_BLOCKED'));
       promoted.data.shopFences.push({
         shop_id: blocked.shopId,
         installation_generation: '1',
@@ -398,8 +403,9 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
         readiness: 'HOLD_STORAGE_AND_AUTHORITY_REQUALIFICATION',
       });
       const conflict = structuredClone(exclusions);
-      conflict.data.receipts.find((row: { shop_id: string }) => row.shop_id === f.shopId).staged_at =
-        '2026-01-01T00:00:00Z';
+      conflict.data.receipts = conflict.data.receipts.map((row) =>
+        row.shop_id === f.shopId ? { ...row, staged_at: '2026-01-01T00:00:00Z' } : row,
+      );
       await expect(importErasureExclusions(target, reseal(conflict))).rejects.toThrow(
         'conflicting copied erasure identity',
       );
@@ -539,7 +545,7 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
       expect(exclusions.data.uninstallScopes).toMatchObject([
         { generation_ceiling: '1', observation_kind: 'original_processing' },
       ]);
-      expect(exclusions.data.receipts[0].operation).toBe('SHOP_ERASURE_BLOCKED');
+      expect(required(exclusions.data.receipts[0]).operation).toBe('SHOP_ERASURE_BLOCKED');
       execFileSync(join(tools, 'pg_restore'), ['--no-owner', '--exit-on-error', '--dbname', targetUrl.href, backup], {
         stdio: 'pipe',
       });
@@ -557,7 +563,9 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
         return copy;
       };
       const widenedScope = structuredClone(exclusions);
-      widenedScope.data.uninstallScopes[0].generation_ceiling = '2';
+      widenedScope.data.uninstallScopes = required(widenedScope.data.uninstallScopes).map((row, index) =>
+        index === 0 ? { ...row, generation_ceiling: '2' } : row,
+      );
       await expect(importErasureExclusions(target, reseal(widenedScope))).rejects.toThrow(
         'conflicting copied erasure identity',
       );

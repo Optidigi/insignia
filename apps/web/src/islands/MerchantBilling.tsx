@@ -83,13 +83,14 @@ export default function MerchantBilling() {
               )}
               {view.trialEndsAt && (
                 <s-paragraph>
-                  Trial ends <time dateTime={view.trialEndsAt}>{date(view.trialEndsAt)}</time>.
+                  Trial ends <s-text data-date-time={view.trialEndsAt}>{date(view.trialEndsAt)}</s-text>.
                 </s-paragraph>
               )}
               {view.currentCycle && (
                 <s-paragraph>
-                  Current cycle: <time dateTime={view.currentCycle.startTime}>{date(view.currentCycle.startTime)}</time>{' '}
-                  to <time dateTime={view.currentCycle.endTime}>{date(view.currentCycle.endTime)}</time>.
+                  Current cycle:{' '}
+                  <s-text data-date-time={view.currentCycle.startTime}>{date(view.currentCycle.startTime)}</s-text> to{' '}
+                  <s-text data-date-time={view.currentCycle.endTime}>{date(view.currentCycle.endTime)}</s-text>.
                 </s-paragraph>
               )}
               {view.scheduledCancellation && (
@@ -110,7 +111,7 @@ export default function MerchantBilling() {
               )}
               {view.observedAt && (
                 <s-paragraph>
-                  Last checked <time dateTime={view.observedAt}>{date(view.observedAt)}</time>.
+                  Last checked <s-text data-date-time={view.observedAt}>{date(view.observedAt)}</s-text>.
                 </s-paragraph>
               )}
               {view.managementUrl ? (

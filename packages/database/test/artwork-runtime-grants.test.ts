@@ -51,7 +51,7 @@ it.runIf(process.env.M6_RUNTIME_GRANTS === '1')(
       await owner.query('GRANT SELECT(original_key), UPDATE(expires_at) ON artwork_assets TO insignia_queue_consume');
       await owner.query('GRANT UPDATE(expires_at) ON artwork_assets TO insignia_artwork_inspect');
       await owner.query(
-        await readFile(new URL('../../../scripts/m6-artwork/runtime-grants.sql', import.meta.url), 'utf8'),
+        await readFile(new URL('../../../scripts/database/artwork-runtime-grants.sql', import.meta.url), 'utf8'),
       );
       ({ shopId } = await createTestShop(db));
       const assetId = randomUUID();

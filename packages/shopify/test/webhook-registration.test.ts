@@ -1,3 +1,4 @@
+import { jsonRecord, string } from './fixture-assertions.js';
 import '@shopify/shopify-api/adapters/node';
 import { ApiVersion, DeliveryMethod, Session, shopifyApi } from '@shopify/shopify-api';
 import { abstractFetch, setAbstractFetchFunc } from '@shopify/shopify-api/runtime';
@@ -33,7 +34,7 @@ async function characterize(input: {
     throw new Error('network_escape_denied');
   };
   setAbstractFetchFunc(async (_url, options) => {
-    const { query } = JSON.parse(String(options?.body)) as { query: string };
+    const query = string(jsonRecord(String(options?.body)).query);
     operations.push(query);
     if (query.includes('query shopifyApiReadWebhookSubscriptions')) {
       const next = input.secondPage && page++ === 0;

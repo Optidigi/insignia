@@ -12,11 +12,6 @@ export { CONFIG_DRAFT_STORAGE_VERSION, type ConfigRecord, type RevisionRecord } 
 export type { CustomerPrivacyProcessing, CustomerPrivacyRepository } from './repositories/customer-privacy.js';
 export { createMerchantPreviewRepository } from './repositories/merchant-preview.js';
 export {
-  applyOwnerLifecycleDecision,
-  type OwnerLifecycleDecision,
-  type OwnerLifecycleResult,
-} from './repositories/owner-lifecycle.js';
-export {
   type PurchaseDesignPayload,
   type PurchaseRecord,
   type PurchaseRepository,

@@ -1,4 +1,5 @@
 import { createHmac } from 'node:crypto';
+import type { Server } from 'node:http';
 import { InvalidJwtError } from '@shopify/shopify-api';
 import { abstractFetch, setAbstractFetchFunc } from '@shopify/shopify-api/runtime';
 import { describe, expect, it, vi } from 'vitest';
@@ -8,6 +9,7 @@ import {
   deadlineAwareOnlineFetch,
   hasAdminAccessScope,
 } from '../src/admin-online-identity.js';
+import { jsonRecord, required } from './fixture-assertions.js';
 
 const key = 'synthetic-m5-client';
 const secret = 'synthetic-m5-secret-only';
@@ -64,7 +66,7 @@ describe('production Shopify online staff adapter with synthetic transport', () 
       [token({}, secret, 'HS384'), 'SESSION_TOKEN_REJECTED'],
       [token({ exp: 'invalid-number' }), 'SESSION_TOKEN_REJECTED'],
     ]) {
-      const failure = await provider.verify(signed).catch((error: unknown) => error);
+      const failure = await provider.verify(required(signed)).catch((error: unknown) => error);
       expect(failure).toMatchObject({ name: 'AdminOnlineIdentityError', stage });
       expect(String(failure)).not.toContain(signed);
       expect(failure).not.toHaveProperty('cause');
@@ -92,7 +94,7 @@ describe('production Shopify online staff adapter with synthetic transport', () 
       { sid: 'short' },
     ]) {
       const signed = token(claims);
-      const failure = await provider.verify(signed).catch((error: unknown) => error);
+      const failure = await provider.verify(required(signed)).catch((error: unknown) => error);
       expect(failure).toMatchObject({ name: 'AdminOnlineIdentityError', stage: 'SESSION_IDENTITY_REJECTED' });
       expect(String(failure)).not.toContain(signed);
       expect(failure).not.toHaveProperty('cause');
@@ -120,14 +122,7 @@ describe('production Shopify online staff adapter with synthetic transport', () 
       fetchImpl: async () => Response.json(body, { status }),
     });
     const failure = await provider
-      .readInstallation({
-        shop,
-        staffId: '23',
-        accessToken: 'synthetic-private-grant',
-        expiresAtMs: Date.now() + 60_000,
-        appScopes: [],
-        userScopes: [],
-      })
+      .readInstallation({ shop, accessToken: 'synthetic-private-grant' })
       .catch((error: unknown) => error);
     expect(failure).toMatchObject({ stage });
     expect(String(failure)).not.toContain('synthetic-private');
@@ -148,7 +143,7 @@ describe('production Shopify online staff adapter with synthetic transport', () 
     try {
       const provider = createAdminOnlineIdentity({ apiKey: key, apiSecret: secret, hostName: 'example.test' });
       const signed = token();
-      const identity = await provider.verify(signed);
+      const identity = await provider.verify(required(signed));
       const failure = await provider.exchangeOnline(signed, identity).catch((value: unknown) => value);
       expect(failure).toMatchObject({ stage: 'ONLINE_EXCHANGE_FAILED' });
       expect(String(failure)).not.toContain('synthetic-private-body');
@@ -170,7 +165,7 @@ describe('production Shopify online staff adapter with synthetic transport', () 
         },
       });
       const signed = token();
-      const identity = await provider.verify(signed);
+      const identity = await provider.verify(required(signed));
       const failure = await provider.exchangeOnline(signed, identity).catch((value: unknown) => value);
       expect(failure).toMatchObject({ stage });
       expect(String(failure)).not.toContain('synthetic-private-token');
@@ -193,7 +188,7 @@ describe('production Shopify online staff adapter with synthetic transport', () 
     try {
       const provider = createAdminOnlineIdentity({ apiKey: key, apiSecret: secret, hostName: 'example.test' });
       const signed = token();
-      const identity = await provider.verify(signed);
+      const identity = await provider.verify(required(signed));
       const failure = await provider.exchangeOnline(signed, identity).catch((error: unknown) => error);
       expect(failure).toMatchObject({ stage: 'ONLINE_EXCHANGE_REFRESH_REQUIRED' });
       expect(String(failure)).not.toContain('synthetic-secret-token-must-not-leak');
@@ -210,7 +205,7 @@ describe('production Shopify online staff adapter with synthetic transport', () 
         calls++;
         expect(init?.signal).toBeInstanceOf(AbortSignal);
         expect(String(url)).toBe(`https://${shop}/admin/oauth/access_token`);
-        const body = JSON.parse(String(init?.body));
+        const body = jsonRecord(String(init?.body));
         expect(body.client_id).toBe(key);
         expect(body.requested_token_type).toBe('urn:shopify:params:oauth:token-type:online-access-token');
         expect(body.subject_token).toBe(signed);
@@ -226,7 +221,7 @@ describe('production Shopify online staff adapter with synthetic transport', () 
     const signed = token();
     try {
       const provider = createAdminOnlineIdentity({ apiKey: key, apiSecret: secret, hostName: 'example.test' });
-      const identity = await provider.verify(signed);
+      const identity = await provider.verify(required(signed));
       const grant = await provider.exchangeOnline(signed, identity);
       expect(grant).toMatchObject({ shop, staffId: '23', accountOwner: true, accessToken: 'synthetic-real-sdk-grant' });
       expect(grant.expiresAtMs).toBeGreaterThan(Date.now() + 30_000);
@@ -267,7 +262,7 @@ describe('production Shopify online staff adapter with synthetic transport', () 
       },
     });
     const signed = token();
-    const identity = await provider.verify(signed);
+    const identity = await provider.verify(required(signed));
     const grant = await provider.exchangeOnline(signed, identity);
     const installation = await provider.readInstallation(grant);
     expect(identity.staffId).toBe('23');
@@ -309,11 +304,7 @@ describe('production Shopify online staff adapter with synthetic transport', () 
     await expect(
       large.readInstallation({
         shop,
-        staffId: '23',
         accessToken: 'synthetic',
-        expiresAtMs: Date.now() + 60_000,
-        appScopes: [],
-        userScopes: [],
       }),
     ).rejects.toMatchObject({ stage: 'INSTALLATION_PROVIDER_READ_FAILED' });
   });
@@ -332,7 +323,7 @@ describe('expiring offline acquisition on a verified embedded identity', () => {
         hostName: 'example.test',
         fetchImpl: async (_url, init) => {
           calls++;
-          const body = JSON.parse(String(init?.body));
+          const body = jsonRecord(String(init?.body));
           expect(body.requested_token_type).toBe('urn:shopify:params:oauth:token-type:offline-access-token');
           expect(body.expiring).toBe('1');
           expect(body.subject_token).toBe(signed);
@@ -347,7 +338,7 @@ describe('expiring offline acquisition on a verified embedded identity', () => {
           });
         },
       });
-      const identity = await provider.verify(signed);
+      const identity = await provider.verify(required(signed));
       const pair = await provider.exchangeOffline(signed, identity);
       expect(calls).toBe(1);
       expect(pair.schemaVersion).toBe('m3-offline-credential-v1');
@@ -371,7 +362,7 @@ describe('expiring offline acquisition on a verified embedded identity', () => {
       },
     });
     const signed = token();
-    const identity = await provider.verify(signed);
+    const identity = await provider.verify(required(signed));
     await expect(provider.exchangeOffline(signed, { ...identity, shop: 'other.myshopify.com' })).rejects.toMatchObject({
       name: 'OfflineAcquisitionRejectedError',
     });
@@ -389,7 +380,7 @@ describe('expiring offline acquisition on a verified embedded identity', () => {
       },
     });
     const signed = token();
-    const error = await provider.exchangeOffline(signed, await provider.verify(signed)).catch((e) => e);
+    const error = await provider.exchangeOffline(signed, await provider.verify(required(signed))).catch((e) => e);
     expect(calls).toBe(1);
     expect(String(error)).not.toContain('private');
     expect(error.name).toBe('OfflineExchangeError');
@@ -412,7 +403,7 @@ describe('expiring offline acquisition on a verified embedded identity', () => {
         },
       });
       const signed = token();
-      const error = await provider.exchangeOffline(signed, await provider.verify(signed)).catch((e) => e);
+      const error = await provider.exchangeOffline(signed, await provider.verify(required(signed))).catch((e) => e);
       expect(error.name).toBe(name);
       expect(calls).toBe(1);
       expect(String(error)).not.toContain('private');
@@ -443,7 +434,7 @@ it('bounds offline parsing and cancels a stalled response without redispatch', a
       );
     },
   });
-  const identity = await provider.verify(signed);
+  const identity = await provider.verify(required(signed));
   vi.useFakeTimers();
   try {
     const pending = provider.exchangeOffline(signed, identity).catch((e) => e);
@@ -468,7 +459,7 @@ it('rejects an oversized offline success without exposing or installing its payl
     },
   });
   const signed = token();
-  const error = await provider.exchangeOffline(signed, await provider.verify(signed)).catch((e) => e);
+  const error = await provider.exchangeOffline(signed, await provider.verify(required(signed))).catch((e) => e);
   expect(error.name).toBe('OfflineExchangeError');
   expect(String(error)).not.toContain('private');
   expect(calls).toBe(1);
@@ -481,16 +472,21 @@ it('never forwards the offline access header when installation verification redi
     received++;
     res.end('{}');
   });
-  const bind = (s) => new Promise((resolve) => s.listen(0, '127.0.0.1', resolve));
+  const bind = (s: Server) => new Promise<void>((resolve) => s.listen(0, '127.0.0.1', resolve));
+  const port = (s: Server) => {
+    const address = s.address();
+    if (!address || typeof address === 'string') throw new Error('Expected TCP listener');
+    return address.port;
+  };
   await bind(sink);
-  const sinkUrl = `http://127.0.0.1:${sink.address().port}/forbidden`;
+  const sinkUrl = `http://127.0.0.1:${port(sink)}/forbidden`;
   const source = createServer((_req, res) => {
     res.writeHead(302, { Location: sinkUrl });
     res.end();
   });
   await bind(source);
   try {
-    const url = `http://127.0.0.1:${source.address().port}/installation`;
+    const url = `http://127.0.0.1:${port(source)}/installation`;
     const provider = createAdminOnlineIdentity({
       apiKey: key,
       apiSecret: secret,

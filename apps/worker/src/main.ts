@@ -1,4 +1,4 @@
-import { createM3AdminReadCredentialSource } from '@insignia/application';
+import { createAdminReadCredentialSource } from '@insignia/application';
 import { currencyExponent } from '@insignia/cart-authorization';
 import { createDurableCore } from '@insignia/database';
 import {
@@ -46,7 +46,7 @@ if (process.argv.includes('--diagnostic')) {
   const usage = createWorkerUsageRuntime({ env: process.env, core });
   const queue = createPgBossRuntime({ connectionString, credentialKeysReady: true, webhookHandoff: core.webhooks });
   const transport = createShopifyOfflineRefreshTransport({ clientId, clientSecret });
-  const purchaseCredentials = createM3AdminReadCredentialSource({
+  const purchaseCredentials = createAdminReadCredentialSource({
     tenants: core.tenants,
     credentials: credentialLifecycle(core),
     refresh: transport,

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { readPrimaryMarketContext } from '../src/primary-market.js';
+import { graphqlRequest, required } from './fixture-assertions.js';
 
 const target = { shopId: 'tenant-1', installationGeneration: '7', shopifyShopId: '105501393179' };
 const now = () => new Date('2026-10-15T12:00:00Z');
@@ -54,11 +55,11 @@ describe('primary-Market context read', () => {
     const [url, options] = fetchImpl.mock.calls[0] as [string, RequestInit];
     expect(url).toBe('https://synthetic.myshopify.com/admin/api/2026-07/graphql.json');
     expect(options.redirect).toBe('error');
-    const query = JSON.parse(String(options.body));
+    const query = graphqlRequest(String(options.body));
     expect(query.variables).toEqual({ after: null });
     expect(query.query).toContain('regions(first: 250, after: $after)');
     expect(query.query).toContain('... on MarketRegionCountry { code }');
-    expect(JSON.parse(String(fetchImpl.mock.calls[1]?.[1].body)).variables).toEqual({ after: 'page-2' });
+    expect(graphqlRequest(String(fetchImpl.mock.calls[1]?.[1].body)).variables).toEqual({ after: 'page-2' });
   });
   it.each([
     [
@@ -100,19 +101,20 @@ describe('primary-Market context read', () => {
     [
       'subdivision membership',
       (body: ReturnType<typeof page>) => {
-        body.data.primaryMarket.conditions.regionsCondition.regions.nodes[0]!.__typename = 'MarketRegionSubdivision';
+        required(body.data.primaryMarket.conditions.regionsCondition.regions.nodes[0]).__typename =
+          'MarketRegionSubdivision';
       },
     ],
     [
       'unknown region type',
       (body: ReturnType<typeof page>) => {
-        body.data.primaryMarket.conditions.regionsCondition.regions.nodes[0]!.__typename = 'FutureRegion';
+        required(body.data.primaryMarket.conditions.regionsCondition.regions.nodes[0]).__typename = 'FutureRegion';
       },
     ],
     [
       'malformed country',
       (body: ReturnType<typeof page>) => {
-        body.data.primaryMarket.conditions.regionsCondition.regions.nodes[0]!.code = 'USA';
+        required(body.data.primaryMarket.conditions.regionsCondition.regions.nodes[0]).code = 'USA';
       },
     ],
     [
@@ -145,7 +147,7 @@ describe('primary-Market context read', () => {
   ])('fails closed for %s', async (_name, alter) => {
     const body = page(['US']);
     alter(body);
-    const fetchImpl = vi.fn().mockResolvedValue(fixture(body));
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(fixture(body));
     await expect(
       readPrimaryMarketContext(target, { credentials: { acquire: async () => credential }, fetchImpl, now }),
     ).rejects.toThrow('Primary Market unavailable:');
@@ -158,7 +160,7 @@ describe('primary-Market context read', () => {
       const first = page(['US'], 'page-2');
       const second = page(['CA']);
       if (reason === 'duplicate country')
-        second.data.primaryMarket.conditions.regionsCondition.regions.nodes[0]!.code = 'US';
+        required(second.data.primaryMarket.conditions.regionsCondition.regions.nodes[0]).code = 'US';
       if (reason === 'changed market') second.data.primaryMarket.id = 'gid://shopify/Market/999';
       if (reason === 'changed currency') second.data.shop.currencyCode = 'EUR';
       if (reason === 'repeated cursor')
@@ -166,7 +168,10 @@ describe('primary-Market context read', () => {
           hasNextPage: true,
           endCursor: 'page-2',
         };
-      const fetchImpl = vi.fn().mockResolvedValueOnce(fixture(first)).mockResolvedValueOnce(fixture(second));
+      const fetchImpl = vi
+        .fn<typeof fetch>()
+        .mockResolvedValueOnce(fixture(first))
+        .mockResolvedValueOnce(fixture(second));
       if (reason === 'page overflow') {
         fetchImpl.mockReset();
         for (const [index, code] of ['US', 'CA', 'GB', 'NL'].entries())
@@ -193,7 +198,7 @@ describe('primary-Market context read', () => {
   });
 
   it('rejects invalid scope, unavailable/expired credentials and unsafe domains before transport', async () => {
-    const fetchImpl = vi.fn();
+    const fetchImpl = vi.fn<typeof fetch>();
     const acquire = vi.fn().mockResolvedValue(credential);
     await expect(
       readPrimaryMarketContext(
@@ -230,7 +235,7 @@ describe('primary-Market context read', () => {
       },
     ];
     for (const fetchResponse of cases) {
-      const fetchImpl = vi.fn(fetchResponse);
+      const fetchImpl = vi.fn<typeof fetch>(fetchResponse);
       const error = await readPrimaryMarketContext(target, {
         credentials: { acquire: async () => credential },
         fetchImpl,
@@ -245,8 +250,8 @@ describe('primary-Market context read', () => {
     vi.useFakeTimers();
     try {
       let settle: (response: Response) => void = () => {};
-      const fetchImpl = vi.fn(
-        (_url: unknown, _options: RequestInit) =>
+      const fetchImpl = vi.fn<typeof fetch>(
+        (_url, _options) =>
           new Promise<Response>((resolve) => {
             settle = resolve;
           }),
@@ -259,7 +264,7 @@ describe('primary-Market context read', () => {
       await vi.advanceTimersByTimeAsync(10_001);
       expect(await outcome).toMatchObject({ kind: 'network' });
       expect(fetchImpl).toHaveBeenCalledOnce();
-      expect(fetchImpl.mock.calls[0]?.[1]?.signal.aborted).toBe(true);
+      expect(fetchImpl.mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
       settle(fixture(page(['US'], 'more')));
       await vi.advanceTimersByTimeAsync(1);
       expect(fetchImpl).toHaveBeenCalledOnce();
@@ -292,7 +297,7 @@ describe('primary-Market context read', () => {
         if (phase === 'credential acquisition') mutate();
         return credential;
       });
-      const fetchImpl = vi.fn(async () => {
+      const fetchImpl = vi.fn<typeof fetch>(async () => {
         if (phase === 'transport') mutate();
         return fixture(page(['US']));
       });
@@ -313,7 +318,7 @@ describe('primary-Market context read', () => {
         if (phase === 'credential acquisition') expire();
         return credential;
       };
-      const fetchImpl = vi.fn(async () => {
+      const fetchImpl = vi.fn<typeof fetch>(async () => {
         expire();
         return fixture(page(['US'], 'next-page'));
       });
@@ -343,7 +348,7 @@ describe('primary-Market context read', () => {
     'rejects invalid/backward clock %s before dispatch',
     async (changedTime) => {
       let calls = 0;
-      const fetchImpl = vi.fn();
+      const fetchImpl = vi.fn<typeof fetch>();
       await expect(
         readPrimaryMarketContext(target, {
           credentials: { acquire: async () => credential },

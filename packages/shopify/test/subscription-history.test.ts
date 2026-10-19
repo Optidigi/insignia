@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { describe, expect, test, vi } from 'vitest';
 import { createPartnerGraphqlTransport } from '../src/active-subscription.js';
 import { createSubscriptionHistoryClient, PARTNER_HISTORY_QUERY } from '../src/subscription-history.js';
+import { array, graphqlRequest, jsonRecord, record, required } from './fixture-assertions.js';
 
 const appId = 'gid://shopify/App/123',
   shopId = 'gid://shopify/Shop/456';
@@ -51,11 +52,11 @@ describe('one bounded Partner subscription history page', () => {
     );
   });
   test('uses the existing bounded factory for the exact history read and forwards canonical scope/cursor', async () => {
-    const fetchImpl = vi.fn(async () => new Response(page(), { status: 200 }));
+    const fetchImpl = vi.fn<typeof fetch>(async () => new Response(page(), { status: 200 }));
     const transport = createPartnerGraphqlTransport({
       organizationId: '789',
       accessToken: 'synthetic-not-a-token',
-      fetchImpl: fetchImpl as never,
+      fetchImpl,
     });
     const result = await createSubscriptionHistoryClient({ transport }).readPage({
       ...input,
@@ -63,10 +64,11 @@ describe('one bounded Partner subscription history page', () => {
     });
     expect(result.after).toBe('previous-cursor');
     expect(fetchImpl).toHaveBeenCalledTimes(1);
-    const [url, request] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    const [url, rawInit] = required(fetchImpl.mock.calls[0]);
+    const request = required(rawInit);
     expect(url).toBe('https://partners.shopify.com/789/api/2026-07/graphql.json');
     expect(request.redirect).toBe('error');
-    expect(JSON.parse(request.body as string)).toEqual({
+    expect(graphqlRequest(String(request.body))).toEqual({
       query: PARTNER_HISTORY_QUERY,
       variables: { ...input, after: 'previous-cursor' },
     });
@@ -84,11 +86,11 @@ describe('one bounded Partner subscription history page', () => {
       { after: '' },
       { after: 'cursor\nother' },
     ];
-    const fetchImpl = vi.fn(async () => new Response(page()));
+    const fetchImpl = vi.fn<typeof fetch>(async () => new Response(page()));
     const transport = createPartnerGraphqlTransport({
       organizationId: '789',
       accessToken: 'synthetic-not-a-token',
-      fetchImpl: fetchImpl as never,
+      fetchImpl,
     });
     for (const override of bad) {
       await expect(
@@ -133,7 +135,7 @@ describe('one bounded Partner subscription history page', () => {
       });
   });
   test('rejects partial GraphQL errors and mismatched app/shop on every event', async () => {
-    const partial = JSON.parse(page());
+    const partial = jsonRecord(page());
     partial.errors = [{ message: 'synthetic partial failure' }];
     await expect(client(JSON.stringify(partial)).readPage(input)).rejects.toMatchObject({ kind: 'provider_error' });
     for (const override of [{ shop: { id: 'gid://shopify/Shop/999' } }, { subject: { id: 'gid://shopify/App/999' } }])
@@ -151,13 +153,13 @@ describe('one bounded Partner subscription history page', () => {
     await expect(
       client(page([event(), event()], { hasNextPage: false, endCursor: 'cursor-b' })).readPage(input),
     ).rejects.toMatchObject({ kind: 'malformed_response' });
-    const duplicateCursor = JSON.parse(
+    const duplicateCursor = jsonRecord(
       page([event(), event({ id: 'gid://partners/SubscriptionStatus/opaque-b' })], {
         hasNextPage: false,
         endCursor: 'cursor-b',
       }),
     );
-    duplicateCursor.data.events.edges[1].cursor = 'cursor-a';
+    record(required(array(record(record(duplicateCursor.data).events).edges)[1])).cursor = 'cursor-a';
     await expect(client(JSON.stringify(duplicateCursor)).readPage(input)).rejects.toMatchObject({
       kind: 'malformed_response',
     });

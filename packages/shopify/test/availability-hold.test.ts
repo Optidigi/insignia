@@ -2,6 +2,7 @@ import type { AvailabilityHold, AvailabilityScope, ProductAvailabilitySnapshot }
 import { expect, test, vi } from 'vitest';
 import { createShopifyAvailabilityHoldPort } from '../src/availability-hold.js';
 import type { AdminCredentialAcquire } from '../src/contextual-pricing.js';
+import { graphqlRequest, record, roundTripFixture, string } from './fixture-assertions.js';
 
 const scope: AvailabilityScope = {
   shopId: 'synthetic-shop',
@@ -45,7 +46,7 @@ const update = (node: unknown = product('DRAFT', heldVersion)) => ({
 type Step = unknown | Error | Response | (() => Promise<Response>);
 function fixture(steps: Step[], now = clock) {
   const queue = [...steps];
-  const fetchImpl = vi.fn(async (_url: string | URL | Request, _init?: RequestInit) => {
+  const fetchImpl = vi.fn<typeof fetch>(async (_url: string | URL | Request, _init?: RequestInit) => {
     if (!queue.length) throw new Error('synthetic response queue exhausted');
     const step = queue.shift();
     if (step instanceof Error) throw step;
@@ -64,13 +65,13 @@ function fixture(steps: Step[], now = clock) {
   const port = createShopifyAvailabilityHoldPort({
     credentials: { acquire },
     isCurrent,
-    fetchImpl: fetchImpl as typeof fetch,
+    fetchImpl,
     now,
     timeoutMs: 100,
   });
   const writes = () =>
     fetchImpl.mock.calls
-      .map((call) => JSON.parse(String(call[1]?.body)))
+      .map((call) => graphqlRequest(String(call[1]?.body)))
       .filter((request) => request.query.startsWith('mutation'));
   return { port, fetchImpl, acquire, isCurrent, writes };
 }
@@ -155,7 +156,9 @@ test.each(['ACTIVE', 'ARCHIVED', 'DRAFT', 'UNLISTED'])(
       kind: 'RESTORED',
       current: { state: acquired.hold.before.state },
     });
-    expect(f.writes().map((w) => w.variables.product.status)).toEqual(status === 'DRAFT' ? [] : ['DRAFT', status]);
+    expect(f.writes().map((w) => string(record(w.variables.product).status))).toEqual(
+      status === 'DRAFT' ? [] : ['DRAFT', status],
+    );
   },
 );
 
@@ -189,7 +192,7 @@ test('restart observation recognizes the exact persisted held state without anot
     read(product('DRAFT', heldVersion)),
   ]);
   const acquired = await owned(f);
-  const restarted = JSON.parse(JSON.stringify(acquired.hold)) as AvailabilityHold;
+  const restarted = roundTripFixture(acquired.hold);
   expect(await f.port.observe(scope, restarted)).toMatchObject({ kind: 'HELD' });
   expect(await f.port.acquire(scope, restarted)).toMatchObject({ kind: 'HELD' });
   expect(f.writes()).toHaveLength(1);
@@ -649,11 +652,11 @@ test('invalid hold/snapshot binding and malformed input are rejected without pro
 test.each(['missing', 'inactive', 'reauth_required', 'temporarily_unavailable'] as const)(
   'credential %s is classified before a request',
   async (kind) => {
-    const fetchImpl = vi.fn();
+    const fetchImpl = vi.fn<typeof fetch>();
     const port = createShopifyAvailabilityHoldPort({
       credentials: { acquire: async () => ({ kind }) },
       isCurrent: async () => true,
-      fetchImpl: fetchImpl as unknown as typeof fetch,
+      fetchImpl,
       now: clock,
     });
     await expect(port.snapshot(scope, productId)).rejects.toMatchObject({
@@ -850,7 +853,7 @@ test('HTTP uses only the fenced synthetic credential at the pinned endpoint', as
     redirect: 'error',
     headers: { 'x-shopify-access-token': 'synthetic-token' },
   });
-  const request = JSON.parse(String(init?.body));
+  const request = graphqlRequest(String(init?.body));
   expect(request.variables).toEqual({ productId });
   expect(request.query).toContain('resourcePublications(first: 250, onlyPublished: false)');
   expect(request.query).toContain('hasNextPage hasPreviousPage');
@@ -1027,7 +1030,7 @@ function timedRead(delayPoint: 'fetch' | 'body' | 'credential', delayMs: number,
         };
       },
     },
-    fetchImpl: (async () => {
+    fetchImpl: async () => {
       if (delayPoint === 'fetch') at += delayMs;
       return new Response(
         new ReadableStream({
@@ -1041,7 +1044,7 @@ function timedRead(delayPoint: 'fetch' | 'body' | 'credential', delayMs: number,
         }),
         { status: 200 },
       );
-    }) as typeof fetch,
+    },
   });
   return { port, now: () => new Date(at) };
 }
@@ -1092,7 +1095,7 @@ test('R2 a merchant UNLISTED status change while held conflicts without a visibi
     kind: 'CONFLICT',
     current: { state: 'available' },
   });
-  expect(f.writes().map((w) => w.variables.product.status)).toEqual(['DRAFT']);
+  expect(f.writes().map((w) => string(record(w.variables.product).status))).toEqual(['DRAFT']);
 });
 
 test('R1 mid-request provider version survives journal validation and observe origin remains conservative', async () => {
@@ -1132,7 +1135,7 @@ test('R1 acquisition and restoration allow provider versions generated inside a 
     kind: 'RESTORED',
     current: { state: 'available', providerVersion: restoredAt },
   });
-  expect(f.writes().map((w) => w.variables.product.status)).toEqual(['DRAFT', 'ACTIVE']);
+  expect(f.writes().map((w) => string(record(w.variables.product).status))).toEqual(['DRAFT', 'ACTIVE']);
 });
 
 test.each(['2026-10-01T11:59:59.999Z', 'not-a-date', '2026-10-01T13:00:00.000Z'])(
@@ -1180,6 +1183,6 @@ test.each(['late', 'error', 'unavailable'] as const)(
     expect(result.kind).toBe('NOT_DISPATCHED');
     release?.();
     await new Promise<void>((resolve) => setImmediate(resolve));
-    expect(f.writes().map((request) => request.variables.product.status)).toEqual(['DRAFT']);
+    expect(f.writes().map((request) => string(record(request.variables.product).status))).toEqual(['DRAFT']);
   },
 );

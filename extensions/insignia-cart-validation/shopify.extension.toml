@@ -12,6 +12,6 @@ description = "Local preproduction candidate only"
   export = "cart_validations_generate_run"
 
   [extensions.build]
-  command = "bash ../../scripts/m1-functions/build-wasm.sh validation"
+  command = "node ../../scripts/functions/build-wasm.mts validation"
   path = "target/cart-validation.wasm"
   wasm_opt = false

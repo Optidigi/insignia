@@ -10,23 +10,19 @@ export const RELEASE_VERIFICATION_SOCKET = '/run/insignia/release-verification/c
  * executable paths and append credentials cannot be selected by this request. */
 export function parseReleaseVerificationRequest(
   value: unknown,
-  expectedVersion = resolveRuntimeReleaseProfile().activeVersionRef,
+  expectedVersion: string = resolveRuntimeReleaseProfile().activeVersionRef,
 ): ReleaseVerificationRequest {
-  assert.ok(
-    [
-      'm5-functions-9c2e56b42fbf',
-      'm8-read-orders-617057f',
-      'm8-app-proxy-3d2a02e',
-      'm8-theme-c8d8713',
-      'm8-cookie-91b35ab',
-      'm8-preview-28443bd',
-      'lean-markets-7b17cd9',
-      'lean-privacy-theme-23fd116',
-    ]
-      .map((name) => resolveRuntimeReleaseProfile(name).activeVersionRef)
-      .includes(expectedVersion),
-    'reviewed_release_target_required',
-  );
+  const reviewedVersions: readonly string[] = [
+    'm5-functions-9c2e56b42fbf',
+    'm8-read-orders-617057f',
+    'm8-app-proxy-3d2a02e',
+    'm8-theme-c8d8713',
+    'm8-cookie-91b35ab',
+    'm8-preview-28443bd',
+    'lean-markets-7b17cd9',
+    'lean-privacy-theme-23fd116',
+  ].map((name) => resolveRuntimeReleaseProfile(name).activeVersionRef);
+  assert.ok(reviewedVersions.includes(expectedVersion), 'reviewed_release_target_required');
   assert.ok(value && typeof value === 'object' && !Array.isArray(value));
   const input = value as ReleaseVerificationRequest;
   assert.deepEqual(Object.keys(input).sort(), ['binding', 'deadlineMs', 'expectedActiveAppVersionRef', 'requestId']);
@@ -55,7 +51,7 @@ export function parseReleaseVerificationRequest(
  * The independently privileged process owns custody and durable dispatch. */
 export function createReleaseVerificationClient(
   socketPath = RELEASE_VERIFICATION_SOCKET,
-  expectedVersion = resolveRuntimeReleaseProfile().activeVersionRef,
+  expectedVersion: string = resolveRuntimeReleaseProfile().activeVersionRef,
 ): ReleaseVerificationCollector {
   return {
     async collect(value) {

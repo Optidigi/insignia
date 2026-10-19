@@ -243,7 +243,7 @@ function Placement({
         {placement.currentExpiresAt && (
           <s-paragraph>
             Artwork available until:{' '}
-            <time dateTime={placement.currentExpiresAt}>{recordDate(placement.currentExpiresAt)}</time>.{' '}
+            <s-text data-date-time={placement.currentExpiresAt}>{recordDate(placement.currentExpiresAt)}</s-text>.{' '}
             {retentionExpired
               ? 'Artwork expired.'
               : Date.parse(placement.currentExpiresAt) - Date.now() <= 30 * 86400000
@@ -463,7 +463,7 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
                           </s-link>
                         </s-table-cell>
                         <s-table-cell>
-                          <time dateTime={item.orderCreatedAt}>{recordDate(item.orderCreatedAt)}</time>
+                          <s-text data-date-time={item.orderCreatedAt}>{recordDate(item.orderCreatedAt)}</s-text>
                         </s-table-cell>
                         <s-table-cell>
                           <s-badge tone={item.artworkState === 'PENDING_ARTWORK' ? 'warning' : 'neutral'}>
@@ -500,7 +500,8 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
             <s-stack gap="base">
               <s-heading>{purchase.orderName ?? 'Order name unavailable'}</s-heading>
               <s-paragraph>
-                Order created: <time dateTime={purchase.orderCreatedAt}>{recordDate(purchase.orderCreatedAt)}</time>
+                Order created:{' '}
+                <s-text data-date-time={purchase.orderCreatedAt}>{recordDate(purchase.orderCreatedAt)}</s-text>
               </s-paragraph>
               <s-paragraph>
                 {purchase.isTest === true
@@ -515,7 +516,7 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
               <s-paragraph>
                 Shopify payment status: {purchase.financialStatus}. First fully paid:{' '}
                 {purchase.firstPaidAt ? (
-                  <time dateTime={purchase.firstPaidAt}>{recordDate(purchase.firstPaidAt)}</time>
+                  <s-text data-date-time={purchase.firstPaidAt}>{recordDate(purchase.firstPaidAt)}</s-text>
                 ) : (
                   'Not recorded'
                 )}
@@ -523,7 +524,8 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
               </s-paragraph>
               {purchase.cancelledAt && (
                 <s-paragraph>
-                  Shopify cancellation: <time dateTime={purchase.cancelledAt}>{recordDate(purchase.cancelledAt)}</time>
+                  Shopify cancellation:{' '}
+                  <s-text data-date-time={purchase.cancelledAt}>{recordDate(purchase.cancelledAt)}</s-text>
                 </s-paragraph>
               )}
               <s-paragraph>Shopify owns payment, fulfillment, refunds, returns and restock.</s-paragraph>
@@ -591,7 +593,7 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
                         </AdminDisclosure>
                         <s-paragraph>
                           Design retention deadline:{' '}
-                          <time dateTime={group.payloadExpiresAt}>{recordDate(group.payloadExpiresAt)}</time>
+                          <s-text data-date-time={group.payloadExpiresAt}>{recordDate(group.payloadExpiresAt)}</s-text>
                         </s-paragraph>
                         <PurchaseHistoricalPreview
                           purchaseId={purchase.purchaseId}
@@ -639,7 +641,8 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
                   {event.expiresAt && (
                     <>
                       {' '}
-                      · original deadline <time dateTime={event.expiresAt}>{recordDate(event.expiresAt)}</time>
+                      · original deadline{' '}
+                      <s-text data-date-time={event.expiresAt}>{recordDate(event.expiresAt)}</s-text>
                     </>
                   )}
                   {event.kind === 'ATTACH' &&
@@ -665,7 +668,7 @@ export default function PurchaseArtwork({ purchaseId }: { purchaseId?: string })
               {purchase.refunds.map((refund) => (
                 <s-paragraph key={refund.refundId}>
                   {refund.refundId}: {exactPurchaseMoney(refund.amountMinor, purchase.exponent, refund.currency)} ·{' '}
-                  <time dateTime={refund.occurredAt}>{recordDate(refund.occurredAt)}</time>
+                  <s-text data-date-time={refund.occurredAt}>{recordDate(refund.occurredAt)}</s-text>
                   {refund.lines.map((line) => (
                     <s-text key={line.lineId}>
                       {' '}

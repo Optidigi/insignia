@@ -49,7 +49,7 @@ describe('verified Shopify webhook handoff', () => {
 
   test('processed duplicate needs no new job, but unknown queue outcome never acknowledges', async () => {
     const processed: ShopifyWebhookIngressPort = {
-      receive: vi.fn(async () => ({
+      receive: vi.fn<ShopifyWebhookIngressPort['receive']>(async () => ({
         kind: 'processed',
         id: 'stable-uuid',
         shopId: 'shop',
@@ -64,13 +64,14 @@ describe('verified Shopify webhook handoff', () => {
     await expect(
       receiveVerifiedShopifyWebhook(
         {
-          receive: vi.fn(async () => ({
+          receive: vi.fn<ShopifyWebhookIngressPort['receive']>(async () => ({
             kind: 'received',
             id: 'stable-uuid',
             shopId: null,
             installationGeneration: null,
           })),
         },
+        // An invalid queue acknowledgment must never be promoted to success.
         { ensureEnqueued: vi.fn(async () => undefined as never) },
         delivery,
       ),
@@ -82,7 +83,7 @@ describe('verified Shopify webhook handoff', () => {
     await expect(
       receiveVerifiedShopifyWebhook(
         {
-          receive: vi.fn(async () => {
+          receive: vi.fn<ShopifyWebhookIngressPort['receive']>(async () => {
             throw new Error('payload conflict');
           }),
         },

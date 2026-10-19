@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { readVariantAvailability } from '../src/storefront/variant-availability.js';
+import { graphqlRequest, required } from './fixture-assertions.js';
 
 const now = new Date('2026-10-12T12:00:00.000Z');
 const target = {
@@ -22,7 +23,7 @@ function fixture() {
       accessExpiresAt: new Date(+now + 60000),
     })),
   };
-  const fetchImpl = vi.fn(
+  const fetchImpl = vi.fn<typeof fetch>(
     async () =>
       new Response(
         JSON.stringify({ data: { nodes: [node(target.variantIds[1], false), node(target.variantIds[0], true)] } }),
@@ -49,10 +50,11 @@ describe('owned Admin variant availability', () => {
       shopId: target.shopId,
       installationGeneration: '1',
     });
-    const [url, options] = dependencies.fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    const [url, rawInit] = required(dependencies.fetchImpl.mock.calls[0]);
+    const options = required(rawInit);
     expect(url).toBe('https://owned.myshopify.com/admin/api/2026-07/graphql.json');
     expect(options.redirect).toBe('error');
-    expect(JSON.parse(options.body as string).variables).toEqual({ ids: target.variantIds });
+    expect(graphqlRequest(String(options.body)).variables).toEqual({ ids: target.variantIds });
   });
   it('rejects invalid and incomplete identities, duplicate/missing nodes and untrusted availability values', async () => {
     const dependencies = fixture();

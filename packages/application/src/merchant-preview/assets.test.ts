@@ -169,6 +169,7 @@ it('does not write storage if durable ownership or the one-use capture claim fai
 it('requires merchant scope and trustworthy inspection before creating custody or writing objects', async () => {
   const guest = fixture();
   await expect(
+    // Deliberately forge the merchant-only type to prove guest capability rejection at runtime.
     createMerchantPreviewCapture(guest.input).capture({ ...scope, kind: 'guest' as 'merchant' }, request),
   ).rejects.toMatchObject({ code: 'INVALID_INPUT' });
   expect(guest.calls).toEqual([]);

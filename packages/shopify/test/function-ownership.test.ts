@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { describe, expect, test, vi } from 'vitest';
 import { createFunctionOwnershipReconciler } from '../src/function-ownership.js';
 import type { PublicationAdminRequest } from '../src/publication-admin.js';
+import { required } from './fixture-assertions.js';
 
 const tenant = {
   shopId: 'shop-internal-1',
@@ -79,7 +80,7 @@ describe('read-only owned Function reconciliation', () => {
       observation: { schemaVersion: 2, transform: { inputQuerySha256: null }, validation: { inputQuerySha256: null } },
     });
     expect(await read(tenant, expected)).toMatchObject({ transform: 'unknown', validation: 'unknown' });
-    const first = body.data.shopifyFunctions.nodes[0];
+    const first = required(body.data.shopifyFunctions.nodes[0]);
     if (!first) throw new Error('fixture Function missing');
     Object.assign(first, { inputQuery: {} });
     expect(await read(tenant, { ...expected, observationVersion: 2 })).toMatchObject({
@@ -135,7 +136,7 @@ describe('read-only owned Function reconciliation', () => {
         transport: { execute: async () => ({ status: 200, body }) },
       }).read(tenant, expected);
     const drift = fixture();
-    Object.assign(drift.data.shopifyFunctions.nodes[0], { apiVersion: '2026-04', inputQuery: 'changed' });
+    Object.assign(required(drift.data.shopifyFunctions.nodes[0]), { apiVersion: '2026-04', inputQuery: 'changed' });
     expect(await read(drift)).toMatchObject({
       transform: 'unknown',
       observation: {
@@ -146,10 +147,10 @@ describe('read-only owned Function reconciliation', () => {
       },
     });
     const foreign = fixture();
-    Object.assign(foreign.data.shopifyFunctions.nodes[0], { appKey: 'other-app' });
+    Object.assign(required(foreign.data.shopifyFunctions.nodes[0]), { appKey: 'other-app' });
     expect(await read(foreign)).toMatchObject({ transform: 'unknown', observation: { transform: null } });
     const duplicate = fixture();
-    const first = duplicate.data.shopifyFunctions.nodes[0];
+    const first = required(duplicate.data.shopifyFunctions.nodes[0]);
     if (!first) throw new Error('fixture missing Function');
     duplicate.data.shopifyFunctions.nodes.push({ ...first });
     expect(await read(duplicate)).toMatchObject({ transform: 'duplicate', observation: { transform: null } });
@@ -165,8 +166,8 @@ describe('read-only owned Function reconciliation', () => {
     'profile %s retains enabled and block-on-failure deployment requirements',
     async (observationVersion) => {
       const body = fixture();
-      Object.assign(body.data.cartTransforms.nodes[0], { blockOnFailure: false });
-      Object.assign(body.data.validations.nodes[0], { enabled: false });
+      Object.assign(required(body.data.cartTransforms.nodes[0]), { blockOnFailure: false });
+      Object.assign(required(body.data.validations.nodes[0]), { enabled: false });
       const result = await createFunctionOwnershipReconciler({
         transport: { execute: async () => ({ status: 200, body }) },
       }).read(tenant, { ...expected, ...(observationVersion === 2 ? { observationVersion } : {}) });
@@ -204,7 +205,7 @@ describe('read-only owned Function reconciliation', () => {
   test('separates missing, duplicated, drifted and unverifiable ownership', async () => {
     const body = fixture();
     body.data.cartTransforms.nodes = [];
-    const firstValidation = body.data.validations.nodes[0];
+    const firstValidation = required(body.data.validations.nodes[0]);
     if (!firstValidation) throw new Error('fixture missing validation');
     body.data.validations.nodes.push({ ...firstValidation });
     const read = (snapshot: unknown) =>
@@ -213,7 +214,7 @@ describe('read-only owned Function reconciliation', () => {
       }).read(tenant, expected);
     expect(await read(body)).toMatchObject({ transform: 'missing', validation: 'duplicate', readiness: 'unknown' });
     const drifted = fixture();
-    const firstFunction = drifted.data.shopifyFunctions.nodes[0];
+    const firstFunction = required(drifted.data.shopifyFunctions.nodes[0]);
     if (!firstFunction) throw new Error('fixture missing Function');
     firstFunction.inputQuery = 'changed';
     expect(await read(drifted)).toMatchObject({ transform: 'drift', validation: 'present', readiness: 'unknown' });

@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 import { createPartnerGraphqlTransport } from '../src/active-subscription.js';
 import { createPartnerRelationshipClient, PARTNER_RELATIONSHIP_QUERY } from '../src/partner-relationship.js';
+import { graphqlRequest, required } from './fixture-assertions.js';
 
 const input = {
   appId: 'gid://shopify/App/123',
@@ -44,7 +45,7 @@ describe('bounded exact Partner relationship observations', () => {
     expect(r.pagination).toBe('EXHAUSTED');
     expect(r.pagesRead).toBe(2);
     expect(r.installationAuthority).toBe(false);
-    expect(c.query.mock.calls[1][0].variables.after).toBe('gid://partners/Relationship/a');
+    expect(required(required(c.query.mock.calls[1])[0]).variables.after).toBe('gid://partners/Relationship/a');
   });
   test('rejects incomplete pages, repeats, wrong scope and ambiguous chronology', async () => {
     const cases: [string[], string][] = [
@@ -72,14 +73,14 @@ describe('bounded exact Partner relationship observations', () => {
     expect((await client([page([])]).read(input)).events).toEqual([]);
   });
   test('transport admits only the exact read with bounded variables, retains existing query restrictions', async () => {
-    const fetchImpl = vi.fn(async (_url: string, _request: RequestInit) => new Response(page([event()])));
+    const fetchImpl = vi.fn<typeof fetch>(async (_url, _request) => new Response(page([event()])));
     const transport = createPartnerGraphqlTransport({
       organizationId: '789',
       accessToken: 'synthetic-not-a-token',
       fetchImpl,
     });
     await createPartnerRelationshipClient({ transport, now: () => new Date(input.through) }).readRange(input);
-    expect(JSON.parse(fetchImpl.mock.calls[0][1].body as string).query).toBe(PARTNER_RELATIONSHIP_QUERY);
+    expect(graphqlRequest(String(required(fetchImpl.mock.calls[0])?.[1]?.body)).query).toBe(PARTNER_RELATIONSHIP_QUERY);
     for (const request of [
       { query: PARTNER_RELATIONSHIP_QUERY, variables: { ...input, appId: 'bad' } },
       { query: `${PARTNER_RELATIONSHIP_QUERY} `, variables: input },

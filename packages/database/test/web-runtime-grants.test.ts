@@ -323,10 +323,14 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
         asset.originalKey,
       );
       expect(await core.purchases.getAuthorizedArtwork(authority, { purchaseId, assetId: randomUUID() })).toBeNull();
-      await core.purchases.appendArtwork(
-        { ...authority, ownerHash },
-        { purchaseId, expectedVersion: 0, groupIndex: 0, placementId: 'front', assetId, ownerHash },
-      );
+      await core.purchases.appendArtwork(authority, {
+        purchaseId,
+        expectedVersion: 0,
+        groupIndex: 0,
+        placementId: 'front',
+        assetId,
+        ownerHash,
+      });
       await core.purchases.lockArtwork(authority, { purchaseId, expectedVersion: 1 });
       expect((await core.purchases.get(authority, purchaseId))?.artworkState).toBe('ARTWORK_LOCKED');
 
@@ -469,9 +473,9 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       await owner.query('ROLLBACK');
       await owner.query(`ALTER ROLE ${enqueue} NOCREATEROLE`);
       for (const path of [
-        '../../../scripts/m6-artwork/runtime-grants.sql',
-        '../../../scripts/m7-storefront/runtime-grants.sql',
-        '../../../scripts/m8-purchase/runtime-grants.sql',
+        '../../../scripts/database/artwork-runtime-grants.sql',
+        '../../../scripts/database/buyer-cleanup-grants.sql',
+        '../../../scripts/database/purchase-runtime-grants.sql',
       ]) {
         const other = (await readFile(new URL(path, import.meta.url), 'utf8'))
           .replaceAll('insignia_queue_consume', queue)
@@ -676,7 +680,7 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
         `CREATE ROLE ${worker} LOGIN PASSWORD '${workerPassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; GRANT ${queue} TO ${worker}`,
       );
       // Model the M5 worker baseline used by the usage ledger's installation read/row lock.
-      // Existing production grants: scripts/m5-024/queue-roles.sql; this fixture grants only the needed subset.
+      // Existing production grants: scripts/worker/queue-roles.sql; this fixture grants only the needed subset.
       await owner.query(`GRANT SELECT ON public.shops,public.installation_generations TO ${queue}`);
       await owner.query(`GRANT UPDATE(deactivated_at) ON public.installation_generations TO ${queue}`);
       const workerAddress = new URL(target);

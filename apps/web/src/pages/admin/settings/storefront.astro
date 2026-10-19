@@ -9,7 +9,7 @@ Astro.response.headers.set('Cache-Control', 'private, no-store');
 Astro.response.headers.set('Content-Security-Policy', csp);
 Astro.response.headers.set('Referrer-Policy', 'no-referrer');
 if (!apiKey || !/^[A-Za-z0-9_-]{1,128}$/.test(apiKey))
-  return new Response('Admin configuration unavailable', { status: 503, headers: Astro.response.headers });
+  return Astro.rewrite('/admin/unavailable');
 ---
 <AdminLayout title="Storefront setup" apiKey={apiKey}>
 <StorefrontSetup client:load />

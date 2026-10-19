@@ -36,7 +36,7 @@ const before: ProductAvailabilitySnapshotV2 = {
   receivedAt: '2026-10-01T12:00:00.000Z',
 };
 const observed = { ...before, scope, providerUpdatedAt: '2026-10-01T11:01:00.000Z' };
-const context = {
+const context: AvailabilityRecoveryContext = {
   shopId: 'shop',
   configId: 'config',
   operationId: 'op',
@@ -44,12 +44,12 @@ const context = {
   currentScope: scope,
   hold: { version: 'm5-availability-hold-v2', operationId: 'op', before, held: null },
   observed,
-} as unknown as AvailabilityRecoveryContext;
+};
 test('trusted v2 recovery binds exact observed metadata while original closure uses semantic state after reinstall', () => {
   expect(() => assertOriginalAvailabilityObserved(context)).not.toThrow();
   const digest = availabilitySnapshotIdentityDigest(context.observed);
   const changed = { ...observed, providerUpdatedAt: '2026-10-01T11:02:00.000Z' };
-  expect(availabilitySnapshotIdentityDigest(changed as unknown as typeof context.observed)).not.toBe(digest);
+  expect(availabilitySnapshotIdentityDigest(changed)).not.toBe(digest);
   const decision = {
     version: 'm5-availability-recovery-decision-v2',
     shopId: 'shop',
@@ -69,14 +69,12 @@ test('trusted v2 recovery binds exact observed metadata while original closure u
   expect(() =>
     validateAvailabilityRecoveryDecision(
       decision,
-      { ...context, observed: changed as unknown as typeof context.observed },
+      { ...context, observed: changed },
       new Date(before.observedAt),
       1000,
     ),
   ).toThrow();
-  expect(() =>
-    assertOriginalAvailabilityObserved({ ...context, observed: changed as unknown as typeof context.observed }),
-  ).not.toThrow();
+  expect(() => assertOriginalAvailabilityObserved({ ...context, observed: changed })).not.toThrow();
 });
 
 test('v2 original-state recovery rejects semantic drift even with identical updatedAt', () => {

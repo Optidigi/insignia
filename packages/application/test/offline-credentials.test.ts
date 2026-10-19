@@ -21,7 +21,7 @@ const target = { shopId: 'shop-uuid', installationGeneration: '2', minimumRemain
 function credentials(overrides: Partial<OfflineCredentialLifecyclePort> = {}): OfflineCredentialLifecyclePort {
   return {
     install: vi.fn(async () => {}),
-    acquire: vi.fn(async () => ({
+    acquire: vi.fn<OfflineCredentialLifecyclePort['acquire']>(async () => ({
       kind: 'claimed',
       shopDomain: 'test.myshopify.com',
       claimId: 'claim-1',
@@ -29,9 +29,9 @@ function credentials(overrides: Partial<OfflineCredentialLifecyclePort> = {}): O
       refreshToken: 'refresh-old',
       refreshExpiresAt: new Date(now.getTime() + 60_000),
     })),
-    replaceClaim: vi.fn(async () => 'replaced'),
+    replaceClaim: vi.fn<OfflineCredentialLifecyclePort['replaceClaim']>(async () => 'replaced'),
     releaseClaim: vi.fn(async () => {}),
-    markReauthRequired: vi.fn(async () => 'marked'),
+    markReauthRequired: vi.fn<OfflineCredentialLifecyclePort['markReauthRequired']>(async () => 'marked'),
     ...overrides,
   };
 }
@@ -101,7 +101,9 @@ describe('expiring offline credential lifecycle', () => {
   });
 
   test('stale replacement cannot leak new access token or advance chain', async () => {
-    const port = credentials({ replaceClaim: vi.fn(async () => 'stale') });
+    const port = credentials({
+      replaceClaim: vi.fn<OfflineCredentialLifecyclePort['replaceClaim']>(async () => 'stale'),
+    });
     expect(await refreshExpiringOfflineCredentials(port, { refresh: async () => pair() }, target, () => now)).toEqual({
       kind: 'stale',
     });
@@ -109,11 +111,15 @@ describe('expiring offline credential lifecycle', () => {
 
   test('inactive generation and busy claim never reach transport', async () => {
     const transport = { refresh: vi.fn() };
-    const inactive = credentials({ acquire: vi.fn(async () => ({ kind: 'inactive' })) });
+    const inactive = credentials({
+      acquire: vi.fn<OfflineCredentialLifecyclePort['acquire']>(async () => ({ kind: 'inactive' })),
+    });
     expect(await refreshExpiringOfflineCredentials(inactive, transport, target, () => now)).toEqual({
       kind: 'inactive',
     });
-    const busy = credentials({ acquire: vi.fn(async () => ({ kind: 'busy' })) });
+    const busy = credentials({
+      acquire: vi.fn<OfflineCredentialLifecyclePort['acquire']>(async () => ({ kind: 'busy' })),
+    });
     expect(await refreshExpiringOfflineCredentials(busy, transport, target, () => now)).toEqual({ kind: 'busy' });
     expect(transport.refresh).not.toHaveBeenCalled();
   });

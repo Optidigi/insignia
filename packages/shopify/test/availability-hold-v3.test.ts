@@ -1,3 +1,19 @@
+import {
+  type AnyAvailabilityRestoreResult,
+  type AnyProductAvailabilitySnapshot,
+  isAvailabilityV3,
+  type ProductAvailabilitySnapshotV3,
+} from '@insignia/application';
+import { graphqlRequest, record, required, roundTripFixture, string } from './fixture-assertions.js';
+
+function compensation(value: AnyAvailabilityRestoreResult) {
+  return 'compensation' in value ? value.compensation : undefined;
+}
+function v3Snapshot(value: AnyProductAvailabilitySnapshot): ProductAvailabilitySnapshotV3 {
+  if (!isAvailabilityV3(value)) throw new Error('Expected v3 snapshot');
+  return value;
+}
+
 import type { AvailabilityScope } from '@insignia/application';
 import { expect, test, vi } from 'vitest';
 import { createShopifyAvailabilityHoldV3Port } from '../src/availability-hold-v3.js';
@@ -43,8 +59,8 @@ const anchor = () => ({
 });
 test('PR47 hidden effective Publication is qualified by direct anchor without generic discovery', async () => {
   const requests: { query: string; variables: Record<string, unknown> }[] = [];
-  const fetchImpl = vi.fn(async (_url: unknown, init?: RequestInit) => {
-    const request = JSON.parse(String(init?.body));
+  const fetchImpl = vi.fn<typeof fetch>(async (_url: unknown, init?: RequestInit) => {
+    const request = graphqlRequest(String(init?.body));
     requests.push(request);
     const data = request.query.includes('nodes(ids:')
       ? { ...identity, nodes: [anchor()] }
@@ -63,11 +79,11 @@ test('PR47 hidden effective Publication is qualified by direct anchor without ge
       }),
     },
     isCurrent: async () => true,
-    fetchImpl: fetchImpl as typeof fetch,
+    fetchImpl,
     now,
     timeoutMs: 10000,
   });
-  const before = await port.snapshot(scope, productId);
+  const before = v3Snapshot(await port.snapshot(scope, productId));
   expect(before).toMatchObject({
     version: 'm5-product-availability-snapshot-v3',
     state: 'available',
@@ -83,11 +99,11 @@ test('PR47 hidden effective Publication is qualified by direct anchor without ge
 test('acquire preserves the hidden anchor and accepts distinct ACK/readback updatedAt diagnostics', async () => {
   let state = 'ACTIVE',
     writes = 0;
-  const fetchImpl = vi.fn(async (_url: unknown, init?: RequestInit) => {
-    const r = JSON.parse(String(init?.body));
+  const fetchImpl = vi.fn<typeof fetch>(async (_url: unknown, init?: RequestInit) => {
+    const r = graphqlRequest(String(init?.body));
     if (r.query.startsWith('mutation')) {
       writes++;
-      state = r.variables.product.status;
+      state = string(record(r.variables.product).status);
       return new Response(
         JSON.stringify({
           data: {
@@ -126,11 +142,11 @@ test('acquire preserves the hidden anchor and accepts distinct ACK/readback upda
       }),
     },
     isCurrent: async () => true,
-    fetchImpl: fetchImpl as typeof fetch,
+    fetchImpl,
     now,
     timeoutMs: 10000,
   });
-  const before = await port.snapshot(scope, productId);
+  const before = v3Snapshot(await port.snapshot(scope, productId));
   if (before.version !== 'm5-product-availability-snapshot-v3') throw new Error('wrong snapshot');
   const result = await port.acquire(scope, {
     version: 'm5-availability-hold-v3',
@@ -168,11 +184,11 @@ function lifecycle(options: Scenario = {}) {
   const writes: string[] = [],
     requests: { query: string; variables: Record<string, unknown> }[] = [];
   const other = 'gid://shopify/Publication/304';
-  const fetchImpl = vi.fn(async (_url: unknown, init?: RequestInit) => {
-    const r = JSON.parse(String(init?.body));
+  const fetchImpl = vi.fn<typeof fetch>(async (_url: unknown, init?: RequestInit) => {
+    const r = graphqlRequest(String(init?.body));
     requests.push(r);
     if (r.query.startsWith('mutation')) {
-      state = r.variables.product.status;
+      state = string(record(r.variables.product).status);
       writes.push(state);
       if (
         (writes.length === 1 && options.ambiguous === 'acquire') ||
@@ -277,7 +293,7 @@ function lifecycle(options: Scenario = {}) {
       }),
     },
     isCurrent: async () => true,
-    fetchImpl: fetchImpl as typeof fetch,
+    fetchImpl,
     now: () => clock,
     timeoutMs: 10000,
     beforeWrite: options.beforeWrite,
@@ -298,7 +314,7 @@ function lifecycle(options: Scenario = {}) {
 }
 async function acquiredFixture(options: Scenario = {}) {
   const f = lifecycle(options),
-    before = await f.port.snapshot(scope, productId);
+    before = v3Snapshot(await f.port.snapshot(scope, productId));
   if (before.version !== 'm5-product-availability-snapshot-v3') throw new Error('wrong snapshot');
   const acquired = await f.port.acquire(scope, {
     version: 'm5-availability-hold-v3',
@@ -318,11 +334,11 @@ async function acquiredFixture(options: Scenario = {}) {
       compensationReserved: true as const,
     },
   };
-  return { ...f, hold, current: acquired.current };
+  return { ...f, hold, current: v3Snapshot(acquired.current) };
 }
 test('restore returns exact original effective membership despite different diagnostic timestamps', async () => {
   const { port, writes } = lifecycle();
-  const before = await port.snapshot(scope, productId);
+  const before = v3Snapshot(await port.snapshot(scope, productId));
   if (before.version !== 'm5-product-availability-snapshot-v3') throw new Error('wrong snapshot');
   const acquired = await port.acquire(scope, {
     version: 'm5-availability-hold-v3',
@@ -344,13 +360,13 @@ test('restore returns exact original effective membership despite different diag
   };
   const restored = await port.restore(scope, hold, acquired.current, () => true);
   expect(restored.kind).toBe('RESTORED');
-  expect(restored.current?.version).toBe('m5-product-availability-snapshot-v3');
+  expect(v3Snapshot(required(restored.current)).version).toBe('m5-product-availability-snapshot-v3');
   expect(writes).toEqual(['DRAFT', 'ACTIVE']);
 });
 
 test('settled active restore with missing membership is compensated once and never restored again', async () => {
   const { port, writes } = lifecycle({ missingAfterRestore: true });
-  const before = await port.snapshot(scope, productId);
+  const before = v3Snapshot(await port.snapshot(scope, productId));
   if (before.version !== 'm5-product-availability-snapshot-v3') throw new Error('wrong snapshot');
   const acquired = await port.acquire(scope, {
     version: 'm5-availability-hold-v3',
@@ -372,12 +388,11 @@ test('settled active restore with missing membership is compensated once and nev
   };
   const result = await port.restore(scope, hold, acquired.current, () => true);
   expect(result.kind).toBe('REHELD_CONFLICT');
-  if (result.current?.version !== 'm5-product-availability-snapshot-v3' || !('compensation' in result))
-    throw new Error('no audit');
+  if (!isAvailabilityV3(result.current) || !('compensation' in result)) throw new Error('no audit');
   expect(result.current.state).toBe('unavailable');
-  expect(result.compensation?.mismatch).toContain('effective_publication_ids');
-  expect(result.compensation?.restored.state).toBe('available');
-  expect(result.compensation?.acknowledgement?.state).toBe('unavailable');
+  expect(compensation(result)?.mismatch).toContain('effective_publication_ids');
+  expect(compensation(result)?.restored.state).toBe('available');
+  expect(compensation(result)?.acknowledgement?.state).toBe('unavailable');
   expect(writes).toEqual(['DRAFT', 'ACTIVE', 'DRAFT']);
   await expect(port.restore(scope, hold, acquired.current, () => true)).rejects.toMatchObject({
     kind: 'ambiguous_write',
@@ -411,12 +426,12 @@ test('lost compensation ACK preserves restore audit and returns pending without 
   expect(result.kind).toBe('RESTORATION_PENDING');
   expect(f.writes).toEqual(['DRAFT', 'ACTIVE', 'DRAFT']);
   if (!('compensation' in result)) throw new Error('missing compensation audit');
-  expect(result.compensation?.restoreAcknowledgement.state).toBe('available');
-  expect(result.compensation?.acknowledgement).toBeNull();
+  expect(compensation(result)?.restoreAcknowledgement.state).toBe('available');
+  expect(compensation(result)?.acknowledgement).toBeNull();
 });
 test('lost acquisition is unattributable and adapter is quarantined without another observation', async () => {
   const f = lifecycle({ ambiguous: 'acquire' }),
-    before = await f.port.snapshot(scope, productId);
+    before = v3Snapshot(await f.port.snapshot(scope, productId));
   if (before.version !== 'm5-product-availability-snapshot-v3') throw new Error('wrong snapshot');
   const hold = { version: 'm5-availability-hold-v3' as const, operationId: 'lost-acquire', before, held: null };
   await expect(f.port.acquire(scope, hold)).rejects.toMatchObject({ kind: 'ambiguous_write' });
@@ -427,7 +442,7 @@ test('lost acquisition is unattributable and adapter is quarantined without anot
 });
 test('unsupported legacy false prestate blocks acquire with zero status writes', async () => {
   const f = lifecycle({ unsupportedBefore: true }),
-    before = await f.port.snapshot(scope, productId);
+    before = v3Snapshot(await f.port.snapshot(scope, productId));
   if (before.version !== 'm5-product-availability-snapshot-v3') throw new Error('wrong snapshot');
   expect(
     (await f.port.acquire(scope, { version: 'm5-availability-hold-v3', operationId: 'scheduled', before, held: null }))
@@ -437,7 +452,7 @@ test('unsupported legacy false prestate blocks acquire with zero status writes',
 });
 test('removed original inclusion after ACK conflicts without another mutation', async () => {
   const f = lifecycle({ removedAfterAcquire: true }),
-    before = await f.port.snapshot(scope, productId);
+    before = v3Snapshot(await f.port.snapshot(scope, productId));
   if (before.version !== 'm5-product-availability-snapshot-v3') throw new Error('wrong snapshot');
   expect(
     (await f.port.acquire(scope, { version: 'm5-availability-hold-v3', operationId: 'removed', before, held: null }))
@@ -456,7 +471,7 @@ test.each(['capability', 'effective'] as const)('held %s drift is conflict and n
 test('fresh process observes exact persisted hold and unscheduled future-capable anchors restore', async () => {
   const f = await acquiredFixture({ futureCapable: true });
   const fresh = f.fresh(),
-    persisted = JSON.parse(JSON.stringify(f.hold));
+    persisted = roundTripFixture(f.hold);
   const observed = await fresh.observe(scope, persisted);
   expect(observed.kind).toBe('HELD');
   if (observed.kind !== 'HELD') throw new Error('not held');
@@ -499,8 +514,8 @@ test.each([
   { ...anchor(), autoPublish: 'true' },
   { ...anchor(), supportsFuturePublishing: null },
 ])('unqualified exact anchor fails closed before any mutation %#', async (publication) => {
-  const fetchImpl = vi.fn(async (_url: unknown, init?: RequestInit) => {
-    const r = JSON.parse(String(init?.body));
+  const fetchImpl = vi.fn<typeof fetch>(async (_url: unknown, init?: RequestInit) => {
+    const r = graphqlRequest(String(init?.body));
     expect(r.query).not.toMatch(/^mutation/);
     return Response.json({
       data: r.query.includes('publication(id:') ? { ...identity, publication } : { ...identity, node: product() },
@@ -509,7 +524,7 @@ test.each([
   const port = createShopifyAvailabilityHoldV3Port({
     credentials,
     isCurrent: async () => true,
-    fetchImpl: fetchImpl as typeof fetch,
+    fetchImpl,
     now,
   });
   await expect(port.snapshot(scope, productId)).rejects.toBeInstanceOf(Error);
@@ -527,11 +542,11 @@ test('65 effective IDs exceed the engineering anchor guard before direct queries
       pageInfo: complete,
     },
   };
-  const fetchImpl = vi.fn(async () => Response.json({ data: { ...identity, node } }));
+  const fetchImpl = vi.fn<typeof fetch>(async () => Response.json({ data: { ...identity, node } }));
   const port = createShopifyAvailabilityHoldV3Port({
     credentials,
     isCurrent: async () => true,
-    fetchImpl: fetchImpl as typeof fetch,
+    fetchImpl,
     now,
   });
   await expect(port.snapshot(scope, productId)).rejects.toMatchObject({ kind: 'provider_shape' });
@@ -544,11 +559,11 @@ test.each(['shop', 'app', 'grants'] as const)(
     if (change === 'shop') data.shop.id = 'gid://shopify/Shop/999';
     else if (change === 'app') data.currentAppInstallation.app.apiKey = 'b'.repeat(32);
     else data.currentAppInstallation.accessScopes = [];
-    const fetchImpl = vi.fn(async () => Response.json({ data }));
+    const fetchImpl = vi.fn<typeof fetch>(async () => Response.json({ data }));
     const port = createShopifyAvailabilityHoldV3Port({
       credentials,
       isCurrent: async () => true,
-      fetchImpl: fetchImpl as typeof fetch,
+      fetchImpl,
       now,
     });
     await expect(port.snapshot(scope, productId)).rejects.toMatchObject({
@@ -564,11 +579,11 @@ test('one high-level deadline expires before a slow response and permanently qua
     isCurrent: async () => true,
     now,
     timeoutMs: 100,
-    fetchImpl: (async () => {
+    fetchImpl: async () => {
       outbound++;
       await new Promise((r) => setTimeout(r, 150));
       return Response.json({ data: { ...identity, node: product() } });
-    }) as typeof fetch,
+    },
   });
   await expect(port.snapshot(scope, productId)).rejects.toMatchObject({ kind: 'network_or_timeout' });
   await expect(port.snapshot(scope, productId)).rejects.toMatchObject({ kind: 'ambiguous_write' });
@@ -576,7 +591,7 @@ test('one high-level deadline expires before a slow response and permanently qua
   expect(outbound).toBe(1);
 });
 test('expired credential preparation never reaches the external transport even when it later resolves', async () => {
-  const fetchImpl = vi.fn(async () => Response.json({ data: { ...identity, node: product() } }));
+  const fetchImpl = vi.fn<typeof fetch>(async () => Response.json({ data: { ...identity, node: product() } }));
   const port = createShopifyAvailabilityHoldV3Port({
     credentials: {
       acquire: async () => {
@@ -587,32 +602,32 @@ test('expired credential preparation never reaches the external transport even w
     isCurrent: async () => true,
     now,
     timeoutMs: 100,
-    fetchImpl: fetchImpl as typeof fetch,
+    fetchImpl,
   });
   await expect(port.snapshot(scope, productId)).rejects.toMatchObject({ kind: 'network_or_timeout' });
   await new Promise((r) => setTimeout(r, 160));
   expect(fetchImpl).not.toHaveBeenCalled();
 });
 test('oversized provider body fails closed under the same operation budget', async () => {
-  const fetchImpl = vi.fn(async () => new Response(' '.repeat(128 * 1024 + 1)));
+  const fetchImpl = vi.fn<typeof fetch>(async () => new Response(' '.repeat(128 * 1024 + 1)));
   const port = createShopifyAvailabilityHoldV3Port({
     credentials,
     isCurrent: async () => true,
     now,
-    fetchImpl: fetchImpl as typeof fetch,
+    fetchImpl,
   });
   await expect(port.snapshot(scope, productId)).rejects.toMatchObject({ kind: 'provider_shape' });
   expect(fetchImpl).toHaveBeenCalledTimes(1);
 });
 test('original exact DRAFT needs no acquire or restore mutation', async () => {
-  const fetchImpl = vi.fn(async () => Response.json({ data: { ...identity, node: product('DRAFT') } }));
+  const fetchImpl = vi.fn<typeof fetch>(async () => Response.json({ data: { ...identity, node: product('DRAFT') } }));
   const port = createShopifyAvailabilityHoldV3Port({
     credentials,
     isCurrent: async () => true,
     now,
-    fetchImpl: fetchImpl as typeof fetch,
+    fetchImpl,
   });
-  const before = await port.snapshot(scope, productId);
+  const before = v3Snapshot(await port.snapshot(scope, productId));
   if (before.version !== 'm5-product-availability-snapshot-v3') throw new Error('wrong version');
   const result = await port.acquire(scope, {
     version: 'm5-availability-hold-v3',
@@ -627,12 +642,12 @@ test('original exact DRAFT needs no acquire or restore mutation', async () => {
 
 test('quiescent wall-clock deadline expiry also denies every later provider request', async () => {
   let clock = now();
-  const fetchImpl = vi.fn(async () => Response.json({ data: { ...identity, node: product() } }));
+  const fetchImpl = vi.fn<typeof fetch>(async () => Response.json({ data: { ...identity, node: product() } }));
   const port = createShopifyAvailabilityHoldV3Port({
     now: () => clock,
     timeoutMs: 1000,
     isCurrent: async () => true,
-    fetchImpl: fetchImpl as typeof fetch,
+    fetchImpl,
     credentials: {
       acquire: async () => {
         clock = new Date(clock.getTime() + 1001);
@@ -648,7 +663,7 @@ test('quiescent wall-clock deadline expiry also denies every later provider requ
 for (const phase of ['acquire', 'restore'] as const) {
   test(`ACK-only unsupported legacy false evidence during ${phase} blocks success while retaining the settled receipt`, async () => {
     const f = lifecycle({ ackNonEffective: phase });
-    const before = await f.port.snapshot(scope, productId);
+    const before = v3Snapshot(await f.port.snapshot(scope, productId));
     if (before.version !== 'm5-product-availability-snapshot-v3') throw new Error('wrong version');
     const acquired = await f.port.acquire(scope, {
       version: 'm5-availability-hold-v3',
@@ -677,7 +692,7 @@ for (const phase of ['acquire', 'restore'] as const) {
       const restored = await f.port.restore(scope, hold, acquired.current, () => true);
       expect(restored.kind).toBe('CONFLICT');
       expect(restored.acknowledgement?.effectiveVisibility.publicationEvidence.some((p) => !p.isPublished)).toBe(true);
-      expect(restored.compensation).toBeUndefined();
+      expect(compensation(restored)).toBeUndefined();
       expect(f.writes).toEqual(['DRAFT', 'ACTIVE']);
     }
   });
@@ -687,7 +702,7 @@ test('ACK-only unsupported legacy false evidence during compensation retains pen
   const result = await f.port.restore(scope, f.hold, f.current, () => true);
   expect(result.kind).toBe('RESTORATION_PENDING');
   expect(
-    result.compensation?.acknowledgement?.effectiveVisibility.publicationEvidence.some((p) => !p.isPublished),
+    compensation(result)?.acknowledgement?.effectiveVisibility.publicationEvidence.some((p) => !p.isPublished),
   ).toBe(true);
   expect(f.writes).toEqual(['DRAFT', 'ACTIVE', 'DRAFT']);
 });
@@ -818,10 +833,10 @@ for (const [publishDate, blocking] of [
 ] as const) {
   test(`production snapshot classifies publication ${publishDate} at completed receipt`, async () => {
     let clock = new Date('2026-10-07T12:09:54.968Z');
-    const fetchImpl = vi.fn(async (_url: unknown, init?: RequestInit) => {
-      const request = JSON.parse(String(init?.body));
+    const fetchImpl = vi.fn<typeof fetch>(async (_url: unknown, init?: RequestInit) => {
+      const request = graphqlRequest(String(init?.body));
       const node = product();
-      node.resourcePublications.nodes[0]!.publishDate = publishDate;
+      required(node.resourcePublications.nodes[0]).publishDate = publishDate;
       clock = new Date('2026-10-07T12:09:57.978Z');
       return Response.json({
         data: request.query.includes('publication(id:')
@@ -832,10 +847,10 @@ for (const [publishDate, blocking] of [
     const port = createShopifyAvailabilityHoldV3Port({
       credentials,
       isCurrent: async () => true,
-      fetchImpl: fetchImpl as typeof fetch,
+      fetchImpl,
       now: () => clock,
     });
-    const current = await port.snapshot(scope, productId);
+    const current = v3Snapshot(await port.snapshot(scope, productId));
     if (current.version !== 'm5-product-availability-snapshot-v3') throw new Error('wrong version');
     expect(current.observedAt).toBe('2026-10-07T12:09:54.968Z');
     expect(current.receivedAt).toBe('2026-10-07T12:09:57.978Z');
@@ -863,7 +878,7 @@ for (const phase of ['acquire', 'restore', 'compensate'] as const) {
       };
       if (phase === 'acquire') {
         const f = lifecycle(options);
-        const before = await f.port.snapshot(scope, productId);
+        const before = v3Snapshot(await f.port.snapshot(scope, productId));
         if (before.version !== 'm5-product-availability-snapshot-v3') throw new Error('wrong version');
         const acquired = await f.port.acquire(scope, {
           version: 'm5-availability-hold-v3',
@@ -886,7 +901,7 @@ for (const phase of ['acquire', 'restore', 'compensate'] as const) {
               : 'RESTORATION_PENDING',
         );
         expect(f.writes).toEqual(phase === 'restore' ? ['DRAFT', 'ACTIVE'] : ['DRAFT', 'ACTIVE', 'DRAFT']);
-        if (phase === 'restore') expect(restored.compensation).toBeUndefined();
+        if (phase === 'restore') expect(compensation(restored)).toBeUndefined();
       }
     });
   }
@@ -895,7 +910,7 @@ for (const phase of ['acquire', 'restore', 'compensate'] as const) {
 test('expired request authority denies acquisition at the actual provider dispatch boundary', async () => {
   let allowed = true;
   const f = lifecycle({ beforeWrite: () => allowed });
-  const before = await f.port.snapshot(scope, productId);
+  const before = v3Snapshot(await f.port.snapshot(scope, productId));
   const hold = { version: 'm5-availability-hold-v3' as const, operationId: 'guarded-acquire', before, held: null };
   allowed = false;
   await expect(f.port.acquire(scope, hold)).rejects.toMatchObject({ kind: 'not_dispatched' });

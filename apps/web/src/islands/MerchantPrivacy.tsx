@@ -103,7 +103,7 @@ export default function MerchantPrivacy() {
                       <s-text>{request.requestId}</s-text>
                     </s-table-cell>
                     <s-table-cell>
-                      <time dateTime={request.fulfillBy}>{new Date(request.fulfillBy).toUTCString()}</time>
+                      <s-text data-date-time={request.fulfillBy}>{new Date(request.fulfillBy).toUTCString()}</s-text>
                     </s-table-cell>
                     <s-table-cell>{request.requestedOrderCount}</s-table-cell>
                     <s-table-cell>

@@ -64,7 +64,7 @@ Astro provides Node SSR and Preact integrations; Node 24 is an LTS release. Thes
 apps/web (server) ──┬──> application ──> domain
                    ├──> database ─────> application ports + domain
                    ├──> shopify ──────> application ports + domain
-                   ├──> artwork ──────> application ports + domain
+                   ├──> storage ──────> application ports + domain
                    ├──> cart-authorization (server)
                    └──> observability
 
@@ -119,7 +119,7 @@ apps/
     src/pages/proxy/v1/        # App Proxy upstream routes
     src/pages/webhooks/        # Raw-body ingress
     src/islands/               # Preact only where interaction warrants it
-    src/composition/
+    src/server/                # Server composition and transport boundaries
   worker/                      # Job registry, outbox dispatcher, composition
   storefront/                  # Vite + Preact, custom element, theme/cart bridge
 packages/
@@ -128,7 +128,7 @@ packages/
   contracts/                   # Zod 4 request/response schemas; browser-safe DTOs
   database/                    # pg/Kysely repositories, inbox/outbox, migrations
   shopify/                     # SDK boundary, auth, Admin/Partner/App Events clients
-  artwork/                     # R2, upload inspection and derivative adapters
+  storage/                     # Private R2 storage adapter
   visualizer/                  # Renderer-neutral API, direct Konva implementation
   cart-authorization/          # TS binary codec, server signer, fixtures helpers
   observability/               # Pino config, prom-client registry, correlation
@@ -145,18 +145,10 @@ fixtures/
   pricing/
   shopify/                     # Redacted real Function/cart/order captures
   storefront-reference/       # Screenshots and interaction records; no buyer artwork
-spikes/
-  platform/                   # G1–G6; later replace fixtures/stubs with production adapters
-  embedded-admin/             # G7
-  billing/                    # G8
-  evidence/                   # Gate results, versions, steps, captures, failure reports
-scripts/                       # Build extensions, dependency checks, contract validation
-architecture/
-  implementation-plan.md
-  decision-ledger.md
-  protocol-v1.md
-  api-contracts.md
-  feature-entitlements.json   # Commercial values set separately before release
+scripts/                       # Typed build, verification, release and recovery tools
+deployment/                    # Compose, service declarations and typed operations
+docs/architecture/             # This plan, decision ledger and adopted protocol
+docs/delivery/                 # Current state, operations and dated inert evidence
 pnpm-workspace.yaml
 pnpm-lock.yaml
 Cargo.toml
@@ -219,7 +211,7 @@ Exactly recognized identical groups in the same cart may aggregate. Separate unk
 
 **PricingRule:** new Lean authoring/publication/issuance permits one final nonnegative shop-currency unit surcharge per allowed method × placement × decoration-size choice. Missing is unavailable; explicit zero is a real price. Advanced rule roles/schedules/overrides are historical design references, not supported authoring or a requirement to retain development-version readers. Validate constrained inputs and overflow at backend boundaries as well as the editor.
 
-**QuoteProposal:** immutable short-lived review output with desired group vector, config versions, contextual price evidence, FX snapshot, pricing-engine version, totals and proposal hash. It is not yet authorization to purchase.
+**QuoteProposal:** immutable short-lived review output with desired group vector, config versions, contextual price evidence, pricing-engine version, totals and proposal hash. New Lean proposals carry no FX snapshot; actual retained historical evidence keeps its original meaning. It is not yet authorization to purchase.
 
 **AcceptedQuote:** immutable buyer-accepted *complete customized subset of one cart context*. Ordinary cart lines are outside it. Holds economic details, physical group vector and exact materialization buckets. Acceptances may be superseded as the active cart choice without revoking historical offers.
 
@@ -241,136 +233,25 @@ Customization readiness is `PENDING_ARTWORK → READY → ARTWORK_LOCKED`. READY
 
 Use one currency equal to shop currency and its qualified primary Market; EUR/USD/GBP are targets, each qualified before enablement/advertising. Unsupported currency/Market contexts fail clearly with safe cart repair and ordinary unrelated lines preserved. Actual country/Market and contextual prices remain independently checked; same currency alone is insufficient. Merchant-wide settings remain untouched.
 
-**Historical design reference (§§4.1–4.6):** these advanced algorithms/examples preserve the earlier design record; setup/tier/FX/layer behavior is deferred/not shipping. They do not require executable compatibility paths or compatibility-only tests under the 16 October first-version direction. Retain code only for demonstrated current Lean behavior, actual immutable purchase/preview records, unexpired issued offers or unresolved recovery obligations. Preserve original terms/expiry, stored economics and dated fixtures; new authoring/issuance/renewal is Lean-only.
+Shopify owns discounts, tax, duties and shipping. Accepted customized merchandise remains pre-discount and uses the real variant’s normal tax treatment; qualification must preserve exact pre-discount Function economics and Shopify’s supported checkout adjustments. Required Shopify contextual-price lookup failure rejects the quote; browser prices, zero substitution and stale-market fallback are invalid. Application resolves external prices before pure domain evaluation.
 
-### 4.1 Historical Inputs and evaluation order
+Accepted quotes freeze resolved values and production specifications. Renewal compares current Lean eligibility, production, quantities, currency/Market and economics without overwriting original evidence; changed output requires a new proposal and review. Functions consume final signed amounts without currency conversion.
 
-Pure input includes all desired customization groups, resolved published revisions, current contextual Shopify garment prices, target country/market/currency context, FX/override evidence and a versioned rounding policy. Application resolves external data before calling pure pricing.
-
-1. Normalize group identity; aggregate only recognized identical groups.
-2. Validate variant ownership, methods, steps, artwork readiness/logo-later and compatible variant selections.
-3. Calculate `Q = sum(all customized physical variant quantities)` across every group/product. Ordinary Shopify items contribute zero.
-4. For each configured unit component, select the greatest `minQuantity <= Q`. This is **all-units** pricing, not graduated pricing. The selected component price applies to every applicable unit. Different components may have different schedules but use the same Q.
-5. Resolve each amount's explicit presentment-currency override, otherwise convert shop-currency amount with the captured FX rate.
-6. Round each resolved component unit amount to presentment minor units using round-half-even, then add unit components and the contextual garment price. Apply each applicable setup amount once and round once.
-7. Allocate setup amounts deterministically across physical units as below.
-8. Construct quote-global materialization buckets, full breakdown and exact totals; verify invariants before accepting.
-
-Required Shopify price lookup failure means no quote. Never substitute zero, default shop pricing, browser-supplied price, or an old cached market merely to complete a quote.
-
-### 4.2 Historical Explicit pricing scopes
-
-| Component | Setup multiplicity within group | Unit multiplicity |
-|---|---|---|
-| General | Once if configured | No general unit component required by this baseline |
-| Method | Once per distinct selected method | Merchant-configured once per garment using that method, OR per placement decorated using that method |
-| Placement | Once per selected placement | Per garment decorated at that placement |
-| Decoration step | Once per selected placement-and-step | Per garment using that selected placement-and-step |
-
-Method-specific placement/step overrides resolve by replacement, including an explicit zero. Absence means inherit. Resolved method + placement + step components remain additive; an override replaces only its corresponding component, not unrelated pricing levels.
-
-For each setup component, use a deterministic applicability key such as `(ruleId, groupId, methodId?)` or `(ruleId, groupId, placementId, stepId?)` to prevent duplicate evaluation from colors/sizes. Merchant-configured component amounts do not multiply by garment quantity. Under the historical advanced profile, setup fees were not tiered; all-units pricing applied to customization **unit** components.
-
-### 4.3 Historical Formula
-
-For group g, variant v and selected placements p:
-
-```text
-Q = Σg Σv q[g,v]
-methodUnits[g] = sum distinct-method rates or per-placement method rates,
-                 as configured for each method
-customizationUnit[g,v] = methodUnits[g]
-                        + Σp placementRate[g,p,Q]
-                        + Σp stepRate[g,p,Q]
-unitBeforeSetup[g,v] = contextualGarment[g,v] + customizationUnit[g,v]
-setup[g] = generalSetup[g]
-           + Σdistinct methods methodSetup[g,m]
-           + Σselected placements placementSetup[g,p]
-           + Σselected placement/step pairs stepSetup[g,p,s]
-total[g] = Σv q[g,v] × unitBeforeSetup[g,v] + setup[g]
-quoteTotal = Σg total[g]
-```
-
-Never add Shopify discounts to this engine. The accepted price is customized **pre-discount merchandise**, not total checkout payment. Shipping, Shopify discounts, duties and tax adjustments remain Shopify-owned. The normal variant tax treatment applies to the entire customized price. Inclusive/exclusive-tax context and Function cost interpretation must pass G4.
-
-### 4.4 Historical FX and contextual pricing
-
-The Shopify adapter retrieves contextual market pricing and verifies currency, country and variant applicability. No negotiated company-location/B2B pricing in v1. The contextual pricing API is a relevant surface; exact query inputs belong in adapter contracts. [S11]
-
-Historical FX was designed as an application port; selecting/implementing a new FX provider is deferred outside Lean V1. Require positive rate, supported currency pair, as-of timestamp, provider/source ID, rate version and maximum accepted staleness. Store the original decimal rate and rounding policy. An override wins only for the exact configured component/tier/currency; other components may convert normally. Fail quoting when required FX is unavailable/too stale.
-
-Accepted quotes freeze resolved presentment values. Functions receive the final presentment amount; they must **not convert it again**. Their documented fixed unit prices use presentment currency. [S1]
-
-Renewal can use current evidence to establish unchanged economics without overwriting the quote's original evidence. A changed output amount, material production specification, quantity or market requires a new quote/review. A refreshed FX rate alone does not mutate an existing valid authorization.
-
-### 4.5 Historical Deterministic setup allocation
-
-Use equal-per-physical-unit allocation within the group, not value-weighted allocation. Given total setup minor units S and physical quantity N:
-
-```text
-baseSetupPerUnit = S div N
-extraUnitCount = S mod N
-```
-
-Order logical variants by stable external-ID byte/numeric order defined in the adapter contract, then by deterministic unit ordinal within variant. The first `extraUnitCount` units receive one extra minor unit. All others receive `baseSetupPerUnit`. Implement with ranges, not an in-memory object per garment. Coalesce identical allocations for each `(group, variant, authorized unit price)` into one bucket. At most two setup-allocation price buckets per logical variant before any additional Shopify capacity partitioning.
-
-Keep the per-rule setup breakdown at group level. Allocate the aggregate setup once: independently distributing each rule's remainder can change the final per-unit allocation. Any optional per-unit rule breakdown must fit the already-fixed bucket allocations, not recalculate them. The group setup sum and all quote-line totals must match exactly. A capacity split cannot change fees, identity or tier counts.
-
-### 4.6 Historical Worked examples
-
-**A — Setup across colors/sizes.** Ten red/small plus fifteen black/large share one design, product and revision. Both variants have €20 garment + €3 customization per unit. Applicable setup total is €35. Total is `25 × €23 + €35 = €610`. Setup allocation is €1.40 per garment, so both authorized unit prices are €24.40. Ten thousand identical-spec garments still incur €35 setup, not €35 per variant or garment.
-
-**B — Order-wide 500 tier.** Shirts: 250 at €20 base, customization €3 at Q=500, €35 setup. Hoodies: 250 at €30 base, customization €5 at Q=500, €50 setup. Total is `(250 × €23 + €35) + (250 × €35 + €50) = €14,585`. Ordinary items do not count toward Q. Removing the hoodies creates a new quote for Q=250; all remaining applicable rates are reevaluated. The two original groups do not share setup.
-
-**C — Non-divisible setup.** Three garments at €30 before setup plus €1 setup total €91. Two units at €30.33 plus one at €30.34 preserve the exact total. Shopify must retain the same real variant at these two authorized prices. G5 proves that lifecycle.
-
-**D — Merchant unit scope.** One method at €2/unit with €20 setup, 100 garments, front and back: per-garment mode yields €220 in method charges; per-placement mode yields €420. Other configured components add independently.
-
-**E — Conversion/override.** Garment contextual USD price $22.50. Shop-currency customization €3.00 with captured EUR→USD 1.10 resolves $3.30. Explicit USD setup override $21.00 replaces converted €20 setup. For four units: `4 × $25.80 + $21 = $124.20`; authorized unit price $31.05. A later FX change does not change this offer.
-
-**F — Discounts.** €20 contextual garment + €10 customization, no additional setup, produces €30 pre-discount merchandise. A Shopify 10% discount yields €27 before any other Shopify-owned checkout adjustments. Validator compares the pre-discount materialized amount, not €27 against the €30 authorization.
+Earlier setup/tier/FX/scope/allocation algorithms and worked examples are historical design material in the fixed pre-Lean plan at `0c3672e2f38a7c6421f9b4791a3830c2db5aaaf8`. They are not a second active pricing specification or a requirement for compatibility-only code/tests. Preserve actual immutable purchase/preview economics, valid issued offers and unresolved recovery obligations under their original terms and expiry.
 
 ## 5. Signed cart authorization protocol
 
 ### 5.1 Scope and status
 
-The historical per-line v1 proposal below is retained for decision provenance only. [Whole-quote v2](WHOLE-QUOTE-V2-ADOPTED.md) is the adopted production implementation contract; there is no per-line runtime fallback. Tokens are signed, not encrypted: “opaque” means the buyer UI treats them as opaque, not that the claims are secret. No artwork, buyer PII, price rules, JSON or JWT in cart authorization.
+The historical per-line v1 proposal is retained in Git history for decision provenance only. [Whole-quote v2](WHOLE-QUOTE-V2-ADOPTED.md) is the adopted production implementation contract; there is no per-line runtime fallback. Tokens are signed, not encrypted: “opaque” means the buyer UI treats them as opaque, not that the claims are secret. No artwork, buyer PII, price rules, JSON or JWT in cart authorization.
 
 Use Ed25519, installation-scoped keys, and one shared v2 envelope plus a member carrier per physical line. Store private keys encrypted using authenticated encryption and a wrapping-key version held outside PostgreSQL. Use the Node crypto signer and maintained Rust Ed25519 verifier with strict verification; never implement curve arithmetic manually. Both Functions verify complete sets independently.
 
-### 5.2 Historical v1 candidate binary layout
+### 5.2 Adopted v2 wire contract
 
-All integers are unsigned, fixed width, big-endian. Currency exponent is explicit and checked against the supported versioned table. UUIDs are raw 16 bytes, not strings. Shopify GID suffixes are checked u64 values in the adapter only.
+[WHOLE-QUOTE-V2-ADOPTED.md](WHOLE-QUOTE-V2-ADOPTED.md) is the single authority for wire layout, domain separation, signature input, member ordering, exact lengths and canonical encoding. It specifies the shared `_insignia_quote_v2` envelope and per-physical-line `_insignia_member_v2` carrier. TypeScript/Rust golden vectors and real Function transport controls must agree with that document. Reject unknown versions/flags, alternate encodings, padding, trailing bytes and overflow. A changed wire contract needs its own version and owner decision.
 
-| Offset | Bytes | Field |
-|---:|---:|---|
-| 0 | 4 | Magic `ISG1` |
-| 4 | 1 | Protocol version = 1 |
-| 5 | 1 | Reserved flags = 0 |
-| 6 | 2 | Key ID |
-| 8 | 16 | Installation generation UUID |
-| 24 | 4 | Authorization epoch |
-| 28 | 16 | Accepted quote UUID |
-| 44 | 16 | Authorization-set UUID |
-| 60 | 2 | Quote-global line index, zero-based |
-| 62 | 2 | Quote-global line count |
-| 64 | 8 | Real variant numeric ID |
-| 72 | 4 | Authorized physical quantity for this bucket |
-| 76 | 8 | Authorized pre-discount unit price, minor units |
-| 84 | 3 | Uppercase currency ASCII |
-| 87 | 1 | Currency exponent |
-| 88 | 2 | Uppercase country ASCII |
-| 90 | 8 | Market numeric ID, zero only for an explicitly supported no-market context |
-| 98 | 4 | Valid-through local date, day ordinal from 1970-01-01 |
-| 102 | 4 | Total customized physical quantity for the entire quote |
-| 106 | 8 | Entire quote pre-discount total, minor units |
-| 114 | 64 | Ed25519 signature |
-
-Total: **178 bytes**, **238 characters** when unpadded base64url encoded. G3 must prove transport of that value through Ajax cart properties, expanded child properties, checkout and order APIs; do not infer a platform allowance from this size alone.
-
-Signature message: fixed domain-separation prefix `Insignia\0CartAuthorization\0v1\0` followed by the 114-byte payload. Use distinct prefixes for any later protocol. Encoding rejects unknown fields/flags, padding, alternate encodings, trailing bytes and overflow. External money is bounded to the intersection of DB, protocol and tested Shopify limits.
-
-Use one reserved property `_insignia_auth` for the token. Additional human-readable summary properties are informative only and must not override quote IDs or production specifications. Do not put production original URLs in cart properties.
+The rejected per-line v1 layout remains in the fixed pre-Lean record at `0c3672e2f38a7c6421f9b4791a3830c2db5aaaf8`; it is not an implementation example or fallback. Human-readable cart summaries are informative only and cannot override signed identity/production data. Original artwork URLs never belong in cart properties.
 
 ### 5.3 Whole-set verification
 
@@ -751,6 +632,8 @@ Health endpoints separate process liveness, DB readiness, worker freshness and i
 
 ## 14. Testing strategy and executable gates
 
+The 19 October owner cleanup revision requires one strict typed implementation across maintained application, tests, fixtures, build/release/deployment/monitoring/recovery code: TypeScript/TSX/MTS/CTS or Rust. Compiler projects must include test and tooling source; runtime stripping alone is insufficient. Generated JavaScript and third-party dependencies retain provenance. SQL, Liquid, CSS, HTML and declarative infrastructure keep their appropriate formats; shell launchers remain thin. Retire superseded executable experiments and compatibility machinery with their consumers, preserving applied migrations, current protocol/persisted identities, immutable evidence and recovery readers needed by actual records. Responsibility-based names govern maintained code and commands. The source/type/rendered controls must enforce actual Shopify App Home Polaris Web Components through shared merchant views and loading/error/empty/recovery states, with supported App Bridge host controls, the Konva renderer and separate buyer storefront boundaries preserved.
+
 ### 14.1 Testing layers
 
 **Domain/Vitest:** exact Lean unit totals, missing versus explicit-zero prices, method/placement/size eligibility, currency/context rejection, quantity/variant identity, overflow and retention. Test safe exclusion of advanced configuration at editor/backend issuance/renewal boundaries. Keep historical protocol/economic fixtures where actual retained records or unexpired offers depend on them; retire compatibility-only checks for unsupported development versions; do not turn their old success matrix into a Lean launch prerequisite. Use independent expected results and representative interactions, not arbitrary coverage/test-count quotas.
@@ -968,49 +851,7 @@ Routine implementation tuning—indexes, retry intervals, resource budgets, file
 
 ## 17. Decision ledger
 
-This section mirrors `decision-ledger.md`; update both in the same reviewed change.
-
-### LOCKED
-
-**Authority/scope:** The [15 October owner-approved Lean V1](../delivery/authority/lean-v1-2026-10-15.md) prospectively amends pricing, supported surfaces, billing, deployment and release acceptance. Greenfield modular monolith; reuse the working rewrite. Legacy is the actual storefront appearance/interaction reference, with no legacy data migration/import.
-
-**Stack/boundaries:** Strict TypeScript; Node 24 LTS; pnpm + Cargo; Astro 7 Node SSR; Preact admin islands and Vite storefront; Polaris Web Components; Custom Element + Shadow DOM; direct Konva in a shared framework-independent visualizer; Zod 4; PostgreSQL 18 + pg/Kysely; dbmate SQL; pg-boss; private R2; Sharp/libvips; Pino/prom-client; Vitest/Playwright/dependency-cruiser/GitHub Actions. Shopify JS SDK only inside Shopify adapter. Pure domain independent of framework, renderer, platform and persistence.
-
-**Configuration:** One active ProductConfig per product, independent copy, mutable draft, immutable published revisions. New unaccepted pricing uses current permitted publication. Accepted quotes/orders retain historical revisions.
-
-**Pricing/identity:** Product/revision-bound customization groups aggregate compatible size/color variants; different production design means a different group. New Lean configurations select one final nonnegative per-garment surcharge for each allowed method × placement × decoration-size choice; missing entries are unavailable, explicit zero is allowed. Add selected placement surcharges to each real variant’s contextual Shopify base price exactly once. New authoring/issuance/renewal excludes setup fees, quantity tiers, signed adjustments, additive pricing layers, scope switches, inheritance and currency overrides. Reuse current Lean engine behavior behind constrained backend/editor inputs. Earlier development revisions do not require compatibility support; actual retained purchase/preview records and still-valid accepted offers retain original terms/expiry. An incompatible renewal needs a new Lean proposal and buyer review. Real variants and exact money remain mandatory.
-
-**Checkout economics/security:** Accepted customized merchandise price is pre-discount; Shopify applies ordinary supported discounts and owns tax/shipping/duties/payment. Lean issuance uses the qualified primary-market path in the shop currency; EUR/USD/GBP are targets, each enabled/advertised only after qualification. Preserve actual country/Market/currency/contextual-price checks; unqualified contexts reject with safe repair, without changing merchant settings. New Lean offers use neither FX nor per-currency overrides. Immutable accepted quotes retain frozen values. Installation-scoped Ed25519, compact binary/no JWT whole-quote v2, complete-set verification, three shop-local calendar days and independent fail-closed economic validation remain. The [adopted v2 bytes/carriers](WHOLE-QUOTE-V2-ADOPTED.md) are unchanged; incompatible protocol changes require a new version and owner decision. No per-line fallback.
-
-**Materialization/surfaces:** Retain ordinary non-Plus eligibility and same-real-variant one-child lineExpand; qualify representative merchants, not only a development store. Shopify component/group presentation is acceptable when garment/quantity/price/order handling stays correct and clear. Online Store one-time ordinary cart → checkout, App Proxy control and direct private presigned uploads remain. A separate Plus/lineUpdate branch, product-page express/Buy-now integration and broad third-party-transform compatibility are deferred/not shipping. Unsupported routes cannot bypass required customization or economic checks. Required products remain required; optional plain purchases retain their configured behavior. No paid customization with a selling plan.
-
-**Required-product policy — approved Option A:** Within the supported enforcement conditions, v1 trusts correctly published, access-controlled app-owned Shopify policy and correctly operating Function inputs. Buyer-controlled markers are not policy authority. Reject unsigned or invalid authorization for identifiable required merchandise and detectable incomplete, malformed, pending, mismatched or wrong-installation policy; unrelated merchandise does not require a catalogue-wide authorization or outage. Unexpected complete loss or coherent rollback of *all* trusted product-policy evidence outside the supported publication contract may permit a formerly required unsigned plain purchase before detection. That residual risk is accepted as an incident to prevent, detect, contain and recover from; reconciliation cannot undo the purchase. Application-controlled unsafe publication remains a defect. The approved boundary and its limits are recorded in [OPTION-A-APPROVED.md](OPTION-A-APPROVED.md). Production publication, activation, reconciliation and gate evidence remain outstanding.
-
-**Artwork/orders:** Byte-exact private SVG/PNG/JPEG originals, verified before use, safe PNG/WebP previews, no arbitrary inline SVG. Merchant-controlled logo-later; merchant-only post-order attachment. Append-only replacements; PENDING_ARTWORK → READY → ARTWORK_LOCKED. Immutable order-time purchase facts. Shopify owns payment/fulfillment/refunds/returns/restock; no garment/customization refund split.
-
-**Billing/entitlements:** One recurring-only plan includes all released Lean V1 features: USD $49.99 per 30-day cycle and authoritative 14-day trial. No usage meter, included-order allowance, overage, per-order charge or retrospective billing for V1. Qualify actual recurring-only provider contract, trial, cancellation, reauthorization, entitlement and merchant billing-management route; disabling sends alone does not make the old flat-plus-meter reader compatible. No active entitlement means no new issuance/renewal; valid old offers retain normal expiry and authorized historical/artwork access remains within retention. Preserve prior financial facts and reconcile genuine obligations before transition; new usage staging/dispatch stays disabled. Technical resource limits remain; no unlimited-infrastructure promise.
-
-**Retention:** Buyer artwork/identifying customization payloads at most six months from collection; abandoned uploads shorter; reuse does not reset expiry; merchant warning/export opportunity. Permitted minimal pseudonymized financial/audit facts may persist separately. Privacy/uninstall erasure includes derivatives/payloads and does not rewrite purchase economics.
-
-**Delivery governance:** The [13 October autonomous direction](../delivery/authority/autonomous-delivery-2026-10-13.md), [approved Lean V1](../delivery/authority/lean-v1-2026-10-15.md) and [operating model](../delivery/operating-model.md) delegate useful implementation, proportionate review/testing, normal integration, permitted development deployment and continuation. The owner retains missing access/resources, human-only actions, new material product/risk decisions, unallocated effects and production rollout. Engineering completion, native qualification and rollout remain distinct. Versioned Docker images/Compose on the VPS with Traefik must reproducibly include web, worker, inspector and verification responsibilities; no agent session or mutable development checkout is a normal dependency. Preserve independent authority, real expiry/invalidation, host security prerequisites, retention and actual resource limits; explain any unavoidable host-side application-service exception to the owner.
-
-**Qualified development composition:** The [18 October immutable-inspector receipt](../delivery/evidence/lean-v1/native-storefront-inspector-2026-10-18.json) closes the scoped host artifact/sandbox/handover step under the 17 October exception. The [18 October combined-runtime receipt](../delivery/evidence/lean-v1/native-combined-release-2026-10-18.json) qualifies immutable verifier startup, selected reads, append and consumer agreement. The [later runtime/custody receipt](../delivery/evidence/technical-merchant-completion/NATIVE.json) qualifies PR209 development web/worker deployment, native schema45, permanent verifier startup/auth/state and management Compose custody, fresh correlated collection and unchanged protected facts/services. These do not close recovery/monitoring, native uninstall/privacy or production rollout. Other bounded copies remain due20October; permanent custody does not extend actual credential/data expiry. Current remaining outcomes belong in the [work index](../delivery/evidence/m8-context-runtime/WORKLIST.md).
-
-### DEVELOPMENT GATES
-
-Applicable G1–G8 mechanisms now support the five Lean outcomes in plan §14: non-Plus lineExpand; measured Function capacity and TS/Rust protocol; qualified primary-market shop-currency prices/ordinary discounts; exact Lean unit totals; independent required-product enforcement/repair; useful authenticated admin; and recurring-only provider entitlement. Setup/tier/FX/Plus/express/usage matrices are DEFERRED / NOT SHIPPING, never PASS. Unchanged historical controls remain evidence for their actual dependencies.
-
-**Current state:** The maintained [delivery evidence register](../delivery/state.md) records partial observations, unresolved work and dated historical verdicts. No complete gate has been accepted; G7 and G8 have bounded observed sub-results but remain incomplete. Option A closes the joint-loss A/B owner decision but does not pass G6.
-
-### ADOPTED PROTOCOL / UNQUALIFIED DEPLOYMENT
-
-Whole-quote v2 is the single production implementation protocol. Its domain `Insignia\0WholeQuoteAuthorization\0v2\0`, `ISG2` magic, version 2, flags 0, 92-byte header, 22-byte ordered member record, shared `_insignia_quote_v2` and per-physical-line `_insignia_member_v2` carriers, exact Ed25519 message and canonical unpadded base64url are frozen. The current 32-bucket, 200-line, 10,000-physical-unit profile and 16,000-byte Transform output target are engineering admission guards, not a universal merchant capacity. Stack peak remains unmeasured against Shopify's 512 kB stack limit; measured supported-profile/live qualification remains due under Lean §14, with safe rejection beyond the qualified capacity. Historical stress examples are not mandatory commercial capacity targets. Protocol adoption authorizes no deployment, key activation, merchant publication or rollout.
-
-### DEFERRED
-
-Layered/setup/tier/FX/override pricing, usage billing, separate Plus implementation, dedicated express entry points and broad third-party interoperability are deferred/not shipping; qualify their safe exclusion rather than completing their old successful-behavior matrices. Keep readers/tests only where actual valid offers, current recovery or retained records require them; unsupported development-version compatibility is retired by the 16 October direction. Recurring-only provider configuration, reproducible deployment/recovery and applicable public-app approvals remain release work under Lean §14; owner terms are not provider evidence or effect permission. Legacy migration/import remains excluded.
-
----
+The [decision ledger](decision-ledger.md) is the single current decision record. This plan defines implementation and acceptance; it does not maintain a second copy of the locks. Historical plan versions remain recoverable from their recorded commits.
 
 ## Source register — checked 24 September 2026
 

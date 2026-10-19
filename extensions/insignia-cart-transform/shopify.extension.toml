@@ -12,6 +12,6 @@ description = "Local preproduction candidate only"
   export = "cart_transform_run"
 
   [extensions.build]
-  command = "bash ../../scripts/m1-functions/build-wasm.sh transform"
+  command = "node ../../scripts/functions/build-wasm.mts transform"
   path = "target/cart-transform.wasm"
   wasm_opt = false

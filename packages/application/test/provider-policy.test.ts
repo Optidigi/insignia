@@ -152,6 +152,7 @@ test('recurring-only policy cannot mix historical meter or allowance fields or s
     { billing: 'unknown' },
     { billing: undefined },
   ]) {
+    // Invalid external policy data intentionally crosses the typed boundary to verify runtime rejection.
     const malformed = {
       ...recurring,
       plans: recurring.plans.map((plan) => ({ ...plan, ...fields })),
@@ -164,6 +165,7 @@ test('recurring-only policy cannot mix historical meter or allowance fields or s
   expect(() =>
     projectEntitlement(
       snapshot({ items: [flat('plan.flat-only')] }),
+      // Missing billing mode is deliberate malformed external configuration.
       { ...recurring, plans: [unmarked] } as unknown as EntitlementPolicyConfig,
       context(at),
     ),
@@ -216,6 +218,7 @@ test('explicit malformed provider shop restrictions reject configuration rather 
     'gid://shopify/Shop/456\r',
     'gid://shopify/Shop/456\r\n',
   ]) {
+    // Invalid external policy data intentionally crosses the typed boundary to verify runtime rejection.
     const malformed = {
       ...recurring,
       plans: recurring.plans.map((plan) => ({ ...plan, shopId })),
@@ -265,6 +268,7 @@ test('a different verified shop cannot borrow the plan and reauthorization requi
 });
 
 test('Lean V1 rejects a configured hybrid plan instead of preserving a metered compatibility branch', () => {
+  // Excluded historical hybrid configuration must fail runtime admission.
   const hybrid = {
     ...recurring,
     plans: [

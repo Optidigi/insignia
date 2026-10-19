@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   bootstrapExpiringOfflineCredentials,
+  type OfflineAcquisitionPort,
   OfflineAcquisitionRejectedError,
 } from '../src/shopify/offline-acquisition.js';
 
@@ -20,12 +21,16 @@ const pair = {
   refreshExpiresAt: new Date(+now + 86400000),
   scopes: 'write_products',
 };
-function fixture(kind = 'reserved') {
+function fixture(kind: 'reserved' | 'existing' | 'busy' | 'unresolved' | 'inactive' = 'reserved') {
   const credentials = {
-    reserveAcquisition: vi.fn(async () => ({ kind, attemptId: 'attempt-1', shopDomain: 'alpha.myshopify.com' })),
-    dispatchAcquisition: vi.fn(async () => true),
-    completeAcquisition: vi.fn(async () => 'installed'),
-    rejectAcquisition: vi.fn(async () => true),
+    reserveAcquisition: vi.fn<OfflineAcquisitionPort['reserveAcquisition']>(async () => ({
+      kind,
+      attemptId: 'attempt-1',
+      shopDomain: 'alpha.myshopify.com',
+    })),
+    dispatchAcquisition: vi.fn<OfflineAcquisitionPort['dispatchAcquisition']>(async () => true),
+    completeAcquisition: vi.fn<OfflineAcquisitionPort['completeAcquisition']>(async () => 'installed'),
+    rejectAcquisition: vi.fn<OfflineAcquisitionPort['rejectAcquisition']>(async () => true),
   };
   const exchange = vi.fn(async () => pair);
   return {
@@ -53,7 +58,7 @@ describe('verified merchant bootstrap to durable offline credentials', () => {
     });
     expect(f.credentials.rejectAcquisition).not.toHaveBeenCalled();
   });
-  it.each(['existing', 'busy', 'unresolved', 'inactive'])(
+  it.each(['existing', 'busy', 'unresolved', 'inactive'] as const)(
     'never regenerates a credential when reservation says %s',
     async (kind) => {
       const f = fixture(kind);
@@ -75,8 +80,6 @@ describe('verified merchant bootstrap to durable offline credentials', () => {
     expect(f.credentials.completeAcquisition).not.toHaveBeenCalled();
     f.credentials.reserveAcquisition.mockResolvedValue({
       kind: 'unresolved',
-      attemptId: 'attempt-1',
-      shopDomain: 'alpha.myshopify.com',
     });
     expect(await f.run()).toBe('unresolved');
     expect(f.exchange).toHaveBeenCalledTimes(1);

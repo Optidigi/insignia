@@ -1,6 +1,6 @@
 # Configuration template only. No account/route/secret is committed.
 name = "insignia-alerts"
-main = "worker.mjs"
+main = "worker.mts"
 compatibility_date = "2026-10-18"
 workers_dev = false
 preview_urls = false

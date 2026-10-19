@@ -69,7 +69,7 @@ export interface SigningProvisionPorts {
   };
 }
 
-/** Maintained typed signing preparation. Frozen historical operators remain unchanged. */
+/** Maintained typed signing preparation. Historical operator bytes remain in Git; this is the maintained implementation. */
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { lstat, mkdir, open, realpath } from 'node:fs/promises';

@@ -6,7 +6,7 @@ import {
 import type { ProviderTenantScopePort } from './provider-scope.js';
 
 /** Structural credential source for the Shopify Admin read transport, using M3's fenced lifecycle. */
-export function createM3AdminReadCredentialSource(config: {
+export function createAdminReadCredentialSource(config: {
   tenants: ProviderTenantScopePort;
   credentials: OfflineCredentialLifecyclePort;
   refresh: OfflineRefreshTransport;

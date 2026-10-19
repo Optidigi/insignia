@@ -110,15 +110,32 @@ const productionComposition = (profile?: 2) => {
     revisionId: 'revision-a',
     contentHash: 'c'.repeat(64),
   };
-  const core = {
-    tenants: { getActiveAuthorizationScope: async () => ({ ...scope, shopifyShopId: '101' }) },
+  const unexpected = async (): Promise<never> => {
+    throw new Error('Unexpected readiness fixture boundary');
+  };
+  const core: ProductionReadinessInput['core'] = {
+    tenants: {
+      getActiveAuthorizationScope: async () => ({
+        ...scope,
+        shopifyShopId: '101',
+        shopDomain: 'synthetic.myshopify.com',
+      }),
+    },
     signingKeys: {
+      createPending: unexpected,
+      activate: unexpected,
+      revoke: unexpected,
+      destroy: unexpected,
+      destroyInactiveInstallationKeys: unexpected,
+      incrementEpoch: unexpected,
       getActiveScope: async () => scope,
       list: async () => [
         {
           ...scope,
           id: 7,
           keyId: 7,
+          privateEnvelope: null,
+          wrappingKeyId: null,
           publicKey,
           publicKeyFingerprint: publicKeyFingerprint(publicKey),
           state: 'active',
@@ -134,7 +151,7 @@ const productionComposition = (profile?: 2) => {
         config: { revisionId: 'revision-a', revisionContentHash: 'c'.repeat(64) },
       }),
     },
-  } as unknown as ProductionReadinessInput['core'];
+  };
   const input = {
     core,
     ring: { currentKeyId: 'unused', keys: {} },
@@ -153,7 +170,7 @@ const productionComposition = (profile?: 2) => {
       trustedEvidence: { read: vi.fn(async (): Promise<unknown> => value.attestation) },
     },
   };
-  const quote = { ...scope, acceptedDay: 102, effectiveRevisions: [revision] } as unknown as AcceptedQuote;
+  const quote: AcceptedQuote = { ...scope, acceptedDay: 102, effectiveRevisions: [revision] };
   return { input, quote, value, execute };
 };
 

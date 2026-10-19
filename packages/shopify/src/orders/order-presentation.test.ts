@@ -1,4 +1,5 @@
 import { expect, test } from 'vitest';
+import { graphqlRequest, required } from '../../test/fixture-assertions.js';
 import { readOrderPresentation } from './order-presentation.js';
 
 const target = {
@@ -17,11 +18,11 @@ const order = {
   lineItems: {
     nodes: [
       {
-        id: target.lines[0].orderLineId,
+        id: required(target.lines[0]).orderLineId,
         title: 'Purchased shirt',
         variantTitle: 'Blue / L',
-        product: { id: target.lines[0].productId },
-        variant: { id: target.lines[0].variantId },
+        product: { id: required(target.lines[0]).productId },
+        variant: { id: required(target.lines[0]).variantId },
       },
     ],
     pageInfo: { hasNextPage: false },
@@ -31,13 +32,13 @@ test('retained order labels bind to exact order and purchased line identities', 
   const transport = { read: async () => ({ order }) };
   expect(await readOrderPresentation(transport, target)).toEqual({
     orderName: '#1001',
-    lines: [{ orderLineId: target.lines[0].orderLineId, title: 'Purchased shirt', variantTitle: 'Blue / L' }],
+    lines: [{ orderLineId: required(target.lines[0]).orderLineId, title: 'Purchased shirt', variantTitle: 'Blue / L' }],
   });
   await expect(
     readOrderPresentation({ read: async () => ({ order: { ...order, id: 'gid://shopify/Order/9' } }) }, target),
   ).rejects.toThrow();
   const foreign = structuredClone(order);
-  foreign.lineItems.nodes[0].variant.id = 'gid://shopify/ProductVariant/9';
+  required(foreign.lineItems.nodes[0]).variant.id = 'gid://shopify/ProductVariant/9';
   expect((await readOrderPresentation({ read: async () => ({ order: foreign }) }, target))?.lines).toEqual([]);
 });
 
@@ -54,7 +55,7 @@ test('presentation transport uses pinned read-only query and rejects revoked aut
     },
   });
   expect((await readOrderPresentation(transport, target))?.orderName).toBe('#1001');
-  expect(JSON.parse(String(request?.body)).query).not.toMatch(/mutation|customer|email|shippingAddress/);
+  expect(graphqlRequest(String(request?.body)).query).not.toMatch(/mutation|customer|email|shippingAddress/);
   const denied = createOrderPresentationTransport({
     shop: 'fixture.myshopify.com',
     accessToken: 'synthetic',

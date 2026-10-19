@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 import { createShopifyOfflineRefreshTransport, ShopifyRefreshError } from '../src/refresh.js';
+import { required } from './fixture-assertions.js';
 
 const configuration = { clientId: 'synthetic-client-id', clientSecret: 'synthetic-client-secret' };
 const request = { shopDomain: 'test-shop.myshopify.com', refreshToken: 'synthetic-refresh-old' };
@@ -13,7 +14,7 @@ const valid = {
 
 describe('Shopify expiring offline refresh transport', () => {
   test('posts only to validated shop OAuth endpoint, parses provider lifetimes and scope', async () => {
-    const fetchImpl = vi.fn(async () => Response.json(valid));
+    const fetchImpl = vi.fn<typeof fetch>(async () => Response.json(valid));
     const transport = createShopifyOfflineRefreshTransport({
       ...configuration,
       fetchImpl,
@@ -28,7 +29,8 @@ describe('Shopify expiring offline refresh transport', () => {
       refreshExpiresAt: new Date('2026-09-30T12:00:00Z'),
       scopes: valid.scope,
     });
-    const [url, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    const [url, rawInit] = required(fetchImpl.mock.calls[0]);
+    const init = required(rawInit);
     expect(url).toBe('https://test-shop.myshopify.com/admin/oauth/access_token');
     expect(init.method).toBe('POST');
     expect(init.headers).toEqual({ 'content-type': 'application/x-www-form-urlencoded' });
@@ -42,7 +44,7 @@ describe('Shopify expiring offline refresh transport', () => {
   });
 
   test('rejects endpoint host injection before network request', async () => {
-    const fetchImpl = vi.fn();
+    const fetchImpl = vi.fn<typeof fetch>();
     const transport = createShopifyOfflineRefreshTransport({ ...configuration, fetchImpl });
     await expect(
       transport.refresh({ ...request, shopDomain: 'test-shop.myshopify.com.evil.test' }),
@@ -59,13 +61,13 @@ describe('Shopify expiring offline refresh transport', () => {
     [401, { error: 'invalid_client' }, 'unexpected_status'],
     [302, {}, 'unexpected_status'],
   ] as const)('classifies HTTP %i response', async (status, data, kind) => {
-    const fetchImpl = vi.fn(async () => Response.json(data, { status }));
+    const fetchImpl = vi.fn<typeof fetch>(async () => Response.json(data, { status }));
     const transport = createShopifyOfflineRefreshTransport({ ...configuration, fetchImpl });
     await expect(transport.refresh(request)).rejects.toMatchObject({ kind });
   });
 
   test('network loss remains retryable and exceptions do not include token material', async () => {
-    const fetchImpl = vi.fn(async () => {
+    const fetchImpl = vi.fn<typeof fetch>(async () => {
       throw new Error('network failure synthetic-refresh-old');
     });
     const transport = createShopifyOfflineRefreshTransport({ ...configuration, fetchImpl });
@@ -76,7 +78,7 @@ describe('Shopify expiring offline refresh transport', () => {
   });
 
   test('bounds success bodies before JSON parsing', async () => {
-    const fetchImpl = vi.fn(async () => new Response('x'.repeat(17 * 1024), { status: 200 }));
+    const fetchImpl = vi.fn<typeof fetch>(async () => new Response('x'.repeat(17 * 1024), { status: 200 }));
     const transport = createShopifyOfflineRefreshTransport({ ...configuration, fetchImpl });
     await expect(transport.refresh(request)).rejects.toMatchObject({ kind: 'malformed_response' });
   });

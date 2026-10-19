@@ -7,6 +7,7 @@ import {
   createShopifyAdminGraphqlReadTransport,
   resolveVariantContext,
 } from '../src/contextual-pricing.js';
+import { graphqlRequest, required } from './fixture-assertions.js';
 
 const target = {
   shopId: 'gid://shopify/Shop/101',
@@ -246,7 +247,7 @@ describe('resolveVariantContext', () => {
   });
 
   test('read-only HTTP transport uses the pinned endpoint and scoped injected credential', async () => {
-    const fetchImpl = vi.fn(async () =>
+    const fetchImpl = vi.fn<typeof fetch>(async () =>
       Response.json(response().body, {
         headers: { 'x-request-id': 'req-123' },
       }),
@@ -261,17 +262,18 @@ describe('resolveVariantContext', () => {
     const [snapshot] = await resolveVariantContext(target, { transport });
     expect(snapshot?.correlation).toEqual({ requestId: 'req-123' });
     expect(acquire).toHaveBeenCalledWith({ shopId: target.shopId, installationGeneration: '7' });
-    const [url, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    const [url, rawInit] = required(fetchImpl.mock.calls[0]);
+    const init = required(rawInit);
     expect(url).toBe('https://synthetic-store.myshopify.com/admin/api/2026-07/graphql.json');
     expect(init.method).toBe('POST');
     expect(init.redirect).toBe('error');
     expect(init.headers).toMatchObject({ 'x-shopify-access-token': 'synthetic-token' });
-    expect(JSON.parse(init.body as string)).toMatchObject({ variables: { country: 'NL', ids: target.variantIds } });
+    expect(graphqlRequest(String(init.body))).toMatchObject({ variables: { country: 'NL', ids: target.variantIds } });
   });
 
   test('direct exported Admin transport rejects oversized or duplicate ID vectors before credential acquisition', async () => {
     const acquire = vi.fn();
-    const fetchImpl = vi.fn();
+    const fetchImpl = vi.fn<typeof fetch>();
     const transport = createShopifyAdminGraphqlReadTransport({ credentials: { acquire }, fetchImpl });
     const captured = vi.fn(async (_request: Parameters<typeof transport.execute>[0]) => response());
     await resolveVariantContext(target, { transport: { execute: captured } });
@@ -300,7 +302,7 @@ describe('resolveVariantContext', () => {
   });
 
   test('uses an opaque M3 tenant ID and refuses an expiring token before HTTP', async () => {
-    const fetchImpl = vi.fn();
+    const fetchImpl = vi.fn<typeof fetch>();
     const transport = createShopifyAdminGraphqlReadTransport({
       credentials: {
         acquire: async () => ({
@@ -324,7 +326,7 @@ describe('resolveVariantContext', () => {
     ['inactive', 'credential_inactive'],
     ['reauth_required', 'reauth_required'],
   ] as const)('credential state %s fails before HTTP', async (state, kind) => {
-    const fetchImpl = vi.fn();
+    const fetchImpl = vi.fn<typeof fetch>();
     const transport = createShopifyAdminGraphqlReadTransport({
       credentials: { acquire: async () => ({ kind: state }) },
       fetchImpl,
@@ -334,7 +336,7 @@ describe('resolveVariantContext', () => {
   });
 
   test('rejects an untrusted credential host before HTTP and strips unsafe provider correlation', async () => {
-    const fetchImpl = vi.fn();
+    const fetchImpl = vi.fn<typeof fetch>();
     const transport = createShopifyAdminGraphqlReadTransport({
       credentials: {
         acquire: async () => ({

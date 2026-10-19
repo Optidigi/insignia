@@ -1,6 +1,7 @@
 import type { ExpectedFunctionBuild, VerifiedOrder } from '@insignia/application';
 import { describe, expect, it, vi } from 'vitest';
 import { createShopifyCheckoutPurchaseAdmission } from '../../src/orders/checkout-admission.js';
+import { graphqlRequest, required } from '../fixture-assertions.js';
 
 const now = new Date('2026-10-13T12:00:00.000Z');
 const scope = { shopId: 'tenant', installationGeneration: '1', appClientId: 'owned-client' };
@@ -96,9 +97,21 @@ function fixture() {
     },
     release: { read: vi.fn(async () => ({ expectedBuild, attestation })) },
     clock: () => now,
-    fetchImpl: vi.fn(async () => new Response(JSON.stringify({ data: provider }))),
+    fetchImpl: vi.fn<typeof fetch>(async () => new Response(JSON.stringify({ data: provider }))),
   };
-  const order = {
+  const order: VerifiedOrder = {
+    updatedAt: now.toISOString(),
+    currency: 'EUR',
+    totalPriceMinor: '0',
+    test: false,
+    edited: false,
+    sourceApiVersion: '2026-07',
+    complete: true,
+    financialStatus: 'PAID',
+    cancelledAt: null,
+    lines: [],
+    transactions: [],
+    refunds: [],
     ...scope,
     orderId: 'gid://shopify/Order/900',
     createdAt: '2026-10-13T11:30:00.000Z',
@@ -111,7 +124,7 @@ function fixture() {
     country: null,
     marketId: null,
     contextVerified: false,
-  } as unknown as VerifiedOrder;
+  };
   return { config, order, expectedBuild, attestation, provider, active };
 }
 
@@ -120,6 +133,7 @@ describe('current checkout purchase admission', () => {
     'rejects %s orders without provider access',
     async (caseName) => {
       const { config, order } = fixture();
+      // Missing configured origin deliberately violates the typed input to test fail-closed admission.
       if (caseName === 'unqualified') config.origin = null as unknown as typeof config.origin;
       if (caseName === 'foreign_creator' && order.checkoutOrigin)
         order.checkoutOrigin.creatorAppId = 'gid://shopify/App/88';
@@ -152,7 +166,8 @@ describe('current checkout purchase admission', () => {
     'rejects %s trusted release evidence',
     async (caseName) => {
       const { config, order, attestation } = fixture();
-      if (caseName === 'artifact_drift') attestation.transform.wasmSha256 = 'f'.repeat(64);
+      if (caseName === 'artifact_drift')
+        attestation.transform = { ...attestation.transform, wasmSha256: 'f'.repeat(64) };
       if (caseName === 'scope_drift') attestation.installationGeneration = '2';
       if (caseName === 'expired') attestation.expiresAt = now.toISOString();
       if (caseName === 'slow_read') {
@@ -187,9 +202,10 @@ describe('current checkout purchase admission', () => {
       creatorAppId: 'gid://shopify/App/77',
       enforcementObservedAt: now.toISOString(),
     });
-    const [url, init] = config.fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    const [url, rawInit] = required(config.fetchImpl.mock.calls[0]);
+    const init = required(rawInit);
     expect(url).toBe('https://owned.myshopify.com/admin/api/2026-07/graphql.json');
-    expect(JSON.parse(init.body as string).query).toMatch(/query InsigniaOwnedFunctions/);
+    expect(graphqlRequest(String(init.body)).query).toMatch(/query InsigniaOwnedFunctions/);
     expect(config.release.read).toHaveBeenCalledWith({ scope, now });
   });
 });

@@ -197,7 +197,7 @@ describe('Partner activeSubscription normalization', () => {
     expect(String(caught)).not.toContain(error.message);
   });
   test('HTTP transport pins endpoint and classifies network, auth and throttle', async () => {
-    const fetchImpl = vi.fn(async () => Response.json({ data: { activeSubscription: null } }));
+    const fetchImpl = vi.fn<typeof fetch>(async () => Response.json({ data: { activeSubscription: null } }));
     const transport = createPartnerGraphqlTransport({
       organizationId: '12345',
       accessToken: 'synthetic-token',

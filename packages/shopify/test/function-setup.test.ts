@@ -4,6 +4,7 @@ import type { AddressInfo } from 'node:net';
 import { expect, test } from 'vitest';
 import { provisionOwnedFunctions } from '../src/function-setup.js';
 import type { PublicationAdminTransport } from '../src/publication-admin.js';
+import { jsonRecord, string } from './fixture-assertions.js';
 
 const tenant = {
   shopId: 'synthetic',
@@ -37,7 +38,7 @@ test.each(['settled', 'ambiguous', 'drift', 'identity', 'existing', 'partial', '
     const server = createServer(async (incoming, outgoing) => {
       const chunks = [];
       for await (const chunk of incoming) chunks.push(chunk);
-      const request = JSON.parse(Buffer.concat(chunks).toString());
+      const request = jsonRecord(Buffer.concat(chunks).toString());
       const reply = () => {
         if (request.operation === 'function_ownership')
           return {
@@ -72,7 +73,7 @@ test.each(['settled', 'ambiguous', 'drift', 'identity', 'existing', 'partial', '
               },
             },
           };
-        attempts.push(request.operation);
+        attempts.push(string(request.operation));
         if (scenario === 'ambiguous') throw new Error('SYNTHETIC_PRIVATE_PROVIDER_FAILURE');
         if (request.operation === 'function_transform_create') {
           transformed = true;

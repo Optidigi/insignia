@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { artworkManifest, artworkRow } from '../../test/artwork-fixtures.js';
 import { createArtworkUsabilityPort } from '../artwork/artwork.js';
 import { acceptQuote, localDay, normalizeMarketId, prepareQuote, type QuoteAuthorityPorts } from './accept-quote.js';
 
@@ -88,7 +89,7 @@ function fixture() {
     },
     publication: { getEffective: vi.fn(async () => ({ config, configId: 'cfg', operationId: 'op' })) },
     artwork: {
-      readUsability: vi.fn(async (input) =>
+      readUsability: vi.fn<QuoteAuthorityPorts['artwork']['readUsability']>(async (input) =>
         input.choices.map((choice) => ({
           ...choice,
           shopId: input.shopId,
@@ -247,14 +248,14 @@ describe('acceptQuote', () => {
   it('cached authorization and transactional replay remain bound to verified artwork owner authority', async () => {
     const { ports } = fixture();
     const scope = { shopId: 'shop', installationGeneration: '1', kind: 'guest' as const, ownerHash: 'a'.repeat(64) };
-    const row = {
+    const row = artworkRow({
       assetId: 'art',
       ownerHash: scope.ownerHash,
       state: 'USABLE',
-      manifest: {},
+      manifest: artworkManifest,
       expiresAt: new Date(+now + 7 * 86400000),
-    };
-    const store = { readUsability: async () => [row] } as never;
+    });
+    const store = { readUsability: async () => [row] };
     ports.artwork = createArtworkUsabilityPort(store, () => now, scope);
     let cached: Awaited<ReturnType<typeof acceptQuote>> | undefined,
       digest = '';
@@ -293,9 +294,14 @@ describe('acceptQuote', () => {
     ports.artwork = createArtworkUsabilityPort(
       {
         readUsability: async () => [
-          { assetId: 'art', state: 'USABLE', manifest: {}, expiresAt: new Date(+now + 7 * 86400000) },
+          artworkRow({
+            assetId: 'art',
+            state: 'USABLE',
+            manifest: artworkManifest,
+            expiresAt: new Date(+now + 7 * 86400000),
+          }),
         ],
-      } as never,
+      },
       clock,
       { shopId: 'shop', installationGeneration: '1', kind: 'merchant' },
     );
@@ -811,22 +817,15 @@ describe('acceptQuote', () => {
     await expect(acceptQuote({ ...request, marketId: '9'.repeat(256) }, ports)).rejects.toThrow(
       /invalid desired Market ID/,
     );
+    const oversizedDesign = { ...group.design, ignoredArtwork: 'x'.repeat(128_001) };
     await expect(
-      acceptQuote(
-        {
-          ...request,
-          groups: [{ group: { ...group, design: { ...group.design, ignoredArtwork: 'x'.repeat(128_001) } } }],
-        },
-        ports,
-      ),
+      acceptQuote({ ...request, groups: [{ group: { ...group, design: oversizedDesign } }] }, ports),
     ).rejects.toThrow(/candidate request bytes exceeded/);
     let nested: unknown = 'bottom';
     for (let depth = 0; depth < 20; depth++) nested = { next: nested };
+    const nestedDesign = { ...group.design, ignoredArtwork: nested };
     await expect(
-      acceptQuote(
-        { ...request, groups: [{ group: { ...group, design: { ...group.design, ignoredArtwork: nested } } }] },
-        ports,
-      ),
+      acceptQuote({ ...request, groups: [{ group: { ...group, design: nestedDesign } }] }, ports),
     ).rejects.toThrow(/candidate request complexity exceeded/);
     expect(ports.tenant.getActive).not.toHaveBeenCalled();
   });

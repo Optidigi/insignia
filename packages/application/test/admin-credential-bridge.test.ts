@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
-import { createM3AdminReadCredentialSource } from '../src/shopify/admin-credential-bridge.js';
+import { createAdminReadCredentialSource } from '../src/shopify/admin-credential-bridge.js';
 import type { OfflineCredentialLifecyclePort, OfflineRefreshTransport } from '../src/shopify/offline-credentials.js';
 
 const input = { shopId: 'tenant-1', installationGeneration: '7' };
@@ -8,7 +8,17 @@ const scope = {
   shopDomain: 'fixture.myshopify.com',
   shopifyShopId: '456',
 };
-const refresh = { refresh: vi.fn() } as unknown as OfflineRefreshTransport;
+const unexpected = async (): Promise<never> => {
+  throw new Error('Unexpected credential fixture boundary');
+};
+const refresh: OfflineRefreshTransport = { refresh: vi.fn(unexpected) };
+const credentials = (acquire: OfflineCredentialLifecyclePort['acquire']): OfflineCredentialLifecyclePort => ({
+  acquire,
+  install: unexpected,
+  replaceClaim: unexpected,
+  releaseClaim: unexpected,
+  markReauthRequired: unexpected,
+});
 
 describe('M3 Admin credential bridge', () => {
   test('joins the active M3 scope to its fenced usable token and rechecks before returning', async () => {
@@ -18,9 +28,9 @@ describe('M3 Admin credential bridge', () => {
       accessToken: 'synthetic-token',
       accessExpiresAt: new Date('2026-10-01T00:00:00Z'),
     }));
-    const source = createM3AdminReadCredentialSource({
+    const source = createAdminReadCredentialSource({
       tenants: { getActiveProviderScope },
-      credentials: { acquire } as unknown as OfflineCredentialLifecyclePort,
+      credentials: credentials(acquire),
       refresh,
       now: () => new Date('2026-09-29T12:00:00Z'),
     });
@@ -40,16 +50,16 @@ describe('M3 Admin credential bridge', () => {
       accessToken: 'synthetic-token',
       accessExpiresAt: new Date('2026-10-01T00:00:00Z'),
     }));
-    const source = createM3AdminReadCredentialSource({
+    const source = createAdminReadCredentialSource({
       tenants: { getActiveProviderScope: vi.fn().mockResolvedValueOnce(scope).mockResolvedValueOnce(null) },
-      credentials: { acquire } as unknown as OfflineCredentialLifecyclePort,
+      credentials: credentials(acquire),
       refresh,
     });
     await expect(source.acquire(input)).resolves.toEqual({ kind: 'inactive' });
     expect(acquire).toHaveBeenCalledTimes(1);
-    const missing = createM3AdminReadCredentialSource({
+    const missing = createAdminReadCredentialSource({
       tenants: { getActiveProviderScope: async () => null },
-      credentials: { acquire } as unknown as OfflineCredentialLifecyclePort,
+      credentials: credentials(acquire),
       refresh,
     });
     await expect(missing.acquire(input)).resolves.toEqual({ kind: 'inactive' });

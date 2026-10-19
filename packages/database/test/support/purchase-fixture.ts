@@ -1,4 +1,5 @@
 import { createHash, generateKeyPairSync, randomUUID, sign } from 'node:crypto';
+import type { AcceptedQuote } from '@insignia/application';
 import { encodeHeader, encodeMember, wholeQuoteSignBytes } from '@insignia/cart-authorization';
 import { sql } from 'kysely';
 import { expect } from 'vitest';
@@ -121,7 +122,7 @@ export async function purchaseFixture(db: Awaited<ReturnType<typeof openTestData
       contentHash: value.contentHash,
     },
   ];
-  const quote = {
+  const quote: AcceptedQuote = {
     physicalGroups: [
       {
         productId: value.productId,
@@ -155,12 +156,52 @@ export async function purchaseFixture(db: Awaited<ReturnType<typeof openTestData
     trial: true,
     qualifyingUsageDisposition: 'WAIVE_TRIAL',
     effectiveRevisions,
+    artworkChecks: [],
+    catalogSnapshots: [],
+    fxSnapshot: null,
     economics: {
+      version: 'm4-quote-economics-v1',
+      groups: [],
+      fx: null,
       customizedQuantity: 2,
       totalMinor: '2001',
+      shopId: value.shopId,
+      pricingEngineVersion: 'm2-pricing-v1',
+      roundingPolicy: 'm2-half-even-v1',
+      currency: { version: 'm2-currency-resolution-v1', presentmentCurrency: 'USD', exponents: { USD: 2 } },
+      effectiveAt: '2026-09-29T12:00:00.000Z',
+      marketContext: '42',
       lines: [
-        { lineIndex: 0, variantId: '1', quantity: 1, unitPriceMinor: '1001', lineTotalMinor: '1001' },
-        { lineIndex: 1, variantId: '2', quantity: 1, unitPriceMinor: '1000', lineTotalMinor: '1000' },
+        {
+          lineIndex: 0,
+          unitOrdinalStart: 1,
+          unitOrdinalEnd: 1,
+          setupPerUnitMinor: '2',
+          shopId: value.shopId,
+          productId: value.productId,
+          configRevisionId: value.revisionId,
+          revisionContentHash: value.contentHash,
+          canonicalIdentitySha256: 'a'.repeat(64),
+          variantId: '1',
+          quantity: 1,
+          unitPriceMinor: '1001',
+          lineTotalMinor: '1001',
+        },
+        {
+          lineIndex: 1,
+          unitOrdinalStart: 1,
+          unitOrdinalEnd: 1,
+          setupPerUnitMinor: '1',
+          shopId: value.shopId,
+          productId: value.productId,
+          configRevisionId: value.revisionId,
+          revisionContentHash: value.contentHash,
+          canonicalIdentitySha256: 'a'.repeat(64),
+          variantId: '2',
+          quantity: 1,
+          unitPriceMinor: '1000',
+          lineTotalMinor: '1000',
+        },
       ],
     },
   };

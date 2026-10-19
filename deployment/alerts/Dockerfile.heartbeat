@@ -3,4 +3,4 @@ FROM node:24.21.0-bookworm-slim@sha256:51b1100cc2a83d370c6a60952e3f2989c8a43159d
 WORKDIR /srv/insignia
 COPY --chown=1000:1000 operations-package/ ./
 USER 1000:1000
-ENTRYPOINT ["/srv/insignia/bin/node", "/srv/insignia/scripts/operations/heartbeat.mjs", "--loop"]
+ENTRYPOINT ["/srv/insignia/bin/node", "/srv/insignia/scripts/operations/heartbeat.mts", "--loop"]

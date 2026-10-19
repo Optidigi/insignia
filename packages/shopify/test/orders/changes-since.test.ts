@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { readShopifyOrderChanges } from '../../src/orders/read-order.js';
+import { graphqlRequest, required } from '../fixture-assertions.js';
 
 const now = new Date('2026-10-13T12:00:00Z');
 const target = {
@@ -20,7 +21,7 @@ function fixture() {
         accessExpiresAt: new Date(+now + 60000),
       })),
     },
-    fetchImpl: vi.fn(
+    fetchImpl: vi.fn<typeof fetch>(
       async () =>
         new Response(
           JSON.stringify({
@@ -48,8 +49,9 @@ describe('missing-webhook order discovery', () => {
       nextCursor: 'next',
       observedAt: now.toISOString(),
     });
-    const [, init] = d.fetchImpl.mock.calls[0] as unknown as [string, RequestInit],
-      body = JSON.parse(init.body as string);
+    const [, rawInit] = required(d.fetchImpl.mock.calls[0]);
+    const init = required(rawInit),
+      body = graphqlRequest(String(init.body));
     expect(body.query).toContain('sortKey:UPDATED_AT');
     expect(body.query).not.toMatch(/customer|email|originalUnitPrice/);
     expect(body.variables).toEqual({
@@ -63,9 +65,9 @@ describe('missing-webhook order discovery', () => {
         ),
     );
     await readShopifyOrderChanges({ ...target, cursor: 'next' }, d);
-    expect(
-      JSON.parse((d.fetchImpl.mock.calls[1] as unknown as [string, RequestInit])[1].body as string).variables.query,
-    ).toBe(body.variables.query);
+    expect(graphqlRequest(String(required(d.fetchImpl.mock.calls[1])[1]?.body)).variables.query).toBe(
+      body.variables.query,
+    );
   });
   it('rejects invalid windows and incomplete/outside-window/duplicate/unsorted provider pages', async () => {
     const d = fixture();

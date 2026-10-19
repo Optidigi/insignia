@@ -68,9 +68,9 @@ function wire(
     type?: string;
     length?: string;
     encoding?: string;
-    chunks?: Buffer[];
+    chunks?: readonly Buffer[];
     complete?: boolean;
-    addresses?: { address: string; family: number }[];
+    addresses?: readonly { address: string; family: number }[];
   } = {},
 ) {
   let requests = 0,
@@ -80,7 +80,7 @@ function wire(
   const reader = createCatalogImageReader({
     lookup: async () => {
       lookups++;
-      return input.addresses ?? [{ address: '104.16.1.1', family: 4 }];
+      return [...(input.addresses ?? [{ address: '104.16.1.1', family: 4 }])];
     },
     request: (url, options, callback) => {
       requests++;
