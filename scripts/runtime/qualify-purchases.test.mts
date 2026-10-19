@@ -36,7 +36,7 @@ test('CI qualification creates only a unique owned loopback database and rejects
 });
 
 test('invalid later invocation replaces a previous CI PASS receipt and transcript with FAIL', async () => {
-  const evidence = new URL('../../docs/delivery/evidence/m8-context-runtime/', import.meta.url);
+  const evidence = new URL('../../.m1-artifacts/', import.meta.url);
   const result = new URL('runtime-role-ci.json', evidence),
     log = new URL('runtime-role-ci.log', evidence);
   await mkdir(evidence, { recursive: true });

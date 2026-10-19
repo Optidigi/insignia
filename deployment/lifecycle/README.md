@@ -2,7 +2,7 @@
 
 Source enrollment runs at verified merchant authentication and independently in
 worker reconciliation, one current tenant per pass. Worker and web require the
-same canonical HTTPS `APP_URL`, client ID and client secret. Use the frozen
+same canonical HTTPS `APP_URL`, client ID and client secret. Use the qualified immutable
 runtime artifact and schema-owner migration/grant workflow; this document does
 not authorize a release, scope change, deployment or store uninstall.
 
@@ -53,4 +53,4 @@ authorized and qualified.
 
 Qualify native registration, delivery, immediate uninstall/response-loss races,
 reinstall and cleanup only on an explicitly allocated disposable installation.
-Protect rewrite-dev. Local HTTP/PostgreSQL/SDK tests are not native evidence.
+Protect rewrite-dev. Local HTTP/PostgreSQL/SDK tests are not native evidence. The [current checklist](../../docs/delivery/state.md) owns installation-specific status, unresolved effects, protected fixtures and exact next owner/operator actions; this runbook does not grant another uninstall or retry.

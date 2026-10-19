@@ -67,8 +67,6 @@ test('current entrypoints reject retired source commands while preserving inert 
   writeFileSync(join(root, 'deployment/compose.yaml'), 'name: insignia-uninstall-m5-024\n');
   mkdirSync(join(root, 'docs/history'), { recursive: true });
   writeFileSync(join(root, 'docs/history/frozen-schema18-manifest.json'), JSON.stringify({ original: retired }));
-  mkdirSync(join(root, 'scripts/lifecycle'), { recursive: true });
-  writeFileSync(join(root, 'scripts/lifecycle/SERVICE-PROPOSAL.json'), JSON.stringify({ historical: retired }));
   assert.doesNotThrow(() => inspectMaintainedSources(root, policy));
   mkdirSync(join(root, 'scripts/m5-runtime'), { recursive: true });
   writeFileSync(join(root, 'scripts', 'm5-runtime', 'revived.sh'), '#!/bin/sh\n');

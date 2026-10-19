@@ -3,9 +3,9 @@ import { appendFileSync } from 'node:fs';
 import { posix, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-// These two mutable progress documents have no executable/data consumers.
+// This mutable progress document has no executable/data consumers.
 // Expanding this set requires tracing consumers; evidence JSON and authority stay full-route.
-const documents = new Set(['docs/delivery/state.md', 'docs/delivery/evidence/m8-context-runtime/WORKLIST.md']);
+const documents = new Set(['docs/delivery/state.md']);
 const full = (reason: string) => ({ route: 'full', reason });
 function refuse(code: string): never {
   throw new Error(code);
@@ -126,7 +126,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       appendFileSync(
         process.env.GITHUB_STEP_SUMMARY,
         result.route === 'status-docs'
-          ? '### Status documentation validation\n\nOnly the two supported current-progress documents changed; Git file scope, links and secret checks validated. Full behavior, PostgreSQL, browser, process and Wasm suites were **not selected**. This is no new product or native qualification.\n'
+          ? '### Status documentation validation\n\nOnly the supported current-progress document changed; Git file scope, links and secret checks validated. Full behavior, PostgreSQL, browser, process and Wasm suites were **not selected**. This is no new product or native qualification.\n'
           : '### Full verification selected\n\nThe change is outside the bounded current-document route, or exact refs were unavailable. Existing full checks and failure semantics apply; classification does not report their outcome.\n',
       );
     console.log(`CI route: ${result.route} (${result.reason})`);

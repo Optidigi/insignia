@@ -324,7 +324,7 @@ const artifact = {
   },
   plans,
 };
-const out = resolve(process.env.M5_QUERY_PLAN_OUTPUT ?? 'docs/delivery/evidence/m5-003/query-plan.json');
+const out = resolve(process.env.M5_QUERY_PLAN_OUTPUT ?? '.m1-artifacts/query-plan.json');
 await mkdir(resolve(out, '..'), { recursive: true });
 await writeFile(out, JSON.stringify(artifact, null, 2) + '\n');
 console.log(JSON.stringify(Object.fromEntries(Object.entries(plans).map(([name, p]) => [name, p.summary])), null, 2));

@@ -1,10 +1,6 @@
-# Whole-quote v2 production protocol adoption
+# Whole-quote v2 wire contract
 
-## Decision
-
-**ADOPTED for production implementation after the exact approved merge of PR #25.**
-
-This closes the long-running provisional status of the whole-quote v2 wire/semantic contract. It does not declare the current capacity profile production-qualified for every merchant/cart and does not authorize deployment.
+This document owns exact authorization bytes and carrier semantics. The [current specification](implementation-plan.md) owns product behavior and acceptance; [current state](../delivery/state.md) owns qualified contexts and remaining work. Original adoption is preserved at [the pre-closeout record](https://github.com/Optidigi/insignia/blob/9d69dd5f440a383400e6e8af3bb93678d66f3b9f/docs/architecture/WHOLE-QUOTE-V2-ADOPTED.md). Adoption grants neither deployment nor universal merchant capacity.
 
 ## Frozen wire contract
 
@@ -35,7 +31,7 @@ The following are now the single production authorization protocol for the rewri
 
 No per-line v1 fallback is part of the rewrite runtime. Historical v1 evidence remains archived only.
 
-Any incompatible change to these signed bytes, carrier semantics or field meanings requires an explicit new protocol version and principal decision.
+Any incompatible change to these signed bytes, carrier semantics or field meanings requires an explicit new protocol version and owner decision.
 
 ## Current implementation admission profile
 
@@ -48,17 +44,17 @@ The current issuer/Function implementation retains these conservative guards:
 
 These are **engineering admission guards, not merchant/product-plan limits**.
 
-They may be changed under the same v2 wire only after source-bound Function/resource evidence demonstrates the new implementation bound. A changed merchant-facing supported profile still requires principal acceptance.
+They may be changed under the same v2 wire only after source-bound Function/resource evidence demonstrates the new implementation bound. A changed merchant-facing supported profile still requires owner acceptance.
 
 The historical 64-bucket output failure remains evidence that arbitrary wider sets cannot simply be assumed safe.
 
 ## Remaining resource qualification
 
-Stack peak remains unmeasured. Shopify currently publishes a 512 kB stack limit in addition to binary, linear-memory, instruction, input and output limits.
+Stack peak remains unmeasured. Shopify’s [2026-07 Function resource limits](https://shopify.dev/docs/api/functions/2026-07#fixed-limits) specify a 512 kB stack limit in addition to binary, linear-memory, instruction, input and output limits.
 
 Therefore:
 
-- stack measurement or a defensible artifact-specific upper bound remains required before M7 supported-profile acceptance and again at M10 release qualification;
+- stack measurement or a defensible artifact-specific upper bound remains required before supported-profile release acceptance;
 - the current 32-bucket case is not a universal capacity claim;
 - live 200-line/supported-profile qualification remains later work;
 - release artifacts must be remeasured.
@@ -70,18 +66,3 @@ This residual does not require leaving the byte protocol itself provisional.
 The current versioned supported-currency exponent table is adopted as the initial v2 implementation support matrix, not as part of the immutable byte layout.
 
 Changing admitted currencies/exponents requires synchronized TypeScript/Rust/Function updates and resource regression. Unknown or ambiguous currencies continue to fail closed.
-
-## Governance amendment
-
-The next authorized PR must update the current v1.3 plan/decision ledger to a narrow v1.4 governance state that:
-
-- records v2 as the adopted rewrite authorization protocol;
-- removes obsolete `v2 remains provisional` wording;
-- preserves every original G1-G8 criterion;
-- preserves current capacity/stack/live-profile qualifications;
-- does not mark G2/G3/G5 or any other gate complete merely because the protocol is adopted;
-- preserves old v1.1/v1.2/v1.3 hash/history checks rather than rewriting history.
-
-Current pre-amendment v1.3 hashes remain:
-- implementation plan: `b730c0dc274af8180a9aae3290189a8fd61b6b92e06681d345fe5d9aab22c06d`
-- decision ledger: `d4297182b12978822dae124a040a0d47aafcdb7749f7ad8602f0626e964937e9`.

@@ -1,47 +1,24 @@
-# Insignia — greenfield architecture and implementation plan
+# Insignia — current specification and rationale
 
-**Record version:** 1.7 — 15 October 2026 (owner-approved Lean V1 prospective amendment; unaffected contracts and historical evidence retained)
+This is the canonical Lean V1 product, architecture and acceptance specification. [Current state](../delivery/state.md) owns progress, deployed identities, defects, assignments and the owner/operator checklist; the [operating model](../delivery/operating-model.md) owns delivery procedure and effective resource permissions. Read affected technical sections before changing behavior. The separately adopted [whole-quote v2 wire contract](WHOLE-QUOTE-V2-ADOPTED.md) remains authoritative for exact bytes.
 
-**Status:** [Approved Lean V1](../delivery/authority/lean-v1-2026-10-15.md) governs current shipping work. Option A and unchanged v2/security/history contracts remain. This amendment is not implementation, native acceptance or a gate PASS. The [16 October first-version direction](decision-ledger.md#owner-first-version-direction--16-october-2026) supersedes earlier development-version compatibility requirements: ship only Lean V1 and remove compatibility-only paths/tests; preserve actual immutable records, current purchase/preview integrity and safe cleanup.
-
-**Authority:** The [15 October Lean V1 owner decision](../delivery/authority/lean-v1-2026-10-15.md) supersedes conflicting earlier pricing/scope/billing/acceptance requirements prospectively. Unaffected authority includes the user's pasted baseline, subsequent answers, final inactive-subscription/downgrade approval, [Option A approval](OPTION-A-APPROVED.md), [whole-quote v2 adoption](WHOLE-QUOTE-V2-ADOPTED.md), and the [single-plan owner decision](../delivery/authority/commercial-single-plan-2026-10-10.md). The exact pre-Lean v1.6 plan/ledger remain available at `0c3672e2f38a7c6421f9b4791a3830c2db5aaaf8`; dated decisions and receipts keep their original meaning. No missing `plan.md` dependency remains.
-
-**Delivery:** Consult the maintained [delivery state](../delivery/state.md) for current authorization, evidence and gate status. The v1.3 record remains available at fixed PR #25 merge `4209bb16a09cff95d5cbbc1bbcb082e8c1fa8899` with plan SHA-256 `b730c0dc274af8180a9aae3290189a8fd61b6b92e06681d345fe5d9aab22c06d` and ledger SHA-256 `d4297182b12978822dae124a040a0d47aafcdb7749f7ad8602f0626e964937e9`. The original v1.1 record remains at fixed PR #10 merge `0f2c80a316228bd69fdd2ff272e967ff14647b2b`; approved v1.2 remains at fixed PR #17 merge `662a78cd27507d8a2f1eaa976f1c644c93edd1be`.
-
-**Execution governance:** The [13 October autonomous-delivery direction](../delivery/authority/autonomous-delivery-2026-10-13.md) and [operating model](../delivery/operating-model.md) govern implementation ownership, TDD, proportionate review/CI, substantive sequencing and engineering-versus-native acceptance. This complete technical plan retains unaffected product/stack/protocol contracts. Existing external resource grants remain scoped; engineering delivery does not certify native acceptance or rollout.
-
-This document is intended to be sufficient context for implementation agents. A numbered source register follows section 17. `[S#]` references support external platform/library facts. Requirements and algorithms stated as Insignia decisions are design specifications, not claims of already-observed Shopify behavior.
+Lean V1 is the sole supported first product version. Historical negotiation, milestone tasks and superseded decisions remain in Git history; the pre-closeout technical record is recoverable at commit `9d69dd5f440a383400e6e8af3bb93678d66f3b9f`. Current requirements incorporate approved Lean scope and unchanged security/economic obligations. This specification is neither an implementation receipt nor an external-effect grant.
 
 ## 0. Scope, evidence and completion rules
 
 ### 0.1 Product scope
 
-Insignia is a public Shopify app for merchant-configured product customization. Buyers select decoration methods, placements, decoration sizes/steps, artwork or merchant-enabled logo-later, and quantities across compatible Shopify garment variants. Preserve the existing storefront UI/visual experience, adapting labels and review interactions where new pricing semantics require it. Rewrite everything else against this record; legacy admin screens, RFQ workflows, production management, fee products, variant pools, schemas and operational machinery are not inherited requirements.
+Insignia is a public Shopify app for merchant-configured product customization. Buyers select decoration methods, placements, decoration sizes/steps, artwork or merchant-enabled logo-later, and quantities across compatible Shopify garment variants. Preserve the existing storefront UI/visual experience, adapting labels and review interactions where new pricing semantics require it. Maintain the current rewrite against these contracts; legacy admin screens, RFQ workflows, production management, fee products, variant pools, schemas and operational machinery are not inherited requirements.
 
 There is **no migration/import work** in development: no importer, dual writes, compatibility views, old-ID mapping, legacy adapters, or migration milestones. Ordinary migrations of the *new application's own schema* are required and unrelated to importing legacy data.
 
 Lean V1 supports ordinary non-Plus merchants through same-real-variant lineExpand and Online Store one-time ordinary cart → checkout. Separate Plus/lineUpdate, product-page express/Buy-now and broad third-party transform compatibility are deferred/not shipping; unsupported routes must not bypass required-product or economic enforcement. It does not offer negotiated Shopify B2B pricing, POS/headless integrations, subscription customization, an RFQ mode, or order-edit repricing. Shopify owns payments, fulfillment, cancellations, refunds, returns and inventory.
 
-### 0.2 Evidence classification
+### 0.2 Evidence and qualification
 
-- **Verified fact:** Current primary sources document a capability or constraint; cited below. This is not proof of Insignia's end-to-end behavior.
-- **Evidence-backed inference:** The selected combination appears compatible, but an integration test remains necessary.
-- **Product decision:** Approved in the conversation and summarized in section 17.
-- **Development hypothesis:** A candidate implementation that must pass an explicit gate before dependent work proceeds.
+Distinguish platform documentation, engineering inference, product requirement and observed behavior. Source references support platform facts; they do not prove application behavior. Current state records source-bound observations and their actual enabled context. Local completion, native qualification, owner visual acceptance and rollout approval are separate.
 
-Lean V1 is an approved prospective amendment to the closed baseline, including the unchanged Option A residual boundary. Section 14 narrows applicable gate criteria and closes work through five outcomes; deferred capabilities are not PASS or launch prerequisites. Reuse unchanged evidence and qualify changed boundaries. Algorithms/resource budgets remain reviewable engineering choices; actual expiry, independent authority and historical records do not. Report genuine product/security conflicts directly with evidence and alternatives.
-
-### 0.3 Source reconciliation
-
-Current Cart Transform documentation permits one Function per app per store; do not implement onboarding around the old store-wide one-transform assumption. Retain collision testing. The same-variant one-child route has bounded native proof through the [17 October Lean purchase/original journey](../delivery/evidence/lean-v1/native-lean-purchase-original-2026-10-17.json): one USD/US development fixture, exact real-variant quantity/price binding, independent payment reconciliation and authenticated original retrieval. Representative non-development merchant eligibility, broader variants/quantities and refund/restock remain unqualified. [S1]
-
-Current App Pricing uses Partner API subscription state and App Events. Do not port older Admin Billing API webhook assumptions or copy an `unstable` example when the versioned App Events reference supplies a supported stable endpoint. [S5–S8]
-
-Polaris now has versioned CDN releases; the old blanket assumption that it cannot be pinned is outdated. Pin the tested runtime and align its types. [S14]
-
-The Shopify Rust SDK's Decimal scalar is a wrapper over `f64`. An API type named Decimal is not an exact-money guarantee; inspect the pinned SDK and implement exact adapter conversion/serialization. [S25]
-
-The legacy storefront modal spec is a visual/interaction reference only. Its old single-method pricing and fee-pool calls must not become rewrite contracts. [S24]
+Reuse unchanged evidence and qualify changed boundaries under §14. Capability, admission budgets and native results are bounded by actual merchant, channel, currency/Market and permissions. Resource grants and actual expiry are never inferred from this specification. When a platform result contradicts an invariant, preserve evidence and reopen the affected boundary.
 
 ## 1. System architecture
 
@@ -116,7 +93,7 @@ apps/
   web/                         # Astro standalone SSR and composition root
     src/pages/admin/           # File-based merchant pages
     src/pages/api/admin/       # Authenticated merchant command/query endpoints
-    src/pages/api/artwork/v1/  # Buyer/App Proxy upstream contracts
+    src/pages/api/artwork/     # Artwork routes plus v1 buyer/App Proxy upstream
     src/pages/api/purchases/v1/ # Purchase/history/artwork contracts
     src/pages/api/webhooks/    # Raw-body Shopify/uninstall ingress
     src/islands/               # Preact only where interaction warrants it
@@ -142,13 +119,12 @@ crates/
   cart-transform/              # Target-specific normalization and operations
   cart-validation/             # Target-specific normalization and validation errors
 fixtures/
-  authorization/              # Shared TS/Rust bytes, keys, negative cases
-  pricing/
-  shopify/                     # Redacted real Function/cart/order captures
-  storefront-reference/       # Screenshots and interaction records; no buyer artwork
+  shopify/                     # Curated availability replay input/provenance
+# TS/Rust protocol vectors live under packages/cart-authorization/fixtures.
+# Other curated fixtures live with their owning package/test, not a duplicate tree.
 scripts/                       # Typed build, verification, release and recovery tools
 deployment/                    # Compose, service declarations and typed operations
-docs/architecture/             # This plan, decision ledger and adopted protocol
+docs/architecture/             # Current specification and adopted protocol
 docs/delivery/                 # Current state, operations and dated inert evidence
 pnpm-workspace.yaml
 pnpm-lock.yaml
@@ -163,7 +139,7 @@ Use explicit package exports. Client bundling must reject server exports of data
 
 `packages/database/migrations` is the single source for application SQL migrations via dbmate. Do not also run a Kysely migration system. pg-boss owns its separate schema/version procedure. [S19, S20]
 
-Pin exact tested package versions in lockfiles, a Node 24 patch, pnpm and Rust toolchain; pin Actions by commit. Initial library installation must pass the full build/type/test matrix. No floating `latest` in runtime deployment configuration. Zod 4 is boundary validation, not a reason to expose mutable ORM-shaped objects. [S27]
+Derive exact Node/pnpm versions from root `package.json`, Rust from `rust-toolchain.toml`, dependencies from package manifests/lockfiles and compiler coverage from `scripts/boundaries/source-contract.mts`. Pin tested versions; pin Actions by commit. Initial library installation must pass the full build/type/test matrix. No floating `latest` in runtime deployment configuration. Zod 4 is boundary validation, not a reason to expose mutable ORM-shaped objects. [S27]
 
 ## 3. Domain model and invariants
 
@@ -181,9 +157,15 @@ Pin exact tested package versions in lockfiles, a Node 24 patch, pnpm and Rust t
 
 Publication validates IDs, references, geometry, complete step schedules, currency codes, pricing scope, feature entitlements and asset readiness. Missing *optional preview* does not prohibit publishing or purchasing. Missing production-critical rule/selection validity does.
 
-Option A trusts correctly published, access-controlled app-owned Shopify policy under its [approved fault boundary](OPTION-A-APPROVED.md). Merchant intent, a durable operation journal, Shopify mutation acknowledgement, exact Admin readback, Function observations and application activation are distinct states. An incomplete or ambiguous publication remains pending/error; it is not the effective policy. Preserve the previous effective policy, known management evidence and already accepted quote terms while resolving a transition. Production activation still requires a reviewed consistency/availability contract; a local model cannot prove platform-wide propagation.
+**Required-product trust (Option A):** trust correctly published, access-controlled app-owned Shopify policy and correctly operating Function inputs. Buyer markers are never policy authority. Detectable incomplete, malformed, pending, mismatched or wrong-installation policy rejects identifiable required merchandise; unrelated merchandise needs neither catalogue-wide authorization nor outage. Unexpected complete loss or coherent rollback of *all* trusted product-policy evidence outside the publication contract can allow a formerly required unsigned plain purchase before detection. That accepted residual is an incident to prevent, detect, contain and recover from; reconciliation cannot undo it. App-controlled unsafe publication remains a defect. The [Option A approval](https://github.com/Optidigi/insignia/blob/9d69dd5f440a383400e6e8af3bb93678d66f3b9f/docs/architecture/OPTION-A-APPROVED.md) provides detailed boundaries and provenance. Merchant intent, a durable operation journal, Shopify mutation acknowledgement, exact Admin readback, Function observations and application activation are distinct states. An incomplete or ambiguous publication remains pending/error; it is not the effective policy. Preserve the previous effective policy, known management evidence and already accepted quote terms while resolving a transition. Production activation still requires a reviewed consistency/availability contract; a local model cannot prove platform-wide propagation.
 
-Availability-hold implementation is now governed by the [M5-017 v3 contract](../delivery/prompts/M5-017-AVAILABILITY-HOLD-V3.md) and [PR47 adjudication](../delivery/PR-047-principal-review.md). New FIRST_PUBLICATION/MODE_CHANGE uses effective-anchor v3; SAME_MODE remains no-hold. Preserve v1/v2 historical semantics/recovery and fail closed on unresolved historical state. Durable one-use acquisition/restoration/conditional-compensation claims precede provider dispatch; immutable versioned receipts fence replay. A settled semantic restore mismatch may rehold DRAFT once and becomes OPERATOR_HOLD. Ambiguous writes remain pending/operator-handled. No complete configured-intent discovery or hidden future-intent guarantee is claimed. This does not pass development gates or authorize production activation.
+**Availability transition:** FIRST_PUBLICATION/MODE_CHANGE uses effective-anchor v3; SAME_MODE remains no-hold. Generic discovery once omitted an effective third-party Publication that exact-ID lookup confirmed. Capture exact effective IDs and online-store presence, directly confirm every original Publication includes this product, hold DRAFT with zero effective visibility and unchanged original anchors, then restore exact original effective semantics. Provider `updatedAt` is diagnostic, never CAS/tolerance. Visible scheduled/staged publication fails closed; absence of arbitrary hidden non-effective intent is not guaranteed. Durable one-use acquisition/restoration/conditional-compensation claims precede dispatch; immutable versioned receipts fence replay. Only exact owned ACTIVE readback with settled semantic mismatch permits one compensating DRAFT rehold, becoming OPERATOR_HOLD. Ambiguous restore/compensation never retries. Retained v1/v2 JSONB and trusted recovery retain exact meanings and are never auto-upgraded.
+
+V3 snapshots bind exact scope/product, normalized state, diagnostic provider timestamps, sorted effective Publication IDs, online-store publishedAt/URL presence, complete visible scheduled/staged projection, direct-anchor inclusion/capabilities, observed/received times and canonical digests. Direct queries are static/bounded, require exact returned Publication/product identity and complete pageInfo, and fail closed on duplicates/missing/null/permission/shape mismatch; the implementation guard of 64 anchors is not a merchant-capacity promise. Equality compares semantic state/membership/presence/capabilities, not diagnostic timestamps/URLs/publish dates alone.
+
+A safe held snapshot is DRAFT, effectively invisible, unscheduled, with all original anchors still included and unchanged capabilities. Acquire compares the persisted before state, reserves a durable claim, sends one status-only DRAFT mutation and requires exact ACK plus complete held readback; already-safe DRAFT requires no mutation. Lost/ambiguous ACK never gains attribution from a later matching status. Restore requires the held/readiness fences, one durable claim, one status-only original-state update and complete readback. Exact original effective membership/presence is required. A single allowed compensation must itself read back held-safe; uncertainty remains RESTORATION_PENDING/operator incident with no retry.
+
+Trusted recovery is observation-only absent separately authorized mutation; outstanding writes require `SETTLED_BY_TRUSTED_OPERATOR`. Nested version/tenant/product constraints and immutable receipts fence database replay; down migration fails closed when v3 records exist. The [original v3 decision](https://github.com/Optidigi/insignia/blob/9d69dd5f440a383400e6e8af3bb93678d66f3b9f/docs/delivery/prompts/M5-017-AVAILABILITY-HOLD-V3.md) provides historical rationale, not reusable live-test authority.
 
 ### 3.2 Geometry
 
@@ -245,7 +227,7 @@ Earlier setup/tier/FX/scope/allocation algorithms and worked examples are histor
 
 ### 5.1 Scope and status
 
-The historical per-line v1 proposal is retained in Git history for decision provenance only. [Whole-quote v2](WHOLE-QUOTE-V2-ADOPTED.md) is the adopted production implementation contract; there is no per-line runtime fallback. Tokens are signed, not encrypted: “opaque” means the buyer UI treats them as opaque, not that the claims are secret. No artwork, buyer PII, price rules, JSON or JWT in cart authorization.
+[Whole-quote v2](WHOLE-QUOTE-V2-ADOPTED.md) is the adopted production implementation contract; there is no per-line runtime fallback. Tokens are signed, not encrypted: “opaque” means the buyer UI treats them as opaque, not that the claims are secret. No artwork, buyer PII, price rules, JSON or JWT in cart authorization.
 
 Use Ed25519, installation-scoped keys, and one shared v2 envelope plus a member carrier per physical line. Store private keys encrypted using authenticated encryption and a wrapping-key version held outside PostgreSQL. Use the Node crypto signer and maintained Rust Ed25519 verifier with strict verification; never implement curve arithmetic manually. Both Functions verify complete sets independently.
 
@@ -253,11 +235,11 @@ Use Ed25519, installation-scoped keys, and one shared v2 envelope plus a member 
 
 [WHOLE-QUOTE-V2-ADOPTED.md](WHOLE-QUOTE-V2-ADOPTED.md) is the single authority for wire layout, domain separation, signature input, member ordering, exact lengths and canonical encoding. It specifies the shared `_insignia_quote_v2` envelope and per-physical-line `_insignia_member_v2` carrier. TypeScript/Rust golden vectors and real Function transport controls must agree with that document. Reject unknown versions/flags, alternate encodings, padding, trailing bytes and overflow. A changed wire contract needs its own version and owner decision.
 
-The rejected per-line v1 layout remains in the fixed pre-Lean record at `0c3672e2f38a7c6421f9b4791a3830c2db5aaaf8`; it is not an implementation example or fallback. Human-readable cart summaries are informative only and cannot override signed identity/production data. Original artwork URLs never belong in cart properties.
+Human-readable cart summaries are informative only and cannot override signed identity/production data. Original artwork URLs never belong in cart properties.
 
 ### 5.3 Whole-set verification
 
-Normalize actual physical priced items through the target-specific adapter; G1/G6 determine which parent/component records represent them. Do not guess by double-counting parent and child. Then:
+Normalize actual physical priced items through the target-specific adapter; Qualified Shopify normalization determines which parent/component records represent them. Do not guess by double-counting parent and child. Then:
 
 1. Classify plain optional lines versus required/Insignia-marked lines from independent product policy and reserved markers.
 2. Decode each bounded token and verify key, signature, installation generation, epoch, local validity date, currency, country and market.
@@ -267,7 +249,7 @@ Normalize actual physical priced items through the target-specific adapter; G1/G
 6. Checked-sum physical quantities and `quantity × unitMinor` using sufficiently wide intermediates; compare with signed totals.
 7. Validator additionally compares **actual materialized pre-discount economic amounts**, not just signature claims or a transform-generated marker.
 
-For a historical tier-priced offer, a buyer cannot preserve a 500-unit tier by submitting a quote for 500 and checking out only 10: completeness and quantity checks fail. Removing every marker on an optional product creates a plain purchase with no production customization, not an entitlement to free customization. Required products still reject unsigned purchases.
+Submitting a complete offer and checking out only a subset fails completeness and quantity checks. Removing every marker on an optional product creates a plain purchase with no production customization, not an entitlement to free customization. Required products still reject unsigned purchases.
 
 ### 5.4 Expiry, replay and renewal
 
@@ -302,7 +284,7 @@ Admin token verification checks algorithm/signature, audience, destination/issue
 App Bridge/platform-issued identity tokens and App Events credentials may use JWT as required by Shopify. The no-JWT decision applies specifically to Insignia **cart authorization**.
 
 
-**Least-privilege scope contract.** The initial adapter requires `write_products` for app-owned product policy metafields (and its implied product read access), `read_orders`, `write_cart_transforms`, `write_validations`, `write_app_proxy`, and `read_markets` for the chosen market-resolution queries. Confirm each exact query/mutation against the pinned schema and remove any permission made unnecessary by its implementation. Request approval for `read_all_orders` before declaring it: default order access covers only orders created in the previous 60 days. The justification is reconciliation of known Insignia purchases, late payment/refund events and ongoing artwork work within retention—not a legacy import or unrestricted historical-data collection. [S31]
+**Least-privilege scope contract.** The least-privilege adapter baseline requires `write_products` for app-owned product policy metafields (and its implied product read access), `read_orders`, `write_cart_transforms`, `write_validations`, `write_app_proxy`, and `read_markets` for the chosen market-resolution queries. Confirm each exact query/mutation against the pinned schema and remove any permission made unnecessary by its implementation. Request approval for `read_all_orders` before declaring it: default order access covers only orders created in the previous 60 days. The justification is reconciliation of known Insignia purchases, late payment/refund events and ongoing artwork work within retention—not a legacy import or unrestricted historical-data collection. [S31]
 
 Approval is a release prerequisite for the promised older-order reconciliation path. Until granted, retain available purchase snapshots and expose restricted reconciliation explicitly; an authorization failure is not evidence that an order was deleted. Do not request order-write, inventory-write, fulfillment-write, theme-write or subscription-contract scopes merely to operate this design. Extra development-store test permissions do not belong in the public app scope manifest. Protected-customer-data review remains a separate approval requirement. [S23, S31]
 
@@ -318,7 +300,7 @@ There is no generic Cart Transform fallback or separate Lean Plus branch. Retain
 
 ### 6.3 Function behavior during cart mutations
 
-Cart-wide replacement may require several Ajax operations. Do not demand complete sets during every intermediate cart mutation in a way that makes repair impossible. Candidate G6 policy:
+Cart-wide replacement may require several Ajax operations. Do not demand complete sets during every intermediate cart mutation in a way that makes repair impossible. Cart mutation policy:
 
 - Cart Transform returns prices only for a valid complete authorization set; invalid sets never receive new authoritative customization prices.
 - During ordinary cart interaction, allow removal/replacement of stale or malformed lines. The storefront marks such state as requiring review and does not display a base-price fallback as an accepted customization.
@@ -330,7 +312,7 @@ The current Validation API exposes buyer journey steps; verify their actual beha
 
 Use the Ajax Cart API for the Online Store cart through a theme-side adapter. App Proxy carries Insignia config, proposals, acceptance and upload control requests. The browser's claimed market/cart is a proposal; Shopify Functions independently compare checkout context.
 
-Pin an explicit tested Shopify API version (initial candidate 2026-07) for Admin, Functions and App Events, with separate contracts for APIs whose versioning differs. Check deprecations and generate input/output schemas in CI. Never rely on a `latest` URL at runtime or copy a deprecated field merely because it appeared in an example.
+Read pinned Shopify API versions from current extension/deployment TOMLs and adapter manifests; pin explicit tested versions for Admin, Functions and App Events, with separate contracts for APIs whose versioning differs. Check deprecations and generate input/output schemas in CI. Never rely on a `latest` URL at runtime or copy a deprecated field merely because it appeared in an example.
 
 The Shopify adapter provides narrow ports such as:
 
@@ -354,19 +336,21 @@ These are illustrative domain-neutral signatures; concrete DTOs must include tim
 
 Declare app-wide subscriptions in TOML. Required business topics include orders/create, orders/paid, orders/updated where needed for reconciliation, refunds/create, app/uninstalled and app/scopes_update; subscribe to necessary product/shop changes for configuration validity and timezone/currency changes. Select exact supported topics and scopes from the pinned schema; avoid an indiscriminate all-events subscription.
 
-Uninstall additionally uses a private generation-specific APP_UNINSTALLED subscription destination, enrolled from verified current installation identity. Its exclusive destination plus raw HMAC binds purpose and generation; generic app-wide headers/body do not. Dispatch/unknown outcomes, exact readback, repair, old-generation fencing and separate immutable privacy recovery are required. Generic cleanup accounting is non-authorizing and never qualifies uninstall. See deployment/lifecycle/README.md for runtime limits and required native qualification.
+Uninstall additionally uses a private generation-specific APP_UNINSTALLED subscription destination, enrolled from verified current installation identity. Its exclusive destination plus raw HMAC binds purpose and generation; generic app-wide headers/body do not. Dispatch/unknown outcomes, exact readback, repair, old-generation fencing and separate immutable privacy recovery are required. Generic cleanup accounting is non-authorizing and never qualifies uninstall. See [lifecycle operations](../../deployment/lifecycle/README.md) for runtime limits and required native qualification.
+
+Verify exact raw-body HMAC against the current/previous app-secret ring before durable admission. HMAC authenticates the body; unsigned topic, domain, delivery/event IDs, time, API version and name do not independently establish uninstall purpose or generation. An old authenticated body must never gain authority over a newer installation from that metadata. Generic receipts and old header-derived pending bindings cannot authorize generation deactivation, credential revocation, publication-pointer clearing or business completion. Historical processed facts remain unchanged; queue transport completion is distinct from privacy/uninstall fulfillment. Conservative bootstrap fencing retains its unsigned-metadata denial limitation and proves neither a genuine uninstall nor its absence. Permanent quarantine is not the accepted unattended-lifecycle solution; actual exclusive authority, callback reconciliation, registration-gap/reinstall/response-loss behavior and native qualification remain required. TLS/proxy/logging controls cannot supply cryptographic generation authority.
 
 Mandatory privacy topics are customers/data_request, customers/redact and shop/redact. Verify raw request HMAC before parsing/trusting payloads. Acknowledge only after durable receipt. [S21, S22]
 
 Deduplicate delivery on `(installation_id, webhook_delivery_id)` and make business processing idempotent independently. Track event ID/topic/API version/received time. An out-of-order event triggers reconciliation from Shopify rather than rolling back newer facts. Reconciliation paginates all order lines and refunds; never assume the first GraphQL connection page is complete.
 
-The [13 October owner-delegated M8 decision](../delivery/authority/m8-purchase-proof-ownership-2026-10-13.md) permits a distinct signed-offer/original-order matching proof for a qualified Online Store one-time flow. Preserve signature, complete physical members, actual merchandise/economics and historical authorization checks. Admit wholly unavailable actual localization only through trusted creator-origin/current-enforcement qualification; record it as unknown, with quote country/Market identified as authorized context. Independent provider context, when supplied, must still match. The [17 October native Lean journey](../delivery/evidence/lean-v1/native-lean-purchase-original-2026-10-17.json) qualifies the bounded USD/US development-store admission and purchase path. It does not qualify distribution or other contexts; no current-health observation becomes historical execution proof. Required-product enforcement and its incident limitations remain separate obligations.
+The [13 October owner-delegated M8 decision](https://github.com/Optidigi/insignia/blob/9d69dd5f440a383400e6e8af3bb93678d66f3b9f/docs/delivery/authority/m8-purchase-proof-ownership-2026-10-13.md) permits a distinct signed-offer/original-order matching proof for a qualified Online Store one-time flow. Preserve signature, complete physical members, actual merchandise/economics and historical authorization checks. Admit wholly unavailable actual localization only through trusted creator-origin/current-enforcement qualification; record it as unknown, with quote country/Market identified as authorized context. Independent provider context, when supplied, must still match. The [17 October native Lean journey](../delivery/evidence/lean-v1/native-lean-purchase-original-2026-10-17.json) qualifies the bounded USD/US development-store admission and purchase path. It does not qualify distribution or other contexts; no current-health observation becomes historical execution proof. Required-product enforcement and its incident limitations remain separate obligations.
 
 Record orders at creation, bind approved customizations, and maintain first-full-payment facts. Refund processing appends Shopify economic facts without recalculating historical customization pricing; Lean V1 has no per-order app charge. Unsupported merchant order edits are recorded as discrepancies for review, not treated as newly authorized customization changes.
 
 ### 6.6 Recurring-only commercial contract
 
-One plan includes all released Lean V1 features: USD $49.99 per 30-day cycle, with an authoritative 14-day trial. There is no usage meter, 100-order allowance, overage or per-order charge. Keep existing technical resource limits and disclose them honestly. The [Lean owner authority](../delivery/authority/lean-v1-2026-10-15.md) supersedes the historical 10 October hybrid target; saved provider drafts/current subscriptions remain actual facts, not automatically converted contracts.
+Use Shopify App Pricing authoritative subscription state through the isolated adapter, rather than older Admin Billing webhook assumptions. One plan includes all released Lean V1 features: USD $49.99 per 30-day cycle, with an authoritative 14-day trial. There is no usage meter, 100-order allowance, overage or per-order charge. Keep existing technical resource limits and disclose them honestly. [S5] The [Lean owner authority](https://github.com/Optidigi/insignia/blob/9d69dd5f440a383400e6e8af3bb93678d66f3b9f/docs/delivery/authority/lean-v1-2026-10-15.md) supersedes the historical 10 October hybrid target; saved provider drafts/current subscriptions remain actual facts, not automatically converted contracts.
 
 Qualify actual recurring-only provider configuration and its supported billing-management/selection route before enabling it under a scoped effect grant. Use recurring-only entitlement recognition; the [17 October native billing lifecycle](../delivery/evidence/lean-v1/native-billing-lifecycle-2026-10-17.json) qualifies bounded zero-dollar development cancellation/reapproval, not a paid invoice or natural trial completion. Switching off usage dispatch alone does not qualify a provider contract. Read authoritative contract/trial/cancellation state through the supported Shopify adapter and keep a versioned feature mapping. Redirect parameters alone grant no entitlement. Server-side publication/new-offer/acceptance/renewal checks enforce supported features and Lean scope; UI hiding is insufficient.
 
@@ -388,9 +372,9 @@ Astro owns routing, server authorization and rendering. There is no application-
 
 Never return private merchant data merely because a request includes `shop`/`host` query parameters. Authenticated document requests may SSR their permitted content. A request without valid credentials returns only a minimal public bootstrap/shell; App Bridge obtains an identity token before private requests.
 
-The initial implementation candidate keeps file-based pages and uses authenticated HTML fragments for read-only server-rendered sections, and already-mounted page-local islands fetching authenticated DTOs for interactive sections. The fragment path returns trusted server-generated markup without inline application scripts; it is not a generic client router. Header-authenticated mutations use explicit endpoints. Locally implement and qualify cold-launch/deep-link/reload behavior, including whether a supported platform document-authentication mechanism removes the bootstrap step. Named native G7 browser observations may remain deferred during engineering development/review under the operating model. Do not add custom long-lived browser sessions or a SPA as an untested shortcut.
+File-based pages use authenticated HTML fragments for read-only server-rendered sections and already-mounted page-local islands fetching authenticated DTOs for interactive sections. The fragment path returns trusted server-generated markup without inline application scripts; it is not a generic client router. Header-authenticated mutations use explicit endpoints. Locally implement and qualify cold-launch/deep-link/reload behavior, including whether a supported platform document-authentication mechanism removes the bootstrap step. Record unperformed native browser observations explicitly in current state. Do not add custom long-lived browser sessions or a SPA as an untested shortcut.
 
-Set frame-ancestors for Shopify admin and the verified shop, use no-store on private responses, avoid logging URL credentials and enforce same-origin request protections alongside identity tokens. Load App Bridge and exactly one version-matched Polaris build. Initial candidate Polaris 1.1 with aligned type package; upgrades run visual/component regression tests. [S14]
+Set frame-ancestors for Shopify admin and the verified shop, use no-store on private responses, avoid logging URL credentials and enforce same-origin request protections alongside identity tokens. Load App Bridge and exactly one version-matched Polaris build. Read the tested Polaris runtime pin from `apps/web/src/layouts/AdminLayout.astro` and aligned types from the web package manifest; upgrades run visual/component regression tests. [S14]
 
 ### 7.2 Screens and use cases
 
@@ -405,6 +389,32 @@ Set frame-ancestors for Shopify admin and the verified shop, use no-store on pri
 **Billing/settings:** verified recurring-only contract/trial dates, all-released-feature and technical-limit disclosure, plus supported billing management. No usage dashboard or multi-plan comparison; labels and server authorization use the same qualified versioned contract.
 
 Do not automatically implement legacy RFQ, notes, CSV, reminder automation, QC or native order-block extensions. They are not scope through legacy inheritance.
+
+### 7.3 Current merchant implementation map
+
+**Disposition:** the merchant UI is owner-unaccepted and assigned to the fresh presentation-focused UI agent. Existing internal component, smoke and visual observations are engineering evidence only. Current layout is a replaceable implementation; the behavior and trust contracts here remain required. The continuity closeout does not start the rebuild. The explicit current assignment and acceptance work are in [state](../delivery/state.md).
+
+| File-based merchant route | Capability and implementation entry |
+|---|---|
+| `/admin/products` | Product search/pagination and entry to the independent product config; `pages/admin/products/index.astro` |
+| `/admin/products/:productId/config` | `MerchantConfigEditor.tsx`: draft/create/save/copy, method/placement/decoration-size prices, variant images, geometry, optional/required/logo-later, preview and publication reconciliation |
+| `/admin/orders` and `/admin/orders/:purchaseId` | Immutable purchase list/detail, historical preview, actual variant quantities and permitted artwork workflow; `PurchaseArtwork.tsx`, `PurchaseHistoricalPreview.tsx` |
+| `/admin/settings` | `MerchantSettings.tsx`: navigation and readiness/permissions; `ReadinessPermissions.tsx` |
+| `/admin/settings/methods` | `MethodLibrary.tsx`: create/rename/remove merchant method templates with optimistic versions and uncertain-outcome handling |
+| `/admin/settings/storefront` | `StorefrontSetup.tsx`: supported theme installation/setup guidance; not permission to publish a new theme/app version |
+| `/admin/settings/billing` | `MerchantBilling.tsx`: authoritative recurring contract/trial/access and supported management route |
+| `/admin/settings/privacy` | `MerchantPrivacy.tsx`: authorized privacy request/manifest/export reads; clear private data on authorization loss |
+| `/admin/unavailable` | Public safe recovery shell; no private-data fallback |
+
+Paths in the capability column are under `apps/web/src/` (`islands/` unless a page is specified). `/admin/billing` and `/admin/privacy` currently redirect to settings routes; redirects are navigation behavior, not separate product features. Discover the exact current route set from `apps/web/src/pages/admin/` and API route set from `apps/web/src/pages/api/`, rather than a copied file count.
+
+**API and DTO ownership:** `pages/api/admin/` exposes products/config, methods, billing, readiness and signing operations. `server/admin/http.ts` authenticates/authorizes, enforces same-origin mutations, bounds requests, and routes commands. `server/admin/contracts.ts` owns server-only service/actor ports; `shared/admin-view.ts`, `billing-view.ts` and `purchase-view.ts` hold browser-safe views. `packages/contracts/src/v1/merchant-draft.ts` and `pricing-config.ts` validate current draft/pricing inputs; purchase/buyer/proposal schemas are adjacent. Purchase/history/privacy/attachment/lock routes are in `pages/api/purchases/v1/` with `server/purchase/http.ts`; upload/inspection/download routes are in `pages/api/artwork/` with `server/artwork/`. Read their concrete validators/handlers before changing payloads. Browser bodies never select a trusted tenant, staff identity or private object key.
+
+**Shared request and save behavior:** `shared/admin-request.ts` obtains App Bridge identity tokens, shares only an in-flight token request, applies bounded request deadlines, disables cache/browser credentials/redirects, and makes one fresh-token retry on 401. It preserves typed HTTP status/validation errors. `layouts/AdminLayout.astro`, `components/AdminNavigation.astro`, shared navigation/page-ready/route utilities and skeleton/recovery components own the transitive merchant shell. `components/AdminSaveBar.tsx` delegates to supported App Bridge host Save Bar when available and uses Polaris fallback otherwise. Dirty navigation/discard requires confirmation; unknown writes remain owned by the exact original request and cannot be cleared by discard/navigation. Editor CAS/idempotency and publication journals remain authoritative across reload, conflicts and lost responses.
+
+**Presentation boundary:** actual App Home Polaris Web Components cover merchant pages and transitive shared controls, dialogs, loading/error/empty/recovery states, with appropriate Shopify page composition and reviewed responsive behavior. Component tags or HTTP 200 alone are insufficient. Supported App Bridge host declarations are preserved. `packages/visualizer` exclusively owns Konva; editor state/normalized geometry remains outside canvas nodes. The buyer Shadow DOM storefront remains separate and does not import Polaris.
+
+**Verification and preview:** `apps/web/test/admin/` contains the current auth/session, command/editor/CAS/publication, shared-control/navigation, billing/privacy/purchase and composition/browser regressions; source guard/type/rendered controls enforce the merchant closure. Find supported scripts in root/web `package.json`, strict projects through the source-contract manifest, and browser prerequisites through README. After building, `pnpm dev:admin` runs loopback-only compiled SSR with synthetic read-only data; `INSIGNIA_PREVIEW_STATE` supports `normal`, `empty`, `denied`, `unavailable`, `loading`. It deliberately excludes ambient application credentials and blocks commands, webhooks, proxy and upload writes. Browser command fixtures qualify mutation/reconciliation states; preview does not prove native authorization, provider outcomes or owner visual acceptance. Existing native browser access must be rechecked under actual scoped permissions.
 
 ## 8. Storefront
 
@@ -428,19 +438,20 @@ Guest capability is an unguessable bearer value, stored hashed server-side and s
 
 ### 8.3 HTTP contracts
 
-All following routes are upstream logical paths mapped behind App Proxy; published storefront URLs use the configured proxy mount. API version is explicit. Requests and responses are Zod-validated, size bounded and return a stable error envelope `{code,message,requestId,details?}` with no secret payloads.
+The buyer flow is implemented by `server/buyer/http.ts` behind `pages/api/artwork/v1/[...route].ts`; uploads have the separate `pages/api/artwork/guest/` handlers. Paths shown as `/v1/...` below are relative to the configured buyer upstream `/api/artwork/v1`; explicit upload paths are separate transports. They are current flow contracts, not a second router to implement; published storefront URLs use the configured proxy mount. API version is explicit. Requests and responses are Zod-validated, size bounded and return a stable error envelope `{code,message,requestId,details?}` with no secret payloads.
 
 | Method/path | Input and result |
 |---|---|
 | GET `/v1/config` | Product and current selection context → current published revision ID, safe config DTO, image/placement choices and readiness |
 | POST `/v1/sessions` | Signed shop context → guest capability and expiry; rate-limited, no cookie reliance |
-| POST `/v1/uploads` | Capability, declared metadata, idempotency key → upload ID, quarantine PUT URL, constraints and expiry |
-| POST `/v1/uploads/:id/complete` | Capability + upload ID → idempotently queue inspection, return status |
-| GET `/v1/uploads/:id` | Owner capability → inspection result and safe derivative reference; never arbitrary object-key access |
+| POST `/api/artwork/guest` | Capability, declared metadata, idempotency key → upload ID, quarantine PUT URL, constraints and expiry |
+| POST `/api/artwork/guest/:id/complete` | Capability + upload ID → idempotently queue inspection, return status |
+| POST `/api/artwork/guest/:id/status` | Owner capability → inspection result and safe derivative reference; never arbitrary object-key access |
 | PUT `/v1/designs/:id` | Versioned selection/variant vector → validated draft version; conflict is 409 |
 | POST `/v1/quote-proposals` | Complete desired customized subset and context → proposal ID/hash, breakdown, total Q, expiry, changed groups |
 | POST `/v1/quote-proposals/:id/accept` | Expected proposal hash, capability and idempotency key → immutable quote, set ID, real-variant bucket vector and tokens |
 | POST `/v1/quotes/:id/renew` | Owner capability and current desired/context vector → fresh set, or 409 REVIEW_REQUIRED, or entitlement denial |
+| POST `/v1/cart-state` | Owner capability and observed signed lines → current complete-set state for safe repair |
 | POST `/v1/cart-applications/:id/confirm` | Observed cart vector/fingerprint → UX reconciliation result; never proof of payment |
 
 Admin contracts cover draft get/save/publish/copy, authorized artwork inspection/download/attachment/lock, order queries and plan-state refresh. Commands have tenant/user context derived outside the body. Safe defaults: 400 malformed, 401 invalid capability/auth, 403 entitlement/permission, 409 stale/concurrent/review-needed, 422 domain-invalid, 429 throttled, 503 authoritative dependency unavailable.
@@ -525,7 +536,7 @@ Check positive quantities, valid currency/exponent, nonnegative final amounts, b
 
 ### 10.3 Atomicity and external work
 
-Publish intent: compare draft CAS version → validate → insert immutable requested revision and durable publication operation/outbox record in one transaction. Do not move the effective published pointer before the activation contract is satisfied. Shopify mutation and exact readback occur outside the transaction; an ambiguous response is reconciled by reading the exact desired state before retry or conflict classification. Activation separately advances the effective pointer only under the reviewed preconditions. The M0-008 in-memory journal tests model restart and ordering, not durable database transactions.
+Publish intent: compare draft CAS version → validate → insert immutable requested revision and durable publication operation/outbox record in one transaction. Do not move the effective published pointer before the activation contract is satisfied. Shopify mutation and exact readback occur outside the transaction; an ambiguous response is reconciled by reading the exact desired state before retry or conflict classification. Activation separately advances the effective pointer only under the reviewed preconditions. In-memory journal tests model restart and ordering, not durable database transactions.
 
 Accept: compare proposal/current permitted inputs → insert quote/groups/buckets/set identity → insert idempotency result in one transaction. Generate/persist signatures against committed immutable claims; reissuing after a crash uses the same set identity/claims.
 
@@ -564,7 +575,7 @@ pg-boss supplies queue scheduling/retries on PostgreSQL. Its supported Node/Post
 | `retention-warning` | Asset/deadline/notice type | Deduplicate; notice failure does not extend collection cap |
 | `delete-expired-data` | Deletion task/resource version | Retry until completed; verify missing objects is success; audit erasure without retaining erased content |
 
-Initial transient policy: exponential backoff with jitter from 5 seconds, cap 15 minutes, up to 12 automated attempts before review; honor provider Retry-After and tighter billing deadlines. These values are tuning defaults, not host-specific alert thresholds. Recurring reconciliation is independent of exhaustion of an individual job. Separate CPU-heavy image concurrency from webhook/billing queues to prevent upload floods starving economic processing.
+Default transient policy: exponential backoff with jitter from 5 seconds, cap 15 minutes, up to 12 automated attempts before review; honor provider Retry-After and tighter billing deadlines. These values are tuning defaults, not host-specific alert thresholds. Recurring reconciliation is independent of exhaustion of an individual job. Separate CPU-heavy image concurrency from webhook/billing queues to prevent upload floods starving economic processing.
 
 Jobs carry resource IDs and expected versions, not copies of full artwork, secrets or long-lived customer payloads. Check installation/deletion generation before and after external work. Use worker leases, graceful shutdown and cancellation; a shutdown must not mark unfinished work successful.
 
@@ -634,9 +645,7 @@ Health endpoints separate process liveness, DB readiness, worker freshness and i
 
 ## 14. Testing strategy and executable gates
 
-The 19 October canonical-app completion direction replaces the earlier typed-cleanup execution packet, retaining these conventions and contracts. Complete the actual repository/contributor loop and each merchant page composition, with reviewed rendered desktop/mobile states; component tags and native smoke alone do not establish visual acceptance. One current state index routes working behavior, deployed artifacts, defects and owner gates. Remove obsolete active configs/commands with consumers, preserve necessary fixture bytes and applied records, measure verification consolidation, and qualify a fresh clone/session. This is independently executable engineering work under the operating model, separate from production rollout or unallocated provider effects.
-
-The 19 October owner cleanup revision requires one strict typed implementation across maintained application, tests, fixtures, build/release/deployment/monitoring/recovery code: TypeScript/TSX/MTS/CTS or Rust. Compiler projects must include test and tooling source; runtime stripping alone is insufficient. Generated JavaScript and third-party dependencies retain provenance. SQL, Liquid, CSS, HTML and declarative infrastructure keep their appropriate formats; shell launchers remain thin. Retire superseded executable experiments and compatibility machinery with their consumers, preserving applied migrations, current protocol/persisted identities, immutable evidence and recovery readers needed by actual records. Responsibility-based names govern maintained code and commands. The source/type/rendered controls must enforce actual Shopify App Home Polaris Web Components through shared merchant views and loading/error/empty/recovery states, with supported App Bridge host controls, the Konva renderer and separate buyer storefront boundaries preserved.
+Maintained source, tests, fixtures and operational tooling use strictly compiled TypeScript/TSX/MTS/CTS or Rust. Runtime type stripping alone is insufficient. Generated JavaScript and dependencies retain provenance. SQL/PLpgSQL, Liquid, CSS, HTML and declarative infrastructure keep their formats; shell launchers remain thin. Source checks derive coverage from actual compiler projects rather than copied counts. Preserve applied migration bytes, protocol/persisted identities, current recovery readers and necessary records; assess database routines by responsibility, never by a language statistic.
 
 ### 14.1 Testing layers
 
@@ -654,7 +663,7 @@ The 19 October owner cleanup revision requires one strict typed implementation a
 
 ### 14.2 Gate register — Lean V1 shipping criteria
 
-The [15 October owner amendment](../delivery/authority/lean-v1-2026-10-15.md) narrows these existing gates prospectively. Dated G1–G8 results, failures and fixtures keep their original claims; no deferred capability becomes PASS. Reuse valid unchanged observations and qualify changed boundaries. The maintained [delivery state](../delivery/state.md) records actual completion, limits and owner dependencies; this plan is not an acceptance receipt. Relevant final-candidate CI and proportionate independent correctness/security review remain required.
+G1–G8 identify the applicable Lean acceptance mechanisms. Dated results, failures and fixtures keep their original claims; no deferred capability becomes PASS. Reuse valid unchanged observations and qualify changed boundaries. The maintained [delivery state](../delivery/state.md) records actual completion, limits and owner dependencies; this plan is not an acceptance receipt. Relevant final-candidate CI and proportionate independent correctness/security review remain required.
 
 | Gate | Lean executable acceptance | Deferred/history and failure boundary |
 |---|---|---|
@@ -667,19 +676,11 @@ The [15 October owner amendment](../delivery/authority/lean-v1-2026-10-15.md) na
 | **G7: useful authenticated admin/storefront** | Native merchant authentication, publish/copy/conflicts, simple price table, geometry/images, installation/readiness, purchase/historical preview/original retrieval, permitted merchant replacement/lock and retention indicators. Verify staff/tenant/privacy boundaries, important cold/deep/reload/recovery and representative desktop/mobile legacy visual/interaction fidelity. | No unrelated redesign, legacy admin/RFQ/ERP inheritance, buyer post-order upload expansion, usage dashboard or multi-plan comparison. Known defects remain defects, not owner-browser deferrals. |
 | **G8: recurring-only subscription** | Actual USD $49.99/30-day single-plan contract, authoritative 14-day trial, cancellation/reauthorization/current entitlement, no-entitlement new-action restrictions, valid-old-offer handling and authorized retained artwork/history; usable merchant billing-management route. Qualify the flat-only reader against actual provider observations. | Hybrid meter/allowance/overage/sender/back-billing matrices are DEFERRED / NOT SHIPPING, not PASS. Preserve/reconcile genuine existing obligations and financial history. Disabling dispatch does not qualify recurring-only recognition. |
 
-### 14.2.1 Current acceptance map — five owner-approved outcomes
+### 14.2.1 Integrated outcomes
 
-Retain M0–M11/G1–G8 identifiers for traceability and useful existing dependency evidence. Delivery now closes the following five outcomes; there is no separate principal/milestone permission gate. An unchanged bounded feasibility result is not a new native PASS. Deferred features need exclusion tests, not completion of the historical matrix. New provider/store/deployment/test-checkout effects still require actual scoped grants; owner rollout and real-charge authority remain separate.
+The five outcomes are Lean pricing/currency scope; recurring subscription/entitlement; native purchase-to-original journey; storefront/admin/privacy/recovery; and reproducible operation/public-app readiness. The gate table and corresponding technical sections define their criteria. Old milestone IDs in evidence identify historical dependencies; they create no separate approval checkpoint or obligation to replay superseded matrices.
 
-| Outcome | Reused mechanisms/evidence | Remaining acceptance boundary |
-|---|---|---|
-| **1. Lean pricing/currency scope** | Existing exact-money engine, configuration/revision history, v2/cart/Function path (G1–G6; M2/M4/M5/M7). | Editor and backend constrain final nonnegative method × placement × size prices; missing unavailable/explicit zero; no setup/tier/FX/layer/override new offers. Qualified primary-market shop-currency contexts only. Old accepted terms/expiry remain exact; incompatible new issuance/renewal requires a Lean replacement and review. |
-| **2. Recurring subscription/entitlement/UI** | Existing installation/credential/current-provider readers and retained financial facts (G8; M4/M9). | Qualify actual recurring-only 49.99/30-day/14-day-trial contract, cancellation/reauthorization/new-action eligibility and merchant billing route. New usage staging/dispatch is disabled, no flat/trial-period back-billing; preserve/reconcile genuine prior effects. |
-| **3. Complete native purchase/artwork journey** | Proven unchanged artwork/cart/order/purchase/payment/storage components and source-bound evidence (G1/G3/G4/G6; M5–M8). | Authenticate merchant → configure/publish Lean → buyer uploads/customizes/reviews → actual cart/permitted test checkout → independent worker order/payment reconciliation → durable purchase/first-paid → authenticated original and historical-preview retrieval. Qualify changed boundaries plus important rejection/repair/duplicate/restart/concurrency behavior. Test checkout is not a billable usage or rollout proof. |
-| **4. Storefront/admin/privacy/recovery** | Actual legacy captures, shared visualizer, authentication, safe inspection/access, retained-record and cleanup controls (G6/G7; M5/M6/M8/M10). | Corresponding desktop/mobile appearance/interactions; complete usable Lean admin, historical previews, original downloads, merchant replacement/locking; privacy handling, actual object/payload retention/cleanup, credential rotation and important failure/restart behavior. Existing expiry/cleanup obligations continue throughout rescope. |
-| **5. Reproducible operation/public-app readiness** | Versioned artifacts, scoped roles, host isolation, independent release authority, migrations and recovery evidence (G2/G3/G7/G8; M10/M11). | Versioned Docker images + Compose on VPS + Traefik HTTPS include web/worker/inspector/verifier responsibilities without agent sessions/mutable checkout. Qualify explicit host prerequisites, readiness, stop/restart, compatible migrations, backup/restore with erasure reapplication, rollback and actionable monitoring. Explain any unavoidable host application-service exception for owner decision. Applicable Shopify/public-app approvals and owner-authorized rollout remain due. |
-
-Published historical Function resource ceilings remain reference evidence; qualify current pinned limits and measured headroom for the enabled profile. A physical garment count is not a signed-line count. [S4]
+Function capacity is a measured enabled profile with headroom, not a universal merchant capacity. Physical garment count differs from signed-line count. Qualify pinned platform limits and reject beyond current admission guards. [S4]
 
 ### 14.3 Release acceptance
 
@@ -689,188 +690,25 @@ Obtain applicable Shopify/public-app scope/protected-data/privacy/distribution a
 
 Compare actual corresponding legacy screenshots/interactions on representative supported desktop/mobile states; synthetic schematics or modal markdown alone do not prove fidelity. Preserve exact originals/history/retention and the unchanged Option A/protocol/tenant/resource boundaries.
 
-## 15. Dependency-aware implementation sequence
+## 15. Evolution and operation
 
-**Historical sequence/current routing:** M0–M11 below retain dependency and evidence traceability; completed work is reused, not restarted. PF-001 and the original broad spike matrices remain historical entry records. Current shipping work closes the five Lean outcomes in §14; superseded capabilities are deferred/not shipping rather than still owed by their old milestone.
+Lean V1 is the sole supported product version. Keep historical readers only for demonstrated retained purchase/preview records, unexpired issued offers or unsettled recovery obligations. Dated evidence alone does not justify compatibility machinery. New writes use the explicit current version; immutable snapshots and stored prices are records, not caches to recompute on upgrade. Deploy verification support before issuing a changed protocol and retain support through valid offer windows.
 
-Only the small scaffolding necessary for a spike precedes platform risk proof. The full workspace/domain/database/admin build does not precede the foundational pricing/authorization evidence in section 14.2.1. G7/G8 can run in parallel with the pricing spike where independent. Entry evidence, feature acceptance and release acceptance are separate decisions; a partial gate observation does not satisfy an unproved substantive dependency.
+Use additive migrations/backfills for online compatibility and separately authorized destructive cleanup. Rollback must decode offers already issued by the new version and preserve purchase records/deletion commitments. Applied migrations remain immutable. Database tenant/economic/erasure constraints, triggers and narrow privileged routines retain their enforced responsibility rather than moving into broadly privileged application code.
 
-### M0 — Platform, authorization, embedded-auth and billing proof
+Normal operation uses versioned Docker images and Compose with Traefik HTTPS for web, worker and independent verifier; no agent session or mutable development checkout is a runtime dependency. The approved narrow exception is the existing isolated artwork-inspection host service, running an independently verified immutable CI package under its sandbox/grants. This does not authorize another host service. Current runbooks and the checklist linked from [state](../delivery/state.md) carry environment-specific access, custody, grants, recovery, monitoring and rollout actions. Engineering qualification never waives independent authority, actual expiry or owner-held production actions.
 
-**Goal:** Establish the locked mechanisms can meet their invariants before building the full app.  
-**Prerequisites:** This record; dedicated test-store/app access; current primary API schemas.  
-**Created:** Minimal spike harness, provisional TS/Rust codec, two Functions, small Astro/Polaris auth harness, billing client harness, evidence directories.  
-**Work:** Establish bounded feasibility and interface contracts for the original G1–G8 criteria using fixed test configurations/prices and minimal spike persistence. Capture actual parent/component/price inputs, representative public-app real-variant lifecycle and independent rejection, full-path resource measurements, embedded identity and provider contract/processing evidence. Record every remaining original criterion against its owning milestone in section 14.2.1.
-**Tests:** Source-bound spike suites and reproducible merchant steps where authorized; preserve failed and unrun rows.
-**Acceptance:** The engineering lead qualifies a reviewed bounded feasibility basis with build hashes, exact context, observed limits and no unresolved mechanism failure in the proposed M1 foundation. This is **not** a complete G1–G8 PASS. Narrow adapter/protocol contracts and later blocking criteria are explicit. Do not build the complete admin or production billing engine as a substitute for a spike.
-**Commitment afterward:** Cart materialization and enforcement have a reviewed basis, not final production acceptance. Freeze a protocol only after the selected G3/G5 evidence and owner adoption for a material protocol change. No production data exists yet; a failed spike is cheap to discard.
+## Platform reference register
 
-### M1 — Workspace and enforced boundaries
-
-**Goal:** A reproducible development/CI foundation, not a platform framework.  
-**Prerequisites:** Reviewed M0 feasibility/contracts, including measured candidate capacity, public-app same-variant/economic-protection basis and known compatible versions. Applicable Lean criteria remain mapped by section 14.2.1.
-**Created:** `apps/*`, package exports, Cargo workspace, pnpm lockfile, toolchain pin, minimal CI, dependency-cruiser rules.  
-**Work:** Strict TS, browser/server entry boundaries, lint/type/test/build, versioned Shopify extension builds, secret scanning and immutable CI artifacts. Migrate proven spike code into narrow owned modules instead of copying everything.  
-**Tests:** Import-rule negative fixtures, Node/Preact/Astro build, both Wasm builds, native Sharp smoke test in worker build image.  
-**Acceptance:** A clean checkout installs/builds/tests; forbidden dependency imports fail CI; no React or react-konva workaround introduced.  
-**Commitment afterward:** Public package exports and ownership boundaries; internal file names remain refactorable.
-
-### M2 — Domain and executable economics
-
-**Goal:** Complete pure configuration, identity and pricing invariants.  
-**Prerequisites:** M0 normalization/capacity findings; M1.  
-**Created:** `domain`, `contracts`, application port skeleton, pricing/identity fixtures.  
-**Work:** Reuse groups/variant vectors, exact Money and existing engine/history; enforce the Lean final nonnegative per-placement unit-price profile at new authoring/issuance/renewal boundaries. Preserve immutable proposals/quotes and production readiness; advanced setup/tier/FX structures serve historical readers only.
-**Tests:** Lean independent totals/missing-zero cases, unsupported configuration rejection, qualified currency/context, late/current revision and schema-version boundaries; retain unaffected historical engine examples where readers depend on them.
-**Acceptance:** Lean pricing is deterministic and browser-independent; every garment/base/surcharge is counted exactly; historical economics stay unchanged; no server/network imports in domain.
-**Commitment afterward:** Identity/pricing semantics and serialized schema version. Any later change to accepted economics needs a new version.
-
-### M3 — Persistence, installation and durable delivery skeleton
-
-**Goal:** Save new-system data safely and receive/recover events.  
-**Prerequisites:** M1–M2.  
-**Created:** Database migrations/repositories, application transactions, inbox/outbox, worker/pg-boss, Shopify credential adapter, logging/metrics.  
-**Work:** Tenant constraints, draft/revision storage, command idempotency, expiring token rotation, installation generations, raw webhook ingress and transactional dispatch. Start deletion metadata now, not after data has accumulated.  
-**Tests:** Real PostgreSQL transactions/races, webhook HMAC/duplicate/out-of-order cases, crash between enqueue and acknowledge, missing wrapping keys, refresh lost response.  
-**Acceptance:** No acknowledged webhook is lost; retries do not duplicate business facts; stores cannot access each other's records.  
-**Commitment afterward:** Database identity/tenant model and migration conventions; no production import compatibility promised.
-
-### M4 — Shopify pricing, authorization and entitlement adapter
-
-**Goal:** Replace spike fixtures with production ports for safe quoting.  
-**Prerequisites:** M2–M3; accepted M0 contract evidence and representative G4 context contract. Establish actual recurring-only G8 trial/contract/cancellation behavior before accepting the corresponding entitlement rules.
-**Created:** Catalog/context adapters (historical FX retained), server signer, key/Function reconciliation, subscription projections and feature-policy service.
-**Work:** Batch contextual lookups, freshness checks, exact decimal boundary, known-currency matrix, publication-readiness projection, stable per-plan feature catalog structure and issuance authorization. Implement Shopify App Pricing contract reads early because publication and quote eligibility depend on them.  
-**Tests:** Provider contract fixtures, expired/rotated credentials, unavailable/unsupported context, desired/observed drift, no-entitlement/downgrade rules and key overlap.
-**Acceptance:** A programmatic immutable accepted quote yields the same validated prices as the spike; missing entitlement/pricing/config blocks issuance without affecting old valid offers.  
-**Commitment afterward:** External adapter contracts, the separately adopted versioned protocol and feature identifiers; future incompatible change is explicit/versioned.
-
-### M5 — Shared visualizer and new admin configuration
-
-**Goal:** Merchant can configure, preview and publish a product.  
-**Prerequisites:** M2–M4 and accepted G7 embedded identity/navigation feasibility.
-**Created:** Visualizer package, page-local Preact editors, Astro routes and admin command endpoints.  
-**Work:** Pure geometry projection, direct Konva editor, variant/color images, simple final method × placement × size price table, copy-to-product, draft CAS and publish readiness. Capture storefront visual fixtures in parallel, without porting legacy backend.
-**Tests:** Geometry roundtrips/contain-fit, UI→canvas/canvas→UI, server/browser scene agreement, concurrent editing, missing preview fallbacks, required-feature errors.  
-**Acceptance:** A merchant publishes a correct revision; changing the draft or defaults leaves historical revision/prices unchanged. Engineering readiness requires the implemented usable flow and relevant local qualification, with defects and named deferred native/browser observations explicit. Full native acceptance still requires G7 staff/session/browser/grant-cache/save-recovery and Option A readiness/activation evidence; it remains distinct from engineering review and rollout.
-**Commitment afterward:** Serialized config/geometry contracts and merchant workflow; old published versions need readers, not mutation.
-
-### M6 — Secure artwork vertical slice
-
-**Goal:** Buyer/merchant artwork becomes genuinely usable through the safe pipeline.  
-**Prerequisites:** M3; M5 for preview integration.  
-**Created:** R2 adapter, upload/session endpoints, isolated inspector, derivative worker, artwork UI.  
-**Work:** Direct quarantine upload, exact-byte immutable promotion, resource limits, ownership, safe previews, merchant original download and retention metadata.  
-**Tests:** Valid SVG/PNG/JPEG, MIME spoofing, decompression bombs, external SVG references, timeout/memory kill, overwritten quarantine after inspection, retry/orphan cleanup, cross-tenant/expired URL access.  
-**Acceptance:** No quote can use an unverified file; merchant gets byte-identical original; arbitrary SVG never executes inline.  
-**Commitment afterward:** Asset revision/retention contract; processing changes receive an inspection version.
-
-### M7 — Complete storefront quote/cart purchase slice
-
-**Goal:** A buyer customizes, reviews cart-wide economics and checks out safely.  
-**Prerequisites:** M4–M6 and accepted G1–G6 foundation contracts for the supported checkout path. Remaining G1–G6 criteria block M7 feature acceptance rather than the act of implementing the feature.
-**Created:** Theme block/embed, Custom Element/Shadow DOM, Preact state, App Proxy contracts, proposal/acceptance/cart-application use cases.  
-**Work:** Visual-reference flow, per-placement artwork/logo-later, size/color quantity vector, complete-subset Lean review/pricing, exact real-variant buckets, Lean-fenced renewal and outside-cart mutation repair through ordinary checkout; unsupported express routes reject safely.
-**Tests:** Relevant browser/native acceptance, Lean prices and missing-zero exclusions, identical/different designs/variants/quantities, multi-tab/lost-response recovery, ordinary discounts and qualified primary-market contexts, pending/rejected files and required products; preserve historical split/tier fixtures without new scope.
-**Acceptance:** Accepted pre-discount quote equals materialized total exactly; no unsupported path silently falls back to base-price customization; visual reference review passes. Remaining G1–G6 supported-context, resource, transport and enforcement criteria pass for this checkout path before it is accepted.
-**Commitment afterward:** Storefront API v1, signed cart contract and buyer review behavior; backward compatibility for issued offers becomes necessary on deployment.
-
-### M8 — Purchase snapshots, artwork work and refunds
-
-**Goal:** Orders retain exactly what was bought and usable production originals.  
-**Prerequisites:** M3 and M7.  
-**Created:** Order/refund reconciliation, immutable purchase storage, minimal order/artwork admin.  
-**Work:** Bind actual order lines to complete sets, capture historical config/geometry/images, append first-paid/refund facts, merchant-only later artwork/lock, reconcile missing webhooks and unsupported order edits.  
-**Tests:** Delayed orders/create vs paid, repeat authorizations in distinct orders, real fulfillment/restock, partial refunds, late artwork replacement and immutable historical preview.  
-**Acceptance:** Real product variants/quantities/prices are correctly visible and operable in Shopify; replacement artwork never overwrites purchase history.  
-**Commitment afterward:** Purchase/event identities and audit semantics; real order data would require compatible readers.
-
-### M9 — Recurring-only subscription and entitlement lifecycle
-
-**Goal:** Qualify the single Lean recurring plan, authoritative trial/access behavior and useful merchant billing UI; prior usage work is deferred/not shipping.
-**Prerequisites:** Existing installation/current-provider readers and trustworthy purchase/history records; actual approved provider configuration/selection authority before effects. Old hybrid feasibility does not prove recurring-only recognition.
-**Work:** Adapt flat-only contract mapping for 49.99/30-day/14-day trial, cancellation/reauthorization/new-action eligibility, valid-old-offer and retained-artwork access. Disable new usage staging/dispatch for flat operation; preserve financial facts and resolve genuine prior obligations without retroactive charges.
-**Tests/acceptance:** Actual contract/trial/cancellation observations and supported billing management; stale/absent/inactive state rejects new actions, history remains authorized within retention, no trial/flat back-billing. Outcome2/G8 in §14 governs completion; no allowance/meter/sender matrix is owed for Lean launch.
-**Commitment afterward:** The actual recurring contract and versioned feature/access semantics. Owner terms, saved drafts and development effective-zero observations alone are not configured commercial acceptance.
-
-### M10 — Recovery, retention, security and release qualification
-
-**Goal:** Validate the integrated application's failure behavior before infrastructure release.  
-**Prerequisites:** M3–M9.  
-**Created:** Complete cleanup/reconciliation jobs, privacy export/redaction, fault-injection suites, operational readiness pages.  
-**Work:** Collection deadlines/warnings, end-to-end object/payload erasure, uninstall/reinstall isolation, no-PII logs/jobs, fault drills, bounded queues/metrics and final App Store scope/privacy checklist.  
-**Tests:** Kill workers around commits, drop webhook deliveries, rotate keys/tokens, simulate DB/Shopify/R2 failures, delete old artwork still referenced by unfinished orders, replay erasure after restore in a disposable environment.  
-**Acceptance:** Every applicable supported failure in section 13 has an observed test; all applicable Lean §14 criteria are qualified on the release candidate; required public-app approvals and disclosures ready.
-**Commitment afterward:** External privacy promises, security guarantees and compatibility envelope; changes must be deliberate and documented.
-
-### M11 — Production environment and controlled release
-
-**Goal:** Build the actual production environment using the proven application requirements.  
-**Prerequisites:** Applicable Lean recovery/privacy/release evidence; close the remaining reproducible deployment outcome without restarting completed environment work.
-**Created:** Host-specific deployment/backup/restore/monitoring implementation and runbooks.  
-**Work:** Deliver versioned Docker images/Compose on the VPS with Traefik public HTTPS, including web/worker/inspector/verifier responsibilities. Qualify secrets delivery, host security prerequisites, DB recovery, R2 erasure-aware restore, isolation, compatible migrations and actionable monitoring. Agent sessions and mutable development checkouts cannot be normal runtime dependencies; explain any unavoidable host-side application-service exception for owner decision. Publish Shopify app/extensions and perform a controlled live merchant installation only with appropriate authorization.
-**Tests:** Production-like restore, old/new Function/key/quote compatibility, readiness, rollback of code without rewriting accepted records, real merchant end-to-end acceptance.  
-**Acceptance:** Proven recovery and release procedure, compatible external versions, operational ownership and no outstanding release-blocking gate.  
-**Commitment afterward:** Live public contracts and merchant data. Rollback must preserve issued offers, purchase records and deletion commitments.
-
-## 16. Implementation method for coding agents
-
-The authoritative delivery procedure is `../delivery/operating-model.md`. This section retains architecture-specific implementation requirements. Read both before implementation. The [tooling register](../delivery/tooling-register.md) records observed tool capabilities; the [agent-role reference](../delivery/agent-roles.md) provides optional task-brief context under that policy.
-
-### 16.0 Milestone engineering and native acceptance
-
-The accountable lead owns delivery through the approved plan under the [operating model](../delivery/operating-model.md). At meaningful boundaries record integrated refs, cumulative behavior, evidence, defects, owner dependencies and cleanup obligations, then continue as substantive dependencies qualify. Principal review and separate milestone permission are retired prospectively. No deferred observation establishes full G7/M5/native acceptance or rollout eligibility.
-
-Known implementation defects stay explicit. Missing native browser access permits continued independent development and ENGINEERING_READY / NATIVE_ACCEPTANCE_DEFERRED review; it does not excuse weak authentication or invent provider evidence. Current trust/freshness implementation is revisable under the operating model while preserving independent authority, true historical records and current authorization.
-
-### 16.1 Work in narrow vertical slices
-
-Each slice must name the use case, invariant, package owner and relevant gate evidence. Start from an input/output contract and failing test; implement domain rule, migration/repository and one adapter path, then exercise an end-to-end behavior. Do not build every table, endpoint and component horizontally before a buyer can perform one safe purchase.
-
-Only create interfaces for actual external boundaries or genuinely separate callers. Prefer a concrete method like `publishProductConfig` over generic repositories/event-bus abstractions. Use explicit typed errors and transaction boundaries. Application owns orchestration; controllers and jobs adapt transport and invoke it.
-
-### 16.2 Required change bundle
-
-For a behavior-changing pull request, include the new/updated invariant test, implementation, schema migration when relevant, contract/schema version impact, failure/retention implications and current evidence for any altered Shopify assumption. Golden fixtures must change together across TypeScript and Rust. Do not update golden expected outputs merely to make a failing signature/price test pass without explaining the intended version change.
-
-At a milestone, demonstrate the acceptance criteria, summarize risks and update the evidence/decision ledger. “Build succeeds”, “Shopify docs say it works” and “HTTP 202” do not substitute for the corresponding acceptance tests.
-
-### 16.3 CI gates
-
-Choose relevant strict typecheck, dependency-cruiser, unit/property/golden, PostgreSQL, Rust/Wasm, generated Shopify schema, Playwright, secret/dependency and release-build checks by change impact. Complete integrated qualification at milestone/release boundaries; harmless edits do not require every suite. Keep fixture keys out of production configuration and server-only code out of storefront bundles. Produce versioned artifacts with source revision and protocol/config/pricing versions.
-
-Some real-store tests and billing-log checks require controlled external credentials/operator review. CI should mark those as required external evidence, not fabricate automated success. Destructive inventory/refund/uninstall tests run only in dedicated stores.
-
-### 16.4 Schema/protocol evolution
-
-Lean V1 is the sole supported product version. Keep a historical reader only for demonstrated actual retained purchase/preview records, unexpired issued offers or unsettled recovery obligations; dated evidence alone does not justify executable compatibility machinery. New writes use the current explicit version; actual immutable snapshots are not silently rewritten. Never change a protocol field's meaning without a new version. Deploy verifier support before issuing a new protocol; keep old support through valid windows. Treat stored prices as records, not caches to recompute on library upgrade.
-
-Online deployment compatibility is an application requirement under the reproducible Lean deployment target. Use additive migrations/backfills and separately authorized destructive cleanup. A rollback cannot make the previous application unable to decode offers the new one has already issued.
-
-### 16.5 Stop/reopen rule
-
-If a gate fails, preserve fixtures and record the smallest violated invariant, actual platform result, realistic alternatives and recommendation. Reopen only the impacted boundary. Do not respond by rebuilding React, using synthetic fee products, removing signatures, overriding tax, widening retained PII or introducing legacy migration code without an explicit decision.
-
-Routine implementation tuning—indexes, retry intervals, resource budgets, file organization—does not require another architecture questionnaire. Material new business semantics or evidence that contradicts a lock does.
-
-## 17. Decision ledger
-
-The [decision ledger](decision-ledger.md) is the single current decision record. This plan defines implementation and acceptance; it does not maintain a second copy of the locks. Historical plan versions remain recoverable from their recorded commits.
-
-## Source register — checked 24 September 2026
-
-Primary sources document the external behavior noted in the plan. Linked references are rendered here as code URLs for portability. Recheck relevant versions at M0; do not assume future changes preserve these details. The implementation design itself is authored for Insignia and is not a paraphrase of any single source.
+These primary-source pointers explain platform choices. They are a reference index, not current capability receipts; recheck affected versioned APIs before changing behavior. Manifests and source-bound observations determine tested versions. Historical-only usage-billing research remains in Git history.
 
 | Ref | Source and supported subject |
 |---|---|
-| S1 | Shopify Cart Transform reference, current 2026-07: availability, collision rules, fixed presentment pricing, operation shapes. `https://shopify.dev/docs/api/functions/latest/cart-transform` |
+| S1 | Shopify Cart Transform reference, versioned availability, collision rules, fixed presentment pricing, operation shapes. `https://shopify.dev/docs/api/functions/latest/cart-transform` |
 | S2 | Shopify Cart & Checkout Validation: costs, journey steps, local time and target schema. `https://shopify.dev/docs/api/functions/latest/cart-and-checkout-validation` |
 | S3 | Cart Transform creation and validation configuration: `https://shopify.dev/docs/api/admin-graphql/latest/mutations/cartTransformCreate` ; `https://shopify.dev/docs/api/admin-graphql/latest/input-objects/ValidationCreateInput` |
 | S4 | Function runtime limits and execution overview; Rust build target. `https://shopify.dev/docs/api/functions/latest` ; `https://shopify.dev/docs/apps/build/functions/programming-languages/rust-for-functions` |
 | S5 | Shopify App Pricing integration, Partner API state/history, changed notification model. `https://shopify.dev/docs/apps/launch/billing/shopify-app-pricing` |
-| S6 | Monthly combined subscription/usage contract. `https://shopify.dev/docs/apps/launch/billing/shopify-app-pricing/subscription-billing/combined-subscription-and-usage` |
-| S7 | Usage meters and graduated/volume billing. `https://shopify.dev/docs/apps/launch/billing/shopify-app-pricing/subscription-billing/setup-usage-charges` |
-| S8 | App Events versioned creation, permanent billing idempotency, asynchronous validation and uninstall window. `https://shopify.dev/docs/api/app-events/latest/creating-events` |
 | S9 | App Proxy authentication, signed query context and cookie/header behavior. `https://shopify.dev/docs/apps/build/online-store/app-proxies/authenticate-app-proxies` |
 | S10 | Custom-framework embedded token exchange. `https://shopify.dev/docs/apps/build/authentication-authorization/implement-token-exchange` |
 | S11 | Shopify contextual variant pricing. `https://shopify.dev/docs/api/admin-graphql/latest/objects/ProductVariantContextualPricing` |
@@ -894,7 +732,3 @@ Primary sources document the external behavior noted in the plan. Linked referen
 | S29 | Cloudflare R2 presigned URL semantics. `https://developers.cloudflare.com/r2/api/s3/presigned-urls/` |
 | S30 | Sharp constructor/decode limits/options. `https://sharp.pixelplumbing.com/api-constructor/` |
 | S31 | Shopify access scopes: least privilege, approval requirements and the default 60-day order access window. `https://shopify.dev/docs/api/usage/access-scopes` |
-
-### Historical owner single-plan commercial amendment — 10 October 2026 (prospectively superseded by Lean V1)
-
-The [owner decision](../delivery/authority/commercial-single-plan-2026-10-10.md) binds one all-released-feature paid plan, USD $49.99 per 30-day cycle, 100 included qualifying paid orders, USD $0.10 additional order fee and 14-day live trial with both fees waived. This prospectively changes current commercial configuration targets, not historical JSONB/receipts or old feature/downgrade/recovery semantics. G8 retains allowance/trial/first-paid/idempotency/cancellation/late-delivery/reconciliation requirements and historical plan-change compatibility controls; it no longer requires three new paid offers. Native pricing/development entitlement configuration and resource permissions are not fabricated. No M9/G8 execution, milestone completion or rollout is granted.

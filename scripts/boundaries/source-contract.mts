@@ -74,15 +74,11 @@ const retiredExecutable = new RegExp(
 const currentDocuments = new Set([
   'README.md',
   'AGENTS.md',
-  'HANDOFF.md',
-  'docs/delivery/tooling-register.md',
-  'docs/delivery/agent-roles.md',
   '.agents/skills/PROJECT-ADAPTATIONS.md',
   'docs/architecture/implementation-plan.md',
-  'docs/architecture/decision-ledger.md',
+  'docs/architecture/WHOLE-QUOTE-V2-ADOPTED.md',
   'docs/delivery/operating-model.md',
   'docs/delivery/state.md',
-  'docs/delivery/evidence/m8-context-runtime/WORKLIST.md',
 ]);
 function inspectCommandTargets(root: string, path: string, text: string): void {
   for (const command of text.matchAll(
@@ -106,12 +102,10 @@ function inspectCurrentReferences(root: string, files: string[]): void {
       !(/\.(?:[cm]?[jt]sx?|py|sh)$/.test(path) && retiredExecutable.test(path)),
       `RETIRED_EXECUTABLE_PATH ${path}`,
     );
-    // The lifecycle proposal and frozen schema manifests are immutable provenance,
-    // not current command authority. Applied migration identity/bytes are preserved.
+    // Applied migration identities and bytes remain immutable records.
     if (
       /^(?:apps|packages|scripts|deployment|\.github)\//.test(path) &&
       !path.startsWith('packages/database/migrations/') &&
-      path !== 'scripts/lifecycle/SERVICE-PROPOSAL.json' &&
       /\.(?:[cm]?[jt]sx?|astro|json|ya?ml|toml|sh|sql|service|in)$/.test(path)
     ) {
       assert(

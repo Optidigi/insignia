@@ -1,9 +1,6 @@
-# Restricted operational alerts (source candidate)
+# Restricted operational alerts
 
-This candidate sends only `Insignia Alerts <insignia-alerts@optidigi.nl>` to
-`admin@optidigi.nl`. No Worker, DNS, destination verification, credential, image,
-container or message has been created by adding these files. Four bounded drill messages have recorded delivery evidence; installed production producer/monitor wiring, receiver SPF/DKIM/DMARC and application readiness remain **unqualified**. Do not resend a drill merely because header qualification is deferred. Production deployment, public-app
-review and storefront visual review are outside this change.
+The relay permits only `Insignia Alerts <insignia-alerts@optidigi.nl>` to `admin@optidigi.nl`. [Delivery state](../../docs/delivery/state.md) owns installed wiring, observed drills/email delivery, outstanding authentication evidence and permitted next actions. Source and local tests do not establish provider deployment or application readiness; do not repeat consumed drills or verification messages.
 
 Run local behavioral checks from the repository root:
 
@@ -27,7 +24,7 @@ synthetic inputs, load the actual R2/pg module closure and execute the copied
 backup helper to a deliberately rejected database boundary and copied replica
 pruner to a deliberately rejected transport boundary without provider calls.
 Set `M5_WORKER_PACKAGE_ENTRY` to the current portable worker entrypoint to run the
-actual artifact case. Native Docker is unavailable locally; CI must build and
+actual artifact case. CI must build and
 qualify the standalone operations image. These checks do not prove Cloudflare
 transaction behavior, binding restrictions
 or email delivery.
@@ -105,7 +102,7 @@ only, never native qualification. No credentials, snapshots, private inputs or
 historical evidence enter the artifact. Retain the external CI manifest digest.
 
 Build `Dockerfile.heartbeat` with that new directory as its context. It uses the
-same pinned Node24.21.0 base digest as the web/worker images and copies only the
+same Node base digest pinned in the build source as the web/worker images and copies only the
 operations package, preserving complete module paths. Reference the resulting
 immutable image digest in `compose.heartbeat.yaml`. The snapshot service executes
 the packaged Node binary and collector path. No mutable checkout or host
@@ -163,7 +160,7 @@ items, never unique customers. No usage table or contiguous migration assumption
 is used. Query failures, missing schema/grants and unqualified database clock
 replace old healthy snapshots with unknown; they never fabricate zero backlog.
 
-The backup source scans a private bounded inventory of the actual backup.py store,
+The backup source scans a private bounded inventory of the actual typed backup operator store,
 validates UUID intents/successful receipts and matching private ciphertext file
 sizes,
 uses their successful completedAt (older createdAt is conservative fallback) and
@@ -191,15 +188,17 @@ old. The replica pruner writes unknown before provider work and zero only after
 qualified completion. Missing, stale, null or wrong-target evidence makes deletion
 unknown even when local backup and database aggregates are healthy. Numeric remote
 backlog joins the local/database deletion aggregate. This consumes protected local
-receipts only; the collector makes no remote calls. Native completion/prune source
-custody and the actual independent destination still need qualification.
+receipts only; the collector makes no remote calls. Qualify native completion/prune source
+custody and the actual independent destination before admission.
 
 Snapshot files are atomically replaced mode0600 in an owned0700 directory. No
 exporter starts or external grants are applied merely by adding these templates.
-Native monitor-role/source wiring, actual backup scheduling and native
-source observations remain due before the respective signal can be called healthy.
+Only qualified native monitor-role/source wiring, actual backup scheduling and
+source observations can establish the respective signal as healthy.
 
-## Native prerequisites (no action authorized here)
+## Qualification procedure
+
+Use only the effects allocated by the [current checklist](../../docs/delivery/state.md) and operating model; these steps describe dependencies, not fresh grants or a second backlog.
 
 1. Pin/qualify Wrangler and generated Env types supporting the documented structured
    Email Sending binding; validate/bundle this config without deploying. Qualify
@@ -223,7 +222,7 @@ source observations remain due before the respective signal can be called health
    independent VPS failure coverage. Monitor this external route's own operation;
    it cannot prove its own email/Cloudflare outage absent another observation.
 
-Contract provenance: [agreed research](../../docs/delivery/notes/cloudflare-alert-worker-contract-2026-10-18.md).
+Contract provenance: [agreed research](https://github.com/Optidigi/insignia/blob/9d69dd5f440a383400e6e8af3bb93678d66f3b9f/docs/delivery/notes/cloudflare-alert-worker-contract-2026-10-18.md).
 Current official contracts checked during implementation:
 [storage and transactions](https://developers.cloudflare.com/durable-objects/api/legacy-kv-storage-api/),
 [namespace binding](https://developers.cloudflare.com/durable-objects/api/namespace/),

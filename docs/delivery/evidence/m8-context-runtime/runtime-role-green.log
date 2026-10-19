@@ -1,9 +1,0 @@
-✔ actual queue-member login reconciles signed initial and renewed offers, paid/refund history, replay and tenant fences (532.34549ms)
-ℹ tests 1
-ℹ suites 0
-ℹ pass 1
-ℹ fail 0
-ℹ cancelled 0
-ℹ skipped 0
-ℹ todo 0
-ℹ duration_ms 944.415081

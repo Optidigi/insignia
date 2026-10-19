@@ -1,6 +1,6 @@
 {
   "purpose": "Offline memory replay of sealed acknowledged restore responses and complete canonical-run hash membership. Original STOPPED/CONFLICT outcome and acknowledgement timestamps are retained; no provider transport, credentials, retry or new grant.",
-  "originalRecords": "Retained unchanged at sourcePath and fixed sourceCommit; these byte-identical copies are maintained test/replay inputs, not executable historical workflows.",
+  "originalRecords": "Original records are retained in Git history at sourceCommit:sourcePath; these byte-identical copies are maintained test/replay inputs, not executable historical workflows.",
   "files": [
     {
       "fixture": "canonical-run-manifest.json",

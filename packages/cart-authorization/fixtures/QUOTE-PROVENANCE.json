@@ -1,6 +1,6 @@
 {
   "purpose": "Versioned persisted quote/signature/exact-economics regression and actual TS-to-Rust Function replay. Historical record versions and bytes are unchanged; not new issuance.",
-  "originalRecords": "Retained unchanged at sourcePath and fixed sourceCommit; these byte-identical copies are maintained test/replay inputs, not executable historical workflows.",
+  "originalRecords": "Original records are retained in Git history at sourceCommit:sourcePath; these byte-identical copies are maintained test/replay inputs, not executable historical workflows.",
   "files": [
     {
       "fixture": "persisted-negative-vector.json",
