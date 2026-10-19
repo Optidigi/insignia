@@ -15,7 +15,7 @@ import { tmpdir } from 'node:os';
 import { join, relative, resolve } from 'node:path';
 import test from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
-import { errorCode, required } from './validation.mts';
+import { errorCode, object, required } from './validation.mts';
 
 const root = resolve(import.meta.dirname, '../..');
 
@@ -117,6 +117,11 @@ test('current compiled web package survives relocation and serves HTTP on the co
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { status: 'live' });
     assert.equal(response.headers.get('cache-control'), 'no-store');
+    // Load the actual lazy API graph from the relocated production package. The
+    // shell can be healthy even when an externalized server dependency is absent.
+    const unavailable = await fetch(`http://127.0.0.2:${port}/api/admin/products`);
+    assert.equal(unavailable.status, 503, 'Cold admin API must reach its configured-unavailable guard');
+    assert.equal(object(await unavailable.json()).error, 'Admin service unavailable');
     for (const route of ['/admin/products', '/admin/products/111/config']) {
       const page = await fetch(`http://127.0.0.2:${port}${route}?apiKey=22222222222222222222222222222222`);
       assert.equal(page.status, 200);
