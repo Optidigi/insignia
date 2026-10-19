@@ -797,7 +797,7 @@
     },
     "readOnlyAndLocalUI": {
       "classification": "NATIVE_PR214_CORRECTED_POLARIS_UI_PASS",
-      "at": "2026-10-19T01:06:50.039Z",
+      "at": "2026-10-19T01:11:55.483Z",
       "pages": [
         {
           "area": "products",
@@ -808,10 +808,10 @@
           "inlineSize": null,
           "mobile": {
             "width": 379,
-            "documentWidth": 379
+            "documentWidth": 364
           },
           "heading": "Products",
-          "bodySha256": "4705adc5f8ff69664235b3e269d22b42a2093b841a2f1786f0f6e66a9ff366ff"
+          "bodySha256": "3bfb247830480d3222fec7426b42c8d6a4827784354f910d29e93a53ff5521d4"
         },
         {
           "area": "orders",
@@ -881,7 +881,7 @@
             "documentWidth": 379
           },
           "heading": "Billing",
-          "bodySha256": "3b634a64104a1a152d8f38ffefde4c94a1a348f95beef3fc1931933ae9262e2c"
+          "bodySha256": "124186cd2a5a469d7087c76aaf2fb719ce76a0db55a11ef13dd2c20ac96bb886"
         },
         {
           "area": "settings/privacy",
@@ -940,13 +940,13 @@
       "apiReads": [
         {
           "path": "/api/admin/products",
-          "status": 503,
-          "sha256": "6b99f83b0f93064824e6f5d9b60cd90647b26f79c2d343646986428e47bb6b50"
+          "status": 200,
+          "sha256": "c307646a909b7bfe9f018a27bb12c7a8739573d88a6fa22f2b4d24eaad35cc57"
         },
         {
           "path": "/api/purchases/v1",
           "status": 200,
-          "sha256": "8c59bc9a759bc0dfaae61aa0d8ff0b6e7335e60890148767d96c4003e2056c41"
+          "sha256": "4df5b0a4b45d979b61bc40e22badc25bf4991cc5a5d7b314df20d93a6c295377"
         },
         {
           "path": "/api/admin/methods",
@@ -956,7 +956,7 @@
         {
           "path": "/api/admin/billing",
           "status": 200,
-          "sha256": "71fe881a704a62db5551a570542cbd6cf22b299a441be25895e40df17717834f"
+          "sha256": "95cc68589b2f5cf650bb19fa093ed7029de43151202b31464baf6a11c68b38ec"
         },
         {
           "path": "/api/purchases/v1/privacy",
@@ -1108,6 +1108,90 @@
       "native-ui/navigation-loading.png": {
         "sha256": "8c66906e7f92c681d913c614670129e4a74461275b063ba76a7dc30d103f01fb",
         "bytes": 55076
+      },
+      "native-ui-strict.cjs": {
+        "sha256": "9de56f281577ef7a77655259e6453dd1aca9b8abff322fb625f1c0926abeaa4a",
+        "bytes": 9032
+      },
+      "native-ui-strict/desktop-orders.png": {
+        "sha256": "e2ec9c87332f8336bd90abd70d3358dc1897efca1ac17766bfe3c245b46109bd",
+        "bytes": 89679
+      },
+      "native-ui-strict/desktop-products.png": {
+        "sha256": "46028d8935ec4e56def892d0201dc9145ba529b2720310f60c59f03516c8784e",
+        "bytes": 128798
+      },
+      "native-ui-strict/desktop-settings-billing.png": {
+        "sha256": "044af4bc349221cd5d70ee831fbdd2ce0e1434761989c1e747121fb01e2f6854",
+        "bytes": 84001
+      },
+      "native-ui-strict/desktop-settings-methods.png": {
+        "sha256": "a54130e047f710b6208575714ef8c825eabf5b010c06415c151f6ff984e2f6a7",
+        "bytes": 83254
+      },
+      "native-ui-strict/desktop-settings-privacy.png": {
+        "sha256": "a77a862e8027090479fb0bd38f993e1d5545271f63a26473657c802c9d1df70d",
+        "bytes": 79345
+      },
+      "native-ui-strict/desktop-settings-storefront.png": {
+        "sha256": "8dcc4271b0d4be623c1298d173b8625eb26c98a883dd3b488bcae394eafa0384",
+        "bytes": 141967
+      },
+      "native-ui-strict/desktop-settings.png": {
+        "sha256": "9b8449ac32f8ff437e38661ab31dbc8313dd5be4e8fb42fbe0005a416e904a4b",
+        "bytes": 93413
+      },
+      "native-ui-strict/editor-desktop.png": {
+        "sha256": "22af5bbeaba52f9d89d06820933425d2355b30e7571f2726488b92c0852cc7e9",
+        "bytes": 137631
+      },
+      "native-ui-strict/editor-mobile.png": {
+        "sha256": "43cc9058abd84e2965db719e681c3d7b1a3ac89261db084561142496c6326410",
+        "bytes": 45506
+      },
+      "native-ui-strict/mobile-orders.png": {
+        "sha256": "b0af2948e5adb8d3a26a606f3976ec4861ec9af733325f8667dba4c9424b0c19",
+        "bytes": 45089
+      },
+      "native-ui-strict/mobile-products.png": {
+        "sha256": "af2e728cb3969ecb26c53c2a6a337404ab95b95cdc10cd08d6197968a32c3c50",
+        "bytes": 49111
+      },
+      "native-ui-strict/mobile-settings-billing.png": {
+        "sha256": "c880d443b9fa38e11bf1e7061a5ed5aea5a403c7857facae2a65381230406ce0",
+        "bytes": 40368
+      },
+      "native-ui-strict/mobile-settings-methods.png": {
+        "sha256": "598c5639453210eaeb759d1c6dc38c7c68c285019163c25d818098b703bf7d20",
+        "bytes": 40408
+      },
+      "native-ui-strict/mobile-settings-privacy.png": {
+        "sha256": "03f58c86c145b4b1c9b4da922212bac9b63fe1ba7d061cceb89ca2c74eb5f804",
+        "bytes": 36792
+      },
+      "native-ui-strict/mobile-settings-storefront.png": {
+        "sha256": "89547ff45f96ac1498a143fdffedcca4fc6be0b0bcdc5699b29ff8eeee499cda",
+        "bytes": 58810
+      },
+      "native-ui-strict/mobile-settings.png": {
+        "sha256": "372d6ba05f20ee5b07c27762013fb7be962ef7a57560545ee71359346f11a8c2",
+        "bytes": 44938
+      },
+      "native-ui-strict/native-discard-confirmation.png": {
+        "sha256": "2e30373f037270e3f8f75a48307ad52021047982cd43c7e14370108c5c589d17",
+        "bytes": 163622
+      },
+      "native-ui-strict/native-discard-restored.png": {
+        "sha256": "ff8c3d7416bb4be2f7dba17d024894157d490d2d62857a6600616d2d7ff3e9b2",
+        "bytes": 138118
+      },
+      "native-ui-strict/native-host-savebar.png": {
+        "sha256": "b02c9d924838dc9d02cedca3e8f7f2bfde26507e07ee2e5dafbe13c2905d67ac",
+        "bytes": 151625
+      },
+      "native-ui-strict/navigation-loading.png": {
+        "sha256": "8c66906e7f92c681d913c614670129e4a74461275b063ba76a7dc30d103f01fb",
+        "bytes": 55076
       }
     },
     "retainedFailure": "Evidence-head839be4f foundation39182120307 attempt1 failed; actual source correctiond25ed54 and meaningful RED/GREEN followed. Earlier PR213 native/probe history remains unchanged. No rerun laundering or retrospective native correction claim.",
@@ -1124,6 +1208,32 @@
       "other34Unchanged": true,
       "schemaPurchasePaidFactsUnchanged": true,
       "inspectorSocketsUnchanged": true
+    },
+    "initialSweepReadFailure": {
+      "classification": "FAILED_NATIVE_READ_OBSERVATION_RETAINED",
+      "apiPath": "/api/admin/products",
+      "httpStatus": 503,
+      "visibleMessage": "Authentication unavailable",
+      "responseSha256": "6b99f83b0f93064824e6f5d9b60cd90647b26f79c2d343646986428e47bb6b50",
+      "originalRawReceiptSha256": "f8916008e0e788c40a7c38d792acb7ca59332642ff49a068c2fe5d4f98e33d84",
+      "originalProbeGap": "The first layout probe excluded too few error strings and did not require successful API status; its overall route PASS was invalid. Other UI observations retain their individual scope.",
+      "sanitizedSequence": [
+        "ONLINE_EXCHANGE_SUCCEEDED",
+        "INSTALLATION_PROVIDER_READ_SUCCEEDED",
+        "INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED",
+        "INSTALLATION_PROVIDER_READ_FAILED"
+      ],
+      "diagnosis": "The final stage is a generic untyped-exception label for the entire installation callback, including post-bootstrap uninstall enrollment DB/reservation/provider checks. It does not establish the exact failing step, provider outage or deterministic application defect. Authentication correctly failed closed.",
+      "strictRequalification": {
+        "at": "2026-10-19T01:11:55.483Z",
+        "everyAuthenticatedAPIStatus": 200,
+        "apiReads": 7,
+        "applicationMutationRequests": 0,
+        "rule": "All API reads must be200; Authentication unavailable is an explicit failure.",
+        "scope": "Fresh bounded read availability and UI proof; not a diagnosis or code fix for the original503."
+      },
+      "independentDiagnosis": "/root/technical_completion_audit read-only source/stage analysis: no exact cause or deterministic code defect established; preserve original503, qualify current reads, add typed sanitized stage diagnostics only if it recurs.",
+      "recurrenceAction": "Investigate exact lifecycle stage with sanitized typed diagnostics before claiming a fix; never weaken auth/enrollment or retry an unknown mutation."
     }
   }
 }
