@@ -50,7 +50,7 @@ function view(state: PurchaseView['artworkState'] = 'PENDING_ARTWORK'): Purchase
               geometry: null,
               presentation: null,
               imageUrls: {},
-              payloadExpiresAt: '2026-10-19T12:00:00Z',
+              payloadExpiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
             },
           ],
     artworkEvents: [],
