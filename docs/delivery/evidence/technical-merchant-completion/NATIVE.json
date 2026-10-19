@@ -709,5 +709,22 @@
       "retrieval": "Private local operator receipts and screenshots; compact digests/observations retained here after temporary-copy cleanup"
     },
     "mutationBoundary": "One exact-image development web replacement only; nativeUI blocked/counts non-GET application API requests and observed zero. Normal authenticated navigation can reconcile app-owned installation/subscription state. No persistent edit, upload, publication, purchase, plan, release/scope/version or VAT retry."
+  },
+  "pr214MethodRemovalCorrection": {
+    "classification": "LOCAL_CORRECTION_PASS_FINAL_QUALIFICATION_PENDING",
+    "failedHead": "839be4f6825270f6dd4a39c27baae5074dee0966",
+    "failedFoundationRun": 39182120307,
+    "attempt": 1,
+    "failure": "library removal confirmation after cancel/reopen timed out2500ms,214PASS/1FAIL/55environmentSKIP in full web",
+    "diagnosis": "Polaris synchronous hide closes the dialog; afterhide waits animations or an animation frame. Same-ID reopen before state cleanup is no-op. Clear selection on hide instead.",
+    "redGreen": "Existing public browser interaction with actual pinned Polaris plus real500msclosing animation: same Confirm removal timeout before source correction; passes after. No deadline or assertion relaxed.",
+    "localChecks": "Typed Astro/web build and4focused modal/discard/uncertain-save controls PASS; source style PASS. Full editor regression and final corrective CI pending.",
+    "productionImpact": "Only method-library modal selection lifecycle changes; auth, pending keys, inFlight/busy/uncertain locks, persisted commands and all provider/publication behavior unchanged. PR213 native SaveBar/discard/loading receipt remains evidence for its original source; not a new native correction proof.",
+    "logs": {
+      "pr214-foundation-failed.log": "1c0188775e6af148566c7cccd36d625c5bfd5ebb660131be80b4f3d434d87be6",
+      "modal-reopen-red.log": "46ef9553809d18fe523e3dccabf69ff79020f10b14f73aa51c0cf61fe6524060",
+      "modal-reopen-green.log": "131d3e656980e9a3165bfb031419ff2ec0f75d27ec814e9adac1306a95c85c2b",
+      "modal-impact.log": "732fe827adff35ac7bf7f253d742ccb275b222fdabcf8d0ebbf1c9f3beb3602a"
+    }
   }
 }

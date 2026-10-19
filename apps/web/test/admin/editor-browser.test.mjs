@@ -3298,6 +3298,15 @@ test('library removal uses an accessible Polaris confirmation and cancel never d
   page.setDefaultTimeout(2500);
   await page.addInitScript(() => {
     window.shopify = { idToken: async () => 'synthetic-modal-actor' };
+    // A real closing animation keeps afterhide pending while the already-hidden dialog can be reopened.
+    document.addEventListener(
+      'hide',
+      (event) => {
+        if (event.target instanceof Element && event.target.id === 'remove-method')
+          event.target.shadowRoot.querySelector('dialog').animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500 });
+      },
+      true,
+    );
   });
   await routePolaris(page, source);
   await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
