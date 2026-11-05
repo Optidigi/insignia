@@ -275,10 +275,13 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('customer purchase artwork aut
   it('real restricted web grants issue/revoke scoped links but cannot rewrite link identity, slots or restore epoch', async () => {
     const f = await fixture();
     const role = `customer_web_${randomUUID().replaceAll('-', '')}`;
+    const password = `synthetic-${randomUUID()}`;
     const owner = new Pool({ connectionString: process.env.DATABASE_URL });
     let runtime: ReturnType<typeof createDurableCore> | undefined;
     try {
-      await owner.query(`CREATE ROLE ${role} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS`);
+      await owner.query(
+        `CREATE ROLE ${role} LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS`,
+      );
       await owner.query(
         `GRANT USAGE ON SCHEMA public TO ${role}; GRANT SELECT ON public.shops,public.installation_generations TO ${role}; GRANT UPDATE(updated_at) ON public.shops TO ${role}; GRANT UPDATE(deactivated_at) ON public.installation_generations TO ${role}`,
       );
@@ -291,6 +294,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('customer purchase artwork aut
       for (const grant of grants) await owner.query(grant.replaceAll('insignia_runtime', role));
       const address = new URL(process.env.DATABASE_URL ?? '');
       address.username = role;
+      address.password = password;
       const pool = new Pool({ connectionString: address.href });
       runtime = createDurableCore(pool);
       expect((await runtime.customerArtwork.issue(f.scope, f.request))?.purchaseId).toBe(f.purchaseId);
@@ -365,14 +369,18 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('customer purchase artwork aut
     const f = await fixture();
     await f.repo.issue(f.scope, f.request);
     const role = `customer_monitor_${randomUUID().replaceAll('-', '')}`;
+    const password = `synthetic-${randomUUID()}`;
     const owner = new Pool({ connectionString: process.env.DATABASE_URL });
     let monitor: Pool | undefined;
     try {
-      await owner.query(`CREATE ROLE ${role} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS`);
+      await owner.query(
+        `CREATE ROLE ${role} LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS`,
+      );
       const script = await readFile(new URL('../../../deployment/alerts/monitor-grants.sql', import.meta.url), 'utf8');
       await owner.query(script.replaceAll(':"monitor_role"', role));
       const address = new URL(process.env.DATABASE_URL ?? '');
       address.username = role;
+      address.password = password;
       monitor = new Pool({ connectionString: address.href });
       const before = await collectDatabaseSnapshot(monitor);
       await owner.query(

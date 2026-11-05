@@ -102,7 +102,7 @@ jobs:
         if: steps.changes.outputs.route == 'full'
         working-directory: apps/web
         run: |
-          mapfile -t insignia_backend_tests < <(rg --files test -g '*.test.mts' | rg -v 'browser')
+          mapfile -t insignia_backend_tests < <(find test -type f -name '*.test.mts' ! -name '*browser*' -print | sort)
           (( ${#insignia_backend_tests[@]} > 0 ))
           node --test --test-concurrency=4 "${insignia_backend_tests[@]}"
       - name: Actual queue-member purchase/history and first-paid qualification
