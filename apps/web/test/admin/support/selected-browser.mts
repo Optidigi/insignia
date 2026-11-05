@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { type ChildProcess, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { after, before, type TestContext } from 'node:test';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+import { after, type TestContext } from 'node:test';
 import {
   type MerchantDraft,
   MerchantDraftSchema,
@@ -169,7 +169,12 @@ let server: { base: string; child: ChildProcess; exited: Promise<unknown> };
 let polaris: Buffer;
 let photo: Buffer;
 
-before(async () => {
+let startup: Promise<void> | undefined;
+function ensureBrowser() {
+  startup ??= startBrowser();
+  return startup;
+}
+async function startBrowser() {
   polaris = await readFile(
     new URL('../../../../../frontend/admin/examples/fixtures/polaris-2.0-rc.snapshot', import.meta.url),
   );
@@ -215,7 +220,7 @@ before(async () => {
   }
   server = { base, child, exited };
   browser = await chromium.launch({ headless: true });
-});
+}
 after(async () => {
   await browser?.close();
   server?.child.kill('SIGTERM');
@@ -232,6 +237,7 @@ type Scenario = {
   publicationPending?: boolean;
 };
 async function fixture(t: TestContext, scenario: Scenario = {}) {
+  await ensureBrowser();
   const context = await browser.newContext({ viewport: { width: 1280, height: 696 }, reducedMotion: 'reduce' });
   const page = await context.newPage();
   t.after(async () => {
@@ -359,6 +365,16 @@ async function fixture(t: TestContext, scenario: Scenario = {}) {
     return route.fulfill({ status: 202, json: { kind: 'accepted', state, revisionId: 'revision-selected-111' } });
   });
   async function open() {
+    if (process.env.INSIGNIA_STRESS_BLOCK_VISUALIZER === '1') {
+      const directory = new URL('../../../dist/client/_astro/', import.meta.url);
+      const modules = [];
+      for (const name of await readdir(directory))
+        if (name.endsWith('.js') && /as createVisualizer[,}]/.test(await readFile(new URL(name, directory), 'utf8')))
+          modules.push(name);
+      assert.equal(modules.length, 1, 'Control must block exactly the actual built renderer module');
+      await page.route(`**/_astro/${modules[0]}`, (route) => route.abort('failed'));
+      t.diagnostic('STRESS_RENDERER_BLOCKED: actual built createVisualizer module');
+    }
     await page.goto(`${server.base}/admin/products/111/config?locale=en&view=front&placement=chest`);
     try {
       await page.locator('.placement-editor').waitFor({ state: 'visible' });
@@ -368,6 +384,14 @@ async function fixture(t: TestContext, scenario: Scenario = {}) {
         await page.locator('.placement-canvas-status.is-ready').waitFor({ state: 'attached' });
       }
     } catch (error) {
+      if (process.env.INSIGNIA_STRESS_BLOCK_VISUALIZER === '1')
+        console.error(
+          'STRESS_RENDERER_OBSERVATION',
+          JSON.stringify({
+            canvasCount: await page.locator('.placement-canvas canvas').count(),
+            rendererReady: await page.locator('.placement-canvas-status.is-ready').count(),
+          }),
+        );
       await page.screenshot({ path: new URL('bootstrap-failure.png', artifacts).pathname });
       t.diagnostic(`Selected bootstrap body: ${await page.locator('body').innerText()}`);
       throw error;
@@ -439,6 +463,7 @@ function selectedConfigView(
 
 /** Shared real-artifact harness for selected and still-mounted merchant surfaces. */
 async function browserFixture(t: TestContext) {
+  await ensureBrowser();
   const context = await browser.newContext({ reducedMotion: 'reduce' });
   t.after(() => context.close());
   return { source: polaris, server, browser: context };

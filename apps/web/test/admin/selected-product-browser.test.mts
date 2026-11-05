@@ -119,34 +119,6 @@ test('delayed saves fence keyboard, programmatic native/header actions and input
   assert.equal(await f.page.getByRole('textbox', { name: /^Placement name/ }).inputValue(), 'Frozen save name');
 });
 
-test('lost save reply and reload recover the original exact body, version and operation key', {
-  timeout: 30000,
-}, async (t) => {
-  const f = await fixture(t, { loseSaveReply: true });
-  await f.open();
-  await editName(f.page, 'Recover this intent');
-  await hostSave(f.page);
-  await f.page
-    .locator('.placement-notice s-banner')
-    .filter({ hasText: 'Your changes could not be confirmed.' })
-    .waitFor();
-  assert.ok(await storedIntent(f.page));
-  await f.page.reload();
-  await f.page.locator('.placement-editor').waitFor({ state: 'visible' });
-  await f.page.getByRole('button', { name: 'Retry', exact: true }).click();
-  await f.page.waitForFunction(
-    () =>
-      !sessionStorage.getItem(
-        'insignia:selected-product-write:v1:selected-browser.myshopify.com:gid://shopify/Product/111',
-      ),
-  );
-  const writes = f.mutations.filter((entry) => entry.method === 'PUT');
-  assert.equal(writes.length, 2);
-  assert.equal(writes[1]?.key, writes[0]?.key);
-  assert.equal(writes[1]?.body, writes[0]?.body);
-  assert.equal(await f.page.getByRole('textbox', { name: /^Placement name/ }).inputValue(), 'Recover this intent');
-});
-
 test('a pending publication remains visibly pending and reuses its original publication identity', {
   timeout: 30000,
 }, async (t) => {

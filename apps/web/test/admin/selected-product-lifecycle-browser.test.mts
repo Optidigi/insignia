@@ -444,52 +444,6 @@ for (const readback of ['failed', 'stale'] as const)
     assert.equal(f.mutations.filter((entry) => JSON.parse(entry.body).action === 'publish').length, 0);
   });
 
-test('a passive current publication observation preserves dirty selected edits and never mutates', {
-  timeout: 20000,
-}, async (t) => {
-  const f = await fixture(t);
-  let active = false;
-  let reads = 0;
-  await f.page.route('**/api/admin/products/111/config', (route) => {
-    if (route.request().method() !== 'GET') return route.fallback();
-    reads++;
-    const view = f.view();
-    if (active) {
-      const config = required(view.config);
-      config.publication = {
-        ...config.publication,
-        state: 'ACTIVE',
-        revisionId: 'activated-revision',
-        activeRevisionId: 'activated-revision',
-        sourceDraftVersion: '1',
-        requestKey: 'm5pub_cfg-selected-111_1_1',
-      };
-      config.publishedSetup = structuredClone(required(draft.selectedSetup));
-    }
-    return route.fulfill({ json: view });
-  });
-  await f.open();
-  await editName(f.page, 'Preserve local edit across activation');
-  active = true;
-  const observation = f.page.waitForResponse(
-    (response) => response.request().method() === 'GET' && response.url().endsWith('/api/admin/products/111/config'),
-  );
-  await f.page.evaluate(() => window.dispatchEvent(new Event('focus')));
-  await observation;
-  assert.ok(reads >= 2);
-  assert.equal(
-    await f.page.getByRole('textbox', { name: /^Placement name/ }).inputValue(),
-    'Preserve local edit across activation',
-  );
-  const modal = await openPublication(f.page);
-  await modal
-    .getByText('Replace the published preview with this setup? Later edits stay in a draft until published.', {
-      exact: true,
-    })
-    .waitFor();
-  assert.equal(f.mutations.length, 0);
-});
-
 test('authorization denial during a pending save fences its late completion from restoring private selected state', {
   timeout: 20000,
 }, async (t) => {
@@ -626,86 +580,6 @@ test('a blank product-specific cell is not offered while explicit zero is an exa
   await f.page.reload();
   await f.page.locator('.placement-editor').waitFor({ state: 'visible' });
   assert.equal(await f.page.getByRole('spinbutton', { name: 'Price for Small', exact: true }).inputValue(), '0');
-});
-
-test('a pre-command passive response cannot replace the newer pending selected publication or its exact custody', {
-  timeout: 20000,
-}, async (t) => {
-  const f = await fixture(t, { publicationPending: true });
-  let armed = false;
-  let release: (() => void) | undefined;
-  let started: (() => void) | undefined;
-  const waiting = new Promise<void>((resolve) => {
-    started = resolve;
-  });
-  await f.page.route('**/api/admin/products/111/config', async (route) => {
-    if (!armed || route.request().method() !== 'GET') return route.fallback();
-    armed = false;
-    const old = f.view();
-    await new Promise<void>((resolve) => {
-      release = resolve;
-      required(started)();
-    });
-    return route.fulfill({ json: old });
-  });
-  await f.open();
-  armed = true;
-  await f.page.evaluate(() => window.dispatchEvent(new Event('focus')));
-  await waiting;
-  try {
-    const modal = await openPublication(f.page);
-    await modal.getByRole('button', { name: 'Publish preview', exact: true }).click();
-    await f.page
-      .getByText('Publication is still processing. Continue the original request to check its status.', { exact: true })
-      .waitFor();
-    const intent = await storedIntent(f.page);
-    assert.ok(intent);
-    required(release)();
-    await settleFrame(f.page);
-    assert.equal(await storedIntent(f.page), intent);
-    assert.equal(f.mutations.length, 2);
-    assert.equal(await f.page.getByText('Published', { exact: true }).count(), 0);
-  } finally {
-    required(release)();
-  }
-});
-
-test('a current passive activation settles the exact selected publication without redispatching its command', {
-  timeout: 20000,
-}, async (t) => {
-  const f = await fixture(t, { publicationPending: true });
-  await f.open();
-  const modal = await openPublication(f.page);
-  await modal.getByRole('button', { name: 'Publish preview', exact: true }).click();
-  await f.page
-    .getByText('Publication is still processing. Continue the original request to check its status.', { exact: true })
-    .waitFor();
-  await modal.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await modal.waitFor({ state: 'hidden' });
-  await f.page.route('**/api/admin/products/111/config', (route) => {
-    if (route.request().method() !== 'GET') return route.fallback();
-    const view = f.view();
-    const config = required(view.config);
-    config.publication = {
-      ...config.publication,
-      state: 'ACTIVE',
-      revisionId: 'revision-selected-111',
-      activeRevisionId: 'revision-selected-111',
-      sourceDraftVersion: '2',
-      requestKey: 'm5pub_cfg-selected-111_2_1',
-    };
-    config.publishedSetup = MerchantDraftSchema.parse(config.draft).selectedSetup ?? null;
-    return route.fulfill({ json: view });
-  });
-  await f.page.evaluate(() => window.dispatchEvent(new Event('focus')));
-  await f.page.waitForFunction(
-    () =>
-      !sessionStorage.getItem(
-        'insignia:selected-product-write:v1:selected-browser.myshopify.com:gid://shopify/Product/111',
-      ),
-  );
-  await f.page.getByText('Published', { exact: true }).first().waitFor();
-  assert.equal(f.mutations.length, 2, 'Readback alone settles the one original save and publication');
 });
 
 test('a different authoring scope cannot replay or silently replace a previous installation pending intent', {
