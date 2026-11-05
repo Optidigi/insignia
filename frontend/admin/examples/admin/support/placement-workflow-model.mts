@@ -1,133 +1,31 @@
-/** Preview-only merchant placement schemas and editing helpers. Safe to import in the browser bundle. */
-import { z } from 'zod';
+/** Selected editor geometry helpers; data validation is shared with the server. */
 import { parsePrice } from './method-workflow-prices.mts';
-import { placementCalibrationSchema } from './placement-calibration.mts';
-import { validateVariantPhotoReferences, variantPhotoSetupSchema } from './placement-variant-photos.mts';
-
-const minimumRectSize = 0.02;
-
-export const placementRectSchema = z
-  .object({
-    centerX: z.number().finite().min(0).max(1),
-    centerY: z.number().finite().min(0).max(1),
-    width: z.number().finite().min(minimumRectSize).max(1),
-    height: z.number().finite().min(minimumRectSize).max(1),
-  })
-  .strict()
-  .refine(
-    ({ centerX, centerY, width, height }) =>
-      centerX - width / 2 >= 0 && centerX + width / 2 <= 1 && centerY - height / 2 >= 0 && centerY + height / 2 <= 1,
-    'The artwork area must fit inside the image.',
-  );
-
-type RectShape = z.infer<typeof placementRectSchema>;
-
-/** Whether a movement area contains the complete maximum artwork rectangle. */
-export function movementRectContainsPlacementRect(movementRect: RectShape, placementRect: RectShape): boolean {
-  const movementLeft = movementRect.centerX - movementRect.width / 2;
-  const movementRight = movementRect.centerX + movementRect.width / 2;
-  const movementTop = movementRect.centerY - movementRect.height / 2;
-  const movementBottom = movementRect.centerY + movementRect.height / 2;
-  const artworkLeft = placementRect.centerX - placementRect.width / 2;
-  const artworkRight = placementRect.centerX + placementRect.width / 2;
-  const artworkTop = placementRect.centerY - placementRect.height / 2;
-  const artworkBottom = placementRect.centerY + placementRect.height / 2;
-
-  return (
-    movementLeft <= artworkLeft &&
-    movementRight >= artworkRight &&
-    movementTop <= artworkTop &&
-    movementBottom >= artworkBottom
-  );
-}
-
-const placementSizeSchema = z
-  .object({
-    id: z.string(),
-    name: z.string(),
-    widthPercent: z.string(),
-    prices: z.record(z.string(), z.string()),
-  })
-  .strict();
-
-const editorPlacementSchema = z
-  .object({
-    id: z.string(),
-    name: z.string(),
-    rect: placementRectSchema,
-    widthCm: z.string(),
-    heightCm: z.string(),
-    methodIds: z.array(z.string()),
-    sizes: z.array(placementSizeSchema),
-    logoLaterAllowed: z.boolean(),
-    customPlacementAllowed: z.boolean().default(false),
-    movementRect: placementRectSchema.optional(),
-  })
-  .strict()
-  .superRefine(({ rect, movementRect, customPlacementAllowed }, context) => {
-    if (customPlacementAllowed && movementRect && !movementRectContainsPlacementRect(movementRect, rect)) {
-      context.addIssue({
-        code: 'custom',
-        path: ['movementRect'],
-        message: 'movement-area-invalid',
-      });
-    }
-  });
-
-const editorViewSchema = z
-  .object({
-    id: z.string().min(1),
-    name: z.string(),
-    imageUrl: z.union([z.string().url(), z.literal('')]),
-    imageWidth: z.number().int().positive().finite(),
-    imageHeight: z.number().int().positive().finite(),
-    placements: z.array(editorPlacementSchema),
-    needsAlignmentReview: z.boolean().optional(),
-    calibration: placementCalibrationSchema.optional(),
-  })
-  .strict();
-
-export const editorProductImageSchema = z
-  .object({
-    id: z.string().min(1),
-    url: z.string().url(),
-    width: z.number().int().positive().finite(),
-    height: z.number().int().positive().finite(),
-    alt: z.string(),
-  })
-  .strict();
-
-const editorMethodSchema = z
-  .object({
-    id: z.string(),
-    name: z.string(),
-    pricing: z.enum(['fixed', 'product']),
-    amount: z.string(),
-  })
-  .strict();
-
-export const placementProductSchema = z
-  .object({
-    id: z.string().min(1),
-    title: z.string(),
-    images: z.array(editorProductImageSchema),
-    views: z.array(editorViewSchema),
-    methods: z.array(editorMethodSchema),
-    variantPhotos: variantPhotoSetupSchema.optional(),
-  })
-  .strict()
-  .superRefine((product, context) => {
-    for (const issue of validateVariantPhotoReferences(product))
-      context.addIssue({ code: 'custom', path: issue.path, message: issue.message });
-  });
-
-export type PlacementRect = z.infer<typeof placementRectSchema>;
-export type PlacementSize = z.infer<typeof placementSizeSchema>;
-export type EditorPlacement = z.infer<typeof editorPlacementSchema>;
-export type EditorView = z.infer<typeof editorViewSchema>;
-export type EditorMethod = z.infer<typeof editorMethodSchema>;
-export type EditorProductImage = z.infer<typeof editorProductImageSchema>;
-export type PlacementProduct = z.infer<typeof placementProductSchema>;
+import {
+  minimumRectSize,
+  movementRectContainsPlacementRect,
+  placementProductSchema,
+  placementRectSchema,
+  type PlacementRect,
+  type PlacementSize,
+  type EditorPlacement,
+  type EditorView,
+  type EditorMethod,
+  type EditorProductImage,
+  type PlacementProduct,
+} from '@insignia/contracts';
+export {
+  movementRectContainsPlacementRect,
+  placementProductSchema,
+  placementRectSchema,
+  editorProductImageSchema,
+  type PlacementRect,
+  type PlacementSize,
+  type EditorPlacement,
+  type EditorView,
+  type EditorMethod,
+  type EditorProductImage,
+  type PlacementProduct,
+} from '@insignia/contracts';
 
 function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
@@ -589,6 +487,14 @@ export function validatePlacementProduct(product: PlacementProduct): Record<stri
           widthPercent > 100
         )
           addError(errors, `${sizePath}.widthPercent`, 'size-factor-invalid');
+        if (
+          size.heightPercent !== undefined &&
+          (!/^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(size.heightPercent.trim()) ||
+            !Number.isFinite(Number(size.heightPercent)) ||
+            Number(size.heightPercent) <= 0 ||
+            Number(size.heightPercent) > 100)
+        )
+          addError(errors, `${sizePath}.heightPercent`, 'size-factor-invalid');
 
         for (const methodId of placement.methodIds) {
           const method = methodsById.get(methodId);

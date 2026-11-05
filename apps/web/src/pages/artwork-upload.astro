@@ -1,0 +1,10 @@
+---
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+Astro.response.headers.set('X-Content-Type-Options', 'nosniff');
+Astro.response.headers.set('Content-Security-Policy', "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' https: blob: data:; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
+---
+<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="referrer" content="no-referrer"/></head><body><script>
+import { mountCustomerArtwork } from '../../../storefront/src/designer/customer-artwork';
+mountCustomerArtwork();
+</script></body></html>

@@ -5,6 +5,7 @@ import { Counter, Gauge, Registry } from 'prom-client';
 const EVENTS = new Set([
   'admin_authentication',
   'buyer_request_failed',
+  'customer_artwork_notification',
   'worker_started',
   'worker_stopped',
   'worker_start_failed',
@@ -19,6 +20,7 @@ const EVENTS = new Set([
 export type RuntimeEvent =
   | 'admin_authentication'
   | 'buyer_request_failed'
+  | 'customer_artwork_notification'
   | 'worker_started'
   | 'worker_stopped'
   | 'worker_start_failed'
@@ -120,6 +122,7 @@ function safeDetails(input: RuntimeLogDetails): RuntimeLogDetails {
   if (input.queue === 'insignia.shopify-webhook.v1' || input.queue === 'insignia.token-refresh.v1')
     result.queue = input.queue;
   if (
+    input.errorClass === 'CUSTOMER_EMAIL_RUNTIME_UNAVAILABLE' ||
     input.errorClass === 'QueueStartupError' ||
     input.errorClass === 'ProcessingError' ||
     input.errorClass === 'RefreshError' ||

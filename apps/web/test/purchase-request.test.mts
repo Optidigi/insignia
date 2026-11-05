@@ -205,3 +205,79 @@ test('empty retained order list does not query Shopify for labels', async () => 
   assert.deepEqual((await services.list(actor, { limit: 10, before: null })).items, []);
   assert.equal(calls, 0);
 });
+
+test('whole-dataset order filters are validated and forwarded rather than silently ignored', async () => {
+  let observed: unknown;
+  const services = purchaseHttpFixture({
+    authenticate: async () => actor,
+    list: async (_actor, query) => {
+      observed = query;
+      return { version: 'm8-purchase-list-v1', items: [], nextCursor: null, timeZone: 'Europe/Amsterdam' };
+    },
+  });
+  const read = (query: string) =>
+    handlePurchaseRequest(
+      new Request(`https://insignia.example/api/purchases/v1?${query}`, {
+        headers: { Authorization: 'Bearer synthetic' },
+      }),
+      services,
+    );
+  assert.equal(
+    (await read('q=%231001&artwork=needed&sort=date-asc&createdFrom=2026-10-01T00%3A00%3A00Z&limit=12')).status,
+    200,
+  );
+  assert.deepEqual(observed, {
+    before: null,
+    limit: 12,
+    q: '#1001',
+    artwork: 'needed',
+    sort: 'date-asc',
+    createdFrom: '2026-10-01T00:00:00Z',
+  });
+  for (const query of [
+    'sort=garbage',
+    'artwork=garbage',
+    'limit=100',
+    'q=one&q=two',
+    'ignored=true',
+    'createdFrom=2026-11-02T00:00:00Z&createdBefore=2026-11-01T00:00:00Z',
+  ])
+    assert.equal((await read(query)).status, 400, query);
+});
+
+test('search reconciles one bounded label batch and refuses to claim complete results while labels remain unknown', async () => {
+  const record = purchaseRecord({ ...view, bindings: [], observations: [], artworkEvents: [] });
+  let missing = true,
+    pages = 0;
+  const services = createPurchaseServices({
+    core: coreFixture({
+      purchases: {
+        missingOrderNames: async () => (missing ? [record.orderId] : []),
+        rememberOrderNames: async (_scope, names) => {
+          assert.equal(names[record.orderId], '#1001');
+          missing = false;
+        },
+        list: async (_scope, query) => {
+          pages++;
+          if (!query) throw new Error('Expected full-dataset search query');
+          assert.equal(query.q, '#1001');
+          return [record];
+        },
+      },
+    }),
+    appOrigin: 'https://insignia.example',
+    authenticate: async () => actor,
+    orderNames: async () => ({ [record.orderId]: '#1001' }),
+  });
+  assert.equal((await services.list(actor, { limit: 10, before: null, q: '#1001' })).items.length, 1);
+  assert.equal(pages, 1);
+  const incomplete = createPurchaseServices({
+    core: coreFixture({
+      purchases: { missingOrderNames: async () => [record.orderId], rememberOrderNames: async () => {} },
+    }),
+    appOrigin: 'https://insignia.example',
+    authenticate: async () => actor,
+    orderNames: async () => ({ [record.orderId]: '#1001' }),
+  });
+  await assert.rejects(() => incomplete.list(actor, { limit: 10, before: null, q: '#1001' }), /SEARCH_INCOMPLETE/);
+});

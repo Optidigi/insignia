@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { builtinModules } from 'node:module';
 import { resolve } from 'node:path';
-import { inspectPolarisPresentation } from './polaris.mts';
+import { inspectPolarisPresentation, readReviewedNativePresentation } from './polaris.mts';
 
 const root = resolve(import.meta.dirname, '../..');
 const entries = ['apps', 'packages', 'extensions'].flatMap((parent) =>
@@ -22,7 +22,7 @@ assert.ok(entries.includes('packages/visualizer/src'), 'visualizer source graph 
 const depcruise = ['pnpm', 'exec', 'depcruise', '--config', '.dependency-cruiser.mts'];
 
 function run(command: string, args: string[], expected = 0) {
-  const result = spawnSync(command, args, { cwd: root, encoding: 'utf8' });
+  const result = spawnSync(command, args, { cwd: root, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
   assert.equal(result.status, expected, `${command} ${args.join(' ')}\n${result.stdout}\n${result.stderr}`);
   return `${result.stdout}${result.stderr}`;
 }
@@ -41,6 +41,9 @@ const polaris = await inspectPolarisPresentation({
   buyerEntries: ['apps/storefront/src/main.ts'],
   runtimeLayout: 'apps/web/src/layouts/AdminLayout.astro',
   versionManifest: 'apps/web/package.json',
+  reviewedNativePresentation: readReviewedNativePresentation(
+    resolve(root, 'scripts/boundaries/selected-native-presentation.json'),
+  ),
 });
 assert.deepEqual(polaris.violations, [], polaris.violations.join('\n'));
 assert(

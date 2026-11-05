@@ -1,14 +1,19 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 const id = z
   .string()
-  .regex(
-    /^[a-zA-Z0-9][a-zA-Z0-9_-]*$/,
-    "Use letters, numbers, underscores or hyphens, with no colons.",
-  );
+  .regex(/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/, 'Use letters, numbers, underscores or hyphens, with no colons.');
 const label = z.string().trim().min(1);
 const cents = z.number().int().nonnegative();
 const percent = z.number().min(0).max(100);
+const sizeBounds = z
+  .array(
+    z.strictObject({
+      width: z.number().finite().positive().max(100),
+      maximumHeight: z.number().finite().positive().max(100),
+    }),
+  )
+  .min(1);
 const movementArea = z
   .strictObject({
     x: percent,
@@ -18,11 +23,8 @@ const movementArea = z
   })
   .refine(
     ({ x, y, width, height }) =>
-      x - width / 2 >= 0 &&
-      x + width / 2 <= 100 &&
-      y - height / 2 >= 0 &&
-      y + height / 2 <= 100,
-    "The movement area must fit inside the preview image.",
+      x - width / 2 >= 0 && x + width / 2 <= 100 && y - height / 2 >= 0 && y + height / 2 <= 100,
+    'The movement area must fit inside the preview image.',
   );
 
 export const configSchema = z
@@ -34,57 +36,81 @@ export const configSchema = z
     productName: label,
     productDescription: label,
     artworkOnly: z.boolean().optional(),
+    previewUnavailable: z.boolean().optional(),
     optionPresentation: z
       .strictObject({
         rowOption: z.strictObject({
           label: label,
-          display: z.enum(["swatch", "named-choice"]),
-          labelSource: z.literal("generic-selection").optional(),
+          display: z.enum(['swatch', 'named-choice']),
+          labelSource: z.literal('generic-selection').optional(),
         }),
         columnOption: z.strictObject({
           label: label,
         }),
       })
       .optional(),
+    positionOverrides: z
+      .record(
+        id,
+        z.record(
+          id,
+          z.strictObject({
+            x: percent,
+            y: percent,
+            width: z.number().positive().max(100),
+            maximumHeight: z.number().positive().max(100),
+            sizeBounds: sizeBounds.optional(),
+            movementArea: movementArea.optional(),
+          }),
+        ),
+      )
+      .optional(),
     basePrice: cents,
-    currency: z
-      .string()
-      .regex(/^[A-Z]{3}$/, "Use a three-letter currency code."),
+    variantBasePrices: z.record(z.string().regex(/^[1-9][0-9]{0,19}$/), cents).optional(),
+    currency: z.string().regex(/^[A-Z]{3}$/, 'Use a three-letter currency code.'),
     locale: label,
-    garment: z.enum(["tshirt", "hoodie", "polo", "apron"]).optional(),
-    preview: z.enum(["photo", "illustration"]),
+    garment: z.enum(['tshirt', 'hoodie', 'polo', 'apron']).optional(),
+    preview: z.enum(['photo', 'illustration']),
     maxQuantity: z.number().int().positive(),
     artworkLater: z.boolean(),
+    productionOptions: z
+      .array(z.strictObject({ id, label, values: z.array(z.strictObject({ id, label })).min(1).max(64) }))
+      .max(32)
+      .optional(),
     sizes: z.array(z.strictObject({ id, label })).min(1),
     colors: z
       .array(
         z.strictObject({
           id,
           name: label,
-          nameSource: z.enum(["generic-selection", "admin-preview-product-image"]).optional(),
+          nameSource: z.enum(['generic-selection', 'admin-preview-product-image']).optional(),
           hex: z
             .string()
-            .regex(/^#[0-9a-fA-F]{6}$/, "Use a six-digit hex colour.")
+            .regex(/^#[0-9a-fA-F]{6}$/, 'Use a six-digit hex colour.')
             .optional(),
           images: z.record(id, label).optional(),
+          imageAspects: z.record(id, z.number().finite().positive()).optional(),
           availableSizeIds: z.array(id),
         }),
       )
       .min(1),
-    variantMatrix: z.array(z.strictObject({
-      rowId: id,
-      columnId: id,
-      variantId: z.string().regex(/^[1-9][0-9]{0,19}$/),
-      available: z.boolean(),
-    })).max(250).optional(),
+    variantMatrix: z
+      .array(
+        z.strictObject({
+          rowId: id,
+          columnId: id,
+          variantId: z.string().regex(/^[1-9][0-9]{0,19}$/),
+          available: z.boolean(),
+        }),
+      )
+      .max(250)
+      .optional(),
     views: z
       .array(
         z.strictObject({
           id,
           label,
-          illustration: z
-            .enum(["front", "back", "left", "right"])
-            .default("front"),
+          illustration: z.enum(['front', 'back', 'left', 'right']).default('front'),
         }),
       )
       .min(1),
@@ -100,6 +126,7 @@ export const configSchema = z
           movementArea: movementArea.optional(),
           maximumHeight: z.number().positive().max(100).optional(),
           sizeLabels: z.array(label).optional(),
+          sizeBounds: sizeBounds.optional(),
           price: cents,
           dimensions: z.array(z.number().positive()).min(1),
           sizePrices: z.array(cents).min(1),
@@ -110,118 +137,106 @@ export const configSchema = z
       )
       .min(1)
       .max(100),
-    methods: z.array(z.strictObject({ id, label, surcharge: cents })).min(1),
+    methods: z
+      .array(
+        z.strictObject({
+          id,
+          label,
+          surcharge: cents,
+          description: z.string().optional(),
+          defaultLabel: z.string().optional(),
+          defaultDescription: z.string().optional(),
+          translations: z
+            .record(z.string(), z.strictObject({ label: z.string().optional(), description: z.string().optional() }))
+            .optional(),
+        }),
+      )
+      .min(1),
   })
   .superRefine((config, ctx) => {
     function issue(path: (string | number)[], message: string) {
-      ctx.addIssue({ code: "custom", path, message });
+      ctx.addIssue({ code: 'custom', path, message });
     }
-    for (const key of [
-      "sizes",
-      "colors",
-      "views",
-      "positions",
-      "methods",
-    ] as const) {
+    for (const key of ['sizes', 'colors', 'views', 'positions', 'methods'] as const) {
       const seen = new Set<string>();
       config[key].forEach((entry, index) => {
-        if (seen.has(entry.id))
-          issue([key, index, "id"], `Duplicate ID: ${entry.id}`);
+        if (seen.has(entry.id)) issue([key, index, 'id'], `Duplicate ID: ${entry.id}`);
         seen.add(entry.id);
       });
+    }
+    const productionIds = new Set<string>();
+    for (const [index, option] of (config.productionOptions ?? []).entries()) {
+      if (productionIds.has(option.id)) issue(['productionOptions', index, 'id'], 'Duplicate production choice');
+      productionIds.add(option.id);
+      if (new Set(option.values.map((value) => value.id)).size !== option.values.length)
+        issue(['productionOptions', index, 'values'], 'Duplicate production value');
     }
     const sizeIds = new Set(config.sizes.map((size) => size.id));
     const viewIds = new Set(config.views.map((view) => view.id));
     const methodIds = new Set(config.methods.map((method) => method.id));
-    if (config.preview === "illustration" && !config.garment) {
-      issue(
-        ["garment"],
-        "Illustration previews require a supported garment type.",
-      );
+    if (config.preview === 'illustration' && !config.garment) {
+      issue(['garment'], 'Illustration previews require a supported garment type.');
     }
     config.positions.forEach((position, index) => {
-      if (!viewIds.has(position.view))
-        issue(["positions", index, "view"], `Unknown view: ${position.view}`);
+      if (!viewIds.has(position.view)) issue(['positions', index, 'view'], `Unknown view: ${position.view}`);
       if (
         position.movementArea &&
-        (Math.abs(position.x - position.movementArea.x) >
-          position.movementArea.width / 2 ||
-          Math.abs(position.y - position.movementArea.y) >
-            position.movementArea.height / 2)
+        (Math.abs(position.x - position.movementArea.x) > position.movementArea.width / 2 ||
+          Math.abs(position.y - position.movementArea.y) > position.movementArea.height / 2)
       ) {
         issue(
-          ["positions", index, "movementArea"],
+          ['positions', index, 'movementArea'],
           "The merchant's default artwork position must be inside the movement area.",
         );
       }
-      if (
-        position.sizeLabels &&
-        position.sizeLabels.length !== position.dimensions.length
-      ) {
-        issue(
-          ["positions", index, "sizeLabels"],
-          "Provide one display label for each priced print size.",
-        );
+      if (position.sizeLabels && position.sizeLabels.length !== position.dimensions.length) {
+        issue(['positions', index, 'sizeLabels'], 'Provide one display label for each priced print size.');
       }
       if (position.dimensions.length !== position.sizePrices.length) {
-        issue(
-          ["positions", index, "sizePrices"],
-          "Provide one size price for each dimension.",
-        );
+        issue(['positions', index, 'sizePrices'], 'Provide one size price for each dimension.');
       }
       if (position.maximumHeight !== undefined && position.maximumHeight <= 0) {
-        issue(["positions", index, "maximumHeight"], "Provide a positive maximum artwork height.");
+        issue(['positions', index, 'maximumHeight'], 'Provide a positive maximum artwork height.');
       }
       if (position.methodSizePrices) {
         for (const methodId of position.methodIds) {
           const prices = position.methodSizePrices[methodId];
           if (!prices) {
-            issue(
-              ["positions", index, "methodSizePrices", methodId],
-              `Provide prices for method ${methodId}.`,
-            );
+            issue(['positions', index, 'methodSizePrices', methodId], `Provide prices for method ${methodId}.`);
             continue;
           }
           if (prices.length !== position.dimensions.length) {
             issue(
-              ["positions", index, "methodSizePrices", methodId],
-              "Provide one price or unavailable value for each print size.",
+              ['positions', index, 'methodSizePrices', methodId],
+              'Provide one price or unavailable value for each print size.',
             );
           }
           if (!prices.some((price) => price !== null)) {
             issue(
-              ["positions", index, "methodSizePrices", methodId],
-              "A method must have at least one available print size.",
+              ['positions', index, 'methodSizePrices', methodId],
+              'A method must have at least one available print size.',
             );
           }
         }
       }
-      if (new Set(position.dimensions).size !== position.dimensions.length) {
-        issue(
-          ["positions", index, "dimensions"],
-          "Each artwork width must be unique.",
-        );
+      if (position.sizeBounds && position.sizeBounds.length !== position.dimensions.length)
+        issue(['positions', index, 'sizeBounds'], 'Provide one footprint per size.');
+      if (
+        new Set(position.sizeBounds?.map((bounds) => JSON.stringify(bounds)) ?? position.dimensions.map(String))
+          .size !== position.dimensions.length
+      ) {
+        issue(['positions', index, 'dimensions'], 'Each artwork width must be unique.');
       }
       const seen = new Set<string>();
       position.methodIds.forEach((methodId, methodIndex) => {
         if (!methodIds.has(methodId))
-          issue(
-            ["positions", index, "methodIds", methodIndex],
-            `Unknown method: ${methodId}`,
-          );
-        if (seen.has(methodId))
-          issue(
-            ["positions", index, "methodIds", methodIndex],
-            `Duplicate method: ${methodId}`,
-          );
+          issue(['positions', index, 'methodIds', methodIndex], `Unknown method: ${methodId}`);
+        if (seen.has(methodId)) issue(['positions', index, 'methodIds', methodIndex], `Duplicate method: ${methodId}`);
         seen.add(methodId);
       });
       for (const methodId of Object.keys(position.methodSizePrices ?? {})) {
         if (!position.methodIds.includes(methodId)) {
-          issue(
-            ["positions", index, "methodSizePrices", methodId],
-            `Unknown position method: ${methodId}`,
-          );
+          issue(['positions', index, 'methodSizePrices', methodId], `Unknown position method: ${methodId}`);
         }
       }
     });
@@ -230,56 +245,46 @@ export const configSchema = z
     config.variantMatrix?.forEach((variant, index) => {
       const key = `${variant.rowId}:${variant.columnId}`;
       if (!config.colors.some((row) => row.id === variant.rowId) || !sizeIds.has(variant.columnId))
-        issue(["variantMatrix", index], "Match this variant to existing option values.");
+        issue(['variantMatrix', index], 'Match this variant to existing option values.');
       if (matrixIds.has(variant.variantId) || matrixCells.has(key))
-        issue(["variantMatrix", index], "Each variant and option combination must be unique.");
+        issue(['variantMatrix', index], 'Each variant and option combination must be unique.');
       matrixIds.add(variant.variantId);
       matrixCells.add(key);
     });
     config.colors.forEach((color, index) => {
       if (config.variantMatrix) {
-        const available = new Set(config.variantMatrix.filter((cell) => cell.rowId === color.id && cell.available).map((cell) => cell.columnId));
-        if (available.size !== color.availableSizeIds.length || color.availableSizeIds.some((value) => !available.has(value)))
-          issue(["colors", index, "availableSizeIds"], "Availability must match the supplied Shopify variants.");
+        const available = new Set(
+          config.variantMatrix.filter((cell) => cell.rowId === color.id && cell.available).map((cell) => cell.columnId),
+        );
+        if (
+          available.size !== color.availableSizeIds.length ||
+          color.availableSizeIds.some((value) => !available.has(value))
+        )
+          issue(['colors', index, 'availableSizeIds'], 'Availability must match the supplied Shopify variants.');
       }
       const seen = new Set<string>();
       color.availableSizeIds?.forEach((sizeId, sizeIndex) => {
-        if (!sizeIds.has(sizeId))
-          issue(
-            ["colors", index, "availableSizeIds", sizeIndex],
-            `Unknown size: ${sizeId}`,
-          );
-        if (seen.has(sizeId))
-          issue(
-            ["colors", index, "availableSizeIds", sizeIndex],
-            `Duplicate size: ${sizeId}`,
-          );
+        if (!sizeIds.has(sizeId)) issue(['colors', index, 'availableSizeIds', sizeIndex], `Unknown size: ${sizeId}`);
+        if (seen.has(sizeId)) issue(['colors', index, 'availableSizeIds', sizeIndex], `Duplicate size: ${sizeId}`);
         seen.add(sizeId);
       });
       for (const viewId of Object.keys(color.images ?? {})) {
-        if (!viewIds.has(viewId))
-          issue(["colors", index, "images", viewId], `Unknown view: ${viewId}`);
+        if (!viewIds.has(viewId)) issue(['colors', index, 'images', viewId], `Unknown view: ${viewId}`);
       }
-      if (config.preview === "photo") {
+      if (config.preview === 'photo' && !config.previewUnavailable) {
         for (const view of config.views) {
           if (!color.images?.[view.id])
-            issue(
-              ["colors", index, "images", view.id],
-              "Photo previews need an image for every view.",
-            );
+            issue(['colors', index, 'images', view.id], 'Photo previews need an image for every view.');
         }
       }
     });
     try {
       new Intl.NumberFormat(config.locale, {
-        style: "currency",
+        style: 'currency',
         currency: config.currency,
       });
     } catch {
-      issue(
-        ["locale"],
-        "Provide a valid locale and currency for price formatting.",
-      );
+      issue(['locale'], 'Provide a valid locale and currency for price formatting.');
     }
   });
 

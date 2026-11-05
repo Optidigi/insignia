@@ -1,59 +1,56 @@
-import type { CartReceipt } from "./runtime";
-import { resolvePrintCenter } from "./position-geometry";
-import type { PercentPoint } from "./position-geometry";
 import {
-  isValidQuantity,
   type Artwork,
   type ColorId,
   type Design,
+  isValidQuantity,
   type Position,
   type PositionId,
   type Print,
   type Quantities,
-  type View,
   type VariantMatrixCell,
-} from "./model";
+  type View,
+} from './model';
+import type { PercentPoint } from './position-geometry';
+import { resolvePrintCenter } from './position-geometry';
+import type { CartReceipt } from './runtime';
 
 export type DesignerStep = 0 | 1 | 2;
 
 export type DesignerModal =
-  | { kind: "closed" }
-  | { kind: "artwork"; positionId: PositionId }
-  | { kind: "positions"; view: View | null }
-  | { kind: "colors"; mode: "choose" | "add" }
-  | { kind: "switch-design"; design: Design };
+  | { kind: 'closed' }
+  | { kind: 'artwork'; positionId: PositionId }
+  | { kind: 'positions'; view: View | null }
+  | { kind: 'colors'; mode: 'choose' | 'add' }
+  | { kind: 'switch-design'; design: Design };
 
-export type UploadFailureReason =
-  | "file-too-large"
-  | "unsupported-file-type"
-  | "read-failed";
+export type UploadFailureReason = 'file-too-large' | 'unsupported-file-type' | 'read-failed';
 
 export type UploadState =
-  | { kind: "idle" }
-  | { kind: "reading"; token: number; target: PositionId }
+  | { kind: 'idle' }
+  | { kind: 'reading'; token: number; target: PositionId }
   | {
-      kind: "failed";
+      kind: 'failed';
       token: number;
       target: PositionId;
       reason: UploadFailureReason;
     };
 
 export type RecoveryState =
-  | { kind: "none" }
-  | { kind: "removed-position"; token: number; print: Print }
+  | { kind: 'none' }
+  | { kind: 'removed-position'; token: number; print: Print }
   | {
-      kind: "removed-color";
+      kind: 'removed-color';
       token: number;
       color: ColorId;
       colorName: string;
-      colorNameSource?: "generic-selection";
+      colorNameSource?: 'generic-selection';
       index: number;
       quantities: Quantities;
     }
   | {
-      kind: "message";
+      kind: 'message';
       token: number;
-      reason: "artwork-restored" | "items-restored";
+      reason: 'artwork-restored' | 'items-restored';
     };
 
 export interface DesignerRules {
@@ -62,6 +59,7 @@ export interface DesignerRules {
   sizeIds: readonly string[];
   availableSizes: Readonly<Record<ColorId, readonly string[] | undefined>>;
   variantMatrix?: readonly VariantMatrixCell[] | undefined;
+  productionOptions?: readonly { id: string; valueIds: readonly string[] }[];
   maxQuantity: number;
   deferablePositions: readonly PositionId[];
 }
@@ -75,15 +73,17 @@ export interface DesignerState {
   active: PositionId;
   expanded: PositionId | null;
   artworks: Artwork[];
-  positionUndo: Partial<Record<PositionId, Pick<Print, "size" | "position">>>;
+  positionUndo: Partial<Record<PositionId, Pick<Print, 'size' | 'position'>>>;
   quantities: Quantities;
+  productionChoices: Record<string, string>;
   colorRows: ColorId[];
   /** Baseline for dirty detection; the host owns its saved-design collection. */
   baseline: Design | null;
+  requiresCartReview: boolean;
   commit:
-    | { kind: "idle" }
-    | { kind: "pending"; requestId: string; design: Design }
-    | { kind: "failed"; reason: "cart-commit-failed" };
+    | { kind: 'idle' }
+    | { kind: 'pending'; requestId: string; design: Design }
+    | { kind: 'failed'; reason: 'cart-commit-failed' };
   completion: CartReceipt | null;
   editing: string | null;
   open: boolean;
@@ -105,81 +105,85 @@ export interface CreateDesignerStateInput {
   artworks: readonly Artwork[];
   designerOpen: boolean;
   initialDesign?: Design;
+  requiresCartReview?: boolean;
 }
 
 export type DesignerEvent =
-  | { type: "step-selected"; step: DesignerStep }
-  | { type: "step-advanced" }
-  | { type: "validation-attempted"; step: DesignerStep }
-  | { type: "validation-cleared" }
-  | { type: "view-selected"; view: View }
-  | { type: "color-selected"; color: ColorId }
-  | { type: "color-added"; color: ColorId }
+  | { type: 'production-option-selected'; optionId: string; valueId: string }
+  | { type: 'review-navigation-failed' }
+  | { type: 'cart-review-satisfied' }
+  | { type: 'step-selected'; step: DesignerStep }
+  | { type: 'step-advanced' }
+  | { type: 'validation-attempted'; step: DesignerStep }
+  | { type: 'validation-cleared' }
+  | { type: 'view-selected'; view: View }
+  | { type: 'color-selected'; color: ColorId }
+  | { type: 'color-added'; color: ColorId }
   | {
-      type: "color-row-removed";
+      type: 'color-row-removed';
       color: ColorId;
       name: string;
-      nameSource?: "generic-selection";
+      nameSource?: 'generic-selection';
     }
-  | { type: "color-row-restored" }
-  | { type: "quantity-entered"; color: ColorId; size: string; value: number }
-  | { type: "quantity-focused"; color: ColorId }
-  | { type: "quantity-removed"; key: string }
-  | { type: "position-selected"; positionId: PositionId }
-  | { type: "position-expanded"; positionId: PositionId | null }
-  | { type: "position-added"; print: Print }
-  | { type: "position-removed"; positionId: PositionId }
-  | { type: "position-restored" }
-  | { type: "print-size-selected"; positionId: PositionId; size: number }
-  | { type: "print-method-selected"; positionId: PositionId; method: string }
+  | { type: 'color-row-restored' }
+  | { type: 'quantity-entered'; color: ColorId; size: string; value: number }
+  | { type: 'quantity-focused'; color: ColorId }
+  | { type: 'quantity-removed'; key: string }
+  | { type: 'position-selected'; positionId: PositionId }
+  | { type: 'position-expanded'; positionId: PositionId | null }
+  | { type: 'position-added'; print: Print }
+  | { type: 'position-removed'; positionId: PositionId }
+  | { type: 'position-restored' }
+  | { type: 'print-size-selected'; positionId: PositionId; size: number }
+  | { type: 'print-method-selected'; positionId: PositionId; method: string }
   | {
-      type: "position-committed";
+      type: 'position-committed';
       positionId: PositionId;
       size: number;
       position: PercentPoint | undefined;
     }
-  | { type: "position-undone"; positionId: PositionId }
-  | { type: "position-undo-cleared"; positionId: PositionId }
-  | { type: "artwork-applied"; positionId: PositionId; artworkId: string }
-  | { type: "cart-commit-requested"; requestId: string; design: Design }
-  | { type: "cart-commit-succeeded"; requestId: string; receipt: CartReceipt }
-  | { type: "cart-commit-failed"; requestId: string; reason: "cart-commit-failed" }
-  | { type: "cart-commit-canceled" }
-  | { type: "product-design-edit-requested"; design: Design }
-  | { type: "product-design-switch-confirmed" }
-  | { type: "new-design-requested" }
-  | { type: "product-return-requested" }
-  | { type: "designer-reopened" }
-  | { type: "location-observed"; designerOpen: boolean }
-  | { type: "modal-opened"; modal: Exclude<DesignerModal, { kind: "closed" }> }
-  | { type: "modal-closed" }
+  | { type: 'position-undone'; positionId: PositionId }
+  | { type: 'position-undo-cleared'; positionId: PositionId }
+  | { type: 'artwork-applied'; positionId: PositionId; artworkId: string }
+  | { type: 'cart-commit-requested'; requestId: string; design: Design }
+  | { type: 'cart-commit-succeeded'; requestId: string; receipt: CartReceipt }
+  | { type: 'cart-commit-failed'; requestId: string; reason: 'cart-commit-failed' }
+  | { type: 'cart-commit-canceled' }
+  | { type: 'product-design-edit-requested'; design: Design }
+  | { type: 'product-design-switch-confirmed' }
+  | { type: 'new-design-requested' }
+  | { type: 'product-return-requested' }
+  | { type: 'designer-reopened' }
+  | { type: 'location-observed'; designerOpen: boolean }
+  | { type: 'modal-opened'; modal: Exclude<DesignerModal, { kind: 'closed' }> }
+  | { type: 'modal-closed' }
   | {
-      type: "upload-rejected";
+      type: 'upload-rejected';
       token: number;
       target: PositionId;
       reason: UploadFailureReason;
     }
-  | { type: "upload-started"; token: number; target: PositionId }
-  | { type: "upload-canceled" }
+  | { type: 'upload-started'; token: number; target: PositionId }
+  | { type: 'upload-canceled' }
   | {
-      type: "upload-succeeded";
+      type: 'upload-succeeded';
       token: number;
       target: PositionId;
       artwork: Artwork;
     }
   | {
-      type: "upload-failed";
+      type: 'upload-failed';
       token: number;
       target: PositionId;
-      reason: "read-failed";
+      reason: 'read-failed';
     }
-  | { type: "recovery-undone" }
-  | { type: "recovery-dismissed" }
-  | { type: "recovery-expired"; token: number };
+  | { type: 'recovery-undone' }
+  | { type: 'recovery-dismissed' }
+  | { type: 'recovery-expired'; token: number };
 
-const closedModal: DesignerModal = { kind: "closed" };
-const noUpload: UploadState = { kind: "idle" };
-const noRecovery: RecoveryState = { kind: "none" };
+const closedModal: DesignerModal = { kind: 'closed' };
+const noUpload: UploadState = { kind: 'idle' };
+const noRecovery: RecoveryState = { kind: 'none' };
 
 export function createDesignerState(input: CreateDesignerStateInput): DesignerState {
   const initial: DesignerState = {
@@ -193,9 +197,11 @@ export function createDesignerState(input: CreateDesignerStateInput): DesignerSt
     artworks: input.artworks.map((artwork) => ({ ...artwork })),
     positionUndo: {},
     quantities: {},
+    productionChoices: defaultProductionChoices(input.rules),
     colorRows: [input.color],
     baseline: null,
-    commit: { kind: "idle" },
+    requiresCartReview: input.requiresCartReview ?? false,
+    commit: { kind: 'idle' },
     completion: null,
     editing: null,
     open: input.designerOpen,
@@ -209,62 +215,64 @@ export function createDesignerState(input: CreateDesignerStateInput): DesignerSt
   return input.initialDesign ? loadCartDesign(initial, input.initialDesign) : initial;
 }
 
-export function designerReducer(
-  state: DesignerState,
-  event: DesignerEvent,
-): DesignerState {
+export function designerReducer(state: DesignerState, event: DesignerEvent): DesignerState {
   if (
-    state.commit.kind === "pending" &&
+    state.commit.kind === 'pending' &&
     ![
-      "cart-commit-succeeded",
-      "cart-commit-failed",
-      "cart-commit-canceled",
-      "product-return-requested",
-      "location-observed",
+      'cart-commit-succeeded',
+      'cart-commit-failed',
+      'cart-commit-canceled',
+      'product-return-requested',
+      'location-observed',
     ].includes(event.type)
   )
     return state;
   switch (event.type) {
-    case "step-selected":
+    case 'production-option-selected': {
+      const definition = state.rules.productionOptions?.find((option) => option.id === event.optionId);
+      if (!definition || (event.valueId !== '' && !definition.valueIds.includes(event.valueId))) return state;
+      const next = { ...state.productionChoices };
+      if (event.valueId === '') delete next[event.optionId];
+      else next[event.optionId] = event.valueId;
+      return { ...state, productionChoices: next };
+    }
+
+    case 'step-selected':
       return { ...state, step: event.step };
-    case "step-advanced":
+    case 'step-advanced':
       return {
         ...state,
         step: Math.min(2, state.step + 1) as DesignerStep,
         attemptedStep: null,
       };
-    case "validation-attempted":
+    case 'validation-attempted':
       return { ...state, attemptedStep: event.step };
-    case "validation-cleared":
+    case 'validation-cleared':
       return { ...state, attemptedStep: null };
-    case "view-selected":
+    case 'view-selected':
       return { ...state, view: event.view };
-    case "color-selected":
+    case 'color-selected':
       return selectColor(state, event.color);
-    case "color-added":
+    case 'color-added':
       if (!state.rules.colorIds.includes(event.color)) return state;
       return {
         ...state,
         color: event.color,
-        colorRows: state.colorRows.includes(event.color)
-          ? state.colorRows
-          : [...state.colorRows, event.color],
+        colorRows: state.colorRows.includes(event.color) ? state.colorRows : [...state.colorRows, event.color],
         recovery: clearMatchingColorRecovery(state.recovery, event.color),
       };
-    case "color-row-removed":
+    case 'color-row-removed':
       return removeColorRow(state, event.color, event.name, event.nameSource);
-    case "color-row-restored":
+    case 'color-row-restored':
       return restoreColorRow(state);
-    case "quantity-entered": {
+    case 'quantity-entered': {
       if (!isAvailableSize(state, event.color, event.size)) return state;
       // Invalid drafts remain ineligible. The input boundary sends zero only for a deliberate empty field.
       const value = event.value;
       return {
         ...state,
         color: event.color,
-        colorRows: state.colorRows.includes(event.color)
-          ? state.colorRows
-          : [...state.colorRows, event.color],
+        colorRows: state.colorRows.includes(event.color) ? state.colorRows : [...state.colorRows, event.color],
         recovery: clearMatchingColorRecovery(state.recovery, event.color),
         quantities: {
           ...state.quantities,
@@ -272,19 +280,21 @@ export function designerReducer(
         },
       };
     }
-    case "quantity-focused":
+    case 'quantity-focused':
       return state.rules.colorIds.includes(event.color) ? { ...state, color: event.color } : state;
-    case "quantity-removed":
+    case 'quantity-removed':
       return Object.hasOwn(state.quantities, event.key)
-        ? { ...state, quantities: Object.fromEntries(Object.entries(state.quantities).filter(([key]) => key !== event.key)) }
+        ? {
+            ...state,
+            quantities: Object.fromEntries(Object.entries(state.quantities).filter(([key]) => key !== event.key)),
+          }
         : state;
-    case "position-selected":
+    case 'position-selected':
       return selectPosition(state, event.positionId);
-    case "position-expanded":
+    case 'position-expanded':
       return { ...state, expanded: event.positionId };
-    case "position-added": {
-      if (!state.rules.positions.some((position) => position.id === event.print.id))
-        return state;
+    case 'position-added': {
+      if (!state.rules.positions.some((position) => position.id === event.print.id)) return state;
       const prints = state.prints.some((print) => print.id === event.print.id)
         ? state.prints
         : [...state.prints, copyPrint(event.print)];
@@ -297,15 +307,15 @@ export function designerReducer(
         recovery: clearMatchingPositionRecovery(state.recovery, event.print.id),
       };
     }
-    case "position-removed":
+    case 'position-removed':
       return removePosition(state, event.positionId);
-    case "position-restored":
+    case 'position-restored':
       return restorePosition(state);
-    case "print-size-selected":
+    case 'print-size-selected':
       return selectPrintSize(state, event.positionId, event.size);
-    case "print-method-selected":
+    case 'print-method-selected':
       return selectPrintMethod(state, event.positionId, event.method);
-    case "position-committed": {
+    case 'position-committed': {
       const current = state.prints.find((print) => print.id === event.positionId);
       if (!current) return state;
       return commitPosition(state, {
@@ -314,98 +324,99 @@ export function designerReducer(
         position: event.position,
       });
     }
-    case "position-undone":
+    case 'position-undone':
       return undoPosition(state, event.positionId);
-    case "position-undo-cleared":
+    case 'position-undo-cleared':
       return clearPositionUndo(state, event.positionId);
-    case "artwork-applied":
+    case 'artwork-applied':
       return applyArtwork(state, event.positionId, event.artworkId);
-    case "cart-commit-requested": {
+    case 'cart-review-satisfied':
+      return { ...state, requiresCartReview: false };
+    case 'review-navigation-failed':
+      return { ...state, commit: { kind: 'failed', reason: 'cart-commit-failed' } };
+    case 'cart-commit-requested': {
       const design = buildCommitDesign(state, event.design.id);
-      return design
-        ? { ...state, commit: { kind: "pending", requestId: event.requestId, design } }
-        : state;
+      return design ? { ...state, commit: { kind: 'pending', requestId: event.requestId, design } } : state;
     }
-    case "cart-commit-succeeded": {
+    case 'cart-commit-succeeded': {
       const pending = state.commit;
       if (
-        pending.kind !== "pending" ||
+        pending.kind !== 'pending' ||
         pending.requestId !== event.requestId ||
         !state.open ||
-        event.receipt.kind !== "applied" ||
+        event.receipt.kind !== 'applied' ||
         event.receipt.requestId !== event.requestId ||
         event.receipt.designId !== pending.design.id ||
-        event.receipt.operation !== (state.editing ? "updated" : "added") ||
-        !["local-preview", "shopify"].includes(event.receipt.authority) ||
-        (event.receipt.authority === "shopify" && !pending.design.variants?.length)
+        event.receipt.operation !== (state.editing ? 'updated' : 'added') ||
+        !['local-preview', 'shopify'].includes(event.receipt.authority) ||
+        (event.receipt.authority === 'shopify' && !pending.design.variants?.length)
       )
         return state;
       return {
         ...state,
         baseline: copyDesign(pending.design),
+        requiresCartReview: false,
         editing: pending.design.id,
         open: false,
         completion: event.receipt,
-        commit: { kind: "idle" },
+        commit: { kind: 'idle' },
         modal: closedModal,
         recovery: noRecovery,
         upload: noUpload,
       };
     }
-    case "cart-commit-failed":
-      return state.commit.kind === "pending" && state.commit.requestId === event.requestId
-        ? { ...state, commit: { kind: "failed", reason: event.reason } }
+    case 'cart-commit-failed':
+      return state.commit.kind === 'pending' && state.commit.requestId === event.requestId
+        ? { ...state, commit: { kind: 'failed', reason: event.reason } }
         : state;
-    case "cart-commit-canceled":
-      return state.commit.kind === "pending"
-        ? { ...state, commit: { kind: "idle" } }
-        : state;
-    case "product-design-edit-requested":
+    case 'cart-commit-canceled':
+      return state.commit.kind === 'pending' ? { ...state, commit: { kind: 'idle' } } : state;
+    case 'product-design-edit-requested':
       return requestProductDesignEdit(state, event.design);
-    case "product-design-switch-confirmed":
+    case 'product-design-switch-confirmed':
       return confirmProductDesignSwitch(state);
-    case "new-design-requested":
+    case 'new-design-requested':
       return startNewDesign(state);
-    case "product-return-requested":
+    case 'product-return-requested':
       return {
         ...state,
         open: false,
-        commit: { kind: "idle" },
+        commit: { kind: 'idle' },
         completion: null,
         modal: closedModal,
         upload: noUpload,
         recovery: noRecovery,
       };
-    case "designer-reopened":
+    case 'designer-reopened':
       return { ...state, open: true, completion: null };
-    case "location-observed":
+    case 'location-observed':
       return {
         ...state,
         open: event.designerOpen,
-        commit: { kind: "idle" },
+        commit: { kind: 'idle' },
         completion: null,
         modal: closedModal,
         upload: noUpload,
       };
-    case "modal-opened":
+    case 'modal-opened':
       return { ...state, modal: event.modal, upload: noUpload };
-    case "modal-closed":
+    case 'modal-closed':
       return { ...state, modal: closedModal, upload: noUpload };
-    case "upload-rejected":
+    case 'upload-rejected':
       return beginUploadFailure(state, event.token, event.target, event.reason);
-    case "upload-canceled":
-      return state.upload.kind === "idle" ? state : { ...state, upload: noUpload };
-    case "upload-started":
+    case 'upload-canceled':
+      return state.upload.kind === 'idle' ? state : { ...state, upload: noUpload };
+    case 'upload-started':
       if (!isOpenUploadTarget(state, event.target)) return state;
       if (event.token <= state.uploadVersion) return state;
       return {
         ...state,
         uploadVersion: event.token,
-        upload: { kind: "reading", token: event.token, target: event.target },
+        upload: { kind: 'reading', token: event.token, target: event.target },
       };
-    case "upload-succeeded": {
+    case 'upload-succeeded': {
       if (
-        state.upload.kind !== "reading" ||
+        state.upload.kind !== 'reading' ||
         state.upload.token !== event.token ||
         state.upload.target !== event.target ||
         !isOpenUploadTarget(state, event.target) ||
@@ -416,16 +427,18 @@ export function designerReducer(
       return applyArtwork(
         {
           ...state,
-          artworks: [...state.artworks, artwork],
+          artworks: state.artworks.some((existing) => existing.id === artwork.id)
+            ? state.artworks.map((existing) => (existing.id === artwork.id ? artwork : existing))
+            : [...state.artworks, artwork],
           upload: noUpload,
         },
         event.target,
         artwork.id,
       );
     }
-    case "upload-failed":
+    case 'upload-failed':
       if (
-        state.upload.kind !== "reading" ||
+        state.upload.kind !== 'reading' ||
         state.upload.token !== event.token ||
         state.upload.target !== event.target ||
         !isOpenUploadTarget(state, event.target)
@@ -434,18 +447,18 @@ export function designerReducer(
       return {
         ...state,
         upload: {
-          kind: "failed",
+          kind: 'failed',
           token: event.token,
           target: event.target,
           reason: event.reason,
         },
       };
-    case "recovery-undone":
+    case 'recovery-undone':
       return undoRecovery(state);
-    case "recovery-dismissed":
+    case 'recovery-dismissed':
       return { ...state, recovery: noRecovery };
-    case "recovery-expired":
-      return state.recovery.kind !== "none" && state.recovery.token === event.token
+    case 'recovery-expired':
+      return state.recovery.kind !== 'none' && state.recovery.token === event.token
         ? { ...state, recovery: noRecovery }
         : state;
   }
@@ -454,8 +467,7 @@ export function designerReducer(
 function selectColor(state: DesignerState, color: ColorId): DesignerState {
   if (!state.rules.colorIds.includes(color)) return state;
   const quantity = Object.values(state.quantities).reduce<number>(
-    (sum, value) =>
-      isValidQuantity(value ?? 0, state.rules.maxQuantity) ? sum + (value ?? 0) : sum,
+    (sum, value) => (isValidQuantity(value ?? 0, state.rules.maxQuantity) ? sum + (value ?? 0) : sum),
     0,
   );
   const hasInvalidQuantity = Object.values(state.quantities).some(
@@ -476,12 +488,30 @@ function selectColor(state: DesignerState, color: ColorId): DesignerState {
 }
 
 export function hasUnappliedDraft(state: DesignerState): boolean {
+  if (state.requiresCartReview) return true;
   const saved = state.baseline;
   return saved
     ? JSON.stringify(state.prints) !== JSON.stringify(saved.prints) ||
-        quantitySignature(state.quantities) !== quantitySignature(saved.quantities)
-    : state.prints.length > 0 ||
+        quantitySignature(state.quantities) !== quantitySignature(saved.quantities) ||
+        productionSignature(state.productionChoices) !==
+          productionSignature(
+            Object.fromEntries((saved.options ?? []).map((option) => [option.optionId, option.valueId])),
+          )
+    : productionSignature(state.productionChoices) !== productionSignature(defaultProductionChoices(state.rules)) ||
+        state.prints.length > 0 ||
         Object.values(state.quantities).some((value) => (value ?? 0) !== 0);
+}
+
+function defaultProductionChoices(rules: DesignerRules) {
+  return Object.fromEntries(
+    (rules.productionOptions ?? []).flatMap((option) => {
+      const value = option.valueIds[0];
+      return value ? [[option.id, value]] : [];
+    }),
+  );
+}
+function productionSignature(values: Record<string, string>) {
+  return JSON.stringify(Object.entries(values).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
 }
 
 function quantitySignature(quantities: Quantities): string {
@@ -492,10 +522,7 @@ function quantitySignature(quantities: Quantities): string {
   );
 }
 
-export function productDesignEditRequiresConfirmation(
-  state: DesignerState,
-  designId: string,
-): boolean {
+export function productDesignEditRequiresConfirmation(state: DesignerState, designId: string): boolean {
   return hasUnappliedDraft(state) && designId !== state.editing;
 }
 
@@ -520,7 +547,7 @@ function removePosition(state: DesignerState, positionId: PositionId): DesignerS
       ...state,
       prints,
       recovery: {
-        kind: "removed-position",
+        kind: 'removed-position',
         token,
         print: copyPrint(removed),
       },
@@ -533,22 +560,18 @@ function removePosition(state: DesignerState, positionId: PositionId): DesignerS
 }
 
 function restorePosition(state: DesignerState): DesignerState {
-  if (state.recovery.kind !== "removed-position") return state;
+  if (state.recovery.kind !== 'removed-position') return state;
   const print = state.recovery.print;
-  if (state.prints.some((entry) => entry.id === print.id))
-    return { ...state, recovery: noRecovery };
-  const selected = selectPosition(
-    { ...state, prints: [...state.prints, copyPrint(print)] },
-    print.id,
-  );
-  return setRecoveryMessage(selected, "artwork-restored");
+  if (state.prints.some((entry) => entry.id === print.id)) return { ...state, recovery: noRecovery };
+  const selected = selectPosition({ ...state, prints: [...state.prints, copyPrint(print)] }, print.id);
+  return setRecoveryMessage(selected, 'artwork-restored');
 }
 
 function removeColorRow(
   state: DesignerState,
   color: ColorId,
   name: string,
-  nameSource?: "generic-selection",
+  nameSource?: 'generic-selection',
 ): DesignerState {
   if (!state.colorRows.includes(color) || state.colorRows.length < 2) return state;
   const index = state.colorRows.indexOf(color);
@@ -557,20 +580,16 @@ function removeColorRow(
   );
   const nextColor =
     state.color === color
-      ? (state.colorRows.find((id) => id !== color) ??
-        state.rules.colorIds[0] ??
-        state.color)
+      ? (state.colorRows.find((id) => id !== color) ?? state.rules.colorIds[0] ?? state.color)
       : state.color;
   const token = state.recoveryVersion + 1;
   return {
     ...state,
     color: nextColor,
     colorRows: state.colorRows.filter((id) => id !== color),
-    quantities: Object.fromEntries(
-      Object.entries(state.quantities).filter(([key]) => !key.startsWith(`${color}:`)),
-    ),
+    quantities: Object.fromEntries(Object.entries(state.quantities).filter(([key]) => !key.startsWith(`${color}:`))),
     recovery: {
-      kind: "removed-color",
+      kind: 'removed-color',
       token,
       color,
       colorName: name,
@@ -583,7 +602,7 @@ function removeColorRow(
 }
 
 function restoreColorRow(state: DesignerState): DesignerState {
-  if (state.recovery.kind !== "removed-color") return state;
+  if (state.recovery.kind !== 'removed-color') return state;
   const { color, index, quantities } = state.recovery;
   if (state.colorRows.includes(color)) return { ...state, recovery: noRecovery };
   const rows = [...state.colorRows];
@@ -594,12 +613,12 @@ function restoreColorRow(state: DesignerState): DesignerState {
     colorRows: rows,
     quantities: { ...state.quantities, ...quantities },
   };
-  return setRecoveryMessage(restored, "items-restored");
+  return setRecoveryMessage(restored, 'items-restored');
 }
 
 function undoRecovery(state: DesignerState): DesignerState {
-  if (state.recovery.kind === "removed-position") return restorePosition(state);
-  if (state.recovery.kind === "removed-color") return restoreColorRow(state);
+  if (state.recovery.kind === 'removed-position') return restorePosition(state);
+  if (state.recovery.kind === 'removed-color') return restoreColorRow(state);
   return state;
 }
 
@@ -622,15 +641,13 @@ function commitPosition(state: DesignerState, nextPrint: Print): DesignerState {
     Math.abs(before.y - after.y) < 0.000001
   )
     return state;
-  const prior: Pick<Print, "size" | "position"> = {
+  const prior: Pick<Print, 'size' | 'position'> = {
     size: current.size,
     position: current.position,
   };
   return {
     ...state,
-    prints: state.prints.map((entry) =>
-      entry.id === nextPrint.id ? copyPrint(nextPrint) : entry,
-    ),
+    prints: state.prints.map((entry) => (entry.id === nextPrint.id ? copyPrint(nextPrint) : entry)),
     positionUndo: { ...state.positionUndo, [nextPrint.id]: prior },
   };
 }
@@ -640,9 +657,7 @@ function undoPosition(state: DesignerState, positionId: PositionId): DesignerSta
   if (!previous || !hasPrint(state, positionId)) return state;
   return {
     ...state,
-    prints: state.prints.map((print) =>
-      print.id === positionId ? { ...print, ...previous } : print,
-    ),
+    prints: state.prints.map((print) => (print.id === positionId ? { ...print, ...previous } : print)),
     positionUndo: withoutPositionUndo(state.positionUndo, positionId),
   };
 }
@@ -655,19 +670,10 @@ function clearPositionUndo(state: DesignerState, positionId: PositionId): Design
   };
 }
 
-function applyArtwork(
-  state: DesignerState,
-  positionId: PositionId,
-  artworkId: string,
-): DesignerState {
+function applyArtwork(state: DesignerState, positionId: PositionId, artworkId: string): DesignerState {
   if (!hasPrint(state, positionId)) return state;
-  if (
-    artworkId !== "later" &&
-    !state.artworks.some((artwork) => artwork.id === artworkId)
-  )
-    return state;
-  if (artworkId === "later" && !state.rules.deferablePositions.includes(positionId))
-    return state;
+  if (artworkId !== 'later' && !state.artworks.some((artwork) => artwork.id === artworkId)) return state;
+  if (artworkId === 'later' && !state.rules.deferablePositions.includes(positionId)) return state;
   return {
     ...clearPositionUndo(
       {
@@ -675,7 +681,7 @@ function applyArtwork(
         prints: state.prints.map((print) => {
           if (print.id !== positionId) return print;
           const updated: Print = { ...print, artworkId };
-          if (artworkId === "later") delete updated.position;
+          if (artworkId === 'later') delete updated.position;
           return updated;
         }),
         recovery: noRecovery,
@@ -691,16 +697,16 @@ export function canCommitDesign(state: DesignerState): boolean {
   return (
     state.open &&
     state.step === 2 &&
-    state.modal.kind === "closed" &&
-    state.commit.kind !== "pending" &&
+    state.modal.kind === 'closed' &&
+    state.commit.kind !== 'pending' &&
     !(state.editing && !hasUnappliedDraft(state)) &&
     state.prints.length > 0 &&
     isCartQuantityValid(state) &&
+    isProductionChoicesValid(state) &&
     state.prints.every(
       (print) =>
         isAllowedPrint(state, print) &&
-        ((print.artworkId === "later" &&
-          state.rules.deferablePositions.includes(print.id)) ||
+        ((print.artworkId === 'later' && state.rules.deferablePositions.includes(print.id)) ||
           state.artworks.some((artwork) => artwork.id === print.artworkId)),
     )
   );
@@ -709,6 +715,7 @@ function copyDesign(design: Design): Design {
   return {
     id: design.id,
     prints: design.prints.map(copyPrint),
+    ...(design.options ? { options: design.options.map((option) => ({ ...option })) } : {}),
     quantities: { ...design.quantities },
     ...(design.variants ? { variants: design.variants.map((variant) => ({ ...variant })) } : {}),
   };
@@ -724,10 +731,11 @@ function loadCartDesign(state: DesignerState, design: Design): DesignerState {
     step: 0,
     prints: design.prints.map(copyPrint),
     quantities: { ...design.quantities },
+    productionChoices: Object.fromEntries((design.options ?? []).map((option) => [option.optionId, option.valueId])),
     colorRows: colorRows.length ? colorRows : [state.color],
     editing: design.id,
     baseline: copyDesign(design),
-    commit: { kind: "idle" },
+    commit: { kind: 'idle' },
     completion: null,
     positionUndo: {},
     attemptedStep: null,
@@ -744,7 +752,7 @@ function requestProductDesignEdit(state: DesignerState, design: Design): Designe
   const designId = design.id;
   if (state.open) return state;
   if (productDesignEditRequiresConfirmation(state, designId)) {
-    return { ...state, modal: { kind: "switch-design", design: copyDesign(design) } };
+    return { ...state, modal: { kind: 'switch-design', design: copyDesign(design) } };
   }
   if (hasUnappliedDraft(state) && designId === state.editing) {
     return {
@@ -758,7 +766,7 @@ function requestProductDesignEdit(state: DesignerState, design: Design): Designe
 }
 
 function confirmProductDesignSwitch(state: DesignerState): DesignerState {
-  if (state.modal.kind !== "switch-design") return state;
+  if (state.modal.kind !== 'switch-design') return state;
   return loadCartDesign({ ...state, open: true, modal: closedModal }, state.modal.design);
 }
 
@@ -768,10 +776,12 @@ function startNewDesign(state: DesignerState): DesignerState {
     step: 0,
     prints: [],
     quantities: {},
+    productionChoices: defaultProductionChoices(state.rules),
     colorRows: [state.color],
     editing: null,
     baseline: null,
-    commit: { kind: "idle" },
+    requiresCartReview: false,
+    commit: { kind: 'idle' },
     completion: null,
     expanded: null,
     positionUndo: {},
@@ -792,51 +802,35 @@ function beginUploadFailure(
   return {
     ...state,
     uploadVersion: token,
-    upload: { kind: "failed", token, target, reason },
+    upload: { kind: 'failed', token, target, reason },
   };
 }
 
 function isOpenUploadTarget(state: DesignerState, target: PositionId): boolean {
-  return state.modal.kind === "artwork" && state.modal.positionId === target;
+  return state.modal.kind === 'artwork' && state.modal.positionId === target;
 }
 
-function setRecoveryMessage(
-  state: DesignerState,
-  reason: "artwork-restored" | "items-restored",
-): DesignerState {
+function setRecoveryMessage(state: DesignerState, reason: 'artwork-restored' | 'items-restored'): DesignerState {
   const token = state.recoveryVersion + 1;
   return {
     ...state,
-    recovery: { kind: "message", token, reason },
+    recovery: { kind: 'message', token, reason },
     recoveryVersion: token,
   };
 }
 
-function clearMatchingColorRecovery(
-  recovery: RecoveryState,
-  color: ColorId,
-): RecoveryState {
-  return recovery.kind === "removed-color" && recovery.color === color
-    ? noRecovery
-    : recovery;
+function clearMatchingColorRecovery(recovery: RecoveryState, color: ColorId): RecoveryState {
+  return recovery.kind === 'removed-color' && recovery.color === color ? noRecovery : recovery;
 }
 
-function clearMatchingPositionRecovery(
-  recovery: RecoveryState,
-  positionId: PositionId,
-): RecoveryState {
-  return recovery.kind === "removed-position" && recovery.print.id === positionId
-    ? noRecovery
-    : recovery;
+function clearMatchingPositionRecovery(recovery: RecoveryState, positionId: PositionId): RecoveryState {
+  return recovery.kind === 'removed-position' && recovery.print.id === positionId ? noRecovery : recovery;
 }
 
 function isAvailableSize(state: DesignerState, color: ColorId, size: string): boolean {
-  if (!state.rules.colorIds.includes(color) || !state.rules.sizeIds.includes(size))
-    return false;
+  if (!state.rules.colorIds.includes(color) || !state.rules.sizeIds.includes(size)) return false;
   if (state.rules.variantMatrix !== undefined) {
-    const cells = state.rules.variantMatrix.filter((cell) =>
-      cell.rowId === color && cell.columnId === size,
-    );
+    const cells = state.rules.variantMatrix.filter((cell) => cell.rowId === color && cell.columnId === size);
     return cells.length === 1 && cells[0]?.available === true;
   }
   return state.rules.availableSizes[color]?.includes(size) ?? false;
@@ -852,59 +846,47 @@ function isAllowedPrint(state: DesignerState, print: Print): boolean {
   )
     return false;
   const prices = position.methodSizePrices?.[print.method];
-  return (
-    prices === undefined ||
-    (prices[print.size] !== null && prices[print.size] !== undefined)
-  );
+  return prices === undefined || (prices[print.size] !== null && prices[print.size] !== undefined);
 }
 
-function selectPrintSize(
-  state: DesignerState,
-  positionId: PositionId,
-  size: number,
-): DesignerState {
+function selectPrintSize(state: DesignerState, positionId: PositionId, size: number): DesignerState {
   const current = state.prints.find((print) => print.id === positionId);
   if (!current || !isAllowedPrint(state, { ...current, size })) return state;
   return replacePrint(state, positionId, { ...current, size });
 }
 
-function selectPrintMethod(
-  state: DesignerState,
-  positionId: PositionId,
-  method: string,
-): DesignerState {
+function selectPrintMethod(state: DesignerState, positionId: PositionId, method: string): DesignerState {
   const current = state.prints.find((print) => print.id === positionId);
   const position = state.rules.positions.find((entry) => entry.id === positionId);
   if (!current || !position || !position.methodIds.includes(method)) return state;
   const currentSize = { ...current, method };
-  if (isAllowedPrint(state, currentSize))
-    return replacePrint(state, positionId, currentSize);
+  if (isAllowedPrint(state, currentSize)) return replacePrint(state, positionId, currentSize);
   const nextSize = position.dimensions.findIndex((_, index) =>
     isAllowedPrint(state, { ...current, size: index, method }),
   );
-  return nextSize < 0
-    ? state
-    : replacePrint(state, positionId, { ...current, method, size: nextSize });
+  return nextSize < 0 ? state : replacePrint(state, positionId, { ...current, method, size: nextSize });
 }
 
-function replacePrint(
-  state: DesignerState,
-  positionId: PositionId,
-  nextPrint: Print,
-): DesignerState {
+function replacePrint(state: DesignerState, positionId: PositionId, nextPrint: Print): DesignerState {
   return {
     ...state,
-    prints: state.prints.map((print) =>
-      print.id === positionId ? copyPrint(nextPrint) : print,
-    ),
+    prints: state.prints.map((print) => (print.id === positionId ? copyPrint(nextPrint) : print)),
   };
 }
 
+export function isProductionChoicesValid(state: DesignerState): boolean {
+  const definitions = state.rules.productionOptions ?? [];
+  return (
+    Object.keys(state.productionChoices).length === definitions.length &&
+    definitions.every((option) => option.valueIds.includes(state.productionChoices[option.id] ?? ''))
+  );
+}
 function isCartQuantityValid(state: DesignerState): boolean {
-  const availableKeys = new Set(state.colorRows.flatMap((color) =>
-    state.rules.sizeIds.filter((size) => isAvailableSize(state, color, size))
-      .map((size) => `${color}:${size}`),
-  ));
+  const availableKeys = new Set(
+    state.colorRows.flatMap((color) =>
+      state.rules.sizeIds.filter((size) => isAvailableSize(state, color, size)).map((size) => `${color}:${size}`),
+    ),
+  );
   let hasQuantity = false;
   for (const [key, value] of Object.entries(state.quantities)) {
     const quantity = value ?? 0;
@@ -935,6 +917,14 @@ export function buildCommitDesign(state: DesignerState, id: string): Design | nu
     prints: state.prints.map(copyPrint),
     quantities: { ...state.quantities },
     ...(variants === undefined ? {} : { variants }),
+    ...(Object.keys(state.productionChoices).length
+      ? {
+          options: (state.rules.productionOptions ?? []).map((option) => ({
+            optionId: option.id,
+            valueId: state.productionChoices[option.id]!,
+          })),
+        }
+      : {}),
   };
 }
 
@@ -943,9 +933,9 @@ function hasPrint(state: DesignerState, positionId: PositionId): boolean {
 }
 
 function withoutPositionUndo(
-  positionUndo: DesignerState["positionUndo"],
+  positionUndo: DesignerState['positionUndo'],
   positionId: PositionId,
-): DesignerState["positionUndo"] {
+): DesignerState['positionUndo'] {
   const next = { ...positionUndo };
   delete next[positionId];
   return next;

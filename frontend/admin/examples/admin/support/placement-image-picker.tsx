@@ -122,6 +122,7 @@ export default function PlacementImagePicker({
   selection,
   usedBy,
   onUpload,
+  upload,
   onBusyChange,
   onSelectionReadyChange,
 }: {
@@ -131,6 +132,7 @@ export default function PlacementImagePicker({
     | { kind: 'multiple'; values: string[]; onChange(ids: string[]): void };
   usedBy: Record<string, string>;
   onUpload(image: EditorProductImage): void;
+  upload?(image: EditorProductImage): Promise<EditorProductImage>;
   onBusyChange?(busy: boolean): void;
   onSelectionReadyChange?(ready: boolean, imageIds: string[]): void;
 }) {
@@ -270,13 +272,16 @@ export default function PlacementImagePicker({
           if (!bitmap.width || !bitmap.height) throw new ImagePreparationError('invalid-dimensions');
           const encoded = encodeWebp(bitmap);
           if (!inputIsActive.current) return;
-          additions.push({
+          const prepared: EditorProductImage = {
             id: crypto.randomUUID(),
             url: encoded.dataUrl,
             width: encoded.width,
             height: encoded.height,
             alt: file.name.slice(0, 160),
-          });
+          };
+          const stored = upload ? await upload(prepared) : prepared;
+          if (!inputIsActive.current) return;
+          additions.push(stored);
         } catch (cause) {
           errors.push({
             fileName: file.name,

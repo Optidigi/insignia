@@ -10,6 +10,8 @@ on:
       - 'deployment/alerts/**'
       - 'deployment/backup/**'
       - 'apps/web/**'
+      - 'apps/storefront/**'
+      - 'frontend/**'
       - 'apps/worker/**'
       - 'packages/application/**'
       - 'packages/database/**'
@@ -96,6 +98,13 @@ jobs:
           corepack pnpm db:migrate
       - run: corepack pnpm --filter @insignia/worker test
         if: steps.changes.outputs.route == 'full'
+      - name: Actual PostgreSQL merchant and customer integration
+        if: steps.changes.outputs.route == 'full'
+        working-directory: apps/web
+        run: |
+          mapfile -t insignia_backend_tests < <(rg --files test -g '*.test.mts' | rg -v 'browser')
+          (( ${#insignia_backend_tests[@]} > 0 ))
+          node --test --test-concurrency=4 "${insignia_backend_tests[@]}"
       - name: Actual queue-member purchase/history and first-paid qualification
         if: steps.changes.outputs.route == 'full'
         run: |
@@ -246,7 +255,7 @@ jobs:
           # Qualified package construction below remains offline and frozen.
           corepack pnpm --filter @insignia/web deploy --prod --frozen-lockfile --legacy /tmp/insignia-m5-web-cache-primer
           corepack pnpm install --offline --frozen-lockfile --ignore-scripts --prod=false
-          node --test scripts/runtime/web-address.test.mts scripts/runtime/portable-web.test.mts
+          node --test scripts/worker/copy-built-workspaces.test.mts scripts/runtime/web-address.test.mts scripts/runtime/portable-web.test.mts
           bash scripts/runtime/build-web.sh /tmp/insignia-m5-web
       - name: Actual current web image startup restart and export
         if: steps.changes.outputs.route == 'full'

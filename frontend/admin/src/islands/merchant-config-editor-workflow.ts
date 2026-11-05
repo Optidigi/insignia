@@ -109,7 +109,7 @@ const publicationInProgress = new Set<PublicationState>([
 
 export const isMerchantPublicationContinuing = (state: PublicationState) => publicationInProgress.has(state);
 
-const operatorPublication = (state: PublicationState) =>
+export const isMerchantPublicationOperatorBlocked = (state: PublicationState) =>
   state === 'OPERATOR_HOLD' || state === 'RESTORATION_CONFLICT' || state === 'CONFLICT';
 
 const terminalPublication = new Set<PublicationState>(['ACTIVE', 'FAILED']);
@@ -683,7 +683,7 @@ export function createMerchantConfigEditorWorkflow(
   async function publish(ready: boolean): Promise<MerchantConfigEditorPublicationOutcome> {
     if (state.loading || state.busy) return { kind: 'ignored' };
     const config = state.view?.config;
-    if (!config || operatorPublication(config.publication.state)) return { kind: 'ignored' };
+    if (!config || isMerchantPublicationOperatorBlocked(config.publication.state)) return { kind: 'ignored' };
     const pending = publicationRequestOf(state.transaction);
     const continuing = isMerchantPublicationContinuing(config.publication.state);
     if (
@@ -771,7 +771,7 @@ export function createMerchantConfigEditorWorkflow(
       if (
         observed?.publication.requestKey === request.key &&
         observed.publication.sourceDraftVersion === requestBody.draftVersion &&
-        (terminalPublication.has(observed.publication.state) || operatorPublication(observed.publication.state))
+        (terminalPublication.has(observed.publication.state) || isMerchantPublicationOperatorBlocked(observed.publication.state))
       )
         return { kind: 'refreshed' };
       return {

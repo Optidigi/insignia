@@ -1,15 +1,11 @@
-import type { ProductConfig } from "./config";
-import {
-  printWidthPercent,
-  resolvePrintCenter,
-  type PercentPoint,
-} from "./position-geometry";
+import type { ProductConfig } from './config';
+import { type PercentPoint, printWidthPercent, resolvePrintCenter } from './position-geometry';
 
 export type View = string;
 export type PositionId = string;
 export type Method = string;
 export type ColorId = string;
-export type Position = ProductConfig["positions"][number];
+export type Position = ProductConfig['positions'][number];
 
 export interface Artwork {
   id: string;
@@ -23,6 +19,8 @@ export interface Artwork {
 export interface Print {
   id: PositionId;
   artworkId: string | null;
+  /** Retained backend identity for this specific deferred placement. */
+  deferredIntentId?: string;
   size: number;
   method: Method;
   /** Omitted means the merchant's configured center. */
@@ -31,17 +29,17 @@ export interface Print {
 
 export const samples: Artwork[] = [
   {
-    id: "north",
-    name: "North outdoor club.svg",
-    url: "/club-logo.svg",
+    id: 'north',
+    name: 'North outdoor club.svg',
+    url: '/club-logo.svg',
     width: 300,
     height: 180,
     sample: true,
   },
   {
-    id: "trail",
-    name: "Take the long way.svg",
-    url: "/trail-logo.svg",
+    id: 'trail',
+    name: 'Take the long way.svg',
+    url: '/trail-logo.svg',
     width: 300,
     height: 320,
     sample: true,
@@ -68,6 +66,7 @@ export interface SelectedVariant {
 
 export interface Design {
   id: string;
+  options?: { optionId: string; valueId: string }[];
   prints: Print[];
   quantities: Quantities;
   /** Exact Shopify identities, derived from configured cells at commit time. */
@@ -75,39 +74,30 @@ export interface Design {
 }
 
 export const totalQuantity = (quantities: Quantities): number =>
-  Object.values(quantities).reduce<number>(
-    (sum, quantity) => sum + (quantity ?? 0),
-    0,
-  );
+  Object.values(quantities).reduce<number>((sum, quantity) => sum + (quantity ?? 0), 0);
 
 // Config is parsed at the fixture boundary. State belongs to that config and
 // resets when scenarios change; width indexes are not portable between configs.
-export function createProductModel(
-  config: ProductConfig,
-  formatLocale = config.locale,
-) {
+export function createProductModel(config: ProductConfig, formatLocale = config.locale, activeColor?: ColorId) {
   const formatter = new Intl.NumberFormat(formatLocale, {
-    style: "currency",
+    style: 'currency',
     currency: config.currency,
   });
 
-  function positionFor(id: PositionId): Position {
+  function positionFor(id: PositionId, colorId = activeColor): Position {
     const position = config.positions.find((entry) => entry.id === id);
     if (!position) throw new Error(`Unknown position: ${id}`);
-    return position;
+    const override = colorId ? config.positionOverrides?.[colorId]?.[id] : undefined;
+    return override ? { ...position, ...override } : position;
   }
 
-  function methodFor(id: Method): ProductConfig["methods"][number] {
+  function methodFor(id: Method): ProductConfig['methods'][number] {
     const method = config.methods.find((entry) => entry.id === id);
     if (!method) throw new Error(`Unknown method: ${id}`);
     return method;
   }
 
-  function isCombinationAvailable(
-    positionId: PositionId,
-    sizeIndex: number,
-    methodId: Method,
-  ): boolean {
+  function isCombinationAvailable(positionId: PositionId, sizeIndex: number, methodId: Method): boolean {
     const position = positionFor(positionId);
     if (
       !Number.isInteger(sizeIndex) ||
@@ -116,7 +106,7 @@ export function createProductModel(
     )
       return false;
     const prices = position.methodSizePrices?.[methodId];
-    return prices === undefined || prices[sizeIndex] !== null && prices[sizeIndex] !== undefined;
+    return prices === undefined || (prices[sizeIndex] !== null && prices[sizeIndex] !== undefined);
   }
 
   function printPrice(print: Print): number {
@@ -140,10 +130,41 @@ export function createProductModel(
   }
 
   function unitPrice(prints: Print[]): number {
-    return (
-      config.basePrice +
-      prints.reduce((sum, print) => sum + printPrice(print), 0)
-    );
+    return config.basePrice + prints.reduce((sum, print) => sum + printPrice(print), 0);
+  }
+
+  function totalPrice(prints: Print[], quantities: Quantities): number {
+    if (!config.variantBasePrices) return unitPrice(prints) * totalQuantity(quantities);
+    const decoration = prints.reduce((sum, print) => sum + printPrice(print), 0);
+    let total = 0;
+    for (const [key, quantity] of Object.entries(quantities)) {
+      if (!quantity) continue;
+      const cell = config.variantMatrix?.find((cell) => `${cell.rowId}:${cell.columnId}` === key);
+      const base = cell ? config.variantBasePrices[cell.variantId] : undefined;
+      if (!cell?.available || base === undefined || !isValidQuantity(quantity, config.maxQuantity))
+        throw new Error('Invalid priced variant quantity');
+      total += (base + decoration) * quantity;
+      if (!Number.isSafeInteger(total)) throw new Error('Display amount exceeds safe integer range');
+    }
+    return total;
+  }
+  function basePriceRange(quantities?: Quantities): [number, number] {
+    if (!config.variantBasePrices) return [config.basePrice, config.basePrice];
+    const selected =
+      config.variantMatrix?.filter(
+        (cell) =>
+          cell.available &&
+          (!quantities ||
+            Object.values(quantities).every((quantity) => !quantity) ||
+            (quantities[`${cell.rowId}:${cell.columnId}`] ?? 0) > 0),
+      ) ?? [];
+    const amounts = selected
+      .map((cell) => config.variantBasePrices?.[cell.variantId])
+      .filter((amount): amount is number => amount !== undefined);
+    return amounts.length ? [Math.min(...amounts), Math.max(...amounts)] : [config.basePrice, config.basePrice];
+  }
+  function moneyRange(range: [number, number]): string {
+    return range[0] === range[1] ? money(range[0]) : `${money(range[0])}–${money(range[1])}`;
   }
 
   function minimumPrintPrice(positionId: PositionId): number {
@@ -164,9 +185,7 @@ export function createProductModel(
   }
 
   function imageFor(colorId: ColorId, viewId: View): string | undefined {
-    return config.colors.find((color) => color.id === colorId)?.images?.[
-      viewId
-    ];
+    return config.colors.find((color) => color.id === colorId)?.images?.[viewId];
   }
 
   function initialPrint(id: PositionId): Print {
@@ -180,10 +199,7 @@ export function createProductModel(
     return { id, artworkId: null, size, method };
   }
 
-  function updatePrintOption(
-    print: Print,
-    change: Partial<Pick<Print, "size" | "method">>,
-  ): Print | null {
+  function updatePrintOption(print: Print, change: Partial<Pick<Print, 'size' | 'method'>>): Print | null {
     const updated = { ...print, ...change };
     if (isCombinationAvailable(updated.id, updated.size, updated.method)) return updated;
     if (change.method !== undefined && change.size === undefined) {
@@ -198,14 +214,13 @@ export function createProductModel(
   function isSizeAvailable(colorId: ColorId, sizeId: string): boolean {
     const color = config.colors.find((entry) => entry.id === colorId);
     if (config.variantMatrix !== undefined)
-      return Boolean(color && config.sizes.some((size) => size.id === sizeId) &&
-        config.variantMatrix.some((cell) =>
-          cell.rowId === colorId && cell.columnId === sizeId && cell.available,
-        ));
+      return Boolean(
+        color &&
+          config.sizes.some((size) => size.id === sizeId) &&
+          config.variantMatrix.some((cell) => cell.rowId === colorId && cell.columnId === sizeId && cell.available),
+      );
     return Boolean(
-      color &&
-        config.sizes.some((size) => size.id === sizeId) &&
-        color.availableSizeIds?.includes(sizeId),
+      color && config.sizes.some((size) => size.id === sizeId) && color.availableSizeIds?.includes(sizeId),
     );
   }
 
@@ -231,6 +246,9 @@ export function createProductModel(
     printPrice,
     isCombinationAvailable,
     unitPrice,
+    totalPrice,
+    basePriceRange,
+    moneyRange,
     minimumPrintPrice,
     money,
     imageFor,

@@ -4,6 +4,7 @@ import { AdminLocaleProvider, getAdminLocaleController } from '../../../src/shar
 import { launchCustomerPreview } from './placement-customer-preview.mts';
 import { readPlacementPreviewProduct, readPlacementSetupExample } from './placement-preview-storage.mts';
 import PlacementSetupCopyDialog from './placement-setup-copy-dialog.tsx';
+import { createDemoPlacementSetupCopyPorts } from './placement-setup-copy-demo.mts';
 import { applyPlacementSetupExample } from './placement-workflow-examples.mts';
 import { placementProductSchema } from './placement-workflow-model.mts';
 
@@ -24,6 +25,7 @@ document.addEventListener('insignia:copy-product-setup', (event) => {
   render(
     <AdminLocaleProvider controller={getAdminLocaleController(document)}>
       <PlacementSetupCopyDialog
+        ports={createDemoPlacementSetupCopyPorts()}
         targetIds={targetIds}
         onClose={() => {
           open = false;
@@ -67,5 +69,6 @@ document.addEventListener('insignia:preview-product', (event) => {
       document.dispatchEvent(
         new CustomEvent('insignia:customer-preview-error', { detail: { reason: 'preview-failed' } }),
       ),
+    { hostUrl: 'http://127.0.0.1:5173' },
   );
 });

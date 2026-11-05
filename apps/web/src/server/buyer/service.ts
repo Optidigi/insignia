@@ -17,13 +17,26 @@ import {
   ENVELOPE_ATTRIBUTE,
   MEMBER_ATTRIBUTE,
 } from '@insignia/cart-authorization';
-import { type BuyerDesired, type BuyerDesiredGroup, BuyerDesiredSchema } from '@insignia/contracts';
+import {
+  type BuyerDesired,
+  type BuyerDesiredGroup,
+  BuyerDesiredGroupSchema,
+  BuyerDesiredSchema,
+  PublishedConfigSchema,
+} from '@insignia/contracts';
 import { type BuyerScope, BuyerStateError, type DurableCore, sha256CanonicalJson } from '@insignia/database';
-import { normalizeCustomizationGroups } from '@insignia/domain';
+import {
+  canonicalDesignIdentity,
+  normalizeCustomizationGroups,
+  parseMinor,
+  validateLeanConfig,
+} from '@insignia/domain';
 import type { GeometryV1 } from '@insignia/visualizer/geometry';
 import type { createArtworkGuestAuthority } from '../artwork/guest.ts';
 import { buyerGeometry } from '../merchant-preview/geometry.ts';
 import type { FrozenPreviewReader } from '../merchant-preview/read.ts';
+import { publicSelectedSetup } from '../merchant-preview/selected-public.ts';
+import { validateBuyerProductionPositions } from './production-position.ts';
 
 type GuestAuthority = ReturnType<typeof createArtworkGuestAuthority>;
 type Bucket = { variantId: string; quantity: number; properties: Record<string, string> };
@@ -74,8 +87,17 @@ export function createBuyerServices(input: {
     scope: { shopId: string; installationGeneration: string },
     productId: string,
     phase?: 'final',
+    context?: { country: string },
   ): Promise<{
-    variants: { id: string; label: string; available: boolean }[];
+    title?: string;
+    currency?: string;
+    variants: {
+      id: string;
+      label: string;
+      available: boolean;
+      selectedOptions?: { name: string; value: string }[];
+      baseUnitMinor?: string;
+    }[];
     imageUrls: Record<string, string>;
   }>;
   previewImages?: FrozenPreviewReader;
@@ -100,6 +122,14 @@ export function createBuyerServices(input: {
       group: { ...group, version: 'm2-customization-group-v1', shopId: scope.shopId },
     })),
   });
+  function validatePositions(scope: BuyerScope, groups: BuyerDesiredGroup[]) {
+    return validateBuyerProductionPositions(groups, {
+      presentation: (revisionId) => input.core.configs.getRevisionPresentation(scope.shopId, revisionId),
+      geometry: (revisionId) => input.core.configs.getRevisionGeometry(scope.shopId, revisionId),
+      artwork: (assetId) => input.core.artwork.get({ ...scope, kind: 'guest' }, assetId),
+      now: clock,
+    });
+  }
   function checkedPorts(scope: BuyerScope, groups: BuyerDesiredGroup[]): QuoteAuthorityPorts {
     const ports = input.ports({ ...scope, kind: 'guest' });
     let finalCheck = false;
@@ -120,6 +150,7 @@ export function createBuyerServices(input: {
       },
       readiness: {
         async assertReady(target) {
+          await validatePositions(scope, groups);
           for (const productId of new Set(groups.map((group) => group.productId))) {
             const current = await input.catalog(scope, productId, finalCheck ? 'final' : undefined);
             const available = new Map(current.variants.map((variant) => [variant.id, variant.available]));
@@ -187,7 +218,11 @@ export function createBuyerServices(input: {
       if (!geometryRecord || !presentation) throw new Error('Published presentation missing');
       const geometry = buyerGeometry(geometryRecord.value as GeometryV1),
         config = revision.config;
-      const catalog = await input.catalog(scope, scope.productId);
+      const country = new URL(request.url).searchParams.get('country');
+      const contextual = !!country && /^[A-Z]{2}$/.test(country);
+      if (presentation.selectedSetup && (!country || !/^[A-Z]{2}$/.test(country)))
+        throw new Error('Country context required');
+      const catalog = await input.catalog(scope, scope.productId, undefined, country ? { country } : undefined);
       if (catalog.variants.length > 250 || catalog.variants.some((v) => !/^[1-9][0-9]{0,19}$/.test(v.id)))
         throw new Error('Catalog boundary unavailable');
       await input.configurationReady(scope, scope.productId);
@@ -195,7 +230,63 @@ export function createBuyerServices(input: {
         const value = presentation.labels[kind]?.[id];
         return typeof value === 'string' ? value : id;
       };
+      const imageUrls = input.previewImages
+        ? await input.previewImages(scope, { productId: scope.productId, revisionId: config.revisionId, geometry })
+        : contextual
+          ? {}
+          : catalog.imageUrls;
+      const selected = presentation.selectedSetup;
+      // Older readers can omit country and still receive the retained canonical DTO.
+      // Editable financial metadata requires actual contextual catalogue facts, independently of authoring sidecars.
+      let editable:
+        | {
+            shopCurrency: 'USD' | 'EUR';
+            decorationPrices: { placementId: string; methodId: string; stepId: string; minor: string }[];
+          }
+        | undefined;
+      const currency = config.shopCurrency;
+      if (
+        contextual &&
+        (currency === 'USD' || currency === 'EUR') &&
+        catalog.currency === currency &&
+        catalog.variants.every(
+          (variant) =>
+            Array.isArray(variant.selectedOptions) &&
+            typeof variant.baseUnitMinor === 'string' &&
+            /^(0|[1-9][0-9]{0,19})$/.test(variant.baseUnitMinor),
+        )
+      ) {
+        try {
+          const cells = new Set<string>();
+          const decorationPrices = validateLeanConfig(config).pricingRules.map((rule) => {
+            if (rule.scope.kind !== 'step' || !rule.scope.methodId || rule.rate.kind !== 'fixed')
+              throw new Error('Unsupported published price');
+            const identity = JSON.stringify([rule.scope.placementId, rule.scope.methodId, rule.scope.stepId]);
+            if (cells.has(identity)) throw new Error('Ambiguous published price cell');
+            cells.add(identity);
+            return {
+              placementId: rule.scope.placementId,
+              methodId: rule.scope.methodId,
+              stepId: rule.scope.stepId,
+              minor: parseMinor(rule.rate.amount.shopDecimal, 2).toString(),
+            };
+          });
+          editable = { shopCurrency: currency, decorationPrices };
+        } catch {
+          // Historical setup/tier/override/multiplicity or ambiguous rules remain readable; new UI repairs them.
+        }
+      }
+      const title = catalog.title ?? selected?.product.title;
+      const wording = contextual
+        ? await input.core.transactions.run((tx) => input.core.preferences.readWording(tx, scope))
+        : undefined;
+      if (contextual && !wording) throw new Error('Customer wording unavailable');
       return {
+        ...(selected ? { selectedSetup: publicSelectedSetup(selected, geometry, imageUrls) } : {}),
+        ...(contextual
+          ? { wording, ...(typeof title === 'string' && title.trim() && title.length <= 256 ? { title } : {}) }
+          : {}),
+        ...editable,
         version: 'm7-config-v1',
         productId: scope.productId,
         revisionId: config.revisionId,
@@ -210,9 +301,7 @@ export function createBuyerServices(input: {
         })),
         variants: catalog.variants,
         geometry,
-        imageUrls: input.previewImages
-          ? await input.previewImages(scope, { productId: scope.productId, revisionId: config.revisionId, geometry })
-          : catalog.imageUrls,
+        imageUrls,
         ready: true,
       };
     },
@@ -235,6 +324,72 @@ export function createBuyerServices(input: {
       });
       return { capability: grant.token, sessionId: session.sessionId, expiresAt: session.expiresAt.toISOString() };
     },
+    async restoreDesign(scope: BuyerScope, id: string) {
+      const saved = await store.getDesign(scope, id, clock());
+      if (!saved) return notFound();
+      const group = BuyerDesiredGroupSchema.parse(saved.value);
+      const original = await input.core.configs.getValidatedPublishedRevision(scope.shopId, group.configRevisionId);
+      if (!original || original.contentHash !== group.revisionContentHash) return notFound();
+      const originalConfig = PublishedConfigSchema.parse(original.publishedValue);
+      if (originalConfig.productId !== group.productId) return notFound();
+      const presentation = await input.core.configs.getRevisionPresentation(scope.shopId, group.configRevisionId);
+      const geometryRecord = await input.core.configs.getRevisionGeometry(scope.shopId, group.configRevisionId);
+      let compatibility:
+        | 'current'
+        | 'publication-changed'
+        | 'choice-unavailable'
+        | 'configuration-unavailable'
+        | 'legacy' = 'configuration-unavailable';
+      const current = await input.core.acceptedQuotes.getEffective(scope.shopId, group.productId);
+      if (current) {
+        try {
+          normalizeCustomizationGroups(
+            [
+              {
+                ...group,
+                shopId: scope.shopId,
+                version: 'm2-customization-group-v1',
+                configRevisionId: current.config.revisionId,
+                revisionContentHash: current.config.revisionContentHash,
+              },
+            ],
+            [current.config],
+          );
+          compatibility = current.config.revisionId === group.configRevisionId ? 'current' : 'publication-changed';
+        } catch {
+          compatibility = 'choice-unavailable';
+        }
+      }
+      let retained = null;
+      if (presentation?.selectedSetup && geometryRecord && input.previewImages) {
+        const geometry = buyerGeometry(geometryRecord.value as GeometryV1);
+        const imageUrls = await input.previewImages(scope, {
+          productId: group.productId,
+          revisionId: group.configRevisionId,
+          geometry,
+          retainUntil: saved.expiresAt,
+        });
+        retained = {
+          revisionId: group.configRevisionId,
+          contentHash: group.revisionContentHash,
+          selectedSetup: publicSelectedSetup(presentation.selectedSetup, geometry, imageUrls),
+          geometry,
+          imageUrls,
+        };
+      } else if (!presentation?.selectedSetup) compatibility = 'legacy';
+      // Recheck the exact owned retained design after asynchronous image reads.
+      const currentSaved = await store.getDesign(scope, id, clock());
+      if (!currentSaved || currentSaved.version !== saved.version || +currentSaved.expiresAt !== +saved.expiresAt)
+        return notFound();
+      return {
+        id: saved.id,
+        version: saved.version,
+        value: group,
+        expiresAt: saved.expiresAt.toISOString(),
+        compatibility,
+        retained,
+      };
+    },
     async design(scope: BuyerScope, id: string, body: { expectedVersion: number; group: BuyerDesiredGroup }) {
       const revision = await input.core.acceptedQuotes.getEffective(scope.shopId, body.group.productId);
       if (!revision) return review();
@@ -242,6 +397,7 @@ export function createBuyerServices(input: {
         [{ ...body.group, shopId: scope.shopId, version: 'm2-customization-group-v1' }],
         [revision.config],
       );
+      await validatePositions(scope, [body.group]);
       const expiresAt = await privateUntil(scope, [body.group]);
       return store.saveDesign(scope, {
         id,
@@ -295,14 +451,34 @@ export function createBuyerServices(input: {
         customizedQuantity: quote.economics.customizedQuantity,
         totalMinor: quote.economics.totalMinor,
         groups: quote.economics.groups.map(
-          ({ productId, quantity, setupMinor, customizationUnitMinor, baseTotalMinor, totalMinor }) => ({
+          ({
             productId,
+            canonicalIdentitySha256,
             quantity,
             setupMinor,
             customizationUnitMinor,
             baseTotalMinor,
             totalMinor,
-          }),
+          }) => {
+            const original = request.groups.find(
+              ({ group }) => inputIdentityHash(canonicalDesignIdentity(group)) === canonicalIdentitySha256,
+            )?.group;
+            const physical = quote.physicalGroups.find(
+              (group) => group.canonicalIdentitySha256 === canonicalIdentitySha256,
+            );
+            if (!original || !physical) throw new Error('Quote group identity unavailable');
+            const { shopId: _shop, version: _version, ...selection } = original;
+            return {
+              productId,
+              canonicalIdentitySha256,
+              selection: { ...selection, variants: physical.variants.map((variant) => ({ ...variant })) },
+              quantity,
+              setupMinor,
+              customizationUnitMinor,
+              baseTotalMinor,
+              totalMinor,
+            };
+          },
         ),
         changedGroups,
       };
@@ -447,8 +623,15 @@ export function createBuyerServices(input: {
         quoteIds.add(id);
       }
       const result = BuyerDesiredSchema.shape.groups.parse([...groups.values()]);
+      const labels: Record<string, string> = {};
+      for (const group of result) {
+        const presentation = await input.core.configs.getRevisionPresentation(scope.shopId, group.configRevisionId);
+        const title = presentation?.selectedSetup?.product.title;
+        if (title?.trim()) labels[group.productId] = title;
+      }
       return {
         groups: result,
+        ...(Object.keys(labels).length ? { labels } : {}),
         ...(quoteIds.size === 1 ? { quoteId: [...quoteIds][0] } : {}),
         repairRequired: repairRequired || sets.size !== 1 || [...sets.values()].some((v) => v.indexes.size !== v.count),
       };

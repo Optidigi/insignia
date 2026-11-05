@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } fro
 import { useAdminLocale } from '../../../src/shared/admin-i18n.js';
 import Dialog from './method-dialog.tsx';
 import { formatPrice, parsePrice } from './method-workflow-prices.mts';
-import { availablePlacementMethods, loadPlacementMethodCatalog } from './placement-method-library.mts';
+import { availablePlacementMethods, type PlacementMethodCatalog } from '../../../src/islands/selected-method-choices.ts';
 import {
   createPlacementMethodManagerState,
   type PlacementMethodManagerError,
@@ -14,10 +14,10 @@ import type { EditorMethod, EditorPlacement, PlacementProduct } from './placemen
 
 type MethodChanges = Pick<EditorPlacement, 'methodIds' | 'sizes'>;
 
-function priceLabel(value: string, t: ReturnType<typeof useAdminLocale>['t'], locale: string): string {
+function priceLabel(value: string, t: ReturnType<typeof useAdminLocale>['t'], locale: string, currency = 'EUR'): string {
   const result = parsePrice(value);
   if (result.kind === 'invalid') return t('editor:placementMethodManager.priceUnavailable');
-  return result.minor === 0n ? t('editor:placementMethodManager.free') : formatPrice(result.minor, locale);
+  return result.minor === 0n ? t('editor:placementMethodManager.free') : formatPrice(result.minor, locale, currency);
 }
 
 function sizeCoverage(
@@ -75,7 +75,11 @@ export default function PlacementMethodManager({
   targetRevision,
   onClose,
   onApply,
+  loadCatalog,
+  currency = 'EUR',
 }: {
+  currency?: string;
+  loadCatalog: (signal: AbortSignal) => Promise<PlacementMethodCatalog>;
   methods: EditorMethod[];
   product?: PlacementProduct;
   onOpenLibrary?(): void;
@@ -84,7 +88,7 @@ export default function PlacementMethodManager({
   sessionId: string;
   targetRevision: number;
   onClose(): void;
-  onApply(change: MethodChanges, choices: EditorMethod[], editedIds: string[]): void;
+  onApply(change: MethodChanges, choices: EditorMethod[], editedIds: string[], editedCells: { sizeId: string; methodId: string }[]): void;
 }) {
   const { t: translateUi, formatLocale } = useAdminLocale();
   const initialState = useMemo(
@@ -160,7 +164,7 @@ export default function PlacementMethodManager({
   useEffect(() => {
     if (!product || catalogRequestId === null) return;
     const controller = new AbortController();
-    void loadPlacementMethodCatalog(AbortSignal.any([controller.signal, AbortSignal.timeout(10_000)]))
+    void loadCatalog(AbortSignal.any([controller.signal, AbortSignal.timeout(10_000)]))
       .then((catalog) => {
         if (controller.signal.aborted) return;
         send({
@@ -266,7 +270,7 @@ export default function PlacementMethodManager({
       return;
     }
     claimedCommit.current = true;
-    onApply(structuredClone(next.applied.change), next.applied.choices, next.applied.editedIds);
+    onApply(structuredClone(next.applied.change), next.applied.choices, next.applied.editedIds, next.applied.editedCells);
     onClose();
   }
 
@@ -441,7 +445,7 @@ export default function PlacementMethodManager({
                       </div>
                       {fixed ? (
                         <div class="pm-manager__method-facts">
-                          <s-text type="strong">{priceLabel(method.amount, translateUi, formatLocale)}</s-text>
+                          <s-text type="strong">{priceLabel(method.amount, translateUi, formatLocale, currency)}</s-text>
                           {enabled && (
                             <s-button
                               variant="tertiary"
@@ -534,7 +538,7 @@ export default function PlacementMethodManager({
                   </s-paragraph>
                   <s-number-field
                     label={translateUi('editor:placementMethodManager.pricePerPlacementPerGarment')}
-                    prefix="€"
+                    prefix={currency === 'USD' ? '$' : '€'}
                     inputMode="decimal"
                     min={0}
                     step={0.01}
@@ -572,7 +576,7 @@ export default function PlacementMethodManager({
                           sizeName: size.name || translateUi('editor:placementMethodManager.sizeFallback'),
                         })}
                         labelAccessibilityVisibility="exclusive"
-                        prefix="€"
+                        prefix={currency === 'USD' ? '$' : '€'}
                         inputMode="decimal"
                         min={0}
                         step={0.01}

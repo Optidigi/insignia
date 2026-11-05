@@ -202,11 +202,27 @@
     "itemsRestored": "Artikelen hersteld.",
     "cartCommitFailed": "Je winkelwagen kon niet worden bijgewerkt. Je ontwerp is er nog. Probeer het opnieuw.",
     "undo": "Ongedaan maken",
-    "dismissNotification": "Melding verbergen"
+    "dismissNotification": "Melding verbergen",
+    "repairRequired": "Je personalisatie moet worden gecontroleerd",
+    "repairHelp": "Je bestaande gepersonaliseerde artikelen blijven in de winkelwagen totdat je vervanging of verwijdering bevestigt.",
+    "startNew": "Nieuwe personalisatie starten",
+    "removeGroup": "Verwijdering van deze personalisatie controleren",
+    "removeAll": "Verwijdering van alle gepersonaliseerde artikelen controleren",
+    "confirmRemoval": "Winkelwagenwijziging bevestigen",
+    "remainingItems": "Resterende gepersonaliseerde artikelen"
   },
   "language": {
     "label": "Taal",
     "automatic": "Taal van de winkel gebruiken",
     "failure": "De taal kon niet worden gewijzigd. Probeer het opnieuw."
+  },
+  "postOrder": {
+    "title": "Ontbrekend ontwerp uploaden",
+    "loading": "Uploadverzoek laden…",
+    "unavailable": "Dit uploadverzoek is niet beschikbaar of verlopen. Neem contact op met de winkel voor hulp.",
+    "notice": "Upload hier ontbrekende ontwerpen. Neem contact op met de winkel om een ingediend ontwerp te wijzigen.",
+    "saved": "Je ontwerp is ingediend.",
+    "continue": "Verder uploaden",
+    "retry": "Opnieuw proberen"
   }
 }

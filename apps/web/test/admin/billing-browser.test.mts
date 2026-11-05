@@ -1,55 +1,25 @@
 import './support/browser-state.mts';
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
-import { chromium } from 'playwright';
+import { browserFixture, routePolaris } from './support/selected-browser.mts';
 
 test('merchant billing separates development terms and trial, links Shopify management and recovers a failed observation', {
   timeout: 20000,
 }, async (t) => {
-  const child = spawn(process.execPath, [new URL('../../dist/server/entry.mjs', import.meta.url).pathname], {
-    env: { ...process.env, HOST: '127.0.0.1', PORT: '0', SHOPIFY_CLIENT_ID: '11111111111111111111111111111111' },
-  });
-  let log = '';
-  child.stdout.on('data', (part) => {
-    log += part;
-  });
-  child.stderr.on('data', (part) => {
-    log += part;
-  });
-  const exited = new Promise((resolve) => child.once('close', resolve));
-  t.after(async () => {
-    child.kill('SIGTERM');
-    await exited;
-  });
-  let base: string | undefined;
-  for (let i = 0; i < 100; i++) {
-    base = log.match(/http:\/\/127\.0\.0\.1:\d+/)?.[0];
-    if (base) {
-      try {
-        if ((await fetch(`${base}/live`)).ok) break;
-      } catch {}
-    }
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
-  assert.ok(base, log);
+  const { source, server, browser } = await browserFixture(t);
+  const base = server.base;
   const shell = await fetch(`${base}/admin/settings/billing`);
   assert.equal(shell.status, 200);
   assert.equal(shell.headers.get('cache-control'), 'private, no-store');
   assert.equal((await shell.text()).includes('2026-10-31'), false, 'bare shell has no private provider facts');
-  const browser = await chromium.launch();
-  t.after(() => browser.close());
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const page = await browser.newPage();
+  await page.setViewportSize({ width: 1440, height: 900 });
   page.setDefaultTimeout(5000);
   await page.addInitScript(() => {
     window.shopify = { idToken: async () => 'synthetic-billing-actor' };
   });
   await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
-  const polaris = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
-  await page.route('https://cdn.shopify.com/shopifycloud/polaris-1.1.js', (r) =>
-    r.fulfill({ body: polaris, contentType: 'text/javascript' }),
-  );
+  await routePolaris(page, source);
   await page.route('https://cdn.shopify.com/static/fonts/**', (r) => r.fulfill({ body: '' }));
   const view: import('../../src/shared/billing-view.js').BillingView = {
     status: 'trial',
@@ -75,7 +45,7 @@ test('merchant billing separates development terms and trial, links Shopify mana
       : route.fulfill({ json: view });
   });
   await page.goto(`${base}/admin/settings/billing`);
-  await page.getByText('Billing status could not be verified. Try again.').waitFor();
+  await page.getByText('Billing status could not be verified.').waitFor();
   await page.screenshot({ path: '/tmp/insignia-canonical-billing-unavailable.png', fullPage: true });
   const navigation = page.locator('s-app-nav');
   assert.equal(
@@ -101,12 +71,17 @@ test('merchant billing separates development terms and trial, links Shopify mana
   );
   assert.equal(await page.locator('s-text[data-date-time]').count(), 0);
   failing = false;
-  await page.getByRole('button', { name: 'Refresh billing status' }).click();
-  await page.getByText('Development test terms: USD 0.00 per 30 days.').waitFor();
-  await page.getByText('Subscription price: USD 49.99 per 30 days.').waitFor();
+  await page.getByRole('button', { name: 'Try again', exact: true }).click();
+  await page.getByText('Development test terms', { exact: true }).waitFor();
+  await page
+    .locator('.billing-amount')
+    .filter({ hasText: /^USD\s0\.00$/ })
+    .waitFor();
+  await page.getByText('Standard plan price', { exact: true }).waitFor();
+  await page.getByText(/^USD\s49\.99 per 30 days$/).waitFor();
   await page.getByText('Trial active').waitFor();
   assert.equal(await page.locator('s-text[data-date-time]').first().getAttribute('data-date-time'), view.trialEndsAt);
-  const manage = page.getByRole('link', { name: 'Manage billing in Shopify' });
+  const manage = page.getByRole('link', { name: 'Manage plan in Shopify' });
   assert.equal(await manage.getAttribute('href'), view.managementUrl);
   assert.equal(await manage.getAttribute('target'), '_top');
   assert.equal(await page.getByText(/unlimited/i).count(), 0);
@@ -124,11 +99,13 @@ test('merchant billing separates development terms and trial, links Shopify mana
   view.recurringPrice = null;
   view.developmentTerms = false;
   view.newActionsAllowed = false;
-  await page.getByRole('button', { name: 'Refresh billing status' }).click();
+  await page.reload(); // Explicit fresh observation; the selected successful view has no refresh action.
   await page.getByText('No active subscription', { exact: true }).waitFor();
   assert.equal(await page.getByText('Trial active', { exact: true }).count(), 0);
-  assert.equal(await page.getByText('Development test terms: USD 0.00 per 30 days.').count(), 0);
-  await page.getByText('New customization offers and publication are unavailable.', { exact: false }).waitFor();
-  assert.equal(await page.getByRole('link', { name: 'Manage billing in Shopify' }).count(), 1);
+  assert.equal(await page.getByText('Development test terms', { exact: true }).count(), 0);
+  await page.getByText('New customizations and product publication are unavailable.', { exact: false }).waitFor();
+  const inactiveManagement = page.getByRole('link', { name: 'Choose a plan in Shopify', exact: true });
+  assert.equal(await inactiveManagement.getAttribute('href'), view.managementUrl);
+  assert.equal(await inactiveManagement.getAttribute('target'), '_top');
   assert.equal(calls, 3);
 });

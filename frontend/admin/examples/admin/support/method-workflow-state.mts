@@ -66,6 +66,13 @@ export type MethodWorkflowEvent =
   | { type: 'route-opened'; sessionId: string; editor: MethodConfiguration | null }
   | { type: 'method-name-edited'; sessionId: string; value: string }
   | { type: 'method-explanation-edited'; sessionId: string; value: string }
+  | {
+      type: 'method-translation-edited';
+      sessionId: string;
+      locale: string;
+      field: 'name' | 'explanation';
+      value: string;
+    }
   | { type: 'pricing-kind-changed'; sessionId: string; value: MethodConfiguration['pricing'] }
   | { type: 'default-price-edited'; sessionId: string; value: string }
   | { type: 'assignment-mode-changed'; sessionId: string; value: MethodConfiguration['assignment'] }
@@ -87,7 +94,12 @@ export type MethodWorkflowEvent =
   | { type: 'duplicate-failed'; id: string; reason: MethodDuplicateFailureReason }
   | { type: 'duplicate-canceled'; id: string }
   | { type: 'method-duplicated'; id: string; method: MethodConfiguration }
-  | { type: 'navigation-requested'; confirmationId: string; target: MethodWorkflowNavigationTarget }
+  | {
+      type: 'navigation-requested';
+      confirmationId: string;
+      target: MethodWorkflowNavigationTarget;
+      additionalDirty?: boolean;
+    }
   | { type: 'navigation-confirmed'; id: string }
   | { type: 'navigation-canceled'; id: string };
 
@@ -109,6 +121,23 @@ export function methodWorkflowReducer(state: MethodWorkflowState, event: MethodW
       return state.editor && state.editorSessionId === event.sessionId
         ? { ...state, editor: { ...state.editor, explanation: event.value } }
         : state;
+    case 'method-translation-edited': {
+      if (
+        !state.editor ||
+        state.editorSessionId !== event.sessionId ||
+        !/^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(event.locale)
+      )
+        return state;
+      const translations = { ...state.editor.translations };
+      const fields = { ...translations[event.locale] };
+      if (event.value === '') delete fields[event.field];
+      else fields[event.field] = event.value;
+      if (Object.keys(fields).length) translations[event.locale] = fields;
+      else delete translations[event.locale];
+      const editor: MethodConfiguration = { ...state.editor, translations };
+      if (!Object.keys(translations).length) delete editor.translations;
+      return { ...state, editor, errors: clearError(state.errors, 'name') };
+    }
     case 'pricing-kind-changed':
       return state.editor && state.editorSessionId === event.sessionId
         ? { ...state, editor: { ...state.editor, pricing: event.value }, errors: clearError(state.errors, 'amount') }
@@ -223,7 +252,7 @@ export function methodWorkflowReducer(state: MethodWorkflowState, event: MethodW
         ? { ...state, dialog: state.dialog.resume }
         : state;
     case 'navigation-requested':
-      return requestMethodNavigation(state, event.target, event.confirmationId).state;
+      return requestMethodNavigation(state, event.target, event.confirmationId, event.additionalDirty).state;
     case 'navigation-confirmed':
       return confirmMethodNavigation(state, event.id).state;
   }
@@ -237,8 +266,9 @@ export function requestMethodNavigation(
   state: MethodWorkflowState,
   target: MethodWorkflowNavigationTarget,
   confirmationId: string,
+  additionalDirty = false,
 ): { state: MethodWorkflowState; decision: MethodNavigationDecision } {
-  if (!methodWorkflowDirty(state)) return { state, decision: { kind: 'navigate', target } };
+  if (!methodWorkflowDirty(state) && !additionalDirty) return { state, decision: { kind: 'navigate', target } };
   if (state.dialog.kind === 'leave') return { state, decision: { kind: 'confirm', id: state.dialog.id } };
   return {
     state: { ...state, dialog: { kind: 'leave', id: confirmationId, target, resume: state.dialog } },

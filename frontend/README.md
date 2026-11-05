@@ -1,6 +1,6 @@
-# Insignia UI handoff
+# Insignia frontend
 
-This folder contains the designed UI and working examples of its intended behavior. **It is not mapped or connected to the production backend.** The backend developer will do that work. The existing production applications, APIs and backend packages are unchanged.
+This folder contains the selected merchant UI and customer Designer, plus isolated examples. The current integration reuses their presentation and reducers in `apps/web` and `apps/storefront`, with authenticated services for persistence, publication, artwork, quotes and cart operations. Deployment and owner visual acceptance are separate from local integration; see [current delivery state](../docs/delivery/state.md).
 
 ## Run the examples
 
@@ -24,26 +24,30 @@ The commands print their local URLs. The admin demo uses a local frame renderer 
 | --- | --- |
 | `admin/src` | Merchant UI components, pages, browser workflows, reducers and styles |
 | `admin/examples/admin` | Optional local demo host, example orders/catalogs, fake responses and browser storage |
-| `admin/examples/admin/support/placement-*` | Selected product editor presentation and its example adapters |
-| `admin/examples/admin/support/method-*` | Selected Methods presentation and its example adapters |
+| `admin/src/islands/SelectedProductEditor.tsx`, `SelectedProductContainer.tsx` | Selected product presentation and authenticated backend composition |
+| `admin/examples/admin/support/placement-*` | Shared selected presentation/reducers and explicit isolated example adapters |
+| `admin/src/islands/SelectedMethods.tsx`, `MethodsContainer.tsx` | Selected Methods presentation and authenticated catalogue composition |
+| `admin/examples/admin/support/method-*` | Shared selected Method helpers and explicit isolated example adapters |
 | `designer/src` | Selected light/dark customer configurator and its reducer/runtime |
 | `designer/src/demo`, preview shell and scenario files | Optional sample data, local upload/cart results and Shopify host stand-in |
 | `localization` | Shared English, Dutch, German, French, Spanish and Italian UI text and locale state |
-| `visualizer` | UI-specific browser canvas, camera and placement interactions |
+| `visualizer` | Browser canvas/camera interactions; production geometry delegates to canonical `packages/visualizer` |
 | `theme` | Reference Liquid blocks/locales for later integration; not a deployable extension |
-| `docs/notes` | Historical design research/review records; old paths describe the original working checkout |
+| `docs/notes` | Historical design research/review records; old paths describe original sources preserved in Git (including PR223 base `d490e4d`) |
 
-Some selected product-editor and Methods components are still beside their example composition. Keep those components when replacing demo adapters. Do not delete the whole support folder. The older integration-oriented editor remains available in `admin/src/islands`, but the selected placement/method designs are the files identified above.
+Some shared selected components remain beside example composition. Keep those components and their reducers; do not delete the whole support folder. The production routes use the selected placement/Methods composition identified above. Historical editor transaction helpers and accepted publication/history authority remain distinct from replaceable presentation.
 
 ## Replaceable examples
 
-The demo order/catalog server, sample products, in-memory saves, browser-local drafts and simulated publication/upload/cart outcomes are examples. They are not backend implementations or agreed API mappings. The preview server cannot forward writes to Shopify. Its child Astro process renders UI frames and has no API routes or server services.
+The demo order/catalog server, sample products, in-memory saves, browser-local drafts and simulated publication/upload/cart outcomes are examples. They do not authorize production operations. The [research action map](../docs/architecture/frontend-backend-map.md) and [confirmed target](../docs/architecture/implementation-plan.md#15-confirmed-selected-frontend-integration-target) define integration requirements. The preview server cannot forward writes to Shopify. Its child Astro process renders UI frames and has no API routes or server services.
 
-The customer configurator has a separate embeddable entry, `designer/src/index.ts`. Run `corepack pnpm --filter @insignia/designer build:library` for its embeddable build. It produces JS, CSS and TypeScript declarations without importing the demo host, scenario catalog or fake upload/cart implementation. It requires host inputs and upload/cart ports; their real implementations are the backend developer's responsibility. Use the stylesheet in an isolated modal document/iframe, not in the surrounding Shopify theme document.
+The customer configurator has a separate embeddable entry, `designer/src/index.ts`. Run `corepack pnpm --filter @insignia/designer build:library` for its embeddable build. It produces JS, CSS and TypeScript declarations without importing the demo host, scenario catalog or fake upload/cart implementation. It requires host inputs and upload/cart ports. `apps/storefront/src/designer` supplies real session, upload, design restoration, quote-review and cart ports. The artwork-only portal uses its separate secure post-order capability; merchant preview cannot purchase or persist artwork. Use the stylesheet in an isolated modal document/iframe, not in the surrounding Shopify theme document.
+
+All customer flows use the selected Designer, including products with retained production choices. Products without those choices retain the selected presentation unchanged. Opaque production-choice definitions/labels travel with selected merchant snapshots and independent copies, while accepted order values remain immutable.
 
 Shopify owns the product page, cart and checkout. After a verified add/update the Insignia modal closes and returns control to Shopify. Local demo success does not prove a real cart operation. Example totals must not authorize production purchases.
 
-The admin source contains browser request contracts used by its example workflows. These are UI examples, not a declaration that an existing backend endpoint implements them. Connect real data, persistence, pricing, translations, permissions and publication separately. No such mapping is part of this delivery.
+Production hosts use server-confirmed currency and current authentication authority. Local storage holds unresolved operation custody only; it is not authoritative product or store data. Save and Publish remain separate. Method inheritance/overrides, review decisions, production dimensions and movement are carried by shared contracts. See [selected Designer wiring](../docs/architecture/selected-live-designer.md) and [customer artwork](../docs/architecture/customer-artwork-integration.md) for the buyer and post-order boundaries.
 
 ## Checks
 
@@ -54,7 +58,7 @@ corepack pnpm --filter @insignia/designer exec playwright install chromium
 corepack pnpm check:ui
 ```
 
-This runs admin, localization and visualizer tests; every existing designer `*-check.mts` suite (including browser/localization and variant checks); and the embeddable library/declarations build. The full repository check includes this gate after build and strict compiler checks. Foundation CI installs both web and designer browser versions; frontend-only main pushes select that existing protected job.
+This runs admin, localization and visualizer tests; every existing designer `*-check.mts` suite (including browser/localization and variant checks); and the embeddable library/artifact checks. The normal Designer build produces the embeddable JS/CSS/declarations before the demo. The full repository check includes this gate after build and strict compiler checks. Foundation CI installs both web and designer browser versions; frontend-only main pushes select that existing protected job.
 
 Useful focused commands:
 

@@ -3,9 +3,11 @@
  * ports may trust a shop, product or staff identity from the browser body. */
 
 import type { ExpectedFunctionBuild } from '@insignia/application';
+import type { MethodConfiguration, VersionedMethodConfiguration } from '@insignia/contracts';
 import type { FunctionOwnership } from '@insignia/shopify';
 import type { CatalogProduct, CommandOutcome, ConfigView } from '../../shared/admin-view.js';
 import type { BillingView } from '../../shared/billing-view.js';
+import type { MerchantMediaService } from './merchant-media.js';
 import type { SigningOwnerAction } from './signing-owner-action.js';
 
 export type { CatalogProduct, CommandOutcome, ConfigView, PublicationState } from '../../shared/admin-view.js';
@@ -32,15 +34,43 @@ export type MethodOutcome =
   | { kind: 'created' | 'saved'; method: MethodTemplate }
   | { kind: 'deleted' }
   | { kind: 'conflict'; message: string };
+export type MethodConfigurationOutcome =
+  | { kind: 'created' | 'saved'; method: VersionedMethodConfiguration }
+  | { kind: 'conflict'; message: string };
 export interface MethodLibrary {
+  catalog?(actor: AdminActor): Promise<{
+    methods: VersionedMethodConfiguration[];
+    shop?: string;
+    authority?: string;
+    currency?: string;
+    canEdit?: boolean;
+  }>;
+  saveConfiguration?(
+    actor: AdminActor,
+    value: MethodConfiguration,
+    expectedVersion: string | null,
+    key: string,
+    expectedAuthority?: string,
+    expectedCurrency?: string,
+  ): Promise<MethodConfigurationOutcome>;
+
   list(actor: AdminActor): Promise<{ methods: MethodTemplate[] }>;
   create(actor: AdminActor, name: string, key: string): Promise<MethodOutcome>;
   rename(actor: AdminActor, id: string, version: string, name: string, key: string): Promise<MethodOutcome>;
-  delete(actor: AdminActor, id: string, version: string, key: string): Promise<MethodOutcome>;
+  delete(
+    actor: AdminActor,
+    id: string,
+    version: string,
+    key: string,
+    expectedAuthority?: string,
+  ): Promise<MethodOutcome>;
 }
 export interface AdminServices {
+  media?: MerchantMediaService;
+  preferences?: import('./preferences.js').MerchantPreferences;
   assertPurchaseAccess?(actor: AdminActor): Promise<void>;
   methods?: MethodLibrary;
+  shopTimeZone?(actor: AdminActor): Promise<string>;
   orderNames?(actor: AdminActor, orderIds: string[]): Promise<Record<string, string | null>>;
   orderPresentation?(
     actor: AdminActor,
@@ -78,18 +108,23 @@ export interface AdminServices {
   catalog: {
     list(
       actor: AdminActor,
-      input: { query: string; cursor: string | null; limit: number },
+      input: import('./catalog-query.js').CatalogListInput,
     ): Promise<{ products: CatalogProduct[]; nextCursor: string | null }>;
     get(actor: AdminActor, productId: string): Promise<CatalogProduct | null>;
   };
   /** Commands own M2 validation, M3 CAS/idempotency and M4 publication. */
   configs: {
+    reconcile?(
+      actor: AdminActor,
+      productId: string,
+      input: { stage: 'create' | 'save' | 'publish'; operationKey: string; authority: string },
+    ): Promise<{ kind: 'resolved'; publicationRecorded?: boolean }>;
     read(actor: AdminActor, productId: string): Promise<ConfigView>;
-    create(actor: AdminActor, productId: string, idempotencyKey: string): Promise<CommandOutcome>;
+    create(actor: AdminActor, productId: string, idempotencyKey: string, authority?: string): Promise<CommandOutcome>;
     save(
       actor: AdminActor,
       productId: string,
-      input: { configId: string; draftVersion: string; draft: unknown; idempotencyKey: string },
+      input: { configId: string; draftVersion: string; draft: unknown; idempotencyKey: string; authority?: string },
     ): Promise<CommandOutcome>;
     copy(
       actor: AdminActor,
@@ -100,7 +135,7 @@ export interface AdminServices {
     publish(
       actor: AdminActor,
       productId: string,
-      input: { configId: string; draftVersion: string; idempotencyKey: string },
+      input: { configId: string; draftVersion: string; idempotencyKey: string; authority?: string },
     ): Promise<CommandOutcome>;
   };
 }

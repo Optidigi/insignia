@@ -1,5 +1,5 @@
 import type { AdminTranslator } from '@insignia/ui-localization/admin';
-/** Preview-only image assignment controls, embedded in the existing view settings. */
+/** Shared selected image assignment controls, embedded in the existing view settings. */
 import { useEffect, useId, useState } from 'preact/hooks';
 import { useAdminLocale } from '../../../src/shared/admin-i18n.js';
 import {

@@ -44,6 +44,8 @@ export type CustomerTranslationsSnapshot = CustomerTranslationsState & {
 
 export type CustomerTranslationsWorkflowOptions = {
   shop: unknown;
+  /** Production resolves this through authenticated preferences before any wording read. */
+  resolveShop?: () => Promise<unknown>;
   storage: CustomerTranslationsStoragePort | null | undefined;
   validateOverlay: CustomerTranslationsOverlayValidator;
 };
@@ -120,7 +122,7 @@ export const createBrowserCustomerTranslationsStoragePort = createBrowserCustome
 export function createCustomerTranslationsWorkflow(
   options: CustomerTranslationsWorkflowOptions,
 ): CustomerTranslationsWorkflow {
-  const shop = customerTranslationShopDomain(options.shop);
+  let shop = customerTranslationShopDomain(options.shop);
   let state = initialCustomerTranslationsState(shop);
   let nextRequestId = 0;
   let disposed = false;
@@ -165,9 +167,23 @@ export function createCustomerTranslationsWorkflow(
     return overlays;
   }
 
+  const isCurrentLoad = (request: number): boolean => !disposed && state.phase === 'loading' && state.loadRequestId === request;
+
   async function load(): Promise<boolean> {
     const request = ++nextRequestId;
     dispatch({ type: 'load-started', request });
+    if (!isCurrentLoad(request)) return false;
+    if (options.resolveShop) {
+      try {
+        const resolved = customerTranslationShopDomain(await options.resolveShop());
+        if (!isCurrentLoad(request)) return false;
+        if (!resolved || (shop !== null && shop !== resolved)) throw new Error('Customer wording shop authority changed');
+        shop = resolved;
+      } catch {
+        dispatch({ type: 'load-failed', request, reason: 'storage-read-failed' });
+        return false;
+      }
+    }
     if (!shop) {
       dispatch({ type: 'load-failed', request, reason: 'invalid-shop' });
       return false;
@@ -179,7 +195,7 @@ export function createCustomerTranslationsWorkflow(
     try {
       const raw = await options.storage.read();
       if (raw === null) {
-        dispatch({ type: 'load-succeeded', request, overlays: { en: emptyOverlay('en') } });
+        dispatch({ type: 'load-succeeded', request, shop, overlays: { en: emptyOverlay('en') } });
         return !disposed && state.phase === 'ready';
       }
       const value = typeof raw === 'string' ? parseJson(raw) : raw;
@@ -188,7 +204,7 @@ export function createCustomerTranslationsWorkflow(
         dispatch({ type: 'load-failed', request, reason: 'invalid-record' });
         return false;
       }
-      dispatch({ type: 'load-succeeded', request, overlays });
+      dispatch({ type: 'load-succeeded', request, shop, overlays });
       return !disposed && state.phase === 'ready';
     } catch (error) {
       const reason: CustomerTranslationsLoadError =

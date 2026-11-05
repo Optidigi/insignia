@@ -45,7 +45,7 @@ function csvCell(value: string): string {
   return `"${safe.replaceAll('"', '""')}"`;
 }
 /** Readable audit summary, not a restorable backup of product configurations. */
-export function methodSummaryCsv(methods: readonly MethodConfiguration[], products: readonly MethodProduct[]): string {
+export function methodSummaryCsv(methods: readonly MethodConfiguration[], products: readonly MethodProduct[], currency = 'EUR', methodCurrencies: Record<string, string> = {}): string {
   const rows = [
     [
       'Method',
@@ -72,7 +72,7 @@ export function methodSummaryCsv(methods: readonly MethodConfiguration[], produc
         method.explanation,
         method.pricing === 'fixed' ? 'Fixed price' : 'Product-specific prices',
         amount,
-        method.pricing === 'fixed' ? 'EUR' : '',
+        method.pricing === 'fixed' ? methodCurrencies[method.id] ?? currency : '',
         method.pricing === 'fixed' ? 'Per location per item' : '',
         method.assignment === 'manual' ? 'Manual' : 'By tag',
         method.assignment === 'tags' ? method.tags.join('; ') : '',
@@ -87,8 +87,10 @@ export function methodSummaryCsv(methods: readonly MethodConfiguration[], produc
 export function downloadMethodSummary(
   methods: readonly MethodConfiguration[],
   products: readonly MethodProduct[],
+  currency = 'EUR',
+  methodCurrencies: Record<string, string> = {},
 ): void {
-  const url = URL.createObjectURL(new Blob([methodSummaryCsv(methods, products)], { type: 'text/csv;charset=utf-8' }));
+  const url = URL.createObjectURL(new Blob([methodSummaryCsv(methods, products, currency, methodCurrencies)], { type: 'text/csv;charset=utf-8' }));
   const link = document.createElement('a');
   link.href = url;
   link.download = `decoration-methods-${new Date().toISOString().slice(0, 10)}.csv`;

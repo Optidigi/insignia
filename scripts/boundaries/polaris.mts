@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, extname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,6 +8,38 @@ import ts from 'typescript';
 type RecordValue = Record<string, unknown>;
 function record(value: unknown): value is RecordValue {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+function withoutLocations(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(withoutLocations);
+  if (record(value))
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([key]) => !['start', 'end', 'loc', 'range'].includes(key))
+        .map(([key, item]) => [key, withoutLocations(item)]),
+    );
+  return value;
+}
+export function readReviewedNativePresentation(path: string): Record<string, Record<string, number>> {
+  const value: unknown = JSON.parse(readFileSync(path, 'utf8'));
+  if (!record(value) || value.version !== 1 || !record(value.files))
+    throw new Error('Invalid reviewed presentation manifest');
+  const files: Record<string, Record<string, number>> = {};
+  for (const [file, entries] of Object.entries(value.files)) {
+    if (
+      !/^(?:apps\/web|frontend\/admin)\/.+\.(?:tsx?|mts|astro)$/.test(file) ||
+      file.includes('..') ||
+      !record(entries)
+    )
+      throw new Error('Invalid reviewed presentation file');
+    const signatures: Record<string, number> = {};
+    files[file] = signatures;
+    for (const [signature, count] of Object.entries(entries)) {
+      if (!/^[a-f0-9]{64}$/.test(signature) || typeof count !== 'number' || !Number.isSafeInteger(count) || count < 1)
+        throw new Error('Invalid reviewed presentation signature');
+      signatures[signature] = count;
+    }
+  }
+  return files;
 }
 const structural = new Set([
   'div',
@@ -34,18 +67,42 @@ export type PolarisInspectionOptions = {
   buyerEntries: readonly string[];
   runtimeLayout?: string;
   versionManifest?: string;
+  /** Exact reviewed selected-UI native nodes; not a directory or tag exemption. */
+  reviewedNativePresentation?: Record<string, Record<string, number>>;
 };
 /** Read-only source inspection; callers decide how violations affect verification. */
-export async function inspectPolarisPresentation(
-  options: PolarisInspectionOptions,
-): Promise<{ violations: string[]; merchantFiles: string[]; buyerFiles: string[] }> {
+export async function inspectPolarisPresentation(options: PolarisInspectionOptions): Promise<{
+  violations: string[];
+  merchantFiles: string[];
+  buyerFiles: string[];
+  nativeFindings: { file: string; signature: string }[];
+}> {
   const root = resolve(options.root);
   const configPath = resolve(root, options.tsconfig);
   const config = ts.readConfigFile(configPath, ts.sys.readFile);
   if (config.error) throw new Error(ts.flattenDiagnosticMessageText(config.error.messageText, '\n'));
   const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, dirname(configPath));
   const violations: string[] = [];
-  const report = (file: string, message: string) => violations.push(`${file}: ${message}`);
+  const nativeFindings: { file: string; signature: string }[] = [];
+  const remaining = structuredClone(options.reviewedNativePresentation ?? {});
+  const digest = (value: string) => createHash('sha256').update(value).digest('hex');
+  const report = (file: string, message: string, nodeSignature?: string) => {
+    if (
+      nodeSignature &&
+      /^(?:merchant presentation|structural merchant control) requires supported Polaris component:/.test(message)
+    ) {
+      const path = relative(root, file).split(sep).join('/');
+      const signature = digest(`${message}\n${nodeSignature}`);
+      nativeFindings.push({ file: path, signature });
+      const signatures = remaining[path],
+        approved = signatures?.[signature];
+      if (signatures && approved && approved > 0) {
+        signatures[signature] = approved - 1;
+        return;
+      }
+    }
+    violations.push(`${file}: ${message}`);
+  };
   const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
   const declarations = resolve(packageRoot, 'apps/web/node_modules/@shopify/polaris-types/dist/polaris.d.ts');
   const supported = new Set<string>();
@@ -55,7 +112,7 @@ export async function inspectPolarisPresentation(
     ts.forEachChild(node, collect);
   }
   collect(types);
-  function tag(file: string, name: string, saveBarChild = false) {
+  function tag(file: string, name: string, saveBarChild = false, signature?: string) {
     if (!name || name[0] !== name[0]?.toLowerCase()) return;
     if (
       structural.has(name) ||
@@ -65,7 +122,7 @@ export async function inspectPolarisPresentation(
       (saveBarChild && name === 'button')
     )
       return;
-    report(file, `merchant presentation requires supported Polaris component: ${name}`);
+    report(file, `merchant presentation requires supported Polaris component: ${name}`, signature);
   }
   const controlRoles = new Set([
     'button',
@@ -86,16 +143,23 @@ export async function inspectPolarisPresentation(
     'treeitem',
     'gridcell',
   ]);
-  function structuralAttribute(file: string, element: string, name: string, value: string | undefined) {
+  function structuralAttribute(
+    file: string,
+    element: string,
+    name: string,
+    value: string | undefined,
+    signature?: string,
+  ) {
     if (!structural.has(element)) return;
     const attribute = name.toLowerCase();
     if (
       (attribute === 'role' && (value === undefined || value.split(/\s+/).some((role) => controlRoles.has(role)))) ||
       /^on(?:click|dblclick|pointer|mouse|key|input|change|submit|touch)/.test(attribute) ||
+      attribute === 'spread' ||
       (attribute === 'tabindex' && value !== '-1') ||
       (attribute === 'contenteditable' && value !== 'false')
     )
-      report(file, `structural merchant control requires supported Polaris component: ${element}.${name}`);
+      report(file, `structural merchant control requires supported Polaris component: ${element}.${name}`, signature);
   }
   function dependency(file: string, specifier: string): string | undefined {
     const resolutionHost: ts.ModuleResolutionHost = {
@@ -167,6 +231,41 @@ export async function inspectPolarisPresentation(
       }
       function inspectTs(text: string) {
         const ast = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+        const printer = ts.createPrinter({ removeComments: true });
+        const nodeSignature = (node: ts.Node) => digest(printer.printNode(ts.EmitHint.Unspecified, node, ast));
+        function propertyName(name: ts.PropertyName): string | undefined {
+          if (ts.isIdentifier(name) || ts.isStringLiteralLike(name) || ts.isNumericLiteral(name)) return name.text;
+          if (
+            ts.isComputedPropertyName(name) &&
+            (ts.isStringLiteralLike(name.expression) || ts.isNumericLiteral(name.expression))
+          )
+            return name.expression.text;
+          return undefined;
+        }
+        function spreadControl(element: string, expression: ts.Expression, signature: string) {
+          if (!structural.has(element)) return;
+          if (!ts.isObjectLiteralExpression(expression)) {
+            report(
+              file,
+              `structural merchant control requires supported Polaris component: ${element}.spread`,
+              signature,
+            );
+            return;
+          }
+          for (const property of expression.properties) {
+            if (ts.isSpreadAssignment(property)) spreadControl(element, property.expression, signature);
+            else if (ts.isPropertyAssignment(property))
+              structuralAttribute(
+                file,
+                element,
+                propertyName(property.name) ?? 'spread',
+                staticAttribute(property.initializer),
+                signature,
+              );
+            else if (property.name)
+              structuralAttribute(file, element, propertyName(property.name) ?? 'spread', undefined, signature);
+          }
+        }
         const factories = new Set(['createElement', 'h', 'jsx', 'jsxs', 'jsxDEV']);
         function staticAttribute(node: ts.Expression | undefined): string | undefined {
           if (!node) return undefined;
@@ -268,7 +367,7 @@ export async function inspectPolarisPresentation(
             const rawProperty = (name: string) => ['dangerouslySetInnerHTML', 'innerHTML', 'outerHTML'].includes(name);
             if (ts.isJsxAttribute(node) && node.name.getText(ast) === 'dangerouslySetInnerHTML')
               report(file, 'merchant raw HTML presentation is prohibited');
-            if (ts.isPropertyAssignment(node) && rawProperty(node.name.getText(ast).replace(/^['"]|['"]$/g, '')))
+            if (ts.isPropertyAssignment(node) && rawProperty(propertyName(node.name) ?? ''))
               report(file, 'merchant raw HTML presentation is prohibited');
             if (
               ts.isBinaryExpression(node) &&
@@ -280,14 +379,24 @@ export async function inspectPolarisPresentation(
                   rawProperty(node.left.argumentExpression.text)))
             )
               report(file, 'merchant raw HTML presentation is prohibited');
-            if (
-              ts.isCallExpression(node) &&
-              ts.isPropertyAccessExpression(node.expression) &&
-              (['insertAdjacentHTML', 'setHTMLUnsafe'].includes(node.expression.name.text) ||
-                (node.expression.expression.getText(ast) === 'document' &&
-                  ['write', 'writeln'].includes(node.expression.name.text)))
-            )
-              report(file, 'merchant raw HTML presentation is prohibited');
+            if (ts.isCallExpression(node)) {
+              const access = node.expression;
+              const name = ts.isPropertyAccessExpression(access)
+                ? access.name.text
+                : ts.isElementAccessExpression(access) && ts.isStringLiteralLike(access.argumentExpression)
+                  ? access.argumentExpression.text
+                  : null;
+              const target =
+                ts.isPropertyAccessExpression(access) || ts.isElementAccessExpression(access)
+                  ? access.expression.getText(ast)
+                  : '';
+              if (
+                name &&
+                (['insertAdjacentHTML', 'setHTMLUnsafe'].includes(name) ||
+                  (/^(?:(?:window|globalThis)\.)?document$/.test(target) && ['write', 'writeln'].includes(name)))
+              )
+                report(file, 'merchant raw HTML presentation is prohibited');
+            }
           }
           if (
             (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
@@ -330,24 +439,29 @@ export async function inspectPolarisPresentation(
                 parent.arguments[0] &&
                 ts.isStringLiteralLike(parent.arguments[0]) &&
                 parent.arguments[0].text === 'ui-save-bar';
-              if (!(first.text === 'a' && downloadTransport(node))) tag(file, first.text, Boolean(saveBarChild));
+              if (!(first.text === 'a' && downloadTransport(node)))
+                tag(file, first.text, Boolean(saveBarChild), nodeSignature(node));
               const properties = node.arguments[1];
               if (properties && ts.isObjectLiteralExpression(properties))
                 for (const property of properties.properties)
-                  if (ts.isPropertyAssignment(property))
+                  if (ts.isSpreadAssignment(property))
+                    spreadControl(first.text, property.expression, nodeSignature(node));
+                  else if (ts.isPropertyAssignment(property))
                     structuralAttribute(
                       file,
                       first.text,
-                      property.name.getText(ast).replace(/^['"]|['"]$/g, ''),
+                      propertyName(property.name) ?? 'spread',
                       staticAttribute(property.initializer),
+                      nodeSignature(node),
                     );
             }
           }
           if (merchant && (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node))) {
             const element = node.tagName.getText(ast);
-            tag(file, element);
+            tag(file, element, false, nodeSignature(node));
             for (const attribute of node.attributes.properties)
-              if (ts.isJsxAttribute(attribute)) {
+              if (ts.isJsxSpreadAttribute(attribute)) spreadControl(element, attribute.expression, nodeSignature(node));
+              else if (ts.isJsxAttribute(attribute)) {
                 const value = attribute.initializer;
                 structuralAttribute(
                   file,
@@ -358,6 +472,7 @@ export async function inspectPolarisPresentation(
                     : value && ts.isJsxExpression(value)
                       ? staticAttribute(value.expression)
                       : undefined,
+                  nodeSignature(node),
                 );
               }
           }
@@ -404,7 +519,8 @@ export async function inspectPolarisPresentation(
           }
           if (value.type === 'JSXOpeningElement' && record(value.name) && typeof value.name.name === 'string') {
             if (merchant) {
-              tag(file, value.name.name);
+              const signature = digest(JSON.stringify(withoutLocations([value.name, value.attributes])));
+              tag(file, value.name.name, false, signature);
               if (Array.isArray(value.attributes))
                 for (const attribute of value.attributes)
                   if (record(attribute) && record(attribute.name) && typeof attribute.name.name === 'string')
@@ -415,6 +531,7 @@ export async function inspectPolarisPresentation(
                       record(attribute.value) && typeof attribute.value.value === 'string'
                         ? attribute.value.value
                         : undefined,
+                      signature,
                     );
             } else if (
               supported.has(value.name.name) ||
@@ -447,8 +564,8 @@ export async function inspectPolarisPresentation(
   if (options.versionManifest && options.runtimeLayout) {
     const manifest: unknown = JSON.parse(readFileSync(resolve(root, options.versionManifest), 'utf8'));
     const dev = record(manifest) && record(manifest.devDependencies) ? manifest.devDependencies : {};
-    if (dev['@shopify/polaris-types'] !== '1.1.0')
-      report(options.versionManifest, 'Polaris checked types must match selected 1.1.0');
+    if (dev['@shopify/polaris-types'] !== '2.0.0-rc.3')
+      report(options.versionManifest, 'Polaris checked types must match selected 2.0.0-rc.3');
     const layout = readFileSync(resolve(root, options.runtimeLayout), 'utf8');
     const runtimeSources: string[] = [];
     function scriptSources(value: unknown) {
@@ -477,8 +594,11 @@ export async function inspectPolarisPresentation(
       for (const child of Object.values(value)) scriptSources(child);
     }
     scriptSources(parse(layout).ast);
-    if (runtimeSources.length !== 1 || runtimeSources[0] !== 'https://cdn.shopify.com/shopifycloud/polaris-1.1.js')
-      report(options.runtimeLayout, 'Polaris runtime must match selected 1.1.js');
+    if (runtimeSources.length !== 1 || runtimeSources[0] !== 'https://cdn.shopify.com/shopifycloud/polaris-2.0-rc.js')
+      report(options.runtimeLayout, 'Polaris runtime must match selected 2.0-rc.js');
   }
-  return { violations, merchantFiles, buyerFiles };
+  for (const [file, entries] of Object.entries(remaining))
+    for (const count of Object.values(entries))
+      if (count > 0) report(file, 'Reviewed native presentation signature is stale');
+  return { violations, merchantFiles, buyerFiles, nativeFindings };
 }

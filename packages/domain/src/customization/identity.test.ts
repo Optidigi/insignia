@@ -198,3 +198,28 @@ describe('canonical production identity and quantity vectors', () => {
     ).toThrow();
   });
 });
+
+it('preserves historical fixed-placement identity while binding normalized customer production positions', () => {
+  const before = canonicalDesignIdentity(group);
+  const shifted = {
+    ...group,
+    design: {
+      ...group.design,
+      placements: group.design.placements.map((placement) => ({
+        ...placement,
+        position: { xMicros: 500000, yMicros: 400000 },
+      })),
+    },
+  };
+  expect(canonicalDesignIdentity(shifted)).not.toBe(before);
+  expect(normalizeCustomizationGroups([shifted], [config])[0]?.design.placements[0]?.position).toEqual({
+    xMicros: 500000,
+    yMicros: 400000,
+  });
+  expect(() =>
+    canonicalDesignIdentity({
+      ...shifted,
+      design: { ...shifted.design, placements: [{ ...front, position: { xMicros: 1000001, yMicros: 0 } }] },
+    }),
+  ).toThrow();
+});

@@ -12,11 +12,34 @@ if (!['normal', 'empty', 'denied', 'unavailable', 'loading'].includes(state))
 const fixtures = jsonRecord(await readFile(new URL('./support/preview-fixtures.json', import.meta.url), 'utf8'));
 const config = response(draft());
 config.product.title = 'Cotton crewneck — local sample';
+if (config.product.imageUrl)
+  config.product.images = [
+    { id: 'product_111', url: config.product.imageUrl, width: 1, height: 1, alt: 'Synthetic preview' },
+  ];
 config.config.draft.labels = {
   methods: { print: 'Screen printing' },
   placements: { front: 'Front chest' },
   steps: { small: 'Small', large: 'Large' },
 };
+const catalogue = {
+  shop: 'synthetic.myshopify.com',
+  authority: 'a'.repeat(64),
+  canEdit: false,
+  currency: 'USD',
+  methods: [],
+};
+fixtures['/api/admin/preferences'] = {
+  version: 'merchant-preferences-v1',
+  shop: catalogue.shop,
+  authority: catalogue.authority,
+  canEdit: false,
+  canReadPrivacy: false,
+  guidanceVersion: '0',
+  wordingVersion: '0',
+  guidance: { dismissed: false, completedSteps: [] },
+  overlays: { en: { locale: 'en', messages: {} } },
+};
+fixtures['/api/admin/methods'] = catalogue;
 fixtures['/api/admin/products'] = { products: [config.product], nextCursor: null };
 fixtures['/api/admin/products/111/config'] = config;
 const child = spawn(process.execPath, [new URL('../../dist/server/entry.mjs', import.meta.url).pathname], {
@@ -53,7 +76,11 @@ const server = createServer(async (request, reply) => {
     }
     if (url.pathname === '/__preview/polaris.js') {
       reply.setHeader('content-type', 'text/javascript');
-      reply.end(await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url)));
+      reply.end(
+        await readFile(
+          new URL('../../../../frontend/admin/examples/fixtures/polaris-2.0-rc.snapshot', import.meta.url),
+        ),
+      );
       return;
     }
     if (url.pathname.startsWith('/api/')) {
@@ -82,7 +109,7 @@ const server = createServer(async (request, reply) => {
           ? url.pathname === '/api/admin/products'
             ? { products: [], nextCursor: null }
             : url.pathname === '/api/admin/methods'
-              ? { methods: [] }
+              ? catalogue
               : url.pathname === '/api/purchases/v1'
                 ? { version: 'm8-purchase-list-v1', items: [], nextCursor: null }
                 : url.pathname === '/api/purchases/v1/privacy'
@@ -96,7 +123,10 @@ const server = createServer(async (request, reply) => {
     // No webhook, proxy, upload, release or other command route reaches the real SSR server.
     if (
       request.method !== 'GET' ||
-      (!url.pathname.startsWith('/admin') && !url.pathname.startsWith('/_astro/') && url.pathname !== '/live')
+      (!url.pathname.startsWith('/admin') &&
+        !url.pathname.startsWith('/_astro/') &&
+        url.pathname !== '/illustrations/editor-sample.png' &&
+        url.pathname !== '/live')
     ) {
       reply.statusCode = 404;
       reply.end('Local preview route unavailable');
@@ -116,7 +146,7 @@ const server = createServer(async (request, reply) => {
     if (type.includes('text/html')) {
       const html = (await result.text())
         .replace('https://cdn.shopify.com/shopifycloud/app-bridge.js', '/__preview/bridge.js')
-        .replace('https://cdn.shopify.com/shopifycloud/polaris-1.1.js', '/__preview/polaris.js');
+        .replace('https://cdn.shopify.com/shopifycloud/polaris-2.0-rc.js', '/__preview/polaris.js');
       reply.end(html);
     } else reply.end(Buffer.from(await result.arrayBuffer()));
   } catch {

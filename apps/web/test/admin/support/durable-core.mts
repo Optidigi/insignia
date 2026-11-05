@@ -7,7 +7,9 @@ type Overrides = {
   uninstallLifecycle?: Partial<DurableCore['uninstallLifecycle']>;
   uninstallPrivacy?: Partial<DurableCore['uninstallPrivacy']>;
   methodCatalog?: Partial<DurableCore['methodCatalog']>;
+  preferences?: Partial<DurableCore['preferences']>;
   customerPrivacy?: Partial<DurableCore['customerPrivacy']>;
+  customerArtwork?: Partial<DurableCore['customerArtwork']>;
   usageLedger?: Partial<DurableCore['usageLedger']>;
   usageDeliveryIntents?: Partial<DurableCore['usageDeliveryIntents']>;
   purchases?: Partial<DurableCore['purchases']>;
@@ -49,11 +51,26 @@ export function fixtureCore(overrides: Overrides = {}): DurableCore {
       ...overrides.uninstallPrivacy,
     },
     methodCatalog: {
+      listConfigurations: async () => [],
+      saveConfiguration: async () => null,
       list: unexpected,
       create: unexpected,
       rename: unexpected,
       delete: unexpected,
       ...overrides.methodCatalog,
+    },
+    preferences: { read: unexpected, readWording: unexpected, save: unexpected, ...overrides.preferences },
+    customerArtwork: {
+      issue: unexpected,
+      resolve: unexpected,
+      attach: unexpected,
+      revoke: unexpected,
+      epoch: unexpected,
+      pendingNotifications: unexpected,
+      deferNotification: unexpected,
+      claimNotification: unexpected,
+      settleNotification: unexpected,
+      ...overrides.customerArtwork,
     },
     customerPrivacy: {
       blockedShopErasureCount: unexpected,
@@ -76,6 +93,9 @@ export function fixtureCore(overrides: Overrides = {}): DurableCore {
       ...overrides.usageDeliveryIntents,
     },
     purchases: {
+      rememberOrderNames: unexpected,
+      missingOrderNames: unexpected,
+      statistics: unexpected,
       requestReconciliation: unexpected,
       reconcile: unexpected,
       getPurchaseReconciliationHint: unexpected,
@@ -176,6 +196,8 @@ export function fixtureCore(overrides: Overrides = {}): DurableCore {
       ...overrides.outbox,
     },
     configs: {
+      summaries: unexpected,
+      listSelectedForMethod: async () => [],
       createConfig: unexpected,
       getConfig: unexpected,
       getConfigInTransaction: unexpected,

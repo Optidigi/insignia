@@ -5,14 +5,14 @@ import type { Connect } from 'vite';
 import { createServer } from 'vite';
 import { handleBuyerRequest } from '../../web/src/server/buyer/http.ts';
 import { fixture } from '../../web/test/support/buyer-fixture.mts';
-import { type AjaxItem, ajaxBody, record, required, serverPort, text } from './support.mts';
+import { type AjaxItem, ajaxBody, record, required, selectedFrameAssets, serverPort, text } from './support.mts';
 
 // Actual browser -> HTTP -> real HMAC/quote/signing/PG -> HTTP Ajax adapter.
 // Shopify signed routing, catalog, entitlement/readiness and cart provider are synthetic boundaries.
-test('buyer purchases the EUR91 quote through actual HTTP, real signing and PostgreSQL while ordinary cart stays exact', {
+test('buyer purchases the EUR90 Lean quote through actual HTTP, real signing and PostgreSQL while ordinary cart stays exact', {
   skip: !process.env.DATABASE_URL,
 }, async (t) => {
-  const f = await fixture(t, { demo91: true });
+  const f = await fixture(t, { representativePricing: true, selectedBrowser: true });
   let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
   let items: AjaxItem[] = [
     { key: 'ordinary', variant_id: 999, product_id: 888, quantity: 2, properties: { gift: true } },
@@ -79,6 +79,7 @@ test('buyer purchases the EUR91 quote through actual HTTP, real signing and Post
   };
   const server = await createServer({
     plugins: [
+      selectedFrameAssets(),
       {
         name: 'synthetic-buyer-http',
         configureServer(server) {
@@ -93,6 +94,15 @@ test('buyer purchases the EUR91 quote through actual HTTP, real signing and Post
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
     await page.clock.install({ time: new Date('2026-10-12T12:00:00Z') });
+    await page.route('https://synthetic.invalid/product.png', (route) =>
+      route.fulfill({
+        contentType: 'image/png',
+        body: Buffer.from(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lL0AAAAASUVORK5CYII=',
+          'base64',
+        ),
+      }),
+    );
     await page.goto(`http://127.0.0.1:${serverPort(server.httpServer)}`);
     await page.evaluate((productId) => {
       const host = document.createElement('insignia-buyer');
@@ -103,20 +113,20 @@ test('buyer purchases the EUR91 quote through actual HTTP, real signing and Post
     }, f.productId);
     const host = page.locator('insignia-buyer');
     await host.getByRole('button', { name: 'Customize this product' }).click();
-    await host.getByRole('button', { name: 'Provide logo later' }).click();
-    await host.getByRole('button', { name: 'Continue to Placement' }).click();
-    await host.getByRole('checkbox', { name: 'Front', exact: true }).check();
-    await host.getByRole('button', { name: 'Continue to Preview' }).click();
-    await host.getByRole('button', { name: 'Continue to Review' }).click();
-    await host.getByRole('spinbutton').fill('3');
-    await host.getByRole('button', { name: 'Review complete customized cart' }).click();
-    await host.getByRole('button', { name: 'Add to Cart — EUR 91.00' }).waitFor();
-    if (process.env.M7_DEMO_SCREENSHOT) {
-      await host.getByRole('button', { name: 'Add to Cart — EUR 91.00' }).scrollIntoViewIfNeeded();
-      await page.screenshot({ path: process.env.M7_DEMO_SCREENSHOT, fullPage: true });
-    }
-    await host.getByRole('button', { name: 'Add to Cart — EUR 91.00' }).click();
-    await host.getByText('Customized cart updated.').waitFor();
+    const frame = page.frameLocator('iframe');
+    await frame.getByRole('button', { name: 'Add artwork', exact: true }).first().click();
+    await frame.locator('.artwork-choice').first().click();
+    await frame.getByRole('button', { name: 'Provide artwork later', exact: true }).click();
+    await frame.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+    await frame.locator('input[type=number]:enabled').first().fill('3');
+    const proposed = page.waitForResponse((response) => new URL(response.url()).pathname.endsWith('/quote-proposals'));
+    await frame.getByRole('button', { name: 'Review', exact: true }).last().click();
+    const proposalResponse = await proposed;
+    assert.equal(proposalResponse.status(), 200, await proposalResponse.text());
+    await frame.getByText('€90.00', { exact: true }).filter({ visible: true }).first().waitFor();
+    if (process.env.M7_DEMO_SCREENSHOT) await page.screenshot({ path: process.env.M7_DEMO_SCREENSHOT, fullPage: true });
+    await frame.getByRole('button', { name: 'Add to cart', exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
     assert.equal(adds, 1);
     assert.equal(confirmed, true);
     assert.deepEqual(items[0], {
@@ -138,11 +148,11 @@ test('buyer purchases the EUR91 quote through actual HTTP, real signing and Post
     const accepted = (await f.pool.query('SELECT quote_value FROM accepted_quotes WHERE shop_id=$1', [f.shopId])).rows;
     assert.equal(accepted.length, 1);
     const economics = record(record(required(accepted[0]).quote_value).economics);
-    assert.equal(economics.totalMinor, '9100');
+    assert.equal(economics.totalMinor, '9000');
     assert.equal(economics.customizedQuantity, 3);
     assert(Array.isArray(economics.groups));
     const firstGroup = record(required(economics.groups[0]));
-    assert.equal(firstGroup.setupMinor, '100');
+    assert.equal(firstGroup.setupMinor, '0');
     assert.equal(firstGroup.customizationUnitMinor, '1000');
     assert.equal(firstGroup.baseTotalMinor, '6000');
   } finally {

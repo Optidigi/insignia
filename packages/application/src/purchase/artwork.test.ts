@@ -75,6 +75,7 @@ describe('merchant-only purchased artwork work', () => {
       expiresAt: expiresAt.toISOString(),
       sha256: 'b'.repeat(64),
       byteLength: 123,
+      contentType: 'image/svg+xml',
     });
   });
   it('does not expose arbitrary same-tenant artwork', async () => {

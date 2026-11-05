@@ -8,7 +8,7 @@
     "node": "24.21.0"
   },
   "scripts": {
-    "build": "corepack pnpm -r --filter './packages/**' build && corepack pnpm -r --filter './apps/**' build && corepack pnpm -r --filter './frontend/**' build",
+    "build": "corepack pnpm -r build",
     "test:unit": "corepack pnpm --filter @insignia/domain test && corepack pnpm --filter @insignia/contracts test && corepack pnpm --filter @insignia/visualizer test && corepack pnpm --filter @insignia/cart-authorization test && corepack pnpm --filter @insignia/application test && corepack pnpm --filter @insignia/shopify test && corepack pnpm --filter @insignia/observability test && corepack pnpm --filter @insignia/storage test && corepack pnpm --filter @insignia/worker test",
     "db:migrate": "dbmate --no-dump-schema --migrations-dir packages/database/migrations up",
     "test:database": "corepack pnpm --filter @insignia/database test",
@@ -33,7 +33,7 @@
     "dev:ui:admin": "corepack pnpm --filter @insignia/admin-ui dev",
     "dev:ui:customer": "corepack pnpm --filter @insignia/designer dev",
     "build:ui": "corepack pnpm -r --filter './frontend/**' build",
-    "check:ui": "corepack pnpm -r --filter './frontend/**' test && corepack pnpm --filter @insignia/designer build:library"
+    "check:ui": "corepack pnpm -r --filter './frontend/**' test"
   },
   "devDependencies": {
     "@astrojs/compiler-rs": "0.5.1",

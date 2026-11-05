@@ -19,6 +19,11 @@ export type MerchantPreviewRecord = {
 };
 /** No expired lease may turn an unresolved storage writer into a cleanup candidate. */
 export interface MerchantPreviewStore {
+  getUploads?(
+    scope: MerchantPreviewScope,
+    productId: string,
+    assetIds: readonly string[],
+  ): Promise<MerchantPreviewRecord[]>;
   getForRevision(
     scope: Pick<MerchantPreviewScope, 'shopId' | 'installationGeneration'>,
     target: { productId: string; revisionId: string },
@@ -67,7 +72,8 @@ function identity(
     !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(request.assetId) ||
     !/^[1-9][0-9]{0,19}$/.test(request.productId) ||
     (request.imageRevisionId !== `product_${request.productId}` &&
-      !/^variant_[1-9][0-9]{0,19}$/.test(request.imageRevisionId))
+      !/^(?:variant|image)_[1-9][0-9]{0,19}$/.test(request.imageRevisionId) &&
+      !/^upload_[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(request.imageRevisionId))
   )
     fail('INVALID_INPUT');
 }

@@ -222,3 +222,15 @@ describe('geometry boundary', () => {
     expect(() => applyGeometryCommand(moved, { kind: 'select-step', baseVersion: 1, stepId: 'small' })).toThrow();
   });
 });
+
+it('projects the accepted production position through contained-image coordinates without mutating published geometry', () => {
+  const moved = projectScene(
+    { ...state, artworkPosition: { xMicros: 250000, yMicros: 600000 } },
+    { width: 500, height: 300, pixelRatio: 1 },
+  );
+  expect(moved.artwork?.bounds).toEqual({ x: 166, y: 157.5, width: 48, height: 45 });
+  expect(geometry.views[0]?.placements[0]?.rect.centerX).toBe(0.5);
+  expect(() =>
+    projectScene({ ...state, artworkPosition: { xMicros: 0, yMicros: 0 } }, { width: 500, height: 300, pixelRatio: 1 }),
+  ).toThrow('production artwork outside image');
+});

@@ -40,6 +40,9 @@ if (!customElements.get('insignia-artwork-upload'))
 export class InsigniaBuyer extends HTMLElement {
   private readonly root = this.attachShadow({ mode: 'open' });
   private generation = 0;
+  private liveFrame?: { open(): boolean; destroy(): void };
+  private mounting = false;
+  private readonly triggerClick = () => void this.mount();
   connectedCallback() {
     this.generation++;
     const button = document.createElement('button');
@@ -48,9 +51,15 @@ export class InsigniaBuyer extends HTMLElement {
       ? 'Review customized cart'
       : (this.getAttribute('trigger-label') ?? 'Customize this product');
     this.root.replaceChildren(button);
-    button.addEventListener('click', () => void this.mount(), { once: true });
+    button.addEventListener('click', this.triggerClick);
   }
   private async mount() {
+    if (this.liveFrame) {
+      if (this.liveFrame.open()) return;
+      this.liveFrame.destroy();
+      this.liveFrame = undefined;
+    }
+    if (this.mounting) return;
     const generation = this.generation;
     const productId = this.getAttribute('product-id') ?? '';
     const proxyBase = this.getAttribute('proxy-base') ?? '/apps/insignia';
@@ -59,24 +68,70 @@ export class InsigniaBuyer extends HTMLElement {
       this.root.textContent = 'Customization unavailable';
       return;
     }
-    const { BuyerCustomizer } = await import('./customizer');
-    if (generation !== this.generation) return;
-    render(
-      <BuyerCustomizer
-        productId={productId}
-        proxyBase={proxyBase}
-        cartRoot={cartRoot}
-        country={this.getAttribute('country') ?? ''}
-        marketId={this.getAttribute('market-id') ?? ''}
-        repair={this.hasAttribute('repair')}
-        triggerLabel={this.getAttribute('trigger-label') ?? 'Customize this product'}
-      />,
-      this.root,
-    );
-    this.root.querySelector<HTMLButtonElement>('button')?.click();
+    this.mounting = true;
+    try {
+      const [{ createBuyerApi }, { mountLiveDesigner }] = await Promise.all([
+        import('./buyer'),
+        import('./designer/controller'),
+      ]);
+      const country = this.getAttribute('country') ?? '';
+      const api = createBuyerApi({ proxyBase, productId, country, storage: sessionStorage });
+      const source = await api.config();
+      if (generation !== this.generation) return;
+      {
+        const controller = await mountLiveDesigner({
+          source,
+          proxyBase,
+          cartRoot,
+          country,
+          marketId: this.getAttribute('market-id') ?? '',
+          locale: this.getAttribute('language') || document.documentElement.lang || 'en',
+          storeName:
+            this.getAttribute('store-name') ?? source.title ?? source.selectedSetup?.product.title ?? 'Customization',
+          storage: sessionStorage,
+          repair: this.hasAttribute('repair'),
+          isCurrent: () => generation === this.generation,
+          onClose: () => {
+            this.root.querySelector<HTMLButtonElement>('button')?.focus();
+          },
+          onError: () => {
+            const notice = this.root.querySelector('[role=alert]') ?? document.createElement('p');
+            notice.setAttribute('role', 'alert');
+            notice.textContent = 'Customization unavailable';
+            this.root.append(notice);
+          },
+        });
+        if (generation !== this.generation) {
+          controller.destroy();
+          return;
+        }
+        this.liveFrame = controller;
+        return;
+      }
+    } catch {
+      if (generation !== this.generation) return;
+      const { mountUnavailableDesigner } = await import('./designer/unavailable');
+      this.liveFrame = mountUnavailableDesigner({
+        locale: this.getAttribute('language') || document.documentElement.lang || 'en',
+        cartRoot,
+        storage: sessionStorage,
+        onClose: () => this.root.querySelector<HTMLButtonElement>('button')?.focus(),
+        retry: async () => {
+          this.liveFrame?.destroy();
+          this.liveFrame = undefined;
+          this.mounting = false;
+          await this.mount();
+        },
+      });
+      return;
+    } finally {
+      this.mounting = false;
+    }
   }
   disconnectedCallback() {
     this.generation++;
+    this.liveFrame?.destroy();
+    this.liveFrame = undefined;
     render(null, this.root);
   }
 }

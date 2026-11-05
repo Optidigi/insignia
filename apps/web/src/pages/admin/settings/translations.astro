@@ -1,0 +1,15 @@
+---
+import MerchantTranslations from '../../../../../../frontend/admin/src/islands/MerchantTranslations';
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+
+const apiKey = process.env.SHOPIFY_CLIENT_ID;
+const csp =
+  "default-src 'none'; script-src 'self' https://cdn.shopify.com 'sha256-UAsB0KRBWzyM3993V+dfqSKU2EkVmZChnGDvWJyraz8=' 'sha256-Ya0pUYrC7nM5Cn/056TyVuEiz6dFGrzmkWzgON0pF0U='; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; font-src https://cdn.shopify.com; img-src 'self' https: data: blob:; connect-src 'self' https://cdn.shopify.com/shopifycloud/admin-ui-foundations/icons/ https://cdn.shopify.com/shopifycloud/admin-ui-foundations/experimental/; frame-ancestors https://admin.shopify.com https://*.myshopify.com; base-uri 'none'; form-action 'self'";
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Content-Security-Policy', csp);
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+if (!apiKey || !/^[A-Za-z0-9_-]{1,128}$/.test(apiKey)) return Astro.rewrite('/admin/unavailable');
+---
+<AdminLayout titleKey="admin-shell:titles.translations" apiKey={apiKey}>
+  <MerchantTranslations locale={Astro.url.searchParams.get('locale')} initialSection={Astro.url.searchParams.get('section')} initialWordingLocale={Astro.url.searchParams.get('wordingLocale')} client:polaris />
+</AdminLayout>

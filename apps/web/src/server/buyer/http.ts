@@ -4,6 +4,7 @@ import {
   BuyerCapabilitySchema,
   BuyerCartStateSchema,
   BuyerConfirmationSchema,
+  BuyerDesignRestoreRequestSchema,
   BuyerDesignSchema,
   BuyerIdSchema,
   BuyerProposalRequestSchema,
@@ -83,6 +84,10 @@ export async function handleBuyerRequest(
       const parsed = BuyerRenewalSchema.safeParse(body);
       if (!parsed.success) throw new HttpError(400, 'INVALID_REQUEST');
       return respond(await services.renew(scope, id, parsed.data));
+    }
+    if (request.method === 'POST' && collection === 'designs' && id && action === 'restore') {
+      if (!BuyerDesignRestoreRequestSchema.safeParse(body).success) throw new HttpError(400, 'INVALID_REQUEST');
+      return respond(await services.restoreDesign(scope, id));
     }
     if (request.method === 'PUT' && collection === 'designs' && id && !action) {
       const parsed = BuyerDesignSchema.safeParse(body);

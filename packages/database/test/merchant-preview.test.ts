@@ -476,4 +476,53 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('merchant-owned preview lifecy
       ),
     ).toBe(3);
   });
+  it('durably captures a gallery reference and binds that exact image into an immutable revision', async () => {
+    const f = await fixture();
+    f.row.imageRevisionId = 'image_12';
+    const row = await usable(f);
+    expect(row.imageRevisionId).toBe('image_12');
+    const revisionId = randomUUID();
+    await core.transactions.run((tx) =>
+      core.configs.createValidatedRevision(tx, {
+        shopId: f.scope.shopId,
+        configId: f.configId,
+        revisionId,
+        mode: 'required',
+        sourceDraftVersion: '1',
+        sourceInstallationGeneration: '1',
+        createdByRef: 'synthetic',
+        publishedValue: {
+          version: 'm2-published-config-v1',
+          shopId: f.scope.shopId,
+          productId: '42',
+          revisionId,
+          shopCurrency: 'USD',
+          methods: [],
+          placements: [],
+          productionOptions: [],
+          pricingRules: [],
+        },
+        geometry: {
+          version: 'm5-geometry-v1',
+          value: {
+            version: 'm5-geometry-v1',
+            views: [
+              {
+                id: 'front',
+                image: { revisionId: 'image_12', width: 100, height: 100 },
+                variantImages: [],
+                placements: [],
+              },
+            ],
+            steps: [],
+          },
+        },
+        presentation: { version: 'm5-presentation-v1', labels: {} },
+        previewAssets: [{ imageRevisionId: 'image_12', assetId: f.row.assetId }],
+      }),
+    );
+    const bound = await store.getForRevision(f.scope, { productId: '42', revisionId });
+    expect(bound.map((asset) => asset.imageRevisionId)).toEqual(['image_12']);
+    expect(bound[0]?.assetId).toBe(f.row.assetId);
+  });
 });

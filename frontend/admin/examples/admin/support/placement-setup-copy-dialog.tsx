@@ -1,23 +1,13 @@
-/** Shared, preview-only staged dialog for copying product setup drafts. */
+/** Selected staged copy dialog; persistence and catalog ownership are supplied by its host. */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useAdminLocale } from '../../../src/shared/admin-i18n.js';
 import PlacementCopyDestinations from './placement-copy-destinations.tsx';
-import {
-  inspectPlacementPreviewState,
-  type PlacementSetupExample,
-  placementPreviewStorageKey,
-  readPlacementPreviewProduct,
-  readPlacementPreviewState,
-  readPlacementSetupExample,
-  writePlacementPreviewProduct,
-} from './placement-preview-storage.mts';
 import {
   type CopyPlacementSetupError,
   type CopyPlacementSetupSummary,
   copyPlacementSetup,
 } from './placement-setup-copy.mts';
 import PlacementSetupCopyReview from './placement-setup-copy-review.tsx';
-import { applyPlacementSetupExample } from './placement-workflow-examples.mts';
 import {
   type PlacementProduct,
   placementProductSchema,
@@ -58,7 +48,7 @@ export interface PlacementSetupCopyTargetResult {
 
 export interface PlacementSetupCopyReport {
   version: 2;
-  example: PlacementSetupExample;
+  example: string;
   sourceId: string;
   sourceTitle: string;
   sourceKind: 'current' | 'saved';
@@ -70,7 +60,27 @@ export interface PlacementSetupCopyReport {
   results: PlacementSetupCopyTargetResult[];
 }
 
+export interface PlacementSetupCopyIntent {
+  sourceSignature: string; selectedViewIds: string[]; includeMethods: boolean; includePrices: boolean;
+}
+export type PlacementSetupCopyReadiness = 'ready' | 'configured' | 'unavailable';
+export interface PlacementSetupCopyPorts {
+  /** Tenant/installation scope for transient operation reports; null until authorized load. */
+  scope(): string | null;
+  reportStorage: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | null;
+  loadCatalog(signal: AbortSignal): Promise<PlacementProduct[]>;
+  inspect(product: PlacementProduct): { product: PlacementProduct; readiness: PlacementSetupCopyReadiness };
+  save(product: PlacementProduct, intent: PlacementSetupCopyIntent): Promise<void>;
+}
+const unavailablePorts: PlacementSetupCopyPorts = {
+  scope: () => null, reportStorage: null,
+  loadCatalog: async () => { throw new Error('Copy setup service unavailable'); },
+  inspect: (product) => ({ product, readiness: 'unavailable' }),
+  save: async () => { throw new Error('Copy setup service unavailable'); },
+};
+
 export interface PlacementSetupCopyDialogProps {
+  ports?: PlacementSetupCopyPorts;
   /** The editor's current valid snapshot. It takes precedence over a saved draft. */
   source?: PlacementProduct;
   /** When supplied, these overview-selected products are the complete target set. */
@@ -103,13 +113,13 @@ function isCopyableSource(product: PlacementProduct): boolean {
   return Object.keys(validatePlacementProduct(product)).every(isIncompleteDraftIssue);
 }
 
-function makeReportKey(example: PlacementSetupExample): string {
+function makeReportKey(example: string): string {
   return `${reportPrefix}${example}`;
 }
 
-function readCopyReport(example: PlacementSetupExample): PlacementSetupCopyReport | null {
+function readCopyReport(example: string, storage: PlacementSetupCopyPorts['reportStorage']): PlacementSetupCopyReport | null {
   try {
-    const raw = globalThis.sessionStorage?.getItem(makeReportKey(example));
+    const raw = storage?.getItem(makeReportKey(example));
     if (!raw) return null;
     const value: unknown = JSON.parse(raw);
     if (!isRecord(value)) return null;
@@ -327,31 +337,13 @@ function countLabel(count: number, kind: CopyCountKind, t: AdminTranslator, loca
   }
 }
 
-function saveCopyReport(report: PlacementSetupCopyReport): boolean {
+function saveCopyReport(report: PlacementSetupCopyReport, storage: PlacementSetupCopyPorts['reportStorage']): boolean {
   try {
-    globalThis.sessionStorage?.setItem(makeReportKey(report.example), JSON.stringify(report));
-    return !!globalThis.sessionStorage;
+    storage?.setItem(makeReportKey(report.example), JSON.stringify(report));
+    return !!storage;
   } catch {
     return false;
   }
-}
-
-function effectiveTarget(product: PlacementProduct, example: PlacementSetupExample): PlacementProduct {
-  const saved = readPlacementPreviewProduct(example, product.id);
-  if (saved) return { ...saved, title: product.title, images: saved.images.map((image) => ({ ...image })) };
-  return applyPlacementSetupExample(product, example);
-}
-
-/** A published snapshot still protects a product when its editable draft is empty. */
-type TargetReadiness = 'ready' | 'configured' | 'unavailable';
-
-function targetReadiness(product: PlacementProduct, example: PlacementSetupExample): TargetReadiness {
-  const inspection = inspectPlacementPreviewState(example, product.id);
-  if (inspection.status === 'malformed' || inspection.status === 'unavailable') return 'unavailable';
-  if (new Set(product.methods.map((method) => method.id)).size !== product.methods.length) return 'unavailable';
-  const state = readPlacementPreviewState(example, product.id);
-  if (product.views.length > 0 || (state !== null && state.published !== null)) return 'configured';
-  return 'ready';
 }
 
 function productEditorHref(productId: string): string {
@@ -361,13 +353,15 @@ function productEditorHref(productId: string): string {
 }
 
 export default function PlacementSetupCopyDialog({
+  ports: providedPorts,
   source,
   targetIds,
   onClose,
   onComplete,
 }: PlacementSetupCopyDialogProps) {
   const { t: translateUi, formatLocale } = useAdminLocale();
-  const [example] = useState(() => readPlacementSetupExample());
+  const ports = providedPorts ?? unavailablePorts;
+  const example = ports.scope() ?? 'unavailable';
   const [catalog, setCatalog] = useState<PlacementProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -384,7 +378,7 @@ export default function PlacementSetupCopyDialog({
   const [busy, setBusy] = useState(false);
   const [report, setReport] = useState<PlacementSetupCopyReport | null>(null);
   const [resumableReport, setResumableReport] = useState<PlacementSetupCopyReport | null>(() =>
-    readCopyReport(readPlacementSetupExample()),
+    ports.scope() ? readCopyReport(example, ports.reportStorage) : null,
   );
   const [resumedReport, setResumedReport] = useState(false);
   const [reportStorageFailed, setReportStorageFailed] = useState(false);
@@ -432,15 +426,14 @@ export default function PlacementSetupCopyDialog({
     setLoading(true);
     setLoadError(false);
     const timeout = setTimeout(() => controller.abort(), 10_000);
-    void fetch('/__preview/placement-workflow/catalog', {
-      signal: controller.signal,
-      headers: { accept: 'application/json' },
-    })
-      .then(async (response) => {
-        if (!response.ok) throw new Error('Product catalog unavailable');
-        const parsed = placementProductSchema.array().safeParse(await response.json());
-        if (!parsed.success) throw new Error('Product catalog response was invalid');
-        if (current) setCatalog(parsed.data);
+    void ports.loadCatalog(controller.signal)
+      .then((products) => {
+        const parsed = placementProductSchema.array().parse(products);
+        if (current) {
+          setCatalog(parsed);
+          const scope = ports.scope();
+          if (scope) setResumableReport(readCopyReport(scope, ports.reportStorage));
+        }
       })
       .catch(() => {
         if (current) setLoadError(true);
@@ -477,13 +470,9 @@ export default function PlacementSetupCopyDialog({
   const savedSources = useMemo(
     () =>
       catalog.flatMap((product) => {
-        const saved = readPlacementPreviewProduct(example, product.id);
-        try {
-          if (!saved && sessionStorage.getItem(placementPreviewStorageKey(example, product.id))) return [];
-        } catch {
-          return [];
-        }
-        const candidate = saved ?? applyPlacementSetupExample(product, example);
+        const inspected = ports.inspect(product);
+        if (inspected.readiness === 'unavailable') return [];
+        const candidate = inspected.product;
         if (!isCopyableSource(candidate)) return [];
         return [{ ...candidate, title: product.title }];
       }),
@@ -516,7 +505,7 @@ export default function PlacementSetupCopyDialog({
     };
   }, [sourceData]);
   const targetProducts = useMemo(
-    () => catalog.map((product) => effectiveTarget(product, example)),
+    () => catalog.map((product) => ports.inspect(product).product),
     [catalog, catalogRevision, example],
   );
   const targetById = useMemo(() => new Map(targetProducts.map((product) => [product.id, product])), [targetProducts]);
@@ -546,7 +535,7 @@ export default function PlacementSetupCopyDialog({
       if (id === activeSource.id) return [{ targetId: id, reason: 'same-product' as const }];
       const target = targetById.get(id);
       if (!target) return [{ targetId: id, reason: 'product-unavailable' as const }];
-      const readiness = targetReadiness(target, example);
+      const readiness = ports.inspect(target).readiness;
       if (readiness === 'configured') return [{ targetId: id, reason: 'target-has-views' as const }];
       if (readiness === 'unavailable') return [{ targetId: id, reason: 'target-state-unavailable' as const }];
       return [];
@@ -606,7 +595,7 @@ export default function PlacementSetupCopyDialog({
       return;
     }
     const currentTargetById = new Map(
-      catalog.map((product) => [product.id, effectiveTarget(product, example)] as const),
+      catalog.map((product) => [product.id, ports.inspect(product).product] as const),
     );
     const targets = targetSelection.map((id) => ({ id, product: currentTargetById.get(id) }));
     const blockers: CopyPreflightBlocker[] = [];
@@ -614,7 +603,7 @@ export default function PlacementSetupCopyDialog({
       if (id === activeSource.id) blockers.push({ id, product, status: 'blocked', reason: 'same-product' });
       else if (!product) blockers.push({ id, product, status: 'unavailable', reason: 'product-unavailable' });
       else {
-        const readiness = targetReadiness(product, example);
+        const readiness = ports.inspect(product).readiness;
         if (readiness === 'configured')
           blockers.push({ id, product, status: 'already-configured', reason: 'target-has-views' });
         else if (readiness === 'unavailable')
@@ -656,7 +645,7 @@ export default function PlacementSetupCopyDialog({
         results,
       };
       setReport(next);
-      setReportStorageFailed(!saveCopyReport(next));
+      setReportStorageFailed(!saveCopyReport(next, ports.reportStorage));
       setLocalError('review-targets');
       return;
     }
@@ -697,14 +686,8 @@ export default function PlacementSetupCopyDialog({
               status: copied.reason === 'id-collision' ? 'failed' : 'blocked',
               reason: copied.reason,
             };
-          } else if (!writePlacementPreviewProduct(example, copied.product)) {
-            result = {
-              targetId: id,
-              title: product.title,
-              status: 'failed',
-              reason: 'storage-write-failed',
-            };
           } else {
+            await ports.save(copied.product, { sourceSignature, selectedViewIds: [...copyViewIds], includeMethods: copyMethods, includePrices: copyPrices });
             result = {
               targetId: id,
               title: product.title,
@@ -714,18 +697,18 @@ export default function PlacementSetupCopyDialog({
             };
             setCatalogRevision((revision) => revision + 1);
           }
-        } catch {
+        } catch (error) {
           result = {
             targetId: id,
             title: product.title,
             status: 'failed',
-            reason: 'copy-unexpected-failure',
+            reason: error && typeof error === 'object' && 'code' in error && error.code === 'storage-write-failed' ? 'storage-write-failed' : 'copy-unexpected-failure',
           };
         }
         if (prior >= 0) results[prior] = result;
         else results.push(result);
         setReport(baseReport());
-        if (!saveCopyReport(baseReport())) reportSaveFailed = true;
+        if (!saveCopyReport(baseReport(), ports.reportStorage)) reportSaveFailed = true;
       }
       const completed = baseReport();
       setReport(completed);
@@ -989,7 +972,7 @@ export default function PlacementSetupCopyDialog({
                           </s-clickable>
                         );
                       const selected = selectedTargetIds.includes(product.id);
-                      const readiness = targetReadiness(product, example);
+                      const readiness = ports.inspect(product).readiness;
                       const disabled = busy || readiness !== 'ready';
                       return (
                         // biome-ignore lint/a11y/noStaticElementInteractions: The native child checkbox is the selection control; this row only extends its pointer hit area.

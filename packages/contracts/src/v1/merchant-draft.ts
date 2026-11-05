@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { MethodDraftBindingSchema } from './method-catalog.js';
 import { PublishedConfigSchema } from './pricing-config.js';
+import { placementProductSchema } from './selected-product.js';
 
 const labelMap = z.record(
   z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/),
@@ -27,9 +29,17 @@ export const MerchantLabelsSchema = z.strictObject({
   prices: labelMap.optional(),
 });
 
+export const SelectedProductSetupSchema = z.strictObject({
+  version: z.literal('selected-product-setup-v1'),
+  product: placementProductSchema,
+  methodBindings: z.record(z.string(), MethodDraftBindingSchema),
+});
+export type SelectedProductSetup = z.infer<typeof SelectedProductSetupSchema>;
+
 export const MerchantPresentationSchema = z.strictObject({
   version: z.literal('m5-presentation-v1'),
   labels: MerchantLabelsSchema,
+  selectedSetup: SelectedProductSetupSchema.optional(),
 });
 export type MerchantPresentation = z.infer<typeof MerchantPresentationSchema>;
 
@@ -45,6 +55,7 @@ export const MerchantDraftSchema = z.strictObject({
   // Editor presentation only. Published M2 economics use stable IDs, not these labels.
   labels: MerchantLabelsSchema.optional(),
   geometry: z.unknown(),
+  selectedSetup: SelectedProductSetupSchema.optional(),
 });
 
 export type MerchantDraft = z.infer<typeof MerchantDraftSchema>;

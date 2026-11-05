@@ -66,8 +66,8 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       );
       const migrations = new URL('../migrations/', import.meta.url);
       const names = (await readdir(migrations)).filter((n) => n.endsWith('.sql')).sort();
-      expect(names).toHaveLength(45);
-      expect(names.slice(-7)).toEqual([
+      expect(names).toHaveLength(50);
+      expect(names.slice(-12)).toEqual([
         '20261017000200_privacy_merchant_export.sql',
         '20261017000300_shop_privacy_staging.sql',
         '20261018000100_method_catalog.sql',
@@ -75,6 +75,11 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
         '20261018000300_uninstall_privacy_recovery.sql',
         '20261018000400_generic_uninstall_cleanup_accounting.sql',
         '20261018000500_restore_validation_namespace.sql',
+        '20261105000100_method_configuration.sql',
+        '20261105000200_merchant_preferences.sql',
+        '20261105000300_merchant_uploaded_media.sql',
+        '20261105000400_customer_artwork.sql',
+        '20261105000500_purchase_order_labels.sql',
       ]);
       for (const file of names.slice(0, 20))
         await owner.query((await readFile(new URL(file, migrations), 'utf8')).split('-- migrate:down')[0]!);
@@ -161,6 +166,13 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       await owner.query(script);
       await owner.query(script); // Reapplication must retain the same bounded authority.
       expect((await web.query('SELECT current_user')).rows[0].current_user).toBe(login);
+      // New store preferences/labels remain mutable projections, not owner-wide table powers.
+      await web.query('SELECT guidance,overlays FROM merchant_preferences LIMIT 0');
+      await web.query('UPDATE merchant_preferences SET updated_at=updated_at WHERE false');
+      await web.query('SELECT order_name FROM purchase_order_labels LIMIT 0');
+      await web.query('UPDATE purchase_order_labels SET observed_at=observed_at WHERE false');
+      await expect(web.query('DELETE FROM merchant_preferences WHERE false')).rejects.toMatchObject({ code: '42501' });
+      await expect(web.query('DELETE FROM purchase_order_labels WHERE false')).rejects.toMatchObject({ code: '42501' });
       // Initial authorization inserts execute the renewal-aware trigger even when
       // no renewal exists. Exercise it as the real restricted LOGIN, not the owner.
       const initialSetId = randomUUID();
@@ -423,9 +435,9 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       await owner.query(`REVOKE SELECT(claim_token) ON purchase_reconciliation_cursors FROM ${login}`);
       const payloadHazards = [
         {
-          grant: `GRANT TRUNCATE ON purchase_artwork_events TO PUBLIC`,
-          revoke: `REVOKE TRUNCATE ON purchase_artwork_events FROM PUBLIC`,
-          probe: 'TRUNCATE purchase_artwork_events',
+          grant: `GRANT TRUNCATE ON purchase_artwork_events,customer_artwork_submissions TO PUBLIC`,
+          revoke: `REVOKE TRUNCATE ON purchase_artwork_events,customer_artwork_submissions FROM PUBLIC`,
+          probe: 'TRUNCATE purchase_artwork_events,customer_artwork_submissions',
         },
         {
           grant: `GRANT DELETE ON purchase_offer_payloads TO ${login}`,

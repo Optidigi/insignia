@@ -6,10 +6,18 @@ import {
   purchaseArtworkPreview,
 } from '@insignia/application';
 import { currencyExponent } from '@insignia/cart-authorization';
-import { MerchantPresentationSchema, type PurchaseView, PurchaseViewSchema } from '@insignia/contracts';
+import {
+  MerchantPresentationSchema,
+  type PurchaseListQuery,
+  PurchaseListQuerySchema,
+  PurchaseStatisticsSchema,
+  type PurchaseView,
+  PurchaseViewSchema,
+} from '@insignia/contracts';
 import type { DurableCore, PurchaseRecord, PurchaseScope } from '@insignia/database';
 import type { GeometryV1 } from '@insignia/visualizer/geometry';
 import type { AdminActor } from '../admin/contracts.js';
+import { scopeCustomerArtworkGeometry } from '../customer-artwork/presentation.ts';
 import { buyerGeometry } from '../merchant-preview/geometry.ts';
 import type { FrozenPreviewReader } from '../merchant-preview/read.ts';
 
@@ -31,6 +39,7 @@ export function createPurchaseServices(input: {
     actor: AdminActor,
     target: import('@insignia/shopify').OrderPresentationTarget,
   ) => Promise<import('@insignia/shopify').OrderPresentation | null>;
+  timeZone?: (actor: AdminActor) => Promise<string>;
   storage?: Pick<ArtworkStorage, 'presignRead'>;
   previewImages?: FrozenPreviewReader;
   clock?: () => Date;
@@ -106,6 +115,7 @@ export function createPurchaseServices(input: {
             id: placement.placementId,
             methodId: placement.methodId,
             stepId: placement.stepId,
+            ...(placement.position ? { position: { ...placement.position } } : {}),
             originalArtwork: placement.artwork,
             currentAssetId: assetId,
             currentExpiresAt: asset?.expiresAt.toISOString() ?? latest?.expiresAt ?? null,
@@ -150,6 +160,55 @@ export function createPurchaseServices(input: {
       financialStatus: latest?.financialStatus ?? 'UNKNOWN',
       cancelledAt: latest?.cancelledAt ?? null,
       exceptions: [...new Set(purchase.observations.map((o) => o.exception).filter((e): e is string => !!e))],
+      canUploadArtwork: actor.canUploadArtwork,
+      canShareCustomerArtwork:
+        actor.canUploadArtwork &&
+        groups.some((group) =>
+          group.placements.some(
+            (placement) => placement.originalArtwork.kind === 'deferred' && !placement.currentAssetId,
+          ),
+        ) &&
+        groups.every((group) => {
+          if (
+            !group.placements.some(
+              (placement) => placement.originalArtwork.kind === 'deferred' && !placement.currentAssetId,
+            )
+          )
+            return true;
+          const geometry = group.geometry as GeometryV1 | null;
+          if (!geometry) return false;
+          try {
+            const slots = group.placements
+              .filter((placement) => placement.originalArtwork.kind === 'deferred' && !placement.currentAssetId)
+              .map((placement) => ({
+                groupIndex: group.index,
+                placementId: placement.id,
+                productId: group.productId,
+                revisionId: group.configRevisionId,
+                methodId: placement.methodId,
+                stepId: placement.stepId,
+              }));
+            const scoped = scopeCustomerArtworkGeometry(
+              geometry,
+              {
+                variants: group.variants,
+                design: {
+                  placements: group.placements.map((placement) => ({
+                    placementId: placement.id,
+                    methodId: placement.methodId,
+                    stepId: placement.stepId,
+                    artwork: placement.originalArtwork,
+                    ...(placement.position ? { position: placement.position } : {}),
+                  })),
+                },
+              },
+              slots,
+            );
+            return scoped.geometry.views.length > 0;
+          } catch {
+            return false;
+          }
+        }),
       artworkVersion: purchase.artworkVersion,
       artworkState: purchase.artworkState,
       refunds: purchase.refunds,
@@ -171,11 +230,26 @@ export function createPurchaseServices(input: {
       input.core.customerPrivacy.readDataRequest(scope(actor), inboxId),
     privacyOrder: (actor: AdminActor, inboxId: string, purchaseId: string, setId: string | null = null) =>
       input.core.customerPrivacy.exportOrder(scope(actor), inboxId, purchaseId, setId),
-    async list(actor: AdminActor, query: { limit: number; before: string | null }) {
+    async list(actor: AdminActor, query: { limit: number; before: string | null } & Partial<PurchaseListQuery>) {
+      query = PurchaseListQuerySchema.parse(query);
       await currentAccess(actor);
+      if (query.q?.trim()) {
+        const missing = await store.missingOrderNames(scope(actor), 100);
+        if (missing.length) {
+          if (!input.orderNames) throw new Error('SEARCH_UNAVAILABLE');
+          const observed = await input.orderNames(actor, missing);
+          await currentAccess(actor);
+          await store.rememberOrderNames(
+            scope(actor),
+            Object.fromEntries(missing.map((id) => [id, observed[id] ?? null])),
+          );
+          if ((await store.missingOrderNames(scope(actor), 1)).length) throw new Error('SEARCH_INCOMPLETE');
+        }
+      }
       const rows = await store.list(scope(actor), {
+        ...query,
         limit: query.limit + 1,
-        ...(query.before ? { before: query.before } : {}),
+        before: query.before,
       });
       const page = rows.slice(0, query.limit).filter((row): row is PurchaseRecord => row !== null);
       let names: Record<string, string | null> = {};
@@ -190,13 +264,41 @@ export function createPurchaseServices(input: {
           /* Labels are optional. */
         }
       }
+      await currentAccess(actor);
       const items = await Promise.all(page.map((row) => view(actor, row, names)));
       await currentAccess(actor);
       return {
         version: 'm8-purchase-list-v1' as const,
         items,
         nextCursor: rows.length > query.limit ? page.at(-1)!.purchaseId : null,
+        ...(input.timeZone ? { timeZone: await input.timeZone(actor) } : {}),
       };
+    },
+    async statistics(actor: AdminActor) {
+      await currentAccess(actor);
+      if (!input.timeZone) throw new Error('STORE_CALENDAR_UNAVAILABLE');
+      const timeZone = await input.timeZone(actor);
+      try {
+        new Intl.DateTimeFormat('en', { timeZone });
+      } catch {
+        throw new Error('STORE_CALENDAR_UNAVAILABLE');
+      }
+      const observedAt = now();
+      const rows = await store.statistics(scope(actor), timeZone, observedAt);
+      await currentAccess(actor);
+      return PurchaseStatisticsSchema.parse({
+        version: 'purchase-statistics-v1',
+        timeZone,
+        periodDays: 30,
+        observedAt: observedAt.toISOString(),
+        available: rows.every((row) => row.unknown_test === '0'),
+        series: rows.map((row) => ({
+          day: row.day,
+          orders: row.orders,
+          items: row.items,
+          productIds: row.product_ids,
+        })),
+      });
     },
     async get(actor: AdminActor, id: string) {
       await currentAccess(actor);

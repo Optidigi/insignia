@@ -1,28 +1,45 @@
 import { withAdminDeadline } from './admin-deadline.js';
 /** Bounded, read-only Admin catalog projection. The caller supplies a verified online grant. */
 export interface CatalogTransport {
-  read<T>(operation: 'list' | 'detail' | 'currency', variables: Record<string, unknown>): Promise<T>;
+  read<T>(operation: 'list' | 'detail' | 'currency' | 'tags', variables: Record<string, unknown>): Promise<T>;
 }
 
+export type CatalogImage = { url: string; alt: string | null; id?: string; width?: number; height?: number };
 export type CatalogProduct = {
   id: string;
   title: string;
   status: 'ACTIVE' | 'ARCHIVED' | 'DRAFT' | 'UNLISTED';
-  image: { url: string; alt: string | null } | null;
+  image: CatalogImage | null;
   variants: {
     id: string;
     title: string;
     selectedOptions: { name: string; value: string }[];
-    image: { url: string; alt: string | null } | null;
+    image: CatalogImage | null;
   }[];
   variantsTruncated: boolean;
+  tags?: string[];
+  collections?: { id: string; title: string }[];
+  collectionsTruncated?: boolean;
+  options?: { id: string; name: string; values: string[] }[];
+  images?: { revisionId: string; image: CatalogImage }[];
+  imagesTruncated?: boolean;
 };
 
-type RawImage = { url: string; altText: string | null } | null;
+type RawImage = {
+  url: string;
+  altText: string | null;
+  id?: string | null;
+  width?: number | null;
+  height?: number | null;
+} | null;
 type RawProduct = {
+  options?: { id: string; name: string; optionValues: { id: string; name: string }[] }[];
+  media?: { nodes: { __typename: string; id?: string; image?: RawImage }[]; pageInfo: { hasNextPage: boolean } };
   id: string;
   title: string;
   status: string;
+  tags?: string[];
+  collections?: { nodes: { id: string; title: string }[]; pageInfo: { hasNextPage: boolean } };
   featuredMedia: { preview: { image: RawImage } | null } | null;
   variants: {
     nodes: { id: string; title: string; selectedOptions?: { name: string; value: string }[]; image: RawImage }[];
@@ -30,9 +47,16 @@ type RawProduct = {
   };
 };
 
-const productFields = 'id title status featuredMedia { preview { image { url altText } } }';
-const listFields = `${productFields}
-  variants(first: 8) { nodes { id title selectedOptions { name value } image { url altText } } pageInfo { hasNextPage } }`;
+// Product.tags and Product.collections are declared by the pinned Admin 2026-07 schema.
+const productFields =
+  'id title status tags options { id name optionValues { id name } } featuredMedia { preview { image { id url altText width height } } }';
+// Nested list connections are deliberately smaller than detail connections to bound requested query cost.
+const listMetadata =
+  'media(first: 8) { nodes { __typename ... on MediaImage { id image { id url altText width height } } } pageInfo { hasNextPage } } collections(first: 20) { nodes { id title } pageInfo { hasNextPage } }';
+const detailMetadata =
+  'media(first: 100) { nodes { __typename ... on MediaImage { id image { id url altText width height } } } pageInfo { hasNextPage } } collections(first: 100) { nodes { id title } pageInfo { hasNextPage } }';
+const listFields = `${productFields} ${listMetadata}
+  variants(first: 8) { nodes { id title selectedOptions { name value } image { id url altText width height } } pageInfo { hasNextPage } }`;
 const listQuery = `query M5001Products($first: Int!, $after: String, $search: String) {
   products(first: $first, after: $after, query: $search, sortKey: TITLE) {
     nodes { ${listFields} }
@@ -40,14 +64,15 @@ const listQuery = `query M5001Products($first: Int!, $after: String, $search: St
   }
 }`;
 const detailQuery = `query M5001Product($id: ID!, $after: String) { product(id: $id) {
-  ${productFields}
-  variants(first: 100, after: $after) { nodes { id title selectedOptions { name value } image { url altText } } pageInfo { hasNextPage endCursor } }
+  ${productFields} ${detailMetadata}
+  variants(first: 100, after: $after) { nodes { id title selectedOptions { name value } image { id url altText width height } } pageInfo { hasNextPage endCursor } }
 } }`;
 const currencyQuery = 'query M5001ShopCurrency { shop { currencyCode } }';
+const tagsQuery = 'query InsigniaMethodProductTags($ids: [ID!]!) { nodes(ids: $ids) { ... on Product { id tags } } }';
 const productGid = /^gid:\/\/shopify\/Product\/[1-9][0-9]*$/;
 const variantGid = /^gid:\/\/shopify\/ProductVariant\/[1-9][0-9]*$/;
 
-function image(value: RawImage): { url: string; alt: string | null } | null {
+function image(value: RawImage): CatalogImage | null {
   if (value === null) return null;
   if (
     !value ||
@@ -55,7 +80,19 @@ function image(value: RawImage): { url: string; alt: string | null } | null {
     !/^https:\/\/(?:cdn\.shopify\.com|[a-z0-9.-]+\.shopifycdn\.net)\//.test(value.url)
   )
     throw new Error('Invalid catalog image');
-  return { url: value.url, alt: value.altText === null ? null : String(value.altText) };
+  if (
+    (value.width != null && (!Number.isSafeInteger(value.width) || value.width <= 0)) ||
+    (value.height != null && (!Number.isSafeInteger(value.height) || value.height <= 0))
+  )
+    throw new Error('Invalid catalog image dimensions');
+  if (value.id != null && !/^gid:\/\/shopify\/(?:ProductImage|Image)\/[1-9][0-9]*$/.test(value.id))
+    throw new Error('Invalid catalog image identity');
+  return {
+    url: value.url,
+    alt: value.altText === null ? null : String(value.altText),
+    ...(value.id ? { id: value.id } : {}),
+    ...(value.width != null && value.height != null ? { width: value.width, height: value.height } : {}),
+  };
 }
 
 function project(value: RawProduct, maxVariants = 8): CatalogProduct {
@@ -72,6 +109,59 @@ function project(value: RawProduct, maxVariants = 8): CatalogProduct {
     throw new Error('Invalid catalog product');
   if (new Set(value.variants.nodes.map((item) => item.id)).size !== value.variants.nodes.length)
     throw new Error('Duplicate catalog variant identity');
+  if (
+    (value.tags !== undefined &&
+      (!Array.isArray(value.tags) ||
+        value.tags.length > 250 ||
+        value.tags.some((tag) => typeof tag !== 'string' || !tag || tag.length > 255) ||
+        new Set(value.tags).size !== value.tags.length)) ||
+    (value.collections !== undefined &&
+      (!Array.isArray(value.collections.nodes) ||
+        value.collections.nodes.length > 100 ||
+        typeof value.collections.pageInfo?.hasNextPage !== 'boolean' ||
+        value.collections.nodes.some(
+          (item) =>
+            !/^gid:\/\/shopify\/Collection\/[1-9][0-9]*$/.test(item.id) ||
+            typeof item.title !== 'string' ||
+            item.title.length > 500,
+        ) ||
+        new Set(value.collections.nodes.map((item) => item.id)).size !== value.collections.nodes.length))
+  )
+    throw new Error('Invalid catalog assignment metadata');
+  if (
+    value.options !== undefined &&
+    (!Array.isArray(value.options) ||
+      value.options.length > 10 ||
+      value.options.some(
+        (option) =>
+          !/^gid:\/\/shopify\/ProductOption\/[1-9][0-9]*$/.test(option.id) ||
+          typeof option.name !== 'string' ||
+          option.name.length > 200 ||
+          !Array.isArray(option.optionValues) ||
+          option.optionValues.length > 500 ||
+          option.optionValues.some((item) => typeof item.name !== 'string' || item.name.length > 200),
+      ))
+  )
+    throw new Error('Invalid catalog option axes');
+  const images: { revisionId: string; image: CatalogImage }[] = [];
+  if (value.media !== undefined) {
+    if (
+      !Array.isArray(value.media.nodes) ||
+      value.media.nodes.length > 100 ||
+      typeof value.media.pageInfo?.hasNextPage !== 'boolean'
+    )
+      throw new Error('Invalid catalog media connection');
+    for (const media of value.media.nodes) {
+      if (typeof media.__typename !== 'string') throw new Error('Invalid catalog media kind');
+      if (media.__typename !== 'MediaImage') continue;
+      const projected = image(media.image ?? null);
+      if (!projected?.id) continue;
+      const number = projected.id.split('/').at(-1);
+      const revisionId = `image_${number}`;
+      if (images.some((item) => item.revisionId === revisionId)) throw new Error('Duplicate catalog image identity');
+      images.push({ revisionId, image: projected });
+    }
+  }
   return {
     id: value.id,
     title: value.title,
@@ -96,11 +186,57 @@ function project(value: RawProduct, maxVariants = 8): CatalogProduct {
       return { id: variant.id, title: variant.title, selectedOptions, image: image(variant.image) };
     }),
     variantsTruncated: value.variants.pageInfo.hasNextPage,
+    ...(value.options === undefined
+      ? {}
+      : {
+          options: value.options.map((option) => ({
+            id: option.id,
+            name: option.name,
+            values: option.optionValues.map((item) => item.name),
+          })),
+        }),
+    ...(value.media === undefined ? {} : { images, imagesTruncated: value.media.pageInfo.hasNextPage }),
+    ...(value.tags === undefined ? {} : { tags: [...value.tags] }),
+    ...(value.collections === undefined
+      ? {}
+      : {
+          collections: value.collections.nodes.map((item) => ({ ...item })),
+          collectionsTruncated: value.collections.pageInfo.hasNextPage,
+        }),
   };
 }
 
 export function createCatalogReader(transport: CatalogTransport) {
   return {
+    async productTags(productIds: readonly string[]): Promise<Record<string, string[]>> {
+      if (
+        productIds.length > 250 ||
+        new Set(productIds).size !== productIds.length ||
+        productIds.some((id) => !productGid.test(id))
+      )
+        throw new Error('Invalid product-tag batch');
+      if (!productIds.length) return {};
+      const response = await transport.read<{ nodes: ({ id: string; tags: string[] } | null)[] }>('tags', {
+        ids: [...productIds],
+      });
+      if (!Array.isArray(response?.nodes) || response.nodes.length !== productIds.length)
+        throw new Error('Incomplete product-tag batch');
+      const tags: Record<string, string[]> = {};
+      for (const product of response.nodes) {
+        if (
+          !product ||
+          !productIds.includes(product.id) ||
+          Object.hasOwn(tags, product.id) ||
+          !Array.isArray(product.tags) ||
+          product.tags.length > 250 ||
+          product.tags.some((tag) => typeof tag !== 'string' || !tag || tag.length > 255) ||
+          new Set(product.tags).size !== product.tags.length
+        )
+          throw new Error('Invalid product-tag identity or shape');
+        tags[product.id] = [...product.tags];
+      }
+      return tags;
+    },
     async shopCurrency(): Promise<string> {
       const response = await transport.read<{ shop: { currencyCode: string } }>('currency', {});
       if (!/^[A-Z]{3}$/.test(response?.shop?.currencyCode ?? '')) throw new Error('Invalid shop currency');
@@ -188,8 +324,15 @@ export function createCatalogTransport(input: {
   if (!/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(input.shop) || !input.accessToken)
     throw new Error('Invalid catalog transport scope');
   return {
-    async read<T>(operation: 'list' | 'detail' | 'currency', variables: Record<string, unknown>): Promise<T> {
-      const query = operation === 'list' ? listQuery : operation === 'detail' ? detailQuery : currencyQuery;
+    async read<T>(operation: 'list' | 'detail' | 'currency' | 'tags', variables: Record<string, unknown>): Promise<T> {
+      const query =
+        operation === 'list'
+          ? listQuery
+          : operation === 'detail'
+            ? detailQuery
+            : operation === 'tags'
+              ? tagsQuery
+              : currencyQuery;
       let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
       return withAdminDeadline(
         async (signal) => {

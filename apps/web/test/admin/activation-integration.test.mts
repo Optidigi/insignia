@@ -1,4 +1,4 @@
-import { MerchantDraftSchema } from '@insignia/contracts';
+import { type MerchantDraft, MerchantDraftSchema } from '@insignia/contracts';
 import type { DurableCore } from '@insignia/database';
 
 type Remote = Parameters<DurableCore['productionPublications']['create']>[0]['remote'];
@@ -8,14 +8,15 @@ import { createHash, randomUUID } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import type { ExpectedFunctionBuild, FunctionArtifactIdentity } from '@insignia/application';
-import { SigningKeyLifecycle } from '@insignia/application';
-import { createDurableCore } from '@insignia/database';
+import { newOutboxEvent, SigningKeyLifecycle } from '@insignia/application';
+import { createDurableCore, sha256CanonicalJson } from '@insignia/database';
 import { createShopifyAvailabilityHoldV3Port } from '@insignia/shopify';
 import { Pool } from 'pg';
 import { handleAdminRequest } from '../../src/server/admin/http.ts';
 import { createServerActivationReadiness } from '../../src/server/admin/release-evidence.ts';
 import { createMerchantConfigService } from '../../src/server/merchant-config.ts';
 import { adminServices, required } from './support/fixtures.mts';
+import { captureSyntheticPublicationPreviews } from './support/publication-previews.mts';
 
 const database = process.env.DATABASE_URL;
 for (const ending of [
@@ -66,11 +67,13 @@ for (const ending of [
               views: [
                 {
                   id: 'front',
+                  image: { revisionId: 'product_42', width: 800, height: 900 },
                   variantImages: [],
                   placements: [{ id: 'front', rect: { centerX: 0.5, centerY: 0.5, width: 0.3, height: 0.3 } }],
                 },
               ],
-              steps: [{ id: 'small', widthFraction: 0.5, heightFraction: 0.5 }],
+              // Explicit synthetic production dimensions, independent of preview pixel geometry.
+              steps: [{ id: 'small', widthFraction: 0.5, heightFraction: 0.5, physicalMm: { width: 80, height: 60 } }],
             },
           },
         });
@@ -282,6 +285,7 @@ for (const ending of [
         eligibility: async () => ({ allowed: eligible, reason: eligible ? null : 'Synthetic feature revoked' }),
         publication: () => activation.publications,
         activation: () => activation,
+        capturePublicationPreviews: (actor, input) => captureSyntheticPublicationPreviews(core, actor, input),
       });
       const services = adminServices({
         appOrigin: 'https://synthetic.example',
@@ -396,9 +400,103 @@ for (const ending of [
           services,
           { kind: 'config', productId: `gid://shopify/Product/${productId}` },
         );
-        assert.equal(response.status, 200);
-        draftVersion = (await response.json()).draftVersion;
+        if (mode === 'optional') {
+          assert.equal(response.status, 422, 'New optional authoring remains forbidden');
+          const rejected = await response.json();
+          assert.equal(rejected.kind, 'invalid');
+          assert.equal(rejected.noEffect, true);
+          const unchanged = required(await core.configs.getConfig(shopId, configId));
+          assert.equal(unchanged.draftVersion, draftVersion);
+          assert.equal(MerchantDraftSchema.parse(unchanged.draftValue).mode, 'required');
+        } else {
+          assert.equal(response.status, 200);
+          draftVersion = (await response.json()).draftVersion;
+        }
+        return draft;
       };
+      async function historicalOptionalIntent(draft: MerchantDraft, key: string) {
+        // Arrange a legitimate immutable optional intent admitted by the older
+        // authoring policy. Current HTTP authoring above must still reject it.
+        await core.transactions.run(async (tx) => {
+          await core.tenants.lockActiveAuthorizationScope(tx, { shopId, installationGeneration: '1' });
+          const updated = await core.configs.updateDraft(tx, {
+            shopId,
+            configId,
+            expectedVersion: draftVersion,
+            schemaVersion: 'm3-config-draft-v1',
+            draftValue: draft,
+          });
+          assert.equal(updated.kind, 'updated');
+          if (updated.kind !== 'updated') throw new Error('Historical draft arrangement conflicted');
+          draftVersion = updated.config.draftVersion;
+          const historicalRevisionId = randomUUID();
+          const identity = {
+            shopId,
+            namespace: 'm5-publish-config',
+            key,
+            requestDigest: sha256CanonicalJson({
+              productId: `gid://shopify/Product/${productId}`,
+              configId,
+              draftVersion,
+            }),
+          };
+          assert.equal((await core.commands.reserve(tx, identity)).kind, 'reserved');
+          await core.configs.createValidatedRevision(tx, {
+            shopId,
+            configId,
+            revisionId: historicalRevisionId,
+            publishedValue: {
+              version: 'm2-published-config-v1',
+              shopId,
+              productId,
+              revisionId: historicalRevisionId,
+              shopCurrency: draft.shopCurrency,
+              methods: draft.methods,
+              placements: draft.placements,
+              productionOptions: draft.productionOptions,
+              pricingRules: draft.pricingRules,
+            },
+            geometry: { version: 'm5-geometry-v1', value: draft.geometry },
+            presentation: { version: 'm5-presentation-v1', labels: draft.labels ?? {} },
+            sourceDraftVersion: draftVersion,
+            sourceInstallationGeneration: '1',
+            mode: 'optional',
+            createdByRef: actor.staffId,
+          });
+          await core.configs.setCurrentPublicationPointer(tx, {
+            shopId,
+            configId,
+            revisionId: historicalRevisionId,
+            installationGeneration: '1',
+            sourceDraftVersion: draftVersion,
+            idempotencyKey: key,
+          });
+          const occurredAt = new Date();
+          await core.outbox.add(
+            tx,
+            newOutboxEvent({
+              shopId,
+              installationGeneration: '1',
+              eventType: 'm5.publication.intent',
+              schemaVersion: 1,
+              aggregateRef: configId,
+              businessKey: historicalRevisionId,
+              payload: {
+                configId,
+                revisionId: historicalRevisionId,
+                installationGeneration: '1',
+                sourceDraftVersion: draftVersion,
+                idempotencyKey: key,
+              },
+              occurredAt,
+              availableAt: occurredAt,
+              retentionClass: 'publication-intent',
+              purgeAfter: new Date(occurredAt.getTime() + 180 * 86400000),
+            }),
+          );
+          await core.commands.complete(tx, identity, `${historicalRevisionId}:optional`);
+        });
+      }
       await save('required');
       const same = await (await publish('m5-018-same-mode')).json();
       assert.equal(same.state, 'ACTIVE');
@@ -407,7 +505,8 @@ for (const ending of [
       assert.equal(required(sameEvidence).admissionClass, 'SAME_MODE');
       assert.equal(required(sameEvidence).hold, null);
       assert.equal(mutationCount, 2);
-      await save('optional');
+      const historicalOptional = await save('optional');
+      await historicalOptionalIntent(historicalOptional, 'm5-018-mode-change');
       const changed = await (await publish('m5-018-mode-change')).json();
       assert.equal(changed.state, 'ACTIVE');
       const changedEvidence = required(

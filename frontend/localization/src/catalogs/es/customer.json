@@ -206,11 +206,27 @@
     "itemsRestored": "Artículos restaurados.",
     "cartCommitFailed": "No se pudo actualizar tu carrito. Tu diseño sigue aquí. Vuelve a intentarlo.",
     "undo": "Deshacer",
-    "dismissNotification": "Cerrar notificación"
+    "dismissNotification": "Cerrar notificación",
+    "repairRequired": "Tu personalización necesita revisión",
+    "repairHelp": "Tus artículos personalizados permanecen en el carrito hasta que confirmes su sustitución o eliminación.",
+    "startNew": "Iniciar una nueva personalización",
+    "removeGroup": "Revisar la eliminación de esta personalización",
+    "removeAll": "Revisar la eliminación de todos los artículos personalizados",
+    "confirmRemoval": "Confirmar actualización del carrito",
+    "remainingItems": "Artículos personalizados restantes"
   },
   "language": {
     "label": "Idioma",
     "automatic": "Usar el idioma de la tienda",
     "failure": "No se ha podido cambiar el idioma. Inténtalo de nuevo."
+  },
+  "postOrder": {
+    "title": "Subir los diseños pendientes",
+    "loading": "Cargando la solicitud…",
+    "unavailable": "Esta solicitud no está disponible o ha caducado. Contacta con la tienda para obtener ayuda.",
+    "notice": "Sube aquí los diseños pendientes. Para cambiar un diseño ya enviado, contacta con la tienda.",
+    "saved": "Tu diseño se ha enviado.",
+    "continue": "Continuar subiendo",
+    "retry": "Intentar de nuevo"
   }
 }

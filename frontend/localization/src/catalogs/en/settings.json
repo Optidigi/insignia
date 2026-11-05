@@ -206,6 +206,10 @@
     "translations": {
       "title": "Translations",
       "description": "Customize the text customers see in Insignia."
+    },
+    "privacy": {
+      "title": "Privacy",
+      "description": "View customer data requests and retained order data."
     }
   },
   "translations": {
@@ -297,7 +301,8 @@
       "files": "Files",
       "theme": "Appearance",
       "recovery": "Recovery messages",
-      "common": "Shared text"
+      "common": "Shared text",
+      "postOrder": "After-order artwork"
     },
     "fields": {
       "customer_chrome_skipToDesignControls": "Skip to design controls",
@@ -489,7 +494,21 @@
       "common_summary_unavailable": "Unavailable",
       "customer_language_label": "Language picker label",
       "customer_language_automatic": "Follow store language option",
-      "customer_language_failure": "Language change error"
+      "customer_language_failure": "Language change error",
+      "customer_postOrder_title": "Post-order upload heading",
+      "customer_postOrder_loading": "Post-order loading message",
+      "customer_postOrder_unavailable": "Expired upload-link message",
+      "customer_postOrder_notice": "Post-order upload instructions",
+      "customer_postOrder_saved": "Artwork submitted message",
+      "customer_postOrder_continue": "Continue-upload button",
+      "customer_postOrder_retry": "Retry upload-request button",
+      "customer_recovery_repairRequired": "Your customization needs review",
+      "customer_recovery_repairHelp": "Your existing customized items stay in the cart until you confirm replacement or removal.",
+      "customer_recovery_startNew": "Start a new customization",
+      "customer_recovery_removeGroup": "Review removing this customization",
+      "customer_recovery_removeAll": "Review removing all customized items",
+      "customer_recovery_confirmRemoval": "Confirm cart update",
+      "customer_recovery_remainingItems": "Remaining customized items"
     },
     "resetSavedHeading": "Reset saved translations?",
     "resetSavedDescription": "Restore the default wording for all saved languages. Your custom text will be removed.",

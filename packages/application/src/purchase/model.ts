@@ -5,6 +5,8 @@ export type VerifiedOrder = {
   shopId: string;
   installationGeneration: string;
   orderId: string;
+  /** Optional verified provider display label; never customer identity. */
+  orderName?: string | null;
   createdAt: string;
   updatedAt: string;
   observedAt: string;

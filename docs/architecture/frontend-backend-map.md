@@ -1,6 +1,8 @@
 # Selected frontend → backend research map
 
-Research date: 2026-11-05. Workspace: `/home/serveradmin/insignia-current`; branch `chore/frontend-tooling-state`; requested base `36ff013`. Research artifact only; no implementation, provider invocation, commit, push or deployment. Sources are the checked-out files. This document is an integration inventory and question register, not a new product specification or an implementation receipt.
+Research date: 2026-11-05. Workspace: `/home/serveradmin/insignia-current`; branch `chore/frontend-tooling-state`; requested base `36ff013`. Research artifact only; no implementation, provider invocation, commit, push or deployment. Source citations are pinned to the original research baseline `36ff013` (recorded by `5cc4d35`); later extraction and implementation moved several owners. Consult current delivery state and the frontend guide for present wiring. This document is an integration inventory and question register, not a new product specification or an implementation receipt.
+
+2026-11-05 final owner direction: **“everything should be the new UI, no legacy UI.”** Existing production choices, such as thread colour, use the selected UI too. Merchant adaptation, independent copying and order/design recovery preserve their original definitions, labels and accepted values. This supersedes the earlier legacy-UI preference; immutable compatibility readers remain internal. Source facts that cannot be represented safely lead to selected repair/read-only UI, with no fabricated prices or production dimensions.
 
 ## Evidence and classification
 

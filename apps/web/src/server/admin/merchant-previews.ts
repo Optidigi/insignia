@@ -20,6 +20,7 @@ export function createMerchantPublicationCapture(input: {
   current(actor: AdminActor): Promise<void>;
   readProduct(actor: AdminActor, productId: string): Promise<CatalogProduct | null>;
   readImage(product: CatalogProduct, imageRevisionId: string): Promise<Uint8Array | null>;
+  readUploadedImage?(actor: AdminActor, productId: string, imageRevisionId: string): Promise<Uint8Array>;
   inspect(bytes: Uint8Array): Promise<ArtworkInspection>;
 }): PublicationPreviewCapture {
   return async (actor, request) => {
@@ -88,6 +89,12 @@ export function createMerchantPublicationCapture(input: {
           )
             throw new Error('Publication preview scope changed');
           await current();
+          if (ref.startsWith('upload_')) {
+            if (!input.readUploadedImage) throw new Error('Private product media unavailable');
+            const bytes = await input.readUploadedImage(actor, request.productId, ref);
+            await current();
+            return bytes;
+          }
           product ??= input.readProduct(actor, request.productId);
           const source = await product;
           if (!source || source.id !== request.productId) throw new Error('Publication preview product unavailable');

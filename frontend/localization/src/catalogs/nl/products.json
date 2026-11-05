@@ -21,9 +21,9 @@
   "search": "Producten zoeken",
   "filter": {
     "products": "Producten filteren",
-    "configurationOnPage": "Configuratie op deze pagina",
+    "configurationOnPage": "Configuratie",
     "editConfiguration": "Configuratiefilter bewerken",
-    "onThisPage": "{{configuration}} op deze pagina"
+    "onThisPage": "{{configuration}}"
   },
   "configuration": {
     "all": "Alle",
@@ -60,7 +60,7 @@
     "summaryDownloadFailed": "Het overzicht kon niet worden gedownload. Probeer het opnieuw."
   },
   "empty": {
-    "noneOnPage": "Geen producten gevonden op deze pagina",
+    "noneOnPage": "Geen producten gevonden",
     "changeFilterOrPage": "Wijzig het configuratiefilter of bekijk een andere pagina.",
     "returnFirstOrSearch": "Ga terug naar de eerste pagina of probeer een andere zoekopdracht.",
     "changeProductSearch": "Probeer een andere productnaam of wis je zoekopdracht.",

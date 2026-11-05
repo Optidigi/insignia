@@ -28,7 +28,7 @@ const productId = 'gid://shopify/Product/555';
 function draft(): MerchantDraft & { labels?: MerchantDraft['labels'] } {
   return {
     version: 'm5-merchant-draft-v1',
-    mode: 'optional',
+    mode: 'required',
     shopCurrency: 'USD',
     methods: [{ id: 'print' }],
     placements: [{ id: 'front', allowedMethodIds: ['print'], allowedStepIds: ['small'], logoLaterAllowed: true }],
@@ -44,7 +44,7 @@ function draft(): MerchantDraft & { labels?: MerchantDraft['labels'] } {
           placements: [{ id: 'front', rect: { centerX: 0.5, centerY: 0.5, width: 0.4, height: 0.3 } }],
         },
       ],
-      steps: [{ id: 'small', widthFraction: 0.5, heightFraction: 0.5 }],
+      steps: [{ id: 'small', widthFraction: 0.5, heightFraction: 0.5, physicalMm: { width: 80, height: 60 } }],
     },
   };
 }
@@ -76,6 +76,36 @@ function fixture(
         }
       : null;
   const core = fixtureCore({
+    merchantPreviews: {
+      get: async (target, assetId) => {
+        assert.deepEqual(target, { kind: 'merchant', shopId: actor.tenantShopId, installationGeneration: '1' });
+        if (assetId !== 'a53f9809-0ffe-4fd6-a23e-89111b1929a8') return null;
+        const now = new Date();
+        return {
+          assetId,
+          shopId: actor.tenantShopId,
+          installationGeneration: '1',
+          productId: '555',
+          imageRevisionId: 'product_555',
+          originalKey: `originals/merchant-previews/${actor.tenantShopId}/1/${assetId}`,
+          previewKey: `previews/merchant-previews/${actor.tenantShopId}/1/${assetId}.png`,
+          manifest: {
+            version: 'm6-inspection-v1',
+            mimeType: 'image/png',
+            sha256: 'a'.repeat(64),
+            previewSha256: 'b'.repeat(64),
+            byteLength: 10,
+            previewByteLength: 10,
+            width: 800,
+            height: 900,
+          },
+          collectedAt: now,
+          abandonAt: new Date(+now + 86400000),
+          state: 'USABLE',
+          claimId: null,
+        };
+      },
+    },
     tenants: { getActiveAuthorizationScope: async () => scope(), lockActiveAuthorizationScope: async () => scope() },
     transactions: {
       async run(work) {
@@ -125,9 +155,10 @@ function fixture(
       getRevisionGeometry: async () => ({
         version: 'm5-geometry-v1',
         contentHash: 'a'.repeat(64),
-        mode: 'optional',
+        mode: 'required',
         value: required(revisions[0]).geometry.value,
       }),
+      getRevisionPresentation: async () => null,
     },
     outbox: { add: async () => 'synthetic-outbox-id' },
   });

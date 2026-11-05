@@ -99,4 +99,13 @@ GRANT INSERT(event_id,shop_id,installation_generation,purchase_id,version,kind,g
  ON public.purchase_artwork_events TO insignia_runtime;
 GRANT SELECT(shop_id,installation_generation,next_attempt_at) ON public.purchase_reconciliation_cursors TO insignia_runtime;
 GRANT UPDATE(next_attempt_at) ON public.purchase_reconciliation_cursors TO insignia_runtime;
+-- Selected frontend mutable preferences and safe provider label projection.
+GRANT SELECT, INSERT, UPDATE ON public.merchant_preferences TO insignia_runtime;
+GRANT SELECT, INSERT, UPDATE ON public.purchase_order_labels TO insignia_runtime;
+
+-- Narrow customer artwork capability and delivery custody; planning is trigger-owned.
+GRANT SELECT, INSERT ON public.customer_artwork_grants,public.customer_artwork_submissions TO insignia_runtime;
+GRANT UPDATE(revoked_at) ON public.customer_artwork_grants TO insignia_runtime;
+GRANT SELECT ON public.customer_artwork_notifications,public.customer_artwork_epoch TO insignia_runtime;
+GRANT UPDATE(state,attempts,claimed_at,settled_at,retry_at,provider_receipt,capability_hash) ON public.customer_artwork_notifications TO insignia_runtime;
 COMMIT;

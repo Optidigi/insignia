@@ -206,6 +206,10 @@
     "translations": {
       "title": "Übersetzungen",
       "description": "Passen Sie die Texte an, die die Kundschaft in Insignia sieht."
+    },
+    "privacy": {
+      "title": "Datenschutz",
+      "description": "Kundenanfragen zu personenbezogenen Daten und gespeicherte Bestelldaten ansehen."
     }
   },
   "translations": {
@@ -297,7 +301,8 @@
       "files": "Dateien",
       "theme": "Darstellung",
       "recovery": "Wiederherstellungsmeldungen",
-      "common": "Gemeinsame Texte"
+      "common": "Gemeinsame Texte",
+      "postOrder": "Druckdateien nach Bestellung"
     },
     "fields": {
       "customer_chrome_skipToDesignControls": "Zu den Gestaltungseinstellungen springen",
@@ -489,7 +494,21 @@
       "common_summary_unavailable": "Nicht verfügbar",
       "customer_language_label": "Beschriftung der Sprachauswahl",
       "customer_language_automatic": "Option zum Verwenden der Shop-Sprache",
-      "customer_language_failure": "Fehler beim Sprachwechsel"
+      "customer_language_failure": "Fehler beim Sprachwechsel",
+      "customer_postOrder_title": "Überschrift für Upload nach Bestellung",
+      "customer_postOrder_loading": "Lademeldung nach Bestellung",
+      "customer_postOrder_unavailable": "Meldung für abgelaufenen Upload-Link",
+      "customer_postOrder_notice": "Anleitung für Upload nach Bestellung",
+      "customer_postOrder_saved": "Bestätigung eingereichter Druckdatei",
+      "customer_postOrder_continue": "Schaltfläche zum weiteren Hochladen",
+      "customer_postOrder_retry": "Schaltfläche für erneute Upload-Anfrage",
+      "customer_recovery_repairRequired": "Deine Personalisierung muss geprüft werden",
+      "customer_recovery_repairHelp": "Deine vorhandenen personalisierten Artikel bleiben im Warenkorb, bis du den Ersatz oder die Entfernung bestätigst.",
+      "customer_recovery_startNew": "Neue Personalisierung starten",
+      "customer_recovery_removeGroup": "Entfernung dieser Personalisierung prüfen",
+      "customer_recovery_removeAll": "Entfernung aller personalisierten Artikel prüfen",
+      "customer_recovery_confirmRemoval": "Warenkorbänderung bestätigen",
+      "customer_recovery_remainingItems": "Verbleibende personalisierte Artikel"
     },
     "resetSavedHeading": "Gespeicherte Übersetzungen zurücksetzen?",
     "resetSavedDescription": "Die Standardformulierungen für alle gespeicherten Sprachen wiederherstellen. Eigene Texte werden entfernt.",

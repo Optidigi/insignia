@@ -16,12 +16,22 @@ export default defineConfig({
   ],
   build: {
     lib: {
-      entry: resolve(import.meta.dirname, 'src/element.tsx'),
+      entry: {
+        element: resolve(import.meta.dirname, 'src/element.tsx'),
+        designer: resolve(import.meta.dirname, 'src/designer/frame.tsx'),
+      },
       formats: ['es'],
-      fileName: () => 'insignia-element.js',
+      fileName: (_format, name) => (name === 'designer' ? 'insignia-designer-frame.js' : 'insignia-element.js'),
+      cssFileName: 'insignia-designer',
     },
     rolldownOptions: {
-      output: { chunkFileNames: 'insignia-[name]-[hash].js', assetFileNames: 'insignia-[name]-[hash][extname]' },
+      output: {
+        chunkFileNames: 'insignia-[name]-[hash].js',
+        assetFileNames: (asset) =>
+          asset.names.some((name) => name.endsWith('.css'))
+            ? 'insignia-designer.css'
+            : 'insignia-[name]-[hash][extname]',
+      },
     },
     minify: true,
   },

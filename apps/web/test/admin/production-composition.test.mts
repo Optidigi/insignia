@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash, createHmac, generateKeyPairSync, randomBytes, randomUUID } from 'node:crypto';
-import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -18,6 +18,7 @@ import { createReleaseVerificationClient } from '../../src/server/admin/release-
 import { isolatedDatabase } from '../support/isolated-database.mts';
 import { uninstallSubscriptionFixture } from '../support/uninstall-subscription.mts';
 import { record as object, required, text } from './support/fixtures.mts';
+import { captureSyntheticPublicationPreviews } from './support/publication-previews.mts';
 
 const database = process.env.DATABASE_URL;
 const client = binding.appClientId;
@@ -59,7 +60,7 @@ function staffToken(shop: string) {
 function validDraft() {
   return {
     version: 'm5-merchant-draft-v1',
-    mode: 'optional',
+    mode: 'required',
     shopCurrency: 'USD',
     methods: [{ id: 'print' }],
     placements: [{ id: 'front', allowedMethodIds: ['print'], allowedStepIds: ['small'], logoLaterAllowed: true }],
@@ -75,7 +76,7 @@ function validDraft() {
           placements: [{ id: 'front', rect: { centerX: 0.5, centerY: 0.5, width: 0.4, height: 0.3 } }],
         },
       ],
-      steps: [{ id: 'small', widthFraction: 0.5, heightFraction: 0.5 }],
+      steps: [{ id: 'small', widthFraction: 0.5, heightFraction: 0.5, physicalMm: { width: 80, height: 60 } }],
     },
   };
 }
@@ -134,11 +135,19 @@ for (const releaseMode of [
       signingConfiguration:
         | import('../../src/server/admin/signing-owner-action.ts').SigningOwnerConfiguration
         | undefined,
-      ownerDirectory: string | undefined;
+      ownerDirectory: string | undefined,
+      previewDirectory: string | undefined;
     let collected = 0;
     let authenticationInFlight = 0;
     const role = `m5022_runtime_${randomUUID().replaceAll('-', '')}`;
     try {
+      previewDirectory = await mkdtemp(join(tmpdir(), 'm5-composition-previews-'));
+      const previewProfile = join(previewDirectory, 'storage.json');
+      await writeFile(
+        previewProfile,
+        JSON.stringify({ accessKeyId: 'synthetic-preview-key', secretAccessKey: 'synthetic-preview-secret' }),
+        { mode: 0o600 },
+      );
       await core.transactions.run((tx) =>
         core.tenants.createShop(tx, {
           shopId: tenantId,
@@ -647,6 +656,11 @@ for (const releaseMode of [
             INSIGNIA_PARTNER_ACCESS_TOKEN: 'synthetic-partner-grant',
             INSIGNIA_M5_ENTITLEMENT_POLICY_JSON: JSON.stringify(policy),
             INSIGNIA_M5_FEATURES_JSON: JSON.stringify(features),
+            INSIGNIA_M8_MERCHANT_PREVIEWS_ENABLED: '1',
+            ARTWORK_STORAGE_PROFILE: previewProfile,
+            ARTWORK_R2_ENDPOINT: 'http://127.0.0.1:1',
+            ARTWORK_R2_BUCKET: 'synthetic-previews',
+            ARTWORK_R2_PREFIX: 'synthetic',
           },
           runtimePool ?? pool,
           () => new Date(entitlementNow),
@@ -670,6 +684,33 @@ for (const releaseMode of [
         idempotencyKey: 'composition-save',
       });
       assert.equal(saved.kind, 'saved');
+      async function prepareCapturedPreviews(draftVersion: string, idempotencyKey: string) {
+        await captureSyntheticPublicationPreviews(
+          core,
+          actor,
+          { productId, draft: validDraft() },
+          (imageRevisionId) => {
+            const hex = createHash('sha256')
+              .update(
+                JSON.stringify([
+                  'merchant-preview-v1',
+                  tenantId,
+                  '1',
+                  created.configId,
+                  draftVersion,
+                  idempotencyKey,
+                  '555',
+                  imageRevisionId,
+                ]),
+              )
+              .digest('hex')
+              .slice(0, 32);
+            return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+          },
+        );
+      }
+      // This suite exercises release/signing composition, reusing explicitly captured synthetic preview facts.
+      await prepareCapturedPreviews(saved.draftVersion, 'composition-publish');
       // Recurring-only entitlement rejects an unexpected provider usage item.
       unexpectedUsageItem = true;
       const meteredRead = await services.configs.read(actor, productId);
@@ -837,6 +878,7 @@ for (const releaseMode of [
           idempotencyKey: 'composition-save-next',
         });
         assert.equal(nextDraft.kind, 'saved');
+        await prepareCapturedPreviews(nextDraft.draftVersion, 'composition-publish-next');
         const next = await handleAdminRequest(
           new Request(`${origin}/api/admin/products/555/config`, {
             method: 'POST',
@@ -903,6 +945,7 @@ for (const releaseMode of [
       if (verificationServer) await new Promise((resolve) => required(verificationServer).close(resolve));
       if (socketDirectory) await rm(socketDirectory, { recursive: true, force: true });
       if (ownerDirectory) await rm(ownerDirectory, { recursive: true, force: true });
+      if (previewDirectory) await rm(previewDirectory, { recursive: true, force: true });
       await pool.query(`DROP OWNED BY ${role}_writer`).catch(() => {});
       await pool.query(`DROP ROLE ${role}_writer`).catch(() => {});
       await pool.query(`DROP OWNED BY ${role}`).catch(() => {});

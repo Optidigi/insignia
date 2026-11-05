@@ -10,6 +10,7 @@ import { createDurableCore } from '@insignia/database';
 import { Pool } from 'pg';
 import { createMerchantConfigService } from '../../src/server/merchant-config.ts';
 import { required } from './support/fixtures.mts';
+import { captureSyntheticPublicationPreviews } from './support/publication-previews.mts';
 import { createSyntheticActivation } from './support/synthetic-activation.mts';
 
 const database = process.env.DATABASE_URL;
@@ -33,7 +34,7 @@ function observed(target: Parameters<Remote['read']>[0], value: string): Observe
 function draft() {
   return {
     version: 'm5-merchant-draft-v1',
-    mode: 'optional',
+    mode: 'required',
     shopCurrency: 'USD',
     methods: [{ id: 'print' }],
     placements: [{ id: 'front', allowedMethodIds: ['print'], allowedStepIds: ['small'], logoLaterAllowed: true }],
@@ -49,7 +50,8 @@ function draft() {
           placements: [{ id: 'front', rect: { centerX: 0.5, centerY: 0.5, width: 0.4, height: 0.3 } }],
         },
       ],
-      steps: [{ id: 'small', widthFraction: 0.5, heightFraction: 0.5 }],
+      // Explicit synthetic production dimensions, independent of preview pixel geometry.
+      steps: [{ id: 'small', widthFraction: 0.5, heightFraction: 0.5, physicalMm: { width: 80, height: 60 } }],
     },
   };
 }
@@ -134,7 +136,7 @@ async function run(mode: string) {
         const row = await core.configs.getConfigForUpdate(tx, shopId, captured.configId);
         assert.equal(required(row).draftVersion, captured.draftVersion);
       });
-      return [];
+      return captureSyntheticPublicationPreviews(core, staff, captured);
     },
     publication() {
       return publication;
@@ -204,7 +206,11 @@ async function run(mode: string) {
     if (mode === 'setup-waiting') {
       assert.equal(published.kind, 'forbidden');
       assert.equal(preparations, 1);
-      assert.equal(captures, 0);
+      assert.equal(
+        captures,
+        1,
+        'Complete previews are captured before signing preparation, without committing an intent',
+      );
       assert.equal(await core.configs.getCurrentPublication(shopId, created.configId), null);
       assert.equal(remoteWrites, 0);
       return;

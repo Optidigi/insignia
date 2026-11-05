@@ -105,7 +105,7 @@
     },
     "notices": {
       "methodUnavailable": "Deze methode is niet meer beschikbaar.",
-      "storageFailure": "Je browser kon deze methoden niet opslaan. Houd deze pagina open en probeer het opnieuw.",
+      "storageFailure": "Deze methoden konden niet worden opgeslagen. Houd deze pagina open en probeer het opnieuw.",
       "created": "Methode gemaakt.",
       "saved": "Methode opgeslagen.",
       "duplicated": "Methode gedupliceerd.",
@@ -127,7 +127,11 @@
       "productsMustMatch": "Producten moeten overeenkomen",
       "searchTags": "Tags zoeken",
       "searchAssignedProducts": "Toegewezen producten zoeken",
-      "productSetup": "Productconfiguratie"
+      "productSetup": "Productconfiguratie",
+      "translationLanguage": "Vertaaltaal",
+      "defaultText": "Standaardtekst",
+      "realExplanation": "Beschrijving (optioneel)",
+      "realExplanationHelp": "Zichtbaar voor winkeliers en klanten die deze decoratiemethode kiezen."
     },
     "copy": {
       "duplicateNameError": "Voer een methodenaam van maximaal 80 tekens in.",
@@ -166,7 +170,12 @@
       "removeManyAvailability_other": "De methoden zijn niet langer beschikbaar in de bibliotheek voor {{formattedCount}} producten.",
       "setupFixedPrice": "Stel op alle geselecteerde producten dezelfde prijs in voor elke decoratieplek en elk decoratieformaat.",
       "setupProductPrice": "Stel per product prijzen in voor elke decoratieplek en elk decoratieformaat.",
-      "tagMatchSummary": "Tagregel ‘{{match}}’ voor: {{tags}}. Als tags later veranderen, kunnen ook de bijpassende producten veranderen."
+      "tagMatchSummary": "Tagregel ‘{{match}}’ voor: {{tags}}. Als tags later veranderen, kunnen ook de bijpassende producten veranderen.",
+      "translationFallback": "Laat een vertaling leeg om de standaardtekst te gebruiken.",
+      "currencyReview": "De opgeslagen prijs is {{amount}}, maar de winkel gebruikt nu {{currency}}. Voer een gecontroleerde prijs in de huidige valuta in en sla deze op.",
+      "realDefaultsDescription": "Gewijzigde standaardprijzen werken door in overgenomen productconcepten. Productspecifieke prijzen blijven behouden; publiceer elk product afzonderlijk.",
+      "realFixedPriceDescription": "Gebruik één overgenomen standaardprijs voor productposities en formaten.",
+      "realLeaveSavedData": "Gepubliceerde producten en bestellingen blijven ongewijzigd. Ingestelde concepten behouden de methode en vereisen bevestiging om deze te behouden of te verwijderen vóór publicatie."
     },
     "pricing": {
       "fixed": "Vaste prijs",

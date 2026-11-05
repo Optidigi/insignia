@@ -17,7 +17,7 @@ export function readMethodReturnContext(
 ): MethodReturnContext | null {
   const params = new URLSearchParams(search);
   const id = params.get('productId') ?? '';
-  const product = products.find((item) => item.id === id);
+  const product = products.find((item) => item.id.replace(/^gid:\/\/shopify\/Product\//, '') === id);
   const returnTo = params.get('returnTo') ?? '';
   if (!/^\d+$/.test(id) || !product || !returnTo.startsWith(`/admin/products/${id}/config?`)) return null;
   const target = new URL(returnTo, 'https://preview.invalid');
@@ -32,7 +32,7 @@ export function readMethodReturnContext(
     return null;
   if (target.searchParams.get('chooseMethods') !== '1') return null;
   return {
-    productId: id,
+    productId: product.id,
     productTitle: product.title,
     returnTo: `${target.pathname}${target.search}`,
     search: `?${new URLSearchParams({ productId: id, returnTo: `${target.pathname}${target.search}` })}`,

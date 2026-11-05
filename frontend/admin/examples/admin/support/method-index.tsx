@@ -1,4 +1,4 @@
-/** Preview-only Methods index using the same search, table and selection shell as Products. */
+/** Selected Methods index using the same search, table and selection shell as Products. */
 import { useMemo, useRef, useState } from 'preact/hooks';
 import AdminActionChip from '../../../src/components/AdminActionChip.tsx';
 import AdminIndexToolbar, { AdminFilterChip } from '../../../src/components/AdminIndexToolbar.tsx';
@@ -20,19 +20,24 @@ import {
 import { downloadMethodSummary, methodPreviewLimit } from './method-management.mts';
 import { formatPrice, parsePrice } from './method-workflow-prices.mts';
 
-function pricingLabel(method: MethodConfiguration, t: ReturnType<typeof useAdminLocale>['t'], locale: string): string {
+function pricingLabel(
+  method: MethodConfiguration,
+  t: ReturnType<typeof useAdminLocale>['t'],
+  locale: string,
+  currency = 'EUR',
+): string {
   if (method.pricing !== 'fixed') return t('methods:index.price.productSpecific');
   const price = parsePrice(method.amount);
   return price.kind !== 'valid'
     ? t('methods:index.price.notSet')
     : price.minor === 0n
       ? t('methods:index.price.free')
-      : formatPrice(price.minor, locale);
+      : formatPrice(price.minor, locale, currency);
 }
 
-function MethodPriceSummary({ method }: { method: MethodConfiguration }) {
+function MethodPriceSummary({ method, currency = 'EUR' }: { method: MethodConfiguration; currency?: string }) {
   const { t, formatLocale } = useAdminLocale();
-  return <s-text>{pricingLabel(method, t, formatLocale)}</s-text>;
+  return <s-text>{pricingLabel(method, t, formatLocale, currency)}</s-text>;
 }
 
 type Filters = { pricing: string; assignment: string; setup: string };
@@ -40,12 +45,18 @@ const emptyFilters: Filters = { pricing: 'all', assignment: 'all', setup: 'all' 
 const perPage = 25;
 export default function MethodIndex({
   methods,
+  readOnly = false,
+  currency = 'EUR',
+  methodCurrencies = {},
   products,
   onCreate,
   onDuplicate,
   onDelete,
 }: {
   methods: MethodConfiguration[];
+  readOnly?: boolean;
+  currency?: string;
+  methodCurrencies?: Record<string, string>;
   products: MethodProduct[];
   onCreate(): void;
   onDuplicate(method: MethodConfiguration): void;
@@ -166,7 +177,7 @@ export default function MethodIndex({
       <div class="resource-selection-actions resource-selection-desktop">
         <AdminActionChip
           accessibilityLabel={t('methods:index.actions.exportSummary')}
-          onClick={() => downloadMethodSummary(selected, products)}
+          onClick={() => downloadMethodSummary(selected, products, currency, methodCurrencies)}
         >
           {t('methods:index.actions.exportSummary')}
         </AdminActionChip>
@@ -178,7 +189,7 @@ export default function MethodIndex({
           {t('methods:index.actions.moreActions')}
         </AdminActionChip>
         <s-menu id="methods-bulk-actions" accessibilityLabel={t('methods:index.actions.selectedActions')}>
-          <s-button tone="critical" onClick={() => onDelete(selected)}>
+          <s-button tone="critical" disabled={readOnly} onClick={() => onDelete(selected)}>
             {t('methods:index.actions.deleteMethods')}
           </s-button>
         </s-menu>
@@ -191,10 +202,10 @@ export default function MethodIndex({
           commandFor="methods-mobile-actions"
         />
         <s-menu id="methods-mobile-actions" accessibilityLabel={t('methods:index.actions.selectedActions')}>
-          <s-button onClick={() => downloadMethodSummary(selected, products)}>
+          <s-button onClick={() => downloadMethodSummary(selected, products, currency, methodCurrencies)}>
             {t('methods:index.actions.exportSummary')}
           </s-button>
-          <s-button tone="critical" onClick={() => onDelete(selected)}>
+          <s-button tone="critical" disabled={readOnly} onClick={() => onDelete(selected)}>
             {t('methods:index.actions.deleteMethods')}
           </s-button>
         </s-menu>
@@ -443,7 +454,10 @@ export default function MethodIndex({
                               <dl class="method-index-mobile-details">
                                 <dt>{t('methods:index.columns.pricing')}</dt>
                                 <dd>
-                                  <MethodPriceSummary method={method} />
+                                  <MethodPriceSummary
+                                    method={method}
+                                    currency={methodCurrencies[method.id] ?? currency}
+                                  />
                                 </dd>
                                 <dt>{t('methods:index.columns.productsUsing')}</dt>
                                 <dd>{numberFormat.format(used)}</dd>
@@ -476,7 +490,7 @@ export default function MethodIndex({
                           </div>
                         </ResourceTableCell>
                         <ResourceTableCell column="method-pricing">
-                          <MethodPriceSummary method={method} />
+                          <MethodPriceSummary method={method} currency={methodCurrencies[method.id] ?? currency} />
                         </ResourceTableCell>
                         <ResourceTableCell column="method-scope">
                           <s-text type="strong">
@@ -529,15 +543,17 @@ export default function MethodIndex({
                               })}
                             >
                               <s-button
-                                disabled={methods.length >= methodPreviewLimit}
+                                disabled={readOnly || methods.length >= methodPreviewLimit}
                                 onClick={() => onDuplicate(method)}
                               >
                                 {t('methods:index.actions.duplicate')}
                               </s-button>
-                              <s-button onClick={() => downloadMethodSummary([method], products)}>
+                              <s-button
+                                onClick={() => downloadMethodSummary([method], products, currency, methodCurrencies)}
+                              >
                                 {t('methods:index.actions.exportSummary')}
                               </s-button>
-                              <s-button tone="critical" onClick={() => onDelete([method])}>
+                              <s-button tone="critical" disabled={readOnly} onClick={() => onDelete([method])}>
                                 {t('methods:index.actions.deleteMethod')}
                               </s-button>
                             </s-menu>
@@ -588,7 +604,7 @@ export default function MethodIndex({
               />
             </s-box>
             <s-text slot="subheading">{t('methods:index.empty.firstDescription')}</s-text>
-            <s-button slot="primary-action" variant="primary" onClick={onCreate}>
+            <s-button slot="primary-action" variant="primary" disabled={readOnly} onClick={onCreate}>
               {t('methods:index.actions.create')}
             </s-button>
           </s-empty-state>

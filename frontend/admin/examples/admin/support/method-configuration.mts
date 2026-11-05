@@ -12,6 +12,7 @@ export const methodConfigurationSchema = z.object({
   productIds: z.array(z.string()),
   tags: z.array(z.string()),
   tagMatch: z.enum(['any', 'all']),
+  translations: z.record(z.string(), z.object({ name: z.string().optional(), explanation: z.string().optional() })).optional(),
 });
 export const methodProductSchema = z.object({
   id: z.string(),
@@ -64,8 +65,9 @@ export function methodErrors(method: MethodConfiguration): MethodErrors {
 }
 export function assignedProducts(method: MethodConfiguration, products: readonly MethodProduct[]): MethodProduct[] {
   if (method.assignment === 'manual') {
-    const ids = new Set(method.productIds);
-    return products.filter((product) => ids.has(product.id));
+    const normalize = (id: string) => id.replace(/^gid:\/\/shopify\/Product\//, '');
+    const ids = new Set(method.productIds.map(normalize));
+    return products.filter((product) => ids.has(normalize(product.id)));
   }
   if (!method.tags.length) return [];
   return products.filter((product) =>

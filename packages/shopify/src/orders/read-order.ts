@@ -7,6 +7,7 @@ export type ShopifyOrderFacts = {
   shopId: string;
   installationGeneration: string;
   orderId: string;
+  orderName?: string;
   /** Correlation only; never independent checkout localization authority. Raw token is not exported. */
   checkoutTokenDigest: string | null;
   checkoutOrigin: { creatorAppId: string | null; sourceName: string | null; checkoutTokenDigest: string | null };
@@ -70,7 +71,7 @@ export class ShopifyOrderReadError extends Error {
 }
 const MONEY = 'presentmentMoney { amount currencyCode }';
 const TX = `id kind status processedAt amountSet { ${MONEY} }`;
-const HEADER = `id app { id } sourceName checkoutToken createdAt updatedAt presentmentCurrencyCode displayFinancialStatus edited test cancelledAt originalTotalPriceSet { ${MONEY} } transactionsCount { count precision } transactions(first:250) { ${TX} } refunds { id updatedAt }`;
+const HEADER = `id name app { id } sourceName checkoutToken createdAt updatedAt presentmentCurrencyCode displayFinancialStatus edited test cancelledAt originalTotalPriceSet { ${MONEY} } transactionsCount { count precision } transactions(first:250) { ${TX} } refunds { id updatedAt }`;
 const LINES = `lineItems(first:100, after:$after) { nodes { id product { id } variant { id } quantity currentQuantity originalUnitPriceSet { ${MONEY} } sellingPlan { sellingPlanId } customAttributes { key value } lineItemGroup { id customAttributes { key value } } } pageInfo { hasNextPage endCursor } }`;
 const ORDER_QUERY = `query InsigniaPurchaseOrder($id:ID!,$after:String) { order(id:$id) { ${HEADER} ${LINES} } }`;
 const RECHECK_QUERY = `query InsigniaPurchaseOrderRecheck($id:ID!) { order(id:$id) { ${HEADER} } }`;
@@ -440,6 +441,12 @@ export async function readShopifyOrder(
           shopId: target.shopId,
           installationGeneration: target.installationGeneration,
           orderId: target.orderId,
+          ...(typeof initial.name === 'string' &&
+          initial.name.trim() &&
+          initial.name.length <= 512 &&
+          !/[\p{Cc}]/u.test(initial.name)
+            ? { orderName: initial.name }
+            : {}),
           checkoutTokenDigest,
           checkoutOrigin,
           createdAt: date(initial.createdAt),

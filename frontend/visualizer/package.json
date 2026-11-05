@@ -20,7 +20,8 @@
     "typecheck:test": "tsc -p tsconfig.test.json"
   },
   "dependencies": {
-    "konva": "10.7.0"
+    "konva": "10.7.0",
+    "@insignia/visualizer": "workspace:*"
   },
   "devDependencies": {
     "typescript": "5.9.3",

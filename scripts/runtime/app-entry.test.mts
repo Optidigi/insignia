@@ -45,7 +45,7 @@ test('built application entry preserves Shopify host context and opens current m
   const page = await fetch(base + '/admin/products');
   assert.equal(page.status, 200);
   const body = await page.text();
-  assert.match(body, /shopifycloud\/polaris-1\.1\.js/);
+  assert.match(body, /shopifycloud\/polaris-2\.0-rc\.js/);
   assert.doesNotMatch(body, /Development preview: draft saves are local/);
 });
 
@@ -56,7 +56,7 @@ test('missing merchant configuration retains 503 with actual Polaris recovery an
   const body = await page.text();
   assert.match(body, /<s-page[^>]*heading="Application unavailable"/);
   assert.match(body, /<s-banner[^>]*tone="critical"/);
-  assert.match(body, /shopifycloud\/polaris-1\.1\.js/);
+  assert.match(body, /shopifycloud\/polaris-2\.0-rc\.js/);
   assert.match(body, /data-admin-ready="true"/);
   assert.doesNotMatch(body, /shopify-api-key|shopifycloud\/app-bridge|<s-app-nav/);
 });

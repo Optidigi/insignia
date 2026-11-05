@@ -25,6 +25,8 @@ export type ArtworkScope = {
   installationGeneration: string;
   kind: 'merchant' | 'guest';
   ownerHash?: string;
+  /** Server-verified resource authority; never accepted from a declaration body. */
+  authorityExpiresAt?: Date;
 };
 export type ArtworkManifest = {
   version: 'm6-inspection-v1';
@@ -133,7 +135,14 @@ export function createArtworkService(input: {
       input.onCleanupError?.('ARTWORK_CLEANUP_UNAVAILABLE');
     } catch {}
   };
+  function bound(scope: ArtworkScope, normal: Date): Date {
+    if (scope.authorityExpiresAt === undefined) return normal;
+    if (!Number.isFinite(+scope.authorityExpiresAt) || scope.authorityExpiresAt <= clock())
+      throw new ArtworkError('EXPIRED');
+    return new Date(Math.min(+normal, +scope.authorityExpiresAt));
+  }
   async function readOwned(scope: ArtworkScope, id: string) {
+    bound(scope, datePlus(clock(), ARTWORK_POLICY.uploadMs));
     const row = await input.store.get(scope, id);
     if (!row) throw new ArtworkError('NOT_FOUND');
     if (row.expiresAt <= clock() || row.state === 'DELETED' || row.state === 'DELETING')
@@ -173,8 +182,8 @@ export function createArtworkService(input: {
         originalKey: `originals/${namespace}/v1`,
         previewKey: `previews/${namespace}/v1.png`,
         collectedAt: now,
-        uploadUntil: datePlus(now, ARTWORK_POLICY.uploadMs),
-        expiresAt: datePlus(now, ARTWORK_POLICY.retainedMs),
+        uploadUntil: bound(scope, datePlus(now, ARTWORK_POLICY.uploadMs)),
+        expiresAt: bound(scope, datePlus(now, ARTWORK_POLICY.retainedMs)),
         claimId: null,
         manifest: null,
         rejection: null,
@@ -197,7 +206,10 @@ export function createArtworkService(input: {
     async preview(scope: ArtworkScope, id: string) {
       const row = await readOwned(scope, id);
       if (!usable(row, clock())) throw new ArtworkError('NOT_USABLE');
-      const expiresAt = new Date(Math.min(row.expiresAt.getTime(), clock().getTime() + ARTWORK_POLICY.uploadMs));
+      const expiresAt = bound(
+        scope,
+        new Date(Math.min(row.expiresAt.getTime(), clock().getTime() + ARTWORK_POLICY.uploadMs)),
+      );
       return {
         url: await input.storage.presignRead({ key: row.previewKey, expiresAt }),
         expiresAt: expiresAt.toISOString(),
@@ -211,7 +223,10 @@ export function createArtworkService(input: {
       if (!usable(row, clock())) throw new ArtworkError('NOT_USABLE');
       const ext =
         row.manifest!.mimeType === 'image/svg+xml' ? 'svg' : row.manifest!.mimeType === 'image/png' ? 'png' : 'jpg';
-      const expiresAt = new Date(Math.min(row.expiresAt.getTime(), clock().getTime() + ARTWORK_POLICY.uploadMs));
+      const expiresAt = bound(
+        scope,
+        new Date(Math.min(row.expiresAt.getTime(), clock().getTime() + ARTWORK_POLICY.uploadMs)),
+      );
       return {
         url: await input.storage.presignRead({
           key: row.originalKey,

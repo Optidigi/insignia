@@ -2,7 +2,6 @@ import { parsePrice } from './method-workflow-prices.mts';
 import { getVariantPhotoGroups, resolveVariantPhotoView } from './placement-variant-photos.mts';
 import { type PlacementProduct, placementProductSchema, placementSetupIssue } from './placement-workflow-model.mts';
 
-const customerPreviewOrigin = 'http://127.0.0.1:5173';
 const handshakeTimeoutMs = 10_000;
 
 export type CustomerPreviewFailure =
@@ -32,6 +31,7 @@ export class CustomerPreviewError extends Error {
 }
 
 export interface CustomerPreviewOptions {
+  hostUrl?: string;
   appearanceGroupKey?: string;
 }
 
@@ -165,8 +165,8 @@ export function launchCustomerPreview(
   }
 
   const id = nonce();
-  const prototypeOrigin = new URL(customerPreviewOrigin).origin;
-  const url = new URL('/', customerPreviewOrigin);
+  const url = new URL(options.hostUrl ?? '/designer-preview', window.location.origin);
+  const prototypeOrigin = url.origin;
   url.searchParams.set('adminPreview', id);
   url.searchParams.set('adminOrigin', window.location.origin);
 

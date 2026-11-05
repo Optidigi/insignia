@@ -1,16 +1,18 @@
 ---
-import MethodLibrary from '../../../islands/MethodLibrary';
-import AdminLayout from '../../../layouts/AdminLayout.astro';
-
-const apiKey = process.env.SHOPIFY_CLIENT_ID;
-const csp =
-  "default-src 'none'; script-src 'self' https://cdn.shopify.com 'sha256-QzWFZi+FLIx23tnm9SBU4aEgx4x8DsuASP07mfqol/c=' 'sha256-Ya0pUYrC7nM5Cn/056TyVuEiz6dFGrzmkWzgON0pF0U='; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; font-src https://cdn.shopify.com; img-src 'self' https: data:; connect-src 'self' https://cdn.shopify.com/shopifycloud/admin-ui-foundations/icons/; frame-ancestors https://admin.shopify.com https://*.myshopify.com; base-uri 'none'; form-action 'self'";
+// Methods has one real destination; keep bounded Shopify host hints, never bearer/session query material.
+const query = new URLSearchParams();
+const rules = {
+  host: /^[A-Za-z0-9+/_=-]{1,1024}$/,
+  shop: /^[a-z0-9][a-z0-9-]{0,62}\.myshopify\.com$/,
+  embedded: /^1$/,
+  locale: /^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$/,
+};
+for (const [name, rule] of Object.entries(rules)) {
+  const values = Astro.url.searchParams.getAll(name);
+  if (values.length === 1 && values[0] && values[0].length <= (name === 'host' ? 1024 : 128) && rule.test(values[0])) query.set(name, values[0]);
+}
 Astro.response.headers.set('Cache-Control', 'private, no-store');
-Astro.response.headers.set('Content-Security-Policy', csp);
 Astro.response.headers.set('Referrer-Policy', 'no-referrer');
-if (!apiKey || !/^[A-Za-z0-9_-]{1,128}$/.test(apiKey))
-  return Astro.rewrite('/admin/unavailable');
+Astro.response.headers.set('Location', '/admin/methods' + (query.size ? `?${query}` : ''));
+return new Response(null, {status:302, headers:Astro.response.headers});
 ---
-<AdminLayout title="Decoration method library" apiKey={apiKey}>
-<MethodLibrary client:load />
-</AdminLayout>

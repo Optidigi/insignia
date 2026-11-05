@@ -15,6 +15,7 @@ import { useAdminLocale, withAdminLocale } from '../shared/admin-i18n';
 import { useAdminPageReady } from '../shared/admin-page-ready';
 import { authenticatedJson } from '../shared/admin-request';
 import type { CatalogProduct } from '../shared/admin-view';
+import { installSelectedProductActions } from './selected-product-actions';
 import { productConfigurationCsv } from '../shared/product-configuration-export';
 import { isProductCursorStack, productConfigHref, productCursorTrail } from '../shared/products-return-path';
 
@@ -52,9 +53,15 @@ function ProductsOverview() {
     published: t('products:configuration.published'),
     unavailable: t('products:configuration.unavailable'),
   };
+  const configurationRef = useRef<ConfigurationFilter>('all');
   const [setupCopyAvailable, setSetupCopyAvailable] = useState(false);
   useEffect(() => {
-    setSetupCopyAvailable(document.documentElement.dataset.previewSetupCopy === 'true');
+    let disposeActions: (() => void) | undefined;
+    if (document.documentElement.dataset.previewSetupCopy === 'true') setSetupCopyAvailable(true);
+    else {
+      try { disposeActions = installSelectedProductActions(); setSetupCopyAvailable(true); }
+      catch { setSetupCopyAvailable(false); }
+    }
     const previewError = (event: Event) => {
       if (!(event instanceof CustomEvent)) return;
       const detail: unknown = event.detail;
@@ -63,7 +70,7 @@ function ProductsOverview() {
       }
     };
     document.addEventListener('insignia:customer-preview-error', previewError);
-    return () => document.removeEventListener('insignia:customer-preview-error', previewError);
+    return () => { document.removeEventListener('insignia:customer-preview-error', previewError); disposeActions?.(); };
   }, []);
   const selectionControl = useRef<HTMLElementTagNameMap['s-checkbox']>(null);
   const bulkSelectionControl = useRef<HTMLElementTagNameMap['s-checkbox']>(null);
@@ -92,7 +99,8 @@ function ProductsOverview() {
     void load(value.trim(), [null]);
   }
   useAdminPageReady(state.kind !== 'loading');
-  function changeConfigurationFilter(value: ConfigurationFilter) {
+  function changeConfigurationFilter(value: ConfigurationFilter, refresh = true) {
+    configurationRef.current = value;
     clearSelection();
     dispatch({ type: 'filter-changed', value });
     document
@@ -102,6 +110,7 @@ function ProductsOverview() {
     if (value === 'all') url.searchParams.delete('configuration');
     else url.searchParams.set('configuration', value);
     history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+    if (refresh) void load(search.trim(), [null]);
   }
   async function load(query: string, pages: (string | null)[], fresh = false) {
     clearTimeout(searchTimer.current);
@@ -121,6 +130,7 @@ function ProductsOverview() {
     else url.searchParams.delete('cursor');
     history.replaceState({ ...history.state, insigniaProductCursors: pages }, '', url.pathname + url.search + url.hash);
     const params = new URLSearchParams({ q: query });
+    if (configurationRef.current !== 'all') params.set('configuration', configurationRef.current);
     const cursor = pages[pages.length - 1];
     if (cursor) params.set('cursor', cursor);
     try {
@@ -142,7 +152,7 @@ function ProductsOverview() {
       const url = new URL(location.href);
       const query = (url.searchParams.get('q') ?? '').slice(0, 100).trim();
       const filter = url.searchParams.get('configuration') ?? 'all';
-      changeConfigurationFilter(isConfigurationFilter(filter) ? filter : 'all');
+      changeConfigurationFilter(isConfigurationFilter(filter) ? filter : 'all', false);
       const cursor = url.searchParams.get('cursor');
       const stored: unknown = history.state;
       const stack =

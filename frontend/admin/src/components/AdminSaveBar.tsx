@@ -1,7 +1,7 @@
 import { createElement } from 'preact';
 import { useEffect, useReducer, useRef, useState } from 'preact/hooks';
-import { useAdminLocale } from '../shared/admin-i18n';
-import { initialLeaveGuardState, leaveGuardReducer } from '../shared/leave-guard-state';
+import { useAdminLocale } from '../shared/admin-i18n.js';
+import { initialLeaveGuardState, leaveGuardReducer } from '../shared/leave-guard-state.js';
 
 type Bridge = {
   saveBar?: { show(id: string): Promise<void>; hide(id: string): Promise<void>; leaveConfirmation?(): Promise<void> };
@@ -19,6 +19,7 @@ export default function AdminSaveBar({
   saveLabel,
   discardDescription,
   showFallback = true,
+  manageNavigation = true,
 }: {
   dirty: boolean;
   saving: boolean;
@@ -30,6 +31,7 @@ export default function AdminSaveBar({
   saveLabel?: string;
   discardDescription?: string;
   showFallback?: boolean;
+  manageNavigation?: boolean;
 }) {
   const { t } = useAdminLocale();
   const barId = id;
@@ -102,7 +104,7 @@ export default function AdminSaveBar({
     }
   }
   useEffect(() => {
-    if (!dirty) return;
+    if (!dirty || !manageNavigation) return;
     const beforeUnload = (event: BeforeUnloadEvent) => {
       if (!leaving.current) event.preventDefault();
     };
@@ -135,7 +137,7 @@ export default function AdminSaveBar({
       document.removeEventListener('click', navigate, true);
       window.removeEventListener('beforeunload', beforeUnload);
     };
-  }, [dirty]);
+  }, [dirty, manageNavigation]);
   function ask() {
     void confirmDestination(null);
   }

@@ -24,6 +24,7 @@ export interface PositionGeometry {
   /** Optional height envelope, scaled to dimensions[0]. */
   maximumHeight?: number | undefined;
   sizeLabels?: readonly string[] | undefined;
+  sizeBounds?: readonly { width: number; maximumHeight: number }[] | undefined;
   movementArea?: MovementArea | undefined;
 }
 
@@ -53,17 +54,23 @@ function validArea(area: MovementArea): boolean {
 
 /** Missing customer position keeps the configured merchant center. */
 export function resolvePrintCenter(
-  position: Pick<PositionGeometry, "x" | "y">,
-  print: Pick<PrintGeometry, "position">,
+  position: Pick<PositionGeometry, 'x' | 'y'>,
+  print: Pick<PrintGeometry, 'position'>,
 ): PercentPoint {
   return print.position ?? { x: position.x, y: position.y };
 }
 
 /** The first configured width is the existing preview's reference scale. */
 export function printWidthPercent(
-  position: Pick<PositionGeometry, "width" | "dimensions">,
+  position: Pick<PositionGeometry, 'width' | 'dimensions' | 'sizeBounds'>,
   sizeIndex: number,
 ): number {
+  if (position.sizeBounds) {
+    const bounds = position.sizeBounds[sizeIndex];
+    if (!Number.isInteger(sizeIndex) || !bounds || !finitePositive(bounds.width))
+      throw new Error('invalid print size geometry');
+    return bounds.width;
+  }
   const selectedWidth = position.dimensions[sizeIndex];
   const referenceWidth = position.dimensions[0];
   if (
@@ -74,20 +81,25 @@ export function printWidthPercent(
     !finitePositive(selectedWidth) ||
     !finitePositive(referenceWidth)
   )
-    throw new Error("invalid print size geometry");
+    throw new Error('invalid print size geometry');
   const width = (position.width * selectedWidth) / referenceWidth;
-  if (!finitePositive(width)) throw new Error("invalid print width geometry");
+  if (!finitePositive(width)) throw new Error('invalid print width geometry');
   return width;
 }
 
 /** Fit a print inside an optional height envelope while keeping its aspect ratio. */
 export function printWidthPercentForArtwork(
-  position: Pick<PositionGeometry, "width" | "dimensions" | "maximumHeight">,
+  position: Pick<PositionGeometry, 'width' | 'dimensions' | 'maximumHeight' | 'sizeBounds'>,
   sizeIndex: number,
   artworkAspectRatio: number,
   imageAspectRatio: number,
 ): number {
   const width = printWidthPercent(position, sizeIndex);
+  if (position.sizeBounds) {
+    const height = position.sizeBounds[sizeIndex]?.maximumHeight;
+    if (!height || !finitePositive(artworkAspectRatio) || !finitePositive(imageAspectRatio)) return 0;
+    return Math.min(width, (height * artworkAspectRatio) / imageAspectRatio);
+  }
   if (position.maximumHeight === undefined) return width;
   const referenceWidth = position.dimensions[0];
   const selectedWidth = position.dimensions[sizeIndex];
@@ -97,20 +109,20 @@ export function printWidthPercentForArtwork(
     selectedWidth === undefined ||
     !finitePositive(artworkAspectRatio) ||
     !finitePositive(imageAspectRatio)
-  ) return 0;
-  const heightEnvelope = position.maximumHeight * selectedWidth / referenceWidth;
-  return Math.min(width, heightEnvelope * artworkAspectRatio / imageAspectRatio);
+  )
+    return 0;
+  const heightEnvelope = (position.maximumHeight * selectedWidth) / referenceWidth;
+  return Math.min(width, (heightEnvelope * artworkAspectRatio) / imageAspectRatio);
 }
 
 /** Display merchant-defined relative names, or the existing physical label. */
 export function printSizeLabel(
-  position: Pick<PositionGeometry, "dimensions" | "sizeLabels">,
+  position: Pick<PositionGeometry, 'dimensions' | 'sizeLabels'>,
   sizeIndex: number,
   centimeterLabel: (dimension: number) => string = (dimension) => `${dimension} cm`,
 ): string {
   const dimension = position.dimensions[sizeIndex];
-  if (!Number.isInteger(sizeIndex) || dimension === undefined)
-    throw new Error("invalid print size label");
+  if (!Number.isInteger(sizeIndex) || dimension === undefined) throw new Error('invalid print size label');
   return position.sizeLabels?.[sizeIndex] ?? centimeterLabel(dimension);
 }
 
@@ -157,20 +169,10 @@ export function clampArtworkCenter(
   artworkAspectRatio: number,
   imageAspectRatio: number,
 ): PercentPoint | null {
-  if (!Number.isFinite(requested.x) || !Number.isFinite(requested.y))
-    return null;
+  if (!Number.isFinite(requested.x) || !Number.isFinite(requested.y)) return null;
   if (!validArea(movementArea)) return null;
-  const footprint = artworkFootprint(
-    { x: 50, y: 50 },
-    widthPercent,
-    artworkAspectRatio,
-    imageAspectRatio,
-  );
-  if (
-    !footprint ||
-    footprint.width > movementArea.width + EPSILON ||
-    footprint.height > movementArea.height + EPSILON
-  )
+  const footprint = artworkFootprint({ x: 50, y: 50 }, widthPercent, artworkAspectRatio, imageAspectRatio);
+  if (!footprint || footprint.width > movementArea.width + EPSILON || footprint.height > movementArea.height + EPSILON)
     return null;
 
   const halfWidth = footprint.width / 2;
@@ -193,18 +195,12 @@ export function clampArtworkCenterForImages(
   artworkAspectRatio: number,
   imageAspectRatios: readonly number[],
 ): PercentPoint | null {
-  if (!Number.isFinite(requested.x) || !Number.isFinite(requested.y))
-    return null;
+  if (!Number.isFinite(requested.x) || !Number.isFinite(requested.y)) return null;
   if (!validArea(movementArea) || imageAspectRatios.length === 0) return null;
 
   let maxHeight = 0;
   for (const imageAspectRatio of imageAspectRatios) {
-    const footprint = artworkFootprint(
-      { x: 50, y: 50 },
-      widthPercent,
-      artworkAspectRatio,
-      imageAspectRatio,
-    );
+    const footprint = artworkFootprint({ x: 50, y: 50 }, widthPercent, artworkAspectRatio, imageAspectRatio);
     if (
       !footprint ||
       footprint.width > movementArea.width + EPSILON ||
@@ -234,18 +230,8 @@ export function isArtworkCenterAllowed(
   artworkAspectRatio: number,
   imageAspectRatio: number,
 ): boolean {
-  const clamped = clampArtworkCenter(
-    center,
-    movementArea,
-    widthPercent,
-    artworkAspectRatio,
-    imageAspectRatio,
-  );
-  return (
-    clamped !== null &&
-    Math.abs(clamped.x - center.x) <= EPSILON &&
-    Math.abs(clamped.y - center.y) <= EPSILON
-  );
+  const clamped = clampArtworkCenter(center, movementArea, widthPercent, artworkAspectRatio, imageAspectRatio);
+  return clamped !== null && Math.abs(clamped.x - center.x) <= EPSILON && Math.abs(clamped.y - center.y) <= EPSILON;
 }
 
 /** True only when a full artwork raster fits every selected image without movement. */
@@ -263,11 +249,7 @@ export function isArtworkCenterAllowedForImages(
     artworkAspectRatio,
     imageAspectRatios,
   );
-  return (
-    clamped !== null &&
-    Math.abs(clamped.x - center.x) <= EPSILON &&
-    Math.abs(clamped.y - center.y) <= EPSILON
-  );
+  return clamped !== null && Math.abs(clamped.x - center.x) <= EPSILON && Math.abs(clamped.y - center.y) <= EPSILON;
 }
 
 /** Preset indexes whose complete artwork can fit inside this movement area. */
@@ -276,9 +258,7 @@ export function availablePrintSizes(
   artworkAspectRatio: number,
   imageAspectRatio: number,
 ): number[] {
-  return availablePrintSizesForImages(position, artworkAspectRatio, [
-    imageAspectRatio,
-  ]);
+  return availablePrintSizesForImages(position, artworkAspectRatio, [imageAspectRatio]);
 }
 
 /** Preset indexes whose full artwork fits every selected source image. */
@@ -291,20 +271,10 @@ export function availablePrintSizesForImages(
   if (!area || imageAspectRatios.length === 0) return [];
   const mostRestrictiveImageAspect = Math.max(...imageAspectRatios);
   return position.dimensions.flatMap((_, sizeIndex) => {
-    const width = printWidthPercentForArtwork(
-      position,
-      sizeIndex,
-      artworkAspectRatio,
-      mostRestrictiveImageAspect,
-    );
+    const width = printWidthPercentForArtwork(position, sizeIndex, artworkAspectRatio, mostRestrictiveImageAspect);
     if (width <= 0) return [];
-    return clampArtworkCenterForImages(
-      { x: area.x, y: area.y },
-      area,
-      width,
-      artworkAspectRatio,
-      imageAspectRatios,
-    ) !== null
+    return clampArtworkCenterForImages({ x: area.x, y: area.y }, area, width, artworkAspectRatio, imageAspectRatios) !==
+      null
       ? [sizeIndex]
       : [];
   });

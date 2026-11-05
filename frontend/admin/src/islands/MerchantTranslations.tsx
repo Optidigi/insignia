@@ -23,6 +23,8 @@ import {
   createBrowserCustomerTranslationsStorage,
   createCustomerTranslationsWorkflow,
 } from './customer-translations-workflow';
+import { createMerchantPreferencesClient } from '../shared/merchant-preferences-client';
+import { createRemoteCustomerTranslationsStorage } from './customer-translations-remote';
 import '../styles/merchant-translations.css';
 
 const commonLanguageTags = [
@@ -69,18 +71,16 @@ const sectionId = (entry: CustomerWordingManifestEntry) =>
 type Confirmation = { kind: 'switch'; locale: string } | { kind: 'reset' | 'remove' | 'clear' };
 
 /** Test-host ports are accepted only in the explicit loopback review environment. */
-function localPreviewOptions(): { storagePort?: CustomerTranslationsStoragePort; readOnly?: boolean } {
+function localPreviewOptions(): { demo?: boolean; storagePort?: CustomerTranslationsStoragePort; readOnly?: boolean } {
   if (typeof window === 'undefined') return {};
   const url = new URL(window.location.href);
   if (!['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname) || !url.searchParams.has('__translations_example'))
     return {};
-  return (
-    (
+  return { demo: true, ...((
       window as unknown as {
         __insigniaCustomerTranslationsPreview?: { storagePort?: CustomerTranslationsStoragePort; readOnly?: boolean };
       }
-    ).__insigniaCustomerTranslationsPreview ?? {}
-  );
+    ).__insigniaCustomerTranslationsPreview ?? {}) };
 }
 
 function MerchantTranslations({
@@ -92,18 +92,25 @@ function MerchantTranslations({
 }) {
   const { t, formatLocale } = useAdminLocale();
   const previewOptions = useMemo(localPreviewOptions, []);
-  const workflow = useMemo(
-    () =>
-      createCustomerTranslationsWorkflow({
-        validateOverlay: validateCustomerWordingOverlay,
-        shop:
-          typeof window === 'undefined'
-            ? null
-            : (window as unknown as { shopify?: { config?: { shop?: unknown } } }).shopify?.config?.shop,
-        storage: previewOptions.storagePort ?? createBrowserCustomerTranslationsStorage(),
-      }),
-    [],
-  );
+  const [serverReadOnly, setServerReadOnly] = useState(false);
+  const workflow = useMemo(() => {
+    if (previewOptions.demo) return createCustomerTranslationsWorkflow({
+      validateOverlay: validateCustomerWordingOverlay,
+      shop: typeof window === 'undefined' ? null : (window as unknown as { shopify?: { config?: { shop?: unknown } } }).shopify?.config?.shop,
+      storage: previewOptions.storagePort ?? createBrowserCustomerTranslationsStorage(),
+    });
+    const client = createMerchantPreferencesClient();
+    return createCustomerTranslationsWorkflow({
+      validateOverlay: validateCustomerWordingOverlay,
+      shop: null,
+      resolveShop: async () => {
+        const view = await client.read();
+        setServerReadOnly(view.canEdit !== true);
+        return view.shop;
+      },
+      storage: createRemoteCustomerTranslationsStorage(null, client),
+    });
+  }, []);
   const [state, setState] = useState(workflow.getSnapshot());
   const knownSections = ['all', 'customized', ...new Set(CUSTOMER_WORDING_MANIFEST.map(sectionId))];
   const initialGroup = initialSection && knownSections.includes(initialSection) ? initialSection : null;
@@ -217,7 +224,7 @@ function MerchantTranslations({
   entries.sort((left, right) => (navigationOrder.get(left.key) ?? 100) - (navigationOrder.get(right.key) ?? 100));
   const currentPage = Math.min(page, Math.max(0, Math.ceil(entries.length / pageSize) - 1));
   const visibleEntries = entries.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
-  const editable = ready && !busy && !previewOptions.readOnly;
+  const editable = ready && !busy && !previewOptions.readOnly && !serverReadOnly;
   const errors = current ? workflow.validateCurrent() : [];
   const errorFor = (key: string, form: CustomerWordingForm, variables: string) => {
     if (!showErrors && !touched.has(`${selectedLocale}:${key}:${form}`)) return undefined;

@@ -232,3 +232,91 @@ test('structural containers cannot become replacement merchant controls', async 
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('reviewed selected native nodes allow only exact source-bound controls and never raw HTML', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'polaris-selected-'));
+  try {
+    await writeFile(join(root, 'tsconfig.json'), '{}');
+    const original = 'export const view=<button class="selected-photo" onClick={()=>select()}>Choose</button>;';
+    await writeFile(join(root, 'view.tsx'), original);
+    const options = { root, tsconfig: 'tsconfig.json', merchantEntries: ['view.tsx'], buyerEntries: [] };
+    const first = await inspectPolarisPresentation(options);
+    assert.equal(first.violations.length, 1);
+    const signatures: Record<string, number> = {};
+    for (const value of first.nativeFindings) signatures[value.signature] = (signatures[value.signature] ?? 0) + 1;
+    const reviewedNativePresentation = { 'view.tsx': signatures };
+    assert.deepEqual((await inspectPolarisPresentation({ ...options, reviewedNativePresentation })).violations, []);
+    await writeFile(
+      join(root, 'view.tsx'),
+      original.replace('</button>', '</button>') + 'export const added=<input type="text"/>;',
+    );
+    assert.ok(
+      (await inspectPolarisPresentation({ ...options, reviewedNativePresentation })).violations.some((value) =>
+        value.endsWith(': input'),
+      ),
+    );
+    await writeFile(join(root, 'view.tsx'), original.replace('selected-photo', 'unreviewed-control'));
+    assert.ok(
+      (await inspectPolarisPresentation({ ...options, reviewedNativePresentation })).violations.some((value) =>
+        value.includes(': button'),
+      ),
+    );
+    await writeFile(
+      join(root, 'view.tsx'),
+      original + 'export const unsafe=<div dangerouslySetInnerHTML={{__html:payload}}/>;',
+    );
+    assert.ok(
+      (await inspectPolarisPresentation({ ...options, reviewedNativePresentation })).violations.some((value) =>
+        value.includes('raw HTML'),
+      ),
+    );
+    await writeFile(join(root, 'view.tsx'), 'export const view=<s-button>Choose</s-button>;');
+    assert.ok(
+      (await inspectPolarisPresentation({ ...options, reviewedNativePresentation })).violations.some((value) =>
+        value.includes('stale'),
+      ),
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+test('native structural spread handlers and computed HTML sinks cannot bypass the presentation guard', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'polaris-computed-'));
+  try {
+    await writeFile(join(root, 'tsconfig.json'), '{}');
+    const options = { root, tsconfig: 'tsconfig.json', merchantEntries: ['view.tsx'], buyerEntries: [] };
+    for (const source of [
+      'export const view=<div {...{onClick:()=>send()}}/>;',
+      "export const view=<div {...{['onClick']:()=>send()}}/>;",
+      "export const view=<div {...{['dangerouslySetInnerHTML']:{__html:payload}}}/>;",
+      "host['insertAdjacentHTML']('beforeend',payload);",
+      'export const view=<div {...props}/>;',
+    ]) {
+      await writeFile(join(root, 'view.tsx'), source);
+      assert.ok((await inspectPolarisPresentation(options)).violations.length > 0, source);
+    }
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+test('Astro reviewed opening nodes remain stable when preceding comments move source positions', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'polaris-astro-offset-'));
+  try {
+    await writeFile(join(root, 'tsconfig.json'), '{}');
+    const source = '<button class="selected-photo">Choose</button>';
+    await writeFile(join(root, 'view.astro'), source);
+    const options = { root, tsconfig: 'tsconfig.json', merchantEntries: ['view.astro'], buyerEntries: [] };
+    const report = await inspectPolarisPresentation(options);
+    assert.equal(report.nativeFindings.length, 1);
+    const signatures: Record<string, number> = {};
+    for (const item of report.nativeFindings) signatures[item.signature] = (signatures[item.signature] ?? 0) + 1;
+    await writeFile(join(root, 'view.astro'), '<!-- retained note -->\n' + source);
+    assert.deepEqual(
+      (await inspectPolarisPresentation({ ...options, reviewedNativePresentation: { 'view.astro': signatures } }))
+        .violations,
+      [],
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

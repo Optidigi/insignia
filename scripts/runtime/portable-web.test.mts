@@ -16,6 +16,7 @@ import { join, relative, resolve } from 'node:path';
 import test from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { errorCode, object, required } from './validation.mts';
+import { workspaceOutputs } from './workspace-outputs.mts';
 
 const root = resolve(import.meta.dirname, '../..');
 
@@ -59,11 +60,12 @@ test('current compiled web package survives relocation and serves HTTP on the co
       if (!existsSync(scope)) continue;
       try {
         for (const child of readdirSync(scope)) {
+          const directory = realpathSync(join(scope, child));
+          const outputs = workspaceOutputs(object(JSON.parse(readFileSync(join(directory, 'package.json'), 'utf8'))));
           assert.ok(
-            readdirSync(realpathSync(join(scope, child))).every((entry) =>
-              ['dist', 'node_modules', 'package.json'].includes(entry),
-            ),
+            readdirSync(directory).every((entry) => [...outputs, 'node_modules', 'package.json'].includes(entry)),
           );
+          assert.ok(!existsSync(join(directory, 'src')) && !existsSync(join(directory, 'examples')));
         }
       } catch (error) {
         if (errorCode(error) !== 'ENOENT') throw error;
@@ -74,9 +76,9 @@ test('current compiled web package survives relocation and serves HTTP on the co
       [
         '--input-type=module',
         '-e',
-        "import { shopifyApi } from '@shopify/shopify-api'; if (typeof shopifyApi !== 'function') process.exit(1)",
+        "import { shopifyApi } from '@shopify/shopify-api'; import {createAdminTranslator} from '@insignia/ui-localization/admin'; import {createCustomerTranslator} from '@insignia/ui-localization/customer'; import {containFit} from '@insignia/ui-visualizer/geometry'; if ([shopifyApi,createAdminTranslator,createCustomerTranslator,containFit].some(value => typeof value !== 'function')) process.exit(1)",
       ],
-      { cwd: relocated, encoding: 'utf8' },
+      { cwd: relocated, encoding: 'utf8', env: { PATH: process.env.PATH } },
     );
     assert.equal(imported.status, 0, imported.stderr);
     const portProbe = createServer();
@@ -122,7 +124,13 @@ test('current compiled web package survives relocation and serves HTTP on the co
     const unavailable = await fetch(`http://127.0.0.2:${port}/api/admin/products`);
     assert.equal(unavailable.status, 503, 'Cold admin API must reach its configured-unavailable guard');
     assert.equal(object(await unavailable.json()).error, 'Admin service unavailable');
-    for (const route of ['/admin/products', '/admin/products/111/config']) {
+    for (const route of [
+      '/admin/home',
+      '/admin/products',
+      '/admin/products/111/config',
+      '/admin/methods',
+      '/admin/settings/translations',
+    ]) {
       const page = await fetch(`http://127.0.0.2:${port}${route}?apiKey=22222222222222222222222222222222`);
       assert.equal(page.status, 200);
       assert.equal(page.headers.get('cache-control'), 'private, no-store');
@@ -131,7 +139,37 @@ test('current compiled web package survives relocation and serves HTTP on the co
       );
       const html = await page.text();
       assert.ok(html.includes('<meta name="shopify-api-key" content="11111111111111111111111111111111">'));
-      assert.ok(!html.includes('22222222222222222222222222222222'), 'Browser input must not supply the client key');
+      assert.ok(
+        !html.includes('22222222222222222222222222222222'),
+        `${route}: browser input must not supply the client key`,
+      );
+      assert.match(html, /shopifycloud\/polaris-2\.0-rc\.js/);
+      if (route.endsWith('/config')) assert.match(html, /component-url="[^"]*SelectedProductContainer/);
+      for (const match of html.matchAll(/(?:src|href|component-url|renderer-url)="(\/_astro\/[^"#]+)"/g)) {
+        const asset = await fetch(`http://127.0.0.2:${port}${match[1]}`);
+        assert.equal(asset.status, 200, `Packaged route asset missing: ${match[1]}`);
+        const bytes = await asset.text();
+        assert.doesNotMatch(
+          bytes,
+          /\/__preview\/(?:catalog|methods|upload)/,
+          'Production UI must not contain demo transport',
+        );
+      }
+    }
+    for (const route of ['/designer-preview', '/artwork-upload']) {
+      const page = await fetch(`http://127.0.0.2:${port}${route}`);
+      assert.equal(page.status, 200);
+      const html = await page.text();
+      const assets = [...html.matchAll(/(?:src|href)="(\/_astro\/[^"#]+)"/g)];
+      assert.ok(
+        assets.some((match) => match[1]?.endsWith('.js')),
+        'Selected Designer must have its own built script',
+      );
+      for (const match of assets) {
+        const asset = await fetch(`http://127.0.0.2:${port}${match[1]}`);
+        assert.equal(asset.status, 200, `Designer artifact missing: ${match[1]}`);
+        assert.doesNotMatch(await asset.text(), /\/__preview\/(?:catalog|methods|upload)|src\/scenarios/);
+      }
     }
     await assert.rejects(fetch(`http://127.0.0.1:${port}/live`, { signal: AbortSignal.timeout(1000) }));
     for (const key of [undefined, '<malformed>']) {
@@ -171,10 +209,13 @@ test('current compiled web package survives relocation and serves HTTP on the co
           html,
           /<s-button\b[^>]*href="https:\/\/admin\.shopify\.com"[^>]*target="_top"[^>]*>Return to Shopify Admin<\/s-button>/,
         );
-        assert.match(html, /shopifycloud\/polaris-1\.1\.js/);
-        assert.match(html, /data-admin-ready="true"/);
+        assert.match(html, /shopifycloud\/polaris-2\.0-rc\.js/);
+        assert.match(html, /<html\b[^>]*data-admin-ready="true"/);
         assert.doesNotMatch(html, /shopify-api-key|shopifycloud\/app-bridge|<s-app-nav|id="admin-route-skeleton"/);
-        assert.ok(!html.includes('22222222222222222222222222222222'), 'Browser input must not supply a client key');
+        assert.ok(
+          !html.includes('22222222222222222222222222222222'),
+          `${route}: browser input must not supply a client key`,
+        );
       }
     }
   } finally {

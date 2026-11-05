@@ -76,7 +76,20 @@ export const CustomizationGroupSchema = z.strictObject({
   revisionContentHash,
   design: z.strictObject({
     placements: z
-      .array(z.strictObject({ placementId: id, methodId: id, stepId: id, artwork: ArtworkChoiceSchema }))
+      .array(
+        z.strictObject({
+          placementId: id,
+          methodId: id,
+          stepId: id,
+          artwork: ArtworkChoiceSchema,
+          position: z
+            .strictObject({
+              xMicros: z.number().int().min(0).max(1000000),
+              yMicros: z.number().int().min(0).max(1000000),
+            })
+            .optional(),
+        }),
+      )
       .min(1),
     options: z.array(z.strictObject({ optionId: id, valueId: id })),
   }),

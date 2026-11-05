@@ -120,3 +120,102 @@ it('R2 genuinely unknown catalog status remains a whole-response error', async (
   await expect(reader.list()).rejects.toThrow('Invalid catalog product');
   await expect(reader.get(id)).rejects.toThrow('Invalid catalog product');
 });
+
+it('projects real tags and collections, distinguishes unavailable metadata, and exposes collection truncation', async () => {
+  const raw = {
+    ...product,
+    tags: ['shirts'],
+    collections: { nodes: [{ id: 'gid://shopify/Collection/123', title: 'Shirts' }], pageInfo: { hasNextPage: true } },
+  };
+  const reader = (value: unknown) =>
+    createCatalogReader({
+      async read<T>(): Promise<T> {
+        return { products: { nodes: [value], pageInfo: { hasNextPage: false, endCursor: null } } } as T;
+      },
+    });
+  const result = (await reader(raw).list({ first: 1 })).products[0];
+  expect(result).toMatchObject({
+    tags: ['shirts'],
+    collections: [{ id: 'gid://shopify/Collection/123', title: 'Shirts' }],
+    collectionsTruncated: true,
+  });
+  const missing = (await reader(product).list({ first: 1 })).products[0];
+  expect(missing?.tags).toBeUndefined();
+  expect(missing?.collections).toBeUndefined();
+  await expect(reader({ ...raw, tags: ['shirts', 'shirts'] }).list({ first: 1 })).rejects.toThrow('assignment');
+  await expect(
+    reader({ ...raw, collections: { ...raw.collections, pageInfo: {} } }).list({ first: 1 }),
+  ).rejects.toThrow('assignment');
+});
+
+it('keeps image dimensions and option axes from the provider without inventing missing metadata', async () => {
+  const raw = {
+    ...product,
+    featuredMedia: {
+      preview: { image: { url: 'https://cdn.shopify.com/photo.png', altText: 'Front', width: 1200, height: 1600 } },
+    },
+    options: [
+      {
+        id: 'gid://shopify/ProductOption/8',
+        name: 'Size',
+        optionValues: [{ id: 'gid://shopify/ProductOptionValue/9', name: 'M' }],
+      },
+    ],
+    media: {
+      nodes: [
+        {
+          __typename: 'MediaImage',
+          id: 'gid://shopify/MediaImage/10',
+          image: {
+            id: 'gid://shopify/ProductImage/12',
+            url: 'https://cdn.shopify.com/back.png',
+            altText: 'Back',
+            width: 1200,
+            height: 1600,
+          },
+        },
+        { __typename: 'Video' },
+      ],
+      pageInfo: { hasNextPage: false },
+    },
+  };
+  const reader = createCatalogReader({
+    async read<T>(): Promise<T> {
+      return { products: { nodes: [raw], pageInfo: { hasNextPage: false, endCursor: null } } } as T;
+    },
+  });
+  const value = (await reader.list({ first: 1 })).products[0];
+  expect(value?.image).toMatchObject({ width: 1200, height: 1600, alt: 'Front' });
+  expect(value?.options).toEqual([{ id: 'gid://shopify/ProductOption/8', name: 'Size', values: ['M'] }]);
+  expect(value?.images).toEqual([
+    {
+      revisionId: 'image_12',
+      image: {
+        id: 'gid://shopify/ProductImage/12',
+        url: 'https://cdn.shopify.com/back.png',
+        width: 1200,
+        height: 1600,
+        alt: 'Back',
+      },
+    },
+  ]);
+  expect(value?.imagesTruncated).toBe(false);
+});
+
+it('reads tag assignments in exact bounded identity batches and refuses missing provider nodes', async () => {
+  const reader = createCatalogReader({
+    async read<T>(operation: string, variables: Record<string, unknown>): Promise<T> {
+      expect(operation).toBe('tags');
+      expect(variables).toEqual({ ids: [id] });
+      return { nodes: [{ id, tags: ['shirts'] }] } as T;
+    },
+  });
+  expect(await reader.productTags([id])).toEqual({ [id]: ['shirts'] });
+  const unavailable = createCatalogReader({
+    async read<T>(): Promise<T> {
+      return { nodes: [null] } as T;
+    },
+  });
+  await expect(unavailable.productTags([id])).rejects.toThrow('identity');
+  await expect(unavailable.productTags([id, id])).rejects.toThrow('batch');
+});

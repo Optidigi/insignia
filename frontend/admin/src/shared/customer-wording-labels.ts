@@ -3,6 +3,14 @@ import type { CustomerMessageKey } from '@insignia/ui-localization/customer';
 
 /** Merchant-facing field names, kept separate from editable buyer copy. */
 export const customerWordingLabels = {
+  'customer:postOrder.title': 'settings:translations.fields.customer_postOrder_title',
+  'customer:postOrder.loading': 'settings:translations.fields.customer_postOrder_loading',
+  'customer:postOrder.unavailable': 'settings:translations.fields.customer_postOrder_unavailable',
+  'customer:postOrder.notice': 'settings:translations.fields.customer_postOrder_notice',
+  'customer:postOrder.saved': 'settings:translations.fields.customer_postOrder_saved',
+  'customer:postOrder.continue': 'settings:translations.fields.customer_postOrder_continue',
+  'customer:postOrder.retry': 'settings:translations.fields.customer_postOrder_retry',
+
   'customer:language.label': 'settings:translations.fields.customer_language_label',
   'customer:language.automatic': 'settings:translations.fields.customer_language_automatic',
   'customer:language.failure': 'settings:translations.fields.customer_language_failure',
@@ -195,6 +203,13 @@ export const customerWordingLabels = {
   'customer:recovery.cartCommitFailed': 'settings:translations.fields.customer_recovery_cartCommitFailed',
   'customer:recovery.undo': 'settings:translations.fields.customer_recovery_undo',
   'customer:recovery.dismissNotification': 'settings:translations.fields.customer_recovery_dismissNotification',
+  'customer:recovery.repairRequired': 'settings:translations.fields.customer_recovery_repairRequired',
+  'customer:recovery.repairHelp': 'settings:translations.fields.customer_recovery_repairHelp',
+  'customer:recovery.startNew': 'settings:translations.fields.customer_recovery_startNew',
+  'customer:recovery.removeGroup': 'settings:translations.fields.customer_recovery_removeGroup',
+  'customer:recovery.removeAll': 'settings:translations.fields.customer_recovery_removeAll',
+  'customer:recovery.confirmRemoval': 'settings:translations.fields.customer_recovery_confirmRemoval',
+  'customer:recovery.remainingItems': 'settings:translations.fields.customer_recovery_remainingItems',
   'common:actions.save': 'settings:translations.fields.common_actions_save',
   'common:actions.cancel': 'settings:translations.fields.common_actions_cancel',
   'common:actions.close': 'settings:translations.fields.common_actions_close',

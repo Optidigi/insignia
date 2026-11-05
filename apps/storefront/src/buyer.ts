@@ -1,4 +1,4 @@
-import { parseBuyerResponse } from '@insignia/contracts';
+import { type MerchantCustomerWordingView, parseBuyerResponse, type SelectedProductSetup } from '@insignia/contracts';
 import { type GeometryV1, projectScene, validateGeometry } from '@insignia/visualizer/geometry';
 import { type CartBucket, type CartMutationIntent, parseCartMutationIntent } from './cart.ts';
 export type DesiredGroup = {
@@ -11,6 +11,7 @@ export type DesiredGroup = {
       methodId: string;
       stepId: string;
       artwork: { kind: 'revision'; revisionId: string } | { kind: 'deferred'; intentId: string };
+      position?: { xMicros: number; yMicros: number };
     }[];
     options: { optionId: string; valueId: string }[];
   };
@@ -31,7 +32,18 @@ export type BuyerConfig = {
   }[];
   steps: { id: string; label: string }[];
   options: { id: string; label: string; values: { id: string; label: string }[] }[];
-  variants: { id: string; label: string; available: boolean }[];
+  variants: {
+    id: string;
+    label: string;
+    available: boolean;
+    selectedOptions?: { name: string; value: string }[];
+    baseUnitMinor?: string;
+  }[];
+  selectedSetup?: SelectedProductSetup;
+  wording?: MerchantCustomerWordingView;
+  shopCurrency?: 'USD' | 'EUR';
+  title?: string;
+  decorationPrices?: { placementId: string; methodId: string; stepId: string; minor: string }[];
   geometry: GeometryV1;
   imageUrls: Record<string, string>;
   ready: boolean;
@@ -46,6 +58,8 @@ export type QuoteProposal = {
   totalMinor: string;
   groups: {
     productId: string;
+    canonicalIdentitySha256?: string;
+    selection?: DesiredGroup;
     quantity: number;
     setupMinor: string;
     customizationUnitMinor: string;
@@ -105,18 +119,25 @@ export function createBuyerApi({
   productId,
   fetchImpl = fetch,
   storage,
+  country,
 }: {
   proxyBase: string;
   productId: string;
+  country?: string;
   fetchImpl?: typeof fetch;
   storage?: Pick<Storage, 'getItem' | 'setItem'>;
 }) {
   if (!/^\/(?:[A-Za-z0-9_-]+\/)*apps\/[a-z0-9-]{1,64}$/.test(proxyBase) || !/^[1-9][0-9]{0,19}$/.test(productId))
     throw new Error('Buyer configuration unavailable');
   let session: Promise<{ capability: string; sessionId: string; expiresAt: string }> | undefined;
-  async function request<T>(url: string, body?: unknown, signal?: AbortSignal): Promise<T> {
+  async function request<T>(
+    url: string,
+    body?: unknown,
+    signal?: AbortSignal,
+    method: 'POST' | 'PUT' = 'POST',
+  ): Promise<T> {
     const response = await fetchImpl(url, {
-      method: body === undefined ? 'GET' : 'POST',
+      method: body === undefined ? 'GET' : method,
       // Shopify's storefront access gate needs its same-origin cookie.
       // Proxy signature and private capability still authorize Insignia requests.
       credentials: 'same-origin',
@@ -209,12 +230,21 @@ export function createBuyerApi({
   return {
     config: (signal?: AbortSignal, targetProduct = productId) => {
       if (!/^[1-9][0-9]{0,19}$/.test(targetProduct)) throw new Error('Invalid product');
-      return request<BuyerConfig>(`${proxyBase}/v1/config?productId=${targetProduct}`, undefined, signal);
+      return request<BuyerConfig>(
+        `${proxyBase}/v1/config?productId=${targetProduct}${country && /^[A-Z]{2}$/.test(country) ? `&country=${country}` : ''}`,
+        undefined,
+        signal,
+      );
     },
-    async private<T>(path: string, body: Record<string, unknown>, signal?: AbortSignal) {
+    async private<T>(
+      path: string,
+      body: Record<string, unknown>,
+      signal?: AbortSignal,
+      method: 'POST' | 'PUT' = 'POST',
+    ) {
       if (!/^[a-z-]+(?:\/[a-zA-Z0-9-]+)*(?:\/[a-z-]+)?$/.test(path)) throw new Error('Invalid buyer action');
       const token = await grant();
-      return request<T>(`${proxyBase}/v1/${path}`, { ...body, capability: token.capability }, signal);
+      return request<T>(`${proxyBase}/v1/${path}`, { ...body, capability: token.capability }, signal, method);
     },
     artwork: async <T>(path: string, init: RequestInit = {}): Promise<T> => {
       if (!/^\/api\/artwork(?:\/[a-f0-9-]+\/(?:complete|status|preview))?$/.test(path))
@@ -295,7 +325,9 @@ export function buildBuyerScene(input: {
   viewId: string;
   variantId?: string;
   selectedPlacementId?: string;
-  placements: ReadonlyArray<Pick<DesiredGroup['design']['placements'][number], 'placementId' | 'stepId' | 'artwork'>>;
+  placements: ReadonlyArray<
+    Pick<DesiredGroup['design']['placements'][number], 'placementId' | 'stepId' | 'artwork' | 'position'>
+  >;
   previews: Readonly<Record<string, { url: string; aspectRatio: number }>>;
   imageUrls: Readonly<Record<string, string>>;
 }) {
@@ -331,6 +363,7 @@ export function buildBuyerScene(input: {
         variantId: input.variantId,
         selectedPlacementId: placement.placementId,
         selectedStepId: placement.stepId,
+        ...(placement.position ? { artworkPosition: placement.position } : {}),
         artwork,
       },
       viewport,

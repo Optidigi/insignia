@@ -76,3 +76,22 @@ test('retention loss stays recent history and never becomes an invented merchant
     'malformed response must not turn into empty orders',
   );
 });
+
+test('Home uses exact whole-store aggregates and cannot present unavailable evidence as zero', async () => {
+  const { homeStatisticsFromAggregate } = await import('../../src/shared/merchant-home-source.ts');
+  const value = { version: 'purchase-statistics-v1', timeZone: 'Europe/Amsterdam', periodDays: 30, observedAt: '2026-11-05T12:00:00Z', available: true, series: [
+    { day: '2026-11-05', orders: '3', items: '9007199254740993', productIds: ['a', 'b'] },
+    { day: '2026-11-04', orders: '2', items: '7', productIds: ['a'] },
+    { day: '2026-10-01', orders: '1', items: '5', productIds: ['c'] },
+  ] };
+  const result = homeStatisticsFromAggregate(value);
+  assert.equal(result?.state, 'ready');
+  if (result?.state !== 'ready') throw new Error('Expected complete aggregate');
+  assert.equal(result.customizedOrders, 5);
+  assert.equal(result.customizedItems, 9007199254741000n);
+  assert.equal(result.productsOrdered, 2);
+  assert.equal(result.previousPeriod?.customizedOrders, 1);
+  assert.equal(result.series?.length, 30);
+  assert.equal(homeStatisticsFromAggregate({ ...value, available: false }), undefined);
+  assert.equal(homeStatisticsFromAggregate({ ...value, series: [{ ...value.series[0], orders: '9007199254740993' }] }), undefined);
+});

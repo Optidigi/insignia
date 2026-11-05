@@ -1,38 +1,51 @@
 ---
-import '../styles/admin-editor.css';
-import AdminNavigation from '../components/AdminNavigation.astro';
-import AdminPageSkeleton from '../components/AdminPageSkeleton';
+import '../../../../frontend/admin/src/styles/admin-editor.css';
+import AdminNavigation from '../../../../frontend/admin/src/components/AdminNavigation.astro';
+import AdminPageSkeleton from '../../../../frontend/admin/src/components/AdminPageSkeleton';
+import { createAdminTranslator, type AdminMessageKey } from '@insignia/ui-localization/admin';
 
 interface Props {
-  title: string;
+  title?: string;
+  titleKey?: Extract<AdminMessageKey, `admin-shell:titles.${string}`>;
   apiKey?: string;
   ready?: boolean;
 }
 const { title, apiKey, ready = false } = Astro.props;
+const titleKey = Astro.props.titleKey ?? (title === 'Products' ? 'admin-shell:titles.products' : title === 'Product configuration' ? 'admin-shell:titles.configuration' : 'admin-shell:titles.settings');
+const requestedLocale = Astro.url.searchParams.get('locale');
+const localization = createAdminTranslator(requestedLocale);
+const { t } = localization;
 ---
 <!doctype html>
-<html lang="en" data-admin-ready={ready ? 'true' : 'false'}>
+<html lang={localization.lang} dir={localization.dir} data-admin-requested-locale={localization.canonicalRequestedLocale ?? undefined} data-admin-locale-ready={ready ? 'true' : 'false'} data-admin-title-key={titleKey} data-admin-ready={ready ? 'true' : 'false'} data-admin-content-ready={ready ? 'true' : undefined}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="referrer" content="no-referrer" />
     {apiKey && <meta name="shopify-api-key" content={apiKey} />}
-    <title>{title} · Insignia</title>
+    <title>{localization.canonicalRequestedLocale ? t('admin-shell:pageTitle', { title: t(titleKey) }) : 'Insignia'}</title>
+    <style is:inline>
+      /* Keep server-rendered controls out of the first paint until the runtime is ready. */
+      html:not([data-admin-ready="true"]) #admin-route-content { visibility: hidden; pointer-events: none; }
+      html[data-admin-locale-ready="false"] s-app-nav { visibility: hidden; }
+    </style>
     {apiKey && <script is:inline src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>}
-    <script is:inline defer src="https://cdn.shopify.com/shopifycloud/polaris-1.1.js"></script>
-  </head>
-  <body>
-    {apiKey && <AdminNavigation />}
-    {!ready && <div id="admin-route-skeleton">
-      <AdminPageSkeleton pathname={Astro.url.pathname} />
-    </div>}
-    {!ready && <div id="admin-route-failure" hidden>
-      <s-banner tone="critical" heading="Interface unavailable">Reopen Insignia from Shopify Admin to try again.</s-banner>
-    </div>}
-    <div id="admin-route-content" inert={!ready}><slot /></div>
     <script>
-      import { installAdminNavigation } from '../shared/admin-navigation';
+      import { installAdminNavigation } from '../../../../frontend/admin/src/shared/admin-navigation';
+      import { installAdminLocalization } from '../../../../frontend/admin/src/shared/admin-i18n';
+      installAdminLocalization(document);
       if (document.documentElement.dataset.adminReady !== 'true') installAdminNavigation();
     </script>
+    <script is:inline async src="https://cdn.shopify.com/shopifycloud/polaris-2.0-rc.js"></script>
+  </head>
+  <body>
+    {apiKey && <AdminNavigation locale={localization.canonicalRequestedLocale} />}
+    {!ready && <div id="admin-route-skeleton" aria-hidden={localization.canonicalRequestedLocale ? undefined : 'true'}>
+      <AdminPageSkeleton pathname={Astro.url.pathname} search={Astro.url.searchParams.has('section') ? '?section' : ''} locale={localization.canonicalRequestedLocale} client:polaris />
+    </div>}
+    {!ready && <div id="admin-route-failure" hidden>
+      <s-banner tone="critical" heading={t('admin-shell:failure.heading')} data-admin-failure-heading><span data-admin-failure-body>{t('admin-shell:failure.body')}</span></s-banner>
+    </div>}
+    <div id="admin-route-content" inert={!ready}><slot /></div>
   </body>
 </html>

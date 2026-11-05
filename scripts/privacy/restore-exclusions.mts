@@ -72,6 +72,12 @@ const tables = [
   'shops',
   'installation_generations',
   'purchase_orders',
+  'customer_artwork_epoch',
+  'customer_artwork_grants',
+  'customer_artwork_submissions',
+  'customer_artwork_notifications',
+  'merchant_preferences',
+  'purchase_order_labels',
   'purchase_bindings',
   'purchase_offer_payloads',
   'purchase_design_payloads',
@@ -102,7 +108,13 @@ const functions = [
   'recover_uninstall_privacy',
   'recover_pending_uninstall_privacy',
   'uninstall_privacy_status',
+  'plan_customer_artwork_notification',
+  'erase_customer_artwork_for_payload',
+  'erase_customer_artwork_authority',
   'erase_method_catalog_for_shop_privacy',
+  'erase_merchant_preferences_for_shop_privacy',
+  'erase_purchase_labels_for_order_privacy',
+  'erase_purchase_labels_for_shop_privacy',
   'enforce_payload_collection_time',
   'guard_webhook_obligation_facts',
 ];
@@ -587,6 +599,11 @@ export async function importErasureExclusions(pool: Pick<Pool, 'connect'>, envel
       fail('target is not offline');
 
     if ((await schemaIdentity(client)) !== data.schemaIdentity) fail('schema mismatch');
+    // Restoring an old backup cannot replay prior customer capabilities or email delivery intents.
+    await client.query('DELETE FROM public.customer_artwork_notifications');
+    await client.query('DELETE FROM public.customer_artwork_submissions');
+    await client.query('DELETE FROM public.customer_artwork_grants');
+    await client.query('UPDATE public.customer_artwork_epoch SET value=gen_random_uuid() WHERE singleton=true');
     for (const shop of data.shops)
       await client.query('SELECT 1 FROM public.shops WHERE shop_id=$1 FOR UPDATE', [shop.shop_id]);
     // Identity uses copied immutable installation UUIDs, not a newly asserted current installation.

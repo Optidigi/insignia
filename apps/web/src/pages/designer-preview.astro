@@ -1,0 +1,11 @@
+---
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Content-Security-Policy', "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src https: data: blob:; connect-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+---
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Insignia preview</title></head>
+<body><script>
+import { mountMerchantDesignerPreview } from '../../../storefront/src/designer/admin-preview';
+mountMerchantDesignerPreview();
+</script></body></html>

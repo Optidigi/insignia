@@ -1054,7 +1054,28 @@
       "placement": "Placement",
       "size": "Size"
     },
-    "checkAppearanceOnView": "Check {{appearanceName}} on {{viewName}}."
+    "checkAppearanceOnView": "Check {{appearanceName}} on {{viewName}}.",
+    "realPublicationPending": "Publication is still processing. Continue the original request to check its status.",
+    "realPublicationNotice": "Publishing updates your Shopify store after validation and activation complete.",
+    "realSaveFailed": "Your changes could not be confirmed. Retry the original request before saving different changes.",
+    "realPublished": "Published",
+    "realDraftChanged": "Inherited defaults changed. Review the saved changes before publishing again.",
+    "realCurrencyReview": "The shop currency is now {{currency}}. Review every price before saving a new proposal.",
+    "realReviewCurrency": "Review prices in the shop currency",
+    "realCalibrateImage": "Calibrate image",
+    "realDimensionsRequired": "Calibrate this image to define production dimensions.",
+    "realReviewMethods": "Review unassigned or deleted methods before publication.",
+    "realKeepMethod": "Keep method",
+    "realRemoveMethod": "Remove method",
+    "realCapacityExceeded": "This configuration exceeds the supported limits: 16 views, 32 placements, 32 methods, 64 decoration sizes, 250 variants, and 100 image or alignment overrides per view or placement.",
+    "realReloadDraft": "Reload current draft",
+    "realDraftSaved": "Draft saved. Publish separately to update the storefront.",
+    "realPublicationFailed": "Publication failed. Review the saved draft and publication status before trying again.",
+    "realPublicationBlocked": "Publication requires review.",
+    "legacyWidthScale": "Width scale (%)",
+    "legacyHeightScale": "Height scale (%)",
+    "realHistoricalPricingReview": "This configuration uses prices that this editor cannot represent safely. Its saved draft and published prices remain unchanged. Review the pricing before converting it.",
+    "realHistoricalAppearanceReview": "Existing variant photos or placement alignments need review against the complete Shopify catalogue. The saved configuration remains unchanged."
   },
   "placementValidation": {
     "errors": {

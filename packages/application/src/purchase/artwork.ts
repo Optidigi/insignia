@@ -98,6 +98,7 @@ export async function purchaseArtworkDownload(
     expiresAt: expiresAt.toISOString(),
     sha256: manifest.sha256,
     byteLength: manifest.byteLength,
+    contentType: manifest.mimeType,
   };
 }
 /** Browser previews use the verified raster derivative; private SVG originals are download-only. */

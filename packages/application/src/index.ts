@@ -20,6 +20,8 @@ export * from './publication/availability-v2.js';
 export * from './publication/availability-v3.js';
 export * from './publication/projection.js';
 export * from './purchase/artwork.js';
+export * from './purchase/customer-artwork.js';
+export * from './purchase/customer-artwork-notifications.js';
 export * from './purchase/model.js';
 export * from './purchase/reconcile.js';
 export * from './quote/accept-quote.js';

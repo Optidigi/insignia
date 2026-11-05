@@ -1,5 +1,5 @@
 /** UI read models only. These do not extend the server/API contract. */
-import { PurchaseListViewSchema as BackendPurchaseListSchema, PurchasePrivateUrlSchema } from '@insignia/contracts';
+import { PurchaseListViewSchema as BackendPurchaseListSchema } from '@insignia/contracts';
 import { z } from 'zod';
 
 export const PurchaseListViewSchema = BackendPurchaseListSchema.extend({
@@ -18,13 +18,5 @@ export const PurchaseListViewSchema = BackendPurchaseListSchema.extend({
     .optional(),
 });
 
-/** Archive preparation fails closed until the backend supplies verified original metadata. */
-export const PurchaseOriginalDownloadSchema = PurchasePrivateUrlSchema.extend({
-  sha256: z.string().regex(/^[a-f0-9]{64}$/),
-  byteLength: z
-    .number()
-    .int()
-    .positive()
-    .max(5 * 1024 * 1024),
-  contentType: z.enum(['image/png', 'image/jpeg', 'image/svg+xml']),
-});
+/** Verified original metadata is owned by the same server wire contract. */
+export { PurchaseOriginalDownloadSchema } from '@insignia/contracts';

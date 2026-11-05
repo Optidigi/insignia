@@ -31,14 +31,14 @@
     "changeSearchFilterPage": "Ändern Sie die Suche oder den Filter oder prüfen Sie eine andere Seite."
   },
   "search": {
-    "label": "Bestellungen auf dieser Seite suchen",
-    "placeholder": "Diese Seite durchsuchen",
+    "label": "Bestellungen suchen",
+    "placeholder": "Bestellungen suchen",
     "results_one": "{{formattedCount}} Bestellung auf dieser Seite angezeigt.",
     "results_other": "{{formattedCount}} Bestellungen auf dieser Seite angezeigt."
   },
   "filters": {
     "filterOrders": "Bestellungen filtern",
-    "artworkStatus": "Motivstatus auf dieser Seite",
+    "artworkStatus": "Grafikstatus",
     "editArtworkStatus": "Filter für Motivstatus bearbeiten",
     "editOrderDate": "Bestelldatumsfilter bearbeiten",
     "orderDateRange": "Bestelldatum: {{from}} – {{to}}"
@@ -268,6 +268,23 @@
       "refundDetails": "Erstattungsdetails",
       "purchasedItem": "Gekaufter Artikel",
       "refundLine": "{{itemName}}: {{formattedQuantity}} zur Erstattung erfasst, {{amount}}"
+    },
+    "customerLink": {
+      "copy": "Upload-Link für Kunden kopieren",
+      "help": "Teilen Sie diesen sicheren Link, damit der Kunde fehlende Druckdaten auch vor der Zahlung hochladen kann.",
+      "copied": "Upload-Link kopiert. Teilen Sie ihn vertraulich mit dem Kunden.",
+      "failed": "Der Link konnte nicht kopiert werden. Prüfen Sie den Zugriff auf die Zwischenablage und versuchen Sie es erneut oder laden Sie die Druckdaten hier hoch."
+    },
+    "commands": {
+      "refresh": "Aktualisieren",
+      "reconcile": "Bestellaktualisierungen in Shopify prüfen",
+      "lock": "Druckdaten sperren",
+      "lockHeading": "Druckdaten für die Produktion sperren?",
+      "lockBody": "Dadurch werden die aktuellen Druckdaten festgeschrieben. Danach ist kein Austausch mehr möglich.",
+      "locked": "Druckdaten gesperrt.",
+      "requested": "Prüfung angefordert. Nach der Verarbeitung aktualisieren, um bestätigte Shopify-Daten zu sehen.",
+      "changed": "Druckdaten wurden geändert. Aktualisiere die Bestellung, bevor du fortfährst.",
+      "failed": "Die Aktion konnte nicht bestätigt werden. Aktualisiere die Bestellung, bevor du fortfährst."
     }
   }
 }

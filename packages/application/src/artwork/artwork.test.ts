@@ -305,3 +305,49 @@ describe('private artwork lifecycle at the application seam', () => {
     expect(calls).toEqual(['admitted']);
   });
 });
+
+it('post-order authority bounds upload/original/preview expiry without extending the original resource deadline', async () => {
+  const now = new Date('2026-11-05T12:00:00Z');
+  const deadline = new Date(+now + 60000);
+  const scope = {
+    kind: 'guest' as const,
+    shopId: 'shop',
+    installationGeneration: '1',
+    ownerHash: 'a'.repeat(64),
+    authorityExpiresAt: deadline,
+  };
+  let created: ArtworkRecord | undefined;
+  let uploadExpiry: Date | undefined;
+  let previewExpiry: Date | undefined;
+  const service = createArtworkService({
+    clock: () => now,
+    inspect: async () => {
+      throw new Error('unused');
+    },
+    store: artworkStore({
+      create: async (row) => {
+        created = row;
+        return row;
+      },
+      get: async () => artworkRow({ state: 'USABLE', manifest: artworkManifest, expiresAt: new Date(+now + 86400000) }),
+    }),
+    storage: artworkStorage({
+      presignUpload: async (value) => {
+        uploadExpiry = value.expiresAt;
+        return { url: 'https://objects.example.test/upload', headers: {} };
+      },
+      presignRead: async (value) => {
+        previewExpiry = value.expiresAt;
+        return 'https://objects.example.test/preview';
+      },
+    }),
+  });
+  await service.begin(scope, { contentType: 'image/png', byteLength: 3 });
+  expect(created?.expiresAt).toEqual(deadline);
+  expect(uploadExpiry).toEqual(deadline);
+  await service.preview(scope, 'asset');
+  expect(previewExpiry).toEqual(deadline);
+  await expect(
+    service.begin({ ...scope, authorityExpiresAt: now }, { contentType: 'image/png', byteLength: 3 }),
+  ).rejects.toMatchObject({ code: 'EXPIRED' });
+});

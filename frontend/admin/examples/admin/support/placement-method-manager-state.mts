@@ -24,6 +24,7 @@ export interface PlacementMethodManagerState {
   methods: EditorMethod[];
   draft: PlacementMethodChanges;
   editedMethodIds: string[];
+  editedPriceCells: { sizeId: string; methodId: string }[];
   catalog: PlacementMethodCatalog;
   screen: PlacementMethodManagerScreen;
   createName: string;
@@ -34,6 +35,7 @@ export interface PlacementMethodManagerState {
     change: PlacementMethodChanges;
     choices: EditorMethod[];
     editedIds: string[];
+    editedCells: { sizeId: string; methodId: string }[];
   };
 }
 
@@ -62,6 +64,7 @@ export function createPlacementMethodManagerState(
     methods: options.methods.map((method) => ({ ...method })),
     draft: structuredClone({ methodIds: options.placement.methodIds, sizes: options.placement.sizes }),
     editedMethodIds: [],
+    editedPriceCells: [],
     catalog: options.catalogLoaded
       ? { kind: 'ready', attempt: 0, requestId: 0 }
       : { kind: 'loading', attempt: 0, requestId: 0 },
@@ -143,6 +146,7 @@ function applyStagedMethods(state: PlacementMethodManagerState): PlacementMethod
       change: structuredClone(state.draft),
       choices: state.methods.map((method) => ({ ...method })),
       editedIds: [...state.editedMethodIds],
+      editedCells: state.editedPriceCells.map((cell) => ({ ...cell })),
     },
   };
 }
@@ -204,6 +208,7 @@ export function placementMethodManagerReducer(
       delete errors[key];
       return {
         ...state,
+        editedPriceCells: state.editedPriceCells.some((cell) => cell.sizeId === event.sizeId && cell.methodId === event.methodId) ? state.editedPriceCells : [...state.editedPriceCells, { sizeId: event.sizeId, methodId: event.methodId }],
         draft: {
           ...state.draft,
           sizes: state.draft.sizes.map((size) =>

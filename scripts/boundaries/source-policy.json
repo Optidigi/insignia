@@ -3,6 +3,7 @@
   "projects": [
     "apps/storefront/tsconfig.json",
     "apps/storefront/tsconfig.test.json",
+    "apps/storefront/tsconfig.test-browser.json",
     "apps/web/tsconfig.admin-test.json",
     "apps/web/tsconfig.http-test.json",
     "apps/web/tsconfig.json",

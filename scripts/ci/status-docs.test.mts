@@ -244,5 +244,16 @@ test('foundation includes frontend and workspace inputs and executes the fronten
   const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
   assert.ok(manifest.scripts.check.includes('corepack pnpm check:ui'));
   assert.ok(manifest.scripts['check:ui'].includes("--filter './frontend/**' test"));
-  assert.ok(manifest.scripts['check:ui'].includes('--filter @insignia/designer build:library'));
+  const designer = JSON.parse(readFileSync(join(root, 'frontend/designer/package.json'), 'utf8'));
+  assert.ok(designer.scripts.build.includes('build:library'));
+  assert.ok(designer.scripts.test.includes('scripts/*-check.mts'));
+  assert.ok(
+    readFileSync(join(root, 'frontend/designer/scripts/library-artifact-check.mts'), 'utf8').includes('dist-library'),
+  );
+  assert.ok(manifest.scripts.build.includes('pnpm -r build'));
+});
+test('runtime image qualification includes selected frontend and storefront source inputs', () => {
+  const workflow = readFileSync(join(root, '.github/workflows/runtime.yml'), 'utf8');
+  for (const path of ['frontend/**', 'apps/storefront/**'])
+    assert.ok(workflow.includes(`      - '${path}'`), `Missing production bundle input: ${path}`);
 });

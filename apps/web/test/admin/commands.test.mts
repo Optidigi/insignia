@@ -265,3 +265,29 @@ test('generic exchange/provider/database failures do not gain the fresh-token re
     assert.deepEqual(await response.json(), { error: 'Authentication unavailable' });
   }
 });
+
+test('product configuration filtering reaches the full catalog query boundary and validates cursor/limit input', async () => {
+  let input: unknown;
+  const h = deps({
+    catalog: {
+      list: async (_actor, query) => {
+        input = query;
+        return { products: [], nextCursor: null };
+      },
+    },
+  });
+  assert.equal(
+    (
+      await handleAdminRequest(request('/api/admin/products?q=shirt&configuration=published&limit=10'), h.services, {
+        kind: 'list',
+      })
+    ).status,
+    200,
+  );
+  assert.deepEqual(input, { query: 'shirt', cursor: null, limit: 10, configuration: 'published' });
+  for (const query of ['configuration=garbage', 'limit=100', 'limit=0', 'cursor=' + 'a'.repeat(513)])
+    assert.equal(
+      (await handleAdminRequest(request(`/api/admin/products?${query}`), h.services, { kind: 'list' })).status,
+      422,
+    );
+});

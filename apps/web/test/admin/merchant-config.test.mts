@@ -10,6 +10,7 @@ import { createMerchantConfigService } from '../../src/server/merchant-config.ts
 import { fixtureCore } from './support/durable-core.mts';
 import { adminServices, configRecord, fixtureTransaction, record, required, unexpected } from './support/fixtures.mts';
 import { type FixtureDraft, readConfig, readGeometry } from './support/merchant-draft.mts';
+import { captureSyntheticPublicationPreviews } from './support/publication-previews.mts';
 
 const database = process.env.DATABASE_URL;
 const productA = 'gid://shopify/Product/111';
@@ -20,7 +21,7 @@ const sharedId = 's'.repeat(128);
 function baseDraft(): FixtureDraft {
   return {
     version: 'm5-merchant-draft-v1',
-    mode: 'optional',
+    mode: 'required',
     shopCurrency: 'USD',
     methods: [{ id: sharedId }],
     placements: [{ id: sharedId, allowedMethodIds: [sharedId], allowedStepIds: [sharedId], logoLaterAllowed: true }],
@@ -55,7 +56,8 @@ function baseDraft(): FixtureDraft {
           ],
         },
       ],
-      steps: [{ id: sharedId, widthFraction: 0.5, heightFraction: 0.5 }],
+      // Explicit synthetic production dimensions, independent of preview pixel geometry.
+      steps: [{ id: sharedId, widthFraction: 0.5, heightFraction: 0.5, physicalMm: { width: 100, height: 75 } }],
     },
   };
 }
@@ -316,6 +318,7 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
     async eligibility() {
       return { allowed: true, reason: null };
     },
+    capturePublicationPreviews: (actor, input) => captureSyntheticPublicationPreviews(core, actor, input),
     publication() {
       return {
         async prepare(input) {
@@ -468,15 +471,25 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
     assert.equal(required(copied).draft.labels.methods[sharedId], undefined);
     assert.deepEqual(required(required(required(copied).draft.geometry.views[0]).placements[0]).variantOverrides, []);
     assert.equal(required(required(copied).draft.geometry.views[0]).image, undefined);
+    // Copy remains independent and image-free; add the target's own complete preview before publishing.
+    const copyReady = structuredClone(required(copied).draft);
+    required(copyReady.geometry.views[0]).image = { revisionId: 'product_222', width: 800, height: 1000 };
+    const readyCopy = await service.save(staff, productB, {
+      configId: copy.configId,
+      draftVersion: '1',
+      draft: copyReady,
+      idempotencyKey: 'save-copy-preview',
+    });
+    assert.equal(readyCopy.kind, 'saved');
     const competing = await Promise.all([
       service.publish(staff, productB, {
         configId: copy.configId,
-        draftVersion: '1',
+        draftVersion: readyCopy.draftVersion,
         idempotencyKey: 'publish-copy-race-01',
       }),
       service.publish(staff, productB, {
         configId: copy.configId,
-        draftVersion: '1',
+        draftVersion: readyCopy.draftVersion,
         idempotencyKey: 'publish-copy-race-02',
       }),
     ]);
@@ -512,7 +525,7 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
     }
     const recovered = await service.publish(staff, productB, {
       configId: copy.configId,
-      draftVersion: '1',
+      draftVersion: readyCopy.draftVersion,
       idempotencyKey: winningKey,
     });
     assert.equal(recovered.kind, 'accepted');
@@ -532,7 +545,7 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
     assert.deepEqual(await service.copy(staff, productA, productB, 'copy-key-01'), copy);
     assert.equal(
       MerchantDraftSchema.parse(required((await service.read(staff, productB)).config).draft).mode,
-      'optional',
+      'required',
     );
     failPrepareOnce = true;
     await assert.rejects(
@@ -613,7 +626,10 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
         }),
       ),
     );
-    const newerDraft = { ...changed, mode: 'optional' };
+    const newerDraft = {
+      ...changed,
+      labels: { ...changed.labels, views: { ...changed.labels?.views, 'front-view': 'Updated draft view' } },
+    };
     assert.equal(
       (
         await service.save(staff, productA, {
@@ -660,7 +676,7 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
       );
       await sql.query(
         'INSERT INTO m4_publication_progress (shop_id,config_id,operation_id,phase,mode) VALUES ($1,$2,$3,$4,$5)',
-        [shopId, created.configId, newer.revisionId, 'prepared', 'optional'],
+        [shopId, created.configId, newer.revisionId, 'prepared', 'required'],
       );
       await sql.query('UPDATE product_configs SET publication_sequence=2 WHERE shop_id=$1 AND config_id=$2', [
         shopId,

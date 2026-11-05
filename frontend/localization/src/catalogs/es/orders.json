@@ -33,15 +33,15 @@
     "changeSearchFilterPage": "Cambia la búsqueda o el filtro, o consulta otra página."
   },
   "search": {
-    "label": "Buscar pedidos en esta página",
-    "placeholder": "Buscar en esta página",
+    "label": "Buscar pedidos",
+    "placeholder": "Buscar pedidos",
     "results_one": "Se muestra {{formattedCount}} pedido en esta página.",
     "results_other": "Se muestran {{formattedCount}} pedidos en esta página.",
     "results_many": "Se muestran {{formattedCount}} pedidos en esta página."
   },
   "filters": {
     "filterOrders": "Filtrar pedidos",
-    "artworkStatus": "Estado del diseño en esta página",
+    "artworkStatus": "Estado del diseño",
     "editArtworkStatus": "Editar filtro por estado del diseño",
     "editOrderDate": "Editar filtro por fecha del pedido",
     "orderDateRange": "Fecha del pedido: {{from}} – {{to}}"
@@ -275,6 +275,23 @@
       "refundDetails": "Detalles del reembolso",
       "purchasedItem": "Artículo comprado",
       "refundLine": "{{itemName}}: {{formattedQuantity}} unidades registradas para el reembolso; {{amount}}"
+    },
+    "customerLink": {
+      "copy": "Copiar enlace de carga del cliente",
+      "help": "Comparte este enlace seguro para que el cliente aporte los archivos que faltan, incluso antes del pago.",
+      "copied": "Enlace de carga copiado. Compártelo en privado con el cliente.",
+      "failed": "No se pudo copiar el enlace. Comprueba el acceso al portapapeles y reintenta, o carga los archivos aquí."
+    },
+    "commands": {
+      "refresh": "Actualizar",
+      "reconcile": "Comprobar cambios del pedido en Shopify",
+      "lock": "Bloquear diseño",
+      "lockHeading": "¿Bloquear el diseño para producción?",
+      "lockBody": "Esto fija el diseño actual. Después no será posible sustituirlo.",
+      "locked": "Diseño bloqueado.",
+      "requested": "Comprobación solicitada. Actualiza después del proceso para ver los datos verificados de Shopify.",
+      "changed": "El diseño ha cambiado. Actualiza el pedido antes de continuar.",
+      "failed": "No se pudo confirmar la acción. Actualiza el pedido antes de continuar."
     }
   }
 }

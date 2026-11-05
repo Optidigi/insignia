@@ -9,6 +9,7 @@ import { useEffect, useId, useLayoutEffect, useReducer, useRef, useState } from 
 import AdminDisclosure from '../components/AdminDisclosure';
 import AdminSkeleton from '../components/AdminSkeleton';
 import ArtworkArchiveDownload from '../components/ArtworkArchiveDownload';
+import CustomerArtworkShareLink from '../components/CustomerArtworkShareLink';
 import OriginalArtworkDownload from '../components/OriginalArtworkDownload';
 import PrivatePreviewImage from '../components/PrivatePreviewImage';
 import PurchaseArtworkHistory from '../components/PurchaseArtworkHistory';
@@ -79,6 +80,7 @@ function Placement({
   const identity = JSON.stringify([
     purchase.purchaseId,
     purchase.artworkVersion,
+    purchase.canUploadArtwork,
     placement.currentAssetId,
     placement.currentExpiresAt,
     placement.expired,
@@ -125,6 +127,7 @@ function Placement({
   }, [
     purchase.purchaseId,
     purchase.artworkVersion,
+    purchase.canUploadArtwork,
     placement.currentAssetId,
     placement.currentExpiresAt,
     placement.expired,
@@ -179,7 +182,7 @@ function Placement({
     }
   }
   async function attach() {
-    if (!selected || command.current !== null) return;
+    if (!selected || command.current !== null || disabled || !canAttach) return;
     const current = generation.current;
     const request = ++requestId.current;
     command.current = request;
@@ -221,6 +224,7 @@ function Placement({
       formattedNumber: new Intl.NumberFormat(formatLocale).format(group.placements.indexOf(placement) + 1),
     });
   const canAttach =
+    purchase.canUploadArtwork === true &&
     purchase.lines.length > 0 &&
     purchase.artworkState !== 'ARTWORK_LOCKED' &&
     !purchase.artworkEvents.some((event) => event.kind === 'LOCK') &&
@@ -407,6 +411,11 @@ function Placement({
 function PurchaseArtwork({ purchaseId, returnTo }: { purchaseId: string; returnTo?: string }) {
   const { t, formatLocale } = useAdminLocale();
   const actionsId = useId();
+  const lockId = useId();
+  const [commandPhase, setCommandPhase] = useState<'lock' | 'reconcile' | null>(null);
+  const commandRequest = useRef<symbol | null>(null);
+  const [commandNotice, setCommandNotice] = useState<'locked' | 'requested' | 'changed' | 'failed' | null>(null);
+  const [needsRefresh, setNeedsRefresh] = useState(false);
   const missingTargets = useRef(new Map<string, () => void>());
   const lastMissing = useRef<string | null>(null);
   const [read, dispatchRead] = useReducer(
@@ -424,7 +433,7 @@ function PurchaseArtwork({ purchaseId, returnTo }: { purchaseId: string; returnT
       case 'failed':
         return t(purchase ? 'orders:purchaseArtwork.read.refreshFailed' : 'orders:purchaseArtwork.read.loadFailed');
       default:
-        return '';
+        return commandNotice ? t(`orders:purchaseArtwork.commands.${commandNotice}`) : '';
     }
   })();
   const recordDate = (value: string) =>
@@ -457,7 +466,7 @@ function PurchaseArtwork({ purchaseId, returnTo }: { purchaseId: string; returnT
         return t('orders:payment.unknown');
     }
   };
-  const busy = read.phase === 'loading';
+  const busy = read.phase === 'loading' || commandPhase !== null;
   const [now, setNow] = useState(Date.now);
   const retentionDeadlines =
     purchase?.groups.flatMap((group) => [
@@ -498,6 +507,7 @@ function PurchaseArtwork({ purchaseId, returnTo }: { purchaseId: string; returnT
     }
   }
   async function load(clear = false) {
+    setCommandNotice(null);
     activeRead.current?.abort();
     const controller = new AbortController();
     activeRead.current = controller;
@@ -507,8 +517,11 @@ function PurchaseArtwork({ purchaseId, returnTo }: { purchaseId: string; returnT
       const value = PurchaseViewSchema.parse(
         await authenticatedJson(endpoint(purchaseId), { signal: controller.signal }),
       );
-      if (generation === current.current && !controller.signal.aborted)
+      if (value.purchaseId !== purchaseId) throw new Error('Purchase identity changed');
+      if (generation === current.current && !controller.signal.aborted) {
+        setNeedsRefresh(false);
         dispatchRead({ type: 'read-succeeded', request: generation, value });
+      }
     } catch (error) {
       if (generation !== current.current || controller.signal.aborted) return;
       const status =
@@ -520,9 +533,13 @@ function PurchaseArtwork({ purchaseId, returnTo }: { purchaseId: string; returnT
   }
   useEffect(() => {
     lastMissing.current = null;
+    commandRequest.current = null;
+    setCommandPhase(null);
+    setNeedsRefresh(false);
     void load(true);
     return () => {
       current.current++;
+      commandRequest.current = null;
       activeRead.current?.abort();
     };
   }, [purchaseId]);
@@ -566,6 +583,61 @@ function PurchaseArtwork({ purchaseId, returnTo }: { purchaseId: string; returnT
     jump();
   }
   const shopifyOrderId = purchase?.orderId.match(/^gid:\/\/shopify\/Order\/([1-9][0-9]*)$/)?.[1];
+  const canLock =
+    !!purchase &&
+    purchase.canUploadArtwork === true &&
+    !needsRefresh &&
+    purchase.artworkState === 'READY' &&
+    !purchase.artworkEvents.some((event) => event.kind === 'LOCK') &&
+    purchase.lines.length > 0 &&
+    purchase.groups.length > 0 &&
+    purchase.groups.every((group) => Date.parse(group.payloadExpiresAt) > Date.now()) &&
+    artworkStatus(purchase, Date.now()) === 'complete';
+  async function command(kind: 'lock' | 'reconcile') {
+    if (
+      !purchase ||
+      busy ||
+      commandRequest.current ||
+      needsRefresh ||
+      purchase.canUploadArtwork !== true ||
+      (kind === 'lock' && !canLock)
+    )
+      return;
+    const token = Symbol(kind),
+      generation = current.current,
+      expectedPurchase = purchase.purchaseId;
+    commandRequest.current = token;
+    setCommandPhase(kind);
+    setCommandNotice(null);
+    try {
+      const result = PurchaseViewSchema.parse(
+        await authenticatedJson(`${endpoint(expectedPurchase)}/${kind}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(kind === 'lock' ? { expectedVersion: purchase.artworkVersion } : {}),
+        }),
+      );
+      if (generation !== current.current || commandRequest.current !== token) return;
+      if (result.purchaseId !== expectedPurchase) throw new Error('Purchase identity changed');
+      acceptArtworkChange(result);
+      setNeedsRefresh(false);
+      setCommandNotice(kind === 'lock' ? 'locked' : 'requested');
+    } catch (error) {
+      if (generation === current.current && commandRequest.current === token) {
+        setNeedsRefresh(true);
+        setCommandNotice(
+          error && typeof error === 'object' && 'status' in error && error.status === 409 ? 'changed' : 'failed',
+        );
+        deny(error);
+      }
+    } finally {
+      if (commandRequest.current === token) {
+        commandRequest.current = null;
+        setCommandPhase(null);
+      }
+    }
+  }
+
   return (
     <s-page inlineSize="base" heading={t('orders:pageTitle')}>
       <s-link slot="breadcrumb-actions" href={ordersReturnPath(returnTo ?? null)}>
@@ -585,7 +657,7 @@ function PurchaseArtwork({ purchaseId, returnTo }: { purchaseId: string; returnT
             deny={deny}
             triggerSlot="secondary-actions"
           />
-          {shopifyOrderId && (
+          {purchase && (
             <s-button
               slot="secondary-actions"
               variant="secondary"
@@ -683,14 +755,52 @@ function PurchaseArtwork({ purchaseId, returnTo }: { purchaseId: string; returnT
                     </s-button>
                   </s-banner>
                 )}
-                {shopifyOrderId && (
-                  <s-menu id={actionsId} accessibilityLabel={t('orders:purchaseArtwork.actions.orderActions')}>
+                <CustomerArtworkShareLink
+                  key={`${purchase.purchaseId}:${purchase.artworkVersion}`}
+                  purchase={purchase}
+                  disabled={busy || needsRefresh}
+                  deny={deny}
+                />
+                <s-menu id={actionsId} accessibilityLabel={t('orders:purchaseArtwork.actions.orderActions')}>
+                  {shopifyOrderId && (
                     <s-button href={`shopify://admin/orders/${shopifyOrderId}`} target="_top">
                       {t('orders:purchaseArtwork.actions.viewInShopify')}
                     </s-button>
-                  </s-menu>
-                )}
-                {purchase.lines.length === 0 || purchase.groups.length === 0 ? (
+                  )}
+                  <s-button disabled={busy || denied} onClick={() => void load()}>
+                    {t('orders:purchaseArtwork.commands.refresh')}
+                  </s-button>
+                  <s-button
+                    disabled={busy || denied || needsRefresh || purchase.canUploadArtwork !== true}
+                    onClick={() => void command('reconcile')}
+                  >
+                    {t('orders:purchaseArtwork.commands.reconcile')}
+                  </s-button>
+                  <s-button disabled={busy || denied || !canLock} commandFor={lockId}>
+                    {t('orders:purchaseArtwork.commands.lock')}
+                  </s-button>
+                </s-menu>
+                <s-modal id={lockId} heading={t('orders:purchaseArtwork.commands.lockHeading')}>
+                  <s-paragraph>{t('orders:purchaseArtwork.commands.lockBody')}</s-paragraph>
+                  <s-button slot="secondary-actions" commandFor={lockId} command="--hide">
+                    {t('common:actions.cancel')}
+                  </s-button>
+                  <s-button
+                    slot="primary-action"
+                    variant="primary"
+                    disabled={busy || !canLock}
+                    commandFor={lockId}
+                    command="--hide"
+                    onClick={() => void command('lock')}
+                  >
+                    {t('orders:purchaseArtwork.commands.lock')}
+                  </s-button>
+                </s-modal>
+                {(purchase.lines.length === 0 || purchase.groups.length === 0) &&
+                !(
+                  purchase.artworkState === 'ERASED' &&
+                  !purchase.groups.some((group) => Date.parse(group.payloadExpiresAt) > Date.now())
+                ) ? (
                   <s-section>
                     <s-paragraph>{t('orders:purchaseArtwork.verification.customizationUnavailable')}</s-paragraph>
                   </s-section>
@@ -780,7 +890,7 @@ function PurchaseArtwork({ purchaseId, returnTo }: { purchaseId: string; returnT
                                   placement={placement}
                                   changed={acceptArtworkChange}
                                   deny={deny}
-                                  disabled={busy || denied}
+                                  disabled={busy || denied || needsRefresh}
                                   onJumpTarget={
                                     missingArtwork.includes(`${group.index}:${placement.id}`)
                                       ? (target) => {

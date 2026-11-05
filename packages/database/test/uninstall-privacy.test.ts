@@ -27,6 +27,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('independent generation-only u
         externalInstallationId: 'gid://shopify/AppInstallation/7',
       }),
     );
+    await sql`INSERT INTO merchant_preferences(shop_id,guidance_version,wording_version) VALUES(${shopId},5,7)`.execute(
+      db,
+    );
     const hooks = createShopifyWebhookRepository(db);
     const uninstall = await hooks.receive({
       shopDomain,
@@ -56,6 +59,17 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('independent generation-only u
     );
     return { shopId, shopDomain, shopifyShopId, uninstall: uninstall.id, privacy: privacy.id, asset };
   }
+  async function orderLabel(f: Awaited<ReturnType<typeof fixture>>, generation: string, name: string) {
+    const purchase = randomUUID();
+    const order = `gid://shopify/Order/${BigInt(f.shopifyShopId) * 10n + BigInt(generation)}`;
+    await sql`INSERT INTO purchase_orders(purchase_id,shop_id,installation_generation,order_id,order_created_at,currency,original_total_minor,is_test) VALUES(${purchase}::uuid,${f.shopId},${generation}::bigint,${order},clock_timestamp(),'USD',2001,false)`.execute(
+      db,
+    );
+    await sql`INSERT INTO purchase_order_labels(shop_id,purchase_id,order_name) VALUES(${f.shopId},${purchase}::uuid,${name})`.execute(
+      db,
+    );
+    return purchase;
+  }
   async function qualify(
     f: Awaited<ReturnType<typeof fixture>>,
     generation = '1',
@@ -74,6 +88,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('independent generation-only u
   }
   it('generic receipt remains held, then qualified inactive generation stages cleanup without changing original BLOCKED', async () => {
     const f = await fixture();
+    const purchase = await orderLabel(f, '1', '#before-recovery');
     const repo = createUninstallPrivacyRepository(db);
     const originalDates = (
       await sql`SELECT collected_at,expires_at,upload_until FROM artwork_assets WHERE asset_id=${f.asset}::uuid`.execute(
@@ -90,6 +105,17 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('independent generation-only u
       installationGeneration: '1',
     });
     expect(await repo.recover(f.privacy, f.uninstall)).toMatchObject({ installationGeneration: '1' });
+    expect((await sql`SELECT * FROM merchant_preferences WHERE shop_id=${f.shopId}`.execute(db)).rows).toEqual([]);
+    expect(
+      (await sql`SELECT * FROM purchase_order_labels WHERE purchase_id=${purchase}::uuid`.execute(db)).rows,
+    ).toEqual([]);
+    expect(
+      (
+        await sql`SELECT original_total_minor::text AS total FROM purchase_orders WHERE purchase_id=${purchase}::uuid`.execute(
+          db,
+        )
+      ).rows,
+    ).toEqual([{ total: '2001' }]);
     expect(
       (
         await sql<{
@@ -128,10 +154,34 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('independent generation-only u
   });
   it('recovery after reinstall fences only old independently inactive generation and keeps new active generation untouched', async () => {
     const f = await fixture();
+    const oldPurchase = await orderLabel(f, '1', '#old-generation');
     await qualify(f);
     await db.transaction().execute((tx) => createTenantRepository(tx).deactivateCurrent(tx, f.shopId, '1'));
     await db.transaction().execute((tx) => createTenantRepository(tx).startInstallation(tx, f.shopId));
+    const currentPurchase = await orderLabel(f, '2', '#current-generation');
+    await sql`UPDATE merchant_preferences SET guidance_version=6 WHERE shop_id=${f.shopId}`.execute(db);
     expect(await createUninstallPrivacyRepository(db).recoverPending(100)).toBeGreaterThanOrEqual(1);
+    expect(
+      (await sql`SELECT order_name FROM purchase_order_labels WHERE purchase_id=${oldPurchase}::uuid`.execute(db)).rows,
+    ).toEqual([]);
+    expect(
+      (await sql`SELECT order_name FROM purchase_order_labels WHERE purchase_id=${currentPurchase}::uuid`.execute(db))
+        .rows,
+    ).toEqual([{ order_name: '#current-generation' }]);
+    expect(
+      (
+        await sql`SELECT guidance_version::text AS version FROM merchant_preferences WHERE shop_id=${f.shopId}`.execute(
+          db,
+        )
+      ).rows,
+    ).toEqual([{ version: '6' }]);
+    expect(
+      (
+        await sql`SELECT original_total_minor::text AS total FROM purchase_orders WHERE shop_id=${f.shopId} ORDER BY installation_generation`.execute(
+          db,
+        )
+      ).rows,
+    ).toEqual([{ total: '2001' }, { total: '2001' }]);
     expect(
       (
         await sql<{

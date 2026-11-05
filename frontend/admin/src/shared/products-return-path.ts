@@ -1,5 +1,5 @@
 const productsPath = '/admin/products';
-const maxProductCursorLength = 512;
+const maxProductCursorLength = 1024;
 const maxProductCursorTrail = 40;
 const maxReturnPathLength = 2048;
 const configurationStates = ['not_configured', 'draft', 'published', 'unavailable'];

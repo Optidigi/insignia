@@ -60,6 +60,9 @@ stalled AS (
  AND coalesce(retry_at,collected_at)<at-$1*interval '1 second' AND (claim_until IS NULL OR claim_until<at)
  UNION ALL SELECT count(state) FROM public.merchant_preview_assets,clock
  WHERE state='WRITING' AND updated_at<at-$1*interval '1 second'
+ UNION ALL SELECT count(state) FROM public.customer_artwork_notifications,clock
+ WHERE state='UNCERTAIN' OR (state='DISPATCHING' AND claimed_at<at-$1*interval '1 second')
+ OR (state IN ('PENDING','NO_EFFECT') AND created_at<at-$1*interval '1 second')
  UNION ALL SELECT (public.uninstall_privacy_status()->>'unrecoveredBlockedReceiptCount')::bigint
 ), overdue AS (
  SELECT count(state) AS n FROM public.inbox_messages,clock WHERE erasure_state<>'erased' AND purge_after<=at
@@ -72,7 +75,7 @@ stalled AS (
  WHERE state NOT IN ('WRITING','DELETED') AND (state IN ('RETIRED','DELETING') OR NOT EXISTS(
  SELECT 1 FROM public.shops s JOIN public.installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation
  WHERE s.shop_id=a.shop_id AND s.current_generation=a.installation_generation AND i.deactivated_at IS NULL)
- OR (abandon_at<=at AND NOT EXISTS(SELECT 1 FROM public.config_revision_preview_assets r WHERE r.asset_id=a.asset_id)))
+ OR (abandon_at<=at AND NOT EXISTS(SELECT 1 FROM public.config_revision_preview_assets r WHERE r.asset_id=a.asset_id) AND NOT EXISTS(SELECT 1 FROM public.merchant_preview_draft_references d WHERE d.asset_id=a.asset_id)))
  UNION ALL SELECT count(expires_at) FROM public.purchase_offer_payloads a,clock WHERE erased_at IS NULL AND (expires_at<=at OR NOT EXISTS(
  SELECT 1 FROM public.shops s JOIN public.installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation
  WHERE s.shop_id=a.shop_id AND s.current_generation=a.installation_generation AND i.deactivated_at IS NULL))
@@ -86,6 +89,9 @@ stalled AS (
  SELECT 1 FROM public.shops s JOIN public.installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation
  WHERE s.shop_id=b.shop_id AND s.current_generation=b.installation_generation AND i.deactivated_at IS NULL)
  UNION ALL SELECT count(forget_after) FROM public.webhook_obligation_facts,clock WHERE facts_erased_at IS NULL AND forget_after<=at
+ UNION ALL SELECT count(expires_at) FROM public.customer_artwork_grants g,clock WHERE expires_at<=at OR NOT EXISTS(
+ SELECT 1 FROM public.shops s JOIN public.installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation
+ WHERE s.shop_id=g.shop_id AND s.current_generation=g.installation_generation AND i.deactivated_at IS NULL)
  UNION ALL SELECT count(expires_at) FROM public.design_drafts,clock WHERE expires_at<=at
  UNION ALL SELECT count(retain_private_until) FROM public.quote_proposals,clock WHERE retain_private_until<=at
 )

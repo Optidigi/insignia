@@ -58,6 +58,7 @@ export interface EditorState {
   selectedPlacementId?: string;
   selectedStepId?: string;
   artwork: Artwork;
+  artworkPosition?: { xMicros: number; yMicros: number };
 }
 
 export type GeometryCommand =
@@ -327,7 +328,31 @@ export function projectScene(
       const width = max.width * step.widthFraction;
       const height = max.height * step.heightFraction;
       const stepBounds = { x: max.x + (max.width - width) / 2, y: max.y + (max.height - height) / 2, width, height };
-      const bounds = state.artwork.kind === 'raster' ? fitAspect(stepBounds, state.artwork.aspectRatio) : stepBounds;
+      let bounds = state.artwork.kind === 'raster' ? fitAspect(stepBounds, state.artwork.aspectRatio) : stepBounds;
+      if (state.artworkPosition) {
+        const { xMicros, yMicros } = state.artworkPosition;
+        if (
+          !Number.isInteger(xMicros) ||
+          !Number.isInteger(yMicros) ||
+          xMicros < 0 ||
+          xMicros > 1000000 ||
+          yMicros < 0 ||
+          yMicros > 1000000
+        )
+          throw new Error('invalid production artwork position');
+        bounds = {
+          ...bounds,
+          x: contentRect.x + (xMicros / 1000000) * contentRect.width - bounds.width / 2,
+          y: contentRect.y + (yMicros / 1000000) * contentRect.height - bounds.height / 2,
+        };
+        if (
+          bounds.x < contentRect.x - 1e-9 ||
+          bounds.y < contentRect.y - 1e-9 ||
+          bounds.x + bounds.width > contentRect.x + contentRect.width + 1e-9 ||
+          bounds.y + bounds.height > contentRect.y + contentRect.height + 1e-9
+        )
+          throw new Error('production artwork outside image');
+      }
       scene.artwork = {
         kind: state.artwork.kind,
         ...(state.artwork.kind === 'raster' ? { url: state.artwork.url } : {}),
@@ -390,4 +415,40 @@ export function applyGeometryCommand(state: EditorState, command: GeometryComman
       return { ...state, version: nextVersion, geometry };
     }
   }
+}
+
+/** Physical calibration belongs to the source image, independent of canvas viewport/zoom. */
+export function calibratedDimensions(
+  calibration: {
+    imageWidth: number;
+    imageHeight: number;
+    a: { x: number; y: number };
+    b: { x: number; y: number };
+    distanceCm: number;
+  },
+  rect: { width: number; height: number },
+): { widthCm: number; heightCm: number; pixelsPerCm: number } | null {
+  const { imageWidth, imageHeight, a, b, distanceCm } = calibration;
+  if (
+    !Number.isFinite(imageWidth) ||
+    !Number.isFinite(imageHeight) ||
+    imageWidth <= 0 ||
+    imageHeight <= 0 ||
+    !Number.isFinite(distanceCm) ||
+    distanceCm <= 0 ||
+    [a.x, a.y, b.x, b.y].some((value) => !Number.isFinite(value) || value < 0 || value > 1) ||
+    !Number.isFinite(rect.width) ||
+    !Number.isFinite(rect.height) ||
+    rect.width <= 0 ||
+    rect.width > 1 ||
+    rect.height <= 0 ||
+    rect.height > 1
+  )
+    return null;
+  const linePixels = Math.hypot((b.x - a.x) * imageWidth, (b.y - a.y) * imageHeight);
+  if (!Number.isFinite(linePixels) || linePixels <= 0) return null;
+  const pixelsPerCm = linePixels / distanceCm;
+  const widthCm = (rect.width * imageWidth) / pixelsPerCm;
+  const heightCm = (rect.height * imageHeight) / pixelsPerCm;
+  return [pixelsPerCm, widthCm, heightCm].every(Number.isFinite) ? { widthCm, heightCm, pixelsPerCm } : null;
 }

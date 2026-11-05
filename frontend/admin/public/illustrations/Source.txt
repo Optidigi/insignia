@@ -1,0 +1,2 @@
+
+editor-sample.png: repository-owned Northcoast chest artwork fixture, copied without image changes from frontend/admin/examples/admin/support/assets/order-demo/north-coast-chest.png. Used only as the selected editor canvas sample; never customer production artwork.
