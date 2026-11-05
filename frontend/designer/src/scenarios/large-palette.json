@@ -1,0 +1,899 @@
+{
+  "id": "large-palette",
+  "name": "Large colour range",
+  "description": "60 garment colours, including similar shades, long names and accented labels.",
+  "storeName": "Common Thread Supply",
+  "productName": "Everyday heavyweight tee",
+  "productDescription": "A durable ring-spun cotton tee in a wide seasonal colour range.",
+  "basePrice": 1295,
+  "currency": "EUR",
+  "locale": "en-NL",
+  "garment": "tshirt",
+  "preview": "illustration",
+  "maxQuantity": 999,
+  "artworkLater": true,
+  "sizes": [
+    {
+      "id": "xs",
+      "label": "XS"
+    },
+    {
+      "id": "s",
+      "label": "S"
+    },
+    {
+      "id": "m",
+      "label": "M"
+    },
+    {
+      "id": "l",
+      "label": "L"
+    },
+    {
+      "id": "xl",
+      "label": "XL"
+    },
+    {
+      "id": "2xl",
+      "label": "2XL"
+    }
+  ],
+  "colors": [
+    {
+      "id": "optic-white",
+      "name": "Optic white",
+      "hex": "#f8f8f4",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "natural",
+      "name": "Natural",
+      "hex": "#e9dfc9",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "sand",
+      "name": "Sand",
+      "hex": "#c9b89a",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "butter",
+      "name": "Butter yellow",
+      "hex": "#eddf8a",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "mustard",
+      "name": "Mustard",
+      "hex": "#c29a35",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "orange",
+      "name": "Burnt orange",
+      "hex": "#bd5d31",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "red",
+      "name": "Brick red",
+      "hex": "#a83e3f",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "pink",
+      "name": "Dusty pink",
+      "hex": "#d59b9d",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "coral",
+      "name": "Coral",
+      "hex": "#df796c",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "burgundy",
+      "name": "Burgundy",
+      "hex": "#672e3d",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "lavender",
+      "name": "Lavender",
+      "hex": "#b3a2c8",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "purple",
+      "name": "Deep purple",
+      "hex": "#514266",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "sky",
+      "name": "Sky blue",
+      "hex": "#9ec9de",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "royal-blue",
+      "name": "Royal blue",
+      "hex": "#315fac",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "teal",
+      "name": "Teal",
+      "hex": "#327e7e",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "forest",
+      "name": "Forest green",
+      "hex": "#335742",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "sage",
+      "name": "Sage",
+      "hex": "#a1b19b",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "olive",
+      "name": "Olive",
+      "hex": "#77754b",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "heather-grey",
+      "name": "Heather grey",
+      "hex": "#a7a7a4",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "charcoal",
+      "name": "Charcoal",
+      "hex": "#4b4c4e",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "black",
+      "name": "Black",
+      "hex": "#25262a",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "navy",
+      "name": "Navy",
+      "hex": "#25334c",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "midnight",
+      "name": "Midnight blue",
+      "hex": "#1b2638",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "stone",
+      "name": "Stone grey",
+      "hex": "#777b7c",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "off-white",
+      "name": "Off white",
+      "hex": "#eee9de",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "snow-white",
+      "name": "Snow white",
+      "hex": "#fffefa",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "pearl-grey",
+      "name": "Pearl grey",
+      "hex": "#d0d0c9",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "ash-grey",
+      "name": "Ash grey",
+      "hex": "#bdbdb7",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "silver",
+      "name": "Silver",
+      "hex": "#b9bec5",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "graphite",
+      "name": "Graphite",
+      "hex": "#41464b",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "jet-black",
+      "name": "Jet black",
+      "hex": "#18191b",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "chocolate-brown",
+      "name": "Chocolate brown",
+      "hex": "#594037",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "walnut-brown",
+      "name": "Walnut brown",
+      "hex": "#6f5340",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "camel",
+      "name": "Camel",
+      "hex": "#b49670",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "caramel",
+      "name": "Caramel",
+      "hex": "#b47844",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "khaki",
+      "name": "Khaki",
+      "hex": "#b5aa82",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "cream",
+      "name": "Cream",
+      "hex": "#f0e6bd",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "lemon-yellow",
+      "name": "Lemon yellow",
+      "hex": "#f4df66",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "sunflower-yellow",
+      "name": "Sunflower yellow",
+      "hex": "#eabd32",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "ochre",
+      "name": "Ochre",
+      "hex": "#bf8c2e",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "bright-orange",
+      "name": "Bright orange",
+      "hex": "#eb752c",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "rust",
+      "name": "Rust",
+      "hex": "#ab4e32",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "flame-red",
+      "name": "Flame red",
+      "hex": "#ce352f",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "scarlet",
+      "name": "Scarlet",
+      "hex": "#c32f40",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "cherry-red",
+      "name": "Cherry red",
+      "hex": "#a93249",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "wine-red",
+      "name": "Wine red",
+      "hex": "#6e2c44",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "fuchsia",
+      "name": "Fuchsia",
+      "hex": "#bd417d",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "rose-pink",
+      "name": "Rose pink",
+      "hex": "#dc94b0",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "blush-pink",
+      "name": "Blush pink",
+      "hex": "#e3b9bc",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "creme-rose",
+      "name": "Crème rose",
+      "hex": "#e0c0b8",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "lilac",
+      "name": "Lilac",
+      "hex": "#c1aacd",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "aubergine",
+      "name": "Aubergine",
+      "hex": "#50354e",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "indigo",
+      "name": "Indigo",
+      "hex": "#3b416b",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "denim-blue",
+      "name": "Denim blue",
+      "hex": "#546f8d",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "french-navy",
+      "name": "French navy",
+      "hex": "#233449",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "petrol-blue",
+      "name": "Petrol blue",
+      "hex": "#245965",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "ocean-blue",
+      "name": "Ocean blue",
+      "hex": "#377c9c",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "mint-green",
+      "name": "Mint green",
+      "hex": "#a3cbbb",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "bottle-green",
+      "name": "Bottle green",
+      "hex": "#284d3d",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "heather-sage-green-melange",
+      "name": "Heather sage green melange",
+      "hex": "#8f9b88",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "front",
+      "label": "Front",
+      "illustration": "front"
+    },
+    {
+      "id": "back",
+      "label": "Back",
+      "illustration": "back"
+    }
+  ],
+  "positions": [
+    {
+      "id": "front",
+      "name": "Centre front",
+      "view": "front",
+      "x": 50,
+      "y": 40,
+      "width": 15,
+      "price": 1150,
+      "dimensions": [
+        10,
+        15,
+        21,
+        28
+      ],
+      "sizePrices": [
+        0,
+        250,
+        500,
+        750
+      ],
+      "methodIds": [
+        "print"
+      ]
+    },
+    {
+      "id": "back",
+      "name": "Centre back",
+      "view": "back",
+      "x": 50,
+      "y": 36,
+      "width": 15,
+      "price": 1350,
+      "dimensions": [
+        15,
+        21,
+        28
+      ],
+      "sizePrices": [
+        0,
+        250,
+        500
+      ],
+      "methodIds": [
+        "print"
+      ]
+    }
+  ],
+  "methods": [
+    {
+      "id": "print",
+      "label": "Print",
+      "surcharge": 0
+    }
+  ],
+  "optionPresentation": {
+    "rowOption": {
+      "display": "swatch",
+      "label": "Colour"
+    },
+    "columnOption": {
+      "label": "Size"
+    }
+  }
+}

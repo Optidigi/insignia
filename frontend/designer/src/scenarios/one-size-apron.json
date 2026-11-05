@@ -1,0 +1,121 @@
+{
+  "id": "one-size-apron",
+  "name": "One-size café apron",
+  "description": "A simple apron listing with three fabric colours and print or embroidery at two locations.",
+  "storeName": "Good Measure Workwear",
+  "productName": "Cross-back café apron",
+  "productDescription": "A durable cross-back apron for independent cafés and bakeries.",
+  "basePrice": 2895,
+  "currency": "EUR",
+  "locale": "en-NL",
+  "garment": "apron",
+  "preview": "illustration",
+  "maxQuantity": 999,
+  "artworkLater": false,
+  "sizes": [
+    {
+      "id": "one-size",
+      "label": "One size"
+    }
+  ],
+  "colors": [
+    {
+      "id": "natural",
+      "name": "Natural cotton",
+      "hex": "#e8ddc8",
+      "availableSizeIds": [
+        "one-size"
+      ]
+    },
+    {
+      "id": "charcoal",
+      "name": "Charcoal",
+      "hex": "#45494c",
+      "availableSizeIds": [
+        "one-size"
+      ]
+    },
+    {
+      "id": "olive",
+      "name": "Olive green",
+      "hex": "#73734a",
+      "availableSizeIds": [
+        "one-size"
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "front",
+      "label": "Front",
+      "illustration": "front"
+    }
+  ],
+  "positions": [
+    {
+      "id": "chest",
+      "name": "Upper chest",
+      "view": "front",
+      "x": 50,
+      "y": 29,
+      "width": 12,
+      "price": 850,
+      "dimensions": [
+        10,
+        12
+      ],
+      "sizePrices": [
+        0,
+        200
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    },
+    {
+      "id": "lower-front",
+      "name": "Lower front",
+      "view": "front",
+      "x": 50,
+      "y": 57,
+      "width": 18,
+      "price": 1100,
+      "dimensions": [
+        15,
+        18,
+        22
+      ],
+      "sizePrices": [
+        0,
+        250,
+        500
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    }
+  ],
+  "methods": [
+    {
+      "id": "print",
+      "label": "Print",
+      "surcharge": 0
+    },
+    {
+      "id": "embroidery",
+      "label": "Embroidery",
+      "surcharge": 650
+    }
+  ],
+  "optionPresentation": {
+    "rowOption": {
+      "display": "swatch",
+      "label": "Colour"
+    },
+    "columnOption": {
+      "label": "Size"
+    }
+  }
+}

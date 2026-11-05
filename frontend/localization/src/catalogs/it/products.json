@@ -1,0 +1,73 @@
+{
+  "pageTitle": "Prodotti",
+  "actions": {
+    "viewInShopify": "Visualizza in Shopify",
+    "selectAllShown": "Seleziona tutti i prodotti mostrati in questa pagina",
+    "selectProduct": "Seleziona {{productName}}",
+    "copySetupAccessible": "Copia la configurazione da un altro prodotto",
+    "copySetup": "Copia la configurazione da…",
+    "downloadSummary": "Scarica il riepilogo",
+    "previewCustomization": "Anteprima della personalizzazione",
+    "selectionActions": "Azioni per i prodotti selezionati",
+    "clearSelection": "Cancella la selezione",
+    "firstPage": "Prima pagina",
+    "showAll": "Mostra tutti i prodotti",
+    "clearFilter": "Cancella il filtro della configurazione"
+  },
+  "selection": {
+    "selected_one": "{{formattedCount}} selezionato",
+    "selected_many": "{{formattedCount}} selezionati",
+    "selected_other": "{{formattedCount}} selezionati"
+  },
+  "search": "Cerca prodotti",
+  "filter": {
+    "products": "Filtra i prodotti",
+    "configurationOnPage": "Configurazione in questa pagina",
+    "editConfiguration": "Modifica il filtro della configurazione",
+    "onThisPage": "{{configuration}} in questa pagina"
+  },
+  "configuration": {
+    "all": "Tutti",
+    "notConfigured": "Non configurato",
+    "draft": "Bozza",
+    "published": "Pubblicato",
+    "unavailable": "Non disponibile"
+  },
+  "results": {
+    "shown_one": "{{formattedCount}} prodotto mostrato in questa pagina.",
+    "shown_many": "{{formattedCount}} prodotti mostrati in questa pagina.",
+    "shown_other": "{{formattedCount}} prodotti mostrati in questa pagina."
+  },
+  "table": {
+    "region": "Prodotti Shopify",
+    "columns": "Prodotti",
+    "product": "Prodotto",
+    "configuration": "Configurazione",
+    "methods": "Tecniche",
+    "printLocations": "Posizioni di decorazione",
+    "variants": "Varianti"
+  },
+  "summary": {
+    "methods": "tecniche",
+    "printLocations": "posizioni di decorazione",
+    "noneConfigured": "Nessuna configurata",
+    "viewAllMethods": "Visualizza tutte le tecniche",
+    "viewAllPrintLocations": "Visualizza tutte le posizioni di decorazione"
+  },
+  "errors": {
+    "loadHeading": "Impossibile caricare i prodotti",
+    "access": "Non è stato possibile verificare il tuo accesso. Prova a ricollegarti a Shopify Admin.",
+    "unavailable": "I prodotti non sono disponibili. Riprova.",
+    "previewFailed": "Non è stato possibile aprire l'anteprima cliente. Riprova.",
+    "summaryDownloadFailed": "Non è stato possibile scaricare il riepilogo. Riprova."
+  },
+  "empty": {
+    "noneOnPage": "Nessun prodotto trovato in questa pagina",
+    "changeFilterOrPage": "Modifica il filtro della configurazione o controlla un'altra pagina.",
+    "returnFirstOrSearch": "Torna alla prima pagina o prova un'altra ricerca.",
+    "changeProductSearch": "Prova un altro nome di prodotto o cancella la ricerca.",
+    "noProductsFound": "Nessun prodotto trovato",
+    "noProductsYet": "Non ci sono ancora prodotti",
+    "addInShopify": "Aggiungi un prodotto in Shopify, poi torna qui per configurarne la personalizzazione."
+  }
+}

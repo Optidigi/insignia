@@ -1,0 +1,280 @@
+{
+  "pageTitle": "Pedidos",
+  "actions": {
+    "selectAllShown": "Seleccionar todos los pedidos que se muestran en esta página",
+    "selectedOnPage_one": "{{formattedCount}} seleccionado en esta página",
+    "selectedOnPage_other": "{{formattedCount}} seleccionados en esta página",
+    "selected_one": "{{formattedCount}} seleccionado",
+    "selected_other": "{{formattedCount}} seleccionados",
+    "selectionActions": "Acciones para los pedidos seleccionados",
+    "productionSheets": "Hojas de producción",
+    "downloadArtwork": "Descargar diseños",
+    "clearSelection": "Borrar selección",
+    "clearFilters": "Borrar filtros",
+    "viewProducts": "Ver productos",
+    "selectOrder": "Seleccionar pedido {{orderLabel}}",
+    "firstPage": "Ver la primera página",
+    "selectedOnPage_many": "{{formattedCount}} seleccionados en esta página",
+    "selected_many": "{{formattedCount}} seleccionados"
+  },
+  "errors": {
+    "accessHeading": "Pedidos no disponibles",
+    "accessDescription": "Vuelve a abrir Insignia desde el panel de control de Shopify. Si sigues sin poder ver los pedidos, pide al propietario de la tienda que revise tus permisos.",
+    "loadHeading": "No se pudieron cargar los pedidos",
+    "staleResults": "Puede que los pedidos que aparecen a continuación no estén actualizados. Vuelve a intentarlo.",
+    "initialLoad": "Vuelve a intentarlo para cargar tus pedidos."
+  },
+  "empty": {
+    "noCustomizedOrders": "Todavía no hay pedidos personalizados",
+    "noCustomizedOrdersDescription": "Aquí aparecerán los pedidos con personalizaciones de Insignia.",
+    "noOrders": "No se encontraron pedidos",
+    "noOrdersOnPage": "No se encontraron pedidos en esta página",
+    "tryAnotherDateRange": "Prueba con otro intervalo de fechas o borra los filtros.",
+    "changeSearchFilterPage": "Cambia la búsqueda o el filtro, o consulta otra página."
+  },
+  "search": {
+    "label": "Buscar pedidos en esta página",
+    "placeholder": "Buscar en esta página",
+    "results_one": "Se muestra {{formattedCount}} pedido en esta página.",
+    "results_other": "Se muestran {{formattedCount}} pedidos en esta página.",
+    "results_many": "Se muestran {{formattedCount}} pedidos en esta página."
+  },
+  "filters": {
+    "filterOrders": "Filtrar pedidos",
+    "artworkStatus": "Estado del diseño en esta página",
+    "editArtworkStatus": "Editar filtro por estado del diseño",
+    "editOrderDate": "Editar filtro por fecha del pedido",
+    "orderDateRange": "Fecha del pedido: {{from}} – {{to}}"
+  },
+  "artwork": {
+    "all": "Todos",
+    "needed": "Falta el diseño",
+    "complete": "Diseño completo"
+  },
+  "display": {
+    "accessibleLabel": "Opciones de visualización",
+    "sortBy": "Ordenar por",
+    "dateOrder": "Orden de fechas",
+    "newestFirst": "Más recientes primero",
+    "oldestFirst": "Más antiguos primero",
+    "columns": "Columnas",
+    "hideColumn": "Ocultar {{column}}",
+    "showColumn": "Mostrar {{column}}"
+  },
+  "date": {
+    "orderDate": "Fecha del pedido",
+    "anyTime": "En cualquier momento",
+    "any": "Cualquiera",
+    "today": "Hoy",
+    "lastSevenDays": "Últimos 7 días",
+    "lastThirtyDays": "Últimos 30 días",
+    "lastNinetyDays": "Últimos 90 días",
+    "customRange": "Intervalo de fechas personalizado",
+    "editCustomRange": "Editar intervalo personalizado",
+    "from": "Desde",
+    "to": "Hasta",
+    "datePlaceholder": "YYYY-MM-DD",
+    "apply": "Aplicar",
+    "backToPresets": "Volver a los intervalos predefinidos",
+    "utc": "UTC",
+    "errors": {
+      "bothRequired": "Selecciona una fecha de inicio y una fecha de fin.",
+      "endBeforeStart": "La fecha de fin debe ser igual o posterior a la fecha de inicio.",
+      "emptyDate": "Esta fecha no existe en la zona horaria de la tienda, así que no puede haber pedidos en esa fecha.",
+      "invalidDate": "Introduce fechas válidas para la zona horaria de la tienda."
+    }
+  },
+  "table": {
+    "columns": {
+      "order": "Pedido",
+      "date": "Fecha",
+      "total": "Total",
+      "payment": "Estado del pago",
+      "artwork": "Estado del diseño",
+      "methods": "Técnicas de personalización",
+      "items": "Artículos personalizados"
+    }
+  },
+  "payment": {
+    "paid": "Pagado",
+    "refunded": "Reembolsado",
+    "partiallyRefunded": "Reembolsado parcialmente",
+    "partiallyPaid": "Pagado parcialmente",
+    "authorized": "Autorizado",
+    "voided": "Anulado",
+    "pending": "Pendiente",
+    "expired": "Vencido",
+    "unknown": "Desconocido"
+  },
+  "badges": {
+    "test": "Prueba",
+    "cancelled": "Cancelado",
+    "needsReview": "Requiere revisión"
+  },
+  "order": {
+    "reference": "Pedido {{orderNumber}}"
+  },
+  "summary": {
+    "methods": "Técnicas de personalización",
+    "viewAllMethods": "Ver todas las técnicas de personalización de {{orderLabel}}",
+    "noMethods": "Sin técnicas de personalización",
+    "methodUnavailable": "Técnica no disponible"
+  },
+  "counts": {
+    "items_one": "{{formattedCount}} artículo",
+    "items_other": "{{formattedCount}} artículos",
+    "itemsExact": "Cantidad de artículos: {{formattedCount}}",
+    "variantAndItems_one": "{{formattedVariantCount}} variante · {{formattedItemCount}} artículo",
+    "variantAndItems_other": "{{formattedVariantCount}} variantes · {{formattedItemCount}} artículos",
+    "items_many": "{{formattedCount}} artículos",
+    "variantAndItems_many": "{{formattedVariantCount}} variantes · {{formattedItemCount}} artículos"
+  },
+  "items": {
+    "heading": "Artículos personalizados",
+    "needsVerification": "Requiere verificación",
+    "variantUnavailable": "Nombre de la variante no disponible",
+    "variantBreakdown_one": "{{formattedVariantCount}} variante · {{formattedItemCount}} artículo",
+    "variantBreakdown_other": "{{formattedVariantCount}} variantes · {{formattedItemCount}} artículos",
+    "imageAlt": "Imagen de {{itemName}}",
+    "purchasedItem": "artículo comprado",
+    "purchasedItemUnavailable": "Nombre del artículo comprado no disponible",
+    "showBreakdown": "Mostrar {{breakdown}} de {{itemName}}",
+    "hideBreakdown": "Ocultar {{breakdown}} de {{itemName}}",
+    "showVariantBreakdown": "Mostrar {{summary}}",
+    "hideVariantBreakdown": "Ocultar {{summary}}",
+    "variant": "Variante",
+    "quantity": "Cantidad",
+    "empty": "Los artículos comprados requieren verificación.",
+    "variantBreakdown_many": "{{formattedVariantCount}} variantes · {{formattedItemCount}} artículos"
+  },
+  "designPreview": {
+    "expired": "Los detalles del diseño han caducado",
+    "unavailable": "Vista previa del diseño no disponible",
+    "expiredDetails": "Los detalles guardados del diseño ya no se conservan.",
+    "unavailableDetails": "Los datos guardados de las zonas no están disponibles para este diseño.",
+    "view": "Ver diseño",
+    "heading": "Vista previa del diseño",
+    "artworkVersion": "Versión del diseño",
+    "currentArtwork": "Diseño actual",
+    "atPurchase": "Al comprar",
+    "refreshing": "Actualizando el pedido"
+  },
+  "artworkDownload": {
+    "action": "Descargar archivo original",
+    "expired": "El diseño original ya no está disponible.",
+    "failed": "No se pudo descargar el archivo original. Vuelve a intentarlo."
+  },
+  "artworkHistory": {
+    "heading": "Historial del diseño",
+    "view": "Ver historial del diseño ({{formattedCount}})",
+    "design": "Diseño {{designNumber}}",
+    "placement": "Zona {{placementNumber}}",
+    "attached": "Diseño adjunto",
+    "version": "Versión {{version}}",
+    "erased": "Detalles del diseño eliminados",
+    "originalAvailableUntil": "Archivo original disponible hasta {{date}}",
+    "showMore": "Mostrar más del historial",
+    "dateUtc": "{{date}} UTC"
+  },
+  "purchaseArtwork": {
+    "read": {
+      "accessDenied": "No se pudo verificar tu identidad o tus permisos de Shopify. Vuelve a abrir Insignia desde el panel de control de Shopify.",
+      "notFound": "No se encontró este pedido. Vuelve a Pedidos y selecciona uno disponible.",
+      "refreshFailed": "No se pudo actualizar el pedido. Se muestran los últimos datos cargados. Vuelve a intentarlo.",
+      "loadFailed": "No se pudo cargar el pedido. Vuelve a intentarlo."
+    },
+    "actions": {
+      "orderActions": "Acciones del pedido",
+      "more": "Más acciones",
+      "viewInShopify": "Ver en Shopify",
+      "tryAgain": "Volver a intentarlo",
+      "jumpToMissingArtwork": "Ir al diseño que falta"
+    },
+    "placement": {
+      "fallback": "Zona {{formattedNumber}}",
+      "ariaLabel": "Diseño {{placementName}}",
+      "status": {
+        "replaced": "Reemplazado",
+        "attached": "Adjunto",
+        "provided": "Entregado",
+        "unavailable": "No disponible",
+        "needed": "Falta el diseño"
+      },
+      "sizeUnavailable": "Tamaño del diseño no disponible",
+      "preview": "Previsualizar diseño",
+      "download": "Descargar archivo",
+      "replace": "Reemplazar diseño",
+      "attach": "Adjuntar diseño",
+      "accessFailed": "No se pudo cargar el diseño. Vuelve a intentarlo.",
+      "changed": "El diseño ha cambiado. Vuelve a cargar la página del pedido antes de continuar.",
+      "attachFailed": "No se pudo adjuntar el diseño. Vuelve a cargar la página del pedido y vuelve a intentarlo.",
+      "retentionEnded": "El diseño ya no está disponible.",
+      "deleteSoon": "Descárgalo antes de que se elimine el {{date}}.",
+      "originalArtwork": "Diseño original",
+      "previewHeading": "Vista previa del diseño: {{placementName}}",
+      "previewAlt": "PNG verificado {{placementName}}",
+      "previewLoading": "Cargando vista previa del diseño",
+      "previewUnavailable": "Vista previa no disponible. Cierra este cuadro de diálogo y vuelve a intentarlo."
+    },
+    "preview": {
+      "currentSection": "Vista previa del diseño actual",
+      "purchasedSection": "Vista previa del diseño de la compra",
+      "view": "Vista",
+      "variant": "Variante",
+      "viewFallback": "Vista {{formattedNumber}}",
+      "variantFallback": "Variante {{formattedNumber}} (nombre no disponible)",
+      "variantOption": "{{variantName}} · {{formattedQuantity}} unidades compradas",
+      "loadingCurrent": "Cargando la vista previa del diseño actual",
+      "loadingPurchased": "Cargando la vista previa del diseño de la compra",
+      "unavailable": "No se pudo cargar la vista previa del diseño. Vuelve a intentarlo.",
+      "designUnavailable": "Este diseño ya no está disponible.",
+      "accessExpired": "El acceso a la vista previa ha caducado. Vuelve a cargarla para continuar.",
+      "currentArtworkUnavailable": "Algunos diseños actuales no están disponibles en esta vista previa.",
+      "purchasedArtworkUnavailable": "Algunos diseños del pedido original no están disponibles en esta vista previa.",
+      "loadPreview": "Cargar vista previa",
+      "tryAgain": "Volver a intentarlo"
+    },
+    "artworkState": {
+      "currentUnavailableLocked": "El diseño actual ya no está disponible.",
+      "currentUnavailableReplace": "El diseño actual no está disponible. Sube un reemplazo antes de que caduquen los detalles de personalización."
+    },
+    "badges": {
+      "orderUnavailable": "Pedido no disponible",
+      "accessUnavailable": "Acceso al pedido no disponible"
+    },
+    "warnings": {
+      "orderCancelledHeading": "Pedido cancelado",
+      "orderCancelledBody": "Este pedido se canceló. Revísalo en Shopify antes de preparar los diseños.",
+      "orderReviewHeading": "El pedido requiere revisión",
+      "orderReviewBody": "Revisa este pedido en Shopify antes de preparar los diseños.",
+      "artworkNeededHeading": "Falta el diseño",
+      "missingArtwork_one": "Falta el diseño en {{formattedCount}} zona.",
+      "missingArtwork_other": "Falta el diseño en {{formattedCount}} zonas.",
+      "missingArtworkExact": "Falta el diseño en {{formattedCount}} zonas.",
+      "missingArtwork_many": "Falta el diseño en {{formattedCount}} zonas."
+    },
+    "verification": {
+      "placementDetailsMissing": "Faltan los datos de la zona. Revisa este pedido en Shopify antes de preparar los diseños.",
+      "customizationUnavailable": "La personalización del pedido requiere verificación. No empieces la producción hasta comprobar sus detalles.",
+      "erasedUnavailable": "Los detalles de personalización y el diseño original ya no están disponibles. Los importes del pedido siguen disponibles."
+    },
+    "design": {
+      "productUnavailable": "Producto personalizado",
+      "customization": "Personalización de {{productName}}",
+      "ariaLabel": "{{productName}}, diseño {{formattedNumber}}",
+      "heading": "{{productName}} · Diseño {{formattedNumber}}",
+      "noPlacementsHeading": "La personalización requiere verificación"
+    },
+    "payment": {
+      "heading": "Información del pago",
+      "originalTotal": "Total original del pedido",
+      "firstFullyPaid": "Fecha del primer pago íntegro",
+      "notRecorded": "No registrado",
+      "refundRecords": "Registros de reembolso",
+      "settlementNote": "Estos registros no confirman que los fondos se hayan liquidado. Comprueba la liquidación del pago en Shopify.",
+      "refundDetails": "Detalles del reembolso",
+      "purchasedItem": "Artículo comprado",
+      "refundLine": "{{itemName}}: {{formattedQuantity}} unidades registradas para el reembolso; {{amount}}"
+    }
+  }
+}

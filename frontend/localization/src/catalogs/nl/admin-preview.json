@@ -1,0 +1,30 @@
+{
+  "preview": {
+    "documentTitle": "Insignia | Voorbeeld van ontwerp",
+    "context": "Ontwerpvoorbeeld · Huidig concept",
+    "title": "Voorbeeld van ontwerp",
+    "unavailableTitle": "Voorbeeld van ontwerp niet beschikbaar",
+    "loadingTitle": "Voorbeeld van ontwerp laden",
+    "waitingForDraft": "Wachten tot het huidige productconcept binnenkomt…",
+    "reopenFromEditor": "Open het personalisatievoorbeeld opnieuw via de producteditor.",
+    "expired": "Dit voorbeeld is verlopen. Open het opnieuw vanuit de productconfiguratie in Shopify-beheercentrum.",
+    "draftDidNotArrive": "Het huidige concept is niet binnengekomen. Sluit dit tabblad en open het personalisatievoorbeeld opnieuw via de producteditor.",
+    "draftCouldNotBePreviewed": "Van het huidige concept kon geen voorbeeld worden gemaakt.",
+    "unrepresentableDraftData": "Dit concept bevat gegevens over ontwerpvoorbeelden die deze editor niet kan weergeven. Open het voorbeeld opnieuw via de producteditor.",
+    "emptyProductName": "Voeg een productnaam toe voordat je het personalisatievoorbeeld opent.",
+    "noProductViews": "Voeg een productaanzicht toe voordat je het personalisatievoorbeeld opent.",
+    "missingImageForPlacedView": "Voeg een afbeelding toe aan elk aanzicht met decoratieplekken.",
+    "noProductImage": "Voeg een productafbeelding toe voordat je het personalisatievoorbeeld opent.",
+    "unnamedProductView": "Geef elk productaanzicht een naam voordat je het personalisatievoorbeeld opent.",
+    "unmappableProductView": "Het productaanzicht kon niet in het voorbeeld worden opgenomen.",
+    "noValidArtworkPlacements": "Configureer ten minste één decoratieplek met een geldige prijs voordat je het personalisatievoorbeeld opent.",
+    "tooManyArtworkPlacements": "Dit product heeft te veel decoratieplekken voor het personalisatievoorbeeld.",
+    "unrepresentableArtworkSetup": "De huidige ontwerpconfiguratie bevat opties die niet in het personalisatievoorbeeld kunnen worden weergegeven.",
+    "previewNotice": "Alleen het ontwerpvoorbeeld. Prijzen, productopties en beschikbaarheid zijn niet opgenomen.",
+    "previewNoticeWithPlacements_one": "Alleen het ontwerpvoorbeeld. Prijzen, productopties en beschikbaarheid zijn niet opgenomen. {{availableCount}} van de {{totalCount}} decoratieplek is beschikbaar in dit conceptvoorbeeld.",
+    "previewNoticeWithPlacements_other": "Alleen het ontwerpvoorbeeld. Prijzen, productopties en beschikbaarheid zijn niet opgenomen. {{availableCount}} van de {{totalCount}} decoratieplekken zijn beschikbaar in dit conceptvoorbeeld.",
+    "placementsAvailable_one": "{{availableCount}} van de {{totalCount}} decoratieplek is beschikbaar in dit conceptvoorbeeld.",
+    "placementsAvailable_other": "{{availableCount}} van de {{totalCount}} decoratieplekken zijn beschikbaar in dit conceptvoorbeeld.",
+    "productImage": "Productafbeelding"
+  }
+}

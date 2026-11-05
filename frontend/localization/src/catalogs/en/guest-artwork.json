@@ -1,0 +1,33 @@
+{
+  "upload": {
+    "privateArtwork": "Private artwork",
+    "previewHeading": "Artwork preview",
+    "uploadAction": "Upload artwork",
+    "verifiedPreview": "Verified artwork preview",
+    "retryUpload": "Retry uploaded artwork",
+    "retryPreview": "Retry artwork preview",
+    "requirements": "SVG, PNG or JPEG, up to 5 MiB.",
+    "invalidFormat": "Choose an SVG, PNG or JPEG file.",
+    "tooLarge": "Choose a file up to 5 MiB.",
+    "allocating": "Preparing upload…",
+    "uploading": "Uploading artwork…",
+    "processing": "Inspecting artwork…",
+    "verified": "Artwork verified. Original retained until {{expiresAt}}.",
+    "previewRenewed": "Artwork preview renewed.",
+    "downloadPrepared": "Download ready.",
+    "expired": "Artwork access expired. Upload the file again.",
+    "inspectionRejected": "Artwork could not be verified. Choose another file.",
+    "processingTimeout": "Your artwork is still processing. Try checking it again.",
+    "failed": "Artwork unavailable",
+    "resumeFailed": "Uploaded artwork unavailable. Retry later.",
+    "previewFailed": "Preview unavailable. Retry the preview.",
+    "downloadFailed": "Download unavailable. Try again.",
+    "accessDenied": "Artwork access is unavailable. Reload the page and try again."
+  },
+  "launcher": {
+    "reviewCart": "Review customized cart",
+    "customize": "Customize this product",
+    "configurationUnavailable": "Artwork configuration unavailable",
+    "unavailable": "Customization unavailable"
+  }
+}

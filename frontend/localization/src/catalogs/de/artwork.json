@@ -1,0 +1,36 @@
+{
+  "upload": {
+    "region": "Bereich für geschützte Motive",
+    "action": "Motiv hochladen",
+    "requirement": "Bis zu 5 MiB.",
+    "verified": "Motiv geprüft. Das Original wird bis {{expiry}} aufbewahrt.",
+    "previewRenewed": "Motivvorschau erneuert.",
+    "downloadPrepared": "Geschützter Download vorbereitet. Verwenden Sie „Geprüftes Original herunterladen“.",
+    "expired": "Das Motiv ist abgelaufen. Laden Sie es erneut hoch.",
+    "inspectionRejected": "Das Motiv wurde bei der Prüfung abgelehnt. Wählen Sie ein unterstütztes, statisches Bild aus.",
+    "processingTimeout": "Ihr Motiv wird noch verarbeitet. Prüfen Sie es später erneut.",
+    "uploadFailed": "Das Motiv konnte nicht hochgeladen werden. Versuchen Sie es erneut.",
+    "resumeFailed": "Das hochgeladene Motiv ist nicht verfügbar. Versuchen Sie es später erneut.",
+    "previewFailed": "Vorschau nicht verfügbar. Laden Sie die Vorschau erneut.",
+    "downloadFailed": "Download nicht verfügbar. Versuchen Sie es erneut.",
+    "accessDenied": "Ihr Zugriff konnte nicht bestätigt werden. Öffnen Sie Insignia erneut über den Shopify-Adminbereich und versuchen Sie es noch einmal.",
+    "verifiedPreviewAlt": "Vorschau des geprüften Motivs",
+    "progress": {
+      "allocating": "Geschützter Upload wird vorbereitet",
+      "uploading": "Wird hochgeladen",
+      "processing": "Motiv wird verarbeitet"
+    },
+    "actions": {
+      "retryUploaded": "Hochgeladenes Motiv erneut prüfen",
+      "retryPreview": "Motivvorschau erneut laden",
+      "prepareDownload": "Download des Originals vorbereiten",
+      "downloadVerifiedOriginal": "Geprüftes Original herunterladen"
+    },
+    "invalidFormat": "Wählen Sie ein SVG-, PNG- oder JPEG-Bild aus.",
+    "tooLarge": "Wählen Sie ein Bild mit höchstens 5 MiB aus."
+  },
+  "preview": {
+    "imageUnavailable": "Motivbild nicht verfügbar.",
+    "preparing": "{{imageDescription}} wird vorbereitet"
+  }
+}

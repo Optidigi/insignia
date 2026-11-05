@@ -1,0 +1,14 @@
+{
+  "blocks": {
+    "customize": {
+      "name": "Insignia customization",
+      "button_label": "Button label",
+      "button_default": "Customize this product",
+      "proxy_prefix": "App proxy prefix"
+    },
+    "cart_repair": {
+      "name": "Insignia cart review",
+      "proxy_prefix": "App proxy prefix"
+    }
+  }
+}

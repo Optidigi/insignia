@@ -1,0 +1,134 @@
+{
+  "adminPageSkeleton": {
+    "method": "Veredelungsmethode",
+    "actions": "Aktionen",
+    "loadingProductConfiguration": "Produktkonfiguration wird geladen",
+    "loadingCustomizationActivity": "Aktivitäten zur Produktanpassung werden geladen",
+    "loadingProducts": "Produkte werden geladen",
+    "loadingCustomizedOrders": "Bestellungen mit Produktanpassungen werden geladen"
+  },
+  "ordersTableSkeleton": {
+    "loadingOrders": "Bestellungen werden geladen",
+    "order": "Bestellung"
+  },
+  "productsTableSkeleton": {
+    "loadingProducts": "Produkte werden geladen",
+    "products": "Produkte",
+    "product": "Produkt",
+    "configuration": "Konfiguration",
+    "methods": "Veredelungsmethoden",
+    "printLocations": "Veredelungspositionen",
+    "variants": "Varianten"
+  },
+  "purchaseDetailSkeleton": {
+    "loadingOrderAndArtwork": "Bestellung und Motive werden geladen"
+  },
+  "titles": {
+    "home": "Insignia",
+    "products": "Produkte",
+    "orders": "Bestellungen",
+    "order": "Bestellung",
+    "methods": "Veredelungsmethoden",
+    "configuration": "Produktkonfiguration",
+    "settings": "Einstellungen",
+    "billing": "Abrechnung",
+    "permissions": "App-Berechtigungen",
+    "storefront": "Einrichtung des Onlineshops",
+    "unavailable": "App nicht verfügbar",
+    "translations": "Übersetzungen"
+  },
+  "navigation": {
+    "home": "Startseite",
+    "products": "Produkte",
+    "orders": "Bestellungen",
+    "methods": "Methoden",
+    "settings": "Einstellungen"
+  },
+  "routes": {
+    "customizeProduct": "Produkt anpassen",
+    "orderArtwork": "Bestellung und Motive",
+    "home": "Insignia",
+    "products": "Produkte",
+    "orders": "Bestellungen",
+    "permissions": "App-Berechtigungen",
+    "methods": "Methoden",
+    "storefront": "Einrichtung des Onlineshops",
+    "billing": "Abrechnung",
+    "settings": "Einstellungen"
+  },
+  "loading": {
+    "settings": "Einstellungen werden geladen",
+    "permissions": "App-Berechtigungen werden geladen",
+    "methods": "Veredelungsmethoden werden geladen",
+    "storefront": "Einrichtung des Onlineshops wird geladen",
+    "billing": "Abrechnung wird geladen",
+    "billingDetails": "Abrechnungsdetails werden geladen",
+    "detail": "Bestellung und Motive werden geladen",
+    "preview": "Produkteinrichtung wird geladen",
+    "translations": "Übersetzungen werden geladen"
+  },
+  "pageTitle": "{{title}} · Insignia",
+  "failure": {
+    "heading": "Oberfläche nicht verfügbar",
+    "body": "Öffnen Sie Insignia erneut über den Shopify-Adminbereich."
+  },
+  "unavailable": {
+    "heading": "App nicht verfügbar",
+    "bannerHeading": "Insignia konnte nicht geöffnet werden",
+    "body": "Die App-Konfiguration ist nicht verfügbar. Wenden Sie sich an den App-Support, um den Zugriff wiederherzustellen.",
+    "recoveryHeading": "Zugriff wiederherstellen",
+    "recoveryBody": "Kehren Sie zum Shopify-Adminbereich zurück und öffnen Sie Insignia erneut. Wenn das Problem weiterhin besteht, wenden Sie sich an den App-Support. Auf dieser Seite wurden keine Änderungen vorgenommen.",
+    "return": "Zurück zum Shopify-Adminbereich"
+  },
+  "shared": {
+    "actions": {
+      "action": "Aktion",
+      "discard": "Verwerfen",
+      "reviewPermissions": "App-Berechtigungen prüfen"
+    },
+    "filters": {
+      "defaultLabel": "Filter",
+      "add": "Filter hinzufügen",
+      "withCount": " ({{formattedCount}})"
+    },
+    "loading": {
+      "results": "Ergebnisse werden geladen"
+    },
+    "navigation": {
+      "settings": "Einstellungen"
+    },
+    "pagination": {
+      "previous": "Zurück",
+      "next": "Weiter",
+      "previousPage": "Zur vorherigen Seite",
+      "nextPage": "Zur nächsten Seite"
+    },
+    "preview": {
+      "imageUnavailable": "Bild nicht verfügbar",
+      "preparing": "Vorschau wird vorbereitet …"
+    },
+    "saveBar": {
+      "save": "Speichern",
+      "discard": "Verwerfen",
+      "saveDraft": "Entwurf speichern",
+      "discardChanges": "Änderungen verwerfen",
+      "heading": "Nicht gespeicherte Änderungen verwerfen?",
+      "body": "Sie haben nicht gespeicherte Änderungen.",
+      "keepEditing": "Weiter bearbeiten",
+      "productDiscardBody": "Ihre nicht gespeicherten Produktänderungen gehen verloren. Die zuletzt gespeicherte Konfiguration und das veröffentlichte Produkt bleiben unverändert."
+    },
+    "search": {
+      "clear": "Suche löschen",
+      "searchBy": "Suchen nach"
+    },
+    "summary": {
+      "empty": "Keine",
+      "view": "Ansicht",
+      "viewAllValues": "Alle Werte ansehen"
+    },
+    "table": {
+      "columnsFor": "Spalten für {{tableName}}"
+    }
+  },
+  "hostBack": "Zurück: {{destination}}"
+}

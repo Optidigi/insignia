@@ -1,0 +1,273 @@
+{
+  "pageTitle": "Bestellingen",
+  "actions": {
+    "selectAllShown": "Alle getoonde bestellingen selecteren",
+    "selectedOnPage_one": "{{formattedCount}} geselecteerd op deze pagina",
+    "selectedOnPage_other": "{{formattedCount}} geselecteerd op deze pagina",
+    "selected_one": "{{formattedCount}} geselecteerd",
+    "selected_other": "{{formattedCount}} geselecteerd",
+    "selectionActions": "Acties voor geselecteerde bestellingen",
+    "productionSheets": "Productiebladen",
+    "downloadArtwork": "Ontwerp downloaden",
+    "clearSelection": "Selectie wissen",
+    "clearFilters": "Filters wissen",
+    "viewProducts": "Producten bekijken",
+    "selectOrder": "Bestelling {{orderLabel}} selecteren",
+    "firstPage": "Eerste pagina bekijken"
+  },
+  "errors": {
+    "accessHeading": "Bestellingen niet beschikbaar",
+    "accessDescription": "Open Insignia opnieuw via Shopify-beheercentrum. Kun je de bestellingen nog steeds niet bekijken, vraag dan de winkeleigenaar om je machtigingen te controleren.",
+    "loadHeading": "Bestellingen konden niet worden geladen",
+    "staleResults": "De onderstaande bestellingen zijn mogelijk verouderd. Probeer het opnieuw.",
+    "initialLoad": "Probeer de bestellingen opnieuw te laden."
+  },
+  "empty": {
+    "noCustomizedOrders": "Nog geen gepersonaliseerde bestellingen",
+    "noCustomizedOrdersDescription": "Bestellingen met Insignia-personalisaties verschijnen hier.",
+    "noOrders": "Geen bestellingen gevonden",
+    "noOrdersOnPage": "Geen bestellingen gevonden op deze pagina",
+    "tryAnotherDateRange": "Probeer een andere periode of wis je filters.",
+    "changeSearchFilterPage": "Wijzig je zoekopdracht of filter, of bekijk een andere pagina."
+  },
+  "search": {
+    "label": "Bestellingen op deze pagina zoeken",
+    "placeholder": "Op deze pagina zoeken",
+    "results_one": "{{formattedCount}} bestelling getoond op deze pagina.",
+    "results_other": "{{formattedCount}} bestellingen getoond op deze pagina."
+  },
+  "filters": {
+    "filterOrders": "Bestellingen filteren",
+    "artworkStatus": "Ontwerpstatus op deze pagina",
+    "editArtworkStatus": "Filter voor ontwerpstatus bewerken",
+    "editOrderDate": "Filter voor besteldatum bewerken",
+    "orderDateRange": "Besteldatum: {{from}} – {{to}}"
+  },
+  "artwork": {
+    "all": "Alle",
+    "needed": "Ontwerp nodig",
+    "complete": "Ontwerp compleet"
+  },
+  "display": {
+    "accessibleLabel": "Weergaveopties",
+    "sortBy": "Sorteren op",
+    "dateOrder": "Volgorde van datums",
+    "newestFirst": "Nieuwste eerst",
+    "oldestFirst": "Oudste eerst",
+    "columns": "Kolommen",
+    "hideColumn": "{{column}} verbergen",
+    "showColumn": "{{column}} weergeven"
+  },
+  "date": {
+    "orderDate": "Besteldatum",
+    "anyTime": "Elke periode",
+    "any": "Ongeacht",
+    "today": "Vandaag",
+    "lastSevenDays": "Afgelopen 7 dagen",
+    "lastThirtyDays": "Afgelopen 30 dagen",
+    "lastNinetyDays": "Afgelopen 90 dagen",
+    "customRange": "Aangepaste periode",
+    "editCustomRange": "Aangepaste periode bewerken",
+    "from": "Van",
+    "to": "Tot",
+    "datePlaceholder": "YYYY-MM-DD",
+    "apply": "Toepassen",
+    "backToPresets": "Terug naar de standaardperioden",
+    "utc": "UTC",
+    "errors": {
+      "bothRequired": "Selecteer zowel een startdatum als een einddatum.",
+      "endBeforeStart": "De einddatum moet gelijk zijn aan of na de startdatum liggen.",
+      "emptyDate": "Deze kalenderdatum komt niet voor in de tijdzone van de winkel. Er kunnen dus op die datum geen bestellingen zijn.",
+      "invalidDate": "Voer geldige datums in voor de tijdzone van je winkel."
+    }
+  },
+  "table": {
+    "columns": {
+      "order": "Bestelling",
+      "date": "Datum",
+      "total": "Totaal",
+      "payment": "Betaalstatus",
+      "artwork": "Ontwerpstatus",
+      "methods": "Decoratiemethoden",
+      "items": "Gepersonaliseerde artikelen"
+    }
+  },
+  "payment": {
+    "paid": "Betaald",
+    "refunded": "Terugbetaald",
+    "partiallyRefunded": "Gedeeltelijk terugbetaald",
+    "partiallyPaid": "Gedeeltelijk betaald",
+    "authorized": "Geautoriseerd",
+    "voided": "Ongeldig gemaakt",
+    "pending": "In behandeling",
+    "expired": "Verlopen",
+    "unknown": "Onbekend"
+  },
+  "badges": {
+    "test": "Test",
+    "cancelled": "Geannuleerd",
+    "needsReview": "Moet worden gecontroleerd"
+  },
+  "order": {
+    "reference": "Bestelling {{orderNumber}}"
+  },
+  "summary": {
+    "methods": "Decoratiemethoden",
+    "viewAllMethods": "Alle decoratiemethoden voor {{orderLabel}} weergeven",
+    "noMethods": "Geen decoratiemethoden",
+    "methodUnavailable": "Decoratiemethode niet beschikbaar"
+  },
+  "counts": {
+    "items_one": "{{formattedCount}} artikel",
+    "items_other": "{{formattedCount}} artikelen",
+    "itemsExact": "Aantal artikelen: {{formattedCount}}",
+    "variantAndItems_one": "{{formattedVariantCount}} variant · aantal artikelen: {{formattedItemCount}}",
+    "variantAndItems_other": "{{formattedVariantCount}} varianten · aantal artikelen: {{formattedItemCount}}"
+  },
+  "items": {
+    "heading": "Gepersonaliseerde artikelen",
+    "needsVerification": "Moet worden gecontroleerd",
+    "variantUnavailable": "Variantnaam niet beschikbaar",
+    "variantBreakdown_one": "{{formattedVariantCount}} variant · aantal artikelen: {{formattedItemCount}}",
+    "variantBreakdown_other": "{{formattedVariantCount}} varianten · aantal artikelen: {{formattedItemCount}}",
+    "imageAlt": "Afbeelding van {{itemName}}",
+    "purchasedItem": "gekocht artikel",
+    "purchasedItemUnavailable": "Naam van gekocht artikel niet beschikbaar",
+    "showBreakdown": "{{breakdown}} voor {{itemName}} weergeven",
+    "hideBreakdown": "{{breakdown}} voor {{itemName}} verbergen",
+    "showVariantBreakdown": "{{summary}} weergeven",
+    "hideVariantBreakdown": "{{summary}} verbergen",
+    "variant": "Variant",
+    "quantity": "Aantal",
+    "empty": "Gekochte artikelen moeten worden gecontroleerd."
+  },
+  "designPreview": {
+    "expired": "Ontwerpgegevens verlopen",
+    "unavailable": "Ontwerpvoorbeeld niet beschikbaar",
+    "expiredDetails": "De opgeslagen ontwerpgegevens worden niet meer bewaard.",
+    "unavailableDetails": "De opgeslagen gegevens over decoratieplekken zijn niet beschikbaar voor dit ontwerp.",
+    "view": "Ontwerp bekijken",
+    "heading": "Ontwerpvoorbeeld",
+    "artworkVersion": "Ontwerpversie",
+    "currentArtwork": "Huidig ontwerp",
+    "atPurchase": "Bij aankoop",
+    "refreshing": "Bestelling vernieuwen"
+  },
+  "artworkDownload": {
+    "action": "Origineel bestand downloaden",
+    "expired": "Het oorspronkelijke ontwerpbestand is niet meer beschikbaar.",
+    "failed": "Het oorspronkelijke bestand kon niet worden gedownload. Probeer het opnieuw."
+  },
+  "artworkHistory": {
+    "heading": "Ontwerphistorie",
+    "view": "Ontwerphistorie bekijken ({{formattedCount}})",
+    "design": "Ontwerp {{designNumber}}",
+    "placement": "Decoratieplek {{placementNumber}}",
+    "attached": "Ontwerp toegevoegd",
+    "version": "Versie {{version}}",
+    "erased": "Ontwerpgegevens gewist",
+    "originalAvailableUntil": "Origineel bestand beschikbaar tot {{date}}",
+    "showMore": "Meer geschiedenis weergeven",
+    "dateUtc": "{{date}} UTC"
+  },
+  "purchaseArtwork": {
+    "read": {
+      "accessDenied": "Je Shopify-identiteit of machtiging kon niet worden gecontroleerd. Open Insignia opnieuw via Shopify-beheercentrum.",
+      "notFound": "Deze bestelling kon niet worden gevonden. Ga terug naar Bestellingen en selecteer een beschikbare bestelling.",
+      "refreshFailed": "De bestelling kon niet worden vernieuwd. De laatst geladen gegevens worden getoond. Probeer het opnieuw.",
+      "loadFailed": "De bestelling kon niet worden geladen. Probeer het opnieuw."
+    },
+    "actions": {
+      "orderActions": "Bestelacties",
+      "more": "Meer acties",
+      "viewInShopify": "Bekijken in Shopify",
+      "tryAgain": "Opnieuw proberen",
+      "jumpToMissingArtwork": "Naar ontbrekend ontwerp gaan"
+    },
+    "placement": {
+      "fallback": "Decoratieplek {{formattedNumber}}",
+      "ariaLabel": "Ontwerp {{placementName}}",
+      "status": {
+        "replaced": "Vervangen",
+        "attached": "Toegevoegd",
+        "provided": "Aangeleverd",
+        "unavailable": "Niet beschikbaar",
+        "needed": "Ontwerp nodig"
+      },
+      "sizeUnavailable": "Decoratieformaat niet beschikbaar",
+      "preview": "Ontwerpvoorbeeld bekijken",
+      "download": "Bestand downloaden",
+      "replace": "Ontwerp vervangen",
+      "attach": "Ontwerp toevoegen",
+      "accessFailed": "Het ontwerp kon niet worden geladen. Probeer het opnieuw.",
+      "changed": "Het ontwerp is gewijzigd. Laad de bestelpagina opnieuw voordat je verdergaat.",
+      "attachFailed": "Het ontwerp kon niet worden toegevoegd. Laad de bestelpagina opnieuw en probeer het opnieuw.",
+      "retentionEnded": "Ontwerp niet meer beschikbaar.",
+      "deleteSoon": "Download het bestand voordat het op {{date}} wordt verwijderd.",
+      "originalArtwork": "Origineel ontwerpbestand",
+      "previewHeading": "Ontwerpvoorbeeld: {{placementName}}",
+      "previewAlt": "Gecontroleerd PNG-bestand {{placementName}}",
+      "previewLoading": "Voorbeeld van ontwerp laden",
+      "previewUnavailable": "Voorbeeld niet beschikbaar. Sluit dit dialoogvenster en probeer het opnieuw."
+    },
+    "preview": {
+      "currentSection": "Voorbeeld van huidig ontwerp",
+      "purchasedSection": "Voorbeeld van gekocht ontwerp",
+      "view": "Aanzicht",
+      "variant": "Variant",
+      "viewFallback": "Aanzicht {{formattedNumber}}",
+      "variantFallback": "Variant {{formattedNumber}} (naam niet beschikbaar)",
+      "variantOption": "{{variantName}} · {{formattedQuantity}} besteld",
+      "loadingCurrent": "Voorbeeld van huidig ontwerp laden",
+      "loadingPurchased": "Voorbeeld van gekocht ontwerp laden",
+      "unavailable": "Het ontwerpvoorbeeld kon niet worden geladen. Probeer het opnieuw.",
+      "designUnavailable": "Dit ontwerp is niet meer beschikbaar.",
+      "accessExpired": "De toegang tot het voorbeeld is verlopen. Laad het voorbeeld opnieuw om verder te gaan.",
+      "currentArtworkUnavailable": "Sommige huidige ontwerpen zijn niet beschikbaar in dit voorbeeld.",
+      "purchasedArtworkUnavailable": "Sommige ontwerpen van de oorspronkelijke bestelling zijn niet beschikbaar in dit voorbeeld.",
+      "loadPreview": "Voorbeeld laden",
+      "tryAgain": "Opnieuw proberen"
+    },
+    "artworkState": {
+      "currentUnavailableLocked": "Huidig ontwerp niet meer beschikbaar.",
+      "currentUnavailableReplace": "Huidig ontwerp niet beschikbaar. Upload een vervangend bestand voordat de personalisatiegegevens verlopen."
+    },
+    "badges": {
+      "orderUnavailable": "Bestelling niet beschikbaar",
+      "accessUnavailable": "Geen toegang tot bestelling"
+    },
+    "warnings": {
+      "orderCancelledHeading": "Bestelling geannuleerd",
+      "orderCancelledBody": "Deze bestelling is geannuleerd. Controleer de bestelling in Shopify voordat je het ontwerp klaarmaakt.",
+      "orderReviewHeading": "Bestelling moet worden gecontroleerd",
+      "orderReviewBody": "Controleer deze bestelling in Shopify voordat je het ontwerp klaarmaakt.",
+      "artworkNeededHeading": "Ontwerp nodig",
+      "missingArtwork_one": "Voor {{formattedCount}} decoratieplek is een ontwerp nodig.",
+      "missingArtwork_other": "Voor {{formattedCount}} decoratieplekken is een ontwerp nodig.",
+      "missingArtworkExact": "Voor {{formattedCount}} decoratieplekken ontbreekt een ontwerp."
+    },
+    "verification": {
+      "placementDetailsMissing": "Gegevens over decoratieplekken ontbreken. Controleer deze bestelling in Shopify voordat je het ontwerp klaarmaakt.",
+      "customizationUnavailable": "De personalisatie van deze bestelling moet worden gecontroleerd. Begin niet met de productie voordat de gegevens zijn gecontroleerd.",
+      "erasedUnavailable": "De personalisatiegegevens en het oorspronkelijke ontwerpbestand zijn niet meer beschikbaar. De bestelbedragen zijn nog wel beschikbaar."
+    },
+    "design": {
+      "productUnavailable": "Gepersonaliseerd product",
+      "customization": "Personalisatie van {{productName}}",
+      "ariaLabel": "{{productName}}, ontwerp {{formattedNumber}}",
+      "heading": "{{productName}} · Ontwerp {{formattedNumber}}",
+      "noPlacementsHeading": "Personalisatie moet worden gecontroleerd"
+    },
+    "payment": {
+      "heading": "Betaalgegevens",
+      "originalTotal": "Oorspronkelijk totaalbedrag van de bestelling",
+      "firstFullyPaid": "Datum eerste volledige betaling",
+      "notRecorded": "Niet geregistreerd",
+      "refundRecords": "Terugbetalingsregistraties",
+      "settlementNote": "Deze registraties bevestigen niet dat het geld is vereffend. Controleer de betalingsvereffening in Shopify.",
+      "refundDetails": "Gegevens over terugbetalingen",
+      "purchasedItem": "Gekocht artikel",
+      "refundLine": "{{itemName}}: {{formattedQuantity}} stuks geregistreerd voor terugbetaling, {{amount}}"
+    }
+  }
+}

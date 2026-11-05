@@ -1,0 +1,33 @@
+{
+  "upload": {
+    "privateArtwork": "Privéontwerp",
+    "previewHeading": "Voorbeeld van ontwerp",
+    "uploadAction": "Ontwerp uploaden",
+    "verifiedPreview": "Gecontroleerd ontwerpvoorbeeld",
+    "retryUpload": "Geüpload ontwerp opnieuw controleren",
+    "retryPreview": "Voorbeeld van ontwerp opnieuw proberen",
+    "requirements": "SVG-, PNG- of JPEG-bestand, maximaal 5 MiB.",
+    "invalidFormat": "Kies een SVG-, PNG- of JPEG-bestand.",
+    "tooLarge": "Kies een bestand van maximaal 5 MiB.",
+    "allocating": "Upload voorbereiden…",
+    "uploading": "Ontwerp uploaden…",
+    "processing": "Ontwerp controleren…",
+    "verified": "Ontwerp gecontroleerd. Het origineel wordt bewaard tot {{expiresAt}}.",
+    "previewRenewed": "Toegang tot het ontwerpvoorbeeld vernieuwd.",
+    "downloadPrepared": "Download gereed.",
+    "expired": "De toegang tot het ontwerp is verlopen. Upload het bestand opnieuw.",
+    "inspectionRejected": "Het ontwerp kon niet worden gecontroleerd. Kies een ander bestand.",
+    "processingTimeout": "Je ontwerp wordt nog verwerkt. Controleer het later opnieuw.",
+    "failed": "Ontwerp niet beschikbaar",
+    "resumeFailed": "Geüpload ontwerp niet beschikbaar. Probeer het later opnieuw.",
+    "previewFailed": "Voorbeeld niet beschikbaar. Probeer het opnieuw.",
+    "downloadFailed": "Download niet beschikbaar. Probeer het opnieuw.",
+    "accessDenied": "Toegang tot het ontwerp is niet beschikbaar. Laad de pagina opnieuw en probeer het nog eens."
+  },
+  "launcher": {
+    "reviewCart": "Gepersonaliseerde winkelwagen bekijken",
+    "customize": "Dit product personaliseren",
+    "configurationUnavailable": "Personalisatie-instellingen niet beschikbaar",
+    "unavailable": "Personalisatie niet beschikbaar"
+  }
+}

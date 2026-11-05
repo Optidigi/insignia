@@ -1,0 +1,4 @@
+<insignia-cart-repair language="{{ localization.language.iso_code | escape }}" text-direction="{{ localization.language.direction | escape }}" proxy-base="{{ routes.root_url }}apps/{{ block.settings.proxy_prefix | escape }}" cart-root="{{ routes.root_url }}" country="{{ localization.country.iso_code }}" market-id="{{ localization.market.id }}"></insignia-cart-repair>
+{% schema %}
+{"name":"t:blocks.cart_repair.name","target":"body","javascript":"insignia-storefront.js","settings":[{"type":"text","id":"proxy_prefix","label":"t:blocks.cart_repair.proxy_prefix","default":"insignia"}]}
+{% endschema %}

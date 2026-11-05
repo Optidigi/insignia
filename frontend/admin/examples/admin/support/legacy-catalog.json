@@ -1,0 +1,1356 @@
+{
+  "retrievedOn": "2026-10-20",
+  "geometryUnits": "percent of the full source image; centers, not upper-left corners",
+  "products": [
+    {
+      "id": "gid://shopify/Product/15468416336256",
+      "title": "Ontwerp je eigen Superfunny hoodie",
+      "handle": "ontwerp-je-eigen-superfunny-hoodie",
+      "productConfigId": "cb86e7b8-0281-4062-a7e3-52214a2e28e9",
+      "selectedVariantId": "gid://shopify/ProductVariant/56991766053248",
+      "sourceUrl": "https://superfunny.nl/products/ontwerp-je-eigen-superfunny-hoodie",
+      "configUrl": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15468416336256&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56991766053248",
+      "color": "Zwart",
+      "currency": "EUR",
+      "baseProductPriceCents": 2495,
+      "variants": [
+        {
+          "id": "gid://shopify/ProductVariant/56991766053248",
+          "title": "Zwart / XS",
+          "sizeLabel": "XS",
+          "priceCents": 2495,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56991766086016",
+          "title": "Zwart / S",
+          "sizeLabel": "S",
+          "priceCents": 2495,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56991766118784",
+          "title": "Zwart / M",
+          "sizeLabel": "M",
+          "priceCents": 2495,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56991766151552",
+          "title": "Zwart / L",
+          "sizeLabel": "L",
+          "priceCents": 2495,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56991766184320",
+          "title": "Zwart / XL",
+          "sizeLabel": "XL",
+          "priceCents": 2495,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56991766217088",
+          "title": "Zwart / XXL",
+          "sizeLabel": "XXL",
+          "priceCents": 2495,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56991766249856",
+          "title": "Zwart / 3XL",
+          "sizeLabel": "3XL",
+          "priceCents": 2495,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56991766282624",
+          "title": "Zwart / 4XL",
+          "sizeLabel": "4XL",
+          "priceCents": 2495,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56991766315392",
+          "title": "Zwart / 5XL",
+          "sizeLabel": "5XL",
+          "priceCents": 2495,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56991766348160",
+          "title": "Zwart / 6XL",
+          "sizeLabel": "6XL",
+          "priceCents": 2495,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56991766380928",
+          "title": "Zwart / 7XL",
+          "sizeLabel": "7XL",
+          "priceCents": 2495,
+          "available": true,
+          "selectedOptions": []
+        }
+      ],
+      "methods": [
+        {
+          "id": "d8f3958d-f892-470f-8144-20397097fa40",
+          "name": "Bedrukken",
+          "basePriceCents": 0,
+          "hidePriceWhenZero": true,
+          "customerName": null,
+          "customerDescription": "Levendige kleuren en scherpe details",
+          "artworkConstraints": {
+            "fileTypes": ["jpg", "pdf", "eps", "svg", "png", "webp", "tiff"]
+          }
+        }
+      ],
+      "placements": [
+        {
+          "id": "be0d8012-badd-4344-814b-cb771baf5533",
+          "name": "Rechterborst",
+          "basePriceAdjustmentCents": 0,
+          "hidePriceWhenZero": true,
+          "steps": [
+            {
+              "label": "Standaard",
+              "priceAdjustmentCents": 0,
+              "scaleFactor": 0.75
+            },
+            {
+              "label": "Groot",
+              "priceAdjustmentCents": 250,
+              "scaleFactor": 1
+            }
+          ],
+          "defaultStepIndex": 0,
+          "geometryByViewId": {
+            "08d16398-5b9b-4468-acbf-00f90bccc8b8": {
+              "centerXPercent": 37.99999999999999,
+              "centerYPercent": 31.49999999999999,
+              "maxWidthPercent": 18,
+              "maxHeightPercent": 15
+            },
+            "d0934613-efbe-4b65-b239-206a829ea6e4": null,
+            "582555d8-e03e-481c-bb04-95afa2a36f55": null,
+            "8ab39150-a661-45c5-b77d-85f057314128": null
+          },
+          "pricePerMethod": {
+            "54f013a5-5382-41de-b36e-d80e6fc1c971": 1500,
+            "d8f3958d-f892-470f-8144-20397097fa40": 750
+          }
+        },
+        {
+          "id": "5d57f4bb-aa8d-4499-9973-f5a71d9716bf",
+          "name": "Linkerborst",
+          "basePriceAdjustmentCents": 0,
+          "hidePriceWhenZero": true,
+          "steps": [
+            {
+              "label": "Standaard",
+              "priceAdjustmentCents": 0,
+              "scaleFactor": 0.75
+            },
+            {
+              "label": "Groot",
+              "priceAdjustmentCents": 250,
+              "scaleFactor": 1
+            }
+          ],
+          "defaultStepIndex": 0,
+          "geometryByViewId": {
+            "08d16398-5b9b-4468-acbf-00f90bccc8b8": {
+              "centerXPercent": 61.99999999999999,
+              "centerYPercent": 31.49999999999999,
+              "maxWidthPercent": 18,
+              "maxHeightPercent": 15
+            },
+            "d0934613-efbe-4b65-b239-206a829ea6e4": null,
+            "582555d8-e03e-481c-bb04-95afa2a36f55": null,
+            "8ab39150-a661-45c5-b77d-85f057314128": null
+          },
+          "pricePerMethod": {
+            "54f013a5-5382-41de-b36e-d80e6fc1c971": 1500,
+            "d8f3958d-f892-470f-8144-20397097fa40": 750
+          }
+        },
+        {
+          "id": "35c04bcd-1017-425e-beed-60697b97fea8",
+          "name": "Buik",
+          "basePriceAdjustmentCents": 0,
+          "hidePriceWhenZero": false,
+          "steps": [
+            {
+              "label": "Standard",
+              "priceAdjustmentCents": 0,
+              "scaleFactor": 1
+            }
+          ],
+          "defaultStepIndex": 0,
+          "geometryByViewId": {
+            "08d16398-5b9b-4468-acbf-00f90bccc8b8": {
+              "centerXPercent": 50,
+              "centerYPercent": 40,
+              "maxWidthPercent": 32,
+              "maxHeightPercent": 32
+            },
+            "d0934613-efbe-4b65-b239-206a829ea6e4": null,
+            "582555d8-e03e-481c-bb04-95afa2a36f55": null,
+            "8ab39150-a661-45c5-b77d-85f057314128": null
+          },
+          "pricePerMethod": {
+            "d8f3958d-f892-470f-8144-20397097fa40": 1500,
+            "54f013a5-5382-41de-b36e-d80e6fc1c971": 3000
+          }
+        },
+        {
+          "id": "bb7aa0b0-2ca9-4c88-b4ad-37db792a5be7",
+          "name": "Rug",
+          "basePriceAdjustmentCents": 0,
+          "hidePriceWhenZero": true,
+          "steps": [
+            {
+              "label": "Standaard",
+              "priceAdjustmentCents": 0,
+              "scaleFactor": 0.75
+            },
+            {
+              "label": "Groot",
+              "priceAdjustmentCents": 250,
+              "scaleFactor": 1
+            }
+          ],
+          "defaultStepIndex": 0,
+          "geometryByViewId": {
+            "08d16398-5b9b-4468-acbf-00f90bccc8b8": null,
+            "d0934613-efbe-4b65-b239-206a829ea6e4": {
+              "centerXPercent": 49.5,
+              "centerYPercent": 37.99999999999999,
+              "maxWidthPercent": 27,
+              "maxHeightPercent": 28
+            },
+            "582555d8-e03e-481c-bb04-95afa2a36f55": null,
+            "8ab39150-a661-45c5-b77d-85f057314128": null
+          },
+          "pricePerMethod": {
+            "54f013a5-5382-41de-b36e-d80e6fc1c971": 3000,
+            "d8f3958d-f892-470f-8144-20397097fa40": 1500
+          }
+        },
+        {
+          "id": "06c4def0-a2f7-48d0-91cc-14982e20f00e",
+          "name": "Linker Schouder",
+          "basePriceAdjustmentCents": 0,
+          "hidePriceWhenZero": true,
+          "steps": [
+            {
+              "label": "Standaard",
+              "priceAdjustmentCents": 0,
+              "scaleFactor": 0.75
+            },
+            {
+              "label": "Groot",
+              "priceAdjustmentCents": 250,
+              "scaleFactor": 1
+            }
+          ],
+          "defaultStepIndex": 0,
+          "geometryByViewId": {
+            "08d16398-5b9b-4468-acbf-00f90bccc8b8": null,
+            "d0934613-efbe-4b65-b239-206a829ea6e4": null,
+            "582555d8-e03e-481c-bb04-95afa2a36f55": {
+              "centerXPercent": 50.49999999999999,
+              "centerYPercent": 36.49999999999999,
+              "maxWidthPercent": 11,
+              "maxHeightPercent": 15
+            },
+            "8ab39150-a661-45c5-b77d-85f057314128": null
+          },
+          "pricePerMethod": {
+            "54f013a5-5382-41de-b36e-d80e6fc1c971": 1500,
+            "d8f3958d-f892-470f-8144-20397097fa40": 1000
+          }
+        },
+        {
+          "id": "25b36e82-e61e-4286-9dff-78ca91940738",
+          "name": "Rechter Schouder",
+          "basePriceAdjustmentCents": 0,
+          "hidePriceWhenZero": true,
+          "steps": [
+            {
+              "label": "Standaard",
+              "priceAdjustmentCents": 0,
+              "scaleFactor": 0.75
+            },
+            {
+              "label": "Groot",
+              "priceAdjustmentCents": 250,
+              "scaleFactor": 1
+            }
+          ],
+          "defaultStepIndex": 0,
+          "geometryByViewId": {
+            "08d16398-5b9b-4468-acbf-00f90bccc8b8": null,
+            "d0934613-efbe-4b65-b239-206a829ea6e4": null,
+            "582555d8-e03e-481c-bb04-95afa2a36f55": null,
+            "8ab39150-a661-45c5-b77d-85f057314128": {
+              "centerXPercent": 49.50000000000001,
+              "centerYPercent": 36.49999999999999,
+              "maxWidthPercent": 11,
+              "maxHeightPercent": 15
+            }
+          },
+          "pricePerMethod": {
+            "54f013a5-5382-41de-b36e-d80e6fc1c971": 1500,
+            "d8f3958d-f892-470f-8144-20397097fa40": 1000
+          }
+        }
+      ],
+      "views": [
+        {
+          "id": "08d16398-5b9b-4468-acbf-00f90bccc8b8",
+          "name": "Voorkant",
+          "perspective": "front",
+          "calibrationPxPerCm": 11.73469387755102,
+          "image": {
+            "filename": "hoodie-front.jpg",
+            "width": 1000,
+            "height": 1000,
+            "sha256": "bf5bc475eecf6f09c2fcd5aff239ec6690eea255863efc10865292208b4a715e",
+            "sourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/a7fd2f65-371d-4320-b3dc-f8ccdfd344dc/1776965787216-0.jpg",
+            "previewFilename": "hoodie-front-preview.jpg",
+            "previewWidth": 1000,
+            "previewHeight": 1000,
+            "previewSha256": "21e3b9f9f98e1368737fb9afd5896f2976fa17309f017f301406a2366add1ee1",
+            "reportedWidth": null,
+            "reportedHeight": null
+          },
+          "placements": [
+            {
+              "id": "be0d8012-badd-4344-814b-cb771baf5533",
+              "name": "Rechterborst",
+              "centerXPercent": 37.99999999999999,
+              "centerYPercent": 31.49999999999999,
+              "maxWidthPercent": 18,
+              "maxHeightPercent": 15
+            },
+            {
+              "id": "5d57f4bb-aa8d-4499-9973-f5a71d9716bf",
+              "name": "Linkerborst",
+              "centerXPercent": 61.99999999999999,
+              "centerYPercent": 31.49999999999999,
+              "maxWidthPercent": 18,
+              "maxHeightPercent": 15
+            },
+            {
+              "id": "35c04bcd-1017-425e-beed-60697b97fea8",
+              "name": "Buik",
+              "centerXPercent": 50,
+              "centerYPercent": 40,
+              "maxWidthPercent": 32,
+              "maxHeightPercent": 32
+            }
+          ]
+        },
+        {
+          "id": "d0934613-efbe-4b65-b239-206a829ea6e4",
+          "name": "Achterkant",
+          "perspective": "custom",
+          "calibrationPxPerCm": 58.16452401967759,
+          "image": {
+            "filename": "hoodie-back.jpg",
+            "width": 6000,
+            "height": 6000,
+            "sha256": "fbacb0cd6fddba5d77a3694aa65c5264a28f2d79266f0cf1389a7cc0fac22c01",
+            "sourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/a8772613-abef-4fdd-8407-7bad875f172d/variants/52400687448392/img.jpg",
+            "previewFilename": "hoodie-back-preview.jpg",
+            "previewWidth": 1200,
+            "previewHeight": 1200,
+            "previewSha256": "a04e013c637d19efe418bdcb7ef84d1105d5af77fb9f99660128ca70ad293023",
+            "reportedWidth": null,
+            "reportedHeight": null
+          },
+          "placements": [
+            {
+              "id": "bb7aa0b0-2ca9-4c88-b4ad-37db792a5be7",
+              "name": "Rug",
+              "centerXPercent": 49.5,
+              "centerYPercent": 37.99999999999999,
+              "maxWidthPercent": 27,
+              "maxHeightPercent": 28
+            }
+          ]
+        },
+        {
+          "id": "582555d8-e03e-481c-bb04-95afa2a36f55",
+          "name": "Zijkant Links",
+          "perspective": "custom",
+          "calibrationPxPerCm": 42.09357603085522,
+          "image": {
+            "filename": "hoodie-left.jpg",
+            "width": 6000,
+            "height": 6000,
+            "sha256": "ca743a9cf38ab75115cdd893a0672d4acd7b9019369d8237ebf917e3c59df6b5",
+            "sourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/45a57578-aa9e-40c4-8be0-0819bc414ec0/variants/52400687448392/img.jpg",
+            "previewFilename": "hoodie-left-preview.jpg",
+            "previewWidth": 1200,
+            "previewHeight": 1200,
+            "previewSha256": "efeb7e3e64885993c27bf92f351853b200079fe2bb6548677eed419cbaa1b79d",
+            "reportedWidth": null,
+            "reportedHeight": null
+          },
+          "placements": [
+            {
+              "id": "06c4def0-a2f7-48d0-91cc-14982e20f00e",
+              "name": "Linker Schouder",
+              "centerXPercent": 50.49999999999999,
+              "centerYPercent": 36.49999999999999,
+              "maxWidthPercent": 11,
+              "maxHeightPercent": 15
+            }
+          ]
+        },
+        {
+          "id": "8ab39150-a661-45c5-b77d-85f057314128",
+          "name": "Zijkant Rechts",
+          "perspective": "custom",
+          "calibrationPxPerCm": 42.09357603085522,
+          "image": {
+            "filename": "hoodie-right.jpg",
+            "width": 6000,
+            "height": 6000,
+            "sha256": "829f54858b524d63f10eaf844121eeb38daf1f76242fe19ee69a675f220d93b1",
+            "sourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/8b454d21-1578-441b-a552-13a91307d5f1/variants/52400687448392/img.jpg",
+            "previewFilename": "hoodie-right-preview.jpg",
+            "previewWidth": 1200,
+            "previewHeight": 1200,
+            "previewSha256": "431cd36deebdb698bbf1ff509b9eec155e9db50fc0808fa6e95b25021dca0961",
+            "reportedWidth": null,
+            "reportedHeight": null
+          },
+          "placements": [
+            {
+              "id": "25b36e82-e61e-4286-9dff-78ca91940738",
+              "name": "Rechter Schouder",
+              "centerXPercent": 49.50000000000001,
+              "centerYPercent": 36.49999999999999,
+              "maxWidthPercent": 11,
+              "maxHeightPercent": 15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gid://shopify/Product/15468473450880",
+      "title": "Ontwerp je eigen Superfunny polo",
+      "handle": "ontwerp-je-eigen-superfunny-polo",
+      "productConfigId": "5e0a683f-1b9d-4d2c-b49a-701985ec4937",
+      "selectedVariantId": "gid://shopify/ProductVariant/56992114442624",
+      "sourceUrl": "https://superfunny.nl/products/ontwerp-je-eigen-superfunny-polo",
+      "configUrl": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15468473450880&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56992114442624",
+      "color": "Blauw",
+      "currency": "EUR",
+      "baseProductPriceCents": 1195,
+      "variants": [
+        {
+          "id": "gid://shopify/ProductVariant/56992114442624",
+          "title": "Blauw / XS",
+          "sizeLabel": "XS",
+          "priceCents": 1195,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56992114475392",
+          "title": "Blauw / S",
+          "sizeLabel": "S",
+          "priceCents": 1195,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56992114508160",
+          "title": "Blauw / M",
+          "sizeLabel": "M",
+          "priceCents": 1195,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56992114540928",
+          "title": "Blauw / L",
+          "sizeLabel": "L",
+          "priceCents": 1195,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56992114573696",
+          "title": "Blauw / XL",
+          "sizeLabel": "XL",
+          "priceCents": 1195,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56992114606464",
+          "title": "Blauw / XXL",
+          "sizeLabel": "XXL",
+          "priceCents": 1195,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56992114639232",
+          "title": "Blauw / 3XL",
+          "sizeLabel": "3XL",
+          "priceCents": 1195,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56992114672000",
+          "title": "Blauw / 4XL",
+          "sizeLabel": "4XL",
+          "priceCents": 1195,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56992114704768",
+          "title": "Blauw / 5XL",
+          "sizeLabel": "5XL",
+          "priceCents": 1195,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56992114737536",
+          "title": "Blauw / 6XL",
+          "sizeLabel": "6XL",
+          "priceCents": 1195,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56992114770304",
+          "title": "Blauw / 7XL",
+          "sizeLabel": "7XL",
+          "priceCents": 1195,
+          "available": true,
+          "selectedOptions": []
+        }
+      ],
+      "methods": [
+        {
+          "id": "d8f3958d-f892-470f-8144-20397097fa40",
+          "name": "Bedrukken",
+          "basePriceCents": 0,
+          "hidePriceWhenZero": true,
+          "customerName": null,
+          "customerDescription": "Levendige kleuren en scherpe details",
+          "artworkConstraints": {
+            "fileTypes": ["jpg", "pdf", "eps", "svg", "png", "webp", "tiff"]
+          }
+        }
+      ],
+      "placements": [
+        {
+          "id": "ec2181f6-3c2c-4fcd-b2f8-6dbc23ae4b1d",
+          "name": "Linkerborst",
+          "basePriceAdjustmentCents": 0,
+          "hidePriceWhenZero": true,
+          "steps": [
+            {
+              "label": "Standaard",
+              "priceAdjustmentCents": 0,
+              "scaleFactor": 0.75
+            },
+            {
+              "label": "Groot",
+              "priceAdjustmentCents": 250,
+              "scaleFactor": 1
+            }
+          ],
+          "defaultStepIndex": 0,
+          "geometryByViewId": {
+            "917e345a-6e29-4178-9ffa-78e4294a3f53": {
+              "centerXPercent": 62.99999999999999,
+              "centerYPercent": 28.5,
+              "maxWidthPercent": 18,
+              "maxHeightPercent": 17
+            },
+            "c862e4c7-1c58-4305-93b4-633372f706e2": null,
+            "60c96cee-5b01-4bb2-8afe-5d9dbfd7abe3": null,
+            "72b94a90-6573-4d9d-9ce1-17de85082f4f": null
+          },
+          "pricePerMethod": {
+            "54f013a5-5382-41de-b36e-d80e6fc1c971": 1500,
+            "d8f3958d-f892-470f-8144-20397097fa40": 750
+          }
+        },
+        {
+          "id": "178c4e39-5615-43b3-a785-ba0a8f986ce9",
+          "name": "Rechterborst",
+          "basePriceAdjustmentCents": 0,
+          "hidePriceWhenZero": true,
+          "steps": [
+            {
+              "label": "Standaard",
+              "priceAdjustmentCents": 0,
+              "scaleFactor": 0.75
+            },
+            {
+              "label": "Groot",
+              "priceAdjustmentCents": 250,
+              "scaleFactor": 1
+            }
+          ],
+          "defaultStepIndex": 0,
+          "geometryByViewId": {
+            "917e345a-6e29-4178-9ffa-78e4294a3f53": {
+              "centerXPercent": 37,
+              "centerYPercent": 28.5,
+              "maxWidthPercent": 18,
+              "maxHeightPercent": 17
+            },
+            "c862e4c7-1c58-4305-93b4-633372f706e2": null,
+            "60c96cee-5b01-4bb2-8afe-5d9dbfd7abe3": null,
+            "72b94a90-6573-4d9d-9ce1-17de85082f4f": null
+          },
+          "pricePerMethod": {
+            "54f013a5-5382-41de-b36e-d80e6fc1c971": 1500,
+            "d8f3958d-f892-470f-8144-20397097fa40": 750
+          }
+        },
+        {
+          "id": "f46bba88-0d95-44f7-b311-8e8abe0b45d2",
+          "name": "Buik",
+          "basePriceAdjustmentCents": 0,
+          "hidePriceWhenZero": false,
+          "steps": [
+            {
+              "label": "Standard",
+              "priceAdjustmentCents": 0,
+              "scaleFactor": 1
+            }
+          ],
+          "defaultStepIndex": 0,
+          "geometryByViewId": {
+            "917e345a-6e29-4178-9ffa-78e4294a3f53": {
+              "centerXPercent": 49.5,
+              "centerYPercent": 59.5,
+              "maxWidthPercent": 31,
+              "maxHeightPercent": 43
+            },
+            "c862e4c7-1c58-4305-93b4-633372f706e2": null,
+            "60c96cee-5b01-4bb2-8afe-5d9dbfd7abe3": null,
+            "72b94a90-6573-4d9d-9ce1-17de85082f4f": null
+          },
+          "pricePerMethod": {
+            "54f013a5-5382-41de-b36e-d80e6fc1c971": 3000,
+            "d8f3958d-f892-470f-8144-20397097fa40": 1500
+          }
+        },
+        {
+          "id": "bc4f4f76-4d98-4ff5-85ae-50fffe67c0ee",
+          "name": "Rug",
+          "basePriceAdjustmentCents": 0,
+          "hidePriceWhenZero": true,
+          "steps": [
+            {
+              "label": "Standaard",
+              "priceAdjustmentCents": 0,
+              "scaleFactor": 0.75
+            },
+            {
+              "label": "Groot",
+              "priceAdjustmentCents": 250,
+              "scaleFactor": 1
+            }
+          ],
+          "defaultStepIndex": 0,
+          "geometryByViewId": {
+            "917e345a-6e29-4178-9ffa-78e4294a3f53": null,
+            "c862e4c7-1c58-4305-93b4-633372f706e2": {
+              "centerXPercent": 50,
+              "centerYPercent": 32,
+              "maxWidthPercent": 34,
+              "maxHeightPercent": 34
+            },
+            "60c96cee-5b01-4bb2-8afe-5d9dbfd7abe3": null,
+            "72b94a90-6573-4d9d-9ce1-17de85082f4f": null
+          },
+          "pricePerMethod": {
+            "54f013a5-5382-41de-b36e-d80e6fc1c971": 3000,
+            "d8f3958d-f892-470f-8144-20397097fa40": 1500
+          }
+        },
+        {
+          "id": "f17ed5e5-de5b-4150-b5b5-2fdce96cf9ec",
+          "name": "Linker Schouder",
+          "basePriceAdjustmentCents": 0,
+          "hidePriceWhenZero": true,
+          "steps": [
+            {
+              "label": "Standaard",
+              "priceAdjustmentCents": 0,
+              "scaleFactor": 0.75
+            },
+            {
+              "label": "Groot",
+              "priceAdjustmentCents": 250,
+              "scaleFactor": 1
+            }
+          ],
+          "defaultStepIndex": 0,
+          "geometryByViewId": {
+            "917e345a-6e29-4178-9ffa-78e4294a3f53": null,
+            "c862e4c7-1c58-4305-93b4-633372f706e2": null,
+            "60c96cee-5b01-4bb2-8afe-5d9dbfd7abe3": {
+              "centerXPercent": 52,
+              "centerYPercent": 28.5,
+              "maxWidthPercent": 12,
+              "maxHeightPercent": 15
+            },
+            "72b94a90-6573-4d9d-9ce1-17de85082f4f": null
+          },
+          "pricePerMethod": {
+            "54f013a5-5382-41de-b36e-d80e6fc1c971": 1500,
+            "d8f3958d-f892-470f-8144-20397097fa40": 1000
+          }
+        },
+        {
+          "id": "de727f92-d782-4e12-aa53-3f69f2c4b85c",
+          "name": "Rechter Schouder",
+          "basePriceAdjustmentCents": 0,
+          "hidePriceWhenZero": true,
+          "steps": [
+            {
+              "label": "Standaard",
+              "priceAdjustmentCents": 0,
+              "scaleFactor": 0.75
+            },
+            {
+              "label": "Groot",
+              "priceAdjustmentCents": 250,
+              "scaleFactor": 1
+            }
+          ],
+          "defaultStepIndex": 0,
+          "geometryByViewId": {
+            "917e345a-6e29-4178-9ffa-78e4294a3f53": null,
+            "c862e4c7-1c58-4305-93b4-633372f706e2": null,
+            "60c96cee-5b01-4bb2-8afe-5d9dbfd7abe3": null,
+            "72b94a90-6573-4d9d-9ce1-17de85082f4f": {
+              "centerXPercent": 48,
+              "centerYPercent": 28.5,
+              "maxWidthPercent": 12,
+              "maxHeightPercent": 15
+            }
+          },
+          "pricePerMethod": {
+            "54f013a5-5382-41de-b36e-d80e6fc1c971": 1500,
+            "d8f3958d-f892-470f-8144-20397097fa40": 1000
+          }
+        }
+      ],
+      "views": [
+        {
+          "id": "917e345a-6e29-4178-9ffa-78e4294a3f53",
+          "name": "Voorkant",
+          "perspective": "front",
+          "calibrationPxPerCm": 10.71447552067056,
+          "image": {
+            "filename": "polo-front.jpg",
+            "width": 1000,
+            "height": 1000,
+            "sha256": "988be00b1a7090d032f46fc02075b5b8215e40d1465d91db1be5c7c64889b5f1",
+            "sourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/448a2895-4496-4496-9611-7f51fa3a9f28/1777022356213-6.jpg",
+            "previewFilename": "polo-front-preview.jpg",
+            "previewWidth": 1000,
+            "previewHeight": 1000,
+            "previewSha256": "c197fa3b3985a807c649a0eaa4194eb033b0a2630a04623690b4a200cf16d607",
+            "reportedWidth": null,
+            "reportedHeight": null
+          },
+          "placements": [
+            {
+              "id": "ec2181f6-3c2c-4fcd-b2f8-6dbc23ae4b1d",
+              "name": "Linkerborst",
+              "centerXPercent": 62.99999999999999,
+              "centerYPercent": 28.5,
+              "maxWidthPercent": 18,
+              "maxHeightPercent": 17
+            },
+            {
+              "id": "178c4e39-5615-43b3-a785-ba0a8f986ce9",
+              "name": "Rechterborst",
+              "centerXPercent": 37,
+              "centerYPercent": 28.5,
+              "maxWidthPercent": 18,
+              "maxHeightPercent": 17
+            },
+            {
+              "id": "f46bba88-0d95-44f7-b311-8e8abe0b45d2",
+              "name": "Buik",
+              "centerXPercent": 49.5,
+              "centerYPercent": 59.5,
+              "maxWidthPercent": 31,
+              "maxHeightPercent": 43
+            }
+          ]
+        },
+        {
+          "id": "c862e4c7-1c58-4305-93b4-633372f706e2",
+          "name": "Achterkant",
+          "perspective": "custom",
+          "calibrationPxPerCm": 72.70408163265306,
+          "image": {
+            "filename": "polo-back.jpg",
+            "width": 5000,
+            "height": 5000,
+            "sha256": "c8322f616085573e9ff4959144ab4e79d5a099cbf0f8672a0bb2e1765ad8b5ad",
+            "sourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/e3fb8673-c839-46cc-b741-a1abd999d26c/variants/52407830315336/img.jpg",
+            "previewFilename": "polo-back-preview.jpg",
+            "previewWidth": 1200,
+            "previewHeight": 1200,
+            "previewSha256": "d30f18f7f3d5af39ef7fbe57c3024be11788b2f820ba711d5bea833252b113a0",
+            "reportedWidth": null,
+            "reportedHeight": null
+          },
+          "placements": [
+            {
+              "id": "bc4f4f76-4d98-4ff5-85ae-50fffe67c0ee",
+              "name": "Rug",
+              "centerXPercent": 50,
+              "centerYPercent": 32,
+              "maxWidthPercent": 34,
+              "maxHeightPercent": 34
+            }
+          ]
+        },
+        {
+          "id": "60c96cee-5b01-4bb2-8afe-5d9dbfd7abe3",
+          "name": "Zijkant Links",
+          "perspective": "custom",
+          "calibrationPxPerCm": 51.66383188852798,
+          "image": {
+            "filename": "polo-left.jpg",
+            "width": 5000,
+            "height": 5000,
+            "sha256": "16384e5ea8edbf7567a777c1281122ddb51398155c535b0c517c1bd8cf472cb2",
+            "sourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/tray/1777022282469-39g8rp8rpri.jpg",
+            "previewFilename": "polo-left-preview.jpg",
+            "previewWidth": 1200,
+            "previewHeight": 1200,
+            "previewSha256": "b8c1d079cad49347ac163d9f4c9b1bb3b44adace120abc0dff879e5b00dd8a82",
+            "reportedWidth": null,
+            "reportedHeight": null
+          },
+          "placements": [
+            {
+              "id": "f17ed5e5-de5b-4150-b5b5-2fdce96cf9ec",
+              "name": "Linker Schouder",
+              "centerXPercent": 52,
+              "centerYPercent": 28.5,
+              "maxWidthPercent": 12,
+              "maxHeightPercent": 15
+            }
+          ]
+        },
+        {
+          "id": "72b94a90-6573-4d9d-9ce1-17de85082f4f",
+          "name": "Zijkant Rechts",
+          "perspective": "custom",
+          "calibrationPxPerCm": 51.66383188852798,
+          "image": {
+            "filename": "polo-right.jpg",
+            "width": 5000,
+            "height": 5000,
+            "sha256": "476c1242142a5a94f007a1273a1ba158fc2933d4ac319a445dc389a5af78c840",
+            "sourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/eb1e21a2-233a-4f29-b126-a2dce591bfc7/variants/52407830249800/img.jpg",
+            "previewFilename": "polo-right-preview.jpg",
+            "previewWidth": 1200,
+            "previewHeight": 1200,
+            "previewSha256": "3ca84caf67d5374bab818d4de216d14a73921f804e14a5ffe4239cef6292c0dd",
+            "reportedWidth": null,
+            "reportedHeight": null
+          },
+          "placements": [
+            {
+              "id": "de727f92-d782-4e12-aa53-3f69f2c4b85c",
+              "name": "Rechter Schouder",
+              "centerXPercent": 48,
+              "centerYPercent": 28.5,
+              "maxWidthPercent": 12,
+              "maxHeightPercent": 15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gid://shopify/Product/15464675246464",
+      "title": "Ontwerp je eigen superfunny T-shirt",
+      "handle": "ontwerp-je-eigen-superfunny-t-shirt",
+      "productConfigId": "b7985d0d-b9e6-4faa-9b38-4abe3ce0077c",
+      "selectedVariantId": "gid://shopify/ProductVariant/56980145176960",
+      "sourceUrl": "https://superfunny.nl/products/ontwerp-je-eigen-superfunny-t-shirt",
+      "configUrl": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15464675246464&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56980145176960",
+      "color": "Zwart",
+      "currency": "EUR",
+      "baseProductPriceCents": 995,
+      "variants": [
+        {
+          "id": "gid://shopify/ProductVariant/56980145176960",
+          "title": "Zwart / XS",
+          "sizeLabel": "XS",
+          "priceCents": 995,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56980145209728",
+          "title": "Zwart / S",
+          "sizeLabel": "S",
+          "priceCents": 995,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56980145242496",
+          "title": "Zwart / M",
+          "sizeLabel": "M",
+          "priceCents": 995,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56980237517184",
+          "title": "Zwart / L",
+          "sizeLabel": "L",
+          "priceCents": 995,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56980145275264",
+          "title": "Zwart / XL",
+          "sizeLabel": "XL",
+          "priceCents": 995,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56980145308032",
+          "title": "Zwart / XXL",
+          "sizeLabel": "XXL",
+          "priceCents": 995,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56980145340800",
+          "title": "Zwart / 3XL",
+          "sizeLabel": "3XL",
+          "priceCents": 995,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56980145373568",
+          "title": "Zwart / 4XL",
+          "sizeLabel": "4XL",
+          "priceCents": 995,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56980145406336",
+          "title": "Zwart / 5XL",
+          "sizeLabel": "5XL",
+          "priceCents": 995,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56980145439104",
+          "title": "Zwart / 6XL",
+          "sizeLabel": "6XL",
+          "priceCents": 995,
+          "available": true,
+          "selectedOptions": []
+        },
+        {
+          "id": "gid://shopify/ProductVariant/56980145471872",
+          "title": "Zwart / 7XL",
+          "sizeLabel": "7XL",
+          "priceCents": 995,
+          "available": true,
+          "selectedOptions": []
+        }
+      ],
+      "methods": [
+        {
+          "id": "d8f3958d-f892-470f-8144-20397097fa40",
+          "name": "Bedrukken",
+          "basePriceCents": 0,
+          "hidePriceWhenZero": true,
+          "customerName": null,
+          "customerDescription": "Levendige kleuren en scherpe details",
+          "artworkConstraints": {
+            "fileTypes": ["jpg", "pdf", "eps", "svg", "png", "webp", "tiff"]
+          }
+        }
+      ],
+      "placements": [
+        {
+          "id": "02cac149-aa3b-4466-961d-17220f562db5",
+          "name": "Linkerborst",
+          "basePriceAdjustmentCents": 0,
+          "hidePriceWhenZero": true,
+          "steps": [
+            {
+              "label": "Standaard",
+              "priceAdjustmentCents": 0,
+              "scaleFactor": 0.75
+            },
+            {
+              "label": "Groot",
+              "priceAdjustmentCents": 250,
+              "scaleFactor": 1
+            }
+          ],
+          "defaultStepIndex": 0,
+          "geometryByViewId": {
+            "2fafe3f1-a14a-493e-aaac-38cf08c0b66c": {
+              "centerXPercent": 61,
+              "centerYPercent": 25,
+              "maxWidthPercent": 20,
+              "maxHeightPercent": 20
+            },
+            "459d7036-b95c-41d0-98c9-f1e4586e6df5": null,
+            "4ad9d02c-dd16-4cd4-8493-04696349aaa0": null,
+            "b6c93732-5975-4480-bf9d-c70e648cd60d": null
+          },
+          "pricePerMethod": {
+            "54f013a5-5382-41de-b36e-d80e6fc1c971": 1500,
+            "d8f3958d-f892-470f-8144-20397097fa40": 750
+          }
+        },
+        {
+          "id": "6026de95-041f-452a-954e-fb169570fa28",
+          "name": "Rechterborst",
+          "basePriceAdjustmentCents": 0,
+          "hidePriceWhenZero": true,
+          "steps": [
+            {
+              "label": "Standaard",
+              "priceAdjustmentCents": 0,
+              "scaleFactor": 0.75
+            },
+            {
+              "label": "Groot",
+              "priceAdjustmentCents": 250,
+              "scaleFactor": 1
+            }
+          ],
+          "defaultStepIndex": 0,
+          "geometryByViewId": {
+            "2fafe3f1-a14a-493e-aaac-38cf08c0b66c": {
+              "centerXPercent": 38.99999999999999,
+              "centerYPercent": 25,
+              "maxWidthPercent": 20,
+              "maxHeightPercent": 20
+            },
+            "459d7036-b95c-41d0-98c9-f1e4586e6df5": null,
+            "4ad9d02c-dd16-4cd4-8493-04696349aaa0": null,
+            "b6c93732-5975-4480-bf9d-c70e648cd60d": null
+          },
+          "pricePerMethod": {
+            "54f013a5-5382-41de-b36e-d80e6fc1c971": 1500,
+            "d8f3958d-f892-470f-8144-20397097fa40": 750
+          }
+        },
+        {
+          "id": "9466e911-7fb8-433f-82fa-1323ddfc77dd",
+          "name": "Buik",
+          "basePriceAdjustmentCents": 0,
+          "hidePriceWhenZero": false,
+          "steps": [
+            {
+              "label": "Standard",
+              "priceAdjustmentCents": 0,
+              "scaleFactor": 1
+            }
+          ],
+          "defaultStepIndex": 0,
+          "geometryByViewId": {
+            "2fafe3f1-a14a-493e-aaac-38cf08c0b66c": {
+              "centerXPercent": 50,
+              "centerYPercent": 31,
+              "maxWidthPercent": 32,
+              "maxHeightPercent": 32
+            },
+            "459d7036-b95c-41d0-98c9-f1e4586e6df5": null,
+            "4ad9d02c-dd16-4cd4-8493-04696349aaa0": null,
+            "b6c93732-5975-4480-bf9d-c70e648cd60d": null
+          },
+          "pricePerMethod": {
+            "54f013a5-5382-41de-b36e-d80e6fc1c971": 3000,
+            "d8f3958d-f892-470f-8144-20397097fa40": 1500
+          }
+        },
+        {
+          "id": "a9253959-57f5-4925-b71c-73289d697584",
+          "name": "Rug",
+          "basePriceAdjustmentCents": 0,
+          "hidePriceWhenZero": true,
+          "steps": [
+            {
+              "label": "Standaard",
+              "priceAdjustmentCents": 0,
+              "scaleFactor": 0.75
+            },
+            {
+              "label": "Groot",
+              "priceAdjustmentCents": 250,
+              "scaleFactor": 1
+            }
+          ],
+          "defaultStepIndex": 0,
+          "geometryByViewId": {
+            "2fafe3f1-a14a-493e-aaac-38cf08c0b66c": null,
+            "459d7036-b95c-41d0-98c9-f1e4586e6df5": {
+              "centerXPercent": 50.49999999999999,
+              "centerYPercent": 27,
+              "maxWidthPercent": 27,
+              "maxHeightPercent": 28
+            },
+            "4ad9d02c-dd16-4cd4-8493-04696349aaa0": null,
+            "b6c93732-5975-4480-bf9d-c70e648cd60d": null
+          },
+          "pricePerMethod": {
+            "54f013a5-5382-41de-b36e-d80e6fc1c971": 3000,
+            "d8f3958d-f892-470f-8144-20397097fa40": 1500
+          }
+        },
+        {
+          "id": "a470c2c4-8515-41dc-9432-0b068ae736d3",
+          "name": "Linker Schouder",
+          "basePriceAdjustmentCents": 0,
+          "hidePriceWhenZero": true,
+          "steps": [
+            {
+              "label": "Standaard",
+              "priceAdjustmentCents": 0,
+              "scaleFactor": 0.75
+            },
+            {
+              "label": "Groot",
+              "priceAdjustmentCents": 250,
+              "scaleFactor": 1
+            }
+          ],
+          "defaultStepIndex": 0,
+          "geometryByViewId": {
+            "2fafe3f1-a14a-493e-aaac-38cf08c0b66c": null,
+            "459d7036-b95c-41d0-98c9-f1e4586e6df5": null,
+            "4ad9d02c-dd16-4cd4-8493-04696349aaa0": {
+              "centerXPercent": 51.5,
+              "centerYPercent": 30.5,
+              "maxWidthPercent": 15,
+              "maxHeightPercent": 15
+            },
+            "b6c93732-5975-4480-bf9d-c70e648cd60d": null
+          },
+          "pricePerMethod": {
+            "54f013a5-5382-41de-b36e-d80e6fc1c971": 1500,
+            "d8f3958d-f892-470f-8144-20397097fa40": 1000
+          }
+        },
+        {
+          "id": "f270554a-fad6-454f-92f7-3d4c52204c1c",
+          "name": "Rechter Schouder",
+          "basePriceAdjustmentCents": 0,
+          "hidePriceWhenZero": true,
+          "steps": [
+            {
+              "label": "Standaard",
+              "priceAdjustmentCents": 0,
+              "scaleFactor": 0.75
+            },
+            {
+              "label": "Groot",
+              "priceAdjustmentCents": 250,
+              "scaleFactor": 1
+            }
+          ],
+          "defaultStepIndex": 0,
+          "geometryByViewId": {
+            "2fafe3f1-a14a-493e-aaac-38cf08c0b66c": null,
+            "459d7036-b95c-41d0-98c9-f1e4586e6df5": null,
+            "4ad9d02c-dd16-4cd4-8493-04696349aaa0": null,
+            "b6c93732-5975-4480-bf9d-c70e648cd60d": {
+              "centerXPercent": 48.5,
+              "centerYPercent": 30.5,
+              "maxWidthPercent": 15,
+              "maxHeightPercent": 15
+            }
+          },
+          "pricePerMethod": {
+            "54f013a5-5382-41de-b36e-d80e6fc1c971": 1500,
+            "d8f3958d-f892-470f-8144-20397097fa40": 1000
+          }
+        }
+      ],
+      "views": [
+        {
+          "id": "2fafe3f1-a14a-493e-aaac-38cf08c0b66c",
+          "name": "Voorkant",
+          "perspective": "front",
+          "calibrationPxPerCm": 10.26864935465856,
+          "image": {
+            "filename": "t-shirt-front.jpg",
+            "width": 1000,
+            "height": 1000,
+            "sha256": "aa22eed10cafb355420ca85b716a8f4946b0e073752251a7bf259535fd89b3e4",
+            "sourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/d7a81f72-b1ab-4d5b-b724-436316535e7b/1777024333630-0.jpg",
+            "previewFilename": "t-shirt-front-preview.jpg",
+            "previewWidth": 1000,
+            "previewHeight": 1000,
+            "previewSha256": "ae72b647b5181ece3d4efbad96089c139783badfc10c86614a0f786a2613d531",
+            "reportedWidth": null,
+            "reportedHeight": null
+          },
+          "placements": [
+            {
+              "id": "02cac149-aa3b-4466-961d-17220f562db5",
+              "name": "Linkerborst",
+              "centerXPercent": 61,
+              "centerYPercent": 25,
+              "maxWidthPercent": 20,
+              "maxHeightPercent": 20
+            },
+            {
+              "id": "6026de95-041f-452a-954e-fb169570fa28",
+              "name": "Rechterborst",
+              "centerXPercent": 38.99999999999999,
+              "centerYPercent": 25,
+              "maxWidthPercent": 20,
+              "maxHeightPercent": 20
+            },
+            {
+              "id": "9466e911-7fb8-433f-82fa-1323ddfc77dd",
+              "name": "Buik",
+              "centerXPercent": 50,
+              "centerYPercent": 31,
+              "maxWidthPercent": 32,
+              "maxHeightPercent": 32
+            }
+          ]
+        },
+        {
+          "id": "459d7036-b95c-41d0-98c9-f1e4586e6df5",
+          "name": "Achterkant",
+          "perspective": "custom",
+          "calibrationPxPerCm": 57.78061224489795,
+          "image": {
+            "filename": "t-shirt-back.jpg",
+            "width": 6000,
+            "height": 6000,
+            "sha256": "d2b418593dba1948e556f259a6dd5e1db30f3d35a0105dff5eb4418383bfa9c4",
+            "sourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/c1bf057e-590f-426d-9d62-603be27adf62/variants/52407842701640/img.jpg",
+            "previewFilename": "t-shirt-back-preview.jpg",
+            "previewWidth": 1200,
+            "previewHeight": 1200,
+            "previewSha256": "b964b75aa1a72c090bc27872480791288b723e145110f605d45b07d4955b337e",
+            "reportedWidth": null,
+            "reportedHeight": null
+          },
+          "placements": [
+            {
+              "id": "a9253959-57f5-4925-b71c-73289d697584",
+              "name": "Rug",
+              "centerXPercent": 50.49999999999999,
+              "centerYPercent": 27,
+              "maxWidthPercent": 27,
+              "maxHeightPercent": 28
+            }
+          ]
+        },
+        {
+          "id": "4ad9d02c-dd16-4cd4-8493-04696349aaa0",
+          "name": "Zijkant Links",
+          "perspective": "custom",
+          "calibrationPxPerCm": 48.47043668306467,
+          "image": {
+            "filename": "t-shirt-left.jpg",
+            "width": 5000,
+            "height": 5000,
+            "sha256": "a9179ddf9f48bf4a5770133c633d709d8543e54b359e71aa1040dc5856c4585c",
+            "sourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/ec732251-dd5a-41dd-a798-79e2fb9971e2/variants/52407842701640/img.jpg",
+            "previewFilename": "t-shirt-left-preview.jpg",
+            "previewWidth": 1200,
+            "previewHeight": 1200,
+            "previewSha256": "193608c19ced394f9c91ae1da91db934f07becacb0ea1a7d88ac6eaab85d3f2c",
+            "reportedWidth": null,
+            "reportedHeight": null
+          },
+          "placements": [
+            {
+              "id": "a470c2c4-8515-41dc-9432-0b068ae736d3",
+              "name": "Linker Schouder",
+              "centerXPercent": 51.5,
+              "centerYPercent": 30.5,
+              "maxWidthPercent": 15,
+              "maxHeightPercent": 15
+            }
+          ]
+        },
+        {
+          "id": "b6c93732-5975-4480-bf9d-c70e648cd60d",
+          "name": "Zijkant Rechts",
+          "perspective": "custom",
+          "calibrationPxPerCm": 48.47043668306467,
+          "image": {
+            "filename": "t-shirt-right.jpg",
+            "width": 5000,
+            "height": 5000,
+            "sha256": "5f19a5238b7c011d966e98b578248484d610954292af4ff16e3e93cb83ebc0fb",
+            "sourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/a66711dc-1ecf-465b-92fb-8733e94d9287/variants/52407842701640/img.jpg",
+            "previewFilename": "t-shirt-right-preview.jpg",
+            "previewWidth": 1200,
+            "previewHeight": 1200,
+            "previewSha256": "2c7d1f18b1651db2fd7d0473d8597a00e58fe70aca5813bd1c8b4246d0c1b31d",
+            "reportedWidth": null,
+            "reportedHeight": null
+          },
+          "placements": [
+            {
+              "id": "f270554a-fad6-454f-92f7-3d4c52204c1c",
+              "name": "Rechter Schouder",
+              "centerXPercent": 48.5,
+              "centerYPercent": 30.5,
+              "maxWidthPercent": 15,
+              "maxHeightPercent": 15
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

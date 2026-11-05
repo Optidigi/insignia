@@ -1,0 +1,36 @@
+{
+  "upload": {
+    "region": "Grafica privata",
+    "action": "Carica grafica",
+    "requirement": "Fino a 5 MiB.",
+    "verified": "Grafica verificata. L'originale verrà conservato fino al {{expiry}}.",
+    "previewRenewed": "Anteprima della grafica aggiornata.",
+    "downloadPrepared": "Download privato pronto. Usa “Scarica il file originale verificato”.",
+    "expired": "La grafica è scaduta. Caricala di nuovo.",
+    "inspectionRejected": "La grafica non ha superato il controllo. Scegli un'immagine statica in un formato supportato.",
+    "processingTimeout": "La grafica è ancora in elaborazione. Prova a controllarla di nuovo.",
+    "uploadFailed": "Non è stato possibile completare il caricamento della grafica. Riprova.",
+    "resumeFailed": "La grafica caricata non è disponibile. Riprova più tardi.",
+    "previewFailed": "Anteprima non disponibile. Riprova a visualizzarla.",
+    "downloadFailed": "Download non disponibile. Riprova.",
+    "accessDenied": "Non è stato possibile verificare il tuo accesso. Riapri Insignia da Shopify Admin e riprova.",
+    "verifiedPreviewAlt": "Anteprima della grafica verificata",
+    "progress": {
+      "allocating": "Preparazione del caricamento privato",
+      "uploading": "Caricamento in corso",
+      "processing": "Elaborazione della grafica"
+    },
+    "actions": {
+      "retryUploaded": "Riprova la verifica della grafica caricata",
+      "retryPreview": "Riprova l'anteprima della grafica",
+      "prepareDownload": "Prepara il download dell'originale",
+      "downloadVerifiedOriginal": "Scarica il file originale verificato"
+    },
+    "invalidFormat": "Scegli un'immagine SVG, PNG o JPEG.",
+    "tooLarge": "Scegli un'immagine di massimo 5 MiB."
+  },
+  "preview": {
+    "imageUnavailable": "Immagine della grafica non disponibile.",
+    "preparing": "Preparazione di {{imageDescription}}"
+  }
+}

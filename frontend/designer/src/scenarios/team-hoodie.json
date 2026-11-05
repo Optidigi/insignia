@@ -1,0 +1,276 @@
+{
+  "id": "team-hoodie",
+  "name": "Team hoodie",
+  "description": "A club hoodie with several decoration areas and method choices that vary by location.",
+  "storeName": "Riverside Athletics",
+  "productName": "Club fleece hoodie",
+  "productDescription": "A brushed fleece pullover for teams, supporters, and coaches.",
+  "basePrice": 4295,
+  "currency": "EUR",
+  "locale": "en-NL",
+  "garment": "hoodie",
+  "preview": "illustration",
+  "maxQuantity": 999,
+  "artworkLater": true,
+  "sizes": [
+    {
+      "id": "xs",
+      "label": "XS"
+    },
+    {
+      "id": "s",
+      "label": "S"
+    },
+    {
+      "id": "m",
+      "label": "M"
+    },
+    {
+      "id": "l",
+      "label": "L"
+    },
+    {
+      "id": "xl",
+      "label": "XL"
+    },
+    {
+      "id": "2xl",
+      "label": "2XL"
+    },
+    {
+      "id": "3xl",
+      "label": "3XL"
+    },
+    {
+      "id": "4xl",
+      "label": "4XL"
+    }
+  ],
+  "colors": [
+    {
+      "id": "black",
+      "name": "Black",
+      "hex": "#25262a",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl",
+        "3xl",
+        "4xl"
+      ]
+    },
+    {
+      "id": "navy",
+      "name": "Navy",
+      "hex": "#24324b",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl",
+        "3xl",
+        "4xl"
+      ]
+    },
+    {
+      "id": "heather-grey",
+      "name": "Heather grey",
+      "hex": "#a5a5a5",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl",
+        "3xl",
+        "4xl"
+      ]
+    },
+    {
+      "id": "forest",
+      "name": "Forest green",
+      "hex": "#31513e",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl",
+        "3xl",
+        "4xl"
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "front",
+      "label": "Front",
+      "illustration": "front"
+    },
+    {
+      "id": "back",
+      "label": "Back",
+      "illustration": "back"
+    },
+    {
+      "id": "left",
+      "label": "Left sleeve",
+      "illustration": "left"
+    },
+    {
+      "id": "right",
+      "label": "Right sleeve",
+      "illustration": "right"
+    }
+  ],
+  "positions": [
+    {
+      "id": "left-chest",
+      "name": "Left chest",
+      "view": "front",
+      "x": 63,
+      "y": 28,
+      "width": 10,
+      "price": 950,
+      "dimensions": [
+        8,
+        10,
+        12
+      ],
+      "sizePrices": [
+        0,
+        200,
+        400
+      ],
+      "methodIds": [
+        "print",
+        "embroidery",
+        "transfer"
+      ]
+    },
+    {
+      "id": "front",
+      "name": "Centre front",
+      "view": "front",
+      "x": 50,
+      "y": 43,
+      "width": 18,
+      "price": 1450,
+      "dimensions": [
+        18,
+        24,
+        30
+      ],
+      "sizePrices": [
+        0,
+        300,
+        600
+      ],
+      "methodIds": [
+        "print",
+        "transfer"
+      ]
+    },
+    {
+      "id": "back",
+      "name": "Centre back",
+      "view": "back",
+      "x": 50,
+      "y": 39,
+      "width": 18,
+      "price": 1650,
+      "dimensions": [
+        18,
+        24,
+        30
+      ],
+      "sizePrices": [
+        0,
+        300,
+        600
+      ],
+      "methodIds": [
+        "print",
+        "transfer"
+      ]
+    },
+    {
+      "id": "left-sleeve",
+      "name": "Left sleeve near cuff",
+      "view": "left",
+      "x": 54,
+      "y": 31,
+      "width": 7,
+      "price": 750,
+      "dimensions": [
+        6,
+        8,
+        10
+      ],
+      "sizePrices": [
+        0,
+        200,
+        400
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    },
+    {
+      "id": "right-sleeve",
+      "name": "Right sleeve near cuff",
+      "view": "right",
+      "x": 46,
+      "y": 31,
+      "width": 7,
+      "price": 750,
+      "dimensions": [
+        6,
+        8,
+        10
+      ],
+      "sizePrices": [
+        0,
+        200,
+        400
+      ],
+      "methodIds": [
+        "embroidery"
+      ]
+    }
+  ],
+  "methods": [
+    {
+      "id": "print",
+      "label": "Print",
+      "surcharge": 0
+    },
+    {
+      "id": "embroidery",
+      "label": "Embroidery",
+      "surcharge": 550
+    },
+    {
+      "id": "transfer",
+      "label": "Heat transfer",
+      "surcharge": 250
+    }
+  ],
+  "optionPresentation": {
+    "rowOption": {
+      "display": "swatch",
+      "label": "Colour"
+    },
+    "columnOption": {
+      "label": "Size"
+    }
+  }
+}

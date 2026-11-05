@@ -1,0 +1,36 @@
+{
+  "upload": {
+    "region": "Visuel privé",
+    "action": "Importer un visuel",
+    "requirement": "Jusqu’à 5 Mio.",
+    "verified": "Visuel vérifié. L’original est conservé jusqu’au {{expiry}}.",
+    "previewRenewed": "Aperçu du visuel actualisé.",
+    "downloadPrepared": "Téléchargement privé prêt. Utilisez « Télécharger l’original vérifié ».",
+    "expired": "Le visuel a expiré. Importez-le de nouveau.",
+    "inspectionRejected": "Le visuel n’a pas passé la vérification. Choisissez une image compatible non animée.",
+    "processingTimeout": "Votre visuel est toujours en cours de traitement. Réessayez de vérifier son état.",
+    "uploadFailed": "L’import du visuel n’a pas abouti. Réessayez.",
+    "resumeFailed": "Le visuel importé est indisponible. Réessayez plus tard.",
+    "previewFailed": "Aperçu indisponible. Réessayez d’ouvrir l’aperçu.",
+    "downloadFailed": "Téléchargement indisponible. Réessayez.",
+    "accessDenied": "Impossible de vérifier votre accès. Rouvrez Insignia depuis l’interface d’administration Shopify et réessayez.",
+    "verifiedPreviewAlt": "Aperçu du visuel vérifié",
+    "progress": {
+      "allocating": "Préparation de l’import privé",
+      "uploading": "Import en cours",
+      "processing": "Traitement du visuel"
+    },
+    "actions": {
+      "retryUploaded": "Vérifier à nouveau le visuel importé",
+      "retryPreview": "Réessayer l’aperçu du visuel",
+      "prepareDownload": "Préparer le téléchargement de l’original",
+      "downloadVerifiedOriginal": "Télécharger l’original vérifié"
+    },
+    "invalidFormat": "Choisissez une image SVG, PNG ou JPEG.",
+    "tooLarge": "Choisissez une image de 5 Mio maximum."
+  },
+  "preview": {
+    "imageUnavailable": "Image du visuel indisponible.",
+    "preparing": "Préparation de {{imageDescription}}"
+  }
+}

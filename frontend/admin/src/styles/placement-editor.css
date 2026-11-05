@@ -1,0 +1,43 @@
+/* The drawing surface and its controls form one task. Polaris owns their appearance. */
+.placement-context {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: end;
+}
+.placement-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+}
+.placement-settings {
+  display: grid;
+  gap: 16px;
+}
+.placement-preview {
+  position: sticky;
+  top: 16px;
+}
+.placement-workspace > *,
+.placement-context > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.placement-preview #insignia-visualizer {
+  height: clamp(320px, 40vw, 520px);
+  touch-action: none;
+}
+@media (max-width: 760px) {
+  .placement-context,
+  .placement-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .placement-preview {
+    position: static;
+    grid-row: 1;
+  }
+  .placement-preview #insignia-visualizer {
+    height: clamp(240px, 75vw, 320px);
+  }
+}

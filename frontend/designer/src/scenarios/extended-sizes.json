@@ -1,0 +1,200 @@
+{
+  "id": "extended-sizes",
+  "name": "Extended size range tee",
+  "description": "A core and tall-fit size range with colour availability that varies by blank size.",
+  "storeName": "Fieldwork Clothing",
+  "productName": "Workwear cotton T-shirt",
+  "productDescription": "A sturdy everyday tee stocked in standard and tall cuts.",
+  "basePrice": 1495,
+  "currency": "EUR",
+  "locale": "en-NL",
+  "garment": "tshirt",
+  "preview": "photo",
+  "maxQuantity": 999,
+  "artworkLater": true,
+  "sizes": [
+    {
+      "id": "xxs",
+      "label": "XXS"
+    },
+    {
+      "id": "xs",
+      "label": "XS"
+    },
+    {
+      "id": "s",
+      "label": "S"
+    },
+    {
+      "id": "m",
+      "label": "M"
+    },
+    {
+      "id": "l",
+      "label": "L"
+    },
+    {
+      "id": "xl",
+      "label": "XL"
+    },
+    {
+      "id": "2xl",
+      "label": "2XL"
+    },
+    {
+      "id": "3xl",
+      "label": "3XL"
+    },
+    {
+      "id": "4xl",
+      "label": "4XL"
+    },
+    {
+      "id": "5xl",
+      "label": "5XL"
+    },
+    {
+      "id": "6xl",
+      "label": "6XL"
+    },
+    {
+      "id": "s-tall",
+      "label": "S Tall"
+    },
+    {
+      "id": "m-tall",
+      "label": "M Tall"
+    },
+    {
+      "id": "l-tall",
+      "label": "L Tall"
+    }
+  ],
+  "colors": [
+    {
+      "id": "black",
+      "name": "Black",
+      "hex": "#25262a",
+      "images": {
+        "front": "/shirt-black-front.jpg",
+        "back": "/shirt-black-back.jpg"
+      },
+      "availableSizeIds": [
+        "xxs",
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl",
+        "3xl",
+        "4xl",
+        "5xl",
+        "6xl",
+        "s-tall",
+        "m-tall",
+        "l-tall"
+      ]
+    },
+    {
+      "id": "grey",
+      "name": "Heather charcoal grey",
+      "hex": "#625956",
+      "images": {
+        "front": "/shirt-grey-front.jpg",
+        "back": "/shirt-grey-back.jpg"
+      },
+      "availableSizeIds": [
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl",
+        "3xl",
+        "4xl",
+        "5xl",
+        "6xl"
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "front",
+      "label": "Front",
+      "illustration": "front"
+    },
+    {
+      "id": "back",
+      "label": "Back",
+      "illustration": "back"
+    }
+  ],
+  "positions": [
+    {
+      "id": "left-chest",
+      "name": "Left chest",
+      "view": "front",
+      "x": 63,
+      "y": 28,
+      "width": 10,
+      "price": 750,
+      "dimensions": [
+        10,
+        12,
+        15
+      ],
+      "sizePrices": [
+        0,
+        250,
+        500
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    },
+    {
+      "id": "back",
+      "name": "Centre back",
+      "view": "back",
+      "x": 50,
+      "y": 36,
+      "width": 15,
+      "price": 1400,
+      "dimensions": [
+        15,
+        21,
+        28
+      ],
+      "sizePrices": [
+        0,
+        250,
+        500
+      ],
+      "methodIds": [
+        "print"
+      ]
+    }
+  ],
+  "methods": [
+    {
+      "id": "print",
+      "label": "Print",
+      "surcharge": 0
+    },
+    {
+      "id": "embroidery",
+      "label": "Embroidery",
+      "surcharge": 450
+    }
+  ],
+  "optionPresentation": {
+    "rowOption": {
+      "display": "swatch",
+      "label": "Colour"
+    },
+    "columnOption": {
+      "label": "Size"
+    }
+  }
+}

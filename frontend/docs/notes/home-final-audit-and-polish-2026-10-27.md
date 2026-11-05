@@ -1,0 +1,50 @@
+# Home audit and final polish, 27 October 2026
+
+The owner likes the current Home and requested a focused metric-hover correction, a clearer review-order state around analytics, and several independent Luna Max audits of logic, copy and new-merchant flow. This is a local frontend refinement. It adds no aggregation endpoint, inferred work queue, authentication change or Shopify write.
+
+## Reference and review evidence
+
+Three independent Luna Max agents reviewed workflow/source truth, copy/first use and work priorities. They read the installed Checklist Design Dashboard, Onboarding and Empty State files and current implementation evidence. The visual auditors inspected representative desktop, phone and short-phone captures; the workflow auditor explicitly reported a source-only review. A separate Sol reviewer compared corrected source and pixels after implementation. These are bounded reviews, not owner acceptance.
+
+Fresh read-only inspection of the actual Shopify Orders metric established a report link with 16px rounded interaction corners. Its dotted heading has a separate native tooltip carrying a short heading and definition. No order/customer records were saved as reference material. The current report route is an actual analytics destination; Insignia has no corresponding report page. [Shopify metrics composition](https://shopify.dev/docs/api/app-home/v2.0-rc/patterns/compositions/metrics-card) supplies clickable padding and rounded corners; [Clickable](https://shopify.dev/docs/api/app-home/latest/web-components/actions/clickable) supplies supported styling and keyboard behavior. The installed Checklist Design [Tooltip checklist](https://www.checklist.design/design-system/tooltip) calls for relevant brief information, limited obstruction and dismissal. Fresh [Vercel guidelines](https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md) informed semantic controls, visible focus, overflow and localized data. Shopify remains the component and copy authority.
+
+## Implemented corrections
+
+- Metric interaction now uses native Clickable padding and `large-200` corner radius. The hover background has a real text inset rather than a flush square fill. A native tooltip keeps the definition brief. Insignia deliberately permits interest on the whole metric for hover/focus; this is not an exact reproduction of Shopify's title-only trigger.
+- Clicking a metric opens its existing data in a supported native modal. This replaces the large click-open definition/daily-data popover that covered setup. The modal retains the selected period, aggregate, definition, a short exclusion note, daily rows and Orders destination. Escape and Close return focus to the metric. No custom tooltip engine, report page or new data source is added.
+- Repeated period/comparison paragraphs were removed from that detail view. The pinned RC custom-element Table contract accepts only `auto` and `list`, despite an internal shared interface documenting `table`. The proposed forced-table refinement was rejected by the web build and removed. Supported inline count slots remove repeated labels; phone retains the native date/count list layout, while desktop retains a table. No type widening, private-component override or runtime upgrade was used.
+- Analytics retain a stable first position in operating states. Orders to review follow directly, before optional guidance and recent records. The competing primary Configure product header action is omitted while review work exists. The task heading covers review as well as missing artwork, and replacement copy no longer implies an app-managed production queue. This ordering is a response to the owner's concern about the task card above analytics, while keeping work near the top.
+- Established shops now default to a collapsed guide when expansion was not explicitly supplied. A restored guide still opens. This fixes the difference between the live container's omitted expansion preference and the operating fixture's explicit collapse.
+- Manual progress is still a browser/shop-scoped checklist, independent of publication/theme facts. Its completion heading is now Setup guide complete. It does not claim that a product was published or that a storefront test was verified.
+- The welcome explanation is one outcome sentence. Add a product no longer claims first-ever product creation from an empty current catalog. Historical orders with no current products keep their activity context, omit first-use welcome text, and still offer the actual product-creation action. The unknown/failed Orders read does not create a duplicate initial product action.
+
+## Recommendations and limits
+
+No additional Home sections, arbitrary greetings, news, templates or widget controls are justified by these audits. The next useful product check is a fresh merchant completing the actual product, theme and customer journey after data integration.
+
+Complete metrics and a reliable review queue remain integration dependencies. The live Home adapter deliberately requests a bounded recent list, omits totals when that source is incomplete and does not invent task reasons from artwork status. Synthetic review/metrics scenarios demonstrate intended frontend states, not a completed backend feature. Replacement review and production-queue states must not be fabricated from the current DTO.
+
+One audit also identified medium-priority session recovery friction: a failed fresh-token retry can show the unavailable state without an immediate reconnect action. Existing navigation/instructions provide a route back. A trusted native reopen destination or fully tested recovery action should be resolved with authenticated integration; this polish pass does not invent an app handle or add a reload loop.
+
+## Verification
+
+Web check/build covers 160 files with zero diagnostics; strict admin-test TypeScript and scoped Biome pass. Six focused browser/period/preference checks pass. The Home workflow covers 39 scenarios and 102 desktop, phone and selected 320px captures, including real hover, 7/30 daily rows, modal Escape/focus, review-work ordering, no competing setup action, default operating-guide collapse, returning empty catalog, guide persistence/restoration and actual product-creation recovery. Pinned App Home 2.0-rc validation passes for the changed metric, Home and guide components.
+
+The final independent Sol source/pixel pass reports no remaining concrete blocker in this correction. Its [review note](home-native-correction-review-2026-10-26.md) records native-interaction differences and the supported phone list fallback. The local preview and gallery are refreshed and lead with the changed states. Native deployment, full assistive-technology testing and owner acceptance remain separate.
+
+
+## Owner correction: metric navigation
+
+The owner explicitly rejected click-open metric dialogs. This supersedes the details-modal decision above. Both metrics now use supported native Clickable links to `/admin/orders`, the owning page for customized orders and their purchased quantities. Labels read Orders with customizations and Customized items ordered. Brief optional native hover definitions remain; click handlers, modal markup, daily table markup and their unused CSS are removed.
+
+Fresh Shopify toolkit search returned the Metrics card example's explicit href-based analytics navigation. Insignia currently has no separate analytics or item-detail report, so this correction uses its real Orders page. It does not manufacture a report destination or promise that the unfiltered index exactly matches the metric's selected time period and test/cancellation exclusions. Native links retain keyboard and modified-click behavior.
+
+The obsolete modal gallery scene is removed from current captures. The refreshed Home workflow covers 38 states and 99 responsive captures; it asserts both hrefs, Enter/click navigation to the actual Orders page, and absence of a metric modal. Web check/build, strict admin test TypeScript, scoped style and pinned native validation pass. The proportionate independent Sol source/pixel check covers both labels and navigation. Local preview only; no backend or Shopify data changes.
+
+## Owner correction: recent-order hover
+
+The old hover painted the bare order-content wrapper, while row spacing lived outside the clickable area. This caused the background to touch the text and left the surrounding space outside the link. The correction follows Shopify's actual rendered [Resource list, Navigate to item detail](https://shopify.dev/docs/api/app-home/latest/patterns/compositions/resource-list) example. Its native anchor has 12px vertical and 16px horizontal padding; the section body has zero padding, a 20px radius and clipped overflow. These values were read from the rendered example DOM, alongside the published component markup. Toolkit search confirms the supported composition for the selected 2.0-rc runtime.
+
+Recent orders now use native Clickable rows inside a Section with no body padding. Each row owns its padding and native hover/focus treatment. Native top borders separate subsequent rows, and the section clips the first and last backgrounds. The app's custom wrapper hover and focus CSS are removed. Resource names remain nonlinked inside the real row anchor; tasks and product drafts keep their separate existing composition.
+
+The 40-state Home gallery has 105 responsive captures, including first/last row hover at 1440, 390 and 320px. The capture helper re-hovers after resizing the host iframe so a short-phone screenshot cannot accidentally show a different hover target. Root and independent Sol pixel checks inspect the actual corrected desktop and narrow captures. Browser checks measure the rendered anchor's insets, click the padding at 8px/8px, verify focus-visible and activate the row with Enter. Build/check covers 160 files with zero errors or warnings; strict test types, scoped Biome and pinned Shopify validation pass. The local preview and gallery are refreshed; no backend, native account or production changes.

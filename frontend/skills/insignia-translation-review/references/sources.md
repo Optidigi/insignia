@@ -1,0 +1,15 @@
+# Sources and adaptation
+
+Checked 4 November 2026. This skill is original Insignia guidance synthesized from the sources below and the active product contracts. It does not vendor another skill or introduce a localization service.
+
+- [FormatJS localization-review, inspected revision bc1987fa](https://github.com/formatjs/formatjs/blob/bc1987fa429d64400be579469c2eb1815e32301d/.agents/skills/localization-review/SKILL.md): context, glossary, exact message meaning, evidence-backed findings and in-context review. Its ICU/React-Intl examples are not Insignia's runtime syntax.
+- [Microsoft contextual metadata](https://learn.microsoft.com/en-us/globalization/internationalization/contextual-metadata): UI role, triggering state, ambiguity and variable descriptions/examples. This supports the context packet.
+- [Microsoft localization testing](https://learn.microsoft.com/en-us/globalization/testing/how-to-perform-localization-testing): distinct functional, rendered and linguistic validation; qualified target-language and in-context review. Source/screenshots can support a limited review without certifying a running translated application.
+- [Microsoft locale style guides](https://learn.microsoft.com/en-us/globalization/reference/microsoft-style-guides), including [Dutch](https://download.microsoft.com/download/e/8/f/e8f04dd4-591e-46e9-a076-e49a8c8c75e4/nld-nld-StyleGuide.pdf): locale conventions and natural everyday language. Microsoft's corporate register is not automatically Insignia's register.
+- [MQM typology](https://www.themqm.org/mqm-pillars/typology/) and [FAQ](https://www.themqm.org/resources/faq/): distinguish meaning, terminology, linguistic conventions, style and presentation. The skill uses a practical subset, not a claim to MQM certification or a calculated quality score.
+- [i18next best practices](https://www.i18next.com/principles/best-practices): complete messages and grammatical risks of interpolating known translated fragments. Dynamic supplied values still need interpolation.
+- [Locize conventions, inspected revision 8d5112ce](https://github.com/locize/locize-agents/blob/8d5112ce6d7486aeea1960e88239bc46903965c1/AGENTS.md): consult glossary, style, prior accepted wording and screenshot context. These inputs can remain in this repository; no Locize project or MCP connection is required.
+
+For Shopify-owned concepts, use the same concept's current localized Shopify help or actual UI as terminology evidence. Record the exact page/locale when selecting a term. Shopify's English UI, general Microsoft terminology or an app-store marketing page cannot alone approve an Insignia-specific production term.
+
+Repository sources remain authoritative for feature meanings and behavior. Read AGENTS.md and `docs/architecture/implementation-plan.md` for the current contract; read `packages/localization/README.md` for catalog ownership, validation and delivery. The dated delivery note `docs/delivery/notes/translation-linguistic-quality-research-2026-11-04.md` records the research decision and limits.

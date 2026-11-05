@@ -1,0 +1,235 @@
+/* Task layout only. Public Polaris components own control appearance and focus. */
+.placement-setup-copy {
+  min-width: 0;
+  overscroll-behavior: contain;
+}
+.placement-setup-copy__stage {
+  min-width: 0;
+  outline: none;
+}
+.placement-setup-copy__chooser,
+.placement-setup-copy__review,
+.placement-setup-copy__results {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.placement-setup-copy__loading {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+}
+.placement-setup-copy__source-context,
+.placement-setup-copy__resource-row,
+.placement-setup-copy__destination,
+.placement-setup-copy__result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.placement-setup-copy__resource-row {
+  padding: 12px 8px;
+  text-align: start;
+}
+.placement-setup-copy__source-context {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--p-color-border-secondary, #ebebeb);
+}
+.placement-setup-copy__source-context > div,
+.placement-setup-copy__resource-copy,
+.placement-setup-copy__result > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+.placement-setup-copy__picker-toolbar,
+.placement-setup-copy__destination-bar,
+.placement-setup-copy__blocker,
+.placement-setup-copy__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+.placement-setup-copy__picker-toolbar {
+  min-height: 28px;
+}
+.placement-setup-copy__picker-list,
+.placement-setup-copy__result-list {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  max-height: min(430px, 48dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  border-block: 1px solid var(--p-color-border, #e3e3e3);
+}
+.placement-setup-copy__picker-list > s-clickable,
+.placement-setup-copy__picker-list > .placement-setup-copy__resource-row,
+.placement-setup-copy__result {
+  border-bottom: 1px solid var(--p-color-border-secondary, #ebebeb);
+}
+.placement-setup-copy__picker-list > s-clickable {
+  display: block;
+}
+.placement-setup-copy__picker-list > s-clickable:last-child,
+.placement-setup-copy__picker-list > .placement-setup-copy__resource-row:last-child,
+.placement-setup-copy__result:last-child {
+  border-bottom: 0;
+}
+.placement-setup-copy__picker-list > .placement-setup-copy__resource-row:not(.is-disabled) {
+  cursor: pointer;
+}
+.placement-setup-copy__picker-list > .placement-setup-copy__resource-row:not(.is-disabled):hover {
+  background: var(--p-color-bg-surface-hover, #f7f7f7);
+}
+.placement-setup-copy__resource-row.is-selected {
+  background: var(--p-color-bg-surface-selected, #f0f5ff);
+}
+.placement-setup-copy__picker-list > .placement-setup-copy__resource-row.is-selected:hover {
+  background: var(--p-color-bg-surface-selected-hover, #e7eefb);
+}
+.placement-setup-copy__source-row {
+  padding-block: 16px;
+}
+.placement-setup-copy__resource-row > s-checkbox,
+.placement-setup-copy__resource-row > s-thumbnail,
+.placement-setup-copy__resource-row > s-icon,
+.placement-setup-copy__resource-row > s-badge,
+.placement-setup-copy__source-context > s-thumbnail,
+.placement-setup-copy__destination > s-thumbnail,
+.placement-setup-copy__result > s-thumbnail,
+.placement-setup-copy__result > s-badge {
+  flex: none;
+}
+.placement-setup-copy__product-title {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.placement-setup-copy__product-image {
+  display: grid;
+  place-items: center;
+  inline-size: 40px;
+  aspect-ratio: 1;
+  flex: none;
+  border: 1px solid var(--p-color-border-secondary, #ebebeb);
+  border-radius: 4px;
+  background: var(--p-color-bg-surface-secondary, #f6f6f7);
+}
+.placement-setup-copy__pagination {
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+.placement-setup-copy__destination-group {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.placement-setup-copy__destination-bar {
+  flex-wrap: wrap;
+}
+.placement-setup-copy__destinations {
+  min-width: 0;
+  flex: 1;
+}
+.placement-setup-copy__destinations > summary {
+  cursor: pointer;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+}
+.placement-setup-copy__destinations > summary::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-inline-end: 1.5px solid currentColor;
+  border-block-end: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  margin-inline-start: 6px;
+}
+.placement-setup-copy__destinations[open] > summary::after {
+  transform: translateY(2px) rotate(225deg);
+}
+.placement-setup-copy__destinations > summary:focus-visible {
+  outline: 2px solid var(--p-color-border-focus, #005bd3);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+.placement-setup-copy__destination-list {
+  display: grid;
+  gap: 4px;
+}
+
+.placement-setup-copy__destination {
+  gap: 8px;
+}
+.placement-setup-copy__destination-browser {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding-top: 8px;
+}
+.placement-setup-copy__destination > s-text {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.placement-setup-copy__blockers {
+  display: grid;
+  gap: 12px;
+}
+.placement-setup-copy__blocker > div {
+  display: grid;
+  gap: 4px;
+}
+.placement-setup-copy__result {
+  display: flex;
+  padding: 16px 8px;
+}
+.placement-setup-copy__success {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  padding: 8px 0;
+}
+.placement-setup-copy__success-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.placement-setup-copy__result > s-badge {
+  align-self: flex-start;
+}
+.placement-setup-copy__result s-paragraph {
+  margin: 0;
+}
+@media (max-width: 480px) {
+  .placement-setup-copy__resource-row,
+  .placement-setup-copy__result {
+    gap: 8px;
+  }
+  .placement-setup-copy__result {
+    flex-wrap: wrap;
+  }
+  .placement-setup-copy__success {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .placement-setup-copy__result > s-badge {
+    margin-inline-start: 48px;
+  }
+  .placement-setup-copy__result > div {
+    min-width: calc(100% - 56px);
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "name": "@insignia/ui-localization",
+  "version": "0.1.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "exports": {
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "import": "./dist/core.js",
+      "default": "./dist/core.js"
+    },
+    "./admin": {
+      "types": "./dist/admin.d.ts",
+      "import": "./dist/admin.js",
+      "default": "./dist/admin.js"
+    },
+    "./customer": {
+      "types": "./dist/customer.d.ts",
+      "import": "./dist/customer.js",
+      "default": "./dist/customer.js"
+    },
+    "./guest": {
+      "types": "./dist/guest.d.ts",
+      "import": "./dist/guest.js",
+      "default": "./dist/guest.js"
+    },
+    "./preact": {
+      "types": "./dist/preact.d.ts",
+      "import": "./dist/preact.js",
+      "default": "./dist/preact.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "generate:types": "node scripts/generate-types.mts",
+    "build": "tsc -p tsconfig.tools.json && node scripts/generate-types.mts && node scripts/validate-target-catalogs.mts && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.tools.json && node scripts/generate-types.mts --check && node scripts/validate-target-catalogs.mts && tsc -p tsconfig.json --noEmit",
+    "test": "vitest run src && node --test scripts/*.test.mts",
+    "typecheck:test": "tsc -p tsconfig.test.json"
+  },
+  "dependencies": {
+    "i18next": "26.7.1"
+  },
+  "peerDependencies": {
+    "preact": "10.29.8"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@types/node": "24.10.0",
+    "preact": "10.29.8",
+    "typescript": "5.9.3",
+    "vitest": "5.0.2",
+    "i18next-cli": "1.82.1"
+  }
+}

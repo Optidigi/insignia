@@ -1,0 +1,14 @@
+{
+  "blocks": {
+    "customize": {
+      "name": "Insignia-Produktanpassung",
+      "button_label": "Schaltflächenbeschriftung",
+      "button_default": "Dieses Produkt anpassen",
+      "proxy_prefix": "App-Proxy-Präfix"
+    },
+    "cart_repair": {
+      "name": "Insignia-Warenkorbprüfung",
+      "proxy_prefix": "App-Proxy-Präfix"
+    }
+  }
+}

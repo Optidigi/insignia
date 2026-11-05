@@ -1,0 +1,32 @@
+{
+  "name": "@insignia/admin-ui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "astro check && astro build",
+    "dev": "node examples/admin/preview.mts",
+    "typecheck:examples": "tsc -p tsconfig.examples.json",
+    "test": "node --test test/admin/*.test.mts"
+  },
+  "dependencies": {
+    "@astrojs/node": "11.1.6",
+    "@astrojs/preact": "6.0.5",
+    "@insignia/contracts": "workspace:*",
+    "@insignia/domain": "workspace:*",
+    "@insignia/ui-localization": "workspace:*",
+    "@insignia/ui-visualizer": "workspace:*",
+    "astro": "7.3.5",
+    "fflate": "0.8.2",
+    "pdf-lib": "1.17.1",
+    "preact": "10.29.8",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.6",
+    "@shopify/polaris-types": "2.0.0-rc.3",
+    "@types/node": "24.10.0",
+    "esbuild": "0.25.12",
+    "typescript": "5.9.3"
+  }
+}

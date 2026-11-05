@@ -1,0 +1,4 @@
+<insignia-buyer trigger-label="{{ block.settings.button_label | escape }}" language="{{ localization.language.iso_code | escape }}" text-direction="{{ localization.language.direction | escape }}" product-id="{{ product.id }}" proxy-base="{{ routes.root_url }}apps/{{ block.settings.proxy_prefix | escape }}" cart-root="{{ routes.root_url }}" country="{{ localization.country.iso_code }}" market-id="{{ localization.market.id }}" {{ block.shopify_attributes }}></insignia-buyer>
+{% schema %}
+{"name":"t:blocks.customize.name","target":"section","javascript":"insignia-storefront.js","settings":[{"type":"text","id":"button_label","label":"t:blocks.customize.button_label","default":"t:blocks.customize.button_default"},{"type":"text","id":"proxy_prefix","label":"t:blocks.customize.proxy_prefix","default":"insignia"}]}
+{% endschema %}

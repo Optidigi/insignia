@@ -1,0 +1,71 @@
+{
+  "pageTitle": "Producten",
+  "actions": {
+    "viewInShopify": "Bekijken in Shopify",
+    "selectAllShown": "Alle getoonde Shopify-producten op deze pagina selecteren",
+    "selectProduct": "{{productName}} selecteren",
+    "copySetupAccessible": "Configuratie van een ander product kopiëren",
+    "copySetup": "Configuratie kopiëren van…",
+    "downloadSummary": "Overzicht downloaden",
+    "previewCustomization": "Voorbeeld van personalisatie bekijken",
+    "selectionActions": "Acties voor geselecteerde producten",
+    "clearSelection": "Selectie wissen",
+    "firstPage": "Eerste pagina",
+    "showAll": "Alle producten weergeven",
+    "clearFilter": "Configuratiefilter wissen"
+  },
+  "selection": {
+    "selected_one": "{{formattedCount}} geselecteerd",
+    "selected_other": "{{formattedCount}} geselecteerd"
+  },
+  "search": "Producten zoeken",
+  "filter": {
+    "products": "Producten filteren",
+    "configurationOnPage": "Configuratie op deze pagina",
+    "editConfiguration": "Configuratiefilter bewerken",
+    "onThisPage": "{{configuration}} op deze pagina"
+  },
+  "configuration": {
+    "all": "Alle",
+    "notConfigured": "Niet geconfigureerd",
+    "draft": "Concept",
+    "published": "Gepubliceerd",
+    "unavailable": "Niet beschikbaar"
+  },
+  "results": {
+    "shown_one": "{{formattedCount}} product getoond op deze pagina.",
+    "shown_other": "{{formattedCount}} producten getoond op deze pagina."
+  },
+  "table": {
+    "region": "Shopify-producten",
+    "columns": "Producten",
+    "product": "Product",
+    "configuration": "Configuratie",
+    "methods": "Decoratiemethoden",
+    "printLocations": "Decoratieplekken",
+    "variants": "Varianten"
+  },
+  "summary": {
+    "methods": "decoratiemethoden",
+    "printLocations": "decoratieplekken",
+    "noneConfigured": "Niets geconfigureerd",
+    "viewAllMethods": "Alle decoratiemethoden bekijken",
+    "viewAllPrintLocations": "Alle decoratieplekken bekijken"
+  },
+  "errors": {
+    "loadHeading": "Producten konden niet worden geladen",
+    "access": "Je toegang kon niet worden gecontroleerd. Probeer opnieuw verbinding te maken met Shopify-beheercentrum.",
+    "unavailable": "Producten zijn niet beschikbaar. Probeer het opnieuw.",
+    "previewFailed": "Het klantvoorbeeld kon niet worden geopend. Probeer het opnieuw.",
+    "summaryDownloadFailed": "Het overzicht kon niet worden gedownload. Probeer het opnieuw."
+  },
+  "empty": {
+    "noneOnPage": "Geen producten gevonden op deze pagina",
+    "changeFilterOrPage": "Wijzig het configuratiefilter of bekijk een andere pagina.",
+    "returnFirstOrSearch": "Ga terug naar de eerste pagina of probeer een andere zoekopdracht.",
+    "changeProductSearch": "Probeer een andere productnaam of wis je zoekopdracht.",
+    "noProductsFound": "Geen producten gevonden",
+    "noProductsYet": "Nog geen producten",
+    "addInShopify": "Voeg een product toe in Shopify en kom daarna terug om de personalisatie in te stellen."
+  }
+}

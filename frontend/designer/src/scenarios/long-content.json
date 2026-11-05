@@ -1,0 +1,231 @@
+{
+  "id": "long-content",
+  "name": "Bilingual hospitality polo",
+  "description": "German-English staff uniform with extended labels, mixed decoration methods and a twelve-width chest mark.",
+  "storeName": "Nordlicht Hospitality & Uniformen",
+  "productName": "Polohemd für Empfang, Service und Verkauf / Staff polo for reception, hospitality and retail teams in durable piqué knit",
+  "productDescription": "Für Empfang und Service: ein strapazierfähiges Piqué-Polo für den täglichen Einsatz. A durable piqué polo for customer-facing teams, with optional chest embroidery and sleeve print.",
+  "basePrice": 2795,
+  "currency": "EUR",
+  "locale": "de-DE",
+  "garment": "polo",
+  "preview": "illustration",
+  "maxQuantity": 999,
+  "artworkLater": true,
+  "sizes": [
+    {
+      "id": "xs",
+      "label": "XS"
+    },
+    {
+      "id": "s",
+      "label": "S"
+    },
+    {
+      "id": "m",
+      "label": "M"
+    },
+    {
+      "id": "l",
+      "label": "L"
+    },
+    {
+      "id": "xl",
+      "label": "XL"
+    },
+    {
+      "id": "2xl",
+      "label": "2XL"
+    },
+    {
+      "id": "3xl",
+      "label": "3XL"
+    },
+    {
+      "id": "4xl-tall-regular-2026",
+      "label": "4XLTallRegularFit2026"
+    }
+  ],
+  "colors": [
+    {
+      "id": "midnight-navy",
+      "name": "Mitternachtsblau für Empfangsteams / Midnight navy for front-of-house staff",
+      "hex": "#24324b",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl",
+        "3xl",
+        "4xl-tall-regular-2026"
+      ]
+    },
+    {
+      "id": "soft-ivory",
+      "name": "Warmweiß mit Cremeton / Soft ivory white for hospitality teams",
+      "hex": "#f2eee4",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl",
+        "3xl"
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "front",
+      "label": "Vorderseite / Front",
+      "illustration": "front"
+    },
+    {
+      "id": "back",
+      "label": "Rückseite / Back",
+      "illustration": "back"
+    }
+  ],
+  "positions": [
+    {
+      "id": "chest-mark",
+      "name": "Linke Brust / Left chest",
+      "view": "front",
+      "x": 63,
+      "y": 28,
+      "width": 6,
+      "price": 950,
+      "dimensions": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "sizePrices": [
+        0,
+        50,
+        100,
+        150,
+        200,
+        250,
+        300,
+        350,
+        400,
+        450,
+        500,
+        550
+      ],
+      "methodIds": [
+        "embroidery",
+        "transfer-print"
+      ]
+    },
+    {
+      "id": "back-company-mark",
+      "name": "Rückenmitte für Firmenlogo / Centre back for company mark",
+      "view": "back",
+      "x": 50,
+      "y": 32,
+      "width": 18,
+      "price": 1250,
+      "dimensions": [
+        20,
+        25,
+        30
+      ],
+      "sizePrices": [
+        0,
+        250,
+        500
+      ],
+      "methodIds": [
+        "screen-print",
+        "embroidery"
+      ]
+    },
+    {
+      "id": "left-sleeve-cuff",
+      "name": "Linker Ärmel, oberhalb des Bündchens / Left sleeve, above the cuff and facing outward",
+      "view": "front",
+      "x": 80,
+      "y": 31,
+      "width": 7,
+      "price": 750,
+      "dimensions": [
+        6,
+        8,
+        10
+      ],
+      "sizePrices": [
+        0,
+        100,
+        200
+      ],
+      "methodIds": [
+        "embroidery",
+        "transfer-print"
+      ]
+    },
+    {
+      "id": "lower-front-name",
+      "name": "Saum links für den Namenszug / Lower left front for an individual name",
+      "view": "front",
+      "x": 36,
+      "y": 60,
+      "width": 10,
+      "price": 800,
+      "dimensions": [
+        8,
+        10,
+        12
+      ],
+      "sizePrices": [
+        0,
+        100,
+        200
+      ],
+      "methodIds": [
+        "screen-print",
+        "transfer-print"
+      ],
+      "artworkLater": false
+    }
+  ],
+  "methods": [
+    {
+      "id": "embroidery",
+      "label": "Stickerei / Computerized embroidery service",
+      "surcharge": 500
+    },
+    {
+      "id": "screen-print",
+      "label": "Siebdruck / Screen print",
+      "surcharge": 0
+    },
+    {
+      "id": "transfer-print",
+      "label": "Transferdruck / Heat-transfer application",
+      "surcharge": 250
+    }
+  ],
+  "optionPresentation": {
+    "rowOption": {
+      "display": "swatch",
+      "label": "Colour"
+    },
+    "columnOption": {
+      "label": "Size"
+    }
+  }
+}

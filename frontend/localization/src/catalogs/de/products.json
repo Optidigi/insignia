@@ -1,0 +1,71 @@
+{
+  "pageTitle": "Produkte",
+  "actions": {
+    "viewInShopify": "In Shopify ansehen",
+    "selectAllShown": "Alle auf dieser Seite angezeigten Produkte auswählen",
+    "selectProduct": "{{productName}} auswählen",
+    "copySetupAccessible": "Konfiguration von einem anderen Produkt übernehmen",
+    "copySetup": "Konfiguration übernehmen von …",
+    "downloadSummary": "Übersicht herunterladen",
+    "previewCustomization": "Produktanpassung in der Vorschau ansehen",
+    "selectionActions": "Aktionen für ausgewählte Produkte",
+    "clearSelection": "Auswahl aufheben",
+    "firstPage": "Erste Seite",
+    "showAll": "Alle Produkte anzeigen",
+    "clearFilter": "Konfigurationsfilter löschen"
+  },
+  "selection": {
+    "selected_one": "{{formattedCount}} ausgewählt",
+    "selected_other": "{{formattedCount}} ausgewählt"
+  },
+  "search": "Produkte suchen",
+  "filter": {
+    "products": "Produkte filtern",
+    "configurationOnPage": "Konfiguration auf dieser Seite",
+    "editConfiguration": "Konfigurationsfilter bearbeiten",
+    "onThisPage": "{{configuration}} auf dieser Seite"
+  },
+  "configuration": {
+    "all": "Alle",
+    "notConfigured": "Nicht konfiguriert",
+    "draft": "Entwurf",
+    "published": "Veröffentlicht",
+    "unavailable": "Nicht verfügbar"
+  },
+  "results": {
+    "shown_one": "{{formattedCount}} Produkt auf dieser Seite angezeigt.",
+    "shown_other": "{{formattedCount}} Produkte auf dieser Seite angezeigt."
+  },
+  "table": {
+    "region": "Shopify-Produkte",
+    "columns": "Produkte",
+    "product": "Produkt",
+    "configuration": "Konfiguration",
+    "methods": "Veredelungsmethoden",
+    "printLocations": "Veredelungspositionen",
+    "variants": "Varianten"
+  },
+  "summary": {
+    "methods": "Veredelungsmethoden",
+    "printLocations": "Veredelungspositionen",
+    "noneConfigured": "Keine konfiguriert",
+    "viewAllMethods": "Alle Methoden ansehen",
+    "viewAllPrintLocations": "Alle Veredelungspositionen ansehen"
+  },
+  "errors": {
+    "loadHeading": "Produkte konnten nicht geladen werden",
+    "access": "Ihr Zugriff konnte nicht bestätigt werden. Versuchen Sie erneut, die Verbindung zum Shopify-Adminbereich herzustellen.",
+    "unavailable": "Produkte sind nicht verfügbar. Versuchen Sie es erneut.",
+    "previewFailed": "Die Kundenvorschau konnte nicht geöffnet werden. Versuchen Sie es erneut.",
+    "summaryDownloadFailed": "Die Übersicht konnte nicht heruntergeladen werden. Versuchen Sie es erneut."
+  },
+  "empty": {
+    "noneOnPage": "Auf dieser Seite wurden keine Produkte gefunden",
+    "changeFilterOrPage": "Ändern Sie den Konfigurationsfilter oder prüfen Sie eine andere Seite.",
+    "returnFirstOrSearch": "Gehen Sie zur ersten Seite zurück oder suchen Sie erneut.",
+    "changeProductSearch": "Suchen Sie nach einem anderen Produktnamen oder löschen Sie die Suche.",
+    "noProductsFound": "Keine Produkte gefunden",
+    "noProductsYet": "Noch keine Produkte",
+    "addInShopify": "Fügen Sie ein Produkt in Shopify hinzu. Kehren Sie dann hierher zurück, um die Produktanpassung einzurichten."
+  }
+}

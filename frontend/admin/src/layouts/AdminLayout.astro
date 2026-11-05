@@ -1,0 +1,49 @@
+---
+import '../styles/admin-editor.css';
+import AdminNavigation from '../components/AdminNavigation.astro';
+import AdminPageSkeleton from '../components/AdminPageSkeleton';
+import { createAdminTranslator, type AdminMessageKey } from '@insignia/ui-localization/admin';
+
+interface Props {
+  titleKey: Extract<AdminMessageKey, `admin-shell:titles.${string}`>;
+  apiKey?: string;
+  ready?: boolean;
+}
+const { titleKey, apiKey, ready = false } = Astro.props;
+const requestedLocale = Astro.url.searchParams.get('locale');
+const localization = createAdminTranslator(requestedLocale);
+const { t } = localization;
+---
+<!doctype html>
+<html lang={localization.lang} dir={localization.dir} data-admin-requested-locale={localization.canonicalRequestedLocale ?? undefined} data-admin-locale-ready="false" data-admin-title-key={titleKey} data-admin-ready="false" data-admin-content-ready={ready ? 'true' : undefined}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    {apiKey && <meta name="shopify-api-key" content={apiKey} />}
+    <title>{localization.canonicalRequestedLocale ? t('admin-shell:pageTitle', { title: t(titleKey) }) : 'Insignia'}</title>
+    <style is:inline>
+      /* Keep server-rendered controls out of the first paint until the runtime is ready. */
+      html:not([data-admin-ready="true"]) #admin-route-content { visibility: hidden; pointer-events: none; }
+      html[data-admin-locale-ready="false"] s-app-nav { visibility: hidden; }
+    </style>
+    {apiKey && <script is:inline src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>}
+    <script>
+      import { installAdminNavigation } from '../shared/admin-navigation';
+      import { installAdminLocalization } from '../shared/admin-i18n';
+      installAdminLocalization(document);
+      installAdminNavigation();
+    </script>
+    <script is:inline async src="https://cdn.shopify.com/shopifycloud/polaris-2.0-rc.js"></script>
+  </head>
+  <body>
+    {apiKey && <AdminNavigation locale={requestedLocale} />}
+    <div id="admin-route-skeleton" aria-hidden={localization.canonicalRequestedLocale ? undefined : 'true'}>
+      <AdminPageSkeleton pathname={Astro.url.pathname} search={Astro.url.search} locale={requestedLocale} client:polaris />
+    </div>
+    <div id="admin-route-failure" hidden>
+      <s-banner tone="critical" heading={t('admin-shell:failure.heading')} data-admin-failure-heading><span data-admin-failure-body>{t('admin-shell:failure.body')}</span></s-banner>
+    </div>
+    <div id="admin-route-content" inert><slot /></div>
+  </body>
+</html>

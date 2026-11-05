@@ -1,0 +1,73 @@
+{
+  "pageTitle": "Productos",
+  "actions": {
+    "viewInShopify": "Ver en Shopify",
+    "selectAllShown": "Seleccionar todos los productos que se muestran en esta página",
+    "selectProduct": "Seleccionar {{productName}}",
+    "copySetupAccessible": "Copiar la configuración de otro producto",
+    "copySetup": "Copiar configuración de…",
+    "downloadSummary": "Descargar resumen",
+    "previewCustomization": "Vista previa de la personalización",
+    "selectionActions": "Acciones para los productos seleccionados",
+    "clearSelection": "Borrar selección",
+    "firstPage": "Primera página",
+    "showAll": "Mostrar todos los productos",
+    "clearFilter": "Borrar filtro de configuración"
+  },
+  "selection": {
+    "selected_one": "{{formattedCount}} seleccionado",
+    "selected_other": "{{formattedCount}} seleccionados",
+    "selected_many": "{{formattedCount}} seleccionados"
+  },
+  "search": "Buscar productos",
+  "filter": {
+    "products": "Filtrar productos",
+    "configurationOnPage": "Configuración en esta página",
+    "editConfiguration": "Editar filtro de configuración",
+    "onThisPage": "{{configuration}} en esta página"
+  },
+  "configuration": {
+    "all": "Todos",
+    "notConfigured": "Sin configurar",
+    "draft": "Borrador",
+    "published": "Publicado",
+    "unavailable": "No disponible"
+  },
+  "results": {
+    "shown_one": "Se muestra {{formattedCount}} producto en esta página.",
+    "shown_other": "Se muestran {{formattedCount}} productos en esta página.",
+    "shown_many": "Se muestran {{formattedCount}} productos en esta página."
+  },
+  "table": {
+    "region": "Productos de Shopify",
+    "columns": "Productos",
+    "product": "Producto",
+    "configuration": "Configuración",
+    "methods": "Técnicas",
+    "printLocations": "Zonas de diseño",
+    "variants": "Variantes"
+  },
+  "summary": {
+    "methods": "técnicas",
+    "printLocations": "zonas de diseño",
+    "noneConfigured": "Ninguna configurada",
+    "viewAllMethods": "Ver todas las técnicas",
+    "viewAllPrintLocations": "Ver todas las zonas de diseño"
+  },
+  "errors": {
+    "loadHeading": "No se pudieron cargar los productos",
+    "access": "No se pudo verificar tu acceso. Vuelve a conectarte al panel de control de Shopify.",
+    "unavailable": "Los productos no están disponibles. Vuelve a intentarlo.",
+    "previewFailed": "No se pudo abrir la vista previa para clientes. Vuelve a intentarlo.",
+    "summaryDownloadFailed": "No se pudo descargar el resumen. Vuelve a intentarlo."
+  },
+  "empty": {
+    "noneOnPage": "No se encontraron productos en esta página",
+    "changeFilterOrPage": "Cambia el filtro de configuración o consulta otra página.",
+    "returnFirstOrSearch": "Vuelve a la primera página o prueba otra búsqueda.",
+    "changeProductSearch": "Prueba con otro nombre de producto o borra la búsqueda.",
+    "noProductsFound": "No se encontraron productos",
+    "noProductsYet": "Todavía no hay productos",
+    "addInShopify": "Añade un producto en Shopify y vuelve aquí para configurar su personalización."
+  }
+}

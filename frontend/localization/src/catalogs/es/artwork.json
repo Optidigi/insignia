@@ -1,0 +1,36 @@
+{
+  "upload": {
+    "region": "Diseño privado",
+    "action": "Subir diseño",
+    "requirement": "Hasta 5 MiB.",
+    "verified": "Diseño verificado. El original se conserva hasta {{expiry}}.",
+    "previewRenewed": "Vista previa del diseño renovada.",
+    "downloadPrepared": "Descarga privada preparada. Usa «Descargar original verificado».",
+    "expired": "El diseño ha caducado. Vuelve a subirlo.",
+    "inspectionRejected": "El diseño no superó la revisión. Elige una imagen estática compatible.",
+    "processingTimeout": "Tu diseño todavía se está procesando. Vuelve a comprobarlo.",
+    "uploadFailed": "No se pudo completar la subida del diseño. Vuelve a intentarlo.",
+    "resumeFailed": "El diseño subido no está disponible. Vuelve a intentarlo más tarde.",
+    "previewFailed": "La vista previa no está disponible. Vuelve a intentarlo.",
+    "downloadFailed": "La descarga no está disponible. Vuelve a intentarlo.",
+    "accessDenied": "No se pudo verificar tu acceso. Vuelve a abrir Insignia desde el panel de control de Shopify.",
+    "verifiedPreviewAlt": "Vista previa del diseño verificado",
+    "progress": {
+      "allocating": "Preparando la subida privada",
+      "uploading": "Subiendo",
+      "processing": "Procesando el diseño"
+    },
+    "actions": {
+      "retryUploaded": "Volver a intentar con el diseño subido",
+      "retryPreview": "Volver a intentar la vista previa del diseño",
+      "prepareDownload": "Preparar la descarga del original",
+      "downloadVerifiedOriginal": "Descargar original verificado"
+    },
+    "invalidFormat": "Elige una imagen SVG, PNG o JPEG.",
+    "tooLarge": "Elige una imagen de hasta 5 MiB."
+  },
+  "preview": {
+    "imageUnavailable": "La imagen del diseño no está disponible.",
+    "preparing": "Preparando {{imageDescription}}"
+  }
+}

@@ -8,7 +8,7 @@
     "node": "24.21.0"
   },
   "scripts": {
-    "build": "corepack pnpm -r --filter './packages/**' build && corepack pnpm -r --filter './apps/**' build",
+    "build": "corepack pnpm -r --filter './packages/**' build && corepack pnpm -r --filter './apps/**' build && corepack pnpm -r --filter './frontend/**' build",
     "test:unit": "corepack pnpm --filter @insignia/domain test && corepack pnpm --filter @insignia/contracts test && corepack pnpm --filter @insignia/visualizer test && corepack pnpm --filter @insignia/cart-authorization test && corepack pnpm --filter @insignia/application test && corepack pnpm --filter @insignia/shopify test && corepack pnpm --filter @insignia/observability test && corepack pnpm --filter @insignia/storage test && corepack pnpm --filter @insignia/worker test",
     "db:migrate": "dbmate --no-dump-schema --migrations-dir packages/database/migrations up",
     "test:database": "corepack pnpm --filter @insignia/database test",
@@ -29,7 +29,10 @@
     "check:source": "node scripts/boundaries/source-contract.mts",
     "test:runtime-inventory": "node --test scripts/runtime/worker-inventory.test.mts",
     "dev:admin": "node apps/web/test/admin/preview.mts",
-    "test:database:isolated": "node scripts/database/isolated.mts"
+    "test:database:isolated": "node scripts/database/isolated.mts",
+    "dev:ui:admin": "corepack pnpm --filter @insignia/admin-ui dev",
+    "dev:ui:customer": "corepack pnpm --filter @insignia/designer dev",
+    "build:ui": "corepack pnpm -r --filter './frontend/**' build"
   },
   "devDependencies": {
     "@astrojs/compiler-rs": "0.5.1",

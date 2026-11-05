@@ -1,0 +1,13 @@
+---
+import { createAdminTranslator } from '@insignia/ui-localization/admin';
+interface Props { locale?: string | null }
+const { t } = createAdminTranslator(Astro.props.locale);
+---
+<!-- App Bridge renders these destinations in Shopify's sidebar/mobile menu. -->
+<template data-admin-nav-template><s-app-nav>
+  <s-link href="/admin/home" rel="home" data-admin-nav="home">{t('admin-shell:navigation.home')}</s-link>
+  <s-link href="/admin/products" data-admin-nav="products">{t('admin-shell:navigation.products')}</s-link>
+  <s-link href="/admin/orders" data-admin-nav="orders">{t('admin-shell:navigation.orders')}</s-link>
+  <s-link href="/admin/methods" data-admin-nav="methods">{t('admin-shell:navigation.methods')}</s-link>
+  <s-link href="/admin/settings" data-admin-nav="settings">{t('admin-shell:navigation.settings')}</s-link>
+</s-app-nav></template>

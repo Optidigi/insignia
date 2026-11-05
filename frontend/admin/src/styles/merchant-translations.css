@@ -1,0 +1,342 @@
+.translations-content {
+  inline-size: 100%;
+  max-inline-size: 1100px;
+  min-inline-size: 0;
+  margin-inline: auto;
+}
+
+.translations-notice {
+  margin-block-end: 16px;
+}
+
+.translations-overview-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  align-items: start;
+  gap: 24px;
+  min-inline-size: 0;
+}
+
+.translations-overview-layout > *,
+.translations-content-categories,
+.translations-languages,
+.translations-editor-main {
+  min-inline-size: 0;
+}
+
+.translations-overview-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-block-size: 32px;
+  margin-block-end: 16px;
+}
+
+.translations-language-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-inline-size: 0;
+}
+
+.translations-content-categories {
+  display: grid;
+  gap: 16px;
+  min-inline-size: 0;
+}
+
+.translations-category-heading {
+  min-inline-size: 0;
+}
+
+.translations-languages {
+  display: grid;
+  align-content: start;
+  min-inline-size: 0;
+}
+
+.translations-editor-top {
+  display: grid;
+  grid-template-columns: minmax(180px, 320px) auto;
+  align-items: end;
+  gap: 12px;
+  margin-block-end: 16px;
+}
+
+.translations-editor-top > s-button {
+  justify-self: start;
+}
+
+.translations-editor-shell {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+  min-inline-size: 0;
+}
+
+.translations-section-nav {
+  display: grid;
+  align-content: start;
+  align-self: stretch;
+  gap: 2px;
+  min-inline-size: 0;
+  padding: 4px;
+}
+
+.translations-nav-heading {
+  min-inline-size: 0;
+}
+
+.translations-section-nav s-clickable {
+  box-sizing: border-box;
+  display: block;
+  min-inline-size: 0;
+  border-inline-start: 2px solid transparent;
+  overflow-wrap: anywhere;
+}
+
+.translations-section-nav s-clickable[data-active] {
+  background: var(--p-color-bg-surface-secondary, #eaeaea);
+  border-inline-start-color: var(--p-color-border-interactive, #2c6ecb);
+  font-weight: 600;
+}
+
+.translations-section-select {
+  display: none;
+  min-inline-size: 0;
+  margin-block-end: 12px;
+}
+
+.translations-editor-main {
+  min-inline-size: 0;
+}
+
+.translations-editor-heading {
+  margin-block: 0 12px;
+  overflow-wrap: anywhere;
+}
+
+.translations-editor-search {
+  display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
+  margin-block-end: 12px;
+}
+
+.translations-editor-main > s-search-field {
+  display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
+  margin-block-end: 12px;
+}
+
+.translations-comparison-head,
+.translations-comparison-row {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) minmax(0, 1fr);
+  min-inline-size: 0;
+  inline-size: 100%;
+  box-sizing: border-box;
+}
+
+.translations-comparison-head {
+  align-items: center;
+  min-block-size: 40px;
+  background-color: var(--p-color-bg-surface, transparent);
+  border-block-end: 1px solid #e3e3e3;
+}
+
+.translations-comparison-head > * {
+  min-inline-size: 0;
+  padding: 8px 12px;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.translations-fieldset {
+  display: block;
+  min-inline-size: 0;
+  inline-size: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.translations-comparison-row {
+  grid-column: 1 / -1;
+  align-items: stretch;
+  min-block-size: 52px;
+  border-block-end: 1px solid #e3e3e3;
+}
+
+.translations-field-label,
+.translations-reference,
+.translations-target {
+  box-sizing: border-box;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.translations-field-label {
+  align-self: center;
+  padding-block: 8px;
+  padding-inline: 16px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.translations-reference {
+  padding: 0;
+}
+
+.translations-reference-content {
+  padding-inline: 12px;
+}
+
+.translations-reference s-text-area,
+.translations-target s-text-area {
+  display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+.translations-target {
+  display: block;
+  padding: 8px 12px;
+}
+
+.translations-target-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px;
+  align-items: start;
+  gap: 4px;
+  min-inline-size: 0;
+}
+
+.translations-mobile-label {
+  display: none;
+}
+
+.translations-pagination,
+.translations-bottom-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.translations-announcement:empty {
+  display: none;
+}
+
+.translations-announcement {
+  margin-block-end: 16px;
+  color: var(--p-color-text-subdued, #616161);
+}
+
+@media (max-width: 900px) {
+  .translations-overview-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1199px) {
+  .translations-section-nav {
+    display: none;
+  }
+
+  .translations-section-select {
+    display: block;
+  }
+
+  .translations-editor-shell {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .translations-editor-top {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .translations-bottom-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 760px) {
+  .translations-comparison-head {
+    display: none;
+  }
+
+  .translations-comparison-row {
+    grid-column: auto;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding-block: 4px;
+  }
+
+  .translations-field-label {
+    align-self: start;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .translations-mobile-label {
+    display: block;
+    margin-block-end: 4px;
+    font-size: 12px;
+    line-height: 20px;
+  }
+
+  .translations-reference,
+  .translations-target {
+    padding: 8px 12px;
+  }
+
+  .translations-reference {
+    padding: 0;
+  }
+}
+
+@media (min-width: 1200px) {
+  .translations-editor-shell {
+    grid-template-columns: 300px minmax(0, 1fr);
+  }
+}
+
+.translations-overview-mobile-controls {
+  display: none;
+}
+@media (max-width: 900px) {
+  .translations-languages,
+  .translations-overview-heading {
+    display: none;
+  }
+  .translations-overview-mobile-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: end;
+    margin-block-end: 16px;
+  }
+}
+@media (max-width: 360px) {
+  .translations-overview-mobile-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .translations-overview-mobile-controls > s-button {
+    justify-self: start;
+  }
+}

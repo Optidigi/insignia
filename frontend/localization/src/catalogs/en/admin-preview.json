@@ -1,0 +1,30 @@
+{
+  "preview": {
+    "documentTitle": "Insignia | Artwork preview",
+    "context": "Artwork preview · Current draft",
+    "title": "Artwork preview",
+    "unavailableTitle": "Artwork preview unavailable",
+    "loadingTitle": "Loading artwork preview",
+    "waitingForDraft": "Waiting for the current product draft…",
+    "reopenFromEditor": "Reopen the customization preview from the product editor.",
+    "expired": "This preview has expired. Reopen it from the admin product draft.",
+    "draftDidNotArrive": "The current draft did not arrive. Close this tab and reopen the customization preview from the product editor.",
+    "draftCouldNotBePreviewed": "The current draft could not be previewed.",
+    "unrepresentableDraftData": "This draft contains artwork preview data this designer cannot represent. Reopen the preview from the product editor.",
+    "emptyProductName": "Add a product name before opening the customization preview.",
+    "noProductViews": "Add a product view before opening the customization preview.",
+    "missingImageForPlacedView": "Add an image to every view that has artwork placements.",
+    "noProductImage": "Add a product image before opening the customization preview.",
+    "unnamedProductView": "Name each product view before opening the customization preview.",
+    "unmappableProductView": "The product view could not be mapped for preview.",
+    "noValidArtworkPlacements": "Complete at least one artwork placement with a valid price before opening the customization preview.",
+    "tooManyArtworkPlacements": "This product has too many artwork placements for the customization preview.",
+    "unrepresentableArtworkSetup": "The current artwork setup has options the customization preview cannot represent.",
+    "previewNotice": "Artwork preview only. Prices, product options and availability are not included.",
+    "previewNoticeWithPlacements_one": "Artwork preview only. Prices, product options and availability are not included. {{availableCount}} of {{totalCount}} placement is available in this draft preview.",
+    "previewNoticeWithPlacements_other": "Artwork preview only. Prices, product options and availability are not included. {{availableCount}} of {{totalCount}} placements are available in this draft preview.",
+    "placementsAvailable_one": "{{availableCount}} of {{totalCount}} placement available in this draft preview.",
+    "placementsAvailable_other": "{{availableCount}} of {{totalCount}} placements available in this draft preview.",
+    "productImage": "Product image"
+  }
+}

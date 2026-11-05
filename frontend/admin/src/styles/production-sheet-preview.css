@@ -1,0 +1,103 @@
+.production-sheet-order-summary {
+  min-inline-size: 0;
+}
+
+.production-sheet-order-summary + .production-sheet-order-summary {
+  padding-block-start: 10px;
+  border-block-start: 1px solid #e4e6e7;
+}
+
+.production-sheet-preview-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.production-sheet-preview-frame {
+  display: grid;
+  place-items: start center;
+  max-block-size: min(70svh, 880px);
+  overflow: auto;
+}
+
+.production-sheet-preview-frame > s-image {
+  display: block;
+  inline-size: min(100%, 680px);
+  max-block-size: min(70svh, 880px);
+}
+
+@media (max-width: 760px) {
+  .production-sheet-preview-frame {
+    max-block-size: min(55svh, 620px);
+  }
+
+  .production-sheet-preview-frame > s-image {
+    inline-size: 100%;
+    max-block-size: min(55svh, 620px);
+  }
+}
+
+.production-sheet-dialog-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  grid-template-areas: "document details";
+  gap: 24px;
+  align-items: start;
+}
+.production-sheet-details {
+  grid-area: details;
+  display: grid;
+  gap: 20px;
+  min-inline-size: 0;
+}
+.production-sheet-document {
+  grid-area: document;
+  min-inline-size: 0;
+  display: grid;
+  gap: 12px;
+}
+.production-sheet-order-heading {
+  overflow-wrap: anywhere;
+}
+.production-sheet-facts {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+.production-sheet-facts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.production-sheet-facts dt {
+  color: #616161;
+}
+.production-sheet-facts dd {
+  margin: 0;
+}
+.production-sheet-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.production-sheet-status > s-banner {
+  flex-basis: 100%;
+}
+@media (max-width: 760px) {
+  .production-sheet-dialog-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "details" "document";
+    gap: 20px;
+  }
+  .production-sheet-details {
+    gap: 12px;
+  }
+  .production-sheet-facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .production-sheet-facts > div {
+    display: grid;
+    gap: 4px;
+  }
+}

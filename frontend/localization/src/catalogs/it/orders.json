@@ -1,0 +1,280 @@
+{
+  "pageTitle": "Ordini",
+  "actions": {
+    "selectAllShown": "Seleziona tutti gli ordini mostrati",
+    "selectedOnPage_one": "{{formattedCount}} selezionato in questa pagina",
+    "selectedOnPage_many": "{{formattedCount}} selezionati in questa pagina",
+    "selectedOnPage_other": "{{formattedCount}} selezionati in questa pagina",
+    "selected_one": "{{formattedCount}} selezionato",
+    "selected_many": "{{formattedCount}} selezionati",
+    "selected_other": "{{formattedCount}} selezionati",
+    "selectionActions": "Azioni per gli ordini selezionati",
+    "productionSheets": "Schede di produzione",
+    "downloadArtwork": "Scarica la grafica",
+    "clearSelection": "Cancella la selezione",
+    "clearFilters": "Cancella i filtri",
+    "viewProducts": "Visualizza i prodotti",
+    "selectOrder": "Seleziona l'ordine {{orderLabel}}",
+    "firstPage": "Visualizza la prima pagina"
+  },
+  "errors": {
+    "accessHeading": "Ordini non disponibili",
+    "accessDescription": "Riapri Insignia da Shopify Admin. Se non riesci ancora a visualizzare gli ordini, chiedi al proprietario del negozio di controllare le tue autorizzazioni.",
+    "loadHeading": "Impossibile caricare gli ordini",
+    "staleResults": "Gli ordini qui sotto potrebbero non essere aggiornati. Riprova.",
+    "initialLoad": "Riprova a caricare gli ordini."
+  },
+  "empty": {
+    "noCustomizedOrders": "Non ci sono ancora ordini personalizzati",
+    "noCustomizedOrdersDescription": "Qui compariranno gli ordini con personalizzazioni Insignia.",
+    "noOrders": "Nessun ordine trovato",
+    "noOrdersOnPage": "Nessun ordine trovato in questa pagina",
+    "tryAnotherDateRange": "Prova un altro intervallo di date o cancella i filtri.",
+    "changeSearchFilterPage": "Modifica la ricerca o il filtro oppure controlla un'altra pagina."
+  },
+  "search": {
+    "label": "Cerca gli ordini in questa pagina",
+    "placeholder": "Cerca in questa pagina",
+    "results_one": "{{formattedCount}} ordine mostrato in questa pagina.",
+    "results_many": "{{formattedCount}} ordini mostrati in questa pagina.",
+    "results_other": "{{formattedCount}} ordini mostrati in questa pagina."
+  },
+  "filters": {
+    "filterOrders": "Filtra gli ordini",
+    "artworkStatus": "Stato della grafica in questa pagina",
+    "editArtworkStatus": "Modifica il filtro dello stato della grafica",
+    "editOrderDate": "Modifica il filtro della data dell'ordine",
+    "orderDateRange": "Data dell'ordine: {{from}} – {{to}}"
+  },
+  "artwork": {
+    "all": "Tutte",
+    "needed": "Grafica richiesta",
+    "complete": "Grafica completa"
+  },
+  "display": {
+    "accessibleLabel": "Opzioni di visualizzazione",
+    "sortBy": "Ordina per",
+    "dateOrder": "Ordine cronologico",
+    "newestFirst": "Dal più recente",
+    "oldestFirst": "Dal meno recente",
+    "columns": "Colonne",
+    "hideColumn": "Nascondi {{column}}",
+    "showColumn": "Mostra {{column}}"
+  },
+  "date": {
+    "orderDate": "Data dell'ordine",
+    "anyTime": "Qualsiasi periodo",
+    "any": "Qualsiasi",
+    "today": "Oggi",
+    "lastSevenDays": "Ultimi 7 giorni",
+    "lastThirtyDays": "Ultimi 30 giorni",
+    "lastNinetyDays": "Ultimi 90 giorni",
+    "customRange": "Intervallo di date personalizzato",
+    "editCustomRange": "Modifica l'intervallo personalizzato",
+    "from": "Da",
+    "to": "A",
+    "datePlaceholder": "YYYY-MM-DD",
+    "apply": "Applica",
+    "backToPresets": "Torna agli intervalli predefiniti",
+    "utc": "UTC",
+    "errors": {
+      "bothRequired": "Seleziona una data di inizio e una data di fine.",
+      "endBeforeStart": "La data di fine deve essere uguale o successiva alla data di inizio.",
+      "emptyDate": "Questa data non esiste nel fuso orario del negozio, quindi non può esserci alcun ordine in quel giorno.",
+      "invalidDate": "Inserisci date valide per il fuso orario del negozio."
+    }
+  },
+  "table": {
+    "columns": {
+      "order": "Ordine",
+      "date": "Data",
+      "total": "Totale",
+      "payment": "Stato del pagamento",
+      "artwork": "Stato della grafica",
+      "methods": "Tecniche di decorazione",
+      "items": "Articoli personalizzati"
+    }
+  },
+  "payment": {
+    "paid": "Pagato",
+    "refunded": "Rimborsato",
+    "partiallyRefunded": "Rimborsato parzialmente",
+    "partiallyPaid": "Pagato parzialmente",
+    "authorized": "Autorizzato",
+    "voided": "Annullato",
+    "pending": "In attesa",
+    "expired": "Scaduto",
+    "unknown": "Sconosciuto"
+  },
+  "badges": {
+    "test": "Di prova",
+    "cancelled": "Annullato",
+    "needsReview": "Da controllare"
+  },
+  "order": {
+    "reference": "Ordine {{orderNumber}}"
+  },
+  "summary": {
+    "methods": "Tecniche di decorazione",
+    "viewAllMethods": "Visualizza tutte le tecniche di decorazione per {{orderLabel}}",
+    "noMethods": "Nessuna tecnica di decorazione",
+    "methodUnavailable": "Tecnica non disponibile"
+  },
+  "counts": {
+    "items_one": "{{formattedCount}} articolo",
+    "items_many": "{{formattedCount}} articoli",
+    "items_other": "{{formattedCount}} articoli",
+    "itemsExact": "Numero di articoli: {{formattedCount}}",
+    "variantAndItems_one": "{{formattedVariantCount}} variante · {{formattedItemCount}} unità",
+    "variantAndItems_many": "{{formattedVariantCount}} varianti · {{formattedItemCount}} unità",
+    "variantAndItems_other": "{{formattedVariantCount}} varianti · {{formattedItemCount}} unità"
+  },
+  "items": {
+    "heading": "Articoli personalizzati",
+    "needsVerification": "Da verificare",
+    "variantUnavailable": "Nome della variante non disponibile",
+    "variantBreakdown_one": "{{formattedVariantCount}} variante · {{formattedItemCount}} unità",
+    "variantBreakdown_many": "{{formattedVariantCount}} varianti · {{formattedItemCount}} unità",
+    "variantBreakdown_other": "{{formattedVariantCount}} varianti · {{formattedItemCount}} unità",
+    "imageAlt": "Immagine di {{itemName}}",
+    "purchasedItem": "articolo acquistato",
+    "purchasedItemUnavailable": "Nome dell'articolo acquistato non disponibile",
+    "showBreakdown": "Mostra {{breakdown}} per {{itemName}}",
+    "hideBreakdown": "Nascondi {{breakdown}} per {{itemName}}",
+    "showVariantBreakdown": "Mostra {{summary}}",
+    "hideVariantBreakdown": "Nascondi {{summary}}",
+    "variant": "Variante",
+    "quantity": "Quantità",
+    "empty": "Gli articoli acquistati devono essere verificati."
+  },
+  "designPreview": {
+    "expired": "Dettagli della personalizzazione scaduti",
+    "unavailable": "Anteprima della personalizzazione non disponibile",
+    "expiredDetails": "I dettagli salvati della personalizzazione non vengono più conservati.",
+    "unavailableDetails": "I dettagli salvati delle posizioni non sono disponibili per questa personalizzazione.",
+    "view": "Visualizza la personalizzazione",
+    "heading": "Anteprima della personalizzazione",
+    "artworkVersion": "Versione della grafica",
+    "currentArtwork": "Grafica attuale",
+    "atPurchase": "Al momento dell'acquisto",
+    "refreshing": "Aggiornamento dell'ordine in corso"
+  },
+  "artworkDownload": {
+    "action": "Scarica il file originale",
+    "expired": "La grafica originale non è più disponibile.",
+    "failed": "Non è stato possibile scaricare il file originale. Riprova."
+  },
+  "artworkHistory": {
+    "heading": "Cronologia della grafica",
+    "view": "Visualizza la cronologia della grafica ({{formattedCount}})",
+    "design": "Personalizzazione {{designNumber}}",
+    "placement": "Posizione {{placementNumber}}",
+    "attached": "Grafica allegata",
+    "version": "Versione {{version}}",
+    "erased": "Dettagli della grafica cancellati",
+    "originalAvailableUntil": "File originale disponibile fino al {{date}}",
+    "showMore": "Mostra altra cronologia",
+    "dateUtc": "{{date}} UTC"
+  },
+  "purchaseArtwork": {
+    "read": {
+      "accessDenied": "Non è stato possibile verificare la tua identità Shopify o i tuoi permessi. Riapri Insignia da Shopify Admin.",
+      "notFound": "Non è stato possibile trovare questo ordine. Torna alla sezione Ordini e seleziona un ordine disponibile.",
+      "refreshFailed": "Non è stato possibile aggiornare l'ordine. Sono mostrati gli ultimi dettagli caricati. Riprova.",
+      "loadFailed": "Non è stato possibile caricare l'ordine. Riprova."
+    },
+    "actions": {
+      "orderActions": "Azioni per l'ordine",
+      "more": "Altre azioni",
+      "viewInShopify": "Visualizza in Shopify",
+      "tryAgain": "Riprova",
+      "jumpToMissingArtwork": "Vai alla grafica mancante"
+    },
+    "placement": {
+      "fallback": "Posizione {{formattedNumber}}",
+      "ariaLabel": "Grafica {{placementName}}",
+      "status": {
+        "replaced": "Sostituita",
+        "attached": "Allegata",
+        "provided": "Fornita",
+        "unavailable": "Non disponibile",
+        "needed": "Grafica richiesta"
+      },
+      "sizeUnavailable": "Dimensione di decorazione non disponibile",
+      "preview": "Visualizza l'anteprima della grafica",
+      "download": "Scarica il file",
+      "replace": "Sostituisci la grafica",
+      "attach": "Allega la grafica",
+      "accessFailed": "Non è stato possibile caricare la grafica. Riprova.",
+      "changed": "La grafica è cambiata. Ricarica la pagina dell'ordine prima di continuare.",
+      "attachFailed": "Non è stato possibile allegare la grafica. Ricarica la pagina dell'ordine e riprova.",
+      "retentionEnded": "La grafica non è più disponibile.",
+      "deleteSoon": "Scarica il file prima della cancellazione del {{date}}.",
+      "originalArtwork": "Grafica originale",
+      "previewHeading": "Anteprima della grafica: {{placementName}}",
+      "previewAlt": "Anteprima PNG verificata {{placementName}}",
+      "previewLoading": "Caricamento dell'anteprima della grafica",
+      "previewUnavailable": "Anteprima non disponibile. Chiudi questa finestra di dialogo e riprova."
+    },
+    "preview": {
+      "currentSection": "Anteprima della personalizzazione attuale",
+      "purchasedSection": "Anteprima della personalizzazione acquistata",
+      "view": "Vista",
+      "variant": "Variante",
+      "viewFallback": "Vista {{formattedNumber}}",
+      "variantFallback": "Variante {{formattedNumber}} (nome non disponibile)",
+      "variantOption": "{{variantName}} · {{formattedQuantity}} articoli acquistati",
+      "loadingCurrent": "Caricamento dell'anteprima della personalizzazione attuale",
+      "loadingPurchased": "Caricamento dell'anteprima della personalizzazione acquistata",
+      "unavailable": "Non è stato possibile caricare l'anteprima della personalizzazione. Riprova.",
+      "designUnavailable": "Questa personalizzazione non è più disponibile.",
+      "accessExpired": "L'accesso all'anteprima è scaduto. Caricala di nuovo per continuare.",
+      "currentArtworkUnavailable": "Parte della grafica attuale non è disponibile in questa anteprima.",
+      "purchasedArtworkUnavailable": "Parte della grafica dell'ordine originale non è disponibile in questa anteprima.",
+      "loadPreview": "Carica l'anteprima",
+      "tryAgain": "Riprova"
+    },
+    "artworkState": {
+      "currentUnavailableLocked": "La grafica attuale non è più disponibile.",
+      "currentUnavailableReplace": "La grafica attuale non è disponibile. Carica un file sostitutivo prima che scadano i dettagli della personalizzazione."
+    },
+    "badges": {
+      "orderUnavailable": "Ordine non disponibile",
+      "accessUnavailable": "Accesso all'ordine non disponibile"
+    },
+    "warnings": {
+      "orderCancelledHeading": "Ordine annullato",
+      "orderCancelledBody": "Questo ordine è stato annullato. Controllalo in Shopify prima di preparare la grafica.",
+      "orderReviewHeading": "Ordine da controllare",
+      "orderReviewBody": "Controlla questo ordine in Shopify prima di preparare la grafica.",
+      "artworkNeededHeading": "Grafica richiesta",
+      "missingArtwork_one": "{{formattedCount}} posizione di decorazione richiede la grafica.",
+      "missingArtwork_many": "{{formattedCount}} posizioni di decorazione richiedono la grafica.",
+      "missingArtwork_other": "{{formattedCount}} posizioni di decorazione richiedono la grafica.",
+      "missingArtworkExact": "La grafica manca in {{formattedCount}} posizioni di decorazione."
+    },
+    "verification": {
+      "placementDetailsMissing": "Mancano i dettagli della posizione. Controlla questo ordine in Shopify prima di preparare la grafica.",
+      "customizationUnavailable": "La personalizzazione dell'ordine deve essere verificata. Non avviare la produzione finché i dettagli non sono stati controllati.",
+      "erasedUnavailable": "I dettagli della personalizzazione e la grafica originale non sono più disponibili. Gli importi dell'ordine restano disponibili."
+    },
+    "design": {
+      "productUnavailable": "Prodotto personalizzato",
+      "customization": "Personalizzazione di {{productName}}",
+      "ariaLabel": "{{productName}}, personalizzazione {{formattedNumber}}",
+      "heading": "{{productName}} · Personalizzazione {{formattedNumber}}",
+      "noPlacementsHeading": "La personalizzazione deve essere verificata"
+    },
+    "payment": {
+      "heading": "Informazioni sul pagamento",
+      "originalTotal": "Totale originale dell'ordine",
+      "firstFullyPaid": "Data del primo pagamento completo",
+      "notRecorded": "Non registrato",
+      "refundRecords": "Rimborsi registrati",
+      "settlementNote": "Questi dati non confermano che i fondi siano stati accreditati. Controlla l'accredito del pagamento in Shopify.",
+      "refundDetails": "Dettagli del rimborso",
+      "purchasedItem": "Articolo acquistato",
+      "refundLine": "{{itemName}}: quantità registrata per il rimborso {{formattedQuantity}}, importo {{amount}}"
+    }
+  }
+}

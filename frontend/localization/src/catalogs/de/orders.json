@@ -1,0 +1,273 @@
+{
+  "pageTitle": "Bestellungen",
+  "actions": {
+    "selectAllShown": "Alle angezeigten Bestellungen auswählen",
+    "selectedOnPage_one": "{{formattedCount}} auf dieser Seite ausgewählt",
+    "selectedOnPage_other": "{{formattedCount}} auf dieser Seite ausgewählt",
+    "selected_one": "{{formattedCount}} ausgewählt",
+    "selected_other": "{{formattedCount}} ausgewählt",
+    "selectionActions": "Aktionen für ausgewählte Bestellungen",
+    "productionSheets": "Produktionsblätter",
+    "downloadArtwork": "Motive herunterladen",
+    "clearSelection": "Auswahl aufheben",
+    "clearFilters": "Filter löschen",
+    "viewProducts": "Produkte ansehen",
+    "selectOrder": "Bestellung {{orderLabel}} auswählen",
+    "firstPage": "Erste Seite anzeigen"
+  },
+  "errors": {
+    "accessHeading": "Bestellungen nicht verfügbar",
+    "accessDescription": "Öffnen Sie Insignia erneut über den Shopify-Adminbereich. Wenn Sie weiterhin keine Bestellungen ansehen können, bitten Sie die Shop-Inhaberin oder den Shop-Inhaber, Ihre Berechtigungen zu prüfen.",
+    "loadHeading": "Bestellungen konnten nicht geladen werden",
+    "staleResults": "Die unten angezeigten Bestellungen sind möglicherweise nicht aktuell. Versuchen Sie es erneut.",
+    "initialLoad": "Versuchen Sie es erneut, um Ihre Bestellungen zu laden."
+  },
+  "empty": {
+    "noCustomizedOrders": "Noch keine Bestellungen mit Produktanpassungen",
+    "noCustomizedOrdersDescription": "Bestellungen mit Insignia-Produktanpassungen werden hier angezeigt.",
+    "noOrders": "Keine Bestellungen gefunden",
+    "noOrdersOnPage": "Auf dieser Seite wurden keine Bestellungen gefunden",
+    "tryAnotherDateRange": "Wählen Sie einen anderen Zeitraum oder löschen Sie die Filter.",
+    "changeSearchFilterPage": "Ändern Sie die Suche oder den Filter oder prüfen Sie eine andere Seite."
+  },
+  "search": {
+    "label": "Bestellungen auf dieser Seite suchen",
+    "placeholder": "Diese Seite durchsuchen",
+    "results_one": "{{formattedCount}} Bestellung auf dieser Seite angezeigt.",
+    "results_other": "{{formattedCount}} Bestellungen auf dieser Seite angezeigt."
+  },
+  "filters": {
+    "filterOrders": "Bestellungen filtern",
+    "artworkStatus": "Motivstatus auf dieser Seite",
+    "editArtworkStatus": "Filter für Motivstatus bearbeiten",
+    "editOrderDate": "Bestelldatumsfilter bearbeiten",
+    "orderDateRange": "Bestelldatum: {{from}} – {{to}}"
+  },
+  "artwork": {
+    "all": "Alle",
+    "needed": "Motiv erforderlich",
+    "complete": "Motiv vollständig"
+  },
+  "display": {
+    "accessibleLabel": "Anzeigeoptionen",
+    "sortBy": "Sortieren nach",
+    "dateOrder": "Datumsreihenfolge",
+    "newestFirst": "Neueste zuerst",
+    "oldestFirst": "Älteste zuerst",
+    "columns": "Spalten",
+    "hideColumn": "{{column}} ausblenden",
+    "showColumn": "{{column}} anzeigen"
+  },
+  "date": {
+    "orderDate": "Bestelldatum",
+    "anyTime": "Jederzeit",
+    "any": "Beliebig",
+    "today": "Heute",
+    "lastSevenDays": "Letzte 7 Tage",
+    "lastThirtyDays": "Letzte 30 Tage",
+    "lastNinetyDays": "Letzte 90 Tage",
+    "customRange": "Benutzerdefinierter Zeitraum",
+    "editCustomRange": "Benutzerdefinierten Zeitraum bearbeiten",
+    "from": "Von",
+    "to": "Bis",
+    "datePlaceholder": "JJJJ-MM-TT",
+    "apply": "Anwenden",
+    "backToPresets": "Zurück zu den Zeiträumen",
+    "utc": "UTC",
+    "errors": {
+      "bothRequired": "Wählen Sie ein Start- und ein Enddatum aus.",
+      "endBeforeStart": "Das Enddatum muss am selben Tag oder nach dem Startdatum liegen.",
+      "emptyDate": "Dieser Kalendertag kommt in der Zeitzone des Shops nicht vor. Daher kann es für diesen Tag keine Bestellungen geben.",
+      "invalidDate": "Geben Sie gültige Daten für die Zeitzone Ihres Shops ein."
+    }
+  },
+  "table": {
+    "columns": {
+      "order": "Bestellung",
+      "date": "Datum",
+      "total": "Gesamtbetrag",
+      "payment": "Zahlungsstatus",
+      "artwork": "Motivstatus",
+      "methods": "Veredelungsverfahren",
+      "items": "Artikel mit Produktanpassungen"
+    }
+  },
+  "payment": {
+    "paid": "Bezahlt",
+    "refunded": "Erstattet",
+    "partiallyRefunded": "Teilweise erstattet",
+    "partiallyPaid": "Teilweise bezahlt",
+    "authorized": "Autorisiert",
+    "voided": "Zahlung aufgehoben",
+    "pending": "Ausstehend",
+    "expired": "Abgelaufen",
+    "unknown": "Unbekannt"
+  },
+  "badges": {
+    "test": "Test",
+    "cancelled": "Storniert",
+    "needsReview": "Prüfung erforderlich"
+  },
+  "order": {
+    "reference": "Bestellung {{orderNumber}}"
+  },
+  "summary": {
+    "methods": "Veredelungsverfahren",
+    "viewAllMethods": "Alle Veredelungsverfahren für {{orderLabel}} ansehen",
+    "noMethods": "Keine Veredelungsverfahren",
+    "methodUnavailable": "Verfahren nicht verfügbar"
+  },
+  "counts": {
+    "items_one": "{{formattedCount}} Artikel",
+    "items_other": "{{formattedCount}} Artikel",
+    "itemsExact": "Artikelanzahl: {{formattedCount}}",
+    "variantAndItems_one": "{{formattedVariantCount}} Variante · {{formattedItemCount}} Artikel",
+    "variantAndItems_other": "{{formattedVariantCount}} Varianten · {{formattedItemCount}} Artikel"
+  },
+  "items": {
+    "heading": "Artikel mit Produktanpassungen",
+    "needsVerification": "Prüfung erforderlich",
+    "variantUnavailable": "Variantenname nicht verfügbar",
+    "variantBreakdown_one": "{{formattedVariantCount}} Variante · {{formattedItemCount}} Artikel",
+    "variantBreakdown_other": "{{formattedVariantCount}} Varianten · {{formattedItemCount}} Artikel",
+    "imageAlt": "Bild von {{itemName}}",
+    "purchasedItem": "gekaufter Artikel",
+    "purchasedItemUnavailable": "Name des gekauften Artikels nicht verfügbar",
+    "showBreakdown": "{{breakdown}} für {{itemName}} anzeigen",
+    "hideBreakdown": "{{breakdown}} für {{itemName}} ausblenden",
+    "showVariantBreakdown": "{{summary}} anzeigen",
+    "hideVariantBreakdown": "{{summary}} ausblenden",
+    "variant": "Variante",
+    "quantity": "Menge",
+    "empty": "Gekaufte Artikel müssen geprüft werden."
+  },
+  "designPreview": {
+    "expired": "Details zur Gestaltung abgelaufen",
+    "unavailable": "Vorschau der Gestaltung nicht verfügbar",
+    "expiredDetails": "Die gespeicherten Details zur Gestaltung werden nicht mehr aufbewahrt.",
+    "unavailableDetails": "Gespeicherte Details zur Veredelungsposition sind für diese Gestaltung nicht verfügbar.",
+    "view": "Gestaltung ansehen",
+    "heading": "Vorschau der Gestaltung",
+    "artworkVersion": "Motivversion",
+    "currentArtwork": "Aktuelles Motiv",
+    "atPurchase": "Zum Kaufzeitpunkt",
+    "refreshing": "Bestellung wird aktualisiert"
+  },
+  "artworkDownload": {
+    "action": "Originaldatei herunterladen",
+    "expired": "Das Originalmotiv ist nicht mehr verfügbar.",
+    "failed": "Die Originaldatei konnte nicht heruntergeladen werden. Versuchen Sie es erneut."
+  },
+  "artworkHistory": {
+    "heading": "Motivverlauf",
+    "view": "Motivverlauf ansehen ({{formattedCount}})",
+    "design": "Gestaltung {{designNumber}}",
+    "placement": "Veredelungsposition {{placementNumber}}",
+    "attached": "Motiv angehängt",
+    "version": "Version {{version}}",
+    "erased": "Motivdetails gelöscht",
+    "originalAvailableUntil": "Originaldatei verfügbar bis {{date}}",
+    "showMore": "Mehr Verlauf anzeigen",
+    "dateUtc": "{{date}} UTC"
+  },
+  "purchaseArtwork": {
+    "read": {
+      "accessDenied": "Ihre Shopify-Identität oder Berechtigung konnte nicht bestätigt werden. Öffnen Sie die App erneut über den Shopify-Adminbereich.",
+      "notFound": "Diese Bestellung wurde nicht gefunden. Kehren Sie zu den Bestellungen zurück und wählen Sie eine verfügbare Bestellung aus.",
+      "refreshFailed": "Die Bestellung konnte nicht aktualisiert werden. Die zuletzt geladenen Details werden angezeigt. Versuchen Sie es erneut.",
+      "loadFailed": "Die Bestellung konnte nicht geladen werden. Versuchen Sie es erneut."
+    },
+    "actions": {
+      "orderActions": "Bestellaktionen",
+      "more": "Weitere Aktionen",
+      "viewInShopify": "In Shopify ansehen",
+      "tryAgain": "Erneut versuchen",
+      "jumpToMissingArtwork": "Zum fehlenden Motiv springen"
+    },
+    "placement": {
+      "fallback": "Veredelungsposition {{formattedNumber}}",
+      "ariaLabel": "Motiv {{placementName}}",
+      "status": {
+        "replaced": "Ersetzt",
+        "attached": "Angehängt",
+        "provided": "Bereitgestellt",
+        "unavailable": "Nicht verfügbar",
+        "needed": "Motiv erforderlich"
+      },
+      "sizeUnavailable": "Größe nicht verfügbar",
+      "preview": "Motivvorschau ansehen",
+      "download": "Datei herunterladen",
+      "replace": "Motiv ersetzen",
+      "attach": "Motiv anhängen",
+      "accessFailed": "Das Motiv konnte nicht geladen werden. Versuchen Sie es erneut.",
+      "changed": "Das Motiv wurde geändert. Laden Sie die Bestellseite neu, bevor Sie fortfahren.",
+      "attachFailed": "Das Motiv konnte nicht angehängt werden. Laden Sie die Bestellseite neu und versuchen Sie es erneut.",
+      "retentionEnded": "Das Motiv ist nicht mehr verfügbar.",
+      "deleteSoon": "Laden Sie die Datei vor dem Löschen am {{date}} herunter.",
+      "originalArtwork": "Originalmotiv",
+      "previewHeading": "Motivvorschau: {{placementName}}",
+      "previewAlt": "Geprüftes PNG {{placementName}}",
+      "previewLoading": "Motivvorschau wird geladen",
+      "previewUnavailable": "Vorschau nicht verfügbar. Schließen Sie den Dialog und versuchen Sie es erneut."
+    },
+    "preview": {
+      "currentSection": "Vorschau der aktuellen Gestaltung",
+      "purchasedSection": "Vorschau der gekauften Gestaltung",
+      "view": "Ansicht",
+      "variant": "Variante",
+      "viewFallback": "Ansicht {{formattedNumber}}",
+      "variantFallback": "Variante {{formattedNumber}} (Name nicht verfügbar)",
+      "variantOption": "{{variantName}} · {{formattedQuantity}} gekauft",
+      "loadingCurrent": "Vorschau der aktuellen Gestaltung wird geladen",
+      "loadingPurchased": "Vorschau der gekauften Gestaltung wird geladen",
+      "unavailable": "Die Vorschau der Gestaltung konnte nicht geladen werden. Versuchen Sie es erneut.",
+      "designUnavailable": "Diese Gestaltung ist nicht mehr verfügbar.",
+      "accessExpired": "Der Zugriff auf die Vorschau ist abgelaufen. Laden Sie die Vorschau erneut, um fortzufahren.",
+      "currentArtworkUnavailable": "Einige aktuelle Motive sind in dieser Vorschau nicht verfügbar.",
+      "purchasedArtworkUnavailable": "Einige Motive aus der ursprünglichen Bestellung sind in dieser Vorschau nicht verfügbar.",
+      "loadPreview": "Vorschau laden",
+      "tryAgain": "Erneut versuchen"
+    },
+    "artworkState": {
+      "currentUnavailableLocked": "Das aktuelle Motiv ist nicht mehr verfügbar.",
+      "currentUnavailableReplace": "Das aktuelle Motiv ist nicht verfügbar. Laden Sie ein Ersatzmotiv hoch, bevor die Details zur Gestaltung ablaufen."
+    },
+    "badges": {
+      "orderUnavailable": "Bestellung nicht verfügbar",
+      "accessUnavailable": "Zugriff auf Bestellung nicht verfügbar"
+    },
+    "warnings": {
+      "orderCancelledHeading": "Bestellung storniert",
+      "orderCancelledBody": "Diese Bestellung wurde storniert. Prüfen Sie sie in Shopify, bevor Sie Motive vorbereiten.",
+      "orderReviewHeading": "Bestellung muss geprüft werden",
+      "orderReviewBody": "Prüfen Sie diese Bestellung in Shopify, bevor Sie Motive vorbereiten.",
+      "artworkNeededHeading": "Motiv erforderlich",
+      "missingArtwork_one": "Für {{formattedCount}} Veredelungsposition wird ein Motiv benötigt.",
+      "missingArtwork_other": "Für {{formattedCount}} Veredelungspositionen werden Motive benötigt.",
+      "missingArtworkExact": "Für {{formattedCount}} Veredelungspositionen fehlt ein Motiv."
+    },
+    "verification": {
+      "placementDetailsMissing": "Details zur Veredelungsposition fehlen. Prüfen Sie diese Bestellung in Shopify, bevor Sie Motive vorbereiten.",
+      "customizationUnavailable": "Die Produktanpassung der Bestellung muss geprüft werden. Beginnen Sie erst mit der Produktion, wenn die Details geprüft wurden.",
+      "erasedUnavailable": "Details zur Produktanpassung und Originalmotive sind nicht mehr verfügbar. Bestellbeträge sind weiterhin verfügbar."
+    },
+    "design": {
+      "productUnavailable": "Produkt mit Produktanpassung",
+      "customization": "Produktanpassung für {{productName}}",
+      "ariaLabel": "{{productName}}, Gestaltung {{formattedNumber}}",
+      "heading": "{{productName}} · Gestaltung {{formattedNumber}}",
+      "noPlacementsHeading": "Produktanpassung muss geprüft werden"
+    },
+    "payment": {
+      "heading": "Zahlungsinformationen",
+      "originalTotal": "Ursprünglicher Bestellbetrag",
+      "firstFullyPaid": "Erstmals vollständig bezahlt",
+      "notRecorded": "Nicht erfasst",
+      "refundRecords": "Erstattungen",
+      "settlementNote": "Diese Angaben bestätigen nicht, dass die Zahlung abgewickelt wurde. Prüfen Sie den Zahlungseingang in Shopify.",
+      "refundDetails": "Erstattungsdetails",
+      "purchasedItem": "Gekaufter Artikel",
+      "refundLine": "{{itemName}}: {{formattedQuantity}} zur Erstattung erfasst, {{amount}}"
+    }
+  }
+}

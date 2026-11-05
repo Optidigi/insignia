@@ -1,0 +1,134 @@
+{
+  "adminPageSkeleton": {
+    "method": "Decoratiemethode",
+    "actions": "Acties",
+    "loadingProductConfiguration": "Productconfiguratie laden",
+    "loadingCustomizationActivity": "Activiteit rond personalisaties laden",
+    "loadingProducts": "Producten laden",
+    "loadingCustomizedOrders": "Gepersonaliseerde bestellingen laden"
+  },
+  "ordersTableSkeleton": {
+    "loadingOrders": "Bestellingen laden",
+    "order": "Bestelling"
+  },
+  "productsTableSkeleton": {
+    "loadingProducts": "Producten laden",
+    "products": "Producten",
+    "product": "Product",
+    "configuration": "Configuratie",
+    "methods": "Decoratiemethoden",
+    "printLocations": "Decoratieplekken",
+    "variants": "Varianten"
+  },
+  "purchaseDetailSkeleton": {
+    "loadingOrderAndArtwork": "Bestelling en ontwerp laden"
+  },
+  "titles": {
+    "home": "Insignia",
+    "products": "Producten",
+    "orders": "Bestellingen",
+    "order": "Bestelling",
+    "methods": "Decoratiemethoden",
+    "configuration": "Productconfiguratie",
+    "settings": "Instellingen",
+    "billing": "Facturering",
+    "permissions": "App-machtigingen",
+    "storefront": "Webshop instellen",
+    "unavailable": "App niet beschikbaar",
+    "translations": "Vertalingen"
+  },
+  "navigation": {
+    "home": "Startpagina",
+    "products": "Producten",
+    "orders": "Bestellingen",
+    "methods": "Methoden",
+    "settings": "Instellingen"
+  },
+  "routes": {
+    "customizeProduct": "Product personaliseren",
+    "orderArtwork": "Bestelling en ontwerp",
+    "home": "Insignia",
+    "products": "Producten",
+    "orders": "Bestellingen",
+    "permissions": "App-machtigingen",
+    "methods": "Methoden",
+    "storefront": "Webshop instellen",
+    "billing": "Facturering",
+    "settings": "Instellingen"
+  },
+  "loading": {
+    "settings": "Instellingen laden",
+    "permissions": "App-machtigingen laden",
+    "methods": "Methoden laden",
+    "storefront": "Webshopinstellingen laden",
+    "billing": "Facturering laden",
+    "billingDetails": "Factureringsgegevens laden",
+    "detail": "Bestelling en ontwerp laden",
+    "preview": "Productconfiguratie laden",
+    "translations": "Vertalingen laden"
+  },
+  "pageTitle": "{{title}} · Insignia",
+  "failure": {
+    "heading": "Interface niet beschikbaar",
+    "body": "Open Insignia opnieuw via Shopify-beheercentrum om het nog eens te proberen."
+  },
+  "unavailable": {
+    "heading": "App niet beschikbaar",
+    "bannerHeading": "Insignia kan niet worden geopend",
+    "body": "De appconfiguratie is niet beschikbaar. Neem contact op met de app-support om weer toegang te krijgen.",
+    "recoveryHeading": "Toegang herstellen",
+    "recoveryBody": "Ga terug naar Shopify-beheercentrum en open Insignia opnieuw. Blijft het probleem bestaan, neem dan contact op met de app-support. Via deze pagina zijn geen wijzigingen aangebracht.",
+    "return": "Terug naar Shopify-beheercentrum"
+  },
+  "shared": {
+    "actions": {
+      "action": "Actie",
+      "discard": "Verwerpen",
+      "reviewPermissions": "App-machtigingen controleren"
+    },
+    "filters": {
+      "defaultLabel": "Filters",
+      "add": "Filter toevoegen",
+      "withCount": " ({{formattedCount}})"
+    },
+    "loading": {
+      "results": "Resultaten laden"
+    },
+    "navigation": {
+      "settings": "Instellingen"
+    },
+    "pagination": {
+      "previous": "Vorige",
+      "next": "Volgende",
+      "previousPage": "Naar de vorige pagina",
+      "nextPage": "Naar de volgende pagina"
+    },
+    "preview": {
+      "imageUnavailable": "Afbeelding niet beschikbaar",
+      "preparing": "Voorbeeld voorbereiden…"
+    },
+    "saveBar": {
+      "save": "Opslaan",
+      "discard": "Verwerpen",
+      "saveDraft": "Concept opslaan",
+      "discardChanges": "Wijzigingen verwerpen",
+      "heading": "Niet-opgeslagen wijzigingen verwerpen?",
+      "body": "Je hebt niet-opgeslagen wijzigingen.",
+      "keepEditing": "Verder bewerken",
+      "productDiscardBody": "Je niet-opgeslagen productwijzigingen gaan verloren. De laatst opgeslagen configuratie en het gepubliceerde product blijven ongewijzigd."
+    },
+    "search": {
+      "clear": "Zoekopdracht wissen",
+      "searchBy": "Zoeken op"
+    },
+    "summary": {
+      "empty": "Geen",
+      "view": "Weergeven",
+      "viewAllValues": "Alle waarden bekijken"
+    },
+    "table": {
+      "columnsFor": "Kolommen voor {{tableName}}"
+    }
+  },
+  "hostBack": "Terug naar {{destination}}"
+}

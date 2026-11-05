@@ -1,0 +1,45 @@
+.purchase-artwork-preview-frame {
+  display: grid;
+  place-items: center;
+  width: min(100%, 480px);
+  min-height: 240px;
+  margin-inline: auto;
+  overflow: hidden;
+  border-radius: 12px;
+  background-color: #f4f5f6;
+  background-image:
+    linear-gradient(45deg, #e3e6e9 25%, transparent 25%, transparent 75%, #e3e6e9 75%),
+    linear-gradient(45deg, #e3e6e9 25%, transparent 25%, transparent 75%, #e3e6e9 75%);
+  background-position:
+    0 0,
+    8px 8px;
+  background-size: 16px 16px;
+}
+
+.purchase-placement-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+}
+
+.purchase-placement-action {
+  position: relative;
+  display: inline-flex;
+}
+
+.purchase-artwork-replacement-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+@media (min-width: 761px) {
+  .purchase-placement-actions {
+    justify-content: flex-end;
+    gap: 8px;
+  }
+}

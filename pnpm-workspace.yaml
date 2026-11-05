@@ -1,8 +1,10 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+  - 'frontend/*'
 
 allowBuilds:
   esbuild: true
+  '@swc/core': false
 
 # Historical spike evidence is inert; maintained packages belong to this workspace.

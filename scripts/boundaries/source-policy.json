@@ -36,6 +36,17 @@
     "scripts/privacy/tsconfig.json",
     "scripts/release/tsconfig.json",
     "scripts/worker/tsconfig.json",
-    "tsconfig.tooling.json"
+    "tsconfig.tooling.json",
+    "frontend/admin/tsconfig.json",
+    "frontend/admin/tsconfig.examples.json",
+    "frontend/designer/tsconfig.json",
+    "frontend/designer/tsconfig.test.json",
+    "frontend/designer/tsconfig.locale-test.json",
+    "frontend/designer/tsconfig.library.json",
+    "frontend/localization/tsconfig.json",
+    "frontend/localization/tsconfig.test.json",
+    "frontend/localization/tsconfig.tools.json",
+    "frontend/visualizer/tsconfig.json",
+    "frontend/visualizer/tsconfig.test.json"
   ]
 }

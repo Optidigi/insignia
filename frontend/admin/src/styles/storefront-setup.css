@@ -1,0 +1,93 @@
+/* Own only composition. Polaris owns typography, surfaces, status and controls. */
+.storefront-setup {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  min-inline-size: 0;
+}
+.storefront-setup > * {
+  min-inline-size: 0;
+}
+.storefront-setup__task {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: center;
+  padding-block: 24px;
+}
+.storefront-setup__task:first-child {
+  padding-block-start: 0;
+}
+.storefront-setup__task:last-child {
+  padding-block-end: 0;
+}
+.storefront-setup__task-copy {
+  display: grid;
+  gap: 8px;
+  min-inline-size: 0;
+}
+.storefront-setup__task-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.storefront-setup__task-action {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.storefront-setup__announcement {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media (max-width: 600px) {
+  .storefront-setup__task {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+}
+.storefront-test__selection {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+}
+[data-storefront-test-state="idle"] .storefront-test__selection {
+  align-items: center;
+}
+.storefront-test__product {
+  display: grid;
+  gap: 4px;
+  flex: 1 1 220px;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+.storefront-test__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.storefront-test__name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  line-height: 20px;
+  max-block-size: 60px;
+}
+
+#test-product {
+  scroll-margin-block-start: 24px;
+}
+#test-product:focus-visible {
+  outline: 2px solid var(--p-color-border-focus, #005bd3);
+  outline-offset: 4px;
+}

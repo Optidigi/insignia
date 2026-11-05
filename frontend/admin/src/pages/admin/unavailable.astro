@@ -1,0 +1,23 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { createAdminTranslator } from '@insignia/ui-localization/admin';
+const { t } = createAdminTranslator(Astro.url.searchParams.get('locale'));
+
+Astro.response.status = 503;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+Astro.response.headers.set('Content-Security-Policy', "default-src 'none'; script-src 'self' https://cdn.shopify.com 'sha256-UAsB0KRBWzyM3993V+dfqSKU2EkVmZChnGDvWJyraz8=' 'sha256-Ya0pUYrC7nM5Cn/056TyVuEiz6dFGrzmkWzgON0pF0U='; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; font-src https://cdn.shopify.com; connect-src https://cdn.shopify.com/shopifycloud/admin-ui-foundations/icons/ https://cdn.shopify.com/shopifycloud/admin-ui-foundations/experimental/; frame-ancestors https://admin.shopify.com https://*.myshopify.com; base-uri 'none'; form-action 'none'");
+---
+<AdminLayout titleKey="admin-shell:titles.unavailable" ready>
+  <s-page heading={t('admin-shell:unavailable.heading')} inlineSize="small" data-admin-unavailable-page>
+    <s-banner tone="critical" heading={t('admin-shell:unavailable.bannerHeading')} data-admin-unavailable-banner>
+      <span data-admin-unavailable-body>{t('admin-shell:unavailable.body')}</span>
+    </s-banner>
+    <s-section heading={t('admin-shell:unavailable.recoveryHeading')} data-admin-unavailable-recovery>
+      <s-stack gap="base">
+        <s-paragraph data-admin-unavailable-recovery-body>{t('admin-shell:unavailable.recoveryBody')}</s-paragraph>
+        <s-button variant="primary" href="https://admin.shopify.com" target="_top" data-admin-unavailable-return>{t('admin-shell:unavailable.return')}</s-button>
+      </s-stack>
+    </s-section>
+  </s-page>
+</AdminLayout>
