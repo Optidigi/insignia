@@ -1,0 +1,13 @@
+Shopify-sourced illustration, unchanged.
+Repository: https://github.com/Shopify/polaris-react-archive
+Commit: 3f7954ae42fabf26d63cee68c23ceebfd7ef0972
+Source: polaris.shopify.com/public/images/examples/emptystate-files.png
+License: LICENSE.txt, copied unchanged from the same commit.
+Used as a static image with current Polaris web components; the archived React library is not installed.
+Asset SHA-256: 10e84ca8d3fdd88f32333547e6f9902f919a924d295913dae64bbe1ff91f5268
+
+Product-record illustration: empty-product.png, unchanged 156x155px.
+Source: https://raw.githubusercontent.com/Shopify/polaris/main/polaris.shopify.com/public/images/examples/emptystate-files-product.png
+Notice: PRODUCT-LICENSE.txt, copied unchanged from https://raw.githubusercontent.com/Shopify/polaris/main/LICENSE.md
+Used in the embedded Shopify app for product setup; the archived React library is not installed.
+Asset SHA-256: 638c29485b875b0b6be35141c5b863e5c0a565d59b16b5d4806c9515a6f7a87b

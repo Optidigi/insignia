@@ -1,0 +1,14 @@
+{
+  "blocks": {
+    "customize": {
+      "name": "Insignia-personalisatie",
+      "button_label": "Knoplabel",
+      "button_default": "Dit product aanpassen",
+      "proxy_prefix": "App-proxyprefix"
+    },
+    "cart_repair": {
+      "name": "Insignia-winkelwagencontrole",
+      "proxy_prefix": "App-proxyprefix"
+    }
+  }
+}

@@ -1,0 +1,141 @@
+{
+  "id": "staff-polo",
+  "name": "Staff polo",
+  "description": "A small uniform range with one embroidered chest logo location.",
+  "storeName": "Atelier Noord",
+  "productName": "Piqué staff polo",
+  "productDescription": "A cotton-rich piqué polo for front-of-house and retail teams.",
+  "basePrice": 2495,
+  "currency": "EUR",
+  "locale": "en-NL",
+  "garment": "polo",
+  "preview": "illustration",
+  "maxQuantity": 999,
+  "artworkLater": true,
+  "sizes": [
+    {
+      "id": "xs",
+      "label": "XS"
+    },
+    {
+      "id": "s",
+      "label": "S"
+    },
+    {
+      "id": "m",
+      "label": "M"
+    },
+    {
+      "id": "l",
+      "label": "L"
+    },
+    {
+      "id": "xl",
+      "label": "XL"
+    },
+    {
+      "id": "2xl",
+      "label": "2XL"
+    },
+    {
+      "id": "3xl",
+      "label": "3XL"
+    }
+  ],
+  "colors": [
+    {
+      "id": "navy",
+      "name": "Navy",
+      "hex": "#24324b",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl",
+        "3xl"
+      ]
+    },
+    {
+      "id": "white",
+      "name": "White",
+      "hex": "#fafafa",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl",
+        "3xl"
+      ]
+    },
+    {
+      "id": "burgundy",
+      "name": "Burgundy",
+      "hex": "#6e2d40",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl",
+        "3xl"
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "front",
+      "label": "Front",
+      "illustration": "front"
+    },
+    {
+      "id": "back",
+      "label": "Back",
+      "illustration": "back"
+    }
+  ],
+  "positions": [
+    {
+      "id": "left-chest",
+      "name": "Left chest",
+      "view": "front",
+      "x": 63,
+      "y": 28,
+      "width": 10,
+      "price": 950,
+      "dimensions": [
+        8,
+        10,
+        12
+      ],
+      "sizePrices": [
+        0,
+        150,
+        300
+      ],
+      "methodIds": [
+        "embroidery"
+      ]
+    }
+  ],
+  "methods": [
+    {
+      "id": "embroidery",
+      "label": "Embroidery",
+      "surcharge": 500
+    }
+  ],
+  "optionPresentation": {
+    "rowOption": {
+      "display": "swatch",
+      "label": "Colour"
+    },
+    "columnOption": {
+      "label": "Size"
+    }
+  }
+}

@@ -1,0 +1,185 @@
+{
+  "page": "Inicio",
+  "sections": {
+    "home": "Inicio",
+    "products": "Productos",
+    "productSetup": "Configuración del producto",
+    "orders": "Pedidos",
+    "customizedOrders": "Pedidos personalizados",
+    "recentOrders": "Pedidos personalizados recientes",
+    "drafts": "Borradores de productos",
+    "tasks": "Pedidos que requieren revisión",
+    "storefrontSetup": "Configuración de la tienda online"
+  },
+  "loading": {
+    "home": "Cargando el inicio",
+    "products": "Cargando productos",
+    "productSetup": "Cargando la configuración del producto",
+    "orders": "Cargando pedidos personalizados",
+    "activity": "Cargando la actividad de personalización"
+  },
+  "unavailable": {
+    "heading": "Abre Insignia en Shopify",
+    "body": "Abre la aplicación desde el panel de control de Shopify para continuar.",
+    "action": "Abrir en Shopify",
+    "sessionLost": "Tu sesión del panel de control de Shopify ha caducado. Abre la aplicación desde Shopify para continuar."
+  },
+  "failure": {
+    "productsHeading": "No se pudieron cargar los productos",
+    "ordersHeading": "No se pudieron cargar los pedidos",
+    "productsBody": "Vuelve a intentarlo o abre los productos para continuar.",
+    "ordersBody": "Vuelve a intentarlo o abre los pedidos para continuar.",
+    "retry": "Reintentar",
+    "viewProducts": "Ver productos",
+    "viewOrders": "Ver pedidos"
+  },
+  "permissions": {
+    "products": "Tu cuenta no tiene acceso a la configuración de productos.",
+    "orders": "Para consultar los pedidos y diseños, necesitas la cuenta del propietario de la tienda y acceso a los pedidos.",
+    "review": "Revisar los permisos de la aplicación"
+  },
+  "welcome": {
+    "heading": "Permite personalizar tus productos",
+    "body": "Deja que tus clientes añadan sus propios diseños a tus productos."
+  },
+  "products": {
+    "addHeading": "Añadir un producto",
+    "customizeHeading": "Personalizar un producto",
+    "addBody": "Añade un producto en Shopify y elige dónde pueden colocar los clientes sus diseños.",
+    "customizeBody": "Elige un producto, configura sus zonas de diseño y precios y publícalo.",
+    "add": "Añadir producto",
+    "openShopify": "Abrir productos de Shopify",
+    "configure": "Configurar producto",
+    "view": "Ver productos",
+    "continue": "Continuar con la configuración",
+    "creationFailed": "No se pudo abrir la creación del producto.",
+    "draftPublished": "Producto publicado con cambios en borrador",
+    "draftUnpublished": "Personalización en borrador"
+  },
+  "orders": {
+    "emptyHeading": "Todavía no hay pedidos personalizados",
+    "emptyBody": "Los pedidos personalizados aparecerán aquí después de finalizar el proceso de compra.",
+    "viewAll": "Ver todos los pedidos",
+    "testBadge": "Prueba",
+    "reference": "Pedido {{number}}",
+    "customizedProduct": "Producto personalizado",
+    "itemCountExact": "Cantidad de artículos: {{formattedCount}}",
+    "itemMeta": "{{formattedItemCount}} · {{date}}",
+    "orderLink": "Abrir {{orderName}} para {{products}}",
+    "statuses": {
+      "artwork-ready": "Diseño completo",
+      "artwork-needed": "Falta el diseño",
+      "waiting": "Esperando el diseño",
+      "expired": "Diseño no disponible",
+      "cancelled": "Cancelado"
+    },
+    "tasks": {
+      "artwork-missing": "Añade un diseño a este pedido.",
+      "artwork-supplied": "Revisa el diseño enviado.",
+      "replacement-artwork-review": "Revisa el diseño de reemplazo.",
+      "artwork-confirmation": "Confirma el diseño de este pedido.",
+      "action": "Revisar pedido"
+    },
+    "itemCount_one": "{{formattedCount}} artículo",
+    "itemCount_other": "{{formattedCount}} artículos",
+    "itemCount_many": "{{formattedCount}} artículos"
+  },
+  "activity": {
+    "label": "Actividad de personalización",
+    "period": {
+      "lastSevenDays": "Últimos 7 días",
+      "lastThirtyDays": "Últimos 30 días",
+      "menu": "Periodo de actividad"
+    },
+    "metrics": {
+      "customizedOrders": "Pedidos con personalizaciones",
+      "customizedOrdersDefinition": "Pedidos que contienen al menos un diseño de Insignia.",
+      "customizedItems": "Artículos personalizados pedidos",
+      "customizedItemsDefinition": "Cantidad total de artículos personalizados pedidos."
+    },
+    "orders": "Ver pedidos",
+    "unavailable": "Las estadísticas no están disponibles en este momento.",
+    "metricLink": "{{metricLabel}}: {{formattedCount}}. Ver pedidos",
+    "metricLinkWithChange": "{{metricLabel}}: {{formattedCount}}. {{changeSummary}}. Ver pedidos",
+    "change": {
+      "increase": "{{formattedPercent}} más que en los {{days}} días anteriores",
+      "decrease": "{{formattedPercent}} menos que en los {{days}} días anteriores",
+      "unchanged": "Variación de {{formattedPercent}} respecto a los {{days}} días anteriores"
+    },
+    "metricValueExact": "{{metricLabel}}: {{formattedCount}}"
+  },
+  "guidance": {
+    "complete": "Guía de configuración completada",
+    "heading": "Empieza con Insignia",
+    "progress": "Progreso de la guía de configuración",
+    "completedCount": "{{completed}} de {{total}} pasos completados",
+    "dismiss": "Descartar la guía de inicio",
+    "hide": "Ocultar la guía de inicio",
+    "show": "Mostrar la guía de inicio",
+    "markIncomplete": "Marcar {{step}} como incompleto",
+    "markComplete": "Marcar {{step}} como completado",
+    "steps": {
+      "product": "Configurar un producto",
+      "storefront": "Conectar el tema",
+      "test": "Probar una personalización"
+    },
+    "stepLabels": {
+      "product": "configuración del producto",
+      "storefront": "conexión de la tienda online",
+      "test": "prueba para clientes"
+    },
+    "product": {
+      "addTitle": "Añadir un producto",
+      "addDescription": "Crea un producto en Shopify y elige dónde pueden añadir los clientes sus diseños.",
+      "finishTitle": "Terminar la configuración del producto",
+      "finishDescription": "Configura las zonas de diseño, las opciones de personalización y los precios; después, publícalo.",
+      "configure": "Configurar producto",
+      "continue": "Continuar con la configuración",
+      "view": "Ver productos"
+    },
+    "storefront": {
+      "description": "Añade el botón de personalización y la revisión del carrito a tu tema.",
+      "action": "Abrir la configuración del tema"
+    },
+    "test": {
+      "description": "Previsualiza un producto publicado, añade un diseño y comprueba el carrito.",
+      "action": "Probar un producto",
+      "blocked": "Publica un producto personalizable y termina la configuración del tema antes de hacer la prueba."
+    },
+    "hideAction": "Ocultar",
+    "showAction": "Mostrar",
+    "dismissGuide": "Guía de configuración"
+  },
+  "setup": {
+    "toggleShow": "Mostrar configuración de la tienda online",
+    "toggleHide": "Ocultar configuración de la tienda online",
+    "complete": "Completado",
+    "confirmed": "Confirmado por ti",
+    "unverified": "Sin verificar",
+    "reviewChecks": "Revisa las comprobaciones de configuración.",
+    "tasks": {
+      "storefront": {
+        "title": "Conectar el tema",
+        "description": "Añade el botón de personalización y la revisión del carrito a tu tema.",
+        "action": "Abrir la configuración del tema",
+        "button-disabled": "Activa el botón de personalización en tu tema.",
+        "cart-review-disabled": "Activa la revisión del carrito en tu tema.",
+        "both-disabled": "Activa el botón de personalización y la revisión del carrito en tu tema.",
+        "check": "Comprueba la configuración de la tienda online en tu tema."
+      },
+      "test": {
+        "title": "Probar una personalización",
+        "description": "Publica un producto y prueba su personalización en tu tienda online.",
+        "action": "Probar un producto"
+      }
+    }
+  },
+  "notice": {
+    "planRestriction": {
+      "heading": "Revisa tu plan",
+      "description": "Revisa la facturación antes de empezar a configurar otro producto.",
+      "action": "Ver facturación"
+    }
+  },
+  "homePreview": {}
+}

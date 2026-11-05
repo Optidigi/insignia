@@ -1,0 +1,255 @@
+/* Polaris owns type, surfaces and controls. These rules only compose Home. */
+.merchant-home {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  min-inline-size: 0;
+}
+.merchant-home > *,
+.merchant-home__region,
+.merchant-home__task-copy,
+.merchant-home__order-copy,
+.merchant-home__draft-copy {
+  min-inline-size: 0;
+}
+.merchant-home__region:empty {
+  display: none;
+}
+.merchant-home__region:focus-visible {
+  outline: 2px solid var(--p-color-border-focus, #005bd3);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+.merchant-home__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.merchant-home__separator {
+  padding-block: 16px;
+}
+.merchant-home__task,
+.merchant-home__recovery {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px 24px;
+}
+.merchant-home__task-copy,
+.merchant-home__order-copy,
+.merchant-home__draft-copy {
+  display: grid;
+  gap: 4px;
+}
+.merchant-home__identity,
+.merchant-home__actions,
+.merchant-home__task-action {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-inline-size: 0;
+}
+.merchant-home__resource-name,
+.merchant-home__order-product {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  max-block-size: 40px;
+  line-height: 20px;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.merchant-home__resource-name {
+  min-inline-size: 0;
+}
+.merchant-home__order {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 16px;
+  align-items: center;
+}
+.merchant-home__order-heading {
+  grid-column: 1;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 8px 12px;
+}
+.merchant-home__order-meta {
+  grid-column: 1;
+  grid-row: 2;
+}
+.merchant-home__order-status {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+.merchant-home__draft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.merchant-home__draft-copy {
+  flex: 1;
+}
+.merchant-home__draft-action {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+.merchant-home__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 16px;
+  text-align: center;
+}
+.merchant-home__empty-copy {
+  display: grid;
+  gap: 8px;
+  max-inline-size: 420px;
+}
+.merchant-home__empty-heading,
+.merchant-home__empty-description {
+  margin: 0;
+  font: inherit;
+  text-align: center;
+}
+.merchant-home__empty-action {
+  display: flex;
+  justify-content: center;
+  padding-block-start: 4px;
+}
+.merchant-home__skeleton {
+  min-inline-size: 0;
+}
+.merchant-home__skeleton-content {
+  display: grid;
+  gap: 24px;
+  padding-block: 8px;
+}
+.merchant-home__skeleton-order-row {
+  padding: 12px 16px;
+}
+.merchant-home__skeleton-order-row + .merchant-home__skeleton-order-row {
+  border-block-start: 1px solid #e3e3e3;
+}
+.merchant-home__skeleton-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+}
+@media (max-width: 600px) {
+  .merchant-home__task,
+  .merchant-home__recovery {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .merchant-home__task > s-button,
+  .merchant-home__task-action {
+    justify-self: start;
+  }
+  .merchant-home__order {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 8px;
+    align-items: start;
+  }
+  .merchant-home__order-heading {
+    display: contents;
+  }
+  .merchant-home__order-heading > .merchant-home__identity {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .merchant-home__order-product {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .merchant-home__order-meta {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+  .merchant-home__order-status {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .merchant-home__draft {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+  .merchant-home__draft:not(:has(s-thumbnail)) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .merchant-home__draft-action {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+  .merchant-home__empty {
+    padding: 16px 0;
+  }
+}
+
+.merchant-home__create-recovery {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.merchant-home__welcome {
+  display: grid;
+  gap: 8px;
+  max-inline-size: 660px;
+  padding-block: 8px;
+}
+
+.merchant-home__orders-illustration {
+  inline-size: 180px;
+  block-size: 180px;
+}
+
+.merchant-home__illustrated-empty {
+  display: grid;
+  justify-items: center;
+  min-inline-size: 0;
+}
+
+.merchant-home__product-illustration {
+  display: grid;
+  place-items: center;
+  inline-size: 180px;
+  block-size: 180px;
+}
+.merchant-home__product-artwork {
+  inline-size: 156px;
+  block-size: 155px;
+}
+
+/* App-owned composition keeps native heading/action controls legible when copy grows. */
+.merchant-home__section {
+  min-inline-size: 0;
+  display: grid;
+  gap: 12px;
+}
+.merchant-home__section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+.merchant-home__section-title {
+  display: flex;
+  flex: 1 1 180px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-inline-size: 0;
+}
+.merchant-home__section-action {
+  flex: 0 0 auto;
+  max-inline-size: 100%;
+}

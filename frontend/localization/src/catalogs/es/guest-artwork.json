@@ -1,0 +1,33 @@
+{
+  "upload": {
+    "privateArtwork": "Diseño privado",
+    "previewHeading": "Vista previa del diseño",
+    "uploadAction": "Subir diseño",
+    "verifiedPreview": "Vista previa del diseño verificado",
+    "retryUpload": "Comprobar de nuevo el diseño subido",
+    "retryPreview": "Reintentar vista previa",
+    "requirements": "SVG, PNG o JPEG, hasta 5 MiB.",
+    "invalidFormat": "Elige un archivo SVG, PNG o JPEG.",
+    "tooLarge": "Elige un archivo de hasta 5 MiB.",
+    "allocating": "Preparando la subida…",
+    "uploading": "Subiendo el diseño…",
+    "processing": "Comprobando el diseño…",
+    "verified": "Diseño verificado. El original se conserva hasta {{expiresAt}}.",
+    "previewRenewed": "Vista previa del diseño renovada.",
+    "downloadPrepared": "Descarga lista.",
+    "expired": "El acceso al diseño ha caducado. Vuelve a subir el archivo.",
+    "inspectionRejected": "No se pudo verificar el diseño. Elige otro archivo.",
+    "processingTimeout": "Tu diseño aún se está procesando. Vuelve a comprobarlo.",
+    "failed": "Diseño no disponible",
+    "resumeFailed": "El diseño subido no está disponible. Vuelve a intentarlo más tarde.",
+    "previewFailed": "Vista previa no disponible. Vuelve a intentarlo.",
+    "downloadFailed": "Descarga no disponible. Vuelve a intentarlo.",
+    "accessDenied": "El acceso al diseño no está disponible. Recarga la página y vuelve a intentarlo."
+  },
+  "launcher": {
+    "reviewCart": "Revisar tu carrito personalizado",
+    "customize": "Personalizar este producto",
+    "configurationUnavailable": "Configuración del diseño no disponible",
+    "unavailable": "Personalización no disponible"
+  }
+}

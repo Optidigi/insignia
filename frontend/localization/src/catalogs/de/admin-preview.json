@@ -1,0 +1,30 @@
+{
+  "preview": {
+    "documentTitle": "Insignia | Motivvorschau",
+    "context": "Motivvorschau · Aktueller Entwurf",
+    "title": "Motivvorschau",
+    "unavailableTitle": "Motivvorschau nicht verfügbar",
+    "loadingTitle": "Motivvorschau wird geladen",
+    "waitingForDraft": "Warten auf den aktuellen Produktentwurf …",
+    "reopenFromEditor": "Öffnen Sie die Vorschau der Produktanpassung erneut im Produkteditor.",
+    "expired": "Diese Vorschau ist abgelaufen. Öffnen Sie sie erneut im Produktentwurf in der Verwaltung.",
+    "draftDidNotArrive": "Der aktuelle Entwurf wurde nicht geladen. Schließen Sie diesen Tab und öffnen Sie die Vorschau der Produktanpassung erneut im Produkteditor.",
+    "draftCouldNotBePreviewed": "Der aktuelle Entwurf konnte nicht in der Vorschau angezeigt werden.",
+    "unrepresentableDraftData": "Dieser Entwurf enthält Motivdaten, die in dieser Vorschau nicht dargestellt werden können. Öffnen Sie die Vorschau erneut im Produkteditor.",
+    "emptyProductName": "Geben Sie einen Produktnamen ein, bevor Sie die Vorschau der Produktanpassung öffnen.",
+    "noProductViews": "Fügen Sie eine Produktansicht hinzu, bevor Sie die Vorschau der Produktanpassung öffnen.",
+    "missingImageForPlacedView": "Fügen Sie jeder Ansicht mit Motivpositionen ein Bild hinzu.",
+    "noProductImage": "Fügen Sie ein Produktbild hinzu, bevor Sie die Vorschau der Produktanpassung öffnen.",
+    "unnamedProductView": "Benennen Sie alle Produktansichten, bevor Sie die Vorschau der Produktanpassung öffnen.",
+    "unmappableProductView": "Die Produktansicht konnte nicht für die Vorschau zugeordnet werden.",
+    "noValidArtworkPlacements": "Richten Sie mindestens eine Motivposition mit gültigem Preis ein, bevor Sie die Vorschau der Produktanpassung öffnen.",
+    "tooManyArtworkPlacements": "Dieses Produkt hat zu viele Motivpositionen für die Vorschau der Produktanpassung.",
+    "unrepresentableArtworkSetup": "Die aktuelle Motiveinrichtung enthält Optionen, die in der Vorschau der Produktanpassung nicht dargestellt werden können.",
+    "previewNotice": "Nur die Motivvorschau. Preise, Produktoptionen und Verfügbarkeit werden nicht angezeigt.",
+    "previewNoticeWithPlacements_one": "Nur die Motivvorschau. Preise, Produktoptionen und Verfügbarkeit werden nicht angezeigt. {{availableCount}} von {{totalCount}} Motivposition ist in dieser Entwurfsvorschau verfügbar.",
+    "previewNoticeWithPlacements_other": "Nur die Motivvorschau. Preise, Produktoptionen und Verfügbarkeit werden nicht angezeigt. {{availableCount}} von {{totalCount}} Motivpositionen sind in dieser Entwurfsvorschau verfügbar.",
+    "placementsAvailable_one": "{{availableCount}} von {{totalCount}} Motivposition ist in dieser Entwurfsvorschau verfügbar.",
+    "placementsAvailable_other": "{{availableCount}} von {{totalCount}} Motivpositionen sind in dieser Entwurfsvorschau verfügbar.",
+    "productImage": "Produktbild"
+  }
+}

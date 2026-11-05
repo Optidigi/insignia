@@ -1,0 +1,33 @@
+# Complete built-in UI languages
+
+The owner selected Dutch, German, French, Spanish and Italian alongside English. The current frontend implements all five target languages across merchant admin, the selected sibling customer modal, embedded guest artwork input, generated production worksheets and Theme Editor schema labels. Shopify/merchant names, option values, filenames, identifiers, exact monetary values and accepted history remain data.
+
+## Runtime and authoring
+
+The explicit registry and typed audience assemblies use six complete family catalogs. Regional requests retain their region for formatting, for example German copy with `de-CH` formatting. Unsupported language families fall back to complete English copy and formatting. Fresh i18next instances remain local to each translator; existing Preact controllers publish complete snapshots and preserve domain state during language changes.
+
+Merchant wording stays a sparse, exact-canonical-locale override. Empty forms use the selected language’s built-in default, or English when no catalog exists. Missing custom plural forms delegate to the baseline translator’s grammar. Restoring a field removes that override; restoring a language does not copy defaults into storage or delete another language’s wording. The editor retains its English reference and shows the selected language’s default in a growing placeholder. Search includes those visible defaults even when staff UI uses another language.
+
+The Theme Editor schemas translate app-owned block names and setting labels. They do not rewrite saved merchant button labels, add languages to Shopify, translate catalog content or publish a language. The selected customer application consumes a content-hashed archive, with its manifest and lockfile synchronized together.
+
+## Quality and review
+
+Each locale has all 13 namespaces against 2,765 English source messages, plus six Theme Editor strings. Dutch and German have 2,765 target entries each; French, Spanish and Italian have 2,855 each, including the additional required plural forms. Build/type checks reject missing/extra keys, blank content, duplicate keys, unsupported markup, placeholder occurrence mismatches and missing `Intl.PluralRules` categories.
+
+The project [translation skill](../../../.agents/skills/insignia-translation-review/SKILL.md) supplied the product glossary, caller/context packets and distinction between errors and preferences. Locale drafting used localized Shopify help and the [Microsoft style-guide references](https://learn.microsoft.com/en-us/globalization/reference/microsoft-style-guides). The application follows i18next’s [family fallback](https://www.i18next.com/principles/fallback) and [Intl plural contracts](https://www.i18next.com/translation-function/plurals); Shopify’s [app localization guidance](https://shopify.dev/docs/apps/build/localize-your-app) and [schema locale guidance](https://shopify.dev/docs/storefronts/themes/architecture/locales/schema-locale-files) define the host boundaries.
+
+Independent Luna reviews checked the targets against English and actual callers, rather than another agent’s verdict. Corrections include any/all tag meaning, recorded refund scope, per-item pricing, generic product variant labels, reorder versus customer-order wording, plural agreement and retrying an uploaded asset’s check. Valid terminology preferences were not changed merely to satisfy another reviewer.
+
+Independent Sol source and actual-screen review found and closed target-default search omission, fixed-height metric rows, heading/action crowding, narrow Methods metadata labels, fragmented editor counts and the Dutch Fit control. The real customer flow also exposed a 390px preview-toolbar collision; the control remains icon-only on narrow phones with its translated accessible name and title intact. Original option-name field meaning and complete localized back-destination announcements are retained. Layout fixes preserve native Polaris controls, use app-owned wrapping composition and avoid changing shadow internals or shortening translations to conceal defects.
+
+This is an AI-reviewed implementation. No qualified human target-language reviewer participated. Technical checks and rendered evidence do not claim native-language certification, live Shopify cart behavior, deployment or owner acceptance.
+
+## Verification record
+
+Regression and capture results are recorded in the [local evidence directory](../../../.artifacts/languages-2026-11-04/). The folder keeps the task’s start date although delivery crossed into 5 November. The [catalog manifest](../../../.artifacts/languages-2026-11-04/final-catalog-manifest.json) records actual working-tree bytes; HEAD alone does not identify this dirty checkout or attribute its pre-existing work to this task.
+
+Independent reports: [Dutch/German](../../../.artifacts/languages-2026-11-04/nl-de-independent-language-review.md), [French](../../../.artifacts/languages-2026-11-04/fr-independent-language-review.md), [Spanish](../../../.artifacts/languages-2026-11-04/es-independent-language-review.md), [Italian](../../../.artifacts/languages-2026-11-04/it-independent-language-review.md), [Sol source](../../../.artifacts/languages-2026-11-04/sol-source-review.md), [Sol screens](../../../.artifacts/languages-2026-11-04/sol-rendered-review.md). Review reports identify their original snapshots and corrections; the final manifest records later integration wording changes separately.
+
+The [delivery receipt](../../../.artifacts/languages-2026-11-04/delivery-receipt.json) records command results and limits. Catalog/runtime tests, builds, clean consumer installation, strict compiler/source/style checks and responsive language checks pass. The broad frontend run completed 808 web checks and 71 integration checks. It found four obsolete expectations for the intentionally changed mobile metadata composition and garment-specific labels; these were updated without relaxing geometry or exact-money checks, and all four current cases pass in focused reruns. That historical full command exited 1 and is not claimed as a clean run. Environment-gated checks keep their explicit skip status.
+
+The local [review gallery](http://127.0.0.1:62168/__preview/popup-review/#language-nl-wording) retains earlier screens and leads with the new wording editors. The language additions comprise 150 merchant captures, 90 selected customer captures and five worksheet images/PDFs. The separate customer evidence also includes an English reference. Actual routes and dimensions are in the manifests; screenshot counts are not claims of independently exercised commerce transactions.

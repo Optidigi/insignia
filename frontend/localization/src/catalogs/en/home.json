@@ -1,0 +1,184 @@
+{
+  "page": "Home",
+  "sections": {
+    "home": "Home",
+    "products": "Products",
+    "productSetup": "Product setup",
+    "orders": "Orders",
+    "customizedOrders": "Customized orders",
+    "recentOrders": "Recent customized orders",
+    "drafts": "Product drafts",
+    "tasks": "Orders to review",
+    "storefrontSetup": "Storefront setup"
+  },
+  "loading": {
+    "home": "Loading Home",
+    "products": "Loading products",
+    "productSetup": "Loading product setup",
+    "orders": "Loading customized orders",
+    "activity": "Loading customization activity"
+  },
+  "unavailable": {
+    "heading": "Open Insignia in Shopify",
+    "body": "Open the app from your Shopify admin to continue.",
+    "action": "Open in Shopify",
+    "sessionLost": "Your Shopify Admin session ended. Open the app from Shopify Admin to continue."
+  },
+  "failure": {
+    "productsHeading": "Products couldn’t be loaded",
+    "ordersHeading": "Orders couldn’t be loaded",
+    "productsBody": "Try again, or open products to continue.",
+    "ordersBody": "Try again, or open orders to continue.",
+    "retry": "Retry",
+    "viewProducts": "View products",
+    "viewOrders": "View orders"
+  },
+  "permissions": {
+    "products": "Your account doesn’t have access to product setup.",
+    "orders": "Orders and artwork require the store owner’s account and order access.",
+    "review": "Review app permissions"
+  },
+  "welcome": {
+    "heading": "Make your products customizable",
+    "body": "Let customers add their own artwork to your products."
+  },
+  "products": {
+    "addHeading": "Add a product",
+    "customizeHeading": "Make a product customizable",
+    "addBody": "Add a product in Shopify, then choose where customers can add artwork.",
+    "customizeBody": "Choose a product, set its artwork areas and prices, then publish.",
+    "add": "Add product",
+    "openShopify": "Open Shopify products",
+    "configure": "Configure product",
+    "view": "View products",
+    "continue": "Continue setup",
+    "creationFailed": "Product creation couldn’t be opened.",
+    "draftPublished": "Published product with draft changes",
+    "draftUnpublished": "Draft customization"
+  },
+  "orders": {
+    "emptyHeading": "No customized orders yet",
+    "emptyBody": "Customized orders appear here after checkout.",
+    "viewAll": "View all orders",
+    "testBadge": "Test",
+    "reference": "Order {{number}}",
+    "customizedProduct": "Customized product",
+    "itemCountExact": "Item count: {{formattedCount}}",
+    "itemMeta": "{{formattedItemCount}} · {{date}}",
+    "orderLink": "Open {{orderName}} for {{products}}",
+    "statuses": {
+      "artwork-ready": "Artwork complete",
+      "artwork-needed": "Artwork needed",
+      "waiting": "Awaiting artwork",
+      "expired": "Artwork unavailable",
+      "cancelled": "Cancelled"
+    },
+    "tasks": {
+      "artwork-missing": "Add artwork to this order.",
+      "artwork-supplied": "Review the submitted artwork.",
+      "replacement-artwork-review": "Review the replacement artwork.",
+      "artwork-confirmation": "Confirm the artwork for this order.",
+      "action": "Review order"
+    },
+    "itemCount_one": "{{formattedCount}} item",
+    "itemCount_other": "{{formattedCount}} items"
+  },
+  "activity": {
+    "label": "Customization activity",
+    "period": {
+      "lastSevenDays": "Last 7 days",
+      "lastThirtyDays": "Last 30 days",
+      "menu": "Activity period"
+    },
+    "metrics": {
+      "customizedOrders": "Orders with customizations",
+      "customizedOrdersDefinition": "Orders containing at least one Insignia design.",
+      "customizedItems": "Customized items ordered",
+      "customizedItemsDefinition": "Total quantity of customized items ordered."
+    },
+    "orders": "View orders",
+    "unavailable": "Statistics are unavailable right now.",
+    "metricLink": "{{metricLabel}}: {{formattedCount}}. View orders",
+    "metricLinkWithChange": "{{metricLabel}}: {{formattedCount}}. {{changeSummary}}. View orders",
+    "change": {
+      "increase": "{{formattedPercent}} increase from the previous {{days}} days",
+      "decrease": "{{formattedPercent}} decrease from the previous {{days}} days",
+      "unchanged": "{{formattedPercent}} change from the previous {{days}} days"
+    },
+    "metricValueExact": "{{metricLabel}}: {{formattedCount}}"
+  },
+  "guidance": {
+    "complete": "Setup guide complete",
+    "heading": "Get started with Insignia",
+    "progress": "Setup guide progress",
+    "completedCount": "{{completed}} of {{total}} complete",
+    "dismiss": "Dismiss getting started",
+    "hide": "Hide getting started guide",
+    "show": "Show getting started guide",
+    "markIncomplete": "Mark {{step}} as incomplete",
+    "markComplete": "Mark {{step}} as complete",
+    "steps": {
+      "product": "Configure a product",
+      "storefront": "Connect your theme",
+      "test": "Test a customization"
+    },
+    "stepLabels": {
+      "product": "product setup",
+      "storefront": "storefront connection",
+      "test": "customer test"
+    },
+    "product": {
+      "addTitle": "Add a product",
+      "addDescription": "Create a product in Shopify, then choose where customers can add artwork.",
+      "finishTitle": "Finish product setup",
+      "finishDescription": "Set artwork areas, decoration options and prices, then publish.",
+      "configure": "Configure product",
+      "continue": "Continue setup",
+      "view": "View products"
+    },
+    "storefront": {
+      "description": "Add the customization button and cart review to your theme.",
+      "action": "Open theme setup"
+    },
+    "test": {
+      "description": "Preview a published product, add a design and check it in your cart.",
+      "action": "Test a product",
+      "blocked": "Publish a customized product and finish theme setup before testing."
+    },
+    "hideAction": "Hide",
+    "showAction": "Show",
+    "dismissGuide": "Setup guide"
+  },
+  "setup": {
+    "toggleShow": "Show storefront setup",
+    "toggleHide": "Hide storefront setup",
+    "complete": "Complete",
+    "confirmed": "Confirmed by you",
+    "unverified": "Not verified",
+    "reviewChecks": "Review your setup checks.",
+    "tasks": {
+      "storefront": {
+        "title": "Connect your theme",
+        "description": "Add the customization button and cart review to your theme.",
+        "action": "Open theme setup",
+        "button-disabled": "Enable the customization button in your theme.",
+        "cart-review-disabled": "Enable cart review in your theme.",
+        "both-disabled": "Enable the customization button and cart review in your theme.",
+        "check": "Check the storefront setup in your theme."
+      },
+      "test": {
+        "title": "Test a customization",
+        "description": "Publish a product, then test its customization on your storefront.",
+        "action": "Test a product"
+      }
+    }
+  },
+  "notice": {
+    "planRestriction": {
+      "heading": "Review your plan",
+      "description": "Review billing before starting a new product setup.",
+      "action": "View billing"
+    }
+  },
+  "homePreview": {}
+}

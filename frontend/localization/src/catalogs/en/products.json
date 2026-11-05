@@ -1,0 +1,71 @@
+{
+  "pageTitle": "Products",
+  "actions": {
+    "viewInShopify": "View in Shopify",
+    "selectAllShown": "Select all shown products on this page",
+    "selectProduct": "Select {{productName}}",
+    "copySetupAccessible": "Copy setup from another product",
+    "copySetup": "Copy setup from…",
+    "downloadSummary": "Download summary",
+    "previewCustomization": "Preview customization",
+    "selectionActions": "Actions for selected products",
+    "clearSelection": "Clear selection",
+    "firstPage": "First page",
+    "showAll": "Show all products",
+    "clearFilter": "Clear configuration filter"
+  },
+  "selection": {
+    "selected_one": "{{formattedCount}} selected",
+    "selected_other": "{{formattedCount}} selected"
+  },
+  "search": "Search products",
+  "filter": {
+    "products": "Filter products",
+    "configurationOnPage": "Configuration on this page",
+    "editConfiguration": "Edit configuration filter",
+    "onThisPage": "{{configuration}} on this page"
+  },
+  "configuration": {
+    "all": "All",
+    "notConfigured": "Not configured",
+    "draft": "Draft",
+    "published": "Published",
+    "unavailable": "Unavailable"
+  },
+  "results": {
+    "shown_one": "{{formattedCount}} product shown on this page.",
+    "shown_other": "{{formattedCount}} products shown on this page."
+  },
+  "table": {
+    "region": "Shopify products",
+    "columns": "Products",
+    "product": "Product",
+    "configuration": "Configuration",
+    "methods": "Methods",
+    "printLocations": "Print locations",
+    "variants": "Variants"
+  },
+  "summary": {
+    "methods": "methods",
+    "printLocations": "print locations",
+    "noneConfigured": "None configured",
+    "viewAllMethods": "View all methods",
+    "viewAllPrintLocations": "View all print locations"
+  },
+  "errors": {
+    "loadHeading": "Products could not be loaded",
+    "access": "Your access could not be verified. Try again to reconnect with Shopify Admin.",
+    "unavailable": "Products are unavailable. Try again.",
+    "previewFailed": "The customer preview could not be opened. Try again.",
+    "summaryDownloadFailed": "The summary could not be downloaded. Try again."
+  },
+  "empty": {
+    "noneOnPage": "No products found on this page",
+    "changeFilterOrPage": "Change the configuration filter or check another page.",
+    "returnFirstOrSearch": "Return to the first page or try another search.",
+    "changeProductSearch": "Try another product name or clear your search.",
+    "noProductsFound": "No products found",
+    "noProductsYet": "No products yet",
+    "addInShopify": "Add a product in Shopify, then return here to set up customization."
+  }
+}

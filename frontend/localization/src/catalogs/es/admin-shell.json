@@ -1,0 +1,134 @@
+{
+  "adminPageSkeleton": {
+    "method": "Técnica",
+    "actions": "Acciones",
+    "loadingProductConfiguration": "Cargando la configuración del producto",
+    "loadingCustomizationActivity": "Cargando la actividad de personalización",
+    "loadingProducts": "Cargando productos",
+    "loadingCustomizedOrders": "Cargando pedidos personalizados"
+  },
+  "ordersTableSkeleton": {
+    "loadingOrders": "Cargando pedidos",
+    "order": "Pedido"
+  },
+  "productsTableSkeleton": {
+    "loadingProducts": "Cargando productos",
+    "products": "Productos",
+    "product": "Producto",
+    "configuration": "Configuración",
+    "methods": "Técnicas",
+    "printLocations": "Zonas de diseño",
+    "variants": "Variantes"
+  },
+  "purchaseDetailSkeleton": {
+    "loadingOrderAndArtwork": "Cargando el pedido y el diseño"
+  },
+  "titles": {
+    "home": "Insignia",
+    "products": "Productos",
+    "orders": "Pedidos",
+    "order": "Pedido",
+    "methods": "Técnicas de personalización",
+    "configuration": "Configuración del producto",
+    "settings": "Configuración",
+    "billing": "Facturación",
+    "permissions": "Permisos de la aplicación",
+    "storefront": "Configuración de la tienda online",
+    "unavailable": "Aplicación no disponible",
+    "translations": "Traducciones"
+  },
+  "navigation": {
+    "home": "Inicio",
+    "products": "Productos",
+    "orders": "Pedidos",
+    "methods": "Técnicas",
+    "settings": "Configuración"
+  },
+  "routes": {
+    "customizeProduct": "Personalizar producto",
+    "orderArtwork": "Pedido y diseño",
+    "home": "Insignia",
+    "products": "Productos",
+    "orders": "Pedidos",
+    "permissions": "Permisos de la aplicación",
+    "methods": "Técnicas",
+    "storefront": "Configuración de la tienda online",
+    "billing": "Facturación",
+    "settings": "Configuración"
+  },
+  "loading": {
+    "settings": "Cargando la configuración",
+    "permissions": "Cargando los permisos de la aplicación",
+    "methods": "Cargando las técnicas",
+    "storefront": "Cargando la configuración de la tienda online",
+    "billing": "Cargando la facturación",
+    "billingDetails": "Cargando los datos de facturación",
+    "detail": "Cargando el pedido y el diseño",
+    "preview": "Cargando la configuración del producto",
+    "translations": "Cargando las traducciones"
+  },
+  "pageTitle": "{{title}} · Insignia",
+  "failure": {
+    "heading": "Interfaz no disponible",
+    "body": "Vuelve a abrir Insignia desde el panel de control de Shopify para intentarlo de nuevo."
+  },
+  "unavailable": {
+    "heading": "Aplicación no disponible",
+    "bannerHeading": "No se pudo abrir Insignia",
+    "body": "La configuración de la aplicación no está disponible. Ponte en contacto con el equipo de asistencia de la aplicación para recuperar el acceso.",
+    "recoveryHeading": "Recuperar el acceso",
+    "recoveryBody": "Vuelve al panel de control de Shopify y abre Insignia de nuevo. Si el problema continúa, ponte en contacto con el equipo de asistencia de la aplicación. No se han realizado cambios desde esta página.",
+    "return": "Volver al panel de control de Shopify"
+  },
+  "shared": {
+    "actions": {
+      "action": "Acción",
+      "discard": "Descartar",
+      "reviewPermissions": "Revisar los permisos de la aplicación"
+    },
+    "filters": {
+      "defaultLabel": "Filtros",
+      "add": "Añadir filtro",
+      "withCount": " ({{formattedCount}})"
+    },
+    "loading": {
+      "results": "Cargando resultados"
+    },
+    "navigation": {
+      "settings": "Configuración"
+    },
+    "pagination": {
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "previousPage": "Ir a la página anterior",
+      "nextPage": "Ir a la página siguiente"
+    },
+    "preview": {
+      "imageUnavailable": "Imagen no disponible",
+      "preparing": "Preparando la vista previa…"
+    },
+    "saveBar": {
+      "save": "Guardar",
+      "discard": "Descartar",
+      "saveDraft": "Guardar borrador",
+      "discardChanges": "Descartar cambios",
+      "heading": "¿Descartar los cambios sin guardar?",
+      "body": "Tienes cambios sin guardar.",
+      "keepEditing": "Seguir editando",
+      "productDiscardBody": "Se perderán los cambios del producto que no hayas guardado. La última configuración guardada y el producto publicado no cambiarán."
+    },
+    "search": {
+      "clear": "Borrar búsqueda",
+      "searchBy": "Buscar por"
+    },
+    "summary": {
+      "empty": "Ninguno",
+      "view": "Ver",
+      "viewAllValues": "Ver todos los valores"
+    },
+    "table": {
+      "columnsFor": "Columnas de {{tableName}}"
+    }
+  },
+  "hostBack": "Volver a {{destination}}"
+}

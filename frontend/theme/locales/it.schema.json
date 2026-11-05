@@ -1,0 +1,14 @@
+{
+  "blocks": {
+    "customize": {
+      "name": "Personalizzazione Insignia",
+      "button_label": "Etichetta del pulsante",
+      "button_default": "Personalizza questo prodotto",
+      "proxy_prefix": "Prefisso del proxy dell'app"
+    },
+    "cart_repair": {
+      "name": "Riepilogo del carrello Insignia",
+      "proxy_prefix": "Prefisso del proxy dell'app"
+    }
+  }
+}

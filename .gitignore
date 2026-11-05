@@ -17,3 +17,7 @@ extensions/insignia-cart-*/target/
 # M5-002 serialized operator state; never evidence or credentials
 .m5-002-local/
 .shopify/
+
+frontend/*/dist/
+frontend/*/dist-library/
+frontend/*/.astro/

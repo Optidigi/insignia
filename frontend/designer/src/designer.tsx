@@ -1,0 +1,2006 @@
+import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "preact/hooks";
+import type {
+  ComponentChildren,
+  TargetedDragEvent,
+  TargetedEvent,
+} from "preact";
+import {
+  IconCloudUpload,
+  IconCheck,
+  IconArrowLeft,
+  IconArrowRight,
+  IconX,
+  IconShoppingCart,
+  IconAlertTriangle,
+  IconFrame,
+  IconChevronDown,
+  IconChevronUp,
+} from "./legacy-icons";
+import { createProductModel, isValidQuantity } from "./model";
+import { createDesignerRuntime, type CartReceipt, type DesignerPorts } from "./runtime";
+import { ArtworkFile, FileName } from "./file-name";
+import { ThemeControl } from "./theme";
+import { ReviewPanel } from "./review-panel";
+import { QuantityEntry } from "./quantity-entry";
+import { quantityLayout } from "./quantity-layout";
+import { ValidationSummary, type ValidationIssue } from "./validation-summary";
+import { PositionPicker } from "./position-picker";
+import { ColorPicker } from "./color-picker";
+import {
+  resolveOptionPresentation,
+} from "./option-presentation";
+import { FloatingSelect } from "./compact-fields";
+import type { ProductConfig } from "./config";
+import { GarmentIllustration, swatchInk } from "./garment-preview";
+import { InlineArtwork, InlinePositionControls } from "./inline-positioning";
+import {
+  isArtworkCenterAllowed,
+  printWidthPercentForArtwork,
+  printWidthPercent,
+  printSizeLabel,
+  resolvePrintCenter,
+} from "./position-geometry";
+import type {
+  Artwork,
+  Print,
+  PositionId,
+  View,
+  ColorId,
+  Quantities,
+  Design,
+  Position,
+} from "./model";
+import {
+  createDesignerState,
+  designerReducer,
+  hasUnappliedDraft,
+  productDesignEditRequiresConfirmation,
+  type CreateDesignerStateInput,
+  type DesignerEvent,
+  type DesignerState,
+  type UploadFailureReason,
+} from "./designer-state";
+import {
+  LocaleProvider,
+  useLocale,
+} from "./customer-locale";
+import type { CustomerWordingOverlay } from "@insignia/ui-localization/customer";
+import type { SupportedLanguage } from "@insignia/ui-localization/core";
+import { useCustomerLanguage } from "./use-customer-language";
+import { selectedLanguagePreference } from "@insignia/ui-localization/core";
+import { CustomerLanguagePicker } from "./language-picker";
+
+export interface ClosedDesignerProps {
+  completion: CartReceipt | null;
+  hasDraft: boolean;
+  editing: string | null;
+  switchingDesign: string | null;
+  onResume: () => void;
+  onStartNew: () => void;
+  onEdit: (design: Design) => void;
+  onCancelSwitch: () => void;
+  onConfirmSwitch: () => void;
+}
+export interface DesignerProps {
+  config: ProductConfig;
+  ports: DesignerPorts;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  initialPrints?: readonly Print[];
+  initialDesign?: Design;
+  initialArtworks?: readonly Artwork[];
+  previewOnly?: boolean;
+  /** Active Shopify page language; missing context falls back to browser language, then English. */
+  locale?: string | undefined;
+  /** Sparse merchant-authored customer wording for one exact locale. */
+  wordingOverlay?: CustomerWordingOverlay | null;
+  /** Called after a manual language choice is active; null follows the host locale. */
+  onLanguagePreferenceChange?: (language: SupportedLanguage | null) => void;
+  /** App-owned context supplied only by the separate editor artwork preview. */
+  previewContextLabel?: string;
+  /** App-owned notice supplied by the separate editor artwork preview. */
+  previewNotice?: string;
+  /** Localized app fallback for the selected editor preview's generic image. */
+  previewProductImageLabel?: string;
+  allowUnload?: boolean;
+  renderClosed?: (props: ClosedDesignerProps) => ComponentChildren;
+}
+export function Designer(props: DesignerProps) {
+  const language = useCustomerLanguage({
+    hostLocale: props.locale,
+    wordingOverlay: props.wordingOverlay,
+    onPreferenceChange: props.onLanguagePreferenceChange,
+  });
+  return (
+    <LocaleProvider controller={language.controller}>
+      <DesignerSession
+        {...props}
+        languagePreference={selectedLanguagePreference(language.state)}
+        languageChangeFailed={language.state.status === "failed"}
+        onLanguagePreferenceSelect={language.selectPreference}
+      />
+    </LocaleProvider>
+  );
+}
+
+interface DesignerSessionProps extends DesignerProps {
+  languagePreference: SupportedLanguage | null;
+  languageChangeFailed: boolean;
+  onLanguagePreferenceSelect: (preference: SupportedLanguage | null) => void;
+}
+
+function DesignerSession({
+  config, ports, isOpen, onOpenChange,
+  initialPrints = [], initialArtworks = [], initialDesign,
+  previewOnly = false, allowUnload = false, renderClosed,
+  previewContextLabel, previewNotice,
+  previewProductImageLabel,
+  languagePreference, languageChangeFailed, onLanguagePreferenceSelect,
+}: DesignerSessionProps) {
+  const { t, formatLocale, lang, dir } = useLocale();
+  const accordionExample = initialPrints.length > 0;
+  const { colors, sizes, positions, views } = config;
+  const optionPresentation = resolveOptionPresentation(
+    config.optionPresentation,
+  );
+  const { rowOption } = optionPresentation;
+  const rowOptionLabel = rowOption.labelSource === "generic-selection"
+    ? t("customer:options.selectionFallback")
+    : config.optionPresentation?.rowOption.label ?? t("customer:options.genericLabel");
+  const columnOptionLabel = config.optionPresentation?.columnOption.label ?? t("customer:options.genericLabel");
+  const isNamedChoice = rowOption.display === "named-choice" || colors.some((choice) => !choice.hex);
+  const artworkOnly = previewOnly || config.artworkOnly === true;
+  const quantityStepHeading = t("customer:steps.quantities");
+  const quantitiesLayout = useMemo(() => quantityLayout(config), [config]);
+  const model = useMemo(() => createProductModel(config, formatLocale), [config, formatLocale]);
+  const {
+    positionFor,
+    methodFor,
+    printPrice,
+    unitPrice,
+    money,
+    imageFor,
+    initialPrint,
+    isSizeAvailable,
+    isCombinationAvailable,
+    canDeferArtwork,
+  } = model;
+  const firstPosition = positions[0];
+  const firstColor = colors[0];
+  const firstView = views[0];
+  if (!firstPosition || !firstColor || !firstView)
+    throw new Error("product-options-empty");
+  const [workflow, dispatch] = useReducer<
+    DesignerState,
+    DesignerEvent,
+    CreateDesignerStateInput
+  >(
+    designerReducer,
+    {
+      rules: {
+        positions,
+        colorIds: colors.map((entry) => entry.id),
+        sizeIds: sizes.map((entry) => entry.id),
+        availableSizes: Object.fromEntries(
+          colors.map((entry) => [entry.id, entry.availableSizeIds]),
+        ),
+        ...(config.variantMatrix ? { variantMatrix: config.variantMatrix } : {}),
+        maxQuantity: config.maxQuantity,
+        deferablePositions: positions
+          .filter((entry) => entry.artworkLater ?? config.artworkLater)
+          .map((entry) => entry.id),
+      },
+      view: accordionExample ? firstPosition.view : firstView.id,
+      color: firstColor.id,
+      prints: initialPrints,
+      active: firstPosition.id,
+      expanded: accordionExample ? firstPosition.id : null,
+      artworks: initialArtworks,
+      designerOpen: isOpen,
+      ...(initialDesign ? { initialDesign } : {}),
+    },
+    createDesignerState,
+  );
+  const {
+    step,
+    view,
+    color,
+    prints,
+    active,
+    expanded,
+    artworks,
+    positionUndo,
+    quantities,
+    colorRows,
+    editing,
+    attemptedStep,
+    modal,
+    recovery,
+  } = workflow;
+  const quantityRowIds = quantitiesLayout.kind === "compact" || quantitiesLayout.kind === "single" ? colors.map(row => row.id) : colorRows;
+  const designerOpen = workflow.open;
+  const modalKind = modal.kind === "closed" ? null : modal.kind;
+  const placementView = modal.kind === "positions" ? modal.view : null;
+  const colorMode = modal.kind === "colors" ? modal.mode : "choose";
+  const uploading = workflow.upload.kind === "reading";
+  const error = workflow.upload.kind === "failed"
+    ? uploadFailureMessage(workflow.upload.reason)
+    : "";
+  const notice = recovery.kind === "none"
+    ? ""
+    : recovery.kind === "removed-position"
+      ? t("customer:recovery.artworkRemoved")
+      : recovery.kind === "removed-color"
+        ? t("customer:recovery.colorItemsRemoved", {
+            colorName: recovery.colorNameSource === "generic-selection"
+              ? t("customer:options.selectionFallback")
+              : recovery.colorName,
+          })
+        : t(`customer:recovery.${recovery.reason === "artwork-restored" ? "artworkRestored" : "itemsRestored"}`);
+  const removed = recovery.kind === "removed-position" ? recovery.print : null;
+  const removedColor =
+    recovery.kind === "removed-color"
+      ? {
+          id: recovery.color,
+          index: recovery.index,
+          quantities: recovery.quantities,
+        }
+      : null;
+  const [focusPrint, setFocusPrint] = useState(
+    () => !accordionExample && window.matchMedia("(max-width:780px)").matches,
+  );
+  const [previewExpanded, setPreviewExpanded] = useState(false);
+  const [failedArtworks, setFailedArtworks] = useState<ReadonlySet<string>>(
+    new Set(),
+  );
+  const [imageDimensions, setImageDimensions] = useState<
+    Record<string, { width: number; height: number } | null>
+  >({});
+  const summaryRef = useRef<HTMLDivElement>(null);
+  const [dragging, setDragging] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const opener = useRef<HTMLElement | null>(null);
+  const previousStep = useRef(step);
+  const workflowRef = useRef(workflow);
+  workflowRef.current = workflow;
+  const runtime = useMemo(() => createDesignerRuntime(ports, () => workflowRef.current, dispatch), [ports]);
+
+  function uploadFailureMessage(reason: UploadFailureReason): string {
+    switch (reason) {
+      case "file-too-large":
+        return t("customer:artwork.uploadTooLarge", { maxSizeMb: 5 });
+      case "unsupported-file-type":
+        return t("customer:artwork.uploadUnsupportedType");
+      case "read-failed":
+        return t("customer:artwork.uploadReadFailed");
+    }
+  }
+
+  function positionConstraintMessage(
+    reason: "preview-unavailable" | "loading-previews" | undefined,
+  ): string | undefined {
+    if (reason === "preview-unavailable") return t("customer:artwork.selectedPreviewFailed");
+    if (reason === "loading-previews") return t("customer:artwork.loadingPreviews");
+    return undefined;
+  }
+
+  function colorName(entry: ProductConfig["colors"][number] | undefined): string {
+    if (!entry) return t("customer:options.genericLabel");
+    if (entry.nameSource === "admin-preview-product-image")
+      return previewProductImageLabel ?? entry.name;
+    return entry.nameSource === "generic-selection"
+      ? t("customer:options.selectionFallback")
+      : entry.name;
+  }
+  useEffect(() => () => runtime.cancel(), [runtime]);
+  useLayoutEffect(() => {
+    if (workflowRef.current.open === isOpen) return;
+    runtime.cancel();
+    dispatch({ type: "location-observed", designerOpen: isOpen });
+  }, [isOpen, runtime]);
+  const availableQuantityKeys = useMemo(() => new Set(quantitiesLayout.cells.filter(cell => cell.available).map(cell => `${cell.rowId}:${cell.sizeId}`)), [quantitiesLayout]);
+  const hasUnavailableQuantities = Object.entries(quantities).some(([key, value]) => (value ?? 0) !== 0 && !availableQuantityKeys.has(key));
+  const hasQuantityErrors = hasUnavailableQuantities || Object.values(quantities).some(
+    (value) => !isValidQuantity(value ?? 0, config.maxQuantity),
+  );
+  const qty = Object.values(quantities).reduce<number>(
+    (sum, value) =>
+      sum +
+      (isValidQuantity(value ?? 0, config.maxQuantity) ? (value ?? 0) : 0),
+    0,
+  );
+  function colorQuantity(id: ColorId): number {
+    return sizes.reduce((sum, size) => {
+      const value = quantities[`${id}:${size.id}`] ?? 0;
+      return sum + (isValidQuantity(value, config.maxQuantity) ? value : 0);
+    }, 0);
+  }
+  const unit = unitPrice(prints);
+  const policy = positionFor(active);
+  function positioningColorIds(): ColorId[] {
+    const ordered = colorRows.filter((id) => colorQuantity(id) > 0);
+    return [
+      ...new Set(step === 0 || !ordered.length ? [color, ...ordered] : ordered),
+    ];
+  }
+  function imageAspectFor(position: Position, colorId = color): number | null {
+    if (config.preview !== "photo") return 1;
+    const src = imageFor(colorId, position.view);
+    const dimensions = src ? imageDimensions[src] : undefined;
+    return dimensions ? dimensions.width / dimensions.height : null;
+  }
+  const movementImageSources = useMemo(
+    () => [
+      ...new Set(
+        [...new Set([color, ...colorRows])].flatMap((colorId) =>
+          positions
+            .filter((entry) => entry.movementArea)
+            .flatMap((entry) => {
+              const src = model.imageFor(colorId, entry.view);
+              return src ? [src] : [];
+            }),
+        ),
+      ),
+    ],
+    [model, positions, color, colorRows],
+  );
+  useEffect(() => {
+    let live = true;
+    const images: HTMLImageElement[] = [];
+    void Promise.all(
+      movementImageSources.map(
+        (src) =>
+          new Promise<{
+            src: string;
+            dimensions: { width: number; height: number } | null;
+          }>((resolve) => {
+            const image = new Image();
+            images.push(image);
+            image.onload = () =>
+              resolve({
+                src,
+                dimensions:
+                  image.naturalWidth > 0 && image.naturalHeight > 0
+                    ? { width: image.naturalWidth, height: image.naturalHeight }
+                    : null,
+              });
+            image.onerror = () => resolve({ src, dimensions: null });
+            image.src = src;
+          }),
+      ),
+    ).then((results) => {
+      if (!live) return;
+      setImageDimensions((current) => {
+        const next = { ...current };
+        for (const result of results) next[result.src] = result.dimensions;
+        return next;
+      });
+    });
+    return () => {
+      live = false;
+      for (const image of images) {
+        image.onload = null;
+        image.onerror = null;
+      }
+    };
+  }, [movementImageSources]);
+  function positionImageConstraints(position: Position) {
+    const colorIds = positioningColorIds();
+    const aspects = colorIds.map((id) => imageAspectFor(position, id));
+    const unavailable =
+      config.preview === "photo" &&
+      colorIds.some((id) => {
+        const src = imageFor(id, position.view);
+        return !src || imageDimensions[src] === null;
+      });
+    const complete = aspects.every(
+      (aspect): aspect is number => aspect !== null,
+    );
+    return {
+      aspects: complete ? aspects : [],
+      messageReason: unavailable
+        ? "preview-unavailable"
+        : !complete
+          ? "loading-previews"
+          : undefined,
+    } satisfies {
+      aspects: number[];
+      messageReason: "preview-unavailable" | "loading-previews" | undefined;
+    };
+  }
+  function positionIsValid(print: Print): boolean {
+    const position = positionFor(print.id);
+    const movementArea = position.movementArea;
+    const art = artworks.find((entry) => entry.id === print.artworkId);
+    if (!art) return true;
+    if (failedArtworks.has(art.id)) return false;
+    if (!movementArea) return true;
+    return positioningColorIds().every((colorId) => {
+      const aspect = imageAspectFor(position, colorId);
+      return (
+        aspect !== null &&
+        isArtworkCenterAllowed(
+          resolvePrintCenter(position, print),
+          movementArea,
+          printWidthPercentForArtwork(
+            position,
+            print.size,
+            art.width / art.height,
+            aspect,
+          ),
+          art.width / art.height,
+          aspect,
+        )
+      );
+    });
+  }
+  const ready =
+    prints.length > 0 &&
+    prints.every(
+      (p) =>
+        (artworks.some((a) => a.id === p.artworkId) ||
+          (canDeferArtwork(p.id) && p.artworkId === "later")) &&
+        positionIsValid(p),
+    );
+  const artworkIssues: ValidationIssue[] = prints
+    .filter(
+      (p) =>
+        (!artworks.some((a) => a.id === p.artworkId) &&
+          !(canDeferArtwork(p.id) && p.artworkId === "later")) ||
+        !positionIsValid(p),
+    )
+    .map((p) => ({
+      target: positionIsValid(p)
+        ? `artwork-${p.id}`
+        : `adjust-position-${p.id}`,
+      position: p.id,
+      message: positionIsValid(p)
+        ? t("customer:validation.chooseArtworkForPosition", {
+            positionName: positionFor(p.id).name,
+          })
+        : positionConstraintMessage(positionImageConstraints(positionFor(p.id)).messageReason) ??
+          t("customer:validation.adjustArtworkForPosition", {
+            positionName: positionFor(p.id).name,
+          }),
+    }));
+  const validationIssues: ValidationIssue[] =
+    attemptedStep !== step
+      ? []
+      : [
+          ...artworkIssues,
+          ...(step === 1
+            ? quantityRowIds.flatMap((c) =>
+                sizes
+                  .filter(
+                    (size) =>
+                      !isValidQuantity(
+                        quantities[`${c}:${size.id}`] ?? 0,
+                        config.maxQuantity,
+                      ),
+                  )
+                  .map((size) => ({
+                    target: `quantity-${c}-${size.id}`,
+                    message: t("customer:validation.quantityForSelection", {
+                      rowName: colorName(colors.find((color) => color.id === c)),
+                      sizeLabel: size.label,
+                      maxQuantity: config.maxQuantity,
+                    }),
+                  })),
+              )
+            : []),
+        ];
+  if (attemptedStep === 1 && step === 1 && !qty && !hasQuantityErrors) {
+    const first = quantityRowIds.flatMap((c) =>
+      sizes
+        .filter((size) => isSizeAvailable(c, size.id))
+        .map((size) => ({ c, size })),
+    )[0];
+    if (first)
+      validationIssues.push({
+        target: `quantity-${first.c}-${first.size.id}`,
+        message: t("customer:validation.enterQuantity"),
+      });
+  }
+  if (attemptedStep === 1 && step === 1 && hasUnavailableQuantities) {
+    validationIssues.push({
+      target: "quantity-unavailable-selections",
+      message: t("customer:validation.removeUnavailableSelections"),
+    });
+  }
+  function showValidation() {
+    dispatch({ type: "validation-attempted", step });
+    window.requestAnimationFrame(() => {
+      summaryRef.current?.focus({ preventScroll: true });
+      summaryRef.current?.scrollIntoView({ block: "start" });
+    });
+  }
+  function navigateIssue(issue: ValidationIssue) {
+    if (issue.position) {
+      selectPosition(issue.position);
+      dispatch({ type: "step-selected", step: 0 });
+    }
+    window.requestAnimationFrame(() => {
+      const target = document.getElementById(issue.target);
+      (target?.closest("label") ?? target)?.scrollIntoView({ block: "center" });
+      target?.focus({ preventScroll: true });
+    });
+  }
+  function openModal(
+    value: Exclude<DesignerState["modal"], { kind: "closed" }>,
+  ) {
+    opener.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    dispatch({ type: "modal-opened", modal: value });
+  }
+  function closeModal() {
+    runtime.cancelUpload();
+    dispatch({ type: "modal-closed" });
+    restoreFocus();
+  }
+  function restoreFocus() {
+    window.requestAnimationFrame(() => {
+      if (opener.current?.isConnected) opener.current.focus();
+      else {
+        const target =
+          document.querySelector<HTMLElement>(
+            ".print-card.active .print-card-heading",
+          ) ?? panelRef.current;
+        target?.focus();
+      }
+    });
+  }
+  useEffect(() => {
+    if (recovery.kind === "none") return;
+    const token = recovery.token;
+    const timer = window.setTimeout(() => {
+      dispatch({ type: "recovery-expired", token });
+    }, 6000);
+    return () => window.clearTimeout(timer);
+  }, [recovery]);
+  useEffect(() => {
+    panelRef.current?.scrollTo({ top: 0 });
+    if (
+      previousStep.current !== step &&
+      window.matchMedia("(max-width:780px)").matches
+    )
+      panelRef.current?.scrollIntoView({ block: "start" });
+    previousStep.current = step;
+  }, [step]);
+  useEffect(() => {
+    const viewport = window.matchMedia("(max-width:780px)");
+    const onChange = (event: MediaQueryListEvent) =>
+      setFocusPrint(event.matches);
+    viewport.addEventListener("change", onChange);
+    return () => viewport.removeEventListener("change", onChange);
+  }, []);
+  useEffect(() => {
+    if (modal.kind === "closed" || !designerOpen) return;
+    const dialog = document.querySelector<HTMLDialogElement>("dialog");
+    dialog?.showModal();
+    const listener = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeModal();
+      }
+    };
+    document.addEventListener("keydown", listener);
+    return () => document.removeEventListener("keydown", listener);
+  }, [modal, designerOpen]);
+  useEffect(() => {
+    if (modal.kind !== "closed" || !designerOpen || artworkOnly) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") returnToProduct();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [modal, designerOpen, artworkOnly]);
+  function selectPosition(id: PositionId) {
+    dispatch({ type: "position-selected", positionId: id });
+    setFocusPrint(window.matchMedia("(max-width:780px)").matches);
+  }
+  function printSizeDisplayLabel(position: Position, sizeIndex: number): string {
+    return printSizeLabel(position, sizeIndex, (dimension) =>
+      t("customer:positioning.centimeters", { dimension: String(dimension) }),
+    );
+  }
+  function sizePriceLabel(
+    position: Position,
+    print: Print,
+    sizeIndex: number,
+  ): string {
+    if (artworkOnly) return "";
+    if (position.methodSizePrices) {
+      if (!isCombinationAvailable(position.id, sizeIndex, print.method))
+        return t("customer:chrome.unavailable");
+      const exact = printPrice({ ...print, size: sizeIndex });
+      return exact === 0 ? t("customer:chrome.included") : `+${money(exact)}`;
+    }
+    const price = position.sizePrices[sizeIndex] ?? 0;
+    return price > 0 ? `+${money(price)}` : "";
+  }
+  function methodPriceLabel(position: Position, methodId: string): string {
+    if (artworkOnly) return "";
+    if (position.methodSizePrices) {
+      const prices = position.dimensions.flatMap((_, sizeIndex) =>
+        isCombinationAvailable(position.id, sizeIndex, methodId)
+          ? [
+              printPrice({
+                ...initialPrint(position.id),
+                size: sizeIndex,
+                method: methodId,
+              }),
+            ]
+          : [],
+      );
+      return prices.length
+        ? t("customer:chrome.fromPrice", { price: money(Math.min(...prices)) })
+        : t("customer:chrome.unavailable");
+    }
+    const surcharge = methodFor(methodId).surcharge;
+    return surcharge > 0 ? `+${money(surcharge)}` : "";
+  }
+  function artworkFitsSize(
+    position: Position,
+    print: Print,
+    sizeIndex: number,
+    art: Artwork | undefined,
+  ): boolean {
+    if (!art) return true;
+    if (failedArtworks.has(art.id)) return false;
+    return positioningColorIds().every((colorId) => {
+      const aspect = imageAspectFor(position, colorId);
+      if (aspect === null) return false;
+      const width = printWidthPercentForArtwork(
+        position,
+        sizeIndex,
+        art.width / art.height,
+        aspect,
+      );
+      return (
+        width > 0 &&
+        (!position.movementArea ||
+          isArtworkCenterAllowed(
+            resolvePrintCenter(position, print),
+            position.movementArea,
+            width,
+            art.width / art.height,
+            aspect,
+          ))
+      );
+    });
+  }
+  function commitPosition(next: Print) {
+    dispatch({
+      type: "position-committed",
+      positionId: next.id,
+      size: next.size,
+      position: next.position,
+    });
+  }
+  function undoPosition(id: PositionId) {
+    dispatch({ type: "position-undone", positionId: id });
+  }
+  function clearPositionUndo(id: PositionId) {
+    dispatch({ type: "position-undo-cleared", positionId: id });
+  }
+  function inlineConstraints(position: Position, art: Artwork) {
+    const constraints = positionImageConstraints(position);
+    return {
+      aspects: failedArtworks.has(art.id) ? [] : constraints.aspects,
+      message: failedArtworks.has(art.id)
+        ? t("customer:artwork.unavailable")
+        : positionConstraintMessage(constraints.messageReason),
+    };
+  }
+  function addPosition(id: PositionId) {
+    dispatch({ type: "position-added", print: initialPrint(id) });
+    selectPosition(id);
+    closeModal();
+  }
+  function requestPosition(viewId?: View) {
+    const available = positions.filter(
+      (position) =>
+        !prints.some((p) => p.id === position.id) &&
+        (!viewId || position.view === viewId),
+    );
+    if (available.length === 1 && available[0]) addPosition(available[0].id);
+    else if (available.length) {
+      openModal({ kind: "positions", view: viewId ?? null });
+    }
+  }
+  function removePrint(id: PositionId) {
+    dispatch({ type: "position-removed", positionId: id });
+    window.requestAnimationFrame(() => {
+      const next =
+        panelRef.current?.querySelector<HTMLElement>(
+          ".print-card.active .print-card-heading, .empty-state button",
+        ) ?? panelRef.current;
+      next?.focus();
+    });
+  }
+  function applyArtwork(id: string, positionId: PositionId = active) {
+    if (id === "later" && !canDeferArtwork(positionId)) return;
+    dispatch({ type: "artwork-applied", positionId, artworkId: id });
+    closeModal();
+  }
+  async function upload(file: File | undefined) {
+    if (!file) return;
+    const target = modal.kind === "artwork" ? modal.positionId : active;
+    if (fileRef.current) fileRef.current.value = "";
+    await runtime.upload(file, target);
+    if (workflowRef.current.open && workflowRef.current.modal.kind === "closed") restoreFocus();
+  }
+  function onDrop(event: TargetedDragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setDragging(false);
+    void upload(event.dataTransfer?.files[0]);
+  }
+  function changeQuantity(c: ColorId, size: string, value: number) {
+    if (!isSizeAvailable(c, size)) return;
+    dispatch({ type: "quantity-entered", color: c, size, value });
+  }
+  function goNext() {
+    if (!ready || (step === 1 && (hasQuantityErrors || !qty))) {
+      showValidation();
+      return;
+    }
+    dispatch({ type: "step-advanced" });
+  }
+  function addToCart() {
+    if (artworkOnly) return;
+    if (!ready || !qty || hasQuantityErrors) {
+      showValidation();
+      return;
+    }
+    if (workflow.modal.kind !== "closed") return;
+    opener.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    void runtime.commit();
+  }
+  // Only the reducer's matching applied receipt can close the host session.
+  useLayoutEffect(() => {
+    if (!workflow.completion) return;
+    runtime.cancelUpload();
+    onOpenChange(false);
+  }, [workflow.completion]);
+  function newDesign() {
+    dispatch({ type: "new-design-requested" });
+    closeModal();
+  }
+  function returnToProduct() {
+    dispatch({ type: "product-return-requested" });
+    runtime.cancel();
+    onOpenChange(false);
+    window.requestAnimationFrame(() =>
+      document.getElementById("host-personalise")?.focus(),
+    );
+  }
+  function openDesigner() {
+    dispatch({ type: "designer-reopened" });
+    onOpenChange(true);
+    window.requestAnimationFrame(() => panelRef.current?.focus());
+  }
+  function chooseColor(id: ColorId) {
+    dispatch({ type: "color-selected", color: id });
+  }
+  function requestProductDesignEdit(design: Design) {
+    const needsConfirmation = productDesignEditRequiresConfirmation(
+      workflow,
+      design.id,
+    );
+    dispatch({ type: "product-design-edit-requested", design });
+    if (!needsConfirmation) {
+      onOpenChange(true);
+      window.requestAnimationFrame(() => panelRef.current?.focus());
+    }
+  }
+  function cancelProductDesignSwitch() {
+    dispatch({ type: "modal-closed" });
+  }
+  function confirmProductAction() {
+    if (workflow.modal.kind !== "switch-design") return;
+    dispatch({ type: "product-design-switch-confirmed" });
+    onOpenChange(true);
+    window.requestAnimationFrame(() => panelRef.current?.focus());
+  }
+  const unappliedDraft = hasUnappliedDraft(workflow);
+  useEffect(() => {
+    if (!unappliedDraft || allowUnload || previewOnly) return;
+    const handle = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener("beforeunload", handle);
+    return () => window.removeEventListener("beforeunload", handle);
+  }, [unappliedDraft, allowUnload, previewOnly]);
+  const focused =
+    step === 0 && expanded
+      ? prints.find(
+          (p) =>
+            p.id === expanded &&
+            p.artworkId !== null &&
+            p.artworkId !== "later" &&
+            positionFor(p.id).view === view,
+        )
+      : undefined;
+  const focusPolicy = focused ? positionFor(focused.id) : undefined;
+  const focusStyle =
+    focusPrint && focusPolicy && !focusPolicy.movementArea
+      ? {
+          transform: "scale(1.4)",
+          transformOrigin: `${focusPolicy.x}% ${focusPolicy.y}%`,
+        }
+      : undefined;
+  const visibleColors = [...colors.slice(0, 5)];
+  const selectedColor = colors.find((c) => c.id === color);
+  if (selectedColor && !visibleColors.some((c) => c.id === color))
+    visibleColors.splice(visibleColors.length - 1, 1, selectedColor);
+  const pickerColors =
+    colorMode === "add"
+      ? colors.filter((c) => !colorRows.includes(c.id))
+      : colors;
+  const artworkTarget = modal.kind === "artwork" ? modal.positionId : active;
+  const dialogClassName = [
+    "dialog",
+    modalKind === "positions" && "position-dialog",
+    modalKind === "artwork" && "artwork-dialog",
+    modalKind === "colors" && "color-dialog",
+    modalKind === "colors" && pickerColors.length > 12 && "many-colors",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  if (!designerOpen) {
+    const hostModal = workflow.modal;
+    const target =
+      hostModal.kind === "switch-design"
+        ? hostModal.design
+        : undefined;
+    return (
+      renderClosed?.({
+        completion: workflow.completion,
+        hasDraft: unappliedDraft,
+        editing,
+        switchingDesign: target?.id ?? null,
+        onResume: openDesigner,
+        onStartNew: () => {
+          newDesign();
+          openDesigner();
+        },
+        onEdit: requestProductDesignEdit,
+        onCancelSwitch: cancelProductDesignSwitch,
+        onConfirmSwitch: confirmProductAction,
+      }) ?? null
+    );
+  }
+
+  const visiblePrints = prints.filter(
+    (print) => positionFor(print.id).view === view,
+  );
+  return (
+    <div
+      className={`app ${artworkOnly ? "admin-preview" : ""} ${previewExpanded && focusPolicy?.movementArea ? "preview-expanded" : ""}`}
+      data-step={step}
+      lang={lang}
+      dir={dir}
+    >
+      <a className="skip-link" href="#design-controls">
+        {t("customer:chrome.skipToDesignControls")}
+      </a>
+      <header className="app-header">
+        <div className="header-product">
+          {artworkOnly && previewContextLabel && (
+            <p className="admin-preview-context">
+              {previewContextLabel}
+            </p>
+          )}
+          <h1 title={config.productName}>{config.productName}</h1>
+          {artworkOnly && previewNotice && (
+            <p className="admin-preview-omitted" role="status">
+              {previewNotice}
+            </p>
+          )}
+        </div>
+        {!artworkOnly && (
+          <nav className="steps" aria-label={t("customer:steps.designSteps")}>
+            {[
+              { key: "artwork", label: t("customer:steps.artwork") },
+              { key: "quantities", label: quantityStepHeading },
+              { key: "review", label: t("customer:steps.review") },
+            ].map(({ key, label }, i) => (
+              <button
+                key={key}
+                aria-current={step === i ? "step" : undefined}
+                disabled={
+                  workflow.commit.kind === "pending" || (i > step &&
+                  // Existing quantities must remain reachable to remove a row
+                  // whose image can no longer support the shared position.
+                  (i === 1
+                    ? !ready && !qty
+                    : !ready || !qty || hasQuantityErrors))
+                }
+                onClick={() => {
+                  dispatch({ type: "step-selected", step: i as 0 | 1 | 2 });
+                }}
+              >
+                <span className="step-number" aria-hidden="true">
+                  {step > i ? (
+                    <IconCheck size={14} />
+                  ) : (
+                    <span className="step-count">{i + 1}</span>
+                  )}
+                </span>
+                <span className="step-label">{label}</span>
+              </button>
+            ))}
+          </nav>
+        )}
+        <div className="header-actions">
+          {!artworkOnly && (
+            <CustomerLanguagePicker
+              preference={languagePreference}
+              failure={languageChangeFailed}
+              onPreferenceChange={onLanguagePreferenceSelect}
+            />
+          )}
+          {!artworkOnly && <ThemeControl />}
+          <button
+            className="icon-button"
+            aria-label={
+              previewOnly
+                ? t("customer:chrome.closeArtworkPreview")
+                : t("customer:chrome.closeCustomizer")
+            }
+            onClick={previewOnly ? () => window.close() : returnToProduct}
+          >
+            <IconX size={22} />
+          </button>
+        </div>
+      </header>
+      <main className="workspace">
+        <section
+          className="preview-panel"
+          aria-label={t("customer:chrome.productPreview")}
+          inert={workflow.commit.kind === "pending"}
+        >
+          <div className="preview-toolbar">
+            {views.length > 3 ? (
+              <label className="view-select">
+                <span className="sr-only">{t("customer:chrome.productView")}</span>
+                <select
+                  name="garment-view"
+                  value={view}
+                  onChange={(event) => {
+                    dispatch({
+                      type: "view-selected",
+                      view: event.currentTarget.value,
+                    });
+                    setFocusPrint(false);
+                  }}
+                >
+                  {views.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              views.length > 1 && (
+                <div
+                  className="view-tabs"
+                  role="group"
+                  aria-label={t("customer:chrome.productView")}
+                  style={{
+                    gridTemplateColumns: `repeat(${Math.min(3, views.length)}, minmax(0, 1fr))`,
+                  }}
+                >
+                  {views.length > 1 &&
+                    views.map((v) => (
+                      <button
+                        key={v.id}
+                        aria-pressed={view === v.id}
+                        onClick={() => {
+                          dispatch({ type: "view-selected", view: v.id });
+                          setFocusPrint(false);
+                        }}
+                      >
+                        {v.label}
+                      </button>
+                    ))}
+                </div>
+              )
+            )}
+            <div className="preview-options">
+              {focused && (
+                <button
+                  className={`preview-toggle ${focusPolicy?.movementArea ? "inline-preview-toggle" : ""}`}
+                  aria-label={
+                    focusPolicy?.movementArea
+                      ? previewExpanded
+                        ? t("customer:chrome.reducePreview")
+                        : t("customer:chrome.enlargePreview")
+                      : focusPrint
+                        ? t("customer:chrome.showFullProduct")
+                        : t("customer:chrome.focusOnArtwork")
+                  }
+                  title={
+                    focusPolicy?.movementArea
+                      ? previewExpanded
+                        ? t("customer:chrome.reducePreview")
+                        : t("customer:chrome.enlargePreview")
+                      : focusPrint
+                        ? t("customer:chrome.showFullProduct")
+                        : t("customer:chrome.focusOnArtwork")
+                  }
+                  aria-pressed={
+                    focusPolicy?.movementArea ? previewExpanded : focusPrint
+                  }
+                  onClick={() =>
+                    focusPolicy?.movementArea
+                      ? setPreviewExpanded(!previewExpanded)
+                      : setFocusPrint(!focusPrint)
+                  }
+                >
+                  <IconFrame size={18} />
+                  <span>
+                    {focusPolicy?.movementArea
+                      ? previewExpanded
+                        ? t("customer:chrome.reducePreview")
+                        : t("customer:chrome.enlargePreview")
+                      : focusPrint
+                        ? t("customer:chrome.fullProduct")
+                        : t("customer:chrome.focusArtwork")}
+                  </span>
+                </button>
+              )}
+              {step === 0 && colors.length > 1 && (
+                <button
+                  className={`mobile-color-trigger${isNamedChoice ? " named-choice-trigger" : ""}`}
+                  aria-label={t("customer:options.mobileOptionSummary", {
+                    optionLabel: rowOptionLabel,
+                    optionValue: selectedColor ? colorName(selectedColor) : "",
+                    count: colors.length,
+                  })}
+                  title={t("customer:options.mobileOptionTitle", {
+                    optionLabel: rowOptionLabel,
+                    optionValue: selectedColor ? colorName(selectedColor) : "",
+                  })}
+                  aria-haspopup="dialog"
+                  onClick={() => {
+                    openModal({ kind: "colors", mode: "choose" });
+                  }}
+                >
+                  {isNamedChoice ? (
+                    <span className="mobile-option-name">
+                      {selectedColor ? colorName(selectedColor) : ""}
+                    </span>
+                  ) : (
+                    <span
+                      className="color-dot"
+                      style={{ background: selectedColor?.hex }}
+                    />
+                  )}
+                  <IconChevronDown size={16} />
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="garment-stage">
+            <div className="garment-image-wrap" style={focusStyle}>
+              {config.preview === "photo" && imageFor(color, view) ? (
+                <img
+                  className="garment-photo"
+                  src={imageFor(color, view)}
+                  width={1200}
+                  height={1200}
+                  alt={t("customer:chrome.productViewAlt", {
+                    colorName: selectedColor ? colorName(selectedColor) : "",
+                    productName: config.productName,
+                    viewName: views.find((v) => v.id === view)?.label ?? "",
+                  })}
+                  onLoad={(event) => {
+                    const image = event.currentTarget;
+                    const src = imageFor(color, view);
+                    if (src && image.naturalWidth && image.naturalHeight)
+                      setImageDimensions((current) => ({
+                        ...current,
+                        [src]: {
+                          width: image.naturalWidth,
+                          height: image.naturalHeight,
+                        },
+                      }));
+                  }}
+                />
+              ) : (
+                <GarmentIllustration
+                  className="garment-photo"
+                  garment={
+                    config.preview === "illustration"
+                      ? config.garment
+                      : undefined
+                  }
+                  color={
+                    isNamedChoice
+                      ? "#fafafa"
+                      : (selectedColor?.hex ?? "#fafafa")
+                  }
+                  view={
+                    views.find((entry) => entry.id === view)?.illustration ??
+                    "front"
+                  }
+                  label={t("customer:chrome.productViewAlt", {
+                    colorName: selectedColor ? colorName(selectedColor) : "",
+                    productName: config.productName,
+                    viewName: views.find((v) => v.id === view)?.label ?? "",
+                  })}
+                />
+              )}
+              {visiblePrints.map((p) => {
+                const pos = positionFor(p.id);
+                const art = artworks.find((a) => a.id === p.artworkId);
+                const imageAspect = imageAspectFor(pos) ?? 1;
+                const width = art
+                  ? printWidthPercentForArtwork(
+                      pos,
+                      p.size,
+                      art.width / art.height,
+                      imageAspect,
+                    )
+                  : printWidthPercent(pos, p.size);
+                const contentWidth = Math.min(1, imageAspect);
+                const contentHeight = Math.min(1, 1 / imageAspect);
+                if (pos.movementArea && art) {
+                  const constraints = inlineConstraints(pos, art);
+                  return (
+                    <InlineArtwork
+                      key={`${p.id}:${art.id}`}
+                      config={artworkOnly ? { ...config, artworkOnly: true } : config}
+                      position={pos}
+                      print={p}
+                      artwork={art}
+                      imageAspectRatio={imageAspect}
+                      imageAspectRatios={constraints.aspects}
+                      constraintMessage={constraints.message}
+                      selected={step === 0 && expanded === p.id}
+                      onSelect={() => {
+                        selectPosition(p.id);
+                        dispatch({ type: "step-selected", step: 0 });
+                      }}
+                      onChange={commitPosition}
+                      onArtworkError={() =>
+                        setFailedArtworks(
+                          (current) => new Set([...current, art.id]),
+                        )
+                      }
+                    />
+                  );
+                }
+                return (
+                  <button
+                    key={p.id}
+                    className={`print-overlay ${step === 0 && expanded === p.id ? "selected" : ""} ${step === 0 && expanded === p.id ? "guides" : ""}`}
+                    style={{
+                      left: `${(100 - contentWidth * 100) / 2 + pos.x * contentWidth}%`,
+                      top: `${(100 - contentHeight * 100) / 2 + pos.y * contentHeight}%`,
+                      width: `${width * contentWidth}%`,
+                    }}
+                    onClick={() => {
+                      selectPosition(p.id);
+                      dispatch({ type: "step-selected", step: 0 });
+                      if (!p.artworkId)
+                        openModal({ kind: "artwork", positionId: p.id });
+                    }}
+                    aria-label={t("customer:artwork.editPositionArtwork", {
+                      positionName: pos.name,
+                    })}
+                  >
+                    {art ? (
+                      <img src={art.url} alt={art.name} />
+                    ) : (
+                      <span className="placeholder-print" aria-hidden="true">
+                        +
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+              {step === 0 &&
+                prints.length > 0 &&
+                visiblePrints.length === 0 &&
+                positions.some(
+                  (position) =>
+                    position.view === view &&
+                    !prints.some((p) => p.id === position.id),
+                ) && (
+                  <button
+                    className="empty-hotspot"
+                    onClick={() => requestPosition(view)}
+                  >
+                    <span aria-hidden="true">+</span>{t("customer:artwork.addArtwork")}
+                  </button>
+                )}
+            </div>
+          </div>
+          {step === 0 && (
+            <div className="color-section">
+              <div className="color-label">
+                {previewOnly ? (
+                  <strong>{colorName(colors.find((c) => c.id === color))}</strong>
+                ) : (
+                  <>
+                    {rowOptionLabel}{" "}
+                    <strong>{colorName(colors.find((c) => c.id === color))}</strong>
+                  </>
+                )}
+              </div>
+              <div
+                className={`swatches${isNamedChoice ? " named-choice-swatches" : ""}`}
+              >
+                {colors.length > 1 &&
+                  visibleColors.map((c) => (
+                    <button
+                      key={c.id}
+                      aria-label={t("customer:options.chooseOption", {
+                        optionName: colorName(c),
+                      })}
+                      aria-pressed={color === c.id}
+                      className={
+                        isNamedChoice
+                          ? `named-choice-inline-option${color === c.id ? " chosen" : ""}`
+                          : color === c.id
+                            ? "chosen"
+                            : ""
+                      }
+                      onClick={() => chooseColor(c.id)}
+                    >
+                      {isNamedChoice ? (
+                        <>
+                          <span className="named-choice-inline-label">
+                            {colorName(c)}
+                          </span>
+                          {color === c.id && (
+                            <IconCheck size={14} aria-hidden="true" />
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <span style={{ background: c.hex }} />
+                          {color === c.id && (
+                            <IconCheck
+                              size={14}
+                              style={{
+                                color: swatchInk(c.hex ?? "#ffffff"),
+                              }}
+                              aria-hidden="true"
+                            />
+                          )}
+                        </>
+                      )}
+                    </button>
+                  ))}
+                {colors.length > visibleColors.length && (
+                  <button
+                    className="more-colors"
+                    aria-label={t("customer:options.allOptions", {
+                      count: colors.length,
+                    })}
+                    onClick={() => {
+                      openModal({ kind: "colors", mode: "choose" });
+                    }}
+                  >
+                    +{colors.length - visibleColors.length}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </section>
+        <section className="control-panel" aria-label={t("customer:chrome.designControls")}>
+          <div
+            className="panel-content"
+            inert={workflow.commit.kind === "pending"}
+            ref={panelRef}
+            id="design-controls"
+            tabIndex={-1}
+          >
+            <ValidationSummary
+              issues={validationIssues}
+              summaryRef={summaryRef}
+              onNavigate={navigateIssue}
+            />
+            {step === 0 && (
+              <>
+                {prints.length === 0 && (
+                  <div className="empty-state">
+                    <h2>{t("customer:artwork.emptyTitle")}</h2>
+                    <p>{t("customer:artwork.emptyDescription")}</p>
+                    <button
+                      className="primary-button"
+                      onClick={() => requestPosition()}
+                    >
+                      {t("customer:artwork.addArtwork")}
+                    </button>
+                  </div>
+                )}
+                <div className="print-list">
+                  {prints.map((p) => {
+                    const pos = positionFor(p.id);
+                    const art = artworks.find((a) => a.id === p.artworkId);
+                    const isExpanded = expanded === p.id;
+                    return (
+                      <article
+                        className={`print-card ${isExpanded ? "active" : ""} ${validationIssues.some((issue) => issue.position === p.id) ? "has-error" : ""}`}
+                        key={p.id}
+                      >
+                        <h2 className="print-card-title">
+                          <button
+                            id={`print-heading-${p.id}`}
+                            type="button"
+                            className="print-card-heading"
+                            aria-expanded={isExpanded}
+                            aria-controls={`print-panel-${p.id}`}
+                            onClick={() =>
+                              isExpanded
+                                ? dispatch({
+                                    type: "position-expanded",
+                                    positionId: null,
+                                  })
+                                : selectPosition(p.id)
+                            }
+                          >
+                            <span>
+                              <strong>{pos.name}</strong>
+                              {!isExpanded && (
+                                <small>
+                                  {art ? (
+                                    <FileName name={art.name} />
+                                  ) : p.artworkId === "later" ? (
+                                    t("customer:artwork.artworkToFollow")
+                                  ) : (
+                                    t("customer:artwork.artworkNeeded")
+                                  )}
+                                </small>
+                              )}
+                            </span>
+                            {!artworkOnly && <span className="print-card-price">
+                              +{money(printPrice(p))}
+                            </span>}
+                            <span className="chevron">
+                              {isExpanded ? (
+                                <IconChevronUp size={20} />
+                              ) : (
+                                <IconChevronDown size={20} />
+                              )}
+                            </span>
+                          </button>
+                        </h2>
+                        <PrintPanel
+                          expanded={isExpanded}
+                          id={`print-panel-${p.id}`}
+                          labelledBy={`print-heading-${p.id}`}
+                        >
+                          <button
+                            id={`artwork-${p.id}`}
+                            aria-invalid={
+                              validationIssues.some(
+                                (issue) => issue.position === p.id,
+                              ) || undefined
+                            }
+                            aria-describedby={
+                              validationIssues.some(
+                                (issue) => issue.position === p.id,
+                              )
+                                ? `artwork-error-${p.id}`
+                                : undefined
+                            }
+                            className={`artwork-choice ${!art ? "needs-artwork" : ""}`}
+                            onClick={() =>
+                              openModal({ kind: "artwork", positionId: p.id })
+                            }
+                          >
+                            <span className="artwork-thumb">
+                              {art ? (
+                                <img
+                                  src={art.url}
+                                  alt=""
+                                  width={56}
+                                  height={56}
+                                />
+                              ) : (
+                                <IconCloudUpload size={24} />
+                              )}
+                            </span>
+                            <span>
+                              <strong>
+                                {art ? (
+                                  <FileName name={art.name} />
+                                ) : p.artworkId === "later" ? (
+                                  t("customer:artwork.artworkToFollow")
+                                ) : (
+                                  t("customer:artwork.chooseArtwork")
+                                )}
+                              </strong>
+                            </span>
+                            <span className="text-action">
+                              {art
+                                ? t("customer:artwork.change")
+                                : t("customer:artwork.choose")}
+                            </span>
+                          </button>
+                          {validationIssues.some(
+                            (issue) => issue.position === p.id,
+                          ) && (
+                            <p
+                              className="field-error"
+                              id={`artwork-error-${p.id}`}
+                            >
+                              {positionIsValid(p)
+                                ? t("customer:validation.chooseArtworkForPosition", {
+                                    positionName: pos.name,
+                                  })
+                                : positionConstraintMessage(
+                                    positionImageConstraints(pos).messageReason,
+                                  ) ?? t("customer:artwork.adjustArtworkInstructions")}
+                            </p>
+                          )}
+                          {pos.movementArea && art ? (
+                            <InlinePositionControls
+                              config={artworkOnly ? { ...config, artworkOnly: true } : config}
+                              position={pos}
+                              print={p}
+                              artwork={art}
+                              imageAspectRatio={imageAspectFor(pos) ?? 1}
+                              imageAspectRatios={
+                                inlineConstraints(pos, art).aspects
+                              }
+                              constraintMessage={
+                                inlineConstraints(pos, art).message
+                              }
+                              priceForSize={
+                                pos.methodSizePrices
+                                  ? (sizeIndex) =>
+                                      isCombinationAvailable(
+                                        pos.id,
+                                        sizeIndex,
+                                        p.method,
+                                      )
+                                        ? printPrice({ ...p, size: sizeIndex })
+                                        : null
+                                  : undefined
+                              }
+                              onChange={commitPosition}
+                              canUndo={positionUndo[p.id] !== undefined}
+                              onUndo={() => undoPosition(p.id)}
+                            />
+                          ) : pos.dimensions.length === 1 ? (
+                            <div className="fixed-detail">
+                              <span>
+                                {pos.sizeLabels
+                                  ? t("customer:artwork.decorationSize")
+                                  : t("customer:artwork.width")}
+                              </span>
+                              <strong>{printSizeDisplayLabel(pos, 0)}</strong>
+                            </div>
+                          ) : pos.dimensions.length > 6 ? (
+                            <FloatingSelect
+                              className="width-select"
+                              label={
+                                pos.sizeLabels
+                                  ? t("customer:artwork.decorationSize")
+                                  : t("customer:artwork.width")
+                              }
+                              value={p.size}
+                              name={`width-${p.id}`}
+                              onChange={(value) =>
+                                dispatch({
+                                  type: "print-size-selected",
+                                  positionId: p.id,
+                                  size: Number(value),
+                                })
+                              }
+                            >
+                              {pos.dimensions.map((cm, i) => (
+                                <option
+                                  key={cm}
+                                  value={i}
+                                  disabled={
+                                    !(pos.methodSizePrices
+                                      ? isCombinationAvailable(
+                                          pos.id,
+                                          i,
+                                          p.method,
+                                        )
+                                      : pos.methodIds.some((method) =>
+                                          isCombinationAvailable(
+                                            pos.id,
+                                            i,
+                                            method,
+                                          ),
+                                        )) || !artworkFitsSize(pos, p, i, art)
+                                  }
+                                >
+                                  {printSizeDisplayLabel(pos, i)}
+                                  {(() => {
+                                    const label = sizePriceLabel(pos, p, i);
+                                    return label ? ` (${label})` : "";
+                                  })()}
+                                </option>
+                              ))}
+                            </FloatingSelect>
+                          ) : (
+                            <fieldset className="width-options">
+                              <legend>
+                                {pos.sizeLabels
+                                  ? t("customer:artwork.decorationSize")
+                                  : t("customer:artwork.width")}
+                              </legend>
+                              <div
+                                className="size-options"
+                                style={{
+                                  gridTemplateColumns: `repeat(${pos.dimensions.length === 4 ? 2 : Math.min(3, pos.dimensions.length)},minmax(0,1fr))`,
+                                }}
+                              >
+                                {pos.dimensions.map((cm, i) => (
+                                  <button
+                                    key={cm}
+                                    aria-pressed={p.size === i}
+                                    disabled={
+                                      !(pos.methodSizePrices
+                                        ? isCombinationAvailable(
+                                            pos.id,
+                                            i,
+                                            p.method,
+                                          )
+                                        : pos.methodIds.some((method) =>
+                                            isCombinationAvailable(
+                                              pos.id,
+                                              i,
+                                              method,
+                                            ),
+                                          )) || !artworkFitsSize(pos, p, i, art)
+                                    }
+                                    onClick={() =>
+                                      dispatch({
+                                        type: "print-size-selected",
+                                        positionId: p.id,
+                                        size: i,
+                                      })
+                                    }
+                                  >
+                                    <span>{printSizeDisplayLabel(pos, i)}</span>
+                                    {sizePriceLabel(pos, p, i) && (
+                                      <small>{sizePriceLabel(pos, p, i)}</small>
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                            </fieldset>
+                          )}
+                          {pos.methodIds.length === 1 ? (
+                            <div className="fixed-detail">
+                              <span>{t("customer:artwork.method")}</span>
+                              <strong>{methodFor(p.method).label}</strong>
+                            </div>
+                          ) : pos.methodIds.length > 2 ? (
+                            <FloatingSelect
+                              className="method-select"
+                              label={t("customer:artwork.method")}
+                              value={p.method}
+                              name={`method-${p.id}`}
+                              onChange={(value) =>
+                                dispatch({
+                                  type: "print-method-selected",
+                                  positionId: p.id,
+                                  method: value,
+                                })
+                              }
+                            >
+                              {pos.methodIds.map((id) => {
+                                const method = methodFor(id);
+                                return (
+                                  <option key={id} value={id}>
+                                    {method.label}
+                                    {methodPriceLabel(pos, id)
+                                      ? ` (${methodPriceLabel(pos, id)})`
+                                      : ""}
+                                  </option>
+                                );
+                              })}
+                            </FloatingSelect>
+                          ) : (
+                            <fieldset className="method-options">
+                            <legend>{t("customer:artwork.method")}</legend>
+                              {pos.methodIds.map((id) => {
+                                const method = methodFor(id);
+                                return (
+                                  <label key={id}>
+                                    <input
+                                      type="radio"
+                                      name={`method-${p.id}`}
+                                      value={id}
+                                      checked={p.method === id}
+                                      disabled={
+                                        !pos.dimensions.some((_, sizeIndex) =>
+                                          isCombinationAvailable(
+                                            pos.id,
+                                            sizeIndex,
+                                            id,
+                                          ),
+                                        )
+                                      }
+                                      onChange={() =>
+                                        dispatch({
+                                          type: "print-method-selected",
+                                          positionId: p.id,
+                                          method: id,
+                                        })
+                                      }
+                                    />
+                                    <span>{method.label}</span>
+                                    {methodPriceLabel(pos, id) && (
+                                      <small>{methodPriceLabel(pos, id)}</small>
+                                    )}
+                                  </label>
+                                );
+                              })}
+                            </fieldset>
+                          )}
+                          <div className="print-card-bottom">
+                            <button onClick={() => removePrint(p.id)}>
+                            {t("customer:artwork.removeArtwork")}
+                            </button>
+                          </div>
+                        </PrintPanel>
+                      </article>
+                    );
+                  })}
+                </div>
+                {prints.length > 0 && prints.length < positions.length && (
+                  <button
+                    className="add-print"
+                    onClick={() => requestPosition()}
+                    disabled={prints.length === positions.length}
+                  >
+                    <span aria-hidden="true">+</span> {t("customer:artwork.addArtwork")}
+                  </button>
+                )}
+              </>
+            )}
+            {step === 1 && (
+              <QuantityEntry
+                config={config}
+                quantities={quantities}
+                colorRows={colorRows}
+                validationIssues={validationIssues}
+                onChange={changeQuantity}
+                onSelectRow={(color) => dispatch({ type: "quantity-focused", color })}
+                onRemoveQuantity={(key) => dispatch({ type: "quantity-removed", key })}
+                onRemoveRow={(color, name, nameSource) => {
+                  dispatch({
+                    type: "color-row-removed",
+                    color,
+                    name,
+                    ...(nameSource ? { nameSource } : {}),
+                  });
+                  window.requestAnimationFrame(() => panelRef.current?.querySelector<HTMLInputElement>('input[type="number"]:enabled')?.focus());
+                }}
+                onAddRow={() => openModal({ kind: "colors", mode: "add" })}
+              />
+            )}
+            {step === 2 && (
+              <ReviewPanel
+                config={artworkOnly ? { ...config, artworkOnly: true } : config}
+                prints={prints}
+                artworks={artworks}
+                quantities={quantities}
+                colorRows={colorRows}
+                onEditArtwork={(id) => {
+                  selectPosition(id);
+                  dispatch({ type: "step-selected", step: 0 });
+                  window.requestAnimationFrame(() => {
+                    const heading = document.getElementById(
+                      `print-heading-${id}`,
+                    );
+                    heading?.scrollIntoView({ block: "nearest" });
+                    heading?.focus({ preventScroll: true });
+                  });
+                }}
+                onEditQuantities={() => {
+                  dispatch({ type: "step-selected", step: 1 });
+                  window.requestAnimationFrame(() => {
+                    const field =
+                      panelRef.current?.querySelector<HTMLInputElement>(
+                        'input[type="number"]:enabled',
+                      );
+                    field?.scrollIntoView({ block: "nearest" });
+                    field?.focus({ preventScroll: true });
+                  });
+                }}
+              />
+            )}
+            {error && !modalKind && (
+              <p className="form-error" role="alert">
+                <IconAlertTriangle size={17} />
+                {error}
+              </p>
+            )}
+          </div>
+          {!artworkOnly && (prints.length > 0 || step > 0) && (
+            <footer className="panel-footer">
+              {workflow.commit.kind === "failed" && (
+                <div className="cart-submit-error" role="alert">
+                  <IconAlertTriangle size={18} />
+                  <span>{t("customer:recovery.cartCommitFailed")}</span>
+                </div>
+              )}
+              {validationIssues.length > 0 && (
+                <button className="validation-return" onClick={showValidation}>
+                  {t("customer:validation.issueCount", {
+                    count: validationIssues.length,
+                  })}
+                </button>
+              )}
+              <div className="footer-price">
+                <span>
+                  {qty
+                    ? t("customer:quantities.quantityCount", { count: qty })
+                    : t("customer:chrome.perItem")}
+                </span>
+                <strong>{money(qty ? unit * qty : unit)}</strong>
+              </div>
+              <div className="footer-buttons">
+                {step > 0 && (
+                  <button
+                    className="back-button"
+                    aria-label={t("customer:steps.previousStep")}
+                    disabled={workflow.commit.kind === "pending"}
+                    onClick={() => {
+                      dispatch({
+                        type: "step-selected",
+                        step: step === 2 ? 1 : 0,
+                      });
+                    }}
+                  >
+                    <IconArrowLeft size={19} />
+                  </button>
+                )}
+                <button
+                  className={`primary-button ${step === 2 ? "cart-button" : ""}`}
+                  disabled={workflow.commit.kind === "pending" || (step === 1 && !quantitiesLayout.cells.some(cell => cell.available))}
+                  aria-busy={workflow.commit.kind === "pending"}
+                  onClick={
+                    step === 2
+                      ? editing && !unappliedDraft
+                        ? returnToProduct
+                        : addToCart
+                      : goNext
+                  }
+                >
+                  {workflow.commit.kind === "pending"
+                    ? editing
+                      ? t("customer:steps.updatingCart")
+                      : t("customer:steps.addingToCart")
+                    : step === 0
+                    ? t("customer:steps.chooseQuantities")
+                    : step === 1
+                      ? t("customer:steps.review")
+                      : editing
+                        ? unappliedDraft
+                          ? t("customer:steps.updateCart")
+                          : t("customer:steps.done")
+                        : t("customer:steps.addToCart")}
+                  {step === 2 && <IconShoppingCart size={18} />}
+                </button>
+              </div>
+            </footer>
+          )}
+        </section>
+      </main>
+      {notice && (
+        <div className="toast" role="status">
+          <IconCheck size={18} />
+          {notice}
+          {(removed || removedColor) && (
+            <button
+              onClick={() => {
+                dispatch({ type: "recovery-undone" });
+                window.requestAnimationFrame(() => panelRef.current?.focus());
+              }}
+            >
+              {t("customer:recovery.undo")}
+            </button>
+          )}
+          <button
+            aria-label={t("customer:recovery.dismissNotification")}
+            onClick={() => dispatch({ type: "recovery-dismissed" })}
+          >
+            <IconX size={16} />
+          </button>
+        </div>
+      )}
+      {modalKind && (
+        <dialog
+          className={dialogClassName}
+          onCancel={(e) => {
+            e.preventDefault();
+            closeModal();
+          }}
+          onClick={(e) => {
+            const bounds = e.currentTarget.getBoundingClientRect();
+            if (
+              e.target === e.currentTarget &&
+              (e.clientX < bounds.left ||
+                e.clientX > bounds.right ||
+                e.clientY < bounds.top ||
+                e.clientY > bounds.bottom)
+            )
+              closeModal();
+          }}
+          aria-labelledby="dialog-title"
+        >
+          <div className="dialog-header">
+            <div>
+              <h2 id="dialog-title">
+                {modalKind === "artwork"
+                  ? t("customer:artwork.dialogArtworkTitle", {
+                      positionName: positionFor(artworkTarget).name,
+                    })
+                  : modalKind === "positions"
+                    ? t("customer:artwork.dialogPositionsTitle")
+                    : t("customer:artwork.dialogOptionTitle")}
+                {modalKind === "colors" && pickerColors.length > 12 && (
+                  <small className="dialog-count">
+                    {" "}
+                    {pickerColors.length}
+                    <span className="sr-only"> {t("customer:artwork.optionsAvailable")}</span>
+                  </small>
+                )}
+              </h2>
+            </div>
+            <button
+              className="icon-button"
+              aria-label={t("customer:artwork.closeDialog")}
+              onClick={closeModal}
+            >
+              <IconX size={22} />
+            </button>
+          </div>
+          {modalKind === "artwork" && (
+            <div className="artwork-dialog-body">
+              <div
+                className={`upload-zone ${dragging ? "dragging" : ""}`}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragging(true);
+                }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={onDrop}
+              >
+                <IconCloudUpload size={32} />
+                <strong>
+                  {uploading
+                    ? t("customer:artwork.openingFile")
+                    : t("customer:artwork.dropFile")}
+                </strong>
+                <span>
+                  {t("customer:artwork.or")}{" "}
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    {t("customer:artwork.browseFiles")}
+                  </button>
+                </span>
+                <small>{t("customer:artwork.fileRequirements", { maxSizeMb: 5 })}</small>
+                {error && (
+                  <p
+                    className="upload-error"
+                    id="artwork-upload-error"
+                    role="alert"
+                  >
+                    {error}
+                  </p>
+                )}
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/svg+xml"
+                  className="sr-only"
+                  aria-label={t("customer:artwork.uploadArtworkFile")}
+                  aria-invalid={Boolean(error) || undefined}
+                  aria-describedby={error ? "artwork-upload-error" : undefined}
+                  onChange={(e: TargetedEvent<HTMLInputElement>) =>
+                    void upload(e.currentTarget.files?.[0])
+                  }
+                />
+              </div>
+              <div className="section-label">
+                <h3>
+                  {artworks.length === 0
+                    ? t("customer:artwork.yourArtwork")
+                    : artworks.some((artwork) => !artwork.sample)
+                      ? t("customer:artwork.files")
+                      : t("customer:artwork.samples")}
+                </h3>
+              </div>
+              {artworks.length > 0 && (
+                <div className="artwork-library">
+                  {artworks.map((a) => (
+                    <ArtworkFile
+                      key={a.id}
+                      artwork={a}
+                      onChoose={(id) => applyArtwork(id, artworkTarget)}
+                    />
+                  ))}
+                </div>
+              )}
+              {canDeferArtwork(artworkTarget) && (
+                <button
+                  className="later-button"
+                  onClick={() => applyArtwork("later", artworkTarget)}
+                >
+                  <IconCloudUpload size={18} />
+                  <span>
+                    <strong>{t("customer:artwork.provideArtworkLater")}</strong>
+                  </span>
+                  <IconArrowRight size={17} />
+                </button>
+              )}
+            </div>
+          )}
+          {modalKind === "colors" && (
+            <ColorPicker
+              colors={pickerColors}
+              selected={color}
+              presentation={config.optionPresentation}
+              onChoose={(id) => {
+                if (colorMode === "add") {
+                  dispatch({ type: "color-added", color: id });
+                } else chooseColor(id);
+                closeModal();
+              }}
+            />
+          )}
+          {modalKind === "positions" && (
+            <PositionPicker
+              config={artworkOnly ? { ...config, artworkOnly: true } : config}
+              color={color}
+              usedIds={prints.map((p) => p.id)}
+              initialView={placementView}
+              onChoose={addPosition}
+            />
+          )}
+          {error && modalKind !== "artwork" && (
+            <p role="alert" className="form-error">
+              {error}
+            </p>
+          )}
+        </dialog>
+      )}
+    </div>
+  );
+}
+interface PrintPanelProps {
+  expanded: boolean;
+  id: string;
+  labelledBy: string;
+  children: ComponentChildren;
+}
+
+function PrintPanel({ expanded, id, labelledBy, children }: PrintPanelProps) {
+  return (
+    <div
+      id={id}
+      className="print-panel"
+      hidden={!expanded}
+      role="region"
+      aria-labelledby={labelledBy}
+    >
+      <div className="print-card-body">{children}</div>
+    </div>
+  );
+}

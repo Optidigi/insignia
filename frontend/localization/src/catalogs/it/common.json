@@ -1,0 +1,22 @@
+{
+  "actions": {
+    "save": "Salva",
+    "cancel": "Annulla",
+    "close": "Chiudi",
+    "retry": "Riprova",
+    "done": "Fatto",
+    "action": "Azione"
+  },
+  "resources": {
+    "remove": "Rimuovi {{resourceName}}"
+  },
+  "counts": {
+    "items_one": "{{count}} articolo",
+    "items_many": "{{count}} articoli",
+    "items_other": "{{count}} articoli",
+    "exactTotal": "Totale articoli: {{formattedCount}}"
+  },
+  "summary": {
+    "unavailable": "Non disponibile"
+  }
+}

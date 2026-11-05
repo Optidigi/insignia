@@ -1,0 +1,32 @@
+{
+  "preview": {
+    "documentTitle": "Insignia | Anteprima della grafica",
+    "context": "Anteprima della grafica · Bozza attuale",
+    "title": "Anteprima della grafica",
+    "unavailableTitle": "Anteprima della grafica non disponibile",
+    "loadingTitle": "Caricamento dell'anteprima della grafica",
+    "waitingForDraft": "In attesa della bozza attuale…",
+    "reopenFromEditor": "Riapri l'anteprima della personalizzazione dall'editor del prodotto.",
+    "expired": "Questa anteprima è scaduta. Riaprila dalla bozza del prodotto in Shopify Admin.",
+    "draftDidNotArrive": "La bozza attuale non è stata caricata. Chiudi questa scheda e riapri l'anteprima della personalizzazione dall'editor del prodotto.",
+    "draftCouldNotBePreviewed": "Non è stato possibile visualizzare l'anteprima della bozza attuale.",
+    "unrepresentableDraftData": "Questa bozza contiene dati di anteprima della grafica non supportati da questo editor. Riapri l'anteprima dall'editor del prodotto.",
+    "emptyProductName": "Aggiungi il nome del prodotto prima di aprire l'anteprima della personalizzazione.",
+    "noProductViews": "Aggiungi una vista del prodotto prima di aprire l'anteprima della personalizzazione.",
+    "missingImageForPlacedView": "Aggiungi un'immagine a ogni vista con posizioni di decorazione.",
+    "noProductImage": "Aggiungi un'immagine del prodotto prima di aprire l'anteprima della personalizzazione.",
+    "unnamedProductView": "Assegna un nome a ogni vista del prodotto prima di aprire l'anteprima della personalizzazione.",
+    "unmappableProductView": "Non è stato possibile associare la vista del prodotto all'anteprima.",
+    "noValidArtworkPlacements": "Completa almeno una posizione di decorazione con un prezzo valido prima di aprire l'anteprima della personalizzazione.",
+    "tooManyArtworkPlacements": "Questo prodotto ha troppe posizioni di decorazione per l'anteprima della personalizzazione.",
+    "unrepresentableArtworkSetup": "La configurazione attuale della grafica include opzioni non supportate dall'anteprima della personalizzazione.",
+    "previewNotice": "Solo anteprima della grafica. Prezzi, opzioni del prodotto e disponibilità non sono inclusi.",
+    "previewNoticeWithPlacements_one": "Solo anteprima della grafica. Prezzi, opzioni del prodotto e disponibilità non sono inclusi. In questa bozza è disponibile {{availableCount}} posizione di decorazione su {{totalCount}}.",
+    "previewNoticeWithPlacements_many": "Solo anteprima della grafica. Prezzi, opzioni del prodotto e disponibilità non sono inclusi. In questa bozza sono disponibili {{availableCount}} posizioni di decorazione su {{totalCount}}.",
+    "previewNoticeWithPlacements_other": "Solo anteprima della grafica. Prezzi, opzioni del prodotto e disponibilità non sono inclusi. In questa bozza sono disponibili {{availableCount}} posizioni di decorazione su {{totalCount}}.",
+    "placementsAvailable_one": "{{availableCount}} posizione di decorazione disponibile su {{totalCount}} in questa anteprima della bozza.",
+    "placementsAvailable_many": "{{availableCount}} posizioni di decorazione disponibili su {{totalCount}} in questa anteprima della bozza.",
+    "placementsAvailable_other": "{{availableCount}} posizioni di decorazione disponibili su {{totalCount}} in questa anteprima della bozza.",
+    "productImage": "Immagine del prodotto"
+  }
+}

@@ -1,0 +1,185 @@
+{
+  "page": "Pagina iniziale",
+  "sections": {
+    "home": "Pagina iniziale",
+    "products": "Prodotti",
+    "productSetup": "Configurazione del prodotto",
+    "orders": "Ordini",
+    "customizedOrders": "Ordini personalizzati",
+    "recentOrders": "Ordini personalizzati recenti",
+    "drafts": "Bozze dei prodotti",
+    "tasks": "Ordini da controllare",
+    "storefrontSetup": "Configurazione del negozio online"
+  },
+  "loading": {
+    "home": "Caricamento della pagina principale",
+    "products": "Caricamento dei prodotti",
+    "productSetup": "Caricamento della configurazione del prodotto",
+    "orders": "Caricamento degli ordini personalizzati",
+    "activity": "Caricamento delle attività di personalizzazione"
+  },
+  "unavailable": {
+    "heading": "Apri Insignia in Shopify",
+    "body": "Apri l'app dal pannello di controllo Shopify per continuare.",
+    "action": "Apri in Shopify",
+    "sessionLost": "La sessione Shopify Admin è terminata. Apri l'app da Shopify Admin per continuare."
+  },
+  "failure": {
+    "productsHeading": "Impossibile caricare i prodotti",
+    "ordersHeading": "Impossibile caricare gli ordini",
+    "productsBody": "Riprova oppure apri la sezione Prodotti per continuare.",
+    "ordersBody": "Riprova oppure apri la sezione Ordini per continuare.",
+    "retry": "Riprova",
+    "viewProducts": "Visualizza i prodotti",
+    "viewOrders": "Visualizza gli ordini"
+  },
+  "permissions": {
+    "products": "Il tuo account non ha accesso alla configurazione dei prodotti.",
+    "orders": "Per visualizzare gli ordini e la grafica servono l'account del proprietario del negozio e l'accesso agli ordini.",
+    "review": "Controlla le autorizzazioni dell'app"
+  },
+  "welcome": {
+    "heading": "Rendi personalizzabili i tuoi prodotti",
+    "body": "Consenti ai clienti di aggiungere la propria grafica ai tuoi prodotti."
+  },
+  "products": {
+    "addHeading": "Aggiungi un prodotto",
+    "customizeHeading": "Rendi personalizzabile un prodotto",
+    "addBody": "Aggiungi un prodotto in Shopify, poi scegli dove i clienti possono aggiungere la grafica.",
+    "customizeBody": "Scegli un prodotto, configura le posizioni di decorazione e i prezzi, poi pubblica.",
+    "add": "Aggiungi prodotto",
+    "openShopify": "Apri i prodotti Shopify",
+    "configure": "Configura il prodotto",
+    "view": "Visualizza i prodotti",
+    "continue": "Continua la configurazione",
+    "creationFailed": "Non è stato possibile aprire la creazione del prodotto.",
+    "draftPublished": "Prodotto pubblicato con modifiche in bozza",
+    "draftUnpublished": "Personalizzazione in bozza"
+  },
+  "orders": {
+    "emptyHeading": "Non ci sono ancora ordini personalizzati",
+    "emptyBody": "Gli ordini personalizzati compariranno qui dopo il check-out.",
+    "viewAll": "Visualizza tutti gli ordini",
+    "testBadge": "Di prova",
+    "reference": "Ordine {{number}}",
+    "customizedProduct": "Prodotto personalizzato",
+    "itemCountExact": "Numero di articoli: {{formattedCount}}",
+    "itemMeta": "{{formattedItemCount}} · {{date}}",
+    "orderLink": "Apri {{orderName}} per {{products}}",
+    "statuses": {
+      "artwork-ready": "Grafica completa",
+      "artwork-needed": "Grafica richiesta",
+      "waiting": "In attesa della grafica",
+      "expired": "Grafica non disponibile",
+      "cancelled": "Annullato"
+    },
+    "tasks": {
+      "artwork-missing": "Aggiungi la grafica a questo ordine.",
+      "artwork-supplied": "Controlla la grafica inviata.",
+      "replacement-artwork-review": "Controlla la grafica sostitutiva.",
+      "artwork-confirmation": "Conferma la grafica per questo ordine.",
+      "action": "Controlla l'ordine"
+    },
+    "itemCount_one": "{{formattedCount}} articolo",
+    "itemCount_many": "{{formattedCount}} articoli",
+    "itemCount_other": "{{formattedCount}} articoli"
+  },
+  "activity": {
+    "label": "Attività di personalizzazione",
+    "period": {
+      "lastSevenDays": "Ultimi 7 giorni",
+      "lastThirtyDays": "Ultimi 30 giorni",
+      "menu": "Periodo di attività"
+    },
+    "metrics": {
+      "customizedOrders": "Ordini con personalizzazioni",
+      "customizedOrdersDefinition": "Ordini che contengono almeno una personalizzazione Insignia.",
+      "customizedItems": "Articoli personalizzati ordinati",
+      "customizedItemsDefinition": "Quantità totale di articoli personalizzati ordinati."
+    },
+    "orders": "Visualizza gli ordini",
+    "unavailable": "Le statistiche non sono disponibili al momento.",
+    "metricLink": "{{metricLabel}}: {{formattedCount}}. Visualizza gli ordini",
+    "metricLinkWithChange": "{{metricLabel}}: {{formattedCount}}. {{changeSummary}}. Visualizza gli ordini",
+    "change": {
+      "increase": "Aumento del {{formattedPercent}} rispetto ai {{days}} giorni precedenti",
+      "decrease": "Diminuzione del {{formattedPercent}} rispetto ai {{days}} giorni precedenti",
+      "unchanged": "Variazione del {{formattedPercent}} rispetto ai {{days}} giorni precedenti"
+    },
+    "metricValueExact": "{{metricLabel}}: {{formattedCount}}"
+  },
+  "guidance": {
+    "complete": "Guida alla configurazione completata",
+    "heading": "Inizia a usare Insignia",
+    "progress": "Avanzamento della guida alla configurazione",
+    "completedCount": "{{completed}} di {{total}} passaggi completati",
+    "dismiss": "Ignora la guida introduttiva",
+    "hide": "Nascondi la guida introduttiva",
+    "show": "Mostra la guida introduttiva",
+    "markIncomplete": "Segna il passaggio {{step}} come da completare",
+    "markComplete": "Segna il passaggio {{step}} come completato",
+    "steps": {
+      "product": "Configura un prodotto",
+      "storefront": "Collega il tema",
+      "test": "Prova una personalizzazione"
+    },
+    "stepLabels": {
+      "product": "configurazione del prodotto",
+      "storefront": "collegamento del negozio online",
+      "test": "prova con un cliente"
+    },
+    "product": {
+      "addTitle": "Aggiungi un prodotto",
+      "addDescription": "Crea un prodotto in Shopify, poi scegli dove i clienti possono aggiungere la grafica.",
+      "finishTitle": "Completa la configurazione del prodotto",
+      "finishDescription": "Configura le posizioni di decorazione, le opzioni e i prezzi, poi pubblica.",
+      "configure": "Configura il prodotto",
+      "continue": "Continua la configurazione",
+      "view": "Visualizza i prodotti"
+    },
+    "storefront": {
+      "description": "Aggiungi al tema il pulsante di personalizzazione e il riepilogo nel carrello.",
+      "action": "Apri la configurazione del tema"
+    },
+    "test": {
+      "description": "Apri l'anteprima di un prodotto pubblicato, aggiungi una personalizzazione e controlla il risultato nel carrello.",
+      "action": "Prova un prodotto",
+      "blocked": "Pubblica un prodotto personalizzato e completa la configurazione del tema prima di fare una prova."
+    },
+    "hideAction": "Nascondi",
+    "showAction": "Mostra",
+    "dismissGuide": "Guida alla configurazione"
+  },
+  "setup": {
+    "toggleShow": "Mostra la configurazione del negozio online",
+    "toggleHide": "Nascondi la configurazione del negozio online",
+    "complete": "Completato",
+    "confirmed": "Confermato da te",
+    "unverified": "Non verificato",
+    "reviewChecks": "Controlla le verifiche della configurazione.",
+    "tasks": {
+      "storefront": {
+        "title": "Collega il tema",
+        "description": "Aggiungi al tema il pulsante di personalizzazione e il riepilogo nel carrello.",
+        "action": "Apri la configurazione del tema",
+        "button-disabled": "Attiva il pulsante di personalizzazione nel tema.",
+        "cart-review-disabled": "Attiva il riepilogo nel carrello nel tema.",
+        "both-disabled": "Attiva il pulsante di personalizzazione e il riepilogo nel carrello nel tema.",
+        "check": "Controlla la configurazione del negozio online nel tema."
+      },
+      "test": {
+        "title": "Prova una personalizzazione",
+        "description": "Pubblica un prodotto, poi prova la personalizzazione nel tuo negozio online.",
+        "action": "Prova un prodotto"
+      }
+    }
+  },
+  "notice": {
+    "planRestriction": {
+      "heading": "Controlla il tuo piano",
+      "description": "Controlla la fatturazione prima di iniziare a configurare un nuovo prodotto.",
+      "action": "Visualizza la fatturazione"
+    }
+  },
+  "homePreview": {}
+}

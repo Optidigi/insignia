@@ -1,0 +1,134 @@
+{
+  "adminPageSkeleton": {
+    "method": "Tecnica",
+    "actions": "Azioni",
+    "loadingProductConfiguration": "Caricamento della configurazione del prodotto",
+    "loadingCustomizationActivity": "Caricamento delle attività di personalizzazione",
+    "loadingProducts": "Caricamento dei prodotti",
+    "loadingCustomizedOrders": "Caricamento degli ordini personalizzati"
+  },
+  "ordersTableSkeleton": {
+    "loadingOrders": "Caricamento degli ordini",
+    "order": "Ordine"
+  },
+  "productsTableSkeleton": {
+    "loadingProducts": "Caricamento dei prodotti",
+    "products": "Prodotti",
+    "product": "Prodotto",
+    "configuration": "Configurazione",
+    "methods": "Tecniche",
+    "printLocations": "Posizioni di decorazione",
+    "variants": "Varianti"
+  },
+  "purchaseDetailSkeleton": {
+    "loadingOrderAndArtwork": "Caricamento dell'ordine e della grafica"
+  },
+  "titles": {
+    "home": "Insignia",
+    "products": "Prodotti",
+    "orders": "Ordini",
+    "order": "Ordine",
+    "methods": "Tecniche di decorazione",
+    "configuration": "Configurazione del prodotto",
+    "settings": "Impostazioni",
+    "billing": "Fatturazione",
+    "permissions": "Autorizzazioni dell'app",
+    "storefront": "Configurazione del negozio online",
+    "unavailable": "Applicazione non disponibile",
+    "translations": "Traduzioni"
+  },
+  "navigation": {
+    "home": "Pagina iniziale",
+    "products": "Prodotti",
+    "orders": "Ordini",
+    "methods": "Tecniche",
+    "settings": "Impostazioni"
+  },
+  "routes": {
+    "customizeProduct": "Personalizza il prodotto",
+    "orderArtwork": "Ordine e grafica",
+    "home": "Insignia",
+    "products": "Prodotti",
+    "orders": "Ordini",
+    "permissions": "Autorizzazioni dell'app",
+    "methods": "Tecniche",
+    "storefront": "Configurazione del negozio online",
+    "billing": "Fatturazione",
+    "settings": "Impostazioni"
+  },
+  "loading": {
+    "settings": "Caricamento delle impostazioni",
+    "permissions": "Caricamento delle autorizzazioni dell'app",
+    "methods": "Caricamento delle tecniche",
+    "storefront": "Caricamento della configurazione del negozio online",
+    "billing": "Caricamento della fatturazione",
+    "billingDetails": "Caricamento dei dettagli di fatturazione",
+    "detail": "Caricamento dell'ordine e della grafica",
+    "preview": "Caricamento della configurazione del prodotto",
+    "translations": "Caricamento delle traduzioni"
+  },
+  "pageTitle": "{{title}} · Insignia",
+  "failure": {
+    "heading": "Interfaccia non disponibile",
+    "body": "Riapri Insignia da Shopify Admin per riprovare."
+  },
+  "unavailable": {
+    "heading": "Applicazione non disponibile",
+    "bannerHeading": "Impossibile aprire Insignia",
+    "body": "La configurazione dell'applicazione non è disponibile. Contatta l'assistenza per ripristinare l'accesso.",
+    "recoveryHeading": "Ripristina l'accesso",
+    "recoveryBody": "Torna a Shopify Admin e riapri Insignia. Se il problema persiste, contatta l'assistenza. Le modifiche apportate da questa pagina non sono state salvate.",
+    "return": "Torna a Shopify Admin"
+  },
+  "shared": {
+    "actions": {
+      "action": "Azione",
+      "discard": "Annulla le modifiche",
+      "reviewPermissions": "Controlla le autorizzazioni dell'app"
+    },
+    "filters": {
+      "defaultLabel": "Filtri",
+      "add": "Aggiungi filtro",
+      "withCount": " ({{formattedCount}})"
+    },
+    "loading": {
+      "results": "Caricamento dei risultati"
+    },
+    "navigation": {
+      "settings": "Impostazioni"
+    },
+    "pagination": {
+      "previous": "Precedente",
+      "next": "Successiva",
+      "previousPage": "Vai alla pagina precedente",
+      "nextPage": "Vai alla pagina successiva"
+    },
+    "preview": {
+      "imageUnavailable": "Immagine non disponibile",
+      "preparing": "Preparazione dell'anteprima…"
+    },
+    "saveBar": {
+      "save": "Salva",
+      "discard": "Annulla le modifiche",
+      "saveDraft": "Salva bozza",
+      "discardChanges": "Annulla le modifiche",
+      "heading": "Annullare le modifiche non salvate?",
+      "body": "Ci sono modifiche non salvate.",
+      "keepEditing": "Continua a modificare",
+      "productDiscardBody": "Le modifiche non salvate al prodotto andranno perse. L'ultima configurazione salvata e il prodotto pubblicato resteranno invariati."
+    },
+    "search": {
+      "clear": "Cancella la ricerca",
+      "searchBy": "Cerca per"
+    },
+    "summary": {
+      "empty": "Nessuno",
+      "view": "Visualizza",
+      "viewAllValues": "Visualizza tutti i valori"
+    },
+    "table": {
+      "columnsFor": "Colonne della tabella {{tableName}}"
+    }
+  },
+  "hostBack": "Torna a {{destination}}"
+}

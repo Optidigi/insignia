@@ -1,0 +1,134 @@
+{
+  "adminPageSkeleton": {
+    "method": "Technique",
+    "actions": "Actions",
+    "loadingProductConfiguration": "Chargement de la configuration du produit",
+    "loadingCustomizationActivity": "Chargement de l’activité de personnalisation",
+    "loadingProducts": "Chargement des produits",
+    "loadingCustomizedOrders": "Chargement des commandes personnalisées"
+  },
+  "ordersTableSkeleton": {
+    "loadingOrders": "Chargement des commandes",
+    "order": "Commande"
+  },
+  "productsTableSkeleton": {
+    "loadingProducts": "Chargement des produits",
+    "products": "Produits",
+    "product": "Produit",
+    "configuration": "Configuration",
+    "methods": "Techniques",
+    "printLocations": "Emplacements de personnalisation",
+    "variants": "Variantes"
+  },
+  "purchaseDetailSkeleton": {
+    "loadingOrderAndArtwork": "Chargement de la commande et du visuel"
+  },
+  "titles": {
+    "home": "Insignia",
+    "products": "Produits",
+    "orders": "Commandes",
+    "order": "Commande",
+    "methods": "Techniques de personnalisation",
+    "configuration": "Configuration du produit",
+    "settings": "Paramètres",
+    "billing": "Facturation",
+    "permissions": "Autorisations de l’application",
+    "storefront": "Configuration de la boutique en ligne",
+    "unavailable": "Application indisponible",
+    "translations": "Traductions"
+  },
+  "navigation": {
+    "home": "Accueil",
+    "products": "Produits",
+    "orders": "Commandes",
+    "methods": "Techniques",
+    "settings": "Paramètres"
+  },
+  "routes": {
+    "customizeProduct": "Personnaliser le produit",
+    "orderArtwork": "Commande et visuel",
+    "home": "Insignia",
+    "products": "Produits",
+    "orders": "Commandes",
+    "permissions": "Autorisations de l’application",
+    "methods": "Techniques",
+    "storefront": "Configuration de la boutique en ligne",
+    "billing": "Facturation",
+    "settings": "Paramètres"
+  },
+  "loading": {
+    "settings": "Chargement des paramètres",
+    "permissions": "Chargement des autorisations de l’application",
+    "methods": "Chargement des techniques",
+    "storefront": "Chargement de la configuration de la boutique en ligne",
+    "billing": "Chargement de la facturation",
+    "billingDetails": "Chargement des détails de facturation",
+    "detail": "Chargement de la commande et du visuel",
+    "preview": "Chargement de la configuration du produit",
+    "translations": "Chargement des traductions"
+  },
+  "pageTitle": "{{title}} · Insignia",
+  "failure": {
+    "heading": "Interface indisponible",
+    "body": "Rouvrez Insignia depuis l’interface d’administration Shopify pour réessayer."
+  },
+  "unavailable": {
+    "heading": "Application indisponible",
+    "bannerHeading": "Impossible d’ouvrir Insignia",
+    "body": "La configuration de l’application est indisponible. Contactez l’assistance pour rétablir l’accès.",
+    "recoveryHeading": "Rétablir l’accès",
+    "recoveryBody": "Retournez dans l’interface d’administration Shopify et rouvrez Insignia. Si le problème persiste, contactez l’assistance. Aucune modification n’a été effectuée depuis cette page.",
+    "return": "Retourner à l’interface d’administration Shopify"
+  },
+  "shared": {
+    "actions": {
+      "action": "Action",
+      "discard": "Abandonner",
+      "reviewPermissions": "Vérifier les autorisations de l’application"
+    },
+    "filters": {
+      "defaultLabel": "Filtres",
+      "add": "Ajouter un filtre",
+      "withCount": " ({{formattedCount}})"
+    },
+    "loading": {
+      "results": "Chargement des résultats"
+    },
+    "navigation": {
+      "settings": "Paramètres"
+    },
+    "pagination": {
+      "previous": "Précédent",
+      "next": "Suivant",
+      "previousPage": "Aller à la page précédente",
+      "nextPage": "Aller à la page suivante"
+    },
+    "preview": {
+      "imageUnavailable": "Image indisponible",
+      "preparing": "Préparation de l’aperçu…"
+    },
+    "saveBar": {
+      "save": "Enregistrer",
+      "discard": "Abandonner",
+      "saveDraft": "Enregistrer le brouillon",
+      "discardChanges": "Abandonner les modifications",
+      "heading": "Abandonner les modifications non enregistrées ?",
+      "body": "Vos modifications non enregistrées seront perdues.",
+      "keepEditing": "Continuer la modification",
+      "productDiscardBody": "Vos modifications non enregistrées du produit seront perdues. La dernière configuration enregistrée et le produit publié resteront inchangés."
+    },
+    "search": {
+      "clear": "Effacer la recherche",
+      "searchBy": "Rechercher par"
+    },
+    "summary": {
+      "empty": "Aucun",
+      "view": "Vue",
+      "viewAllValues": "Afficher toutes les valeurs"
+    },
+    "table": {
+      "columnsFor": "Colonnes de {{tableName}}"
+    }
+  },
+  "hostBack": "Retour : {{destination}}"
+}

@@ -1,0 +1,183 @@
+{
+  "page": "Startpagina",
+  "sections": {
+    "home": "Startpagina",
+    "products": "Producten",
+    "productSetup": "Product instellen",
+    "orders": "Bestellingen",
+    "customizedOrders": "Gepersonaliseerde bestellingen",
+    "recentOrders": "Recente bestellingen met personalisaties",
+    "drafts": "Productconcepten",
+    "tasks": "Bestellingen controleren",
+    "storefrontSetup": "Webshop instellen"
+  },
+  "loading": {
+    "home": "Startpagina laden",
+    "products": "Producten laden",
+    "productSetup": "Productconfiguratie laden",
+    "orders": "Gepersonaliseerde bestellingen laden",
+    "activity": "Personalisatieactiviteit laden"
+  },
+  "unavailable": {
+    "heading": "Insignia openen in Shopify",
+    "body": "Open Insignia via Shopify-beheercentrum om verder te gaan.",
+    "action": "Openen in Shopify",
+    "sessionLost": "Je Shopify-beheerderssessie is verlopen. Open Insignia opnieuw via Shopify-beheercentrum om verder te gaan."
+  },
+  "failure": {
+    "productsHeading": "Producten konden niet worden geladen",
+    "ordersHeading": "Bestellingen konden niet worden geladen",
+    "productsBody": "Probeer het opnieuw of open Producten om verder te gaan.",
+    "ordersBody": "Probeer het opnieuw of open Bestellingen om verder te gaan.",
+    "retry": "Opnieuw proberen",
+    "viewProducts": "Producten bekijken",
+    "viewOrders": "Bestellingen bekijken"
+  },
+  "permissions": {
+    "products": "Je account heeft geen toegang tot de productconfiguratie.",
+    "orders": "Voor bestellingen en ontwerpen heb je het account van de winkeleigenaar en toegang tot bestellingen nodig.",
+    "review": "App-machtigingen controleren"
+  },
+  "welcome": {
+    "heading": "Maak je producten personaliseerbaar",
+    "body": "Laat klanten zelf een ontwerp aan je producten toevoegen."
+  },
+  "products": {
+    "addHeading": "Een product toevoegen",
+    "customizeHeading": "Een product personaliseerbaar maken",
+    "addBody": "Voeg een product toe in Shopify en kies daarna waar klanten een ontwerp kunnen toevoegen.",
+    "customizeBody": "Kies een product, stel de decoratieplekken en prijzen in en publiceer de configuratie.",
+    "add": "Product toevoegen",
+    "openShopify": "Shopify-producten openen",
+    "configure": "Product configureren",
+    "view": "Producten bekijken",
+    "continue": "Verder met instellen",
+    "creationFailed": "Het toevoegen van een product kon niet worden geopend.",
+    "draftPublished": "Gepubliceerd product met conceptwijzigingen",
+    "draftUnpublished": "Conceptpersonalisatie"
+  },
+  "orders": {
+    "emptyHeading": "Nog geen gepersonaliseerde bestellingen",
+    "emptyBody": "Gepersonaliseerde bestellingen verschijnen hier nadat een klant heeft afgerekend.",
+    "viewAll": "Alle bestellingen bekijken",
+    "testBadge": "Test",
+    "reference": "Bestelling {{number}}",
+    "customizedProduct": "Gepersonaliseerd product",
+    "itemCountExact": "Aantal artikelen: {{formattedCount}}",
+    "itemMeta": "{{formattedItemCount}} · {{date}}",
+    "orderLink": "Open {{orderName}} voor {{products}}",
+    "statuses": {
+      "artwork-ready": "Ontwerp compleet",
+      "artwork-needed": "Ontwerp ontbreekt",
+      "waiting": "In afwachting van ontwerp",
+      "expired": "Ontwerp niet beschikbaar",
+      "cancelled": "Geannuleerd"
+    },
+    "tasks": {
+      "artwork-missing": "Voeg een ontwerpbestand toe aan deze bestelling.",
+      "artwork-supplied": "Controleer het aangeleverde ontwerp.",
+      "replacement-artwork-review": "Controleer het vervangende ontwerp.",
+      "artwork-confirmation": "Bevestig het ontwerp voor deze bestelling.",
+      "action": "Bestelling controleren"
+    },
+    "itemCount_one": "{{formattedCount}} artikel",
+    "itemCount_other": "{{formattedCount}} artikelen"
+  },
+  "activity": {
+    "label": "Personalisatieactiviteit",
+    "period": {
+      "lastSevenDays": "Afgelopen 7 dagen",
+      "lastThirtyDays": "Afgelopen 30 dagen",
+      "menu": "Activiteitsperiode"
+    },
+    "metrics": {
+      "customizedOrders": "Bestellingen met personalisaties",
+      "customizedOrdersDefinition": "Bestellingen met ten minste één Insignia-ontwerp.",
+      "customizedItems": "Bestelde artikelen met personalisatie",
+      "customizedItemsDefinition": "Totaal aantal bestelde artikelen met personalisatie."
+    },
+    "orders": "Bestellingen bekijken",
+    "unavailable": "Statistieken zijn nu niet beschikbaar.",
+    "metricLink": "{{metricLabel}}: {{formattedCount}}. Bestellingen bekijken",
+    "metricLinkWithChange": "{{metricLabel}}: {{formattedCount}}. {{changeSummary}}. Bestellingen bekijken",
+    "change": {
+      "increase": "{{formattedPercent}} meer dan in de voorgaande {{days}} dagen",
+      "decrease": "{{formattedPercent}} minder dan in de voorgaande {{days}} dagen",
+      "unchanged": "{{formattedPercent}} verschil ten opzichte van de voorgaande {{days}} dagen"
+    },
+    "metricValueExact": "{{metricLabel}}: {{formattedCount}}"
+  },
+  "guidance": {
+    "complete": "Instelgids voltooid",
+    "heading": "Aan de slag met Insignia",
+    "progress": "Voortgang van de instelgids",
+    "completedCount": "{{completed}} van {{total}} voltooid",
+    "dismiss": "Aan de slag verbergen",
+    "hide": "Instelgids verbergen",
+    "show": "Instelgids weergeven",
+    "markIncomplete": "{{step}} markeren als niet voltooid",
+    "markComplete": "{{step}} markeren als voltooid",
+    "steps": {
+      "product": "Product configureren",
+      "storefront": "Je thema koppelen",
+      "test": "Personalisatie testen"
+    },
+    "stepLabels": {
+      "product": "productconfiguratie",
+      "storefront": "themakoppeling",
+      "test": "klanttest"
+    },
+    "product": {
+      "addTitle": "Een product toevoegen",
+      "addDescription": "Maak een product in Shopify en kies daarna waar klanten een ontwerp kunnen toevoegen.",
+      "finishTitle": "Productconfiguratie afronden",
+      "finishDescription": "Stel de decoratieplekken, decoratieopties en prijzen in en publiceer de configuratie.",
+      "configure": "Product configureren",
+      "continue": "Verder met instellen",
+      "view": "Producten bekijken"
+    },
+    "storefront": {
+      "description": "Voeg de personalisatieknop en de winkelwagencontrole toe aan je thema.",
+      "action": "Thema instellen"
+    },
+    "test": {
+      "description": "Bekijk een voorbeeld van een gepubliceerd product, voeg een ontwerp toe en controleer het in je winkelwagen.",
+      "action": "Product testen",
+      "blocked": "Publiceer een product met personalisatie en rond de thema-instellingen af voordat je gaat testen."
+    },
+    "hideAction": "Verbergen",
+    "showAction": "Weergeven",
+    "dismissGuide": "Instelgids"
+  },
+  "setup": {
+    "toggleShow": "Webshopinstellingen weergeven",
+    "toggleHide": "Webshopinstellingen verbergen",
+    "complete": "Voltooid",
+    "confirmed": "Door jou bevestigd",
+    "unverified": "Niet gecontroleerd",
+    "reviewChecks": "Controleer de stappen voor het instellen.",
+    "tasks": {
+      "storefront": {
+        "title": "Je thema koppelen",
+        "description": "Voeg de personalisatieknop en de winkelwagencontrole toe aan je thema.",
+        "action": "Thema instellen",
+        "button-disabled": "Schakel de personalisatieknop in je thema in.",
+        "cart-review-disabled": "Schakel de winkelwagencontrole in je thema in.",
+        "both-disabled": "Schakel de personalisatieknop en de winkelwagencontrole in je thema in.",
+        "check": "Controleer de instellingen van je thema voor de webshop."
+      },
+      "test": {
+        "title": "Personalisatie testen",
+        "description": "Publiceer een product en test daarna de personalisatie in je webshop.",
+        "action": "Product testen"
+      }
+    }
+  },
+  "notice": {
+    "planRestriction": {
+      "heading": "Controleer je abonnement",
+      "description": "Bekijk je facturering voordat je een nieuw product instelt.",
+      "action": "Facturering bekijken"
+    }
+  }
+}

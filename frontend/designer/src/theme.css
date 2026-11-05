@@ -1,0 +1,292 @@
+/* Semantic UI colours. Product colours and artwork remain unchanged. */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+  --primary: #2563eb;
+  --on-primary: #fff;
+  --success-button: #287458;
+  --media-matte: #f7f8fa;
+  --text: #111827;
+  --text-strong: #17202d;
+  --text-label: #303844;
+  --text-secondary: #374151;
+  --text-detail: #45546a;
+  --text-description: #4b5563;
+  --text-field-label: #526074;
+  --text-badge: #52647a;
+  --text-tab: #58677b;
+  --text-hint: #64748b;
+  --text-muted: #657184;
+  --text-subtle: #79899d;
+  --text-disabled: #8b96a5;
+  --surface: #fff;
+  --surface-subtle: #fafbfc;
+  --surface-back: #f9fafb;
+  --surface-summary: #f8f9fb;
+  --surface-preview: #f7f8fa;
+  --surface-hover: #f8fafc;
+  --surface-hover-soft: #fafcff;
+  --surface-icon-hover: #f3f4f6;
+  --surface-thumb: #f3f5f7;
+  --surface-badge: #f0f3f7;
+  --surface-disabled: #f0f2f5;
+  --surface-tabs: #eaeef2;
+  --surface-lab: #edf2f7;
+  --surface-tabs-hover: #e0e6ee;
+  --surface-selected: #eff6ff;
+  --surface-hotspot: #eff6ffdd;
+  --surface-action-hover: #f6f9ff;
+  --surface-upload: #f8faff;
+  --surface-drag: #e8f0ff;
+  --border: #e5e7eb;
+  --border-tabs: #e5e9ef;
+  --border-card: #e1e6ed;
+  --border-step: #dce1e8;
+  --border-control: #dce2ea;
+  --border-label: #dce3ee;
+  --border-input: #838d9c;
+  --border-action: #d4dbe5;
+  --border-lab: #cbd5e1;
+  --border-subtle: #edf0f3;
+  --border-card-detail: #edf0f4;
+  --border-summary: #f0f1f3;
+  --border-control-hover: #838d9c;
+  --border-size-hover: #a8bddc;
+  --border-card-hover: #bfcde0;
+  --border-action-hover: #8bb0f2;
+  --border-hotspot: #8fa6cc;
+  --border-upload: #9dbbef;
+  --border-expanded: #9dbdf6;
+  --border-selected: #bfdbfe;
+  --border-selected-control: #2563eb;
+  --border-guide: #9caac0;
+  --focus: #2563eb;
+  --link: #2563eb;
+  --primary-hover: #1d4ed8;
+  --success: #287458;
+  --success-hover: #1c5d45;
+  --border-success: #d7e9dc;
+  --surface-success: #eff8f2;
+  --text-warning: #9b641c;
+  --border-warning: #f7e6b7;
+  --surface-warning: #fffbeb;
+  --danger: #b91c1c;
+  --surface-danger: #fff7f7;
+  --border-swatch: #00000020;
+  --border-mini-swatch: #00000025;
+  --border-mobile-swatch: #00000030;
+  --shadow-tab: #0000000d;
+  --shadow-dialog: #17213133;
+  --shadow-toast: #1c334218;
+  --backdrop: #11182766;
+  --surface-print-selected: #2563eb05;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  /* Neutral foundation: elevation comes from luminance, not a blue tint. */
+  --surface: #212121;
+  --surface-subtle: #252525;
+  --surface-back: #181818;
+  --surface-summary: #252525;
+  --surface-preview: #181818;
+  --surface-hover: #292929;
+  --surface-hover-soft: #292929;
+  --surface-icon-hover: #303030;
+  --surface-thumb: #303030;
+  --surface-badge: #303030;
+  --surface-disabled: #292929;
+  --surface-tabs: #262626;
+  --surface-lab: #262626;
+  --surface-tabs-hover: #343434;
+  --surface-selected: #323232;
+  --surface-hotspot: #323232;
+  --surface-action-hover: #303030;
+  --surface-upload: #262626;
+  --surface-drag: #343434;
+  --text: #ededed;
+  --text-strong: #ededed;
+  --text-label: #ededed;
+  --text-secondary: #c4c4c4;
+  --text-detail: #bdbdbd;
+  --text-description: #bdbdbd;
+  --text-field-label: #b4b4b4;
+  --text-badge: #b4b4b4;
+  --text-tab: #b4b4b4;
+  --text-hint: #a3a3a3;
+  --text-muted: #a3a3a3;
+  --text-subtle: #929292;
+  --text-disabled: #858585;
+  /* Dividers are quiet; editable fields and selected controls are stronger. */
+  --border: #373737;
+  --border-tabs: #3b3b3b;
+  --border-card: #414141;
+  --border-step: #565656;
+  --border-control: #565656;
+  --border-label: #414141;
+  --border-input: #737373;
+  --border-action: #565656;
+  --border-lab: #565656;
+  --border-subtle: #333333;
+  --border-card-detail: #373737;
+  --border-summary: #373737;
+  --border-control-hover: #7a7a7a;
+  --border-size-hover: #7a7a7a;
+  --border-card-hover: #626262;
+  --border-action-hover: #7a7a7a;
+  --border-hotspot: #7a7a7a;
+  --border-upload: #626262;
+  --border-expanded: #626262;
+  --border-selected: #929292;
+  --border-selected-control: #858585;
+  --border-guide: #929292;
+  /* A neutral primary action; colour is reserved for product and status. */
+  --primary: #e6e6e6;
+  --primary-hover: #fff;
+  --on-primary: #202020;
+  --link: #e0e0e0;
+  --focus: #bdbdbd;
+  --success-button: #e6e6e6;
+  --success-hover: #fff;
+  --success: #9fceb0;
+  --border-success: #40574a;
+  --surface-success: #243028;
+  --text-warning: #e3c58f;
+  --border-warning: #675635;
+  --surface-warning: #302a20;
+  --danger: #f4aaa4;
+  --surface-danger: #342625;
+  --border-swatch: #ffffff40;
+  --border-mini-swatch: #ffffff40;
+  --border-mobile-swatch: #ffffff40;
+  --shadow-tab: #00000030;
+  --shadow-dialog: #00000050;
+  --shadow-toast: #00000050;
+  --backdrop: #00000099;
+  --surface-print-selected: #00000005;
+  --media-matte: #f7f8fa;
+}
+
+.dialog {
+  background: var(--surface);
+}
+
+/* Photos have white backgrounds. Keep a neutral viewing matte and prevent
+   multiply from tinting the photograph, artwork, or placement controls. */
+:root[data-theme="dark"] .garment-image-wrap {
+  mix-blend-mode: normal;
+  background: var(--media-matte);
+  border-radius: 12px;
+  overflow: visible;
+}
+:root[data-theme="dark"] .store-photo,
+:root[data-theme="dark"] .placement-mini,
+:root[data-theme="dark"] .artwork-thumb:has(img),
+:root[data-theme="dark"] .artwork-library button > span {
+  background: var(--media-matte);
+  border-radius: 6px;
+}
+/* Placement UI stays legible against the deliberately light product matte. */
+:root[data-theme="dark"] .garment-image-wrap .placeholder-print {
+  color: #525252;
+}
+:root[data-theme="dark"] .garment-image-wrap .empty-hotspot {
+  color: #202020;
+  background: #fffffff2;
+  border-color: #737373;
+}
+.theme-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-secondary);
+}
+.theme-control:hover {
+  color: var(--text);
+  background: var(--surface-icon-hover);
+}
+.theme-control:active {
+  background: var(--surface-tabs-hover);
+}
+.theme-control:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+.theme-control svg {
+  display: block;
+}
+
+/* Product pixels can be white or navy; the white halo keeps blue focus
+   distinguishable on either. This also overrides the overlay's base outline. */
+.print-overlay:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 7px #fff;
+}
+.color-results:focus-visible,
+.position-results:focus-visible,
+.file-details summary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+
+/* Canvas controls sit on source imagery, independently of the chrome theme. */
+:root[data-theme="dark"] .garment-image-wrap .print-overlay.selected {
+  outline-color: #262626;
+  box-shadow: 0 0 0 2px #ffffffcc;
+}
+:root[data-theme="dark"] .garment-image-wrap .print-overlay:focus-visible {
+  outline: 3px solid #f5f5f5;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 7px #202020;
+}
+
+/* Source media keep a stable colour scheme, including adaptive SVG images. */
+.garment-image-wrap,
+.store-photo,
+.placement-mini,
+.artwork-thumb,
+.artwork-library button > span {
+  color-scheme: light;
+}
+:root[data-theme="dark"] .garment-image-wrap .garment-photo {
+  border-radius: inherit;
+}
+@media (forced-colors: active) {
+  .size-options button[aria-pressed="true"],
+  .color-option[aria-pressed="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: -3px;
+  }
+  .size-options button:focus-visible,
+  .color-option:focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: 3px;
+  }
+  .swatches button.chosen::after {
+    border-color: Highlight;
+  }
+  .swatches button > span,
+  .swatches button > svg,
+  .color-dot,
+  .mini-swatch,
+  svg.garment-photo,
+  svg.store-photo,
+  .placement-mini svg {
+    forced-color-adjust: none;
+  }
+  .swatches button > span,
+  .color-dot,
+  .mini-swatch {
+    border-color: CanvasText;
+  }
+  .theme-control {
+    border-color: ButtonText;
+  }
+}

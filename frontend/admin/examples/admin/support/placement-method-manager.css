@@ -1,0 +1,217 @@
+.pm-manager {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: min(62dvh, 560px);
+  min-height: 0;
+  color: inherit;
+}
+.pm-manager__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 156px;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  border-bottom: 1px solid #e3e3e3;
+}
+.pm-manager__results,
+.pm-manager__price-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.pm-manager__method-list {
+  display: grid;
+  min-width: 0;
+}
+.pm-manager__choice {
+  min-width: 0;
+}
+.pm-manager__method {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, auto);
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 12px 16px;
+  border: 0;
+  border-bottom: 1px solid #e3e3e3;
+}
+.pm-manager__method-facts,
+.pm-manager__product-price {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.pm-manager__method-facts {
+  grid-template-columns: auto;
+  justify-content: end;
+}
+.pm-manager__coverage {
+  min-width: 0;
+  text-align: end;
+  white-space: nowrap;
+}
+.pm-manager__price-action {
+  justify-self: end;
+}
+.pm-manager__context {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e3e3e3;
+}
+.pm-manager__context > s-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.pm-manager__summary {
+  flex: none;
+  white-space: nowrap;
+}
+.pm-manager__empty {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  padding: 16px;
+}
+.pm-manager__name-form {
+  display: grid;
+}
+.pm-manager__price-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.pm-manager__price-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e3e3e3;
+}
+.pm-manager__price-heading > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.pm-manager__price-heading > s-text {
+  text-align: start;
+  white-space: nowrap;
+}
+.pm-manager__price-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 220px);
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e3e3e3;
+}
+.pm-manager__size-label {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.pm-manager__price-list > s-text,
+.pm-manager__price-list > s-paragraph {
+  display: block;
+  padding: 12px 16px;
+}
+@media (max-width: 560px) {
+  .pm-manager {
+    width: 100%;
+    height: calc(100dvh - 184px);
+  }
+  .pm-manager__controls {
+    grid-template-columns: minmax(0, 1fr) 112px;
+    padding: 12px;
+  }
+  .pm-manager__method {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 8px;
+    padding: 12px;
+  }
+  .pm-manager__method.is-product-method.is-enabled .pm-manager__choice,
+  .pm-manager__method.is-product-method.is-enabled .pm-manager__product-price {
+    grid-column: 1 / -1;
+  }
+  .pm-manager__method-facts {
+    grid-column: 2;
+    grid-row: 1;
+    flex-wrap: nowrap;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  .pm-manager__method-type {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    justify-content: flex-end;
+    white-space: nowrap;
+  }
+  .pm-manager__method.is-product-method.is-enabled .pm-manager__product-price {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding-inline-start: 32px;
+  }
+  .pm-manager__coverage {
+    grid-column: 1;
+    text-align: start;
+  }
+  .pm-manager__price-action {
+    grid-column: 2;
+    justify-self: end;
+  }
+  .pm-manager__price-heading {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 12px;
+  }
+  .pm-manager__price-heading > s-button {
+    grid-column: auto;
+    justify-self: start;
+  }
+  .pm-manager__price-heading > s-text {
+    grid-column: auto;
+    grid-row: auto;
+    text-align: start;
+    white-space: normal;
+  }
+  .pm-manager__price-row {
+    grid-template-columns: minmax(0, 1fr) minmax(120px, 160px);
+    gap: 8px;
+    padding-inline: 12px;
+  }
+}
+
+.pm-manager.is-compact {
+  height: auto;
+  max-height: min(62dvh, 560px);
+}
+.pm-manager.is-compact .pm-manager__results {
+  flex: 0 1 auto;
+}
+.pm-manager.is-compact .pm-manager__price-screen {
+  height: auto;
+  min-height: 0;
+}
+.pm-manager.is-compact .pm-manager__price-list {
+  flex: 0 1 auto;
+}
+
+/* The modal owns scrolling for short forms; an inner scrollport clips native field focus rings. */
+.pm-manager.is-form {
+  max-height: none;
+}
+
+.pm-manager__create-action {
+  padding: 8px 16px;
+  border-bottom: 1px solid #e3e3e3;
+}

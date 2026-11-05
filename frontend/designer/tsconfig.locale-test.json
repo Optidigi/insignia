@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src", "scripts/fixtures/customer-localization.tsx", "scripts/fixtures/customer-language-probe.tsx"]
+}

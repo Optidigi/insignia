@@ -1,0 +1,36 @@
+{
+  "upload": {
+    "region": "Privéontwerp",
+    "action": "Ontwerp uploaden",
+    "requirement": "Maximaal 5 MiB.",
+    "verified": "Ontwerp gecontroleerd. Het origineel blijft beschikbaar tot {{expiry}}.",
+    "previewRenewed": "Toegang tot het ontwerpvoorbeeld vernieuwd.",
+    "downloadPrepared": "Privédownload voorbereid. Gebruik 'Geverifieerd origineel downloaden'.",
+    "expired": "Het ontwerp is verlopen. Upload het opnieuw.",
+    "inspectionRejected": "Het ontwerp is bij de controle afgekeurd. Kies een ondersteunde, statische afbeelding.",
+    "processingTimeout": "Je ontwerp wordt nog verwerkt. Controleer het later opnieuw.",
+    "uploadFailed": "Het ontwerp kon niet worden geüpload. Probeer het opnieuw.",
+    "resumeFailed": "Het geüploade ontwerp is niet beschikbaar. Probeer het later opnieuw.",
+    "previewFailed": "Voorbeeld niet beschikbaar. Probeer het opnieuw.",
+    "downloadFailed": "Download niet beschikbaar. Probeer het opnieuw.",
+    "accessDenied": "Je toegang kon niet worden gecontroleerd. Open Insignia opnieuw via Shopify-beheercentrum en probeer het nog eens.",
+    "verifiedPreviewAlt": "Gecontroleerd ontwerpvoorbeeld",
+    "progress": {
+      "allocating": "Privé-upload voorbereiden",
+      "uploading": "Uploaden",
+      "processing": "Ontwerp verwerken"
+    },
+    "actions": {
+      "retryUploaded": "Geüpload ontwerp opnieuw controleren",
+      "retryPreview": "Voorbeeld van ontwerp opnieuw proberen",
+      "prepareDownload": "Origineel voorbereiden om te downloaden",
+      "downloadVerifiedOriginal": "Geverifieerd origineel downloaden"
+    },
+    "invalidFormat": "Kies een SVG-, PNG- of JPEG-afbeelding.",
+    "tooLarge": "Kies een afbeelding van maximaal 5 MiB."
+  },
+  "preview": {
+    "imageUnavailable": "Ontwerpafbeelding niet beschikbaar.",
+    "preparing": "{{imageDescription}} voorbereiden"
+  }
+}

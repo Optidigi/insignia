@@ -1,0 +1,201 @@
+/* Loopback preview only. Polaris owns controls, type, color, focus and elevation. */
+.method-workflow {
+  min-width: 0;
+  outline: none;
+}
+.method-workflow s-link,
+.method-workflow s-text,
+.method-workflow s-paragraph,
+.method-workflow s-list-item {
+  overflow-wrap: anywhere;
+}
+.method-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  max-width: 1120px;
+  margin-inline: auto;
+  gap: 24px;
+  align-items: start;
+}
+.method-main-column {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.method-summary {
+  min-width: 0;
+  padding-block-start: 4px;
+}
+.method-price-field {
+  max-width: 360px;
+}
+.method-product-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.method-product-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding-block: 8px;
+  border-bottom: 1px solid rgb(128 128 128 / 18%);
+}
+.method-product-row:first-child {
+  padding-block-start: 0;
+}
+.method-product-row:last-child {
+  border-bottom: 0;
+  padding-block-end: 0;
+}
+.method-product-copy {
+  min-width: 0;
+}
+.method-tag-scroll {
+  max-height: 240px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
+.method-workflow .admin-resource-table td:first-child {
+  max-width: 340px;
+}
+@media (max-width: 760px) {
+  .method-detail-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .method-summary {
+    display: none;
+  }
+}
+@media (max-width: 400px) {
+  .method-product-row {
+    gap: 8px;
+  }
+}
+
+.method-product-heading {
+  scroll-margin-block-start: 90px;
+  outline: none;
+}
+.method-workflow .admin-resource-table td:last-child {
+  min-width: 32px;
+  width: 36px;
+}
+
+.method-editor-notice {
+  display: block;
+  position: fixed;
+  z-index: 4;
+  inset-block-end: 8px;
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 520px;
+}
+
+/* Keep the offscreen action-heading label inside the horizontally scrolling table. */
+.method-workflow .admin-resource-table {
+  position: relative;
+}
+
+.method-workflow td[data-column="method-pricing"],
+.method-workflow td[data-column="method-scope"] {
+  white-space: nowrap;
+}
+.method-workflow .method-index-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.method-index-table .admin-resource-table th:last-child,
+.method-index-table .admin-resource-table td:last-child {
+  width: 44px;
+  min-width: 44px;
+  text-align: end;
+}
+.method-index-copy {
+  min-width: 0;
+}
+.method-index-identity {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-inline-size: 200px;
+}
+.method-index-mobile-details {
+  display: none;
+}
+.method-index-assignment {
+  display: inline;
+  margin-inline-start: 4px;
+}
+.method-index-assignment::before {
+  content: "· ";
+}
+@media (max-width: 560px) {
+  .method-index-table .admin-resource-table {
+    table-layout: fixed;
+  }
+  .method-index-table .admin-resource-table th:nth-child(2),
+  .method-index-table .admin-resource-table td:nth-child(2),
+  .method-index-table .admin-resource-table th:nth-child(3),
+  .method-index-table .admin-resource-table td:nth-child(3),
+  .method-index-table .admin-resource-table th:nth-child(4),
+  .method-index-table .admin-resource-table td:nth-child(4) {
+    display: none;
+  }
+  .method-index-table .admin-resource-table td {
+    min-width: 0;
+  }
+  .method-index-table .admin-resource-table th:last-child,
+  .method-index-table .admin-resource-table td:last-child {
+    width: 36px;
+    min-width: 0;
+  }
+  .method-index-identity {
+    min-inline-size: 0;
+    align-items: start;
+  }
+  .method-index-mobile-details {
+    display: grid;
+    grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
+    gap: 6px 12px;
+    margin: 12px 0 0;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .method-index-mobile-details dt {
+    min-inline-size: 0;
+    color: #616161;
+    overflow-wrap: anywhere;
+  }
+  .method-index-mobile-details dd {
+    min-inline-size: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .method-index-assignment {
+    display: block;
+    margin-inline-start: 0;
+    margin-block-start: 2px;
+  }
+  .method-index-assignment::before {
+    content: none;
+  }
+  .method-index-product-suffix {
+    display: none;
+  }
+}
+@media (max-width: 480px) {
+  .method-index-mobile-details {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 2px;
+  }
+}

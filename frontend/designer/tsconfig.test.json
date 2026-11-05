@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "node"
+    ],
+    "exactOptionalPropertyTypes": false,
+    "noUncheckedIndexedAccess": false
+  },
+  "include": [
+    "src",
+    "scripts/**/*.mts",
+    "scripts/fixtures/*.tsx",
+    "vite.library.config.ts"
+  ]
+}

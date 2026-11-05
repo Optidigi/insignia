@@ -1,0 +1,21 @@
+{
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "retry": "Retry",
+    "done": "Done",
+    "action": "Action"
+  },
+  "resources": {
+    "remove": "Remove {{resourceName}}"
+  },
+  "counts": {
+    "items_one": "{{count}} item",
+    "items_other": "{{count}} items",
+    "exactTotal": "Total items: {{formattedCount}}"
+  },
+  "summary": {
+    "unavailable": "Unavailable"
+  }
+}

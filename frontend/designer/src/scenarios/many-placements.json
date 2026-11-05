@@ -1,0 +1,536 @@
+{
+  "id": "many-placements",
+  "name": "Sponsor hoodie",
+  "description": "18 positions across four views, long labels and view IDs with no built-in meaning.",
+  "storeName": "Community Sportswear",
+  "productName": "Team sponsor hoodie with embroidered club badge",
+  "productDescription": "A brushed fleece pullover for teams, supporters, and coaches.",
+  "basePrice": 4295,
+  "currency": "EUR",
+  "locale": "en-NL",
+  "garment": "hoodie",
+  "preview": "illustration",
+  "maxQuantity": 999,
+  "artworkLater": true,
+  "sizes": [
+    {
+      "id": "xs",
+      "label": "XS"
+    },
+    {
+      "id": "s",
+      "label": "S"
+    },
+    {
+      "id": "m",
+      "label": "M"
+    },
+    {
+      "id": "l",
+      "label": "L"
+    },
+    {
+      "id": "xl",
+      "label": "XL"
+    },
+    {
+      "id": "2xl",
+      "label": "2XL"
+    },
+    {
+      "id": "3xl",
+      "label": "3XL"
+    },
+    {
+      "id": "4xl",
+      "label": "4XL"
+    }
+  ],
+  "colors": [
+    {
+      "id": "black",
+      "name": "Black",
+      "hex": "#25262a",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl",
+        "3xl",
+        "4xl"
+      ]
+    },
+    {
+      "id": "navy",
+      "name": "Navy",
+      "hex": "#24324b",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl",
+        "3xl",
+        "4xl"
+      ]
+    },
+    {
+      "id": "heather-grey",
+      "name": "Heather grey",
+      "hex": "#a5a5a5",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl",
+        "3xl",
+        "4xl"
+      ]
+    },
+    {
+      "id": "forest",
+      "name": "Forest green",
+      "hex": "#31513e",
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl",
+        "3xl",
+        "4xl"
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "angle-a",
+      "label": "Front",
+      "illustration": "front"
+    },
+    {
+      "id": "angle-b",
+      "label": "Back",
+      "illustration": "back"
+    },
+    {
+      "id": "angle-c",
+      "label": "Left sleeve",
+      "illustration": "left"
+    },
+    {
+      "id": "angle-d",
+      "label": "Right sleeve",
+      "illustration": "right"
+    }
+  ],
+  "positions": [
+    {
+      "id": "zone-1",
+      "name": "Left chest above pocket",
+      "view": "angle-a",
+      "x": 63,
+      "y": 28,
+      "width": 10,
+      "price": 750,
+      "dimensions": [
+        6,
+        8
+      ],
+      "sizePrices": [
+        0,
+        200
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ],
+      "artworkLater": false
+    },
+    {
+      "id": "zone-2",
+      "name": "Right chest above pocket",
+      "view": "angle-a",
+      "x": 37,
+      "y": 28,
+      "width": 10,
+      "price": 750,
+      "dimensions": [
+        6,
+        8
+      ],
+      "sizePrices": [
+        0,
+        200
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ],
+      "artworkLater": true
+    },
+    {
+      "id": "zone-3",
+      "name": "Centre chest",
+      "view": "angle-a",
+      "x": 50,
+      "y": 42,
+      "width": 15,
+      "price": 750,
+      "dimensions": [
+        6,
+        8
+      ],
+      "sizePrices": [
+        0,
+        200
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    },
+    {
+      "id": "zone-4",
+      "name": "Lower front above pocket",
+      "view": "angle-a",
+      "x": 50,
+      "y": 59,
+      "width": 15,
+      "price": 750,
+      "dimensions": [
+        6,
+        8
+      ],
+      "sizePrices": [
+        0,
+        200
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    },
+    {
+      "id": "zone-5",
+      "name": "Pocket",
+      "view": "angle-a",
+      "x": 50,
+      "y": 74,
+      "width": 10,
+      "price": 750,
+      "dimensions": [
+        6,
+        8
+      ],
+      "sizePrices": [
+        0,
+        200
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    },
+    {
+      "id": "zone-6",
+      "name": "Below the back neckline",
+      "view": "angle-b",
+      "x": 50,
+      "y": 24,
+      "width": 10,
+      "price": 750,
+      "dimensions": [
+        6,
+        8
+      ],
+      "sizePrices": [
+        0,
+        200
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    },
+    {
+      "id": "zone-7",
+      "name": "Upper back between shoulders",
+      "view": "angle-b",
+      "x": 50,
+      "y": 36,
+      "width": 16,
+      "price": 750,
+      "dimensions": [
+        6,
+        8
+      ],
+      "sizePrices": [
+        0,
+        200
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    },
+    {
+      "id": "zone-8",
+      "name": "Centre back for player name and sponsor artwork",
+      "view": "angle-b",
+      "x": 50,
+      "y": 49,
+      "width": 16,
+      "price": 750,
+      "dimensions": [
+        6,
+        8
+      ],
+      "sizePrices": [
+        0,
+        200
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    },
+    {
+      "id": "zone-9",
+      "name": "Lower back",
+      "view": "angle-b",
+      "x": 50,
+      "y": 66,
+      "width": 16,
+      "price": 750,
+      "dimensions": [
+        6,
+        8
+      ],
+      "sizePrices": [
+        0,
+        200
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    },
+    {
+      "id": "zone-10",
+      "name": "Back near hem",
+      "view": "angle-b",
+      "x": 50,
+      "y": 83,
+      "width": 12,
+      "price": 750,
+      "dimensions": [
+        6,
+        8
+      ],
+      "sizePrices": [
+        0,
+        200
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    },
+    {
+      "id": "zone-11",
+      "name": "Left sleeve near shoulder",
+      "view": "angle-c",
+      "x": 42,
+      "y": 26,
+      "width": 6,
+      "price": 750,
+      "dimensions": [
+        6,
+        8
+      ],
+      "sizePrices": [
+        0,
+        200
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    },
+    {
+      "id": "zone-12",
+      "name": "Left upper sleeve",
+      "view": "angle-c",
+      "x": 36,
+      "y": 39,
+      "width": 6,
+      "price": 750,
+      "dimensions": [
+        6,
+        8
+      ],
+      "sizePrices": [
+        0,
+        200
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    },
+    {
+      "id": "zone-13",
+      "name": "Left forearm",
+      "view": "angle-c",
+      "x": 33,
+      "y": 54,
+      "width": 6,
+      "price": 750,
+      "dimensions": [
+        6,
+        8
+      ],
+      "sizePrices": [
+        0,
+        200
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    },
+    {
+      "id": "zone-14",
+      "name": "Left sleeve near cuff",
+      "view": "angle-c",
+      "x": 34,
+      "y": 64,
+      "width": 5,
+      "price": 750,
+      "dimensions": [
+        6,
+        8
+      ],
+      "sizePrices": [
+        0,
+        200
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    },
+    {
+      "id": "zone-15",
+      "name": "Right sleeve near shoulder",
+      "view": "angle-d",
+      "x": 58,
+      "y": 26,
+      "width": 6,
+      "price": 750,
+      "dimensions": [
+        6,
+        8
+      ],
+      "sizePrices": [
+        0,
+        200
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    },
+    {
+      "id": "zone-16",
+      "name": "Right upper sleeve",
+      "view": "angle-d",
+      "x": 64,
+      "y": 39,
+      "width": 6,
+      "price": 750,
+      "dimensions": [
+        6,
+        8
+      ],
+      "sizePrices": [
+        0,
+        200
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    },
+    {
+      "id": "zone-17",
+      "name": "Right forearm",
+      "view": "angle-d",
+      "x": 68,
+      "y": 54,
+      "width": 6,
+      "price": 750,
+      "dimensions": [
+        6,
+        8
+      ],
+      "sizePrices": [
+        0,
+        200
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    },
+    {
+      "id": "zone-18",
+      "name": "Right sleeve near cuff",
+      "view": "angle-d",
+      "x": 68,
+      "y": 64,
+      "width": 5,
+      "price": 750,
+      "dimensions": [
+        6,
+        8
+      ],
+      "sizePrices": [
+        0,
+        200
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    }
+  ],
+  "methods": [
+    {
+      "id": "print",
+      "label": "Print",
+      "surcharge": 0
+    },
+    {
+      "id": "embroidery",
+      "label": "Embroidery",
+      "surcharge": 550
+    }
+  ],
+  "optionPresentation": {
+    "rowOption": {
+      "display": "swatch",
+      "label": "Colour"
+    },
+    "columnOption": {
+      "label": "Size"
+    }
+  }
+}

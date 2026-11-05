@@ -1,0 +1,14 @@
+{
+  "blocks": {
+    "customize": {
+      "name": "Personalización de Insignia",
+      "button_label": "Texto del botón",
+      "button_default": "Personalizar este producto",
+      "proxy_prefix": "Prefijo del proxy de la aplicación"
+    },
+    "cart_repair": {
+      "name": "Revisión del carrito de Insignia",
+      "proxy_prefix": "Prefijo del proxy de la aplicación"
+    }
+  }
+}

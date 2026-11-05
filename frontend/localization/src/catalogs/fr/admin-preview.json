@@ -1,0 +1,32 @@
+{
+  "preview": {
+    "documentTitle": "Insignia | Aperçu du visuel",
+    "context": "Aperçu du visuel · Brouillon actuel",
+    "title": "Aperçu du visuel",
+    "unavailableTitle": "Aperçu du visuel indisponible",
+    "loadingTitle": "Chargement de l’aperçu du visuel",
+    "waitingForDraft": "En attente du brouillon actuel…",
+    "reopenFromEditor": "Rouvrez l’aperçu de la personnalisation depuis l’éditeur du produit.",
+    "expired": "Cet aperçu a expiré. Rouvrez-le depuis le brouillon du produit dans l’interface d’administration.",
+    "draftDidNotArrive": "Le brouillon actuel n’a pas été reçu. Fermez cet onglet, puis rouvrez l’aperçu de la personnalisation depuis l’éditeur du produit.",
+    "draftCouldNotBePreviewed": "Impossible de prévisualiser le brouillon actuel.",
+    "unrepresentableDraftData": "Ce brouillon contient des données de visuel que cet aperçu ne peut pas afficher. Rouvrez l’aperçu depuis l’éditeur du produit.",
+    "emptyProductName": "Ajoutez un nom de produit avant d’ouvrir l’aperçu de la personnalisation.",
+    "noProductViews": "Ajoutez une vue du produit avant d’ouvrir l’aperçu de la personnalisation.",
+    "missingImageForPlacedView": "Ajoutez une image à chaque vue du produit qui comporte des emplacements de personnalisation.",
+    "noProductImage": "Ajoutez une image du produit avant d’ouvrir l’aperçu de la personnalisation.",
+    "unnamedProductView": "Nommez chaque vue du produit avant d’ouvrir l’aperçu de la personnalisation.",
+    "unmappableProductView": "Impossible d’associer cette vue du produit à l’aperçu.",
+    "noValidArtworkPlacements": "Terminez la configuration et indiquez un prix pour au moins un emplacement de personnalisation avant d’ouvrir l’aperçu.",
+    "tooManyArtworkPlacements": "Ce produit comporte trop d’emplacements de personnalisation pour l’aperçu.",
+    "unrepresentableArtworkSetup": "La configuration actuelle des visuels contient des options que l’aperçu ne peut pas afficher.",
+    "previewNotice": "Aperçu des visuels uniquement. Les prix, les options du produit et sa disponibilité ne sont pas inclus.",
+    "previewNoticeWithPlacements_one": "Aperçu des visuels uniquement. Les prix, les options du produit et sa disponibilité ne sont pas inclus. {{availableCount}} emplacement sur {{totalCount}} est disponible dans cet aperçu du brouillon.",
+    "previewNoticeWithPlacements_many": "Aperçu des visuels uniquement. Les prix, les options du produit et sa disponibilité ne sont pas inclus. {{availableCount}} emplacements sur {{totalCount}} sont disponibles dans cet aperçu du brouillon.",
+    "previewNoticeWithPlacements_other": "Aperçu des visuels uniquement. Les prix, les options du produit et sa disponibilité ne sont pas inclus. {{availableCount}} emplacements sur {{totalCount}} sont disponibles dans cet aperçu du brouillon.",
+    "placementsAvailable_one": "{{availableCount}} emplacement sur {{totalCount}} est disponible dans cet aperçu du brouillon.",
+    "placementsAvailable_many": "{{availableCount}} emplacements sur {{totalCount}} sont disponibles dans cet aperçu du brouillon.",
+    "placementsAvailable_other": "{{availableCount}} emplacements sur {{totalCount}} sont disponibles dans cet aperçu du brouillon.",
+    "productImage": "Image du produit"
+  }
+}

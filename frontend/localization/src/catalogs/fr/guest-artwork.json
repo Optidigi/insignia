@@ -1,0 +1,33 @@
+{
+  "upload": {
+    "privateArtwork": "Visuel privé",
+    "previewHeading": "Aperçu du visuel",
+    "uploadAction": "Importer un visuel",
+    "verifiedPreview": "Aperçu du visuel vérifié",
+    "retryUpload": "Vérifier à nouveau le visuel importé",
+    "retryPreview": "Réessayer l’aperçu du visuel",
+    "requirements": "SVG, PNG ou JPEG, jusqu’à 5 Mio.",
+    "invalidFormat": "Choisissez un fichier SVG, PNG ou JPEG.",
+    "tooLarge": "Choisissez un fichier de 5 Mio maximum.",
+    "allocating": "Préparation de l’import…",
+    "uploading": "Import du visuel…",
+    "processing": "Vérification du visuel…",
+    "verified": "Visuel vérifié. L’original est conservé jusqu’au {{expiresAt}}.",
+    "previewRenewed": "Aperçu du visuel actualisé.",
+    "downloadPrepared": "Téléchargement prêt.",
+    "expired": "L’accès au visuel a expiré. Importez de nouveau le fichier.",
+    "inspectionRejected": "Le visuel n’a pas été accepté lors de la vérification. Choisissez un autre fichier.",
+    "processingTimeout": "Votre visuel est toujours en cours de traitement. Réessayez de vérifier son état.",
+    "failed": "Visuel indisponible",
+    "resumeFailed": "Visuel importé indisponible. Réessayez plus tard.",
+    "previewFailed": "Aperçu indisponible. Réessayez d’ouvrir l’aperçu.",
+    "downloadFailed": "Téléchargement indisponible. Réessayez.",
+    "accessDenied": "L’accès au visuel est indisponible. Rechargez la page et réessayez."
+  },
+  "launcher": {
+    "reviewCart": "Vérifier le panier personnalisé",
+    "customize": "Personnaliser ce produit",
+    "configurationUnavailable": "Configuration des visuels indisponible",
+    "unavailable": "Personnalisation indisponible"
+  }
+}

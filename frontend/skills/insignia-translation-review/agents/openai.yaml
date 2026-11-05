@@ -1,0 +1,4 @@
+interface:
+  display_name: "Insignia translation review"
+  short_description: "Review natural, accurate Insignia UI translations"
+  default_prompt: "Use $insignia-translation-review to review the requested locale and workflow for accurate, familiar wording."

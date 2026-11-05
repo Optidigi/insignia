@@ -1,0 +1,185 @@
+{
+  "page": "Accueil",
+  "sections": {
+    "home": "Accueil",
+    "products": "Produits",
+    "productSetup": "Configuration du produit",
+    "orders": "Commandes",
+    "customizedOrders": "Commandes personnalisées",
+    "recentOrders": "Commandes personnalisées récentes",
+    "drafts": "Brouillons de produits",
+    "tasks": "Commandes à vérifier",
+    "storefrontSetup": "Configuration de la boutique en ligne"
+  },
+  "loading": {
+    "home": "Chargement de l’accueil",
+    "products": "Chargement des produits",
+    "productSetup": "Chargement de la configuration du produit",
+    "orders": "Chargement des commandes personnalisées",
+    "activity": "Chargement de l’activité de personnalisation"
+  },
+  "unavailable": {
+    "heading": "Ouvrez Insignia dans Shopify",
+    "body": "Ouvrez l’application depuis l’interface d’administration Shopify pour continuer.",
+    "action": "Ouvrir dans Shopify",
+    "sessionLost": "Votre session d’administration Shopify a expiré. Ouvrez l’application depuis Shopify pour continuer."
+  },
+  "failure": {
+    "productsHeading": "Impossible de charger les produits",
+    "ordersHeading": "Impossible de charger les commandes",
+    "productsBody": "Réessayez ou ouvrez les produits pour continuer.",
+    "ordersBody": "Réessayez ou ouvrez les commandes pour continuer.",
+    "retry": "Réessayer",
+    "viewProducts": "Afficher les produits",
+    "viewOrders": "Afficher les commandes"
+  },
+  "permissions": {
+    "products": "Votre compte ne permet pas d’accéder à la configuration des produits.",
+    "orders": "L’accès aux commandes et aux visuels nécessite le compte du propriétaire de la boutique ainsi que l’autorisation d’accéder aux commandes.",
+    "review": "Vérifier les autorisations de l’application"
+  },
+  "welcome": {
+    "heading": "Proposez des produits personnalisables",
+    "body": "Permettez à vos clients d’ajouter leurs propres visuels à vos produits."
+  },
+  "products": {
+    "addHeading": "Ajouter un produit",
+    "customizeHeading": "Rendre un produit personnalisable",
+    "addBody": "Ajoutez un produit dans Shopify, puis choisissez où vos clients pourront ajouter un visuel.",
+    "customizeBody": "Choisissez un produit, configurez ses zones de personnalisation et ses prix, puis publiez-le.",
+    "add": "Ajouter un produit",
+    "openShopify": "Ouvrir les produits Shopify",
+    "configure": "Configurer le produit",
+    "view": "Afficher les produits",
+    "continue": "Continuer la configuration",
+    "creationFailed": "Impossible d’ouvrir la création du produit.",
+    "draftPublished": "Produit publié avec des modifications en brouillon",
+    "draftUnpublished": "Personnalisation en brouillon"
+  },
+  "orders": {
+    "emptyHeading": "Aucune commande personnalisée pour le moment",
+    "emptyBody": "Les commandes personnalisées s’afficheront ici après le passage en caisse.",
+    "viewAll": "Afficher toutes les commandes",
+    "testBadge": "Test",
+    "reference": "Commande {{number}}",
+    "customizedProduct": "Produit personnalisé",
+    "itemCountExact": "Nombre d’articles : {{formattedCount}}",
+    "itemMeta": "{{formattedItemCount}} · {{date}}",
+    "orderLink": "Ouvrir la commande {{orderName}} pour {{products}}",
+    "statuses": {
+      "artwork-ready": "Visuel complet",
+      "artwork-needed": "Visuel requis",
+      "waiting": "En attente du visuel",
+      "expired": "Visuel indisponible",
+      "cancelled": "Annulée"
+    },
+    "tasks": {
+      "artwork-missing": "Ajoutez un visuel à cette commande.",
+      "artwork-supplied": "Vérifiez le visuel envoyé.",
+      "replacement-artwork-review": "Vérifiez le visuel de remplacement.",
+      "artwork-confirmation": "Confirmez le visuel de cette commande.",
+      "action": "Vérifier la commande"
+    },
+    "itemCount_one": "{{formattedCount}} article",
+    "itemCount_many": "{{formattedCount}} articles",
+    "itemCount_other": "{{formattedCount}} articles"
+  },
+  "activity": {
+    "label": "Activité de personnalisation",
+    "period": {
+      "lastSevenDays": "7 derniers jours",
+      "lastThirtyDays": "30 derniers jours",
+      "menu": "Période d’activité"
+    },
+    "metrics": {
+      "customizedOrders": "Commandes personnalisées",
+      "customizedOrdersDefinition": "Commandes contenant au moins une personnalisation Insignia.",
+      "customizedItems": "Articles personnalisés commandés",
+      "customizedItemsDefinition": "Quantité totale d’articles personnalisés commandés."
+    },
+    "orders": "Afficher les commandes",
+    "unavailable": "Les statistiques sont actuellement indisponibles.",
+    "metricLink": "{{metricLabel}} : {{formattedCount}}. Afficher les commandes",
+    "metricLinkWithChange": "{{metricLabel}} : {{formattedCount}}. {{changeSummary}}. Afficher les commandes",
+    "change": {
+      "increase": "Hausse de {{formattedPercent}} par rapport aux {{days}} derniers jours",
+      "decrease": "Baisse de {{formattedPercent}} par rapport aux {{days}} derniers jours",
+      "unchanged": "Variation de {{formattedPercent}} par rapport aux {{days}} derniers jours"
+    },
+    "metricValueExact": "{{metricLabel}} : {{formattedCount}}"
+  },
+  "guidance": {
+    "complete": "Guide de configuration terminé",
+    "heading": "Bien démarrer avec Insignia",
+    "progress": "Progression du guide de configuration",
+    "completedCount": "Étapes terminées : {{completed}} sur {{total}}",
+    "dismiss": "Ignorer le guide de démarrage",
+    "hide": "Masquer le guide de démarrage",
+    "show": "Afficher le guide de démarrage",
+    "markIncomplete": "Marquer l’étape « {{step}} » comme inachevée",
+    "markComplete": "Marquer l’étape « {{step}} » comme terminée",
+    "steps": {
+      "product": "Configurer un produit",
+      "storefront": "Connecter votre thème",
+      "test": "Tester une personnalisation"
+    },
+    "stepLabels": {
+      "product": "configuration du produit",
+      "storefront": "connexion de la boutique en ligne",
+      "test": "test client"
+    },
+    "product": {
+      "addTitle": "Ajouter un produit",
+      "addDescription": "Créez un produit dans Shopify, puis choisissez où vos clients pourront ajouter un visuel.",
+      "finishTitle": "Terminer la configuration du produit",
+      "finishDescription": "Configurez les zones de personnalisation, les options et les prix, puis publiez le produit.",
+      "configure": "Configurer le produit",
+      "continue": "Continuer la configuration",
+      "view": "Afficher les produits"
+    },
+    "storefront": {
+      "description": "Ajoutez à votre thème le bouton de personnalisation et la vérification du panier.",
+      "action": "Ouvrir la configuration du thème"
+    },
+    "test": {
+      "description": "Prévisualisez un produit publié, ajoutez une personnalisation, puis vérifiez-la dans votre panier.",
+      "action": "Tester un produit",
+      "blocked": "Publiez un produit personnalisable et terminez la configuration du thème avant de lancer le test."
+    },
+    "hideAction": "Masquer",
+    "showAction": "Afficher",
+    "dismissGuide": "Guide de configuration"
+  },
+  "setup": {
+    "toggleShow": "Afficher la configuration de la boutique en ligne",
+    "toggleHide": "Masquer la configuration de la boutique en ligne",
+    "complete": "Terminé",
+    "confirmed": "Confirmé par vous",
+    "unverified": "Non vérifié",
+    "reviewChecks": "Vérifiez les étapes de configuration.",
+    "tasks": {
+      "storefront": {
+        "title": "Connecter votre thème",
+        "description": "Ajoutez à votre thème le bouton de personnalisation et la vérification du panier.",
+        "action": "Ouvrir la configuration du thème",
+        "button-disabled": "Activez le bouton de personnalisation dans votre thème.",
+        "cart-review-disabled": "Activez la vérification du panier dans votre thème.",
+        "both-disabled": "Activez dans votre thème le bouton de personnalisation et la vérification du panier.",
+        "check": "Vérifiez la configuration de la boutique en ligne dans votre thème."
+      },
+      "test": {
+        "title": "Tester une personnalisation",
+        "description": "Publiez un produit, puis testez sa personnalisation dans votre boutique en ligne.",
+        "action": "Tester un produit"
+      }
+    }
+  },
+  "notice": {
+    "planRestriction": {
+      "heading": "Vérifiez votre forfait",
+      "description": "Vérifiez la facturation avant de commencer la configuration d’un nouveau produit.",
+      "action": "Afficher la facturation"
+    }
+  },
+  "homePreview": {}
+}

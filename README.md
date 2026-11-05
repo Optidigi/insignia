@@ -2,6 +2,10 @@
 
 Shopify product customization: a merchant App Home editor, separate buyer storefront, signed whole-quote authorization and independent checkout validation. The [current specification](docs/architecture/implementation-plan.md) defines Lean V1. [Current state](docs/delivery/state.md) distinguishes integrated source, deployed artifacts, known defects and owner-held production gates.
 
+## Designed UI handoff
+
+The UI and its optional demos are in [frontend](frontend/README.md). This folder is not mapped or connected to the production backend. The backend developer owns that work. Existing production application/server code remains unchanged.
+
 ## Start locally
 
 Use Node **24.21.0**, Corepack with **pnpm12.6.0** (`package.json`) and Rust **1.98.1** (`rust-toolchain.toml`). Rustfmt, Clippy and the `wasm32-unknown-unknown` target are declared by that file. Git, the platform linker toolchain (`cc` on Linux) and network access to the pinned package/tool registries are installation prerequisites; a normal local check needs no Shopify or production credentials.

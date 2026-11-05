@@ -1,0 +1,33 @@
+{
+  "upload": {
+    "privateArtwork": "Vertrauliches Motiv",
+    "previewHeading": "Motivvorschau",
+    "uploadAction": "Motiv hochladen",
+    "verifiedPreview": "Geprüfte Motivvorschau",
+    "retryUpload": "Hochgeladenes Motiv erneut prüfen",
+    "retryPreview": "Motivvorschau erneut laden",
+    "requirements": "SVG, PNG oder JPEG, bis zu 5 MiB.",
+    "invalidFormat": "Wählen Sie eine SVG-, PNG- oder JPEG-Datei aus.",
+    "tooLarge": "Wählen Sie eine Datei mit höchstens 5 MiB aus.",
+    "allocating": "Upload wird vorbereitet …",
+    "uploading": "Motiv wird hochgeladen …",
+    "processing": "Motiv wird geprüft …",
+    "verified": "Motiv geprüft. Das Original wird bis {{expiresAt}} aufbewahrt.",
+    "previewRenewed": "Motivvorschau erneuert.",
+    "downloadPrepared": "Download bereit.",
+    "expired": "Der Zugriff auf das Motiv ist abgelaufen. Laden Sie die Datei erneut hoch.",
+    "inspectionRejected": "Das Motiv konnte nicht geprüft werden. Wählen Sie eine andere Datei aus.",
+    "processingTimeout": "Ihr Motiv wird noch verarbeitet. Prüfen Sie es später erneut.",
+    "failed": "Motiv nicht verfügbar",
+    "resumeFailed": "Das hochgeladene Motiv ist nicht verfügbar. Versuchen Sie es später erneut.",
+    "previewFailed": "Vorschau nicht verfügbar. Laden Sie die Vorschau erneut.",
+    "downloadFailed": "Download nicht verfügbar. Versuchen Sie es erneut.",
+    "accessDenied": "Der Zugriff auf das Motiv ist nicht verfügbar. Laden Sie die Seite neu und versuchen Sie es erneut."
+  },
+  "launcher": {
+    "reviewCart": "Warenkorb mit Produktanpassungen prüfen",
+    "customize": "Dieses Produkt anpassen",
+    "configurationUnavailable": "Motivkonfiguration nicht verfügbar",
+    "unavailable": "Produktanpassung nicht verfügbar"
+  }
+}

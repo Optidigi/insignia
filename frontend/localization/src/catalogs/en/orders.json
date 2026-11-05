@@ -1,0 +1,273 @@
+{
+  "pageTitle": "Orders",
+  "actions": {
+    "selectAllShown": "Select all shown orders",
+    "selectedOnPage_one": "{{formattedCount}} selected on this page",
+    "selectedOnPage_other": "{{formattedCount}} selected on this page",
+    "selected_one": "{{formattedCount}} selected",
+    "selected_other": "{{formattedCount}} selected",
+    "selectionActions": "Selected order actions",
+    "productionSheets": "Production sheets",
+    "downloadArtwork": "Download artwork",
+    "clearSelection": "Clear selection",
+    "clearFilters": "Clear filters",
+    "viewProducts": "View products",
+    "selectOrder": "Select order {{orderLabel}}",
+    "firstPage": "View first page"
+  },
+  "errors": {
+    "accessHeading": "Orders unavailable",
+    "accessDescription": "Reopen Insignia from Shopify Admin. If you still can't view orders, ask your store owner to check your permissions.",
+    "loadHeading": "Couldn't load orders",
+    "staleResults": "The orders below may be out of date. Try again.",
+    "initialLoad": "Try again to load your orders."
+  },
+  "empty": {
+    "noCustomizedOrders": "No customized orders yet",
+    "noCustomizedOrdersDescription": "Orders with Insignia customizations will appear here.",
+    "noOrders": "No orders found",
+    "noOrdersOnPage": "No orders found on this page",
+    "tryAnotherDateRange": "Try another date range or clear your filters.",
+    "changeSearchFilterPage": "Change your search or filter, or check another page."
+  },
+  "search": {
+    "label": "Search orders on this page",
+    "placeholder": "Search this page",
+    "results_one": "{{formattedCount}} order shown on this page.",
+    "results_other": "{{formattedCount}} orders shown on this page."
+  },
+  "filters": {
+    "filterOrders": "Filter orders",
+    "artworkStatus": "Artwork status on this page",
+    "editArtworkStatus": "Edit artwork status filter",
+    "editOrderDate": "Edit order date filter",
+    "orderDateRange": "Order date: {{from}} – {{to}}"
+  },
+  "artwork": {
+    "all": "All",
+    "needed": "Artwork needed",
+    "complete": "Artwork complete"
+  },
+  "display": {
+    "accessibleLabel": "Display options",
+    "sortBy": "Sort by",
+    "dateOrder": "Date order",
+    "newestFirst": "Newest first",
+    "oldestFirst": "Oldest first",
+    "columns": "Columns",
+    "hideColumn": "Hide {{column}}",
+    "showColumn": "Show {{column}}"
+  },
+  "date": {
+    "orderDate": "Order date",
+    "anyTime": "Any time",
+    "any": "Any",
+    "today": "Today",
+    "lastSevenDays": "Last 7 days",
+    "lastThirtyDays": "Last 30 days",
+    "lastNinetyDays": "Last 90 days",
+    "customRange": "Custom date range",
+    "editCustomRange": "Edit custom range",
+    "from": "From",
+    "to": "To",
+    "datePlaceholder": "YYYY-MM-DD",
+    "apply": "Apply",
+    "backToPresets": "Back to presets",
+    "utc": "UTC",
+    "errors": {
+      "bothRequired": "Select both a start date and an end date.",
+      "endBeforeStart": "End date must be on or after start date.",
+      "emptyDate": "This calendar date does not occur in the store’s time zone, so no orders can exist on that date.",
+      "invalidDate": "Enter valid dates for your store time zone."
+    }
+  },
+  "table": {
+    "columns": {
+      "order": "Order",
+      "date": "Date",
+      "total": "Total",
+      "payment": "Payment status",
+      "artwork": "Artwork status",
+      "methods": "Decoration methods",
+      "items": "Customized items"
+    }
+  },
+  "payment": {
+    "paid": "Paid",
+    "refunded": "Refunded",
+    "partiallyRefunded": "Partially refunded",
+    "partiallyPaid": "Partially paid",
+    "authorized": "Authorized",
+    "voided": "Voided",
+    "pending": "Pending",
+    "expired": "Expired",
+    "unknown": "Unknown"
+  },
+  "badges": {
+    "test": "Test",
+    "cancelled": "Cancelled",
+    "needsReview": "Needs review"
+  },
+  "order": {
+    "reference": "Order {{orderNumber}}"
+  },
+  "summary": {
+    "methods": "Decoration methods",
+    "viewAllMethods": "View all decoration methods for {{orderLabel}}",
+    "noMethods": "No decoration methods",
+    "methodUnavailable": "Method unavailable"
+  },
+  "counts": {
+    "items_one": "{{formattedCount}} item",
+    "items_other": "{{formattedCount}} items",
+    "itemsExact": "Item count: {{formattedCount}}",
+    "variantAndItems_one": "{{formattedVariantCount}} variant · {{formattedItemCount}} items",
+    "variantAndItems_other": "{{formattedVariantCount}} variants · {{formattedItemCount}} items"
+  },
+  "items": {
+    "heading": "Customized items",
+    "needsVerification": "Needs verification",
+    "variantUnavailable": "Variant name unavailable",
+    "variantBreakdown_one": "{{formattedVariantCount}} variant · {{formattedItemCount}} items",
+    "variantBreakdown_other": "{{formattedVariantCount}} variants · {{formattedItemCount}} items",
+    "imageAlt": "Image of {{itemName}}",
+    "purchasedItem": "purchased item",
+    "purchasedItemUnavailable": "Purchased item name unavailable",
+    "showBreakdown": "Show {{breakdown}} for {{itemName}}",
+    "hideBreakdown": "Hide {{breakdown}} for {{itemName}}",
+    "showVariantBreakdown": "Show {{summary}}",
+    "hideVariantBreakdown": "Hide {{summary}}",
+    "variant": "Variant",
+    "quantity": "Quantity",
+    "empty": "Purchased items need verification."
+  },
+  "designPreview": {
+    "expired": "Design details expired",
+    "unavailable": "Design preview unavailable",
+    "expiredDetails": "The saved design details are no longer retained.",
+    "unavailableDetails": "Saved placement details are unavailable for this design.",
+    "view": "View design",
+    "heading": "Design preview",
+    "artworkVersion": "Artwork version",
+    "currentArtwork": "Current artwork",
+    "atPurchase": "At purchase",
+    "refreshing": "Refreshing order"
+  },
+  "artworkDownload": {
+    "action": "Download original file",
+    "expired": "The original artwork is no longer available.",
+    "failed": "The original file could not be downloaded. Try again."
+  },
+  "artworkHistory": {
+    "heading": "Artwork history",
+    "view": "View artwork history ({{formattedCount}})",
+    "design": "Design {{designNumber}}",
+    "placement": "Placement {{placementNumber}}",
+    "attached": "Artwork attached",
+    "version": "Version {{version}}",
+    "erased": "Artwork detail erased",
+    "originalAvailableUntil": "Original file available until {{date}}",
+    "showMore": "Show more history",
+    "dateUtc": "{{date}} UTC"
+  },
+  "purchaseArtwork": {
+    "read": {
+      "accessDenied": "Your Shopify identity or permission could not be verified. Reopen from Shopify Admin.",
+      "notFound": "This order could not be found. Return to Orders and select an available order.",
+      "refreshFailed": "The order could not be refreshed. Showing the last loaded details. Try again.",
+      "loadFailed": "Could not load the order. Try again."
+    },
+    "actions": {
+      "orderActions": "Order actions",
+      "more": "More actions",
+      "viewInShopify": "View in Shopify",
+      "tryAgain": "Try again",
+      "jumpToMissingArtwork": "Jump to missing artwork"
+    },
+    "placement": {
+      "fallback": "Placement {{formattedNumber}}",
+      "ariaLabel": "Artwork {{placementName}}",
+      "status": {
+        "replaced": "Replaced",
+        "attached": "Attached",
+        "provided": "Provided",
+        "unavailable": "Unavailable",
+        "needed": "Artwork needed"
+      },
+      "sizeUnavailable": "Size unavailable",
+      "preview": "Preview artwork",
+      "download": "Download file",
+      "replace": "Replace artwork",
+      "attach": "Attach artwork",
+      "accessFailed": "The artwork could not be loaded. Try again.",
+      "changed": "Artwork changed. Reload the order page before continuing.",
+      "attachFailed": "The artwork could not be attached. Reload the order page and try again.",
+      "retentionEnded": "Artwork is no longer available.",
+      "deleteSoon": "Download before deletion on {{date}}.",
+      "originalArtwork": "Original artwork",
+      "previewHeading": "Artwork preview: {{placementName}}",
+      "previewAlt": "Verified PNG {{placementName}}",
+      "previewLoading": "Loading artwork preview",
+      "previewUnavailable": "Preview unavailable. Close this dialog and try again."
+    },
+    "preview": {
+      "currentSection": "Current design preview",
+      "purchasedSection": "Purchased design preview",
+      "view": "View",
+      "variant": "Variant",
+      "viewFallback": "View {{formattedNumber}}",
+      "variantFallback": "Variant {{formattedNumber}} (name unavailable)",
+      "variantOption": "{{variantName}} · {{formattedQuantity}} purchased",
+      "loadingCurrent": "Loading current design preview",
+      "loadingPurchased": "Loading purchased design preview",
+      "unavailable": "The design preview could not load. Try again.",
+      "designUnavailable": "This design is no longer available.",
+      "accessExpired": "Preview access expired. Load the preview again to continue.",
+      "currentArtworkUnavailable": "Some current artwork is unavailable in this preview.",
+      "purchasedArtworkUnavailable": "Some artwork from the original order is unavailable in this preview.",
+      "loadPreview": "Load preview",
+      "tryAgain": "Try again"
+    },
+    "artworkState": {
+      "currentUnavailableLocked": "Current artwork is no longer available.",
+      "currentUnavailableReplace": "Current artwork is unavailable. Upload a replacement before customization details expire."
+    },
+    "badges": {
+      "orderUnavailable": "Order unavailable",
+      "accessUnavailable": "Order access unavailable"
+    },
+    "warnings": {
+      "orderCancelledHeading": "Order cancelled",
+      "orderCancelledBody": "This order was cancelled. Check it in Shopify before preparing artwork.",
+      "orderReviewHeading": "Order needs review",
+      "orderReviewBody": "Check this order in Shopify before preparing artwork.",
+      "artworkNeededHeading": "Artwork needed",
+      "missingArtwork_one": "{{formattedCount}} placement needs artwork.",
+      "missingArtwork_other": "{{formattedCount}} placements need artwork.",
+      "missingArtworkExact": "Artwork is missing from {{formattedCount}} placements."
+    },
+    "verification": {
+      "placementDetailsMissing": "Placement details are missing. Check this order in Shopify before preparing artwork.",
+      "customizationUnavailable": "Order customization needs verification. Do not begin production until its details have been checked.",
+      "erasedUnavailable": "Customization details and original artwork are no longer available. Order amounts remain available."
+    },
+    "design": {
+      "productUnavailable": "Customized product",
+      "customization": "{{productName}} customization",
+      "ariaLabel": "{{productName}}, design {{formattedNumber}}",
+      "heading": "{{productName}} · Design {{formattedNumber}}",
+      "noPlacementsHeading": "Customization needs verification"
+    },
+    "payment": {
+      "heading": "Payment information",
+      "originalTotal": "Original order total",
+      "firstFullyPaid": "First fully paid",
+      "notRecorded": "Not recorded",
+      "refundRecords": "Refund records",
+      "settlementNote": "These records do not confirm settled funds. Check payment settlement in Shopify.",
+      "refundDetails": "Refund details",
+      "purchasedItem": "Purchased item",
+      "refundLine": "{{itemName}}: {{formattedQuantity}} recorded for refund, {{amount}}"
+    }
+  }
+}

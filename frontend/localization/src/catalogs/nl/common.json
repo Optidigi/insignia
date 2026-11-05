@@ -1,0 +1,21 @@
+{
+  "actions": {
+    "save": "Opslaan",
+    "cancel": "Annuleren",
+    "close": "Sluiten",
+    "retry": "Opnieuw proberen",
+    "done": "Klaar",
+    "action": "Actie"
+  },
+  "resources": {
+    "remove": "{{resourceName}} verwijderen"
+  },
+  "counts": {
+    "items_one": "{{count}} artikel",
+    "items_other": "{{count}} artikelen",
+    "exactTotal": "Totaal aantal artikelen: {{formattedCount}}"
+  },
+  "summary": {
+    "unavailable": "Niet beschikbaar"
+  }
+}

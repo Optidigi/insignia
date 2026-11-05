@@ -1,0 +1,134 @@
+{
+  "adminPageSkeleton": {
+    "method": "Method",
+    "actions": "Actions",
+    "loadingProductConfiguration": "Loading product configuration",
+    "loadingCustomizationActivity": "Loading customization activity",
+    "loadingProducts": "Loading products",
+    "loadingCustomizedOrders": "Loading customized orders"
+  },
+  "ordersTableSkeleton": {
+    "loadingOrders": "Loading orders",
+    "order": "Order"
+  },
+  "productsTableSkeleton": {
+    "loadingProducts": "Loading products",
+    "products": "Products",
+    "product": "Product",
+    "configuration": "Configuration",
+    "methods": "Methods",
+    "printLocations": "Print locations",
+    "variants": "Variants"
+  },
+  "purchaseDetailSkeleton": {
+    "loadingOrderAndArtwork": "Loading order and artwork"
+  },
+  "titles": {
+    "home": "Insignia",
+    "products": "Products",
+    "orders": "Orders",
+    "order": "Order",
+    "methods": "Decoration methods",
+    "configuration": "Product configuration",
+    "settings": "Settings",
+    "billing": "Billing",
+    "permissions": "App permissions",
+    "storefront": "Storefront setup",
+    "unavailable": "Application unavailable",
+    "translations": "Translations"
+  },
+  "navigation": {
+    "home": "Home",
+    "products": "Products",
+    "orders": "Orders",
+    "methods": "Methods",
+    "settings": "Settings"
+  },
+  "routes": {
+    "customizeProduct": "Customize product",
+    "orderArtwork": "Order and artwork",
+    "home": "Insignia",
+    "products": "Products",
+    "orders": "Orders",
+    "permissions": "App permissions",
+    "methods": "Methods",
+    "storefront": "Storefront setup",
+    "billing": "Billing",
+    "settings": "Settings"
+  },
+  "loading": {
+    "settings": "Loading settings",
+    "permissions": "Loading app permissions",
+    "methods": "Loading methods",
+    "storefront": "Loading storefront setup",
+    "billing": "Loading billing",
+    "billingDetails": "Loading billing details",
+    "detail": "Loading order and artwork",
+    "preview": "Loading product setup",
+    "translations": "Loading translations"
+  },
+  "pageTitle": "{{title}} · Insignia",
+  "failure": {
+    "heading": "Interface unavailable",
+    "body": "Reopen Insignia from Shopify Admin to try again."
+  },
+  "unavailable": {
+    "heading": "Application unavailable",
+    "bannerHeading": "Insignia could not open",
+    "body": "Application configuration is unavailable. Contact app support to recover access.",
+    "recoveryHeading": "Recover access",
+    "recoveryBody": "Return to Shopify Admin and reopen Insignia. If the problem continues, contact app support. No changes have been made from this page.",
+    "return": "Return to Shopify Admin"
+  },
+  "shared": {
+    "actions": {
+      "action": "Action",
+      "discard": "Discard",
+      "reviewPermissions": "Review app permissions"
+    },
+    "filters": {
+      "defaultLabel": "Filters",
+      "add": "Add filter",
+      "withCount": " ({{formattedCount}})"
+    },
+    "loading": {
+      "results": "Loading results"
+    },
+    "navigation": {
+      "settings": "Settings"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "previousPage": "Go to previous page",
+      "nextPage": "Go to next page"
+    },
+    "preview": {
+      "imageUnavailable": "Image unavailable",
+      "preparing": "Preparing preview…"
+    },
+    "saveBar": {
+      "save": "Save",
+      "discard": "Discard",
+      "saveDraft": "Save draft",
+      "discardChanges": "Discard changes",
+      "heading": "Discard unsaved changes?",
+      "body": "You have unsaved changes.",
+      "keepEditing": "Keep editing",
+      "productDiscardBody": "Your unsaved product changes will be lost. The last saved configuration and published product will stay unchanged."
+    },
+    "search": {
+      "clear": "Clear search",
+      "searchBy": "Search by"
+    },
+    "summary": {
+      "empty": "None",
+      "view": "View",
+      "viewAllValues": "View all values"
+    },
+    "table": {
+      "columnsFor": "{{tableName}} columns"
+    }
+  },
+  "hostBack": "Back to {{destination}}"
+}

@@ -1,0 +1,211 @@
+{
+  "source": "https://superfunny.nl/products/ontwerp-je-eigen-superfunny-t-shirt",
+  "productId": "15464675246464",
+  "retrievedAt": "2026-10-19",
+  "notes": "Downloaded from the public Insignia config for the exact listed Shopify color variants. View names follow source Voorkant, Achterkant, Zijkant Links and Zijkant Rechts. Signed delivery URLs are intentionally omitted. Existing shirt-color.jpg files are untouched.",
+  "colors": {
+    "black": {
+      "variantId": "56980145176960",
+      "views": {
+        "front": {
+          "path": "/shirt-black-front.jpg",
+          "sha256": "69585803ffc38def672e1adffb901ff04912c86d3f11a201f10de2cfb81ce5c5",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 85146
+        },
+        "back": {
+          "path": "/shirt-black-back.jpg",
+          "sha256": "28aba11d77a667b202684895ee38115b80890beaab83807b7a121a965e2b8827",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 83812
+        },
+        "left": {
+          "path": "/shirt-black-left.jpg",
+          "sha256": "5457162a0863c575f53f38b8e00eba380866f6dabb8bf2bf517653697a31fa41",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 70227
+        },
+        "right": {
+          "path": "/shirt-black-right.jpg",
+          "sha256": "23b802c4ae8dabe76eb6c76bb7778a58b38d1037bd5a0c2f9e9239dc4e3a5e17",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 67964
+        }
+      }
+    },
+    "grey": {
+      "variantId": "56980145504640",
+      "views": {
+        "front": {
+          "path": "/shirt-grey-front.jpg",
+          "sha256": "ff47641b5e09547b63967dbd5ff8bf6feb83f02942b4568f76a124bcdd6eed42",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 134859
+        },
+        "back": {
+          "path": "/shirt-grey-back.jpg",
+          "sha256": "f2bb973da8b5bb66af0cf377e7f438186eccaf9902f1dd245f1eb988bc87cc6f",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 173339
+        },
+        "left": {
+          "path": "/shirt-grey-left.jpg",
+          "sha256": "ebfd94dbf1d6eed4508967681703146b6f57b4a615fce2eaa86534b224e78ca1",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 103499
+        },
+        "right": {
+          "path": "/shirt-grey-right.jpg",
+          "sha256": "b6ac092315426f6c638076f5b3309e362186fb2b8a96efed38979b38b1bf6ba4",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 100082
+        }
+      }
+    },
+    "navy": {
+      "variantId": "56980145832320",
+      "views": {
+        "front": {
+          "path": "/shirt-navy-front.jpg",
+          "sha256": "ec4becc40c7ffd615b0c53984083cb07b67cf10a27674594aafff0744d97a9a5",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 105611
+        },
+        "back": {
+          "path": "/shirt-navy-back.jpg",
+          "sha256": "eb003e1296bd5a3d60e5ace742c987945051bc3bbd772a04ee45c22bc40b50d9",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 121418
+        },
+        "left": {
+          "path": "/shirt-navy-left.jpg",
+          "sha256": "d3cf2d28fdfc4b3849b8bbad43de005c73d2110612fac0f2f83469770ebac931",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 83938
+        },
+        "right": {
+          "path": "/shirt-navy-right.jpg",
+          "sha256": "03ec9dec8af0ebcf6abb28b3119686686d1a98c4e2c6affde86d85851f888966",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 80927
+        }
+      }
+    },
+    "red": {
+      "variantId": "56980146160000",
+      "views": {
+        "front": {
+          "path": "/shirt-red-front.jpg",
+          "sha256": "22c4e48c37d4e17e7583ea4851a1382fdb4470151ee100a76eb85f9640ea5617",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 102166
+        },
+        "back": {
+          "path": "/shirt-red-back.jpg",
+          "sha256": "1793515fc823f8bce1befa7fd18f092b5fdd8016a12a69a6fa8d649831d5550e",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 127016
+        },
+        "left": {
+          "path": "/shirt-red-left.jpg",
+          "sha256": "a584a43c6499861ae33c589aad0a7ba454d5f1bc33d6a41d9b0a4cc6392a722c",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 90104
+        },
+        "right": {
+          "path": "/shirt-red-right.jpg",
+          "sha256": "0020084ace6971c772929c6227e9ce36ea665416c11ff258675b6870b9aedbab",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 87094
+        }
+      }
+    },
+    "blue": {
+      "variantId": "56980146487680",
+      "views": {
+        "front": {
+          "path": "/shirt-blue-front.jpg",
+          "sha256": "0e85b15ee5391c99d1e52f4c25753789f92c3753299c09d2a4698d6834737407",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 99643
+        },
+        "back": {
+          "path": "/shirt-blue-back.jpg",
+          "sha256": "577edcbda16b54f020a60e9d5243639e91d07e818a914d19ca80db89b2a80550",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 126666
+        },
+        "left": {
+          "path": "/shirt-blue-left.jpg",
+          "sha256": "3cc969512307abb8f950fdf09388a1a0a71b5665ac2f405a54bf4efc733ea14c",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 98089
+        },
+        "right": {
+          "path": "/shirt-blue-right.jpg",
+          "sha256": "59369af7ce6f1768105fbacbf06c70dacb60850c0b9026d41bdf58b1255459ba",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 93954
+        }
+      }
+    },
+    "white": {
+      "variantId": "56980146815360",
+      "views": {
+        "front": {
+          "path": "/shirt-white-front.jpg",
+          "sha256": "fd8c1a5d9481d2b41fdad8969b4dfadd2fd16edbd9b093ab495bda59be9bd22a",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 54385
+        },
+        "back": {
+          "path": "/shirt-white-back.jpg",
+          "sha256": "7634be2bf287d7d911b58f557838b4fef95d3e3526dbbb4b06ad894e24998878",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 64000
+        },
+        "left": {
+          "path": "/shirt-white-left.jpg",
+          "sha256": "b116bcd5d685f8bd7221b0a2b3fcdb55a47a006620cbf1767f00130819639f3f",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 48969
+        },
+        "right": {
+          "path": "/shirt-white-right.jpg",
+          "sha256": "5dd77c8ec9302da70b0904312bbe0e277875c0404e44b26ead215847733db420",
+          "width": 1200,
+          "height": 1200,
+          "bytes": 44653
+        }
+      }
+    }
+  },
+  "optimization": {
+    "maxDimension": 1200,
+    "jpegQuality": 82,
+    "totalBytes": 2247561
+  }
+}

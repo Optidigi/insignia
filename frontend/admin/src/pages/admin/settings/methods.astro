@@ -1,0 +1,4 @@
+---
+// Keep saved Settings links working while Methods has one canonical destination.
+return Astro.redirect(`/admin/methods${Astro.url.search}`, 302);
+---

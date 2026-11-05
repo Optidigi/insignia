@@ -1,0 +1,6 @@
+---
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+Astro.response.headers.set('Location', '/admin/settings/billing' + Astro.url.search);
+return new Response(null, {status:302, headers:Astro.response.headers});
+---

@@ -1,0 +1,74 @@
+{
+  "id": "minimal",
+  "name": "Minimal apron",
+  "description": "A deliberately simple apron setup with one blank, size, view, placement, method, and print width.",
+  "storeName": "Harbour Kitchen Goods",
+  "productName": "Cotton utility apron",
+  "productDescription": "A natural cotton apron for home kitchens and small cafés.",
+  "basePrice": 2195,
+  "currency": "EUR",
+  "locale": "en-NL",
+  "garment": "apron",
+  "preview": "illustration",
+  "maxQuantity": 999,
+  "artworkLater": false,
+  "sizes": [
+    {
+      "id": "one-size",
+      "label": "One size"
+    }
+  ],
+  "colors": [
+    {
+      "id": "natural",
+      "name": "Natural cotton",
+      "hex": "#e8ddc8",
+      "availableSizeIds": [
+        "one-size"
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "front",
+      "label": "Front",
+      "illustration": "front"
+    }
+  ],
+  "positions": [
+    {
+      "id": "chest",
+      "name": "Upper chest",
+      "view": "front",
+      "x": 50,
+      "y": 27,
+      "width": 12,
+      "price": 900,
+      "dimensions": [
+        12
+      ],
+      "sizePrices": [
+        0
+      ],
+      "methodIds": [
+        "print"
+      ]
+    }
+  ],
+  "methods": [
+    {
+      "id": "print",
+      "label": "Print",
+      "surcharge": 0
+    }
+  ],
+  "optionPresentation": {
+    "rowOption": {
+      "display": "swatch",
+      "label": "Colour"
+    },
+    "columnOption": {
+      "label": "Size"
+    }
+  }
+}

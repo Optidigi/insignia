@@ -1,0 +1,184 @@
+{
+  "page": "Startseite",
+  "sections": {
+    "home": "Startseite",
+    "products": "Produkte",
+    "productSetup": "Produkteinrichtung",
+    "orders": "Bestellungen",
+    "customizedOrders": "Bestellungen mit Produktanpassungen",
+    "recentOrders": "Letzte Bestellungen mit Produktanpassungen",
+    "drafts": "Produktentwürfe",
+    "tasks": "Zu prüfende Bestellungen",
+    "storefrontSetup": "Einrichtung des Onlineshops"
+  },
+  "loading": {
+    "home": "Startseite wird geladen",
+    "products": "Produkte werden geladen",
+    "productSetup": "Produkteinrichtung wird geladen",
+    "orders": "Bestellungen mit Produktanpassungen werden geladen",
+    "activity": "Aktivitäten zur Produktanpassung werden geladen"
+  },
+  "unavailable": {
+    "heading": "Insignia in Shopify öffnen",
+    "body": "Öffnen Sie die App über Ihren Shopify-Adminbereich, um fortzufahren.",
+    "action": "In Shopify öffnen",
+    "sessionLost": "Ihre Shopify-Admin-Sitzung ist abgelaufen. Öffnen Sie die App erneut über den Shopify-Adminbereich, um fortzufahren."
+  },
+  "failure": {
+    "productsHeading": "Produkte konnten nicht geladen werden",
+    "ordersHeading": "Bestellungen konnten nicht geladen werden",
+    "productsBody": "Versuchen Sie es erneut oder öffnen Sie die Produkte, um fortzufahren.",
+    "ordersBody": "Versuchen Sie es erneut oder öffnen Sie die Bestellungen, um fortzufahren.",
+    "retry": "Erneut versuchen",
+    "viewProducts": "Produkte ansehen",
+    "viewOrders": "Bestellungen ansehen"
+  },
+  "permissions": {
+    "products": "Ihr Konto hat keinen Zugriff auf die Produkteinrichtung.",
+    "orders": "Für Bestellungen und Motive benötigen Sie das Konto der Shop-Inhaber:innen und Zugriff auf Bestellungen.",
+    "review": "App-Berechtigungen prüfen"
+  },
+  "welcome": {
+    "heading": "Machen Sie Ihre Produkte personalisierbar",
+    "body": "Ermöglichen Sie Ihrer Kundschaft, eigene Motive zu Ihren Produkten hinzuzufügen."
+  },
+  "products": {
+    "addHeading": "Produkt hinzufügen",
+    "customizeHeading": "Produkt personalisierbar machen",
+    "addBody": "Fügen Sie ein Produkt in Shopify hinzu und wählen Sie dann aus, wo die Kundschaft Motive hinzufügen kann.",
+    "customizeBody": "Wählen Sie ein Produkt aus, legen Sie Motivbereiche und Preise fest und veröffentlichen Sie die Konfiguration.",
+    "add": "Produkt hinzufügen",
+    "openShopify": "Shopify-Produkte öffnen",
+    "configure": "Produkt konfigurieren",
+    "view": "Produkte ansehen",
+    "continue": "Einrichtung fortsetzen",
+    "creationFailed": "Die Produkterstellung konnte nicht geöffnet werden.",
+    "draftPublished": "Veröffentlichtes Produkt mit Änderungen im Entwurf",
+    "draftUnpublished": "Entwurf der Produktanpassung"
+  },
+  "orders": {
+    "emptyHeading": "Noch keine Bestellungen mit Produktanpassungen",
+    "emptyBody": "Bestellungen mit Produktanpassungen werden hier nach dem Checkout angezeigt.",
+    "viewAll": "Alle Bestellungen ansehen",
+    "testBadge": "Test",
+    "reference": "Bestellung {{number}}",
+    "customizedProduct": "Produkt mit Anpassung",
+    "itemCountExact": "Artikelanzahl: {{formattedCount}}",
+    "itemMeta": "{{formattedItemCount}} · {{date}}",
+    "orderLink": "{{orderName}} für {{products}} öffnen",
+    "statuses": {
+      "artwork-ready": "Motiv vollständig",
+      "artwork-needed": "Motiv erforderlich",
+      "waiting": "Wartet auf Motiv",
+      "expired": "Motiv nicht verfügbar",
+      "cancelled": "Storniert"
+    },
+    "tasks": {
+      "artwork-missing": "Fügen Sie dieser Bestellung ein Motiv hinzu.",
+      "artwork-supplied": "Prüfen Sie das eingereichte Motiv.",
+      "replacement-artwork-review": "Prüfen Sie das Ersatzmotiv.",
+      "artwork-confirmation": "Bestätigen Sie das Motiv für diese Bestellung.",
+      "action": "Bestellung prüfen"
+    },
+    "itemCount_one": "{{formattedCount}} Artikel",
+    "itemCount_other": "{{formattedCount}} Artikel"
+  },
+  "activity": {
+    "label": "Aktivitäten zur Produktanpassung",
+    "period": {
+      "lastSevenDays": "Letzte 7 Tage",
+      "lastThirtyDays": "Letzte 30 Tage",
+      "menu": "Aktivitätszeitraum"
+    },
+    "metrics": {
+      "customizedOrders": "Bestellungen mit Produktanpassungen",
+      "customizedOrdersDefinition": "Bestellungen mit mindestens einer Insignia-Gestaltung.",
+      "customizedItems": "Bestellte Artikel mit Produktanpassungen",
+      "customizedItemsDefinition": "Gesamtzahl der bestellten Artikel mit Produktanpassungen."
+    },
+    "orders": "Bestellungen ansehen",
+    "unavailable": "Statistiken sind momentan nicht verfügbar.",
+    "metricLink": "{{metricLabel}}: {{formattedCount}}. Bestellungen ansehen",
+    "metricLinkWithChange": "{{metricLabel}}: {{formattedCount}}. {{changeSummary}}. Bestellungen ansehen",
+    "change": {
+      "increase": "{{formattedPercent}} mehr als in den vorherigen {{days}} Tagen",
+      "decrease": "{{formattedPercent}} weniger als in den vorherigen {{days}} Tagen",
+      "unchanged": "{{formattedPercent}} Veränderung gegenüber den vorherigen {{days}} Tagen"
+    },
+    "metricValueExact": "{{metricLabel}}: {{formattedCount}}"
+  },
+  "guidance": {
+    "complete": "Einrichtungsanleitung abgeschlossen",
+    "heading": "Erste Schritte mit Insignia",
+    "progress": "Fortschritt der Einrichtungsanleitung",
+    "completedCount": "{{completed}} von {{total}} abgeschlossen",
+    "dismiss": "Erste Schritte schließen",
+    "hide": "Einrichtungsanleitung ausblenden",
+    "show": "Einrichtungsanleitung anzeigen",
+    "markIncomplete": "{{step}} als nicht abgeschlossen markieren",
+    "markComplete": "{{step}} als abgeschlossen markieren",
+    "steps": {
+      "product": "Produkt konfigurieren",
+      "storefront": "Theme verbinden",
+      "test": "Produktanpassung testen"
+    },
+    "stepLabels": {
+      "product": "Produkteinrichtung",
+      "storefront": "Shop-Verbindung",
+      "test": "Kundentest"
+    },
+    "product": {
+      "addTitle": "Produkt hinzufügen",
+      "addDescription": "Erstellen Sie ein Produkt in Shopify und wählen Sie dann aus, wo die Kundschaft Motive hinzufügen kann.",
+      "finishTitle": "Produkteinrichtung abschließen",
+      "finishDescription": "Legen Sie Motivbereiche, Veredelungsoptionen und Preise fest und veröffentlichen Sie die Konfiguration.",
+      "configure": "Produkt konfigurieren",
+      "continue": "Einrichtung fortsetzen",
+      "view": "Produkte ansehen"
+    },
+    "storefront": {
+      "description": "Fügen Sie Ihrem Theme die Schaltfläche zur Produktanpassung und die Warenkorbprüfung hinzu.",
+      "action": "Theme-Einrichtung öffnen"
+    },
+    "test": {
+      "description": "Sehen Sie sich ein veröffentlichtes Produkt in der Vorschau an, fügen Sie eine Gestaltung hinzu und prüfen Sie sie in Ihrem Warenkorb.",
+      "action": "Produkt testen",
+      "blocked": "Veröffentlichen Sie ein Produkt mit Produktanpassung und schließen Sie die Theme-Einrichtung ab, bevor Sie testen."
+    },
+    "hideAction": "Ausblenden",
+    "showAction": "Anzeigen",
+    "dismissGuide": "Einrichtungsanleitung"
+  },
+  "setup": {
+    "toggleShow": "Einrichtung des Onlineshops anzeigen",
+    "toggleHide": "Einrichtung des Onlineshops ausblenden",
+    "complete": "Abgeschlossen",
+    "confirmed": "Von Ihnen bestätigt",
+    "unverified": "Nicht bestätigt",
+    "reviewChecks": "Prüfen Sie Ihre Einrichtung.",
+    "tasks": {
+      "storefront": {
+        "title": "Theme verbinden",
+        "description": "Fügen Sie Ihrem Theme die Schaltfläche zur Produktanpassung und die Warenkorbprüfung hinzu.",
+        "action": "Theme-Einrichtung öffnen",
+        "button-disabled": "Aktivieren Sie die Schaltfläche zur Produktanpassung in Ihrem Theme.",
+        "cart-review-disabled": "Aktivieren Sie die Warenkorbprüfung in Ihrem Theme.",
+        "both-disabled": "Aktivieren Sie die Schaltfläche zur Produktanpassung und die Warenkorbprüfung in Ihrem Theme.",
+        "check": "Prüfen Sie die Einrichtung des Onlineshops in Ihrem Theme."
+      },
+      "test": {
+        "title": "Produktanpassung testen",
+        "description": "Veröffentlichen Sie ein Produkt und testen Sie dann die Produktanpassung in Ihrem Onlineshop.",
+        "action": "Produkt testen"
+      }
+    }
+  },
+  "notice": {
+    "planRestriction": {
+      "heading": "Tarif prüfen",
+      "description": "Prüfen Sie die Abrechnung, bevor Sie eine neue Produkteinrichtung starten.",
+      "action": "Abrechnung ansehen"
+    }
+  },
+  "homePreview": {}
+}

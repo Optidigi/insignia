@@ -1,0 +1,36 @@
+{
+  "upload": {
+    "region": "Private artwork",
+    "action": "Upload artwork",
+    "requirement": "Up to 5 MiB.",
+    "verified": "Artwork verified. Original retained until {{expiry}}.",
+    "previewRenewed": "Artwork preview renewed.",
+    "downloadPrepared": "Private download prepared. Use Download verified original.",
+    "expired": "Artwork expired. Upload it again.",
+    "inspectionRejected": "Artwork was rejected by inspection. Choose a supported, static image.",
+    "processingTimeout": "Your artwork is still processing. Try checking it again.",
+    "uploadFailed": "Artwork upload could not be completed. Try again.",
+    "resumeFailed": "Uploaded artwork is unavailable. Retry later.",
+    "previewFailed": "Preview unavailable. Retry the preview.",
+    "downloadFailed": "Download unavailable. Try again.",
+    "accessDenied": "Your access could not be verified. Reopen Insignia from Shopify Admin and try again.",
+    "verifiedPreviewAlt": "Verified artwork preview",
+    "progress": {
+      "allocating": "Allocating private upload",
+      "uploading": "Uploading",
+      "processing": "Processing artwork"
+    },
+    "actions": {
+      "retryUploaded": "Retry uploaded artwork",
+      "retryPreview": "Retry artwork preview",
+      "prepareDownload": "Prepare original download",
+      "downloadVerifiedOriginal": "Download verified original"
+    },
+    "invalidFormat": "Choose an SVG, PNG or JPEG image.",
+    "tooLarge": "Choose an image no larger than 5 MiB."
+  },
+  "preview": {
+    "imageUnavailable": "Artwork image unavailable.",
+    "preparing": "Preparing {{imageDescription}}"
+  }
+}

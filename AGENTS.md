@@ -1,5 +1,7 @@
 # Insignia — agent entry
 
+For the selected UI and example-only workflows, read [frontend/README.md](frontend/README.md). Keep this handoff separate from production applications; do not connect backend services as part of UI packaging.
+
 Start with [README](README.md) and [current state and action checklist](docs/delivery/state.md). Refresh live refs, verify the intended project/worktree and preserve newer work and dirty edits. The next designated assignment is the fresh UI agent's merchant presentation rebuild; the merchant UI is **owner-unaccepted**. A continuity task does not start that rebuild.
 
 Read the affected sections of the [current specification](docs/architecture/implementation-plan.md) before changing behavior. It owns Lean V1 product, architecture, security, economics, data and interface contracts; the [wire contract](docs/architecture/WHOLE-QUOTE-V2-ADOPTED.md) owns exact authorization bytes. The [operating model](docs/delivery/operating-model.md) owns delivery conventions and effective resource permissions. Current state is the single mutable progress and owner/operator checklist.

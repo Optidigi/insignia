@@ -1,0 +1,121 @@
+{
+  "id": "front-only",
+  "name": "Single-view event tee",
+  "description": "A black event shirt with a front view and two front decoration choices.",
+  "storeName": "Canal Run Club",
+  "productName": "Annual run T-shirt",
+  "productDescription": "A lightweight black tee for club events and volunteer crews.",
+  "basePrice": 1095,
+  "currency": "EUR",
+  "locale": "en-NL",
+  "garment": "tshirt",
+  "preview": "photo",
+  "maxQuantity": 999,
+  "artworkLater": true,
+  "sizes": [
+    {
+      "id": "s",
+      "label": "S"
+    },
+    {
+      "id": "m",
+      "label": "M"
+    },
+    {
+      "id": "l",
+      "label": "L"
+    },
+    {
+      "id": "xl",
+      "label": "XL"
+    },
+    {
+      "id": "2xl",
+      "label": "2XL"
+    }
+  ],
+  "colors": [
+    {
+      "id": "black",
+      "name": "Black",
+      "hex": "#25262a",
+      "images": {
+        "front": "/shirt-black-front.jpg"
+      },
+      "availableSizeIds": [
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "front",
+      "label": "Front",
+      "illustration": "front"
+    }
+  ],
+  "positions": [
+    {
+      "id": "left-chest",
+      "name": "Left chest",
+      "view": "front",
+      "x": 63,
+      "y": 28,
+      "width": 10,
+      "price": 650,
+      "dimensions": [
+        10,
+        12
+      ],
+      "sizePrices": [
+        0,
+        200
+      ],
+      "methodIds": [
+        "print"
+      ]
+    },
+    {
+      "id": "front",
+      "name": "Centre front",
+      "view": "front",
+      "x": 50,
+      "y": 40,
+      "width": 15,
+      "price": 1100,
+      "dimensions": [
+        15,
+        21,
+        28
+      ],
+      "sizePrices": [
+        0,
+        250,
+        500
+      ],
+      "methodIds": [
+        "print"
+      ]
+    }
+  ],
+  "methods": [
+    {
+      "id": "print",
+      "label": "Screen print",
+      "surcharge": 0
+    }
+  ],
+  "optionPresentation": {
+    "rowOption": {
+      "display": "swatch",
+      "label": "Colour"
+    },
+    "columnOption": {
+      "label": "Size"
+    }
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "id": "many-widths",
+  "name": "Many artwork widths",
+  "description": "Twelve artwork widths, from 6 to 28 cm, on a single front placement.",
+  "storeName": "Canal Run Club",
+  "productName": "Custom print tee",
+  "productDescription": "A lightweight black tee for club events and volunteer crews.",
+  "basePrice": 1095,
+  "currency": "EUR",
+  "locale": "en-NL",
+  "garment": "tshirt",
+  "preview": "photo",
+  "maxQuantity": 999,
+  "artworkLater": true,
+  "sizes": [
+    {
+      "id": "s",
+      "label": "S"
+    },
+    {
+      "id": "m",
+      "label": "M"
+    },
+    {
+      "id": "l",
+      "label": "L"
+    },
+    {
+      "id": "xl",
+      "label": "XL"
+    },
+    {
+      "id": "2xl",
+      "label": "2XL"
+    }
+  ],
+  "colors": [
+    {
+      "id": "black",
+      "name": "Black",
+      "hex": "#25262a",
+      "images": {
+        "front": "/shirt-black-front.jpg"
+      },
+      "availableSizeIds": [
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "front",
+      "label": "Front",
+      "illustration": "front"
+    }
+  ],
+  "positions": [
+    {
+      "id": "centre-front",
+      "name": "Centre front",
+      "view": "front",
+      "x": 50,
+      "y": 43,
+      "width": 6,
+      "price": 1100,
+      "dimensions": [
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        18,
+        20,
+        22,
+        24,
+        26,
+        28
+      ],
+      "sizePrices": [
+        0,
+        100,
+        200,
+        300,
+        400,
+        500,
+        600,
+        700,
+        800,
+        900,
+        1000,
+        1100
+      ],
+      "methodIds": [
+        "print"
+      ]
+    }
+  ],
+  "methods": [
+    {
+      "id": "print",
+      "label": "Screen print",
+      "surcharge": 0
+    }
+  ],
+  "optionPresentation": {
+    "rowOption": {
+      "display": "swatch",
+      "label": "Colour"
+    },
+    "columnOption": {
+      "label": "Size"
+    }
+  }
+}

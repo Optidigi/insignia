@@ -1,0 +1,32 @@
+{
+  "preview": {
+    "documentTitle": "Insignia | Vista previa del diseño",
+    "context": "Vista previa del diseño · Borrador actual",
+    "title": "Vista previa del diseño",
+    "unavailableTitle": "Vista previa del diseño no disponible",
+    "loadingTitle": "Cargando vista previa del diseño",
+    "waitingForDraft": "Esperando el borrador actual del producto…",
+    "reopenFromEditor": "Vuelve a abrir la vista previa de personalización desde el editor del producto.",
+    "expired": "Esta vista previa ha caducado. Vuelve a abrirla desde el borrador del producto.",
+    "draftDidNotArrive": "No se recibió el borrador actual. Cierra esta pestaña y vuelve a abrir la vista previa de personalización desde el editor del producto.",
+    "draftCouldNotBePreviewed": "No se pudo generar una vista previa del borrador actual.",
+    "unrepresentableDraftData": "Este borrador contiene datos de diseño que esta vista previa no puede mostrar. Vuelve a abrirla desde el editor del producto.",
+    "emptyProductName": "Añade un nombre al producto antes de abrir la vista previa de personalización.",
+    "noProductViews": "Añade una vista del producto antes de abrir la vista previa de personalización.",
+    "missingImageForPlacedView": "Añade una imagen a cada vista que tenga zonas de diseño.",
+    "noProductImage": "Añade una imagen del producto antes de abrir la vista previa de personalización.",
+    "unnamedProductView": "Asigna un nombre a cada vista del producto antes de abrir la vista previa de personalización.",
+    "unmappableProductView": "No se pudo asignar la vista del producto para la vista previa.",
+    "noValidArtworkPlacements": "Completa al menos una zona de diseño con un precio válido antes de abrir la vista previa de personalización.",
+    "tooManyArtworkPlacements": "Este producto tiene demasiadas zonas de diseño para la vista previa de personalización.",
+    "unrepresentableArtworkSetup": "La configuración actual del diseño incluye opciones que la vista previa de personalización no puede mostrar.",
+    "previewNotice": "Solo es una vista previa del diseño. No incluye precios, opciones del producto ni disponibilidad.",
+    "previewNoticeWithPlacements_one": "Solo es una vista previa del diseño. No incluye precios, opciones del producto ni disponibilidad. {{availableCount}} de {{totalCount}} zona está disponible en este borrador.",
+    "previewNoticeWithPlacements_other": "Solo es una vista previa del diseño. No incluye precios, opciones del producto ni disponibilidad. Hay {{availableCount}} de {{totalCount}} zonas disponibles en este borrador.",
+    "placementsAvailable_one": "{{availableCount}} de {{totalCount}} zona está disponible en este borrador.",
+    "placementsAvailable_other": "Hay {{availableCount}} de {{totalCount}} zonas disponibles en este borrador.",
+    "productImage": "Imagen del producto",
+    "placementsAvailable_many": "Hay {{availableCount}} de {{totalCount}} zonas disponibles en este borrador.",
+    "previewNoticeWithPlacements_many": "Solo es una vista previa del diseño. No incluye precios, opciones del producto ni disponibilidad. Hay {{availableCount}} de {{totalCount}} zonas disponibles en este borrador."
+  }
+}

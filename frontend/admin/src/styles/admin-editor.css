@@ -1,0 +1,1241 @@
+body {
+  margin: 0;
+}
+/* Konva owns only the drawing surface; Polaris owns surrounding UI. */
+#insignia-visualizer {
+  width: 100%;
+  height: 360px;
+  overflow: hidden;
+}
+.admin-record-id {
+  overflow-wrap: anywhere;
+}
+s-section[id] {
+  scroll-margin-block-start: 24px;
+}
+/* App Bridge consumes these declarations in the host, never in the iframe. */
+s-app-nav,
+ui-save-bar {
+  display: none;
+}
+#admin-route-skeleton {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  min-height: 100vh;
+  color: #303030;
+  font:
+    400 13px / 20px system-ui,
+    sans-serif;
+}
+#admin-route-content {
+  visibility: hidden;
+  pointer-events: none;
+  overflow: clip;
+}
+html[data-admin-ready="true"] #admin-route-content {
+  visibility: visible;
+  pointer-events: auto;
+  overflow: visible;
+}
+html[data-admin-ready="true"] #admin-route-skeleton {
+  display: none;
+}
+#admin-route-failure[hidden],
+#admin-route-skeleton[hidden],
+[hidden] {
+  display: none !important;
+}
+/* Loading decoration never upgrades with Polaris. Its geometry is identical on
+   first paint and while the runtime prepares the interactive page. */
+[data-admin-skeleton] {
+  color: #303030;
+}
+.admin-skeleton-box {
+  box-sizing: border-box;
+  min-width: 0;
+}
+.admin-skeleton-box[data-skeleton-padding-inline="base"] {
+  padding-inline: 16px;
+}
+.admin-skeleton-box[data-skeleton-padding-inline="large-300"] {
+  padding-inline: 32px;
+}
+/* The native region's 1px start edge and small block padding precede
+   the shared 36px/44px search surface; reserve the same space while pending. */
+.admin-skeleton-index-toolbar-owner {
+  border-block-start: 1px solid transparent;
+  padding-block: 12px;
+}
+.admin-skeleton-divider {
+  border-block-start: 1px solid #e3e3e3;
+}
+.admin-skeleton-stack,
+.admin-skeleton-grid {
+  display: grid;
+  min-width: 0;
+}
+.admin-skeleton-index-toolbar .admin-skeleton-grid {
+  width: 100%;
+}
+[data-skeleton-gap="base"] {
+  gap: 16px;
+}
+[data-skeleton-gap="small"] {
+  gap: 12px;
+}
+[data-skeleton-gap="none"] {
+  gap: 0;
+}
+.admin-skeleton-stack[data-skeleton-direction="inline"] {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.admin-skeleton-card {
+  box-sizing: border-box;
+  min-width: 0;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 0 0 1px #e3e3e3;
+}
+.admin-skeleton-fill {
+  width: 100%;
+  height: 100%;
+  background: #e5e7eb;
+  border-radius: 6px;
+}
+#admin-route-skeleton [data-skeleton-layout] {
+  width: 100%;
+  margin-inline: auto;
+}
+/* App-owned placeholders mirror the content groups rather than fake controls. */
+.admin-skeleton-destination,
+.admin-skeleton-copy,
+.admin-skeleton-card-content,
+.admin-skeleton-billing-content,
+.admin-skeleton-billing-price,
+.admin-skeleton-billing-action {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.admin-skeleton-destination {
+  gap: 16px;
+}
+.admin-skeleton-content-row,
+.admin-skeleton-heading,
+.admin-skeleton-method-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+}
+.admin-skeleton-content-row,
+.admin-skeleton-card-heading,
+.admin-skeleton-card-action,
+.admin-skeleton-method-heading {
+  padding: 16px;
+}
+.admin-skeleton-content-row + .admin-skeleton-content-row {
+  border-top: 1px solid #e3e3e3;
+}
+.admin-skeleton-card-content {
+  padding: 16px;
+}
+.admin-skeleton-billing-content > .admin-skeleton-content-row {
+  padding-inline: 0;
+  border-block: 1px solid #e3e3e3;
+}
+.admin-skeleton-billing-price {
+  padding-block: 4px;
+}
+.admin-skeleton-card-heading {
+  display: grid;
+  gap: 12px;
+}
+.admin-skeleton-content-row[data-skeleton-task] {
+  padding-block: 24px;
+}
+@media (max-width: 600px) {
+  .admin-skeleton-content-row[data-skeleton-task] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.admin-skeleton-settings-card {
+  padding: 4px;
+}
+.admin-skeleton-language-section {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
+.admin-skeleton-language-preference {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.admin-skeleton-language-help {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.admin-skeleton-language-help > :nth-child(2) {
+  display: none;
+}
+.admin-skeleton-translations {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.admin-skeleton-translations-overview-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  align-items: start;
+  gap: 24px;
+  min-width: 0;
+}
+.admin-skeleton-translations-overview-main {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.admin-skeleton-translations-overview-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 32px;
+}
+.admin-skeleton-translations-groups {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.admin-skeleton-translations-category {
+  min-width: 0;
+}
+.admin-skeleton-translations-category-heading {
+  margin: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--p-color-bg-surface-secondary, transparent);
+}
+.admin-skeleton-translations-overview-row,
+.admin-skeleton-translations-language-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  min-height: 40px;
+  padding: 8px 16px;
+}
+.admin-skeleton-translations-overview-row + .admin-skeleton-translations-overview-row,
+.admin-skeleton-translations-language-row + .admin-skeleton-translations-language-row {
+  border-top: 1px solid #e3e3e3;
+}
+.admin-skeleton-translations-languages-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 12px;
+}
+.admin-skeleton-translations-languages {
+  display: grid;
+  align-content: start;
+  min-width: 0;
+}
+.admin-skeleton-translations-editor-shell {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+  min-width: 0;
+}
+.admin-skeleton-translations-nav {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+  padding: 4px;
+  background: var(--p-color-bg-surface-secondary, transparent);
+}
+.admin-skeleton-translations-nav-row {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 36px;
+  padding: 8px 12px;
+}
+.admin-skeleton-translations-editor-main {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.admin-skeleton-translations-section-select {
+  display: none;
+  min-width: 0;
+}
+.admin-skeleton-translations-search {
+  min-width: 0;
+  margin-bottom: 4px;
+}
+.admin-skeleton-translations-comparison-head,
+.admin-skeleton-translations-comparison-row {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) minmax(0, 1fr);
+  min-width: 0;
+}
+.admin-skeleton-translations-comparison-head {
+  align-items: center;
+  min-height: 40px;
+  background-color: var(--p-color-bg-surface, transparent);
+  border-bottom: 1px solid #e3e3e3;
+}
+.admin-skeleton-translations-comparison-head > div,
+.admin-skeleton-translations-field-label,
+.admin-skeleton-translations-reference,
+.admin-skeleton-translations-target {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 8px 12px;
+}
+.admin-skeleton-translations-field-label {
+  padding-inline: 16px;
+}
+.admin-skeleton-translations-reference {
+  background: var(--p-color-bg-surface-secondary, transparent);
+}
+.admin-skeleton-translations-target {
+  display: block;
+  min-width: 0;
+  background: var(--p-color-bg-surface, transparent);
+}
+.admin-skeleton-translations-target-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px;
+  align-items: start;
+  gap: 4px;
+  min-width: 0;
+}
+.admin-skeleton-translations-mobile-label {
+  display: none;
+  margin-bottom: 4px;
+}
+.admin-skeleton-translations-comparison-row + .admin-skeleton-translations-comparison-row {
+  border-top: 1px solid #e3e3e3;
+}
+.admin-skeleton-settings-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+}
+.admin-skeleton-settings-row + .admin-skeleton-settings-row {
+  border-block-start: 1px solid #e3e3e3;
+}
+.admin-skeleton-settings-copy {
+  min-width: 0;
+}
+.admin-skeleton-settings-description,
+.admin-skeleton-storefront-description {
+  display: grid;
+  align-content: center;
+  height: 20px;
+  gap: 8px;
+}
+.admin-skeleton-settings-description > :not(:first-child),
+.admin-skeleton-storefront-description > :not(:first-child) {
+  display: none;
+}
+.admin-skeleton-storefront-theme-content {
+  display: grid;
+  gap: 24px;
+  padding: 16px;
+}
+.admin-skeleton-storefront-copy {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.admin-skeleton-storefront-task-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 20px;
+}
+.admin-skeleton-storefront-tasks .admin-skeleton-content-row {
+  padding: 24px 0;
+  gap: 24px;
+}
+.admin-skeleton-storefront-tasks .admin-skeleton-content-row:first-child {
+  padding-block-start: 0;
+}
+.admin-skeleton-storefront-tasks .admin-skeleton-content-row:last-child {
+  padding-block-end: 0;
+}
+.admin-skeleton-storefront-test {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  padding: 16px;
+}
+.admin-skeleton-storefront-test-copy {
+  display: flex;
+  align-items: center;
+  flex: 1 1 220px;
+  min-width: 0;
+  height: 20px;
+}
+@media (max-width: 600px) {
+  .admin-skeleton-translations-overview-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .admin-skeleton-settings-description,
+  .admin-skeleton-storefront-description,
+  .admin-skeleton-storefront-test-copy {
+    height: 40px;
+  }
+  .admin-skeleton-settings-description > :nth-child(2),
+  .admin-skeleton-storefront-description > :nth-child(2) {
+    display: block;
+  }
+  .admin-skeleton-storefront-tasks .admin-skeleton-content-row {
+    gap: 16px;
+  }
+}
+@media (max-width: 350px) {
+  .admin-skeleton-storefront-description-long {
+    height: 60px;
+  }
+  .admin-skeleton-storefront-description-long > :last-child {
+    display: block;
+  }
+  .admin-skeleton-language-help > :nth-child(2) {
+    display: block;
+  }
+}
+.admin-skeleton-section {
+  min-width: 0;
+}
+.admin-skeleton-section-heading {
+  display: grid;
+  min-height: 16px;
+  padding-block: 24px 16px;
+}
+.admin-skeleton-section-heading-with-subheading {
+  gap: 4px;
+  padding-block-end: 8px;
+}
+.admin-skeleton-permissions-subheading {
+  display: flex;
+  align-items: center;
+  height: 20px;
+}
+.admin-skeleton-permissions-card {
+  padding: 16px;
+  display: grid;
+  gap: 16px;
+}
+.admin-skeleton-permission-row {
+  display: grid;
+  gap: 12px;
+  padding-block-end: 16px;
+  border-block-end: 1px solid #e3e3e3;
+}
+.admin-skeleton-permission-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 82px;
+  gap: 12px;
+  align-items: start;
+}
+.admin-skeleton-permission-title {
+  display: flex;
+  align-items: center;
+  min-height: 20px;
+}
+.admin-skeleton-permission-description {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  height: 20px;
+}
+.admin-skeleton-permission-description > :not(:first-child) {
+  display: none;
+}
+@media (max-width: 600px) {
+  .admin-skeleton-permissions-subheading {
+    height: 40px;
+  }
+  .admin-skeleton-permission-description {
+    height: 60px;
+  }
+  .admin-skeleton-permission-description > :not(:first-child) {
+    display: block;
+  }
+  .admin-skeleton-permission-description-short {
+    height: 40px;
+  }
+  .admin-skeleton-permission-description-short > :last-child {
+    display: none;
+  }
+}
+@media (max-width: 350px) {
+  .admin-skeleton-permission-title-long {
+    min-height: 40px;
+  }
+}
+.admin-skeleton-text-line {
+  display: flex;
+  align-items: center;
+  min-height: 20px;
+  min-width: 0;
+}
+.admin-skeleton-field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.admin-skeleton-choice {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+.admin-skeleton-choice-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+@media (max-width: 600px) {
+  .method-skeleton-name-help,
+  .method-skeleton-pricing-intro,
+  .method-skeleton-choice-description {
+    min-height: 40px;
+  }
+  .method-skeleton-dependent-controls {
+    padding-block-end: 24px;
+  }
+}
+@media (max-width: 350px) {
+  .method-skeleton-pricing-intro {
+    min-height: 60px;
+  }
+}
+.admin-skeleton-bar {
+  max-width: 100%;
+}
+.admin-order-skeleton-shell {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1152px;
+  padding: 16px 32px;
+  margin-inline: auto;
+}
+.admin-order-aside-skeleton {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+.admin-order-aside-skeleton [data-skeleton-aside-group] + [data-skeleton-aside-group] {
+  border-block-start: 1px solid #e3e3e3;
+  padding-block-start: 16px;
+}
+.admin-order-aside-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+}
+.admin-order-aside-content {
+  display: grid;
+  gap: 20px;
+  padding: 24px 16px 0;
+}
+.admin-order-item-skeleton {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+.admin-order-payment-skeleton {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+}
+.admin-order-payment-skeleton + .admin-order-payment-skeleton {
+  padding-block-start: 16px;
+  border-block-start: 1px solid #e3e3e3;
+}
+.admin-detail-skeleton-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) min(33vw, 280px);
+  gap: 48px;
+  align-items: start;
+}
+@media (max-width: 783px) {
+  .admin-detail-skeleton-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+}
+@media (max-width: 639px) {
+  .admin-order-skeleton-shell {
+    padding-inline: 16px;
+  }
+}
+s-button:not(:defined),
+s-link:not(:defined),
+s-select:not(:defined),
+s-text-field:not(:defined),
+s-drop-zone:not(:defined) {
+  visibility: hidden;
+}
+
+/* App-owned containment for the loading layout; controls remain Polaris. */
+[data-skeleton-container] {
+  container-type: inline-size;
+  container-name: admin-page-skeleton;
+  width: 100%;
+}
+
+/* These containers only constrain merchant-supplied labels; Polaris owns controls. */
+.purchase-design,
+.purchase-placement,
+.purchase-items,
+.catalog-product-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Page provides 32px gutters. On phones, let resource sections use half of that
+   space, keeping 16px around cards and their own Polaris content padding. */
+@media (max-width: 639px) {
+  /* Order sections intentionally extend halfway into Page’s normal 32px gutters. */
+  #admin-route-skeleton [data-skeleton-layout="detail"][data-skeleton-width="base"] {
+    padding-inline: 16px;
+  }
+  .purchase-detail-primary,
+  .purchase-detail-support,
+  [data-purchase-detail-skeleton] {
+    margin-inline: -16px;
+    min-width: 0;
+  }
+  #admin-route-skeleton [data-purchase-detail-skeleton] {
+    margin-inline: 0;
+  }
+}
+
+/* Native table/scroll semantics retain column scanning. The app owns sticky
+   identity and focus clearance; Polaris owns text, selection and actions. */
+[data-resource-table] {
+  --resource-table-primary-width: 132px;
+  min-width: 0;
+  position: relative;
+  container-name: resource-table;
+  container-type: inline-size;
+  clip-path: inset(0 round 8px);
+}
+[data-resource-table]:has(.product-resource-identity) {
+  --resource-table-primary-width: 400px;
+}
+[data-resource-table]:has(.order-record-name) {
+  --resource-table-primary-width: 140px;
+}
+.resource-table-scroll {
+  overflow: auto;
+  overscroll-behavior-inline: contain;
+}
+[data-pinned-primary] .resource-table-scroll {
+  scroll-padding-inline-start: calc(var(--resource-table-primary-width) + 8px);
+}
+.resource-table-scroll:focus-visible {
+  outline: 2px solid var(--p-color-border-focus, #005bd3);
+  outline-offset: -2px;
+}
+.product-resource-identity {
+  display: grid;
+  grid-template-columns: 20px 40px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  inline-size: calc(var(--resource-table-primary-width) - 20px);
+}
+@container resource-table (max-width: 760px) {
+  .resource-table-scroll:has(.product-resource-identity) {
+    --resource-table-primary-width: 144px;
+  }
+  .product-resource-identity {
+    grid-template-columns: 20px minmax(0, 1fr);
+    gap: 8px;
+  }
+  .product-resource-thumbnail {
+    display: none;
+  }
+}
+[data-resource-table][aria-busy="true"] table {
+  pointer-events: none;
+}
+[data-resource-table][data-selection-active] .resource-table-heading-content {
+  visibility: hidden;
+}
+.resource-table-selection {
+  position: sticky;
+  z-index: 3;
+  inset-inline: 0;
+  inset-block-start: 0;
+  height: 32px;
+  margin-block-end: -32px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  overflow: clip;
+}
+.resource-table-selection[aria-hidden="true"] {
+  visibility: hidden;
+  pointer-events: none;
+}
+.resource-table-selection-content {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  block-size: 32px;
+  padding-inline: 12px;
+}
+.resource-selection-bar {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 4px;
+  min-width: 0;
+}
+.resource-selection-summary,
+.resource-selection-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.resource-selection-count {
+  display: block;
+  flex: 0 0 auto;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  white-space: nowrap;
+}
+.orders-desktop-selection-count,
+.orders-mobile-selection-count {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+.resource-selection-desktop {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.resource-selection-mobile {
+  display: none;
+}
+.resource-selection-clear {
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+}
+.admin-action-chip {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  inline-size: max-content;
+  block-size: 24px;
+  padding-block: 2px;
+  padding-inline: 8px;
+  border: 0;
+  border-radius: 9999px;
+  background-color: var(--p-color-bg-fill-secondary, rgb(235 235 235));
+  color: inherit;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.admin-action-chip:hover:not(:disabled) {
+  background-color: var(--p-color-bg-fill-secondary-hover, rgb(221 221 221));
+}
+.admin-action-chip:focus-visible {
+  outline: 2px solid var(--p-color-border-focus, #005bd3);
+  outline-offset: 2px;
+}
+.admin-action-chip:active:not(:disabled) {
+  background-color: var(--p-color-bg-fill-secondary-active, rgb(208 208 208));
+}
+.admin-action-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.admin-action-chip-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: max-content;
+  block-size: 16px;
+  gap: 4px;
+  white-space: nowrap;
+}
+.admin-action-chip-label {
+  display: block;
+}
+.admin-action-chip-with-trailing-icon {
+  padding-inline-end: 4px;
+}
+.admin-action-chip-icon-only {
+  inline-size: 24px;
+  padding: 0;
+}
+.admin-action-chip-icon-only .admin-action-chip-content {
+  block-size: 24px;
+}
+@container resource-table (max-width: 760px) {
+  .resource-selection-desktop {
+    display: none;
+  }
+  .resource-selection-mobile {
+    display: flex;
+    align-items: center;
+  }
+}
+.admin-resource-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  text-align: start;
+  font: inherit;
+}
+.admin-resource-table th {
+  padding: 6px 8px;
+  background: rgb(128 128 128 / 6%);
+  font-weight: inherit;
+  white-space: nowrap;
+  text-align: start;
+}
+.admin-resource-table td {
+  padding: 8px;
+  border-bottom: 1px solid rgb(128 128 128 / 15%);
+  vertical-align: middle;
+  min-width: 100px;
+  background-color: Canvas;
+}
+.admin-resource-table th:first-child {
+  border-start-start-radius: 8px;
+  border-end-start-radius: 8px;
+}
+[data-pinned-primary] .admin-resource-table th:first-child,
+[data-pinned-primary] .admin-resource-table td:first-child {
+  box-sizing: border-box;
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 1;
+  inline-size: var(--resource-table-primary-width);
+  min-inline-size: var(--resource-table-primary-width);
+  max-inline-size: var(--resource-table-primary-width);
+  padding-inline-start: 12px;
+  /* Canvas follows the inherited color scheme and stays opaque over scrolled facts. */
+  background-color: Canvas;
+}
+[data-pinned-primary] .admin-resource-table th:first-child {
+  z-index: 2;
+  background-image: linear-gradient(rgb(128 128 128 / 6%), rgb(128 128 128 / 6%));
+}
+.admin-resource-table th:last-child,
+.admin-resource-table td:last-child {
+  padding-inline-end: 12px;
+}
+.admin-resource-table th:last-child {
+  border-start-end-radius: 8px;
+  border-end-end-radius: 8px;
+}
+.admin-resource-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.admin-resource-table tbody tr {
+  cursor: pointer;
+}
+.admin-resource-table tbody tr:hover td,
+.admin-resource-table tbody tr[data-selected] td {
+  background-image: linear-gradient(rgb(128 128 128 / 6%), rgb(128 128 128 / 6%));
+}
+.admin-resource-table [data-format="currency"],
+.admin-resource-table [data-format="numeric"] {
+  text-align: end;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.admin-resource-table td[data-column="date"] {
+  white-space: nowrap;
+}
+.admin-resource-table td:has([data-admin-value-summary]) {
+  min-width: 160px;
+  max-width: 320px;
+}
+.orders-mobile-selection {
+  display: none;
+}
+.orders-export-action,
+.orders-desktop-selection-actions {
+  display: contents;
+}
+.orders-mobile-selection-actions {
+  display: none;
+}
+.orders-mobile-selection-count {
+  display: none;
+}
+.resource-table-selection .orders-mobile-selection {
+  display: contents;
+}
+
+@container resource-table (max-width: 760px) {
+  .resource-table-selection .orders-export-action > s-clickable,
+  .resource-table-selection .orders-export-action > s-clickable-chip,
+  .resource-table-selection .orders-export-action > button.admin-action-chip,
+  .resource-table-selection .orders-desktop-selection-actions,
+  .resource-table-selection .orders-selection-clear,
+  .resource-table-selection .orders-desktop-selection-count {
+    display: none;
+  }
+  .resource-table-selection .orders-mobile-selection-actions {
+    display: contents;
+  }
+  .resource-table-selection .orders-mobile-selection-count {
+    display: flex;
+  }
+}
+
+/* Long imported names keep rows scannable; the full accessible name and tooltip remain available. */
+.catalog-product-name,
+.order-record-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Stable native-like resource search. Only the shared input is app styled;
+   Polaris owns the surrounding actions, icons and overlays. */
+.admin-index-toolbar {
+  min-width: 0;
+  width: 100%;
+  container-type: inline-size;
+}
+.admin-index-overlay-scroll {
+  max-block-size: calc(100dvh - 88px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.admin-value-summary-scroll {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  max-block-size: min(360px, 40dvh);
+}
+.admin-index-search {
+  display: flex;
+  flex-wrap: wrap;
+  box-sizing: border-box;
+  width: 100%;
+  align-items: center;
+  min-height: 36px;
+  min-width: 0;
+  padding: 0 2px;
+  border: 1px solid rgb(128 128 128 / 16%);
+  border-radius: 12px;
+  background: Canvas;
+  color: CanvasText;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 6%);
+}
+.admin-index-search:focus-within {
+  border-color: rgb(128 128 128 / 55%);
+}
+.admin-index-filter-trigger {
+  flex: 0 0 auto;
+  padding-inline-end: 4px;
+}
+.admin-index-filter-mobile {
+  display: none;
+}
+.admin-index-search-glyph {
+  margin-inline-start: 6px;
+  display: flex;
+  align-items: center;
+  flex: 0 0 20px;
+  width: 20px;
+}
+.admin-index-search input {
+  appearance: none;
+  border: 0;
+  outline: none;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  min-width: min(140px, 100%);
+  width: 100%;
+  flex: 1 1 140px;
+  padding: 6px 4px;
+}
+.admin-index-search input::placeholder {
+  color: inherit;
+  opacity: 0.55;
+}
+.admin-index-search:has(input:focus-visible) {
+  outline: 2px solid Highlight;
+  outline-offset: 1px;
+}
+.admin-index-search input::-webkit-search-cancel-button {
+  appearance: none;
+}
+.admin-index-clear,
+.admin-index-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+.admin-index-actions {
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+.admin-index-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.admin-index-clear[data-empty] {
+  visibility: hidden;
+}
+.admin-index-applied {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block-start: 8px;
+}
+@container (max-width: 639px) {
+  .admin-index-search {
+    min-height: 44px;
+  }
+  .admin-index-search input {
+    font-size: 16px;
+    line-height: 24px;
+    padding-block: 8px;
+  }
+  .admin-index-filter-trigger {
+    padding-inline-end: 0;
+  }
+  .admin-index-filter-desktop {
+    display: none;
+  }
+  .admin-index-filter-mobile {
+    display: flex;
+  }
+}
+
+/* Public resource-picker controls: unlike index search, scope and filters remain separate. */
+.admin-picker-toolbar {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  container: admin-picker-toolbar / inline-size;
+}
+.admin-picker-toolbar__search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 8px;
+  align-items: end;
+  min-width: 0;
+}
+.admin-picker-toolbar__search-row s-search-field,
+.admin-picker-toolbar__search-row s-select {
+  min-width: 0;
+}
+.admin-picker-toolbar__search-row--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+.admin-picker-toolbar__filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+}
+.admin-picker-toolbar__filter-trigger {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.admin-picker-toolbar__applied {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.admin-picker-toolbar__status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@container admin-picker-toolbar (max-width: 479px) {
+  .admin-picker-toolbar__search-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Reserve the quick-preview action beside the product name without moving it on hover. */
+
+/* The reusable library retains the same table columns at every width. */
+.method-library-overview .admin-resource-table {
+  table-layout: fixed;
+}
+.method-library-overview .admin-resource-table th:last-child,
+.method-library-overview .admin-resource-table td:last-child {
+  width: 76px;
+  min-width: 0;
+  text-align: end;
+}
+.method-library-overview .admin-resource-table td:first-child {
+  overflow-wrap: anywhere;
+}
+.method-library-overview .admin-resource-table tbody tr {
+  cursor: default;
+}
+
+/* Keep the action control at the cell edge even when its menu is slotted nearby. */
+.method-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-inline-size: 0;
+}
+.method-row-actions s-menu {
+  position: absolute;
+}
+/* Long localized actions retain native Polaris controls and wrap their light-DOM labels. */
+.admin-action-wrap {
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+}
+.admin-action-label {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  min-inline-size: 0;
+}
+.admin-action-label--start {
+  text-align: start;
+}
+.admin-permission-heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: start;
+  gap: 8px;
+}
+.admin-permission-title {
+  flex: 1 1 max-content;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+.admin-permission-status {
+  flex: 0 0 auto;
+  max-inline-size: 100%;
+}
+
+.admin-skeleton-translations {
+  max-inline-size: 1100px;
+  margin-inline: auto;
+  inline-size: 100%;
+}
+.admin-skeleton-translations-editor {
+  max-inline-size: none;
+  margin-inline: 0;
+}
+
+@media (max-width: 1199px) {
+  .admin-skeleton-translations-editor-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .admin-skeleton-translations-nav {
+    display: none;
+  }
+  .admin-skeleton-translations-section-select {
+    display: block;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-skeleton-translations-comparison-head {
+    display: none;
+  }
+  .admin-skeleton-translations-comparison-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .admin-skeleton-translations-field-label {
+    padding: 8px 12px;
+  }
+  .admin-skeleton-translations-reference,
+  .admin-skeleton-translations-target {
+    padding: 8px 12px;
+  }
+  .admin-skeleton-translations-mobile-label {
+    display: block;
+  }
+}
+
+@media (min-width: 1200px) {
+  .admin-skeleton-translations-editor-shell {
+    grid-template-columns: 300px minmax(0, 1fr);
+  }
+}
+
+.admin-skeleton-translations-overview-mobile-controls {
+  display: none;
+}
+@media (max-width: 900px) {
+  .admin-skeleton-translations-languages,
+  .admin-skeleton-translations-overview-heading {
+    display: none;
+  }
+  .admin-skeleton-translations-overview-mobile-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: end;
+  }
+}
+@media (max-width: 360px) {
+  .admin-skeleton-translations-overview-mobile-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

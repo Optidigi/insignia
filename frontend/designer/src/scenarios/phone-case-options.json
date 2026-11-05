@@ -1,0 +1,124 @@
+{
+  "id": "phone-case-options",
+  "name": "Phone case options (schematic fixture)",
+  "description": "Model × Finish presentation check. Model A/B and Matte/Gloss are test labels; both row choices reuse the existing generic schematic image.",
+  "storeName": "Scenario store",
+  "productName": "Phone case",
+  "productDescription": "Schematic geometry preview only; not a product photo or a calibrated manufacturing template.",
+  "basePrice": 2400,
+  "currency": "EUR",
+  "locale": "en-NL",
+  "optionPresentation": {
+    "rowOption": {
+      "display": "named-choice",
+      "label": "Finish"
+    },
+    "columnOption": {
+      "label": "Model"
+    }
+  },
+  "preview": "photo",
+  "maxQuantity": 999,
+  "artworkLater": false,
+  "sizes": [
+    {
+      "id": "model-a",
+      "label": "Model A"
+    },
+    {
+      "id": "model-b",
+      "label": "Model B"
+    }
+  ],
+  "colors": [
+    {
+      "id": "matte",
+      "name": "Matte",
+      "images": {
+        "back": "/phone-case-back.svg"
+      },
+      "availableSizeIds": [
+        "model-a"
+      ]
+    },
+    {
+      "id": "gloss",
+      "name": "Gloss",
+      "images": {
+        "back": "/phone-case-back.svg"
+      },
+      "availableSizeIds": [
+        "model-b"
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "back",
+      "label": "Back",
+      "illustration": "back"
+    }
+  ],
+  "positions": [
+    {
+      "id": "case-back",
+      "name": "Back",
+      "view": "back",
+      "x": 50,
+      "y": 60,
+      "width": 22,
+      "movementArea": {
+        "x": 50,
+        "y": 60,
+        "width": 34,
+        "height": 36
+      },
+      "sizeLabels": [
+        "Small",
+        "Medium",
+        "Large"
+      ],
+      "price": 500,
+      "dimensions": [
+        8,
+        10,
+        12
+      ],
+      "sizePrices": [
+        0,
+        200,
+        400
+      ],
+      "methodIds": [
+        "print"
+      ]
+    }
+  ],
+  "methods": [
+    {
+      "id": "print",
+      "label": "Print",
+      "surcharge": 0
+    }
+  ],
+  "variantMatrix": [
+    {
+      "rowId": "matte",
+      "columnId": "model-a",
+      "variantId": "900000000001",
+      "available": true
+    },
+    {
+      "rowId": "gloss",
+      "columnId": "model-a",
+      "variantId": "900000000002",
+      "available": false
+    },
+    {
+      "rowId": "gloss",
+      "columnId": "model-b",
+      "variantId": "900000000003",
+      "available": true
+    }
+  ]
+}

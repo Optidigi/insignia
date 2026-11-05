@@ -1,0 +1,33 @@
+{
+  "upload": {
+    "privateArtwork": "Grafica privata",
+    "previewHeading": "Anteprima della grafica",
+    "uploadAction": "Carica grafica",
+    "verifiedPreview": "Anteprima della grafica verificata",
+    "retryUpload": "Riprova la verifica della grafica caricata",
+    "retryPreview": "Riprova l'anteprima della grafica",
+    "requirements": "SVG, PNG o JPEG, fino a 5 MiB.",
+    "invalidFormat": "Scegli un file SVG, PNG o JPEG.",
+    "tooLarge": "Scegli un file di massimo 5 MiB.",
+    "allocating": "Preparazione del caricamento…",
+    "uploading": "Caricamento della grafica…",
+    "processing": "Controllo della grafica…",
+    "verified": "Grafica verificata. L'originale verrà conservato fino al {{expiresAt}}.",
+    "previewRenewed": "Anteprima della grafica aggiornata.",
+    "downloadPrepared": "Download pronto.",
+    "expired": "L'accesso alla grafica è scaduto. Carica di nuovo il file.",
+    "inspectionRejected": "Non è stato possibile verificare la grafica. Scegli un altro file.",
+    "processingTimeout": "La grafica è ancora in elaborazione. Prova a controllarla di nuovo.",
+    "failed": "Grafica non disponibile",
+    "resumeFailed": "La grafica caricata non è disponibile. Riprova più tardi.",
+    "previewFailed": "Anteprima non disponibile. Riprova a visualizzarla.",
+    "downloadFailed": "Download non disponibile. Riprova.",
+    "accessDenied": "L'accesso alla grafica non è disponibile. Ricarica la pagina e riprova."
+  },
+  "launcher": {
+    "reviewCart": "Rivedi il carrello personalizzato",
+    "customize": "Personalizza questo prodotto",
+    "configurationUnavailable": "Configurazione della grafica non disponibile",
+    "unavailable": "Personalizzazione non disponibile"
+  }
+}

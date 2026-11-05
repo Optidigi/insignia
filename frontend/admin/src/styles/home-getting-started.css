@@ -1,0 +1,183 @@
+.home-guide {
+  display: grid;
+  gap: 12px;
+}
+.home-guide__header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+.home-guide__heading {
+  display: grid;
+  gap: 8px;
+  min-inline-size: 0;
+}
+.home-guide__progress {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.home-guide__progress progress {
+  appearance: none;
+  border: 0;
+  inline-size: 56px;
+  block-size: 4px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+.home-guide__progress progress::-webkit-progress-bar {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  border-radius: 4px;
+}
+.home-guide__progress progress::-webkit-progress-value {
+  background: currentColor;
+  border-radius: 4px;
+}
+.home-guide__progress progress::-moz-progress-bar {
+  background: currentColor;
+  border-radius: 4px;
+}
+.home-guide__controls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+}
+.home-guide__steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0;
+}
+.home-guide__step {
+  padding: 6px 8px;
+}
+.home-guide__step-header {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.home-guide__check-hit {
+  display: grid;
+  place-items: center;
+  inline-size: 32px;
+  block-size: 32px;
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+.home-guide__check {
+  appearance: none;
+  margin: 0;
+  display: grid;
+  place-content: center;
+  inline-size: 18px;
+  block-size: 18px;
+  border: 1.5px dashed currentColor;
+  border-radius: 50%;
+  cursor: pointer;
+  color: inherit;
+}
+.home-guide__check:checked {
+  border-style: solid;
+  background: #303030;
+}
+.home-guide__check:checked::after {
+  content: "";
+  inline-size: 7px;
+  block-size: 4px;
+  border-inline-start: 1.5px solid white;
+  border-block-end: 1.5px solid white;
+  transform: translateY(-1px) rotate(-45deg);
+}
+.home-guide__check:focus-visible,
+.home-guide__step-toggle:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+.home-guide__step-toggle {
+  color: inherit;
+  font: inherit;
+  border: 0;
+  padding: 6px 4px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-inline-size: 0;
+  min-block-size: 32px;
+  flex: 1;
+  text-align: start;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.home-guide__detail {
+  padding: 0 12px 8px 40px;
+}
+.home-guide__action {
+  display: flex;
+}
+@media (max-width: 400px) {
+  .home-guide__header {
+    gap: 8px;
+  }
+  .home-guide__controls {
+    gap: 0;
+  }
+  .home-guide__step {
+    padding-inline: 0;
+  }
+  .home-guide__detail {
+    padding-inline-end: 8px;
+  }
+}
+.home-guide__context {
+  overflow-wrap: anywhere;
+  min-inline-size: 0;
+}
+.home-guide__action .merchant-home__create-recovery {
+  justify-items: start;
+  text-align: start;
+}
+.home-guide__action .merchant-home__empty-description {
+  text-align: start;
+}
+
+.home-guide__detail-content {
+  display: grid;
+  min-inline-size: 0;
+  gap: 16px;
+}
+.home-guide__detail-content--illustrated {
+  grid-template-columns: minmax(0, 1fr) 80px;
+  align-items: center;
+}
+.home-guide__illustration {
+  inline-size: 80px;
+  block-size: 80px;
+}
+@media (max-width: 600px) {
+  .home-guide__detail-content--illustrated {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .home-guide__illustration {
+    display: none;
+  }
+}
+
+.home-guide[data-expanded="false"] .home-guide__header {
+  align-items: center;
+}
+.home-guide[data-expanded="false"] .home-guide__heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.home-guide[data-expanded="false"] .home-guide__progress {
+  flex-wrap: nowrap;
+}

@@ -1,0 +1,315 @@
+{
+  "id": "classic",
+  "name": "Classic cotton tee",
+  "description": "A full-featured everyday T-shirt with the current product photography and five familiar print locations.",
+  "storeName": "Northstar Outfitters",
+  "productName": "Classic cotton T-shirt",
+  "productDescription": "Midweight unisex cotton jersey with a regular fit.",
+  "basePrice": 995,
+  "currency": "EUR",
+  "locale": "en-NL",
+  "garment": "tshirt",
+  "preview": "photo",
+  "maxQuantity": 999,
+  "artworkLater": true,
+  "sizes": [
+    {
+      "id": "xs",
+      "label": "XS"
+    },
+    {
+      "id": "s",
+      "label": "S"
+    },
+    {
+      "id": "m",
+      "label": "M"
+    },
+    {
+      "id": "l",
+      "label": "L"
+    },
+    {
+      "id": "xl",
+      "label": "XL"
+    },
+    {
+      "id": "2xl",
+      "label": "2XL"
+    }
+  ],
+  "colors": [
+    {
+      "id": "white",
+      "name": "White",
+      "hex": "#fafafa",
+      "images": {
+        "front": "/shirt-white-front.jpg",
+        "back": "/shirt-white-back.jpg",
+        "left": "/shirt-white-left.jpg"
+      },
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "black",
+      "name": "Black",
+      "hex": "#25262a",
+      "images": {
+        "front": "/shirt-black-front.jpg",
+        "back": "/shirt-black-back.jpg",
+        "left": "/shirt-black-left.jpg"
+      },
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "navy",
+      "name": "Navy",
+      "hex": "#24324b",
+      "images": {
+        "front": "/shirt-navy-front.jpg",
+        "back": "/shirt-navy-back.jpg",
+        "left": "/shirt-navy-left.jpg"
+      },
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "grey",
+      "name": "Charcoal grey",
+      "hex": "#625956",
+      "images": {
+        "front": "/shirt-grey-front.jpg",
+        "back": "/shirt-grey-back.jpg",
+        "left": "/shirt-grey-left.jpg"
+      },
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "blue",
+      "name": "Royal blue",
+      "hex": "#255fc1",
+      "images": {
+        "front": "/shirt-blue-front.jpg",
+        "back": "/shirt-blue-back.jpg",
+        "left": "/shirt-blue-left.jpg"
+      },
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    },
+    {
+      "id": "red",
+      "name": "Red",
+      "hex": "#bb303c",
+      "images": {
+        "front": "/shirt-red-front.jpg",
+        "back": "/shirt-red-back.jpg",
+        "left": "/shirt-red-left.jpg"
+      },
+      "availableSizeIds": [
+        "xs",
+        "s",
+        "m",
+        "l",
+        "xl",
+        "2xl"
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "front",
+      "label": "Front",
+      "illustration": "front"
+    },
+    {
+      "id": "back",
+      "label": "Back",
+      "illustration": "back"
+    },
+    {
+      "id": "left",
+      "label": "Sleeve",
+      "illustration": "left"
+    }
+  ],
+  "positions": [
+    {
+      "id": "left-chest",
+      "name": "Left chest",
+      "view": "front",
+      "x": 63,
+      "y": 28,
+      "width": 10,
+      "movementArea": {
+        "x": 63,
+        "y": 28,
+        "width": 32,
+        "height": 28
+      },
+      "price": 750,
+      "dimensions": [
+        10,
+        12,
+        15
+      ],
+      "sizeLabels": [
+        "Small",
+        "Medium",
+        "Large"
+      ],
+      "sizePrices": [
+        0,
+        250,
+        500
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    },
+    {
+      "id": "right-chest",
+      "name": "Right chest",
+      "view": "front",
+      "x": 37,
+      "y": 28,
+      "width": 10,
+      "price": 750,
+      "dimensions": [
+        10,
+        12,
+        15
+      ],
+      "sizePrices": [
+        0,
+        250,
+        500
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    },
+    {
+      "id": "front",
+      "name": "Centre front",
+      "view": "front",
+      "x": 50,
+      "y": 40,
+      "width": 15,
+      "price": 1250,
+      "dimensions": [
+        15,
+        21,
+        28
+      ],
+      "sizePrices": [
+        0,
+        250,
+        500
+      ],
+      "methodIds": [
+        "print"
+      ]
+    },
+    {
+      "id": "back",
+      "name": "Centre back",
+      "view": "back",
+      "x": 50,
+      "y": 36,
+      "width": 15,
+      "price": 1500,
+      "dimensions": [
+        15,
+        21,
+        28
+      ],
+      "sizePrices": [
+        0,
+        250,
+        500
+      ],
+      "methodIds": [
+        "print"
+      ]
+    },
+    {
+      "id": "left-sleeve",
+      "name": "Left sleeve",
+      "view": "left",
+      "x": 51,
+      "y": 32,
+      "width": 6,
+      "price": 650,
+      "dimensions": [
+        6,
+        8,
+        10
+      ],
+      "sizePrices": [
+        0,
+        250,
+        500
+      ],
+      "methodIds": [
+        "print",
+        "embroidery"
+      ]
+    }
+  ],
+  "methods": [
+    {
+      "id": "print",
+      "label": "Print",
+      "surcharge": 0
+    },
+    {
+      "id": "embroidery",
+      "label": "Embroidery",
+      "surcharge": 400
+    }
+  ],
+  "optionPresentation": {
+    "rowOption": {
+      "display": "swatch",
+      "label": "Colour"
+    },
+    "columnOption": {
+      "label": "Size"
+    }
+  }
+}
