@@ -4,7 +4,7 @@ This folder contains the designed UI and working examples of its intended behavi
 
 ## Run the examples
 
-Use the repository's pinned Node and pnpm versions. From the repository root:
+Use the repository's pinned Node (`.node-version`) and pnpm (`package.json`) versions. From the repository root:
 
 ```sh
 corepack pnpm install --frozen-lockfile
@@ -47,7 +47,16 @@ The admin source contains browser request contracts used by its example workflow
 
 ## Checks
 
-The source has strict compiler coverage. Useful focused commands:
+The source has strict compiler coverage. After the workspace build, install the designer browser and run the complete frontend gate:
+
+```sh
+corepack pnpm --filter @insignia/designer exec playwright install chromium
+corepack pnpm check:ui
+```
+
+This runs admin, localization and visualizer tests; every existing designer `*-check.mts` suite (including browser/localization and variant checks); and the embeddable library/declarations build. The full repository check includes this gate after build and strict compiler checks. Foundation CI installs both web and designer browser versions; frontend-only main pushes select that existing protected job.
+
+Useful focused commands:
 
 ```sh
 corepack pnpm --filter @insignia/admin-ui typecheck:examples
@@ -56,5 +65,7 @@ corepack pnpm --filter @insignia/designer typecheck:test
 corepack pnpm --filter @insignia/designer check:runtime
 corepack pnpm --filter @insignia/designer check:configs
 ```
+
+Browser localization checks write generated captures beneath the ignored `.m1-artifacts/frontend/customer-language/` directory.
 
 The customer runtime checks enforce the separation between the configurator and its demo. Repository CI still checks the existing production applications independently. The guided tour remains deferred.

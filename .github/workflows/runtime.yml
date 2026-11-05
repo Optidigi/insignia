@@ -30,6 +30,8 @@ on:
       - 'scripts/privacy/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.node-version'
       - '.github/workflows/runtime.yml'
 
 permissions:

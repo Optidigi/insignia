@@ -392,7 +392,7 @@ Do not automatically implement legacy RFQ, notes, CSV, reminder automation, QC o
 
 ### 7.3 Current merchant implementation map
 
-**Disposition:** the merchant UI is owner-unaccepted and assigned to the fresh presentation-focused UI agent. Existing internal component, smoke and visual observations are engineering evidence only. Current layout is a replaceable implementation; the behavior and trust contracts here remain required. The continuity closeout does not start the rebuild. The explicit current assignment and acceptance work are in [state](../delivery/state.md).
+**Disposition:** PR223 supplies the selected UI and example workflows under `frontend/`; [the handoff](../../frontend/README.md) identifies selected merchant/placement/Methods and buyer components. Development demo deployment and backend mapping remain pending. Merchant UI is owner-unaccepted. Existing internal component, smoke and visual observations are engineering evidence only; the behavior and trust contracts here remain required when integrating the handoff. The explicit current assignment and acceptance work are in [state](../delivery/state.md).
 
 | File-based merchant route | Capability and implementation entry |
 |---|---|

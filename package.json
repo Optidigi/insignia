@@ -22,7 +22,7 @@
     "check:boundaries": "node scripts/boundaries/check.mts && node scripts/boundaries/check-database-api.mts && node scripts/boundaries/check-domain-effects.mts && node --test scripts/boundaries/domain-effects.test.mts && node --test scripts/boundaries/source-contract.test.mts scripts/boundaries/polaris.test.mts && corepack pnpm check:source",
     "check:secrets": "node --test scripts/boundaries/check-secrets.test.mts && node scripts/boundaries/check-secrets.mts",
     "check:rust": "node scripts/functions/check.mts",
-    "check": "corepack pnpm check:style && corepack pnpm build && corepack pnpm check:types && corepack pnpm test:operations && corepack pnpm test:unit && corepack pnpm test:runtime-inventory && corepack pnpm test:runtime && corepack pnpm test:vectors && corepack pnpm check:boundaries && corepack pnpm check:secrets && corepack pnpm check:rust && INSIGNIA_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 node scripts/functions/production-vectors.mts && INSIGNIA_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 node scripts/functions/public-config.mts && corepack pnpm test:browser && node scripts/functions/artifact-manifest.mts",
+    "check": "corepack pnpm check:style && corepack pnpm build && corepack pnpm check:types && corepack pnpm check:ui && corepack pnpm test:operations && corepack pnpm test:unit && corepack pnpm test:runtime-inventory && corepack pnpm test:runtime && corepack pnpm test:vectors && corepack pnpm check:boundaries && corepack pnpm check:secrets && corepack pnpm check:rust && INSIGNIA_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 node scripts/functions/production-vectors.mts && INSIGNIA_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 node scripts/functions/public-config.mts && corepack pnpm test:browser && node scripts/functions/artifact-manifest.mts",
     "test:renderer-control": "node scripts/runtime/missing-renderer-control.mts",
     "test:operations": "node --test deployment/alerts/worker.test.mts scripts/operations/*.test.mts scripts/privacy/*.test.mts",
     "check:types": "node scripts/boundaries/source-contract.mts --check-types",
@@ -32,7 +32,8 @@
     "test:database:isolated": "node scripts/database/isolated.mts",
     "dev:ui:admin": "corepack pnpm --filter @insignia/admin-ui dev",
     "dev:ui:customer": "corepack pnpm --filter @insignia/designer dev",
-    "build:ui": "corepack pnpm -r --filter './frontend/**' build"
+    "build:ui": "corepack pnpm -r --filter './frontend/**' build",
+    "check:ui": "corepack pnpm -r --filter './frontend/**' test && corepack pnpm --filter @insignia/designer build:library"
   },
   "devDependencies": {
     "@astrojs/compiler-rs": "0.5.1",

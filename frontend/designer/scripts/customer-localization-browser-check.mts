@@ -168,7 +168,7 @@ test("language picker uses the exact customer wording locale and a 44px mobile t
 });
 
 test("language change failure stays visible and recoverable at 320px in both themes", async () => {
-  const output = fileURLToPath(new URL("../../insignia/.artifacts/language-picker-2026-11-05/", import.meta.url));
+  const output = fileURLToPath(new URL("../../../.m1-artifacts/frontend/customer-language/", import.meta.url));
   await mkdir(output, { recursive: true });
   for (const colorScheme of ["light", "dark"] as const) {
     const page = await openFixture({ width: 320, colorScheme });
