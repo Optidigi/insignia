@@ -57,6 +57,7 @@ test('observed native origin binds only the closed release profile and validated
 for (const [releaseProfile, expectedVersion] of [
   ['m8-preview-28443bd', '1168157736961'],
   ['selected-ui-f48efa2', '1196974997505'],
+  ['selected-ui-aab4a4b', '1197668466689'],
 ] as const)
   test(`${releaseProfile}: UI version transition keeps qualified origin but still requires independent release evidence`, async () => {
     const qualification = resolve({ releaseProfile });

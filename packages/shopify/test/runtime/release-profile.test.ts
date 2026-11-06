@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { resolveRuntimeReleaseProfile } from '../../src/runtime-release-profile.js';
 
 describe('closed server release targets', () => {
+  it('selects the refresh theme candidate without changing Function authority', () => {
+    const selected = resolveRuntimeReleaseProfile('selected-ui-aab4a4b');
+    expect(selected.activeVersionRef).toBe('1197668466689');
+    expect(selected.functionsSourceCommit).toBe('9b94149272d1b62c34f44dda3bde209e80b4ae22');
+    expect(Object.isFrozen(selected)).toBe(true);
+  });
   it('selects the observed selected UI candidate while preserving the original Function authority', () => {
     const selected = resolveRuntimeReleaseProfile('selected-ui-f48efa2');
     expect(selected.activeVersionRef).toBe('1196974997505');

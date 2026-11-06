@@ -19,6 +19,16 @@ test('selected desktop and mobile layouts retain their workspace columns, image 
 }, async (t) => {
   const f = await fixture(t);
   await f.open();
+  const nativeLabels = await f.page
+    .locator(
+      's-page > s-button-group[slot="secondary-actions"] > s-button, s-page > s-button[commandfor="placement-page-actions"]',
+    )
+    .evaluateAll((buttons) => buttons.map((button) => button.textContent?.trim()));
+  assert.deepEqual(
+    nativeLabels,
+    ['Hide views and placements', 'Undo', 'Redo', 'More actions'],
+    'Bridge native-header export needs text labels even when controls render as icons',
+  );
   const bounds = await f.page.locator('.placement-editor').evaluate((editor) => {
     const outline = editor.querySelector('.placement-outline')?.getBoundingClientRect();
     const canvas = editor.querySelector('.placement-workspace')?.getBoundingClientRect();
@@ -277,4 +287,39 @@ test('equal-valued explicit Method edits become dirty metadata and undo restores
     persisted.pricingRules[0]?.rate.kind === 'fixed' && persisted.pricingRules[0].rate.amount.shopDecimal,
     '3.50',
   );
+});
+
+test('unsaved merchant preview accepts a viewBox-only SVG without production upload or cart authority', {
+  timeout: 30000,
+}, async (t) => {
+  const f = await fixture(t);
+  await f.open();
+  const popup = f.page.waitForEvent('popup');
+  await f.page.locator('s-button[accessibilitylabel="Preview customization"]').evaluate((button) => {
+    if (!(button instanceof HTMLElement)) throw new Error('Missing HTML preview control');
+    button.click();
+  });
+  const preview = await popup;
+  preview.setDefaultTimeout(5000);
+  const requests: string[] = [];
+  preview.on('request', (request) => {
+    if (request.method() !== 'GET') requests.push(new URL(request.url()).pathname);
+  });
+  await preview.getByRole('button', { name: 'Add artwork', exact: true }).click();
+  await preview.getByRole('button', { name: 'Choose artwork Choose', exact: true }).click();
+  await preview
+    .locator('input[type=file]')
+    .setInputFiles(new URL('../../../../frontend/designer/public/trail-logo.svg', import.meta.url).pathname);
+  await preview.locator('img[src^="blob:"]').first().waitFor();
+  assert.equal(
+    await preview
+      .locator('img[src^="blob:"]')
+      .first()
+      .evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0),
+    true,
+  );
+  assert.doesNotMatch(await preview.locator('body').innerText(), /couldn.t open this image/i);
+  assert.equal(f.mutations.length, 0);
+  assert.deepEqual(requests, [], 'preview artwork stays browser-local');
+  await preview.close();
 });

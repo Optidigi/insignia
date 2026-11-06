@@ -19,17 +19,26 @@ export function mountMerchantDesignerPreview() {
     artwork: {
       async upload(file, request) {
         if (request.signal.aborted) throw new DOMException('Aborted', 'AbortError');
-        const bitmap = await createImageBitmap(file);
         const url = URL.createObjectURL(file);
         urls.add(url);
-        const artwork = { id: crypto.randomUUID(), name: file.name, url, width: bitmap.width, height: bitmap.height };
-        bitmap.close();
-        if (request.signal.aborted) {
+        try {
+          // Image decoding supports viewBox-only SVGs as well as raster files.
+          const image = new Image();
+          image.src = url;
+          await image.decode();
+          if (request.signal.aborted) throw new DOMException('Aborted', 'AbortError');
+          return {
+            id: crypto.randomUUID(),
+            name: file.name,
+            url,
+            width: image.naturalWidth,
+            height: image.naturalHeight,
+          };
+        } catch (error) {
           URL.revokeObjectURL(url);
           urls.delete(url);
-          throw new DOMException('Aborted', 'AbortError');
+          throw error;
         }
-        return artwork;
       },
     },
     cart: {

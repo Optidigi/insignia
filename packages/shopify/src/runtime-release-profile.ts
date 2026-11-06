@@ -1,6 +1,7 @@
 /** Deployment selects a closed reviewed target, never release authority.
  * Every consumer still independently reads and qualifies trusted release evidence. */
 export type RuntimeReleaseProfileName =
+  | 'selected-ui-aab4a4b'
   | 'selected-ui-f48efa2'
   | 'm5-functions-9c2e56b42fbf'
   | 'm8-read-orders-617057f'
@@ -11,6 +12,11 @@ export type RuntimeReleaseProfileName =
   | 'lean-markets-7b17cd9'
   | 'lean-privacy-theme-23fd116';
 const profiles = Object.freeze({
+  'selected-ui-aab4a4b': Object.freeze({
+    name: 'selected-ui-aab4a4b' as const,
+    activeVersionRef: '1197668466689',
+    functionsSourceCommit: '9b94149272d1b62c34f44dda3bde209e80b4ae22',
+  }),
   'selected-ui-f48efa2': Object.freeze({
     name: 'selected-ui-f48efa2' as const,
     activeVersionRef: '1196974997505',

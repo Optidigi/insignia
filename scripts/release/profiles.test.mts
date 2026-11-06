@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import type { TestFn } from 'node:test';
 import test from 'node:test';
 import { createReleaseVerificationClient } from '../../apps/web/src/server/admin/release-verification.ts';
+import refreshModules from '../../deployment/m5-runtime/selected-refresh-module-baseline.json' with { type: 'json' };
 import selectedModules from '../../deployment/m5-runtime/selected-ui-module-baseline.json' with { type: 'json' };
 import proxyModules from '../../deployment/m8-journey/app-proxy-module-baseline.json' with { type: 'json' };
 import cookieThemeModules from '../../deployment/m8-journey/cookie-theme-module-baseline.json' with { type: 'json' };
@@ -47,7 +48,19 @@ test('selected UI candidate preserves native Function, webhook, proxy and extens
   }
 });
 
+test('refresh candidate changes only theme bytes and preserves every native module identity', () => {
+  assert.equal(refreshModules.length, selectedModules.length);
+  for (const module of refreshModules) {
+    const previous = required(selectedModules.find(({ handle }) => handle === module.handle));
+    const { config, ...identity } = module;
+    const { config: previousConfig, ...previousIdentity } = previous;
+    assert.deepEqual(identity, previousIdentity);
+    if (module.handle !== 'insignia') assert.deepEqual(config, previousConfig);
+  }
+});
+
 for (const profile of [
+  'selected-ui-aab4a4b',
   'selected-ui-f48efa2',
   'm8-read-orders-617057f',
   'm8-app-proxy-3d2a02e',
@@ -57,47 +70,61 @@ for (const profile of [
   'lean-markets-7b17cd9',
   'lean-privacy-theme-23fd116',
 ]) {
-  const selected = profile === 'selected-ui-f48efa2';
+  const refreshed = profile === 'selected-ui-aab4a4b';
+  const selected = refreshed || profile === 'selected-ui-f48efa2';
   const privacy = selected || profile === 'lean-privacy-theme-23fd116';
   const lean = privacy || profile === 'lean-markets-7b17cd9';
   const preview = lean || profile === 'm8-preview-28443bd';
   const cookie = preview || profile === 'm8-cookie-91b35ab';
   const theme = cookie || profile === 'm8-theme-c8d8713';
   const proxy = profile !== 'm8-read-orders-617057f';
-  const versionId = selected
-    ? '1196974997505'
-    : privacy
-      ? '1171218169857'
-      : lean
-        ? '1169137696769'
-        : preview
-          ? '1168157736961'
-          : cookie
-            ? '1166710865921'
-            : theme
-              ? '1166552825857'
-              : proxy
-                ? '1166090010625'
-                : '1165513097217';
-  const modules = selected
-    ? selectedModules
-    : privacy
-      ? privacyModules
-      : lean
-        ? leanMarketsModules
-        : preview
-          ? previewThemeModules
-          : cookie
-            ? cookieThemeModules
-            : theme
-              ? themeModules
-              : proxy
-                ? proxyModules
-                : historicalM8Modules;
+  const versionId = refreshed
+    ? '1197668466689'
+    : selected
+      ? '1196974997505'
+      : privacy
+        ? '1171218169857'
+        : lean
+          ? '1169137696769'
+          : preview
+            ? '1168157736961'
+            : cookie
+              ? '1166710865921'
+              : theme
+                ? '1166552825857'
+                : proxy
+                  ? '1166090010625'
+                  : '1165513097217';
+  const modules = refreshed
+    ? refreshModules
+    : selected
+      ? selectedModules
+      : privacy
+        ? privacyModules
+        : lean
+          ? leanMarketsModules
+          : preview
+            ? previewThemeModules
+            : cookie
+              ? cookieThemeModules
+              : theme
+                ? themeModules
+                : proxy
+                  ? proxyModules
+                  : historicalM8Modules;
   const profileTest = (name: string, fn: TestFn) => test(`${profile}: ${name}`, fn);
   const prior = (versions: ReleaseAppendInput['activeObservation']['versions']) =>
     proxy
       ? [
+          ...(refreshed
+            ? [
+                {
+                  versionId: 'gid://shopify/Version/1196974997505',
+                  versionTag: 'selected-ui-f48efa2',
+                  status: 'inactive',
+                },
+              ]
+            : []),
           ...(selected
             ? [
                 {
