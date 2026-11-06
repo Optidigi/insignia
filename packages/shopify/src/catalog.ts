@@ -85,7 +85,7 @@ function image(value: RawImage): CatalogImage | null {
     (value.height != null && (!Number.isSafeInteger(value.height) || value.height <= 0))
   )
     throw new Error('Invalid catalog image dimensions');
-  if (value.id != null && !/^gid:\/\/shopify\/(?:ProductImage|Image)\/[1-9][0-9]*$/.test(value.id))
+  if (value.id != null && !/^gid:\/\/shopify\/(?:ProductImage|Image|ImageSource)\/[1-9][0-9]*$/.test(value.id))
     throw new Error('Invalid catalog image identity');
   return {
     url: value.url,

@@ -24,7 +24,12 @@ export async function qualifyArtworkRuntimeRole(
   options: { merchantPreviews?: boolean } = {},
 ): Promise<void> {
   const expectedUpdates = options.merchantPreviews
-    ? { ...updates, merchant_preview_assets: ['state', 'manifest', 'updated_at'], config_revision_preview_assets: [] }
+    ? {
+        ...updates,
+        merchant_preview_assets: ['state', 'manifest', 'updated_at'],
+        config_revision_preview_assets: [],
+        merchant_preview_draft_references: [],
+      }
     : updates;
   const denied = () => {
     throw new Error('Inspection database role unavailable');
@@ -68,6 +73,7 @@ export async function qualifyArtworkRuntimeRole(
       continue;
     }
     seen.add(column.relname);
+    if (column.relname === 'merchant_preview_draft_references' && column.attname !== 'asset_id') denied();
     if (
       column.readable !== true ||
       column.insertable ||
