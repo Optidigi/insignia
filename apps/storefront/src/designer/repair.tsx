@@ -8,6 +8,7 @@ export function DesignerRepair({
   wording,
   canStart,
   canRemoveGroup,
+  canRemoveAll = true,
   onAction,
   onClose,
 }: {
@@ -15,6 +16,7 @@ export function DesignerRepair({
   wording?: import('@insignia/contracts').MerchantCustomerWordingView;
   canStart: boolean;
   canRemoveGroup: boolean;
+  canRemoveAll?: boolean;
   onAction(action: RepairAction): Promise<DesignerQuoteReview | undefined>;
   onClose(): void;
 }) {
@@ -41,9 +43,9 @@ export function DesignerRepair({
     <main className="app">
       <section className="panel-content" aria-label={t('customer:recovery.repairRequired')}>
         <div className="section-heading">
-          <h2>{t('customer:recovery.repairRequired')}</h2>
+          <h2>{t(canRemoveAll ? 'customer:recovery.repairRequired' : 'customer:chrome.unavailable')}</h2>
         </div>
-        <p>{t('customer:recovery.repairHelp')}</p>
+        {canRemoveAll && <p>{t('customer:recovery.repairHelp')}</p>}
         {failed && (
           <p className="cart-submit-error" role="alert">
             {t('customer:recovery.cartCommitFailed')}
@@ -96,9 +98,11 @@ export function DesignerRepair({
                   {t('customer:recovery.removeGroup')}
                 </button>
               )}
-              <button type="button" className="text-action" disabled={busy} onClick={() => void action('remove-all')}>
-                {t('customer:recovery.removeAll')}
-              </button>
+              {canRemoveAll && (
+                <button type="button" className="text-action" disabled={busy} onClick={() => void action('remove-all')}>
+                  {t('customer:recovery.removeAll')}
+                </button>
+              )}
             </>
           )}
           {!review && (

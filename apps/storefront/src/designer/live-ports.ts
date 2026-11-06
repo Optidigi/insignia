@@ -38,7 +38,7 @@ export function createLiveDesignerPorts(input: {
   fetchImpl?: typeof fetch;
   storage: Pick<Storage, 'getItem' | 'setItem'>;
   onPriceRefresh?(source: BuyerConfig): void;
-  onNeedsReview?(canStart: boolean, targetAvailable?: boolean): void;
+  onNeedsReview?(canStart: boolean, targetAvailable: boolean, canRemoveAll: boolean): void;
   onReview?(review: DesignerQuoteReview): void;
   onApplied?(groups: DesiredGroup[]): void;
 }) {
@@ -115,7 +115,13 @@ export function createLiveDesignerPorts(input: {
     try {
       observed = await observe(request.signal);
     } catch (error) {
-      input.onNeedsReview?.(false, false);
+      let canRemoveAll = false;
+      try {
+        canRemoveAll = (await cart.read()).customized.length > 0;
+      } catch {
+        /* Unknown cart contents. */
+      }
+      input.onNeedsReview?.(false, false, canRemoveAll);
       throw error;
     }
     // Show every owned group even if one cannot currently be repriced; unknown amounts stay unavailable.
@@ -159,7 +165,7 @@ export function createLiveDesignerPorts(input: {
         buildBuyerDesigner(refreshed, { locale: input.locale, storeName: input.storeName });
         available = true;
       } catch {}
-      input.onNeedsReview?.(available);
+      input.onNeedsReview?.(available, true, observed.cart.customized.length > 0);
       throw new Error('Published configuration changed; review the current product configuration');
     }
     source = refreshed;
@@ -169,7 +175,7 @@ export function createLiveDesignerPorts(input: {
     const old = designs.get(request.design.id);
     const index = old ? observed.groups.findIndex((group) => desiredGroupKey(group) === desiredGroupKey(old)) : -1;
     if (request.operation === 'updated' && index < 0) {
-      input.onNeedsReview?.(true, false);
+      input.onNeedsReview?.(true, false, observed.cart.customized.length > 0);
       throw new Error('Design requires current-cart review');
     }
     const groups = replaceGroup(observed.groups, group, index < 0 ? undefined : index);
@@ -422,6 +428,7 @@ export function createLiveDesignerPorts(input: {
   return {
     ports,
     observe,
+    readCart: cart.read,
     restoreArtwork,
     restoreSaved: custody.restore,
     prepareRemoval,

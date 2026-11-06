@@ -3,7 +3,7 @@ import { cartJournal } from '../buyer.ts';
 import { createAjaxCartAdapter } from '../cart.ts';
 import { createDesignerFrame } from './frame-host.ts';
 /** Missing editable facts do not create a dummy catalogue or quote. Only observed cart removal is available. */
-export function mountUnavailableDesigner(input: {
+export async function mountUnavailableDesigner(input: {
   title?: string;
   locale: string;
   wording?: import('@insignia/contracts').MerchantCustomerWordingView;
@@ -13,12 +13,18 @@ export function mountUnavailableDesigner(input: {
   retry(): Promise<void>;
 }) {
   const cart = createAjaxCartAdapter({ root: input.cartRoot, journal: cartJournal(input.storage, input.cartRoot) });
+  let canRemoveAll = false;
+  try {
+    canRemoveAll = (await cart.read()).customized.length > 0;
+  } catch {
+    /* Unobserved contents cannot offer removal. */
+  }
   let reviewed: Awaited<ReturnType<typeof cart.read>> | undefined;
   const frame = createDesignerFrame({
     title: input.title,
     locale: input.locale,
     wording: input.wording,
-    repair: { canStart: false, canRemoveGroup: false },
+    repair: { canStart: false, canRemoveGroup: false, canRemoveAll },
     onClose: input.onClose,
     async onRepair(action) {
       if (action === 'retry') {

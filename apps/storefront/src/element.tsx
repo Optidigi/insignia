@@ -111,7 +111,7 @@ export class InsigniaBuyer extends HTMLElement {
     } catch {
       if (generation !== this.generation) return;
       const { mountUnavailableDesigner } = await import('./designer/unavailable');
-      this.liveFrame = mountUnavailableDesigner({
+      const unavailable = await mountUnavailableDesigner({
         locale: this.getAttribute('language') || document.documentElement.lang || 'en',
         cartRoot,
         storage: sessionStorage,
@@ -123,6 +123,11 @@ export class InsigniaBuyer extends HTMLElement {
           await this.mount();
         },
       });
+      if (generation !== this.generation) {
+        unavailable.destroy();
+        return;
+      }
+      this.liveFrame = unavailable;
       return;
     } finally {
       this.mounting = false;

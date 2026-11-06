@@ -153,4 +153,88 @@ test('failed target-product lookup never displays another product frozen config 
   assert.equal(await frame.getByRole('button', { name: 'Start a new customization', exact: true }).count(), 0);
   assert.equal(await frame.getByRole('button', { name: 'Review removing this customization', exact: true }).count(), 1);
   assert.equal(mutations, 0);
+
+  await page.route('**/cart.js', (route) => route.fulfill({ json: { currency: 'USD', attributes: {}, items: [] } }));
+  await page.route('**/apps/insignia/v1/cart-state', (route) =>
+    route.fulfill({ json: { groups: [], repairRequired: false } }),
+  );
+  await page.evaluate(async (source) => {
+    Reflect.get(window, 'controller').destroy();
+    const missing = structuredClone(source);
+    for (const step of missing.geometry.steps) Reflect.deleteProperty(step, 'physicalMm');
+    const { mountLiveDesigner } = await import(/* @vite-ignore */ new URL('/controller.js', location.href).href);
+    Reflect.set(
+      window,
+      'controller',
+      await mountLiveDesigner({
+        source: missing,
+        proxyBase: '/apps/insignia',
+        cartRoot: '/',
+        country: 'US',
+        marketId: '42',
+        locale: 'en',
+        storeName: 'Store',
+        repair: false,
+        storage: sessionStorage,
+        onClose() {},
+        onError() {},
+        isCurrent: () => true,
+      }),
+    );
+  }, source);
+  await frame.getByRole('button', { name: 'Retry', exact: true }).waitFor();
+  assert.equal(
+    await frame.getByRole('button', { name: 'Review removing all customized items', exact: true }).count(),
+    0,
+    'empty carts must not offer removal',
+  );
+  assert.equal(await frame.getByRole('heading', { name: 'Unavailable', exact: true }).count(), 1);
+  assert.doesNotMatch(await frame.locator('body').innerText(), /existing customized items stay in the cart/i);
+  assert.equal(mutations, 0);
+  await page.route('**/cart.js', (route) =>
+    route.fulfill({
+      json: {
+        currency: 'USD',
+        attributes: {},
+        items: [
+          {
+            key: 'unrestorable',
+            product_id: 222,
+            variant_id: 202,
+            quantity: 1,
+            properties: { _insignia_quote_v2: 'old', _insignia_member_v2: 'member' },
+          },
+        ],
+      },
+    }),
+  );
+  await page.evaluate(async (source) => {
+    Reflect.get(window, 'controller').destroy();
+    const { mountLiveDesigner } = await import(/* @vite-ignore */ new URL('/controller.js', location.href).href);
+    Reflect.set(
+      window,
+      'controller',
+      await mountLiveDesigner({
+        source,
+        proxyBase: '/apps/insignia',
+        cartRoot: '/',
+        country: 'US',
+        marketId: '42',
+        locale: 'en',
+        storeName: 'Store',
+        repair: true,
+        storage: sessionStorage,
+        onClose() {},
+        onError() {},
+        isCurrent: () => true,
+      }),
+    );
+  }, source);
+  await frame.getByRole('button', { name: 'Review removing all customized items', exact: true }).click();
+  await frame.getByRole('button', { name: 'Confirm cart update', exact: true }).waitFor();
+  assert.equal(
+    mutations,
+    0,
+    'unrestorable customized lines remain removable only through explicit review/confirmation',
+  );
 });

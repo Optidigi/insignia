@@ -19,7 +19,7 @@ export function createDesignerFrame(input: {
   initialDesign?: Design;
   initialPrints?: Print[];
   initialArtworks?: Artwork[];
-  repair?: { canStart: boolean; canRemoveGroup: boolean };
+  repair?: { canStart: boolean; canRemoveGroup: boolean; canRemoveAll?: boolean };
   onRepair?: (action: RepairAction) => Promise<DesignerQuoteReview | undefined>;
   onClose(): void;
   onSelectGroup?: (id: string) => void;
@@ -134,7 +134,7 @@ export function createDesignerFrame(input: {
     hide() {
       frame.hidden = true;
     },
-    repair(value?: { canStart: boolean; canRemoveGroup: boolean }) {
+    repair(value?: { canStart: boolean; canRemoveGroup: boolean; canRemoveAll?: boolean }) {
       send('insignia:designer:repair', { repair: value });
     },
     error() {
