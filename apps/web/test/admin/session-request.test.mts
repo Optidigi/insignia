@@ -141,3 +141,31 @@ for (const [name, request] of [
     }
   });
 }
+
+for (const [name, request] of [
+  ['retained', authenticatedJson],
+  ['selected', selectedJson],
+] as const) {
+  test(`${name}: a token about to expire during staff checks is renewed before dispatch`, async () => {
+    const token = (exp: number) => `synthetic.${Buffer.from(JSON.stringify({ exp })).toString('base64url')}.synthetic`;
+    const near = token(Math.floor(Date.now() / 1000) + 1),
+      fresh = token(Math.floor(Date.now() / 1000) + 60);
+    const originalFetch = globalThis.fetch;
+    let reads = 0,
+      sends = 0;
+    const restoreWindow = replaceWindow({ shopify: { idToken: async () => (++reads < 3 ? near : fresh) } });
+    globalThis.fetch = async (_path, init) => {
+      sends++;
+      return new Headers(init?.headers).get('Authorization') === `Bearer ${fresh}`
+        ? Response.json({ kind: 'read' })
+        : Response.json({ error: 'Staff check expired' }, { status: 503 });
+    };
+    try {
+      assert.deepEqual(await request('/preferences'), { kind: 'read' });
+      assert.equal(sends, 1);
+    } finally {
+      globalThis.fetch = originalFetch;
+      restoreWindow();
+    }
+  });
+}
