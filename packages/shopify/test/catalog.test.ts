@@ -13,6 +13,36 @@ const product = {
   },
 };
 
+it('retains Shopify ImageSource identities for featured, variant and product media images without substituting MediaImage file ids', async () => {
+  const photo = {
+    id: 'gid://shopify/ImageSource/12',
+    url: 'https://cdn.shopify.com/source.png',
+    altText: null,
+    width: 800,
+    height: 900,
+  };
+  const raw = {
+    ...product,
+    featuredMedia: { preview: { image: photo } },
+    variants: { nodes: [{ ...product.variants.nodes[0], image: photo }], pageInfo: { hasNextPage: false } },
+    media: {
+      nodes: [{ __typename: 'MediaImage', id: 'gid://shopify/MediaImage/99', image: photo }],
+      pageInfo: { hasNextPage: false },
+    },
+  };
+  const reader = createCatalogReader({
+    async read<T>(): Promise<T> {
+      return { products: { nodes: [raw], pageInfo: { hasNextPage: false, endCursor: null } } } as T;
+    },
+  });
+  const result = (await reader.list({ first: 1 })).products[0];
+  expect(result?.image?.id).toBe(photo.id);
+  expect(result?.variants[0]?.image?.id).toBe(photo.id);
+  expect(result?.images?.[0]).toMatchObject({ revisionId: 'image_12', image: { id: photo.id } });
+  raw.media.nodes[0]!.image = { ...photo, id: 'gid://shopify/MediaImage/99' };
+  await expect(reader.list({ first: 1 })).rejects.toThrow('image identity');
+});
+
 describe('bounded Admin catalog reader', () => {
   it('paginates products and exposes the limited variant vector without mutations', async () => {
     const calls: { operation: string; variables: Record<string, unknown> }[] = [];
