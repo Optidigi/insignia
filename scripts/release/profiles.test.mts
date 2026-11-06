@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import type { TestFn } from 'node:test';
 import test from 'node:test';
 import { createReleaseVerificationClient } from '../../apps/web/src/server/admin/release-verification.ts';
+import selectedModules from '../../deployment/m5-runtime/selected-ui-module-baseline.json' with { type: 'json' };
 import proxyModules from '../../deployment/m8-journey/app-proxy-module-baseline.json' with { type: 'json' };
 import cookieThemeModules from '../../deployment/m8-journey/cookie-theme-module-baseline.json' with { type: 'json' };
 import leanMarketsModules from '../../deployment/m8-journey/lean-markets-module-baseline.json' with { type: 'json' };
@@ -25,7 +26,29 @@ import { createOwnerHttps } from './owner-https.mts';
 import { createReleaseVerificationServer } from './server.mts';
 import { array, object, required, text } from './validation.mts';
 
+test('selected UI candidate preserves native Function, webhook, proxy and extension identity contracts', () => {
+  assert.equal(selectedModules.length, privacyModules.length);
+  for (const module of selectedModules) {
+    const previous = required(privacyModules.find(({ handle }) => handle === module.handle));
+    const { config, ...identity } = module;
+    const { config: previousConfig, ...previousIdentity } = previous;
+    assert.deepEqual(identity, previousIdentity);
+    if (module.handle === 'insignia') continue; // Theme bytes intentionally change; profile digest binds all files.
+    if (module.handle === 'app_home') {
+      assert.deepEqual(config, { app_url: 'https://insignia-app.optidigi.nl/admin/home', embedded: true });
+    } else if (module.handle === 'app_access') {
+      const access = object(config),
+        previousAccess = object(previousConfig);
+      assert.deepEqual(text(access.scopes).split(',').sort(), text(previousAccess.scopes).split(',').sort());
+      const { scopes: _scopes, ...settings } = access;
+      const { scopes: _previousScopes, ...previousSettings } = previousAccess;
+      assert.deepEqual(settings, previousSettings);
+    } else assert.deepEqual(config, previousConfig);
+  }
+});
+
 for (const profile of [
+  'selected-ui-f48efa2',
   'm8-read-orders-617057f',
   'm8-app-proxy-3d2a02e',
   'm8-theme-c8d8713',
@@ -34,42 +57,56 @@ for (const profile of [
   'lean-markets-7b17cd9',
   'lean-privacy-theme-23fd116',
 ]) {
-  const privacy = profile === 'lean-privacy-theme-23fd116';
+  const selected = profile === 'selected-ui-f48efa2';
+  const privacy = selected || profile === 'lean-privacy-theme-23fd116';
   const lean = privacy || profile === 'lean-markets-7b17cd9';
   const preview = lean || profile === 'm8-preview-28443bd';
   const cookie = preview || profile === 'm8-cookie-91b35ab';
   const theme = cookie || profile === 'm8-theme-c8d8713';
   const proxy = profile !== 'm8-read-orders-617057f';
-  const versionId = privacy
-    ? '1171218169857'
-    : lean
-      ? '1169137696769'
-      : preview
-        ? '1168157736961'
-        : cookie
-          ? '1166710865921'
-          : theme
-            ? '1166552825857'
-            : proxy
-              ? '1166090010625'
-              : '1165513097217';
-  const modules = privacy
-    ? privacyModules
-    : lean
-      ? leanMarketsModules
-      : preview
-        ? previewThemeModules
-        : cookie
-          ? cookieThemeModules
-          : theme
-            ? themeModules
-            : proxy
-              ? proxyModules
-              : historicalM8Modules;
+  const versionId = selected
+    ? '1196974997505'
+    : privacy
+      ? '1171218169857'
+      : lean
+        ? '1169137696769'
+        : preview
+          ? '1168157736961'
+          : cookie
+            ? '1166710865921'
+            : theme
+              ? '1166552825857'
+              : proxy
+                ? '1166090010625'
+                : '1165513097217';
+  const modules = selected
+    ? selectedModules
+    : privacy
+      ? privacyModules
+      : lean
+        ? leanMarketsModules
+        : preview
+          ? previewThemeModules
+          : cookie
+            ? cookieThemeModules
+            : theme
+              ? themeModules
+              : proxy
+                ? proxyModules
+                : historicalM8Modules;
   const profileTest = (name: string, fn: TestFn) => test(`${profile}: ${name}`, fn);
   const prior = (versions: ReleaseAppendInput['activeObservation']['versions']) =>
     proxy
       ? [
+          ...(selected
+            ? [
+                {
+                  versionId: 'gid://shopify/Version/1171218169857',
+                  versionTag: 'lean-privacy-theme-23fd116',
+                  status: 'inactive',
+                },
+              ]
+            : []),
           ...(privacy
             ? [
                 {
@@ -254,7 +291,7 @@ for (const profile of [
               appVersions: {
                 nodes: versions,
                 pageInfo: {
-                  totalResults: privacy ? 14 : lean ? 13 : preview ? 12 : cookie ? 11 : theme ? 10 : proxy ? 9 : 8,
+                  totalResults: versions.length,
                 },
               },
             },

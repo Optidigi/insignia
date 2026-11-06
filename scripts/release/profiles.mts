@@ -2,6 +2,8 @@
  * access or attests that the candidate is Active. No caller supplied baseline. */
 import assert from 'node:assert/strict';
 import historicalModules from '../../deployment/m5-runtime/native-function-module-baseline.json' with { type: 'json' };
+import selectedModules from '../../deployment/m5-runtime/selected-ui-module-baseline.json' with { type: 'json' };
+import selectedCandidate from '../../deployment/m5-runtime/selected-ui-release-binding.json' with { type: 'json' };
 import proxyModules from '../../deployment/m8-journey/app-proxy-module-baseline.json' with { type: 'json' };
 import proxyCandidate from '../../deployment/m8-journey/app-proxy-release-binding.json' with { type: 'json' };
 import cookieThemeModules from '../../deployment/m8-journey/cookie-theme-module-baseline.json' with { type: 'json' };
@@ -39,6 +41,14 @@ const oldIds = [
   '1146748534785',
 ] as const;
 const profiles = {
+  'selected-ui-f48efa2': {
+    versionId: selectedCandidate.versionId,
+    versionTag: selectedCandidate.versionTag,
+    versionIds: selectedCandidate.versionIds,
+    moduleHash: selectedCandidate.moduleHash,
+    modules: selectedModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+  },
   'lean-privacy-theme-23fd116': {
     versionId: privacyCandidate.versionId,
     versionTag: privacyCandidate.versionTag,

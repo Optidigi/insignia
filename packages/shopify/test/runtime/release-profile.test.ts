@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { resolveRuntimeReleaseProfile } from '../../src/runtime-release-profile.js';
 
 describe('closed server release targets', () => {
+  it('selects the observed selected UI candidate while preserving the original Function authority', () => {
+    const selected = resolveRuntimeReleaseProfile('selected-ui-f48efa2');
+    expect(selected.activeVersionRef).toBe('1196974997505');
+    expect(selected.functionsSourceCommit).toBe('9b94149272d1b62c34f44dda3bde209e80b4ae22');
+    expect(Object.isFrozen(selected)).toBe(true);
+  });
   it('preserves the historical default and selects only the reviewed M8 target', () => {
     expect(resolveRuntimeReleaseProfile().activeVersionRef).toBe('1163229200385');
     expect(resolveRuntimeReleaseProfile('m8-read-orders-617057f').activeVersionRef).toBe('1165513097217');

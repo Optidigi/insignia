@@ -1,0 +1,26 @@
+{
+  "versionTag": "selected-ui-f48efa2",
+  "versionId": "1196974997505",
+  "versionIds": [
+    "1196974997505",
+    "1171218169857",
+    "1169137696769",
+    "1168157736961",
+    "1166710865921",
+    "1166552825857",
+    "1166090010625",
+    "1165513097217",
+    "1163229200385",
+    "1162611916801",
+    "1158986629121",
+    "1158837927937",
+    "1153019904001",
+    "1152880803841",
+    "1146748534785"
+  ],
+  "moduleHash": "f8988e6e2d17d4e6eb229ea03edbb53054a86a584d793edfd61a8ad0b8a698ae",
+  "observedAt": "2026-11-06T01:33:30.456Z",
+  "nativeObservation": "EXACT_INACTIVE_14_MODULE_CANDIDATE_PASS",
+  "functionsSourceCommit": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+  "note": "Inactive selected UI candidate. Function modules/configurations exactly match the prior native version; only Home URL, theme files and harmless scope-string ordering changed. No activation authority or production rollout inferred."
+}
