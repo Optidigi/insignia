@@ -1,3 +1,4 @@
+import { readFreshBridgeToken } from './bridge-token.ts';
 let tokenRequest: Promise<string> | null = null;
 async function browserDeadline<T>(task: (signal: AbortSignal) => Promise<T>, caller?: AbortSignal | null): Promise<T> {
   const controller = new AbortController();
@@ -28,9 +29,9 @@ function sessionToken(forceFresh = false): Promise<string> {
   const bridge = (window as unknown as { shopify?: { idToken?: () => Promise<string> } }).shopify;
   const tokenGetter = bridge?.idToken?.bind(bridge);
   if (!tokenGetter) return Promise.reject(new Error('Open this page from Shopify Admin to verify your session.'));
-  if (forceFresh) return browserDeadline(() => tokenGetter());
+  if (forceFresh) return browserDeadline((signal) => readFreshBridgeToken(tokenGetter, signal));
   if (!tokenRequest)
-    tokenRequest = browserDeadline(() => tokenGetter()).finally(() => {
+    tokenRequest = browserDeadline((signal) => readFreshBridgeToken(tokenGetter, signal)).finally(() => {
       tokenRequest = null;
     });
   return tokenRequest;
