@@ -391,7 +391,7 @@ test('application releases the shared lock after read failure and accepts a pure
 test('actual browser origin lock excludes application from a second tab across locale roots', {
   timeout: 15000,
 }, async () => {
-  const { createServer } = await import('vite');
+  const { createStorefrontTestServer: createServer } = await import('./support.mts');
   const { chromium } = await import('playwright');
   const server = await createServer({
     root: new URL('..', import.meta.url).pathname,

@@ -2,10 +2,18 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { chromium } from 'playwright';
 import type { Connect } from 'vite';
-import { createServer } from 'vite';
 import { handleBuyerRequest } from '../../web/src/server/buyer/http.ts';
 import { fixture } from '../../web/test/support/buyer-fixture.mts';
-import { type AjaxItem, ajaxBody, record, required, selectedFrameAssets, serverPort, text } from './support.mts';
+import {
+  type AjaxItem,
+  ajaxBody,
+  createStorefrontTestServer as createServer,
+  record,
+  required,
+  selectedFrameAssets,
+  serverPort,
+  text,
+} from './support.mts';
 
 // Actual browser -> HTTP -> real HMAC/quote/signing/PG -> HTTP Ajax adapter.
 // Shopify signed routing, catalog, entitlement/readiness and cart provider are synthetic boundaries.

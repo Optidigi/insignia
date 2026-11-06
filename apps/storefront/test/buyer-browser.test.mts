@@ -8,8 +8,15 @@ type AcceptanceRequest = ReturnType<typeof BuyerAcceptanceSchema.parse>;
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { chromium } from 'playwright';
-import { createServer } from 'vite';
-import { type AjaxItem, ajaxBody, record, required, selectedFrameAssets, serverPort } from './support.mts';
+import {
+  type AjaxItem,
+  ajaxBody,
+  createStorefrontTestServer as createServer,
+  record,
+  required,
+  selectedFrameAssets,
+  serverPort,
+} from './support.mts';
 
 const config: BuyerConfig = {
   version: 'm7-config-v1',
