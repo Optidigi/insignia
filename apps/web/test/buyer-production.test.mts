@@ -24,6 +24,7 @@ import {
 } from '@insignia/application';
 import { decodeEnvelope, issueWholeQuote } from '@insignia/cart-authorization';
 import { createProductionBuyerServices, type ProductionBuyerInputs } from '../src/server/buyer/production.ts';
+import { fixtureTransaction } from './admin/support/fixtures.mts';
 import { coreFixture, effectiveRevision, type MutableCore, record, required, text } from './http-fixtures.mts';
 
 const secret = 'synthetic-m7-private-capability';
@@ -606,7 +607,7 @@ test('catalog is actual credential-scoped provider data with explicit unavailabl
   const { input } = catalogFixture();
   const services = createProductionBuyerServices(input);
   const config = await services.config(new Request(signed()));
-  assert.deepEqual(config.variants, [{ id: '222', label: 'Blue M', available: false }]);
+  assert.deepEqual(config.variants, [{ id: '222', label: 'Blue M', available: false, selectedOptions: [] }]);
   assert.equal(config.imageUrls.product_111, 'https://cdn.shopify.com/synthetic/product.png');
   assert.equal(config.ready, true);
 });
@@ -860,7 +861,7 @@ test('published editor variant geometry reaches the buyer renderer with the sele
     assert.deepEqual(required(scene.artworks[0]).bounds, required(scene.placements[0]).bounds);
     assert.equal(config.contentHash, 'a'.repeat(64));
     assert.equal(config.revisionId, 'revision');
-    assert.deepEqual(config.variants, [{ id: '222', label: 'Blue M', available: false }]);
+    assert.deepEqual(config.variants, [{ id: '222', label: 'Blue M', available: false, selectedOptions: [] }]);
     assert.deepEqual(
       publishedGeometry,
       original,
@@ -1340,4 +1341,54 @@ test('production buyer reads actual primary context before Lean pricing on propo
     assert.equal(artworkReads, 0, operation);
     assert.equal(required(config.pricingRules[0]).role, 'setup', 'historical advanced revision remains untouched');
   }
+});
+
+test('production config reads real country-contextual base amounts and selected options even without selected authoring state', async () => {
+  const { input } = catalogFixture();
+  const original = input.fetchImpl;
+  let contextReads = 0;
+  input.fetchImpl = async (url, options) => {
+    const body = record(JSON.parse(text(required(options).body)));
+    if (text(body.query).includes('InsigniaVariantContext')) {
+      contextReads++;
+      assert.deepEqual(body.variables, { ids: ['gid://shopify/ProductVariant/222'], country: 'US' });
+      return new Response(
+        JSON.stringify({
+          data: {
+            nodes: [
+              {
+                __typename: 'ProductVariant',
+                id: 'gid://shopify/ProductVariant/222',
+                product: { id: 'gid://shopify/Product/111' },
+                contextualPricing: { price: { amount: '10.99', currencyCode: 'USD' } },
+              },
+            ],
+          },
+        }),
+      );
+    }
+    return required(original)(url, options);
+  };
+  input.core.transactions.run = async (work) => work(fixtureTransaction);
+  input.core.preferences.readWording = async () => ({
+    wordingVersion: '0',
+    overlays: { en: { locale: 'en', messages: {} } },
+  });
+  const url = new URL(signed());
+  url.searchParams.delete('signature');
+  url.searchParams.set('country', 'US');
+  const message = [...url.searchParams.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `${key}=${value}`)
+    .join('');
+  url.searchParams.set('signature', createHmac('sha256', secret).update(message).digest('hex'));
+  const result = await createProductionBuyerServices(input).config(new Request(url));
+  assert.equal(result.selectedSetup, undefined);
+  assert.equal(result.title, 'Owned');
+  assert.equal(result.shopCurrency, 'USD');
+  assert.deepEqual(result.decorationPrices, []);
+  assert.deepEqual(result.variants, [
+    { id: '222', label: 'Blue M', available: false, selectedOptions: [], baseUnitMinor: '1099' },
+  ]);
+  assert.equal(contextReads, 1);
 });

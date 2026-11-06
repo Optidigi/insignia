@@ -255,3 +255,17 @@ it('aborts even while DNS is unresolved and dispatches nothing when lookup later
   await Promise.resolve();
   expect(requests).toBe(0);
 });
+
+it('reads only gallery images declared by the authenticated product catalogue', async () => {
+  const owned = {
+    ...product,
+    images: [{ revisionId: 'image_12', image: { url: 'https://cdn.shopify.com/gallery.png', alt: null } }],
+  };
+  const image = wire();
+  await image.reader.read(owned, 'image_12');
+  expect(image.observed().target).toBe('https://cdn.shopify.com/gallery.png');
+  const foreign = wire();
+  await expect(foreign.reader.read(owned, 'image_13')).rejects.toMatchObject({ code: 'INVALID_REFERENCE' });
+  expect(foreign.observed().requests).toBe(0);
+  await expect(foreign.reader.read(product, 'image_12')).rejects.toMatchObject({ code: 'INVALID_REFERENCE' });
+});

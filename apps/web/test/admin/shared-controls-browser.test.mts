@@ -3,6 +3,7 @@ import { required } from './support/fixtures.mts';
 import './support/browser-state.mts';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import type { TestContext } from 'node:test';
 import { test } from 'node:test';
@@ -23,10 +24,22 @@ function view(state: PurchaseView['artworkState'] = 'PENDING_ARTWORK'): Purchase
     financialStatus: 'PENDING',
     cancelledAt: null,
     exceptions: [],
+    canUploadArtwork: true,
+    canShareCustomerArtwork: false,
     artworkVersion: 0,
     artworkState: state,
     refunds: [],
-    lines: [{ orderLineId: 'line1', productId: '111', variantId: '11', quantity: 2, unitPriceMinor: '4500' }],
+    lines: [
+      {
+        orderLineId: 'line1',
+        title: 'Shirt',
+        variantTitle: 'Blue / M',
+        productId: '111',
+        variantId: '11',
+        quantity: 2,
+        unitPriceMinor: '4500',
+      },
+    ],
     groups:
       state === 'ERASED'
         ? []
@@ -48,7 +61,10 @@ function view(state: PurchaseView['artworkState'] = 'PENDING_ARTWORK'): Purchase
                 },
               ],
               geometry: null,
-              presentation: null,
+              presentation: {
+                version: 'm5-presentation-v1',
+                labels: { methods: { print: 'Print' }, placements: { front: 'Chest' }, steps: { small: 'Small' } },
+              },
               imageUrls: {},
               payloadExpiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
             },
@@ -62,7 +78,7 @@ async function fixture(t: TestContext, apiKey = '1111111111111111111111111111111
     [process.env.PURCHASE_BROWSER_ENTRY ?? new URL('../../dist/server/entry.mjs', import.meta.url).pathname],
     {
       env: {
-        ...process.env,
+        PATH: process.env.PATH,
         HOST: '127.0.0.1',
         PORT: '0',
         SHOPIFY_CLIENT_ID: apiKey,
@@ -95,8 +111,14 @@ async function fixture(t: TestContext, apiKey = '1111111111111111111111111111111
   page.setDefaultTimeout(5000);
   if (apiKey) await page.addInitScript(() => (window.shopify = { idToken: async () => 'synthetic-purchase-actor' }));
   await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
-  const polaris = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
-  await page.route('https://cdn.shopify.com/shopifycloud/polaris-1.1.js', (r) =>
+  const polaris = await readFile(
+    new URL('../../../../frontend/admin/examples/fixtures/polaris-2.0-rc.snapshot', import.meta.url),
+  );
+  assert.equal(
+    createHash('sha256').update(polaris).digest('hex'),
+    '89dd2052b7b8cc6b042900f5c044e1f5754e31bf769d205b6e2399992bdb0c7b',
+  );
+  await page.route('https://cdn.shopify.com/shopifycloud/polaris-2.0-rc.js', (r) =>
     r.fulfill({ body: polaris, contentType: 'text/javascript' }),
   );
   await page.route('https://cdn.shopify.com/shopifycloud/admin-ui-foundations/icons/**', (route) =>
@@ -115,6 +137,7 @@ test('private artwork uses the Polaris drop zone and keeps verified upload actio
   const asset = '0829a06c-e8c5-40aa-9167-4fb47e443231';
   const expiresAt = new Date(Date.now() + 7 * 86400000).toISOString();
   let uploads = 0;
+  let downloads = 0;
   let current = view();
   await page.route(`**/api/purchases/v1/${id}`, (r) => r.fulfill({ json: current }));
   await page.route(`**/api/purchases/v1/${id}/artwork`, (r) => {
@@ -128,6 +151,18 @@ test('private artwork uses the Polaris drop zone and keeps verified upload actio
       ...current,
       artworkVersion: 1,
       artworkState: 'READY',
+      artworkEvents: [
+        {
+          eventId: 'ba863bee-d356-4c73-a5dd-9a57d2610e6b',
+          version: 1,
+          kind: 'ATTACH',
+          groupIndex: 0,
+          placementId: 'front',
+          assetId: asset,
+          expiresAt,
+          erasedAt: null,
+        },
+      ],
       groups: current.groups.map((group) => ({
         ...group,
         placements: group.placements.map((placement) => ({
@@ -139,9 +174,10 @@ test('private artwork uses the Polaris drop zone and keeps verified upload actio
     };
     return r.fulfill({ json: current });
   });
-  await page.route(`**/api/purchases/v1/${id}/artwork/${asset}/download`, (r) =>
-    r.fulfill({ json: { url: 'https://private.example/original.svg', expiresAt } }),
-  );
+  await page.route(`**/api/purchases/v1/${id}/artwork/${asset}/download`, (r) => {
+    downloads++;
+    return r.fulfill({ json: { url: 'https://private.example/original.svg', expiresAt } });
+  });
   await page.route('**/api/artwork', (r) => {
     uploads++;
     return r.fulfill({
@@ -149,15 +185,21 @@ test('private artwork uses the Polaris drop zone and keeps verified upload actio
     });
   });
   await page.route('https://private.example/**', (r) =>
-    r.fulfill({
-      status: 200,
-      body: Buffer.from(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC',
-        'base64',
-      ),
-      contentType: 'image/png',
-      headers: { 'Access-Control-Allow-Origin': '*' },
-    }),
+    r.request().url().endsWith('/original.svg')
+      ? r.fulfill({
+          body: '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"/>',
+          contentType: 'image/svg+xml',
+          headers: { 'Content-Disposition': 'attachment; filename="verified-original.svg"' },
+        })
+      : r.fulfill({
+          status: 200,
+          body: Buffer.from(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC',
+            'base64',
+          ),
+          contentType: 'image/png',
+          headers: { 'Access-Control-Allow-Origin': '*' },
+        }),
   );
   await page.route(`**/api/artwork/${asset}/**`, (r) =>
     r.fulfill({
@@ -171,7 +213,9 @@ test('private artwork uses the Polaris drop zone and keeps verified upload actio
     }),
   );
   await page.goto(`${base}/admin/orders/${id}`);
-  const artwork = page.getByRole('region', { name: 'Private artwork', exact: true });
+  const placement = page.getByRole('region', { name: 'Artwork Chest', exact: true });
+  await placement.getByRole('button', { name: 'Attach artwork', exact: true }).click();
+  const artwork = placement.getByRole('region', { name: 'Private artwork', exact: true });
   await artwork.waitFor();
   assert.equal(await artwork.locator('s-drop-zone').count(), 1, 'The merchant file picker is a Polaris drop zone');
   assert.equal(
@@ -189,12 +233,18 @@ test('private artwork uses the Polaris drop zone and keeps verified upload actio
     0,
     'Unattached uploads do not expose a purchase original download',
   );
-  await page.getByRole('button', { name: 'Attach artwork', exact: true }).click();
-  const placement = page.getByRole('region', { name: 'Artwork front', exact: true });
-  await placement.getByRole('button', { name: 'Prepare original download', exact: true }).click();
-  await placement.getByRole('link', { name: 'Download verified original', exact: true }).waitFor();
-  assert.equal(await placement.locator('s-button').filter({ hasText: 'Prepare original download' }).count(), 1);
-  assert.equal(await placement.locator('s-link').filter({ hasText: 'Download verified original' }).count(), 1);
+  assert.equal(await placement.getByRole('button', { name: 'Download file', exact: true }).count(), 0);
+  assert.equal(downloads, 0, 'No original download authority is requested for an unattached upload');
+  await artwork.getByRole('img', { name: 'Verified artwork preview', exact: true }).waitFor();
+  await placement.getByRole('button', { name: 'Attach artwork', exact: true }).click();
+  const original = placement.getByRole('button', { name: 'Download file', exact: true });
+  await original.waitFor();
+  const pendingDownload = page.waitForEvent('download');
+  await original.click();
+  const downloaded = await pendingDownload;
+  assert.equal(downloaded.suggestedFilename(), 'verified-original.svg');
+  assert.equal(downloads, 1, 'The attached original is fetched through the purchase-scoped authority');
+  assert.equal(await placement.locator('s-button').filter({ hasText: 'Download file' }).count(), 1);
   assert.equal(await placement.evaluate((el) => el.querySelectorAll('input,button,a,select,textarea').length), 0);
 });
 
@@ -234,42 +284,5 @@ test('missing app configuration renders stable Polaris recovery without bootstra
   assert.deepEqual([...apiRequests], []);
 });
 
-test('method library keeps resource names scannable and edits in a cancellable focused dialog', {
-  timeout: 20000,
-}, async (t) => {
-  const { page, base } = await fixture(t);
-  const method = { id: '52915e17-8104-4ef2-beb8-e99efc2914ec', name: 'Embroidery', version: '1' };
-  let writes = 0;
-  await page.route('**/api/admin/methods', (route) => route.fulfill({ json: { methods: [method] } }));
-  await page.route(`**/api/admin/methods/${method.id}`, (route) => {
-    writes++;
-    assert.deepEqual(route.request().postDataJSON(), { name: 'Screen printing', version: '1' });
-    assert.ok(route.request().headers()['idempotency-key']);
-    return route.fulfill({ json: { method: { ...method, name: 'Screen printing', version: '2' } } });
-  });
-  await page.goto(`${base}/admin/settings/methods`);
-  await page.getByText('Embroidery', { exact: true }).waitFor();
-  assert.equal(await page.getByRole('textbox').count(), 0, 'resource list is readable before choosing an edit');
-  await page.getByRole('button', { name: 'Edit', exact: true }).click();
-  const dialog = page.locator('#edit-method');
-  await page.getByRole('dialog', { name: 'Edit decoration method', exact: true }).waitFor();
-  await dialog.getByLabel('Library method name', { exact: true }).fill('Cancelled name');
-  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await page.getByRole('button', { name: 'Edit', exact: true }).click();
-  await dialog.waitFor();
-  assert.equal(await dialog.getByLabel('Library method name', { exact: true }).inputValue(), 'Embroidery');
-  assert.equal(writes, 0);
-  await dialog.getByLabel('Library method name', { exact: true }).fill('Screen printing');
-  await dialog.getByRole('button', { name: 'Save name', exact: true }).click();
-  await page.getByText('Screen printing', { exact: true }).waitFor();
-  assert.equal(writes, 1);
-  await page.setViewportSize({ width: 390, height: 844 });
-  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-  await page.screenshot({ path: '/tmp/insignia-canonical-methods-mobile.png', fullPage: true, animations: 'disabled' });
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.screenshot({
-    path: '/tmp/insignia-canonical-methods-desktop.png',
-    fullPage: true,
-    animations: 'disabled',
-  });
-});
+// Selected Methods resource browsing, cancel, save, loss recovery and deletion now run
+// through the actual selected route in selected-methods-browser.test.mts.

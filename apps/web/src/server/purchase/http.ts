@@ -1,16 +1,20 @@
 import { randomUUID } from 'node:crypto';
 import {
   PurchaseAttachmentSchema,
+  PurchaseListQuerySchema,
   PurchaseListViewSchema,
   PurchaseLockSchema,
+  PurchaseOriginalDownloadSchema,
   PurchasePrivateUrlSchema,
   PurchaseReconcileSchema,
+  PurchaseStatisticsSchema,
   PurchaseViewSchema,
 } from '@insignia/contracts';
 import { AdminOnlineIdentityError } from '@insignia/shopify';
 import type { AdminActor } from '../admin/contracts.js';
 import { mutationOrigin, validActor } from '../admin/http.ts';
 import { artworkJsonBody } from '../artwork/body.ts';
+import { canReadPurchaseRecords } from './access.ts';
 import type { PurchaseServices } from './service.ts';
 
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
@@ -47,7 +51,7 @@ export async function handlePurchaseRequest(
       throw new HttpError(401, 'UNAUTHORIZED');
     const actor: AdminActor | null = await services.authenticate(request);
     if (!validActor(actor, Date.now())) throw new HttpError(401, 'UNAUTHORIZED');
-    if (actor.canReadOrders !== true || actor.canReadArtwork !== true) throw new HttpError(403, 'PERMISSION_REQUIRED');
+    if (!canReadPurchaseRecords(actor)) throw new HttpError(403, 'PERMISSION_REQUIRED');
     const url = new URL(request.url);
     if (url.searchParams.has('shop') && url.searchParams.get('shop') !== actor.shop)
       throw new HttpError(403, 'SHOP_MISMATCH');
@@ -71,15 +75,29 @@ export async function handlePurchaseRequest(
       if (!value) throw new HttpError(404, 'NOT_FOUND');
       return respond(value, 200, 4194304);
     }
+    if (route === 'statistics') {
+      if (request.method !== 'GET') throw new HttpError(405, 'METHOD_NOT_ALLOWED');
+      if (url.searchParams.size) throw new HttpError(400, 'INVALID_REQUEST');
+      return respond(PurchaseStatisticsSchema.parse(await services.statistics(actor)));
+    }
     const [id, action, assetId, purpose, ...extra] = route.split('/');
     if (extra.length || (id && !UUID.test(id))) throw new HttpError(404, 'NOT_FOUND');
     if (request.method === 'GET') {
       if (!route) {
-        const before = url.searchParams.get('before');
-        const limit = Number(url.searchParams.get('limit') ?? '20');
-        if ((before && !UUID.test(before)) || !Number.isInteger(limit) || limit < 1 || limit > 50)
+        const allowed = new Set(['before', 'limit', 'sort', 'q', 'artwork', 'createdFrom', 'createdBefore', 'shop']);
+        if ([...url.searchParams.keys()].some((key) => !allowed.has(key) || url.searchParams.getAll(key).length !== 1))
           throw new HttpError(400, 'INVALID_REQUEST');
-        return respond(PurchaseListViewSchema.parse(await services.list(actor, { before, limit })));
+        const query = PurchaseListQuerySchema.safeParse({
+          before: url.searchParams.get('before'),
+          limit: Number(url.searchParams.get('limit') ?? '20'),
+          ...Object.fromEntries(
+            ['sort', 'q', 'artwork', 'createdFrom', 'createdBefore'].flatMap((key) =>
+              url.searchParams.has(key) ? [[key, url.searchParams.get(key)]] : [],
+            ),
+          ),
+        });
+        if (!query.success) throw new HttpError(400, 'INVALID_REQUEST');
+        return respond(PurchaseListViewSchema.parse(await services.list(actor, query.data)));
       }
       if (id && !action) {
         const view = await services.get(actor, id);
@@ -94,6 +112,8 @@ export async function handlePurchaseRequest(
         ['download', 'preview'].includes(purpose ?? '')
       ) {
         const value = await services[purpose as 'download' | 'preview'](actor, id, assetId);
+        if (purpose === 'download' && url.searchParams.get('metadata') === '1')
+          return respond(PurchaseOriginalDownloadSchema.parse(value));
         return respond(
           PurchasePrivateUrlSchema.parse({
             url: value.url,

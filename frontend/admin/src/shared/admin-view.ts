@@ -17,6 +17,13 @@ export interface CatalogProduct {
     selectedOptions: { name: string; value: string }[];
   }[];
   variantsTruncated?: boolean;
+  images?: { id: string; url: string; width: number; height: number; alt: string }[];
+  imagesTruncated?: boolean;
+  options?: { id: string; name: string; values: string[] }[];
+  tags?: string[];
+  collections?: { id: string; title: string }[];
+  collectionsTruncated?: boolean;
+  methodSetup?: { methodId: string; locations: number; pricedLocations: number }[];
   configurationSummary?: ProductConfigurationSummary;
 }
 
@@ -42,6 +49,7 @@ export interface ConfigView {
     installationGeneration: string;
     draftVersion: string;
     draft: unknown;
+    publishedSetup?: import('@insignia/contracts').SelectedProductSetup | null;
     currentShopCurrency: string | null;
     publication: {
       state: PublicationState;

@@ -11,6 +11,7 @@ import { type Kysely, sql } from 'kysely';
 import type { Database } from '../client/database.js';
 import { sha256CanonicalJson } from '../hash/canonical.js';
 import { createPurchaseCursorRepository } from './purchase-cursors.js';
+import { createPurchaseListRepository } from './purchase-list.js';
 
 export type PurchaseReconciliationHint = {
   inboxId: string;
@@ -630,6 +631,8 @@ export function createPurchaseRepository(db: Kysely<Database>) {
             tx,
           );
         }
+        if (order.orderName !== undefined)
+          await createPurchaseListRepository(tx).rememberNames(order.shopId, { [order.orderId]: order.orderName });
         await completeDelivery();
         return purchaseId;
       });
@@ -667,16 +670,30 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       );
     },
     get: (scope: Scope, id: string) => get(scope, id),
-    async list(scope: PurchaseScope, input: { limit?: number; before?: string } = {}) {
+    async rememberOrderNames(scope: PurchaseScope, names: Record<string, string | null>) {
+      await db.transaction().execute(async (tx) => {
+        await active(tx, scope, true);
+        await createPurchaseListRepository(tx).rememberNames(scope.shopId, names);
+      });
+    },
+    async missingOrderNames(scope: PurchaseScope, limit = 100) {
+      await active(db, scope);
+      return createPurchaseListRepository(db).missingNames(scope.shopId, limit);
+    },
+    async statistics(scope: PurchaseScope, timeZone: string, observedAt: Date) {
+      await active(db, scope);
+      return createPurchaseListRepository(db).statistics(scope.shopId, timeZone, observedAt);
+    },
+    async list(scope: PurchaseScope, input: Partial<import('@insignia/contracts').PurchaseListQuery> = {}) {
       await active(db, scope);
       const limit = input.limit ?? 25;
       if (!Number.isInteger(limit) || limit < 1 || limit > 100) fail('INVALID');
-      const ids = await sql<{
-        purchase_id: string;
-      }>`SELECT purchase_id::text FROM purchase_orders WHERE shop_id=${scope.shopId} ${input.before ? sql`AND (created_at,purchase_id)<(SELECT created_at,purchase_id FROM purchase_orders WHERE shop_id=${scope.shopId} AND purchase_id=${input.before}::uuid)` : sql``} ORDER BY created_at DESC,purchase_id DESC LIMIT ${limit}`.execute(
-        db,
-      );
-      return Promise.all(ids.rows.map((row) => get(scope, row.purchase_id)));
+      const ids = await createPurchaseListRepository(db).listIds(scope.shopId, {
+        ...input,
+        before: input.before ?? null,
+        limit,
+      });
+      return Promise.all(ids.map((id) => get(scope, id)));
     },
     async getOffer(input: {
       shopId: string;

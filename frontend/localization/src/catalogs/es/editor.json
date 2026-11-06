@@ -1185,7 +1185,28 @@
       "size": "Tamaño"
     },
     "checkAppearanceOnView": "Comprueba {{appearanceName}} en {{viewName}}.",
-    "selectedImage": "Seleccionada"
+    "selectedImage": "Seleccionada",
+    "realPublicationPending": "La publicación sigue en curso. Continúa la solicitud original para comprobar su estado.",
+    "realPublicationNotice": "La publicación actualiza tu tienda Shopify después de la validación y activación.",
+    "realSaveFailed": "No se pudieron confirmar los cambios. Reintenta la solicitud original antes de guardar otros cambios.",
+    "realPublished": "Publicado",
+    "realDraftChanged": "Los valores heredados han cambiado. Revisa los cambios guardados antes de volver a publicar.",
+    "realCurrencyReview": "La moneda de la tienda es ahora {{currency}}. Revisa todos los precios antes de guardar una nueva propuesta.",
+    "realReviewCurrency": "Revisar precios en la moneda de la tienda",
+    "realCalibrateImage": "Calibrar imagen",
+    "realDimensionsRequired": "Calibra esta imagen para definir las dimensiones de producción.",
+    "realReviewMethods": "Revisa los métodos no asignados o eliminados antes de publicar.",
+    "realKeepMethod": "Conservar método",
+    "realRemoveMethod": "Eliminar método",
+    "realCapacityExceeded": "Esta configuración supera los límites admitidos: 16 vistas, 32 ubicaciones, 32 métodos, 64 tamaños de decoración, 250 variantes y 100 ajustes de imagen o alineación por vista o ubicación.",
+    "realReloadDraft": "Recargar el borrador actual",
+    "realDraftSaved": "Borrador guardado. Publica por separado para actualizar la tienda.",
+    "realPublicationFailed": "La publicación ha fallado. Revisa el borrador guardado y el estado antes de intentarlo de nuevo.",
+    "realPublicationBlocked": "La publicación necesita revisión.",
+    "legacyWidthScale": "Escala de anchura (%)",
+    "legacyHeightScale": "Escala de altura (%)",
+    "realHistoricalPricingReview": "Esta configuración usa precios que el editor no puede representar de forma segura. El borrador guardado y los precios publicados permanecen sin cambios. Revisa los precios antes de convertirla.",
+    "realHistoricalAppearanceReview": "Las fotos de variantes o las ubicaciones existentes deben revisarse con el catálogo completo de Shopify. La configuración guardada permanece sin cambios."
   },
   "placementSetupCopyEntry": {}
 }

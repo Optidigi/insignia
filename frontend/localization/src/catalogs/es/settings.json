@@ -208,6 +208,10 @@
     "translations": {
       "title": "Traducciones",
       "description": "Personaliza el texto que ven los clientes en Insignia."
+    },
+    "privacy": {
+      "title": "Privacidad",
+      "description": "Consultar solicitudes de datos de clientes y datos de pedidos conservados."
     }
   },
   "translations": {
@@ -299,7 +303,8 @@
       "files": "Archivos",
       "theme": "Apariencia",
       "recovery": "Mensajes de recuperación",
-      "common": "Texto compartido"
+      "common": "Texto compartido",
+      "postOrder": "Diseños tras el pedido"
     },
     "fields": {
       "customer_chrome_skipToDesignControls": "Ir a los controles del diseño",
@@ -491,7 +496,21 @@
       "common_summary_unavailable": "No disponible",
       "customer_language_label": "Etiqueta del selector de idioma",
       "customer_language_automatic": "Opción para usar el idioma de la tienda",
-      "customer_language_failure": "Error al cambiar el idioma"
+      "customer_language_failure": "Error al cambiar el idioma",
+      "customer_postOrder_title": "Título de subida tras el pedido",
+      "customer_postOrder_loading": "Mensaje de carga tras el pedido",
+      "customer_postOrder_unavailable": "Mensaje de enlace de subida caducado",
+      "customer_postOrder_notice": "Instrucciones de subida tras el pedido",
+      "customer_postOrder_saved": "Confirmación del diseño enviado",
+      "customer_postOrder_continue": "Botón para continuar subiendo",
+      "customer_postOrder_retry": "Botón para reintentar la solicitud",
+      "customer_recovery_repairRequired": "Tu personalización necesita revisión",
+      "customer_recovery_repairHelp": "Tus artículos personalizados permanecen en el carrito hasta que confirmes su sustitución o eliminación.",
+      "customer_recovery_startNew": "Iniciar una nueva personalización",
+      "customer_recovery_removeGroup": "Revisar la eliminación de esta personalización",
+      "customer_recovery_removeAll": "Revisar la eliminación de todos los artículos personalizados",
+      "customer_recovery_confirmRemoval": "Confirmar actualización del carrito",
+      "customer_recovery_remainingItems": "Artículos personalizados restantes"
     },
     "resetSavedHeading": "¿Restablecer las traducciones guardadas?",
     "resetSavedDescription": "Se restablecerán los textos predeterminados de todos los idiomas guardados y se eliminarán tus textos personalizados.",

@@ -123,6 +123,7 @@ export default function PurchaseHistoricalPreview({
               variantId,
               selectedPlacementId: placement.id,
               selectedStepId: placement.stepId,
+              ...(placement.position ? { artworkPosition: placement.position } : {}),
               artwork,
             },
             viewport,

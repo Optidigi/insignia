@@ -5,20 +5,23 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "tsc --noEmit && vite build",
+    "build": "corepack pnpm build:library && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "check:runtime": "node --test scripts/runtime-check.mts",
     "check:configs": "node --test scripts/config-check.mts scripts/quantity-entry-check.mts",
     "check:quantities": "node --test scripts/quantity-entry-check.mts",
     "check:variants": "node --test scripts/variant-matrix-check.mts",
     "build:library": "tsc --noEmit && vite build --config vite.library.config.ts && tsc -p tsconfig.library.json",
-    "typecheck:test": "tsc -p tsconfig.test.json"
+    "typecheck:test": "tsc -p tsconfig.test.json",
+    "test": "node --test scripts/*-check.mts"
   },
   "dependencies": {
     "@fontsource-variable/inter": "5.3.0",
     "preact": "10.29.8",
     "zod": "4.3.6",
-    "@insignia/ui-localization": "workspace:*"
+    "@insignia/ui-localization": "workspace:*",
+    "@insignia/contracts": "workspace:*",
+    "@insignia/visualizer": "workspace:*"
   },
   "devDependencies": {
     "esbuild": "0.25.12",
@@ -32,5 +35,8 @@
       "import": "./dist-library/designer.js"
     },
     "./style.css": "./dist-library/designer.css"
-  }
+  },
+  "files": [
+    "dist-library"
+  ]
 }

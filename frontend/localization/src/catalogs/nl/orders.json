@@ -31,14 +31,14 @@
     "changeSearchFilterPage": "Wijzig je zoekopdracht of filter, of bekijk een andere pagina."
   },
   "search": {
-    "label": "Bestellingen op deze pagina zoeken",
-    "placeholder": "Op deze pagina zoeken",
+    "label": "Bestellingen zoeken",
+    "placeholder": "Bestellingen zoeken",
     "results_one": "{{formattedCount}} bestelling getoond op deze pagina.",
     "results_other": "{{formattedCount}} bestellingen getoond op deze pagina."
   },
   "filters": {
     "filterOrders": "Bestellingen filteren",
-    "artworkStatus": "Ontwerpstatus op deze pagina",
+    "artworkStatus": "Status van artwork",
     "editArtworkStatus": "Filter voor ontwerpstatus bewerken",
     "editOrderDate": "Filter voor besteldatum bewerken",
     "orderDateRange": "Besteldatum: {{from}} – {{to}}"
@@ -268,6 +268,23 @@
       "refundDetails": "Gegevens over terugbetalingen",
       "purchasedItem": "Gekocht artikel",
       "refundLine": "{{itemName}}: {{formattedQuantity}} stuks geregistreerd voor terugbetaling, {{amount}}"
+    },
+    "customerLink": {
+      "copy": "Uploadlink voor klant kopiëren",
+      "help": "Deel deze beveiligde link zodat de klant ontbrekend artwork kan aanleveren, ook vóór betaling.",
+      "copied": "Uploadlink gekopieerd. Deel deze privé met de klant.",
+      "failed": "De link kon niet worden gekopieerd. Controleer toegang tot het klembord en probeer opnieuw, of upload het artwork hier."
+    },
+    "commands": {
+      "refresh": "Vernieuwen",
+      "reconcile": "Orderupdates controleren in Shopify",
+      "lock": "Artwork vergrendelen",
+      "lockHeading": "Artwork vergrendelen voor productie?",
+      "lockBody": "Hiermee zet je de huidige artwork vast. Daarna zijn vervangingen niet meer mogelijk.",
+      "locked": "Artwork vergrendeld.",
+      "requested": "Controle aangevraagd. Vernieuw na verwerking om geverifieerde Shopify-gegevens te zien.",
+      "changed": "Artwork is gewijzigd. Vernieuw de order voordat je doorgaat.",
+      "failed": "De actie kon niet worden bevestigd. Vernieuw de order voordat je doorgaat."
     }
   }
 }

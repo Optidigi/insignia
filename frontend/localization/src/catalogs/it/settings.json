@@ -208,6 +208,10 @@
     "translations": {
       "title": "Traduzioni",
       "description": "Personalizza i testi che i clienti vedono in Insignia."
+    },
+    "privacy": {
+      "title": "Privacy",
+      "description": "Visualizza le richieste di dati dei clienti e i dati degli ordini conservati."
     }
   },
   "translations": {
@@ -300,7 +304,8 @@
       "files": "File",
       "theme": "Aspetto",
       "recovery": "Messaggi di recupero",
-      "common": "Testi condivisi"
+      "common": "Testi condivisi",
+      "postOrder": "Grafiche dopo l’ordine"
     },
     "fields": {
       "customer_chrome_skipToDesignControls": "Vai ai controlli della personalizzazione",
@@ -492,7 +497,21 @@
       "common_summary_unavailable": "Non disponibile",
       "customer_language_label": "Etichetta del selettore della lingua",
       "customer_language_automatic": "Opzione per usare la lingua del negozio",
-      "customer_language_failure": "Errore di cambio lingua"
+      "customer_language_failure": "Errore di cambio lingua",
+      "customer_postOrder_title": "Titolo del caricamento dopo l’ordine",
+      "customer_postOrder_loading": "Messaggio di caricamento dopo l’ordine",
+      "customer_postOrder_unavailable": "Messaggio del link di caricamento scaduto",
+      "customer_postOrder_notice": "Istruzioni di caricamento dopo l’ordine",
+      "customer_postOrder_saved": "Conferma della grafica inviata",
+      "customer_postOrder_continue": "Pulsante per continuare a caricare",
+      "customer_postOrder_retry": "Pulsante per riprovare la richiesta",
+      "customer_recovery_repairRequired": "La tua personalizzazione richiede una verifica",
+      "customer_recovery_repairHelp": "Gli articoli personalizzati restano nel carrello finché non confermi la sostituzione o la rimozione.",
+      "customer_recovery_startNew": "Inizia una nuova personalizzazione",
+      "customer_recovery_removeGroup": "Verifica la rimozione di questa personalizzazione",
+      "customer_recovery_removeAll": "Verifica la rimozione di tutti gli articoli personalizzati",
+      "customer_recovery_confirmRemoval": "Conferma aggiornamento carrello",
+      "customer_recovery_remainingItems": "Articoli personalizzati rimanenti"
     },
     "resetSavedHeading": "Ripristinare le traduzioni salvate?",
     "resetSavedDescription": "Ripristina i testi predefiniti per tutte le lingue salvate. I testi personalizzati verranno rimossi.",

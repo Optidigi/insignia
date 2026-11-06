@@ -33,15 +33,15 @@
     "changeSearchFilterPage": "Modifica la ricerca o il filtro oppure controlla un'altra pagina."
   },
   "search": {
-    "label": "Cerca gli ordini in questa pagina",
-    "placeholder": "Cerca in questa pagina",
+    "label": "Cerca ordini",
+    "placeholder": "Cerca ordini",
     "results_one": "{{formattedCount}} ordine mostrato in questa pagina.",
     "results_many": "{{formattedCount}} ordini mostrati in questa pagina.",
     "results_other": "{{formattedCount}} ordini mostrati in questa pagina."
   },
   "filters": {
     "filterOrders": "Filtra gli ordini",
-    "artworkStatus": "Stato della grafica in questa pagina",
+    "artworkStatus": "Stato della grafica",
     "editArtworkStatus": "Modifica il filtro dello stato della grafica",
     "editOrderDate": "Modifica il filtro della data dell'ordine",
     "orderDateRange": "Data dell'ordine: {{from}} – {{to}}"
@@ -275,6 +275,23 @@
       "refundDetails": "Dettagli del rimborso",
       "purchasedItem": "Articolo acquistato",
       "refundLine": "{{itemName}}: quantità registrata per il rimborso {{formattedQuantity}}, importo {{amount}}"
+    },
+    "customerLink": {
+      "copy": "Copia link di caricamento cliente",
+      "help": "Condividi questo link sicuro per consentire al cliente di caricare i file mancanti, anche prima del pagamento.",
+      "copied": "Link di caricamento copiato. Condividilo in privato con il cliente.",
+      "failed": "Impossibile copiare il link. Controlla l’accesso agli appunti e riprova, oppure carica i file qui."
+    },
+    "commands": {
+      "refresh": "Aggiorna",
+      "reconcile": "Verifica aggiornamenti ordine in Shopify",
+      "lock": "Blocca grafica",
+      "lockHeading": "Bloccare la grafica per la produzione?",
+      "lockBody": "La grafica attuale verrà fissata. Non sarà più possibile sostituirla.",
+      "locked": "Grafica bloccata.",
+      "requested": "Verifica richiesta. Aggiorna dopo l’elaborazione per vedere i dati Shopify verificati.",
+      "changed": "La grafica è cambiata. Aggiorna l’ordine prima di continuare.",
+      "failed": "Non è stato possibile confermare l’azione. Aggiorna l’ordine prima di continuare."
     }
   }
 }

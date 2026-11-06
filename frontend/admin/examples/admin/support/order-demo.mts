@@ -62,6 +62,7 @@ export async function createOrderDemo() {
   const assets = new Map<string, Asset>();
   const initial = PurchaseViewSchema.parse({
     version: 'm8-purchase-v1',
+    canUploadArtwork: true,
     purchaseId: demoPurchaseId,
     orderId: 'gid://shopify/Order/1042',
     orderName: '#1042',

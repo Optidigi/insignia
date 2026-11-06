@@ -111,7 +111,7 @@
     },
     "notices": {
       "methodUnavailable": "Cette technique n’est plus disponible.",
-      "storageFailure": "Votre navigateur n’a pas pu enregistrer ces techniques. Gardez cette page ouverte et réessayez.",
+      "storageFailure": "Ces méthodes n’ont pas pu être enregistrées. Gardez cette page ouverte et réessayez.",
       "created": "Technique créée.",
       "saved": "Technique enregistrée.",
       "duplicated": "Technique dupliquée.",
@@ -134,7 +134,11 @@
       "productsMustMatch": "Les produits doivent correspondre",
       "searchTags": "Rechercher des balises",
       "searchAssignedProducts": "Rechercher les produits associés",
-      "productSetup": "Configuration du produit"
+      "productSetup": "Configuration du produit",
+      "translationLanguage": "Langue de traduction",
+      "defaultText": "Texte par défaut",
+      "realExplanation": "Description (facultative)",
+      "realExplanationHelp": "Visible par les marchands et les clients qui choisissent cette méthode de décoration."
     },
     "copy": {
       "duplicateNameError": "Saisissez un nom de technique de 80 caractères maximum.",
@@ -178,7 +182,12 @@
       "removeManyAvailability_other": "Ces techniques ne seront plus disponibles dans la bibliothèque pour {{formattedCount}} produits.",
       "setupFixedPrice": "Définissez le même prix pour chaque emplacement et chaque taille du visuel sur tous les produits sélectionnés.",
       "setupProductPrice": "Définissez les prix de chaque produit selon l’emplacement et la taille du visuel.",
-      "tagMatchSummary": "Règle d’association : {{match}}. Balises : {{tags}}. Les modifications ultérieures des balises peuvent changer les produits concernés."
+      "tagMatchSummary": "Règle d’association : {{match}}. Balises : {{tags}}. Les modifications ultérieures des balises peuvent changer les produits concernés.",
+      "translationFallback": "Laissez une traduction vide pour utiliser le texte par défaut.",
+      "currencyReview": "Le prix enregistré est {{amount}}, mais la boutique utilise maintenant {{currency}}. Saisissez et enregistrez un prix vérifié dans la devise actuelle.",
+      "realDefaultsDescription": "Les changements de prix par défaut mettent à jour les brouillons hérités. Les prix propres au produit sont conservés ; publiez chaque produit séparément.",
+      "realFixedPriceDescription": "Utilisez un prix par défaut hérité pour les emplacements et les tailles du produit.",
+      "realLeaveSavedData": "Les produits publiés et les commandes restent inchangés. Les brouillons configurés conservent la méthode et nécessitent une confirmation pour la conserver ou la supprimer avant publication."
     },
     "pricing": {
       "fixed": "Prix fixe",

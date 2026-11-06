@@ -4,10 +4,11 @@ import { readGeometry } from './support/merchant-draft.mts';
 import './support/browser-state.mts';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import type { TestContext } from 'node:test';
 import { test } from 'node:test';
-import { chromium } from 'playwright';
+import { chromium, type Page } from 'playwright';
 
 const id = 'd841ee12-2075-4101-b3bc-429ad31a4059';
 function view(state: PurchaseView['artworkState'] = 'PENDING_ARTWORK'): PurchaseView {
@@ -24,10 +25,22 @@ function view(state: PurchaseView['artworkState'] = 'PENDING_ARTWORK'): Purchase
     financialStatus: 'PENDING',
     cancelledAt: null,
     exceptions: [],
+    canUploadArtwork: true,
+    canShareCustomerArtwork: false,
     artworkVersion: 0,
     artworkState: state,
     refunds: [],
-    lines: [{ orderLineId: 'line1', productId: '111', variantId: '11', quantity: 2, unitPriceMinor: '4500' }],
+    lines: [
+      {
+        orderLineId: 'line1',
+        title: 'Purchased shirt',
+        variantTitle: 'Blue / M',
+        productId: '111',
+        variantId: '11',
+        quantity: 2,
+        unitPriceMinor: '4500',
+      },
+    ],
     groups:
       state === 'ERASED'
         ? []
@@ -49,7 +62,15 @@ function view(state: PurchaseView['artworkState'] = 'PENDING_ARTWORK'): Purchase
                 },
               ],
               geometry: null,
-              presentation: null,
+              presentation: {
+                version: 'm5-presentation-v1',
+                labels: {
+                  methods: { print: 'Print' },
+                  placements: { front: 'Chest', back: 'Back' },
+                  steps: { small: 'Small' },
+                  views: { front: 'Front', back: 'Back' },
+                },
+              },
               imageUrls: {},
               payloadExpiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
             },
@@ -63,7 +84,7 @@ async function fixture(t: TestContext) {
     [process.env.PURCHASE_BROWSER_ENTRY ?? new URL('../../dist/server/entry.mjs', import.meta.url).pathname],
     {
       env: {
-        ...process.env,
+        PATH: process.env.PATH,
         HOST: '127.0.0.1',
         PORT: '0',
         SHOPIFY_CLIENT_ID: '11111111111111111111111111111111',
@@ -87,21 +108,118 @@ async function fixture(t: TestContext) {
   }
   assert.ok(base, log);
   const browser = await chromium.launch();
+  let diagnostics = async () => {};
   t.after(async () => {
-    await browser.close();
-    child.kill('SIGTERM');
-    await exited;
+    try {
+      await diagnostics();
+    } finally {
+      await browser.close();
+      child.kill('SIGTERM');
+      await exited;
+    }
   });
-  const page = await browser.newPage();
+  const page = await browser.newPage({ reducedMotion: 'reduce' });
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  const dir = new URL('../../../../.m1-artifacts/purchase-browser/', import.meta.url);
+  await mkdir(dir, { recursive: true });
+  diagnostics = async () => {
+    const name = t.name.replace(/[^a-z0-9]+/gi, '-').slice(0, 100);
+    if (!page.isClosed()) {
+      await page.screenshot({ path: new URL(`${name}.png`, dir).pathname });
+      await writeFile(new URL(`${name}.aria.txt`, dir), await page.locator('body').ariaSnapshot());
+    }
+    assert.deepEqual(errors, [], 'Purchase route must not throw unhandled browser errors');
+  };
   page.setDefaultTimeout(5000);
   await page.addInitScript(() => (window.shopify = { idToken: async () => 'synthetic-purchase-actor' }));
+  await page.route('**/*', (route) => {
+    const url = new URL(route.request().url());
+    if (url.origin === base) return route.continue();
+    return route.abort('blockedbyclient');
+  });
+  for (const pattern of ['https://cdn.shopify.com/**/icons/**', 'https://cdn.shopify.com/**/experimental/**'])
+    await page.route(pattern, (route) =>
+      route.fulfill({
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"/>',
+      }),
+    );
   await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
-  const polaris = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
-  await page.route('https://cdn.shopify.com/shopifycloud/polaris-1.1.js', (r) =>
+  const polaris = await readFile(
+    new URL('../../../../frontend/admin/examples/fixtures/polaris-2.0-rc.snapshot', import.meta.url),
+  );
+  assert.equal(
+    createHash('sha256').update(polaris).digest('hex'),
+    '89dd2052b7b8cc6b042900f5c044e1f5754e31bf769d205b6e2399992bdb0c7b',
+  );
+  await page.route('https://cdn.shopify.com/shopifycloud/polaris-2.0-rc.js', (r) =>
     r.fulfill({ body: polaris, contentType: 'text/javascript' }),
   );
   await page.route('https://cdn.shopify.com/static/fonts/**', (r) => r.fulfill({ body: '' }));
   return { page, base };
+}
+
+// These declarations live in the iframe; synthetic host dispatch opens the real
+// selected menu. This does not claim native Shopify host observation.
+async function openOrderActions(page: Page) {
+  await page
+    .locator('s-button[slot="secondary-actions"]')
+    .filter({ hasText: 'More actions' })
+    .evaluate((button: HTMLElementTagNameMap['s-button']) => {
+      button.click();
+      const menu = document.getElementById(button.commandFor);
+      if (!menu) throw new Error('The declared order menu target is missing');
+    });
+}
+function orderMenuItem(page: Page, label: string) {
+  return page.locator('s-menu > s-button').filter({ hasText: new RegExp(`^${label}$`) });
+}
+async function orderAction(page: Page, label: string) {
+  await openOrderActions(page);
+  // Shopify renders this menu outside the iframe. Dispatch its actual declared
+  // callback rather than mounting a replacement menu or claiming native proof.
+  await orderMenuItem(page, label).evaluate((button: HTMLElementTagNameMap['s-button']) => {
+    if (button.disabled) throw new Error('The declared order action is disabled');
+    button.click();
+    if (button.commandFor) {
+      const target = document.getElementById(button.commandFor);
+      if (target?.localName !== 's-modal') throw new Error('Order action modal target is missing');
+      (target as HTMLElementTagNameMap['s-modal']).showOverlay();
+    }
+  });
+}
+async function refreshPurchase(page: Page) {
+  await orderAction(page, 'Refresh');
+}
+async function lockArtwork(page: Page) {
+  await orderAction(page, 'Lock artwork');
+  await page
+    .locator('s-modal[heading="Lock artwork for production?"]')
+    .getByRole('button', { name: 'Lock artwork', exact: true })
+    .click();
+}
+async function downloadOriginal(page: Page) {
+  const downloaded = page.waitForEvent('download');
+  await page
+    .getByRole('region', { name: 'Artwork Chest', exact: true })
+    .getByRole('button', { name: 'Download file', exact: true })
+    .click();
+  const result = await downloaded;
+  assert.equal(result.suggestedFilename(), 'verified-original.svg');
+}
+async function openPurchasedPreview(page: Page) {
+  const trigger = page.getByRole('button', { name: 'View design', exact: true });
+  await trigger.click({ trial: true });
+  const shown = page
+    .locator('s-modal[heading="Design preview"]')
+    .evaluate(
+      (modal) => new Promise<void>((resolve) => modal.addEventListener('aftershow', () => resolve(), { once: true })),
+    );
+  await trigger.click();
+  await shown;
+  const version = page.getByRole('combobox', { name: 'Artwork version', exact: true });
+  if (await version.count()) await version.selectOption('purchased');
 }
 test('merchant sees exact historical economics and erased detail never offers new artwork work', {
   timeout: 20000,
@@ -112,12 +230,11 @@ test('merchant sees exact historical economics and erased detail never offers ne
   assert.equal(shell.headers.get('cache-control'), 'private, no-store');
   assert.match(
     required(shell.headers.get('content-security-policy')),
-    /connect-src 'self' https:\/\/cdn\.shopify\.com\/shopifycloud\/admin-ui-foundations\/icons\/ https:\/\/private\.example;/,
+    /connect-src 'self' https:\/\/cdn\.shopify\.com\/shopifycloud\/admin-ui-foundations\/icons\/ https:\/\/cdn\.shopify\.com\/shopifycloud\/admin-ui-foundations\/experimental\/ https:\/\/private\.example;/,
   );
   assert.equal((await shell.text()).includes('9007199254740993'), false, 'SSR does not load private order economics');
   let current = view();
-  // A fixed historical deadline keeps the explicit UTC-format assertion stable.
-  required(current.groups[0]).payloadExpiresAt = '2030-01-01T12:00:00Z';
+  // The original order timestamp supplies a stable explicit UTC-format assertion.
   current.orderName = '#1001';
   required(current.lines[0]).title = 'Purchased cotton shirt';
   required(current.lines[0]).variantTitle = 'Blue / Large';
@@ -127,7 +244,7 @@ test('merchant sees exact historical economics and erased detail never offers ne
   });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`${base}/admin/orders/${id}`);
-  await page.getByText('USD 90071992547409.93', { exact: true }).waitFor();
+  await page.getByText('USD 90,071,992,547,409.93', { exact: true }).waitFor();
   const navigation = page.locator('s-app-nav');
   await navigation
     .locator('s-link')
@@ -144,22 +261,27 @@ test('merchant sees exact historical economics and erased detail never offers ne
       .getAttribute('href'),
     '/admin/settings',
   );
-  await page.getByRole('heading', { name: 'Order summary', exact: true }).waitFor();
-  const primary = await page.getByRole('heading', { name: 'Artwork and customization', exact: true }).boundingBox();
-  const summary = await page.getByRole('heading', { name: 'Order summary', exact: true }).boundingBox();
+  await page.getByRole('heading', { name: 'Payment information', exact: true }).waitFor();
+  const primary = await page
+    .getByRole('region', { name: 'Purchased cotton shirt customization', exact: true })
+    .boundingBox();
+  const summary = await page.getByRole('heading', { name: 'Payment information', exact: true }).boundingBox();
   assert.ok(primary && summary && summary.x > primary.x, 'artwork task is primary; order metadata sits beside it');
   assert.ok(primary && primary.y < 240, 'artwork starts in the initial desktop fold');
   await page.getByText('#1001', { exact: true }).waitFor();
-  await page.getByText(/Purchased cotton shirt · Blue \/ Large/).waitFor();
+  await page.getByText('Blue / Large', { exact: true }).first().waitFor();
   assert.equal(await page.getByText('gid://shopify/Order/1', { exact: true }).isVisible(), false);
-  await page.getByRole('button', { name: 'Show order and variant references', exact: true }).click();
-  await page.getByText('gid://shopify/Order/1', { exact: true }).waitFor();
   assert.equal(
-    await page.locator('s-text[data-date-time="2030-01-01T12:00:00Z"]').innerText(),
-    'Jan 1, 2030, 12:00 PM UTC',
+    await page.locator('s-text[data-date-time="2026-10-12T12:00:00Z"]').innerText(),
+    'Oct 12, 2026, 12:00 PM UTC',
   );
-  await page.getByText('Historical preview unavailable.', { exact: true }).waitFor();
-  assert.equal(await page.getByRole('button', { name: 'Lock artwork', exact: true }).isEnabled(), false);
+  await page.getByText('Design preview unavailable', { exact: true }).waitFor();
+  await openOrderActions(page);
+  assert.equal(
+    await orderMenuItem(page, 'Lock artwork').evaluate((button: HTMLElementTagNameMap['s-button']) => button.disabled),
+    true,
+  );
+  await page.keyboard.press('Escape');
   await page.screenshot({ path: '/tmp/insignia-m8-local-order-demo.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(
@@ -170,9 +292,13 @@ test('merchant sees exact historical economics and erased detail never offers ne
   await page.screenshot({ path: '/tmp/insignia-lean-local-order-mobile.png', fullPage: true });
   await page.setViewportSize({ width: 1440, height: 900 });
   current = view('ERASED');
-  await page.getByRole('button', { name: 'Refresh purchase', exact: true }).click();
-  await page.getByText('Production detail erased. Historical economics remain.', { exact: true }).waitFor();
-  await page.getByText('Order name unavailable', { exact: true }).waitFor();
+  await refreshPurchase(page);
+  await page
+    .getByText('Customization details and original artwork are no longer available. Order amounts remain available.', {
+      exact: true,
+    })
+    .waitFor();
+  await page.getByRole('heading', { name: 'Order 1', exact: true }).waitFor();
   assert.equal(await page.locator('s-drop-zone input[type=file]').count(), 0);
 });
 test('merchant attaches verified upload, locks exact version, and permission loss removes private work', {
@@ -189,22 +315,33 @@ test('merchant attaches verified upload, locks exact version, and permission los
     r.fulfill({ json: { assetId: asset, expiresAt, upload: { url: 'https://private.example/q', headers: {} } } }),
   );
   await page.route('https://private.example/**', (r) =>
-    r.fulfill({
-      status: 200,
-      body: Buffer.from(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=',
-        'base64',
-      ),
-      contentType: 'image/png',
-      headers: { 'Access-Control-Allow-Origin': '*' },
-    }),
+    r.request().url().endsWith('.svg')
+      ? r.fulfill({
+          body: '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"/>',
+          contentType: 'image/svg+xml',
+          headers: { 'Content-Disposition': 'attachment; filename="verified-original.svg"' },
+        })
+      : r.fulfill({
+          status: 200,
+          body: Buffer.from(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=',
+            'base64',
+          ),
+          contentType: 'image/png',
+          headers: { 'Access-Control-Allow-Origin': '*' },
+        }),
   );
   await page.route(`**/api/artwork/${asset}/**`, (r) =>
     r.fulfill({
       json: r.request().url().endsWith('/status')
         ? { state: 'USABLE', expiresAt }
         : r.request().url().endsWith('/preview')
-          ? { url: 'https://private.example/preview.png', width: 10, height: 10, expiresAt }
+          ? {
+              url: 'https://private.example/preview.png',
+              width: 10,
+              height: 10,
+              expiresAt: new Date(Date.now() + 60000).toISOString(),
+            }
           : {},
     }),
   );
@@ -242,29 +379,40 @@ test('merchant attaches verified upload, locks exact version, and permission los
     r.fulfill(
       denied
         ? { status: 403, json: { error: 'DENIED' } }
-        : { json: { url: 'https://private.example/original.svg', expiresAt } },
+        : {
+            json: {
+              url: 'https://private.example/original.svg',
+              expiresAt: new Date(Date.now() + 60000).toISOString(),
+            },
+          },
     ),
   );
   await page.goto(`${base}/admin/orders/${id}`);
+  await page
+    .getByRole('region', { name: 'Artwork Chest', exact: true })
+    .getByRole('button', { name: 'Attach artwork', exact: true })
+    .click();
   await page
     .locator('s-drop-zone input[type=file]')
     .setInputFiles({ name: 'safe.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg/>') });
   await page.getByRole('img', { name: 'Verified artwork preview', exact: true }).waitFor();
   await page.getByRole('button', { name: 'Attach artwork', exact: true }).click();
-  await page.getByText('Artwork status: Artwork complete', { exact: true }).waitFor();
+  await page.getByText('Artwork complete', { exact: true }).waitFor();
   assert.deepEqual(attachment, { expectedVersion: 0, groupIndex: 0, placementId: 'front', assetId: asset });
-  await page.getByRole('button', { name: 'Lock artwork', exact: true }).click();
-  await page.getByText('Artwork status: Artwork locked', { exact: true }).waitFor();
+  await lockArtwork(page);
+  await page.getByText('Artwork locked.', { exact: true }).waitFor();
   assert.equal(await page.locator('s-drop-zone input[type=file]').count(), 0);
-  await page.getByRole('button', { name: 'Prepare original download', exact: true }).click();
-  await page.getByRole('link', { name: 'Download verified original', exact: true }).waitFor();
+  await downloadOriginal(page);
   denied = true;
-  await page.getByRole('button', { name: 'Prepare original download', exact: true }).click();
+  await page
+    .getByRole('region', { name: 'Artwork Chest', exact: true })
+    .getByRole('button', { name: 'Download file', exact: true })
+    .click();
   await page
     .getByText('Your Shopify identity or permission could not be verified. Reopen from Shopify Admin.', { exact: true })
     .waitFor();
-  assert.equal(await page.getByRole('link', { name: 'Download verified original' }).count(), 0);
-  assert.equal(await page.getByText('USD 90071992547409.93', { exact: true }).count(), 0);
+  assert.equal(await page.getByRole('button', { name: 'Download file', exact: true }).count(), 0);
+  assert.equal(await page.getByText('USD 90,071,992,547,409.93', { exact: true }).count(), 0);
 });
 test('stale lock stays READY and asks refresh without optimistic lock or fulfillment changes', {
   timeout: 15000,
@@ -284,11 +432,11 @@ test('stale lock stays READY and asks refresh without optimistic lock or fulfill
     return r.fulfill({ status: 409, json: { error: 'CONFLICT' } });
   });
   await page.goto(`${base}/admin/orders/${id}`);
-  await page.getByText('Artwork status: Artwork complete', { exact: true }).waitFor();
-  await page.getByRole('button', { name: 'Lock artwork', exact: true }).click();
-  await page.getByText('Artwork changed. Refresh the purchase before continuing.', { exact: true }).waitFor();
+  await page.getByText('Artwork complete', { exact: true }).waitFor();
+  await lockArtwork(page);
+  await page.getByText('Artwork changed. Refresh the order before continuing.', { exact: true }).waitFor();
   assert.equal(calls, 1);
-  assert.equal(await page.getByText('Artwork status: Artwork complete', { exact: true }).count(), 1);
+  assert.equal(await page.getByText('Artwork complete', { exact: true }).count(), 1);
   assert.equal(await page.getByRole('button', { name: /fulfill|refund|unlock/i }).count(), 0);
 });
 test('erased selected artwork permits explicit replacement only while bound design detail remains and is unlocked', {
@@ -321,8 +469,14 @@ test('erased selected artwork permits explicit replacement only while bound desi
   await page.route(`**/api/purchases/v1/${id}`, (r) => r.fulfill({ json: current }));
   await page.goto(`${base}/admin/orders/${id}`);
   await page
-    .getByText('Selected artwork unavailable; explicitly replace within remaining detail retention.', { exact: true })
+    .getByText('Current artwork is unavailable. Upload a replacement before customization details expire.', {
+      exact: true,
+    })
     .waitFor();
+  await page
+    .getByRole('region', { name: 'Artwork Chest', exact: true })
+    .getByRole('button', { name: 'Attach artwork', exact: true })
+    .click();
   assert.equal(await page.locator('s-drop-zone input[type=file]').count(), 1);
   assert.equal(await page.getByRole('button', { name: 'Preview artwork', exact: true }).count(), 0);
   current = {
@@ -342,11 +496,12 @@ test('erased selected artwork permits explicit replacement only while bound desi
     ],
     artworkVersion: 2,
   };
-  await page.getByRole('button', { name: 'Refresh purchase', exact: true }).click();
-  await page.getByText('Version 2: LOCK', { exact: true }).waitFor();
+  await refreshPurchase(page);
+  await page.getByText('Current artwork is no longer available.', { exact: true }).waitFor();
+  assert.equal(await page.getByRole('button', { name: 'Replace artwork', exact: true }).count(), 0);
   assert.equal(await page.locator('s-drop-zone input[type=file]').count(), 0);
   current = { ...view(), groups: [], lines: [], exceptions: ['CONTEXT_UNVERIFIED'] };
-  await page.getByRole('button', { name: 'Refresh purchase', exact: true }).click();
+  await refreshPurchase(page);
   await page
     .getByText('Order customization needs verification. Do not begin production until its details have been checked.', {
       exact: true,
@@ -370,35 +525,46 @@ test('retention readback clears a displayed selected preview even when artwork v
   };
   await page.route(`**/api/purchases/v1/${id}`, (r) => r.fulfill({ json: current }));
   await page.route(`**/api/purchases/v1/${id}/artwork/${asset}/preview`, (r) =>
-    r.fulfill({ json: { url: 'https://private.example/old.png', expiresAt: deadline } }),
-  );
-  await page.route(`**/api/purchases/v1/${id}/artwork/${asset}/download`, (r) =>
-    r.fulfill({ json: { url: 'https://private.example/old.svg', expiresAt: deadline } }),
-  );
-  await page.route('https://private.example/**', (r) =>
     r.fulfill({
-      body: Buffer.from(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=',
-        'base64',
-      ),
-      contentType: 'image/png',
-      headers: { 'Access-Control-Allow-Origin': '*' },
+      json: { url: 'https://private.example/old.png', expiresAt: new Date(Date.now() + 60000).toISOString() },
     }),
   );
+  await page.route(`**/api/purchases/v1/${id}/artwork/${asset}/download`, (r) =>
+    r.fulfill({
+      json: { url: 'https://private.example/old.svg', expiresAt: new Date(Date.now() + 60000).toISOString() },
+    }),
+  );
+  await page.route('https://private.example/**', (r) =>
+    r.request().url().endsWith('.svg')
+      ? r.fulfill({
+          body: '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"/>',
+          contentType: 'image/svg+xml',
+          headers: { 'Content-Disposition': 'attachment; filename="verified-original.svg"' },
+        })
+      : r.fulfill({
+          body: Buffer.from(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=',
+            'base64',
+          ),
+          contentType: 'image/png',
+          headers: { 'Access-Control-Allow-Origin': '*' },
+        }),
+  );
   await page.goto(`${base}/admin/orders/${id}`);
-  await page.getByRole('button', { name: 'Prepare original download', exact: true }).click();
-  await page.getByRole('link', { name: 'Download verified original', exact: true }).waitFor();
+  await downloadOriginal(page);
   await page.getByRole('button', { name: 'Preview artwork', exact: true }).click();
-  await page.getByRole('img', { name: 'Verified PNG front', exact: true }).waitFor();
+  await page.getByRole('img', { name: 'Verified PNG Chest', exact: true }).waitFor();
   await page.evaluate(() => {
     window.erasurePrivacyGap = false;
     new MutationObserver(() => {
       if (
         document.body.textContent.includes(
-          'Selected artwork unavailable; explicitly replace within remaining detail retention.',
+          'Current artwork is unavailable. Upload a replacement before customization details expire.',
         ) &&
-        (document.querySelector('img[alt="Verified PNG front"]') ||
-          Array.from(document.querySelectorAll('a')).some((link) => link.textContent === 'Download verified original'))
+        (document.querySelector('img[alt="Verified PNG Chest"]') ||
+          Array.from(document.querySelectorAll('s-button')).some(
+            (button) => button.textContent?.trim() === 'Download file',
+          ))
       )
         window.erasurePrivacyGap = true;
     }).observe(document.body, { childList: true, subtree: true });
@@ -411,11 +577,13 @@ test('retention readback clears a displayed selected preview even when artwork v
       placements: g.placements.map((p) => ({ ...p, currentAssetId: null, currentExpiresAt: null, expired: true })),
     })),
   };
-  await page.getByRole('button', { name: 'Refresh purchase', exact: true }).click();
+  await refreshPurchase(page);
   await page
-    .getByText('Selected artwork unavailable; explicitly replace within remaining detail retention.', { exact: true })
+    .getByText('Current artwork is unavailable. Upload a replacement before customization details expire.', {
+      exact: true,
+    })
     .waitFor();
-  assert.equal(await page.getByRole('img', { name: 'Verified PNG front', exact: true }).count(), 0);
+  assert.equal(await page.getByRole('img', { name: 'Verified PNG Chest', exact: true }).count(), 0);
   assert.equal(await page.getByRole('link', { name: 'Download verified original', exact: true }).count(), 0);
   assert.equal(
     await page.evaluate(() => window.erasurePrivacyGap),
@@ -442,18 +610,20 @@ test('Shopify refund records describe requested facts without claiming settled p
   };
   await page.route(`**/api/purchases/v1/${id}`, (r) => r.fulfill({ json: current }));
   await page.goto(`${base}/admin/orders/${id}`);
-  await page.getByRole('heading', { name: 'Shopify refund records', exact: true }).waitFor();
-  await page.getByText('Test order.', { exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Refund records', exact: true }).waitFor();
+  await page.getByText('Test', { exact: true }).waitFor();
   await page
-    .getByText('Refund records do not prove that money has settled. Shopify remains the payment authority.', {
+    .getByText('These records do not confirm settled funds. Check payment settlement in Shopify.', {
       exact: true,
     })
     .waitFor();
-  await page.getByText('· line1: 1 recorded for refund, USD 45.00', { exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Refund details', exact: true }).click();
+  await page.getByText('Purchased shirt: 1 recorded for refund, USD 45.00', { exact: true }).waitFor();
   assert.equal(await page.getByText(/1 refunded/).count(), 0);
   current = { ...current, isTest: null };
-  await page.getByRole('button', { name: 'Refresh purchase', exact: true }).click();
-  await page.getByText('Test status unavailable.', { exact: true }).waitFor();
+  await refreshPurchase(page);
+  await page.getByText('Test', { exact: true }).waitFor({ state: 'hidden' });
+  assert.equal(await page.getByText('Test', { exact: true }).count(), 0);
 });
 
 test('merchant requests independent reconciliation without claiming current facts changed', {
@@ -469,13 +639,13 @@ test('merchant requests independent reconciliation without claiming current fact
     return r.fulfill({ status: 202, json: current });
   });
   await page.goto(`${base}/admin/orders/${id}`);
-  await page.getByText('USD 90071992547409.93', { exact: true }).waitFor();
-  await page.getByRole('button', { name: 'Check order updates in Shopify', exact: true }).click();
+  await page.getByText('USD 90,071,992,547,409.93', { exact: true }).waitFor();
+  await orderAction(page, 'Check order updates in Shopify');
   await page
-    .getByText('Reconciliation requested. Refresh later for independently read Shopify facts.', { exact: true })
+    .getByText('Update check requested. Refresh after processing to see verified Shopify facts.', { exact: true })
     .waitFor();
   assert.equal(requests, 1);
-  assert.equal(await page.getByText('USD 90071992547409.93', { exact: true }).count(), 1);
+  assert.equal(await page.getByText('USD 90,071,992,547,409.93', { exact: true }).count(), 1);
   assert.equal(await page.getByText('Shopify facts reconciled.', { exact: true }).count(), 0);
 });
 
@@ -505,6 +675,15 @@ function historicalView() {
     placements: [{ id: 'back', rect: { centerX: 0.5, centerY: 0.5, width: 0.5, height: 0.5 } }],
   });
   group.variants.push({ variantId: '12', quantity: 1 });
+  current.lines.push({
+    orderLineId: 'line2',
+    productId: '111',
+    variantId: '12',
+    title: 'Purchased shirt',
+    variantTitle: 'Red / Large',
+    quantity: 1,
+    unitPriceMinor: '4500',
+  });
   group.placements.push({
     ...required(group.placements[0]),
     id: 'back',
@@ -533,7 +712,9 @@ test('historical canvas composes the purchased original PNG at its frozen placem
     seen.push(route.request().url().split('/').at(-2));
     return route.fulfill({
       json: {
-        url: 'https://private.example/purchased-original.png',
+        url: route.request().url().includes(`/${original}/`)
+          ? 'https://private.example/purchased-original.png'
+          : 'https://private.example/current-replacement.png',
         aspectRatio: 1,
         expiresAt: new Date(Date.now() + 60000).toISOString(),
       },
@@ -552,8 +733,12 @@ test('historical canvas composes the purchased original PNG at its frozen placem
   );
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`${base}/admin/orders/${id}`);
-  await page.getByText('Historical purchased artwork preview.', { exact: true }).waitFor();
-  assert.deepEqual(seen, [original]);
+  await openPurchasedPreview(page);
+  await page.locator('[data-design-ready="true"]').waitFor();
+  assert.deepEqual(
+    seen.filter((asset) => asset === original),
+    [original],
+  );
   const canvas = page.getByRole('region', { name: 'Purchased design preview' }).locator('canvas').nth(1);
   const centerColor = async () => {
     const screenshot = await canvas.screenshot();
@@ -588,28 +773,34 @@ test('historical canvas composes the purchased original PNG at its frozen placem
   current.artworkVersion++;
   required(group.placements[0]).currentAssetId = 'e365cfa1-bab9-42e6-b4c2-319baae86e69';
   const refreshedOriginal = page.waitForResponse((response) => response.url().endsWith(`/${original}/preview`));
-  await page.getByRole('button', { name: 'Refresh purchase', exact: true }).click();
+  await refreshPurchase(page);
+  // A new artwork version deliberately closes the old scoped modal. Reopen
+  // the current design and explicitly select its retained purchased artwork.
+  await openPurchasedPreview(page);
   await (await refreshedOriginal).finished();
-  await page.getByText('Historical purchased artwork preview.', { exact: true }).waitFor();
-  assert.deepEqual(seen, [original, original]);
+  await page.locator('[data-design-ready="true"]').waitFor();
+  assert.deepEqual(
+    seen.filter((asset) => asset === original),
+    [original, original],
+  );
   assert.deepEqual(await centerColor(), [220, 30, 30]);
   const backImage = page.waitForResponse('https://private.example/frozen-back.png');
-  await page.getByLabel('Preview view', { exact: true }).selectOption('back');
+  await page.getByRole('combobox', { name: 'View', exact: true }).selectOption('back');
   await (await backImage).finished();
-  await page.getByText('Historical purchased artwork preview.', { exact: true }).waitFor();
+  await page.locator('[data-design-ready="true"]').waitFor();
   assert.notDeepEqual(
     await centerColor(),
     [220, 30, 30],
     'another purchased view must not keep the previous placement artwork',
   );
   const frontOriginal = page.waitForResponse((response) => response.url().endsWith(`/${original}/preview`));
-  await page.getByLabel('Preview view', { exact: true }).selectOption('front');
+  await page.getByRole('combobox', { name: 'View', exact: true }).selectOption('front');
   await (await frontOriginal).finished();
-  await page.getByText('Historical purchased artwork preview.', { exact: true }).waitFor();
+  await page.locator('[data-design-ready="true"]').waitFor();
   const variantOriginal = page.waitForResponse((response) => response.url().endsWith(`/${original}/preview`));
-  await page.getByLabel('Purchased variant', { exact: true }).selectOption('12');
+  await page.getByRole('combobox', { name: 'Variant', exact: true }).selectOption('12');
   await (await variantOriginal).finished();
-  await page.getByText('Historical purchased artwork preview.', { exact: true }).waitFor();
+  await page.locator('[data-design-ready="true"]').waitFor();
   assert.deepEqual(await centerColor(), [220, 30, 30]);
 });
 
@@ -617,8 +808,9 @@ test('historical preview never fetches or paints an original when its retained p
   timeout: 15000,
 }, async (t) => {
   const { page, base } = await fixture(t);
+  await page.clock.install();
   const { original, current, group } = historicalView();
-  group.payloadExpiresAt = new Date(Date.now() + 1500).toISOString();
+  group.payloadExpiresAt = new Date(Date.now() + 4000).toISOString();
   let release: (() => void) | undefined;
   const pending = new Promise<void>((resolve) => {
     release = resolve;
@@ -629,9 +821,13 @@ test('historical preview never fetches or paints an original when its retained p
   });
   const imageRequests: (string | undefined)[] = [];
   page.on('request', (request) => {
-    if (request.url().startsWith('https://private.example/')) imageRequests.push(request.url());
+    if (/https:\/\/private\.example\/(?:expired|late)-original\.png$/.test(request.url()))
+      imageRequests.push(request.url());
   });
-  await page.route(`**/api/purchases/v1/${id}`, (route) => route.fulfill({ json: current }));
+  await page.route(`**/api/purchases/v1/${id}`, async (route) => {
+    group.payloadExpiresAt = new Date(await page.evaluate(() => Date.now() + 4000)).toISOString();
+    return route.fulfill({ json: current });
+  });
   await page.route(`**/api/purchases/v1/${id}/artwork/${original}/preview`, async (route) => {
     required(requested)();
     await pending;
@@ -653,10 +849,11 @@ test('historical preview never fetches or paints an original when its retained p
     }),
   );
   await page.goto(`${base}/admin/orders/${id}`);
+  await openPurchasedPreview(page);
   await started;
-  await new Promise((resolve) => setTimeout(resolve, 1600));
+  await page.clock.fastForward(5000);
   required(release)();
-  await page.getByText('Historical preview expired. Refresh to check current access.', { exact: true }).waitFor();
+  await page.getByText('Design details expired', { exact: true }).waitFor();
   assert.deepEqual(
     [...imageRequests],
     [],
@@ -687,17 +884,26 @@ test('missing historical originals remain explicit and permission loss clears al
     }),
   );
   await page.goto(`${base}/admin/orders/${id}`);
-  await page.getByText('Historical preview: some original artwork is unavailable.', { exact: true }).waitFor();
-  assert.deepEqual(seen, [original]);
-  assert.equal(await page.getByText('Historical purchased artwork preview.', { exact: true }).count(), 0);
+  await openPurchasedPreview(page);
+  await page
+    .getByText('Some artwork from the original order is unavailable in this preview.', { exact: true })
+    .waitFor();
+  assert.deepEqual(
+    seen.filter((asset) => asset === original),
+    [original],
+  );
+  assert.equal(await page.locator('[data-design-ready="true"]').count(), 0);
   denied = true;
-  await page.getByRole('button', { name: 'Refresh historical preview', exact: true }).click();
+  await page.getByRole('button', { name: /^(?:Load preview|Try again)$/ }).click();
   await page
     .getByText('Your Shopify identity or permission could not be verified. Reopen from Shopify Admin.', { exact: true })
     .waitFor();
   assert.equal(await page.locator('canvas').count(), 0);
-  assert.equal(await page.getByText('USD 90071992547409.93', { exact: true }).count(), 0);
-  assert.deepEqual(seen, [original, original]);
+  assert.equal(await page.getByText('USD 90,071,992,547,409.93', { exact: true }).count(), 0);
+  assert.deepEqual(
+    seen.filter((asset) => asset === original),
+    [original, original],
+  );
 });
 
 test('a late historical PNG lookup cannot restore a design after a same-version erasure readback', {
@@ -709,13 +915,18 @@ test('a late historical PNG lookup cannot restore a design after a same-version 
   const pending = new Promise<void>((resolve) => {
     release = resolve;
   });
+  let delivered: (() => void) | undefined;
+  const deliveredResponse = new Promise<void>((resolve) => {
+    delivered = resolve;
+  });
   let requested: (() => void) | undefined;
   const started = new Promise<void>((resolve) => {
     requested = resolve;
   });
   const imageRequests: (string | undefined)[] = [];
   page.on('request', (request) => {
-    if (request.url().startsWith('https://private.example/')) imageRequests.push(request.url());
+    if (/https:\/\/private\.example\/(?:expired|late)-original\.png$/.test(request.url()))
+      imageRequests.push(request.url());
   });
   await page.route(`**/api/purchases/v1/${id}`, (route) => route.fulfill({ json: current }));
   await page.route(`**/api/purchases/v1/${id}/artwork/${original}/preview`, async (route) => {
@@ -728,15 +939,20 @@ test('a late historical PNG lookup cannot restore a design after a same-version 
         expiresAt: new Date(Date.now() + 60000).toISOString(),
       },
     });
+    required(delivered)();
   });
   await page.goto(`${base}/admin/orders/${id}`);
+  await openPurchasedPreview(page);
   await started;
   group.geometry = null;
-  await page.getByRole('button', { name: 'Refresh purchase', exact: true }).click();
-  await page.getByText('Historical preview unavailable.', { exact: true }).waitFor();
-  const response = page.waitForResponse((request) => request.url().endsWith(`/${original}/preview`));
+  const disposed = page.waitForEvent('requestfailed', {
+    predicate: (request) => request.url().endsWith(`/${original}/preview`),
+  });
+  await refreshPurchase(page);
+  assert.ok((await disposed).failure(), 'The scoped consumer aborts its lookup on authoritative refresh');
+  await page.getByText('Design preview unavailable', { exact: true }).waitFor();
   required(release)();
-  await (await response).finished();
+  await deliveredResponse; // The stale mock reply settles even though the disposed consumer cannot receive it.
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   assert.equal(await page.locator('canvas').count(), 0);
   assert.deepEqual([...imageRequests], []);
@@ -769,44 +985,90 @@ test('displayed historical artwork clears at its real preview expiry and refresh
     }),
   );
   await page.goto(`${base}/admin/orders/${id}`);
-  await page.getByText('Historical purchased artwork preview.', { exact: true }).waitFor();
-  await page.getByText('Historical preview expired. Refresh to check current access.', { exact: true }).waitFor();
+  await openPurchasedPreview(page);
+  await page.locator('[data-design-ready="true"]').waitFor();
+  await page.getByText('Preview access expired. Load the preview again to continue.', { exact: true }).waitFor();
   assert.equal(await page.getByRole('region', { name: 'Purchased design preview' }).locator('canvas').count(), 0);
   assert.equal(lookups, 1);
-  await page.getByRole('button', { name: 'Refresh historical preview', exact: true }).click();
-  await page.getByText('Historical purchased artwork preview.', { exact: true }).waitFor();
+  await page.getByRole('button', { name: /^(?:Load preview|Try again)$/ }).click();
+  await page.locator('[data-design-ready="true"]').waitFor();
   assert.equal(lookups, 2);
 });
 
-test('orders table supports artwork triage on the loaded page and opens the exact purchase', {
+test('orders table queries every matching record for artwork triage and opens the exact purchase', {
   timeout: 20000,
 }, async (t) => {
   const { page, base } = await fixture(t);
   const readyId = 'ae39ae2a-8a58-4d3a-ae40-42dcdf0e91c7';
-  await page.route('**/api/purchases/v1', (route) =>
-    route.fulfill({
+  const outsideFirstPage = 'fe39ae2a-8a58-4d3a-ae40-42dcdf0e91c7';
+  const complete = view('READY');
+  const readyAsset = '0829a06c-e8c5-40aa-9167-4fb47e443231';
+  const readyExpiry = new Date(Date.now() + 86400000).toISOString();
+  const readyPlacement = required(required(complete.groups[0]).placements[0]);
+  readyPlacement.currentAssetId = readyAsset;
+  readyPlacement.currentExpiresAt = readyExpiry;
+  complete.artworkVersion = 1;
+  complete.artworkEvents = [
+    {
+      eventId: 'ready-attachment',
+      version: 1,
+      kind: 'ATTACH',
+      groupIndex: 0,
+      placementId: 'front',
+      assetId: readyAsset,
+      expiresAt: readyExpiry,
+      erasedAt: null,
+    },
+  ];
+  const requests: URLSearchParams[] = [];
+  await page.route('**/api/purchases/v1?*', (route) => {
+    const query = new URL(route.request().url()).searchParams;
+    requests.push(query);
+    const needed = query.get('artwork') === 'needed';
+    return route.fulfill({
       json: {
         version: 'm8-purchase-list-v1',
-        items: [
-          { ...view(), orderName: '#1001' },
-          { ...view('READY'), purchaseId: readyId, orderId: 'gid://shopify/Order/2', orderName: '#1002' },
-        ],
-        nextCursor: null,
+        items: needed
+          ? [
+              { ...view(), orderName: '#1001' },
+              { ...view(), purchaseId: outsideFirstPage, orderId: 'gid://shopify/Order/3', orderName: '#1003' },
+            ]
+          : [
+              { ...view(), orderName: '#1001' },
+              { ...complete, purchaseId: readyId, orderId: 'gid://shopify/Order/2', orderName: '#1002' },
+            ],
+        nextCursor: needed ? null : readyId,
       },
-    }),
-  );
+    });
+  });
   await page.goto(`${base}/admin/orders`);
   const first = page.getByRole('link', { name: '#1001', exact: true });
   await first.waitFor();
-  assert.equal(await first.getAttribute('href'), `/admin/orders/${id}`);
-  await page.getByRole('combobox', { name: 'Artwork status', exact: true }).selectOption('PENDING_ARTWORK');
+  const destination = new URL(required(await first.getAttribute('href')), base);
+  assert.equal(destination.origin, base);
+  assert.equal(destination.pathname, `/admin/orders/${id}`);
+  await page.getByRole('button', { name: 'Filter orders', exact: true }).click();
+  await page
+    .locator('s-choice-list[name="orders-artwork-status"]')
+    .locator('label.choice')
+    .filter({ hasText: 'Artwork needed' })
+    .click();
+  await page.getByRole('link', { name: '#1003', exact: true }).waitFor();
   assert.equal(await page.getByRole('link', { name: '#1002', exact: true }).count(), 0);
-  await page.getByText('1 of 2 loaded orders', { exact: true }).waitFor();
+  assert.equal(requests.at(-1)?.get('artwork'), 'needed', 'Filtering is a whole-dataset authenticated server query');
+  assert.equal(requests.at(-1)?.get('limit'), '20');
   await page.screenshot({ path: '/tmp/insignia-canonical-orders-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   assert.ok(await first.isVisible());
-  await page.screenshot({ path: '/tmp/insignia-canonical-orders-mobile.png', fullPage: true });
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-  await page.getByRole('combobox', { name: 'Artwork status', exact: true }).selectOption('all');
+  await page.screenshot({ path: '/tmp/insignia-canonical-orders-mobile.png', fullPage: true });
+  await page.getByRole('button', { name: 'Filter orders', exact: true }).click();
+  await page
+    .locator('s-choice-list[name="orders-artwork-status"]')
+    .locator('label.choice')
+    .filter({ hasText: /^All$/ })
+    .click();
   await page.getByRole('link', { name: '#1002', exact: true }).waitFor();
+  assert.equal(await page.getByRole('link', { name: '#1003', exact: true }).count(), 0);
+  assert.equal(requests.at(-1)?.has('artwork'), false);
 });

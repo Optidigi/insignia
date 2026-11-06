@@ -29,7 +29,8 @@ export interface CartReceipt {
   authority: "local-preview" | "shopify";
 }
 export interface DesignerPorts {
-  artwork: { upload(file: File, request: UploadRequest): Promise<Artwork> };
+  review?: { prepare(request: CartRequest): Promise<void> };
+  artwork: { upload(file: File, request: UploadRequest): Promise<Artwork>; apply?(artwork:Artwork,request:UploadRequest):Promise<Artwork> };
   /** Resolve only after the requested cart application has been verified by the adapter. */
   cart: { commit(request: CartRequest): Promise<CartReceipt> };
 }
@@ -60,6 +61,7 @@ export function createDesignerRuntime(
   getState: () => DesignerState,
   dispatch: (event: DesignerEvent) => void,
 ) {
+  let reviewing = false;
   let uploadVersion = 0;
   let uploadController: AbortController | null = null;
   let commitController: AbortController | null = null;
@@ -77,11 +79,30 @@ export function createDesignerRuntime(
     dispatch({ type: "cart-commit-canceled" });
   }
   return {
+    get reviewing() { return reviewing; },
     cancelUpload,
     cancelCommit,
     cancel() {
       cancelUpload();
       cancelCommit();
+    },
+    async apply(artworkId:string,target:PositionId) {
+      const artwork=getState().artworks.find((artwork)=>artwork.id===artworkId);
+      if(!artwork||!ports.artwork.apply)return;
+      if(getState().prints.find((print)=>print.id===target)?.artworkId===artworkId){dispatch({type:'artwork-applied',positionId:target,artworkId});return;}
+      cancelUpload();
+      const token=Math.max(uploadVersion+1,getState().uploadVersion+1);uploadVersion=token;
+      const controller=new AbortController();uploadController=controller;
+      const started:DesignerEvent={type:'upload-started',token,target};
+      if(designerReducer(getState(),started)===getState()){uploadController=null;return;}
+      dispatch(started);
+      try{
+        const applied=await ports.artwork.apply(artwork,{target,requestId:crypto.randomUUID(),signal:controller.signal});
+        if(controller.signal.aborted||token!==uploadVersion)return;
+        if(applied.id!==artwork.id||!applied.url||!Number.isFinite(applied.width)||!Number.isFinite(applied.height)||applied.width<=0||applied.height<=0)throw new Error('Invalid applied artwork');
+        dispatch({type:'upload-succeeded',token,target,artwork:applied});
+      }catch{if(!controller.signal.aborted&&token===uploadVersion)dispatch({type:'upload-failed',token,target,reason:'read-failed'});}
+      finally{if(uploadController===controller)uploadController=null;}
     },
     async upload(file: File, target: PositionId) {
       cancelUpload();
@@ -140,7 +161,8 @@ export function createDesignerRuntime(
         if (uploadController === controller) uploadController = null;
       }
     },
-    async commit() {
+    async commit(prepareOnly = false) {
+      if (prepareOnly && !ports.review) return;
       const state = getState();
       if (commitController || !canCommitDesign(state)) return;
       const signature = JSON.stringify([state.editing, state.prints, state.quantities, state.rules.variantMatrix]);
@@ -164,8 +186,14 @@ export function createDesignerRuntime(
         operation: state.editing ? "updated" : "added",
         signal: controller.signal,
       };
+      reviewing = prepareOnly;
       dispatch({ type: "cart-commit-requested", requestId, design: request.design });
       try {
+        if (prepareOnly) {
+          await ports.review?.prepare(request);
+          if (!controller.signal.aborted && commitController === controller) dispatch({type:"cart-commit-canceled"});
+          return;
+        }
         const receipt = await ports.cart.commit(request);
         if (controller.signal.aborted || commitController !== controller) return;
         if (!matchesCartReceipt(receipt, request))
@@ -180,7 +208,7 @@ export function createDesignerRuntime(
             reason: "cart-commit-failed",
           });
       } finally {
-        if (commitController === controller) commitController = null;
+        if (commitController === controller) { commitController = null; reviewing = false; }
       }
     },
   };

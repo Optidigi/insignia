@@ -10,7 +10,13 @@ import {
   validEntitlementPolicy,
 } from '@insignia/application';
 import type { MerchantDraft } from '@insignia/contracts';
-import { createDurableCore, ManagedInstallationError, type ManagedInstallationIdentity } from '@insignia/database';
+import { MerchantDraftSchema } from '@insignia/contracts';
+import {
+  createDurableCore,
+  ManagedInstallationError,
+  type ManagedInstallationIdentity,
+  sha256CanonicalJson,
+} from '@insignia/database';
 import { type AdminAuthenticationStage, createObservability } from '@insignia/observability';
 import {
   canonicalAdminAccessScopes,
@@ -37,9 +43,13 @@ import { loadCredentialKeys } from '../../../../worker/src/config.ts';
 import { createMerchantConfigService } from '../merchant-config.js';
 import { type AdminInstallation, AdminInstallationReconciliationError, createAdminAuthenticator } from './auth.js';
 import { createMerchantBillingReader } from './billing.js';
+import { type CatalogListInput, filteredCatalogPage } from './catalog-query.js';
 import type { AdminActor, AdminServices, CatalogProduct } from './contracts.js';
+import { createMerchantMediaService, MerchantMediaError } from './merchant-media.js';
 import { createMerchantPublicationCapture } from './merchant-previews.js';
 import { createMethodLibrary } from './methods.js';
+import { createMerchantPreferences } from './preferences.js';
+import { productSummary } from './product-summary.js';
 import {
   createBoundProductionActivationReadiness,
   createDemandDrivenReleaseReader,
@@ -50,6 +60,16 @@ import { createSigningOwnerAction, type SigningOwnerConfiguration } from './sign
 type DurableCoreReleaseReader = ReturnType<typeof createDemandDrivenReleaseReader>;
 
 function project(value: ShopifyCatalogProduct): CatalogProduct {
+  const imageRecords: { id: string; image: ShopifyCatalogProduct['image'] }[] = [
+    { id: `product_${value.id.split('/').at(-1)}`, image: value.image },
+    ...value.variants.map((item) => ({ id: `variant_${item.id.split('/').at(-1)}`, image: item.image })),
+    ...(value.images ?? []).map((item) => ({ id: item.revisionId, image: item.image })),
+  ];
+  const images = imageRecords.flatMap(({ id, image }) =>
+    image?.width && image?.height
+      ? [{ id, url: image.url, width: image.width, height: image.height, alt: image.alt ?? '' }]
+      : [],
+  );
   return {
     id: value.id,
     title: value.title,
@@ -62,6 +82,13 @@ function project(value: ShopifyCatalogProduct): CatalogProduct {
       selectedOptions: item.selectedOptions,
     })),
     variantsTruncated: value.variantsTruncated,
+    ...(images.length || value.images !== undefined ? { images } : {}),
+    ...(value.imagesTruncated === undefined ? {} : { imagesTruncated: value.imagesTruncated }),
+    ...(value.options === undefined ? {} : { options: value.options }),
+    ...(value.tags === undefined ? {} : { tags: value.tags }),
+    ...(value.collections === undefined
+      ? {}
+      : { collections: value.collections, collectionsTruncated: value.collectionsTruncated }),
   };
 }
 function required(env: NodeJS.ProcessEnv, key: string): string {
@@ -245,20 +272,30 @@ export function createProductionAdminServices(
       : undefined;
 
   const catalog = {
-    async list(actor: AdminActor, input: { query: string; cursor: string | null; limit: number }) {
-      await active(actor);
-      const result = await createCatalogReader(
-        createCatalogTransport({
-          shop: actor.shop,
-          accessToken: grant(actor).accessToken,
-        }),
-      ).list({
-        search: input.query,
-        after: input.cursor ?? undefined,
-        first: input.limit,
-      });
-      await active(actor);
-      return { products: result.products.map(project), nextCursor: result.nextCursor };
+    async list(actor: AdminActor, input: CatalogListInput) {
+      return filteredCatalogPage(
+        `${actor.tenantShopId}:${actor.installationGeneration}`,
+        input,
+        async (cursor, limit) => {
+          await active(actor);
+          const result = await createCatalogReader(
+            createCatalogTransport({ shop: actor.shop, accessToken: grant(actor).accessToken }),
+          ).list({ search: input.query, after: cursor ?? undefined, first: limit });
+          await active(actor);
+          const summaries = await core.configs.summaries(
+            actor.tenantShopId,
+            result.products.map((product) => product.id.split('/').at(-1)!),
+          );
+          await active(actor);
+          const byProduct = new Map(summaries.map((summary) => [summary.productId, summary]));
+          return {
+            products: result.products.map((product) =>
+              productSummary(project(product), byProduct.get(product.id.split('/').at(-1)!)),
+            ),
+            nextCursor: result.nextCursor,
+          };
+        },
+      );
     },
     async get(actor: AdminActor, productId: string) {
       await active(actor);
@@ -283,6 +320,40 @@ export function createProductionAdminServices(
       return currency;
     },
   };
+  const media =
+    env.INSIGNIA_M8_MERCHANT_PREVIEWS_ENABLED === '1'
+      ? createMerchantMediaService({
+          appOrigin,
+          store: core.merchantPreviews,
+          storage: () =>
+            loadArtworkStorageProfile(required(env, 'ARTWORK_STORAGE_PROFILE'), {
+              endpoint: required(env, 'ARTWORK_R2_ENDPOINT'),
+              bucket: required(env, 'ARTWORK_R2_BUCKET'),
+              prefix: required(env, 'ARTWORK_R2_PREFIX'),
+            }),
+          inspect: (bytes) => inspectArtworkPrivately(required(env, 'ARTWORK_WORKER_READY_SOCKET'), bytes),
+          current: async (actor, expectedAuthority) => {
+            await active(actor);
+            grant(actor);
+            if (expectedAuthority !== undefined) {
+              const scope = await core.tenants.getActiveAuthorizationScope({
+                shopId: actor.tenantShopId,
+                installationGeneration: actor.installationGeneration,
+              });
+              if (!scope || sha256CanonicalJson(scope) !== expectedAuthority)
+                throw new MerchantMediaError('AUTHORITY_CHANGED');
+            }
+          },
+          product: (actor, productId) => catalog.get(actor, productId),
+          draftImages: async (actor, productId) => {
+            await active(actor);
+            const record = await core.configs.getByProduct(actor.tenantShopId, productId.split('/').at(-1) ?? '');
+            const draft = record ? MerchantDraftSchema.safeParse(record.draftValue) : null;
+            await active(actor);
+            return draft?.success ? (draft.data.selectedSetup?.product.images.map((image) => image.id) ?? []) : [];
+          },
+        })
+      : undefined;
   function activation(actor: AdminActor) {
     const cached = activations.get(actor);
     if (cached) return cached;
@@ -430,6 +501,9 @@ export function createProductionAdminServices(
               await active(actor);
               return result;
             },
+            readUploadedImage: media
+              ? (actor, productId, imageRevisionId) => media.readOriginal(actor, productId, imageRevisionId)
+              : undefined,
             readImage: async (product, imageRevisionId) =>
               (await createCatalogImageReader().read(product, imageRevisionId))?.bytes ?? null,
             inspect: (bytes) => inspectArtworkPrivately(required(env, 'ARTWORK_WORKER_READY_SOCKET'), bytes),
@@ -540,6 +614,8 @@ export function createProductionAdminServices(
   return {
     billing,
     appOrigin,
+    media,
+    preferences: createMerchantPreferences(core),
     async assertPurchaseAccess(actor) {
       await active(actor);
       grant(actor);
@@ -806,6 +882,13 @@ export function createProductionAdminServices(
         commercialConfigured: partner !== null && policy !== null && appGid !== null,
       };
     },
+    async shopTimeZone(actor) {
+      await active(actor);
+      grant(actor);
+      const zone = merchantTimezones.get(actor);
+      if (!zone) throw new Error('Trusted merchant calendar unavailable');
+      return zone;
+    },
     async orderNames(actor, orderIds) {
       await active(actor);
       if (
@@ -848,6 +931,50 @@ export function createProductionAdminServices(
     },
     catalog: { list: catalog.list, get: catalog.get },
     configs: service,
-    methods: createMethodLibrary(core),
+    methods: createMethodLibrary(core, {
+      currency: async (actor) => {
+        await active(actor);
+        const online = grant(actor);
+        const currency = await createCatalogReader(
+          createCatalogTransport({ shop: actor.shop, accessToken: online.accessToken, fetchImpl: fetch }),
+        ).shopCurrency();
+        await active(actor);
+        grant(actor);
+        return currency;
+      },
+      productTags: async (actor, productIds) => {
+        await active(actor);
+        const online = grant(actor);
+        const scope = await core.tenants.getActiveAuthorizationScope({
+          shopId: actor.tenantShopId,
+          installationGeneration: actor.installationGeneration,
+        });
+        if (!scope) throw new Error('Method product-tag authority unavailable');
+        const reader = createCatalogReader(
+          createCatalogTransport({ shop: actor.shop, accessToken: online.accessToken, fetchImpl: fetch }),
+        );
+        const result: Record<string, string[]> = {};
+        for (let offset = 0; offset < productIds.length; offset += 250) {
+          const batch = productIds
+            .slice(offset, offset + 250)
+            .map((id) => (id.startsWith('gid://shopify/Product/') ? id : `gid://shopify/Product/${id}`));
+          const found = await reader.productTags(batch);
+          for (const [id, tags] of Object.entries(found)) result[id.replace('gid://shopify/Product/', '')] = tags;
+        }
+        await active(actor);
+        grant(actor);
+        const after = await core.tenants.getActiveAuthorizationScope({
+          shopId: actor.tenantShopId,
+          installationGeneration: actor.installationGeneration,
+        });
+        if (
+          !after ||
+          after.authorizationGeneration !== scope.authorizationGeneration ||
+          after.authorizationEpoch !== scope.authorizationEpoch
+        )
+          throw new Error('Method product-tag authority changed');
+        return result;
+      },
+    }),
   };
 }

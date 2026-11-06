@@ -10,9 +10,15 @@ GRANT SELECT (state,updated_at,abandon_at,asset_id,shop_id,installation_generati
 GRANT SELECT (shop_id,current_generation) ON public.shops TO :"monitor_role";
 GRANT SELECT (shop_id,generation,deactivated_at) ON public.installation_generations TO :"monitor_role";
 GRANT SELECT (asset_id) ON public.config_revision_preview_assets TO :"monitor_role";
+-- UUID-only security-barrier view; never grant raw merchant draft access.
+GRANT SELECT (asset_id) ON public.merchant_preview_draft_references TO :"monitor_role";
 GRANT SELECT (expires_at,erased_at,shop_id,installation_generation) ON public.purchase_offer_payloads,public.purchase_design_payloads TO :"monitor_role";
 GRANT SELECT (kind,expires_at,erased_at,shop_id,installation_generation) ON public.purchase_artwork_events TO :"monitor_role";
 GRANT SELECT (expires_at,shop_id,installation_generation) ON public.buyer_sessions TO :"monitor_role";
 GRANT SELECT (expires_at) ON public.design_drafts TO :"monitor_role";
 GRANT SELECT (facts_erased_at,forget_after) ON public.webhook_obligation_facts TO :"monitor_role";
 GRANT SELECT (retain_private_until) ON public.quote_proposals TO :"monitor_role";
+
+-- Customer artwork authority remains private; monitoring receives lifecycle metadata only.
+GRANT SELECT (state,created_at,claimed_at) ON public.customer_artwork_notifications TO :"monitor_role";
+GRANT SELECT (expires_at,shop_id,installation_generation) ON public.customer_artwork_grants TO :"monitor_role";

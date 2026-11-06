@@ -22,7 +22,7 @@ type Row = {
   claim_id: string | null;
 };
 const active = `EXISTS (SELECT 1 FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=a.shop_id AND s.current_generation=a.installation_generation AND i.deactivated_at IS NULL)`;
-const referenced = `EXISTS (SELECT 1 FROM config_revision_preview_assets r WHERE r.asset_id=a.asset_id)`;
+const referenced = `EXISTS (SELECT 1 FROM config_revision_preview_assets r WHERE r.asset_id=a.asset_id) OR EXISTS (SELECT 1 FROM public.merchant_preview_draft_references d WHERE d.asset_id=a.asset_id)`;
 const eligible = `a.state NOT IN ('WRITING','DELETED') AND (a.state IN ('RETIRED','DELETING') OR NOT (${active}) OR (a.abandon_at <= $1 AND NOT (${referenced})))`;
 const map = (r: Row): MerchantPreviewRecord => ({
   assetId: r.asset_id,
@@ -87,6 +87,21 @@ export function createMerchantPreviewRepository(pool: Pool): MerchantPreviewStor
     });
   }
   return {
+    async getUploads(scope, productId, assetIds) {
+      if (
+        scope.kind !== 'merchant' ||
+        !/^[1-9][0-9]{0,19}$/.test(productId) ||
+        assetIds.length > 100 ||
+        assetIds.some((id) => !uuid(id))
+      )
+        fail('INVALID_INPUT');
+      if (!assetIds.length) return [];
+      const rows = await pool.query<Row>(
+        `SELECT a.* FROM merchant_preview_assets a WHERE a.shop_id=$1 AND a.installation_generation=$2 AND a.product_id=$3 AND a.asset_id=ANY($4::uuid[]) AND a.image_revision_id='upload_' || a.asset_id::text AND a.state='USABLE' AND ${active}`,
+        [scope.shopId, scope.installationGeneration, productId, [...assetIds]],
+      );
+      return rows.rows.map(map);
+    },
     async getForRevision(scope, target) {
       const result = await pool.query<Row>(
         `SELECT a.* FROM merchant_preview_assets a
@@ -121,7 +136,8 @@ export function createMerchantPreviewRepository(pool: Pool): MerchantPreviewStor
         !Number.isFinite(+row.collectedAt) ||
         +row.abandonAt !== +row.collectedAt + 7 * 86400000 ||
         !/^[1-9][0-9]{0,19}$/.test(row.productId) ||
-        !/^(product|variant)_[1-9][0-9]{0,19}$/.test(row.imageRevisionId) ||
+        (!/^(product|variant|image)_[1-9][0-9]{0,19}$/.test(row.imageRevisionId) &&
+          !/^upload_[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(row.imageRevisionId)) ||
         row.originalKey !== `originals/merchant-previews/${row.shopId}/${row.installationGeneration}/${row.assetId}` ||
         row.previewKey !== `previews/merchant-previews/${row.shopId}/${row.installationGeneration}/${row.assetId}.png`
       )

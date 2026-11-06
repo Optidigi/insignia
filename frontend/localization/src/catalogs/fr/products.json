@@ -22,9 +22,9 @@
   "search": "Rechercher des produits",
   "filter": {
     "products": "Filtrer les produits",
-    "configurationOnPage": "Configuration sur cette page",
+    "configurationOnPage": "Configuration",
     "editConfiguration": "Modifier le filtre de configuration",
-    "onThisPage": "{{configuration}} sur cette page"
+    "onThisPage": "{{configuration}}"
   },
   "configuration": {
     "all": "Tous",
@@ -62,7 +62,7 @@
     "summaryDownloadFailed": "Impossible de télécharger le récapitulatif. Réessayez."
   },
   "empty": {
-    "noneOnPage": "Aucun produit trouvé sur cette page",
+    "noneOnPage": "Aucun produit trouvé",
     "changeFilterOrPage": "Modifiez le filtre de configuration ou consultez une autre page.",
     "returnFirstOrSearch": "Retournez à la première page ou lancez une autre recherche.",
     "changeProductSearch": "Essayez un autre nom de produit ou effacez votre recherche.",

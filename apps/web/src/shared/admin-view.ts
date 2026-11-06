@@ -10,7 +10,19 @@ export interface CatalogProduct {
     imageUrl: string | null;
     selectedOptions: { name: string; value: string }[];
   }[];
+  configurationSummary?: {
+    state: 'not_configured' | 'draft' | 'published';
+    methods: string[] | null;
+    locations: string[] | null;
+  };
   variantsTruncated?: boolean;
+  images?: { id: string; url: string; width: number; height: number; alt: string }[];
+  imagesTruncated?: boolean;
+  options?: { id: string; name: string; values: string[] }[];
+  tags?: string[];
+  collections?: { id: string; title: string }[];
+  collectionsTruncated?: boolean;
+  methodSetup?: { methodId: string; locations: number; pricedLocations: number }[];
 }
 
 export type PublicationState =
@@ -35,6 +47,7 @@ export interface ConfigView {
     installationGeneration: string;
     draftVersion: string;
     draft: unknown;
+    publishedSetup?: import('@insignia/contracts').SelectedProductSetup | null;
     currentShopCurrency: string | null;
     publication: {
       state: PublicationState;

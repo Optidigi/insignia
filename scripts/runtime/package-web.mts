@@ -12,6 +12,7 @@ import {
 } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { errorCode, object, required } from './validation.mts';
+import { assertWorkspaceOutputs, workspaceOutputs } from './workspace-outputs.mts';
 
 const root = resolve(import.meta.dirname, '../..');
 const destination = realpathSync(required(process.argv[2]));
@@ -23,9 +24,11 @@ for (const name of readdirSync(store)) {
 }
 for (const target of targets) {
   if (relative(destination, target).startsWith('..')) throw new Error('Workspace package escaped destination');
+  const manifest = object(JSON.parse(readFileSync(join(target, 'package.json'), 'utf8')));
+  const allowed = [...workspaceOutputs(manifest), 'node_modules', 'package.json'];
+  assertWorkspaceOutputs(manifest, target);
   for (const name of readdirSync(target)) {
-    if (!['dist', 'node_modules', 'package.json'].includes(name))
-      rmSync(join(target, name), { recursive: true, force: true });
+    if (!allowed.includes(name)) rmSync(join(target, name), { recursive: true, force: true });
   }
 }
 cpSync(join(root, 'packages/database/migrations'), join(destination, 'migrations'), {

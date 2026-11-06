@@ -12,6 +12,7 @@ import {
 } from '@insignia/application';
 import { currencyExponent, InjectedEd25519Signer } from '@insignia/cart-authorization';
 import type { DurableCore } from '@insignia/database';
+import { parseMinor } from '@insignia/domain';
 import {
   type ActiveSubscriptionSnapshot,
   type AdminCredentialSource,
@@ -24,12 +25,15 @@ import {
   readVariantAvailability as readAvailability,
   readPrimaryMarketContext,
   readShopContext,
+  resolveRuntimeReleaseProfile,
+  resolveVariantContext,
 } from '@insignia/shopify';
 import { loadArtworkStorageProfile } from '@insignia/storage';
 import { createArtworkGuestAuthority } from '../artwork/guest.ts';
 import { createFrozenPreviewReader } from '../merchant-preview/read.ts';
 import { createProductionQuoteReadiness } from '../production-readiness.ts';
 import { createQuoteAuthorityPorts } from '../quote-composition.ts';
+import { createLeanPrimaryMarketAdmission, parseEurNetherlandsQualification } from './lean-primary-market.ts';
 import { createBuyerServices } from './service.ts';
 
 type Scope = { shopId: string; installationGeneration: string };
@@ -100,6 +104,7 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
   )
     throw new Error('Buyer production configuration incomplete');
   const clock = input.clock ?? (() => new Date());
+  const eurQualification = parseEurNetherlandsQualification(input.env.INSIGNIA_EUR_NL_QUALIFICATION);
   const fetchImpl: typeof fetch = (target, options) =>
     (input.fetchImpl ?? fetch)(target, { ...options, redirect: 'error' });
   const keys = new SigningKeyLifecycle(input.core.signingKeys, input.ring);
@@ -188,36 +193,20 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
     const artwork = createArtworkUsabilityPort(input.core.artwork, clock, scope);
     let acceptanceFenceHeld = false;
     const credentialSource = credentials(scope, () => acceptanceFenceHeld);
-    const leanContext: NonNullable<QuoteAuthorityPorts['leanContext']> = input.leanContext ?? {
-      async assertSupported(target) {
-        // USD is the initial implementation target. EUR/GBP need their own qualification
-        // before being enabled; a target currency name is never context authority.
-        if (target.currency !== 'USD' || target.shopCurrency !== target.currency)
-          throw new Error('Lean primary-Market context unavailable');
-        const matches = (current: Awaited<ReturnType<typeof active>>) =>
-          target.tenant.shopId === scope.shopId &&
-          target.tenant.installationGeneration === scope.installationGeneration &&
-          target.tenant.shopifyShopGid === `gid://shopify/Shop/${current.shopifyShopId}` &&
-          target.tenant.authorizationGeneration === current.authorizationGeneration &&
-          target.tenant.authorizationEpoch === current.authorizationEpoch;
-        const before = await active(scope);
-        if (!matches(before)) throw new Error('Buyer Lean context authority changed');
-        const observed = await readPrimaryMarketContext(
-          { ...scope, shopifyShopId: before.shopifyShopId },
-          { credentials: credentialSource, fetchImpl, now: clock },
-        );
-        const after = await active(scope);
-        if (!matches(after)) throw new Error('Buyer Lean context authority changed');
-        if (
-          observed.shopCurrency !== target.currency ||
-          observed.primaryMarketId !== `gid://shopify/Market/${target.marketId}` ||
-          !observed.countryCodes.includes(target.country) ||
-          +clock() < Date.parse(observed.observedAt) ||
-          +clock() >= Date.parse(observed.freshUntil)
-        )
-          throw new Error('Lean primary-Market context unavailable');
-      },
-    };
+    const leanContext: NonNullable<QuoteAuthorityPorts['leanContext']> =
+      input.leanContext ??
+      createLeanPrimaryMarketAdmission({
+        scope,
+        active: () => active(scope),
+        observe: (current) =>
+          readPrimaryMarketContext(
+            { ...scope, shopifyShopId: current.shopifyShopId },
+            { credentials: credentialSource, fetchImpl, now: clock },
+          ),
+        clock,
+        eurQualification,
+        expectedRelease: resolveRuntimeReleaseProfile(input.env.INSIGNIA_RELEASE_PROFILE),
+      });
     let composed: QuoteAuthorityPorts | undefined, pending: Promise<QuoteAuthorityPorts> | undefined;
     const compose = () =>
       (pending ??= (async () => {
@@ -438,7 +427,7 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       )
         throw new Error('Buyer readiness changed');
     },
-    async catalog(scope, productId, phase) {
+    async catalog(scope, productId, phase, context) {
       const source = await credentials(scope, () => phase === 'final').acquire(scope);
       if (source.kind !== 'usable') throw new Error('Buyer catalog credential unavailable');
       const catalog = createCatalogReader(
@@ -497,7 +486,37 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
         imageUrls[`product_${gid}`] = product.image.url;
       }
       const availability = new Map(inventory.variants.map((variant) => [variant.id, variant.available]));
+      const prices = new Map<string, { minor: string; currency: string }>();
+      if (context) {
+        for (let offset = 0; offset < product.variants.length; offset += 100) {
+          const snapshots = await resolveVariantContext(
+            {
+              ...scope,
+              productId: gid,
+              variantIds: product.variants.slice(offset, offset + 100).map((variant) => variant.id),
+              context,
+            },
+            {
+              transport: createShopifyAdminGraphqlReadTransport({
+                credentials: credentials(scope, () => phase === 'final'),
+                fetchImpl,
+                now: clock,
+              }),
+              now: clock,
+            },
+          );
+          for (const snapshot of snapshots)
+            prices.set(snapshot.variantId, {
+              minor: parseMinor(snapshot.amount, 2).toString(),
+              currency: snapshot.currencyCode,
+            });
+        }
+        if (new Set([...prices.values()].map((price) => price.currency)).size !== 1)
+          throw new Error('Mixed variant currency');
+      }
       return {
+        title: product.title,
+        ...(context ? { currency: [...prices.values()][0]?.currency } : {}),
         variants: product.variants.map((variant) => {
           const id = variant.id.slice('gid://shopify/ProductVariant/'.length);
           const image = variant.image ?? product.image;
@@ -506,7 +525,13 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
             imageUrls[variant.id] = variant.image.url;
             imageUrls[id] = variant.image.url;
           }
-          return { id, label: variant.title, available: availability.get(variant.id) === true };
+          return {
+            id,
+            label: variant.title,
+            available: availability.get(variant.id) === true,
+            selectedOptions: variant.selectedOptions,
+            ...(context ? { baseUnitMinor: prices.get(variant.id)?.minor } : {}),
+          };
         }),
         imageUrls,
       };

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { sql } from 'kysely';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createCustomerPrivacyRepository } from '../src/repositories/customer-privacy.js';
+import { createPurchaseRepository } from '../src/repositories/purchase.js';
 import { createShopifyWebhookRepository } from '../src/repositories/shopify-webhooks.js';
 import { openTestDatabase } from './support/postgres.js';
 import { purchaseFixture } from './support/purchase-fixture.js';
@@ -145,6 +146,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('body-bound customer privacy p
       attached = await asset(f.shopId),
       unrelated = await asset(other.shopId);
     await bind(f, purchaseId, primary);
+    const listing = createPurchaseRepository(db);
+    const merchantScope = { shopId: f.shopId, installationGeneration: '1', kind: 'merchant' as const };
+    await listing.rememberOrderNames(merchantScope, { 'gid://shopify/Order/101': '#Private101' });
     await sql`INSERT INTO purchase_artwork_events(event_id,shop_id,installation_generation,purchase_id,version,kind,group_index,placement_id,asset_id,expires_at) SELECT ${randomUUID()}::uuid,${f.shopId},1,${purchaseId}::uuid,1,'ATTACH',0,'front',asset_id,expires_at FROM artwork_assets WHERE asset_id=${attached}::uuid`.execute(
       db,
     );
@@ -175,6 +179,13 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('body-bound customer privacy p
       matchedPurchaseCount: 1,
     });
     expect(await repo.processInbox(receipt)).toEqual(result);
+    expect(
+      (await sql`SELECT order_name FROM purchase_order_labels WHERE shop_id=${f.shopId}`.execute(db)).rows,
+    ).toHaveLength(0);
+    await listing.rememberOrderNames(merchantScope, { 'gid://shopify/Order/101': '#Private101' });
+    expect(
+      (await sql`SELECT order_name FROM purchase_order_labels WHERE shop_id=${f.shopId}`.execute(db)).rows,
+    ).toHaveLength(0);
     await sql`UPDATE inbox_messages SET state='processed' WHERE id=${related}::uuid`.execute(db);
     const pendingRefund = await receive(
       f.shopifyShopId,
@@ -335,6 +346,12 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('body-bound customer privacy p
       await sql`INSERT INTO method_catalog(shop_id,method_id,name) VALUES(${shopId},${id}::uuid,'Private shop label')`.execute(
         db,
       );
+      await sql`INSERT INTO merchant_preferences(shop_id,overlays) VALUES(${shopId},'{"en":{"locale":"en","messages":{"customer:steps.done":{"message":"Private wording"}}}}'::jsonb)`.execute(
+        db,
+      );
+      await sql`INSERT INTO idempotency_records(shop_id,namespace,idempotency_key,request_digest,status,result_ref,completed_at) VALUES(${shopId},'merchant-preferences-wording:1:old','legacy-preference-key',${'e'.repeat(64)},'completed','{"kind":"saved","legacy":"Private wording"}',clock_timestamp())`.execute(
+        db,
+      );
       await sql`INSERT INTO idempotency_records(shop_id,namespace,idempotency_key,request_digest,status,result_ref,completed_at) VALUES(${shopId},'merchant-method-create:1:old','legacy-method-key',${'d'.repeat(64)},'completed','{"kind":"created","method":{"name":"Private shop label"}}',clock_timestamp())`.execute(
         db,
       );
@@ -367,6 +384,21 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('body-bound customer privacy p
     expect((await sql`SELECT name FROM method_catalog WHERE shop_id=${inactive.shopId}`.execute(db)).rows).toHaveLength(
       0,
     );
+    expect(
+      (await sql`SELECT shop_id FROM merchant_preferences WHERE shop_id=${inactive.shopId}`.execute(db)).rows,
+    ).toHaveLength(0);
+    expect(
+      (await sql`SELECT shop_id FROM merchant_preferences WHERE shop_id=${active.shopId}`.execute(db)).rows,
+    ).toHaveLength(1);
+    expect(
+      JSON.stringify(
+        (
+          await sql`SELECT result_ref FROM idempotency_records WHERE shop_id=${inactive.shopId} AND namespace LIKE 'merchant-preferences-%'`.execute(
+            db,
+          )
+        ).rows,
+      ),
+    ).not.toContain('Private wording');
     expect(
       JSON.stringify(
         (await sql`SELECT result_ref FROM idempotency_records WHERE shop_id=${inactive.shopId}`.execute(db)).rows,

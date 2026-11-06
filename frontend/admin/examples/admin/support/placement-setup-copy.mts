@@ -1,7 +1,7 @@
-/** Pure, preview-only cross-product setup snapshots. No media or Shopify writes are copied. */
+/** Pure cross-product setup snapshots shared by the selected UI hosts. No media or Shopify writes are copied. */
 import type { EditorMethod, EditorPlacement, PlacementProduct } from './placement-workflow-model.mts';
 
-export type CopySetupIdKind = 'view' | 'placement' | 'size';
+export type CopySetupIdKind = 'view' | 'placement' | 'size' | 'option' | 'value';
 
 export interface CopyPlacementSetupOptions {
   selectedViewIds: readonly string[];
@@ -46,6 +46,10 @@ function defaultId(kind: CopySetupIdKind): string {
 
 function collectIds(product: PlacementProduct, used: Set<string>): void {
   for (const method of product.methods) used.add(method.id);
+  for (const option of product.productionChoices?.definitions ?? []) {
+    used.add(option.id);
+    for (const value of option.allowedValueIds) used.add(value);
+  }
   for (const view of product.views) {
     used.add(view.id);
     for (const placement of view.placements) {
@@ -84,7 +88,7 @@ export function copyPlacementSetup(
   const targetMethods = new Map<string, EditorMethod>();
   for (const method of target.methods) {
     if (targetMethods.has(method.id)) return { kind: 'error', reason: 'duplicate-target-method' };
-    targetMethods.set(method.id, method);
+    targetMethods.set(method.id, structuredClone(method));
   }
 
   const neededMethodIds = new Set<string>();
@@ -99,7 +103,7 @@ export function copyPlacementSetup(
 
   const importedMethods = source.methods
     .filter((method) => neededMethodIds.has(method.id) && !targetMethods.has(method.id))
-    .map((method) => ({ ...method }));
+    .map((method) => structuredClone(method));
   const effectiveMethods = new Map(targetMethods);
   for (const method of importedMethods) effectiveMethods.set(method.id, method);
 
@@ -113,6 +117,30 @@ export function copyPlacementSetup(
     usedIds.add(id);
     return id;
   };
+
+  let productionChoices: PlacementProduct['productionChoices'];
+  if (source.productionChoices) {
+    const definitions: NonNullable<PlacementProduct['productionChoices']>['definitions'] = [];
+    const labels: NonNullable<PlacementProduct['productionChoices']>['labels'] = { options: {}, values: {} };
+    for (const option of source.productionChoices.definitions) {
+      const id = fresh('option');
+      if (!id) return { kind: 'error', reason: 'id-collision' };
+      const values: string[] = [];
+      const valueLabels: Record<string, string> = {};
+      for (const value of option.allowedValueIds) {
+        const valueId = fresh('value');
+        if (!valueId) return { kind: 'error', reason: 'id-collision' };
+        values.push(valueId);
+        const label = source.productionChoices.labels.values?.[option.id]?.[value];
+        if (label !== undefined) valueLabels[valueId] = label;
+      }
+      definitions.push({ id, allowedValueIds: values });
+      const label = source.productionChoices.labels.options?.[option.id];
+      if (label !== undefined) labels.options![id] = label;
+      labels.values![id] = valueLabels;
+    }
+    productionChoices = { definitions, labels };
+  }
 
   let placementCount = 0;
   let priceCount = 0;
@@ -178,6 +206,7 @@ export function copyPlacementSetup(
     kind: 'copied',
     product: {
       ...target,
+      ...(productionChoices ? { productionChoices } : {}),
       images: target.images.map((image) => ({ ...image })),
       methods,
       views: copiedViews,

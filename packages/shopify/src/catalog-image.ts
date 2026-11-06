@@ -55,9 +55,18 @@ export function createCatalogImageReader(
       const variants = variantId
         ? product.variants.filter((v) => v.id === `gid://shopify/ProductVariant/${variantId}`)
         : [];
-      if (!productId || (imageRevisionId !== `product_${productId}` && variants.length !== 1))
+      const catalogImages = product.images?.filter((item) => item.revisionId === imageRevisionId) ?? [];
+      if (
+        !productId ||
+        (imageRevisionId !== `product_${productId}` && variants.length !== 1 && catalogImages.length !== 1)
+      )
         throw new CatalogImageError('INVALID_REFERENCE');
-      const image = variantId ? (variants[0]?.image ?? product.image) : product.image;
+      const image =
+        catalogImages.length === 1
+          ? catalogImages[0]?.image
+          : variantId
+            ? (variants[0]?.image ?? product.image)
+            : product.image;
       if (!image) return null;
       let url: URL;
       try {

@@ -317,3 +317,20 @@ it('cleanup reporting preserves unresolved custody while continuing unrelated du
   expect(due.row()?.state).toBe('DELETED');
   expect(due.objects.size).toBe(0);
 });
+
+it('captures a gallery reference only through the trusted product-scoped reader', async () => {
+  const f = fixture();
+  f.input.readImage = async (_scope, productId, revisionId) =>
+    productId === '42' && revisionId === 'image_12' ? png : null;
+  const result = await createMerchantPreviewCapture(f.input).capture(scope, {
+    ...request,
+    imageRevisionId: 'image_12',
+  });
+  expect(result?.imageRevisionId).toBe('image_12');
+  const missing = fixture();
+  missing.input.readImage = async () => null;
+  expect(
+    await createMerchantPreviewCapture(missing.input).capture(scope, { ...request, imageRevisionId: 'image_999' }),
+  ).toBeNull();
+  expect(missing.calls).toEqual([]);
+});

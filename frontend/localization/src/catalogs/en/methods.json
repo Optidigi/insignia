@@ -105,7 +105,7 @@
     },
     "notices": {
       "methodUnavailable": "This method is no longer available.",
-      "storageFailure": "Your browser could not save these methods. Keep this page open and try again.",
+      "storageFailure": "These methods could not be saved. Keep this page open and try again.",
       "created": "Method created.",
       "saved": "Method saved.",
       "duplicated": "Method duplicated.",
@@ -127,7 +127,11 @@
       "productsMustMatch": "Products must match",
       "searchTags": "Search tags",
       "searchAssignedProducts": "Search assigned products",
-      "productSetup": "Product setup"
+      "productSetup": "Product setup",
+      "translationLanguage": "Translation language",
+      "defaultText": "Default text",
+      "realExplanation": "Description (optional)",
+      "realExplanationHelp": "Shown to merchants and customers choosing this decoration method."
     },
     "copy": {
       "duplicateNameError": "Enter a method name of up to 80 characters.",
@@ -166,7 +170,12 @@
       "removeManyAvailability_other": "Library availability for these methods will be removed for {{formattedCount}} products.",
       "setupFixedPrice": "Set the same price for each placement and size on all selected products.",
       "setupProductPrice": "Set prices for each product by placement and decoration size.",
-      "tagMatchSummary": "Match {{match}} of: {{tags}}. Future tag changes can change the matched products."
+      "tagMatchSummary": "Match {{match}} of: {{tags}}. Future tag changes can change the matched products.",
+      "translationFallback": "Leave a translation blank to use the default text.",
+      "currencyReview": "The saved price is {{amount}}, but the shop now uses {{currency}}. Enter and save a reviewed price in the current currency.",
+      "realDefaultsDescription": "Default changes update inherited product drafts. Product-specific prices stay unchanged; publish each product separately.",
+      "realFixedPriceDescription": "Use one inherited default price for product placements and sizes.",
+      "realLeaveSavedData": "Published products and orders stay unchanged. Configured drafts retain the method and require keep/remove review before publication."
     },
     "pricing": {
       "fixed": "Fixed price",

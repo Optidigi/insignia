@@ -206,6 +206,10 @@
     "translations": {
       "title": "Vertalingen",
       "description": "Pas de tekst aan die klanten in Insignia zien."
+    },
+    "privacy": {
+      "title": "Privacy",
+      "description": "Bekijk klantgegevensverzoeken en bewaarde bestelgegevens."
     }
   },
   "translations": {
@@ -326,7 +330,8 @@
       "files": "Bestanden",
       "theme": "Weergave",
       "recovery": "Herstelmeldingen",
-      "common": "Gedeelde tekst"
+      "common": "Gedeelde tekst",
+      "postOrder": "Ontwerp na bestelling"
     },
     "fields": {
       "customer_chrome_skipToDesignControls": "Naar ontwerpbediening gaan",
@@ -518,7 +523,21 @@
       "common_summary_unavailable": "Niet beschikbaar",
       "customer_language_label": "Label van de taalkiezer",
       "customer_language_automatic": "Optie om de winkeltaal te gebruiken",
-      "customer_language_failure": "Fout bij het wijzigen van de taal"
+      "customer_language_failure": "Fout bij het wijzigen van de taal",
+      "customer_postOrder_title": "Titel voor upload na bestelling",
+      "customer_postOrder_loading": "Laadmelding na bestelling",
+      "customer_postOrder_unavailable": "Melding verlopen uploadlink",
+      "customer_postOrder_notice": "Instructies voor upload na bestelling",
+      "customer_postOrder_saved": "Bevestiging ingediend ontwerp",
+      "customer_postOrder_continue": "Knop verder uploaden",
+      "customer_postOrder_retry": "Knop uploadverzoek opnieuw proberen",
+      "customer_recovery_repairRequired": "Je personalisatie moet worden gecontroleerd",
+      "customer_recovery_repairHelp": "Je bestaande gepersonaliseerde artikelen blijven in de winkelwagen totdat je vervanging of verwijdering bevestigt.",
+      "customer_recovery_startNew": "Nieuwe personalisatie starten",
+      "customer_recovery_removeGroup": "Verwijdering van deze personalisatie controleren",
+      "customer_recovery_removeAll": "Verwijdering van alle gepersonaliseerde artikelen controleren",
+      "customer_recovery_confirmRemoval": "Winkelwagenwijziging bevestigen",
+      "customer_recovery_remainingItems": "Resterende gepersonaliseerde artikelen"
     },
     "discard": "Verwerpen"
   },

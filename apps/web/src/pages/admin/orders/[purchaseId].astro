@@ -1,6 +1,7 @@
 ---
-import PurchaseArtwork from '../../../islands/PurchaseArtwork';
+import PurchaseArtwork from '../../../../../../frontend/admin/src/islands/PurchaseArtwork';
 import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { ordersReturnPath } from '../../../../../../frontend/admin/src/shared/orders-return-path';
 
 const purchaseId = Astro.params.purchaseId;
 if (!purchaseId || !/^[a-f0-9-]{36}$/.test(purchaseId)) return new Response('Not found', { status: 404 });
@@ -18,13 +19,13 @@ try {
   )
     storageOrigin = endpoint.origin;
 } catch {}
-const csp = `default-src 'none'; script-src 'self' https://cdn.shopify.com 'sha256-QzWFZi+FLIx23tnm9SBU4aEgx4x8DsuASP07mfqol/c=' 'sha256-Ya0pUYrC7nM5Cn/056TyVuEiz6dFGrzmkWzgON0pF0U='; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; font-src https://cdn.shopify.com; img-src 'self' https: data: blob:; connect-src 'self' https://cdn.shopify.com/shopifycloud/admin-ui-foundations/icons/ ${storageOrigin}; frame-ancestors https://admin.shopify.com https://*.myshopify.com; base-uri 'none'; form-action 'self'`;
+const csp = `default-src 'none'; script-src 'self' https://cdn.shopify.com 'sha256-UAsB0KRBWzyM3993V+dfqSKU2EkVmZChnGDvWJyraz8=' 'sha256-Ya0pUYrC7nM5Cn/056TyVuEiz6dFGrzmkWzgON0pF0U='; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; font-src https://cdn.shopify.com; img-src 'self' https: data: blob:; connect-src 'self' https://cdn.shopify.com/shopifycloud/admin-ui-foundations/icons/ https://cdn.shopify.com/shopifycloud/admin-ui-foundations/experimental/ ${storageOrigin}; frame-ancestors https://admin.shopify.com https://*.myshopify.com; base-uri 'none'; form-action 'self'`;
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 Astro.response.headers.set('Content-Security-Policy', csp);
 Astro.response.headers.set('Referrer-Policy', 'no-referrer');
 if (!apiKey || !/^[A-Za-z0-9_-]{1,128}$/.test(apiKey))
   return Astro.rewrite('/admin/unavailable');
 ---
-<AdminLayout title="Orders and artwork" apiKey={apiKey}>
-<PurchaseArtwork purchaseId={purchaseId} client:load />
+<AdminLayout titleKey="admin-shell:titles.order" apiKey={apiKey}>
+<PurchaseArtwork purchaseId={purchaseId} returnTo={ordersReturnPath(Astro.url.searchParams.get('returnTo'))} locale={Astro.url.searchParams.get('locale')} client:polaris />
 </AdminLayout>

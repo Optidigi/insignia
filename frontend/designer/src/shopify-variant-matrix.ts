@@ -67,7 +67,7 @@ function tupleId(prefix: string, tuple: readonly (readonly string[])[]): string 
 }
 
 /** Projects only actual Shopify option tuples. It does not infer product categories or swatches. */
-export function buildShopifyVariantMatrix(input: unknown): ShopifyVariantMatrixResult {
+export function buildShopifyVariantMatrix(input: unknown, photoGroupingOptionNames?:readonly string[]): ShopifyVariantMatrixResult {
   const parsed = shopifyOptionsSchema.safeParse(input);
   if (!parsed.success) return unsupported("invalid-input");
   const variants = parsed.data.variants;
@@ -76,9 +76,10 @@ export function buildShopifyVariantMatrix(input: unknown): ShopifyVariantMatrixR
   if (!first.selectedOptions?.length) return unsupported("unknown-options");
   if (first.selectedOptions.length > 3) return unsupported("too-many-options");
   const optionNames = first.selectedOptions.map((option) => option.name);
-  const rowOptionNames = optionNames.slice(0, -1);
-  const columnOptionName = optionNames.at(-1);
-  if (columnOptionName === undefined) return unsupported("unknown-options");
+  const rowOptionNames = photoGroupingOptionNames?.length ? [...photoGroupingOptionNames] : optionNames.slice(0,-1);
+  if(photoGroupingOptionNames?.length&&(new Set(rowOptionNames).size!==rowOptionNames.length||rowOptionNames.some(name=>!optionNames.includes(name))))return unsupported('inconsistent-option-names');
+  const columnOptionNames=optionNames.filter(name=>!rowOptionNames.includes(name));
+  const columnOptionName=columnOptionNames.join(' / ')||'Selection';
   const rows = new Map<string, ShopifyVariantMatrix["colors"][number]>();
   const columns = new Map<string, ShopifyVariantMatrix["sizes"][number]>();
   const variantMatrix: VariantMatrixCell[] = [];
@@ -104,10 +105,10 @@ export function buildShopifyVariantMatrix(input: unknown): ShopifyVariantMatrixR
       if (value === undefined) return unsupported("inconsistent-option-names");
       rowTuple.push([name, value]);
     }
-    const columnValue = options.get(columnOptionName);
-    if (columnValue === undefined) return unsupported("inconsistent-option-names");
+    const columnTuple:[string,string][]=columnOptionNames.map(name=>[name,options.get(name)!]);
+    const columnValue=columnTuple.length===0?'Selection':columnTuple.length===1?columnTuple[0]![1]:columnTuple.map(([name,value])=>`${name}: ${value}`).join(' · ');
     const rowId = tupleId("row", rowTuple);
-    const columnId = tupleId("column", [[columnOptionName, columnValue]]);
+    const columnId = tupleId("column", columnTuple);
     const tuple = JSON.stringify([rowId, columnId]);
     if (tuples.has(tuple)) return unsupported("duplicate-option-tuple");
     tuples.add(tuple);

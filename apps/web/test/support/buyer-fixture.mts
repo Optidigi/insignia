@@ -17,7 +17,7 @@ import { createQuoteAuthorityPorts } from '../../src/server/quote-composition.ts
 const connectionString = process.env.DATABASE_URL;
 export async function fixture(
   t: Pick<TestContext, 'after'>,
-  options: { representativePricing?: boolean; demo91?: boolean; clock?: () => Date } = {},
+  options: { representativePricing?: boolean; demo91?: boolean; selectedBrowser?: boolean; clock?: () => Date } = {},
 ) {
   const pool = new Pool({ connectionString, max: 4 });
   const core = createDurableCore(new Pool({ connectionString, max: 8 }));
@@ -82,11 +82,19 @@ export async function fixture(
           views: [
             {
               id: 'front',
+              ...(options.selectedBrowser ? { image: { revisionId: 'photo', width: 1000, height: 1000 } } : {}),
               variantImages: [],
               placements: [{ id: 'front', rect: { centerX: 0.5, centerY: 0.5, width: 0.3, height: 0.3 } }],
             },
           ],
-          steps: [{ id: 'small', widthFraction: 0.5, heightFraction: 0.5 }],
+          steps: [
+            {
+              id: 'small',
+              widthFraction: 0.5,
+              heightFraction: 0.5,
+              ...(options.selectedBrowser ? { physicalMm: { width: 50, height: 50 } } : {}),
+            },
+          ],
         },
       },
       presentation: {
@@ -231,8 +239,26 @@ export async function fixture(
     ports,
     clock: () => now,
     catalog: async () => ({
-      variants: [{ id: '222', label: 'Blue M', available: typeof available === 'function' ? available() : available }],
-      imageUrls: {},
+      variants: [
+        {
+          id: '222',
+          label: 'Blue M',
+          available: typeof available === 'function' ? available() : available,
+          ...(options.selectedBrowser
+            ? {
+                selectedOptions: [
+                  { name: 'Color', value: 'Blue' },
+                  { name: 'Size', value: 'M' },
+                ],
+                baseUnitMinor: amount.replace('.', ''),
+              }
+            : {}),
+        },
+      ],
+      ...(options.selectedBrowser ? { title: 'Synthetic retained shirt', currency: 'EUR' } : {}),
+      imageUrls: Object.fromEntries(
+        options.selectedBrowser ? [['photo', 'https://synthetic.invalid/product.png']] : [],
+      ),
     }),
     configurationReady: async () => {},
   });

@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.test.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
+  },
+  "include": [
+    "test/selected-removal.test.mts",
+    "test/published-options.test.mts"
+  ],
+  "exclude": []
+}

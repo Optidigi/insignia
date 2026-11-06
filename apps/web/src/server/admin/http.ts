@@ -1,7 +1,11 @@
 import { CommandDigestConflictError } from '@insignia/application';
+import { MethodConfigurationSchema } from '@insignia/contracts';
 import { AdminOnlineIdentityError } from '@insignia/shopify';
+import { SelectedSetupAuthorityError } from '../selected-product.ts';
+import { selectedMediaUrlsValid } from '../selected-product-media-urls.ts';
+import { CatalogQueryError } from './catalog-query.ts';
 import type { AdminActor, AdminServices, CommandOutcome } from './contracts.js';
-import { MethodAuthorizationError } from './methods.ts';
+import { MethodAuthorizationError, MethodCurrencyConflictError } from './methods.ts';
 
 export type AdminRoute =
   | { kind: 'list' }
@@ -64,8 +68,9 @@ export function mutationOrigin(request: Request, appOrigin: string): boolean {
 
 async function bodyObject(request: Request): Promise<Record<string, unknown> | null> {
   if (!request.headers.get('Content-Type')?.toLowerCase().startsWith('application/json')) return null;
+  const limit = /^[a-f0-9]{64}$/.test(request.headers.get('X-Insignia-Setup-Authority') ?? '') ? 1_048_576 : MAX_BODY;
   const contentLength = request.headers.get('Content-Length');
-  if (contentLength && Number(contentLength) > MAX_BODY) return null;
+  if (contentLength && Number(contentLength) > limit) return null;
   if (!request.body) return null;
   const reader = request.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -74,7 +79,7 @@ async function bodyObject(request: Request): Promise<Record<string, unknown> | n
     const part = await reader.read();
     if (part.done) break;
     size += part.value.byteLength;
-    if (size > MAX_BODY) {
+    if (size > limit) {
       await reader.cancel();
       return null;
     }
@@ -143,8 +148,13 @@ export async function handleAdminRequest(
   try {
     if (route.kind === 'methods' || route.kind === 'method') {
       if (!services.methods) return adminJson(503, { error: 'Method library unavailable' });
-      if (route.kind === 'methods' && request.method === 'GET')
+      if (route.kind === 'methods' && request.method === 'GET') {
+        if (url.searchParams.get('view') === 'catalog')
+          return services.methods.catalog
+            ? adminJson(200, await services.methods.catalog(actor))
+            : adminJson(503, { error: 'Method catalog unavailable' });
         return adminJson(200, await services.methods.list(actor));
+      }
       const item = route.kind === 'method';
       if ((item && !['PUT', 'DELETE'].includes(request.method)) || (!item && request.method !== 'POST'))
         return adminJson(405, { error: 'Method not allowed' });
@@ -155,6 +165,34 @@ export async function handleAdminRequest(
       const key = request.headers.get('Idempotency-Key') ?? '';
       if (!KEY.test(key)) return adminJson(422, { error: 'Idempotency key required' });
       const body = await bodyObject(request);
+      const methodAuthority = request.headers.get('X-Insignia-Method-Authority') ?? undefined;
+      const methodCurrency = request.headers.get('X-Insignia-Method-Currency') ?? undefined;
+      if (methodAuthority !== undefined && !/^[a-f0-9]{64}$/.test(methodAuthority))
+        return adminJson(422, { error: 'Invalid Method authority' });
+      if (body && 'configuration' in body && request.method !== 'DELETE') {
+        if (methodAuthority === undefined || (methodCurrency !== 'USD' && methodCurrency !== 'EUR'))
+          return adminJson(422, { error: 'Method authority and currency required' });
+        if (!services.methods.saveConfiguration) return adminJson(503, { error: 'Method catalog unavailable' });
+        const parsed = MethodConfigurationSchema.safeParse(body.configuration);
+        if (
+          !parsed.success ||
+          Object.keys(body).sort().join(',') !== (item ? 'configuration,version' : 'configuration') ||
+          (item &&
+            (parsed.data.id !== route.methodId.toLowerCase() ||
+              typeof body.version !== 'string' ||
+              !/^[1-9][0-9]{0,17}$/.test(body.version)))
+        )
+          return adminJson(422, { error: 'Invalid method configuration' });
+        const result = await services.methods.saveConfiguration(
+          actor,
+          parsed.data,
+          item ? (body.version as string) : null,
+          key,
+          methodAuthority,
+          methodCurrency,
+        );
+        return adminJson(result.kind === 'conflict' ? 409 : result.kind === 'created' ? 201 : 200, result);
+      }
       const deleting = request.method === 'DELETE';
       const name = typeof body?.name === 'string' ? body.name.trim() : '';
       if (
@@ -169,7 +207,7 @@ export async function handleAdminRequest(
         return adminJson(422, { error: 'Invalid method command' });
       const result = item
         ? deleting
-          ? await services.methods.delete(actor, route.methodId, body.version as string, key)
+          ? await services.methods.delete(actor, route.methodId, body.version as string, key, methodAuthority)
           : await services.methods.rename(actor, route.methodId, body.version as string, name, key)
         : await services.methods.create(actor, name, key);
       return adminJson(result.kind === 'conflict' ? 409 : result.kind === 'created' ? 201 : 200, result);
@@ -200,8 +238,29 @@ export async function handleAdminRequest(
       if (route.kind === 'list') {
         const query = (url.searchParams.get('q') ?? '').trim();
         const cursor = url.searchParams.get('cursor');
-        if (query.length > 100 || (cursor && cursor.length > 512)) return adminJson(422, { error: 'Invalid search' });
-        return adminJson(200, await services.catalog.list(actor, { query, cursor, limit: 20 }));
+        const configuration = url.searchParams.get('configuration');
+        const limit = Number(url.searchParams.get('limit') ?? '20');
+        if (
+          query.length > 100 ||
+          (cursor && cursor.length > (cursor.startsWith('selected-catalog-v1:') ? 1024 : 512)) ||
+          !Number.isInteger(limit) ||
+          limit < 1 ||
+          limit > 20 ||
+          (configuration !== null &&
+            !['all', 'not_configured', 'draft', 'published', 'unavailable'].includes(configuration))
+        )
+          return adminJson(422, { error: 'Invalid search' });
+        return adminJson(
+          200,
+          await services.catalog.list(actor, {
+            query,
+            cursor,
+            limit,
+            ...(configuration
+              ? { configuration: configuration as import('./catalog-query.js').ProductConfigurationFilter }
+              : {}),
+          }),
+        );
       }
       if (!PRODUCT_ID.test(route.productId)) return adminJson(404, { error: 'Product not found' });
       const product = await services.catalog.get(actor, route.productId);
@@ -221,8 +280,37 @@ export async function handleAdminRequest(
       return adminJson(422, { error: 'Invalid command' });
     const source = await services.catalog.get(actor, route.productId);
     if (!source || source.id !== route.productId) return adminJson(404, { error: 'Product not found' });
+    if (request.method === 'POST' && body.action === 'reconcile') {
+      const authority = request.headers.get('X-Insignia-Setup-Authority') ?? '';
+      if (
+        Object.keys(body).sort().join(',') !== 'action,operationKey,stage' ||
+        (body.stage !== 'create' && body.stage !== 'save' && body.stage !== 'publish') ||
+        typeof body.operationKey !== 'string' ||
+        !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(body.operationKey) ||
+        key !== `${body.operationKey}:reconcile` ||
+        !/^[a-f0-9]{64}$/.test(authority)
+      )
+        return adminJson(422, { error: 'Invalid reconciliation identity' });
+      return services.configs.reconcile
+        ? adminJson(
+            200,
+            await services.configs.reconcile(actor, route.productId, {
+              stage: body.stage,
+              operationKey: body.operationKey,
+              authority,
+            }),
+          )
+        : adminJson(503, { error: 'Reconciliation unavailable' });
+    }
     if (request.method === 'POST' && body.action === 'create' && Object.keys(body).length === 1)
-      return outcome(await services.configs.create(actor, route.productId, key));
+      return outcome(
+        await services.configs.create(
+          actor,
+          route.productId,
+          key,
+          request.headers.get('X-Insignia-Setup-Authority') ?? undefined,
+        ),
+      );
     if (
       request.method === 'POST' &&
       body.action === 'copy' &&
@@ -249,8 +337,21 @@ export async function handleAdminRequest(
           configId: body.configId,
           draftVersion: body.draftVersion,
           idempotencyKey: key,
+          ...(request.headers.has('X-Insignia-Setup-Authority')
+            ? { authority: request.headers.get('X-Insignia-Setup-Authority')! }
+            : {}),
         }),
       );
+    if (
+      request.method === 'PUT' &&
+      body.action === 'save' &&
+      !selectedMediaUrlsValid(body.draft, services.appOrigin, route.productId)
+    )
+      return adminJson(422, {
+        kind: 'invalid',
+        noEffect: true,
+        message: 'Reload owned preview media before saving. Delivery URLs cannot be stored in product configuration.',
+      });
     if (
       request.method === 'PUT' &&
       body.action === 'save' &&
@@ -269,10 +370,17 @@ export async function handleAdminRequest(
           draftVersion: body.draftVersion,
           draft: body.draft,
           idempotencyKey: key,
+          ...(request.headers.has('X-Insignia-Setup-Authority')
+            ? { authority: request.headers.get('X-Insignia-Setup-Authority')! }
+            : {}),
         }),
       );
     return adminJson(422, { error: 'Invalid command' });
   } catch (error) {
+    if (error instanceof SelectedSetupAuthorityError)
+      return adminJson(403, { error: 'Current setup authority required' });
+    if (error instanceof CatalogQueryError) return adminJson(error.status, { error: error.message });
+    if (error instanceof MethodCurrencyConflictError) return adminJson(409, { error: error.message });
     if (error instanceof MethodAuthorizationError)
       return adminJson(403, { error: 'Current tenant installation required' });
     if (error instanceof CommandDigestConflictError)

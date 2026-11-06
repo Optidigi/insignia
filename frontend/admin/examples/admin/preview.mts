@@ -250,7 +250,7 @@ const server = createServer(async (request, reply) => {
     reply.setHeader('cache-control', 'no-store');
     if (
       request.method === 'GET' &&
-      ['/illustrations/shopify/empty-records.png', '/illustrations/shopify/empty-product.png'].includes(url.pathname)
+      ['/illustrations/shopify/empty-records.png', '/illustrations/shopify/empty-product.png', '/illustrations/editor-sample.png'].includes(url.pathname)
     ) {
       reply.setHeader('content-type', 'image/png');
       reply.end(await readFile(new URL(`../../dist/client${url.pathname}`, import.meta.url)));

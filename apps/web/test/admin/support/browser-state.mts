@@ -14,6 +14,7 @@ declare global {
     shopify: {
       idToken(): Promise<string>;
       config?: { shop: string };
+      app?: { extensions(): Promise<unknown> };
       loading?(active: boolean): void;
       scopes?: {
         query(): Promise<{ granted: string[]; required: string[]; optional: string[] }>;
@@ -31,6 +32,8 @@ declare global {
     __tokenCount: number;
     __tokenCalls: number;
     __releaseInitialToken: () => void;
+    themeExtensionReads: number;
+    hostLoadingEvents: boolean[];
     scopeQueries: number;
     scopeRequests: string[][];
     saveBarEvents: [string, string][];

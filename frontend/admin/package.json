@@ -20,7 +20,8 @@
     "fflate": "0.8.2",
     "pdf-lib": "1.17.1",
     "preact": "10.29.8",
-    "zod": "4.6.5"
+    "zod": "4.6.5",
+    "@insignia/visualizer": "workspace:*"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.6",

@@ -202,11 +202,27 @@
     "itemsRestored": "Artikel wiederhergestellt.",
     "cartCommitFailed": "Ihr Warenkorb konnte nicht aktualisiert werden. Ihre Gestaltung ist weiterhin vorhanden. Versuchen Sie es erneut.",
     "undo": "Rückgängig",
-    "dismissNotification": "Mitteilung schließen"
+    "dismissNotification": "Mitteilung schließen",
+    "repairRequired": "Deine Personalisierung muss geprüft werden",
+    "repairHelp": "Deine vorhandenen personalisierten Artikel bleiben im Warenkorb, bis du den Ersatz oder die Entfernung bestätigst.",
+    "startNew": "Neue Personalisierung starten",
+    "removeGroup": "Entfernung dieser Personalisierung prüfen",
+    "removeAll": "Entfernung aller personalisierten Artikel prüfen",
+    "confirmRemoval": "Warenkorbänderung bestätigen",
+    "remainingItems": "Verbleibende personalisierte Artikel"
   },
   "language": {
     "label": "Sprache",
     "automatic": "Shop-Sprache verwenden",
     "failure": "Die Sprache konnte nicht geändert werden. Versuchen Sie es erneut."
+  },
+  "postOrder": {
+    "title": "Fehlende Druckdateien hochladen",
+    "loading": "Upload-Anfrage wird geladen…",
+    "unavailable": "Diese Upload-Anfrage ist nicht verfügbar oder abgelaufen. Bitte kontaktiere den Shop.",
+    "notice": "Lade hier fehlende Druckdateien hoch. Um bereits eingereichte Dateien zu ändern, kontaktiere den Shop.",
+    "saved": "Deine Druckdatei wurde eingereicht.",
+    "continue": "Weiter hochladen",
+    "retry": "Erneut versuchen"
   }
 }

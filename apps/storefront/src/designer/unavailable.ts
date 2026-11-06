@@ -1,0 +1,58 @@
+import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quote-review';
+import { cartJournal } from '../buyer.ts';
+import { createAjaxCartAdapter } from '../cart.ts';
+import { createDesignerFrame } from './frame-host.ts';
+/** Missing editable facts do not create a dummy catalogue or quote. Only observed cart removal is available. */
+export function mountUnavailableDesigner(input: {
+  title?: string;
+  locale: string;
+  wording?: import('@insignia/contracts').MerchantCustomerWordingView;
+  cartRoot: string;
+  storage: Pick<Storage, 'getItem' | 'setItem'>;
+  onClose(): void;
+  retry(): Promise<void>;
+}) {
+  const cart = createAjaxCartAdapter({ root: input.cartRoot, journal: cartJournal(input.storage, input.cartRoot) });
+  let reviewed: Awaited<ReturnType<typeof cart.read>> | undefined;
+  const frame = createDesignerFrame({
+    title: input.title,
+    locale: input.locale,
+    wording: input.wording,
+    repair: { canStart: false, canRemoveGroup: false },
+    onClose: input.onClose,
+    async onRepair(action) {
+      if (action === 'retry') {
+        await input.retry();
+        return;
+      }
+      if (action === 'remove-all') {
+        const actual = await cart.read();
+        if (!actual.customized.length) throw new Error('No observed customization to remove');
+        reviewed = actual;
+        const review: DesignerQuoteReview = {
+          currency: actual.currency,
+          exponent: 2,
+          customizedQuantity: 0,
+          groups: [],
+          ...(['USD', 'EUR'].includes(actual.currency) ? { totalMinor: '0' } : {}),
+        };
+        return review;
+      }
+      if (action !== 'confirm' || !reviewed) throw new Error('Observed removal review required');
+      const applied = await cart.apply([], { expectedFingerprint: reviewed.fingerprint, repair: true });
+      if (applied.status !== 'applied' || applied.recovery || !applied.cart)
+        throw new Error('Cart removal remains unresolved');
+      reviewed = undefined;
+      window.dispatchEvent(new CustomEvent('insignia-cart-updated'));
+      frame.close();
+      return;
+    },
+  });
+  return {
+    open() {
+      frame.open();
+      return true;
+    },
+    destroy: frame.destroy,
+  };
+}

@@ -1,5 +1,6 @@
 import { PublishedConfigSchema } from '@insignia/contracts';
 import { validatePublishedConfig } from '@insignia/domain';
+import { sql } from 'kysely';
 import type { DatabaseExecutor } from '../client/database.js';
 import { canonicalJson, revisionContentHash } from '../hash/canonical.js';
 
@@ -129,6 +130,19 @@ export function createConfigRepositoryInternal(executor: DatabaseExecutor) {
         .forUpdate()
         .executeTakeFirst();
       return row ? mapConfig(row) : null;
+    },
+
+    async listSelectedForMethod(shopId: string, catalogMethodId: string, lock = false): Promise<ConfigRecord[]> {
+      let query = executor
+        .selectFrom('product_configs')
+        .selectAll()
+        .where('shop_id', '=', shopId)
+        .where(
+          sql<boolean>`EXISTS (SELECT 1 FROM jsonb_each(CASE WHEN jsonb_typeof(product_configs.draft_value->'selectedSetup'->'methodBindings')='object' THEN product_configs.draft_value->'selectedSetup'->'methodBindings' ELSE '{}'::jsonb END) AS binding WHERE binding.value->>'catalogMethodId'=${catalogMethodId})`,
+        )
+        .orderBy('config_id');
+      if (lock) query = query.forUpdate();
+      return (await query.execute()).map(mapConfig);
     },
 
     async getByProduct(shopId: string, externalProductId: string): Promise<ConfigRecord | null> {

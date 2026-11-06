@@ -206,11 +206,27 @@
     "itemsRestored": "Articoli ripristinati.",
     "cartCommitFailed": "Non è stato possibile aggiornare il carrello. La personalizzazione è ancora disponibile. Riprova.",
     "undo": "Annulla",
-    "dismissNotification": "Chiudi la notifica"
+    "dismissNotification": "Chiudi la notifica",
+    "repairRequired": "La tua personalizzazione richiede una verifica",
+    "repairHelp": "Gli articoli personalizzati restano nel carrello finché non confermi la sostituzione o la rimozione.",
+    "startNew": "Inizia una nuova personalizzazione",
+    "removeGroup": "Verifica la rimozione di questa personalizzazione",
+    "removeAll": "Verifica la rimozione di tutti gli articoli personalizzati",
+    "confirmRemoval": "Conferma aggiornamento carrello",
+    "remainingItems": "Articoli personalizzati rimanenti"
   },
   "language": {
     "label": "Lingua",
     "automatic": "Usa la lingua del negozio",
     "failure": "Non è stato possibile cambiare la lingua. Riprova."
+  },
+  "postOrder": {
+    "title": "Carica le grafiche mancanti",
+    "loading": "Caricamento della richiesta…",
+    "unavailable": "Questa richiesta non è disponibile o è scaduta. Contatta il negozio per assistenza.",
+    "notice": "Carica qui le grafiche mancanti. Per modificare una grafica già inviata, contatta il negozio.",
+    "saved": "La tua grafica è stata inviata.",
+    "continue": "Continua a caricare",
+    "retry": "Riprova"
   }
 }

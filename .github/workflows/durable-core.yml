@@ -11,6 +11,8 @@ on:
       - 'packages/database/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.node-version'
       - '.github/workflows/durable-core.yml'
 
 permissions:

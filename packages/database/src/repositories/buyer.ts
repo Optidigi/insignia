@@ -308,11 +308,14 @@ export function createBuyerRepository(db: Kysely<Database>) {
           design_id: string;
           version: string;
           payload: unknown;
+          expires_at: Date;
         }>`SELECT d.* FROM design_drafts d JOIN buyer_sessions b ON b.session_id=d.session_id WHERE d.design_id=${id}::uuid AND b.shop_id=${scope.shopId} AND b.installation_generation=${scope.installationGeneration}::bigint AND b.owner_hash=${scope.ownerHash} AND b.created_at<=${now} AND b.expires_at>${now} AND d.expires_at>${now} AND ${active}`.execute(
           db,
         )
       ).rows[0];
-      return row ? { id: row.design_id, version: Number(row.version), value: row.payload } : null;
+      return row
+        ? { id: row.design_id, version: Number(row.version), value: row.payload, expiresAt: row.expires_at }
+        : null;
     },
     async putProposal(
       scope: BuyerScope,

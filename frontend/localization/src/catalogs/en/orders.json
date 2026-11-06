@@ -31,14 +31,14 @@
     "changeSearchFilterPage": "Change your search or filter, or check another page."
   },
   "search": {
-    "label": "Search orders on this page",
-    "placeholder": "Search this page",
+    "label": "Search orders",
+    "placeholder": "Search orders",
     "results_one": "{{formattedCount}} order shown on this page.",
     "results_other": "{{formattedCount}} orders shown on this page."
   },
   "filters": {
     "filterOrders": "Filter orders",
-    "artworkStatus": "Artwork status on this page",
+    "artworkStatus": "Artwork status",
     "editArtworkStatus": "Edit artwork status filter",
     "editOrderDate": "Edit order date filter",
     "orderDateRange": "Order date: {{from}} – {{to}}"
@@ -268,6 +268,23 @@
       "refundDetails": "Refund details",
       "purchasedItem": "Purchased item",
       "refundLine": "{{itemName}}: {{formattedQuantity}} recorded for refund, {{amount}}"
+    },
+    "customerLink": {
+      "copy": "Copy customer upload link",
+      "help": "Share this secure link so the customer can supply missing artwork, including before payment.",
+      "copied": "Upload link copied. Share it privately with the customer.",
+      "failed": "Could not copy the link. Check clipboard access and retry, or upload the artwork here."
+    },
+    "commands": {
+      "refresh": "Refresh",
+      "reconcile": "Check order updates in Shopify",
+      "lock": "Lock artwork",
+      "lockHeading": "Lock artwork for production?",
+      "lockBody": "This freezes the current artwork. Further replacements will be unavailable.",
+      "locked": "Artwork locked.",
+      "requested": "Update check requested. Refresh after processing to see verified Shopify facts.",
+      "changed": "Artwork changed. Refresh the order before continuing.",
+      "failed": "The action could not be confirmed. Refresh the order before continuing."
     }
   }
 }

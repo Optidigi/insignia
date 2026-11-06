@@ -5,8 +5,15 @@ export const DESIGN_IDENTITY_VERSION = 'm2-design-identity-v1' as const;
 
 export type ArtworkChoice = { kind: 'revision'; revisionId: string } | { kind: 'deferred'; intentId: string };
 
+export type ProductionPosition = { xMicros: number; yMicros: number };
 export interface ProductionDesign {
-  placements: { placementId: string; methodId: string; stepId: string; artwork: ArtworkChoice }[];
+  placements: {
+    placementId: string;
+    methodId: string;
+    stepId: string;
+    artwork: ArtworkChoice;
+    position?: ProductionPosition;
+  }[];
   options: { optionId: string; valueId: string }[];
 }
 
@@ -66,7 +73,20 @@ export function canonicalDesignIdentity(group: CustomizationGroup): string {
         throw new Error('invalid artwork choice');
       const artworkId = item.artwork.kind === 'revision' ? item.artwork.revisionId : item.artwork.intentId;
       requireId(artworkId, 'artwork revision or deferred intent ID');
-      return [item.placementId, item.methodId, item.stepId, item.artwork.kind, artworkId] as const;
+      if (
+        item.position !== undefined &&
+        (!Number.isInteger(item.position.xMicros) ||
+          !Number.isInteger(item.position.yMicros) ||
+          item.position.xMicros < 0 ||
+          item.position.xMicros > 1000000 ||
+          item.position.yMicros < 0 ||
+          item.position.yMicros > 1000000 ||
+          Object.keys(item.position).some((key) => key !== 'xMicros' && key !== 'yMicros'))
+      )
+        throw new Error('invalid production position');
+      const base = [item.placementId, item.methodId, item.stepId, item.artwork.kind, artworkId] as const;
+      // Absent positions retain exact historical identity bytes.
+      return item.position === undefined ? base : ([...base, item.position.xMicros, item.position.yMicros] as const);
     })
     .sort((left, right) => compareId(left[0], right[0]));
   const options = group.design.options
@@ -155,6 +175,7 @@ export function normalizeCustomizationGroups(
           methodId: selection.methodId,
           stepId: selection.stepId,
           artwork: { ...selection.artwork },
+          ...(selection.position ? { position: { ...selection.position } } : {}),
         })),
       options: [...group.design.options]
         .sort((left, right) => compareId(left.optionId, right.optionId))

@@ -20,6 +20,9 @@ export const PurchasePlacementSchema = z.strictObject({
   id,
   methodId: id,
   stepId: id,
+  position: z
+    .strictObject({ xMicros: z.number().int().min(0).max(1000000), yMicros: z.number().int().min(0).max(1000000) })
+    .optional(),
   originalArtwork: z.discriminatedUnion('kind', [
     z.strictObject({ kind: z.literal('revision'), revisionId: id }),
     z.strictObject({ kind: z.literal('deferred'), intentId: id }),
@@ -58,6 +61,8 @@ export const PurchaseViewSchema = z.strictObject({
   financialStatus: z.string().max(80),
   cancelledAt: date.nullable(),
   exceptions: z.array(z.string().max(160)).max(128),
+  canUploadArtwork: z.boolean().optional(),
+  canShareCustomerArtwork: z.boolean().optional(),
   artworkVersion: z.number().int().nonnegative(),
   artworkState: z.enum(['PENDING_ARTWORK', 'READY', 'ARTWORK_LOCKED', 'ERASED']),
   refunds: z
@@ -94,6 +99,19 @@ export const PurchaseListSchema = z.strictObject({
   version: z.literal('m8-purchase-list-v1'),
   items: z.array(PurchaseViewSchema).max(100),
   nextCursor: z.string().uuid().nullable(),
+  timeZone: z
+    .string()
+    .min(1)
+    .max(128)
+    .refine((zone) => {
+      try {
+        new Intl.DateTimeFormat('en', { timeZone: zone });
+        return true;
+      } catch {
+        return false;
+      }
+    })
+    .optional(),
 });
 export const PurchaseAttachmentSchema = z.strictObject({
   expectedVersion: z.number().int().nonnegative(),
@@ -111,3 +129,52 @@ export type PurchaseView = z.infer<typeof PurchaseViewSchema>;
 export type PurchaseGroup = z.infer<typeof PurchaseGroupSchema>;
 export const PurchaseListViewSchema = PurchaseListSchema;
 export const PurchaseReconcileSchema = z.strictObject({});
+
+export const PurchaseOriginalDownloadSchema = PurchasePrivateUrlSchema.extend({
+  sha256: z.string().regex(/^[a-f0-9]{64}$/),
+  byteLength: z
+    .number()
+    .int()
+    .positive()
+    .max(5 * 1024 * 1024),
+  contentType: z.enum(['image/png', 'image/jpeg', 'image/svg+xml']),
+});
+export const PurchaseListQuerySchema = z
+  .object({
+    before: z.string().uuid().nullable().default(null),
+    limit: z.number().int().min(1).max(50).default(20),
+    sort: z.enum(['date-asc', 'date-desc']).optional(),
+    q: z.string().max(128).optional(),
+    artwork: z.enum(['all', 'needed', 'complete']).optional(),
+    createdFrom: date.optional(),
+    createdBefore: date.optional(),
+  })
+  .strict()
+  .refine(
+    (input) =>
+      !input.createdFrom || !input.createdBefore || Date.parse(input.createdFrom) <= Date.parse(input.createdBefore),
+    'Invalid date range',
+  );
+export type PurchaseListQuery = z.infer<typeof PurchaseListQuerySchema>;
+export const PurchaseStatisticsSchema = z
+  .object({
+    version: z.literal('purchase-statistics-v1'),
+    timeZone: z.string().min(1).max(128),
+    periodDays: z.literal(30),
+    observedAt: date,
+    available: z.boolean(),
+    series: z
+      .array(
+        z
+          .object({
+            day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+            orders: minor,
+            items: minor,
+            productIds: z.array(id),
+          })
+          .strict(),
+      )
+      .max(60),
+  })
+  .strict();
+export type PurchaseStatistics = z.infer<typeof PurchaseStatisticsSchema>;

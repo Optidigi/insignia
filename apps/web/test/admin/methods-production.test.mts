@@ -103,3 +103,192 @@ test('durable method templates isolate tenants, replay commands, CAS edits, pres
     await core.close();
   }
 });
+
+test('rich method configuration survives reload, isolates tenants and detects version conflicts without changing copied drafts', {
+  skip: !connectionString,
+}, async () => {
+  const core = createDurableCore(new Pool({ connectionString }));
+  const tenantShopId = randomUUID();
+  const actor = adminActor({
+    tenantShopId,
+    shop: `rich-${tenantShopId}.myshopify.com`,
+    shopId: `gid://shopify/Shop/${BigInt(`0x${tenantShopId.replaceAll('-', '').slice(0, 12)}`)}`,
+    installationGeneration: '1',
+    canRead: true,
+    canEdit: true,
+  });
+  try {
+    await core.transactions.run((tx) =>
+      core.tenants.createShop(tx, {
+        shopId: tenantShopId,
+        shopDomain: actor.shop,
+        shopifyShopId: actor.shopId.split('/').at(-1),
+      }),
+    );
+    const service = createMethodLibrary(core, { currency: async () => 'USD' });
+    assert.ok(service.saveConfiguration);
+    assert.ok(service.catalog);
+    const configuration = {
+      id: randomUUID(),
+      name: 'Print',
+      explanation: 'Full colour',
+      pricing: 'fixed' as const,
+      amount: '3.50',
+      assignment: 'tags' as const,
+      productIds: [],
+      tags: ['shirts'],
+      tagMatch: 'all' as const,
+      translations: { nl: { name: 'Bedrukking', explanation: 'In kleur' } },
+    };
+    const created = await service.saveConfiguration(actor, configuration, null, 'rich-method-create');
+    assert.equal(created.kind, 'created');
+    assert.deepEqual(await service.saveConfiguration(actor, configuration, null, 'rich-method-create'), created);
+    const reloaded = createMethodLibrary(core, { currency: async () => 'USD' });
+    assert.ok(reloaded.catalog);
+    const catalog = await reloaded.catalog(actor);
+    assert.deepEqual(catalog.methods, [{ configuration, version: '1', currency: 'USD' }]);
+    assert.equal(catalog.shop, actor.shop);
+    assert.match(catalog.authority ?? '', /^[a-f0-9]{64}$/);
+    const updated = { ...configuration, amount: '4.00' };
+    const saved = await service.saveConfiguration(actor, updated, '1', 'rich-method-update');
+    assert.equal(saved.kind, 'saved');
+    assert.equal((await service.saveConfiguration(actor, configuration, '1', 'rich-method-stale')).kind, 'conflict');
+    assert.equal((await service.saveConfiguration(actor, configuration, null, 'rich-method-create')).kind, 'conflict');
+    assert.equal((await service.rename(actor, configuration.id, '2', 'Printing', 'rich-rename')).kind, 'saved');
+    assert.deepEqual((await service.catalog(actor)).methods[0]?.configuration, { ...updated, name: 'Printing' });
+    assert.equal((await service.delete(actor, configuration.id, '3', 'rich-delete')).kind, 'deleted');
+    assert.deepEqual((await service.catalog(actor)).methods, []);
+  } finally {
+    await core.close();
+  }
+});
+
+test('rich Method price currency remains frozen until an explicit current-currency save', {
+  skip: !connectionString,
+}, async () => {
+  const core = createDurableCore(new Pool({ connectionString }));
+  const tenantShopId = randomUUID();
+  const actor = adminActor({
+    tenantShopId,
+    shop: `currency-${tenantShopId}.myshopify.com`,
+    shopId: `gid://shopify/Shop/${BigInt(`0x${tenantShopId.replaceAll('-', '').slice(0, 12)}`)}`,
+    installationGeneration: '1',
+    canRead: true,
+    canEdit: true,
+  });
+  let currency = 'USD';
+  try {
+    await core.transactions.run((tx) =>
+      core.tenants.createShop(tx, {
+        shopId: tenantShopId,
+        shopDomain: actor.shop,
+        shopifyShopId: actor.shopId.split('/').at(-1),
+      }),
+    );
+    const methods = createMethodLibrary(core, { currency: async () => currency });
+    assert.ok(methods.saveConfiguration);
+    assert.ok(methods.catalog);
+    const configuration = {
+      id: randomUUID(),
+      name: 'Print',
+      explanation: '',
+      pricing: 'fixed' as const,
+      amount: '3.50',
+      assignment: 'manual' as const,
+      productIds: [],
+      tags: [],
+      tagMatch: 'any' as const,
+    };
+    await methods.saveConfiguration(actor, configuration, null, 'price-currency-create', undefined, 'USD');
+    currency = 'EUR';
+    const observed = await methods.catalog(actor);
+    assert.equal(observed.currency, 'EUR');
+    assert.equal(observed.methods[0]?.currency, 'USD');
+    await assert.rejects(
+      methods.saveConfiguration(actor, configuration, '1', 'price-currency-stale', undefined, 'USD'),
+      /currency changed/,
+    );
+    assert.equal((await methods.catalog(actor)).methods[0]?.version, '1');
+    const saved = await methods.saveConfiguration(
+      actor,
+      { ...configuration, amount: '4.00' },
+      '1',
+      'price-currency-reviewed',
+      undefined,
+      'EUR',
+    );
+    assert.equal(saved.kind, 'saved');
+    if (saved.kind === 'saved') assert.equal(saved.method.currency, 'EUR');
+  } finally {
+    await core.close();
+  }
+});
+
+test('Methods and preferences expose one frozen authoring authority and both reject its stale generation', {
+  skip: !connectionString,
+}, async () => {
+  const { createMerchantPreferences } = await import('../../src/server/admin/preferences.ts');
+  const core = createDurableCore(new Pool({ connectionString }));
+  const tenant = randomUUID();
+  const actor = adminActor({
+    tenantShopId: tenant,
+    shop: `authority-${tenant}.myshopify.com`,
+    shopId: `gid://shopify/Shop/${BigInt(`0x${tenant.replaceAll('-', '').slice(0, 12)}`)}`,
+    installationGeneration: '1',
+    canRead: true,
+    canEdit: true,
+  });
+  try {
+    await core.transactions.run((tx) =>
+      core.tenants.createShop(tx, {
+        shopId: tenant,
+        shopDomain: actor.shop,
+        shopifyShopId: actor.shopId.split('/').at(-1),
+      }),
+    );
+    const methods = createMethodLibrary(core, { currency: async () => 'USD' });
+    assert.ok(methods.catalog);
+    assert.ok(methods.saveConfiguration);
+    const prefs = createMerchantPreferences(core);
+    const before = await prefs.read(actor);
+    assert.equal((await methods.catalog(actor)).authority, before.authority);
+    assert.equal((await methods.catalog(actor)).canEdit, true);
+    assert.equal((await methods.catalog({ ...actor, canEdit: false })).canEdit, false);
+    await core.transactions.run((tx) => core.tenants.deactivateCurrent(tx, tenant, '1'));
+    const generation = await core.transactions.run((tx) => core.tenants.startInstallation(tx, tenant));
+    const next = { ...actor, installationGeneration: generation };
+    const after = await prefs.read(next);
+    assert.equal((await methods.catalog(next)).authority, after.authority);
+    assert.notEqual(after.authority, before.authority);
+    const configuration = {
+      id: randomUUID(),
+      name: 'Print',
+      explanation: '',
+      pricing: 'fixed' as const,
+      amount: '3.50',
+      assignment: 'manual' as const,
+      productIds: [],
+      tags: [],
+      tagMatch: 'any' as const,
+    };
+    await assert.rejects(
+      methods.saveConfiguration(next, configuration, null, 'stale-method-authority', before.authority, 'USD'),
+      /authorization changed/,
+    );
+    await assert.rejects(
+      prefs.save(
+        next,
+        {
+          action: 'guidance',
+          authority: before.authority,
+          expectedVersion: before.guidanceVersion,
+          guidance: before.guidance,
+        },
+        'stale-pref-authority',
+      ),
+      /preferences authority/,
+    );
+  } finally {
+    await core.close();
+  }
+});

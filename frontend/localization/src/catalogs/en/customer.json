@@ -202,11 +202,27 @@
     "itemsRestored": "Items restored.",
     "cartCommitFailed": "Your cart could not be updated. Your design is still here. Try again.",
     "undo": "Undo",
-    "dismissNotification": "Dismiss notification"
+    "dismissNotification": "Dismiss notification",
+    "repairRequired": "Your customization needs review",
+    "repairHelp": "Your existing customized items stay in the cart until you confirm replacement or removal.",
+    "startNew": "Start a new customization",
+    "removeGroup": "Review removing this customization",
+    "removeAll": "Review removing all customized items",
+    "confirmRemoval": "Confirm cart update",
+    "remainingItems": "Remaining customized items"
   },
   "language": {
     "label": "Language",
     "automatic": "Use store language",
     "failure": "Language couldn’t be changed. Try again."
+  },
+  "postOrder": {
+    "title": "Upload missing artwork",
+    "loading": "Loading artwork request…",
+    "unavailable": "This artwork request is unavailable or expired. Contact the store for help.",
+    "notice": "Upload missing artwork here. To change artwork already submitted, contact the store.",
+    "saved": "Your artwork has been submitted.",
+    "continue": "Continue uploading",
+    "retry": "Try again"
   }
 }

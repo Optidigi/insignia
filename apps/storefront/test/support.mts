@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import type { Server } from 'node:http';
+import type { Plugin } from 'vite';
 import type { CartProperty } from '../src/cart.ts';
 
 export function required<T>(value: T | null | undefined): T {
@@ -78,4 +80,34 @@ export function fetchBody(init: RequestInit): AjaxBody {
 export function text(value: unknown): string {
   assert(typeof value === 'string');
   return value;
+}
+
+/** Vite serves the actual compiled isolated frame and its closed asset graph at the source host URL. */
+export function selectedFrameAssets(): Plugin {
+  return {
+    name: 'selected-frame-artifact',
+    // Keep pure ESM hashing native during source-host tests; delayed optimizer discovery would reload the page after the user opens the frame.
+    config() {
+      return { optimizeDeps: { exclude: ['@noble/hashes'] } };
+    },
+    configureServer(server) {
+      server.middlewares.use((request, response, next) => {
+        const path = new URL(request.url ?? '/', 'http://fixture').pathname;
+        const name = path.split('/').at(-1);
+        if (!name || !/^insignia-[A-Za-z0-9_.-]+\.(js|css)$/.test(name)) {
+          next();
+          return;
+        }
+        void readFile(new URL(`../dist/${name}`, import.meta.url))
+          .then((bytes) => {
+            response.setHeader('Content-Type', name.endsWith('.css') ? 'text/css' : 'text/javascript');
+            response.end(bytes);
+          })
+          .catch(() => {
+            response.statusCode = 404;
+            response.end();
+          });
+      });
+    },
+  };
 }

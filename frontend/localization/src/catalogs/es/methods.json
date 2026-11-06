@@ -111,7 +111,7 @@
     },
     "notices": {
       "methodUnavailable": "Esta técnica ya no está disponible.",
-      "storageFailure": "El navegador no pudo guardar estas técnicas. Mantén esta página abierta y vuelve a intentarlo.",
+      "storageFailure": "No se han podido guardar estos métodos. Mantén esta página abierta e inténtalo de nuevo.",
       "created": "Técnica creada.",
       "saved": "Técnica guardada.",
       "duplicated": "Técnica duplicada.",
@@ -134,7 +134,11 @@
       "productsMustMatch": "Los productos deben coincidir con",
       "searchTags": "Buscar etiquetas",
       "searchAssignedProducts": "Buscar productos asignados",
-      "productSetup": "Configuración del producto"
+      "productSetup": "Configuración del producto",
+      "translationLanguage": "Idioma de traducción",
+      "defaultText": "Texto predeterminado",
+      "realExplanation": "Descripción (opcional)",
+      "realExplanationHelp": "Visible para comerciantes y clientes al elegir este método de decoración."
     },
     "copy": {
       "duplicateNameError": "Introduce un nombre de hasta 80 caracteres.",
@@ -178,7 +182,12 @@
       "removeManyHeading_many": "¿Eliminar {{formattedCount}} técnicas seleccionadas?",
       "needsSetupCount_many": "{{formattedCount}} requieren configuración",
       "removeOneAvailability_many": "La técnica dejará de estar disponible en {{formattedCount}} productos.",
-      "removeManyAvailability_many": "Se eliminará la disponibilidad de estas técnicas en {{formattedCount}} productos."
+      "removeManyAvailability_many": "Se eliminará la disponibilidad de estas técnicas en {{formattedCount}} productos.",
+      "translationFallback": "Deja una traducción vacía para usar el texto predeterminado.",
+      "currencyReview": "El precio guardado es {{amount}}, pero la tienda ahora usa {{currency}}. Introduce y guarda un precio revisado en la moneda actual.",
+      "realDefaultsDescription": "Los cambios en el precio predeterminado actualizan los borradores que lo heredan. Los precios propios del producto se conservan; publica cada producto por separado.",
+      "realFixedPriceDescription": "Usa un precio predeterminado heredado para las ubicaciones y los tamaños del producto.",
+      "realLeaveSavedData": "Los productos publicados y los pedidos no cambian. Los borradores configurados conservan el método y requieren confirmar si se mantiene o se elimina antes de publicar."
     },
     "pricing": {
       "fixed": "Precio fijo",

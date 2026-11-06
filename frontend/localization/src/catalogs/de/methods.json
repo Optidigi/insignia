@@ -105,7 +105,7 @@
     },
     "notices": {
       "methodUnavailable": "Dieses Verfahren ist nicht mehr verfügbar.",
-      "storageFailure": "Ihr Browser konnte diese Verfahren nicht speichern. Lassen Sie diese Seite geöffnet und versuchen Sie es erneut.",
+      "storageFailure": "Diese Methoden konnten nicht gespeichert werden. Lassen Sie diese Seite geöffnet und versuchen Sie es erneut.",
       "created": "Verfahren erstellt.",
       "saved": "Verfahren gespeichert.",
       "duplicated": "Verfahren dupliziert.",
@@ -127,7 +127,11 @@
       "productsMustMatch": "Produkte müssen übereinstimmen",
       "searchTags": "Tags suchen",
       "searchAssignedProducts": "Zugeordnete Produkte suchen",
-      "productSetup": "Produkteinrichtung"
+      "productSetup": "Produkteinrichtung",
+      "translationLanguage": "Übersetzungssprache",
+      "defaultText": "Standardtext",
+      "realExplanation": "Beschreibung (optional)",
+      "realExplanationHelp": "Sichtbar für Händler und Kunden bei der Auswahl dieser Veredelungsmethode."
     },
     "copy": {
       "duplicateNameError": "Geben Sie einen Verfahrensnamen mit höchstens 80 Zeichen ein.",
@@ -166,7 +170,12 @@
       "removeManyAvailability_other": "Die Verfügbarkeit dieser Verfahren für die Bibliothek wird für {{formattedCount}} Produkte entfernt.",
       "setupFixedPrice": "Legen Sie für alle ausgewählten Produkte denselben Preis für jede Position und Größe fest.",
       "setupProductPrice": "Legen Sie die Preise für jedes Produkt nach Position und Veredelungsgröße fest.",
-      "tagMatchSummary": "Tagregel „{{match}}“ für: {{tags}}. Künftige Tag-Änderungen können die passenden Produkte ändern."
+      "tagMatchSummary": "Tagregel „{{match}}“ für: {{tags}}. Künftige Tag-Änderungen können die passenden Produkte ändern.",
+      "translationFallback": "Lassen Sie eine Übersetzung leer, um den Standardtext zu verwenden.",
+      "currencyReview": "Der gespeicherte Preis ist {{amount}}, aber der Shop verwendet jetzt {{currency}}. Prüfen Sie den Preis und speichern Sie ihn in der aktuellen Währung.",
+      "realDefaultsDescription": "Geänderte Standardpreise aktualisieren geerbte Produktentwürfe. Produktspezifische Preise bleiben erhalten; veröffentlichen Sie jedes Produkt separat.",
+      "realFixedPriceDescription": "Verwenden Sie einen geerbten Standardpreis für Produktpositionen und Größen.",
+      "realLeaveSavedData": "Veröffentlichte Produkte und Bestellungen bleiben unverändert. Konfigurierte Entwürfe behalten die Methode und erfordern vor der Veröffentlichung eine Bestätigung zum Beibehalten oder Entfernen."
     },
     "pricing": {
       "fixed": "Festpreis",

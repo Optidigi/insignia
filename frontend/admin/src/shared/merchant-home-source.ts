@@ -1,3 +1,4 @@
+import { PurchaseStatisticsSchema } from '@insignia/contracts';
 import { z } from 'zod';
 import type { HomeOrdersPanel, HomeProductsPanel, HomeSetup, HomeStatistics } from './merchant-home.js';
 import { PurchaseListViewSchema } from './purchase-presentation.ts';
@@ -218,4 +219,27 @@ export function homeStatisticsFromResponse(input: unknown, now = Date.now()): Ho
     series,
     ...(previousPeriod ? { previousPeriod } : {}),
   };
+}
+
+/** A dedicated store-wide aggregation is distinct from the bounded recent-orders panel. */
+export function homeStatisticsFromAggregate(input: unknown): HomeStatistics | undefined {
+  const parsed = PurchaseStatisticsSchema.safeParse(input);
+  if (!parsed.success || !parsed.data.available) return undefined;
+  const result = parsed.data;
+  const today = orderCalendarDay(new Date(result.observedAt), result.timeZone);
+  const first = offsetCalendarDay(today, -29), previousFirst = offsetCalendarDay(first, -30);
+  const count = (value: string) => {
+    const integer = BigInt(value);
+    if (integer > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error('Count exceeds UI integer range');
+    return Number(integer);
+  };
+  try {
+    const period = (start: string) => {
+      const days = Array.from({ length: 30 }, (_, index) => offsetCalendarDay(start, index));
+      const source = days.map((day) => result.series.find((row) => row.day === day));
+      const series = days.map((date, index) => ({ date, customizedOrders: count(source[index]?.orders ?? '0'), customizedItems: BigInt(source[index]?.items ?? '0'), productsOrdered: new Set(source[index]?.productIds ?? []).size }));
+      return { customizedOrders: count(series.reduce((sum, row) => sum + BigInt(row.customizedOrders), 0n).toString()), customizedItems: series.reduce((sum, row) => sum + row.customizedItems, 0n), productsOrdered: new Set(source.flatMap((row) => row?.productIds ?? [])).size, series };
+    };
+    return { state: 'ready', periodDays: 30, excludesTestOrders: true, ...period(first), previousPeriod: period(previousFirst) };
+  } catch { return undefined; }
 }

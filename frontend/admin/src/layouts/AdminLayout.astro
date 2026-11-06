@@ -15,7 +15,7 @@ const localization = createAdminTranslator(requestedLocale);
 const { t } = localization;
 ---
 <!doctype html>
-<html lang={localization.lang} dir={localization.dir} data-admin-requested-locale={localization.canonicalRequestedLocale ?? undefined} data-admin-locale-ready="false" data-admin-title-key={titleKey} data-admin-ready="false" data-admin-content-ready={ready ? 'true' : undefined}>
+<html lang={localization.lang} dir={localization.dir} data-admin-requested-locale={localization.canonicalRequestedLocale ?? undefined} data-admin-locale-ready={ready ? 'true' : 'false'} data-admin-title-key={titleKey} data-admin-ready={ready ? 'true' : 'false'} data-admin-content-ready={ready ? 'true' : undefined}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -32,18 +32,18 @@ const { t } = localization;
       import { installAdminNavigation } from '../shared/admin-navigation';
       import { installAdminLocalization } from '../shared/admin-i18n';
       installAdminLocalization(document);
-      installAdminNavigation();
+      if (document.documentElement.dataset.adminReady !== 'true') installAdminNavigation();
     </script>
     <script is:inline async src="https://cdn.shopify.com/shopifycloud/polaris-2.0-rc.js"></script>
   </head>
   <body>
-    {apiKey && <AdminNavigation locale={requestedLocale} />}
-    <div id="admin-route-skeleton" aria-hidden={localization.canonicalRequestedLocale ? undefined : 'true'}>
-      <AdminPageSkeleton pathname={Astro.url.pathname} search={Astro.url.search} locale={requestedLocale} client:polaris />
-    </div>
-    <div id="admin-route-failure" hidden>
+    {apiKey && <AdminNavigation locale={localization.canonicalRequestedLocale} />}
+    {!ready && <div id="admin-route-skeleton" aria-hidden={localization.canonicalRequestedLocale ? undefined : 'true'}>
+      <AdminPageSkeleton pathname={Astro.url.pathname} search={Astro.url.searchParams.has('section') ? '?section' : ''} locale={localization.canonicalRequestedLocale} client:polaris />
+    </div>}
+    {!ready && <div id="admin-route-failure" hidden>
       <s-banner tone="critical" heading={t('admin-shell:failure.heading')} data-admin-failure-heading><span data-admin-failure-body>{t('admin-shell:failure.body')}</span></s-banner>
-    </div>
-    <div id="admin-route-content" inert><slot /></div>
+    </div>}
+    <div id="admin-route-content" inert={!ready}><slot /></div>
   </body>
 </html>

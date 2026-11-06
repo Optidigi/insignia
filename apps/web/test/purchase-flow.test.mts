@@ -1,4 +1,10 @@
-import { BuyerAcceptedCartSchema, BuyerProposalSchema, PurchaseViewSchema } from '@insignia/contracts';
+import {
+  BuyerAcceptedCartSchema,
+  BuyerProposalRequestSchema,
+  BuyerProposalSchema,
+  CustomerArtworkPublicViewSchema,
+  PurchaseViewSchema,
+} from '@insignia/contracts';
 import type { PurchaseRecord } from '@insignia/database';
 
 type Mutable<T> = T extends object ? { -readonly [K in keyof T]: Mutable<T[K]> } : T;
@@ -11,11 +17,13 @@ import {
   type ArtworkRecord,
   type ArtworkScope,
   type ArtworkStorage,
+  createCustomerArtworkLinks,
   type PurchaseObservation,
   type PurchasePorts,
   reconcilePurchase as reconcile,
   type VerifiedOrder,
 } from '@insignia/application';
+import { createCustomerArtworkViewReader } from '../src/server/customer-artwork/view.ts';
 import { handlePurchaseRequest } from '../src/server/purchase/http.ts';
 import { createPurchaseServices } from '../src/server/purchase/service.ts';
 import { coreFixture, record, required } from './http-fixtures.mts';
@@ -42,9 +50,29 @@ async function reconcilePurchase(
 }
 
 const database = process.env.DATABASE_URL;
-async function purchase(t: TestContext) {
-  const f = await fixture(t, { representativePricing: true, clock: () => new Date() });
-  const body = structuredClone(f.body);
+async function purchase(t: TestContext, options: { deferred?: boolean } = {}) {
+  const f = await fixture(t, {
+    representativePricing: true,
+    selectedBrowser: options.deferred,
+    clock: () => new Date(),
+  });
+  const body = BuyerProposalRequestSchema.parse(
+    options.deferred
+      ? {
+          ...f.body,
+          groups: f.body.groups.map((group) => ({
+            ...group,
+            design: {
+              ...group.design,
+              placements: group.design.placements.map((placement) => ({
+                ...placement,
+                artwork: { kind: 'deferred', intentId: 'retained-slot' },
+              })),
+            },
+          })),
+        }
+      : structuredClone(f.body),
+  );
   required(required(body.groups[0]).variants[0]).quantity = 3;
   const proposed = await f.http('quote-proposals', body);
   assert.equal(proposed.status, 200, await proposed.clone().text());
@@ -230,6 +258,34 @@ test('actual quote/signing/PG purchase authority is independent from cart confir
   );
   assert.equal(original.status, 200, await original.clone().text());
   assert.match(required(required(f.presigns.at(-1)).downloadFilename), /\.png$/);
+  const metadataRoute = `${result.purchaseId}/artwork/${required(f.group.design.placements[0]).artwork.revisionId}/download`;
+  const metadata = await handlePurchaseRequest(
+    new Request(`https://app.example.test/api/purchases/v1/${metadataRoute}?metadata=1`, {
+      headers: { Authorization: 'Bearer independently-verified-owner' },
+    }),
+    f.services,
+    metadataRoute,
+  );
+  const originalMetadata = record(await metadata.json());
+  assert.equal(originalMetadata.contentType, 'image/png');
+  assert.match(String(originalMetadata.sha256), /^[a-f0-9]{64}$/);
+  assert.equal(typeof originalMetadata.byteLength, 'number');
+  const available = await f.core.purchases.list(
+    { shopId: f.shopId, installationGeneration: '1', kind: 'merchant' },
+    { artwork: 'complete', sort: 'date-desc', limit: 50 },
+  );
+  assert.ok(
+    available.some((entry) => entry?.purchaseId === result.purchaseId),
+    'server artwork filter must agree with the real retained original',
+  );
+  const unavailable = await f.core.purchases.list(
+    { shopId: f.shopId, installationGeneration: '1', kind: 'merchant' },
+    { artwork: 'needed', sort: 'date-desc', limit: 50 },
+  );
+  assert.equal(
+    unavailable.some((entry) => entry?.purchaseId === result.purchaseId),
+    false,
+  );
   assert.equal(
     required(f.presigns.at(-1)).key,
     `synthetic/${required(f.group.design.placements[0]).artwork.revisionId}/o`,
@@ -393,4 +449,59 @@ test('HTTP projection never restores original artwork when an expired replacemen
   const view = PurchaseViewSchema.parse(await response.json());
   assert.equal(view.artworkState, 'ERASED');
   assert.equal(required(required(view.groups[0]).placements[0]).currentAssetId, null);
+});
+
+test('real old Lean purchase issues a working customer link before payment and uses new upload-only frozen read projection', {
+  skip: !database,
+}, async (t) => {
+  const f = await purchase(t, { deferred: true });
+  f.order.financialStatus = 'PENDING';
+  f.order.transactions = [];
+  const persisted = await reconcilePurchase(
+    { shopId: f.shopId, installationGeneration: '1', orderId: f.order.orderId },
+    f.ports,
+  );
+  assert.equal(persisted.firstPaidAt, null);
+  const links = createCustomerArtworkLinks({
+    store: f.core.customerArtwork,
+    secret: 'local-only-customer-capability-test-secret',
+    appOrigin: 'https://app.example.test',
+    clock: f.now,
+  });
+  const issued = await links.issue(
+    { kind: 'merchant', shopId: f.shopId, installationGeneration: '1' },
+    { purchaseId: persisted.purchaseId, requestId: randomUUID() },
+  );
+  const capability = new URLSearchParams(new URL(issued.url).hash.slice(1)).get('capability');
+  assert(capability);
+  let available = true;
+  const reader = createCustomerArtworkViewReader({
+    core: f.core,
+    links,
+    previewImages: async (_scope, target) => {
+      assert.equal(target.productId, f.productId);
+      assert.equal(target.revisionId, f.group.configRevisionId);
+      return Object.fromEntries(available ? [['photo', 'https://frozen.example.test/photo.png']] : []);
+    },
+  });
+  const view = CustomerArtworkPublicViewSchema.parse(await reader(capability));
+  assert.equal(view.configurations[0]?.selectedSetup, undefined);
+  assert.equal(view.configurations[0]?.readProduct?.views[0]?.imageUrl, 'https://frozen.example.test/photo.png');
+  assert.deepEqual(view.configurations[0]?.variantIds, ['222']);
+  assert.equal(view.slots[0]?.placementId, 'front');
+  assert.equal(view.artworkVersion, 0);
+  assert.equal(view.configurations[0]?.readProduct?.methods[0]?.amount, '0');
+  assert.equal(view.configurations[0]?.readProduct?.views[0]?.placements[0]?.sizes[0]?.prices.print, undefined);
+  const merchant = PurchaseViewSchema.parse(await (await f.http(persisted.purchaseId)).json());
+  assert.equal(merchant.canShareCustomerArtwork, true);
+  available = false;
+  const degraded = CustomerArtworkPublicViewSchema.parse(await reader(capability));
+  assert.equal(degraded.configurations[0]?.readProduct?.views[0]?.imageUrl, '');
+  assert.deepEqual(degraded.configurations[0]?.readProduct?.images, []);
+  assert.equal(degraded.slots.length, 1);
+  assert.equal(
+    (await f.core.purchases.get({ shopId: f.shopId, installationGeneration: '1' }, persisted.purchaseId))
+      ?.artworkVersion,
+    0,
+  );
 });

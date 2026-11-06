@@ -8,6 +8,17 @@ import { parseSignedMinor, validateLeanConfig, validatePublishedConfig } from '@
 import { GEOMETRY_VERSION, type GeometryV1, validateGeometryBridge } from '@insignia/visualizer/geometry';
 import { projectActivationPublicationState } from './admin/activation-state.ts';
 import type { AdminActor as Actor, CatalogProduct } from './admin/contracts.js';
+import {
+  reconcileIncomingSelectedSetup,
+  SelectedMethodBindingContinuityError,
+  selectedMethodPublicationIsCurrent,
+} from './selected-method-reconciliation.ts';
+import {
+  SelectedSetupAuthorityError,
+  SelectedSetupCapacityError,
+  selectedProductDraft,
+  selectedPublicationProblems,
+} from './selected-product.ts';
 
 type Outcome =
   | { kind: 'created'; configId: string }
@@ -15,6 +26,7 @@ type Outcome =
   | { kind: 'accepted'; state: ReturnType<typeof projectActivationPublicationState>; revisionId: string }
   | {
       kind: 'conflict' | 'invalid' | 'forbidden';
+      noEffect?: true;
       message: string;
       validationIssues?: { path: string; message: string }[];
     };
@@ -63,6 +75,7 @@ class DraftValidationError extends Error {
 function invalidDraft(error: unknown): Outcome {
   return {
     kind: 'invalid',
+    noEffect: true,
     message: 'Review the configuration validation errors before saving or publishing.',
     validationIssues:
       error instanceof DraftValidationError
@@ -86,7 +99,18 @@ function validatedDraft(
         .join('.') ?? 'configuration';
     throw new DraftValidationError(path || 'configuration', 'This field does not satisfy the configuration contract.');
   }
-  const draft = parsed.data;
+  let draft = parsed.data;
+  if (draft.selectedSetup) {
+    if (draft.selectedSetup.product.id.replace(/^gid:\/\/shopify\/Product\//, '') !== productNumber(productId))
+      throw new DraftValidationError('selectedSetup.product.id', 'Product identity changed. Reload the editor.');
+    try {
+      draft = selectedProductDraft(draft.selectedSetup, draft);
+    } catch (error) {
+      if (error instanceof SelectedSetupCapacityError)
+        throw new DraftValidationError('selectedSetup.product', error.message);
+      throw error;
+    }
+  }
   const geometry = draft.geometry as GeometryV1;
   // Check every configured amount, including unselected tiers and overrides.
   // M2 still owns signed-role, range and final allocation semantics; never round
@@ -271,6 +295,55 @@ export function createMerchantConfigService(input: {
   activation?(actor: Actor): { advance(identity: ActivationIdentity): Promise<ActivationResult> };
 }) {
   const { core } = input;
+  async function selectedPreviewCoverage(
+    actor: Actor,
+    productId: string,
+    geometry: GeometryV1,
+    bindings: readonly { imageRevisionId: string; assetId: string }[] | undefined,
+  ) {
+    if (geometry.views.some((view) => !view.image)) return false;
+    const expected = new Map<string, { width: number; height: number }>();
+    for (const view of geometry.views)
+      for (const image of [...(view.image ? [view.image] : []), ...view.variantImages.map((item) => item.image)]) {
+        const prior = expected.get(image.revisionId);
+        if (prior && (prior.width !== image.width || prior.height !== image.height)) return false;
+        expected.set(image.revisionId, { width: image.width, height: image.height });
+      }
+    if (!expected.size || !Array.isArray(bindings) || bindings.length !== expected.size) return false;
+    const seen = new Set<string>();
+    for (const binding of bindings) {
+      const dimensions = expected.get(binding.imageRevisionId);
+      if (
+        !dimensions ||
+        seen.has(binding.imageRevisionId) ||
+        !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(binding.assetId)
+      )
+        return false;
+      seen.add(binding.imageRevisionId);
+      const row = await core.merchantPreviews.get(
+        { kind: 'merchant', shopId: actor.tenantShopId, installationGeneration: actor.installationGeneration },
+        binding.assetId,
+      );
+      if (
+        !row ||
+        row.assetId !== binding.assetId ||
+        row.productId !== productId ||
+        row.shopId !== actor.tenantShopId ||
+        row.installationGeneration !== actor.installationGeneration ||
+        row.imageRevisionId !== binding.imageRevisionId ||
+        row.state !== 'USABLE' ||
+        row.claimId !== null ||
+        row.manifest?.width !== dimensions.width ||
+        row.manifest.height !== dimensions.height ||
+        row.originalKey !==
+          `originals/merchant-previews/${actor.tenantShopId}/${actor.installationGeneration}/${binding.assetId}` ||
+        row.previewKey !==
+          `previews/merchant-previews/${actor.tenantShopId}/${actor.installationGeneration}/${binding.assetId}.png`
+      )
+        return false;
+    }
+    return true;
+  }
   async function current(actor: Actor): Promise<void> {
     const scope = await core.tenants.getActiveAuthorizationScope({
       shopId: actor.tenantShopId,
@@ -279,22 +352,26 @@ export function createMerchantConfigService(input: {
     if (!scope || scope.shopDomain !== actor.shop || `gid://shopify/Shop/${scope.shopifyShopId}` !== actor.shopId)
       throw new Error('Current tenant installation required');
   }
-  async function currentLocked(actor: Actor, tx: DurableTransaction): Promise<void> {
+  async function currentLocked(actor: Actor, tx: DurableTransaction, authority?: string): Promise<void> {
+    if (!actor.canRead || !actor.canEdit || actor.expiresAtMs <= Date.now())
+      throw new SelectedSetupAuthorityError('Current edit permission required');
     const scope = await core.tenants.lockActiveAuthorizationScope(tx, {
       shopId: actor.tenantShopId,
       installationGeneration: actor.installationGeneration,
     });
     if (!scope || scope.shopDomain !== actor.shop || `gid://shopify/Shop/${scope.shopifyShopId}` !== actor.shopId)
       throw new Error('Current tenant installation required');
+    if (authority !== undefined && authority !== sha256CanonicalJson(scope))
+      throw new SelectedSetupAuthorityError('Selected setup authority changed');
   }
-  function commandTransactions(actor: Actor) {
+  function commandTransactions(actor: Actor, authority?: string) {
     return {
       run<T>(work: (tx: DurableTransaction) => Promise<T>): Promise<T> {
         return core.transactions.run(async (tx) => {
           // Reserve inserts reference shops and take a FK key-share lock. Lock
           // the current tenant first so concurrent commands cannot both upgrade
           // that shared lock to FOR UPDATE and deadlock inside their callbacks.
-          await currentLocked(actor, tx);
+          await currentLocked(actor, tx, authority);
           return work(tx);
         });
       },
@@ -310,6 +387,38 @@ export function createMerchantConfigService(input: {
     return { shopId: actor.tenantShopId, namespace, key, requestDigest: sha256CanonicalJson(request) };
   }
   return {
+    async reconcile(
+      actor: Actor,
+      productId: string,
+      data: { stage: 'create' | 'save' | 'publish'; operationKey: string; authority: string },
+    ): Promise<{ kind: 'resolved'; publicationRecorded?: boolean }> {
+      await product(actor, productId);
+      const identity = command(
+        actor,
+        data.stage === 'create' ? 'm5-create-config' : data.stage === 'save' ? 'm5-save-draft' : 'm5-publish-config',
+        `${data.operationKey}:${data.stage}`,
+        { version: 'selected-command-reconciliation-v1', productId, authority: data.authority },
+      );
+      let inspectReceipt = false;
+      let publicationRecorded = false;
+      await commandTransactions(actor, data.authority).run(async (tx) => {
+        // Same tenant-first lock order and original unique operation key as the write.
+        // An absent write is fenced before any late request can reserve it; an
+        // in-flight transaction settles before reserve can observe its receipt.
+        const prior = await core.commands.reserve(tx, identity);
+        if (prior.kind === 'reserved') await core.commands.complete(tx, identity, 'reconciled:no-effect');
+        else if (prior.kind === 'digest_conflict') inspectReceipt = true;
+      });
+      if (inspectReceipt) {
+        const receipt = await core.commands.lookup(identity);
+        if (receipt?.status !== 'completed' || !receipt.resultRef)
+          throw new Error('Original command still requires reconciliation');
+        publicationRecorded =
+          data.stage === 'publish' &&
+          /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}:(?:required|optional)$/.test(receipt.resultRef);
+      }
+      return { kind: 'resolved', ...(data.stage === 'publish' ? { publicationRecorded } : {}) };
+    },
     async read(actor: Actor, productId: string) {
       const item = await product(actor, productId);
       const config = await core.configs.getByProduct(actor.tenantShopId, productNumber(productId));
@@ -327,9 +436,14 @@ export function createMerchantConfigService(input: {
         const draft = validatedDraft(config.draftValue, actor, productId, false);
         validateLeanConfig(PublishedConfigSchema.parse(draftPublished(draft, actor, productId, 'draft')));
         eligibility =
-          draft.shopCurrency !== currentShopCurrency
-            ? { allowed: false, reason: 'Shop currency changed. Review amounts and adopt the current shop currency.' }
-            : await input.eligibility(actor, draft);
+          draft.mode !== 'required'
+            ? {
+                allowed: false,
+                reason: 'Configured products require customization. Review and save the required policy.',
+              }
+            : draft.shopCurrency !== currentShopCurrency
+              ? { allowed: false, reason: 'Shop currency changed. Review amounts and adopt the current shop currency.' }
+              : await input.eligibility(actor, draft);
       } catch (error) {
         eligibility = {
           allowed: false,
@@ -348,6 +462,15 @@ export function createMerchantConfigService(input: {
         operationStatus: progress?.status,
         recoveryFromAnotherOperation: otherRecovery,
       });
+      let publishedSetup: MerchantDraft['selectedSetup'] | null = null;
+      const selectedRead = MerchantDraftSchema.safeParse(config.draftValue);
+      if (config.effectiveRevisionId && selectedRead.success && selectedRead.data.selectedSetup) {
+        const source = await core.configs.getRevisionSourceScope(actor.tenantShopId, config.effectiveRevisionId);
+        if (source?.installationGeneration === actor.installationGeneration)
+          publishedSetup =
+            (await core.configs.getRevisionPresentation(actor.tenantShopId, config.effectiveRevisionId))
+              ?.selectedSetup ?? null;
+      }
       return {
         product: item,
         config: {
@@ -355,6 +478,7 @@ export function createMerchantConfigService(input: {
           installationGeneration: actor.installationGeneration,
           draftVersion: config.draftVersion,
           draft: config.draftValue,
+          ...(publishedSetup ? { publishedSetup } : {}),
           currentShopCurrency,
           publication: {
             state: publicationState,
@@ -390,22 +514,22 @@ export function createMerchantConfigService(input: {
         },
       };
     },
-    async create(actor: Actor, productId: string, key: string): Promise<Outcome> {
+    async create(actor: Actor, productId: string, key: string, authority?: string): Promise<Outcome> {
       await product(actor, productId);
       const currency = await input.catalog.shopCurrency(actor);
       let result: { kind: 'executed' | 'replayed'; resultRef: string };
       try {
         result = await executeCommand(
-          commandTransactions(actor),
+          commandTransactions(actor, authority),
           core.commands,
-          command(actor, 'm5-create-config', key, { productId }),
+          command(actor, 'm5-create-config', key, { productId, ...(authority ? { authority } : {}) }),
           async (tx) => {
             if (await core.configs.getByProductForUpdate(tx, actor.tenantShopId, productNumber(productId)))
               return 'occupied';
             const id = randomUUID();
             const draft: MerchantDraft = {
               version: 'm5-merchant-draft-v1',
-              mode: 'optional',
+              mode: 'required',
               shopCurrency: currency,
               methods: [],
               placements: [],
@@ -442,44 +566,88 @@ export function createMerchantConfigService(input: {
         draftVersion: string;
         draft: unknown;
         idempotencyKey: string;
+        authority?: string;
       },
     ): Promise<Outcome> {
-      await product(actor, productId);
+      const catalogProduct = await product(actor, productId);
       let draft: MerchantDraft;
       try {
         draft = validatedDraft(data.draft, actor, productId);
       } catch (error) {
         return invalidDraft(error);
       }
+      if (draft.mode !== 'required')
+        return {
+          kind: 'invalid',
+          noEffect: true,
+          message:
+            'All configured products require customization. Review and save the required policy before publishing.',
+        };
+      if (draft.selectedSetup && !data.authority)
+        throw new SelectedSetupAuthorityError('Selected setup authority required');
       const shopCurrency = await input.catalog.shopCurrency(actor);
       const result = await executeCommand(
-        commandTransactions(actor),
+        commandTransactions(actor, data.authority),
         core.commands,
         command(actor, 'm5-save-draft', data.idempotencyKey, {
           productId,
           configId: data.configId,
           draftVersion: data.draftVersion,
           draft,
+          ...(data.authority ? { authority: data.authority } : {}),
         }),
         async (tx) => {
           if (draft.shopCurrency !== shopCurrency) return 'currency';
           const config = await core.configs.getConfigForUpdate(tx, actor.tenantShopId, data.configId);
           if (!config || config.externalProductId !== productNumber(productId)) return 'conflict';
+          if (config.draftVersion !== data.draftVersion) return 'conflict';
+          const previousSetup = MerchantDraftSchema.parse(config.draftValue).selectedSetup;
+          if (previousSetup && !draft.selectedSetup) return 'method-links';
+          let resolvedDraft: MerchantDraft;
+          try {
+            resolvedDraft = draft.selectedSetup
+              ? validatedDraft(
+                  {
+                    ...draft,
+                    selectedSetup: await reconcileIncomingSelectedSetup(
+                      core,
+                      tx,
+                      actor,
+                      draft.selectedSetup,
+                      draft.shopCurrency,
+                      catalogProduct.tags,
+                      previousSetup,
+                    ),
+                  },
+                  actor,
+                  productId,
+                )
+              : draft;
+          } catch (error) {
+            if (error instanceof SelectedMethodBindingContinuityError) return 'method-links';
+            throw error;
+          }
           const updated = await core.configs.updateDraft(tx, {
             shopId: actor.tenantShopId,
             configId: data.configId,
             expectedVersion: data.draftVersion,
             schemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
-            draftValue: draft,
+            draftValue: resolvedDraft,
           });
           return updated.kind === 'updated' ? `saved:${updated.config.draftVersion}` : 'conflict';
         },
       );
       return result.resultRef === 'conflict'
-        ? { kind: 'conflict', message: 'Draft changed. Reload and review the current version.' }
+        ? { kind: 'conflict', noEffect: true, message: 'Draft changed. Reload and review the current version.' }
         : result.resultRef === 'currency'
-          ? { kind: 'invalid', message: 'Shop currency changed. Reload and review the draft.' }
-          : { kind: 'saved', draftVersion: result.resultRef.slice('saved:'.length) };
+          ? { kind: 'invalid', noEffect: true, message: 'Shop currency changed. Reload and review the draft.' }
+          : result.resultRef === 'method-links'
+            ? {
+                kind: 'invalid',
+                noEffect: true,
+                message: 'Configured Method inheritance metadata changed. Reload and review the draft.',
+              }
+            : { kind: 'saved', draftVersion: result.resultRef.slice('saved:'.length) };
     },
     async copy(actor: Actor, sourceProductId: string, targetProductId: string, key: string): Promise<Outcome> {
       await product(actor, sourceProductId);
@@ -546,9 +714,11 @@ export function createMerchantConfigService(input: {
         configId: string;
         draftVersion: string;
         idempotencyKey: string;
+        authority?: string;
       },
     ): Promise<Outcome> {
-      await product(actor, productId);
+      const catalogProduct = await product(actor, productId);
+      if (data.authority) await core.transactions.run((tx) => currentLocked(actor, tx, data.authority));
       const identity = command(actor, 'm5-publish-config', data.idempotencyKey, {
         productId,
         configId: data.configId,
@@ -578,6 +748,64 @@ export function createMerchantConfigService(input: {
         } catch (error) {
           return invalidDraft(error);
         }
+        if (snapshot.mode !== 'required')
+          return {
+            kind: 'invalid',
+            noEffect: true,
+            message: 'All configured products require customization. Save the required policy before publishing.',
+          };
+        if (
+          snapshot.placements.some((placement) =>
+            placement.allowedStepIds.some((id) => !snapshot.geometry.steps.find((step) => step.id === id)?.physicalMm),
+          )
+        )
+          return {
+            kind: 'invalid',
+            noEffect: true,
+            message:
+              'Actual production dimensions are required for every configured decoration size before publication.',
+          };
+        if (snapshot.selectedSetup && !data.authority)
+          throw new SelectedSetupAuthorityError('Selected setup authority required');
+        const capturedDraftDigest = sha256CanonicalJson(snapshot);
+        const selectedSetup = snapshot.selectedSetup;
+        if (selectedSetup) {
+          const methodAdmission = await core.transactions.run(async (tx) => {
+            await currentLocked(actor, tx, data.authority);
+            const checked = await core.configs.getConfigForUpdate(tx, actor.tenantShopId, data.configId);
+            if (
+              !checked ||
+              checked.externalProductId !== productNumber(productId) ||
+              checked.draftVersion !== data.draftVersion ||
+              sha256CanonicalJson(validatedDraft(checked.draftValue, actor, productId)) !== capturedDraftDigest
+            )
+              return 'conflict';
+            const current = await selectedMethodPublicationIsCurrent(
+              core,
+              tx,
+              actor,
+              selectedSetup,
+              snapshot.shopCurrency,
+              catalogProduct.tags,
+            );
+            return current ? 'current' : 'review';
+          });
+          if (methodAdmission === 'conflict')
+            return { kind: 'conflict', noEffect: true, message: 'Draft changed. Reload before publication.' };
+          if (methodAdmission === 'review')
+            return {
+              kind: 'invalid',
+              noEffect: true,
+              message: 'Method defaults or assignments changed. Save and review the current draft before publishing.',
+            };
+        }
+        const selectedProblems = selectedPublicationProblems(snapshot, catalogProduct);
+        if (selectedProblems.length)
+          return {
+            kind: 'invalid',
+            message: selectedProblems[0]!,
+            validationIssues: selectedProblems.map((message) => ({ path: 'selectedSetup', message })),
+          };
         if (snapshot.geometry.views.length === 0 || snapshot.placements.length === 0 || snapshot.methods.length === 0)
           return { kind: 'invalid', message: 'At least one view, placement and method is required' };
         const shopCurrency = await input.catalog.shopCurrency(actor);
@@ -588,12 +816,7 @@ export function createMerchantConfigService(input: {
           .catch(() => ({ allowed: false, reason: 'Entitlement unavailable' }));
         if (!eligibility.allowed)
           return { kind: 'forbidden', message: eligibility.reason ?? 'Publication feature unavailable' };
-        if (input.preparePublication) {
-          const preparation = await input.preparePublication(actor);
-          if (!preparation.ready)
-            return { kind: 'forbidden', message: preparation.reason ?? 'Publication preparation unavailable' };
-        }
-        const capturedDraftDigest = sha256CanonicalJson(snapshot);
+        if (!input.capturePublicationPreviews) throw new Error('Complete customer previews are unavailable');
         const previewAssets = input.capturePublicationPreviews
           ? await input.capturePublicationPreviews(actor, {
               productId,
@@ -603,80 +826,109 @@ export function createMerchantConfigService(input: {
               draft: structuredClone(snapshot),
             })
           : undefined;
-        const result = await executeCommand(commandTransactions(actor), core.commands, identity, async (tx) => {
-          const config = await core.configs.getConfigForUpdate(tx, actor.tenantShopId, data.configId);
-          if (
-            !config ||
-            config.externalProductId !== productNumber(productId) ||
-            config.draftVersion !== data.draftVersion
-          )
-            return 'conflict';
-          // The config row serializes different command keys for the same draft.
-          const currentPublication = await core.configs.getCurrentPublicationInTransaction(
-            tx,
-            actor.tenantShopId,
-            data.configId,
-          );
-          if (
-            !publicationSettled(currentPublication) ||
-            (await core.configs.getAvailabilityRecoveryInTransaction(tx, actor.tenantShopId, data.configId))
-          )
-            return 'open';
-          const draft = validatedDraft(config.draftValue, actor, productId);
-          if (sha256CanonicalJson(draft) !== capturedDraftDigest) return 'conflict';
-          if (draft.shopCurrency !== shopCurrency) return 'currency';
-          const geometry = draft.geometry as GeometryV1;
-          if (geometry.views.length === 0 || draft.placements.length === 0 || draft.methods.length === 0)
-            return 'invalid';
-          const revisionId = randomUUID();
-          const published = draftPublished(draft, actor, productId, revisionId);
-          const { revisionContentHash: _discard, ...content } = published;
-          await core.configs.createValidatedRevision(tx, {
-            shopId: actor.tenantShopId,
-            configId: data.configId,
-            revisionId,
-            publishedValue: content,
-            geometry: { version: GEOMETRY_VERSION, value: geometry },
-            presentation: { version: 'm5-presentation-v1', labels: draft.labels ?? {} },
-            ...(previewAssets ? { previewAssets } : {}),
-            sourceDraftVersion: data.draftVersion,
-            sourceInstallationGeneration: actor.installationGeneration,
-            mode: draft.mode,
-            createdByRef: actor.staffId,
+        {
+          const stillCurrent = await core.transactions.run(async (tx) => {
+            await currentLocked(actor, tx, data.authority);
+            const checked = await core.configs.getConfigForUpdate(tx, actor.tenantShopId, data.configId);
+            return (
+              !!checked &&
+              checked.externalProductId === productNumber(productId) &&
+              checked.draftVersion === data.draftVersion &&
+              sha256CanonicalJson(validatedDraft(checked.draftValue, actor, productId)) === capturedDraftDigest
+            );
           });
-          await core.configs.setCurrentPublicationPointer(tx, {
-            shopId: actor.tenantShopId,
-            configId: data.configId,
-            revisionId,
-            installationGeneration: actor.installationGeneration,
-            sourceDraftVersion: data.draftVersion,
-            idempotencyKey: data.idempotencyKey,
-          });
-          const occurredAt = new Date();
-          await core.outbox.add(
-            tx,
-            newOutboxEvent({
+          if (!stillCurrent) return { kind: 'conflict', message: 'Draft changed. Reload before publication.' };
+          if (!(await selectedPreviewCoverage(actor, productNumber(productId), snapshot.geometry, previewAssets)))
+            throw new Error('Complete customer previews are unavailable');
+          if (input.preparePublication) {
+            const preparation = await input.preparePublication(actor);
+            if (!preparation.ready)
+              return { kind: 'forbidden', message: preparation.reason ?? 'Publication preparation unavailable' };
+          }
+        }
+        const result = await executeCommand(
+          commandTransactions(actor, data.authority),
+          core.commands,
+          identity,
+          async (tx) => {
+            const config = await core.configs.getConfigForUpdate(tx, actor.tenantShopId, data.configId);
+            if (
+              !config ||
+              config.externalProductId !== productNumber(productId) ||
+              config.draftVersion !== data.draftVersion
+            )
+              return 'conflict';
+            // The config row serializes different command keys for the same draft.
+            const currentPublication = await core.configs.getCurrentPublicationInTransaction(
+              tx,
+              actor.tenantShopId,
+              data.configId,
+            );
+            if (
+              !publicationSettled(currentPublication) ||
+              (await core.configs.getAvailabilityRecoveryInTransaction(tx, actor.tenantShopId, data.configId))
+            )
+              return 'open';
+            const draft = validatedDraft(config.draftValue, actor, productId);
+            if (sha256CanonicalJson(draft) !== capturedDraftDigest) return 'conflict';
+            if (draft.shopCurrency !== shopCurrency) return 'currency';
+            const geometry = draft.geometry as GeometryV1;
+            if (geometry.views.length === 0 || draft.placements.length === 0 || draft.methods.length === 0)
+              return 'invalid';
+            const revisionId = randomUUID();
+            const published = draftPublished(draft, actor, productId, revisionId);
+            const { revisionContentHash: _discard, ...content } = published;
+            await core.configs.createValidatedRevision(tx, {
               shopId: actor.tenantShopId,
-              installationGeneration: actor.installationGeneration,
-              eventType: 'm5.publication.intent',
-              schemaVersion: 1,
-              aggregateRef: data.configId,
-              businessKey: revisionId,
-              payload: {
-                configId: data.configId,
-                revisionId,
-                installationGeneration: actor.installationGeneration,
-                sourceDraftVersion: data.draftVersion,
-                idempotencyKey: data.idempotencyKey,
+              configId: data.configId,
+              revisionId,
+              publishedValue: content,
+              geometry: { version: GEOMETRY_VERSION, value: geometry },
+              presentation: {
+                version: 'm5-presentation-v1',
+                labels: draft.labels ?? {},
+                ...(draft.selectedSetup ? { selectedSetup: draft.selectedSetup } : {}),
               },
-              occurredAt,
-              availableAt: occurredAt,
-              retentionClass: 'publication-intent',
-              purgeAfter: new Date(occurredAt.getTime() + 180 * 86400000),
-            }),
-          );
-          return `${revisionId}:${draft.mode}`;
-        });
+              ...(previewAssets ? { previewAssets } : {}),
+              sourceDraftVersion: data.draftVersion,
+              sourceInstallationGeneration: actor.installationGeneration,
+              mode: draft.mode,
+              createdByRef: actor.staffId,
+            });
+            await core.configs.setCurrentPublicationPointer(tx, {
+              shopId: actor.tenantShopId,
+              configId: data.configId,
+              revisionId,
+              installationGeneration: actor.installationGeneration,
+              sourceDraftVersion: data.draftVersion,
+              idempotencyKey: data.idempotencyKey,
+            });
+            const occurredAt = new Date();
+            await core.outbox.add(
+              tx,
+              newOutboxEvent({
+                shopId: actor.tenantShopId,
+                installationGeneration: actor.installationGeneration,
+                eventType: 'm5.publication.intent',
+                schemaVersion: 1,
+                aggregateRef: data.configId,
+                businessKey: revisionId,
+                payload: {
+                  configId: data.configId,
+                  revisionId,
+                  installationGeneration: actor.installationGeneration,
+                  sourceDraftVersion: data.draftVersion,
+                  idempotencyKey: data.idempotencyKey,
+                },
+                occurredAt,
+                availableAt: occurredAt,
+                retentionClass: 'publication-intent',
+                purgeAfter: new Date(occurredAt.getTime() + 180 * 86400000),
+              }),
+            );
+            return `${revisionId}:${draft.mode}`;
+          },
+        );
         resultRef = result.resultRef;
       }
       if (resultRef === 'conflict') return { kind: 'conflict', message: 'Draft changed. Reload before publication.' };
@@ -723,6 +975,22 @@ export function createMerchantConfigService(input: {
       const published = PublishedConfigSchema.parse(revision.publishedValue);
       if (published.shopCurrency !== (await input.catalog.shopCurrency(actor)))
         return { kind: 'invalid', message: 'Shop currency changed. Reload and review the draft.' };
+      const presentation = await core.configs.getRevisionPresentation(actor.tenantShopId, revisionId);
+      if (presentation?.selectedSetup) {
+        const frozen = await core.merchantPreviews.getForRevision(
+          { shopId: actor.tenantShopId, installationGeneration: actor.installationGeneration },
+          { productId: published.productId, revisionId },
+        );
+        if (
+          !(await selectedPreviewCoverage(
+            actor,
+            published.productId,
+            geometry.value as GeometryV1,
+            frozen.map((row) => ({ imageRevisionId: row.imageRevisionId, assetId: row.assetId })),
+          ))
+        )
+          throw new Error('Immutable customer previews are unavailable');
+      }
       const immutableDraft = MerchantDraftSchema.parse({
         version: 'm5-merchant-draft-v1',
         mode,

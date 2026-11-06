@@ -11,7 +11,12 @@ import type {
   SigningKeyStore,
   TransactionRunner,
 } from '@insignia/application';
-import { type MerchantPresentation, MerchantPresentationSchema } from '@insignia/contracts';
+import {
+  type MerchantPresentation,
+  MerchantPresentationSchema,
+  type MethodConfiguration,
+  type VersionedMethodConfiguration,
+} from '@insignia/contracts';
 import { type GeometryV1, validateGeometry, validateGeometryBridge } from '@insignia/visualizer/geometry';
 import type { Transaction } from 'kysely';
 import { sql } from 'kysely';
@@ -29,9 +34,12 @@ import {
   createConfigRepositoryInternal,
   type RevisionRecord,
 } from './repositories/config.js';
+import { type ConfigSummaryRecord, readConfigSummaries } from './repositories/config-summary.js';
+import { createCustomerArtworkRepository } from './repositories/customer-artwork.js';
 import { type CustomerPrivacyRepository, createCustomerPrivacyRepository } from './repositories/customer-privacy.js';
 import { PgInboxRepository } from './repositories/delivery/pg-inbox-repository.js';
 import { PgOutboxRepository } from './repositories/delivery/pg-outbox-repository.js';
+import { createMerchantPreferencesRepository } from './repositories/merchant-preferences.js';
 import { createMerchantPreviewRepository } from './repositories/merchant-preview.js';
 import { createMethodCatalogRepository, type MethodTemplate } from './repositories/method-catalog.js';
 import { createProductionActivation, type ProductionActivationOptions } from './repositories/production-activation.js';
@@ -89,9 +97,18 @@ export type ConfigInput = {
 };
 
 export interface DurableCore {
+  readonly customerArtwork: ReturnType<typeof createCustomerArtworkRepository>;
   readonly uninstallLifecycle: ReturnType<typeof createUninstallLifecycleRepository>;
   readonly uninstallPrivacy: ReturnType<typeof createUninstallPrivacyRepository>;
   readonly methodCatalog: {
+    listConfigurations(transaction: DurableTransaction, shopId: string): Promise<VersionedMethodConfiguration[]>;
+    saveConfiguration(
+      transaction: DurableTransaction,
+      shopId: string,
+      configuration: MethodConfiguration,
+      expectedVersion: string | null,
+      currency?: string,
+    ): Promise<VersionedMethodConfiguration | null>;
     list(transaction: DurableTransaction, shopId: string): Promise<MethodTemplate[]>;
     create(transaction: DurableTransaction, shopId: string, id: string, name: string): Promise<MethodTemplate | null>;
     rename(
@@ -102,6 +119,24 @@ export interface DurableCore {
       name: string,
     ): Promise<MethodTemplate | null>;
     delete(transaction: DurableTransaction, shopId: string, id: string, version: string): Promise<boolean>;
+  };
+  readonly preferences: {
+    readWording(
+      transaction: DurableTransaction,
+      scope: { shopId: string; installationGeneration: string },
+    ): ReturnType<ReturnType<typeof createMerchantPreferencesRepository>['readWording']>;
+    read(
+      transaction: DurableTransaction,
+      shopId: string,
+      shop: string,
+      authority: string,
+    ): ReturnType<ReturnType<typeof createMerchantPreferencesRepository>['read']>;
+    save(
+      transaction: DurableTransaction,
+      shopId: string,
+      shop: string,
+      command: import('@insignia/contracts').MerchantPreferencesCommand,
+    ): ReturnType<ReturnType<typeof createMerchantPreferencesRepository>['save']>;
   };
   readonly customerPrivacy: CustomerPrivacyRepository;
   readonly usageLedger: UsageLedgerRepository;
@@ -134,6 +169,13 @@ export interface DurableCore {
   readonly inbox: InboxRepository<DurableTransaction>;
   readonly outbox: OutboxRepository<DurableTransaction>;
   readonly configs: {
+    listSelectedForMethod(
+      transaction: DurableTransaction,
+      shopId: string,
+      catalogMethodId: string,
+      lock?: boolean,
+    ): Promise<ConfigRecord[]>;
+    summaries(shopId: string, productIds: readonly string[]): Promise<ConfigSummaryRecord[]>;
     createConfig(transaction: DurableTransaction, input: ConfigInput): Promise<ConfigRecord>;
     getConfig(shopId: string, configId: string): Promise<ConfigRecord | null>;
     getConfigInTransaction(
@@ -470,14 +512,24 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
   }
   return {
     methodCatalog: {
+      listConfigurations: (tx, shopId) => createMethodCatalogRepository(resolve(tx)).listConfigurations(shopId),
+      saveConfiguration: (tx, shopId, value, version, currency) =>
+        createMethodCatalogRepository(resolve(tx)).saveConfiguration(shopId, value, version, currency),
       list: (tx, shopId) => createMethodCatalogRepository(resolve(tx)).list(shopId),
       create: (tx, shopId, id, name) => createMethodCatalogRepository(resolve(tx)).create(shopId, id, name),
       rename: (tx, shopId, id, version, name) =>
         createMethodCatalogRepository(resolve(tx)).rename(shopId, id, version, name),
       delete: (tx, shopId, id, version) => createMethodCatalogRepository(resolve(tx)).delete(shopId, id, version),
     },
+    preferences: {
+      readWording: (tx, scope) => createMerchantPreferencesRepository(resolve(tx)).readWording(scope),
+      read: (tx, shopId, shop, authority) =>
+        createMerchantPreferencesRepository(resolve(tx)).read(shopId, shop, authority),
+      save: (tx, shopId, shop, command) => createMerchantPreferencesRepository(resolve(tx)).save(shopId, shop, command),
+    },
     customerPrivacy: createCustomerPrivacyRepository(database),
     purchases: createPurchaseRepository(database),
+    customerArtwork: createCustomerArtworkRepository(database),
     usageLedger: createUsageLedgerRepository(database),
     usageDeliveryIntents: createUsageDeliveryIntentRepository(database),
     artwork: createArtworkRepository(pool),
@@ -541,6 +593,9 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       acknowledge: (shopId, id, owner, attempt) => outbox.acknowledge(shopId, id, owner, attempt),
     },
     configs: {
+      listSelectedForMethod: (tx, shopId, methodId, lock = false) =>
+        createConfigRepositoryInternal(resolve(tx)).listSelectedForMethod(shopId, methodId, lock),
+      summaries: (shopId, productIds) => readConfigSummaries(database, shopId, productIds),
       createConfig: async (handle, input) => createConfigRepository(resolve(handle)).createConfig(input),
       getConfig: (shopId, configId) => configs.getConfig(shopId, configId),
       getConfigInTransaction: async (handle, shopId, configId) =>

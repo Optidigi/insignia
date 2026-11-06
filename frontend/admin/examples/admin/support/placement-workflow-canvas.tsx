@@ -36,6 +36,7 @@ type Props = {
   editingLocked?: boolean;
   interactionRevision: number;
   sizePercent?: number;
+  sizeHeightPercent?: number;
   onSelect(id: string): void;
   onRect(id: string, rect: PlacementRect): void;
   movementRect?: PlacementRect | null;
@@ -70,7 +71,7 @@ function canvasTask({
   return drawing ? 'draw' : 'edit';
 }
 
-const demoArtworkUrl = 'https://insignia-order-demo.invalid/files/north-coast-chest.png';
+const demoArtworkUrl = '/illustrations/editor-sample.png';
 const demoArtworkAspectRatio = 1;
 
 function renderableDemoUrl(url: string): string {
@@ -89,8 +90,10 @@ function canvasStatusMessage(status: CanvasImageState, t: AdminTranslator): stri
   return t(`editor:canvas.imageStatus.${status}`);
 }
 
-function geometryFor(view: EditorView, sizePercent: number): GeometryV1 {
-  const factor = Math.max(0.01, Math.min(1, Number.isFinite(sizePercent) ? sizePercent / 100 : 1));
+function geometryFor(view: EditorView, sizePercent: number, sizeHeightPercent = sizePercent): GeometryV1 {
+  const fraction = (value: number) => (Number.isFinite(value) && value > 0 ? Math.min(1, value / 100) : 1);
+  const factor = fraction(sizePercent),
+    heightFactor = fraction(sizeHeightPercent);
   return {
     version: 'm5-geometry-v1',
     views: [
@@ -105,7 +108,7 @@ function geometryFor(view: EditorView, sizePercent: number): GeometryV1 {
         placements: view.placements.map(({ id, rect }) => ({ id, rect })),
       },
     ],
-    steps: [{ id: 'placement-preview-artwork', widthFraction: factor, heightFraction: factor }],
+    steps: [{ id: 'placement-preview-artwork', widthFraction: factor, heightFraction: heightFactor }],
   };
 }
 
@@ -115,6 +118,7 @@ function sceneFor(
   task: CanvasTask,
   viewport: Viewport,
   sizePercent: number,
+  sizeHeightPercent = sizePercent,
 ): RenderScene {
   const validDimensions =
     Number.isFinite(view.imageWidth) &&
@@ -127,7 +131,7 @@ function sceneFor(
     const selectedPlacementId = selectedId ?? undefined;
     const state: EditorState = {
       version: 1,
-      geometry: geometryFor(view, sizePercent),
+      geometry: geometryFor(view, sizePercent, sizeHeightPercent),
       viewId: view.id,
       selectedPlacementId,
       ...(task === 'preview' && selectedPlacementId
@@ -214,6 +218,7 @@ export default function PlacementCanvas({
   editingLocked = false,
   interactionRevision,
   sizePercent = 100,
+  sizeHeightPercent = sizePercent,
   movementRect = null,
   drawing = false,
   drawTarget = 'artwork',
@@ -258,6 +263,7 @@ export default function PlacementCanvas({
     preview,
     editingLocked,
     sizePercent,
+    sizeHeightPercent,
     movementRect,
     drawing,
     drawTarget,
@@ -276,6 +282,7 @@ export default function PlacementCanvas({
     preview,
     editingLocked,
     sizePercent,
+    sizeHeightPercent,
     movementRect,
     drawing,
     drawTarget,
@@ -539,7 +546,14 @@ export default function PlacementCanvas({
         const current = propsRef.current;
         created.setMode(canvasTask(current) === 'edit' ? 'edit-placement' : 'preview');
         created.update(
-          sceneFor(current.view, current.selectedId, canvasTask(current), viewportFor(element), current.sizePercent),
+          sceneFor(
+            current.view,
+            current.selectedId,
+            canvasTask(current),
+            viewportFor(element),
+            current.sizePercent,
+            current.sizeHeightPercent,
+          ),
         );
       })
       .catch(() => {
@@ -618,7 +632,7 @@ export default function PlacementCanvas({
     if (!element || !renderer.current) return;
     const task = canvasTask({ preview, measuring, editingLocked, drawing });
     renderer.current.setMode(task === 'edit' ? 'edit-placement' : 'preview');
-    renderer.current.update(sceneFor(view, selectedId, task, viewportFor(element), sizePercent));
+    renderer.current.update(sceneFor(view, selectedId, task, viewportFor(element), sizePercent, sizeHeightPercent));
   }, [
     view,
     selectedId,
@@ -627,6 +641,7 @@ export default function PlacementCanvas({
     editingLocked,
     drawing,
     sizePercent,
+    sizeHeightPercent,
     surfaceSize.width,
     surfaceSize.height,
   ]);

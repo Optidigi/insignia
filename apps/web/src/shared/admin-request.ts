@@ -27,7 +27,12 @@ function sessionToken(forceFresh = false): Promise<string> {
 }
 
 async function jsonResponse<T>(response: Response): Promise<T> {
-  let body: T & { error?: string; message?: string; validationIssues?: { path: string; message: string }[] };
+  let body: T & {
+    error?: string;
+    message?: string;
+    validationIssues?: { path: string; message: string }[];
+    noEffect?: boolean;
+  };
   try {
     body = (await response.json()) as T & { error?: string; message?: string };
   } catch {
@@ -42,6 +47,7 @@ async function jsonResponse<T>(response: Response): Promise<T> {
     throw Object.assign(new Error(body.message ?? body.error ?? `Request failed (${response.status})`), {
       status: response.status,
       validationIssues: body.validationIssues,
+      noEffect: body.noEffect === true,
     });
   return body;
 }

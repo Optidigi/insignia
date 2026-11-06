@@ -5,11 +5,13 @@ import type { MethodConfiguration } from './method-configuration.mts';
 import { formatPrice, parsePrice } from './method-workflow-prices.mts';
 export default function MethodSummary({
   method,
+  currency = 'EUR',
   count,
   needsSetup,
   onReview,
 }: {
   method: MethodConfiguration;
+  currency?: string;
   count: number;
   needsSetup: number;
   onReview(needsOnly: boolean): void;
@@ -31,7 +33,7 @@ export default function MethodSummary({
                   {price.kind === 'valid'
                     ? price.minor === 0n
                       ? t('methods:summary.free')
-                      : formatPrice(price.minor, formatLocale)
+                      : formatPrice(price.minor, formatLocale, currency)
                     : t('methods:summary.priceNotSet')}
                 </s-text>{' '}
                 {t('methods:summary.perPlacementPerGarment')}

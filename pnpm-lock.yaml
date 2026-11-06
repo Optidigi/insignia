@@ -214,6 +214,9 @@ importers:
       '@insignia/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@insignia/ui-localization':
+        specifier: workspace:*
+        version: link:../../frontend/localization
       '@insignia/visualizer':
         specifier: workspace:*
         version: link:../../packages/visualizer
@@ -266,6 +269,12 @@ importers:
       '@insignia/storage':
         specifier: workspace:*
         version: link:../../packages/storage
+      '@insignia/ui-localization':
+        specifier: workspace:*
+        version: link:../../frontend/localization
+      '@insignia/ui-visualizer':
+        specifier: workspace:*
+        version: link:../../frontend/visualizer
       '@insignia/visualizer':
         specifier: workspace:*
         version: link:../../packages/visualizer
@@ -292,8 +301,8 @@ importers:
         specifier: 0.9.6
         version: 0.9.6(@emnapi/runtime@1.11.3)(prettier@3.9.9)(typescript@5.9.3)
       '@shopify/polaris-types':
-        specifier: 1.1.0
-        version: 1.1.0
+        specifier: 2.0.0-rc.3
+        version: 2.0.0-rc.3
       '@shopify/shopify-api':
         specifier: 15.0.0
         version: 15.0.0
@@ -373,6 +382,9 @@ importers:
       '@insignia/ui-visualizer':
         specifier: workspace:*
         version: link:../visualizer
+      '@insignia/visualizer':
+        specifier: workspace:*
+        version: link:../../packages/visualizer
       astro:
         specifier: 7.3.5
         version: 7.3.5(@types/node@24.10.0)(aws4fetch@1.0.20)(jiti@2.7.0)(yaml@2.9.1)
@@ -410,9 +422,15 @@ importers:
       '@fontsource-variable/inter':
         specifier: 5.3.0
         version: 5.3.0
+      '@insignia/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@insignia/ui-localization':
         specifier: workspace:*
         version: link:../localization
+      '@insignia/visualizer':
+        specifier: workspace:*
+        version: link:../../packages/visualizer
       preact:
         specifier: 10.29.8
         version: 10.29.8(preact-render-to-string@6.7.0)
@@ -460,6 +478,9 @@ importers:
 
   frontend/visualizer:
     dependencies:
+      '@insignia/visualizer':
+        specifier: workspace:*
+        version: link:../../packages/visualizer
       konva:
         specifier: 10.7.0
         version: 10.7.0
@@ -507,6 +528,9 @@ importers:
 
   packages/contracts:
     dependencies:
+      '@noble/hashes':
+        specifier: 2.4.0
+        version: 2.4.0
       zod:
         specifier: 4.6.5
         version: 4.6.5
@@ -1978,9 +2002,6 @@ packages:
 
   '@shopify/graphql-client@2.0.0':
     resolution: {integrity: sha512-SfIZa6J9Px4ZSMIVdPLNupeSyqznovV6pDVxwC1rmbi0JTVj2q/CCsOf9hLQvsMdBiyJDHVnoVHGpBzlhpwO2Q==}
-
-  '@shopify/polaris-types@1.1.0':
-    resolution: {integrity: sha512-hqd+58XbpsShQmTiMakiUraLL9yjeqcFkaEfiajdxAArQJGREsnNBxY1+cN0egWHFQ7/1Xsqjx0RObd3V0Fy1w==}
 
   '@shopify/polaris-types@2.0.0-rc.3':
     resolution: {integrity: sha512-Sm3GyuTF/7gRM0hY4cWQxXwSi1hIGm7uXdUG2eCnY2QprRr3blkyF6H/a4eBhP5LBr0p3qy/zM3um1h2c0rVzA==}
@@ -5119,8 +5140,6 @@ snapshots:
       '@shopify/graphql-client': 2.0.0
 
   '@shopify/graphql-client@2.0.0': {}
-
-  '@shopify/polaris-types@1.1.0': {}
 
   '@shopify/polaris-types@2.0.0-rc.3': {}
 

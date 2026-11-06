@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { CustomerSelectedSetupSchema } from './customer-artwork.js';
+import { MerchantCustomerWordingViewSchema } from './merchant-preferences.js';
 import { CustomizationGroupSchema } from './pricing-config.js';
 
 export const BuyerIdSchema = z.string().uuid();
@@ -95,7 +97,33 @@ export const BuyerConfigSchema = z.strictObject({
     .max(32),
   steps: z.array(choice).max(64),
   options: z.array(choice.extend({ values: z.array(choice).max(64) })).max(32),
-  variants: z.array(choice.extend({ available: z.boolean() })).max(250),
+  variants: z
+    .array(
+      choice.extend({
+        available: z.boolean(),
+        selectedOptions: z
+          .array(z.strictObject({ name: z.string().min(1).max(200), value: z.string().min(1).max(200) }))
+          .max(3)
+          .optional(),
+        baseUnitMinor: minor.optional(),
+      }),
+    )
+    .max(250),
+  selectedSetup: CustomerSelectedSetupSchema.optional(),
+  wording: MerchantCustomerWordingViewSchema.optional(),
+  shopCurrency: z.enum(['USD', 'EUR']).optional(),
+  title: label.optional(),
+  decorationPrices: z
+    .array(
+      z.strictObject({
+        placementId: z.string().max(128),
+        methodId: z.string().max(128),
+        stepId: z.string().max(128),
+        minor,
+      }),
+    )
+    .max(32768)
+    .optional(),
   geometry: z.unknown(),
   imageUrls: z.record(z.string().max(128), z.url().max(4096)),
   ready: z.boolean(),
@@ -117,6 +145,8 @@ export const BuyerProposalSchema = z.strictObject({
     .array(
       z.strictObject({
         productId: z.string().max(128),
+        canonicalIdentitySha256: BuyerHashSchema.optional(),
+        selection: BuyerDesiredGroupSchema.optional(),
         quantity: z.number().int().min(1).max(10000),
         setupMinor: minor,
         customizationUnitMinor: z
@@ -143,6 +173,7 @@ export const BuyerCartRestorationSchema = z.strictObject({
   groups: z.array(BuyerDesiredGroupSchema).max(32),
   quoteId: BuyerIdSchema.optional(),
   repairRequired: z.boolean(),
+  labels: z.record(z.string().max(128), label).optional(),
 });
 export const BuyerConfirmationResultSchema = z.strictObject({
   id: BuyerIdSchema,
@@ -153,6 +184,29 @@ export const BuyerDesignResultSchema = z.strictObject({
   version: z.number().int().positive(),
   value: BuyerDesiredGroupSchema,
 });
+export const BuyerDesignRestoreRequestSchema = z.strictObject({ capability: BuyerCapabilitySchema });
+export const BuyerDesignRestorationSchema = BuyerDesignResultSchema.extend({
+  expiresAt: z.iso.datetime(),
+  compatibility: z.enum([
+    'current',
+    'publication-changed',
+    'choice-unavailable',
+    'configuration-unavailable',
+    'legacy',
+  ]),
+  retained: z
+    .strictObject({
+      revisionId: z.string().min(1).max(128),
+      contentHash: BuyerHashSchema,
+      selectedSetup: CustomerSelectedSetupSchema,
+      geometry: z.unknown(),
+      imageUrls: z.record(
+        z.string().min(1).max(128),
+        z.url().refine((value) => value.startsWith('https://')),
+      ),
+    })
+    .nullable(),
+});
 /** The browser and HTTP composition share these versioned JSON boundaries. Geometry is validated by the visualizer. */
 export function parseBuyerResponse(route: string, value: unknown): unknown {
   if (route === 'config') return BuyerConfigSchema.parse(value);
@@ -162,6 +216,7 @@ export function parseBuyerResponse(route: string, value: unknown): unknown {
     return BuyerAcceptedCartSchema.parse(value);
   if (route === 'cart-state') return BuyerCartRestorationSchema.parse(value);
   if (/^cart-applications\/[a-f0-9-]+\/confirm$/.test(route)) return BuyerConfirmationResultSchema.parse(value);
+  if (/^designs\/[a-f0-9-]+\/restore$/.test(route)) return BuyerDesignRestorationSchema.parse(value);
   if (/^designs\/[a-f0-9-]+$/.test(route)) return BuyerDesignResultSchema.parse(value);
   throw new Error('Unknown buyer response');
 }

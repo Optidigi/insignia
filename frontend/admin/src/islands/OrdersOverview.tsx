@@ -137,8 +137,8 @@ function rememberQuery(cursors: (string | undefined)[], artwork: string, search 
   history.replaceState({ ...state, insigniaOrderCursors: cursors[0] === undefined ? cursors.slice(1) : null }, '', url);
 }
 
-function OrdersOverview({ supportsServerQueries = false }: { supportsServerQueries?: boolean }) {
-  // The optional loopback example implements these queries; the unchanged backend does not.
+function OrdersOverview({ supportsServerQueries = true }: { supportsServerQueries?: boolean }) {
+  // Production queries cover the whole retained matching dataset; local examples remain isolated.
   const serverQueries =
     supportsServerQueries ||
     (typeof document !== 'undefined' && document.documentElement.dataset.previewOrderQueries === 'true');
@@ -161,6 +161,7 @@ function OrdersOverview({ supportsServerQueries = false }: { supportsServerQueri
   const queryRef = useRef<ServerQuery>({ sort: 'date-desc' });
   const generation = useRef(0);
   const pending = useRef(false);
+  const activeRead = useRef<AbortController | null>(null);
   const requestedCursors = useRef<(string | undefined)[]>([undefined]);
   const filter = useRef<ArtworkFilter>('all');
   const locale = formatLocale;
@@ -177,7 +178,9 @@ function OrdersOverview({ supportsServerQueries = false }: { supportsServerQueri
   useAdminPageReady(status !== 'loading' || page !== null);
 
   async function load(cursors: (string | undefined)[] = [undefined]) {
-    if (pending.current) return;
+    activeRead.current?.abort();
+    const controller = new AbortController();
+    activeRead.current = controller;
     pending.current = true;
     clearSelection();
     requestedCursors.current = cursors;
@@ -186,13 +189,17 @@ function OrdersOverview({ supportsServerQueries = false }: { supportsServerQueri
     try {
       const before = cursors[cursors.length - 1];
       const query = new URLSearchParams({ limit: '20' });
-      if (serverQueries) query.set('sort', queryRef.current.sort);
+      if (serverQueries) {
+        query.set('sort', queryRef.current.sort);
+        if (searchValue.current.trim()) query.set('q', searchValue.current.trim());
+        if (filter.current !== 'all') query.set('artwork', filter.current);
+      }
       for (const key of serverQueries ? (['createdFrom', 'createdBefore'] as const) : []) {
         const value = queryRef.current[key];
         if (value) query.set(key, value);
       }
       if (before) query.set('before', before);
-      const result = PurchaseListViewSchema.parse(await authenticatedJson(`/api/purchases/v1?${query}`));
+      const result = PurchaseListViewSchema.parse(await authenticatedJson(`/api/purchases/v1?${query}`, { signal: controller.signal }));
       if (generation.current !== request) return;
       dispatch({ type: 'read-succeeded', request, page: { ...result, cursors } });
       rememberQuery(cursors, filter.current, searchValue.current, queryRef.current);
@@ -212,6 +219,7 @@ function OrdersOverview({ supportsServerQueries = false }: { supportsServerQueri
     searchValue.current = query.search;
     void load(query.cursors);
     return () => {
+      activeRead.current?.abort();
       generation.current++;
       pending.current = false;
     };
@@ -238,14 +246,16 @@ function OrdersOverview({ supportsServerQueries = false }: { supportsServerQueri
     clearSelection();
     filter.current = value;
     dispatch({ type: 'filter-changed', value });
-    rememberQuery(page?.cursors ?? requestedCursors.current, value, searchValue.current);
+    rememberQuery(serverQueries ? [undefined] : page?.cursors ?? requestedCursors.current, value, searchValue.current, queryRef.current);
+    if (serverQueries) void load();
   }
 
   function changeSearch(value: string) {
     clearSelection();
     searchValue.current = value;
     dispatch({ type: 'search-changed', value });
-    rememberQuery(page?.cursors ?? requestedCursors.current, filter.current, value);
+    rememberQuery(serverQueries ? [undefined] : page?.cursors ?? requestedCursors.current, filter.current, value, queryRef.current);
+    if (serverQueries) void load();
   }
   function changeServerQuery(value: ServerQuery) {
     if (!serverQueries) return;

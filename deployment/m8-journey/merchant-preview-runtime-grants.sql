@@ -1,4 +1,4 @@
--- Owner-applied after migrations33–34 and the qualified existing web/inspection grants.
+-- Owner-applied after current migrations including selected merchant-upload media and the qualified existing web/inspection grants.
 -- No role creation, revocation, data mutation or activation. Unexpected authority aborts atomically.
 BEGIN;
 SET LOCAL search_path=public,pg_catalog;
@@ -47,6 +47,20 @@ GRANT UPDATE(state,claim_id,updated_at) ON public.merchant_preview_assets TO ins
 GRANT INSERT(shop_id,config_id,revision_id,installation_generation,product_id,image_revision_id,asset_id)
   ON public.config_revision_preview_assets TO insignia_runtime;
 GRANT UPDATE(state,manifest,updated_at) ON public.merchant_preview_assets TO insignia_artwork_inspect;
+DO $$ BEGIN
+ IF NOT EXISTS(SELECT 1 FROM pg_class WHERE oid='public.merchant_preview_draft_references'::regclass AND relkind='v' AND relowner=(SELECT oid FROM pg_roles WHERE rolname=current_user) AND 'security_barrier=true'=ANY(reloptions)) OR
+  (SELECT array_agg(attname::text ORDER BY attnum) FROM pg_attribute WHERE attrelid='public.merchant_preview_draft_references'::regclass AND attnum>0 AND NOT attisdropped) IS DISTINCT FROM ARRAY['asset_id']::text[]
+ THEN RAISE EXCEPTION 'qualified_preview_reference_view_required'; END IF;
+END $$;
+-- This security-barrier view exposes referenced asset UUIDs only, not raw merchant drafts.
+GRANT SELECT ON public.merchant_preview_draft_references TO insignia_runtime,insignia_artwork_inspect;
+DO $$ DECLARE identity text; BEGIN
+  FOREACH identity IN ARRAY ARRAY['insignia_runtime','insignia_artwork_inspect'] LOOP
+    IF NOT has_table_privilege(identity,'public.merchant_preview_draft_references','SELECT') OR
+      has_table_privilege(identity,'public.merchant_preview_draft_references','INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
+    THEN RAISE EXCEPTION 'unqualified_preview_reference_access'; END IF;
+  END LOOP;
+END $$;
 -- Check effective privileges (including inherited/PUBLIC column grants), never launder them by revocation.
 DO $$ DECLARE identity text; BEGIN
   IF EXISTS(SELECT 1 FROM pg_class c CROSS JOIN LATERAL aclexplode(c.relacl) acl

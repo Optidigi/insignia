@@ -206,11 +206,27 @@
     "itemsRestored": "Articles rétablis.",
     "cartCommitFailed": "Impossible de mettre à jour le panier. Votre personnalisation est toujours disponible. Réessayez.",
     "undo": "Annuler",
-    "dismissNotification": "Fermer la notification"
+    "dismissNotification": "Fermer la notification",
+    "repairRequired": "Votre personnalisation doit être vérifiée",
+    "repairHelp": "Vos articles personnalisés restent dans le panier jusqu’à votre confirmation du remplacement ou du retrait.",
+    "startNew": "Créer une nouvelle personnalisation",
+    "removeGroup": "Vérifier le retrait de cette personnalisation",
+    "removeAll": "Vérifier le retrait de tous les articles personnalisés",
+    "confirmRemoval": "Confirmer la mise à jour du panier",
+    "remainingItems": "Articles personnalisés restants"
   },
   "language": {
     "label": "Langue",
     "automatic": "Utiliser la langue de la boutique",
     "failure": "La langue n’a pas pu être modifiée. Réessayez."
+  },
+  "postOrder": {
+    "title": "Importer les visuels manquants",
+    "loading": "Chargement de la demande…",
+    "unavailable": "Cette demande est indisponible ou a expiré. Contactez la boutique pour obtenir de l’aide.",
+    "notice": "Importez ici les visuels manquants. Pour modifier un visuel déjà envoyé, contactez la boutique.",
+    "saved": "Votre visuel a été envoyé.",
+    "continue": "Continuer les imports",
+    "retry": "Réessayer"
   }
 }

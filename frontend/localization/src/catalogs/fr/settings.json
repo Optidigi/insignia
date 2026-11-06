@@ -208,6 +208,10 @@
     "translations": {
       "title": "Traductions",
       "description": "Personnalisez les textes qu’Insignia affiche aux clients."
+    },
+    "privacy": {
+      "title": "Confidentialité",
+      "description": "Consulter les demandes de données clients et les données de commande conservées."
     }
   },
   "translations": {
@@ -299,7 +303,8 @@
       "files": "Fichiers",
       "theme": "Apparence",
       "recovery": "Messages de récupération",
-      "common": "Textes partagés"
+      "common": "Textes partagés",
+      "postOrder": "Visuels après commande"
     },
     "fields": {
       "customer_chrome_skipToDesignControls": "Aller aux commandes de personnalisation",
@@ -491,7 +496,21 @@
       "common_summary_unavailable": "Indisponible",
       "customer_language_label": "Libellé du sélecteur de langue",
       "customer_language_automatic": "Option pour utiliser la langue de la boutique",
-      "customer_language_failure": "Erreur de changement de langue"
+      "customer_language_failure": "Erreur de changement de langue",
+      "customer_postOrder_title": "Titre de l’import après commande",
+      "customer_postOrder_loading": "Message de chargement après commande",
+      "customer_postOrder_unavailable": "Message du lien d’import expiré",
+      "customer_postOrder_notice": "Instructions d’import après commande",
+      "customer_postOrder_saved": "Confirmation du visuel envoyé",
+      "customer_postOrder_continue": "Bouton pour continuer les imports",
+      "customer_postOrder_retry": "Bouton pour réessayer la demande",
+      "customer_recovery_repairRequired": "Votre personnalisation doit être vérifiée",
+      "customer_recovery_repairHelp": "Vos articles personnalisés restent dans le panier jusqu’à votre confirmation du remplacement ou du retrait.",
+      "customer_recovery_startNew": "Créer une nouvelle personnalisation",
+      "customer_recovery_removeGroup": "Vérifier le retrait de cette personnalisation",
+      "customer_recovery_removeAll": "Vérifier le retrait de tous les articles personnalisés",
+      "customer_recovery_confirmRemoval": "Confirmer la mise à jour du panier",
+      "customer_recovery_remainingItems": "Articles personnalisés restants"
     },
     "resetSavedHeading": "Rétablir les traductions enregistrées ?",
     "resetSavedDescription": "Rétablissez les textes par défaut pour toutes les langues enregistrées. Vos textes personnalisés seront supprimés.",

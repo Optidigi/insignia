@@ -1,3 +1,4 @@
+import { MerchantPreferencesViewSchema } from '@insignia/contracts';
 import {
   createLanguagePreferenceState,
   LANGUAGE_OPTIONS,
@@ -5,7 +6,7 @@ import {
   parseLanguagePreference,
   selectedLanguagePreference,
 } from '@insignia/ui-localization/core';
-import { useLayoutEffect, useReducer, useRef } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useReducer, useRef, useState } from 'preact/hooks';
 import {
   ADMIN_LANGUAGE_PREFERENCE_KEY,
   getAdminLocaleController,
@@ -16,6 +17,7 @@ import {
   writeAdminLanguagePreference,
 } from '../shared/admin-i18n.js';
 import { useAdminPageReady } from '../shared/admin-page-ready.js';
+import { authenticatedJson } from '../shared/admin-request.js';
 
 const destinations = [
   {
@@ -41,7 +43,32 @@ const destinations = [
 ] as const;
 const automaticLanguageValue = 'automatic';
 
-function MerchantSettings() {
+function MerchantSettings({ real = false }: { real?: boolean }) {
+  const [canReadPrivacy, setCanReadPrivacy] = useState(false);
+  useEffect(() => {
+    if (!real) return;
+    const controller = new AbortController();
+    void authenticatedJson<unknown>('/api/admin/preferences', { signal: controller.signal })
+      .then((value) => {
+        const preferences = MerchantPreferencesViewSchema.parse(value);
+        if (!controller.signal.aborted) setCanReadPrivacy(preferences.canReadPrivacy === true);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setCanReadPrivacy(false);
+      });
+    return () => controller.abort();
+  }, [real]);
+  const rows =
+    real && canReadPrivacy
+      ? [
+          ...destinations,
+          {
+            title: 'settings:destinations.privacy.title',
+            description: 'settings:destinations.privacy.description',
+            href: '/admin/settings/privacy',
+          } as const,
+        ]
+      : destinations;
   const { t: translateUi } = useAdminLocale();
   const [languageState, dispatchLanguage] = useReducer(languagePreferenceReducer, createLanguagePreferenceState());
   const languagePreference = selectedLanguagePreference(languageState) ?? automaticLanguageValue;
@@ -138,7 +165,7 @@ function MerchantSettings() {
       </s-section>
       <s-section accessibilityLabel={translateUi('settings:merchantSettings.settings')} padding="none">
         <s-box padding="small-400">
-          {destinations.map((row, index) => (
+          {rows.map((row, index) => (
             <s-box key={row.href}>
               {index > 0 && (
                 <s-box paddingInline="small-100">

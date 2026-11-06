@@ -1,55 +1,26 @@
 import './support/browser-state.mts';
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
-import { chromium } from 'playwright';
+import { browserFixture, routePolaris } from './support/selected-browser.mts';
 
 test('merchant can recover a failed privacy lookup and download exact requested data without claiming customer delivery', {
   timeout: 20000,
 }, async (t) => {
-  const child = spawn(process.execPath, [new URL('../../dist/server/entry.mjs', import.meta.url).pathname], {
-    env: { ...process.env, HOST: '127.0.0.1', PORT: '0', SHOPIFY_CLIENT_ID: '11111111111111111111111111111111' },
-  });
-  let log = '';
-  child.stdout.on('data', (part) => {
-    log += part;
-  });
-  child.stderr.on('data', (part) => {
-    log += part;
-  });
-  const exited = new Promise((resolve) => child.once('close', resolve));
-  t.after(async () => {
-    child.kill('SIGTERM');
-    await exited;
-  });
-  let base: string | undefined;
-  for (let i = 0; i < 100; i++) {
-    base = log.match(/http:\/\/127\.0\.0\.1:\d+/)?.[0];
-    if (base) {
-      try {
-        if ((await fetch(`${base}/live`)).ok) break;
-      } catch {}
-    }
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
-  assert.ok(base, log);
+  const { source, server, browser } = await browserFixture(t);
+  const base = server.base;
   const shell = await fetch(`${base}/admin/settings/privacy`);
   assert.equal(shell.status, 200);
   assert.equal(shell.headers.get('cache-control'), 'private, no-store');
   assert.equal((await shell.text()).includes('2026-10-31'), false, 'bare shell has no private provider facts');
-  const browser = await chromium.launch();
-  t.after(() => browser.close());
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const page = await browser.newPage();
+  await page.setViewportSize({ width: 1440, height: 900 });
   page.setDefaultTimeout(5000);
   await page.addInitScript(() => {
     window.shopify = { idToken: async () => 'synthetic-privacy-actor' };
   });
   await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
-  const polaris = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
-  await page.route('https://cdn.shopify.com/shopifycloud/polaris-1.1.js', (r) =>
-    r.fulfill({ body: polaris, contentType: 'text/javascript' }),
-  );
+  await routePolaris(page, source);
   await page.route('https://cdn.shopify.com/static/fonts/**', (r) => r.fulfill({ body: '' }));
   const inbox = '83cec3c3-6010-4941-9743-99ea655a9999',
     purchase = '9f959f81-f169-4848-a190-0b0059db8888';

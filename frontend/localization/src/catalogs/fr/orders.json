@@ -33,15 +33,15 @@
     "changeSearchFilterPage": "Modifiez votre recherche ou votre filtre, ou consultez une autre page."
   },
   "search": {
-    "label": "Rechercher des commandes sur cette page",
-    "placeholder": "Rechercher sur cette page",
+    "label": "Rechercher des commandes",
+    "placeholder": "Rechercher des commandes",
     "results_one": "{{formattedCount}} commande affichée sur cette page.",
     "results_many": "{{formattedCount}} commandes affichées sur cette page.",
     "results_other": "{{formattedCount}} commandes affichées sur cette page."
   },
   "filters": {
     "filterOrders": "Filtrer les commandes",
-    "artworkStatus": "État du visuel sur cette page",
+    "artworkStatus": "État des visuels",
     "editArtworkStatus": "Modifier le filtre d’état du visuel",
     "editOrderDate": "Modifier le filtre de date de commande",
     "orderDateRange": "Date de commande : {{from}} – {{to}}"
@@ -275,6 +275,23 @@
       "refundDetails": "Détails du remboursement",
       "purchasedItem": "Article acheté",
       "refundLine": "{{itemName}} : remboursement enregistré pour une quantité de {{formattedQuantity}}, montant {{amount}}"
+    },
+    "customerLink": {
+      "copy": "Copier le lien de dépôt client",
+      "help": "Partagez ce lien sécurisé pour que le client fournisse les fichiers manquants, même avant le paiement.",
+      "copied": "Lien de dépôt copié. Partagez-le en privé avec le client.",
+      "failed": "Impossible de copier le lien. Vérifiez l’accès au presse-papiers et réessayez, ou déposez les fichiers ici."
+    },
+    "commands": {
+      "refresh": "Actualiser",
+      "reconcile": "Vérifier les mises à jour dans Shopify",
+      "lock": "Verrouiller le visuel",
+      "lockHeading": "Verrouiller le visuel pour la production ?",
+      "lockBody": "Le visuel actuel sera figé. Son remplacement ne sera plus possible.",
+      "locked": "Visuel verrouillé.",
+      "requested": "Vérification demandée. Actualisez après traitement pour voir les données Shopify vérifiées.",
+      "changed": "Le visuel a changé. Actualisez la commande avant de continuer.",
+      "failed": "L’action n’a pas pu être confirmée. Actualisez la commande avant de continuer."
     }
   }
 }

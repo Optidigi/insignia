@@ -45,6 +45,11 @@ export async function createProductionPurchaseServices(
         if (!assertAccess) throw new Error('Current merchant authority unavailable');
         await assertAccess(actor);
       },
+      timeZone: async (actor) => {
+        const read = adminServices()?.shopTimeZone;
+        if (!read) throw new Error('Store calendar unavailable');
+        return read(actor);
+      },
       orderNames: async (actor, orderIds) => (await adminServices()?.orderNames?.(actor, orderIds)) ?? {},
       orderPresentation: async (actor, target) => (await adminServices()?.orderPresentation?.(actor, target)) ?? null,
       storage,

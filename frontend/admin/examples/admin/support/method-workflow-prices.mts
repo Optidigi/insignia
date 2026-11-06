@@ -11,7 +11,7 @@ export function parsePrice(value: string): PriceResult {
   return minor <= 9_999_999n ? { kind: 'valid', minor } : { kind: 'invalid' };
 }
 
-export function formatPrice(minor: bigint, locale = 'en-GB'): string {
+export function formatPrice(minor: bigint, locale = 'en-GB', currency = 'EUR'): string {
   if (minor < 0n || minor > 9_999_999n) throw new RangeError('Price is outside the demo limit');
-  return new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(Number(minor) / 100);
+  return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(Number(minor) / 100);
 }

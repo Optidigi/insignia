@@ -35,7 +35,7 @@ export type CustomerTranslationsState = {
 
 export type CustomerTranslationsEvent =
   | { type: 'load-started'; request: number }
-  | { type: 'load-succeeded'; request: number; overlays: Record<string, CustomerWordingOverlay> }
+  | { type: 'load-succeeded'; request: number; shop?: string; overlays: Record<string, CustomerWordingOverlay> }
   | { type: 'load-failed'; request: number; reason: CustomerTranslationsLoadError }
   | { type: 'language-added'; locale: string }
   | { type: 'language-selected'; locale: string; discardChanges?: boolean }
@@ -106,6 +106,7 @@ export function customerTranslationsReducer(
         return {
           ...state,
           phase: 'ready',
+          shop: event.shop ?? state.shop,
           selectedLocale,
           savedByLocale: cloneOverlays(overlays),
           draftByLocale: cloneOverlays(overlays),

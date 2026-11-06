@@ -1,30 +1,6 @@
-import { z } from 'zod';
-
-const normalizedPointSchema = z
-  .object({
-    x: z.number().finite().min(0).max(1),
-    y: z.number().finite().min(0).max(1),
-  })
-  .strict();
-
-export const placementCalibrationSchema = z
-  .object({
-    imageUrl: z.string().url(),
-    imageWidth: z.number().int().positive().finite(),
-    imageHeight: z.number().int().positive().finite(),
-    a: normalizedPointSchema,
-    b: normalizedPointSchema,
-    distanceCm: z.number().finite().positive(),
-  })
-  .strict()
-  .refine(
-    ({ imageWidth, imageHeight, a, b }) => Math.hypot((b.x - a.x) * imageWidth, (b.y - a.y) * imageHeight) > 0,
-    'Calibration points must be different.',
-  );
-
-export type PlacementCalibration = z.infer<typeof placementCalibrationSchema>;
-export type CalibrationPoint = PlacementCalibration['a'];
-export type CalibrationImage = Pick<PlacementCalibration, 'imageUrl' | 'imageWidth' | 'imageHeight'>;
+import { calibratedDimensions } from '@insignia/visualizer/geometry';
+import { placementCalibrationSchema, type PlacementCalibration, type CalibrationPoint, type CalibrationImage } from '@insignia/contracts';
+export { placementCalibrationSchema, type PlacementCalibration, type CalibrationPoint, type CalibrationImage } from '@insignia/contracts';
 
 export type ApproximatePlacementDimensions = {
   widthCm: number;
@@ -58,15 +34,5 @@ export function approximatePlacementDimensions(
   )
     return null;
 
-  const linePixels = Math.hypot(
-    (calibration.b.x - calibration.a.x) * calibration.imageWidth,
-    (calibration.b.y - calibration.a.y) * calibration.imageHeight,
-  );
-  if (!Number.isFinite(linePixels) || linePixels <= 0) return null;
-
-  const pixelsPerCm = linePixels / calibration.distanceCm;
-  const widthCm = (rect.width * calibration.imageWidth) / pixelsPerCm;
-  const heightCm = (rect.height * calibration.imageHeight) / pixelsPerCm;
-  if (![pixelsPerCm, widthCm, heightCm].every(Number.isFinite)) return null;
-  return { widthCm, heightCm, pixelsPerCm };
+  return calibratedDimensions(calibration, rect);
 }

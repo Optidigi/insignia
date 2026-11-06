@@ -73,6 +73,7 @@ test('authority, executable, workflow and evidence-data edits require full check
     ({ put }) => put('docs/delivery/other.md', 'A new document\n'),
     ({ put }) => put('docs/delivery/evidence/m8-context-runtime/WORKLIST.md', 'Retired competing status\n'),
     ({ put }) => put('scripts/ci/changed.mts', 'export const changed=true;\n'),
+    ({ put }) => put('frontend/designer/src/designer.tsx', 'export const changed=true;\n'),
     ({ put }) => put('.github/workflows/changed.yml', 'name: changed\n'),
     ({ put }) => put('docs/delivery/receipt1.json', '{"runtimeInput":"changed"}\n'),
     ({ put }) => put(state, '# Current state\n\nRun `node scripts/ci/absent.mts`.\n'),
@@ -233,3 +234,26 @@ test('the real current state supports prose updates with its actual local links'
       reason: 'CURRENT_DOCS_VALIDATED',
     });
   }));
+
+// Frontend-only changes must select the existing full foundation gate.
+test('foundation includes frontend and workspace inputs and executes the frontend gate', () => {
+  const workflow = readFileSync(join(root, '.github/workflows/foundation.yml'), 'utf8');
+  for (const path of ['frontend/**', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.node-version'])
+    assert.ok(workflow.includes(`      - '${path}'`), `Missing push trigger: ${path}`);
+  assert.match(workflow, /--filter @insignia\/designer exec playwright install --with-deps chromium/);
+  const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+  assert.ok(manifest.scripts.check.includes('corepack pnpm check:ui'));
+  assert.ok(manifest.scripts['check:ui'].includes("--filter './frontend/**' test"));
+  const designer = JSON.parse(readFileSync(join(root, 'frontend/designer/package.json'), 'utf8'));
+  assert.ok(designer.scripts.build.includes('build:library'));
+  assert.ok(designer.scripts.test.includes('scripts/*-check.mts'));
+  assert.ok(
+    readFileSync(join(root, 'frontend/designer/scripts/library-artifact-check.mts'), 'utf8').includes('dist-library'),
+  );
+  assert.ok(manifest.scripts.build.includes('pnpm -r build'));
+});
+test('runtime image qualification includes selected frontend and storefront source inputs', () => {
+  const workflow = readFileSync(join(root, '.github/workflows/runtime.yml'), 'utf8');
+  for (const path of ['frontend/**', 'apps/storefront/**'])
+    assert.ok(workflow.includes(`      - '${path}'`), `Missing production bundle input: ${path}`);
+});

@@ -111,7 +111,7 @@
     },
     "notices": {
       "methodUnavailable": "Questa tecnica non è più disponibile.",
-      "storageFailure": "Il browser non è riuscito a salvare queste tecniche. Tieni aperta questa pagina e riprova.",
+      "storageFailure": "Non è stato possibile salvare questi metodi. Tieni aperta questa pagina e riprova.",
       "created": "Tecnica creata.",
       "saved": "Tecnica salvata.",
       "duplicated": "Tecnica duplicata.",
@@ -134,7 +134,11 @@
       "productsMustMatch": "I prodotti devono corrispondere",
       "searchTags": "Cerca tag",
       "searchAssignedProducts": "Cerca i prodotti assegnati",
-      "productSetup": "Configurazione del prodotto"
+      "productSetup": "Configurazione del prodotto",
+      "translationLanguage": "Lingua della traduzione",
+      "defaultText": "Testo predefinito",
+      "realExplanation": "Descrizione (facoltativa)",
+      "realExplanationHelp": "Visibile a commercianti e clienti che scelgono questo metodo di decorazione."
     },
     "copy": {
       "duplicateNameError": "Inserisci un nome per la tecnica di massimo 80 caratteri.",
@@ -178,7 +182,12 @@
       "removeManyAvailability_other": "La disponibilità di queste tecniche verrà rimossa da {{formattedCount}} prodotti.",
       "setupFixedPrice": "Imposta lo stesso prezzo per ogni posizione e dimensione di decorazione su tutti i prodotti selezionati.",
       "setupProductPrice": "Imposta i prezzi per ogni prodotto, in base alla posizione e alla dimensione di decorazione.",
-      "tagMatchSummary": "Corrispondenza: {{match}} dei seguenti tag: {{tags}}. Le modifiche future ai tag potrebbero cambiare i prodotti corrispondenti."
+      "tagMatchSummary": "Corrispondenza: {{match}} dei seguenti tag: {{tags}}. Le modifiche future ai tag potrebbero cambiare i prodotti corrispondenti.",
+      "translationFallback": "Lascia vuota una traduzione per usare il testo predefinito.",
+      "currencyReview": "Il prezzo salvato è {{amount}}, ma il negozio ora usa {{currency}}. Inserisci e salva un prezzo verificato nella valuta attuale.",
+      "realDefaultsDescription": "Le modifiche ai prezzi predefiniti aggiornano le bozze che li ereditano. I prezzi specifici del prodotto vengono conservati; pubblica ogni prodotto separatamente.",
+      "realFixedPriceDescription": "Usa un prezzo predefinito ereditato per posizioni e dimensioni del prodotto.",
+      "realLeaveSavedData": "I prodotti pubblicati e gli ordini restano invariati. Le bozze configurate mantengono il metodo e richiedono di confermare se mantenerlo o rimuoverlo prima della pubblicazione."
     },
     "pricing": {
       "fixed": "Prezzo fisso",

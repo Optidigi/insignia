@@ -1,13 +1,7 @@
-import { useEffect, useReducer, useRef, useState } from 'preact/hooks';
+import { useEffect, useMemo, useReducer, useRef, useState } from 'preact/hooks';
 import { withAdminLocale } from '../shared/admin-i18n';
 import { authenticatedJson } from '../shared/admin-request';
-import {
-  homeGuidanceCompletedSteps,
-  homeGuidanceIsDismissed,
-  homePreferenceStorage,
-  saveHomeGuidanceCompletedSteps,
-  saveHomeGuidanceDismissed,
-} from '../shared/home-guidance-preference';
+import { createMerchantPreferencesClient } from '../shared/merchant-preferences-client';
 import { homeGuidanceReducer, initialHomeGuidanceState } from '../shared/home-workflow-state';
 import type {
   HomeOrdersPanel,
@@ -23,6 +17,7 @@ import {
   homeProductsFromResponse,
   homeSetupFromTheme,
   homeStatisticsFromResponse,
+  homeStatisticsFromAggregate,
 } from '../shared/merchant-home-source';
 import { themeSetupStatus, unknownThemeSetup } from '../shared/storefront-setup';
 import MerchantHome from './MerchantHome';
@@ -36,9 +31,14 @@ function MerchantHomeContainer() {
   const [sessionLost, setSessionLost] = useState(false);
   const [statistics, setStatistics] = useState<HomeStatistics | undefined>({ state: 'loading' });
   const [guidance, dispatchGuidance] = useReducer(homeGuidanceReducer, undefined, initialHomeGuidanceState);
+  const guidanceRef = useRef(guidance);
+  guidanceRef.current = guidance;
+  const guidanceQueue = useRef<Promise<void>>(Promise.resolve());
+  const preferences = useMemo(() => createMerchantPreferencesClient(), []);
+  const [guidanceFailed, setGuidanceFailed] = useState(false);
+  const [guidanceEditable, setGuidanceEditable] = useState(false);
   const guidanceDismissed = guidance.dismissed;
   const guidanceCompletedSteps = guidance.completedSteps;
-  const guidanceShop = useRef<unknown>(undefined);
   const mounted = useRef(false);
   const requests = useRef<Partial<Record<HomePanel, AbortController>>>({});
   const facts = useRef({ theme: unknownThemeSetup(), published: false });
@@ -62,6 +62,12 @@ function MerchantHomeContainer() {
       } else {
         setOrders(homeOrdersFromResponse(value));
         setStatistics(homeStatisticsFromResponse(value));
+        try {
+          const totals = await authenticatedJson<unknown>('/api/purchases/v1/statistics', { signal: controller.signal });
+          if (mounted.current && !controller.signal.aborted) setStatistics(homeStatisticsFromAggregate(totals));
+        } catch {
+          if (mounted.current && !controller.signal.aborted) setStatistics(undefined);
+        }
       }
     } catch (error: unknown) {
       if (!mounted.current || controller.signal.aborted) return;
@@ -74,12 +80,18 @@ function MerchantHomeContainer() {
   }
   useEffect(() => {
     mounted.current = true;
-    guidanceShop.current = (window as unknown as { shopify?: { config?: { shop?: unknown } } }).shopify?.config?.shop;
-    dispatchGuidance({
-      type: 'preferences-loaded',
-      dismissed: homeGuidanceIsDismissed(homePreferenceStorage(), guidanceShop.current),
-      completedSteps: homeGuidanceCompletedSteps(homePreferenceStorage(), guidanceShop.current),
-    });
+    async function loadGuidance() {
+      try {
+        const value = await preferences.read();
+        if (!mounted.current) return;
+        guidanceRef.current = homeGuidanceReducer(guidanceRef.current, { type: 'preferences-loaded', ...value.guidance });
+        dispatchGuidance({ type: 'preferences-loaded', ...value.guidance });
+        setGuidanceEditable(value.canEdit === true);
+        setGuidanceFailed(false);
+      } catch {
+        if (mounted.current) setGuidanceFailed(true);
+      }
+    }
     let departed = false;
     const bridge = (window as unknown as { shopify?: { app?: { extensions?: () => Promise<unknown> } } }).shopify;
     let themeGeneration = 0;
@@ -130,6 +142,7 @@ function MerchantHomeContainer() {
       }
     }
     const reload = () => {
+      void loadGuidance();
       void load('products');
       void load('orders');
       void theme();
@@ -163,13 +176,27 @@ function MerchantHomeContainer() {
       document.removeEventListener('visibilitychange', visibility);
     };
   }, []);
-  useEffect(() => {
-    if (!guidance.loaded) return;
-    saveHomeGuidanceDismissed(homePreferenceStorage(), guidanceShop.current, guidance.dismissed);
-    saveHomeGuidanceCompletedSteps(homePreferenceStorage(), guidanceShop.current, guidance.completedSteps);
-  }, [guidance]);
-  const model: MerchantHomeModel = sessionLost
-    ? { state: 'unavailable' }
+  function updateGuidance(event: Parameters<typeof homeGuidanceReducer>[1]) {
+    guidanceQueue.current = guidanceQueue.current.then(async () => {
+      if (!mounted.current || !guidanceRef.current.loaded) return;
+      try {
+        // Reconcile any original uncertain command, then apply this single user event
+        // to the latest store state rather than replacing another staff member's steps.
+        const observed = await preferences.read();
+        const base = homeGuidanceReducer(guidanceRef.current, { type: 'preferences-loaded', ...observed.guidance });
+        const next = homeGuidanceReducer(base, event);
+        const saved = await preferences.saveGuidance({ dismissed: next.dismissed, completedSteps: next.completedSteps });
+        if (!mounted.current) return;
+        guidanceRef.current = homeGuidanceReducer(guidanceRef.current, { type: 'preferences-loaded', ...saved.guidance });
+        dispatchGuidance({ type: 'preferences-loaded', ...saved.guidance });
+        setGuidanceFailed(false);
+      } catch {
+        if (mounted.current) setGuidanceFailed(true);
+      }
+    });
+  }
+  const model: MerchantHomeModel = sessionLost || guidanceFailed
+    ? { state: 'unavailable', reopenHref: '/admin/home', ...(sessionLost ? { reason: 'session-lost' as const } : {}) }
     : {
         state: 'ready',
         products: products.state === 'ready' ? { ...products, canConfigure: !restrictedPlan } : products,
@@ -197,16 +224,16 @@ function MerchantHomeContainer() {
     if (mounted.current && result.code === 'ok') await load('products');
   }
   const dismissGuidance = (dismissed: boolean) => {
-    dispatchGuidance({ type: dismissed ? 'guide-dismissed' : 'guide-restored' });
+    updateGuidance({ type: dismissed ? 'guide-dismissed' : 'guide-restored' });
   };
   return (
     <MerchantHome
       model={model}
       onRetry={load}
       onCreateProduct={createProduct}
-      onDismissGuidance={() => dismissGuidance(true)}
-      onRestoreGuidance={() => dismissGuidance(false)}
-      onCompleteGuidanceStep={(step, complete) => dispatchGuidance({ type: 'step-acknowledged', step, complete })}
+      onDismissGuidance={guidanceEditable ? () => dismissGuidance(true) : undefined}
+      onRestoreGuidance={guidanceEditable ? () => dismissGuidance(false) : undefined}
+      onCompleteGuidanceStep={guidanceEditable ? (step, complete) => updateGuidance({ type: 'step-acknowledged', step, complete }) : undefined}
     />
   );
 }

@@ -791,6 +791,7 @@ export async function renderProductionSheet(
                 variantId: variant.variantId,
                 selectedPlacementId: placement.id,
                 selectedStepId: placement.stepId,
+                ...(placement.position ? {artworkPosition:placement.position} : {}),
                 artwork: { kind: 'raster', url: 'blob:worksheet', aspectRatio: current.ratio },
               },
               viewport,

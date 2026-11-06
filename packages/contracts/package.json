@@ -16,7 +16,8 @@
     "typecheck:test": "tsc -p tsconfig.test.json"
   },
   "dependencies": {
-    "zod": "4.6.5"
+    "zod": "4.6.5",
+    "@noble/hashes": "2.4.0"
   },
   "devDependencies": {
     "typescript": "5.9.3",

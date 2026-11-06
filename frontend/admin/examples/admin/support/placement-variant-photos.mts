@@ -1,6 +1,20 @@
-/** Preview-only photo assignments. Image grouping never changes commerce or production identity. */
-import { z } from 'zod';
-import type { EditorView, PlacementProduct, PlacementRect } from './placement-workflow-model.mts';
+/** Shared appearance grouping and alignment. Stable variant IDs retain garment identity; canonical geometry determines production placement. */
+import {
+  getVariantPhotoGroups,
+  photoRectSchema,
+  resolveVariantPhotoView as resolveSharedVariantPhotoView,
+  type VariantPhotoAssignment,
+  type VariantPhotoGroup,
+} from '@insignia/contracts';
+
+export {
+  type VariantPhotoAssignment,
+  type VariantPhotoSetup,
+  validateVariantPhotoReferences,
+  variantPhotoSetupSchema,
+} from '@insignia/contracts';
+
+import type { PlacementProduct, PlacementRect } from './placement-workflow-model.mts';
 
 const variantPhotoDiagnostics = {
   'view-required': 'Choose an existing product view.',
@@ -22,203 +36,7 @@ export class VariantPhotoError extends Error {
   }
 }
 
-const idSchema = z.string().min(1).max(1000);
-const photoRectSchema = z
-  .object({
-    centerX: z.number().finite().min(0).max(1),
-    centerY: z.number().finite().min(0).max(1),
-    width: z.number().finite().min(0.02).max(1),
-    height: z.number().finite().min(0.02).max(1),
-  })
-  .strict()
-  .refine(rectInImage, 'Keep the artwork area inside the image.');
-
-function rectInImage(rect: PlacementRect): boolean {
-  return (
-    rect.centerX - rect.width / 2 >= -1e-9 &&
-    rect.centerX + rect.width / 2 <= 1 + 1e-9 &&
-    rect.centerY - rect.height / 2 >= -1e-9 &&
-    rect.centerY + rect.height / 2 <= 1 + 1e-9
-  );
-}
-
-const assignmentSchema = z
-  .object({
-    groupKey: idSchema,
-    viewId: idSchema,
-    imageId: idSchema.optional(),
-    useShared: z.boolean().optional(),
-    needsAlignmentReview: z.boolean().optional(),
-    placementRects: z.record(z.string(), photoRectSchema).optional(),
-  })
-  .strict()
-  .refine((value) => !(value.imageId && value.useShared), 'Choose an image or the shared image.');
-
-export const variantPhotoSetupSchema = z
-  .object({
-    options: z
-      .array(
-        z
-          .object({
-            id: idSchema,
-            name: z.string().min(1).max(200),
-            values: z
-              .array(
-                z
-                  .object({
-                    id: idSchema,
-                    label: z.string().min(1).max(200),
-                    swatch: z
-                      .string()
-                      .regex(/^#[0-9a-fA-F]{6}$/)
-                      .optional(),
-                  })
-                  .strict(),
-              )
-              .min(1)
-              .max(500),
-          })
-          .strict(),
-      )
-      .max(3),
-    variants: z
-      .array(
-        z
-          .object({
-            id: idSchema,
-            label: z.string().max(300).optional(),
-            optionValues: z.record(z.string(), z.string()),
-          })
-          .strict(),
-      )
-      .max(500),
-    groupingOptionIds: z.array(idSchema).max(3),
-    assignments: z.array(assignmentSchema).max(2000),
-  })
-  .strict()
-  .superRefine((value, context) => {
-    const options = new Map(value.options.map((option) => [option.id, option]));
-    if (options.size !== value.options.length)
-      context.addIssue({ code: 'custom', path: ['options'], message: 'Option IDs must be unique.' });
-    for (const [index, option] of value.options.entries()) {
-      if (new Set(option.values.map((item) => item.id)).size !== option.values.length)
-        context.addIssue({
-          code: 'custom',
-          path: ['options', index, 'values'],
-          message: 'Option value IDs must be unique.',
-        });
-    }
-    if (
-      new Set(value.groupingOptionIds).size !== value.groupingOptionIds.length ||
-      value.groupingOptionIds.some((id) => !options.has(id))
-    )
-      context.addIssue({
-        code: 'custom',
-        path: ['groupingOptionIds'],
-        message: 'Choose each product option at most once.',
-      });
-    if (new Set(value.variants.map((variant) => variant.id)).size !== value.variants.length)
-      context.addIssue({ code: 'custom', path: ['variants'], message: 'Variant IDs must be unique.' });
-    for (const [index, variant] of value.variants.entries()) {
-      if (
-        Object.keys(variant.optionValues).length !== options.size ||
-        value.options.some((option) => !option.values.some((item) => item.id === variant.optionValues[option.id])) ||
-        Object.keys(variant.optionValues).some((id) => !options.has(id))
-      )
-        context.addIssue({
-          code: 'custom',
-          path: ['variants', index, 'optionValues'],
-          message: 'Match this variant to the product option values.',
-        });
-    }
-    const seen = new Set<string>();
-    for (const [index, assignment] of value.assignments.entries()) {
-      const key = JSON.stringify([assignment.groupKey, assignment.viewId]);
-      if (seen.has(key))
-        context.addIssue({
-          code: 'custom',
-          path: ['assignments', index],
-          message: 'Assign this group and view only once.',
-        });
-      seen.add(key);
-      if (!validGroupKey(value, assignment.groupKey))
-        context.addIssue({
-          code: 'custom',
-          path: ['assignments', index, 'groupKey'],
-          message: 'Choose an existing product image group.',
-        });
-    }
-  });
-
-export type VariantPhotoSetup = z.infer<typeof variantPhotoSetupSchema>;
-export type VariantPhotoAssignment = VariantPhotoSetup['assignments'][number];
-export type VariantPhotoGroup = {
-  key: string;
-  label: string;
-  values: { optionId: string; optionName: string; valueId: string; label: string; swatch?: string }[];
-  variantIds: string[];
-};
-
-function validGroupKey(setup: VariantPhotoSetup, key: string): boolean {
-  let pairs: unknown;
-  try {
-    pairs = JSON.parse(key);
-  } catch {
-    return false;
-  }
-  if (!Array.isArray(pairs) || pairs.length === 0 || pairs.length > setup.options.length) return false;
-  const seen = new Set<string>();
-  const values: [string, string][] = [];
-  for (const pair of pairs) {
-    if (
-      !Array.isArray(pair) ||
-      pair.length !== 2 ||
-      typeof pair[0] !== 'string' ||
-      typeof pair[1] !== 'string' ||
-      seen.has(pair[0])
-    )
-      return false;
-    const option = setup.options.find((item) => item.id === pair[0]);
-    if (!option?.values.some((value) => value.id === pair[1])) return false;
-    seen.add(pair[0]);
-    values.push([pair[0], pair[1]]);
-  }
-  return setup.variants.some((variant) => values.every(([id, value]) => variant.optionValues[id] === value));
-}
-
-function groupsForSetup(setup: VariantPhotoSetup): VariantPhotoGroup[] {
-  if (setup.groupingOptionIds.length === 0) return [];
-  const groups = new Map<string, VariantPhotoGroup>();
-  for (const variant of setup.variants) {
-    const values = setup.groupingOptionIds.flatMap((optionId) => {
-      const option = setup.options.find((item) => item.id === optionId);
-      const value = option?.values.find((item) => item.id === variant.optionValues[optionId]);
-      return option && value
-        ? [
-            {
-              optionId,
-              optionName: option.name,
-              valueId: value.id,
-              label: value.label,
-              ...(value.swatch ? { swatch: value.swatch } : {}),
-            },
-          ]
-        : [];
-    });
-    if (values.length !== setup.groupingOptionIds.length) continue;
-    const key = JSON.stringify(values.map((value) => [value.optionId, value.valueId]));
-    const group = groups.get(key);
-    if (group) group.variantIds.push(variant.id);
-    else
-      groups.set(key, { key, label: values.map((value) => value.label).join(' / '), values, variantIds: [variant.id] });
-  }
-  return [...groups.values()];
-}
-
-export function getVariantPhotoGroups(product: PlacementProduct): VariantPhotoGroup[] {
-  return product.variantPhotos ? groupsForSetup(product.variantPhotos) : [];
-}
-
+export { getVariantPhotoGroups, type VariantPhotoGroup } from '@insignia/contracts';
 /** Match one actual variant's values together, including options hidden by photo grouping. */
 export function filterVariantPhotoGroups(product: PlacementProduct, query: string, locale = 'en'): VariantPhotoGroup[] {
   const groups = getVariantPhotoGroups(product);
@@ -262,100 +80,10 @@ export function getRegroupedVariantPhotoGroupKey(
   );
 }
 
-export function validateVariantPhotoReferences(
-  product: Pick<PlacementProduct, 'views' | 'images' | 'variantPhotos'>,
-): { path: (string | number)[]; message: string }[] {
-  return (product.variantPhotos?.assignments ?? []).flatMap((assignment, index) => {
-    const errors: { path: (string | number)[]; message: string }[] = [];
-    const view = product.views.find((item) => item.id === assignment.viewId);
-    if (!view)
-      errors.push({
-        path: ['variantPhotos', 'assignments', index, 'viewId'],
-        message: 'Choose an existing product view.',
-      });
-    if (assignment.imageId && !product.images.some((item) => item.id === assignment.imageId))
-      errors.push({
-        path: ['variantPhotos', 'assignments', index, 'imageId'],
-        message: 'Choose an image from this product.',
-      });
-    for (const placementId of Object.keys(assignment.placementRects ?? {})) {
-      if (!view?.placements.some((item) => item.id === placementId))
-        errors.push({
-          path: ['variantPhotos', 'assignments', index, 'placementRects', placementId],
-          message: 'Choose a placement in this view.',
-        });
-    }
-    return errors;
-  });
-}
-
-export type ResolvedVariantPhotoView = {
-  status: 'ready' | 'missing';
-  view: EditorView;
-  imageSource: 'shared' | 'assigned' | 'missing';
-  group?: VariantPhotoGroup;
-  needsAlignmentReview: boolean;
-  alignmentValid: boolean;
-};
-
-function transformedRect(rect: PlacementRect, from: PlacementRect, to: PlacementRect): PlacementRect {
-  return {
-    centerX: to.centerX + ((rect.centerX - from.centerX) * to.width) / from.width,
-    centerY: to.centerY + ((rect.centerY - from.centerY) * to.height) / from.height,
-    width: (rect.width * to.width) / from.width,
-    height: (rect.height * to.height) / from.height,
-  };
-}
-
-export function resolveVariantPhotoView(
-  product: PlacementProduct,
-  viewId: string,
-  groupKey?: string,
-): ResolvedVariantPhotoView {
-  const source = product.views.find((view) => view.id === viewId);
-  if (!source) throw new VariantPhotoError('view-required');
-  if (!groupKey || !product.variantPhotos || product.variantPhotos.groupingOptionIds.length === 0) {
-    return {
-      status: source.imageUrl ? 'ready' : 'missing',
-      view: source,
-      imageSource: source.imageUrl ? 'shared' : 'missing',
-      needsAlignmentReview: !!source.needsAlignmentReview,
-      alignmentValid: true,
-    };
-  }
-  const group = getVariantPhotoGroups(product).find((item) => item.key === groupKey);
-  const assignment = product.variantPhotos.assignments.find(
-    (item) => item.groupKey === groupKey && item.viewId === viewId,
-  );
-  const image = assignment?.imageId ? product.images.find((item) => item.id === assignment.imageId) : undefined;
-  const shared = !!group && assignment?.useShared === true;
-  const imageUrl = image?.url ?? (shared ? source.imageUrl : '');
-  let alignmentValid = true;
-  const view: EditorView = {
-    ...source,
-    imageUrl,
-    imageWidth: image?.width ?? source.imageWidth,
-    imageHeight: image?.height ?? source.imageHeight,
-    placements: source.placements.map((placement) => {
-      const rect = assignment?.placementRects?.[placement.id];
-      if (!rect) return placement;
-      const movementRect = placement.movementRect
-        ? transformedRect(placement.movementRect, placement.rect, rect)
-        : undefined;
-      if (movementRect && !rectInImage(movementRect)) alignmentValid = false;
-      return { ...placement, rect, ...(movementRect ? { movementRect } : {}) };
-    }),
-  };
-  if (imageUrl !== source.imageUrl) delete view.calibration;
-  return {
-    status: group && imageUrl ? 'ready' : 'missing',
-    view,
-    imageSource: image ? 'assigned' : shared && imageUrl ? 'shared' : 'missing',
-    ...(group ? { group } : {}),
-    needsAlignmentReview:
-      !!assignment?.needsAlignmentReview || (shared && !!source.needsAlignmentReview) || !alignmentValid,
-    alignmentValid,
-  };
+export type { ResolvedVariantPhotoView } from '@insignia/contracts';
+export function resolveVariantPhotoView(product: PlacementProduct, viewId: string, groupKey?: string) {
+  if (!product.views.some((view) => view.id === viewId)) throw new VariantPhotoError('view-required');
+  return resolveSharedVariantPhotoView(product, viewId, groupKey);
 }
 
 function updateAssignment(

@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { EventEmitter } from 'node:events';
+import type { ClientRequest, IncomingMessage } from 'node:http';
+import { Readable } from 'node:stream';
 import { test } from 'node:test';
 import type { MerchantPreviewRecord } from '@insignia/application';
+import { createCatalogImageReader } from '@insignia/shopify';
 import { createMerchantPublicationCapture } from '../../src/server/admin/merchant-previews.ts';
 import { adminActor, required, unexpected } from './support/fixtures.mts';
 
@@ -184,4 +188,59 @@ test('authorization changes and conflicting geometry never dispatch capture writ
   await assert.rejects(createMerchantPublicationCapture(f.input)(actor, request), /generation changed/);
   assert.equal(f.rows.size, 0);
   assert.equal(f.objects.size, 0);
+});
+
+test('gallery publication captures only authenticated product-owned gallery bytes and rejects forged image references', async () => {
+  const f = fixture();
+  const owned = {
+    id: request.productId,
+    title: 'Synthetic',
+    status: 'ACTIVE' as const,
+    image: null,
+    variants: [],
+    variantsTruncated: false,
+    images: [
+      {
+        revisionId: 'image_12',
+        image: { url: 'https://cdn.shopify.com/gallery.svg', alt: null, width: 10, height: 20 },
+      },
+    ],
+  };
+  const reader = createCatalogImageReader({
+    lookup: async () => [{ address: '104.16.1.1', family: 4 }],
+    request: (_url, _options, callback) => {
+      const pending = new EventEmitter() as ClientRequest;
+      pending.end = () => {
+        const response = Readable.from([source]) as IncomingMessage;
+        response.statusCode = 200;
+        response.headers = { 'content-type': 'image/svg+xml', 'content-length': String(source.length) };
+        Object.defineProperty(response, 'complete', { value: true });
+        callback(response);
+        return pending;
+      };
+      return pending;
+    },
+  });
+  f.input.readProduct = async () => owned;
+  f.input.readImage = async (product, revisionId) => (await reader.read(product, revisionId))?.bytes ?? null;
+  const gallery = {
+    ...request,
+    draft: {
+      ...request.draft,
+      geometry: { views: [{ image: { ...image, revisionId: 'image_12' }, variantImages: [] }] },
+    },
+  };
+  const captured = await createMerchantPublicationCapture(f.input)(actor, gallery);
+  assert.equal(captured.length, 1);
+  assert.equal(captured[0]?.imageRevisionId, 'image_12');
+  assert.equal(f.objects.size, 2);
+  const forged = {
+    ...gallery,
+    draft: {
+      ...gallery.draft,
+      geometry: { views: [{ image: { ...image, revisionId: 'image_13' }, variantImages: [] }] },
+    },
+  };
+  await assert.rejects(createMerchantPublicationCapture(f.input)(actor, forged), /INVALID_REFERENCE/);
+  assert.equal(f.objects.size, 2);
 });

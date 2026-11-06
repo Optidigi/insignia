@@ -45,4 +45,6 @@ GRANT SELECT(asset_id,shop_id,state,expires_at) ON public.artwork_assets TO insi
 GRANT SELECT(set_id,quote_id,shop_id,installation_generation) ON public.quote_authorization_sets TO insignia_queue_consume;
 GRANT SELECT, INSERT, UPDATE ON public.purchase_reconciliation_cursors TO insignia_queue_consume;
 GRANT UPDATE(lease_owner,lease_until) ON public.inbox_messages TO insignia_queue_consume;
+-- Reconciliation may refresh verified display labels, never customer identity.
+GRANT SELECT, INSERT, UPDATE ON public.purchase_order_labels TO insignia_queue_consume;
 COMMIT;

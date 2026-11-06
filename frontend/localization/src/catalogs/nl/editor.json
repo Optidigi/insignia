@@ -332,7 +332,28 @@
       "placement": "Decoratieplek",
       "size": "Decoratieformaat"
     },
-    "checkAppearanceOnView": "Controleer {{appearanceName}} in aanzicht {{viewName}}."
+    "checkAppearanceOnView": "Controleer {{appearanceName}} in aanzicht {{viewName}}.",
+    "realPublicationPending": "Publicatie wordt nog verwerkt. Ga door met het oorspronkelijke verzoek om de status te controleren.",
+    "realPublicationNotice": "Na validatie en activering werkt publiceren je Shopify-winkel bij.",
+    "realSaveFailed": "Je wijzigingen konden niet worden bevestigd. Probeer het oorspronkelijke verzoek opnieuw voordat je andere wijzigingen opslaat.",
+    "realPublished": "Gepubliceerd",
+    "realDraftChanged": "Overgenomen standaardwaarden zijn gewijzigd. Controleer de opgeslagen wijzigingen voordat je opnieuw publiceert.",
+    "realCurrencyReview": "De winkelvaluta is nu {{currency}}. Controleer alle prijzen voordat je een nieuw voorstel opslaat.",
+    "realReviewCurrency": "Prijzen in de winkelvaluta controleren",
+    "realCalibrateImage": "Afbeelding kalibreren",
+    "realDimensionsRequired": "Kalibreer deze afbeelding om de productiematen vast te leggen.",
+    "realReviewMethods": "Controleer niet-toegewezen of verwijderde methoden voordat je publiceert.",
+    "realKeepMethod": "Methode behouden",
+    "realRemoveMethod": "Methode verwijderen",
+    "realCapacityExceeded": "Deze configuratie overschrijdt de ondersteunde limieten: 16 weergaven, 32 locaties, 32 methoden, 64 decoratieformaten, 250 varianten en 100 afbeeldings- of uitlijningsaanpassingen per weergave of locatie.",
+    "realReloadDraft": "Huidig concept opnieuw laden",
+    "realDraftSaved": "Concept opgeslagen. Publiceer apart om de webshop bij te werken.",
+    "realPublicationFailed": "Publicatie mislukt. Controleer het opgeslagen concept en de publicatiestatus voordat je het opnieuw probeert.",
+    "realPublicationBlocked": "De publicatie moet worden beoordeeld.",
+    "legacyWidthScale": "Breedteschaal (%)",
+    "legacyHeightScale": "Hoogteschaal (%)",
+    "realHistoricalPricingReview": "Deze configuratie gebruikt prijzen die deze editor niet veilig kan weergeven. Het opgeslagen concept en de gepubliceerde prijzen blijven ongewijzigd. Controleer de prijzen vóór omzetting.",
+    "realHistoricalAppearanceReview": "Bestaande variantfoto’s of plaatsingen moeten worden gecontroleerd met de volledige Shopify-catalogus. De opgeslagen configuratie blijft ongewijzigd."
   },
   "placementValidation": {
     "errors": {

@@ -363,6 +363,8 @@ test("customer preview includes ready placements and discloses omitted draft pla
     }],
   };
   const config = buildCustomerPreviewConfig(product, "http://127.0.0.1:62168");
+  const retainedChoices = buildCustomerPreviewConfig({...product,productionChoices:{definitions:[{id:"thread",allowedValueIds:["blue"]}],labels:{options:{thread:"Thread colour"},values:{thread:{blue:"Blue"}}}}}, "http://127.0.0.1:62168");
+  assert.deepEqual(retainedChoices,config,"retained production metadata is accepted without altering artwork-only preview geometry or inventing commerce");
   assert.equal(config.positions.length, 1);
   assert.equal(config.positions[0].name, "Front");
   assert.equal("previewNotice" in config, false, "translated preview copy stays out of the product domain model");
@@ -874,4 +876,10 @@ test("exact option labels are retained without singularization or title casing",
   const resolved = resolveOptionPresentation(configSchema.parse(candidate).optionPresentation);
   assert.equal(resolved.rowOption.label, "eSIM / Maat");
   assert.equal(resolved.columnOption.label, "Storage (GB)");
+});
+
+test('explicit per-size bounds retain independent width and height envelopes without changing legacy ratio sizing',()=>{
+ const position={x:50,y:50,width:20,maximumHeight:10,dimensions:[5,10],sizeBounds:[{width:20,maximumHeight:10},{width:30,maximumHeight:5}]};
+ assert.equal(printWidthPercent(position,1),30);assert.equal(printWidthPercentForArtwork(position,1,1,1),5);assert.equal(printWidthPercentForArtwork(position,0,1,1),10);
+ const legacy={x:50,y:50,width:20,maximumHeight:10,dimensions:[5,10]};assert.equal(printWidthPercent(legacy,1),40);assert.equal(printWidthPercentForArtwork(legacy,1,1,1),20);
 });
