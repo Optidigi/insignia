@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { chromium } from 'playwright';
-import { createServer } from 'vite';
-import { serverPort } from './support.mts';
+import { createStorefrontTestServer as createServer, serverPort } from './support.mts';
 
 test('guest artwork selection event survives derivative renewal and carries no private URL or capability', async () => {
   const server = await createServer({ server: { host: '127.0.0.1', port: 0, strictPort: true } });

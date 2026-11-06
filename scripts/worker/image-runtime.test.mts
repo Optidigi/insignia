@@ -157,7 +157,7 @@ test('actual built worker image qualifies OS isolation, frozen inventory, readin
       '--env',
       'POSTGRES_DB=insignia_image_test',
       '--health-cmd',
-      'pg_isready -U insignia_test -d insignia_image_test',
+      'pg_isready -h 127.0.0.1 -U insignia_test -d insignia_image_test',
       '--health-interval',
       '1s',
       '--health-timeout',

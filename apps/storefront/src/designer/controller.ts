@@ -81,10 +81,10 @@ export async function mountLiveDesigner(input: {
       ...input,
       source,
       productId: source.productId,
-      onNeedsReview(available, targetAvailable = true) {
+      onNeedsReview(available, targetAvailable, canRemoveAll) {
         canStart = available;
         cartTargetAvailable = targetAvailable;
-        record.frame.repair({ canStart: available, canRemoveGroup: !!group && targetAvailable });
+        record.frame.repair({ canStart: available, canRemoveGroup: !!group && targetAvailable, canRemoveAll });
       },
       onPriceRefresh(next) {
         record.frame.prices(buildBuyerDesigner(next, options).config, next.wording);
@@ -148,11 +148,19 @@ export async function mountLiveDesigner(input: {
         repair = true;
       }
     }
+    let canRemoveAll = !!original;
+    if (repair && !original) {
+      try {
+        canRemoveAll = (await live.readCart()).customized.length > 0;
+      } catch {
+        /* Unknown cart contents confer no removal affordance. */
+      }
+    }
     if (!current() || generation !== selectionGeneration) return;
     const frame = createDesignerFrame({
       ...(mapped ? { config: mapped.config } : {}),
       title: canStart ? source.title : undefined,
-      ...(repair ? { repair: { canStart: canStart && !!original, canRemoveGroup: !!original } } : {}),
+      ...(repair ? { repair: { canStart: canStart && !!original, canRemoveGroup: !!original, canRemoveAll } } : {}),
       async onRepair(action) {
         if (action === 'retry') {
           if (repair) {
@@ -179,7 +187,11 @@ export async function mountLiveDesigner(input: {
             latest.contentHash !== source.contentHash ||
             !cartTargetAvailable
           ) {
-            record.frame.repair({ canStart, canRemoveGroup: !!group && cartTargetAvailable });
+            record.frame.repair({
+              canStart,
+              canRemoveGroup: !!group && cartTargetAvailable,
+              canRemoveAll: observed.cart.customized.length > 0,
+            });
             throw new Error('Explicit customization review required');
           }
           record.frame.repair();
@@ -236,11 +248,18 @@ export async function mountLiveDesigner(input: {
       await show(group);
     } catch {
       // No owned choices are disclosed. Only an explicit journalled removal of observed customization is available.
+      let canRemoveAll = false;
+      try {
+        canRemoveAll = (await probe.readCart()).customized.length > 0;
+      } catch {
+        /* Unknown cart contents. */
+      }
+      if (!current()) return { open: () => false, destroy() {} };
       const frame = createDesignerFrame({
         title: input.source.title,
         ports: probe.ports,
         locale: input.locale,
-        repair: { canStart: false, canRemoveGroup: false },
+        repair: { canStart: false, canRemoveGroup: false, canRemoveAll },
         onClose: close,
         async onRepair(action) {
           if (action === 'retry') {

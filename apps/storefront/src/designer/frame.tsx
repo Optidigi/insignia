@@ -50,7 +50,7 @@ function invoke<T>(
 }
 type Initial = {
   config?: ProductConfig;
-  repair?: { canStart: boolean; canRemoveGroup: boolean };
+  repair?: { canStart: boolean; canRemoveGroup: boolean; canRemoveAll?: boolean };
   wording?: MerchantCustomerWordingView;
   locale?: string;
   initialDesign?: Design;
@@ -129,6 +129,7 @@ function Frame({ initial }: { initial: Initial }) {
           wording={wording}
           canStart={repair.canStart}
           canRemoveGroup={repair.canRemoveGroup}
+          canRemoveAll={repair.canRemoveAll}
           onClose={() => send('insignia:designer:closed')}
           onAction={(action: RepairAction) => {
             const id = crypto.randomUUID();

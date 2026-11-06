@@ -8,8 +8,15 @@ type AcceptanceRequest = ReturnType<typeof BuyerAcceptanceSchema.parse>;
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { chromium } from 'playwright';
-import { createServer } from 'vite';
-import { type AjaxItem, ajaxBody, record, required, selectedFrameAssets, serverPort } from './support.mts';
+import {
+  type AjaxItem,
+  ajaxBody,
+  createStorefrontTestServer as createServer,
+  record,
+  required,
+  selectedFrameAssets,
+  serverPort,
+} from './support.mts';
 
 const config: BuyerConfig = {
   version: 'm7-config-v1',
@@ -1159,12 +1166,43 @@ test('selected mobile artwork dialog rejects unsupported files locally and real 
   );
 });
 
+test('republishing during a new empty-cart customization never offers removal of nonexistent cart items', async () => {
+  await withProductDesigner(config, async ({ page, ui }) => {
+    let writes = 0;
+    await page.route('**/apps/insignia/v1/**', (route) => {
+      const path = new URL(route.request().url()).pathname;
+      if (path.endsWith('/config'))
+        return route.fulfill({ json: { ...config, revisionId: 'new-publication', contentHash: 'f'.repeat(64) } });
+      if (path.endsWith('/sessions'))
+        return route.fulfill({
+          json: {
+            capability: 'abc.def',
+            sessionId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            expiresAt: new Date(Date.now() + 60000).toISOString(),
+          },
+        });
+      writes++;
+      return route.fulfill({ status: 500, json: { error: 'unexpected' } });
+    });
+    await addDeferred(ui, 'Front');
+    await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+    await ui.locator('input[type=number]:enabled').first().fill('1');
+    await ui.getByRole('button', { name: 'Review', exact: true }).last().click();
+    await ui.getByRole('heading', { name: 'Unavailable', exact: true }).waitFor();
+    assert.equal(
+      await ui.getByRole('button', { name: 'Review removing all customized items', exact: true }).count(),
+      0,
+    );
+    assert.equal(writes, 0, 'revision drift does not issue a proposal or alter the cart');
+  });
+});
+
 test('missing critical physical production facts require repair without issuing editable defaults', async () => {
   const cfg = structuredClone(config);
   delete required(cfg.geometry.views[0]).image;
   delete required(cfg.geometry.steps[0]).physicalMm;
   await withProductDesigner(cfg, async ({ ui, privateRequests }) => {
-    await ui.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
+    await ui.getByRole('heading', { name: 'Unavailable', exact: true }).waitFor();
     assert.equal(await ui.getByRole('button', { name: 'Add artwork', exact: true }).count(), 0);
     assert.equal(privateRequests(), 0);
   });

@@ -1,8 +1,33 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import type { Server } from 'node:http';
-import type { Plugin } from 'vite';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import type { InlineConfig, Plugin, ViteDevServer } from 'vite';
 import type { CartProperty } from '../src/cart.ts';
+
+/** Concurrent Vite configurations must not rewrite another fixture's optimizer cache. */
+export async function createStorefrontTestServer(config: InlineConfig = {}): Promise<ViteDevServer> {
+  const cacheDir = await mkdtemp(join(tmpdir(), 'insignia-storefront-vite-'));
+  try {
+    const { createServer } = await import('vite');
+    const server = await createServer({ ...config, cacheDir });
+    const close = server.close.bind(server);
+    let closing: Promise<void> | undefined;
+    server.close = () =>
+      (closing ??= (async () => {
+        try {
+          await close();
+        } finally {
+          await rm(cacheDir, { recursive: true, force: true });
+        }
+      })());
+    return server;
+  } catch (error) {
+    await rm(cacheDir, { recursive: true, force: true });
+    throw error;
+  }
+}
 
 export function required<T>(value: T | null | undefined): T {
   assert(value !== null && value !== undefined, 'Missing test fixture or observed value');
