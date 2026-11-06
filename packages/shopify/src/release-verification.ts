@@ -13,6 +13,7 @@ export function parseReleaseVerificationRequest(
   expectedVersion: string = resolveRuntimeReleaseProfile().activeVersionRef,
 ): ReleaseVerificationRequest {
   const reviewedVersions: readonly string[] = [
+    'selected-ui-f48efa2',
     'm5-functions-9c2e56b42fbf',
     'm8-read-orders-617057f',
     'm8-app-proxy-3d2a02e',

@@ -54,43 +54,46 @@ test('observed native origin binds only the closed release profile and validated
   for (const appClientId of ['', 'bad client', 'x'.repeat(129)]) assert.equal(resolve({ appClientId }), null);
 });
 
-test('preview-only version transition keeps qualified origin but still requires independent release evidence', async () => {
-  const releaseProfile = 'm8-preview-28443bd';
-  const qualification = resolve({ releaseProfile });
-  assert(qualification);
-  assert.equal(qualification.activeVersionRef, '1168157736961');
-  const previous = resolve();
-  assert(previous);
-  assert.deepEqual(qualification.origin, previous.origin);
-  const port = admission.createProductionPurchaseAdmission({
-    core: durableCoreFixture({
-      tenants: {
-        getActiveProviderScope: async (scope) => ({
-          ...scope,
-          shopDomain: 'synthetic.myshopify.com',
-          shopifyShopId: '101',
-        }),
+for (const [releaseProfile, expectedVersion] of [
+  ['m8-preview-28443bd', '1168157736961'],
+  ['selected-ui-f48efa2', '1196974997505'],
+] as const)
+  test(`${releaseProfile}: UI version transition keeps qualified origin but still requires independent release evidence`, async () => {
+    const qualification = resolve({ releaseProfile });
+    assert(qualification);
+    assert.equal(qualification.activeVersionRef, expectedVersion);
+    const previous = resolve();
+    assert(previous);
+    assert.deepEqual(qualification.origin, previous.origin);
+    const port = admission.createProductionPurchaseAdmission({
+      core: durableCoreFixture({
+        tenants: {
+          getActiveProviderScope: async (scope) => ({
+            ...scope,
+            shopDomain: 'synthetic.myshopify.com',
+            shopifyShopId: '101',
+          }),
+        },
+        trustedReleaseRecords: { read: async () => null },
+      }),
+      credentials: untouched,
+      qualification,
+      releaseProfile,
+      clock: () => now,
+    });
+    assert.ok(port);
+    const order = orderFixture({
+      ...qualification.origin,
+      createdAt: qualification.origin.supportedFrom,
+      observedAt: now.toISOString(),
+      checkoutOrigin: {
+        creatorAppId: qualification.origin.creatorAppId,
+        sourceName: 'web',
+        checkoutTokenDigest: 'a'.repeat(64),
       },
-      trustedReleaseRecords: { read: async () => null },
-    }),
-    credentials: untouched,
-    qualification,
-    releaseProfile,
-    clock: () => now,
+    });
+    assert.equal(await port.admit({ order }), null);
   });
-  assert.ok(port);
-  const order = orderFixture({
-    ...qualification.origin,
-    createdAt: qualification.origin.supportedFrom,
-    observedAt: now.toISOString(),
-    checkoutOrigin: {
-      creatorAppId: qualification.origin.creatorAppId,
-      sourceName: 'web',
-      checkoutTokenDigest: 'a'.repeat(64),
-    },
-  });
-  assert.equal(await port.admit({ order }), null);
-});
 
 test('native origin qualification never supplies missing independent release authority', async () => {
   const qualification = resolve();
