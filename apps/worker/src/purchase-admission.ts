@@ -36,6 +36,7 @@ export function resolveNativePurchaseQualification(input: {
       'lean-markets-7b17cd9',
       'lean-privacy-theme-23fd116',
       'selected-ui-f48efa2',
+      'selected-ui-aab4a4b',
     ].includes(profile.name) ||
     !/^[1-9][0-9]{0,19}$/.test(input.appId) ||
     !/^[A-Za-z0-9_-]{1,128}$/.test(input.appClientId)

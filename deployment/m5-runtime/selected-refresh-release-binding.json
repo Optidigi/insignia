@@ -1,0 +1,27 @@
+{
+  "versionTag": "selected-ui-aab4a4b",
+  "versionId": "1197668466689",
+  "versionIds": [
+    "1197668466689",
+    "1196974997505",
+    "1171218169857",
+    "1169137696769",
+    "1168157736961",
+    "1166710865921",
+    "1166552825857",
+    "1166090010625",
+    "1165513097217",
+    "1163229200385",
+    "1162611916801",
+    "1158986629121",
+    "1158837927937",
+    "1153019904001",
+    "1152880803841",
+    "1146748534785"
+  ],
+  "moduleHash": "4ba5731b7571954de507c07de6f84b8f5c6bbf8f257cee767eed32888bda5822",
+  "observedAt": "2026-11-06T12:58:40.258Z",
+  "nativeObservation": "EXACT_INACTIVE_14_MODULE_CANDIDATE_PASS",
+  "functionsSourceCommit": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+  "note": "Inactive refresh candidate. Only theme asset files differ from selected-ui-f48efa2; all Function modules, registrations, permissions, Home URL and webhooks are unchanged. No activation or production authority inferred."
+}
