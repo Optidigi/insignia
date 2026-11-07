@@ -2,6 +2,8 @@
  * access or attests that the candidate is Active. No caller supplied baseline. */
 import assert from 'node:assert/strict';
 import historicalModules from '../../deployment/m5-runtime/native-function-module-baseline.json' with { type: 'json' };
+import nativeThemeModules from '../../deployment/m5-runtime/native-theme-module-baseline.json' with { type: 'json' };
+import nativeThemeCandidate from '../../deployment/m5-runtime/native-theme-release-binding.json' with { type: 'json' };
 import refreshModules from '../../deployment/m5-runtime/selected-refresh-module-baseline.json' with { type: 'json' };
 import refreshCandidate from '../../deployment/m5-runtime/selected-refresh-release-binding.json' with { type: 'json' };
 import selectedModules from '../../deployment/m5-runtime/selected-ui-module-baseline.json' with { type: 'json' };
@@ -43,6 +45,14 @@ const oldIds = [
   '1146748534785',
 ] as const;
 const profiles = {
+  'native-theme-ced0143': {
+    versionId: nativeThemeCandidate.versionId,
+    versionTag: nativeThemeCandidate.versionTag,
+    versionIds: nativeThemeCandidate.versionIds,
+    moduleHash: nativeThemeCandidate.moduleHash,
+    modules: nativeThemeModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+  },
   'selected-ui-aab4a4b': {
     versionId: refreshCandidate.versionId,
     versionTag: refreshCandidate.versionTag,

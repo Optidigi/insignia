@@ -13,6 +13,7 @@ export function parseReleaseVerificationRequest(
   expectedVersion: string = resolveRuntimeReleaseProfile().activeVersionRef,
 ): ReleaseVerificationRequest {
   const reviewedVersions: readonly string[] = [
+    'native-theme-ced0143',
     'selected-ui-aab4a4b',
     'selected-ui-f48efa2',
     'm5-functions-9c2e56b42fbf',

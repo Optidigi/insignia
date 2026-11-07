@@ -31,6 +31,7 @@ export function resolveNativePurchaseQualification(input: {
   const profile = resolveRuntimeReleaseProfile(input.releaseProfile);
   if (
     ![
+      'native-theme-ced0143',
       'm8-cookie-91b35ab',
       'm8-preview-28443bd',
       'lean-markets-7b17cd9',
