@@ -1,9 +1,0 @@
-{%- liquid
-  assign policy = product.metafields['$app'].insignia_policy_v2.value | split: ':'
-  assign generation = shop.metafields['$app'].insignia_public_config_v2.value.generationHex
-  assign required = false
-  if generation != blank and policy.size == 3 and policy[0] == generation and policy[2] == 'required'
-    assign required = true
-  endif
--%}
-{%- if required -%}known-required{%- endif -%}

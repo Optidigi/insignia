@@ -1,0 +1,39 @@
+{%- liquid
+  assign policy = product.metafields['$app'].insignia_policy_v2.value | split: ':'
+  assign generation = shop.metafields['$app'].insignia_public_config_v2.value.generationHex
+  assign required = false
+  if generation != blank and policy.size == 3 and policy[0] == generation and policy[2] == 'required'
+    assign required = true
+  endif
+  assign control_tag = 'insignia-buyer'
+  if control == 'automatic'
+    assign control_tag = 'insignia-theme-integration'
+  endif
+  assign default_label = 'insignia.customise' | t
+-%}
+{%- if control == 'automatic' or required -%}
+  <{{ control_tag }}
+    product-id="{{ product.id }}"
+    {% if control == 'automatic' %}
+      variant-ids="{{ product.variants | map: 'id' | join: ',' }}"
+      auto-placement="{{ block.settings.auto_placement }}"
+    {% else %}
+      {{ block.shopify_attributes }}
+    {% endif %}
+    {% if required %}known-required{% endif %}
+    proxy-base="{{ routes.root_url }}apps/{{ block.settings.proxy_prefix | escape }}"
+    cart-root="{{ routes.root_url }}" country="{{ localization.country.iso_code }}" market-id="{{ localization.market.id }}"
+    language="{{ request.locale.iso_code | escape }}" store-name="{{ shop.name | escape }}"
+    trigger-label="{{ block.settings.button_label | default: default_label | escape }}"
+    button-style="{{ block.settings.button_style | escape }}"
+    button-width="{{ block.settings.button_width | escape }}"
+    {% if block.settings.button_background != blank %}button-background="{{ block.settings.button_background | escape }}"{% endif %}
+    {% if block.settings.button_color != blank %}button-color="{{ block.settings.button_color | escape }}"{% endif %}
+    {% if block.settings.override_radius %}button-radius="{{ block.settings.button_radius }}px"{% endif %}
+    {% if block.settings.override_border %}button-border-width="{{ block.settings.button_border_width }}px"{% endif %}
+    {% if block.settings.button_border_color != blank %}button-border-color="{{ block.settings.button_border_color | escape }}"{% endif %}
+    {% if block.settings.button_spacing > 0 %}button-spacing="{{ block.settings.button_spacing }}px"{% endif %}
+  ></{{ control_tag }}>
+{%- elsif request.design_mode -%}
+  <p {{ block.shopify_attributes }}>Publish required customization for this product to show Customise.</p>
+{%- endif -%}

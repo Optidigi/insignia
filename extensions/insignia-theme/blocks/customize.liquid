@@ -1,15 +1,4 @@
-{% capture required_marker %}{% render 'published-product', product: product %}{% endcapture %}
-{% assign required_marker = required_marker | strip %}
-{% if required_marker == 'known-required' %}
-  {% assign default_label = 'insignia.customise' | t %}
-  <insignia-buyer product-id="{{ product.id }}" proxy-base="{{ routes.root_url }}apps/{{ block.settings.proxy_prefix | escape }}"
-    cart-root="{{ routes.root_url }}" country="{{ localization.country.iso_code }}" market-id="{{ localization.market.id }}"
-    language="{{ request.locale.iso_code | escape }}" store-name="{{ shop.name | escape }}"
-    {% render 'button-settings', block: block, default_label: default_label %} {{ block.shopify_attributes }}
-  ></insignia-buyer>
-{% elsif request.design_mode %}
-  <p {{ block.shopify_attributes }}>Publish required customization for this product to show Customise.</p>
-{% endif %}
+{% render 'customise-control', product: product, block: block, control: 'manual' %}
 {% schema %}
 {
   "name": "Insignia customization",

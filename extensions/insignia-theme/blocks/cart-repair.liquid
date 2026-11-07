@@ -1,15 +1,5 @@
 <insignia-cart-repair proxy-base="{{ routes.root_url }}apps/{{ block.settings.proxy_prefix | escape }}" cart-root="{{ routes.root_url }}" country="{{ localization.country.iso_code }}" market-id="{{ localization.market.id }}"></insignia-cart-repair>
-{% assign default_label = 'insignia.customise' | t %}
-<insignia-theme-integration
-  product-id="{{ product.id }}"
-  variant-ids="{{ product.variants | map: 'id' | join: ',' }}"
-  {% render 'published-product', product: product %}
-  auto-placement="{{ block.settings.auto_placement }}"
-  proxy-base="{{ routes.root_url }}apps/{{ block.settings.proxy_prefix | escape }}"
-  cart-root="{{ routes.root_url }}" country="{{ localization.country.iso_code }}" market-id="{{ localization.market.id }}"
-  language="{{ request.locale.iso_code | escape }}" store-name="{{ shop.name | escape }}"
-  {% render 'button-settings', block: block, default_label: default_label %}
-></insignia-theme-integration>
+{% render 'customise-control', product: product, block: block, control: 'automatic' %}
 {% schema %}
 {
   "name": "Insignia storefront",
