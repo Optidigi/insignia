@@ -1,0 +1,65 @@
+{
+  "kind": "bounded-development-promotion-and-theme-rollback",
+  "date": "2026-11-07",
+  "source": {
+    "pullRequest": 235,
+    "head": "d84a7613b682d5bd2d6fd772c0e0748e340f10b5",
+    "merge": "05df720f5e3963eca7fb5a0996ad5eb1ebd0483e",
+    "tree": "f3ff58241651b0ca4e2cff0c5982cfb242bfb73d",
+    "runtimeRun": "42389632267",
+    "foundationRun": "42389632366",
+    "durableRun": "42389632404",
+    "ciMergeHead": "cd37e8d20ddac396d26ec689e41ee1799370c029",
+    "requiredChecks": "all passed"
+  },
+  "promoted": {
+    "profile": "native-theme-ced0143",
+    "web": {
+      "manifest": "sha256:ff977b317e9f55d0f0b9cc644197ab9da98080c5a9e5d6d83efc5d4798077f6a",
+      "config": "sha256:3d552830911a6bf22264dd497abecc0d74f67b4444f1e31750bd482414a0e41f",
+      "archiveSha256": "0900c3c1f0f6cc2053ae670b8a3ae473d92fd8fbe5f1dacc5c23d13427071db3",
+      "health": "healthy"
+    },
+    "worker": {
+      "manifest": "sha256:b9237624a1cf1ed6807de36ac9f20f221d0a23b163eea76c990abc85b5e84b26",
+      "config": "sha256:d89d89500f9c91499bfc58177d8bcc860cd202ac75f01985247d8a564de7592a",
+      "archiveSha256": "dfd9d0944bf14285386b6a328c1f70318c350cb6a53839b97499e19f05841fe6",
+      "health": "healthy"
+    },
+    "verifier": {
+      "manifest": "sha256:f8d85e326ee2e50cfc71a47632dac4cf6d8973f22d730701c963c8a4355179aa",
+      "config": "sha256:953f25f658ac022b73215a0dc6dad4a3402a274d82e990d3f87bb1c82fd4fd31",
+      "archiveSha256": "36e036e9f7b0add68f249aa197caa0d2017a0f7b8cbe875b5fa59fa363006369",
+      "codeManifestSha256": "9983bb3f271dfebc6bb5e90f70a2d6d80bc910d6480d39defc3fe94bccd82efa",
+      "state": "running"
+    },
+    "archiveConfigLayerAndLoadedIdentityChecks": "passed",
+    "themeAssetComparison": "all11 final-profile CI assets equal the staged candidate bytes",
+    "privateConfiguration": "only image selectors, selected release profile and verifier code digest changed",
+    "protectedPurchasePaidShopInstallationFingerprints": "unchanged after recreation",
+    "unrelatedContainers": "unchanged",
+    "schema": 50
+  },
+  "shopify": {
+    "candidate": "1198938357761",
+    "tag": "native-theme-ced0143",
+    "releaseClaimedAt": "2026-11-07T16:25:19.199430+00:00",
+    "release": "single acknowledged CLI release; SDK read confirmed sole Active with exact17-version inventory",
+    "nativeDefect": "Shopify app-snippet comment wrappers appeared inside opening-tag attributes; attributes after the wrapper became visible text. Captured snippet output also contained comments, so the scalar required-marker comparison was invalid.",
+    "observedAttribute": { "auto-placement": null },
+    "scopeNote": "The retained product10519322493211 has an effective optional policy. Its missing required hint alone is not a defect or proof of a required-product journey.",
+    "rollbackClaimedAt": "2026-11-07T16:28:58.384724+00:00",
+    "rollback": "single acknowledged CLI release of prior selected-ui-aab4a4b",
+    "rollbackReadbackAt": "2026-11-07T16:30:48.182Z",
+    "activeAfterRollback": "1197668466689",
+    "nativeAfterRollback": "prior selected Designer trigger restored; no malformed integration element or visible attribute text",
+    "candidateDisposition": "1198938357761 NEVER_RELEASE"
+  },
+  "limits": [
+    "Backend image health and Home loading do not establish release admission or native purchase E2E.",
+    "After rollback, the running selected release target differs from Active; no fresh admission is claimed. A corrected candidate, matching closed profiles and fresh correlated observations remain required.",
+    "No existing product/configuration/stock, subscription, currency, sender-test allocation or purchase/paid history was changed by this deployment. No test checkout/order was attempted.",
+    "No database restoration or migration occurred. Prior private runtime configuration and immutable artifacts remain in existing operator custody.",
+    "Source fixes and subscription-compatibility qualification require their own final-head CI and development promotion."
+  ]
+}
