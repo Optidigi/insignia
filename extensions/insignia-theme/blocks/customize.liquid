@@ -1,4 +1,134 @@
-<insignia-buyer trigger-label="{{ block.settings.button_label | escape }}" product-id="{{ product.id }}" proxy-base="{{ routes.root_url }}apps/{{ block.settings.proxy_prefix | escape }}" cart-root="{{ routes.root_url }}" country="{{ localization.country.iso_code }}" market-id="{{ localization.market.id }}" {{ block.shopify_attributes }}></insignia-buyer>
+{% capture required_marker %}{% render 'published-product', product: product %}{% endcapture %}
+{% assign required_marker = required_marker | strip %}
+{% if required_marker == 'known-required' %}
+  {% assign default_label = 'insignia.customise' | t %}
+  <insignia-buyer product-id="{{ product.id }}" proxy-base="{{ routes.root_url }}apps/{{ block.settings.proxy_prefix | escape }}"
+    cart-root="{{ routes.root_url }}" country="{{ localization.country.iso_code }}" market-id="{{ localization.market.id }}"
+    language="{{ request.locale.iso_code | escape }}" store-name="{{ shop.name | escape }}"
+    {% render 'button-settings', block: block, default_label: default_label %} {{ block.shopify_attributes }}
+  ></insignia-buyer>
+{% elsif request.design_mode %}
+  <p {{ block.shopify_attributes }}>Publish required customization for this product to show Customise.</p>
+{% endif %}
 {% schema %}
-{"name":"Insignia customization","target":"section","javascript":"insignia-storefront.js","settings":[{"type":"text","id":"button_label","label":"Button label","default":"Customize this product"},{"type":"text","id":"proxy_prefix","label":"App proxy prefix","default":"insignia"}]}
+{
+  "name": "Insignia customization",
+  "target": "section",
+  "javascript": "insignia-storefront.js",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Optional manual placement. Enable the Insignia storefront app embed to replace native purchase controls. The button appears for products with published required customization."
+    },
+    {
+      "type": "text",
+      "id": "button_label",
+      "label": "Button label",
+      "info": "Leave blank to use the storefront language."
+    },
+    {
+      "type": "select",
+      "id": "button_style",
+      "label": "Button style",
+      "default": "auto",
+      "options": [
+        {
+          "value": "auto",
+          "label": "Match theme purchase button"
+        },
+        {
+          "value": "primary",
+          "label": "Primary"
+        },
+        {
+          "value": "secondary",
+          "label": "Secondary"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "button_width",
+      "label": "Button width",
+      "default": "theme",
+      "options": [
+        {
+          "value": "theme",
+          "label": "Match theme"
+        },
+        {
+          "value": "full",
+          "label": "Full width"
+        },
+        {
+          "value": "content",
+          "label": "Fit text"
+        }
+      ]
+    },
+    {
+      "type": "color",
+      "id": "button_background",
+      "label": "Background override"
+    },
+    {
+      "type": "color",
+      "id": "button_color",
+      "label": "Text color override"
+    },
+    {
+      "type": "checkbox",
+      "id": "override_radius",
+      "label": "Override corner radius",
+      "default": false
+    },
+    {
+      "type": "range",
+      "id": "button_radius",
+      "label": "Corner radius",
+      "min": 0,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "default": 6
+    },
+    {
+      "type": "checkbox",
+      "id": "override_border",
+      "label": "Override border width",
+      "default": false
+    },
+    {
+      "type": "range",
+      "id": "button_border_width",
+      "label": "Border width",
+      "min": 0,
+      "max": 6,
+      "step": 1,
+      "unit": "px",
+      "default": 1
+    },
+    {
+      "type": "color",
+      "id": "button_border_color",
+      "label": "Border color override"
+    },
+    {
+      "type": "range",
+      "id": "button_spacing",
+      "label": "Vertical spacing",
+      "min": 0,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "text",
+      "id": "proxy_prefix",
+      "label": "App proxy prefix",
+      "default": "insignia"
+    }
+  ]
+}
 {% endschema %}

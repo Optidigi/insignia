@@ -605,9 +605,9 @@ test('settings owns billing and privacy and storefront guidance opens exact unsa
   assert.equal(link.origin, 'https://example.myshopify.com');
   assert.equal(link.pathname, '/admin/themes/current/editor');
   assert.deepEqual(Object.fromEntries(link.searchParams), {
+    context: 'apps',
     template: 'product',
-    addAppBlockId: '11111111111111111111111111111111/customize',
-    target: 'mainSection',
+    activateAppId: '11111111111111111111111111111111/cart-repair',
   });
   const repair = new URL(
     required(

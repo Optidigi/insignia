@@ -1,0 +1,62 @@
+{
+  "kind": "bounded-development-observation",
+  "observedDate": "2026-11-07",
+  "shop": "insignia-rewrite-dev.myshopify.com",
+  "shopCurrency": "USD",
+  "deployedAppVersion": "selected-ui-aab4a4b",
+  "fixture": {
+    "productId": "10585669959963",
+    "title": "Insignia UI demo — example calibration",
+    "handle": "insignia-ui-demo-example-calibration",
+    "basePrice": "10.00",
+    "initialInventory": 10,
+    "previewPhoto": { "source": "existing dev-store Shopify media", "width": 600, "height": 800 },
+    "draftVersion": "3",
+    "effectiveRevisionId": null,
+    "publicationSequence": "0",
+    "placement": "Front demo",
+    "method": "Demo print",
+    "methodScope": "product-specific",
+    "decorationPrice": "2.50",
+    "calibration": {
+      "purpose": "explicitly synthetic example for this dedicated development fixture only",
+      "referenceLengthCm": 50,
+      "reference": "full image width",
+      "physicalMm": { "width": 120, "height": 186.667 }
+    }
+  },
+  "observed": {
+    "nativeShopifyProductSave": "succeeded",
+    "selectedEditorDraftCreate": "HTTP201",
+    "selectedEditorDraftSaves": "HTTP200",
+    "localSavedDraftSchemaProjectionLeanAndGeometryValidation": "passed",
+    "publication": "blocked before publication dispatch by subscription verification",
+    "nativeCheckoutOrOrder": "not attempted",
+    "embedActivation": "existing cart-repair body embed and customize section block are active on published theme196092199195"
+  },
+  "subscriptionBlocker": {
+    "source": "actual fixed Partner API2026-07 activeSubscription read using runtime-held credentials",
+    "appAndShopIdentityMatch": true,
+    "readFailureKind": "malformed_response",
+    "trialEndsAt": "2026-10-31T10:57:49Z",
+    "currentBillingCycle": { "startTime": "2026-10-31T10:57:49Z", "endTime": "2026-11-30T10:57:49Z" },
+    "itemHandle": "insignia-standard-20261015",
+    "itemAmount": "0.0",
+    "itemCurrency": "USD",
+    "itemPriceActive": false,
+    "cause": "The response contains both an expired trial and a current billing cycle. The documented contract says trialEndsAt becomes null after trial expiry. Existing strict parsing rejects the contradictory response; no entitlement bypass was introduced.",
+    "documentation": "https://shopify.dev/docs/api/partner/latest/active-subscription",
+    "next": "Reconcile the provider subscription response without adding charges or changing retained financial facts; then repeat publication and the allocated native test journey."
+  },
+  "preservationReadback": {
+    "10490128138523": { "draftVersion": "1", "effectiveRevisionId": null, "publicationSequence": "0", "physicalSteps": [] },
+    "10519322493211": { "draftVersion": "4", "effectiveRevisionId": "9215185d-3109-4f07-b93b-d7e25b9bd7f5", "publicationSequence": "3", "physicalDimensionsStillMissing": true }
+  },
+  "limits": [
+    "Not a successful native publication, customer checkout, payment or order proof.",
+    "The native observer retained only demo-product request paths, methods and status codes; it was restored and its helper tab closed.",
+    "No existing product configuration, stock or shop currency was changed. No billing change, real charge or additional sender test was made.",
+    "Automatic theme integration changes are source/local qualification only until matching CI artifacts and native release bindings are promoted.",
+    "Legacy presentation retirement remains gated on successful replacement E2E."
+  ]
+}

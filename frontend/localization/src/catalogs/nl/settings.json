@@ -118,9 +118,9 @@
     "failedAnnouncement": "Thema-status kon niet worden gecontroleerd.",
     "unsupportedAnnouncement": "Thema-status is niet beschikbaar.",
     "finishedAnnouncement": "Controle van gepubliceerd thema voltooid.",
-    "productTemplatesGuidance": "Voeg het personalisatieblok toe aan elk productsjabloon dat je gebruikt. Als je het aan één sjabloon toevoegt, staat het nog niet in de andere.",
+    "productTemplatesGuidance": "Schakel de Insignia-storefront-embed één keer in voor automatische plaatsing op ondersteunde producttemplates. Gebruik het optionele personalisatie-appblok voor een specifieke positie.",
     "unpublishedThemesGuidance": "Open het thema via Onlinewinkel → Thema’s om Insignia toe te voegen. De statussen hier gelden alleen voor het gepubliceerde thema.",
-    "compatibilityGuidance": "Vraag je themabouwer om hulp bij het toevoegen van de personalisatieknop als app-blokken niet beschikbaar zijn."
+    "compatibilityGuidance": "Automatische plaatsing ondersteunt Horizon en Dawn. Test bij aangepaste thema’s de product- en sneltoevoegknoppen of gebruik het optionele appblok."
   },
   "readinessPermissions": {
     "accessChecks": "Toegangscontroles",
@@ -169,12 +169,12 @@
     "enableInShopify": "Inschakelen in Shopify",
     "editInShopify": "Bewerken in Shopify",
     "openThemeEditor": "Thema-editor openen",
-    "buttonActive": "Toegevoegd aan het gepubliceerde thema. Controleer de productsjablonen die je gebruikt.",
+    "buttonActive": "De storefront-embed is ingeschakeld. Test een gepubliceerd product om de knopplaatsing te controleren.",
     "cartActive": "Laat klanten hun ontwerpen controleren en bewerken voordat ze afrekenen.",
-    "buttonAvailable": "Voeg ‘Insignia-personalisatie’ toe bij de aankoopknoppen in je productsjabloon.",
-    "cartAvailable": "Schakel ‘Insignia-winkelwagencontrole’ in onder App-insluitingen.",
-    "buttonUnknown": "Controleer of ‘Insignia-personalisatie’ bij de aankoopknoppen in je productsjabloon staat.",
-    "cartUnknown": "Controleer of ‘Insignia-winkelwagencontrole’ is ingeschakeld onder App-insluitingen.",
+    "buttonAvailable": "Schakel “Insignia storefront” in bij App-embeds en sla het thema op.",
+    "cartAvailable": "Schakel “Insignia storefront” in bij App-embeds en sla het thema op.",
+    "buttonUnknown": "Controleer of “Insignia storefront” is ingeschakeld bij App-embeds.",
+    "cartUnknown": "Controleer of “Insignia storefront” is ingeschakeld bij App-embeds.",
     "buttonAccessible": "{{action}}: personalisatieknop",
     "cartAccessible": "{{action}}: winkelwagencontrole"
   },

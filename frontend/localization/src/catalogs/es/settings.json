@@ -120,9 +120,9 @@
     "failedAnnouncement": "No se pudo comprobar el estado del tema.",
     "unsupportedAnnouncement": "El estado del tema no está disponible.",
     "finishedAnnouncement": "Terminó la comprobación del tema publicado.",
-    "productTemplatesGuidance": "Añade el bloque de personalización a cada plantilla de producto que uses. Añadirlo a una plantilla no lo añade a las demás.",
+    "productTemplatesGuidance": "Activa una vez la integración de tienda Insignia para colocar el botón automáticamente en las plantillas de producto compatibles. Usa el bloque de aplicación opcional para una posición concreta.",
     "unpublishedThemesGuidance": "Abre el tema desde Tienda online → Temas para añadir Insignia. Los estados que aparecen aquí solo se aplican al tema publicado.",
-    "compatibilityGuidance": "Si no están disponibles los bloques de aplicación, pide al desarrollador del tema que te ayude a añadir el botón de personalización."
+    "compatibilityGuidance": "La colocación automática admite Horizon y Dawn. En temas personalizados, prueba los controles de producto y adición rápida o usa el bloque de aplicación opcional."
   },
   "readinessPermissions": {
     "accessChecks": "Comprobaciones de acceso",
@@ -171,12 +171,12 @@
     "enableInShopify": "Activar en Shopify",
     "editInShopify": "Editar en Shopify",
     "openThemeEditor": "Abrir el editor de temas",
-    "buttonActive": "Añadido al tema publicado. Revisa las plantillas de producto que usas.",
+    "buttonActive": "La integración de tienda está activada. Prueba un producto publicado para comprobar la posición del botón.",
     "cartActive": "Permite que los clientes revisen y editen sus diseños antes de ir al pago.",
-    "buttonAvailable": "Añade «Personalización de Insignia» junto a los controles de compra en la plantilla de producto.",
-    "cartAvailable": "Activa «Revisión del carrito de Insignia» en Incrustaciones de aplicaciones.",
-    "buttonUnknown": "Comprueba que «Personalización de Insignia» esté junto a los controles de compra en la plantilla de producto.",
-    "cartUnknown": "Comprueba que «Revisión del carrito de Insignia» esté activada en Incrustaciones de aplicaciones.",
+    "buttonAvailable": "Activa «Insignia storefront» en Integraciones de aplicaciones y guarda el tema.",
+    "cartAvailable": "Activa «Insignia storefront» en Integraciones de aplicaciones y guarda el tema.",
+    "buttonUnknown": "Comprueba que «Insignia storefront» esté activado en Integraciones de aplicaciones.",
+    "cartUnknown": "Comprueba que «Insignia storefront» esté activado en Integraciones de aplicaciones.",
     "buttonAccessible": "{{action}}: botón de personalización",
     "cartAccessible": "{{action}}: revisión del carrito"
   },

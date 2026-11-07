@@ -28,7 +28,7 @@ Reuse unchanged evidence and qualify changed boundaries under §14. Capability, 
 |---|---|---|
 | Embedded merchant app and HTTP API | Astro 7, standalone Node SSR, Preact islands, Polaris Web Components | Authenticated admin pages, commands, App Proxy endpoints, webhook ingress, health endpoints |
 | Worker | Node.js 24 LTS, pg-boss | Durable asynchronous work, reconciliation, cleanup, isolated artwork inspection coordination |
-| Buyer interface | Theme App Extension, lazy Vite-built Preact bundle, Custom Element + Shadow DOM | Storefront UI, local state, uploads, cart review and cart application |
+| Buyer interface | Theme App Extension, lazy Vite-built Preact bundle, Custom Element host + isolated Designer iframe | Storefront UI, local state, uploads, cart review and cart application |
 | Price materialization | Rust Cart Transform Function | Verify authorizations and apply approved real-variant prices |
 | Checkout protection | Separate Rust Cart & Checkout Validation Function | Independently verify authorization completeness, context, quantity and actual economic result |
 | Data/object services | PostgreSQL 18; private R2 | Durable records, outbox/inbox, original artwork and safe derivatives |
@@ -423,13 +423,13 @@ File-based routes are under `apps/web/src/pages/`; selected merchant islands are
 
 ### 8.1 Bootstrap and visual reference
 
-Theme App Extension app block supplies the customize trigger and trusted *non-authoritative* product/context hints. A lightweight app embed detects Insignia cart lines and exposes review/repair outside product pages. No direct theme-source editing. Theme extensions provide this installable surface. [S16]
+The Theme App Extension body embed places Customise automatically for effective required publications, supplies non-authoritative product/context hints, and exposes cart review/repair. The section app block is an optional placement override. Reuse the existing extension identities and require the merchant to enable/save the embed once; no direct theme-source editing. See §16 and the extension integration guide. [S16]
 
 Lazy-load the custom element/Vite bundle and Konva on interaction or when cart repair is necessary. Register once; support multiple product sections and theme-editor section replacement without duplicate handlers. Pass locale-aware Shopify cart root and merchant-configurable proxy prefix explicitly rather than hardcoding storefront paths.
 
-Shadow DOM isolates styles. Explicitly manage dialog focus, focus return, scroll locking, keyboard/escape behavior, live error announcements, touch interaction and composed events. Shadow DOM is not a security boundary. Do not load Polaris into the buyer interface.
+The selected Designer uses an isolated iframe document and its existing styles. The host trigger inherits theme-native styling. Preserve dialog focus, focus return, scroll locking, keyboard/escape behavior, live error announcements and touch interaction. Style isolation does not grant purchase authority. Do not load Polaris into the buyer interface.
 
-Reference interactions: upload/logo-later, method selection, placement selection, per-placement step choice, conditional multi-view preview, review and garment quantity matrix. Preserve slider/card/placement-tab alternatives and graceful missing-preview states from the existing visual reference. Match actual legacy desktop/mobile layout, typography, color, spacing and interaction states. Only approved Lean per-garment price/review wording changes are permitted; cart grouping acceptance does not waive storefront fidelity. [S24]
+Reference interactions: upload/logo-later, method selection, placement selection, per-placement step choice, conditional multi-view preview, review and garment quantity matrix. Preserve slider/card/placement-tab alternatives and graceful missing-preview states from the existing visual reference. Match the selected §15 Designer desktop/mobile layout, typography, color, spacing and reducers. Its real quote/review wiring preserves the approved per-garment economics; cart grouping acceptance does not waive storefront fidelity. Earlier legacy visual reference [S24] remains historical context.
 
 ### 8.2 State model
 
@@ -660,7 +660,7 @@ Maintained source, tests, fixtures and operational tooling use strictly compiled
 
 **Shopify adapter contracts:** pinned GraphQL schemas and normalized recorded responses, missing/partial errors, throttling/timeouts, exact Money string conversion, pagination, context mismatch and current/offline credential recovery. Redacted fixtures must exclude original artwork, bearer tokens and buyer PII.
 
-**Browser/Playwright:** storefront reference states across desktop/mobile, keyboard/focus/accessibility, Shadow DOM/theme coexistence, variant-color preview switches, local UI↔canvas sync, upload states, price review, complete-cart replacement, arbitrary external cart edits, stale requests and expired renewal. Admin tests cover authenticated cold launch, draft/publish conflicts, entitlement restrictions and artwork lock.
+**Browser/Playwright:** storefront reference states across desktop/mobile, keyboard/focus/accessibility, Designer iframe/native-theme coexistence, variant-color preview switches, local UI↔canvas sync, upload states, price review, complete-cart replacement, arbitrary external cart edits, stale requests and expired renewal. Admin tests cover authenticated cold launch, draft/publish conflicts, entitlement restrictions and artwork lock.
 
 **Real stores/Functions:** deploy exact release-built Wasm and input queries, capture actual Transform/Validation inputs, cart/order/refund data and authoritative recurring contract/trial/cancellation observations. Record Shopify plan, channel, API versions, app distribution mode, currency/tax settings, build hashes and test steps. A special development-store capability must not be mistaken for non-Plus production support.
 

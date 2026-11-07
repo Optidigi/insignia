@@ -118,9 +118,9 @@
     "failedAnnouncement": "Theme-Status konnte nicht geprüft werden.",
     "unsupportedAnnouncement": "Theme-Status nicht verfügbar.",
     "finishedAnnouncement": "Prüfung des veröffentlichten Themes abgeschlossen.",
-    "productTemplatesGuidance": "Fügen Sie den Produktanpassungsblock zu jeder verwendeten Produktvorlage hinzu. Wenn Sie ihn zu einer Vorlage hinzufügen, wird er nicht automatisch zu den anderen hinzugefügt.",
+    "productTemplatesGuidance": "Aktivieren Sie die Insignia-Storefront-Einbettung einmal für die automatische Platzierung in unterstützten Produktvorlagen. Nutzen Sie den optionalen Anpassungs-App-Block für eine bestimmte Position.",
     "unpublishedThemesGuidance": "Öffnen Sie das Theme unter Onlineshop → Themes und fügen Sie Insignia hinzu. Die hier angezeigten Status gelten nur für das veröffentlichte Theme.",
-    "compatibilityGuidance": "Wenn App-Blöcke nicht verfügbar sind, bitten Sie Ihre Theme-Entwicklerin oder Ihren Theme-Entwickler um Hilfe beim Hinzufügen der Schaltfläche zur Produktanpassung."
+    "compatibilityGuidance": "Die automatische Platzierung unterstützt Horizon und Dawn. Testen Sie in angepassten Themes die Produkt- und Schnellkauf-Schaltflächen oder nutzen Sie den optionalen App-Block."
   },
   "readinessPermissions": {
     "accessChecks": "Zugriffsprüfungen",
@@ -169,12 +169,12 @@
     "enableInShopify": "In Shopify aktivieren",
     "editInShopify": "In Shopify bearbeiten",
     "openThemeEditor": "Theme-Editor öffnen",
-    "buttonActive": "Zum veröffentlichten Theme hinzugefügt. Prüfen Sie die verwendeten Produktvorlagen.",
+    "buttonActive": "Die Storefront-Einbettung ist aktiviert. Testen Sie ein veröffentlichtes Produkt, um die Schaltflächenplatzierung zu prüfen.",
     "cartActive": "Ermöglichen Sie der Kundschaft, ihre Gestaltungen vor dem Checkout zu prüfen und zu bearbeiten.",
-    "buttonAvailable": "Fügen Sie „Insignia-Produktanpassung“ in Ihrer Produktvorlage neben den Kaufoptionen hinzu.",
-    "cartAvailable": "Aktivieren Sie „Insignia-Warenkorbprüfung“ unter App-Einbettungen.",
-    "buttonUnknown": "Prüfen Sie, ob „Insignia-Produktanpassung“ in Ihrer Produktvorlage neben den Kaufoptionen angezeigt wird.",
-    "cartUnknown": "Prüfen Sie, ob „Insignia-Warenkorbprüfung“ unter App-Einbettungen aktiviert ist.",
+    "buttonAvailable": "Aktivieren Sie „Insignia storefront“ unter App-Einbettungen und speichern Sie das Theme.",
+    "cartAvailable": "Aktivieren Sie „Insignia storefront“ unter App-Einbettungen und speichern Sie das Theme.",
+    "buttonUnknown": "Prüfen Sie, ob „Insignia storefront“ unter App-Einbettungen aktiviert ist.",
+    "cartUnknown": "Prüfen Sie, ob „Insignia storefront“ unter App-Einbettungen aktiviert ist.",
     "buttonAccessible": "{{action}}: Schaltfläche zur Produktanpassung",
     "cartAccessible": "{{action}}: Warenkorbprüfung"
   },

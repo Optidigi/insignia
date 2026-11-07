@@ -41,6 +41,7 @@ export async function handleBuyerRequest(
     });
   try {
     if (!services) throw new HttpError(503, 'UNAVAILABLE');
+    if (route === 'eligibility' && request.method === 'GET') return respond(await services.eligibility(request));
     if (route === 'config' && request.method === 'GET') return respond(await services.config(request));
     const body = await buyerJsonBody(request);
     if (!body) throw new HttpError(400, 'INVALID_REQUEST');

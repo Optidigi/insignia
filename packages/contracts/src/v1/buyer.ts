@@ -80,6 +80,10 @@ const minor = z
   .string()
   .max(20)
   .regex(/^(0|[1-9][0-9]*)$/);
+export const BuyerEligibilitySchema = z.strictObject({
+  productId: z.string().regex(/^[1-9][0-9]{0,19}$/),
+  configured: z.literal(true),
+});
 export const BuyerConfigSchema = z.strictObject({
   version: z.literal('m7-config-v1'),
   productId: z.string().regex(/^[1-9][0-9]{0,19}$/),
@@ -209,6 +213,7 @@ export const BuyerDesignRestorationSchema = BuyerDesignResultSchema.extend({
 });
 /** The browser and HTTP composition share these versioned JSON boundaries. Geometry is validated by the visualizer. */
 export function parseBuyerResponse(route: string, value: unknown): unknown {
+  if (route === 'eligibility') return BuyerEligibilitySchema.parse(value);
   if (route === 'config') return BuyerConfigSchema.parse(value);
   if (route === 'sessions') return BuyerSessionSchema.parse(value);
   if (route === 'quote-proposals') return BuyerProposalSchema.parse(value);

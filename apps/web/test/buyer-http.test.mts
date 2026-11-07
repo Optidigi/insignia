@@ -18,6 +18,16 @@ test('buyer authority has no fallback when production composition is absent', as
   assert.ok(error.requestId);
   assert.equal(result.headers.get('Cache-Control'), 'private, no-store');
 });
+test('eligibility is a no-store public presentation hint with no session or quote authority', async () => {
+  const result = await handleBuyerRequest(
+    new Request('https://app.invalid/v1/eligibility?productId=123'),
+    buyerFixture({ eligibility: async () => ({ productId: '123', configured: true }) }),
+    'eligibility',
+  );
+  assert.equal(result.status, 200);
+  assert.deepEqual(await result.json(), { productId: '123', configured: true });
+  assert.equal(result.headers.get('Cache-Control'), 'private, no-store');
+});
 test('buyer rejects oversized bodies before authentication and never copies an unlimited stream', async () => {
   let verified = 0;
   const result = await handleBuyerRequest(
