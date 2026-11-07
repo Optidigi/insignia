@@ -298,6 +298,8 @@ Publication sequencing favors safe denial over transient unsigned required purch
 
 There is no generic Cart Transform fallback or separate Lean Plus branch. Retain and qualify the non-Plus G1 route: expand to one child with the same real variant, child quantity one relative to its parent, and the authorized fixed unit price. A failed G1 reopens that mechanism instead of enabling fee products behind the scenes.
 
+A v3 restoration claim may be rearmed only from a durable, bound **NOT_DISPATCHED** receipt: no acknowledgement/compensation, exact held product/scope/operation and matching snapshot. Atomically consume the stored receipt's canonical digest into the claim before issuing one local dispatch capability; the same receipt cannot grant another attempt, including with a frozen clock or crash after consumption. Keep all fresh release/projection/key/identity/snapshot/expiry checks at dispatch. The adapter can release its physical-attempt slot only for proved pre-fetch non-dispatch, never clear expired-port quarantine. Readback, timeout, an ambiguous/acknowledged outcome or a claim-owning failure without a new settled outcome cannot authorize replay. Schema51 archives each original claim/receipt and consumed claim in an owner-triggered append-only audit, without granting runtime direct DML. Historical financial and publication evidence remains immutable.
+
 ### 6.3 Function behavior during cart mutations
 
 Cart-wide replacement may require several Ajax operations. Do not demand complete sets during every intermediate cart mutation in a way that makes repair impossible. Cart mutation policy:
@@ -375,6 +377,8 @@ The identity-sanitized [observed wire fixture](../../packages/shopify/fixtures/p
 Astro owns routing, server authorization and rendering. There is no application-wide React/Preact router. Use Polaris for ordinary controls and page composition, plus Preact islands for the price editor, placement canvas, upload/preview and other genuinely stateful controls. Use direct App Bridge APIs, not React wrappers. Polaris and Preact support framework-independent custom elements, but their events/hydration/focus integration is tested in G7. [S14, S15]
 
 ### 7.1 Secure SSR boundary
+
+Ordinary merchant requests retain a ten-second client deadline and two-second minimum token scheduling window. Only an exact product-config POST `publish` uses a sixty-second total client budget and requires a decoded expiry hint of at least thirty seconds of JWT validity before sending, including a forced401 refresh. Token-acquisition sharing is isolated by policy; cancellation still fences late dispatch, and command bytes/idempotency remain unchanged. These are client scheduling budgets justified by the measured native continuation (16.471seconds); they never extend server signature/expiry/staff/installation authority. Publishing and restoration retain their existing pending/reconciliation UI states.
 
 Never return private merchant data merely because a request includes `shop`/`host` query parameters. Authenticated document requests may SSR their permitted content. A request without valid credentials returns only a minimal public bootstrap/shell; App Bridge obtains an identity token before private requests.
 
