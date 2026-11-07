@@ -55,6 +55,7 @@ test('observed native origin binds only the closed release profile and validated
 });
 
 for (const [releaseProfile, expectedVersion] of [
+  ['native-selected-fixed-81830c6', '1199166783489'],
   ['native-cart-fd9cc61', '1199122513921'],
   ['native-fixed-5c04fa8', '1198986199041'],
   ['native-theme-ced0143', '1198938357761'],

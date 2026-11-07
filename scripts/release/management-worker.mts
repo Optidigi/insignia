@@ -9,6 +9,7 @@ import type { Reservation } from './collector.mts';
 import { SESSION_CLIENT_SHA256, VERIFIER_SDK } from './paths.mts';
 import { releaseProfile } from './profiles.mts';
 import { array, callable, method, number, object, required, text } from './validation.mts';
+import { readAppVersionInventory } from './version-inventory.mts';
 
 const APP = '1443cf6d03d39edae7c101a943c5c684';
 const pins = [
@@ -122,7 +123,7 @@ export async function runManagementReads({
 function managementClient(value: unknown): ManagementClient {
   return {
     activeAppVersionRawResult: async (key) => method(value, 'activeAppVersionRawResult')(key),
-    appVersions: async (remote) => method(value, 'appVersions')(remote),
+    appVersions: async (remote) => readAppVersionInventory(value, remote),
     appVersionByTag: async (remote, tag) => method(value, 'appVersionByTag')(remote, tag),
   };
 }

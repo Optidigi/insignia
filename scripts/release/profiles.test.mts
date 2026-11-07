@@ -10,6 +10,12 @@ import cartModules from '../../deployment/m5-runtime/native-cart-module-baseline
 import cartBinding from '../../deployment/m5-runtime/native-cart-release-binding.json' with { type: 'json' };
 import fixedModules from '../../deployment/m5-runtime/native-fixed-module-baseline.json' with { type: 'json' };
 import fixedBinding from '../../deployment/m5-runtime/native-fixed-release-binding.json' with { type: 'json' };
+import selectedOnlyModules from '../../deployment/m5-runtime/native-selected-fixed-module-baseline.json' with {
+  type: 'json',
+};
+import selectedOnlyBinding from '../../deployment/m5-runtime/native-selected-fixed-release-binding.json' with {
+  type: 'json',
+};
 import nativeThemeModules from '../../deployment/m5-runtime/native-theme-module-baseline.json' with { type: 'json' };
 import refreshModules from '../../deployment/m5-runtime/selected-refresh-module-baseline.json' with { type: 'json' };
 import selectedModules from '../../deployment/m5-runtime/selected-ui-module-baseline.json' with { type: 'json' };
@@ -100,7 +106,25 @@ test('native cart candidate adds exactly one version and preserves all identitie
   }
 });
 
+test('corrected cleanup candidate preserves all original identities and retains both new inactive-version facts', () => {
+  assert.equal(selectedOnlyModules.length, 14);
+  const handles = selectedOnlyModules.map(({ handle }) => handle);
+  assert.deepEqual(handles, [...handles].sort());
+  assert.deepEqual(
+    new Set(selectedOnlyBinding.versionIds),
+    new Set([...cartBinding.versionIds, '1199165767681', '1199166783489']),
+  );
+  for (const module of selectedOnlyModules) {
+    const prior = required(cartModules.find(({ handle }) => handle === module.handle));
+    const { config, ...identity } = module;
+    const { config: previousConfig, ...previousIdentity } = prior;
+    assert.deepEqual(identity, previousIdentity);
+    if (module.handle !== 'insignia') assert.deepEqual(config, previousConfig);
+  }
+});
+
 for (const profile of [
+  'native-selected-fixed-81830c6',
   'native-cart-fd9cc61',
   'native-fixed-5c04fa8',
   'native-theme-ced0143',
@@ -114,7 +138,8 @@ for (const profile of [
   'lean-markets-7b17cd9',
   'lean-privacy-theme-23fd116',
 ]) {
-  const cart = profile === 'native-cart-fd9cc61';
+  const selectedOnly = profile === 'native-selected-fixed-81830c6';
+  const cart = selectedOnly || profile === 'native-cart-fd9cc61';
   const fixed = cart || profile === 'native-fixed-5c04fa8';
   const nativeTheme = fixed || profile === 'native-theme-ced0143';
   const refreshed = nativeTheme || profile === 'selected-ui-aab4a4b';
@@ -125,56 +150,74 @@ for (const profile of [
   const cookie = preview || profile === 'm8-cookie-91b35ab';
   const theme = cookie || profile === 'm8-theme-c8d8713';
   const proxy = profile !== 'm8-read-orders-617057f';
-  const versionId = cart
-    ? '1199122513921'
-    : fixed
-      ? '1198986199041'
-      : nativeTheme
-        ? '1198938357761'
-        : refreshed
-          ? '1197668466689'
-          : selected
-            ? '1196974997505'
-            : privacy
-              ? '1171218169857'
-              : lean
-                ? '1169137696769'
-                : preview
-                  ? '1168157736961'
-                  : cookie
-                    ? '1166710865921'
-                    : theme
-                      ? '1166552825857'
-                      : proxy
-                        ? '1166090010625'
-                        : '1165513097217';
-  const modules = cart
-    ? cartModules
-    : fixed
-      ? fixedModules
-      : nativeTheme
-        ? nativeThemeModules
-        : refreshed
-          ? refreshModules
-          : selected
-            ? selectedModules
-            : privacy
-              ? privacyModules
-              : lean
-                ? leanMarketsModules
-                : preview
-                  ? previewThemeModules
-                  : cookie
-                    ? cookieThemeModules
-                    : theme
-                      ? themeModules
-                      : proxy
-                        ? proxyModules
-                        : historicalM8Modules;
+  const versionId = selectedOnly
+    ? '1199166783489'
+    : cart
+      ? '1199122513921'
+      : fixed
+        ? '1198986199041'
+        : nativeTheme
+          ? '1198938357761'
+          : refreshed
+            ? '1197668466689'
+            : selected
+              ? '1196974997505'
+              : privacy
+                ? '1171218169857'
+                : lean
+                  ? '1169137696769'
+                  : preview
+                    ? '1168157736961'
+                    : cookie
+                      ? '1166710865921'
+                      : theme
+                        ? '1166552825857'
+                        : proxy
+                          ? '1166090010625'
+                          : '1165513097217';
+  const modules = selectedOnly
+    ? selectedOnlyModules
+    : cart
+      ? cartModules
+      : fixed
+        ? fixedModules
+        : nativeTheme
+          ? nativeThemeModules
+          : refreshed
+            ? refreshModules
+            : selected
+              ? selectedModules
+              : privacy
+                ? privacyModules
+                : lean
+                  ? leanMarketsModules
+                  : preview
+                    ? previewThemeModules
+                    : cookie
+                      ? cookieThemeModules
+                      : theme
+                        ? themeModules
+                        : proxy
+                          ? proxyModules
+                          : historicalM8Modules;
   const profileTest = (name: string, fn: TestFn) => test(`${profile}: ${name}`, fn);
   const prior = (versions: ReleaseAppendInput['activeObservation']['versions']) =>
     proxy
       ? [
+          ...(selectedOnly
+            ? [
+                {
+                  versionId: 'gid://shopify/Version/1199165767681',
+                  versionTag: 'native-selected-81830c6',
+                  status: 'inactive',
+                },
+                {
+                  versionId: 'gid://shopify/Version/1199122513921',
+                  versionTag: 'native-cart-fd9cc61',
+                  status: 'inactive',
+                },
+              ]
+            : []),
           ...(cart
             ? [
                 {

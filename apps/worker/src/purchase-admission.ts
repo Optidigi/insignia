@@ -31,6 +31,7 @@ export function resolveNativePurchaseQualification(input: {
   const profile = resolveRuntimeReleaseProfile(input.releaseProfile);
   if (
     ![
+      'native-selected-fixed-81830c6',
       'native-cart-fd9cc61',
       'native-fixed-5c04fa8',
       'native-theme-ced0143',
