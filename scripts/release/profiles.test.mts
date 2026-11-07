@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import type { TestFn } from 'node:test';
 import test from 'node:test';
 import { createReleaseVerificationClient } from '../../apps/web/src/server/admin/release-verification.ts';
+import fixedModules from '../../deployment/m5-runtime/native-fixed-module-baseline.json' with { type: 'json' };
 import nativeThemeModules from '../../deployment/m5-runtime/native-theme-module-baseline.json' with { type: 'json' };
 import refreshModules from '../../deployment/m5-runtime/selected-refresh-module-baseline.json' with { type: 'json' };
 import selectedModules from '../../deployment/m5-runtime/selected-ui-module-baseline.json' with { type: 'json' };
@@ -71,7 +72,19 @@ test('native theme candidate changes only theme configuration and preserves ever
   }
 });
 
+test('corrected native candidate preserves every module identity and changes only its complete-element theme files', () => {
+  assert.equal(fixedModules.length, nativeThemeModules.length);
+  for (const module of fixedModules) {
+    const previous = required(nativeThemeModules.find(({ handle }) => handle === module.handle));
+    const { config, ...identity } = module;
+    const { config: previousConfig, ...previousIdentity } = previous;
+    assert.deepEqual(identity, previousIdentity);
+    if (module.handle !== 'insignia') assert.deepEqual(config, previousConfig);
+  }
+});
+
 for (const profile of [
+  'native-fixed-5c04fa8',
   'native-theme-ced0143',
   'selected-ui-aab4a4b',
   'selected-ui-f48efa2',
@@ -83,7 +96,8 @@ for (const profile of [
   'lean-markets-7b17cd9',
   'lean-privacy-theme-23fd116',
 ]) {
-  const nativeTheme = profile === 'native-theme-ced0143';
+  const fixed = profile === 'native-fixed-5c04fa8';
+  const nativeTheme = fixed || profile === 'native-theme-ced0143';
   const refreshed = nativeTheme || profile === 'selected-ui-aab4a4b';
   const selected = refreshed || profile === 'selected-ui-f48efa2';
   const privacy = selected || profile === 'lean-privacy-theme-23fd116';
@@ -92,48 +106,61 @@ for (const profile of [
   const cookie = preview || profile === 'm8-cookie-91b35ab';
   const theme = cookie || profile === 'm8-theme-c8d8713';
   const proxy = profile !== 'm8-read-orders-617057f';
-  const versionId = nativeTheme
-    ? '1198938357761'
-    : refreshed
-      ? '1197668466689'
-      : selected
-        ? '1196974997505'
-        : privacy
-          ? '1171218169857'
-          : lean
-            ? '1169137696769'
-            : preview
-              ? '1168157736961'
-              : cookie
-                ? '1166710865921'
-                : theme
-                  ? '1166552825857'
-                  : proxy
-                    ? '1166090010625'
-                    : '1165513097217';
-  const modules = nativeTheme
-    ? nativeThemeModules
-    : refreshed
-      ? refreshModules
-      : selected
-        ? selectedModules
-        : privacy
-          ? privacyModules
-          : lean
-            ? leanMarketsModules
-            : preview
-              ? previewThemeModules
-              : cookie
-                ? cookieThemeModules
-                : theme
-                  ? themeModules
-                  : proxy
-                    ? proxyModules
-                    : historicalM8Modules;
+  const versionId = fixed
+    ? '1198986199041'
+    : nativeTheme
+      ? '1198938357761'
+      : refreshed
+        ? '1197668466689'
+        : selected
+          ? '1196974997505'
+          : privacy
+            ? '1171218169857'
+            : lean
+              ? '1169137696769'
+              : preview
+                ? '1168157736961'
+                : cookie
+                  ? '1166710865921'
+                  : theme
+                    ? '1166552825857'
+                    : proxy
+                      ? '1166090010625'
+                      : '1165513097217';
+  const modules = fixed
+    ? fixedModules
+    : nativeTheme
+      ? nativeThemeModules
+      : refreshed
+        ? refreshModules
+        : selected
+          ? selectedModules
+          : privacy
+            ? privacyModules
+            : lean
+              ? leanMarketsModules
+              : preview
+                ? previewThemeModules
+                : cookie
+                  ? cookieThemeModules
+                  : theme
+                    ? themeModules
+                    : proxy
+                      ? proxyModules
+                      : historicalM8Modules;
   const profileTest = (name: string, fn: TestFn) => test(`${profile}: ${name}`, fn);
   const prior = (versions: ReleaseAppendInput['activeObservation']['versions']) =>
     proxy
       ? [
+          ...(fixed
+            ? [
+                {
+                  versionId: 'gid://shopify/Version/1198938357761',
+                  versionTag: 'native-theme-ced0143',
+                  status: 'inactive',
+                },
+              ]
+            : []),
           ...(nativeTheme
             ? [
                 {

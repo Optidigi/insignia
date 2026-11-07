@@ -1,6 +1,8 @@
 /** Closed reviewed profiles. Selection changes expected observations, never grants
  * access or attests that the candidate is Active. No caller supplied baseline. */
 import assert from 'node:assert/strict';
+import fixedModules from '../../deployment/m5-runtime/native-fixed-module-baseline.json' with { type: 'json' };
+import fixedCandidate from '../../deployment/m5-runtime/native-fixed-release-binding.json' with { type: 'json' };
 import historicalModules from '../../deployment/m5-runtime/native-function-module-baseline.json' with { type: 'json' };
 import nativeThemeModules from '../../deployment/m5-runtime/native-theme-module-baseline.json' with { type: 'json' };
 import nativeThemeCandidate from '../../deployment/m5-runtime/native-theme-release-binding.json' with { type: 'json' };
@@ -45,6 +47,14 @@ const oldIds = [
   '1146748534785',
 ] as const;
 const profiles = {
+  'native-fixed-5c04fa8': {
+    versionId: fixedCandidate.versionId,
+    versionTag: fixedCandidate.versionTag,
+    versionIds: fixedCandidate.versionIds,
+    moduleHash: fixedCandidate.moduleHash,
+    modules: fixedModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+  },
   'native-theme-ced0143': {
     versionId: nativeThemeCandidate.versionId,
     versionTag: nativeThemeCandidate.versionTag,
