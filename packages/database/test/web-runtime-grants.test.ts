@@ -291,6 +291,24 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
         [purchaseId, shopId, 'gid://shopify/Order/123', now, 'USD'],
       );
       expect((await core.purchases.get(authority, purchaseId))?.originalTotalMinor).toBe('100');
+      // Reproduce an already deployed installation missing the new projection's
+      // identifier-only reads; use the additive delta rather than rerunning bootstrap grants.
+      await owner.query(`REVOKE SELECT(shop_id,order_id) ON customer_order_erasure_fences FROM ${login},${queue}`);
+      await owner.query(`REVOKE SELECT(shop_id,installation_generation) ON shop_privacy_fences FROM ${login},${queue}`);
+      await expect(core.purchases.missingOrderNames(authority)).rejects.toMatchObject({ code: '42501' });
+      const labelGrants = (
+        await readFile(
+          new URL('../../../deployment/m5-runtime/order-label-runtime-grants.sql', import.meta.url),
+          'utf8',
+        )
+      )
+        .replaceAll(':"web_role"', login)
+        .replaceAll(':"worker_role"', queue);
+      await owner.query(labelGrants);
+      await owner.query(labelGrants);
+      expect(await core.purchases.missingOrderNames(authority)).toEqual(['gid://shopify/Order/123']);
+      await core.purchases.rememberOrderNames(authority, { 'gid://shopify/Order/123': '#123' });
+      expect(await core.purchases.missingOrderNames(authority)).toEqual([]);
       const manifest = {
         version: 'm6-inspection-v1',
         mimeType: 'image/png',
@@ -695,11 +713,23 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       // Model the M5 worker baseline used by the usage ledger's installation read/row lock.
       // Existing production grants: scripts/worker/queue-roles.sql; this fixture grants only the needed subset.
       await owner.query(`GRANT SELECT ON public.shops,public.installation_generations TO ${queue}`);
+      await owner.query(`GRANT UPDATE(updated_at) ON public.shops TO ${queue}`);
       await owner.query(`GRANT UPDATE(deactivated_at) ON public.installation_generations TO ${queue}`);
       const workerAddress = new URL(target);
       workerAddress.username = worker;
       workerAddress.password = workerPassword;
       purchaseWorker = new Pool({ connectionString: workerAddress.href, connectionTimeoutMillis: 5000 });
+      const labelWorker = createDurableCore(new Pool({ connectionString: workerAddress.href }));
+      try {
+        expect(await labelWorker.purchases.missingOrderNames(authority)).toEqual([]);
+        await labelWorker.purchases.rememberOrderNames(authority, { 'gid://shopify/Order/123': '#123 worker' });
+        expect(
+          (await owner.query('SELECT order_name FROM purchase_order_labels WHERE purchase_id=$1', [purchaseId])).rows[0]
+            ?.order_name,
+        ).toBe('#123 worker');
+      } finally {
+        await labelWorker.close();
+      }
       await owner.query(script); // Requalify baseline before the separately additive lifecycle grant.
       // Qualify the additive lifecycle grant on actual LOGINs. Keep the
       // intentionally narrow worker baseline; these definers need no raw PII grants.
@@ -819,6 +849,12 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       // The local ledger is not activated for any deployed runtime role.
       for (const runtime of [web, purchaseWorker, inspectionWorker])
         for (const query of [
+          'SELECT * FROM customer_order_erasure_fences',
+          'SELECT source_inbox_id FROM customer_order_erasure_fences',
+          'SELECT * FROM shop_privacy_fences',
+          'SELECT source_inbox_id FROM shop_privacy_fences',
+          'INSERT INTO customer_order_erasure_fences DEFAULT VALUES',
+          'DELETE FROM shop_privacy_fences WHERE false',
           'SELECT * FROM m5_restoration_no_dispatch_consumptions',
           'INSERT INTO m5_restoration_no_dispatch_consumptions DEFAULT VALUES',
           'UPDATE m5_restoration_no_dispatch_consumptions SET receipt_digest=receipt_digest WHERE false',

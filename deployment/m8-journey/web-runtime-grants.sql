@@ -102,6 +102,9 @@ GRANT UPDATE(next_attempt_at) ON public.purchase_reconciliation_cursors TO insig
 -- Selected frontend mutable preferences and safe provider label projection.
 GRANT SELECT, INSERT, UPDATE ON public.merchant_preferences TO insignia_runtime;
 GRANT SELECT, INSERT, UPDATE ON public.purchase_order_labels TO insignia_runtime;
+-- Label eligibility uses identifiers only; privacy receipts and source fields stay private.
+GRANT SELECT(shop_id,order_id) ON public.customer_order_erasure_fences TO insignia_runtime;
+GRANT SELECT(shop_id,installation_generation) ON public.shop_privacy_fences TO insignia_runtime;
 
 -- Narrow customer artwork capability and delivery custody; planning is trigger-owned.
 GRANT SELECT, INSERT ON public.customer_artwork_grants,public.customer_artwork_submissions TO insignia_runtime;

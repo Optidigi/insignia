@@ -47,4 +47,6 @@ GRANT SELECT, INSERT, UPDATE ON public.purchase_reconciliation_cursors TO insign
 GRANT UPDATE(lease_owner,lease_until) ON public.inbox_messages TO insignia_queue_consume;
 -- Reconciliation may refresh verified display labels, never customer identity.
 GRANT SELECT, INSERT, UPDATE ON public.purchase_order_labels TO insignia_queue_consume;
+GRANT SELECT(shop_id,order_id) ON public.customer_order_erasure_fences TO insignia_queue_consume;
+GRANT SELECT(shop_id,installation_generation) ON public.shop_privacy_fences TO insignia_queue_consume;
 COMMIT;
