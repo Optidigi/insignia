@@ -1,11 +1,14 @@
 ---
-import '../../../../styles/placement-editor.css';
-import MerchantConfigEditor from '../../../../islands/MerchantConfigEditor';
+import '../../../../../examples/admin/support/placement-workflow-preview.css';
+import '../../../../../examples/admin/support/placement-variant-photo-panel.css';
+import '../../../../../examples/admin/support/placement-method-manager.css';
+import '../../../../../examples/admin/support/placement-image-picker.css';
+import '../../../../../examples/admin/support/placement-setup-copy-dialog.css';
+import '../../../../../examples/admin/support/placement-setup-copy-review.css';
+import SelectedProductContainer from '../../../../islands/SelectedProductContainer';
 import AdminLayout from '../../../../layouts/AdminLayout.astro';
-import { productEditorReturnPath } from '../../../../shared/products-return-path';
 
 const productId = Astro.params.productId ?? '';
-const returnTo = productEditorReturnPath(Astro.url.searchParams.get('returnTo'));
 if (!/^[1-9][0-9]*$/.test(productId)) return Astro.redirect('/admin/products');
 const apiKey = process.env.SHOPIFY_CLIENT_ID;
 let storageOrigin = '';
@@ -30,5 +33,5 @@ if (!apiKey || !/^[A-Za-z0-9_-]{1,128}$/.test(apiKey))
   return Astro.rewrite('/admin/unavailable');
 ---
 <AdminLayout titleKey="admin-shell:titles.configuration" apiKey={apiKey}>
-    <MerchantConfigEditor productId={productId} returnTo={returnTo} locale={Astro.url.searchParams.get('locale')} client:polaris />
+    <SelectedProductContainer productId={`gid://shopify/Product/${productId}`} locale={Astro.url.searchParams.get('locale')} client:polaris />
 </AdminLayout>

@@ -218,6 +218,16 @@ config.config.draft.labels = {
   placements: { front: 'Front chest' },
   steps: { small: 'Small', large: 'Large' },
 };
+// Read-only selected-container fixtures for scenarios without the interactive demo adapter.
+const selectedContext = { shop: 'synthetic.myshopify.com', authority: 'a'.repeat(64), canEdit: false };
+fixtures['/api/admin/preferences'] = {
+  version: 'merchant-preferences-v1', ...selectedContext, canReadPrivacy: false,
+  guidanceVersion: '0', wordingVersion: '0', guidance: { dismissed: false, completedSteps: [] },
+  overlays: { en: { locale: 'en', messages: {} } },
+};
+fixtures['/api/admin/methods'] = { ...selectedContext, currency: 'USD', methods: [] };
+Object.assign(config.product, { tags: [], collections: [], collectionsTruncated: false, methodSetup: [],
+  configurationSummary: { state: 'draft', methods: ['Screen printing'], locations: ['Front chest'] } });
 fixtures['/api/admin/products'] = { products: [config.product], nextCursor: null };
 fixtures['/api/admin/products/111/config'] = config;
 const loadPreviewIcon = createPreviewIconLoader();
@@ -533,7 +543,7 @@ const server = createServer(async (request, reply) => {
           ? url.pathname === '/api/admin/products'
             ? { products: [], nextCursor: null }
             : url.pathname === '/api/admin/methods'
-              ? { methods: [] }
+              ? { ...selectedContext, currency: 'USD', methods: [] }
               : url.pathname === '/api/purchases/v1'
                 ? { version: 'm8-purchase-list-v1', items: [], nextCursor: null }
                 : url.pathname === '/api/purchases/v1/privacy'
@@ -600,7 +610,7 @@ const server = createServer(async (request, reply) => {
       }
       if (demo && state === 'normal' && /^\/admin\/products\/\d+\/config\/?$/.test(url.pathname)) {
         html = html.replace(
-          /<astro-island\b[^>]*component-url="[^"]*MerchantConfigEditor[^"]*"[^>]*>[\s\S]*?<\/astro-island>/,
+          /<astro-island\b[^>]*component-url="[^"]*SelectedProductContainer[^"]*"[^>]*>[\s\S]*?<\/astro-island>/,
           '<div id="placement-workflow-preview" role="status" aria-label="Loading product setup"></div>',
         );
         html = html.replace(
@@ -615,7 +625,7 @@ const server = createServer(async (request, reply) => {
       }
       if (methodWorkflow && state === 'normal' && (methodRoute || url.pathname === '/admin/settings/methods')) {
         html = html.replace(
-          /<astro-island\b[^>]*component-url="[^"]*MethodLibrary[^"]*"[^>]*>[\s\S]*?<\/astro-island>/,
+          /<astro-island\b[^>]*component-url="[^"]*MethodsContainer[^"]*"[^>]*>[\s\S]*?<\/astro-island>/,
           '<div id="method-workflow-preview" role="status" aria-label="Loading decoration methods"></div>',
         );
         html = html.replace(

@@ -31,7 +31,7 @@ import { createSelectedProductMedia } from './selected-product-media';
 import {
   isMerchantPublicationContinuing,
   isMerchantPublicationOperatorBlocked,
-} from './merchant-config-editor-workflow';
+} from './publication-state';
 
 type Client = ReturnType<typeof createSelectedProductClient>;
 type Media = ReturnType<typeof createSelectedProductMedia>;

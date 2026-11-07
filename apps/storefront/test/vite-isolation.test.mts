@@ -22,11 +22,11 @@ test('parallel storefront servers own independent optimizer caches and survive a
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
     await page.goto(`http://127.0.0.1:${serverPort(first.httpServer)}/`);
-    await page.waitForFunction(() => !!customElements.get('insignia-artwork-upload'));
+    await page.waitForFunction(() => !!customElements.get('insignia-buyer'));
     await first.close();
     await assert.rejects(access(first.config.cacheDir));
     await page.goto(`http://127.0.0.1:${serverPort(second.httpServer)}/`);
-    await page.waitForFunction(() => !!customElements.get('insignia-artwork-upload'));
+    await page.waitForFunction(() => !!customElements.get('insignia-buyer'));
     await access(second.config.cacheDir);
   } finally {
     await browser?.close();

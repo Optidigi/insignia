@@ -1,0 +1,100 @@
+{
+  "kind": "bounded-development-activation-and-native-cart-handoff",
+  "date": "2026-11-07",
+  "source": {
+    "pullRequest": 240,
+    "head": "d102895d834afd617f1943b9f7eb29ccdfbb4ea6",
+    "merge": "d3287063dc90427cd2546cc8f2bc565206fd9053",
+    "tree": "b5a0c4c749d68f4f3fbf53e8d27abea81ab24d88",
+    "ciMergeHead": "e330d352ec2849ac39762eb04e4ba9571751d701",
+    "runtimeRun": "42417380729",
+    "foundationRun": "42417380748",
+    "durableRun": "42417380747",
+    "attempt": 1,
+    "requiredChecks": "all passed"
+  },
+  "promoted": {
+    "profile": "native-cart-fd9cc61",
+    "schema": 51,
+    "newMigration": false,
+    "newGrants": false,
+    "web": {
+      "manifest": "sha256:ac48aac415d42dc1c93dd20daeb626cf1e5d487b058dc4519d998d59b12f4ff3",
+      "config": "sha256:742ce491b6d2245718469b765b94c06e79fcab8872044b21e15952202a497cf8",
+      "archiveSha256": "ee933a632dc72e428146fa3c752e8ebbc329cbc2235b13b5cf105ae7fdba164c"
+    },
+    "worker": {
+      "manifest": "sha256:ebc6b8aa69055744faae4e5609c81f3b2150f48ec53905357f03117c637efcd5",
+      "config": "sha256:68bcc6814b38b43b72a82e6ad51172adcd1591a72079099a536b093f8963c902",
+      "archiveSha256": "baf18e9e5b29e75c2a678ccb5c906e999b4f072f2f708ca915e4cfd0cae35795"
+    },
+    "verifier": {
+      "manifest": "sha256:9a658aea39b575a67a52d654eb2b2ea39d58be195f47dea3fc4b3523481c6894",
+      "config": "sha256:f106b18ad954d10b4d22b91933423c3e3a0b116da6af80a6152f65f55d70cfe5",
+      "archiveSha256": "d067a8530b968027978306de5f399b5bc1701ea2ccaeabae39b38223cc921ce0",
+      "codeManifestSha256": "17c78b23742226be28ee5c8a42db55dbc0ffbce2ecc9d6a09c6497f924cc1a06"
+    },
+    "qualification": "exact archives, all OCI blobs/config/layers and loaded identities qualified before owned role recreation; all three running and liveness healthy",
+    "preserved": "all five purchase/all four paid facts, shops/installations, schema/roles/membership/table and column ACLs, unrelated containers and inspector unchanged; auth, mounts, journals, networks and routing retained"
+  },
+  "activation": {
+    "versionId": "1199122513921",
+    "versionTag": "native-cart-fd9cc61",
+    "status": "sole active",
+    "previousVersionId": "1198986199041",
+    "versionCount": 19,
+    "moduleCount": 14,
+    "nonThemeConfigsUnchanged": 13,
+    "moduleHash": "43681bfdabfc06aeede1960e6655642841b6d3d9a06492a1b4498fe68d0a2620",
+    "themeFileCount": 21,
+    "ciAssetCount": 12,
+    "assets": "all rebuilt CI240 assets equal the frozen qualified CI239 staging",
+    "functionsSource": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+    "procedure": "single acknowledged CLI4.8.2 release after exclusive intent; independent official SDK active readback; no historical evidence rewrite"
+  },
+  "finiteReleaseProof": {
+    "recordId": "a62d6f9d-6641-49de-859a-6f34f1de9579",
+    "observedAt": "2026-11-07T22:03:37.232Z",
+    "expiresAt": "2026-11-07T22:04:05.162Z",
+    "webAndWorkerSameFreshRecord": true,
+    "historicalOnly": true
+  },
+  "nativeBrowser": {
+    "shop": "insignia-rewrite-dev.myshopify.com",
+    "productId": "10585669959963",
+    "productHandle": "insignia-ui-demo-example-calibration",
+    "theme": "Horizon",
+    "coldConfig": {
+      "attempt": 1,
+      "status": 200,
+      "durationMs": 7127,
+      "retryOrUnavailable": false
+    },
+    "artwork": "existing PNG fixture uploaded, inspected and rendered through selected Designer",
+    "flow": "Artwork \u2192 Quantities (1) \u2192 Review \u2192 authoritative USD12.50 \u2192 Add to cart \u2192 automatic Shopify /cart navigation",
+    "cartReadback": {
+      "itemCount": 1,
+      "currency": "USD",
+      "totalMinor": 1250,
+      "productId": "10585669959963",
+      "variantId": "54545321885979",
+      "quantity": 1,
+      "finalPriceMinor": 1250,
+      "propertyKeys": [
+        "_insignia_member_v2",
+        "_insignia_quote_v2"
+      ]
+    },
+    "restoration": "Review customized cart opened the selected Designer and restored original artwork/method/size/quantity",
+    "zeroQuantity": "selected validation requires a quantity, unchanged; no removal handoff claim",
+    "cleanup": "manual close returned to unchanged cart; native Remove removed only the owned demo line; cart.js confirms zero items/zero total",
+    "existingOrderDetail": "#1005 shows actual purchased product title; Shopify historical default-variant title is null and remains explicitly unavailable",
+    "newCheckoutOrOrder": false
+  },
+  "limits": [
+    "The one authorized native test order was consumed earlier and is preserved; no second checkout/payment or webhook retry reset.",
+    "Owner visual acceptance, native EUR qualification and customer-email received-message authentication evidence remain separate.",
+    "Unused UI retirement is subsequent source work; this receipt establishes the deployed PR240 state, not a future cleanup release.",
+    "Original Function bytes, historical release inventories/bindings and prior receipts remain immutable."
+  ]
+}

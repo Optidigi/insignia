@@ -4,6 +4,8 @@ Research date: 2026-11-05. Workspace: `/home/serveradmin/insignia-current`; bran
 
 2026-11-05 final owner direction: **“everything should be the new UI, no legacy UI.”** Existing production choices, such as thread colour, use the selected UI too. Merchant adaptation, independent copying and order/design recovery preserve their original definitions, labels and accepted values. This supersedes the earlier legacy-UI preference; immutable compatibility readers remain internal. Source facts that cannot be represented safely lead to selected repair/read-only UI, with no fabricated prices or production dimensions.
 
+Current implementation owners and retirement are documented in the [frontend guide](../../frontend/README.md) and [UI retirement record](selected-ui-retirement.md). The file/line citations below intentionally describe the pinned research baseline; removed screen paths remain retrievable in that Git history.
+
 ## Evidence and classification
 
 Every action row below is **S: source-traced**, not runtime-observed. No application, database, browser or provider was run for this research. Tests cited below were read as executable evidence of intended seams; they were not executed. Dated native evidence in `docs/delivery/evidence` is not evidence that the selected UI is connected. File references use repository-relative `file:line` notation. Section reference keys resolve to those exact owners in the source register.

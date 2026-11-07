@@ -789,8 +789,8 @@ test('production default readiness derives actual shop context and refuses missi
   assert.equal(publicReads, 1);
 });
 
-test('published editor variant geometry reaches the buyer renderer with the selected image, fallback and placement', async () => {
-  const { buildBuyerScene } = await import('../../storefront/src/buyer.ts');
+test('published editor variant geometry retains its image, fallback and placement at the canonical renderer boundary', async () => {
+  const { projectScene } = await import('@insignia/visualizer/geometry');
   for (const imageCase of ['variant', 'fallback', 'missing']) {
     const { input } = catalogFixture();
     const publishedGeometry = {
@@ -835,15 +835,19 @@ test('published editor variant geometry reaches the buyer renderer with the sele
       return new Response(JSON.stringify(data), { status: 200 });
     };
     const config = await createProductionBuyerServices(input).config(new Request(signed()));
-    const scene = buildBuyerScene({
-      geometry: config.geometry,
-      viewId: 'front',
-      variantId: required(config.variants[0]).id,
-      selectedPlacementId: 'chest',
-      placements: [{ placementId: 'chest', stepId: 'small', artwork: { kind: 'deferred', intentId: 'later' } }],
-      previews: {},
-      imageUrls: config.imageUrls,
-    });
+    const scene = projectScene(
+      {
+        version: 0,
+        geometry: config.geometry,
+        viewId: 'front',
+        variantId: required(config.variants[0]).id,
+        selectedPlacementId: 'chest',
+        selectedStepId: 'small',
+        artwork: { kind: 'logo-later' },
+      },
+      { width: 450, height: 350, pixelRatio: 1 },
+      config.imageUrls,
+    );
     assert.equal(
       required(scene.image).revisionId,
       'variant_222',
@@ -858,7 +862,7 @@ test('published editor variant geometry reaches the buyer renderer with the sele
           : undefined,
     );
     assert.deepEqual(required(scene.placements[0]).bounds, { x: 251.25, y: 140, width: 35, height: 70 });
-    assert.deepEqual(required(scene.artworks[0]).bounds, required(scene.placements[0]).bounds);
+    assert.deepEqual(required(scene.artwork).bounds, required(scene.placements[0]).bounds);
     assert.equal(config.contentHash, 'a'.repeat(64));
     assert.equal(config.revisionId, 'revision');
     assert.deepEqual(config.variants, [{ id: '222', label: 'Blue M', available: false, selectedOptions: [] }]);

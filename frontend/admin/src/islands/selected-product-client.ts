@@ -13,7 +13,7 @@ import type { ConfigView } from '../shared/admin-view.ts';
 import {
   isMerchantPublicationContinuing,
   isMerchantPublicationOperatorBlocked,
-} from './merchant-config-editor-workflow.ts';
+} from './publication-state.ts';
 
 // Compare persisted JSON values without depending on database object-key order.
 const sameJson = (first: unknown, second: unknown) =>

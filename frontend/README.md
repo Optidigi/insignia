@@ -4,7 +4,7 @@ This folder contains the selected merchant UI and customer Designer, plus isolat
 
 ## Native development review
 
-Open the [published development product](https://insignia-rewrite-dev.myshopify.com/products/insignia-ui-demo-example-calibration) to review the selected customer Designer, or open Insignia in the rewrite-dev Shopify Admin for the merchant editor. The product's calibration is labelled example-only. Current deployment limits and outstanding qualification are recorded in [delivery state](../docs/delivery/state.md); a published demo does not establish complete E2E or owner visual acceptance.
+Open the [published development product](https://insignia-rewrite-dev.myshopify.com/products/insignia-ui-demo-example-calibration) to review the selected customer Designer, or open Insignia in the rewrite-dev Shopify Admin for the merchant editor. The product's calibration is labelled example-only. Current deployment limits and outstanding qualification are recorded in [delivery state](../docs/delivery/state.md); the dated native receipt verifies the bounded USD development purchase and current cart handoff. Owner visual acceptance remains separate.
 
 ## Run the examples
 
@@ -39,7 +39,9 @@ The commands print their local URLs. The admin demo uses a local frame renderer 
 | `theme` | Reference Liquid blocks/locales for later integration; not a deployable extension |
 | `docs/notes` | Historical design research/review records; old paths describe original sources preserved in Git (including PR223 base `d490e4d`) |
 
-Some shared selected components remain beside example composition. Keep those components and their reducers; do not delete the whole support folder. The production routes use the selected placement/Methods composition identified above. Historical editor transaction helpers and accepted publication/history authority remain distinct from replaceable presentation.
+Some shared selected components remain beside example composition. Keep those components and their reducers; do not delete the whole support folder. The production routes use the selected placement/Methods composition identified above. The selected publication-state classifications remain in `admin/src/islands/publication-state.ts`. The replaced editor/workflows have been retired; accepted publication/history authority remains in the application/backend.
+
+See the [UI retirement record](../docs/architecture/selected-ui-retirement.md) for removed entrypoints, retained contracts and deployment status.
 
 ## Replaceable examples
 
@@ -49,7 +51,7 @@ The customer configurator has a separate embeddable entry, `designer/src/index.t
 
 All customer flows use the selected Designer, including products with retained production choices. Products without those choices retain the selected presentation unchanged. Opaque production-choice definitions/labels travel with selected merchant snapshots and independent copies, while accepted order values remain immutable.
 
-Shopify owns the product page, cart and checkout. After a verified add/update the Insignia modal closes and returns control to Shopify. Local demo success does not prove a real cart operation. Example totals must not authorize production purchases.
+Shopify owns the product page, cart and checkout. After a matching verified add/update or confirmed removal, the selected modal closes and navigates to Shopify’s locale-native cart. Manual close and failed/unknown operations keep the current page. Local demo success does not prove a real cart operation. Example totals must not authorize production purchases.
 
 Production hosts use server-confirmed currency and current authentication authority. Local storage holds unresolved operation custody only; it is not authoritative product or store data. Save and Publish remain separate. Method inheritance/overrides, review decisions, production dimensions and movement are carried by shared contracts. See [selected Designer wiring](../docs/architecture/selected-live-designer.md) and [customer artwork](../docs/architecture/customer-artwork-integration.md) for the buyer and post-order boundaries.
 

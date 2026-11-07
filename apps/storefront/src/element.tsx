@@ -1,41 +1,5 @@
 import { render } from 'preact';
-import GuestArtworkUpload from '../../web/src/islands/GuestArtworkUpload';
 import { connectThemeIntegration, styleThemeTrigger } from './theme-integration';
-
-/** Secure M6 artwork input only; purchase and cart integration belong to M7. */
-export class InsigniaArtworkUpload extends HTMLElement {
-  private readonly root = this.attachShadow({ mode: 'open' });
-  connectedCallback() {
-    const productId = this.getAttribute('product-id') ?? '';
-    const proxyBase = this.getAttribute('proxy-base') ?? '/apps/insignia';
-    if (!/^[1-9][0-9]{0,19}$/.test(productId) || !/^\/apps\/[a-z0-9-]{1,64}$/.test(proxyBase)) {
-      this.root.textContent = 'Artwork configuration unavailable';
-      return;
-    }
-    render(
-      <GuestArtworkUpload
-        proxyBase={proxyBase}
-        productId={productId}
-        onPreview={() => {}}
-        onAssetChange={(asset) => {
-          this.dispatchEvent(
-            new CustomEvent('insignia-artwork-change', {
-              detail: asset ? { assetId: asset.assetId, expiresAt: asset.assetExpiresAt } : null,
-              bubbles: false,
-              composed: false,
-            }),
-          );
-        }}
-      />,
-      this.root,
-    );
-  }
-  disconnectedCallback() {
-    render(null, this.root);
-  }
-}
-if (!customElements.get('insignia-artwork-upload'))
-  customElements.define('insignia-artwork-upload', InsigniaArtworkUpload);
 
 /** Buyer code is imported only when its trigger is used or a marked cart needs repair. */
 export class InsigniaBuyer extends HTMLElement {

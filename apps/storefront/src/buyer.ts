@@ -1,5 +1,5 @@
 import { type MerchantCustomerWordingView, parseBuyerResponse, type SelectedProductSetup } from '@insignia/contracts';
-import { type GeometryV1, projectScene, validateGeometry } from '@insignia/visualizer/geometry';
+import { type GeometryV1, validateGeometry } from '@insignia/visualizer/geometry';
 import { type CartBucket, type CartMutationIntent, parseCartMutationIntent } from './cart.ts';
 export type DesiredGroup = {
   productId: string;
@@ -76,41 +76,10 @@ export type AcceptedCart = {
   buckets: CartBucket[];
   desired: DesiredGroup[];
 };
-export function formatMinor(value: string, currency: string, exponent: number): string {
-  if (
-    !/^(0|-?[1-9][0-9]*)$/.test(value) ||
-    !Number.isInteger(exponent) ||
-    exponent < 0 ||
-    exponent > 3 ||
-    !/^[A-Z]{3}$/.test(currency)
-  )
-    throw new Error('Invalid money');
-  const amount = BigInt(value);
-  const digits = (amount < 0n ? -amount : amount).toString().padStart(exponent + 1, '0');
-  return `${currency} ${amount < 0n ? '-' : ''}${exponent ? `${digits.slice(0, -exponent)}.${digits.slice(-exponent)}` : digits}`;
-}
 export function replaceGroup(groups: DesiredGroup[], group: DesiredGroup, index?: number): DesiredGroup[] {
   if (index === undefined) return [...groups, group];
   if (!Number.isInteger(index) || index < 0 || index >= groups.length) throw new Error('Unknown group');
   return groups.map((old, i) => (i === index ? group : old));
-}
-export function createRequestLane() {
-  let generation = 0;
-  let controller: AbortController | undefined;
-  return {
-    next() {
-      controller?.abort();
-      controller = new AbortController();
-      return { id: ++generation, signal: controller.signal };
-    },
-    current(id: number) {
-      return generation === id && !controller?.signal.aborted;
-    },
-    cancel() {
-      controller?.abort();
-      generation++;
-    },
-  };
 }
 type Session = { capability: string; sessionId: string; expiresAt: string };
 const pendingSessions = new WeakMap<Pick<Storage, 'getItem' | 'setItem'>, Map<string, Promise<Session>>>();
@@ -274,26 +243,6 @@ export function cartJournal(storage: Pick<Storage, 'getItem' | 'setItem'>, root:
       storage.setItem(intentKey, JSON.stringify(parseCartMutationIntent(value))),
   };
 }
-export function sizeControlKind(count: number): 'slider' | 'cards' | 'preview' {
-  if (!Number.isInteger(count) || count < 0) throw new Error('Invalid step count');
-  return count >= 3 ? 'slider' : count === 2 ? 'cards' : 'preview';
-}
-export function applyDefaultArtwork(
-  group: DesiredGroup,
-  artwork: DesiredGroup['design']['placements'][number]['artwork'],
-  overrides: ReadonlySet<string>,
-): DesiredGroup {
-  return {
-    ...group,
-    design: {
-      ...group.design,
-      placements: group.design.placements.map((placement) =>
-        overrides.has(placement.placementId) ? placement : { ...placement, artwork },
-      ),
-    },
-  };
-}
-
 export async function advisoryFingerprint(value: string): Promise<string> {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
   return [...new Uint8Array(bytes)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
@@ -318,58 +267,4 @@ export function normalizeBuyerGeometry(geometry: GeometryV1): GeometryV1 {
       })),
     })),
   };
-}
-
-export function buildBuyerScene(input: {
-  geometry: GeometryV1;
-  viewId: string;
-  variantId?: string;
-  selectedPlacementId?: string;
-  placements: ReadonlyArray<
-    Pick<DesiredGroup['design']['placements'][number], 'placementId' | 'stepId' | 'artwork' | 'position'>
-  >;
-  previews: Readonly<Record<string, { url: string; aspectRatio: number }>>;
-  imageUrls: Readonly<Record<string, string>>;
-}) {
-  const viewport = { width: 450, height: 350, pixelRatio: 1 };
-  const visible = input.geometry.views.find((view) => view.id === input.viewId)?.placements ?? [];
-  const base = projectScene(
-    {
-      version: 0,
-      geometry: input.geometry,
-      viewId: input.viewId,
-      variantId: input.variantId,
-      selectedPlacementId: visible.some((p) => p.id === input.selectedPlacementId)
-        ? input.selectedPlacementId
-        : undefined,
-      artwork: { kind: 'none' },
-    },
-    viewport,
-    input.imageUrls,
-  );
-  const artworks = input.placements.flatMap((placement) => {
-    const preview = placement.artwork.kind === 'revision' ? input.previews[placement.artwork.revisionId] : undefined;
-    const artwork =
-      placement.artwork.kind === 'deferred'
-        ? { kind: 'logo-later' as const }
-        : preview
-          ? { kind: 'raster' as const, url: preview.url, aspectRatio: preview.aspectRatio }
-          : { kind: 'none' as const };
-    const scene = projectScene(
-      {
-        version: 0,
-        geometry: input.geometry,
-        viewId: input.viewId,
-        variantId: input.variantId,
-        selectedPlacementId: placement.placementId,
-        selectedStepId: placement.stepId,
-        ...(placement.position ? { artworkPosition: placement.position } : {}),
-        artwork,
-      },
-      viewport,
-      input.imageUrls,
-    );
-    return scene.status === 'ready' && scene.artwork ? [{ placementId: placement.placementId, ...scene.artwork }] : [];
-  });
-  return { ...base, artworks };
 }
