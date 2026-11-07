@@ -181,12 +181,16 @@ export function projectEntitlement(
     snapshot.trialEndsAt !== null &&
     snapshot.currentBillingCycle === null &&
     Date.parse(snapshot.trialEndsAt) > now.getTime();
-  const paid =
-    snapshot.trialEndsAt === null &&
+  const currentCycle =
     snapshot.currentBillingCycle !== null &&
+    (snapshot.trialEndsAt === null ||
+      (Date.parse(snapshot.trialEndsAt) <= Date.parse(snapshot.currentBillingCycle.startTime) &&
+        Date.parse(snapshot.currentBillingCycle.startTime) <= observedMs)) &&
     Date.parse(snapshot.currentBillingCycle.startTime) <= now.getTime() &&
     Date.parse(snapshot.currentBillingCycle.endTime) > now.getTime();
-  if (!trial && !paid) return base;
+  // A current subscription cycle grants configured recurring features, never
+  // proof of invoice payment or permission to emit usage charges.
+  if (!trial && !currentCycle) return base;
   return {
     ...base,
     recognizedPolicyId: plan.policyId,

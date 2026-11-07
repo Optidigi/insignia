@@ -1,0 +1,39 @@
+{
+  "sourceApiVersion": "2026-07",
+  "observedAt": "2026-11-07T16:38:17.837Z",
+  "identitySanitized": true,
+  "sourceRawResponseSha256": "aaebfa980b735f192eb29322f7c6648d9098f25669227d214328c3f756d65622",
+  "response": {
+    "data": {
+      "activeSubscription": {
+        "app": {
+          "id": "gid://shopify/App/900000000003"
+        },
+        "shop": {
+          "id": "gid://shopify/Shop/900000000004"
+        },
+        "billingPeriod": "EVERY_30_DAYS",
+        "cancelAtEndOfCycle": false,
+        "trialEndsAt": "2026-10-31T10:57:49Z",
+        "currentBillingCycle": {
+          "startTime": "2026-10-31T10:57:49Z",
+          "endTime": "2026-11-30T10:57:49Z"
+        },
+        "items": [
+          {
+            "handle": "insignia-standard-20261015",
+            "price": {
+              "__typename": "FlatRatePrice",
+              "active": false,
+              "currency": "USD",
+              "amount": "0.0"
+            },
+            "discount": null,
+            "usage": null
+          }
+        ],
+        "pendingUpdate": null
+      }
+    }
+  }
+}

@@ -387,8 +387,19 @@ export function createActiveSubscriptionClient(config: { transport: PartnerGraph
               if (startTime >= endTime) return malformed();
               return { startTime, endTime };
             })();
-      if ((trialEndsAt === null) === (cycle === null) || (trialEndsAt !== null && trialEndsAt <= shared.observedAt))
-        return malformed();
+      if (trialEndsAt === null && cycle === null) return malformed();
+      if (trialEndsAt !== null) {
+        // Observed2026-07 compatibility: the provider can retain the ended trial
+        // beside its subsequent current cycle. Preserve both actual facts;
+        // accept neither overlap nor a future/expired cycle as that transition.
+        if (cycle === null) {
+          if (trialEndsAt <= shared.observedAt) return malformed();
+        } else if (
+          !(trialEndsAt <= cycle.startTime && cycle.startTime <= shared.observedAt && shared.observedAt < cycle.endTime)
+        ) {
+          return malformed();
+        }
+      }
       if (!Array.isArray(subscription.items) || subscription.items.length === 0 || subscription.items.length > 100)
         return malformed();
       const items = subscription.items.map(item);

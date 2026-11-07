@@ -78,6 +78,19 @@ test('merchant sees authoritative trial and zero provider price separately from 
   assert.equal(result.managementUrl, 'https://admin.shopify.com/store/example/charges/insignia-1/pricing_plans');
   assert.equal(JSON.stringify(result).includes('standard"'), false, 'provider plan handles are not exposed');
 });
+
+test('a retained ended trial displays the actual current cycle without an expired active-trial row', async () => {
+  const source = snapshot({
+    trialEndsAt: '2026-10-01T00:00:00.000Z',
+    currentBillingCycle: { startTime: '2026-10-01T00:00:00.000Z', endTime: '2026-10-31T00:00:00.000Z' },
+  });
+  const result = await reader(source)(actor);
+  assert.equal(result.status, 'active');
+  assert.equal(result.trialEndsAt, null);
+  assert.deepEqual(result.currentCycle, source.currentBillingCycle);
+  assert.equal(result.newActionsAllowed, true);
+  assert.equal(source.trialEndsAt, '2026-10-01T00:00:00.000Z');
+});
 test('lifecycle display follows current provider boundaries without resetting trial or granting pending terms', async () => {
   const paid = snapshot({
     trialEndsAt: null,

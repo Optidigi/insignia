@@ -150,6 +150,28 @@ describe('Partner activeSubscription normalization', () => {
     [contract({ items: [flat('Same'), flat('Same')] }), 'malformed_response'],
     [contract({ items: [flat('Case'), flat('case')] }), null],
     [contract({ trialEndsAt: '2026-10-04T00:00:00Z' }), 'malformed_response'],
+    [contract({ trialEndsAt: '2026-09-02T00:00:00Z' }), 'malformed_response'],
+    [
+      contract({
+        trialEndsAt: '2026-08-31T00:00:00Z',
+        currentBillingCycle: { startTime: '2026-09-30T00:00:00Z', endTime: '2026-10-30T00:00:00Z' },
+      }),
+      'malformed_response',
+    ],
+    [
+      contract({
+        trialEndsAt: '2026-08-01T00:00:00Z',
+        currentBillingCycle: { startTime: '2026-08-01T00:00:00Z', endTime: '2026-09-01T00:00:00Z' },
+      }),
+      'malformed_response',
+    ],
+    [
+      contract({
+        trialEndsAt: '2026-09-01T00:00:00Z',
+        currentBillingCycle: { startTime: '2026-09-01T00:00:00Z', endTime: '2026-09-29T12:00:00Z' },
+      }),
+      'malformed_response',
+    ],
     [contract({ currentBillingCycle: null }), 'malformed_response'],
     [contract({ trialEndsAt: '2026-02-30T00:00:00Z', currentBillingCycle: null }), 'malformed_response'],
     [contract({ shop: { id: 'gid://shopify/Shop/999' } }), 'malformed_response'],

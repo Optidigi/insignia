@@ -67,7 +67,7 @@ const recurring: EntitlementPolicyConfig = {
   ],
 };
 
-test('explicit recurring-only current paid contract grants features without a usage obligation', () => {
+test('explicit recurring-only current contract grants features without a usage obligation', () => {
   expect(projectEntitlement(snapshot({ items: [flat('plan.flat-only')] }), recurring, context(at))).toMatchObject({
     active: true,
     recognizedPolicyId: 'flat-only',
@@ -79,6 +79,56 @@ test('explicit recurring-only current paid contract grants features without a us
     qualifyingUsageDisposition: 'NOT_METERED',
     freshness: 'fresh',
   });
+});
+
+test('a coherent retained expired trial uses only the current recurring cycle and preserves its actual history', () => {
+  const source = snapshot({ trialEndsAt: '2026-09-01T00:00:00.000Z', items: [flat('plan.flat-only', false)] });
+  expect(projectEntitlement(source, recurring, context(at))).toMatchObject({
+    recognizedPolicyId: 'flat-only',
+    trial: false,
+    features: ['quote', 'advanced-art'],
+    qualifyingUsageDisposition: 'NOT_METERED',
+    billableUsageAllowed: false,
+  });
+  expect(source.trialEndsAt).toBe('2026-09-01T00:00:00.000Z');
+  expect(
+    projectEntitlement(
+      { ...source, cancelAtEndOfCycle: true, pendingUpdate: { billingPeriod: 'ANNUAL', itemHandles: ['next-plan'] } },
+      recurring,
+      context(at),
+    ),
+  ).toMatchObject({
+    recognizedPolicyId: 'flat-only',
+    features: ['quote', 'advanced-art'],
+    scheduledCancellation: true,
+    pendingProviderUpdate: { itemHandles: ['next-plan'] },
+    billableUsageAllowed: false,
+  });
+});
+
+test('retained trial metadata cannot bypass transition ordering, scope, freshness or recurring-only policy', () => {
+  for (const change of [
+    { trialEndsAt: '2026-09-02T00:00:00.000Z' },
+    { trialEndsAt: '2026-10-02T00:00:00.000Z' },
+    { currentBillingCycle: { startTime: '2026-09-30T00:00:00.000Z', endTime: '2026-10-30T00:00:00.000Z' } },
+    { currentBillingCycle: { startTime: '2026-09-29T12:00:15.000Z', endTime: '2026-10-29T00:00:00.000Z' } },
+    { currentBillingCycle: { startTime: '2026-09-01T00:00:00.000Z', endTime: at.toISOString() } },
+    { currentBillingCycle: null },
+    { observedAt: '2026-09-29T11:58:00.000Z' },
+    { installationGeneration: '8' },
+    { shopId: 'gid://shopify/Shop/999' },
+    { active: false },
+    { billingPeriod: 'ANNUAL' },
+    { items: [flat('unknown')] },
+    { items: [flat('plan.flat-only'), meter()] },
+    { items: [{ ...flat('plan.flat-only'), usage: { quantity: '0' } }] },
+  ]) {
+    const source = snapshot({ trialEndsAt: '2026-09-01T00:00:00.000Z', ...change });
+    const result = projectEntitlement(source, recurring, context(at));
+    expect(result.features).toEqual([]);
+    expect(result.qualifyingUsageDisposition).toBe('DENY');
+    expect(result.billableUsageAllowed).toBe(false);
+  }
 });
 
 test('recurring-only live trial uses the provider boundary without an allowance or later usage charge', () => {
