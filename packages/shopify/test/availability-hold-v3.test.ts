@@ -336,6 +336,18 @@ async function acquiredFixture(options: Scenario = {}) {
   };
   return { ...f, hold, current: v3Snapshot(acquired.current) };
 }
+test('a proved pre-fetch denial does not consume the physical restoration write budget', async () => {
+  let allowed = true;
+  const f = await acquiredFixture({ beforeWrite: () => allowed });
+  allowed = false;
+  const first = await f.port.restore(scope, f.hold, f.current, () => allowed);
+  expect(first.kind).toBe('NOT_DISPATCHED');
+  expect(f.writes).toEqual(['DRAFT']);
+  allowed = true;
+  const restored = await f.port.restore(scope, f.hold, f.current, () => allowed);
+  expect(restored.kind).toBe('RESTORED');
+  expect(f.writes).toEqual(['DRAFT', 'ACTIVE']);
+});
 test('restore returns exact original effective membership despite different diagnostic timestamps', async () => {
   const { port, writes } = lifecycle();
   const before = v3Snapshot(await port.snapshot(scope, productId));

@@ -1,31 +1,54 @@
+import { adminRequestPolicy } from '../../../../frontend/admin/src/shared/admin-request-policy.ts';
 import { readFreshBridgeToken } from '../../../../frontend/admin/src/shared/bridge-token.ts';
 
-let tokenRequest: Promise<string> | null = null;
-async function browserDeadline<T>(task: (signal: AbortSignal) => Promise<T>): Promise<T> {
+const tokenRequests = new Map<number, Promise<string>>();
+async function browserDeadline<T>(
+  task: (signal: AbortSignal) => Promise<T>,
+  caller?: AbortSignal | null,
+  timeoutMs = 10000,
+): Promise<T> {
   const controller = new AbortController();
+  caller?.throwIfAborted();
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let abortCaller: (() => void) | undefined;
+  const cancelled = new Promise<never>((_resolve, reject) => {
+    abortCaller = () => {
+      controller.abort(caller?.reason);
+      reject(caller?.reason ?? new DOMException('Request cancelled', 'AbortError'));
+    };
+    caller?.addEventListener('abort', abortCaller, { once: true });
+  });
   const timeout = new Promise<never>((_resolve, reject) => {
     timer = setTimeout(() => {
       controller.abort();
       reject(new Error('Admin request timed out'));
-    }, 10_000);
+    }, timeoutMs);
   });
   try {
-    return await Promise.race([task(controller.signal), timeout]);
+    return await Promise.race([task(controller.signal), timeout, cancelled]);
   } finally {
     if (timer) clearTimeout(timer);
+    if (abortCaller) caller?.removeEventListener('abort', abortCaller);
   }
 }
-function sessionToken(forceFresh = false): Promise<string> {
+function sessionToken(forceFresh = false, policy = adminRequestPolicy('')): Promise<string> {
   const bridge = (window as unknown as { shopify?: { idToken?: () => Promise<string> } }).shopify;
   const tokenGetter = bridge?.idToken?.bind(bridge);
   if (!tokenGetter) return Promise.reject(new Error('Open this page from Shopify Admin to verify your session.'));
-  if (forceFresh) return browserDeadline((signal) => readFreshBridgeToken(tokenGetter, signal));
-  if (!tokenRequest)
-    tokenRequest = browserDeadline((signal) => readFreshBridgeToken(tokenGetter, signal)).finally(() => {
-      tokenRequest = null;
-    });
-  return tokenRequest;
+  const acquire = () =>
+    browserDeadline(
+      (signal) => readFreshBridgeToken(tokenGetter, signal, policy.minimumValidityMs),
+      undefined,
+      policy.timeoutMs,
+    );
+  if (forceFresh) return acquire();
+  const key = policy.minimumValidityMs;
+  let pending = tokenRequests.get(key);
+  if (!pending) {
+    pending = acquire().finally(() => tokenRequests.delete(key));
+    tokenRequests.set(key, pending);
+  }
+  return pending;
 }
 
 async function jsonResponse<T>(response: Response): Promise<T> {
@@ -54,21 +77,29 @@ async function jsonResponse<T>(response: Response): Promise<T> {
   return body;
 }
 export async function authenticatedJson<T>(path: string, init: RequestInit = {}, forceFresh = false): Promise<T> {
-  return browserDeadline(async (signal) => {
-    const send = async (fresh = forceFresh) =>
-      fetch(path, {
-        ...init,
-        headers: {
-          ...Object.fromEntries(new Headers(init.headers).entries()),
-          Authorization: 'Bearer ' + (await sessionToken(fresh)),
-        },
-        cache: 'no-store',
-        credentials: 'omit',
-        redirect: 'error',
-        signal,
-      });
-    let response = await send();
-    if (response.status === 401) response = await send(true);
-    return jsonResponse<T>(response);
-  });
+  const policy = adminRequestPolicy(path, init);
+  return browserDeadline(
+    async (signal) => {
+      const send = async (fresh = forceFresh) => {
+        const token = await sessionToken(fresh, policy);
+        signal.throwIfAborted();
+        return fetch(path, {
+          ...init,
+          headers: {
+            ...Object.fromEntries(new Headers(init.headers).entries()),
+            Authorization: `Bearer ${token}`,
+          },
+          cache: 'no-store',
+          credentials: 'omit',
+          redirect: 'error',
+          signal,
+        });
+      };
+      let response = await send();
+      if (response.status === 401) response = await send(true);
+      return jsonResponse<T>(response);
+    },
+    init.signal,
+    policy.timeoutMs,
+  );
 }

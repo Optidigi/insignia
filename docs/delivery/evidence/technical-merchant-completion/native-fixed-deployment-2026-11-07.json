@@ -1,0 +1,104 @@
+{
+  "kind": "bounded-development-promotion-and-corrected-theme-activation",
+  "date": "2026-11-07",
+  "source": {
+    "pullRequest": 237,
+    "head": "6d795cd79a66cf5972ac6733ac74f5a22889aa7b",
+    "merge": "acc5c0f7b5626ede8ee658202cb2f7ce47df7ed8",
+    "tree": "e7ef6aae66ce06dba4f35ab5c8ddc46d2092a6b5",
+    "runtimeRun": "42396020459",
+    "foundationRun": "42396020340",
+    "durableRun": "42396020367",
+    "attempt": 1,
+    "ciMergeHead": "45868d489319305d6f01ec57282b995eeeb143b0",
+    "requiredChecks": "all passed"
+  },
+  "promoted": {
+    "profile": "native-fixed-5c04fa8",
+    "web": {
+      "manifest": "sha256:3c65d94fe645aa6d32914d646b6332a774469c93119d57891fd5a01fd68d2f79",
+      "config": "sha256:1dc61fdf6746aac0814e87013a209dc93ee8ba87e84aef7a1ba36f4023f7b21b",
+      "archiveSha256": "f07b33bee65dc75d7e2aa8336b4474948f3e7039dcb2fd8561794fffb4183079",
+      "state": "healthy"
+    },
+    "worker": {
+      "manifest": "sha256:56b5452030198cc9f8b59ae2f4fe3de176be4c59f4051270e7f4f23a522506ff",
+      "config": "sha256:b875ca7f81ae2810ce1d7bf74e2090a39d8e799297ad475309bd454396277965",
+      "archiveSha256": "07e49dbdc69b841e3ab9c716d5e4059e6146bc70c66af36fa8e9b86871cac4b5",
+      "state": "healthy"
+    },
+    "verifier": {
+      "manifest": "sha256:70fd4b21a53378822408933907536ab8083c397b07f47355a6690d06bffff9ff",
+      "config": "sha256:4dede1c0ca5c328182bd98bb97d5adbaa5bdca849dd957632309381190869460",
+      "archiveSha256": "f47d5ace7969ec1b0831d29eb32e5679734db40e37a7606250cdb7d72f20fbe1",
+      "state": "running",
+      "codeManifestSha256": "5978d30c4dff19f8ebd283b9ed634dd10913ad664e9e94e23124bf3503ac684a"
+    },
+    "archiveConfigLayerAndLoadedIdentityChecks": "passed",
+    "themeAssetComparison": "all11 final-profile CI assets equal staged candidate bytes",
+    "privateConfiguration": "only reviewed image/profile/verifier-code selectors changed",
+    "protectedPurchasePaidShopInstallationFingerprints": "unchanged after recreation",
+    "unrelatedContainers": "unchanged",
+    "schema": 50
+  },
+  "shopify": {
+    "version": "1198986199041",
+    "tag": "native-fixed-5c04fa8",
+    "releaseClaimedAt": "2026-11-07T17:40:07.805487+00:00",
+    "release": "single acknowledged CLI release",
+    "activeReadbackAt": "2026-11-07T17:40:44.335Z",
+    "activeReadback": "sole Active; exact18-version inventory and14 module identities",
+    "moduleHash": "799ef71e89644da87c02bff02a063ed98e74dc81d4324ea377915d4bebf17171",
+    "functionsSource": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+    "rendering": "complete element attributes intact; no leaked attribute text",
+    "badHistoricalVersion": "1198938357761 NEVER_RELEASE"
+  },
+  "correlatedReleaseProof": {
+    "requestId": "312ffc35-6b68-4a6e-afd5-385b38bf15d4",
+    "recordId": "6f1c04fc-2508-4d88-9a42-6b1b6f499b7b",
+    "observedAt": "2026-11-07T17:44:28.465Z",
+    "expiresAt": "2026-11-07T17:44:56.877Z",
+    "actualConsumers": [
+      "web",
+      "worker"
+    ],
+    "sameRecord": true,
+    "limit": "historical finite proof; fresh demand requires fresh observation"
+  },
+  "nativePublication": {
+    "productId": "10585669959963",
+    "configId": "8ab258f0-b7e0-4b10-bde5-c09763b0c7ea",
+    "savedDraftVersion": 4,
+    "originalRequestKey": "0f87f334-6d5a-4b0d-a6d6-bae23808148d:publish",
+    "revisionAndOperationId": "211a5e1d-e1dd-4d0d-95a0-876dddf77cc6",
+    "revisionSequence": 1,
+    "status": "activated",
+    "activationState": "RESTORATION_CLAIMED",
+    "receiptKind": "NOT_DISPATCHED",
+    "acknowledgement": null,
+    "compensation": "absent",
+    "productAvailability": "held DRAFT/unavailable",
+    "exactOriginalDiagnosticReplay": {
+      "httpStatus": 202,
+      "result": "ACTIVATED_RESTORATION_PENDING",
+      "elapsedMs": 16471
+    },
+    "evidenceCustody": "original no-write claim/receipt retained privately; no manual status reset or new publication identity"
+  },
+  "nativeBilling": {
+    "httpStatus": 200,
+    "subscription": "active",
+    "recurringCurrency": "USD",
+    "recurringAmount": "0.00",
+    "developmentTerms": true,
+    "newActionsAllowed": true,
+    "limit": "actual expired trial/current cycle retained; no payment or metered-history authority inferred"
+  },
+  "limits": [
+    "Recovery code and append migration51 are not deployed by this receipt. Native remains schema50.",
+    "Required-product Customise replacement and buyer upload/quote/cart/checkout/order E2E remain unproved while the demo product is held. No native test order was attempted.",
+    "No original Function binary, subscription, currency, protected VAT installation or unrelated product was changed by this promotion.",
+    "Automatic customer email remains disabled pending original received-message authentication evidence; no new sender test was sent.",
+    "Legacy retirement and owner visual acceptance remain open; no database restoration or credential change occurred."
+  ]
+}

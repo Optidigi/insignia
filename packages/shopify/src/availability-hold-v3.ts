@@ -591,8 +591,12 @@ export function createShopifyAvailabilityHoldV3Port(
     try {
       acknowledgement = await mutate(scope, hold, budget, hold.before.state, beforeSend);
     } catch (error) {
-      if (error instanceof ShopifyAvailabilityHoldError && error.kind === 'not_dispatched')
+      if (error instanceof ShopifyAvailabilityHoldError && error.kind === 'not_dispatched') {
+        // No fetch occurred. A new caller-owned claim may use the physical
+        // write slot; expired-port quarantine is deliberately retained.
+        restorationAttempts.delete(key);
         return { kind: 'NOT_DISPATCHED', current };
+      }
       quarantined = true;
       return { kind: 'RESTORATION_PENDING', current: null };
     }

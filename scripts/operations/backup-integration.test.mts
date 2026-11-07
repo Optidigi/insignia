@@ -108,20 +108,26 @@ test('real populated dump restores atomically with erasure/expiry replay, unchan
         'run',
         'test/activation.test.ts',
         '-t',
-        'v3 hold/evidence/restoration audit JSONB roundtrips',
+        'v3 hold/evidence/restoration audit JSONB roundtrips|SQL serializes settled no-dispatch recovery',
       ],
       { cwd: join(root, 'packages/database'), env: { ...env, DATABASE_URL: url } },
     );
     const historicalSQL =
-      "SELECT jsonb_build_object('evidence',(SELECT jsonb_agg(to_jsonb(e) ORDER BY shop_id,config_id,operation_id) FROM m5_activation_evidence e),'states',(SELECT jsonb_agg(to_jsonb(s) ORDER BY shop_id,config_id,operation_id) FROM m5_activation_state s))::text";
+      "SELECT jsonb_build_object('evidence',(SELECT jsonb_agg(to_jsonb(e) ORDER BY shop_id,config_id,operation_id) FROM m5_activation_evidence e),'states',(SELECT jsonb_agg(to_jsonb(s) ORDER BY shop_id,config_id,operation_id) FROM m5_activation_state s),'retryAudit',(SELECT jsonb_agg(to_jsonb(a) ORDER BY shop_id,config_id,operation_id,receipt_digest) FROM m5_restoration_no_dispatch_consumptions a))::text";
     const helperSQL =
       "SELECT jsonb_object_agg(oid::regprocedure::text,md5(prosrc))::text FROM pg_proc WHERE pronamespace='public'::regnamespace AND proname LIKE 'm5_v3_%'";
     const at = (sql: string) => run([join(tools, 'psql'), '-X', '-Atc', sql]);
     const historical = at(historicalSQL),
       helpers = at(helperSQL);
     assert(array(record(JSON.parse(historical)).evidence).length > 0, 'populated activation evidence required');
+    assert(
+      array(record(JSON.parse(historical)).retryAudit).length > 0,
+      'populated restoration retry evidence required',
+    );
+    // Reproduce the historical namespace defect only in helpers that existed then.
+    // The schema51 copy was introduced with its own pinned namespace.
     psql(
-      "DO $$ DECLARE f record; BEGIN FOR f IN SELECT oid::regprocedure AS signature FROM pg_proc WHERE pronamespace='public'::regnamespace AND proname LIKE 'm5_v3_%' LOOP EXECUTE format('ALTER FUNCTION %s RESET search_path',f.signature); END LOOP; END $$",
+      "DO $$ DECLARE f record; BEGIN FOR f IN SELECT oid::regprocedure AS signature FROM pg_proc WHERE pronamespace='public'::regnamespace AND proname LIKE 'm5_v3_%' AND proname<>'m5_v3_hold_before_no_dispatch' LOOP EXECUTE format('ALTER FUNCTION %s RESET search_path',f.signature); END LOOP; END $$",
     );
     nodeFixture('snapshot-read');
     const exclusions = join(stage, 'exclusions.json'),
@@ -250,7 +256,7 @@ test('real populated dump restores atomically with erasure/expiry replay, unchan
           "SELECT count(*) FROM pg_proc WHERE pronamespace='public'::regnamespace AND proname LIKE 'm5_v3_%' AND proconfig=ARRAY['search_path=pg_catalog, public, pg_temp']",
         ),
       ),
-      12,
+      13,
     );
     assert.equal(at(helperSQL), helpers);
     const malformed = invoke([

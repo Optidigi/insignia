@@ -1,6 +1,12 @@
+import { adminRequestPolicy } from './admin-request-policy.ts';
 import { readFreshBridgeToken } from './bridge-token.ts';
-let tokenRequest: Promise<string> | null = null;
-async function browserDeadline<T>(task: (signal: AbortSignal) => Promise<T>, caller?: AbortSignal | null): Promise<T> {
+
+const tokenRequests = new Map<number, Promise<string>>();
+async function browserDeadline<T>(
+  task: (signal: AbortSignal) => Promise<T>,
+  caller?: AbortSignal | null,
+  timeoutMs = 10000,
+): Promise<T> {
   const controller = new AbortController();
   caller?.throwIfAborted();
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -16,7 +22,7 @@ async function browserDeadline<T>(task: (signal: AbortSignal) => Promise<T>, cal
     timer = setTimeout(() => {
       controller.abort();
       reject(new Error('Admin request timed out'));
-    }, 10_000);
+    }, timeoutMs);
   });
   try {
     return await Promise.race([task(controller.signal), timeout, cancelled]);
@@ -25,20 +31,33 @@ async function browserDeadline<T>(task: (signal: AbortSignal) => Promise<T>, cal
     if (abortCaller) caller?.removeEventListener('abort', abortCaller);
   }
 }
-function sessionToken(forceFresh = false): Promise<string> {
+function sessionToken(forceFresh = false, policy = adminRequestPolicy('')): Promise<string> {
   const bridge = (window as unknown as { shopify?: { idToken?: () => Promise<string> } }).shopify;
   const tokenGetter = bridge?.idToken?.bind(bridge);
   if (!tokenGetter) return Promise.reject(new Error('Open this page from Shopify Admin to verify your session.'));
-  if (forceFresh) return browserDeadline((signal) => readFreshBridgeToken(tokenGetter, signal));
-  if (!tokenRequest)
-    tokenRequest = browserDeadline((signal) => readFreshBridgeToken(tokenGetter, signal)).finally(() => {
-      tokenRequest = null;
-    });
-  return tokenRequest;
+  const acquire = () =>
+    browserDeadline(
+      (signal) => readFreshBridgeToken(tokenGetter, signal, policy.minimumValidityMs),
+      undefined,
+      policy.timeoutMs,
+    );
+  if (forceFresh) return acquire();
+  const key = policy.minimumValidityMs;
+  let pending = tokenRequests.get(key);
+  if (!pending) {
+    pending = acquire().finally(() => tokenRequests.delete(key));
+    tokenRequests.set(key, pending);
+  }
+  return pending;
 }
 
 async function jsonResponse<T>(response: Response): Promise<T> {
-  let body: T & { error?: string; message?: string; validationIssues?: { path: string; message: string }[]; noEffect?: boolean };
+  let body: T & {
+    error?: string;
+    message?: string;
+    validationIssues?: { path: string; message: string }[];
+    noEffect?: boolean;
+  };
   try {
     body = (await response.json()) as T & { error?: string; message?: string };
   } catch {
@@ -58,24 +77,29 @@ async function jsonResponse<T>(response: Response): Promise<T> {
   return body;
 }
 export async function authenticatedJson<T>(path: string, init: RequestInit = {}, forceFresh = false): Promise<T> {
-  return browserDeadline(async (signal) => {
-    const send = async (fresh = forceFresh) => {
-      const token = await sessionToken(fresh);
-      signal.throwIfAborted();
-      return fetch(path, {
-        ...init,
-        headers: {
-          ...Object.fromEntries(new Headers(init.headers).entries()),
-          Authorization: `Bearer ${token}`,
-        },
-        cache: 'no-store',
-        credentials: 'omit',
-        redirect: 'error',
-        signal,
-      });
-    };
-    let response = await send();
-    if (response.status === 401) response = await send(true);
-    return jsonResponse<T>(response);
-  }, init.signal);
+  const policy = adminRequestPolicy(path, init);
+  return browserDeadline(
+    async (signal) => {
+      const send = async (fresh = forceFresh) => {
+        const token = await sessionToken(fresh, policy);
+        signal.throwIfAborted();
+        return fetch(path, {
+          ...init,
+          headers: {
+            ...Object.fromEntries(new Headers(init.headers).entries()),
+            Authorization: `Bearer ${token}`,
+          },
+          cache: 'no-store',
+          credentials: 'omit',
+          redirect: 'error',
+          signal,
+        });
+      };
+      let response = await send();
+      if (response.status === 401) response = await send(true);
+      return jsonResponse<T>(response);
+    },
+    init.signal,
+    policy.timeoutMs,
+  );
 }

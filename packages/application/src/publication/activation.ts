@@ -419,6 +419,47 @@ export function createPublicationActivation(input: {
             return result('OPERATOR_HOLD', c);
           }
           if (c.status === 'activated') {
+            const hold = c.state.hold;
+            const receipt = hold?.version === 'm5-availability-hold-v3' ? hold.restorationReceipt : undefined;
+            const claim = hold?.version === 'm5-availability-hold-v3' ? hold.restorationClaim : undefined;
+            if (
+              c.state.kind === 'RESTORATION_CLAIMED' &&
+              hold?.version === 'm5-availability-hold-v3' &&
+              hold.operationId === c.operationId &&
+              hold.held &&
+              claim &&
+              receipt?.version === 'm5-availability-restoration-receipt-v3' &&
+              receipt.kind === 'NOT_DISPATCHED' &&
+              receipt.acknowledgement === null &&
+              receipt.compensation === undefined &&
+              receipt.current &&
+              isAvailabilityV3(receipt.current) &&
+              exactSnapshot(receipt.current, hold.held) &&
+              receipt.current.state === 'unavailable' &&
+              receipt.current.productId === c.productId &&
+              activationDigest(receipt.current.scope) === activationDigest(c.availabilityScope) &&
+              claim.version === 'm5-availability-restoration-claim-v3' &&
+              claim.operationId === c.operationId &&
+              claim.productId === c.productId &&
+              activationDigest(claim.scope) === activationDigest(c.availabilityScope) &&
+              claim.restoreReserved === true &&
+              claim.compensationReserved === true
+            ) {
+              const digest = activationDigest(receipt);
+              if (claim.settledNoDispatchReceiptDigest !== digest) {
+                try {
+                  await release(c);
+                } catch {
+                  return result('ACTIVATED_RESTORATION_PENDING', c);
+                }
+                writeAuthorized();
+                await session.save({
+                  ...c.state,
+                  hold: { ...hold, restorationClaim: { ...claim, settledNoDispatchReceiptDigest: digest } },
+                });
+                dispatchRestoration = true;
+              }
+            }
             if (c.state.kind === 'RESTORATION_PENDING') {
               try {
                 await release(c);
