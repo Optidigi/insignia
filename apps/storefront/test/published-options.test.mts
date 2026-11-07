@@ -120,6 +120,9 @@ test('older Lean publication uses actual retained facts in new Designer and pres
 });
 test('missing or ambiguous critical canonical financial/production facts cannot create editable defaults', () => {
   for (const change of [
+    (value: BuyerConfig) => {
+      value.ready = false;
+    },
     (value: BuyerConfig) => delete value.shopCurrency,
     (value: BuyerConfig) => delete value.decorationPrices,
     (value: BuyerConfig) => {

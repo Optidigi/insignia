@@ -347,6 +347,19 @@ test('unsupported historical economics and missing contextual facts remain reada
   }
 });
 
+test('a retained publication without required production dimensions stays readable but is not ready for customers', async () => {
+  const f = fixture();
+  const step = f.geometry.steps[0];
+  assert(step);
+  Reflect.deleteProperty(step, 'physicalMm');
+  for (const query of ['', '?country=US']) {
+    const result = BuyerConfigSchema.parse(await f.service.config(new Request(`https://app.example/config${query}`)));
+    assert.equal(result.ready, false);
+    assert.deepEqual(result.geometry, f.geometry, 'readiness never invents dimensions or rewrites retained geometry');
+    assert.equal(result.revisionId, f.config.revisionId);
+  }
+});
+
 test('missing current wording never becomes a fabricated default for a new UI caller while no-country readers remain compatible', async () => {
   const f = fixture();
   f.core.preferences.readWording = async () => null;

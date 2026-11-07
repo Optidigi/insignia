@@ -302,7 +302,11 @@ export function createBuyerServices(input: {
         variants: catalog.variants,
         geometry,
         imageUrls,
-        ready: true,
+        // Retained revisions remain readable, but the selected Designer must never
+        // present a publication without actual dimensions as production-ready.
+        ready: config.placements.every((placement) =>
+          placement.allowedStepIds.every((id) => !!geometry.steps.find((step) => step.id === id)?.physicalMm),
+        ),
       };
     },
     async session(request: Request) {
