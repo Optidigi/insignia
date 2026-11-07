@@ -1,0 +1,29 @@
+{
+  "versionTag": "native-fixed-5c04fa8",
+  "versionId": "1198986199041",
+  "versionIds": [
+    "1198986199041",
+    "1198938357761",
+    "1197668466689",
+    "1196974997505",
+    "1171218169857",
+    "1169137696769",
+    "1168157736961",
+    "1166710865921",
+    "1166552825857",
+    "1166090010625",
+    "1165513097217",
+    "1163229200385",
+    "1162611916801",
+    "1158986629121",
+    "1158837927937",
+    "1153019904001",
+    "1152880803841",
+    "1146748534785"
+  ],
+  "moduleHash": "799ef71e89644da87c02bff02a063ed98e74dc81d4324ea377915d4bebf17171",
+  "observedAt": "2026-11-07T17:14:37.870Z",
+  "nativeObservation": "EXACT_INACTIVE_14_MODULE_CANDIDATE_PASS",
+  "functionsSourceCommit": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+  "note": "Corrected inactive theme candidate with complete-element Liquid. Exact20 theme files:11 built assets from foundation42394179634/attempt1 plus merged source blocks/snippet/locales from93a56c27/tree2789e5cf. All13 non-theme modules and14 identities match preceding native-theme attempt. Original Function binaries/source9b941 retained. Version1198938357761 remains NEVER_RELEASE. No activation/admission/E2E inferred."
+}
