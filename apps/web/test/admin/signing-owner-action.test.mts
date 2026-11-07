@@ -307,8 +307,9 @@ test('restart after a reserved incomplete run is uncertain and cannot start anot
 test('nonregular, wrong-mode and hostile closed status files cannot block or qualify status', async () => {
   const f = await bound();
   try {
-    await f.action.start(f.actor, 'synthetic-token');
-    assert.equal((await settled(f)).state, 'PROVISIONED');
+    // A readable terminal result can precede the final fsync/cleanup. Tamper
+    // only after the owning execution has completed, through its existing API.
+    assert.equal((await f.action.prepare(f.actor, 'synthetic-token')).state, 'PROVISIONED');
     const path = join(f.config.directory, 'owner-result.json');
     await writeFile(
       path,
