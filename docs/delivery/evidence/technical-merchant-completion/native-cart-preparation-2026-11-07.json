@@ -1,0 +1,141 @@
+{
+  "kind": "bounded-development-promotion-same-order-recovery-and-inactive-cart-candidate",
+  "date": "2026-11-07",
+  "source": {
+    "pullRequest": 239,
+    "head": "fd9cc6116d58785e48118fff028f7595f01822db",
+    "merge": "0943aa01f63b5988f13a9949f90c248f8fec5d84",
+    "tree": "f142cd4bf1e006bc0e56aa8a7308d9746804df21",
+    "ciMergeHead": "ae9a0b4c10e0ad676d41634ba6f74ee0ce4d20d2",
+    "runtimeRun": "42412933423",
+    "foundationRun": "42412933401",
+    "durableRun": "42412933406",
+    "attempt": 1,
+    "requiredChecks": "all passed"
+  },
+  "promoted": {
+    "profile": "native-fixed-5c04fa8",
+    "web": {
+      "manifest": "sha256:59f7d3e0e518aa612b1e9a9bd206ecf0324afa3a6e7844ee8ac9ff63cab3100a",
+      "config": "sha256:e1e088ef026b99520d154069ac94488a5245db8524f11b3fc5912675ccf2a053",
+      "archiveSha256": "c566a2b97d5b79e6ad8ff58b27bc37538e28f6b2437373700dca43b71b67ea37",
+      "state": "healthy"
+    },
+    "worker": {
+      "manifest": "sha256:820748811787b34d9f152d245c68d8f221140de14cb8364ced9f610ce0db5468",
+      "config": "sha256:c7b8afe8c0a2007283a48f90f652271a453e42caf4de0f891c10156420c9677c",
+      "archiveSha256": "558df996e24dd877216b70ec723cfdb97a5bacf64a7e891cc484f2a29d40030b",
+      "state": "healthy"
+    },
+    "verifier": {
+      "manifest": "sha256:0906badf982ac9dc3346a7f127e6eb5eae9c0498755b7aa59ef2d98a25faffea",
+      "config": "sha256:314578e32731d7dafbb1b9361036a4f60e7f14cd852f941b946463a08bae5e87",
+      "archiveSha256": "018e4b25b5f8b9b8201cf90d5978c3b65310fc2866c459befdd82f93bc950268",
+      "state": "running",
+      "codeManifestSha256": "2d6722e1477d927e3487d6e2eb0d85649e879faa26fdb44482fdbeff281d2eee"
+    },
+    "schema": 51,
+    "newMigration": false,
+    "qualification": "archive hashes, all OCI blobs/config/layers and loaded identities qualified before owned role drain/recreation",
+    "protectedOldPurchasePaidShopInstallationFingerprints": "unchanged; only existing target order7570906415387 excluded so its legitimate ingestion is permitted",
+    "unrelatedContainers": "unchanged",
+    "privateConfiguration": "only reviewed immutable image/verifier-code selectors changed; profile/auth/mounts/journals/routing preserved"
+  },
+  "permissionDelta": {
+    "script": "deployment/m5-runtime/order-label-runtime-grants.sql",
+    "customerOrderFenceReadColumns": [
+      "shop_id",
+      "order_id"
+    ],
+    "shopFenceReadColumns": [
+      "shop_id",
+      "installation_generation"
+    ],
+    "targets": "existing web login and queue capability",
+    "rolesMembershipsTableACLs": "unchanged",
+    "newColumnACLs": "only expected SELECT additions; raw source fields, full table access and mutations denied"
+  },
+  "sameExistingTestOrder": {
+    "orderId": "gid://shopify/Order/7570906415387",
+    "purchaseId": "def6bbeb-90e2-48c0-b642-ee94b398cb5a",
+    "orderName": "#1005",
+    "test": true,
+    "currency": "USD",
+    "originalTotalMinor": "2050",
+    "lineUnitMinor": "1250",
+    "firstPaidAt": "2026-11-07T19:35:35Z",
+    "ingestedAt": "2026-11-07T21:09:15.978254Z",
+    "bindings": 1,
+    "normalDiscovery": {
+      "watermark": "2026-11-07T19:35:46.205Z",
+      "windowUntil": null,
+      "lastError": null
+    },
+    "operatorContinuation": "scoped fresh independent order/admission recheck and normal discovery both completed against the same unique order; no exhausted attempt reset or duplicate checkout",
+    "nativeMerchantList": "#1005, Paid, Artwork complete, Demo print, one item, USD20.50",
+    "frozenInstructions": {
+      "artworkRevisionId": "09caa037-8dad-4151-baef-9ba801511c54",
+      "publicationRevisionId": "211a5e1d-e1dd-4d0d-95a0-876dddf77cc6",
+      "examplePhysicalMm": {
+        "width": 120,
+        "height": 186.667
+      },
+      "placementPosition": "merchant fixed rectangle retained; no customer movement instruction supplied in this fixture"
+    },
+    "originalArtworkDownload": {
+      "assetId": "09caa037-8dad-4151-baef-9ba801511c54",
+      "bytes": 21882,
+      "sha256": "1cd434414281ddca295a0f62912779976a126f6dcb4b1b140de9bd715aa2935c",
+      "originalBytesIdentical": true,
+      "nativeMerchantAction": "Download file",
+      "completedAt": "2026-11-07T21:31:36.771Z"
+    }
+  },
+  "candidate": {
+    "versionId": "1199122513921",
+    "versionTag": "native-cart-fd9cc61",
+    "status": "inactive",
+    "activeAfterCreation": "1198986199041",
+    "versionCount": 19,
+    "moduleCount": 14,
+    "nonThemeConfigsUnchanged": 13,
+    "moduleHash": "43681bfdabfc06aeede1960e6655642841b6d3d9a06492a1b4498fe68d0a2620",
+    "themeFileCount": 21,
+    "ciAssetCount": 12,
+    "functionsSource": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+    "creation": "one acknowledged no-release/no-build CLI4.8.2 deployment, followed by independent SDK readback",
+    "originalFunctionBytes": {
+      "transform": {
+        "sha256": "49248769ae4ce578af7c5e7fa77f8c230c8fd4f45b2d673c22cfed87ff946576",
+        "bytes": 181378
+      },
+      "validation": {
+        "sha256": "3193f60bbb29cdc473ce7ae73e88d1064ca7be2f03da2aade4e17ae1390366c6",
+        "bytes": 182968
+      }
+    }
+  },
+  "purchasedLabelCorrection": {
+    "observed": "stored numeric Product/ProductVariant IDs compared literally against Shopify GIDs; purchased names unavailable despite the reader being wired",
+    "candidate": "canonicalize only valid expected identifiers before exact order/line/resource matching; no persisted history rewrite or current catalog substitution",
+    "readOnlyNativeProbe": {
+      "readOnlyCandidatePresentation": {
+        "orderName": "#1005",
+        "lines": [
+          {
+            "orderLineId": "gid://shopify/LineItem/18112397771035",
+            "title": "Insignia UI demo — example calibration",
+            "variantTitle": null
+          }
+        ]
+      }
+    },
+    "deployed": false
+  },
+  "limits": [
+    "The inactive version expands the exact inventory. Fresh quote/publication admission is paused until the matching closed profile/runtime and activation are qualified; no stale evidence is extended.",
+    "Native cart handoff and final purchased-title UI verification remain pending the matching release. No E2E PASS or owner visual acceptance is claimed here.",
+    "The single authorized test checkout is consumed. No second order, real payment, currency/scope/credential change, sender resend or protected VAT operation occurred.",
+    "Legacy UI retirement follows successful replacement qualification. Historical profiles, Function bytes and prior receipts remain immutable."
+  ]
+}

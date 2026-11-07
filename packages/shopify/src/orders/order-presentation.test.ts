@@ -42,6 +42,29 @@ test('retained order labels bind to exact order and purchased line identities', 
   expect((await readOrderPresentation({ read: async () => ({ order: foreign }) }, target))?.lines).toEqual([]);
 });
 
+test.each([
+  ['3', '4'],
+  ['3', 'gid://shopify/ProductVariant/4'],
+  ['gid://shopify/Product/3', '4'],
+])('purchased numeric identities %s / %s bind to the same Shopify GIDs', async (productId, variantId) => {
+  const purchased = { ...target, lines: [{ ...required(target.lines[0]), productId, variantId }] };
+  expect((await readOrderPresentation({ read: async () => ({ order }) }, purchased))?.lines).toEqual([
+    { orderLineId: 'gid://shopify/LineItem/2', title: 'Purchased shirt', variantTitle: 'Blue / L' },
+  ]);
+});
+
+test.each([
+  ['03', '4'],
+  ['3', '04'],
+  ['gid://shopify/Shop/3', '4'],
+  ['3', 'gid://shopify/Product/4'],
+  ['3?foreign=1', '4'],
+  ['3', '9'],
+])('malformed or foreign identities %s / %s cannot borrow purchased labels', async (productId, variantId) => {
+  const purchased = { ...target, lines: [{ ...required(target.lines[0]), productId, variantId }] };
+  expect((await readOrderPresentation({ read: async () => ({ order }) }, purchased))?.lines).toEqual([]);
+});
+
 test('presentation transport uses pinned read-only query and rejects revoked authorization', async () => {
   const { createOrderPresentationTransport } = await import('./order-presentation.js');
   let request: RequestInit | undefined;
