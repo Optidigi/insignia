@@ -58,6 +58,14 @@ export class SelectedProductReviewChanged extends Error {
   }
 }
 
+export class SelectedProductPublicationBlocked extends Error {
+  readonly view: ConfigView;
+  constructor(view: ConfigView) {
+    super(view.config?.publishEligibility.reason ?? 'Publication requires review.');
+    this.view = view;
+  }
+}
+
 export function createSelectedProductClient(input: {
   productId: string;
   request?: Request;
@@ -277,7 +285,7 @@ export function createSelectedProductClient(input: {
         isMerchantPublicationOperatorBlocked(savedView.config.publication.state)
       ) {
         input.storage.removeItem(key());
-        throw new SelectedProductReviewChanged(savedView);
+        throw new SelectedProductPublicationBlocked(savedView);
       }
       value = { ...value, setup: persisted, stage: 'publish', draftVersion: saved.draftVersion };
       store(value);

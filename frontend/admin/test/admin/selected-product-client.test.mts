@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createSelectedProductClient } from '../../src/islands/selected-product-client.ts';
+import { createSelectedProductClient, SelectedProductPublicationBlocked } from '../../src/islands/selected-product-client.ts';
 import { MerchantDraftSchema, SelectedProductSetupSchema } from '@insignia/contracts';
 
 const product = { id: 'gid://shopify/Product/111', title: 'T-shirt', status: 'ACTIVE', imageUrl: null, variants: [] };
@@ -149,6 +149,29 @@ function configView(version = '1', state: 'DRAFT' | 'ACTIVE' | 'OPERATOR_HOLD' |
     },
   };
 }
+test('confirmed draft saves blocked by publication eligibility do not claim inherited changes or an unresolved mutation', async () => {
+  const f = fixture();
+  let saved = false;
+  let publications = 0;
+  const client = createSelectedProductClient({ productId: product.id, storage: f.storage, newKey: () => key,
+    request: async (path, init) => {
+      if (path.endsWith('preferences')) return preferences;
+      if (init?.method === 'PUT') { saved = true; return { kind: 'saved', draftVersion: '2' }; }
+      if (init) { publications++; throw new Error('Publication must remain blocked'); }
+      const view = configView(saved ? '2' : '1');
+      return saved ? { ...view, config: { ...view.config, publishEligibility: { allowed: false, reason: 'Subscription verification unavailable' } } } : view;
+    },
+  });
+  await client.load();
+  await assert.rejects(client.publish(setup), (error: unknown) => {
+    assert(error instanceof SelectedProductPublicationBlocked);
+    assert.equal(error.view.config?.draftVersion, '2');
+    assert.equal(error.message, 'Subscription verification unavailable');
+    return true;
+  });
+  assert.equal(publications, 0);
+  assert.equal(client.hasPending(), false);
+});
 test('older ACTIVE cannot acknowledge a newer publication; exact retry settles only its matching revision and source', async () => {
   const f = fixture();
   let version = '1',
