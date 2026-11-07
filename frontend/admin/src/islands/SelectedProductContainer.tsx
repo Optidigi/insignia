@@ -15,7 +15,7 @@ import type { ConfigView } from '../shared/admin-view';
 import { launchCustomerPreview } from '../../examples/admin/support/placement-customer-preview.mts';
 import type { PlacementPublicationIssue } from './selected-product-publication';
 import { PlacementEditor, type ProductEditorAdapter, type ProductPublicationResult } from './SelectedProductEditor';
-import { createSelectedProductClient, SelectedProductReviewChanged } from './selected-product-client';
+import { createSelectedProductClient, SelectedProductPublicationBlocked, SelectedProductReviewChanged } from './selected-product-client';
 import { selectedProductFromConfig, UnsupportedHistoricalPricingError } from './selected-product-view';
 import { LegacyVariantPhotoError } from './legacy-variant-photos';
 import {
@@ -475,6 +475,11 @@ function SelectedProductContainer({ productId }: { productId: string }) {
                 },
               };
             } catch (error) {
+              if (error instanceof SelectedProductPublicationBlocked) {
+                await observe(error.view);
+                setRemote('failed');
+                return { status: 'rejected' };
+              }
               if (error instanceof SelectedProductReviewChanged) {
                 const product = await observe(error.view);
                 setRemote('conflict');
@@ -525,7 +530,8 @@ function SelectedProductContainer({ productId }: { productId: string }) {
         (!!view.config && isMerchantPublicationOperatorBlocked(view.config.publication.state))) && (
         <s-banner tone={remote === 'pending' ? 'warning' : 'critical'}>
           {t(
-            view.config && isMerchantPublicationOperatorBlocked(view.config.publication.state)
+            view.config && (isMerchantPublicationOperatorBlocked(view.config.publication.state) ||
+              (remote === 'failed' && !view.config.publishEligibility.allowed))
               ? 'editor:placementWorkflowPreview.realPublicationBlocked'
               : view.config?.publication.state === 'FAILED' && !client.current?.hasPending()
                 ? 'editor:placementWorkflowPreview.realPublicationFailed'

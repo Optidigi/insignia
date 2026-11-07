@@ -118,9 +118,9 @@
     "failedAnnouncement": "Theme status could not be checked.",
     "unsupportedAnnouncement": "Theme status is not available.",
     "finishedAnnouncement": "Published theme check finished.",
-    "productTemplatesGuidance": "Add the customization block to each product template you use. Adding it to one template doesn’t add it to the others.",
+    "productTemplatesGuidance": "Enable the Insignia storefront embed once for automatic placement on supported product templates. Use the optional customization app block for a specific position.",
     "unpublishedThemesGuidance": "Open the theme from Online Store → Themes to add Insignia. Statuses here apply only to the published theme.",
-    "compatibilityGuidance": "If app blocks aren’t available, ask your theme developer for help adding the customization button."
+    "compatibilityGuidance": "Automatic placement supports Horizon and Dawn. For custom themes, test product and quick-add controls, or use the optional app block."
   },
   "readinessPermissions": {
     "accessChecks": "Access checks",
@@ -169,12 +169,12 @@
     "enableInShopify": "Enable in Shopify",
     "editInShopify": "Edit in Shopify",
     "openThemeEditor": "Open theme editor",
-    "buttonActive": "Added to the published theme. Check the product templates you use.",
+    "buttonActive": "The storefront embed is enabled. Test a published product to check button placement.",
     "cartActive": "Let customers review and edit their designs before checkout.",
-    "buttonAvailable": "Add “Insignia customization” near the purchase controls in your product template.",
-    "cartAvailable": "Enable “Insignia cart review” under App embeds.",
-    "buttonUnknown": "Check that “Insignia customization” is near the purchase controls in your product template.",
-    "cartUnknown": "Check that “Insignia cart review” is enabled under App embeds.",
+    "buttonAvailable": "Enable “Insignia storefront” under App embeds, then save the theme.",
+    "cartAvailable": "Enable “Insignia storefront” under App embeds, then save the theme.",
+    "buttonUnknown": "Check that “Insignia storefront” is enabled under App embeds.",
+    "cartUnknown": "Check that “Insignia storefront” is enabled under App embeds.",
     "buttonAccessible": "{{action}}: customization button",
     "cartAccessible": "{{action}}: cart review"
   },

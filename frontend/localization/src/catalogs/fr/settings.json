@@ -120,9 +120,9 @@
     "failedAnnouncement": "Impossible de vérifier l’état du thème.",
     "unsupportedAnnouncement": "L’état du thème n’est pas disponible.",
     "finishedAnnouncement": "Vérification du thème publié terminée.",
-    "productTemplatesGuidance": "Ajoutez le bloc de personnalisation à chaque modèle de produit utilisé. L’ajouter à un modèle ne l’ajoute pas aux autres.",
+    "productTemplatesGuidance": "Activez une seule fois l’intégration de boutique Insignia pour le placement automatique dans les modèles de produit compatibles. Utilisez le bloc d’application facultatif pour une position précise.",
     "unpublishedThemesGuidance": "Ouvrez le thème depuis Boutique en ligne → Thèmes pour y ajouter Insignia. Les états affichés ici concernent uniquement le thème publié.",
-    "compatibilityGuidance": "Si les blocs d’application ne sont pas disponibles, demandez à votre développeur de thème de vous aider à ajouter le bouton de personnalisation."
+    "compatibilityGuidance": "Le placement automatique prend en charge Horizon et Dawn. Pour un thème personnalisé, testez les boutons de produit et d’ajout rapide ou utilisez le bloc d’application facultatif."
   },
   "readinessPermissions": {
     "accessChecks": "Vérification des accès",
@@ -171,12 +171,12 @@
     "enableInShopify": "Activer dans Shopify",
     "editInShopify": "Modifier dans Shopify",
     "openThemeEditor": "Ouvrir l’éditeur de thème",
-    "buttonActive": "Ajouté au thème publié. Vérifiez les modèles de produit utilisés.",
+    "buttonActive": "L’intégration de boutique est activée. Testez un produit publié pour vérifier le placement du bouton.",
     "cartActive": "Permettez aux clients de vérifier et de modifier leurs personnalisations avant de passer à la caisse.",
-    "buttonAvailable": "Ajoutez « Personnalisation Insignia » près des commandes d’achat dans le modèle de produit.",
-    "cartAvailable": "Activez « Vérification du panier Insignia » dans les intégrations d’applications.",
-    "buttonUnknown": "Vérifiez que « Personnalisation Insignia » se trouve près des commandes d’achat dans le modèle de produit.",
-    "cartUnknown": "Vérifiez que « Vérification du panier Insignia » est activée dans les intégrations d’applications.",
+    "buttonAvailable": "Activez « Insignia storefront » dans les intégrations d’applications, puis enregistrez le thème.",
+    "cartAvailable": "Activez « Insignia storefront » dans les intégrations d’applications, puis enregistrez le thème.",
+    "buttonUnknown": "Vérifiez que « Insignia storefront » est activé dans les intégrations d’applications.",
+    "cartUnknown": "Vérifiez que « Insignia storefront » est activé dans les intégrations d’applications.",
     "buttonAccessible": "{{action}} : bouton de personnalisation",
     "cartAccessible": "{{action}} : vérification du panier"
   },

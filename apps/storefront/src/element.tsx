@@ -1,5 +1,6 @@
 import { render } from 'preact';
 import GuestArtworkUpload from '../../web/src/islands/GuestArtworkUpload';
+import { connectThemeIntegration, styleThemeTrigger } from './theme-integration';
 
 /** Secure M6 artwork input only; purchase and cart integration belong to M7. */
 export class InsigniaArtworkUpload extends HTMLElement {
@@ -45,12 +46,18 @@ export class InsigniaBuyer extends HTMLElement {
   private readonly triggerClick = () => void this.mount();
   connectedCallback() {
     this.generation++;
-    const button = document.createElement('button');
+    this.style.display = 'contents';
+    const button = this.querySelector<HTMLButtonElement>('button[slot="trigger"]') ?? document.createElement('button');
     button.type = 'button';
-    button.textContent = this.hasAttribute('repair')
+    button.slot = 'trigger';
+    styleThemeTrigger(button, this);
+    button.textContent ||= this.hasAttribute('repair')
       ? 'Review customized cart'
       : (this.getAttribute('trigger-label') ?? 'Customize this product');
-    this.root.replaceChildren(button);
+    if (!button.parentNode) this.append(button);
+    const slot = document.createElement('slot');
+    slot.name = 'trigger';
+    this.root.replaceChildren(slot);
     button.addEventListener('click', this.triggerClick);
   }
   private async mount() {
@@ -92,7 +99,7 @@ export class InsigniaBuyer extends HTMLElement {
           repair: this.hasAttribute('repair'),
           isCurrent: () => generation === this.generation,
           onClose: () => {
-            this.root.querySelector<HTMLButtonElement>('button')?.focus();
+            this.querySelector<HTMLButtonElement>('button[slot="trigger"]')?.focus();
           },
           onError: () => {
             const notice = this.root.querySelector('[role=alert]') ?? document.createElement('p');
@@ -115,7 +122,7 @@ export class InsigniaBuyer extends HTMLElement {
         locale: this.getAttribute('language') || document.documentElement.lang || 'en',
         cartRoot,
         storage: sessionStorage,
-        onClose: () => this.root.querySelector<HTMLButtonElement>('button')?.focus(),
+        onClose: () => this.querySelector<HTMLButtonElement>('button[slot="trigger"]')?.focus(),
         retry: async () => {
           this.liveFrame?.destroy();
           this.liveFrame = undefined;
@@ -135,6 +142,7 @@ export class InsigniaBuyer extends HTMLElement {
   }
   disconnectedCallback() {
     this.generation++;
+    this.querySelector<HTMLButtonElement>('button[slot="trigger"]')?.removeEventListener('click', this.triggerClick);
     this.liveFrame?.destroy();
     this.liveFrame = undefined;
     render(null, this.root);
@@ -191,3 +199,17 @@ export class InsigniaCartRepair extends HTMLElement {
   }
 }
 if (!customElements.get('insignia-cart-repair')) customElements.define('insignia-cart-repair', InsigniaCartRepair);
+
+export class InsigniaThemeIntegration extends HTMLElement {
+  private dispose?: () => void;
+  connectedCallback() {
+    this.dispose?.();
+    this.dispose = connectThemeIntegration(this);
+  }
+  disconnectedCallback() {
+    this.dispose?.();
+    this.dispose = undefined;
+  }
+}
+if (!customElements.get('insignia-theme-integration'))
+  customElements.define('insignia-theme-integration', InsigniaThemeIntegration);

@@ -130,6 +130,7 @@ export function buyerFixture(
   return {
     store: coreFixture({}).buyers,
     clock: () => new Date(),
+    eligibility: deny,
     config: deny,
     session: deny,
     design: deny,

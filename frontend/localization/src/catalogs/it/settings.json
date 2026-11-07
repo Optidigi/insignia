@@ -120,9 +120,9 @@
     "failedAnnouncement": "Impossibile verificare lo stato del tema.",
     "unsupportedAnnouncement": "Stato del tema non disponibile.",
     "finishedAnnouncement": "Verifica del tema pubblicato completata.",
-    "productTemplatesGuidance": "Aggiungi il blocco di personalizzazione a ogni modello di prodotto che usi. Aggiungerlo a un modello non lo aggiunge agli altri.",
+    "productTemplatesGuidance": "Attiva una sola volta l’incorporamento della vetrina Insignia per il posizionamento automatico nei modelli di prodotto supportati. Usa il blocco app facoltativo per una posizione specifica.",
     "unpublishedThemesGuidance": "Apri il tema da Negozio online → Temi per aggiungere Insignia. Qui gli stati si riferiscono solo al tema pubblicato.",
-    "compatibilityGuidance": "Se i blocchi app non sono disponibili, chiedi allo sviluppatore del tema come aggiungere il pulsante di personalizzazione."
+    "compatibilityGuidance": "Il posizionamento automatico supporta Horizon e Dawn. Per i temi personalizzati, prova i controlli di prodotto e aggiunta rapida oppure usa il blocco app facoltativo."
   },
   "readinessPermissions": {
     "accessChecks": "Verifiche di accesso",
@@ -171,12 +171,12 @@
     "enableInShopify": "Attiva in Shopify",
     "editInShopify": "Modifica in Shopify",
     "openThemeEditor": "Apri l'editor del tema",
-    "buttonActive": "Aggiunto al tema pubblicato. Controlla i modelli di prodotto che usi.",
+    "buttonActive": "L’incorporamento della vetrina è attivo. Prova un prodotto pubblicato per verificare la posizione del pulsante.",
     "cartActive": "Consenti ai clienti di controllare e modificare le loro personalizzazioni prima del check-out.",
-    "buttonAvailable": "Aggiungi “Personalizzazione Insignia” vicino ai controlli di acquisto nel modello di prodotto.",
-    "cartAvailable": "Attiva “Riepilogo del carrello Insignia” tra gli incorporamenti app.",
-    "buttonUnknown": "Controlla che “Personalizzazione Insignia” sia vicino ai controlli di acquisto nel modello di prodotto.",
-    "cartUnknown": "Controlla che “Riepilogo del carrello Insignia” sia attivo tra gli incorporamenti app.",
+    "buttonAvailable": "Attiva “Insignia storefront” negli incorporamenti app e salva il tema.",
+    "cartAvailable": "Attiva “Insignia storefront” negli incorporamenti app e salva il tema.",
+    "buttonUnknown": "Verifica che “Insignia storefront” sia attivo negli incorporamenti app.",
+    "cartUnknown": "Verifica che “Insignia storefront” sia attivo negli incorporamenti app.",
     "buttonAccessible": "{{action}}: pulsante di personalizzazione",
     "cartAccessible": "{{action}}: riepilogo del carrello"
   },

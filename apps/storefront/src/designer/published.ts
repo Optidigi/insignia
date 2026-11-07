@@ -8,6 +8,7 @@ function unavailable(): never {
 }
 /** Compatibility is a factual projection, never a rewrite of retained config/history or a financial fallback. */
 export function canonicalDesignerSource(source: BuyerConfig): PublishedDesignerSource {
+  if (!source.ready) unavailable();
   if (source.selectedSetup) return source;
   if (!source.title?.trim() || !source.shopCurrency || !source.decorationPrices || !source.variants.length)
     unavailable();

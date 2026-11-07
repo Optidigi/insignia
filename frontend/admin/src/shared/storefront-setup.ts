@@ -40,7 +40,10 @@ export function themeSetupStatus(input: unknown): ThemeSetupStatus {
       return 'unknown';
     return block.status;
   }
-  return { button: status('customize', 'section'), cart: status('cart-repair', 'body') };
+  // The existing body embed now owns both automatic placement and cart repair.
+  // A manual section block is an optional placement override, not a setup prerequisite.
+  const storefront = status('cart-repair', 'body');
+  return { button: storefront, cart: storefront };
 }
 
 export function storefrontLinks(shop: unknown, apiKey: unknown) {
@@ -55,7 +58,7 @@ export function storefrontLinks(shop: unknown, apiKey: unknown) {
   return {
     editor: `${editor}?template=product`,
     cartEditor: `${editor}?context=apps&template=product`,
-    button: `${editor}?${new URLSearchParams({ template: 'product', addAppBlockId: `${apiKey}/customize`, target: 'mainSection' })}`,
+    button: `${editor}?${new URLSearchParams({ context: 'apps', template: 'product', activateAppId: `${apiKey}/cart-repair` })}`,
     cart: `${editor}?${new URLSearchParams({ context: 'apps', template: 'product', activateAppId: `${apiKey}/cart-repair` })}`,
   };
 }

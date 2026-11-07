@@ -4,7 +4,7 @@ Shopify product customization: a merchant App Home editor, separate buyer storef
 
 ## Designed UI handoff
 
-The UI and its optional demos are in [frontend](frontend/README.md). This folder is not mapped or connected to the production backend. The backend developer owns that work. Existing production application/server code remains unchanged.
+The UI and its optional demos are in [frontend](frontend/README.md). The selected components/reducers are composed with the authenticated backend in `apps/web` and `apps/storefront`. Native UI review is deployed; dedicated-product full E2E and automatic theme integration are the current assignment.
 
 ## Start locally
 
@@ -45,6 +45,6 @@ PostgreSQL qualification is separate. Install PostgreSQL18 server/client tools (
 
 Maintained tools live under responsibility-named `scripts/{boundaries,ci,database,functions,operations,privacy,release,runtime,worker}`. Project skills live in `.agents/skills`; select their project paths explicitly when the host also advertises generic account skills. A fresh session should confirm its intended checkout/base and project skill paths before editing. Preserve other dirty worktrees and actual service dependencies.
 
-PR223 provides the selected merchant/customer UI handoff. Development demo deployment and backend integration remain pending; merchant UI is **owner-unaccepted**. Current component/runtime checks and earlier internal visual observations do not establish owner acceptance. The source inventory is in the specification; the action checklist owns the assignment.
+PR223 supplied the selected merchant/customer UI, now integrated and deployed through the qualified development releases recorded in current state; merchant UI is **owner-unaccepted**. Current component/runtime checks and earlier internal visual observations do not establish owner acceptance. The source inventory is in the specification; the action checklist owns the assignment.
 
 Superseded development records remain in Git history. Necessary current effect/retention records and curated fixtures retain their explicit purpose; no historical prompt needs to be replayed to start work.

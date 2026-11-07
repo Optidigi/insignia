@@ -208,6 +208,17 @@ export function createBuyerServices(input: {
     guest: input.guest,
     store,
     clock,
+    async eligibility(request: Request) {
+      // resolve admits only a signed, active installation and its effective
+      // published revision. Presentation hints never grant purchase authority.
+      const scope = await input.guest.resolve(request);
+      if (!scope) return notFound();
+      const revision = await input.core.acceptedQuotes.getEffective(scope.shopId, scope.productId);
+      if (!revision) return notFound();
+      const geometry = await input.core.configs.getRevisionGeometry(scope.shopId, revision.config.revisionId);
+      if (!geometry || geometry.mode !== 'required') return notFound();
+      return { productId: scope.productId, configured: true as const };
+    },
     async config(request: Request) {
       const scope = await input.guest.resolve(request);
       if (!scope) return notFound();
@@ -245,13 +256,22 @@ export function createBuyerServices(input: {
           }
         | undefined;
       const currency = config.shopCurrency;
+      const optionNames = catalog.variants[0]?.selectedOptions?.map((option) => option.name) ?? [];
       if (
         contextual &&
         (currency === 'USD' || currency === 'EUR') &&
         catalog.currency === currency &&
+        optionNames.length > 0 &&
+        optionNames.length <= 3 &&
+        new Set(optionNames).size === optionNames.length &&
         catalog.variants.every(
           (variant) =>
             Array.isArray(variant.selectedOptions) &&
+            variant.selectedOptions.length === optionNames.length &&
+            new Set(variant.selectedOptions.map((option) => option.name)).size === optionNames.length &&
+            optionNames.every((name) =>
+              variant.selectedOptions?.some((option) => option.name === name && !!option.value.trim()),
+            ) &&
             typeof variant.baseUnitMinor === 'string' &&
             /^(0|[1-9][0-9]{0,19})$/.test(variant.baseUnitMinor),
         )
@@ -302,7 +322,18 @@ export function createBuyerServices(input: {
         variants: catalog.variants,
         geometry,
         imageUrls,
-        ready: true,
+        // Retained revisions remain readable, but the selected Designer must never
+        // present a publication without actual dimensions as production-ready.
+        ready:
+          config.placements.every((placement) =>
+            placement.allowedStepIds.every((id) => !!geometry.steps.find((step) => step.id === id)?.physicalMm),
+          ) &&
+          (!contextual ||
+            (!!editable &&
+              typeof title === 'string' &&
+              !!title.trim() &&
+              title.length <= 256 &&
+              catalog.variants.length > 0)),
       };
     },
     async session(request: Request) {

@@ -494,7 +494,7 @@ test('real SDK proxy and shared HMAC guest authority provide seven days without 
   assert.equal(await services.guest.issue(new Request(forged)), null);
 });
 
-function catalogFixture() {
+function catalogFixture(selectedOptions: { name: string; value: string }[] = []) {
   const value = fixture(),
     { input } = value;
   const scope = { shopId: 'tenant', installationGeneration: '1' };
@@ -574,7 +574,7 @@ function catalogFixture() {
               preview: { image: { url: 'https://cdn.shopify.com/synthetic/product.png', altText: null } },
             },
             variants: {
-              nodes: [{ id: 'gid://shopify/ProductVariant/222', title: 'Blue M', selectedOptions: [], image: null }],
+              nodes: [{ id: 'gid://shopify/ProductVariant/222', title: 'Blue M', selectedOptions, image: null }],
               pageInfo: { hasNextPage: false },
             },
           },
@@ -1343,52 +1343,70 @@ test('production buyer reads actual primary context before Lean pricing on propo
   }
 });
 
-test('production config reads real country-contextual base amounts and selected options even without selected authoring state', async () => {
-  const { input } = catalogFixture();
-  const original = input.fetchImpl;
-  let contextReads = 0;
-  input.fetchImpl = async (url, options) => {
-    const body = record(JSON.parse(text(required(options).body)));
-    if (text(body.query).includes('InsigniaVariantContext')) {
-      contextReads++;
-      assert.deepEqual(body.variables, { ids: ['gid://shopify/ProductVariant/222'], country: 'US' });
-      return new Response(
-        JSON.stringify({
-          data: {
-            nodes: [
-              {
-                __typename: 'ProductVariant',
-                id: 'gid://shopify/ProductVariant/222',
-                product: { id: 'gid://shopify/Product/111' },
-                contextualPricing: { price: { amount: '10.99', currencyCode: 'USD' } },
-              },
-            ],
-          },
-        }),
-      );
-    }
-    return required(original)(url, options);
-  };
-  input.core.transactions.run = async (work) => work(fixtureTransaction);
-  input.core.preferences.readWording = async () => ({
-    wordingVersion: '0',
-    overlays: { en: { locale: 'en', messages: {} } },
-  });
-  const url = new URL(signed());
-  url.searchParams.delete('signature');
-  url.searchParams.set('country', 'US');
-  const message = [...url.searchParams.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, value]) => `${key}=${value}`)
-    .join('');
-  url.searchParams.set('signature', createHmac('sha256', secret).update(message).digest('hex'));
-  const result = await createProductionBuyerServices(input).config(new Request(url));
-  assert.equal(result.selectedSetup, undefined);
-  assert.equal(result.title, 'Owned');
-  assert.equal(result.shopCurrency, 'USD');
-  assert.deepEqual(result.decorationPrices, []);
-  assert.deepEqual(result.variants, [
-    { id: '222', label: 'Blue M', available: false, selectedOptions: [], baseUnitMinor: '1099' },
-  ]);
-  assert.equal(contextReads, 1);
+test('production config reads real country-contextual base amounts and selected options even without selected authoring state', async (t) => {
+  for (const selectedOptions of [
+    [
+      { name: 'Color', value: 'Blue' },
+      { name: 'Size', value: 'M' },
+    ],
+    [],
+  ])
+    await t.test(
+      selectedOptions.length ? 'actual option facts remain editable' : 'missing option facts remain unavailable',
+      async () => {
+        const { input } = catalogFixture(selectedOptions);
+        const original = input.fetchImpl;
+        let contextReads = 0;
+        input.fetchImpl = async (url, options) => {
+          const body = record(JSON.parse(text(required(options).body)));
+          if (text(body.query).includes('InsigniaVariantContext')) {
+            contextReads++;
+            assert.deepEqual(body.variables, { ids: ['gid://shopify/ProductVariant/222'], country: 'US' });
+            return new Response(
+              JSON.stringify({
+                data: {
+                  nodes: [
+                    {
+                      __typename: 'ProductVariant',
+                      id: 'gid://shopify/ProductVariant/222',
+                      product: { id: 'gid://shopify/Product/111' },
+                      contextualPricing: { price: { amount: '10.99', currencyCode: 'USD' } },
+                    },
+                  ],
+                },
+              }),
+            );
+          }
+          return required(original)(url, options);
+        };
+        input.core.transactions.run = async (work) => work(fixtureTransaction);
+        input.core.preferences.readWording = async () => ({
+          wordingVersion: '0',
+          overlays: { en: { locale: 'en', messages: {} } },
+        });
+        const url = new URL(signed());
+        url.searchParams.delete('signature');
+        url.searchParams.set('country', 'US');
+        const message = [...url.searchParams.entries()]
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([key, value]) => `${key}=${value}`)
+          .join('');
+        url.searchParams.set('signature', createHmac('sha256', secret).update(message).digest('hex'));
+        const result = await createProductionBuyerServices(input).config(new Request(url));
+        assert.equal(result.selectedSetup, undefined);
+        assert.equal(result.title, 'Owned');
+        if (selectedOptions.length) {
+          assert.equal(result.shopCurrency, 'USD');
+          assert.deepEqual(result.decorationPrices, []);
+        } else {
+          assert.equal(result.shopCurrency, undefined);
+          assert.equal(result.decorationPrices, undefined);
+          assert.equal(result.ready, false);
+        }
+        assert.deepEqual(result.variants, [
+          { id: '222', label: 'Blue M', available: false, selectedOptions, baseUnitMinor: '1099' },
+        ]);
+        assert.equal(contextReads, 1);
+      },
+    );
 });

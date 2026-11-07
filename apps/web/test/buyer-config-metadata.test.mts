@@ -163,6 +163,23 @@ test('a published Lean configuration without selected authoring state exports ac
   assert.equal(f.wordingReads(), 1);
 });
 
+test('storefront eligibility reads only effective publication authority without catalogue, preview or wording work', async () => {
+  const f = fixture();
+  f.catalog.variants = [];
+  f.core.preferences.readWording = async () => {
+    throw new Error('Eligibility must not load customer wording');
+  };
+  const result = await f.service.eligibility(new Request('https://app.example/eligibility'));
+  assert.deepEqual(result, { productId: '123', configured: true });
+  assert.deepEqual(f.contexts, [], 'No Shopify catalogue call for button placement');
+  const geometry = await f.core.configs.getRevisionGeometry('tenant', f.config.revisionId);
+  assert(geometry);
+  f.core.configs.getRevisionGeometry = async () => ({ ...geometry, mode: 'optional' });
+  await assert.rejects(f.service.eligibility(new Request('https://app.example/eligibility')), /NOT_FOUND/);
+  f.service.guest.resolve = async () => null;
+  await assert.rejects(f.service.eligibility(new Request('https://app.example/eligibility')), /NOT_FOUND/);
+});
+
 test('new contextual UI never substitutes a current catalogue photo when immutable capture reading is unavailable', async () => {
   const f = fixture(false);
   const current = BuyerConfigSchema.parse(await f.service.config(new Request('https://app.example/config?country=US')));
@@ -330,6 +347,22 @@ test('unsupported historical economics and missing contextual facts remain reada
         delete variant.selectedOptions;
       },
     ],
+    [
+      'empty variant options',
+      (f) => {
+        const variant = f.catalog.variants[0];
+        assert(variant);
+        variant.selectedOptions = [];
+      },
+    ],
+    [
+      'inconsistent variant option names',
+      (f) => {
+        const variant = f.catalog.variants[0];
+        assert(variant);
+        f.catalog.variants.push({ ...variant, id: '223', selectedOptions: [{ name: 'Different', value: 'Other' }] });
+      },
+    ],
   ];
   for (const [name, change] of cases) {
     const f = fixture();
@@ -337,13 +370,26 @@ test('unsupported historical economics and missing contextual facts remain reada
     const result = BuyerConfigSchema.parse(
       await f.service.config(new Request('https://app.example/config?country=US')),
     );
-    assert.equal(result.ready, true, name);
+    assert.equal(result.ready, false, name);
     assert.equal(result.shopCurrency, undefined, name);
     assert.equal(result.decorationPrices, undefined, name);
     assert.deepEqual(result.wording, f.wording, name);
     assert.equal(result.title, 'Actual catalogue title', name);
     assert.deepEqual(result.geometry, f.geometry, name);
     assert.equal(f.wordingReads(), 1, name);
+  }
+});
+
+test('a retained publication without required production dimensions stays readable but is not ready for customers', async () => {
+  const f = fixture();
+  const step = f.geometry.steps[0];
+  assert(step);
+  Reflect.deleteProperty(step, 'physicalMm');
+  for (const query of ['', '?country=US']) {
+    const result = BuyerConfigSchema.parse(await f.service.config(new Request(`https://app.example/config${query}`)));
+    assert.equal(result.ready, false);
+    assert.deepEqual(result.geometry, f.geometry, 'readiness never invents dimensions or rewrites retained geometry');
+    assert.equal(result.revisionId, f.config.revisionId);
   }
 });
 
