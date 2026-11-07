@@ -47,7 +47,7 @@ export function createMerchantBillingReader(ports: {
               ? 'trial'
               : 'active',
       observedAt: fresh ? snapshot.observedAt : null,
-      trialEndsAt: recognized ? snapshot.trialEndsAt : null,
+      trialEndsAt: recognized && projection.trial ? snapshot.trialEndsAt : null,
       currentCycle: recognized ? snapshot.currentBillingCycle : null,
       scheduledCancellation: fresh && projection.scheduledCancellation,
       pendingChange: fresh && projection.pendingProviderUpdate !== null,

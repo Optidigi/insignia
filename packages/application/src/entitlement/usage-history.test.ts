@@ -202,6 +202,9 @@ describe('same-current-cycle historical usage qualification', () => {
   it('holds trial, pending, inactive, scheduled and non-monthly snapshots', () => {
     const changes: ((input: CurrentCycleUsageHistoryInput) => void)[] = [
       (i) => {
+        i.current.trialEndsAt = '2026-09-28T16:53:01.000Z';
+      },
+      (i) => {
         i.current.trialEndsAt = '2026-10-16T00:00:00.000Z';
         i.current.currentBillingCycle = null;
       },

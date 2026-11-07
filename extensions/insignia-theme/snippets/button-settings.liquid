@@ -1,9 +1,0 @@
-trigger-label="{{ block.settings.button_label | default: default_label | escape }}"
-button-style="{{ block.settings.button_style | escape }}"
-button-width="{{ block.settings.button_width | escape }}"
-{% if block.settings.button_background != blank %}button-background="{{ block.settings.button_background | escape }}"{% endif %}
-{% if block.settings.button_color != blank %}button-color="{{ block.settings.button_color | escape }}"{% endif %}
-{% if block.settings.override_radius %}button-radius="{{ block.settings.button_radius }}px"{% endif %}
-{% if block.settings.override_border %}button-border-width="{{ block.settings.button_border_width }}px"{% endif %}
-{% if block.settings.button_border_color != blank %}button-border-color="{{ block.settings.button_border_color | escape }}"{% endif %}
-{% if block.settings.button_spacing > 0 %}button-spacing="{{ block.settings.button_spacing }}px"{% endif %}
