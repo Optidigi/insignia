@@ -268,8 +268,8 @@ async function schemaIdentity(client: PoolClient) {
       [tables],
     )
   ).rows;
-  // pg_dump reparses this existing nested AND check into its equivalent flat
-  // form. Normalize only these two known expressions, never arbitrary checks.
+  // pg_dump reparses existing nested AND checks into equivalent flat forms.
+  // Normalize only these known expression pairs, never arbitrary checks.
   for (const row of constraints) {
     if (
       row.relname === 'shopify_webhook_deliveries' &&
@@ -279,6 +279,13 @@ async function schemaIdentity(client: PoolClient) {
         "CHECK (((length(shop_domain) >= 16) AND (length(shop_domain) <= 253) AND (shop_domain = lower(shop_domain)) AND (shop_domain ~~ '%.myshopify.com'::text)))";
       const nested =
         "CHECK ((((length(shop_domain) >= 16) AND (length(shop_domain) <= 253)) AND (shop_domain = lower(shop_domain)) AND (shop_domain ~~ '%.myshopify.com'::text)))";
+      if (row.definition === nested) row.definition = flat;
+    }
+    if (row.relname === 'purchase_order_labels' && row.conname === 'purchase_order_labels_order_name_check') {
+      const flat =
+        "CHECK (((order_name IS NULL) OR ((char_length(order_name) >= 1) AND (char_length(order_name) <= 512) AND (order_name !~ '[[:cntrl:]]'::text))))";
+      const nested =
+        "CHECK (((order_name IS NULL) OR (((char_length(order_name) >= 1) AND (char_length(order_name) <= 512)) AND (order_name !~ '[[:cntrl:]]'::text))))";
       if (row.definition === nested) row.definition = flat;
     }
   }

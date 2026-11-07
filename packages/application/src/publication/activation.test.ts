@@ -106,11 +106,12 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
   let restoreClock: Date | null = null;
   let crashBeforeAcquire = false;
   let crashBeforeRestore = false;
+  let crashAfterNoDispatchClaim = false;
   let crashAcquire = false;
   let crashRestore = false;
   let unsupportedRestorationAck = false;
   let omitRestorationAck = false;
-  let unresolvedRestore: 'pending' | 'throw' | 'original' | null = null;
+  let unresolvedRestore: 'pending' | 'throw' | 'original' | 'not-dispatched' | null = null;
   let failCommit = false;
   let fenced = false;
   let observations = 0;
@@ -189,6 +190,7 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
       stateAtRestore = structuredClone(candidate.state);
       restoreClock = new Date(clock);
       restores++;
+      if (unresolvedRestore === 'not-dispatched') return { kind: 'NOT_DISPATCHED', current: structuredClone(current) };
       if (unresolvedRestore === 'pending') return { kind: 'RESTORATION_PENDING', current: null };
       if (unresolvedRestore === 'throw') throw new Error('unsettled restore response');
       if (unresolvedRestore === 'original') {
@@ -286,6 +288,14 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
   const store = {
     locked: async <T>(_identity: unknown, action: (session: ActivationSession) => Promise<T>) => {
       if (fenced) throw new ActivationFenceError('reinstall/epoch/supersession');
+      if (
+        crashAfterNoDispatchClaim &&
+        candidate.state.hold?.version === 'm5-availability-hold-v3' &&
+        candidate.state.hold.restorationClaim?.settledNoDispatchReceiptDigest
+      ) {
+        crashAfterNoDispatchClaim = false;
+        throw new Error('crash after consuming no-dispatch proof');
+      }
       if (crashBeforeRestore && candidate.state.kind === 'RESTORATION_CLAIMED') {
         crashBeforeRestore = false;
         throw new Error('crash after restore claim before dispatch');
@@ -323,6 +333,22 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
         throw error;
       }
     },
+  };
+  // The port promises serialization; model the production row-lock boundary.
+  const unlocked = store.locked;
+  let lockTail = Promise.resolve();
+  store.locked = async <T>(identity: unknown, action: (session: ActivationSession) => Promise<T>) => {
+    const previous = lockTail;
+    let release!: () => void;
+    lockTail = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await previous;
+    try {
+      return await unlocked(identity, action);
+    } finally {
+      release();
+    }
   };
   const restart = () =>
     createPublicationActivation({
@@ -472,7 +498,10 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
     set crashBeforeRestore(value: boolean) {
       crashBeforeRestore = value;
     },
-    set unresolvedRestore(value: 'pending' | 'throw' | 'original' | null) {
+    set crashAfterNoDispatchClaim(value: boolean) {
+      crashAfterNoDispatchClaim = value;
+    },
+    set unresolvedRestore(value: 'pending' | 'throw' | 'original' | 'not-dispatched' | null) {
       unresolvedRestore = value;
     },
     armMidnightRead: (read: number) => {
@@ -1034,6 +1063,87 @@ it('durable restore claim reserves one conditional rehold before dispatch', asyn
     },
   });
 });
+
+it('a bound settled no-dispatch receipt can authorize one fresh restoration without changing the publication', async () => {
+  const f = fixture();
+  await f.advance();
+  await f.advance();
+  f.unresolvedRestore = 'not-dispatched';
+  expect((await f.advance()).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+  const original = f.candidate.operationId;
+  f.unresolvedRestore = null;
+  expect((await f.advance()).kind).toBe('ACTIVE');
+  expect(f.candidate.operationId).toBe(original);
+  expect(f.restores).toBe(2);
+});
+
+it('concurrent continuations consume one settled receipt and dispatch only one restoration', async () => {
+  const f = fixture();
+  await f.advance();
+  await f.advance();
+  f.unresolvedRestore = 'not-dispatched';
+  await f.advance();
+  f.unresolvedRestore = null;
+  const results = await Promise.all([f.advance(), f.advance()]);
+  expect(results.map((r) => r.kind)).toEqual(['ACTIVE', 'ACTIVE']);
+  expect(f.restores).toBe(2);
+});
+
+it('settled no-dispatch recovery still requires fresh independent release evidence', async () => {
+  const f = fixture();
+  await f.advance();
+  await f.advance();
+  f.unresolvedRestore = 'not-dispatched';
+  await f.advance();
+  f.unresolvedRestore = null;
+  f.mismatchArtifact('wasmSha256');
+  expect((await f.advance()).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+  expect(f.restores).toBe(1);
+});
+
+it('the same settled receipt cannot authorize another restore after consumption or a claim-owning crash', async () => {
+  for (const crash of [false, true]) {
+    const f = fixture();
+    await f.advance();
+    await f.advance();
+    f.unresolvedRestore = 'not-dispatched';
+    await f.advance();
+    f.crashAfterNoDispatchClaim = crash;
+    if (crash) await expect(f.advance()).rejects.toThrow('crash after consuming');
+    else await f.advance();
+    const calls = f.restores;
+    f.unresolvedRestore = null;
+    expect((await f.advance()).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+    expect(f.restores).toBe(calls);
+  }
+});
+
+it.each(['acknowledgement', 'compensation', 'scope', 'product', 'version', 'unsettled', 'operation'] as const)(
+  'unqualified %s receipt cannot rearm a claimed restoration',
+  async (field) => {
+    const f = fixture();
+    await f.advance();
+    await f.advance();
+    f.unresolvedRestore = 'not-dispatched';
+    await f.advance();
+    const hold = f.candidate.state.hold;
+    if (hold?.version !== 'm5-availability-hold-v3' || !hold.restorationReceipt || !hold.restorationReceipt.current)
+      throw new Error('Expected settled receipt');
+    const receipt = hold.restorationReceipt;
+    const current = receipt.current;
+    if (!current) throw new Error('Expected held receipt snapshot');
+    if (field === 'acknowledgement') Reflect.set(receipt, field, hold.acquisitionAcknowledgement);
+    if (field === 'compensation') Reflect.set(receipt, field, {});
+    if (field === 'version') Reflect.set(receipt, field, 'unsupported');
+    if (field === 'unsettled') Reflect.set(receipt, 'kind', 'RESTORATION_PENDING');
+    if (field === 'operation') Reflect.set(hold, 'operationId', 'different-operation');
+    if (field === 'product') Reflect.set(current, 'productId', 'gid://shopify/Product/999');
+    if (field === 'scope') Reflect.set(current.scope, 'shopId', 'foreign');
+    f.unresolvedRestore = null;
+    await f.advance();
+    expect(f.restores).toBe(1);
+  },
+);
 
 it('unresolved historical v2 remains byte-equivalent and operator-held without any provider dispatch', async () => {
   const f = fixture();

@@ -328,7 +328,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     let acquireNotSent = false;
     let acquireLost = false;
     let restoreLost = false;
-    let restoreUnsettled: 'pending' | 'throw' | 'original' | null = null;
+    let restoreUnsettled: 'pending' | 'throw' | 'original' | 'not-dispatched' | null = null;
     let restoreSettled = false;
     let acquisitions = 0;
     let restores = 0;
@@ -386,6 +386,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         expect(record?.evidence).not.toBeNull();
         expect((await core.configs.getConfig(shopId, configId))?.effectiveRevisionId).not.toBeNull();
         restores++;
+        if (restoreUnsettled === 'not-dispatched') return { kind: 'NOT_DISPATCHED', current: structuredClone(current) };
         if (restoreUnsettled === 'pending') return { kind: 'RESTORATION_PENDING', current: null };
         if (restoreUnsettled === 'throw') throw new Error('unsettled restore response');
         if (restoreUnsettled === 'original') {
@@ -595,7 +596,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       set restoreLost(value: boolean) {
         restoreLost = value;
       },
-      set restoreUnsettled(value: 'pending' | 'throw' | 'original' | null) {
+      set restoreUnsettled(value: 'pending' | 'throw' | 'original' | 'not-dispatched' | null) {
         restoreUnsettled = value;
       },
       get restoreSettled() {
@@ -929,6 +930,106 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       ),
     ).rejects.toThrow('v3 availability audit is immutable');
     expect((await f.restart().read(f.identity))?.state.hold).toEqual(record?.state.hold);
+  });
+
+  it('SQL serializes settled no-dispatch recovery and retains the immutable original receipt', async () => {
+    const f = await fixture();
+    await f.prepareHold();
+    await f.publish();
+    f.restoreUnsettled = 'not-dispatched';
+    await f.restart().advance(f.identity);
+    await f.restart().advance(f.identity);
+    const before = await f.restart().read(f.identity);
+    if (
+      before?.state.hold?.version !== 'm5-availability-hold-v3' ||
+      before.state.hold.restorationReceipt?.kind !== 'NOT_DISPATCHED'
+    )
+      throw new Error('Expected no-write receipt');
+    await expect(
+      sql`UPDATE m5_activation_state SET hold=jsonb_set(hold,'{restorationClaim,settledNoDispatchReceiptDigest}',to_jsonb(${'a'.repeat(64)}::text)),version=version+1 WHERE shop_id=${f.identity.shopId}`.execute(
+        database,
+      ),
+    ).rejects.toThrow('immutable');
+    const rejectedAudit =
+      await sql`SELECT FROM m5_restoration_no_dispatch_consumptions WHERE shop_id=${f.identity.shopId}`.execute(
+        database,
+      );
+    expect(rejectedAudit.rows).toHaveLength(0);
+    expect((await f.restart().read(f.identity))?.state.hold).toEqual(before.state.hold);
+    f.restoreUnsettled = null;
+    await Promise.all([f.restart().advance(f.identity), f.restart().advance(f.identity)]);
+    const after = await f.restart().read(f.identity);
+    expect(after?.state.kind).toBe('RESTORED');
+    const audit = await sql<{
+      original_claim: unknown;
+      original_receipt: unknown;
+      receipt_digest: string;
+    }>`SELECT original_claim,original_receipt,receipt_digest FROM m5_restoration_no_dispatch_consumptions WHERE shop_id=${f.identity.shopId} AND config_id=${f.identity.configId} AND operation_id=${f.identity.operationId}`.execute(
+      database,
+    );
+    expect(audit.rows).toHaveLength(1);
+    expect(audit.rows[0]?.original_claim).toEqual(before.state.hold.restorationClaim);
+    expect(audit.rows[0]?.original_receipt).toEqual(before.state.hold.restorationReceipt);
+    expect(audit.rows[0]?.receipt_digest).toBe(activationDigest(before.state.hold.restorationReceipt));
+    await expect(
+      sql`UPDATE m5_restoration_no_dispatch_consumptions SET original_receipt='{}'::jsonb WHERE shop_id=${f.identity.shopId}`.execute(
+        database,
+      ),
+    ).rejects.toThrow('immutable');
+    await expect(
+      sql`UPDATE m5_activation_state SET hold=jsonb_set(hold,'{restorationClaim,settledNoDispatchReceiptDigest}',to_jsonb(${'a'.repeat(64)}::text)),version=version+1 WHERE shop_id=${f.identity.shopId}`.execute(
+        database,
+      ),
+    ).rejects.toThrow();
+  });
+
+  it('restricted runtime consumes through the owner trigger without direct audit privileges', async () => {
+    const f = await fixture();
+    await f.prepareHold();
+    await f.publish();
+    f.restoreUnsettled = 'not-dispatched';
+    await f.restart().advance(f.identity);
+    await f.restart().advance(f.identity);
+    const hold = (await f.restart().read(f.identity))?.state.hold;
+    if (hold?.version !== 'm5-availability-hold-v3' || hold.restorationReceipt?.kind !== 'NOT_DISPATCHED')
+      throw new Error('Expected no-write receipt');
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const client = await pool.connect();
+    const role = `restoration_${randomUUID().replaceAll('-', '')}`;
+    try {
+      await client.query('BEGIN');
+      await client.query(`CREATE ROLE ${role} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS`);
+      await client.query(`GRANT USAGE ON SCHEMA public TO ${role}`);
+      await client.query(`GRANT SELECT,UPDATE ON public.m5_activation_state TO ${role}`);
+      await client.query(`SET LOCAL ROLE ${role}`);
+      const privileges = await client.query(
+        "SELECT has_table_privilege(current_user,'public.m5_restoration_no_dispatch_consumptions','SELECT,INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER') AS audit_access",
+      );
+      expect(privileges.rows[0]?.audit_access).toBe(false);
+      const result = await client.query(
+        "UPDATE public.m5_activation_state SET hold=jsonb_set(hold,'{restorationClaim,settledNoDispatchReceiptDigest}',to_jsonb($1::text)),version=version+1 WHERE shop_id=$2 RETURNING operation_id",
+        [activationDigest(hold.restorationReceipt), f.identity.shopId],
+      );
+      expect(result.rowCount).toBe(1);
+      await client.query('RESET ROLE');
+      const audit = await client.query(
+        'SELECT original_receipt FROM public.m5_restoration_no_dispatch_consumptions WHERE shop_id=$1',
+        [f.identity.shopId],
+      );
+      expect(audit.rows.map((row) => row.original_receipt)).toEqual([hold.restorationReceipt]);
+      await client.query(`SET LOCAL ROLE ${role}`);
+      await client.query('CREATE TEMP TABLE counterfeit_activation (hold jsonb)');
+      await client.query(
+        'CREATE TRIGGER counterfeit BEFORE INSERT ON counterfeit_activation FOR EACH ROW EXECUTE FUNCTION public.enforce_activation_v3_audit()',
+      );
+      await expect(client.query("INSERT INTO counterfeit_activation VALUES ('{}'::jsonb)")).rejects.toThrow(
+        'unexpected restoration audit relation',
+      );
+    } finally {
+      await client.query('ROLLBACK');
+      client.release();
+      await pool.end();
+    }
   });
 
   it('a crash after compensation leaves the committed v3 claim and never replays either write', async () => {
@@ -1278,8 +1379,13 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     expect(result.kind).toBe(permitted ? 'ACTIVE' : 'ACTIVATED_RESTORATION_PENDING');
     expect((await f.restart().read(f.identity))?.evidence).toEqual(evidence);
     expect((await f.restart().read(f.identity))?.state.kind).toBe(permitted ? 'RESTORED' : 'RESTORATION_CLAIMED');
-    if (ms < 0) await expect(f.restart().advance(f.identity)).rejects.toMatchObject({ kind: 'invalid_request' });
-    else await f.restart().advance(f.identity);
+    const beforeRetry = await f.restart().read(f.identity);
+    const retried = await f.restart().advance(f.identity);
+    if (ms < 0) {
+      // The new fresh-release gate rejects backwards time before the adapter.
+      expect(retried.kind).toBe('ACTIVATED_RESTORATION_PENDING');
+      expect((await f.restart().read(f.identity))?.state.hold).toEqual(beforeRetry?.state.hold);
+    }
     expect(f.providerWrites).toEqual(permitted ? ['DRAFT', 'ACTIVE'] : ['DRAFT']);
   });
 

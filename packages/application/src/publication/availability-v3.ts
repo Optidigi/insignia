@@ -54,6 +54,8 @@ export type AvailabilityRestorationClaimV3 = Readonly<{
   productId: string;
   restoreReserved: true;
   compensationReserved: true;
+  /** A settled no-write receipt is consumed once, never reconstructed from readback/timeout. */
+  settledNoDispatchReceiptDigest?: string;
 }>;
 export type AvailabilityCompensationReceiptV3 = Readonly<{
   version: 'm5-availability-compensation-receipt-v3';

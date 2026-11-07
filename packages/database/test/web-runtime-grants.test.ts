@@ -66,8 +66,8 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       );
       const migrations = new URL('../migrations/', import.meta.url);
       const names = (await readdir(migrations)).filter((n) => n.endsWith('.sql')).sort();
-      expect(names).toHaveLength(50);
-      expect(names.slice(-12)).toEqual([
+      expect(names).toHaveLength(51);
+      expect(names.slice(-13)).toEqual([
         '20261017000200_privacy_merchant_export.sql',
         '20261017000300_shop_privacy_staging.sql',
         '20261018000100_method_catalog.sql',
@@ -80,6 +80,7 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
         '20261105000300_merchant_uploaded_media.sql',
         '20261105000400_customer_artwork.sql',
         '20261105000500_purchase_order_labels.sql',
+        '20261107000100_restoration_no_dispatch_retry.sql',
       ]);
       for (const file of names.slice(0, 20))
         await owner.query((await readFile(new URL(file, migrations), 'utf8')).split('-- migrate:down')[0]!);
@@ -818,6 +819,11 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       // The local ledger is not activated for any deployed runtime role.
       for (const runtime of [web, purchaseWorker, inspectionWorker])
         for (const query of [
+          'SELECT * FROM m5_restoration_no_dispatch_consumptions',
+          'INSERT INTO m5_restoration_no_dispatch_consumptions DEFAULT VALUES',
+          'UPDATE m5_restoration_no_dispatch_consumptions SET receipt_digest=receipt_digest WHERE false',
+          'DELETE FROM m5_restoration_no_dispatch_consumptions WHERE false',
+          'TRUNCATE m5_restoration_no_dispatch_consumptions',
           'SELECT * FROM m9_usage_delivery_intents',
           'INSERT INTO m9_usage_delivery_intents DEFAULT VALUES',
           'UPDATE m9_usage_delivery_intents SET idempotency_key=idempotency_key WHERE false',
