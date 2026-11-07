@@ -1,0 +1,138 @@
+{
+  "kind": "bounded-selected-ui-retirement-deployment-and-native-activation",
+  "date": "2026-11-07",
+  "source": {
+    "pullRequest": 242,
+    "head": "3899c7ff71ba16e57ff4d1c43b9bef6696687ee2",
+    "merge": "8652f61d52ecab09c21aa3d1208d112ea9265090",
+    "tree": "4120fa9606a8e279ae3f8aae903d2b862508698a",
+    "ciMergeHead": "bf43ad332d374e6549564f31b62e8b06e0a1ab9f",
+    "runtimeRun": "42424127989",
+    "foundationRun": "42424127963",
+    "durableRun": "42424127965",
+    "attempt": 1,
+    "requiredChecks": "all passed"
+  },
+  "promotion": {
+    "roles": {
+      "web": {
+        "manifest": "sha256:06183be42774953649e4308aedc02a6e1929a6ece4676f8d4d538da429da1222",
+        "config": "sha256:382ed30048a2aaf237e953f09b469724a1b525a95a26f305b277a1543acd3e62",
+        "archiveSha256": "015e35f45e34d4365ff9f1b387ed78c53a48e2fc88526b133fafd19ca5085202",
+        "archiveSizeBytes": 497749504,
+        "state": "healthy"
+      },
+      "worker": {
+        "manifest": "sha256:d2b30e54b6fdf70447e6c8a1a5b1934aae1b18617f08a951bb0daa20937686dc",
+        "config": "sha256:c893cd21bb5cb4b16f11a622a34db4403a8c494b1efde4f67337dc7befd76816",
+        "archiveSha256": "ff98f37f064297d38bffa6fa0f390fef30684361e0bb23967153e1bb442fdc97",
+        "archiveSizeBytes": 315218944,
+        "state": "healthy"
+      },
+      "verifier": {
+        "manifest": "sha256:5096ebfdb2c6dafc761a42b18f563790a2d081ffe36ab320985d64243a931b18",
+        "config": "sha256:651bc304d3ffd0ae0fc9e57a2f5c3881e1a4b96c7ea5210c12888af594972c0a",
+        "archiveSha256": "3efdf89cbc1296f261aba4b997f4a958c0f032792760642a21ee63f8890ac6fe",
+        "archiveSizeBytes": 472695296,
+        "state": "running",
+        "codeManifestSha256": "43679324ea3a23b1d0bd2d77ecc8a1b764a12eb67b68f4b593350eb8a496467c"
+      }
+    },
+    "profile": "native-selected-fixed-81830c6",
+    "schema": 51,
+    "newMigration": false,
+    "newGrants": false,
+    "archiveQualification": "Exact ZIP hashes, source receipts, OCI blobs/config/layers and loaded native identities qualified before owned role recreation.",
+    "preserved": "All five purchases/four paid facts, shops/installations, role membership/table and column ACLs, unrelated containers, inspector, private credentials/mounts/journals/networks/routing unchanged during promotion.",
+    "appLivenessHTTP": 200
+  },
+  "shopify": {
+    "versionId": "1199166783489",
+    "versionTag": "native-selected-fixed-81830c6",
+    "status": "sole active",
+    "previousVersionId": "1199122513921",
+    "exactVersionCount": 21,
+    "moduleCount": 14,
+    "nonThemeConfigsUnchanged": 13,
+    "moduleHash": "86f8d603737f1c311d74176d1521ff571a231bda160659b29d2c12520fb4828e",
+    "themeFiles": 20,
+    "ciAssets": 11,
+    "assets": "Final CI242 files exactly equal frozen CI241 staging; no additional version created.",
+    "themeIdentity": "Original native UID/name and registration UUID preserved.",
+    "selectedCssSha256": "11a3ed3eaa1e7ac1830daf7058d86281c7917647a66badb7b10d5ac897507897",
+    "functionsSourceCommit": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+    "functions": "Original target WASM hashes/sizes and native non-theme module configurations remain unchanged.",
+    "activation": "One acknowledged official CLI4.8.2 release after exclusive intent, followed by independent complete SDK readback.",
+    "wrongIdentityCandidate": {
+      "versionId": "1199165767681",
+      "status": "inactive",
+      "disposition": "NEVER_RELEASE"
+    }
+  },
+  "finiteReleaseProof": {
+    "recordId": "c991bdfe-f580-4cea-81bd-ad4994e6f106",
+    "requestId": "a85b103d-ea3a-4806-bf02-edd9a248f21a",
+    "observedAt": "2026-11-07T23:29:36.223Z",
+    "expiresAt": "2026-11-07T23:30:04.633Z",
+    "sameFreshRecordAdmittedByWebAndWorker": true,
+    "historicalOnly": true
+  },
+  "nativeBrowser": {
+    "shop": "insignia-rewrite-dev.myshopify.com",
+    "productId": "10585669959963",
+    "productHandle": "insignia-ui-demo-example-calibration",
+    "desktopCSSViewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "firstDesktopConfig": {
+      "status": 200,
+      "durationMs": 1191,
+      "context": "Initial browser request after correlated proof; trusted evidence was warm.",
+      "retry": false
+    },
+    "productTheme": "Customise controls replace native product purchase controls in the published Horizon theme. Ordinary cart checkout remains available after valid customization.",
+    "retiredArtworkElementRegistered": false,
+    "selectedBuyerRegistered": true,
+    "assetsVersionTag": "native-selected-fixed-81830c6",
+    "artwork": "Existing approved PNG fixture uploaded, inspected and rendered in the selected Designer.",
+    "journey": "Artwork \u2192 quantity1 \u2192 authoritative USD12.50 review \u2192 Add to cart \u2192 automatic native /cart navigation.",
+    "cartReadback": {
+      "itemCount": 1,
+      "currency": "USD",
+      "totalMinor": 1250,
+      "productId": "10585669959963",
+      "variantId": "54545321885979",
+      "quantity": 1,
+      "finalPriceMinor": 1250,
+      "propertyKeys": [
+        "_insignia_member_v2",
+        "_insignia_quote_v2"
+      ]
+    },
+    "restoration": "Review customized cart restores the artwork, method, Standard size and quantity in the selected Designer.",
+    "cleanup": "Manual close preserves cart; native Remove deletes only the owned test line. Independent readback confirms zero items/zero total.",
+    "merchantProductEditor": "Authenticated published selected editor, loaded image, production dimensions and native Preview customization/Save draft/Publish controls observed; no draft write.",
+    "merchantOrder": "Existing#1005 is Paid/Artwork complete/Test, correct purchased title, original total2050USD and first-paid19:35 preserved; historical variant title remains explicitly unavailable.",
+    "narrowCSSViewport": {
+      "width": 390,
+      "height": 844,
+      "userAgentChanged": false,
+      "designerAndHostScrollWidth": 390,
+      "designerPreviewWidth": 390,
+      "controlsBelowPreview": true,
+      "firstConfigHTTP": 200,
+      "firstConfigDurationMs": 7234,
+      "retry": false,
+      "merchantHostScrollWidth": 390,
+      "merchantNativeActions": "Actions and Publish present."
+    },
+    "newCheckoutOrderOrPayment": false
+  },
+  "limits": [
+    "Owner visual acceptance remains pending; these observations do not grant production rollout.",
+    "The original single native test checkout remains consumed. No second checkout/order, sender resend, new scope/currency/charge, or protected VAT action.",
+    "Customer email dispatch remains off pending original received-message authentication evidence; a narrow connected-mailbox search found no matching original test message, which does not prove non-delivery. Native EUR qualification remains deferred.",
+    "Frozen initial inactive bindings, original Function bytes, old inventories and earlier receipts remain immutable; expired proof is never reused as current admission."
+  ]
+}
