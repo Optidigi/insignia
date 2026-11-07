@@ -8,6 +8,12 @@ export type OrderPresentation = {
   lines: { orderLineId: string; title: string | null; variantTitle: string | null }[];
 };
 const query = `query InsigniaOrderPresentation($id: ID!) { order(id: $id) { id name lineItems(first: 250) { nodes { id title variantTitle product { id } variant { id } } pageInfo { hasNextPage } } } }`;
+function resourceId(value: unknown, resource: 'Product' | 'ProductVariant'): string | null {
+  if (typeof value !== 'string') return null;
+  const prefix = `gid://shopify/${resource}/`;
+  const id = value.startsWith(prefix) ? value.slice(prefix.length) : value;
+  return /^[1-9][0-9]{0,19}$/.test(id) ? `${prefix}${id}` : null;
+}
 const label = (value: unknown): string | null =>
   typeof value === 'string' &&
   value.trim().length > 0 &&
@@ -53,7 +59,9 @@ export async function readOrderPresentation(
     if (!line || typeof line.id !== 'string' || ids.has(line.id)) throw new Error('Invalid order line identity');
     ids.add(line.id);
     const purchased = target.lines.find((item) => item.orderLineId === line.id);
-    if (purchased && line.product?.id === purchased.productId && line.variant?.id === purchased.variantId)
+    const productId = purchased && resourceId(purchased.productId, 'Product');
+    const variantId = purchased && resourceId(purchased.variantId, 'ProductVariant');
+    if (productId && variantId && line.product?.id === productId && line.variant?.id === variantId)
       lines.push({ orderLineId: line.id, title: label(line.title), variantTitle: label(line.variantTitle) });
   }
   return { orderName: label(order.name), lines };
