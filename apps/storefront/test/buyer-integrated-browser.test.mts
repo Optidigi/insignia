@@ -32,6 +32,11 @@ test('buyer purchases the EUR90 Lean quote through actual HTTP, real signing and
     void (async () => {
       const url = new URL(req.url ?? '/', 'http://local.test');
       const prefix = '/apps/insignia/v1/';
+      if (url.pathname === '/cart') {
+        res.setHeader('Content-Type', 'text/html');
+        res.end('<main><h1>Native cart</h1></main>');
+        return;
+      }
       if (url.pathname.startsWith(prefix)) {
         // This local adapter substitutes the Shopify-signed routing boundary, not buyer-supplied tenant authority.
         url.searchParams.set('shop', f.shopDomain);
@@ -134,7 +139,8 @@ test('buyer purchases the EUR90 Lean quote through actual HTTP, real signing and
     await frame.getByText('€90.00', { exact: true }).filter({ visible: true }).first().waitFor();
     if (process.env.M7_DEMO_SCREENSHOT) await page.screenshot({ path: process.env.M7_DEMO_SCREENSHOT, fullPage: true });
     await frame.getByRole('button', { name: 'Add to cart', exact: true }).click();
-    await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
+    await page.waitForURL('**/cart');
+    await page.getByRole('heading', { name: 'Native cart', exact: true }).waitFor();
     assert.equal(adds, 1);
     assert.equal(confirmed, true);
     assert.deepEqual(items[0], {

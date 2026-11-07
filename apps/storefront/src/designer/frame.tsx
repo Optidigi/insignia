@@ -1,6 +1,6 @@
 import type { MerchantCustomerWordingView } from '@insignia/contracts';
 import { render } from 'preact';
-import { useLayoutEffect, useMemo, useState } from 'preact/hooks';
+import { useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { ProductConfig } from '../../../../frontend/designer/src/config';
 import { resolveCustomerHostLocale } from '../../../../frontend/designer/src/customer-language-policy';
 import { readCustomerLanguagePreference } from '../../../../frontend/designer/src/customer-language-preference';
@@ -59,6 +59,16 @@ type Initial = {
   previewOnly?: boolean;
   requiresCartReview?: boolean;
 };
+function Closed({ completion }: { completion: CartReceipt | null }) {
+  const sent = useRef(false);
+  useLayoutEffect(() => {
+    if (sent.current) return;
+    sent.current = true;
+    send('insignia:designer:closed', { receipt: completion });
+  }, [completion]);
+  return null;
+}
+
 function Frame({ initial }: { initial: Initial }) {
   const [config, setConfig] = useState(initial.config);
   const [repair, setRepair] = useState(initial.repair);
@@ -117,10 +127,8 @@ function Frame({ initial }: { initial: Initial }) {
           hostErrorSignal={hostError}
           cartReviewedSignal={reviewed}
           onSelectQuoteGroup={(id) => send('insignia:designer:select-group', { id })}
-          onOpenChange={(value) => {
-            setOpen(value);
-            if (!value) send('insignia:designer:closed');
-          }}
+          onOpenChange={setOpen}
+          renderClosed={({ completion }) => <Closed completion={completion} />}
         />
       )}
       {repair && (

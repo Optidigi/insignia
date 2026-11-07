@@ -72,8 +72,8 @@ test('isolated selected Designer preserves edits, renders real review before con
   const html = `<!doctype html><html><head><style>body{font-family:serif}#outside{color:rgb(200,0,0)}</style></head><body><p id="outside">Shopify-owned page</p><script type="module">
  import {createDesignerFrame} from '/host.js';
  const config=${JSON.stringify(config)};
- window.preparations=[];window.writes=[];window.designerClosed=0;
- const frame=createDesignerFrame({config,locale:'en',initialPrints:[{id:'chest',method:'print',size:0,artworkId:'asset'}],initialArtworks:[{id:'asset',name:'Logo.png',url:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="navy"/%3E%3C/svg%3E',width:100,height:100}],ports:{artwork:{upload:async()=>{throw Error('unused')}},review:{prepare:async(request)=>{window.preparations.push({key:request.idempotencyKey,design:request.design});frame.review({currency:'USD',exponent:2,totalMinor:'3500',customizedQuantity:request.design.variants[0].quantity,groups:[{id:'other',label:'Reviewed customized cart',quantity:request.design.variants[0].quantity,totalMinor:'3500'}]});}},cart:{commit:async(request)=>{window.writes.push({key:request.idempotencyKey,design:request.design});if(window.writes.length===1)throw Error('lost response');return{kind:'applied',requestId:request.requestId,designId:request.design.id,operation:request.operation,authority:'shopify'};}}},onClose(){window.designerClosed++}});
+ window.preparations=[];window.writes=[];window.designerClosed=0;window.appliedCloses=0;
+ const frame=createDesignerFrame({config,locale:'en',initialPrints:[{id:'chest',method:'print',size:0,artworkId:'asset'}],initialArtworks:[{id:'asset',name:'Logo.png',url:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="navy"/%3E%3C/svg%3E',width:100,height:100}],ports:{artwork:{upload:async()=>{throw Error('unused')}},review:{prepare:async(request)=>{window.preparations.push({key:request.idempotencyKey,design:request.design});frame.review({currency:'USD',exponent:2,totalMinor:'3500',customizedQuantity:request.design.variants[0].quantity,groups:[{id:'other',label:'Reviewed customized cart',quantity:request.design.variants[0].quantity,totalMinor:'3500'}]});}},cart:{commit:async(request)=>{window.writes.push({key:request.idempotencyKey,design:request.design});if(window.writes.length===1)throw Error('lost response');return{kind:'applied',requestId:request.requestId,designId:request.design.id,operation:request.operation,authority:'shopify'};}}},onClose(){window.designerClosed++},onAppliedClose(){window.appliedCloses++}});
  window.liveFrame=frame;
  </script></body></html>`;
   const server = createServer((request, response) => {
@@ -151,6 +151,11 @@ test('isolated selected Designer preserves edits, renders real review before con
   await frame.getByText(/Reviewed customized cart/).waitFor();
   await frame.getByRole('button', { name: 'Add to cart', exact: true }).click();
   await frame.locator('.cart-submit-error').waitFor();
+  assert.equal(
+    await page.evaluate(() => Reflect.get(window, 'appliedCloses')),
+    0,
+    'Unknown application cannot hand off to a native cart',
+  );
   await frame.getByRole('button', { name: 'Previous step', exact: true }).click();
   assert.equal(await quantity.inputValue(), '2');
   await frame.getByRole('button', { name: 'Review', exact: true }).last().click();
@@ -164,4 +169,108 @@ test('isolated selected Designer preserves edits, renders real review before con
   assert.equal(attempts[0]?.key, attempts[1]?.key);
   assert.equal(attempts[0]?.design.id, attempts[1]?.design.id);
   assert.equal(await page.locator('iframe').isHidden(), true);
+  assert.equal(await page.evaluate(() => Reflect.get(window, 'appliedCloses')), 1);
+  await page.evaluate(() => Reflect.get(window, 'liveFrame').close());
+  assert.equal(await page.evaluate(() => Reflect.get(window, 'appliedCloses')), 1, 'An applied close is consumed once');
+});
+
+test('frame handoff consumes only the completion matching its verified Shopify request', async (t) => {
+  const bundle = await build({
+    entryPoints: [new URL('../src/designer/frame-host.ts', import.meta.url).pathname],
+    bundle: true,
+    write: false,
+    format: 'esm',
+    platform: 'browser',
+  });
+  const source = bundle.outputFiles[0];
+  assert.ok(source);
+  const html = `<!doctype html><body><script type="module">
+import {createDesignerFrame} from '/host.js';
+window.protocolClosed=0;window.protocolApplied=0;
+const frame=createDesignerFrame({ports:{artwork:{upload:async()=>{throw Error('unused')}},cart:{commit:async(request)=>({kind:'applied',requestId:request.requestId,designId:request.design.id,operation:request.operation,authority:'shopify'})}},onClose(){window.protocolClosed++},onAppliedClose(){window.protocolApplied++}});
+frame.frame.id='protocol-frame';frame.frame.srcdoc='<!doctype html><body>Protocol fixture</body>';
+</script></body>`;
+  const server = createServer((request, response) => {
+    response.setHeader('Content-Type', request.url === '/host.js' ? 'text/javascript' : 'text/html');
+    response.end(request.url === '/host.js' ? source.text : html);
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const browser = await chromium.launch({ headless: true });
+  t.after(async () => {
+    await browser.close();
+    await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+  });
+  const page = await browser.newPage();
+  await page.goto(`http://127.0.0.1:${serverPort(server)}/`);
+  await page.waitForFunction(
+    () =>
+      document.querySelector<HTMLIFrameElement>('#protocol-frame')?.contentDocument?.body?.textContent ===
+      'Protocol fixture',
+  );
+  const channel = await page.locator('#protocol-frame').getAttribute('name');
+  const child = page.frames().find((frame) => frame.name() === channel);
+  assert.ok(child);
+  const commit = async (id: string, mode: 'foreign' | 'valid' | 'manual', closed: number) => {
+    await child.evaluate(
+      async ({ id, mode }) =>
+        new Promise<void>((resolve) => {
+          const received = (event: MessageEvent) => {
+            if (event.source !== parent || event.data?.type !== 'insignia:designer:result' || event.data.id !== id)
+              return;
+            window.removeEventListener('message', received);
+            const receipt =
+              mode === 'foreign'
+                ? { ...event.data.value, requestId: 'foreign' }
+                : mode === 'valid'
+                  ? event.data.value
+                  : undefined;
+            Reflect.set(window, 'lastReceipt', event.data.value);
+            parent.postMessage(
+              { type: 'insignia:designer:closed', channel: window.name, receipt },
+              new URL(document.referrer).origin,
+            );
+            resolve();
+          };
+          window.addEventListener('message', received);
+          parent.postMessage(
+            {
+              type: 'insignia:designer:request',
+              channel: window.name,
+              id,
+              action: 'commit',
+              request: {
+                requestId: id,
+                operation: 'added',
+                design: { id: 'design', variants: [{ variantId: '1', quantity: 1 }] },
+              },
+            },
+            new URL(document.referrer).origin,
+          );
+        }),
+      { id, mode },
+    );
+    await page.waitForFunction((count) => Reflect.get(window, 'protocolClosed') === count, closed);
+  };
+  await commit('one', 'foreign', 1);
+  assert.equal(await page.evaluate(() => Reflect.get(window, 'protocolApplied')), 0);
+  await commit('two', 'valid', 2);
+  assert.equal(await page.evaluate(() => Reflect.get(window, 'protocolApplied')), 1);
+  await child.evaluate(() =>
+    parent.postMessage(
+      { type: 'insignia:designer:closed', channel: window.name, receipt: Reflect.get(window, 'lastReceipt') },
+      new URL(document.referrer).origin,
+    ),
+  );
+  await page.waitForFunction(() => Reflect.get(window, 'protocolClosed') === 3);
+  assert.equal(
+    await page.evaluate(() => Reflect.get(window, 'protocolApplied')),
+    1,
+    'Duplicate completion is consumed once',
+  );
+  await commit('three', 'manual', 4);
+  assert.equal(
+    await page.evaluate(() => Reflect.get(window, 'protocolApplied')),
+    1,
+    'Manual close cannot use a known cart response as completion',
+  );
 });

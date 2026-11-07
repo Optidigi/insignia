@@ -2,7 +2,12 @@ import type { MerchantCustomerWordingView } from '@insignia/contracts';
 import type { ProductConfig } from '../../../../frontend/designer/src/config';
 import type { Artwork, Design, Print } from '../../../../frontend/designer/src/model';
 import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quote-review';
-import type { CartRequest, DesignerPorts, UploadRequest } from '../../../../frontend/designer/src/runtime';
+import {
+  type CartRequest,
+  type DesignerPorts,
+  matchesCartReceipt,
+  type UploadRequest,
+} from '../../../../frontend/designer/src/runtime';
 import type { RepairAction } from './repair';
 
 const escapeAttribute = (value: string) =>
@@ -22,6 +27,7 @@ export function createDesignerFrame(input: {
   repair?: { canStart: boolean; canRemoveGroup: boolean; canRemoveAll?: boolean };
   onRepair?: (action: RepairAction) => Promise<DesignerQuoteReview | undefined>;
   onClose(): void;
+  onAppliedClose?(): void;
   onSelectGroup?: (id: string) => void;
 }) {
   const channel = crypto.randomUUID();
@@ -43,14 +49,19 @@ export function createDesignerFrame(input: {
   const previousOverflow = document.documentElement.style.overflow;
   const focused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   let ready = false;
+  let applied: CartRequest | undefined;
   function send(type: string, data: Record<string, unknown> = {}) {
     frame.contentWindow?.postMessage({ type, channel, ...data }, window.location.origin);
   }
-  function close() {
+  function close(receipt?: unknown) {
+    const appliedClose =
+      applied !== undefined && matchesCartReceipt(receipt, applied) && receipt.authority === 'shopify';
+    applied = undefined;
     frame.hidden = true;
     document.documentElement.style.overflow = previousOverflow;
     focused?.focus();
     input.onClose();
+    if (appliedClose) input.onAppliedClose?.();
   }
   async function message(event: MessageEvent) {
     if (
@@ -92,7 +103,7 @@ export function createDesignerFrame(input: {
       return;
     }
     if (data.type === 'insignia:designer:closed') {
-      close();
+      close(data.receipt);
       return;
     }
     if (data.type === 'insignia:designer:select-group' && typeof data.id === 'string') {
@@ -118,7 +129,11 @@ export function createDesignerFrame(input: {
       else if (data.action === 'commit' && !input.previewOnly && input.ports)
         value = await input.ports.cart.commit({ ...data.request, signal: controller.signal } as CartRequest);
       else throw new Error('Unsupported designer operation');
-      if (!controller.signal.aborted) send('insignia:designer:result', { id: data.id, ok: true, value });
+      if (!controller.signal.aborted) {
+        if (data.action === 'commit' && matchesCartReceipt(value, data.request) && value.authority === 'shopify')
+          applied = data.request;
+        send('insignia:designer:result', { id: data.id, ok: true, value });
+      }
     } catch {
       if (!controller.signal.aborted) send('insignia:designer:result', { id: data.id, ok: false });
     } finally {
