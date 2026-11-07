@@ -4,7 +4,9 @@ This folder contains the selected merchant UI and customer Designer, plus isolat
 
 ## Native development review
 
-Open the [published development product](https://insignia-rewrite-dev.myshopify.com/products/insignia-ui-demo-example-calibration) to review the selected customer Designer, or open Insignia in the rewrite-dev Shopify Admin for the merchant editor. The product's calibration is labelled example-only. Current deployment limits and outstanding qualification are recorded in [delivery state](../docs/delivery/state.md); the dated native receipt verifies the bounded USD development purchase and current cart handoff. Owner visual acceptance remains separate.
+The new merchant UI and customer Designer are deployed and active on rewrite-dev, and the unused legacy UI has been removed. Open the [published development product](https://insignia-rewrite-dev.myshopify.com/products/insignia-ui-demo-example-calibration) or [merchant demo editor](https://admin.shopify.com/store/insignia-rewrite-dev/apps/insignia-1/admin/products/10585669959963/config) to review them. The product's calibration is labelled example-only and remains configurable in the editor.
+
+Native checks cover artwork upload, authoritative USD12.50 quote, automatic Shopify cart navigation, saved-design restoration, the existing paid test order and desktop/narrow CSS viewports. The test cart is empty; no second checkout was submitted. See [current delivery state](../docs/delivery/state.md) and [activation evidence](../docs/delivery/evidence/technical-merchant-completion/native-selected-retirement-activation-2026-11-07.json) for exact source/artifact identities and limits. Owner visual acceptance remains separate. Customer email authentication and native EUR qualification remain outstanding.
 
 ## Run the examples
 
