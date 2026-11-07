@@ -5,6 +5,204 @@ import { authenticatedJson } from '../../src/shared/admin-request.ts';
 import { replaceWindow } from './support/browser-node.mts';
 import { required } from './support/fixtures.mts';
 
+for (const [name, request] of [
+  ['retained', authenticatedJson],
+  ['selected', selectedJson],
+] as const) {
+  test(`${name}: publication scheduling stops at its finite deadline without sending a short token`, async (t) => {
+    t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: new Date('2026-11-07T12:00:00Z') });
+    const originalFetch = globalThis.fetch;
+    const token = `synthetic.${Buffer.from(JSON.stringify({ exp: Date.now() / 1000 + 20 })).toString('base64url')}.synthetic`;
+    const restore = replaceWindow({ shopify: { idToken: async () => token } });
+    let sent = 0;
+    globalThis.fetch = async () => {
+      sent++;
+      return Response.json({ ok: true });
+    };
+    try {
+      const result = request('/api/admin/products/111/config', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'publish' }),
+      });
+      const rejected = assert.rejects(result, /Admin request timed out/);
+      await new Promise((resolve) => setImmediate(resolve));
+      t.mock.timers.tick(60000);
+      await rejected;
+      await new Promise((resolve) => setImmediate(resolve));
+      assert.equal(sent, 0);
+    } finally {
+      restore();
+      globalThis.fetch = originalFetch;
+    }
+  });
+  test(`${name}: publication token scheduling is isolated from an ordinary overlapping request`, async () => {
+    const token = (seconds: number) =>
+      `synthetic.${Buffer.from(JSON.stringify({ exp: Date.now() / 1000 + seconds })).toString('base64url')}.synthetic`;
+    const short = token(20),
+      sufficient = token(60);
+    const originalFetch = globalThis.fetch;
+    let release!: (value: string) => void;
+    let calls = 0;
+    const restore = replaceWindow({
+      shopify: {
+        idToken: () =>
+          ++calls === 1
+            ? new Promise<string>((resolve) => {
+                release = resolve;
+              })
+            : Promise.resolve(sufficient),
+      },
+    });
+    const sent = new Map<string, string | null>();
+    globalThis.fetch = async (path, init) => {
+      sent.set(String(path), new Headers(init?.headers).get('Authorization'));
+      return Response.json({ ok: true });
+    };
+    try {
+      const ordinary = request('/ordinary');
+      const publication = request('/api/admin/products/111/config', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'publish' }),
+      });
+      release(short);
+      await Promise.all([ordinary, publication]);
+      assert.equal(sent.get('/ordinary'), `Bearer ${short}`);
+      assert.equal(sent.get('/api/admin/products/111/config'), `Bearer ${sufficient}`);
+      assert.equal(calls, 2);
+    } finally {
+      restore();
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test(`${name}: publication401 refresh retains its real token window and original bytes`, async () => {
+    const token = (seconds: number) =>
+      `synthetic.${Buffer.from(JSON.stringify({ exp: Date.now() / 1000 + seconds })).toString('base64url')}.synthetic`;
+    const short = token(20),
+      sufficient = token(60);
+    const originalFetch = globalThis.fetch;
+    let tokens = 0;
+    const restore = replaceWindow({ shopify: { idToken: async () => (++tokens % 2 ? short : sufficient) } });
+    const seen: string[] = [];
+    const body = JSON.stringify({ action: 'publish', configId: 'config', draftVersion: '4' });
+    globalThis.fetch = async (_path, init) => {
+      assert.equal(init?.body, body);
+      assert.equal(new Headers(init?.headers).get('Idempotency-Key'), 'same');
+      seen.push(new Headers(init?.headers).get('Authorization') ?? '');
+      return seen.length === 1 ? Response.json({}, { status: 401 }) : Response.json({ ok: true });
+    };
+    try {
+      await request('/api/admin/products/111/config', { method: 'POST', body, headers: { 'Idempotency-Key': 'same' } });
+      assert.deepEqual(seen, [`Bearer ${sufficient}`, `Bearer ${sufficient}`]);
+      assert.equal(tokens, 4);
+    } finally {
+      restore();
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test(`${name}: an already cancelled publication never acquires or sends authority`, async () => {
+    const originalFetch = globalThis.fetch;
+    const restore = replaceWindow({
+      shopify: {
+        idToken: async () => {
+          assert.fail('Cancelled token acquisition');
+        },
+      },
+    });
+    globalThis.fetch = async () => {
+      assert.fail('Cancelled dispatch');
+    };
+    const controller = new AbortController();
+    controller.abort();
+    try {
+      await assert.rejects(
+        request('/api/admin/products/111/config', {
+          method: 'POST',
+          body: JSON.stringify({ action: 'publish' }),
+          signal: controller.signal,
+        }),
+        { name: 'AbortError' },
+      );
+    } finally {
+      restore();
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test(`${name}: cancelling during shared publication token acquisition fences a late completion`, async () => {
+    const originalFetch = globalThis.fetch;
+    let release!: (value: string) => void;
+    const restore = replaceWindow({
+      shopify: {
+        idToken: () =>
+          new Promise<string>((resolve) => {
+            release = resolve;
+          }),
+      },
+    });
+    let sent = 0;
+    globalThis.fetch = async () => {
+      sent++;
+      return Response.json({ ok: true });
+    };
+    const controller = new AbortController();
+    try {
+      const pending = request('/api/admin/products/111/config', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'publish' }),
+        signal: controller.signal,
+      });
+      const rejected = assert.rejects(pending, { name: 'AbortError' });
+      controller.abort();
+      await rejected;
+      release(
+        `synthetic.${Buffer.from(JSON.stringify({ exp: Date.now() / 1000 + 60 })).toString('base64url')}.synthetic`,
+      );
+      await new Promise((resolve) => setImmediate(resolve));
+      assert.equal(sent, 0);
+    } finally {
+      restore();
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test(`${name}: publication keeps its exact command while a bounded native continuation exceeds ten seconds`, async (t) => {
+    t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: new Date('2026-11-07T12:00:00Z') });
+    const originalFetch = globalThis.fetch;
+    const token = `synthetic.${Buffer.from(JSON.stringify({ exp: Date.now() / 1000 + 60 })).toString('base64url')}.synthetic`;
+    const restore = replaceWindow({ shopify: { idToken: async () => token } });
+    const body = JSON.stringify({ action: 'publish', configId: 'config', draftVersion: '4' });
+    let sent = 0;
+    globalThis.fetch = async (_path, init) => {
+      sent++;
+      assert.equal(init?.body, body);
+      assert.equal(new Headers(init?.headers).get('Idempotency-Key'), 'original:publish');
+      await new Promise((resolve) => setTimeout(resolve, 16500));
+      init?.signal?.throwIfAborted();
+      return Response.json({ kind: 'accepted', state: 'ACTIVE' });
+    };
+    try {
+      const result = request('/api/admin/products/111/config', {
+        method: 'POST',
+        body,
+        headers: { 'Idempotency-Key': 'original:publish' },
+      });
+      const observed = result.then(
+        (value) => ({ value }),
+        (error: Error) => ({ error: error.message }),
+      );
+      await new Promise((resolve) => setImmediate(resolve));
+      t.mock.timers.tick(16500);
+      assert.deepEqual(await observed, { value: { kind: 'accepted', state: 'ACTIVE' } });
+      assert.equal(sent, 1);
+    } finally {
+      restore();
+      globalThis.fetch = originalFetch;
+    }
+  });
+}
+
 test('401 retry obtains a fresh Bridge token independently of a concurrent token request', async () => {
   const originalFetch = globalThis.fetch;
   let tokenCalls = 0;
