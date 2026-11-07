@@ -6,7 +6,10 @@ import { join } from 'node:path';
 import type { TestFn } from 'node:test';
 import test from 'node:test';
 import { createReleaseVerificationClient } from '../../apps/web/src/server/admin/release-verification.ts';
+import cartModules from '../../deployment/m5-runtime/native-cart-module-baseline.json' with { type: 'json' };
+import cartBinding from '../../deployment/m5-runtime/native-cart-release-binding.json' with { type: 'json' };
 import fixedModules from '../../deployment/m5-runtime/native-fixed-module-baseline.json' with { type: 'json' };
+import fixedBinding from '../../deployment/m5-runtime/native-fixed-release-binding.json' with { type: 'json' };
 import nativeThemeModules from '../../deployment/m5-runtime/native-theme-module-baseline.json' with { type: 'json' };
 import refreshModules from '../../deployment/m5-runtime/selected-refresh-module-baseline.json' with { type: 'json' };
 import selectedModules from '../../deployment/m5-runtime/selected-ui-module-baseline.json' with { type: 'json' };
@@ -83,7 +86,22 @@ test('corrected native candidate preserves every module identity and changes onl
   }
 });
 
+test('native cart candidate adds exactly one version and preserves all identities and non-theme configurations', () => {
+  assert.equal(cartModules.length, 14);
+  const handles = cartModules.map(({ handle }) => handle);
+  assert.deepEqual(handles, [...handles].sort(), 'Frozen module arrays use canonical handle order');
+  assert.deepEqual(new Set(cartBinding.versionIds), new Set([...fixedBinding.versionIds, '1199122513921']));
+  for (const module of cartModules) {
+    const prior = required(fixedModules.find(({ handle }) => handle === module.handle));
+    const { config, ...identity } = module;
+    const { config: previousConfig, ...previousIdentity } = prior;
+    assert.deepEqual(identity, previousIdentity);
+    if (module.handle !== 'insignia') assert.deepEqual(config, previousConfig);
+  }
+});
+
 for (const profile of [
+  'native-cart-fd9cc61',
   'native-fixed-5c04fa8',
   'native-theme-ced0143',
   'selected-ui-aab4a4b',
@@ -96,7 +114,8 @@ for (const profile of [
   'lean-markets-7b17cd9',
   'lean-privacy-theme-23fd116',
 ]) {
-  const fixed = profile === 'native-fixed-5c04fa8';
+  const cart = profile === 'native-cart-fd9cc61';
+  const fixed = cart || profile === 'native-fixed-5c04fa8';
   const nativeTheme = fixed || profile === 'native-theme-ced0143';
   const refreshed = nativeTheme || profile === 'selected-ui-aab4a4b';
   const selected = refreshed || profile === 'selected-ui-f48efa2';
@@ -106,52 +125,65 @@ for (const profile of [
   const cookie = preview || profile === 'm8-cookie-91b35ab';
   const theme = cookie || profile === 'm8-theme-c8d8713';
   const proxy = profile !== 'm8-read-orders-617057f';
-  const versionId = fixed
-    ? '1198986199041'
-    : nativeTheme
-      ? '1198938357761'
-      : refreshed
-        ? '1197668466689'
-        : selected
-          ? '1196974997505'
-          : privacy
-            ? '1171218169857'
-            : lean
-              ? '1169137696769'
-              : preview
-                ? '1168157736961'
-                : cookie
-                  ? '1166710865921'
-                  : theme
-                    ? '1166552825857'
-                    : proxy
-                      ? '1166090010625'
-                      : '1165513097217';
-  const modules = fixed
-    ? fixedModules
-    : nativeTheme
-      ? nativeThemeModules
-      : refreshed
-        ? refreshModules
-        : selected
-          ? selectedModules
-          : privacy
-            ? privacyModules
-            : lean
-              ? leanMarketsModules
-              : preview
-                ? previewThemeModules
-                : cookie
-                  ? cookieThemeModules
-                  : theme
-                    ? themeModules
-                    : proxy
-                      ? proxyModules
-                      : historicalM8Modules;
+  const versionId = cart
+    ? '1199122513921'
+    : fixed
+      ? '1198986199041'
+      : nativeTheme
+        ? '1198938357761'
+        : refreshed
+          ? '1197668466689'
+          : selected
+            ? '1196974997505'
+            : privacy
+              ? '1171218169857'
+              : lean
+                ? '1169137696769'
+                : preview
+                  ? '1168157736961'
+                  : cookie
+                    ? '1166710865921'
+                    : theme
+                      ? '1166552825857'
+                      : proxy
+                        ? '1166090010625'
+                        : '1165513097217';
+  const modules = cart
+    ? cartModules
+    : fixed
+      ? fixedModules
+      : nativeTheme
+        ? nativeThemeModules
+        : refreshed
+          ? refreshModules
+          : selected
+            ? selectedModules
+            : privacy
+              ? privacyModules
+              : lean
+                ? leanMarketsModules
+                : preview
+                  ? previewThemeModules
+                  : cookie
+                    ? cookieThemeModules
+                    : theme
+                      ? themeModules
+                      : proxy
+                        ? proxyModules
+                        : historicalM8Modules;
   const profileTest = (name: string, fn: TestFn) => test(`${profile}: ${name}`, fn);
   const prior = (versions: ReleaseAppendInput['activeObservation']['versions']) =>
     proxy
       ? [
+          ...(cart
+            ? [
+                {
+                  versionId: 'gid://shopify/Version/1198986199041',
+                  versionTag: 'native-fixed-5c04fa8',
+                  status: 'inactive',
+                },
+              ]
+            : []),
           ...(fixed
             ? [
                 {
