@@ -37,6 +37,9 @@ export async function mountLiveDesigner(input: {
   let destroyed = false;
   let selectionGeneration = 0;
   const current = () => !destroyed && input.isCurrent();
+  function openNativeCart() {
+    if (current()) window.location.assign(`${input.cartRoot}cart`);
+  }
   function close() {
     for (const record of records) record.frame.hide();
     document.documentElement.style.overflow = originals;
@@ -214,8 +217,8 @@ export async function mountLiveDesigner(input: {
         await live.confirmRemoval();
         discard(record);
         active = [...records][0];
-        if (!active) await show();
         close();
+        openNativeCart();
       },
 
       wording: source.wording,
@@ -224,6 +227,7 @@ export async function mountLiveDesigner(input: {
       requiresCartReview: !!group,
       ...restored,
       onClose: close,
+      onAppliedClose: openNativeCart,
       onSelectGroup(id) {
         const selection = live.selectionFor(id);
         if (!selection) return;
@@ -278,8 +282,8 @@ export async function mountLiveDesigner(input: {
           frame.destroy();
           records.delete(record);
           active = undefined;
-          await show();
           close();
+          openNativeCart();
         },
       });
       const record = { frame, live: probe };

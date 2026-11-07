@@ -233,10 +233,14 @@ export function createBuyerServices(input: {
       const contextual = !!country && /^[A-Z]{2}$/.test(country);
       if (presentation.selectedSetup && (!country || !/^[A-Z]{2}$/.test(country)))
         throw new Error('Country context required');
-      const catalog = await input.catalog(scope, scope.productId, undefined, country ? { country } : undefined);
+      // Both independently validate the resolved publication; neither grants a quote.
+      // Start provider catalogue reads while fresh release readiness is collected.
+      const [catalog] = await Promise.all([
+        input.catalog(scope, scope.productId, undefined, country ? { country } : undefined),
+        input.configurationReady(scope, scope.productId),
+      ]);
       if (catalog.variants.length > 250 || catalog.variants.some((v) => !/^[1-9][0-9]{0,19}$/.test(v.id)))
         throw new Error('Catalog boundary unavailable');
-      await input.configurationReady(scope, scope.productId);
       const label = (kind: keyof typeof presentation.labels, id: string) => {
         const value = presentation.labels[kind]?.[id];
         return typeof value === 'string' ? value : id;

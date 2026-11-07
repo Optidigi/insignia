@@ -1,0 +1,144 @@
+{
+  "kind": "bounded-development-schema51-promotion-and-original-publication-recovery",
+  "date": "2026-11-07",
+  "source": {
+    "pullRequest": 238,
+    "head": "92a35aca4b9e6d23e4492c213fe208ae73966744",
+    "merge": "724e7350335c6ee86bd4a74cda571ff29498eaf0",
+    "tree": "9136683542e84c2308e3ff88a24bf444de634fd7",
+    "ciMergeHead": "457a985b5ef5acc66c720e5bfe299dd3f3573cf9",
+    "runtimeRun": "42404187594",
+    "foundationRun": "42404187489",
+    "durableRun": "42404187426",
+    "attempt": 1,
+    "requiredChecks": "all passed"
+  },
+  "promoted": {
+    "profile": "native-fixed-5c04fa8",
+    "web": {
+      "manifest": "sha256:c03a891c22362cb247f61475c983f02c8b5e01ee9964635dc8b2e16f033f5e89",
+      "config": "sha256:d8bca7139c15b3d0a42ee191535385d4083715ea3f8e21435a040b2152101767",
+      "archiveSha256": "b771fac176df4d6146fe9e9f03f5d9e48cf5008cb114d0a2a247c2cd9d4fcb18",
+      "state": "healthy"
+    },
+    "worker": {
+      "manifest": "sha256:77253e0230e9544bafb429158792e05ecde2f2508e54ed759b9094444b12394a",
+      "config": "sha256:628b9a5742920acc09a1440e7426641f9cf7c9dee06bc6f41f1f758d64957870",
+      "archiveSha256": "b785cd4b38f494757ab073b37bfa3aa975b002ef594fb72c8cb62d6af3e8c1dd",
+      "state": "healthy"
+    },
+    "verifier": {
+      "manifest": "sha256:f3c6ad104a4a5c833b4c06a3e8e2dbca286167c7db681df91ed6f0e3a442f8f7",
+      "config": "sha256:0cc8b710c4ce990e24ea301c6d9de71f5cf67215033681202674b30ee9e80a71",
+      "archiveSha256": "721e24689424e9e8e1780947d10d85684e9b20b4ef94f29af265f2530d49abb6",
+      "state": "running",
+      "codeManifestSha256": "efb07614ece09e2bf60d8d2aa8b297bb2578b245e9ea3421677205c90bcf3581"
+    },
+    "schema": 51,
+    "migration": "20261107000100_restoration_no_dispatch_retry.sql",
+    "checks": "all50 applied migration bytes and original functions match; append applied atomically after owned role drain; loaded archive/blob/layer/config identities verified",
+    "rolesMembershipsExistingRelationACLs": "unchanged; no app direct retry-audit access",
+    "protectedPurchasePaidShopInstallationFingerprints": "unchanged after migration and recreation",
+    "unrelatedContainers": "unchanged",
+    "checkpoint": "fresh encrypted schema-only archive; hash/decryption/archive structure verified; no customer payload copy; full restore not claimed"
+  },
+  "shopify": {
+    "activeVersion": "1198986199041",
+    "profile": "native-fixed-5c04fa8",
+    "newVersionOrRelease": false,
+    "storefrontAssets": "all11 final CI files byte-identical to active staged assets",
+    "functionsSource": "9b94149272d1b62c34f44dda3bde209e80b4ae22"
+  },
+  "correlatedReleaseProof": {
+    "recordId": "b6613cc1-784c-4edc-bb86-57741344ee3d",
+    "observedAt": "2026-11-07T19:19:32.560Z",
+    "expiresAt": "2026-11-07T19:20:00.920Z",
+    "actualConsumers": [
+      "web",
+      "worker"
+    ],
+    "sameRecord": true,
+    "limit": "historical finite proof; fresh demand requires fresh observations"
+  },
+  "publicationRecovery": {
+    "productId": "10585669959963",
+    "configId": "8ab258f0-b7e0-4b10-bde5-c09763b0c7ea",
+    "originalRequestKey": "0f87f334-6d5a-4b0d-a6d6-bae23808148d:publish",
+    "revisionAndOperationId": "211a5e1d-e1dd-4d0d-95a0-876dddf77cc6",
+    "draftVersion": "4",
+    "nativeContinuation": {
+      "httpStatus": 202,
+      "result": "ACTIVE",
+      "elapsedMs": 20632
+    },
+    "operatorNote": "Fresh browser had no original local journal. Resumed the exact durable publication identity through the real authenticated API after fresh staff, config, revision, source-version and request-key verification; no synthetic journal or new revision/key. This is an operator continuation, not a merchant button recovery proof.",
+    "databaseReadback": {
+      "activation": "RESTORED",
+      "receipt": "RESTORED",
+      "consumedDigest": "08715e99e563fe6b7240909b614c2424e021da0c157d3216367134c84a1858d7",
+      "retryAuditRows": 1
+    }
+  },
+  "nativeBuyerProgress": {
+    "productVisible": true,
+    "mainAndStickyCustomization": true,
+    "nativeAddToCartAndBuyNowVisible": false,
+    "initialConfigRead": "ten-second client timeout, Unavailable/Retry/Close",
+    "subsequentConfigReadMs": 8169,
+    "actualRetryResourceMs": 7950,
+    "retry": "selected three-step Designer loaded",
+    "stageTrace": {
+      "totalMs": 8382,
+      "independentReleaseCollectionMs": 6158,
+      "limit": "one read-only diagnostic; timeout tail cause not fully isolated"
+    },
+    "pngUpload": "real inspection and private preview displayed; native artwork09caa037-8dad-4151-baef-9ba801511c54",
+    "svgNote": "demo club-logo SVG contains live text excluded by existing static SVG policy; rejected/cleaned, no policy bypass",
+    "quoteProposal": "HTTP200, quantity1, USD12.50 (10.00 garment +2.50 decoration)",
+    "cart": {
+      "confirmed": true,
+      "applicationId": "78dc3574-3121-4c0a-85b9-8c41faa86d89",
+      "productId": "10585669959963",
+      "variantId": "54545321885979",
+      "quantity": 1,
+      "currency": "USD",
+      "lineMinor": "1250",
+      "cartMinor": "1250",
+      "nativeMarkers": "member on line; quote/member retained on native line-item group"
+    },
+    "nativeCartHandoffGap": "cart data and Function price correct; theme drawer retained its stale empty HTML until native /cart navigation",
+    "singleTestOrder": {
+      "orderId": "gid://shopify/Order/7570906415387",
+      "confirmation": "CCFDIGJTD",
+      "createdAt": "2026-11-07T19:35:34.000Z",
+      "test": true,
+      "financialStatus": "PAID",
+      "itemMinor": "1250",
+      "shippingMinor": "800",
+      "totalMinor": "2050",
+      "currency": "USD",
+      "gateway": "existing Test Payment Gateway, approved-transaction test value1",
+      "checkoutSubmissions": 1,
+      "firstPaidAt": "2026-11-07T19:35:35.000Z",
+      "independentReader": "PASS; native line/group carriers normalize to the exact signed customization",
+      "checkoutAdmission": "PASS under fresh release/ownership proof",
+      "domainReconciliation": {
+        "exception": null,
+        "bindings": 1
+      },
+      "appIngestion": "transaction rolls back42501, permission denied on customer_order_erasure_fences in verified order-name projection; no purchase row committed",
+      "retryDisposition": "original webhook attempts remain exhausted; no attempt reset, fabricated delivery or second checkout. Normal independent discovery can recover the same existing order after the qualified permission correction."
+    },
+    "candidateConfigProbe": {
+      "totalMs": 7131,
+      "releaseCollectionStartedAtMs": 613,
+      "releaseCollectionMs": 6224,
+      "limit": "read-only diagnostic bundle of pending concurrent-read source; not deployed HTTP acceptance"
+    }
+  },
+  "limits": [
+    "Native upload, proposal, acceptance, signed cart and one real test checkout passed. Overall replacement E2E remains incomplete: order ingestion and customer cart handoff corrections are pending qualification/deployment.",
+    "Selected UI visuals/reducers and all theme/Function bytes preserved. Legacy retirement and owner visual acceptance remain open.",
+    "Protected VAT/currency/unrelated products and sender-test allocation remain unchanged. No payment provider reconfiguration or real charge."
+  ]
+}

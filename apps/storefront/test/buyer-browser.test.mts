@@ -122,7 +122,7 @@ async function addDeferred(ui: FrameLocator, label?: string, remaining = 1) {
   await card.locator('.artwork-choice').click();
   await ui.getByRole('button', { name: 'Provide artwork later', exact: true }).click();
 }
-test('buyer reviews full retained cart, accepts exact price and keeps ordinary lines; dialog returns focus', async () => {
+test('buyer reviews the full retained cart and opens the locale native cart only after verified application', async () => {
   const server = await createServer({
     plugins: [selectedFrameAssets()],
     server: { host: '127.0.0.1', port: 0, strictPort: true },
@@ -237,9 +237,13 @@ test('buyer reviews full retained cart, accepts exact price and keeps ordinary l
       return route.fulfill({ json: { id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', status: 'APPLIED' } });
     });
     await installDesignBoundary(page);
+    await page.route('**/nl/cart', (route) =>
+      route.fulfill({ contentType: 'text/html', body: '<main><h1>Native cart</h1></main>' }),
+    );
     await page.evaluate(() => {
       const host = document.createElement('insignia-buyer');
       host.setAttribute('product-id', '111');
+      host.setAttribute('cart-root', '/nl/');
       host.setAttribute('country', 'NL');
       host.setAttribute('market-id', '1');
       host.setAttribute('market-id', '1');
@@ -268,20 +272,15 @@ test('buyer reviews full retained cart, accepts exact price and keeps ordinary l
       el.dispatchEvent(new DragEvent('drop', { bubbles: true, dataTransfer }));
     });
     assert.equal(artworkCalls, 0, 'No artwork allocation can start during the exact cart commit');
+    assert.equal(new URL(page.url()).pathname, '/', 'Pending application never leaves the selected review');
     releaseCartAdd();
-    await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
+    await page.waitForURL('**/nl/cart', { timeout: 7000 });
+    await page.getByRole('heading', { name: 'Native cart', exact: true }).waitFor();
     assert.equal(required(items[0]).key, 'ordinary');
     assert.deepEqual(required(items[0]).properties, { gift: true });
     assert.equal(required(items[1]).quantity, 3);
     assert.ok(required(acceptedBody).idempotencyKey);
     assert.equal(sessionCalls, 1);
-    assert.equal(
-      await trigger.getByRole('button', { name: 'Customize this product' }).evaluate((el) => {
-        const root = el.getRootNode();
-        return (root instanceof ShadowRoot || root instanceof Document) && el === root.activeElement;
-      }),
-      true,
-    );
   } finally {
     await browser?.close();
     await server.close();
@@ -581,12 +580,13 @@ type RetainedScenario = {
   group: DesiredGroup;
   editCart(): void;
   mutations(): number;
+  cartNavigations(): number;
   failAcceptance(value: boolean): void;
   configure(value: BuyerConfig): void;
 };
 async function withRetainedBuyer(
   run: (context: RetainedScenario) => Promise<void>,
-  { multipleProducts = false, clock = false } = {},
+  { multipleProducts = false, clock = false, unknownOwned = false } = {},
 ) {
   const server = await createServer({
     plugins: [selectedFrameAssets()],
@@ -717,6 +717,7 @@ async function withRetainedBuyer(
       const body = record(route.request().postDataJSON());
       assert.equal(body.capability, 'abc.def');
       if (path.endsWith('/cart-state')) {
+        if (unknownOwned) return route.fulfill({ status: 503, json: { error: 'Owned session unavailable' } });
         const expected = groups.flatMap((group) => group.variants);
         if (
           items.some(
@@ -840,6 +841,14 @@ async function withRetainedBuyer(
       buyer.setAttribute('repair', '');
       document.body.append(buyer);
     });
+    // These cases isolate retained-state/retry behavior. The native-cart
+    // navigation boundary returns no document so that the same session can be reopened.
+    // The product purchase and real HTTP/PG cases separately verify actual navigation.
+    let cartNavigations = 0;
+    await page.route('**/cart', (route) => {
+      cartNavigations++;
+      return route.fulfill({ status: 204 });
+    });
     const trigger = page.locator('insignia-buyer');
     await trigger.getByRole('button', { name: 'Review customized cart', exact: true }).click();
     const host = page.frameLocator('iframe:not([hidden])');
@@ -856,6 +865,7 @@ async function withRetainedBuyer(
         required(items[0]).quantity = 5;
       },
       mutations: () => mutations,
+      cartNavigations: () => cartNavigations,
       failAcceptance: (value) => {
         failure = value;
       },
@@ -941,6 +951,63 @@ test('an incompatible republish requires explicit selected design repair and nev
     assert.equal(proposals.length, 0);
     assert.equal(required(group.design.placements[0]).artwork.kind, 'deferred');
   });
+});
+
+for (const [action, unknownOwned] of [
+  ['Review removing this customization', false],
+  ['Review removing all customized items', false],
+  ['Review removing all customized items', true],
+] as const) {
+  test(`confirmed ${action} (unknown session=${unknownOwned}) opens the native cart and preserves ordinary lines`, async () => {
+    await withRetainedBuyer(
+      async ({ page, host, configure, cartNavigations }) => {
+        if (!unknownOwned) {
+          const next = structuredClone(config);
+          required(next.placements[0]).logoLaterAllowed = false;
+          next.revisionId = 'changed';
+          next.contentHash = 'e'.repeat(64);
+          configure(next);
+          await reviewRetained(host);
+        }
+        await host.getByRole('button', { name: action, exact: true }).click();
+        assert.equal(cartNavigations(), 0);
+        const navigated = page.waitForResponse(
+          (response) => new URL(response.url()).pathname === '/cart' && response.request().isNavigationRequest(),
+        );
+        await host.getByRole('button', { name: 'Confirm cart update', exact: true }).click();
+        await navigated;
+        await page.waitForFunction(() => !document.querySelector('iframe:not([hidden])'));
+        assert.equal(cartNavigations(), 1);
+        const cart = record(await page.evaluate(async () => (await fetch('/cart.js')).json()));
+        assert.deepEqual(cart.items, [
+          {
+            key: 'ordinary-gift',
+            variant_id: 999,
+            quantity: 2,
+            properties: { gift: true, note: 'Keep gift wrapping' },
+          },
+        ]);
+      },
+      { unknownOwned },
+    );
+  });
+}
+
+test('failed fallback removal preserves review and never opens the native cart', async () => {
+  await withRetainedBuyer(
+    async ({ page, host, cartNavigations, mutations }) => {
+      await host.getByRole('button', { name: 'Review removing all customized items', exact: true }).click();
+      await page.route('**/cart/update.js', (route) =>
+        route.fulfill({ status: 503, json: { error: 'Unknown cart update' } }),
+      );
+      await host.getByRole('button', { name: 'Confirm cart update', exact: true }).click();
+      await host.locator('.cart-submit-error').waitFor();
+      assert.equal(cartNavigations(), 0);
+      assert.equal(mutations(), 0);
+      assert.equal(await page.locator('iframe:not([hidden])').count(), 1);
+    },
+    { unknownOwned: true },
+  );
 });
 test('known quote expiry prepares a fresh authoritative proposal and requires another acceptance gesture', async () => {
   await withRetainedBuyer(
