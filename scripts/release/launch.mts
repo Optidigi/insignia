@@ -472,6 +472,8 @@ export const SOURCE_PATHS = [
     'collector.test',
     'management-process',
     'management-worker',
+    'version-inventory',
+    'version-inventory.test',
     'owner-https',
     'owner-boundaries.test',
   ].map((name) => `scripts/release/${name}.mts`),

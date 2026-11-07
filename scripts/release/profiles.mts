@@ -6,6 +6,12 @@ import cartCandidate from '../../deployment/m5-runtime/native-cart-release-bindi
 import fixedModules from '../../deployment/m5-runtime/native-fixed-module-baseline.json' with { type: 'json' };
 import fixedCandidate from '../../deployment/m5-runtime/native-fixed-release-binding.json' with { type: 'json' };
 import historicalModules from '../../deployment/m5-runtime/native-function-module-baseline.json' with { type: 'json' };
+import selectedOnlyModules from '../../deployment/m5-runtime/native-selected-fixed-module-baseline.json' with {
+  type: 'json',
+};
+import selectedOnlyCandidate from '../../deployment/m5-runtime/native-selected-fixed-release-binding.json' with {
+  type: 'json',
+};
 import nativeThemeModules from '../../deployment/m5-runtime/native-theme-module-baseline.json' with { type: 'json' };
 import nativeThemeCandidate from '../../deployment/m5-runtime/native-theme-release-binding.json' with { type: 'json' };
 import refreshModules from '../../deployment/m5-runtime/selected-refresh-module-baseline.json' with { type: 'json' };
@@ -49,6 +55,14 @@ const oldIds = [
   '1146748534785',
 ] as const;
 const profiles = {
+  'native-selected-fixed-81830c6': {
+    versionId: selectedOnlyCandidate.versionId,
+    versionTag: selectedOnlyCandidate.versionTag,
+    versionIds: selectedOnlyCandidate.versionIds,
+    moduleHash: selectedOnlyCandidate.moduleHash,
+    modules: selectedOnlyModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+  },
   'native-cart-fd9cc61': {
     versionId: cartCandidate.versionId,
     versionTag: cartCandidate.versionTag,
