@@ -12,8 +12,8 @@ function fixture(root: string) {
   mkdirSync(theme, { recursive: true });
   for (const [name, value] of [
     ['insignia-storefront.js', 'import("./insignia-element.js")'],
-    ['insignia-element.js', 'import("./insignia-customizer-hash.js")'],
-    ['insignia-customizer-hash.js', 'export const actualCustomizer = true'],
+    ['insignia-element.js', 'import("./insignia-controller-hash.js")'],
+    ['insignia-controller-hash.js', 'export const actualController = true'],
   ]) {
     assert(name && value);
     writeFileSync(join(build, name), value);
@@ -27,8 +27,8 @@ test('lazy chunks and retained CDN assets are all bound', () => {
     const { theme } = fixture(root);
     writeFileSync(join(theme, 'insignia-retained-hash.js'), 'cached entry dependency');
     const paths = collectThemeArtifacts(root);
-    assert(paths.includes('apps/storefront/dist/insignia-customizer-hash.js'));
-    assert(paths.includes('extensions/insignia-theme/assets/insignia-customizer-hash.js'));
+    assert(paths.includes('apps/storefront/dist/insignia-controller-hash.js'));
+    assert(paths.includes('extensions/insignia-theme/assets/insignia-controller-hash.js'));
     assert(paths.includes('extensions/insignia-theme/assets/insignia-retained-hash.js'));
     assert.equal(paths.length, 7);
   } finally {
@@ -39,7 +39,7 @@ test('missing or different copied chunks reject', () => {
   const root = mkdtempSync(join(tmpdir(), 'theme-inventory-'));
   try {
     const { theme } = fixture(root),
-      chunk = join(theme, 'insignia-customizer-hash.js');
+      chunk = join(theme, 'insignia-controller-hash.js');
     unlinkSync(chunk);
     assert.throws(() => collectThemeArtifacts(root), /current build/);
     writeFileSync(chunk, 'different');

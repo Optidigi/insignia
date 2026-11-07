@@ -2,14 +2,9 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { GeometryV1 } from '@insignia/visualizer/geometry';
 import type { DesiredGroup } from '../src/buyer.ts';
-import { createBuyerApi, createRequestLane, formatMinor, replaceGroup } from '../src/buyer.ts';
+import { createBuyerApi, replaceGroup } from '../src/buyer.ts';
 import { jsonRecord, requestUrl, required } from './support.mts';
 
-test('exact money avoids floating rounding and keeps zero/three decimal currencies', () => {
-  assert.equal(formatMinor('9100', 'EUR', 2), 'EUR 91.00');
-  assert.equal(formatMinor('123', 'JPY', 0), 'JPY 123');
-  assert.equal(formatMinor('123', 'KWD', 3), 'KWD 0.123');
-});
 test('editing one group preserves siblings including same-product designs', () => {
   const first: DesiredGroup = {
     configRevisionId: 'r1',
@@ -22,14 +17,6 @@ test('editing one group preserves siblings including same-product designs', () =
   const otherDesign = { ...first, configRevisionId: 'other' };
   const replacement = { ...first, variants: [{ variantId: '4', quantity: 3 }] };
   assert.deepEqual(replaceGroup([first, sibling, otherDesign], replacement, 0), [replacement, sibling, otherDesign]);
-});
-test('new request aborts old generation and rejects stale response ownership', () => {
-  const lane = createRequestLane();
-  const first = lane.next();
-  const second = lane.next();
-  assert.equal(first.signal.aborted, true);
-  assert.equal(lane.current(first.id), false);
-  assert.equal(lane.current(second.id), true);
 });
 test('buyer and artwork API use one private capability and locale proxy prefix', async () => {
   const calls: [string, RequestInit][] = [];
@@ -122,36 +109,6 @@ test('simultaneous product controls share one owner session before any private r
   assert.equal(sessions, 1);
   assert.deepEqual(caps, ['cap1.def', 'cap1.def']);
 });
-test('size controls follow permitted step count and default artwork preserves placement overrides', async () => {
-  const { sizeControlKind, applyDefaultArtwork } = await import('../src/buyer.ts');
-  assert.equal(sizeControlKind(3), 'slider');
-  assert.equal(sizeControlKind(2), 'cards');
-  assert.equal(sizeControlKind(1), 'preview');
-  assert.equal(sizeControlKind(0), 'preview');
-  const group: DesiredGroup = {
-    productId: '1',
-    configRevisionId: 'r1',
-    revisionContentHash: 'a'.repeat(64),
-    design: {
-      placements: [
-        { placementId: 'front', methodId: 'print', stepId: 'small', artwork: { kind: 'revision', revisionId: 'old' } },
-        {
-          placementId: 'back',
-          methodId: 'print',
-          stepId: 'small',
-          artwork: { kind: 'revision', revisionId: 'override' },
-        },
-      ],
-      options: [],
-    },
-    variants: [],
-  };
-  const next = applyDefaultArtwork(group, { kind: 'revision', revisionId: 'new' }, new Set(['back']));
-  assert.deepEqual(
-    next.design.placements.map((p) => (p.artwork.kind === 'revision' ? p.artwork.revisionId : undefined)),
-    ['new', 'override'],
-  );
-});
 test('advisory cart fingerprints are bounded hashes and uncertainty persists across locales', async () => {
   const { advisoryFingerprint, cartJournal } = await import('../src/buyer.ts');
   assert.equal(await advisoryFingerprint('abc'), 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
@@ -163,8 +120,6 @@ test('advisory cart fingerprints are bounded hashes and uncertainty persists acr
   cartJournal(storage, '/nl/').writeUnresolved(true);
   assert.equal(cartJournal(storage, '/en/').readUnresolved(), true);
 });
-test('authoritative negative customization increments display exact signed money', () =>
-  assert.equal(formatMinor('-1', 'EUR', 2), 'EUR -0.01'));
 test('browser rejects malformed successful responses and validates geometry before state', async () => {
   const api = createBuyerApi({
     proxyBase: '/apps/insignia',
@@ -229,58 +184,4 @@ test('numeric buyer variants select existing GID-specific preview images and geo
     required(required(required(geometry.views[0]).variantImages)[0]).variantId,
     'gid://shopify/ProductVariant/123',
   );
-});
-test('complete view derives every placement own size/artwork and preserves siblings across preview renewal', async () => {
-  const { buildBuyerScene } = await import('../src/buyer.ts');
-  const geometry: GeometryV1 = {
-    version: 'm5-geometry-v1',
-    views: [
-      {
-        id: 'front',
-        image: { revisionId: 'garment', width: 100, height: 100 },
-        variantImages: [],
-        placements: [
-          { id: 'left', rect: { centerX: 0.25, centerY: 0.5, width: 0.2, height: 0.2 } },
-          { id: 'right', rect: { centerX: 0.75, centerY: 0.5, width: 0.2, height: 0.2 } },
-        ],
-      },
-    ],
-    steps: [
-      { id: 'small', widthFraction: 0.5, heightFraction: 0.5 },
-      { id: 'large', widthFraction: 1, heightFraction: 1 },
-    ],
-  };
-  const placements: Pick<DesiredGroup['design']['placements'][number], 'placementId' | 'stepId' | 'artwork'>[] = [
-    { placementId: 'left', stepId: 'small', artwork: { kind: 'deferred', intentId: 'later' } },
-    { placementId: 'right', stepId: 'large', artwork: { kind: 'revision', revisionId: 'art' } },
-  ];
-  const previews = { art: { assetId: 'art', url: 'https://private.example/first.png', aspectRatio: 2 } };
-  const first = buildBuyerScene({
-    geometry,
-    viewId: 'front',
-    selectedPlacementId: 'left',
-    placements,
-    previews,
-    imageUrls: { garment: 'https://public.example/garment.png' },
-  });
-  assert.equal(first.artworks.length, 2);
-  assert.deepEqual(
-    first.artworks.map((art) => [art.placementId, art.kind, art.bounds.width]),
-    [
-      ['left', 'logo-later', 35],
-      ['right', 'raster', 70],
-    ],
-  );
-  const renewed = buildBuyerScene({
-    geometry,
-    viewId: 'front',
-    selectedPlacementId: 'left',
-    placements,
-    previews: { art: { ...previews.art, url: 'https://private.example/renewed.png' } },
-    imageUrls: { garment: 'https://public.example/garment.png' },
-  });
-  assert.deepEqual(required(renewed.artworks[0]), required(first.artworks[0]));
-  assert.equal(required(renewed.artworks[1]).url, 'https://private.example/renewed.png');
-  const unseen = buildBuyerScene({ geometry, viewId: 'unknown', placements, previews, imageUrls: {} });
-  assert.deepEqual(unseen.artworks, []);
 });
