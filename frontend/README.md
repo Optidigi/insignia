@@ -2,6 +2,10 @@
 
 This folder contains the selected merchant UI and customer Designer, plus isolated examples. The current integration reuses their presentation and reducers in `apps/web` and `apps/storefront`, with authenticated services for persistence, publication, artwork, quotes and cart operations. Deployment and owner visual acceptance are separate from local integration; see [current delivery state](../docs/delivery/state.md).
 
+## Native development review
+
+Open the [published development product](https://insignia-rewrite-dev.myshopify.com/products/insignia-ui-demo-example-calibration) to review the selected customer Designer, or open Insignia in the rewrite-dev Shopify Admin for the merchant editor. The product's calibration is labelled example-only. Current deployment limits and outstanding qualification are recorded in [delivery state](../docs/delivery/state.md); a published demo does not establish complete E2E or owner visual acceptance.
+
 ## Run the examples
 
 Use the repository's pinned Node (`.node-version`) and pnpm (`package.json`) versions. From the repository root:
