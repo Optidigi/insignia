@@ -1,0 +1,28 @@
+{
+  "versionTag": "native-theme-ced0143",
+  "versionId": "1198938357761",
+  "versionIds": [
+    "1198938357761",
+    "1197668466689",
+    "1196974997505",
+    "1171218169857",
+    "1169137696769",
+    "1168157736961",
+    "1166710865921",
+    "1166552825857",
+    "1166090010625",
+    "1165513097217",
+    "1163229200385",
+    "1162611916801",
+    "1158986629121",
+    "1158837927937",
+    "1153019904001",
+    "1152880803841",
+    "1146748534785"
+  ],
+  "moduleHash": "0051f7bb5a1bb69b198ff6284326fd5145ceb3a0bfb44ef8337e3058a46d36a2",
+  "observedAt": "2026-11-07T15:58:17.428Z",
+  "nativeObservation": "EXACT_INACTIVE_14_MODULE_CANDIDATE_PASS",
+  "functionsSourceCommit": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+  "note": "Inactive native-theme candidate. Only theme configuration differs from selected-ui-aab4a4b; Function binaries, registrations, permissions, Home URL, proxy and webhooks are unchanged. Theme assets are exact foundation42387489858/attempt1 bytes from source treee26d6100352690e9af5b8777566e113fac9e11bc. No activation or purchase authority inferred."
+}

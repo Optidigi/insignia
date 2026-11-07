@@ -55,6 +55,7 @@ test('observed native origin binds only the closed release profile and validated
 });
 
 for (const [releaseProfile, expectedVersion] of [
+  ['native-theme-ced0143', '1198938357761'],
   ['m8-preview-28443bd', '1168157736961'],
   ['selected-ui-f48efa2', '1196974997505'],
   ['selected-ui-aab4a4b', '1197668466689'],
