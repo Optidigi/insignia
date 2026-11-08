@@ -152,6 +152,7 @@ for (const engine of [chromium, firefox]) {
       .frameLocator('dialog:modal > iframe[srcdoc]')
       .getByRole('button', { name: 'Close customizer', exact: true })
       .click();
+    await page.locator('dialog:modal').waitFor({ state: 'detached', timeout: 5000 });
     assert.equal(await page.locator('dialog:modal').count(), 0);
   });
   test(`${engine.name()}: prewarm failures and context changes cannot poison the real opening`, async (t) => {
