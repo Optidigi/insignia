@@ -1,4 +1,4 @@
-/* Shared closed-state host controls; the developer harness supplies its own page context. */
+/* Developer-only Shopify stand-in. Shared confirmation styles live in design-switch.css. */
 .storefront-host-preview {
   max-width: 520px;
   margin: 48px auto;
