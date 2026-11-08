@@ -4,6 +4,10 @@ Updated8November2026 from merged source, exact-head CI and bounded native observ
 
 **Current review entry:** open the [native development review guide](../../frontend/README.md#native-development-review) for both the customer demo and merchant editor. Calibration is labelled example-only. Desktop and390-pixel CSS viewport observations pass; owner visual acceptance remains separate. [Current deployment and activation evidence](evidence/technical-merchant-completion/native-selected-behavior-activation-2026-11-08.json). Email delivery remains disabled pending original received-message authentication evidence; native EUR qualification remains deferred. The wrong-identity candidate1199165767681 remains inactive/NEVER_RELEASE.
 
+## Firefox startup correction — implementation pending deployment
+
+The owner reported the startup failure in Firefox on desktop and rejected the plain browser-styled loader. Actual Firefox reproduction failed before handshake with an invalid URL error: its srcdoc document.referrer is empty. The correction derives the peer origin from the deliberately same-origin parent while retaining source/origin/channel validation. The same Firefox desktop/mobile retention scenario passes after the change; a permanent Firefox regression and CI browser installation cover this previously missing engine. The loader presentation still requires correction using the selected UI styling before the combined fix is deployed. The current native release below is not claimed corrected for Firefox.
+
 ## 8 November behavior/performance correction — deployed and qualified
 
 Owner authorized preservation of the complete d490e4d selected behavior with real service effects, a proper storefront modal and a simple performance correction. PR244 restores resume/new/saved-cart edit/discard decisions, immediate localized loading and bounded startup recovery, focus/Escape/scroll containment, visible artwork preview renewal and same-publication garment-media recovery. Production choices participate in retry identity and cached attempts reject changed payloads. One active selected reducer owns unfinished edits.

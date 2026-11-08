@@ -14,7 +14,7 @@ type AcceptanceRequest = ReturnType<typeof BuyerAcceptanceSchema.parse>;
 
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { chromium } from 'playwright';
+import { chromium, firefox } from 'playwright';
 import {
   type AjaxItem,
   ajaxBody,
@@ -1093,6 +1093,7 @@ async function withProductDesigner(
   cfg: BuyerConfig,
   run: (context: { page: Page; ui: FrameLocator; trigger: Locator; privateRequests: () => number }) => Promise<void>,
   mobile = false,
+  engine: typeof chromium = chromium,
 ) {
   const server = await createServer({
     plugins: [selectedFrameAssets()],
@@ -1101,7 +1102,7 @@ async function withProductDesigner(
   let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
   try {
     await server.listen();
-    browser = await chromium.launch({ headless: true });
+    browser = await engine.launch({ headless: true });
     const page = await browser.newPage({
       viewport: mobile ? { width: 390, height: 844 } : { width: 1440, height: 900 },
       hasTouch: mobile,
@@ -1144,6 +1145,27 @@ async function withProductDesigner(
     await server.close();
   }
 }
+
+test('Firefox opens the selected Designer when srcdoc has no document referrer', async () => {
+  await withProductDesigner(
+    config,
+    async ({ page, ui }) => {
+      assert.equal(await ui.locator('body').evaluate(() => document.referrer), '');
+      await ui.getByRole('button', { name: 'Add artwork', exact: true }).waitFor();
+      assert.equal(await page.locator('dialog:modal').count(), 1);
+      assert.equal(
+        await page.locator('dialog iframe').evaluate((frame) => getComputedStyle(frame).visibility),
+        'visible',
+      );
+      await addDeferred(ui, 'Front');
+      await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+      await ui.locator('input[type=number]:enabled').first().fill('2');
+      assert.equal(await ui.locator('input[type=number]:enabled').first().inputValue(), '2');
+    },
+    false,
+    firefox,
+  );
+});
 
 test('selected desktop and mobile layouts retain the design and quantities when closing and reopening', async () => {
   await withProductDesigner(config, async ({ page, ui, trigger }) => {
