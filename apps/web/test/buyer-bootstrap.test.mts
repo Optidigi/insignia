@@ -154,13 +154,15 @@ test('enabled bootstrap binds existing credential lifecycle and immutable truste
   const scope = { shopId: 'tenant', installationGeneration: '1', appClientId: 'synthetic-app' };
   assert.equal(await composition.artifactPorts.expectedBuild.read(scope), null);
   assert.equal(await composition.artifactPorts.trustedEvidence.read(scope), null);
-  assert.equal(value.readers.length, 2);
-  assert.equal(required(value.readers[0]).expectedActiveAppVersionRef, '1163229200385');
-  assert.equal(required(value.readers[0]).scope.shopId, scope.shopId);
-  assert.equal(required(value.readers[0]).scope.installationGeneration, scope.installationGeneration);
-  assert.equal(required(value.readers[0]).scope.appClientId, scope.appClientId);
+  assert.equal(value.readers.length, 4, 'Each missing lookup rechecks evidence before requesting collection');
+  for (const reader of value.readers) {
+    assert.equal(reader.expectedActiveAppVersionRef, '1163229200385');
+    assert.equal(reader.scope.shopId, scope.shopId);
+    assert.equal(reader.scope.installationGeneration, scope.installationGeneration);
+    assert.equal(reader.scope.appClientId, scope.appClientId);
+  }
   assert.equal(await composition.artifactPorts.expectedBuild.read({ ...scope, appClientId: 'other' }), null);
-  assert.equal(value.readers.length, 2);
+  assert.equal(value.readers.length, 4);
 });
 test('a production composition failure closes its dedicated core and exposes no provider secret', async () => {
   const value = seam();
