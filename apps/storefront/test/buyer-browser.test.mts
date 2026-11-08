@@ -1659,6 +1659,42 @@ test('switching a dirty cart design offers the baseline cancel/discard decision 
   );
 });
 
+test('an owned selection made during pending review remains editable after the final quote arrives', async () => {
+  await withRetainedBuyer(
+    async ({ host, accepts, mutations }) => {
+      await host.locator('body').evaluate(() => {
+        addEventListener('message', (event) => {
+          if (
+            event.source !== parent ||
+            event.origin !== parent.location.origin ||
+            event.data?.channel !== window.name ||
+            event.data.type !== 'insignia:designer:quote'
+          )
+            return;
+          if (event.data.quote.totalMinor === undefined)
+            window.pendingOtherSelection = event.data.quote.groups.find(
+              (group: { label: string; id: string }) => group.label === 'Other synthetic shirt',
+            )?.id;
+        });
+      });
+      await reviewRetained(host);
+      await applyButton(host).waitFor();
+      const id = await host.locator('body').evaluate(() => window.pendingOtherSelection);
+      assert(id);
+      await host.locator('body').evaluate((_body, selected) => {
+        parent.postMessage(
+          { type: 'insignia:designer:select-group', channel: window.name, id: selected },
+          parent.location.origin,
+        );
+      }, id);
+      await host.getByRole('heading', { name: 'Other synthetic shirt', exact: true }).waitFor();
+      assert.equal(accepts.length, 0);
+      assert.equal(mutations(), 0);
+    },
+    { multipleProducts: true },
+  );
+});
+
 test('switching an unchanged cart design skips discard confirmation and disconnect aborts its loading modal', async () => {
   await withRetainedBuyer(
     async ({ page, host, trigger, proposals, mutations }) => {
@@ -1766,5 +1802,6 @@ test('an option-only change after lost acceptance requires distinct reviewed ter
 declare global {
   interface Window {
     observedCartRequests: ObservedCartRequest[];
+    pendingOtherSelection?: string;
   }
 }

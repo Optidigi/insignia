@@ -214,7 +214,8 @@ export function createLiveDesignerPorts(input: {
       baseline: observed.cart,
       group,
     });
-    reviewSelections.clear();
+    // A click may already be queued with a pending display ID. Keep its owned
+    // edit alias until the next prepare; it grants no purchase authority.
     for (const candidate of proposal.groups)
       if (candidate.selection && candidate.canonicalIdentitySha256)
         reviewSelections.set(candidate.canonicalIdentitySha256, candidate.selection);
