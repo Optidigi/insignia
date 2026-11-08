@@ -17,7 +17,13 @@ import { createQuoteAuthorityPorts } from '../../src/server/quote-composition.ts
 const connectionString = process.env.DATABASE_URL;
 export async function fixture(
   t: Pick<TestContext, 'after'>,
-  options: { representativePricing?: boolean; demo91?: boolean; selectedBrowser?: boolean; clock?: () => Date } = {},
+  options: {
+    representativePricing?: boolean;
+    demo91?: boolean;
+    selectedBrowser?: boolean;
+    clock?: () => Date;
+    readiness?: QuoteAuthorityPorts['readiness'];
+  } = {},
 ) {
   const pool = new Pool({ connectionString, max: 4 });
   const core = createDurableCore(new Pool({ connectionString, max: 8 }));
@@ -137,7 +143,7 @@ export async function fixture(
     amount = options.representativePricing ? '20.00' : '10.00',
     signings = 0,
     catalogUnavailable = false,
-    available: boolean | ((phase?: 'final') => boolean) = true,
+    available: boolean | ((phase?: 'final') => boolean | Promise<boolean>) = true,
     qualified = true;
   const guest = createArtworkGuestAuthority({
     core,
@@ -180,7 +186,7 @@ export async function fixture(
           },
         },
       },
-      readiness: { assertReady: async () => {} },
+      readiness: options.readiness ?? { assertReady: async () => {} },
       clock: () => now,
     });
     return {
@@ -243,7 +249,7 @@ export async function fixture(
         {
           id: '222',
           label: 'Blue M',
-          available: typeof available === 'function' ? available(phase) : available,
+          available: typeof available === 'function' ? await available(phase) : available,
           ...(options.selectedBrowser
             ? {
                 selectedOptions: [
@@ -374,7 +380,7 @@ export async function fixture(
     unavailable: (value: boolean) => {
       catalogUnavailable = value;
     },
-    availability: (value: boolean | ((phase?: 'final') => boolean)) => {
+    availability: (value: boolean | ((phase?: 'final') => boolean | Promise<boolean>)) => {
       available = value;
     },
     advance: (ms: number) => {

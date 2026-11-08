@@ -6,6 +6,14 @@ The 8 November implementation preserves the PR223 presentation and reducer-owned
 
 One native Chromium journey on the fully configured development T-shirt recorded Review readiness after 10,109ms, including a 7,182ms quote proposal. Add to cart took 7,426ms before navigation, including 5,404ms acceptance. A 21,882-byte artwork transfer took about one second, but two-second browser status intervals delayed usable preview to about 6.5 seconds. These are observed request waterfalls, not cold-cache benchmarks or percentile guarantees. “Checkout” in this report means Designer Add to cart, before Shopify payment.
 
+## Initial native rollout and remaining work
+
+The first performance rollout is active on the fully configured T-shirt. Prepared opening measured16ms in Chromium and144ms in Firefox; a separate cache-disabled direct Firefox opening measured2118ms. The selected editor and normal cold/failure recovery remain distinct. Review editing became available in82ms, while its authoritative quote remained8937ms.
+
+The same21,882-byte PNG still needed6575–6867ms. Native correlation separates3213ms of queue/storage processing after completion from1334ms of polling lateness, plus preview delivery. Representative original/preview reads measured336ms/271ms; they do not retroactively split every pipeline phase. The follow-up source overlaps only each independent immutable write/readback pair and drains both before releasing custody. Early status polling is500ms for six seconds of accumulated pauses, then2seconds; request time is additional and the existing240-second pause budget remains. No native speedup is claimed before redeployment.
+
+A delayed Add took8959ms after the user waited87.576seconds beyond Review readiness, so its30-second proof had expired. A distinct immediate Add using artwork-later took4289ms. These are not identical uploaded-artwork benchmarks. Release collection still occupies several seconds; the next narrow preparation overlap retains a current-time final readiness assertion after availability. It introduces no authority cache or periodic refresher. The full presentation preflight remains necessary for prices, wording and explicit publication-drift recovery.
+
 ## Implementation
 
 - One visible product trigger per page prepares immutable editor assets and public presentation on idle; explicit hover/focus can transfer this background preparation to another product. A hidden, inert, nonmodal selected frame can initialize without taking focus or locking scrolling. Actual opening reuses that frame. Context changes, disconnection, failure and expiry retire preparation; assigning the same context preserves it. Failed hidden photos stop refreshes instead of looping through rotating URLs. Cart repair and owned-design reads remain user-initiated. The short presentation cache is capped by actual signed-image expiry; it supplies no purchase authority.

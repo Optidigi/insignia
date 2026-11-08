@@ -127,3 +127,202 @@ for (const inactive of [false, true]) {
     if (inactive) assert.equal(providerReads, 0);
   });
 }
+
+function releasePreparationFixture(
+  artifacts: NonNullable<Parameters<typeof createProductionQuoteReadiness>[0]['artifactPorts']>,
+) {
+  const scope = {
+    shopId: 'tenant',
+    installationGeneration: '1',
+    authorizationGeneration: '11111111-1111-4111-8111-111111111111',
+    authorizationEpoch: 0,
+  };
+  const publicKey = publicKeyFromSeed(Buffer.alloc(32, 1));
+  let active = true,
+    revoked = false,
+    providerReads = 0;
+  const read = createProductionQuoteReadiness({
+    core: coreFixture({
+      tenants: {
+        getActiveAuthorizationScope: async () =>
+          active ? { ...scope, shopDomain: 'synthetic.myshopify.com', shopifyShopId: '9' } : null,
+      },
+      signingKeys: {
+        getActiveScope: async () => scope,
+        list: async () => [
+          {
+            ...scope,
+            id: 7,
+            keyId: 7,
+            state: revoked ? 'revoked' : 'active',
+            publicKey,
+            publicKeyFingerprint: publicKeyFingerprint(publicKey),
+            firstDay: 20000,
+            lastDay: 23000,
+            privateEnvelope: null,
+            wrappingKeyId: null,
+          },
+        ],
+      },
+    }),
+    ring: { currentKeyId: 'synthetic', keys: { synthetic: Buffer.alloc(32, 1) } },
+    selectedKeyId: 7,
+    appId: '7',
+    expectedFunctions: {
+      appKey: 'synthetic-app',
+      transformInputQuerySha256: 'a'.repeat(64),
+      validationInputQuerySha256: 'c'.repeat(64),
+    },
+    maxObservationAgeMs: 30000,
+    artifactPorts: artifacts,
+    transport: {
+      execute: async () => {
+        providerReads++;
+        throw new Error('No provider reads during release-only preparation');
+      },
+    },
+  });
+  return {
+    read,
+    quote: {
+      ...scope,
+      acceptedDay: 20758,
+      effectiveRevisions: [
+        {
+          configId: 'config',
+          operationId: 'operation',
+          productId: '111',
+          revisionId: 'revision',
+          contentHash: 'a'.repeat(64),
+        },
+      ],
+    },
+    deactivate: () => {
+      active = false;
+    },
+    revoke: () => {
+      revoked = true;
+    },
+    providerReads: () => providerReads,
+  };
+}
+function preparationGate() {
+  let release: () => void = () => {
+    throw new Error('Gate not initialized');
+  };
+  const promise = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  return { promise, release };
+}
+
+test('release-only preparation starts both evidence reads, drains them and retains no approval', async () => {
+  const first = preparationGate(),
+    second = preparationGate();
+  let reads = 0,
+    settled = false;
+  const evidence = releaseEvidenceFixture();
+  const f = releasePreparationFixture({
+    expectedBuild: {
+      read: async () => {
+        reads++;
+        await first.promise;
+        return evidence.expectedBuild;
+      },
+    },
+    trustedEvidence: {
+      read: async () => {
+        reads++;
+        await second.promise;
+        return evidence.record.attestation;
+      },
+    },
+  });
+  const work = f.read.prepare({ quote: f.quote }).then(() => {
+    settled = true;
+  });
+  try {
+    await setImmediate();
+    assert.equal(reads, 2);
+    first.release();
+    await setImmediate();
+    assert.equal(settled, false);
+    second.release();
+    assert.equal(await work, undefined);
+    assert.equal(f.providerReads(), 0);
+    await assert.rejects(f.read.assertReady({ quote: f.quote }));
+    assert.equal(reads, 4, 'final readiness independently reads evidence instead of using preparation as approval');
+  } finally {
+    first.release();
+    second.release();
+    await work;
+  }
+});
+
+for (const fail of ['expected', 'evidence'] as const) {
+  test(`failed ${fail} preparation read drains its pending sibling before returning`, async () => {
+    const held = preparationGate();
+    let reads = 0,
+      settled = false;
+    const evidence = releaseEvidenceFixture();
+    const f = releasePreparationFixture({
+      expectedBuild: {
+        read: async () => {
+          reads++;
+          if (fail === 'expected') throw new Error('Synthetic preparation failure');
+          await held.promise;
+          return evidence.expectedBuild;
+        },
+      },
+      trustedEvidence: {
+        read: async () => {
+          reads++;
+          if (fail === 'evidence') throw new Error('Synthetic preparation failure');
+          await held.promise;
+          return evidence.record.attestation;
+        },
+      },
+    });
+    const work = f.read.prepare({ quote: f.quote });
+    const rejected = assert.rejects(work, /Synthetic preparation failure/).then(() => {
+      settled = true;
+    });
+    try {
+      await setImmediate();
+      assert.equal(reads, 2);
+      assert.equal(settled, false);
+      held.release();
+      await rejected;
+      assert.equal(f.providerReads(), 0);
+    } finally {
+      held.release();
+      await rejected;
+    }
+  });
+}
+
+for (const invalid of ['scope', 'key', 'missing build', 'missing evidence'] as const) {
+  test(`release preparation rejects invalid ${invalid} without approving authority`, async () => {
+    let reads = 0;
+    const evidence = releaseEvidenceFixture();
+    const f = releasePreparationFixture({
+      expectedBuild: {
+        read: async () => {
+          reads++;
+          return invalid === 'missing build' ? null : evidence.expectedBuild;
+        },
+      },
+      trustedEvidence: {
+        read: async () => {
+          reads++;
+          return invalid === 'missing evidence' ? null : evidence.record.attestation;
+        },
+      },
+    });
+    if (invalid === 'scope') f.deactivate();
+    if (invalid === 'key') f.revoke();
+    await assert.rejects(f.read.prepare({ quote: f.quote }));
+    assert.equal(reads, invalid.startsWith('missing') ? 2 : 0);
+    assert.equal(f.providerReads(), 0);
+  });
+}

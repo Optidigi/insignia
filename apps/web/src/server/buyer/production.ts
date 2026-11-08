@@ -311,7 +311,10 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       artwork,
       catalog: { resolveVariantContext: async (target) => (await compose()).catalog.resolveVariantContext(target) },
       currency: { exponent: (code) => currencyExponent(code) ?? null },
-      readiness: { assertReady: async (target) => (await compose()).readiness.assertReady(target) },
+      readiness: {
+        prepare: async (target) => (await compose()).readiness.prepare?.(target),
+        assertReady: async (target) => (await compose()).readiness.assertReady(target),
+      },
       authorization: {
         admit: (target) => {
           if (!composed) throw new Error('Buyer quote preparation incomplete');
