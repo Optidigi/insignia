@@ -99,3 +99,10 @@ Chromium reached editable Review controls in82ms while the authoritative quote w
 A fresh merchant read shows the selected placement editor, real garment photograph, four views/six placements, editable calibrated area/movement controls and native Preview/Save draft/Publish host actions. No configuration was changed during that read. Other admin panels retain the source/local coverage limits above; this is not a new claim of owner acceptance.
 
 The follow-up artwork storage/polling changes retain the same upload reducer and progress phases. Request-local release preparation must remain an effect, not cached readiness authority: the full current-time assertion still follows availability, and final signing reads stay passive. The initial parallel full-assertion attempt was rejected before shipping because an earlier successful proof could expire during slower sibling IO. No new presentation or animation framework follows from this correction. FindingQ1 remains the separately documented preparation/acceptance recovery gap.
+
+
+## Qualified native follow-up
+
+Native1199807692801 retains the same selected state owners and styles. Chromium observed11ms to editable Review controls while its authoritative quote remained pending; exactUSD24.95 quote/cart and automatic navigation passed. The same PNG applied in2379ms Chromium/2547ms Firefox, with actual opening/uploading/checking feedback. Firefox reused a prepared frame without a loader, restored focus/scroll on close and retained artwork on resume;390px CSS layout had no overflow. These observations do not replace the source/local branch coverage above.
+
+The merchant editor still shows the saved four-view/six-placement fixture. Normal fully opened Add views X/Escape/Cancel and the CSP-safe PNG picker upload were observed on the combined253/254 build. The upload produced a private USABLE400×400 preview; cancelling selection made no draft/publication change. Rapid host-opening dismissal remains QA-009’s separate limit; findingQ1 still requires authoritative declined-versus-ambiguous command classification. Owner acceptance remains separate.

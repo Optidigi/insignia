@@ -6,13 +6,32 @@ The 8 November implementation preserves the PR223 presentation and reducer-owned
 
 One native Chromium journey on the fully configured development T-shirt recorded Review readiness after 10,109ms, including a 7,182ms quote proposal. Add to cart took 7,426ms before navigation, including 5,404ms acceptance. A 21,882-byte artwork transfer took about one second, but two-second browser status intervals delayed usable preview to about 6.5 seconds. These are observed request waterfalls, not cold-cache benchmarks or percentile guarantees. “Checkout” in this report means Designer Add to cart, before Shopify payment.
 
+## Qualified follow-up results
+
+The current native speed rollout applies the bounded storage and preparation changes below. Observed journeys on the same configured development product were:
+
+| Operation | Earlier observation | Current observation |
+| --- | --- | --- |
+| Same21,882-byte PNG, Chromium |6867ms |2379ms |
+| Same PNG, Firefox |6575ms |2547ms |
+| Review click to editable controls |82ms in first performance rollout |11ms |
+| Review click to authoritative Add readiness |10109ms before performance work |7989ms |
+| Immediate Add to cart navigation |7426ms in the starting journey |4622ms |
+| Prepared opening |16–144ms in first performance rollout |17–213ms |
+
+These are individual observations, not percentiles or identical cache/network-age guarantees. The starting cart journey clicked Add18.6seconds after Review became ready; the current one clicked immediately, both within the finite evidence window. The later8959ms sample waited87.6seconds and required fresh collection; it is a distinct cold-proof case. Current Firefox direct cache-disabled opening is2105ms. A loader remains necessary for cold/failure recovery.
+
+The current quote proposal still took6193ms and total authoritative Review7989ms. Configuration/pricing and finite release verification remain real network work; the visible Review can be edited or left while it runs. Removing that preflight requires typed drift/presentation recovery that the current client does not supply. Further producer/protocol changes must preserve current-time checks and provider-attempt settlement rather than silently extending the proof window.
+
+See [native evidence](../delivery/evidence/technical-merchant-completion/native-speed-followup-activation-2026-11-08.json) and the state audit for scope and remaining recovery limits. Sol high review approved the artwork changes; a fresh review approved the release-only preparation contract. The rejected early-assertion variant was never shipped.
+
 ## Initial native rollout and remaining work
 
 The first performance rollout is active on the fully configured T-shirt. Prepared opening measured16ms in Chromium and144ms in Firefox; a separate cache-disabled direct Firefox opening measured2118ms. The selected editor and normal cold/failure recovery remain distinct. Review editing became available in82ms, while its authoritative quote remained8937ms.
 
-The same21,882-byte PNG still needed6575–6867ms. Native correlation separates3213ms of queue/storage processing after completion from1334ms of polling lateness, plus preview delivery. Representative original/preview reads measured336ms/271ms; they do not retroactively split every pipeline phase. The follow-up source overlaps only each independent immutable write/readback pair and drains both before releasing custody. Early status polling is500ms for six seconds of accumulated pauses, then2seconds; request time is additional and the existing240-second pause budget remains. No native speedup is claimed before redeployment.
+The same21,882-byte PNG still needed6575–6867ms. Native correlation separates3213ms of queue/storage processing after completion from1334ms of polling lateness, plus preview delivery. Representative original/preview reads measured336ms/271ms; they do not retroactively split every pipeline phase. The follow-up source overlaps only each independent immutable write/readback pair and drains both before releasing custody. Early status polling is500ms for six seconds of accumulated pauses, then2seconds; request time is additional and the existing240-second pause budget remains. The qualified follow-up above now records native improvement; these earlier observations explain the change.
 
-A delayed Add took8959ms after the user waited87.576seconds beyond Review readiness, so its30-second proof had expired. A distinct immediate Add using artwork-later took4289ms. These are not identical uploaded-artwork benchmarks. Release collection still occupies several seconds; the next narrow preparation overlap retains a current-time final readiness assertion after availability. It introduces no authority cache or periodic refresher. The full presentation preflight remains necessary for prices, wording and explicit publication-drift recovery.
+A delayed Add took8959ms after the user waited87.576seconds beyond Review readiness, so its30-second proof had expired. A distinct immediate Add using artwork-later took4289ms. These are not identical uploaded-artwork benchmarks. Release collection still occupies several seconds; the deployed narrow preparation overlap retains a current-time final readiness assertion after availability. It introduces no authority cache or periodic refresher. The full presentation preflight remains necessary for prices, wording and explicit publication-drift recovery.
 
 ## Implementation
 
