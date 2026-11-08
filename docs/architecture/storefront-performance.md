@@ -1,0 +1,25 @@
+# Selected UI performance
+
+The 8 November implementation preserves the PR223 presentation and reducer-owned workflows while moving avoidable work out of customer interactions. The [state audit](selected-ui-state-audit.md) maps storefront and merchant states, effects and motion to `d490e4d0e285b7b5be50da52cdf97474ff4a0e0f`. [Current delivery state](../delivery/state.md) distinguishes implementation, deployment and native qualification.
+
+## Measured starting point
+
+One native Chromium journey on the fully configured development T-shirt recorded Review readiness after 10,109ms, including a 7,182ms quote proposal. Add to cart took 7,426ms before navigation, including 5,404ms acceptance. A 21,882-byte artwork transfer took about one second, but two-second browser status intervals delayed usable preview to about 6.5 seconds. These are observed request waterfalls, not cold-cache benchmarks or percentile guarantees. “Checkout” in this report means Designer Add to cart, before Shopify payment.
+
+## Implementation
+
+- One visible product trigger per page prepares immutable editor assets and public presentation on idle; explicit hover/focus can transfer this background preparation to another product. A hidden, inert, nonmodal selected frame can initialize without taking focus or locking scrolling. Actual opening reuses that frame. Context changes, disconnection, failure and expiry retire preparation; assigning the same context preserves it. Failed hidden photos stop refreshes instead of looping through rotating URLs. Cart repair and owned-design reads remain user-initiated. The short presentation cache is capped by actual signed-image expiry; it supplies no purchase authority.
+- Quote preparation has a distinct `preparing` state. Back/edit/close remain available; only purchasing waits for a ready quote. One automatic preparation can start while quantities settle; further typing does not spend another session proposal slot. Review reuses unchanged preparation, while edits or retirement cancel obsolete work. Actual cart submission retains its blocking pending state, stable retry identity and matching receipt checks. Clean completion still permits Done without another preparation or purchase.
+- Current configuration and cart observation overlap. Foreign product reads are deduplicated within preparation and processed with bounded concurrency. New draft UUIDs use atomic server CAS0 creation, and actor-local acknowledged versions avoid repeatedly restoring preview payloads before updates; conflicts and lost acknowledgements still use scoped reads. Restoration never treats this metadata as ownership.
+- Quote preparation overlaps independent shop/subscription and product reads. Acceptance performs fresh shop/catalog comparison inside its existing fence instead of repeating a whole preparation at signing. Final tenant, entitlement, market, artwork, day, readiness and material-hash checks remain. Readiness work overlaps independent observations without restamping their timestamps or extending validity.
+- Upload status uses a short initial interval with bounded backoff; the existing inspector scans pending work more promptly. Original customer artwork remains unchanged and inspected. Publication overlaps bounded photo IO while serializing the existing single decoder; deterministic identities, drained failures and partial-capture custody remain.
+- The final cart-attribute update uses Shopify's complete response as its normalized post-write witness. Post-add reads, the post-removal checkpoint, mutation lock and whole-cart goal checks remain. Small best-effort application confirmations are dispatched with keepalive before returning the receipt; oversized notifications retain awaited delivery. Confirmation remains UX reconciliation, never purchase/payment proof.
+- Retiring a Method screen aborts catalogue/product reads. Already-dispatched Method writes retain their journals and receipt handling.
+
+No replacement editor, new animation system, websocket service or caching authority was introduced. Existing theme, focus, keyboard, Undo and reduced-motion behavior remain owned by the selected components. Cold/failure recovery remains available; immediate prepared opening is not a promise of zero latency on an offline connection.
+
+## Verification and rollout
+
+Focused cases cover stale/canceled preparation, unchanged retry identity, usable upload and inspection failures, worker polling, concurrent capture bounds and decoder exclusivity, in-fence price/shop drift, cart-response tampering and Method-route retirement. Chromium and Firefox exercise the actual selected frame. Exact final CI artifacts and native measurements are recorded in delivery state before any deployment claim.
+
+The worker scan runs in the separate immutable artwork-inspection host package. Updating the web or ordinary worker container alone does not deploy that change. Its existing service, credentials, socket protocol, sandbox and grants must remain intact during the qualified package replacement.

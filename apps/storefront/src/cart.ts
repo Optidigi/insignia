@@ -375,8 +375,9 @@ export function createAjaxCartAdapter({
         return { status: 'review_required', cart: current, reason: 'vector_mismatch' };
       if ((current.attributes[QUOTE] ?? '') !== quote) {
         dispatched = true;
-        await request('cart/update.js', { attributes: { [QUOTE]: quote } });
-        current = await read();
+        // Shopify update.js returns the complete post-mutation cart. Normalize
+        // that witness and verify the same whole-cart goal below.
+        current = snapshot(await request('cart/update.js', { attributes: { [QUOTE]: quote } }));
       }
       if ((await digest(logicalState(current))) !== goal)
         return { status: 'review_required', cart: current, reason: 'vector_mismatch' };

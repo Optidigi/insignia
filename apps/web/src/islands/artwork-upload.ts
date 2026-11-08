@@ -102,7 +102,8 @@ export function createArtworkUpload(input: {
     signal?: AbortSignal,
   ): Promise<ArtworkPreview> {
     let completionAttempted = false;
-    for (let attempt = 0; attempt < 120; attempt++) {
+    let waitedMs = 0;
+    for (let attempt = 0; attempt < 124 && waitedMs < 240000; attempt++) {
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
       if (Date.parse(asset.assetExpiresAt) <= Date.now())
         throw Object.assign(new Error('Artwork expired. Upload it again.'), { status: 410 });
@@ -133,7 +134,9 @@ export function createArtworkUpload(input: {
         });
       }
       onState('Processing artwork');
-      await pause(2000, signal);
+      const waitMs = Math.min(250 * 2 ** Math.min(attempt, 3), 240000 - waitedMs);
+      await pause(waitMs, signal);
+      waitedMs += waitMs;
     }
     throw new Error('Artwork is still processing. Try again later.');
   }

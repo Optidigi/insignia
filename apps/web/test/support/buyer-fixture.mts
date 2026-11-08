@@ -137,7 +137,7 @@ export async function fixture(
     amount = options.representativePricing ? '20.00' : '10.00',
     signings = 0,
     catalogUnavailable = false,
-    available: boolean | (() => boolean) = true,
+    available: boolean | ((phase?: 'final') => boolean) = true,
     qualified = true;
   const guest = createArtworkGuestAuthority({
     core,
@@ -238,12 +238,12 @@ export async function fixture(
     guest,
     ports,
     clock: () => now,
-    catalog: async () => ({
+    catalog: async (_scope, _productId, phase) => ({
       variants: [
         {
           id: '222',
           label: 'Blue M',
-          available: typeof available === 'function' ? available() : available,
+          available: typeof available === 'function' ? available(phase) : available,
           ...(options.selectedBrowser
             ? {
                 selectedOptions: [
@@ -374,7 +374,7 @@ export async function fixture(
     unavailable: (value: boolean) => {
       catalogUnavailable = value;
     },
-    availability: (value: boolean | (() => boolean)) => {
+    availability: (value: boolean | ((phase?: 'final') => boolean)) => {
       available = value;
     },
     advance: (ms: number) => {

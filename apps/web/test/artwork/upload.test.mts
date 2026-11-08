@@ -361,3 +361,53 @@ test('merchant upload and pending completion cross the HTTPS proxy origin gate w
   assert.equal((await complete(completionHeaders, services.appOrigin, false)).status, 401);
   assert.equal(completed, 2, 'denied callers cannot complete an upload');
 });
+
+test('short processing checks find promptly usable artwork without waiting two seconds, then back off', async () => {
+  const waits: number[] = [];
+  let statuses = 0;
+  const flow = createArtworkUpload({
+    api: async (path) =>
+      path.endsWith('/status')
+        ? { state: ++statuses <= 5 ? 'QUEUED' : 'USABLE', expiresAt: '2099-01-08T00:00:00Z' }
+        : { url: 'https://private.example/verified.png', width: 10, height: 10, expiresAt: '2099-01-01T00:05:00Z' },
+    pause: async (ms) => {
+      waits.push(ms);
+    },
+  });
+  assert.equal(
+    (await flow.resume({ assetId: 'ready-soon', assetExpiresAt: '2099-01-08T00:00:00Z' }, () => {})).assetId,
+    'ready-soon',
+  );
+  assert.deepEqual(waits, [250, 500, 1000, 2000, 2000]);
+});
+
+test('faster polling retains the complete processing wait budget and cancellation prevents the next read', async () => {
+  let waited = 0;
+  const flow = createArtworkUpload({
+    api: async () => ({ state: 'QUEUED', expiresAt: '2099-01-08T00:00:00Z' }),
+    pause: async (ms) => {
+      waited += ms;
+    },
+  });
+  await assert.rejects(
+    flow.resume({ assetId: 'slow', assetExpiresAt: '2099-01-08T00:00:00Z' }, () => {}),
+    /still processing/,
+  );
+  assert.equal(waited, 240000);
+  const controller = new AbortController();
+  let reads = 0;
+  const cancelled = createArtworkUpload({
+    api: async () => {
+      reads++;
+      return { state: 'QUEUED', expiresAt: '2099-01-08T00:00:00Z' };
+    },
+    pause: async () => {
+      controller.abort();
+    },
+  });
+  await assert.rejects(
+    cancelled.resume({ assetId: 'cancelled', assetExpiresAt: '2099-01-08T00:00:00Z' }, () => {}, controller.signal),
+    { name: 'AbortError' },
+  );
+  assert.equal(reads, 1);
+});

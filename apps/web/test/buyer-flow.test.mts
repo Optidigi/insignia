@@ -66,9 +66,15 @@ test('unavailable variants deny new proposals, serialized acceptance and renewal
   f.availability(true);
   const proposal = await (await f.http('quote-proposals', f.body)).json();
   const body = { capability: f.session.capability, hash: proposal.hash, idempotencyKey: randomUUID() };
-  let reads = 0;
-  f.availability(() => ++reads < 2);
+  const availabilityPhases: (string | undefined)[] = [];
+  // Availability must fail at the actual serialized signing boundary, regardless
+  // of how many preparation reads the adapter needs.
+  f.availability((phase) => {
+    availabilityPhases.push(phase);
+    return phase !== 'final';
+  });
   assert.equal((await f.http(`quote-proposals/${proposal.proposalId}/accept`, body)).status, 409);
+  assert.ok(availabilityPhases.includes('final'), 'stock was rechecked inside serialized acceptance');
   assert.equal(f.signings(), 0);
   assert.equal((await f.pool.query('SELECT 1 FROM accepted_quotes WHERE shop_id=$1', [f.shopId])).rowCount, 0);
   f.availability(true);

@@ -907,6 +907,133 @@ async function reviewRetained(host: FrameLocator) {
 }
 const applyButton = (host: FrameLocator) => host.getByRole('button', { name: /^(?:Add to cart|Update cart)$/ });
 
+test('direct Artwork to Review starts one current preparation without passive cleanup aborting it', async () => {
+  await withRetainedBuyer(async ({ page, host, accepts, mutations }) => {
+    await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+    await host.locator('body').evaluate((body) => {
+      const input = body.querySelector<HTMLInputElement>('input[type=number]:enabled');
+      if (!input) throw new Error('Quantity field was not rendered');
+      input.value = '4';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      [...body.querySelectorAll<HTMLButtonElement>('.steps button')]
+        .find((b) => b.textContent?.includes('Artwork'))
+        ?.click();
+    });
+    await host.getByRole('button', { name: 'Choose quantities', exact: true }).waitFor();
+    await host.locator('body').evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 0)));
+        }),
+    );
+    await page.evaluate(() => {
+      Reflect.set(window, 'directReviewRequests', 0);
+      addEventListener('message', (event) => {
+        if (event.data?.type === 'insignia:designer:request' && event.data.action === 'prepare')
+          Reflect.set(window, 'directReviewRequests', Reflect.get(window, 'directReviewRequests') + 1);
+      });
+    });
+    await host.locator('.steps button').filter({ hasText: 'Review' }).click();
+    await applyButton(host).waitFor();
+    await page.waitForFunction(() => {
+      const doc = document.querySelector<HTMLIFrameElement>('dialog:modal > iframe[srcdoc]')?.contentDocument;
+      const button = doc?.querySelector<HTMLButtonElement>('.footer-buttons .primary-button');
+      return button && !button.disabled && !doc?.querySelector('.cart-submit-error');
+    });
+    assert.equal(await page.evaluate(() => Reflect.get(window, 'directReviewRequests')), 1);
+    assert.equal(accepts.length, 0);
+    assert.equal(mutations(), 0);
+  });
+});
+
+test('quantity editing speculates once instead of spending a proposal slot on every pause', async () => {
+  await withRetainedBuyer(
+    async ({ page, host, proposals, accepts, mutations }) => {
+      const first = page.waitForResponse('**/quote-proposals');
+      await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+      await host.locator('input[type=number]:enabled').first().fill('4');
+      await page.clock.runFor(700);
+      await first;
+      await page.clock.runFor(100);
+      for (const value of ['5', '6']) {
+        await host.locator('input[type=number]:enabled').first().fill(value);
+        await page.clock.runFor(700);
+      }
+      assert.equal(proposals.length, 1, 'typing pauses must not exhaust the bounded session draft/proposal budget');
+      const final = page.waitForResponse('**/quote-proposals');
+      await host.getByRole('button', { name: 'Review', exact: true }).last().click();
+      await final;
+      assert.equal(proposals.length, 2);
+      assert.equal(proposals[1]?.groups[0]?.variants[0]?.quantity, 6);
+      assert.equal(accepts.length, 0);
+      assert.equal(mutations(), 0);
+    },
+    { clock: true },
+  );
+});
+
+test('verified cart handoff does not wait for best-effort application confirmation', async () => {
+  await withRetainedBuyer(async ({ page, host, cartNavigations }) => {
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route('**/cart-applications/*/confirm', async (route) => {
+      await held;
+      await route.fallback().catch(() => {});
+    });
+    try {
+      await reviewRetained(host);
+      await applyButton(host).click();
+      await page.waitForFunction(() => !document.querySelector('dialog:modal'));
+      await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
+      assert.equal(cartNavigations(), 1, 'only the verified cart receipt gates native handoff');
+    } finally {
+      release();
+      await page.unrouteAll({ behavior: 'ignoreErrors' });
+    }
+  });
+});
+
+test('pending quote preparation keeps review editing responsive and cancels obsolete quantities', async () => {
+  await withRetainedBuyer(async ({ page, host, accepts, mutations }) => {
+    const started = page.waitForRequest('**/quote-proposals');
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route('**/quote-proposals', async (route) => {
+      await held;
+      await route.fallback().catch(() => {}); // The edited-away request may already be aborted.
+    });
+    try {
+      await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+      await host.locator('input[type=number]:enabled').first().fill('4');
+      await started;
+      await host.getByRole('button', { name: 'Review', exact: true }).last().click();
+      assert.equal(await host.locator('.footer-buttons .primary-button').isEnabled(), false);
+      await host.getByRole('button', { name: 'Edit quantities', exact: true }).click();
+      await host.locator('input[type=number]:enabled').first().fill('5');
+      release();
+      await host.getByRole('button', { name: 'Review', exact: true }).last().click();
+      await applyButton(host).waitFor();
+      await page.waitForFunction(() => {
+        const doc = document.querySelector<HTMLIFrameElement>('iframe:not([hidden])')?.contentDocument;
+        return [...(doc?.querySelectorAll<HTMLButtonElement>('button') ?? [])].some(
+          (b) => b.textContent?.trim() === 'Update cart' && !b.disabled,
+        );
+      });
+      assert.equal(accepts.length, 0);
+      assert.equal(mutations(), 0);
+      await host.getByRole('button', { name: 'Edit quantities', exact: true }).click();
+      assert.equal(await host.locator('input[type=number]:enabled').first().inputValue(), '5');
+    } finally {
+      release();
+      await page.unrouteAll({ behavior: 'ignoreErrors' });
+    }
+  });
+});
+
 test('selected full-cart review rejects external signed quantity drift without issuing or mutating the cart', async () => {
   await withRetainedBuyer(async ({ host, editCart, proposals, accepts, mutations }) => {
     editCart();
@@ -1589,7 +1716,7 @@ test('a failed frame asset shows a bounded retry state and Retry opens the selec
       if (buyer) document.body.append(buyer);
     });
     await trigger.click();
-    await page.locator('iframe').waitFor({ state: 'attached' });
+    await page.locator('dialog:modal > iframe[srcdoc]').waitFor({ state: 'attached' });
     await page.clock.fastForward(11000);
     await page.getByRole('alert').waitFor();
     await page.unroute('**/insignia-designer-frame.js');
@@ -1612,7 +1739,7 @@ test('a failed selected stylesheet stays behind startup recovery until a styled 
       if (buyer) document.body.append(buyer);
     });
     await trigger.click();
-    await page.locator('iframe').waitFor({ state: 'attached' });
+    await page.locator('dialog:modal > iframe[srcdoc]').waitFor({ state: 'attached' });
     await page.clock.fastForward(11000);
     await page.getByRole('alert').waitFor();
     assert.equal(await page.locator('iframe').evaluate((frame) => getComputedStyle(frame).visibility), 'hidden');

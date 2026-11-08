@@ -15,6 +15,7 @@ const owners = new Set<HTMLDialogElement>();
 let previousOverflow = '';
 export function createDesignerModal(input: {
   locale?: string;
+  initiallyHidden?: boolean;
   title?: string;
   wording?: MerchantCustomerWordingView;
   onCancel(): void;
@@ -23,7 +24,7 @@ export function createDesignerModal(input: {
   const locale =
     readCustomerLanguagePreference() ?? resolveCustomerHostLocale(input.locale, customerBrowserLanguages());
   const { t } = createCustomerTranslator(locale, { wordingOverlay: input.wording?.overlays[locale] ?? null });
-  const focused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  let focused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   const dialog = document.createElement('dialog');
   dialog.setAttribute('aria-label', input.title ?? t('customer:startup.loading'));
   dialog.style.cssText =
@@ -61,9 +62,20 @@ export function createDesignerModal(input: {
     event.preventDefault();
     input.onCancel();
   });
+  if (input.initiallyHidden) {
+    dialog.style.display = 'block';
+    dialog.style.visibility = 'hidden';
+    dialog.style.pointerEvents = 'none';
+    dialog.inert = true;
+  }
   document.body.append(dialog);
   function show() {
     if (!dialog.isConnected) return false;
+    if (!dialog.open) focused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    dialog.style.removeProperty('display');
+    dialog.style.removeProperty('visibility');
+    dialog.style.removeProperty('pointer-events');
+    dialog.inert = false;
     if (!owners.size) previousOverflow = document.documentElement.style.overflow;
     owners.add(dialog);
     document.documentElement.style.overflow = 'hidden';
@@ -78,8 +90,10 @@ export function createDesignerModal(input: {
       if (focused?.isConnected) focused.focus();
     }
   }
-  show();
-  close.focus();
+  if (!input.initiallyHidden) {
+    show();
+    close.focus();
+  }
   return {
     dialog,
     show,
@@ -92,7 +106,7 @@ export function createDesignerModal(input: {
       message.setAttribute('role', 'alert');
       message.textContent = t('customer:startup.failure');
       retry.hidden = !input.onRetry;
-      close.focus();
+      if (dialog.open) close.focus();
     },
     destroy() {
       if (!dialog.isConnected) return;

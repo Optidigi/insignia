@@ -7,6 +7,7 @@ import {
   materialHash,
   prepareQuote,
   type QuoteAuthorityPorts,
+  QuoteContextChangedError,
   type QuoteRequest,
   quoteRequestDigest,
   renewQuote,
@@ -539,13 +540,16 @@ export function createBuyerServices(input: {
           ...ports.authorization,
           async issue(value) {
             if (+clock() >= +proposal.expiresAt || materialHash(value.quote) !== proposal.materialHash) return review();
-            const final = await prepareQuote(request, ports);
-            if (materialHash(final.quote) !== proposal.materialHash) return review();
+            // acceptQuote revalidates live shop/catalog facts and the signing fence;
+            // compare its validated economics without preparing the whole quote again.
             return ports.authorization.issue(value);
           },
         },
       };
-      const result = await acceptQuote(request, guarded);
+      const result = await acceptQuote(request, guarded).catch((error: unknown) => {
+        if (error instanceof QuoteContextChangedError) return review();
+        throw error;
+      });
       // Material hash binds replay as well as new signing; a different original acceptance cannot be linked.
       if (materialHash(result.quote) !== proposal.materialHash) return review();
       await store.linkQuote(scope, {

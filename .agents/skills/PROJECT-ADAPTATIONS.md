@@ -8,6 +8,10 @@ Matt Pocock's MIT-licensed source was inspected at commit c55ee46073ed923f86ce59
 
 ## Frontend handoff and verification
 
+For performance work, keep quote preparation cancellable and distinct from cart submission. Prepared presentation and acknowledged draft versions are hints, never purchase authority; retain fresh signing-fence checks and original ambiguous-write identities. A clean Done action must not wait for a new quote. Verify background frame preparation does not take focus, show a modal, lock scrolling or start private/cart operations. Retire expired/context-mismatched preparation and preserve real cold/failure recovery.
+
+The artwork scan belongs to the separate immutable inspector host package, not the ordinary worker container. Qualify that package when changing runner timing. The existing decoder accepts one active inspection; bounded photo IO must retain decoder exclusivity and drain started work before reporting failure. Browser test compiler libraries remain distinct from Node's runtime features; use the existing deferred-promise pattern when the test project does not expose a newer Promise helper.
+
 For UI packaging, integration planning or UI review, read `frontend/README.md` first. It identifies the selected placement/Methods components beside example adapters. Preserve those presentations when replacing adapters. Production `apps/*` and isolated `frontend/*` have different runtime roles; example request shapes do not prove backend compatibility.
 
 For local execution, select `.node-version` and confirm it matches `package.json` before installing/building. CI, Docker digests and runtime qualification also pin Node; upgrades must reconcile all consumers. Build the workspace before tests that import compiled shared/localization packages. Install Chromium through both web and designer packages, which currently pin different Playwright versions.

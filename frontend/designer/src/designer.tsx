@@ -13,6 +13,7 @@ import {
   type DesignerEvent,
   type DesignerState,
   designerReducer,
+  canCommitDesign,
   hasDraftChanges,
   hasUnappliedDraft,
   isProductionChoicesValid,
@@ -50,7 +51,7 @@ import { QuantityEntry } from './quantity-entry';
 import { quantityLayout } from './quantity-layout';
 import { type DesignerQuoteReview, quoteReviewMoney } from './quote-review';
 import { ReviewPanel } from './review-panel';
-import { type CartReceipt, createDesignerRuntime, type DesignerPorts } from './runtime';
+import { type CartReceipt, createDesignerRuntime, designerIntentKey, type DesignerPorts } from './runtime';
 import { ThemeControl } from './theme';
 import { useCustomerLanguage } from './use-customer-language';
 import { type ValidationIssue, ValidationSummary } from './validation-summary';
@@ -304,9 +305,30 @@ function DesignerSession({
   useLayoutEffect(() => {
     if (hostErrorSignal) dispatch({ type: 'review-navigation-failed' });
   }, [hostErrorSignal]);
+  const reviewIntent = designerIntentKey(workflow);
+  const beforeQuantities = step === 0;
+  const eagerReviewStarted = useRef(false);
   useLayoutEffect(() => {
-    if (step === 2 && ports.review) void runtime.commit(true);
-  }, [step, runtime]);
+    if (beforeQuantities || !designerOpen) eagerReviewStarted.current = false;
+    if (!ports.review || !designerOpen || suspended || beforeQuantities || eagerReviewStarted.current)
+      return () => runtime.cancelPreparation();
+    // Use the existing real review port while quantities settle. Entering Review
+    // reuses this request; editing/closing cancels only preparation, never a cart write.
+    const timer = window.setTimeout(() => {
+      const state = {...workflowRef.current, step:2 as const};
+      if (!canCommitDesign(state)) return;
+      // A multi-size matrix can involve many edits. Speculate once per visit,
+      // rather than consuming a draft/proposal slot on every typing pause.
+      eagerReviewStarted.current = true;
+      void runtime.commit(true);
+    }, 350);
+    return () => { clearTimeout(timer); runtime.cancelPreparation(); };
+  }, [reviewIntent, beforeQuantities, designerOpen, suspended, runtime]);
+  // Retire the old intent before starting an explicit review. A passive cleanup
+  // here could otherwise abort the newer request after the layout phase.
+  useLayoutEffect(() => {
+    if (step === 2 && ports.review && designerOpen && !suspended) void runtime.commit(true);
+  }, [step, reviewIntent, designerOpen, suspended, runtime]);
 
   const previewRenewals = useRef(new Set<string>());
   const artworkUrls = useRef(new Map<string, string>());
@@ -1755,13 +1777,14 @@ function DesignerSession({
                   className={`primary-button ${step === 2 ? 'cart-button' : ''}`}
                   disabled={
                     workflow.commit.kind === 'pending' ||
+                    (step === 2 && !!ports.review && (!editing || unappliedDraft) && !runtime.prepared && workflow.commit.kind !== 'failed') ||
                     (step === 1 && !quantitiesLayout.cells.some((cell) => cell.available))
                   }
-                  aria-busy={workflow.commit.kind === 'pending'}
-                  onClick={step === 2 ? (editing && !unappliedDraft ? returnToProduct : addToCart) : goNext}
+                  aria-busy={workflow.commit.kind === 'pending' || workflow.commit.kind === 'preparing'}
+                  onClick={step === 2 ? (workflow.commit.kind === 'failed' && workflow.commit.preparation ? () => void runtime.commit(true) : editing && !unappliedDraft ? returnToProduct : addToCart) : goNext}
                 >
-                  {workflow.commit.kind === 'pending'
-                    ? runtime.reviewing
+                  {workflow.commit.kind === 'pending' || workflow.commit.kind === 'preparing'
+                    ? workflow.commit.kind === 'preparing'
                       ? t('customer:steps.review')
                       : editing
                         ? t('customer:steps.updatingCart')

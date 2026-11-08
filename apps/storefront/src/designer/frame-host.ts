@@ -13,9 +13,44 @@ import type { RepairAction } from './repair';
 
 const escapeAttribute = (value: string) =>
   value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;');
+function designerAssets() {
+  const base = new URL(import.meta.url);
+  base.pathname = base.pathname.slice(0, base.pathname.lastIndexOf('/') + 1);
+  base.search = '';
+  base.hash = '';
+  return { entry: new URL('insignia-designer-frame.js', base), css: new URL('insignia-designer.css', base) };
+}
+
+/** Fetch immutable frame assets without executing a frame or touching theme focus/styles. */
+export function prewarmDesignerAssets(): () => void {
+  const assets = designerAssets();
+  const links: HTMLLinkElement[] = [];
+  for (const [rel, url] of [
+    ['modulepreload', assets.entry],
+    ['preload', assets.css],
+  ] as const) {
+    if (
+      [...document.head.querySelectorAll<HTMLLinkElement>('link')].some(
+        (link) => link.rel === rel && link.href === url.href,
+      )
+    )
+      continue;
+    const link = document.createElement('link');
+    link.rel = rel;
+    link.href = url.href;
+    if (rel === 'preload') link.as = 'style';
+    document.head.append(link);
+    links.push(link);
+  }
+  return () => {
+    for (const link of links) link.remove();
+  };
+}
+
 /** Run the selected CSS and event handlers in their own document, never in the Shopify theme. */
 export function createDesignerFrame(input: {
   config?: ProductConfig;
+  initiallyHidden?: boolean;
   title?: string;
   wording?: MerchantCustomerWordingView;
   ports?: DesignerPorts;
@@ -42,20 +77,18 @@ export function createDesignerFrame(input: {
   frame.referrerPolicy = 'origin';
   frame.style.cssText =
     'position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483000;background:transparent;';
-  const assetsBase = new URL(import.meta.url);
-  assetsBase.pathname = assetsBase.pathname.slice(0, assetsBase.pathname.lastIndexOf('/') + 1);
-  assetsBase.search = '';
-  assetsBase.hash = '';
-  const entry = new URL('insignia-designer-frame.js', assetsBase);
-  const css = new URL('insignia-designer.css', assetsBase);
+  const { entry, css } = designerAssets();
   frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="origin"><link rel="stylesheet" href="${escapeAttribute(css.href)}"></head><body><script type="module" src="${escapeAttribute(entry.href)}"></script></body></html>`;
   const controllers = new Map<string, AbortController>();
   const focused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   let ready = false;
   let initialized = false;
+  let initializedMessage = false;
+  let documentLoaded = false;
   let failed = false;
   let destroyed = false;
   const modal = createDesignerModal({
+    initiallyHidden: input.initiallyHidden,
     wording: input.wording,
     locale: input.locale,
     title: frame.title,
@@ -80,16 +113,27 @@ export function createDesignerFrame(input: {
       modal.failed();
     }
   }, 10000);
-  frame.addEventListener('load', () => {
-    if (
-      !destroyed &&
-      !initialized &&
-      !frame.contentDocument?.querySelector<HTMLLinkElement>('link[rel="stylesheet"]')?.sheet
-    ) {
+  function finishInitialization() {
+    if (!initializedMessage || !documentLoaded || initialized || failed || destroyed) return;
+    const styles = frame.contentDocument?.querySelector<HTMLLinkElement>('link[rel="stylesheet"]');
+    const root = frame.contentDocument?.documentElement;
+    const styled = root && frame.contentWindow?.getComputedStyle(root).getPropertyValue('--primary').trim();
+    if (!styles?.sheet || !styled) {
       failed = true;
       clearTimeout(initializationTimer);
       modal.failed();
+      return;
     }
+    initialized = true;
+    clearTimeout(initializationTimer);
+    modal.loaded();
+    frame.style.visibility = 'visible';
+    if (!frame.hidden && modal.dialog.open) frame.focus();
+  }
+  frame.addEventListener('load', () => {
+    if (frame.contentDocument?.URL !== 'about:srcdoc') return;
+    documentLoaded = true;
+    finishInitialization();
   });
   let applied: CartRequest | undefined;
   function send(type: string, data: Record<string, unknown> = {}) {
@@ -118,18 +162,8 @@ export function createDesignerFrame(input: {
       return;
     }
     if (data.type === 'insignia:designer:initialized' && !failed) {
-      const styles = frame.contentDocument?.querySelector<HTMLLinkElement>('link[rel="stylesheet"]');
-      if (!styles?.sheet) {
-        failed = true;
-        clearTimeout(initializationTimer);
-        modal.failed();
-        return;
-      }
-      initialized = true;
-      clearTimeout(initializationTimer);
-      modal.loaded();
-      frame.style.visibility = 'visible';
-      if (!frame.hidden && modal.dialog.open) frame.focus();
+      initializedMessage = true;
+      finishInitialization();
       return;
     }
     if (data.type === 'insignia:designer:ready') {
@@ -225,6 +259,9 @@ export function createDesignerFrame(input: {
   }
   return {
     frame,
+    get initialized() {
+      return initialized && !failed && !destroyed;
+    },
     close,
     hide() {
       frame.hidden = true;

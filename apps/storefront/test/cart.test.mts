@@ -533,6 +533,76 @@ test('accepted vector also installs the shared Function quote carrier while reta
   assert.equal(required(required(result.cart).customized[0]).properties._insignia_member_v2, 'member-0');
 });
 
+test('the full final update response verifies the goal without another cart GET', async () => {
+  const remote = provider([ordinary]);
+  let finalAcknowledged = false;
+  const adapter = createAjaxCartAdapter({
+    root: '/',
+    fetchImpl: async (input, init) => {
+      const url = requestUrl(input);
+      if (finalAcknowledged && url.endsWith('cart.js')) throw new Error('Unnecessary extra read');
+      const response = await remote.fetchImpl(input, init);
+      if (url.endsWith('cart/update.js') && fetchBody(init ?? {}).attributes?._insignia_quote_v2 === 'new')
+        finalAcknowledged = true;
+      return response;
+    },
+  });
+  const before = await adapter.read();
+  const result = await adapter.apply(desired, { expectedFingerprint: before.fingerprint });
+  assert.equal(result.status, 'applied');
+  assert.equal(required(result.cart).currency, 'EUR');
+  assert.equal(required(result.cart).attributes._insignia_quote_v2, 'new');
+  assert.deepEqual(required(result.cart).ordinary[0]?.properties, ordinary.properties);
+  assert.equal(remote.requests.filter((r) => r.url.endsWith('cart.js')).length, 3);
+});
+
+for (const drift of ['currency', 'ordinary', 'foreign attribute', 'member'] as const) {
+  test(`the final update response cannot settle a changed ${drift}`, async () => {
+    let pending = false;
+    const remote = provider([ordinary], ({ url, body, items, attributes }) => {
+      if (!url.endsWith('cart/update.js') || body.attributes?._insignia_quote_v2 !== 'new') return undefined;
+      Object.assign(attributes, body.attributes);
+      if (drift === 'ordinary') required(items[0]).quantity++;
+      if (drift === 'foreign attribute') attributes.Gift = 'Changed';
+      if (drift === 'member') required(items.find((item) => item.properties._insignia_member_v2)).quantity++;
+      return Response.json({ items, attributes, currency: drift === 'currency' ? 'USD' : 'EUR' });
+    });
+    const adapter = createAjaxCartAdapter({
+      root: '/',
+      fetchImpl: remote.fetchImpl,
+      journal: {
+        readUnresolved: () => pending,
+        writeUnresolved: (value) => {
+          pending = value;
+        },
+      },
+    });
+    const before = await adapter.read();
+    const result = await adapter.apply(desired, { expectedFingerprint: before.fingerprint });
+    assert.equal(result.status, 'review_required');
+    assert.equal(result.reason, 'vector_mismatch');
+    assert.equal(pending, true);
+    const writes = remote.requests.filter((r) => r.method === 'POST').length;
+    await adapter.apply(desired, { expectedFingerprint: required(result.cart).fingerprint });
+    assert.equal(remote.requests.filter((r) => r.method === 'POST').length, writes);
+  });
+}
+
+test('malformed final acknowledgement reconciles its actual effect without redispatch', async () => {
+  const remote = provider([ordinary], ({ url, body, attributes }) => {
+    if (!url.endsWith('cart/update.js') || body.attributes?._insignia_quote_v2 !== 'new') return undefined;
+    Object.assign(attributes, body.attributes);
+    return Response.json({ items: 'not a complete cart' });
+  });
+  const adapter = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl });
+  const before = await adapter.read();
+  const result = await adapter.apply(desired, { expectedFingerprint: before.fingerprint });
+  assert.equal(result.status, 'applied');
+  assert.equal(required(result.cart).attributes._insignia_quote_v2, 'new');
+  assert.equal(remote.requests.filter((r) => r.method === 'POST').length, 2);
+  assert.equal(remote.requests.filter((r) => r.url.endsWith('cart.js')).length, 4);
+});
+
 test('lost final attribute acknowledgement settles exact full goal after reload without another mutation', async () => {
   let state: CartMutationIntent | null = null,
     flag = false;

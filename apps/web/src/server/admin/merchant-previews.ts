@@ -57,9 +57,10 @@ export function createMerchantPublicationCapture(input: {
     const storage = await input.storage();
     await current();
     let product: Promise<CatalogProduct | null> | undefined;
+    let inspecting = Promise.resolve();
     const bindings: { imageRevisionId: string; assetId: string }[] = [];
-    // Fixed order and a deterministic command/image identity preserve partial-capture custody.
-    for (const [imageRevisionId, dimensions] of [...images.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    const ordered = [...images.entries()].sort(([a], [b]) => a.localeCompare(b));
+    const captureImage = async ([imageRevisionId, dimensions]: (typeof ordered)[number]) => {
       await current();
       const hex = createHash('sha256')
         .update(
@@ -102,11 +103,21 @@ export function createMerchantPublicationCapture(input: {
           await current();
           return bytes;
         },
-        inspect: async (bytes) => {
-          const result = await input.inspect(bytes);
-          await current();
-          if (result.width !== dimensions.width || result.height !== dimensions.height)
-            throw new Error('Product image dimensions changed. Review the draft before publication.');
+        inspect: (bytes) => {
+          // The private host admits one decoder. Overlap independent IO, never
+          // concurrent inspection RPCs that the host would reject as unavailable.
+          const result = inspecting.then(async () => {
+            await current();
+            const inspected = await input.inspect(bytes);
+            await current();
+            if (inspected.width !== dimensions.width || inspected.height !== dimensions.height)
+              throw new Error('Product image dimensions changed. Review the draft before publication.');
+            return inspected;
+          });
+          inspecting = result.then(
+            () => {},
+            () => {},
+          );
           return result;
         },
       });
@@ -115,7 +126,18 @@ export function createMerchantPublicationCapture(input: {
       if (row) {
         if (row.manifest?.width !== dimensions.width || row.manifest.height !== dimensions.height)
           throw new Error('Publication preview dimensions conflict');
-        bindings.push({ imageRevisionId, assetId });
+        return { imageRevisionId, assetId };
+      }
+      return null;
+    };
+    // Drain each bounded group before reporting failure: immutable in-flight claims
+    // must settle before the same publication can be resumed. Never schedule the
+    // following group after a failure; identity and returned order stay canonical.
+    for (let offset = 0; offset < ordered.length; offset += 3) {
+      const captured = await Promise.allSettled(ordered.slice(offset, offset + 3).map(captureImage));
+      for (const result of captured) {
+        if (result.status === 'rejected') throw result.reason;
+        if (result.value) bindings.push(result.value);
       }
     }
     return bindings;

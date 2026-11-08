@@ -80,27 +80,35 @@ export function createProductionQuoteReadiness(input: {
         appId: input.appId,
       };
       const desired = await keys.desiredPublicConfig(scope);
-      const observed = await admin.read({ ...tenant, field: 'public_config' });
-      if (!observed) throw new Error('Public Function config missing');
-      const observedAt = now();
       const artifactScope = {
         shopId: quote.shopId,
         installationGeneration: quote.installationGeneration,
         appClientId: input.expectedFunctions.appKey,
       };
-      const [expectedBuild, attestation] = await Promise.all([
+      const artifacts = Promise.all([
         input.artifactPorts.expectedBuild.read(artifactScope),
         input.artifactPorts.trustedEvidence.read(artifactScope),
       ]);
-      const owned = await functions.read(tenant, {
-        ...input.expectedFunctions,
-        ...(expectedBuild?.schemaVersion === 2 ? { observationVersion: 2 as const } : {}),
-      });
-      const effective = await Promise.all(
-        quote.effectiveRevisions.map((revision) =>
-          input.core.acceptedQuotes.getEffective(quote.shopId, revision.productId),
-        ),
+      const functionObservation = artifacts.then(([expectedBuild]) =>
+        functions.read(tenant, {
+          ...input.expectedFunctions,
+          ...(expectedBuild?.schemaVersion === 2 ? { observationVersion: 2 as const } : {}),
+        }),
       );
+      const [observed, [expectedBuild, attestation], owned, effective] = await Promise.all([
+        admin.read({ ...tenant, field: 'public_config' }).then((value) => {
+          if (!value) throw new Error('Public Function config missing');
+          // Timestamp the completed observation, not the later end of unrelated IO.
+          return { value: value.value, observedAt: now() };
+        }),
+        artifacts,
+        functionObservation,
+        Promise.all(
+          quote.effectiveRevisions.map((revision) =>
+            input.core.acceptedQuotes.getEffective(quote.shopId, revision.productId),
+          ),
+        ),
+      ]);
       const effectiveRevision =
         quote.effectiveRevisions.length > 0 &&
         effective.every((row, index) => {
@@ -119,7 +127,7 @@ export function createProductionQuoteReadiness(input: {
         selectedKeyId: input.selectedKeyId,
         acceptedDay: quote.acceptedDay,
         desired,
-        observed: { value: observed.value, observedAt },
+        observed,
         now: now(),
         maxObservationAgeMs: input.maxObservationAgeMs,
         functions: owned,

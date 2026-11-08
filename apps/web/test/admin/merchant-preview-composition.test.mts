@@ -165,7 +165,7 @@ test('lost storage acknowledgement preserves the same unresolved command asset w
   await assert.rejects(capture(actor, request));
   assert.equal(required([...f.rows.values()][0]).state, 'WRITING');
   await assert.rejects(createMerchantPublicationCapture(f.input)(actor, request), { code: 'UNRESOLVED' });
-  assert.equal(writes, 1);
+  assert.equal(writes, 2, 'both independent in-flight captures settle once; retry dispatches no writes');
 });
 
 test('authorization changes and conflicting geometry never dispatch capture writes', async () => {
@@ -243,4 +243,103 @@ test('gallery publication captures only authenticated product-owned gallery byte
   };
   await assert.rejects(createMerchantPublicationCapture(f.input)(actor, forged), /INVALID_REFERENCE/);
   assert.equal(f.objects.size, 2);
+});
+
+test('rich products capture a bounded group of independent photos together and retain deterministic ordering', async () => {
+  const f = fixture();
+  const gates = Promise.withResolvers<void>();
+  const started = Promise.withResolvers<void>();
+  let reads = 0;
+  let inspecting = 0,
+    maxInspecting = 0;
+  const inspect = f.input.inspect;
+  f.input.inspect = async (bytes) => {
+    inspecting++;
+    maxInspecting = Math.max(maxInspecting, inspecting);
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    try {
+      return await inspect(bytes);
+    } finally {
+      inspecting--;
+    }
+  };
+  f.input.readImage = async () => {
+    if (++reads === 3) started.resolve();
+    await gates.promise;
+    return source;
+  };
+  const rich = {
+    ...request,
+    draft: {
+      ...request.draft,
+      geometry: {
+        views: Array.from({ length: 7 }, (_, i) => ({
+          image: { ...image, revisionId: `image_${i + 1}` },
+          variantImages: [],
+        })),
+      },
+    },
+  };
+  const pending = createMerchantPublicationCapture(f.input)(actor, rich);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      started.promise,
+      new Promise<void>((_, reject) => {
+        timer = setTimeout(() => reject(Error('Independent photo reads remained serial')), 1000);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+  assert.equal(reads, 3);
+  gates.resolve();
+  const bindings = await pending;
+  assert.deepEqual(
+    bindings.map((binding) => binding.imageRevisionId),
+    Array.from({ length: 7 }, (_, i) => `image_${i + 1}`),
+  );
+  assert.equal(f.inspections, 7);
+  assert.equal(maxInspecting, 1, 'the native private host has one inspection slot');
+  assert.deepEqual(await createMerchantPublicationCapture(f.input)(actor, rich), bindings);
+  assert.equal(reads, 7);
+});
+
+test('a failed photo group drains started captures and never starts the next group', async () => {
+  const f = fixture();
+  const gate = Promise.withResolvers<void>();
+  const started = Promise.withResolvers<void>();
+  let reads = 0;
+  f.input.readImage = async (_product, id) => {
+    reads++;
+    if (reads === 3) started.resolve();
+    if (id === 'image_1') throw Error('photo unavailable');
+    await gate.promise;
+    return source;
+  };
+  const rich = {
+    ...request,
+    draft: {
+      ...request.draft,
+      geometry: {
+        views: Array.from({ length: 7 }, (_, i) => ({
+          image: { ...image, revisionId: `image_${i + 1}` },
+          variantImages: [],
+        })),
+      },
+    },
+  };
+  let settled = false;
+  const captured = createMerchantPublicationCapture(f.input)(actor, rich).finally(() => {
+    settled = true;
+  });
+  const rejected = assert.rejects(captured, /photo unavailable/);
+  await started.promise;
+  assert.equal(settled, false, 'failure must not leave sibling captures running after returning');
+  assert.equal(reads, 3);
+  gate.resolve();
+  await rejected;
+  assert.equal(reads, 3);
+  assert.equal(f.rows.size, 2);
+  assert.ok([...f.rows.values()].every((row) => row.state === 'USABLE'));
 });

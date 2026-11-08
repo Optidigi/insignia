@@ -631,8 +631,10 @@ test('real quote preparation preserves the draft, issues no cart effect, and fin
   );
   const before = structuredClone(state.prints);
   const preparing = runtime.commit(true);
-  assert.equal(state.commit.kind, 'pending');
+  assert.equal(state.commit.kind, 'preparing');
   assert.equal(runtime.reviewing, true);
+  state = designerReducer(state, { type: 'step-selected', step: 1 });
+  assert.equal(state.step, 1, 'quote preparation must not trap navigation');
   assert.equal(cartWrites, 0);
   assert(release);
   release();
@@ -640,11 +642,58 @@ test('real quote preparation preserves the draft, issues no cart effect, and fin
   assert.equal(state.commit.kind, 'idle');
   assert.equal(state.open, true);
   assert.deepEqual(state.prints, before);
+  state = designerReducer(state, {type:'step-selected',step:2});
   await runtime.commit();
   assert.equal(cartWrites, 1);
   assert.equal(requests[0]?.idempotencyKey, requests[1]?.idempotencyKey);
   assert.equal(requests[0]?.design.id, requests[1]?.design.id);
   assert.equal(state.open, false);
+});
+
+test('quantity-step preparation is reused on Review and changed intent cancels stale preparation', async () => {
+  let state = designerReducer(ready(), {type:'step-selected',step:1});
+  const pending: {request:CartRequest; finish:()=>void}[] = [];
+  const runtime = createDesignerRuntime({
+    artwork:{upload:async()=>{throw Error('unused');}},
+    cart:{commit:async()=>{throw Error('no purchase during preparation');}},
+    review:{prepare:request=>new Promise<void>(finish=>pending.push({request,finish}))},
+  },()=>state,event=>{state=designerReducer(state,event);});
+  const first=runtime.commit(true);
+  assert.equal(state.commit.kind,'preparing');
+  assert.equal(state.step,1);
+  state=designerReducer(state,{type:'quantity-entered',color:'white',size:'s',value:3});
+  runtime.cancelPreparation();
+  assert.equal(pending[0]?.request.signal.aborted,true);
+  const second=runtime.commit(true);
+  assert.equal(pending[1]?.request.design.quantities['white:s'],3);
+  pending[0]?.finish(); await first;
+  assert.equal(runtime.prepared,false,'late old result cannot qualify new quantities');
+  pending[1]?.finish(); await second;
+  assert.equal(runtime.prepared,true);
+  state=designerReducer(state,{type:'step-selected',step:2});
+  await runtime.commit(true);
+  assert.equal(pending.length,2,'entering Review reuses the settled quantity-step quote');
+});
+
+test('returning to an older intent after replacing its review prepares a matching attempt again', async () => {
+  let state=designerReducer(ready(),{type:'step-selected',step:1});
+  const requests:CartRequest[]=[];
+  const releases:(()=>void)[]=[];
+  const runtime=createDesignerRuntime({artwork:{upload:async()=>{throw Error('unused');}},cart:{commit:async()=>{throw Error('no cart write');}},review:{prepare:request=>{
+    requests.push(request);return new Promise<void>(resolve=>releases.push(resolve));
+  }}},()=>state,event=>{state=designerReducer(state,event);});
+  const first=runtime.commit(true);releases[0]?.();await first;
+  assert.equal(runtime.prepared,true);
+  state=designerReducer(state,{type:'quantity-entered',color:'white',size:'s',value:3});
+  const second=runtime.commit(true);
+  state=designerReducer(state,{type:'quantity-entered',color:'white',size:'s',value:2});
+  runtime.cancelPreparation();
+  assert.equal(runtime.prepared,false,'the previous displayed proposal no longer owns the current attempt');
+  const third=runtime.commit(true);
+  releases[1]?.();releases[2]?.();await Promise.all([second,third]);
+  assert.equal(requests.length,3);
+  assert.notEqual(requests[0]?.idempotencyKey,requests[2]?.idempotencyKey);
+  assert.equal(runtime.prepared,true);
 });
 
 test('restored cart review can reauthorize unchanged choices without inventing dirty production edits', async () => {

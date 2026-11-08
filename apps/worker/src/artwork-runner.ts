@@ -17,7 +17,7 @@ export function createArtworkRunner(input: {
   timing?: { pollMs?: number; backoffMaxMs?: number; heartbeatMaxAgeMs?: number; deadlineMs?: number };
 }) {
   const clock = input.clock ?? (() => new Date());
-  const pollMs = input.timing?.pollMs ?? 2000,
+  const pollMs = input.timing?.pollMs ?? 250,
     backoffMaxMs = input.timing?.backoffMaxMs ?? 30000;
   const heartbeatMaxAgeMs = input.timing?.heartbeatMaxAgeMs ?? 30000,
     deadlineMs = input.timing?.deadlineMs ?? 240000;

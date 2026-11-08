@@ -215,6 +215,29 @@ export function createBuyerApi({
       const token = await grant();
       return request<T>(`${proxyBase}/v1/${path}`, { ...body, capability: token.capability }, signal, method);
     },
+    async confirmCartApplication(id: string, body: Record<string, unknown>): Promise<void> {
+      if (!/^[a-zA-Z0-9-]{1,128}$/.test(id)) throw new Error('Invalid cart application');
+      const token = await grant();
+      const value = { ...body, capability: token.capability };
+      const encoded = JSON.stringify(value);
+      const url = `${proxyBase}/v1/cart-applications/${id}/confirm`;
+      if (new TextEncoder().encode(encoded).byteLength > 48 * 1024) {
+        await request(url, value);
+        return;
+      }
+      // UX reconciliation only: the Ajax cart is already verified. Dispatch
+      // before returning and let the bounded request survive native navigation.
+      void fetchImpl(url, {
+        method: 'POST',
+        credentials: 'same-origin',
+        cache: 'no-store',
+        redirect: 'error',
+        keepalive: true,
+        signal: AbortSignal.timeout(10000),
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: encoded,
+      }).catch(() => {});
+    },
     artwork: async <T>(path: string, init: RequestInit = {}): Promise<T> => {
       if (!/^\/api\/artwork(?:\/[a-f0-9-]+\/(?:complete|status|preview))?$/.test(path))
         throw new Error('Invalid artwork action');

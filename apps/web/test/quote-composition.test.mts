@@ -258,7 +258,7 @@ test('production quote composition rejects unsupported prices and signs complete
   );
   assert.equal(signatures, 1);
   assert.deepEqual(await acceptQuote(request, ports), result);
-  assert.deepEqual([contextReads, catalogReads, subscriptionReads, artworkReads, signatures], [1, 1, 2, 2, 1]);
+  assert.deepEqual([contextReads, catalogReads, subscriptionReads, artworkReads, signatures], [2, 2, 2, 2, 1]);
 });
 
 test('default artwork composition binds verified guest authority and denies unscoped or other-session UUID use', async () => {
