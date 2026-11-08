@@ -201,12 +201,12 @@ export function createAjaxCartAdapter({
   function settle(value: CartMutationIntent) {
     saveIntent(value.abandoned.length ? { ...value, phase: 'abandoned', quote: value.abandoned[0]! } : null);
   }
-  async function request(path: string, body?: unknown): Promise<unknown> {
+  async function request(path: string, body?: unknown, signal?: AbortSignal): Promise<unknown> {
     const response = await fetchImpl(`${root}${path}`, {
       method: body === undefined ? 'GET' : 'POST',
       credentials: 'same-origin',
       cache: 'no-store',
-      signal: AbortSignal.timeout(10000),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(10000)]) : AbortSignal.timeout(10000),
       headers: { Accept: 'application/json', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
@@ -236,7 +236,7 @@ export function createAjaxCartAdapter({
       reader.releaseLock();
     }
   }
-  const read = async () => snapshot(await request('cart.js'));
+  const read = async (signal?: AbortSignal) => snapshot(await request('cart.js', undefined, signal));
   async function applyUnlocked(
     buckets: CartBucket[],
     { expectedFingerprint, repair = false }: { expectedFingerprint: string; repair?: boolean },

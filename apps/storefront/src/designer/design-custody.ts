@@ -23,6 +23,10 @@ export function createSelectedDesignCustody(input: {
     }
   }
   return {
+    async forget(id: string, group: BuyerDesiredGroup) {
+      const pointer = await key(group);
+      if (input.storage.getItem(pointer) === id) input.storage.setItem(pointer, '');
+    },
     async restore(group: BuyerDesiredGroup, signal?: AbortSignal) {
       const id = input.storage.getItem(await key(group));
       if (!id) return null;
@@ -42,8 +46,11 @@ export function createSelectedDesignCustody(input: {
           if (!observed || desiredGroupKey(observed.value) !== desiredGroupKey(group)) throw error;
         }
       }
-      input.storage.setItem(await key(group), id);
-      if (original) input.storage.setItem(await key(original), id);
+      const pointer = await key(group);
+      const originalPointer = original ? await key(original) : undefined;
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+      input.storage.setItem(pointer, id);
+      if (originalPointer) input.storage.setItem(originalPointer, id);
     },
   };
 }

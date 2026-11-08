@@ -21,6 +21,10 @@ export async function mountUnavailableDesigner(input: {
   }
   let reviewed: Awaited<ReturnType<typeof cart.read>> | undefined;
   const frame = createDesignerFrame({
+    onInitializationRetry: async () => {
+      frame.destroy();
+      await input.retry();
+    },
     title: input.title,
     locale: input.locale,
     wording: input.wording,
@@ -56,8 +60,7 @@ export async function mountUnavailableDesigner(input: {
   });
   return {
     open() {
-      frame.open();
-      return true;
+      return frame.open();
     },
     destroy: frame.destroy,
   };

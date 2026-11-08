@@ -228,5 +228,20 @@
     "saved": "Tu diseño se ha enviado.",
     "continue": "Continuar subiendo",
     "retry": "Intentar de nuevo"
+  },
+  "startup": {
+    "loading": "Cargando personalización…",
+    "failure": "No se pudo cargar la personalización. Inténtalo de nuevo.",
+    "retry": "Intentar de nuevo"
+  },
+  "host": {
+    "personalise": "Personalizar",
+    "savedDesigns": "Diseños guardados",
+    "openSaved": "Abrir diseño guardado",
+    "startNew": "Empezar un nuevo diseño",
+    "discardTitle": "¿Descartar cambios?",
+    "discardHelp": "Descarta tus cambios para editar otro diseño. Los artículos del carrito no cambiarán.",
+    "cancel": "Cancelar",
+    "discardEdit": "Descartar y editar"
   }
 }

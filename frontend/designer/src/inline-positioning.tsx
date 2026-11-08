@@ -452,7 +452,7 @@ export function InlineArtwork({
         onPointerCancel={(event) => cancelDrag(event.pointerId)}
         onLostPointerCapture={(event) => commitDrag(event.pointerId)}
       >
-        {artworkFailed ? (
+        {artworkFailed || !artwork.url ? (
           <span className="inline-artwork__fallback" role="status">
             {t("customer:positioning.previewUnavailable")}
           </span>

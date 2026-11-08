@@ -537,7 +537,18 @@
       "customer_recovery_removeGroup": "Verwijdering van deze personalisatie controleren",
       "customer_recovery_removeAll": "Verwijdering van alle gepersonaliseerde artikelen controleren",
       "customer_recovery_confirmRemoval": "Winkelwagenwijziging bevestigen",
-      "customer_recovery_remainingItems": "Resterende gepersonaliseerde artikelen"
+      "customer_recovery_remainingItems": "Resterende gepersonaliseerde artikelen",
+      "customer_startup_loading": "Laadbericht",
+      "customer_startup_failure": "Bericht bij laadfout",
+      "customer_startup_retry": "Knop opnieuw proberen",
+      "customer_host_personalise": "Knop personaliseren",
+      "customer_host_savedDesigns": "Label opgeslagen ontwerpen",
+      "customer_host_openSaved": "Knop ontwerp openen",
+      "customer_host_startNew": "Knop nieuw ontwerp",
+      "customer_host_discardTitle": "Titel wijzigingen verwerpen",
+      "customer_host_discardHelp": "Uitleg wijzigingen verwerpen",
+      "customer_host_cancel": "Knop annuleren",
+      "customer_host_discardEdit": "Knop verwerpen"
     },
     "discard": "Verwerpen"
   },

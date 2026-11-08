@@ -30,7 +30,7 @@ export interface CartReceipt {
 }
 export interface DesignerPorts {
   review?: { prepare(request: CartRequest): Promise<void> };
-  artwork: { upload(file: File, request: UploadRequest): Promise<Artwork>; apply?(artwork:Artwork,request:UploadRequest):Promise<Artwork> };
+  artwork: { upload(file: File, request: UploadRequest): Promise<Artwork>; apply?(artwork:Artwork,request:UploadRequest):Promise<Artwork>; renew?(artwork:Artwork,request:UploadRequest):Promise<Artwork> };
   /** Resolve only after the requested cart application has been verified by the adapter. */
   cart: { commit(request: CartRequest): Promise<CartReceipt> };
 }
@@ -61,6 +61,7 @@ export function createDesignerRuntime(
   getState: () => DesignerState,
   dispatch: (event: DesignerEvent) => void,
 ) {
+  const renewing = new Map<string, AbortController>();
   let reviewing = false;
   let uploadVersion = 0;
   let uploadController: AbortController | null = null;
@@ -85,11 +86,29 @@ export function createDesignerRuntime(
     cancel() {
       cancelUpload();
       cancelCommit();
+      for (const controller of renewing.values()) controller.abort();
+      renewing.clear();
+    },
+    async renew(artwork: Artwork) {
+      if (!ports.artwork.renew || renewing.has(artwork.id)) return false;
+      const controller = new AbortController(); renewing.set(artwork.id, controller);
+      const expectedExpiry = artwork.previewExpiresAt;
+      dispatch({ type: 'artwork-preview-expired', id: artwork.id, expectedExpiry });
+      try {
+        const fresh = await ports.artwork.renew(artwork, { target: getState().active ?? getState().rules.positions[0]?.id ?? '', requestId: crypto.randomUUID(), signal: controller.signal });
+        if (controller.signal.aborted || fresh.id !== artwork.id || !fresh.url || !Number.isFinite(fresh.width) || !Number.isFinite(fresh.height) || fresh.width <= 0 || fresh.height <= 0 || !fresh.previewExpiresAt || !Number.isFinite(Date.parse(fresh.previewExpiresAt)) || Date.parse(fresh.previewExpiresAt) <= Date.now()) return false;
+        dispatch({ type: 'artwork-preview-refreshed', artwork: fresh, expectedExpiry });
+        return true;
+      } catch (error) {
+        if (!controller.signal.aborted && error && typeof error === 'object' && 'status' in error && [403, 404, 410].includes(Number(error.status)))
+          dispatch({ type: 'artwork-unavailable', id: artwork.id, expectedExpiry });
+        return false;
+      } finally { if (renewing.get(artwork.id) === controller) renewing.delete(artwork.id); }
     },
     async apply(artworkId:string,target:PositionId) {
       const artwork=getState().artworks.find((artwork)=>artwork.id===artworkId);
       if(!artwork||!ports.artwork.apply)return;
-      if(getState().prints.find((print)=>print.id===target)?.artworkId===artworkId){dispatch({type:'artwork-applied',positionId:target,artworkId});return;}
+      if(getState().prints.find((print)=>print.id===target)?.artworkId===artworkId && artwork.url && (!artwork.previewExpiresAt || Date.parse(artwork.previewExpiresAt) > Date.now())){dispatch({type:'artwork-applied',positionId:target,artworkId});return;}
       cancelUpload();
       const token=Math.max(uploadVersion+1,getState().uploadVersion+1);uploadVersion=token;
       const controller=new AbortController();uploadController=controller;
@@ -165,7 +184,7 @@ export function createDesignerRuntime(
       if (prepareOnly && !ports.review) return;
       const state = getState();
       if (commitController || !canCommitDesign(state)) return;
-      const signature = JSON.stringify([state.editing, state.prints, state.quantities, state.rules.variantMatrix]);
+      const signature = JSON.stringify([state.editing, state.prints, state.quantities, state.rules.variantMatrix, state.productionChoices]);
       if (!attempt || attempt.signature !== signature) {
         attempt = {
           signature,

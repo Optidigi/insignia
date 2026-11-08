@@ -1,4 +1,5 @@
 import { render } from 'preact';
+import { createDesignerModal } from './designer/modal';
 import { connectThemeIntegration, styleThemeTrigger } from './theme-integration';
 
 /** Buyer code is imported only when its trigger is used or a marked cart needs repair. */
@@ -7,6 +8,7 @@ export class InsigniaBuyer extends HTMLElement {
   private generation = 0;
   private liveFrame?: { open(): boolean; destroy(): void };
   private mounting = false;
+  private cancelOpening?: () => void;
   private readonly triggerClick = () => void this.mount();
   connectedCallback() {
     this.generation++;
@@ -40,6 +42,31 @@ export class InsigniaBuyer extends HTMLElement {
       return;
     }
     this.mounting = true;
+    const opening = new AbortController();
+    const pending = createDesignerModal({
+      locale: this.getAttribute('language') || document.documentElement.lang,
+      onRetry: () => {
+        opening.abort();
+        this.generation++;
+        this.mounting = false;
+        pending.destroy();
+        void this.mount();
+      },
+      onCancel: () => {
+        opening.abort();
+        this.generation++;
+        this.mounting = false;
+        this.cancelOpening = undefined;
+        pending.destroy();
+        this.querySelector<HTMLButtonElement>('button[slot="trigger"]')?.focus();
+      },
+    });
+    const loadingTimeout = setTimeout(() => pending.failed(), 10000);
+    this.cancelOpening = () => {
+      clearTimeout(loadingTimeout);
+      opening.abort();
+      pending.destroy();
+    };
     try {
       const [{ createBuyerApi }, { mountLiveDesigner }] = await Promise.all([
         import('./buyer'),
@@ -47,7 +74,7 @@ export class InsigniaBuyer extends HTMLElement {
       ]);
       const country = this.getAttribute('country') ?? '';
       const api = createBuyerApi({ proxyBase, productId, country, storage: sessionStorage });
-      const source = await api.config();
+      const source = await api.config(opening.signal);
       if (generation !== this.generation) return;
       {
         const controller = await mountLiveDesigner({
@@ -80,7 +107,7 @@ export class InsigniaBuyer extends HTMLElement {
         return;
       }
     } catch {
-      if (generation !== this.generation) return;
+      if (opening.signal.aborted || generation !== this.generation) return;
       const { mountUnavailableDesigner } = await import('./designer/unavailable');
       const unavailable = await mountUnavailableDesigner({
         locale: this.getAttribute('language') || document.documentElement.lang || 'en',
@@ -101,11 +128,19 @@ export class InsigniaBuyer extends HTMLElement {
       this.liveFrame = unavailable;
       return;
     } finally {
-      this.mounting = false;
+      clearTimeout(loadingTimeout);
+      pending.destroy();
+      if (generation === this.generation) {
+        this.mounting = false;
+        this.cancelOpening = undefined;
+      }
     }
   }
   disconnectedCallback() {
     this.generation++;
+    this.cancelOpening?.();
+    this.cancelOpening = undefined;
+    this.mounting = false;
     this.querySelector<HTMLButtonElement>('button[slot="trigger"]')?.removeEventListener('click', this.triggerClick);
     this.liveFrame?.destroy();
     this.liveFrame = undefined;

@@ -4,6 +4,8 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { ProductConfig } from '../../../../frontend/designer/src/config';
 import { resolveCustomerHostLocale } from '../../../../frontend/designer/src/customer-language-policy';
 import { readCustomerLanguagePreference } from '../../../../frontend/designer/src/customer-language-preference';
+import type { ClosedDesignerProps } from '../../../../frontend/designer/src/designer';
+import { DesignerHostActions } from '../../../../frontend/designer/src/host-actions';
 import { Designer } from '../../../../frontend/designer/src/index';
 import type { Artwork, Design, Print } from '../../../../frontend/designer/src/model';
 import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quote-review';
@@ -18,9 +20,10 @@ function send(type: string, data: Record<string, unknown> = {}) {
   window.parent.postMessage({ type, channel, ...data }, parentOrigin);
 }
 function invoke<T>(
-  action: 'upload' | 'prepare' | 'commit',
+  action: 'upload' | 'renew' | 'prepare' | 'commit',
   request: CartRequest | UploadRequest,
   file?: File,
+  artwork?: Artwork,
 ): Promise<T> {
   const id = crypto.randomUUID();
   const { signal, ...body } = request;
@@ -45,10 +48,17 @@ function invoke<T>(
         reject(error);
       },
     });
-    send('insignia:designer:request', { id, action, request: body, ...(file ? { file } : {}) });
+    send('insignia:designer:request', {
+      id,
+      action,
+      request: body,
+      ...(file ? { file } : {}),
+      ...(artwork ? { artwork } : {}),
+    });
   });
 }
 type Initial = {
+  choices?: { id: string; label: string }[];
   config?: ProductConfig;
   repair?: { canStart: boolean; canRemoveGroup: boolean; canRemoveAll?: boolean };
   wording?: MerchantCustomerWordingView;
@@ -69,10 +79,65 @@ function Closed({ completion }: { completion: CartReceipt | null }) {
   return null;
 }
 
+function HostClosed({
+  state,
+  visible,
+  productName,
+  choices,
+  pendingGroup,
+  onChoose,
+  onCancel,
+  onConfirm,
+  onClose,
+  onResume,
+  onStartNew,
+}: {
+  state: ClosedDesignerProps;
+  visible: boolean;
+  productName: string;
+  choices: readonly { id: string; label: string }[];
+  pendingGroup: string | null;
+  onChoose(id: string): void;
+  onCancel(): void;
+  onConfirm(): void;
+  onClose(): void;
+  onResume(): void;
+  onStartNew(): void;
+}) {
+  useLayoutEffect(() => {
+    if (pendingGroup && !state.hasDraft) onConfirm();
+  }, [pendingGroup, state.hasDraft]);
+  if (!visible && !pendingGroup) return <Closed completion={state.completion} />;
+  return (
+    <DesignerHostActions
+      {...state}
+      productName={productName}
+      choices={choices}
+      onEditChoice={onChoose}
+      switchingDesign={pendingGroup && state.hasDraft ? pendingGroup : state.switchingDesign}
+      onCancelSwitch={pendingGroup ? onCancel : state.onCancelSwitch}
+      onConfirmSwitch={pendingGroup ? onConfirm : state.onConfirmSwitch}
+      onResume={() => {
+        onResume();
+        state.onResume();
+      }}
+      onStartNew={() => {
+        onStartNew();
+        state.onStartNew();
+      }}
+      onClose={onClose}
+    />
+  );
+}
+
 function Frame({ initial }: { initial: Initial }) {
+  const [choices, setChoices] = useState(initial.choices ?? []);
   const [config, setConfig] = useState(initial.config);
   const [repair, setRepair] = useState(initial.repair);
   const [open, setOpen] = useState(true);
+  const [hostOpen, setHostOpen] = useState(false);
+  const [visible, setVisible] = useState(true);
+  const [pendingGroup, setPendingGroup] = useState<string | null>(null);
   const [quote, setQuote] = useState<DesignerQuoteReview>();
   const [hostError, setHostError] = useState(0);
   const [reviewed, setReviewed] = useState(0);
@@ -81,17 +146,31 @@ function Frame({ initial }: { initial: Initial }) {
   const wordingLocale = language ?? resolveCustomerHostLocale(initial.locale, navigator.languages);
   const ports = useMemo<DesignerPorts>(
     () => ({
-      artwork: { upload: (file, request) => invoke<Artwork>('upload', request, file) },
+      artwork: {
+        upload: (file, request) => invoke<Artwork>('upload', request, file),
+        renew: (artwork, request) => invoke<Artwork>('renew', request, undefined, artwork),
+        apply: (artwork, request) => invoke<Artwork>('renew', request, undefined, artwork),
+      },
       review: initial.previewOnly ? undefined : { prepare: (request) => invoke<void>('prepare', request) },
       cart: { commit: (request) => invoke<CartReceipt>('commit', request) },
     }),
     [],
   );
   useLayoutEffect(() => {
+    send('insignia:designer:initialized');
     function update(event: MessageEvent) {
       if (event.source !== parent || event.origin !== parentOrigin || event.data?.channel !== channel) return;
       if (event.data.type === 'insignia:designer:repair') setRepair(event.data.repair);
-      if (event.data.type === 'insignia:designer:open') setOpen(true);
+      if (event.data.type === 'insignia:designer:open') {
+        setVisible(true);
+        setHostOpen(true);
+      }
+      if (event.data.type === 'insignia:designer:suspend') setVisible(false);
+      if (event.data.type === 'insignia:designer:request-close') {
+        setOpen(false);
+        setHostOpen(false);
+        setPendingGroup(null);
+      }
       if (event.data.type === 'insignia:designer:host-error') setHostError((value) => value + 1);
       if (event.data.type === 'insignia:designer:cart-reviewed') {
         setQuote(undefined);
@@ -102,6 +181,21 @@ function Frame({ initial }: { initial: Initial }) {
         if (event.data.wording) setWording(event.data.wording);
       }
       if (event.data.type === 'insignia:designer:quote') setQuote(event.data.quote);
+      if (event.data.type === 'insignia:designer:saved-choices') setChoices(event.data.choices);
+      if (event.data.type === 'insignia:designer:previews') {
+        setConfig(
+          (current) =>
+            current && {
+              ...current,
+              colors: current.colors.map((color) => ({
+                ...color,
+                images:
+                  (event.data.colors as ProductConfig['colors']).find((next) => next.id === color.id)?.images ??
+                  color.images,
+              })),
+            },
+        );
+      }
     }
     window.addEventListener('message', update);
     return () => window.removeEventListener('message', update);
@@ -111,7 +205,8 @@ function Frame({ initial }: { initial: Initial }) {
       {config && (
         <Designer
           key="workflow"
-          suspended={!!repair}
+          onPreviewFailure={(url) => send('insignia:designer:preview-failed', { url })}
+          suspended={!!repair || !visible}
           config={config}
           ports={ports}
           isOpen={open}
@@ -126,9 +221,42 @@ function Frame({ initial }: { initial: Initial }) {
           quoteReview={quote}
           hostErrorSignal={hostError}
           cartReviewedSignal={reviewed}
-          onSelectQuoteGroup={(id) => send('insignia:designer:select-group', { id })}
-          onOpenChange={setOpen}
-          renderClosed={({ completion }) => <Closed completion={completion} />}
+          onSelectQuoteGroup={(id) => {
+            setPendingGroup(id);
+            setOpen(false);
+          }}
+          onOpenChange={(value) => {
+            setOpen(value);
+            if (value) setHostOpen(false);
+          }}
+          renderClosed={(state) => (
+            <HostClosed
+              state={state}
+              productName={config.productName}
+              visible={hostOpen}
+              choices={choices}
+              pendingGroup={pendingGroup}
+              onChoose={setPendingGroup}
+              onCancel={() => {
+                setPendingGroup(null);
+                setHostOpen(false);
+                state.onResume();
+                setOpen(true);
+              }}
+              onConfirm={() => {
+                if (pendingGroup) send('insignia:designer:select-group', { id: pendingGroup });
+              }}
+              onClose={() => {
+                setHostOpen(false);
+                setPendingGroup(null);
+              }}
+              onResume={() => setHostOpen(false)}
+              onStartNew={() => {
+                setHostOpen(false);
+                setQuote(undefined);
+              }}
+            />
+          )}
         />
       )}
       {repair && (
@@ -167,7 +295,12 @@ window.addEventListener('message', (event) => {
     if (!request) return;
     pending.delete(event.data.id);
     if (event.data.ok === true) request.resolve(event.data.value);
-    else request.reject(new Error('Live operation unavailable'));
+    else
+      request.reject(
+        Object.assign(new Error('Live operation unavailable'), {
+          status: [403, 404, 410].includes(event.data.status) ? event.data.status : undefined,
+        }),
+      );
   }
   if (event.data.type === 'insignia:designer:init' && !mounted) {
     mounted = true;

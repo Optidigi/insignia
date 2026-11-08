@@ -14,6 +14,9 @@ export interface Artwork {
   width: number;
   height: number;
   sample?: boolean;
+  /** Presentation leases only; the server remains artwork authority. */
+  previewExpiresAt?: string;
+  assetExpiresAt?: string;
 }
 
 export interface Print {

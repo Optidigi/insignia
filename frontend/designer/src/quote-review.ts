@@ -3,6 +3,8 @@ export type DesignerQuoteReview = {
   exponent: number;
   totalMinor?: string;
   customizedQuantity: number;
+  /** Host navigation identity only; never purchase authority. */
+  currentGroupId?: string;
   groups: { id: string; label: string; quantity: number; totalMinor?: string; editable?: boolean }[];
 };
 /** Format server minor-unit strings without converting authoritative amounts to floating point. */

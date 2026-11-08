@@ -1,4 +1,4 @@
-/* Development harness, not storefront product/cart styling. */
+/* Shared closed-state host controls; the developer harness supplies its own page context. */
 .storefront-host-preview {
   max-width: 520px;
   margin: 48px auto;

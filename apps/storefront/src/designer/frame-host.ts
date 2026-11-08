@@ -8,6 +8,7 @@ import {
   matchesCartReceipt,
   type UploadRequest,
 } from '../../../../frontend/designer/src/runtime';
+import { createDesignerModal } from './modal';
 import type { RepairAction } from './repair';
 
 const escapeAttribute = (value: string) =>
@@ -27,6 +28,8 @@ export function createDesignerFrame(input: {
   repair?: { canStart: boolean; canRemoveGroup: boolean; canRemoveAll?: boolean };
   onRepair?: (action: RepairAction) => Promise<DesignerQuoteReview | undefined>;
   onClose(): void;
+  onPreviewFailure?(url: string): void;
+  onInitializationRetry?(): Promise<void> | void;
   onAppliedClose?(): void;
   onSelectGroup?: (id: string) => void;
 }) {
@@ -46,9 +49,47 @@ export function createDesignerFrame(input: {
   const css = new URL('insignia-designer.css', assetsBase);
   frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="origin"><link rel="stylesheet" href="${escapeAttribute(css.href)}"></head><body><script type="module" src="${escapeAttribute(entry.href)}"></script></body></html>`;
   const controllers = new Map<string, AbortController>();
-  const previousOverflow = document.documentElement.style.overflow;
   const focused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   let ready = false;
+  let choices: { id: string; label: string }[] = [];
+  let initialized = false;
+  let failed = false;
+  let destroyed = false;
+  const modal = createDesignerModal({
+    locale: input.locale,
+    title: frame.title,
+    onCancel: () => {
+      if (initialized) send('insignia:designer:request-close');
+      else close();
+    },
+    ...(input.onInitializationRetry
+      ? {
+          onRetry: () => {
+            destroy();
+            void input.onInitializationRetry?.();
+          },
+        }
+      : {}),
+  });
+  frame.style.visibility = 'hidden';
+  modal.dialog.append(frame);
+  const initializationTimer = setTimeout(() => {
+    if (!initialized && !destroyed) {
+      failed = true;
+      modal.failed();
+    }
+  }, 10000);
+  frame.addEventListener('load', () => {
+    if (
+      !destroyed &&
+      !initialized &&
+      !frame.contentDocument?.querySelector<HTMLLinkElement>('link[rel="stylesheet"]')?.sheet
+    ) {
+      failed = true;
+      clearTimeout(initializationTimer);
+      modal.failed();
+    }
+  });
   let applied: CartRequest | undefined;
   function send(type: string, data: Record<string, unknown> = {}) {
     frame.contentWindow?.postMessage({ type, channel, ...data }, window.location.origin);
@@ -58,7 +99,7 @@ export function createDesignerFrame(input: {
       applied !== undefined && matchesCartReceipt(receipt, applied) && receipt.authority === 'shopify';
     applied = undefined;
     frame.hidden = true;
-    document.documentElement.style.overflow = previousOverflow;
+    modal.hide();
     focused?.focus();
     input.onClose();
     if (appliedClose) input.onAppliedClose?.();
@@ -71,6 +112,25 @@ export function createDesignerFrame(input: {
     )
       return;
     const data = event.data;
+    if (data.type === 'insignia:designer:preview-failed' && typeof data.url === 'string') {
+      input.onPreviewFailure?.(data.url);
+      return;
+    }
+    if (data.type === 'insignia:designer:initialized' && !failed) {
+      const styles = frame.contentDocument?.querySelector<HTMLLinkElement>('link[rel="stylesheet"]');
+      if (!styles?.sheet) {
+        failed = true;
+        clearTimeout(initializationTimer);
+        modal.failed();
+        return;
+      }
+      initialized = true;
+      clearTimeout(initializationTimer);
+      modal.loaded();
+      frame.style.visibility = 'visible';
+      if (!frame.hidden && modal.dialog.open) frame.focus();
+      return;
+    }
     if (data.type === 'insignia:designer:ready') {
       ready = true;
       send('insignia:designer:init', {
@@ -84,6 +144,7 @@ export function createDesignerFrame(input: {
           initialDesign: input.initialDesign,
           initialPrints: input.initialPrints,
           initialArtworks: input.initialArtworks,
+          choices,
         },
       });
       return;
@@ -124,6 +185,8 @@ export function createDesignerFrame(input: {
           ...data.request,
           signal: controller.signal,
         } as UploadRequest);
+      else if (data.action === 'renew' && data.artwork && input.ports?.artwork.renew)
+        value = await input.ports.artwork.renew(data.artwork, { ...data.request, signal: controller.signal });
       else if (data.action === 'prepare' && input.ports?.review)
         value = await input.ports.review.prepare({ ...data.request, signal: controller.signal } as CartRequest);
       else if (data.action === 'commit' && !input.previewOnly && input.ports)
@@ -134,20 +197,34 @@ export function createDesignerFrame(input: {
           applied = data.request;
         send('insignia:designer:result', { id: data.id, ok: true, value });
       }
-    } catch {
-      if (!controller.signal.aborted) send('insignia:designer:result', { id: data.id, ok: false });
+    } catch (error) {
+      const status =
+        error && typeof error === 'object' && 'status' in error && [403, 404, 410].includes(Number(error.status))
+          ? Number(error.status)
+          : undefined;
+      if (!controller.signal.aborted)
+        send('insignia:designer:result', { id: data.id, ok: false, ...(status ? { status } : {}) });
     } finally {
       controllers.delete(data.id);
     }
   }
   window.addEventListener('message', message);
-  document.documentElement.style.overflow = 'hidden';
-  document.body.append(frame);
+  function destroy() {
+    if (destroyed) return;
+    destroyed = true;
+    clearTimeout(initializationTimer);
+    for (const controller of controllers.values()) controller.abort();
+    window.removeEventListener('message', message);
+    frame.remove();
+    modal.destroy();
+  }
   return {
     frame,
     close,
     hide() {
       frame.hidden = true;
+      send('insignia:designer:suspend');
+      modal.hide();
     },
     repair(value?: { canStart: boolean; canRemoveGroup: boolean; canRemoveAll?: boolean }) {
       send('insignia:designer:repair', { repair: value });
@@ -159,24 +236,26 @@ export function createDesignerFrame(input: {
       send('insignia:designer:cart-reviewed');
     },
     open() {
-      if (ready) {
-        frame.hidden = false;
-        document.documentElement.style.overflow = 'hidden';
-        send('insignia:designer:open');
-        frame.focus();
-      }
+      if (destroyed || failed) return false;
+      frame.hidden = false;
+      modal.show();
+      if (ready) send('insignia:designer:open');
+      if (initialized) frame.focus();
+      return true;
     },
     prices(config: ProductConfig, wording?: MerchantCustomerWordingView) {
       send('insignia:designer:prices', { config, wording });
     },
+    previews(colors: ProductConfig['colors']) {
+      send('insignia:designer:previews', { colors });
+    },
+    savedChoices(value: { id: string; label: string }[]) {
+      choices = value;
+      if (ready) send('insignia:designer:saved-choices', { choices });
+    },
     review(quote: DesignerQuoteReview) {
       send('insignia:designer:quote', { quote });
     },
-    destroy() {
-      for (const controller of controllers.values()) controller.abort();
-      window.removeEventListener('message', message);
-      frame.remove();
-      document.documentElement.style.overflow = previousOverflow;
-    },
+    destroy,
   };
 }

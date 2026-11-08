@@ -61,12 +61,15 @@ export function createLiveDesignerPorts(input: {
   const designs = new Map<string, DesiredGroup>();
   const completed = new Map<string, CartReceipt>();
   const acceptedAttempts = new Map<string, AcceptedCart>();
+  const issuedSignatures = new Map<string, string>();
   const issuanceAttempted = new Set<string>();
   const prepared = new Map<string, Prepared>();
   const reviewSelections = new Map<string, DesiredGroup>();
+  const savedSelections = new Map<string, DesiredGroup>();
+  const draftSaves = new Map<string, { group: DesiredGroup; original?: DesiredGroup }>();
   let currentSelection: DesiredGroup | undefined;
   async function observe(signal?: AbortSignal) {
-    const observed = await cart.read();
+    const observed = await cart.read(signal);
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     const restore = observed.customized.length
       ? await api.private<{ groups: DesiredGroup[]; labels?: Record<string, string> }>(
@@ -179,6 +182,7 @@ export function createLiveDesignerPorts(input: {
       throw new Error('Design requires current-cart review');
     }
     const groups = replaceGroup(observed.groups, group, index < 0 ? undefined : index);
+    draftSaves.set(request.design.id, { group, original: old });
     await custody.save(request.design.id, group, old, request.signal);
     const labels = await refreshGroups(groups, request.signal);
     const proposal = await api.private<QuoteProposal>(
@@ -215,6 +219,10 @@ export function createLiveDesignerPorts(input: {
         reviewSelections.set(candidate.canonicalIdentitySha256, candidate.selection);
     input.onReview?.({
       currency: proposal.currency,
+      currentGroupId: proposal.groups.find(
+        (candidate) =>
+          candidate.selection && desiredGroupKey(candidate.selection, false) === desiredGroupKey(group, false),
+      )?.canonicalIdentitySha256,
       exponent: proposal.exponent,
       totalMinor: proposal.totalMinor,
       customizedQuantity: proposal.customizedQuantity,
@@ -227,9 +235,39 @@ export function createLiveDesignerPorts(input: {
       })),
     });
   }
+  const renewArtwork: NonNullable<DesignerPorts['artwork']['renew']> = async (selected, request) => {
+    let assetExpiresAt = selected.assetExpiresAt;
+    if (!assetExpiresAt) {
+      const status = await api.artwork<{ state: string; expiresAt: string }>(`/api/artwork/${selected.id}/status`, {
+        signal: request.signal,
+      });
+      if (status.state !== 'USABLE') throw Object.assign(new Error('Artwork unavailable'), { status: 410 });
+      assetExpiresAt = status.expiresAt;
+    }
+    const preview = await artwork.renew(
+      {
+        assetId: selected.id,
+        url: selected.url,
+        aspectRatio: selected.width / selected.height,
+        expiresAt: selected.previewExpiresAt ?? '',
+        assetExpiresAt,
+      },
+      request.signal,
+    );
+    return {
+      ...selected,
+      url: preview.url,
+      width: preview.aspectRatio * 1000,
+      height: 1000,
+      previewExpiresAt: preview.expiresAt,
+      assetExpiresAt: preview.assetExpiresAt,
+    };
+  };
   const ports: DesignerPorts = {
     review: { prepare },
     artwork: {
+      renew: renewArtwork,
+      apply: renewArtwork,
       async upload(file, request) {
         const preview = await artwork.upload(file, () => {}, request.signal);
         return {
@@ -238,11 +276,18 @@ export function createLiveDesignerPorts(input: {
           url: preview.url,
           width: preview.aspectRatio * 1000,
           height: 1000,
+          previewExpiresAt: preview.expiresAt,
+          assetExpiresAt: preview.assetExpiresAt,
         };
       },
     },
     cart: {
       async commit(request) {
+        const issuedSignature = issuedSignatures.get(request.idempotencyKey);
+        if (issuedSignature !== undefined && issuedSignature !== signature(request))
+          throw new Error(
+            'The existing authorization belongs to a different design. Reconcile it before applying changes.',
+          );
         const completedReceipt = completed.get(request.idempotencyKey);
         if (completedReceipt) return { ...completedReceipt, requestId: request.requestId };
         if (request.signal.aborted) throw new DOMException('Aborted', 'AbortError');
@@ -263,6 +308,7 @@ export function createLiveDesignerPorts(input: {
             throw new Error('Cart changed; review the refreshed quote');
           }
           // The final user action accepts only the hash displayed by the prepared review.
+          issuedSignatures.set(request.idempotencyKey, signature(request));
           issuanceAttempted.add(request.idempotencyKey);
           // An acceptance may be ambiguous: keep the exact proposal/key for retry, never re-propose here.
           accepted = await api.private<AcceptedCart>(
@@ -275,11 +321,20 @@ export function createLiveDesignerPorts(input: {
         const applied = await cart.apply(accepted.buckets, { expectedFingerprint: review?.baseline.fingerprint ?? '' });
         if (applied.status !== 'applied' || applied.recovery || !applied.cart)
           throw new Error('Cart needs review; an uncertain update is never retried automatically');
-        designs.set(
-          request.design.id,
+        const selected =
           review?.group ??
-            buildBuyerDesigner(source, { locale: input.locale, storeName: input.storeName }).desired(request.design),
+          buildBuyerDesigner(source, { locale: input.locale, storeName: input.storeName }).desired(request.design);
+        const appliedGroups = accepted.desired.filter(
+          (group) => desiredGroupKey(group, false) === desiredGroupKey(selected, false),
         );
+        if (appliedGroups.length === 1 && appliedGroups[0]) {
+          designs.set(request.design.id, appliedGroups[0]);
+          if (desiredGroupKey(appliedGroups[0]) !== desiredGroupKey(selected))
+            await custody
+              .save(request.design.id, appliedGroups[0], appliedGroups[0], request.signal)
+              .catch(async () => custody.forget(request.design.id, appliedGroups[0]!))
+              .catch(() => {});
+        } else designs.delete(request.design.id);
         await api
           .private(`cart-applications/${accepted.applicationId}/confirm`, {
             fingerprint: await advisoryFingerprint(applied.cart.fingerprint),
@@ -300,7 +355,7 @@ export function createLiveDesignerPorts(input: {
       },
     },
   };
-  async function restoreArtwork(group: DesiredGroup) {
+  async function restoreArtwork(group: DesiredGroup, signal?: AbortSignal) {
     const assets = [];
     const ids = [
       ...new Set(
@@ -313,6 +368,7 @@ export function createLiveDesignerPorts(input: {
       try {
         const preview = await api.artwork<{ url: string; width: number; height: number; expiresAt: string }>(
           `/api/artwork/${id}/preview`,
+          { signal },
         );
         if (
           !/^https:\/\//.test(preview.url) ||
@@ -329,6 +385,7 @@ export function createLiveDesignerPorts(input: {
           url: preview.url,
           width: preview.width,
           height: preview.height,
+          previewExpiresAt: preview.expiresAt,
         });
       } catch {
         /* Missing/expired originals remain missing; no substituted preview or ownership is invented. */
@@ -431,11 +488,29 @@ export function createLiveDesignerPorts(input: {
     readCart: cart.read,
     restoreArtwork,
     restoreSaved: custody.restore,
+    async discardDrafts() {
+      for (const [id, saved] of draftSaves) {
+        await custody.forget(id, saved.group);
+        if (saved.original) await custody.forget(id, saved.original);
+      }
+      draftSaves.clear();
+    },
+    async savedChoices(signal?: AbortSignal) {
+      const observed = await observe(signal);
+      const choices = [];
+      savedSelections.clear();
+      for (const group of observed.groups) {
+        const id = `saved:${await advisoryFingerprint(desiredGroupKey(group, false, false))}`;
+        savedSelections.set(id, group);
+        choices.push({ id, label: observed.labels[group.productId] ?? group.productId });
+      }
+      return choices;
+    },
     prepareRemoval,
     confirmRemoval,
     rebase,
     currentSelection: () => currentSelection,
-    selectionFor: (id: string) => reviewSelections.get(id),
+    selectionFor: (id: string) => savedSelections.get(id) ?? reviewSelections.get(id),
     registerDesign: (designId: string, group: DesiredGroup) => designs.set(designId, structuredClone(group)),
   };
 }
