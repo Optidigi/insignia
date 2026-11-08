@@ -8,6 +8,8 @@ Matt Pocock's MIT-licensed source was inspected at commit c55ee46073ed923f86ce59
 
 ## Frontend handoff and verification
 
+Signing-fence read-only restrictions belong to the entire asynchronous operation tree. A sibling rejection must not let a delayed read select active credential refresh or release collection after the parent unwinds. Use the existing server async-context convention and verify a gated late-read failure; do not relax expiry, refresh or collection assertions to hide the race.
+
 For performance work, keep quote preparation cancellable and distinct from cart submission. Prepared presentation and acknowledged draft versions are hints, never purchase authority; retain fresh signing-fence checks and original ambiguous-write identities. A clean Done action must not wait for a new quote. Verify background frame preparation does not take focus, show a modal, lock scrolling or start private/cart operations. Retire expired/context-mismatched preparation and preserve real cold/failure recovery.
 
 The artwork scan belongs to the separate immutable inspector host package, not the ordinary worker container. Qualify that package when changing runner timing. The existing decoder accepts one active inspection; bounded photo IO must retain decoder exclusivity and drain started work before reporting failure. Browser test compiler libraries remain distinct from Node's runtime features; use the existing deferred-promise pattern when the test project does not expose a newer Promise helper.
