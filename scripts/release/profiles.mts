@@ -22,6 +22,8 @@ import selectedOnlyModules from '../../deployment/m5-runtime/native-selected-fix
 import selectedOnlyCandidate from '../../deployment/m5-runtime/native-selected-fixed-release-binding.json' with {
   type: 'json',
 };
+import speedModules from '../../deployment/m5-runtime/native-speed-module-baseline.json' with { type: 'json' };
+import speedCandidate from '../../deployment/m5-runtime/native-speed-release-binding.json' with { type: 'json' };
 import nativeThemeModules from '../../deployment/m5-runtime/native-theme-module-baseline.json' with { type: 'json' };
 import nativeThemeCandidate from '../../deployment/m5-runtime/native-theme-release-binding.json' with { type: 'json' };
 import refreshModules from '../../deployment/m5-runtime/selected-refresh-module-baseline.json' with { type: 'json' };
@@ -65,6 +67,14 @@ const oldIds = [
   '1146748534785',
 ] as const;
 const profiles = {
+  'native-speed-e52be93': {
+    versionId: speedCandidate.versionId,
+    versionTag: speedCandidate.versionTag,
+    versionIds: speedCandidate.versionIds,
+    moduleHash: speedCandidate.moduleHash,
+    modules: speedModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+  },
   'native-performance-b2729a6': {
     versionId: performanceCandidate.versionId,
     versionTag: performanceCandidate.versionTag,
