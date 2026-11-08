@@ -316,3 +316,37 @@ test('one asset failure leaves other tenants processing while the outage is repo
   assert.deepEqual(errors, ['ARTWORK_RUNNER_UNAVAILABLE']);
   await runner.stop();
 });
+
+test('default scheduling picks up newly queued artwork on the short idle interval', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let pending = false;
+  const seen: string[] = [];
+  const runner = createArtworkRunner({
+    inspect,
+    store: {
+      async selectPending() {
+        return pending ? ['new-upload'] : [];
+      },
+    },
+    service: {
+      async process(id) {
+        seen.push(id);
+        pending = false;
+        return 'usable';
+      },
+    },
+  });
+  try {
+    await runner.start();
+    t.mock.timers.tick(0);
+    await runner.runOnce();
+    pending = true;
+    t.mock.timers.tick(249);
+    assert.deepEqual(seen, []);
+    t.mock.timers.tick(1);
+    await Promise.resolve();
+    assert.deepEqual(seen, ['new-upload']);
+  } finally {
+    await runner.stop();
+  }
+});

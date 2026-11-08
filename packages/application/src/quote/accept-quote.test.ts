@@ -431,6 +431,67 @@ describe('acceptQuote', () => {
     expect(saved).toHaveLength(1);
   });
 
+  it('starts independent shop and subscription reads together during preparation', async () => {
+    const { ports } = fixture();
+    const tenant = await ports.tenant.getActive('shop', '1');
+    if (!tenant) throw new Error('fixture tenant unavailable');
+    const entitlement = await ports.entitlement.getFresh(tenant);
+    const shop = await ports.shop.getContext(tenant);
+    let startShop: () => void = () => {
+      throw new Error('fixture not initialized');
+    };
+    const shopStarted = new Promise<void>((resolve) => {
+      startShop = resolve;
+    });
+    vi.mocked(ports.entitlement.getFresh).mockImplementation(async () => {
+      await shopStarted;
+      return entitlement;
+    });
+    vi.mocked(ports.shop.getContext).mockImplementation(async () => {
+      startShop();
+      return shop;
+    });
+    const result = await prepareQuote(request, ports);
+    expect(result.quote.economics.totalMinor).toBe('2002');
+  });
+
+  it('rechecks live shop and catalog facts inside the signing fence without another whole preparation', async () => {
+    const { ports } = fixture();
+    await acceptQuote(request, ports);
+    expect(ports.shop.getContext).toHaveBeenCalledTimes(2);
+    expect(ports.catalog.resolveVariantContext).toHaveBeenCalledTimes(2);
+    expect(ports.entitlement.getFresh).toHaveBeenCalledTimes(2);
+    expect(ports.publication.getEffective).toHaveBeenCalledTimes(1);
+    expect(ports.readiness.assertReady).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['price', 'shop'] as const)('rejects %s drift inside the signing fence before issuance', async (drift) => {
+    const { ports, saved } = fixture();
+    const snapshots = await ports.catalog.resolveVariantContext({
+      shopId: 'shop',
+      installationGeneration: '1',
+      productId: 'product',
+      variantIds: ['variant'],
+      context: { country: 'US' },
+    });
+    vi.mocked(ports.catalog.resolveVariantContext).mockClear();
+    if (drift === 'price')
+      vi.mocked(ports.catalog.resolveVariantContext)
+        .mockResolvedValueOnce(snapshots)
+        .mockResolvedValue(snapshots.map((value) => ({ ...value, amount: '99.00' })));
+    else {
+      const tenant = await ports.tenant.getActive('shop', '1');
+      if (!tenant) throw new Error('fixture tenant unavailable');
+      const shop = await ports.shop.getContext(tenant);
+      vi.mocked(ports.shop.getContext)
+        .mockResolvedValueOnce(shop)
+        .mockResolvedValue({ ...shop, timezone: 'Europe/Amsterdam' });
+    }
+    await expect(acceptQuote(request, ports)).rejects.toThrow(/changed during quote acceptance/);
+    expect(ports.authorization.issue).not.toHaveBeenCalled();
+    expect(saved).toHaveLength(0);
+  });
+
   it('replays a completed set without new provider reads or signing', async () => {
     const { ports } = fixture();
     const first = await acceptQuote(request, ports);

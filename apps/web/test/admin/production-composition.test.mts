@@ -813,7 +813,11 @@ for (const releaseMode of [
       if (successful) {
         assert.equal(published.state, 'ACTIVE');
         if (!lostAcknowledgement) {
-          assert.equal(required(responses[1]).status, 202);
+          assert.equal(
+            required(responses[1]).status,
+            202,
+            JSON.stringify({ body: await required(responses[1]).clone().text(), collected }),
+          );
           assert.equal((await required(responses[1]).json()).revisionId, published.revisionId);
         }
         const effective = await core.configs.getConfig(tenantId, created.configId);

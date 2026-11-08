@@ -25,7 +25,7 @@ export function createPurchaseReleasePreparation(input: {
   const origin = Object.freeze({ ...qualification.origin });
   const appClientId = qualification.appClientId;
   const now = input.clock ?? (() => new Date());
-  const inFlight = new Map<string, Promise<{ requestId: string; recordId: string | null; state: string }>>();
+  const inFlight = new Map<string, Promise<string | null>>();
   return async (target: { shopId: string; installationGeneration: string }): Promise<void> => {
     let expired = false;
     let timer: ReturnType<typeof setTimeout> | undefined;

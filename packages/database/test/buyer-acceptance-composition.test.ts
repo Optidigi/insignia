@@ -18,8 +18,11 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
     'expired-after-preparation',
     'release-expired-after-preparation',
     'price-drift-after-preparation',
+    'late-final-read-after-rejection',
+    'late-final-read-during-teardown',
   ] as const) {
     it(`qualifies reviewed proposal acceptance with ${mode}`, async () => {
+      const delayedFinalRead = mode === 'late-final-read-after-rejection' || mode === 'late-final-read-during-teardown';
       const cleanup: (() => Promise<void>)[] = [];
       const f = await fixture({ after: (fn: () => Promise<void>) => cleanup.push(fn) }, { clock: () => new Date() });
       const keys = { currentKeyId: 'composition', keys: { composition: Buffer.alloc(32, 23) } };
@@ -36,6 +39,21 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
         max: 1,
         options: '-c lock_timeout=500ms -c statement_timeout=2000ms',
       });
+      // The server owns a long-lived core. This fixture must let rejected
+      // parallel reads finish before destroying its short-lived database pool.
+      const pendingReads = new Set<Promise<unknown>>();
+      const trackRead = <T>(read: Promise<T>): Promise<T> => {
+        pendingReads.add(read);
+        void read.then(
+          () => pendingReads.delete(read),
+          () => pendingReads.delete(read),
+        );
+        return read;
+      };
+      let releasePendingReads = () => {};
+      const lateSources: string[] = [];
+      let refreshes = 0;
+      const credentialErrors: unknown[] = [];
       try {
         await f.pool.query('UPDATE shops SET shop_domain=$2 WHERE shop_id=$1', [f.shopId, `${f.shopId}.myshopify.com`]);
         const scope = await core.tenants.getActiveAuthorizationScope({ shopId: f.shopId, installationGeneration: '1' });
@@ -54,8 +72,50 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
             refreshExpiresAt: new Date(Date.now() + 86400000),
           },
         });
-        let refreshes = 0;
-        const credentialErrors: unknown[] = [];
+        let insideFence = false;
+        let acceptanceRejected = false;
+        let finalScopeReads = 0;
+        let blockedReads = 0;
+        let enterLate: () => void = () => {
+          throw new Error('Missing entry gate');
+        };
+        let releaseLate: () => void = () => {
+          throw new Error('Missing release gate');
+        };
+        let finishLate: () => void = () => {
+          throw new Error('Missing completion gate');
+        };
+        const lateEntered = new Promise<void>((resolve) => {
+          enterLate = resolve;
+        });
+        const lateRelease = new Promise<void>((resolve) => {
+          releaseLate = resolve;
+        });
+        const lateFinished = new Promise<void>((resolve) => {
+          finishLate = resolve;
+        });
+        releasePendingReads = releaseLate;
+        // Entitlement binding reads provider scope independently from credentials.
+        const getProviderScope = core.tenants.getActiveProviderScope.bind(core.tenants);
+        core.tenants.getActiveProviderScope = (target) => trackRead(getProviderScope(target));
+        const getScope = core.tenants.getActiveAuthorizationScope.bind(core.tenants);
+        core.tenants.getActiveAuthorizationScope = (target) =>
+          trackRead(
+            (async () => {
+              const ordinal = delayedFinalRead && insideFence ? ++finalScopeReads : 0;
+              const current = await getScope(target);
+              if (ordinal >= 2) {
+                if (++blockedReads === 2) enterLate();
+                await lateRelease;
+              }
+              return current;
+            })(),
+          );
+        const lateReadDone = (source: string) => {
+          if (!acceptanceRejected) return;
+          lateSources.push(source);
+          if (lateSources.length === 2) finishLate();
+        };
         const acquire = core.credentials.acquire.bind(core.credentials);
         core.credentials.acquire = async (input) => {
           try {
@@ -82,6 +142,17 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
             },
           },
         });
+        const acquireActive = credentials.acquire.bind(credentials);
+        credentials.acquire = (target) =>
+          trackRead(
+            (async () => {
+              try {
+                return await acquireActive(target);
+              } finally {
+                lateReadDone('active');
+              }
+            })(),
+          );
         const query = { transform: 'synthetic-transform-input', validation: 'synthetic-validation-input' };
         const hash = (value: string) => createHash('sha256').update(value).digest('hex');
         const build = {
@@ -212,11 +283,22 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
           },
           credentials,
           passiveCredentials: {
-            async acquire(target) {
-              const current = await core.tenants.getActiveProviderScope(target);
-              if (!current) return { kind: 'inactive' };
-              const pair = await core.credentials.readUsable({ ...target, minimumRemainingMs: 30000 });
-              return pair ? { ...pair, shopDomain: current.shopDomain } : { kind: 'temporarily_unavailable' };
+            acquire(target) {
+              return trackRead(
+                (async () => {
+                  try {
+                    const current = await core.tenants.getActiveProviderScope(target);
+                    if (!current) return { kind: 'inactive' };
+                    const pair = await core.credentials.readUsable({ ...target, minimumRemainingMs: 30000 });
+                    return pair ? { ...pair, shopDomain: current.shopDomain } : { kind: 'temporarily_unavailable' };
+                  } catch (error) {
+                    credentialErrors.push(error);
+                    throw error;
+                  } finally {
+                    lateReadDone('passive');
+                  }
+                })(),
+              );
             },
           },
           passiveArtifactPorts: {
@@ -246,33 +328,39 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
                   ?.record.attestation ?? null,
             },
           },
-          readSubscription: async () => ({
-            schemaVersion: 'm4-active-subscription-v1',
-            sourceApiVersion: '2026-07',
-            appId: 'gid://shopify/App/7',
-            shopId: shopGid,
-            observedAt: new Date().toISOString(),
-            active: true,
-            billingPeriod: 'EVERY_30_DAYS',
-            cancelAtEndOfCycle: false,
-            trialEndsAt: new Date(Date.now() + 86400000).toISOString(),
-            currentBillingCycle: null,
-            pendingUpdate: null,
-            items: [
-              {
-                handle: 'synthetic-plan',
-                price: {
-                  kind: 'flat',
-                  providerTypename: 'FlatRatePrice',
-                  active: false,
-                  currency: 'USD',
-                  amount: '0.00',
+          readSubscription: async () => {
+            if (delayedFinalRead && insideFence) {
+              await lateEntered;
+              throw new Error('Synthetic final entitlement failure');
+            }
+            return {
+              schemaVersion: 'm4-active-subscription-v1',
+              sourceApiVersion: '2026-07',
+              appId: 'gid://shopify/App/7',
+              shopId: shopGid,
+              observedAt: new Date().toISOString(),
+              active: true,
+              billingPeriod: 'EVERY_30_DAYS',
+              cancelAtEndOfCycle: false,
+              trialEndsAt: new Date(Date.now() + 86400000).toISOString(),
+              currentBillingCycle: null,
+              pendingUpdate: null,
+              items: [
+                {
+                  handle: 'synthetic-plan',
+                  price: {
+                    kind: 'flat',
+                    providerTypename: 'FlatRatePrice',
+                    active: false,
+                    currency: 'USD',
+                    amount: '0.00',
+                  },
+                  usage: null,
+                  discount: null,
                 },
-                usage: null,
-                discount: null,
-              },
-            ],
-          }),
+              ],
+            };
+          },
           readVariantAvailability: async (target) => {
             const observedAt = Date.now();
             return {
@@ -386,11 +474,12 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
         if (
           mode === 'expired-after-preparation' ||
           mode === 'release-expired-after-preparation' ||
-          mode === 'price-drift-after-preparation'
+          mode === 'price-drift-after-preparation' ||
+          delayedFinalRead
         ) {
           const accept = core.acceptedQuotes.accept.bind(core.acceptedQuotes);
           core.acceptedQuotes.accept = async (input, commit) => {
-            if (mode === 'expired-after-preparation')
+            if (mode === 'expired-after-preparation' || delayedFinalRead)
               await f.pool.query(
                 "UPDATE shop_credentials SET access_expires_at=clock_timestamp()+interval '20 seconds' WHERE shop_id=$1",
                 [f.shopId],
@@ -398,7 +487,14 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
             if (mode === 'release-expired-after-preparation')
               record.attestation.expiresAt = new Date(Date.now() - 1).toISOString();
             if (mode === 'price-drift-after-preparation') amount = '11.00';
-            return accept(input, commit);
+            return accept(input, async () => {
+              insideFence = true;
+              try {
+                return await commit();
+              } finally {
+                insideFence = false;
+              }
+            });
           };
         }
         try {
@@ -409,9 +505,18 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
           if (
             mode === 'expired-after-preparation' ||
             mode === 'release-expired-after-preparation' ||
-            mode === 'price-drift-after-preparation'
+            mode === 'price-drift-after-preparation' ||
+            delayedFinalRead
           ) {
             await expect(acceptance).rejects.toThrow();
+            if (delayedFinalRead) {
+              acceptanceRejected = true;
+              if (mode === 'late-final-read-after-rejection') {
+                releaseLate();
+                await lateFinished;
+                expect({ sources: lateSources, refreshes }).toEqual({ sources: ['passive', 'passive'], refreshes: 0 });
+              } else expect(lateSources).toEqual([]);
+            }
             expect(credentialErrors).toEqual([]);
             expect(refreshes).toBe(0);
             const persisted = await f.pool.query('SELECT quote_id FROM accepted_quotes WHERE shop_id=$1', [f.shopId]);
@@ -432,8 +537,15 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
           throw error;
         }
       } finally {
+        releasePendingReads();
+        // A completed scope read can start its credential read; drain to quiescence.
+        while (pendingReads.size) await Promise.allSettled([...pendingReads]);
         await Promise.all([core.close(), append.end()]);
         for (const close of cleanup.reverse()) await close();
+        if (mode === 'late-final-read-during-teardown') {
+          expect({ sources: lateSources, refreshes }).toEqual({ sources: ['passive', 'passive'], refreshes: 0 });
+          expect(credentialErrors).toEqual([]);
+        }
       }
     }, 15000);
   }

@@ -45,7 +45,7 @@ export function createDemandDrivenReleaseReader(input: {
   deadline(): number;
   now?: () => Date;
   releaseProfile?: RuntimeReleaseProfileName;
-  inFlight?: Map<string, Promise<{ requestId: string; recordId: string | null; state: string }>>;
+  inFlight?: Map<string, Promise<string | null>>;
 }): TrustedReleaseEvidenceRecordsPort {
   const acceptedActiveAppVersionRef = resolveRuntimeReleaseProfile(input.releaseProfile).activeVersionRef;
   const binding = Object.freeze({ ...input.binding });
@@ -78,18 +78,22 @@ export function createDemandDrivenReleaseReader(input: {
       }
       let collection = inFlight.get(key);
       if (!collection) {
-        const requestId = randomUUID();
-        collection = input.collector
-          .collect({
+        // An older empty read can arrive after a sibling collection settles.
+        // Publish this recheck before awaiting it, so only a still-missing record
+        // starts collection; the shared result is an ID, never cached authority.
+        collection = (async () => {
+          const available = await read();
+          if (available) return available.record.recordId;
+          const requestId = randomUUID();
+          const result = await input.collector.collect({
             requestId,
             binding,
             expectedActiveAppVersionRef: acceptedActiveAppVersionRef,
             deadlineMs: input.deadline(),
-          })
-          .then((result) => {
-            if (result.requestId !== requestId) throw new Error('Verification completion mismatch');
-            return result;
           });
+          if (result.requestId !== requestId) throw new Error('Verification completion mismatch');
+          return result.state === 'COMPLETE' ? result.recordId : null;
+        })();
         inFlight.set(key, collection);
       }
       let completed: Awaited<typeof collection>;
@@ -101,10 +105,10 @@ export function createDemandDrivenReleaseReader(input: {
         if (inFlight.get(key) === collection) inFlight.delete(key);
       }
       await current();
-      if (completed.state !== 'COMPLETE' || !completed.recordId) return null;
+      if (!completed) return null;
       const evidence = await read();
       await current();
-      return evidence?.record.recordId === completed.recordId ? evidence : null;
+      return evidence?.record.recordId === completed ? evidence : null;
     },
   });
 }

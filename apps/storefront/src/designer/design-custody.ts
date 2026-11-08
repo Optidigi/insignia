@@ -11,13 +11,19 @@ export function createSelectedDesignCustody(input: {
   storage: Pick<Storage, 'getItem' | 'setItem'>;
   namespace: string;
 }) {
+  // Actor-local CAS metadata, never ownership or purchase authority. Restoration
+  // always reads the server; changed writes still use its acknowledged version.
+  const known = new Map<string, ReturnType<typeof BuyerDesignResultSchema.parse>>();
   const key = async (group: BuyerDesiredGroup) =>
     `insignia:selected-design:v1:${input.namespace}:${await advisoryFingerprint(desiredGroupKey(group, false, false))}`;
   async function read(id: string, signal?: AbortSignal) {
     if (!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id)) return null;
     try {
-      return BuyerDesignRestorationSchema.parse(await input.api.private(`designs/${id}/restore`, {}, signal));
+      const saved = BuyerDesignRestorationSchema.parse(await input.api.private(`designs/${id}/restore`, {}, signal));
+      known.set(id, saved);
+      return saved;
     } catch (error) {
+      known.delete(id);
       if (error && typeof error === 'object' && 'status' in error && error.status === 404) return null;
       throw error;
     }
@@ -36,13 +42,17 @@ export function createSelectedDesignCustody(input: {
       return read(id, signal);
     },
     async save(id: string, group: BuyerDesiredGroup, original: BuyerDesiredGroup | undefined, signal?: AbortSignal) {
-      const saved = await read(id, signal);
+      // Unknown UUIDs can only create with CAS0; they never overwrite a row.
+      // Conflict/lost-response recovery performs the scoped ownership read.
+      const saved = known.get(id);
       if (!saved || desiredGroupKey(saved.value) !== desiredGroupKey(group)) {
         try {
-          BuyerDesignResultSchema.parse(
+          const acknowledged = BuyerDesignResultSchema.parse(
             await input.api.private(`designs/${id}`, { expectedVersion: saved?.version ?? 0, group }, signal, 'PUT'),
           );
+          known.set(id, acknowledged);
         } catch (error) {
+          known.delete(id);
           if (signal?.aborted) throw error;
           // Lost acknowledgement is recovered through the same owned UUID, never an unconditional rewrite.
           const observed = await read(id, signal);

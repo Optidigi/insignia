@@ -13,6 +13,7 @@ type DesignerRecord = {
 /** One selected state machine; switching cart designs confirms discarding unfinished edits. */
 export async function mountLiveDesigner(input: {
   source: BuyerConfig;
+  initiallyHidden?: boolean;
   proxyBase: string;
   cartRoot: string;
   country: string;
@@ -25,6 +26,7 @@ export async function mountLiveDesigner(input: {
   onError(): void;
   isCurrent(): boolean;
 }) {
+  if (input.initiallyHidden && input.repair) throw new Error('Background cart recovery is unavailable');
   const api = createBuyerApi({
     proxyBase: input.proxyBase,
     productId: input.source.productId,
@@ -36,6 +38,8 @@ export async function mountLiveDesigner(input: {
   let pendingRead: AbortController | undefined;
   let active: DesignerRecord | undefined;
   let destroyed = false;
+  let initiallyHidden = input.initiallyHidden === true;
+  let preparationFailed = false;
   let selectionGeneration = 0;
   const current = () => !destroyed && input.isCurrent();
   function openNativeCart() {
@@ -144,6 +148,9 @@ export async function mountLiveDesigner(input: {
     }
     let canRemoveAll = !!original;
     if (!current() || signal.aborted || generation !== selectionGeneration) return;
+    // Background preparation is only for a complete, brand-new product. A
+    // repair path may read owned cart custody and must wait for the user.
+    if (initiallyHidden && repair) return;
     if (repair && !original) {
       try {
         canRemoveAll = (await live.readCart()).customized.length > 0;
@@ -153,6 +160,7 @@ export async function mountLiveDesigner(input: {
     }
     if (!current() || signal.aborted || generation !== selectionGeneration) return;
     const frame = createDesignerFrame({
+      initiallyHidden,
       ...(mapped ? { config: mapped.config } : {}),
       title: canStart ? source.title : undefined,
       onInitializationRetry: () => retryInitialization((signal) => show(group, reset, targetProduct, signal)),
@@ -165,7 +173,7 @@ export async function mountLiveDesigner(input: {
             await show(group);
             return;
           }
-          const latest = await api.config(undefined, source.productId);
+          const latest = await api.config(lifetime.signal, source.productId);
           const observed = await live.observe();
           cartTargetAvailable =
             !group ||
@@ -216,10 +224,14 @@ export async function mountLiveDesigner(input: {
 
       wording: source.wording,
       onPreviewFailure(url) {
+        if (initiallyHidden) {
+          preparationFailed = true;
+          return;
+        }
         if (refreshedPreviews.has(url)) return;
         refreshedPreviews.add(url);
         void api
-          .config(undefined, source.productId)
+          .config(lifetime.signal, source.productId)
           .then((latest) => {
             if (
               !current() ||
@@ -281,6 +293,7 @@ export async function mountLiveDesigner(input: {
     }
   }
   async function showOwned(signal = lifetime.signal) {
+    if (!current() || signal.aborted) return;
     const generation = selectionGeneration;
     const probe = createLiveDesignerPorts({ ...input, productId: input.source.productId });
     try {
@@ -333,7 +346,12 @@ export async function mountLiveDesigner(input: {
   if (input.repair) await showOwned();
   else await show();
   return {
+    get ready() {
+      return !preparationFailed && active?.frame.initialized === true;
+    },
     open() {
+      if (preparationFailed) return false;
+      initiallyHidden = false;
       const record = active;
       if (!record?.frame.open()) return false;
 

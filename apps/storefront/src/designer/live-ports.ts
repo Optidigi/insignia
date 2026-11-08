@@ -80,162 +80,191 @@ export function createLiveDesignerPorts(input: {
   }
   async function refreshGroups(groups: DesiredGroup[], signal?: AbortSignal) {
     const labels = new Map<string, string>();
-    for (let index = 0; index < groups.length; index++) {
-      const candidate = groups[index];
-      if (!candidate) continue;
-      const config = candidate.productId === source.productId ? source : await api.config(signal, candidate.productId);
-      if (
-        !config.ready ||
-        candidate.design.placements.some((choice) => {
-          const placement = config.placements.find((placement) => placement.id === choice.placementId);
-          return (
-            !placement ||
-            !placement.allowedMethodIds.includes(choice.methodId) ||
-            !placement.allowedStepIds.includes(choice.stepId) ||
-            (choice.artwork.kind === 'deferred' && !placement.logoLaterAllowed)
-          );
-        }) ||
-        candidate.design.options.length !== config.options.length ||
-        candidate.design.options.some(
-          (choice) =>
-            !config.options.some(
-              (option) => option.id === choice.optionId && option.values.some((value) => value.id === choice.valueId),
-            ),
-        )
-      )
-        throw new Error('A customized cart choice needs explicit repair');
-      groups[index] = { ...candidate, configRevisionId: config.revisionId, revisionContentHash: config.contentHash };
-      labels.set(candidate.productId, config.title ?? config.selectedSetup?.product.title ?? candidate.productId);
+    const configs = new Map<string, Promise<BuyerConfig>>([[source.productId, Promise.resolve(source)]]);
+    for (let offset = 0; offset < groups.length; offset += 4) {
+      await Promise.all(
+        groups.slice(offset, offset + 4).map(async (candidate, index) => {
+          let reading = configs.get(candidate.productId);
+          if (!reading) {
+            reading = api.config(signal, candidate.productId);
+            configs.set(candidate.productId, reading);
+          }
+          const config = await reading;
+          signal?.throwIfAborted();
+          if (
+            !config.ready ||
+            candidate.design.placements.some((choice) => {
+              const placement = config.placements.find((placement) => placement.id === choice.placementId);
+              return (
+                !placement ||
+                !placement.allowedMethodIds.includes(choice.methodId) ||
+                !placement.allowedStepIds.includes(choice.stepId) ||
+                (choice.artwork.kind === 'deferred' && !placement.logoLaterAllowed)
+              );
+            }) ||
+            candidate.design.options.length !== config.options.length ||
+            candidate.design.options.some(
+              (choice) =>
+                !config.options.some(
+                  (option) =>
+                    option.id === choice.optionId && option.values.some((value) => value.id === choice.valueId),
+                ),
+            )
+          )
+            throw new Error('A customized cart choice needs explicit repair');
+          groups[offset + index] = {
+            ...candidate,
+            configRevisionId: config.revisionId,
+            revisionContentHash: config.contentHash,
+          };
+          labels.set(candidate.productId, config.title ?? config.selectedSetup?.product.title ?? candidate.productId);
+        }),
+      );
     }
     return labels;
   }
+  let prepareController: AbortController | undefined;
   async function prepare(request: CartRequest) {
     if (issuanceAttempted.has(request.idempotencyKey))
       throw new Error('Reconcile the existing authorization before preparing a different quote');
-    let observed: Awaited<ReturnType<typeof observe>>;
+    prepareController?.abort();
+    const controller = new AbortController();
+    prepareController = controller;
+    const signal = AbortSignal.any([request.signal, controller.signal]);
     try {
-      observed = await observe(request.signal);
-    } catch (error) {
-      let canRemoveAll = false;
-      try {
-        canRemoveAll = (await cart.read()).customized.length > 0;
-      } catch {
-        /* Unknown cart contents. */
-      }
-      input.onNeedsReview?.(false, false, canRemoveAll);
-      throw error;
-    }
-    // Show every owned group even if one cannot currently be repriced; unknown amounts stay unavailable.
-    reviewSelections.clear();
-    const currentMapped = buildBuyerDesigner(source, { locale: input.locale, storeName: input.storeName });
-    const currentGroup = currentMapped.desired(request.design);
-    if (!source.shopCurrency) throw new Error('Shop currency unavailable');
-    const previous = designs.get(request.design.id);
-    const oldIndex = previous
-      ? observed.groups.findIndex((group) => desiredGroupKey(group) === desiredGroupKey(previous))
-      : -1;
-    const pendingGroups = replaceGroup(observed.groups, currentGroup, oldIndex < 0 ? undefined : oldIndex);
-    const pendingRows = [];
-    let currentGroupId: string | undefined;
-    const currentKey = desiredGroupKey(currentGroup);
-    for (const candidate of pendingGroups) {
-      const key = desiredGroupKey(candidate);
-      const id = await advisoryFingerprint(key);
-      if (key === currentKey) currentGroupId = id;
-      reviewSelections.set(id, candidate);
-      pendingRows.push({
-        id,
-        editable: true,
-        label:
-          observed.labels[candidate.productId] ??
-          (candidate.productId === source.productId
-            ? (source.title ?? source.selectedSetup?.product.title)
-            : createCustomerTranslator(input.locale).t('customer:steps.artwork')) ??
-          createCustomerTranslator(input.locale).t('customer:steps.artwork'),
-        quantity: candidate.variants.reduce((total, variant) => total + variant.quantity, 0),
+      const observedRead = observe(signal).catch(async (error) => {
+        signal.throwIfAborted();
+        let canRemoveAll = false;
+        try {
+          canRemoveAll = (await cart.read(signal)).customized.length > 0;
+        } catch {
+          /* Unknown cart contents. */
+        }
+        signal.throwIfAborted();
+        input.onNeedsReview?.(false, false, canRemoveAll);
+        throw error;
       });
-    }
-    input.onReview?.({
-      currency: source.shopCurrency,
-      currentGroupId,
-      exponent: 2,
-      customizedQuantity: pendingRows.reduce((total, row) => total + row.quantity, 0),
-      groups: pendingRows,
-    });
-    const refreshed = await api.config(request.signal);
-    // Stable IDs and unchanged publication permit amount refresh without replacing the editing state.
-    if (refreshed.revisionId !== source.revisionId || refreshed.contentHash !== source.contentHash) {
-      let available = false;
-      try {
-        buildBuyerDesigner(refreshed, { locale: input.locale, storeName: input.storeName });
-        available = true;
-      } catch {}
-      input.onNeedsReview?.(available, true, observed.cart.customized.length > 0);
-      throw new Error('Published configuration changed; review the current product configuration');
-    }
-    source = refreshed;
-    input.onPriceRefresh?.(refreshed);
-    const mapped = buildBuyerDesigner(source, { locale: input.locale, storeName: input.storeName });
-    const group: DesiredGroup = mapped.desired(request.design);
-    const old = designs.get(request.design.id);
-    const index = old ? observed.groups.findIndex((group) => desiredGroupKey(group) === desiredGroupKey(old)) : -1;
-    if (request.operation === 'updated' && index < 0) {
-      input.onNeedsReview?.(true, false, observed.cart.customized.length > 0);
-      throw new Error('Design requires current-cart review');
-    }
-    const groups = replaceGroup(observed.groups, group, index < 0 ? undefined : index);
-    draftSaves.set(request.design.id, { group, original: old });
-    await custody.save(request.design.id, group, old, request.signal);
-    const labels = await refreshGroups(groups, request.signal);
-    const proposal = await api.private<QuoteProposal>(
-      'quote-proposals',
-      {
-        country: input.country,
-        marketId: input.marketId,
-        groups,
-        capacity: {
-          ordinaryLineCount: observed.cart.ordinary.length,
-          inputBytes: new TextEncoder().encode(JSON.stringify(observed.cart.items)).byteLength,
+      const [observed, refreshed] = await Promise.all([observedRead, api.config(signal)]);
+      signal.throwIfAborted();
+      // Show every owned group even if one cannot currently be repriced; unknown amounts stay unavailable.
+      reviewSelections.clear();
+      const currentMapped = buildBuyerDesigner(source, { locale: input.locale, storeName: input.storeName });
+      const currentGroup = currentMapped.desired(request.design);
+      if (!source.shopCurrency) throw new Error('Shop currency unavailable');
+      const previous = designs.get(request.design.id);
+      const oldIndex = previous
+        ? observed.groups.findIndex((group) => desiredGroupKey(group) === desiredGroupKey(previous))
+        : -1;
+      const pendingGroups = replaceGroup(observed.groups, currentGroup, oldIndex < 0 ? undefined : oldIndex);
+      const pendingRows = [];
+      let currentGroupId: string | undefined;
+      const currentKey = desiredGroupKey(currentGroup);
+      for (const candidate of pendingGroups) {
+        const key = desiredGroupKey(candidate);
+        const id = await advisoryFingerprint(key);
+        signal.throwIfAborted();
+        if (key === currentKey) currentGroupId = id;
+        reviewSelections.set(id, candidate);
+        pendingRows.push({
+          id,
+          editable: true,
+          label:
+            observed.labels[candidate.productId] ??
+            (candidate.productId === source.productId
+              ? (source.title ?? source.selectedSetup?.product.title)
+              : createCustomerTranslator(input.locale).t('customer:steps.artwork')) ??
+            createCustomerTranslator(input.locale).t('customer:steps.artwork'),
+          quantity: candidate.variants.reduce((total, variant) => total + variant.quantity, 0),
+        });
+      }
+      input.onReview?.({
+        currency: source.shopCurrency,
+        currentGroupId,
+        exponent: 2,
+        customizedQuantity: pendingRows.reduce((total, row) => total + row.quantity, 0),
+        groups: pendingRows,
+      });
+      // Stable IDs and unchanged publication permit amount refresh without replacing the editing state.
+      if (refreshed.revisionId !== source.revisionId || refreshed.contentHash !== source.contentHash) {
+        let available = false;
+        try {
+          buildBuyerDesigner(refreshed, { locale: input.locale, storeName: input.storeName });
+          available = true;
+        } catch {}
+        input.onNeedsReview?.(available, true, observed.cart.customized.length > 0);
+        throw new Error('Published configuration changed; review the current product configuration');
+      }
+      source = refreshed;
+      input.onPriceRefresh?.(refreshed);
+      const mapped = buildBuyerDesigner(source, { locale: input.locale, storeName: input.storeName });
+      const group: DesiredGroup = mapped.desired(request.design);
+      const old = designs.get(request.design.id);
+      const index = old ? observed.groups.findIndex((group) => desiredGroupKey(group) === desiredGroupKey(old)) : -1;
+      if (request.operation === 'updated' && index < 0) {
+        input.onNeedsReview?.(true, false, observed.cart.customized.length > 0);
+        throw new Error('Design requires current-cart review');
+      }
+      const groups = replaceGroup(observed.groups, group, index < 0 ? undefined : index);
+      draftSaves.set(request.design.id, { group, original: old });
+      const [, labels] = await Promise.all([
+        custody.save(request.design.id, group, old, signal),
+        refreshGroups(groups, signal),
+      ]);
+      signal.throwIfAborted();
+      const proposal = await api.private<QuoteProposal>(
+        'quote-proposals',
+        {
+          country: input.country,
+          marketId: input.marketId,
+          groups,
+          capacity: {
+            ordinaryLineCount: observed.cart.ordinary.length,
+            inputBytes: new TextEncoder().encode(JSON.stringify(observed.cart.items)).byteLength,
+          },
+          observedFingerprint: await advisoryFingerprint(observed.cart.fingerprint),
         },
-        observedFingerprint: await advisoryFingerprint(observed.cart.fingerprint),
-      },
-      request.signal,
-    );
-    if (
-      proposal.currency !== source.shopCurrency ||
-      proposal.exponent !== 2 ||
-      Date.parse(proposal.expiresAt) <= Date.now()
-    )
-      throw new Error('Current quote unavailable');
-    prepared.set(request.idempotencyKey, {
-      signature: signature(request),
-      proposal,
-      groups,
-      baseline: observed.cart,
-      group,
-    });
-    // A click may already be queued with a pending display ID. Keep its owned
-    // edit alias until the next prepare; it grants no purchase authority.
-    for (const candidate of proposal.groups)
-      if (candidate.selection && candidate.canonicalIdentitySha256)
-        reviewSelections.set(candidate.canonicalIdentitySha256, candidate.selection);
-    input.onReview?.({
-      currency: proposal.currency,
-      currentGroupId: proposal.groups.find(
-        (candidate) =>
-          candidate.selection && desiredGroupKey(candidate.selection, false) === desiredGroupKey(group, false),
-      )?.canonicalIdentitySha256,
-      exponent: proposal.exponent,
-      totalMinor: proposal.totalMinor,
-      customizedQuantity: proposal.customizedQuantity,
-      groups: proposal.groups.map((group, index) => ({
-        id: group.canonicalIdentitySha256 ?? `${group.productId}-${index}`,
-        editable: !!group.selection,
-        label: labels.get(group.productId) ?? group.productId,
-        quantity: group.quantity,
-        totalMinor: group.totalMinor,
-      })),
-    });
+        signal,
+      );
+      signal.throwIfAborted();
+      if (
+        proposal.currency !== source.shopCurrency ||
+        proposal.exponent !== 2 ||
+        Date.parse(proposal.expiresAt) <= Date.now()
+      )
+        throw new Error('Current quote unavailable');
+      prepared.set(request.idempotencyKey, {
+        signature: signature(request),
+        proposal,
+        groups,
+        baseline: observed.cart,
+        group,
+      });
+      // A click may already be queued with a pending display ID. Keep its owned
+      // edit alias until the next prepare; it grants no purchase authority.
+      for (const candidate of proposal.groups)
+        if (candidate.selection && candidate.canonicalIdentitySha256)
+          reviewSelections.set(candidate.canonicalIdentitySha256, candidate.selection);
+      input.onReview?.({
+        currency: proposal.currency,
+        currentGroupId: proposal.groups.find(
+          (candidate) =>
+            candidate.selection && desiredGroupKey(candidate.selection, false) === desiredGroupKey(group, false),
+        )?.canonicalIdentitySha256,
+        exponent: proposal.exponent,
+        totalMinor: proposal.totalMinor,
+        customizedQuantity: proposal.customizedQuantity,
+        groups: proposal.groups.map((group, index) => ({
+          id: group.canonicalIdentitySha256 ?? `${group.productId}-${index}`,
+          editable: !!group.selection,
+          label: labels.get(group.productId) ?? group.productId,
+          quantity: group.quantity,
+          totalMinor: group.totalMinor,
+        })),
+      });
+    } finally {
+      controller.abort();
+      if (prepareController === controller) prepareController = undefined;
+    }
   }
   const renewArtwork: NonNullable<DesignerPorts['artwork']['renew']> = async (selected, request) => {
     let assetExpiresAt = selected.assetExpiresAt;
@@ -342,7 +371,7 @@ export function createLiveDesignerPorts(input: {
               .catch(() => {});
         } else designs.delete(request.design.id);
         await api
-          .private(`cart-applications/${accepted.applicationId}/confirm`, {
+          .confirmCartApplication(accepted.applicationId, {
             fingerprint: await advisoryFingerprint(applied.cart.fingerprint),
             vector: accepted.buckets,
           })

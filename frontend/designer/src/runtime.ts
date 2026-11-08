@@ -38,6 +38,9 @@ export interface CartReceipt {
   operation: "added" | "updated";
   authority: "local-preview" | "shopify";
 }
+/** Editing intent only; changing the viewed photo does not invalidate a quote. */
+export const designerIntentKey = (state: DesignerState) =>
+  JSON.stringify([state.editing, state.prints, state.quantities, state.rules.variantMatrix, state.productionChoices]);
 export interface DesignerPorts {
   review?: { prepare(request: CartRequest): Promise<void> };
   artwork: { upload(file: File, request: UploadRequest): Promise<Artwork>; apply?(artwork:Artwork,request:UploadRequest):Promise<Artwork>; renew?(artwork:Artwork,request:UploadRequest):Promise<Artwork> };
@@ -73,6 +76,7 @@ export function createDesignerRuntime(
 ) {
   const renewing = new Map<string, AbortController>();
   let reviewing = false;
+  let preparedSignature: string | null = null;
   let uploadVersion = 0;
   let uploadController: AbortController | null = null;
   let commitController: AbortController | null = null;
@@ -87,12 +91,15 @@ export function createDesignerRuntime(
   function cancelCommit() {
     commitController?.abort();
     commitController = null;
+    reviewing = false;
     dispatch({ type: "cart-commit-canceled" });
   }
   return {
     get reviewing() { return reviewing; },
+    get prepared() { return preparedSignature === designerIntentKey(getState()); },
     cancelUpload,
     cancelCommit,
+    cancelPreparation() { if (reviewing) cancelCommit(); },
     cancel() {
       cancelUpload();
       cancelCommit();
@@ -198,10 +205,13 @@ export function createDesignerRuntime(
     },
     async commit(prepareOnly = false) {
       if (prepareOnly && !ports.review) return;
-      const state = getState();
+      const observed = getState();
+      const state = prepareOnly && observed.step === 1 ? {...observed,step:2 as const} : observed;
       if (commitController || !canCommitDesign(state)) return;
-      const signature = JSON.stringify([state.editing, state.prints, state.quantities, state.rules.variantMatrix, state.productionChoices]);
+      const signature = designerIntentKey(state);
+      if (prepareOnly && preparedSignature === signature) return;
       if (!attempt || attempt.signature !== signature) {
+        preparedSignature = null;
         attempt = {
           signature,
           designId: state.editing ?? crypto.randomUUID(),
@@ -222,11 +232,14 @@ export function createDesignerRuntime(
         signal: controller.signal,
       };
       reviewing = prepareOnly;
-      dispatch({ type: "cart-commit-requested", requestId, design: request.design });
+      dispatch({ type: "cart-commit-requested", requestId, design: request.design, ...(prepareOnly ? {preparation:true} : {}) });
       try {
         if (prepareOnly) {
           await ports.review?.prepare(request);
-          if (!controller.signal.aborted && commitController === controller) dispatch({type:"cart-commit-canceled"});
+          if (!controller.signal.aborted && commitController === controller) {
+            if (designerIntentKey(getState()) === signature) preparedSignature = signature;
+            dispatch({type:"cart-commit-canceled"});
+          }
           return;
         }
         const receipt = await ports.cart.commit(request);
@@ -241,6 +254,7 @@ export function createDesignerRuntime(
             type: "cart-commit-failed",
             requestId,
             reason: "cart-commit-failed",
+            ...(prepareOnly ? {preparation:true} : {}),
           });
       } finally {
         if (commitController === controller) { commitController = null; reviewing = false; }

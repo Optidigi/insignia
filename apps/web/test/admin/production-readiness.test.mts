@@ -178,3 +178,62 @@ test('concurrent publication coalesces collection and refuses expired or unrelat
   await assert.rejects(expired.read(read), /identity expired/);
   assert.equal(calls, 1);
 });
+
+test('a delayed empty release read cannot start another collection after a sibling completed', async () => {
+  const inFlight: NonNullable<DemandInput['inFlight']> = new Map();
+  const current = new Date('2026-10-08T12:00:00Z');
+  let stored: Stored = null;
+  let calls = 0;
+  const entered = Promise.withResolvers<void>();
+  const release = Promise.withResolvers<void>();
+  const base: DemandInput = {
+    records: { read: async () => stored },
+    now: () => current,
+    binding: {
+      ...scope,
+      authorizationGeneration: 'test-auth',
+      authorizationEpoch: 0,
+      externalInstallationId: 'installation-9',
+    },
+    isCurrent: async () => {},
+    deadline: () => current.getTime() + 60_000,
+    inFlight,
+    collector: {
+      async collect(request) {
+        calls++;
+        if (calls > 1) return { requestId: request.requestId, recordId: null, state: 'STOPPED' };
+        stored = {
+          record,
+          expectedBuild: build,
+          activeVersionEvidenceSha256: 'f'.repeat(64),
+          evidenceDigest: 'e'.repeat(64),
+        };
+        return { requestId: request.requestId, recordId: record.recordId, state: 'COMPLETE' };
+      },
+    },
+  };
+  let first = true;
+  const delayed = readiness.createDemandDrivenReleaseReader({
+    ...base,
+    records: {
+      async read() {
+        if (!first) return stored;
+        first = false;
+        entered.resolve();
+        await release.promise;
+        return null;
+      },
+    },
+  });
+  const request = { scope, expectedActiveAppVersionRef: '1163229200385', now: current };
+  const pending = delayed.read(request);
+  try {
+    await entered.promise;
+    assert.deepEqual(await readiness.createDemandDrivenReleaseReader(base).read(request), stored);
+    assert.equal(inFlight.size, 0);
+  } finally {
+    release.resolve();
+  }
+  assert.deepEqual(await pending, stored);
+  assert.equal(calls, 1);
+});

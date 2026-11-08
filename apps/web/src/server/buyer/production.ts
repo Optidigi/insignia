@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { createPrivateKey } from 'node:crypto';
 import {
   type ArtworkScope,
@@ -35,6 +36,9 @@ import { createProductionQuoteReadiness } from '../production-readiness.ts';
 import { createQuoteAuthorityPorts } from '../quote-composition.ts';
 import { createLeanPrimaryMarketAdmission, parseEurNetherlandsQualification } from './lean-primary-market.ts';
 import { createBuyerServices } from './service.ts';
+
+// One context instance, isolated by async execution rather than mutable request flags.
+const acceptanceContext = new AsyncLocalStorage<true>();
 
 type Scope = { shopId: string; installationGeneration: string };
 export type BuyerVariantAvailability = Scope & {
@@ -188,8 +192,8 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
     if (scope.kind !== 'guest' || !scope.ownerHash || !/^[a-f0-9]{64}$/.test(scope.ownerHash))
       throw new Error('Buyer resource ownership unavailable');
     const artwork = createArtworkUsabilityPort(input.core.artwork, clock, scope);
-    let acceptanceFenceHeld = false;
-    const credentialSource = credentials(scope, () => acceptanceFenceHeld);
+    // A rejecting sibling must not change the role of final reads still in flight.
+    const credentialSource = credentials(scope, () => acceptanceContext.getStore() === true);
     const leanContext: NonNullable<QuoteAuthorityPorts['leanContext']> =
       input.leanContext ??
       createLeanPrimaryMarketAdmission({
@@ -251,12 +255,13 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
           artifactPorts: {
             expectedBuild: {
               read: async (target) =>
-                (acceptanceFenceHeld ? input.passiveArtifactPorts : input.artifactPorts)?.expectedBuild.read(target) ??
-                null,
+                (acceptanceContext.getStore() ? input.passiveArtifactPorts : input.artifactPorts)?.expectedBuild.read(
+                  target,
+                ) ?? null,
             },
             trustedEvidence: {
               read: async (target) =>
-                (acceptanceFenceHeld ? input.passiveArtifactPorts : input.artifactPorts)?.trustedEvidence.read(
+                (acceptanceContext.getStore() ? input.passiveArtifactPorts : input.artifactPorts)?.trustedEvidence.read(
                   target,
                 ) ?? null,
             },
@@ -330,12 +335,7 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
             input.artifactPorts.trustedEvidence.read(artifactScope),
           ]);
           if (!build || !evidence) throw new Error('Buyer acceptance release unavailable');
-          acceptanceFenceHeld = true;
-          try {
-            return await ports.store.accept(target, commit);
-          } finally {
-            acceptanceFenceHeld = false;
-          }
+          return ports.store.accept(target, () => acceptanceContext.run(true, commit));
         },
       },
     };

@@ -13,6 +13,7 @@ import {
   type CatalogVariantContextSnapshot,
   resolveFreshCatalogContext,
 } from '../pricing/catalog-context.js';
+import { materialHash } from './material.js';
 
 export type ActiveQuoteTenant = {
   shopId: string;
@@ -197,6 +198,13 @@ export interface QuoteAuthorityPorts {
   readiness: { assertReady(input: { quote: AcceptedQuote }): Promise<void> };
   authorization: CartAuthorizationPort;
   store: QuoteAcceptanceStore;
+}
+
+export class QuoteContextChangedError extends Error {
+  constructor(context: 'shop context' | 'catalog') {
+    super(`${context} changed during quote acceptance`);
+    this.name = 'QuoteContextChangedError';
+  }
 }
 
 function requireTenant(value: ActiveQuoteTenant | null, request: QuoteRequest): ActiveQuoteTenant {
@@ -522,6 +530,35 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
   return ports.store.accept(prepared.fence, prepared.commit);
 }
 
+async function freshCatalog(request: QuoteRequest, ports: QuoteAuthorityPorts, products: readonly string[]) {
+  const result: CatalogVariantContextSnapshot[] = [];
+  for (let offset = 0; offset < products.length; offset += 4) {
+    const batch = await Promise.all(
+      products.slice(offset, offset + 4).map((productId) =>
+        resolveFreshCatalogContext(
+          ports.catalog,
+          {
+            shopId: request.shopId,
+            installationGeneration: request.installationGeneration,
+            productId,
+            variantIds: [
+              ...new Set(
+                request.groups
+                  .filter(({ group }) => group.productId === productId)
+                  .flatMap(({ group }) => group.variants.map((variant) => variant.variantId)),
+              ),
+            ],
+            context: { country: request.country },
+          },
+          ports.clock,
+        ),
+      ),
+    );
+    result.push(...batch.flat());
+  }
+  return result;
+}
+
 async function prepareValidatedQuote(
   request: QuoteRequest,
   ports: QuoteAuthorityPorts,
@@ -529,9 +566,8 @@ async function prepareValidatedQuote(
   marketId: string,
   requestDigest: string,
 ) {
-  const entitlement = await ports.entitlement.getFresh(tenant);
+  const [entitlement, shop] = await Promise.all([ports.entitlement.getFresh(tenant), ports.shop.getContext(tenant)]);
   requireEntitlement(entitlement);
-  const shop = await ports.shop.getContext(tenant);
   if (
     shop.shopId !== tenant.shopId ||
     shop.installationGeneration !== tenant.installationGeneration ||
@@ -560,29 +596,7 @@ async function prepareValidatedQuote(
       throw new Error('no effective published revision for requested product');
     revisions.push(revision);
   }
-  const catalogSnapshots: CatalogVariantContextSnapshot[] = [];
-  for (const product of products) {
-    const variantIds = [
-      ...new Set(
-        groups
-          .filter((group) => group.productId === product)
-          .flatMap((group) => group.variants.map((variant: { variantId: string }) => variant.variantId)),
-      ),
-    ];
-    catalogSnapshots.push(
-      ...(await resolveFreshCatalogContext(
-        ports.catalog,
-        {
-          shopId: request.shopId,
-          installationGeneration: request.installationGeneration,
-          productId: product,
-          variantIds,
-          context: { country: request.country },
-        },
-        ports.clock,
-      )),
-    );
-  }
+  const catalogSnapshots = await freshCatalog(request, ports, products);
   const presentment = catalogSnapshots[0]?.currencyCode;
   if (!presentment || catalogSnapshots.some((snapshot) => snapshot.currencyCode !== presentment))
     throw new Error('mixed presentment currency');
@@ -698,7 +712,6 @@ async function prepareValidatedQuote(
       effectiveRevisions: quote.effectiveRevisions,
     },
     commit: async () => {
-      await usableArtwork(ports.artwork, request, shop.timezone, choices, quote.validThroughDay, ports.clock);
       const current = requireTenant(
         await ports.tenant.getActive(request.shopId, request.installationGeneration),
         request,
@@ -710,7 +723,14 @@ async function prepareValidatedQuote(
         throw new Error('installation authorization identity changed');
       if (localDay(ports.clock(), shop.timezone).ordinal !== quote.acceptedDay)
         throw new Error('shop-local acceptance day changed before signing');
-      const currentEntitlement = await ports.entitlement.getFresh(current);
+      const [currentEntitlement, currentShop, finalCatalog] = await Promise.all([
+        ports.entitlement.getFresh(current),
+        ports.shop.getContext(current),
+        freshCatalog(request, ports, products),
+      ]);
+      if (canonical(currentShop) !== canonical(shop)) throw new QuoteContextChangedError('shop context');
+      if (materialHash({ ...quote, catalogSnapshots: finalCatalog }) !== materialHash(quote))
+        throw new QuoteContextChangedError('catalog');
       requireEntitlement(currentEntitlement);
       if (
         currentEntitlement.policyVersion !== entitlement.policyVersion ||
@@ -751,6 +771,9 @@ async function prepareValidatedQuote(
         shopCurrency: shop.currency,
       });
       await ports.readiness.assertReady({ quote });
+      await usableArtwork(ports.artwork, request, shop.timezone, choices, quote.validThroughDay, ports.clock);
+      if (localDay(ports.clock(), shop.timezone).ordinal !== quote.acceptedDay)
+        throw new Error('shop-local acceptance day changed before signing');
       const authorization = await ports.authorization.issue({ quote });
       validAuthorization(quote, authorization);
       return { quote, authorization };

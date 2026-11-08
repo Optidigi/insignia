@@ -184,7 +184,7 @@ export async function createBuyerBootstrap(
     });
     const collector =
       seam.releaseCollector ?? createReleaseVerificationClient(undefined, releaseProfile.activeVersionRef);
-    const collecting = new Map<string, Promise<{ requestId: string; recordId: string | null; state: string }>>();
+    const collecting = new Map<string, Promise<string | null>>();
     const read = async (scope: { shopId: string; installationGeneration: string; appClientId: string }) => {
       if (scope.appClientId !== clientId) return null;
       const current = await ownedCore.tenants.getActiveAuthorizationScope(scope);

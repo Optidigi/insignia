@@ -34,18 +34,31 @@ function MethodsContainer() {
   const { t } = useAdminLocale();
   const [state, setState] = useState<Ready | { kind: 'loading' | 'failed' }>({ kind: 'loading' });
   const requestVersion = useRef(0);
+  const activeRead = useRef<AbortController | null>(null);
   useAdminPageReady(state.kind !== 'loading');
   useEffect(() => {
     void load();
     return () => {
       requestVersion.current++;
+      activeRead.current?.abort();
     };
   }, []);
   async function load() {
+    activeRead.current?.abort();
+    const controller = new AbortController();
+    activeRead.current = controller;
     const version = ++requestVersion.current;
+    const current = () => version === requestVersion.current && !controller.signal.aborted;
+    async function read(path: string) {
+      controller.signal.throwIfAborted();
+      const value = await authenticatedJson(path, { signal: controller.signal });
+      controller.signal.throwIfAborted();
+      if (!current()) throw new DOMException('Method route retired', 'AbortError');
+      return value;
+    }
     setState({ kind: 'loading' });
     try {
-      let catalog = MethodCatalogViewSchema.parse(await authenticatedJson('/api/admin/methods?view=catalog'));
+      let catalog = MethodCatalogViewSchema.parse(await read('/api/admin/methods?view=catalog'));
       if (!catalog.shop || !catalog.authority || !catalog.currency || typeof catalog.canEdit !== 'boolean')
         throw new Error('Method authorization context unavailable');
       let transport = createMethodCatalogTransport({
@@ -56,7 +69,9 @@ function MethodsContainer() {
         storage: sessionStorage,
       });
       if (catalog.canEdit) await transport.resume();
-      catalog = MethodCatalogViewSchema.parse(await authenticatedJson('/api/admin/methods?view=catalog'));
+      // A dispatched write keeps its journal/receipt custody. Route retirement cancels only reads.
+      if (!current()) return;
+      catalog = MethodCatalogViewSchema.parse(await read('/api/admin/methods?view=catalog'));
       if (!catalog.shop || !catalog.authority || !catalog.currency || typeof catalog.canEdit !== 'boolean')
         throw new Error('Method authorization context unavailable');
       transport = createMethodCatalogTransport({
@@ -78,7 +93,7 @@ function MethodsContainer() {
       do {
         const query = new URLSearchParams();
         if (cursor) query.set('cursor', cursor);
-        const page = productPage.parse(await authenticatedJson(`/api/admin/products?${query}`));
+        const page = productPage.parse(await read(`/api/admin/products?${query}`));
         for (const item of page.products) {
           if (productIds.has(item.id)) throw new Error('Product catalogue changed during pagination');
           productIds.add(item.id);
@@ -100,7 +115,7 @@ function MethodsContainer() {
           throw new Error('Complete product catalog unavailable');
         if (cursor) cursors.add(cursor);
       } while (cursor);
-      if (version !== requestVersion.current) return;
+      if (!current()) return;
       const canEdit = catalog.canEdit;
       setState({
         kind: 'ready',
@@ -122,7 +137,7 @@ function MethodsContainer() {
             );
             setState((state) => (state.kind === 'ready' ? { ...state, methodCurrencies } : state));
           } catch (error) {
-            if (error && typeof error === 'object' && 'status' in error && [401, 403].includes(Number(error.status))) {
+            if (current() && error && typeof error === 'object' && 'status' in error && [401, 403].includes(Number(error.status))) {
               requestVersion.current++;
               setState({ kind: 'failed' });
             }
@@ -131,7 +146,7 @@ function MethodsContainer() {
         },
       });
     } catch {
-      if (version === requestVersion.current) setState({ kind: 'failed' });
+      if (current()) setState({ kind: 'failed' });
     }
   }
   if (state.kind === 'ready')

@@ -10,7 +10,7 @@ import { copyThemeAssets } from '../scripts/copy-theme-asset.mts';
 import config from '../vite.config.ts';
 import { serverPort } from './support.mts';
 
-test('unlocked storefront loads buyer controls through its cookie-gated proxy and lazy classic CDN bootstrap', async () => {
+test('unlocked storefront loads buyer controls through its cookie-gated proxy and public-only idle CDN preparation', async () => {
   const temporary = await mkdtemp(join(tmpdir(), 'insignia-theme-build-'));
   try {
     await build({
@@ -97,6 +97,7 @@ test('unlocked storefront loads buyer controls through its cookie-gated proxy an
       let cartReads = 0;
       const cartWrites: string[] = [];
       const proxyMutations: string[] = [];
+      const privateProxyReads: string[] = [];
       await page.route('**/cart.js', (route) => {
         cartReads++;
         return route.fulfill({ json: { items: ordinary, attributes: {}, currency: 'EUR' } });
@@ -107,6 +108,7 @@ test('unlocked storefront loads buyer controls through its cookie-gated proxy an
       });
       await page.route('**/apps/insignia/v1/**', (route) => {
         if (route.request().method() !== 'GET') proxyMutations.push(route.request().method());
+        else privateProxyReads.push(new URL(route.request().url()).pathname);
         return route.fulfill({ status: 503, json: { error: 'Bootstrap cannot allocate private commerce authority' } });
       });
       let lockedRequests = 0,
@@ -175,12 +177,24 @@ test('unlocked storefront loads buyer controls through its cookie-gated proxy an
       await page.goto(`http://127.0.0.1:${serverPort(server)}/nl/products/example`);
       const host = page.locator('insignia-buyer');
       await host.getByRole('button', { name: 'Customize this product' }).waitFor();
-      assert.equal(
-        requested.some((path) => /insignia-(?:controller-|frame-host-|designer-frame\.js)/.test(path)),
-        false,
-        'No selected controller/frame is requested before the customization trigger',
+      await page.waitForFunction(
+        () =>
+          document.querySelector<HTMLIFrameElement>('dialog:not([open]) > iframe[srcdoc]')?.style.visibility ===
+          'visible',
       );
-      assert.equal(await page.locator('iframe').count(), 0);
+      const preparedFrame = page.locator('dialog:not([open]) > iframe[srcdoc]');
+      assert.equal(await preparedFrame.count(), 1, 'The built CDN entry prepares the selected frame on idle');
+      await preparedFrame.evaluate((element) => {
+        element.id = 'synthetic-prepared-frame';
+      });
+      assert.equal(await page.locator('dialog:modal').count(), 0, 'Preparation never opens a modal');
+      assert.equal(await page.locator('dialog').evaluate((element: HTMLDialogElement) => element.inert), true);
+      assert.equal(await page.evaluate(() => document.activeElement?.tagName), 'BODY');
+      assert.equal(await page.evaluate(() => document.documentElement.style.overflow), '');
+      assert.deepEqual(privateProxyReads, [], 'Idle preparation never reads private commerce authority');
+      assert.deepEqual(proxyMutations, [], 'Idle preparation never establishes a buyer session or writes a draft');
+      assert.equal(cartReads, 0);
+      assert.deepEqual(cartWrites, []);
       assert.equal(
         await page.evaluate(async () => {
           try {
@@ -197,11 +211,12 @@ test('unlocked storefront loads buyer controls through its cookie-gated proxy an
         'Without the storefront unlock cookie the proxy cannot expose configuration',
       );
       assert.equal(lockedRequests, 1);
-      const frameEntry = page.waitForRequest(
-        (request) => new URL(request.url()).pathname === '/cdn-assets/insignia-designer-frame.js',
-      );
       await host.getByRole('button', { name: 'Customize this product' }).click();
-      await frameEntry;
+      assert.equal(
+        await page.locator('dialog:modal > #synthetic-prepared-frame').count(),
+        1,
+        'The real click reveals the same prepared frame',
+      );
       const iframe = page.locator('iframe');
       const frame = page.frameLocator('iframe');
       await frame.getByRole('navigation', { name: 'Design steps', exact: true }).waitFor();
@@ -285,6 +300,7 @@ test('unlocked storefront loads buyer controls through its cookie-gated proxy an
       );
       assert.deepEqual(cartWrites, []);
       assert.deepEqual(proxyMutations, []);
+      assert.deepEqual(privateProxyReads, []);
       assert.equal(cartReads, 0, 'Opening the unmodified product does not inspect or mutate an ordinary cart');
       assert.deepEqual(ordinary, originalOrdinary);
       await frame.getByRole('button', { name: 'Close customizer', exact: true }).click();

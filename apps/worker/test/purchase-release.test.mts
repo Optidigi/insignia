@@ -147,12 +147,12 @@ test('expired release evidence demands correlated collection then independently 
   const f = fixture();
   await prepare(f.input)(target);
   assert.equal(f.collected.length, 1);
-  assert.equal(f.reads.length, 2);
+  assert.equal(f.reads.length, 3, 'Missing evidence is rechecked before collection, then independently reread');
   const q = required(f.collected[0]);
   assert.equal(q.deadlineMs, start + 15000);
   assert.equal(q.expectedActiveAppVersionRef, '1166090010625');
   assert.ok(!('orderId' in q.binding) && !('accessToken' in q));
-  assert.equal(required(f.reads[1]).expectedActiveAppVersionRef, q.expectedActiveAppVersionRef);
+  assert.equal(required(f.reads[2]).expectedActiveAppVersionRef, q.expectedActiveAppVersionRef);
   await prepare(f.input)(target);
   assert.equal(f.collected.length, 1);
 });

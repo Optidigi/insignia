@@ -148,7 +148,7 @@ export function createProductionAdminServices(
   const activations = new WeakMap<AdminActor, ReturnType<typeof core.productionActivations.create>>();
   const verifications = new WeakMap<AdminActor, DurableCoreReleaseReader>();
   const verified = new WeakMap<AdminActor, NonNullable<Awaited<ReturnType<DurableCoreReleaseReader['read']>>>>();
-  const collecting = new Map<string, Promise<Awaited<ReturnType<ReleaseVerificationCollector['collect']>>>>();
+  const collecting = new Map<string, Promise<string | null>>();
   const policy = featurePolicy(env);
   const partner =
     policy && appGid && env.INSIGNIA_PARTNER_ORGANIZATION_ID && env.INSIGNIA_PARTNER_ACCESS_TOKEN

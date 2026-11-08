@@ -124,7 +124,7 @@ test('production factory requires server-owned resource, commercial and readines
 });
 
 test('valid Lean acceptance uses passive primary reads under its lock and rejects final context drift without a fact', async () => {
-  for (const drift of [false, true]) {
+  for (const drift of [false, true, 'price'] as const) {
     const { input } = catalogFixture(),
       now = input.clock();
     const scope = { shopId: 'tenant', installationGeneration: '1', ownerHash: 'f'.repeat(64) };
@@ -172,6 +172,8 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
     };
     let insideLock = false,
       facts = 0,
+      subscriptionReads = 0,
+      artifactCollectionStarted = false,
       passivePrimaryReads = 0,
       refreshReadsInsideLock = 0,
       proposal: Awaited<ReturnType<MutableCore['buyers']['getProposal']>> = null;
@@ -230,27 +232,30 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
       maxAgeMs: 300000,
       plans: [{ billing: 'recurring-only', planHandle: 'flat', policyId: 'lean', features: [] }],
     };
-    input.readSubscription = async () => ({
-      schemaVersion: 'm4-active-subscription-v1',
-      sourceApiVersion: '2026-07',
-      appId: 'gid://shopify/App/7',
-      shopId: 'gid://shopify/Shop/9',
-      observedAt: now.toISOString(),
-      active: true,
-      billingPeriod: 'EVERY_30_DAYS',
-      cancelAtEndOfCycle: false,
-      trialEndsAt: new Date(+now + 86400000).toISOString(),
-      currentBillingCycle: null,
-      pendingUpdate: null,
-      items: [
-        {
-          handle: 'flat',
-          price: { kind: 'flat', providerTypename: 'FlatRatePrice', active: false, currency: 'USD', amount: '49.99' },
-          discount: null,
-          usage: null,
-        },
-      ],
-    });
+    input.readSubscription = async () => {
+      subscriptionReads++;
+      return {
+        schemaVersion: 'm4-active-subscription-v1',
+        sourceApiVersion: '2026-07',
+        appId: 'gid://shopify/App/7',
+        shopId: 'gid://shopify/Shop/9',
+        observedAt: now.toISOString(),
+        active: true,
+        billingPeriod: 'EVERY_30_DAYS',
+        cancelAtEndOfCycle: false,
+        trialEndsAt: new Date(+now + 86400000).toISOString(),
+        currentBillingCycle: null,
+        pendingUpdate: null,
+        items: [
+          {
+            handle: 'flat',
+            price: { kind: 'flat', providerTypename: 'FlatRatePrice', active: false, currency: 'USD', amount: '49.99' },
+            discount: null,
+            usage: null,
+          },
+        ],
+      };
+    };
     const build: Extract<ExpectedFunctionBuild, { schemaVersion: 2 }> = {
       schemaVersion: 2,
       shopId: 'tenant',
@@ -297,6 +302,7 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
       expectedBuild: {
         read: async () => {
           assert.equal(insideLock, false);
+          artifactCollectionStarted = true;
           return build;
         },
       },
@@ -344,7 +350,7 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
         data = {
           shop: { id: 'gid://shopify/Shop/9', currencyCode: 'USD' },
           primaryMarket: {
-            id: `gid://shopify/Market/${insideLock && drift ? '43' : '42'}`,
+            id: `gid://shopify/Market/${insideLock && drift === true ? '43' : '42'}`,
             status: 'ACTIVE',
             conditions: {
               regionsCondition: {
@@ -358,7 +364,8 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
         };
       } else if (query.includes('InsigniaShopContext'))
         data = { shop: { id: 'gid://shopify/Shop/9', currencyCode: 'USD', ianaTimezone: 'UTC' } };
-      else if (query.includes('InsigniaReadPublicConfig'))
+      else if (query.includes('InsigniaReadPublicConfig')) {
+        assert.equal(artifactCollectionStarted, true, 'release observation must not wait for public-config HTTP');
         data = {
           shop: {
             id: 'gid://shopify/Shop/9',
@@ -372,7 +379,7 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
             },
           },
         };
-      else if (query.includes('InsigniaOwnedFunctions')) {
+      } else if (query.includes('InsigniaOwnedFunctions')) {
         const functions = [build.transform, build.validation].map(
           ({ functionId: id, inputQuerySha256: _q, wasmSha256: _w, ...value }) => ({
             ...value,
@@ -415,7 +422,9 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
               __typename: 'ProductVariant',
               id: 'gid://shopify/ProductVariant/222',
               product: { id: 'gid://shopify/Product/111' },
-              contextualPricing: { price: { amount: '10.00', currencyCode: 'USD' } },
+              contextualPricing: {
+                price: { amount: insideLock && drift === 'price' ? '11.00' : '10.00', currencyCode: 'USD' },
+              },
             },
           ],
         };
@@ -449,18 +458,23 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
     });
     assert.equal(result.totalMinor, '1300');
     const accept = () => services.accept(scope, result.proposalId, { hash: result.hash, idempotencyKey: 'accept' });
-    if (drift) {
+    if (drift === true) {
       await assert.rejects(accept, /Lean primary-Market context unavailable/);
+      assert.equal(facts, 0);
+    } else if (drift === 'price') {
+      await assert.rejects(accept, /REVIEW_REQUIRED/);
       assert.equal(facts, 0);
     } else {
       const accepted = await accept();
       assert.equal(facts, 1);
+      assert.ok(subscriptionReads <= 3, 'proposal and acceptance must not prepare the full quote a third time');
       assert.equal(
         decodeEnvelope(required(required(accepted.buckets[0]).properties._insignia_quote_v2)).header.totalMinor,
         '1300',
       );
     }
-    assert.ok(passivePrimaryReads >= 1);
+    if (drift === 'price') assert.equal(passivePrimaryReads, 0, 'changed economics stop before further provider work');
+    else assert.ok(passivePrimaryReads >= 1);
     assert.equal(refreshReadsInsideLock, 0);
   }
 });

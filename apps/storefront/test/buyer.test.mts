@@ -18,6 +18,74 @@ test('editing one group preserves siblings including same-product designs', () =
   const replacement = { ...first, variants: [{ variantId: '4', quantity: 3 }] };
   assert.deepEqual(replaceGroup([first, sibling, otherDesign], replacement, 0), [replacement, sibling, otherDesign]);
 });
+
+test('verified-cart notification dispatches before returning without delaying navigation for its acknowledgement', async () => {
+  let finish!: (value: Response) => void;
+  let sent: RequestInit | undefined;
+  const api = createBuyerApi({
+    proxyBase: '/apps/insignia',
+    productId: '12',
+    fetchImpl: async (input, init) => {
+      if (requestUrl(input).includes('/sessions?'))
+        return Response.json({
+          capability: 'abc.def',
+          sessionId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          expiresAt: new Date(Date.now() + 60000).toISOString(),
+        });
+      sent = init;
+      return new Promise<Response>((resolve) => {
+        finish = resolve;
+      });
+    },
+  });
+  await api.confirmCartApplication('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', { fingerprint: 'a'.repeat(64), vector: [] });
+  assert(sent, 'notification fetch must already be dispatched before native navigation');
+  assert.equal(sent.keepalive, true);
+  assert.equal(sent.credentials, 'same-origin');
+  assert.equal(jsonRecord(String(sent.body)).capability, 'abc.def');
+  finish(Response.json({ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', status: 'APPLIED' }));
+});
+
+test('large cart notifications retain normal awaited delivery instead of exceeding keepalive quota', async () => {
+  let finish!: (value: Response) => void;
+  let dispatched!: () => void;
+  const sending = new Promise<void>((resolve) => {
+    dispatched = resolve;
+  });
+  let sent: RequestInit | undefined;
+  let returned = false;
+  const api = createBuyerApi({
+    proxyBase: '/apps/insignia',
+    productId: '12',
+    fetchImpl: async (input, init) => {
+      if (requestUrl(input).includes('/sessions?'))
+        return Response.json({
+          capability: 'abc.def',
+          sessionId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          expiresAt: new Date(Date.now() + 60000).toISOString(),
+        });
+      sent = init;
+      dispatched();
+      return new Promise<Response>((resolve) => {
+        finish = resolve;
+      });
+    },
+  });
+  const confirmation = api
+    .confirmCartApplication('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', {
+      fingerprint: 'a'.repeat(64),
+      vector: [],
+      padding: 'x'.repeat(50 * 1024),
+    })
+    .then(() => {
+      returned = true;
+    });
+  await sending;
+  assert.equal(returned, false);
+  assert.notEqual(sent?.keepalive, true);
+  finish(Response.json({ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', status: 'APPLIED' }));
+  await confirmation;
+});
 test('buyer and artwork API use one private capability and locale proxy prefix', async () => {
   const calls: [string, RequestInit][] = [];
   const api = createBuyerApi({

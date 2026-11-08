@@ -160,7 +160,11 @@ test('isolated selected Designer preserves edits, renders real review before con
   await frame.getByRole('button', { name: 'Previous step', exact: true }).click();
   assert.equal(await quantity.inputValue(), '2');
   await frame.getByRole('button', { name: 'Review', exact: true }).last().click();
-  await page.waitForFunction(() => Reflect.get(window, 'preparations').length === 2);
+  assert.equal(
+    await page.evaluate(() => Reflect.get(window, 'preparations').length),
+    1,
+    'unchanged intent reuses its reviewed proposal after an ambiguous cart response',
+  );
   await frame.getByRole('button', { name: 'Add to cart', exact: true }).click();
   await page.waitForFunction(() => Reflect.get(window, 'designerClosed') === 1);
   const attempts = (await page.evaluate(() => Reflect.get(window, 'writes'))) as {
@@ -171,6 +175,12 @@ test('isolated selected Designer preserves edits, renders real review before con
   assert.equal(attempts[0]?.design.id, attempts[1]?.design.id);
   assert.equal(await page.locator('iframe').isHidden(), true);
   assert.equal(await page.evaluate(() => Reflect.get(window, 'appliedCloses')), 1);
+  await page.evaluate(() => Reflect.get(window, 'liveFrame').open());
+  const done = frame.getByRole('button', { name: 'Done', exact: true });
+  await done.waitFor();
+  assert.equal(await done.isEnabled(), true, 'clean completion can close without preparing or purchasing again');
+  await done.click();
+  assert.equal(await page.evaluate(() => Reflect.get(window, 'writes').length), 2);
   await page.evaluate(() => Reflect.get(window, 'liveFrame').close());
   assert.equal(await page.evaluate(() => Reflect.get(window, 'appliedCloses')), 1, 'An applied close is consumed once');
 });
