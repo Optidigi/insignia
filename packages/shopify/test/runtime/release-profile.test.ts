@@ -2,6 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { resolveRuntimeReleaseProfile } from '../../src/runtime-release-profile.js';
 
 describe('closed server release targets', () => {
+  it('selects the parity candidate while preserving historical targets', () => {
+    const selected = resolveRuntimeReleaseProfile('native-parity-466a687');
+    expect(selected.activeVersionRef).toBe('1199503441921');
+    expect(selected.functionsSourceCommit).toBe('9b94149272d1b62c34f44dda3bde209e80b4ae22');
+    expect(Object.isFrozen(selected)).toBe(true);
+    expect(resolveRuntimeReleaseProfile('native-behavior-6b6c15e').activeVersionRef).toBe('1199244476417');
+  });
   it('selects the behavior candidate while preserving all historical targets', () => {
     const selected = resolveRuntimeReleaseProfile('native-behavior-6b6c15e');
     expect(selected.activeVersionRef).toBe('1199244476417');

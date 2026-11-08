@@ -12,6 +12,8 @@ import cartModules from '../../deployment/m5-runtime/native-cart-module-baseline
 import cartBinding from '../../deployment/m5-runtime/native-cart-release-binding.json' with { type: 'json' };
 import fixedModules from '../../deployment/m5-runtime/native-fixed-module-baseline.json' with { type: 'json' };
 import fixedBinding from '../../deployment/m5-runtime/native-fixed-release-binding.json' with { type: 'json' };
+import parityModules from '../../deployment/m5-runtime/native-parity-module-baseline.json' with { type: 'json' };
+import parityBinding from '../../deployment/m5-runtime/native-parity-release-binding.json' with { type: 'json' };
 import selectedOnlyModules from '../../deployment/m5-runtime/native-selected-fixed-module-baseline.json' with {
   type: 'json',
 };
@@ -140,7 +142,23 @@ test('behavior candidate preserves original identities and extends only its own 
   }
 });
 
+test('parity candidate preserves identities and exactly extends its own inventory', () => {
+  assert.equal(parityModules.length, 14);
+  const handles = parityModules.map(({ handle }) => handle);
+  assert.deepEqual(handles, [...handles].sort());
+  assert.equal(parityBinding.versionIds.length, 23);
+  assert.deepEqual(new Set(parityBinding.versionIds), new Set([...behaviorBinding.versionIds, '1199503441921']));
+  for (const module of parityModules) {
+    const prior = required(behaviorModules.find(({ handle }) => handle === module.handle));
+    const { config, ...identity } = module;
+    const { config: previousConfig, ...previousIdentity } = prior;
+    assert.deepEqual(identity, previousIdentity);
+    if (module.handle !== 'insignia') assert.deepEqual(config, previousConfig);
+  }
+});
+
 for (const profile of [
+  'native-parity-466a687',
   'native-behavior-6b6c15e',
   'native-selected-fixed-81830c6',
   'native-cart-fd9cc61',
@@ -156,7 +174,8 @@ for (const profile of [
   'lean-markets-7b17cd9',
   'lean-privacy-theme-23fd116',
 ]) {
-  const behavior = profile === 'native-behavior-6b6c15e';
+  const parity = profile === 'native-parity-466a687';
+  const behavior = parity || profile === 'native-behavior-6b6c15e';
   const selectedOnly = behavior || profile === 'native-selected-fixed-81830c6';
   const cart = selectedOnly || profile === 'native-cart-fd9cc61';
   const fixed = cart || profile === 'native-fixed-5c04fa8';
@@ -169,64 +188,77 @@ for (const profile of [
   const cookie = preview || profile === 'm8-cookie-91b35ab';
   const theme = cookie || profile === 'm8-theme-c8d8713';
   const proxy = profile !== 'm8-read-orders-617057f';
-  const versionId = behavior
-    ? '1199244476417'
-    : selectedOnly
-      ? '1199166783489'
-      : cart
-        ? '1199122513921'
-        : fixed
-          ? '1198986199041'
-          : nativeTheme
-            ? '1198938357761'
-            : refreshed
-              ? '1197668466689'
-              : selected
-                ? '1196974997505'
-                : privacy
-                  ? '1171218169857'
-                  : lean
-                    ? '1169137696769'
-                    : preview
-                      ? '1168157736961'
-                      : cookie
-                        ? '1166710865921'
-                        : theme
-                          ? '1166552825857'
-                          : proxy
-                            ? '1166090010625'
-                            : '1165513097217';
-  const modules = behavior
-    ? behaviorModules
-    : selectedOnly
-      ? selectedOnlyModules
-      : cart
-        ? cartModules
-        : fixed
-          ? fixedModules
-          : nativeTheme
-            ? nativeThemeModules
-            : refreshed
-              ? refreshModules
-              : selected
-                ? selectedModules
-                : privacy
-                  ? privacyModules
-                  : lean
-                    ? leanMarketsModules
-                    : preview
-                      ? previewThemeModules
-                      : cookie
-                        ? cookieThemeModules
-                        : theme
-                          ? themeModules
-                          : proxy
-                            ? proxyModules
-                            : historicalM8Modules;
+  const versionId = parity
+    ? '1199503441921'
+    : behavior
+      ? '1199244476417'
+      : selectedOnly
+        ? '1199166783489'
+        : cart
+          ? '1199122513921'
+          : fixed
+            ? '1198986199041'
+            : nativeTheme
+              ? '1198938357761'
+              : refreshed
+                ? '1197668466689'
+                : selected
+                  ? '1196974997505'
+                  : privacy
+                    ? '1171218169857'
+                    : lean
+                      ? '1169137696769'
+                      : preview
+                        ? '1168157736961'
+                        : cookie
+                          ? '1166710865921'
+                          : theme
+                            ? '1166552825857'
+                            : proxy
+                              ? '1166090010625'
+                              : '1165513097217';
+  const modules = parity
+    ? parityModules
+    : behavior
+      ? behaviorModules
+      : selectedOnly
+        ? selectedOnlyModules
+        : cart
+          ? cartModules
+          : fixed
+            ? fixedModules
+            : nativeTheme
+              ? nativeThemeModules
+              : refreshed
+                ? refreshModules
+                : selected
+                  ? selectedModules
+                  : privacy
+                    ? privacyModules
+                    : lean
+                      ? leanMarketsModules
+                      : preview
+                        ? previewThemeModules
+                        : cookie
+                          ? cookieThemeModules
+                          : theme
+                            ? themeModules
+                            : proxy
+                              ? proxyModules
+                              : historicalM8Modules;
   const profileTest = (name: string, fn: TestFn) => test(`${profile}: ${name}`, fn);
   const prior = (versions: ReleaseAppendInput['activeObservation']['versions']) =>
     proxy
       ? [
+          ...(parity
+            ? [
+                {
+                  versionId: 'gid://shopify/Version/1199244476417',
+                  versionTag: 'native-behavior-6b6c15e',
+                  status: 'inactive',
+                },
+              ]
+            : []),
           ...(behavior
             ? [
                 {
