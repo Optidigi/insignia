@@ -13,7 +13,9 @@ import type { CartReceipt, CartRequest, DesignerPorts, UploadRequest } from '../
 import { DesignerRepair, type RepairAction } from './repair';
 
 const channel = window.name;
-const parentOrigin = new URL(document.referrer).origin;
+// This sandboxed srcdoc frame deliberately shares its host origin. Firefox can
+// leave document.referrer empty here; it is not a reliable handshake authority.
+const parentOrigin = window.parent.location.origin;
 type Pending = { resolve(value: unknown): void; reject(error: Error): void };
 const pending = new Map<string, Pending>();
 function send(type: string, data: Record<string, unknown> = {}) {

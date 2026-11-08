@@ -60,7 +60,7 @@ jobs:
           rustup toolchain install 1.98.1 --profile minimal --component rustfmt,clippy --target wasm32-unknown-unknown
           corepack pnpm install --frozen-lockfile
           corepack pnpm --filter @insignia/web exec playwright install --with-deps chromium
-          corepack pnpm --filter @insignia/designer exec playwright install --with-deps chromium
+          corepack pnpm --filter @insignia/designer exec playwright install --with-deps chromium firefox
       - name: Build and check actual workspace
         if: steps.changes.outputs.route == 'full'
         run: corepack pnpm check

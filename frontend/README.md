@@ -64,7 +64,7 @@ Production hosts use server-confirmed currency and current authentication author
 The source has strict compiler coverage. After the workspace build, install the designer browser and run the complete frontend gate:
 
 ```sh
-corepack pnpm --filter @insignia/designer exec playwright install chromium
+corepack pnpm --filter @insignia/designer exec playwright install chromium firefox
 corepack pnpm check:ui
 ```
 
