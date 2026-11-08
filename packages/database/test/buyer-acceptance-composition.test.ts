@@ -95,6 +95,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
           finishLate = resolve;
         });
         releasePendingReads = releaseLate;
+        // Entitlement binding reads provider scope independently from credentials.
+        const getProviderScope = core.tenants.getActiveProviderScope.bind(core.tenants);
+        core.tenants.getActiveProviderScope = (target) => trackRead(getProviderScope(target));
         const getScope = core.tenants.getActiveAuthorizationScope.bind(core.tenants);
         core.tenants.getActiveAuthorizationScope = (target) =>
           trackRead(
