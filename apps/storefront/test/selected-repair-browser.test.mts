@@ -11,6 +11,7 @@ test('selected repair keeps cart unchanged until actual remaining-cart review is
     entryPoints: [new URL('../src/designer/frame-host.ts', import.meta.url).pathname],
     bundle: true,
     write: false,
+    loader: { '.css': 'text' },
     format: 'esm',
     platform: 'browser',
   });

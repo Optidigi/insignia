@@ -23,11 +23,11 @@ export type DesignerModal =
   | { kind: 'colors'; mode: 'choose' | 'add' }
   | { kind: 'switch-design'; design: Design };
 
-export type UploadFailureReason = 'file-too-large' | 'unsupported-file-type' | 'read-failed';
+export type UploadFailureReason = 'file-too-large' | 'unsupported-file-type' | 'read-failed' | 'upload-failed' | 'processing-failed' | 'inspection-rejected' | 'artwork-expired';
 
 export type UploadState =
   | { kind: 'idle' }
-  | { kind: 'reading'; token: number; target: PositionId }
+  | { kind: 'reading'; token: number; target: PositionId; phase?: 'uploading' | 'processing' }
   | {
       kind: 'failed';
       token: number;
@@ -105,6 +105,8 @@ export interface CreateDesignerStateInput {
   artworks: readonly Artwork[];
   designerOpen: boolean;
   initialDesign?: Design;
+  /** Accepted cart intent when the restored editable draft differs from it. */
+  initialBaseline?: Design;
   requiresCartReview?: boolean;
 }
 
@@ -166,6 +168,7 @@ export type DesignerEvent =
       target: PositionId;
       reason: UploadFailureReason;
     }
+  | { type: 'upload-progress'; token: number; target: PositionId; phase: 'uploading' | 'processing' }
   | { type: 'upload-started'; token: number; target: PositionId }
   | { type: 'upload-canceled' }
   | {
@@ -178,7 +181,7 @@ export type DesignerEvent =
       type: 'upload-failed';
       token: number;
       target: PositionId;
-      reason: 'read-failed';
+      reason: Exclude<UploadFailureReason, 'file-too-large' | 'unsupported-file-type'>;
     }
   | { type: 'recovery-undone' }
   | { type: 'recovery-dismissed' }
@@ -215,7 +218,8 @@ export function createDesignerState(input: CreateDesignerStateInput): DesignerSt
     recovery: noRecovery,
     recoveryVersion: 0,
   };
-  return input.initialDesign ? loadCartDesign(initial, input.initialDesign) : initial;
+  const loaded = input.initialDesign ? loadCartDesign(initial, input.initialDesign) : initial;
+  return input.initialBaseline ? { ...loaded, baseline: copyDesign(input.initialBaseline) } : loaded;
 }
 
 export function designerReducer(state: DesignerState, event: DesignerEvent): DesignerState {
@@ -422,6 +426,9 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
       return beginUploadFailure(state, event.token, event.target, event.reason);
     case 'upload-canceled':
       return state.upload.kind === 'idle' ? state : { ...state, upload: noUpload };
+    case 'upload-progress':
+      if (state.upload.kind !== 'reading' || state.upload.token !== event.token || state.upload.target !== event.target || state.upload.phase === event.phase) return state;
+      return { ...state, upload: { ...state.upload, phase: event.phase } };
     case 'upload-started':
       if (!isOpenUploadTarget(state, event.target)) return state;
       if (event.token <= state.uploadVersion) return state;
@@ -504,7 +511,11 @@ function selectColor(state: DesignerState, color: ColorId): DesignerState {
 }
 
 export function hasUnappliedDraft(state: DesignerState): boolean {
-  if (state.requiresCartReview) return true;
+  return state.requiresCartReview || hasDraftChanges(state);
+}
+
+/** Edited intent is distinct from the requirement to review current purchase terms. */
+export function hasDraftChanges(state: DesignerState): boolean {
   const saved = state.baseline;
   return saved
     ? JSON.stringify(state.prints) !== JSON.stringify(saved.prints) ||
@@ -539,7 +550,7 @@ function quantitySignature(quantities: Quantities): string {
 }
 
 export function productDesignEditRequiresConfirmation(state: DesignerState, designId: string): boolean {
-  return hasUnappliedDraft(state) && designId !== state.editing;
+  return hasDraftChanges(state) && designId !== state.editing;
 }
 
 function selectPosition(state: DesignerState, positionId: PositionId): DesignerState {

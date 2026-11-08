@@ -13,6 +13,7 @@ import {
   type DesignerEvent,
   type DesignerState,
   designerReducer,
+  hasDraftChanges,
   hasUnappliedDraft,
   isProductionChoicesValid,
   productDesignEditRequiresConfirmation,
@@ -80,6 +81,7 @@ export interface DesignerProps {
   onOpenChange: (open: boolean) => void;
   initialPrints?: readonly Print[];
   initialDesign?: Design;
+  initialBaseline?: Design;
   initialArtworks?: readonly Artwork[];
   previewOnly?: boolean;
   /** Active Shopify page language; missing context falls back to browser language, then English. */
@@ -96,6 +98,8 @@ export interface DesignerProps {
   previewProductImageLabel?: string;
   allowUnload?: boolean;
   renderClosed?: (props: ClosedDesignerProps) => ComponentChildren;
+  /** Keep the selected view behind an external host confirmation, inert and paused. */
+  retainViewForConfirmation?: boolean;
 }
 export function Designer(props: DesignerProps) {
   const language = useCustomerLanguage({
@@ -136,9 +140,11 @@ function DesignerSession({
   initialPrints = [],
   initialArtworks = [],
   initialDesign,
+  initialBaseline,
   previewOnly = false,
   allowUnload = false,
   renderClosed,
+  retainViewForConfirmation = false,
   previewContextLabel,
   previewNotice,
   previewProductImageLabel,
@@ -213,6 +219,7 @@ function DesignerSession({
       designerOpen: isOpen,
       ...(requiresCartReview ? { requiresCartReview: true } : {}),
       ...(initialDesign ? { initialDesign } : {}),
+      ...(initialBaseline ? { initialBaseline } : {}),
     },
     createDesignerState,
   );
@@ -333,6 +340,10 @@ function DesignerSession({
         return t('customer:artwork.uploadTooLarge', { maxSizeMb: 5 });
       case 'unsupported-file-type':
         return t('customer:artwork.uploadUnsupportedType');
+      case 'upload-failed': return t('customer:artwork.uploadFailed');
+      case 'processing-failed': return t('customer:artwork.processingFailed');
+      case 'inspection-rejected': return t('customer:artwork.inspectionRejected');
+      case 'artwork-expired': return t('customer:artwork.artworkExpired');
       case 'read-failed':
         return t('customer:artwork.uploadReadFailed');
     }
@@ -855,14 +866,15 @@ function DesignerSession({
     window.requestAnimationFrame(() => panelRef.current?.focus());
   }
   const unappliedDraft = hasUnappliedDraft(workflow);
+  const dirtyDraft = hasDraftChanges(workflow);
   useEffect(() => {
-    if (!unappliedDraft || allowUnload || previewOnly) return;
+    if (!dirtyDraft || allowUnload || previewOnly) return;
     const handle = (event: BeforeUnloadEvent) => {
       event.preventDefault();
     };
     window.addEventListener('beforeunload', handle);
     return () => window.removeEventListener('beforeunload', handle);
-  }, [unappliedDraft, allowUnload, previewOnly]);
+  }, [dirtyDraft, allowUnload, previewOnly]);
   const focused =
     step === 0 && expanded
       ? prints.find(
@@ -893,13 +905,14 @@ function DesignerSession({
   ]
     .filter(Boolean)
     .join(' ');
+  let closedView: ComponentChildren = null;
   if (!designerOpen) {
     const hostModal = workflow.modal;
     const target = hostModal.kind === 'switch-design' ? hostModal.design : undefined;
-    return (
+    closedView = (
       renderClosed?.({
         completion: workflow.completion,
-        hasDraft: unappliedDraft,
+        hasDraft: dirtyDraft,
         editing,
         switchingDesign: target?.id ?? null,
         onResume: openDesigner,
@@ -912,11 +925,14 @@ function DesignerSession({
         onConfirmSwitch: confirmProductAction,
       }) ?? null
     );
+    if (!retainViewForConfirmation) return closedView;
   }
 
   const visiblePrints = prints.filter((print) => positionFor(print.id).view === view);
   return (
+    <>
     <div
+      inert={!designerOpen}
       className={`app ${artworkOnly ? 'admin-preview' : ''} ${previewExpanded && focusPolicy?.movementArea ? 'preview-expanded' : ''}`}
       style={suspended ? { display: 'none' } : undefined}
       data-step={step}
@@ -1835,6 +1851,7 @@ function DesignerSession({
             <div className="artwork-dialog-body">
               <div
                 className={`upload-zone ${dragging ? 'dragging' : ''}`}
+                aria-busy={uploading}
                 onDragOver={(e) => {
                   e.preventDefault();
                   setDragging(true);
@@ -1843,7 +1860,7 @@ function DesignerSession({
                 onDrop={onDrop}
               >
                 <IconCloudUpload size={32} />
-                <strong>{uploading ? t('customer:artwork.openingFile') : t('customer:artwork.dropFile')}</strong>
+                <strong role={uploading ? 'status' : undefined} aria-live="polite">{uploading ? workflow.upload.kind === 'reading' && workflow.upload.phase === 'processing' ? t('customer:artwork.processingFile') : workflow.upload.kind === 'reading' && workflow.upload.phase === 'uploading' ? t('customer:artwork.uploadingFile') : t('customer:artwork.openingFile') : t('customer:artwork.dropFile')}</strong>
                 <span>
                   {t('customer:artwork.or')}{' '}
                   <button onClick={() => fileRef.current?.click()} disabled={uploading}>
@@ -1924,6 +1941,8 @@ function DesignerSession({
         </dialog>
       )}
     </div>
+    {closedView}
+    </>
   );
 }
 interface PrintPanelProps {

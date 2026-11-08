@@ -73,7 +73,13 @@
     "yourArtwork": "Tu diseño",
     "files": "Archivos",
     "samples": "Ejemplos",
-    "provideArtworkLater": "Entregar el diseño más tarde"
+    "provideArtworkLater": "Entregar el diseño más tarde",
+    "uploadingFile": "Subiendo archivo…",
+    "processingFile": "Comprobando archivo…",
+    "uploadFailed": "La subida falló. Selecciona el archivo de nuevo.",
+    "processingFailed": "No se pudo comprobar el archivo. Inténtalo de nuevo.",
+    "inspectionRejected": "Esta imagen fue rechazada. Elige una imagen estática compatible.",
+    "artworkExpired": "Este archivo ha caducado. Súbelo de nuevo."
   },
   "quantities": {
     "heading": "Cantidades",
@@ -235,13 +241,13 @@
     "retry": "Intentar de nuevo"
   },
   "host": {
-    "personalise": "Personalizar",
-    "savedDesigns": "Diseños guardados",
-    "openSaved": "Abrir diseño guardado",
-    "startNew": "Empezar un nuevo diseño",
     "discardTitle": "¿Descartar cambios?",
     "discardHelp": "Descarta tus cambios para editar otro diseño. Los artículos del carrito no cambiarán.",
     "cancel": "Cancelar",
-    "discardEdit": "Descartar y editar"
+    "discardEdit": "Descartar y editar",
+    "personalise": "Personalizar",
+    "savedDesigns": "Diseños guardados",
+    "openSaved": "Abrir diseño guardado",
+    "startNew": "Empezar un nuevo diseño"
   }
 }

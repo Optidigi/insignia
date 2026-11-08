@@ -11,6 +11,7 @@ test('isolated selected Designer preserves edits, renders real review before con
     entryPoints: [new URL('../src/designer/frame-host.ts', import.meta.url).pathname],
     bundle: true,
     write: false,
+    loader: { '.css': 'text' },
     format: 'esm',
     platform: 'browser',
   });
@@ -179,6 +180,7 @@ test('frame handoff consumes only the completion matching its verified Shopify r
     entryPoints: [new URL('../src/designer/frame-host.ts', import.meta.url).pathname],
     bundle: true,
     write: false,
+    loader: { '.css': 'text' },
     format: 'esm',
     platform: 'browser',
   });

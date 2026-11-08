@@ -73,7 +73,13 @@
     "yourArtwork": "Je ontwerp",
     "files": "Bestanden",
     "samples": "Voorbeelden",
-    "provideArtworkLater": "Ontwerp later aanleveren"
+    "provideArtworkLater": "Ontwerp later aanleveren",
+    "uploadingFile": "Bestand uploaden…",
+    "processingFile": "Bestand controleren…",
+    "uploadFailed": "Upload mislukt. Kies het bestand opnieuw.",
+    "processingFailed": "Het bestand kon niet worden gecontroleerd. Probeer opnieuw.",
+    "inspectionRejected": "Deze afbeelding is afgewezen. Kies een ondersteunde statische afbeelding.",
+    "artworkExpired": "Dit bestand is verlopen. Upload het opnieuw."
   },
   "quantities": {
     "heading": "Aantallen",
@@ -231,13 +237,13 @@
     "retry": "Opnieuw proberen"
   },
   "host": {
-    "personalise": "Personaliseren",
-    "savedDesigns": "Opgeslagen ontwerpen",
-    "openSaved": "Opgeslagen ontwerp openen",
-    "startNew": "Een nieuw ontwerp starten",
     "discardTitle": "Wijzigingen verwerpen?",
     "discardHelp": "Verwerp je wijzigingen om een ander ontwerp te bewerken. Artikelen in je winkelwagen veranderen niet.",
     "cancel": "Annuleren",
-    "discardEdit": "Verwerpen en bewerken"
+    "discardEdit": "Verwerpen en bewerken",
+    "personalise": "Personaliseren",
+    "savedDesigns": "Opgeslagen ontwerpen",
+    "openSaved": "Opgeslagen ontwerp openen",
+    "startNew": "Een nieuw ontwerp starten"
   }
 }

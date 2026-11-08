@@ -18,6 +18,20 @@ function validOverlay(input: unknown) {
 }
 
 describe('merchant-authored customer wording overlays', () => {
+  it('keeps saved retired-host wording readable alongside active customer wording', () => {
+    const overlay = validOverlay({
+      locale: 'en',
+      messages: {
+        'customer:host.personalise': { message: 'Previously saved host wording' },
+        'customer:steps.review': { message: 'Check my design' },
+      },
+    });
+    expect(overlay.messages['customer:host.personalise']).toEqual({ message: 'Previously saved host wording' });
+    expect(createCustomerTranslator('en', { wordingOverlay: overlay }).t('customer:steps.review')).toBe(
+      'Check my design',
+    );
+  });
+
   it('restores built-in language defaults while keeping regional overrides exact and sparse', () => {
     const overlay = validOverlay({
       locale: 'nl-NL',

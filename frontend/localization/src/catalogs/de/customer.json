@@ -73,7 +73,13 @@
     "yourArtwork": "Ihr Motiv",
     "files": "Dateien",
     "samples": "Beispiele",
-    "provideArtworkLater": "Motiv später nachreichen"
+    "provideArtworkLater": "Motiv später nachreichen",
+    "uploadingFile": "Datei wird hochgeladen…",
+    "processingFile": "Datei wird geprüft…",
+    "uploadFailed": "Hochladen fehlgeschlagen. Wähle die Datei erneut aus.",
+    "processingFailed": "Die Datei konnte nicht geprüft werden. Versuche es erneut.",
+    "inspectionRejected": "Dieses Bild wurde abgelehnt. Wähle ein unterstütztes statisches Bild.",
+    "artworkExpired": "Diese Datei ist abgelaufen. Lade sie erneut hoch."
   },
   "quantities": {
     "heading": "Mengen",
@@ -231,13 +237,13 @@
     "retry": "Erneut versuchen"
   },
   "host": {
-    "personalise": "Personalisieren",
-    "savedDesigns": "Gespeicherte Designs",
-    "openSaved": "Gespeichertes Design öffnen",
-    "startNew": "Neues Design starten",
     "discardTitle": "Änderungen verwerfen?",
     "discardHelp": "Verwirf deine Änderungen, um ein anderes Design zu bearbeiten. Artikel im Warenkorb bleiben unverändert.",
     "cancel": "Abbrechen",
-    "discardEdit": "Verwerfen und bearbeiten"
+    "discardEdit": "Verwerfen und bearbeiten",
+    "personalise": "Personalisieren",
+    "savedDesigns": "Gespeicherte Designs",
+    "openSaved": "Gespeichertes Design öffnen",
+    "startNew": "Neues Design starten"
   }
 }

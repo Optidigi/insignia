@@ -932,8 +932,7 @@ test('selected acknowledgements rotate acceptance keys while uncertain API retri
     assert.deepEqual(accepts[1], accepts[0]);
     assert.equal(proposals.length, 1, 'Unknown acceptance never prepares a new proposal');
     await trigger.getByRole('button', { name: 'Review customized cart', exact: true }).click();
-    await host.getByRole('button', { name: 'Open saved design', exact: true }).click();
-    await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+    await host.getByRole('button', { name: 'Previous step', exact: true }).click();
     await host.locator('input[type=number]:enabled').first().fill('4');
     await host.getByRole('button', { name: 'Review', exact: true }).last().click();
     await applyButton(host).waitFor();
@@ -965,6 +964,56 @@ test('explicit selected full-cart review rebases compatible historical designs t
     { multipleProducts: true },
   );
 });
+for (const restoreUnavailable of [false, true])
+  test(`explicit repair Start-new abandons restored custody across reloads (restore unavailable=${restoreUnavailable})`, async () => {
+    await withRetainedBuyer(async ({ page, host, trigger, configure, accepts, mutations }) => {
+      const reloadOwned = async (inRepair = false) => {
+        await page.reload();
+        await page.evaluate(() => {
+          const buyer = document.createElement('insignia-buyer');
+          buyer.setAttribute('product-id', '111');
+          buyer.setAttribute('country', 'NL');
+          buyer.setAttribute('market-id', '1');
+          buyer.setAttribute('repair', '');
+          document.body.append(buyer);
+        });
+        await trigger.getByRole('button', { name: 'Review customized cart', exact: true }).click();
+        if (inRepair)
+          await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
+        else await host.locator('.app').waitFor();
+      };
+      await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+      await host.locator('input[type=number]:enabled').first().fill('4');
+      await host.getByRole('button', { name: 'Review', exact: true }).last().click();
+      await applyButton(host).waitFor();
+      page.on('dialog', (dialog) => dialog.accept());
+      const restoreRoute = '**/apps/insignia/v1/designs/*/restore';
+      if (restoreUnavailable)
+        await page.route(restoreRoute, (route) =>
+          route.fulfill({ status: 503, json: { error: 'Temporarily unavailable' } }),
+        );
+      await reloadOwned(restoreUnavailable);
+      if (!restoreUnavailable) {
+        await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+        assert.equal(await host.locator('input[type=number]:enabled').first().inputValue(), '4');
+        const published = structuredClone(config);
+        published.revisionId = 'new-publication';
+        published.contentHash = 'e'.repeat(64);
+        configure(published);
+        await host.getByRole('button', { name: 'Review', exact: true }).last().click();
+        await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
+      }
+      await host.getByRole('button', { name: 'Start a new customization', exact: true }).click();
+      await host.getByRole('button', { name: 'Add artwork', exact: true }).waitFor();
+      if (restoreUnavailable) await page.unroute(restoreRoute);
+      await reloadOwned();
+      await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+      assert.equal(await host.locator('input[type=number]:enabled').first().inputValue(), '3');
+      assert.equal(accepts.length, 0);
+      assert.equal(mutations(), 0);
+    });
+  });
+
 test('an incompatible republish requires explicit selected design repair and never silently drops retained logo-later choices', async () => {
   await withRetainedBuyer(async ({ host, proposals, configure, group }) => {
     const cfg = structuredClone(config);
@@ -1167,6 +1216,86 @@ test('Firefox opens the selected Designer when srcdoc has no document referrer',
   );
 });
 
+for (const engine of [chromium, firefox])
+  for (const result of ['USABLE', 'REJECTED'] as const)
+    test(`${engine.name()}: selected artwork exposes real transfer/inspection and ${result.toLowerCase()} outcome`, async () => {
+      await withProductDesigner(
+        config,
+        async ({ page, ui }) => {
+          const assetId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+          const expiresAt = new Date(Date.now() + 3600000).toISOString();
+          let releaseUpload: () => void = () => {};
+          const transferring = new Promise<void>((resolve) => {
+            releaseUpload = resolve;
+          });
+          let inspected = false;
+          await page.route('https://upload.example.test/original', async (route) => {
+            await transferring;
+            await route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*' } });
+          });
+          await page.route('**/apps/insignia/guest**', (route) => {
+            const path = new URL(route.request().url()).pathname;
+            if (path.endsWith('/guest'))
+              return route.fulfill({
+                json: { assetId, expiresAt, upload: { url: 'https://upload.example.test/original', headers: {} } },
+              });
+            if (path.endsWith('/complete')) return route.fulfill({ json: { state: 'QUEUED', expiresAt } });
+            if (path.endsWith('/status'))
+              return route.fulfill({ json: { state: inspected ? result : 'INSPECTING', expiresAt } });
+            if (path.endsWith('/preview'))
+              return route.fulfill({
+                json: { url: 'https://preview.example/uploaded.png', width: 100, height: 100, expiresAt },
+              });
+            throw Error('Unexpected artwork operation');
+          });
+          await ui.getByRole('button', { name: 'Add artwork', exact: true }).click();
+          await ui.getByRole('button', { name: 'Choose artwork Choose', exact: true }).click();
+          await ui.locator('input[type=file]').setInputFiles({
+            name: 'progress.png',
+            mimeType: 'image/png',
+            buffer: Buffer.from(
+              'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC',
+              'base64',
+            ),
+          });
+          await ui.getByRole('status').getByText('Uploading artwork…', { exact: true }).waitFor();
+          assert.equal(await ui.getByRole('button', { name: 'browse files', exact: true }).isDisabled(), true);
+          assert.equal(await ui.locator('.upload-zone').getAttribute('aria-busy'), 'true');
+          releaseUpload();
+          await ui.getByRole('status').getByText('Checking artwork…', { exact: true }).waitFor();
+          inspected = true;
+          if (result === 'USABLE') {
+            await ui.getByRole('button', { name: 'progress.png Change', exact: true }).waitFor();
+            assert.equal(await ui.getByRole('dialog', { name: 'Artwork for Front', exact: true }).count(), 0);
+          } else {
+            await ui
+              .getByRole('alert')
+              .getByText('This image was rejected. Choose a supported static image.', { exact: true })
+              .waitFor();
+            assert.equal(await ui.getByRole('button', { name: 'progress.png Change', exact: true }).count(), 0);
+            assert.equal(await ui.getByRole('button', { name: 'browse files', exact: true }).isEnabled(), true);
+          }
+        },
+        false,
+        engine,
+      );
+    });
+
+test('reopening resumes the selected Designer without a developer host page', async () => {
+  await withProductDesigner(config, async ({ page, ui, trigger }) => {
+    await addDeferred(ui, 'Front');
+    await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+    await ui.locator('input[type=number]:enabled').first().fill('3');
+    await ui.getByRole('button', { name: 'Close customizer', exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('dialog:modal') === null);
+    await trigger.click();
+    await ui.locator('.app').waitFor();
+    assert.equal(await ui.locator('input[type=number]:enabled').first().inputValue(), '3');
+    assert.equal(await ui.getByRole('button', { name: 'Personalise', exact: true }).count(), 0);
+    assert.equal(await ui.getByRole('button', { name: 'Start a new design', exact: true }).count(), 0);
+  });
+});
+
 test('selected desktop and mobile layouts retain the design and quantities when closing and reopening', async () => {
   await withProductDesigner(config, async ({ page, ui, trigger }) => {
     const iframe = required(await page.locator('iframe').boundingBox());
@@ -1189,7 +1318,6 @@ test('selected desktop and mobile layouts retain the design and quantities when 
       true,
     );
     await trigger.click();
-    await ui.getByRole('button', { name: 'Personalise', exact: true }).click();
     await ui.locator('.app').waitFor();
     assert.equal(await quantity.inputValue(), '3');
     await ui.getByRole('button', { name: 'Previous step', exact: true }).click();
@@ -1219,7 +1347,6 @@ test('selected desktop and mobile layouts retain the design and quantities when 
     await page.keyboard.press('Escape');
     await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
     await trigger.click();
-    await ui.getByRole('button', { name: 'Personalise', exact: true }).click();
     await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
     assert.equal(await quantity.inputValue(), '3');
   });
@@ -1496,21 +1623,6 @@ test('a failed selected stylesheet stays behind startup recovery until a styled 
   });
 });
 
-test('the retained host decisions resume a draft and start a genuinely new design', async () => {
-  await withProductDesigner(config, async ({ page, ui, trigger }) => {
-    await addDeferred(ui, 'Front');
-    await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-    await ui.locator('input[type=number]:enabled').first().fill('3');
-    await ui.getByRole('button', { name: 'Close customizer', exact: true }).click();
-    await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
-    await trigger.click();
-    await ui.getByRole('button', { name: 'Start a new design', exact: true }).click();
-    await ui.getByRole('button', { name: 'Add artwork', exact: true }).waitFor();
-    assert.equal(await ui.getByText('Artwork to follow', { exact: true }).count(), 0);
-    assert.equal(await page.evaluate(() => document.querySelectorAll('dialog:modal').length), 1);
-  });
-});
-
 test('switching a dirty cart design offers the baseline cancel/discard decision and never mutates the cart', async () => {
   await withRetainedBuyer(
     async ({ page, trigger, host, mutations, accepts }) => {
@@ -1520,7 +1632,10 @@ test('switching a dirty cart design offers the baseline cancel/discard decision 
       await host.locator('.review-pricing summary').click();
       await host.getByRole('button', { name: 'Other synthetic shirt', exact: true }).click();
       await host.getByRole('dialog', { name: 'Discard changes?', exact: true }).waitFor();
-      await host.getByRole('button', { name: 'Cancel', exact: true }).click();
+      assert.equal(await host.locator('.app').count(), 1, 'the selected view remains behind its confirmation');
+      assert.equal(await host.locator('.app').isVisible(), true);
+      assert.equal(await host.locator('.app').getAttribute('inert'), '');
+      await page.keyboard.press('Escape');
       await host.getByRole('button', { name: 'Edit quantities', exact: true }).click();
       assert.equal(await host.locator('input[type=number]:enabled').first().inputValue(), '4');
       await host.getByRole('button', { name: 'Review', exact: true }).last().click();
@@ -1528,12 +1643,9 @@ test('switching a dirty cart design offers the baseline cancel/discard decision 
       await host.getByRole('button', { name: 'Other synthetic shirt', exact: true }).click();
       await host.getByRole('button', { name: 'Discard and edit', exact: true }).click();
       await host.getByRole('heading', { name: 'Other synthetic shirt', exact: true }).waitFor();
-      await host.getByRole('button', { name: 'Close customizer', exact: true }).click();
-      await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
-      await trigger.getByRole('button', { name: 'Review customized cart', exact: true }).click();
-      await host.getByLabel('Saved designs', { exact: true }).selectOption({ label: 'Synthetic shirt' });
-      await host.getByRole('button', { name: 'Open saved design', exact: true }).click();
-      await host.getByRole('button', { name: 'Discard and edit', exact: true }).click();
+      await reviewRetained(host);
+      await host.locator('.review-pricing summary').click();
+      await host.getByRole('button', { name: 'Synthetic shirt', exact: true }).click();
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
       assert.equal(
         await host.locator('input[type=number]:enabled').first().inputValue(),
@@ -1547,14 +1659,47 @@ test('switching a dirty cart design offers the baseline cancel/discard decision 
   );
 });
 
-test('owned saved designs are available before Review and disconnect aborts a pending switch without leaving a modal', async () => {
+test('an owned selection made during pending review remains editable after the final quote arrives', async () => {
+  await withRetainedBuyer(
+    async ({ host, accepts, mutations }) => {
+      await host.locator('body').evaluate(() => {
+        addEventListener('message', (event) => {
+          if (
+            event.source !== parent ||
+            event.origin !== parent.location.origin ||
+            event.data?.channel !== window.name ||
+            event.data.type !== 'insignia:designer:quote'
+          )
+            return;
+          if (event.data.quote.totalMinor === undefined)
+            window.pendingOtherSelection = event.data.quote.groups.find(
+              (group: { label: string; id: string }) => group.label === 'Other synthetic shirt',
+            )?.id;
+        });
+      });
+      await reviewRetained(host);
+      await applyButton(host).waitFor();
+      const id = await host.locator('body').evaluate(() => window.pendingOtherSelection);
+      assert(id);
+      await host.locator('body').evaluate((_body, selected) => {
+        parent.postMessage(
+          { type: 'insignia:designer:select-group', channel: window.name, id: selected },
+          parent.location.origin,
+        );
+      }, id);
+      await host.getByRole('heading', { name: 'Other synthetic shirt', exact: true }).waitFor();
+      assert.equal(accepts.length, 0);
+      assert.equal(mutations(), 0);
+    },
+    { multipleProducts: true },
+  );
+});
+
+test('switching an unchanged cart design skips discard confirmation and disconnect aborts its loading modal', async () => {
   await withRetainedBuyer(
     async ({ page, host, trigger, proposals, mutations }) => {
-      await host.getByRole('button', { name: 'Close customizer', exact: true }).click();
-      await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
-      await trigger.getByRole('button', { name: 'Review customized cart', exact: true }).click();
-      await host.getByLabel('Saved designs', { exact: true }).selectOption({ label: 'Other synthetic shirt' });
-      assert.equal(proposals.length, 0);
+      await reviewRetained(host);
+      await host.locator('.review-pricing summary').click();
       await page.route('**/apps/insignia/v1/config*', (route) =>
         new URL(route.request().url()).searchParams.get('productId') === '333'
           ? new Promise<void>(() => {})
@@ -1563,9 +1708,9 @@ test('owned saved designs are available before Review and disconnect aborts a pe
       const requesting = page.waitForRequest(
         (request) => new URL(request.url()).searchParams.get('productId') === '333',
       );
-      await host.getByRole('button', { name: 'Open saved design', exact: true }).click();
-      await host.getByRole('button', { name: 'Discard and edit', exact: true }).click();
+      await host.getByRole('button', { name: 'Other synthetic shirt', exact: true }).click();
       await requesting;
+      assert.equal(await host.getByRole('dialog', { name: 'Discard changes?', exact: true }).count(), 0);
       await page.getByRole('status').waitFor();
       const aborted = page.waitForEvent(
         'requestfailed',
@@ -1657,5 +1802,6 @@ test('an option-only change after lost acceptance requires distinct reviewed ter
 declare global {
   interface Window {
     observedCartRequests: ObservedCartRequest[];
+    pendingOtherSelection?: string;
   }
 }

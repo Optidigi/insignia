@@ -25,6 +25,9 @@ const moduleFile = join(temporary, 'runtime.mjs');
 await writeFile(moduleFile, bundle.outputFiles[0]!.text);
 const {
   createDesignerState,
+  hasDraftChanges,
+  hasUnappliedDraft,
+  productDesignEditRequiresConfirmation,
   designerReducer,
   createDesignerRuntime,
   canCommitDesign,
@@ -854,4 +857,68 @@ test('preview renewal updates media without changing intent or dialogs, and term
   await runtime.renew(state.artworks[0]!);
   assert.equal(state.artworks.length, 0);
   assert.deepEqual(state.prints, prints);
+});
+
+ test('required quote review is not edited content and same-design editing never discards a draft', () => {
+  let state = ready();
+  state = { ...state, editing: 'saved', requiresCartReview: true, baseline: { id: 'saved', prints: structuredClone(state.prints), quantities: structuredClone(state.quantities), variants: [] } };
+  assert.equal(hasDraftChanges(state), false);
+  assert.equal(hasUnappliedDraft(state), true);
+  assert.equal(productDesignEditRequiresConfirmation(state, 'other'), false);
+  state = designerReducer(state, { type: 'quantity-entered', color: 'white', size: 's', value: 3 });
+  assert.equal(hasDraftChanges(state), true);
+  assert.equal(productDesignEditRequiresConfirmation(state, 'other'), true);
+  assert.equal(productDesignEditRequiresConfirmation(state, 'saved'), false);
+});
+
+test('upload progress keeps selected intent unchanged and cancelled progress cannot revive an upload', async () => {
+  const deferred = delayed();
+  let request: UploadRequest | undefined;
+  const app = harness({ artwork: { upload: async (_file, next) => { request = next; return deferred.promise; } }, cart: { commit: async () => { throw Error('unused'); } } });
+  app.dispatch({ type: 'step-selected', step: 0 });
+  app.dispatch({ type: 'modal-opened', modal: { kind: 'artwork', positionId: 'front' } });
+  const before = structuredClone(app.state.prints);
+  const pending = app.runtime.upload(new File(['image'], 'progress.png', { type: 'image/png' }), 'front');
+  assert(request);
+  request.onProgress?.('uploading');
+  assert.equal(app.state.upload.kind === 'reading' && app.state.upload.phase, 'uploading');
+  request.onProgress?.('processing');
+  assert.equal(app.state.upload.kind === 'reading' && app.state.upload.phase, 'processing');
+  assert.deepEqual(app.state.prints, before);
+  app.runtime.cancelUpload();
+  app.dispatch({ type: 'modal-closed' });
+  const cancelled = app.state;
+  request.onProgress?.('uploading');
+  deferred.resolve({ id: 'late', name: 'late.png', url: '/late.png', width: 1, height: 1 });
+  await pending;
+  assert.equal(app.state, cancelled);
+});
+
+for (const [phase, status, reason] of [
+  ['uploading', 503, 'upload-failed'],
+  ['processing', 503, 'processing-failed'],
+  ['processing', 422, 'inspection-rejected'],
+  ['processing', 410, 'artwork-expired'],
+] as const) test(`real upload failure reports ${reason} without applying unverified artwork`, async () => {
+  const app = harness({ artwork: { upload: async (_file, request) => { request.onProgress?.(phase); throw Object.assign(Error('private provider detail'), { status }); } }, cart: { commit: async () => { throw Error('unused'); } } });
+  app.dispatch({ type: 'step-selected', step: 0 });
+  app.dispatch({ type: 'modal-opened', modal: { kind: 'artwork', positionId: 'front' } });
+  const before = structuredClone(app.state.prints);
+  await app.runtime.upload(new File(['image'], 'failure.png', { type: 'image/png' }), 'front');
+  assert.equal(app.state.upload.kind === 'failed' && app.state.upload.reason, reason);
+  assert.deepEqual(app.state.prints, before);
+  assert.equal(app.state.modal.kind, 'artwork');
+});
+
+test('restored unpurchased edits compare against accepted cart intent, and reverting removes only the dirty warning', () => {
+  const original = ready();
+  const baseline = { id: 'restored', prints: structuredClone(original.prints), quantities: structuredClone(original.quantities), variants: [] };
+  let state = createDesignerState({ rules: original.rules, view: original.view, color: original.color, prints: original.prints, active: original.active, expanded: original.expanded, artworks: original.artworks, designerOpen: true, requiresCartReview: true,
+    initialDesign: { ...baseline, quantities: { 'white:s': 4 } }, initialBaseline: baseline });
+  assert.equal(hasDraftChanges(state), true);
+  assert.equal(productDesignEditRequiresConfirmation(state, 'other'), true);
+  state = designerReducer(state, { type: 'quantity-entered', color: 'white', size: 's', value: 2 });
+  assert.equal(hasDraftChanges(state), false);
+  assert.equal(productDesignEditRequiresConfirmation(state, 'other'), false);
+  assert.equal(hasUnappliedDraft(state), true);
 });

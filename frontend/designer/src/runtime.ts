@@ -5,9 +5,19 @@ import {
   designerReducer,
   type DesignerEvent,
   type DesignerState,
+  type UploadFailureReason,
 } from "./designer-state";
 
+export type UploadPhase = 'uploading' | 'processing';
+function uploadFailure(error: unknown, phase?: UploadPhase): Exclude<UploadFailureReason, 'file-too-large' | 'unsupported-file-type'> {
+  const status = error && typeof error === 'object' && 'status' in error ? error.status : undefined;
+  if (status === 410) return 'artwork-expired';
+  if (phase === 'processing') return status === 422 ? 'inspection-rejected' : 'processing-failed';
+  return phase === 'uploading' ? 'upload-failed' : 'read-failed';
+}
+
 export interface UploadRequest {
+  onProgress?: (phase: UploadPhase) => void;
   requestId: string;
   target: PositionId;
   signal: AbortSignal;
@@ -120,7 +130,7 @@ export function createDesignerRuntime(
         if(controller.signal.aborted||token!==uploadVersion)return;
         if(applied.id!==artwork.id||!applied.url||!Number.isFinite(applied.width)||!Number.isFinite(applied.height)||applied.width<=0||applied.height<=0)throw new Error('Invalid applied artwork');
         dispatch({type:'upload-succeeded',token,target,artwork:applied});
-      }catch{if(!controller.signal.aborted&&token===uploadVersion)dispatch({type:'upload-failed',token,target,reason:'read-failed'});}
+      }catch(error){if(!controller.signal.aborted&&token===uploadVersion)dispatch({type:'upload-failed',token,target,reason:uploadFailure(error)});}
       finally{if(uploadController===controller)uploadController=null;}
     },
     async upload(file: File, target: PositionId) {
@@ -151,11 +161,17 @@ export function createDesignerRuntime(
         return;
       }
       dispatch(started);
+      let phase: UploadPhase | undefined;
       try {
         const artwork = await ports.artwork.upload(file, {
           target,
           requestId: `upload-${token}`,
           signal: controller.signal,
+          onProgress(next) {
+            if (controller.signal.aborted || token !== uploadVersion) return;
+            phase = next;
+            dispatch({ type: 'upload-progress', token, target, phase: next });
+          },
         });
         if (controller.signal.aborted || token !== uploadVersion) return;
         if (
@@ -168,13 +184,13 @@ export function createDesignerRuntime(
         )
           throw new Error("Invalid artwork result");
         dispatch({ type: "upload-succeeded", token, target, artwork });
-      } catch {
+      } catch (error) {
         if (!controller.signal.aborted && token === uploadVersion)
           dispatch({
             type: "upload-failed",
             token,
             target,
-            reason: "read-failed",
+            reason: uploadFailure(error, phase),
           });
       } finally {
         if (uploadController === controller) uploadController = null;

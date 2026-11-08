@@ -4,8 +4,8 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { ProductConfig } from '../../../../frontend/designer/src/config';
 import { resolveCustomerHostLocale } from '../../../../frontend/designer/src/customer-language-policy';
 import { readCustomerLanguagePreference } from '../../../../frontend/designer/src/customer-language-preference';
+import { DesignerDesignSwitch } from '../../../../frontend/designer/src/design-switch';
 import type { ClosedDesignerProps } from '../../../../frontend/designer/src/designer';
-import { DesignerHostActions } from '../../../../frontend/designer/src/host-actions';
 import { Designer } from '../../../../frontend/designer/src/index';
 import type { Artwork, Design, Print } from '../../../../frontend/designer/src/model';
 import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quote-review';
@@ -16,7 +16,7 @@ const channel = window.name;
 // This sandboxed srcdoc frame deliberately shares its host origin. Firefox can
 // leave document.referrer empty here; it is not a reliable handshake authority.
 const parentOrigin = window.parent.location.origin;
-type Pending = { resolve(value: unknown): void; reject(error: Error): void };
+type Pending = { resolve(value: unknown): void; reject(error: Error): void; progress?: UploadRequest['onProgress'] };
 const pending = new Map<string, Pending>();
 function send(type: string, data: Record<string, unknown> = {}) {
   window.parent.postMessage({ type, channel, ...data }, parentOrigin);
@@ -29,6 +29,8 @@ function invoke<T>(
 ): Promise<T> {
   const id = crypto.randomUUID();
   const { signal, ...body } = request;
+  const onProgress = 'onProgress' in body ? body.onProgress : undefined;
+  if ('onProgress' in body) delete body.onProgress;
   return new Promise<T>((resolve, reject) => {
     const abort = () => {
       pending.delete(id);
@@ -41,6 +43,7 @@ function invoke<T>(
     }
     signal.addEventListener('abort', abort, { once: true });
     pending.set(id, {
+      ...(onProgress ? { progress: onProgress } : {}),
       resolve(value) {
         signal.removeEventListener('abort', abort);
         resolve(value as T);
@@ -60,12 +63,12 @@ function invoke<T>(
   });
 }
 type Initial = {
-  choices?: { id: string; label: string }[];
   config?: ProductConfig;
   repair?: { canStart: boolean; canRemoveGroup: boolean; canRemoveAll?: boolean };
   wording?: MerchantCustomerWordingView;
   locale?: string;
   initialDesign?: Design;
+  initialBaseline?: Design;
   initialPrints?: Print[];
   initialArtworks?: Artwork[];
   previewOnly?: boolean;
@@ -83,61 +86,26 @@ function Closed({ completion }: { completion: CartReceipt | null }) {
 
 function HostClosed({
   state,
-  visible,
-  productName,
-  choices,
   pendingGroup,
-  onChoose,
   onCancel,
   onConfirm,
-  onClose,
-  onResume,
-  onStartNew,
 }: {
   state: ClosedDesignerProps;
-  visible: boolean;
-  productName: string;
-  choices: readonly { id: string; label: string }[];
   pendingGroup: string | null;
-  onChoose(id: string): void;
   onCancel(): void;
   onConfirm(): void;
-  onClose(): void;
-  onResume(): void;
-  onStartNew(): void;
 }) {
   useLayoutEffect(() => {
     if (pendingGroup && !state.hasDraft) onConfirm();
   }, [pendingGroup, state.hasDraft]);
-  if (!visible && !pendingGroup) return <Closed completion={state.completion} />;
-  return (
-    <DesignerHostActions
-      {...state}
-      productName={productName}
-      choices={choices}
-      onEditChoice={onChoose}
-      switchingDesign={pendingGroup && state.hasDraft ? pendingGroup : state.switchingDesign}
-      onCancelSwitch={pendingGroup ? onCancel : state.onCancelSwitch}
-      onConfirmSwitch={pendingGroup ? onConfirm : state.onConfirmSwitch}
-      onResume={() => {
-        onResume();
-        state.onResume();
-      }}
-      onStartNew={() => {
-        onStartNew();
-        state.onStartNew();
-      }}
-      onClose={onClose}
-    />
-  );
+  if (!pendingGroup) return <Closed completion={state.completion} />;
+  return state.hasDraft ? <DesignerDesignSwitch onCancel={onCancel} onConfirm={onConfirm} /> : null;
 }
 
 function Frame({ initial }: { initial: Initial }) {
-  const [choices, setChoices] = useState(initial.choices ?? []);
   const [config, setConfig] = useState(initial.config);
   const [repair, setRepair] = useState(initial.repair);
   const [open, setOpen] = useState(true);
-  const [hostOpen, setHostOpen] = useState(false);
   const [visible, setVisible] = useState(true);
   const [pendingGroup, setPendingGroup] = useState<string | null>(null);
   const [quote, setQuote] = useState<DesignerQuoteReview>();
@@ -165,12 +133,11 @@ function Frame({ initial }: { initial: Initial }) {
       if (event.data.type === 'insignia:designer:repair') setRepair(event.data.repair);
       if (event.data.type === 'insignia:designer:open') {
         setVisible(true);
-        setHostOpen(true);
+        setOpen(true);
       }
       if (event.data.type === 'insignia:designer:suspend') setVisible(false);
       if (event.data.type === 'insignia:designer:request-close') {
         setOpen(false);
-        setHostOpen(false);
         setPendingGroup(null);
       }
       if (event.data.type === 'insignia:designer:host-error') setHostError((value) => value + 1);
@@ -183,7 +150,6 @@ function Frame({ initial }: { initial: Initial }) {
         if (event.data.wording) setWording(event.data.wording);
       }
       if (event.data.type === 'insignia:designer:quote') setQuote(event.data.quote);
-      if (event.data.type === 'insignia:designer:saved-choices') setChoices(event.data.choices);
       if (event.data.type === 'insignia:designer:previews') {
         setConfig(
           (current) =>
@@ -216,6 +182,7 @@ function Frame({ initial }: { initial: Initial }) {
           onLanguagePreferenceChange={setLanguage}
           locale={initial.locale}
           initialDesign={initial.initialDesign}
+          initialBaseline={initial.initialBaseline}
           initialPrints={initial.initialPrints}
           initialArtworks={initial.initialArtworks}
           previewOnly={initial.previewOnly}
@@ -227,35 +194,19 @@ function Frame({ initial }: { initial: Initial }) {
             setPendingGroup(id);
             setOpen(false);
           }}
-          onOpenChange={(value) => {
-            setOpen(value);
-            if (value) setHostOpen(false);
-          }}
+          onOpenChange={setOpen}
+          retainViewForConfirmation={pendingGroup !== null}
           renderClosed={(state) => (
             <HostClosed
               state={state}
-              productName={config.productName}
-              visible={hostOpen}
-              choices={choices}
               pendingGroup={pendingGroup}
-              onChoose={setPendingGroup}
               onCancel={() => {
                 setPendingGroup(null);
-                setHostOpen(false);
                 state.onResume();
                 setOpen(true);
               }}
               onConfirm={() => {
                 if (pendingGroup) send('insignia:designer:select-group', { id: pendingGroup });
-              }}
-              onClose={() => {
-                setHostOpen(false);
-                setPendingGroup(null);
-              }}
-              onResume={() => setHostOpen(false)}
-              onStartNew={() => {
-                setHostOpen(false);
-                setQuote(undefined);
               }}
             />
           )}
@@ -290,6 +241,14 @@ let mounted = false;
 window.addEventListener('message', (event) => {
   if (event.source !== window.parent || event.origin !== parentOrigin || event.data?.channel !== channel) return;
   if (
+    event.data.type === 'insignia:designer:progress' &&
+    typeof event.data.id === 'string' &&
+    ['uploading', 'processing'].includes(event.data.phase)
+  ) {
+    pending.get(event.data.id)?.progress?.(event.data.phase);
+    return;
+  }
+  if (
     (event.data.type === 'insignia:designer:result' || event.data.type === 'insignia:designer:repair-result') &&
     typeof event.data.id === 'string'
   ) {
@@ -300,7 +259,7 @@ window.addEventListener('message', (event) => {
     else
       request.reject(
         Object.assign(new Error('Live operation unavailable'), {
-          status: [403, 404, 410].includes(event.data.status) ? event.data.status : undefined,
+          status: [403, 404, 410, 422].includes(event.data.status) ? event.data.status : undefined,
         }),
       );
   }

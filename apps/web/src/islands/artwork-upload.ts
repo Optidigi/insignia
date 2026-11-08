@@ -192,6 +192,7 @@ export function createArtworkUpload(input: {
       if (!response.ok) throw new Error('Private upload failed. Choose the file again to start a new upload.');
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
       input.onPending?.({ assetId: admitted.assetId, assetExpiresAt: admitted.expiresAt });
+      onState('Processing artwork');
       await input.api(`/api/artwork/${admitted.assetId}/complete`, {
         method: 'POST',
         // Empty JSON API requests must not be classified as form submissions behind HTTPS proxies.

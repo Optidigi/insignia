@@ -144,7 +144,11 @@ function CustomerArtwork({ capability }: { capability: string }) {
         },
         async upload(file, uploadRequest) {
           await missingSlot(uploadRequest);
-          const preview = await uploader.upload(file, () => {}, uploadRequest.signal);
+          const preview = await uploader.upload(
+            file,
+            (state) => uploadRequest.onProgress?.(state === 'Processing artwork' ? 'processing' : 'uploading'),
+            uploadRequest.signal,
+          );
           return apply(
             {
               id: preview.assetId,
