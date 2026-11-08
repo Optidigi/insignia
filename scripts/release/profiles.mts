@@ -1,6 +1,8 @@
 /** Closed reviewed profiles. Selection changes expected observations, never grants
  * access or attests that the candidate is Active. No caller supplied baseline. */
 import assert from 'node:assert/strict';
+import behaviorModules from '../../deployment/m5-runtime/native-behavior-module-baseline.json' with { type: 'json' };
+import behaviorCandidate from '../../deployment/m5-runtime/native-behavior-release-binding.json' with { type: 'json' };
 import cartModules from '../../deployment/m5-runtime/native-cart-module-baseline.json' with { type: 'json' };
 import cartCandidate from '../../deployment/m5-runtime/native-cart-release-binding.json' with { type: 'json' };
 import fixedModules from '../../deployment/m5-runtime/native-fixed-module-baseline.json' with { type: 'json' };
@@ -55,6 +57,14 @@ const oldIds = [
   '1146748534785',
 ] as const;
 const profiles = {
+  'native-behavior-6b6c15e': {
+    versionId: behaviorCandidate.versionId,
+    versionTag: behaviorCandidate.versionTag,
+    versionIds: behaviorCandidate.versionIds,
+    moduleHash: behaviorCandidate.moduleHash,
+    modules: behaviorModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+  },
   'native-selected-fixed-81830c6': {
     versionId: selectedOnlyCandidate.versionId,
     versionTag: selectedOnlyCandidate.versionTag,
