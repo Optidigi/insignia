@@ -11,9 +11,14 @@ export async function methodsFixture(
     readOnly?: boolean;
     holdWrite?: boolean;
     currency?: 'USD' | 'EUR';
+    shopifyModal?: boolean;
+    deferShopifyModalDismiss?: boolean;
   } = {},
 ) {
-  const f = await fixture(t);
+  const f = await fixture(t, {
+    shopifyModal: options.shopifyModal,
+    deferShopifyModalDismiss: options.deferShopifyModalDismiss,
+  });
   let records: VersionedMethodConfiguration[] = options.empty ? [] : structuredClone(catalog.methods);
   const writes: { method: string; key: string; body: string }[] = [];
   const receipts = new Map<string, unknown>();

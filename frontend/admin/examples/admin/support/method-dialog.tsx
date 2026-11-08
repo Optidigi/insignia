@@ -1,4 +1,4 @@
-/** Local-only overlay shared by the Methods exploration. */
+/** Shared Polaris modal wrapper for the selected editor and Methods UI. */
 import type { ComponentChildren } from 'preact';
 import { useLayoutEffect, useRef } from 'preact/hooks';
 import { useAdminLocale } from '../../../src/shared/admin-i18n.js';
@@ -24,6 +24,8 @@ export default function MethodDialog({
   size?: HTMLElementTagNameMap['s-modal']['size'];
 }) {
   const { t } = useAdminLocale();
+  const id = useRef('');
+  if (!id.current) id.current = `insignia-method-dialog-${crypto.randomUUID()}`;
   const modal = useRef<HTMLElementTagNameMap['s-modal']>(null);
   const active = useRef(true);
   const suspendedRef = useRef(suspended);
@@ -33,14 +35,15 @@ export default function MethodDialog({
   useLayoutEffect(() => {
     const element = modal.current;
     element?.toggleAttribute('inert', suspended);
-    if (suspended) element?.hideOverlay();
-    else element?.showOverlay();
+    if (suspended) {
+      hideStartedSuspended.current = true;
+      element?.hideOverlay();
+    } else element?.showOverlay();
   }, [suspended]);
   useLayoutEffect(() => {
-    const element = modal.current;
     return () => {
       active.current = false;
-      element?.hideOverlay();
+      // Polaris hides the Shopify overlay from s-modal's disconnected callback.
       requestAnimationFrame(() => {
         const target = previousFocus.current;
         if (
@@ -54,6 +57,7 @@ export default function MethodDialog({
   }, []);
   return (
     <s-modal
+      id={id.current}
       data-method-dialog
       ref={modal}
       heading={heading}
@@ -61,14 +65,21 @@ export default function MethodDialog({
       padding={padding}
       aria-hidden={suspended ? 'true' : undefined}
       onHide={() => {
-        hideStartedSuspended.current = suspendedRef.current;
+        if (!hideStartedSuspended.current) hideStartedSuspended.current = suspendedRef.current;
       }}
       onAfterShow={() => {
         if (!suspendedRef.current && matchMedia('(min-width: 768px) and (pointer: fine)').matches)
           modal.current?.querySelector<HTMLElement>('input[type=search],s-search-field,s-text-field')?.focus();
       }}
       onAfterHide={() => {
-        if (active.current && !hideStartedSuspended.current && !suspendedRef.current) onClose();
+        const hiddenWhileSuspended = hideStartedSuspended.current;
+        hideStartedSuspended.current = false;
+        if (!active.current) return;
+        if (hiddenWhileSuspended) {
+          if (!suspendedRef.current) modal.current?.showOverlay();
+          return;
+        }
+        if (!suspendedRef.current) onClose();
       }}
     >
       {children}
@@ -84,7 +95,15 @@ export default function MethodDialog({
           {t('methods:picker.backToMethods')}
         </s-button>
       )}
-      <s-button slot="secondary-actions" variant="secondary" onClick={onClose}>
+      <s-button
+        slot="secondary-actions"
+        variant="secondary"
+        onClick={() => {
+          const element = modal.current;
+          if (element) element.hideOverlay();
+          else onClose();
+        }}
+      >
         {cancelLabel ?? t('common:actions.cancel')}
       </s-button>
     </s-modal>

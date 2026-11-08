@@ -242,6 +242,44 @@ test('a first selected view creates its configuration then saves one exact autho
   assert.equal(f.read().selectedSetup?.product.views[0]?.imageUrl, imageUrl);
 });
 
+for (const closePath of ['X', 'Escape', 'Cancel'] as const) {
+  test(`Shopify-hosted Add views ${closePath} clears the host overlay and restores focus`, {
+    timeout: 30000,
+  }, async (t) => {
+    const f = await fixture(t, { shopifyModal: true });
+    await f.open();
+    const trigger = f.page.locator('[data-outline-add-view]');
+    await trigger.click();
+    const picker = f.page
+      .locator('s-modal[data-method-dialog]')
+      .filter({ has: f.page.locator('.placement-image-picker') });
+    await picker.waitFor({ state: 'visible' });
+    await f.page.locator('[data-shopify-host-modal-scrim]').waitFor({ state: 'attached' });
+
+    if (closePath === 'X') {
+      const id = await picker.getAttribute('id');
+      const imageChoice = picker.locator('button.placement-image-choice').first();
+      await imageChoice.waitFor({ state: 'visible' });
+      await f.page.waitForFunction(() => {
+        const choice = document.querySelector('.placement-image-picker button.placement-image-choice');
+        return choice instanceof HTMLButtonElement && !choice.disabled;
+      });
+      await imageChoice.click();
+      assert.equal(await picker.getAttribute('id'), id, 'The host routing ID remains stable as the picker rerenders');
+      await f.page.evaluate(() => window.dismissShopifyModal());
+    } else if (closePath === 'Escape') await f.page.keyboard.press('Escape');
+    else await picker.getByRole('button', { name: 'Cancel', exact: true }).click();
+
+    await picker.waitFor({ state: 'detached' });
+    await f.page.locator('[data-shopify-host-modal-scrim]').waitFor({ state: 'detached' });
+    await f.page.waitForFunction(() => {
+      const button = document.querySelector('[data-outline-add-view]');
+      return button instanceof HTMLElement && document.activeElement === button;
+    });
+    assert.equal(f.mutations.length, 0, 'Closing the picker does not save a design change');
+  });
+}
+
 test('equal-valued explicit Method edits become dirty metadata and undo restores inheritance before an exact save', {
   timeout: 30000,
 }, async (t) => {
