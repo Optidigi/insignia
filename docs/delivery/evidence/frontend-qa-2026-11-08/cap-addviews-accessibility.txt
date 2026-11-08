@@ -1,0 +1,116 @@
+Browser tab: 835133932, Title: "insignia-rewrite-dev · QA legacy import — Superfunny muts · Shopify", URL: "https://admin.shopify.com/store/insignia-rewrite-dev/apps/insignia-1/admin/products/10590373970203/config".
+1 AXWebArea insignia-rewrite-dev · QA legacy import — Superfunny muts · Shopify, URL: admin.shopify.com/store/insignia-rewrite-dev/apps/insignia-1/admin/products/10590373970203/config
+	2 container
+		3 container app
+			4 container AppFrame
+				5 container AppFrameChrome
+					6 link Description: Skip to content, Value: admin.shopify.com/store/insignia-rewrite-dev/apps/insignia-1/admin/products/10590373970203/config#AppFrameMain
+					7 container AppFrameBevel
+						8 container Description: Navigation, ID: AppFrameNav
+							9 container
+								10 image Shopify
+								11 button (expanded) Description: Collapse navigation, Secondary Actions: Collapse
+								12 button Search
+									13 text Search
+								14 container scroll-container
+									15 content list
+										16 link Description: Home, Value: admin.shopify.com/store/insignia-rewrite-dev
+										17 container
+											18 link (collapsed) Description: Orders 4, Value: admin.shopify.com/store/insignia-rewrite-dev/orders, Secondary Actions: Expand
+										19 container
+											20 link (collapsed) Description: Products, Value: admin.shopify.com/store/insignia-rewrite-dev/products, Secondary Actions: Expand
+										21 container
+											22 link (collapsed) Description: Customers, Value: admin.shopify.com/store/insignia-rewrite-dev/customers, Secondary Actions: Expand
+										23 container
+											24 link (collapsed) Description: Growth, Value: admin.shopify.com/store/insignia-rewrite-dev/growth, Secondary Actions: Expand
+										25 link Description: Discounts, Value: admin.shopify.com/store/insignia-rewrite-dev/discounts
+										26 container
+											27 link (collapsed) Description: Content, Value: admin.shopify.com/store/insignia-rewrite-dev/content/metaobjects, Secondary Actions: Expand
+										28 container
+											29 link (collapsed) Description: Markets, Value: admin.shopify.com/store/insignia-rewrite-dev/markets, Secondary Actions: Expand
+										30 container
+											31 link (collapsed) Description: Finance, Value: admin.shopify.com/store/insignia-rewrite-dev/finance, Secondary Actions: Expand
+										32 container
+											33 link (collapsed) Description: Analytics, Value: admin.shopify.com/store/insignia-rewrite-dev/analytics, Secondary Actions: Expand
+									34 content list
+										35 container
+											36 button Sales channels
+												37 text Sales channels
+											38 content list
+												39 sortable Online Store
+													40 content list
+														41 link Description: Online Store, Value: admin.shopify.com/store/insignia-rewrite-dev/themes?[redacted]
+												42 sortable Agentic
+													43 content list
+														44 link Description: Agentic, Value: admin.shopify.com/store/insignia-rewrite-dev/apps/agentic?[redacted]
+										45 container
+											46 button Apps
+												47 text Apps
+											48 content list
+												49 content list
+													74 container
+														75 link (expanded) Description: Insignia, Secondary Actions: Collapse, Value: admin.shopify.com/store/insignia-rewrite-dev/apps/insignia-1?[redacted]
+														76 content list
+															77 link Description: Products, Value: admin.shopify.com/store/insignia-rewrite-dev/apps/insignia-1/admin/products
+															78 link Description: Orders, Value: admin.shopify.com/store/insignia-rewrite-dev/apps/insignia-1/admin/orders
+															79 link Description: Methods, Value: admin.shopify.com/store/insignia-rewrite-dev/apps/insignia-1/admin/methods
+															80 link Description: Settings, Value: admin.shopify.com/store/insignia-rewrite-dev/apps/insignia-1/admin/settings
+												51 sortable Translate & Adapt Pin to your navigation
+													52 content list
+														53 container
+															54 link Description: Translate & Adapt, Value: admin.shopify.com/store/insignia-rewrite-dev/apps/translate-and-adapt?[redacted]
+															55 button Pin to your navigation
+																138 text •
+								57 content list
+									58 link Description: Settings, Value: admin.shopify.com/store/insignia-rewrite-dev/settings
+									59 container
+										60 button (collapsed) Description: Admin Optidigi, Secondary Actions: Expand
+											61 container insignia-rewrite-dev
+											62 text insignia-rewrite-dev
+											63 text dev
+										64 button (collapsed) Description: Alerts Feed - 0 unread alerts, Secondary Actions: Expand
+						65 container AppFrameMain
+							82 container
+								98 container
+									99 container
+										100 button Products
+										101 link admin.shopify.com/store/insignia-rewrite-dev/apps/insignia-1
+										102 button Products
+											103 text Products
+									104 heading QA legacy import — Superfunny muts, Value: 1
+										105 text QA legacy import — Superfunny muts
+								106 container
+									107 button (disabled) Hide views and placements
+										108 text Hide views and placements
+									109 button (disabled) Undo
+										110 text Undo
+									111 button (disabled) Redo
+										112 text Redo
+								113 button Preview customization
+									114 text Preview customization
+								115 button (collapsed) More actions, Secondary Actions: Expand
+									116 text More actions
+								117 button (disabled) Save draft
+									118 text Save draft
+								119 button Publish
+								90 button (collapsed) Description: More actions, Secondary Actions: Expand
+								91 container Insignia
+									96 AXWebArea Product configuration · Insignia, URL: insignia-app.optidigi.nl/admin/products/10590373970203/config
+										121 container Add views
+											122 heading Add views, Value: 2, ID: P0-0
+												123 text Add views
+											124 button Close
+											125 container Description: Add views, ID: scroll-container
+												126 container
+													127 text Upload product images
+													128 container
+														129 button Description: Upload product images, ID: file-input
+														130 button Add files
+														131 text Accepts .jpg, .png, and .webp
+													139 text [redacted local filename]: The image could not be processed.
+													132 text Up to 5 MB per image.
+													133 heading No product images yet, Value: 2
+														134 text No product images yet
+													135 text Upload product photos to add them as views.
+											136 button Cancel
+											137 button (disabled) Add view

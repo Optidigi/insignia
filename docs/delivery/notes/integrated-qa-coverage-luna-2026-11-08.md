@@ -1,0 +1,37 @@
+# Integrated merchant UI QA coverage for Luna
+
+**Research note — 8 November 2026.** Source audit of clean `897a44e48a715957881ca1117a7ba26c63da567a` in `insignia-ui-audit-2026-11-08`; no code, tests, or deployment were changed. The native reproduction below was separately observed by the parent agent in a bounded read-only run; no saved product data changed.
+
+## Current production path and evidence boundary
+
+The production product route mounts `SelectedProductContainer` with `client:polaris` (`apps/web/src/pages/admin/products/[productId]/config.astro:8,35-36`). The container fetches authenticated preferences, config, Method catalogue and product media, then supplies real save/publish/upload ports to the selected editor (`frontend/admin/src/islands/SelectedProductContainer.tsx:193-250,304-455`). Global Methods use `MethodsContainer` and the selected Methods screen (`frontend/admin/src/islands/MethodsContainer.tsx:32-49,74-149`). This matches `frontend/README.md:3,33-46` and current implementation-plan §15 (`docs/architecture/implementation-plan.md:749-762`).
+
+The focused browser suite exercises the built production route and selected components; it is not just the standalone demo. Its support fixture launches `apps/web/dist/server/entry.mjs`, but returns synthetic product/config/method data, supplies a fake `window.shopify` token/Save Bar, and pins the Polaris 2.0-rc snapshot (`apps/web/test/admin/support/selected-browser.mts:177-223,254-365`). Thus it is strong deterministic UI/client evidence, not actual Shopify host or native-data proof. The native state currently confirms the merchant editor opens and exposes Preview/Save draft/Publish; it explicitly records no merchant save or publication (`docs/delivery/state.md:67-69`). The Nov5 frontend-backend map is an older source inventory, not current integration evidence (`docs/architecture/frontend-backend-map.md:3,7,11`).
+
+Existing coverage is useful and should be extended narrowly:
+
+- Product browser tests cover selected layout, exact save and successful first-view creation from an image choice (`apps/web/test/admin/selected-product-browser.test.mts:15-16,61-90,209-243`). The first-view case selects a synthetic gallery image, commits “Add view,” and saves through the selected client. It does not exercise closing the picker without committing.
+- Lifecycle browser tests cover save/discard, conflicts and explicit reload of the winning draft, denied authority, and uncertain writes (`apps/web/test/admin/selected-product-lifecycle-browser.test.mts:115-151,317-355,200-245`). Client tests cover original-command custody/retry and publication readback (`frontend/admin/test/admin/selected-product-client.test.mts:86-103,152-209`).
+- Selected Methods browser tests cover CRUD, cancel, reload, exact writes and lost-reply recovery with a controlled API fixture (`apps/web/test/admin/selected-methods-browser.test.mts:6-112`). They do not substitute for native App Bridge/Shopify session proof.
+
+## Add views close defect: reproduced; cause unconfirmed
+
+The source path is nominally wired: Add views dispatches an `opened` event through the picker reducer (`frontend/admin/src/islands/SelectedProductEditor.tsx:738-758,1552-1555`); its dialog receives `onClose={closePhotoPicker}` (`:4374-4387`); `closePhotoPicker` clears the session guard and dispatches `closed` (`:713-720`). The shared `Dialog` calls `onClose` from `onAfterHide` and from its explicit Cancel button (`frontend/admin/examples/admin/support/method-dialog.tsx:55-90`). Adding views is a separate confirmed action guarded by session/revision/readiness (`SelectedProductEditor.tsx:856-914`). These source facts do not prove Shopify’s close affordances invoke the expected hide lifecycle.
+
+**Native reproduction:** in the actual Shopify iframe, opening Add views then clicking its semantic Close X left the dialog open in later observations; Escape also left it open after settling. The explicit Cancel button dismissed it. No image was selected, view count stayed zero, and no saved change occurred. This reproduces the reported X/Escape behavior, not a data mutation. A dialog-scoped Cancel locator returned no matches at the native shadow/slot boundary, while a frame-level Cancel locator worked; keep that automation locator issue separate from the UI defect. The reason the native X/Escape path fails remains unverified; inspect the actual Polaris hide/event lifecycle before choosing a source fix.
+
+## Small deterministic regressions and native preflight
+
+Add one focused regression to `apps/web/test/admin/selected-product-browser.test.mts` using the existing built route/fixture: open Add views, click the actual accessible modal Close control, and assert the dialog is hidden/detached, the picker can reopen, the product/view count is unchanged, the Save Bar stays clean, and no POST/PUT/publish request occurred. Repeat with Escape. Retain an explicit Cancel assertion as the known working path. Avoid direct reducer dispatch or calling `closePhotoPicker`; the regression must cross the modal runtime into the component handler. If the pinned-runtime case passes while native still fails, that cleanly isolates a host/runtime gap. Do not broaden this into a control-click census.
+
+Before any write-flow qualification, verify current deployed app/page identity and selected product ID, then use a dedicated development product in read-only mode for Close X/Escape/reopen and check there are no create/save/publish requests. Record the iframe, modal visibility after settling, view count before/after and observed request list. The parent’s current native repro already supplies this narrow no-write baseline; the next action should be the deterministic local regression and event-path diagnosis, then recheck the same native path after a qualified fix.
+
+## Later Luna / Superfunny product scenarios
+
+Use a small set of dedicated development products and assert UI state plus authoritative readback, not screenshots alone:
+
+1. **Simple setup:** one view, one placement, one Method and one variant. Add a view, configure placement/size/price, Save draft, reload, and confirm the same selected setup and exact amount from the backend read. This proves Add views feeds the real persistence path.
+2. **Representative setup:** multiple views and variants, including an existing Shopify product photo and one retained production choice if Superfunny’s product uses it. Exercise view/photo assignment, placement geometry, Method bindings and Save/reload. Assert identities/labels/choices survive projection and readback; do not infer dimensions or currency.
+3. **Incomplete setup:** save an intentionally incomplete draft, then attempt Publish. Assert the readiness reason is visible and no publish command is sent; any existing active revision remains unchanged. Use shop-configured currency and test publication only after all required image/calibration/pricing facts and current backend eligibility are established.
+
+For each persona flow, capture product/config IDs, exact requests and status, resulting draft/revision, then reload from a fresh page. Keep Save and Publish assertions separate. Current native proof is a single-configuration merchant opening with no writes; it does not cover new multi-view composition or a native persisted/published cycle. These bounded scenarios provide that next evidence without a blanket 400-case suite. Owner visual acceptance and any provider mutation remain separate from this research.

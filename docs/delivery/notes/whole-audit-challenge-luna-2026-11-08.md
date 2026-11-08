@@ -1,0 +1,22 @@
+# Independent challenge of whole-product audit — 8 November 2026
+
+Read the main report and its customer, admin, and state/runtime support notes at `897a44e4`, then checked the cited Designer, Home, and runtime-package source paths. Native observations below are evidence supplied by the primary auditor; I did not control the browser, build, or run tests. No source files were changed.
+
+## Corrections and classification
+
+- **F4 is a real handoff discontinuity, but not a demonstrated contract violation.** The Shopify variant/quantity were visibly selected, the fresh Designer opened at its first allowed color with empty quantities, and the theme integration passes product/context rather than current form state. However, `selected-live-designer.md:5` explicitly preserves first-allowed defaults for new designs and exact values for restored designs; nothing found requires importing the Shopify page's current variant or quantity. Keep the observation, but classify it as a product/UX decision for owner resolution (or P3 continuity suggestion), rather than a medium defect. The report appropriately avoids inferring wrong variant IDs, pricing, or cart corruption.
+
+- **F6 is supported at the exact helper/composition boundary, with native scope correctly limited.** `homeProductsFromResponse()` treats a non-final page as unknown, but `homeHasPublishedProduct()` reduces that same page to a boolean without considering `nextCursor`; `MerchantHomeContainer` stores it and passes it to `homeSetupFromTheme()`, which omits the test task when false and theme setup is active (`merchant-home-source.ts:21-51,111-156`; `MerchantHomeContainer.tsx:58-61`). The missed task is plausible only when the first, bounded product page has no published item and one exists later. This is a source/helper reproduction, not evidence from a native large catalog. The report describes that limit accurately.
+
+- **E1 should remain a package qualification concern, separate from native service failures.** The concern has source/artifact support: the generated server entry imports bare `cookie`; lazy server chunks import bare `zod` and `@noble/hashes`; the production web manifest omits them, and `package-web.mts:56-65` explicitly verifies only `aws4fetch` and `pg-boss` among flattened externals. The portable package/startup check exists in CI, but the local pinned run stopped before server startup on a Darwin ARM symlink check; browser suites needed ignored runtime links to the locked packages. This supports an unresolved exact-package/release gate, not a deployed outage or cause of F2/F3. Keep the report's separation and qualify severity as a P1 candidate only if the current release package fails its clean Linux/container gate.
+
+- **F7 is copy-only under an intentional policy.** The SVG policy rejects text nodes by design (`apps/worker/src/artwork/svg-policy.ts:66-70,139-145`); the path-only SVG success is consistent with that boundary. Since the input accepts SVG while the generic rejection gives no useful conversion guidance, a recovery-copy suggestion is fair. Consider low/P3 severity and make clear the rejected file was a checked-in sample uploaded as test input; this is not evidence that the inspector should accept text-bearing SVG or relax the policy.
+
+## Other checks
+
+- F1's native host-scrim failure and missing-ID explanation are kept distinct: the user-visible failure is observed; the Bridge/lifecycle cause remains a hypothesis. The shared helper's other callers are candidates, not separately established bugs.
+- F2 groups the editor/Methods and intermittent list failures without inventing a common backend cause. F3 reports one failed final Add to cart attempt, with empty-cart readback; it does not claim a bad quote or permanent outage. Their high priority is reasonable for the blocked admin and purchase workflows.
+- F5 is a source-supported labeling omission. F6/F5 can remain medium usability findings; F4/F7 have no corresponding data-integrity or money impact and merit lower classification.
+- The current coverage arithmetic is correct: `76 + 30 + 40 + 15 + 109 + 37 + 3 + 3 = 313`; six opt-in database checks were skipped. The five-case Home helper rerun is explicitly included in the admin count. Keep the count framed as local checks; the report's E1 section separately discloses the runtime-link workaround for the browser suites.
+
+No additional defect emerged from this challenge. The report's evidence limits and filtered-out claims are generally appropriately cautious.

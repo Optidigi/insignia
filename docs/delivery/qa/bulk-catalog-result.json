@@ -1,0 +1,79 @@
+{
+  "store": "insignia-rewrite-dev",
+  "importDispatchCount": 1,
+  "products": [
+    {
+      "handle": "qa-legacy-import-superfunny-muts",
+      "variants": 5,
+      "images": 5,
+      "variantImageAssignments": 5,
+      "status": "draft",
+      "published": "false",
+      "price": "17.50",
+      "currency": "USD",
+      "inventoryTracked": false
+    },
+    {
+      "handle": "qa-legacy-import-superfunny-hoodie",
+      "variants": 33,
+      "images": 3,
+      "variantImageAssignments": 33,
+      "status": "draft",
+      "published": "false",
+      "price": "24.95",
+      "currency": "USD",
+      "inventoryTracked": false
+    },
+    {
+      "handle": "qa-legacy-import-superfunny-polo",
+      "variants": 66,
+      "images": 6,
+      "variantImageAssignments": 66,
+      "status": "draft",
+      "published": "false",
+      "price": "11.95",
+      "currency": "USD",
+      "inventoryTracked": false
+    },
+    {
+      "handle": "qa-legacy-import-superfunny-trui",
+      "variants": 66,
+      "images": 6,
+      "variantImageAssignments": 66,
+      "status": "draft",
+      "published": "false",
+      "price": "24.95",
+      "currency": "USD",
+      "inventoryTracked": false
+    },
+    {
+      "handle": "qa-legacy-import-superfunny-dames-t-shirt",
+      "variants": 27,
+      "images": 3,
+      "variantImageAssignments": 27,
+      "status": "draft",
+      "published": "false",
+      "price": "9.95",
+      "currency": "USD",
+      "inventoryTracked": false
+    },
+    {
+      "handle": "qa-legacy-import-superfunny-t-shirt",
+      "variants": 64,
+      "images": 6,
+      "variantImageAssignments": 64,
+      "status": "draft",
+      "published": "false",
+      "price": "9.95",
+      "currency": "USD",
+      "inventoryTracked": false
+    }
+  ],
+  "newProductId": "10590416175387",
+  "existingProductIdsPreserved": true,
+  "readback": "Shopify native export of six selected QA products",
+  "readbackSha256": "96dc1fe15c41cd30b1f77e2c10bf467486882dbd39defcc34afb8521d9ab959c",
+  "insigniaConfigurationImported": false,
+  "viewAssignmentAndPlacements": "Remain manual UI test work",
+  "sourceStoreWrites": false
+}

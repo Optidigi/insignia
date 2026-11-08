@@ -1,0 +1,697 @@
+{
+  "schemaVersion": 1,
+  "status": "partial_source_inventory",
+  "retrievedAtUtc": "2026-11-08T21:11:48Z",
+  "sourceStore": "https://superfunny.nl",
+  "discovery": {
+    "homepageUrl": "https://superfunny.nl/",
+    "homepageCallToAction": "Ontwerp je eigen superfunny kleding",
+    "collectionUrl": "https://superfunny.nl/collections/ontwerp-zelf",
+    "collectionTitle": "Ontwerp Zelf",
+    "collectionCount": 6,
+    "scope": "The live dedicated customization collection showed six products. Each of the six collection product pages has an Insignia Personaliseer link. The public sitemap contains 1,010 product URLs, but this audit did not probe all 1,010 pages for configuration links; therefore six is the verified dedicated-collection scope, not an authoritative total of every Insignia-configured SKU in the shop.",
+    "sourceCapture": "Read-only live storefront UI and public Shopify product/sitemap GETs; no source product edits, artwork uploads, cart actions, or checkout. Public app-proxy configuration was opened only for product/variant IDs shown by the product UI. Temporary signed media query strings were stripped from this file.",
+    "publicCatalogAudit": {
+      "sitemapIndexUrl": "https://superfunny.nl/sitemap.xml",
+      "productSitemaps": [
+        {"url": "https://superfunny.nl/sitemap_products_1.xml?from=15438593982848&to=15975550058880", "publicProductUrlCount": 999},
+        {"url": "https://superfunny.nl/sitemap_products_2.xml?from=15975550222720&to=15975552352640", "publicProductUrlCount": 11}
+      ],
+      "totalPublicProductUrls": 1010,
+      "dedicatedCollectionMemberCount": 6,
+      "catalogBoundaryNote": "The six `ontwerp-je-eigen-*` handles in the dedicated `ontwerp-zelf` collection were verified as current customizer products through their public Personaliseer links. The catalog contains many designed garments and a separate test-named product; this inventory does not claim to have checked every public product for an Insignia link or config."
+    },
+    "excludedPublicProduct": {
+      "title": "Live Product Options Interactive T-Shirt",
+      "handle": "live-product-options-interactive-t-shirt",
+      "productId": "gid://shopify/Product/15458471575936",
+      "productPageUrl": "https://superfunny.nl/products/live-product-options-interactive-t-shirt",
+      "publicProductJsonUrl": "https://superfunny.nl/products/live-product-options-interactive-t-shirt.js",
+      "createdAt": "2025-11-28T12:35:19+01:00",
+      "publishedAt": "2025-11-28T12:35:19+01:00",
+      "variantCount": 1,
+      "tags": [],
+      "exclusionReason": "Public product page showed regular add-to-cart controls, no Insignia Personaliseer link, and demo description text. It is not included in the six-source import set. The public createdAt proves it predates this audit; no Superfunny admin or product mutation was performed."
+    }
+  },
+  "destinationGuard": {
+    "store": "Insignia DEV",
+    "preserveExistingProductId": "10588458647835",
+    "reason": "This is the already-owned rich Superfunny T-shirt calibration fixture (64 variants, six colors, four views, six placements). Do not overwrite it when creating QA copies."
+  },
+  "sharedStorefrontLocalization": {
+    "locale": "nl",
+    "translationGroups": ["common", "footer", "placement", "previewSheet", "review", "size", "steps", "upload", "v2"],
+    "translationsUtf8ByteLength": 7019,
+    "translationsSha256": "3f76f2b95c4c0c80b23b495d771a2785b5aa9a2acfeab0112556460a7b2df8e5",
+    "verifiedSameAcrossProducts": ["ontwerp-je-eigen-muts", "ontwerp-je-eigen-superfunny-hoodie", "ontwerp-je-eigen-superfunny-t-shirt", "ontwerp-je-eigen-superfunny-polo", "ontwerp-je-eigen-superfunny-trui", "ontwerp-je-eigen-superfunny-t-shirt-dames"],
+    "note": "The same Dutch translation object was compared across all six current source configs. It is a shared store-level UI bundle. The customizer UI was inspected for all six products; their upload formats, 5 MB max, logo-later control, and Bedrukken method matched the config/translation data."
+  },
+  "sharedCustomizerUi": {
+    "verifiedSameAcrossProducts": ["ontwerp-je-eigen-muts", "ontwerp-je-eigen-superfunny-hoodie", "ontwerp-je-eigen-superfunny-t-shirt", "ontwerp-je-eigen-superfunny-polo", "ontwerp-je-eigen-superfunny-trui", "ontwerp-je-eigen-superfunny-t-shirt-dames"],
+    "uploadText": "JPG · PDF · EPS · SVG · PNG · WEBP · TIFF (Max 5 MB)",
+    "uploadMaxDisplayed": "5 MB",
+    "logoLaterCheckbox": "Bestel nu, stuur logo na het afrekenen",
+    "logoLaterHelper": "We sturen je een mailtje om je artwork op te halen — geen haast",
+    "activeMethod": {"name": "Bedrukken", "description": "Levendige kleuren en scherpe details"},
+    "placementTabInitiallyDisabledUntilArtworkUploaded": true,
+    "startingPriceDisplayedByProduct": {
+      "ontwerp-je-eigen-muts": "Vanaf €17.50",
+      "ontwerp-je-eigen-superfunny-hoodie": "€24.95",
+      "ontwerp-je-eigen-superfunny-t-shirt": "€9.95",
+      "ontwerp-je-eigen-superfunny-polo": "€11.95",
+      "ontwerp-je-eigen-superfunny-trui": "€24.95",
+      "ontwerp-je-eigen-superfunny-t-shirt-dames": "€9.95"
+    },
+    "uploadActions": "Only opened each product's Personaliseer page and inspected visible controls; no file was selected or uploaded."
+  },
+  "recordEncodingNotes": {
+    "variantIds": "Nested color/size maps preserve the exact source variant ID for each observed option tuple. Shared per-variant price and availability are recorded alongside each product where they are uniform.",
+    "geometry": "Base geometry maps store only non-null configured view regions; omitted view IDs had null source geometry. Color override maps are patches containing only changed fields and inherit unspecified dimensions/coordinates from the base geometry.",
+    "media": "Source URLs are unsigned paths; temporary X-Amz query parameters were stripped. Shopify `?v=` asset version parameters are stable public CDN identifiers and are retained.",
+    "pickerResize": "The selected DEV image picker normalizes uploaded images to a maximum 1200 px edge. Percentage geometry remains proportional after proportional resizing. Record source decoded dimensions and target dimensions inspected after upload; only adjust historical calibrationPxPerCm proportionally when that resize relationship is verified. Otherwise leave physical calibration unresolved. Source calibration values here are historical config data, not new physical measurements.",
+    "captureDate": "All six product/variant config captures and visible customizer UI checks were completed 2026-11-08 UTC."
+  },
+  "products": [
+    {
+      "title": "Ontwerp je eigen Superfunny hoodie",
+      "handle": "ontwerp-je-eigen-superfunny-hoodie",
+      "productId": "gid://shopify/Product/15468416336256",
+      "productPageUrl": "https://superfunny.nl/collections/ontwerp-zelf/products/ontwerp-je-eigen-superfunny-hoodie",
+      "collectionPriceCents": 2495,
+      "colorsObserved": ["Zwart", "Grijs", "Navy"],
+      "status": "fully_verified_current_source_config"
+    },
+    {
+      "title": "Ontwerp je eigen superfunny T-shirt",
+      "handle": "ontwerp-je-eigen-superfunny-t-shirt",
+      "productId": "gid://shopify/Product/15464675246464",
+      "productPageUrl": "https://superfunny.nl/collections/ontwerp-zelf/products/ontwerp-je-eigen-superfunny-t-shirt",
+      "collectionPriceCents": 995,
+      "colorsObserved": ["Zwart", "Grijs", "Navy", "Rood", "Blauw", "Wit"],
+      "status": "fully_verified_current_source_config"
+    },
+    {
+      "title": "Ontwerp je eigen Superfunny muts",
+      "handle": "ontwerp-je-eigen-muts",
+      "productId": "gid://shopify/Product/15461436457344",
+      "productPageUrl": "https://superfunny.nl/collections/ontwerp-zelf/products/ontwerp-je-eigen-muts",
+      "collectionPriceCents": 1750,
+      "colorsObserved": ["Zwart", "Blauw", "Grijs", "Navy", "Rood"],
+      "status": "fully_verified_current_source_config"
+    },
+    {
+      "title": "Ontwerp je eigen Superfunny polo",
+      "handle": "ontwerp-je-eigen-superfunny-polo",
+      "productId": "gid://shopify/Product/15468473450880",
+      "productPageUrl": "https://superfunny.nl/collections/ontwerp-zelf/products/ontwerp-je-eigen-superfunny-polo",
+      "collectionPriceCents": 1195,
+      "colorSamplesObserved": ["Zwart", "Grijs", "Navy", "Rood"],
+      "additionalColorsAdvertisedOnCollectionCard": 2,
+      "status": "fully_verified_current_source_config"
+    },
+    {
+      "title": "Ontwerp je eigen Superfunny trui",
+      "handle": "ontwerp-je-eigen-superfunny-trui",
+      "productId": "gid://shopify/Product/15468463686016",
+      "productPageUrl": "https://superfunny.nl/collections/ontwerp-zelf/products/ontwerp-je-eigen-superfunny-trui",
+      "collectionPriceCents": 2495,
+      "colorsObserved": ["Zwart", "Grijs", "Navy", "Rood", "Blauw", "Wit"],
+      "status": "fully_verified_current_source_config"
+    },
+    {
+      "title": "Ontwerp je eigen Superfunny T-shirt | Dames",
+      "handle": "ontwerp-je-eigen-superfunny-t-shirt-dames",
+      "productId": "gid://shopify/Product/15468458541440",
+      "productPageUrl": "https://superfunny.nl/collections/ontwerp-zelf/products/ontwerp-je-eigen-superfunny-t-shirt-dames",
+      "collectionPriceCents": 995,
+      "colorsObserved": ["Zwart", "Navy", "Wit"],
+      "status": "fully_verified_current_source_config"
+    }
+  ],
+  "fullyVerifiedProducts": [
+    {
+      "title": "Ontwerp je eigen Superfunny T-shirt | Dames",
+      "handle": "ontwerp-je-eigen-superfunny-t-shirt-dames",
+      "productId": "gid://shopify/Product/15468458541440",
+      "productConfigId": "6d4da625-1351-408c-8164-a8a692fbedce",
+      "productPageUrl": "https://superfunny.nl/products/ontwerp-je-eigen-superfunny-t-shirt-dames",
+      "currency": "EUR",
+      "baseProductPriceCents": 995,
+      "productPageOptions": [
+        {"name": "Kleur", "values": ["Zwart", "Navy", "Wit"]},
+        {"name": "Maat", "values": ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"]}
+      ],
+      "variantSummary": {"sourceTitlePattern": "<color> / <size>", "sizesAvailableForEveryColor": ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"], "allAvailable": true, "priceCentsPerVariant": 995},
+      "variantAxis": "size",
+      "variantIdsByColorAndSize": {
+        "Zwart": {"XS": "gid://shopify/ProductVariant/56992064471424", "S": "gid://shopify/ProductVariant/56992064504192", "M": "gid://shopify/ProductVariant/56992064536960", "L": "gid://shopify/ProductVariant/56992064569728", "XL": "gid://shopify/ProductVariant/56992064602496", "XXL": "gid://shopify/ProductVariant/56992064635264", "3XL": "gid://shopify/ProductVariant/56992064668032", "4XL": "gid://shopify/ProductVariant/56992064700800", "5XL": "gid://shopify/ProductVariant/56992064733568"},
+        "Navy": {"XS": "gid://shopify/ProductVariant/56992064766336", "S": "gid://shopify/ProductVariant/56992064799104", "M": "gid://shopify/ProductVariant/56992064831872", "L": "gid://shopify/ProductVariant/56992064864640", "XL": "gid://shopify/ProductVariant/56992064897408", "XXL": "gid://shopify/ProductVariant/56992064930176", "3XL": "gid://shopify/ProductVariant/56992064962944", "4XL": "gid://shopify/ProductVariant/56992064995712", "5XL": "gid://shopify/ProductVariant/56992065028480"},
+        "Wit": {"XS": "gid://shopify/ProductVariant/56992065061248", "S": "gid://shopify/ProductVariant/56992065094016", "M": "gid://shopify/ProductVariant/56992065126784", "L": "gid://shopify/ProductVariant/56992065159552", "XL": "gid://shopify/ProductVariant/56992065192320", "XXL": "gid://shopify/ProductVariant/56992065225088", "3XL": "gid://shopify/ProductVariant/56992065257856", "4XL": "gid://shopify/ProductVariant/56992065290624", "5XL": "gid://shopify/ProductVariant/56992065323392"}
+      },
+      "customizerConfigUrlsByColor": {
+        "Zwart": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15468458541440&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56992064471424",
+        "Navy": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15468458541440&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56992064766336",
+        "Wit": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15468458541440&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56992065061248"
+      },
+      "placeholderLogo": {"mode": "merchant_asset", "text": null, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/ab3a7ac6-7a96-4a9c-ab85-5addfd1dbf21/placeholder/img.png"},
+      "methods": [
+        {"id": "d8f3958d-f892-470f-8144-20397097fa40", "name": "Bedrukken", "basePriceCents": 0, "hidePriceWhenZero": true, "customerName": null, "customerDescription": "Levendige kleuren en scherpe details", "artworkConstraints": {"fileTypes": ["jpg", "pdf", "eps", "svg", "png", "webp", "tiff"]}}
+      ],
+      "placements": [
+        {"id": "1e9949e8-679e-4926-a5f6-ffe47c19484d", "name": "Linkerborst", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 1500, "d8f3958d-f892-470f-8144-20397097fa40": 750}, "geometryByViewId": {"51db9162-9a58-43ca-b670-42b1022b06d4": {"centerXPercent": 61.99999999999999, "centerYPercent": 25.5, "maxWidthPercent": 18, "maxHeightPercent": 17}}},
+        {"id": "c104dcb6-d34d-45d1-bdab-99c993eba038", "name": "Rechterborst", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 1500, "d8f3958d-f892-470f-8144-20397097fa40": 750}, "geometryByViewId": {"51db9162-9a58-43ca-b670-42b1022b06d4": {"centerXPercent": 38.5, "centerYPercent": 25.5, "maxWidthPercent": 17, "maxHeightPercent": 17}}},
+        {"id": "07d493f0-6dc9-4652-a8e4-80062afaca7c", "name": "Buik", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": false, "defaultStepIndex": 0, "steps": [{"label": "Standard", "priceAdjustmentCents": 0, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 3000, "d8f3958d-f892-470f-8144-20397097fa40": 1500}, "geometryByViewId": {"51db9162-9a58-43ca-b670-42b1022b06d4": {"centerXPercent": 50.49999999999999, "centerYPercent": 56.99999999999999, "maxWidthPercent": 29, "maxHeightPercent": 42}}},
+        {"id": "58e926db-df3a-4f1c-b6e0-2aba019f5dea", "name": "Rug", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 3000, "d8f3958d-f892-470f-8144-20397097fa40": 1500}, "geometryByViewId": {"3fb7bb52-1863-4037-a740-fe07b4609f50": {"centerXPercent": 50, "centerYPercent": 26, "maxWidthPercent": 30, "maxHeightPercent": 30}}, "geometryOverridesByColor": {"Navy": {"centerXPercent": 49.5, "centerYPercent": 27.5, "maxWidthPercent": 29, "maxHeightPercent": 29}, "Wit": {"centerXPercent": 49.5, "centerYPercent": 28.49999999999999, "maxWidthPercent": 29, "maxHeightPercent": 29}}},
+        {"id": "c9ff61fc-88c4-4eda-b296-323715202995", "name": "Linker Schouder", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 1500, "d8f3958d-f892-470f-8144-20397097fa40": 1000}, "geometryByViewId": {"ceefd939-3b32-4dbf-af81-5425a2103155": {"centerXPercent": 51.5, "centerYPercent": 20.5, "maxWidthPercent": 13, "maxHeightPercent": 13}}, "geometryOverridesByColor": {"Navy": {"centerXPercent": 53.49999999999999, "centerYPercent": 19.5}, "Wit": {"centerXPercent": 52.49999999999999}}},
+        {"id": "2e1baf26-835c-4068-a830-df9568bb5f68", "name": "Rechter Schouder", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 1500, "d8f3958d-f892-470f-8144-20397097fa40": 1000}, "geometryByViewId": {"d062f5e6-eb59-4229-8898-f03db348fb7f": {"centerXPercent": 48.5, "centerYPercent": 20.5, "maxWidthPercent": 13, "maxHeightPercent": 13}}, "geometryOverridesByColor": {"Navy": {"centerXPercent": 46.50000000000001, "centerYPercent": 19.5}, "Wit": {"centerXPercent": 47.50000000000001}}}
+      ],
+      "viewMetadata": [
+        {"id": "51db9162-9a58-43ca-b670-42b1022b06d4", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 9.88520408163265},
+        {"id": "3fb7bb52-1863-4037-a740-fe07b4609f50", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 53.25350573505674},
+        {"id": "ceefd939-3b32-4dbf-af81-5425a2103155", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 45.28510325529777},
+        {"id": "d062f5e6-eb59-4229-8898-f03db348fb7f", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 45.28510325529777}
+      ],
+      "viewsByColor": {
+        "Zwart": [
+          {"id": "51db9162-9a58-43ca-b670-42b1022b06d4", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 9.88520408163265, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/9dd12fb7-7121-47bd-aec2-86d36dcb7268/1777024019266-0.jpg"},
+          {"id": "3fb7bb52-1863-4037-a740-fe07b4609f50", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 53.25350573505674, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/79c0b90e-fa79-4a19-bfba-18d081e2351a/variants/52407845355848/img.jpg"},
+          {"id": "ceefd939-3b32-4dbf-af81-5425a2103155", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 45.28510325529777, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/98b0872a-400b-4f28-a262-9cb91c981d75/variants/52407845355848/img.jpg"},
+          {"id": "d062f5e6-eb59-4229-8898-f03db348fb7f", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 45.28510325529777, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/3458d933-a0a3-4f3e-8859-91390243a60c/variants/52407845355848/img.jpg"}
+        ],
+        "Navy": [
+          {"id": "51db9162-9a58-43ca-b670-42b1022b06d4", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 9.88520408163265, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/9dd12fb7-7121-47bd-aec2-86d36dcb7268/1777024022277-3.jpg"},
+          {"id": "3fb7bb52-1863-4037-a740-fe07b4609f50", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 53.25350573505674, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/79c0b90e-fa79-4a19-bfba-18d081e2351a/variants/52407843782984/img.jpg"},
+          {"id": "ceefd939-3b32-4dbf-af81-5425a2103155", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 45.28510325529777, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/98b0872a-400b-4f28-a262-9cb91c981d75/variants/52407843782984/img.jpg"},
+          {"id": "d062f5e6-eb59-4229-8898-f03db348fb7f", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 45.28510325529777, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/3458d933-a0a3-4f3e-8859-91390243a60c/variants/52407843782984/img.jpg"}
+        ],
+        "Wit": [
+          {"id": "51db9162-9a58-43ca-b670-42b1022b06d4", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 9.88520408163265, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/9dd12fb7-7121-47bd-aec2-86d36dcb7268/1777024020354-1.jpg"},
+          {"id": "3fb7bb52-1863-4037-a740-fe07b4609f50", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 53.25350573505674, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/79c0b90e-fa79-4a19-bfba-18d081e2351a/variants/52407844962632/img.jpg"},
+          {"id": "ceefd939-3b32-4dbf-af81-5425a2103155", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 45.28510325529777, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/98b0872a-400b-4f28-a262-9cb91c981d75/variants/52407844962632/img.jpg"},
+          {"id": "d062f5e6-eb59-4229-8898-f03db348fb7f", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 45.28510325529777, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/3458d933-a0a3-4f3e-8859-91390243a60c/variants/52407844962632/img.jpg"}
+        ]
+      },
+      "productMediaByColor": {
+        "Zwart": {"imageId": "gid://shopify/ProductImage/80814505787776", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_TS160SL_BLACK_FRONT.jpg?v=1764889573"},
+        "Navy": {"imageId": "gid://shopify/ProductImage/80814506475904", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_TS160SL_NAVY_FRONT.jpg?v=1764889584"},
+        "Wit": {"imageId": "gid://shopify/ProductImage/80814506770816", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_TS160SL_WHITE_FRONT.jpg?v=1764889593"}
+      },
+      "settingsMatchByColor": {"Zwart": true, "Navy": false, "Wit": false},
+      "sourceConfigInconsistencies": [
+        "All 27 variants have EUR 9.95 and are available; all three colors have sizes XS–5XL.",
+        "Methods, placement prices, steps, and view calibrations match across colors. Navy and white have color-specific geometry for Rug and both shoulders; exact overrides are recorded above.",
+        "Placement pricePerMethod maps contain method ID 54f013a5-5382-41de-b36e-d80e6fc1c971 even though the current methods array exposes only Bedrukken (ID d8f3958d-f892-470f-8144-20397097fa40). Preserve this unresolved source key."
+      ],
+      "notExposedByPublicConfig": {"separateMovementBounds": true, "measuredPhysicalPrintDimensions": true, "manufacturerProductionLimitsBeyondUploadConstraints": true}
+    },
+    {
+      "title": "Ontwerp je eigen Superfunny trui",
+      "handle": "ontwerp-je-eigen-superfunny-trui",
+      "productId": "gid://shopify/Product/15468463686016",
+      "productConfigId": "9bdb8dd1-8776-4b00-824d-08b20adb5008",
+      "productPageUrl": "https://superfunny.nl/products/ontwerp-je-eigen-superfunny-trui",
+      "currency": "EUR",
+      "baseProductPriceCents": 2495,
+      "productPageOptions": [
+        {"name": "Kleur", "values": ["Zwart", "Grijs", "Navy", "Rood", "Blauw", "Wit"]},
+        {"name": "Maat", "values": ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL", "6XL", "7XL"]}
+      ],
+      "variantSummary": {"sourceTitlePattern": "<color> / <size>", "sizesAvailableForEveryColor": ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL", "6XL", "7XL"], "allAvailable": true, "priceCentsPerVariant": 2495},
+      "variantAxis": "size",
+      "variantIdsByColorAndSize": {
+        "Zwart": {"XS": "gid://shopify/ProductVariant/56992083247488", "S": "gid://shopify/ProductVariant/56992083280256", "M": "gid://shopify/ProductVariant/56992083313024", "L": "gid://shopify/ProductVariant/56992083345792", "XL": "gid://shopify/ProductVariant/56992083378560", "XXL": "gid://shopify/ProductVariant/56992083411328", "3XL": "gid://shopify/ProductVariant/56992083444096", "4XL": "gid://shopify/ProductVariant/56992083476864", "5XL": "gid://shopify/ProductVariant/56992083509632", "6XL": "gid://shopify/ProductVariant/56992083542400", "7XL": "gid://shopify/ProductVariant/56992083575168"},
+        "Grijs": {"XS": "gid://shopify/ProductVariant/56992083607936", "S": "gid://shopify/ProductVariant/56992083640704", "M": "gid://shopify/ProductVariant/56992083673472", "L": "gid://shopify/ProductVariant/56992083706240", "XL": "gid://shopify/ProductVariant/56992083739008", "XXL": "gid://shopify/ProductVariant/56992083771776", "3XL": "gid://shopify/ProductVariant/56992083804544", "4XL": "gid://shopify/ProductVariant/56992083837312", "5XL": "gid://shopify/ProductVariant/56992083870080", "6XL": "gid://shopify/ProductVariant/56992083902848", "7XL": "gid://shopify/ProductVariant/56992083935616"},
+        "Navy": {"XS": "gid://shopify/ProductVariant/56992083968384", "S": "gid://shopify/ProductVariant/56992084001152", "M": "gid://shopify/ProductVariant/56992084033920", "L": "gid://shopify/ProductVariant/56992084066688", "XL": "gid://shopify/ProductVariant/56992084099456", "XXL": "gid://shopify/ProductVariant/56992084132224", "3XL": "gid://shopify/ProductVariant/56992084164992", "4XL": "gid://shopify/ProductVariant/56992084197760", "5XL": "gid://shopify/ProductVariant/56992084230528", "6XL": "gid://shopify/ProductVariant/56992084263296", "7XL": "gid://shopify/ProductVariant/56992084296064"},
+        "Rood": {"XS": "gid://shopify/ProductVariant/56992087310720", "S": "gid://shopify/ProductVariant/56992087343488", "M": "gid://shopify/ProductVariant/56992087376256", "L": "gid://shopify/ProductVariant/56992087409024", "XL": "gid://shopify/ProductVariant/56992087441792", "XXL": "gid://shopify/ProductVariant/56992087474560", "3XL": "gid://shopify/ProductVariant/56992087507328", "4XL": "gid://shopify/ProductVariant/56992087540096", "5XL": "gid://shopify/ProductVariant/56992087572864", "6XL": "gid://shopify/ProductVariant/56992087605632", "7XL": "gid://shopify/ProductVariant/56992087638400"},
+        "Blauw": {"XS": "gid://shopify/ProductVariant/56992087671168", "S": "gid://shopify/ProductVariant/56992087703936", "M": "gid://shopify/ProductVariant/56992087736704", "L": "gid://shopify/ProductVariant/56992087769472", "XL": "gid://shopify/ProductVariant/56992087802240", "XXL": "gid://shopify/ProductVariant/56992087835008", "3XL": "gid://shopify/ProductVariant/56992087867776", "4XL": "gid://shopify/ProductVariant/56992087900544", "5XL": "gid://shopify/ProductVariant/56992087933312", "6XL": "gid://shopify/ProductVariant/56992087966080", "7XL": "gid://shopify/ProductVariant/56992087998848"},
+        "Wit": {"XS": "gid://shopify/ProductVariant/56992088031616", "S": "gid://shopify/ProductVariant/56992088064384", "M": "gid://shopify/ProductVariant/56992088097152", "L": "gid://shopify/ProductVariant/56992088129920", "XL": "gid://shopify/ProductVariant/56992088162688", "XXL": "gid://shopify/ProductVariant/56992088195456", "3XL": "gid://shopify/ProductVariant/56992088228224", "4XL": "gid://shopify/ProductVariant/56992088260992", "5XL": "gid://shopify/ProductVariant/56992088293760", "6XL": "gid://shopify/ProductVariant/56992088326528", "7XL": "gid://shopify/ProductVariant/56992088359296"}
+      },
+      "customizerConfigUrlsByColor": {
+        "Zwart": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15468463686016&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56992083247488",
+        "Grijs": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15468463686016&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56992083607936",
+        "Navy": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15468463686016&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56992083968384",
+        "Rood": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15468463686016&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56992087310720",
+        "Blauw": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15468463686016&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56992087671168",
+        "Wit": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15468463686016&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56992088031616"
+      },
+      "placeholderLogo": {"mode": "merchant_asset", "text": null, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/ab3a7ac6-7a96-4a9c-ab85-5addfd1dbf21/placeholder/img.png"},
+      "methods": [
+        {"id": "d8f3958d-f892-470f-8144-20397097fa40", "name": "Bedrukken", "basePriceCents": 0, "hidePriceWhenZero": true, "customerName": null, "customerDescription": "Levendige kleuren en scherpe details", "artworkConstraints": {"fileTypes": ["jpg", "pdf", "eps", "svg", "png", "webp", "tiff"]}}
+      ],
+      "placements": [
+        {"id": "f9ef34e7-e3a6-4b94-8b16-ec80ddc45be9", "name": "Linkerborst", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 1500, "d8f3958d-f892-470f-8144-20397097fa40": 750}, "geometryByViewId": {"b770a3be-67d4-4147-b1b3-34420ccab510": {"centerXPercent": 64, "centerYPercent": 28, "maxWidthPercent": 20, "maxHeightPercent": 20}}},
+        {"id": "7ba04a3c-c31a-4f95-9584-94ffa1ef74af", "name": "Rechterborst", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 1500, "d8f3958d-f892-470f-8144-20397097fa40": 750}, "geometryByViewId": {"b770a3be-67d4-4147-b1b3-34420ccab510": {"centerXPercent": 36, "centerYPercent": 28, "maxWidthPercent": 20, "maxHeightPercent": 20}}},
+        {"id": "bec71b10-1907-45ef-8929-bb41f5d0b5ac", "name": "Buik", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": false, "defaultStepIndex": 0, "steps": [{"label": "Standard", "priceAdjustmentCents": 0, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 3000, "d8f3958d-f892-470f-8144-20397097fa40": 1500}, "geometryByViewId": {"b770a3be-67d4-4147-b1b3-34420ccab510": {"centerXPercent": 50, "centerYPercent": 34, "maxWidthPercent": 32, "maxHeightPercent": 32}}},
+        {"id": "0a7dad5c-16cd-409f-803b-7788ecd5ca17", "name": "Rug", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 3000, "d8f3958d-f892-470f-8144-20397097fa40": 1500}, "geometryByViewId": {"e75c15bd-ff60-4402-96c7-096f4b434c8d": {"centerXPercent": 50, "centerYPercent": 31, "maxWidthPercent": 36, "maxHeightPercent": 36}}},
+        {"id": "54cb05ae-8775-4d1d-b22a-bd4f514e512c", "name": "Linker Schouder", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 1500, "d8f3958d-f892-470f-8144-20397097fa40": 1000}, "geometryByViewId": {"528b3de6-3a2a-4989-ad3d-c0ff6b3ce0ec": {"centerXPercent": 52.99999999999999, "centerYPercent": 28.5, "maxWidthPercent": 14, "maxHeightPercent": 15}}, "geometryOverridesByColor": {"Grijs": {"centerXPercent": 52}, "Rood": {"centerXPercent": 50.99999999999999}, "Wit": {"centerXPercent": 52}}},
+        {"id": "b46bda59-8e74-41ae-afa7-cfc272547c0f", "name": "Rechter Schouder", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 1500, "d8f3958d-f892-470f-8144-20397097fa40": 1000}, "geometryByViewId": {"898737ff-18a4-4693-9ada-159847a1d908": {"centerXPercent": 47.00000000000001, "centerYPercent": 28.5, "maxWidthPercent": 14, "maxHeightPercent": 15}}, "geometryOverridesByColor": {"Grijs": {"centerXPercent": 48}, "Rood": {"centerXPercent": 49.00000000000001}, "Wit": {"centerXPercent": 48}}}
+      ],
+      "viewMetadata": [
+        {"id": "b770a3be-67d4-4147-b1b3-34420ccab510", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 12.69196747432917},
+        {"id": "e75c15bd-ff60-4402-96c7-096f4b434c8d", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 77.29591836734696},
+        {"id": "528b3de6-3a2a-4989-ad3d-c0ff6b3ce0ec", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 54.34212390635734},
+        {"id": "898737ff-18a4-4693-9ada-159847a1d908", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 54.34212390635734}
+      ],
+      "viewsByColor": {
+        "Zwart": [
+          {"id": "b770a3be-67d4-4147-b1b3-34420ccab510", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 12.69196747432917, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/73340b67-d393-4270-8495-44d2502c235e/1777023001167-0.jpg"},
+          {"id": "e75c15bd-ff60-4402-96c7-096f4b434c8d", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 77.29591836734696, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/92c33111-3507-458c-923d-c92619abdbfa/variants/52407820976456/img.jpg"},
+          {"id": "528b3de6-3a2a-4989-ad3d-c0ff6b3ce0ec", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 54.34212390635734, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/4e88ab80-7f7c-42f6-8748-b38ba98dd4f1/variants/52407820976456/img.jpg"},
+          {"id": "898737ff-18a4-4693-9ada-159847a1d908", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 54.34212390635734, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/b66aea28-afed-40fd-9a9e-64d8da42b7fa/variants/52407820976456/img.jpg"}
+        ],
+        "Grijs": [
+          {"id": "b770a3be-67d4-4147-b1b3-34420ccab510", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 12.69196747432917, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/73340b67-d393-4270-8495-44d2502c235e/1777023003346-2.jpg"},
+          {"id": "e75c15bd-ff60-4402-96c7-096f4b434c8d", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 77.29591836734696, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/92c33111-3507-458c-923d-c92619abdbfa/variants/52407821762888/img.jpg"},
+          {"id": "528b3de6-3a2a-4989-ad3d-c0ff6b3ce0ec", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 54.34212390635734, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/4e88ab80-7f7c-42f6-8748-b38ba98dd4f1/variants/52407821762888/img.jpg"},
+          {"id": "898737ff-18a4-4693-9ada-159847a1d908", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 54.34212390635734, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/b66aea28-afed-40fd-9a9e-64d8da42b7fa/variants/52407821762888/img.jpg"}
+        ],
+        "Navy": [
+          {"id": "b770a3be-67d4-4147-b1b3-34420ccab510", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 12.69196747432917, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/73340b67-d393-4270-8495-44d2502c235e/1777023004265-3.jpg"},
+          {"id": "e75c15bd-ff60-4402-96c7-096f4b434c8d", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 77.29591836734696, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/92c33111-3507-458c-923d-c92619abdbfa/variants/52407822156104/img.jpg"},
+          {"id": "528b3de6-3a2a-4989-ad3d-c0ff6b3ce0ec", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 54.34212390635734, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/4e88ab80-7f7c-42f6-8748-b38ba98dd4f1/variants/52407822156104/img.jpg"},
+          {"id": "898737ff-18a4-4693-9ada-159847a1d908", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 54.34212390635734, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/b66aea28-afed-40fd-9a9e-64d8da42b7fa/variants/52407822156104/img.jpg"}
+        ],
+        "Rood": [
+          {"id": "b770a3be-67d4-4147-b1b3-34420ccab510", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 12.69196747432917, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/73340b67-d393-4270-8495-44d2502c235e/1777023006431-5.jpg"},
+          {"id": "e75c15bd-ff60-4402-96c7-096f4b434c8d", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 77.29591836734696, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/92c33111-3507-458c-923d-c92619abdbfa/variants/52407821369672/img.jpg"},
+          {"id": "528b3de6-3a2a-4989-ad3d-c0ff6b3ce0ec", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 54.34212390635734, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/4e88ab80-7f7c-42f6-8748-b38ba98dd4f1/variants/52407821369672/img.jpg"},
+          {"id": "898737ff-18a4-4693-9ada-159847a1d908", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 54.34212390635734, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/b66aea28-afed-40fd-9a9e-64d8da42b7fa/variants/52407821369672/img.jpg"}
+        ],
+        "Blauw": [
+          {"id": "b770a3be-67d4-4147-b1b3-34420ccab510", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 12.69196747432917, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/73340b67-d393-4270-8495-44d2502c235e/1777023005343-4.jpg"},
+          {"id": "e75c15bd-ff60-4402-96c7-096f4b434c8d", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 77.29591836734696, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/92c33111-3507-458c-923d-c92619abdbfa/variants/52407820190024/img.jpg"},
+          {"id": "528b3de6-3a2a-4989-ad3d-c0ff6b3ce0ec", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 54.34212390635734, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/4e88ab80-7f7c-42f6-8748-b38ba98dd4f1/variants/52407820190024/img.jpg"},
+          {"id": "898737ff-18a4-4693-9ada-159847a1d908", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 54.34212390635734, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/b66aea28-afed-40fd-9a9e-64d8da42b7fa/variants/52407820190024/img.jpg"}
+        ],
+        "Wit": [
+          {"id": "b770a3be-67d4-4147-b1b3-34420ccab510", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 12.69196747432917, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/73340b67-d393-4270-8495-44d2502c235e/1777023002282-1.jpg"},
+          {"id": "e75c15bd-ff60-4402-96c7-096f4b434c8d", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 77.29591836734696, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/92c33111-3507-458c-923d-c92619abdbfa/variants/52407820583240/img.jpg"},
+          {"id": "528b3de6-3a2a-4989-ad3d-c0ff6b3ce0ec", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 54.34212390635734, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/4e88ab80-7f7c-42f6-8748-b38ba98dd4f1/variants/52407820583240/img.jpg"},
+          {"id": "898737ff-18a4-4693-9ada-159847a1d908", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 54.34212390635734, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/b66aea28-afed-40fd-9a9e-64d8da42b7fa/variants/52407820583240/img.jpg"}
+        ]
+      },
+      "productMediaByColor": {
+        "Zwart": {"imageId": "gid://shopify/ProductImage/80814624604544", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_RNSW_BLACK_FRONT.jpg?v=1764891576"},
+        "Grijs": {"imageId": "gid://shopify/ProductImage/80814625194368", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_RNSW_GREY_FRONT.jpg?v=1764891595"},
+        "Navy": {"imageId": "gid://shopify/ProductImage/80814625292672", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_RNSW_NAVY_FRONT_eea3485c-c9ee-4671-a889-120b1840dd8e.jpg?v=1764891606"},
+        "Rood": {"imageId": "gid://shopify/ProductImage/80814625685888", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_RNSW_RED_FRONT.jpg?v=1764891616"},
+        "Blauw": {"imageId": "gid://shopify/ProductImage/80814626079104", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_RNSW_ROYAL_BLUE_FRONT.jpg?v=1764891626"},
+        "Wit": {"imageId": "gid://shopify/ProductImage/80814626603392", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_RNSW_WHITE_FRONT_b5b95d0b-7279-4234-873c-3bd184c0d5c0.jpg?v=1764891638"}
+      },
+      "settingsMatchByColor": {"Zwart": true, "Grijs": false, "Navy": true, "Rood": false, "Blauw": true, "Wit": false},
+      "sourceConfigInconsistencies": [
+        "All 66 variants have EUR 24.95 and are available; all six colors have sizes XS–7XL.",
+        "Methods, placement prices, steps, and view calibrations match across colors. Only Linker Schouder and Rechter Schouder geometry changes for Grijs, Rood, and Wit; other colors match Zwart.",
+        "All placement pricePerMethod maps reference method ID 54f013a5-5382-41de-b36e-d80e6fc1c971, but the current methods array exposes only Bedrukken (ID d8f3958d-f892-470f-8144-20397097fa40). Preserve the unresolved method price key."
+      ],
+      "notExposedByPublicConfig": {"separateMovementBounds": true, "measuredPhysicalPrintDimensions": true, "manufacturerProductionLimitsBeyondUploadConstraints": true}
+    },
+    {
+      "title": "Ontwerp je eigen Superfunny polo",
+      "handle": "ontwerp-je-eigen-superfunny-polo",
+      "productId": "gid://shopify/Product/15468473450880",
+      "productConfigId": "5e0a683f-1b9d-4d2c-b49a-701985ec4937",
+      "productPageUrl": "https://superfunny.nl/products/ontwerp-je-eigen-superfunny-polo",
+      "currency": "EUR",
+      "baseProductPriceCents": 1195,
+      "productPageOptions": [
+        {"name": "Kleur", "values": ["Zwart", "Grijs", "Navy", "Rood", "Blauw", "Wit"]},
+        {"name": "Maat", "values": ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL", "6XL", "7XL"]}
+      ],
+      "variantSummary": {"sourceTitlePattern": "<color> / <size>", "sizesAvailableForEveryColor": ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL", "6XL", "7XL"], "allAvailable": true, "priceCentsPerVariant": 1195},
+      "variantAxis": "size",
+      "variantIdsByColorAndSize": {
+        "Zwart": {"XS": "gid://shopify/ProductVariant/56992113000832", "S": "gid://shopify/ProductVariant/56992113033600", "M": "gid://shopify/ProductVariant/56992113066368", "L": "gid://shopify/ProductVariant/56992113099136", "XL": "gid://shopify/ProductVariant/56992113131904", "XXL": "gid://shopify/ProductVariant/56992113164672", "3XL": "gid://shopify/ProductVariant/56992113197440", "4XL": "gid://shopify/ProductVariant/56992113230208", "5XL": "gid://shopify/ProductVariant/56992113262976", "6XL": "gid://shopify/ProductVariant/56992113295744", "7XL": "gid://shopify/ProductVariant/56992113328512"},
+        "Grijs": {"XS": "gid://shopify/ProductVariant/56992113361280", "S": "gid://shopify/ProductVariant/56992113394048", "M": "gid://shopify/ProductVariant/56992113426816", "L": "gid://shopify/ProductVariant/56992113459584", "XL": "gid://shopify/ProductVariant/56992113492352", "XXL": "gid://shopify/ProductVariant/56992113525120", "3XL": "gid://shopify/ProductVariant/56992113557888", "4XL": "gid://shopify/ProductVariant/56992113590656", "5XL": "gid://shopify/ProductVariant/56992113623424", "6XL": "gid://shopify/ProductVariant/56992113656192", "7XL": "gid://shopify/ProductVariant/56992113688960"},
+        "Navy": {"XS": "gid://shopify/ProductVariant/56992113721728", "S": "gid://shopify/ProductVariant/56992113754496", "M": "gid://shopify/ProductVariant/56992113787264", "L": "gid://shopify/ProductVariant/56992113820032", "XL": "gid://shopify/ProductVariant/56992113852800", "XXL": "gid://shopify/ProductVariant/56992113885568", "3XL": "gid://shopify/ProductVariant/56992113918336", "4XL": "gid://shopify/ProductVariant/56992113951104", "5XL": "gid://shopify/ProductVariant/56992113983872", "6XL": "gid://shopify/ProductVariant/56992114016640", "7XL": "gid://shopify/ProductVariant/56992114049408"},
+        "Rood": {"XS": "gid://shopify/ProductVariant/56992114082176", "S": "gid://shopify/ProductVariant/56992114114944", "M": "gid://shopify/ProductVariant/56992114147712", "L": "gid://shopify/ProductVariant/56992114180480", "XL": "gid://shopify/ProductVariant/56992114213248", "XXL": "gid://shopify/ProductVariant/56992114246016", "3XL": "gid://shopify/ProductVariant/56992114278784", "4XL": "gid://shopify/ProductVariant/56992114311552", "5XL": "gid://shopify/ProductVariant/56992114344320", "6XL": "gid://shopify/ProductVariant/56992114377088", "7XL": "gid://shopify/ProductVariant/56992114409856"},
+        "Blauw": {"XS": "gid://shopify/ProductVariant/56992114442624", "S": "gid://shopify/ProductVariant/56992114475392", "M": "gid://shopify/ProductVariant/56992114508160", "L": "gid://shopify/ProductVariant/56992114540928", "XL": "gid://shopify/ProductVariant/56992114573696", "XXL": "gid://shopify/ProductVariant/56992114606464", "3XL": "gid://shopify/ProductVariant/56992114639232", "4XL": "gid://shopify/ProductVariant/56992114672000", "5XL": "gid://shopify/ProductVariant/56992114704768", "6XL": "gid://shopify/ProductVariant/56992114737536", "7XL": "gid://shopify/ProductVariant/56992114770304"},
+        "Wit": {"XS": "gid://shopify/ProductVariant/56992114803072", "S": "gid://shopify/ProductVariant/56992114835840", "M": "gid://shopify/ProductVariant/56992114868608", "L": "gid://shopify/ProductVariant/56992114901376", "XL": "gid://shopify/ProductVariant/56992114934144", "XXL": "gid://shopify/ProductVariant/56992114966912", "3XL": "gid://shopify/ProductVariant/56992114999680", "4XL": "gid://shopify/ProductVariant/56992115032448", "5XL": "gid://shopify/ProductVariant/56992115065216", "6XL": "gid://shopify/ProductVariant/56992115097984", "7XL": "gid://shopify/ProductVariant/56992115130752"}
+      },
+      "customizerConfigUrlsByColor": {
+        "Zwart": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15468473450880&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56992113000832",
+        "Grijs": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15468473450880&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56992113361280",
+        "Navy": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15468473450880&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56992113721728",
+        "Rood": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15468473450880&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56992114082176",
+        "Blauw": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15468473450880&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56992114442624",
+        "Wit": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15468473450880&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56992114803072"
+      },
+      "placeholderLogo": {"mode": "merchant_asset", "text": null, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/ab3a7ac6-7a96-4a9c-ab85-5addfd1dbf21/placeholder/img.png"},
+      "methods": [
+        {"id": "d8f3958d-f892-470f-8144-20397097fa40", "name": "Bedrukken", "basePriceCents": 0, "hidePriceWhenZero": true, "customerName": null, "customerDescription": "Levendige kleuren en scherpe details", "artworkConstraints": {"fileTypes": ["jpg", "pdf", "eps", "svg", "png", "webp", "tiff"]}}
+      ],
+      "placements": [
+        {"id": "ec2181f6-3c2c-4fcd-b2f8-6dbc23ae4b1d", "name": "Linkerborst", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 1500, "d8f3958d-f892-470f-8144-20397097fa40": 750}, "geometryByViewId": {"917e345a-6e29-4178-9ffa-78e4294a3f53": {"centerXPercent": 62.99999999999999, "centerYPercent": 28.5, "maxWidthPercent": 18, "maxHeightPercent": 17}}},
+        {"id": "178c4e39-5615-43b3-a785-ba0a8f986ce9", "name": "Rechterborst", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 1500, "d8f3958d-f892-470f-8144-20397097fa40": 750}, "geometryByViewId": {"917e345a-6e29-4178-9ffa-78e4294a3f53": {"centerXPercent": 37, "centerYPercent": 28.5, "maxWidthPercent": 18, "maxHeightPercent": 17}}},
+        {"id": "f46bba88-0d95-44f7-b311-8e8abe0b45d2", "name": "Buik", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": false, "defaultStepIndex": 0, "steps": [{"label": "Standard", "priceAdjustmentCents": 0, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 3000, "d8f3958d-f892-470f-8144-20397097fa40": 1500}, "geometryByViewId": {"917e345a-6e29-4178-9ffa-78e4294a3f53": {"centerXPercent": 49.5, "centerYPercent": 59.5, "maxWidthPercent": 31, "maxHeightPercent": 43}}},
+        {"id": "bc4f4f76-4d98-4ff5-85ae-50fffe67c0ee", "name": "Rug", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 3000, "d8f3958d-f892-470f-8144-20397097fa40": 1500}, "geometryByViewId": {"c862e4c7-1c58-4305-93b4-633372f706e2": {"centerXPercent": 50, "centerYPercent": 31, "maxWidthPercent": 34, "maxHeightPercent": 34}}, "geometryOverridesByColor": {"Grijs": {"centerYPercent": 33}, "Navy": {"centerYPercent": 33}, "Rood": {"centerYPercent": 32}, "Blauw": {"centerYPercent": 32}, "Wit": {"centerYPercent": 32}}},
+        {"id": "f17ed5e5-de5b-4150-b5b5-2fdce96cf9ec", "name": "Linker Schouder", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 1500, "d8f3958d-f892-470f-8144-20397097fa40": 1000}, "geometryByViewId": {"60c96cee-5b01-4bb2-8afe-5d9dbfd7abe3": {"centerXPercent": 53.99999999999999, "centerYPercent": 28.5, "maxWidthPercent": 12, "maxHeightPercent": 15}}, "geometryOverridesByColor": {"Grijs": {"centerXPercent": 52}, "Navy": {"centerXPercent": 52, "centerYPercent": 31.49999999999999}, "Rood": {"centerXPercent": 53}, "Blauw": {"centerXPercent": 52}, "Wit": {"centerXPercent": 52, "centerYPercent": 29.5}}},
+        {"id": "de727f92-d782-4e12-aa53-3f69f2c4b85c", "name": "Rechter Schouder", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 1500, "d8f3958d-f892-470f-8144-20397097fa40": 1000}, "geometryByViewId": {"72b94a90-6573-4d9d-9ce1-17de85082f4f": {"centerXPercent": 46.00000000000001, "centerYPercent": 28.5, "maxWidthPercent": 12, "maxHeightPercent": 15}}, "geometryOverridesByColor": {"Grijs": {"centerXPercent": 48}, "Navy": {"centerXPercent": 48, "centerYPercent": 31.49999999999999}, "Rood": {"centerXPercent": 47}, "Blauw": {"centerXPercent": 48}, "Wit": {"centerXPercent": 48, "centerYPercent": 29.5}}}
+      ],
+      "viewMetadata": [
+        {"id": "917e345a-6e29-4178-9ffa-78e4294a3f53", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 10.71447552067056},
+        {"id": "c862e4c7-1c58-4305-93b4-633372f706e2", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 72.70408163265306},
+        {"id": "60c96cee-5b01-4bb2-8afe-5d9dbfd7abe3", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 51.66383188852798},
+        {"id": "72b94a90-6573-4d9d-9ce1-17de85082f4f", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 51.66383188852798}
+      ],
+      "viewsByColor": {
+        "Zwart": [
+          {"id": "917e345a-6e29-4178-9ffa-78e4294a3f53", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 10.71447552067056, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/448a2895-4496-4496-9611-7f51fa3a9f28/1777022349707-0.jpg"},
+          {"id": "c862e4c7-1c58-4305-93b4-633372f706e2", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 72.70408163265306, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/tray/1777022216267-fya9ee1tm0m.jpg"},
+          {"id": "60c96cee-5b01-4bb2-8afe-5d9dbfd7abe3", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 51.66383188852798, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/tray/1777022282468-1ofpcv4ij9i.jpg"},
+          {"id": "72b94a90-6573-4d9d-9ce1-17de85082f4f", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 51.66383188852798, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/eb1e21a2-233a-4f29-b126-a2dce591bfc7/variants/52407831036232/img.jpg"}
+        ],
+        "Grijs": [
+          {"id": "917e345a-6e29-4178-9ffa-78e4294a3f53", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 10.71447552067056, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/448a2895-4496-4496-9611-7f51fa3a9f28/1777022353320-3.jpg"},
+          {"id": "c862e4c7-1c58-4305-93b4-633372f706e2", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 72.70408163265306, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/e3fb8673-c839-46cc-b741-a1abd999d26c/variants/52407829135688/img.jpg"},
+          {"id": "60c96cee-5b01-4bb2-8afe-5d9dbfd7abe3", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 51.66383188852798, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/tray/1777022282553-wgnoz0so2e.jpg"},
+          {"id": "72b94a90-6573-4d9d-9ce1-17de85082f4f", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 51.66383188852798, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/eb1e21a2-233a-4f29-b126-a2dce591bfc7/variants/52407829070152/img.jpg"}
+        ],
+        "Navy": [
+          {"id": "917e345a-6e29-4178-9ffa-78e4294a3f53", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 10.71447552067056, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/448a2895-4496-4496-9611-7f51fa3a9f28/1777022354191-4.jpg"},
+          {"id": "c862e4c7-1c58-4305-93b4-633372f706e2", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 72.70408163265306, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/e3fb8673-c839-46cc-b741-a1abd999d26c/variants/52407829528904/img.jpg"},
+          {"id": "60c96cee-5b01-4bb2-8afe-5d9dbfd7abe3", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 51.66383188852798, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/tray/1777022282474-4jmsijkm18v.jpg"},
+          {"id": "72b94a90-6573-4d9d-9ce1-17de85082f4f", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 51.66383188852798, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/eb1e21a2-233a-4f29-b126-a2dce591bfc7/variants/52407829463368/img.jpg"}
+        ],
+        "Rood": [
+          {"id": "917e345a-6e29-4178-9ffa-78e4294a3f53", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 10.71447552067056, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/448a2895-4496-4496-9611-7f51fa3a9f28/1777022355209-5.jpg"},
+          {"id": "c862e4c7-1c58-4305-93b4-633372f706e2", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 72.70408163265306, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/e3fb8673-c839-46cc-b741-a1abd999d26c/variants/52407829922120/img.jpg"},
+          {"id": "60c96cee-5b01-4bb2-8afe-5d9dbfd7abe3", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 51.66383188852798, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/tray/1777022282464-f9ffciwzv1n.jpg"},
+          {"id": "72b94a90-6573-4d9d-9ce1-17de85082f4f", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 51.66383188852798, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/eb1e21a2-233a-4f29-b126-a2dce591bfc7/variants/52407829856584/img.jpg"}
+        ],
+        "Blauw": [
+          {"id": "917e345a-6e29-4178-9ffa-78e4294a3f53", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 10.71447552067056, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/448a2895-4496-4496-9611-7f51fa3a9f28/1777022356213-6.jpg"},
+          {"id": "c862e4c7-1c58-4305-93b4-633372f706e2", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 72.70408163265306, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/e3fb8673-c839-46cc-b741-a1abd999d26c/variants/52407830315336/img.jpg"},
+          {"id": "60c96cee-5b01-4bb2-8afe-5d9dbfd7abe3", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 51.66383188852798, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/tray/1777022282469-39g8rp8rpri.jpg"},
+          {"id": "72b94a90-6573-4d9d-9ce1-17de85082f4f", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 51.66383188852798, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/eb1e21a2-233a-4f29-b126-a2dce591bfc7/variants/52407830249800/img.jpg"}
+        ],
+        "Wit": [
+          {"id": "917e345a-6e29-4178-9ffa-78e4294a3f53", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 10.71447552067056, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/448a2895-4496-4496-9611-7f51fa3a9f28/1777022351235-1.jpg"},
+          {"id": "c862e4c7-1c58-4305-93b4-633372f706e2", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 72.70408163265306, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/e3fb8673-c839-46cc-b741-a1abd999d26c/variants/52407830708552/img.jpg"},
+          {"id": "60c96cee-5b01-4bb2-8afe-5d9dbfd7abe3", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 51.66383188852798, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/tray/1777022282472-kwflcxuk9wc.jpg"},
+          {"id": "72b94a90-6573-4d9d-9ce1-17de85082f4f", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 51.66383188852798, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/eb1e21a2-233a-4f29-b126-a2dce591bfc7/variants/52407830643016/img.jpg"}
+        ]
+      },
+      "productMediaByColor": {
+        "Zwart": {"imageId": "gid://shopify/ProductImage/80814747550080", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_PS200_BLACK_FRONT.jpg?v=1764893707"},
+        "Grijs": {"imageId": "gid://shopify/ProductImage/80814747877760", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_PS200_GREY_FRONT.jpg?v=1764893724"},
+        "Navy": {"imageId": "gid://shopify/ProductImage/80814751121792", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_PS200_NAVY_FRONT.jpg?v=1764893767"},
+        "Rood": {"imageId": "gid://shopify/ProductImage/80814751351168", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_PS200_RED_FRONT.jpg?v=1764893779"},
+        "Blauw": {"imageId": "gid://shopify/ProductImage/80814751908224", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_PS200_ROYAL_BLUE_FRONT.jpg?v=1764893790"},
+        "Wit": {"imageId": "gid://shopify/ProductImage/80814751973760", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_PS200_WHITE_FRONT.jpg?v=1764893801"}
+      },
+      "settingsMatchByColor": {"Zwart": true, "Grijs": false, "Navy": false, "Rood": false, "Blauw": false, "Wit": false},
+      "sourceConfigInconsistencies": [
+        "All 66 variants have EUR 11.95 and are available; all six colors have sizes XS–7XL.",
+        "The methods, placement pricing, steps, and calibrations match across colors. Color config differs in geometry for Rug, Linker Schouder, and Rechter Schouder; exact per-color positions are preserved above.",
+        "The live methods array exposes only Bedrukken (ID d8f3958d-f892-470f-8144-20397097fa40), while placement pricePerMethod maps also reference method ID 54f013a5-5382-41de-b36e-d80e6fc1c971. Preserve this unresolved source key; do not infer a second method."
+      ],
+      "notExposedByPublicConfig": {"separateMovementBounds": true, "measuredPhysicalPrintDimensions": true, "manufacturerProductionLimitsBeyondUploadConstraints": true}
+    },
+    {
+      "title": "Ontwerp je eigen superfunny T-shirt",
+      "handle": "ontwerp-je-eigen-superfunny-t-shirt",
+      "productId": "gid://shopify/Product/15464675246464",
+      "productConfigId": "b7985d0d-b9e6-4faa-9b38-4abe3ce0077c",
+      "productPageUrl": "https://superfunny.nl/products/ontwerp-je-eigen-superfunny-t-shirt",
+      "currency": "EUR",
+      "baseProductPriceCents": 995,
+      "productPageOptions": [
+        {"name": "Kleur", "values": ["Zwart", "Grijs", "Navy", "Rood", "Blauw", "Wit"]},
+        {"name": "Maat", "values": ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL", "6XL", "7XL"]}
+      ],
+      "sizesByColor": {
+        "Zwart": ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL", "6XL", "7XL"],
+        "Grijs": ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL", "6XL", "7XL"],
+        "Navy": ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL", "6XL", "7XL"],
+        "Rood": ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL", "6XL", "7XL"],
+        "Blauw": ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL", "6XL", "7XL"],
+        "Wit": ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"]
+      },
+      "variantAxis": "size",
+      "variants": {
+        "sourceTitlePattern": "<color> / <size>",
+        "allAvailable": true,
+        "priceCentsPerVariant": 995,
+        "variantIdsByColorAndSize": {
+          "Zwart": {"XS": "gid://shopify/ProductVariant/56980145176960", "S": "gid://shopify/ProductVariant/56980145209728", "M": "gid://shopify/ProductVariant/56980145242496", "L": "gid://shopify/ProductVariant/56980237517184", "XL": "gid://shopify/ProductVariant/56980145275264", "XXL": "gid://shopify/ProductVariant/56980145308032", "3XL": "gid://shopify/ProductVariant/56980145340800", "4XL": "gid://shopify/ProductVariant/56980145373568", "5XL": "gid://shopify/ProductVariant/56980145406336", "6XL": "gid://shopify/ProductVariant/56980145439104", "7XL": "gid://shopify/ProductVariant/56980145471872"},
+          "Grijs": {"XS": "gid://shopify/ProductVariant/56980145504640", "S": "gid://shopify/ProductVariant/56980145537408", "M": "gid://shopify/ProductVariant/56980145570176", "L": "gid://shopify/ProductVariant/56980237549952", "XL": "gid://shopify/ProductVariant/56980145602944", "XXL": "gid://shopify/ProductVariant/56980145635712", "3XL": "gid://shopify/ProductVariant/56980145668480", "4XL": "gid://shopify/ProductVariant/56980145701248", "5XL": "gid://shopify/ProductVariant/56980145734016", "6XL": "gid://shopify/ProductVariant/56980145766784", "7XL": "gid://shopify/ProductVariant/56980145799552"},
+          "Navy": {"XS": "gid://shopify/ProductVariant/56980145832320", "S": "gid://shopify/ProductVariant/56980145865088", "M": "gid://shopify/ProductVariant/56980145897856", "L": "gid://shopify/ProductVariant/56980237582720", "XL": "gid://shopify/ProductVariant/56980145930624", "XXL": "gid://shopify/ProductVariant/56980145963392", "3XL": "gid://shopify/ProductVariant/56980145996160", "4XL": "gid://shopify/ProductVariant/56980146028928", "5XL": "gid://shopify/ProductVariant/56980146061696", "6XL": "gid://shopify/ProductVariant/56980146094464", "7XL": "gid://shopify/ProductVariant/56980146127232"},
+          "Rood": {"XS": "gid://shopify/ProductVariant/56980146160000", "S": "gid://shopify/ProductVariant/56980146192768", "M": "gid://shopify/ProductVariant/56980146225536", "L": "gid://shopify/ProductVariant/56980237615488", "XL": "gid://shopify/ProductVariant/56980146258304", "XXL": "gid://shopify/ProductVariant/56980146291072", "3XL": "gid://shopify/ProductVariant/56980146323840", "4XL": "gid://shopify/ProductVariant/56980146356608", "5XL": "gid://shopify/ProductVariant/56980146389376", "6XL": "gid://shopify/ProductVariant/56980146422144", "7XL": "gid://shopify/ProductVariant/56980146454912"},
+          "Blauw": {"XS": "gid://shopify/ProductVariant/56980146487680", "S": "gid://shopify/ProductVariant/56980146520448", "M": "gid://shopify/ProductVariant/56980146553216", "L": "gid://shopify/ProductVariant/56980237648256", "XL": "gid://shopify/ProductVariant/56980146585984", "XXL": "gid://shopify/ProductVariant/56980146618752", "3XL": "gid://shopify/ProductVariant/56980146651520", "4XL": "gid://shopify/ProductVariant/56980146684288", "5XL": "gid://shopify/ProductVariant/56980146717056", "6XL": "gid://shopify/ProductVariant/56980146749824", "7XL": "gid://shopify/ProductVariant/56980146782592"},
+          "Wit": {"XS": "gid://shopify/ProductVariant/56980146815360", "S": "gid://shopify/ProductVariant/56980146848128", "M": "gid://shopify/ProductVariant/56980146880896", "L": "gid://shopify/ProductVariant/56980237681024", "XL": "gid://shopify/ProductVariant/56980146913664", "XXL": "gid://shopify/ProductVariant/56980146946432", "3XL": "gid://shopify/ProductVariant/56980146979200", "4XL": "gid://shopify/ProductVariant/56980147011968", "5XL": "gid://shopify/ProductVariant/56980147044736"}
+        }
+      },
+      "customizerConfigUrlsByColor": {
+        "Zwart": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15464675246464&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56980145176960",
+        "Grijs": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15464675246464&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56980145504640",
+        "Navy": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15464675246464&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56980145832320",
+        "Rood": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15464675246464&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56980146160000",
+        "Blauw": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15464675246464&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56980146487680",
+        "Wit": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15464675246464&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56980146815360"
+      },
+      "placeholderLogo": {"mode": "merchant_asset", "text": null, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/ab3a7ac6-7a96-4a9c-ab85-5addfd1dbf21/placeholder/img.png"},
+      "methods": [
+        {"id": "d8f3958d-f892-470f-8144-20397097fa40", "name": "Bedrukken", "basePriceCents": 0, "hidePriceWhenZero": true, "customerName": null, "customerDescription": "Levendige kleuren en scherpe details", "artworkConstraints": {"fileTypes": ["jpg", "pdf", "eps", "svg", "png", "webp", "tiff"]}}
+      ],
+      "placements": [
+        {"id": "02cac149-aa3b-4466-961d-17220f562db5", "name": "Linkerborst", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 1500, "d8f3958d-f892-470f-8144-20397097fa40": 750}, "geometryByViewId": {"2fafe3f1-a14a-493e-aaac-38cf08c0b66c": {"centerXPercent": 61, "centerYPercent": 25, "maxWidthPercent": 20, "maxHeightPercent": 20}}},
+        {"id": "6026de95-041f-452a-954e-fb169570fa28", "name": "Rechterborst", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 1500, "d8f3958d-f892-470f-8144-20397097fa40": 750}, "geometryByViewId": {"2fafe3f1-a14a-493e-aaac-38cf08c0b66c": {"centerXPercent": 38.99999999999999, "centerYPercent": 25, "maxWidthPercent": 20, "maxHeightPercent": 20}}},
+        {"id": "9466e911-7fb8-433f-82fa-1323ddfc77dd", "name": "Buik", "basePriceAdjustmentCents": 0, "defaultStepIndex": 0, "steps": [{"label": "Standard", "priceAdjustmentCents": 0, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 3000, "d8f3958d-f892-470f-8144-20397097fa40": 1500}, "geometryByViewId": {"2fafe3f1-a14a-493e-aaac-38cf08c0b66c": {"centerXPercent": 50, "centerYPercent": 31, "maxWidthPercent": 32, "maxHeightPercent": 32}}},
+        {"id": "a9253959-57f5-4925-b71c-73289d697584", "name": "Rug", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 3000, "d8f3958d-f892-470f-8144-20397097fa40": 1500}, "geometryByViewId": {"459d7036-b95c-41d0-98c9-f1e4586e6df5": {"centerXPercent": 50.49999999999999, "centerYPercent": 27, "maxWidthPercent": 27, "maxHeightPercent": 28}}},
+        {"id": "a470c2c4-8515-41dc-9432-0b068ae736d3", "name": "Linker Schouder", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 1500, "d8f3958d-f892-470f-8144-20397097fa40": 1000}, "geometryByColor": {"Zwart": {"viewId": "4ad9d02c-dd16-4cd4-8493-04696349aaa0", "centerXPercent": 51.5, "centerYPercent": 30.5, "maxWidthPercent": 15, "maxHeightPercent": 15}, "Grijs": {"viewId": "4ad9d02c-dd16-4cd4-8493-04696349aaa0", "centerXPercent": 53.49999999999999, "centerYPercent": 28.5, "maxWidthPercent": 15, "maxHeightPercent": 15}, "Navy": {"viewId": "4ad9d02c-dd16-4cd4-8493-04696349aaa0", "centerXPercent": 52.5, "centerYPercent": 30.5, "maxWidthPercent": 15, "maxHeightPercent": 15}, "Rood": {"viewId": "4ad9d02c-dd16-4cd4-8493-04696349aaa0", "centerXPercent": 51.5, "centerYPercent": 23.5, "maxWidthPercent": 15, "maxHeightPercent": 15}, "Blauw": {"viewId": "4ad9d02c-dd16-4cd4-8493-04696349aaa0", "centerXPercent": 51.5, "centerYPercent": 25.5, "maxWidthPercent": 15, "maxHeightPercent": 15}, "Wit": {"viewId": "4ad9d02c-dd16-4cd4-8493-04696349aaa0", "centerXPercent": 51.5, "centerYPercent": 30.5, "maxWidthPercent": 15, "maxHeightPercent": 15}}},
+        {"id": "f270554a-fad6-454f-92f7-3d4c52204c1c", "name": "Rechter Schouder", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 1500, "d8f3958d-f892-470f-8144-20397097fa40": 1000}, "geometryByColor": {"Zwart": {"viewId": "b6c93732-5975-4480-bf9d-c70e648cd60d", "centerXPercent": 48.5, "centerYPercent": 30.5, "maxWidthPercent": 15, "maxHeightPercent": 15}, "Grijs": {"viewId": "b6c93732-5975-4480-bf9d-c70e648cd60d", "centerXPercent": 46.50000000000001, "centerYPercent": 28.5, "maxWidthPercent": 15, "maxHeightPercent": 15}, "Navy": {"viewId": "b6c93732-5975-4480-bf9d-c70e648cd60d", "centerXPercent": 47.5, "centerYPercent": 30.5, "maxWidthPercent": 15, "maxHeightPercent": 15}, "Rood": {"viewId": "b6c93732-5975-4480-bf9d-c70e648cd60d", "centerXPercent": 48.5, "centerYPercent": 23.5, "maxWidthPercent": 15, "maxHeightPercent": 15}, "Blauw": {"viewId": "b6c93732-5975-4480-bf9d-c70e648cd60d", "centerXPercent": 48.5, "centerYPercent": 25.5, "maxWidthPercent": 15, "maxHeightPercent": 15}, "Wit": {"viewId": "b6c93732-5975-4480-bf9d-c70e648cd60d", "centerXPercent": 48.5, "centerYPercent": 30.5, "maxWidthPercent": 15, "maxHeightPercent": 15}}}
+      ],
+      "viewsByColor": {
+        "Zwart": [{"id": "2fafe3f1-a14a-493e-aaac-38cf08c0b66c", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 10.26864935465856, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/d7a81f72-b1ab-4d5b-b724-436316535e7b/1777024333630-0.jpg"}, {"id": "459d7036-b95c-41d0-98c9-f1e4586e6df5", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 57.78061224489795, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/c1bf057e-590f-426d-9d62-603be27adf62/variants/52407842701640/img.jpg"}, {"id": "4ad9d02c-dd16-4cd4-8493-04696349aaa0", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 48.47043668306467, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/ec732251-dd5a-41dd-a798-79e2fb9971e2/variants/52407842701640/img.jpg"}, {"id": "b6c93732-5975-4480-bf9d-c70e648cd60d", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 48.47043668306467, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/a66711dc-1ecf-465b-92fb-8733e94d9287/variants/52407842701640/img.jpg"}],
+        "Grijs": [{"id": "2fafe3f1-a14a-493e-aaac-38cf08c0b66c", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 10.26864935465856, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/d7a81f72-b1ab-4d5b-b724-436316535e7b/1777024337085-3.jpg"}, {"id": "459d7036-b95c-41d0-98c9-f1e4586e6df5", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 57.78061224489795, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/c1bf057e-590f-426d-9d62-603be27adf62/variants/52407841915208/img.jpg"}, {"id": "4ad9d02c-dd16-4cd4-8493-04696349aaa0", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 48.47043668306467, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/ec732251-dd5a-41dd-a798-79e2fb9971e2/variants/52407841915208/img.jpg"}, {"id": "b6c93732-5975-4480-bf9d-c70e648cd60d", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 48.47043668306467, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/a66711dc-1ecf-465b-92fb-8733e94d9287/variants/52407841915208/img.jpg"}],
+        "Navy": [{"id": "2fafe3f1-a14a-493e-aaac-38cf08c0b66c", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 10.26864935465856, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/d7a81f72-b1ab-4d5b-b724-436316535e7b/1777024338568-4.jpg"}, {"id": "459d7036-b95c-41d0-98c9-f1e4586e6df5", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 57.78061224489795, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/c1bf057e-590f-426d-9d62-603be27adf62/variants/52407842308424/img.jpg"}, {"id": "4ad9d02c-dd16-4cd4-8493-04696349aaa0", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 48.47043668306467, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/ec732251-dd5a-41dd-a798-79e2fb9971e2/variants/52407842308424/img.jpg"}, {"id": "b6c93732-5975-4480-bf9d-c70e648cd60d", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 48.47043668306467, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/a66711dc-1ecf-465b-92fb-8733e94d9287/variants/52407842308424/img.jpg"}],
+        "Rood": [{"id": "2fafe3f1-a14a-493e-aaac-38cf08c0b66c", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 10.26864935465856, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/d7a81f72-b1ab-4d5b-b724-436316535e7b/1777024339618-5.jpg"}, {"id": "459d7036-b95c-41d0-98c9-f1e4586e6df5", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 57.78061224489795, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/c1bf057e-590f-426d-9d62-603be27adf62/variants/52407841128776/img.jpg"}, {"id": "4ad9d02c-dd16-4cd4-8493-04696349aaa0", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 48.47043668306467, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/ec732251-dd5a-41dd-a798-79e2fb9971e2/variants/52407841128776/img.jpg"}, {"id": "b6c93732-5975-4480-bf9d-c70e648cd60d", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 48.47043668306467, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/a66711dc-1ecf-465b-92fb-8733e94d9287/variants/52407841128776/img.jpg"}],
+        "Blauw": [{"id": "2fafe3f1-a14a-493e-aaac-38cf08c0b66c", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 10.26864935465856, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/d7a81f72-b1ab-4d5b-b724-436316535e7b/1777024340579-6.jpg"}, {"id": "459d7036-b95c-41d0-98c9-f1e4586e6df5", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 57.78061224489795, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/c1bf057e-590f-426d-9d62-603be27adf62/variants/52407840735560/img.jpg"}, {"id": "4ad9d02c-dd16-4cd4-8493-04696349aaa0", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 48.47043668306467, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/ec732251-dd5a-41dd-a798-79e2fb9971e2/variants/52407840735560/img.jpg"}, {"id": "b6c93732-5975-4480-bf9d-c70e648cd60d", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 48.47043668306467, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/a66711dc-1ecf-465b-92fb-8733e94d9287/variants/52407840735560/img.jpg"}],
+        "Wit": [{"id": "2fafe3f1-a14a-493e-aaac-38cf08c0b66c", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 10.26864935465856, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/d7a81f72-b1ab-4d5b-b724-436316535e7b/1777024334606-1.jpg"}, {"id": "459d7036-b95c-41d0-98c9-f1e4586e6df5", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 57.78061224489795, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/c1bf057e-590f-426d-9d62-603be27adf62/variants/52407841521992/img.jpg"}, {"id": "4ad9d02c-dd16-4cd4-8493-04696349aaa0", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 48.47043668306467, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/ec732251-dd5a-41dd-a798-79e2fb9971e2/variants/52407841521992/img.jpg"}, {"id": "b6c93732-5975-4480-bf9d-c70e648cd60d", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 48.47043668306467, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/a66711dc-1ecf-465b-92fb-8733e94d9287/variants/52407841521992/img.jpg"}]
+      },
+      "productMediaByColor": {
+        "Zwart": {"imageId": "gid://shopify/ProductImage/80734641258880", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_TS180_BLACK_FRONT.jpg?v=1764722415"},
+        "Grijs": {"imageId": "gid://shopify/ProductImage/80734644961664", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_TS180_GREY_FRONT_1a56d545-08c7-439d-a167-833dd099ead2.jpg?v=1764722435"},
+        "Navy": {"imageId": "gid://shopify/ProductImage/80735156076928", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_TS180_NAVY_FRONT.jpg?v=1764722761"},
+        "Rood": {"imageId": "gid://shopify/ProductImage/80735156830592", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_TS180_RED_FRONT.jpg?v=1764722774"},
+        "Blauw": {"imageId": "gid://shopify/ProductImage/80735157682560", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_TS180_ROYAL_BLUE_FRONT.jpg?v=1764722784"},
+        "Wit": {"imageId": "gid://shopify/ProductImage/80735158305152", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_TS180_WHITE_FRONT.jpg?v=1764722795"}
+      },
+      "settingsMatchByColor": {"Zwart": true, "Grijs": false, "Navy": false, "Rood": false, "Blauw": false, "Wit": true},
+      "sourceConfigInconsistencies": [
+        "Prices and availability are uniform: 64 source variants at EUR 9.95, all available. White has only XS–5XL; other colors have XS–7XL.",
+        "Method and placement prices, step values, and view calibrations match across colors. Only Linker Schouder and Rechter Schouder geometry differs by color; exact centers and sizes are recorded above.",
+        "All six placement pricePerMethod maps contain method ID 54f013a5-5382-41de-b36e-d80e6fc1c971, but only method ID d8f3958d-f892-470f-8144-20397097fa40 (Bedrukken) appears in the current methods array. Keep this unresolved method price key; do not invent a method or flatten it into base variant price."
+      ],
+      "customizerUiObserved": {
+        "uploadText": "JPG · PDF · EPS · SVG · PNG · WEBP · TIFF (Max 5 MB)",
+        "uploadMaxDisplayed": "5 MB",
+        "logoLaterCheckbox": "Bestel nu, stuur logo na het afrekenen",
+        "logoLaterHelper": "We sturen je een mailtje om je artwork op te halen — geen haast",
+        "activeMethod": "Bedrukken",
+        "startingPriceDisplayed": "€9.95",
+        "placementTabInitiallyDisabledUntilArtworkUploaded": true
+      },
+      "notExposedByPublicConfig": {
+        "separateMovementBounds": true,
+        "measuredPhysicalPrintDimensions": true,
+        "manufacturerProductionLimitsBeyondUploadConstraints": true,
+        "interpretation": "Percent geometry and calibration are preserved from config. They are not independently measured garment or print dimensions."
+      }
+    },
+    {
+      "title": "Ontwerp je eigen Superfunny hoodie",
+      "handle": "ontwerp-je-eigen-superfunny-hoodie",
+      "productId": "gid://shopify/Product/15468416336256",
+      "productConfigId": "cb86e7b8-0281-4062-a7e3-52214a2e28e9",
+      "productPageUrl": "https://superfunny.nl/products/ontwerp-je-eigen-superfunny-hoodie",
+      "currency": "EUR",
+      "baseProductPriceCents": 2495,
+      "productPageOptions": [
+        {"name": "Kleur", "values": ["Zwart", "Grijs", "Navy"]},
+        {"name": "Maat", "values": ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL", "6XL", "7XL"]}
+      ],
+      "variantAxis": "size",
+      "variants": {
+        "sourceTitlePattern": "<color> / <size>",
+        "allAvailable": true,
+        "priceCentsPerVariant": 2495,
+        "variantIdsByColorAndSize": {
+          "Zwart": {"XS": "gid://shopify/ProductVariant/56991766053248", "S": "gid://shopify/ProductVariant/56991766086016", "M": "gid://shopify/ProductVariant/56991766118784", "L": "gid://shopify/ProductVariant/56991766151552", "XL": "gid://shopify/ProductVariant/56991766184320", "XXL": "gid://shopify/ProductVariant/56991766217088", "3XL": "gid://shopify/ProductVariant/56991766249856", "4XL": "gid://shopify/ProductVariant/56991766282624", "5XL": "gid://shopify/ProductVariant/56991766315392", "6XL": "gid://shopify/ProductVariant/56991766348160", "7XL": "gid://shopify/ProductVariant/56991766380928"},
+          "Grijs": {"XS": "gid://shopify/ProductVariant/56991766413696", "S": "gid://shopify/ProductVariant/56991766446464", "M": "gid://shopify/ProductVariant/56991766479232", "L": "gid://shopify/ProductVariant/56991766512000", "XL": "gid://shopify/ProductVariant/56991766544768", "XXL": "gid://shopify/ProductVariant/56991766577536", "3XL": "gid://shopify/ProductVariant/56991766610304", "4XL": "gid://shopify/ProductVariant/56991766643072", "5XL": "gid://shopify/ProductVariant/56991766675840", "6XL": "gid://shopify/ProductVariant/56991766708608", "7XL": "gid://shopify/ProductVariant/56991766741376"},
+          "Navy": {"XS": "gid://shopify/ProductVariant/56991766774144", "S": "gid://shopify/ProductVariant/56991766806912", "M": "gid://shopify/ProductVariant/56991766839680", "L": "gid://shopify/ProductVariant/56991766872448", "XL": "gid://shopify/ProductVariant/56991766905216", "XXL": "gid://shopify/ProductVariant/56991766937984", "3XL": "gid://shopify/ProductVariant/56991766970752", "4XL": "gid://shopify/ProductVariant/56991767003520", "5XL": "gid://shopify/ProductVariant/56991767036288", "6XL": "gid://shopify/ProductVariant/56991767069056", "7XL": "gid://shopify/ProductVariant/56991767101824"}
+        }
+      },
+      "customizerConfigUrlsByColor": {
+        "Zwart": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15468416336256&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56991766053248",
+        "Grijs": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15468416336256&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56991766413696",
+        "Navy": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15468416336256&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56991766774144"
+      },
+      "placeholderLogo": {
+        "mode": "merchant_asset",
+        "text": null,
+        "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/ab3a7ac6-7a96-4a9c-ab85-5addfd1dbf21/placeholder/img.png"
+      },
+      "methods": [
+        {"id": "d8f3958d-f892-470f-8144-20397097fa40", "name": "Bedrukken", "basePriceCents": 0, "hidePriceWhenZero": true, "customerName": null, "customerDescription": "Levendige kleuren en scherpe details", "artworkConstraints": {"fileTypes": ["jpg", "pdf", "eps", "svg", "png", "webp", "tiff"]}}
+      ],
+      "placements": [
+        {"id": "be0d8012-badd-4344-814b-cb771baf5533", "name": "Rechterborst", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 1500, "d8f3958d-f892-470f-8144-20397097fa40": 750}, "geometryByViewId": {"08d16398-5b9b-4468-acbf-00f90bccc8b8": {"centerXPercent": 37.99999999999999, "centerYPercent": 31.49999999999999, "maxWidthPercent": 18, "maxHeightPercent": 15}}},
+        {"id": "5d57f4bb-aa8d-4499-9973-f5a71d9716bf", "name": "Linkerborst", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 1500, "d8f3958d-f892-470f-8144-20397097fa40": 750}, "geometryByViewId": {"08d16398-5b9b-4468-acbf-00f90bccc8b8": {"centerXPercent": 61.99999999999999, "centerYPercent": 31.49999999999999, "maxWidthPercent": 18, "maxHeightPercent": 15}}},
+        {"id": "35c04bcd-1017-425e-beed-60697b97fea8", "name": "Buik", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": false, "defaultStepIndex": 0, "steps": [{"label": "Standard", "priceAdjustmentCents": 0, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 3000, "d8f3958d-f892-470f-8144-20397097fa40": 1500}, "geometryByViewId": {"08d16398-5b9b-4468-acbf-00f90bccc8b8": {"centerXPercent": 50, "centerYPercent": 40, "maxWidthPercent": 32, "maxHeightPercent": 32}}},
+        {"id": "bb7aa0b0-2ca9-4c88-b4ad-37db792a5be7", "name": "Rug", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 3000, "d8f3958d-f892-470f-8144-20397097fa40": 1500}, "geometryByViewId": {"d0934613-efbe-4b65-b239-206a829ea6e4": {"centerXPercent": 49.5, "centerYPercent": 37.99999999999999, "maxWidthPercent": 27, "maxHeightPercent": 28}}},
+        {"id": "06c4def0-a2f7-48d0-91cc-14982e20f00e", "name": "Linker Schouder", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 1500, "d8f3958d-f892-470f-8144-20397097fa40": 1000}, "geometryByViewId": {"582555d8-e03e-481c-bb04-95afa2a36f55": {"centerXPercent": 50.49999999999999, "centerYPercent": 36.49999999999999, "maxWidthPercent": 11, "maxHeightPercent": 15}}},
+        {"id": "25b36e82-e61e-4286-9dff-78ca91940738", "name": "Rechter Schouder", "basePriceAdjustmentCents": 0, "hidePriceWhenZero": true, "defaultStepIndex": 0, "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 0.75}, {"label": "Groot", "priceAdjustmentCents": 250, "scaleFactor": 1}], "pricePerMethod": {"54f013a5-5382-41de-b36e-d80e6fc1c971": 1500, "d8f3958d-f892-470f-8144-20397097fa40": 1000}, "geometryByViewId": {"8ab39150-a661-45c5-b77d-85f057314128": {"centerXPercent": 49.50000000000001, "centerYPercent": 36.49999999999999, "maxWidthPercent": 11, "maxHeightPercent": 15}}}
+      ],
+      "viewsByColor": {
+        "Zwart": [
+          {"id": "08d16398-5b9b-4468-acbf-00f90bccc8b8", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 11.73469387755102, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/a7fd2f65-371d-4320-b3dc-f8ccdfd344dc/1776965787216-0.jpg"},
+          {"id": "d0934613-efbe-4b65-b239-206a829ea6e4", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 58.16452401967759, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/a8772613-abef-4fdd-8407-7bad875f172d/variants/52400687448392/img.jpg"},
+          {"id": "582555d8-e03e-481c-bb04-95afa2a36f55", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 42.09357603085522, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/45a57578-aa9e-40c4-8be0-0819bc414ec0/variants/52400687448392/img.jpg"},
+          {"id": "8ab39150-a661-45c5-b77d-85f057314128", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 42.09357603085522, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/8b454d21-1578-441b-a552-13a91307d5f1/variants/52400687448392/img.jpg"}
+        ],
+        "Grijs": [
+          {"id": "08d16398-5b9b-4468-acbf-00f90bccc8b8", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 11.73469387755102, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/tray/1776967944513-s3p57vwlqx.jpg"},
+          {"id": "d0934613-efbe-4b65-b239-206a829ea6e4", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 58.16452401967759, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/tray/1776967944445-wjr4wh9jvlf.jpg"},
+          {"id": "582555d8-e03e-481c-bb04-95afa2a36f55", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 42.09357603085522, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/tray/1776967944512-yzkhtcw2nx.jpg"},
+          {"id": "8ab39150-a661-45c5-b77d-85f057314128", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 42.09357603085522, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/8b454d21-1578-441b-a552-13a91307d5f1/variants/52400687022408/img.jpg"}
+        ],
+        "Navy": [
+          {"id": "08d16398-5b9b-4468-acbf-00f90bccc8b8", "name": "Voorkant", "perspective": "front", "isMissingImage": false, "calibrationPxPerCm": 11.73469387755102, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/tray/1776967944573-crrhmt06i1o.jpg"},
+          {"id": "d0934613-efbe-4b65-b239-206a829ea6e4", "name": "Achterkant", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 58.16452401967759, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/tray/1776967944355-qrckhgly1qq.jpg"},
+          {"id": "582555d8-e03e-481c-bb04-95afa2a36f55", "name": "Zijkant Links", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 42.09357603085522, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/tray/1776967944574-fjgrlw23736.jpg"},
+          {"id": "8ab39150-a661-45c5-b77d-85f057314128", "name": "Zijkant Rechts", "perspective": "custom", "isMissingImage": false, "calibrationPxPerCm": 42.09357603085522, "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/views/8b454d21-1578-441b-a552-13a91307d5f1/variants/52400687055176/img.jpg"}
+        ]
+      },
+      "productMediaByColor": {
+        "Zwart": {"imageId": "gid://shopify/ProductImage/80813921239424", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_HBSW_BLACK_FRONT.jpg?v=1764883648"},
+        "Grijs": {"imageId": "gid://shopify/ProductImage/80813924843904", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_HBSW_GREY_FRONT_348ab832-001a-4dfc-9dc8-08e9ea1d5ec8.jpg?v=1764883675"},
+        "Navy": {"imageId": "gid://shopify/ProductImage/80813926089088", "sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_HBSW_NAVY_FRONT.jpg?v=1764883685"}
+      },
+      "settingsMatchAcrossColors": true,
+      "sourceConfigInconsistencies": [
+        "All three color configs matched for currency, base price, methods, placements, geometry, calibration, and fees.",
+        "All six placement pricePerMethod maps reference method ID 54f013a5-5382-41de-b36e-d80e6fc1c971, but the current methods array exposes only method ID d8f3958d-f892-470f-8144-20397097fa40 (Bedrukken). Preserve the dangling method-price key; do not infer or create the missing method."
+      ],
+      "notExposedByPublicConfig": {
+        "separateMovementBounds": true,
+        "measuredPhysicalPrintDimensions": true,
+        "manufacturerProductionLimitsBeyondUploadConstraints": true,
+        "interpretation": "Percent geometry and calibration are preserved from config. They are not measured physical print limits."
+      }
+    },
+    {
+      "title": "Ontwerp je eigen Superfunny muts",
+      "handle": "ontwerp-je-eigen-muts",
+      "productId": "gid://shopify/Product/15461436457344",
+      "productConfigId": "9e386f50-e322-4d84-8de4-676c0dab7750",
+      "productPageUrl": "https://superfunny.nl/collections/ontwerp-zelf/products/ontwerp-je-eigen-muts",
+      "currency": "EUR",
+      "baseProductPriceCents": 1750,
+      "productPageOptions": [
+        {"name": "Kleur", "values": ["Zwart", "Blauw", "Grijs", "Navy", "Rood"]}
+      ],
+      "variantAxis": "color",
+      "variants": [
+        {"id": "gid://shopify/ProductVariant/56968264647040", "title": "Zwart", "sourceSizeLabel": "Zwart", "color": "Zwart", "priceCents": 1750, "available": true},
+        {"id": "gid://shopify/ProductVariant/56968264679808", "title": "Blauw", "sourceSizeLabel": "Blauw", "color": "Blauw", "priceCents": 1750, "available": true},
+        {"id": "gid://shopify/ProductVariant/56968264712576", "title": "Grijs", "sourceSizeLabel": "Grijs", "color": "Grijs", "priceCents": 1750, "available": true},
+        {"id": "gid://shopify/ProductVariant/56968264745344", "title": "Navy", "sourceSizeLabel": "Navy", "color": "Navy", "priceCents": 1750, "available": true},
+        {"id": "gid://shopify/ProductVariant/56968264778112", "title": "Rood", "sourceSizeLabel": "Rood", "color": "Rood", "priceCents": 1750, "available": true}
+      ],
+      "customizerConfigUrlsByColor": {
+        "Zwart": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15461436457344&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56968264647040",
+        "Blauw": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15461436457344&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56968264679808",
+        "Grijs": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15461436457344&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56968264712576",
+        "Navy": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15461436457344&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56968264745344",
+        "Rood": "https://superfunny.nl/apps/insignia/config?productId=gid%3A%2F%2Fshopify%2FProduct%2F15461436457344&variantId=gid%3A%2F%2Fshopify%2FProductVariant%2F56968264778112"
+      },
+      "placeholderLogo": {
+        "mode": "merchant_asset",
+        "text": null,
+        "unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/ab3a7ac6-7a96-4a9c-ab85-5addfd1dbf21/placeholder/img.png"
+      },
+      "methods": [
+        {
+          "id": "d8f3958d-f892-470f-8144-20397097fa40",
+          "name": "Bedrukken",
+          "basePriceCents": 0,
+          "hidePriceWhenZero": true,
+          "customerName": null,
+          "customerDescription": "Levendige kleuren en scherpe details",
+          "artworkConstraints": {"fileTypes": ["jpg", "pdf", "eps", "svg", "png", "webp", "tiff"]}
+        }
+      ],
+      "placements": [
+        {
+          "id": "d1bec16f-ee04-4127-a356-c752503cb2eb",
+          "name": "Patch",
+          "basePriceAdjustmentCents": 750,
+          "hidePriceWhenZero": true,
+          "steps": [{"label": "Standaard", "priceAdjustmentCents": 0, "scaleFactor": 1}],
+          "defaultStepIndex": 0,
+          "pricePerMethod": null,
+          "viewId": "62a950c9-bd1f-4482-a2ec-a76d4dcdb3d6",
+          "geometryByColor": {
+            "Zwart": {"centerXPercent": 48.99999999999999, "centerYPercent": 80, "maxWidthPercent": 37.99999999999999, "maxHeightPercent": 16},
+            "Blauw": {"centerXPercent": 50, "centerYPercent": 81, "maxWidthPercent": 37.99999999999999, "maxHeightPercent": 16},
+            "Grijs": {"centerXPercent": 48.99999999999999, "centerYPercent": 80, "maxWidthPercent": 37.99999999999999, "maxHeightPercent": 16},
+            "Navy": {"centerXPercent": 52, "centerYPercent": 78.99999999999999, "maxWidthPercent": 37.99999999999999, "maxHeightPercent": 16},
+            "Rood": {"centerXPercent": 48.99999999999999, "centerYPercent": 82, "maxWidthPercent": 37.99999999999999, "maxHeightPercent": 16}
+          }
+        }
+      ],
+      "views": [
+        {
+          "id": "62a950c9-bd1f-4482-a2ec-a76d4dcdb3d6",
+          "name": "Patch",
+          "perspective": "front",
+          "isMissingImage": false,
+          "calibrationPxPerCm": 23.66097750864366,
+          "assetsByColor": {
+            "Zwart": {"unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/24fe092c-710f-4614-b2ae-7e2dc6ca499c/1777048628937-0.jpg", "localFile": "docs/delivery/qa/legacy-assets/cap/cap-view-front-zwart.jpg", "mimeType": "image/jpeg", "width": 1000, "height": 1000, "sha256": "1ea76ccd3475d0f6bbb49bbed8e4ffe077968c4aa132da67d44bf1c9c3b716a7"},
+            "Blauw": {"unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/24fe092c-710f-4614-b2ae-7e2dc6ca499c/1777048631817-4.jpg", "localFile": "docs/delivery/qa/legacy-assets/cap/cap-view-front-blauw.jpg", "mimeType": "image/jpeg", "width": 1000, "height": 1000, "sha256": "8655939dbc14b6502b56c406f7714b02a2aa7ae56078f154e0f0ec7eaa4cf58c"},
+            "Grijs": {"unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/24fe092c-710f-4614-b2ae-7e2dc6ca499c/1777048629774-1.jpg", "localFile": "docs/delivery/qa/legacy-assets/cap/cap-view-front-grijs.jpg", "mimeType": "image/jpeg", "width": 1000, "height": 1000, "sha256": "5806aa15089bee427f36959e50708fc64d331d3eb656f7c0b13450c5ddc900f8"},
+            "Navy": {"unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/24fe092c-710f-4614-b2ae-7e2dc6ca499c/1777048630432-2.jpg", "localFile": "docs/delivery/qa/legacy-assets/cap/cap-view-front-navy.jpg", "mimeType": "image/jpeg", "width": 1000, "height": 1000, "sha256": "3ae4c3051f86fb9fa71ada410bde1d15c2b4d01cf89b21696736b22a679ecc09"},
+            "Rood": {"unsignedSourceUrl": "https://insignia-custom-assets.97984dbfba2fd91f42a4c3fb90fcad09.r2.cloudflarestorage.com/shops/e300bab6-d980-4ec2-9ef2-1067d181aaab/imports/24fe092c-710f-4614-b2ae-7e2dc6ca499c/1777048631068-3.jpg", "downloadStatus": "pending"}
+          }
+        }
+      ],
+      "productMediaByColor": {
+        "Zwart": {"sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/zwart-beanie.jpg?v=1764554481", "localFile": "docs/delivery/qa/legacy-assets/cap/cap-product-zwart.webp", "downloadedMimeType": "image/webp", "downloadedWidth": 1240, "downloadedHeight": 1240, "sha256": "cfb23ffc98406b64db8c908fcc0d5b5a756b03e42348027e925a97fdf36323ea"},
+        "Blauw": {"sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/blauw-beanie.jpg?v=1764554481", "localFile": "docs/delivery/qa/legacy-assets/cap/cap-product-blauw.webp", "downloadedMimeType": "image/webp", "downloadedWidth": 1240, "downloadedHeight": 1240, "sha256": "8c43475c6eab050909a35191d31e9a6bb8c8c67c6a6824892fce340cbd56f94f"},
+        "Grijs": {"sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/grijs-beanie.jpg?v=1764554481", "localFile": "docs/delivery/qa/legacy-assets/cap/cap-product-grijs.webp", "downloadedMimeType": "image/webp", "downloadedWidth": 1240, "downloadedHeight": 1240, "sha256": "37bcfdff01c8a955ea17cf67f0aa6404aa9934e2c79c395929a5f3833f5d7ede"},
+        "Navy": {"sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/navy-beanie.jpg?v=1764554481", "localFile": "docs/delivery/qa/legacy-assets/cap/cap-product-navy.jxl", "downloadedMimeType": "image/jxl", "downloadedWidth": 300, "downloadedHeight": 300, "sha256": "b69b1f4190eec9c5fd2c1a4d80159ddfb062e4e8566f720ff8708ec3de9d0fcc", "note": "The public CDN negotiated image/jxl from a .jpg source URL. This bundle is only a 300x300 responsive candidate; a higher-resolution candidate is still needed for DEV product media."},
+        "Rood": {"sourceUrl": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/rood-beanie.jpg?v=1764554482", "localFile": "docs/delivery/qa/legacy-assets/cap/cap-product-rood.avif", "downloadedMimeType": "image/avif", "downloadedWidth": 300, "downloadedHeight": 300, "sha256": "61fcfdeb5001ccfc0b10a5132c436c1f408333dcdcdc67ef68bdf5437203376c", "note": "The public CDN negotiated image/avif from a .jpg source URL. This bundle is only a 300x300 responsive candidate; a higher-resolution candidate is still needed for DEV product media."}
+      },
+      "customizerUiObserved": {
+        "uploadText": "JPG · PDF · EPS · SVG · PNG · WEBP · TIFF (Max 5 MB)",
+        "uploadMaxDisplayed": "5 MB",
+        "logoLaterCheckbox": "Bestel nu, stuur logo na het afrekenen",
+        "logoLaterHelper": "We sturen je een mailtje om je artwork op te halen — geen haast",
+        "activeMethod": "Bedrukken",
+        "startingPriceDisplayed": "Vanaf €17.50"
+      },
+      "notExposedByPublicConfig": {
+        "separateMovementBounds": true,
+        "measuredPhysicalPrintDimensions": true,
+        "manufacturerProductionLimitsBeyondUploadConstraints": true,
+        "interpretation": "No numeric movement bounds or independently measured physical cap dimensions are exposed. Preserve the source center/extent percentages and calibration value as historical config, not measured production facts."
+      },
+      "assetBundleNotes": {
+        "bundleMethod": "Downloaded from assets already observed by the real customizer/product page using the pageAssets capability; no direct signed-URL navigation.",
+        "productMediaNegotiation": "Shopify CDN returned WebP for three .jpg source paths and JXL/AVIF for two .jpg source paths. Local filenames use the actual MIME extension. The Navy/Red local candidates are 300x300 and flagged above; exact source URLs remain in this file for retrieval of the proper responsive size.",
+        "signedUrlPolicy": "Temporary X-Amz signed query strings are never stored here; reopen the exact public config URL above to obtain fresh delivery URLs."
+      }
+    }
+  ],
+  "historicalFixtureReference": {
+    "file": "frontend/admin/examples/admin/support/legacy-catalog.json",
+    "readme": "frontend/admin/examples/admin/support/assets/legacy-catalog/README.md",
+    "capturedOn": "2026-10-20",
+    "products": ["hoodie", "polo", "t-shirt"],
+    "limitation": "Historical fixture proves three products only and stores one selected color per product. It is not complete proof of the live collection or current per-color config."
+  }
+}

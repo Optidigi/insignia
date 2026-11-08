@@ -1,0 +1,70 @@
+{
+  "store": "insignia-rewrite-dev",
+  "verifiedDate": "2026-11-08",
+  "verification": "Read-only Shopify Admin UI. The Products listing showed these five IDs as Drafts with the stated variant counts and 0 in stock. Handles were taken from each product's Search engine listing or the recorded native Admin readback in the lane report.",
+  "products": [
+    {
+      "productId": "10590373970203",
+      "title": "QA legacy import — Superfunny muts",
+      "handle": "qa-legacy-import-superfunny-muts",
+      "status": "Draft",
+      "variantCount": 5,
+      "evidence": [
+        "Shopify Admin Products listing, read-only run on 2026-11-08: ID, Draft, 5 variants, 0 in stock.",
+        "manual-cap-import.md: Shopify Admin reported handle and fresh post-save readback."
+      ],
+      "source": "legacy-inventory.json fullyVerifiedProducts entry for ontwerp-je-eigen-muts; manual-cap-import.md"
+    },
+    {
+      "productId": "10590396317979",
+      "title": "QA legacy import — Superfunny hoodie",
+      "handle": "qa-legacy-import-superfunny-hoodie",
+      "status": "Draft",
+      "variantCount": 33,
+      "evidence": [
+        "Shopify Admin Products listing, read-only run on 2026-11-08: ID, Draft, 33 variants, 0 in stock.",
+        "manual-hoodie-import.md: saved Admin path and fresh post-save readback including handle and 33 variants."
+      ],
+      "source": "legacy-inventory.json fullyVerifiedProducts entry for ontwerp-je-eigen-superfunny-hoodie; manual-hoodie-import.md"
+    },
+    {
+      "productId": "10590396350747",
+      "title": "QA legacy import — Superfunny polo",
+      "handle": "qa-legacy-import-superfunny-polo",
+      "status": "Draft",
+      "variantCount": 66,
+      "evidence": [
+        "Shopify Admin Products listing, read-only run on 2026-11-08: ID, Draft, 66 variants, 0 in stock.",
+        "Shopify Admin product page Search engine listing, read-only run on 2026-11-08: handle qa-legacy-import-superfunny-polo.",
+        "manual-polo-import.md: six color groups of 11 variants, fresh post-save readback."
+      ],
+      "source": "legacy-inventory.json fullyVerifiedProducts entry for ontwerp-je-eigen-superfunny-polo; manual-polo-import.md"
+    },
+    {
+      "productId": "10590397694235",
+      "title": "QA legacy import — Superfunny trui",
+      "handle": "qa-legacy-import-superfunny-trui",
+      "status": "Draft",
+      "variantCount": 66,
+      "evidence": [
+        "Shopify Admin Products listing, read-only run on 2026-11-08: ID, Draft, 66 variants, 0 in stock.",
+        "manual-trui-import.md: Shopify Admin search preview showed the handle; fresh post-save readback confirmed six groups of 11 variants."
+      ],
+      "source": "legacy-inventory.json fullyVerifiedProducts entry for ontwerp-je-eigen-superfunny-trui; manual-trui-import.md"
+    },
+    {
+      "productId": "10590398152987",
+      "title": "QA legacy import — Superfunny dames T-shirt",
+      "handle": "qa-legacy-import-superfunny-dames-t-shirt",
+      "status": "Draft",
+      "variantCount": 27,
+      "evidence": [
+        "Shopify Admin Products listing, read-only run on 2026-11-08: ID, Draft, 27 variants, 0 in stock.",
+        "Shopify Admin product page Search engine listing, read-only run on 2026-11-08: handle qa-legacy-import-superfunny-dames-t-shirt.",
+        "Shopify Admin product detail, read-only run on 2026-11-08: Kleur values Zwart/Navy/Wit and Maat values XS–5XL, three groups of nine at $9.95 USD."
+      ],
+      "source": "legacy-inventory.json fullyVerifiedProducts entry for ontwerp-je-eigen-superfunny-t-shirt-dames; saved draft was recorded in the agent's task handoff."
+    }
+  ],
+  "boundary": "These are five existing QA catalog Drafts to reuse. This read-only reconciliation created, edited, imported, or deleted nothing. The protected rich fixture 10588458647835 was not changed. The unisex T-shirt is a separate source product and should be created once by the parent import."
+}

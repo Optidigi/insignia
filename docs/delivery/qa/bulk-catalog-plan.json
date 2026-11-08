@@ -1,0 +1,871 @@
+{
+  "generatedDateUtc": "2026-11-08",
+  "artifactType": "local Shopify product CSV preparation; no import performed",
+  "targetStore": "insignia-rewrite-dev",
+  "csvPath": "/tmp/insignia-qa-six-products.csv",
+  "csvEncoding": "UTF-8 with LF line endings",
+  "currentShopifyHeaderFamily": [
+    "Title",
+    "URL handle",
+    "Published on online store",
+    "Status",
+    "Option1 name",
+    "Option1 value",
+    "Option2 name",
+    "Option2 value",
+    "Price",
+    "Inventory tracker",
+    "Product image URL",
+    "Image position",
+    "Variant image URL"
+  ],
+  "inputSha256": {
+    "docs/delivery/qa/legacy-inventory.json": "50eead52182943eaace7dc05d5898a6f8cd0ccf35fc95de4b7937492c394bbee",
+    "docs/delivery/qa/destination-catalog-map.json": "95cc1933fc27a56ac2ba09fc47e98634c468c7169e3f50fc31b7511bbaec8065",
+    "docs/delivery/qa/bulk-catalog-import-research.md": "87cf30ef979a6413cd5b9cd4e119cab7ad9f32cf65323a7ed75b934df7657b6a"
+  },
+  "outputCsvSha256": "f73f30bdca68b5a73fb6747dbec07285ecb0eea4f7d22473196792290c56cf3b",
+  "expectedProductCount": 6,
+  "expectedVariantRowCount": 261,
+  "expectedGalleryImageCount": 29,
+  "expectedVariantImageAssignments": 261,
+  "inventoryConvention": {
+    "csvHeader": "Inventory tracker",
+    "value": "",
+    "meaning": "Proposed untracked QA variants to avoid artificial zero-stock blocking; root review required before import.",
+    "inventoryQuantityFieldIncluded": false
+  },
+  "products": [
+    {
+      "sourceTitle": "Ontwerp je eigen Superfunny muts",
+      "sourceHandle": "ontwerp-je-eigen-muts",
+      "sourceProductId": "gid://shopify/Product/15461436457344",
+      "destinationProductId": "10590373970203",
+      "destinationTitle": "QA legacy import — Superfunny muts",
+      "destinationHandle": "qa-legacy-import-superfunny-muts",
+      "existingDestination": true,
+      "status": "draft",
+      "publishedOnOnlineStore": false,
+      "sourceCurrency": "EUR",
+      "sourcePrice": "17.50",
+      "qaExampleCurrency": "USD",
+      "qaExamplePrice": "17.50",
+      "variantCount": 5,
+      "sourceAvailableVariantCount": 5,
+      "options": [
+        {
+          "name": "Kleur",
+          "values": [
+            "Zwart",
+            "Blauw",
+            "Grijs",
+            "Navy",
+            "Rood"
+          ]
+        }
+      ],
+      "actualSizesByColor": null,
+      "photos": [
+        {
+          "color": "Zwart",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/zwart-beanie.jpg?v=1764554481",
+          "imagePosition": 1,
+          "variantsUsingVariantImageUrl": 1
+        },
+        {
+          "color": "Blauw",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/blauw-beanie.jpg?v=1764554481",
+          "imagePosition": 2,
+          "variantsUsingVariantImageUrl": 1
+        },
+        {
+          "color": "Grijs",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/grijs-beanie.jpg?v=1764554481",
+          "imagePosition": 3,
+          "variantsUsingVariantImageUrl": 1
+        },
+        {
+          "color": "Navy",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/navy-beanie.jpg?v=1764554481",
+          "imagePosition": 4,
+          "variantsUsingVariantImageUrl": 1
+        },
+        {
+          "color": "Rood",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/rood-beanie.jpg?v=1764554482",
+          "imagePosition": 5,
+          "variantsUsingVariantImageUrl": 1
+        }
+      ]
+    },
+    {
+      "sourceTitle": "Ontwerp je eigen Superfunny hoodie",
+      "sourceHandle": "ontwerp-je-eigen-superfunny-hoodie",
+      "sourceProductId": "gid://shopify/Product/15468416336256",
+      "destinationProductId": "10590396317979",
+      "destinationTitle": "QA legacy import — Superfunny hoodie",
+      "destinationHandle": "qa-legacy-import-superfunny-hoodie",
+      "existingDestination": true,
+      "status": "draft",
+      "publishedOnOnlineStore": false,
+      "sourceCurrency": "EUR",
+      "sourcePrice": "24.95",
+      "qaExampleCurrency": "USD",
+      "qaExamplePrice": "24.95",
+      "variantCount": 33,
+      "sourceAvailableVariantCount": 33,
+      "options": [
+        {
+          "name": "Kleur",
+          "values": [
+            "Zwart",
+            "Grijs",
+            "Navy"
+          ]
+        },
+        {
+          "name": "Maat",
+          "values": [
+            "XS",
+            "S",
+            "M",
+            "L",
+            "XL",
+            "XXL",
+            "3XL",
+            "4XL",
+            "5XL",
+            "6XL",
+            "7XL"
+          ]
+        }
+      ],
+      "actualSizesByColor": {
+        "Zwart": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL",
+          "6XL",
+          "7XL"
+        ],
+        "Grijs": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL",
+          "6XL",
+          "7XL"
+        ],
+        "Navy": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL",
+          "6XL",
+          "7XL"
+        ]
+      },
+      "photos": [
+        {
+          "color": "Zwart",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_HBSW_BLACK_FRONT.jpg?v=1764883648",
+          "imagePosition": 1,
+          "variantsUsingVariantImageUrl": 11
+        },
+        {
+          "color": "Grijs",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_HBSW_GREY_FRONT_348ab832-001a-4dfc-9dc8-08e9ea1d5ec8.jpg?v=1764883675",
+          "imagePosition": 2,
+          "variantsUsingVariantImageUrl": 11
+        },
+        {
+          "color": "Navy",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_HBSW_NAVY_FRONT.jpg?v=1764883685",
+          "imagePosition": 3,
+          "variantsUsingVariantImageUrl": 11
+        }
+      ]
+    },
+    {
+      "sourceTitle": "Ontwerp je eigen Superfunny polo",
+      "sourceHandle": "ontwerp-je-eigen-superfunny-polo",
+      "sourceProductId": "gid://shopify/Product/15468473450880",
+      "destinationProductId": "10590396350747",
+      "destinationTitle": "QA legacy import — Superfunny polo",
+      "destinationHandle": "qa-legacy-import-superfunny-polo",
+      "existingDestination": true,
+      "status": "draft",
+      "publishedOnOnlineStore": false,
+      "sourceCurrency": "EUR",
+      "sourcePrice": "11.95",
+      "qaExampleCurrency": "USD",
+      "qaExamplePrice": "11.95",
+      "variantCount": 66,
+      "sourceAvailableVariantCount": 66,
+      "options": [
+        {
+          "name": "Kleur",
+          "values": [
+            "Zwart",
+            "Grijs",
+            "Navy",
+            "Rood",
+            "Blauw",
+            "Wit"
+          ]
+        },
+        {
+          "name": "Maat",
+          "values": [
+            "XS",
+            "S",
+            "M",
+            "L",
+            "XL",
+            "XXL",
+            "3XL",
+            "4XL",
+            "5XL",
+            "6XL",
+            "7XL"
+          ]
+        }
+      ],
+      "actualSizesByColor": {
+        "Zwart": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL",
+          "6XL",
+          "7XL"
+        ],
+        "Grijs": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL",
+          "6XL",
+          "7XL"
+        ],
+        "Navy": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL",
+          "6XL",
+          "7XL"
+        ],
+        "Rood": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL",
+          "6XL",
+          "7XL"
+        ],
+        "Blauw": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL",
+          "6XL",
+          "7XL"
+        ],
+        "Wit": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL",
+          "6XL",
+          "7XL"
+        ]
+      },
+      "photos": [
+        {
+          "color": "Zwart",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_PS200_BLACK_FRONT.jpg?v=1764893707",
+          "imagePosition": 1,
+          "variantsUsingVariantImageUrl": 11
+        },
+        {
+          "color": "Grijs",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_PS200_GREY_FRONT.jpg?v=1764893724",
+          "imagePosition": 2,
+          "variantsUsingVariantImageUrl": 11
+        },
+        {
+          "color": "Navy",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_PS200_NAVY_FRONT.jpg?v=1764893767",
+          "imagePosition": 3,
+          "variantsUsingVariantImageUrl": 11
+        },
+        {
+          "color": "Rood",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_PS200_RED_FRONT.jpg?v=1764893779",
+          "imagePosition": 4,
+          "variantsUsingVariantImageUrl": 11
+        },
+        {
+          "color": "Blauw",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_PS200_ROYAL_BLUE_FRONT.jpg?v=1764893790",
+          "imagePosition": 5,
+          "variantsUsingVariantImageUrl": 11
+        },
+        {
+          "color": "Wit",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_PS200_WHITE_FRONT.jpg?v=1764893801",
+          "imagePosition": 6,
+          "variantsUsingVariantImageUrl": 11
+        }
+      ]
+    },
+    {
+      "sourceTitle": "Ontwerp je eigen Superfunny trui",
+      "sourceHandle": "ontwerp-je-eigen-superfunny-trui",
+      "sourceProductId": "gid://shopify/Product/15468463686016",
+      "destinationProductId": "10590397694235",
+      "destinationTitle": "QA legacy import — Superfunny trui",
+      "destinationHandle": "qa-legacy-import-superfunny-trui",
+      "existingDestination": true,
+      "status": "draft",
+      "publishedOnOnlineStore": false,
+      "sourceCurrency": "EUR",
+      "sourcePrice": "24.95",
+      "qaExampleCurrency": "USD",
+      "qaExamplePrice": "24.95",
+      "variantCount": 66,
+      "sourceAvailableVariantCount": 66,
+      "options": [
+        {
+          "name": "Kleur",
+          "values": [
+            "Zwart",
+            "Grijs",
+            "Navy",
+            "Rood",
+            "Blauw",
+            "Wit"
+          ]
+        },
+        {
+          "name": "Maat",
+          "values": [
+            "XS",
+            "S",
+            "M",
+            "L",
+            "XL",
+            "XXL",
+            "3XL",
+            "4XL",
+            "5XL",
+            "6XL",
+            "7XL"
+          ]
+        }
+      ],
+      "actualSizesByColor": {
+        "Zwart": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL",
+          "6XL",
+          "7XL"
+        ],
+        "Grijs": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL",
+          "6XL",
+          "7XL"
+        ],
+        "Navy": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL",
+          "6XL",
+          "7XL"
+        ],
+        "Rood": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL",
+          "6XL",
+          "7XL"
+        ],
+        "Blauw": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL",
+          "6XL",
+          "7XL"
+        ],
+        "Wit": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL",
+          "6XL",
+          "7XL"
+        ]
+      },
+      "photos": [
+        {
+          "color": "Zwart",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_RNSW_BLACK_FRONT.jpg?v=1764891576",
+          "imagePosition": 1,
+          "variantsUsingVariantImageUrl": 11
+        },
+        {
+          "color": "Grijs",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_RNSW_GREY_FRONT.jpg?v=1764891595",
+          "imagePosition": 2,
+          "variantsUsingVariantImageUrl": 11
+        },
+        {
+          "color": "Navy",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_RNSW_NAVY_FRONT_eea3485c-c9ee-4671-a889-120b1840dd8e.jpg?v=1764891606",
+          "imagePosition": 3,
+          "variantsUsingVariantImageUrl": 11
+        },
+        {
+          "color": "Rood",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_RNSW_RED_FRONT.jpg?v=1764891616",
+          "imagePosition": 4,
+          "variantsUsingVariantImageUrl": 11
+        },
+        {
+          "color": "Blauw",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_RNSW_ROYAL_BLUE_FRONT.jpg?v=1764891626",
+          "imagePosition": 5,
+          "variantsUsingVariantImageUrl": 11
+        },
+        {
+          "color": "Wit",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_RNSW_WHITE_FRONT_b5b95d0b-7279-4234-873c-3bd184c0d5c0.jpg?v=1764891638",
+          "imagePosition": 6,
+          "variantsUsingVariantImageUrl": 11
+        }
+      ]
+    },
+    {
+      "sourceTitle": "Ontwerp je eigen Superfunny T-shirt | Dames",
+      "sourceHandle": "ontwerp-je-eigen-superfunny-t-shirt-dames",
+      "sourceProductId": "gid://shopify/Product/15468458541440",
+      "destinationProductId": "10590398152987",
+      "destinationTitle": "QA legacy import — Superfunny dames T-shirt",
+      "destinationHandle": "qa-legacy-import-superfunny-dames-t-shirt",
+      "existingDestination": true,
+      "status": "draft",
+      "publishedOnOnlineStore": false,
+      "sourceCurrency": "EUR",
+      "sourcePrice": "9.95",
+      "qaExampleCurrency": "USD",
+      "qaExamplePrice": "9.95",
+      "variantCount": 27,
+      "sourceAvailableVariantCount": 27,
+      "options": [
+        {
+          "name": "Kleur",
+          "values": [
+            "Zwart",
+            "Navy",
+            "Wit"
+          ]
+        },
+        {
+          "name": "Maat",
+          "values": [
+            "XS",
+            "S",
+            "M",
+            "L",
+            "XL",
+            "XXL",
+            "3XL",
+            "4XL",
+            "5XL"
+          ]
+        }
+      ],
+      "actualSizesByColor": {
+        "Zwart": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL"
+        ],
+        "Navy": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL"
+        ],
+        "Wit": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL"
+        ]
+      },
+      "photos": [
+        {
+          "color": "Zwart",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_TS160SL_BLACK_FRONT.jpg?v=1764889573",
+          "imagePosition": 1,
+          "variantsUsingVariantImageUrl": 9
+        },
+        {
+          "color": "Navy",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_TS160SL_NAVY_FRONT.jpg?v=1764889584",
+          "imagePosition": 2,
+          "variantsUsingVariantImageUrl": 9
+        },
+        {
+          "color": "Wit",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_TS160SL_WHITE_FRONT.jpg?v=1764889593",
+          "imagePosition": 3,
+          "variantsUsingVariantImageUrl": 9
+        }
+      ]
+    },
+    {
+      "sourceTitle": "Ontwerp je eigen superfunny T-shirt",
+      "sourceHandle": "ontwerp-je-eigen-superfunny-t-shirt",
+      "sourceProductId": "gid://shopify/Product/15464675246464",
+      "destinationProductId": null,
+      "destinationTitle": "QA legacy import — Superfunny T-shirt",
+      "destinationHandle": "qa-legacy-import-superfunny-t-shirt",
+      "existingDestination": false,
+      "status": "draft",
+      "publishedOnOnlineStore": false,
+      "sourceCurrency": "EUR",
+      "sourcePrice": "9.95",
+      "qaExampleCurrency": "USD",
+      "qaExamplePrice": "9.95",
+      "variantCount": 64,
+      "sourceAvailableVariantCount": 64,
+      "options": [
+        {
+          "name": "Kleur",
+          "values": [
+            "Zwart",
+            "Grijs",
+            "Navy",
+            "Rood",
+            "Blauw",
+            "Wit"
+          ]
+        },
+        {
+          "name": "Maat",
+          "values": [
+            "XS",
+            "S",
+            "M",
+            "L",
+            "XL",
+            "XXL",
+            "3XL",
+            "4XL",
+            "5XL",
+            "6XL",
+            "7XL"
+          ]
+        }
+      ],
+      "actualSizesByColor": {
+        "Zwart": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL",
+          "6XL",
+          "7XL"
+        ],
+        "Grijs": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL",
+          "6XL",
+          "7XL"
+        ],
+        "Navy": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL",
+          "6XL",
+          "7XL"
+        ],
+        "Rood": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL",
+          "6XL",
+          "7XL"
+        ],
+        "Blauw": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL",
+          "6XL",
+          "7XL"
+        ],
+        "Wit": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL",
+          "XXL",
+          "3XL",
+          "4XL",
+          "5XL"
+        ]
+      },
+      "photos": [
+        {
+          "color": "Zwart",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_TS180_BLACK_FRONT.jpg?v=1764722415",
+          "imagePosition": 1,
+          "variantsUsingVariantImageUrl": 11
+        },
+        {
+          "color": "Grijs",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_TS180_GREY_FRONT_1a56d545-08c7-439d-a167-833dd099ead2.jpg?v=1764722435",
+          "imagePosition": 2,
+          "variantsUsingVariantImageUrl": 11
+        },
+        {
+          "color": "Navy",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_TS180_NAVY_FRONT.jpg?v=1764722761",
+          "imagePosition": 3,
+          "variantsUsingVariantImageUrl": 11
+        },
+        {
+          "color": "Rood",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_TS180_RED_FRONT.jpg?v=1764722774",
+          "imagePosition": 4,
+          "variantsUsingVariantImageUrl": 11
+        },
+        {
+          "color": "Blauw",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_TS180_ROYAL_BLUE_FRONT.jpg?v=1764722784",
+          "imagePosition": 5,
+          "variantsUsingVariantImageUrl": 11
+        },
+        {
+          "color": "Wit",
+          "url": "https://cdn.shopify.com/s/files/1/0948/9353/9712/files/0__B2B_TS180_WHITE_FRONT.jpg?v=1764722795",
+          "imagePosition": 6,
+          "variantsUsingVariantImageUrl": 9
+        }
+      ]
+    }
+  ],
+  "existingTargetHandles": [
+    "qa-legacy-import-superfunny-muts",
+    "qa-legacy-import-superfunny-hoodie",
+    "qa-legacy-import-superfunny-polo",
+    "qa-legacy-import-superfunny-trui",
+    "qa-legacy-import-superfunny-dames-t-shirt"
+  ],
+  "newTargetHandles": [
+    "qa-legacy-import-superfunny-t-shirt"
+  ],
+  "excludedProtectedFixture": "10588458647835",
+  "mediaRowConvention": "One Product image URL + Image position on the first variant row for each source color; no image-only or duplicate gallery rows. Variant image URL repeats the identical public CDN URL on every variant row for that color.",
+  "officialShopifyGuidance": [
+    {
+      "url": "https://help.shopify.com/en/manual/products/import-export/using-csv",
+      "checkedDate": "2026-11-08",
+      "rulesApplied": [
+        "Use current headers URL handle, Published on online store, Status, Option1 name/value, Option2 name/value, Price, Inventory tracker, Product image URL, Image position, and Variant image URL.",
+        "Status is draft; Published on online store is false. These are separate controls.",
+        "Blank Inventory tracker means inventory is not tracked; this is a proposed convention for root review.",
+        "A blank included column can clear an existing field, while an omitted column preserves the existing value.",
+        "Changing option values deletes and recreates variant IDs; keep existing QA option names and values exact.",
+        "For products with variants, use one row per actual variant combination; image URLs must be public direct links."
+      ]
+    },
+    {
+      "url": "https://help.shopify.com/en/manual/products/import-export/import-products",
+      "checkedDate": "2026-11-08",
+      "rulesApplied": [
+        "Overwrite products with matching handles must be selected to update the five existing QA drafts; otherwise matching products are ignored.",
+        "Keep new-product publication disabled and inspect the preview before starting import."
+      ]
+    },
+    {
+      "url": "https://help.shopify.com/en/manual/products/product-media/add-media",
+      "checkedDate": "2026-11-08",
+      "rulesApplied": [
+        "CSV image imports can succeed while silently skipping images; verify gallery media and variant previews after import."
+      ]
+    }
+  ],
+  "pitfalls": [
+    "The import is not executed by this artifact. Root owns backup, upload, preview, import, and fresh readback.",
+    "Use overwrite matching handles only for the five listed existing QA products; source Superfunny handles and all non-QA handles are excluded.",
+    "Do not include the protected rich T-shirt fixture 10588458647835 or other store products.",
+    "Blank included fields overwrite matching products. Inventory tracker is intentionally blank to propose untracked inventory; root must review that convention before import. Other unknown fields are omitted to preserve existing values.",
+    "All 261 variant tuples are unique. The unisex T-shirt has 64 source tuples: Wit includes XS–5XL only; Wit 6XL and Wit 7XL are absent.",
+    "The source prices are EUR. CSV Price values are identical numeric USD QA examples only, not FX conversions or commercial price parity.",
+    "One gallery photo per known color is placed once in Product image URL at stable ascending positions; Variant image URL repeats by color for preview assignment. Shopify can silently skip inaccessible image URLs, so verify all 29 gallery photos and all 261 variant assignments after import.",
+    "All image URLs come from productMediaByColor as public cdn.shopify.com URLs with only the public version query parameter; no Insignia view, calibration, placeholder, signed, or private URL is used.",
+    "The cap recipe notes public CDN candidates for Navy/Rood negotiated to 300x300 modern formats in local inventory research; Shopify import may skip or downsize them. Root should inspect those media after import and resolve any image gap separately.",
+    "No SKU, barcode, cost, weight, inventory quantity, category, vendor, tax, shipping, metafield, or Insignia configuration is fabricated or added by this CSV."
+  ],
+  "importPreconditions": [
+    "Root independently reviews this CSV and manifest before import.",
+    "Back up/export only the five owned target records and verify handles against destination-catalog-map.json.",
+    "Select Overwrite products with matching handles; keep new-product publication disabled.",
+    "Preview must show exactly six products and 261 variants, all Draft and unpublished online; stop if counts/handles/status differ.",
+    "After import, fresh-read each product and verify exact options, sparse unisex 64 count, USD numeric QA prices, untracked inventory setting, gallery order, and variant images."
+  ],
+  "csvStructureValidation": {
+    "checkedDateUtc": "2026-11-08",
+    "result": "passed",
+    "checkedAfterRootAmendment": true,
+    "checks": [
+      "Six destination handles only; five existing QA handles match destination-catalog-map.json and one new unisex T-shirt handle.",
+      "Exactly 261 variant rows match all source color/size tuples in source order, including the unisex White XS–5XL sparse set.",
+      "Title, Status, and Published on online store appear only on the first row for each product; continuation rows leave them blank.",
+      "Status is draft and Published on online store is false on each product row.",
+      "Existing products retain exact option labels, option axis order, and option values from their manual destination records/source recipes.",
+      "One Product image URL row per source color at ascending positions; each color variant uses the matching public CDN URL.",
+      "Prices, 29 gallery rows, and blank Inventory tracker fields match the reviewed QA convention."
+    ],
+    "variantRows": 261,
+    "galleryImageRows": 29,
+    "productRowsWithTitleStatusPublication": 6,
+    "continuationRowsWithThoseFieldsBlank": 255,
+    "csvSha256": "f73f30bdca68b5a73fb6747dbec07285ecb0eea4f7d22473196792290c56cf3b"
+  }
+}

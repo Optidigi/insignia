@@ -1,0 +1,19 @@
+# Whole customer integration audit
+
+Audited `insignia-ui-audit-2026-11-08` at `897a44e4`, against the selected Shopify product-page → Personalise → Designer modal path. No source files were changed.
+
+## Finding
+
+### P2 — Shopify variant and quantity selection do not carry into the Designer
+
+- **Native reproduction, high confidence:** In a fresh Chrome tab on `/products/insignia-superfunny-t-shirt-demo`, selected `Grijs / M` (`?variant=54552023728411`) with Shopify quantity `1`, then opened **Customize this product**. The first Designer opening showed the default `Zwart` garment and no artwork. After choosing Grijs and proceeding to Quantities, every size started at `0`; I entered `M × 2` manually. No cart action was taken. The new tab had no prior Designer draft; a later ordinary close/reopen correctly retained the draft.
+- **Source evidence:** `extensions/insignia-theme/snippets/customise-control.liquid:14-36` emits the product ID and complete `variant-ids` list, but no current variant or form quantity. `apps/storefront/src/theme-integration.ts:51-62,187-208` uses those IDs to identify the product and creates a buyer with product/context attributes only. `apps/storefront/src/element.tsx:37-40,75-92` mounts from product/context only. `frontend/designer/src/designer.tsx:187-224` initializes the first allowed color and no quantity; `frontend/designer/src/designer-state.ts:194-207` starts quantities empty.
+- **Outcome:** The Shopify controls display a chosen option/quantity that the modal does not inherit; customers must choose again in the Designer. The Designer’s authoritative review used its own explicit Gray/M×2 selection and priced it at `$34.90`; this audit did not establish an incorrect cart or checkout result.
+- **Classification:** High confidence in the state reset; medium confidence that it is a defect rather than the intended split of responsibilities. The selected-runtime spec explicitly says new designs retain first-allowed defaults (`docs/architecture/selected-live-designer.md:5`) but does not say whether visible Shopify form selections should seed them. This is a P2 continuity concern for owner review, not a fail-open pricing or cart-authority finding.
+
+## Coverage and limits
+
+- Read `AGENTS.md`, `frontend/README.md`, `.agents/skills/PROJECT-ADAPTATIONS.md`, the theme-extension README, `docs/architecture/selected-live-designer.md`, the implementation plan and frontend/backend map. Reviewed the Liquid entry point, selected theme integration, buyer mount, Designer config/state/runtime, and cart/repair adapters.
+- Focused checks passed: Designer runtime/config/quantity/variant checks **109/109**; storefront buyer/cart/custody/published-options/removal checks **37/37**. Designer library and storefront builds passed. Selected theme-integration browser tests passed **3/3**. Those browser tests cover purchase-control replacement, product isolation/lifecycle, and section-load retry; they do not assert Shopify variant/quantity handoff.
+- Native customer observations covered product variant selection, modal startup, artwork placement/defer, color/size quantities, quote review, dark mode, and ordinary close/reopen. I did not add/update/remove cart items or enter checkout. The product itself labels its dimensions/prices as development examples. The deployed artifact fingerprint was not independently established, and this audit did not qualify mobile layout or all published product shapes.
+- Considered and did not report two weaker candidates: transient eligibility for an unknown quick-add product leaves its ordinary Shopify control available because required status is not known; gating it could regress ordinary products, and Shopify validation remains authoritative. Previewing Navy while the explicit order rows contain Gray is an independent preview selection and did not change the Gray/M quantities or cart identity.

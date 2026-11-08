@@ -1,0 +1,169 @@
+{
+  "schema": "insignia.qa.execution.v1",
+  "updatedAt": "2026-11-08T21:07:29.759398+00:00",
+  "sourceHead": "f2a405f3f1e729218a5b8633e4164c9f61ce7f70",
+  "notes": "Subset observations do not pass every transition in a broad matrix case. Native writes are recorded below; no purchase/checkout/email or unallocated source-store changes.",
+  "deployments": [
+    {
+      "webImage": "sha256:5650d3bfcca9a25878b9f9ced2df55a7421539acce22e7dcf858791cf20d8404",
+      "phase": "earlier native audit, before20:24Z"
+    },
+    {
+      "webImage": "sha256:76d5d0f90df31f9643f590476f49cd4e12bb7485bc1240ebb3dd5b568ec49e77",
+      "startedAt": "2026-11-08T20:24:30.41330255Z",
+      "phase": "independently observed backend rollout; not deployed by QA agent"
+    }
+  ],
+  "observations": [
+    {
+      "caseIds": [
+        "HOST-01",
+        "ADM-SET-04"
+      ],
+      "layer": "native-read-only + preview-demo",
+      "result": "partial-pass",
+      "scope": "Common enabled storefront setup cards, desktop app iframe1056px and demo iframe1056px. Phone native viewport390, outer iframe379, content364 due host/inner scrollbars; demo viewport390, so phone is responsive observation, not pixel-exact parity. Card hierarchy/actions/padding retained. Source/demo4a9 build.",
+      "evidence": [
+        "storefront-setup-native-wide.png",
+        "storefront-setup-demo-wide.png",
+        "storefront-setup-native-phone.png",
+        "storefront-setup-demo-phone.png"
+      ]
+    },
+    {
+      "caseIds": [
+        "HOST-03",
+        "ADM-SET-04"
+      ],
+      "layer": "native-read-only",
+      "result": "partial-pass",
+      "scope": "Shopify native product resource picker opens at390 viewport, X closes, no remaining dialog, Choose a product re-enabled. Reopen, select existing simple published fixture, correct product/status and Preview in theme editor action appear. Reload retains chosen product. No theme link/open/edit, no cart or save."
+    },
+    {
+      "caseIds": [
+        "ADM-METHOD-01"
+      ],
+      "layer": "native-read-only",
+      "result": "fail",
+      "issueId": "QA-002",
+      "scope": "Methods navigation fails on both observed deployment identities. Current cause not localized."
+    },
+    {
+      "caseIds": [
+        "HOST-02"
+      ],
+      "layer": "built-local",
+      "result": "partial-pass",
+      "scope": "Clean isolated selected desktop/mobile baseline test1/1. No native host/provider claim.",
+      "log": "/tmp/insignia-qa-clean-baseline.log"
+    },
+    {
+      "caseIds": [
+        "HOST-04"
+      ],
+      "layer": "built-local",
+      "result": "partial-pass",
+      "scope": "Base adapter reproduced a blocked data connection with zero upload calls. Corrected adapter plus existing media lifetime/retry tests pass6/6, independently repeated by Sol. Actual native upload and saved media/view readback remain pending.",
+      "issueId": "QA-010",
+      "evidence": [
+        "media-csp-sol-review.md",
+        "/tmp/insignia-qa-media-csp-final.log"
+      ]
+    }
+  ],
+  "automated": {
+    "cleanTreeBase": "4a9cb9511d2db423cb77bc13798556f2a4c395ea",
+    "sourceDelta": "Six modal source/test files mirrored from current QA branch; final PR qualification recorded separately.",
+    "command": "pnpm build:ui followed by pnpm check:ui, Node24.21.0",
+    "result": "pass",
+    "pass": 306,
+    "fail": 0,
+    "skipped": 0,
+    "packages": {
+      "visualizer": 24,
+      "localization": 64,
+      "admin": 76,
+      "designer": 142
+    },
+    "boundary": "Existing isolated front-end reducers/runtime/fixture/browser tests; not native provider durability or all72 matrix case groups passed.",
+    "log": "/tmp/insignia-qa-ui-suite.log",
+    "preconditionCorrection": "First attempt ran before ordinary Designer library build, triggering the intentional library-artifact precondition. After build:ui the full test command passed.",
+    "selectedWebBrowser": {
+      "affectedModalSuites": {
+        "pass": 22,
+        "fail": 0,
+        "skipped": 0,
+        "sourceHash": "5890de37f8aadd0f4a14431a55d229d92ae40dedc346d1bfcbd9082d3019e465"
+      },
+      "additionalRecoveryCohort": {
+        "pass": 28,
+        "fail": 0,
+        "skipped": 0,
+        "files": [
+          "selected-product-media-browser.test.mts",
+          "selected-publication-failure-browser.test.mts",
+          "selected-method-load-cancellation-browser.test.mts",
+          "selected-method-review-browser.test.mts",
+          "selected-product-lifecycle-browser.test.mts"
+        ],
+        "log": "/tmp/insignia-qa-selected-recovery.log"
+      },
+      "independentSol": {
+        "pass": 5,
+        "fail": 0,
+        "skipped": 0,
+        "countsAsSubsetOfAffectedModalSuites": true
+      },
+      "distinctLocalChecksIncludingFrontendSuite": 356
+    },
+    "mediaCspFix": {
+      "pass": 6,
+      "fail": 0,
+      "skipped": 0,
+      "independentSolPass": 6,
+      "head": "118a5bfd",
+      "boundary": "Proves the production adapter/connect-src incompatibility in a controlled browser. Exact native user-PNG causation and successful native upload remain unverified. Four unit tests and the existing browser case overlap earlier counts; the new CSP case adds one distinct check."
+    }
+  },
+  "pullRequests": [
+    {
+      "url": "https://github.com/Optidigi/insignia/pull/253",
+      "head": "da917701",
+      "base": "f2a405f3",
+      "scope": "Shared mounted modal dismissal and regressions only,6files",
+      "ci": "all3requiredcheckspassed",
+      "deployment": "not deployed by QA campaign",
+      "mergedCommit": "8cce456f7afffee9a60254c6bcfb268702f52eb7",
+      "sourceState": "merged; not deployed by this campaign"
+    },
+    {
+      "url": "https://github.com/Optidigi/insignia/pull/254",
+      "head": "22ee1f88821bad88eb6300adf77ea0d5993cbe18",
+      "base": "8cce456f7afffee9a60254c6bcfb268702f52eb7",
+      "scope": "Product-photo adapter memory decode and strict-connection browser regression only, two files",
+      "ci": "Running again after incorporating merged PR253",
+      "deployment": "Not deployed by this QA campaign"
+    }
+  ],
+  "nativeWrites": [
+    {
+      "kind": "owned-development-catalog",
+      "store": "insignia-rewrite-dev",
+      "productId": "10590373970203",
+      "title": "QA legacy import \u2014 Superfunny muts",
+      "status": "Draft; five Kleur variants at USD17.50 as a numeric QA example; stock0; no images, views or saved configuration",
+      "classification": "Partial manual import. The source EUR17.50 was not converted. Destination zero stock does not represent the source availability.",
+      "evidence": "manual-cap-import.md"
+    },
+    {
+      "kind": "explicit-owner-source-exception",
+      "store": "superfunny-kleding",
+      "productId": "15458471575936",
+      "title": "Live Product Options Interactive T-Shirt",
+      "action": "Active to Draft only",
+      "verifiedAt": "2026-11-08T20:50:26Z",
+      "readback": "Fresh Admin readback shows Draft; the plain public URL returned404 in a preview-enabled profile",
+      "evidence": "lpo-product-visibility.md"
+    }
+  ]
+}

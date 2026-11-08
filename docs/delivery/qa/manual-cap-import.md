@@ -1,0 +1,42 @@
+# Manual QA import — Superfunny muts
+
+## Scope and source record
+
+- Source: Superfunny public product “Ontwerp je eigen Superfunny muts”, `https://superfunny.nl/collections/ontwerp-zelf/products/ontwerp-je-eigen-muts`, product GID `gid://shopify/Product/15461436457344`, current source configuration `9e386f50-e322-4d84-8de4-676c0dab7750`.
+- Source collection price: EUR 17.50. The destination uses the same numeric amount as a clearly labelled USD development example; this is not FX conversion or a commercial price-parity claim.
+- Source option: `Kleur`, exactly `Zwart`, `Blauw`, `Grijs`, `Navy`, `Rood`. All five source variants were observed available at EUR 17.50. Variant GIDs: Zwart `56968264647040`, Blauw `56968264679808`, Grijs `56968264712576`, Navy `56968264745344`, Rood `56968264778112` (each prefixed `gid://shopify/ProductVariant/`).
+- Source configuration: one view `Patch`, perspective `front`, one placement `Patch`, method `Bedrukken`; method base price 0 cents; placement base adjustment 750 cents; one decoration step `Standaard`, price adjustment 0, scale factor 1. The source has one color-specific front photo per color; local verified JPGs initially available were only `cap-view-front-zwart.jpg` and `cap-view-front-blauw.jpg`. Do not substitute a color photo for another color. Remaining per-color view assets are pending in the shared source bundle.
+- Source-specific placement centers (x%, y%) are Zwart (49,80), Blauw (50,81), Grijs (49,80), Navy (52,79), Rood (49,82); every extent is 38×16%. Historical source calibration is 23.66097750864366 px/cm and is not a new measurement.
+- The source merchant placeholder is a merchant asset. Do not replace it with text or a guessed image. The source configuration's legacy artwork-file list is not proof of the selected new app's file policy; inspect and record the current UI policy without weakening it.
+- Complete current source recipe and provenance: [legacy-inventory.json](legacy-inventory.json), `fullyVerifiedProducts` entry for the muts; local public media/view files: `legacy-assets/cap/`.
+
+## Destination boundary and run context
+
+- Destination: `insignia-rewrite-dev` only. Preserve all existing products, variants, store USD/US settings, theme, app scopes, checkout and order history. Existing protected rich T-shirt demo product `10588458647835` remains untouched.
+- The only authorized new product is `QA legacy import — Superfunny muts`. Keep it Draft and inventory at the Shopify default of zero. Do not publish, test cart/checkout, or create a customer-facing purchase.
+- Source head recorded for this run: `f2a405f3f1e729218a5b8633e4164c9f61ce7f70`. Independently observed deployed web artifact: `sha256:76d5d0f90df31f9643f590476f49cd4e12bb7485bc1240ebb3dd5b568ec49e77` (rollout started 2026-11-08T20:24:30Z; this QA lane did not deploy it).
+- Browser: Codex-created Chrome tab, title `🧢 Cap QA`; Shopify Admin UI locale English; screenshot viewport 2560×1320. Insignia embedded editor was observed at the same 2560×1320 viewport with host navigation at left and app content in the remaining area; app route locale was `en-NL`, with English labels.
+
+## Manual Shopify product creation
+
+Before the first Save, the visible Add product form contained title `QA legacy import — Superfunny muts`, price `$17.50 USD`, status `Draft`, category unset, no product media, no product options, and inventory quantity 0. Default physical-product, shipping and tax settings were left as presented; no stock was added. A transient accidental `Dog Toys` category selection occurred only in the unsaved form and was cleared before saving.
+
+**Destination Shopify product ID:** `10590373970203` (`gid://shopify/Product/10590373970203`), created through Shopify Admin `Products > Add product` on 2026-11-08. Fresh post-save page readback showed title, Draft status, Kleur values in the source order, five variants at `$17.50 USD` each, and zero available at the shop location. New variant GIDs read from the product page: Zwart `54560362430747`, Blauw `54560362463515`, Grijs `54560362496283`, Navy `54560362529051`, Rood `54560362561819` (each prefixed `gid://shopify/ProductVariant/`). Product handle shown by Shopify: `qa-legacy-import-superfunny-muts`.
+
+**Save/readback status:** Shopify displayed “Product created” and navigated to `/products/10590373970203`; a fresh Shopify Admin reload confirmed Draft, all five source colors and their USD prices, and 0 available. Shopify suggested `Dog Toys` as a category, but the category itself is `Uncategorized`; the suggestion was not accepted. The product currently has no media.
+
+**Shopify media failure:** in the native Shopify “Select file” modal, `Add media > Add from URL` accepted the exact verified Zwart front-view JPG URL from the source recipe. Shopify showed `Uploading`, then a `1 file failed` toast; the picker did not show a completed asset and the product remains media-free. No retry of that URL was made. The CUA screenshot showed the toast; a screenshot file was not persisted.
+
+## Insignia editor workflow and observations
+
+Manual path: Insignia sidebar > Products > `QA legacy import — Superfunny muts` (app route `/admin/products/10590373970203/config`). The product appeared in the Insignia Products table as **Not configured**, no methods or placements, 5 variants. The app editor loaded after a short skeleton state and then showed 0 views, 0 placements, `Add view`, disabled `Save draft`, and `Publish`. `Publish` was not used.
+
+Opening `Add view` displayed a modal titled `Add views` with an `Add files` control, accepted formats `.jpg`, `.png`, `.webp`, limit 5 MB per image, and an `Add view` button disabled while there were no images. This is the selected app’s observed file policy; the wider legacy method file list was not applied. A source-file upload could not be completed safely: the native picker opened in Downloads, a UI-control/shortcut transition occurred, and after re-observing the page the modal reported that an unrelated local file could not be processed. The file contents were not opened or read. The modal still showed **No product images yet**, and `Add view` remained disabled. The picker was closed; the app editor stayed at 0 views / 0 placements. No configuration was created, saved or published, and no further file-picker or upload actions were attempted.
+
+**Timestamp and attribution correction:** the error state was recorded at approximately 2026-11-08 20:45 UTC (the CUA wrapper does not expose a timestamp for each click; the report timestamp was 20:45:34 UTC). The native Open panel was showing Downloads when the CUA wrapper reported a Chrome app state change. The refreshed Insignia modal then showed a PNG processing error and still reported no product images. At 20:47 UTC the owner clarified that they had selected/uploaded the PNG; treat user selection as possible and do not attribute it to this agent. This agent did not enter a path or choose a file, and did not inspect the file contents. The UI indicated a processing attempt that failed; whether bytes had completed transmission is not knowable from the rendered state. No image was retained or selected, and no configuration was saved.
+
+The failed Add views state was recaptured read-only at approximately 2026-11-08 21:00 UTC. Screenshot evidence is persisted at [cap-png-processing-failure.png](../evidence/frontend-qa-2026-11-08/cap-png-processing-failure.png). The accompanying [sanitized accessibility snapshot](../evidence/frontend-qa-2026-11-08/cap-addviews-accessibility.txt) shows `No product images yet`, the processing error, and disabled `Add view` / `Save draft`; URL query values and payload-like strings were redacted before saving. The CUA tab exposes an accessibility tree, not a full DOM snapshot. Read-only console diagnostics were available: seven warnings timestamped 20:35–20:41 UTC and no errors were returned; the warnings concerned Shopify accessibility/router messages and an unavailable ShopifyQL plugin. They did not establish the upload failure cause. No network request details or raw console payloads were inspected or saved. Source geometry and calibration remain source-specific/historical; none were entered.
+
+## Customer-side preview and limits
+
+Not attempted. Keep this QA product Draft; do not publish to a channel or perform cart/checkout actions. A public customer page was not rendered, and a customer-side preview was not opened because the product remains a draft with no saved Insignia view or placement.

@@ -1,0 +1,7 @@
+# Local photo fixtures; provenance and hashes are in legacy-view-assets.json.
+legacy-assets/
+*.jpg
+*.png
+*.webp
+*.avif
+*.jxl

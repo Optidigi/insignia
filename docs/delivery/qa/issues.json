@@ -1,0 +1,324 @@
+{
+  "version": 1,
+  "updatedAt": "2026-11-08T21:48:29.270360+00:00",
+  "scope": {
+    "sourceStore": "superfunny.nl read-only, except the explicitly authorized and completed Draft status change for product15458471575936",
+    "destinationStore": "insignia-rewrite-dev.myshopify.com",
+    "allowedWrites": "Owned development QA product copies/configurations and narrowly reviewed development fixes; one completed source product Draft change at owner request. No other source changes, checkout/payment/email, scopes/currency changes or protected VAT actions."
+  },
+  "issues": [
+    {
+      "firstObserved": "2026-11-08",
+      "observedSource": "897a44e48a715957881ca1117a7ba26c63da567a",
+      "currentReviewBase": "f2a405f3f1e729218a5b8633e4164c9f61ce7f70",
+      "nativeRelease": "not independently re-fingerprinted",
+      "status": "ready-for-native",
+      "resolution": "PR253 merged as8cce456f after independent Sol review and all three exact-head CI checks. No deployment by this campaign. Native replay remains pending.",
+      "id": "QA-001",
+      "priority": "P1",
+      "kind": "defect",
+      "title": "Native shared photo dialogs cannot dismiss and strand Shopify host scrims",
+      "area": "Product editor: Add views and variant photo picker",
+      "actual": "Native X/Escape do not close Add views; Cancel removes app modal but leaves host header/navigation blocked. Same X/Cancel outcome in variant-photo picker.",
+      "expected": "All dismissal routes close their own overlay, restore focus and release the Shopify host.",
+      "evidenceLevel": "native-observed",
+      "owner": "qa_modal_blocker_fix",
+      "evidence": [
+        "docs/delivery/evidence/frontend-qa-2026-11-08/orphaned-host-scrim-after-cancel.png",
+        "docs/delivery/evidence/frontend-qa-2026-11-08/variant-picker-orphaned-host-scrim.png"
+      ],
+      "closure": "Meaningful host-ID regression passes, source independently reviewed, deployed exact build replays X/Escape/Cancel/reopen with zero host scrims and no unsaved data mutation.",
+      "history": [
+        {
+          "date": "2026-11-08",
+          "event": "Carried forward from filtered whole-product audit; not marked fixed."
+        },
+        {
+          "date": "2026-11-08T20:36:33.897528+00:00",
+          "event": "Opened https://github.com/Optidigi/insignia/pull/253 on current mainf2a405f3. Only shared dialog +5test/supportfiles, nobackend/dependencies/layout/API/persistence edits. Native QA-001 remains open until exact deployed replay."
+        },
+        {
+          "date": "2026-11-08T21:07:29.759398+00:00",
+          "event": "PR #253, exact head da917701: foundation, runtime and durable-core all passed. The PR remains open. This QA campaign has not deployed it; native dismissal and host-scrim replay remain pending."
+        },
+        {
+          "date": "2026-11-08T21:11:10Z",
+          "event": "PR #253 merged as8cce456f after all three exact-head CI checks and independent review passed. No runtime deployment was performed by this campaign."
+        }
+      ]
+    },
+    {
+      "firstObserved": "2026-11-08",
+      "observedSource": "897a44e48a715957881ca1117a7ba26c63da567a",
+      "currentReviewBase": "f2a405f3f1e729218a5b8633e4164c9f61ce7f70",
+      "nativeRelease": "not independently re-fingerprinted",
+      "status": "investigating",
+      "resolution": null,
+      "id": "QA-002",
+      "priority": "P1",
+      "kind": "defect",
+      "title": "Intermittent native admin loading failures",
+      "area": "Methods, Products, Orders, product editors",
+      "actual": "Methods and two editors failed repeatedly; Products/Orders failed then recovered on Retry; richer T-shirt editor loaded. Root cause not established.",
+      "expected": "Authorized reads show the correct UI or bounded recoverable failure; normal repeated navigation reliably succeeds.",
+      "evidenceLevel": "native-observed",
+      "owner": "root",
+      "evidence": [
+        "docs/delivery/evidence/frontend-qa-2026-11-08/fresh-editor-load-failure.png",
+        "docs/delivery/evidence/frontend-qa-2026-11-08/methods-load-failure.png"
+      ],
+      "closure": "Correlated native request/status/server diagnosis, failing regression for actual cause, repeated matched-build navigation and recovery pass. Do not deduplicate with QA-003 without evidence.",
+      "history": [
+        {
+          "date": "2026-11-08",
+          "event": "Carried forward from filtered whole-product audit; not marked fixed."
+        },
+        {
+          "date": "2026-11-08T20:28:17.754912+00:00",
+          "event": "Methods failed again before and after an independently observed backend deployment. Earlier web image5650d3bf changed to76d5d0f9 started20:24:30Z; this campaign did not deploy either. Current dev-only read transaction found0 Method rows and4 drafts, all MerchantDraftSchema-valid. Auth successes do not establish downstream HTTP/client success. See loading-diagnosis.md; native request-response ledger remains needed."
+        }
+      ]
+    },
+    {
+      "firstObserved": "2026-11-08",
+      "observedSource": "897a44e48a715957881ca1117a7ba26c63da567a",
+      "currentReviewBase": "f2a405f3f1e729218a5b8633e4164c9f61ce7f70",
+      "nativeRelease": "not independently re-fingerprinted",
+      "status": "investigating",
+      "resolution": null,
+      "id": "QA-003",
+      "priority": "P1",
+      "kind": "defect",
+      "title": "Native final cart submission failed",
+      "area": "Customer simple-product Review -> Shopify cart",
+      "actual": "One Add to cart attempt after authoritative USD37.50 review failed. Draft retained; independent get_cart and full /cart showed no items. No mutation retry.",
+      "expected": "Verified cart application closes the modal and returns to Shopify with exact lines; failures retain design and settle original operation identity.",
+      "evidenceLevel": "native-observed",
+      "owner": "root",
+      "evidence": [
+        "docs/delivery/evidence/frontend-qa-2026-11-08/customer-cart-submit-failure-native.png",
+        "docs/delivery/evidence/frontend-qa-2026-11-08/cart-empty-after-failed-submit.png"
+      ],
+      "closure": "Reconcile original attempt, diagnose failure, targeted regression, native add/edit/quantity/remove and independent cleanup on owned QA cart with no checkout.",
+      "history": [
+        {
+          "date": "2026-11-08",
+          "event": "Carried forward from filtered whole-product audit; not marked fixed."
+        },
+        {
+          "date": "2026-11-08T20:41:12.417883+00:00",
+          "event": "Dev-only read transaction for19:30\u201319:45UTC found a proposal created19:38:22.271Z, expiry19:43:22.271Z, accepted=true; a single accept command and cart application created19:42:22.291Z with PENDING status. Earlier19:35 proposal expired unaccepted. Thus the final attempt was accepted before proposal expiry; expiry alone does not explain the observed cart failure. Independent native cart remained empty at19:44. No retry or native cart mutation was dispatched by this continuing campaign. Exact owner/session binding still needed before operational reconciliation; time-window evidence is not a replacement for that binding."
+        }
+      ]
+    },
+    {
+      "firstObserved": "2026-11-08",
+      "observedSource": "897a44e48a715957881ca1117a7ba26c63da567a",
+      "currentReviewBase": "f2a405f3f1e729218a5b8633e4164c9f61ce7f70",
+      "nativeRelease": "not independently re-fingerprinted",
+      "status": "open",
+      "resolution": null,
+      "id": "QA-004",
+      "priority": "P3",
+      "kind": "ux-decision",
+      "title": "Fresh Designer entry ignores visible Shopify variant and quantity",
+      "area": "Shopify product form -> selected Designer",
+      "actual": "Native selected Gray/M opens default Black; theme quantity3 opens Designer quantity0. Fresh defaults documented; not proved wrong cart identity.",
+      "expected": "Choose one clear responsibility: preserve valid explicit form choices for genuinely new designs, or avoid redundant controls. Ordinary resumed drafts retain edits.",
+      "evidenceLevel": "native-observed",
+      "owner": "root",
+      "evidence": [
+        "docs/delivery/evidence/frontend-qa-2026-11-08/customer-quantity-handoff-native.png"
+      ],
+      "closure": "Confirm intended handoff policy, test fresh and resumed cases plus bulk selection, verify no fabricated variants or overwritten drafts.",
+      "history": [
+        {
+          "date": "2026-11-08",
+          "event": "Carried forward from filtered whole-product audit; not marked fixed."
+        }
+      ]
+    },
+    {
+      "firstObserved": "2026-11-08",
+      "observedSource": "897a44e48a715957881ca1117a7ba26c63da567a",
+      "currentReviewBase": "f2a405f3f1e729218a5b8633e4164c9f61ce7f70",
+      "nativeRelease": "not independently re-fingerprinted",
+      "status": "open",
+      "resolution": null,
+      "id": "QA-005",
+      "priority": "P2",
+      "kind": "defect",
+      "title": "Three translation categories display Unavailable",
+      "area": "Settings > Translations overview and Section dropdown",
+      "actual": "host, language and startup category-label keys absent in all six admin catalogs.",
+      "expected": "Distinct translated category labels for all live customer-wording groups.",
+      "evidenceLevel": "native-and-source-confirmed",
+      "owner": "root",
+      "evidence": [
+        "docs/delivery/evidence/frontend-qa-2026-11-08/translations-overview.png"
+      ],
+      "closure": "Validate manifest/category completeness; all six catalogs plus rendered overview/dropdown show distinct labels without hiding supported wording.",
+      "history": [
+        {
+          "date": "2026-11-08",
+          "event": "Carried forward from filtered whole-product audit; not marked fixed."
+        }
+      ]
+    },
+    {
+      "firstObserved": "2026-11-08",
+      "observedSource": "897a44e48a715957881ca1117a7ba26c63da567a",
+      "currentReviewBase": "f2a405f3f1e729218a5b8633e4164c9f61ce7f70",
+      "nativeRelease": "not independently re-fingerprinted",
+      "status": "open",
+      "resolution": null,
+      "id": "QA-006",
+      "priority": "P2",
+      "kind": "defect",
+      "title": "Home loses test invitation when published product is beyond first page",
+      "area": "Home guide setup facts",
+      "actual": "First20 title-sorted products plus nextCursor become false published-product fact, despite product panel correctly reporting unknown.",
+      "expected": "Incomplete catalog retains unknown until a store-wide fact or supported candidate read establishes published product availability.",
+      "evidenceLevel": "helper-reproduced",
+      "owner": "root",
+      "evidence": [],
+      "closure": "Reproducing composed helper test goes red before fix and green after; large-catalog integrated state exposes correct test action without invented products.",
+      "history": [
+        {
+          "date": "2026-11-08",
+          "event": "Carried forward from filtered whole-product audit; not marked fixed."
+        }
+      ]
+    },
+    {
+      "firstObserved": "2026-11-08",
+      "observedSource": "897a44e48a715957881ca1117a7ba26c63da567a",
+      "currentReviewBase": "f2a405f3f1e729218a5b8633e4164c9f61ce7f70",
+      "nativeRelease": "not independently re-fingerprinted",
+      "status": "open",
+      "resolution": null,
+      "id": "QA-007",
+      "priority": "P3",
+      "kind": "usability",
+      "title": "SVG policy rejection does not explain recovery",
+      "area": "Customer upload error",
+      "actual": "Static SVG with text/fonts is intentionally rejected, but generic message gives no practical supported alternative. Path-only SVG succeeds.",
+      "expected": "Keep inspection policy; guide user toward outlined text or PNG/JPG without parser internals.",
+      "evidenceLevel": "native-and-source-confirmed",
+      "owner": "root",
+      "evidence": [
+        "docs/delivery/evidence/frontend-qa-2026-11-08/customer-upload-state-native.png"
+      ],
+      "closure": "Copy aligns with actual safe policy and translations; valid static SVG and supported PNG/JPG continue; no weakened inspection.",
+      "history": [
+        {
+          "date": "2026-11-08",
+          "event": "Carried forward from filtered whole-product audit; not marked fixed."
+        }
+      ]
+    },
+    {
+      "firstObserved": "2026-11-08",
+      "observedSource": "897a44e48a715957881ca1117a7ba26c63da567a",
+      "currentReviewBase": "f2a405f3f1e729218a5b8633e4164c9f61ce7f70",
+      "nativeRelease": "not independently re-fingerprinted",
+      "status": "not-a-defect",
+      "resolution": "Clean /tmp checkout with frozen workspace dependencies built web and passed the selected desktop/mobile baseline without manual runtime bindings. Live server entry bundles cookie; no missing runtime dependency change justified. Keep environment reproduction for future portable-package checks.",
+      "id": "QA-008",
+      "priority": "P3",
+      "kind": "environment",
+      "title": "Ambient dependencies changed local SSR externalization",
+      "area": "Local server and relocatable runtime package",
+      "actual": "Clean built-server start resolved ambient cookie/Zod versions; 55 browser cases needed temporary ignored bindings. Portable Mac check blocked separately by optional compiler symlink.",
+      "expected": "Pinned declared dependency graph starts and relocates without ambient machine packages or manual links.",
+      "evidenceLevel": "artifact-reproduced",
+      "owner": "root",
+      "evidence": [],
+      "closure": "Actual clean startup and relocatable package check pass, lazy routes resolve dependencies, no manual bindings; deployed causation remains separate from QA-002/003.",
+      "history": [
+        {
+          "date": "2026-11-08",
+          "event": "Carried forward from filtered whole-product audit; not marked fixed."
+        },
+        {
+          "date": "2026-11-08",
+          "event": "PR251 foundation/runtime/durable CI all SUCCESS; actual deployed entry bundles cookie rather than importing it. Local ancestor node_modules may alter Vite externalization. Testing clean /tmp worktree before any dependency/source fix; no native outage cause inferred."
+        },
+        {
+          "date": "2026-11-08T20:28:17.754912+00:00",
+          "event": "Clean comparison separated contaminated local ancestor node_modules resolution from deployed packaging. No dependency/manifest/application fix made. Full UI suite first run additionally required ordinary Designer library build; that precondition is being supplied, not classified as an app failure."
+        }
+      ]
+    },
+    {
+      "id": "QA-009",
+      "priority": "P2",
+      "kind": "defect",
+      "status": "open",
+      "firstObserved": "2026-11-08",
+      "currentReviewBase": "f2a405f3f1e729218a5b8633e4164c9f61ce7f70",
+      "title": "Pending Shopify modal show can outlive its component",
+      "area": "Shared modal route retirement or suspension during asynchronous host opening",
+      "actual": "Independent exact-Polaris browser probe: await host show, remove modal before the host promise resolves, settle show. Host log contains show only and no hide. Local dialog was closed at disconnect, so pinned hideOverlay guard skipped cleanup. Preexisting upstream edge, separate from mounted X/Cancel fix.",
+      "expected": "A retired or suspended dialog never leaves a host overlay active after its delayed opening settles.",
+      "evidenceLevel": "built-pinned-component-probe, not native-observed",
+      "owner": "root",
+      "resolution": null,
+      "evidence": [
+        "docs/delivery/qa/modal-sol-review.md"
+      ],
+      "closure": "Reproduce through the real selected component with delayed host opening; qualify a bounded cancellation or upstream correction without private production bridge calls. Native replay required before native closure.",
+      "history": [
+        {
+          "date": "2026-11-08T20:30:35.732195+00:00",
+          "event": "Independent Sol reproduced exact snapshot89dd2052b7b8cc6b042900f5c044e1f5754e31bf769d205b6e2399992bdb0c7b on Chromium/Node24.21.0. Retained as separate issue; do not widen the current mounted-close PR or claim every asynchronous modal path fixed."
+        }
+      ]
+    },
+    {
+      "id": "QA-010",
+      "priority": "P1",
+      "kind": "defect",
+      "status": "ready-for-native",
+      "firstObserved": "2026-11-08",
+      "currentReviewBase": "f2a405f3f1e729218a5b8633e4164c9f61ce7f70",
+      "title": "Product-photo upload fetches a local data image forbidden by CSP",
+      "area": "Selected product editor Add views image upload",
+      "actual": "User-reported PNG upload on owned QA cap failed with generic processing error and no accepted image. The picker prepares data:image/webp; selected-product-media then fetches that data URL, while production connect-src does not allow data connections. Browser regression reproduces Failed to fetch with zero upload calls under that directive.",
+      "expected": "Supported product photos are decoded locally, converted to inspected PNG, and uploaded without weakening CSP; failed processing must retain the current product setup.",
+      "evidenceLevel": "native symptom plus source and controlled real-browser cause reproduction; exact native console confirmation pending",
+      "owner": "root",
+      "resolution": "Two-file PR254 merged as40957070 after independent Sol review, six media checks and all three exact-current-head CI checks. CSP, backend and dependencies unchanged. No deployment by this campaign; native upload/save/readback remains pending.",
+      "evidence": [
+        "docs/delivery/qa/manual-cap-import.md",
+        "docs/delivery/qa/add-views-parity.md",
+        "apps/web/test/admin/selected-product-media-csp-browser.test.mts",
+        "docs/delivery/qa/media-csp-sol-review.md",
+        "docs/delivery/evidence/frontend-qa-2026-11-08/cap-png-processing-failure.png"
+      ],
+      "closure": "Independently review narrowly scoped fix and qualify CI; on exact deployed build upload valid PNG/JPEG through actual Add views and read back owned media/setup. Do not broaden connect-src or bypass inspector.",
+      "history": [
+        {
+          "date": "2026-11-08T21:01:21.621401+00:00",
+          "event": "User clarified they selected the PNG. Earlier attribution of file selection to the agent was premature and withdrawn. Source file metadata:1,093,646bytes,1254x1254 RGB8, valid PNG signature/chunk CRCs/IEND, within5MiB. No source file bytes or private filesystem paths copied into this repo."
+        },
+        {
+          "date": "2026-11-08T21:01:21.621401+00:00",
+          "event": "Dev-only readonly query found no merchant_preview_assets rows for QA cap10590373970203. Media feature enabled and inspector/storage configuration present. Normal pipeline inspects before DB prepare and writes storage after prepare; do not infer a retained upload from the generic browser error."
+        },
+        {
+          "date": "2026-11-08T21:07:29.759398+00:00",
+          "event": "Independent Sol review reproduced the base CSP failure and passed all six media checks, with no Standards or Spec findings. Opened separate two-file PR #254 at 118a5bfd. Web build, strict admin test types and style checks pass. CSP, backend and dependencies are unchanged. CI and native replay remain pending."
+        },
+        {
+          "date": "2026-11-08",
+          "event": "PR #254 now includes merged PR #253, head22ee1f88 on base8cce456f. The two photo-fix file contents are unchanged; full CI is running on the combined source."
+        },
+        {
+          "date": "2026-11-08T21:48:29.270360+00:00",
+          "event": "PR254 merged as4095707087c7722159b10e9ef4b1fc7b78a354be at21:47:06Z after head22ee1f88 passed allCI. Native closure not claimed."
+        }
+      ]
+    }
+  ]
+}

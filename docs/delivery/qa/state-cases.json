@@ -1,0 +1,2287 @@
+{
+  "schema": "insignia.selected-ui-parity-cases.v1",
+  "purpose": "Reusable UI/state/workflow comparison plan. Cases are not execution results.",
+  "baseline": {
+    "acceptedSelectedUi": "d490e4d0e285b7b5be50da52cdf97474ff4a0e0f",
+    "integratedSourceHead": "4a9cb9511d2db423cb77bc13798556f2a4c395ea",
+    "deployedIdentity": "Separate from integratedSourceHead; current delivery state says PR251 is not deployed.",
+    "nativeAudit": "docs/delivery/notes/whole-product-integration-audit-2026-11-08.md",
+    "caseDefaultStatus": "not-run"
+  },
+  "comparisonRules": {
+    "compare": "Insignia app content only, at equal CSS width inside the merchant app iframe or customer Designer frame.",
+    "data": "Match real product/order complexity, visible labels, locale, theme, image availability, and starting workflow state.",
+    "authority": "Demo estimate, fake upload, local receipt, screenshot, HTTP success, or click is not production authority or persistence proof.",
+    "customerHost": "Shopify owns product page, cart, checkout, theme editor, and language settings.",
+    "forbiddenComparisons": [
+      "Retired MerchantConfigEditor against the selected production editor.",
+      "Developer-only StorefrontHostPreview against the Shopify customer product/cart UI.",
+      "One-view/default-variant fixture against a richer product as proof of a missing conditional control.",
+      "Local preview price estimate against a production quote as if both were authoritative."
+    ],
+    "widthSamplesCssPx": [
+      1440,
+      390,
+      320
+    ],
+    "localeSamples": [
+      "en",
+      "nl",
+      "long de or fr labels/errors"
+    ],
+    "browserSamples": [
+      "Chromium",
+      "Firefox"
+    ],
+    "nativeWriteBoundary": "Native writes use an explicitly owned DEV QA lane and fresh readback. No checkout, payment, email, theme, scope or unallocated source-store effects. The separately authorized source LPO Draft change is completed and documented in lpo-product-visibility.md."
+  },
+  "executionLayers": {
+    "preview-demo": "Loopback frontend demo with explicit synthetic fixtures/adapters. May mutate only its own memory/session/local fixture.",
+    "built-local": "Built production route or selected package with controlled API/Shopify host doubles. Verifies UI and adapter boundary, not provider durability or native Shopify behavior.",
+    "native-read-only": "Actual Shopify host/data observations without business mutation.",
+    "native-owned-write": "Actual user-authorized development QA products/resources with exclusive lane ownership, mutation identity and fresh readback. Screenshots alone do not establish persistence. Completed source-store exceptions are documented separately.",
+    "source-probe": "Source/reducer/helper state evidence only; does not pass a rendered user interaction."
+  },
+  "entries": {
+    "merchantDemo": {
+      "command": "corepack pnpm dev:ui:admin",
+      "normalEntry": "Loopback URL printed by preview.mts; default scenario order-demo opens a synthetic purchase detail. Set INSIGNIA_PREVIEW_SCENARIO=normal for Products with the simple synthetic config, or orders-rich for Orders.",
+      "stateModes": [
+        "normal",
+        "empty",
+        "denied",
+        "unavailable",
+        "loading"
+      ],
+      "scenarios": [
+        "normal",
+        "order-demo",
+        "orders-rich"
+      ],
+      "notes": "Uses a built SSR renderer, synthetic APIs, fake local host/Bridge/Polaris and separate in-memory order demo. Preview state normal with scenario order-demo substitutes local Home, product editor and Methods adapters. No provider writes."
+    },
+    "merchantIntegrated": {
+      "host": "Shopify App Home iframe",
+      "routes": [
+        "/admin/home",
+        "/admin/products",
+        "/admin/products/{numeric-id}/config",
+        "/admin/methods",
+        "/admin/methods/{methodId}",
+        "/admin/orders",
+        "/admin/orders/{purchaseId}",
+        "/admin/settings",
+        "/admin/settings/billing",
+        "/admin/settings/permissions",
+        "/admin/settings/storefront",
+        "/admin/settings/translations",
+        "/admin/settings/privacy",
+        "/admin/unavailable"
+      ],
+      "notes": "Compare inner app document only. Production routes compose selected islands with authenticated containers."
+    },
+    "customerDemo": {
+      "command": "corepack pnpm dev:ui:customer",
+      "catalog": "/scenarios",
+      "scenarios": [
+        "classic",
+        "phone-case",
+        "phone-case-options",
+        "minimal",
+        "colour-studio",
+        "extended-sizes",
+        "front-only",
+        "staff-polo",
+        "team-hoodie",
+        "one-size-apron",
+        "many-placements",
+        "many-widths",
+        "large-palette",
+        "long-content"
+      ],
+      "starts": [
+        "Start empty",
+        "Preview example with local artwork"
+      ],
+      "hostStandIn": "/product",
+      "notes": "Local runtime, estimates, storage, saved designs, upload and add/update results are examples only."
+    },
+    "customerIntegrated": {
+      "host": "Actual Shopify product page and theme trigger",
+      "targetFromGuide": "https://insignia-rewrite-dev.myshopify.com/products/insignia-superfunny-t-shirt-demo",
+      "sourceEntry": "extensions/insignia-theme \u2192 apps/storefront/src/element.tsx \u2192 apps/storefront/src/designer/controller.ts \u2192 frontend/designer/src/index.ts",
+      "notes": "Reconfirm current deployed source/artifact and product facts before native review. Compare Designer frame only."
+    },
+    "merchantCustomerPreview": {
+      "route": "/designer-preview",
+      "launch": "Selected product editor Preview action opens a nonce-bound unsaved snapshot.",
+      "authority": "Temporary local object URLs; preview-only ports; cart commit rejects."
+    },
+    "postOrderCustomerArtwork": {
+      "route": "/artwork-upload#capability=\u2026",
+      "authority": "Scoped capability, missing-artwork-only attach and real artwork upload service; never a cart mutation.",
+      "nativeEntry": "Requires an already issued valid test capability. Do not trigger email."
+    }
+  },
+  "surfaces": [
+    {
+      "id": "admin.home",
+      "demoEntry": "merchantDemo /admin/home",
+      "integratedEntry": "merchantIntegrated /admin/home",
+      "owner": "MerchantHomeContainer and selected MerchantHome; Home source, guidance and action reducers.",
+      "cases": [
+        {
+          "id": "ADM-HOME-01",
+          "title": "Loading-to-ready panels and aggregate facts",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use a store with products, recent orders, known whole-store aggregate and explicit theme/billing readiness.",
+          "walkthrough": [
+            "Open Home.",
+            "Observe initial loading placeholder.",
+            "Wait for all panel reads.",
+            "Open the linked Products and Orders routes."
+          ],
+          "assert": [
+            "Each panel moves independently to its observed result.",
+            "Metrics equal authenticated aggregate facts; unavailable is not rendered as zero.",
+            "Recent-order links identify the selected purchase.",
+            "No sample/demo totals leak into integrated composition."
+          ],
+          "writeBoundary": "No business write.",
+          "coverage": [
+            "apps/web/test/admin/editor-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-HOME-02",
+          "title": "First-use, empty and unknown catalog guidance",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "source-probe"
+          ],
+          "setup": "Exercise complete empty catalog, current page with continuation and known published product on a later page.",
+          "walkthrough": [
+            "Open Home with no product records.",
+            "Open Home with a partial first catalog page.",
+            "Repeat with a published configured product only beyond the first page."
+          ],
+          "assert": [
+            "Complete absence can show first-use guidance.",
+            "Incomplete catalog remains unknown and does not claim absence.",
+            "Store-wide test guidance appears when later-page evidence establishes a published product."
+          ],
+          "knownFinding": "F6: homeHasPublishedProduct currently collapses a partial page to false; source helper probe recorded in the whole-product audit.",
+          "writeBoundary": "No business write.",
+          "coverage": [
+            "frontend/admin/test/admin/merchant-home-source.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-HOME-03",
+          "title": "Independent panel failure, retry and focus",
+          "layers": [
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Fail only Products, only Orders, then both; separately return session/access unavailable.",
+          "walkthrough": [
+            "Hold one panel read.",
+            "Observe its loading state.",
+            "Fail it while another panel succeeds.",
+            "Retry the failed panel.",
+            "Navigate away during a held read and return."
+          ],
+          "assert": [
+            "Failure remains scoped to its panel where supported.",
+            "Retry reports busy and recovers without replacing successful content.",
+            "Session loss shows unavailable/reopen recovery.",
+            "Late old response cannot replace current observation.",
+            "Retry and navigation do not invent totals."
+          ],
+          "writeBoundary": "No business write.",
+          "coverage": [
+            "frontend/admin/src/islands/MerchantHomeContainer.tsx",
+            "frontend/admin/src/shared/home-workflow-state.ts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-HOME-04",
+          "title": "Persisted guidance and theme setup tasks",
+          "layers": [
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use active embed, missing theme button/cart review, incomplete or unknown eligibility, dismissed checklist and a denied preference read.",
+          "walkthrough": [
+            "Expand/dismiss guidance.",
+            "Mark one supported step complete.",
+            "Reload in another context.",
+            "Open the Shopify-owned handoff without saving theme changes."
+          ],
+          "assert": [
+            "Guidance reflects stored shop-wide preference only after authoritative preference read.",
+            "Unknown eligibility remains actionable/retryable.",
+            "Handoff opens Shopify; demo handoff is labelled and cannot alter theme.",
+            "Checklist completion is not presented as verified theme activation."
+          ],
+          "writeBoundary": "Local synthetic preference only; native is read-only.",
+          "coverage": [
+            "frontend/admin/test/admin/storefront-setup.test.mts",
+            "frontend/admin/test/admin/merchant-preferences-client.test.mts"
+          ],
+          "status": "not-run"
+        }
+      ]
+    },
+    {
+      "id": "admin.products",
+      "demoEntry": "merchantDemo /admin/products",
+      "integratedEntry": "merchantIntegrated /admin/products",
+      "owner": "ProductsOverview, products-overview-state.ts, selected-product-actions.tsx.",
+      "cases": [
+        {
+          "id": "ADM-PROD-01",
+          "title": "Search, filters, paging and request ownership",
+          "layers": [
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use more than one catalog page with distinct configured/draft/published/unconfigured records.",
+          "walkthrough": [
+            "Search.",
+            "Change configuration filter.",
+            "Select rows.",
+            "Advance page.",
+            "Issue a slower prior query, then a faster current query."
+          ],
+          "assert": [
+            "Filtering/search covers the server dataset.",
+            "Page and filter changes clear page selection.",
+            "Stale request cannot replace current page.",
+            "Rows route to the exact product configuration."
+          ],
+          "writeBoundary": "No business write.",
+          "coverage": [
+            "frontend/admin/test/admin/index-workflow-state.test.mts",
+            "apps/web/test/admin/editor-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-PROD-02",
+          "title": "Empty, no-match, per-page-empty, failed and denied states",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use a truly empty catalog, an empty search result, a page with no visible records, 503 then success, and 403.",
+          "walkthrough": [
+            "Open each state.",
+            "Use Retry for transient failure.",
+            "Change search/filter from empty states."
+          ],
+          "assert": [
+            "No products, no search match and empty page are distinguishable.",
+            "403 does not appear as transient success.",
+            "Retry restores the actual catalog.",
+            "No demo product appears in integrated failure recovery."
+          ],
+          "writeBoundary": "No business write.",
+          "coverage": [
+            "apps/web/test/admin/editor-browser.test.mts",
+            "frontend/admin/src/islands/products-overview-state.ts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-PROD-03",
+          "title": "Selection summary, CSV/export and selection reset",
+          "layers": [
+            "preview-demo",
+            "built-local"
+          ],
+          "setup": "Select one then multiple visible products, including a filter/page transition.",
+          "walkthrough": [
+            "Select rows and all visible rows.",
+            "Export summary.",
+            "Change page/filter and open the bulk action."
+          ],
+          "assert": [
+            "Selection count matches visible selection.",
+            "Selection clears on query/page change.",
+            "Export content reflects exact current records.",
+            "Summary download failure is recoverable and does not claim a save."
+          ],
+          "writeBoundary": "Download only; no server mutation.",
+          "coverage": [
+            "frontend/admin/src/islands/ProductsOverview.tsx",
+            "frontend/admin/src/shared/product-configuration-export.ts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-PROD-04",
+          "title": "Preview and setup-copy action routing",
+          "layers": [
+            "preview-demo",
+            "built-local"
+          ],
+          "setup": "Use one product with a published preview and two independent empty target products.",
+          "walkthrough": [
+            "Open customer preview.",
+            "Select a valid copy target.",
+            "Cancel, then separately confirm in a local browser fixture."
+          ],
+          "assert": [
+            "Preview is the non-purchasing unsaved preview route.",
+            "Cancel creates no copy.",
+            "Copy receives fresh product-owned identities and retained production labels/options.",
+            "A local copy result is never reported as native persistence."
+          ],
+          "writeBoundary": "Demo is local-only; integrated save requires a separately owned QA product.",
+          "coverage": [
+            "frontend/admin/test/admin/selected-product-copy.test.mts",
+            "apps/web/test/admin/private-preview-browser.test.mts"
+          ],
+          "status": "not-run"
+        }
+      ]
+    },
+    {
+      "id": "admin.productEditor",
+      "demoEntry": "merchantDemo /admin/products/{numeric-id}/config; select matching product/setup example.",
+      "integratedEntry": "merchantIntegrated /admin/products/{numeric-id}/config",
+      "owner": "SelectedProductContainer, SelectedProductEditor, selected-product-client, placement-workflow-state.mts, scoped media and publication adapters.",
+      "cases": [
+        {
+          "id": "ADM-EDIT-01",
+          "title": "Open, initial read, read-only and unavailable recovery",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use an actual configured product, an unconfigured product, read-only access, catalog 503 and 403.",
+          "walkthrough": [
+            "Open directly and from Products.",
+            "Observe skeleton/readiness.",
+            "Retry a transient failed load.",
+            "Navigate away while a read is held."
+          ],
+          "assert": [
+            "Selected editor receives current product/config/media/Method data.",
+            "Read-only hides or disables mutation affordances.",
+            "Failure does not inject sample data.",
+            "Late result from a retired product route cannot replace current state."
+          ],
+          "knownFinding": "F2 native Methods/editor loading intermittency was observed; cause remains unconfirmed. Capture request/status/correlation before attribution.",
+          "writeBoundary": "No business write.",
+          "coverage": [
+            "apps/web/test/admin/selected-product-browser.test.mts",
+            "apps/web/test/admin/selected-product-lifecycle-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-EDIT-02",
+          "title": "Add views picker dismissal without commit",
+          "layers": [
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Open Add views with zero images selected and record view/placement count, Save Bar and requests.",
+          "walkthrough": [
+            "Open picker.",
+            "Dismiss with X.",
+            "Reopen and dismiss with Escape.",
+            "Reopen and dismiss with Cancel."
+          ],
+          "assert": [
+            "All three paths close picker, restore focus and preserve draft counts.",
+            "No save/create/publish request is sent.",
+            "Shopify outer modal scrims are gone and underlying host controls are hittable."
+          ],
+          "knownFinding": "F1 native X/Escape stayed open while Cancel closed. Re-run after modal-owner correction; the native host path is essential.",
+          "writeBoundary": "No mutation.",
+          "coverage": [
+            "apps/web/test/admin/selected-product-browser.test.mts",
+            "docs/delivery/notes/whole-product-integration-audit-2026-11-08.md"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-EDIT-03",
+          "title": "Choose and add a view with exact image mapping",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-owned-write"
+          ],
+          "setup": "Use a product with multiple real images and an empty or partially configured view set.",
+          "walkthrough": [
+            "Search/filter images.",
+            "Select a real image.",
+            "Confirm add.",
+            "Cancel a second attempt.",
+            "Reload after the owned local fixture save."
+          ],
+          "assert": [
+            "Only the confirmed image/view is added.",
+            "Cancel leaves the draft and Save Bar unchanged.",
+            "Exact image identity survives save/reload.",
+            "No front/back/color mapping is inferred from file name."
+          ],
+          "writeBoundary": "Preview mutations are local-only. Native save needs owned QA product.",
+          "coverage": [
+            "apps/web/test/admin/selected-product-browser.test.mts",
+            "apps/web/test/admin/selected-product-media-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-EDIT-04",
+          "title": "Rename, reorder and remove view/placement",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-owned-write"
+          ],
+          "setup": "Use at least two views and two placements, including one selected placement with configuration.",
+          "walkthrough": [
+            "Rename and reorder a view.",
+            "Remove an unselected view.",
+            "Cancel a removal dialog.",
+            "Confirm removal in a controlled fixture."
+          ],
+          "assert": [
+            "IDs and artwork mappings follow intended view identity.",
+            "Cancel has no write.",
+            "Confirm removes only the exact target and invalidates incompatible selection modes.",
+            "Undo/redo restores the exact authoring snapshot where offered."
+          ],
+          "writeBoundary": "Native save requires owned QA product.",
+          "coverage": [
+            "frontend/admin/examples/admin/support/placement-workflow-state.mts",
+            "apps/web/test/admin/selected-product-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-EDIT-05",
+          "title": "Draw placement, measurement and calibrated size preview",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-owned-write"
+          ],
+          "setup": "Use real product image dimensions, a calibrated view and supported placement geometry.",
+          "walkthrough": [
+            "Draw a placement.",
+            "Measure a known line.",
+            "Enter a calibrated distance.",
+            "Preview each supported size.",
+            "Cancel an incomplete measurement."
+          ],
+          "assert": [
+            "Normalized coordinates remain within image and preserve exact typed values.",
+            "Invalid measurement shows recoverable validation.",
+            "Customer preview geometry matches saved selected geometry.",
+            "No unsourced manufacturing precision is implied."
+          ],
+          "writeBoundary": "Local fixture only until owned QA product.",
+          "coverage": [
+            "packages/visualizer",
+            "apps/web/test/admin/selected-product-lifecycle-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-EDIT-06",
+          "title": "Movement area editing and boundary recovery",
+          "layers": [
+            "preview-demo",
+            "built-local"
+          ],
+          "setup": "Use a product whose published setup allows customer movement, plus a fixed-position product.",
+          "walkthrough": [
+            "Open movement editor.",
+            "Draw an area containing artwork.",
+            "Try an invalid area.",
+            "Cancel redraw.",
+            "Switch selected placement.",
+            "Undo/redo."
+          ],
+          "assert": [
+            "Valid area contains full artwork footprint.",
+            "Invalid movement shows reason and retains previous valid geometry.",
+            "Changing target cancels only incompatible interaction.",
+            "Fixed-position product exposes no movement controls."
+          ],
+          "writeBoundary": "No native mutation.",
+          "coverage": [
+            "frontend/designer/scripts/config-check.mts",
+            "frontend/admin/examples/admin/support/placement-workflow-state.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-EDIT-07",
+          "title": "Method binding, inheritance, override, blank and explicit zero",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-owned-write"
+          ],
+          "setup": "Use at least two Methods, one inherited default, one product override, one unset cell and one explicit zero.",
+          "walkthrough": [
+            "Import a catalog Method.",
+            "Review inheritance.",
+            "Set override equal to default.",
+            "Enter explicit zero in a supported cell.",
+            "Undo and save."
+          ],
+          "assert": [
+            "Equal values retain explicit provenance when deliberately edited.",
+            "Blank/unset is not rendered as free.",
+            "Zero is exact only where selected.",
+            "Method import changes only the unsaved product until saved.",
+            "Shop currency change requires explicit review."
+          ],
+          "writeBoundary": "Local fixture or owned QA product.",
+          "coverage": [
+            "apps/web/test/admin/selected-product-browser.test.mts",
+            "frontend/admin/test/admin/selected-product-bindings.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-EDIT-08",
+          "title": "Variant photo matrix, sparse options and alignment review",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use actual Shopify product options/variant IDs, 64-variant T-shirt photo coverage, and local incomplete/ambiguous/long-name examples.",
+          "walkthrough": [
+            "Open variant photo group.",
+            "Change actual option row axes.",
+            "Assign a photo.",
+            "Review missing view/alignment.",
+            "Reload actual option metadata."
+          ],
+          "assert": [
+            "Every saved assignment maps to an actual variant tuple and exact photo.",
+            "Sparse/unavailable tuples remain unavailable.",
+            "Missing/retired/ambiguous options require review and are not silently dropped.",
+            "Product and view alignment overrides survive reload."
+          ],
+          "writeBoundary": "Native read-only; assignments saved only in owned QA product.",
+          "coverage": [
+            "frontend/admin/test/admin/legacy-variant-photos.test.mts",
+            "frontend/admin/test/admin/selected-product-view.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-EDIT-09",
+          "title": "Dirty state, native Save Bar, save success and fresh reload",
+          "layers": [
+            "built-local",
+            "native-owned-write"
+          ],
+          "setup": "Use an isolated product draft with a single small valid authored change.",
+          "walkthrough": [
+            "Make a valid edit.",
+            "Use Save draft.",
+            "Wait for exact confirmation.",
+            "Reload route and fresh-read the same product."
+          ],
+          "assert": [
+            "Dirty and saved values are visually distinct.",
+            "Save sends one versioned command with frozen scope.",
+            "Fresh read matches exact method/view/placement/option/price identities.",
+            "Publish state is not implied by Save."
+          ],
+          "writeBoundary": "Native save only on separately owned QA product.",
+          "coverage": [
+            "apps/web/test/admin/selected-product-browser.test.mts",
+            "apps/web/test/admin/selected-product-lifecycle-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-EDIT-10",
+          "title": "Denied, conflict, uncertain save and exact retry identity",
+          "layers": [
+            "built-local"
+          ],
+          "setup": "Control held response, 403, stale CAS version, malformed/lost reply after commit and session-storage denial.",
+          "walkthrough": [
+            "Start save.",
+            "Change or navigate while held.",
+            "Return each outcome.",
+            "Reopen/reload and explicitly retry or reload the winning version."
+          ],
+          "assert": [
+            "Access loss clears private state and fences late completion.",
+            "Conflict preserves dirty local edits until explicit reload.",
+            "Uncertain result keeps original command custody and exact retry identity.",
+            "No false saved success or duplicate write."
+          ],
+          "writeBoundary": "Synthetic browser fixture only.",
+          "coverage": [
+            "apps/web/test/admin/selected-product-lifecycle-browser.test.mts",
+            "frontend/admin/test/admin/selected-product-client.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-EDIT-11",
+          "title": "Publish readiness, pending, provider failure and exact active revision",
+          "layers": [
+            "built-local",
+            "native-owned-write"
+          ],
+          "setup": "Use incomplete draft, then a complete owned QA draft; control pending, failed, conflict and correlated active readback.",
+          "walkthrough": [
+            "Attempt Publish while incomplete.",
+            "Resolve blocking issues.",
+            "Publish once.",
+            "Read back the exact active revision."
+          ],
+          "assert": [
+            "Incomplete draft is savable if allowed but sends no publish.",
+            "Pending/failed/conflict remain distinct.",
+            "Publication success identifies exact activated revision/source.",
+            "Older active revision cannot settle a newer attempt."
+          ],
+          "writeBoundary": "No native publish in this plan.",
+          "coverage": [
+            "apps/web/test/admin/selected-product-browser.test.mts",
+            "apps/web/test/admin/selected-publication-failure-browser.test.mts",
+            "frontend/admin/test/admin/selected-product-client.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-EDIT-12",
+          "title": "Dirty leave, cancel and confirmed discard",
+          "layers": [
+            "preview-demo",
+            "built-local"
+          ],
+          "setup": "Make one edit, begin leave/route navigation and hold destination load.",
+          "walkthrough": [
+            "Request navigation.",
+            "Cancel dirty-leave dialog.",
+            "Verify current editing state.",
+            "Request leave again and confirm discard."
+          ],
+          "assert": [
+            "Cancel returns to the same usable draft.",
+            "Confirm discard restores last saved snapshot without a write.",
+            "Host navigation is not left under a stale skeleton.",
+            "Dialog state resumes when an embedded subdialog was active."
+          ],
+          "writeBoundary": "No business write.",
+          "coverage": [
+            "apps/web/test/admin/selected-product-lifecycle-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-EDIT-13",
+          "title": "Media upload, rejection, expiry and permission revocation",
+          "layers": [
+            "preview-demo",
+            "built-local"
+          ],
+          "setup": "Use supported image, unsupported/oversized image, delayed upload, expired private image, denied media read.",
+          "walkthrough": [
+            "Upload supported file.",
+            "Cancel or switch target while pending.",
+            "Retry rejected file.",
+            "Expire image/access while preview is open."
+          ],
+          "assert": [
+            "Only verified response applies to current target.",
+            "Failure provides retry/removal reason.",
+            "Late blob body cannot restore revoked private data.",
+            "Object URLs and temporary content are retired on dispose."
+          ],
+          "writeBoundary": "Synthetic fixture only.",
+          "coverage": [
+            "apps/web/test/admin/selected-product-media-browser.test.mts",
+            "frontend/admin/test/admin/selected-product-media.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-EDIT-14",
+          "title": "Independent setup copy and retained choices",
+          "layers": [
+            "built-local"
+          ],
+          "setup": "Copy from a configured product with retained production definitions, Method translations and image alignment into an empty target.",
+          "walkthrough": [
+            "Open copy dialog.",
+            "Cancel once.",
+            "Confirm in isolated fixture.",
+            "Reload the target and compare identities/labels."
+          ],
+          "assert": [
+            "Cancel sends no command.",
+            "Copy creates new product-owned identities.",
+            "Definitions/labels survive but source mutable data is not shared.",
+            "Copy requires the documented review before publication."
+          ],
+          "writeBoundary": "Synthetic fixture only; native copy needs an owned QA product.",
+          "coverage": [
+            "frontend/admin/test/admin/selected-product-copy.test.mts",
+            "apps/web/test/admin/selected-product-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-EDIT-15",
+          "title": "Merchant customer preview is unsaved and non-purchasing",
+          "layers": [
+            "preview-demo",
+            "built-local"
+          ],
+          "setup": "Use a saved product snapshot and unsaved preview snapshot, with a viewBox-only SVG upload.",
+          "walkthrough": [
+            "Open Preview.",
+            "Upload temporary preview artwork.",
+            "Change view/size.",
+            "Close preview."
+          ],
+          "assert": [
+            "Preview displays the intended unsaved snapshot.",
+            "Preview-only upload is temporary.",
+            "No production artwork/save/publish/cart request occurs.",
+            "Closing revokes preview resources."
+          ],
+          "writeBoundary": "No business write.",
+          "coverage": [
+            "apps/web/test/admin/selected-product-browser.test.mts",
+            "apps/web/test/admin/private-preview-browser.test.mts"
+          ],
+          "status": "not-run"
+        }
+      ]
+    },
+    {
+      "id": "admin.methods",
+      "demoEntry": "merchantDemo /admin/methods; original or large generated catalog.",
+      "integratedEntry": "merchantIntegrated /admin/methods; redirect alias /admin/settings/methods.",
+      "owner": "MethodsContainer, SelectedMethods, method-catalog-transport and selected Method reducer.",
+      "cases": [
+        {
+          "id": "ADM-METHOD-01",
+          "title": "Catalog loading, retry, denied state and route retirement",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use 3 and 60 product catalogs, held catalog/product-page reads, 403 and 503.",
+          "walkthrough": [
+            "Open Methods.",
+            "Observe loading.",
+            "Fail and retry.",
+            "Navigate away during catalog read and during paginated product reads."
+          ],
+          "assert": [
+            "No fake method appears in integrated recovery.",
+            "Failure is explicit/retryable.",
+            "Retired read is aborted/fenced and no later page read starts after route retirement.",
+            "Existing dispatched write keeps its journal custody."
+          ],
+          "knownFinding": "F2: intermittent native method/editor catalog failures were observed; root cause is unresolved.",
+          "writeBoundary": "No business write.",
+          "coverage": [
+            "apps/web/test/admin/selected-method-load-cancellation-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-METHOD-02",
+          "title": "Create/edit validation and saved reload",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-owned-write"
+          ],
+          "setup": "Test create and existing Method with valid/invalid name, explanation and required pricing fields.",
+          "walkthrough": [
+            "Edit fields.",
+            "Submit invalid draft.",
+            "Correct validation.",
+            "Save in controlled fixture.",
+            "Reload the Method."
+          ],
+          "assert": [
+            "Field errors identify required correction.",
+            "Cancel returns to saved values.",
+            "One exact Method version persists/reloads.",
+            "Default description/name is not fabricated as merchant data."
+          ],
+          "writeBoundary": "Local in-memory or controlled fixture; native Method save is store-wide and requires separate owner lane.",
+          "coverage": [
+            "apps/web/test/admin/selected-methods-browser.test.mts",
+            "frontend/admin/test/admin/method-catalog-transport.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-METHOD-03",
+          "title": "Unset, explicit zero, fixed/product pricing and currency review",
+          "layers": [
+            "preview-demo",
+            "built-local"
+          ],
+          "setup": "Use fixed and product pricing, blank/unset values, explicit 0.00 and a shop currency change.",
+          "walkthrough": [
+            "Switch pricing mode.",
+            "Edit amount.",
+            "Change currency observation.",
+            "Cancel review, then explicitly adopt it in a controlled fixture."
+          ],
+          "assert": [
+            "Zero and unset remain distinct.",
+            "Amounts preserve exact decimals/currency.",
+            "Loading never relabels stored amount implicitly.",
+            "Explicit equal-value review creates the documented versioned change."
+          ],
+          "writeBoundary": "Synthetic fixture only.",
+          "coverage": [
+            "apps/web/test/admin/selected-method-review-browser.test.mts",
+            "apps/web/test/admin/selected-methods-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-METHOD-04",
+          "title": "Manual/product/collection/tag assignment selection",
+          "layers": [
+            "preview-demo",
+            "built-local"
+          ],
+          "setup": "Use products with actual tags and collections, truncated collection evidence, any/all matching and a large searchable list.",
+          "walkthrough": [
+            "Open product picker.",
+            "Search/filter products/collections.",
+            "Select and cancel.",
+            "Apply manual selection.",
+            "Change any/all tag matching."
+          ],
+          "assert": [
+            "Cancel leaves staged assignment unchanged.",
+            "Apply persists exact product IDs.",
+            "Tag matching follows contract.",
+            "Incomplete catalog/collections does not silently claim complete assignment."
+          ],
+          "writeBoundary": "No native mutation.",
+          "coverage": [
+            "apps/web/test/admin/selected-methods-browser.test.mts",
+            "apps/web/test/admin/shared-controls-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-METHOD-05",
+          "title": "Duplicate and delete confirmation lifecycle",
+          "layers": [
+            "preview-demo",
+            "built-local"
+          ],
+          "setup": "Use source Method with optional assignment and duplicate name collision/storage failure.",
+          "walkthrough": [
+            "Open duplicate dialog.",
+            "Toggle assignment copy.",
+            "Exercise invalid name/failure.",
+            "Cancel.",
+            "Open delete confirmation and cancel, then delete in local fixture."
+          ],
+          "assert": [
+            "Cancel sends no write.",
+            "Duplicate uses fresh ID and exact source values.",
+            "Delete removes only selected Method and version.",
+            "X/Escape/Cancel close without stale host scrim."
+          ],
+          "writeBoundary": "Local-only or controlled fixture.",
+          "coverage": [
+            "apps/web/test/admin/selected-methods-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-METHOD-06",
+          "title": "Dirty navigation resumes staged dialog or confirms leave",
+          "layers": [
+            "preview-demo",
+            "built-local"
+          ],
+          "setup": "Dirty editor while product picker, duplicate or remove flow is active.",
+          "walkthrough": [
+            "Request route/back navigation.",
+            "Cancel leave.",
+            "Verify original subdialog and staged selections.",
+            "Confirm leave."
+          ],
+          "assert": [
+            "Cancel resumes exact staged state.",
+            "Confirm follows intended target.",
+            "Clean navigation does not ask for confirmation.",
+            "Stale dialog IDs cannot settle a newer session."
+          ],
+          "writeBoundary": "No business write.",
+          "coverage": [
+            "apps/web/test/admin/selected-methods-browser.test.mts",
+            "frontend/admin/test/admin/method-currency-state.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-METHOD-07",
+          "title": "Lost reply, idempotent replay, session loss and responsive list",
+          "layers": [
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Commit Method then lose reply, reload; separately revoke authorization and use narrow viewport with long translated Method names.",
+          "walkthrough": [
+            "Trigger save.",
+            "Drop first acknowledgement.",
+            "Reload same scope and reconcile.",
+            "Revoke access during another pending write.",
+            "Review at narrow width."
+          ],
+          "assert": [
+            "Original operation key is resumed, not duplicated.",
+            "Authorization loss scrubs private editor state.",
+            "Readonly actor cannot mutate through host callbacks.",
+            "Name scanability and actions remain usable at narrow width."
+          ],
+          "writeBoundary": "Synthetic browser fixture only.",
+          "coverage": [
+            "apps/web/test/admin/selected-methods-browser.test.mts"
+          ],
+          "status": "not-run"
+        }
+      ]
+    },
+    {
+      "id": "admin.orders",
+      "demoEntry": "merchantDemo order-demo or orders-rich; sample-order selector.",
+      "integratedEntry": "merchantIntegrated /admin/orders and /admin/orders/{purchaseId}",
+      "owner": "OrdersOverview, PurchaseArtwork, remote-read, attachment, artwork-upload and prepared-export state.",
+      "cases": [
+        {
+          "id": "ADM-ORD-01",
+          "title": "Search/filter/date/sort/page the customized order dataset",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use mixed historical orders, dates, artwork status, exact variant/quantity, cursor boundary and timezone.",
+          "walkthrough": [
+            "Search.",
+            "Change artwork filter.",
+            "Change date window/sort.",
+            "Advance page.",
+            "Open exact purchase."
+          ],
+          "assert": [
+            "Queries cover complete eligible dataset and preserve stable cursor semantics.",
+            "Selection clears on server-query change.",
+            "Order detail matches selected immutable purchase.",
+            "UI does not import ordinary unrelated Shopify orders."
+          ],
+          "writeBoundary": "No business write.",
+          "coverage": [
+            "apps/web/test/admin/purchase-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-ORD-02",
+          "title": "Orders empty, failed/retry, denied, revoked and stale results",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Return empty, 503 then success, 403/access revocation and a delayed old search response.",
+          "walkthrough": [
+            "Open each read state.",
+            "Retry transient failure.",
+            "Revoke permission while detail/preview is open.",
+            "Return stale prior query."
+          ],
+          "assert": [
+            "Empty and failure are distinct.",
+            "Retry restores current records.",
+            "Revocation clears private rows/previews.",
+            "Late data cannot reappear after revocation."
+          ],
+          "writeBoundary": "No business write.",
+          "coverage": [
+            "frontend/admin/test/admin/remote-read-state.test.mts",
+            "apps/web/test/admin/purchase-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-ORD-03",
+          "title": "Multi-select archive and batch production-sheet lifecycle",
+          "layers": [
+            "preview-demo",
+            "built-local"
+          ],
+          "setup": "Select 1, multiple and all visible matching rows; control preparation progress, invalidation, failure and download.",
+          "walkthrough": [
+            "Prepare ZIP/PDF.",
+            "Observe progress.",
+            "Change selection before download.",
+            "Retry failed preparation.",
+            "Download prepared artifact."
+          ],
+          "assert": [
+            "Artifact manifest is bound to exact selected IDs.",
+            "Changed selection invalidates prior bytes.",
+            "Preparation/download/failure remain distinct.",
+            "No arbitrary URL is treated as a verified archive manifest."
+          ],
+          "writeBoundary": "Read/export only.",
+          "coverage": [
+            "frontend/admin/src/shared/prepared-export-state.ts",
+            "apps/web/test/admin/purchase-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-ORD-04",
+          "title": "Historical detail, preview and retained expiry/erasure",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use exact paid test purchase with multiple lines/placements and cases for expired, erased, missing original, permission loss.",
+          "walkthrough": [
+            "Open detail.",
+            "Expand purchased design preview.",
+            "Expire/revoke payload during access lookup.",
+            "Refresh from a fresh scoped read."
+          ],
+          "assert": [
+            "Accepted prices, quantities, variant IDs and artwork history remain immutable.",
+            "Preview uses frozen original only, never replacement/current catalog.",
+            "Expired/erased data is removed or explicitly unavailable.",
+            "A same-version stale response cannot restore erased private pixels."
+          ],
+          "writeBoundary": "Read-only native record; synthetic expiry controls for local.",
+          "coverage": [
+            "apps/web/test/admin/purchase-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-ORD-05",
+          "title": "Artwork replacement, upload, attach and stale lock/version",
+          "layers": [
+            "preview-demo",
+            "built-local"
+          ],
+          "setup": "Use upload permission, unlocked purchase, selected line/slot and expected artwork version; separately locked/stale/version mismatch cases.",
+          "walkthrough": [
+            "Open replacement flow.",
+            "Select supported file.",
+            "Cancel once.",
+            "Attach only after inspection.",
+            "Return stale lock/version response."
+          ],
+          "assert": [
+            "Cancel sends no attach.",
+            "Only verified upload and exact expected version can attach.",
+            "Stale lock remains unchanged and requests refresh.",
+            "Permission loss removes private artwork actions.",
+            "Paid economics/history do not change."
+          ],
+          "writeBoundary": "Synthetic mutation only; no native attachment in this pass.",
+          "coverage": [
+            "frontend/admin/src/islands/purchase-attachment-state.ts",
+            "apps/web/test/admin/purchase-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-ORD-06",
+          "title": "Share link issuance, clipboard failure and exact retry",
+          "layers": [
+            "built-local"
+          ],
+          "setup": "Use original missing-artwork slot and a controlled lost issuance acknowledgement.",
+          "walkthrough": [
+            "Request link.",
+            "Lose first reply.",
+            "Retry same intent.",
+            "Simulate clipboard failure."
+          ],
+          "assert": [
+            "Only originally missing retained artwork is shareable.",
+            "Retry reuses the exact issuance request.",
+            "Clipboard failure leaves link visible/copy retry available.",
+            "No customer email is sent."
+          ],
+          "writeBoundary": "Synthetic capability issuance only; no email.",
+          "coverage": [
+            "frontend/admin/test/admin/customer-artwork-link.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-ORD-07",
+          "title": "Historical immutability under replacement and refund/reconciliation facts",
+          "layers": [
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use an order with refunds, cancelled/exception status, replacement event and reconciliation record.",
+          "walkthrough": [
+            "Inspect detail/history.",
+            "Review any available refund/reconciliation presentation.",
+            "Reload after local attachment fixture."
+          ],
+          "assert": [
+            "Provider facts are described without claiming settled payment.",
+            "Replacement becomes a new artwork event; original history remains.",
+            "No historical variant, accepted amount or purchase line is rewritten."
+          ],
+          "writeBoundary": "Read-only native; local controlled mutation.",
+          "coverage": [
+            "apps/web/test/admin/purchase-browser.test.mts"
+          ],
+          "status": "not-run"
+        }
+      ]
+    },
+    {
+      "id": "admin.settings",
+      "demoEntry": "merchantDemo /admin/settings and subroutes; settings preview API and local handoff stand-ins.",
+      "integratedEntry": "merchantIntegrated Settings routes, including explicit Privacy target.",
+      "owner": "MerchantSettings, MerchantBilling, MerchantPermissions, StorefrontSetup, MerchantTranslations, MerchantPrivacy and their state/read adapters.",
+      "cases": [
+        {
+          "id": "ADM-SET-01",
+          "title": "Settings landing, destinations and language preference",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use supported admin locales and denied browser storage.",
+          "walkthrough": [
+            "Open Settings.",
+            "Navigate to Billing, Permissions, Storefront, Translations and Privacy.",
+            "Change app language.",
+            "Reload/navigate back."
+          ],
+          "assert": [
+            "All intended routes resolve to canonical selected surfaces.",
+            "Billing and Methods aliases redirect correctly.",
+            "Language change/failure is visible and recoverable.",
+            "Shopify outer shell is excluded from app-content parity."
+          ],
+          "writeBoundary": "Local preference only; no native scope or resource change.",
+          "coverage": [
+            "apps/web/test/admin/editor-browser.test.mts",
+            "frontend/admin/src/shared/admin-i18n.ts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-SET-02",
+          "title": "Billing loading, denied, missing, trial and change states",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use provider-recognized development terms, active/trial/cancelled/pending-change, 403/404/503.",
+          "walkthrough": [
+            "Open Billing.",
+            "Observe read state.",
+            "Retry transient failure.",
+            "Open Shopify billing management handoff."
+          ],
+          "assert": [
+            "Exact provider decimals/currency and current terms are displayed.",
+            "Development $0 terms are not mistaken for fake data.",
+            "Unavailable/denied/missing do not look like inactive plan.",
+            "External Shopify management remains host-owned."
+          ],
+          "writeBoundary": "Read-only; do not change subscription.",
+          "coverage": [
+            "apps/web/test/admin/billing-browser.test.mts",
+            "frontend/admin/src/shared/billing-display.ts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-SET-03",
+          "title": "Permission check, busy, grants, decline and unknown result",
+          "layers": [
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Control current scopes, read/write capability, consent grant/decline, refused, timeout and old attempt completion.",
+          "walkthrough": [
+            "Start Check explicitly.",
+            "Observe checking state.",
+            "Return each status.",
+            "Start a new explicit attempt after failure."
+          ],
+          "assert": [
+            "No background permission request.",
+            "Busy state prevents duplicate attempts.",
+            "Declined/failed/unknown remain distinct.",
+            "Only current attempt can settle.",
+            "No scope is broadened by checking."
+          ],
+          "writeBoundary": "Synthetic fixture only; real consent not triggered.",
+          "coverage": [
+            "apps/web/test/admin/editor-browser.test.mts",
+            "frontend/admin/src/islands/permissions-state.ts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-SET-04",
+          "title": "Storefront setup and Shopify theme handoff",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use active embed, missing embed, effective/pending manual block, contradictory and transient unknown eligibility.",
+          "walkthrough": [
+            "Open Storefront setup.",
+            "Check status.",
+            "Open theme editor link.",
+            "Return without saving theme changes.",
+            "Recheck after section reload."
+          ],
+          "assert": [
+            "Readiness reflects observed effective publication.",
+            "Unknown remains retryable and does not suppress another eligible surface.",
+            "Manual block is not duplicated/suppressed.",
+            "Local handoff is explicitly explanatory, not the real theme editor."
+          ],
+          "writeBoundary": "No theme write.",
+          "coverage": [
+            "frontend/admin/test/admin/storefront-setup.test.mts",
+            "apps/web/test/admin/editor-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-SET-05",
+          "title": "Translation overview, supported groups and Add language modal",
+          "layers": [
+            "preview-demo",
+            "built-local"
+          ],
+          "setup": "Use en plus one added locale; inspect customizer and Other text groups.",
+          "walkthrough": [
+            "Open Translations.",
+            "Open Add language.",
+            "Cancel with X, Escape and Cancel.",
+            "Reopen and add a supported locale in a local fixture."
+          ],
+          "assert": [
+            "Every Other text section has a distinct localized category label.",
+            "Section dropdown and overview use same names.",
+            "Cancel is write-free and closes host/app modal.",
+            "Added locale is not mistaken for published Shopify language."
+          ],
+          "knownFinding": "F5: host/language/startup group labels currently fall back to Unavailable in six admin catalogs.",
+          "writeBoundary": "Local browser preference or storage fixture only.",
+          "coverage": [
+            "frontend/admin/src/islands/MerchantTranslations.tsx",
+            "docs/delivery/notes/whole-admin-audit-luna-2026-11-08.md"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-SET-06",
+          "title": "Translation edit, plural forms, variables and validation",
+          "layers": [
+            "preview-demo",
+            "built-local"
+          ],
+          "setup": "Use message, plural-count forms, required placeholders, long text and a locale with sparse defaults.",
+          "walkthrough": [
+            "Select section.",
+            "Search and paginate.",
+            "Edit fields.",
+            "Submit invalid placeholder/plural content.",
+            "Correct and clear validation."
+          ],
+          "assert": [
+            "Query/page reset is stable.",
+            "Default and authored values remain distinct.",
+            "Required variables and plural forms are validated.",
+            "Error focuses the exact field/key and preserves unrelated drafts."
+          ],
+          "writeBoundary": "Local wording storage only.",
+          "coverage": [
+            "frontend/admin/src/islands/customer-translations-state.ts",
+            "frontend/admin/src/islands/customer-translations-editor-state.ts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-SET-07",
+          "title": "Translation save pending, failure, stale completion and immediate use",
+          "layers": [
+            "built-local"
+          ],
+          "setup": "Hold save, fail storage, attempt locale switch/edit, then return delayed response from previous request.",
+          "walkthrough": [
+            "Edit one message.",
+            "Save.",
+            "Change/edit while save is pending.",
+            "Return failure or stale success.",
+            "Reload and read current locale."
+          ],
+          "assert": [
+            "No concurrent snapshot is overwritten.",
+            "Failure preserves dirty draft and offers retry.",
+            "Old response does not replace newer locale/state.",
+            "Successful saved wording is available immediately to the selected customer UI."
+          ],
+          "writeBoundary": "Synthetic storage fixture only.",
+          "coverage": [
+            "frontend/admin/src/islands/customer-translations-workflow.ts",
+            "frontend/admin/test/admin/customer-translations-remote.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-SET-08",
+          "title": "Translation discard, reset and remove confirmations",
+          "layers": [
+            "preview-demo",
+            "built-local"
+          ],
+          "setup": "Use dirty existing locale, clean custom locale, attempted English removal and storage clear success/failure.",
+          "walkthrough": [
+            "Edit a message.",
+            "Discard.",
+            "Reset language with cancel/confirm.",
+            "Remove custom language with cancel/confirm.",
+            "Reload."
+          ],
+          "assert": [
+            "English cannot be removed.",
+            "Cancel preserves draft.",
+            "Confirmed reset/remove affects only selected locale.",
+            "Storage clear failure remains an error rather than a false reset."
+          ],
+          "writeBoundary": "Local storage fixture only.",
+          "coverage": [
+            "frontend/admin/src/islands/customer-translations-state.ts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-SET-09",
+          "title": "Privacy capability and exact read/export recovery",
+          "layers": [
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use allowed privacy capability, denied/missing capability, failed read and successful exact export.",
+          "walkthrough": [
+            "Open Privacy from allowed Settings row.",
+            "Fail first lookup.",
+            "Retry.",
+            "Download exact requested data."
+          ],
+          "assert": [
+            "Row appears only for authorized capability.",
+            "Access loss removes private state.",
+            "Export covers exact requested scope and makes no customer-delivery claim.",
+            "No demo data is exported from integrated route."
+          ],
+          "writeBoundary": "Read/download only.",
+          "coverage": [
+            "apps/web/test/admin/privacy-browser.test.mts",
+            "apps/web/test/admin/editor-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ADM-SET-10",
+          "title": "Unavailable application configuration and no private bootstrap",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Missing/invalid Shopify client configuration and API read 503.",
+          "walkthrough": [
+            "Open unavailable route.",
+            "Observe recovery link.",
+            "Inspect request log before configured app is available."
+          ],
+          "assert": [
+            "503 is explicit and recoverable.",
+            "No private business request is sent before app bootstrap is valid.",
+            "No permission, billing or product state is inferred from shell failure."
+          ],
+          "writeBoundary": "No business write.",
+          "coverage": [
+            "apps/web/test/admin/shared-controls-browser.test.mts"
+          ],
+          "status": "not-run"
+        }
+      ]
+    },
+    {
+      "id": "host.crossCutting",
+      "demoEntry": "Local merchant preview iframe/host or customer Vite preview frame.",
+      "integratedEntry": "Actual Shopify App Home iframe, storefront theme modal/frame, preview route.",
+      "cases": [
+        {
+          "id": "HOST-01",
+          "title": "Equal app-content width and host-owned crop",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Set matched viewport and record inner app document/frame client width.",
+          "walkthrough": [
+            "Capture selected surface in local preview.",
+            "Capture same state/record in integrated host.",
+            "Crop host-owned chrome and compare inner content."
+          ],
+          "assert": [
+            "Recorded CSS widths match.",
+            "Shopify navigation/header/cart/theme controls are excluded.",
+            "Differences caused by product shape or width are not filed as layout regressions."
+          ],
+          "writeBoundary": "No business write.",
+          "status": "not-run"
+        },
+        {
+          "id": "HOST-02",
+          "title": "Admin route heading, hydration and navigation readiness",
+          "layers": [
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Open fresh route and navigate between Home, Products, Orders, Methods and Settings with a held destination read.",
+          "walkthrough": [
+            "Observe initial placeholders.",
+            "Start navigation.",
+            "Cancel or retire pending transition.",
+            "Wait for actual destination reveal and Bridge readiness."
+          ],
+          "assert": [
+            "Heading/actions match current route only after both gates.",
+            "Outgoing page remains usable until navigation is accepted.",
+            "Retired route cannot export late heading/actions.",
+            "No stuck skeleton."
+          ],
+          "writeBoundary": "No business write.",
+          "coverage": [
+            "apps/web/test/admin/page-ready-browser.test.mts",
+            "apps/web/test/admin/editor-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "HOST-03",
+          "title": "Dialog close, keyboard, focus and host scrim matrix",
+          "layers": [
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Run on selected dialogs across Add views, variant photo, Method picker/duplicate/remove, Add language, order preview and customer artwork.",
+          "walkthrough": [
+            "Open by real user control.",
+            "Tab/Shift+Tab.",
+            "Press Escape.",
+            "Use X and Cancel.",
+            "Reopen.",
+            "Check focus and host hit-testing."
+          ],
+          "assert": [
+            "Close behavior is consistent with each selected dialog contract.",
+            "Focus returns to the opener.",
+            "No unconfirmed selection/write is committed.",
+            "Native Shopify modal scrims are fully removed after close."
+          ],
+          "knownFinding": "Includes F1; do not accept standalone Polaris fallback as proof of native App Bridge modal cleanup.",
+          "writeBoundary": "No business write.",
+          "status": "not-run"
+        },
+        {
+          "id": "HOST-04",
+          "title": "Product photo preparation under the production connection policy",
+          "layers": [
+            "built-local",
+            "native-owned-write"
+          ],
+          "setup": "Use a supported PNG/JPEG/WebP on an owned DEV product with the production connect-src policy. The picker prepares a bounded WebP data URL.",
+          "walkthrough": [
+            "Choose the actual file through Add views.",
+            "Observe local preparation, authenticated inspected upload and usable preview.",
+            "Select a view, save the owned setup and reload.",
+            "Exercise a retired upload and an explicit failure without losing existing setup."
+          ],
+          "assert": [
+            "Local data images are decoded without a forbidden data connection or weakened CSP.",
+            "PNG bytes retain upload UUID and current setup authority.",
+            "Private preview custody remains scoped and is revoked on disposal.",
+            "Fresh saved readback contains the owned image identity and intended view."
+          ],
+          "writeBoundary": "Built fixture or owned DEV product only. No source-store upload, publishing or checkout.",
+          "coverage": [
+            "apps/web/test/admin/selected-product-media-csp-browser.test.mts",
+            "apps/web/test/admin/selected-product-media-browser.test.mts",
+            "frontend/admin/test/admin/selected-product-media.test.mts"
+          ],
+          "knownFinding": "QA-010 has a local red/green cause reproduction and independent review; exact native upload and save readback remain pending.",
+          "status": "not-run"
+        }
+      ]
+    },
+    {
+      "id": "customer.designer",
+      "demoEntry": "customerDemo /scenarios then Start empty or Preview example.",
+      "integratedEntry": "customerIntegrated native product trigger; see also customer host/preview cases.",
+      "owner": "Selected Designer, designer-state.ts, runtime.ts, live-config mapping, live upload/quote/cart ports and Shopify cart adapter.",
+      "cases": [
+        {
+          "id": "CUS-01",
+          "title": "Open startup, direct entry and frame reuse",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use an eligible published actual product and a fresh tab with no prior Designer draft.",
+          "walkthrough": [
+            "Open canonical Shopify product URL.",
+            "Activate the real Customize trigger.",
+            "Close manually.",
+            "Reopen from the same product page."
+          ],
+          "assert": [
+            "Selected Designer appears in its frame without developer host page.",
+            "Opening is prompt and reuses only current-context preparation.",
+            "Close returns to Shopify and reopen resumes current draft.",
+            "No private/cart mutation happens on idle prewarm."
+          ],
+          "coverage": [
+            "apps/storefront/test/buyer-browser.test.mts",
+            "apps/storefront/test/opening-prewarm-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "CUS-02",
+          "title": "Startup asset/config failure, retry and reconnect",
+          "layers": [
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Fail configuration, frame asset, stylesheet and handshake separately; then restore each.",
+          "walkthrough": [
+            "Open trigger.",
+            "Observe bounded loading/error panel.",
+            "Retry.",
+            "Disconnect/reconnect or context-change while loading."
+          ],
+          "assert": [
+            "Error is visible and retryable.",
+            "No unstyled or sample-content success is claimed.",
+            "Reconnect opens only the matching current context.",
+            "Stale preparation is aborted/retired."
+          ],
+          "coverage": [
+            "apps/storefront/test/buyer-browser.test.mts",
+            "apps/storefront/test/opening-prewarm-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "CUS-03",
+          "title": "Shopify variant and quantity handoff on first entry",
+          "layers": [
+            "native-read-only"
+          ],
+          "setup": "Fresh product tab with explicit real selected variant and Shopify quantity; no existing Designer draft.",
+          "walkthrough": [
+            "Select a real color/size and quantity on Shopify.",
+            "Open Designer.",
+            "Compare selected presentation, quantities and review."
+          ],
+          "assert": [
+            "Record whether current product selection seeds an explicitly supplied new draft; if not, classify as owner UX decision.",
+            "Other variants remain zero unless intentionally supplied.",
+            "An existing resumed draft is never overwritten by current product controls."
+          ],
+          "knownFinding": "F4: actual Shopify selections were discarded on first Designer entry; no wrong cart identity was established.",
+          "writeBoundary": "Read-only; do not cart-submit.",
+          "coverage": [
+            "apps/storefront/test/theme-integration-browser.test.mts",
+            "docs/delivery/notes/whole-customer-audit-luna-2026-11-08.md"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "CUS-04",
+          "title": "Artwork and position dialogs, focus and no unintended application",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use a product with at least two views/placements, one empty and one with existing artwork.",
+          "walkthrough": [
+            "Open artwork chooser.",
+            "Choose existing upload, browse/upload or change position/color.",
+            "Cancel each path.",
+            "Reopen and apply intentionally."
+          ],
+          "assert": [
+            "Dialog remains within selected frame, returns focus and preserves target.",
+            "Cancel does not change prints or quantity.",
+            "Intentional selection applies to exact placement.",
+            "Fixed UI remains the same selected interaction, not a host-owned screen."
+          ],
+          "coverage": [
+            "frontend/designer/scripts/runtime-check.mts",
+            "apps/storefront/test/buyer-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "CUS-05",
+          "title": "Upload progress, validation, inspection and stale target",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use PNG/JPG/allowed SVG, oversized, unsupported, malformed/rejected SVG, delayed upload, expiration and upload abort.",
+          "walkthrough": [
+            "Upload supported artwork.",
+            "Observe transfer/processing/verification.",
+            "Cancel or switch placement while pending.",
+            "Retry an actionable failure."
+          ],
+          "assert": [
+            "Progress reflects bounded real phases, not invented percentages.",
+            "Only accepted inspected artwork is applied.",
+            "Cancellation, newer token or different target ignores late result.",
+            "Failure explains supported recovery and keeps design."
+          ],
+          "knownFinding": "F7: text-containing SVG is intentionally rejected but current copy gives limited actionable guidance; do not weaken inspection policy.",
+          "writeBoundary": "Local fake upload for demo only; use real service in native path.",
+          "coverage": [
+            "frontend/designer/scripts/runtime-check.mts",
+            "frontend/designer/scripts/customer-localization-browser-check.mts",
+            "apps/storefront/test/buyer-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "CUS-06",
+          "title": "Apply existing artwork, remove artwork and position undo",
+          "layers": [
+            "preview-demo",
+            "built-local"
+          ],
+          "setup": "Use multiple saved artworks and placements with independent artwork/size/movement values.",
+          "walkthrough": [
+            "Apply existing artwork to one placement.",
+            "Remove it.",
+            "Use Undo.",
+            "Change size/position and Undo that separately."
+          ],
+          "assert": [
+            "Per-placement artwork is independent.",
+            "Artwork removal recovery is distinct from size/position Undo.",
+            "Undo restores exact previously accepted choice only once.",
+            "Expired preview refresh does not alter production intent."
+          ],
+          "coverage": [
+            "frontend/designer/scripts/runtime-check.mts",
+            "frontend/designer/scripts/localization-state-check.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "CUS-07",
+          "title": "View/placement and artwork-size movement behavior",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use multi-view/multi-placement T-shirt and one fixed-position product.",
+          "walkthrough": [
+            "Switch view/position.",
+            "Expand/collapse card.",
+            "Choose supported size/method.",
+            "Move/reset/undo where allowed.",
+            "Revisit other view."
+          ],
+          "assert": [
+            "Each placement retains its independent artwork, method, size and position.",
+            "Movement clamps full artwork footprint inside allowed area.",
+            "Fixed-position product omits movement controls.",
+            "View switch does not clear unrelated quantities."
+          ],
+          "coverage": [
+            "apps/storefront/test/buyer-browser.test.mts",
+            "frontend/designer/scripts/config-check.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "CUS-08",
+          "title": "Sparse quantity matrix, validation and adaptive layout",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use actual 64-variant/five-or-more option product and local one-size, sparse, three-axis, long-label and unavailable-retained-selection scenarios.",
+          "walkthrough": [
+            "Search/choose color and size.",
+            "Enter mixed quantities.",
+            "Try negative/fraction/over-limit values.",
+            "Remove unavailable retained choice.",
+            "Focus row then switch preview color."
+          ],
+          "assert": [
+            "Only exact Shopify variant tuples are editable.",
+            "Invalid quantities block progression.",
+            "Unselected color preview is independent from quantity rows.",
+            "One-size/named options do not show fabricated axes."
+          ],
+          "coverage": [
+            "frontend/designer/scripts/quantity-entry-check.mts",
+            "frontend/designer/scripts/variant-matrix-check.mts",
+            "apps/storefront/test/buyer-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "CUS-09",
+          "title": "Color row add/remove, undo and timeout ownership",
+          "layers": [
+            "preview-demo",
+            "built-local"
+          ],
+          "setup": "Use three allowed colors with distinct quantities and overlapping recovery timers.",
+          "walkthrough": [
+            "Add a color row.",
+            "Enter quantities.",
+            "Remove it.",
+            "Undo.",
+            "Remove another row before the first recovery expires."
+          ],
+          "assert": [
+            "Removed quantities restore exactly.",
+            "Recreating a row retires old Undo.",
+            "Old timeout token cannot clear newer recovery.",
+            "Color preview and quantity selection stay distinct."
+          ],
+          "coverage": [
+            "frontend/designer/scripts/runtime-check.mts",
+            "frontend/designer/scripts/localization-state-check.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "CUS-10",
+          "title": "Step progression, validation and edit/back navigation",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Test product requiring artwork, product allowing deferred artwork, no quantities, invalid quantity and complete design.",
+          "walkthrough": [
+            "Attempt Continue with missing required data.",
+            "Resolve issue.",
+            "Advance to Quantities/Review.",
+            "Go Back/Edit and return."
+          ],
+          "assert": [
+            "Validation identifies required field.",
+            "Deferred-artwork policy follows published placement.",
+            "Back/edit preserves artwork, quantities and focus.",
+            "No quote/cart request starts for ineligible design."
+          ],
+          "coverage": [
+            "frontend/designer/scripts/customer-localization-browser-check.mts",
+            "apps/storefront/test/buyer-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "CUS-11",
+          "title": "Quote preparation remains cancellable and exact review is authoritative",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use actual shop currency and configured prices; hold quote preparation, edit quantities and compare with local estimate.",
+          "walkthrough": [
+            "Enter Review.",
+            "Hold current quote.",
+            "Edit/back while pending.",
+            "Return matching quote.",
+            "Change intent and return stale quote."
+          ],
+          "assert": [
+            "Review preparation is not cart-submit pending; selected controls remain usable.",
+            "Only matching current intent quote is shown.",
+            "Production amount/currency/minor-unit strings are server authoritative.",
+            "Local estimate is clearly a demo and cannot enable purchase."
+          ],
+          "coverage": [
+            "apps/storefront/test/buyer-browser.test.mts",
+            "frontend/designer/scripts/runtime-check.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "CUS-12",
+          "title": "Quote expiration, decline and explicit repair",
+          "layers": [
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Return expired proposal, known expiry, REVIEW_REQUIRED/unavailable retained lookup, current cart drift and configuration change.",
+          "walkthrough": [
+            "Review current quote.",
+            "Expire/decline it.",
+            "Retry without changing design.",
+            "Open explicit repair and review current cart."
+          ],
+          "assert": [
+            "A declined/resolved command is distinct from lost acknowledgement.",
+            "No new proposal/key is allocated until original identity is reconciled.",
+            "Unavailable retained lookup does not silently clear ownership.",
+            "Current cart drift is checked before acceptance."
+          ],
+          "knownFinding": "Q1 from selected-state audit: repeated acceptance/prepare path needs explicit decline-vs-unknown recovery classification.",
+          "writeBoundary": "Local controlled API only; no native cart action.",
+          "coverage": [
+            "apps/storefront/test/buyer-browser.test.mts",
+            "apps/storefront/test/selected-repair-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "CUS-13",
+          "title": "Cart add/update receipt, failure and navigation",
+          "layers": [
+            "built-local",
+            "native-owned-write"
+          ],
+          "setup": "Use one isolated matching cart intent; control applied, malformed, failed, delayed and unknown receipt.",
+          "walkthrough": [
+            "Accept exact quote.",
+            "Submit once.",
+            "Observe pending.",
+            "Return each receipt category.",
+            "Read cart independently before any retry."
+          ],
+          "assert": [
+            "Only matching verified Shopify request/receipt closes and navigates to locale-native /cart.",
+            "Failed/unknown stays on product page with design intact.",
+            "No duplicate submit during pending.",
+            "Retry preserves original idempotency identity after reconciliation."
+          ],
+          "knownFinding": "F3: one prior native add attempt failed and independent readback showed an empty cart. Do not replay until that attempt's evidence is reconciled.",
+          "writeBoundary": "Native cart mutation requires separate authorized, isolated QA lane; no checkout.",
+          "coverage": [
+            "apps/storefront/test/buyer-browser.test.mts",
+            "apps/storefront/test/selected-designer-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "CUS-14",
+          "title": "Close/reopen, same design, new design and dirty design switch",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use unsaved draft, accepted cart design, same design reopen and a second owned cart design.",
+          "walkthrough": [
+            "Edit then close manually/Escape.",
+            "Reopen.",
+            "Select same design.",
+            "Select another unchanged design.",
+            "Edit then switch and cancel/confirm."
+          ],
+          "assert": [
+            "Ordinary close retains draft without discard prompt.",
+            "Same unchanged design resumes.",
+            "Only actual dirty different-design switch confirms.",
+            "Quote review requirement alone is not dirty.",
+            "Start new resets intended content but preserves approved artwork library semantics."
+          ],
+          "coverage": [
+            "apps/storefront/test/buyer-browser.test.mts",
+            "apps/storefront/test/selected-designer-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "CUS-15",
+          "title": "Retained production options and cart edit restore",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use a product carrying immutable production-choice definitions/labels and saved cart design with accepted values.",
+          "walkthrough": [
+            "Open existing design.",
+            "Restore values.",
+            "Change only one option.",
+            "Back/review/fail and retry."
+          ],
+          "assert": [
+            "Definitions, labels and accepted values survive mapping/restoration.",
+            "Unchanged choices are not dirty; changed choice creates a distinct attempt.",
+            "A failed/unavailable choice never becomes a default/free option.",
+            "Unknown or retired choice needs explicit removal/review."
+          ],
+          "coverage": [
+            "frontend/designer/scripts/runtime-check.mts",
+            "apps/storefront/test/buyer-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "CUS-16",
+          "title": "Preview media expiry, renewal and terminal unavailability",
+          "layers": [
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Expire signed preview for same publication, then change publication and expire accepted asset.",
+          "walkthrough": [
+            "Open preview.",
+            "Expire one URL.",
+            "Refresh same revision.",
+            "Return unavailable result.",
+            "Continue to exact review."
+          ],
+          "assert": [
+            "Renewal can replace media only from same published revision.",
+            "Terminal loss does not revive artwork or discard production choices.",
+            "No stale URL or changed price is trusted.",
+            "Recovery remains explicit."
+          ],
+          "coverage": [
+            "apps/storefront/test/buyer-browser.test.mts",
+            "frontend/designer/scripts/runtime-check.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "CUS-17",
+          "title": "Theme, customer language, dark/light and narrow viewport",
+          "layers": [
+            "preview-demo",
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use theme preference absent/explicit, valid store locale, browser fallback, wording overlay, 390 and 320 CSS px.",
+          "walkthrough": [
+            "Open in light/dark.",
+            "Change language while invalid input/upload/quote is pending.",
+            "Switch theme.",
+            "Check long product/placement/error labels."
+          ],
+          "assert": [
+            "Language/theme changes preserve design, validation and focus.",
+            "Host locale wins when valid; browser fallback only without host context.",
+            "No horizontal overflow or clipped essential control at sampled widths.",
+            "Shopify-owned language/theme controls are excluded from comparison."
+          ],
+          "coverage": [
+            "frontend/designer/scripts/customer-localization-browser-check.mts",
+            "frontend/designer/README.md"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "CUS-18",
+          "title": "Native section, variant, quick-add and Firefox lifecycle",
+          "layers": [
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Open actual product in Chromium and Firefox; vary section reload, variant, quick-add and theme-editor lifecycle.",
+          "walkthrough": [
+            "Mount eligible trigger.",
+            "Open Designer.",
+            "Change variant/context.",
+            "Reload theme section.",
+            "Disconnect/reconnect frame.",
+            "Repeat Firefox with empty referrer."
+          ],
+          "assert": [
+            "Frame only owns current product/session.",
+            "Transient eligibility failure is retryable without polling or replacing ordinary purchase controls.",
+            "No stale dialog/scroll lock/focus leak.",
+            "Firefox parent/source/origin/channel checks work without referrer."
+          ],
+          "coverage": [
+            "apps/storefront/test/theme-integration-browser.test.mts",
+            "apps/storefront/test/theme-liquid-browser.test.mts",
+            "apps/storefront/test/buyer-browser.test.mts"
+          ],
+          "status": "not-run"
+        }
+      ]
+    },
+    {
+      "id": "customer.merchantPreview",
+      "demoEntry": "Local product configuration preview.",
+      "integratedEntry": "merchantCustomerPreview /designer-preview",
+      "cases": [
+        {
+          "id": "PREVIEW-01",
+          "title": "Nonce-bound unsaved customer preview with temporary artwork",
+          "layers": [
+            "preview-demo",
+            "built-local"
+          ],
+          "setup": "Use current product snapshot, nonce and valid same-origin opener; separately test wrong origin/nonce and invalid product snapshot.",
+          "walkthrough": [
+            "Open Preview.",
+            "Observe ready/error.",
+            "Upload temporary image.",
+            "Close window."
+          ],
+          "assert": [
+            "Only current opener/origin/nonce is accepted once.",
+            "Preview error has actionable bounded reason.",
+            "Upload stays object-URL local.",
+            "No production upload/save/publish/cart request and object URLs are revoked."
+          ],
+          "coverage": [
+            "frontend/designer/src/artwork-preview-config.ts",
+            "apps/storefront/src/designer/admin-preview.tsx",
+            "apps/web/test/admin/private-preview-browser.test.mts"
+          ],
+          "status": "not-run"
+        }
+      ]
+    },
+    {
+      "id": "customer.postOrderArtwork",
+      "demoEntry": "No customer capability portal equivalent in the isolated UI demo.",
+      "integratedEntry": "postOrderCustomerArtwork /artwork-upload#capability=\u2026",
+      "owner": "mountCustomerArtwork, secure post-order API, real artwork uploader and fill-missing-only server contract.",
+      "cases": [
+        {
+          "id": "ARTWORK-01",
+          "title": "Capability rejection, loading, retry and completed state",
+          "layers": [
+            "built-local",
+            "native-read-only"
+          ],
+          "setup": "Use malformed/missing capability, valid test capability, failed read, expired capability, no configuration and zero missing slots.",
+          "walkthrough": [
+            "Open each route state.",
+            "Observe loading/unavailable.",
+            "Retry valid transient failure.",
+            "Close completed portal and refresh view."
+          ],
+          "assert": [
+            "Capability fragment is scrubbed from location before later navigation.",
+            "Missing/expired capability reveals no purchase data.",
+            "No-missing-slot state is clearly complete.",
+            "Load failure is retryable and locale-aware."
+          ],
+          "writeBoundary": "Read-only except later attach case; no email dispatch.",
+          "coverage": [
+            "apps/storefront/test/customer-artwork-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ARTWORK-02",
+          "title": "Fill one originally missing slot with verified artwork",
+          "layers": [
+            "built-local",
+            "native-owned-write"
+          ],
+          "setup": "Use valid scoped capability, exact purchase/version and one or more missing artwork slots.",
+          "walkthrough": [
+            "Select missing slot.",
+            "Upload supported image.",
+            "Observe verification.",
+            "Attach once.",
+            "Reload portal to show next remaining slot."
+          ],
+          "assert": [
+            "Attachment targets only currently missing slot.",
+            "Fresh version/slot read is checked at commit.",
+            "Completion is idempotent and reopens on next remaining group.",
+            "No cart, price, quantity or existing artwork changes."
+          ],
+          "writeBoundary": "Synthetic in local test; native upload only with a separately supplied already-valid test capability.",
+          "coverage": [
+            "apps/storefront/test/customer-artwork-browser.test.mts"
+          ],
+          "status": "not-run"
+        },
+        {
+          "id": "ARTWORK-03",
+          "title": "Concurrent fill, stale slot and ambiguous attachment retry",
+          "layers": [
+            "built-local"
+          ],
+          "setup": "Two tabs target same missing slot; make one attach succeed while the other's initial read is stale; separately lose acknowledgement after command.",
+          "walkthrough": [
+            "Start both tab reads.",
+            "Complete first attachment.",
+            "Submit stale second.",
+            "Reconcile ambiguous first result using same request identity."
+          ],
+          "assert": [
+            "Only first valid attach commits.",
+            "Second sees slot already filled and cannot replace it.",
+            "Unknown acknowledgement retries exact same attach identity only.",
+            "Neither path can alter cart or paid economics."
+          ],
+          "writeBoundary": "Controlled API fixture only.",
+          "coverage": [
+            "apps/storefront/test/customer-artwork-browser.test.mts"
+          ],
+          "status": "not-run"
+        }
+      ]
+    }
+  ],
+  "knownFindings": [
+    {
+      "id": "F1",
+      "summary": "Native Add views X/Escape did not close; Cancel did close. Shared modal lifecycle requires host-aware replay.",
+      "caseIds": [
+        "ADM-EDIT-02",
+        "HOST-03"
+      ],
+      "source": "docs/delivery/notes/whole-product-integration-audit-2026-11-08.md"
+    },
+    {
+      "id": "F2",
+      "summary": "Intermittent native Methods/product editor read failure; cause unconfirmed.",
+      "caseIds": [
+        "ADM-EDIT-01",
+        "ADM-METHOD-01"
+      ],
+      "source": "docs/delivery/notes/whole-product-integration-audit-2026-11-08.md"
+    },
+    {
+      "id": "F3",
+      "summary": "One native Add to cart attempt failed and was read back as empty. Reconcile original attempt before any new mutation.",
+      "caseIds": [
+        "CUS-13"
+      ],
+      "source": "docs/delivery/notes/whole-product-integration-audit-2026-11-08.md"
+    },
+    {
+      "id": "F4",
+      "summary": "Shopify selection was not carried into a fresh Designer; ownership is a UX decision.",
+      "caseIds": [
+        "CUS-03"
+      ],
+      "source": "docs/delivery/notes/whole-customer-audit-luna-2026-11-08.md"
+    },
+    {
+      "id": "F5",
+      "summary": "Translations host/language/startup group labels fall back to Unavailable.",
+      "caseIds": [
+        "ADM-SET-05"
+      ],
+      "source": "docs/delivery/notes/whole-admin-audit-luna-2026-11-08.md"
+    },
+    {
+      "id": "F6",
+      "summary": "Home page-only published product helper can omit test invitation when a qualifying product is on a later page.",
+      "caseIds": [
+        "ADM-HOME-02"
+      ],
+      "source": "docs/delivery/notes/whole-admin-audit-luna-2026-11-08.md"
+    },
+    {
+      "id": "F7",
+      "summary": "Intentional SVG policy rejection has limited actionable recovery copy.",
+      "caseIds": [
+        "CUS-05"
+      ],
+      "source": "docs/delivery/notes/whole-product-integration-audit-2026-11-08.md"
+    },
+    {
+      "id": "E1",
+      "summary": "Flattened production package externals were not qualified in a clean relocated Linux package.",
+      "caseIds": [
+        "HOST-02"
+      ],
+      "source": "docs/delivery/notes/whole-product-integration-audit-2026-11-08.md"
+    },
+    {
+      "id": "Q1",
+      "summary": "Declined quote/review recovery must distinguish resolved rejection from unknown acknowledgement before allocating another proposal/key.",
+      "caseIds": [
+        "CUS-12"
+      ],
+      "source": "docs/architecture/selected-ui-state-audit.md"
+    }
+  ],
+  "canonicalIssueIds": {
+    "F1": "QA-001",
+    "F2": "QA-002",
+    "F3": "QA-003",
+    "F4": "QA-004",
+    "F5": "QA-005",
+    "F6": "QA-006",
+    "F7": "QA-007",
+    "E1": "QA-008"
+  }
+}
