@@ -1,0 +1,51 @@
+{
+  "nodes": [
+    {
+      "id": "gid://shopify/Product/10590416175387",
+      "handle": "qa-legacy-import-superfunny-t-shirt",
+      "status": "ACTIVE",
+      "publishedAt": "2026-11-08T21:54:39Z",
+      "onlineStoreUrl": null
+    },
+    {
+      "id": "gid://shopify/Product/10590398152987",
+      "handle": "qa-legacy-import-superfunny-dames-t-shirt",
+      "status": "ACTIVE",
+      "publishedAt": "2026-11-08T21:53:54Z",
+      "onlineStoreUrl": null
+    },
+    {
+      "id": "gid://shopify/Product/10590397694235",
+      "handle": "qa-legacy-import-superfunny-trui",
+      "status": "ACTIVE",
+      "publishedAt": "2026-11-08T21:53:56Z",
+      "onlineStoreUrl": null
+    },
+    {
+      "id": "gid://shopify/Product/10590396350747",
+      "handle": "qa-legacy-import-superfunny-polo",
+      "status": "ACTIVE",
+      "publishedAt": "2026-11-08T21:53:58Z",
+      "onlineStoreUrl": null
+    },
+    {
+      "id": "gid://shopify/Product/10590396317979",
+      "handle": "qa-legacy-import-superfunny-hoodie",
+      "status": "ACTIVE",
+      "publishedAt": "2026-11-08T21:54:00Z",
+      "onlineStoreUrl": null
+    },
+    {
+      "id": "gid://shopify/Product/10590373970203",
+      "handle": "qa-legacy-import-superfunny-muts",
+      "status": "ACTIVE",
+      "publishedAt": "2026-11-08T21:54:01Z",
+      "onlineStoreUrl": null
+    }
+  ],
+  "store": "insignia-rewrite-dev.myshopify.com",
+  "observedAt": "2026-11-08T22:03:45.285694+00:00",
+  "method": "Six allowlisted productUpdate status ACTIVE commands; missing unisex OnlineStore channel selected via native Shopify UI and Save. Fresh AdminGraphQL readback and native list confirm all six Active and publishedAt nonnull.",
+  "insigniaConfiguration": "Catalog publication only. Insignia authoring and publication remain manual UI work.",
+  "evidence": "docs/delivery/evidence/frontend-qa-2026-11-08/root-round2-six-active-products.jpg"
+}

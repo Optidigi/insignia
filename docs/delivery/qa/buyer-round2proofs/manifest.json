@@ -1,0 +1,41 @@
+{
+  "schema": "insignia.native-buyer-qa-proof-set.v1",
+  "suite": "buyer-round2",
+  "store": "insignia-rewrite-dev.myshopify.com",
+  "productId": "10588458647835",
+  "lineVariantId": "54552023302427",
+  "variant": "Zwart / XS",
+  "states": {
+    "afterAdd": {
+      "quantity": 1,
+      "unitPriceUSD": "17.45",
+      "cartTotalUSD": "17.45"
+    },
+    "afterQuantityUpdateAndFreshCartReload": {
+      "quantity": 2,
+      "unitPriceUSD": "9.95",
+      "cartTotalUSD": "19.90",
+      "reviewControlPresent": false,
+      "reviewRequiredWarningPresent": false,
+      "checkoutEnabled": true
+    },
+    "afterRestoreToOne": {
+      "quantity": 1,
+      "unitPriceUSD": "17.45"
+    },
+    "afterRemoveAndFreshCartReload": {
+      "empty": true
+    }
+  },
+  "screenshots": {
+    "qty1Restored": "../../evidence/frontend-qa-2026-11-08/buyer-round2-cart-qty1-restored.jpg",
+    "qty2AfterReload": "../../evidence/frontend-qa-2026-11-08/buyer-round2-cart-qty2-after-reload.jpg",
+    "emptyAfterRemoval": "../../evidence/frontend-qa-2026-11-08/buyer-round2-cart-empty-after-removal.jpg"
+  },
+  "limits": [
+    "The Designer frame was loaded before the 22:05:03Z runtime change; the subsequent cart page reload did not prove the current Designer bundle.",
+    "Two color/view previews showed the localized image-load message; destination photo mapping and URL freshness were not verified.",
+    "No server-side cart carrier/property conclusion was made.",
+    "No checkout or order was created."
+  ]
+}

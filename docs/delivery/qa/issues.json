@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-08T21:48:29.270360+00:00",
+  "updatedAt": "2026-11-08T22:21:49.610715+00:00",
   "scope": {
     "sourceStore": "superfunny.nl read-only, except the explicitly authorized and completed Draft status change for product15458471575936",
     "destinationStore": "insignia-rewrite-dev.myshopify.com",
@@ -13,7 +13,7 @@
       "currentReviewBase": "f2a405f3f1e729218a5b8633e4164c9f61ce7f70",
       "nativeRelease": "not independently re-fingerprinted",
       "status": "ready-for-native",
-      "resolution": "PR253 merged as8cce456f after independent Sol review and all three exact-head CI checks. No deployment by this campaign. Native replay remains pending.",
+      "resolution": "PR253 merged and present on freshly loaded native web image001ffe04. Addviews X, Escape and Cancel now close the dialog and release host hit-testing. Remaining shared dialog variants and successful authoring readback need replay; old already-open76d5 pages retain the historical bug.",
       "id": "QA-001",
       "priority": "P1",
       "kind": "defect",
@@ -44,6 +44,14 @@
         {
           "date": "2026-11-08T21:11:10Z",
           "event": "PR #253 merged as8cce456f after all three exact-head CI checks and independent review passed. No runtime deployment was performed by this campaign."
+        },
+        {
+          "date": "2026-11-08T22:03:45.285694+00:00",
+          "event": "NativehoodieAddviews→addfirstphoto→addplacement→addproductmethod→Done leavesfourvisiblehostscrims. elementFromPointatSaveDraftcenter returns top_scrim. Save/SaveDraft clicksleaveunsaveddraft; devreadonlyDBfound0configrowsforthishoodie. Thisisimpactoftheknownorphanoverlay,notanewsavebug. DemoXclosesnormallyandhostremainsclear. Mergedfixstillnotdeployed: webOCI76d5d0f9started20:24:30Z."
+        },
+        {
+          "date": "2026-11-08T22:21:49.610715+00:00",
+          "event": "External backend rollout changed web OCI to001ffe0481d65cc6e630d8fe92e7191f4af84b9cd6a318abc6c324df1f2d21c7,started22:05:03.241965219Z. Fresh Addviews has insignia-method-dialog-UUID. X closes with no scrims; Escape/Cancel settle with inert hidden zero-size scrim nodes and Preview header hit-test uncovered. DOMnodecountalonewasnotusedasblockerproof."
         }
       ]
     },
@@ -107,7 +115,7 @@
         },
         {
           "date": "2026-11-08T20:41:12.417883+00:00",
-          "event": "Dev-only read transaction for19:30\u201319:45UTC found a proposal created19:38:22.271Z, expiry19:43:22.271Z, accepted=true; a single accept command and cart application created19:42:22.291Z with PENDING status. Earlier19:35 proposal expired unaccepted. Thus the final attempt was accepted before proposal expiry; expiry alone does not explain the observed cart failure. Independent native cart remained empty at19:44. No retry or native cart mutation was dispatched by this continuing campaign. Exact owner/session binding still needed before operational reconciliation; time-window evidence is not a replacement for that binding."
+          "event": "Dev-only read transaction for19:30–19:45UTC found a proposal created19:38:22.271Z, expiry19:43:22.271Z, accepted=true; a single accept command and cart application created19:42:22.291Z with PENDING status. Earlier19:35 proposal expired unaccepted. Thus the final attempt was accepted before proposal expiry; expiry alone does not explain the observed cart failure. Independent native cart remained empty at19:44. No retry or native cart mutation was dispatched by this continuing campaign. Exact owner/session binding still needed before operational reconciliation; time-window evidence is not a replacement for that binding."
         }
       ]
     },
@@ -317,6 +325,170 @@
         {
           "date": "2026-11-08T21:48:29.270360+00:00",
           "event": "PR254 merged as4095707087c7722159b10e9ef4b1fc7b78a354be at21:47:06Z after head22ee1f88 passed allCI. Native closure not claimed."
+        },
+        {
+          "date": "2026-11-08T22:21:49.610715+00:00",
+          "event": "Current001ffe04 browser bundle SelectedProductContainer.C9Snw1QS.js contains the new Invalid prepared photo decoder marker. Actual fresh filechooser replay was automation-limited before file selection; no successful native upload claimed."
+        }
+      ]
+    },
+    {
+      "id": "QA-011",
+      "priority": "P2",
+      "kind": "defect",
+      "status": "open",
+      "title": "Add views repeats featured and per-variant copies of the same catalog photo",
+      "area": "Product editor media projection and gallery selection",
+      "firstObserved": "2026-11-08T22:03:45.285694+00:00",
+      "owner": "root",
+      "evidenceLevel": "native-observed plus source projection",
+      "actual": "Hoodie gallery has3actualShopifyphotos but Addviews shows37 entries (1featured+33variant+3gallery); after selectingblackfront,13entries are Inuse. Cap independentlyshows11entries for5Shopifyphotos.",
+      "expected": "The approved gallery workflow lists each actual product photo once while variant associations remain available to the assignment model.",
+      "evidence": [
+        "docs/delivery/evidence/frontend-qa-2026-11-08/root-round2-gallery-native.jpg",
+        "docs/delivery/evidence/frontend-qa-2026-11-08/root-round2-gallery-demo.jpg",
+        "docs/delivery/evidence/frontend-qa-2026-11-08/cap-addviews-11-images.jpg",
+        "apps/web/src/server/admin/production.ts:62",
+        "docs/delivery/evidence/frontend-qa-2026-11-08/root-round2-shopify-hoodie-three-photos.jpg"
+      ],
+      "resolution": null,
+      "closure": "Deduplicate gallery identity at the catalog projection without losing variant references or freshness checks; verify with a three-photo multi-variant product and persisted assignment readback.",
+      "comparisonLimit": "Demo photograph/product data differ; this is not a pixel comparison or claim that native photo captions should invent Front/Back orientation. The defect is duplicate actual asset identities.",
+      "history": [
+        {
+          "date": "2026-11-08T22:03:45.285694+00:00",
+          "event": "Rootobservedhoodie37andcapagentconfirmed11. Noimplementationchangeinthisround."
+        }
+      ]
+    },
+    {
+      "id": "QA-012",
+      "priority": "P1",
+      "kind": "defect",
+      "status": "investigating",
+      "title": "Changing customized line quantity in Shopify loses displayed surcharge and review entry",
+      "area": "Native Shopify cart quantity and selected Designer restoration",
+      "firstObserved": "2026-11-08T22:21:49.610715+00:00",
+      "owner": "root + qa_buyer_round2",
+      "evidenceLevel": "fresh current-Designer native replay; independently inspected clean before/after cart screenshots; review-control transition by DOM",
+      "actual": "One owned Zwart/XS line added atUSD17.45forLinkerborst+7.50. Shopifyquantity2showsUSD9.95unit/USD19.90totalafterfullreload, no customized-cart review control or review-required warning; Checkout remains visible/enabled. Restoringquantity1returns17.45andreviewentry. Ownedlinefinallyremoved;freshcartempty.",
+      "expected": "Native quantity changes preserve customization or clearly require a fresh design/price review before checkout. They must not silently present an ordinary base-only item as the same customized order.",
+      "evidence": [
+        "docs/delivery/evidence/frontend-qa-2026-11-08/buyer-round2-cart-qty2-after-reload.jpg",
+        "docs/delivery/evidence/frontend-qa-2026-11-08/buyer-round2-cart-qty1-restored.jpg",
+        "docs/delivery/evidence/frontend-qa-2026-11-08/buyer-round2-cart-empty-after-removal.jpg",
+        "docs/delivery/evidence/frontend-qa-2026-11-08/root-round2-cart-qty2.jpg",
+        "docs/delivery/evidence/frontend-qa-2026-11-08/root-round2-clean-cart-qty1.jpg",
+        "docs/delivery/evidence/frontend-qa-2026-11-08/root-round2-clean-cart-qty2.jpg"
+      ],
+      "resolution": null,
+      "closure": "Trace exact owned line/carrier and CartTransform/validation/repair behavior under native qty changes; meaningful regression plus add→qtychange→review/edit→remove current-build replay. Preserve all purchase/signature guards.",
+      "comparisonLimit": "Shopifycartisexternal,thereisnodemo-ownedcartpage. Thiscomparesnativebefore/afterandtheacceptedrequirementofShopifyquantitycompatibility. No checkout attempted; undercharge, carrier removal and accepted-charge outcome are unproven. Browser blocked cart.js navigation, no bypass used.",
+      "history": [
+        {
+          "date": "2026-11-08T22:21:49.610715+00:00",
+          "event": "Luna observed;rootindependentlyfresh-readqty2cart. SeparatefromolderQA003unresolvedoperation;thisnewAddandcleanupworked."
+        },
+        {
+          "date": "2026-11-08T22:33:53.972408+00:00",
+          "event": "Independent Sol found named qty2captures show QA015 backgroundDesignerpainting, notvisibleprice. Raw imagesretained butnotaccepted aspriceproof. Root repeating isolatedpostdeploymentflow to obtain cleanrenderedcartafterpreparedframeexpiry."
+        },
+        {
+          "date": "2026-11-08T22:41:34.989369+00:00",
+          "event": "Fresh current-Designer replay: one deferred-art Linkerborst design at USD17.45; native Increase once and full reload gave USD9.95 unit / USD19.90 total. Clean cart pixels captured after natural preparation expiry and independently inspected. Review control count changed 1→0 in DOM; Checkout remained enabled but unused. Decrease restored USD17.45/review count1. Removed only root-owned line; fresh reload showed empty-cart main and zero cart tables. Cleanup screenshot again contains QA015 painting, not clean empty-cart pixels."
+        }
+      ],
+      "runtimeLimit": "Earlier buyer replay used a pre-rollout Designer. Root then repeated the entire flow from a fresh current Designer after the recorded 001ffe04 web rollout; this independently reproduces the displayed-price regression. Exact active Shopify extension artifact identity is not established by the web OCI hash."
+    },
+    {
+      "id": "QA-013",
+      "priority": "P1",
+      "kind": "defect",
+      "status": "investigating",
+      "title": "First draft save remains unconfirmed after creating an empty scaffold",
+      "area": "Current native product authoring persistence and original-request recovery",
+      "firstObserved": "2026-11-08T22:21:49.610715+00:00",
+      "owner": "root",
+      "evidenceLevel": "native UI plus scoped READ ONLY persistence read",
+      "actual": "Fresh current-build hoodie editor adds one Front view. Save draft now dispatches but ends Your changes could not be confirmed; Retry original request returns same alert. Dev-only readback confirms one configuration atdraftversion1 with no selectedSetupviews, not the desiredoneview. UI retains the unsavedview and gates different saves.",
+      "expected": "A normal first save persists the selected view and confirms it; original-request recovery settles exact intent without losing local changes or issuing an unrelated duplicate operation.",
+      "relatedIssues": [
+        "QA-002"
+      ],
+      "evidence": [
+        "docs/delivery/qa/root-round2.md",
+        "docs/delivery/evidence/frontend-qa-2026-11-08/root-round2-save-unconfirmed-current.jpg",
+        "docs/delivery/evidence/frontend-qa-2026-11-08/root-round2-save-complete-demo.jpg"
+      ],
+      "resolution": null,
+      "closure": "Correlate original create/save/readback statuses and retained command identity; prove first save plus original-request recovery against same native product. Do not delete pending custody or substitute a new operation to force progress.",
+      "comparisonLimit": "The initial scaffold creation succeeded. Desired selected draft persistence has not been confirmed. Cause is not established; admin read failures may be related, not assumed identical.",
+      "history": [
+        {
+          "date": "2026-11-08T22:21:49.610715+00:00",
+          "event": "Current001ffe04 fresh native workflow reached save, unlike old001overlayblocked clicks. One original Retry only; no changed write or force reset."
+        }
+      ]
+    },
+    {
+      "id": "QA-014",
+      "priority": "P2",
+      "kind": "defect",
+      "status": "investigating",
+      "title": "Settled unconfirmed save remains displayed as actively saving",
+      "area": "Selected product editor recovery status and Shopify Save Bar",
+      "firstObserved": "2026-11-08T23:22:53+01:00",
+      "owner": "root",
+      "evidenceLevel": "native screenshot plus source-confirmed state mapping",
+      "actual": "After the original Retry failed, the native screen shows the same 'Your changes could not be confirmed. Retry the original request before saving different changes.' message in both the top error banner and the blue editor notice. The Shopify header Save Bar still shows a loading spinner although the request has settled. Source review confirms saveDraft clears writeBusy in finally, but AdminSaveBar receives saving={writeBusy || adapter.pending()}, and adapter.pending() stays true while exact unresolved custody is retained. The editor's save catch also sets a transient storage-save-failed notice, using the same realSaveFailed translation as the container's persistent retry banner.",
+      "expected": "Once a request settles, the save bar stops indicating an active write while the unresolved command remains locked for exact Retry. Show one persistent recovery message, keep unrelated saves/discard blocked, and only show active loading while a save or retry request is actually in flight.",
+      "relatedIssues": [
+        "QA-013"
+      ],
+      "evidence": [
+        "docs/delivery/evidence/frontend-qa-2026-11-08/root-round2-save-unconfirmed-current.jpg",
+        "frontend/admin/src/islands/SelectedProductEditor.tsx:2314",
+        "frontend/admin/src/islands/SelectedProductEditor.tsx:2317",
+        "frontend/admin/src/islands/SelectedProductEditor.tsx:2666",
+        "frontend/admin/src/islands/SelectedProductContainer.tsx:291",
+        "frontend/admin/src/islands/SelectedProductContainer.tsx:529",
+        "frontend/admin/src/islands/selected-product-client.ts:470"
+      ],
+      "resolution": null,
+      "closure": "Replay first-save unknown result plus one failed exact Retry. Preserve unresolved custody and all write gates; show a stopped Save Bar after each settled response, active loading only while the original request/retry is in flight, and one recovery message with the Retry action. The minimal state correction is to drive loading from in-flight work rather than adapter.pending(); if retry should animate the Save Bar, expose a separate retrying state. Suppress the duplicate production editor notice while the container owns the persistent recovery banner. Do not clear or replace the original command to make the UI appear settled.",
+      "history": [
+        {
+          "date": "2026-11-08T23:22:53+01:00",
+          "event": "Candidate opened from root-round2-save-unconfirmed-current.jpg and source review. This is the UI state/feedback defect accompanying QA-013; it does not establish a new backend persistence cause."
+        }
+      ]
+    },
+    {
+      "id": "QA-015",
+      "priority": "P1",
+      "kind": "defect",
+      "status": "open",
+      "title": "Idle Designer preparation visibly paints over the Shopify cart",
+      "area": "Storefront hidden prewarm iframe and modal visibility",
+      "firstObserved": "2026-11-08T22:33:53.972408+00:00",
+      "owner": "root",
+      "evidenceLevel": "fresh isolated native pixels + same-frame DOM parent/child styles + independently reviewed source",
+      "actual": "Opening an empty Shopify cart without clicking Personalize paints a full-screen Designer over the native page. Accessibility still describes the empty cart. The prepared iframe is full viewport and visibility:visible while parentDIALOG is open=false,inert,display:block,visibility:hidden,pointer-events:none. Prepared frame laterexpiresandnormalcartreturns.",
+      "expected": "Background preparation is visually absent and noninteractive until explicit customer open. Cart, recommendations and product page remain visible and usable with no Designer content before activation.",
+      "evidence": [
+        "docs/delivery/evidence/frontend-qa-2026-11-08/root-round2-background-frame-visible.jpg",
+        "docs/delivery/evidence/frontend-qa-2026-11-08/root-round2-background-frame-expired.jpg",
+        "docs/delivery/qa/background-frame-dom-round2.json",
+        "apps/storefront/src/designer/modal.ts:65",
+        "apps/storefront/src/designer/frame-host.ts:130",
+        "docs/delivery/qa/round2-sol-review.md"
+      ],
+      "resolution": null,
+      "closure": "A styled initialized prepared iframe must not paint or enter focus/accessibility/scroll ownership until explicit open. Test actual native rendered pixels and iframe/parent computed visibility through ready-but-hidden→open→close/expiry/cancellation; preserve warm-start performance and no quote/cart side effects.",
+      "history": [
+        {
+          "date": "2026-11-08T22:33:53.972408+00:00",
+          "event": "Sol initially rejected mixed qty2 screenshots as priceproof. Root isolated fresh empty-cart replay reproduced mixed pixels; DOM proved visible child inside hidden inert closed parent, and normal empty-cart pixels returned when preparationexpired. Sol independently confirmed source mechanism. This is a real visibility defect, not yet clean priceproof forQA012."
         }
       ]
     }

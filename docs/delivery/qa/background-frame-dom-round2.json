@@ -1,0 +1,26 @@
+{
+  "recordedAt": "2026-11-08T22:33:53.972408+00:00",
+  "route": "https://insignia-rewrite-dev.myshopify.com/cart",
+  "trigger": "Fresh reload of confirmed empty cart; no Personalize click",
+  "frame": {
+    "title": "Ontwerp je eigen superfunny T-shirt \u2014 Insignia demo",
+    "computedVisibility": "visible",
+    "rectCssPixels": {
+      "width": 2560,
+      "height": 1267
+    },
+    "pointerEvents": "none",
+    "stylePosition": "fixed",
+    "styleZIndex": "2147483000"
+  },
+  "parent": {
+    "tag": "DIALOG",
+    "open": false,
+    "inert": true,
+    "computedDisplay": "block",
+    "computedVisibility": "hidden",
+    "pointerEvents": "none"
+  },
+  "laterObservation": "No iframe[srcdoc] remains after preparation expires; screenshot shows normal empty cart.",
+  "secretDataRetained": false
+}

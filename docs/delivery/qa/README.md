@@ -47,6 +47,10 @@ The old dirty UI workspace remains separate. Current working branch: `codex/inte
 
 ## Prepared catalog and photos
 
-The native CSV import created the missing QA T-shirt and updated the five owned drafts. All six remain Draft and unpublished. [Catalog result](bulk-catalog-result.json) records exact readback. The development store remains USD; these copied numeric prices are test examples. Inventory is untracked on the six copies.
+The native CSV import created the missing QA T-shirt and updated the five owned drafts. The import initially left all six Draft; the owner then authorized publication. All six are now Active with Online Store publication, recorded in [current catalog publication](catalog-publication-round2.json). [Catalog result](bulk-catalog-result.json) records exact readback. The development store remains USD; these copied numeric prices are test examples. Inventory is untracked on the six copies.
 
 All 101 source view photos are staged locally in `legacy-assets/`, with hashes and source IDs in [asset manifest](legacy-view-assets.json). The binary fixtures are excluded from Git. Source assets can be staged again from a fresh public source config; retain no signed URLs. The gallery photos imported into Shopify are separate from these view photos.
+
+## Current review reference
+
+The approved selected demo is the primary reference. Keep new design preferences out of this parity audit. Use platform guidance only where integration adds a state absent from the demo. See [consolidated round-two findings](round2-report.md), [root observations](root-round2.md), [buyer run](buyer-round2.md) and [state review](state-integration-round2.md).

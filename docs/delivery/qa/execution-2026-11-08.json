@@ -1,6 +1,6 @@
 {
   "schema": "insignia.qa.execution.v1",
-  "updatedAt": "2026-11-08T21:07:29.759398+00:00",
+  "updatedAt": "2026-11-08T22:41:34.989369+00:00",
   "sourceHead": "f2a405f3f1e729218a5b8633e4164c9f61ce7f70",
   "notes": "Subset observations do not pass every transition in a broad matrix case. Native writes are recorded below; no purchase/checkout/email or unallocated source-store changes.",
   "deployments": [
@@ -12,6 +12,11 @@
       "webImage": "sha256:76d5d0f90df31f9643f590476f49cd4e12bb7485bc1240ebb3dd5b568ec49e77",
       "startedAt": "2026-11-08T20:24:30.41330255Z",
       "phase": "independently observed backend rollout; not deployed by QA agent"
+    },
+    {
+      "webImage": "sha256:001ffe0481d65cc6e630d8fe92e7191f4af84b9cd6a318abc6c324df1f2d21c7",
+      "startedAt": "2026-11-08T22:05:03.241965219Z",
+      "phase": "External backend rollout during audit; not deployed by QA. Fresh UUID modal and decoder marker observed; old open pages retain earlier code."
     }
   ],
   "observations": [
@@ -68,6 +73,105 @@
       "evidence": [
         "media-csp-sol-review.md",
         "/tmp/insignia-qa-media-csp-final.log"
+      ]
+    },
+    {
+      "caseIds": [
+        "ADM-EDIT-02",
+        "ADM-EDIT-03",
+        "ADM-EDIT-04",
+        "ADM-EDIT-07",
+        "ADM-EDIT-08",
+        "ADM-EDIT-09",
+        "ADM-EDIT-10"
+      ],
+      "layer": "native UI + approved demo + native catalog export + dev readonly persistence read",
+      "result": "partial-pass-and-blocked",
+      "scope": "Hoodie fresh editor loads; choose existing Shopify photo adds1view; renameFront,addQA chest,createproduct-ownedBedrukken,explicitUSD7.50priceandlogo-latercheckboxallupdateexpectedUI. NativehostscrimthenblocksSave;freshreadfailsQA002andreadonlyDBconfirms0configs. Exactsourcegeometry/fullimportnotclaimed.",
+      "evidence": [
+        "root-round2-gallery-native.jpg",
+        "root-round2-gallery-demo.jpg",
+        "root-round2-after-dismiss-native.jpg",
+        "root-round2-after-dismiss-demo.jpg"
+      ],
+      "issueIds": [
+        "QA-001",
+        "QA-002",
+        "QA-011"
+      ]
+    },
+    {
+      "caseIds": [
+        "ADM-EDIT-02"
+      ],
+      "layer": "native-current-runtime",
+      "result": "partial-pass",
+      "scope": "Fresh001ffe04 Addviews X/Escape/Cancel close and host hit-test is clear. Hidden zero-size scrim nodes are inert; DOM presence alone is not failure. Variant-picker/other shared-dialog lifecycle still not fully replayed."
+    },
+    {
+      "caseIds": [
+        "ADM-EDIT-09",
+        "ADM-EDIT-10"
+      ],
+      "layer": "native-current-runtime + development READ ONLY persistence",
+      "result": "fail",
+      "scope": "One-view initial Save reaches unconfirmed custody; one original Retry same result; scaffoldv1 exists with0selectedviews. Original pending intent retained, no new altered write.",
+      "issueIds": [
+        "QA-013"
+      ],
+      "evidence": [
+        "root-round2-save-unconfirmed-current.jpg",
+        "root-round2-save-complete-demo.jpg"
+      ]
+    },
+    {
+      "caseIds": [
+        "CUS-13"
+      ],
+      "layer": "native Shopify cart",
+      "result": "fail-with-cleanup-pass",
+      "scope": "One owned Add succeeds at17.45. Nativequantity2andfullreloadshow19.90base-onlyandnoReviewentry/warning. Rootindependentreadmatches;qty1restores17.45/review;ownedremoveandfreshcartempty. OldDesignerframe/currentbackendlimit applies.",
+      "issueIds": [
+        "QA-012"
+      ],
+      "evidence": [
+        "buyer-round2-cart-qty1-restored.jpg",
+        "buyer-round2-cart-qty2-after-reload.jpg",
+        "buyer-round2-cart-empty-after-removal.jpg"
+      ]
+    },
+    {
+      "caseIds": [
+        "ADM-SET-03"
+      ],
+      "layer": "native current browser",
+      "result": "partial-pass",
+      "scope": "Check access spinner/disabled state works; checkoutAllowed andordersAppAccessAllowedretained;productcheckNotcheckedwithTryagainerror. No permissions granted or configuration changed."
+    },
+    {
+      "caseIds": [
+        "CUS-16",
+        "CUS-12"
+      ],
+      "layer": "source review + existing local targeted suites",
+      "result": "coverage-gap",
+      "scope": "Production artwork renewal status bridge and reload-between-lost-acceptance need focused browser assertions. Direct runtime and admin tests do not establish native completeness. 46admin+32runtime checks pass0skip, overlap earlier counts. Customerbrowserattemptblockedby scratchreact/jsx-dev-runtime resolution, not counted as app defect."
+    },
+    {
+      "caseIds": [
+        "CUS-13"
+      ],
+      "layer": "fresh current Designer + native Shopify cart",
+      "result": "fail-with-cleanup-pass",
+      "scope": "Root fresh current flow independently reproduces quantity1 USD17.45→quantity2 USD9.95 unit/USD19.90 total after reload. Clean rendered pair reviewed. Review control1→0 is DOM evidence; no checkout. Decrease restores17.45/review; owned line removed; fresh main empty/tablecount0. Cleanup screenshot has QA015 overlay.",
+      "issueIds": [
+        "QA-012",
+        "QA-015"
+      ],
+      "evidence": [
+        "root-round2-clean-cart-qty1.jpg",
+        "root-round2-clean-cart-qty2.jpg",
+        "root-round2-after-cleanup-overlay.jpg"
       ]
     }
   ],
@@ -141,8 +245,10 @@
       "head": "22ee1f88821bad88eb6300adf77ea0d5993cbe18",
       "base": "8cce456f7afffee9a60254c6bcfb268702f52eb7",
       "scope": "Product-photo adapter memory decode and strict-connection browser regression only, two files",
-      "ci": "Running again after incorporating merged PR253",
-      "deployment": "Not deployed by this QA campaign"
+      "ci": "All three required checks passed on exact head22ee1f88",
+      "deployment": "Not deployed by this QA campaign",
+      "mergedCommit": "4095707087c7722159b10e9ef4b1fc7b78a354be",
+      "sourceState": "Merged; current native bundle contains decoder marker; successful native upload remains unverified"
     }
   ],
   "nativeWrites": [
@@ -150,7 +256,7 @@
       "kind": "owned-development-catalog",
       "store": "insignia-rewrite-dev",
       "productId": "10590373970203",
-      "title": "QA legacy import \u2014 Superfunny muts",
+      "title": "QA legacy import — Superfunny muts",
       "status": "Draft; five Kleur variants at USD17.50 as a numeric QA example; stock0; no images, views or saved configuration",
       "classification": "Partial manual import. The source EUR17.50 was not converted. Destination zero stock does not represent the source availability.",
       "evidence": "manual-cap-import.md"
@@ -164,6 +270,13 @@
       "verifiedAt": "2026-11-08T20:50:26Z",
       "readback": "Fresh Admin readback shows Draft; the plain public URL returned404 in a preview-enabled profile",
       "evidence": "lpo-product-visibility.md"
+    },
+    {
+      "kind": "owned-development-catalog-publication",
+      "store": "insignia-rewrite-dev",
+      "action": "Six allowlisted QA products Active and Online Store published",
+      "evidence": "catalog-publication-round2.json",
+      "boundary": "Catalog only; Insignia configurations not all authored or published."
     }
   ]
 }
