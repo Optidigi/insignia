@@ -81,9 +81,23 @@ export function createSelectedProductMedia(
   async function upload(prepared: EditorProductImage) {
     active();
     // The selected picker already decodes/downsizes images. Send a bounded PNG to the isolated server inspector.
-    const source = await read(prepared.url);
-    if (!source.ok) throw new Error('Image preparation unavailable');
-    const bytes = await source.blob();
+    let bytes: Blob;
+    if (prepared.url.startsWith('data:')) {
+      // Decode the picker's local image in memory. fetch(data:) is a connection
+      // and is intentionally forbidden by the product page's connect-src policy.
+      if (prepared.url.length > 1_000_000) throw new Error('Invalid prepared photo');
+      const encoded = /^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/]+={0,2})$/.exec(prepared.url);
+      const mimeType = encoded?.[1],
+        base64 = encoded?.[2];
+      if (!mimeType || !base64) throw new Error('Invalid prepared photo');
+      bytes = new Blob([Uint8Array.from(atob(base64), (character) => character.charCodeAt(0))], {
+        type: mimeType,
+      });
+    } else {
+      const source = await read(prepared.url);
+      if (!source.ok) throw new Error('Image preparation unavailable');
+      bytes = await source.blob();
+    }
     active();
     const bitmap = await createImageBitmap(bytes);
     let png: Blob;
