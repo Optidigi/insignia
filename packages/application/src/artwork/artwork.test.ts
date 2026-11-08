@@ -3,6 +3,16 @@ import { describe, expect, it } from 'vitest';
 import { artworkManifest, artworkRow, artworkStorage, artworkStore } from '../../test/artwork-fixtures.js';
 import { type ArtworkRecord, createArtworkService, createArtworkUsabilityPort } from './artwork.js';
 
+function deferred() {
+  let resolve: () => void = () => {
+    throw new Error('Missing deferred');
+  };
+  const promise = new Promise<void>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+
 describe('private artwork lifecycle at the application seam', () => {
   it('quote usability requires bound verified ownership even when another guest knows the UUID', async () => {
     const row = artworkRow({
@@ -83,6 +93,207 @@ describe('private artwork lifecycle at the application seam', () => {
     expect(objects.get('originals/key')).toEqual(new Uint8Array([1, 2, 3]));
     expect(objects.get('previews/key.png')).toEqual(preview);
   });
+  it('overlaps independent promotion writes and readbacks without exposing partially verified bytes', async () => {
+    const original = new Uint8Array([1, 2, 3]);
+    const preview = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+    const row = artworkRow({ manifest: null });
+    const writes: string[] = [],
+      reads: string[] = [];
+    const originalPut = deferred(),
+      previewPut = deferred(),
+      originalRead = deferred(),
+      previewRead = deferred();
+    const firstPut = deferred(),
+      firstRead = deferred(),
+      originalPutFinished = deferred(),
+      originalReadFinished = deferred();
+    let settled = 0;
+    const service = createArtworkService({
+      clock: () => new Date('2026-10-12T12:00:00Z'),
+      store: artworkStore({
+        claim: async () => row,
+        prepare: async () => row,
+        settle: async () => {
+          settled++;
+          return true;
+        },
+      }),
+      storage: artworkStorage({
+        putImmutable: async ({ key }) => {
+          writes.push(key);
+          firstPut.resolve();
+          await (key === row.originalKey ? originalPut : previewPut).promise;
+          if (key === row.originalKey) originalPutFinished.resolve();
+        },
+        read: async ({ key }) => {
+          if (key === row.quarantineKey) return original;
+          reads.push(key);
+          firstRead.resolve();
+          await (key === row.originalKey ? originalRead : previewRead).promise;
+          if (key === row.originalKey) originalReadFinished.resolve();
+          return key === row.originalKey ? original : preview;
+        },
+        remove: async () => {},
+      }),
+      inspect: async () => ({
+        version: 'm6-inspection-v1',
+        mimeType: 'image/png',
+        width: 1,
+        height: 1,
+        originalSha256: createHash('sha256').update(original).digest('hex'),
+        preview,
+        previewMimeType: 'image/png',
+      }),
+    });
+    const processing = service.process(row.assetId);
+    try {
+      await firstPut.promise;
+      expect(writes).toEqual([row.originalKey, row.previewKey]);
+      originalPut.resolve();
+      await originalPutFinished.promise;
+      expect(reads).toEqual([]);
+      expect(settled).toBe(0);
+      previewPut.resolve();
+      await firstRead.promise;
+      expect(reads).toEqual([row.originalKey, row.previewKey]);
+      originalRead.resolve();
+      await originalReadFinished.promise;
+      expect(settled).toBe(0);
+      previewRead.resolve();
+      await expect(processing).resolves.toBe('usable');
+      expect(settled).toBe(1);
+    } finally {
+      originalPut.resolve();
+      previewPut.resolve();
+      originalRead.resolve();
+      previewRead.resolve();
+      await Promise.allSettled([processing]);
+    }
+  });
+
+  it.each(['write', 'read'] as const)(
+    'drains the sibling %s before releasing a failed promotion claim',
+    async (phase) => {
+      const original = new Uint8Array([1, 2, 3]);
+      const preview = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+      const row = artworkRow({ manifest: null });
+      const failed = deferred(),
+        sibling = deferred();
+      let siblingStarted = false,
+        siblingFinished = false,
+        settled = 0,
+        released = 0;
+      const failOrWait = async (key: string) => {
+        if (key === row.originalKey) {
+          failed.resolve();
+          throw new Error('Synthetic storage unavailable');
+        }
+        siblingStarted = true;
+        await sibling.promise;
+        siblingFinished = true;
+      };
+      const service = createArtworkService({
+        clock: () => new Date('2026-10-12T12:00:00Z'),
+        store: artworkStore({
+          claim: async () => row,
+          prepare: async () => row,
+          settle: async () => {
+            settled++;
+            return true;
+          },
+          release: async (_id, _claim, retryAt) => {
+            released++;
+            expect(siblingFinished).toBe(true);
+            expect(retryAt).toEqual(new Date('2026-10-12T12:00:30Z'));
+          },
+        }),
+        storage: artworkStorage({
+          putImmutable: async ({ key }) => {
+            if (phase === 'write') await failOrWait(key);
+          },
+          read: async ({ key }) => {
+            if (key === row.quarantineKey) return original;
+            if (phase === 'read') await failOrWait(key);
+            return key === row.originalKey ? original : preview;
+          },
+        }),
+        inspect: async () => ({
+          version: 'm6-inspection-v1',
+          mimeType: 'image/png',
+          width: 1,
+          height: 1,
+          originalSha256: createHash('sha256').update(original).digest('hex'),
+          preview,
+          previewMimeType: 'image/png',
+        }),
+      });
+      const processing = service.process(row.assetId);
+      // Observe premature failure while the other storage operation is held.
+      void processing.catch(() => {});
+      try {
+        await failed.promise;
+        await new Promise<void>((resolve) => setImmediate(resolve));
+        expect(siblingStarted).toBe(true);
+        expect(siblingFinished).toBe(false);
+        expect(released).toBe(0);
+        expect(settled).toBe(0);
+        sibling.resolve();
+        await expect(processing).rejects.toMatchObject({ code: 'UNAVAILABLE' });
+        expect(released).toBe(1);
+        expect(settled).toBe(0);
+      } finally {
+        sibling.resolve();
+        await Promise.allSettled([processing]);
+      }
+    },
+  );
+
+  it.each(['original', 'preview'] as const)(
+    'rejects a mismatched %s readback while the other object verifies',
+    async (mismatch) => {
+      const original = new Uint8Array([1, 2, 3]);
+      const preview = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+      const row = artworkRow({ manifest: null });
+      const rejected: string[] = [];
+      let settled = 0;
+      const service = createArtworkService({
+        clock: () => new Date('2026-10-12T12:00:00Z'),
+        store: artworkStore({
+          claim: async () => row,
+          prepare: async () => row,
+          settle: async () => {
+            settled++;
+            return true;
+          },
+          reject: async (_id, _claim, reason) => {
+            rejected.push(reason);
+          },
+        }),
+        storage: artworkStorage({
+          putImmutable: async () => {},
+          remove: async () => {},
+          read: async ({ key }) => {
+            if (key === row.quarantineKey) return original;
+            if (key === (mismatch === 'original' ? row.originalKey : row.previewKey)) return new Uint8Array([0]);
+            return key === row.originalKey ? original : preview;
+          },
+        }),
+        inspect: async () => ({
+          version: 'm6-inspection-v1',
+          mimeType: 'image/png',
+          width: 1,
+          height: 1,
+          originalSha256: createHash('sha256').update(original).digest('hex'),
+          preview,
+          previewMimeType: 'image/png',
+        }),
+      });
+      await expect(service.process(row.assetId)).resolves.toBe('rejected');
+      expect(settled).toBe(0);
+      expect(rejected).toEqual(['INSPECTION_REJECTED']);
+    },
+  );
+
   it('bounds missing upload retries by the grant deadline without inspecting absent bytes', async () => {
     let now = new Date('2026-10-12T12:00:00Z');
     const row = artworkRow({
