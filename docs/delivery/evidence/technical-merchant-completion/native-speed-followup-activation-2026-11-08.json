@@ -1,0 +1,195 @@
+{
+  "classification": "NATIVE_SPEED_FOLLOWUP_ACTIVATED_AND_MEASURED",
+  "date": "2026-11-08",
+  "sourcePR": 255,
+  "bindingPR": 256,
+  "bindingHead": "e17b038f2449d3648f4363988585d0ed791118d8",
+  "merge": "f1a2cd06f0b34fb4a9e685214e7a1aaeace85d6c",
+  "sourceTree": "3a07f51e151d9f3fa1ddd2bc4bd975d55ff3a9ca",
+  "ciSynthetic": "72d893f322ff7665d4c154564a8ac80736fcdefc",
+  "ciRuns": {
+    "runtime": "42527004561",
+    "foundation": "42527004678",
+    "durable": "42527004591"
+  },
+  "native": {
+    "versionId": "1199807692801",
+    "versionTag": "native-speed-e52be93",
+    "soleActive": true,
+    "inventory": 25,
+    "modules": 14,
+    "nonThemeConfigurationsUnchanged": 13,
+    "themeFiles": 21,
+    "ciAssets": 12,
+    "moduleHash": "34af59311fcc015ee4a6c1ba76f297d62a905c4289c8c5376130cec83a823f04",
+    "historicalBindingsUnchanged": true,
+    "neverReleaseVersionsRemainInactive": [
+      "1158837927937",
+      "1199165767681",
+      "1198938357761"
+    ]
+  },
+  "artifacts": {
+    "foundationZip": "50660ec67a62ddd42cc44c3a075dae50776b4406db9001f3a6e57c2cb74920af",
+    "foundationManifest": "e71753bc1a739cb1efc013cb336ddcbd563487449e9e65ad7a495a1f1b172e33",
+    "all138EntriesQualified": true,
+    "allFinalThemeFilesMatchFrozenCandidate": true,
+    "images": {
+      "m5-web-image": {
+        "manifestId": "sha256:001ffe0481d65cc6e630d8fe92e7191f4af84b9cd6a318abc6c324df1f2d21c7",
+        "configId": "sha256:e255b794f5c1d61409b0abcacd7cc1dddda5ab5cc830c397ea60d5c97914be1d",
+        "archiveSha256": "601307d2b5b470c66e6694ddc55a5a135293f5eacffe152a1ad6996462065e97"
+      },
+      "m5-024-worker-image": {
+        "manifestId": "sha256:b52f20dd6d9811702183f1ebfbb9d66663de19bb72318f1a9e2bac30de62590a",
+        "configId": "sha256:9b66ba2350372bfa8ff90bcb88c34f92b5cadabd92fb7aba529921a6a2ef5069",
+        "archiveSha256": "15e29e3b4368727d70aa7d79952406b721c6888225d23a3a7cb74c9289a42251"
+      },
+      "release-verifier": {
+        "manifestId": "sha256:824acf9fa2ab1dfd1dcaadfd43f4764c829a28b16cada2590c17a5daae33aaef",
+        "configId": "sha256:431b63baba3726bafab46378d1fb07f64e12044d2cb13fa6a122aabef754304a",
+        "archiveSha256": "d53c431fed39a8102d421806a1aeeabda65324e25813cdb9c48a3024eb9f43c6"
+      }
+    },
+    "verifierCodeManifest": "4c0a6848e547963ac9b5533ebeba514752134825a2aaeb11865fb5b45744a348"
+  },
+  "inspector": {
+    "sourceTree": "3a07f51e151d9f3fa1ddd2bc4bd975d55ff3a9ca",
+    "manifest": "b9609e126696e2b22e9f575a4803ad1eb2f93db45848a027868bbd1724bd5599",
+    "unit": "b4e13c37d0820cf3e818f54805cb28fd1294539682bc82c88013113118976b4c",
+    "oldProcessExited": true,
+    "oldSocketAbsentBeforeStart": true,
+    "privateCustodyDirectoryAndLimitsUnchanged": true,
+    "firstReadinessProbe": "ENOENT_BEFORE_SOCKET_READY_NO_IMAGE_REQUEST_DISPATCHED",
+    "qualifiedReadinessAndRPC": {
+      "classification": "NATIVE_INSPECTOR_READINESS_AND_REPRESENTATIVE_RPC_PASS",
+      "readiness": 200,
+      "fixtures": [
+        {
+          "name": "svg",
+          "mime": "image/svg+xml",
+          "width": 8,
+          "height": 9,
+          "originalDigestMatched": true,
+          "previewMime": "image/png",
+          "durationMs": 140
+        },
+        {
+          "name": "png",
+          "mime": "image/png",
+          "width": 8,
+          "height": 9,
+          "originalDigestMatched": true,
+          "previewMime": "image/png",
+          "durationMs": 146
+        },
+        {
+          "name": "jpeg",
+          "mime": "image/jpeg",
+          "width": 8,
+          "height": 9,
+          "originalDigestMatched": true,
+          "previewMime": "image/png",
+          "durationMs": 125
+        }
+      ],
+      "storageWrites": 0,
+      "providerCalls": 0
+    },
+    "sandbox": {
+      "classification": "NATIVE_NEW_INSPECTOR_SANDBOX_PASS",
+      "hostFileVisible": false,
+      "network": false,
+      "codeWritable": false,
+      "effectiveCapabilities": "zero",
+      "cpuLimit": "8:9",
+      "providerCalls": 0
+    }
+  },
+  "freshAdmissionHistoricalOnly": [
+    {
+      "state": "COMPLETE",
+      "requestId": "0c3fb578-1eec-4d11-ab77-77cac08e0464",
+      "recordId": "d0671f04-bc1e-4341-8573-6dfe2a904574",
+      "scope": {
+        "shopId": "db771bea-c585-4954-9f88-70771c9a0c89",
+        "installationGeneration": "1",
+        "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+      },
+      "activeVersion": "1199807692801",
+      "observedAt": "2026-11-08T22:08:05.701Z",
+      "expiresAt": "2026-11-08T22:08:34.108Z",
+      "functionsSource": "9b94149272d1b62c34f44dda3bde209e80b4ae22"
+    },
+    {
+      "role": "worker",
+      "sameRecord": true,
+      "recordId": "d0671f04-bc1e-4341-8573-6dfe2a904574",
+      "observedAt": "2026-11-08T22:08:05.701Z",
+      "expiresAt": "2026-11-08T22:08:34.108Z"
+    }
+  ],
+  "observedMetrics": {
+    "chromePreparedOpeningMs": 17,
+    "chromeUpload21882BytesMs": 2379,
+    "chromeReviewEditControlsMs": 11,
+    "chromeReviewReadyMs": 7989,
+    "chromeImmediateAddToNavigationMs": 4622,
+    "firefoxPreparedOpeningMs": 213,
+    "firefoxColdCacheDisabledOpeningMs": 2105
+  },
+  "observedFirefoxUploadMs": 2547,
+  "fixture": {
+    "product": "10588458647835",
+    "title": "Ontwerp je eigen superfunny T-shirt \u2014 Insignia demo",
+    "variant": "54552024744219",
+    "views": 4,
+    "placements": 6,
+    "colours": 6,
+    "variants": 64,
+    "calibration": "EXAMPLE_ONLY_NOT_PRODUCTION_MEASUREMENT"
+  },
+  "nativeFlows": {
+    "same21882BytePNGUploadedAndAppliedBothBrowsers": true,
+    "uploadProgressVisible": true,
+    "preparedFrameReusedWithoutLoader": true,
+    "firefoxCloseFocusScrollArtworkRetentionPass": true,
+    "firefox390CSSNoOverflow": true,
+    "exactCart": {
+      "count": 1,
+      "totalUSDMinor": 2495,
+      "blueXSBackStandard": true
+    },
+    "cartCleanupIndependentReadback": {
+      "count": 0,
+      "totalUSDMinor": 0
+    },
+    "merchantNormalModalXEscapeCancel": true,
+    "merchantPhotoCSPUpload": {
+      "asset": "5e14d94d-3067-4fb7-bc5e-d6fd54e99a0d",
+      "state": "USABLE",
+      "width": 400,
+      "height": 400,
+      "policyErrors": 0,
+      "selectionCancelled": true,
+      "draftSaved": false,
+      "published": false
+    }
+  },
+  "protectedState": {
+    "purchasesUnchanged": true,
+    "paidFactsUnchanged": true,
+    "purchaseCount": 5,
+    "paidCount": 4,
+    "schema": 51,
+    "additionalOrders": 0
+  },
+  "limits": [
+    "Observed samples are not percentiles or an all-file speed guarantee.",
+    "Prepared opening and cold cache-disabled opening are different conditions; cold/failure loading remains.",
+    "Authoritative Review still takes about8seconds for live configuration/pricing/release checks; edit/back/close are responsive.",
+    "Immediate Add after Review and an expired-proof Add are different paths.",
+    "No extra checkout/order/payment was allocated or performed.",
+    "Full state/effect/motion source audit retains known Q1 recovery and QA-009 rapid-opening edge limits; owner visual acceptance is separate."
+  ]
+}
