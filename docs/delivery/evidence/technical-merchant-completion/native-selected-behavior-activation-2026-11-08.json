@@ -1,0 +1,150 @@
+{
+  "kind": "bounded-selected-ui-behavior-performance-deployment",
+  "date": "2026-11-08",
+  "source": {
+    "implementationPR": 244,
+    "bindingPR": 245,
+    "head": "bef4cab4fb0bf43dee5045068f8c8d35330c7852",
+    "merge": "bb6e1d687e38970b0e8e67ca5ace118d89d48744",
+    "tree": "2dcb5d3d01b2b1d3c0efcc7869958376c59a79f5",
+    "ciMergeHead": "eff98b82597792bf0061d19a0c02f9c4c8aa8df8",
+    "runtimeRun": "42437957497",
+    "foundationRun": "42437957495",
+    "durableRun": "42437957531",
+    "attempt": 1,
+    "requiredChecks": "all passed"
+  },
+  "promotion": {
+    "roles": {
+      "web": {
+        "manifest": "sha256:0744406cfa1fe246a298d9227efec19fb2192316ffaa201eeceb9a1373a148e6",
+        "config": "sha256:37da537ef8c1e876fba09e3ad6cd0fec1c192cdf91fe47fa17081d8662452fa7",
+        "archiveSha256": "dfb99022408f8e4587a303440cacc8fbbf3382ed17d166623393fa43f5f68a28",
+        "archiveSizeBytes": 497779712,
+        "state": "healthy"
+      },
+      "worker": {
+        "manifest": "sha256:d5ed88004cd782b4949395b8a1b2f375e3bb3d963320d9de959c17203678a078",
+        "config": "sha256:38689c137abfbee8be2e1caaf391dd9e77de2948f8990ef9462973e65d91a22c",
+        "archiveSha256": "0e9dc97074664f8dc1361122c6a952b00a805244d2e812d83c7ccf218bd45f7f",
+        "archiveSizeBytes": 315218944,
+        "state": "healthy"
+      },
+      "verifier": {
+        "manifest": "sha256:3879bfc8d4f811b689c13d1a48e360dac59e99374d10e8e9eb3d1a9ad30b1e7b",
+        "config": "sha256:52a5cc005437b15ddb7b89020408986e92354ffd7e68b59b4bd6c1204c7b6198",
+        "archiveSha256": "36d9ad6e95aea9aeab6d443386c977a1b60b1566fb02d0eb1dff5b3d2ce70414",
+        "archiveSizeBytes": 472730112,
+        "state": "running",
+        "codeManifestSha256": "2141ba4ee633c213c30d2266ae07df86b40311d929efa964685d955dda6b6954"
+      }
+    },
+    "profile": "native-behavior-6b6c15e",
+    "schema": 51,
+    "newMigration": false,
+    "newGrants": false,
+    "qualification": "Exact ZIP/source receipts, OCI archive blobs/config/layers and loaded identities qualified; final12 storefront files byte-identical to CI244 candidate.",
+    "protectedFactsUnchangedDuringPromotion": true,
+    "otherContainersUnchangedDuringPromotion": true,
+    "credentialsMountsJournalsRoutingPreserved": true,
+    "immutableCodeBoundaryObserved": true
+  },
+  "shopify": {
+    "versionId": "1199244476417",
+    "versionTag": "native-behavior-6b6c15e",
+    "status": "sole active",
+    "previousVersionId": "1199166783489",
+    "exactVersionCount": 22,
+    "moduleCount": 14,
+    "nonThemeConfigsUnchanged": 13,
+    "moduleHash": "15e7353b57f3007532437d478723daaeb40b8b3d41153633528c988c456c3f38",
+    "themeFiles": 21,
+    "ciAssets": 12,
+    "activation": "One acknowledged CLI4.8.2 release after fresh exact prerelease read and exclusive intent, followed by independent full SDK readback.",
+    "functionsSourceCommit": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+    "nativeThemeIdentityPreserved": true,
+    "neverReleaseVersions": [
+      "1199165767681",
+      "1198938357761"
+    ]
+  },
+  "finiteReleaseProof": {
+    "recordId": "9575639d-ec0e-45bf-a9e5-e31d419e1e28",
+    "requestId": "a3defb07-859c-4211-8eda-973c19326156",
+    "observedAt": "2026-11-08T02:33:45.080Z",
+    "expiresAt": "2026-11-08T02:34:13.427Z",
+    "sameFreshRecordAdmittedByWebAndWorker": true,
+    "historicalOnly": true
+  },
+  "nativeBrowser": {
+    "shop": "insignia-rewrite-dev.myshopify.com",
+    "productId": "10585669959963",
+    "desktopViewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "firstPostDeploymentConfig": {
+      "status": 200,
+      "durationMs": 1286.1,
+      "oldMeasuredColdDurationMs": 7560,
+      "beforeExplicitCorrelatedProof": true,
+      "fullFirstDesignerPaintNotMeasured": true
+    },
+    "firstLoaderDelayMs": 31.1,
+    "subsequentNarrowOpening": {
+      "width": 390,
+      "height": 844,
+      "userAgentChanged": false,
+      "cachedCDNAssets": true,
+      "loaderDelayMs": 12.3,
+      "designerVisibleMs": 1138.3,
+      "configDurationMs": 1026.6,
+      "configHTTP": 200,
+      "frameAndContentWidth": 390,
+      "previewControlsStacked": true,
+      "alerts": 0
+    },
+    "modal": "Native modal containment, styled isolated frame, manual close restores focus/scroll, resume retains artwork/quantity; Escape closes.",
+    "artwork": "Approved400x400 PNG fixture inspected and rendered after recovering the pre-existing failed inspector.",
+    "authoritativeReview": {
+      "currency": "USD",
+      "quantity": 1,
+      "totalMinor": 1250,
+      "durationMs": 7067.9,
+      "freshPurchaseChecksPreserved": true
+    },
+    "cart": {
+      "automaticNativeNavigation": true,
+      "itemCount": 1,
+      "productId": "10585669959963",
+      "variantId": "54545321885979",
+      "quantity": 1,
+      "currency": "USD",
+      "totalMinor": 1250,
+      "propertyKeys": [
+        "_insignia_member_v2",
+        "_insignia_quote_v2"
+      ],
+      "restoredArtworkMethodSizeQuantity": true,
+      "cleanup": "Native Remove followed by independent zero-item/zero-total readback"
+    },
+    "merchantEditor": "Authenticated selected published editor, loaded600x800 product image, Front demo approximately12.0x18.7cm and native Preview customization/Save draft/Publish actions; no draft/publication write.",
+    "newCheckoutOrderPaymentOrEmail": false
+  },
+  "inspectorRecovery": {
+    "sourceTree": "37ee1f0ab50c0d75deee5bd84b29bda9aa3b7b30",
+    "manifestSha256": "282538496858237b860012f12298871452c593d5b6394a473990c846d3de4356",
+    "preExistingFailure": "Service exited at2026-11-08T01:25:51Z after Connection terminated unexpectedly, before this promotion; stale socket refused connections.",
+    "proof": "Immutable artifact/unit verified, MainPID/ControlPID0, no listener, no live claims or queued/inspecting/promoting/deleting artwork work.",
+    "action": "One claimed start of unchanged service; dead socket preserved under an audit name, directory inode/config/roles/sandbox unchanged.",
+    "result": "Readiness200 ready=true and actual PNG inspection passed.",
+    "autoRestartPolicyChanged": false
+  },
+  "limits": [
+    "Owner visual acceptance and production rollout remain separate.",
+    "Single checkout and sender test budgets remain consumed; no new order/payment, email, scope/currency or protected VAT action.",
+    "Customer email remains disabled pending original received-message authentication evidence; native EUR qualification deferred.",
+    "Subsequent full-UI timing uses cached CDN assets and a CSS viewport, not a mobile-device user-agent or cold-network benchmark.",
+    "Old bindings and expired proof remain immutable; source research measurements are distinct from native post-change observations."
+  ]
+}

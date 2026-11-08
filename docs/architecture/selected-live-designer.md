@@ -26,7 +26,7 @@ New derived step IDs hash tuples containing delimiter characters or exceeding128
 
 ## Baseline behavior and opening performance
 
-The owner-confirmed8November correction uses PR223 (`d490e4d`) as the presentation/state baseline. Real service effects replace simulations. This correction is being qualified; deployment status stays in [current state](../delivery/state.md).
+The owner-confirmed8November correction uses PR223 (`d490e4d`) as the presentation/state baseline. Real service effects replace simulations. This correction is deployed and natively qualified on rewrite-dev; deployment identities and limits stay in [current state](../delivery/state.md).
 
 | Selected behavior | Live owner |
 | --- | --- |
@@ -39,7 +39,7 @@ The owner-confirmed8November correction uses PR223 (`d490e4d`) as the presentati
 | Open/close containment | Parent native modal, focus/Escape/scroll restoration and isolated styled frame |
 | Startup failure | Immediate localized cancellable loader, successful stylesheet plus frame initialization required before reveal, bounded asset/handshake failure and explicit Retry |
 
-The previous cold configuration took7.56seconds (warm0.996seconds); a correlated trace spent3.63seconds before and3.75seconds inside trusted collection. Opening incorrectly collected purchase-release readiness. Selection now reads complete effective publication/contextual catalogue/preview facts, then rechecks current scope before disclosure. It does not select signing keys or collect release authority. Proposal, acceptance and actual purchase guards remain fresh. Native post-change timings must be recorded separately; local tests do not establish their speed.
+The previous cold configuration took7.56seconds (warm0.996seconds); a correlated trace spent3.63seconds before and3.75seconds inside trusted collection. Opening incorrectly collected purchase-release readiness. Selection now reads complete effective publication/contextual catalogue/preview facts, then rechecks current scope before disclosure. It does not select signing keys or collect release authority. Proposal, acceptance and actual purchase guards remain fresh. Native post-change observations returned the first configuration in1.286seconds with a31millisecond loader. A subsequent390-pixel CSS opening with cached CDN assets showed the full Designer in1.138seconds (configuration1.027seconds). Full first paint was not measured. Actual fresh authoritative review still took7.068seconds; its purchase checks remain intact. See current state for the exact run and measurement limits.
 
 The verifier may reuse startup code qualification only when its actual kernel mount table proves an unmounted code subtree of a read-only Docker overlay image. Writable deployments and host bind mounts keep per-launch hashing. Native credentials, version/module inventory, reservations, freshness and prior-operation settlement remain checked; no evidence TTL is extended. This is a static artifact optimization, not an authority cache.
 
