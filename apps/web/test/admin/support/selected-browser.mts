@@ -232,6 +232,8 @@ type Scenario = {
   initialDraft?: MerchantDraft;
   absent?: boolean;
   readOnly?: boolean;
+  shopifyModal?: boolean;
+  deferShopifyModalDismiss?: boolean;
   loseSaveReply?: boolean;
   holdSave?: boolean;
   publicationPending?: boolean;
@@ -251,20 +253,70 @@ async function fixture(t: TestContext, scenario: Scenario = {}) {
   const pageErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   t.after(() => assert.deepEqual(pageErrors, [], 'Selected route must not throw unhandled browser errors'));
-  await page.addInitScript(() => {
-    window.saveBarEvents = [];
-    window.shopify = {
-      idToken: async () => 'synthetic-selected-token',
-      saveBar: {
-        show: async (id) => {
-          window.saveBarEvents.push(['show', id]);
+  await page.addInitScript(
+    ({ shopifyModal, deferShopifyModalDismiss }) => {
+      window.saveBarEvents = [];
+      const shopify: Window['shopify'] = {
+        idToken: async () => 'synthetic-selected-token',
+        saveBar: {
+          show: async (id) => {
+            window.saveBarEvents.push(['show', id]);
+          },
+          hide: async (id) => {
+            window.saveBarEvents.push(['hide', id]);
+          },
         },
-        hide: async (id) => {
-          window.saveBarEvents.push(['hide', id]);
-        },
-      },
-    };
-  });
+      };
+      if (shopifyModal) {
+        const mounted = new Map<string, { scrim: HTMLElement; onDismiss?: () => void }>();
+        const deferredDismissals: (() => void)[] = [];
+        let deferNextDismiss = deferShopifyModalDismiss;
+        function close(id: string) {
+          const modal = mounted.get(id);
+          if (!modal) return;
+          mounted.delete(id);
+          modal.scrim.remove();
+          if (deferNextDismiss) {
+            deferNextDismiss = false;
+            deferredDismissals.push(() => modal.onDismiss?.());
+          } else modal.onDismiss?.();
+        }
+        shopify._internal = {
+          modal: {
+            async show(id, options) {
+              if (id && document.getElementById(id)) {
+                if (mounted.has(id)) return;
+                const scrim = document.createElement('div');
+                scrim.dataset.shopifyHostModalScrim = '';
+                document.body.append(scrim);
+                mounted.set(id, { scrim, onDismiss: options?.onDismiss });
+                return;
+              }
+              const scrim = document.createElement('div');
+              scrim.dataset.shopifyHostModalScrim = '';
+              document.body.append(scrim);
+            },
+            async hide(id) {
+              close(id);
+            },
+          },
+        };
+        window.dismissShopifyModal = () => {
+          const id = [...mounted.keys()].at(-1);
+          if (id) close(id);
+        };
+        window.finishShopifyModalDismiss = () => deferredDismissals.shift()?.();
+      } else {
+        window.dismissShopifyModal = () => {};
+        window.finishShopifyModalDismiss = () => {};
+      }
+      window.shopify = shopify;
+    },
+    {
+      shopifyModal: scenario.shopifyModal ?? false,
+      deferShopifyModalDismiss: scenario.deferShopifyModalDismiss ?? false,
+    },
+  );
   let currentDraft: MerchantDraft = structuredClone(scenario.initialDraft ?? draft);
   let version = '1';
   let exists = !scenario.absent;
