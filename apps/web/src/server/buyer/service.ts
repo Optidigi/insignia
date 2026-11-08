@@ -151,17 +151,30 @@ export function createBuyerServices(input: {
       readiness: {
         async assertReady(target) {
           await validatePositions(scope, groups);
-          for (const productId of new Set(groups.map((group) => group.productId))) {
-            const current = await input.catalog(scope, productId, finalCheck ? 'final' : undefined);
-            const available = new Map(current.variants.map((variant) => [variant.id, variant.available]));
-            if (
-              current.variants.length !== available.size ||
-              groups
-                .filter((group) => group.productId === productId)
-                .some((group) => group.variants.some((variant) => available.get(variant.variantId) !== true))
-            )
-              return review();
-          }
+          const availability = async () => {
+            for (const productId of new Set(groups.map((group) => group.productId))) {
+              const current = await input.catalog(scope, productId, finalCheck ? 'final' : undefined);
+              const available = new Map(current.variants.map((variant) => [variant.id, variant.available]));
+              if (
+                current.variants.length !== available.size ||
+                groups
+                  .filter((group) => group.productId === productId)
+                  .some((group) => group.variants.some((variant) => available.get(variant.variantId) !== true))
+              )
+                return review();
+            }
+          };
+          const prepare = finalCheck ? undefined : ports.readiness.prepare;
+          if (prepare) {
+            // Preparation owns its IO but grants no authority. Drain both branches;
+            // stock denial retains precedence if both fail.
+            const checks = await Promise.allSettled([
+              availability(),
+              Promise.resolve().then(() => prepare.call(ports.readiness, target)),
+            ]);
+            for (const check of checks) if (check.status === 'rejected') throw check.reason;
+          } else await availability();
+          // Current-time authority remains serial after stock, especially inside signing.
           await ports.readiness.assertReady(target);
         },
       },

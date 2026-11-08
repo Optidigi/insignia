@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
 import {
-  type AcceptedQuote,
   type ArtworkScope,
   bindProviderSubscription,
   createArtworkUsabilityPort,
@@ -65,7 +64,7 @@ export function createQuoteAuthorityPorts(input: {
   /** Current verified resource authority; bind per request, never from quote JSON or a shared cache. */
   artworkAuthority?: ArtworkScope;
   signing: { keyId: number; signer: AuthorizationSigner };
-  readiness: { assertReady(input: { quote: AcceptedQuote }): Promise<void> };
+  readiness: QuoteAuthorityPorts['readiness'];
   clock?: () => Date;
   ids?: { quoteId(): string; setId(): string };
   fetchImpl?: typeof fetch;

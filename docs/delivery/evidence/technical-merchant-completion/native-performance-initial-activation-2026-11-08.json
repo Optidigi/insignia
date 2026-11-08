@@ -1,0 +1,169 @@
+{
+  "classification": "NATIVE_PERFORMANCE_INITIAL_ROLLOUT_PASS_REMAINING_SPEED_WORK_OPEN",
+  "date": "2026-11-08",
+  "sourcePR": 251,
+  "bindingPR": 252,
+  "bindingHead": "7a6db17ac6861c0689e78f6099c64adf50aa992b",
+  "merge": "f2a405f3f1e729218a5b8633e4164c9f61ce7f70",
+  "sourceTree": "5f4a1e3bc64ba3e472451eaafb95115f5bda8e5f",
+  "ciSynthetic": "92323df94fa5bf0d33541d2dada262f44a743471",
+  "ciRuns": {
+    "runtime": "42518247091",
+    "foundation": "42518247069",
+    "durable": "42518247115"
+  },
+  "native": {
+    "versionId": "1199754706945",
+    "tag": "native-performance-b2729a6",
+    "soleActive": true,
+    "versionCount": 24,
+    "moduleCount": 14,
+    "nonThemeConfigurationsUnchanged": 13,
+    "moduleHash": "f046f46022e08b4f5ca9b64799911071a0a8e96fc43ac032a56ff8168831ec2c",
+    "themeFiles": 21,
+    "ciAssets": 12,
+    "historicalBindingsUnchanged": true,
+    "neverReleaseVersionsRemainInactive": [
+      "1158837927937",
+      "1199165767681",
+      "1198938357761"
+    ]
+  },
+  "artifacts": {
+    "foundationZipSha256": "7484122ebda83f487c0344cc61a460a4d97a5a27dc930a01087c8e7c6f2b6fe1",
+    "foundationManifestSha256": "6a96765306951169d30d08a316e22a6c8a65ae3e41d9242c3fb08f57a1d536c2",
+    "all138EntriesQualified": true,
+    "allFinalAssetsEqualFrozenCandidate": true,
+    "images": {
+      "m5-web-image": {
+        "manifestId": "sha256:76d5d0f90df31f9643f590476f49cd4e12bb7485bc1240ebb3dd5b568ec49e77",
+        "configId": "sha256:0be1e942add53519a19efbecf05ebe3920bae1d701bfde9104e135f5ac9ce087",
+        "archiveSha256": "dae1dbf92e11d1130d56047ef5d327ef9eaefde38cad8e4a351b02124d6ef5e6"
+      },
+      "m5-024-worker-image": {
+        "manifestId": "sha256:2734d5613b345925158e3c3e77357e0a6590f317aab07241f8f585c1e1d5b822",
+        "configId": "sha256:84f7b19f8fb55f18288463e5bb0c2e9bf867945c273467b91b72867b29cdcda2",
+        "archiveSha256": "7ce5e76a037d273e38ee64150597d1a5d1bd90548328a5cbfc7ea2604cbe6d16"
+      },
+      "release-verifier": {
+        "manifestId": "sha256:e185ef5efd149e9e8e4b3c293900bd3944c2a26abf2fe72253a0a179097a1059",
+        "configId": "sha256:2ce95dc0650b38b3176843dba74a5baa16be80f286dc8aae60552811ac535ae0",
+        "archiveSha256": "56d51cfdf44a2068f045adb9ff747541ee538822a823da958bb7f7c1bcada1d0"
+      }
+    },
+    "verifierCodeManifestSha256": "e969bf2a536584e6374574aae0689ee90fec10fa941ca4fac048d921cd83a71c"
+  },
+  "inspector": {
+    "sourceTree": "5f4a1e3bc64ba3e472451eaafb95115f5bda8e5f",
+    "manifestSha256": "ca4c9bbe1bcf359ddd45b851aa85387523e9258086d8438b667914abd1ba1209",
+    "serviceSha256": "1ca613dcab200092665c1d3085de0be9aaa48bd9dc84b2d5086ade3842c7ad88",
+    "oldProcessExited": true,
+    "oldSocketAbsentBeforeStart": true,
+    "readinessDirectoryIdentityPreserved": true,
+    "privateSettingsProfileAndLimitsUnchanged": true,
+    "sandbox": {
+      "classification": "NATIVE_NEW_INSPECTOR_SANDBOX_PASS",
+      "hostFileVisible": false,
+      "network": false,
+      "codeWritable": false,
+      "effectiveCapabilities": "zero",
+      "cpuLimit": "8:9",
+      "providerCalls": 0
+    },
+    "representativeRPC": {
+      "classification": "NATIVE_INSPECTOR_READINESS_AND_REPRESENTATIVE_RPC_PASS",
+      "readiness": 200,
+      "fixtures": [
+        {
+          "name": "svg",
+          "mime": "image/svg+xml",
+          "width": 8,
+          "height": 9,
+          "originalDigestMatched": true,
+          "previewMime": "image/png",
+          "durationMs": 135
+        },
+        {
+          "name": "png",
+          "mime": "image/png",
+          "width": 8,
+          "height": 9,
+          "originalDigestMatched": true,
+          "previewMime": "image/png",
+          "durationMs": 124
+        },
+        {
+          "name": "jpeg",
+          "mime": "image/jpeg",
+          "width": 8,
+          "height": 9,
+          "originalDigestMatched": true,
+          "previewMime": "image/png",
+          "durationMs": 126
+        }
+      ],
+      "storageWrites": 0,
+      "providerCalls": 0
+    }
+  },
+  "freshAdmission": [
+    {
+      "state": "COMPLETE",
+      "requestId": "e8b17768-46b6-4e83-8891-9f128226de6f",
+      "recordId": "35d934c7-23a6-41c7-ae41-588320ebd3e8",
+      "scope": {
+        "shopId": "db771bea-c585-4954-9f88-70771c9a0c89",
+        "installationGeneration": "1",
+        "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+      },
+      "activeVersion": "1199754706945",
+      "observedAt": "2026-11-08T20:27:47.135Z",
+      "expiresAt": "2026-11-08T20:28:15.477Z",
+      "functionsSource": "9b94149272d1b62c34f44dda3bde209e80b4ae22"
+    },
+    {
+      "role": "worker",
+      "sameRecord": true,
+      "recordId": "35d934c7-23a6-41c7-ae41-588320ebd3e8",
+      "observedAt": "2026-11-08T20:27:47.135Z",
+      "expiresAt": "2026-11-08T20:28:15.477Z"
+    }
+  ],
+  "observations": {
+    "chromePreparedClickMs": 16,
+    "firefoxPreparedClickMs": 144,
+    "firefoxDirectCacheDisabledClickMs": 2118,
+    "chromeEditingAvailableMs": 82,
+    "chromeReviewAuthoritativeReadyMs": 8937,
+    "chromeProposalMs": 6715,
+    "chromeUpload21882BytesMs": 6867,
+    "firefoxUpload21882BytesMs": 6575,
+    "chromeDelayedAddNavigationMs": 8959,
+    "delayedAddAfterReviewReadyMs": 87576,
+    "chromeImmediateAddNavigationMs": 4289,
+    "immediateAddUsesArtworkLater": true,
+    "exactTestCartUSDMinor": 2495,
+    "testCartCountAfterCleanup": 0,
+    "testCartTotalAfterCleanup": 0,
+    "firefoxCloseFocusScrollAndDraftRetentionPass": true,
+    "firefox390CSSViewportNoOverflow": true,
+    "merchantEditorFreshReadShowsSelectedLayoutFourViewsSixPlacements": true
+  },
+  "protectedState": {
+    "schema": 51,
+    "purchases": 5,
+    "paidFacts": 4,
+    "promotionFactsAndACLsAndOtherContainersUnchanged": true,
+    "additionalCheckoutsOrdersPayments": 0,
+    "protectedVATNoRetry": true,
+    "currencyAndScopesUnchanged": true
+  },
+  "limits": [
+    "Prepared and cache-disabled opening are different conditions; cold/failure recovery remains.",
+    "Review and upload remain slow; source follow-up and native remeasurement required.",
+    "Delayed Add was clicked87.576seconds after readiness; do not treat it as immediate Add latency.",
+    "Immediate Add used artwork-later, so it is not an identical uploaded-artwork benchmark.",
+    "Native samples are not percentiles or owner visual acceptance.",
+    "Owner acceptance, email delivery authentication and EUR qualification remain separate."
+  ]
+}

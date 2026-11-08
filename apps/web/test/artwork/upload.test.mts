@@ -362,29 +362,61 @@ test('merchant upload and pending completion cross the HTTPS proxy origin gate w
   assert.equal(completed, 2, 'denied callers cannot complete an upload');
 });
 
-test('short processing checks find promptly usable artwork without waiting two seconds, then back off', async () => {
-  const waits: number[] = [];
-  let statuses = 0;
+test('processing checks discover a verified image within half a second of completion during the first six seconds', async () => {
+  let elapsed = 0;
+  const observed: number[] = [];
   const flow = createArtworkUpload({
-    api: async (path) =>
-      path.endsWith('/status')
-        ? { state: ++statuses <= 5 ? 'QUEUED' : 'USABLE', expiresAt: '2099-01-08T00:00:00Z' }
-        : { url: 'https://private.example/verified.png', width: 10, height: 10, expiresAt: '2099-01-01T00:05:00Z' },
+    api: async (path) => {
+      if (path.endsWith('/status')) {
+        observed.push(elapsed);
+        return { state: elapsed >= 3200 ? 'USABLE' : 'PROMOTING', expiresAt: '2099-01-08T00:00:00Z' };
+      }
+      return { url: 'https://private.example/verified.png', width: 10, height: 10, expiresAt: '2099-01-01T00:05:00Z' };
+    },
     pause: async (ms) => {
-      waits.push(ms);
+      elapsed += ms;
     },
   });
   assert.equal(
     (await flow.resume({ assetId: 'ready-soon', assetExpiresAt: '2099-01-08T00:00:00Z' }, () => {})).assetId,
     'ready-soon',
   );
-  assert.deepEqual(waits, [250, 500, 1000, 2000, 2000]);
+  assert.equal(elapsed, 3500);
+  assert.equal(observed.length, 8, 'Brief fast checks remain bounded rather than polling continuously');
+});
+
+test('longer processing backs off after the bounded fast-check window', async () => {
+  let elapsed = 0;
+  const observed: number[] = [];
+  const flow = createArtworkUpload({
+    api: async (path) => {
+      if (path.endsWith('/status')) {
+        observed.push(elapsed);
+        return { state: elapsed >= 10000 ? 'USABLE' : 'INSPECTING', expiresAt: '2099-01-08T00:00:00Z' };
+      }
+      return { url: 'https://private.example/verified.png', width: 10, height: 10, expiresAt: '2099-01-01T00:05:00Z' };
+    },
+    pause: async (ms) => {
+      elapsed += ms;
+    },
+  });
+  await flow.resume({ assetId: 'slower', assetExpiresAt: '2099-01-08T00:00:00Z' }, () => {});
+  assert.equal(elapsed, 10000);
+  assert.equal(observed.length, 15);
+  assert.deepEqual(
+    observed.filter((time) => time >= 6000),
+    [6000, 8000, 10000],
+  );
 });
 
 test('faster polling retains the complete processing wait budget and cancellation prevents the next read', async () => {
-  let waited = 0;
+  let waited = 0,
+    totalReads = 0;
   const flow = createArtworkUpload({
-    api: async () => ({ state: 'QUEUED', expiresAt: '2099-01-08T00:00:00Z' }),
+    api: async () => {
+      totalReads++;
+      return { state: 'QUEUED', expiresAt: '2099-01-08T00:00:00Z' };
+    },
     pause: async (ms) => {
       waited += ms;
     },
@@ -394,6 +426,7 @@ test('faster polling retains the complete processing wait budget and cancellatio
     /still processing/,
   );
   assert.equal(waited, 240000);
+  assert.ok(totalReads <= 129, 'The fast window must not become sustained high-frequency polling');
   const controller = new AbortController();
   let reads = 0;
   const cancelled = createArtworkUpload({

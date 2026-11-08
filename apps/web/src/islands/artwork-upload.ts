@@ -103,7 +103,7 @@ export function createArtworkUpload(input: {
   ): Promise<ArtworkPreview> {
     let completionAttempted = false;
     let waitedMs = 0;
-    for (let attempt = 0; attempt < 124 && waitedMs < 240000; attempt++) {
+    while (waitedMs < 240000) {
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
       if (Date.parse(asset.assetExpiresAt) <= Date.now())
         throw Object.assign(new Error('Artwork expired. Upload it again.'), { status: 410 });
@@ -134,7 +134,9 @@ export function createArtworkUpload(input: {
         });
       }
       onState('Processing artwork');
-      const waitMs = Math.min(250 * 2 ** Math.min(attempt, 3), 240000 - waitedMs);
+      // Typical verified uploads finish within this short window. Keep discovery
+      // latency bounded without turning a slow inspection into sustained fast polling.
+      const waitMs = Math.min(waitedMs < 6000 ? 500 : 2000, 240000 - waitedMs);
       await pause(waitMs, signal);
       waitedMs += waitMs;
     }

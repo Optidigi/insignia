@@ -279,28 +279,40 @@ export function createArtworkService(input: {
         };
         const prepared = await input.store.prepare(assetId, claimId, manifest, clock());
         if (signal?.aborted) throw new ArtworkError('UNAVAILABLE');
-        await input.storage.putImmutable({
-          key: prepared.originalKey,
-          bytes: original,
-          contentType: 'application/octet-stream',
-        });
+        // Keep each independent pair concurrent, but drain every started effect
+        // before releasing its claim or handling an ambiguous storage failure.
+        const [originalWrite, previewWrite] = await Promise.allSettled([
+          input.storage.putImmutable({
+            key: prepared.originalKey,
+            bytes: original,
+            contentType: 'application/octet-stream',
+          }),
+          input.storage.putImmutable({
+            key: prepared.previewKey,
+            bytes: new Uint8Array(inspected.preview),
+            contentType: 'image/png',
+          }),
+        ]);
+        if (originalWrite.status === 'rejected') throw originalWrite.reason;
+        if (previewWrite.status === 'rejected') throw previewWrite.reason;
         if (signal.aborted) throw new ArtworkError('UNAVAILABLE');
-        await input.storage.putImmutable({
-          key: prepared.previewKey,
-          bytes: new Uint8Array(inspected.preview),
-          contentType: 'image/png',
-        });
         // Verify both stored byte identities before exposing usability.
-        const readOriginal = await input.storage.read({
-          key: prepared.originalKey,
-          maxBytes: ARTWORK_POLICY.maxBytes,
-          signal,
-        });
-        const readPreview = await input.storage.read({
-          key: prepared.previewKey,
-          maxBytes: ARTWORK_POLICY.previewMaxBytes,
-          signal,
-        });
+        const [originalRead, previewRead] = await Promise.allSettled([
+          input.storage.read({
+            key: prepared.originalKey,
+            maxBytes: ARTWORK_POLICY.maxBytes,
+            signal,
+          }),
+          input.storage.read({
+            key: prepared.previewKey,
+            maxBytes: ARTWORK_POLICY.previewMaxBytes,
+            signal,
+          }),
+        ]);
+        if (originalRead.status === 'rejected') throw originalRead.reason;
+        if (previewRead.status === 'rejected') throw previewRead.reason;
+        const readOriginal = originalRead.value,
+          readPreview = previewRead.value;
         if (hash(readOriginal) !== manifest.sha256 || hash(readPreview) !== manifest.previewSha256)
           throw new ArtworkError('CONFLICT');
         if (signal.aborted) throw new ArtworkError('UNAVAILABLE');

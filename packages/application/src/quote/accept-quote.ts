@@ -195,7 +195,11 @@ export interface QuoteAuthorityPorts {
   catalog: CatalogContextPort;
   currency: { exponent(code: string): number | null };
   /** Trusted publication/key/Function observation, checked in the serialized signing window. */
-  readiness: { assertReady(input: { quote: AcceptedQuote }): Promise<void> };
+  readiness: {
+    /** Optional request-local release IO preparation; completion grants no issuance authority. */
+    prepare?(input: { quote: AcceptedQuote }): Promise<void>;
+    assertReady(input: { quote: AcceptedQuote }): Promise<void>;
+  };
   authorization: CartAuthorizationPort;
   store: QuoteAcceptanceStore;
 }

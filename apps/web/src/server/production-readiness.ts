@@ -2,6 +2,7 @@ import {
   type AcceptedQuote,
   assertQuoteIssuanceReady,
   type FunctionArtifactReadinessPorts,
+  requireIssuanceReady,
   SigningKeyLifecycle,
   type SigningKeyRing,
   type SigningKeyStore,
@@ -49,45 +50,64 @@ export function createProductionQuoteReadiness(input: {
   maxObservationAgeMs: number;
   clock?: () => Date;
   artifactPorts?: FunctionArtifactReadinessPorts;
-}): { assertReady(input: { quote: QuoteReadinessTarget }): Promise<void> } {
+}): {
+  prepare(input: { quote: QuoteReadinessTarget }): Promise<void>;
+  assertReady(input: { quote: QuoteReadinessTarget }): Promise<void>;
+} {
   const keys = new SigningKeyLifecycle(input.core.signingKeys, input.ring);
   const admin = createPublicationAdminAdapter({ transport: input.transport });
   const now = input.clock ?? (() => new Date());
   const functions = createFunctionOwnershipReconciler({ transport: input.transport, clock: now });
+  async function currentContext(quote: QuoteReadinessTarget) {
+    if (!input.artifactPorts) throw new Error('Function artifact trusted evidence and expected build ports missing');
+    const scope = {
+      shopId: quote.shopId,
+      installationGeneration: quote.installationGeneration,
+      authorizationGeneration: quote.authorizationGeneration,
+      authorizationEpoch: quote.authorizationEpoch,
+    };
+    const active = await input.core.tenants.getActiveAuthorizationScope({
+      shopId: quote.shopId,
+      installationGeneration: quote.installationGeneration,
+    });
+    if (
+      !active ||
+      active.authorizationGeneration !== scope.authorizationGeneration ||
+      active.authorizationEpoch !== scope.authorizationEpoch
+    )
+      throw new Error('Quote installation authorization changed');
+    const tenant = {
+      shopId: quote.shopId,
+      installationGeneration: quote.installationGeneration,
+      shopifyShopId: `gid://shopify/Shop/${active.shopifyShopId}`,
+      appId: input.appId,
+    };
+    const desired = await keys.desiredPublicConfig(scope);
+    requireIssuanceReady({ config: desired, keyId: input.selectedKeyId, acceptedDay: quote.acceptedDay });
+    const artifactScope = {
+      shopId: quote.shopId,
+      installationGeneration: quote.installationGeneration,
+      appClientId: input.expectedFunctions.appKey,
+    };
+    return { scope, tenant, desired, artifactScope, artifacts: input.artifactPorts };
+  }
   return {
+    async prepare({ quote }) {
+      const { artifactScope, artifacts } = await currentContext(quote);
+      const [build, evidence] = await Promise.allSettled([
+        Promise.resolve().then(() => artifacts.expectedBuild.read(artifactScope)),
+        Promise.resolve().then(() => artifacts.trustedEvidence.read(artifactScope)),
+      ]);
+      if (build.status === 'rejected') throw build.reason;
+      if (evidence.status === 'rejected') throw evidence.reason;
+      if (!build.value || !evidence.value) throw new Error('Function artifact preparation unavailable');
+      // No result is retained or approved; assertReady independently observes current evidence.
+    },
     async assertReady({ quote }) {
-      if (!input.artifactPorts) throw new Error('Function artifact trusted evidence and expected build ports missing');
-      const scope = {
-        shopId: quote.shopId,
-        installationGeneration: quote.installationGeneration,
-        authorizationGeneration: quote.authorizationGeneration,
-        authorizationEpoch: quote.authorizationEpoch,
-      };
-      const active = await input.core.tenants.getActiveAuthorizationScope({
-        shopId: quote.shopId,
-        installationGeneration: quote.installationGeneration,
-      });
-      if (
-        !active ||
-        active.authorizationGeneration !== scope.authorizationGeneration ||
-        active.authorizationEpoch !== scope.authorizationEpoch
-      )
-        throw new Error('Quote installation authorization changed');
-      const tenant = {
-        shopId: quote.shopId,
-        installationGeneration: quote.installationGeneration,
-        shopifyShopId: `gid://shopify/Shop/${active.shopifyShopId}`,
-        appId: input.appId,
-      };
-      const desired = await keys.desiredPublicConfig(scope);
-      const artifactScope = {
-        shopId: quote.shopId,
-        installationGeneration: quote.installationGeneration,
-        appClientId: input.expectedFunctions.appKey,
-      };
+      const { scope, tenant, desired, artifactScope, artifacts: artifactPorts } = await currentContext(quote);
       const artifacts = Promise.all([
-        input.artifactPorts.expectedBuild.read(artifactScope),
-        input.artifactPorts.trustedEvidence.read(artifactScope),
+        artifactPorts.expectedBuild.read(artifactScope),
+        artifactPorts.trustedEvidence.read(artifactScope),
       ]);
       const functionObservation = artifacts.then(([expectedBuild]) =>
         functions.read(tenant, {
