@@ -59,8 +59,6 @@ export type ProductionBuyerInputs = {
   passiveArtifactPorts?: FunctionArtifactReadinessPorts;
   expectedFunctions: ExpectedFunctionOwnership;
   maxObservationAgeMs: number;
-  /** Qualified server readiness authority, including current installed projections and release identity. */
-  configurationReady?(target: Scope & { productId: string; selectedKeyId: number }): Promise<void>;
   /** Current provider inventory eligibility, not a guessed boolean from product status or variant existence. */
   readVariantAvailability?(
     target: Scope & { productId: string; variantIds: readonly string[] },
@@ -96,7 +94,6 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
     typeof input.artifactPorts?.expectedBuild?.read !== 'function' ||
     typeof input.artifactPorts?.trustedEvidence?.read !== 'function' ||
     input.expectedFunctions?.appKey !== apiKey ||
-    (input.configurationReady !== undefined && typeof input.configurationReady !== 'function') ||
     (input.readVariantAvailability !== undefined && typeof input.readVariantAvailability !== 'function') ||
     !Number.isSafeInteger(input.maxObservationAgeMs) ||
     input.maxObservationAgeMs < 1 ||
@@ -366,67 +363,6 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
             },
           })
         : undefined,
-    async configurationReady(scope, productId) {
-      const selected = await selection(scope);
-      if (input.configurationReady) {
-        await input.configurationReady({
-          shopId: scope.shopId,
-          installationGeneration: scope.installationGeneration,
-          productId,
-          selectedKeyId: selected.selected.id,
-        });
-      } else {
-        const tenant = await active(scope),
-          source = credentials(scope);
-        const context = await readShopContext(
-          {
-            shopId: scope.shopId,
-            installationGeneration: scope.installationGeneration,
-            shopifyShopId: tenant.shopifyShopId,
-          },
-          { credentials: source, fetchImpl, now: clock },
-        );
-        const revision = await input.core.acceptedQuotes.getEffective(scope.shopId, productId);
-        if (!revision || revision.config.shopId !== scope.shopId || revision.config.productId !== productId)
-          throw new Error('Buyer effective publication unavailable');
-        const day = localDay(clock(), context.ianaTimezone).ordinal;
-        if (+clock() < Date.parse(context.observedAt) || +clock() >= Date.parse(context.freshUntil))
-          throw new Error('Buyer shop context unavailable');
-        const readiness = createProductionQuoteReadiness({
-          core: input.core,
-          ring: input.ring,
-          selectedKeyId: selected.selected.id,
-          appId,
-          expectedFunctions: input.expectedFunctions,
-          transport: createPublicationAdminHttpTransport({ credentials: source, fetchImpl }),
-          maxObservationAgeMs: input.maxObservationAgeMs,
-          artifactPorts: input.artifactPorts,
-          clock,
-        });
-        await readiness.assertReady({
-          quote: {
-            ...selected.keyScope,
-            acceptedDay: day,
-            effectiveRevisions: [
-              {
-                configId: revision.configId,
-                operationId: revision.operationId,
-                productId,
-                revisionId: revision.config.revisionId,
-                contentHash: revision.config.revisionContentHash,
-              },
-            ],
-          },
-        });
-      }
-      const after = await selection(scope);
-      if (
-        after.selected.id !== selected.selected.id ||
-        after.keyScope.authorizationGeneration !== selected.keyScope.authorizationGeneration ||
-        after.keyScope.authorizationEpoch !== selected.keyScope.authorizationEpoch
-      )
-        throw new Error('Buyer readiness changed');
-    },
     async catalog(scope, productId, phase, context) {
       const source = await credentials(scope, () => phase === 'final').acquire(scope);
       if (source.kind !== 'usable') throw new Error('Buyer catalog credential unavailable');

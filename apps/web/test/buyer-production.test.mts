@@ -96,9 +96,6 @@ function fixture() {
       transformInputQuerySha256: 'a'.repeat(64),
       validationInputQuerySha256: 'b'.repeat(64),
     },
-    configurationReady: async () => {
-      throw new Error('configuration unavailable');
-    },
     readVariantAvailability: async () => {
       throw new Error('inventory unavailable');
     },
@@ -583,9 +580,6 @@ function catalogFixture(selectedOptions: { name: string; value: string }[] = [])
       { status: 200 },
     );
   };
-  input.configurationReady = async (target) => {
-    assert.deepEqual(target, { ...scope, productId: '111', selectedKeyId: 7 });
-  };
   input.readVariantAvailability = async (target) => {
     assert.deepEqual(target, {
       ...scope,
@@ -675,19 +669,6 @@ test('generation drift during credential acquisition and readiness failures rema
     /installation authority unavailable/,
   );
   assert.equal(requests, 0);
-  const fresh = catalogFixture();
-  fresh.input.configurationReady = async () => {
-    throw new Error('trusted release evidence unavailable');
-  };
-  await assert.rejects(
-    createProductionBuyerServices(fresh.input).config(new Request(signed())),
-    /trusted release evidence unavailable/,
-  );
-  fresh.input.core.signingKeys.list = async () => [];
-  await assert.rejects(
-    createProductionBuyerServices(fresh.input).config(new Request(signed())),
-    /signing key selection unavailable/,
-  );
 });
 
 test('production defaults read Admin availability instead of requiring an injected boolean source', async () => {
@@ -723,70 +704,6 @@ test('production defaults read Admin availability instead of requiring an inject
   const config = await createProductionBuyerServices(defaultInput).config(new Request(signed()));
   assert.equal(availabilityReads, 1);
   assert.equal(required(config.variants[0]).available, false);
-});
-
-test('production default readiness derives actual shop context and refuses missing native public configuration', async () => {
-  const { input } = catalogFixture(),
-    originalFetch = input.fetchImpl;
-  delete input.configurationReady;
-  const scope = {
-    shopId: 'tenant',
-    installationGeneration: '1',
-    authorizationGeneration: '11111111-1111-4111-8111-111111111111',
-    authorizationEpoch: 1,
-  };
-  const publicKey = publicKeyFromSeed(Buffer.alloc(32, 2));
-  input.core.signingKeys.getActiveScope = async () => scope;
-  input.core.signingKeys.list = async () => [
-    {
-      ...scope,
-      privateEnvelope: null,
-      wrappingKeyId: null,
-      id: 7,
-      keyId: 7,
-      state: 'active',
-      publicKey,
-      publicKeyFingerprint: publicKeyFingerprint(publicKey),
-      firstDay: 20000,
-      lastDay: 23000,
-    },
-  ];
-  input.core.acceptedQuotes.getEffective = async () => ({
-    configId: 'config',
-    operationId: 'operation',
-    config: {
-      ...effectiveRevision().config,
-      shopId: 'tenant',
-      productId: '111',
-      revisionId: 'revision',
-      revisionContentHash: 'a'.repeat(64),
-      methods: [],
-      placements: [],
-      productionOptions: [],
-    },
-  });
-  let contextReads = 0,
-    publicReads = 0;
-  input.fetchImpl = async (url, options) => {
-    const query = text(record(JSON.parse(text(required(options).body))).query);
-    if (query.includes('InsigniaShopContext')) {
-      contextReads++;
-      return new Response(
-        JSON.stringify({ data: { shop: { id: 'gid://shopify/Shop/9', currencyCode: 'USD', ianaTimezone: 'UTC' } } }),
-      );
-    }
-    if (query.includes('InsigniaReadPublicConfig')) {
-      publicReads++;
-      return new Response(JSON.stringify({ data: { shop: { id: 'gid://shopify/Shop/9', field: null } } }));
-    }
-    return required(originalFetch)(url, options);
-  };
-  await assert.rejects(
-    createProductionBuyerServices(input).config(new Request(signed())),
-    /Public Function config missing/,
-  );
-  assert.equal(contextReads, 1);
-  assert.equal(publicReads, 1);
 });
 
 test('published editor variant geometry retains its image, fallback and placement at the canonical renderer boundary', async () => {
@@ -1413,4 +1330,29 @@ test('production config reads real country-contextual base amounts and selected 
         assert.equal(contextReads, 1);
       },
     );
+});
+
+test('selection configuration does not wait for signing or release authority; purchase readiness remains separate', async () => {
+  const { input } = catalogFixture();
+  let releaseReads = 0;
+  input.core.signingKeys.list = async () => [];
+  input.artifactPorts = {
+    ...input.artifactPorts,
+    expectedBuild: {
+      read: async () => {
+        releaseReads++;
+        throw Error('release unavailable');
+      },
+    },
+    trustedEvidence: {
+      read: async () => {
+        releaseReads++;
+        throw Error('release unavailable');
+      },
+    },
+  };
+  const config = await createProductionBuyerServices(input).config(new Request(signed()));
+  assert.equal(config.productId, '111');
+  assert.equal(config.variants[0]?.id, '222');
+  assert.equal(releaseReads, 0);
 });

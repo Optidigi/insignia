@@ -101,7 +101,6 @@ export function createBuyerServices(input: {
     imageUrls: Record<string, string>;
   }>;
   previewImages?: FrozenPreviewReader;
-  configurationReady(scope: { shopId: string; installationGeneration: string }, productId: string): Promise<void>;
   clock?: () => Date;
 }) {
   const clock = input.clock ?? (() => new Date()),
@@ -233,12 +232,9 @@ export function createBuyerServices(input: {
       const contextual = !!country && /^[A-Z]{2}$/.test(country);
       if (presentation.selectedSetup && (!country || !/^[A-Z]{2}$/.test(country)))
         throw new Error('Country context required');
-      // Both independently validate the resolved publication; neither grants a quote.
-      // Start provider catalogue reads while fresh release readiness is collected.
-      const [catalog] = await Promise.all([
-        input.catalog(scope, scope.productId, undefined, country ? { country } : undefined),
-        input.configurationReady(scope, scope.productId),
-      ]);
+      // Selection reads complete published/contextual facts. Purchase authority is
+      // checked by proposal/acceptance, not by opening the editor.
+      const catalog = await input.catalog(scope, scope.productId, undefined, country ? { country } : undefined);
       if (catalog.variants.length > 250 || catalog.variants.some((v) => !/^[1-9][0-9]{0,19}$/.test(v.id)))
         throw new Error('Catalog boundary unavailable');
       const label = (kind: keyof typeof presentation.labels, id: string) => {
@@ -305,6 +301,14 @@ export function createBuyerServices(input: {
         ? await input.core.transactions.run((tx) => input.core.preferences.readWording(tx, scope))
         : undefined;
       if (contextual && !wording) throw new Error('Customer wording unavailable');
+      const current = await input.guest.resolve(request);
+      if (
+        !current ||
+        current.shopId !== scope.shopId ||
+        current.installationGeneration !== scope.installationGeneration ||
+        current.productId !== scope.productId
+      )
+        return notFound();
       return {
         ...(selected ? { selectedSetup: publicSelectedSetup(selected, geometry, imageUrls) } : {}),
         ...(contextual
@@ -327,7 +331,7 @@ export function createBuyerServices(input: {
         geometry,
         imageUrls,
         // Retained revisions remain readable, but the selected Designer must never
-        // present a publication without actual dimensions as production-ready.
+        // present a publication without actual dimensions as a usable selection.
         ready:
           config.placements.every((placement) =>
             placement.allowedStepIds.every((id) => !!geometry.steps.find((step) => step.id === id)?.physicalMm),

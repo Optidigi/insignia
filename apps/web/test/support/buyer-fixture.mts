@@ -260,7 +260,6 @@ export async function fixture(
         options.selectedBrowser ? [['photo', 'https://synthetic.invalid/product.png']] : [],
       ),
     }),
-    configurationReady: async () => {},
   });
   async function http(route: string, body: unknown, method = 'POST') {
     return handleBuyerRequest(
