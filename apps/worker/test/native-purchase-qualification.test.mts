@@ -55,6 +55,7 @@ test('observed native origin binds only the closed release profile and validated
 });
 
 for (const [releaseProfile, expectedVersion] of [
+  ['native-performance-b2729a6', '1199754706945'],
   ['native-parity-466a687', '1199503441921'],
   ['native-behavior-6b6c15e', '1199244476417'],
   ['native-selected-fixed-81830c6', '1199166783489'],

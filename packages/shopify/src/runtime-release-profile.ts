@@ -1,6 +1,7 @@
 /** Deployment selects a closed reviewed target, never release authority.
  * Every consumer still independently reads and qualifies trusted release evidence. */
 export type RuntimeReleaseProfileName =
+  | 'native-performance-b2729a6'
   | 'native-parity-466a687'
   | 'native-behavior-6b6c15e'
   | 'native-selected-fixed-81830c6'
@@ -18,6 +19,11 @@ export type RuntimeReleaseProfileName =
   | 'lean-markets-7b17cd9'
   | 'lean-privacy-theme-23fd116';
 const profiles = Object.freeze({
+  'native-performance-b2729a6': Object.freeze({
+    name: 'native-performance-b2729a6' as const,
+    activeVersionRef: '1199754706945',
+    functionsSourceCommit: '9b94149272d1b62c34f44dda3bde209e80b4ae22',
+  }),
   'native-parity-466a687': Object.freeze({
     name: 'native-parity-466a687' as const,
     activeVersionRef: '1199503441921',

@@ -10,6 +10,12 @@ import fixedCandidate from '../../deployment/m5-runtime/native-fixed-release-bin
 import historicalModules from '../../deployment/m5-runtime/native-function-module-baseline.json' with { type: 'json' };
 import parityModules from '../../deployment/m5-runtime/native-parity-module-baseline.json' with { type: 'json' };
 import parityCandidate from '../../deployment/m5-runtime/native-parity-release-binding.json' with { type: 'json' };
+import performanceModules from '../../deployment/m5-runtime/native-performance-module-baseline.json' with {
+  type: 'json',
+};
+import performanceCandidate from '../../deployment/m5-runtime/native-performance-release-binding.json' with {
+  type: 'json',
+};
 import selectedOnlyModules from '../../deployment/m5-runtime/native-selected-fixed-module-baseline.json' with {
   type: 'json',
 };
@@ -59,6 +65,14 @@ const oldIds = [
   '1146748534785',
 ] as const;
 const profiles = {
+  'native-performance-b2729a6': {
+    versionId: performanceCandidate.versionId,
+    versionTag: performanceCandidate.versionTag,
+    versionIds: performanceCandidate.versionIds,
+    moduleHash: performanceCandidate.moduleHash,
+    modules: performanceModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+  },
   'native-parity-466a687': {
     versionId: parityCandidate.versionId,
     versionTag: parityCandidate.versionTag,
