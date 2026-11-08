@@ -5,6 +5,7 @@
     "moduleResolution": "Bundler"
   },
   "include": [
+    "src/inline-css.d.ts",
     "test/selected-removal.test.mts",
     "test/published-options.test.mts"
   ],

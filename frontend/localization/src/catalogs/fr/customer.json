@@ -73,7 +73,13 @@
     "yourArtwork": "Votre visuel",
     "files": "Fichiers",
     "samples": "Exemples",
-    "provideArtworkLater": "Fournir le visuel ultérieurement"
+    "provideArtworkLater": "Fournir le visuel ultérieurement",
+    "uploadingFile": "Envoi du fichier…",
+    "processingFile": "Vérification du fichier…",
+    "uploadFailed": "Échec de l’envoi. Sélectionnez à nouveau le fichier.",
+    "processingFailed": "Le fichier n’a pas pu être vérifié. Réessayez.",
+    "inspectionRejected": "Cette image a été refusée. Choisissez une image statique prise en charge.",
+    "artworkExpired": "Ce fichier a expiré. Envoyez-le à nouveau."
   },
   "quantities": {
     "heading": "Quantités",
@@ -235,13 +241,13 @@
     "retry": "Réessayer"
   },
   "host": {
-    "personalise": "Personnaliser",
-    "savedDesigns": "Créations enregistrées",
-    "openSaved": "Ouvrir la création enregistrée",
-    "startNew": "Commencer une nouvelle création",
     "discardTitle": "Abandonner les modifications ?",
     "discardHelp": "Abandonnez vos modifications pour modifier une autre création. Les articles du panier restent inchangés.",
     "cancel": "Annuler",
-    "discardEdit": "Abandonner et modifier"
+    "discardEdit": "Abandonner et modifier",
+    "personalise": "Personnaliser",
+    "savedDesigns": "Créations enregistrées",
+    "openSaved": "Ouvrir la création enregistrée",
+    "startNew": "Commencer une nouvelle création"
   }
 }

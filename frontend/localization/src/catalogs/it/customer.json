@@ -73,7 +73,13 @@
     "yourArtwork": "La tua grafica",
     "files": "File",
     "samples": "Esempi",
-    "provideArtworkLater": "Fornisci la grafica in seguito"
+    "provideArtworkLater": "Fornisci la grafica in seguito",
+    "uploadingFile": "Caricamento del file…",
+    "processingFile": "Verifica del file…",
+    "uploadFailed": "Caricamento non riuscito. Seleziona di nuovo il file.",
+    "processingFailed": "Impossibile verificare il file. Riprova.",
+    "inspectionRejected": "Questa immagine è stata rifiutata. Scegli un’immagine statica supportata.",
+    "artworkExpired": "Questo file è scaduto. Caricalo di nuovo."
   },
   "quantities": {
     "heading": "Quantità",
@@ -235,13 +241,13 @@
     "retry": "Riprova"
   },
   "host": {
-    "personalise": "Personalizza",
-    "savedDesigns": "Design salvati",
-    "openSaved": "Apri design salvato",
-    "startNew": "Inizia un nuovo design",
     "discardTitle": "Scartare le modifiche?",
     "discardHelp": "Scarta le modifiche per modificare un altro design. Gli articoli nel carrello non cambieranno.",
     "cancel": "Annulla",
-    "discardEdit": "Scarta e modifica"
+    "discardEdit": "Scarta e modifica",
+    "personalise": "Personalizza",
+    "savedDesigns": "Design salvati",
+    "openSaved": "Apri design salvato",
+    "startNew": "Inizia un nuovo design"
   }
 }

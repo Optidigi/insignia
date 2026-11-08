@@ -52,24 +52,3 @@
 .host-preview-result span {
   font-size: 13px;
 }
-.host-preview-switch {
-  width: min(460px, calc(100% - 32px));
-  max-height: calc(100dvh - 40px);
-  overflow: auto;
-  padding: 24px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface);
-  color: var(--text);
-}
-.host-preview-switch::backdrop {
-  background: var(--backdrop);
-}
-.host-preview-switch > div {
-  display: flex;
-  gap: 12px;
-  justify-content: end;
-}
-.host-preview-switch .primary-button {
-  width: auto;
-}

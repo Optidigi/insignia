@@ -65,9 +65,7 @@ export function createLiveDesignerPorts(input: {
   const issuanceAttempted = new Set<string>();
   const prepared = new Map<string, Prepared>();
   const reviewSelections = new Map<string, DesiredGroup>();
-  const savedSelections = new Map<string, DesiredGroup>();
   const draftSaves = new Map<string, { group: DesiredGroup; original?: DesiredGroup }>();
-  let currentSelection: DesiredGroup | undefined;
   async function observe(signal?: AbortSignal) {
     const observed = await cart.read(signal);
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
@@ -131,7 +129,6 @@ export function createLiveDesignerPorts(input: {
     reviewSelections.clear();
     const currentMapped = buildBuyerDesigner(source, { locale: input.locale, storeName: input.storeName });
     const currentGroup = currentMapped.desired(request.design);
-    currentSelection = currentGroup;
     if (!source.shopCurrency) throw new Error('Shop currency unavailable');
     const previous = designs.get(request.design.id);
     const oldIndex = previous
@@ -139,8 +136,12 @@ export function createLiveDesignerPorts(input: {
       : -1;
     const pendingGroups = replaceGroup(observed.groups, currentGroup, oldIndex < 0 ? undefined : oldIndex);
     const pendingRows = [];
+    let currentGroupId: string | undefined;
+    const currentKey = desiredGroupKey(currentGroup);
     for (const candidate of pendingGroups) {
-      const id = await advisoryFingerprint(desiredGroupKey(candidate));
+      const key = desiredGroupKey(candidate);
+      const id = await advisoryFingerprint(key);
+      if (key === currentKey) currentGroupId = id;
       reviewSelections.set(id, candidate);
       pendingRows.push({
         id,
@@ -156,6 +157,7 @@ export function createLiveDesignerPorts(input: {
     }
     input.onReview?.({
       currency: source.shopCurrency,
+      currentGroupId,
       exponent: 2,
       customizedQuantity: pendingRows.reduce((total, row) => total + row.quantity, 0),
       groups: pendingRows,
@@ -212,7 +214,6 @@ export function createLiveDesignerPorts(input: {
       baseline: observed.cart,
       group,
     });
-    currentSelection = group;
     reviewSelections.clear();
     for (const candidate of proposal.groups)
       if (candidate.selection && candidate.canonicalIdentitySha256)
@@ -269,7 +270,11 @@ export function createLiveDesignerPorts(input: {
       renew: renewArtwork,
       apply: renewArtwork,
       async upload(file, request) {
-        const preview = await artwork.upload(file, () => {}, request.signal);
+        const preview = await artwork.upload(
+          file,
+          (state) => request.onProgress?.(state === 'Processing artwork' ? 'processing' : 'uploading'),
+          request.signal,
+        );
         return {
           id: preview.assetId,
           name: file.name,
@@ -473,21 +478,18 @@ export function createLiveDesignerPorts(input: {
     input.onApplied?.(reviewed.accepted?.desired ?? []);
     window.dispatchEvent(new CustomEvent('insignia-cart-updated'));
   }
-  function rebase(groups: DesiredGroup[]) {
-    for (const [id, old] of designs) {
-      const matching = groups.filter(
-        (group) => desiredGroupKey(group, true, false) === desiredGroupKey(old, true, false),
-      );
-      if (matching.length === 1 && matching[0]) designs.set(id, matching[0]);
-    }
-    for (const key of prepared.keys()) if (!issuanceAttempted.has(key)) prepared.delete(key);
-  }
   return {
     ports,
     observe,
     readCart: cart.read,
     restoreArtwork,
-    restoreSaved: custody.restore,
+    async restoreSaved(group: DesiredGroup, signal?: AbortSignal) {
+      const restored = await custody.restore(group, signal, (id) => {
+        draftSaves.set(id, { group, original: group });
+      });
+      if (restored) draftSaves.set(restored.id, { group: restored.value, original: group });
+      return restored;
+    },
     async discardDrafts() {
       for (const [id, saved] of draftSaves) {
         await custody.forget(id, saved.group);
@@ -495,22 +497,9 @@ export function createLiveDesignerPorts(input: {
       }
       draftSaves.clear();
     },
-    async savedChoices(signal?: AbortSignal) {
-      const observed = await observe(signal);
-      const choices = [];
-      savedSelections.clear();
-      for (const group of observed.groups) {
-        const id = `saved:${await advisoryFingerprint(desiredGroupKey(group, false, false))}`;
-        savedSelections.set(id, group);
-        choices.push({ id, label: observed.labels[group.productId] ?? group.productId });
-      }
-      return choices;
-    },
     prepareRemoval,
     confirmRemoval,
-    rebase,
-    currentSelection: () => currentSelection,
-    selectionFor: (id: string) => savedSelections.get(id) ?? reviewSelections.get(id),
+    selectionFor: (id: string) => reviewSelections.get(id),
     registerDesign: (designId: string, group: DesiredGroup) => designs.set(designId, structuredClone(group)),
   };
 }

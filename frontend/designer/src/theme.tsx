@@ -2,30 +2,16 @@ import { useEffect, useState } from "preact/hooks";
 import { IconMoon, IconSun } from "./legacy-icons";
 import { useLocale } from "./customer-locale";
 
-type Theme = "light" | "dark";
-type ThemePreference = Theme | null;
-const preferenceKey = "insignia-theme";
-const media = window.matchMedia("(prefers-color-scheme: dark)");
+import { type Theme, themePreferenceKey as preferenceKey, parseThemePreference as parsePreference, readThemePreference as readPreference, resolveThemePreference } from './theme-preference';
+const media = window.matchMedia('(prefers-color-scheme: dark)');
 const listeners = new Set<() => void>();
-
-function parsePreference(value: unknown): ThemePreference {
-  // An old stored "system" value is the same as no explicit choice.
-  return value === "light" || value === "dark" ? value : null;
-}
-function readPreference(): ThemePreference {
-  try {
-    return parsePreference(window.localStorage.getItem(preferenceKey));
-  } catch {
-    return null;
-  }
-}
 
 // Keep the explicit choice in memory too, so navigation works without storage.
 let preference = readPreference();
-let resolvedTheme: Theme = preference ?? (media.matches ? "dark" : "light");
+let resolvedTheme: Theme = resolveThemePreference(preference, media.matches);
 
 function updateTheme() {
-  const next = preference ?? (media.matches ? "dark" : "light");
+  const next = resolveThemePreference(preference, media.matches);
   document.documentElement.dataset.theme = next;
   document.documentElement.style.colorScheme = next;
   document

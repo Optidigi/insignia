@@ -67,6 +67,7 @@ test('failed target-product lookup never displays another product frozen config 
       entryPoints: [new URL('../src/designer/controller.ts', import.meta.url).pathname],
       bundle: true,
       write: false,
+      loader: { '.css': 'text' },
       platform: 'browser',
       format: 'esm',
     }),

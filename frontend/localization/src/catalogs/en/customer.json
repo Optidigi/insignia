@@ -73,7 +73,13 @@
     "yourArtwork": "Your artwork",
     "files": "Files",
     "samples": "Samples",
-    "provideArtworkLater": "Provide artwork later"
+    "provideArtworkLater": "Provide artwork later",
+    "uploadingFile": "Uploading artwork…",
+    "processingFile": "Checking artwork…",
+    "uploadFailed": "Upload failed. Choose the file again to retry.",
+    "processingFailed": "Artwork could not be checked. Try again.",
+    "inspectionRejected": "This image was rejected. Choose a supported static image.",
+    "artworkExpired": "This artwork has expired. Upload it again."
   },
   "quantities": {
     "heading": "Quantities",
@@ -231,13 +237,13 @@
     "retry": "Try again"
   },
   "host": {
-    "personalise": "Personalise",
-    "savedDesigns": "Saved designs",
-    "openSaved": "Open saved design",
-    "startNew": "Start a new design",
     "discardTitle": "Discard changes?",
     "discardHelp": "Discard your changes to edit another design. Items already in your cart won’t change.",
     "cancel": "Cancel",
-    "discardEdit": "Discard and edit"
+    "discardEdit": "Discard and edit",
+    "personalise": "Personalise",
+    "savedDesigns": "Saved designs",
+    "openSaved": "Open saved design",
+    "startNew": "Start a new design"
   }
 }

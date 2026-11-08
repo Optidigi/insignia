@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "preact/hooks";
 import type { Design } from "./model";
 import { ThemeControl } from "./theme";
 import "./storefront-host-preview.css";
+import "./design-switch.css";
 
 /** Developer harness only. Shopify renders the real product page and cart. */
 export interface StorefrontHostPreviewProps {

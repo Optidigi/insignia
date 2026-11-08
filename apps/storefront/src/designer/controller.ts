@@ -97,6 +97,7 @@ export async function mountLiveDesigner(input: {
     let restored:
       | {
           initialDesign: ReturnType<ReturnType<typeof buildBuyerDesigner>['restore']>;
+          initialBaseline: ReturnType<ReturnType<typeof buildBuyerDesigner>['restore']>;
           initialArtworks: Awaited<ReturnType<typeof live.restoreArtwork>>;
         }
       | undefined;
@@ -110,8 +111,8 @@ export async function mountLiveDesigner(input: {
         );
         if (exact.length !== 1 || !exact[0]) throw new Error('Cart selection changed');
         original = exact[0];
-        if (!canStart || !mapped) throw new Error('Current configuration unavailable');
         const retained = reset ? null : await live.restoreSaved(original, signal);
+        if (!canStart || !mapped) throw new Error('Current configuration unavailable');
         if (retained && ['choice-unavailable', 'configuration-unavailable'].includes(retained.compatibility))
           throw new Error('Saved choices require review');
         const id = reset ? crypto.randomUUID() : (retained?.id ?? crypto.randomUUID());
@@ -134,6 +135,7 @@ export async function mountLiveDesigner(input: {
         live.registerDesign(initialDesign.id, original);
         restored = {
           initialDesign,
+          initialBaseline: mapped.restore(original, id),
           initialArtworks: reset ? [] : await live.restoreArtwork(retained?.value ?? original, signal),
         };
       } catch {
@@ -194,6 +196,7 @@ export async function mountLiveDesigner(input: {
         if (action === 'start') {
           if (!canStart || (group && !original && cartTargetAvailable))
             throw new Error('Current customization unavailable');
+          await live.discardDrafts();
           discard(record);
           active = undefined;
           await show(cartTargetAvailable ? (original ?? group) : undefined, true, source.productId);
@@ -333,12 +336,7 @@ export async function mountLiveDesigner(input: {
     open() {
       const record = active;
       if (!record?.frame.open()) return false;
-      void record.live
-        .savedChoices(lifetime.signal)
-        .then((choices) => {
-          if (current() && active === record) record.frame.savedChoices(choices);
-        })
-        .catch(() => {});
+
       return true;
     },
     destroy() {

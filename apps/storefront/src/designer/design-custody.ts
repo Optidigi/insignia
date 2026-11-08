@@ -27,9 +27,12 @@ export function createSelectedDesignCustody(input: {
       const pointer = await key(group);
       if (input.storage.getItem(pointer) === id) input.storage.setItem(pointer, '');
     },
-    async restore(group: BuyerDesiredGroup, signal?: AbortSignal) {
+    async restore(group: BuyerDesiredGroup, signal?: AbortSignal, onHint?: (id: string) => void) {
       const id = input.storage.getItem(await key(group));
       if (!id) return null;
+      // Track advisory custody even when its scoped read later enters repair.
+      // This does not establish ownership or authorize deleting server data.
+      onHint?.(id);
       return read(id, signal);
     },
     async save(id: string, group: BuyerDesiredGroup, original: BuyerDesiredGroup | undefined, signal?: AbortSignal) {

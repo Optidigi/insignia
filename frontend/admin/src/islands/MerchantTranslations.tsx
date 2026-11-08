@@ -1,7 +1,7 @@
 import type { AdminMessageKey } from '@insignia/ui-localization/admin';
 import { resolveLocale } from '@insignia/ui-localization/core';
 import {
-  CUSTOMER_WORDING_MANIFEST,
+  CUSTOMER_WORDING_MANIFEST as allCustomerWording,
   type CustomerWordingForm,
   type CustomerWordingManifestEntry,
   customerDirectionForLocale,
@@ -26,6 +26,10 @@ import {
 import { createMerchantPreferencesClient } from '../shared/merchant-preferences-client';
 import { createRemoteCustomerTranslationsStorage } from './customer-translations-remote';
 import '../styles/merchant-translations.css';
+
+// Retain old saved overlays as readable data, without advertising developer-only copy.
+const retiredHostCopy = new Set(['customer:host.personalise', 'customer:host.savedDesigns', 'customer:host.openSaved', 'customer:host.startNew']);
+const CUSTOMER_WORDING_MANIFEST = allCustomerWording.filter(({ key }) => !retiredHostCopy.has(key));
 
 const commonLanguageTags = [
   'nl',
@@ -169,7 +173,7 @@ function MerchantTranslations({
   const groupLabel = (id: string) => t(`settings:translations.groups.${id}` as AdminMessageKey);
   const fieldLabel = (entry: CustomerWordingManifestEntry) => t(customerWordingLabels[entry.key]);
   const current = state.currentOverlay;
-  const customizedKeys = () => Object.keys(workflow.getSnapshot().currentOverlay.messages);
+  const customizedKeys = () => Object.keys(workflow.getSnapshot().currentOverlay.messages).filter((key) => !retiredHostCopy.has(key));
   useLayoutEffect(() => {
     if (!ready) return;
     dispatchView({
@@ -189,7 +193,7 @@ function MerchantTranslations({
     dispatchView({
       type: 'snapshot-accepted',
       locale: snapshot.selectedLocale,
-      customizedKeys: Object.keys(snapshot.currentOverlay.messages),
+      customizedKeys: Object.keys(snapshot.currentOverlay.messages).filter((key) => !retiredHostCopy.has(key)),
       matchingKeys: matchKeys(query),
     });
   }

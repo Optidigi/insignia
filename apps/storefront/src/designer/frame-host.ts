@@ -23,6 +23,7 @@ export function createDesignerFrame(input: {
   previewOnly?: boolean;
   requiresCartReview?: boolean;
   initialDesign?: Design;
+  initialBaseline?: Design;
   initialPrints?: Print[];
   initialArtworks?: Artwork[];
   repair?: { canStart: boolean; canRemoveGroup: boolean; canRemoveAll?: boolean };
@@ -51,11 +52,11 @@ export function createDesignerFrame(input: {
   const controllers = new Map<string, AbortController>();
   const focused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   let ready = false;
-  let choices: { id: string; label: string }[] = [];
   let initialized = false;
   let failed = false;
   let destroyed = false;
   const modal = createDesignerModal({
+    wording: input.wording,
     locale: input.locale,
     title: frame.title,
     onCancel: () => {
@@ -142,9 +143,9 @@ export function createDesignerFrame(input: {
           previewOnly: input.previewOnly,
           requiresCartReview: input.requiresCartReview,
           initialDesign: input.initialDesign,
+          initialBaseline: input.initialBaseline,
           initialPrints: input.initialPrints,
           initialArtworks: input.initialArtworks,
-          choices,
         },
       });
       return;
@@ -184,6 +185,10 @@ export function createDesignerFrame(input: {
         value = await input.ports.artwork.upload(data.file, {
           ...data.request,
           signal: controller.signal,
+          onProgress(phase) {
+            if (!controller.signal.aborted && ['uploading', 'processing'].includes(phase))
+              send('insignia:designer:progress', { id: data.id, phase });
+          },
         } as UploadRequest);
       else if (data.action === 'renew' && data.artwork && input.ports?.artwork.renew)
         value = await input.ports.artwork.renew(data.artwork, { ...data.request, signal: controller.signal });
@@ -199,7 +204,7 @@ export function createDesignerFrame(input: {
       }
     } catch (error) {
       const status =
-        error && typeof error === 'object' && 'status' in error && [403, 404, 410].includes(Number(error.status))
+        error && typeof error === 'object' && 'status' in error && [403, 404, 410, 422].includes(Number(error.status))
           ? Number(error.status)
           : undefined;
       if (!controller.signal.aborted)
@@ -248,10 +253,6 @@ export function createDesignerFrame(input: {
     },
     previews(colors: ProductConfig['colors']) {
       send('insignia:designer:previews', { colors });
-    },
-    savedChoices(value: { id: string; label: string }[]) {
-      choices = value;
-      if (ready) send('insignia:designer:saved-choices', { choices });
     },
     review(quote: DesignerQuoteReview) {
       send('insignia:designer:quote', { quote });
