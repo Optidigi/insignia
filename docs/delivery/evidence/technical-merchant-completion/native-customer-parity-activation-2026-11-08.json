@@ -1,0 +1,171 @@
+{
+  "kind": "bounded-customer-ui-parity-deployment",
+  "date": "2026-11-08",
+  "source": {
+    "firefoxPR": 247,
+    "uiPR": 248,
+    "bindingPR": 249,
+    "head": "c30c52448fa04c0b839af6b2796f04033b8c7365",
+    "merge": "733b4e707807476cfec5c1b355794ce4b9b846ae",
+    "tree": "bae8bc02674137c8bd9042df7c4aaac2c714b3e0",
+    "ciMergeHead": "0d3838d77867d9f6a5268134a8a3e826ef084993",
+    "runtimeRun": "42483588355",
+    "foundationRun": "42483588332",
+    "durableRun": "42483588373",
+    "attempt": 1,
+    "requiredChecks": "all passed"
+  },
+  "promotion": {
+    "roles": {
+      "web": {
+        "manifest": "sha256:5650d3bfcca9a25878b9f9ced2df55a7421539acce22e7dcf858791cf20d8404",
+        "config": "sha256:b9ed8473040b18c6a13dc623346b075d0b2cc329a034dcfd3eb4eba1b283d5fc",
+        "archiveSha256": "bd0432a0dc1df5dee4651fe1bd90bd428d006c74d1c26b63568689eb6e08cf2f",
+        "archiveSizeBytes": 497803776,
+        "state": "healthy"
+      },
+      "worker": {
+        "manifest": "sha256:cf6a4eed5513854f9ced9058b321fb63756c710cee16c0fffc2806878d8ce340",
+        "config": "sha256:4f7401ca10caa1ae1804093ad8d2b9a38b1512439a85511b96bd56a980d11182",
+        "archiveSha256": "f297151ad74892f059bfb048241f4b7232d104c5fcbec8af0e2723952de4f7ff",
+        "archiveSizeBytes": 315219968,
+        "state": "healthy"
+      },
+      "verifier": {
+        "manifest": "sha256:f5e5442f6cbfe89cd615798ff98f0912d4cf63a492e418c7c8f37d9b52d8b831",
+        "config": "sha256:ca2e5cf8e099b0cdf9adb512c2432023a94c636fc2b5caf09ff10e65de0a26bb",
+        "archiveSha256": "e13eb12c7e2366f6fa65d88b6a0e5af404f2cb8d5765eaa0664e49553a09c380",
+        "archiveSizeBytes": 472759808,
+        "state": "running",
+        "codeManifestSha256": "f40dbf6a6c203fc1384a2837c46ef53b1992283240dca65c4bc6033eb383839c"
+      }
+    },
+    "profile": "native-parity-466a687",
+    "schema": 51,
+    "newMigration": false,
+    "newGrants": false,
+    "qualification": "Exact ZIP digests/source receipts and OCI blobs/config/layers verified before owned recreation. Final12 CI249 frontend assets equal frozen CI248 candidate bytes.",
+    "protectedFactsUnchangedDuringPromotion": true,
+    "unrelatedContainersUnchangedDuringPromotion": true,
+    "permanentCredentialsMountsJournalsRoutingPreserved": true,
+    "inspector": "Existing immutable37ee1f0a service preserved; readiness200/ready=true before real upload."
+  },
+  "shopify": {
+    "versionId": "1199503441921",
+    "versionTag": "native-parity-466a687",
+    "status": "sole active",
+    "previousVersionId": "1199244476417",
+    "exactVersionCount": 23,
+    "moduleCount": 14,
+    "nonThemeConfigsUnchanged": 13,
+    "moduleHash": "cede26e5c5a657bdf3d05ad7b4767d8925e912b34e902b30f8a47504a9113a75",
+    "themeFiles": 21,
+    "ciAssets": 12,
+    "originalThemeIdentityPreserved": true,
+    "functionsSourceCommit": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+    "originalFunctionBytesPreserved": true,
+    "activation": "One acknowledged official CLI4.8.2 release after fresh exact prerelease read and exclusive intent; independent complete SDK readback.",
+    "neverReleaseVersions": [
+      "1199165767681",
+      "1198938357761"
+    ]
+  },
+  "finiteReleaseProof": {
+    "recordId": "4042790f-33dd-460d-a0d3-4938d4500275",
+    "requestId": "f4d8aa6b-8694-47ee-a1e0-12c031e25cc5",
+    "observedAt": "2026-11-08T13:31:07.424Z",
+    "expiresAt": "2026-11-08T13:31:35.775Z",
+    "sameFreshRecordAdmittedByWebAndWorker": true,
+    "historicalOnly": true
+  },
+  "nativeFirefox": {
+    "engine": "Playwright Firefox155",
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "target": "canonical published product URL, no review query",
+    "freshPageAfterLegitimateStorefrontGate": true,
+    "emptyTopReferrer": true,
+    "emptySrcdocReferrer": true,
+    "startup": {
+      "loaderMs": 18,
+      "visibleMs": 1309,
+      "config": [
+        {
+          "duration": 1026,
+          "status": 200
+        }
+      ]
+    },
+    "coldNetworkBenchmark": false,
+    "uploadPhases": [
+      "Opening file\u2026",
+      "Uploading artwork\u2026",
+      "Checking artwork\u2026"
+    ],
+    "inspectedPNG": "Approved400x400 PNG fixture rendered after actual transfer/inspection. No unverified thumbnail.",
+    "closeAndResume": "Manual close returns to Shopify; reopen resumes selected quantity1/artwork directly with no Personalise/Start-new developer page.",
+    "authoritativeCart": {
+      "count": 1,
+      "totalMinor": 1250,
+      "currency": "USD",
+      "keys": [
+        "_insignia_member_v2",
+        "_insignia_quote_v2"
+      ]
+    },
+    "automaticNativeCartNavigation": true,
+    "ownedRestoration": {
+      "artwork": true,
+      "method": "Demo print",
+      "size": "Standard",
+      "quantity": 1
+    },
+    "cleanup": {
+      "nativeRemoveDispatchedOnce": true,
+      "responseWaitTimedOut": true,
+      "independentReadback": {
+        "readOnly": true,
+        "count": 0,
+        "totalMinor": 0,
+        "currency": "USD",
+        "items": [],
+        "additionalMutation": false
+      },
+      "repeatedRemoval": false
+    },
+    "workflowStatus": "PASS_WITH_READBACK_CLEANUP_RECONCILED",
+    "newCheckoutPaymentOrEmail": false
+  },
+  "nativeChromium": {
+    "surface": "Shared Preview,1280x800",
+    "newCDNTagObserved": "native-parity-466a687",
+    "canonicalProductOpensSelectedDesigner": true,
+    "selectedLoaderVisuallyInspected": "Centered selected message panel, typography, secondary Close control; no native unstyled button panel.",
+    "manualClose": {
+      "modalCount": 0,
+      "overflowRestored": true,
+      "focusReturnedToButton": true
+    },
+    "newCartMutation": false
+  },
+  "localParityProofs": {
+    "reference": "d490e4d0e285b7b5be50da52cdf97474ff4a0e0f",
+    "computedStyles": "Chromium/Firefox primary/empty/cart normal+hover and discard-dialog text match original demo inputs.",
+    "mutations": "Original scoped-cart colour bug and abandoned restored quantity each fail their regression when reintroduced.",
+    "states": "Dirty versus required review, restore/reset including unavailable read, inert view behind confirmation, Escape/cancel, upload processing/success/rejection/late cancellation and queued pending-review selections.",
+    "richConfigurations": "Validated in local configured fixtures; not claimed natively verified for every product shape."
+  },
+  "automationNotes": [
+    "The first Firefox helper used an overly broad iframe selector and matched Shopify recognition as well as Insignia; it failed before commerce writes. The scoped srcdoc replay established actual direct-startup success.",
+    "The replay completed upload, quote, cart and restoration, then its specific cleanup response filter timed out. The same private cart was independently read as zero/zero without another mutation. The raw failed helper report is retained; application workflow success is established by the combined observations."
+  ],
+  "limits": [
+    "Owner visual acceptance and production rollout remain separate.",
+    "The development product has one placement/method/size/default variant and example-only calibration. Do not infer missing rich UI from that data or inject mock content.",
+    "Single checkout and sender budgets remain consumed; no new order/payment/email, currency/scope or protected VAT action.",
+    "Email received-message authentication and native EUR qualification remain deferred as previously documented.",
+    "Native Firefox timing follows legitimate storefront-gate login and is not a cold-cache/network benchmark. Expired release proof remains historical only."
+  ]
+}
