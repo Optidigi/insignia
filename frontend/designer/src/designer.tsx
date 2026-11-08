@@ -66,6 +66,8 @@ export interface ClosedDesignerProps {
   onConfirmSwitch: () => void;
 }
 export interface DesignerProps {
+  /** Refresh an expired preview without changing production choices or reviewed prices. */
+  onPreviewFailure?: (url: string) => void;
   quoteReview?: DesignerQuoteReview;
   suspended?: boolean;
   hostErrorSignal?: number;
@@ -128,6 +130,7 @@ function DesignerSession({
   requiresCartReview,
   suspended = false,
   onSelectQuoteGroup,
+  onPreviewFailure,
   hostErrorSignal,
   cartReviewedSignal,
   initialPrints = [],
@@ -298,6 +301,32 @@ function DesignerSession({
     if (step === 2 && ports.review) void runtime.commit(true);
   }, [step, runtime]);
 
+  const previewRenewals = useRef(new Set<string>());
+  const artworkUrls = useRef(new Map<string, string>());
+  useEffect(() => {
+    const changed = artworks.filter((artwork) => artwork.url && artworkUrls.current.has(artwork.id) && artworkUrls.current.get(artwork.id) !== artwork.url);
+    artworkUrls.current = new Map(artworks.map((artwork) => [artwork.id, artwork.url]));
+    if (changed.length) setFailedArtworks((current) => new Set([...current].filter((id) => !changed.some((artwork) => artwork.id === id))));
+  }, [artworks]);
+  useEffect(() => {
+    if (!designerOpen || suspended) { previewRenewals.current.clear(); runtime.cancel(); return; }
+    if (!ports.artwork.renew) return;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    for (const artwork of artworks) {
+      if (!artwork.previewExpiresAt || !Number.isFinite(Date.parse(artwork.previewExpiresAt))) continue;
+      const visible = modal.kind === 'artwork' || prints.some((print) => print.artworkId === artwork.id && positions.find((position) => position.id === print.id)?.view === view);
+      const key = `${artwork.id}:${artwork.previewExpiresAt}`;
+      if (!visible || previewRenewals.current.has(key)) continue;
+      timers.push(setTimeout(() => {
+        previewRenewals.current.add(key);
+        void runtime.renew(artwork).then((renewed) => {
+          if (renewed) setFailedArtworks((current) => new Set([...current].filter((id) => id !== artwork.id)));
+        });
+      }, Math.max(0, Math.min(2147483647, Date.parse(artwork.previewExpiresAt) - Date.now()))));
+    }
+    return () => timers.forEach(clearTimeout);
+  }, [artworks, designerOpen, suspended, modal.kind, prints, view, runtime, ports]);
+
   function uploadFailureMessage(reason: UploadFailureReason): string {
     switch (reason) {
       case 'file-too-large':
@@ -398,7 +427,10 @@ function DesignerSession({
                     ? { width: image.naturalWidth, height: image.naturalHeight }
                     : null,
               });
-            image.onerror = () => resolve({ src, dimensions: null });
+            image.onerror = () => {
+              onPreviewFailure?.(src);
+              resolve({ src, dimensions: null });
+            };
             image.src = src;
           }),
       ),
@@ -1088,7 +1120,10 @@ function DesignerSession({
                   })}
                   onError={() => {
                     const src = imageFor(color, view);
-                    if (src) setImageDimensions((current) => ({ ...current, [src]: null }));
+                    if (src) {
+                      setImageDimensions((current) => ({ ...current, [src]: null }));
+                      onPreviewFailure?.(src);
+                    }
                   }}
                   onLoad={(event) => {
                     const image = event.currentTarget;
@@ -1103,7 +1138,7 @@ function DesignerSession({
                       }));
                   }}
                 />
-              ) : config.preview === 'photo' ? (
+              ) : config.preview === 'photo' && imageFor(color, view) ? (
                 <div className="empty-state" role="status">
                   {t('customer:artwork.selectedPreviewFailed')}
                 </div>
@@ -1121,7 +1156,7 @@ function DesignerSession({
                 />
               )}
               {(config.preview === 'photo' &&
-              (!imageFor(color, view) || imageDimensions[imageFor(color, view) ?? ''] === null)
+              imageFor(color, view) && imageDimensions[imageFor(color, view) ?? ''] === null
                 ? []
                 : visiblePrints
               ).map((p) => {
@@ -1616,7 +1651,7 @@ function DesignerSession({
               <ReviewPanel
                 productionChoices={workflow.productionChoices}
                 {...(quoteReview ? { quoteReview } : {})}
-                {...(onSelectQuoteGroup ? { onSelectQuoteGroup } : {})}
+                {...(onSelectQuoteGroup ? { onSelectQuoteGroup: (id: string) => { if (id === quoteReview?.currentGroupId) dispatch({ type: 'step-selected', step: 1 }); else onSelectQuoteGroup(id); } } : {})}
                 config={artworkOnly ? { ...config, artworkOnly: true } : config}
                 prints={prints}
                 artworks={artworks}

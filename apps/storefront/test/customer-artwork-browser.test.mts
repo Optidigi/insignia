@@ -74,6 +74,7 @@ test('post-order selected Designer scrubs capability, verifies upload and fills 
     expiresAt = '2027-01-01T00:00:00Z';
   let attached = false;
   let attachCount = 0;
+  let previewCount = 0;
   const actions: string[] = [];
   const authorizations: string[] = [];
   const server = createServer((req, res) => {
@@ -146,9 +147,15 @@ test('post-order selected Designer scrubs capability, verifies upload and fills 
           response = { assetId, expiresAt, upload: { url: 'https://upload.example.test/original', headers: {} } };
         else if (body.action === 'complete') response = { state: 'QUEUED', expiresAt };
         else if (body.action === 'status') response = { state: 'USABLE', expiresAt };
-        else if (body.action === 'preview')
-          response = { url: 'https://images.example.test/logo.svg', width: 100, height: 100, expiresAt };
-        else if (body.action === 'attach') {
+        else if (body.action === 'preview') {
+          previewCount++;
+          response = {
+            url: `https://images.example.test/${previewCount === 1 ? 'logo' : 'renewed'}.svg`,
+            width: 100,
+            height: 100,
+            expiresAt: new Date(Date.now() + (previewCount === 1 ? 60000 : 3600000)).toISOString(),
+          };
+        } else if (body.action === 'attach') {
           assert.equal(body.assetId, assetId);
           assert.equal(body.placementId, 'chest');
           assert.match(body.requestId, /^[a-f0-9-]{36}$/);
@@ -186,6 +193,7 @@ test('post-order selected Designer scrubs capability, verifies upload and fills 
   await page.route('https://upload.example.test/**', (route) =>
     route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*' } }),
   );
+  await page.clock.install();
   await page.goto(`http://127.0.0.1:${serverPort(server)}/artwork-upload#capability=${capability}`);
   try {
     await page.locator('.app.admin-preview').waitFor({ timeout: 5000 });
@@ -208,6 +216,11 @@ test('post-order selected Designer scrubs capability, verifies upload and fills 
   assert(actions.includes('status'));
   assert(actions.includes('preview'));
   assert(authorizations.every((value) => value === `Bearer ${capability}`));
+  const renewed = page.waitForRequest('https://images.example.test/renewed.svg');
+  await page.clock.fastForward(61000);
+  await renewed;
+  assert.equal(previewCount, 2, 'the visible expired preview renews through the owned read service');
+  assert.equal(attachCount, 1, 'preview renewal must never reattach or replace submitted artwork');
   // The artwork-only UI keeps the chosen file available for review, but customer replacement
   // cannot allocate a new private upload once this slot has been filled.
   await page.locator('button.artwork-choice').first().click();

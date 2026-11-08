@@ -144,6 +144,9 @@ export type DesignerEvent =
     }
   | { type: 'position-undone'; positionId: PositionId }
   | { type: 'position-undo-cleared'; positionId: PositionId }
+  | { type: 'artwork-preview-expired'; id: string; expectedExpiry: string | undefined }
+  | { type: 'artwork-preview-refreshed'; artwork: Artwork; expectedExpiry: string | undefined }
+  | { type: 'artwork-unavailable'; id: string; expectedExpiry: string | undefined }
   | { type: 'artwork-applied'; positionId: PositionId; artworkId: string }
   | { type: 'cart-commit-requested'; requestId: string; design: Design }
   | { type: 'cart-commit-succeeded'; requestId: string; receipt: CartReceipt }
@@ -224,10 +227,23 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
       'cart-commit-canceled',
       'product-return-requested',
       'location-observed',
+      'artwork-preview-expired',
+      'artwork-preview-refreshed',
+      'artwork-unavailable',
     ].includes(event.type)
   )
     return state;
   switch (event.type) {
+    case 'artwork-preview-expired':
+    case 'artwork-preview-refreshed':
+    case 'artwork-unavailable': {
+      const id = event.type === 'artwork-preview-refreshed' ? event.artwork.id : event.id;
+      const current = state.artworks.find((artwork) => artwork.id === id);
+      if (!current || current.previewExpiresAt !== event.expectedExpiry) return state;
+      if (event.type === 'artwork-unavailable') return { ...state, artworks: state.artworks.filter((artwork) => artwork.id !== id) };
+      if (event.type === 'artwork-preview-expired' && !current.url) return state;
+      return { ...state, artworks: state.artworks.map((artwork) => artwork.id !== id ? artwork : event.type === 'artwork-preview-expired' ? { ...artwork, url: '' } : { ...event.artwork }) };
+    }
     case 'production-option-selected': {
       const definition = state.rules.productionOptions?.find((option) => option.id === event.optionId);
       if (!definition || (event.valueId !== '' && !definition.valueIds.includes(event.valueId))) return state;

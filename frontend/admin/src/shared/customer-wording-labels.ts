@@ -3,6 +3,18 @@ import type { CustomerMessageKey } from '@insignia/ui-localization/customer';
 
 /** Merchant-facing field names, kept separate from editable buyer copy. */
 export const customerWordingLabels = {
+  'customer:startup.loading': 'settings:translations.fields.customer_startup_loading',
+  'customer:startup.failure': 'settings:translations.fields.customer_startup_failure',
+  'customer:startup.retry': 'settings:translations.fields.customer_startup_retry',
+  'customer:host.personalise': 'settings:translations.fields.customer_host_personalise',
+  'customer:host.savedDesigns': 'settings:translations.fields.customer_host_savedDesigns',
+  'customer:host.openSaved': 'settings:translations.fields.customer_host_openSaved',
+  'customer:host.startNew': 'settings:translations.fields.customer_host_startNew',
+  'customer:host.discardTitle': 'settings:translations.fields.customer_host_discardTitle',
+  'customer:host.discardHelp': 'settings:translations.fields.customer_host_discardHelp',
+  'customer:host.cancel': 'settings:translations.fields.customer_host_cancel',
+  'customer:host.discardEdit': 'settings:translations.fields.customer_host_discardEdit',
+
   'customer:postOrder.title': 'settings:translations.fields.customer_postOrder_title',
   'customer:postOrder.loading': 'settings:translations.fields.customer_postOrder_loading',
   'customer:postOrder.unavailable': 'settings:translations.fields.customer_postOrder_unavailable',

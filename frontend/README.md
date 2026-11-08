@@ -8,6 +8,8 @@ The new merchant UI and customer Designer are deployed and active on rewrite-dev
 
 Native checks cover artwork upload, authoritative USD12.50 quote, automatic Shopify cart navigation, saved-design restoration, the existing paid test order and desktop/narrow CSS viewports. The test cart is empty; no second checkout was submitted. See [current delivery state](../docs/delivery/state.md) and [activation evidence](../docs/delivery/evidence/technical-merchant-completion/native-selected-retirement-activation-2026-11-07.json) for exact source/artifact identities and limits. Owner visual acceptance remains separate. Customer email authentication and native EUR qualification remain outstanding.
 
+The8November behavior/performance correction is under qualification. See the [baseline behavior map](../docs/architecture/selected-live-designer.md#baseline-behavior-and-opening-performance) and current state for what is implemented versus deployed.
+
 ## Run the examples
 
 Use the repository's pinned Node (`.node-version`) and pnpm (`package.json`) versions. From the repository root:

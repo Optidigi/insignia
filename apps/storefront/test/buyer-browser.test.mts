@@ -1,5 +1,12 @@
 import { BuyerAcceptanceSchema, BuyerDesiredGroupSchema, BuyerProposalRequestSchema } from '@insignia/contracts';
 import type { FrameLocator, Locator, Page } from 'playwright';
+
+type ObservedCartRequest = {
+  idempotencyKey: string;
+  design: { options?: { optionId: string; valueId: string }[] };
+  [key: string]: unknown;
+};
+
 import type { BuyerConfig, DesiredGroup } from '../src/buyer.ts';
 
 type ProposalRequest = ReturnType<typeof BuyerProposalRequestSchema.parse>;
@@ -586,7 +593,7 @@ type RetainedScenario = {
 };
 async function withRetainedBuyer(
   run: (context: RetainedScenario) => Promise<void>,
-  { multipleProducts = false, clock = false, unknownOwned = false } = {},
+  { multipleProducts = false, clock = false, unknownOwned = false, productionOptions = false } = {},
 ) {
   const server = await createServer({
     plugins: [selectedFrameAssets()],
@@ -617,6 +624,7 @@ async function withRetainedBuyer(
       },
       variants: [{ variantId: '222', quantity: 3 }],
     };
+    if (productionOptions) group.design.options = [{ optionId: 'packing', valueId: 'plain' }];
     let groups = [structuredClone(group)];
     let items: AjaxItem[] = [
       {
@@ -628,7 +636,19 @@ async function withRetainedBuyer(
       },
       { key: 'ordinary-gift', variant_id: 999, quantity: 2, properties: { gift: true, note: 'Keep gift wrapping' } },
     ];
-    const configurations = new Map<string, BuyerConfig>([['111', structuredClone(config)]]);
+    const initialConfig = structuredClone(config);
+    if (productionOptions)
+      initialConfig.options = [
+        {
+          id: 'packing',
+          label: 'Packing',
+          values: [
+            { id: 'plain', label: 'Plain' },
+            { id: 'gift', label: 'Gift' },
+          ],
+        },
+      ];
+    const configurations = new Map<string, BuyerConfig>([['111', initialConfig]]);
     if (multipleProducts) {
       groups.push({ ...structuredClone(group), productId: '333', variants: [{ variantId: '444', quantity: 2 }] });
       items.push({
@@ -730,7 +750,12 @@ async function withRetainedBuyer(
         )
           return route.fulfill({ status: 409, json: { error: 'Cart quantity changed' } });
         return route.fulfill({
-          json: { groups, quoteId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', repairRequired: false },
+          json: {
+            groups,
+            labels: { '111': 'Synthetic shirt', '333': 'Other synthetic shirt' },
+            quoteId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+            repairRequired: false,
+          },
         });
       }
       if (path.endsWith('/quote-proposals')) {
@@ -907,7 +932,8 @@ test('selected acknowledgements rotate acceptance keys while uncertain API retri
     assert.deepEqual(accepts[1], accepts[0]);
     assert.equal(proposals.length, 1, 'Unknown acceptance never prepares a new proposal');
     await trigger.getByRole('button', { name: 'Review customized cart', exact: true }).click();
-    await host.getByRole('button', { name: 'Previous step', exact: true }).click();
+    await host.getByRole('button', { name: 'Open saved design', exact: true }).click();
+    await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
     await host.locator('input[type=number]:enabled').first().fill('4');
     await host.getByRole('button', { name: 'Review', exact: true }).last().click();
     await applyButton(host).waitFor();
@@ -1141,6 +1167,7 @@ test('selected desktop and mobile layouts retain the design and quantities when 
       true,
     );
     await trigger.click();
+    await ui.getByRole('button', { name: 'Personalise', exact: true }).click();
     await ui.locator('.app').waitFor();
     assert.equal(await quantity.inputValue(), '3');
     await ui.getByRole('button', { name: 'Previous step', exact: true }).click();
@@ -1170,6 +1197,7 @@ test('selected desktop and mobile layouts retain the design and quantities when 
     await page.keyboard.press('Escape');
     await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
     await trigger.click();
+    await ui.getByRole('button', { name: 'Personalise', exact: true }).click();
     await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
     assert.equal(await quantity.inputValue(), '3');
   });
@@ -1279,8 +1307,12 @@ test('lost optional captured product preview keeps valid production choices and 
   const cfg = structuredClone(config);
   cfg.imageUrls = {};
   await withProductDesigner(cfg, async ({ page, ui }) => {
-    await ui.getByText('A selected preview could not load. Choose another option.', { exact: true }).waitFor();
-    assert.equal(await ui.locator('.garment-photo').count(), 0, 'no invented garment replaces the missing photograph');
+    await ui.locator('svg.garment-photo').waitFor();
+    assert.equal(
+      await ui.locator('img.garment-photo').count(),
+      0,
+      'the baseline illustration fallback does not invent a photograph',
+    );
     let quoted: ProposalRequest | undefined,
       accepts = 0,
       writes = 0;
@@ -1333,3 +1365,275 @@ test('lost optional captured product preview keeps valid production choices and 
     assert.equal(writes, 0);
   });
 });
+
+test('an expired product preview renews only media from the same publication without losing the design', async () => {
+  await withProductDesigner(config, async ({ page, ui }) => {
+    await addDeferred(ui, 'Front');
+    let reads = 0;
+    await page.route('**/apps/insignia/v1/config*', (route) => {
+      reads++;
+      return route.fulfill({
+        json: {
+          ...config,
+          imageUrls: { photo: 'https://preview.example/renewed.png' },
+          variants: config.variants.map((variant) => ({ ...variant, baseUnitMinor: '9999' })),
+        },
+      });
+    });
+    await page.route('https://preview.example/fixture.png*', (route) => route.fulfill({ status: 410 }));
+    await ui.locator('img.garment-photo').evaluate((image) => {
+      image.setAttribute('src', `${image.getAttribute('src')}?expired=1`);
+    });
+    await ui.locator('img.garment-photo[src="https://preview.example/renewed.png"]').waitFor();
+    await positionCard(ui, 'Front').getByText('Artwork to follow', { exact: true }).first().waitFor();
+    assert.equal(reads, 1);
+    await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+    await ui.locator('input[type=number]:enabled').first().fill('2');
+    assert.equal(await ui.getByText('€99.99', { exact: true }).count(), 0);
+  });
+});
+
+test('opening immediately shows a cancellable modal and reconnecting during configuration can open again', async () => {
+  await withProductDesigner(config, async ({ page, ui, trigger }) => {
+    await ui.getByRole('button', { name: 'Close customizer', exact: true }).click();
+    let release: () => void = () => {};
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route('**/apps/insignia/v1/config*', async (route) => {
+      await held;
+      await route.fulfill({ json: config }).catch(() => {});
+    });
+    await page.evaluate(() => {
+      const buyer = document.querySelector('insignia-buyer');
+      buyer?.remove();
+      if (buyer) document.body.append(buyer);
+    });
+    await trigger.click();
+    await page.getByRole('status').waitFor();
+    assert.equal(await page.locator('dialog:modal').count(), 1);
+    assert.equal(await page.locator('iframe').count(), 0);
+    await page.evaluate(() => {
+      const buyer = document.querySelector('insignia-buyer');
+      buyer?.remove();
+      if (buyer) document.body.append(buyer);
+    });
+    assert.equal(await page.locator('dialog:modal').count(), 0);
+    release();
+    await trigger.click();
+    await ui.locator('.app').waitFor();
+    await ui.getByRole('button', { name: 'Close customizer', exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
+    assert.equal(await page.evaluate(() => document.documentElement.style.overflow), '');
+  });
+});
+
+test('a failed frame asset shows a bounded retry state and Retry opens the selected Designer', async () => {
+  await withProductDesigner(config, async ({ page, ui, trigger }) => {
+    await ui.getByRole('button', { name: 'Close customizer', exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
+    await page.clock.install();
+    await page.route('**/insignia-designer-frame.js', (route) => route.abort('failed'));
+    await page.evaluate(() => {
+      const buyer = document.querySelector('insignia-buyer');
+      buyer?.remove();
+      if (buyer) document.body.append(buyer);
+    });
+    await trigger.click();
+    await page.locator('iframe').waitFor({ state: 'attached' });
+    await page.clock.fastForward(11000);
+    await page.getByRole('alert').waitFor();
+    await page.unroute('**/insignia-designer-frame.js');
+    await page.getByRole('button', { name: 'Try again', exact: true }).click();
+    await ui.locator('.app').waitFor();
+    assert.equal(await page.locator('dialog:modal').count(), 1);
+    assert.equal(await page.locator('iframe').count(), 1);
+  });
+});
+
+test('a failed selected stylesheet stays behind startup recovery until a styled retry succeeds', async () => {
+  await withProductDesigner(config, async ({ page, ui, trigger }) => {
+    await ui.getByRole('button', { name: 'Close customizer', exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
+    await page.clock.install();
+    await page.route('**/insignia-designer.css', (route) => route.abort('failed'));
+    await page.evaluate(() => {
+      const buyer = document.querySelector('insignia-buyer');
+      buyer?.remove();
+      if (buyer) document.body.append(buyer);
+    });
+    await trigger.click();
+    await page.locator('iframe').waitFor({ state: 'attached' });
+    await page.clock.fastForward(11000);
+    await page.getByRole('alert').waitFor();
+    assert.equal(await page.locator('iframe').evaluate((frame) => getComputedStyle(frame).visibility), 'hidden');
+    await page.unroute('**/insignia-designer.css');
+    await page.getByRole('button', { name: 'Try again', exact: true }).click();
+    await ui.locator('.app').waitFor();
+    assert.equal(await ui.locator('.app').evaluate((app) => getComputedStyle(app).display), 'flex');
+  });
+});
+
+test('the retained host decisions resume a draft and start a genuinely new design', async () => {
+  await withProductDesigner(config, async ({ page, ui, trigger }) => {
+    await addDeferred(ui, 'Front');
+    await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+    await ui.locator('input[type=number]:enabled').first().fill('3');
+    await ui.getByRole('button', { name: 'Close customizer', exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
+    await trigger.click();
+    await ui.getByRole('button', { name: 'Start a new design', exact: true }).click();
+    await ui.getByRole('button', { name: 'Add artwork', exact: true }).waitFor();
+    assert.equal(await ui.getByText('Artwork to follow', { exact: true }).count(), 0);
+    assert.equal(await page.evaluate(() => document.querySelectorAll('dialog:modal').length), 1);
+  });
+});
+
+test('switching a dirty cart design offers the baseline cancel/discard decision and never mutates the cart', async () => {
+  await withRetainedBuyer(
+    async ({ page, trigger, host, mutations, accepts }) => {
+      await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+      await host.locator('input[type=number]:enabled').first().fill('4');
+      await host.getByRole('button', { name: 'Review', exact: true }).last().click();
+      await host.locator('.review-pricing summary').click();
+      await host.getByRole('button', { name: 'Other synthetic shirt', exact: true }).click();
+      await host.getByRole('dialog', { name: 'Discard changes?', exact: true }).waitFor();
+      await host.getByRole('button', { name: 'Cancel', exact: true }).click();
+      await host.getByRole('button', { name: 'Edit quantities', exact: true }).click();
+      assert.equal(await host.locator('input[type=number]:enabled').first().inputValue(), '4');
+      await host.getByRole('button', { name: 'Review', exact: true }).last().click();
+      await host.locator('.review-pricing summary').click();
+      await host.getByRole('button', { name: 'Other synthetic shirt', exact: true }).click();
+      await host.getByRole('button', { name: 'Discard and edit', exact: true }).click();
+      await host.getByRole('heading', { name: 'Other synthetic shirt', exact: true }).waitFor();
+      await host.getByRole('button', { name: 'Close customizer', exact: true }).click();
+      await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
+      await trigger.getByRole('button', { name: 'Review customized cart', exact: true }).click();
+      await host.getByLabel('Saved designs', { exact: true }).selectOption({ label: 'Synthetic shirt' });
+      await host.getByRole('button', { name: 'Open saved design', exact: true }).click();
+      await host.getByRole('button', { name: 'Discard and edit', exact: true }).click();
+      await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+      assert.equal(
+        await host.locator('input[type=number]:enabled').first().inputValue(),
+        '3',
+        'discard restores the accepted cart quantity, never the staged dirty draft',
+      );
+      assert.equal(mutations(), 0);
+      assert.equal(accepts.length, 0);
+    },
+    { multipleProducts: true },
+  );
+});
+
+test('owned saved designs are available before Review and disconnect aborts a pending switch without leaving a modal', async () => {
+  await withRetainedBuyer(
+    async ({ page, host, trigger, proposals, mutations }) => {
+      await host.getByRole('button', { name: 'Close customizer', exact: true }).click();
+      await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
+      await trigger.getByRole('button', { name: 'Review customized cart', exact: true }).click();
+      await host.getByLabel('Saved designs', { exact: true }).selectOption({ label: 'Other synthetic shirt' });
+      assert.equal(proposals.length, 0);
+      await page.route('**/apps/insignia/v1/config*', (route) =>
+        new URL(route.request().url()).searchParams.get('productId') === '333'
+          ? new Promise<void>(() => {})
+          : route.fallback(),
+      );
+      const requesting = page.waitForRequest(
+        (request) => new URL(request.url()).searchParams.get('productId') === '333',
+      );
+      await host.getByRole('button', { name: 'Open saved design', exact: true }).click();
+      await host.getByRole('button', { name: 'Discard and edit', exact: true }).click();
+      await requesting;
+      await page.getByRole('status').waitFor();
+      const aborted = page.waitForEvent(
+        'requestfailed',
+        (request) => new URL(request.url()).searchParams.get('productId') === '333',
+      );
+      await page.locator('insignia-buyer').evaluate((buyer) => buyer.remove());
+      await aborted;
+      assert.equal(await page.locator('dialog:modal').count(), 0);
+      assert.equal(await page.locator('iframe').count(), 0);
+      assert.equal(await page.evaluate(() => document.documentElement.style.overflow), '');
+      assert.equal(mutations(), 0);
+    },
+    { multipleProducts: true },
+  );
+});
+
+test('an option-only change after lost acceptance requires distinct reviewed terms and cannot reuse old authorization', async () => {
+  await withRetainedBuyer(
+    async ({ page, host, accepts, proposals, failAcceptance, mutations }) => {
+      await page.evaluate(() => {
+        window.observedCartRequests = [];
+        window.addEventListener('message', (event) => {
+          if (
+            event.origin === location.origin &&
+            event.data?.type === 'insignia:designer:request' &&
+            event.data.action === 'commit'
+          )
+            window.observedCartRequests.push(event.data.request);
+        });
+      });
+      await reviewRetained(host);
+      failAcceptance(true);
+      await applyButton(host).click();
+      await host.locator('.cart-submit-error').waitFor();
+      assert.equal(accepts.length, 1);
+      assert.equal(mutations(), 0);
+      failAcceptance(false);
+      await host.getByRole('button', { name: 'Edit quantities', exact: true }).click();
+      await host.getByLabel('Packing', { exact: true }).selectOption({ label: 'Gift' });
+      await host.getByRole('button', { name: 'Review', exact: true }).last().click();
+      await applyButton(host).click();
+      await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
+      assert.equal(accepts.length, 2);
+      assert.notEqual(accepts[0]?.idempotencyKey, accepts[1]?.idempotencyKey);
+      assert.deepEqual(proposals[0]?.groups[0]?.design.options, [{ optionId: 'packing', valueId: 'plain' }]);
+      assert.deepEqual(proposals[1]?.groups[0]?.design.options, [{ optionId: 'packing', valueId: 'gift' }]);
+      const frame = page.frameLocator('iframe');
+      const seen = await page.evaluate(() => window.observedCartRequests);
+      const last = seen.at(-1);
+      assert(last);
+      const denied = await frame.locator('body').evaluate(
+        async (_body, request) => {
+          const origin = new URL(document.referrer).origin;
+          return new Promise<boolean>((resolve, reject) => {
+            const timeout = setTimeout(() => reject(Error('Missing guarded receipt')), 5000);
+            const listener = (event: MessageEvent) => {
+              if (
+                event.source !== parent ||
+                event.origin !== origin ||
+                event.data?.channel !== window.name ||
+                event.data.id !== 'changed-cached-attempt'
+              )
+                return;
+              clearTimeout(timeout);
+              removeEventListener('message', listener);
+              resolve(event.data.ok);
+            };
+            addEventListener('message', listener);
+            parent.postMessage(
+              {
+                type: 'insignia:designer:request',
+                channel: window.name,
+                id: 'changed-cached-attempt',
+                action: 'commit',
+                request,
+              },
+              origin,
+            );
+          });
+        },
+        { ...last, requestId: 'changed-cached-ui', design: { ...last.design, options: seen[0]?.design.options } },
+      );
+      assert.equal(denied, false);
+    },
+    { productionOptions: true },
+  );
+});
+
+declare global {
+  interface Window {
+    observedCartRequests: ObservedCartRequest[];
+  }
+}

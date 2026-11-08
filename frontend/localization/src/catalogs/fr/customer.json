@@ -228,5 +228,20 @@
     "saved": "Votre visuel a été envoyé.",
     "continue": "Continuer les imports",
     "retry": "Réessayer"
+  },
+  "startup": {
+    "loading": "Chargement de la personnalisation…",
+    "failure": "La personnalisation n’a pas pu être chargée. Réessayez.",
+    "retry": "Réessayer"
+  },
+  "host": {
+    "personalise": "Personnaliser",
+    "savedDesigns": "Créations enregistrées",
+    "openSaved": "Ouvrir la création enregistrée",
+    "startNew": "Commencer une nouvelle création",
+    "discardTitle": "Abandonner les modifications ?",
+    "discardHelp": "Abandonnez vos modifications pour modifier une autre création. Les articles du panier restent inchangés.",
+    "cancel": "Annuler",
+    "discardEdit": "Abandonner et modifier"
   }
 }

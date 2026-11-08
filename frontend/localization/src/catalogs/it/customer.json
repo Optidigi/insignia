@@ -228,5 +228,20 @@
     "saved": "La tua grafica è stata inviata.",
     "continue": "Continua a caricare",
     "retry": "Riprova"
+  },
+  "startup": {
+    "loading": "Caricamento della personalizzazione…",
+    "failure": "Impossibile caricare la personalizzazione. Riprova.",
+    "retry": "Riprova"
+  },
+  "host": {
+    "personalise": "Personalizza",
+    "savedDesigns": "Design salvati",
+    "openSaved": "Apri design salvato",
+    "startNew": "Inizia un nuovo design",
+    "discardTitle": "Scartare le modifiche?",
+    "discardHelp": "Scarta le modifiche per modificare un altro design. Gli articoli nel carrello non cambieranno.",
+    "cancel": "Annulla",
+    "discardEdit": "Scarta e modifica"
   }
 }

@@ -1,6 +1,7 @@
 import type { ChildProcess } from 'node:child_process';
 import { Writable } from 'node:stream';
 import type { ReleaseVerificationRequest } from '../../apps/web/src/server/admin/release-verification.ts';
+import { immutableImageBoundary } from './immutable-code.mts';
 import { boolean, object, required, text } from './validation.mts';
 export interface CollectorReceipt {
   version: string;
@@ -27,7 +28,7 @@ export interface LauncherReceipt {
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { constants } from 'node:fs';
-import { lstat, mkdir, open, readdir, realpath, rmdir } from 'node:fs/promises';
+import { lstat, mkdir, open, readdir, readFile, realpath, rmdir } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -472,6 +473,8 @@ export const SOURCE_PATHS = [
     'collector.test',
     'management-process',
     'management-worker',
+    'immutable-code',
+    'immutable-code.test',
     'version-inventory',
     'version-inventory.test',
     'owner-https',
@@ -551,10 +554,41 @@ export async function qualifyLaunchInputs(input: unknown) {
   };
 }
 
-export async function launchQualifiedTrustedRelease(
+/** Static code qualification may be reused only inside the proved read-only
+ * image process. This does not cache native authority, credentials or history.
+ * Writable/portable deployments retain full per-launch qualification.
+ */
+export async function createQualifiedReleaseLauncher() {
+  const boundary = async () => {
+    try {
+      return immutableImageBoundary(await readFile('/proc/self/mountinfo', 'utf8'), REPOSITORY);
+    } catch {
+      return null;
+    }
+  };
+  const before = await boundary();
+  if (!before) return launchQualifiedTrustedRelease;
+  const qualified = await qualifyLaunchInputs(await privateJson(join(REPOSITORY, 'identity.json'), 16384));
+  assert.equal(await boundary(), before, 'immutable_code_boundary_changed');
+  return (packet: Buffer, request?: ReleaseVerificationRequest, profileName?: string) =>
+    launch(packet, request, profileName, {
+      qualified,
+      current: async () => assert.equal(await boundary(), before, 'immutable_code_boundary_changed'),
+    });
+}
+export function launchQualifiedTrustedRelease(
+  packet: Buffer,
+  request?: ReleaseVerificationRequest,
+  profileName?: string,
+) {
+  return launch(packet, request, profileName);
+}
+
+async function launch(
   packetBytes: Buffer,
   verificationRequest?: ReleaseVerificationRequest,
   profileName?: string,
+  code?: { qualified: Awaited<ReturnType<typeof qualifyLaunchInputs>>; current(): Promise<void> },
 ) {
   releaseProfile(profileName);
   if (verificationRequest) {
@@ -577,7 +611,9 @@ export async function launchQualifiedTrustedRelease(
     } catch (error) {
       if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error;
     }
-    const qualified = await qualifyLaunchInputs(await privateJson(join(REPOSITORY, 'identity.json'), 16384));
+    if (code) await code.current();
+    const qualified =
+      code?.qualified ?? (await qualifyLaunchInputs(await privateJson(join(REPOSITORY, 'identity.json'), 16384)));
     const intent = join(ROOT, `m5-trusted-release-launch-intent-${recordId}`);
     await mkdir(intent, { mode: 0o700 });
     await durable(join(intent, 'intent.json'), {

@@ -7,7 +7,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { DurableCore } from '../../packages/database/dist/index.js';
 import { parseOwnerPrivatePacket } from './collector-native.mts';
-import { launchQualifiedTrustedRelease } from './launch.mts';
+import { createQualifiedReleaseLauncher } from './launch.mts';
 import { VERIFIER_SOCKET_DIRECTORY } from './paths.mts';
 import { readPrivatePacket } from './private-pipe.mts';
 import { releaseProfile } from './profiles.mts';
@@ -30,6 +30,7 @@ async function main() {
     assert.ok(process.argv.length <= 3);
     const profileName = process.argv[2];
     const profile = releaseProfile(profileName);
+    const launchQualifiedTrustedRelease = await createQualifiedReleaseLauncher();
     const info = await lstat(DIRECTORY);
     assert.ok(
       info.isDirectory() && !info.isSymbolicLink() && info.uid === process.getuid?.() && (info.mode & 0o777) === 0o700,

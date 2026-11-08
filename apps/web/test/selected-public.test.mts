@@ -513,7 +513,7 @@ test('the actual buyer HTTP read retains frozen prices and production dimensions
       ],
       imageUrls: {},
     }),
-    configurationReady: async () => {},
+
     previewImages: async () => ({}),
   });
   const response = await handleBuyerRequest(

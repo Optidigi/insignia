@@ -112,7 +112,7 @@ export function createBuyerApi({
       credentials: 'same-origin',
       cache: 'no-store',
       redirect: 'error',
-      signal: signal ?? AbortSignal.timeout(10000),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(10000)]) : AbortSignal.timeout(10000),
       headers: { Accept: 'application/json', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });

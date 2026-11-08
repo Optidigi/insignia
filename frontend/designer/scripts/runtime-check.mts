@@ -819,3 +819,39 @@ test('production choices keep existing default-first semantics and restored valu
     [saved.options, saved.options],
   );
 });
+
+test('changing only a production choice after failure creates a distinct attempt without repurposing the old request', async () => {
+  const initial = ready();
+  initial.rules = { ...initial.rules, productionOptions: [{ id: 'packing', valueIds: ['plain', 'gift'] }] };
+  initial.productionChoices = { packing: 'plain' };
+  const requests: CartRequest[] = [];
+  const h = harness({ artwork: { upload: async () => { throw Error('unused'); } }, cart: {
+    commit: async (request) => { requests.push(request); throw Error('application failed'); },
+  } }, initial);
+  await h.runtime.commit();
+  h.dispatch({ type: 'production-option-selected', optionId: 'packing', valueId: 'gift' });
+  await h.runtime.commit();
+  assert.equal(requests.length, 2);
+  assert.notEqual(requests[0]?.idempotencyKey, requests[1]?.idempotencyKey);
+  assert.deepEqual(requests[0]?.design.options, [{ optionId: 'packing', valueId: 'plain' }]);
+  assert.deepEqual(requests[1]?.design.options, [{ optionId: 'packing', valueId: 'gift' }]);
+});
+
+test('preview renewal updates media without changing intent or dialogs, and terminal loss never revives artwork', async () => {
+  let state = ready();
+  const expiresAt = new Date(Date.now() + 1000).toISOString();
+  state.artworks = state.artworks.map((artwork) => ({ ...artwork, previewExpiresAt: expiresAt }));
+  const prints = structuredClone(state.prints), quantities = structuredClone(state.quantities);
+  const ports: DesignerPorts = { artwork: {
+    upload: async () => { throw Error('unused'); },
+    renew: async (artwork) => ({ ...artwork, url: '/renewed.png', previewExpiresAt: new Date(Date.now() + 60000).toISOString() }),
+  }, cart: { commit: async () => { throw Error('unused'); } } };
+  const runtime = createDesignerRuntime(ports, () => state, (event) => { state = designerReducer(state, event); });
+  await runtime.renew(state.artworks[0]!);
+  assert.equal(state.artworks[0]?.url, '/renewed.png');
+  assert.deepEqual(state.prints, prints); assert.deepEqual(state.quantities, quantities);
+  ports.artwork.renew = async () => { throw Object.assign(Error('gone'), { status: 410 }); };
+  await runtime.renew(state.artworks[0]!);
+  assert.equal(state.artworks.length, 0);
+  assert.deepEqual(state.prints, prints);
+});

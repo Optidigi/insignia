@@ -224,5 +224,20 @@
     "saved": "Je ontwerp is ingediend.",
     "continue": "Verder uploaden",
     "retry": "Opnieuw proberen"
+  },
+  "startup": {
+    "loading": "Personalisatie laden…",
+    "failure": "Personalisatie kon niet worden geladen. Probeer het opnieuw.",
+    "retry": "Opnieuw proberen"
+  },
+  "host": {
+    "personalise": "Personaliseren",
+    "savedDesigns": "Opgeslagen ontwerpen",
+    "openSaved": "Opgeslagen ontwerp openen",
+    "startNew": "Een nieuw ontwerp starten",
+    "discardTitle": "Wijzigingen verwerpen?",
+    "discardHelp": "Verwerp je wijzigingen om een ander ontwerp te bewerken. Artikelen in je winkelwagen veranderen niet.",
+    "cancel": "Annuleren",
+    "discardEdit": "Verwerpen en bewerken"
   }
 }

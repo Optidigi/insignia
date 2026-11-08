@@ -106,7 +106,7 @@ test('buyer configuration uses the server-selected immutable revision rather tha
       variants: [{ id: '7', label: 'Blue', available: true }],
       imageUrls: { product_42: 'https://cdn.example/current-changed.png' },
     }),
-    configurationReady: async () => {},
+
     ports: () => {
       throw Error('No quote write in read');
     },
@@ -345,7 +345,7 @@ test('an optional preview lookup failure degrades through buyer and purchase pro
       variants: [{ id: '7', label: 'Blue', available: true }],
       imageUrls: { product_42: 'https://cdn.example/current.png' },
     }),
-    configurationReady: async () => {},
+
     ports: () => {
       throw Error('No quote write');
     },

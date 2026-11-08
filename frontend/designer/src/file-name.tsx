@@ -59,13 +59,13 @@ export function ArtworkFile({
     <div className="artwork-file">
       <button onClick={() => onChoose(artwork.id)}>
         <span>
-          <img
+          {artwork.url ? <img
             src={artwork.url}
             alt=""
             width={160}
             height={120}
             loading="lazy"
-          />
+          /> : <span role="status">{t("customer:positioning.previewUnavailable")}</span>}
         </span>
         <strong>
           <FileName

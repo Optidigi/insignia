@@ -108,26 +108,53 @@ function CustomerArtwork({ capability }: { capability: string }) {
       }).parse(result);
       return artwork;
     }
+    const uploader = createArtworkUpload({
+      api: async <T,>(path: string, init: RequestInit = {}) => {
+        const route = /^\/api\/artwork(?:\/([a-f0-9-]+)\/(complete|status|preview))?$/.exec(path);
+        if (!route) throw new Error('Invalid artwork request');
+        const body = init.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
+        return request<T>(
+          capability,
+          { action: route[2] ?? 'begin', ...body, ...(route[1] ? { assetId: route[1] } : {}) },
+          init.signal ?? undefined,
+        );
+      },
+    });
     return {
       artwork: {
         apply,
+        async renew(artwork, uploadRequest) {
+          if (!artwork.assetExpiresAt) throw Object.assign(new Error('Artwork unavailable'), { status: 410 });
+          const preview = await uploader.renew(
+            {
+              assetId: artwork.id,
+              url: artwork.url,
+              aspectRatio: artwork.width / artwork.height,
+              expiresAt: artwork.previewExpiresAt ?? '',
+              assetExpiresAt: artwork.assetExpiresAt,
+            },
+            uploadRequest.signal,
+          );
+          return {
+            ...artwork,
+            url: preview.url,
+            previewExpiresAt: preview.expiresAt,
+            assetExpiresAt: preview.assetExpiresAt,
+          };
+        },
         async upload(file, uploadRequest) {
           await missingSlot(uploadRequest);
-          const uploader = createArtworkUpload({
-            api: async <T,>(path: string, init: RequestInit = {}) => {
-              const route = /^\/api\/artwork(?:\/([a-f0-9-]+)\/(complete|status|preview))?$/.exec(path);
-              if (!route) throw new Error('Invalid artwork request');
-              const body = init.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
-              return request<T>(
-                capability,
-                { action: route[2] ?? 'begin', ...body, ...(route[1] ? { assetId: route[1] } : {}) },
-                init.signal ?? undefined,
-              );
-            },
-          });
           const preview = await uploader.upload(file, () => {}, uploadRequest.signal);
           return apply(
-            { id: preview.assetId, name: file.name, url: preview.url, width: preview.aspectRatio * 1000, height: 1000 },
+            {
+              id: preview.assetId,
+              name: file.name,
+              url: preview.url,
+              width: preview.aspectRatio * 1000,
+              height: 1000,
+              previewExpiresAt: preview.expiresAt,
+              assetExpiresAt: preview.assetExpiresAt,
+            },
             uploadRequest,
           );
         },

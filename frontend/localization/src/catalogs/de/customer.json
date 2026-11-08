@@ -224,5 +224,20 @@
     "saved": "Deine Druckdatei wurde eingereicht.",
     "continue": "Weiter hochladen",
     "retry": "Erneut versuchen"
+  },
+  "startup": {
+    "loading": "Personalisierung wird geladen…",
+    "failure": "Die Personalisierung konnte nicht geladen werden. Bitte erneut versuchen.",
+    "retry": "Erneut versuchen"
+  },
+  "host": {
+    "personalise": "Personalisieren",
+    "savedDesigns": "Gespeicherte Designs",
+    "openSaved": "Gespeichertes Design öffnen",
+    "startNew": "Neues Design starten",
+    "discardTitle": "Änderungen verwerfen?",
+    "discardHelp": "Verwirf deine Änderungen, um ein anderes Design zu bearbeiten. Artikel im Warenkorb bleiben unverändert.",
+    "cancel": "Abbrechen",
+    "discardEdit": "Verwerfen und bearbeiten"
   }
 }

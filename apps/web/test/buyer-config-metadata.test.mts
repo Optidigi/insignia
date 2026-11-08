@@ -7,7 +7,7 @@ import { fixtureCore } from './admin/support/durable-core.mts';
 import { fixtureTransaction } from './admin/support/fixtures.mts';
 import { buyerFixture, effectiveRevision } from './http-fixtures.mts';
 
-function fixture(capturedImages = true, gates: { catalog?(): Promise<void>; readiness?(): Promise<void> } = {}) {
+function fixture(capturedImages = true, gates: { catalog?(): Promise<void> } = {}) {
   const scope = { shopId: 'tenant', installationGeneration: '1', productId: '123' };
   const config: PublishedConfig = {
     ...effectiveRevision().config,
@@ -128,69 +128,37 @@ function fixture(capturedImages = true, gates: { catalog?(): Promise<void>; read
       return catalog;
     },
     ...(capturedImages ? { previewImages: async () => ({ photo: 'https://captured.example.test/frozen.png' }) } : {}),
-    configurationReady: async (target, productId) => {
-      await gates.readiness?.();
-      assert.deepEqual(target, scope);
-      assert.equal(productId, scope.productId);
-    },
   });
   return { service, core, config, catalog, wording, geometry, contexts, wordingReads: () => wordingReads };
 }
 
-test('configuration overlaps independent catalogue and readiness reads but never returns before both settle', async () => {
-  let catalogue!: () => void;
-  let readiness!: () => void;
-  const started: string[] = [];
+test('selection waits for complete catalogue facts and does not invoke purchase ports', async () => {
+  let release!: () => void;
   const f = fixture(true, {
-    catalog: () => {
-      started.push('catalogue');
-      return new Promise<void>((resolve) => {
-        catalogue = resolve;
-      });
-    },
-    readiness: () => {
-      started.push('readiness');
-      return new Promise<void>((resolve) => {
-        readiness = resolve;
-      });
-    },
+    catalog: () =>
+      new Promise<void>((resolve) => {
+        release = resolve;
+      }),
   });
   let settled = false;
   const pending = f.service.config(new Request('https://app.example/config?country=US'));
   void pending.then(() => {
     settled = true;
   });
-  try {
-    await new Promise((resolve) => setImmediate(resolve));
-    assert.deepEqual(new Set(started), new Set(['catalogue', 'readiness']));
-    assert.equal(settled, false);
-    catalogue();
-    await new Promise((resolve) => setImmediate(resolve));
-    assert.equal(settled, false);
-    readiness();
-    assert.equal(BuyerConfigSchema.parse(await pending).ready, true);
-  } finally {
-    catalogue?.();
-    await new Promise((resolve) => setImmediate(resolve));
-    readiness?.();
-    await pending;
-  }
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(settled, false);
+  release();
+  assert.equal(BuyerConfigSchema.parse(await pending).ready, true);
 });
-
-for (const failed of ['catalog', 'readiness'] as const) {
-  test(`configuration stays unavailable when the concurrent ${failed} read fails`, async () => {
-    const f = fixture(true, {
-      [failed]: async () => {
-        throw new Error('Authoritative read unavailable');
-      },
-    });
-    await assert.rejects(
-      f.service.config(new Request('https://app.example/config?country=US')),
-      /Authoritative read unavailable/,
-    );
-    assert.equal(f.wordingReads(), 0, 'No partially admitted presentation is returned');
+test('selection fails closed when catalogue facts are unavailable', async () => {
+  const f = fixture(true, {
+    catalog: async () => {
+      throw Error('Catalogue unavailable');
+    },
   });
-}
+  await assert.rejects(f.service.config(new Request('https://app.example/config?country=US')), /Catalogue unavailable/);
+  assert.equal(f.wordingReads(), 0);
+});
 
 test('a published Lean configuration without selected authoring state exports actual contextual metadata and exact available cells', async () => {
   const f = fixture();
