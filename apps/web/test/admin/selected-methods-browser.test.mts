@@ -236,3 +236,53 @@ test('explicit same-amount Method review adopts the changed shop currency and su
   );
   assert.equal(f.writes.length, 1);
 });
+
+test('suspending the product picker keeps concurrent method dialogs uniquely addressable', {
+  timeout: 30000,
+}, async (t) => {
+  const f = await methodsFixture(t, { shopifyModal: true });
+  await f.open();
+  await f.page.getByRole('link', { name: 'Printing', exact: true }).click();
+  const name = f.page.getByRole('textbox', { name: /^Method name/ });
+  await name.fill('Unsaved method name');
+  await f.page.getByRole('button', { name: 'Select products', exact: true }).click();
+  const picker = f.page.locator('s-modal[data-method-dialog]').filter({ hasText: 'Select products' });
+  await picker.waitFor({ state: 'visible' });
+  await f.page.goBack();
+  const dialogs = f.page.locator('s-modal[data-method-dialog]');
+  await f.page.getByRole('heading', { name: 'Discard unsaved changes?', exact: true }).waitFor();
+  const ids = await dialogs.evaluateAll((elements) => elements.map((element) => (element as HTMLElement).id));
+  assert.equal(ids.length, 2, 'The suspended product picker and leave confirmation stay mounted together');
+  assert.ok(ids.every(Boolean), 'Every open Method dialog needs an ID for Shopify host routing');
+  assert.equal(new Set(ids).size, 2, 'Concurrent Method dialogs need distinct Shopify host IDs');
+});
+
+test('a resumed product picker survives its delayed host dismissal without writing the draft', {
+  timeout: 30000,
+}, async (t) => {
+  const f = await methodsFixture(t, { shopifyModal: true, deferShopifyModalDismiss: true });
+  await f.open();
+  await f.page.getByRole('link', { name: 'Printing', exact: true }).click();
+  await f.page.getByRole('textbox', { name: /^Method name/ }).fill('Unsaved method name');
+  await f.page.getByRole('button', { name: 'Select products', exact: true }).click();
+  const picker = f.page.locator('s-modal[data-method-dialog]').filter({ hasText: 'Select products' });
+  await picker.waitFor({ state: 'visible' });
+  const pickerId = await picker.getAttribute('id');
+
+  await f.page.goBack();
+  const leave = f.page.locator('s-modal[data-method-dialog]').filter({ hasText: 'Discard unsaved changes?' });
+  await leave.waitFor({ state: 'visible' });
+  await leave.getByRole('button', { name: 'Keep editing', exact: true }).click();
+  await leave.waitFor({ state: 'detached' });
+
+  await f.page.evaluate(() => window.finishShopifyModalDismiss());
+  await picker.waitFor({ state: 'visible' });
+  await f.page.locator('[data-shopify-host-modal-scrim]').waitFor({ state: 'attached' });
+  assert.equal(await picker.getAttribute('id'), pickerId);
+  assert.equal(f.writes.length, 0);
+
+  await picker.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await picker.waitFor({ state: 'detached' });
+  await f.page.locator('[data-shopify-host-modal-scrim]').waitFor({ state: 'detached' });
+  assert.equal(f.writes.length, 0);
+});

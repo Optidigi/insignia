@@ -27,7 +27,15 @@ declare global {
         hide(id: string): Promise<unknown>;
         leaveConfirmation?(): Promise<void>;
       };
+      _internal?: {
+        modal?: {
+          show(id: string, options?: { title?: string; buttons?: unknown[]; onDismiss?: () => void }): Promise<unknown>;
+          hide(id: string): Promise<unknown>;
+        };
+      };
     };
+    dismissShopifyModal(): void;
+    finishShopifyModalDismiss(): void;
     syntheticTokenCount: number;
     __tokenCount: number;
     __tokenCalls: number;
