@@ -13,11 +13,13 @@ import { createArtworkGuestAuthority } from '../../src/server/artwork/guest.ts';
 import { handleBuyerRequest } from '../../src/server/buyer/http.ts';
 import { createBuyerServices } from '../../src/server/buyer/service.ts';
 import { createQuoteAuthorityPorts } from '../../src/server/quote-composition.ts';
+import { isolatedDatabase } from './isolated-database.mts';
 
 const connectionString = process.env.DATABASE_URL;
 export async function fixture(
   t: Pick<TestContext, 'after'>,
   options: {
+    isolated?: boolean; // Required when a case exercises database-wide cleanup.
     representativePricing?: boolean;
     demo91?: boolean;
     selectedBrowser?: boolean;
@@ -25,13 +27,16 @@ export async function fixture(
     readiness?: QuoteAuthorityPorts['readiness'];
   } = {},
 ) {
-  const pool = new Pool({ connectionString, max: 4 });
-  const core = createDurableCore(new Pool({ connectionString, max: 8 }));
-  const db = createDatabase(new Pool({ connectionString, max: 4 }));
+  const isolated = options.isolated ? await isolatedDatabase('buyer_cleanup') : undefined;
+  const target = isolated?.connectionString ?? connectionString;
+  const pool = new Pool({ connectionString: target, max: 4 });
+  const core = createDurableCore(new Pool({ connectionString: target, max: 8 }));
+  const db = createDatabase(new Pool({ connectionString: target, max: 4 }));
   t.after(async () => {
     await core.close();
     await db.destroy();
     await pool.end();
+    await isolated?.close();
   });
   const version = (await pool.query('show server_version_num')).rows[0].server_version_num;
   assert.equal(Math.floor(Number(version) / 10000), 18);
