@@ -511,7 +511,13 @@ for (const engine of [chromium, firefox])
         document.querySelector<HTMLIFrameElement>('dialog[aria-label="First shirt"] > iframe')?.style.visibility ===
         'visible',
     );
-    await page.waitForLoadState('networkidle');
+    // Wait for this owner's completed preparation, not the page-wide network-idle
+    // lifecycle: Firefox can lose that idle timer while replacing a srcdoc frame.
+    await page.waitForFunction(() => {
+      const buyer = document.querySelector('insignia-buyer[product-id="111"]');
+      const preparation = buyer && Reflect.get(buyer, 'preparation');
+      return preparation?.warm?.ready === true && !preparation.controller.signal.aborted;
+    });
     assert.deepEqual(reads, ['111']);
     assert.equal(await page.locator('iframe').count(), 1);
     await page.locator('iframe').evaluate((frame) => {
