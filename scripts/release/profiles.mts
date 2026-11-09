@@ -26,6 +26,8 @@ import reviewCartModules from '../../deployment/m5-runtime/native-review-cart-mo
 import reviewCartCandidate from '../../deployment/m5-runtime/native-review-cart-release-binding.json' with {
   type: 'json',
 };
+import reviewNavModules from '../../deployment/m5-runtime/native-review-nav-module-baseline.json' with { type: 'json' };
+import reviewNavBinding from '../../deployment/m5-runtime/native-review-nav-release-binding.json' with { type: 'json' };
 import selectedOnlyModules from '../../deployment/m5-runtime/native-selected-fixed-module-baseline.json' with {
   type: 'json',
 };
@@ -80,6 +82,14 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  'native-review-nav-8a7ee446': {
+    versionId: reviewNavBinding.versionId,
+    versionTag: reviewNavBinding.versionTag,
+    versionIds: reviewNavBinding.versionIds,
+    moduleHash: reviewNavBinding.moduleHash,
+    modules: reviewNavModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+  },
   'native-loading-defd05b0': {
     versionId: loadingCandidate.versionId,
     versionTag: loadingCandidate.versionTag,
