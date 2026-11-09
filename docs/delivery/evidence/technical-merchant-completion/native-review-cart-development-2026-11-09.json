@@ -1,0 +1,569 @@
+{
+  "classification": "DEVELOPMENT_REVIEW_CART_QUALIFIED_WITH_NETWORK_LATENCY_UNRESOLVED",
+  "recordedAt": "2026-11-09T16:14:37.041134+00:00",
+  "source": {
+    "pr": 272,
+    "head": "a82f1901e6a148e499940e8e00bba83784ffccfc",
+    "merge": "e47b26f480a20ca1942602637e0098dd711c262b",
+    "ciSource": "3e938760d34ba3230bbd6364ce9483931b82a8db",
+    "tree": "8315f93cb8cb50e9f999daf9446c43c59d1c6cf0",
+    "foundationRun": "42647547789",
+    "runtimeRun": "42647548089",
+    "allRequiredChecksPassed": true
+  },
+  "provider": {
+    "activeVersionId": "1200729554945",
+    "versionTag": "native-review-cart-1f4595f",
+    "completeInventoryCount": 28,
+    "moduleHash": "6ffb9ad3147b7c959380976dd7749f250b6596cf0587d2e35f691b543ed4db94",
+    "moduleIdentitiesPreserved": 14,
+    "nonThemeConfigurationsPreserved": 13,
+    "themeFilesExact": 21,
+    "assetsExact": 12,
+    "neverReleaseVersionsInactive": [
+      "1158837927937",
+      "1198938357761",
+      "1199165767681"
+    ],
+    "releaseDispatches": 1,
+    "releaseAcknowledged": true,
+    "independentActiveReadback": true
+  },
+  "artifacts": {
+    "web": {
+      "archiveSha256": "2c7739328a2dac268c4c1f82b5d5d363a3697d9bddd2b15fbbaf52f9394d9320",
+      "configId": "sha256:5c19e0935e1707d9c3847277c066053b265e79eec903accd2e494b6501bdf723",
+      "manifestId": "sha256:13cbc0528612eefe371e105b311897476e51bf0b41ab8dae1a8525c1f0976c5e",
+      "sizeBytes": 497874432
+    },
+    "worker": {
+      "archiveSha256": "e888e026e9a40109204a2baf9c92b558c0cb4d0c3d62bdd69d20146844591568",
+      "configId": "sha256:814c8d9b8f8c038dade2ae218ccc01384bac2d66cb73913f455702566912bc95",
+      "manifestId": "sha256:cf28129f2ecdaad8a09c7d56ffe175dbca4f729676e6df289abdae67f8b3ad43",
+      "sizeBytes": 315238400
+    },
+    "verifier": {
+      "archiveSha256": "b021c70ccb603719b1ce912e89d504d8cdced91cbdc1a079b78541346e192ebf",
+      "configId": "sha256:00169883a6ec231292d9ec226711d372596ad658a5586d31200f1f7749db92f5",
+      "manifestId": "sha256:f4708fb295b5c9ded94793bb15f849ac3ce1fc6adab801d5b3e90821faa2c032",
+      "sizeBytes": 472925184
+    }
+  },
+  "runtime": {
+    "profile": "native-review-cart-1f4595f",
+    "webHealthy": true,
+    "workerHealthy": true,
+    "verifierExclusive": true,
+    "inspectorRetainedAndActive": true,
+    "mountsPreserved": true,
+    "schemaVersions": 52,
+    "scopedGrantsPreserved": true,
+    "protectedFactsPreserved": true,
+    "pendingApplicationsPreserved": 1,
+    "declinedCommands": 0,
+    "signingKeysPreserved": [
+      {
+        "id": 1,
+        "state": "retiring",
+        "firstDay": 20736,
+        "lastDay": 20767
+      },
+      {
+        "id": 2,
+        "state": "active",
+        "firstDay": 20766,
+        "lastDay": 20797
+      }
+    ],
+    "ownerSigningMountsAbsent": true
+  },
+  "historicalAdmissionObservation": {
+    "classification": "FRESH_WEB_AND_QUIESCED_WORKER_ROLE_READS_NOT_RUNNING_WORKER_PURCHASE_PROOF",
+    "requestId": "ae5ad246-b584-42a4-bdc0-e8232ed20213",
+    "recordId": "aada3ca9-6360-4d08-af9a-447655b119d6",
+    "matchingRecordId": true,
+    "observedAt": "2026-11-09T16:09:51.517Z",
+    "expiresAt": "2026-11-09T16:10:19.835Z",
+    "collectionCalls": 1,
+    "continuingAuthority": false
+  },
+  "recovery": {
+    "developmentDbRestoreVerified": true,
+    "configurationsVerifiedWithoutPlaintextDiskCopy": true,
+    "completeProductionRecovery": false,
+    "captureExpiry": "2026-11-09T18:03:11.166891+00:00",
+    "disposalCompletedBeforeExpiry": true,
+    "disposedFiles": 7,
+    "disposedBytes": 1334493,
+    "compatibleArtifactsAndPermanentCustodyRetained": true,
+    "outstandingCaptureDeadline": false
+  },
+  "pending": [
+    "Cold quote and Add latency reduction remains unresolved; one native sample only",
+    "Native cold-preparation interactions/reuse and continuous-paint qualification gaps",
+    "Running-worker purchase/throughput qualification",
+    "Owner acceptance",
+    "Unchanged production cutover/recovery/monitoring gates"
+  ],
+  "productionCutover": false,
+  "initialClassification": "DEVELOPMENT_DEPLOYED_NATIVE_UI_AND_LATENCY_QUALIFICATION_PENDING",
+  "updatedAt": "2026-11-09T17:13:45.668395+00:00",
+  "nativeObservation": {
+    "targeting": "explicit active direct srcdoc selectors succeeded; prior aria-ref parser failure not an app defect",
+    "authoritativeReview": {
+      "currency": "USD",
+      "amountMinor": 2495,
+      "quantity": 1,
+      "productId": "10588458647835",
+      "variantId": "54552023302427"
+    },
+    "addClicks": 1,
+    "nativeCartReadbackMatched": true,
+    "removeClicks": 1,
+    "immediateRemovalReadRaced": true,
+    "readOnlyReconciliationRestoredBaseline": true,
+    "cartBaselineAndFinalDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "ownedTabClosed": true,
+    "diagnosticStorageKeyRemoved": true,
+    "modalVisibleDuringBusyAndCompletionSamples": true,
+    "addedOpeningLiteralTextObserved": false,
+    "continuousPaintVerified": false
+  },
+  "nativeTiming": {
+    "samples": 1,
+    "clockBasis": "Browser performance.timeOrigin + performance.now(), Unix epoch milliseconds. Resource startedAt uses document timeOrigin + entry.startTime; durations are ResourceTiming milliseconds. Server durations and UUIDs are actual exposed ServerTiming insignia entries, not independent server-log correlation.",
+    "stateSamplingIntervalMs": 50,
+    "proposal": {
+      "durationMs": 6336.099999427795,
+      "serverDurationMs": 6132,
+      "status": 200,
+      "requestId": "cb61651f-1881-4226-afa1-03bcffdccac2"
+    },
+    "accept": {
+      "durationMs": 2598.6000003814697,
+      "serverDurationMs": 2430,
+      "status": 200,
+      "requestId": "e6ff6ec7-de6f-43cc-9039-d6a46f27e808"
+    },
+    "addToCompletionSampleMs": 4420,
+    "addToPagehideMs": 4729.1,
+    "speedupOrPercentileClaim": false,
+    "backendCorrelatedSummaries": [
+      {
+        "time": 1794241342724,
+        "event": "buyer_request_timing",
+        "correlationId": "cb61651f-1881-4226-afa1-03bcffdccac2",
+        "operation": "proposal",
+        "outcome": "success",
+        "totalMs": 6132,
+        "truncated": false,
+        "spans": [
+          {
+            "id": 1,
+            "parentId": null,
+            "stage": "prepare",
+            "offsetMs": 8,
+            "durationMs": 6122,
+            "outcome": "success"
+          },
+          {
+            "id": 2,
+            "parentId": 1,
+            "stage": "prepare",
+            "offsetMs": 8,
+            "durationMs": 6099,
+            "outcome": "success"
+          },
+          {
+            "id": 3,
+            "parentId": 2,
+            "stage": "tenant",
+            "offsetMs": 9,
+            "durationMs": 2,
+            "outcome": "success"
+          },
+          {
+            "id": 4,
+            "parentId": 3,
+            "stage": "native-configuration",
+            "offsetMs": 9,
+            "durationMs": 1,
+            "outcome": "success"
+          },
+          {
+            "id": 5,
+            "parentId": 2,
+            "stage": "entitlement",
+            "offsetMs": 12,
+            "durationMs": 518,
+            "outcome": "success"
+          },
+          {
+            "id": 6,
+            "parentId": 2,
+            "stage": "shop",
+            "offsetMs": 12,
+            "durationMs": 237,
+            "outcome": "success"
+          },
+          {
+            "id": 7,
+            "parentId": 2,
+            "stage": "revision",
+            "offsetMs": 530,
+            "durationMs": 1,
+            "outcome": "success"
+          },
+          {
+            "id": 8,
+            "parentId": 2,
+            "stage": "variant",
+            "offsetMs": 532,
+            "durationMs": 292,
+            "outcome": "success"
+          },
+          {
+            "id": 9,
+            "parentId": 2,
+            "stage": "primary-context",
+            "offsetMs": 825,
+            "durationMs": 265,
+            "outcome": "success"
+          },
+          {
+            "id": 10,
+            "parentId": 2,
+            "stage": "artwork",
+            "offsetMs": 1092,
+            "durationMs": 0,
+            "outcome": "success"
+          },
+          {
+            "id": 11,
+            "parentId": 2,
+            "stage": "positions",
+            "offsetMs": 1093,
+            "durationMs": 0,
+            "outcome": "success"
+          },
+          {
+            "id": 12,
+            "parentId": 2,
+            "stage": "availability",
+            "offsetMs": 1093,
+            "durationMs": 533,
+            "outcome": "success"
+          },
+          {
+            "id": 13,
+            "parentId": 2,
+            "stage": "release-prepare",
+            "offsetMs": 1093,
+            "durationMs": 4740,
+            "outcome": "success"
+          },
+          {
+            "id": 14,
+            "parentId": 13,
+            "stage": "release-prepare",
+            "offsetMs": 1093,
+            "durationMs": 4740,
+            "outcome": "success"
+          },
+          {
+            "id": 15,
+            "parentId": 2,
+            "stage": "current-readiness",
+            "offsetMs": 5834,
+            "durationMs": 274,
+            "outcome": "success"
+          },
+          {
+            "id": 16,
+            "parentId": 15,
+            "stage": "current-readiness",
+            "offsetMs": 5834,
+            "durationMs": 274,
+            "outcome": "success"
+          },
+          {
+            "id": 17,
+            "parentId": 1,
+            "stage": "private-retention",
+            "offsetMs": 6109,
+            "durationMs": 1,
+            "outcome": "success"
+          },
+          {
+            "id": 18,
+            "parentId": 1,
+            "stage": "persistence",
+            "offsetMs": 6111,
+            "durationMs": 17,
+            "outcome": "success"
+          },
+          {
+            "id": 19,
+            "parentId": 1,
+            "stage": "owned-history",
+            "offsetMs": 6128,
+            "durationMs": 2,
+            "outcome": "success"
+          },
+          {
+            "id": 20,
+            "parentId": 1,
+            "stage": "response-projection",
+            "offsetMs": 6131,
+            "durationMs": 0,
+            "outcome": "success"
+          },
+          {
+            "id": 21,
+            "parentId": null,
+            "stage": "response-validation",
+            "offsetMs": 6131,
+            "durationMs": 1,
+            "outcome": "success"
+          }
+        ]
+      },
+      {
+        "time": 1794241354575,
+        "event": "buyer_request_timing",
+        "correlationId": "e6ff6ec7-de6f-43cc-9039-d6a46f27e808",
+        "operation": "acceptance",
+        "outcome": "success",
+        "totalMs": 2430,
+        "truncated": false,
+        "spans": [
+          {
+            "id": 1,
+            "parentId": null,
+            "stage": "prepare",
+            "offsetMs": 3,
+            "durationMs": 2425,
+            "outcome": "success"
+          },
+          {
+            "id": 2,
+            "parentId": 1,
+            "stage": "tenant",
+            "offsetMs": 28,
+            "durationMs": 1,
+            "outcome": "success"
+          },
+          {
+            "id": 3,
+            "parentId": 2,
+            "stage": "native-configuration",
+            "offsetMs": 28,
+            "durationMs": 1,
+            "outcome": "success"
+          },
+          {
+            "id": 4,
+            "parentId": 1,
+            "stage": "entitlement",
+            "offsetMs": 31,
+            "durationMs": 426,
+            "outcome": "success"
+          },
+          {
+            "id": 5,
+            "parentId": 1,
+            "stage": "shop",
+            "offsetMs": 31,
+            "durationMs": 244,
+            "outcome": "success"
+          },
+          {
+            "id": 6,
+            "parentId": 1,
+            "stage": "revision",
+            "offsetMs": 458,
+            "durationMs": 1,
+            "outcome": "success"
+          },
+          {
+            "id": 7,
+            "parentId": 1,
+            "stage": "variant",
+            "offsetMs": 460,
+            "durationMs": 254,
+            "outcome": "success"
+          },
+          {
+            "id": 8,
+            "parentId": 1,
+            "stage": "primary-context",
+            "offsetMs": 714,
+            "durationMs": 268,
+            "outcome": "success"
+          },
+          {
+            "id": 9,
+            "parentId": 1,
+            "stage": "artwork",
+            "offsetMs": 983,
+            "durationMs": 0,
+            "outcome": "success"
+          },
+          {
+            "id": 10,
+            "parentId": 1,
+            "stage": "native-configuration",
+            "offsetMs": 984,
+            "durationMs": 1,
+            "outcome": "success"
+          },
+          {
+            "id": 11,
+            "parentId": 1,
+            "stage": "release-prepare",
+            "offsetMs": 986,
+            "durationMs": 5,
+            "outcome": "success"
+          },
+          {
+            "id": 12,
+            "parentId": 1,
+            "stage": "release-prepare",
+            "offsetMs": 986,
+            "durationMs": 10,
+            "outcome": "success"
+          },
+          {
+            "id": 13,
+            "parentId": 1,
+            "stage": "persistence",
+            "offsetMs": 997,
+            "durationMs": 1420,
+            "outcome": "success"
+          },
+          {
+            "id": 14,
+            "parentId": 13,
+            "stage": "tenant",
+            "offsetMs": 1000,
+            "durationMs": 0,
+            "outcome": "success"
+          },
+          {
+            "id": 15,
+            "parentId": 13,
+            "stage": "entitlement",
+            "offsetMs": 1001,
+            "durationMs": 338,
+            "outcome": "success"
+          },
+          {
+            "id": 16,
+            "parentId": 13,
+            "stage": "shop",
+            "offsetMs": 1001,
+            "durationMs": 232,
+            "outcome": "success"
+          },
+          {
+            "id": 17,
+            "parentId": 13,
+            "stage": "variant",
+            "offsetMs": 1001,
+            "durationMs": 269,
+            "outcome": "success"
+          },
+          {
+            "id": 18,
+            "parentId": 13,
+            "stage": "tenant",
+            "offsetMs": 1339,
+            "durationMs": 0,
+            "outcome": "success"
+          },
+          {
+            "id": 19,
+            "parentId": 13,
+            "stage": "primary-context",
+            "offsetMs": 1339,
+            "durationMs": 255,
+            "outcome": "success"
+          },
+          {
+            "id": 20,
+            "parentId": 13,
+            "stage": "positions",
+            "offsetMs": 1595,
+            "durationMs": 0,
+            "outcome": "success"
+          },
+          {
+            "id": 21,
+            "parentId": 13,
+            "stage": "availability",
+            "offsetMs": 1595,
+            "durationMs": 514,
+            "outcome": "success"
+          },
+          {
+            "id": 22,
+            "parentId": 13,
+            "stage": "current-readiness",
+            "offsetMs": 2109,
+            "durationMs": 272,
+            "outcome": "success"
+          },
+          {
+            "id": 23,
+            "parentId": 22,
+            "stage": "current-readiness",
+            "offsetMs": 2109,
+            "durationMs": 272,
+            "outcome": "success"
+          },
+          {
+            "id": 24,
+            "parentId": 13,
+            "stage": "artwork",
+            "offsetMs": 2382,
+            "durationMs": 1,
+            "outcome": "success"
+          },
+          {
+            "id": 25,
+            "parentId": null,
+            "stage": "response-validation",
+            "offsetMs": 2429,
+            "durationMs": 0,
+            "outcome": "success"
+          }
+        ]
+      }
+    ],
+    "note": "Nested/parallel spans are non-additive. Main measured proposal delay: release preparation4740ms; proposal database persistence17ms. Acceptance final checks remain required."
+  },
+  "optimizationDecision": {
+    "networkSpeedupShipped": false,
+    "guardedOverlapCandidates": "REJECTED_BY_ACTUAL_SOURCE_FAILURE_CONTROLS",
+    "existingReservationMetadataUsed": true,
+    "newCollectorTimingProtocolAdded": false,
+    "narrowImportCandidate": "NOT_ADOPTED_SMALL_LOCAL_GAIN",
+    "compileCacheCandidate": {
+      "localOwnerImportMedianMs": {
+        "uncached": 474.880239,
+        "cached": 359.394801,
+        "pairs": 9
+      },
+      "readOnlyPublicImageImportMedianMs": {
+        "uncached": 395.776536,
+        "cached": 311.492117,
+        "pairs": 5
+      },
+      "cacheBytesUnchanged": true,
+      "providerCallsInExperiment": 0,
+      "implementationRetained": false,
+      "reason": "Same-UID read-only proof does not establish CI-to-image UID portability. Additional packaging/qualification complexity was not adopted for the modest import-only gain."
+    },
+    "remainingWork": "Further end-to-end latency reduction is engineering work, not an established owner-access blocker. No claim that all future safe optimization is impossible."
+  }
+}
