@@ -485,9 +485,9 @@ test('selected photo views retain size choices when another view has no placemen
     const host = page.frameLocator('iframe');
     await host.locator('.app').waitFor();
     await addDeferred(host);
-    await host.getByRole('button', { name: 'Edit Front artwork', exact: true }).waitFor();
+    await host.getByRole('button', { name: 'Add artwork for Front', exact: true }).waitFor();
     await host.getByRole('button', { name: 'back', exact: true }).click();
-    assert.equal(await host.getByRole('button', { name: 'Edit Front artwork', exact: true }).count(), 0);
+    assert.equal(await host.getByRole('button', { name: 'Add artwork for Front', exact: true }).count(), 0);
     await positionCard(host, 'Front')
       .getByRole('button', { name: /^Large/ })
       .click();
@@ -498,7 +498,7 @@ test('selected photo views retain size choices when another view has no placemen
       'true',
     );
     await host.getByRole('button', { name: 'front', exact: true }).click();
-    await host.getByRole('button', { name: 'Edit Front artwork', exact: true }).waitFor();
+    await host.getByRole('button', { name: 'Add artwork for Front', exact: true }).waitFor();
     await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
     assert.equal(await host.locator('input[type=number]:enabled').first().isVisible(), true);
   } finally {
@@ -569,8 +569,8 @@ test('one selected photo view displays both independent logo-later placements an
     assert.ok(Math.abs(required(centers[1]) - 0.75) < 0.02);
     await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
     await host.getByRole('button', { name: 'Previous step', exact: true }).click();
-    assert.equal(await host.getByRole('button', { name: 'Edit Front artwork', exact: true }).isVisible(), true);
-    assert.equal(await host.getByRole('button', { name: 'Edit Right artwork', exact: true }).isVisible(), true);
+    assert.equal(await host.getByRole('button', { name: 'Add artwork for Front', exact: true }).isVisible(), true);
+    assert.equal(await host.getByRole('button', { name: 'Add artwork for Right', exact: true }).isVisible(), true);
   } finally {
     await browser?.close();
     await server.close();
