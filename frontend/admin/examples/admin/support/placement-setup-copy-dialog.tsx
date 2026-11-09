@@ -411,9 +411,14 @@ export default function PlacementSetupCopyDialog({
   const [sourceProof, setSourceProof] = useState<{ data: string; signature: string; failed: boolean } | null>(null);
   const fixedTargets = targetIds !== undefined;
   const targetIdsKey = targetIds?.join('\u0000') ?? '';
+  const modalId = useRef('');
+  if (!modalId.current) modalId.current = `insignia-copy-dialog-${crypto.randomUUID()}`;
   const modal = useRef<HTMLElementTagNameMap['s-modal']>(null);
   const stageRoot = useRef<HTMLElement>(null);
   const active = useRef(true);
+  const opening = useRef(true);
+  const dismissalRequested = useRef(false);
+  const closed = useRef(false);
   const previousFocus = useRef(document.activeElement);
 
   useLayoutEffect(() => {
@@ -610,8 +615,17 @@ export default function PlacementSetupCopyDialog({
     selectedTargetIds.length > 0 &&
     preflightBlockers.length === 0;
 
+  function closeOnce() {
+    if (!active.current || closed.current || busy) return;
+    closed.current = true;
+    onClose();
+  }
+
   function close() {
-    if (!busy) onClose();
+    if (busy) return;
+    dismissalRequested.current = true;
+    modal.current?.hideOverlay();
+    if (!opening.current) closeOnce();
   }
 
   function toggleTarget(id: string, checked: boolean) {
@@ -881,19 +895,36 @@ export default function PlacementSetupCopyDialog({
 
   return (
     <s-modal
+      id={modalId.current}
       ref={modal}
       data-method-dialog
       heading={heading}
       size="base"
-      onAfterShow={() => modal.current?.querySelector<HTMLElement>('s-search-field, [data-copy-stage]')?.focus()}
+      onShow={() => {
+        opening.current = false;
+      }}
+      onHide={() => {
+        if (active.current && !busy) dismissalRequested.current = true;
+      }}
+      onAfterShow={() => {
+        opening.current = false;
+        // As in MethodDialog, retain the owner while Polaris awaits host show.
+        if (dismissalRequested.current || !active.current) {
+          modal.current?.hideOverlay();
+          closeOnce();
+          return;
+        }
+        modal.current?.querySelector<HTMLElement>('s-search-field, [data-copy-stage]')?.focus();
+      }}
       onAfterHide={() => {
         if (!active.current) return;
         if (busy) {
           // Keep a running copy visible if Escape or the native close control dismisses it.
+          opening.current = true;
           modal.current?.showOverlay();
           return;
         }
-        onClose();
+        if (!opening.current) closeOnce();
       }}
     >
       <div class="placement-setup-copy" aria-busy={loading || hydrating || busy}>
