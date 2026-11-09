@@ -46,6 +46,8 @@ export interface WorkerHandlers {
 
 export interface PgBossRuntimeOptions {
   connectionString?: string;
+  /** Owner-specific queue pool budget; omitted producers retain pg-boss defaults. */
+  max?: number;
   schema?: string;
   /** Test seam. Production constructs its own pg-boss instance. */
   boss?: QueueAdapter;
@@ -92,6 +94,7 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions): PgBossRuntim
     ? undefined
     : new PgBoss({
         connectionString: options.connectionString,
+        ...(options.max === undefined ? {} : { max: options.max }),
         schema,
         migrate: false,
         createSchema: false,

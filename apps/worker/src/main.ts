@@ -1,6 +1,5 @@
 import { createAdminReadCredentialSource } from '@insignia/application';
 import { currencyExponent } from '@insignia/cart-authorization';
-import { createDurableCore } from '@insignia/database';
 import {
   createReleaseVerificationClient,
   createShopifyOfflineRefreshTransport,
@@ -8,8 +7,8 @@ import {
   readShopifyOrderChanges,
   resolveRuntimeReleaseProfile,
 } from '@insignia/shopify';
-import { Pool } from 'pg';
 import { loadCredentialKeys } from './config.js';
+import { createWorkerDatabase } from './database.js';
 import { runLocalDiagnostic } from './diagnostic.js';
 import { createDurableWorkerHandlers, credentialLifecycle } from './handlers.js';
 import { startWorkerProcess } from './process.js';
@@ -17,7 +16,6 @@ import { createProductionPurchaseAdmission, resolveNativePurchaseQualification }
 import { createPurchaseReleasePreparation } from './purchase-release.js';
 import { createPurchaseRunner } from './purchase-runner.js';
 import { createWorkerReconciliation } from './reconciliation.js';
-import { createPgBossRuntime } from './runtime.js';
 import { createAutomaticUninstallEnrollment, createUninstallEnrollmentReconciliation } from './uninstall-enrollment.js';
 import { createWorkerUsageRuntime } from './usage-runtime.js';
 
@@ -39,12 +37,8 @@ if (process.argv.includes('--diagnostic')) {
   const portArgument = process.argv.find((value) => value.startsWith('--port='));
   const port = portArgument ? Number(portArgument.slice('--port='.length)) : 4301;
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('Invalid worker port');
-  const core = createDurableCore(
-    new Pool({ connectionString, connectionTimeoutMillis: 5000, query_timeout: 10000, statement_timeout: 10000 }),
-    { credentialKeys: keys },
-  );
+  const { core, queue } = createWorkerDatabase(connectionString, keys);
   const usage = createWorkerUsageRuntime({ env: process.env, core });
-  const queue = createPgBossRuntime({ connectionString, credentialKeysReady: true, webhookHandoff: core.webhooks });
   const transport = createShopifyOfflineRefreshTransport({ clientId, clientSecret });
   const purchaseCredentials = createAdminReadCredentialSource({
     tenants: core.tenants,
