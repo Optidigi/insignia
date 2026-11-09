@@ -890,7 +890,10 @@ async function withRetainedBuyer(
     } else await host.locator('.app').waitFor();
     assert.equal(await page.locator('dialog[open]').isVisible(), true);
     assert.equal(await page.locator('dialog[open] > iframe').isVisible(), true);
-    assert.equal(await page.locator('dialog[open] > div').evaluate((element) => element instanceof HTMLElement && element.hidden), true);
+    assert.equal(
+      await page.locator('dialog[open] > div').evaluate((element) => element instanceof HTMLElement && element.hidden),
+      true,
+    );
     await run({
       page,
       host,
@@ -1350,7 +1353,10 @@ async function withProductDesigner(
     } else await ui.locator('.app').waitFor();
     assert.equal(await page.locator('dialog[open]').isVisible(), true);
     assert.equal(await page.locator('dialog[open] > iframe').isVisible(), true);
-    assert.equal(await page.locator('dialog[open] > div').evaluate((element) => element instanceof HTMLElement && element.hidden), true);
+    assert.equal(
+      await page.locator('dialog[open] > div').evaluate((element) => element instanceof HTMLElement && element.hidden),
+      true,
+    );
     await run({ page, ui, trigger, privateRequests: () => privateRequests });
   } finally {
     await browser?.close();
