@@ -1599,6 +1599,89 @@ test('selected desktop and mobile layouts retain the design and quantities when 
   });
 });
 
+for (const engine of [chromium, firefox]) {
+  for (const ordering of ['before', 'after'] as const) {
+    test(`${engine.name()} failure recovery autofocus ${ordering} a newer keyboard focus choice`, async () => {
+      await withProductDesigner(
+        config,
+        async ({ page, ui, trigger, privateRequests }) => {
+          await ui.getByRole('button', { name: 'Add artwork', exact: true }).click();
+          const opener = positionCard(ui, 'Front').locator('.artwork-choice');
+          await opener.click();
+          const zone = ui.locator('.upload-zone');
+          await zone.evaluate((element) => {
+            const native = window.requestAnimationFrame.bind(window);
+            const pending: FrameRequestCallback[] = [];
+            // Gate only recovery autofocus; Preact's effect scheduler must keep running.
+            window.requestAnimationFrame = (callback) =>
+              native((time) => {
+                if (callback.toString().includes('.upload-failure-actions')) {
+                  pending.push(() => callback(time));
+                  element.setAttribute('data-failure-frame-pending', 'true');
+                } else callback(time);
+              });
+            element.addEventListener(
+              'release-failure-frame',
+              () => {
+                window.requestAnimationFrame = native;
+                for (const callback of pending.splice(0)) callback(0);
+              },
+              { once: true },
+            );
+            const transfer = new DataTransfer();
+            transfer.items.add(new File(['unsupported'], 'notes.txt', { type: 'text/plain' }));
+            element.dispatchEvent(new DragEvent('drop', { bubbles: true, dataTransfer: transfer }));
+          });
+          await ui.locator('.upload-zone[data-failure-frame-pending]').waitFor();
+          const dialog = ui.locator('dialog[open]');
+          const close = dialog.getByRole('button', { name: 'Close dialog', exact: true });
+          const later = dialog.getByRole('button', { name: 'Provide artwork later', exact: true });
+          const release = () => zone.dispatchEvent('release-failure-frame');
+          const focused = () =>
+            dialog.evaluate(() => {
+              const element = document.activeElement;
+              return element?.getAttribute('aria-label') || element?.textContent?.trim() || element?.tagName;
+            });
+          if (ordering === 'before') {
+            await release();
+            assert.equal(await focused(), 'Choose another file');
+          }
+          await later.focus();
+          await close.focus();
+          if (ordering === 'after') await release();
+          assert.equal(
+            await focused(),
+            'Close dialog',
+            `${engine.name()} ${ordering}: recovery must yield to newer focus`,
+          );
+          await page.keyboard.press('Shift+Tab');
+          assert.equal(await focused(), 'Provide artwork later');
+          await page.keyboard.press('Tab');
+          assert.equal(await focused(), 'Close dialog');
+          await page.keyboard.press('Escape');
+          await dialog.waitFor({ state: 'detached' });
+          await positionCard(ui, 'Front').locator('.artwork-choice:focus').waitFor();
+          assert.equal(await opener.evaluate((element) => document.activeElement === element), true);
+          assert.equal(privateRequests(), 0);
+          await opener.click();
+          await ui.getByRole('button', { name: 'Provide artwork later', exact: true }).click();
+          await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+          const quantity = ui.locator('input[type=number]:enabled').first();
+          await quantity.fill('3');
+          await ui.getByRole('button', { name: 'Close customizer', exact: true }).click();
+          await ui.getByRole('button', { name: 'Close customization', exact: true }).click();
+          await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
+          await trigger.click();
+          await ui.locator('.app').waitFor();
+          assert.equal(await quantity.inputValue(), '3');
+        },
+        true,
+        engine,
+      );
+    });
+  }
+}
+
 test('selected mobile artwork dialog rejects unsupported files locally and real photo views retain the current design', async () => {
   const cfg = structuredClone(config);
   cfg.geometry.views.push({ ...structuredClone(required(cfg.geometry.views[0])), id: 'back', placements: [] });
