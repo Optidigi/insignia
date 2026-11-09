@@ -2,7 +2,7 @@
 
 ## Current Review/cart follow-up
 
-Current loading/handoff delivery: PRs274–277 are integrated and deployed to rewrite-dev as Active1201192632321/native-review-nav-8a7ee446, with exact30-version inventory and schema52/key2 preserved. Native Review opened during preparation, showed truthful loading, and one immediate Add completed inline before native cart navigation; exact owned-line cleanup restored the empty baseline. Cold quote and Add latency remain substantial; no material network speedup is claimed. The [current closeout](loading-handoff-closeout-2026-11-09.md) and [deployment receipt](evidence/technical-merchant-completion/native-loading-handoff-development-2026-11-09.json) supersede earlier runtime/Active identities while preserving historical scope. Production rollout and owner visual acceptance remain open.
+Current loading/handoff delivery: PRs 274–277 are integrated and deployed to rewrite-dev as Active 1201192632321/native-review-nav-8a7ee446, with exact 30-version inventory and schema 52/key 2 preserved. Native Review opened during preparation, showed truthful loading, and one immediate Add completed inline before native cart navigation; exact owned-line cleanup restored the empty baseline. Cold quote and Add latency remain substantial; no material network speedup is claimed. The [current closeout](loading-handoff-closeout-2026-11-09.md) and [deployment receipt](evidence/technical-merchant-completion/native-loading-handoff-development-2026-11-09.json) supersede earlier runtime/Active identities while preserving historical scope. Production rollout and owner visual acceptance remain open.
 
 ## 8 November performance delivery — deployed and natively verified
 
