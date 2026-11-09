@@ -18,7 +18,11 @@
     "reducePreview": "Reduce preview",
     "enlargePreview": "Enlarge preview",
     "showFullProduct": "Show full product",
-    "focusOnArtwork": "Focus on artwork"
+    "focusOnArtwork": "Focus on artwork",
+    "calculatingQuote": "Calculating quote…",
+    "preparingQuote": "Preparing quote…",
+    "openingCart": "Opening cart…",
+    "viewCart": "View cart"
   },
   "steps": {
     "designSteps": "Design steps",

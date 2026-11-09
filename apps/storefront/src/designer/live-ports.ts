@@ -37,9 +37,9 @@ export function createLiveDesignerPorts(input: {
   storeName: string;
   fetchImpl?: typeof fetch;
   storage: Pick<Storage, 'getItem' | 'setItem'>;
-  onPriceRefresh?(source: BuyerConfig): void;
-  onNeedsReview?(canStart: boolean, targetAvailable: boolean, canRemoveAll: boolean): void;
-  onReview?(review: DesignerQuoteReview): void;
+  onPriceRefresh?(source: BuyerConfig, request?: CartRequest): void;
+  onNeedsReview?(canStart: boolean, targetAvailable: boolean, canRemoveAll: boolean, request?: CartRequest): void;
+  onReview?(review: DesignerQuoteReview, request?: CartRequest): void;
   onApplied?(groups: DesiredGroup[]): void;
 }) {
   const fetchImpl = input.fetchImpl ?? fetch;
@@ -141,7 +141,7 @@ export function createLiveDesignerPorts(input: {
           /* Unknown cart contents. */
         }
         signal.throwIfAborted();
-        input.onNeedsReview?.(false, false, canRemoveAll);
+        input.onNeedsReview?.(false, false, canRemoveAll, request);
         throw error;
       });
       const [observed, refreshed] = await Promise.all([observedRead, api.config(signal)]);
@@ -177,13 +177,16 @@ export function createLiveDesignerPorts(input: {
           quantity: candidate.variants.reduce((total, variant) => total + variant.quantity, 0),
         });
       }
-      input.onReview?.({
-        currency: source.shopCurrency,
-        currentGroupId,
-        exponent: 2,
-        customizedQuantity: pendingRows.reduce((total, row) => total + row.quantity, 0),
-        groups: pendingRows,
-      });
+      input.onReview?.(
+        {
+          currency: source.shopCurrency,
+          currentGroupId,
+          exponent: 2,
+          customizedQuantity: pendingRows.reduce((total, row) => total + row.quantity, 0),
+          groups: pendingRows,
+        },
+        request,
+      );
       // Stable IDs and unchanged publication permit amount refresh without replacing the editing state.
       if (refreshed.revisionId !== source.revisionId || refreshed.contentHash !== source.contentHash) {
         let available = false;
@@ -191,17 +194,17 @@ export function createLiveDesignerPorts(input: {
           buildBuyerDesigner(refreshed, { locale: input.locale, storeName: input.storeName });
           available = true;
         } catch {}
-        input.onNeedsReview?.(available, true, observed.cart.customized.length > 0);
+        input.onNeedsReview?.(available, true, observed.cart.customized.length > 0, request);
         throw new Error('Published configuration changed; review the current product configuration');
       }
       source = refreshed;
-      input.onPriceRefresh?.(refreshed);
+      input.onPriceRefresh?.(refreshed, request);
       const mapped = buildBuyerDesigner(source, { locale: input.locale, storeName: input.storeName });
       const group: DesiredGroup = mapped.desired(request.design);
       const old = designs.get(request.design.id);
       const index = old ? observed.groups.findIndex((group) => desiredGroupKey(group) === desiredGroupKey(old)) : -1;
       if (request.operation === 'updated' && index < 0) {
-        input.onNeedsReview?.(true, false, observed.cart.customized.length > 0);
+        input.onNeedsReview?.(true, false, observed.cart.customized.length > 0, request);
         throw new Error('Design requires current-cart review');
       }
       const groups = replaceGroup(observed.groups, group, index < 0 ? undefined : index);
@@ -244,23 +247,26 @@ export function createLiveDesignerPorts(input: {
       for (const candidate of proposal.groups)
         if (candidate.selection && candidate.canonicalIdentitySha256)
           reviewSelections.set(candidate.canonicalIdentitySha256, candidate.selection);
-      input.onReview?.({
-        currency: proposal.currency,
-        currentGroupId: proposal.groups.find(
-          (candidate) =>
-            candidate.selection && desiredGroupKey(candidate.selection, false) === desiredGroupKey(group, false),
-        )?.canonicalIdentitySha256,
-        exponent: proposal.exponent,
-        totalMinor: proposal.totalMinor,
-        customizedQuantity: proposal.customizedQuantity,
-        groups: proposal.groups.map((group, index) => ({
-          id: group.canonicalIdentitySha256 ?? `${group.productId}-${index}`,
-          editable: !!group.selection,
-          label: labels.get(group.productId) ?? group.productId,
-          quantity: group.quantity,
-          totalMinor: group.totalMinor,
-        })),
-      });
+      input.onReview?.(
+        {
+          currency: proposal.currency,
+          currentGroupId: proposal.groups.find(
+            (candidate) =>
+              candidate.selection && desiredGroupKey(candidate.selection, false) === desiredGroupKey(group, false),
+          )?.canonicalIdentitySha256,
+          exponent: proposal.exponent,
+          totalMinor: proposal.totalMinor,
+          customizedQuantity: proposal.customizedQuantity,
+          groups: proposal.groups.map((group, index) => ({
+            id: group.canonicalIdentitySha256 ?? `${group.productId}-${index}`,
+            editable: !!group.selection,
+            label: labels.get(group.productId) ?? group.productId,
+            quantity: group.quantity,
+            totalMinor: group.totalMinor,
+          })),
+        },
+        request,
+      );
     } finally {
       controller.abort();
       if (prepareController === controller) prepareController = undefined;

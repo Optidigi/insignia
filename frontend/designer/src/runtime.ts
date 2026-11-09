@@ -75,6 +75,7 @@ export function createDesignerRuntime(
   dispatch: (event: DesignerEvent) => void,
 ) {
   const renewing = new Map<string, AbortController>();
+  let reviewController: AbortController | undefined;
   let reviewing = false;
   let preparedSignature: string | null = null;
   let uploadVersion = 0;
@@ -95,13 +96,20 @@ export function createDesignerRuntime(
     dispatch({ type: "cart-commit-canceled" });
   }
   return {
+    get reviewIntentId() { return attempt?.signature === designerIntentKey(getState()) ? attempt.idempotencyKey : undefined; },
     get reviewing() { return reviewing; },
     get prepared() { return preparedSignature === designerIntentKey(getState()); },
     cancelUpload,
     cancelCommit,
-    cancelPreparation() { if (reviewing) cancelCommit(); },
+    cancelPreparation() {
+      reviewController?.abort();
+      reviewController = undefined;
+      if (reviewing) cancelCommit();
+    },
     cancel() {
       cancelUpload();
+      reviewController?.abort();
+      reviewController = undefined;
       cancelCommit();
       for (const controller of renewing.values()) controller.abort();
       renewing.clear();
@@ -232,6 +240,8 @@ export function createDesignerRuntime(
         signal: controller.signal,
       };
       reviewing = prepareOnly;
+      reviewController?.abort();
+      reviewController = controller;
       dispatch({ type: "cart-commit-requested", requestId, design: request.design, ...(prepareOnly ? {preparation:true} : {}) });
       try {
         if (prepareOnly) {

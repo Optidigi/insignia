@@ -2677,6 +2677,7 @@ export interface CustomerMessageTable {
   'customer:artwork.yourArtwork': object;
   'customer:chrome.added': object;
   'customer:chrome.allViews': object;
+  'customer:chrome.calculatingQuote': object;
   'customer:chrome.closeArtworkPreview': object;
   'customer:chrome.closeCustomizer': object;
   'customer:chrome.designControls': object;
@@ -2686,7 +2687,9 @@ export interface CustomerMessageTable {
   'customer:chrome.fromPrice': { price: string };
   'customer:chrome.fullProduct': object;
   'customer:chrome.included': object;
+  'customer:chrome.openingCart': object;
   'customer:chrome.perItem': object;
+  'customer:chrome.preparingQuote': object;
   'customer:chrome.productPreview': object;
   'customer:chrome.productView': object;
   'customer:chrome.productViewAlt': { colorName: string; productName: string; viewName: string };
@@ -2694,6 +2697,7 @@ export interface CustomerMessageTable {
   'customer:chrome.showFullProduct': object;
   'customer:chrome.skipToDesignControls': object;
   'customer:chrome.unavailable': object;
+  'customer:chrome.viewCart': object;
   'customer:files.fullFilename': object;
   'customer:host.cancel': object;
   'customer:host.discardEdit': object;
