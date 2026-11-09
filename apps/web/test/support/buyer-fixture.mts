@@ -4,6 +4,7 @@ import type { TestContext } from 'node:test';
 import type { ArtworkScope, QuoteAuthorityPorts } from '@insignia/application';
 import { createArtworkUsabilityPort } from '@insignia/application';
 import { createDurableCore } from '@insignia/database';
+import type { BuyerFailureDiagnostic } from '@insignia/observability';
 import { Pool } from 'pg';
 import { createDatabase } from '../../../../packages/database/dist/client/database.js';
 import { createConfigRepositoryInternal } from '../../../../packages/database/dist/repositories/config.js';
@@ -19,6 +20,7 @@ const connectionString = process.env.DATABASE_URL;
 export async function fixture(
   t: Pick<TestContext, 'after'>,
   options: {
+    diagnostic?: (value: BuyerFailureDiagnostic) => void;
     isolated?: boolean; // Required when a case exercises database-wide cleanup.
     representativePricing?: boolean;
     demo91?: boolean;
@@ -281,6 +283,7 @@ export async function fixture(
       }),
       services,
       route,
+      options.diagnostic,
     );
   }
   const sessionResponse = await http('sessions', {});

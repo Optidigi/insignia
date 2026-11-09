@@ -91,7 +91,30 @@ const BUYER_FAILURES = [
   'TypeError',
   'UnexpectedFailure',
 ] as const;
+export const BUYER_PROPOSAL_FAILURE_STAGES = [
+  'request-setup',
+  'prepare',
+  'native-configuration',
+  'primary-context',
+  'positions',
+  'availability',
+  'release-prepare',
+  'current-readiness',
+  'tenant',
+  'shop',
+  'entitlement',
+  'revision',
+  'artwork',
+  'variant',
+  'private-retention',
+  'persistence',
+  'owned-history',
+  'response-projection',
+  'response-validation',
+  'ambiguous',
+] as const;
 export type BuyerFailureDiagnostic = {
+  proposalStage?: (typeof BUYER_PROPOSAL_FAILURE_STAGES)[number];
   correlationId: string;
   buyerStage: (typeof BUYER_STAGES)[number];
   errorClass: (typeof BUYER_FAILURES)[number];
@@ -99,6 +122,7 @@ export type BuyerFailureDiagnostic = {
 
 export interface RuntimeLogDetails {
   buyerStage?: BuyerFailureDiagnostic['buyerStage'];
+  proposalStage?: BuyerFailureDiagnostic['proposalStage'];
   authStage?: AdminAuthenticationStage;
   correlationId?: string;
   inboxId?: string;
@@ -162,7 +186,14 @@ function eventDetails(event: RuntimeEvent, input: RuntimeLogDetails) {
       !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input.correlationId)
     )
       throw new Error('Invalid buyer failure diagnostic');
-    return { buyerStage: input.buyerStage, correlationId: input.correlationId, errorClass: input.errorClass };
+    if (input.proposalStage !== undefined && !BUYER_PROPOSAL_FAILURE_STAGES.includes(input.proposalStage))
+      throw new Error('Invalid buyer proposal failure stage');
+    return {
+      buyerStage: input.buyerStage,
+      correlationId: input.correlationId,
+      errorClass: input.errorClass,
+      ...(input.proposalStage === undefined ? {} : { proposalStage: input.proposalStage }),
+    };
   }
   if (event !== 'admin_authentication') return safeDetails(input);
   if (

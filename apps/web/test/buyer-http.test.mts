@@ -149,3 +149,67 @@ test('only committed acceptance decline adds the finite outcome to compatible re
   assert.equal(body.code, 'REVIEW_REQUIRED');
   assert.equal(body.acceptanceOutcome, 'declined');
 });
+
+test('proposal response validation preserves a completed write and reports only its finite stage', async () => {
+  const seen: BuyerFailureDiagnostic[] = [];
+  let writes = 0;
+  const services = buyerFixture({
+    guest: {
+      verify: async () => ({ kind: 'guest', shopId: 'tenant', installationGeneration: '1', ownerHash: 'f'.repeat(64) }),
+    },
+    store: coreFixture({
+      buyers: {
+        getSession: async () => ({ sessionId: 'synthetic', expiresAt: new Date('2099-01-01T00:00:00Z') }),
+        admitRequest: async () => {},
+      },
+    }).buyers,
+    propose: async () => {
+      writes++;
+      // A completed proposal can still fail response schema validation.
+      return { proposalId: 'persisted-identity', secret: 'SECRET-private-carrier' } as never;
+    },
+  });
+  const response = await handleBuyerRequest(
+    post({
+      capability: 'synthetic.signature',
+      country: 'US',
+      marketId: '42',
+      capacity: { ordinaryLineCount: 0, inputBytes: 100 },
+      groups: [
+        {
+          productId: '111',
+          configRevisionId: 'revision',
+          revisionContentHash: 'a'.repeat(64),
+          design: {
+            placements: [
+              {
+                placementId: 'front',
+                methodId: 'print',
+                stepId: 'small',
+                artwork: { kind: 'deferred', intentId: 'later' },
+              },
+            ],
+            options: [],
+          },
+          variants: [{ variantId: '222', quantity: 1 }],
+        },
+      ],
+    }),
+    services,
+    'quote-proposals',
+    (value) => seen.push(value),
+  );
+  const body = record(await response.json());
+  assert.equal(writes, 1);
+  assert.equal(response.status, 503);
+  assert.equal(body.acceptanceOutcome, undefined);
+  assert.deepEqual(seen, [
+    {
+      correlationId: body.requestId,
+      buyerStage: 'quote-proposals',
+      errorClass: 'UnexpectedFailure',
+      proposalStage: 'response-validation',
+    },
+  ]);
+  assert.doesNotMatch(JSON.stringify({ body, seen }), /SECRET|private-carrier|persisted-identity/);
+});

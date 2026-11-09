@@ -264,3 +264,38 @@ test('buyer review-required logging retains only its finite diagnostic and corre
   assert.equal(entry.correlationId, '01234567-89ab-4cde-8123-456789abcdef');
   assert.doesNotMatch(output, /SECRET|capability|carrier|properties|message/);
 });
+
+test('proposal failure stage is finite, optional, and never serializes secret-bearing errors', () => {
+  let output = '';
+  const { logger } = createObservability({
+    stream: new Writable({
+      write(chunk, _encoding, callback) {
+        output += chunk;
+        callback();
+      },
+    }),
+  });
+  logger.error('buyer_request_failed', {
+    correlationId: '01234567-89ab-4cde-8123-456789abcdef',
+    buyerStage: 'quote-proposals',
+    errorClass: 'UnexpectedFailure',
+    proposalStage: 'persistence',
+    // @ts-expect-error Runtime privacy check includes forbidden fields.
+    error: Object.assign(new Error('SECRET-message'), { cause: new Error('SECRET-cause') }),
+    stack: 'SECRET-stack',
+    payload: 'SECRET-payload',
+  });
+  assert.equal(parseRecord(output.trim()).proposalStage, 'persistence');
+  assert.doesNotMatch(output, /SECRET|message|stack|payload|cause/);
+  assert.throws(
+    () =>
+      logger.error('buyer_request_failed', {
+        correlationId: '01234567-89ab-4cde-8123-456789abcdef',
+        buyerStage: 'quote-proposals',
+        errorClass: 'UnexpectedFailure',
+        // @ts-expect-error Deliberately invalid diagnostic stage.
+        proposalStage: 'SECRET-url',
+      }),
+    /Invalid buyer proposal failure stage/,
+  );
+});
