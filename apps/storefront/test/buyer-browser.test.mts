@@ -1616,6 +1616,8 @@ test('selected mobile artwork dialog rejects unsupported files locally and real 
       assert.match(required(await ui.locator('.upload-error').textContent()), /PNG.*JPG.*SVG/);
       assert.equal(privateRequests(), 0);
       const dialog = ui.locator('dialog[open]');
+      // Upload failure schedules focus after rendering, before the keyboard-wrap check takes focus.
+      await dialog.locator('.upload-failure-actions button:focus').waitFor();
       await dialog.getByRole('button', { name: 'Close dialog', exact: true }).focus();
       await page.keyboard.press('Shift+Tab');
       assert.equal(
