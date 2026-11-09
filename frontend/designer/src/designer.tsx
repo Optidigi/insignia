@@ -1941,21 +1941,21 @@ function DesignerSession({
                   onChange={(e: TargetedEvent<HTMLInputElement>) => void upload(e.currentTarget.files?.[0])}
                 />
               </div>
-              <div className="section-label">
-                <h3>
-                  {artworks.length === 0
-                    ? t('customer:artwork.yourArtwork')
-                    : artworks.some((artwork) => !artwork.sample)
-                      ? t('customer:artwork.files')
-                      : t('customer:artwork.samples')}
-                </h3>
-              </div>
               {artworks.length > 0 && (
-                <div className="artwork-library">
-                  {artworks.map((a) => (
-                    <ArtworkFile key={a.id} artwork={a} onChoose={(id) => applyArtwork(id, artworkTarget)} />
-                  ))}
-                </div>
+                <>
+                  <div className="section-label">
+                    <h3>
+                      {artworks.some((artwork) => !artwork.sample)
+                        ? t('customer:artwork.files')
+                        : t('customer:artwork.samples')}
+                    </h3>
+                  </div>
+                  <div className="artwork-library">
+                    {artworks.map((a) => (
+                      <ArtworkFile key={a.id} artwork={a} onChoose={(id) => applyArtwork(id, artworkTarget)} />
+                    ))}
+                  </div>
+                </>
               )}
               {canDeferArtwork(artworkTarget) && (
                 <button className="later-button" onClick={() => applyArtwork('later', artworkTarget)}>
