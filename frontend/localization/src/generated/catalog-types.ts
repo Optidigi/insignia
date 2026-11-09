@@ -2500,7 +2500,9 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_review_artworkRequiredBeforeProduction': object;
   'settings:translations.fields.customer_review_artworkToFollow': object;
   'settings:translations.fields.customer_review_baseItem': object;
+  'settings:translations.fields.customer_review_currentDesign': object;
   'settings:translations.fields.customer_review_customPosition': object;
+  'settings:translations.fields.customer_review_designTotals': object;
   'settings:translations.fields.customer_review_edit': object;
   'settings:translations.fields.customer_review_editArtwork': object;
   'settings:translations.fields.customer_review_editPositionArtwork': object;
@@ -2836,7 +2838,9 @@ export interface CustomerMessageTable {
   'customer:review.artworkRequiredBeforeProduction': object;
   'customer:review.artworkToFollow': object;
   'customer:review.baseItem': object;
+  'customer:review.currentDesign': object;
   'customer:review.customPosition': object;
+  'customer:review.designTotals': object;
   'customer:review.edit': object;
   'customer:review.editArtwork': object;
   'customer:review.editPositionArtwork': { positionName: string };

@@ -547,7 +547,9 @@
       "customer_chrome_calculatingQuote": "Calcolo del preventivo",
       "customer_chrome_preparingQuote": "Preparazione del preventivo",
       "customer_chrome_openingCart": "Apertura del carrello",
-      "customer_chrome_viewCart": "Visualizza carrello"
+      "customer_chrome_viewCart": "Visualizza carrello",
+      "customer_review_designTotals": "Titolo dei totali per design",
+      "customer_review_currentDesign": "Etichetta del design attuale"
     },
     "resetSavedHeading": "Ripristinare le traduzioni salvate?",
     "resetSavedDescription": "Ripristina i testi predefiniti per tutte le lingue salvate. I testi personalizzati verranno rimossi.",

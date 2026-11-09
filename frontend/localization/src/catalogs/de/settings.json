@@ -544,7 +544,9 @@
       "customer_chrome_calculatingQuote": "Angebot wird berechnet",
       "customer_chrome_preparingQuote": "Angebot wird vorbereitet",
       "customer_chrome_openingCart": "Warenkorb wird geöffnet",
-      "customer_chrome_viewCart": "Warenkorb ansehen"
+      "customer_chrome_viewCart": "Warenkorb ansehen",
+      "customer_review_designTotals": "Überschrift für Designsummen",
+      "customer_review_currentDesign": "Beschriftung des aktuellen Designs"
     },
     "resetSavedHeading": "Gespeicherte Übersetzungen zurücksetzen?",
     "resetSavedDescription": "Die Standardformulierungen für alle gespeicherten Sprachen wiederherstellen. Eigene Texte werden entfernt.",

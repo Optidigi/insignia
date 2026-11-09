@@ -194,31 +194,53 @@ export function ReviewPanel({
               </dd>
             </div>
           ))}
-          {quoteReview?.groups.map((group) => (
-            <div key={group.id}>
-              <dt>
-                {group.editable && onSelectQuoteGroup ? (
-                  <button className="text-action" onClick={() => onSelectQuoteGroup(group.id)}>
-                    {group.label}
-                  </button>
-                ) : (
-                  group.label
-                )}{' '}
-                · {t('customer:review.itemCount', { count: group.quantity })}
-              </dt>
-              <dd>
-                <bdi>
-                  {quoteStatus
-                    ? t(quoteStatus === 'loading' ? 'customer:chrome.calculatingQuote' : 'common:summary.unavailable')
-                    : group.totalMinor !== undefined
-                      ? quoteReviewMoney(group.totalMinor, quoteReview.currency, quoteReview.exponent, formatLocale)
-                      : t('common:summary.unavailable')}
-                </bdi>
-              </dd>
-            </div>
-          ))}
         </dl>
       </details>
+      {quoteReview && quoteReview.groups.length > 1 && (
+        <section className="review-section review-design-totals" aria-labelledby="review-design-totals-title">
+          <div className="section-label">
+            <h3 id="review-design-totals-title">{t('customer:review.designTotals')}</h3>
+          </div>
+          <ul className="review-groups">
+            {quoteReview.groups.map((group) => {
+              const current = group.id === quoteReview.currentGroupId;
+              const content = (
+                <>
+                  <span className="review-group-info">
+                    <strong className="review-group-name">{group.label}</strong>
+                    <span className="review-group-meta">
+                      <span>{t('customer:review.itemCount', { count: group.quantity })}</span>
+                      {current && <span>{t('customer:review.currentDesign')}</span>}
+                    </span>
+                  </span>
+                  <bdi className="review-group-total">
+                    {quoteStatus
+                      ? t(quoteStatus === 'loading' ? 'customer:chrome.calculatingQuote' : 'common:summary.unavailable')
+                      : group.totalMinor !== undefined
+                        ? quoteReviewMoney(group.totalMinor, quoteReview.currency, quoteReview.exponent, formatLocale)
+                        : t('common:summary.unavailable')}
+                  </bdi>
+                </>
+              );
+              return (
+                <li key={group.id}>
+                  {group.editable && onSelectQuoteGroup && !current ? (
+                    <button
+                      type="button"
+                      className="review-group-row review-group-link"
+                      onClick={() => onSelectQuoteGroup(group.id)}
+                    >
+                      {content}
+                    </button>
+                  ) : (
+                    <div className="review-group-row">{content}</div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
       {prints.some((print) => print.artworkId === 'later') && (
         <p className="review-artwork-note">{t('customer:review.artworkRequiredBeforeProduction')}</p>
       )}

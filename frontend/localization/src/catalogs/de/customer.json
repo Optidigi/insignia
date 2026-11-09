@@ -189,7 +189,9 @@
     "artworkToFollow": "Motiv wird nachgereicht",
     "fullFilename": "Vollständiger Dateiname",
     "itemCount_one": "{{count}} Artikel",
-    "itemCount_other": "{{count}} Artikel"
+    "itemCount_other": "{{count}} Artikel",
+    "designTotals": "Summen je Design",
+    "currentDesign": "Aktuelles Design"
   },
   "validation": {
     "checkDesign": "Prüfen Sie Ihre Gestaltung",

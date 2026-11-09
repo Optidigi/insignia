@@ -546,7 +546,9 @@
       "customer_chrome_calculatingQuote": "Calcul du devis",
       "customer_chrome_preparingQuote": "Préparation du devis",
       "customer_chrome_openingCart": "Ouverture du panier",
-      "customer_chrome_viewCart": "Voir le panier"
+      "customer_chrome_viewCart": "Voir le panier",
+      "customer_review_designTotals": "Titre des totaux par création",
+      "customer_review_currentDesign": "Libellé de la création actuelle"
     },
     "resetSavedHeading": "Rétablir les traductions enregistrées ?",
     "resetSavedDescription": "Rétablissez les textes par défaut pour toutes les langues enregistrées. Vos textes personnalisés seront supprimés.",

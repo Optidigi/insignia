@@ -573,7 +573,9 @@
       "customer_chrome_calculatingQuote": "Offerte berekenen",
       "customer_chrome_preparingQuote": "Offerte voorbereiden",
       "customer_chrome_openingCart": "Winkelwagen openen",
-      "customer_chrome_viewCart": "Winkelwagen bekijken"
+      "customer_chrome_viewCart": "Winkelwagen bekijken",
+      "customer_review_designTotals": "Kop bij totalen per ontwerp",
+      "customer_review_currentDesign": "Label huidig ontwerp"
     },
     "discard": "Verwerpen"
   },

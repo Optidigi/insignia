@@ -189,7 +189,9 @@
     "artworkToFollow": "Artwork to follow",
     "fullFilename": "Full filename",
     "itemCount_one": "{{count}} item",
-    "itemCount_other": "{{count}} items"
+    "itemCount_other": "{{count}} items",
+    "designTotals": "Design totals",
+    "currentDesign": "Current design"
   },
   "validation": {
     "checkDesign": "Check your design",

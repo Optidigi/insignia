@@ -212,6 +212,8 @@ export const customerWordingLabels = {
   'customer:review.customPosition': 'settings:translations.fields.customer_review_customPosition',
   'customer:review.artworkToFollow': 'settings:translations.fields.customer_review_artworkToFollow',
   'customer:review.fullFilename': 'settings:translations.fields.customer_review_fullFilename',
+  'customer:review.designTotals': 'settings:translations.fields.customer_review_designTotals',
+  'customer:review.currentDesign': 'settings:translations.fields.customer_review_currentDesign',
   'customer:review.itemCount': 'settings:translations.fields.customer_review_itemCount',
   'customer:validation.checkDesign': 'settings:translations.fields.customer_validation_checkDesign',
   'customer:validation.chooseArtworkForPosition':
