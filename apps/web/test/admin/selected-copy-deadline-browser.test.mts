@@ -209,3 +209,58 @@ test('saved source view choices survive removing a blocked target and returning 
   assert.equal(await back.evaluate((checkbox: HTMLElementTagNameMap['s-checkbox']) => checkbox.checked), false);
   assert.equal(f.mutations.length, 0);
 });
+
+test('built Copy Back restores its chooser while the selected hydration request is still held', {
+  timeout: 30000,
+}, async (t) => {
+  const f = await fixture(t);
+  await f.open();
+  let resolveStarted: () => void = () => {};
+  let release: () => void = () => {};
+  const started = new Promise<void>((resolve) => {
+    resolveStarted = resolve;
+  });
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  t.after(() => release());
+  await f.page.route('**/api/admin/products?*', (route) =>
+    route.fulfill({
+      json: {
+        products: [
+          {
+            ...product,
+            id: 'gid://shopify/Product/222',
+            title: 'Held target',
+            configurationSummary: { state: 'not_configured', methods: [], locations: [] },
+          },
+        ],
+        nextCursor: null,
+      },
+    }),
+  );
+  await f.page.route('**/api/admin/products/222/config', async (route) => {
+    resolveStarted();
+    await held;
+    await route
+      .fulfill({ json: { product: { ...product, id: 'gid://shopify/Product/222' }, config: null } })
+      .catch(() => {});
+  });
+  await f.page
+    .locator('s-menu#placement-page-actions s-button')
+    .filter({ hasText: 'Copy setup to products' })
+    .evaluate((el: HTMLElement) => el.click());
+  const dialog = f.page.locator('s-modal').filter({ has: f.page.locator('.placement-setup-copy') });
+  const checkbox = dialog.locator('s-checkbox[name="targetProducts"]');
+  await checkbox.waitFor({ state: 'attached' });
+  await checkbox.evaluate((el: HTMLElementTagNameMap['s-checkbox']) => {
+    el.checked = true;
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await dialog.locator('s-button[slot="primary-action"]').evaluate((el: HTMLElement) => el.click());
+  await started;
+  await dialog.locator('s-button[slot="secondary-actions"]').evaluate((el: HTMLElement) => el.click());
+  await dialog.locator('.placement-setup-copy__chooser').waitFor({ timeout: 1500 });
+  assert.equal(await checkbox.evaluate((el: HTMLElementTagNameMap['s-checkbox']) => el.checked), true);
+  assert.equal(f.mutations.length, 0);
+});
