@@ -382,7 +382,7 @@ test('a draft summary stays provisional until its empty snapshot establishes tar
   assert.equal(f.writes.length, 0);
 });
 
-test('demo discovery and hydration expose the saved copy as a source instead of its empty example', async (t) => {
+test('demo discovery, hydration and inspection use saved or example state exactly once', async (t) => {
   const memory = new Map<string, string>([['insignia-placement-example', 'copy-ready']]);
   const storage = {
     getItem: (key: string) => memory.get(key) ?? null,
@@ -409,6 +409,15 @@ test('demo discovery and hydration expose the saved copy as a source instead of 
   assert.equal((await ports.loadCatalog(new AbortController().signal))[0]?.configured, true);
   const [snapshot] = await ports.hydrate([id], new AbortController().signal);
   assert.equal(snapshot?.product?.views[0]?.id, 'saved-front');
+  memory.set('insignia-placement-example', 'many-methods');
+  const many = createDemoPlacementSetupCopyPorts();
+  await many.loadCatalog(new AbortController().signal);
+  const [expanded] = await many.hydrate([id], new AbortController().signal);
+  assert.ok(expanded?.product);
+  assert.ok(expanded.product.methods.length > original.methods.length);
+  const reviewed = many.inspect(expanded.product);
+  assert.equal(reviewed.readiness, 'configured');
+  assert.equal(reviewed.product.methods.length, expanded.product.methods.length);
 });
 
 test('cancelled hydration drains dispatched siblings and cannot replace a later review snapshot', async () => {

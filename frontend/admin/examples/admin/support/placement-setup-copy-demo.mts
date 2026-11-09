@@ -21,13 +21,14 @@ export function createDemoPlacementSetupCopyPorts(): PlacementSetupCopyPorts {
   }
   let catalog: PlacementProduct[] = [];
   function inspect(product: PlacementProduct): ReturnType<PlacementSetupCopyPorts['inspect']> {
+    const original = catalog.find((entry) => entry.id === product.id) ?? product;
     const inspection = inspectPlacementPreviewState(example, product.id);
     if (inspection.status === 'malformed' || inspection.status === 'unavailable')
       return { product, readiness: 'unavailable' };
     const saved = readPlacementPreviewProduct(example, product.id);
     const value = saved
       ? { ...saved, title: product.title, images: saved.images.map((image) => ({ ...image })) }
-      : applyPlacementSetupExample(product, example);
+      : applyPlacementSetupExample(original, example);
     if (new Set(value.methods.map((method) => method.id)).size !== value.methods.length)
       return { product: value, readiness: 'unavailable' };
     const state = readPlacementPreviewState(example, product.id);
