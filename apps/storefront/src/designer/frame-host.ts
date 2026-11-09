@@ -82,7 +82,7 @@ export function createDesignerFrame(input: {
   const { entry, css } = designerAssets();
   frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="origin"><link rel="stylesheet" href="${escapeAttribute(css.href)}"></head><body><script type="module" src="${escapeAttribute(entry.href)}"></script></body></html>`;
   const controllers = new Map<string, AbortController>();
-  let committing = false;
+  let committing: AbortController | undefined;
   let pendingRepair:
     | {
         value: { canStart: boolean; canRemoveGroup: boolean; canRemoveAll?: boolean };
@@ -158,13 +158,11 @@ export function createDesignerFrame(input: {
     const appliedClose =
       applied !== undefined && matchesCartReceipt(receipt, applied) && receipt.authority === 'shopify';
     if (appliedClose) {
-      if (completion) return;
+      if (completion?.requestId === receipt.requestId) return;
       completion = receipt;
       input.onAppliedClose?.();
       return;
     }
-    applied = undefined;
-    completion = undefined;
     frame.hidden = true;
     modal.hide();
     focused?.focus();
@@ -224,6 +222,10 @@ export function createDesignerFrame(input: {
         input.onAppliedClose?.();
       return;
     }
+    if (data.type === 'insignia:designer:completed') {
+      close(data.receipt);
+      return;
+    }
     if (data.type === 'insignia:designer:closed') {
       close(data.receipt);
       return;
@@ -255,8 +257,17 @@ export function createDesignerFrame(input: {
       else if (data.action === 'prepare' && input.ports?.review)
         value = await input.ports.review.prepare({ ...data.request, signal: controller.signal } as CartRequest);
       else if (data.action === 'commit' && !input.previewOnly && input.ports) {
-        committing = true;
-        value = await input.ports.cart.commit({ ...data.request, signal: controller.signal } as CartRequest);
+        committing = controller;
+        value = await input.ports.cart.commit({
+          ...data.request,
+          signal: controller.signal,
+          onMutating() {
+            if (!controller.signal.aborted) send('insignia:designer:mutating', { id: data.id });
+          },
+          onPreparing() {
+            if (!controller.signal.aborted) send('insignia:designer:preparing', { id: data.id });
+          },
+        } as CartRequest);
       } else throw new Error('Unsupported designer operation');
       if (!controller.signal.aborted) {
         if (data.action === 'commit' && matchesCartReceipt(value, data.request) && value.authority === 'shopify')
@@ -272,6 +283,9 @@ export function createDesignerFrame(input: {
         send('insignia:designer:result', {
           id: data.id,
           ok: false,
+          ...(error && typeof error === 'object' && 'reviewRequired' in error && error.reviewRequired === true
+            ? { reviewRequired: true, expiresAt: 'expiresAt' in error ? error.expiresAt : undefined }
+            : {}),
           ...(status ? { status } : {}),
           ...(data.action === 'commit' &&
           error &&
@@ -283,8 +297,8 @@ export function createDesignerFrame(input: {
         });
     } finally {
       controllers.delete(data.id);
-      if (data.action === 'commit') {
-        committing = false;
+      if (data.action === 'commit' && committing === controller) {
+        committing = undefined;
         if (pendingRepair && !controller.signal.aborted && !pendingRepair.request?.signal.aborted)
           send('insignia:designer:repair', {
             repair: pendingRepair.value,
@@ -328,8 +342,6 @@ export function createDesignerFrame(input: {
     },
     open() {
       if (destroyed || failed) return false;
-      completion = undefined;
-      applied = undefined;
       frame.hidden = false;
       modal.show();
       if (ready) send('insignia:designer:open');

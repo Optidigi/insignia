@@ -1252,12 +1252,23 @@ test('known quote expiry prepares a fresh authoritative proposal and requires an
       await applyButton(host).waitFor();
       assert.equal(proposals.length, 1);
       const originalTotal = await host.locator('.footer-price strong').innerText();
+      await host.locator('.review-pricing summary').click();
+      assert.ok((await host.locator('.review-costs').getByText(originalTotal, { exact: true }).count()) > 0);
       const repriced = structuredClone(config);
       repriced.variants = repriced.variants.map((variant) => ({ ...variant, baseUnitMinor: '9000' }));
       configure(repriced);
       await page.clock.fastForward(61000);
-      await applyButton(host).click();
-      await host.locator('.cart-submit-error').waitFor();
+      await host.getByRole('button', { name: 'Retry', exact: true }).waitFor();
+      assert.equal(proposals.length, 1, 'expiry retires presentation without periodic proposal dispatch');
+      assert.equal(await host.locator('.footer-price strong').innerText(), 'Unavailable');
+      assert.equal(
+        await host.locator('.review-costs').getByText(originalTotal, { exact: true }).count(),
+        0,
+        'expired unattempted sibling amounts must retire with the footer',
+      );
+      await host.getByRole('button', { name: 'Retry', exact: true }).click();
+      await applyButton(host).waitFor();
+      assert.equal(await host.locator('.cart-submit-error').count(), 0, 'refresh is not a cart failure');
       assert.equal(proposals.length, 2);
       await host.locator('.footer-price strong').filter({ hasText: '300.00' }).waitFor({ timeout: 3000 });
       assert.notEqual(await host.locator('.footer-price strong').innerText(), originalTotal);
@@ -1287,8 +1298,12 @@ test('expired-offer recovery rejects a subsequent external cart change before ac
       await reviewRetained(host);
       await applyButton(host).waitFor();
       await page.clock.fastForward(61000);
-      await applyButton(host).click();
-      await host.locator('.cart-submit-error').waitFor();
+      await host.getByRole('button', { name: 'Retry', exact: true }).waitFor();
+      assert.equal(proposals.length, 1, 'expiry retires presentation without periodic proposal dispatch');
+      assert.equal(await host.locator('.footer-price strong').innerText(), 'Unavailable');
+      await host.getByRole('button', { name: 'Retry', exact: true }).click();
+      await applyButton(host).waitFor();
+      assert.equal(await host.locator('.cart-submit-error').count(), 0, 'refresh is not a cart failure');
       assert.equal(proposals.length, 2);
       editCart();
       const rejected = page.waitForResponse(

@@ -152,6 +152,8 @@ export type DesignerEvent =
   | { type: 'artwork-unavailable'; id: string; expectedExpiry: string | undefined }
   | { type: 'artwork-applied'; positionId: PositionId; artworkId: string }
   | { type: 'cart-commit-requested'; requestId: string; design: Design; preparation?: boolean }
+  | { type: 'cart-mutation-started'; requestId: string }
+  | { type: 'cart-preparation-started'; requestId: string }
   | { type: 'cart-commit-succeeded'; requestId: string; receipt: CartReceipt }
   | { type: 'cart-commit-failed'; requestId: string; reason: 'cart-commit-failed'; preparation?: boolean }
   | { type: 'cart-commit-canceled' }
@@ -227,6 +229,8 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
   if (
     state.commit.kind === 'pending' &&
     ![
+      'cart-mutation-started',
+      'cart-preparation-started',
       'cart-commit-succeeded',
       'cart-commit-failed',
       'cart-commit-canceled',
@@ -238,6 +242,7 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
     ].includes(event.type)
   )
     return state;
+  if (state.completion?.authority === 'shopify' && !['product-return-requested', 'designer-reopened', 'location-observed', 'artwork-preview-expired', 'artwork-preview-refreshed', 'artwork-unavailable'].includes(event.type)) return state;
   switch (event.type) {
     case 'artwork-preview-expired':
     case 'artwork-preview-refreshed':
@@ -359,6 +364,10 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
       const design = buildCommitDesign(event.preparation ? {...state,step:2} : state, event.design.id);
       return design ? { ...state, commit: { kind: event.preparation ? 'preparing' : 'pending', requestId: event.requestId, design } } : state;
     }
+    case 'cart-mutation-started':
+      return state.commit.kind === 'preparing' && state.commit.requestId === event.requestId ? { ...state, commit: { ...state.commit, kind: 'pending' } } : state;
+    case 'cart-preparation-started':
+      return state.commit.kind === 'pending' && state.commit.requestId === event.requestId ? { ...state, commit: { ...state.commit, kind: 'preparing' } } : state;
     case 'cart-commit-succeeded': {
       const pending = state.commit;
       if (
@@ -378,7 +387,7 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
         baseline: copyDesign(pending.design),
         requiresCartReview: false,
         editing: pending.design.id,
-        open: false,
+        open: event.receipt.authority === 'shopify',
         completion: event.receipt,
         commit: { kind: 'idle' },
         modal: closedModal,
@@ -724,6 +733,7 @@ function applyArtwork(state: DesignerState, positionId: PositionId, artworkId: s
 export function canCommitDesign(state: DesignerState): boolean {
   return (
     state.open &&
+    !state.completion &&
     state.step === 2 &&
     state.modal.kind === 'closed' &&
     state.commit.kind !== 'pending' &&

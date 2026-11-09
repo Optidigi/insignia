@@ -16,6 +16,20 @@ for (const engine of [chromium, firefox]) {
       format: 'esm',
       platform: 'browser',
     });
+    const sourceFrame =
+      process.env.INSIGNIA_SOURCE_FRAME === '1'
+        ? await build({
+            entryPoints: [new URL('../src/designer/frame.tsx', import.meta.url).pathname],
+            bundle: true,
+            write: false,
+            format: 'esm',
+            platform: 'browser',
+            define: { 'import.meta.env.DEV': 'false' },
+            jsx: 'automatic',
+            jsxImportSource: 'preact',
+            loader: { '.css': 'text' },
+          })
+        : undefined;
     const source = host.outputFiles[0];
     assert(source);
     const config = {
@@ -75,7 +89,7 @@ for (const engine of [chromium, firefox]) {
  import {createDesignerFrame} from '/host.js';
  const config=${JSON.stringify(config)};
  window.preparations=[];window.writes=[];window.releaseQuote=null;window.designerClosed=0;window.appliedCloses=0;
- const frame=createDesignerFrame({config,locale:'en',initialPrints:[{id:'chest',method:'print',size:0,artworkId:'asset'}],initialArtworks:[{id:'asset',name:'Logo.png',url:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="navy"/%3E%3C/svg%3E',width:100,height:100}],ports:{artwork:{upload:async()=>{throw Error('unused')}},review:{prepare:async(request)=>{window.preparations.push({key:request.idempotencyKey,requestId:request.requestId,design:request.design});frame.review({currency:'USD',exponent:2,customizedQuantity:2,groups:[]},request);await new Promise((resolve,reject)=>window.releaseQuote=(fail)=>fail?reject(Error("quote unavailable")):resolve());frame.review({currency:'USD',exponent:2,totalMinor:'3500',customizedQuantity:request.design.variants[0].quantity,groups:[{id:'other',label:'Reviewed customized cart',quantity:request.design.variants[0].quantity,totalMinor:'3500'}]},request);}},cart:{commit:async(request)=>{window.writes.push({key:request.idempotencyKey,design:request.design});if(window.writes.length===1)throw Error('lost response');return{kind:'applied',requestId:request.requestId,designId:request.design.id,operation:request.operation,authority:'shopify'};}}},onClose(){window.designerClosed++},onAppliedClose(){window.appliedCloses++}});
+ const frame=createDesignerFrame({config,locale:'en',initialPrints:[{id:'chest',method:'print',size:0,artworkId:'asset'}],initialArtworks:[{id:'asset',name:'Logo.png',url:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="navy"/%3E%3C/svg%3E',width:100,height:100}],ports:{artwork:{upload:async()=>{throw Error('unused')}},review:{prepare:async(request)=>{window.preparations.push({key:request.idempotencyKey,requestId:request.requestId,design:request.design});frame.review({currency:'USD',exponent:2,customizedQuantity:2,groups:[]},request);await new Promise((resolve,reject)=>window.releaseQuote=(fail)=>fail?reject(Error("quote unavailable")):resolve());frame.review({currency:'USD',exponent:2,totalMinor:'3500',customizedQuantity:request.design.variants[0].quantity,groups:[{id:'other',label:'Reviewed customized cart',quantity:request.design.variants[0].quantity,totalMinor:'3500'}]},request);}},cart:{commit:async(request)=>{window.writes.push({key:request.idempotencyKey,requestId:request.requestId,operation:request.operation,design:request.design});if(window.writes.length===1)throw Error('lost response');return{kind:'applied',requestId:request.requestId,designId:request.design.id,operation:request.operation,authority:'shopify'};}}},onClose(){window.designerClosed++},onAppliedClose(){window.appliedCloses++}});
  window.liveFrame=frame;
  </script></body></html>`;
     const server = createServer((request, response) => {
@@ -84,6 +98,11 @@ for (const engine of [chromium, firefox]) {
         if (path === '/') {
           response.setHeader('Content-Type', 'text/html');
           response.end(html);
+          return;
+        }
+        if (path === '/insignia-designer-frame.js' && sourceFrame) {
+          response.setHeader('Content-Type', 'text/javascript');
+          response.end(sourceFrame.outputFiles[0]!.text);
           return;
         }
         if (path === '/host.js') {
@@ -135,6 +154,33 @@ for (const engine of [chromium, firefox]) {
     assert.equal(await frame.getByLabel('Packaging', { exact: true }).inputValue(), 'plain');
     await frame.getByLabel('Packaging', { exact: true }).selectOption('gift');
     const quantity = frame.locator('input[type=number]:enabled').first();
+    await quantity.fill('0');
+    await frame.getByRole('button', { name: 'Review', exact: true }).last().click();
+    await frame.locator('.validation-return').waitFor();
+    const footerLayout = await frame.locator('.panel-footer').evaluate((element) => {
+      const link = element.querySelector('.validation-return')!.getBoundingClientRect();
+      const price = element.querySelector('.footer-price')!.getBoundingClientRect();
+      const buttons = element.querySelector('.footer-buttons')!.getBoundingClientRect();
+      const footer = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      return {
+        linkTop: link.top,
+        linkBottom: link.bottom,
+        priceTop: price.top,
+        priceBottom: price.bottom,
+        buttonWidth: buttons.width,
+        contentWidth: footer.width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
+      };
+    });
+    assert.ok(
+      Math.max(footerLayout.linkTop, footerLayout.priceTop) <
+        Math.min(footerLayout.linkBottom, footerLayout.priceBottom),
+      'validation and price retain one grid row',
+    );
+    assert.ok(
+      Math.abs(footerLayout.buttonWidth - footerLayout.contentWidth) < 2,
+      'footer actions retain their full-grid span',
+    );
     await quantity.fill('2');
     await page.evaluate(() => Reflect.get(window, 'liveFrame').repair({ canStart: true, canRemoveGroup: false }));
     await frame.getByRole('heading', { name: 'Your customization needs review' }).waitFor();
@@ -210,6 +256,30 @@ for (const engine of [chromium, firefox]) {
     );
     await frame.getByRole('button', { name: 'Add to cart', exact: true }).click();
     await page.waitForFunction(() => Reflect.get(window, 'appliedCloses') === 1);
+    await page.evaluate(() => {
+      const element = document.querySelector('iframe')!;
+      const attempt = Reflect.get(window, 'writes')[1];
+      const receipt = {
+        kind: 'applied',
+        requestId: attempt.requestId,
+        designId: attempt.design.id,
+        operation: attempt.operation,
+        authority: 'shopify',
+      };
+      for (let i = 0; i < 2; i++)
+        window.dispatchEvent(
+          new MessageEvent('message', {
+            source: element.contentWindow,
+            origin: location.origin,
+            data: { type: 'insignia:designer:completed', channel: element.name, receipt },
+          }),
+        );
+    });
+    assert.equal(
+      await page.evaluate(() => Reflect.get(window, 'appliedCloses')),
+      1,
+      'duplicate completion cannot repeat automatic navigation',
+    );
     const attempts = (await page.evaluate(() => Reflect.get(window, 'writes'))) as {
       key: string;
       design: { id: string };
@@ -217,10 +287,32 @@ for (const engine of [chromium, firefox]) {
     assert.equal(attempts[0]?.key, attempts[1]?.key);
     assert.equal(attempts[0]?.design.id, attempts[1]?.design.id);
     assert.equal(await page.locator('iframe').isHidden(), false);
-    await frame.getByRole('button', { name: 'View cart', exact: true }).click();
+    assert.equal(
+      await frame.locator('dialog.host-preview-switch').count(),
+      0,
+      'completion stays inline in the original editor',
+    );
+    assert.equal(await frame.locator('.app').isVisible(), true);
+    const fallback = frame.getByRole('button', { name: 'View cart', exact: true });
+    assert.equal(await fallback.isEnabled(), true);
+    for (let tab = 0; tab < 20 && !(await fallback.evaluate((button) => button === document.activeElement)); tab++)
+      await page.keyboard.press('Tab');
+    assert.equal(
+      await fallback.evaluate((button) => button === document.activeElement && !button.closest('[inert]')),
+      true,
+    );
+    await page.evaluate(() => {
+      const frame = document.querySelector('iframe');
+      const completion = frame?.contentDocument?.querySelector('.panel-footer [role=status]');
+      if (!completion || !frame) throw new Error('Inline completion missing');
+    });
+    assert.equal(await frame.getByRole('button', { name: 'Add to cart', exact: true }).count(), 0);
+    await page.keyboard.press('Enter');
     await page.waitForFunction(() => Reflect.get(window, 'appliedCloses') === 2);
     assert.equal(await page.evaluate(() => Reflect.get(window, 'writes').length), 2);
     assert.equal(await page.evaluate(() => Reflect.get(window, 'appliedCloses')), 2);
+    await frame.locator('.header-actions button').last().click();
+    await page.waitForFunction(() => Reflect.get(window, 'designerClosed') > 0);
     await page.evaluate(() => Reflect.get(window, 'liveFrame').open());
     const done = frame.getByRole('button', { name: 'Done', exact: true });
     await done.waitFor();

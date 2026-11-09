@@ -255,6 +255,7 @@ export function createLiveDesignerPorts(input: {
               candidate.selection && desiredGroupKey(candidate.selection, false) === desiredGroupKey(group, false),
           )?.canonicalIdentitySha256,
           exponent: proposal.exponent,
+          expiresAt: proposal.expiresAt,
           totalMinor: proposal.totalMinor,
           customizedQuantity: proposal.customizedQuantity,
           groups: proposal.groups.map((group, index) => ({
@@ -267,6 +268,7 @@ export function createLiveDesignerPorts(input: {
         },
         request,
       );
+      return { expiresAt: proposal.expiresAt };
     } finally {
       controller.abort();
       if (prepareController === controller) prepareController = undefined;
@@ -332,6 +334,7 @@ export function createLiveDesignerPorts(input: {
         const completedReceipt = completed.get(request.idempotencyKey);
         if (completedReceipt) return { ...completedReceipt, requestId: request.requestId };
         if (request.signal.aborted) throw new DOMException('Aborted', 'AbortError');
+        if (!issuanceAttempted.has(request.idempotencyKey)) request.onPreparing?.();
         const review = prepared.get(request.idempotencyKey);
         let accepted = acceptedAttempts.get(request.idempotencyKey);
         if (!accepted) {
@@ -340,15 +343,25 @@ export function createLiveDesignerPorts(input: {
             review.signature !== signature(request) ||
             (!issuanceAttempted.has(request.idempotencyKey) && Date.parse(review.proposal.expiresAt) <= Date.now())
           ) {
-            await prepare(request);
-            throw new Error('Review the refreshed quote before applying it');
+            request.onPreparing?.();
+            const presentation = await prepare(request);
+            throw Object.assign(new Error('Review the refreshed quote before applying it'), {
+              reviewRequired: true,
+              ...presentation,
+            });
           }
           const current = await cart.read();
           if (!issuanceAttempted.has(request.idempotencyKey) && current.fingerprint !== review.baseline.fingerprint) {
-            await prepare(request);
-            throw new Error('Cart changed; review the refreshed quote');
+            request.onPreparing?.();
+            const presentation = await prepare(request);
+            throw Object.assign(new Error('Cart changed; review the refreshed quote'), {
+              reviewRequired: true,
+              ...presentation,
+            });
           }
           // The final user action accepts only the hash displayed by the prepared review.
+          request.signal.throwIfAborted();
+          request.onMutating?.();
           issuedSignatures.set(request.idempotencyKey, signature(request));
           issuanceAttempted.add(request.idempotencyKey);
           // An acceptance may be ambiguous: keep the exact proposal/key for retry, never re-propose here.
@@ -396,12 +409,14 @@ export function createLiveDesignerPorts(input: {
               prepared.delete(request.idempotencyKey);
               issuanceAttempted.delete(request.idempotencyKey);
               issuedSignatures.delete(request.idempotencyKey);
-              input.onNeedsReview?.(canStart, targetAvailable, canRemoveAll);
+              input.onNeedsReview?.(canStart, targetAvailable, canRemoveAll, request);
             }
             throw error;
           }
           acceptedAttempts.set(request.idempotencyKey, accepted);
         }
+        request.signal.throwIfAborted();
+        request.onMutating?.();
         const applied = await cart.apply(accepted.buckets, { expectedFingerprint: review?.baseline.fingerprint ?? '' });
         if (applied.status !== 'applied' || applied.recovery || !applied.cart)
           throw new Error('Cart needs review; an uncertain update is never retried automatically');
