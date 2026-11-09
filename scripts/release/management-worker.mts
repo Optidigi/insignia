@@ -6,9 +6,10 @@ import { createInterface } from 'node:readline';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { ReleaseAppendInput } from './append.mts';
 import type { Reservation } from './collector.mts';
+import { projectActiveModules, readFixedActive } from './management-active.mts';
 import { SESSION_CLIENT_SHA256, VERIFIER_SDK } from './paths.mts';
 import { releaseProfile } from './profiles.mts';
-import { array, callable, method, number, object, required, text } from './validation.mts';
+import { array, callable, number, object, required, text } from './validation.mts';
 import { readAppVersionInventory } from './version-inventory.mts';
 
 const APP = '1443cf6d03d39edae7c101a943c5c684';
@@ -21,7 +22,6 @@ export type RemoteApp = { id: string; organizationId: string; title: string };
 export interface ManagementClient {
   activeAppVersionRawResult(key: string): Promise<unknown>;
   appVersions(remote: RemoteApp): Promise<unknown>;
-  appVersionByTag(remote: RemoteApp, tag: string): Promise<unknown>;
 }
 export type ManagementObservation = {
   versions: ReleaseAppendInput['activeObservation']['versions'];
@@ -71,9 +71,11 @@ export async function runManagementReads({
   profileName?: string;
 }) {
   const profile = releaseProfile(profileName);
-  assert.equal((await reserve('ActiveAppReleaseFromApiKey')).durable, true);
+  assert.equal((await reserve('FixedActiveAppRelease')).durable, true);
   let raw: unknown = await client.activeAppVersionRawResult(APP);
+  const observedAt = now();
   assert(Buffer.byteLength(JSON.stringify(raw)) <= 1048576);
+  assert(!('errors' in object(raw)));
   const remote = (() => {
     const app = object(object(raw).app);
     assert.equal(app.id, 'gid://shopify/App/429028933633');
@@ -82,28 +84,17 @@ export async function runManagementReads({
     assert.match(organizationId, /^[1-9][0-9]*$/);
     return { id: text(app.id), organizationId, title: 'Insignia' };
   })();
+  const version = object(object(object(object(raw).app).activeRelease).version);
   raw = undefined;
   assert.equal((await reserve('AppVersions')).durable, true);
   const opening = selectedVersions(await client.appVersions(remote), remote, profile);
-  assert.equal((await reserve('AppVersionByTag')).durable, true);
-  const version = object(await client.appVersionByTag(remote, profile.versionTag)),
-    observedAt = now();
-  assert.equal(version.uuid, `gid://shopify/Version/${profile.versionId}`);
-  assert.equal(version.versionTag, profile.versionTag);
-  const rawModules = array(version.appModuleVersions);
-  assert.equal(rawModules.length, profile.modules.length);
-  const modules = rawModules.map((value) => {
-    const item = object(value);
-    return {
-      registrationId: item.registrationId,
-      registrationUuid: item.registrationUuid,
-      handle: text(item.registrationTitle),
-      type: item.type,
-      config: item.config,
-      target: item.target,
-      specification: item.specification,
-    };
-  });
+  assert.equal(version.id, `gid://shopify/Version/${profile.versionId}`);
+  assert.equal(object(version.metadata).versionTag, profile.versionTag);
+  const modules = projectActiveModules(version.appModules);
+  assert.deepEqual(
+    [...modules].sort((a, b) => (a.handle < b.handle ? -1 : a.handle > b.handle ? 1 : 0)),
+    profile.modules,
+  );
   await send('OPEN', {
     ...opening,
     moduleObservation: {
@@ -120,11 +111,10 @@ export async function runManagementReads({
   const closing = selectedVersions(await client.appVersions(remote), remote, profile);
   await send('CLOSE', { ...closing, observedAt: now() });
 }
-function managementClient(value: unknown): ManagementClient {
+export function managementClient(value: unknown): ManagementClient {
   return {
-    activeAppVersionRawResult: async (key) => method(value, 'activeAppVersionRawResult')(key),
+    activeAppVersionRawResult: async (key) => readFixedActive(value, key),
     appVersions: async (remote) => readAppVersionInventory(value, remote),
-    appVersionByTag: async (remote, tag) => method(value, 'appVersionByTag')(remote, tag),
   };
 }
 async function main() {
@@ -159,7 +149,7 @@ async function main() {
       getClient: () => callable(object(sdk).z)(),
     });
     const client = managementClient(seeded);
-    emit('AUTHENTICATED\n');
+    emit('AUTHENTICATED_V2\n');
     await next('OPEN');
     await runManagementReads({
       client,

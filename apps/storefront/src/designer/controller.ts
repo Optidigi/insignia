@@ -88,16 +88,17 @@ export async function mountLiveDesigner(input: {
       ...input,
       source,
       productId: source.productId,
-      onNeedsReview(available, targetAvailable, canRemoveAll) {
+      onNeedsReview(available, targetAvailable, canRemoveAll, request) {
+        if (request?.signal.aborted) return;
         canStart = available;
         cartTargetAvailable = targetAvailable;
-        record.frame.repair({ canStart: available, canRemoveGroup: !!group && targetAvailable, canRemoveAll });
+        record.frame.repair({ canStart: available, canRemoveGroup: !!group && targetAvailable, canRemoveAll }, request);
       },
-      onPriceRefresh(next) {
-        record.frame.prices(buildBuyerDesigner(next, options).config, next.wording);
+      onPriceRefresh(next, request) {
+        record.frame.prices(buildBuyerDesigner(next, options).config, next.wording, request);
       },
-      onReview(quote) {
-        record.frame.review(quote);
+      onReview(quote, request) {
+        record.frame.review(quote, request);
       },
     });
     let restored:

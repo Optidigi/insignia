@@ -16,7 +16,14 @@ const channel = window.name;
 // This sandboxed srcdoc frame deliberately shares its host origin. Firefox can
 // leave document.referrer empty here; it is not a reliable handshake authority.
 const parentOrigin = window.parent.location.origin;
-type Pending = { resolve(value: unknown): void; reject(error: Error): void; progress?: UploadRequest['onProgress'] };
+type Pending = {
+  mutating?: () => void;
+  resolve(value: unknown): void;
+  reject(error: Error): void;
+  preparing?: () => void;
+  progress?: UploadRequest['onProgress'];
+};
+let reviewRequestId: string | undefined;
 const pending = new Map<string, Pending>();
 function send(type: string, data: Record<string, unknown> = {}) {
   window.parent.postMessage({ type, channel, ...data }, parentOrigin);
@@ -28,11 +35,18 @@ function invoke<T>(
   artwork?: Artwork,
 ): Promise<T> {
   const id = crypto.randomUUID();
+  if (action === 'prepare' || action === 'commit') reviewRequestId = request.requestId;
   const { signal, ...body } = request;
+  const onMutating = 'onMutating' in body ? body.onMutating : undefined;
+  if ('onMutating' in body) delete body.onMutating;
+  const onPreparing = 'onPreparing' in body ? body.onPreparing : undefined;
+  if ('onPreparing' in body) delete body.onPreparing;
   const onProgress = 'onProgress' in body ? body.onProgress : undefined;
   if ('onProgress' in body) delete body.onProgress;
   return new Promise<T>((resolve, reject) => {
     const abort = () => {
+      if ((action === 'prepare' || action === 'commit') && reviewRequestId === request.requestId)
+        reviewRequestId = undefined;
       pending.delete(id);
       send('insignia:designer:abort', { id });
       reject(new DOMException('Aborted', 'AbortError'));
@@ -43,13 +57,15 @@ function invoke<T>(
     }
     signal.addEventListener('abort', abort, { once: true });
     pending.set(id, {
+      ...(onMutating ? { mutating: onMutating } : {}),
+      ...(onPreparing ? { preparing: onPreparing } : {}),
       ...(onProgress ? { progress: onProgress } : {}),
       resolve(value) {
-        signal.removeEventListener('abort', abort);
+        if (action !== 'prepare' && action !== 'commit') signal.removeEventListener('abort', abort);
         resolve(value as T);
       },
       reject(error) {
-        signal.removeEventListener('abort', abort);
+        if (action !== 'prepare' && action !== 'commit') signal.removeEventListener('abort', abort);
         reject(error);
       },
     });
@@ -76,9 +92,11 @@ type Initial = {
 };
 function Closed({ completion }: { completion: CartReceipt | null }) {
   const sent = useRef(false);
+
   useLayoutEffect(() => {
     if (sent.current) return;
     sent.current = true;
+
     send('insignia:designer:closed', { receipt: completion });
   }, [completion]);
   return null;
@@ -121,7 +139,9 @@ function Frame({ initial }: { initial: Initial }) {
         renew: (artwork, request) => invoke<Artwork>('renew', request, undefined, artwork),
         apply: (artwork, request) => invoke<Artwork>('renew', request, undefined, artwork),
       },
-      review: initial.previewOnly ? undefined : { prepare: (request) => invoke<void>('prepare', request) },
+      review: initial.previewOnly
+        ? undefined
+        : { prepare: (request) => invoke<void | { expiresAt: string }>('prepare', request) },
       cart: { commit: (request) => invoke<CartReceipt>('commit', request) },
     }),
     [],
@@ -130,6 +150,7 @@ function Frame({ initial }: { initial: Initial }) {
     send('insignia:designer:initialized');
     function update(event: MessageEvent) {
       if (event.source !== parent || event.origin !== parentOrigin || event.data?.channel !== channel) return;
+      if (event.data.requestId !== undefined && event.data.requestId !== reviewRequestId) return;
       if (event.data.type === 'insignia:designer:repair') setRepair(event.data.repair);
       if (event.data.type === 'insignia:designer:open') {
         setVisible(true);
@@ -149,7 +170,12 @@ function Frame({ initial }: { initial: Initial }) {
         setConfig(event.data.config);
         if (event.data.wording) setWording(event.data.wording);
       }
-      if (event.data.type === 'insignia:designer:quote') setQuote(event.data.quote);
+      if (
+        event.data.type === 'insignia:designer:quote' &&
+        event.data.requestId === reviewRequestId &&
+        reviewRequestId !== undefined
+      )
+        setQuote(event.data.quote);
       if (event.data.type === 'insignia:designer:previews') {
         setConfig(
           (current) =>
@@ -173,6 +199,9 @@ function Frame({ initial }: { initial: Initial }) {
       {config && (
         <Designer
           key="workflow"
+          onCartCompletion={(receipt, automatic) =>
+            send(automatic ? 'insignia:designer:completed' : 'insignia:designer:navigate-cart', { receipt })
+          }
           onPreviewFailure={(url) => send('insignia:designer:preview-failed', { url })}
           suspended={!!repair || !visible}
           config={config}
@@ -195,7 +224,7 @@ function Frame({ initial }: { initial: Initial }) {
             setOpen(false);
           }}
           onOpenChange={setOpen}
-          retainViewForConfirmation={pendingGroup !== null}
+          retainViewForConfirmation={pendingGroup !== null || !initial.previewOnly}
           renderClosed={(state) => (
             <HostClosed
               state={state}
@@ -240,6 +269,14 @@ function Frame({ initial }: { initial: Initial }) {
 let mounted = false;
 window.addEventListener('message', (event) => {
   if (event.source !== window.parent || event.origin !== parentOrigin || event.data?.channel !== channel) return;
+  if (event.data.type === 'insignia:designer:mutating' && typeof event.data.id === 'string') {
+    pending.get(event.data.id)?.mutating?.();
+    return;
+  }
+  if (event.data.type === 'insignia:designer:preparing' && typeof event.data.id === 'string') {
+    pending.get(event.data.id)?.preparing?.();
+    return;
+  }
   if (
     event.data.type === 'insignia:designer:progress' &&
     typeof event.data.id === 'string' &&
@@ -259,6 +296,7 @@ window.addEventListener('message', (event) => {
     else
       request.reject(
         Object.assign(new Error('Live operation unavailable'), {
+          ...(event.data.reviewRequired === true ? { reviewRequired: true, expiresAt: event.data.expiresAt } : {}),
           status: [403, 404, 410, 422].includes(event.data.status) ? event.data.status : undefined,
           ...(event.data.acceptanceOutcome === 'declined' ? { acceptanceOutcome: 'declined' as const } : {}),
         }),

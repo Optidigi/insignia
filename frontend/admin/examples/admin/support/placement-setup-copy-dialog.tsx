@@ -387,6 +387,8 @@ export default function PlacementSetupCopyDialog({
   const [catalog, setCatalog] = useState<PlacementSetupCopyDiscovery[]>([]);
   const [snapshots, setSnapshots] = useState<PlacementProduct[]>([]);
   const [hydrating, setHydrating] = useState(false);
+  const [hydrationError, setHydrationError] = useState(false);
+  const retireHydration = useRef<(() => void) | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -504,7 +506,14 @@ export default function PlacementSetupCopyDialog({
     let current = true;
     const timeout = setTimeout(() => controller.abort(), 10_000);
     setHydrating(true);
+    setHydrationError(false);
     setSnapshots([]);
+    const retire = () => {
+      current = false;
+      clearTimeout(timeout);
+      controller.abort();
+    };
+    retireHydration.current = retire;
     void ports
       .hydrate([...selectedTargetIds, ...(!source && sourceId ? [sourceId] : [])], controller.signal)
       .then((results) => {
@@ -517,7 +526,7 @@ export default function PlacementSetupCopyDialog({
           const saved = products.find((product) => product.id === sourceId);
           const inspected = saved ? ports.inspect(saved) : null;
           if (!inspected || inspected.readiness === 'unavailable' || !isCopyableSource(inspected.product)) {
-            setLoadError(true);
+            setHydrationError(true);
           } else if (initializedSource.current !== sourceId) {
             initializedSource.current = sourceId;
             setSelectedViewIds(inspected.product.views.map((view) => view.id));
@@ -525,16 +534,15 @@ export default function PlacementSetupCopyDialog({
         }
       })
       .catch(() => {
-        if (current) setLoadError(true);
+        if (current) setHydrationError(true);
       })
       .finally(() => {
         clearTimeout(timeout);
         if (current) setHydrating(false);
       });
     return () => {
-      current = false;
-      clearTimeout(timeout);
-      controller.abort();
+      retire();
+      if (retireHydration.current === retire) retireHydration.current = null;
     };
   }, [stage, loading, loadAttempt, sourceId, selectedTargetIds.join('\u0000')]);
 
@@ -608,6 +616,7 @@ export default function PlacementSetupCopyDialog({
     !loading &&
     !hydrating &&
     !loadError &&
+    !hydrationError &&
     !busy &&
     sourceValid &&
     sourceSignature.length > 0 &&
@@ -653,6 +662,11 @@ export default function PlacementSetupCopyDialog({
   }
 
   function backToChooser() {
+    if (busy) return;
+    retireHydration.current?.();
+    retireHydration.current = null;
+    setHydrating(false);
+    setHydrationError(false);
     setStage('choose');
     setLocalError(null);
   }
@@ -935,7 +949,7 @@ export default function PlacementSetupCopyDialog({
               accessibilityLabel={translateUi('editor:placementSetupCopyDialog.loadingProducts')}
             />
           </div>
-        ) : loadError ? (
+        ) : loadError || hydrationError ? (
           <s-banner tone="critical" heading={translateUi('editor:placementSetupCopyDialog.productsCouldNotBeLoaded')}>
             <s-button onClick={() => setLoadAttempt((attempt) => attempt + 1)}>
               {translateUi('editor:placementSetupCopyDialog.tryAgain')}
@@ -1339,6 +1353,7 @@ export default function PlacementSetupCopyDialog({
               (hydrating ||
                 loading ||
                 !!loadError ||
+                hydrationError ||
                 (stage === 'review' ? !canCopy : !sourceValid || !selectedTargetIds.length)))
           }
           loading={busy}

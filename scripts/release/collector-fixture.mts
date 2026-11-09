@@ -91,7 +91,7 @@ export async function fixture(overrides: FixtureOverrides = {}) {
         totalResults: number;
         moduleObservation: ReleaseAppendInput['moduleObservation'];
       }> {
-        for (const op of ['ActiveAppReleaseFromApiKey', 'AppVersions', 'AppVersionByTag']) await reserve(op);
+        for (const op of ['FixedActiveAppRelease', 'AppVersions']) await reserve(op);
         return {
           versions,
           totalResults: 7,

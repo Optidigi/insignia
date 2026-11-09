@@ -3,6 +3,7 @@ import type { ProductConfig } from '../../../../frontend/designer/src/config';
 import type { Artwork, Design, Print } from '../../../../frontend/designer/src/model';
 import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quote-review';
 import {
+  type CartReceipt,
   type CartRequest,
   type DesignerPorts,
   matchesCartReceipt,
@@ -81,8 +82,13 @@ export function createDesignerFrame(input: {
   const { entry, css } = designerAssets();
   frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="origin"><link rel="stylesheet" href="${escapeAttribute(css.href)}"></head><body><script type="module" src="${escapeAttribute(entry.href)}"></script></body></html>`;
   const controllers = new Map<string, AbortController>();
-  let committing = false;
-  let pendingRepair: { canStart: boolean; canRemoveGroup: boolean; canRemoveAll?: boolean } | undefined;
+  let committing: AbortController | undefined;
+  let pendingRepair:
+    | {
+        value: { canStart: boolean; canRemoveGroup: boolean; canRemoveAll?: boolean };
+        request: Pick<CartRequest, 'requestId' | 'signal'> | undefined;
+      }
+    | undefined;
   const focused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   let ready = false;
   let initialized = false;
@@ -144,18 +150,23 @@ export function createDesignerFrame(input: {
     finishInitialization();
   });
   let applied: CartRequest | undefined;
+  let completion: CartReceipt | undefined;
   function send(type: string, data: Record<string, unknown> = {}) {
     frame.contentWindow?.postMessage({ type, channel, ...data }, window.location.origin);
   }
   function close(receipt?: unknown) {
     const appliedClose =
       applied !== undefined && matchesCartReceipt(receipt, applied) && receipt.authority === 'shopify';
-    applied = undefined;
+    if (appliedClose) {
+      if (completion?.requestId === receipt.requestId) return;
+      completion = receipt;
+      input.onAppliedClose?.();
+      return;
+    }
     frame.hidden = true;
     modal.hide();
     focused?.focus();
     input.onClose();
-    if (appliedClose) input.onAppliedClose?.();
   }
   async function message(event: MessageEvent) {
     if (
@@ -206,6 +217,15 @@ export function createDesignerFrame(input: {
       }
       return;
     }
+    if (data.type === 'insignia:designer:navigate-cart') {
+      if (completion && applied && matchesCartReceipt(data.receipt, applied) && data.receipt.authority === 'shopify')
+        input.onAppliedClose?.();
+      return;
+    }
+    if (data.type === 'insignia:designer:completed') {
+      close(data.receipt);
+      return;
+    }
     if (data.type === 'insignia:designer:closed') {
       close(data.receipt);
       return;
@@ -237,8 +257,17 @@ export function createDesignerFrame(input: {
       else if (data.action === 'prepare' && input.ports?.review)
         value = await input.ports.review.prepare({ ...data.request, signal: controller.signal } as CartRequest);
       else if (data.action === 'commit' && !input.previewOnly && input.ports) {
-        committing = true;
-        value = await input.ports.cart.commit({ ...data.request, signal: controller.signal } as CartRequest);
+        committing = controller;
+        value = await input.ports.cart.commit({
+          ...data.request,
+          signal: controller.signal,
+          onMutating() {
+            if (!controller.signal.aborted) send('insignia:designer:mutating', { id: data.id });
+          },
+          onPreparing() {
+            if (!controller.signal.aborted) send('insignia:designer:preparing', { id: data.id });
+          },
+        } as CartRequest);
       } else throw new Error('Unsupported designer operation');
       if (!controller.signal.aborted) {
         if (data.action === 'commit' && matchesCartReceipt(value, data.request) && value.authority === 'shopify')
@@ -254,6 +283,9 @@ export function createDesignerFrame(input: {
         send('insignia:designer:result', {
           id: data.id,
           ok: false,
+          ...(error && typeof error === 'object' && 'reviewRequired' in error && error.reviewRequired === true
+            ? { reviewRequired: true, expiresAt: 'expiresAt' in error ? error.expiresAt : undefined }
+            : {}),
           ...(status ? { status } : {}),
           ...(data.action === 'commit' &&
           error &&
@@ -265,9 +297,13 @@ export function createDesignerFrame(input: {
         });
     } finally {
       controllers.delete(data.id);
-      if (data.action === 'commit') {
-        committing = false;
-        if (pendingRepair && !controller.signal.aborted) send('insignia:designer:repair', { repair: pendingRepair });
+      if (data.action === 'commit' && committing === controller) {
+        committing = undefined;
+        if (pendingRepair && !controller.signal.aborted && !pendingRepair.request?.signal.aborted)
+          send('insignia:designer:repair', {
+            repair: pendingRepair.value,
+            requestId: pendingRepair.request?.requestId,
+          });
         pendingRepair = undefined;
       }
     }
@@ -293,9 +329,10 @@ export function createDesignerFrame(input: {
       send('insignia:designer:suspend');
       modal.hide();
     },
-    repair(value?: { canStart: boolean; canRemoveGroup: boolean; canRemoveAll?: boolean }) {
-      if (committing && value) pendingRepair = value;
-      else send('insignia:designer:repair', { repair: value });
+    repair(value?: { canStart: boolean; canRemoveGroup: boolean; canRemoveAll?: boolean }, request?: CartRequest) {
+      if (request?.signal.aborted) return;
+      if (committing && value) pendingRepair = { value, request };
+      else send('insignia:designer:repair', { repair: value, requestId: request?.requestId });
     },
     error() {
       send('insignia:designer:host-error');
@@ -311,14 +348,19 @@ export function createDesignerFrame(input: {
       if (initialized) frame.focus();
       return true;
     },
-    prices(config: ProductConfig, wording?: MerchantCustomerWordingView) {
-      send('insignia:designer:prices', { config, wording });
+    prices(config: ProductConfig, wording?: MerchantCustomerWordingView, request?: CartRequest) {
+      if (request?.signal.aborted) return;
+      send('insignia:designer:prices', { config, wording, requestId: request?.requestId });
     },
     previews(colors: ProductConfig['colors']) {
       send('insignia:designer:previews', { colors });
     },
-    review(quote: DesignerQuoteReview) {
-      send('insignia:designer:quote', { quote });
+    review(quote: DesignerQuoteReview, request?: CartRequest) {
+      if (request?.signal.aborted) return;
+      send('insignia:designer:quote', {
+        quote: { ...quote, intentId: request?.idempotencyKey },
+        requestId: request?.requestId,
+      });
     },
     destroy,
   };

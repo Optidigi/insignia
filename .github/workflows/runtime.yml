@@ -82,7 +82,7 @@ jobs:
         if: steps.changes.outputs.route == 'full'
       - name: Owner trusted-release collector local accounting and process controls
         if: steps.changes.outputs.route == 'full'
-        run: node --test --test-concurrency=1 scripts/release/collector.test.mts scripts/release/owner-boundaries.test.mts scripts/release/launch.test.mts scripts/release/profiles.test.mts
+        run: node --test --test-concurrency=1 scripts/release/collector.test.mts scripts/release/management-active.test.mts scripts/release/owner-boundaries.test.mts scripts/release/launch.test.mts scripts/release/profiles.test.mts
       - name: Current signing and historical settlement controls
         if: steps.changes.outputs.route == 'full'
         run: node --test --test-concurrency=1 scripts/database/owner-settlement.test.mts scripts/release/append.test.mts scripts/runtime/signing-provision.test.mts

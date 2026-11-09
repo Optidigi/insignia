@@ -71,6 +71,7 @@ export interface DesignerProps {
   /** Refresh an expired preview without changing production choices or reviewed prices. */
   onPreviewFailure?: (url: string) => void;
   quoteReview?: DesignerQuoteReview;
+  onCartCompletion?: (receipt: CartReceipt, automatic: boolean) => void;
   suspended?: boolean;
   hostErrorSignal?: number;
   cartReviewedSignal?: number;
@@ -131,7 +132,8 @@ function DesignerSession({
   ports,
   isOpen,
   onOpenChange,
-  quoteReview,
+  onCartCompletion,
+  quoteReview: incomingQuoteReview,
   requiresCartReview,
   suspended = false,
   onSelectQuoteGroup,
@@ -305,6 +307,14 @@ function DesignerSession({
   useLayoutEffect(() => {
     if (hostErrorSignal) dispatch({ type: 'review-navigation-failed' });
   }, [hostErrorSignal]);
+  const quoteReview = incomingQuoteReview?.intentId === runtime.reviewIntentId ? incomingQuoteReview : undefined;
+  const [, expirePresentation] = useState(0);
+  const quoteExpired = !runtime.prepared && !!quoteReview?.expiresAt && Date.parse(quoteReview.expiresAt) <= Date.now();
+  useEffect(() => {
+    if (!quoteReview?.expiresAt || quoteExpired) return;
+    const timer = window.setTimeout(() => expirePresentation((n) => n + 1), Math.max(0, Date.parse(quoteReview.expiresAt) - Date.now()));
+    return () => clearTimeout(timer);
+  }, [quoteReview?.expiresAt, quoteExpired]);
   const reviewIntent = designerIntentKey(workflow);
   const beforeQuantities = step === 0;
   const eagerReviewStarted = useRef(false);
@@ -315,6 +325,7 @@ function DesignerSession({
     // Use the existing real review port while quantities settle. Entering Review
     // reuses this request; editing/closing cancels only preparation, never a cart write.
     const timer = window.setTimeout(() => {
+      if (eagerReviewStarted.current) return;
       const state = {...workflowRef.current, step:2 as const};
       if (!canCommitDesign(state)) return;
       // A multi-size matrix can involve many edits. Speculate once per visit,
@@ -327,7 +338,10 @@ function DesignerSession({
   // Retire the old intent before starting an explicit review. A passive cleanup
   // here could otherwise abort the newer request after the layout phase.
   useLayoutEffect(() => {
-    if (step === 2 && ports.review && designerOpen && !suspended) void runtime.commit(true);
+    if (step === 2 && ports.review && designerOpen && !suspended) {
+      eagerReviewStarted.current = true;
+      void runtime.commit(true);
+    }
   }, [step, reviewIntent, designerOpen, suspended, runtime]);
 
   const previewRenewals = useRef(new Set<string>());
@@ -846,11 +860,18 @@ function DesignerSession({
     opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     void runtime.commit();
   }
+  const sentCompletion = useRef<string>();
+  const cartCompletion = workflow.completion?.authority === 'shopify' ? workflow.completion : null;
   // Only the reducer's matching applied receipt can close the host session.
   useLayoutEffect(() => {
     if (!workflow.completion) return;
     runtime.cancelUpload();
-    onOpenChange(false);
+    if (workflow.completion.authority === 'shopify') {
+      if (sentCompletion.current !== workflow.completion.requestId) {
+        sentCompletion.current = workflow.completion.requestId;
+        onCartCompletion?.(workflow.completion, true);
+      }
+    } else onOpenChange(false);
   }, [workflow.completion]);
   function newDesign() {
     dispatch({ type: 'new-design-requested' });
@@ -888,6 +909,11 @@ function DesignerSession({
     window.requestAnimationFrame(() => panelRef.current?.focus());
   }
   const unappliedDraft = hasUnappliedDraft(workflow);
+  const quoteStatus = ports.review && (!editing || unappliedDraft) &&
+    (!runtime.prepared || quoteReview?.totalMinor === undefined)
+    ? workflow.commit.kind === 'failed' || quoteExpired ? 'unavailable' : 'loading'
+    : undefined;
+  const footerBusy = workflow.commit.kind === 'pending' || (step === 2 && workflow.commit.kind === 'preparing');
   const dirtyDraft = hasDraftChanges(workflow);
   useEffect(() => {
     if (!dirtyDraft || allowUnload || previewOnly) return;
@@ -985,7 +1011,7 @@ function DesignerSession({
                 key={key}
                 aria-current={step === i ? 'step' : undefined}
                 disabled={
-                  workflow.commit.kind === 'pending' ||
+                  workflow.commit.kind === 'pending' || !!cartCompletion ||
                   (i > step &&
                     // Existing quantities must remain reachable to remove a row
                     // whose image can no longer support the shared position.
@@ -1025,7 +1051,7 @@ function DesignerSession({
         <section
           className="preview-panel"
           aria-label={t('customer:chrome.productPreview')}
-          inert={workflow.commit.kind === 'pending'}
+          inert={workflow.commit.kind === 'pending' || !!cartCompletion}
         >
           <div className="preview-toolbar">
             {views.length > 3 ? (
@@ -1337,7 +1363,7 @@ function DesignerSession({
         <section className="control-panel" aria-label={t('customer:chrome.designControls')}>
           <div
             className="panel-content"
-            inert={workflow.commit.kind === 'pending'}
+            inert={workflow.commit.kind === 'pending' || !!cartCompletion}
             ref={panelRef}
             id="design-controls"
             tabIndex={-1}
@@ -1687,6 +1713,7 @@ function DesignerSession({
             )}
             {step === 2 && (
               <ReviewPanel
+                {...(quoteStatus ? { quoteStatus } : {})}
                 productionChoices={workflow.productionChoices}
                 {...(quoteReview ? { quoteReview } : {})}
                 {...(onSelectQuoteGroup ? { onSelectQuoteGroup: (id: string) => { if (id === quoteReview?.currentGroupId) dispatch({ type: 'step-selected', step: 1 }); else onSelectQuoteGroup(id); } } : {})}
@@ -1723,10 +1750,12 @@ function DesignerSession({
           </div>
           {!artworkOnly && (prints.length > 0 || step > 0) && (
             <footer className="panel-footer">
+              {cartCompletion && <div role="status"><h2>{t('customer:chrome.added')}</h2><p>{t('customer:chrome.openingCart')}</p><button type="button" className="primary-button" onClick={() => onCartCompletion?.(cartCompletion, false)}>{t('customer:chrome.viewCart')}</button></div>}
+              {!cartCompletion && <>
               {workflow.commit.kind === 'failed' && (
                 <div className="cart-submit-error" role="alert">
                   <IconAlertTriangle size={18} />
-                  <span>{t('customer:recovery.cartCommitFailed')}</span>
+                  <span>{t(workflow.commit.preparation ? 'common:summary.unavailable' : 'customer:recovery.cartCommitFailed')}</span>
                 </div>
               )}
               {validationIssues.length > 0 && (
@@ -1745,7 +1774,9 @@ function DesignerSession({
                     : t('customer:chrome.perItem')}
                 </span>
                 <strong>
-                  {step === 2 && quoteReview
+                  {step === 2 && quoteStatus
+                    ? t(quoteStatus === 'unavailable' ? 'common:summary.unavailable' : 'customer:chrome.calculatingQuote')
+                    : step === 2 && quoteReview
                     ? quoteReview.totalMinor !== undefined
                       ? quoteReviewMoney(
                           quoteReview.totalMinor,
@@ -1776,19 +1807,21 @@ function DesignerSession({
                 <button
                   className={`primary-button ${step === 2 ? 'cart-button' : ''}`}
                   disabled={
-                    workflow.commit.kind === 'pending' ||
-                    (step === 2 && !!ports.review && (!editing || unappliedDraft) && !runtime.prepared && workflow.commit.kind !== 'failed') ||
+                    footerBusy ||
+                    (step === 2 && !!ports.review && (!editing || unappliedDraft) && !runtime.prepared && !quoteExpired && workflow.commit.kind !== 'failed') ||
                     (step === 1 && !quantitiesLayout.cells.some((cell) => cell.available))
                   }
-                  aria-busy={workflow.commit.kind === 'pending' || workflow.commit.kind === 'preparing'}
-                  onClick={step === 2 ? (workflow.commit.kind === 'failed' && workflow.commit.preparation ? () => void runtime.commit(true) : editing && !unappliedDraft ? returnToProduct : addToCart) : goNext}
+                  aria-busy={footerBusy}
+                  onClick={step === 2 ? (quoteExpired || (workflow.commit.kind === 'failed' && workflow.commit.preparation) ? () => void runtime.commit(true) : editing && !unappliedDraft ? returnToProduct : addToCart) : goNext}
                 >
-                  {workflow.commit.kind === 'pending' || workflow.commit.kind === 'preparing'
+                  {footerBusy
                     ? workflow.commit.kind === 'preparing'
-                      ? t('customer:steps.review')
+                      ? t('customer:chrome.preparingQuote')
                       : editing
                         ? t('customer:steps.updatingCart')
                         : t('customer:steps.addingToCart')
+                    : quoteExpired || (workflow.commit.kind === 'failed' && workflow.commit.preparation)
+                      ? t('common:actions.retry')
                     : step === 0
                       ? t('customer:steps.chooseQuantities')
                       : step === 1
@@ -1801,6 +1834,7 @@ function DesignerSession({
                   {step === 2 && <IconShoppingCart size={18} />}
                 </button>
               </div>
+              </>}
             </footer>
           )}
         </section>

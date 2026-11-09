@@ -5,6 +5,7 @@ import { Counter, Gauge, Registry } from 'prom-client';
 const EVENTS = new Set([
   'admin_authentication',
   'buyer_request_failed',
+  'buyer_request_timing',
   'customer_artwork_notification',
   'worker_started',
   'worker_stopped',
@@ -20,6 +21,7 @@ const EVENTS = new Set([
 export type RuntimeEvent =
   | 'admin_authentication'
   | 'buyer_request_failed'
+  | 'buyer_request_timing'
   | 'customer_artwork_notification'
   | 'worker_started'
   | 'worker_stopped'
@@ -120,7 +122,28 @@ export type BuyerFailureDiagnostic = {
   errorClass: (typeof BUYER_FAILURES)[number];
 };
 
+// One summary per proposal/acceptance; at most 64 spans, each with finite vocabulary.
+// Integer milliseconds cap the timing payload below 12 KiB. Spans overlap: never sum.
+export type BuyerTimingSpan = {
+  id: number;
+  parentId: number | null;
+  stage: NonNullable<BuyerFailureDiagnostic['proposalStage']>;
+  offsetMs: number;
+  durationMs: number;
+  outcome: 'success' | 'failure' | 'unfinished';
+};
+export type BuyerTimingDiagnostic = {
+  correlationId: string;
+  operation: 'proposal' | 'acceptance';
+  /** Transport cancellation at snapshot time does not prove a write did not commit. */
+  outcome: 'success' | 'failure' | 'cancelled';
+  totalMs: number;
+  truncated: boolean;
+  spans: BuyerTimingSpan[];
+};
+
 export interface RuntimeLogDetails {
+  timing?: BuyerTimingDiagnostic;
   buyerStage?: BuyerFailureDiagnostic['buyerStage'];
   proposalStage?: BuyerFailureDiagnostic['proposalStage'];
   authStage?: AdminAuthenticationStage;
@@ -177,6 +200,53 @@ function safeDetails(input: RuntimeLogDetails): RuntimeLogDetails {
 }
 
 function eventDetails(event: RuntimeEvent, input: RuntimeLogDetails) {
+  if (event === 'buyer_request_timing') {
+    const t = input.timing;
+    const ms = (v: number) => Number.isInteger(v) && v >= 0 && v <= 86400000;
+    if (
+      !t ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t.correlationId) ||
+      !['proposal', 'acceptance'].includes(t.operation) ||
+      !['success', 'failure', 'cancelled'].includes(t.outcome) ||
+      !ms(t.totalMs) ||
+      typeof t.truncated !== 'boolean' ||
+      !Array.isArray(t.spans) ||
+      t.spans.length > 64
+    )
+      throw new Error('Invalid buyer timing diagnostic');
+    const ids = new Set<number>();
+    const spans = t.spans.map((s) => {
+      if (
+        !Number.isInteger(s.id) ||
+        s.id < 1 ||
+        s.id > 64 ||
+        ids.has(s.id) ||
+        (s.parentId !== null && !ids.has(s.parentId)) ||
+        !BUYER_PROPOSAL_FAILURE_STAGES.includes(s.stage) ||
+        !ms(s.offsetMs) ||
+        !ms(s.durationMs) ||
+        !['success', 'failure', 'unfinished'].includes(s.outcome)
+      )
+        throw new Error('Invalid buyer timing span');
+      ids.add(s.id);
+      return {
+        id: s.id,
+        parentId: s.parentId,
+        stage: s.stage,
+        offsetMs: s.offsetMs,
+        durationMs: s.durationMs,
+        outcome: s.outcome,
+      };
+    });
+    return {
+      correlationId: t.correlationId,
+      operation: t.operation,
+      outcome: t.outcome,
+      totalMs: t.totalMs,
+      truncated: t.truncated,
+      spans,
+    };
+  }
   if (event === 'buyer_request_failed') {
     if (
       !input.buyerStage ||

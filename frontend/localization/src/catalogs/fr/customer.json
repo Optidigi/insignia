@@ -18,7 +18,11 @@
     "reducePreview": "Réduire l’aperçu",
     "enlargePreview": "Agrandir l’aperçu",
     "showFullProduct": "Afficher le produit en entier",
-    "focusOnArtwork": "Centrer l’aperçu sur le visuel"
+    "focusOnArtwork": "Centrer l’aperçu sur le visuel",
+    "calculatingQuote": "Calcul du devis…",
+    "preparingQuote": "Préparation du devis…",
+    "openingCart": "Ouverture du panier…",
+    "viewCart": "Voir le panier"
   },
   "steps": {
     "designSteps": "Étapes de personnalisation",

@@ -18,7 +18,11 @@
     "reducePreview": "Riduci l'anteprima",
     "enlargePreview": "Ingrandisci l'anteprima",
     "showFullProduct": "Mostra il prodotto intero",
-    "focusOnArtwork": "Inquadra la grafica"
+    "focusOnArtwork": "Inquadra la grafica",
+    "calculatingQuote": "Calcolo del preventivo…",
+    "preparingQuote": "Preparazione del preventivo…",
+    "openingCart": "Apertura del carrello…",
+    "viewCart": "Visualizza carrello"
   },
   "steps": {
     "designSteps": "Fasi della personalizzazione",
