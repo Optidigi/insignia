@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { resolveRuntimeReleaseProfile } from '../../src/runtime-release-profile.js';
 
 describe('closed server release targets', () => {
+  it('selects the observed inactive recovery target while retaining original Function authority', () => {
+    const profile = resolveRuntimeReleaseProfile('native-recovery-e2c3dc5');
+    expect(profile.activeVersionRef).toBe('1199953805313');
+    expect(profile.functionsSourceCommit).toBe('9b94149272d1b62c34f44dda3bde209e80b4ae22');
+    expect(Object.isFrozen(profile)).toBe(true);
+  });
   it('selects the speed candidate while preserving the active performance target', () => {
     const selected = resolveRuntimeReleaseProfile('native-speed-e52be93');
     expect(selected.activeVersionRef).toBe('1199807692801');

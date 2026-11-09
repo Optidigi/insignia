@@ -31,6 +31,7 @@ export function resolveNativePurchaseQualification(input: {
   const profile = resolveRuntimeReleaseProfile(input.releaseProfile);
   if (
     ![
+      'native-recovery-e2c3dc5',
       'native-speed-e52be93',
       'native-performance-b2729a6',
       'native-parity-466a687',
