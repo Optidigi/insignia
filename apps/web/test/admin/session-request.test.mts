@@ -367,3 +367,38 @@ for (const [name, request] of [
     }
   });
 }
+
+test('selected and retained consumers share one in-flight session token acquisition', async () => {
+  const originalFetch = globalThis.fetch;
+  let tokenCalls = 0;
+  let release: (value: string) => void = () => {};
+  const pending = new Promise<string>((resolve) => {
+    release = resolve;
+  });
+  const restore = replaceWindow({
+    shopify: {
+      idToken: () => {
+        tokenCalls++;
+        return pending;
+      },
+    },
+  });
+  const token = `synthetic.${Buffer.from(JSON.stringify({ exp: Date.now() / 1000 + 3600 })).toString('base64url')}.synthetic`;
+  const sent: string[] = [];
+  globalThis.fetch = async (path) => {
+    sent.push(String(path));
+    return Response.json({ ok: true });
+  };
+  try {
+    const retained = authenticatedJson('/retained-read');
+    const selected = selectedJson('/selected-read');
+    release(token);
+    await Promise.all([retained, selected]);
+    assert.equal(tokenCalls, 1);
+    assert.deepEqual(sent.sort(), ['/retained-read', '/selected-read']);
+  } finally {
+    release(token);
+    restore();
+    globalThis.fetch = originalFetch;
+  }
+});
