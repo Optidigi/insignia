@@ -374,8 +374,10 @@ for (const engine of [chromium, firefox]) {
     await page.waitForFunction(() => Reflect.get(window, 'appliedCloses') === 2);
     assert.equal(await page.evaluate(() => Reflect.get(window, 'writes').length), 2);
     assert.equal(await page.evaluate(() => Reflect.get(window, 'appliedCloses')), 2);
+    const closesBeforeCompletion = await page.evaluate(() => Reflect.get(window, 'designerClosed'));
     await frame.locator('.header-actions button').last().click();
-    await page.waitForFunction(() => Reflect.get(window, 'designerClosed') > 0);
+    await page.waitForFunction((previous) => Reflect.get(window, 'designerClosed') > previous, closesBeforeCompletion);
+    await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
     await page.evaluate(() => Reflect.get(window, 'liveFrame').open());
     const done = frame.getByRole('button', { name: 'Done', exact: true });
     await done.waitFor();
