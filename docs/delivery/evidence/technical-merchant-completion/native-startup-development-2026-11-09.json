@@ -1,6 +1,17 @@
 {
-  "classification": "QUALIFIED_STARTUP_DEVELOPMENT_ACTIVATION_WITH_NATIVE_UI_AND_SIGNING_PENDING",
-  "recordedAt": "2026-11-09T11:01:16.776576+00:00",
+  "initialObservation": {
+    "classification": "QUALIFIED_STARTUP_DEVELOPMENT_ACTIVATION_WITH_NATIVE_UI_AND_SIGNING_PENDING",
+    "recordedAt": "2026-11-09T11:01:16.776576+00:00",
+    "meaning": "Historical activation observation; pending labels describe this initial observation only."
+  },
+  "closeout": {
+    "classification": "DEVELOPMENT_ACTIVATION_WITH_VERIFIED_SIGNING_COPY_AND_QUOTE_CART_FOLLOWUPS",
+    "recordedAt": "2026-11-09T12:37:09.684139+00:00",
+    "signingEvidence": "native-signing-rotation-development-2026-11-09.json",
+    "quoteCartEvidence": "native-startup-quote-cart-development-2026-11-09.json",
+    "checkpointPayloadDisposal": "COMPLETED_BEFORE_DEADLINE",
+    "productionCutover": false
+  },
   "source": {
     "pullRequest": 265,
     "head": "19bd48754e3e708cc5bbb7e82b525e3c5520b080",

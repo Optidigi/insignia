@@ -20,7 +20,7 @@ The reported duplication and complexity leads were checked against consumers:
 - `apps/web/src/shared/admin-request.ts` now re-exports the canonical frontend implementation. Cancellation, token deduplication and ordinary 401 recovery remain. Only the single-use signing POST suppresses automatic resend.
 - Production imports under `frontend/admin/examples/admin/support` are intentional shared presentation and workflow owners. Their production consumers remain connected.
 - `SelectedProductEditor.tsx` has substantial state/effect coordination. Existing photo-picker and Methods reducers remain the owners. File size did not justify a broad refactor.
-- Theme fallback styles did suppress interactions. The correction preserves idle fallback, hover, focus, transitions and manual placement. Chromium and Firefox fixtures pass; the current native theme also passed observed interaction checks.
+- Theme fallback styles did suppress interactions. The correction preserves idle fallback, hover, focus, transitions and manual placement. Chromium and Firefox fixtures pass. Earlier 9 November native investigation observed theme interaction behavior; those checks were not all repeated on the final artifact.
 
 ## Exact development baseline
 
@@ -54,7 +54,7 @@ Customer email dispatch remains disabled. No EUR qualification profile is config
 
 | Work | Evidence and practical limit |
 | --- | --- |
-| Theme and modal startup | Combined interaction fixtures and dual-engine startup cases pass. A gated late abort reproduced stale cleanup; ownership and idempotent cleanup corrected it. Native loader/Escape/reopen, focus and current-theme scrolling were observed. |
+| Theme and modal startup | The final cleanup correction passed 14 startup cases in Chromium and Firefox. A gated late abort reproduced stale cleanup before the fix. Native loader/Escape/reopen, focus and theme scrolling observations came from the earlier 9 November investigation. The later final-artifact journey opened Designer and completed quote/cart, but did not repeat every startup interaction. |
 | Q1 acceptance recovery | Serialized terminal-decline authority, original-result replay, client repair and fresh explicit consent are integrated. Unknown acceptance keeps its identity. Tests cover races, retained reads, postcommit failures and cancellation. Native changed-price recovery was not forced. |
 | QA009 and Copy | Shared dialog lifecycle regressions pass. Native Copy discovery, selected review, Cancel, scrim removal and repeated pointer reopening pass without a product write. The visible review showed four views and six placements. It did not show numeric prices or Method names. |
 | Signing rotation | One native setup POST returned 202 and durable PROVISIONED. Independent database/provider readback found key 2 solely active, key 1 retiring with unchanged material and dates, unchanged epoch 0 and exact public configuration. Temporary owner mounts were removed. |
