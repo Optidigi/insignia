@@ -163,6 +163,7 @@ export function createDesignerRuntime(
           type: "upload-rejected",
           token,
           target,
+          fileName: file.name,
           reason:
             file.size > 5 * 1024 * 1024
               ? "file-too-large"
@@ -172,7 +173,7 @@ export function createDesignerRuntime(
       }
       const controller = new AbortController();
       uploadController = controller;
-      const started: DesignerEvent = { type: "upload-started", token, target };
+      const started: DesignerEvent = { type: "upload-started", token, target, fileName: file.name };
       if (designerReducer(getState(), started) === getState()) {
         uploadController = null;
         controller.abort();

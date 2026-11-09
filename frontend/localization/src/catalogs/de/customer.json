@@ -80,10 +80,17 @@
     "provideArtworkLater": "Motiv später nachreichen",
     "uploadingFile": "Datei wird hochgeladen…",
     "processingFile": "Datei wird geprüft…",
-    "uploadFailed": "Hochladen fehlgeschlagen. Wähle die Datei erneut aus.",
+    "uploadFailed": "Der Upload ist fehlgeschlagen. Versuchen Sie es erneut oder wählen Sie eine andere Datei.",
     "processingFailed": "Die Datei konnte nicht geprüft werden. Versuche es erneut.",
     "inspectionRejected": "Dieses Bild wurde abgelehnt. Wähle ein unterstütztes statisches Bild.",
-    "artworkExpired": "Diese Datei ist abgelaufen. Lade sie erneut hoch."
+    "artworkExpired": "Diese Datei ist abgelaufen. Lade sie erneut hoch.",
+    "cancelUpload": "Upload abbrechen",
+    "retryUpload": "Erneut versuchen",
+    "uploadErrorTitle": "Motiv nicht hochgeladen",
+    "chooseAnotherFile": "Andere Datei auswählen",
+    "cancelTitle": "Diesen Upload abbrechen?",
+    "cancelHelp": "Diese Datei ist noch nicht bereit. Beim Abbrechen wird nur dieser Upload gestoppt. Ihre bisherige Auswahl bleibt erhalten.",
+    "keepUploading": "Weiter hochladen"
   },
   "quantities": {
     "heading": "Mengen",
@@ -249,5 +256,11 @@
     "savedDesigns": "Gespeicherte Designs",
     "openSaved": "Gespeichertes Design öffnen",
     "startNew": "Neues Design starten"
+  },
+  "close": {
+    "title": "Personalisierung schließen?",
+    "help": "Ihr Entwurf bleibt erhalten, solange diese Seite geöffnet ist. Beim Schließen wird er nicht zum Warenkorb hinzugefügt.",
+    "keepEditing": "Weiter bearbeiten",
+    "leave": "Personalisierung schließen"
   }
 }

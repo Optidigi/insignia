@@ -3,6 +3,17 @@ import type { CustomerMessageKey } from '@insignia/ui-localization/customer';
 
 /** Merchant-facing field names, kept separate from editable buyer copy. */
 export const customerWordingLabels = {
+  'customer:artwork.cancelUpload': 'settings:translations.fields.customer_artwork_cancelUpload',
+  'customer:artwork.retryUpload': 'settings:translations.fields.customer_artwork_retryUpload',
+  'customer:artwork.uploadErrorTitle': 'settings:translations.fields.customer_artwork_uploadErrorTitle',
+  'customer:artwork.chooseAnotherFile': 'settings:translations.fields.customer_artwork_chooseAnotherFile',
+  'customer:artwork.cancelTitle': 'settings:translations.fields.customer_artwork_cancelTitle',
+  'customer:artwork.cancelHelp': 'settings:translations.fields.customer_artwork_cancelHelp',
+  'customer:artwork.keepUploading': 'settings:translations.fields.customer_artwork_keepUploading',
+  'customer:close.title': 'settings:translations.fields.customer_close_title',
+  'customer:close.help': 'settings:translations.fields.customer_close_help',
+  'customer:close.keepEditing': 'settings:translations.fields.customer_close_keepEditing',
+  'customer:close.leave': 'settings:translations.fields.customer_close_leave',
   'customer:startup.loading': 'settings:translations.fields.customer_startup_loading',
   'customer:startup.failure': 'settings:translations.fields.customer_startup_failure',
   'customer:startup.retry': 'settings:translations.fields.customer_startup_retry',

@@ -80,10 +80,17 @@
     "provideArtworkLater": "Ontwerp later aanleveren",
     "uploadingFile": "Bestand uploaden…",
     "processingFile": "Bestand controleren…",
-    "uploadFailed": "Upload mislukt. Kies het bestand opnieuw.",
+    "uploadFailed": "Uploaden is mislukt. Probeer het opnieuw of kies een ander bestand.",
     "processingFailed": "Het bestand kon niet worden gecontroleerd. Probeer opnieuw.",
     "inspectionRejected": "Deze afbeelding is afgewezen. Kies een ondersteunde statische afbeelding.",
-    "artworkExpired": "Dit bestand is verlopen. Upload het opnieuw."
+    "artworkExpired": "Dit bestand is verlopen. Upload het opnieuw.",
+    "cancelUpload": "Upload annuleren",
+    "retryUpload": "Opnieuw proberen",
+    "uploadErrorTitle": "Ontwerp niet geüpload",
+    "chooseAnotherFile": "Ander bestand kiezen",
+    "cancelTitle": "Deze upload annuleren?",
+    "cancelHelp": "Dit bestand is nog niet klaar. Annuleren stopt deze upload. Je eerdere keuzes blijven behouden.",
+    "keepUploading": "Upload voortzetten"
   },
   "quantities": {
     "heading": "Aantallen",
@@ -249,5 +256,11 @@
     "savedDesigns": "Opgeslagen ontwerpen",
     "openSaved": "Opgeslagen ontwerp openen",
     "startNew": "Een nieuw ontwerp starten"
+  },
+  "close": {
+    "title": "Personalisatievenster sluiten?",
+    "help": "Je ontwerp blijft beschikbaar zolang deze pagina open is. Sluiten voegt het niet toe aan je winkelwagen.",
+    "keepEditing": "Verder ontwerpen",
+    "leave": "Personalisatievenster sluiten"
   }
 }

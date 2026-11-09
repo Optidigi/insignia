@@ -318,6 +318,7 @@
     "restore": "Standaardteksten herstellen",
     "currentSection": "{{section}}, huidige sectie",
     "groups": {
+      "close": "Personalisatievenster sluiten",
       "chrome": "Algemeen",
       "steps": "Navigatie",
       "artwork": "Ontwerp",
@@ -334,6 +335,17 @@
       "postOrder": "Ontwerp na bestelling"
     },
     "fields": {
+      "customer_artwork_cancelUpload": "Knop upload annuleren",
+      "customer_artwork_retryUpload": "Knop opnieuw proberen",
+      "customer_artwork_uploadErrorTitle": "Kop bij uploadfout",
+      "customer_artwork_chooseAnotherFile": "Knop ander bestand kiezen",
+      "customer_artwork_cancelTitle": "Kop bij upload annuleren",
+      "customer_artwork_cancelHelp": "Uitleg bij upload annuleren",
+      "customer_artwork_keepUploading": "Knop upload voortzetten",
+      "customer_close_title": "Kop bij personalisatievenster sluiten",
+      "customer_close_help": "Uitleg bij personalisatievenster sluiten",
+      "customer_close_keepEditing": "Knop verder ontwerpen",
+      "customer_close_leave": "Knop personalisatievenster sluiten",
       "customer_chrome_skipToDesignControls": "Naar ontwerpbediening gaan",
       "customer_chrome_closeCustomizer": "Personalisatievenster sluiten",
       "customer_chrome_closeArtworkPreview": "Ontwerpvoorbeeld sluiten",

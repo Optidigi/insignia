@@ -1116,6 +1116,10 @@ test('verified inline completion retains media expiry and renewal while rejectin
   assert.equal(unavailable.completion, app.state.completion, 'lifecycle changes preserve verified completion');
   assert.equal(designerReducer(unavailable, { type: 'step-selected', step: 0 }), unavailable);
   assert.equal(canCommitDesign(unavailable), false);
+  const closed = designerReducer(unavailable, { type: 'close-requested' });
+  assert.equal(closed.open, false);
+  assert.equal(closed.modal.kind, 'closed');
+  assert.equal(closed.completion, null, 'closing retires the inline completion as the existing product-return action does');
 });
 
 
@@ -1152,4 +1156,107 @@ test('explicit preparation Retry recovers a transient preflight read before quot
   assert.equal(commits.length, 2);
   assert.equal(commits[1].idempotencyKey, commits[0].idempotencyKey);
   assert.notEqual(app.state.completion, null);
+});
+
+test('close confirmation keeps draft, cancels safely and resumes exact intent', () => {
+  const original = ready();
+  const requested = designerReducer(original, { type: 'close-requested' });
+  assert.equal(requested.open, true);
+  assert.equal(requested.modal.kind, 'confirm-close');
+  assert.deepEqual(requested.prints, original.prints);
+  assert.deepEqual(requested.quantities, original.quantities);
+  const canceled = designerReducer(requested, { type: 'modal-closed' });
+  assert.equal(canceled.open, true);
+  assert.deepEqual(canceled.prints, original.prints);
+  const closed = designerReducer(requested, { type: 'product-return-requested' });
+  assert.equal(closed.open, false);
+  const resumed = designerReducer(closed, { type: 'designer-reopened' });
+  assert.deepEqual(resumed.prints, original.prints);
+  assert.deepEqual(resumed.quantities, original.quantities);
+  assert.equal(resumed.open, true);
+});
+
+test('empty clean design closes without asking for confirmation', () => {
+  const original = { ...ready(), prints: [], quantities: {}, artworks: [] };
+  const closed = designerReducer(original, { type: 'close-requested' });
+  assert.equal(closed.open, false);
+  assert.equal(closed.modal.kind, 'closed');
+});
+
+test('closing an active upload asks without aborting and can keep the same request running', async () => {
+  const deferred = delayed();
+  let request!: UploadRequest;
+  const app = harness({ artwork: { upload: async (_file, value) => { request = value; return deferred.promise; } }, cart: { commit: async () => { throw Error('unused'); } } });
+  app.dispatch({ type: 'modal-opened', modal: { kind: 'artwork', positionId: 'front' } });
+  const pending = app.runtime.upload(new File(['image'], 'pending.png', { type: 'image/png' }), 'front');
+  app.dispatch({ type: 'upload-close-requested' });
+  assert.equal(app.state.modal.kind, 'confirm-upload-cancel');
+  assert.equal(app.state.upload.kind, 'reading');
+  assert.equal(request.signal.aborted, false);
+  app.dispatch({ type: 'upload-continue-requested' });
+  assert.equal(app.state.modal.kind, 'artwork');
+  deferred.resolve({ id: 'accepted', name: 'pending.png', url: '/pending.png', width: 10, height: 10 });
+  await pending;
+  assert.equal(app.state.prints[0].artworkId, 'accepted');
+});
+
+test('upload success or failure while interruption confirmation is open settles to the real result', async () => {
+  for (const outcome of ['success', 'failure'] as const) {
+    const deferred = delayed();
+    const app = harness({ artwork: { upload: async () => deferred.promise }, cart: { commit: async () => { throw Error('unused'); } } });
+    app.dispatch({ type: 'modal-opened', modal: { kind: 'artwork', positionId: 'front' } });
+    const pending = app.runtime.upload(new File(['image'], 'pending.png', { type: 'image/png' }), 'front');
+    app.dispatch({ type: 'upload-close-requested' });
+    if (outcome === 'success') deferred.resolve({ id: 'accepted', name: 'pending.png', url: '/pending.png', width: 10, height: 10 });
+    else deferred.reject(new Error('unavailable'));
+    await pending;
+    assert.equal(app.state.modal.kind, outcome === 'success' ? 'closed' : 'artwork');
+    assert.equal(app.state.prints[0].artworkId, outcome === 'success' ? 'accepted' : 'logo');
+  }
+});
+
+test('confirmed upload cancellation retains previous artwork and ignores the late result', async () => {
+  const deferred = delayed();
+  let request!: UploadRequest;
+  const app = harness({ artwork: { upload: async (_file, value) => { request = value; return deferred.promise; } }, cart: { commit: async () => { throw Error('unused'); } } });
+  app.dispatch({ type: 'modal-opened', modal: { kind: 'artwork', positionId: 'front' } });
+  const pending = app.runtime.upload(new File(['image'], 'pending.png', { type: 'image/png' }), 'front');
+  const previous = structuredClone(app.state.prints);
+  app.dispatch({ type: 'upload-close-requested' });
+  app.runtime.cancelUpload();
+  app.dispatch({ type: 'modal-closed' });
+  deferred.resolve({ id: 'late', name: 'late.png', url: '/late.png', width: 10, height: 10 });
+  await pending;
+  assert.equal(request.signal.aborted, true);
+  assert.deepEqual(app.state.prints, previous);
+  assert.equal(app.state.modal.kind, 'closed');
+  assert.equal(app.state.upload.kind, 'idle');
+});
+
+test('public close request preserves the existing pending-cart cancel and late-receipt behavior', async () => {
+  const deferred = delayed();
+  let request!: CartRequest;
+  const app = harness({ artwork: { upload: async () => { throw Error('unused'); } }, cart: { commit: async value => { request = value; return deferred.promise; } } });
+  const pending = app.runtime.commit();
+  assert.equal(app.state.commit.kind, 'pending');
+  app.dispatch({ type: 'close-requested' });
+  assert.equal(app.state.open, false);
+  assert.equal(app.state.modal.kind, 'closed');
+  app.runtime.cancel();
+  app.dispatch({ type: 'designer-reopened' });
+  deferred.resolve(receipt(request));
+  await pending;
+  assert.equal(request.signal.aborted, true);
+  assert.equal(app.state.completion, null);
+  assert.equal(app.state.prints[0].artworkId, 'logo');
+});
+
+
+test('a stale close gesture cannot add a confirmation to a closed workflow during a design switch', () => {
+  const closed = designerReducer(ready(), { type: 'product-return-requested' });
+  const stale = designerReducer(closed, { type: 'close-requested' });
+  assert.equal(stale, closed);
+  const resumed = designerReducer(stale, { type: 'designer-reopened' });
+  assert.equal(resumed.open, true);
+  assert.equal(resumed.modal.kind, 'closed');
 });

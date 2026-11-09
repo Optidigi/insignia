@@ -80,10 +80,17 @@
     "provideArtworkLater": "Fornisci la grafica in seguito",
     "uploadingFile": "Caricamento del file…",
     "processingFile": "Verifica del file…",
-    "uploadFailed": "Caricamento non riuscito. Seleziona di nuovo il file.",
+    "uploadFailed": "Caricamento non riuscito. Riprova o scegli un altro file.",
     "processingFailed": "Impossibile verificare il file. Riprova.",
     "inspectionRejected": "Questa immagine è stata rifiutata. Scegli un’immagine statica supportata.",
-    "artworkExpired": "Questo file è scaduto. Caricalo di nuovo."
+    "artworkExpired": "Questo file è scaduto. Caricalo di nuovo.",
+    "cancelUpload": "Annulla caricamento",
+    "retryUpload": "Riprova",
+    "uploadErrorTitle": "Grafica non caricata",
+    "chooseAnotherFile": "Scegli un altro file",
+    "cancelTitle": "Annullare questo caricamento?",
+    "cancelHelp": "Questo file non è ancora pronto. Annullando interrompi questo caricamento e mantieni le scelte precedenti.",
+    "keepUploading": "Continua il caricamento"
   },
   "quantities": {
     "heading": "Quantità",
@@ -253,5 +260,11 @@
     "savedDesigns": "Design salvati",
     "openSaved": "Apri design salvato",
     "startNew": "Inizia un nuovo design"
+  },
+  "close": {
+    "title": "Chiudere la personalizzazione?",
+    "help": "Il tuo design resta disponibile finché questa pagina è aperta. Chiudendo, non verrà aggiunto al carrello.",
+    "keepEditing": "Continua a modificare",
+    "leave": "Chiudi personalizzazione"
   }
 }
