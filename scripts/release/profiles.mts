@@ -8,6 +8,8 @@ import cartCandidate from '../../deployment/m5-runtime/native-cart-release-bindi
 import fixedModules from '../../deployment/m5-runtime/native-fixed-module-baseline.json' with { type: 'json' };
 import fixedCandidate from '../../deployment/m5-runtime/native-fixed-release-binding.json' with { type: 'json' };
 import historicalModules from '../../deployment/m5-runtime/native-function-module-baseline.json' with { type: 'json' };
+import loadingModules from '../../deployment/m5-runtime/native-loading-module-baseline.json' with { type: 'json' };
+import loadingCandidate from '../../deployment/m5-runtime/native-loading-release-binding.json' with { type: 'json' };
 import parityModules from '../../deployment/m5-runtime/native-parity-module-baseline.json' with { type: 'json' };
 import parityCandidate from '../../deployment/m5-runtime/native-parity-release-binding.json' with { type: 'json' };
 import performanceModules from '../../deployment/m5-runtime/native-performance-module-baseline.json' with {
@@ -78,6 +80,14 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  'native-loading-defd05b0': {
+    versionId: loadingCandidate.versionId,
+    versionTag: loadingCandidate.versionTag,
+    versionIds: loadingCandidate.versionIds,
+    moduleHash: loadingCandidate.moduleHash,
+    modules: loadingModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+  },
   'native-review-cart-1f4595f': {
     versionId: reviewCartCandidate.versionId,
     versionTag: reviewCartCandidate.versionTag,
