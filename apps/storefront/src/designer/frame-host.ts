@@ -49,6 +49,7 @@ export function prewarmDesignerAssets(): () => void {
 
 /** Run the selected CSS and event handlers in their own document, never in the Shopify theme. */
 export function createDesignerFrame(input: {
+  modal?: ReturnType<typeof createDesignerModal>;
   config?: ProductConfig;
   initiallyHidden?: boolean;
   title?: string;
@@ -87,24 +88,29 @@ export function createDesignerFrame(input: {
   let documentLoaded = false;
   let failed = false;
   let destroyed = false;
-  const modal = createDesignerModal({
-    initiallyHidden: input.initiallyHidden,
-    wording: input.wording,
-    locale: input.locale,
-    title: frame.title,
-    onCancel: () => {
-      if (initialized) send('insignia:designer:request-close');
-      else close();
-    },
-    ...(input.onInitializationRetry
-      ? {
-          onRetry: () => {
-            destroy();
-            void input.onInitializationRetry?.();
-          },
-        }
-      : {}),
-  });
+  const cancel = () => {
+    if (initialized) send('insignia:designer:request-close');
+    else close();
+  };
+  const modal =
+    input.modal ??
+    createDesignerModal({
+      initiallyHidden: input.initiallyHidden,
+      wording: input.wording,
+      locale: input.locale,
+      title: frame.title,
+      onCancel: cancel,
+      ...(input.onInitializationRetry
+        ? {
+            onRetry: () => {
+              destroy();
+              void input.onInitializationRetry?.();
+            },
+          }
+        : {}),
+    });
+  modal.setCancelHandler(cancel);
+  modal.setTitle(frame.title);
   frame.style.visibility = 'hidden';
   modal.dialog.append(frame);
   const initializationTimer = setTimeout(() => {

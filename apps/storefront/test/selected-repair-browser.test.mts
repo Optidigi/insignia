@@ -91,6 +91,13 @@ test('selected repair keeps cart unchanged until actual remaining-cart review is
   await page.goto(`http://127.0.0.1:${serverPort(server)}/`);
   const frame = page.frameLocator('iframe');
   await frame.getByRole('heading', { name: 'Your customization needs review' }).waitFor();
+  const repairBounds = await frame
+    .getByRole('region', { name: 'Your customization needs review', exact: true })
+    .boundingBox();
+  assert.ok(
+    repairBounds && repairBounds.width <= 600 && repairBounds.x > 100,
+    'Recovery stays in a selected centered panel inside the modal',
+  );
   assert.equal(await page.evaluate(() => Reflect.get(window, 'confirmed')), 0);
   await frame.getByRole('button', { name: 'Review removing this customization', exact: true }).click();
   await frame.getByText('Retained sibling customization', { exact: false }).waitFor();

@@ -40,10 +40,10 @@ export function DesignerRepair({
     }
   }
   return (
-    <main className="app">
-      <section className="panel-content" aria-label={t('customer:recovery.repairRequired')}>
+    <main className="admin-preview-message">
+      <section aria-label={t('customer:recovery.repairRequired')}>
         <div className="section-heading">
-          <h2>{t(canRemoveAll ? 'customer:recovery.repairRequired' : 'customer:chrome.unavailable')}</h2>
+          <h1>{t(canRemoveAll ? 'customer:recovery.repairRequired' : 'customer:chrome.unavailable')}</h1>
         </div>
         {canRemoveAll && <p>{t('customer:recovery.repairHelp')}</p>}
         {failed && (
