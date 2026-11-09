@@ -4,6 +4,12 @@ This directory retains the actual deployment configuration/data boundary; its `m
 
 Active VPS management custody is `%h/.local/share/insignia/runtime/`. Some live mounts and database Compose configuration still reference the older `insignia-m8-runtime-20261013-pr114` and `insignia-m5-verify-20261012-r2` directories. Their historical names do not make those dependencies disposable. Inspect current mounts/configuration before removing or relocating anything.
 
+## Startup candidate development transition
+
+`native-startup-771bb8f` binds inactive version1200333160449, the complete27-version inventory and exact14-module baseline. Its21 theme files (12 CI assets) are frozen from foundation42595259659/attempt1 and PR264 mergea58d8025/tree198bd77c. All13 non-theme configurations, original native registration identities and9b941 Function binaries remain unchanged. This is candidate custody, not activation, independent admission, signing completion or native acceptance.
+
+Use matching final binding-head web/worker/verifier artifacts and the closed profile in all consumers, preserve schema52/grants and compatible recovery, and reconcile the single development release before fresh independent admission. Creating this inactive candidate expands inventory; the preceding closed profile now intentionally fails admission. Never widen inventory/freshness checks or restamp an old receipt. All NEVER_RELEASE versions remain inactive. The signing allocation stays unmounted and undispatched until its separately qualified first-party invocation; key1 dates remain unchanged and replacement development lastDay is trusted provisioning shop day+31.
+
 ## Recovery candidate development transition
 
 `native-recovery-e2c3dc5` binds the independently observed inactive version1199953805313, all26 observed versions and the exact14-module baseline. All13 non-theme configurations and original9b941 Function identities/binaries remain unchanged. Its21 theme files, including12 CI assets, are frozen from foundation42548633865/attempt1 and merged sourcee2c3dc51/treec5ad8fed. The binding is not activation or admission evidence. Preserve historical profiles and every NEVER_RELEASE version.
