@@ -1,0 +1,68 @@
+{
+  "classification": "WORKER_ONLY_DEVELOPMENT_REPLACEMENT_QUALIFIED_WITH_CORRELATED_READER_BOUNDARY",
+  "observedAt": "2026-11-09T05:11:40.134139+00:00",
+  "sourcePR": 262,
+  "merge": "7c24473481792c4816d393b2fc49d02127f70efb",
+  "head": "986aa21a54800e6cdfd88ab04f778dc9fc7ede4d",
+  "tree": "bebf4d31ebeeefee80158332193ab6efd7b2bbe4",
+  "ciSynthetic": "fe3c27df23748976dbda702828f233e73c121583",
+  "ciRuns": {
+    "runtime": "42564170692",
+    "foundation": "42564170684",
+    "durable": "42564170685"
+  },
+  "workerImage": {
+    "manifestId": "sha256:ade9e2e4c19070aab351bfe263f611a0651542bbab5d0985ee1f37bbaeaf0356",
+    "configId": "sha256:9bb4b75b923b76d02877df2b65a7cde43cac6e7e1b1c0c8852bdf72e607c3f8d",
+    "archiveSha256": "2119ae06e1838367dc27a14a29deb6d5acf4040d4fe564d3c4c783204f713a5e",
+    "sizeBytes": 315233792
+  },
+  "workerBudget": {
+    "corePoolMax": 2,
+    "queuePoolMax": 2,
+    "connections": 3,
+    "limit": 4
+  },
+  "services": {
+    "web": {
+      "running": true,
+      "image": "sha256:6d50e4a8c3d559e5784ba70f1c0b9554f88f238a9b6d12c3ce000b5f65801050",
+      "health": "healthy",
+      "restartCount": 0
+    },
+    "worker": {
+      "running": true,
+      "image": "sha256:ade9e2e4c19070aab351bfe263f611a0651542bbab5d0985ee1f37bbaeaf0356",
+      "health": "healthy",
+      "restartCount": 0
+    },
+    "verifier": {
+      "running": true,
+      "image": "sha256:5cba0edca2248886a3e72549311a1f2ea4b362a13a53b60df5a8b76c352671bf",
+      "health": null,
+      "restartCount": 0
+    }
+  },
+  "schema": 52,
+  "protectedPurchaseFactsUnchanged": true,
+  "pendingApplicationPreserved": true,
+  "webVerifierInspectorUnchanged": true,
+  "theme21FilesByteIdentical": true,
+  "newShopifyRelease": false,
+  "profile": "native-recovery-e2c3dc5",
+  "appVersion": "1199953805313",
+  "historicalFiniteReleaseEvidence": {
+    "requestId": "d41ee573-7113-4f2a-af59-dc401625a9fe",
+    "recordId": "38330c70-006f-49fd-ba98-1bec55dfdff3",
+    "observedAt": "2026-11-09T05:10:30.469Z",
+    "expiresAt": "2026-11-09T05:10:58.839Z",
+    "webRead": "PASS",
+    "workerImageRoleRead": "PASS",
+    "workerReadBoundary": "STANDALONE_READER_IN_QUALIFIED_WORKER_IMAGE_WITH_EXISTING_ROLE_DURING_GRACEFUL_QUIESCENCE_NOT_RUNNING_PURCHASE_PROCESS",
+    "readerReadOnly": true,
+    "oneoffRemoved": true
+  },
+  "actualPurchaseProcessing": "NOT_ASSERTED",
+  "nativeUIQualification": "PARTIAL_SEE_CURRENT_STATE",
+  "productionCutover": false
+}
