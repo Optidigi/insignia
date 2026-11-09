@@ -913,6 +913,7 @@ function DesignerSession({
     (!runtime.prepared || quoteReview?.totalMinor === undefined)
     ? workflow.commit.kind === 'failed' || quoteExpired ? 'unavailable' : 'loading'
     : undefined;
+  const footerBusy = workflow.commit.kind === 'pending' || (step === 2 && workflow.commit.kind === 'preparing');
   const dirtyDraft = hasDraftChanges(workflow);
   useEffect(() => {
     if (!dirtyDraft || allowUnload || previewOnly) return;
@@ -1806,14 +1807,14 @@ function DesignerSession({
                 <button
                   className={`primary-button ${step === 2 ? 'cart-button' : ''}`}
                   disabled={
-                    workflow.commit.kind === 'pending' || workflow.commit.kind === 'preparing' ||
+                    footerBusy ||
                     (step === 2 && !!ports.review && (!editing || unappliedDraft) && !runtime.prepared && !quoteExpired && workflow.commit.kind !== 'failed') ||
                     (step === 1 && !quantitiesLayout.cells.some((cell) => cell.available))
                   }
-                  aria-busy={workflow.commit.kind === 'pending' || workflow.commit.kind === 'preparing'}
+                  aria-busy={footerBusy}
                   onClick={step === 2 ? (quoteExpired || (workflow.commit.kind === 'failed' && workflow.commit.preparation) ? () => void runtime.commit(true) : editing && !unappliedDraft ? returnToProduct : addToCart) : goNext}
                 >
-                  {workflow.commit.kind === 'pending' || workflow.commit.kind === 'preparing'
+                  {footerBusy
                     ? workflow.commit.kind === 'preparing'
                       ? t('customer:chrome.preparingQuote')
                       : editing
