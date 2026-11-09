@@ -14,8 +14,11 @@ export async function ensurePinnedTool(destination: string, kind: 'runner' | 'tr
     const url =
       kind === 'runner'
         ? 'https://github.com/Shopify/function-runner/releases/download/v9.2.2/function-runner-x86_64-linux-v9.2.2.gz'
-        : 'https://github.com/Shopify/shopify-function-wasm-api/releases/download/shopify_function_trampoline/v2.0.1/shopify-function-trampoline-x86_64-linux-v2.0.1.gz';
-    const response = await fetch(url);
+        : 'https://api.github.com/repos/Shopify/shopify-function-wasm-api/releases/assets/298980878';
+    const response = await fetch(
+      url,
+      kind === 'trampoline' ? { headers: { Accept: 'application/octet-stream' } } : undefined,
+    );
     assert(response.ok && response.body, `Pinned Function tool download failed (HTTP ${response.status})`);
     const chunks: Buffer[] = [],
       maximum = 128 * 1024 * 1024;
