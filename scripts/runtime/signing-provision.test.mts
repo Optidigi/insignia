@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -295,6 +296,91 @@ test('a pending-key wait cannot carry expired release authority into provider pu
     assert.equal(result.pendingCreateAcknowledged, true);
     assert.equal(result.publicConfigWriteAttempted, false);
     assert.equal(required(f.rows[0]).state, 'pending');
+  } finally {
+    await f.close();
+  }
+});
+
+test('retained key rotation publishes both keys by CAS before activating fresh key 2', async () => {
+  const f = await fixture();
+  const digest = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
+  try {
+    await f.lifecycle.createPending({
+      scope: f.scope,
+      keyId: 1,
+      firstDay: f.plan.firstDay - 1,
+      lastDay: f.plan.lastDay - 1,
+    });
+    await f.lifecycle.activate(f.scope, 1);
+    const old = required(f.rows.find((row) => row.id === 1));
+    const retained = digest({ ...old, state: undefined });
+    const originalScope = { ...f.scope };
+    const prior = await f.lifecycle.desiredPublicConfig(f.scope);
+    assert.throws(
+      () => f.ports.app.requireIssuanceReady({ config: prior, keyId: 1, acceptedDay: f.plan.firstDay }),
+      /not issuance ready/,
+    );
+    assert.doesNotThrow(() =>
+      f.ports.app.requireIssuanceReady({ config: prior, keyId: 1, acceptedDay: f.plan.firstDay - 1 }),
+    );
+    f.setPublicValue(prior.value);
+    f.plan.keyId = 2;
+    f.ports.journal = await reserveSigningProvisionRun(join(f.directory, 'rotation-run'), f.plan);
+    const execute = f.transport.execute;
+    let published = false,
+      readBack = false;
+    f.transport.execute = async (request) => {
+      if (request.operation === 'set') {
+        assert.equal(old.state, 'active');
+        const pending = required(f.rows.find((row) => row.id === 2));
+        assert.equal(pending.state, 'pending');
+        assert.notEqual(pending.publicKeyFingerprint, old.publicKeyFingerprint);
+        const fields = request.variables.metafields as { value: string; compareDigest: string }[];
+        const field = required(fields[0]);
+        assert.equal(field.compareDigest, 'a'.repeat(64));
+        const config = JSON.parse(field.value);
+        assert.equal(config.epoch, originalScope.authorizationEpoch);
+        assert.equal(config.generationHex, originalScope.authorizationGeneration.replaceAll('-', ''));
+        assert.deepEqual(config.keys, [
+          ...JSON.parse(prior.value).keys,
+          {
+            id: 2,
+            publicHex: Buffer.from(pending.publicKey).toString('hex'),
+            revoked: false,
+            firstDay: f.plan.firstDay,
+            lastDay: f.plan.lastDay,
+          },
+        ]);
+        published = true;
+      } else if (published) readBack = true;
+      return execute(request);
+    };
+    const activate = f.ports.core.signingKeys.activate;
+    f.ports.core.signingKeys.activate = async (...args) => {
+      assert.equal(published && readBack, true);
+      assert.equal(old.state, 'active');
+      return activate(...args);
+    };
+    const result = await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
+    assert.equal(result.classification, 'SIGNING_KEY_CONFIG_PROVISIONED');
+    assert.equal(result.pendingCreateAcknowledged, true);
+    assert.equal(result.publicConfigWriteAcknowledged, true);
+    assert.equal(result.activationAcknowledged, true);
+    assert.equal(result.retryAuthorized, false);
+    assert.equal(result.quoteIssuanceAuthorized, false);
+    assert.equal(f.requests.filter((operation) => operation === 'set').length, 1);
+    assert.equal(old.state, 'retiring');
+    assert.equal(digest({ ...old, state: undefined }), retained);
+    assert.deepEqual(f.scope, originalScope);
+    assert.deepEqual(
+      f.rows.filter((row) => row.state === 'active').map((row) => row.id),
+      [2],
+    );
+    const current = await f.lifecycle.desiredPublicConfig(f.scope);
+    assert.equal(f.publicValue(), current.value);
+    assert.doesNotThrow(() =>
+      f.ports.app.requireIssuanceReady({ config: current, keyId: 2, acceptedDay: f.plan.firstDay }),
+    );
   } finally {
     await f.close();
   }
