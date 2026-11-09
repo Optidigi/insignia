@@ -1012,6 +1012,43 @@ test('verified cart handoff does not wait for best-effort application confirmati
   });
 });
 
+test('Quantities footer enters Review while its speculative quote is still preparing', async () => {
+  await withRetainedBuyer(async ({ page, host, accepts, mutations }) => {
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const started = page.waitForRequest('**/quote-proposals');
+    let requests = 0;
+    await page.route('**/quote-proposals', async (route) => {
+      requests++;
+      await held;
+      await route.fallback().catch(() => {});
+    });
+    try {
+      await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+      await host.locator('input[type=number]:enabled').first().fill('4');
+      await started;
+      const next = host.locator('.footer-buttons .primary-button');
+      assert.equal(await next.textContent(), 'Review', 'background preparation cannot replace the navigation action');
+      assert.equal(await next.isEnabled(), true, 'Review navigation cannot wait for quote IO');
+      await next.click();
+      assert.equal(await host.locator('.footer-price strong').textContent(), 'Calculating quote…');
+      assert.equal(await next.isEnabled(), false, 'purchase stays disabled until authoritative preparation finishes');
+      assert.equal(await next.textContent(), 'Preparing quote…');
+      assert.equal(await host.getByRole('button', { name: 'Edit quantities', exact: true }).isEnabled(), true);
+      release();
+      await applyButton(host).waitFor();
+      assert.equal(requests, 1, 'entering Review reuses the in-flight preparation');
+      assert.equal(accepts.length, 0);
+      assert.equal(mutations(), 0);
+    } finally {
+      release();
+      await page.unrouteAll({ behavior: 'ignoreErrors' });
+    }
+  });
+});
+
 test('pending quote preparation keeps review editing responsive and cancels obsolete quantities', async () => {
   await withRetainedBuyer(async ({ page, host, accepts, mutations }) => {
     const started = page.waitForRequest('**/quote-proposals');
