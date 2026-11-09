@@ -301,7 +301,11 @@ for (const engine of [chromium, firefox]) {
     assert.equal(await frame.locator('.footer-price strong').innerText(), '$35.00');
     assert.equal(await page.evaluate(() => Reflect.get(window, 'writes').length), 0);
     await frame.locator('.review-pricing summary').click();
-    await frame.getByText(/Reviewed customized cart/).waitFor();
+    assert.equal(await frame.getByRole('region', { name: 'Design totals', exact: true }).count(), 0);
+    assert.equal(await frame.getByText('Reviewed customized cart', { exact: true }).count(), 0);
+    assert.equal(await frame.locator('.review-pricing summary bdi').innerText(), '$15.00');
+    assert.deepEqual(await frame.locator('.review-costs dd').allTextContents(), ['$10.00', '$5.00']);
+    assert.equal(await frame.locator('.footer-price strong').innerText(), '$35.00');
     await frame.getByRole('button', { name: 'Add to cart', exact: true }).click();
     await frame.locator('.cart-submit-error').waitFor();
     assert.equal(

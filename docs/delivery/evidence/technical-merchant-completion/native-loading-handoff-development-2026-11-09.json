@@ -1,0 +1,748 @@
+{
+  "classification": "QUALIFIED_DEVELOPMENT_LOADING_HANDOFF_AND_NATIVE_CART_PASS_WITH_LATENCY_LIMITS",
+  "recordedAt": "2026-11-09T21:15:25.969189+00:00",
+  "deployment": {
+    "merge": "e15f982ae75d9121b2c90773f6e8669629f996df",
+    "head": "1b231facc74f5af7c855016daf746b27157b92ae",
+    "syntheticCI": "45c5590b5dd13a42da65b6635fa59e520158f444",
+    "tree": "a866e4c98c567afa165be372419cdbdf98c43212",
+    "activeVersion": "1201192632321",
+    "profile": "native-review-nav-8a7ee446",
+    "inventoryCount": 30,
+    "moduleCount": 14,
+    "nonThemeConfigurationsPreserved": 13,
+    "themeFiles": 21,
+    "themeAssets": 12,
+    "functionSource": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+    "moduleCanonicalSha256": "0b8452cc5cfbe750f9bb871f03ae6a2474daaec3a30c5158cee4d0dd37e29dab",
+    "images": [
+      {
+        "name": "web",
+        "archiveSha256": "d9f6fa775426f0495a47030d5900a271badf89ebae30249515c6bec6fcfc4eb2",
+        "sizeBytes": 497882624,
+        "configId": "sha256:f7a9bc8c28c9682c4856aa0fcefdd48f820346b70585684f9ed2c309079532b2",
+        "manifestId": "sha256:a67e6677a749c76fcc5a9f387b9a8d7b562844d08e3844716fc35e853dc4681f"
+      },
+      {
+        "name": "worker",
+        "archiveSha256": "219b07f1310c5a6d0a9b18f324a03d158b6ee18fc09bc7eeb37948f4a7994c52",
+        "sizeBytes": 315240960,
+        "configId": "sha256:2cf1a3788919101f54be71a2f32cc1140748e65b945dcf0a2f07f410bf9f6e9f",
+        "manifestId": "sha256:7a7738fb38c238750835f18d1d53f3164310ea6d91e32bae1d404a96d2a6866e"
+      },
+      {
+        "name": "verifier",
+        "archiveSha256": "1d3b0ffabc22c62368b18539df986d3589489fae95330813fa90914b8cb8a470",
+        "sizeBytes": 473000960,
+        "configId": "sha256:386ba9dc39e4cf9c1a1d116701a1243f27f6c9e855a5573925e5a2a3ec435c3e",
+        "manifestId": "sha256:137d9d6b942f03c43468c5627cc13622d8b1375b495ac13d5037592f68a67402"
+      }
+    ],
+    "verifierManifestSha256": "c516c7bc7be0508f65c4bbcc5ff56ad49856a38ba1165c4b727820d1ad4d3952",
+    "foundationRun": 42696934491,
+    "runtimeRun": 42696934479,
+    "durableRun": 42696934394,
+    "protectedChecks": "ALL_PASSED",
+    "neverReleaseVersionsInactive": [
+      "1158837927937",
+      "1198938357761",
+      "1199165767681"
+    ]
+  },
+  "statePreservation": {
+    "schemaVersions": 52,
+    "keys": [
+      {
+        "id": 1,
+        "state": "retiring",
+        "firstDay": 20736,
+        "lastDay": 20767
+      },
+      {
+        "id": 2,
+        "state": "active",
+        "firstDay": 20766,
+        "lastDay": 20797
+      }
+    ],
+    "acl": {
+      "runtimeDeclineUpdate": true,
+      "runtimeFullUpdate": false,
+      "workerDeclineUpdate": false,
+      "inspectorDeclineUpdate": false
+    },
+    "pendingApplications": 1,
+    "declinedCommands": 0,
+    "protectedFactsMatchedDrainedBaseline": true,
+    "protectedFactCounts": {
+      "purchase_orders": 6,
+      "purchase_paid_facts": 5,
+      "purchase_refund_facts": 2,
+      "purchase_bindings": 5,
+      "purchase_lines": 8
+    },
+    "inspectorActive": true,
+    "servicesRunning": true,
+    "mountsSecurityRestartPreserved": true
+  },
+  "releaseReaderProof": {
+    "requestId": "58829b62-86d1-42b4-bfa8-69470d1fada9",
+    "recordId": "710ed7dc-f572-46b0-977b-1a65a93864f7",
+    "observedAt": "2026-11-09T21:09:05.100Z",
+    "expiresAt": "2026-11-09T21:09:32.560Z",
+    "matchingWebAndQuiescedWorkerRole": true,
+    "continuingAuthority": false,
+    "runningWorkerPurchaseAdmission": "NOT_ASSERTED"
+  },
+  "native": {
+    "sampleCount": 1,
+    "scope": "one synthetic artwork upload, authoritative Review, one Add, one native Remove; no checkout/order/payment",
+    "selection": {
+      "placement": "Buik",
+      "method": "Bedrukken",
+      "size": "Standaard",
+      "variant": [
+        "Zwart",
+        "XS"
+      ],
+      "quantity": 1,
+      "reviewTotalMinor": 2495,
+      "currency": "USD"
+    },
+    "quantities": {
+      "at": 1794258665396.8,
+      "value": 1,
+      "valid": true,
+      "focused": true,
+      "footerLabel": "Review",
+      "enabled": true,
+      "busy": "false"
+    },
+    "reviewLoading": {
+      "at": 1794258665855.6,
+      "footer": "1 itemCalculating quote…Preparing quote…",
+      "purchaseDisabled": true,
+      "editEnabled": true
+    },
+    "reviewReady": {
+      "ready": true,
+      "at": 1794258673080,
+      "price": "$24.95"
+    },
+    "reviewGestureAt": 1794258665802.2002,
+    "reviewReadySampleAfterGestureMs": 7276.1,
+    "proposal": {
+      "type": "resource",
+      "at": 1794258673069.1,
+      "route": "proposal",
+      "startedAt": 1794258667113.8,
+      "duration": 5947.89999961853,
+      "status": 200,
+      "serverDuration": 5689,
+      "requestId": "61de4bfb-7ec3-4b2e-96fa-529cada336a7"
+    },
+    "acceptance": {
+      "type": "resource",
+      "at": 1794258676006.1,
+      "route": "accept",
+      "startedAt": 1794258673557.3,
+      "duration": 2441.5,
+      "status": 200,
+      "serverDuration": 2280,
+      "requestId": "241b8e0f-4222-489f-a355-5ccbf5c52a64"
+    },
+    "addToCompletedDomSampleMs": 5042.1,
+    "addToPagehideMs": 5377.5,
+    "handoffStates": [
+      {
+        "type": "state",
+        "at": 1794258664377.5,
+        "footer": "Per item$24.95Review",
+        "modals": 1,
+        "second": 0,
+        "appVisible": true
+      },
+      {
+        "type": "state",
+        "at": 1794258664877.4001,
+        "footer": "1 item$24.95Review",
+        "modals": 1,
+        "second": 0,
+        "appVisible": true
+      },
+      {
+        "type": "review-gesture",
+        "at": 1794258665802.2002
+      },
+      {
+        "type": "state",
+        "at": 1794258665827.4001,
+        "footer": "1 itemCalculating quote…Preparing quote…",
+        "modals": 1,
+        "second": 0,
+        "appVisible": true
+      },
+      {
+        "type": "state",
+        "at": 1794258673078.3,
+        "footer": "1 item$24.95Add to cart",
+        "modals": 1,
+        "second": 0,
+        "appVisible": true
+      },
+      {
+        "type": "add-gesture",
+        "at": 1794258673445.1
+      },
+      {
+        "type": "state",
+        "at": 1794258673478.6,
+        "footer": "1 item$24.95Preparing quote…",
+        "modals": 1,
+        "second": 0,
+        "appVisible": true
+      },
+      {
+        "type": "state",
+        "at": 1794258673577.5,
+        "footer": "1 item$24.95Adding to cart…",
+        "modals": 1,
+        "second": 0,
+        "appVisible": true
+      },
+      {
+        "type": "state",
+        "at": 1794258678487.2002,
+        "footer": "AddedOpening cart…View cart",
+        "modals": 1,
+        "second": 0,
+        "appVisible": true
+      },
+      {
+        "type": "pagehide",
+        "at": 1794258678822.6
+      }
+    ],
+    "cartResources": [
+      {
+        "type": "resource",
+        "at": 1794258621425.3,
+        "route": "cart-observe",
+        "startedAt": 1794258621308.5,
+        "duration": 115.09999942779541,
+        "status": 200
+      },
+      {
+        "type": "resource",
+        "at": 1794258665309.5,
+        "route": "cart-observe",
+        "startedAt": 1794258665195,
+        "duration": 110.5,
+        "status": 200
+      },
+      {
+        "type": "resource",
+        "at": 1794258673069.1,
+        "route": "proposal",
+        "startedAt": 1794258667113.8,
+        "duration": 5947.89999961853,
+        "status": 200,
+        "serverDuration": 5689,
+        "requestId": "61de4bfb-7ec3-4b2e-96fa-529cada336a7"
+      },
+      {
+        "type": "resource",
+        "at": 1794258673558.3,
+        "route": "cart-observe",
+        "startedAt": 1794258673462,
+        "duration": 91.80000019073486,
+        "status": 200
+      },
+      {
+        "type": "resource",
+        "at": 1794258676006.1,
+        "route": "accept",
+        "startedAt": 1794258673557.3,
+        "duration": 2441.5,
+        "status": 200,
+        "serverDuration": 2280,
+        "requestId": "241b8e0f-4222-489f-a355-5ccbf5c52a64"
+      },
+      {
+        "type": "resource",
+        "at": 1794258676107.8,
+        "route": "cart-observe",
+        "startedAt": 1794258676010.9001,
+        "duration": 90.10000038146973,
+        "status": 200
+      },
+      {
+        "type": "resource",
+        "at": 1794258677793.6,
+        "route": "cart-add",
+        "startedAt": 1794258676107.3,
+        "duration": 1655.7999992370605,
+        "status": 200
+      },
+      {
+        "type": "resource",
+        "at": 1794258677896.3,
+        "route": "cart-observe",
+        "startedAt": 1794258677768.4001,
+        "duration": 122.80000019073486,
+        "status": 200
+      },
+      {
+        "type": "resource",
+        "at": 1794258678468.6,
+        "route": "cart-update",
+        "startedAt": 1794258677895.6,
+        "duration": 564.2000007629395,
+        "status": 200
+      },
+      {
+        "type": "resource",
+        "at": 1794258678562.9001,
+        "route": "cart-observe",
+        "startedAt": 1794258678466.9001,
+        "duration": 94.80000019073486,
+        "status": 200
+      }
+    ],
+    "baseline": {
+      "status": 200,
+      "lines": 0,
+      "units": 0,
+      "total": 0,
+      "currency": "USD",
+      "digest": "862835c996d1837244ae75e034242e76c0cd520a2112d920b2648d8e979e54ba"
+    },
+    "cleanup": {
+      "status": 200,
+      "lines": 0,
+      "units": 0,
+      "total": 0,
+      "currency": "USD",
+      "digest": "862835c996d1837244ae75e034242e76c0cd520a2112d920b2648d8e979e54ba",
+      "readOnlyReconciliationReads": 2
+    },
+    "baselineRestored": true,
+    "ownTabClosed": true,
+    "measurementKeysRemoved": true,
+    "secondCompletionDialogObserved": false,
+    "iframeRetained": true,
+    "samplingMs": 50,
+    "clockBasis": "parent performance.timeOrigin + performance.now; parent/frame origins separately observed",
+    "paintOrPercentileProof": false
+  },
+  "backendTiming": [
+    {
+      "event": "buyer_request_timing",
+      "correlationId": "61de4bfb-7ec3-4b2e-96fa-529cada336a7",
+      "operation": "proposal",
+      "outcome": "success",
+      "totalMs": 5689,
+      "truncated": false,
+      "spans": [
+        {
+          "id": 1,
+          "parentId": null,
+          "stage": "prepare",
+          "offsetMs": 16,
+          "durationMs": 5672,
+          "outcome": "success"
+        },
+        {
+          "id": 2,
+          "parentId": 1,
+          "stage": "prepare",
+          "offsetMs": 16,
+          "durationMs": 5652,
+          "outcome": "success"
+        },
+        {
+          "id": 3,
+          "parentId": 2,
+          "stage": "tenant",
+          "offsetMs": 17,
+          "durationMs": 2,
+          "outcome": "success"
+        },
+        {
+          "id": 4,
+          "parentId": 3,
+          "stage": "native-configuration",
+          "offsetMs": 17,
+          "durationMs": 1,
+          "outcome": "success"
+        },
+        {
+          "id": 5,
+          "parentId": 2,
+          "stage": "entitlement",
+          "offsetMs": 19,
+          "durationMs": 494,
+          "outcome": "success"
+        },
+        {
+          "id": 6,
+          "parentId": 2,
+          "stage": "shop",
+          "offsetMs": 19,
+          "durationMs": 241,
+          "outcome": "success"
+        },
+        {
+          "id": 7,
+          "parentId": 2,
+          "stage": "revision",
+          "offsetMs": 513,
+          "durationMs": 1,
+          "outcome": "success"
+        },
+        {
+          "id": 8,
+          "parentId": 2,
+          "stage": "variant",
+          "offsetMs": 515,
+          "durationMs": 256,
+          "outcome": "success"
+        },
+        {
+          "id": 9,
+          "parentId": 2,
+          "stage": "primary-context",
+          "offsetMs": 772,
+          "durationMs": 258,
+          "outcome": "success"
+        },
+        {
+          "id": 10,
+          "parentId": 2,
+          "stage": "artwork",
+          "offsetMs": 1033,
+          "durationMs": 0,
+          "outcome": "success"
+        },
+        {
+          "id": 11,
+          "parentId": 2,
+          "stage": "positions",
+          "offsetMs": 1034,
+          "durationMs": 0,
+          "outcome": "success"
+        },
+        {
+          "id": 12,
+          "parentId": 2,
+          "stage": "availability",
+          "offsetMs": 1034,
+          "durationMs": 483,
+          "outcome": "success"
+        },
+        {
+          "id": 13,
+          "parentId": 2,
+          "stage": "release-prepare",
+          "offsetMs": 1035,
+          "durationMs": 4356,
+          "outcome": "success"
+        },
+        {
+          "id": 14,
+          "parentId": 13,
+          "stage": "release-prepare",
+          "offsetMs": 1035,
+          "durationMs": 4356,
+          "outcome": "success"
+        },
+        {
+          "id": 15,
+          "parentId": 2,
+          "stage": "current-readiness",
+          "offsetMs": 5391,
+          "durationMs": 277,
+          "outcome": "success"
+        },
+        {
+          "id": 16,
+          "parentId": 15,
+          "stage": "current-readiness",
+          "offsetMs": 5391,
+          "durationMs": 277,
+          "outcome": "success"
+        },
+        {
+          "id": 17,
+          "parentId": 1,
+          "stage": "private-retention",
+          "offsetMs": 5669,
+          "durationMs": 1,
+          "outcome": "success"
+        },
+        {
+          "id": 18,
+          "parentId": 1,
+          "stage": "persistence",
+          "offsetMs": 5671,
+          "durationMs": 15,
+          "outcome": "success"
+        },
+        {
+          "id": 19,
+          "parentId": 1,
+          "stage": "owned-history",
+          "offsetMs": 5686,
+          "durationMs": 2,
+          "outcome": "success"
+        },
+        {
+          "id": 20,
+          "parentId": 1,
+          "stage": "response-projection",
+          "offsetMs": 5688,
+          "durationMs": 0,
+          "outcome": "success"
+        },
+        {
+          "id": 21,
+          "parentId": null,
+          "stage": "response-validation",
+          "offsetMs": 5688,
+          "durationMs": 1,
+          "outcome": "success"
+        }
+      ]
+    },
+    {
+      "event": "buyer_request_timing",
+      "correlationId": "241b8e0f-4222-489f-a355-5ccbf5c52a64",
+      "operation": "acceptance",
+      "outcome": "success",
+      "totalMs": 2280,
+      "truncated": false,
+      "spans": [
+        {
+          "id": 1,
+          "parentId": null,
+          "stage": "prepare",
+          "offsetMs": 4,
+          "durationMs": 2275,
+          "outcome": "success"
+        },
+        {
+          "id": 2,
+          "parentId": 1,
+          "stage": "tenant",
+          "offsetMs": 25,
+          "durationMs": 1,
+          "outcome": "success"
+        },
+        {
+          "id": 3,
+          "parentId": 2,
+          "stage": "native-configuration",
+          "offsetMs": 25,
+          "durationMs": 1,
+          "outcome": "success"
+        },
+        {
+          "id": 4,
+          "parentId": 1,
+          "stage": "entitlement",
+          "offsetMs": 28,
+          "durationMs": 335,
+          "outcome": "success"
+        },
+        {
+          "id": 5,
+          "parentId": 1,
+          "stage": "shop",
+          "offsetMs": 28,
+          "durationMs": 298,
+          "outcome": "success"
+        },
+        {
+          "id": 6,
+          "parentId": 1,
+          "stage": "revision",
+          "offsetMs": 363,
+          "durationMs": 1,
+          "outcome": "success"
+        },
+        {
+          "id": 7,
+          "parentId": 1,
+          "stage": "variant",
+          "offsetMs": 365,
+          "durationMs": 280,
+          "outcome": "success"
+        },
+        {
+          "id": 8,
+          "parentId": 1,
+          "stage": "primary-context",
+          "offsetMs": 646,
+          "durationMs": 229,
+          "outcome": "success"
+        },
+        {
+          "id": 9,
+          "parentId": 1,
+          "stage": "artwork",
+          "offsetMs": 876,
+          "durationMs": 0,
+          "outcome": "success"
+        },
+        {
+          "id": 10,
+          "parentId": 1,
+          "stage": "native-configuration",
+          "offsetMs": 877,
+          "durationMs": 1,
+          "outcome": "success"
+        },
+        {
+          "id": 11,
+          "parentId": 1,
+          "stage": "release-prepare",
+          "offsetMs": 878,
+          "durationMs": 4,
+          "outcome": "success"
+        },
+        {
+          "id": 12,
+          "parentId": 1,
+          "stage": "release-prepare",
+          "offsetMs": 879,
+          "durationMs": 5,
+          "outcome": "success"
+        },
+        {
+          "id": 13,
+          "parentId": 1,
+          "stage": "persistence",
+          "offsetMs": 884,
+          "durationMs": 1384,
+          "outcome": "success"
+        },
+        {
+          "id": 14,
+          "parentId": 13,
+          "stage": "tenant",
+          "offsetMs": 887,
+          "durationMs": 0,
+          "outcome": "success"
+        },
+        {
+          "id": 15,
+          "parentId": 13,
+          "stage": "entitlement",
+          "offsetMs": 888,
+          "durationMs": 347,
+          "outcome": "success"
+        },
+        {
+          "id": 16,
+          "parentId": 13,
+          "stage": "shop",
+          "offsetMs": 888,
+          "durationMs": 234,
+          "outcome": "success"
+        },
+        {
+          "id": 17,
+          "parentId": 13,
+          "stage": "variant",
+          "offsetMs": 888,
+          "durationMs": 255,
+          "outcome": "success"
+        },
+        {
+          "id": 18,
+          "parentId": 13,
+          "stage": "tenant",
+          "offsetMs": 1235,
+          "durationMs": 0,
+          "outcome": "success"
+        },
+        {
+          "id": 19,
+          "parentId": 13,
+          "stage": "primary-context",
+          "offsetMs": 1236,
+          "durationMs": 248,
+          "outcome": "success"
+        },
+        {
+          "id": 20,
+          "parentId": 13,
+          "stage": "positions",
+          "offsetMs": 1484,
+          "durationMs": 0,
+          "outcome": "success"
+        },
+        {
+          "id": 21,
+          "parentId": 13,
+          "stage": "availability",
+          "offsetMs": 1484,
+          "durationMs": 493,
+          "outcome": "success"
+        },
+        {
+          "id": 22,
+          "parentId": 13,
+          "stage": "current-readiness",
+          "offsetMs": 1978,
+          "durationMs": 267,
+          "outcome": "success"
+        },
+        {
+          "id": 23,
+          "parentId": 22,
+          "stage": "current-readiness",
+          "offsetMs": 1978,
+          "durationMs": 267,
+          "outcome": "success"
+        },
+        {
+          "id": 24,
+          "parentId": 13,
+          "stage": "artwork",
+          "offsetMs": 2246,
+          "durationMs": 1,
+          "outcome": "success"
+        },
+        {
+          "id": 25,
+          "parentId": null,
+          "stage": "response-validation",
+          "offsetMs": 2279,
+          "durationMs": 0,
+          "outcome": "success"
+        }
+      ]
+    }
+  ],
+  "captureDisposal": {
+    "checkpointExpiresAt": "2026-11-09T23:07:35.408614+00:00",
+    "localAt": "2026-11-09T21:09:21.296233+00:00",
+    "remoteAt": "2026-11-09T21:09:20.421405+00:00",
+    "localFiles": 2,
+    "remoteFiles": 5,
+    "totalBytes": 1371037,
+    "beforeExpiry": true,
+    "permanentRuntimeKeysAndJournalsPreserved": true,
+    "completeProductionRecovery": false
+  },
+  "limits": [
+    "No material end-to-end network speedup established; single sample, no matched alternating runs or percentile claim.",
+    "Native final Review-entry and inline completion proved by sampled DOM; no exact paint/no-flash video proof.",
+    "Cold proposal release preparation remains dominant; nested/parallel spans must not be summed.",
+    "Final acceptance persistence includes provider checks, not only database execution.",
+    "Actual hosted checkout, running-worker purchase admission, sustained throughput and owner visual acceptance remain unqualified.",
+    "Production cutover, off-host/provider recovery and separate recovery-key ownership remain outside this development delivery.",
+    "Original same-tab cart report remains unattributed."
+  ]
+}
