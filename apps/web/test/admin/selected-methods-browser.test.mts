@@ -286,3 +286,63 @@ test('a resumed product picker survives its delayed host dismissal without writi
   await f.page.locator('[data-shopify-host-modal-scrim]').waitFor({ state: 'detached' });
   assert.equal(f.writes.length, 0);
 });
+
+declare global {
+  interface Window {
+    resumeQa009PickerShow(): void;
+    cancelQa009PickerShow(): void;
+  }
+}
+
+test('pending picker dismissal is delivered after leave confirmation resumes its owner', {
+  timeout: 30000,
+}, async (t) => {
+  const f = await methodsFixture(t, { shopifyModal: true });
+  await f.page.addInitScript(() => {
+    const modal = window.shopify?._internal?.modal;
+    if (!modal) throw new Error('Expected Shopify modal fixture');
+    const originalShow = modal.show.bind(modal);
+    let held = false;
+    modal.show = async (id, options) => {
+      await originalShow(id, options);
+      if (held) return;
+      held = true;
+      const cancel = options?.buttons?.find(
+        (button) =>
+          !!button &&
+          typeof button === 'object' &&
+          'label' in button &&
+          button.label === 'Cancel' &&
+          'onAction' in button,
+      );
+      if (!cancel || typeof cancel !== 'object' || !('onAction' in cancel) || typeof cancel.onAction !== 'function')
+        throw new Error('Expected Cancel');
+      const action = cancel.onAction;
+      window.cancelQa009PickerShow = () => {
+        action();
+      };
+      await new Promise<void>((resolve) => {
+        window.resumeQa009PickerShow = resolve;
+      });
+    };
+  });
+  await f.open();
+  await f.page.getByRole('link', { name: 'Printing', exact: true }).click();
+  await f.page.getByRole('textbox', { name: /^Method name/ }).fill('Unsaved method name');
+  await f.page.getByRole('button', { name: 'Select products', exact: true }).click();
+  await f.page.waitForFunction(() => typeof window.cancelQa009PickerShow === 'function');
+  await f.page.evaluate(() => window.cancelQa009PickerShow());
+  await f.page.goBack();
+  const leave = f.page.locator('s-modal[data-method-dialog]').filter({ hasText: 'Discard unsaved changes?' });
+  await leave.waitFor({ state: 'visible' });
+  await f.page.evaluate(() => window.resumeQa009PickerShow());
+  await f.page.getByRole('button', { name: 'Keep editing', exact: true }).click();
+  await leave.waitFor({ state: 'detached' });
+  await f.page
+    .locator('s-modal[data-method-dialog]')
+    .filter({ hasText: 'Select products' })
+    .waitFor({ state: 'detached' });
+  assert.equal(await f.page.getByRole('textbox', { name: /^Method name/ }).inputValue(), 'Unsaved method name');
+  assert.equal(await f.page.locator('[data-shopify-host-modal-scrim]').count(), 0);
+  assert.equal(f.writes.length, 0);
+});
