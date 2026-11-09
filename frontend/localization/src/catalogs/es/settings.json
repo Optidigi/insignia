@@ -291,6 +291,7 @@
     "previewUnavailable": "La vista previa del personalizador no está disponible. Tus cambios siguen aquí.",
     "sourceLanguage": "Inglés",
     "groups": {
+      "close": "Cerrar la personalización",
       "chrome": "General",
       "steps": "Navegación",
       "artwork": "Diseño",
@@ -307,6 +308,17 @@
       "postOrder": "Diseños tras el pedido"
     },
     "fields": {
+      "customer_artwork_cancelUpload": "Botón para cancelar la carga",
+      "customer_artwork_retryUpload": "Botón para reintentar la carga",
+      "customer_artwork_uploadErrorTitle": "Título del error de carga",
+      "customer_artwork_chooseAnotherFile": "Botón para elegir otro archivo",
+      "customer_artwork_cancelTitle": "Título de confirmación para cancelar la carga",
+      "customer_artwork_cancelHelp": "Explicación de la cancelación de la carga",
+      "customer_artwork_keepUploading": "Botón para continuar la carga",
+      "customer_close_title": "Título de confirmación para cerrar la personalización",
+      "customer_close_help": "Explicación del cierre de la personalización",
+      "customer_close_keepEditing": "Botón para seguir editando",
+      "customer_close_leave": "Botón para cerrar la personalización",
       "customer_chrome_skipToDesignControls": "Ir a los controles del diseño",
       "customer_chrome_closeCustomizer": "Cerrar el personalizador",
       "customer_chrome_closeArtworkPreview": "Cerrar la vista previa del diseño",

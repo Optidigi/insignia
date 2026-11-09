@@ -289,6 +289,7 @@
     "previewUnavailable": "Die Vorschau der Produktanpassung ist nicht verfügbar. Ihre Änderungen sind weiterhin vorhanden.",
     "sourceLanguage": "Englisch",
     "groups": {
+      "close": "Personalisierung schließen",
       "chrome": "Allgemein",
       "steps": "Navigation",
       "artwork": "Motive",
@@ -305,6 +306,17 @@
       "postOrder": "Druckdateien nach Bestellung"
     },
     "fields": {
+      "customer_artwork_cancelUpload": "Schaltfläche Upload abbrechen",
+      "customer_artwork_retryUpload": "Schaltfläche Upload erneut versuchen",
+      "customer_artwork_uploadErrorTitle": "Überschrift bei Uploadfehler",
+      "customer_artwork_chooseAnotherFile": "Schaltfläche andere Datei auswählen",
+      "customer_artwork_cancelTitle": "Überschrift zum Abbrechen des Uploads",
+      "customer_artwork_cancelHelp": "Erklärung zum Abbrechen des Uploads",
+      "customer_artwork_keepUploading": "Schaltfläche Upload fortsetzen",
+      "customer_close_title": "Überschrift zum Schließen der Personalisierung",
+      "customer_close_help": "Erklärung zum Schließen der Personalisierung",
+      "customer_close_keepEditing": "Schaltfläche weiter bearbeiten",
+      "customer_close_leave": "Schaltfläche Personalisierung schließen",
       "customer_chrome_skipToDesignControls": "Zu den Gestaltungseinstellungen springen",
       "customer_chrome_closeCustomizer": "Produktanpassung schließen",
       "customer_chrome_closeArtworkPreview": "Motivvorschau schließen",
