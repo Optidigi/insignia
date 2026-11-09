@@ -80,10 +80,17 @@
     "provideArtworkLater": "Provide artwork later",
     "uploadingFile": "Uploading artwork…",
     "processingFile": "Checking artwork…",
-    "uploadFailed": "Upload failed. Choose the file again to retry.",
+    "uploadFailed": "Upload failed. Try again or choose another file.",
     "processingFailed": "Artwork could not be checked. Try again.",
     "inspectionRejected": "This image was rejected. Choose a supported static image.",
-    "artworkExpired": "This artwork has expired. Upload it again."
+    "artworkExpired": "This artwork has expired. Upload it again.",
+    "cancelUpload": "Cancel upload",
+    "retryUpload": "Try again",
+    "uploadErrorTitle": "Artwork not uploaded",
+    "chooseAnotherFile": "Choose another file",
+    "cancelTitle": "Cancel this upload?",
+    "cancelHelp": "This file is not ready yet. Canceling stops this upload and keeps your earlier choices.",
+    "keepUploading": "Keep uploading"
   },
   "quantities": {
     "heading": "Quantities",
@@ -249,5 +256,11 @@
     "savedDesigns": "Saved designs",
     "openSaved": "Open saved design",
     "startNew": "Start a new design"
+  },
+  "close": {
+    "title": "Close customization?",
+    "help": "Your design will stay here while this page is open. Closing will not add it to your cart.",
+    "keepEditing": "Keep editing",
+    "leave": "Close customization"
   }
 }

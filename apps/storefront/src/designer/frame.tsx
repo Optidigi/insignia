@@ -128,6 +128,7 @@ function Frame({ initial }: { initial: Initial }) {
   const [pendingGroup, setPendingGroup] = useState<string | null>(null);
   const [quote, setQuote] = useState<DesignerQuoteReview>();
   const [hostError, setHostError] = useState(0);
+  const [requestClose, setRequestClose] = useState(0);
   const [reviewed, setReviewed] = useState(0);
   const [wording, setWording] = useState(initial.wording);
   const [language, setLanguage] = useState(readCustomerLanguagePreference());
@@ -158,7 +159,7 @@ function Frame({ initial }: { initial: Initial }) {
       }
       if (event.data.type === 'insignia:designer:suspend') setVisible(false);
       if (event.data.type === 'insignia:designer:request-close') {
-        setOpen(false);
+        setRequestClose((value) => value + 1);
         setPendingGroup(null);
       }
       if (event.data.type === 'insignia:designer:host-error') setHostError((value) => value + 1);
@@ -217,6 +218,7 @@ function Frame({ initial }: { initial: Initial }) {
           previewOnly={initial.previewOnly}
           requiresCartReview={initial.requiresCartReview}
           quoteReview={quote}
+          requestCloseSignal={requestClose}
           hostErrorSignal={hostError}
           cartReviewedSignal={reviewed}
           onSelectQuoteGroup={(id) => {

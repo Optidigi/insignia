@@ -2320,8 +2320,12 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_artwork_artworkNeeded': object;
   'settings:translations.fields.customer_artwork_artworkToFollow': object;
   'settings:translations.fields.customer_artwork_browseFiles': object;
+  'settings:translations.fields.customer_artwork_cancelHelp': object;
+  'settings:translations.fields.customer_artwork_cancelTitle': object;
+  'settings:translations.fields.customer_artwork_cancelUpload': object;
   'settings:translations.fields.customer_artwork_change': object;
   'settings:translations.fields.customer_artwork_choose': object;
+  'settings:translations.fields.customer_artwork_chooseAnotherFile': object;
   'settings:translations.fields.customer_artwork_chooseArtwork': object;
   'settings:translations.fields.customer_artwork_chooseArtworkForPosition': object;
   'settings:translations.fields.customer_artwork_chooseOption': object;
@@ -2338,6 +2342,7 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_artwork_fileRequirements': object;
   'settings:translations.fields.customer_artwork_files': object;
   'settings:translations.fields.customer_artwork_inspectionRejected': object;
+  'settings:translations.fields.customer_artwork_keepUploading': object;
   'settings:translations.fields.customer_artwork_loadingPreviews': object;
   'settings:translations.fields.customer_artwork_method': object;
   'settings:translations.fields.customer_artwork_openingFile': object;
@@ -2347,10 +2352,12 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_artwork_processingFile': object;
   'settings:translations.fields.customer_artwork_provideArtworkLater': object;
   'settings:translations.fields.customer_artwork_removeArtwork': object;
+  'settings:translations.fields.customer_artwork_retryUpload': object;
   'settings:translations.fields.customer_artwork_samples': object;
   'settings:translations.fields.customer_artwork_selectedPreviewFailed': object;
   'settings:translations.fields.customer_artwork_unavailable': object;
   'settings:translations.fields.customer_artwork_uploadArtworkFile': object;
+  'settings:translations.fields.customer_artwork_uploadErrorTitle': object;
   'settings:translations.fields.customer_artwork_uploadFailed': object;
   'settings:translations.fields.customer_artwork_uploadingFile': object;
   'settings:translations.fields.customer_artwork_uploadReadFailed': object;
@@ -2381,6 +2388,10 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_chrome_skipToDesignControls': object;
   'settings:translations.fields.customer_chrome_unavailable': object;
   'settings:translations.fields.customer_chrome_viewCart': object;
+  'settings:translations.fields.customer_close_help': object;
+  'settings:translations.fields.customer_close_keepEditing': object;
+  'settings:translations.fields.customer_close_leave': object;
+  'settings:translations.fields.customer_close_title': object;
   'settings:translations.fields.customer_files_fullFilename': object;
   'settings:translations.fields.customer_host_cancel': object;
   'settings:translations.fields.customer_host_discardEdit': object;
@@ -2530,6 +2541,7 @@ export interface AdminMessageTable {
   'settings:translations.filterFields': object;
   'settings:translations.groups.artwork': object;
   'settings:translations.groups.chrome': object;
+  'settings:translations.groups.close': object;
   'settings:translations.groups.common': object;
   'settings:translations.groups.files': object;
   'settings:translations.groups.options': object;
@@ -2641,8 +2653,12 @@ export interface CustomerMessageTable {
   'customer:artwork.artworkNeeded': object;
   'customer:artwork.artworkToFollow': object;
   'customer:artwork.browseFiles': object;
+  'customer:artwork.cancelHelp': object;
+  'customer:artwork.cancelTitle': object;
+  'customer:artwork.cancelUpload': object;
   'customer:artwork.change': object;
   'customer:artwork.choose': object;
+  'customer:artwork.chooseAnotherFile': object;
   'customer:artwork.chooseArtwork': object;
   'customer:artwork.chooseArtworkForPosition': { positionName: string };
   'customer:artwork.chooseOption': object;
@@ -2659,6 +2675,7 @@ export interface CustomerMessageTable {
   'customer:artwork.fileRequirements': { maxSizeMb: number };
   'customer:artwork.files': object;
   'customer:artwork.inspectionRejected': object;
+  'customer:artwork.keepUploading': object;
   'customer:artwork.loadingPreviews': object;
   'customer:artwork.method': object;
   'customer:artwork.openingFile': object;
@@ -2668,10 +2685,12 @@ export interface CustomerMessageTable {
   'customer:artwork.processingFile': object;
   'customer:artwork.provideArtworkLater': object;
   'customer:artwork.removeArtwork': object;
+  'customer:artwork.retryUpload': object;
   'customer:artwork.samples': object;
   'customer:artwork.selectedPreviewFailed': object;
   'customer:artwork.unavailable': object;
   'customer:artwork.uploadArtworkFile': object;
+  'customer:artwork.uploadErrorTitle': object;
   'customer:artwork.uploadFailed': object;
   'customer:artwork.uploadingFile': object;
   'customer:artwork.uploadReadFailed': object;
@@ -2702,6 +2721,10 @@ export interface CustomerMessageTable {
   'customer:chrome.skipToDesignControls': object;
   'customer:chrome.unavailable': object;
   'customer:chrome.viewCart': object;
+  'customer:close.help': object;
+  'customer:close.keepEditing': object;
+  'customer:close.leave': object;
+  'customer:close.title': object;
   'customer:files.fullFilename': object;
   'customer:host.cancel': object;
   'customer:host.discardEdit': object;

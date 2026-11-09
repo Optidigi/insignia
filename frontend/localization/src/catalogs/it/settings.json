@@ -292,6 +292,7 @@
     "previewUnavailable": "L'anteprima della finestra di personalizzazione non è disponibile. Le modifiche sono ancora qui.",
     "sourceLanguage": "Inglese",
     "groups": {
+      "close": "Chiusura della personalizzazione",
       "chrome": "Generale",
       "steps": "Navigazione",
       "artwork": "Grafica",
@@ -308,6 +309,17 @@
       "postOrder": "Grafiche dopo l’ordine"
     },
     "fields": {
+      "customer_artwork_cancelUpload": "Pulsante per annullare il caricamento",
+      "customer_artwork_retryUpload": "Pulsante per riprovare il caricamento",
+      "customer_artwork_uploadErrorTitle": "Titolo dell’errore di caricamento",
+      "customer_artwork_chooseAnotherFile": "Pulsante per scegliere un altro file",
+      "customer_artwork_cancelTitle": "Titolo della conferma di annullamento del caricamento",
+      "customer_artwork_cancelHelp": "Spiegazione dell’annullamento del caricamento",
+      "customer_artwork_keepUploading": "Pulsante per continuare il caricamento",
+      "customer_close_title": "Titolo della conferma di chiusura della personalizzazione",
+      "customer_close_help": "Spiegazione della chiusura della personalizzazione",
+      "customer_close_keepEditing": "Pulsante per continuare a modificare",
+      "customer_close_leave": "Pulsante per chiudere la personalizzazione",
       "customer_chrome_skipToDesignControls": "Vai ai controlli della personalizzazione",
       "customer_chrome_closeCustomizer": "Chiudi la finestra di personalizzazione",
       "customer_chrome_closeArtworkPreview": "Chiudi l'anteprima della grafica",

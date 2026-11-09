@@ -289,6 +289,7 @@
     "previewUnavailable": "The customizer preview is unavailable. Your changes are still here.",
     "sourceLanguage": "English",
     "groups": {
+      "close": "Closing customization",
       "chrome": "General",
       "steps": "Navigation",
       "artwork": "Artwork",
@@ -305,6 +306,17 @@
       "postOrder": "After-order artwork"
     },
     "fields": {
+      "customer_artwork_cancelUpload": "Cancel upload button",
+      "customer_artwork_retryUpload": "Retry upload button",
+      "customer_artwork_uploadErrorTitle": "Upload error heading",
+      "customer_artwork_chooseAnotherFile": "Choose another file button",
+      "customer_artwork_cancelTitle": "Cancel upload confirmation heading",
+      "customer_artwork_cancelHelp": "Cancel upload explanation",
+      "customer_artwork_keepUploading": "Keep uploading button",
+      "customer_close_title": "Close customization confirmation heading",
+      "customer_close_help": "Close customization explanation",
+      "customer_close_keepEditing": "Keep editing button",
+      "customer_close_leave": "Close customization button",
       "customer_chrome_skipToDesignControls": "Skip to design controls",
       "customer_chrome_closeCustomizer": "Close customizer",
       "customer_chrome_closeArtworkPreview": "Close artwork preview",

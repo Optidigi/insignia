@@ -291,6 +291,7 @@
     "previewUnavailable": "L’aperçu du personnalisateur est indisponible. Vos modifications sont toujours présentes.",
     "sourceLanguage": "Anglais",
     "groups": {
+      "close": "Fermeture de la personnalisation",
       "chrome": "Général",
       "steps": "Navigation",
       "artwork": "Visuels",
@@ -307,6 +308,17 @@
       "postOrder": "Visuels après commande"
     },
     "fields": {
+      "customer_artwork_cancelUpload": "Bouton pour annuler l’importation",
+      "customer_artwork_retryUpload": "Bouton pour réessayer l’importation",
+      "customer_artwork_uploadErrorTitle": "Titre de l’erreur d’importation",
+      "customer_artwork_chooseAnotherFile": "Bouton pour choisir un autre fichier",
+      "customer_artwork_cancelTitle": "Titre de confirmation d’annulation de l’importation",
+      "customer_artwork_cancelHelp": "Explication de l’annulation de l’importation",
+      "customer_artwork_keepUploading": "Bouton pour poursuivre l’importation",
+      "customer_close_title": "Titre de confirmation de fermeture de la personnalisation",
+      "customer_close_help": "Explication de la fermeture de la personnalisation",
+      "customer_close_keepEditing": "Bouton pour continuer la personnalisation",
+      "customer_close_leave": "Bouton pour fermer la personnalisation",
       "customer_chrome_skipToDesignControls": "Aller aux commandes de personnalisation",
       "customer_chrome_closeCustomizer": "Fermer la fenêtre de personnalisation",
       "customer_chrome_closeArtworkPreview": "Fermer l’aperçu du visuel",
