@@ -558,6 +558,12 @@ for (const engine of [chromium, firefox])
     assert.equal(await page.locator('dialog:modal > #retained-second').count(), 1);
   });
 
+declare global {
+  interface Window {
+    coldCancellation: { release(): void; fetched: boolean; held: boolean; completed: number };
+  }
+}
+
 for (const engine of [chromium, firefox]) {
   test(`${engine.name()}: cold opening owns one immediate modal and keeps loading inside its editor shell`, async (t) => {
     const server = await createStorefrontTestServer({
@@ -573,6 +579,28 @@ for (const engine of [chromium, firefox]) {
       await server.close();
     });
     const page = await browser.newPage();
+    await page.addInitScript(() => {
+      let release = () => {};
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const state = { release, fetched: false, held: false, completed: 0 };
+      window.coldCancellation = state;
+      const originalFetch = window.fetch.bind(window);
+      window.fetch = async (input, init) => {
+        const isConfig = String(input).includes('/v1/config');
+        if (isConfig) state.fetched = true;
+        try {
+          return await originalFetch(input, init);
+        } catch (error) {
+          if (isConfig && init?.signal?.aborted) {
+            state.held = true;
+            await gate;
+          }
+          throw error;
+        }
+      };
+    });
     await page.route('**/apps/insignia/v1/config*', async (route) => {
       await hold.promise;
       await route.fulfill({ json: config });
@@ -592,10 +620,26 @@ for (const engine of [chromium, firefox]) {
       await customElements.whenDefined('insignia-buyer');
       document.body.innerHTML = '<insignia-buyer product-id="111" country="US"></insignia-buyer>';
     });
+    // Observe completion without changing the opening's result or scheduling.
+    await page.evaluate(() => {
+      const definition = customElements.get('insignia-buyer');
+      if (!definition) throw new Error('Missing buyer element');
+      const prototype = definition.prototype as { mount(): Promise<void> };
+      const originalMount = prototype.mount;
+      prototype.mount = async function () {
+        try {
+          await originalMount.call(this);
+        } finally {
+          window.coldCancellation.completed++;
+        }
+      };
+    });
     const trigger = page.locator('insignia-buyer button');
     await trigger.click();
     await page.locator('dialog:modal').waitFor();
+    await page.waitForFunction(() => window.coldCancellation.fetched);
     await page.keyboard.press('Escape');
+    await page.waitForFunction(() => window.coldCancellation.held);
     await page.locator('dialog:modal').waitFor({ state: 'detached' });
     assert.equal(await trigger.getAttribute('aria-busy'), null);
     assert.equal(await trigger.evaluate((button) => document.activeElement === button), true);
@@ -608,6 +652,9 @@ for (const engine of [chromium, firefox]) {
     await page.locator('dialog:modal').evaluate((dialog) => {
       dialog.id = 'same-startup-shell';
     });
+    // Deliver the cancelled read only after the replacement owns the shell.
+    await page.evaluate(() => window.coldCancellation.release());
+    await page.waitForFunction(() => window.coldCancellation.completed >= 1);
     assert.equal(await trigger.getAttribute('aria-busy'), 'true');
     assert.equal(await page.locator('dialog:modal header').count(), 1);
     assert.equal(await page.locator('dialog:modal .designer-loading-state').count(), 1);
