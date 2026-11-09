@@ -1,0 +1,473 @@
+[
+  {
+    "registrationId": "app/uninstalled::::https://insignia-app.optidigi.nl/api/webhooks/shopify",
+    "registrationUuid": "01a14c18-b90e-754a-8a2e-20e937c69a96",
+    "handle": "4351a46b767ede76a9cf4bf2b29d269fcac93ded",
+    "type": "webhook_subscription",
+    "config": {
+      "topic": "app/uninstalled",
+      "api_version": "2026-07",
+      "uri": "https://insignia-app.optidigi.nl/api/webhooks/shopify",
+      "include_fields": [
+        "id",
+        "myshopify_domain"
+      ]
+    },
+    "target": "",
+    "specification": {
+      "identifier": "webhook_subscription",
+      "externalIdentifier": "webhook_subscription",
+      "name": "Webhooks Subscriptions",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "orders/paid::::https://insignia-app.optidigi.nl/api/webhooks/shopify",
+    "registrationUuid": "01a14c18-b90e-7d00-bdf7-6023ca48de0e",
+    "handle": "7528ee38aa14b1177955d65a4a5baa6f3bec56b4",
+    "type": "webhook_subscription",
+    "config": {
+      "topic": "orders/paid",
+      "api_version": "2026-07",
+      "uri": "https://insignia-app.optidigi.nl/api/webhooks/shopify",
+      "include_fields": [
+        "id",
+        "admin_graphql_api_id",
+        "updated_at"
+      ]
+    },
+    "target": "",
+    "specification": {
+      "identifier": "webhook_subscription",
+      "externalIdentifier": "webhook_subscription",
+      "name": "Webhooks Subscriptions",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "refunds/create::::https://insignia-app.optidigi.nl/api/webhooks/shopify",
+    "registrationUuid": "01a14c18-b90e-7bf5-847a-e003733f6045",
+    "handle": "75d3f159874810d032ff53611ee38c5f2e4819fc",
+    "type": "webhook_subscription",
+    "config": {
+      "topic": "refunds/create",
+      "api_version": "2026-07",
+      "uri": "https://insignia-app.optidigi.nl/api/webhooks/shopify",
+      "include_fields": [
+        "id",
+        "admin_graphql_api_id",
+        "order_id",
+        "created_at"
+      ]
+    },
+    "target": "",
+    "specification": {
+      "identifier": "webhook_subscription",
+      "externalIdentifier": "webhook_subscription",
+      "name": "Webhooks Subscriptions",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "orders/updated::::https://insignia-app.optidigi.nl/api/webhooks/shopify",
+    "registrationUuid": "01a14c18-b90e-7f0e-b7b8-104e78aaf558",
+    "handle": "ac32cec30a966dde67ecb49cd1e253ea69707b3b",
+    "type": "webhook_subscription",
+    "config": {
+      "topic": "orders/updated",
+      "api_version": "2026-07",
+      "uri": "https://insignia-app.optidigi.nl/api/webhooks/shopify",
+      "include_fields": [
+        "id",
+        "admin_graphql_api_id",
+        "updated_at"
+      ]
+    },
+    "target": "",
+    "specification": {
+      "identifier": "webhook_subscription",
+      "externalIdentifier": "webhook_subscription",
+      "name": "Webhooks Subscriptions",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "app_access",
+    "registrationUuid": "01a0e7ed-3119-7dce-81d4-7aabc1b62f9f",
+    "handle": "app_access",
+    "type": "app_access",
+    "config": {
+      "scopes": "read_orders,write_app_proxy",
+      "optional_scopes": [
+        "write_products",
+        "read_publications",
+        "read_product_listings",
+        "read_cart_transforms",
+        "read_validations",
+        "write_cart_transforms",
+        "write_validations",
+        "read_markets"
+      ],
+      "use_legacy_install_flow": false,
+      "redirect_url_allowlist": []
+    },
+    "target": "",
+    "specification": {
+      "identifier": "app_access",
+      "externalIdentifier": "app_access",
+      "name": "App access",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "app_home",
+    "registrationUuid": "01a0e7ed-3119-7229-92f1-2eab7eb456c8",
+    "handle": "app_home",
+    "type": "app_home",
+    "config": {
+      "app_url": "https://insignia-app.optidigi.nl/admin/home",
+      "embedded": true
+    },
+    "target": "",
+    "specification": {
+      "identifier": "app_home",
+      "externalIdentifier": "app_home",
+      "name": "App Home",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "app_proxy",
+    "registrationUuid": "01a137a9-b4be-7137-b2f7-07ebaf8fff32",
+    "handle": "app_proxy",
+    "type": "app_proxy",
+    "config": {
+      "url": "https://insignia-app.optidigi.nl/api/artwork",
+      "subpath": "insignia",
+      "prefix": "apps"
+    },
+    "target": "",
+    "specification": {
+      "identifier": "app_proxy",
+      "externalIdentifier": "app_proxy",
+      "name": "App Proxy",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "branding",
+    "registrationUuid": "01a0e7ed-3119-7f99-a441-ba954ed80654",
+    "handle": "branding",
+    "type": "branding",
+    "config": {
+      "name": "Insignia"
+    },
+    "target": "",
+    "specification": {
+      "identifier": "branding",
+      "externalIdentifier": "branding",
+      "name": "Branding",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "orders/create::::https://insignia-app.optidigi.nl/api/webhooks/shopify",
+    "registrationUuid": "01a14c18-b90e-7b80-ada9-ec4281bf82b5",
+    "handle": "c90468ca01222eb3ac0cdabd89274aa4e57094b0",
+    "type": "webhook_subscription",
+    "config": {
+      "topic": "orders/create",
+      "api_version": "2026-07",
+      "uri": "https://insignia-app.optidigi.nl/api/webhooks/shopify",
+      "include_fields": [
+        "id",
+        "admin_graphql_api_id",
+        "updated_at"
+      ]
+    },
+    "target": "",
+    "specification": {
+      "identifier": "webhook_subscription",
+      "externalIdentifier": "webhook_subscription",
+      "name": "Webhooks Subscriptions",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97",
+    "registrationUuid": "01a13996-ce86-7b3c-9bac-1f2605986f7f",
+    "handle": "insignia",
+    "type": "theme_app_extension",
+    "config": {
+      "theme_extension": {
+        "files": {
+          "assets": {
+            "insignia-buyer-DNPl462P.js": {
+              "sha256": "xuwLoK0BQAsnRgaLwvLNUaGgq4bIlYG1z5HIAOjFYp0=",
+              "size": 178182
+            },
+            "insignia-controller-CSAvwhrU.js": {
+              "sha256": "qRqcsTp+wprvBCu84PbJvqvwm88iqEsLhFHE7v1hBww=",
+              "size": 42472
+            },
+            "insignia-designer-frame.js": {
+              "sha256": "HEHFtOb0w27GlIzoMDiQIIUhBkhE0QJSPOHeh0MAeUE=",
+              "size": 128602
+            },
+            "insignia-element.js": {
+              "sha256": "CdBmpuaPQMGRdgLVyjmregYVC5RcPyhK45vm0Qb2x70=",
+              "size": 22702
+            },
+            "insignia-frame-host-CxKtBsD3.js": {
+              "sha256": "WeXZ/o1Rq4hIrBvOMcL7d2JBddt/xwekhrylBYZoHbI=",
+              "size": 8135
+            },
+            "insignia-modal-CMPHAtLf.js": {
+              "sha256": "Qz7edNIVDwPKSgfE4CYEHWv9R297ifLyTMfPRxldLNE=",
+              "size": 12742
+            },
+            "insignia-runtime-RhxXbLIG.js": {
+              "sha256": "tD9YdSD8djBoR4URqVJR9bkKaTR7tCGpqEDsqSbn/no=",
+              "size": 32996
+            },
+            "insignia-shopify-variant-matrix-DE7lZW_t.js": {
+              "sha256": "bdCaSqy1kGqRw81EpkWAuLtwtuMPj993oD8S9wFGYYc=",
+              "size": 98941
+            },
+            "insignia-storefront.js": {
+              "sha256": "boUmVITdrJv5suwvj1GPyWkInO8OxeakKs7978lXQao=",
+              "size": 393
+            },
+            "insignia-designer.css": {
+              "sha256": "GsY87vgFmg3mMCFURHoRNtjIkQXt+4YhDqW3Oe8A+ak=",
+              "size": 360100
+            },
+            "insignia-unavailable-Kb6Rq7le.js": {
+              "sha256": "wbnuWuomWKlC3lFVKe05dV4fj5bxbhYpPD5UH6J53IA=",
+              "size": 1541
+            },
+            "insignia-theme-preference-DTsdeZeI.js": {
+              "sha256": "7OsJ1VLq/xFEFBltDJf6gEeEIgBKmKNhtyJ0FWriC1k=",
+              "size": 174100
+            }
+          },
+          "blocks": {
+            "cart-repair.liquid": {
+              "value": "<insignia-cart-repair proxy-base=\"{{ routes.root_url }}apps/{{ block.settings.proxy_prefix | escape }}\" cart-root=\"{{ routes.root_url }}\" country=\"{{ localization.country.iso_code }}\" market-id=\"{{ localization.market.id }}\"></insignia-cart-repair>\n{% render 'customise-control', product: product, block: block, control: 'automatic' %}\n{% schema %}\n{\n  \"name\": \"Insignia storefront\",\n  \"target\": \"body\",\n  \"javascript\": \"insignia-storefront.js\",\n  \"settings\": [\n    {\n      \"type\": \"paragraph\",\n      \"content\": \"Enable once, then save your theme. Published Insignia products automatically use Customise in place of purchase buttons. Ordinary products keep their theme controls.\"\n    },\n    {\n      \"type\": \"checkbox\",\n      \"id\": \"auto_placement\",\n      \"label\": \"Place Customise automatically\",\n      \"default\": true,\n      \"info\": \"Turn off only when using the Insignia customization app block for placement.\"\n    },\n    {\n      \"type\": \"text\",\n      \"id\": \"button_label\",\n      \"label\": \"Button label\",\n      \"info\": \"Leave blank to use the storefront language.\"\n    },\n    {\n      \"type\": \"select\",\n      \"id\": \"button_style\",\n      \"label\": \"Button style\",\n      \"default\": \"auto\",\n      \"options\": [\n        {\n          \"value\": \"auto\",\n          \"label\": \"Match theme purchase button\"\n        },\n        {\n          \"value\": \"primary\",\n          \"label\": \"Primary\"\n        },\n        {\n          \"value\": \"secondary\",\n          \"label\": \"Secondary\"\n        }\n      ]\n    },\n    {\n      \"type\": \"select\",\n      \"id\": \"button_width\",\n      \"label\": \"Button width\",\n      \"default\": \"theme\",\n      \"options\": [\n        {\n          \"value\": \"theme\",\n          \"label\": \"Match theme\"\n        },\n        {\n          \"value\": \"full\",\n          \"label\": \"Full width\"\n        },\n        {\n          \"value\": \"content\",\n          \"label\": \"Fit text\"\n        }\n      ]\n    },\n    {\n      \"type\": \"color\",\n      \"id\": \"button_background\",\n      \"label\": \"Background override\"\n    },\n    {\n      \"type\": \"color\",\n      \"id\": \"button_color\",\n      \"label\": \"Text color override\"\n    },\n    {\n      \"type\": \"checkbox\",\n      \"id\": \"override_radius\",\n      \"label\": \"Override corner radius\",\n      \"default\": false\n    },\n    {\n      \"type\": \"range\",\n      \"id\": \"button_radius\",\n      \"label\": \"Corner radius\",\n      \"min\": 0,\n      \"max\": 40,\n      \"step\": 1,\n      \"unit\": \"px\",\n      \"default\": 6\n    },\n    {\n      \"type\": \"checkbox\",\n      \"id\": \"override_border\",\n      \"label\": \"Override border width\",\n      \"default\": false\n    },\n    {\n      \"type\": \"range\",\n      \"id\": \"button_border_width\",\n      \"label\": \"Border width\",\n      \"min\": 0,\n      \"max\": 6,\n      \"step\": 1,\n      \"unit\": \"px\",\n      \"default\": 1\n    },\n    {\n      \"type\": \"color\",\n      \"id\": \"button_border_color\",\n      \"label\": \"Border color override\"\n    },\n    {\n      \"type\": \"range\",\n      \"id\": \"button_spacing\",\n      \"label\": \"Vertical spacing\",\n      \"min\": 0,\n      \"max\": 40,\n      \"step\": 1,\n      \"unit\": \"px\",\n      \"default\": 0\n    },\n    {\n      \"type\": \"text\",\n      \"id\": \"proxy_prefix\",\n      \"label\": \"App proxy prefix\",\n      \"default\": \"insignia\"\n    }\n  ]\n}\n{% endschema %}\n"
+            },
+            "customize.liquid": {
+              "value": "{% render 'customise-control', product: product, block: block, control: 'manual' %}\n{% schema %}\n{\n  \"name\": \"Insignia customization\",\n  \"target\": \"section\",\n  \"javascript\": \"insignia-storefront.js\",\n  \"settings\": [\n    {\n      \"type\": \"paragraph\",\n      \"content\": \"Optional manual placement. Enable the Insignia storefront app embed to replace native purchase controls. The button appears for products with published required customization.\"\n    },\n    {\n      \"type\": \"text\",\n      \"id\": \"button_label\",\n      \"label\": \"Button label\",\n      \"info\": \"Leave blank to use the storefront language.\"\n    },\n    {\n      \"type\": \"select\",\n      \"id\": \"button_style\",\n      \"label\": \"Button style\",\n      \"default\": \"auto\",\n      \"options\": [\n        {\n          \"value\": \"auto\",\n          \"label\": \"Match theme purchase button\"\n        },\n        {\n          \"value\": \"primary\",\n          \"label\": \"Primary\"\n        },\n        {\n          \"value\": \"secondary\",\n          \"label\": \"Secondary\"\n        }\n      ]\n    },\n    {\n      \"type\": \"select\",\n      \"id\": \"button_width\",\n      \"label\": \"Button width\",\n      \"default\": \"theme\",\n      \"options\": [\n        {\n          \"value\": \"theme\",\n          \"label\": \"Match theme\"\n        },\n        {\n          \"value\": \"full\",\n          \"label\": \"Full width\"\n        },\n        {\n          \"value\": \"content\",\n          \"label\": \"Fit text\"\n        }\n      ]\n    },\n    {\n      \"type\": \"color\",\n      \"id\": \"button_background\",\n      \"label\": \"Background override\"\n    },\n    {\n      \"type\": \"color\",\n      \"id\": \"button_color\",\n      \"label\": \"Text color override\"\n    },\n    {\n      \"type\": \"checkbox\",\n      \"id\": \"override_radius\",\n      \"label\": \"Override corner radius\",\n      \"default\": false\n    },\n    {\n      \"type\": \"range\",\n      \"id\": \"button_radius\",\n      \"label\": \"Corner radius\",\n      \"min\": 0,\n      \"max\": 40,\n      \"step\": 1,\n      \"unit\": \"px\",\n      \"default\": 6\n    },\n    {\n      \"type\": \"checkbox\",\n      \"id\": \"override_border\",\n      \"label\": \"Override border width\",\n      \"default\": false\n    },\n    {\n      \"type\": \"range\",\n      \"id\": \"button_border_width\",\n      \"label\": \"Border width\",\n      \"min\": 0,\n      \"max\": 6,\n      \"step\": 1,\n      \"unit\": \"px\",\n      \"default\": 1\n    },\n    {\n      \"type\": \"color\",\n      \"id\": \"button_border_color\",\n      \"label\": \"Border color override\"\n    },\n    {\n      \"type\": \"range\",\n      \"id\": \"button_spacing\",\n      \"label\": \"Vertical spacing\",\n      \"min\": 0,\n      \"max\": 40,\n      \"step\": 1,\n      \"unit\": \"px\",\n      \"default\": 0\n    },\n    {\n      \"type\": \"text\",\n      \"id\": \"proxy_prefix\",\n      \"label\": \"App proxy prefix\",\n      \"default\": \"insignia\"\n    }\n  ]\n}\n{% endschema %}\n"
+            }
+          },
+          "locales": {
+            "de.json": {
+              "value": "{\n  \"insignia\": {\n    \"customise\": \"Anpassen\"\n  }\n}\n"
+            },
+            "en.default.json": {
+              "value": "{\n  \"insignia\": {\n    \"customise\": \"Customise\"\n  }\n}\n"
+            },
+            "es.json": {
+              "value": "{\n  \"insignia\": {\n    \"customise\": \"Personalizar\"\n  }\n}\n"
+            },
+            "fr.json": {
+              "value": "{\n  \"insignia\": {\n    \"customise\": \"Personnaliser\"\n  }\n}\n"
+            },
+            "it.json": {
+              "value": "{\n  \"insignia\": {\n    \"customise\": \"Personalizza\"\n  }\n}\n"
+            },
+            "nl.json": {
+              "value": "{\n  \"insignia\": {\n    \"customise\": \"Personaliseren\"\n  }\n}\n"
+            }
+          },
+          "snippets": {
+            "customise-control.liquid": {
+              "value": "{%- liquid\n  assign policy = product.metafields['$app'].insignia_policy_v2.value | split: ':'\n  assign generation = shop.metafields['$app'].insignia_public_config_v2.value.generationHex\n  assign required = false\n  if generation != blank and policy.size == 3 and policy[0] == generation and policy[2] == 'required'\n    assign required = true\n  endif\n  assign control_tag = 'insignia-buyer'\n  if control == 'automatic'\n    assign control_tag = 'insignia-theme-integration'\n  endif\n  assign default_label = 'insignia.customise' | t\n-%}\n{%- if control == 'automatic' or required -%}\n  <{{ control_tag }}\n    product-id=\"{{ product.id }}\"\n    {% if control == 'automatic' %}\n      variant-ids=\"{{ product.variants | map: 'id' | join: ',' }}\"\n      auto-placement=\"{{ block.settings.auto_placement }}\"\n    {% else %}\n      {{ block.shopify_attributes }}\n    {% endif %}\n    {% if required %}known-required{% endif %}\n    proxy-base=\"{{ routes.root_url }}apps/{{ block.settings.proxy_prefix | escape }}\"\n    cart-root=\"{{ routes.root_url }}\" country=\"{{ localization.country.iso_code }}\" market-id=\"{{ localization.market.id }}\"\n    language=\"{{ request.locale.iso_code | escape }}\" store-name=\"{{ shop.name | escape }}\"\n    trigger-label=\"{{ block.settings.button_label | default: default_label | escape }}\"\n    button-style=\"{{ block.settings.button_style | escape }}\"\n    button-width=\"{{ block.settings.button_width | escape }}\"\n    {% if block.settings.button_background != blank %}button-background=\"{{ block.settings.button_background | escape }}\"{% endif %}\n    {% if block.settings.button_color != blank %}button-color=\"{{ block.settings.button_color | escape }}\"{% endif %}\n    {% if block.settings.override_radius %}button-radius=\"{{ block.settings.button_radius }}px\"{% endif %}\n    {% if block.settings.override_border %}button-border-width=\"{{ block.settings.button_border_width }}px\"{% endif %}\n    {% if block.settings.button_border_color != blank %}button-border-color=\"{{ block.settings.button_border_color | escape }}\"{% endif %}\n    {% if block.settings.button_spacing > 0 %}button-spacing=\"{{ block.settings.button_spacing }}px\"{% endif %}\n  ></{{ control_tag }}>\n{%- elsif request.design_mode -%}\n  <p {{ block.shopify_attributes }}>Publish required customization for this product to show Customise.</p>\n{%- endif -%}\n"
+            }
+          }
+        }
+      }
+    },
+    "target": "",
+    "specification": {
+      "identifier": "theme_app_extension",
+      "externalIdentifier": "theme_app_extension",
+      "name": "Online Store - App Theme Extension",
+      "experience": "extension",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "c56038d4-146a-405e-b47d-a055249eeeb3",
+    "registrationUuid": "01a1182f-15a0-78e4-8d71-fb20283ef34e",
+    "handle": "insignia-experimental-v2-transform",
+    "type": "function",
+    "config": {
+      "title": "Insignia experimental-v2 cart transform",
+      "module_id": "7eda302a-3e57-4bc6-b1d0-351935e7d757",
+      "description": "Local preproduction candidate only",
+      "app_key": "1443cf6d03d39edae7c101a943c5c684",
+      "api_version": "2026-07",
+      "enable_creation_ui": true,
+      "localization": {},
+      "targets": [
+        {
+          "handle": "cart.transform.run",
+          "export": "cart_transform_run",
+          "input_query": "query CartTransformRunInput {\n  cart {\n    quote: attribute(key: \"_insignia_quote_v2\") { value }\n    lines {\n      id\n      quantity\n      member: attribute(key: \"_insignia_member_v2\") { value }\n      cost { amountPerQuantity { currencyCode } }\n      sellingPlanAllocation { sellingPlan { id } }\n      merchandise {\n        __typename\n        ... on ProductVariant {\n          id\n          product {\n            id\n            registration: metafield(key: \"insignia_registration_v2\") { value }\n            policy: metafield(key: \"insignia_policy_v2\") { value }\n          }\n        }\n      }\n    }\n  }\n  localization { country { isoCode } market { id } }\n  shop {\n    localTime { date }\n    publicConfig: metafield(key: \"insignia_public_config_v2\") { value }\n  }\n}\n"
+        }
+      ],
+      "module_metadata": {
+        "standard_modules": [
+          "shopify_function_v2"
+        ],
+        "sdks": [],
+        "processed_by": [
+          "walrus#0.23.3"
+        ],
+        "languages": [],
+        "module_wasm_size_bytes": 181378,
+        "module_compiled_size_bytes": 566952
+      },
+      "api_type": "cart_transform"
+    },
+    "target": "cart.transform.run",
+    "specification": {
+      "identifier": "function",
+      "externalIdentifier": "function",
+      "name": "function",
+      "experience": "extension",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "552059da-2dc1-47f8-8fc0-14a5ccb6f665",
+    "registrationUuid": "01a1182f-15a0-74a3-a5ac-88800606d379",
+    "handle": "insignia-experimental-v2-validation",
+    "type": "function",
+    "config": {
+      "title": "Insignia experimental-v2 cart validation",
+      "module_id": "d22718a8-1d61-4421-b352-63366af929ce",
+      "description": "Local preproduction candidate only",
+      "app_key": "1443cf6d03d39edae7c101a943c5c684",
+      "api_version": "2026-07",
+      "enable_creation_ui": true,
+      "localization": {},
+      "targets": [
+        {
+          "handle": "cart.validations.generate.run",
+          "export": "cart_validations_generate_run",
+          "input_query": "query Input {\n  buyerJourney { step }\n  cart {\n    quote: attribute(key: \"_insignia_quote_v2\") { value }\n    lines {\n      id\n      quantity\n      member: attribute(key: \"_insignia_member_v2\") { value }\n      cost {\n        amountPerQuantity { currencyCode }\n        subtotalAmount { amount currencyCode }\n      }\n      sellingPlanAllocation { sellingPlan { id } }\n      merchandise {\n        __typename\n        ... on ProductVariant {\n          id\n          product {\n            id\n            registration: metafield(key: \"insignia_registration_v2\") { value }\n            policy: metafield(key: \"insignia_policy_v2\") { value }\n          }\n        }\n      }\n    }\n  }\n  localization { country { isoCode } market { id } }\n  shop {\n    localTime { date }\n    publicConfig: metafield(key: \"insignia_public_config_v2\") { value }\n  }\n}\n"
+        }
+      ],
+      "module_metadata": {
+        "standard_modules": [
+          "shopify_function_v2"
+        ],
+        "sdks": [],
+        "processed_by": [
+          "walrus#0.23.3"
+        ],
+        "languages": [],
+        "module_wasm_size_bytes": 182968,
+        "module_compiled_size_bytes": 571096
+      },
+      "api_type": "cart_checkout_validation"
+    },
+    "target": "cart.validations.generate.run",
+    "specification": {
+      "identifier": "function",
+      "externalIdentifier": "function",
+      "name": "function",
+      "experience": "extension",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "privacy_compliance_webhooks",
+    "registrationUuid": "01a14c18-b90e-7308-9fdb-7ad86619b40d",
+    "handle": "privacy_compliance_webhooks",
+    "type": "privacy_compliance_webhooks",
+    "config": {
+      "api_version": "2026-07",
+      "customers_redact_url": "https://insignia-app.optidigi.nl/api/webhooks/shopify",
+      "customers_data_request_url": "https://insignia-app.optidigi.nl/api/webhooks/shopify",
+      "shop_redact_url": "https://insignia-app.optidigi.nl/api/webhooks/shopify"
+    },
+    "target": "",
+    "specification": {
+      "identifier": "privacy_compliance_webhooks",
+      "externalIdentifier": "privacy_compliance_webhooks",
+      "name": "Privacy Compliance Webhooks",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "webhooks",
+    "registrationUuid": "01a0e7ed-3119-7dc5-8c7a-868166591889",
+    "handle": "webhooks",
+    "type": "webhooks",
+    "config": {
+      "api_version": "2026-07"
+    },
+    "target": "",
+    "specification": {
+      "identifier": "webhooks",
+      "externalIdentifier": "webhooks",
+      "name": "Imperative Webhooks Api Version",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  }
+]

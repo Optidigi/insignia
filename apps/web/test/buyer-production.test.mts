@@ -124,7 +124,27 @@ test('production factory requires server-owned resource, commercial and readines
 });
 
 test('valid Lean acceptance uses passive primary reads under its lock and rejects final context drift without a fact', async () => {
-  for (const drift of [false, true, 'price'] as const) {
+  for (const drift of [
+    false,
+    true,
+    'price',
+    'stock',
+    'overflow',
+    'deleted',
+    'duplicate',
+    'malformed',
+    '251',
+    'passive-missing',
+    'inventory-missing',
+    'inventory-extra',
+    'inventory-duplicate',
+    'inventory-malformed',
+    'inventory-nonboolean',
+    'inventory-nonarray',
+    'inventory-scope',
+    'inventory-product',
+    'inventory-stale',
+  ] as const) {
     const { input } = catalogFixture(),
       now = input.clock();
     const scope = { shopId: 'tenant', installationGeneration: '1', ownerHash: 'f'.repeat(64) };
@@ -171,6 +191,9 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
       ],
     };
     let insideLock = false,
+      inventoryDispatches = 0,
+      activeAcquisitions = 0,
+      passiveAcquisitions = 0,
       facts = 0,
       subscriptionReads = 0,
       artifactCollectionStarted = false,
@@ -179,6 +202,7 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
       proposal: Awaited<ReturnType<MutableCore['buyers']['getProposal']>> = null;
     const originalCredential = input.credentials.acquire;
     input.credentials.acquire = async (target) => {
+      activeAcquisitions++;
       if (insideLock) refreshReadsInsideLock++;
       assert.equal(insideLock, false, 'refresh-capable credential lifecycle must never run under acceptance locks');
       return originalCredential(target);
@@ -186,6 +210,8 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
     input.passiveCredentials = {
       acquire: async (target) => {
         assert.equal(insideLock, true);
+        passiveAcquisitions++;
+        if (drift === 'passive-missing') return { kind: 'missing' };
         return { ...(await originalCredential(target)), accessToken: 'synthetic-passive-token' };
       },
     };
@@ -331,11 +357,30 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
     };
     const originalAvailability = input.readVariantAvailability;
     input.readVariantAvailability = async (target) => {
+      inventoryDispatches++;
+      if (insideLock) assert.notEqual(drift, 'overflow');
+      if (insideLock) assert.ok(!['deleted', 'duplicate', 'malformed', '251'].includes(String(drift)));
+      assert.deepEqual(target.variantIds, ['gid://shopify/ProductVariant/222']);
       const result = await originalAvailability(target);
-      return {
+      const snapshot = {
         ...result,
-        variants: result.variants.map((variant, index) => (index === 0 ? { ...variant, available: true } : variant)),
+        variants: result.variants.map((variant, index) =>
+          index === 0 ? { ...variant, available: !(insideLock && drift === 'stock') } : variant,
+        ),
       };
+      if (insideLock) {
+        if (drift === 'inventory-missing') snapshot.variants = [];
+        if (drift === 'inventory-extra')
+          snapshot.variants.push({ id: 'gid://shopify/ProductVariant/333', available: true });
+        if (drift === 'inventory-duplicate') snapshot.variants.push({ ...snapshot.variants[0]! });
+        if (drift === 'inventory-malformed') Reflect.set(snapshot.variants, 0, null);
+        if (drift === 'inventory-nonboolean') Reflect.set(snapshot.variants[0]!, 'available', 'true');
+        if (drift === 'inventory-nonarray') Reflect.set(snapshot, 'variants', {});
+        if (drift === 'inventory-scope') snapshot.shopId = 'foreign';
+        if (drift === 'inventory-product') snapshot.productId = 'gid://shopify/Product/112';
+        if (drift === 'inventory-stale') snapshot.freshUntil = now.toISOString();
+      }
+      return snapshot;
     };
     input.fetchImpl = async (_url, options) => {
       assert(options);
@@ -404,6 +449,27 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
             pageInfo: { hasNextPage: false },
           },
         };
+      } else if (query.includes('InsigniaAvailabilityProduct')) {
+        assert.doesNotMatch(query, /title|media|options|collections|variantsCount/);
+        assert.match(query, /variants\(first: 250\)/);
+        data = {
+          product: {
+            id: 'gid://shopify/Product/111',
+            status: 'ACTIVE',
+            variants: {
+              nodes: [
+                ...(insideLock && drift === 'deleted' ? [] : [{ id: 'gid://shopify/ProductVariant/222' }]),
+                { id: 'gid://shopify/ProductVariant/333' },
+                ...(insideLock && drift === 'duplicate' ? [{ id: 'gid://shopify/ProductVariant/222' }] : []),
+                ...(insideLock && drift === 'malformed' ? [{ id: 'bad' }] : []),
+                ...Array.from({ length: insideLock && drift === '251' ? 249 : 248 }, (_, i) => ({
+                  id: `gid://shopify/ProductVariant/${1000 + i}`,
+                })),
+              ],
+              pageInfo: { hasNextPage: insideLock && drift === 'overflow' },
+            },
+          },
+        };
       } else if (query.includes('M5001Product'))
         data = {
           product: {
@@ -434,7 +500,7 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
       return new Response(JSON.stringify({ data }), { headers: { 'x-shopify-api-version': '2026-07' } });
     };
     const services = createProductionBuyerServices(input);
-    const result = await services.propose(scope, {
+    const desired: Parameters<typeof services.propose>[1] = {
       country: 'US',
       marketId: '42',
       capacity: { ordinaryLineCount: 0, inputBytes: 100 },
@@ -457,7 +523,187 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
           variants: [{ variantId: '222', quantity: 1 }],
         },
       ],
-    });
+    };
+    const excessive = structuredClone(desired);
+    excessive.groups = [
+      {
+        ...excessive.groups[0]!,
+        variants: Array.from({ length: 17 }, (_, i) => ({ variantId: String(2000 + i), quantity: 1 })),
+      },
+      {
+        ...excessive.groups[0]!,
+        productId: '112',
+        variants: Array.from({ length: 16 }, (_, i) => ({ variantId: String(3000 + i), quantity: 1 })),
+      },
+    ];
+    await assert.rejects(() => services.propose(scope, excessive), /capacity exceeded before provider reads/);
+    assert.equal(activeAcquisitions, 0, '33 TOTAL selections across products fail before credential/provider work');
+    if (drift === false) {
+      const originalEffective = input.core.acceptedQuotes.getEffective;
+      const originalFetch = input.fetchImpl!;
+      const originalInventory = input.readVariantAvailability;
+      const uniqueSelected = Array.from({ length: 32 }, (_, i) => `gid://shopify/ProductVariant/${1000 + i}`);
+      const inventoryTargets: { product: string; variants: readonly string[]; final: boolean }[] = [];
+      input.core.acceptedQuotes.getEffective = async (_shop, productId) => ({
+        config: { ...config, productId, revisionId: productId === '111' ? 'revision' : 'revision-two' },
+        configId: productId === '111' ? 'config' : 'config-two',
+        operationId: productId === '111' ? 'publication' : 'publication-two',
+      });
+      input.fetchImpl = async (url, options) => {
+        const body = record(JSON.parse(String(options?.body)));
+        const variables = body.variables ? record(body.variables) : {};
+        const query = text(body.query);
+        const productId = variables.id;
+        const ids = Array.isArray(variables.ids) ? variables.ids : [];
+        if (
+          (query.includes('InsigniaAvailabilityProduct') && productId === 'gid://shopify/Product/112') ||
+          (query.includes('contextualPricing') &&
+            ids.some((id) => id === 'gid://shopify/ProductVariant/444' || uniqueSelected.includes(String(id))))
+        ) {
+          assert.equal(
+            new Headers(options?.headers).get('x-shopify-access-token'),
+            insideLock ? 'synthetic-passive-token' : 'synthetic-offline-token',
+          );
+          const data = query.includes('InsigniaAvailabilityProduct')
+            ? {
+                product: {
+                  id: productId,
+                  status: 'ACTIVE',
+                  variants: {
+                    nodes: [{ id: 'gid://shopify/ProductVariant/444' }],
+                    pageInfo: { hasNextPage: false },
+                  },
+                },
+              }
+            : {
+                nodes: ids.map((id) => ({
+                  __typename: 'ProductVariant',
+                  id,
+                  product: {
+                    id:
+                      id === 'gid://shopify/ProductVariant/444'
+                        ? 'gid://shopify/Product/112'
+                        : 'gid://shopify/Product/111',
+                  },
+                  contextualPricing: {
+                    price: {
+                      amount: id === 'gid://shopify/ProductVariant/444' ? '20.00' : '10.00',
+                      currencyCode: 'USD',
+                    },
+                  },
+                })),
+              };
+          return Response.json({ data }, { headers: { 'x-shopify-api-version': '2026-07' } });
+        }
+        return originalFetch(url, options);
+      };
+      input.readVariantAvailability = async (target) => {
+        inventoryTargets.push({ product: target.productId, variants: [...target.variantIds], final: insideLock });
+        if (target.productId === 'gid://shopify/Product/111' && target.variantIds.length === 32) {
+          assert.deepEqual(target.variantIds, uniqueSelected);
+          return {
+            shopId: scope.shopId,
+            installationGeneration: scope.installationGeneration,
+            productId: target.productId,
+            observedAt: input.clock().toISOString(),
+            freshUntil: new Date(+input.clock() + 300000).toISOString(),
+            variants: target.variantIds.map((id) => ({ id, available: true })),
+          };
+        }
+        if (target.productId === 'gid://shopify/Product/111') return originalInventory(target);
+        assert.equal(target.productId, 'gid://shopify/Product/112');
+        assert.deepEqual(target.variantIds, ['gid://shopify/ProductVariant/444']);
+        return {
+          shopId: scope.shopId,
+          installationGeneration: scope.installationGeneration,
+          productId: target.productId,
+          observedAt: input.clock().toISOString(),
+          freshUntil: new Date(+input.clock() + 300000).toISOString(),
+          variants: [{ id: 'gid://shopify/ProductVariant/444', available: true }],
+        };
+      };
+      try {
+        const multiple = structuredClone(desired);
+        multiple.groups.push({
+          ...structuredClone(multiple.groups[0]!),
+          productId: '112',
+          configRevisionId: 'revision-two',
+          variants: [{ variantId: '444', quantity: 1 }],
+        });
+        const reviewed = await services.propose(scope, multiple);
+        assert.equal(reviewed.totalMinor, '3600');
+        const applied = await services.accept(scope, reviewed.proposalId, {
+          hash: reviewed.hash,
+          idempotencyKey: 'two-products',
+        });
+        assert.equal(
+          decodeEnvelope(required(required(applied.buckets[0]).properties._insignia_quote_v2)).header.totalMinor,
+          '3600',
+        );
+        assert.deepEqual(
+          applied.buckets
+            .map(({ variantId, quantity }) => ({ variantId, quantity }))
+            .sort((a, b) => a.variantId.localeCompare(b.variantId)),
+          [
+            { variantId: '222', quantity: 1 },
+            { variantId: '444', quantity: 1 },
+          ],
+        );
+        assert.equal(facts, 1);
+        for (const final of [false, true]) {
+          assert.deepEqual(
+            inventoryTargets.filter((value) => value.final === final),
+            [
+              { product: 'gid://shopify/Product/111', variants: ['gid://shopify/ProductVariant/222'], final },
+              { product: 'gid://shopify/Product/112', variants: ['gid://shopify/ProductVariant/444'], final },
+            ],
+            'each phase reads only the selected inventory of each product',
+          );
+        }
+        assert.equal(refreshReadsInsideLock, 0);
+        inventoryTargets.length = 0;
+        const unique = structuredClone(desired);
+        unique.groups[0]!.variants = uniqueSelected.map((id) => ({ variantId: id.split('/').at(-1)!, quantity: 1 }));
+        const uniqueReview = await services.propose(scope, unique);
+        assert.equal(uniqueReview.totalMinor, '41600');
+        const uniqueAcceptance = await services.accept(scope, uniqueReview.proposalId, {
+          hash: uniqueReview.hash,
+          idempotencyKey: '32-unique-selected',
+        });
+        assert.deepEqual(
+          uniqueAcceptance.buckets.map((bucket) => bucket.variantId).sort(),
+          unique.groups[0]!.variants.map((variant) => variant.variantId).sort(),
+        );
+        assert.equal(facts, 2, 'each explicitly accepted reviewed quote creates one result');
+        for (const final of [false, true])
+          assert.deepEqual(
+            inventoryTargets.filter((value) => value.final === final),
+            [{ product: 'gid://shopify/Product/111', variants: uniqueSelected, final }],
+          );
+        assert.equal(refreshReadsInsideLock, 0);
+      } finally {
+        input.core.acceptedQuotes.getEffective = originalEffective;
+        input.fetchImpl = originalFetch;
+        input.readVariantAvailability = originalInventory;
+        facts = 0;
+        inventoryDispatches = 0;
+        activeAcquisitions = 0;
+        passiveAcquisitions = 0;
+        subscriptionReads = 0;
+      }
+      const atLimit = structuredClone(desired);
+      atLimit.groups = Array.from({ length: 32 }, () => structuredClone(desired.groups[0]!));
+      const atLimitResult = await services.propose(scope, atLimit);
+      assert.equal(atLimitResult.totalMinor, '41600');
+      assert.equal(
+        inventoryDispatches,
+        1,
+        '32 groups deduplicate the selected ID into one per-product inventory dispatch',
+      );
+      activeAcquisitions = 0;
+      subscriptionReads = 0;
+    }
+    const result = await services.propose(scope, desired);
     assert.equal(result.totalMinor, '1300');
     const accept = () => services.accept(scope, result.proposalId, { hash: result.hash, idempotencyKey: 'accept' });
     if (drift === true) {
@@ -465,6 +711,20 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
       assert.equal(facts, 0);
     } else if (drift === 'price') {
       await assert.rejects(accept, /REVIEW_REQUIRED/);
+      assert.equal(facts, 0);
+    } else if (drift === 'passive-missing') {
+      await assert.rejects(accept, /credential_unavailable/);
+      assert.equal(facts, 0);
+    } else if (
+      String(drift).startsWith('inventory-') ||
+      drift === 'duplicate' ||
+      drift === 'malformed' ||
+      drift === '251'
+    ) {
+      await assert.rejects(accept);
+      assert.equal(facts, 0);
+    } else if (drift === 'stock' || drift === 'overflow' || drift === 'deleted') {
+      await assert.rejects(accept, drift === 'deleted' || drift === 'stock' ? /REVIEW_REQUIRED/ : /incomplete/);
       assert.equal(facts, 0);
     } else {
       const accepted = await accept();
@@ -476,7 +736,11 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
       );
     }
     if (drift === 'price') assert.equal(passivePrimaryReads, 0, 'changed economics stop before further provider work');
-    else assert.ok(passivePrimaryReads >= 1);
+    else if (drift !== 'passive-missing') assert.ok(passivePrimaryReads >= 1);
+    assert.equal(activeAcquisitions, 10, 'exact refresh-capable acquisitions across proposal and acceptance');
+    const expectedPassive =
+      drift === false ? 6 : drift === true ? 3 : drift === 'price' ? 2 : drift === 'passive-missing' ? 2 : 4;
+    assert.equal(passiveAcquisitions, expectedPassive, String(drift));
     assert.equal(refreshReadsInsideLock, 0);
   }
 });

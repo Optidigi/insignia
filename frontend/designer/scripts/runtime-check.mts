@@ -588,6 +588,8 @@ test('validated product configuration carries its selected exact cell through th
   assert.deepEqual(request.design.quantities, { [`${selected!.rowId}:${selected!.columnId}`]: 7 });
   assert.deepEqual(request.design.variants, [{ variantId: source.variants[0].id, quantity: 7 }]);
   assert.equal(app.state.completion!.authority, 'shopify');
+  assert.equal(app.state.open, true, 'verified completion retains the original editor');
+  assert.equal(canCommitDesign(app.state), false);
 });
 
 test('real quote preparation preserves the draft, issues no cart effect, and final consent reuses the prepared identity', async () => {
@@ -662,7 +664,9 @@ test('quantity-step preparation is reused on Review and changed intent cancels s
   const first=runtime.commit(true);
   assert.equal(state.commit.kind,'preparing');
   assert.equal(state.step,1);
+  assert.equal(runtime.reviewIntentId,pending[0]?.request.idempotencyKey);
   state=designerReducer(state,{type:'quantity-entered',color:'white',size:'s',value:3});
+  assert.equal(runtime.reviewIntentId,undefined,'retired intent cannot own partial review data');
   runtime.cancelPreparation();
   assert.equal(pending[0]?.request.signal.aborted,true);
   const second=runtime.commit(true);
@@ -997,4 +1001,155 @@ test('late declined response from a canceled commit cannot retire the resumed at
   await h.runtime.commit();
   assert.equal(requests[0]?.idempotencyKey,requests[1]?.idempotencyKey);
   assert.equal(requests[1]?.idempotencyKey,requests[2]?.idempotencyKey);
+});
+
+test('prepared readiness expires without retiring the original attempt identity', async () => {
+  const now = Date.now();
+  const originalNow = Date.now;
+  const app = harness({ artwork: { upload: async () => ({}) }, review: { prepare: async () => ({ expiresAt: new Date(now + 1000).toISOString() }) }, cart: { commit: async (request) => receipt(request) } });
+  try {
+    await app.runtime.commit(true);
+    const identity = app.runtime.reviewIntentId;
+    assert.equal(app.runtime.prepared, true);
+    Date.now = () => now + 1001;
+    assert.equal(app.runtime.prepared, false);
+    assert.equal(app.runtime.reviewIntentId, identity);
+  } finally { Date.now = originalNow; }
+});
+
+test('refreshed terms require a separate Add without reporting cart failure', async () => {
+  let calls = 0;
+  const app = harness({ artwork: { upload: async () => ({}) }, cart: { commit: async (request) => {
+    if (++calls === 1) throw Object.assign(new Error('Review refreshed terms'), { reviewRequired: true, expiresAt: new Date(Date.now() + 60000).toISOString() });
+    return receipt(request);
+  } } });
+  await app.runtime.commit();
+  assert.equal(app.state.commit.kind, 'idle');
+  assert.equal(app.state.completion, null);
+  assert.equal(app.runtime.prepared, true);
+  assert.equal(calls, 1);
+  await app.runtime.commit();
+  assert.equal((app.state.completion as CartReceipt | null)?.kind, 'applied');
+});
+
+test('refresh preparation is cancellable and its late result cannot clear newer work', async () => {
+  const held = delayed();
+  const newer = delayed();
+  const requests: CartRequest[] = [];
+  const app = harness({ artwork: { upload: async () => ({}) }, cart: { commit: async (request) => {
+    requests.push(request);
+    request.onPreparing?.();
+    return requests.length === 1 ? held.promise : newer.promise;
+  } } });
+  const first = app.runtime.commit();
+  assert.equal(app.state.commit.kind, 'preparing');
+  app.runtime.cancelPreparation();
+  app.dispatch({ type: 'step-selected', step: 1 });
+  app.dispatch({ type: 'quantity-entered', color: 'white', size: 's', value: 3 });
+  assert.equal(app.state.step, 1);
+  app.dispatch({ type: 'step-selected', step: 2 });
+  const second = app.runtime.commit();
+  assert.equal(app.state.commit.kind, 'preparing');
+  assert.notEqual(requests[0].requestId, requests[1].requestId);
+  held.resolve({});
+  await first;
+  assert.equal(app.state.commit.kind, 'preparing');
+  newer.resolve({});
+  await second;
+});
+
+test('an ambiguous dispatched attempt replays its identity after the presentation deadline', async () => {
+  const now = Date.now();
+  const originalNow = Date.now;
+  const requests: CartRequest[] = [];
+  let preparations = 0;
+  const app = harness({ artwork: { upload: async () => ({}) }, review: { prepare: async () => { preparations++; return { expiresAt: new Date(now + 1000).toISOString() }; } }, cart: { commit: async (request) => {
+    requests.push(request);
+    if (requests.length === 1) throw Error('Unknown acceptance');
+    return receipt(request);
+  } } });
+  try {
+    await app.runtime.commit(true);
+    await app.runtime.commit();
+    Date.now = () => now + 1001;
+    assert.equal(app.runtime.prepared, true, 'deadline cannot revoke reconciliation of an unknown dispatch');
+    await app.runtime.commit(true);
+    assert.equal(preparations, 1);
+    await app.runtime.commit();
+    assert.equal(requests[1].idempotencyKey, requests[0].idempotencyKey);
+    assert.equal(requests[1].design.id, requests[0].design.id);
+  } finally { Date.now = originalNow; }
+});
+
+test('preflight failure has no dispatched acceptance and loses expired readiness', async () => {
+  const now = Date.now();
+  const originalNow = Date.now;
+  const app = harness({ artwork: { upload: async () => ({}) }, review: { prepare: async () => ({ expiresAt: new Date(now + 1000).toISOString() }) }, cart: { commit: async (request) => {
+    request.onPreparing?.();
+    throw Error('Cart read unavailable');
+  } } });
+  try {
+    await app.runtime.commit(true);
+    await app.runtime.commit();
+    assert.equal(app.state.commit.kind, 'failed');
+    assert.equal(app.state.commit.kind === 'failed' && app.state.commit.preparation, true);
+    Date.now = () => now + 1001;
+    assert.equal(app.runtime.prepared, false);
+  } finally { Date.now = originalNow; }
+});
+
+
+test('verified inline completion retains media expiry and renewal while rejecting editing and resubmission', async () => {
+  const initial = ready();
+  initial.rules = { ...initial.rules, variantMatrix: [{ rowId: 'white', columnId: 's', variantId: '7', available: true }] };
+  const app = harness({ artwork: { upload: async () => ({}) }, cart: { commit: async request => ({ ...receipt(request), authority: 'shopify' }) } }, initial);
+  await app.runtime.commit();
+  assert.equal(app.state.completion?.authority, 'shopify');
+  const current = app.state.artworks[0]!;
+  const expired = designerReducer(app.state, { type: 'artwork-preview-expired', id: current.id, expectedExpiry: current.previewExpiresAt });
+  assert.equal(expired.artworks[0]?.url, '', 'expired capability cannot stay presented while navigation is blocked');
+  const fresh = { ...current, url: 'https://example.test/renewed.png', previewExpiresAt: '2099-02-01T00:00:00Z' };
+  const renewed = designerReducer(expired, { type: 'artwork-preview-refreshed', artwork: fresh, expectedExpiry: current.previewExpiresAt });
+  assert.equal(renewed.artworks[0]?.url, fresh.url);
+  const unavailable = designerReducer(renewed, { type: 'artwork-unavailable', id: fresh.id, expectedExpiry: fresh.previewExpiresAt });
+  assert.equal(unavailable.artworks.some(artwork => artwork.id === fresh.id), false);
+  assert.equal(unavailable.completion, app.state.completion, 'lifecycle changes preserve verified completion');
+  assert.equal(designerReducer(unavailable, { type: 'step-selected', step: 0 }), unavailable);
+  assert.equal(canCommitDesign(unavailable), false);
+});
+
+
+test('explicit preparation Retry recovers a transient preflight read before quote expiry without accepting', async () => {
+  const preparations: CartRequest[] = [];
+  const commits: CartRequest[] = [];
+  let cartReadAvailable = false;
+  const app = harness({
+    artwork: { upload: async () => ({}) },
+    review: { prepare: async request => {
+      preparations.push(request);
+      return { expiresAt: new Date(Date.now() + 60000).toISOString() };
+    } },
+    cart: { commit: async request => {
+      commits.push(request);
+      request.onPreparing?.();
+      if (!cartReadAvailable) throw Error('Transient preflight read');
+      request.onMutating?.();
+      return receipt(request);
+    } },
+  });
+  await app.runtime.commit(true);
+  await app.runtime.commit();
+  assert.equal(app.state.commit.kind === 'failed' && app.state.commit.preparation, true);
+  assert.equal(app.runtime.prepared, true, 'the original quote has not expired');
+  cartReadAvailable = true;
+  await app.runtime.commit(true);
+  assert.equal(preparations.length, 2, 'Retry must perform preparation rather than hit the prepared shortcut');
+  assert.equal(preparations[1].idempotencyKey, preparations[0].idempotencyKey);
+  assert.equal(commits.length, 1, 'preparation retry cannot accept or apply a cart');
+  assert.equal(app.state.commit.kind, 'idle');
+  assert.equal(app.state.completion, null);
+  await app.runtime.commit();
+  assert.equal(commits.length, 2);
+  assert.equal(commits[1].idempotencyKey, commits[0].idempotencyKey);
+  assert.notEqual(app.state.completion, null);
 });

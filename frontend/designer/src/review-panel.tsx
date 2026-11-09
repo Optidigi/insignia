@@ -10,6 +10,7 @@ import { printSizeLabel } from './position-geometry';
 import { type DesignerQuoteReview, quoteReviewMoney } from './quote-review';
 
 interface ReviewPanelProps {
+  quoteStatus?: 'loading' | 'unavailable';
   productionChoices?: Record<string, string>;
   quoteReview?: DesignerQuoteReview;
   onSelectQuoteGroup?: (id: string) => void;
@@ -32,6 +33,7 @@ export function ReviewPanel({
   onEditArtwork,
   onEditQuantities,
   quoteReview,
+  quoteStatus,
   onSelectQuoteGroup,
 }: ReviewPanelProps) {
   const { t, formatLocale } = useLocale();
@@ -161,7 +163,11 @@ export function ReviewPanel({
         <summary>
           <span>{t('customer:review.pricePerItem')}</span>
           <strong>
-            <bdi>{moneyRange([baseRange[0] + decoration, baseRange[1] + decoration])}</bdi>
+            <bdi>
+              {quoteStatus
+                ? t(quoteStatus === 'loading' ? 'customer:chrome.calculatingQuote' : 'common:summary.unavailable')
+                : moneyRange([baseRange[0] + decoration, baseRange[1] + decoration])}
+            </bdi>
           </strong>
           <DisclosureIcon />
         </summary>
@@ -169,14 +175,22 @@ export function ReviewPanel({
           <div>
             <dt>{t('customer:review.baseItem')}</dt>
             <dd>
-              <bdi>{moneyRange(baseRange)}</bdi>
+              <bdi>
+                {quoteStatus
+                  ? t(quoteStatus === 'loading' ? 'customer:chrome.calculatingQuote' : 'common:summary.unavailable')
+                  : moneyRange(baseRange)}
+              </bdi>
             </dd>
           </div>
           {prints.map((print) => (
             <div key={print.id}>
               <dt>{positionFor(print.id).name}</dt>
               <dd>
-                <bdi>{money(printPrice(print))}</bdi>
+                <bdi>
+                  {quoteStatus
+                    ? t(quoteStatus === 'loading' ? 'customer:chrome.calculatingQuote' : 'common:summary.unavailable')
+                    : money(printPrice(print))}
+                </bdi>
               </dd>
             </div>
           ))}
@@ -194,9 +208,11 @@ export function ReviewPanel({
               </dt>
               <dd>
                 <bdi>
-                  {group.totalMinor !== undefined
-                    ? quoteReviewMoney(group.totalMinor, quoteReview.currency, quoteReview.exponent, formatLocale)
-                    : t('common:summary.unavailable')}
+                  {quoteStatus
+                    ? t(quoteStatus === 'loading' ? 'customer:chrome.calculatingQuote' : 'common:summary.unavailable')
+                    : group.totalMinor !== undefined
+                      ? quoteReviewMoney(group.totalMinor, quoteReview.currency, quoteReview.exponent, formatLocale)
+                      : t('common:summary.unavailable')}
                 </bdi>
               </dd>
             </div>

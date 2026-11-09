@@ -8,6 +8,8 @@ import cartCandidate from '../../deployment/m5-runtime/native-cart-release-bindi
 import fixedModules from '../../deployment/m5-runtime/native-fixed-module-baseline.json' with { type: 'json' };
 import fixedCandidate from '../../deployment/m5-runtime/native-fixed-release-binding.json' with { type: 'json' };
 import historicalModules from '../../deployment/m5-runtime/native-function-module-baseline.json' with { type: 'json' };
+import loadingModules from '../../deployment/m5-runtime/native-loading-module-baseline.json' with { type: 'json' };
+import loadingCandidate from '../../deployment/m5-runtime/native-loading-release-binding.json' with { type: 'json' };
 import parityModules from '../../deployment/m5-runtime/native-parity-module-baseline.json' with { type: 'json' };
 import parityCandidate from '../../deployment/m5-runtime/native-parity-release-binding.json' with { type: 'json' };
 import performanceModules from '../../deployment/m5-runtime/native-performance-module-baseline.json' with {
@@ -18,6 +20,14 @@ import performanceCandidate from '../../deployment/m5-runtime/native-performance
 };
 import recoveryModules from '../../deployment/m5-runtime/native-recovery-module-baseline.json' with { type: 'json' };
 import recoveryCandidate from '../../deployment/m5-runtime/native-recovery-release-binding.json' with { type: 'json' };
+import reviewCartModules from '../../deployment/m5-runtime/native-review-cart-module-baseline.json' with {
+  type: 'json',
+};
+import reviewCartCandidate from '../../deployment/m5-runtime/native-review-cart-release-binding.json' with {
+  type: 'json',
+};
+import reviewNavModules from '../../deployment/m5-runtime/native-review-nav-module-baseline.json' with { type: 'json' };
+import reviewNavBinding from '../../deployment/m5-runtime/native-review-nav-release-binding.json' with { type: 'json' };
 import selectedOnlyModules from '../../deployment/m5-runtime/native-selected-fixed-module-baseline.json' with {
   type: 'json',
 };
@@ -72,6 +82,30 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  'native-review-nav-8a7ee446': {
+    versionId: reviewNavBinding.versionId,
+    versionTag: reviewNavBinding.versionTag,
+    versionIds: reviewNavBinding.versionIds,
+    moduleHash: reviewNavBinding.moduleHash,
+    modules: reviewNavModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+  },
+  'native-loading-defd05b0': {
+    versionId: loadingCandidate.versionId,
+    versionTag: loadingCandidate.versionTag,
+    versionIds: loadingCandidate.versionIds,
+    moduleHash: loadingCandidate.moduleHash,
+    modules: loadingModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+  },
+  'native-review-cart-1f4595f': {
+    versionId: reviewCartCandidate.versionId,
+    versionTag: reviewCartCandidate.versionTag,
+    versionIds: reviewCartCandidate.versionIds,
+    moduleHash: reviewCartCandidate.moduleHash,
+    modules: reviewCartModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+  },
   'native-startup-771bb8f': {
     versionId: startupCandidate.versionId,
     versionTag: startupCandidate.versionTag,

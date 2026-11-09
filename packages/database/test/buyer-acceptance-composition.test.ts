@@ -375,6 +375,14 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
             let data: unknown;
             if (body.query.includes('InsigniaShopContext'))
               data = { shop: { id: shopGid, currencyCode: 'EUR', ianaTimezone: 'UTC' } };
+            else if (body.query.includes('InsigniaAvailabilityProduct'))
+              data = {
+                product: {
+                  id: `gid://shopify/Product/${f.productId}`,
+                  status: 'ACTIVE',
+                  variants: { nodes: [{ id: 'gid://shopify/ProductVariant/222' }], pageInfo: { hasNextPage: false } },
+                },
+              };
             else if (body.query.includes('M5001Product'))
               data = {
                 product: {

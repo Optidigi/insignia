@@ -39,13 +39,13 @@ const operations = [
   'READ_DURABLE_TENANT_CLOSE',
   'APPEND_TRUSTED_RELEASE_ONCE',
 ];
-async function writeCollectorRecords(phase: string, id: string, sequence: string[]) {
+async function writeCollectorRecords(phase: string, id: string, sequence: string[], protocol = 'v1') {
   await mkdir(phase, { mode: 0o700 });
   const write = (name: string, value: unknown) => writeFile(join(phase, name), JSON.stringify(value), { mode: 0o600 });
   await write('invocation.json', {
-    version: 'm5-owner-collector-invocation-v1',
+    version: `m5-owner-collector-invocation-${protocol}`,
     recordId: id,
-    sdkReadMethods: 4,
+    sdkReadMethods: protocol === 'v1' ? 4 : 3,
     ownerOAuthPosts: 1,
     ownerAdminSelectedReads: 3,
     appendCalls: 1,
@@ -62,12 +62,12 @@ async function writeCollectorRecords(phase: string, id: string, sequence: string
   });
   for (let index = 0; index < sequence.length; index++) {
     const record = {
-      version: 'm5-owner-collector-reservation-v1',
+      version: `m5-owner-collector-reservation-${protocol}`,
       ordinal: index + 1,
       operation: sequence[index],
       reservedAt: '2026-10-11T00:00:00.000Z',
     };
-    if (index === 11) Object.assign(record, { recordId: id, inputDigest: '0'.repeat(64) });
+    if (index === (protocol === 'v1' ? 11 : 10)) Object.assign(record, { recordId: id, inputDigest: '0'.repeat(64) });
     await write(`reservation-${String(index + 1).padStart(2, '0')}.json`, record);
   }
 }
@@ -480,5 +480,42 @@ test('bridge handover reconciles a real launcher timeout only with a closed no-a
     await assert.rejects(inspectPriorBridgeHandoverSettlement(c.parent), /prior_settlement_unknown/);
   } finally {
     await rm(c.parent, { recursive: true, force: true });
+  }
+});
+
+test('v2 journals use eleven reservations and reject mixed versions, ordinals and uncertain append', async () => {
+  const sequence = operations
+    .filter((op) => op !== 'AppVersionByTag')
+    .map((op) => (op === 'ActiveAppReleaseFromApiKey' ? 'FixedActiveAppRelease' : op));
+  for (const mode of ['ack', 'uncertain', 'mixed', 'ordinal', 'digest', 'unknown', 'prefix']) {
+    const parent = await mkdtemp(join(tmpdir(), 'insignia-owner-v2-'));
+    const phase = join(parent, `m5-trusted-release-collector-native-run-20261011-${recordId}`);
+    try {
+      await writeCollectorRecords(phase, recordId, mode === 'prefix' ? sequence.slice(0, 4) : sequence, 'v2');
+      await writeFile(
+        join(phase, 'receipt.json'),
+        JSON.stringify({
+          ...closed(mode === 'uncertain'),
+          version: mode === 'mixed' ? 'm5-owner-trusted-release-collector-v1' : 'm5-owner-trusted-release-collector-v2',
+          ...(mode === 'prefix'
+            ? { classification: 'TRUSTED_RELEASE_COLLECT_STOPPED', appendAttempted: false, appendAcknowledged: false }
+            : {}),
+        }),
+        { mode: 0o600 },
+      );
+      if (['ordinal', 'digest', 'unknown'].includes(mode)) {
+        const file = join(phase, 'reservation-11.json');
+        const row = JSON.parse(await readFile(file, 'utf8'));
+        if (mode === 'ordinal') row.ordinal = 12;
+        if (mode === 'digest') row.inputDigest = '1'.repeat(64);
+        if (mode === 'unknown') row.version = 'm5-owner-collector-reservation-v3';
+        await writeFile(file, JSON.stringify(row));
+      }
+      if (mode === 'ack' || mode === 'prefix')
+        assert.equal(required((await inspectPriorCollectorSettlement(parent))[0]).settled, true);
+      else await assert.rejects(inspectPriorCollectorSettlement(parent));
+    } finally {
+      await rm(parent, { recursive: true, force: true });
+    }
   }
 });

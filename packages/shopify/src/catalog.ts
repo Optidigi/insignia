@@ -1,7 +1,10 @@
 import { withAdminDeadline } from './admin-deadline.js';
 /** Bounded, read-only Admin catalog projection. The caller supplies a verified online grant. */
 export interface CatalogTransport {
-  read<T>(operation: 'list' | 'detail' | 'currency' | 'tags', variables: Record<string, unknown>): Promise<T>;
+  read<T>(
+    operation: 'list' | 'detail' | 'currency' | 'tags' | 'availability',
+    variables: Record<string, unknown>,
+  ): Promise<T>;
 }
 
 export type CatalogImage = { url: string; alt: string | null; id?: string; width?: number; height?: number };
@@ -223,8 +226,49 @@ function project(value: RawProduct, maxVariants = 8): CatalogProduct {
   };
 }
 
+// Admin 2026-07 Product.variants is a connection; 250 plus hasNextPage bounds support.
+// https://shopify.dev/docs/api/admin-graphql/2026-07/objects/Product
+const availabilityQuery = `query InsigniaAvailabilityProduct($id: ID!) {
+  product(id: $id) { id status variants(first: 250) { nodes { id } pageInfo { hasNextPage } } }
+}`;
 export function createCatalogReader(transport: CatalogTransport) {
   return {
+    async availabilityProduct(
+      productId: string,
+    ): Promise<{ id: string; status: CatalogProduct['status']; variantIds: string[] } | null> {
+      if (!/^gid:\/\/shopify\/Product\/[1-9][0-9]{0,19}$/.test(productId)) throw new Error('Invalid product ID');
+      const response = await transport.read<{
+        product: {
+          id: string;
+          status: string;
+          variants: { nodes: { id: string }[]; pageInfo: { hasNextPage: boolean } };
+        } | null;
+      }>('availability', { id: productId });
+      if (!response || !Object.hasOwn(response, 'product')) throw new Error('Invalid availability product');
+      if (response.product === null) return null;
+      const product = response.product;
+      if (
+        !product ||
+        product.id !== productId ||
+        !['ACTIVE', 'DRAFT', 'ARCHIVED', 'UNLISTED'].includes(product.status) ||
+        !Array.isArray(product.variants?.nodes) ||
+        product.variants.nodes.length > 250 ||
+        product.variants.pageInfo?.hasNextPage !== false ||
+        product.variants.nodes.some(
+          (variant) =>
+            !variant ||
+            typeof variant.id !== 'string' ||
+            !/^gid:\/\/shopify\/ProductVariant\/[1-9][0-9]{0,19}$/.test(variant.id),
+        ) ||
+        new Set(product.variants.nodes.map((variant) => variant.id)).size !== product.variants.nodes.length
+      )
+        throw new Error('Invalid or incomplete availability product');
+      return {
+        id: product.id,
+        status: product.status as CatalogProduct['status'],
+        variantIds: product.variants.nodes.map((variant) => variant.id),
+      };
+    },
     async productTags(productIds: readonly string[]): Promise<Record<string, string[]>> {
       if (
         productIds.length > 250 ||
@@ -341,15 +385,20 @@ export function createCatalogTransport(input: {
   if (!/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(input.shop) || !input.accessToken)
     throw new Error('Invalid catalog transport scope');
   return {
-    async read<T>(operation: 'list' | 'detail' | 'currency' | 'tags', variables: Record<string, unknown>): Promise<T> {
+    async read<T>(
+      operation: 'list' | 'detail' | 'currency' | 'tags' | 'availability',
+      variables: Record<string, unknown>,
+    ): Promise<T> {
       const query =
-        operation === 'list'
-          ? listQuery
-          : operation === 'detail'
-            ? detailQuery
-            : operation === 'tags'
-              ? tagsQuery
-              : currencyQuery;
+        operation === 'availability'
+          ? availabilityQuery
+          : operation === 'list'
+            ? listQuery
+            : operation === 'detail'
+              ? detailQuery
+              : operation === 'tags'
+                ? tagsQuery
+                : currencyQuery;
       let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
       return withAdminDeadline(
         async (signal) => {

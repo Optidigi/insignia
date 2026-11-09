@@ -167,7 +167,7 @@ const reply = (
   appendAcknowledged = false,
   ambiguousWrite = false,
 ) => ({
-  version: 'm5-owner-trusted-release-collector-v1',
+  version: 'm5-owner-trusted-release-collector-v2',
   classification,
   appendAttempted,
   appendAcknowledged,
@@ -220,9 +220,9 @@ export async function collectFreshTrustedRelease(config: unknown, ports: Collect
       await parentHandle.close();
     }
     await persist(directory, 'invocation.json', {
-      version: 'm5-owner-collector-invocation-v1',
+      version: 'm5-owner-collector-invocation-v2',
       recordId: config.recordId,
-      sdkReadMethods: 4,
+      sdkReadMethods: 3,
       ownerOAuthPosts: 1,
       ownerAdminSelectedReads: 3,
       appendCalls: 1,
@@ -237,12 +237,12 @@ export async function collectFreshTrustedRelease(config: unknown, ports: Collect
       assert.ok(Number.isFinite(now) && now >= startedAt && now - startedAt < 300000);
       return now;
     };
-    const sdkSequence = ['ActiveAppReleaseFromApiKey', 'AppVersions', 'AppVersionByTag', 'AppVersions'];
+    const sdkSequence = ['FixedActiveAppRelease', 'AppVersions', 'AppVersions'];
     let sdkOrdinal = 0;
     const reserve = async (operation: string, extra: Record<string, unknown> = {}) => {
       live();
       const receipt = {
-        version: 'm5-owner-collector-reservation-v1',
+        version: 'm5-owner-collector-reservation-v2',
         ordinal: ++ordinal,
         operation,
         reservedAt: new Date(ports.now()).toISOString(),
@@ -265,7 +265,7 @@ export async function collectFreshTrustedRelease(config: unknown, ports: Collect
     await operation('AUTHENTICATE_EXISTING_MANAGEMENT_SESSION', () => ports.management.authenticate());
     const opening = await ports.management.open(sdkReserve);
     managementOpening(opening, profile);
-    assert.equal(sdkOrdinal, 3);
+    assert.equal(sdkOrdinal, 2);
     accessToken = await operation('CLIENT_CREDENTIALS_ONCE', ports.acquireToken);
     assert.ok(typeof accessToken === 'string' && /^[^\s]{1,4096}$/.test(accessToken));
     installation(
@@ -291,7 +291,7 @@ export async function collectFreshTrustedRelease(config: unknown, ports: Collect
     keys(closing, ['versions', 'totalResults', 'observedAt']);
     versionRows(closing.versions);
     assert(typeof closing.observedAt === 'string');
-    assert.equal(sdkOrdinal, 4);
+    assert.equal(sdkOrdinal, 3);
     assert.equal(closing.totalResults, profile.versionIds.length);
     assert.deepEqual(closing.versions, opening.versions);
     assert.deepEqual(

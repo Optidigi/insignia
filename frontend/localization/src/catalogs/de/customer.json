@@ -18,7 +18,11 @@
     "reducePreview": "Vorschau verkleinern",
     "enlargePreview": "Vorschau vergrößern",
     "showFullProduct": "Ganzes Produkt anzeigen",
-    "focusOnArtwork": "Motiv in den Fokus rücken"
+    "focusOnArtwork": "Motiv in den Fokus rücken",
+    "calculatingQuote": "Angebot wird berechnet…",
+    "preparingQuote": "Angebot wird vorbereitet…",
+    "openingCart": "Warenkorb wird geöffnet…",
+    "viewCart": "Warenkorb ansehen"
   },
   "steps": {
     "designSteps": "Gestaltungsschritte",

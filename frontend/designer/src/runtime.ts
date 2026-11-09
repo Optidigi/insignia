@@ -23,6 +23,8 @@ export interface UploadRequest {
   signal: AbortSignal;
 }
 export interface CartRequest {
+  onPreparing?: () => void;
+  onMutating?: () => void;
   requestId: string;
   /** Separate from UI request identity; a connected adapter must preserve it on transport retries. */
   idempotencyKey: string;
@@ -42,7 +44,7 @@ export interface CartReceipt {
 export const designerIntentKey = (state: DesignerState) =>
   JSON.stringify([state.editing, state.prints, state.quantities, state.rules.variantMatrix, state.productionChoices]);
 export interface DesignerPorts {
-  review?: { prepare(request: CartRequest): Promise<void> };
+  review?: { prepare(request: CartRequest): Promise<void | { expiresAt: string }> };
   artwork: { upload(file: File, request: UploadRequest): Promise<Artwork>; apply?(artwork:Artwork,request:UploadRequest):Promise<Artwork>; renew?(artwork:Artwork,request:UploadRequest):Promise<Artwork> };
   /** Resolve only after the requested cart application has been verified by the adapter. */
   cart: { commit(request: CartRequest): Promise<CartReceipt> };
@@ -75,12 +77,14 @@ export function createDesignerRuntime(
   dispatch: (event: DesignerEvent) => void,
 ) {
   const renewing = new Map<string, AbortController>();
+  let reviewController: AbortController | undefined;
   let reviewing = false;
   let preparedSignature: string | null = null;
+  let preparedExpiresAt: string | undefined;
   let uploadVersion = 0;
   let uploadController: AbortController | null = null;
   let commitController: AbortController | null = null;
-  let attempt: { signature: string; designId: string; idempotencyKey: string } | null =
+  let attempt: { signature: string; designId: string; idempotencyKey: string; dispatched?: boolean } | null =
     null;
   function cancelUpload() {
     uploadVersion += 1;
@@ -95,13 +99,20 @@ export function createDesignerRuntime(
     dispatch({ type: "cart-commit-canceled" });
   }
   return {
+    get reviewIntentId() { return attempt?.signature === designerIntentKey(getState()) ? attempt.idempotencyKey : undefined; },
     get reviewing() { return reviewing; },
-    get prepared() { return preparedSignature === designerIntentKey(getState()); },
+    get prepared() { return preparedSignature === designerIntentKey(getState()) && (attempt?.dispatched || !preparedExpiresAt || Date.parse(preparedExpiresAt) > Date.now()); },
     cancelUpload,
     cancelCommit,
-    cancelPreparation() { if (reviewing) cancelCommit(); },
+    cancelPreparation() {
+      reviewController?.abort();
+      reviewController = undefined;
+      if (reviewing) cancelCommit();
+    },
     cancel() {
       cancelUpload();
+      reviewController?.abort();
+      reviewController = undefined;
       cancelCommit();
       for (const controller of renewing.values()) controller.abort();
       renewing.clear();
@@ -209,9 +220,11 @@ export function createDesignerRuntime(
       const state = prepareOnly && observed.step === 1 ? {...observed,step:2 as const} : observed;
       if (commitController || !canCommitDesign(state)) return;
       const signature = designerIntentKey(state);
-      if (prepareOnly && preparedSignature === signature) return;
+      const retryPreparation = prepareOnly && state.commit.kind === 'failed' && state.commit.preparation && !attempt?.dispatched;
+      if (prepareOnly && !retryPreparation && preparedSignature === signature && (attempt?.dispatched || !preparedExpiresAt || Date.parse(preparedExpiresAt) > Date.now())) return;
       if (!attempt || attempt.signature !== signature) {
         preparedSignature = null;
+        preparedExpiresAt = undefined;
         attempt = {
           signature,
           designId: state.editing ?? crypto.randomUUID(),
@@ -224,6 +237,18 @@ export function createDesignerRuntime(
       const controller = new AbortController();
       commitController = controller;
       const request: CartRequest = {
+        onMutating() {
+          if (controller.signal.aborted || commitController !== controller) return;
+          if (attempt) attempt.dispatched = true;
+          reviewing = false;
+          dispatch({ type: 'cart-mutation-started', requestId });
+        },
+        onPreparing() {
+          if (controller.signal.aborted || commitController !== controller) return;
+          if (attempt) attempt.dispatched = false;
+          reviewing = true;
+          dispatch({ type: 'cart-preparation-started', requestId });
+        },
         requestId,
         idempotencyKey: attempt.idempotencyKey,
         design,
@@ -232,16 +257,20 @@ export function createDesignerRuntime(
         signal: controller.signal,
       };
       reviewing = prepareOnly;
+      reviewController?.abort();
+      reviewController = controller;
       dispatch({ type: "cart-commit-requested", requestId, design: request.design, ...(prepareOnly ? {preparation:true} : {}) });
       try {
         if (prepareOnly) {
-          await ports.review?.prepare(request);
+          const presentation = await ports.review?.prepare(request);
           if (!controller.signal.aborted && commitController === controller) {
+            preparedExpiresAt = presentation?.expiresAt;
             if (designerIntentKey(getState()) === signature) preparedSignature = signature;
             dispatch({type:"cart-commit-canceled"});
           }
           return;
         }
+        if (attempt) attempt.dispatched = true;
         const receipt = await ports.cart.commit(request);
         if (controller.signal.aborted || commitController !== controller) return;
         if (!matchesCartReceipt(receipt, request))
@@ -250,6 +279,13 @@ export function createDesignerRuntime(
         dispatch({ type: "cart-commit-succeeded", requestId, receipt });
       } catch (error) {
         if (!controller.signal.aborted && commitController === controller) {
+          if (!prepareOnly && error && typeof error === 'object' && 'reviewRequired' in error && error.reviewRequired === true) {
+            if (attempt) attempt.dispatched = false;
+            preparedSignature = signature;
+            preparedExpiresAt = 'expiresAt' in error ? String(error.expiresAt) : undefined;
+            dispatch({ type: 'cart-commit-canceled' });
+            return;
+          }
           if (!prepareOnly && error && typeof error === 'object' && 'acceptanceOutcome' in error && error.acceptanceOutcome === 'declined' && attempt?.idempotencyKey === request.idempotencyKey) {
             attempt = null;
             preparedSignature = null;
@@ -258,7 +294,7 @@ export function createDesignerRuntime(
             type: "cart-commit-failed",
             requestId,
             reason: "cart-commit-failed",
-            ...(prepareOnly ? {preparation:true} : {}),
+            ...(prepareOnly || reviewing ? {preparation:true} : {}),
           });
         }
       } finally {

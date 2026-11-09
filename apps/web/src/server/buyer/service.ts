@@ -109,6 +109,13 @@ export function createBuyerServices(input: {
     }[];
     imageUrls: Record<string, string>;
   }>;
+  /** Late readiness only; full catalog remains the presentation/restore contract. */
+  availability?(
+    scope: { shopId: string; installationGeneration: string },
+    productId: string,
+    variantIds: readonly string[],
+    phase?: 'final',
+  ): Promise<{ variants: readonly { id: string; available: boolean }[] }>;
   previewImages?: FrozenPreviewReader;
   clock?: () => Date;
 }) {
@@ -161,7 +168,16 @@ export function createBuyerServices(input: {
           await proposalStage('positions', () => validatePositions(scope, groups));
           const availability = async () => {
             for (const productId of new Set(groups.map((group) => group.productId))) {
-              const current = await input.catalog(scope, productId, finalCheck ? 'final' : undefined);
+              const selectedIds = [
+                ...new Set(
+                  groups
+                    .filter((group) => group.productId === productId)
+                    .flatMap((group) => group.variants.map((variant) => variant.variantId)),
+                ),
+              ];
+              const current = input.availability
+                ? await input.availability(scope, productId, selectedIds, finalCheck ? 'final' : undefined)
+                : await input.catalog(scope, productId, finalCheck ? 'final' : undefined);
               const available = new Map(current.variants.map((variant) => [variant.id, variant.available]));
               if (
                 current.variants.length === available.size &&

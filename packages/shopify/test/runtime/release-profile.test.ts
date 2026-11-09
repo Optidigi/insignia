@@ -2,6 +2,27 @@ import { describe, expect, it } from 'vitest';
 import { resolveRuntimeReleaseProfile } from '../../src/runtime-release-profile.js';
 
 describe('closed server release targets', () => {
+  it('binds the inactive Review navigation candidate while preserving the loading target', () => {
+    const profile = resolveRuntimeReleaseProfile('native-review-nav-8a7ee446');
+    expect(profile.activeVersionRef).toBe('1201192632321');
+    expect(profile.functionsSourceCommit).toBe('9b94149272d1b62c34f44dda3bde209e80b4ae22');
+    expect(Object.isFrozen(profile)).toBe(true);
+    expect(resolveRuntimeReleaseProfile('native-loading-defd05b0').activeVersionRef).toBe('1201128341505');
+  });
+  it('binds the inactive loading/handoff candidate without changing prior or Function targets', () => {
+    const profile = resolveRuntimeReleaseProfile('native-loading-defd05b0');
+    expect(profile.activeVersionRef).toBe('1201128341505');
+    expect(profile.functionsSourceCommit).toBe('9b94149272d1b62c34f44dda3bde209e80b4ae22');
+    expect(Object.isFrozen(profile)).toBe(true);
+    expect(resolveRuntimeReleaseProfile('native-review-cart-1f4595f').activeVersionRef).toBe('1200729554945');
+  });
+  it('binds the inactive Review/cart candidate without changing prior or Function targets', () => {
+    const profile = resolveRuntimeReleaseProfile('native-review-cart-1f4595f');
+    expect(profile.activeVersionRef).toBe('1200729554945');
+    expect(profile.functionsSourceCommit).toBe('9b94149272d1b62c34f44dda3bde209e80b4ae22');
+    expect(Object.isFrozen(profile)).toBe(true);
+    expect(resolveRuntimeReleaseProfile('native-startup-771bb8f').activeVersionRef).toBe('1200333160449');
+  });
   it('binds the inactive startup candidate while preserving Function and historical authority', () => {
     const profile = resolveRuntimeReleaseProfile('native-startup-771bb8f');
     expect(profile.activeVersionRef).toBe('1200333160449');
