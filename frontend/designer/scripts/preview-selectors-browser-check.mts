@@ -1,25 +1,37 @@
 import assert from 'node:assert/strict';
-import { spawn, type ChildProcess } from 'node:child_process';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { createServer, type ViteDevServer } from 'vite';
 import { after, before, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { chromium, type Browser } from 'playwright';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const origin = 'http://127.0.0.1:4188';
-let vite: ChildProcess | undefined;
+let origin: string;
+let vite: ViteDevServer | undefined;
+let cacheDir: string;
 let browser: Browser;
 before(async () => {
-  vite = spawn(process.execPath, [fileURLToPath(new URL('../node_modules/vite/bin/vite.js', import.meta.url)),
-    '--host', '127.0.0.1', '--port', '4188', '--strictPort', '--force'], { cwd: root, stdio: 'ignore' });
-  let ready = false;
-  for (let attempt = 0; attempt < 100; attempt++) {
-    try { if ((await fetch(`${origin}/scripts/fixtures/preview-selectors.html`)).ok) { ready = true; break; } } catch { /* Server is starting. */ }
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
-  assert.equal(ready, true, 'selector fixture should start');
+  // Concurrent suites must not replace each other's optimized dependency cache.
+  cacheDir = await mkdtemp(join(tmpdir(), 'insignia-preview-selectors-'));
+  vite = await createServer({
+    root,
+    cacheDir,
+    server: { host: '127.0.0.1', port: 0 },
+    logLevel: 'error',
+  });
+  await vite.listen();
+  const url = vite.resolvedUrls?.local[0];
+  assert.ok(url, 'selector fixture should expose its loopback URL');
+  origin = url.replace(/\/$/, '');
   browser = await chromium.launch({ headless: true });
 });
-after(async () => { await browser?.close(); vite?.kill('SIGTERM'); });
+after(async () => {
+  await browser?.close();
+  await vite?.close();
+  if (cacheDir) await rm(cacheDir, { recursive: true, force: true });
+});
 
 test('phone view and colour names fit together, retain full labels and dispatch actual selections', async () => {
   for (const width of [320, 390]) for (const views of [2, 3, 4]) for (const palette of ['swatch', 'named', 'missing']) {
