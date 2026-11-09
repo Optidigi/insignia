@@ -11,6 +11,7 @@ import type {
   SigningKeyStore,
   TransactionRunner,
 } from '@insignia/application';
+import { BuyerAcceptanceDeclinedError } from '@insignia/application';
 import {
   type MerchantPresentation,
   MerchantPresentationSchema,
@@ -155,9 +156,10 @@ export interface DurableCore {
   readonly productionActivations: {
     create(options: ProductionActivationOptions): ReturnType<typeof createProductionActivation>;
   };
-  readonly acceptedQuotes: QuoteAcceptanceStore & {
-    getEffective(shopId: string, productId: string): Promise<EffectiveQuoteRevision | null>;
-  };
+  readonly acceptedQuotes: QuoteAcceptanceStore &
+    Required<Pick<QuoteAcceptanceStore, 'resolveBuyerAcceptance'>> & {
+      getEffective(shopId: string, productId: string): Promise<EffectiveQuoteRevision | null>;
+    };
   readonly transactions: TransactionRunner<DurableTransaction>;
   readonly commands: CommandRepository<DurableTransaction> & {
     lookup(identity: { shopId: string; namespace: string; key: string }): Promise<{
@@ -553,7 +555,22 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
     acceptedQuotes: {
       getEffective: (shopId, productId) => acceptedQuotes.getEffective(shopId, productId),
       findCompleted: (input) => acceptedQuotes.findCompleted<AcceptedQuoteResult>(input),
-      accept: (input, commit) => acceptedQuotes.accept<AcceptedQuoteResult>(input, commit),
+      resolveBuyerAcceptance: (input) => acceptedQuotes.resolveBuyerAcceptance<AcceptedQuoteResult>(input),
+      accept: async (input, commit) => {
+        try {
+          return await acceptedQuotes.accept<AcceptedQuoteResult>(input, commit);
+        } catch (error) {
+          // Only this repository fence rejection warrants checking terminal evidence.
+          if (!input.buyerCommand || !(error instanceof Error) || error.message !== 'buyer acceptance declined')
+            throw error;
+          const resolution = await acceptedQuotes.resolveBuyerAcceptance<AcceptedQuoteResult>({
+            ...input,
+            buyerCommand: input.buyerCommand,
+          });
+          if (resolution.outcome === 'accepted') return resolution.result;
+          throw new BuyerAcceptanceDeclinedError();
+        }
+      },
     },
     transactions: {
       run: (work) =>

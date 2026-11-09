@@ -346,11 +346,54 @@ export function createLiveDesignerPorts(input: {
           issuedSignatures.set(request.idempotencyKey, signature(request));
           issuanceAttempted.add(request.idempotencyKey);
           // An acceptance may be ambiguous: keep the exact proposal/key for retry, never re-propose here.
-          accepted = await api.private<AcceptedCart>(
-            `quote-proposals/${review.proposal.proposalId}/accept`,
-            { hash: review.proposal.hash, idempotencyKey: request.idempotencyKey },
-            request.signal,
-          );
+          try {
+            accepted = await api.private<AcceptedCart>(
+              `quote-proposals/${review.proposal.proposalId}/accept`,
+              { hash: review.proposal.hash, idempotencyKey: request.idempotencyKey },
+              request.signal,
+            );
+            request.signal.throwIfAborted();
+          } catch (error) {
+            request.signal.throwIfAborted();
+            if (
+              error &&
+              typeof error === 'object' &&
+              'acceptanceOutcome' in error &&
+              error.acceptanceOutcome === 'declined' &&
+              prepared.get(request.idempotencyKey) === review &&
+              issuedSignatures.get(request.idempotencyKey) === signature(request)
+            ) {
+              let canStart = false,
+                targetAvailable = false,
+                canRemoveAll = false;
+              try {
+                const [latest, observed] = await Promise.all([api.config(request.signal), observe(request.signal)]);
+                request.signal.throwIfAborted();
+                canRemoveAll = observed.cart.customized.length > 0;
+                const original = designs.get(request.design.id);
+                targetAvailable =
+                  !!original &&
+                  observed.groups.some(
+                    (candidate) => desiredGroupKey(candidate, false, false) === desiredGroupKey(original, false, false),
+                  );
+                buildBuyerDesigner(latest, { locale: input.locale, storeName: input.storeName });
+                canStart = latest.ready;
+              } catch {
+                /* Unavailable observations grant no recovery capability. */
+              }
+              request.signal.throwIfAborted();
+              if (
+                prepared.get(request.idempotencyKey) !== review ||
+                issuedSignatures.get(request.idempotencyKey) !== signature(request)
+              )
+                throw error;
+              prepared.delete(request.idempotencyKey);
+              issuanceAttempted.delete(request.idempotencyKey);
+              issuedSignatures.delete(request.idempotencyKey);
+              input.onNeedsReview?.(canStart, targetAvailable, canRemoveAll);
+            }
+            throw error;
+          }
           acceptedAttempts.set(request.idempotencyKey, accepted);
         }
         const applied = await cart.apply(accepted.buckets, { expectedFingerprint: review?.baseline.fingerprint ?? '' });

@@ -115,6 +115,7 @@ export function fixtureCore(overrides: Overrides = {}): DurableCore {
       ...overrides.purchases,
     },
     buyers: {
+      commandDeclined: unexpected,
       admitRequest: unexpected,
       reserveCommand: unexpected,
       completeCommand: unexpected,
@@ -167,6 +168,7 @@ export function fixtureCore(overrides: Overrides = {}): DurableCore {
       ...overrides.productionActivations,
     },
     acceptedQuotes: {
+      resolveBuyerAcceptance: unexpected,
       findCompleted: unexpected,
       accept: unexpected,
       getEffective: unexpected,

@@ -1,4 +1,5 @@
 import { createHash, generateKeyPairSync, randomUUID, sign } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { encodeHeader, encodeMember, wholeQuoteSignBytes } from '@insignia/cart-authorization';
 import { sql } from 'kysely';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -14,6 +15,16 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
   afterAll(async () => {
     await db?.destroy();
   });
+  async function waitForBlocked(queryFragment: string) {
+    const deadline = Date.now() + 3000;
+    while (Date.now() < deadline) {
+      const result = await sql<{ count: string }>`SELECT count(*)::text AS count FROM pg_stat_activity
+        WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE ${`%${queryFragment}%`}`.execute(db);
+      if (Number(result.rows[0]?.count) > 0) return;
+      await new Promise<void>((resolve) => setImmediate(resolve));
+    }
+    throw new Error(`Expected real PostgreSQL lock contention: ${queryFragment}`);
+  }
   async function effectiveFixture() {
     const { shopId, generation } = await createTestShop(db);
     const shopifyShopId = (BigInt(`0x${shopId.replaceAll('-', '').slice(0, 15)}`) + 1n).toString();
@@ -138,6 +149,160 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
       db,
     );
     expect(await repo.getSession(scope, now)).toBeNull();
+  });
+  it('unused decline schema can roll back without changing retained commands', async () => {
+    const migration = readFileSync(
+      new URL('../migrations/20261109000100_buyer_acceptance_decline.sql', import.meta.url),
+      'utf8',
+    );
+    const [up, down] = migration.split('-- migrate:down');
+    await db.transaction().execute(async (tx) => {
+      const schema = `decline_rollback_${randomUUID().replaceAll('-', '')}`;
+      await sql`CREATE SCHEMA ${sql.id(schema)}`.execute(tx);
+      await sql`SET LOCAL search_path TO ${sql.id(schema)}, pg_catalog`.execute(tx);
+      await sql`CREATE TABLE buyer_commands (kind text, application_id uuid, created_at timestamptz)`.execute(tx);
+      await sql.raw(up ?? '').execute(tx);
+      await sql`INSERT INTO buyer_commands(kind,created_at) VALUES ('accept',now())`.execute(tx);
+      await sql.raw(down ?? '').execute(tx);
+      expect((await sql<{ kind: string }>`SELECT kind FROM buyer_commands`.execute(tx)).rows).toEqual([
+        { kind: 'accept' },
+      ]);
+      const columns =
+        await sql`SELECT 1 FROM information_schema.columns WHERE table_schema=${schema} AND table_name='buyer_commands' AND column_name='declined_at'`.execute(
+          tx,
+        );
+      expect(columns.rows).toHaveLength(0);
+      await sql`DROP SCHEMA ${sql.id(schema)} CASCADE`.execute(tx);
+    });
+  });
+  it('terminal decline survives retries and prevents a delayed issuer from signing', async () => {
+    const value = await effectiveFixture();
+    const buyer = createBuyerRepository(db);
+    const scope = { shopId: value.shopId, installationGeneration: value.generation, ownerHash: 'a'.repeat(64) };
+    const now = new Date('2026-10-12T12:00:00Z');
+    await buyer.issueSession({ scope, sessionId: randomUUID(), now, expiresAt: new Date(+now + 600000) });
+    const command = { kind: 'accept' as const, key: 'declined', requestDigest: 'b'.repeat(64), now };
+    await buyer.reserveCommand(scope, command);
+    const repo = new PgAcceptedQuoteRepository(db);
+    const input = {
+      ...scope,
+      authorizationGeneration: value.authorizationGeneration,
+      authorizationEpoch: value.authorizationEpoch,
+      idempotencyKey: command.key,
+      requestDigest: 'c'.repeat(64),
+      buyerCommand: { ownerHash: scope.ownerHash, requestDigest: command.requestDigest, now },
+    };
+    expect(await repo.resolveBuyerAcceptance(input)).toEqual({ outcome: 'declined' });
+    const down = readFileSync(
+      new URL('../migrations/20261109000100_buyer_acceptance_decline.sql', import.meta.url),
+      'utf8',
+    ).split('-- migrate:down')[1];
+    await expect(
+      db.transaction().execute(async (tx) => {
+        await sql.raw(down ?? '').execute(tx);
+        throw new Error('rollback unexpectedly allowed');
+      }),
+    ).rejects.toThrow('terminal buyer declines prevent rollback');
+
+    expect(await repo.resolveBuyerAcceptance(input)).toEqual({ outcome: 'declined' });
+    let issued = false;
+    await expect(
+      repo.accept(
+        {
+          ...input,
+          effectiveRevisions: [
+            {
+              configId: 'unused',
+              operationId: 'unused',
+              productId: 'unused',
+              revisionId: 'unused',
+              contentHash: 'unused',
+            },
+          ],
+        },
+        async () => {
+          issued = true;
+          throw new Error('issuer reached');
+        },
+      ),
+    ).rejects.toThrow('buyer acceptance declined');
+    expect(issued).toBe(false);
+    await expect(
+      repo.resolveBuyerAcceptance({ ...input, buyerCommand: { ...input.buyerCommand, requestDigest: 'd'.repeat(64) } }),
+    ).rejects.toThrow();
+    await expect(
+      sql`UPDATE buyer_commands SET declined_at=NULL WHERE shop_id=${scope.shopId}`.execute(db),
+    ).rejects.toThrow();
+  });
+  it('a decline holding the issuance fence wins over an overlapping delayed issuer', async () => {
+    const value = await effectiveFixture();
+    const buyer = createBuyerRepository(db),
+      now = new Date('2026-10-12T12:00:00Z');
+    const scope = { shopId: value.shopId, installationGeneration: value.generation, ownerHash: '6'.repeat(64) };
+    const sessionId = randomUUID();
+    await buyer.issueSession({ scope, sessionId, now, expiresAt: new Date(+now + 604800000) });
+    const command = { kind: 'accept' as const, key: 'overlapping-decline', requestDigest: '7'.repeat(64), now };
+    await buyer.reserveCommand(scope, command);
+    const input = {
+      shopId: value.shopId,
+      installationGeneration: value.generation,
+      authorizationGeneration: value.authorizationGeneration,
+      authorizationEpoch: value.authorizationEpoch,
+      idempotencyKey: command.key,
+      requestDigest: '8'.repeat(64),
+      buyerCommand: { ownerHash: scope.ownerHash, requestDigest: command.requestDigest, now },
+    };
+    let release: () => void = () => {},
+      entered: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const ready = new Promise<void>((resolve) => {
+      entered = resolve;
+    });
+    const blocker = db.transaction().execute(async (tx) => {
+      await sql`SELECT 1 FROM buyer_commands WHERE session_id=${sessionId}::uuid FOR UPDATE`.execute(tx);
+      entered();
+      await gate;
+    });
+    await ready;
+    const repo = new PgAcceptedQuoteRepository(db);
+    const resolution = repo.resolveBuyerAcceptance(input);
+    let signed = false;
+    let issuance: Promise<unknown> | undefined;
+    try {
+      await waitForBlocked('FROM buyer_commands WHERE session_id');
+      issuance = repo
+        .accept(
+          {
+            ...input,
+            effectiveRevisions: [
+              {
+                configId: 'unused',
+                operationId: 'unused',
+                productId: 'unused',
+                revisionId: 'unused',
+                contentHash: 'unused',
+              },
+            ],
+          },
+          async () => {
+            signed = true;
+            throw new Error('Unexpected signing');
+          },
+        )
+        .then(
+          () => 'unexpected success',
+          (error: unknown) => error,
+        );
+      await waitForBlocked('FROM shops s JOIN installation_generations');
+    } finally {
+      release();
+      await blocker;
+    }
+    expect(await resolution).toEqual({ outcome: 'declined' });
+    expect(await issuance).toMatchObject({ message: 'buyer acceptance declined' });
+    expect(signed).toBe(false);
   });
   it('retains expired proposals for owned restoration until session erasure and bounds writes', async () => {
     const { shopId } = await createTestShop(db);
@@ -304,10 +469,44 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
       effectiveRevisions,
     };
 
-    await new PgAcceptedQuoteRepository(db).accept(input, async () => ({ quote, authorization }));
     const buyer = createBuyerRepository(db),
       now = new Date('2026-10-12T15:00:00Z');
-    const scope = { shopId: value.shopId, installationGeneration: value.generation, ownerHash: 'c'.repeat(64) };
+    const raceScope = { shopId: value.shopId, installationGeneration: value.generation, ownerHash: 'c'.repeat(64) };
+    await buyer.issueSession({ scope: raceScope, sessionId: randomUUID(), now, expiresAt: new Date(+now + 604800000) });
+    const reserved = { kind: 'accept' as const, key: input.idempotencyKey, requestDigest: '9'.repeat(64), now };
+    await buyer.reserveCommand(raceScope, reserved);
+    const fenced = {
+      ...input,
+      buyerCommand: { ownerHash: raceScope.ownerHash, requestDigest: reserved.requestDigest, now },
+    };
+    const repository = new PgAcceptedQuoteRepository(db);
+    let release!: () => void;
+    let entered!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const signing = new Promise<void>((resolve) => {
+      entered = resolve;
+    });
+    const issuance = repository.accept(fenced, async () => {
+      entered();
+      await gate;
+      return { quote, authorization };
+    });
+    await signing;
+    const resolution = repository.resolveBuyerAcceptance(fenced);
+    try {
+      await waitForBlocked('FROM shops s JOIN installation_generations');
+    } finally {
+      release();
+    }
+    await expect(issuance).resolves.toEqual({ quote, authorization });
+    await expect(resolution).resolves.toEqual({ outcome: 'accepted', result: { quote, authorization } });
+    await expect(repository.resolveBuyerAcceptance(fenced)).resolves.toEqual({
+      outcome: 'accepted',
+      result: { quote, authorization },
+    });
+    const scope = { ...raceScope, ownerHash: 'd'.repeat(64) };
     await buyer.issueSession({ scope, sessionId: randomUUID(), now, expiresAt: new Date(+now + 604800000) });
     const proposalId = randomUUID(),
       ownerBinding = 'b'.repeat(64);

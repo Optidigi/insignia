@@ -238,3 +238,29 @@ test('complete retention counts survive above the sample bound but unsafe or pri
   for (const record of records.slice(2)) assert.equal(Object.hasOwn(record, 'count'), false);
   assert.doesNotMatch(output, /SECRET|rawBody|customerId/);
 });
+
+test('buyer review-required logging retains only its finite diagnostic and correlation fields', () => {
+  let output = '';
+  const { logger } = createObservability({
+    stream: new Writable({
+      write(chunk, _encoding, callback) {
+        output += chunk;
+        callback();
+      },
+    }),
+  });
+  logger.error('buyer_request_failed', {
+    correlationId: '01234567-89ab-4cde-8123-456789abcdef',
+    buyerStage: 'cart-state',
+    errorClass: 'ReviewRequired',
+    // @ts-expect-error Private payloads must be omitted at runtime too.
+    capability: 'private-capability-SECRET',
+    properties: { carrier: 'signed-carrier-SECRET' },
+    message: 'exception-message-SECRET',
+  });
+  const entry = parseRecord(output.trim());
+  assert.equal(entry.errorClass, 'ReviewRequired');
+  assert.equal(entry.buyerStage, 'cart-state');
+  assert.equal(entry.correlationId, '01234567-89ab-4cde-8123-456789abcdef');
+  assert.doesNotMatch(output, /SECRET|capability|carrier|properties|message/);
+});

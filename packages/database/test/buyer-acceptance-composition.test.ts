@@ -498,9 +498,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
           };
         }
         try {
+          const acceptanceKey = randomUUID();
           const acceptance = services.accept(f.scope, proposal.proposalId, {
             hash: proposal.hash,
-            idempotencyKey: randomUUID(),
+            idempotencyKey: acceptanceKey,
           });
           if (
             mode === 'expired-after-preparation' ||
@@ -508,7 +509,23 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
             mode === 'price-drift-after-preparation' ||
             delayedFinalRead
           ) {
-            await expect(acceptance).rejects.toThrow();
+            if (mode === 'price-drift-after-preparation')
+              await expect(acceptance).rejects.toMatchObject({ acceptanceOutcome: 'declined' });
+            else await expect(acceptance).rejects.toThrow();
+            if (mode === 'price-drift-after-preparation') {
+              amount = '10.00';
+              const retainedRead = core.buyers.getProposal;
+              core.buyers.getProposal = async () => {
+                throw new Error('Synthetic retained read unavailable');
+              };
+              try {
+                await expect(
+                  services.accept(f.scope, proposal.proposalId, { hash: proposal.hash, idempotencyKey: acceptanceKey }),
+                ).rejects.toMatchObject({ acceptanceOutcome: 'declined' });
+              } finally {
+                core.buyers.getProposal = retainedRead;
+              }
+            }
             if (delayedFinalRead) {
               acceptanceRejected = true;
               if (mode === 'late-final-read-after-rejection') {
@@ -528,6 +545,25 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
           } else {
             const accepted = await acceptance;
             expect(accepted.quoteId).toBeTruthy();
+            if (mode === 'current') {
+              const retry = () =>
+                services.accept(f.scope, proposal.proposalId, {
+                  hash: proposal.hash,
+                  idempotencyKey: acceptanceKey,
+                });
+              // A lost success acknowledgement and duplicate arrivals recover the original receipt/application.
+              expect(await Promise.all([retry(), retry()])).toEqual([accepted, accepted]);
+              const link = core.buyers.linkQuote;
+              core.buyers.linkQuote = async () => {
+                throw new Error('synthetic postcommit link failure');
+              };
+              try {
+                await expect(retry()).rejects.toThrow('synthetic postcommit link failure');
+              } finally {
+                core.buyers.linkQuote = link;
+              }
+              expect(await retry()).toEqual(accepted);
+            }
             expect(refreshes).toBe(mode === 'near-expiry' ? 1 : 0);
           }
           expect(collections).toBe(mode === 'missing-release' ? 1 : 0);

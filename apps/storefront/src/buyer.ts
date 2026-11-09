@@ -119,8 +119,14 @@ export function createBuyerApi({
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       throw Object.assign(
-        new Error(typeof error.message === 'string' ? error.message : 'Customization request unavailable'),
-        { status: response.status, code: error.code },
+        new Error(typeof error?.message === 'string' ? error.message : 'Customization request unavailable'),
+        {
+          status: response.status,
+          code: error?.code,
+          ...(response.status === 409 && error?.code === 'REVIEW_REQUIRED' && error?.acceptanceOutcome === 'declined'
+            ? { acceptanceOutcome: 'declined' as const }
+            : {}),
+        },
       );
     }
     const text = await response.text();

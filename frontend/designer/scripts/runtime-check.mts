@@ -78,6 +78,7 @@ function ready() {
 }
 function harness(
   ports: {
+    review?: DesignerPorts['review'];
     artwork: { upload(file: File, request: UploadRequest): Promise<unknown> };
     cart: { commit(request: CartRequest): Promise<unknown> };
   },
@@ -970,4 +971,30 @@ test('restored unpurchased edits compare against accepted cart intent, and rever
   assert.equal(hasDraftChanges(state), false);
   assert.equal(productDesignEditRequiresConfirmation(state, 'other'), false);
   assert.equal(hasUnappliedDraft(state), true);
+});
+
+test('terminal decline retires only the failed attempt; unchanged intent needs fresh preparation and separate consent', async () => {
+  const requests: CartRequest[] = []; const preparations: CartRequest[] = [];
+  const h = harness({artwork:{upload:async()=>{throw Error('unused')}},review:{prepare:async request=>{preparations.push(request)}},cart:{commit:async request=>{requests.push(request);throw Object.assign(Error('declined'),{acceptanceOutcome:'declined'});}}});
+  await h.runtime.commit(true); await h.runtime.commit();
+  const artworks = structuredClone(h.state.artworks);
+  await h.runtime.commit(true);
+  assert.equal(preparations.length,2);
+  assert.notEqual(preparations[1]?.idempotencyKey,requests[0]?.idempotencyKey);
+  assert.equal(requests.length,1);
+  assert.deepEqual(h.state.artworks,artworks);
+  await h.runtime.commit();
+  assert.equal(requests[1]?.idempotencyKey,preparations[1]?.idempotencyKey);
+});
+
+test('late declined response from a canceled commit cannot retire the resumed attempt', async () => {
+  let reject!: (error: Error) => void;
+  const requests: CartRequest[] = [];
+  const h = harness({artwork:{upload:async()=>{throw Error('unused')}},cart:{commit:async request=>{requests.push(request); if(requests.length===1) return new Promise((_resolve,no)=>{reject=no}); throw Error('unknown');}}});
+  const first = h.runtime.commit(); h.runtime.cancel();
+  await h.runtime.commit();
+  reject(Object.assign(Error('late decline'),{acceptanceOutcome:'declined'})); await first;
+  await h.runtime.commit();
+  assert.equal(requests[0]?.idempotencyKey,requests[1]?.idempotencyKey);
+  assert.equal(requests[1]?.idempotencyKey,requests[2]?.idempotencyKey);
 });

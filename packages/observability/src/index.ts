@@ -82,6 +82,7 @@ const BUYER_STAGES = [
   'request',
 ] as const;
 const BUYER_FAILURES = [
+  'ReviewRequired',
   'DatabaseLockTimeout',
   'DatabaseQueryTimeout',
   'DatabasePermissionDenied',

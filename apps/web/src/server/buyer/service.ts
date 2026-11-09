@@ -3,6 +3,7 @@ import {
   type AcceptedQuoteResult,
   type ArtworkScope,
   acceptQuote,
+  BuyerAcceptanceDeclinedError,
   localDay,
   materialHash,
   prepareQuote,
@@ -38,6 +39,12 @@ import { buyerGeometry } from '../merchant-preview/geometry.ts';
 import type { FrozenPreviewReader } from '../merchant-preview/read.ts';
 import { publicSelectedSetup } from '../merchant-preview/selected-public.ts';
 import { validateBuyerProductionPositions } from './production-position.ts';
+
+class BuyerPrecommitReviewError extends Error {
+  constructor() {
+    super('REVIEW_REQUIRED');
+  }
+}
 
 type GuestAuthority = ReturnType<typeof createArtworkGuestAuthority>;
 type Bucket = { variantId: string; quantity: number; properties: Record<string, string> };
@@ -155,6 +162,13 @@ export function createBuyerServices(input: {
             for (const productId of new Set(groups.map((group) => group.productId))) {
               const current = await input.catalog(scope, productId, finalCheck ? 'final' : undefined);
               const available = new Map(current.variants.map((variant) => [variant.id, variant.available]));
+              if (
+                current.variants.length === available.size &&
+                groups
+                  .filter((group) => group.productId === productId)
+                  .some((group) => group.variants.some((variant) => available.get(variant.variantId) === false))
+              )
+                throw new BuyerPrecommitReviewError();
               if (
                 current.variants.length !== available.size ||
                 groups
@@ -537,30 +551,64 @@ export function createBuyerServices(input: {
       };
     },
     async accept(scope: BuyerScope, id: string, body: { hash: string; idempotencyKey: string }) {
-      const proposal = await store.getProposal(scope, id, clock(), true);
-      if (!proposal || proposal.materialHash !== body.hash) return review();
-      const request = { ...(proposal.request as QuoteRequest), idempotencyKey: `m7:${id}:${body.idempotencyKey}` },
-        ports = checkedPorts(scope, desired(request));
+      const key = `m7:${id}:${body.idempotencyKey}`;
       const command = {
         kind: 'accept' as const,
-        key: request.idempotencyKey,
-        requestDigest: sha256CanonicalJson({ proposalId: id, hash: body.hash, key: request.idempotencyKey }),
+        key,
+        requestDigest: sha256CanonicalJson({ proposalId: id, hash: body.hash, key }),
       };
+      if (await store.commandDeclined(scope, { ...command, now: clock() })) throw new BuyerAcceptanceDeclinedError();
+      const proposal = await store.getProposal(scope, id, clock(), true);
+      if (!proposal || proposal.materialHash !== body.hash) return review();
+      const request = { ...(proposal.request as QuoteRequest), idempotencyKey: key },
+        ports = checkedPorts(scope, desired(request));
       await store.reserveCommand(scope, { ...command, now: clock() });
       const guarded: QuoteAuthorityPorts = {
         ...ports,
+        store: {
+          ...ports.store,
+          accept: (target, commit) =>
+            ports.store.accept(
+              {
+                ...target,
+                buyerCommand: {
+                  ownerHash: scope.ownerHash,
+                  requestDigest: command.requestDigest,
+                  now: clock(),
+                },
+              },
+              commit,
+            ),
+        },
         authorization: {
           ...ports.authorization,
           async issue(value) {
-            if (+clock() >= +proposal.expiresAt || materialHash(value.quote) !== proposal.materialHash) return review();
+            if (+clock() >= +proposal.expiresAt || materialHash(value.quote) !== proposal.materialHash)
+              throw new BuyerPrecommitReviewError();
             // acceptQuote revalidates live shop/catalog facts and the signing fence;
             // compare its validated economics without preparing the whole quote again.
             return ports.authorization.issue(value);
           },
         },
       };
-      const result = await acceptQuote(request, guarded).catch((error: unknown) => {
-        if (error instanceof QuoteContextChangedError) return review();
+      const result = await acceptQuote(request, guarded).catch(async (error: unknown) => {
+        if (error instanceof QuoteContextChangedError || error instanceof BuyerPrecommitReviewError) {
+          const resolve = ports.store.resolveBuyerAcceptance;
+          if (!resolve) throw error;
+          const tenant = await ports.tenant.getActive(scope.shopId, scope.installationGeneration);
+          if (!tenant) throw error;
+          const resolution = await resolve({
+            shopId: scope.shopId,
+            installationGeneration: scope.installationGeneration,
+            authorizationGeneration: tenant.authorizationGeneration,
+            authorizationEpoch: tenant.authorizationEpoch,
+            idempotencyKey: request.idempotencyKey,
+            requestDigest: quoteRequestDigest(request, ports),
+            buyerCommand: { ownerHash: scope.ownerHash, requestDigest: command.requestDigest, now: clock() },
+          });
+          if (resolution.outcome === 'accepted') return resolution.result;
+          throw new BuyerAcceptanceDeclinedError();
+        }
         throw error;
       });
       // Material hash binds replay as well as new signing; a different original acceptance cannot be linked.
