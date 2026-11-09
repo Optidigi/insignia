@@ -1,9 +1,19 @@
 /** Typed subprocess fixture for actual isolated PostgreSQL boundaries. Never selects a database. */
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { Pool } from 'pg';
 import { array, check, record, text } from './backup-files.mts';
 
+const objectBytes: Record<string, Uint8Array> = {
+  'objects/retained-original.svg': Buffer.from(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"><rect width="1" height="1"/></svg>',
+  ),
+  'objects/retained-preview.png': Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+y5UAAAAAASUVORK5CYII=',
+    'base64',
+  ),
+};
 const mode = text(process.argv[2]);
 async function operation(file: string, name: string): Promise<(...args: unknown[]) => Promise<unknown>> {
   const value: unknown = await import(new URL(file, import.meta.url).href);
@@ -17,7 +27,19 @@ if (mode === 'produce') {
       input instanceof Request && input.method === 'GET' && input.headers.has('authorization'),
       'unexpected source dispatch',
     );
-    return new Response('<ListBucketResult><IsTruncated>false</IsTruncated></ListBucketResult>');
+    if (new URL(input.url).searchParams.has('list-type'))
+      return new Response(
+        `<ListBucketResult><IsTruncated>false</IsTruncated>${Object.keys(objectBytes)
+          .map((key) => `<Contents><Key>snapshot-fixture/${key}</Key></Contents>`)
+          .join('')}</ListBucketResult>`,
+      );
+    const key = Object.keys(objectBytes).find((key) =>
+      new URL(input.url).pathname.endsWith(`/snapshot-fixture/${key}`),
+    );
+    assert(key, 'Unexpected object read');
+    const bytes = objectBytes[key];
+    assert(bytes);
+    return new Response(Uint8Array.from(bytes), { headers: { 'Content-Length': String(bytes.byteLength) } });
   };
   const path = new URL('./backup-snapshot.mts', import.meta.url).pathname;
   process.argv = [process.execPath, path, ...process.argv.slice(3)];
@@ -29,6 +51,29 @@ if (mode === 'produce') {
     if (mode === 'snapshot-read') {
       const snapshot = await operation('./backup-snapshot.mts', 'databaseSnapshot');
       assert.equal(array(record(await snapshot(client)).references).length, 0, 'expected empty object fixture');
+    } else if (mode === 'seed-objects') {
+      const original = objectBytes['objects/retained-original.svg'],
+        preview = objectBytes['objects/retained-preview.png'];
+      assert(original && preview);
+      const hash = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
+      const manifest = {
+        version: 'm6-inspection-v1',
+        mimeType: 'image/svg+xml',
+        byteLength: original.byteLength,
+        sha256: hash(original),
+        width: 1,
+        height: 1,
+        previewSha256: hash(preview),
+        previewByteLength: preview.byteLength,
+      };
+      await client.query(
+        "INSERT INTO shops(shop_id,shop_domain,current_generation) VALUES('backup-objects','backup-objects.myshopify.com',1); INSERT INTO installation_generations(shop_id,generation) VALUES('backup-objects',1)",
+      );
+      await client.query(
+        `INSERT INTO artwork_assets(asset_id,shop_id,installation_generation,owner_hash,declared_mime,declared_bytes,state,quarantine_key,original_key,preview_key,collected_at,upload_until,expires_at,manifest,quarantine_cleaned_at)
+        VALUES(gen_random_uuid(),'backup-objects',1,repeat('f',64),'image/svg+xml',$1,'USABLE','quarantine/retained','objects/retained-original.svg','objects/retained-preview.png',clock_timestamp(),clock_timestamp()+interval '1 minute',clock_timestamp()+interval '6 days',$2,clock_timestamp())`,
+        [original.byteLength, manifest],
+      );
     } else if (mode === 'telemetry') {
       const collect = await operation('./heartbeat-snapshot.mts', 'collectDatabaseSnapshot');
       const counts = (value: unknown) => {
