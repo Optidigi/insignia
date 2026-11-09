@@ -1,5 +1,7 @@
 # Review and cart performance handoff, 9 November 2026
 
+Historical baseline: the [loading and handoff closeout](loading-handoff-closeout-2026-11-09.md) records the later deployed artifacts, native corrections and remaining latency. Observations below retain their original artifact and timing scope.
+
 The Review presentation and verified cart handoff are deployed to rewrite-dev. The iframe is retained. Native quote, Add, cart readback and exact owned-line cleanup passed. **Cold quote and Add latency are not resolved:** one proposal took 6.34 seconds and one acceptance took 2.60 seconds. No network speedup or production readiness is claimed.
 
 The [deployment and measurement receipt](evidence/technical-merchant-completion/native-review-cart-development-2026-11-09.json) owns exact identities, timings and qualification limits. The [earlier handoff](precutover-handoff-2026-11-09.md) retains the wider application history and owner-held production gates. Final production cutover and rollout were excluded.
