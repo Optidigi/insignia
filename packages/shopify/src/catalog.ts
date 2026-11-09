@@ -13,7 +13,7 @@ export type CatalogProduct = {
   variants: {
     id: string;
     title: string;
-    selectedOptions: { name: string; value: string }[];
+    selectedOptions: { name: string; value: string; swatch?: { color: string } }[];
     image: CatalogImage | null;
   }[];
   variantsTruncated: boolean;
@@ -42,7 +42,12 @@ type RawProduct = {
   collections?: { nodes: { id: string; title: string }[]; pageInfo: { hasNextPage: boolean } };
   featuredMedia: { preview: { image: RawImage } | null } | null;
   variants: {
-    nodes: { id: string; title: string; selectedOptions?: { name: string; value: string }[]; image: RawImage }[];
+    nodes: {
+      id: string;
+      title: string;
+      selectedOptions?: { name: string; value: string; optionValue?: { swatch?: { color?: unknown } | null } | null }[];
+      image: RawImage;
+    }[];
     pageInfo: { hasNextPage: boolean; endCursor?: string | null };
   };
 };
@@ -56,7 +61,7 @@ const listMetadata =
 const detailMetadata =
   'media(first: 100) { nodes { __typename ... on MediaImage { id image { id url altText width height } } } pageInfo { hasNextPage } } collections(first: 100) { nodes { id title } pageInfo { hasNextPage } }';
 const listFields = `${productFields} ${listMetadata}
-  variants(first: 8) { nodes { id title selectedOptions { name value } image { id url altText width height } } pageInfo { hasNextPage } }`;
+  variants(first: 8) { nodes { id title selectedOptions { name value optionValue { swatch { color } } } image { id url altText width height } } pageInfo { hasNextPage } }`;
 const listQuery = `query M5001Products($first: Int!, $after: String, $search: String) {
   products(first: $first, after: $after, query: $search, sortKey: TITLE) {
     nodes { ${listFields} }
@@ -65,7 +70,7 @@ const listQuery = `query M5001Products($first: Int!, $after: String, $search: St
 }`;
 const detailQuery = `query M5001Product($id: ID!, $after: String) { product(id: $id) {
   ${productFields} ${detailMetadata}
-  variants(first: 100, after: $after) { nodes { id title selectedOptions { name value } image { id url altText width height } } pageInfo { hasNextPage endCursor } }
+  variants(first: 100, after: $after) { nodes { id title selectedOptions { name value optionValue { swatch { color } } } image { id url altText width height } } pageInfo { hasNextPage endCursor } }
 } }`;
 const currencyQuery = 'query M5001ShopCurrency { shop { currencyCode } }';
 const tagsQuery = 'query InsigniaMethodProductTags($ids: [ID!]!) { nodes(ids: $ids) { ... on Product { id tags } } }';
@@ -183,7 +188,19 @@ function project(value: RawProduct, maxVariants = 8): CatalogProduct {
         )
       )
         throw new Error('Invalid catalog variant options');
-      return { id: variant.id, title: variant.title, selectedOptions, image: image(variant.image) };
+      return {
+        id: variant.id,
+        title: variant.title,
+        selectedOptions: selectedOptions.map(({ name, value, optionValue }) => {
+          const color = optionValue?.swatch?.color;
+          return {
+            name,
+            value,
+            ...(typeof color === 'string' && /^#[0-9a-fA-F]{6}$/.test(color) ? { swatch: { color } } : {}),
+          };
+        }),
+        image: image(variant.image),
+      };
     }),
     variantsTruncated: value.variants.pageInfo.hasNextPage,
     ...(value.options === undefined

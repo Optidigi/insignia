@@ -36,7 +36,7 @@ export type BuyerConfig = {
     id: string;
     label: string;
     available: boolean;
-    selectedOptions?: { name: string; value: string }[];
+    selectedOptions?: { name: string; value: string; swatch?: { color: string } }[];
     baseUnitMinor?: string;
   }[];
   selectedSetup?: SelectedProductSetup;

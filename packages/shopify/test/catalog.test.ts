@@ -249,3 +249,71 @@ it('reads tag assignments in exact bounded identity batches and refuses missing 
   await expect(unavailable.productTags([id])).rejects.toThrow('identity');
   await expect(unavailable.productTags([id, id])).rejects.toThrow('batch');
 });
+
+it('reads and projects Shopify option-value colour facts through the real catalog transport', async () => {
+  const { createCatalogTransport } = await import('../src/catalog.js');
+  const requests: string[] = [];
+  const raw = {
+    ...product,
+    variants: {
+      nodes: [
+        {
+          id: 'gid://shopify/ProductVariant/77',
+          title: 'Ocean / L',
+          image: null,
+          selectedOptions: [
+            { name: 'Colour', value: 'Ocean', optionValue: { swatch: { color: '#123456' } } },
+            { name: 'Size', value: 'L', optionValue: { swatch: null } },
+          ],
+        },
+      ],
+      pageInfo: { hasNextPage: false },
+    },
+  };
+  const reader = createCatalogReader(
+    createCatalogTransport({
+      shop: 'synthetic.myshopify.com',
+      accessToken: 'synthetic-token',
+      fetchImpl: async (_url, init) => {
+        const payload = JSON.parse(String(init?.body)) as { query: string };
+        requests.push(payload.query);
+        return new Response(JSON.stringify({ data: { product: raw } }), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      },
+    }),
+  );
+  const result = await reader.get(id);
+  expect(requests).toHaveLength(1);
+  expect(requests[0]).toMatch(/selectedOptions\s*\{\s*name value optionValue\s*\{\s*swatch\s*\{\s*color\s*\}/);
+  expect(result?.variants[0]?.selectedOptions).toEqual([
+    { name: 'Colour', value: 'Ocean', swatch: { color: '#123456' } },
+    { name: 'Size', value: 'L' },
+  ]);
+});
+
+it('omits absent, image-only and invalid swatch colours without guessing from the option label', async () => {
+  for (const swatch of [null, { color: null }, { image: { id: 'gid://shopify/MediaImage/1' } }, { color: 'Blue' }]) {
+    const reader = createCatalogReader({
+      async read<T>(): Promise<T> {
+        return {
+          product: {
+            ...product,
+            variants: {
+              nodes: [
+                {
+                  id: 'gid://shopify/ProductVariant/77',
+                  title: 'Blue',
+                  image: null,
+                  selectedOptions: [{ name: 'Colour', value: 'Blue', optionValue: { swatch } }],
+                },
+              ],
+              pageInfo: { hasNextPage: false },
+            },
+          },
+        } as T;
+      },
+    });
+    expect((await reader.get(id))?.variants[0]?.selectedOptions).toEqual([{ name: 'Colour', value: 'Blue' }]);
+  }
+});

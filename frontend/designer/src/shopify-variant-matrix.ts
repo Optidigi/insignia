@@ -10,6 +10,7 @@ const shopifyOptionsSchema = z.object({
     selectedOptions: z.array(z.object({
       name: z.string().refine((value) => value.trim().length > 0),
       value: z.string().refine((value) => value.trim().length > 0),
+      swatch: z.object({ color: z.string().regex(/^#[0-9a-fA-F]{6}$/) }).nullish().catch(undefined),
     })).nullable(),
   })),
 });
@@ -30,6 +31,7 @@ export interface ShopifyVariantMatrix {
   colors: {
     id: string;
     name: string;
+    hex?: string;
     nameSource?: "generic-selection";
     availableSizeIds: string[];
   }[];
@@ -41,7 +43,7 @@ export interface ShopifyVariantMatrix {
   optionPresentation: {
     rowOption: {
       label: string;
-      display: "named-choice";
+      display: "swatch" | "named-choice";
       labelSource?: "generic-selection";
     };
     columnOption: { label: string };
@@ -66,7 +68,7 @@ function tupleId(prefix: string, tuple: readonly (readonly string[])[]): string 
   return `${prefix}_${encoded}`;
 }
 
-/** Projects only actual Shopify option tuples. It does not infer product categories or swatches. */
+/** Projects only actual Shopify option tuples. It never guesses product categories or swatches from names. */
 export function buildShopifyVariantMatrix(input: unknown, photoGroupingOptionNames?:readonly string[]): ShopifyVariantMatrixResult {
   const parsed = shopifyOptionsSchema.safeParse(input);
   if (!parsed.success) return unsupported("invalid-input");
@@ -81,6 +83,7 @@ export function buildShopifyVariantMatrix(input: unknown, photoGroupingOptionNam
   const columnOptionNames=optionNames.filter(name=>!rowOptionNames.includes(name));
   const columnOptionName=columnOptionNames.join(' / ')||'Selection';
   const rows = new Map<string, ShopifyVariantMatrix["colors"][number]>();
+  const rowSwatches = new Map<string, string | null>();
   const columns = new Map<string, ShopifyVariantMatrix["sizes"][number]>();
   const variantMatrix: VariantMatrixCell[] = [];
   const ids = new Set<string>();
@@ -109,6 +112,12 @@ export function buildShopifyVariantMatrix(input: unknown, photoGroupingOptionNam
     const columnValue=columnTuple.length===0?'Selection':columnTuple.length===1?columnTuple[0]![1]:columnTuple.map(([name,value])=>`${name}: ${value}`).join(' · ');
     const rowId = tupleId("row", rowTuple);
     const columnId = tupleId("column", columnTuple);
+    // A composite row has no single unambiguous swatch. Missing or conflicting
+    // facts keep the existing named choices instead of guessing from labels.
+    const swatch = rowOptionNames.length === 1
+      ? variant.selectedOptions.find(option => option.name === rowOptionNames[0])?.swatch?.color.toUpperCase() ?? null
+      : null;
+    rowSwatches.set(rowId, rowSwatches.has(rowId) && rowSwatches.get(rowId) !== swatch ? null : swatch);
     const tuple = JSON.stringify([rowId, columnId]);
     if (tuples.has(tuple)) return unsupported("duplicate-option-tuple");
     tuples.add(tuple);
@@ -132,7 +141,10 @@ export function buildShopifyVariantMatrix(input: unknown, photoGroupingOptionNam
   const rowLabel = rowOptionNames.length ? rowOptionNames.join(" / ") : "Selection";
   return {
     status: "ready",
-    colors: [...rows.values()],
+    colors: [...rows.values()].map(row => {
+      const hex = rowSwatches.get(row.id);
+      return hex ? { ...row, hex } : row;
+    }),
     sizes: [...columns.values()],
     variantMatrix,
     optionNames,
@@ -141,7 +153,7 @@ export function buildShopifyVariantMatrix(input: unknown, photoGroupingOptionNam
     optionPresentation: {
       rowOption: {
         label: rowLabel,
-        display: "named-choice",
+        display: [...rows.keys()].every(id => rowSwatches.get(id)) ? "swatch" : "named-choice",
         ...(rowOptionNames.length ? {} : { labelSource: "generic-selection" as const }),
       },
       columnOption: { label: columnOptionName,},

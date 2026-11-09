@@ -507,7 +507,9 @@ test('real SDK proxy and shared HMAC guest authority provide seven days without 
   assert.equal(await services.guest.issue(new Request(forged)), null);
 });
 
-function catalogFixture(selectedOptions: { name: string; value: string }[] = []) {
+function catalogFixture(
+  selectedOptions: { name: string; value: string; optionValue?: { swatch: { color: string } | null } }[] = [],
+) {
   const value = fixture(),
     { input } = value;
   const scope = { shopId: 'tenant', installationGeneration: '1' };
@@ -1372,4 +1374,24 @@ test('selection configuration does not wait for signing or release authority; pu
   assert.equal(config.productId, '111');
   assert.equal(config.variants[0]?.id, '222');
   assert.equal(releaseReads, 0);
+});
+
+test('catalog swatches survive production buyer config parsing without changing variant identity or inventory', async () => {
+  const { BuyerConfigSchema } = await import('@insignia/contracts');
+  const { input } = catalogFixture([
+    { name: 'Colour', value: 'Ocean', optionValue: { swatch: { color: '#123456' } } },
+    { name: 'Size', value: 'M', optionValue: { swatch: null } },
+  ]);
+  const result = BuyerConfigSchema.parse(await createProductionBuyerServices(input).config(new Request(signed())));
+  assert.deepEqual(result.variants, [
+    {
+      id: '222',
+      label: 'Blue M',
+      available: false,
+      selectedOptions: [
+        { name: 'Colour', value: 'Ocean', swatch: { color: '#123456' } },
+        { name: 'Size', value: 'M' },
+      ],
+    },
+  ]);
 });
