@@ -4,7 +4,7 @@ import type {
   TargetedKeyboardEvent as ReactKeyboardEvent,
   TargetedPointerEvent as ReactPointerEvent,
 } from "preact";
-import { IconArrowLeft, IconArrowRight } from "./legacy-icons";
+import { IconArrowLeft, IconArrowRight, IconChevronDown } from "./legacy-icons";
 import { useLocale } from "./customer-locale";
 import type { ProductConfig } from "./config";
 import type { Artwork, Position, Print } from "./model";
@@ -629,9 +629,6 @@ export function InlinePositionControls({
       tabIndex={-1}
       aria-describedby={hintId}
     >
-      <p className="inline-position-controls__hint" id={hintId}>
-        {t("customer:positioning.dragInsideAreaInstructions")}
-      </p>
       <fieldset
         className="inline-position-controls__sizes width-options"
         disabled={!canEdit || !validSizes.length}
@@ -691,6 +688,11 @@ export function InlinePositionControls({
         )}
       </fieldset>
 
+      <details className="position-adjustments">
+        <summary><span>{t("customer:positioning.adjustPosition")}</span><IconChevronDown size={16} aria-hidden="true" /></summary>
+      <p className="inline-position-controls__hint" id={hintId}>
+        {t("customer:positioning.dragInsideAreaInstructions")}
+      </p>
       <div className="inline-position-controls__move-tools">
         <div
           className="inline-position-controls__nudge-row"
@@ -750,6 +752,7 @@ export function InlinePositionControls({
           </button>
         </div>
       </div>
+      </details>
       {sizeNotice && (
         <p className="inline-position-controls__note">
           {positioningAnnouncementText(sizeNotice, t, position, print.size)}

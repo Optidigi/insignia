@@ -90,7 +90,8 @@
     "chooseAnotherFile": "Scegli un altro file",
     "cancelTitle": "Annullare questo caricamento?",
     "cancelHelp": "Questo file non è ancora pronto. Annullando interrompi questo caricamento e mantieni le scelte precedenti.",
-    "keepUploading": "Continua il caricamento"
+    "keepUploading": "Continua il caricamento",
+    "addPositionArtwork": "Aggiungi una grafica per {{positionName}}"
   },
   "quantities": {
     "heading": "Quantità",
@@ -171,7 +172,8 @@
     "artworkMovedDown": "Grafica spostata in basso.",
     "artworkMovedRight": "Grafica spostata a destra.",
     "sizeChangedTo": "Dimensione della decorazione modificata in {{sizeLabel}}.",
-    "previewUnavailableForProduct": "{{label}}: anteprima non disponibile"
+    "previewUnavailableForProduct": "{{label}}: anteprima non disponibile",
+    "adjustPosition": "Regola la posizione"
   },
   "review": {
     "artwork": "Grafica",

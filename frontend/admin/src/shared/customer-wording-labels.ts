@@ -14,6 +14,9 @@ export const customerWordingLabels = {
   'customer:close.help': 'settings:translations.fields.customer_close_help',
   'customer:close.keepEditing': 'settings:translations.fields.customer_close_keepEditing',
   'customer:close.leave': 'settings:translations.fields.customer_close_leave',
+
+  'customer:artwork.addPositionArtwork': 'settings:translations.fields.customer_artwork_addPositionArtwork',
+  'customer:positioning.adjustPosition': 'settings:translations.fields.customer_positioning_adjustPosition',
   'customer:startup.loading': 'settings:translations.fields.customer_startup_loading',
   'customer:startup.failure': 'settings:translations.fields.customer_startup_failure',
   'customer:startup.retry': 'settings:translations.fields.customer_startup_retry',

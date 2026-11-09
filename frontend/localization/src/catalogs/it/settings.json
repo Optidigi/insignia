@@ -549,7 +549,9 @@
       "customer_chrome_openingCart": "Apertura del carrello",
       "customer_chrome_viewCart": "Visualizza carrello",
       "customer_review_designTotals": "Titolo dei totali per design",
-      "customer_review_currentDesign": "Etichetta del design attuale"
+      "customer_review_currentDesign": "Etichetta del design attuale",
+      "customer_artwork_addPositionArtwork": "Azione per aggiungere la grafica a una posizione",
+      "customer_positioning_adjustPosition": "Pulsante per regolare la posizione"
     },
     "resetSavedHeading": "Ripristinare le traduzioni salvate?",
     "resetSavedDescription": "Ripristina i testi predefiniti per tutte le lingue salvate. I testi personalizzati verranno rimossi.",

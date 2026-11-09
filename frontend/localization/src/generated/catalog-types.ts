@@ -2314,6 +2314,7 @@ export interface AdminMessageTable {
   'settings:translations.fields.common_summary_unavailable': object;
   'settings:translations.fields.customer_artwork_addArtwork': object;
   'settings:translations.fields.customer_artwork_addArtworkForPosition': object;
+  'settings:translations.fields.customer_artwork_addPositionArtwork': object;
   'settings:translations.fields.customer_artwork_adjustArtworkInstructions': object;
   'settings:translations.fields.customer_artwork_adjustArtworkToFit': object;
   'settings:translations.fields.customer_artwork_artworkExpired': object;
@@ -2422,6 +2423,7 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_placements_resetFilters': object;
   'settings:translations.fields.customer_placements_search': object;
   'settings:translations.fields.customer_placements_view': object;
+  'settings:translations.fields.customer_positioning_adjustPosition': object;
   'settings:translations.fields.customer_positioning_approvedSizes': object;
   'settings:translations.fields.customer_positioning_approvedSizeSelection': object;
   'settings:translations.fields.customer_positioning_artworkMovedDown': object;
@@ -2652,6 +2654,7 @@ export interface CustomerMessageTable {
   'common:summary.unavailable': object;
   'customer:artwork.addArtwork': object;
   'customer:artwork.addArtworkForPosition': { positionName: string };
+  'customer:artwork.addPositionArtwork': { positionName: string };
   'customer:artwork.adjustArtworkInstructions': object;
   'customer:artwork.adjustArtworkToFit': { positionName: string };
   'customer:artwork.artworkExpired': object;
@@ -2760,6 +2763,7 @@ export interface CustomerMessageTable {
   'customer:placements.resetFilters': object;
   'customer:placements.search': object;
   'customer:placements.view': object;
+  'customer:positioning.adjustPosition': object;
   'customer:positioning.approvedSizes': object;
   'customer:positioning.approvedSizeSelection': object;
   'customer:positioning.artworkMovedDown': object;

@@ -701,3 +701,68 @@ test("expiring a reviewed quote replaces design totals and unit prices with unav
     assert.ok((await page.locator(".review-group-total, .review-pricing bdi").allTextContents()).every((text) => text.trim() === "Unavailable"));
   } finally { await page.close(); }
 });
+
+test("single-method details wrap naturally and empty artwork uses an actionable 44px target in both themes", async () => {
+  for (const colorScheme of ['light', 'dark'] as const) {
+    const page = await openFixture({ width: 320, colorScheme });
+    try {
+      assert.equal(await page.locator('.fixed-method-detail strong').innerText(), 'Screen printing');
+      assert.equal(await page.locator('.fixed-method-detail p').isVisible(), false);
+      await page.locator('.fixed-method-detail summary').click();
+      assert.equal(await page.locator('.fixed-method-detail p').innerText(), 'Vivid colors and fine detail');
+      await page.locator('.fixed-method-detail summary').press('Enter');
+      assert.equal(await page.locator('.fixed-method-detail p').isVisible(), false);
+      assert.equal(await page.locator('.fixed-method-detail').evaluate(el => el.scrollWidth <= el.clientWidth), true);
+      await page.getByRole('button', { name: 'Remove artwork', exact: true }).click();
+      await page.getByRole('button', { name: 'Add artwork', exact: true }).click();
+      const target = page.getByRole('button', { name: 'Add artwork for Front print', exact: true });
+      const box = await target.boundingBox();
+      assert.equal(box?.width, 44); assert.equal(box?.height, 44);
+      assert.equal(await target.locator('span').evaluate(el => getComputedStyle(el).color), await target.evaluate(el => getComputedStyle(el).color));
+      await target.click();
+      await page.getByRole('dialog', { name: 'Artwork for Front print' }).waitFor();
+      await page.getByRole('button', { name: 'fixture-logo.svg', exact: true }).click();
+      assert.equal(await page.locator('.empty-print-target').count(), 0);
+      assert.equal(await page.locator('.print-overlay img').count(), 1);
+    } finally { await page.close(); }
+  }
+});
+
+
+test("long method copy is available on request without truncation", async () => {
+  const page = await openFixture({ width: 320, colorScheme: 'dark' });
+  try {
+    const name = 'Full-colour printing with detailed artwork preparation';
+    const description = 'Our team checks fine lines and small lettering before printing. Choose this method for artwork with several colours, gradients or detailed illustrations.\n\nThe final result depends on the material and the quality of the artwork you provide. We will contact you if changes are needed before production.';
+    await page.evaluate(({label,description}) => window.__customerLocalizationTest.setMethod({label,description}), {label:name,description});
+    await page.getByText(name, { exact: true }).waitFor();
+    assert.equal(await page.getByText(description, { exact: true }).isVisible(), false);
+    await page.locator('.fixed-method-detail summary').click();
+    assert.equal(await page.getByText(description, { exact: true }).isVisible(), true);
+    assert.equal(await page.locator('.fixed-method-detail').evaluate(el => el.scrollWidth <= el.clientWidth), true);
+    await page.locator('.fixed-method-detail summary').press('Enter');
+    assert.equal(await page.getByText(description, { exact: true }).isVisible(), false);
+    await page.evaluate(() => window.__customerLocalizationTest.setMethod({ label: 'Screen printing', description: '' }));
+    await page.locator('.fixed-method-detail strong').filter({ hasText: 'Screen printing' }).waitFor();
+    assert.equal(await page.locator('.fixed-method-detail summary').count(), 0, 'a method without an explanation has no empty disclosure');
+  } finally { await page.close(); }
+});
+
+
+test("position precision tools open on request and preserve nudge and undo behavior", async () => {
+  const page = await browser.newPage({ viewport: { width: 320, height: 844 } });
+  try {
+    await page.goto(`${origin}/scripts/fixtures/customer-localization.html?movable=1`);
+    const right = page.getByRole('button', { name: 'Move artwork right', exact: true });
+    assert.equal(await right.isVisible(), false);
+    const before = await page.locator('.inline-artwork').getAttribute('style');
+    await page.locator('.position-adjustments summary').click();
+    await right.click();
+    const moved = await page.locator('.inline-artwork').getAttribute('style');
+    assert.notEqual(moved, before);
+    await page.getByRole('button', { name: 'Undo position change', exact: true }).click();
+    assert.equal(await page.locator('.inline-artwork').getAttribute('style'), before);
+    await page.locator('.position-adjustments summary').click();
+    assert.equal(await right.isVisible(), false);
+  } finally { await page.close(); }
+});

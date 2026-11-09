@@ -90,7 +90,8 @@
     "chooseAnotherFile": "Choose another file",
     "cancelTitle": "Cancel this upload?",
     "cancelHelp": "This file is not ready yet. Canceling stops this upload and keeps your earlier choices.",
-    "keepUploading": "Keep uploading"
+    "keepUploading": "Keep uploading",
+    "addPositionArtwork": "Add artwork for {{positionName}}"
   },
   "quantities": {
     "heading": "Quantities",
@@ -170,7 +171,8 @@
     "artworkMovedDown": "Artwork moved down.",
     "artworkMovedRight": "Artwork moved right.",
     "sizeChangedTo": "Decoration size changed to {{sizeLabel}}.",
-    "previewUnavailableForProduct": "{{label}}: preview unavailable"
+    "previewUnavailableForProduct": "{{label}}: preview unavailable",
+    "adjustPosition": "Adjust position"
   },
   "review": {
     "artwork": "Artwork",

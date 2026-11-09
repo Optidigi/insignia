@@ -186,9 +186,6 @@
   border-radius: 6px;
 }
 /* Placement UI stays legible against the deliberately light product matte. */
-:root[data-theme="dark"] .garment-image-wrap .placeholder-print {
-  color: #525252;
-}
 :root[data-theme="dark"] .garment-image-wrap .empty-hotspot {
   color: #202020;
   background: #fffffff2;

@@ -548,7 +548,9 @@
       "customer_chrome_openingCart": "Ouverture du panier",
       "customer_chrome_viewCart": "Voir le panier",
       "customer_review_designTotals": "Titre des totaux par création",
-      "customer_review_currentDesign": "Libellé de la création actuelle"
+      "customer_review_currentDesign": "Libellé de la création actuelle",
+      "customer_artwork_addPositionArtwork": "Action pour ajouter un visuel à un emplacement",
+      "customer_positioning_adjustPosition": "Bouton pour ajuster la position"
     },
     "resetSavedHeading": "Rétablir les traductions enregistrées ?",
     "resetSavedDescription": "Rétablissez les textes par défaut pour toutes les langues enregistrées. Vos textes personnalisés seront supprimés.",

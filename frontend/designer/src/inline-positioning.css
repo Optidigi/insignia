@@ -245,3 +245,23 @@
     display: inline;
   }
 }
+
+.position-adjustments { border-top: 1px solid var(--border-subtle); }
+.position-adjustments > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding-block: 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  list-style: none;
+  cursor: pointer;
+}
+.position-adjustments > summary::-webkit-details-marker { display: none; }
+.position-adjustments > summary > svg { color: var(--muted); flex-shrink: 0; }
+.position-adjustments[open] > summary > svg { transform: rotate(180deg); }
+.position-adjustments > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.position-adjustments .inline-position-controls__hint { margin: 4px 0 12px; }
+.position-adjustments .inline-position-controls__move-tools { padding-bottom: 12px; }

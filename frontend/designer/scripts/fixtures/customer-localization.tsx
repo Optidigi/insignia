@@ -38,6 +38,7 @@ interface LocalizationTestApi {
   rejectReview(): void;
   selectedQuoteGroups(): string[];
   setLocale(locale: string): void;
+  setMethod(method: { label: string; description: string }): void;
   setWordingOverlay(overlay: CustomerWordingOverlay | null): void;
   commitRequests(): Array<{ requestId: string; idempotencyKey: string }>;
   languagePreferenceChanges(): Array<SupportedLanguage | null>;
@@ -46,6 +47,7 @@ interface LocalizationTestApi {
   rejectUpload(index: number): void;
 }
 
+const movable = new URLSearchParams(location.search).has('movable');
 const config = configSchema.parse({
   id: "localization-fixture",
   name: "Localization fixture",
@@ -70,12 +72,13 @@ const config = configSchema.parse({
     x: 50,
     y: 45,
     width: 20,
+    ...(movable ? { movementArea: { x: 50, y: 45, width: 40, height: 40 } } : {}),
     price: 100,
     dimensions: [10],
     sizePrices: [100],
     methodIds: ["screen"],
   }],
-  methods: [{ id: "screen", label: "Screen printing", surcharge: 0 }],
+  methods: [{ id: "screen", label: "Screen printing", description: "Vivid colors and fine detail", surcharge: 0 }],
 });
 const artwork: Artwork = {
   id: "fixture-artwork",
@@ -91,6 +94,7 @@ const initialPrints: Print[] = [{
 
 function CustomerLocalizationFixture() {
   const [locale, setLocale] = useState("en");
+  const [method, setMethod] = useState(config.methods[0]!);
   const [wordingOverlay, setWordingOverlay] = useState<CustomerWordingOverlay | null>(null);
   const [quoteReview, setQuoteReview] = useState<DesignerQuoteReview>();
   const reviews = useRef<DeferredReview[]>([]);
@@ -126,6 +130,7 @@ function CustomerLocalizationFixture() {
   useEffect(() => {
     const api: LocalizationTestApi = {
       setLocale,
+      setMethod: (value) => setMethod(current => ({ ...current, ...value })),
       setWordingOverlay,
       reviewRequests: () => reviews.current.length,
       setQuoteReview: (review) => {
@@ -159,7 +164,7 @@ function CustomerLocalizationFixture() {
 
   return (
     <Designer
-      config={config}
+      config={{ ...config, methods: [method] }}
       ports={ports}
       isOpen
       onOpenChange={() => undefined}
