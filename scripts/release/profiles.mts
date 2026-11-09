@@ -26,6 +26,8 @@ import selectedOnlyCandidate from '../../deployment/m5-runtime/native-selected-f
 };
 import speedModules from '../../deployment/m5-runtime/native-speed-module-baseline.json' with { type: 'json' };
 import speedCandidate from '../../deployment/m5-runtime/native-speed-release-binding.json' with { type: 'json' };
+import startupModules from '../../deployment/m5-runtime/native-startup-module-baseline.json' with { type: 'json' };
+import startupCandidate from '../../deployment/m5-runtime/native-startup-release-binding.json' with { type: 'json' };
 import nativeThemeModules from '../../deployment/m5-runtime/native-theme-module-baseline.json' with { type: 'json' };
 import nativeThemeCandidate from '../../deployment/m5-runtime/native-theme-release-binding.json' with { type: 'json' };
 import refreshModules from '../../deployment/m5-runtime/selected-refresh-module-baseline.json' with { type: 'json' };
@@ -68,7 +70,16 @@ const oldIds = [
   '1152880803841',
   '1146748534785',
 ] as const;
+
 const profiles = {
+  'native-startup-771bb8f': {
+    versionId: startupCandidate.versionId,
+    versionTag: startupCandidate.versionTag,
+    versionIds: startupCandidate.versionIds,
+    moduleHash: startupCandidate.moduleHash,
+    modules: startupModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+  },
   'native-recovery-e2c3dc5': {
     versionId: recoveryCandidate.versionId,
     versionTag: recoveryCandidate.versionTag,

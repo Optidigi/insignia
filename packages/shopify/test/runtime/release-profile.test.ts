@@ -2,6 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { resolveRuntimeReleaseProfile } from '../../src/runtime-release-profile.js';
 
 describe('closed server release targets', () => {
+  it('binds the inactive startup candidate while preserving Function and historical authority', () => {
+    const profile = resolveRuntimeReleaseProfile('native-startup-771bb8f');
+    expect(profile.activeVersionRef).toBe('1200333160449');
+    expect(profile.functionsSourceCommit).toBe('9b94149272d1b62c34f44dda3bde209e80b4ae22');
+    expect(Object.isFrozen(profile)).toBe(true);
+    expect(resolveRuntimeReleaseProfile('native-recovery-e2c3dc5').activeVersionRef).toBe('1199953805313');
+  });
   it('selects the observed inactive recovery target while retaining original Function authority', () => {
     const profile = resolveRuntimeReleaseProfile('native-recovery-e2c3dc5');
     expect(profile.activeVersionRef).toBe('1199953805313');
