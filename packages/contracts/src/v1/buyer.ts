@@ -106,7 +106,13 @@ export const BuyerConfigSchema = z.strictObject({
       choice.extend({
         available: z.boolean(),
         selectedOptions: z
-          .array(z.strictObject({ name: z.string().min(1).max(200), value: z.string().min(1).max(200) }))
+          .array(
+            z.strictObject({
+              name: z.string().min(1).max(200),
+              value: z.string().min(1).max(200),
+              swatch: z.strictObject({ color: z.string().regex(/^#[0-9a-fA-F]{6}$/) }).optional(),
+            }),
+          )
           .max(3)
           .optional(),
         baseUnitMinor: minor.optional(),

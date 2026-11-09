@@ -72,3 +72,80 @@ test("model fails closed when explicit availability or exact cells are absent", 
   assert.equal(createProductModel({ ...basic, colors: [{ ...basic.colors[0], availableSizeIds: ["col"] }] }).isSizeAvailable("row", "col"), true);
   assert.equal(createProductModel({ ...basic, colors: [{ ...basic.colors[0], availableSizeIds: ["col"] }], variantMatrix: [] }).isSizeAvailable("row", "col"), false);
 });
+
+test('actual Shopify swatches select the local swatch presentation without inferring option names', () => {
+  const variants = [
+    {
+      ...variant('201', [
+        ['Afwerking', 'Ocean'],
+        ['Maat', 'M'],
+      ]),
+      selectedOptions: [
+        { name: 'Afwerking', value: 'Ocean', swatch: { color: '#123456' } },
+        { name: 'Maat', value: 'M' },
+      ],
+    },
+    {
+      ...variant('202', [
+        ['Afwerking', 'Snow'],
+        ['Maat', 'M'],
+      ]),
+      selectedOptions: [
+        { name: 'Afwerking', value: 'Snow', swatch: { color: '#FFFFFF' } },
+        { name: 'Maat', value: 'M' },
+      ],
+    },
+  ];
+  const result = buildShopifyVariantMatrix({ variants });
+  assert.equal(result.status, 'ready');
+  if (result.status !== 'ready') return;
+  assert.equal(result.optionPresentation.rowOption.display, 'swatch');
+  assert.deepEqual(
+    result.colors.map((row) => row.hex),
+    ['#123456', '#FFFFFF'],
+  );
+  assert.deepEqual(
+    result.variantMatrix.map((cell) => cell.variantId),
+    ['201', '202'],
+  );
+  const incomplete = buildShopifyVariantMatrix({
+    variants: [
+      variants[0],
+      {
+        ...variants[1],
+        selectedOptions: [
+          { name: 'Afwerking', value: 'Snow' },
+          { name: 'Maat', value: 'M' },
+        ],
+      },
+    ],
+  });
+  assert.equal(incomplete.status, 'ready');
+  if (incomplete.status === 'ready') assert.equal(incomplete.optionPresentation.rowOption.display, 'named-choice');
+});
+
+test('missing, malformed, conflicting and composite swatches fall back without fabricated colours', () => {
+  const selected = (id: string, color: unknown) => ({
+    ...variant(id, [
+      ['Colour', 'Blue'],
+      ['Size', id],
+    ]),
+    selectedOptions: [
+      { name: 'Colour', value: 'Blue', swatch: { color } },
+      { name: 'Size', value: id },
+    ],
+  });
+  for (const variants of [
+    [selected('201', 'blue')],
+    [selected('201', '#123456'), selected('202', '#654321')],
+    [selected('201', '#123456'), selected('202', null)],
+    [selected('201', '#123456'), selected('202', null), selected('203', '#123456')],
+  ]) {
+    const result = buildShopifyVariantMatrix({ variants });
+    assert.equal(result.status, 'ready');
+    if (result.status === 'ready') assert.equal(result.optionPresentation.rowOption.display, 'named-choice');
+  }
+  const composite = buildShopifyVariantMatrix({ variants: [selected('201', '#123456')] }, ['Colour', 'Size']);
+  assert.equal(composite.status, 'ready');
+  if (composite.status === 'ready') assert.equal(composite.optionPresentation.rowOption.display, 'named-choice');
+});

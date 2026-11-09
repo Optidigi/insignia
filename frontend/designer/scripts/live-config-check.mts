@@ -278,3 +278,31 @@ test('deferred placement identity is stable and independent, and original identi
   const restored = mapped.restore(original, 'different-editor-session');
   assert.deepEqual(mapped.desired(restored).design, original.design);
 });
+
+test('published Designer preserves validated Shopify swatches through its public configuration boundary', async () => {
+  const { BuyerConfigSchema } = await import('@insignia/contracts');
+  const source = fixture();
+  source.variants = BuyerConfigSchema.shape.variants.parse(
+    source.variants.map((variant) => ({
+      ...variant,
+      selectedOptions: variant.selectedOptions?.map((option) =>
+        option.name === 'Color' ? { ...option, swatch: { color: '#123456' } } : option,
+      ),
+    })),
+  );
+  const config = live.buildPublishedDesigner(source, { locale: 'en-GB', storeName: 'Store' }).config;
+  assert.equal(config.optionPresentation?.rowOption.display, 'swatch');
+  assert.equal(config.colors[0]?.hex, '#123456');
+  assert.deepEqual(
+    config.variantMatrix?.map((cell) => cell.variantId),
+    ['101', '102'],
+  );
+  assert.throws(() =>
+    BuyerConfigSchema.shape.variants.parse([
+      {
+        ...source.variants[0],
+        selectedOptions: [{ name: 'Color', value: 'Blue', swatch: { color: 'url(https://example.test)' } }],
+      },
+    ]),
+  );
+});
