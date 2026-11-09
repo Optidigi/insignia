@@ -306,7 +306,10 @@
       "theme": "Aspetto",
       "recovery": "Messaggi di recupero",
       "common": "Testi condivisi",
-      "postOrder": "Grafiche dopo l’ordine"
+      "postOrder": "Grafiche dopo l’ordine",
+      "host": "Modifiche al design",
+      "language": "Selettore della lingua",
+      "startup": "Caricamento e connessione"
     },
     "fields": {
       "customer_artwork_cancelUpload": "Pulsante per annullare il caricamento",

@@ -303,7 +303,10 @@
       "theme": "Appearance",
       "recovery": "Recovery messages",
       "common": "Shared text",
-      "postOrder": "After-order artwork"
+      "postOrder": "After-order artwork",
+      "host": "Design changes",
+      "language": "Language selector",
+      "startup": "Loading and connection"
     },
     "fields": {
       "customer_artwork_cancelUpload": "Cancel upload button",

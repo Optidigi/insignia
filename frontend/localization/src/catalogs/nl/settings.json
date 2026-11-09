@@ -332,7 +332,10 @@
       "theme": "Weergave",
       "recovery": "Herstelmeldingen",
       "common": "Gedeelde tekst",
-      "postOrder": "Ontwerp na bestelling"
+      "postOrder": "Ontwerp na bestelling",
+      "host": "Ontwerpwijzigingen",
+      "language": "Taalselectie",
+      "startup": "Laden en verbinding"
     },
     "fields": {
       "customer_artwork_cancelUpload": "Knop upload annuleren",

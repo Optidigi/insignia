@@ -305,7 +305,10 @@
       "theme": "Apparence",
       "recovery": "Messages de récupération",
       "common": "Textes partagés",
-      "postOrder": "Visuels après commande"
+      "postOrder": "Visuels après commande",
+      "host": "Modifications de la création",
+      "language": "Sélecteur de langue",
+      "startup": "Chargement et connexion"
     },
     "fields": {
       "customer_artwork_cancelUpload": "Bouton pour annuler l’importation",
