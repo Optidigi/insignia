@@ -1,0 +1,66 @@
+{
+  "classification": "NATIVE_SINGLE_QUOTE_CART_AND_EXACT_BASELINE_CLEANUP_PASS",
+  "sourceMerge": "48df80e5d79d63afa16f6dd3ab6be19d8d8423c3",
+  "profile": "native-startup-771bb8f",
+  "appVersion": "1200333160449",
+  "recordedAt": "2026-11-09T11:58:38.595469+00:00",
+  "quantityControl": {
+    "observedAt": "2026-11-09T11:43:48Z",
+    "inputType": "number",
+    "accessibleName": "Zwart XS quantity",
+    "sameOriginDirectSrcdoc": true,
+    "explicitLocatorWorked": true,
+    "realClickAndType": true,
+    "valueAsNumber": 1,
+    "validity": true,
+    "evaluatedValueAssignment": false,
+    "earlierLocatorlessFailureCause": "UNCONFIRMED_AUTOMATION_TARGET_FOCUS_LEAD_NO_APP_DEFECT_REPRODUCED"
+  },
+  "artwork": {
+    "synthetic": true,
+    "bytes": 271,
+    "sha256": "774113e8128187fc1fde403997af0004452d94509b1d4023571bbe649b7f96eb",
+    "realUploadAndInspection": true,
+    "placement": "Buik",
+    "method": "Bedrukken",
+    "size": "Standaard"
+  },
+  "review": {
+    "readyObservedAt": "2026-11-09T11:44:07.224Z",
+    "currency": "USD",
+    "totalMinor": 2495,
+    "quantity": 1,
+    "variant": "Zwart XS",
+    "proposalStatus": 200,
+    "proposalResourceTimingMs": 6660.2,
+    "resourceTimingContext": "Parent product document; no matching entry in active child frame",
+    "reviewGestureToReadyObservationMsApprox": 8100,
+    "sampleCount": 1,
+    "percentile": "NOT_ASSERTED"
+  },
+  "cart": {
+    "addDispatchCount": 1,
+    "addDispatchedAtApprox": "2026-11-09T11:44:14.986Z",
+    "nativeCartNavigationObservedBy": "2026-11-09T11:44:21.802Z",
+    "verifiedReadbackAt": "2026-11-09T11:44:29.782Z",
+    "customizedLines": 1,
+    "units": 1,
+    "currency": "USD",
+    "totalMinor": 2495,
+    "matchesReviewedQuote": true
+  },
+  "cleanup": {
+    "nativeRemoveDispatchCount": 1,
+    "finalReadbackAt": "2026-11-09T11:44:44.408Z",
+    "lines": 0,
+    "units": 0,
+    "totalMinor": 0,
+    "exactBaselineSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "baselineRestored": true,
+    "ownedTabClosed": true
+  },
+  "checkoutOrOrderOrPayment": false,
+  "originalSameTabReportAttributed": false,
+  "ownerVisualAcceptance": false,
+  "nativeChangedPriceRecoveryOrBusyCopy": "NOT_QUALIFIED"
+}

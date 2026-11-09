@@ -1,0 +1,123 @@
+{
+  "at": "2026-11-09T12:13:32.663106+00:00",
+  "classification": "TEN_EXPIRED_PRIVATE_CAPTURE_PATHS_DISPOSED_AFTER_ORIGINAL_DEADLINE",
+  "originalDeadline": "2026-10-20T00:00:00Z",
+  "disposalIntentAt": "2026-11-09T12:12:15.922509+00:00",
+  "pathnameAbsenceReconciled": true,
+  "removedBytes": 1331073,
+  "guardsBeforeEffects": 388,
+  "remainingGuardsRecheckedNow": 378,
+  "minimalHistoricalProjectionsRetained": 4,
+  "operationRecordsRetainedUnchanged": 363,
+  "metadataSnapshotsRetainedUnchanged": 5,
+  "companionGuardsUnchanged": true,
+  "activeRuntimeConfigurationsMatchPreparedDeployedHashes": true,
+  "receiptFinalizationReconciledAfterByteTotalFieldError": true,
+  "deletionRepeated": false,
+  "expiredPayloadsRecovered": false,
+  "physicalErasure": "NOT_ASSERTED",
+  "sourceDatabaseTouched": false,
+  "serviceOrProviderMutations": 0,
+  "directoriesDeleted": 0,
+  "boundedReferenceChecks": "NO_CANDIDATE_REFERENCES_OBSERVED; NOT_PROCESS_GLOBAL_ACCESS",
+  "removedFiles": [
+    {
+      "packet": "insignia-deploy217-20261019",
+      "file": "web-original-compose.private.json",
+      "bytes": 5146,
+      "sha256": "a2e35e6357a99eb6596e7b23432cc7b686f362519415d89c35ab6eb32b20fd4e"
+    },
+    {
+      "packet": "insignia-deploy217-20261019",
+      "file": "web-precontainer.private.json",
+      "bytes": 11182,
+      "sha256": "a41029077fd8a877e27a633dffd6fb30353a329b393406cca662ebdbfb2fb43d"
+    },
+    {
+      "packet": "insignia-deploy217-20261019",
+      "file": "web-import.private.log",
+      "bytes": 89,
+      "sha256": "459fec4cbf27d8811ee6351bacaf107d0fb681a21f6f3f89eb96bff6e910dadb"
+    },
+    {
+      "packet": "insignia-deploy219-20261019",
+      "file": "web-original-compose.private.json",
+      "bytes": 5146,
+      "sha256": "46c1355288ca76631e36836ff674dd875849d4c63bbb7b1ddc52406aad750da2"
+    },
+    {
+      "packet": "insignia-deploy219-20261019",
+      "file": "web-precontainer.private.json",
+      "bytes": 11180,
+      "sha256": "c5d52e8fdd112a5aa17eccaf5a5a97fdd86c4e52d7586d268b4e898ee196d5a7"
+    },
+    {
+      "packet": "insignia-deploy219-20261019",
+      "file": "web-import.private.log",
+      "bytes": 89,
+      "sha256": "1c4623058d23fa03a9d0b38ce27086b9cfc49a006acf638d04e38da00afe9dcf"
+    },
+    {
+      "packet": "insignia-deploy217-20261019",
+      "file": "preimage.private.json",
+      "bytes": 333923,
+      "sha256": "87583fa036572b63686dc5f5321e65a78d7e9ec689e888a6f79a53ccf0fec9e4"
+    },
+    {
+      "packet": "insignia-deploy217-20261019",
+      "file": "final-host.private.json",
+      "bytes": 315137,
+      "sha256": "eb906952951f84b97da6c2b7d41d9ef10f386a27b2138871ba7930738270d1b0"
+    },
+    {
+      "packet": "insignia-deploy219-20261019",
+      "file": "preimage.private.json",
+      "bytes": 333925,
+      "sha256": "595554268210f39ebde1dd4c5e2228b7726b0943b41dd10c2a05062730c27592"
+    },
+    {
+      "packet": "insignia-deploy219-20261019",
+      "file": "final-host.private.json",
+      "bytes": 315256,
+      "sha256": "9a19afde222645caeca71c5a4dd4021bfed463e41e0101310986a6c2e32045e0"
+    }
+  ],
+  "retainedProjectionHashes": {
+    "deploy217-final-host.json.projection.json": "01b4e200a91f4c4145bdf8bc3742227719a95f26c103f021a400d35ab0965a05",
+    "deploy217-preimage.json.projection.json": "7668daa0856a484268387684c5ac338133caf29de0b95dd712c901d69259ecfd",
+    "deploy219-final-host.json.projection.json": "775684c1d9bd38c5432a1713b1cd1841a7a9ddfae68bd21752a52bec5253920a",
+    "deploy219-preimage.json.projection.json": "ea8f6688c5df4f7ff493e7ab27ebcb2102c6fa2c6a55b83c592560ed91119651"
+  },
+  "earlierActualDisposals": [
+    {
+      "at": "2026-11-09T07:58:50.677581Z",
+      "packet": "insignia-deploy217-20261019",
+      "file": "database-before.dump",
+      "bytes": 564589
+    },
+    {
+      "at": "2026-11-09T09:04:26.244991Z",
+      "packet": "insignia-deploy219-20261019",
+      "files": [
+        "fresh-web.private.json",
+        "fresh-worker.private.json"
+      ],
+      "companionRetainedUnchanged": true
+    },
+    {
+      "at": "2026-11-09T11:29:00Z",
+      "files": "Latest local and VPS encrypted development database/configuration checkpoint payloads",
+      "disposedBeforeDeadline": "2026-11-09T12:51:28.014115Z",
+      "metadataAndOriginalCertificateKeyRetained": true
+    }
+  ],
+  "localAuthCleanup": {
+    "heldFiles": 4,
+    "bytesEach": 57,
+    "authBytesRead": false,
+    "reason": "Unreadable process environments/file references for systemd, sd-pam and ssh-agent; user-manager query showed no matching references.",
+    "privilegedNoninteractiveReadAvailable": false,
+    "ownerAccessDependency": true
+  },
+  "retentionMeaning": "The five inventories and 363 original operation records contain necessary metadata and no identified payload field requiring projection. They retain original provenance and unknown/no-retry outcomes. This is not blanket retention of unknown captures."
+}

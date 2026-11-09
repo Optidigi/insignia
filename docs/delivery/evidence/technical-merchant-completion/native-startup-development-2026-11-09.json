@@ -1,0 +1,107 @@
+{
+  "classification": "QUALIFIED_STARTUP_DEVELOPMENT_ACTIVATION_WITH_NATIVE_UI_AND_SIGNING_PENDING",
+  "recordedAt": "2026-11-09T11:01:16.776576+00:00",
+  "source": {
+    "pullRequest": 265,
+    "head": "19bd48754e3e708cc5bbb7e82b525e3c5520b080",
+    "merge": "48df80e5d79d63afa16f6dd3ab6be19d8d8423c3",
+    "ciSource": "6189526162e7770182752f632c96dd71dc3f94ae",
+    "tree": "738511b3ac4d74de1cb18f51275556e78ae5b97a",
+    "foundationRun": "42601384634",
+    "runtimeRun": "42601384992",
+    "durableRun": "42601384951",
+    "attempt": 1
+  },
+  "release": {
+    "classification": "NATIVE_STARTUP_SINGLE_RELEASE_ACTIVE_READBACK_PASS",
+    "observedAt": "2026-11-09T10:57:25.922Z",
+    "versionId": "1200333160449",
+    "versionTag": "native-startup-771bb8f",
+    "inventoryCount": 27,
+    "exactModules": 14,
+    "moduleHash": "a26f9c4c0c754b35a8774de6444d483ca6e5ad6cdf14f95dfe84a2585843221f",
+    "neverReleaseInactive": true,
+    "independentAdmission": "PENDING"
+  },
+  "images": [
+    {
+      "name": "web",
+      "nativeId": "sha256:7e545f4390e3e6a235a47e2f90842a2bbe60ce86bbfdf1c83881a5a8c379ac40",
+      "configId": "sha256:2df5696752d80d75335a946c8e841142bdd788f2f5bbf7f572b17d0d9b196d55",
+      "manifestId": "sha256:7e545f4390e3e6a235a47e2f90842a2bbe60ce86bbfdf1c83881a5a8c379ac40",
+      "archiveSha256": "e623682bd0fda579169b1246a446c9b0b31d70e764107ad9a725e96b3429691e"
+    },
+    {
+      "name": "worker",
+      "nativeId": "sha256:2abbfa02896df81ddab35bc2729b0ca883994975e44196f7b2cf262528307e96",
+      "configId": "sha256:f1576a7990db1e8c73956b3c7e7d813a8792b192dc35f1d9f93096f3663eac19",
+      "manifestId": "sha256:2abbfa02896df81ddab35bc2729b0ca883994975e44196f7b2cf262528307e96",
+      "archiveSha256": "7a60f21f529437682c6ca319a611eba24c27950471f3a649f7d7eb4cd2f6f53e"
+    },
+    {
+      "name": "verifier",
+      "nativeId": "sha256:d0012bc868836a4766d3dc107f0130529ea6c3d8009d8a295e2c376b26f056d7",
+      "configId": "sha256:76cc54773559a1b12bd077965368f118f6edab0f689d85c76942d270a3dd5cbb",
+      "manifestId": "sha256:d0012bc868836a4766d3dc107f0130529ea6c3d8009d8a295e2c376b26f056d7",
+      "archiveSha256": "6233947f973421bc237fcc55fc1c085dd65db532c1ad5b12607b9d21b0736125"
+    }
+  ],
+  "schema": 52,
+  "databaseGrantChange": false,
+  "configurationChange": "Qualified image pins, matching profile selectors and verifier manifest only; rendered model otherwise equal.",
+  "protectedFactsMatched": true,
+  "pendingApplicationsUnchanged": 1,
+  "verifierReceiver": "Exclusive old receiver stopped before replacement; socket reachable after replacement.",
+  "inspector": "Original 3a07f51e package retained; verify-only integrity passed and service restarted active.",
+  "releaseReaderEvidence": {
+    "webReturnCode": 0,
+    "workerReturnCode": 0,
+    "classification": "CORRELATED_WEB_AND_QUIESCED_WORKER_ROLE_READ_PASS",
+    "requestId": "26df9ec3-264e-4cf7-bf52-453efc806a0e",
+    "recordId": "4c2e9616-9832-408a-8dbc-6f3ff2081777",
+    "observedAt": "2026-11-09T10:58:12.570Z",
+    "expiresAt": "2026-11-09T10:58:40.995Z",
+    "actualPurchaseAdmission": "NOT_ASSERTED",
+    "collectionCalls": 1,
+    "workerRestartReturnCode": 0
+  },
+  "readerLimit": "Finite historical record read through web and quiesced worker image/role; not a running-worker checkout or purchase admission proof.",
+  "checkpoint": {
+    "restoreVerified": true,
+    "protectedFactsMatched": true,
+    "schemaVersions": 52,
+    "completeProductionRecovery": false,
+    "objectBytesCaptured": false,
+    "expiresAt": "2026-11-09T12:51:28.014115+00:00",
+    "payloadDisposal": "LOCAL_AND_VPS_PATHS_DISPOSED_2026-11-09T11:29Z_BEFORE_DEADLINE",
+    "cleanupScheduled": false,
+    "physicalErasure": "NOT_ASSERTED",
+    "metadataAndOriginalKeyCustodyRetained": true
+  },
+  "signing": {
+    "ownerAllocationMounted": false,
+    "setupDispatched": true,
+    "observedSetupPostCount": 1,
+    "durableOwnerState": "PROVISIONED",
+    "soleActiveKey": 2,
+    "oldKey1State": "retiring",
+    "retainedKey1MaterialAndDatesUnchanged": true,
+    "independentProviderDatabaseConfigMatch": true,
+    "ordinaryWebHealthy": true
+  },
+  "nativeCopyCorrectedBehavior": {
+    "chooserLoaded": true,
+    "selectedReview": {
+      "products": 1,
+      "selectedViews": 4,
+      "placements": 6,
+      "numericPricesOrMethodNamesObserved": false
+    },
+    "cancelScrimRemovedAndPointerReopen": true,
+    "persistedCopyAction": false,
+    "preciseLatency": "NOT_MEASURED",
+    "ownerAcceptance": false
+  },
+  "productionCutover": false,
+  "newOrderOrPayment": false
+}
