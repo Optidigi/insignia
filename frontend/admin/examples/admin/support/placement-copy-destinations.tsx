@@ -9,7 +9,7 @@ export default function PlacementCopyDestinations({
   busy,
   onChange,
 }: {
-  products: PlacementProduct[];
+  products: Pick<PlacementProduct, 'id' | 'title' | 'images'>[];
   total: number;
   busy: boolean;
   onChange?: () => void;
