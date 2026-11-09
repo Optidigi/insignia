@@ -492,15 +492,12 @@ test("the actual mobile artwork toolbar keeps view names readable beside the pre
       await control.waitFor();
       assert.ok(await control.getAttribute("aria-label"), "icon-only control keeps its translated accessible name");
       assert.equal(await control.locator("span").isVisible(), false);
-      for (const view of await page.locator(".view-tabs button").all()) {
-        const geometry = await view.evaluate(button => {
-          const range = document.createRange();
-          range.selectNodeContents(button);
-          const rect = range.getBoundingClientRect();
-          return { height: rect.height, line: Number.parseFloat(getComputedStyle(button).lineHeight) };
-        });
-        assert.ok(geometry.height <= geometry.line + 1, `${language}: short supplied view names stay on one line`);
-      }
+      const select = page.locator('.view-select select');
+      assert.equal(await select.isVisible(), true);
+      assert.deepEqual(await select.locator('option').allTextContents(), ['Front', 'Back', 'Sleeve']);
+      assert.equal(await page.locator('.view-tabs').isVisible(), false);
+      await select.selectOption('back');
+      assert.equal(await select.inputValue(), 'back');
     }
   } finally { await page.close(); }
 });
