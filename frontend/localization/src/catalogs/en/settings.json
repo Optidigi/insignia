@@ -544,7 +544,9 @@
       "customer_chrome_calculatingQuote": "Calculating quote",
       "customer_chrome_preparingQuote": "Preparing quote",
       "customer_chrome_openingCart": "Opening cart",
-      "customer_chrome_viewCart": "View cart"
+      "customer_chrome_viewCart": "View cart",
+      "customer_review_designTotals": "Design totals heading",
+      "customer_review_currentDesign": "Current design label"
     },
     "resetSavedHeading": "Reset saved translations?",
     "resetSavedDescription": "Restore the default wording for all saved languages. Your custom text will be removed.",

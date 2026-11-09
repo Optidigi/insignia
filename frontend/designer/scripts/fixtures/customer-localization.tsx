@@ -4,6 +4,7 @@ import type { SupportedLanguage } from "@insignia/ui-localization/core";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import type { Artwork, Print } from "../../src/model";
 import { Designer } from "../../src/designer";
+import type { DesignerQuoteReview } from "../../src/quote-review";
 import { configSchema } from "../../src/config";
 import { createProductModel } from "../../src/model";
 import type { CartReceipt, CartRequest, DesignerPorts } from "../../src/runtime";
@@ -24,7 +25,18 @@ interface DeferredUpload {
   reject: (reason?: unknown) => void;
 }
 
+interface DeferredReview {
+  request: CartRequest;
+  resolve: (presentation: { expiresAt: string }) => void;
+  reject: (reason: Error) => void;
+}
+
 interface LocalizationTestApi {
+  reviewRequests(): number;
+  setQuoteReview(review: Omit<DesignerQuoteReview, "intentId">): void;
+  resolveReview(expiresAt: string): void;
+  rejectReview(): void;
+  selectedQuoteGroups(): string[];
   setLocale(locale: string): void;
   setWordingOverlay(overlay: CustomerWordingOverlay | null): void;
   commitRequests(): Array<{ requestId: string; idempotencyKey: string }>;
@@ -80,10 +92,20 @@ const initialPrints: Print[] = [{
 function CustomerLocalizationFixture() {
   const [locale, setLocale] = useState("en");
   const [wordingOverlay, setWordingOverlay] = useState<CustomerWordingOverlay | null>(null);
+  const [quoteReview, setQuoteReview] = useState<DesignerQuoteReview>();
+  const reviews = useRef<DeferredReview[]>([]);
+  const selectedGroups = useRef<string[]>([]);
   const commits = useRef<DeferredCommit[]>([]);
   const uploads = useRef<DeferredUpload[]>([]);
   const languagePreferences = useRef<Array<SupportedLanguage | null>>([]);
   const ports = useMemo<DesignerPorts>(() => ({
+    ...(new URLSearchParams(location.search).has("quote-review") ? {
+      review: {
+        prepare: (request: CartRequest) => new Promise<{ expiresAt: string }>((resolve, reject) => {
+          reviews.current.push({ request, resolve, reject });
+        }),
+      },
+    } : {}),
     artwork: {
       upload: async () => new Promise<Artwork>((resolve, reject) => {
         uploads.current.push({ resolve, reject });
@@ -105,6 +127,14 @@ function CustomerLocalizationFixture() {
     const api: LocalizationTestApi = {
       setLocale,
       setWordingOverlay,
+      reviewRequests: () => reviews.current.length,
+      setQuoteReview: (review) => {
+        const latest = reviews.current.at(-1);
+        if (latest) setQuoteReview({ ...review, intentId: latest.request.idempotencyKey });
+      },
+      resolveReview: (expiresAt) => reviews.current.at(-1)?.resolve({ expiresAt }),
+      rejectReview: () => reviews.current.at(-1)?.reject(new Error("fixture-review-failure")),
+      selectedQuoteGroups: () => [...selectedGroups.current],
       commitRequests: () => commits.current.map(({ requestId, idempotencyKey }) => ({ requestId, idempotencyKey })),
       languagePreferenceChanges: () => [...languagePreferences.current],
       rejectCommit: (index) => commits.current[index]?.reject(new Error("fixture-cart-failure")),
@@ -137,6 +167,8 @@ function CustomerLocalizationFixture() {
       initialArtworks={[artwork]}
       locale={locale}
       wordingOverlay={wordingOverlay}
+      {...(quoteReview ? { quoteReview } : {})}
+      onSelectQuoteGroup={(id) => selectedGroups.current.push(id)}
       onLanguagePreferenceChange={(preference) => languagePreferences.current.push(preference)}
     />
   );

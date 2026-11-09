@@ -189,7 +189,9 @@
     "artworkToFollow": "Ontwerp volgt later",
     "fullFilename": "Volledige bestandsnaam",
     "itemCount_one": "{{count}} artikel",
-    "itemCount_other": "{{count}} artikelen"
+    "itemCount_other": "{{count}} artikelen",
+    "designTotals": "Totalen per ontwerp",
+    "currentDesign": "Huidig ontwerp"
   },
   "validation": {
     "checkDesign": "Controleer je ontwerp",

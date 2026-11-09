@@ -1290,7 +1290,11 @@ test('known quote expiry prepares a fresh authoritative proposal and requires an
       assert.equal(proposals.length, 1);
       const originalTotal = await host.locator('.footer-price strong').innerText();
       await host.locator('.review-pricing summary').click();
-      assert.ok((await host.locator('.review-costs').getByText(originalTotal, { exact: true }).count()) > 0);
+      assert.equal(originalTotal, '€90.00', 'the footer owns the full three-item design total');
+      assert.equal(await host.locator('.review-pricing summary bdi').innerText(), '€30.00');
+      assert.deepEqual(await host.locator('.review-costs dd').allTextContents(), ['€20.00', '€10.00']);
+      assert.equal(await host.getByRole('region', { name: 'Design totals', exact: true }).count(), 0);
+      assert.equal(await host.locator('.review-pricing').getByText(originalTotal, { exact: true }).count(), 0);
       const repriced = structuredClone(config);
       repriced.variants = repriced.variants.map((variant) => ({ ...variant, baseUnitMinor: '9000' }));
       configure(repriced);
@@ -1298,10 +1302,11 @@ test('known quote expiry prepares a fresh authoritative proposal and requires an
       await host.getByRole('button', { name: 'Retry', exact: true }).waitFor();
       assert.equal(proposals.length, 1, 'expiry retires presentation without periodic proposal dispatch');
       assert.equal(await host.locator('.footer-price strong').innerText(), 'Unavailable');
-      assert.equal(
-        await host.locator('.review-costs').getByText(originalTotal, { exact: true }).count(),
-        0,
-        'expired unattempted sibling amounts must retire with the footer',
+      assert.equal(await host.locator('.review-pricing summary bdi').innerText(), 'Unavailable');
+      assert.deepEqual(
+        await host.locator('.review-costs dd').allTextContents(),
+        ['Unavailable', 'Unavailable'],
+        'expired unit prices must retire with the single-design footer total',
       );
       await host.getByRole('button', { name: 'Retry', exact: true }).click();
       await applyButton(host).waitFor();
@@ -1879,8 +1884,11 @@ test('switching a dirty cart design offers the baseline cancel/discard decision 
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
       await host.locator('input[type=number]:enabled').first().fill('4');
       await host.getByRole('button', { name: 'Review', exact: true }).last().click();
-      await host.locator('.review-pricing summary').click();
-      await host.getByRole('button', { name: 'Other synthetic shirt', exact: true }).click();
+      await host.getByRole('region', { name: 'Design totals', exact: true }).waitFor();
+      await host
+        .getByRole('region', { name: 'Design totals', exact: true })
+        .getByRole('button', { name: /^Other synthetic shirt\b/ })
+        .click();
       await host.getByRole('dialog', { name: 'Discard changes?', exact: true }).waitFor();
       assert.equal(await host.locator('.app').count(), 1, 'the selected view remains behind its confirmation');
       assert.equal(await host.locator('.app').isVisible(), true);
@@ -1889,13 +1897,19 @@ test('switching a dirty cart design offers the baseline cancel/discard decision 
       await host.getByRole('button', { name: 'Edit quantities', exact: true }).click();
       assert.equal(await host.locator('input[type=number]:enabled').first().inputValue(), '4');
       await host.getByRole('button', { name: 'Review', exact: true }).last().click();
-      await host.locator('.review-pricing summary').click();
-      await host.getByRole('button', { name: 'Other synthetic shirt', exact: true }).click();
+      await host.getByRole('region', { name: 'Design totals', exact: true }).waitFor();
+      await host
+        .getByRole('region', { name: 'Design totals', exact: true })
+        .getByRole('button', { name: /^Other synthetic shirt\b/ })
+        .click();
       await host.getByRole('button', { name: 'Discard and edit', exact: true }).click();
       await host.getByRole('heading', { name: 'Other synthetic shirt', exact: true }).waitFor();
       await reviewRetained(host);
-      await host.locator('.review-pricing summary').click();
-      await host.getByRole('button', { name: 'Synthetic shirt', exact: true }).click();
+      await host.getByRole('region', { name: 'Design totals', exact: true }).waitFor();
+      await host
+        .getByRole('region', { name: 'Design totals', exact: true })
+        .getByRole('button', { name: /^Synthetic shirt\b/ })
+        .click();
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
       assert.equal(
         await host.locator('input[type=number]:enabled').first().inputValue(),
@@ -1949,7 +1963,7 @@ test('switching an unchanged cart design skips discard confirmation and disconne
   await withRetainedBuyer(
     async ({ page, host, trigger, proposals, mutations }) => {
       await reviewRetained(host);
-      await host.locator('.review-pricing summary').click();
+      await host.getByRole('region', { name: 'Design totals', exact: true }).waitFor();
       await page.route('**/apps/insignia/v1/config*', (route) =>
         new URL(route.request().url()).searchParams.get('productId') === '333'
           ? new Promise<void>(() => {})
@@ -1958,7 +1972,10 @@ test('switching an unchanged cart design skips discard confirmation and disconne
       const requesting = page.waitForRequest(
         (request) => new URL(request.url()).searchParams.get('productId') === '333',
       );
-      await host.getByRole('button', { name: 'Other synthetic shirt', exact: true }).click();
+      await host
+        .getByRole('region', { name: 'Design totals', exact: true })
+        .getByRole('button', { name: /^Other synthetic shirt\b/ })
+        .click();
       await requesting;
       assert.equal(await host.getByRole('dialog', { name: 'Discard changes?', exact: true }).count(), 0);
       await page.getByRole('status').waitFor();

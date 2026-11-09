@@ -191,7 +191,9 @@
     "fullFilename": "Nom de fichier complet",
     "itemCount_one": "{{count}} article",
     "itemCount_many": "{{count}} articles",
-    "itemCount_other": "{{count}} articles"
+    "itemCount_other": "{{count}} articles",
+    "designTotals": "Totaux par création",
+    "currentDesign": "Création actuelle"
   },
   "validation": {
     "checkDesign": "Vérifiez votre personnalisation",

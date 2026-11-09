@@ -283,3 +283,64 @@
     min-height: 44px;
   }
 }
+
+.review-design-totals {
+  border-top: 1px solid var(--line);
+  margin-top: 8px;
+}
+.review-groups {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.review-groups > li + li {
+  border-top: 1px solid var(--border-subtle);
+}
+.review-group-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 16px;
+  padding: 12px;
+  width: 100%;
+  text-align: start;
+  border-radius: 6px;
+  color: var(--text);
+  line-height: 1.5;
+}
+.review-group-info {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+.review-group-name {
+  font-size: 13px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.review-group-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.review-group-total {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.review-group-link {
+  cursor: pointer;
+}
+.review-group-link:hover {
+  background: var(--surface-hover);
+}
+.review-group-link:hover .review-group-name {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.review-group-link:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}

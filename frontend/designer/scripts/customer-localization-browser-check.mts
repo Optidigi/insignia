@@ -5,6 +5,7 @@ import { after, before, test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { chromium, type Browser, type Page } from "playwright";
 import type { ChildProcess } from "node:child_process";
+import type { DesignerQuoteReview } from "../src/quote-review";
 
 
 
@@ -566,5 +567,137 @@ test("a storefront locale refresh retains pending manual intent and persists it 
     assert.equal(await page.locator('#active-locale').getAttribute('data-format-locale'), 'fr-CA');
     assert.deepEqual(await page.evaluate(() => window.__languageProbe.changes()), ['de', null]);
     assert.equal(await page.evaluate(() => localStorage.getItem('insignia.customer.language.v1')), null);
+  } finally { await page.close(); }
+});
+
+
+const reviewedDesigns: Omit<DesignerQuoteReview, "intentId"> = {
+  currency: "EUR",
+  exponent: 2,
+  totalMinor: "8087",
+  customizedQuantity: 7,
+  currentGroupId: "current-design",
+  groups: [
+    { id: "current-design", label: "Current shirt", quantity: 2, totalMinor: "2213", editable: true },
+    { id: "other-design", label: "Other shirt", quantity: 5, totalMinor: "5874", editable: true },
+  ],
+};
+
+async function openQuoteReview() {
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await page.goto(`${origin}/scripts/fixtures/customer-localization.html?quote-review`);
+  await page.waitForFunction(() => Boolean(window.__customerLocalizationTest));
+  await page.locator(".steps button").nth(1).click();
+  await page.locator("#quantity-white-small").fill("2");
+  await page.locator(".steps button").nth(2).click();
+  await page.waitForFunction(() => window.__customerLocalizationTest.reviewRequests() > 0);
+  await page.evaluate((review) => window.__customerLocalizationTest.setQuoteReview(review), reviewedDesigns);
+  return page;
+}
+
+function euro(minor: number) {
+  return new Intl.NumberFormat("en", { style: "currency", currency: "EUR" }).format(minor / 100);
+}
+
+test("review separates exact multi-design totals from per-item costs and only links other editable designs", async () => {
+  const page = await openQuoteReview();
+  try {
+    await page.evaluate(() => window.__customerLocalizationTest.resolveReview(new Date(Date.now() + 60_000).toISOString()));
+    const totals = page.getByRole("region", { name: "Design totals" });
+    await totals.waitFor();
+    await page.waitForFunction(() => document.querySelector(".review-group-total")?.textContent?.trim() === "€22.13");
+    assert.deepEqual(await totals.locator(".review-group-total").allTextContents(), [euro(2213), euro(5874)]);
+    assert.equal(await totals.getByText("2 items", { exact: true }).count(), 1);
+    assert.equal(await totals.getByText("5 items", { exact: true }).count(), 1);
+    assert.equal(await totals.getByText("Current design", { exact: true }).count(), 1);
+    assert.equal(await totals.getByRole("button").count(), 1);
+    assert.equal(await totals.getByRole("button", { name: /Current shirt/ }).count(), 0);
+    await totals.getByRole("button", { name: /Other shirt/ }).click();
+    assert.deepEqual(await page.evaluate(() => window.__customerLocalizationTest.selectedQuoteGroups()), ["other-design"]);
+    await page.locator(".review-pricing summary").click();
+    assert.equal(await page.locator(".review-pricing summary bdi").innerText(), euro(1200));
+    assert.deepEqual(await page.locator(".review-costs dd").allTextContents(), [euro(1000), euro(200)]);
+    assert.equal(await page.locator(".review-pricing").getByText("Other shirt").count(), 0);
+    assert.ok((await page.locator(".panel-footer").innerText()).includes(euro(8087)));
+
+    await page.evaluate((review) => window.__customerLocalizationTest.setQuoteReview({
+      ...review, customizedQuantity: 2, totalMinor: "2213", groups: [review.groups[0]!],
+    }), reviewedDesigns);
+    await totals.waitFor({ state: "hidden" });
+    assert.equal(await page.locator(".review-pricing").getByText("Current shirt").count(), 0);
+    assert.ok((await page.locator(".panel-footer").innerText()).includes(euro(2213)));
+  } finally { await page.close(); }
+});
+
+test("pending and unavailable reviews mask stale group totals and per-item prices", async () => {
+  const page = await openQuoteReview();
+  try {
+    const totals = page.getByRole("region", { name: "Design totals" });
+    await totals.waitFor();
+    await page.locator(".review-pricing summary").click();
+    const amounts = page.locator(".review-group-total, .review-pricing bdi");
+    await page.waitForFunction(() => document.querySelector(".review-group-total")?.textContent?.includes("Calculating"));
+    const pending = await amounts.allTextContents();
+    assert.equal(pending.length, 5);
+    assert.ok(pending.every((text) => text.trim() === "Calculating quote…"), JSON.stringify(pending));
+    await page.evaluate(() => window.__customerLocalizationTest.rejectReview());
+    await page.waitForFunction(() => document.querySelector(".review-group-total")?.textContent?.trim() === "Unavailable");
+    assert.ok((await amounts.allTextContents()).every((text) => text.trim() === "Unavailable"));
+    assert.equal((await totals.innerText()).includes(euro(2213)), false);
+    assert.equal((await totals.innerText()).includes(euro(5874)), false);
+  } finally { await page.close(); }
+});
+
+
+test("design totals retain translated labels and fit narrow and desktop review layouts", async () => {
+  const page = await openQuoteReview();
+  try {
+    await page.evaluate(() => window.__customerLocalizationTest.resolveReview(new Date(Date.now() + 60_000).toISOString()));
+    const labels = [
+      ["en", "Design totals", "Current design"],
+      ["nl", "Totalen per ontwerp", "Huidig ontwerp"],
+      ["de", "Summen je Design", "Aktuelles Design"],
+      ["fr", "Totaux par création", "Création actuelle"],
+      ["es", "Totales por diseño", "Diseño actual"],
+      ["it", "Totali per design", "Design attuale"],
+    ];
+    for (const [language, heading, current] of labels) {
+      await setLocale(page, language);
+      assert.equal(await page.locator(".review-design-totals h3").innerText(), heading);
+      assert.equal(await page.locator(".review-design-totals").getByText(current, { exact: true }).count(), 1);
+      for (const width of [320, 1440]) {
+        await page.setViewportSize({ width, height: 1000 });
+        const geometry = await page.locator(".review-design-totals").evaluate((section) => ({
+          client: section.clientWidth,
+          scroll: section.scrollWidth,
+          rows: [...section.querySelectorAll(".review-group-row")].map((row) => ({
+            infoRight: row.querySelector(".review-group-info")!.getBoundingClientRect().right,
+            totalLeft: row.querySelector(".review-group-total")!.getBoundingClientRect().left,
+            height: row.getBoundingClientRect().height,
+          })),
+        }));
+        assert.ok(geometry.scroll <= geometry.client + 1, `${language} ${width}: totals overflow`);
+        assert.ok(geometry.rows.every((row) => row.infoRight < row.totalLeft && row.height >= 44), `${language} ${width}: totals overlap or have small targets`);
+      }
+    }
+    await setLocale(page, "en");
+    await page.setViewportSize({ width: 390, height: 844 });
+    const output = fileURLToPath(new URL("../../../.m1-artifacts/frontend/customer-language/", import.meta.url));
+    await mkdir(output, { recursive: true });
+    await page.locator(".review-design-totals").screenshot({ path: `${output}review-design-totals-390.png` });
+  } finally { await page.close(); }
+});
+
+test("expiring a reviewed quote replaces design totals and unit prices with unavailable", async () => {
+  const page = await openQuoteReview();
+  try {
+    await page.evaluate((review) => {
+      const expiresAt = new Date(Date.now() + 600).toISOString();
+      window.__customerLocalizationTest.setQuoteReview({ ...review, expiresAt });
+      window.__customerLocalizationTest.resolveReview(expiresAt);
+    }, reviewedDesigns);
+    await page.waitForFunction(() => document.querySelector(".review-group-total")?.textContent?.trim() === "€22.13");
+    await page.waitForFunction(() => document.querySelector(".review-group-total")?.textContent?.trim() === "Unavailable");
+    assert.ok((await page.locator(".review-group-total, .review-pricing bdi").allTextContents()).every((text) => text.trim() === "Unavailable"));
   } finally { await page.close(); }
 });
