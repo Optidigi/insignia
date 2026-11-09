@@ -96,7 +96,9 @@ export async function authenticatedJson<T>(path: string, init: RequestInit = {},
         });
       };
       let response = await send();
-      if (response.status === 401) response = await send(true);
+      // Signing setup consumes a single-use owner allocation, including ambiguous replies.
+      const singleAttempt = path === '/api/admin/signing' && init.method?.toUpperCase() === 'POST';
+      if (response.status === 401 && !singleAttempt) response = await send(true);
       return jsonResponse<T>(response);
     },
     init.signal,

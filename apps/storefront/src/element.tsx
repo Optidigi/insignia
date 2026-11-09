@@ -70,7 +70,12 @@ export class InsigniaBuyer extends HTMLElement {
       owner.clearPreparation();
     }
     const context = this.context();
-    if (this.preparation?.context === context && this.preparation.expiresAt > Date.now()) return;
+    if (
+      this.preparation?.context === context &&
+      !this.preparation.controller.signal.aborted &&
+      this.preparation.expiresAt > Date.now()
+    )
+      return;
     this.clearPreparation();
     const productId = this.getAttribute('product-id') ?? '';
     if (!/^[1-9][0-9]{0,19}$/.test(productId)) return;
@@ -224,7 +229,9 @@ export class InsigniaBuyer extends HTMLElement {
       return;
     }
     const prepared =
-      this.preparation?.context === this.context() && this.preparation.expiresAt > Date.now()
+      this.preparation?.context === this.context() &&
+      !this.preparation.controller.signal.aborted &&
+      this.preparation.expiresAt > Date.now()
         ? this.preparation
         : undefined;
     if (!prepared) this.clearPreparation();
@@ -259,7 +266,10 @@ export class InsigniaBuyer extends HTMLElement {
       icon.style.setProperty('display', 'none', 'important');
       icon.before(spinner);
     } else trigger?.append(spinner);
+    let busyStopped = false;
     const stopBusy = () => {
+      if (busyStopped) return;
+      busyStopped = true;
       animation?.cancel();
       spinner.remove();
       if (icon) {
@@ -351,7 +361,7 @@ export class InsigniaBuyer extends HTMLElement {
       this.liveFrame = unavailable;
       return;
     } finally {
-      this.clearPreparation();
+      if (this.preparation === prepared) this.clearPreparation();
       clearTimeout(loadingTimeout);
       if (!adopted) {
         pending.destroy();

@@ -32,9 +32,26 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable signing key lifecycle
       expect(raw.rows[0]?.value).not.toContain(seed.toString('base64'));
       await lifecycle.activate(scope, 7);
       expect(await lifecycle.openActiveSeed(scope, 7)).toEqual(seed);
+      const retained = (await store.list(scope)).find((key) => key.keyId === 7);
+      if (!retained) throw new Error('Retained key missing');
+      const retainedDigest = createHash('sha256')
+        .update(JSON.stringify({ ...retained, state: undefined, retiredAt: undefined }))
+        .digest('hex');
       await lifecycle.createPending({ scope, keyId: 8, firstDay: 102, lastDay: 106 });
+      expect((await store.list(scope)).find((key) => key.keyId === 8)?.state).toBe('pending');
       await lifecycle.activate(scope, 8);
       expect((await store.list(scope)).find((key) => key.keyId === 7)?.state).toBe('retiring');
+      const rotated = await store.list(scope);
+      const old = rotated.find((key) => key.keyId === 7);
+      if (!old) throw new Error('Retained key missing after rotation');
+      expect(
+        createHash('sha256')
+          .update(JSON.stringify({ ...old, state: undefined, retiredAt: undefined }))
+          .digest('hex'),
+      ).toBe(retainedDigest);
+      expect(old.retiredAt).toBeInstanceOf(Date);
+      expect(rotated.filter((key) => key.state === 'active').map((key) => key.keyId)).toEqual([8]);
+      expect(await store.getActiveScope(shopId, '1')).toEqual(scope);
       const requestDigest = createHash('sha256').update('emergency').digest('hex');
       expect(await lifecycle.incrementEpoch({ scope, commandKey: 'incident-1', requestDigest })).toBe(1);
       expect(await lifecycle.incrementEpoch({ scope, commandKey: 'incident-1', requestDigest })).toBe(1);
