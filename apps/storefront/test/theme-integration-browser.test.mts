@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { type TestContext, test } from 'node:test';
-import { chromium } from 'playwright';
+import { chromium, firefox } from 'playwright';
 import { createStorefrontTestServer, serverPort } from './support.mts';
 
-async function fixture(t: TestContext) {
+async function fixture(t: TestContext, engine: typeof chromium = chromium) {
   const server = await createStorefrontTestServer({ server: { host: '127.0.0.1', port: 0, strictPort: true } });
   let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
   t.after(async () => {
@@ -11,7 +11,7 @@ async function fixture(t: TestContext) {
     await server.close();
   });
   await server.listen();
-  browser = await chromium.launch({ headless: true });
+  browser = await engine.launch({ headless: true });
   const page = await browser.newPage();
   await page.goto(`http://127.0.0.1:${serverPort(server.httpServer)}`);
   return page;
@@ -225,3 +225,251 @@ test('a transient eligibility failure is retried on section reload without polli
   await page.evaluate(() => document.dispatchEvent(new CustomEvent('shopify:section:load')));
   assert.equal(await page.locator('button[name=add]').isVisible(), false);
 });
+
+test('card Customise retains native modifier, local variables and scoped presentation across resize without copying purchase behavior', async (t) => {
+  const page = await fixture(t);
+  await page.route('**/apps/insignia/v1/eligibility?*', (route) =>
+    route.fulfill({ json: { productId: '111', configured: true } }),
+  );
+  await page.evaluate(() => {
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      `<style>
+      .button { background: white; color: black; border-radius: 2px; }
+      quick-add-component > button.quick-add__button--choose { background:var(--native-card-color);color:rgb(240,241,242);border:2px solid rgb(31,32,33);border-radius:13px;padding:11px 19px;font:600 15px/20px monospace; }
+      @media(max-width:600px){quick-add-component > button.quick-add__button--choose{padding:7px 12px;border-radius:9px}}
+      .button:focus-visible { outline:3px solid rgb(60,70,80); }
+    </style><quick-add-component data-product-id="111"><button name="add" type="submit" id="native-card" ref="addToCartButton" on:click="/handleClick" class="button quick-add__button--choose" style="--native-card-color:rgb(21,22,23)">Choose</button></quick-add-component>
+    <insignia-theme-integration proxy-base="/apps/insignia"></insignia-theme-integration>`,
+    );
+  });
+  const trigger = page.locator('quick-add-component insignia-buyer button');
+  await trigger.waitFor();
+  const appearance = () =>
+    trigger.evaluate((button) => {
+      const s = getComputedStyle(button);
+      return {
+        background: s.backgroundColor,
+        color: s.color,
+        radius: s.borderRadius,
+        padding: s.padding,
+        font: s.fontFamily,
+        modifier: button.classList.contains('quick-add__button--choose'),
+        id: button.id,
+        ref: button.getAttribute('ref'),
+        name: button.getAttribute('name'),
+        handler: button.getAttribute('on:click'),
+        type: button.getAttribute('type'),
+      };
+    });
+  assert.deepEqual(await appearance(), {
+    background: 'rgb(21, 22, 23)',
+    color: 'rgb(240, 241, 242)',
+    radius: '13px',
+    padding: '11px 19px',
+    font: 'monospace',
+    modifier: true,
+    id: '',
+    ref: null,
+    name: null,
+    handler: null,
+    type: 'button',
+  });
+  await page.setViewportSize({ width: 500, height: 700 });
+  await page.waitForFunction(() => {
+    const button = document.querySelector('quick-add-component insignia-buyer button');
+    return !!button && getComputedStyle(button).borderRadius === '9px';
+  });
+  assert.equal((await appearance()).padding, '7px 12px');
+});
+
+test('icon card keeps the native collapsed and hover presentation with a safe decorative icon', async (t) => {
+  const page = await fixture(t);
+  await page.route('**/apps/insignia/v1/eligibility?*', (route) =>
+    route.fulfill({ json: { productId: '111', configured: true } }),
+  );
+  await page.evaluate(() =>
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      `<style>
+    button.quick-add__button{display:flex;align-items:center;width:36px;height:36px;border:2px solid rgb(20,30,40);border-radius:50px;padding:0;background:rgb(240,241,242);overflow:hidden;white-space:nowrap;gap:0}
+    .quick-add__button .svg-wrapper{width:32px;min-width:32px;display:flex;align-items:center;justify-content:center}
+    .quick-add__button svg{width:20px;height:20px}
+    button.quick-add__button:hover{width:max-content;padding-right:12px;background:rgb(210,211,212)}
+  </style><quick-add-component data-product-id="111"><button name="add" class="button quick-add__button quick-add__button--choose"><span class="svg-wrapper add-to-cart-icon" aria-hidden="true"><svg viewBox="0 0 20 20" id="native-svg" onload="window.shouldNeverCopy=true"><path d="M2 2L18 18" stroke="currentColor" ref="nativeRef"></path></svg></span>Choose</button></quick-add-component><insignia-theme-integration proxy-base="/apps/insignia"></insignia-theme-integration>`,
+    ),
+  );
+  const trigger = page.locator('quick-add-component insignia-buyer button');
+  await trigger.waitFor();
+  assert.equal(await trigger.evaluate((b) => getComputedStyle(b).width), '36px');
+  assert.equal(await trigger.locator('span.svg-wrapper svg').count(), 1);
+  assert.equal(await trigger.locator('[id],[ref],[onload]').count(), 0);
+  assert.equal(await trigger.getAttribute('name'), null);
+  assert.equal(await trigger.getAttribute('type'), 'button');
+  assert.equal(await trigger.getAttribute('aria-label'), null);
+  assert.equal(await trigger.innerText(), 'Customise');
+  await trigger.hover();
+  await page.evaluate(() => document.body.append(document.createElement('div')));
+  assert.equal(await trigger.evaluate((b) => getComputedStyle(b).backgroundColor), 'rgb(210, 211, 212)');
+  assert.ok(await trigger.evaluate((b) => b.getBoundingClientRect().width > 36));
+});
+
+test('explicit Theme Editor controls override inherited native presentation', async (t) => {
+  const page = await fixture(t);
+  await page.route('**/apps/insignia/v1/eligibility?*', (route) =>
+    route.fulfill({ json: { productId: '111', configured: true } }),
+  );
+  await page.evaluate(() =>
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      `<style>.native{background:linear-gradient(rgb(20,30,40),rgb(20,30,40));color:white;border-radius:20px}</style><form data-product-id="111" action="/cart/add"><button name="add" class="button native">Buy</button></form><insignia-theme-integration proxy-base="/apps/insignia" button-background="rgb(90,80,70)" button-color="rgb(60,50,40)" button-radius="3px" button-width="full"></insignia-theme-integration>`,
+    ),
+  );
+  const button = page.locator('form insignia-buyer button');
+  await button.waitFor();
+  assert.equal(await button.evaluate((b) => getComputedStyle(b).backgroundImage), 'none');
+  assert.deepEqual(
+    await button.evaluate((b) => {
+      const s = getComputedStyle(b);
+      return { bg: s.backgroundColor, color: s.color, radius: s.borderRadius, width: b.style.width };
+    }),
+    { bg: 'rgb(90, 80, 70)', color: 'rgb(60, 50, 40)', radius: '3px', width: '100%' },
+  );
+});
+
+test('explicit secondary preset retains its theme variant instead of inheriting the replaced primary colours', async (t) => {
+  const page = await fixture(t);
+  await page.route('**/apps/insignia/v1/eligibility?*', (route) =>
+    route.fulfill({ json: { productId: '111', configured: true } }),
+  );
+  await page.evaluate(() =>
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      `<style>.button--primary{background:rgb(20,30,40);color:white}.button--secondary{background:rgb(230,231,232);color:rgb(10,11,12)}</style><form data-product-id="111" action="/cart/add"><button name="add" class="button button--primary">Buy</button></form><insignia-theme-integration proxy-base="/apps/insignia" button-style="secondary"></insignia-theme-integration>`,
+    ),
+  );
+  const button = page.locator('form insignia-buyer button');
+  await button.waitFor();
+  assert.deepEqual(
+    await button.evaluate((b) => {
+      const s = getComputedStyle(b);
+      return { bg: s.backgroundColor, color: s.color };
+    }),
+    { bg: 'rgb(230, 231, 232)', color: 'rgb(10, 11, 12)' },
+  );
+});
+
+test('ancestor-scoped idle fallback preserves generic hover background and keyboard focus shadow', async (t) => {
+  const page = await fixture(t);
+  await page.route('**/apps/insignia/v1/eligibility?*', (route) =>
+    route.fulfill({ json: { productId: '111', configured: true } }),
+  );
+  await page.evaluate(() =>
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      `<style>
+    quick-add-component > button.button {background:rgb(21,22,23);box-shadow:rgb(0,0,0) 0 0 0 0;padding:12px}
+    .button:hover {background:rgb(210,211,212)}
+    .button:focus-visible {box-shadow:rgb(60,70,80) 0 0 0 3px}
+    </style><quick-add-component data-product-id="111"><button name="add" class="button">Choose</button></quick-add-component>
+    <insignia-theme-integration proxy-base="/apps/insignia"></insignia-theme-integration>`,
+    ),
+  );
+  const trigger = page.locator('quick-add-component insignia-buyer button');
+  await trigger.waitFor();
+  const appearance = () =>
+    trigger.evaluate((b) => {
+      const s = getComputedStyle(b);
+      return { background: s.backgroundColor, shadow: s.boxShadow, padding: s.padding };
+    });
+  const idle = { background: 'rgb(21, 22, 23)', shadow: 'rgb(0, 0, 0) 0px 0px 0px 0px', padding: '12px' };
+  assert.deepEqual(await appearance(), idle);
+  await trigger.hover();
+  await page.waitForFunction(() => {
+    const button = document.querySelector('quick-add-component insignia-buyer button');
+    return button && getComputedStyle(button).backgroundColor === 'rgb(210, 211, 212)';
+  });
+  assert.deepEqual(await appearance(), { ...idle, background: 'rgb(210, 211, 212)' });
+  await page.mouse.move(800, 600);
+  await page.keyboard.press('Tab');
+  assert.equal(await trigger.evaluate((b) => b.matches(':focus-visible')), true);
+  await page.waitForFunction(() => {
+    const button = document.querySelector('quick-add-component insignia-buyer button');
+    return button && getComputedStyle(button).boxShadow === 'rgb(60, 70, 80) 0px 0px 0px 3px';
+  });
+  assert.deepEqual(await appearance(), { ...idle, shadow: 'rgb(60, 70, 80) 0px 0px 0px 3px' });
+  await page.keyboard.press('Tab');
+  await page.waitForFunction(() => {
+    const button = document.querySelector('quick-add-component insignia-buyer button');
+    return button && getComputedStyle(button).boxShadow === 'rgb(0, 0, 0) 0px 0px 0px 0px';
+  });
+  assert.deepEqual(await appearance(), idle);
+});
+
+for (const engine of [chromium, firefox]) {
+  for (const manual of [false, true]) {
+    test(`${engine.name()}: transitioning fallback preserves hover and padding on ${manual ? 'manual' : 'automatic'} triggers`, async (t) => {
+      const page = await fixture(t, engine);
+      await page.route('**/apps/insignia/v1/eligibility?*', (route) =>
+        route.fulfill({ json: { productId: '111', configured: true } }),
+      );
+      await page.route('**/apps/insignia/v1/config?*', (route) =>
+        route.fulfill({ status: 503, json: { code: 'UNAVAILABLE' } }),
+      );
+      await page.evaluate(
+        (manual) =>
+          document.body.insertAdjacentHTML(
+            'beforeend',
+            `<style>
+      form > button.button {background:rgb(21,22,23);padding:12px}
+      .button {transition:background-color .2s,padding .2s}
+      .button:hover {background:rgb(210,211,212)}
+      </style><section><form action="/cart/add" data-product-id="111"><button name="add" class="button">Buy</button></form>
+      ${manual ? '<insignia-buyer product-id="111"><button slot="trigger" class="button">Customise</button></insignia-buyer>' : ''}
+      <insignia-theme-integration proxy-base="/apps/insignia"></insignia-theme-integration></section>`,
+          ),
+        manual,
+      );
+      const trigger = page.locator('insignia-buyer button[slot="trigger"]');
+      await trigger.waitFor();
+      await page.waitForFunction(() =>
+        (() => {
+          const button = document.querySelector('insignia-buyer button');
+          return button && getComputedStyle(button).padding === '12px';
+        })(),
+      );
+      await trigger.hover();
+      await page.waitForFunction(
+        () => {
+          const button = document.querySelector('insignia-buyer button');
+          if (!button) return false;
+          const color = getComputedStyle(button).backgroundColor;
+          return color !== 'rgb(21, 22, 23)' && color !== 'rgb(210, 211, 212)';
+        },
+        undefined,
+        { timeout: 1000 },
+      );
+      await page.waitForFunction(
+        () => {
+          const button = document.querySelector('insignia-buyer button');
+          if (!button) return false;
+          const s = getComputedStyle(button);
+          return s.backgroundColor === 'rgb(210, 211, 212)' && s.padding === '12px';
+        },
+        undefined,
+        { timeout: 2000 },
+      );
+      await page.mouse.move(800, 600);
+      await page.waitForFunction(
+        () => {
+          const button = document.querySelector('insignia-buyer button');
+          if (!button) return false;
+          const s = getComputedStyle(button);
+          return s.backgroundColor === 'rgb(21, 22, 23)' && s.padding === '12px';
+        },
+        undefined,
+        { timeout: 2000 },
+      );
+    });
+  }
+}

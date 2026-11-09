@@ -31,14 +31,31 @@ export default function MethodDialog({
   const suspendedRef = useRef(suspended);
   suspendedRef.current = suspended;
   const hideStartedSuspended = useRef(false);
+  const opening = useRef(false);
+  const shown = useRef(false);
+  const dismissalRequested = useRef(false);
+  const closed = useRef(false);
+  function closeOnce() {
+    if (!active.current || closed.current || suspendedRef.current) return;
+    closed.current = true;
+    onClose();
+  }
+  function show() {
+    if (opening.current || dismissalRequested.current || closed.current) return;
+    opening.current = true;
+    modal.current?.showOverlay();
+  }
   const previousFocus = useRef(document.activeElement);
   useLayoutEffect(() => {
     const element = modal.current;
     element?.toggleAttribute('inert', suspended);
     if (suspended) {
-      hideStartedSuspended.current = true;
-      element?.hideOverlay();
-    } else element?.showOverlay();
+      if (!opening.current && shown.current) {
+        hideStartedSuspended.current = true;
+        element?.hideOverlay();
+      }
+    } else if (dismissalRequested.current && !opening.current) closeOnce();
+    else if (!hideStartedSuspended.current) show();
   }, [suspended]);
   useLayoutEffect(() => {
     return () => {
@@ -64,22 +81,42 @@ export default function MethodDialog({
       size={size}
       padding={padding}
       aria-hidden={suspended ? 'true' : undefined}
+      onShow={() => {
+        shown.current = true;
+        opening.current = false;
+      }}
       onHide={() => {
+        if (!active.current) return;
         if (!hideStartedSuspended.current) hideStartedSuspended.current = suspendedRef.current;
+        if (!hideStartedSuspended.current) dismissalRequested.current = true;
       }}
       onAfterShow={() => {
+        opening.current = false;
+        // hideOverlay is a no-op while Polaris awaits the host show promise.
+        // Retain the owner until that show finishes, then retire both surfaces.
+        if (dismissalRequested.current || !active.current) {
+          modal.current?.hideOverlay();
+          closeOnce();
+          return;
+        }
+        if (suspendedRef.current) {
+          hideStartedSuspended.current = true;
+          modal.current?.hideOverlay();
+          return;
+        }
         if (!suspendedRef.current && matchMedia('(min-width: 768px) and (pointer: fine)').matches)
           modal.current?.querySelector<HTMLElement>('input[type=search],s-search-field,s-text-field')?.focus();
       }}
       onAfterHide={() => {
+        shown.current = false;
         const hiddenWhileSuspended = hideStartedSuspended.current;
         hideStartedSuspended.current = false;
         if (!active.current) return;
         if (hiddenWhileSuspended) {
-          if (!suspendedRef.current) modal.current?.showOverlay();
+          if (!suspendedRef.current) show();
           return;
         }
-        if (!suspendedRef.current) onClose();
+        if (!suspendedRef.current && !opening.current) closeOnce();
       }}
     >
       {children}
@@ -100,8 +137,9 @@ export default function MethodDialog({
         variant="secondary"
         onClick={() => {
           const element = modal.current;
+          dismissalRequested.current = true;
           if (element) element.hideOverlay();
-          else onClose();
+          else closeOnce();
         }}
       >
         {cancelLabel ?? t('common:actions.cancel')}

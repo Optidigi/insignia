@@ -128,6 +128,14 @@ for (const engine of [chromium, firefox]) {
         rect.height > 0
       );
     });
+    assert.equal(
+      await page.locator('dialog:not([open]) > iframe[srcdoc]').evaluate((frame) => {
+        const parent = frame.parentElement;
+        return parent ? getComputedStyle(parent).opacity : 'missing';
+      }),
+      '0',
+      'Prepared editor pixels remain transparent even when its iframe sets visibility visible',
+    );
     assert.equal(await page.locator('dialog:modal').count(), 0);
     assert.equal(await page.locator('iframe').count(), 1);
     assert.equal(await page.locator('dialog').evaluate((dialog: HTMLDialogElement) => dialog.inert), true);
@@ -549,3 +557,85 @@ for (const engine of [chromium, firefox])
     await active().locator('.app').waitFor();
     assert.equal(await page.locator('dialog:modal > #retained-second').count(), 1);
   });
+
+for (const engine of [chromium, firefox]) {
+  test(`${engine.name()}: cold opening owns one immediate modal and keeps loading inside its editor shell`, async (t) => {
+    const server = await createStorefrontTestServer({
+      plugins: [selectedFrameAssets()],
+      server: { host: '127.0.0.1', port: 0, hmr: false },
+    });
+    await server.listen();
+    const browser = await engine.launch({ headless: true });
+    const hold = deferred();
+    t.after(async () => {
+      hold.resolve();
+      await browser.close();
+      await server.close();
+    });
+    const page = await browser.newPage();
+    await page.route('**/apps/insignia/v1/config*', async (route) => {
+      await hold.promise;
+      await route.fulfill({ json: config });
+    });
+    await page.route('https://preview.example/**', (route) =>
+      route.fulfill({
+        contentType: 'image/png',
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: Buffer.from(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC',
+          'base64',
+        ),
+      }),
+    );
+    await page.goto(`http://127.0.0.1:${serverPort(server.httpServer)}`);
+    await page.evaluate(async () => {
+      await customElements.whenDefined('insignia-buyer');
+      document.body.innerHTML = '<insignia-buyer product-id="111" country="US"></insignia-buyer>';
+    });
+    const trigger = page.locator('insignia-buyer button');
+    await trigger.click();
+    await page.locator('dialog:modal').waitFor();
+    await page.keyboard.press('Escape');
+    await page.locator('dialog:modal').waitFor({ state: 'detached' });
+    assert.equal(await trigger.getAttribute('aria-busy'), null);
+    assert.equal(await trigger.evaluate((button) => document.activeElement === button), true);
+    assert.equal(await page.evaluate(() => document.documentElement.style.overflow), '');
+    // Both the cancelled read and the new opening finish after the hold releases.
+    // Only the new generation may adopt a frame or retain the scroll lock.
+    await trigger.click();
+    await page.locator('dialog:modal').waitFor();
+    assert.equal(await page.locator('dialog:modal').count(), 1);
+    await page.locator('dialog:modal').evaluate((dialog) => {
+      dialog.id = 'same-startup-shell';
+    });
+    assert.equal(await trigger.getAttribute('aria-busy'), 'true');
+    assert.equal(await page.locator('dialog:modal header').count(), 1);
+    assert.equal(await page.locator('dialog:modal .designer-loading-state').count(), 1);
+    assert.equal(
+      await page.locator('dialog:modal .admin-preview-message').count(),
+      0,
+      'No separate loading-page composition',
+    );
+    hold.resolve();
+    await page.frameLocator('dialog:modal > iframe[srcdoc]').locator('.app').waitFor();
+    await page.waitForFunction(
+      () => document.querySelector<HTMLIFrameElement>('dialog:modal > iframe[srcdoc]')?.style.visibility === 'visible',
+    );
+    assert.equal(
+      await page.locator('dialog:modal#same-startup-shell').count(),
+      1,
+      'The editor adopts the already-open shell',
+    );
+    assert.equal(await page.locator('dialog:modal').count(), 1);
+    assert.equal(await trigger.getAttribute('aria-busy'), null);
+    await page
+      .frameLocator('dialog:modal > iframe[srcdoc]')
+      .getByRole('button', { name: 'Close customizer', exact: true })
+      .click();
+    await page.locator('dialog:modal').waitFor({ state: 'detached' });
+    assert.equal(await page.locator('#same-startup-shell > iframe').isVisible(), false);
+    assert.equal(await trigger.evaluate((button) => document.activeElement === button), true);
+    assert.equal(await page.evaluate(() => document.documentElement.style.overflow), '');
+    assert.equal(await page.locator('iframe').count(), 1, 'Cancelled completion cannot create a second frame');
+  });
+}

@@ -12,6 +12,7 @@ type DesignerRecord = {
 };
 /** One selected state machine; switching cart designs confirms discarding unfinished edits. */
 export async function mountLiveDesigner(input: {
+  modal?: ReturnType<typeof createDesignerModal>;
   source: BuyerConfig;
   initiallyHidden?: boolean;
   proxyBase: string;
@@ -37,6 +38,7 @@ export async function mountLiveDesigner(input: {
   let pendingModal: ReturnType<typeof createDesignerModal> | undefined;
   let pendingRead: AbortController | undefined;
   let active: DesignerRecord | undefined;
+  let openingModal = input.modal;
   let destroyed = false;
   let initiallyHidden = input.initiallyHidden === true;
   let preparationFailed = false;
@@ -159,7 +161,10 @@ export async function mountLiveDesigner(input: {
       }
     }
     if (!current() || signal.aborted || generation !== selectionGeneration) return;
+    const modal = openingModal;
+    openingModal = undefined;
     const frame = createDesignerFrame({
+      modal,
       initiallyHidden,
       ...(mapped ? { config: mapped.config } : {}),
       title: canStart ? source.title : undefined,
@@ -312,7 +317,10 @@ export async function mountLiveDesigner(input: {
         /* Unknown cart contents. */
       }
       if (!current() || generation !== selectionGeneration) return;
+      const modal = openingModal;
+      openingModal = undefined;
       const frame = createDesignerFrame({
+        modal,
         onInitializationRetry: () => retryInitialization(showOwned),
         title: input.source.title,
         ports: probe.ports,

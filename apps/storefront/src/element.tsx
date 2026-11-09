@@ -15,6 +15,7 @@ export class InsigniaBuyer extends HTMLElement {
   private liveFrame?: { open(): boolean; destroy(): void };
   private mounting = false;
   private cancelOpening?: () => void;
+  private stopBusy?: () => void;
   private readonly triggerClick = () => void this.mount();
   private readonly triggerIntent = () => this.prewarm(true);
   private cancelIdle?: () => void;
@@ -103,7 +104,12 @@ export class InsigniaBuyer extends HTMLElement {
             preparation.expiresAt = Math.min(preparation.expiresAt, instant + seconds * 1000);
           }
         }
-        if (controller.signal.aborted || this.preparation !== preparation || preparation.expiresAt <= Date.now())
+        if (
+          controller.signal.aborted ||
+          this.preparation !== preparation ||
+          this.mounting ||
+          preparation.expiresAt <= Date.now()
+        )
           return source;
         preparation.expiryTimer = setTimeout(
           () => {
@@ -168,12 +174,16 @@ export class InsigniaBuyer extends HTMLElement {
       this.cancelIdle = () => clearTimeout(idle);
     }
   }
-  private async createController(source: BuyerConfig, initiallyHidden = false): Promise<LiveDesigner> {
+  private async createController(
+    source: BuyerConfig,
+    initiallyHidden = false,
+    modal?: ReturnType<typeof createDesignerModal>,
+  ): Promise<LiveDesigner> {
     const generation = this.generation;
     const { mountLiveDesigner } = await import('./designer/controller');
     return mountLiveDesigner({
       initiallyHidden,
-
+      modal,
       source,
       proxyBase: this.getAttribute('proxy-base') ?? '/apps/insignia',
       cartRoot: this.getAttribute('cart-root') ?? '/',
@@ -228,6 +238,37 @@ export class InsigniaBuyer extends HTMLElement {
       this.liveFrame = undefined;
     }
     this.mounting = true;
+    const trigger = this.querySelector<HTMLButtonElement>('button[slot="trigger"]');
+    const spinner = document.createElement('span');
+    spinner.setAttribute('aria-hidden', 'true');
+    spinner.setAttribute('data-insignia-loading', '');
+    spinner.style.cssText =
+      'display:inline-block;width:1em;height:1em;margin-inline-start:.5em;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:middle;';
+    const icon = trigger?.querySelector<HTMLElement>('[data-insignia-theme-icon]');
+    const iconDisplay = icon?.style.getPropertyValue('display') ?? '';
+    const iconPriority = icon?.style.getPropertyPriority('display') ?? '';
+    const animation = !matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? spinner.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }], {
+          duration: 700,
+          iterations: Infinity,
+        })
+      : undefined;
+    trigger?.setAttribute('aria-busy', 'true');
+    if (icon) {
+      spinner.style.marginInlineStart = '0';
+      icon.style.setProperty('display', 'none', 'important');
+      icon.before(spinner);
+    } else trigger?.append(spinner);
+    const stopBusy = () => {
+      animation?.cancel();
+      spinner.remove();
+      if (icon) {
+        if (iconDisplay) icon.style.setProperty('display', iconDisplay, iconPriority);
+        else icon.style.removeProperty('display');
+      }
+      trigger?.removeAttribute('aria-busy');
+    };
+    this.stopBusy = stopBusy;
     const opening = new AbortController();
     opening.signal.addEventListener('abort', () => prepared?.controller.abort(), { once: true });
     const pending = createDesignerModal({
@@ -235,6 +276,9 @@ export class InsigniaBuyer extends HTMLElement {
       onRetry: () => {
         opening.abort();
         this.generation++;
+        // Once the frame adopts this shell, retire its listeners and timers too.
+        this.liveFrame?.destroy();
+        this.liveFrame = undefined;
         pending.destroy();
         this.mounting = false;
         void this.mount();
@@ -244,10 +288,13 @@ export class InsigniaBuyer extends HTMLElement {
         this.generation++;
         this.cancelOpening = undefined;
         pending.destroy();
+        this.stopBusy?.();
         this.querySelector<HTMLButtonElement>('button[slot="trigger"]')?.focus();
         this.mounting = false;
       },
     });
+    pending.onSettled(stopBusy);
+    let adopted = false;
     const loadingTimeout = setTimeout(() => pending.failed(), 10000);
     this.cancelOpening = () => {
       clearTimeout(loadingTimeout);
@@ -265,11 +312,14 @@ export class InsigniaBuyer extends HTMLElement {
       {
         let controller = prepared?.warm;
         if (prepared) prepared.warm = undefined;
-        if (controller && !controller.open()) {
+        if (controller) {
           controller.destroy();
           controller = undefined;
         }
-        controller ??= await this.createController(source);
+        if (!controller) {
+          controller = await this.createController(source, false, pending);
+          adopted = true;
+        }
         if (generation !== this.generation) {
           controller.destroy();
           return;
@@ -281,6 +331,7 @@ export class InsigniaBuyer extends HTMLElement {
       if (opening.signal.aborted || generation !== this.generation) return;
       const { mountUnavailableDesigner } = await import('./designer/unavailable');
       const unavailable = await mountUnavailableDesigner({
+        modal: pending,
         locale: this.getAttribute('language') || document.documentElement.lang || 'en',
         cartRoot,
         storage: sessionStorage,
@@ -296,12 +347,16 @@ export class InsigniaBuyer extends HTMLElement {
         unavailable.destroy();
         return;
       }
+      adopted = true;
       this.liveFrame = unavailable;
       return;
     } finally {
       this.clearPreparation();
       clearTimeout(loadingTimeout);
-      pending.destroy();
+      if (!adopted) {
+        pending.destroy();
+        stopBusy();
+      }
       if (generation === this.generation) {
         this.mounting = false;
         this.cancelOpening = undefined;
@@ -316,6 +371,7 @@ export class InsigniaBuyer extends HTMLElement {
     this.cancelOpening?.();
     this.cancelOpening = undefined;
     this.mounting = false;
+    this.stopBusy?.();
     const trigger = this.querySelector<HTMLButtonElement>('button[slot="trigger"]');
     trigger?.removeEventListener('click', this.triggerClick);
     trigger?.removeEventListener('pointerenter', this.triggerIntent);

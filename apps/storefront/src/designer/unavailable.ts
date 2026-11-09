@@ -2,8 +2,10 @@ import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quot
 import { cartJournal } from '../buyer.ts';
 import { createAjaxCartAdapter } from '../cart.ts';
 import { createDesignerFrame } from './frame-host.ts';
+import type { createDesignerModal } from './modal';
 /** Missing editable facts do not create a dummy catalogue or quote. Only observed cart removal is available. */
 export async function mountUnavailableDesigner(input: {
+  modal?: ReturnType<typeof createDesignerModal>;
   title?: string;
   locale: string;
   wording?: import('@insignia/contracts').MerchantCustomerWordingView;
@@ -21,6 +23,7 @@ export async function mountUnavailableDesigner(input: {
   }
   let reviewed: Awaited<ReturnType<typeof cart.read>> | undefined;
   const frame = createDesignerFrame({
+    modal: input.modal,
     onInitializationRetry: async () => {
       frame.destroy();
       await input.retry();

@@ -34,11 +34,148 @@ export function styleThemeTrigger(button: HTMLButtonElement, host: HTMLElement):
     ['button-spacing', 'margin-block'],
   ]) {
     const value = host.getAttribute(attribute ?? '');
-    if (value && property && CSS.supports(property, value)) button.style.setProperty(property, value);
+    if (value && property && CSS.supports(property, value)) {
+      button.style.setProperty(property, value);
+      if (attribute === 'button-background') button.style.backgroundImage = 'none';
+    }
   }
   if (host.hasAttribute('button-border-width')) button.style.borderStyle = 'solid';
   if (host.getAttribute('button-width') === 'full') button.style.width = '100%';
   else if (host.getAttribute('button-width') === 'content') button.style.width = 'auto';
+}
+
+function decorativeThemeIcon(native: HTMLButtonElement): HTMLElement | undefined {
+  const source = native.querySelector('svg');
+  if (!source) return;
+  const tags = new Set(['svg', 'g', 'path', 'circle', 'ellipse', 'rect', 'line', 'polyline', 'polygon']);
+  const attributes = new Set([
+    'viewBox',
+    'd',
+    'fill',
+    'stroke',
+    'stroke-width',
+    'stroke-linecap',
+    'stroke-linejoin',
+    'transform',
+    'cx',
+    'cy',
+    'r',
+    'rx',
+    'ry',
+    'x',
+    'y',
+    'x1',
+    'x2',
+    'y1',
+    'y2',
+    'width',
+    'height',
+    'points',
+    'opacity',
+    'class',
+  ]);
+  function copy(node: Element): SVGElement | undefined {
+    const tag = node.localName;
+    if (!tags.has(tag)) return;
+    const result = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    if (!(result instanceof SVGElement)) return;
+    for (const attribute of node.attributes)
+      if (attributes.has(attribute.name) && !/url\s*\(/i.test(attribute.value))
+        result.setAttribute(attribute.name, attribute.value);
+    for (const child of node.children) {
+      const safe = copy(child);
+      if (safe) result.append(safe);
+    }
+    return result;
+  }
+  const icon = copy(source);
+  if (!icon?.childElementCount) return;
+  icon.setAttribute('aria-hidden', 'true');
+  icon.setAttribute('focusable', 'false');
+  const wrapper = document.createElement('span');
+  if (source.parentElement?.tagName === 'SPAN') wrapper.className = source.parentElement.className;
+  wrapper.setAttribute('aria-hidden', 'true');
+  wrapper.dataset.insigniaThemeIcon = '';
+  wrapper.append(icon);
+  return wrapper;
+}
+
+// Slotting adds a DOM ancestor: direct-child theme rules can stop matching.
+// Retain visual classes for interaction states and fill only lost presentation.
+const presentationProperties = [
+  'background-color',
+  'background-image',
+  'color',
+  'border-top',
+  'border-right',
+  'border-bottom',
+  'border-left',
+  'border-radius',
+  'padding',
+  'font',
+  'letter-spacing',
+  'text-transform',
+  'text-align',
+  'box-shadow',
+  'box-sizing',
+  'align-items',
+  'justify-content',
+  'gap',
+  'min-height',
+];
+const inheritedPresentation = new WeakMap<HTMLButtonElement, Set<string>>();
+const idlePresentation = new WeakMap<HTMLButtonElement, Map<string, string>>();
+function inheritThemePresentation(button: HTMLButtonElement, native: HTMLButtonElement, host: HTMLElement) {
+  const interacting = button.matches(':hover,:active,:focus-visible');
+  const idle = idlePresentation.get(button) ?? new Map<string, string>();
+  const beforeStyle = getComputedStyle(button);
+  const before = presentationProperties.map((property) => [property, beforeStyle.getPropertyValue(property)] as const);
+  // Sample the cascade's destination, not an intermediate CSS transition value.
+  const transition = button.style.getPropertyValue('transition');
+  const transitionPriority = button.style.getPropertyPriority('transition');
+  button.style.setProperty('transition', 'none', 'important');
+  for (const property of inheritedPresentation.get(button) ?? []) button.style.removeProperty(property);
+  const copied = new Set<string>();
+  const variant = host.getAttribute('button-style');
+  if (variant === 'primary' || variant === 'secondary') {
+    if (transition) button.style.setProperty('transition', transition, transitionPriority);
+    else button.style.removeProperty('transition');
+    inheritedPresentation.set(button, copied);
+    return;
+  }
+  for (const property of native.style) {
+    if (!property.startsWith('--')) continue;
+    button.style.setProperty(
+      property,
+      native.style.getPropertyValue(property),
+      native.style.getPropertyPriority(property),
+    );
+    copied.add(property);
+  }
+  const source = getComputedStyle(native),
+    target = getComputedStyle(button);
+  for (const property of presentationProperties) {
+    const value = source.getPropertyValue(property);
+    const current = target.getPropertyValue(property);
+    // Keep lost ancestor styling only where the theme has no state-specific value.
+    // Inline fallbacks must yield to real hover/focus rules on the retained classes.
+    if (interacting && idle.has(property) && current !== idle.get(property)) continue;
+    if (!interacting) idle.set(property, current);
+    if (value === current) continue;
+    button.style.setProperty(property, value);
+    copied.add(property);
+  }
+  if (transition) button.style.setProperty('transition', transition, transitionPriority);
+  else button.style.removeProperty('transition');
+  const destination = button.style.cssText;
+  // Sampling is synchronous and unpainted. Restore the visible starting point
+  // before committing the destination so the theme can animate between them.
+  button.style.setProperty('transition', 'none', 'important');
+  for (const [property, value] of before) button.style.setProperty(property, value);
+  void getComputedStyle(button).padding;
+  button.style.cssText = destination;
+  inheritedPresentation.set(button, copied);
+  idlePresentation.set(button, idle);
 }
 
 /** Presentation only. Signed publication, quote and Shopify validation remain authoritative. */
@@ -46,11 +183,13 @@ export function connectThemeIntegration(host: HTMLElement): () => void {
   const placements = new Map<HTMLElement, Placement>();
   const eligibility = new Map<string, boolean | 'pending' | 'failed'>();
   const abort = new AbortController();
+  const interactionTriggers = new WeakSet<HTMLButtonElement>();
   const proxy = host.getAttribute('proxy-base') ?? '/apps/insignia';
   if (!/^\/(?:[A-Za-z0-9_-]+\/)*apps\/[a-z0-9-]{1,64}$/.test(proxy)) return () => {};
   const mainId = host.getAttribute('product-id') ?? '';
   const variants = new Set((host.getAttribute('variant-ids') ?? '').split(',').filter((id) => idPattern.test(id)));
   if (idPattern.test(mainId) && host.hasAttribute('known-required')) eligibility.set(mainId, true);
+  let interactionFrame: number | undefined;
   let queued = false;
   let disposed = false;
 
@@ -96,6 +235,13 @@ export function connectThemeIntegration(host: HTMLElement): () => void {
     queueMicrotask(() => {
       queued = false;
       scan();
+    });
+  }
+  function scheduleInteraction() {
+    if (disposed || interactionFrame !== undefined) return;
+    interactionFrame = requestAnimationFrame(() => {
+      interactionFrame = undefined;
+      schedule();
     });
   }
   function lookup(id: string) {
@@ -196,16 +342,29 @@ export function connectThemeIntegration(host: HTMLElement): () => void {
         button.slot = 'trigger';
         // Copy presentation, never theme refs, handlers, names, IDs or cart authority.
         button.className = primary.className;
-        button.classList.remove('quick-add__button--add', 'quick-add__button--choose', 'loading');
-        if (root.matches('quick-add-component,sticky-add-to-cart')) {
+        button.classList.remove('loading');
+        styleThemeTrigger(button, host);
+        button.textContent = host.getAttribute('trigger-label') || 'Customise';
+        const icon = decorativeThemeIcon(primary);
+        if (icon) button.prepend(icon);
+        else if (root.matches('quick-add-component,sticky-add-to-cart')) {
           button.style.width = 'auto';
           button.style.minWidth = 'max-content';
         }
-        styleThemeTrigger(button, host);
-        button.textContent = host.getAttribute('trigger-label') || 'Customise';
         buyer.append(button);
         primary.before(buyer);
         placement.buyer = buyer;
+      }
+      const styleHost = placement.buyer ? host : placement.manual;
+      const trigger = (placement.buyer ?? placement.manual)?.querySelector<HTMLButtonElement>('button[slot="trigger"]');
+      if (trigger && styleHost) {
+        if (!interactionTriggers.has(trigger)) {
+          for (const event of ['pointerenter', 'pointerleave', 'pointerdown', 'pointerup', 'focus', 'blur'])
+            trigger.addEventListener(event, scheduleInteraction, { signal: abort.signal });
+          interactionTriggers.add(trigger);
+        }
+        inheritThemePresentation(trigger, primary, styleHost);
+        styleThemeTrigger(trigger, styleHost);
       }
     }
     observer.observe(document.body, {
@@ -239,6 +398,7 @@ export function connectThemeIntegration(host: HTMLElement): () => void {
   scan();
   return () => {
     disposed = true;
+    if (interactionFrame !== undefined) cancelAnimationFrame(interactionFrame);
     abort.abort();
     observer.disconnect();
     document.removeEventListener('submit', preventPlainSubmission, true);

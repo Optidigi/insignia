@@ -593,7 +593,13 @@ type RetainedScenario = {
 };
 async function withRetainedBuyer(
   run: (context: RetainedScenario) => Promise<void>,
-  { multipleProducts = false, clock = false, unknownOwned = false, productionOptions = false } = {},
+  {
+    multipleProducts = false,
+    clock = false,
+    unknownOwned = false,
+    productionOptions = false,
+    opening = 'editable' as 'editable' | 'repair',
+  } = {},
 ) {
   const server = await createServer({
     plugins: [selectedFrameAssets()],
@@ -877,7 +883,17 @@ async function withRetainedBuyer(
     const trigger = page.locator('insignia-buyer');
     await trigger.getByRole('button', { name: 'Review customized cart', exact: true }).click();
     const host = page.frameLocator('iframe:not([hidden])');
-    await host.locator('.app').waitFor();
+    if (opening === 'repair') {
+      await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
+      await host.getByRole('button', { name: 'Review removing all customized items', exact: true }).waitFor();
+      assert.equal(await host.locator('input,select,textarea').count(), 0);
+    } else await host.locator('.app').waitFor();
+    assert.equal(await page.locator('dialog[open]').isVisible(), true);
+    assert.equal(await page.locator('dialog[open] > iframe').isVisible(), true);
+    assert.equal(
+      await page.locator('dialog[open] > div').evaluate((element) => element instanceof HTMLElement && element.hidden),
+      true,
+    );
     await run({
       page,
       host,
@@ -1190,7 +1206,7 @@ for (const [action, unknownOwned] of [
           },
         ]);
       },
-      { unknownOwned },
+      { unknownOwned, opening: unknownOwned ? 'repair' : 'editable' },
     );
   });
 }
@@ -1198,17 +1214,31 @@ for (const [action, unknownOwned] of [
 test('failed fallback removal preserves review and never opens the native cart', async () => {
   await withRetainedBuyer(
     async ({ page, host, cartNavigations, mutations }) => {
+      const before = await page.evaluate(async () => (await fetch('/cart.js')).json());
+      let attempts = 0;
+      page.on('request', (request) => {
+        if (new URL(request.url()).pathname === '/cart/update.js') attempts++;
+      });
       await host.getByRole('button', { name: 'Review removing all customized items', exact: true }).click();
+      assert.equal(attempts, 0, 'Opening removal review cannot mutate the cart');
       await page.route('**/cart/update.js', (route) =>
         route.fulfill({ status: 503, json: { error: 'Unknown cart update' } }),
       );
       await host.getByRole('button', { name: 'Confirm cart update', exact: true }).click();
       await host.locator('.cart-submit-error').waitFor();
       assert.equal(cartNavigations(), 0);
-      assert.equal(mutations(), 0);
+      assert.equal(attempts, 1, 'One confirmed update was attempted and failed');
+      assert.equal(mutations(), 0, 'The original route recorded no successful mutation');
+      assert.deepEqual(await page.evaluate(async () => (await fetch('/cart.js')).json()), before);
+      assert.equal(
+        await host.getByRole('heading', { name: 'Remaining customized items', exact: true }).isVisible(),
+        true,
+      );
+      assert.equal(await host.getByRole('button', { name: 'Confirm cart update', exact: true }).isVisible(), true);
+      assert.equal(await host.getByRole('button', { name: 'Cancel', exact: true }).isVisible(), true);
       assert.equal(await page.locator('iframe:not([hidden])').count(), 1);
     },
-    { unknownOwned: true },
+    { unknownOwned: true, opening: 'repair' },
   );
 });
 test('known quote expiry prepares a fresh authoritative proposal and requires another acceptance gesture', async () => {
@@ -1270,6 +1300,7 @@ async function withProductDesigner(
   run: (context: { page: Page; ui: FrameLocator; trigger: Locator; privateRequests: () => number }) => Promise<void>,
   mobile = false,
   engine: typeof chromium = chromium,
+  opening: 'editable' | 'unavailable' = 'editable',
 ) {
   const server = await createServer({
     plugins: [selectedFrameAssets()],
@@ -1314,7 +1345,18 @@ async function withProductDesigner(
     const trigger = page.locator('insignia-buyer').getByRole('button', { name: 'Customize this product' });
     await trigger.click();
     const ui = page.frameLocator('iframe:not([hidden])');
-    await ui.locator('.app').waitFor();
+    if (opening === 'unavailable') {
+      await ui.getByRole('heading', { name: 'Unavailable', exact: true }).waitFor();
+      assert.equal(await ui.locator('input,select,textarea').count(), 0);
+      assert.equal(await ui.locator('.app').count(), 0);
+      assert.equal(await ui.getByRole('button', { name: /Review removing/ }).count(), 0);
+    } else await ui.locator('.app').waitFor();
+    assert.equal(await page.locator('dialog[open]').isVisible(), true);
+    assert.equal(await page.locator('dialog[open] > iframe').isVisible(), true);
+    assert.equal(
+      await page.locator('dialog[open] > div').evaluate((element) => element instanceof HTMLElement && element.hidden),
+      true,
+    );
     await run({ page, ui, trigger, privateRequests: () => privateRequests });
   } finally {
     await browser?.close();
@@ -1572,11 +1614,17 @@ test('missing critical physical production facts require repair without issuing 
   const cfg = structuredClone(config);
   delete required(cfg.geometry.views[0]).image;
   delete required(cfg.geometry.steps[0]).physicalMm;
-  await withProductDesigner(cfg, async ({ ui, privateRequests }) => {
-    await ui.getByRole('heading', { name: 'Unavailable', exact: true }).waitFor();
-    assert.equal(await ui.getByRole('button', { name: 'Add artwork', exact: true }).count(), 0);
-    assert.equal(privateRequests(), 0);
-  });
+  await withProductDesigner(
+    cfg,
+    async ({ ui, privateRequests }) => {
+      await ui.getByRole('heading', { name: 'Unavailable', exact: true }).waitFor();
+      assert.equal(await ui.getByRole('button', { name: 'Add artwork', exact: true }).count(), 0);
+      assert.equal(privateRequests(), 0);
+    },
+    false,
+    chromium,
+    'unavailable',
+  );
 });
 
 test('lost optional captured product preview keeps valid production choices and explicit authoritative quote review available', async () => {
