@@ -208,9 +208,11 @@ export function ReviewPanel({
               </dt>
               <dd>
                 <bdi>
-                  {group.totalMinor !== undefined
-                    ? quoteReviewMoney(group.totalMinor, quoteReview.currency, quoteReview.exponent, formatLocale)
-                    : t(quoteStatus === 'loading' ? 'customer:chrome.calculatingQuote' : 'common:summary.unavailable')}
+                  {quoteStatus
+                    ? t(quoteStatus === 'loading' ? 'customer:chrome.calculatingQuote' : 'common:summary.unavailable')
+                    : group.totalMinor !== undefined
+                      ? quoteReviewMoney(group.totalMinor, quoteReview.currency, quoteReview.exponent, formatLocale)
+                      : t('common:summary.unavailable')}
                 </bdi>
               </dd>
             </div>

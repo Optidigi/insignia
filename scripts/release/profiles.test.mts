@@ -676,6 +676,20 @@ for (const profile of [
               id: 'gid://shopify/App/429028933633',
               key: '1443cf6d03d39edae7c101a943c5c684',
               organizationId: 'gid://shopify/Organization/123',
+              activeRelease: {
+                version: {
+                  id: `gid://shopify/Version/${versionId}`,
+                  metadata: { versionTag: profile },
+                  appModules: modules.map((m) => ({
+                    uuid: m.registrationUuid,
+                    userIdentifier: m.registrationId || m.registrationUuid,
+                    handle: m.handle,
+                    config: m.config,
+                    target: m.target,
+                    specification: m.specification,
+                  })),
+                },
+              },
             },
           }),
           appVersions: async () => ({
@@ -688,11 +702,6 @@ for (const profile of [
                 },
               },
             },
-          }),
-          appVersionByTag: async (_remote: RemoteApp, tag: string) => ({
-            uuid: `gid://shopify/Version/${versionId}`,
-            versionTag: tag,
-            appModuleVersions: modules.map(({ handle, ...m }) => ({ ...m, registrationTitle: handle })),
           }),
         };
         const stateHolder: {

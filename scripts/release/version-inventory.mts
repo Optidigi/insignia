@@ -16,6 +16,7 @@ const query = `query AppVersions($appId: ID!) {
 export async function readAppVersionInventory(client: unknown, remote: { id: string }) {
   const result = await method(client, 'appManagementRequest')({ query, variables: { appId: remote.id } });
   assert(Buffer.byteLength(JSON.stringify(result)) <= 1048576);
+  assert(!('errors' in object(result)));
   const app = object(object(result).app);
   assert.equal(app.id, remote.id);
   const totalResults = number(app.versionsCount);

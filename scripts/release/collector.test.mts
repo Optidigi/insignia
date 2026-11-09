@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
@@ -238,9 +239,9 @@ test('each settled owner intent has one UUID-bound budget and duplicate UUID or 
     );
     const budget = JSON.parse(await readFile(join(f.config.directory, 'invocation.json'), 'utf8'));
     assert.deepEqual(budget, {
-      version: 'm5-owner-collector-invocation-v1',
+      version: 'm5-owner-collector-invocation-v2',
       recordId: f.config.recordId,
-      sdkReadMethods: 4,
+      sdkReadMethods: 3,
       ownerOAuthPosts: 1,
       ownerAdminSelectedReads: 3,
       appendCalls: 1,
@@ -315,5 +316,39 @@ test('invalid UUID or directory escape stops before ports and does not reserve a
     await assert.rejects(readFile(join(f.config.directory, 'invocation.json')), { code: 'ENOENT' });
   } finally {
     await f.close();
+  }
+});
+
+test('v2 retains stale observation/future module fences and rechecks expiry after append reservation', async () => {
+  for (const mode of ['stale', 'future', 'after-reservation', 'closing-drift']) {
+    const f = await fixture();
+    const time = f.ports.now();
+    const original = f.ports.management.open;
+    f.ports.management.open = async (reserve) => {
+      const result = await original(reserve);
+      if (mode === 'future') object(result.moduleObservation).observedAt = new Date(time + 1000).toISOString();
+      if (mode === 'stale') f.functions.observation.observedAt = new Date(time - 30001).toISOString();
+      return result;
+    };
+    if (mode === 'after-reservation')
+      f.ports.now = () => time + (existsSync(join(f.config.directory, 'reservation-11.json')) ? 30001 : 0);
+    if (mode === 'closing-drift') {
+      const close = f.ports.management.close;
+      f.ports.management.close = async (reserve) => {
+        const result = structuredClone(await close(reserve));
+        object(array(result.versions)[1]).versionTag = 'drift';
+        return result;
+      };
+    }
+    try {
+      assert.equal(
+        (await collectFreshTrustedRelease(f.config, f.ports)).classification,
+        'TRUSTED_RELEASE_COLLECT_STOPPED',
+      );
+      assert.equal(f.appends, 0);
+      if (mode === 'after-reservation') assert.equal(existsSync(join(f.config.directory, 'reservation-11.json')), true);
+    } finally {
+      await f.close();
+    }
   }
 });

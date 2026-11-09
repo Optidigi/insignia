@@ -57,7 +57,7 @@ export function createManagementProcess({
       const line = await next();
       if (line.startsWith('RESERVE ')) {
         const operation = line.slice(8);
-        assert.ok(['ActiveAppReleaseFromApiKey', 'AppVersions', 'AppVersionByTag'].includes(operation));
+        assert.ok(['FixedActiveAppRelease', 'AppVersions'].includes(operation));
         assert.equal((await reserve(operation)).durable, true);
         required(child).stdin.write('DURABLE_ACK\n');
       } else {
@@ -122,7 +122,7 @@ export function createManagementProcess({
         });
       });
       child.stdin.write('AUTHENTICATE\n');
-      assert.equal(await next(), 'AUTHENTICATED');
+      assert.equal(await next(), 'AUTHENTICATED_V2');
     },
     async open(reserve: Reservation) {
       required(child).stdin.write('OPEN\n');
