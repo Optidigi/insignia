@@ -16,14 +16,14 @@ import performanceModules from '../../deployment/m5-runtime/native-performance-m
 import performanceCandidate from '../../deployment/m5-runtime/native-performance-release-binding.json' with {
   type: 'json',
 };
+import recoveryModules from '../../deployment/m5-runtime/native-recovery-module-baseline.json' with { type: 'json' };
+import recoveryCandidate from '../../deployment/m5-runtime/native-recovery-release-binding.json' with { type: 'json' };
 import selectedOnlyModules from '../../deployment/m5-runtime/native-selected-fixed-module-baseline.json' with {
   type: 'json',
 };
 import selectedOnlyCandidate from '../../deployment/m5-runtime/native-selected-fixed-release-binding.json' with {
   type: 'json',
 };
-import recoveryModules from '../../deployment/m5-runtime/native-recovery-module-baseline.json' with { type: 'json' };
-import recoveryCandidate from '../../deployment/m5-runtime/native-recovery-release-binding.json' with { type: 'json' };
 import speedModules from '../../deployment/m5-runtime/native-speed-module-baseline.json' with { type: 'json' };
 import speedCandidate from '../../deployment/m5-runtime/native-speed-release-binding.json' with { type: 'json' };
 import nativeThemeModules from '../../deployment/m5-runtime/native-theme-module-baseline.json' with { type: 'json' };
