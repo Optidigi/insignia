@@ -131,7 +131,7 @@ function DesignerSession({
   ports,
   isOpen,
   onOpenChange,
-  quoteReview,
+  quoteReview: incomingQuoteReview,
   requiresCartReview,
   suspended = false,
   onSelectQuoteGroup,
@@ -305,6 +305,7 @@ function DesignerSession({
   useLayoutEffect(() => {
     if (hostErrorSignal) dispatch({ type: 'review-navigation-failed' });
   }, [hostErrorSignal]);
+  const quoteReview = incomingQuoteReview?.intentId === runtime.reviewIntentId ? incomingQuoteReview : undefined;
   const reviewIntent = designerIntentKey(workflow);
   const beforeQuantities = step === 0;
   const eagerReviewStarted = useRef(false);
@@ -315,6 +316,7 @@ function DesignerSession({
     // Use the existing real review port while quantities settle. Entering Review
     // reuses this request; editing/closing cancels only preparation, never a cart write.
     const timer = window.setTimeout(() => {
+      if (eagerReviewStarted.current) return;
       const state = {...workflowRef.current, step:2 as const};
       if (!canCommitDesign(state)) return;
       // A multi-size matrix can involve many edits. Speculate once per visit,
@@ -327,7 +329,10 @@ function DesignerSession({
   // Retire the old intent before starting an explicit review. A passive cleanup
   // here could otherwise abort the newer request after the layout phase.
   useLayoutEffect(() => {
-    if (step === 2 && ports.review && designerOpen && !suspended) void runtime.commit(true);
+    if (step === 2 && ports.review && designerOpen && !suspended) {
+      eagerReviewStarted.current = true;
+      void runtime.commit(true);
+    }
   }, [step, reviewIntent, designerOpen, suspended, runtime]);
 
   const previewRenewals = useRef(new Set<string>());
@@ -888,6 +893,10 @@ function DesignerSession({
     window.requestAnimationFrame(() => panelRef.current?.focus());
   }
   const unappliedDraft = hasUnappliedDraft(workflow);
+  const quoteStatus = ports.review && (!editing || unappliedDraft) &&
+    (!runtime.prepared || quoteReview?.totalMinor === undefined)
+    ? workflow.commit.kind === 'failed' ? 'unavailable' : 'loading'
+    : undefined;
   const dirtyDraft = hasDraftChanges(workflow);
   useEffect(() => {
     if (!dirtyDraft || allowUnload || previewOnly) return;
@@ -1687,6 +1696,7 @@ function DesignerSession({
             )}
             {step === 2 && (
               <ReviewPanel
+                {...(quoteStatus ? { quoteStatus } : {})}
                 productionChoices={workflow.productionChoices}
                 {...(quoteReview ? { quoteReview } : {})}
                 {...(onSelectQuoteGroup ? { onSelectQuoteGroup: (id: string) => { if (id === quoteReview?.currentGroupId) dispatch({ type: 'step-selected', step: 1 }); else onSelectQuoteGroup(id); } } : {})}
@@ -1726,7 +1736,7 @@ function DesignerSession({
               {workflow.commit.kind === 'failed' && (
                 <div className="cart-submit-error" role="alert">
                   <IconAlertTriangle size={18} />
-                  <span>{t('customer:recovery.cartCommitFailed')}</span>
+                  <span>{t(workflow.commit.preparation ? 'common:summary.unavailable' : 'customer:recovery.cartCommitFailed')}</span>
                 </div>
               )}
               {validationIssues.length > 0 && (
@@ -1745,7 +1755,9 @@ function DesignerSession({
                     : t('customer:chrome.perItem')}
                 </span>
                 <strong>
-                  {step === 2 && quoteReview
+                  {step === 2 && quoteStatus
+                    ? t(quoteStatus === 'unavailable' ? 'common:summary.unavailable' : 'customer:chrome.calculatingQuote')
+                    : step === 2 && quoteReview
                     ? quoteReview.totalMinor !== undefined
                       ? quoteReviewMoney(
                           quoteReview.totalMinor,
@@ -1785,10 +1797,12 @@ function DesignerSession({
                 >
                   {workflow.commit.kind === 'pending' || workflow.commit.kind === 'preparing'
                     ? workflow.commit.kind === 'preparing'
-                      ? t('customer:steps.review')
+                      ? t('customer:chrome.preparingQuote')
                       : editing
                         ? t('customer:steps.updatingCart')
                         : t('customer:steps.addingToCart')
+                    : workflow.commit.kind === 'failed' && workflow.commit.preparation
+                      ? t('common:actions.retry')
                     : step === 0
                       ? t('customer:steps.chooseQuantities')
                       : step === 1

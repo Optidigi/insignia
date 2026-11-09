@@ -13,9 +13,9 @@ import {
   parseBuyerResponse,
 } from '@insignia/contracts';
 import { BuyerStateError } from '@insignia/database';
-import { type BuyerFailureDiagnostic, createObservability } from '@insignia/observability';
+import { type BuyerFailureDiagnostic, type BuyerTimingDiagnostic, createObservability } from '@insignia/observability';
 import { buyerJsonBody } from './body.ts';
-import { proposalDiagnostics, proposalFailureStage, proposalStage } from './diagnostics.ts';
+import { proposalDiagnostics, proposalFailureStage, proposalStage, proposalTiming } from './diagnostics.ts';
 import type { BuyerServices } from './service.ts';
 
 const logger = createObservability().logger;
@@ -30,7 +30,9 @@ class HttpError extends Error {
   }
 }
 export function handleBuyerRequest(...args: Parameters<typeof handleRequest>): Promise<Response> {
-  return args[2] === 'quote-proposals' && args[0].method === 'POST'
+  const [collection, id, action] = args[2].split('/');
+  return args[0].method === 'POST' &&
+    (args[2] === 'quote-proposals' || (collection === 'quote-proposals' && id && action === 'accept'))
     ? proposalDiagnostics(() => handleRequest(...args))
     : handleRequest(...args);
 }
@@ -40,13 +42,19 @@ async function handleRequest(
   services: BuyerServices | undefined,
   route: string,
   diagnostic: (value: BuyerFailureDiagnostic) => void = (value) => logger.error('buyer_request_failed', value),
+  timingDiagnostic: (value: BuyerTimingDiagnostic) => void = (value) =>
+    logger.info('buyer_request_timing', { timing: value }),
 ): Promise<Response> {
   const requestId = randomUUID();
-  const respond = (body: unknown, status = 200) =>
-    Response.json(status < 400 ? parseBuyerResponse(route, body) : body, {
+  let outcome: BuyerTimingDiagnostic['outcome'] = 'failure';
+  let response: Response | undefined;
+  const respond = (body: unknown, status = 200) => {
+    response = Response.json(status < 400 ? parseBuyerResponse(route, body) : body, {
       status,
       headers: { 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' },
     });
+    return response;
+  };
   try {
     if (!services) throw new HttpError(503, 'UNAVAILABLE');
     if (route === 'eligibility' && request.method === 'GET') return respond(await services.eligibility(request));
@@ -83,12 +91,17 @@ async function handleRequest(
       const parsed = BuyerProposalRequestSchema.safeParse(body);
       if (!parsed.success) throw new HttpError(400, 'INVALID_REQUEST');
       const proposal = await proposalStage('prepare', () => services.propose(scope, parsed.data));
-      return await proposalStage('response-validation', () => respond(proposal));
+      const response = await proposalStage('response-validation', () => respond(proposal));
+      outcome = 'success';
+      return response;
     }
     if (request.method === 'POST' && collection === 'quote-proposals' && id && action === 'accept') {
       const parsed = BuyerAcceptanceSchema.safeParse(body);
       if (!parsed.success) throw new HttpError(400, 'INVALID_REQUEST');
-      return respond(await services.accept(scope, id, parsed.data));
+      const accepted = await proposalStage('prepare', () => services.accept(scope, id, parsed.data));
+      const response = await proposalStage('response-validation', () => respond(accepted));
+      outcome = 'success';
+      return response;
     }
     if (request.method === 'POST' && collection === 'quotes' && id && action === 'renew') {
       const parsed = BuyerRenewalSchema.safeParse(body);
@@ -203,5 +216,21 @@ async function handleRequest(
       },
       status,
     );
+  } finally {
+    try {
+      const timing = proposalTiming(
+        requestId,
+        route === 'quote-proposals' ? 'proposal' : 'acceptance',
+        request.signal.aborted ? 'cancelled' : outcome,
+      );
+      if (timing) {
+        // Diagnostic identity only; no command or buyer capability crosses here.
+        response?.headers.set('X-Insignia-Request-Id', requestId);
+        response?.headers.set('Server-Timing', `insignia;dur=${timing.totalMs};desc="${requestId}"`);
+        timingDiagnostic(timing);
+      }
+    } catch {
+      /* Diagnostics cannot change settlement. */
+    }
   }
 }

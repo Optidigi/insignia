@@ -18,7 +18,11 @@
     "reducePreview": "Voorbeeld verkleinen",
     "enlargePreview": "Voorbeeld vergroten",
     "showFullProduct": "Volledig product tonen",
-    "focusOnArtwork": "Inzoomen op ontwerp"
+    "focusOnArtwork": "Inzoomen op ontwerp",
+    "calculatingQuote": "Offerte berekenen…",
+    "preparingQuote": "Offerte voorbereiden…",
+    "openingCart": "Winkelwagen openen…",
+    "viewCart": "Winkelwagen bekijken"
   },
   "steps": {
     "designSteps": "Stappen voor personalisatie",

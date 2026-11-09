@@ -4,6 +4,7 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { ProductConfig } from '../../../../frontend/designer/src/config';
 import { resolveCustomerHostLocale } from '../../../../frontend/designer/src/customer-language-policy';
 import { readCustomerLanguagePreference } from '../../../../frontend/designer/src/customer-language-preference';
+import { useLocale } from '../../../../frontend/designer/src/customer-locale';
 import { DesignerDesignSwitch } from '../../../../frontend/designer/src/design-switch';
 import type { ClosedDesignerProps } from '../../../../frontend/designer/src/designer';
 import { Designer } from '../../../../frontend/designer/src/index';
@@ -17,6 +18,7 @@ const channel = window.name;
 // leave document.referrer empty here; it is not a reliable handshake authority.
 const parentOrigin = window.parent.location.origin;
 type Pending = { resolve(value: unknown): void; reject(error: Error): void; progress?: UploadRequest['onProgress'] };
+let reviewRequestId: string | undefined;
 const pending = new Map<string, Pending>();
 function send(type: string, data: Record<string, unknown> = {}) {
   window.parent.postMessage({ type, channel, ...data }, parentOrigin);
@@ -28,11 +30,14 @@ function invoke<T>(
   artwork?: Artwork,
 ): Promise<T> {
   const id = crypto.randomUUID();
+  if (action === 'prepare' || action === 'commit') reviewRequestId = request.requestId;
   const { signal, ...body } = request;
   const onProgress = 'onProgress' in body ? body.onProgress : undefined;
   if ('onProgress' in body) delete body.onProgress;
   return new Promise<T>((resolve, reject) => {
     const abort = () => {
+      if ((action === 'prepare' || action === 'commit') && reviewRequestId === request.requestId)
+        reviewRequestId = undefined;
       pending.delete(id);
       send('insignia:designer:abort', { id });
       reject(new DOMException('Aborted', 'AbortError'));
@@ -45,11 +50,11 @@ function invoke<T>(
     pending.set(id, {
       ...(onProgress ? { progress: onProgress } : {}),
       resolve(value) {
-        signal.removeEventListener('abort', abort);
+        if (action !== 'prepare' && action !== 'commit') signal.removeEventListener('abort', abort);
         resolve(value as T);
       },
       reject(error) {
-        signal.removeEventListener('abort', abort);
+        if (action !== 'prepare' && action !== 'commit') signal.removeEventListener('abort', abort);
         reject(error);
       },
     });
@@ -76,11 +81,33 @@ type Initial = {
 };
 function Closed({ completion }: { completion: CartReceipt | null }) {
   const sent = useRef(false);
+  const { t } = useLocale();
+  const dialog = useRef<HTMLDialogElement>(null);
   useLayoutEffect(() => {
     if (sent.current) return;
     sent.current = true;
+    dialog.current?.showModal();
     send('insignia:designer:closed', { receipt: completion });
   }, [completion]);
+  if (completion?.authority === 'shopify')
+    return (
+      <dialog
+        ref={dialog}
+        className="host-preview-switch"
+        aria-label={t('customer:chrome.added')}
+        onCancel={(event) => event.preventDefault()}
+      >
+        <h2>{t('customer:chrome.added')}</h2>
+        <p>{t('customer:chrome.openingCart')}</p>
+        <button
+          type="button"
+          className="primary-button"
+          onClick={() => send('insignia:designer:navigate-cart', { receipt: completion })}
+        >
+          {t('customer:chrome.viewCart')}
+        </button>
+      </dialog>
+    );
   return null;
 }
 
@@ -130,6 +157,7 @@ function Frame({ initial }: { initial: Initial }) {
     send('insignia:designer:initialized');
     function update(event: MessageEvent) {
       if (event.source !== parent || event.origin !== parentOrigin || event.data?.channel !== channel) return;
+      if (event.data.requestId !== undefined && event.data.requestId !== reviewRequestId) return;
       if (event.data.type === 'insignia:designer:repair') setRepair(event.data.repair);
       if (event.data.type === 'insignia:designer:open') {
         setVisible(true);
@@ -149,7 +177,12 @@ function Frame({ initial }: { initial: Initial }) {
         setConfig(event.data.config);
         if (event.data.wording) setWording(event.data.wording);
       }
-      if (event.data.type === 'insignia:designer:quote') setQuote(event.data.quote);
+      if (
+        event.data.type === 'insignia:designer:quote' &&
+        event.data.requestId === reviewRequestId &&
+        reviewRequestId !== undefined
+      )
+        setQuote(event.data.quote);
       if (event.data.type === 'insignia:designer:previews') {
         setConfig(
           (current) =>
@@ -195,7 +228,7 @@ function Frame({ initial }: { initial: Initial }) {
             setOpen(false);
           }}
           onOpenChange={setOpen}
-          retainViewForConfirmation={pendingGroup !== null}
+          retainViewForConfirmation={pendingGroup !== null || !initial.previewOnly}
           renderClosed={(state) => (
             <HostClosed
               state={state}

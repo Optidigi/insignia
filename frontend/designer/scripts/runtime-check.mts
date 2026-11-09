@@ -662,7 +662,9 @@ test('quantity-step preparation is reused on Review and changed intent cancels s
   const first=runtime.commit(true);
   assert.equal(state.commit.kind,'preparing');
   assert.equal(state.step,1);
+  assert.equal(runtime.reviewIntentId,pending[0]?.request.idempotencyKey);
   state=designerReducer(state,{type:'quantity-entered',color:'white',size:'s',value:3});
+  assert.equal(runtime.reviewIntentId,undefined,'retired intent cannot own partial review data');
   runtime.cancelPreparation();
   assert.equal(pending[0]?.request.signal.aborted,true);
   const second=runtime.commit(true);

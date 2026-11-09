@@ -554,7 +554,11 @@
       "customer_host_personalise": "Knop personaliseren",
       "customer_host_savedDesigns": "Label opgeslagen ontwerpen",
       "customer_host_openSaved": "Knop ontwerp openen",
-      "customer_host_startNew": "Knop nieuw ontwerp"
+      "customer_host_startNew": "Knop nieuw ontwerp",
+      "customer_chrome_calculatingQuote": "Offerte berekenen",
+      "customer_chrome_preparingQuote": "Offerte voorbereiden",
+      "customer_chrome_openingCart": "Winkelwagen openen",
+      "customer_chrome_viewCart": "Winkelwagen bekijken"
     },
     "discard": "Verwerpen"
   },

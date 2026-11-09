@@ -527,7 +527,11 @@
       "customer_host_personalise": "Bouton Personnaliser",
       "customer_host_savedDesigns": "Libellé des créations enregistrées",
       "customer_host_openSaved": "Bouton Ouvrir la création",
-      "customer_host_startNew": "Bouton Nouvelle création"
+      "customer_host_startNew": "Bouton Nouvelle création",
+      "customer_chrome_calculatingQuote": "Calcul du devis",
+      "customer_chrome_preparingQuote": "Préparation du devis",
+      "customer_chrome_openingCart": "Ouverture du panier",
+      "customer_chrome_viewCart": "Voir le panier"
     },
     "resetSavedHeading": "Rétablir les traductions enregistrées ?",
     "resetSavedDescription": "Rétablissez les textes par défaut pour toutes les langues enregistrées. Vos textes personnalisés seront supprimés.",

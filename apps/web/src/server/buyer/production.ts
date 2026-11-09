@@ -345,15 +345,17 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
             throw new Error('Passive buyer acceptance authority unavailable');
           // Prepare writes before serialization; final callbacks still re-read provider
           // facts, stored evidence and economics under the original acceptance fences.
-          const credential = await credentials(scope).acquire(scope);
+          const credential = await proposalStage('native-configuration', () => credentials(scope).acquire(scope));
           if (credential.kind !== 'usable') throw new Error('Buyer acceptance credential unavailable');
           const artifactScope = { ...scope, appClientId: apiKey };
           const [build, evidence] = await Promise.all([
-            input.artifactPorts.expectedBuild.read(artifactScope),
-            input.artifactPorts.trustedEvidence.read(artifactScope),
+            proposalStage('release-prepare', () => input.artifactPorts.expectedBuild.read(artifactScope)),
+            proposalStage('release-prepare', () => input.artifactPorts.trustedEvidence.read(artifactScope)),
           ]);
           if (!build || !evidence) throw new Error('Buyer acceptance release unavailable');
-          return ports.store.accept(target, () => acceptanceContext.run(true, commit));
+          return proposalStage('persistence', () =>
+            ports.store.accept(target, () => acceptanceContext.run(true, commit)),
+          );
         },
       },
     };
