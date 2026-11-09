@@ -39,7 +39,20 @@ function sdkFixture() {
           key,
           organizationId: 'gid://shopify/Organization/123',
           activeRoot: { clientCredentials: { secrets: [{ key: 'SYNTHETIC_PRIVATE_ROOT_SECRET' }] } },
-          activeRelease: { id: 'opaque-release-with-no-version-id' },
+          activeRelease: {
+            version: {
+              id: 'gid://shopify/Version/1163229200385',
+              metadata: { versionTag: 'm5-functions-9c2e56b42fbf' },
+              appModules: modules.map((m) => ({
+                uuid: m.registrationUuid,
+                userIdentifier: m.registrationId || m.registrationUuid,
+                handle: m.handle,
+                config: m.config,
+                target: m.target,
+                specification: m.specification,
+              })),
+            },
+          },
         },
       };
     },
@@ -62,7 +75,7 @@ function sdkFixture() {
   return { client, calls, sent };
 }
 
-test('fixed SDK workflow keeps original four methods and omits root secrets and SDK location', async () => {
+test('fixed SDK workflow keeps three fresh reads and omits root secrets and SDK location', async () => {
   const f = sdkFixture(),
     reservations: string[] = [];
   await runManagementReads({
@@ -75,8 +88,8 @@ test('fixed SDK workflow keeps original four methods and omits root secrets and 
     waitClose: async () => {},
     now: () => '2026-10-11T12:00:00.000Z',
   });
-  assert.deepEqual(f.calls, ['root', 'versions', 'modules', 'versions']);
-  assert.deepEqual(reservations, ['ActiveAppReleaseFromApiKey', 'AppVersions', 'AppVersionByTag', 'AppVersions']);
+  assert.deepEqual(f.calls, ['root', 'versions', 'versions']);
+  assert.deepEqual(reservations, ['FixedActiveAppRelease', 'AppVersions', 'AppVersions']);
   assert.ok(
     !JSON.stringify(f.sent).includes('SYNTHETIC_PRIVATE_ROOT_SECRET') &&
       !JSON.stringify(f.sent).includes('SYNTHETIC_PRIVATE_LOCATION'),
@@ -179,7 +192,7 @@ test('closed child protocol never acknowledges a refused reservation or exports 
       queueMicrotask(() =>
         child.stdout.emit(
           'data',
-          Buffer.from(value === 'AUTHENTICATE\n' ? 'AUTHENTICATED\n' : 'RESERVE ActiveAppReleaseFromApiKey\n'),
+          Buffer.from(value === 'AUTHENTICATE\n' ? 'AUTHENTICATED_V2\n' : 'RESERVE FixedActiveAppRelease\n'),
         ),
       );
     },
