@@ -70,65 +70,76 @@ test('buyer proposal overlaps release preparation with stock, then checks curren
   }
 });
 
-for (const failing of ['availability', 'preparation'] as const) {
-  test(`buyer proposal drains its held sibling after ${failing} failure and retains stock-error precedence`, {
-    skip: !database,
-    timeout: 15000,
-  }, async (t) => {
-    const held = gate(),
-      entered = gate();
-    let settled = false,
-      preparationStarted = false,
-      readyChecks = 0;
-    const seen: BuyerFailureDiagnostic[] = [];
-    const f = await fixture(t, {
-      diagnostic: (value) => seen.push(value),
-      readiness: {
-        prepare: async () => {
-          preparationStarted = true;
-          if (failing === 'availability') await held.promise;
-          throw new Error('Synthetic preparation unavailable');
+for (const narrow of [false, true])
+  for (const failing of ['availability', 'preparation'] as const) {
+    test(`buyer ${narrow ? 'narrow availability' : 'catalog fallback'} proposal drains its held sibling after ${failing} failure and retains stock-error precedence`, {
+      skip: !database,
+      timeout: 15000,
+    }, async (t) => {
+      const held = gate(),
+        entered = gate();
+      let settled = false,
+        preparationStarted = false,
+        readyChecks = 0;
+      const seen: BuyerFailureDiagnostic[] = [];
+      const f = await fixture(t, {
+        diagnostic: (value) => seen.push(value),
+        narrowAvailability: narrow
+          ? async (productId, selectedIds, phase) => {
+              assert.equal(productId, f.productId);
+              assert.deepEqual(selectedIds, ['222']);
+              assert.equal(phase, undefined);
+              entered.release();
+              if (failing === 'preparation') await held.promise;
+              return { variants: [{ id: '222', available: false }] };
+            }
+          : undefined,
+        readiness: {
+          prepare: async () => {
+            preparationStarted = true;
+            if (failing === 'availability') await held.promise;
+            throw new Error('Synthetic preparation unavailable');
+          },
+          assertReady: async () => {
+            readyChecks++;
+          },
         },
-        assertReady: async () => {
-          readyChecks++;
-        },
-      },
+      });
+      f.availability(async () => {
+        entered.release();
+        if (failing === 'preparation') await held.promise;
+        return false;
+      });
+      const response = f.http('quote-proposals', f.body).then((value) => {
+        settled = true;
+        return value;
+      });
+      try {
+        await entered.promise;
+        await setImmediate();
+        assert.equal(preparationStarted, true);
+        assert.equal(settled, false, 'failure cannot retire still-running preparation or stock work');
+        held.release();
+        const result = await response;
+        assert.equal(result.status, 409, 'stock denial retains REVIEW_REQUIRED if preparation also fails');
+        const body = await result.json();
+        assert.deepEqual(seen, [
+          {
+            correlationId: body.requestId,
+            buyerStage: 'quote-proposals',
+            errorClass: 'ReviewRequired',
+            proposalStage: 'availability',
+          },
+        ]);
+        assert.equal(readyChecks, 0);
+        assert.equal(f.signings(), 0);
+        assert.equal((await f.pool.query('SELECT 1 FROM accepted_quotes WHERE shop_id=$1', [f.shopId])).rowCount, 0);
+      } finally {
+        held.release();
+        await response;
+      }
     });
-    f.availability(async () => {
-      entered.release();
-      if (failing === 'preparation') await held.promise;
-      return false;
-    });
-    const response = f.http('quote-proposals', f.body).then((value) => {
-      settled = true;
-      return value;
-    });
-    try {
-      await entered.promise;
-      await setImmediate();
-      assert.equal(preparationStarted, true);
-      assert.equal(settled, false, 'failure cannot retire still-running preparation or stock work');
-      held.release();
-      const result = await response;
-      assert.equal(result.status, 409, 'stock denial retains REVIEW_REQUIRED if preparation also fails');
-      const body = await result.json();
-      assert.deepEqual(seen, [
-        {
-          correlationId: body.requestId,
-          buyerStage: 'quote-proposals',
-          errorClass: 'ReviewRequired',
-          proposalStage: 'availability',
-        },
-      ]);
-      assert.equal(readyChecks, 0);
-      assert.equal(f.signings(), 0);
-      assert.equal((await f.pool.query('SELECT 1 FROM accepted_quotes WHERE shop_id=$1', [f.shopId])).rowCount, 0);
-    } finally {
-      held.release();
-      await response;
-    }
-  });
-}
+  }
 
 for (const invalid of ['position', 'artwork'] as const) {
   test(`buyer ${invalid} guard rejects before starting availability or release preparation`, {
@@ -170,69 +181,83 @@ for (const invalid of ['position', 'artwork'] as const) {
   });
 }
 
-test('serialized acceptance keeps stock then passive readiness serial without preparing under its fence', {
-  skip: !database,
-  timeout: 15000,
-}, async (t) => {
-  let insideFence = false,
-    finalPreparations = 0,
-    finalReadyChecks = 0;
-  const entered = gate(),
-    held = gate();
-  const f = await fixture(t, {
-    readiness: {
-      prepare: async () => {
-        if (insideFence) finalPreparations++;
+for (const narrow of [false, true])
+  test(`serialized acceptance keeps ${narrow ? 'narrow stock' : 'catalog stock'} then passive readiness serial without preparing under its fence`, {
+    skip: !database,
+    timeout: 15000,
+  }, async (t) => {
+    let insideFence = false,
+      finalPreparations = 0,
+      finalReadyChecks = 0;
+    const entered = gate(),
+      held = gate();
+    const f = await fixture(t, {
+      narrowAvailability: narrow
+        ? async (productId, selectedIds, phase) => {
+            assert.equal(productId, f.productId);
+            assert.deepEqual(selectedIds, ['222']);
+            if (phase === 'final') {
+              assert.equal(insideFence, true);
+              entered.release();
+              await held.promise;
+              assert.equal(insideFence, true);
+            }
+            return { variants: [{ id: '222', available: true }] };
+          }
+        : undefined,
+      readiness: {
+        prepare: async () => {
+          if (insideFence) finalPreparations++;
+        },
+        assertReady: async () => {
+          if (insideFence) {
+            finalReadyChecks++;
+            throw new Error('Synthetic passive readiness unavailable');
+          }
+        },
       },
-      assertReady: async () => {
-        if (insideFence) {
-          finalReadyChecks++;
-          throw new Error('Synthetic passive readiness unavailable');
-        }
-      },
-    },
-  });
-  const proposal = await (await f.http('quote-proposals', f.body)).json();
-  const accept = f.core.acceptedQuotes.accept.bind(f.core.acceptedQuotes);
-  f.core.acceptedQuotes.accept = (input, commit) =>
-    accept(input, async () => {
-      insideFence = true;
-      try {
-        return await commit();
-      } finally {
-        insideFence = false;
-      }
     });
-  f.availability(async (phase) => {
-    if (phase !== 'final') return true;
-    assert.equal(insideFence, true);
-    entered.release();
-    await held.promise;
-    assert.equal(insideFence, true);
-    return true;
+    const proposal = await (await f.http('quote-proposals', f.body)).json();
+    const accept = f.core.acceptedQuotes.accept.bind(f.core.acceptedQuotes);
+    f.core.acceptedQuotes.accept = (input, commit) =>
+      accept(input, async () => {
+        insideFence = true;
+        try {
+          return await commit();
+        } finally {
+          insideFence = false;
+        }
+      });
+    f.availability(async (phase) => {
+      if (phase !== 'final') return true;
+      assert.equal(insideFence, true);
+      entered.release();
+      await held.promise;
+      assert.equal(insideFence, true);
+      return true;
+    });
+    const response = f.http(`quote-proposals/${proposal.proposalId}/accept`, {
+      capability: f.session.capability,
+      hash: proposal.hash,
+      idempotencyKey: randomUUID(),
+    });
+    try {
+      await entered.promise;
+      await setImmediate();
+      assert.equal(finalPreparations, 0);
+      assert.equal(finalReadyChecks, 0, 'passive readiness follows the final stock read');
+      held.release();
+      assert.equal((await response).status, 503);
+      assert.equal(finalReadyChecks, 1);
+      assert.equal(finalPreparations, 0);
+      assert.equal(insideFence, false);
+      assert.equal(f.signings(), 0);
+      assert.equal((await f.pool.query('SELECT 1 FROM accepted_quotes WHERE shop_id=$1', [f.shopId])).rowCount, 0);
+    } finally {
+      held.release();
+      await response;
+    }
   });
-  const response = f.http(`quote-proposals/${proposal.proposalId}/accept`, {
-    capability: f.session.capability,
-    hash: proposal.hash,
-    idempotencyKey: randomUUID(),
-  });
-  try {
-    await entered.promise;
-    await setImmediate();
-    assert.equal(finalPreparations, 0);
-    assert.equal(finalReadyChecks, 0, 'passive readiness follows the final stock read');
-    held.release();
-    assert.equal((await response).status, 503);
-    assert.equal(finalReadyChecks, 1);
-    assert.equal(finalPreparations, 0);
-    assert.equal(insideFence, false);
-    assert.equal(f.signings(), 0);
-    assert.equal((await f.pool.query('SELECT 1 FROM accepted_quotes WHERE shop_id=$1', [f.shopId])).rowCount, 0);
-  } finally {
-    held.release();
-    await response;
-  }
-});
 
 test('completed buyer acceptance replay repeats neither preparation nor authority work', {
   skip: !database,

@@ -361,6 +361,40 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
     };
   }
 
+  async function inventoryFor(target: Scope & { productId: string; variantIds: readonly string[] }, phase?: 'final') {
+    const scope = target;
+    const inventory = input.readVariantAvailability
+      ? await input.readVariantAvailability(target)
+      : await readAvailability(target, {
+          credentials: credentials(scope, () => phase === 'final'),
+          fetchImpl,
+          clock,
+        });
+    if (!inventory) throw new Error('Buyer inventory authority unavailable');
+    const now = +clock(),
+      observed = Date.parse(inventory.observedAt),
+      until = Date.parse(inventory.freshUntil);
+    if (
+      inventory.shopId !== scope.shopId ||
+      inventory.installationGeneration !== scope.installationGeneration ||
+      inventory.productId !== target.productId ||
+      !Number.isFinite(observed) ||
+      !Number.isFinite(until) ||
+      observed > now ||
+      now >= until ||
+      until <= observed ||
+      until - observed > 300000 ||
+      !Array.isArray(inventory.variants) ||
+      inventory.variants.length !== target.variantIds.length ||
+      new Set(inventory.variants.map((variant) => variant.id)).size !== inventory.variants.length ||
+      inventory.variants.some(
+        (variant) => typeof variant.available !== 'boolean' || !target.variantIds.includes(variant.id),
+      )
+    )
+      throw new Error('Buyer inventory authority unavailable');
+    return inventory;
+  }
+
   return createBuyerServices({
     core: input.core,
     guest,
@@ -383,6 +417,42 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
             },
           })
         : undefined,
+    async availability(scope, productId, variantIds, phase) {
+      if (
+        !/^[1-9][0-9]{0,19}$/.test(productId) ||
+        variantIds.length < 1 ||
+        variantIds.length > 32 ||
+        new Set(variantIds).size !== variantIds.length ||
+        variantIds.some((id) => !/^[1-9][0-9]{0,19}$/.test(id))
+      )
+        throw new Error('Buyer availability selection invalid');
+      const source = await credentials(scope, () => phase === 'final').acquire(scope);
+      if (source.kind !== 'usable') throw new Error('Buyer catalog credential unavailable');
+      const gid = `gid://shopify/Product/${productId}`;
+      const product = await createCatalogReader(
+        createCatalogTransport({ shop: source.shopDomain, accessToken: source.accessToken, fetchImpl }),
+      ).availabilityProduct(gid);
+      const selected = variantIds.map((id) => `gid://shopify/ProductVariant/${id}`);
+      if (!product || product.status !== 'ACTIVE') throw new Error('Buyer catalog product unavailable');
+      // Match the full-catalog caller's missing-membership classification, without inventory IO.
+      if (selected.some((id) => !product.variantIds.includes(id))) return { variants: [] };
+      const inventory = await inventoryFor(
+        {
+          shopId: scope.shopId,
+          installationGeneration: scope.installationGeneration,
+          productId: gid,
+          variantIds: selected,
+        },
+        phase,
+      );
+      await active(scope);
+      return {
+        variants: inventory.variants.map((variant) => ({
+          id: variant.id.slice('gid://shopify/ProductVariant/'.length),
+          available: variant.available,
+        })),
+      };
+    },
     async catalog(scope, productId, phase, context) {
       const source = await credentials(scope, () => phase === 'final').acquire(scope);
       if (source.kind !== 'usable') throw new Error('Buyer catalog credential unavailable');
@@ -405,36 +475,7 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
         productId: gid,
         variantIds: product.variants.map((variant) => variant.id),
       };
-      const inventory = input.readVariantAvailability
-        ? await input.readVariantAvailability(target)
-        : await readAvailability(target, {
-            credentials: credentials(scope, () => phase === 'final'),
-            fetchImpl,
-            clock,
-          });
-      if (!inventory) throw new Error('Buyer inventory authority unavailable');
-      const now = +clock(),
-        observed = Date.parse(inventory.observedAt),
-        until = Date.parse(inventory.freshUntil);
-      if (
-        inventory.shopId !== scope.shopId ||
-        inventory.installationGeneration !== scope.installationGeneration ||
-        inventory.productId !== gid ||
-        !Number.isFinite(observed) ||
-        !Number.isFinite(until) ||
-        observed > now ||
-        now >= until ||
-        until <= observed ||
-        until - observed > 300000 ||
-        !Array.isArray(inventory.variants) ||
-        inventory.variants.length !== product.variants.length ||
-        new Set(inventory.variants.map((variant) => variant.id)).size !== inventory.variants.length ||
-        inventory.variants.some(
-          (variant) =>
-            typeof variant.available !== 'boolean' || !product.variants.some((item) => item.id === variant.id),
-        )
-      )
-        throw new Error('Buyer inventory authority unavailable');
+      const inventory = await inventoryFor(target, phase);
       await active(scope);
       const imageUrls: Record<string, string> = {};
       if (product.image) {
