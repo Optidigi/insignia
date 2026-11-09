@@ -1599,7 +1599,7 @@ test('selected desktop and mobile layouts retain the design and quantities when 
   });
 });
 
-test('selected mobile artwork dialog rejects unsupported files locally and real photo tabs retain the current design', async () => {
+test('selected mobile artwork dialog rejects unsupported files locally and real photo views retain the current design', async () => {
   const cfg = structuredClone(config);
   cfg.geometry.views.push({ ...structuredClone(required(cfg.geometry.views[0])), id: 'back', placements: [] });
   await withProductDesigner(
@@ -1638,13 +1638,10 @@ test('selected mobile artwork dialog rejects unsupported files locally and real 
       await dialog.waitFor({ state: 'detached' });
       await positionCard(ui, 'Front').locator('.artwork-choice').click();
       await ui.getByRole('button', { name: 'Provide artwork later', exact: true }).click();
-      const viewTabs = ui.getByRole('group', { name: 'Product view', exact: true });
-      await viewTabs.getByRole('button', { name: 'back', exact: true }).click();
-      assert.equal(
-        await viewTabs.getByRole('button', { name: 'back', exact: true }).getAttribute('aria-pressed'),
-        'true',
-      );
-      await viewTabs.getByRole('button', { name: 'front', exact: true }).click();
+      const viewSelect = ui.getByRole('combobox', { name: 'Product view', exact: true });
+      await viewSelect.selectOption({ label: 'back' });
+      assert.equal(await viewSelect.locator('option:checked').innerText(), 'back');
+      await viewSelect.selectOption({ label: 'front' });
       await positionCard(ui, 'Front').getByText('Artwork to follow', { exact: true }).first().waitFor();
       await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
       assert.equal(await ui.locator('input[type=number]:enabled').first().isVisible(), true);

@@ -1113,39 +1113,39 @@ function DesignerSession({
           inert={workflow.commit.kind === 'pending' || !!cartCompletion}
         >
           <div className="preview-toolbar">
-            {views.length > 3 ? (
-              <label className="view-select">
-                <span className="sr-only">{t('customer:chrome.productView')}</span>
-                <select
-                  name="garment-view"
-                  value={view}
-                  onChange={(event) => {
-                    dispatch({
-                      type: 'view-selected',
-                      view: event.currentTarget.value,
-                    });
-                    setFocusPrint(false);
-                  }}
-                >
-                  {views.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : (
-              views.length > 1 && (
-                <div
-                  className="view-tabs"
-                  role="group"
-                  aria-label={t('customer:chrome.productView')}
-                  style={{
-                    gridTemplateColumns: `repeat(${Math.min(3, views.length)}, minmax(0, 1fr))`,
-                  }}
-                >
-                  {views.length > 1 &&
-                    views.map((v) => (
+            {views.length > 1 && (
+              <>
+                <label className={`view-select${views.length <= 3 ? ' narrow-view-select' : ''}`}>
+                  <span className="sr-only">{t('customer:chrome.productView')}</span>
+                  <select
+                    name="garment-view"
+                    title={views.find((candidate) => candidate.id === view)?.label}
+                    value={view}
+                    onChange={(event) => {
+                      dispatch({
+                        type: 'view-selected',
+                        view: event.currentTarget.value,
+                      });
+                      setFocusPrint(false);
+                    }}
+                  >
+                    {views.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {views.length <= 3 && (
+                  <div
+                    className="view-tabs"
+                    role="group"
+                    aria-label={t('customer:chrome.productView')}
+                    style={{
+                      gridTemplateColumns: `repeat(${Math.min(3, views.length)}, minmax(0, 1fr))`,
+                    }}
+                  >
+                    {views.map((v) => (
                       <button
                         key={v.id}
                         aria-pressed={view === v.id}
@@ -1157,8 +1157,9 @@ function DesignerSession({
                         {v.label}
                       </button>
                     ))}
-                </div>
-              )
+                  </div>
+                )}
+              </>
             )}
             <div className="preview-options">
               {focused && (
