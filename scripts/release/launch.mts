@@ -111,7 +111,9 @@ async function durable(path: string, value: unknown) {
 export function qualifyCollectorReceipt(input: unknown): CollectorReceipt {
   const value = object(input);
   assert.deepEqual(Object.keys(value).sort(), replyKeys, 'closed_receipt_required');
-  assert.equal(value.version, 'm5-owner-trusted-release-collector-v1');
+  assert.ok(
+    ['m5-owner-trusted-release-collector-v1', 'm5-owner-trusted-release-collector-v2'].includes(text(value.version)),
+  );
   assert.ok(
     ['TRUSTED_RELEASE_COLLECT_APPEND_ACK', 'TRUSTED_RELEASE_COLLECT_STOPPED'].includes(text(value.classification)),
   );
@@ -158,10 +160,18 @@ async function inspectPhase(path: string) {
     const invocation = await privateJson(join(path, 'invocation.json'), 16384, true);
     assert.match(text(invocation.recordId), UUID);
     assert.ok(basename(path) === PREFIX || basename(path) === recordPhaseName(text(invocation.recordId)));
+    const protocol = invocation.version === 'm5-owner-collector-invocation-v1' ? 'v1' : 'v2';
+    const phaseOperations =
+      protocol === 'v1'
+        ? operations
+        : operations
+            .filter((op) => op !== 'AppVersionByTag')
+            .map((op) => (op === 'ActiveAppReleaseFromApiKey' ? 'FixedActiveAppRelease' : op));
+    const appendIndex = phaseOperations.length - 1;
     assert.deepEqual(invocation, {
-      version: 'm5-owner-collector-invocation-v1',
+      version: `m5-owner-collector-invocation-${protocol}`,
       recordId: invocation.recordId,
-      sdkReadMethods: 4,
+      sdkReadMethods: protocol === 'v1' ? 4 : 3,
       ownerOAuthPosts: 1,
       ownerAdminSelectedReads: 3,
       appendCalls: 1,
@@ -170,19 +180,19 @@ async function inspectPhase(path: string) {
       retryAuthorized: false,
     });
     const names = (await readdir(path)).filter((name) => name.startsWith('reservation-')).sort();
-    assert.ok(names.length <= operations.length);
+    assert.ok(names.length <= phaseOperations.length);
     let appendReserved = false;
     for (let index = 0; index < names.length; index++) {
       assert.equal(names[index], `reservation-${String(index + 1).padStart(2, '0')}.json`);
       const reservation = await privateJson(join(path, required(names[index])), 16384, true);
       const expectedKeys = ['version', 'ordinal', 'operation', 'reservedAt'];
-      if (index === 11) expectedKeys.push('recordId', 'inputDigest');
+      if (index === appendIndex) expectedKeys.push('recordId', 'inputDigest');
       assert.deepEqual(Object.keys(reservation).sort(), expectedKeys.sort());
-      assert.equal(reservation.version, 'm5-owner-collector-reservation-v1');
+      assert.equal(reservation.version, `m5-owner-collector-reservation-${protocol}`);
       assert.equal(reservation.ordinal, index + 1);
-      assert.equal(reservation.operation, operations[index]);
+      assert.equal(reservation.operation, phaseOperations[index]);
       assert.equal(new Date(text(reservation.reservedAt)).toISOString(), reservation.reservedAt);
-      if (index === 11) {
+      if (index === appendIndex) {
         assert.equal(reservation.recordId, invocation.recordId);
         assert.match(text(reservation.inputDigest), /^[0-9a-f]{64}$/);
         const observations = await privateJson(join(path, 'observations.json'), 1048576, true);
@@ -201,6 +211,7 @@ async function inspectPhase(path: string) {
     let receipt: CollectorReceipt | undefined;
     try {
       receipt = qualifyCollectorReceipt(await privateJson(join(path, 'receipt.json'), 16384, true));
+      assert.equal(receipt.version, `m5-owner-trusted-release-collector-${protocol}`);
     } catch (error) {
       if (appendReserved || !(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error;
     }
@@ -473,6 +484,8 @@ export const SOURCE_PATHS = [
     'collector.test',
     'management-process',
     'management-worker',
+    'management-active',
+    'management-active.test',
     'immutable-code',
     'immutable-code.test',
     'version-inventory',

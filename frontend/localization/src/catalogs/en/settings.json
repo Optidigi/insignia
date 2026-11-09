@@ -525,7 +525,11 @@
       "customer_host_personalise": "Personalise button",
       "customer_host_savedDesigns": "Saved designs label",
       "customer_host_openSaved": "Open design button",
-      "customer_host_startNew": "New design button"
+      "customer_host_startNew": "New design button",
+      "customer_chrome_calculatingQuote": "Calculating quote",
+      "customer_chrome_preparingQuote": "Preparing quote",
+      "customer_chrome_openingCart": "Opening cart",
+      "customer_chrome_viewCart": "View cart"
     },
     "resetSavedHeading": "Reset saved translations?",
     "resetSavedDescription": "Restore the default wording for all saved languages. Your custom text will be removed.",

@@ -525,7 +525,11 @@
       "customer_host_personalise": "Schaltfläche personalisieren",
       "customer_host_savedDesigns": "Beschriftung gespeicherter Designs",
       "customer_host_openSaved": "Schaltfläche Design öffnen",
-      "customer_host_startNew": "Schaltfläche neues Design"
+      "customer_host_startNew": "Schaltfläche neues Design",
+      "customer_chrome_calculatingQuote": "Angebot wird berechnet",
+      "customer_chrome_preparingQuote": "Angebot wird vorbereitet",
+      "customer_chrome_openingCart": "Warenkorb wird geöffnet",
+      "customer_chrome_viewCart": "Warenkorb ansehen"
     },
     "resetSavedHeading": "Gespeicherte Übersetzungen zurücksetzen?",
     "resetSavedDescription": "Die Standardformulierungen für alle gespeicherten Sprachen wiederherstellen. Eigene Texte werden entfernt.",

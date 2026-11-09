@@ -1,5 +1,7 @@
 # Pre-cutover handoff, 9 November 2026
 
+This records the earlier development snapshot. The [later Review/cart performance handoff](review-cart-performance-handoff-2026-11-09.md) supersedes its runtime/Active baseline and adds the later native observations. Earlier evidence below keeps its original scope and timestamps; owner-held production gates remain open.
+
 Development changes are integrated and qualified within the recorded scope. Production readiness remains blocked by the owner and qualification gates below. Final production cutover and rollout were not performed.
 
 The [cutover preparation procedure](cutover-preparation-2026-11-09.md) describes the remaining sequence. The existing dirty instruction, documentation, skill and task files remain preserved in the shared checkout.
@@ -22,9 +24,9 @@ The reported duplication and complexity leads were checked against consumers:
 - `SelectedProductEditor.tsx` has substantial state/effect coordination. Existing photo-picker and Methods reducers remain the owners. File size did not justify a broad refactor.
 - Theme fallback styles did suppress interactions. The correction preserves idle fallback, hover, focus, transitions and manual placement. Chromium and Firefox fixtures pass. Earlier 9 November native investigation observed theme interaction behavior; those checks were not all repeated on the final artifact.
 
-## Exact development baseline
+## Earlier development baseline
 
-The final runtime source is PR265 head `19bd48754e3e708cc5bbb7e82b525e3c5520b080`, merged as `48df80e5d79d63afa16f6dd3ab6be19d8d8423c3`. Its tree is `738511b3ac4d74de1cb18f51275556e78ae5b97a`. CI source `6189526162e7770182752f632c96dd71dc3f94ae` has the same tree.
+The earlier runtime source is PR265 head `19bd48754e3e708cc5bbb7e82b525e3c5520b080`, merged as `48df80e5d79d63afa16f6dd3ab6be19d8d8423c3`. Its tree is `738511b3ac4d74de1cb18f51275556e78ae5b97a`. CI source `6189526162e7770182752f632c96dd71dc3f94ae` has the same tree.
 
 [Foundation42601384634](https://github.com/Optidigi/insignia/actions/runs/42601384634), [runtime42601384992](https://github.com/Optidigi/insignia/actions/runs/42601384992) and [durable-core42601384951](https://github.com/Optidigi/insignia/actions/runs/42601384951) passed on the reviewed head. Documentation added after this baseline does not identify a new runtime deployment.
 

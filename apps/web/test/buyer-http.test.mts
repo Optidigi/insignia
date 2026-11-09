@@ -213,3 +213,68 @@ test('proposal response validation preserves a completed write and reports only 
   ]);
   assert.doesNotMatch(JSON.stringify({ body, seen }), /SECRET|private-carrier|persisted-identity/);
 });
+
+test('empty or malformed quote selections stop before proposal credential/provider work', async () => {
+  let proposals = 0;
+  const services = buyerFixture({
+    guest: {
+      verify: async () => ({ kind: 'guest', shopId: 'tenant', installationGeneration: '1', ownerHash: 'f'.repeat(64) }),
+    },
+    store: coreFixture({
+      buyers: {
+        getSession: async () => ({ sessionId: 'synthetic', expiresAt: new Date('2099-01-01T00:00:00Z') }),
+        admitRequest: async () => {},
+      },
+    }).buyers,
+    propose: async () => {
+      proposals++;
+      throw new Error('synthetic reached proposal');
+    },
+  });
+  const base = {
+    capability: 'synthetic.signature',
+    country: 'US',
+    marketId: '42',
+    capacity: { ordinaryLineCount: 0, inputBytes: 100 },
+    groups: [
+      {
+        productId: '111',
+        configRevisionId: 'revision',
+        revisionContentHash: 'a'.repeat(64),
+        design: {
+          placements: [
+            {
+              placementId: 'front',
+              methodId: 'print',
+              stepId: 'small',
+              artwork: { kind: 'deferred', intentId: 'later' },
+            },
+          ],
+          options: [],
+        },
+        variants: [{ variantId: '222', quantity: 1 }],
+      },
+    ],
+  };
+  const control = await handleBuyerRequest(post(base), services, 'quote-proposals', () => {});
+  assert.equal(control.status, 503);
+  assert.equal(proposals, 1, 'the valid control reaches proposal composition');
+  proposals = 0;
+  for (const variants of [
+    [],
+    [null],
+    [{ quantity: 1 }],
+    [{ variantId: 222, quantity: 1 }],
+    [{ variantId: '', quantity: 1 }],
+    [{ variantId: '222', quantity: 0 }],
+  ]) {
+    const response = await handleBuyerRequest(
+      post({ ...base, groups: [{ ...base.groups[0], variants }] }),
+      services,
+      'quote-proposals',
+      () => {},
+    );
+    assert.equal(response.status, 400);
+    assert.equal(proposals, 0, 'rejected selections never enter the provider/credential composition');
+  }
+});

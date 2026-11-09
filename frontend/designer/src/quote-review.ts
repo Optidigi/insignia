@@ -1,4 +1,6 @@
 export type DesignerQuoteReview = {
+  intentId?: string;
+  expiresAt?: string;
   currency: string;
   exponent: number;
   totalMinor?: string;

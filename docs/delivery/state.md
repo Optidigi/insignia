@@ -1,5 +1,9 @@
 # Current state and owner/operator checklist
 
+## Current Review/cart follow-up
+
+Current loading/handoff delivery: PRs 274–277 are integrated and deployed to rewrite-dev as Active 1201192632321/native-review-nav-8a7ee446, with exact 30-version inventory and schema 52/key 2 preserved. Native Review opened during preparation, showed truthful loading, and one immediate Add completed inline before native cart navigation; exact owned-line cleanup restored the empty baseline. Cold quote and Add latency remain substantial; no material network speedup is claimed. The [current closeout](loading-handoff-closeout-2026-11-09.md) and [deployment receipt](evidence/technical-merchant-completion/native-loading-handoff-development-2026-11-09.json) supersede earlier runtime/Active identities while preserving historical scope. Production rollout and owner visual acceptance remain open.
+
 ## 8 November performance delivery — deployed and natively verified
 
 Native1199807692801/native-speed-e52be93 is sole Active with the exact25-version inventory,14 original module identities and13 preserved non-theme configurations. Original9b941 Function binaries and all historical bindings/NEVER_RELEASE guards remain unchanged. PR256 mergef1a2cd06 has ordered parents40957070/e17b038f and tree3a07f51e151d9f3fa1ddd2bc4bd975d55ff3a9ca, identical to CI synthetic72d893f3. Final durable42527004591, runtime42527004561 and foundation42527004678 passed. All138 foundation entries qualified; final12 assets/21 theme files equal frozen CI255 staging. This combined build includes the shared-dialog dismissal and product-photo CSP fixes.

@@ -1001,9 +1001,47 @@ test('verified cart handoff does not wait for best-effort application confirmati
     try {
       await reviewRetained(host);
       await applyButton(host).click();
-      await page.waitForFunction(() => !document.querySelector('dialog:modal'));
-      await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
+      await host.getByRole('button', { name: 'View cart', exact: true }).waitFor();
+      assert.equal(await page.locator('dialog:modal').isVisible(), true);
+      assert.equal(await page.locator('iframe:not([hidden])').isVisible(), true);
       assert.equal(cartNavigations(), 1, 'only the verified cart receipt gates native handoff');
+    } finally {
+      release();
+      await page.unrouteAll({ behavior: 'ignoreErrors' });
+    }
+  });
+});
+
+test('Quantities footer enters Review while its speculative quote is still preparing', async () => {
+  await withRetainedBuyer(async ({ page, host, accepts, mutations }) => {
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const started = page.waitForRequest('**/quote-proposals');
+    let requests = 0;
+    await page.route('**/quote-proposals', async (route) => {
+      requests++;
+      await held;
+      await route.fallback().catch(() => {});
+    });
+    try {
+      await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+      await host.locator('input[type=number]:enabled').first().fill('4');
+      await started;
+      const next = host.locator('.footer-buttons .primary-button');
+      assert.equal(await next.textContent(), 'Review', 'background preparation cannot replace the navigation action');
+      assert.equal(await next.isEnabled(), true, 'Review navigation cannot wait for quote IO');
+      await next.click();
+      assert.equal(await host.locator('.footer-price strong').textContent(), 'Calculating quote…');
+      assert.equal(await next.isEnabled(), false, 'purchase stays disabled until authoritative preparation finishes');
+      assert.equal(await next.textContent(), 'Preparing quote…');
+      assert.equal(await host.getByRole('button', { name: 'Edit quantities', exact: true }).isEnabled(), true);
+      release();
+      await applyButton(host).waitFor();
+      assert.equal(requests, 1, 'entering Review reuses the in-flight preparation');
+      assert.equal(accepts.length, 0);
+      assert.equal(mutations(), 0);
     } finally {
       release();
       await page.unrouteAll({ behavior: 'ignoreErrors' });
@@ -1070,17 +1108,20 @@ test('selected acknowledgements rotate acceptance keys while uncertain API retri
     assert.equal(accepts.length, 1);
     failAcceptance(false);
     await applyButton(host).click();
-    await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
+    await host.getByRole('button', { name: 'View cart', exact: true }).waitFor();
     assert.equal(accepts.length, 2);
     assert.deepEqual(accepts[1], accepts[0]);
     assert.equal(proposals.length, 1, 'Unknown acceptance never prepares a new proposal');
+    const placement = await trigger.evaluate((element) => element.outerHTML);
+    await page.reload();
+    await page.locator('body').evaluate((body, markup) => body.insertAdjacentHTML('beforeend', markup), placement);
     await trigger.getByRole('button', { name: 'Review customized cart', exact: true }).click();
-    await host.getByRole('button', { name: 'Previous step', exact: true }).click();
+    await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
     await host.locator('input[type=number]:enabled').first().fill('4');
     await host.getByRole('button', { name: 'Review', exact: true }).last().click();
     await applyButton(host).waitFor();
     await applyButton(host).click();
-    await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
+    await host.getByRole('button', { name: 'View cart', exact: true }).waitFor();
     assert.equal(accepts.length, 3);
     assert.notEqual(required(accepts[2]).idempotencyKey, required(accepts[1]).idempotencyKey);
   });
@@ -1243,18 +1284,35 @@ test('failed fallback removal preserves review and never opens the native cart',
 });
 test('known quote expiry prepares a fresh authoritative proposal and requires another acceptance gesture', async () => {
   await withRetainedBuyer(
-    async ({ page, host, proposals, accepts, proposalIds }) => {
+    async ({ page, host, proposals, accepts, proposalIds, configure }) => {
       await reviewRetained(host);
       await applyButton(host).waitFor();
       assert.equal(proposals.length, 1);
+      const originalTotal = await host.locator('.footer-price strong').innerText();
+      await host.locator('.review-pricing summary').click();
+      assert.ok((await host.locator('.review-costs').getByText(originalTotal, { exact: true }).count()) > 0);
+      const repriced = structuredClone(config);
+      repriced.variants = repriced.variants.map((variant) => ({ ...variant, baseUnitMinor: '9000' }));
+      configure(repriced);
       await page.clock.fastForward(61000);
-      await applyButton(host).click();
-      await host.locator('.cart-submit-error').waitFor();
+      await host.getByRole('button', { name: 'Retry', exact: true }).waitFor();
+      assert.equal(proposals.length, 1, 'expiry retires presentation without periodic proposal dispatch');
+      assert.equal(await host.locator('.footer-price strong').innerText(), 'Unavailable');
+      assert.equal(
+        await host.locator('.review-costs').getByText(originalTotal, { exact: true }).count(),
+        0,
+        'expired unattempted sibling amounts must retire with the footer',
+      );
+      await host.getByRole('button', { name: 'Retry', exact: true }).click();
+      await applyButton(host).waitFor();
+      assert.equal(await host.locator('.cart-submit-error').count(), 0, 'refresh is not a cart failure');
       assert.equal(proposals.length, 2);
+      await host.locator('.footer-price strong').filter({ hasText: '300.00' }).waitFor({ timeout: 3000 });
+      assert.notEqual(await host.locator('.footer-price strong').innerText(), originalTotal);
       assert.notEqual(proposalIds[1], proposalIds[0]);
       assert.equal(accepts.length, 0, 'The expired proposal is never accepted');
       await applyButton(host).click();
-      await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
+      await host.getByRole('button', { name: 'View cart', exact: true }).waitFor();
       assert.equal(accepts.length, 1);
       assert.equal(required(accepts[0]).hash, String(2).padStart(64, '0'));
       const cart = record(await page.evaluate(async () => (await fetch('/cart.js')).json()));
@@ -1277,8 +1335,12 @@ test('expired-offer recovery rejects a subsequent external cart change before ac
       await reviewRetained(host);
       await applyButton(host).waitFor();
       await page.clock.fastForward(61000);
-      await applyButton(host).click();
-      await host.locator('.cart-submit-error').waitFor();
+      await host.getByRole('button', { name: 'Retry', exact: true }).waitFor();
+      assert.equal(proposals.length, 1, 'expiry retires presentation without periodic proposal dispatch');
+      assert.equal(await host.locator('.footer-price strong').innerText(), 'Unavailable');
+      await host.getByRole('button', { name: 'Retry', exact: true }).click();
+      await applyButton(host).waitFor();
+      assert.equal(await host.locator('.cart-submit-error').count(), 0, 'refresh is not a cart failure');
       assert.equal(proposals.length, 2);
       editCart();
       const rejected = page.waitForResponse(
@@ -1927,7 +1989,7 @@ test('an option-only change after lost acceptance requires distinct reviewed ter
       await host.getByLabel('Packing', { exact: true }).selectOption({ label: 'Gift' });
       await host.getByRole('button', { name: 'Review', exact: true }).last().click();
       await applyButton(host).click();
-      await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
+      await host.getByRole('button', { name: 'View cart', exact: true }).waitFor();
       assert.equal(accepts.length, 2);
       assert.notEqual(accepts[0]?.idempotencyKey, accepts[1]?.idempotencyKey);
       assert.deepEqual(proposals[0]?.groups[0]?.design.options, [{ optionId: 'packing', valueId: 'plain' }]);

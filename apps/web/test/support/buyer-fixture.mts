@@ -20,6 +20,11 @@ const connectionString = process.env.DATABASE_URL;
 export async function fixture(
   t: Pick<TestContext, 'after'>,
   options: {
+    narrowAvailability?: (
+      productId: string,
+      selectedIds: readonly string[],
+      phase?: 'final',
+    ) => Promise<{ variants: { id: string; available: boolean }[] }>;
     diagnostic?: (value: BuyerFailureDiagnostic) => void;
     isolated?: boolean; // Required when a case exercises database-wide cleanup.
     representativePricing?: boolean;
@@ -251,6 +256,9 @@ export async function fixture(
     guest,
     ports,
     clock: () => now,
+    availability: options.narrowAvailability
+      ? async (_scope, productId, selectedIds, phase) => options.narrowAvailability!(productId, selectedIds, phase)
+      : undefined,
     catalog: async (_scope, _productId, phase) => ({
       variants: [
         {
