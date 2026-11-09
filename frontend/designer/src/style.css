@@ -2760,3 +2760,39 @@ img.store-photo {
 html, body, #root { min-width: 0; }
 
 .close-dialog > .upload-filename { margin-bottom: 12px; }
+
+.fixed-method-detail { margin-top: 8px; min-width: 0; font-size: 13px; line-height: 1.5; }
+.method-detail-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding-block: 8px;
+  border-radius: 4px;
+  list-style: none;
+}
+.method-detail-name { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; min-width: 0; }
+.method-detail-name > span { color: var(--muted); }
+.method-detail-name strong { font-weight: 500; overflow-wrap: anywhere; min-width: 0; }
+.method-detail-summary > svg { color: var(--muted); flex-shrink: 0; }
+.fixed-method-detail summary { cursor: pointer; }
+.fixed-method-detail summary::-webkit-details-marker { display: none; }
+.fixed-method-detail summary:hover { color: var(--text-strong); }
+.fixed-method-detail summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.fixed-method-detail details[open] summary > svg { transform: rotate(180deg); }
+.fixed-method-detail p { margin: 0; padding: 4px 0 12px; color: var(--muted); overflow-wrap: anywhere; white-space: pre-line; }
+.print-overlay.empty-print-target {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  border: 1px solid var(--border-guide);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  box-shadow: 0 1px 4px #0002;
+}
+.print-overlay.empty-print-target.selected { border-color: var(--accent); }
+.print-overlay.empty-print-target:hover { background: var(--surface-hover); border-color: var(--accent); }
+.empty-print-target .placeholder-print { min-height: 0; height: 100%; font-size: 22px; color: inherit; }

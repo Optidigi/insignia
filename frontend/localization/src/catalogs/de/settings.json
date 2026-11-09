@@ -546,7 +546,9 @@
       "customer_chrome_openingCart": "Warenkorb wird geöffnet",
       "customer_chrome_viewCart": "Warenkorb ansehen",
       "customer_review_designTotals": "Überschrift für Designsummen",
-      "customer_review_currentDesign": "Beschriftung des aktuellen Designs"
+      "customer_review_currentDesign": "Beschriftung des aktuellen Designs",
+      "customer_artwork_addPositionArtwork": "Aktion zum Hinzufügen eines Motivs zur Position",
+      "customer_positioning_adjustPosition": "Schaltfläche Position anpassen"
     },
     "resetSavedHeading": "Gespeicherte Übersetzungen zurücksetzen?",
     "resetSavedDescription": "Die Standardformulierungen für alle gespeicherten Sprachen wiederherstellen. Eigene Texte werden entfernt.",

@@ -548,7 +548,9 @@
       "customer_chrome_openingCart": "Abriendo el carrito",
       "customer_chrome_viewCart": "Ver carrito",
       "customer_review_designTotals": "Título de totales por diseño",
-      "customer_review_currentDesign": "Etiqueta del diseño actual"
+      "customer_review_currentDesign": "Etiqueta del diseño actual",
+      "customer_artwork_addPositionArtwork": "Acción para añadir diseño a una posición",
+      "customer_positioning_adjustPosition": "Botón para ajustar la posición"
     },
     "resetSavedHeading": "¿Restablecer las traducciones guardadas?",
     "resetSavedDescription": "Se restablecerán los textos predeterminados de todos los idiomas guardados y se eliminarán tus textos personalizados.",

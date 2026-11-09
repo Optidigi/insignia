@@ -90,7 +90,8 @@
     "chooseAnotherFile": "Choisir un autre fichier",
     "cancelTitle": "Annuler cette importation ?",
     "cancelHelp": "Ce fichier n’est pas encore prêt. L’annulation interrompt cette importation sans modifier vos choix précédents.",
-    "keepUploading": "Continuer l’importation"
+    "keepUploading": "Continuer l’importation",
+    "addPositionArtwork": "Ajouter un visuel pour {{positionName}}"
   },
   "quantities": {
     "heading": "Quantités",
@@ -171,7 +172,8 @@
     "artworkMovedDown": "Visuel déplacé vers le bas.",
     "artworkMovedRight": "Visuel déplacé vers la droite.",
     "sizeChangedTo": "Taille du visuel définie sur {{sizeLabel}}.",
-    "previewUnavailableForProduct": "{{label}} : aperçu indisponible"
+    "previewUnavailableForProduct": "{{label}} : aperçu indisponible",
+    "adjustPosition": "Ajuster la position"
   },
   "review": {
     "artwork": "Visuels",

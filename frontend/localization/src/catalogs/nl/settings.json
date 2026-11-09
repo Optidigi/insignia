@@ -575,7 +575,9 @@
       "customer_chrome_openingCart": "Winkelwagen openen",
       "customer_chrome_viewCart": "Winkelwagen bekijken",
       "customer_review_designTotals": "Kop bij totalen per ontwerp",
-      "customer_review_currentDesign": "Label huidig ontwerp"
+      "customer_review_currentDesign": "Label huidig ontwerp",
+      "customer_artwork_addPositionArtwork": "Actie ontwerp aan positie toevoegen",
+      "customer_positioning_adjustPosition": "Knop positie aanpassen"
     },
     "discard": "Verwerpen"
   },

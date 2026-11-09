@@ -90,7 +90,8 @@
     "chooseAnotherFile": "Ander bestand kiezen",
     "cancelTitle": "Deze upload annuleren?",
     "cancelHelp": "Dit bestand is nog niet klaar. Annuleren stopt deze upload. Je eerdere keuzes blijven behouden.",
-    "keepUploading": "Upload voortzetten"
+    "keepUploading": "Upload voortzetten",
+    "addPositionArtwork": "Ontwerp voor {{positionName}} toevoegen"
   },
   "quantities": {
     "heading": "Aantallen",
@@ -170,7 +171,8 @@
     "artworkMovedDown": "Ontwerp omlaag verplaatst.",
     "artworkMovedRight": "Ontwerp naar rechts verplaatst.",
     "sizeChangedTo": "Decoratieformaat gewijzigd in {{sizeLabel}}.",
-    "previewUnavailableForProduct": "{{label}}: voorbeeld niet beschikbaar"
+    "previewUnavailableForProduct": "{{label}}: voorbeeld niet beschikbaar",
+    "adjustPosition": "Positie aanpassen"
   },
   "review": {
     "artwork": "Ontwerp",

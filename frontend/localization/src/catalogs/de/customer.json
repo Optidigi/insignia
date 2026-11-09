@@ -90,7 +90,8 @@
     "chooseAnotherFile": "Andere Datei auswählen",
     "cancelTitle": "Diesen Upload abbrechen?",
     "cancelHelp": "Diese Datei ist noch nicht bereit. Beim Abbrechen wird nur dieser Upload gestoppt. Ihre bisherige Auswahl bleibt erhalten.",
-    "keepUploading": "Weiter hochladen"
+    "keepUploading": "Weiter hochladen",
+    "addPositionArtwork": "Motiv für {{positionName}} hinzufügen"
   },
   "quantities": {
     "heading": "Mengen",
@@ -170,7 +171,8 @@
     "artworkMovedDown": "Das Motiv wurde nach unten verschoben.",
     "artworkMovedRight": "Das Motiv wurde nach rechts verschoben.",
     "sizeChangedTo": "Veredelungsgröße auf {{sizeLabel}} geändert.",
-    "previewUnavailableForProduct": "{{label}}: Vorschau nicht verfügbar"
+    "previewUnavailableForProduct": "{{label}}: Vorschau nicht verfügbar",
+    "adjustPosition": "Position anpassen"
   },
   "review": {
     "artwork": "Motiv",

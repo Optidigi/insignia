@@ -1316,18 +1316,18 @@ function DesignerSession({
                 return (
                   <button
                     key={p.id}
-                    className={`print-overlay ${step === 0 && expanded === p.id ? 'selected' : ''} ${step === 0 && expanded === p.id ? 'guides' : ''}`}
+                    className={`print-overlay ${!art || p.artworkId === 'later' ? 'empty-print-target' : ''} ${step === 0 && expanded === p.id ? 'selected' : ''} ${step === 0 && expanded === p.id ? 'guides' : ''}`}
                     style={{
                       left: `${(100 - contentWidth * 100) / 2 + pos.x * contentWidth}%`,
                       top: `${(100 - contentHeight * 100) / 2 + pos.y * contentHeight}%`,
-                      width: `${width * contentWidth}%`,
+                      width: art ? `${width * contentWidth}%` : undefined,
                     }}
                     onClick={() => {
                       selectPosition(p.id);
                       dispatch({ type: 'step-selected', step: 0 });
-                      if (!p.artworkId) openModal({ kind: 'artwork', positionId: p.id });
+                      if (!art) openModal({ kind: 'artwork', positionId: p.id });
                     }}
-                    aria-label={t('customer:artwork.editPositionArtwork', {
+                    aria-label={t(art ? 'customer:artwork.editPositionArtwork' : 'customer:artwork.addPositionArtwork', {
                       positionName: pos.name,
                     })}
                   >
@@ -1633,10 +1633,20 @@ function DesignerSession({
                             </fieldset>
                           )}
                           {pos.methodIds.length === 1 ? (
-                            <div className="fixed-detail">
-                              <span>{t('customer:artwork.method')}</span>
-                              <strong>{methodFor(p.method).label}</strong>
-                              {methodFor(p.method).description && <span>{methodFor(p.method).description}</span>}
+                            <div className="fixed-method-detail">
+                              {methodFor(p.method).description ? (
+                                <details>
+                                  <summary className="method-detail-summary">
+                                    <span className="method-detail-name"><span>{t('customer:artwork.method')}</span><strong>{methodFor(p.method).label}</strong></span>
+                                    <IconChevronDown size={16} aria-hidden="true" />
+                                  </summary>
+                                  <p>{methodFor(p.method).description}</p>
+                                </details>
+                              ) : (
+                                <div className="method-detail-summary">
+                                  <span className="method-detail-name"><span>{t('customer:artwork.method')}</span><strong>{methodFor(p.method).label}</strong></span>
+                                </div>
+                              )}
                             </div>
                           ) : pos.methodIds.length > 2 ? (
                             <>
