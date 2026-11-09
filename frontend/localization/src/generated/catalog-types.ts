@@ -2360,6 +2360,7 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_artwork_yourArtwork': object;
   'settings:translations.fields.customer_chrome_added': object;
   'settings:translations.fields.customer_chrome_allViews': object;
+  'settings:translations.fields.customer_chrome_calculatingQuote': object;
   'settings:translations.fields.customer_chrome_closeArtworkPreview': object;
   'settings:translations.fields.customer_chrome_closeCustomizer': object;
   'settings:translations.fields.customer_chrome_designControls': object;
@@ -2369,7 +2370,9 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_chrome_fromPrice': object;
   'settings:translations.fields.customer_chrome_fullProduct': object;
   'settings:translations.fields.customer_chrome_included': object;
+  'settings:translations.fields.customer_chrome_openingCart': object;
   'settings:translations.fields.customer_chrome_perItem': object;
+  'settings:translations.fields.customer_chrome_preparingQuote': object;
   'settings:translations.fields.customer_chrome_productPreview': object;
   'settings:translations.fields.customer_chrome_productView': object;
   'settings:translations.fields.customer_chrome_productViewAlt': object;
@@ -2377,6 +2380,7 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_chrome_showFullProduct': object;
   'settings:translations.fields.customer_chrome_skipToDesignControls': object;
   'settings:translations.fields.customer_chrome_unavailable': object;
+  'settings:translations.fields.customer_chrome_viewCart': object;
   'settings:translations.fields.customer_files_fullFilename': object;
   'settings:translations.fields.customer_host_cancel': object;
   'settings:translations.fields.customer_host_discardEdit': object;

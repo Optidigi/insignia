@@ -528,7 +528,11 @@
       "customer_host_personalise": "Pulsante Personalizza",
       "customer_host_savedDesigns": "Etichetta dei design salvati",
       "customer_host_openSaved": "Pulsante Apri design",
-      "customer_host_startNew": "Pulsante Nuovo design"
+      "customer_host_startNew": "Pulsante Nuovo design",
+      "customer_chrome_calculatingQuote": "Calcolo del preventivo",
+      "customer_chrome_preparingQuote": "Preparazione del preventivo",
+      "customer_chrome_openingCart": "Apertura del carrello",
+      "customer_chrome_viewCart": "Visualizza carrello"
     },
     "resetSavedHeading": "Ripristinare le traduzioni salvate?",
     "resetSavedDescription": "Ripristina i testi predefiniti per tutte le lingue salvate. I testi personalizzati verranno rimossi.",
