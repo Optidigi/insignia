@@ -271,10 +271,20 @@ function DesignerSession({
   const error = workflow.upload.kind === 'failed' ? uploadFailureMessage(workflow.upload.reason) : '';
   useEffect(() => {
     if (workflow.upload.kind !== 'failed' || modal.kind !== 'artwork') return;
+    // Recovery autofocus must yield to a newer keyboard or pointer focus choice.
+    let focusMoved = false;
+    const onFocus = () => {
+      focusMoved = true;
+    };
+    document.addEventListener('focusin', onFocus);
     const frame = window.requestAnimationFrame(() => {
-      document.querySelector<HTMLButtonElement>('.upload-failure-actions button')?.focus();
+      document.removeEventListener('focusin', onFocus);
+      if (!focusMoved) document.querySelector<HTMLButtonElement>('.upload-failure-actions button')?.focus();
     });
-    return () => window.cancelAnimationFrame(frame);
+    return () => {
+      document.removeEventListener('focusin', onFocus);
+      window.cancelAnimationFrame(frame);
+    };
   }, [workflow.upload.kind, modal.kind]);
   const notice =
     recovery.kind === 'none'
