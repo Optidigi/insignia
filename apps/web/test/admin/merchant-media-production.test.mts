@@ -10,13 +10,14 @@ import { CONFIG_DRAFT_STORAGE_VERSION, createDurableCore } from '@insignia/datab
 import { Pool } from 'pg';
 import { createMerchantMediaService } from '../../src/server/admin/merchant-media.ts';
 import { createMerchantPublicationCapture } from '../../src/server/admin/merchant-previews.ts';
+import { isolatedDatabase } from '../support/isolated-database.mts';
 import { adminActor, unexpected } from './support/fixtures.mts';
 
 const database = process.env.DATABASE_URL;
 const png = Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10]);
 const sha = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
-async function fixture() {
-  const pool = new Pool({ connectionString: database });
+async function fixture(connectionString = database) {
+  const pool = new Pool({ connectionString });
   const core = createDurableCore(pool);
   const tenant = randomUUID();
   const configId = randomUUID();
@@ -111,8 +112,12 @@ async function fixture() {
 
 test('private upload references roundtrip an isolated PostgreSQL archive without losing source identity or constraints', {
   skip: !database || !process.env.INSIGNIA_PG_BIN,
-}, async () => {
-  const f = await fixture();
+}, async (t) => {
+  // A whole-database snapshot must not consume other tests' expired/in-flight rows.
+  const isolated = await isolatedDatabase('media_archive');
+  t.after(() => isolated.close());
+  const database = isolated.connectionString;
+  const f = await fixture(database);
   const directory = await mkdtemp(join(tmpdir(), 'insignia-media-restore-'));
   const name = `insignia_recovery_media_${randomUUID().replaceAll('-', '')}`;
   let restored: Pool | undefined;

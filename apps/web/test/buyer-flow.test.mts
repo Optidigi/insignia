@@ -190,7 +190,27 @@ test('changed authoritative price requires review before signing or immutable ac
 test('HTTP rejects forged capability, tenant injection, oversize and foreign draft CAS; raw design retention follows asset deadline', {
   skip: !connectionString,
 }, async (t) => {
-  const f = await fixture(t);
+  const f = await fixture(t, { isolated: true });
+  let preparations = 0,
+    proofs = 0,
+    availability = 0;
+  const victim = await fixture(t, {
+    readiness: {
+      prepare: async () => {
+        preparations++;
+      },
+      assertReady: async () => {
+        proofs++;
+      },
+    },
+  });
+  victim.availability(() => {
+    availability++;
+    return true;
+  });
+  const proposalResponse = await victim.http('quote-proposals', victim.body);
+  assert.equal(proposalResponse.status, 200);
+  const victimProposal = await proposalResponse.json();
   assert.equal((await f.http('quote-proposals', { ...f.body, capability: 'forged.token' })).status, 401);
   assert.equal((await f.http('quote-proposals', { ...f.body, shopId: randomUUID() })).status, 400);
   assert.equal((await f.http('quote-proposals', 'x'.repeat(128001))).status, 400);
@@ -214,6 +234,16 @@ test('HTTP rejects forged capability, tenant injection, oversize and foreign dra
     (await f.pool.query('SELECT count(*)::int n FROM design_drafts WHERE design_id=$1', [designId])).rows[0].n,
     0,
   );
+  const victimBody = { capability: victim.session.capability, hash: victimProposal.hash, idempotencyKey: randomUUID() };
+  const first = await victim.http(`quote-proposals/${victimProposal.proposalId}/accept`, victimBody);
+  assert.equal(first.status, 200, await first.clone().text());
+  assert.ok(
+    await victim.core.buyers.getProposal(victim.scope, victimProposal.proposalId, victim.now(), true),
+    'Another fixture cleanup cannot delete the victim proposal',
+  );
+  const before = { preparations, proofs, availability, signings: victim.signings() };
+  assert.equal((await victim.http(`quote-proposals/${victimProposal.proposalId}/accept`, victimBody)).status, 200);
+  assert.deepEqual({ preparations, proofs, availability, signings: victim.signings() }, before);
 });
 
 test('completed acceptance replay does not require another catalog observation', {

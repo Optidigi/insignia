@@ -1,31 +1,49 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { test } from 'node:test';
+import { stripVTControlCharacters } from 'node:util';
 
 async function startServer() {
-  const port = 44000 + Math.floor(Math.random() * 1000);
+  const port = 0;
   const child = spawn(process.execPath, [new URL('../dist/server/entry.mjs', import.meta.url).pathname], {
-    env: { ...process.env, SHOPIFY_CLIENT_ID: '', HOST: '127.0.0.1', PORT: String(port) },
+    env: {
+      ...process.env,
+      SHOPIFY_CLIENT_ID: '',
+      HOST: '127.0.0.1',
+      PORT: String(port),
+      ASTRO_NODE_LOGGING: 'enabled',
+    },
   });
   const exited = new Promise((resolve) => child.once('close', resolve));
   let stderr = '';
+  let stdout = '';
+  child.stdout.setEncoding('utf8').on('data', (chunk) => {
+    stdout = (stdout + chunk).slice(-8192);
+  });
   child.on('error', (error) => {
     stderr += error.message;
   });
   child.stderr.setEncoding('utf8').on('data', (chunk) => {
-    stderr += chunk;
+    stderr = (stderr + chunk).slice(-8192);
   });
-  const base = `http://127.0.0.1:${port}`;
+  let base: string | undefined;
   try {
     let live: Response | undefined;
-    for (let i = 0; i < 100 && !live && child.exitCode === null; i++) {
+    for (let i = 0; i < 100 && !live && child.exitCode === null && child.signalCode === null; i++) {
       try {
+        const match = stripVTControlCharacters(stdout).match(/Server listening on (http:\/\/127\.0\.0\.1:(\d+))\r?\n/);
+        if (!match || Number(match[2]) < 1 || Number(match[2]) > 65535) throw new Error('No bound address yet');
+        base = match[1];
         live = await fetch(`${base}/live`);
       } catch {
         await new Promise((resolve) => setTimeout(resolve, 50));
       }
     }
-    assert.ok(live, stderr);
+    assert.ok(
+      live,
+      JSON.stringify({ requestedPort: port, stdout, stderr, exitCode: child.exitCode, signalCode: child.signalCode }),
+    );
+    assert.ok(base);
     assert.deepEqual(await live.json(), { status: 'live' });
     return { base, child, exited };
   } catch (error) {

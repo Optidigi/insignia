@@ -16,6 +16,8 @@ import performanceModules from '../../deployment/m5-runtime/native-performance-m
 import performanceCandidate from '../../deployment/m5-runtime/native-performance-release-binding.json' with {
   type: 'json',
 };
+import recoveryModules from '../../deployment/m5-runtime/native-recovery-module-baseline.json' with { type: 'json' };
+import recoveryCandidate from '../../deployment/m5-runtime/native-recovery-release-binding.json' with { type: 'json' };
 import selectedOnlyModules from '../../deployment/m5-runtime/native-selected-fixed-module-baseline.json' with {
   type: 'json',
 };
@@ -67,6 +69,14 @@ const oldIds = [
   '1146748534785',
 ] as const;
 const profiles = {
+  'native-recovery-e2c3dc5': {
+    versionId: recoveryCandidate.versionId,
+    versionTag: recoveryCandidate.versionTag,
+    versionIds: recoveryCandidate.versionIds,
+    moduleHash: recoveryCandidate.moduleHash,
+    modules: recoveryModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+  },
   'native-speed-e52be93': {
     versionId: speedCandidate.versionId,
     versionTag: speedCandidate.versionTag,

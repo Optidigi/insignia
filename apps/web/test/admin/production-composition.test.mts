@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { createHash, createHmac, generateKeyPairSync, randomBytes, randomUUID } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -138,7 +139,55 @@ for (const releaseMode of [
       ownerDirectory: string | undefined,
       previewDirectory: string | undefined;
     let collected = 0;
-    let authenticationInFlight = 0;
+    const requestScope = new AsyncLocalStorage<number>();
+    const collectionOwners = new Map<string, number>();
+    const siblingEntered = Promise.withResolvers<void>();
+    const siblingRelease = Promise.withResolvers<void>();
+    let requestSequence = 0,
+      holdSibling = false,
+      siblingHeld = false;
+    function observeTransactions(observedPool: Pool) {
+      observedPool.on('connect', (connection) => {
+        connection.query = new Proxy(connection.query, {
+          apply(query, _receiver, args) {
+            const statement = typeof args[0] === 'string' ? args[0] : args[0]?.text;
+            const owner = requestScope.getStore();
+            const result = Reflect.apply(query, connection, args);
+            if (
+              owner === undefined ||
+              typeof statement !== 'string' ||
+              !/^\s*(BEGIN|START TRANSACTION)\b/i.test(statement)
+            )
+              return result;
+            assert(result instanceof Promise, 'Observed transaction must use the real promise-returning adapter');
+            return result.then(async (value: unknown) => {
+              // PostgreSQL clears this request tag when COMMIT/ROLLBACK settles.
+              await Reflect.apply(query, connection, [
+                'SELECT set_config($1,$2,true)',
+                ['application_name', `composition-request-${owner}`],
+              ]);
+              if (releaseMode === 'demand-success' && holdSibling && owner === 2 && !siblingHeld) {
+                siblingHeld = true;
+                siblingEntered.resolve();
+                await siblingRelease.promise;
+              }
+              return value;
+            });
+          },
+        });
+      });
+    }
+    observeTransactions(pool);
+    async function assertCallerOutsideTransaction(owner: number) {
+      const open = await pool.query(
+        "SELECT count(*)::integer n FROM pg_stat_activity WHERE datname=current_database() AND state='idle in transaction' AND application_name=$1",
+        [`composition-request-${owner}`],
+      );
+      assert.equal(open.rows[0].n, 0, 'Independent collection may not inherit the initiating request transaction');
+    }
+
+    const requestAdmin = (...args: Parameters<typeof handleAdminRequest>) =>
+      requestScope.run(++requestSequence, () => handleAdminRequest(...args));
     const role = `m5022_runtime_${randomUUID().replaceAll('-', '')}`;
     try {
       previewDirectory = await mkdtemp(join(tmpdir(), 'm5-composition-previews-'));
@@ -241,6 +290,7 @@ for (const releaseMode of [
         await pool.query(`GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO ${role}`);
         await pool.query(`REVOKE INSERT,UPDATE,DELETE ON trusted_release_records FROM ${role}`);
         runtimePool = new Pool({ connectionString: fixtureDatabase, options: `-c role=${role}` });
+        observeTransactions(runtimePool);
         if (releaseMode.startsWith('demand-')) {
           await pool.query(`CREATE ROLE ${role}_writer NOLOGIN`);
           await pool.query(`GRANT USAGE ON SCHEMA public TO ${role}_writer`);
@@ -259,7 +309,7 @@ for (const releaseMode of [
           };
           verificationServer = createReleaseVerificationServer({
             readBinding: async () => requestBinding,
-            async collect() {
+            async collect(request) {
               collected++;
               if (releaseMode === 'demand-failure')
                 return {
@@ -269,19 +319,30 @@ for (const releaseMode of [
                   ambiguousWrite: false,
                   retryAuthorized: false,
                 };
-              // No database transaction may span independent collection.
-              const open = await pool.query(
-                "SELECT count(*)::integer n FROM pg_stat_activity WHERE datname=current_database() AND state='idle in transaction'",
-              );
-              if (open.rows[0].n !== 0)
-                console.error(
-                  'SYNTHETIC_COLLECTION_TRANSACTION_BOUNDARY',
-                  JSON.stringify({
-                    openTransactions: open.rows[0].n,
-                    authenticationInFlight,
-                  }),
-                );
-              assert.equal(open.rows[0].n, 0);
+              const initiating = collectionOwners.get(request.requestId);
+              assert(initiating !== undefined, 'The metadata request must retain its initiating request identity');
+              let rendezvous: ReturnType<typeof setTimeout> | undefined;
+              try {
+                if (releaseMode === 'demand-success' && collected === 1) {
+                  await Promise.race([
+                    siblingEntered.promise,
+                    new Promise<never>((_resolve, reject) => {
+                      rendezvous = setTimeout(
+                        () => reject(new Error('Sibling preview transaction did not reach its gate')),
+                        3000,
+                      );
+                    }),
+                  ]);
+                  const sibling = await pool.query(
+                    "SELECT count(*)::integer n FROM pg_stat_activity WHERE datname=current_database() AND state='idle in transaction' AND application_name='composition-request-2'",
+                  );
+                  assert.equal(sibling.rows[0].n, 1, 'A real sibling preview transaction overlaps collection');
+                }
+                await assertCallerOutsideTransaction(initiating);
+              } finally {
+                if (rendezvous) clearTimeout(rendezvous);
+                siblingRelease.resolve();
+              }
               if (successful) {
                 const f = await collectorFixture({
                   root: socketDirectory,
@@ -359,7 +420,19 @@ for (const releaseMode of [
             },
           });
           await new Promise<void>((resolve) => required(verificationServer).listen(socketPath, resolve));
-          verificationClient = createReleaseVerificationClient(socketPath);
+          const transport = createReleaseVerificationClient(socketPath);
+          verificationClient = {
+            async collect(request) {
+              const initiating = requestScope.getStore();
+              assert(initiating !== undefined, 'Demand collection must originate from a publication request');
+              collectionOwners.set(request.requestId, initiating);
+              try {
+                return await transport.collect(request);
+              } finally {
+                collectionOwners.delete(request.requestId);
+              }
+            },
+          };
           if (signing) {
             ownerDirectory = await mkdtemp(join(tmpdir(), 'm5-signing-composition-'));
             const day = Math.floor(Date.now() / 86400000);
@@ -742,6 +815,18 @@ for (const releaseMode of [
       entitlementNow = '2026-09-30T23:59:59.999Z';
       providerMode = 'current';
       if (releaseMode === 'demand-success') {
+        // The observer must still reject collection inside its OWN real transaction.
+        const probe = await pool.connect();
+        try {
+          await requestScope.run(0, async () => {
+            await probe.query('BEGIN');
+            await assert.rejects(() => assertCallerOutsideTransaction(0), /initiating request transaction/);
+            await probe.query('ROLLBACK');
+          });
+        } finally {
+          await probe.query('ROLLBACK');
+          probe.release();
+        }
         // Exercise concurrent publication after both real authentication transactions
         // commit: a sibling bootstrap transaction is not the collector's caller.
         const authenticated = Promise.withResolvers<void>();
@@ -751,24 +836,24 @@ for (const releaseMode of [
         services = {
           ...services,
           async authenticate(request: Request) {
-            authenticationInFlight++;
             let actor: Awaited<ReturnType<typeof authenticate>>;
             try {
               actor = await authenticate(request);
             } catch (error) {
               authenticated.reject(error);
               throw error;
-            } finally {
-              authenticationInFlight--;
             }
-            if (++completed === 2) authenticated.resolve();
+            if (++completed === 2) {
+              holdSibling = true;
+              authenticated.resolve();
+            }
             await authenticated.promise;
             return actor;
           },
         };
       }
       const publishRequest = () =>
-        handleAdminRequest(
+        requestAdmin(
           new Request(`${origin}/api/admin/products/555/config`, {
             method: 'POST',
             headers: {
@@ -848,7 +933,7 @@ for (const releaseMode of [
         // Idempotent settled replay must not depend on a collector after evidence expires.
         await new Promise((resolve) => setTimeout(resolve, 31_000));
         await new Promise((resolve) => required(verificationServer).close(resolve));
-        const replay = await handleAdminRequest(
+        const replay = await requestAdmin(
           new Request(`${origin}/api/admin/products/555/config`, {
             method: 'POST',
             headers: {
@@ -883,7 +968,7 @@ for (const releaseMode of [
         });
         assert.equal(nextDraft.kind, 'saved');
         await prepareCapturedPreviews(nextDraft.draftVersion, 'composition-publish-next');
-        const next = await handleAdminRequest(
+        const next = await requestAdmin(
           new Request(`${origin}/api/admin/products/555/config`, {
             method: 'POST',
             headers: {
@@ -944,6 +1029,7 @@ for (const releaseMode of [
       t.mock.timers.reset();
       globalThis.fetch = oldFetch;
       setAbstractFetchFunc(oldSdkFetch);
+      siblingRelease.resolve();
       await runtimePool?.end();
       await writerPool?.end();
       if (verificationServer) await new Promise((resolve) => required(verificationServer).close(resolve));
