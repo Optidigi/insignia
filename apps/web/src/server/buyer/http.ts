@@ -15,6 +15,7 @@ import {
 import { BuyerStateError } from '@insignia/database';
 import { type BuyerFailureDiagnostic, createObservability } from '@insignia/observability';
 import { buyerJsonBody } from './body.ts';
+import { proposalDiagnostics, proposalFailureStage, proposalStage } from './diagnostics.ts';
 import type { BuyerServices } from './service.ts';
 
 const logger = createObservability().logger;
@@ -28,7 +29,13 @@ class HttpError extends Error {
     this.code = code;
   }
 }
-export async function handleBuyerRequest(
+export function handleBuyerRequest(...args: Parameters<typeof handleRequest>): Promise<Response> {
+  return args[2] === 'quote-proposals' && args[0].method === 'POST'
+    ? proposalDiagnostics(() => handleRequest(...args))
+    : handleRequest(...args);
+}
+
+async function handleRequest(
   request: Request,
   services: BuyerServices | undefined,
   route: string,
@@ -75,7 +82,8 @@ export async function handleBuyerRequest(
     if (request.method === 'POST' && route === 'quote-proposals') {
       const parsed = BuyerProposalRequestSchema.safeParse(body);
       if (!parsed.success) throw new HttpError(400, 'INVALID_REQUEST');
-      return respond(await services.propose(scope, parsed.data));
+      const proposal = await proposalStage('prepare', () => services.propose(scope, parsed.data));
+      return await proposalStage('response-validation', () => respond(proposal));
     }
     if (request.method === 'POST' && collection === 'quote-proposals' && id && action === 'accept') {
       const parsed = BuyerAcceptanceSchema.safeParse(body);
@@ -146,7 +154,15 @@ export async function handleBuyerRequest(
       // Whitelisted classes/stages only: no exception message/stack, body, URL,
       // capability or signed carriers enter diagnostics or the public response.
       try {
-        diagnostic({ correlationId: requestId, buyerStage, errorClass });
+        const proposalStage =
+          proposalFailureStage(error) ??
+          (route === 'quote-proposals' && request.method === 'POST' ? 'request-setup' : undefined);
+        diagnostic({
+          correlationId: requestId,
+          buyerStage,
+          errorClass,
+          ...(proposalStage === undefined ? {} : { proposalStage }),
+        });
       } catch {
         /* Diagnostics cannot change settlement. */
       }

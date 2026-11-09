@@ -1,0 +1,53 @@
+{
+  "classification": "NATIVE_QUOTE_PREPARATION_FAILURE_UNRESOLVED",
+  "date": "2026-11-09",
+  "deployedWebMerge": "6dba789fee12fc8f91e7a44b1ec435ea7619e575",
+  "appVersion": "1199953805313",
+  "profile": "native-recovery-e2c3dc5",
+  "schema": 52,
+  "fixtureProduct": "10588458647835",
+  "syntheticArtworkBytes": 271,
+  "uploadReadyMs": 2624,
+  "selection": {
+    "placement": "Buik",
+    "method": "Bedrukken",
+    "decorationSize": "Standaard",
+    "color": "Zwart",
+    "size": "XS",
+    "quantity": 1
+  },
+  "preparation": {
+    "configStatus": 200,
+    "ownedDesignSaveStatus": 200,
+    "browserProposalStatus": 500,
+    "proposalDurationMs": 1904,
+    "uiFailureTerminalMs": 4015,
+    "backendFiniteErrorClass": "UnexpectedFailure",
+    "correlationId": "6b219021-5ee0-4af8-ae05-525acde7d62d",
+    "successLatency": null,
+    "traefikStatus": 503,
+    "traefikDurationMs": 1567,
+    "separateOriginStatus": null,
+    "statusTransformationLocation": "UNCONFIRMED"
+  },
+  "cartBaselineItems": 0,
+  "cartReadbackItems": 0,
+  "addAcceptanceCartOrderPaymentDispatched": false,
+  "privateProbesRemovedAndTabClosed": true,
+  "rootCause": "UNCONFIRMED",
+  "originalCartFailureAttribution": "NOT_ESTABLISHED",
+  "readOnlyReconciliation": {
+    "ownedDesignVersion": 1,
+    "ownedSessionProposals": 0,
+    "ownedBuyerCommands": 0,
+    "ownedCartApplications": 0,
+    "artworkState": "USABLE",
+    "artworkBytes": 271,
+    "artworkManifestMatchesSyntheticSource": true,
+    "assetExpiresAt": "2026-11-16T05:24:06.386Z",
+    "designSessionExpiresAt": "2026-11-16T05:24:06.154Z",
+    "objectBytesRead": false,
+    "physicalDeletionVerified": false,
+    "innerFailureStage": "UNKNOWN_REQUIRES_BOUNDED_DIAGNOSTICS"
+  }
+}

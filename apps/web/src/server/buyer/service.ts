@@ -38,6 +38,7 @@ import type { createArtworkGuestAuthority } from '../artwork/guest.ts';
 import { buyerGeometry } from '../merchant-preview/geometry.ts';
 import type { FrozenPreviewReader } from '../merchant-preview/read.ts';
 import { publicSelectedSetup } from '../merchant-preview/selected-public.ts';
+import { proposalStage } from './diagnostics.ts';
 import { validateBuyerProductionPositions } from './production-position.ts';
 
 class BuyerPrecommitReviewError extends Error {
@@ -157,7 +158,7 @@ export function createBuyerServices(input: {
       },
       readiness: {
         async assertReady(target) {
-          await validatePositions(scope, groups);
+          await proposalStage('positions', () => validatePositions(scope, groups));
           const availability = async () => {
             for (const productId of new Set(groups.map((group) => group.productId))) {
               const current = await input.catalog(scope, productId, finalCheck ? 'final' : undefined);
@@ -183,13 +184,15 @@ export function createBuyerServices(input: {
             // Preparation owns its IO but grants no authority. Drain both branches;
             // stock denial retains precedence if both fail.
             const checks = await Promise.allSettled([
-              availability(),
-              Promise.resolve().then(() => prepare.call(ports.readiness, target)),
+              proposalStage('availability', availability),
+              Promise.resolve().then(() =>
+                proposalStage('release-prepare', () => prepare.call(ports.readiness, target)),
+              ),
             ]);
             for (const check of checks) if (check.status === 'rejected') throw check.reason;
-          } else await availability();
+          } else await proposalStage('availability', availability);
           // Current-time authority remains serial after stock, especially inside signing.
-          await ports.readiness.assertReady(target);
+          await proposalStage('current-readiness', () => ports.readiness.assertReady(target));
         },
       },
     };
@@ -478,77 +481,83 @@ export function createBuyerServices(input: {
       const id = randomUUID(),
         ports = checkedPorts(scope, body.groups),
         request = requestFor(scope, body, id);
-      const candidate = await prepareQuote(request, ports),
+      const candidate = await proposalStage('prepare', () => prepareQuote(request, ports)),
         hash = materialHash(candidate.quote);
-      const retainPrivateUntil = await privateUntil(scope, body.groups);
+      const retainPrivateUntil = await proposalStage('private-retention', () => privateUntil(scope, body.groups));
       const expiresAt = new Date(Math.min(+clock() + 300000, +retainPrivateUntil));
-      await store.putProposal(scope, {
-        id,
-        requestDigest: candidate.requestDigest,
-        materialHash: hash,
-        request,
-        candidate: candidate.quote,
-        expiresAt,
-        retainPrivateUntil,
-        now: clock(),
-      });
+      await proposalStage('persistence', () =>
+        store.putProposal(scope, {
+          id,
+          requestDigest: candidate.requestDigest,
+          materialHash: hash,
+          request,
+          candidate: candidate.quote,
+          expiresAt,
+          retainPrivateUntil,
+          now: clock(),
+        }),
+      );
       const quote = candidate.quote;
-      const previous = await store.getLatestOwnedQuote(scope, binding(scope, ports), clock());
-      const changedGroups = previous
-        ? quote.economics.groups
-            .filter((group) => {
-              const old = previous.quote.economics.groups.find(
-                (v) => v.canonicalIdentitySha256 === group.canonicalIdentitySha256,
-              );
-              return (
-                old &&
-                (old.totalMinor !== group.totalMinor ||
-                  old.setupMinor !== group.setupMinor ||
-                  old.customizationUnitMinor !== group.customizationUnitMinor)
-              );
-            })
-            .map((v) => v.canonicalIdentitySha256)
-        : [];
-      return {
-        proposalId: id,
-        hash,
-        expiresAt: expiresAt.toISOString(),
-        currency: quote.presentmentCurrency,
-        exponent: quote.presentmentExponent,
-        customizedQuantity: quote.economics.customizedQuantity,
-        totalMinor: quote.economics.totalMinor,
-        groups: quote.economics.groups.map(
-          ({
-            productId,
-            canonicalIdentitySha256,
-            quantity,
-            setupMinor,
-            customizationUnitMinor,
-            baseTotalMinor,
-            totalMinor,
-          }) => {
-            const original = request.groups.find(
-              ({ group }) => inputIdentityHash(canonicalDesignIdentity(group)) === canonicalIdentitySha256,
-            )?.group;
-            const physical = quote.physicalGroups.find(
-              (group) => group.canonicalIdentitySha256 === canonicalIdentitySha256,
-            );
-            if (!original || !physical) throw new Error('Quote group identity unavailable');
-            const { shopId: _shop, version: _version, ...selection } = original;
-            return {
+      const previous = await proposalStage('owned-history', () =>
+        store.getLatestOwnedQuote(scope, binding(scope, ports), clock()),
+      );
+      return proposalStage('response-projection', () => {
+        const changedGroups = previous
+          ? quote.economics.groups
+              .filter((group) => {
+                const old = previous.quote.economics.groups.find(
+                  (v) => v.canonicalIdentitySha256 === group.canonicalIdentitySha256,
+                );
+                return (
+                  old &&
+                  (old.totalMinor !== group.totalMinor ||
+                    old.setupMinor !== group.setupMinor ||
+                    old.customizationUnitMinor !== group.customizationUnitMinor)
+                );
+              })
+              .map((v) => v.canonicalIdentitySha256)
+          : [];
+        return {
+          proposalId: id,
+          hash,
+          expiresAt: expiresAt.toISOString(),
+          currency: quote.presentmentCurrency,
+          exponent: quote.presentmentExponent,
+          customizedQuantity: quote.economics.customizedQuantity,
+          totalMinor: quote.economics.totalMinor,
+          groups: quote.economics.groups.map(
+            ({
               productId,
               canonicalIdentitySha256,
-              selection: { ...selection, variants: physical.variants.map((variant) => ({ ...variant })) },
               quantity,
               setupMinor,
               customizationUnitMinor,
               baseTotalMinor,
               totalMinor,
-            };
-          },
-        ),
-        changedGroups,
-      };
+            }) => {
+              const original = request.groups.find(
+                ({ group }) => inputIdentityHash(canonicalDesignIdentity(group)) === canonicalIdentitySha256,
+              )?.group;
+              const physical = quote.physicalGroups.find(
+                (group) => group.canonicalIdentitySha256 === canonicalIdentitySha256,
+              );
+              if (!original || !physical) throw new Error('Quote group identity unavailable');
+              const { shopId: _shop, version: _version, ...selection } = original;
+              return {
+                productId,
+                canonicalIdentitySha256,
+                selection: { ...selection, variants: physical.variants.map((variant) => ({ ...variant })) },
+                quantity,
+                setupMinor,
+                customizationUnitMinor,
+                baseTotalMinor,
+                totalMinor,
+              };
+            },
+          ),
+          changedGroups,
+        };
+      });
     },
     async accept(scope: BuyerScope, id: string, body: { hash: string; idempotencyKey: string }) {
       const key = `m7:${id}:${body.idempotencyKey}`;

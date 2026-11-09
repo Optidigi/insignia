@@ -34,6 +34,7 @@ import { createArtworkGuestAuthority } from '../artwork/guest.ts';
 import { createFrozenPreviewReader } from '../merchant-preview/read.ts';
 import { createProductionQuoteReadiness } from '../production-readiness.ts';
 import { createQuoteAuthorityPorts } from '../quote-composition.ts';
+import { proposalStage } from './diagnostics.ts';
 import { createLeanPrimaryMarketAdmission, parseEurNetherlandsQualification } from './lean-primary-market.ts';
 import { createBuyerServices } from './service.ts';
 
@@ -210,7 +211,7 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       });
     let composed: QuoteAuthorityPorts | undefined, pending: Promise<QuoteAuthorityPorts> | undefined;
     const compose = () =>
-      (pending ??= (async () => {
+      (pending ??= proposalStage('native-configuration', async () => {
         const { keyScope, selected } = await selection(scope);
         const signer = new InjectedEd25519Signer({
           async getSigningKey(statement) {
@@ -287,10 +288,12 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
           fetchImpl,
         });
         return composed;
-      })());
+      }));
     return {
       clock,
-      leanContext,
+      leanContext: {
+        assertSupported: (target) => proposalStage('primary-context', () => leanContext.assertSupported(target)),
+      },
       ids: {
         quoteId: () => {
           if (!composed) throw new Error('Buyer quote preparation incomplete');
@@ -300,20 +303,31 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       tenant: {
         getActive: async (shopId, generation) => {
           if (shopId !== scope.shopId || generation !== scope.installationGeneration) return null;
-          return (await compose()).tenant.getActive(shopId, generation);
+          return proposalStage('tenant', async () => (await compose()).tenant.getActive(shopId, generation));
         },
       },
-      shop: { getContext: async (tenant) => (await compose()).shop.getContext(tenant) },
-      entitlement: { getFresh: async (tenant) => (await compose()).entitlement.getFresh(tenant) },
-      publication: {
-        getEffective: async (shopId, productId) => (await compose()).publication.getEffective(shopId, productId),
+      shop: {
+        getContext: async (tenant) => proposalStage('shop', async () => (await compose()).shop.getContext(tenant)),
       },
-      artwork,
-      catalog: { resolveVariantContext: async (target) => (await compose()).catalog.resolveVariantContext(target) },
+      entitlement: {
+        getFresh: async (tenant) =>
+          proposalStage('entitlement', async () => (await compose()).entitlement.getFresh(tenant)),
+      },
+      publication: {
+        getEffective: async (shopId, productId) =>
+          proposalStage('revision', async () => (await compose()).publication.getEffective(shopId, productId)),
+      },
+      artwork: { ...artwork, readUsability: (target) => proposalStage('artwork', () => artwork.readUsability(target)) },
+      catalog: {
+        resolveVariantContext: async (target) =>
+          proposalStage('variant', async () => (await compose()).catalog.resolveVariantContext(target)),
+      },
       currency: { exponent: (code) => currencyExponent(code) ?? null },
       readiness: {
-        prepare: async (target) => (await compose()).readiness.prepare?.(target),
-        assertReady: async (target) => (await compose()).readiness.assertReady(target),
+        prepare: async (target) =>
+          proposalStage('release-prepare', async () => (await compose()).readiness.prepare?.(target)),
+        assertReady: async (target) =>
+          proposalStage('current-readiness', async () => (await compose()).readiness.assertReady(target)),
       },
       authorization: {
         admit: (target) => {

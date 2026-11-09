@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { setImmediate } from 'node:timers/promises';
 import type { BuyerDesired } from '@insignia/contracts';
+import type { BuyerFailureDiagnostic } from '@insignia/observability';
 import { fixture } from './support/buyer-fixture.mts';
 
 const database = process.env.DATABASE_URL;
@@ -79,7 +80,9 @@ for (const failing of ['availability', 'preparation'] as const) {
     let settled = false,
       preparationStarted = false,
       readyChecks = 0;
+    const seen: BuyerFailureDiagnostic[] = [];
     const f = await fixture(t, {
+      diagnostic: (value) => seen.push(value),
       readiness: {
         prepare: async () => {
           preparationStarted = true;
@@ -106,7 +109,17 @@ for (const failing of ['availability', 'preparation'] as const) {
       assert.equal(preparationStarted, true);
       assert.equal(settled, false, 'failure cannot retire still-running preparation or stock work');
       held.release();
-      assert.equal((await response).status, 409, 'stock denial retains REVIEW_REQUIRED if preparation also fails');
+      const result = await response;
+      assert.equal(result.status, 409, 'stock denial retains REVIEW_REQUIRED if preparation also fails');
+      const body = await result.json();
+      assert.deepEqual(seen, [
+        {
+          correlationId: body.requestId,
+          buyerStage: 'quote-proposals',
+          errorClass: 'ReviewRequired',
+          proposalStage: 'availability',
+        },
+      ]);
       assert.equal(readyChecks, 0);
       assert.equal(f.signings(), 0);
       assert.equal((await f.pool.query('SELECT 1 FROM accepted_quotes WHERE shop_id=$1', [f.shopId])).rowCount, 0);
@@ -349,3 +362,65 @@ test('readiness without preparation preserves the original serial availability f
     await response;
   }
 });
+
+for (const stage of ['release-prepare', 'current-readiness', 'persistence', 'owned-history'] as const) {
+  test(`proposal ${stage} failure is request-local and preserves proposal facts without issuing acceptance`, {
+    skip: !database,
+    timeout: 15000,
+  }, async (t) => {
+    const seen: BuyerFailureDiagnostic[] = [];
+    const error = Object.assign(new Error('SECRET-provider-body'), { cause: new Error('SECRET-capability') });
+    const f = await fixture(t, {
+      diagnostic: (value) => seen.push(value),
+      readiness: {
+        prepare: async () => {
+          if (stage === 'release-prepare') throw error;
+        },
+        assertReady: async () => {
+          if (stage === 'current-readiness') throw error;
+        },
+      },
+    });
+    if (stage === 'persistence')
+      f.core.buyers.putProposal = async () => {
+        throw error;
+      };
+    if (stage === 'owned-history')
+      f.core.buyers.getLatestOwnedQuote = async () => {
+        throw error;
+      };
+    const result = await f.http('quote-proposals', f.body);
+    const body = await result.json();
+    assert.equal(result.status, 503);
+    assert.equal(body.code, 'UNAVAILABLE');
+    assert.equal(body.acceptanceOutcome, undefined);
+    assert.deepEqual(seen, [
+      {
+        correlationId: body.requestId,
+        buyerStage: 'quote-proposals',
+        errorClass: 'UnexpectedFailure',
+        proposalStage: stage,
+      },
+    ]);
+    assert.doesNotMatch(JSON.stringify({ body, seen }), /SECRET|cause|stack/);
+    assert.equal(f.signings(), 0);
+    assert.equal((await f.pool.query('SELECT 1 FROM accepted_quotes WHERE shop_id=$1', [f.shopId])).rowCount, 0);
+    const proposals = await f.pool.query('SELECT 1 FROM quote_proposals WHERE shop_id=$1', [f.shopId]);
+    assert.equal(proposals.rowCount, stage === 'owned-history' ? 1 : 0);
+    // Reusing the exact provider error in another request must not retain its
+    // previous attribution or correlate it to the previous response.
+    f.core.buyers.admitRequest = async () => {
+      throw error;
+    };
+    const second = await f.http('quote-proposals', f.body);
+    const secondBody = await second.json();
+    assert.equal(second.status, 503);
+    assert.notEqual(secondBody.requestId, body.requestId);
+    assert.deepEqual(seen[1], {
+      correlationId: secondBody.requestId,
+      buyerStage: 'quote-proposals',
+      errorClass: 'UnexpectedFailure',
+      proposalStage: 'request-setup',
+    });
+  });
+}
