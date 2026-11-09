@@ -1,0 +1,56 @@
+{
+  "classification": "DEVELOPMENT_ACTIVATED_QUALIFICATION_INCOMPLETE",
+  "date": "2026-11-09",
+  "merge": "6dba789fee12fc8f91e7a44b1ec435ea7619e575",
+  "tree": "30d725ea51e8e28f76922a5bb2e4e4441ed59404",
+  "bindingHead": "91c3d5675a09dab4cf41c67538d5f6c17341ca4f",
+  "requiredChecks": "ALL_THREE_PASSED",
+  "version": {
+    "id": "1199953805313",
+    "tag": "native-recovery-e2c3dc5",
+    "soleActive": true,
+    "inventory": 26,
+    "neverReleaseInactive": true
+  },
+  "schema": 52,
+  "migrationSha256": "a49df4133fec233a35bdd33576684eda3e6b8fb0be306b6b404582ae44ff1bc1",
+  "writerDrainAcknowledged": true,
+  "checkpoint": {
+    "classification": "PRIVATE_DEVELOPMENT_DB_ONLY_RESTORE_VERIFIED",
+    "expiresAt": "2026-11-09T06:28:29.425720Z",
+    "protectedFactsMatch": true,
+    "disposalScheduled": false,
+    "disposal": "LOCAL_AND_VPS_PAYLOAD_AND_DUPLICATE_CONFIG_COPIES_DISPOSED_2026-11-09T04:38:59Z",
+    "sourceAndOriginalKeyUntouched": true
+  },
+  "scopedGrantReadback": true,
+  "protectedPurchaseFactsUnchanged": true,
+  "pendingApplicationPreserved": true,
+  "runtime": {
+    "web": "sha256:6d50e4a8c3d559e5784ba70f1c0b9554f88f238a9b6d12c3ce000b5f65801050",
+    "worker": "sha256:94c213a43af630717bfe4c03b8724e2605af14ec562ed8fbb8faf11323a6746f",
+    "verifier": "sha256:5cba0edca2248886a3e72549311a1f2ea4b362a13a53b60df5a8b76c352671bf",
+    "webWorkerHealthy": true,
+    "verifierListening": true,
+    "inspectorOriginalPackageRetained": true
+  },
+  "admission": {
+    "webFreshCorrelatedRead": "PASS_HISTORICAL_FINITE_EVIDENCE",
+    "worker": "UNQUALIFIED_PROBE_SQLSTATE_53300_EXISTING_ROLE_LIMIT_4",
+    "limitsChanged": false
+  },
+  "nativeUI": {
+    "preparedCloseFocusSingleFrame": "OBSERVED",
+    "narrowWidth390": "OBSERVED",
+    "preparedReopenTwoRafSampleMs": 33,
+    "merchantEditorAuthenticated": "OBSERVED",
+    "fullQualification": "INCOMPLETE",
+    "themeHoverFocusIdleAnd125msTransition": "OBSERVED_EXISTING_NATIVE_THEME",
+    "pickerRepeatedDismissalAndUnsavedTextRetention": "OBSERVED",
+    "QA009EarlyOpeningAndLeaveResume": "UNQUALIFIED_NO_EVENT_CORRELATION",
+    "coldCancellationLateResult": "UNQUALIFIED",
+    "copySetupCatalog": "OBSERVED_PRODUCTS_COULD_NOT_BE_LOADED_NO_COPY_OR_SAVE"
+  },
+  "productionCutover": false,
+  "ownerAcceptance": false
+}

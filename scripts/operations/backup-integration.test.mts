@@ -1,6 +1,7 @@
 /** Explicit disposable PostgreSQL18 qualification; never consumes ambient DB URLs. */
 import assert from 'node:assert/strict';
 import { type SpawnSyncOptionsWithStringEncoding, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import {
   existsSync,
   mkdirSync,
@@ -130,6 +131,7 @@ test('real populated dump restores atomically with erasure/expiry replay, unchan
       "DO $$ DECLARE f record; BEGIN FOR f IN SELECT oid::regprocedure AS signature FROM pg_proc WHERE pronamespace='public'::regnamespace AND proname LIKE 'm5_v3_%' AND proname<>'m5_v3_hold_before_no_dispatch' LOOP EXECUTE format('ALTER FUNCTION %s RESET search_path',f.signature); END LOOP; END $$",
     );
     nodeFixture('snapshot-read');
+    nodeFixture('seed-objects');
     const exclusions = join(stage, 'exclusions.json'),
       privacy = join(root, 'scripts/privacy/restore-exclusions.mts');
     const exportExclusions = () => {
@@ -186,6 +188,7 @@ test('real populated dump restores atomically with erasure/expiry replay, unchan
     });
     nodeFixture('produce', objects, manifest, window);
     const produced = record(JSON.parse(readFileSync(manifest, 'utf8')));
+    assert.equal(array(produced.objects).length, 2, 'Snapshot captures original and preview bytes');
     assert.equal(timestamp(produced.promisedCleanupAt), timestamp(promised));
     assert(timestamp(produced.absoluteExpiresAt) > now + 7 * 86400000);
     const operator = new URL('./backup.mts', import.meta.url).pathname;
@@ -243,6 +246,20 @@ test('real populated dump restores atomically with erasure/expiry replay, unchan
     assert.equal(restored.readiness, 'HOLD_STORAGE_ERASURE_AND_AUTHORITY_REQUALIFICATION');
     assert.equal(restored.erasureImportCompleted, true);
     assert.equal(restored.databaseExpiryReplayed, true);
+    assert.equal(restored.objectsStagedOnly, true);
+    assert.equal(
+      createHash('sha256')
+        .update(readFileSync(join(stage, 'restored', 'objects', 'objects', 'retained-original.svg')))
+        .digest('hex'),
+      '3a444526ae39603865c10d612532ca39a8fb164106261d518d00f9100a278d26',
+    );
+    assert.equal(
+      createHash('sha256')
+        .update(readFileSync(join(stage, 'restored', 'objects', 'objects', 'retained-preview.png')))
+        .digest('hex'),
+      '1462d280d47ef4f118844c2b008fe432ba22fa8d39a39a1a6efdc3ec5bfaa6a1',
+    );
+
     assert.equal(at(historicalSQL), historical);
     const validation = at(
       "SET search_path=''; SELECT bool_and(public.m5_v3_held(evidence#>'{hold,held}',evidence#>'{hold,before}')) FROM public.m5_activation_evidence WHERE evidence->'hold'<>'null'; SELECT public.m5_v3_held('{}','{}')",
