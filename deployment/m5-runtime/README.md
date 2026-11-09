@@ -4,6 +4,12 @@ This directory retains the actual deployment configuration/data boundary; its `m
 
 Active VPS management custody is `%h/.local/share/insignia/runtime/`. Some live mounts and database Compose configuration still reference the older `insignia-m8-runtime-20261013-pr114` and `insignia-m5-verify-20261012-r2` directories. Their historical names do not make those dependencies disposable. Inspect current mounts/configuration before removing or relocating anything.
 
+## Loading/handoff candidate development transition
+
+`native-loading-defd05b0` binds inactive version1201128341505, the complete29-version inventory and exact14-module baseline in [native-loading-release-binding.json](native-loading-release-binding.json) and [native-loading-module-baseline.json](native-loading-module-baseline.json). All21 theme files, including12 assets, match frozen foundation42684743827/attempt1 and PR274 merged source defd05b0/tree df7b967e. All14 native identities,13 non-theme configurations and original9b941 Function binaries remain unchanged. Prior version1200729554945 remains sole Active; all three NEVER_RELEASE versions remain inactive. This binding alone is not activation, fresh independent admission or native acceptance.
+
+Qualify matching final binding-head immutable web/worker/verifier artifacts before any coordinated transition. Preserve schema52, existing grants, signing key2, protected purchase/financial facts, tenant fences and pending/ambiguous operations. Replace the verifier exclusively with its private custody and actual consumer bindings preserved; use compatible schema52 recovery/fix-forward. Inventory expansion intentionally makes the existing live prior closed profile fail closed. Preserve all historical profiles and exact inventory/freshness/independent admission checks; no runtime-v2 protocol change or Function configuration drift exception is introduced.
+
 ## Review/cart candidate development transition
 
 `native-review-cart-1f4595f` binds inactive version1200729554945, the complete28-version inventory and exact14-module baseline. All21 theme files, including12 assets, match qualified foundation42639352594/attempt1 and PR271 merge1f4595fa/tree148c93f0. The13 non-theme configurations, native module identities and original9b941 Function binaries remain unchanged. Candidate creation is not activation, admission, native UI acceptance or measured latency improvement.
