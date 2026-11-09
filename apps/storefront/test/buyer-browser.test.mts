@@ -1490,8 +1490,10 @@ for (const engine of [chromium, firefox])
             ),
           });
           await ui.getByRole('status').getByText('Uploading artwork…', { exact: true }).waitFor();
-          assert.equal(await ui.getByRole('button', { name: 'browse files', exact: true }).isDisabled(), true);
-          assert.equal(await ui.locator('.upload-zone').getAttribute('aria-busy'), 'true');
+          assert.equal(await ui.getByRole('button', { name: 'browse files', exact: true }).count(), 0);
+          assert.equal(await ui.getByRole('button', { name: 'Cancel upload', exact: true }).isEnabled(), true);
+          assert.equal(await ui.locator('.upload-filename .file-name').getAttribute('title'), 'progress.png');
+          assert.equal(await ui.locator('.upload-zone').getAttribute('aria-busy'), null);
           releaseUpload();
           await ui.getByRole('status').getByText('Checking artwork…', { exact: true }).waitFor();
           inspected = true;
@@ -1504,7 +1506,8 @@ for (const engine of [chromium, firefox])
               .getByText('This image was rejected. Choose a supported static image.', { exact: true })
               .waitFor();
             assert.equal(await ui.getByRole('button', { name: 'progress.png Change', exact: true }).count(), 0);
-            assert.equal(await ui.getByRole('button', { name: 'browse files', exact: true }).isEnabled(), true);
+            assert.equal(await ui.getByRole('button', { name: 'Choose another file', exact: true }).isEnabled(), true);
+            assert.equal(await ui.getByRole('button', { name: 'Try again', exact: true }).count(), 0);
           }
         },
         false,
@@ -1518,6 +1521,11 @@ test('reopening resumes the selected Designer without a developer host page', as
     await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
     await ui.locator('input[type=number]:enabled').first().fill('3');
     await ui.getByRole('button', { name: 'Close customizer', exact: true }).click();
+    await ui.getByRole('heading', { name: 'Close customization?', exact: true }).waitFor();
+    await ui.getByRole('button', { name: 'Keep editing', exact: true }).click();
+    assert.equal(await ui.locator('input[type=number]:enabled').first().inputValue(), '3');
+    await ui.getByRole('button', { name: 'Close customizer', exact: true }).click();
+    await ui.getByRole('button', { name: 'Close customization', exact: true }).click();
     await page.waitForFunction(() => document.querySelector('dialog:modal') === null);
     await trigger.click();
     await ui.locator('.app').waitFor();
@@ -1540,6 +1548,7 @@ test('selected desktop and mobile layouts retain the design and quantities when 
     const quantity = ui.locator('input[type=number]:enabled').first();
     await quantity.fill('3');
     await ui.getByRole('button', { name: 'Close customizer', exact: true }).click();
+    await ui.getByRole('button', { name: 'Close customization', exact: true }).click();
     await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
     assert.equal(
       await trigger.evaluate((element) => {
@@ -1576,6 +1585,8 @@ test('selected desktop and mobile layouts retain the design and quantities when 
     assert.equal(await ui.locator('.app').evaluate((element) => element.scrollWidth <= element.clientWidth), true);
     await ui.locator('.app').click({ position: { x: 2, y: 2 } });
     await page.keyboard.press('Escape');
+    await ui.getByRole('heading', { name: 'Close customization?', exact: true }).waitFor();
+    await ui.getByRole('button', { name: 'Close customization', exact: true }).click();
     await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
     await trigger.click();
     await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();

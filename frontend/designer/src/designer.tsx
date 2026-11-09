@@ -73,6 +73,8 @@ export interface DesignerProps {
   quoteReview?: DesignerQuoteReview;
   onCartCompletion?: (receipt: CartReceipt, automatic: boolean) => void;
   suspended?: boolean;
+  /** Host Escape/close intent. The reducer decides whether to confirm or close. */
+  requestCloseSignal?: number;
   hostErrorSignal?: number;
   cartReviewedSignal?: number;
   requiresCartReview?: boolean;
@@ -139,6 +141,7 @@ function DesignerSession({
   onSelectQuoteGroup,
   onPreviewFailure,
   hostErrorSignal,
+  requestCloseSignal,
   cartReviewedSignal,
   initialPrints = [],
   initialArtworks = [],
@@ -263,7 +266,16 @@ function DesignerSession({
   const placementView = modal.kind === 'positions' ? modal.view : null;
   const colorMode = modal.kind === 'colors' ? modal.mode : 'choose';
   const uploading = workflow.upload.kind === 'reading';
+  const uploadFileName = workflow.upload.kind === 'idle' ? undefined : workflow.upload.fileName;
+  const retryFile = useRef<File | null>(null);
   const error = workflow.upload.kind === 'failed' ? uploadFailureMessage(workflow.upload.reason) : '';
+  useEffect(() => {
+    if (workflow.upload.kind !== 'failed' || modal.kind !== 'artwork') return;
+    const frame = window.requestAnimationFrame(() => {
+      document.querySelector<HTMLButtonElement>('.upload-failure-actions button')?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [workflow.upload.kind, modal.kind]);
   const notice =
     recovery.kind === 'none'
       ? ''
@@ -315,6 +327,9 @@ function DesignerSession({
     const timer = window.setTimeout(() => expirePresentation((n) => n + 1), Math.max(0, Date.parse(quoteReview.expiresAt) - Date.now()));
     return () => clearTimeout(timer);
   }, [quoteReview?.expiresAt, quoteExpired]);
+  useLayoutEffect(() => {
+    if (requestCloseSignal) requestReturnToProduct();
+  }, [requestCloseSignal]);
   const reviewIntent = designerIntentKey(workflow);
   const beforeQuantities = step === 0;
   const eagerReviewStarted = useRef(false);
@@ -630,6 +645,29 @@ function DesignerSession({
     opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     dispatch({ type: 'modal-opened', modal: value });
   }
+  function keepUploading() {
+    dispatch({ type: 'upload-continue-requested' });
+    window.requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('.upload-cancel')?.focus());
+  }
+  function requestCloseModal() {
+    const state = workflowRef.current;
+    if (state.modal.kind === 'confirm-upload-cancel') {
+      keepUploading();
+      return;
+    }
+    if (state.modal.kind === 'artwork' && state.upload.kind === 'reading') {
+      dispatch({ type: 'upload-close-requested' });
+      return;
+    }
+    closeModal();
+  }
+  function confirmUploadCancellation() {
+    const state = workflowRef.current;
+    if (state.modal.kind !== 'confirm-upload-cancel') return;
+    runtime.cancelUpload();
+    if (state.modal.destination === 'customizer') returnToProduct();
+    else closeModal();
+  }
   function closeModal() {
     runtime.cancelUpload();
     dispatch({ type: 'modal-closed' });
@@ -669,10 +707,11 @@ function DesignerSession({
     if (modal.kind === 'closed' || !designerOpen) return;
     const dialog = document.querySelector<HTMLDialogElement>('dialog');
     dialog?.showModal();
+    if (modal.kind === 'confirm-close' || modal.kind === 'confirm-upload-cancel') dialog?.querySelector<HTMLButtonElement>('[data-keep-editing]')?.focus();
     const listener = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
-        closeModal();
+        requestCloseModal();
       }
       if (event.key === 'Tab' && dialog) {
         const targets = [
@@ -702,7 +741,10 @@ function DesignerSession({
   useEffect(() => {
     if (modal.kind !== 'closed' || !designerOpen || artworkOnly) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') returnToProduct();
+      if (event.key === 'Escape' && !event.defaultPrevented && workflowRef.current.open && workflowRef.current.modal.kind === 'closed') {
+        event.preventDefault();
+        requestReturnToProduct();
+      }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
@@ -827,9 +869,14 @@ function DesignerSession({
     dispatch({ type: 'artwork-applied', positionId, artworkId: id });
     closeModal();
   }
+  function cancelArtworkUpload() {
+    runtime.cancelUpload();
+    window.requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('.upload-zone button')?.focus());
+  }
   async function upload(file: File | undefined) {
     if (!file) return;
     const target = modal.kind === 'artwork' ? modal.positionId : active;
+    retryFile.current = file;
     if (fileRef.current) fileRef.current.value = '';
     await runtime.upload(file, target);
     if (workflowRef.current.open && workflowRef.current.modal.kind === 'closed') restoreFocus();
@@ -837,7 +884,7 @@ function DesignerSession({
   function onDrop(event: TargetedDragEvent<HTMLDivElement>) {
     event.preventDefault();
     setDragging(false);
-    void upload(event.dataTransfer?.files[0]);
+    if (!uploading) void upload(event.dataTransfer?.files[0]);
   }
   function changeQuantity(c: ColorId, size: string, value: number) {
     if (!isSizeAvailable(c, size)) return;
@@ -876,6 +923,16 @@ function DesignerSession({
   function newDesign() {
     dispatch({ type: 'new-design-requested' });
     closeModal();
+  }
+  function requestReturnToProduct() {
+    const event: DesignerEvent = { type: 'close-requested' };
+    const next = designerReducer(workflowRef.current, event);
+    opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    dispatch(event);
+    if (!next.open) {
+      runtime.cancel();
+      onOpenChange(false);
+    }
   }
   function returnToProduct() {
     dispatch({ type: 'product-return-requested' });
@@ -916,13 +973,14 @@ function DesignerSession({
   const footerBusy = workflow.commit.kind === 'pending' || (step === 2 && workflow.commit.kind === 'preparing');
   const dirtyDraft = hasDraftChanges(workflow);
   useEffect(() => {
-    if (!dirtyDraft || allowUnload || previewOnly) return;
+    if ((!dirtyDraft && !uploading) || allowUnload || previewOnly) return;
     const handle = (event: BeforeUnloadEvent) => {
       event.preventDefault();
+      event.returnValue = '';
     };
     window.addEventListener('beforeunload', handle);
     return () => window.removeEventListener('beforeunload', handle);
-  }, [dirtyDraft, allowUnload, previewOnly]);
+  }, [dirtyDraft, uploading, allowUnload, previewOnly]);
   const focused =
     step === 0 && expanded
       ? prints.find(
@@ -948,6 +1006,7 @@ function DesignerSession({
     'dialog',
     modalKind === 'positions' && 'position-dialog',
     modalKind === 'artwork' && 'artwork-dialog',
+    (modalKind === 'confirm-close' || modalKind === 'confirm-upload-cancel') && 'close-dialog',
     modalKind === 'colors' && 'color-dialog',
     modalKind === 'colors' && pickerColors.length > 12 && 'many-colors',
   ]
@@ -1041,7 +1100,7 @@ function DesignerSession({
           <button
             className="icon-button"
             aria-label={previewOnly ? t('customer:chrome.closeArtworkPreview') : t('customer:chrome.closeCustomizer')}
-            onClick={previewOnly ? () => window.close() : returnToProduct}
+            onClick={previewOnly ? () => window.close() : requestReturnToProduct}
           >
             <IconX size={22} />
           </button>
@@ -1866,7 +1925,7 @@ function DesignerSession({
           className={dialogClassName}
           onCancel={(e) => {
             e.preventDefault();
-            closeModal();
+            requestCloseModal();
           }}
           onClick={(e) => {
             const bounds = e.currentTarget.getBoundingClientRect();
@@ -1877,14 +1936,19 @@ function DesignerSession({
                 e.clientY < bounds.top ||
                 e.clientY > bounds.bottom)
             )
-              closeModal();
+              requestCloseModal();
           }}
           aria-labelledby="dialog-title"
+          aria-describedby={modalKind === 'confirm-close' || modalKind === 'confirm-upload-cancel' ? 'close-dialog-help' : undefined}
         >
           <div className="dialog-header">
             <div>
               <h2 id="dialog-title">
-                {modalKind === 'artwork'
+                {modalKind === 'confirm-upload-cancel'
+                  ? t('customer:artwork.cancelTitle')
+                  : modalKind === 'confirm-close'
+                  ? t('customer:close.title')
+                  : modalKind === 'artwork'
                   ? t('customer:artwork.dialogArtworkTitle', {
                       positionName: positionFor(artworkTarget).name,
                     })
@@ -1900,36 +1964,62 @@ function DesignerSession({
                 )}
               </h2>
             </div>
-            <button className="icon-button" aria-label={t('customer:artwork.closeDialog')} onClick={closeModal}>
+            <button className="icon-button" aria-label={t('customer:artwork.closeDialog')} onClick={requestCloseModal}>
               <IconX size={22} />
             </button>
           </div>
+          {modalKind === 'confirm-close' && (
+            <>
+              <p id="close-dialog-help" className="close-dialog-help">{t('customer:close.help')}</p>
+              <div className="close-dialog-actions">
+                <button className="secondary-button" onClick={returnToProduct}>{t('customer:close.leave')}</button>
+                <button className="primary-button" data-keep-editing onClick={closeModal}>{t('customer:close.keepEditing')}</button>
+              </div>
+            </>
+          )}
+          {modalKind === 'confirm-upload-cancel' && (
+            <>
+              {uploadFileName && <div className="upload-filename"><FileName name={uploadFileName} /></div>}
+              <p id="close-dialog-help" className="close-dialog-help">{t('customer:artwork.cancelHelp')}</p>
+              <div className="close-dialog-actions">
+                <button className="secondary-button" onClick={confirmUploadCancellation}>{t('customer:artwork.cancelUpload')}</button>
+                <button className="primary-button" data-keep-editing onClick={keepUploading}>{t('customer:artwork.keepUploading')}</button>
+              </div>
+            </>
+          )}
           {modalKind === 'artwork' && (
             <div className="artwork-dialog-body">
               <div
-                className={`upload-zone ${dragging ? 'dragging' : ''}`}
-                aria-busy={uploading}
+                className={`upload-zone ${uploading ? 'is-uploading' : ''} ${error ? 'has-error' : ''} ${dragging ? 'dragging' : ''}`}
                 onDragOver={(e) => {
                   e.preventDefault();
-                  setDragging(true);
+                  if (!uploading) setDragging(true);
                 }}
                 onDragLeave={() => setDragging(false)}
                 onDrop={onDrop}
               >
-                <IconCloudUpload size={32} />
-                <strong role={uploading ? 'status' : undefined} aria-live="polite">{uploading ? workflow.upload.kind === 'reading' && workflow.upload.phase === 'processing' ? t('customer:artwork.processingFile') : workflow.upload.kind === 'reading' && workflow.upload.phase === 'uploading' ? t('customer:artwork.uploadingFile') : t('customer:artwork.openingFile') : t('customer:artwork.dropFile')}</strong>
-                <span>
-                  {t('customer:artwork.or')}{' '}
-                  <button onClick={() => fileRef.current?.click()} disabled={uploading}>
-                    {t('customer:artwork.browseFiles')}
-                  </button>
-                </span>
-                <small>{t('customer:artwork.fileRequirements', { maxSizeMb: 5 })}</small>
-                {error && (
-                  <p className="upload-error" id="artwork-upload-error" role="alert">
-                    {error}
-                  </p>
+                {uploading ? <span className="upload-spinner" aria-hidden="true" /> : error ? <IconAlertTriangle size={28} /> : <IconCloudUpload size={32} />}
+                <strong role={uploading ? 'status' : undefined} aria-live="polite">{error ? t('customer:artwork.uploadErrorTitle') : uploading ? workflow.upload.kind === 'reading' && workflow.upload.phase === 'processing' ? t('customer:artwork.processingFile') : workflow.upload.kind === 'reading' && workflow.upload.phase === 'uploading' ? t('customer:artwork.uploadingFile') : t('customer:artwork.openingFile') : t('customer:artwork.dropFile')}</strong>
+                {uploadFileName && <div className="upload-filename"><FileName name={uploadFileName} /></div>}
+                {error ? (
+                  <>
+                    <p className="upload-error" id="artwork-upload-error" role="alert">{error}</p>
+                    <div className="upload-failure-actions">
+                      {workflow.upload.kind === 'failed' && ['upload-failed', 'processing-failed'].includes(workflow.upload.reason) && retryFile.current?.name === uploadFileName && (
+                        <button className="primary-button" onClick={() => void upload(retryFile.current ?? undefined)}>{t('customer:artwork.retryUpload')}</button>
+                      )}
+                      <button className="secondary-button" onClick={() => fileRef.current?.click()}>{t('customer:artwork.chooseAnotherFile')}</button>
+                    </div>
+                  </>
+                ) : uploading ? (
+                  <button className="upload-cancel" onClick={cancelArtworkUpload}>{t('customer:artwork.cancelUpload')}</button>
+                ) : (
+                  <span>
+                    {t('customer:artwork.or')}{' '}
+                    <button onClick={() => fileRef.current?.click()}>{t('customer:artwork.browseFiles')}</button>
+                  </span>
                 )}
+                <small>{t('customer:artwork.fileRequirements', { maxSizeMb: 5 })}</small>
                 <input
                   ref={fileRef}
                   type="file"

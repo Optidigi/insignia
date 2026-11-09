@@ -2641,8 +2641,12 @@ export interface CustomerMessageTable {
   'customer:artwork.artworkNeeded': object;
   'customer:artwork.artworkToFollow': object;
   'customer:artwork.browseFiles': object;
+  'customer:artwork.cancelHelp': object;
+  'customer:artwork.cancelTitle': object;
+  'customer:artwork.cancelUpload': object;
   'customer:artwork.change': object;
   'customer:artwork.choose': object;
+  'customer:artwork.chooseAnotherFile': object;
   'customer:artwork.chooseArtwork': object;
   'customer:artwork.chooseArtworkForPosition': { positionName: string };
   'customer:artwork.chooseOption': object;
@@ -2659,6 +2663,7 @@ export interface CustomerMessageTable {
   'customer:artwork.fileRequirements': { maxSizeMb: number };
   'customer:artwork.files': object;
   'customer:artwork.inspectionRejected': object;
+  'customer:artwork.keepUploading': object;
   'customer:artwork.loadingPreviews': object;
   'customer:artwork.method': object;
   'customer:artwork.openingFile': object;
@@ -2668,10 +2673,12 @@ export interface CustomerMessageTable {
   'customer:artwork.processingFile': object;
   'customer:artwork.provideArtworkLater': object;
   'customer:artwork.removeArtwork': object;
+  'customer:artwork.retryUpload': object;
   'customer:artwork.samples': object;
   'customer:artwork.selectedPreviewFailed': object;
   'customer:artwork.unavailable': object;
   'customer:artwork.uploadArtworkFile': object;
+  'customer:artwork.uploadErrorTitle': object;
   'customer:artwork.uploadFailed': object;
   'customer:artwork.uploadingFile': object;
   'customer:artwork.uploadReadFailed': object;
@@ -2702,6 +2709,10 @@ export interface CustomerMessageTable {
   'customer:chrome.skipToDesignControls': object;
   'customer:chrome.unavailable': object;
   'customer:chrome.viewCart': object;
+  'customer:close.help': object;
+  'customer:close.keepEditing': object;
+  'customer:close.leave': object;
+  'customer:close.title': object;
   'customer:files.fullFilename': object;
   'customer:host.cancel': object;
   'customer:host.discardEdit': object;

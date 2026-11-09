@@ -89,7 +89,7 @@ for (const engine of [chromium, firefox]) {
  import {createDesignerFrame} from '/host.js';
  const config=${JSON.stringify(config)};
  window.preparations=[];window.writes=[];window.releaseQuote=null;window.designerClosed=0;window.appliedCloses=0;
- const frame=createDesignerFrame({config,locale:'en',initialPrints:[{id:'chest',method:'print',size:0,artworkId:'asset'}],initialArtworks:[{id:'asset',name:'Logo.png',url:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="navy"/%3E%3C/svg%3E',width:100,height:100}],ports:{artwork:{upload:async()=>{throw Error('unused')}},review:{prepare:async(request)=>{window.preparations.push({key:request.idempotencyKey,requestId:request.requestId,design:request.design});frame.review({currency:'USD',exponent:2,customizedQuantity:2,groups:[]},request);await new Promise((resolve,reject)=>window.releaseQuote=(fail)=>fail?reject(Error("quote unavailable")):resolve());frame.review({currency:'USD',exponent:2,totalMinor:'3500',customizedQuantity:request.design.variants[0].quantity,groups:[{id:'other',label:'Reviewed customized cart',quantity:request.design.variants[0].quantity,totalMinor:'3500'}]},request);}},cart:{commit:async(request)=>{window.writes.push({key:request.idempotencyKey,requestId:request.requestId,operation:request.operation,design:request.design});if(window.writes.length===1)throw Error('lost response');return{kind:'applied',requestId:request.requestId,designId:request.design.id,operation:request.operation,authority:'shopify'};}}},onClose(){window.designerClosed++},onAppliedClose(){window.appliedCloses++}});
+ const frame=createDesignerFrame({config,locale:'en',initialPrints:[{id:'chest',method:'print',size:0,artworkId:'asset'}],initialArtworks:[{id:'asset',name:'Logo.png',url:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="navy"/%3E%3C/svg%3E',width:100,height:100}],ports:{artwork:{upload:async(file,request)=>{request.onProgress?.('uploading');window.uploadSignal=request.signal;return new Promise((resolve,reject)=>{window.failUpload=()=>reject(new Error('temporary failure'));window.completeUpload=()=>resolve({id:'replacement',name:file.name,url:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"/%3E',width:100,height:100});request.signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true});})}},review:{prepare:async(request)=>{window.preparations.push({key:request.idempotencyKey,requestId:request.requestId,design:request.design});frame.review({currency:'USD',exponent:2,customizedQuantity:2,groups:[]},request);await new Promise((resolve,reject)=>window.releaseQuote=(fail)=>fail?reject(Error("quote unavailable")):resolve());frame.review({currency:'USD',exponent:2,totalMinor:'3500',customizedQuantity:request.design.variants[0].quantity,groups:[{id:'other',label:'Reviewed customized cart',quantity:request.design.variants[0].quantity,totalMinor:'3500'}]},request);}},cart:{commit:async(request)=>{window.writes.push({key:request.idempotencyKey,requestId:request.requestId,operation:request.operation,design:request.design});if(window.writes.length===1)throw Error('lost response');return{kind:'applied',requestId:request.requestId,designId:request.design.id,operation:request.operation,authority:'shopify'};}}},onClose(){window.designerClosed++},onAppliedClose(){window.appliedCloses++}});
  window.liveFrame=frame;
  </script></body></html>`;
     const server = createServer((request, response) => {
@@ -150,6 +150,68 @@ for (const engine of [chromium, firefox]) {
       await page.locator('#outside').evaluate((element) => getComputedStyle(element).color),
       'rgb(200, 0, 0)',
     );
+    // Real srcdoc host Escape uses the same reducer decision as the visible X.
+    await frame.getByRole('button', { name: 'Close customizer', exact: true }).click();
+    await frame.getByRole('heading', { name: 'Close customization?', exact: true }).waitFor();
+    await frame.getByRole('button', { name: 'Keep editing', exact: true }).click();
+    await frame.locator('#artwork-chest').click();
+    await frame
+      .locator('input[type=file]')
+      .setInputFiles({ name: 'replacement.png', mimeType: 'image/png', buffer: Buffer.from('fixture') });
+    await frame.getByText('Uploading artwork…', { exact: true }).waitFor();
+    // The outer modal cancel event used to bypass the selected workflow.
+    await page.locator('dialog').dispatchEvent('cancel');
+    await frame.getByRole('heading', { name: 'Cancel this upload?', exact: true }).waitFor();
+    assert.equal(await page.evaluate(() => Reflect.get(window, 'uploadSignal')?.aborted), false);
+    await frame.getByRole('button', { name: 'Keep uploading', exact: true }).click();
+    await frame.getByText('Uploading artwork…', { exact: true }).waitFor();
+    await frame.getByRole('button', { name: 'Close dialog', exact: true }).click();
+    await frame.getByRole('heading', { name: 'Cancel this upload?', exact: true }).waitFor();
+    await frame.getByRole('button', { name: 'Cancel upload', exact: true }).click();
+    await frame.locator('#artwork-chest').waitFor();
+    await page.waitForFunction(() => Reflect.get(window, 'uploadSignal')?.aborted === true);
+    assert.match(await frame.locator('.app').innerText(), /Logo.png/);
+    await page.locator('dialog').dispatchEvent('cancel');
+    await frame.getByRole('heading', { name: 'Close customization?', exact: true }).waitFor();
+    await frame.getByRole('button', { name: 'Close customization', exact: true }).click();
+    await page.waitForFunction(() => Reflect.get(window, 'designerClosed') === 1);
+    await page.evaluate(() => {
+      Reflect.set(window, 'designerClosed', 0);
+      Reflect.get(window, 'liveFrame').open();
+    });
+    await frame.locator('#artwork-chest').click();
+    await frame
+      .locator('input[type=file]')
+      .setInputFiles({ name: 'cancel-on-close.png', mimeType: 'image/png', buffer: Buffer.from('fixture') });
+    await frame.getByText('Uploading artwork…', { exact: true }).waitFor();
+    await page.locator('dialog').dispatchEvent('cancel');
+    await frame.getByRole('heading', { name: 'Cancel this upload?', exact: true }).waitFor();
+    await frame.getByRole('button', { name: 'Cancel upload', exact: true }).click();
+    await page.waitForFunction(() => Reflect.get(window, 'designerClosed') === 1);
+    await page.waitForFunction(() => Reflect.get(window, 'uploadSignal')?.aborted === true);
+    await page.evaluate(() => {
+      Reflect.set(window, 'designerClosed', 0);
+      Reflect.get(window, 'liveFrame').open();
+    });
+    await frame.locator('#artwork-chest').click();
+    await frame
+      .locator('input[type=file]')
+      .setInputFiles({ name: 'retry.png', mimeType: 'image/png', buffer: Buffer.from('fixture') });
+    await frame.getByText('Uploading artwork…', { exact: true }).waitFor();
+    await page.evaluate(() => Reflect.get(window, 'failUpload')());
+    await frame.getByRole('button', { name: 'Try again', exact: true }).waitFor();
+    await frame.getByRole('button', { name: 'Try again', exact: true }).click();
+    await frame.getByText('Uploading artwork…', { exact: true }).waitFor();
+    await page.evaluate(() => Reflect.get(window, 'completeUpload')());
+    await frame.locator('#artwork-chest').waitFor();
+    await page.waitForFunction(() =>
+      document
+        .querySelector('iframe')
+        ?.contentDocument?.querySelector('#artwork-chest')
+        ?.textContent?.includes('retry.png'),
+    );
+    assert.match(await frame.locator('#artwork-chest').innerText(), /retry.png/);
+
     await frame.getByRole('button', { name: 'Choose quantities', exact: true }).click();
     assert.equal(await frame.getByLabel('Packaging', { exact: true }).inputValue(), 'plain');
     await frame.getByLabel('Packaging', { exact: true }).selectOption('gift');
@@ -212,6 +274,7 @@ for (const engine of [chromium, firefox]) {
     assert.equal(await quantity.inputValue(), '2');
     await frame.getByRole('button', { name: 'Review', exact: true }).last().click();
     await frame.getByRole('button', { name: 'Close customizer', exact: true }).click();
+    await frame.getByRole('button', { name: 'Close customization', exact: true }).click();
     await page.waitForFunction(() => document.querySelector('iframe')?.hidden === true);
     await page.evaluate(() => Reflect.get(window, 'liveFrame').open());
     await page.waitForFunction(() => Reflect.get(window, 'preparations').length === 3);

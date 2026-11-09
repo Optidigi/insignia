@@ -80,10 +80,17 @@
     "provideArtworkLater": "Fournir le visuel ultérieurement",
     "uploadingFile": "Envoi du fichier…",
     "processingFile": "Vérification du fichier…",
-    "uploadFailed": "Échec de l’envoi. Sélectionnez à nouveau le fichier.",
+    "uploadFailed": "L’importation a échoué. Réessayez ou choisissez un autre fichier.",
     "processingFailed": "Le fichier n’a pas pu être vérifié. Réessayez.",
     "inspectionRejected": "Cette image a été refusée. Choisissez une image statique prise en charge.",
-    "artworkExpired": "Ce fichier a expiré. Envoyez-le à nouveau."
+    "artworkExpired": "Ce fichier a expiré. Envoyez-le à nouveau.",
+    "cancelUpload": "Annuler l’importation",
+    "retryUpload": "Réessayer",
+    "uploadErrorTitle": "Visuel non importé",
+    "chooseAnotherFile": "Choisir un autre fichier",
+    "cancelTitle": "Annuler cette importation ?",
+    "cancelHelp": "Ce fichier n’est pas encore prêt. L’annulation interrompt cette importation sans modifier vos choix précédents.",
+    "keepUploading": "Continuer l’importation"
   },
   "quantities": {
     "heading": "Quantités",
@@ -253,5 +260,11 @@
     "savedDesigns": "Créations enregistrées",
     "openSaved": "Ouvrir la création enregistrée",
     "startNew": "Commencer une nouvelle création"
+  },
+  "close": {
+    "title": "Fermer la personnalisation ?",
+    "help": "Votre création reste disponible tant que cette page est ouverte. Fermer la personnalisation ne l’ajoute pas au panier.",
+    "keepEditing": "Continuer à modifier",
+    "leave": "Fermer la personnalisation"
   }
 }

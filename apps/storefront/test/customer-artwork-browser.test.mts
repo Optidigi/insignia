@@ -209,7 +209,7 @@ test('post-order selected Designer scrubs capability, verifies upload and fills 
       '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100"/></svg>',
     ),
   });
-  await page.waitForFunction(() => document.body.innerText.includes('logo.svg'));
+  await page.getByRole('button', { name: 'logo.svg Change', exact: true }).waitFor();
   assert.equal(attached, true);
   assert.equal(attachCount, 1);
   assert(actions.includes('complete'));

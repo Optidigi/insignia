@@ -21,18 +21,21 @@ export type DesignerModal =
   | { kind: 'artwork'; positionId: PositionId }
   | { kind: 'positions'; view: View | null }
   | { kind: 'colors'; mode: 'choose' | 'add' }
+  | { kind: 'confirm-close' }
+  | { kind: 'confirm-upload-cancel'; positionId: PositionId; destination: 'artwork' | 'customizer' }
   | { kind: 'switch-design'; design: Design };
 
 export type UploadFailureReason = 'file-too-large' | 'unsupported-file-type' | 'read-failed' | 'upload-failed' | 'processing-failed' | 'inspection-rejected' | 'artwork-expired';
 
 export type UploadState =
   | { kind: 'idle' }
-  | { kind: 'reading'; token: number; target: PositionId; phase?: 'uploading' | 'processing' }
+  | { kind: 'reading'; token: number; target: PositionId; phase?: 'uploading' | 'processing'; fileName?: string }
   | {
       kind: 'failed';
       token: number;
       target: PositionId;
       reason: UploadFailureReason;
+      fileName?: string;
     };
 
 export type RecoveryState =
@@ -161,6 +164,9 @@ export type DesignerEvent =
   | { type: 'product-design-switch-confirmed' }
   | { type: 'new-design-requested' }
   | { type: 'product-return-requested' }
+  | { type: 'close-requested' }
+  | { type: 'upload-close-requested' }
+  | { type: 'upload-continue-requested' }
   | { type: 'designer-reopened' }
   | { type: 'location-observed'; designerOpen: boolean }
   | { type: 'modal-opened'; modal: Exclude<DesignerModal, { kind: 'closed' }> }
@@ -170,9 +176,10 @@ export type DesignerEvent =
       token: number;
       target: PositionId;
       reason: UploadFailureReason;
+      fileName?: string;
     }
   | { type: 'upload-progress'; token: number; target: PositionId; phase: 'uploading' | 'processing' }
-  | { type: 'upload-started'; token: number; target: PositionId }
+  | { type: 'upload-started'; token: number; target: PositionId; fileName?: string }
   | { type: 'upload-canceled' }
   | {
       type: 'upload-succeeded';
@@ -235,6 +242,7 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
       'cart-commit-failed',
       'cart-commit-canceled',
       'product-return-requested',
+      'close-requested',
       'location-observed',
       'artwork-preview-expired',
       'artwork-preview-refreshed',
@@ -242,7 +250,7 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
     ].includes(event.type)
   )
     return state;
-  if (state.completion?.authority === 'shopify' && !['product-return-requested', 'designer-reopened', 'location-observed', 'artwork-preview-expired', 'artwork-preview-refreshed', 'artwork-unavailable'].includes(event.type)) return state;
+  if (state.completion?.authority === 'shopify' && !['product-return-requested', 'close-requested', 'designer-reopened', 'location-observed', 'artwork-preview-expired', 'artwork-preview-refreshed', 'artwork-unavailable'].includes(event.type)) return state;
   switch (event.type) {
     case 'artwork-preview-expired':
     case 'artwork-preview-refreshed':
@@ -407,6 +415,26 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
       return confirmProductDesignSwitch(state);
     case 'new-design-requested':
       return startNewDesign(state);
+    case 'close-requested':
+      if (!state.open) return state;
+      // Keep pending-cart cancellation and verified completion closure immediate;
+      // another decision would be blocked by their write/edit guards.
+      if (state.commit.kind === 'pending' || state.completion)
+        return designerReducer(state, { type: 'product-return-requested' });
+      if (state.upload.kind === 'reading')
+        return { ...state, modal: { kind: 'confirm-upload-cancel', positionId: state.upload.target, destination: 'customizer' } };
+      if (hasDraftChanges(state))
+        return { ...state, modal: { kind: 'confirm-close' } };
+      // An untouched design can return straight to its Shopify host.
+      return designerReducer(state, { type: 'product-return-requested' });
+    case 'upload-close-requested':
+      return state.modal.kind === 'artwork' && state.upload.kind === 'reading'
+        ? { ...state, modal: { kind: 'confirm-upload-cancel', positionId: state.modal.positionId, destination: 'artwork' } }
+        : state;
+    case 'upload-continue-requested':
+      return state.modal.kind === 'confirm-upload-cancel'
+        ? { ...state, modal: { kind: 'artwork', positionId: state.modal.positionId } }
+        : state;
     case 'product-return-requested':
       return {
         ...state,
@@ -433,9 +461,13 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
     case 'modal-closed':
       return { ...state, modal: closedModal, upload: noUpload };
     case 'upload-rejected':
-      return beginUploadFailure(state, event.token, event.target, event.reason);
+      return beginUploadFailure(state, event.token, event.target, event.reason, event.fileName);
     case 'upload-canceled':
-      return state.upload.kind === 'idle' ? state : { ...state, upload: noUpload };
+      return state.upload.kind === 'idle' ? state : {
+        ...state,
+        upload: noUpload,
+        modal: state.modal.kind === 'confirm-upload-cancel' ? { kind: 'artwork', positionId: state.modal.positionId } : state.modal,
+      };
     case 'upload-progress':
       if (state.upload.kind !== 'reading' || state.upload.token !== event.token || state.upload.target !== event.target || state.upload.phase === event.phase) return state;
       return { ...state, upload: { ...state.upload, phase: event.phase } };
@@ -445,7 +477,7 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
       return {
         ...state,
         uploadVersion: event.token,
-        upload: { kind: 'reading', token: event.token, target: event.target },
+        upload: { kind: 'reading', token: event.token, target: event.target, ...(event.fileName ? { fileName: event.fileName } : {}) },
       };
     case 'upload-succeeded': {
       if (
@@ -484,7 +516,9 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
           token: event.token,
           target: event.target,
           reason: event.reason,
+          ...(state.upload.fileName ? { fileName: state.upload.fileName } : {}),
         },
+        modal: state.modal.kind === 'confirm-upload-cancel' ? { kind: 'artwork', positionId: state.modal.positionId } : state.modal,
       };
     case 'recovery-undone':
       return undoRecovery(state);
@@ -835,17 +869,18 @@ function beginUploadFailure(
   token: number,
   target: PositionId,
   reason: UploadFailureReason,
+  fileName?: string,
 ): DesignerState {
   if (!isOpenUploadTarget(state, target) || token <= state.uploadVersion) return state;
   return {
     ...state,
     uploadVersion: token,
-    upload: { kind: 'failed', token, target, reason },
+    upload: { kind: 'failed', token, target, reason, ...(fileName ? { fileName } : {}) },
   };
 }
 
 function isOpenUploadTarget(state: DesignerState, target: PositionId): boolean {
-  return state.modal.kind === 'artwork' && state.modal.positionId === target;
+  return (state.modal.kind === 'artwork' || state.modal.kind === 'confirm-upload-cancel') && state.modal.positionId === target;
 }
 
 function setRecoveryMessage(state: DesignerState, reason: 'artwork-restored' | 'items-restored'): DesignerState {
