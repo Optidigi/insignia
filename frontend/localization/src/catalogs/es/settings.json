@@ -305,7 +305,10 @@
       "theme": "Apariencia",
       "recovery": "Mensajes de recuperación",
       "common": "Texto compartido",
-      "postOrder": "Diseños tras el pedido"
+      "postOrder": "Diseños tras el pedido",
+      "host": "Cambios del diseño",
+      "language": "Selector de idioma",
+      "startup": "Carga y conexión"
     },
     "fields": {
       "customer_artwork_cancelUpload": "Botón para cancelar la carga",

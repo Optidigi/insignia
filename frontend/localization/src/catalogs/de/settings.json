@@ -303,7 +303,10 @@
       "theme": "Darstellung",
       "recovery": "Wiederherstellungsmeldungen",
       "common": "Gemeinsame Texte",
-      "postOrder": "Druckdateien nach Bestellung"
+      "postOrder": "Druckdateien nach Bestellung",
+      "host": "Designänderungen",
+      "language": "Sprachauswahl",
+      "startup": "Laden und Verbindung"
     },
     "fields": {
       "customer_artwork_cancelUpload": "Schaltfläche Upload abbrechen",

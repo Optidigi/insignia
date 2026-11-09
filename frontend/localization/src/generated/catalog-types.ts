@@ -2544,6 +2544,8 @@ export interface AdminMessageTable {
   'settings:translations.groups.close': object;
   'settings:translations.groups.common': object;
   'settings:translations.groups.files': object;
+  'settings:translations.groups.host': object;
+  'settings:translations.groups.language': object;
   'settings:translations.groups.options': object;
   'settings:translations.groups.placements': object;
   'settings:translations.groups.positioning': object;
@@ -2551,6 +2553,7 @@ export interface AdminMessageTable {
   'settings:translations.groups.quantities': object;
   'settings:translations.groups.recovery': object;
   'settings:translations.groups.review': object;
+  'settings:translations.groups.startup': object;
   'settings:translations.groups.steps': object;
   'settings:translations.groups.theme': object;
   'settings:translations.groups.validation': object;
