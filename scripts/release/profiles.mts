@@ -18,6 +18,12 @@ import performanceCandidate from '../../deployment/m5-runtime/native-performance
 };
 import recoveryModules from '../../deployment/m5-runtime/native-recovery-module-baseline.json' with { type: 'json' };
 import recoveryCandidate from '../../deployment/m5-runtime/native-recovery-release-binding.json' with { type: 'json' };
+import reviewCartModules from '../../deployment/m5-runtime/native-review-cart-module-baseline.json' with {
+  type: 'json',
+};
+import reviewCartCandidate from '../../deployment/m5-runtime/native-review-cart-release-binding.json' with {
+  type: 'json',
+};
 import selectedOnlyModules from '../../deployment/m5-runtime/native-selected-fixed-module-baseline.json' with {
   type: 'json',
 };
@@ -72,6 +78,14 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  'native-review-cart-1f4595f': {
+    versionId: reviewCartCandidate.versionId,
+    versionTag: reviewCartCandidate.versionTag,
+    versionIds: reviewCartCandidate.versionIds,
+    moduleHash: reviewCartCandidate.moduleHash,
+    modules: reviewCartModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+  },
   'native-startup-771bb8f': {
     versionId: startupCandidate.versionId,
     versionTag: startupCandidate.versionTag,

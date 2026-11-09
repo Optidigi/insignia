@@ -4,6 +4,12 @@ This directory retains the actual deployment configuration/data boundary; its `m
 
 Active VPS management custody is `%h/.local/share/insignia/runtime/`. Some live mounts and database Compose configuration still reference the older `insignia-m8-runtime-20261013-pr114` and `insignia-m5-verify-20261012-r2` directories. Their historical names do not make those dependencies disposable. Inspect current mounts/configuration before removing or relocating anything.
 
+## Review/cart candidate development transition
+
+`native-review-cart-1f4595f` binds inactive version1200729554945, the complete28-version inventory and exact14-module baseline. All21 theme files, including12 assets, match qualified foundation42639352594/attempt1 and PR271 merge1f4595fa/tree148c93f0. The13 non-theme configurations, native module identities and original9b941 Function binaries remain unchanged. Candidate creation is not activation, admission, native UI acceptance or measured latency improvement.
+
+Use matching final binding-head web/worker/verifier artifacts, preserve schema52/grants, signing key2 and compatible recovery custody, and replace the verifier exclusively. Reconcile the single development release before obtaining fresh independent admission. Expanded inventory intentionally invalidates the prior closed profile; do not weaken inventory or freshness checks. Keep all NEVER_RELEASE versions inactive and owner signing mounts absent. Measure Review, acceptance and Ajax cart stages after deployment; no checkout/order/payment, consumed sender drill, VAT retry or production cutover is authorized by this transition.
+
 ## Startup candidate development transition
 
 `native-startup-771bb8f` binds inactive version1200333160449, the complete27-version inventory and exact14-module baseline. Its21 theme files (12 CI assets) are frozen from foundation42595259659/attempt1 and PR264 mergea58d8025/tree198bd77c. All13 non-theme configurations, original native registration identities and9b941 Function binaries remain unchanged. This is candidate custody, not activation, independent admission, signing completion or native acceptance.
