@@ -299,3 +299,57 @@ test('proposal failure stage is finite, optional, and never serializes secret-be
     /Invalid buyer proposal failure stage/,
   );
 });
+
+test('buyer timing summaries whitelist every nested span and reject unbounded payloads', () => {
+  let output = '';
+  const { logger } = createObservability({
+    stream: new Writable({
+      write(chunk, _encoding, callback) {
+        output += chunk;
+        callback();
+      },
+    }),
+  });
+  const timing = {
+    correlationId: '01234567-89ab-4cde-8123-456789abcdef',
+    operation: 'proposal' as const,
+    outcome: 'success' as const,
+    totalMs: 20,
+    truncated: false,
+    spans: [
+      {
+        id: 1,
+        parentId: null,
+        stage: 'prepare' as const,
+        offsetMs: 0,
+        durationMs: 20,
+        outcome: 'success' as const,
+        secret: 'SECRET',
+      },
+    ],
+    secret: 'SECRET',
+  };
+  logger.info('buyer_request_timing', { timing });
+  assert.equal(parseRecord(output.trim()).totalMs, 20);
+  assert.doesNotMatch(output, /SECRET|secret/);
+  assert.throws(
+    () => logger.info('buyer_request_timing', { timing: { ...timing, spans: Array(65).fill(timing.spans[0]) } }),
+    /timing/,
+  );
+  assert.throws(() => logger.info('buyer_request_timing', { timing: { ...timing, totalMs: Infinity } }), /timing/);
+  const first = timing.spans[0];
+  assert.ok(first);
+  output = '';
+  logger.info('buyer_request_timing', {
+    timing: { ...timing, outcome: 'failure', spans: [{ ...first, outcome: 'unfinished' }] },
+  });
+  assert.match(output, /"outcome":"unfinished"/);
+  assert.doesNotMatch(output, /SECRET|secret/);
+  assert.throws(
+    () =>
+      logger.info('buyer_request_timing', {
+        timing: { ...timing, spans: [{ ...first, stage: 'SECRET' as never }] },
+      }),
+    /timing/,
+  );
+});
