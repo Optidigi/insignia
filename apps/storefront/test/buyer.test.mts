@@ -253,3 +253,23 @@ test('numeric buyer variants select existing GID-specific preview images and geo
     'gid://shopify/ProductVariant/123',
   );
 });
+
+for (const [status, code, outcome, expected] of [
+  [409, 'REVIEW_REQUIRED', 'declined', 'declined'],
+  [409, 'REVIEW_REQUIRED', undefined, undefined],
+  [500, 'REVIEW_REQUIRED', 'declined', undefined],
+  [409, 'OTHER', 'declined', undefined],
+  [409, 'REVIEW_REQUIRED', 'unknown', undefined],
+] as const) {
+  test(`terminal acceptance proof is bounded: ${status}/${code}/${outcome}`, async () => {
+    const api = createBuyerApi({
+      proxyBase: '/apps/insignia',
+      productId: '12',
+      fetchImpl: async () => Response.json({ code, acceptanceOutcome: outcome }, { status }),
+    });
+    await assert.rejects(api.config(), (error) => {
+      assert.equal(Reflect.get(error as object, 'acceptanceOutcome'), expected);
+      return true;
+    });
+  });
+}

@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { BuyerAcceptanceDeclinedError } from '@insignia/application';
 import type { BuyerFailureDiagnostic } from '@insignia/observability';
 import { handleBuyerRequest } from '../src/server/buyer/http.ts';
-import { buyerFixture, record } from './http-fixtures.mts';
+import { buyerFixture, coreFixture, record } from './http-fixtures.mts';
 
 const post = (body: unknown, path = '/v1/quote-proposals') =>
   new Request(`https://app.invalid${path}`, {
@@ -67,4 +68,84 @@ test('buyer failure diagnostics correlate safely without request or exception pa
   assert.equal(result.status, 503);
   assert.deepEqual(seen, [{ correlationId: body.requestId, buyerStage: 'config', errorClass: 'DatabaseLockTimeout' }]);
   assert.equal(JSON.stringify(seen).includes(secret), false);
+});
+
+test('required cart review is diagnosed as a finite expected class without leaking exception details', async () => {
+  const seen: BuyerFailureDiagnostic[] = [];
+  const secret = 'private-cart-carrier-and-capability-SECRET';
+  const result = await handleBuyerRequest(
+    post(
+      {
+        capability: `${secret}.signature`,
+        lines: [
+          {
+            key: 'line1',
+            variantId: '222',
+            quantity: 1,
+            properties: { _insignia_quote_v2: secret },
+            sellingPlan: null,
+          },
+        ],
+      },
+      '/v1/cart-state',
+    ),
+    buyerFixture({
+      guest: {
+        verify: async () => ({
+          kind: 'guest',
+          shopId: 'tenant',
+          installationGeneration: '1',
+          ownerHash: 'f'.repeat(64),
+        }),
+      },
+      store: coreFixture({
+        buyers: {
+          getSession: async () => ({ sessionId: 'synthetic', expiresAt: new Date('2099-01-01T00:00:00Z') }),
+          admitRequest: async () => {},
+        },
+      }).buyers,
+      cartState: async () => {
+        throw Object.assign(new Error('REVIEW_REQUIRED'), { cause: new Error(secret), payload: secret });
+      },
+    }),
+    'cart-state',
+    (value) => seen.push(value),
+  );
+  const body = record(await result.json());
+  assert.equal(result.status, 409);
+  assert.equal(body.code, 'REVIEW_REQUIRED');
+  assert.equal(body.acceptanceOutcome, undefined);
+  assert.deepEqual(seen, [{ correlationId: body.requestId, buyerStage: 'cart-state', errorClass: 'ReviewRequired' }]);
+  assert.doesNotMatch(JSON.stringify({ body, seen }), /SECRET|private-cart|payload|cause/);
+});
+
+test('only committed acceptance decline adds the finite outcome to compatible review response', async () => {
+  const result = await handleBuyerRequest(
+    post({ capability: 'synthetic.signature', lines: [] }, '/v1/cart-state'),
+    buyerFixture({
+      guest: {
+        verify: async () => ({
+          kind: 'guest',
+          shopId: 'tenant',
+          installationGeneration: '1',
+          ownerHash: 'f'.repeat(64),
+        }),
+      },
+      store: coreFixture({
+        buyers: {
+          getSession: async () => ({ sessionId: 'synthetic', expiresAt: new Date('2099-01-01T00:00:00Z') }),
+          admitRequest: async () => {},
+        },
+      }).buyers,
+      cartState: async () => {
+        throw new BuyerAcceptanceDeclinedError();
+      },
+    }),
+    'cart-state',
+    () => {},
+  );
+  assert.equal(result.status, 409);
+  const body = record(await result.json());
+  assert.equal(body.code, 'REVIEW_REQUIRED');
+  assert.equal(body.acceptanceOutcome, 'declined');
 });

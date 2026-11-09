@@ -323,6 +323,7 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
         issue: async (target) => (await compose()).authorization.issue(target),
       },
       store: {
+        resolveBuyerAcceptance: (target) => input.core.acceptedQuotes.resolveBuyerAcceptance(target),
         findCompleted: async (target) => (await compose()).store.findCompleted(target),
         async accept(target, commit) {
           const ports = await compose();

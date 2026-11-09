@@ -120,6 +120,21 @@ export function createBuyerRepository(db: Kysely<Database>) {
     if (Number(n?.n) >= maximum) fail('RATE_LIMITED');
   }
   return {
+    /** A committed terminal marker can be replayed without preparing or reserving again. */
+    async commandDeclined(scope: BuyerScope, input: BuyerCommandIdentity & { now: Date }): Promise<boolean> {
+      validScope(scope);
+      validCommand(input);
+      const result = await sql<{ request_digest: string; declined_at: Date | null }>`
+        SELECT c.request_digest,c.declined_at FROM buyer_commands c
+        JOIN buyer_sessions b ON b.session_id=c.session_id AND b.shop_id=c.shop_id
+          AND b.installation_generation=c.installation_generation
+        WHERE b.shop_id=${scope.shopId} AND b.installation_generation=${scope.installationGeneration}::bigint
+          AND b.owner_hash=${scope.ownerHash} AND b.created_at<=${input.now} AND b.expires_at>${input.now}
+          AND ${active} AND c.kind=${input.kind} AND c.idempotency_key=${input.key}`.execute(db);
+      const row = result.rows[0];
+      if (row && row.request_digest !== input.requestDigest) fail('CONFLICT');
+      return row?.declined_at != null;
+    },
     /** Commit admission before authoritative provider work, including failures in later commands. */
     async admitRequest(scope: BuyerScope, now: Date) {
       return write(scope, now, async () => undefined);

@@ -193,6 +193,7 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
       ...input.core.acceptedQuotes,
       getEffective: async () => ({ config, configId: 'config', operationId: 'publication' }),
       findCompleted: async () => null,
+      resolveBuyerAcceptance: async () => ({ outcome: 'declined' }),
       accept: async (_target, commit) => {
         insideLock = true;
         try {
@@ -216,6 +217,7 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
     };
     input.core.buyers = {
       ...input.core.buyers,
+      commandDeclined: async () => false,
       getSession: async () => ({ sessionId: 'session', expiresAt: new Date(+now + 7 * 86400000) }),
       putProposal: async (_scope, value) => {
         proposal = value;
@@ -987,6 +989,7 @@ test('production buyer reads actual primary context before Lean pricing on propo
     };
     input.core.buyers = {
       ...input.core.buyers,
+      commandDeclined: async () => false,
       getProposal: async () => ({
         id: 'proposal',
         requestDigest: hash,

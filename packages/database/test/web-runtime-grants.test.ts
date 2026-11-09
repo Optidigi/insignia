@@ -66,8 +66,8 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       );
       const migrations = new URL('../migrations/', import.meta.url);
       const names = (await readdir(migrations)).filter((n) => n.endsWith('.sql')).sort();
-      expect(names).toHaveLength(51);
-      expect(names.slice(-13)).toEqual([
+      expect(names).toHaveLength(52);
+      expect(names.slice(-14)).toEqual([
         '20261017000200_privacy_merchant_export.sql',
         '20261017000300_shop_privacy_staging.sql',
         '20261018000100_method_catalog.sql',
@@ -81,6 +81,7 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
         '20261105000400_customer_artwork.sql',
         '20261105000500_purchase_order_labels.sql',
         '20261107000100_restoration_no_dispatch_retry.sql',
+        '20261109000100_buyer_acceptance_decline.sql',
       ]);
       for (const file of names.slice(0, 20))
         await owner.query((await readFile(new URL(file, migrations), 'utf8')).split('-- migrate:down')[0]!);
@@ -284,6 +285,50 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
         (await web.query('SELECT payload FROM purchase_offer_payloads WHERE quote_id=$1', [fixture.quote.quoteId]))
           .rows[0].payload,
       ).toEqual({ groups: [] });
+      // Terminal acceptance authority is writable through the restricted LOGIN,
+      // while identity and terminal-state rewrites remain forbidden.
+      const declineCommand = { kind: 'accept' as const, key: 'q1-runtime-decline', requestDigest: '2'.repeat(64), now };
+      await core.buyers.reserveCommand(buyerScope, declineCommand);
+      const declineInput = {
+        shopId,
+        installationGeneration: generation,
+        authorizationGeneration: fixture.quote.authorizationGeneration,
+        authorizationEpoch: fixture.quote.authorizationEpoch,
+        idempotencyKey: declineCommand.key,
+        requestDigest: '3'.repeat(64),
+        buyerCommand: { ownerHash, requestDigest: declineCommand.requestDigest, now },
+      };
+      expect(await core.acceptedQuotes.resolveBuyerAcceptance(declineInput)).toEqual({ outcome: 'declined' });
+      for (const [statement, values] of [
+        [
+          'UPDATE buyer_commands SET declined_at=NULL WHERE session_id=$1 AND idempotency_key=$2',
+          [session.sessionId, declineCommand.key],
+        ],
+        [
+          "UPDATE buyer_commands SET declined_at=declined_at+interval '1 second' WHERE session_id=$1 AND idempotency_key=$2",
+          [session.sessionId, declineCommand.key],
+        ],
+        [
+          'UPDATE buyer_commands SET application_id=$3 WHERE session_id=$1 AND idempotency_key=$2',
+          [session.sessionId, declineCommand.key, applicationId],
+        ],
+      ] as const)
+        await expect(web.query(statement, [...values])).rejects.toMatchObject({ code: '23514' });
+      await expect(
+        web.query('UPDATE buyer_commands SET idempotency_key=$3 WHERE session_id=$1 AND idempotency_key=$2', [
+          session.sessionId,
+          declineCommand.key,
+          'rewritten',
+        ]),
+      ).rejects.toMatchObject({ code: '42501' });
+      for (const bad of [
+        { ...declineInput, buyerCommand: { ...declineInput.buyerCommand, ownerHash: 'b'.repeat(64) } },
+        { ...declineInput, buyerCommand: { ...declineInput.buyerCommand, requestDigest: '4'.repeat(64) } },
+        { ...declineInput, buyerCommand: { ...declineInput.buyerCommand, now: new Date(+now + 86400000) } },
+        { ...declineInput, shopId: randomUUID() },
+      ])
+        await expect(core.acceptedQuotes.resolveBuyerAcceptance(bad)).rejects.toThrow();
+      expect(await core.acceptedQuotes.resolveBuyerAcceptance(declineInput)).toEqual({ outcome: 'declined' });
       // Seed economic facts only as owner; web can read and append merchant artwork events, never reconcile.
       const purchaseId = randomUUID();
       await owner.query(

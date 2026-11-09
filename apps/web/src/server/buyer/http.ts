@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { BuyerAcceptanceDeclinedError } from '@insignia/application';
 import {
   BuyerAcceptanceSchema,
   BuyerCapabilitySchema,
@@ -122,24 +123,26 @@ export async function handleBuyerRequest(
         : 'request';
       const databaseCode = error && typeof error === 'object' && 'code' in error ? error.code : null;
       const errorClass: BuyerFailureDiagnostic['errorClass'] =
-        databaseCode === '55P03'
-          ? 'DatabaseLockTimeout'
-          : databaseCode === '57014' || (error instanceof Error && error.message === 'Query read timeout')
-            ? 'DatabaseQueryTimeout'
-            : databaseCode === '42501'
-              ? 'DatabasePermissionDenied'
-              : error instanceof TypeError
-                ? 'TypeError'
-                : error instanceof Error && ['ShopContextError', 'CatalogContextError'].includes(error.name)
-                  ? 'ProviderReadUnavailable'
-                  : error instanceof Error &&
-                      [
-                        'Function artifact evidence invalid or mismatched',
-                        'Buyer acceptance release unavailable',
-                        'Trusted release source unavailable',
-                      ].includes(error.message)
-                    ? 'ReleaseEvidenceUnavailable'
-                    : 'UnexpectedFailure';
+        error instanceof Error && error.message === 'REVIEW_REQUIRED'
+          ? 'ReviewRequired'
+          : databaseCode === '55P03'
+            ? 'DatabaseLockTimeout'
+            : databaseCode === '57014' || (error instanceof Error && error.message === 'Query read timeout')
+              ? 'DatabaseQueryTimeout'
+              : databaseCode === '42501'
+                ? 'DatabasePermissionDenied'
+                : error instanceof TypeError
+                  ? 'TypeError'
+                  : error instanceof Error && ['ShopContextError', 'CatalogContextError'].includes(error.name)
+                    ? 'ProviderReadUnavailable'
+                    : error instanceof Error &&
+                        [
+                          'Function artifact evidence invalid or mismatched',
+                          'Buyer acceptance release unavailable',
+                          'Trusted release source unavailable',
+                        ].includes(error.message)
+                      ? 'ReleaseEvidenceUnavailable'
+                      : 'UnexpectedFailure';
       // Whitelisted classes/stages only: no exception message/stack, body, URL,
       // capability or signed carriers enter diagnostics or the public response.
       try {
@@ -175,6 +178,7 @@ export async function handleBuyerRequest(
     return respond(
       {
         code,
+        ...(error instanceof BuyerAcceptanceDeclinedError ? { acceptanceOutcome: 'declined' as const } : {}),
         message:
           code === 'REVIEW_REQUIRED'
             ? 'Prices or selections changed. Review the complete customization again.'

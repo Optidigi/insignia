@@ -137,7 +137,26 @@ export type AcceptedQuoteResult = { quote: AcceptedQuote; authorization: QuoteAu
 
 /** The store serializes the command, locks the active installation and effective revisions,
  * then calls commit in the same transaction. It atomically stores both returned records. */
+export type BuyerAcceptanceFence = { ownerHash: string; requestDigest: string; now: Date };
+export type BuyerAcceptanceResolutionInput = {
+  shopId: string;
+  installationGeneration: string;
+  authorizationGeneration: string;
+  authorizationEpoch: number;
+  idempotencyKey: string;
+  requestDigest: string;
+  buyerCommand: BuyerAcceptanceFence;
+};
+export class BuyerAcceptanceDeclinedError extends Error {
+  readonly acceptanceOutcome = 'declined' as const;
+  constructor() {
+    super('REVIEW_REQUIRED');
+  }
+}
 export interface QuoteAcceptanceStore {
+  resolveBuyerAcceptance?(
+    input: BuyerAcceptanceResolutionInput,
+  ): Promise<{ outcome: 'declined' } | { outcome: 'accepted'; result: AcceptedQuoteResult }>;
   findCompleted(input: {
     shopId: string;
     installationGeneration: string;
@@ -154,6 +173,7 @@ export interface QuoteAcceptanceStore {
       authorizationEpoch: number;
       idempotencyKey: string;
       requestDigest: string;
+      buyerCommand?: BuyerAcceptanceFence;
       effectiveRevisions: AcceptedQuote['effectiveRevisions'];
     },
     commit: () => Promise<AcceptedQuoteResult>,

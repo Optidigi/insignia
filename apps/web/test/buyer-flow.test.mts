@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
+import { QuoteContextChangedError } from '@insignia/application';
 import { BuyerAcceptedCartSchema } from '@insignia/contracts';
 import { createPublicationRepository } from '../../../packages/database/dist/repositories/publication.js';
 import { fixture } from './support/buyer-fixture.mts';
@@ -78,10 +79,18 @@ test('unavailable variants deny new proposals, serialized acceptance and renewal
   assert.equal(f.signings(), 0);
   assert.equal((await f.pool.query('SELECT 1 FROM accepted_quotes WHERE shop_id=$1', [f.shopId])).rowCount, 0);
   f.availability(true);
-  const result = await (await f.http(`quote-proposals/${proposal.proposalId}/accept`, body)).json();
+  const declinedReplay = await f.http(`quote-proposals/${proposal.proposalId}/accept`, body);
+  assert.equal(declinedReplay.status, 409);
+  assert.equal((await declinedReplay.json()).acceptanceOutcome, 'declined');
+  assert.equal(f.signings(), 0, 'Recovered stock cannot revive a terminally declined command');
+  const replacement = await (await f.http('quote-proposals', f.body)).json();
+  const replacementBody = { capability: f.session.capability, hash: replacement.hash, idempotencyKey: randomUUID() };
+  const accepted = await f.http(`quote-proposals/${replacement.proposalId}/accept`, replacementBody);
+  assert.equal(accepted.status, 200, await accepted.clone().text());
+  const result = await accepted.json();
   assert.equal(f.signings(), 1);
   f.availability(false);
-  const replay = await f.http(`quote-proposals/${proposal.proposalId}/accept`, body);
+  const replay = await f.http(`quote-proposals/${replacement.proposalId}/accept`, replacementBody);
   assert.equal(replay.status, 200);
   assert.equal((await replay.json()).setId, result.setId);
   assert.equal(
@@ -248,12 +257,21 @@ test('concurrent acceptance is one immutable quote/set and expired review permit
   assert.equal(replay.status, 200, await replay.clone().text());
   assert.equal((await replay.json()).setId, first.setId);
   f.unavailable(false);
-  const unreviewed = await f.http(`quote-proposals/${proposal.proposalId}/accept`, {
-    ...body,
-    idempotencyKey: randomUUID(),
-  });
+  const expiredBody = { ...body, idempotencyKey: randomUUID() };
+  const unreviewed = await f.http(`quote-proposals/${proposal.proposalId}/accept`, expiredBody);
   assert.equal(unreviewed.status, 409);
-  assert.equal(f.signings(), 1);
+  assert.equal((await unreviewed.json()).acceptanceOutcome, 'declined');
+  const marker = await f.pool.query('SELECT declined_at FROM buyer_commands WHERE shop_id=$1 AND idempotency_key=$2', [
+    f.shopId,
+    `m7:${proposal.proposalId}:${expiredBody.idempotencyKey}`,
+  ]);
+  assert.ok(marker.rows[0]?.declined_at, 'Expired reviewed terms commit terminal authority');
+  f.unavailable(true);
+  const expiredReplay = await f.http(`quote-proposals/${proposal.proposalId}/accept`, expiredBody);
+  assert.equal(expiredReplay.status, 409);
+  assert.equal((await expiredReplay.json()).acceptanceOutcome, 'declined');
+  f.unavailable(false);
+  assert.equal(f.signings(), 1, 'Expired command and its replay create no additional signature');
   assert.equal(
     (await f.pool.query('SELECT count(*)::int n FROM accepted_quotes WHERE shop_id=$1', [f.shopId])).rows[0].n,
     1,
@@ -360,4 +378,120 @@ test('Lean HTTP and PostgreSQL retain non-metered unit-price offers and replay w
   assert.equal(repeated.status, 200, await repeated.clone().text());
   assert.equal((await repeated.json()).quoteId, accepted.quoteId);
   assert.equal(f.signings(), 1);
+});
+
+for (const stage of ['retained-read', 'settlement', 'finish'] as const) {
+  test(`acceptance ${stage} failure retains uncertainty and never claims terminal decline`, {
+    skip: !connectionString,
+  }, async (t) => {
+    const f = await fixture(t);
+    const proposal = await (await f.http('quote-proposals', f.body)).json();
+    const body = { capability: f.session.capability, hash: proposal.hash, idempotencyKey: randomUUID() };
+    const retainedRead = f.core.buyers.getProposal;
+    const settlement = f.core.acceptedQuotes.resolveBuyerAcceptance;
+    const finish = f.core.buyers.finishApplication;
+    const unavailable = async (): Promise<never> => {
+      throw new Error('Synthetic boundary unavailable');
+    };
+    if (stage === 'retained-read') f.core.buyers.getProposal = unavailable;
+    if (stage === 'settlement') {
+      f.amount('11.00');
+      f.core.acceptedQuotes.resolveBuyerAcceptance = unavailable;
+    }
+    if (stage === 'finish') f.core.buyers.finishApplication = unavailable;
+    try {
+      const response = await f.http(`quote-proposals/${proposal.proposalId}/accept`, body);
+      assert.equal(response.status, 503, await response.clone().text());
+      assert.equal((await response.json()).acceptanceOutcome, undefined);
+      assert.equal(
+        (
+          await f.pool.query(
+            'SELECT count(*)::int n FROM buyer_commands WHERE shop_id=$1 AND declined_at IS NOT NULL',
+            [f.shopId],
+          )
+        ).rows[0].n,
+        0,
+      );
+      assert.equal(f.signings(), stage === 'finish' ? 1 : 0);
+    } finally {
+      f.core.buyers.getProposal = retainedRead;
+      f.core.acceptedQuotes.resolveBuyerAcceptance = settlement;
+      f.core.buyers.finishApplication = finish;
+    }
+    if (stage === 'finish') {
+      const original = (await f.pool.query('SELECT quote_id FROM accepted_quotes WHERE shop_id=$1', [f.shopId]))
+        .rows[0];
+      const replay = await f.http(`quote-proposals/${proposal.proposalId}/accept`, body);
+      assert.equal(replay.status, 200, await replay.clone().text());
+      assert.equal((await replay.json()).quoteId, original.quote_id);
+      assert.equal(f.signings(), 1, 'Postcommit failure replays the original acceptance');
+    }
+  });
+}
+
+test('overlapping known rejection recovers the winning acceptance through service linking', {
+  skip: !connectionString,
+}, async (t) => {
+  const f = await fixture(t);
+  const proposal = await (await f.http('quote-proposals', f.body)).json();
+  const body = { capability: f.session.capability, hash: proposal.hash, idempotencyKey: randomUUID() };
+  const original = f.core.acceptedQuotes.accept.bind(f.core.acceptedQuotes);
+  let enter: () => void = () => {},
+    release: () => void = () => {},
+    calls = 0;
+  const entered = new Promise<void>((resolve) => {
+    enter = resolve;
+  });
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  f.core.acceptedQuotes.accept = async (input, commit) => {
+    if (++calls > 1) throw new QuoteContextChangedError('catalog');
+    return original(input, async () => {
+      enter();
+      await gate;
+      return commit();
+    });
+  };
+  const winner = f.http(`quote-proposals/${proposal.proposalId}/accept`, body);
+  await entered;
+  const rejecting = f.http(`quote-proposals/${proposal.proposalId}/accept`, body);
+  try {
+    let blocked = false;
+    const deadline = Date.now() + 3000;
+    while (Date.now() < deadline) {
+      const state = await f.pool.query(
+        "SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE '%FROM shops s JOIN installation_generations%' LIMIT 1",
+      );
+      if (state.rows.length) {
+        blocked = true;
+        break;
+      }
+      await new Promise<void>((resolve) => setImmediate(resolve));
+    }
+    assert.equal(blocked, true, 'Known-rejection settlement waits on the winning issuance lock');
+  } finally {
+    release();
+  }
+  const responses = await Promise.all([winner, rejecting]);
+  for (const response of responses) assert.equal(response.status, 200, await response.clone().text());
+  const [first, second] = await Promise.all(responses.map((response) => response.json()));
+  assert.deepEqual(second, first, 'Settlement winner completes the original application path');
+  assert.equal(f.signings(), 1);
+  assert.equal(
+    (await f.pool.query('SELECT count(*)::int n FROM accepted_quotes WHERE shop_id=$1', [f.shopId])).rows[0].n,
+    1,
+  );
+  assert.equal(
+    (await f.pool.query('SELECT count(*)::int n FROM cart_applications WHERE shop_id=$1', [f.shopId])).rows[0].n,
+    1,
+  );
+  assert.equal(
+    (
+      await f.pool.query('SELECT count(*)::int n FROM buyer_commands WHERE shop_id=$1 AND declined_at IS NOT NULL', [
+        f.shopId,
+      ])
+    ).rows[0].n,
+    0,
+  );
 });

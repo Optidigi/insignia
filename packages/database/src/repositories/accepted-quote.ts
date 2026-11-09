@@ -16,7 +16,9 @@ type RevisionFence = {
   revisionId: string;
   contentHash: string;
 };
+type BuyerAcceptanceFence = { ownerHash: string; requestDigest: string; now: Date };
 type AcceptanceInput = {
+  buyerCommand?: BuyerAcceptanceFence;
   shopId: string;
   installationGeneration: string;
   authorizationGeneration: string;
@@ -250,23 +252,29 @@ export class PgAcceptedQuoteRepository {
   async findCompleted<T extends StoredResult = StoredResult>(
     input: Omit<AcceptanceInput, 'effectiveRevisions'>,
   ): Promise<T | null> {
-    return this.database.transaction().execute(async (transaction) => {
-      const found = await sql<{
-        request_digest: string;
-        authorization_generation: string;
-        authorization_epoch: string;
-        current_authorization_generation: string;
-        current_authorization_epoch: string;
-        quote_value: unknown;
-        set_id: string;
-        key_id: number;
-        public_key_fingerprint: string;
-        first_valid_day: number;
-        last_valid_day: number;
-        valid_through_day: number;
-        envelope_carrier: string;
-        member_carriers: unknown;
-      }>`
+    return this.database.transaction().execute((transaction) => this.completed<T>(transaction, input));
+  }
+
+  private async completed<T extends StoredResult>(
+    transaction: Kysely<Database>,
+    input: Omit<AcceptanceInput, 'effectiveRevisions'>,
+  ): Promise<T | null> {
+    const found = await sql<{
+      request_digest: string;
+      authorization_generation: string;
+      authorization_epoch: string;
+      current_authorization_generation: string;
+      current_authorization_epoch: string;
+      quote_value: unknown;
+      set_id: string;
+      key_id: number;
+      public_key_fingerprint: string;
+      first_valid_day: number;
+      last_valid_day: number;
+      valid_through_day: number;
+      envelope_carrier: string;
+      member_carriers: unknown;
+    }>`
       SELECT q.request_digest, q.authorization_generation::text, q.authorization_epoch::text,
         i.authorization_generation::text AS current_authorization_generation,
         i.authorization_epoch::text AS current_authorization_epoch,
@@ -280,30 +288,80 @@ export class PgAcceptedQuoteRepository {
       WHERE q.shop_id = ${input.shopId} AND q.installation_generation = ${input.installationGeneration}::bigint
         AND i.deactivated_at IS NULL AND q.idempotency_key = ${input.idempotencyKey}
       ORDER BY a.created_at ASC LIMIT 1 FOR SHARE OF s, i`.execute(transaction);
-      const row = found.rows[0];
-      if (!row) return null;
-      if (
-        row.authorization_generation !== input.authorizationGeneration ||
-        row.authorization_epoch !== String(input.authorizationEpoch) ||
-        row.current_authorization_generation !== input.authorizationGeneration ||
-        row.current_authorization_epoch !== String(input.authorizationEpoch)
-      )
-        throw new Error('idempotency key belongs to revoked authorization identity');
-      if (row.request_digest !== input.requestDigest) throw new Error('idempotency digest conflict');
-      await assertReplayKeyUsable(transaction, input, row.key_id, row.public_key_fingerprint);
-      return {
-        quote: row.quote_value,
-        authorization: {
-          setId: row.set_id,
-          keyId: row.key_id,
-          publicKeyFingerprint: row.public_key_fingerprint,
-          firstValidDay: row.first_valid_day,
-          lastValidDay: row.last_valid_day,
-          validThroughDay: row.valid_through_day,
-          envelopeCarrier: row.envelope_carrier,
-          members: row.member_carriers,
-        },
-      } as T;
+    const row = found.rows[0];
+    if (!row) return null;
+    if (
+      row.authorization_generation !== input.authorizationGeneration ||
+      row.authorization_epoch !== String(input.authorizationEpoch) ||
+      row.current_authorization_generation !== input.authorizationGeneration ||
+      row.current_authorization_epoch !== String(input.authorizationEpoch)
+    )
+      throw new Error('idempotency key belongs to revoked authorization identity');
+    if (row.request_digest !== input.requestDigest) throw new Error('idempotency digest conflict');
+    await assertReplayKeyUsable(transaction, input, row.key_id, row.public_key_fingerprint);
+    return {
+      quote: row.quote_value,
+      authorization: {
+        setId: row.set_id,
+        keyId: row.key_id,
+        publicKeyFingerprint: row.public_key_fingerprint,
+        firstValidDay: row.first_valid_day,
+        lastValidDay: row.last_valid_day,
+        validThroughDay: row.valid_through_day,
+        envelopeCarrier: row.envelope_carrier,
+        members: row.member_carriers,
+      },
+    } as T;
+  }
+
+  private async lockBuyerCommand(transaction: Kysely<Database>, input: Omit<AcceptanceInput, 'effectiveRevisions'>) {
+    const fence = input.buyerCommand;
+    if (
+      !fence ||
+      !/^[a-f0-9]{64}$/.test(fence.ownerHash) ||
+      !/^[a-f0-9]{64}$/.test(fence.requestDigest) ||
+      !Number.isFinite(+fence.now)
+    )
+      throw new Error('invalid buyer acceptance fence');
+    const session = await sql<{ session_id: string }>`SELECT session_id FROM buyer_sessions
+      WHERE shop_id=${input.shopId} AND installation_generation=${input.installationGeneration}::bigint
+      AND owner_hash=${fence.ownerHash} AND created_at<=${fence.now} AND expires_at>${fence.now}
+      FOR UPDATE`.execute(transaction);
+    const id = session.rows[0]?.session_id;
+    if (!id) throw new Error('buyer acceptance session unavailable');
+    const command = await sql<{ request_digest: string; declined_at: Date | null }>`SELECT request_digest, declined_at
+      FROM buyer_commands WHERE session_id=${id}::uuid AND kind='accept' AND idempotency_key=${input.idempotencyKey}
+      FOR UPDATE`.execute(transaction);
+    const row = command.rows[0];
+    if (!row || row.request_digest !== fence.requestDigest) throw new Error('buyer acceptance command unavailable');
+    return { ...row, sessionId: id };
+  }
+
+  async resolveBuyerAcceptance<T extends StoredResult = StoredResult>(
+    input: Omit<AcceptanceInput, 'effectiveRevisions'> & { buyerCommand: BuyerAcceptanceFence },
+  ): Promise<{ outcome: 'declined' } | { outcome: 'accepted'; result: T }> {
+    return this.database.transaction().execute(async (transaction) => {
+      const active = await sql`SELECT 1 FROM shops s JOIN installation_generations i
+        ON i.shop_id=s.shop_id AND i.generation=s.current_generation
+        WHERE s.shop_id=${input.shopId} AND s.current_generation=${input.installationGeneration}::bigint
+        AND i.deactivated_at IS NULL AND i.authorization_generation=${input.authorizationGeneration}::uuid
+        AND i.authorization_epoch=${input.authorizationEpoch} FOR UPDATE OF s,i`.execute(transaction);
+      if (!active.rows.length) throw new Error('inactive buyer acceptance scope');
+      const command = await this.lockBuyerCommand(transaction, input);
+      const completed = await this.completed<T>(transaction, input);
+      if (completed) return { outcome: 'accepted', result: completed };
+      // An incomplete retained receipt must never be interpreted as absence.
+      const receipt = await sql`SELECT 1 FROM accepted_quotes WHERE shop_id=${input.shopId}
+        AND installation_generation=${input.installationGeneration}::bigint AND idempotency_key=${input.idempotencyKey}`.execute(
+        transaction,
+      );
+      if (receipt.rows.length) throw new Error('buyer acceptance receipt unavailable');
+      if (!command.declined_at)
+        await sql`UPDATE buyer_commands SET declined_at=${input.buyerCommand.now}
+        WHERE session_id=${command.sessionId}::uuid AND kind='accept' AND idempotency_key=${input.idempotencyKey}`.execute(
+          transaction,
+        );
+      return { outcome: 'declined' };
     });
   }
 
@@ -401,6 +459,11 @@ export class PgAcceptedQuoteRepository {
             members: row.member_carriers,
           },
         } as T;
+      }
+
+      if (input.buyerCommand) {
+        const command = await this.lockBuyerCommand(transaction, input);
+        if (command.declined_at) throw new Error('buyer acceptance declined');
       }
 
       for (const revision of [...input.effectiveRevisions].sort((a, b) => a.configId.localeCompare(b.configId))) {

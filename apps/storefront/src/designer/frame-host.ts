@@ -81,6 +81,8 @@ export function createDesignerFrame(input: {
   const { entry, css } = designerAssets();
   frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="origin"><link rel="stylesheet" href="${escapeAttribute(css.href)}"></head><body><script type="module" src="${escapeAttribute(entry.href)}"></script></body></html>`;
   const controllers = new Map<string, AbortController>();
+  let committing = false;
+  let pendingRepair: { canStart: boolean; canRemoveGroup: boolean; canRemoveAll?: boolean } | undefined;
   const focused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   let ready = false;
   let initialized = false;
@@ -234,9 +236,10 @@ export function createDesignerFrame(input: {
         value = await input.ports.artwork.renew(data.artwork, { ...data.request, signal: controller.signal });
       else if (data.action === 'prepare' && input.ports?.review)
         value = await input.ports.review.prepare({ ...data.request, signal: controller.signal } as CartRequest);
-      else if (data.action === 'commit' && !input.previewOnly && input.ports)
+      else if (data.action === 'commit' && !input.previewOnly && input.ports) {
+        committing = true;
         value = await input.ports.cart.commit({ ...data.request, signal: controller.signal } as CartRequest);
-      else throw new Error('Unsupported designer operation');
+      } else throw new Error('Unsupported designer operation');
       if (!controller.signal.aborted) {
         if (data.action === 'commit' && matchesCartReceipt(value, data.request) && value.authority === 'shopify')
           applied = data.request;
@@ -248,9 +251,25 @@ export function createDesignerFrame(input: {
           ? Number(error.status)
           : undefined;
       if (!controller.signal.aborted)
-        send('insignia:designer:result', { id: data.id, ok: false, ...(status ? { status } : {}) });
+        send('insignia:designer:result', {
+          id: data.id,
+          ok: false,
+          ...(status ? { status } : {}),
+          ...(data.action === 'commit' &&
+          error &&
+          typeof error === 'object' &&
+          'acceptanceOutcome' in error &&
+          error.acceptanceOutcome === 'declined'
+            ? { acceptanceOutcome: 'declined' }
+            : {}),
+        });
     } finally {
       controllers.delete(data.id);
+      if (data.action === 'commit') {
+        committing = false;
+        if (pendingRepair && !controller.signal.aborted) send('insignia:designer:repair', { repair: pendingRepair });
+        pendingRepair = undefined;
+      }
     }
   }
   window.addEventListener('message', message);
@@ -275,7 +294,8 @@ export function createDesignerFrame(input: {
       modal.hide();
     },
     repair(value?: { canStart: boolean; canRemoveGroup: boolean; canRemoveAll?: boolean }) {
-      send('insignia:designer:repair', { repair: value });
+      if (committing && value) pendingRepair = value;
+      else send('insignia:designer:repair', { repair: value });
     },
     error() {
       send('insignia:designer:host-error');

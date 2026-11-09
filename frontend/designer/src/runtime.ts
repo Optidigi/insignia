@@ -248,14 +248,19 @@ export function createDesignerRuntime(
           throw new Error("Missing cart application receipt");
         attempt = null;
         dispatch({ type: "cart-commit-succeeded", requestId, receipt });
-      } catch {
-        if (!controller.signal.aborted && commitController === controller)
+      } catch (error) {
+        if (!controller.signal.aborted && commitController === controller) {
+          if (!prepareOnly && error && typeof error === 'object' && 'acceptanceOutcome' in error && error.acceptanceOutcome === 'declined' && attempt?.idempotencyKey === request.idempotencyKey) {
+            attempt = null;
+            preparedSignature = null;
+          }
           dispatch({
             type: "cart-commit-failed",
             requestId,
             reason: "cart-commit-failed",
             ...(prepareOnly ? {preparation:true} : {}),
           });
+        }
       } finally {
         if (commitController === controller) { commitController = null; reviewing = false; }
       }

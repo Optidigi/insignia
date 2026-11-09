@@ -260,6 +260,7 @@ window.addEventListener('message', (event) => {
       request.reject(
         Object.assign(new Error('Live operation unavailable'), {
           status: [403, 404, 410, 422].includes(event.data.status) ? event.data.status : undefined,
+          ...(event.data.acceptanceOutcome === 'declined' ? { acceptanceOutcome: 'declined' as const } : {}),
         }),
       );
   }
