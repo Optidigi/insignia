@@ -1,6 +1,10 @@
 import { AdminCatalogProductSchema, MerchantPreferencesViewSchema, placementProductSchema } from '@insignia/contracts';
 import { z } from 'zod';
-import type { PlacementSetupCopyDiscovery, PlacementProductSnapshot, PlacementSetupCopyPorts } from '../../examples/admin/support/placement-setup-copy-dialog.tsx';
+import type {
+  PlacementProductSnapshot,
+  PlacementSetupCopyDiscovery,
+  PlacementSetupCopyPorts,
+} from '../../examples/admin/support/placement-setup-copy-dialog.tsx';
 import { authenticatedJson } from '../shared/admin-request.ts';
 import type { ConfigView } from '../shared/admin-view.ts';
 import { createSelectedProductClient } from './selected-product-client.ts';
@@ -51,7 +55,13 @@ export function createSelectedProductCopyPorts(input: {
         for (const product of page.products) {
           if (seen.has(product.id)) throw new Error('Duplicate catalog product');
           seen.add(product.id);
-          products.push({ id: product.id, title: product.title, images: product.images ?? [], configured: product.configurationSummary?.state !== undefined ? product.configurationSummary.state !== 'not_configured' : null });
+          const state = product.configurationSummary?.state;
+          products.push({
+            id: product.id,
+            title: product.title,
+            images: product.images ?? [],
+            configured: state === 'published' ? true : state === 'not_configured' ? false : null,
+          });
         }
         cursor = page.nextCursor;
         if (cursor && cursors.has(cursor)) throw new Error('Catalog cursor did not advance');
@@ -70,24 +80,33 @@ export function createSelectedProductCopyPorts(input: {
       const selected = [...new Set(ids)];
       const products: PlacementProductSnapshot[] = [];
       let index = 0;
-      await Promise.all(Array.from({ length: Math.min(4, selected.length) }, async () => {
-        while (index < selected.length) {
-          signal.throwIfAborted();
-          const id = selected[index++];
-          if (!id) break;
-          try {
-            const client = createSelectedProductClient({ productId: id, storage: copyCustody, request: scopedRequest });
-            const view = await client.load();
+      const completed = await Promise.allSettled(
+        Array.from({ length: Math.min(4, selected.length) }, async () => {
+          while (index < selected.length) {
             signal.throwIfAborted();
-            if (authority !== capturedAuthority) throw new Error('Copy scope changed');
-            entries.set(id, { view, client });
-            products.push({ id, product: selectedProductFromConfig(view) });
-          } catch {
-            signal.throwIfAborted();
-            products.push({ id, product: null });
+            const id = selected[index++];
+            if (!id) break;
+            try {
+              const client = createSelectedProductClient({
+                productId: id,
+                storage: copyCustody,
+                request: scopedRequest,
+              });
+              const view = await client.load();
+              signal.throwIfAborted();
+              if (authority !== capturedAuthority) throw new Error('Copy scope changed');
+              entries.set(id, { view, client });
+              products.push({ id, product: selectedProductFromConfig(view) });
+            } catch {
+              signal.throwIfAborted();
+              products.push({ id, product: null });
+            }
           }
-        }
-      }));
+        }),
+      );
+      const failed = completed.find((result) => result.status === 'rejected');
+      if (failed) throw failed.reason;
+      signal.throwIfAborted();
       return products;
     },
     inspect(product) {

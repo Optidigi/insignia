@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { MerchantDraftSchema, placementProductSchema } from '@insignia/contracts';
-import { createSelectedProductCopyPorts } from '../../src/islands/selected-product-copy.ts';
 import { copyPlacementSetup } from '../../examples/admin/support/placement-setup-copy.mts';
+import { createDemoPlacementSetupCopyPorts } from '../../examples/admin/support/placement-setup-copy-demo.mts';
+import { createSelectedProductCopyPorts } from '../../src/islands/selected-product-copy.ts';
 
 const intent = {
   sourceSignature: 'a'.repeat(64),
@@ -80,7 +81,20 @@ function fixture(loseReply = false) {
   const writes: { key: string | null; body: string }[] = [];
   const request = async (path: string, init?: RequestInit): Promise<unknown> => {
     if (path === '/api/admin/preferences') return authority;
-    if (path.startsWith('/api/admin/products?')) return { products: [{ id: targetId, title: 'Target', status: 'ACTIVE', imageUrl: null, variants: [], configurationSummary: { state: 'not_configured', methods: [], locations: [] } }], nextCursor: null };
+    if (path.startsWith('/api/admin/products?'))
+      return {
+        products: [
+          {
+            id: targetId,
+            title: 'Target',
+            status: 'ACTIVE',
+            imageUrl: null,
+            variants: [],
+            configurationSummary: { state: 'not_configured', methods: [], locations: [] },
+          },
+        ],
+        nextCursor: null,
+      };
     if (!init?.method)
       return {
         product: { id: targetId, title: 'Target', status: 'ACTIVE', imageUrl: null, images: [], variants: [] },
@@ -156,7 +170,10 @@ test('a partial copy retry settles only its original exact saved intent, not fre
   await assert.rejects(() => ports.save(prepare(target), intent), /lost/);
   const reloaded = createSelectedProductCopyPorts(f);
   await reloaded.loadCatalog(new AbortController().signal);
-  const [{ product: observedTarget } = { product: null }] = await reloaded.hydrate([targetId], new AbortController().signal);
+  const [{ product: observedTarget } = { product: null }] = await reloaded.hydrate(
+    [targetId],
+    new AbortController().signal,
+  );
   if (!observedTarget) throw new Error('Target expected after reload');
   assert.equal(reloaded.inspect(observedTarget).readiness, 'ready');
   await assert.rejects(
@@ -217,11 +234,25 @@ test('independent copy preserves retained production definitions and labels usin
 test('catalog discovery uses existing summaries without loading product snapshots', async () => {
   const f = fixture();
   let details = 0;
-  const ports = createSelectedProductCopyPorts({ ...f, request: async (path, init) => {
-    if (path.startsWith('/api/admin/products?')) return { products: Array.from({ length: 20 }, (_, index) => ({ id: `gid://shopify/Product/${111 + index}`, title: `Product ${index}`, status: 'ACTIVE', imageUrl: null, variants: [], configurationSummary: { state: 'not_configured', methods: [], locations: [] } })), nextCursor: null };
-    if (path !== '/api/admin/preferences') details++;
-    return f.request(path, init);
-  } });
+  const ports = createSelectedProductCopyPorts({
+    ...f,
+    request: async (path, init) => {
+      if (path.startsWith('/api/admin/products?'))
+        return {
+          products: Array.from({ length: 20 }, (_, index) => ({
+            id: `gid://shopify/Product/${111 + index}`,
+            title: `Product ${index}`,
+            status: 'ACTIVE',
+            imageUrl: null,
+            variants: [],
+            configurationSummary: { state: 'not_configured', methods: [], locations: [] },
+          })),
+          nextCursor: null,
+        };
+      if (path !== '/api/admin/preferences') details++;
+      return f.request(path, init);
+    },
+  });
   const discovery = await ports.loadCatalog(new AbortController().signal);
   assert.equal(discovery.length, 20);
   assert.equal(details, 0);
@@ -234,10 +265,13 @@ test('catalog discovery uses existing summaries without loading product snapshot
 
 test('unavailable selected snapshots stay explicit and cancellation cannot admit late snapshots', async () => {
   const f = fixture();
-  const ports = createSelectedProductCopyPorts({ ...f, request: async (path, init) => {
-    if (path.endsWith('/config')) throw new Error('Unavailable');
-    return f.request(path, init);
-  } });
+  const ports = createSelectedProductCopyPorts({
+    ...f,
+    request: async (path, init) => {
+      if (path.endsWith('/config')) throw new Error('Unavailable');
+      return f.request(path, init);
+    },
+  });
   await ports.loadCatalog(new AbortController().signal);
   assert.deepEqual(await ports.hydrate([targetId], new AbortController().signal), [{ id: targetId, product: null }]);
   const controller = new AbortController();
@@ -249,31 +283,48 @@ test('unavailable selected snapshots stay explicit and cancellation cannot admit
 test('discovery rejects duplicate products and looping cursors', async () => {
   for (const duplicate of [true, false]) {
     const f = fixture();
-    const ports = createSelectedProductCopyPorts({ ...f, request: async (path, init) => {
-      if (path.startsWith('/api/admin/products?')) return { products: duplicate ? [
-        { id: targetId, title: 'Target', status: 'ACTIVE', imageUrl: null, variants: [] },
-      ] : [], nextCursor: 'same' };
-      return f.request(path, init);
-    } });
-    await assert.rejects(ports.loadCatalog(new AbortController().signal), duplicate ? /Duplicate catalog/ : /cursor did not advance/);
+    const ports = createSelectedProductCopyPorts({
+      ...f,
+      request: async (path, init) => {
+        if (path.startsWith('/api/admin/products?'))
+          return {
+            products: duplicate
+              ? [{ id: targetId, title: 'Target', status: 'ACTIVE', imageUrl: null, variants: [] }]
+              : [],
+            nextCursor: 'same',
+          };
+        return f.request(path, init);
+      },
+    });
+    await assert.rejects(
+      ports.loadCatalog(new AbortController().signal),
+      duplicate ? /Duplicate catalog/ : /cursor did not advance/,
+    );
     assert.equal(f.writes.length, 0);
   }
 });
 
 test('hydration retains concurrency four and does not admit a cancelled late response', async () => {
   const f = fixture();
-  let active = 0, peak = 0;
-  const ports = createSelectedProductCopyPorts({ ...f, request: async (path, init) => {
-    if (path.endsWith('/config')) {
-      active++;
-      peak = Math.max(peak, active);
-      await new Promise((resolve) => setTimeout(resolve, 15));
-      active--;
-    }
-    return f.request(path, init);
-  } });
+  let active = 0,
+    peak = 0;
+  const ports = createSelectedProductCopyPorts({
+    ...f,
+    request: async (path, init) => {
+      if (path.endsWith('/config')) {
+        active++;
+        peak = Math.max(peak, active);
+        await new Promise((resolve) => setTimeout(resolve, 15));
+        active--;
+      }
+      return f.request(path, init);
+    },
+  });
   await ports.loadCatalog(new AbortController().signal);
-  await ports.hydrate(Array.from({ length: 8 }, (_, i) => `gid://shopify/Product/${111 + i}`), new AbortController().signal);
+  await ports.hydrate(
+    Array.from({ length: 8 }, (_, i) => `gid://shopify/Product/${111 + i}`),
+    new AbortController().signal,
+  );
   assert.equal(peak, 4);
   const controller = new AbortController();
   const pending = ports.hydrate([targetId], controller.signal);
@@ -285,14 +336,132 @@ test('hydration retains concurrency four and does not admit a cancelled late res
 test('fresh authority loss refuses saving a reviewed target without replacing write identity', async () => {
   const f = fixture();
   let changed = false;
-  const ports = createSelectedProductCopyPorts({ ...f, request: async (path, init) => {
-    if (changed && path === '/api/admin/preferences') return { ...authority, authority: 'b'.repeat(64) };
-    return f.request(path, init);
-  } });
+  const ports = createSelectedProductCopyPorts({
+    ...f,
+    request: async (path, init) => {
+      if (changed && path === '/api/admin/preferences') return { ...authority, authority: 'b'.repeat(64) };
+      return f.request(path, init);
+    },
+  });
   await ports.loadCatalog(new AbortController().signal);
   const [snapshot] = await ports.hydrate([targetId], new AbortController().signal);
   assert.ok(snapshot?.product);
   changed = true;
   await assert.rejects(ports.save(prepare(snapshot.product), intent), /authority changed/);
   assert.equal(f.writes.length, 0);
+});
+
+test('a draft summary stays provisional until its empty snapshot establishes target eligibility', async () => {
+  const f = fixture();
+  const ports = createSelectedProductCopyPorts({
+    ...f,
+    request: async (path, init) => {
+      const value = await f.request(path, init);
+      if (path.startsWith('/api/admin/products?'))
+        return {
+          products: [
+            {
+              id: targetId,
+              title: 'Empty draft',
+              status: 'ACTIVE',
+              imageUrl: null,
+              variants: [],
+              configurationSummary: { state: 'draft', methods: [], locations: [] },
+            },
+          ],
+          nextCursor: null,
+        };
+      return value;
+    },
+  });
+  const [discovery] = await ports.loadCatalog(new AbortController().signal);
+  assert.equal(discovery?.configured, null);
+  const [snapshot] = await ports.hydrate([targetId], new AbortController().signal);
+  assert.ok(snapshot?.product);
+  assert.equal(ports.inspect(snapshot.product).readiness, 'ready');
+  assert.equal(f.writes.length, 0);
+});
+
+test('demo discovery and hydration expose the saved copy as a source instead of its empty example', async (t) => {
+  const memory = new Map<string, string>([['insignia-placement-example', 'copy-ready']]);
+  const storage = {
+    getItem: (key: string) => memory.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      memory.set(key, value);
+    },
+    removeItem: (key: string) => {
+      memory.delete(key);
+    },
+  };
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'sessionStorage');
+  Object.defineProperty(globalThis, 'sessionStorage', { configurable: true, value: storage });
+  t.after(() => {
+    if (previous) Object.defineProperty(globalThis, 'sessionStorage', previous);
+    else Reflect.deleteProperty(globalThis, 'sessionStorage');
+  });
+  const id = 'gid://shopify/Product/15468473450880';
+  const original = { ...source, id };
+  t.mock.method(globalThis, 'fetch', async () => Response.json([original]));
+  const ports = createDemoPlacementSetupCopyPorts();
+  assert.equal((await ports.loadCatalog(new AbortController().signal))[0]?.configured, false);
+  const saved = { ...original, views: original.views.map((view) => ({ ...view, id: 'saved-front' })) };
+  await ports.save(saved, intent);
+  assert.equal((await ports.loadCatalog(new AbortController().signal))[0]?.configured, true);
+  const [snapshot] = await ports.hydrate([id], new AbortController().signal);
+  assert.equal(snapshot?.product?.views[0]?.id, 'saved-front');
+});
+
+test('cancelled hydration drains dispatched siblings and cannot replace a later review snapshot', async () => {
+  const f = fixture();
+  let entered = 0;
+  let started!: () => void;
+  const bothStarted = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  const releases: (() => void)[] = [];
+  const gates = Array.from(
+    { length: 2 },
+    () =>
+      new Promise<void>((resolve) => {
+        releases.push(resolve);
+      }),
+  );
+  const ports = createSelectedProductCopyPorts({
+    ...f,
+    request: async (path, init) => {
+      if (path.endsWith('/config') && entered < 2) {
+        const gate = gates[entered++];
+        if (entered === 2) started();
+        await gate;
+      }
+      return f.request(path, init);
+    },
+  });
+  await ports.loadCatalog(new AbortController().signal);
+  const controller = new AbortController();
+  let settled = false;
+  const pending = ports.hydrate([targetId, source.id], controller.signal).finally(() => {
+    settled = true;
+  });
+  pending.catch(() => {});
+  try {
+    await bothStarted;
+    controller.abort();
+    const [releaseFirst, releaseSecond] = releases;
+    assert.ok(releaseFirst && releaseSecond);
+    releaseFirst();
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    assert.equal(settled, false, 'The cancelled owner must drain its other dispatched snapshot');
+    releaseSecond();
+    await assert.rejects(pending, { name: 'AbortError' });
+    assert.equal(ports.inspect({ ...source, id: targetId }).readiness, 'unavailable');
+    const [retry] = await ports.hydrate([targetId], new AbortController().signal);
+    assert.ok(retry?.product);
+    assert.equal(ports.inspect(retry.product).readiness, 'ready');
+    assert.equal(f.writes.length, 0);
+  } finally {
+    controller.abort();
+    for (const release of releases) release();
+    await Promise.allSettled([pending]);
+  }
 });
