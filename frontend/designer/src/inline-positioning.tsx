@@ -660,6 +660,9 @@ export function InlinePositionControls({
         ) : validSizes.length > 0 ? (
           <div
             className="inline-position-controls__presets size-options"
+            style={{
+              gridTemplateColumns: `repeat(${validSizes.length === 4 ? 2 : Math.min(3, validSizes.length)}, minmax(0, 1fr))`,
+            }}
             role="group"
             aria-label={t("customer:positioning.approvedSizes")}
           >
