@@ -7,6 +7,12 @@ import canonicalModules from '../../deployment/m5-runtime/native-canonical-modul
 import canonicalBinding from '../../deployment/m5-runtime/native-canonical-release-binding.json' with { type: 'json' };
 import cartModules from '../../deployment/m5-runtime/native-cart-module-baseline.json' with { type: 'json' };
 import cartCandidate from '../../deployment/m5-runtime/native-cart-release-binding.json' with { type: 'json' };
+import cartRepairModules from '../../deployment/m5-runtime/native-cart-repair-module-baseline.json' with {
+  type: 'json',
+};
+import cartRepairBinding from '../../deployment/m5-runtime/native-cart-repair-release-binding.json' with {
+  type: 'json',
+};
 import fixedModules from '../../deployment/m5-runtime/native-fixed-module-baseline.json' with { type: 'json' };
 import fixedCandidate from '../../deployment/m5-runtime/native-fixed-release-binding.json' with { type: 'json' };
 import historicalModules from '../../deployment/m5-runtime/native-function-module-baseline.json' with { type: 'json' };
@@ -84,6 +90,14 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  'native-cart-repair-eb386d22': {
+    versionId: cartRepairBinding.versionId,
+    versionTag: cartRepairBinding.versionTag,
+    versionIds: cartRepairBinding.versionIds,
+    moduleHash: cartRepairBinding.moduleHash,
+    modules: cartRepairModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+  },
   'native-canonical-313b12ad': {
     versionId: canonicalBinding.versionId,
     versionTag: canonicalBinding.versionTag,
