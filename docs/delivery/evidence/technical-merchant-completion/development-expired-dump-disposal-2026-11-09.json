@@ -1,0 +1,22 @@
+{
+  "at": "2026-11-09T07:58:50.655429+00:00",
+  "status": "DISPOSED_AFTER_ORIGINAL_DEADLINE",
+  "target": "/home/serveradmin/insignia-deploy217-20261019/database-before.dump",
+  "originalCreatedAt": "2026-10-19T12:00:17.909Z",
+  "originalCleanupBy": "2026-10-20T00:00:00Z",
+  "originalReceiptPayloadSha256": "5b775829458c907611d770b5d1d8f5d2398b1f8b5f9cd541fe994725dd7b1613",
+  "payloadHashRecomputed": false,
+  "expectedSize": 564589,
+  "expectedInode": 6743323,
+  "activeScopedReferences": [],
+  "noPayloadBytesRead": true,
+  "completedAt": "2026-11-09T07:58:50.677581+00:00",
+  "pathnameAbsenceVerified": true,
+  "physicalErasure": "NOT_ASSERTED",
+  "minimalOriginalReceiptRetained": true,
+  "protectedConfigIdentitiesUnchanged": true,
+  "sourceDatabaseTouched": false,
+  "operationRecordCopiesTouched": false,
+  "protectedIdentityMethod": "inode-size-mtime-mode",
+  "scope": "EXACT_OVERDUE_TEMPORARY_DATABASE_SAFETY_COPY_ONLY_NOT_SOURCE_DATABASE"
+}

@@ -1,0 +1,23 @@
+# Test and release qualification reference
+
+Read only the notes relevant to the affected subsystem. These retained project lessons supplement current source/tests; the [operating model](../../docs/delivery/operating-model.md) owns workflow and permissions.
+
+For local execution, select `.node-version` and confirm it matches `package.json` before installing/building. CI, Docker digests and runtime qualification also pin Node; upgrades must reconcile all consumers. Build the workspace before tests that import compiled shared/localization packages. Install Chromium through both web and designer packages, which currently pin different Playwright versions.
+
+For CI changes, retain the three protected jobs, their full-route checks and the narrow status-document classifier. The foundation job runs the root `check`, including `check:ui`; frontend-only changes must select full qualification. Use `scripts/ci/status-docs.test.mts` for route/guard regression. The frontend gate runs all four packages' tests and the embeddable library build. Review actual package scripts when changing coverage, including designer browser/localization checks.
+
+When editing `docs/delivery/state.md`, run `node --test scripts/ci/status-docs.test.mts` before pushing. Its bounded link policy admits local targets and the classifier's exact approved GitHub forms. Keep external development-store review links in the frontend guide and link that local guide from current state; source/link checks alone do not run this CI regression.
+
+The runtime job also runs the complete non-browser web/server test cohort against its migrated PostgreSQL18 service. This covers real Method propagation, configuration/reconciliation locks and purchase/customer-link composition; foundation's database-free web run alone cannot prove those branches. Browser-launching web tests must include `browser` in their filename; the runtime cohort intentionally excludes them and does not install Chromium. Foundation still runs the complete browser-enabled web suite.
+
+CI does not guarantee ripgrep is installed; workflow discovery uses the available standard system tools and must retain the same test set. The owned local database runner defaults to trust authentication on a private Unix socket. Restricted LOGIN fixtures must set their own generated password in both PostgreSQL and the connection URL; trust-only success does not verify SCRAM authentication. Qualify changed LOGIN fixtures against SCRAM as well as retaining their permission-denial assertions.
+
+The publication stress command targets `selected-publication-stress-browser.test.mts`: four real selected-state cases repeated25times (100cases). The renderer control blocks the actual built createVisualizer module and requires an observed failure with no painted canvas baseline. Browser/server fixtures start lazily so an empty test-name selection cannot leave a process running. Do not restore retired editor name filters or treat a zero-case run as stress qualification.
+
+A passing local recovery test does not close a failing CI run or prove a timing cause. Record exact head, failed interaction, local reproduction result and remaining uncertainty. Demo/native deployment, backend integration and owner visual acceptance remain distinct outcomes.
+
+For closed-action tamper tests, await the owning execution through its completion API before replacing result files. A terminal status can become readable before final fsync/cleanup finishes. Preserve in-flight pending/uncertain rules and security assertions; use completion synchronization rather than sleeps.
+
+Native theme staging preserves the prior qualified extension manifest's UID/name; the source theme TOML is local-preview configuration. Copying it over the native manifest created an inactive wrong-identity candidate. Keep1199165767681 NEVER_RELEASE, use the corrected original-identity candidate and compare every module before activation. CLI4.8.2's version list is truncated at20; use the collector's bounded full-count read through the same SDK transport, preserving exact opening/closing inventories, operation reservations and finite freshness. Partial or over-capacity inventories remain unavailable.
+
+Run check:boundaries and check:types sequentially. Boundary qualification temporarily writes intentionally invalid source probes; a concurrent full compiler can capture those expected-negative fixtures. Await the boundary wrapper completion/cleanup before starting all-project type qualification; never loosen compiler roots or boundary rules to mask that collision.
