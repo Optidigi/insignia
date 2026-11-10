@@ -35,9 +35,14 @@ async function renderTheme(t: TestContext, mode: 'required' | 'optional' | null,
       request: { locale: { iso_code: 'en' }, design_mode: false },
     },
   });
+  const translations: Record<string, string> = {
+    'insignia.customise': 'Customise',
+    'insignia.cart_review.label': 'Review customized items',
+    'insignia.cart_review.message': 'Customized items changed & need review.',
+  };
   engine.registerFilter('t', (key: unknown) => {
-    assert.equal(key, 'insignia.customise');
-    return 'Customise';
+    assert.ok(typeof key === 'string' && key in translations, `unexpected translation key ${String(key)}`);
+    return translations[key as string];
   });
   const values = {
     product: {
@@ -147,3 +152,85 @@ test('rendered draft-only and retained optional products keep ordinary purchase 
     assert.equal(await page.getByRole('button', { name: 'Buy normally', exact: true }).isVisible(), true);
   }
 });
+
+function memberCarrier(quantity: number, unitMinor: number) {
+  const bytes = Buffer.alloc(22);
+  bytes.writeUInt16BE(0, 0);
+  bytes.writeBigUInt64BE(101n, 2);
+  bytes.writeUInt32BE(quantity, 10);
+  bytes.writeBigUInt64BE(BigInt(unitMinor), 14);
+  return bytes.toString('base64url');
+}
+
+test('cart repair prompts with localized theme-styled review only after a native cart edit voids customization', async (t) => {
+  const html = await renderTheme(t, null);
+  const page = await browserFixture(t);
+  let line = {
+    product_id: 111,
+    quantity: 1,
+    original_price: 1745,
+    properties: { _insignia_member_v2: memberCarrier(1, 1745) },
+  };
+  await page.route('**/cart.js', (route) => route.fulfill({ json: { items: [line] } }));
+  await page.route('**/cart/change.js', (route) => route.fulfill({ json: {} }));
+  await page.evaluate((markup) => document.body.insertAdjacentHTML('beforeend', markup), html);
+  const repair = page.locator('insignia-cart-repair');
+  const trigger = repair.getByRole('button', { name: 'Review customized items', exact: true });
+  await trigger.waitFor();
+  // Light DOM lets the theme's own button styles apply to the trigger.
+  assert.equal(await trigger.evaluate((button) => button.classList.contains('button')), true);
+  const message = repair.getByText('Customized items changed & need review.');
+  assert.equal(await message.isVisible(), false);
+
+  // A native theme quantity change: Shopify reverts the line to its base price.
+  line = { ...line, quantity: 2, original_price: 995 };
+  await page.evaluate(() => fetch('/cart/change.js', { method: 'POST', body: '{}' }));
+  await message.waitFor();
+  const notice = repair.getByRole('status');
+  assert.equal(await notice.evaluate((element) => getComputedStyle(element).position), 'fixed');
+
+  // A repaired, re-signed line clears the prompt.
+  line = { ...line, original_price: 1745, properties: { _insignia_member_v2: memberCarrier(2, 1745) } };
+  await page.evaluate(() => window.dispatchEvent(new Event('insignia-cart-updated')));
+  await message.waitFor({ state: 'hidden' });
+  assert.equal(await notice.evaluate((element) => getComputedStyle(element).position), 'static');
+});
+
+test('a leftover cart quote without designed lines is cleared unless this tab has an unresolved Insignia write', async (t) => {
+  const html = await renderTheme(t, null);
+  for (const unresolved of [false, true]) {
+    const page = await browserFixture(t);
+    const updates: unknown[] = [];
+    let attributes: Record<string, string> = { _insignia_quote_v2: 'stale', gift: 'keep' };
+    await page.route('**/cart.js', (route) =>
+      route.fulfill({ json: { items: [{ product_id: 9, quantity: 1, properties: {} }], attributes } }),
+    );
+    await page.route('**/cart/update.js', (route) => {
+      const body = route.request().postDataJSON() as { attributes: Record<string, string> };
+      updates.push(body);
+      attributes = { ...attributes, ...body.attributes };
+      return route.fulfill({ json: { items: [], attributes } });
+    });
+    if (unresolved) await page.evaluate(() => sessionStorage.setItem('insignia-cart-unresolved-v2', '1'));
+    const loaded = page.waitForResponse((response) => response.url().endsWith('/cart.js'));
+    const cleared = unresolved
+      ? undefined
+      : page.waitForRequest((request) => request.url().endsWith('/cart/update.js'));
+    await page.evaluate((markup) => document.body.insertAdjacentHTML('beforeend', markup), html);
+    await loaded;
+    if (cleared) {
+      await cleared;
+      await expectEventually(() => updates.length === 1);
+      assert.deepEqual(updates, [{ attributes: { _insignia_quote_v2: '' } }], 'only the stale quote is cleared');
+    } else {
+      await page.waitForTimeout(300);
+      assert.deepEqual(updates, [], 'an unresolved Insignia operation keeps the cart for its own recovery');
+    }
+    assert.equal(await page.locator('insignia-cart-repair insignia-buyer').count(), 0);
+  }
+});
+
+async function expectEventually(check: () => boolean) {
+  for (let i = 0; i < 50 && !check(); i++) await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.ok(check());
+}

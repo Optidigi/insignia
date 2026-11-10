@@ -489,7 +489,7 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
       )
         return state;
       const artwork = { ...event.artwork };
-      return applyArtwork(
+      const applied = applyArtwork(
         {
           ...state,
           artworks: state.artworks.some((existing) => existing.id === artwork.id)
@@ -500,6 +500,11 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
         event.target,
         artwork.id,
       );
+      // The customer asked to leave the customizer while this upload ran: keep that
+      // intent as the ordinary close decision for the now-edited design.
+      return state.modal.kind === 'confirm-upload-cancel' && state.modal.destination === 'customizer'
+        ? { ...applied, modal: { kind: 'confirm-close' } }
+        : applied;
     }
     case 'upload-failed':
       if (

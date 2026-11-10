@@ -393,12 +393,62 @@ export class InsigniaBuyer extends HTMLElement {
 }
 if (!customElements.get('insignia-buyer')) customElements.define('insignia-buyer', InsigniaBuyer);
 
+type CartJsLine = {
+  product_id?: number;
+  quantity?: number;
+  original_price?: number;
+  properties?: Record<string, unknown>;
+};
+const CART_MUTATION = /\/cart\/(?:add|change|update|clear)(?:\.js)?$/;
+const isCustomized = (line: CartJsLine) =>
+  !!line.properties &&
+  (Object.hasOwn(line.properties, '_insignia_quote_v2') || Object.hasOwn(line.properties, '_insignia_member_v2'));
+
+/** Signed quantity/unit for presentation only. Layout owner: packages/cart-authorization/src/whole-quote.ts
+ * (u16 index, u64 variant, u32 quantity, u64 unit minor). Shopify Functions remain the price/checkout authority. */
+export function signedMember(carrier: unknown): { quantity: number; unitMinor: bigint } | undefined {
+  if (typeof carrier !== 'string' || !/^[A-Za-z0-9_-]{30}$/.test(carrier)) return;
+  try {
+    const binary = atob(carrier.replace(/-/g, '+').replace(/_/g, '/'));
+    if (binary.length !== 22) return;
+    const view = new DataView(Uint8Array.from(binary, (char) => char.charCodeAt(0)).buffer);
+    return { quantity: view.getUint32(10), unitMinor: view.getBigUint64(14) };
+  } catch {
+    return;
+  }
+}
+
+/** A designed line no longer shows the quantity and customization price it was accepted with. */
+export function customizedLineNeedsReview(line: CartJsLine): boolean {
+  if (!isCustomized(line)) return false;
+  const member = signedMember(line.properties?._insignia_member_v2);
+  return (
+    !member ||
+    member.quantity !== line.quantity ||
+    typeof line.original_price !== 'number' ||
+    BigInt(line.original_price) !== member.unitMinor
+  );
+}
+
 export class InsigniaCartRepair extends HTMLElement {
-  private readonly root = this.attachShadow({ mode: 'open' });
   private abort?: AbortController;
+  private observer?: PerformanceObserver;
   private readonly refresh = () => this.load();
   connectedCallback() {
     window.addEventListener('insignia-cart-updated', this.refresh);
+    // Native theme quantity/remove controls change the cart without an Insignia event.
+    if (typeof PerformanceObserver === 'function') {
+      const observer = new PerformanceObserver((list) => {
+        if (list.getEntries().some((entry) => CART_MUTATION.test(new URL(entry.name, location.href).pathname)))
+          this.load();
+      });
+      try {
+        observer.observe({ type: 'resource' });
+        this.observer = observer;
+      } catch {
+        /* Resource timing unavailable: Insignia events still refresh. */
+      }
+    }
     this.load();
   }
   private load() {
@@ -410,35 +460,118 @@ export class InsigniaCartRepair extends HTMLElement {
     void fetch(`${cartRoot}cart.js`, { cache: 'no-store', signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) return;
-        const cart = await response.json();
-        const line = cart.items?.find(
-          (item: { properties?: Record<string, unknown> }) =>
-            item.properties &&
-            (Object.hasOwn(item.properties, '_insignia_quote_v2') ||
-              Object.hasOwn(item.properties, '_insignia_member_v2')),
-        );
-        if (
-          !line ||
-          controller.signal.aborted ||
-          this.abort !== controller ||
-          this.root.querySelector('insignia-buyer')
-        )
+        const cart = (await response.json()) as { items?: CartJsLine[]; attributes?: Record<string, unknown> };
+        if (controller.signal.aborted || this.abort !== controller) return;
+        const customized = (cart.items ?? []).filter(isCustomized);
+        const changed = customized.find(customizedLineNeedsReview);
+        const line = changed ?? customized[0];
+        if (line) {
+          this.render(String(line.product_id), !!changed);
           return;
-        const buyer = document.createElement('insignia-buyer');
-        for (const attribute of ['proxy-base', 'cart-root', 'country', 'market-id']) {
-          const value = this.getAttribute(attribute);
-          if (value) buyer.setAttribute(attribute, value);
         }
-        buyer.setAttribute('product-id', String(line.product_id));
-        buyer.setAttribute('repair', '');
-        this.root.replaceChildren(buyer);
+        this.replaceChildren();
+        if (cart.attributes?._insignia_quote_v2) this.clearStaleQuote(cartRoot, controller.signal);
       })
       .catch(() => {});
   }
+  /**
+   * Native theme removal leaves the cart-level quote behind; checkout validation treats any quote as a
+   * customization claim, so an otherwise plain cart could not check out. Insignia's own cart writes clear
+   * the quote together with its lines and set it only after lines exist, so a quote with no designed line
+   * is stale. An unresolved Insignia operation in this tab keeps the cart untouched for its own recovery.
+   */
+  private clearStaleQuote(cartRoot: string, signal: AbortSignal) {
+    try {
+      // Same key as buyer.ts cartJournal.
+      if (sessionStorage.getItem('insignia-cart-unresolved-v2') === '1') return;
+    } catch {
+      return;
+    }
+    void fetch(`${cartRoot}cart/update.js`, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ attributes: { _insignia_quote_v2: '' } }),
+      signal,
+    }).catch(() => {});
+  }
+  private render(productId: string, needsReview: boolean) {
+    let buyer = this.querySelector('insignia-buyer');
+    if (buyer?.getAttribute('product-id') !== productId) {
+      // Light DOM keeps the theme's own button styling on the trigger.
+      buyer = document.createElement('insignia-buyer');
+      for (const attribute of ['proxy-base', 'cart-root', 'country', 'market-id']) {
+        const value = this.getAttribute(attribute);
+        if (value) buyer.setAttribute(attribute, value);
+      }
+      const label = this.getAttribute('review-label');
+      if (label) {
+        const button = document.createElement('button');
+        button.slot = 'trigger';
+        button.textContent = label;
+        buyer.append(button);
+      }
+      buyer.setAttribute('product-id', productId);
+      buyer.setAttribute('repair', '');
+    }
+    let notice = this.querySelector<HTMLElement>(':scope > .insignia-cart-review');
+    if (!notice) {
+      notice = document.createElement('div');
+      notice.className = 'insignia-cart-review';
+      notice.setAttribute('role', 'status');
+      notice.append(document.createElement('p'));
+      this.replaceChildren(notice);
+    }
+    const text = notice.querySelector('p');
+    if (text) {
+      text.textContent = needsReview
+        ? (this.getAttribute('review-message') ??
+          'Your customized items changed and are shown without customization prices. Review them before checkout.')
+        : '';
+      text.hidden = !needsReview;
+      text.style.margin = '0 0 0.75rem';
+    }
+    notice.toggleAttribute('data-needs-review', needsReview);
+    // Only a changed cart needs a prominent prompt; otherwise keep the existing inline edit entry.
+    Object.assign(
+      notice.style,
+      needsReview
+        ? {
+            position: 'fixed',
+            insetInline: '1rem',
+            bottom: '1rem',
+            zIndex: '20',
+            maxWidth: '32rem',
+            marginInline: 'auto',
+            padding: '1rem',
+            background: 'Canvas',
+            color: 'CanvasText',
+            border: '1px solid currentColor',
+            borderRadius: '0.5rem',
+            boxShadow: '0 0.5rem 1.5rem rgb(0 0 0 / 0.2)',
+          }
+        : {
+            position: '',
+            insetInline: '',
+            bottom: '',
+            zIndex: '',
+            maxWidth: '',
+            marginInline: '',
+            padding: '',
+            background: '',
+            color: '',
+            border: '',
+            borderRadius: '',
+            boxShadow: '',
+          },
+    );
+    if (buyer.parentElement !== notice) notice.append(buyer);
+  }
   disconnectedCallback() {
     window.removeEventListener('insignia-cart-updated', this.refresh);
+    this.observer?.disconnect();
     this.abort?.abort();
-    this.root.replaceChildren();
+    this.replaceChildren();
   }
 }
 if (!customElements.get('insignia-cart-repair')) customElements.define('insignia-cart-repair', InsigniaCartRepair);

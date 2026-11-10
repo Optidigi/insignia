@@ -1,5 +1,9 @@
 {
   "insignia": {
-    "customise": "Customise"
+    "customise": "Customise",
+    "cart_review": {
+      "label": "Review customized items",
+      "message": "Your customized items changed, so customization prices are not applied. Review them before checkout."
+    }
   }
 }

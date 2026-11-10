@@ -22,3 +22,16 @@ export function desiredGroupKey(group: DesiredGroup, variants = true, revision =
     ...(variants ? [ordered(group.variants.map((variant) => [variant.variantId, variant.quantity]))] : []),
   ]);
 }
+
+/**
+ * Chooses the design to reopen for a cart line. A saved draft owns artwork, placement and
+ * production choices; after a cart edit the cart's quantities are the customer's latest decision.
+ */
+export function restorableDesign(
+  cart: DesiredGroup,
+  draft: DesiredGroup | undefined,
+  cartChangedSinceAcceptance: boolean,
+): DesiredGroup {
+  if (!draft) return cart;
+  return cartChangedSinceAcceptance ? { ...draft, variants: structuredClone(cart.variants) } : draft;
+}
