@@ -2,6 +2,9 @@ use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use curve25519_dalek::edwards::CompressedEdwardsY;
 use ed25519_dalek::{Signature, VerifyingKey};
 
+// Historical whole-quote v2. Functions no longer accept it; purchase reconciliation keeps v2 verification
+// (packages/cart-authorization) for historical orders. Retained here for the shared key/context types.
+
 pub const DOMAIN: &[u8] = b"Insignia\0WholeQuoteAuthorization\0v2\0";
 pub const HEADER_LEN: usize = 92;
 pub const MEMBER_LEN: usize = 22;
@@ -23,6 +26,10 @@ pub enum Error {
     Line,
     MissingPrice,
     Overflow,
+    /// v3: a line does not carry the cart's single signed prefix.
+    MixedSet,
+    /// v3: Merkle inclusion does not reproduce the signed root.
+    Proof,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -190,6 +197,11 @@ impl VerificationKey {
     }
     pub fn admitted(&self, day: u32) -> bool {
         !self.revoked && self.first_day <= day && day <= self.last_day
+    }
+    pub(crate) fn verify_strict(&self, message: &[u8], signature: &Signature) -> Result<(), Error> {
+        self.parsed
+            .verify_strict(message, signature)
+            .map_err(|_| Error::Signature)
     }
 }
 
