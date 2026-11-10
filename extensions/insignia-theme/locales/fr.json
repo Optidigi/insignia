@@ -3,7 +3,11 @@
     "customise": "Personnaliser",
     "cart_review": {
       "label": "Vérifier les articles personnalisés",
-      "message": "Vos articles personnalisés ont changé : les prix de personnalisation ne sont pas appliqués. Vérifiez-les avant de passer commande."
+      "message": "Vos articles personnalisés ont changé : les prix de personnalisation ne sont pas appliqués. Vérifiez-les avant de passer commande.",
+      "renew_label": "Renouveler les prix",
+      "expired_message": "Vos prix de personnalisation ont expiré et ne sont pas appliqués. Renouvelez-les avant de passer commande.",
+      "context_message": "Les prix ont changé, car votre pays ou votre devise a changé. Vérifiez vos articles personnalisés pour les mettre à jour.",
+      "renew_failed_message": "Les prix n’ont pas pu être renouvelés. Vérifiez vos articles personnalisés avant de passer commande."
     }
   }
 }

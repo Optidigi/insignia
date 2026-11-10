@@ -418,6 +418,76 @@ export function signedMember(carrier: unknown): { quantity: number; unitMinor: b
   }
 }
 
+/** Signed context for presentation only, decoded from the per-line `_insignia_quote_v2` envelope
+ * (92-byte header + 64-byte signature; layout owner whole-quote.ts). Functions remain the authority. */
+export function signedContext(
+  carrier: unknown,
+): { currency: string; country: string; marketId: string; validThroughDay: number } | undefined {
+  if (typeof carrier !== 'string' || !/^[A-Za-z0-9_-]{208}$/.test(carrier)) return;
+  try {
+    const bytes = Uint8Array.from(atob(carrier.replace(/-/g, '+').replace(/_/g, '/')), (char) => char.charCodeAt(0));
+    const ascii = (start: number, end: number) => String.fromCharCode(...bytes.subarray(start, end));
+    if (bytes.length !== 156 || ascii(0, 4) !== 'ISG2' || bytes[4] !== 2) return;
+    const view = new DataView(bytes.buffer);
+    return {
+      currency: ascii(62, 65),
+      country: ascii(66, 68),
+      marketId: view.getBigUint64(68).toString(),
+      validThroughDay: view.getUint32(76),
+    };
+  } catch {
+    return;
+  }
+}
+
+export type CartReviewReason = 'changed' | 'context' | 'expired';
+/**
+ * Why designed lines no longer carry their signed prices, for presentation only:
+ * - `context`: cart currency or the storefront country/Market differs from the signed context;
+ * - `expired`: every signed quantity still matches and the shared valid-through day may have passed.
+ *   The day is shop-local and the browser cannot know the shop zone, so this only excludes sets that
+ *   are certainly still valid (any zone is within one day of UTC). The server decides renewal;
+ * - `changed`: anything else.
+ */
+export function cartReviewReason(
+  lines: CartJsLine[],
+  context: { currency?: string; country?: string; marketId?: string },
+  utcDay = Math.floor(Date.now() / 86400000),
+): CartReviewReason | undefined {
+  if (!lines.some(customizedLineNeedsReview)) return;
+  const signed = lines.map((line) => signedContext(line.properties?._insignia_quote_v2));
+  const market = context.marketId?.replace(/^gid:\/\/shopify\/Market\//, '');
+  if (
+    signed.some(
+      (header) =>
+        header &&
+        ((!!context.currency && header.currency !== context.currency) ||
+          (!!context.country && header.country !== context.country) ||
+          (!!market && header.marketId !== market)),
+    )
+  )
+    return 'context';
+  const day = signed[0]?.validThroughDay;
+  return day !== undefined &&
+    day <= utcDay &&
+    signed.every((header) => header?.validThroughDay === day) &&
+    lines.every((line) => signedMember(line.properties?._insignia_member_v2)?.quantity === line.quantity)
+    ? 'expired'
+    : 'changed';
+}
+
+/** Whether this tab still holds the buyer session that owns its accepted sets (same key as buyer.ts). */
+function hasBuyerSession(proxyBase: string) {
+  try {
+    const saved = JSON.parse(
+      sessionStorage.getItem(`insignia-buyer-session:${proxyBase.slice(proxyBase.lastIndexOf('/apps/'))}`) ?? 'null',
+    );
+    return typeof saved?.capability === 'string' && Date.parse(saved.expiresAt) > Date.now();
+  } catch {
+    return false;
+  }
+}
+
 /** A designed line no longer shows the quantity and customization price it was accepted with. */
 export function customizedLineNeedsReview(line: CartJsLine): boolean {
   if (!isCustomized(line)) return false;
@@ -433,6 +503,8 @@ export function customizedLineNeedsReview(line: CartJsLine): boolean {
 export class InsigniaCartRepair extends HTMLElement {
   private abort?: AbortController;
   private observer?: PerformanceObserver;
+  private renewing = false;
+  private renewFailed = false;
   private readonly refresh = () => this.load();
   connectedCallback() {
     window.addEventListener('insignia-cart-updated', this.refresh);
@@ -452,6 +524,8 @@ export class InsigniaCartRepair extends HTMLElement {
     this.load();
   }
   private load() {
+    // Renewal's own verified cart writes pass through transient states; it reloads when settled.
+    if (this.renewing) return;
     this.abort?.abort();
     const controller = new AbortController();
     this.abort = controller;
@@ -460,13 +534,22 @@ export class InsigniaCartRepair extends HTMLElement {
     void fetch(`${cartRoot}cart.js`, { cache: 'no-store', signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) return;
-        const cart = (await response.json()) as { items?: CartJsLine[]; attributes?: Record<string, unknown> };
+        const cart = (await response.json()) as {
+          items?: CartJsLine[];
+          attributes?: Record<string, unknown>;
+          currency?: string;
+        };
         if (controller.signal.aborted || this.abort !== controller) return;
         const customized = (cart.items ?? []).filter(isCustomized);
-        const changed = customized.find(customizedLineNeedsReview);
-        const line = changed ?? customized[0];
+        const reason = cartReviewReason(customized, {
+          currency: typeof cart.currency === 'string' ? cart.currency : undefined,
+          country: this.getAttribute('country') ?? undefined,
+          marketId: this.getAttribute('market-id') ?? undefined,
+        });
+        if (!reason) this.renewFailed = false;
+        const line = customized.find(customizedLineNeedsReview) ?? customized[0];
         if (line) {
-          this.render(String(line.product_id), !!changed);
+          this.render(String(line.product_id), reason);
           return;
         }
         this.replaceChildren();
@@ -495,7 +578,42 @@ export class InsigniaCartRepair extends HTMLElement {
       signal,
     }).catch(() => {});
   }
-  private render(productId: string, needsReview: boolean) {
+  private async renew(productId: string) {
+    if (this.renewing) return;
+    this.renewing = true;
+    this.render(productId, 'expired');
+    const cartRoot = this.getAttribute('cart-root') ?? '/';
+    let renewed = false;
+    try {
+      const { renewCartPrices } = await import('./renewal');
+      renewed = await renewCartPrices({
+        proxyBase: this.getAttribute('proxy-base') ?? '/apps/insignia',
+        cartRoot,
+        productId,
+        country: this.getAttribute('country') ?? '',
+        marketId: this.getAttribute('market-id') ?? '',
+        storage: sessionStorage,
+      });
+    } catch {
+      /* Review required, entitlement denied or unavailable: the Designer repair remains. */
+    } finally {
+      this.renewing = false;
+    }
+    if (!this.isConnected) return;
+    if (renewed) {
+      // Like the Designer, show Shopify's own cart with the renewed prices applied.
+      window.location.assign(`${cartRoot}cart`);
+      return;
+    }
+    this.renewFailed = true;
+    this.render(productId, 'expired');
+    this.querySelector<HTMLButtonElement>('insignia-buyer button[slot="trigger"]')?.focus();
+    this.load();
+  }
+  private render(productId: string, reason: CartReviewReason | undefined) {
+    const needsReview = !!reason;
+    const renewable =
+      reason === 'expired' && !this.renewFailed && hasBuyerSession(this.getAttribute('proxy-base') ?? '/apps/insignia');
     let buyer = this.querySelector('insignia-buyer');
     if (buyer?.getAttribute('product-id') !== productId) {
       // Light DOM keeps the theme's own button styling on the trigger.
@@ -524,10 +642,19 @@ export class InsigniaCartRepair extends HTMLElement {
     }
     const text = notice.querySelector('p');
     if (text) {
-      text.textContent = needsReview
-        ? (this.getAttribute('review-message') ??
-          'Your customized items changed and are shown without customization prices. Review them before checkout.')
-        : '';
+      text.textContent = !needsReview
+        ? ''
+        : reason === 'context'
+          ? (this.getAttribute('context-message') ??
+            'Prices changed because your country or currency changed. Review customized items to update them.')
+          : renewable
+            ? (this.getAttribute('expired-message') ??
+              'Your customization prices expired and are not applied. Renew them before checkout.')
+            : reason === 'expired' && this.renewFailed
+              ? (this.getAttribute('renew-failed-message') ??
+                'Prices could not be renewed. Review your customized items before checkout.')
+              : (this.getAttribute('review-message') ??
+                'Your customized items changed and are shown without customization prices. Review them before checkout.');
       text.hidden = !needsReview;
       text.style.margin = '0 0 0.75rem';
     }
@@ -565,6 +692,22 @@ export class InsigniaCartRepair extends HTMLElement {
             boxShadow: '',
           },
     );
+    let renew = notice.querySelector<HTMLButtonElement>(':scope > button.insignia-cart-renew');
+    if (renewable && !renew) {
+      renew = document.createElement('button');
+      renew.type = 'button';
+      renew.className = 'button insignia-cart-renew';
+      renew.style.marginInlineEnd = '0.5rem';
+      renew.textContent = this.getAttribute('renew-label') ?? 'Renew prices';
+      notice.querySelector('p')?.after(renew);
+    }
+    if (renew) {
+      // Cart custody stays click-only: renewal starts from this buyer gesture.
+      renew.onclick = () => void this.renew(productId);
+      renew.hidden = !renewable;
+      renew.disabled = this.renewing;
+      renew.toggleAttribute('aria-busy', this.renewing);
+    }
     if (buyer.parentElement !== notice) notice.append(buyer);
   }
   disconnectedCallback() {

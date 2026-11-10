@@ -3,7 +3,11 @@
     "customise": "Customise",
     "cart_review": {
       "label": "Review customized items",
-      "message": "Your customized items changed, so customization prices are not applied. Review them before checkout."
+      "message": "Your customized items changed, so customization prices are not applied. Review them before checkout.",
+      "renew_label": "Renew prices",
+      "expired_message": "Your customization prices expired and are not applied. Renew them before checkout.",
+      "context_message": "Prices changed because your country or currency changed. Review customized items to update them.",
+      "renew_failed_message": "Prices could not be renewed. Review your customized items before checkout."
     }
   }
 }

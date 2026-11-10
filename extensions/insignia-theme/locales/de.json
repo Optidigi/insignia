@@ -3,7 +3,11 @@
     "customise": "Anpassen",
     "cart_review": {
       "label": "Personalisierte Artikel prüfen",
-      "message": "Deine personalisierten Artikel wurden geändert, daher werden keine Personalisierungspreise angewendet. Prüfe sie vor dem Checkout."
+      "message": "Deine personalisierten Artikel wurden geändert, daher werden keine Personalisierungspreise angewendet. Prüfe sie vor dem Checkout.",
+      "renew_label": "Preise erneuern",
+      "expired_message": "Deine Personalisierungspreise sind abgelaufen und werden nicht angewendet. Erneuere sie vor dem Checkout.",
+      "context_message": "Die Preise haben sich geändert, weil sich dein Land oder deine Währung geändert hat. Prüfe deine personalisierten Artikel, um sie zu aktualisieren.",
+      "renew_failed_message": "Die Preise konnten nicht erneuert werden. Prüfe deine personalisierten Artikel vor dem Checkout."
     }
   }
 }

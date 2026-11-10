@@ -3,7 +3,11 @@
     "customise": "Personaliseren",
     "cart_review": {
       "label": "Gepersonaliseerde artikelen controleren",
-      "message": "Je gepersonaliseerde artikelen zijn gewijzigd, daarom worden de personalisatieprijzen niet toegepast. Controleer ze voordat je afrekent."
+      "message": "Je gepersonaliseerde artikelen zijn gewijzigd, daarom worden de personalisatieprijzen niet toegepast. Controleer ze voordat je afrekent.",
+      "renew_label": "Prijzen vernieuwen",
+      "expired_message": "Je personalisatieprijzen zijn verlopen en worden niet toegepast. Vernieuw ze voordat je afrekent.",
+      "context_message": "De prijzen zijn gewijzigd omdat je land of valuta is gewijzigd. Controleer je gepersonaliseerde artikelen om ze bij te werken.",
+      "renew_failed_message": "De prijzen konden niet worden vernieuwd. Controleer je gepersonaliseerde artikelen voordat je afrekent."
     }
   }
 }
