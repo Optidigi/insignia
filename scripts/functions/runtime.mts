@@ -18,7 +18,7 @@ export type FunctionLine = Record<string, unknown> & {
 };
 export type FunctionInput = Record<string, unknown> & {
   cart: { quote: Attribute; lines: FunctionLine[] };
-  localization: { country: { isoCode: string }; market: { id: string } };
+  localization: { country: { isoCode: string }; market: { id: string }; language?: { isoCode: string } };
   shop: { localTime: { date: string }; publicConfig: { value: string } };
   buyerJourney?: { step: string };
 };
@@ -144,8 +144,12 @@ export function decodeInput(value: unknown): FunctionInput {
       }),
     },
     localization: {
+      ...localization,
       country: { isoCode: text(record(localization.country).isoCode) },
       market: { id: text(record(localization.market).id) },
+      ...(localization.language === undefined
+        ? {}
+        : { language: { isoCode: text(record(localization.language).isoCode) } }),
     },
     shop: {
       localTime: { date: text(record(shop.localTime).date) },

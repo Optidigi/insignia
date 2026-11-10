@@ -333,6 +333,18 @@ mod tests {
     }
 
     #[test]
+    fn stale_quote_without_marked_lines_emits_no_operation() {
+        let mut input = fixture();
+        for line in input["cart"]["lines"].as_array_mut().unwrap() {
+            line["member"] = serde_json::Value::Null;
+            line["merchandise"]["product"]["policy"]["value"] =
+                "11111111111111111111111111111111:1:optional".into();
+        }
+        assert!(!input["cart"]["quote"].is_null());
+        assert!(run(input)["operations"].as_array().unwrap().is_empty());
+    }
+
+    #[test]
     fn complete_set_sets_both_prices_and_copies_compact_member() {
         let input = fixture();
         let out = run(input.clone());

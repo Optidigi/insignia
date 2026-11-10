@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { createHash, createHmac, generateKeyPairSync, randomBytes, randomUUID } from 'node:crypto';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -9,6 +9,9 @@ import { createDurableCore, sha256CanonicalJson } from '@insignia/database';
 import { abstractFetch, setAbstractFetchFunc } from '@shopify/shopify-api/runtime';
 import { build } from 'esbuild';
 import { Pool } from 'pg';
+import moduleBaseline from '../../../../deployment/m5-runtime/native-function-module-baseline.json' with {
+  type: 'json',
+};
 import binding from '../../../../deployment/m5-runtime/native-function-module-binding.json' with { type: 'json' };
 import { qualifyReleaseAppendInput } from '../../../../scripts/release/append.mts';
 import { collectFreshTrustedRelease } from '../../../../scripts/release/collector.mts';
@@ -26,18 +29,18 @@ const client = binding.appClientId;
 const secret = 'synthetic-m5-composition-secret';
 const productId = 'gid://shopify/Product/555';
 const appId = `gid://shopify/App/${binding.appId}`;
+// The synthetic Admin API serves the queries the active app version's Function
+// artifacts actually run (native module projection), not the working-tree source:
+// a reviewed source change must not be mistaken for the deployed Function.
+function deployedQuery(handle: string) {
+  const module = moduleBaseline.find((item) => item.handle === handle);
+  const query = (module?.config as { targets?: { input_query?: unknown }[] } | undefined)?.targets?.[0]?.input_query;
+  assert.equal(typeof query, 'string');
+  return query as string;
+}
 const queries = {
-  transform: await readFile(
-    new URL('../../../../extensions/insignia-cart-transform/src/cart_transform_run.graphql', import.meta.url),
-    'utf8',
-  ),
-  validation: await readFile(
-    new URL(
-      '../../../../extensions/insignia-cart-validation/src/cart_validations_generate_run.graphql',
-      import.meta.url,
-    ),
-    'utf8',
-  ),
+  transform: deployedQuery('insignia-experimental-v2-transform'),
+  validation: deployedQuery('insignia-experimental-v2-validation'),
 };
 function staffToken(shop: string) {
   const now = Math.floor(Date.now() / 1000);
