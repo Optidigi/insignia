@@ -1,3 +1,4 @@
+import { ARTWORK_UPLOAD_ACCEPT } from '@insignia/contracts';
 import AdminSkeleton from '../components/AdminSkeleton';
 import PrivatePreviewImage from '../components/PrivatePreviewImage';
 import { authenticatedJson } from '../shared/admin-request';
@@ -35,7 +36,7 @@ export default function ArtworkUpload({
         <s-drop-zone
           label="Upload artwork"
           accessibilityLabel="Upload artwork"
-          accept="image/svg+xml,image/png,image/jpeg"
+          accept={ARTWORK_UPLOAD_ACCEPT}
           disabled={disabled || busy}
           onChange={(event) => {
             const file = event.currentTarget.files[0];

@@ -1,3 +1,4 @@
+import { artworkUploadMime } from "@insignia/contracts";
 import type { Artwork, Design, PositionId } from "./model";
 import {
   canCommitDesign,
@@ -156,7 +157,7 @@ export function createDesignerRuntime(
       const token = Math.max(uploadVersion + 1, getState().uploadVersion + 1);
       uploadVersion = token;
       if (
-        !["image/png", "image/jpeg", "image/svg+xml"].includes(file.type) ||
+        !artworkUploadMime(file) ||
         file.size > 5 * 1024 * 1024
       ) {
         dispatch({

@@ -1,3 +1,5 @@
+import { artworkUploadMime } from '@insignia/contracts';
+
 export type ArtworkPreview = {
   assetId: string;
   url: string;
@@ -166,11 +168,8 @@ export function createArtworkUpload(input: {
       return readPreview(asset.assetId, status.expiresAt, signal);
     },
     async upload(file: File, onState: (state: string) => void, signal?: AbortSignal): Promise<ArtworkPreview> {
-      if (
-        !['image/svg+xml', 'image/png', 'image/jpeg'].includes(file.type) ||
-        file.size < 1 ||
-        file.size > 5 * 1024 * 1024
-      )
+      const contentType = artworkUploadMime(file);
+      if (!contentType || file.size < 1 || file.size > 5 * 1024 * 1024)
         throw new Error('Choose an SVG, PNG or JPEG up to 5 MiB.');
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
       onState('Allocating private upload');
@@ -178,7 +177,7 @@ export function createArtworkUpload(input: {
         await input.api('/api/artwork', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contentType: file.type, byteLength: file.size }),
+          body: JSON.stringify({ contentType, byteLength: file.size }),
           signal,
         }),
       );

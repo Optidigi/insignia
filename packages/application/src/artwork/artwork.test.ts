@@ -93,6 +93,47 @@ describe('private artwork lifecycle at the application seam', () => {
     expect(objects.get('originals/key')).toEqual(new Uint8Array([1, 2, 3]));
     expect(objects.get('previews/key.png')).toEqual(preview);
   });
+  it('treats the declared type as a hint and promotes the inspected type for storage and download naming', async () => {
+    const original = new Uint8Array([255, 216, 255]);
+    const preview = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+    const row = artworkRow({ declaredMime: 'image/png', manifest: null });
+    const objects = new Map<string, Uint8Array>([[row.quarantineKey, original]]);
+    let prepared: ArtworkRecord['manifest'] = null;
+    const service = createArtworkService({
+      clock: () => new Date('2026-10-12T12:00:00Z'),
+      store: artworkStore({
+        claim: async () => row,
+        prepare: async (_id, _claim, manifest) => {
+          prepared = manifest;
+          return row;
+        },
+        settle: async () => true,
+        release: async () => {},
+        get: async () => ({ ...row, manifest: prepared }),
+      }),
+      storage: artworkStorage({
+        read: async ({ key }) => new Uint8Array(objects.get(key) ?? []),
+        putImmutable: async ({ key, bytes }) => {
+          objects.set(key, new Uint8Array(bytes));
+        },
+        remove: async () => {},
+        presignRead: async ({ downloadFilename }) => `https://objects.test/${downloadFilename}`,
+      }),
+      inspect: async (bytes) => ({
+        version: 'm6-inspection-v1',
+        mimeType: 'image/jpeg',
+        width: 3,
+        height: 4,
+        originalSha256: createHash('sha256').update(bytes).digest('hex'),
+        preview,
+        previewMimeType: 'image/png',
+      }),
+    });
+    await expect(service.process(row.assetId)).resolves.toBe('usable');
+    expect(prepared).toMatchObject({ mimeType: 'image/jpeg', width: 3, height: 4 });
+    const merchant = { shopId: 'shop', installationGeneration: '1', kind: 'merchant' as const };
+    expect((await service.download(merchant, row.assetId)).url).toBe(`https://objects.test/artwork-${row.assetId}.jpg`);
+  });
   it('overlaps independent promotion writes and readbacks without exposing partially verified bytes', async () => {
     const original = new Uint8Array([1, 2, 3]);
     const preview = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
