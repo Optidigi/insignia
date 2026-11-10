@@ -249,7 +249,7 @@ Normalize actual physical priced items through the target-specific adapter; Qual
 6. Checked-sum physical quantities and `quantity × unitMinor` using sufficiently wide intermediates; compare with signed totals.
 7. Validator additionally compares **actual materialized pre-discount economic amounts**, not just signature claims or a transform-generated marker.
 
-Submitting a complete offer and checking out only a subset fails completeness and quantity checks. Removing every marker on an optional product creates a plain purchase with no production customization, not an entitlement to free customization. Required products still reject unsigned purchases.
+Submitting a complete offer and checking out only a subset fails completeness and quantity checks. Removing every marker on an optional product creates a plain purchase with no production customization, not an entitlement to free customization. Required products still reject unsigned purchases. Markers are the per-line member carriers; a leftover cart-level quote attribute with no marked line is a plain cart, not a marker.
 
 ### 5.4 Expiry, replay and renewal
 
@@ -646,7 +646,7 @@ Post-order upload uses the same inspection pipeline. Once USABLE, an authenticat
 | Historical unresolved usage effect | Lean usage staging/dispatch remains disabled | Preserve/reconcile genuine prior obligations; never infer billed success or back-bill the flat-plan period |
 | Uninstall or Function removal | Stop backend commercial activity; enforcement cannot be guaranteed once removed | Privacy/uninstall policy applies; do not claim offline enforcement survives absent Functions |
 
-For a missing Function configuration, a cart with any Insignia marker or required-product flag fails closed at checkout. Healthy plain optional carts may pass without Insignia processing. Unknown protocol, currency/context, corrupt keys or unsupported quantity boundaries are errors, not free purchases.
+For a missing Function configuration, a cart with any per-line Insignia marker or required-product flag fails closed at checkout. A leftover cart-level quote attribute alone is not a marker. Healthy plain optional carts may pass without Insignia processing. Unknown protocol, currency/context, corrupt keys or unsupported quantity boundaries are errors, not free purchases.
 
 ### 13.2 Observability
 
