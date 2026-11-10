@@ -144,6 +144,7 @@ export function decodeInput(value: unknown): FunctionInput {
       }),
     },
     localization: {
+      ...localization,
       country: { isoCode: text(record(localization.country).isoCode) },
       market: { id: text(record(localization.market).id) },
     },

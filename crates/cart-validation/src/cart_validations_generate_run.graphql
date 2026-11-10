@@ -24,7 +24,7 @@ query Input {
       }
     }
   }
-  localization { country { isoCode } market { id } }
+  localization { country { isoCode } language { isoCode } market { id } }
   shop {
     localTime { date }
     publicConfig: metafield(key: "insignia_public_config_v2") { value }

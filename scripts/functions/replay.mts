@@ -95,6 +95,14 @@ function replayTarget(target: Target, runner: string): SemanticEvidence {
       unsigned.cart.quote = null;
       for (const line of unsigned.cart.lines) line.member = null;
       check(`unsigned-required-${label}`, unsigned, 1);
+      // Native theme removal can leave the cart quote behind with no marked line.
+      const staleRequired = structuredClone(valid);
+      for (const line of staleRequired.cart.lines) line.member = null;
+      check(`stale-quote-required-${label}`, staleRequired, 1);
+      const stalePlain = structuredClone(staleRequired);
+      for (const line of stalePlain.cart.lines)
+        line.merchandise.product.policy = { value: `${'1'.repeat(32)}:1:optional` };
+      check(`stale-quote-plain-${label}`, stalePlain, 0);
     }
   }
   if (target === 'validation') {
