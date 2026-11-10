@@ -1,10 +1,12 @@
-# Whole-quote v2 wire contract
+# Whole-quote v2 wire contract (historical)
+
+> **Historical since 10 November 2026.** The owner adopted [cart-line v3](CART-LINE-V3.md) as a single cutover: the server issues v3 only and both Functions accept v3 only. v2 is no longer issued or accepted at checkout. Purchase reconciliation keeps v2 verification **permanently** for historical orders and late webhooks. The bytes below stay frozen for that purpose.
 
 This document owns exact authorization bytes and carrier semantics. The [current specification](implementation-plan.md) owns product behavior and acceptance; [current state](../delivery/state.md) owns qualified contexts and remaining work. Original adoption is preserved at [the pre-closeout record](https://github.com/Optidigi/insignia/blob/9d69dd5f440a383400e6e8af3bb93678d66f3b9f/docs/architecture/WHOLE-QUOTE-V2-ADOPTED.md). Adoption grants neither deployment nor universal merchant capacity.
 
 ## Frozen wire contract
 
-The following are now the single production authorization protocol for the rewrite:
+The following were the single production authorization protocol until the v3 cutover:
 
 - domain: `Insignia\0WholeQuoteAuthorization\0v2\0`;
 - magic: `ISG2`;

@@ -8,7 +8,7 @@ Inspect the affected code, tests and running behavior to establish what exists. 
 
 - Engineering priorities, workflow or external effects: [operating model](docs/delivery/operating-model.md).
 - UI: [frontend ownership map](frontend/README.md) and [UI state guidance](docs/delivery/operating-model.md#ui-state-and-effects).
-- Signed cart authorization: [exact wire contract](docs/architecture/WHOLE-QUOTE-V2-ADOPTED.md).
+- Signed cart authorization: [exact wire contract](docs/architecture/CART-LINE-V3.md).
 - Diagnosis, tests, review or instruction edits: [project skill selection](.agents/skills/PROJECT-ADAPTATIONS.md); load only applicable skills and references.
 
 Keep current status in the assignment document, workflow in the operating model and requirements in the specification. Historical evidence is consulted for a specific question, not replayed as session instructions. Resource permissions and protected installations remain in the operating model.
