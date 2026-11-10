@@ -4,8 +4,8 @@ import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import accepted from '../../packages/cart-authorization/fixtures/accepted-quote-example.json' with { type: 'json' };
+import vectors from '../../packages/cart-authorization/fixtures/cart-line-v3.json' with { type: 'json' };
 import persisted from '../../packages/cart-authorization/fixtures/persisted-negative-vector.json' with { type: 'json' };
-import vectors from '../../packages/cart-authorization/fixtures/whole-quote-v2.json' with { type: 'json' };
 import { calculatedQueryCost } from './query-cost.mts';
 import {
   array,
@@ -36,40 +36,42 @@ export function makeInput(target: Target, entry: ReplayCase): FunctionInput {
   config.keys = [
     {
       id: header.keyId,
-      publicHex: entry.publicHex ?? vectors.publicHex,
+      publicHex: vectors.publicHex,
       revoked: false,
-      firstDay: entry.firstValidDay ?? 20800,
-      lastDay: entry.lastValidDay ?? 20802,
+      firstDay: vectors.context.keyFirstDay,
+      lastDay: vectors.context.keyLastDay,
     },
   ];
   input.shop.publicConfig.value = compact(config).toString();
-  input.shop.localTime.date = entry.acceptedDate ?? '2026-12-13';
+  input.shop.localTime.date = '2026-12-13';
   input.localization.country.isoCode = header.country;
   input.localization.market.id = `gid://shopify/Market/${header.marketId}`;
-  input.cart.quote = { value: entry.envelope };
   const model = required(input.cart.lines[0]);
   input.cart.lines = [];
-  assert.equal(entry.members.length, entry.memberCarriers.length, 'Complete carrier vector required');
-  for (const [index, member] of entry.members.entries()) {
+  assert.equal(entry.records.length, entry.carriers.length, 'Complete carrier vector required');
+  for (const [index, record] of entry.records.entries()) {
     const line = structuredClone(model);
+    // Quantity is not signed: replay a quantity the issuer never saw.
+    const quantity = BigInt(record.unitMinor) > 1n << 40n ? 1 : 1 + (index % 3);
     line.id = `gid://shopify/CartLine/${index + 1}`;
-    line.member = { value: required(entry.memberCarriers[index]) };
-    line.quantity = member.quantity;
-    line.merchandise.id = `gid://shopify/ProductVariant/${member.variantId}`;
+    line.line = { value: required(entry.carriers[index]) };
+    line.legacy = null;
+    line.quantity = quantity;
+    line.merchandise.id = `gid://shopify/ProductVariant/${record.variantId}`;
     line.merchandise.product.id = `gid://shopify/Product/${42 + (index % 3)}`;
     line.merchandise.product.policy = { value: `${header.generationHex}:1:required` };
     line.merchandise.product.registration = { value: `${header.generationHex}:1:ready` };
     line.cost.subtotalAmount ??= { currencyCode: header.currency };
     line.cost.amountPerQuantity.currencyCode = header.currency;
-    if (target === 'validation')
-      line.cost.subtotalAmount.amount = money(BigInt(member.quantity) * BigInt(member.unitMinor));
+    if (target === 'validation') line.cost.subtotalAmount.amount = money(BigInt(quantity) * BigInt(record.unitMinor));
     line.cost.subtotalAmount.currencyCode = header.currency;
     input.cart.lines.push(line);
   }
   for (let index = 0; index < entry.ordinaryLines; index++) {
     const line = structuredClone(model);
-    line.id = `gid://shopify/CartLine/${entry.members.length + index + 1}`;
-    line.member = null;
+    line.id = `gid://shopify/CartLine/${entry.records.length + index + 1}`;
+    line.line = null;
+    line.legacy = null;
     line.quantity = 1;
     line.merchandise.id = `gid://shopify/ProductVariant/${100000 + index}`;
     line.merchandise.product.policy = null;
@@ -82,8 +84,9 @@ export function makeInput(target: Target, entry: ReplayCase): FunctionInput {
   }
   return input;
 }
+/** Historical v2 quote fixtures still feed reconciliation; their v2 carriers cannot run through v3 Functions. */
 function validateSourceVectors() {
-  assert.equal(vectors.version, 'whole-quote-v2-candidate-v1');
+  assert.equal(vectors.version, 'cart-line-v3-vectors-v1');
   assert.equal(required(accepted.quote.economics.groups[0]).customizationUnitMinor, '-1');
   assert.deepEqual(
     accepted.quote.economics.lines.map((line) => line.unitPriceMinor),
@@ -147,20 +150,18 @@ export function productionVectors(runner: string) {
     assert.equal(output.operations.length, expectedCount, `${target}/${name}`);
     if (target === 'transform' && expectedCount) {
       assert(entry);
-      assert.equal(entry.members.length, entry.memberCarriers.length);
-      const byCarrier = new Map(
-        entry.memberCarriers.map((carrier, index) => [carrier, required(entry.members[index])]),
-      );
+      assert.equal(entry.records.length, entry.carriers.length);
+      const byCarrier = new Map(entry.carriers.map((carrier, index) => [carrier, index]));
       const expected: Record<string, unknown> = {};
       for (const line of payload.cart.lines) {
-        if (!line.member) continue;
-        const carrier = line.member.value,
-          member = required(byCarrier.get(carrier));
+        if (!line.line) continue;
+        const index = required(byCarrier.get(line.line.value)),
+          record = required(entry.records[index]);
         expected[line.id] = {
-          merchandiseId: `gid://shopify/ProductVariant/${member.variantId}`,
+          merchandiseId: `gid://shopify/ProductVariant/${record.variantId}`,
           quantity: 1,
-          attributes: [{ key: '_insignia_member_v2', value: carrier }],
-          amount: money(member.unitMinor),
+          attributes: [{ key: '_insignia_ref_v3', value: required(entry.refs[index]) }],
+          amount: money(record.unitMinor),
         };
       }
       const actual: Record<string, unknown> = {};
@@ -180,7 +181,7 @@ export function productionVectors(runner: string) {
     }
     const actualCount = output.operations.length,
       outputBytes = compact(output).length,
-      upper = 17 + 362 * actualCount + Math.max(0, actualCount - 1);
+      upper = 17 + 352 * actualCount + Math.max(0, actualCount - 1);
     if (target === 'transform') assert(outputBytes <= upper && upper <= 16000, `${name}: output capacity`);
     const paths = targetPaths(target);
     rows.push({
@@ -205,15 +206,11 @@ export function productionVectors(runner: string) {
       stackStatus: 'unmeasured: pinned runner exposes linear memory, not stack peak',
     });
   }
-  const cases: ReplayCase[] = [
-    ...vectors.cases,
-    { ...accepted.functionVector, publicHex: accepted.publicKeyHex },
-    persisted.functionVector,
-  ];
+  const cases: ReplayCase[] = vectors.cases;
   for (const target of TARGETS)
     for (const entry of cases) {
       const base = makeInput(target, entry),
-        count = entry.members.length;
+        count = entry.records.length;
       replay(target, entry.name, base, target === 'transform' ? count : 0, entry);
       const reordered = structuredClone(base);
       reordered.cart.lines.reverse();
@@ -243,22 +240,25 @@ export function productionVectors(runner: string) {
             `"epoch":${entry.header.epoch + 1}`,
           );
         },
-        'missing-member': (input) => {
-          required(input.cart.lines[0]).member = null;
+        'missing-carrier': (input) => {
+          required(input.cart.lines[0]).line = null;
+        },
+        'legacy-v2-line': (input) => {
+          required(input.cart.lines[0]).legacy = { value: 'AAEAIAAAAAAAAQAAAAEAAAAAAAAL2g' };
+        },
+        'expired-d-plus-3': (input) => {
+          input.shop.localTime.date = '2026-12-16';
         },
         'wrong-variant': (input) => {
           required(input.cart.lines[0]).merchandise.id = 'gid://shopify/ProductVariant/999999';
-        },
-        'wrong-quantity': (input) => {
-          required(input.cart.lines[0]).quantity++;
         },
         'selling-plan': (input) => {
           required(input.cart.lines[0]).sellingPlanAllocation = { sellingPlan: { id: 'gid://shopify/SellingPlan/1' } };
         },
       };
       if (count > 1)
-        alterations['duplicate-member'] = (input) => {
-          required(input.cart.lines[1]).member = structuredClone(required(input.cart.lines[0]).member);
+        alterations['duplicate-carrier'] = (input) => {
+          required(input.cart.lines[1]).line = structuredClone(required(input.cart.lines[0]).line);
         };
       if (target === 'validation')
         alterations['wrong-price'] = (input) => {
@@ -276,13 +276,29 @@ export function productionVectors(runner: string) {
       replay(target, `${entry.name}-revoked`, changed, target === 'transform' ? 0 : 1);
       changed = structuredClone(base);
       config = publicConfig(changed.shop.publicConfig.value);
-      required(config.keys[0]).lastDay = (entry.firstValidDay ?? 20800) - 1;
+      required(config.keys[0]).lastDay = vectors.context.keyFirstDay - 1;
       changed.shop.publicConfig.value = compact(config).toString();
       replay(target, `${entry.name}-key-out-of-window`, changed, target === 'transform' ? 0 : 1);
     }
+  // Every shared negative vector also fails through both complete Functions.
+  const five = required(vectors.cases.find((entry) => entry.name === 'five_lines'));
+  for (const target of TARGETS)
+    for (const negative of vectors.negatives) {
+      const input = makeInput(target, five),
+        model = required(input.cart.lines[0]);
+      input.cart.lines = negative.lines.map((line, index) => {
+        const next = structuredClone(model);
+        next.id = `gid://shopify/CartLine/${index + 1}`;
+        next.line = { value: line.carrier };
+        next.merchandise.id = `gid://shopify/ProductVariant/${line.variantId}`;
+        if (target === 'validation') required(next.cost.subtotalAmount).amount = money(line.observedUnitMinor);
+        return next;
+      });
+      replay(target, `negative-${negative.name}`, input, target === 'transform' ? 0 : 1);
+    }
   const manifest = {
     version: 1,
-    sourceVectorsSha256: hash(readFileSync(join(ROOT, 'packages/cart-authorization/fixtures/whole-quote-v2.json'))),
+    sourceVectorsSha256: hash(readFileSync(join(ROOT, 'packages/cart-authorization/fixtures/cart-line-v3.json'))),
     acceptedQuoteExampleSha256: hash(
       readFileSync(join(ROOT, 'packages/cart-authorization/fixtures/accepted-quote-example.json')),
     ),

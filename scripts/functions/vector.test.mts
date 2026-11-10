@@ -5,9 +5,15 @@ import test from 'node:test';
 // Test-only cross-language vector. The seed is in a labelled synthetic fixture,
 // never in a production package or Function configuration.
 import vector from '../../crates/cart-authorization/fixtures/vectors.json' with { type: 'json' };
+import { generateFixtures } from './generate-fixtures.mts';
 import { required } from './runtime.mts';
 
-test('TypeScript/Node and Rust share the exact experimental-v2 envelope/member bytes', () => {
+test('cart-line v3 Function fixtures are reproduced by the production TypeScript issuer', async () => {
+  await generateFixtures(true);
+});
+
+// Historical v2 literal: the Rust crate keeps v2 verification types; reconciliation keeps v2 permanently.
+test('TypeScript/Node and Rust share the exact historical v2 envelope/member bytes', () => {
   const header = Buffer.from(vector.headerHex, 'hex');
   const members: Buffer[] = vector.memberHex.map((hex: string) => Buffer.from(hex, 'hex'));
   const envelope = Buffer.from(vector.envelope, 'base64url');

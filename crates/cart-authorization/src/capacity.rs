@@ -5,7 +5,9 @@ pub const MAX_CART_LINES: usize = 200;
 pub const MAX_PHYSICAL_QUANTITY: u32 = 10_000;
 pub const MAX_CART_LINE_ID_BYTES: usize = 59;
 pub const MAX_VARIANT_ID_BYTES: usize = 49;
-pub const MAX_MEMBER_BYTES: usize = 30;
+/// Transform child attribute: `_insignia_ref_v3` = base64url(set UUID || line index).
+pub const REF_ATTRIBUTE: &str = "_insignia_ref_v3";
+pub const MAX_REF_BYTES: usize = crate::REF_V3_CHARS;
 pub const MAX_AMOUNT_BYTES: usize = 21;
 pub const MAX_OUTPUT_BYTES: usize = 16_000;
 
@@ -30,14 +32,15 @@ pub fn cart_line_id_ok(value: &str) -> bool {
 }
 
 // The custom serializer's compact JSON is 17 bytes for an empty operations array,
-// 203 fixed bytes per lineExpand operation, one separator per additional operation,
-// and the four unescaped ASCII values. These values are checked against the
-// serializer in native tests and the target runner for every generated row.
+// 200 fixed bytes per lineExpand operation (with the 16-byte `_insignia_ref_v3` key),
+// one separator per additional operation, and the four unescaped ASCII values. The
+// Transform crate checks this against the real serializer, and production-vectors
+// checks it for every runner row.
 pub fn output_upper_bound(buckets: usize) -> Option<usize> {
-    let per_operation = 203usize
+    let per_operation = 200usize
         .checked_add(MAX_CART_LINE_ID_BYTES)?
         .checked_add(MAX_VARIANT_ID_BYTES)?
-        .checked_add(MAX_MEMBER_BYTES)?
+        .checked_add(MAX_REF_BYTES)?
         .checked_add(MAX_AMOUNT_BYTES)?;
     17usize
         .checked_add(buckets.checked_mul(per_operation)?)?
@@ -69,7 +72,7 @@ mod tests {
     }
     #[test]
     fn exact_output_bound_has_headroom() {
-        assert_eq!(output_upper_bound(32), Some(11_632));
+        assert_eq!(output_upper_bound(32), Some(11_312));
         assert!(output_upper_bound(32).unwrap() <= MAX_OUTPUT_BYTES);
         assert!(output_upper_bound(64).unwrap() > MAX_OUTPUT_BYTES);
     }
