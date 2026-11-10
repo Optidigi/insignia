@@ -1053,6 +1053,66 @@ test('Quantities footer enters Review while its speculative quote is still prepa
   });
 });
 
+test('applying an already prepared quote never flashes "Preparing quote…"', async () => {
+  await withRetainedBuyer(async ({ host, cartNavigations, accepts }) => {
+    await reviewRetained(host);
+    const apply = applyButton(host);
+    await apply.and(host.locator(':enabled')).waitFor();
+    await host.locator('.footer-buttons').evaluate((footer) => {
+      const seen: string[] = [];
+      Reflect.set(window, '__footerTexts', seen);
+      new MutationObserver(() => seen.push(footer.textContent ?? '')).observe(footer, {
+        subtree: true,
+        childList: true,
+        characterData: true,
+      });
+    });
+    await apply.click();
+    await host.locator('body').evaluate(() => new Promise((resolve) => setTimeout(resolve, 0)));
+    for (let i = 0; i < 100 && cartNavigations() === 0; i++) await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(cartNavigations(), 1);
+    assert.equal(accepts.length, 1);
+    const texts: string[] = await host.locator('body').evaluate(() => Reflect.get(window, '__footerTexts'));
+    assert.ok(
+      texts.some((text) => text.includes('Updating cart…')),
+      texts.join(' | '),
+    );
+    assert.equal(
+      texts.some((text) => text.includes('Preparing quote…')),
+      false,
+      texts.join(' | '),
+    );
+  });
+});
+
+test('Review never shows the local design count before the whole retained cart count', async () => {
+  await withRetainedBuyer(
+    async ({ page, host }) => {
+      let release!: () => void;
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await page.route('**/apps/insignia/v1/cart-state', async (route) => {
+        await held;
+        await route.fallback().catch(() => {});
+      });
+      try {
+        await reviewRetained(host);
+        const count = host.locator('.footer-price > span');
+        assert.equal(await host.locator('.footer-price strong').textContent(), 'Calculating quote…');
+        assert.equal(await count.textContent(), '3 items', 'the local count of this design alone');
+        assert.equal(await count.isVisible(), false, 'is not shown while the cart may hold other designs');
+        release();
+        await count.filter({ hasText: '5 items' }).waitFor({ state: 'visible' });
+      } finally {
+        release();
+        await page.unrouteAll({ behavior: 'ignoreErrors' });
+      }
+    },
+    { multipleProducts: true },
+  );
+});
+
 test('pending quote preparation keeps review editing responsive and cancels obsolete quantities', async () => {
   await withRetainedBuyer(async ({ page, host, accepts, mutations }) => {
     const started = page.waitForRequest('**/quote-proposals');
@@ -1418,7 +1478,13 @@ test('expired-offer recovery rejects a subsequent external cart change before ac
 
 async function withProductDesigner(
   cfg: BuyerConfig,
-  run: (context: { page: Page; ui: FrameLocator; trigger: Locator; privateRequests: () => number }) => Promise<void>,
+  run: (context: {
+    page: Page;
+    ui: FrameLocator;
+    trigger: Locator;
+    privateRequests: () => number;
+    sessions: () => number;
+  }) => Promise<void>,
   mobile = false,
   engine: typeof chromium = chromium,
   opening: 'editable' | 'unavailable' = 'editable',
@@ -1439,12 +1505,14 @@ async function withProductDesigner(
     const origin = `http://127.0.0.1:${serverPort(server.httpServer)}`;
     await prepareSelectedPage(page, origin);
     let privateRequests = 0;
+    let sessions = 0;
     await page.route('**/cart.js', (route) => route.fulfill({ json: { items: [], currency: 'EUR' } }));
     await page.route('**/apps/insignia/v1/**', (route) => {
       const path = new URL(route.request().url()).pathname;
       if (path.endsWith('/config')) return route.fulfill({ json: cfg });
-      privateRequests++;
-      if (path.endsWith('/sessions'))
+      // Opening an editable Designer warms the tab's session; it is not a private data request.
+      if (path.endsWith('/sessions')) {
+        sessions++;
         return route.fulfill({
           json: {
             capability: 'abc.def',
@@ -1452,6 +1520,8 @@ async function withProductDesigner(
             expiresAt: new Date(Date.now() + 3600000).toISOString(),
           },
         });
+      }
+      privateRequests++;
       throw new Error(`Unexpected product-designer API request: ${path}`);
     });
     await installDesignBoundary(page);
@@ -1478,7 +1548,7 @@ async function withProductDesigner(
       await page.locator('dialog[open] > div').evaluate((element) => element instanceof HTMLElement && element.hidden),
       true,
     );
-    await run({ page, ui, trigger, privateRequests: () => privateRequests });
+    await run({ page, ui, trigger, privateRequests: () => privateRequests, sessions: () => sessions });
   } finally {
     await browser?.close();
     await server.close();
@@ -1796,10 +1866,22 @@ test('selected mobile artwork dialog rejects unsupported files locally and real 
 test('republishing during a new empty-cart customization never offers removal of nonexistent cart items', async () => {
   await withProductDesigner(config, async ({ page, ui }) => {
     let writes = 0;
+    const proposals: string[] = [];
+    let cartWrites = 0;
+    await page.route('**/cart/{add,update,change,clear}.js', (route) => {
+      cartWrites++;
+      return route.fulfill({ status: 500, json: { error: 'unexpected' } });
+    });
     await page.route('**/apps/insignia/v1/**', (route) => {
       const path = new URL(route.request().url()).pathname;
       if (path.endsWith('/config'))
         return route.fulfill({ json: { ...config, revisionId: 'new-publication', contentHash: 'f'.repeat(64) } });
+      // The proposal and draft save no longer wait for the config read; the server rejects the
+      // stale revision and the fresh config takes precedence in the Designer.
+      if (path.endsWith('/quote-proposals') || /\/designs\/[a-f0-9-]+$/.test(path)) {
+        proposals.push(path);
+        return route.fulfill({ status: 409, json: { code: 'REVIEW_REQUIRED', error: 'changed' } });
+      }
       if (path.endsWith('/sessions'))
         return route.fulfill({
           json: {
@@ -1820,7 +1902,8 @@ test('republishing during a new empty-cart customization never offers removal of
       await ui.getByRole('button', { name: 'Review removing all customized items', exact: true }).count(),
       0,
     );
-    assert.equal(writes, 0, 'revision drift does not issue a proposal or alter the cart');
+    assert.equal(writes, 0, 'revision drift accepts nothing');
+    assert.equal(cartWrites, 0, 'revision drift does not alter the cart');
   });
 });
 
@@ -1830,10 +1913,11 @@ test('missing critical physical production facts require repair without issuing 
   delete required(cfg.geometry.steps[0]).physicalMm;
   await withProductDesigner(
     cfg,
-    async ({ ui, privateRequests }) => {
+    async ({ ui, privateRequests, sessions }) => {
       await ui.getByRole('heading', { name: 'Unavailable', exact: true }).waitFor();
       assert.equal(await ui.getByRole('button', { name: 'Add artwork', exact: true }).count(), 0);
       assert.equal(privateRequests(), 0);
+      assert.equal(sessions(), 0, 'an unavailable Designer warms no session');
     },
     false,
     chromium,

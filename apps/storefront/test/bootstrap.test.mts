@@ -107,7 +107,8 @@ test('unlocked storefront loads buyer controls through its cookie-gated proxy an
         return route.fulfill({ status: 409, json: { error: 'Bootstrap cannot mutate a cart' } });
       });
       await page.route('**/apps/insignia/v1/**', (route) => {
-        if (route.request().method() !== 'GET') proxyMutations.push(route.request().method());
+        if (route.request().method() !== 'GET')
+          proxyMutations.push(`${route.request().method()} ${new URL(route.request().url()).pathname}`);
         else privateProxyReads.push(new URL(route.request().url()).pathname);
         return route.fulfill({ status: 503, json: { error: 'Bootstrap cannot allocate private commerce authority' } });
       });
@@ -299,7 +300,9 @@ test('unlocked storefront loads buyer controls through its cookie-gated proxy an
         'An invalid parent nonce cannot replace the Designer with repair UI',
       );
       assert.deepEqual(cartWrites, []);
-      assert.deepEqual(proxyMutations, []);
+      // Opening warms the tab's buyer session once (here refused); it writes no draft or quote.
+      const warmed = ['POST /apps/insignia/v1/sessions'];
+      assert.deepEqual(proxyMutations, warmed);
       assert.deepEqual(privateProxyReads, []);
       assert.equal(cartReads, 0, 'Opening the unmodified product does not inspect or mutate an ordinary cart');
       assert.deepEqual(ordinary, originalOrdinary);
@@ -313,7 +316,7 @@ test('unlocked storefront loads buyer controls through its cookie-gated proxy an
         'A valid frame close restores the actual trigger focus',
       );
       assert.deepEqual(cartWrites, []);
-      assert.deepEqual(proxyMutations, []);
+      assert.deepEqual(proxyMutations, warmed);
       assert.deepEqual(ordinary, originalOrdinary);
     } finally {
       await browser?.close();

@@ -225,6 +225,12 @@ export function createBuyerApi({
     }
   }
   return {
+    /** Create or reuse this tab's session ahead of the first private call; failures retry on that call. */
+    warmSession: () =>
+      grant().then(
+        () => {},
+        () => {},
+      ),
     config: (signal?: AbortSignal, targetProduct = productId) => {
       if (!/^[1-9][0-9]{0,19}$/.test(targetProduct)) throw new Error('Invalid product');
       return request<BuyerConfig>(

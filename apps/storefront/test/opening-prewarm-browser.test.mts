@@ -55,6 +55,14 @@ const config: BuyerConfig = {
   },
   imageUrls: { photo: 'https://preview.example/photo.png' },
 };
+/** Opening (not preparation) warms the buyer session once per tab. */
+const sessionGrant = () => ({
+  json: {
+    capability: 'abc.def',
+    sessionId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    expiresAt: new Date(Date.now() + 3600000).toISOString(),
+  },
+});
 for (const engine of [chromium, firefox]) {
   test(`${engine.name()}: idle preparation fetches only public presentation and immutable assets without opening the modal`, async (t) => {
     const server = await createStorefrontTestServer({
@@ -70,6 +78,7 @@ for (const engine of [chromium, firefox]) {
     const page = await browser.newPage();
     const origin = `http://127.0.0.1:${serverPort(server.httpServer)}`;
     const paths: string[] = [];
+    let opened = false;
     page.on('request', (request) => {
       const path = new URL(request.url()).pathname;
       if (path.startsWith('/cart')) paths.push(path);
@@ -77,6 +86,7 @@ for (const engine of [chromium, firefox]) {
     await page.route('**/apps/insignia/**', async (route) => {
       const path = new URL(route.request().url()).pathname;
       paths.push(path);
+      if (path === '/apps/insignia/v1/sessions' && opened) return route.fulfill(sessionGrant());
       assert.equal(
         path,
         '/apps/insignia/v1/config',
@@ -144,7 +154,12 @@ for (const engine of [chromium, firefox]) {
     });
     assert.equal(await page.evaluate(() => document.activeElement?.id), 'theme-focus');
     assert.equal(await page.evaluate(() => document.documentElement.style.overflow), '');
+    assert.deepEqual(paths, ['/apps/insignia/v1/config'], 'preparation creates no session');
     const openingAt = Date.now();
+    opened = true;
+    const sessionRequested = page.waitForRequest(
+      (request) => new URL(request.url()).pathname === '/apps/insignia/v1/sessions',
+    );
     await page.locator('insignia-buyer button').click();
     await page.frameLocator('dialog:modal > iframe[srcdoc]').locator('.app').waitFor();
     await page.waitForFunction(
@@ -153,7 +168,12 @@ for (const engine of [chromium, firefox]) {
     t.diagnostic(
       `Prepared local click-to-visible frame: ${Date.now() - openingAt}ms (source fixture, not native benchmark)`,
     );
-    assert.deepEqual(paths, ['/apps/insignia/v1/config']);
+    await sessionRequested;
+    assert.deepEqual(
+      paths,
+      ['/apps/insignia/v1/config', '/apps/insignia/v1/sessions'],
+      'opening warms exactly one buyer session and reads no private cart custody',
+    );
     assert.equal(await page.locator('dialog:modal > #prepared-frame').count(), 1);
     assert.equal(await page.getByText('Loading customization…', { exact: true }).isVisible(), false);
     await page
@@ -203,6 +223,51 @@ for (const engine of [chromium, firefox]) {
     assert.deepEqual(countries, ['US', 'NL']);
   });
 }
+
+for (const engine of [chromium, firefox])
+  test(`${engine.name()}: a cart page view loads no product configuration until the buyer shows intent`, {
+    timeout: 20000,
+  }, async (t) => {
+    const server = await createStorefrontTestServer({
+      plugins: [selectedFrameAssets()],
+      server: { host: '127.0.0.1', port: 0, hmr: false },
+    });
+    await server.listen();
+    const browser = await engine.launch({ headless: true });
+    t.after(async () => {
+      await browser.close();
+      await server.close();
+    });
+    const page = await browser.newPage();
+    await page.addInitScript(() => {
+      window.requestIdleCallback = (callback) => {
+        Reflect.set(window, '__idle', callback);
+        return 1;
+      };
+      window.cancelIdleCallback = () => Reflect.deleteProperty(window, '__idle');
+    });
+    const paths: string[] = [];
+    await page.route('**/apps/insignia/**', (route) => {
+      paths.push(new URL(route.request().url()).pathname);
+      return route.fulfill({ json: config });
+    });
+    await page.route('**/cart.js', (route) => route.fulfill({ json: { items: [], attributes: {}, currency: 'USD' } }));
+    await page.route('https://preview.example/**', (route) => route.abort());
+    await page.goto(`http://127.0.0.1:${serverPort(server.httpServer)}`);
+    await page.evaluate(async () => {
+      history.replaceState(null, '', '/nl/cart');
+      await customElements.whenDefined('insignia-buyer');
+      // A visible product control on the cart page, e.g. an auto-placed recommendation quick-add.
+      document.body.innerHTML =
+        '<insignia-cart-repair cart-root="/nl/"></insignia-cart-repair><insignia-buyer product-id="111" cart-root="/nl/" data-insignia-auto></insignia-buyer>';
+      Reflect.get(window, '__idle')?.();
+    });
+    await page.waitForLoadState('networkidle');
+    assert.deepEqual(paths, [], 'an ordinary cart view reads no Insignia configuration');
+    await page.locator('insignia-buyer button').hover();
+    await page.waitForResponse((response) => new URL(response.url()).pathname === '/apps/insignia/v1/config');
+    assert.deepEqual(paths, ['/apps/insignia/v1/config'], 'pointer intent still prepares before the click');
+  });
 
 for (const engine of [chromium, firefox])
   test(`${engine.name()}: presentation preparation expires, aborts on disconnect, and never prewarms cart repair`, {
@@ -312,12 +377,11 @@ for (const engine of [chromium, firefox])
       await server.close();
     });
     const page = await browser.newPage();
+    let clicked = false;
     await page.route('**/apps/insignia/**', (route) => {
-      assert.match(
-        new URL(route.request().url()).pathname,
-        /\/v1\/config$/,
-        'background failure must not read private state',
-      );
+      const path = new URL(route.request().url()).pathname;
+      if (path.endsWith('/v1/sessions') && clicked) return route.fulfill(sessionGrant());
+      assert.match(path, /\/v1\/config$/, 'background failure must not read private state');
       return route.fulfill({ json: config });
     });
     const blockedStyles: string[] = [];
@@ -355,6 +419,7 @@ for (const engine of [chromium, firefox])
       frame.id = 'failed-background-frame';
     });
     await page.unroute('**/insignia-designer.css');
+    clicked = true;
     await page.locator('insignia-buyer button').click();
     await page.frameLocator('dialog:modal > iframe[srcdoc]').locator('.app').waitFor();
     assert.equal(await page.locator('#failed-background-frame').count(), 0);
@@ -380,11 +445,9 @@ for (const engine of [chromium, firefox])
     let reads = 0;
     let photosBlocked = true;
     await page.route('**/apps/insignia/**', (route) => {
-      assert.match(
-        new URL(route.request().url()).pathname,
-        /\/v1\/config$/,
-        'background failure must never read private state',
-      );
+      const path = new URL(route.request().url()).pathname;
+      if (path.endsWith('/v1/sessions') && !photosBlocked) return route.fulfill(sessionGrant());
+      assert.match(path, /\/v1\/config$/, 'background failure must never read private state');
       const source = structuredClone(config);
       source.imageUrls.photo = `https://preview.example/rotating-${++reads}.png`;
       return route.fulfill({ json: source });
@@ -462,8 +525,13 @@ for (const engine of [chromium, firefox])
       };
     });
     const reads: string[] = [];
+    let sessions = 0;
     await page.route('**/apps/insignia/**', (route) => {
       const url = new URL(route.request().url());
+      if (url.pathname.endsWith('/v1/sessions')) {
+        sessions++;
+        return route.fulfill(sessionGrant());
+      }
       assert.match(url.pathname, /\/v1\/config$/, 'preparation must not establish sessions or read private custody');
       const id = url.searchParams.get('productId') ?? '';
       reads.push(id);
@@ -543,6 +611,7 @@ for (const engine of [chromium, firefox])
     assert.equal(await second.evaluate((button) => document.activeElement === button), true);
     assert.equal(await page.locator('dialog:modal').count(), 0);
     assert.equal(await page.evaluate(() => document.documentElement.style.overflow), '');
+    assert.equal(sessions, 0, 'preparing visible or intended controls creates no session');
     await second.click();
     const active = () => page.frameLocator('dialog:modal > iframe[srcdoc]');
     await active().locator('.app').waitFor();
@@ -562,6 +631,7 @@ for (const engine of [chromium, firefox])
     await second.click();
     await active().locator('.app').waitFor();
     assert.equal(await page.locator('dialog:modal > #retained-second').count(), 1);
+    assert.equal(sessions, 1, 'opened Designers share one tab session');
   });
 
 declare global {
