@@ -533,7 +533,7 @@ test('overlapping known rejection recovers the winning acceptance through servic
   );
 });
 
-test('cart-state marks a lapsed unchanged set renewable and renewal accepts the restored cart groups', {
+test('cart-state ignores native quantity and removal edits, and renewal re-signs the stored accepted request', {
   skip: !connectionString,
 }, async (t) => {
   // Retained artwork must cover the renewed window (D+3..D+5), as with production's 7-day retention.
@@ -548,34 +548,72 @@ test('cart-state marks a lapsed unchanged set renewable and renewal accepts the 
       })
     ).json(),
   );
+  assert.ok(accepted.buckets.every((bucket) => Object.keys(bucket.properties).join() === '_insignia_line_v3'));
   const lines = accepted.buckets.map((bucket, index) => ({ ...bucket, key: `key${index}`, sellingPlan: null }));
-  // Shop-local day D+3: the cart's set lapsed while its signed vector is unchanged.
+  const state = async (body: typeof lines) => f.http('cart-state', { capability: f.session.capability, lines: body });
+  // Quantity is not signed: a native theme quantity change or a removed line needs no review.
+  const edited = await (await state(lines.map((line) => ({ ...line, quantity: line.quantity + 2 })))).json();
+  assert.equal(edited.repairRequired, false);
+  assert.equal(edited.renewable, false);
+  assert.equal(
+    edited.groups
+      .flatMap((group: { variants: { quantity: number }[] }) => group.variants)
+      .reduce((sum: number, variant: { quantity: number }) => sum + variant.quantity, 0),
+    lines.reduce((sum, line) => sum + line.quantity + 2, 0),
+    'observed quantities feed Designer repair and editing',
+  );
+  const subset = await (await state(lines.slice(0, 1))).json();
+  assert.equal(subset.repairRequired, false);
+  // Tampered, duplicated, foreign-set and historical v2 carriers still need review.
+  const first = lines[0];
+  assert.ok(first);
+  const carrier = String(first.properties._insignia_line_v3);
+  assert.equal((await state([first, { ...first, key: 'copy' }])).status, 409, 'duplicate index');
+  assert.equal(
+    (await state([{ ...first, properties: { _insignia_line_v3: `${carrier.slice(0, -2)}AA` } }])).status,
+    409,
+    'altered carrier',
+  );
+  assert.equal(
+    (
+      await state([
+        { ...first, properties: { _insignia_quote_v2: 'x'.repeat(208), _insignia_member_v2: 'y'.repeat(30) } },
+      ])
+    ).status,
+    409,
+    'historical v2 leftovers',
+  );
+  assert.equal((await state([{ ...first, variantId: '999' }])).status, 409, 'other variant');
+  // Shop-local day D+3: the set lapsed; quantity edits keep it renewable.
   f.advance(3 * 86400000);
-  const lapsedResponse = await f.http('cart-state', { capability: f.session.capability, lines });
-  assert.equal(lapsedResponse.status, 200, await lapsedResponse.clone().text());
-  const lapsed = await lapsedResponse.json();
+  const lapsed = await (await state(lines.map((line) => ({ ...line, quantity: line.quantity + 1 })))).json();
   assert.equal(lapsed.repairRequired, true);
   assert.equal(lapsed.renewable, true);
   assert.equal(lapsed.quoteId, accepted.quoteId);
-  const drifted = await (
-    await f.http('cart-state', {
-      capability: f.session.capability,
-      lines: lines.map((line) => ({ ...line, quantity: line.quantity + 1 })),
-    })
-  ).json();
-  assert.equal(drifted.repairRequired, true);
-  assert.equal(drifted.renewable, false);
-  // The storefront renews with the observed cart's restored groups, not a client-held request.
-  const fromCart = await f.http(`quotes/${lapsed.quoteId}/renew`, {
+  // Renewal prices the stored accepted request; client groups are accepted but not authority.
+  const renewal = await f.http(`quotes/${lapsed.quoteId}/renew`, {
     ...f.body,
     groups: lapsed.groups,
     idempotencyKey: randomUUID(),
   });
-  assert.equal(fromCart.status, 200, await fromCart.clone().text());
-  const cartRenewal = BuyerAcceptedCartSchema.parse(await fromCart.json());
-  assert.equal(cartRenewal.quoteId, accepted.quoteId);
+  assert.equal(renewal.status, 200, await renewal.clone().text());
+  const renewed = BuyerAcceptedCartSchema.parse(await renewal.json());
+  assert.equal(renewed.quoteId, accepted.quoteId);
+  assert.notEqual(renewed.setId, accepted.setId);
   assert.deepEqual(
-    cartRenewal.buckets.map(({ variantId, quantity }) => ({ variantId, quantity })),
+    renewed.buckets.map(({ variantId, quantity }) => ({ variantId, quantity })),
     accepted.buckets.map(({ variantId, quantity }) => ({ variantId, quantity })),
   );
+  // The storefront applies the renewed carriers to the cart's current quantities; that confirms.
+  const confirm = await f.http(`cart-applications/${renewed.applicationId}/confirm`, {
+    capability: f.session.capability,
+    fingerprint: 'observed-current-cart',
+    vector: renewed.buckets.map((bucket) => ({ ...bucket, quantity: bucket.quantity + 1 })),
+  });
+  assert.equal(confirm.status, 200);
+  assert.equal((await confirm.json()).status, 'APPLIED');
+  // A cart may hold only one signed set: a renewed line beside a line of the old set needs review.
+  const renewedLine = { ...first, key: 'renewed', properties: { ...renewed.buckets[0]?.properties } };
+  assert.equal((await state([renewedLine, first])).status, 409, 'two sets');
+  assert.equal((await state([renewedLine])).status, 200, 'the renewed set alone is owned');
 });
