@@ -153,6 +153,10 @@ export function createLiveDesignerPorts(input: {
       const [observed, refreshed] = await Promise.all([observedRead, api.config(signal)]);
       signal.throwIfAborted();
       // Show every owned group even if one cannot currently be repriced; unknown amounts stay unavailable.
+      // Re-proposing an expired, displayed design keeps its total visible until the fresh proposal arrives.
+      const displayed = prepared.get(request.idempotencyKey);
+      const refreshingDisplayed =
+        displayed?.signature === signature(request) && Date.parse(displayed.proposal.expiresAt) <= Date.now();
       reviewSelections.clear();
       const currentMapped = buildBuyerDesigner(source, { locale: input.locale, storeName: input.storeName });
       const currentGroup = currentMapped.desired(request.design);
@@ -183,16 +187,17 @@ export function createLiveDesignerPorts(input: {
           quantity: candidate.variants.reduce((total, variant) => total + variant.quantity, 0),
         });
       }
-      input.onReview?.(
-        {
-          currency: source.shopCurrency,
-          currentGroupId,
-          exponent: 2,
-          customizedQuantity: pendingRows.reduce((total, row) => total + row.quantity, 0),
-          groups: pendingRows,
-        },
-        request,
-      );
+      if (!refreshingDisplayed)
+        input.onReview?.(
+          {
+            currency: source.shopCurrency,
+            currentGroupId,
+            exponent: 2,
+            customizedQuantity: pendingRows.reduce((total, row) => total + row.quantity, 0),
+            groups: pendingRows,
+          },
+          request,
+        );
       // Stable IDs and unchanged publication permit amount refresh without replacing the editing state.
       if (refreshed.revisionId !== source.revisionId || refreshed.contentHash !== source.contentHash) {
         let available = false;
@@ -341,9 +346,10 @@ export function createLiveDesignerPorts(input: {
         if (completedReceipt) return { ...completedReceipt, requestId: request.requestId };
         if (request.signal.aborted) throw new DOMException('Aborted', 'AbortError');
         if (!issuanceAttempted.has(request.idempotencyKey)) request.onPreparing?.();
-        const review = prepared.get(request.idempotencyKey);
+        let review = prepared.get(request.idempotencyKey);
         let accepted = acceptedAttempts.get(request.idempotencyKey);
         if (!accepted) {
+          const displayedHash = review?.signature === signature(request) ? review.proposal.hash : undefined;
           if (
             !review ||
             review.signature !== signature(request) ||
@@ -351,10 +357,15 @@ export function createLiveDesignerPorts(input: {
           ) {
             request.onPreparing?.();
             const presentation = await prepare(request);
-            throw Object.assign(new Error('Review the refreshed quote before applying it'), {
-              reviewRequired: true,
-              ...presentation,
-            });
+            const fresh = prepared.get(request.idempotencyKey);
+            // An expired proposal for the displayed design is replaced in the same click only when the
+            // fresh material hash equals the displayed one: that is the same reviewed terms (owner, 10 Nov 2026).
+            if (!displayedHash || fresh?.signature !== signature(request) || fresh.proposal.hash !== displayedHash)
+              throw Object.assign(new Error('Review the refreshed quote before applying it'), {
+                reviewRequired: true,
+                ...presentation,
+              });
+            review = fresh;
           }
           const current = await cart.read();
           if (!issuanceAttempted.has(request.idempotencyKey) && current.fingerprint !== review.baseline.fingerprint) {

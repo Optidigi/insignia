@@ -80,6 +80,8 @@ export function createDesignerRuntime(
   const renewing = new Map<string, AbortController>();
   let reviewController: AbortController | undefined;
   let reviewing = false;
+  /** The current commit controller belongs to a silent re-proposal of an expired displayed quote. */
+  let refreshing = false;
   let preparedSignature: string | null = null;
   let preparedExpiresAt: string | undefined;
   let uploadVersion = 0;
@@ -97,11 +99,110 @@ export function createDesignerRuntime(
     commitController?.abort();
     commitController = null;
     reviewing = false;
+    refreshing = false;
     dispatch({ type: "cart-commit-canceled" });
+  }
+  const preparedExpired = () =>
+    preparedSignature === designerIntentKey(getState()) && !attempt?.dispatched && !!preparedExpiresAt && Date.parse(preparedExpiresAt) <= Date.now();
+  async function commit(prepareOnly = false, refresh = false) {
+    if (prepareOnly && !ports.review) return;
+    // Add supersedes a silent refresh: the cart port re-proposes an expired quote itself.
+    if (!prepareOnly && refreshing && commitController) {
+      commitController.abort();
+      commitController = null;
+      reviewing = false;
+      refreshing = false;
+    }
+    const observed = getState();
+    const state = prepareOnly && observed.step === 1 ? {...observed,step:2 as const} : observed;
+    if (commitController || !canCommitDesign(state)) return;
+    const signature = designerIntentKey(state);
+    const retryPreparation = prepareOnly && state.commit.kind === 'failed' && state.commit.preparation && !attempt?.dispatched;
+    if (prepareOnly && !retryPreparation && preparedSignature === signature && (attempt?.dispatched || !preparedExpiresAt || Date.parse(preparedExpiresAt) > Date.now())) return;
+    if (!attempt || attempt.signature !== signature) {
+      preparedSignature = null;
+      preparedExpiresAt = undefined;
+      attempt = {
+        signature,
+        designId: state.editing ?? crypto.randomUUID(),
+        idempotencyKey: crypto.randomUUID(),
+      };
+    }
+    const design = buildCommitDesign(state, attempt.designId);
+    if (!design) return;
+    const requestId = crypto.randomUUID();
+    const controller = new AbortController();
+    commitController = controller;
+    refreshing = refresh;
+    const request: CartRequest = {
+      onMutating() {
+        if (controller.signal.aborted || commitController !== controller) return;
+        if (attempt) attempt.dispatched = true;
+        reviewing = false;
+        dispatch({ type: 'cart-mutation-started', requestId });
+      },
+      onPreparing() {
+        if (controller.signal.aborted || commitController !== controller) return;
+        if (attempt) attempt.dispatched = false;
+        reviewing = true;
+        dispatch({ type: 'cart-preparation-started', requestId });
+      },
+      requestId,
+      idempotencyKey: attempt.idempotencyKey,
+      design,
+      artworks: state.artworks.map((artwork) => ({ ...artwork })),
+      operation: state.editing ? "updated" : "added",
+      signal: controller.signal,
+    };
+    reviewing = prepareOnly;
+    reviewController?.abort();
+    reviewController = controller;
+    dispatch({ type: "cart-commit-requested", requestId, design: request.design, ...(prepareOnly ? {preparation:true} : {}), ...(refresh ? {refresh:true} : {}) });
+    try {
+      if (prepareOnly) {
+        const presentation = await ports.review?.prepare(request);
+        if (!controller.signal.aborted && commitController === controller) {
+          preparedExpiresAt = presentation?.expiresAt;
+          if (designerIntentKey(getState()) === signature) preparedSignature = signature;
+          dispatch({type:"cart-commit-canceled"});
+        }
+        return;
+      }
+      if (attempt) attempt.dispatched = true;
+      const receipt = await ports.cart.commit(request);
+      if (controller.signal.aborted || commitController !== controller) return;
+      if (!matchesCartReceipt(receipt, request))
+        throw new Error("Missing cart application receipt");
+      attempt = null;
+      dispatch({ type: "cart-commit-succeeded", requestId, receipt });
+    } catch (error) {
+      if (!controller.signal.aborted && commitController === controller) {
+        if (!prepareOnly && error && typeof error === 'object' && 'reviewRequired' in error && error.reviewRequired === true) {
+          if (attempt) attempt.dispatched = false;
+          preparedSignature = signature;
+          preparedExpiresAt = 'expiresAt' in error ? String(error.expiresAt) : undefined;
+          dispatch({ type: 'cart-commit-canceled' });
+          return;
+        }
+        if (!prepareOnly && error && typeof error === 'object' && 'acceptanceOutcome' in error && error.acceptanceOutcome === 'declined' && attempt?.idempotencyKey === request.idempotencyKey) {
+          attempt = null;
+          preparedSignature = null;
+        }
+        dispatch({
+          type: "cart-commit-failed",
+          requestId,
+          reason: "cart-commit-failed",
+          ...(prepareOnly || reviewing ? {preparation:true} : {}),
+        });
+      }
+    } finally {
+      if (commitController === controller) { commitController = null; reviewing = false; refreshing = false; }
+    }
   }
   return {
     get reviewIntentId() { return attempt?.signature === designerIntentKey(getState()) ? attempt.idempotencyKey : undefined; },
     get reviewing() { return reviewing; },
+    get expired() { return preparedExpired(); },
     get prepared() { return preparedSignature === designerIntentKey(getState()) && (attempt?.dispatched || !preparedExpiresAt || Date.parse(preparedExpiresAt) > Date.now()); },
     cancelUpload,
     cancelCommit,
@@ -216,92 +317,12 @@ export function createDesignerRuntime(
         if (uploadController === controller) uploadController = null;
       }
     },
-    async commit(prepareOnly = false) {
-      if (prepareOnly && !ports.review) return;
-      const observed = getState();
-      const state = prepareOnly && observed.step === 1 ? {...observed,step:2 as const} : observed;
-      if (commitController || !canCommitDesign(state)) return;
-      const signature = designerIntentKey(state);
-      const retryPreparation = prepareOnly && state.commit.kind === 'failed' && state.commit.preparation && !attempt?.dispatched;
-      if (prepareOnly && !retryPreparation && preparedSignature === signature && (attempt?.dispatched || !preparedExpiresAt || Date.parse(preparedExpiresAt) > Date.now())) return;
-      if (!attempt || attempt.signature !== signature) {
-        preparedSignature = null;
-        preparedExpiresAt = undefined;
-        attempt = {
-          signature,
-          designId: state.editing ?? crypto.randomUUID(),
-          idempotencyKey: crypto.randomUUID(),
-        };
-      }
-      const design = buildCommitDesign(state, attempt.designId);
-      if (!design) return;
-      const requestId = crypto.randomUUID();
-      const controller = new AbortController();
-      commitController = controller;
-      const request: CartRequest = {
-        onMutating() {
-          if (controller.signal.aborted || commitController !== controller) return;
-          if (attempt) attempt.dispatched = true;
-          reviewing = false;
-          dispatch({ type: 'cart-mutation-started', requestId });
-        },
-        onPreparing() {
-          if (controller.signal.aborted || commitController !== controller) return;
-          if (attempt) attempt.dispatched = false;
-          reviewing = true;
-          dispatch({ type: 'cart-preparation-started', requestId });
-        },
-        requestId,
-        idempotencyKey: attempt.idempotencyKey,
-        design,
-        artworks: state.artworks.map((artwork) => ({ ...artwork })),
-        operation: state.editing ? "updated" : "added",
-        signal: controller.signal,
-      };
-      reviewing = prepareOnly;
-      reviewController?.abort();
-      reviewController = controller;
-      dispatch({ type: "cart-commit-requested", requestId, design: request.design, ...(prepareOnly ? {preparation:true} : {}) });
-      try {
-        if (prepareOnly) {
-          const presentation = await ports.review?.prepare(request);
-          if (!controller.signal.aborted && commitController === controller) {
-            preparedExpiresAt = presentation?.expiresAt;
-            if (designerIntentKey(getState()) === signature) preparedSignature = signature;
-            dispatch({type:"cart-commit-canceled"});
-          }
-          return;
-        }
-        if (attempt) attempt.dispatched = true;
-        const receipt = await ports.cart.commit(request);
-        if (controller.signal.aborted || commitController !== controller) return;
-        if (!matchesCartReceipt(receipt, request))
-          throw new Error("Missing cart application receipt");
-        attempt = null;
-        dispatch({ type: "cart-commit-succeeded", requestId, receipt });
-      } catch (error) {
-        if (!controller.signal.aborted && commitController === controller) {
-          if (!prepareOnly && error && typeof error === 'object' && 'reviewRequired' in error && error.reviewRequired === true) {
-            if (attempt) attempt.dispatched = false;
-            preparedSignature = signature;
-            preparedExpiresAt = 'expiresAt' in error ? String(error.expiresAt) : undefined;
-            dispatch({ type: 'cart-commit-canceled' });
-            return;
-          }
-          if (!prepareOnly && error && typeof error === 'object' && 'acceptanceOutcome' in error && error.acceptanceOutcome === 'declined' && attempt?.idempotencyKey === request.idempotencyKey) {
-            attempt = null;
-            preparedSignature = null;
-          }
-          dispatch({
-            type: "cart-commit-failed",
-            requestId,
-            reason: "cart-commit-failed",
-            ...(prepareOnly || reviewing ? {preparation:true} : {}),
-          });
-        }
-      } finally {
-        if (commitController === controller) { commitController = null; reviewing = false; }
-      }
+    /** Visible-tab return: re-propose an expired displayed quote once, without a busy state. */
+    refreshExpired() {
+      if (!ports.review || commitController || getState().commit.kind !== 'idle' || !preparedExpired() || !canCommitDesign(getState())) return false;
+      void commit(true, true);
+      return true;
     },
+    commit,
   };
 }

@@ -86,6 +86,8 @@ export interface DesignerState {
   commit:
     | { kind: 'idle' }
     | { kind: 'preparing'; requestId: string; design: Design }
+    /** Silent re-proposal of an expired, still-displayed quote; the footer stays usable. */
+    | { kind: 'refreshing'; requestId: string; design: Design }
     | { kind: 'pending'; requestId: string; design: Design }
     | { kind: 'failed'; reason: 'cart-commit-failed'; preparation?: boolean };
   completion: CartReceipt | null;
@@ -154,7 +156,7 @@ export type DesignerEvent =
   | { type: 'artwork-preview-refreshed'; artwork: Artwork; expectedExpiry: string | undefined }
   | { type: 'artwork-unavailable'; id: string; expectedExpiry: string | undefined }
   | { type: 'artwork-applied'; positionId: PositionId; artworkId: string }
-  | { type: 'cart-commit-requested'; requestId: string; design: Design; preparation?: boolean }
+  | { type: 'cart-commit-requested'; requestId: string; design: Design; preparation?: boolean; refresh?: boolean }
   | { type: 'cart-mutation-started'; requestId: string }
   | { type: 'cart-preparation-started'; requestId: string }
   | { type: 'cart-commit-succeeded'; requestId: string; receipt: CartReceipt }
@@ -370,7 +372,8 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
       return { ...state, commit: { kind: 'failed', reason: 'cart-commit-failed' } };
     case 'cart-commit-requested': {
       const design = buildCommitDesign(event.preparation ? {...state,step:2} : state, event.design.id);
-      return design ? { ...state, commit: { kind: event.preparation ? 'preparing' : 'pending', requestId: event.requestId, design } } : state;
+      const kind = !event.preparation ? 'pending' : event.refresh ? 'refreshing' : 'preparing';
+      return design ? { ...state, commit: { kind, requestId: event.requestId, design } } : state;
     }
     case 'cart-mutation-started':
       return state.commit.kind === 'preparing' && state.commit.requestId === event.requestId ? { ...state, commit: { ...state.commit, kind: 'pending' } } : state;
@@ -404,11 +407,11 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
       };
     }
     case 'cart-commit-failed':
-      return (state.commit.kind === 'pending' || state.commit.kind === 'preparing') && state.commit.requestId === event.requestId
+      return (state.commit.kind === 'pending' || state.commit.kind === 'preparing' || state.commit.kind === 'refreshing') && state.commit.requestId === event.requestId
         ? { ...state, commit: { kind: 'failed', reason: event.reason, ...(event.preparation ? {preparation:true} : {}) } }
         : state;
     case 'cart-commit-canceled':
-      return state.commit.kind === 'pending' || state.commit.kind === 'preparing' ? { ...state, commit: { kind: 'idle' } } : state;
+      return state.commit.kind === 'pending' || state.commit.kind === 'preparing' || state.commit.kind === 'refreshing' ? { ...state, commit: { kind: 'idle' } } : state;
     case 'product-design-edit-requested':
       return requestProductDesignEdit(state, event.design);
     case 'product-design-switch-confirmed':

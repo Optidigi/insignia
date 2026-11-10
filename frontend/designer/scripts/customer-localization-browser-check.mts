@@ -685,7 +685,7 @@ test("design totals retain translated labels and fit narrow and desktop review l
   } finally { await page.close(); }
 });
 
-test("expiring a reviewed quote replaces design totals and unit prices with unavailable", async () => {
+test("an expired reviewed quote keeps its last totals and an enabled Add to cart", async () => {
   const page = await openQuoteReview();
   try {
     await page.evaluate((review) => {
@@ -694,8 +694,11 @@ test("expiring a reviewed quote replaces design totals and unit prices with unav
       window.__customerLocalizationTest.resolveReview(expiresAt);
     }, reviewedDesigns);
     await page.waitForFunction(() => document.querySelector(".review-group-total")?.textContent?.trim() === "€22.13");
-    await page.waitForFunction(() => document.querySelector(".review-group-total")?.textContent?.trim() === "Unavailable");
-    assert.ok((await page.locator(".review-group-total, .review-pricing bdi").allTextContents()).every((text) => text.trim() === "Unavailable"));
+    await page.waitForTimeout(900);
+    assert.deepEqual(await page.locator(".review-group-total").allTextContents(), [euro(2213), euro(5874)]);
+    assert.equal(await page.getByText("Unavailable", { exact: true }).count(), 0);
+    assert.equal(await page.getByRole("button", { name: "Retry", exact: true }).count(), 0);
+    assert.equal(await page.getByRole("button", { name: "Add to cart", exact: true }).isEnabled(), true);
   } finally { await page.close(); }
 });
 

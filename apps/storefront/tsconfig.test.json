@@ -22,6 +22,7 @@
   ],
   "exclude": [
     "test/selected-removal.test.mts",
+    "test/selected-quote-expiry.test.mts",
     "test/published-options.test.mts"
   ]
 }
