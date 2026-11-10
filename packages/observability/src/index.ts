@@ -103,6 +103,7 @@ export const BUYER_PROPOSAL_FAILURE_STAGES = [
   'release-prepare',
   'readiness-observe',
   'release-observe',
+  'presentation',
   'current-readiness',
   'tenant',
   'shop',
@@ -136,7 +137,7 @@ export type BuyerTimingSpan = {
 };
 export type BuyerTimingDiagnostic = {
   correlationId: string;
-  operation: 'proposal' | 'acceptance';
+  operation: 'proposal' | 'acceptance' | 'config';
   /** Transport cancellation at snapshot time does not prove a write did not commit. */
   outcome: 'success' | 'failure' | 'cancelled';
   totalMs: number;
@@ -208,7 +209,7 @@ function eventDetails(event: RuntimeEvent, input: RuntimeLogDetails) {
     if (
       !t ||
       !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t.correlationId) ||
-      !['proposal', 'acceptance'].includes(t.operation) ||
+      !['proposal', 'acceptance', 'config'].includes(t.operation) ||
       !['success', 'failure', 'cancelled'].includes(t.outcome) ||
       !ms(t.totalMs) ||
       typeof t.truncated !== 'boolean' ||

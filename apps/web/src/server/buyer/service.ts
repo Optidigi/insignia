@@ -38,8 +38,10 @@ import type { createArtworkGuestAuthority } from '../artwork/guest.ts';
 import { buyerGeometry } from '../merchant-preview/geometry.ts';
 import type { FrozenPreviewReader } from '../merchant-preview/read.ts';
 import { publicSelectedSetup } from '../merchant-preview/selected-public.ts';
-import { proposalStage } from './diagnostics.ts';
+import { createConfigCache } from './config-cache.ts';
+import { noteCache, proposalStage } from './diagnostics.ts';
 import { validateBuyerProductionPositions } from './production-position.ts';
+import { createRevisionReads } from './revision-cache.ts';
 
 class BuyerPrecommitReviewError extends Error {
   constructor() {
@@ -125,6 +127,10 @@ export function createBuyerServices(input: {
 }) {
   const clock = input.clock ?? (() => new Date()),
     store = input.core.buyers;
+  type CatalogView = Awaited<ReturnType<typeof input.catalog>>;
+  type Wording = Awaited<ReturnType<DurableCore['preferences']['readWording']>>;
+  const revisions = createRevisionReads(input.core.configs, () => +clock());
+  const configCache = createConfigCache<{ catalog: CatalogView; wording: Wording | undefined }>(() => +clock());
   const binding = (scope: BuyerScope, ports = input.ports({ ...scope, kind: 'guest' })) => {
     const value = ports.artwork.replayBinding?.(scope);
     if (!value || !/^[a-f0-9]{64}$/.test(value)) throw new Error('Resource authority missing');
@@ -143,8 +149,8 @@ export function createBuyerServices(input: {
   });
   function validatePositions(scope: BuyerScope, groups: BuyerDesiredGroup[]) {
     return validateBuyerProductionPositions(groups, {
-      presentation: (revisionId) => input.core.configs.getRevisionPresentation(scope.shopId, revisionId),
-      geometry: (revisionId) => input.core.configs.getRevisionGeometry(scope.shopId, revisionId),
+      presentation: (revisionId) => revisions.getRevisionPresentation(scope.shopId, revisionId),
+      geometry: (revisionId) => revisions.getRevisionGeometry(scope.shopId, revisionId),
       artwork: (assetId) => input.core.artwork.get({ ...scope, kind: 'guest' }, assetId),
       now: clock,
     });
@@ -263,17 +269,23 @@ export function createBuyerServices(input: {
       if (!scope) return notFound();
       const revision = await input.core.acceptedQuotes.getEffective(scope.shopId, scope.productId);
       if (!revision) return notFound();
-      const geometry = await input.core.configs.getRevisionGeometry(scope.shopId, revision.config.revisionId);
+      const geometry = await revisions.getRevisionGeometry(scope.shopId, revision.config.revisionId);
       if (!geometry || geometry.mode !== 'required') return notFound();
       return { productId: scope.productId, configured: true as const };
     },
     async config(request: Request) {
-      const scope = await input.guest.resolve(request);
+      const scope = await proposalStage('tenant', () => input.guest.resolve(request));
       if (!scope) return notFound();
-      const revision = await input.core.acceptedQuotes.getEffective(scope.shopId, scope.productId);
+      const revision = await proposalStage('revision', () =>
+        input.core.acceptedQuotes.getEffective(scope.shopId, scope.productId),
+      );
       if (!revision) return notFound();
-      const geometryRecord = await input.core.configs.getRevisionGeometry(scope.shopId, revision.config.revisionId);
-      const presentation = await input.core.configs.getRevisionPresentation(scope.shopId, revision.config.revisionId);
+      const [geometryRecord, presentation] = await proposalStage('revision', () =>
+        Promise.all([
+          revisions.getRevisionGeometry(scope.shopId, revision.config.revisionId),
+          revisions.getRevisionPresentation(scope.shopId, revision.config.revisionId),
+        ]),
+      );
       if (!geometryRecord || !presentation) throw new Error('Published presentation missing');
       const geometry = buyerGeometry(geometryRecord.value as GeometryV1),
         config = revision.config;
@@ -282,16 +294,46 @@ export function createBuyerServices(input: {
       if (presentation.selectedSetup && (!country || !/^[A-Z]{2}$/.test(country)))
         throw new Error('Country context required');
       // Selection reads complete published/contextual facts. Purchase authority is
-      // checked by proposal/acceptance, not by opening the editor.
-      const catalog = await input.catalog(scope, scope.productId, undefined, country ? { country } : undefined);
+      // checked by proposal/acceptance, not by opening the editor. Provider reads are reused for
+      // 30 s per exact revision and country; proposal and acceptance re-check and re-price.
+      const loaded = await configCache.read(
+        scope.shopId,
+        [scope.installationGeneration, scope.productId, config.revisionId, config.revisionContentHash, country ?? ''],
+        async () => {
+          const catalog = await proposalStage('variant', () =>
+            input.catalog(scope, scope.productId, undefined, country ? { country } : undefined),
+          );
+          const wording = contextual
+            ? await proposalStage('presentation', () =>
+                input.core.transactions.run((tx) => input.core.preferences.readWording(tx, scope)),
+              )
+            : undefined;
+          // Only a result whose installation and publication stayed current is reused.
+          const current = await proposalStage('tenant', () => input.guest.resolve(request));
+          if (
+            !current ||
+            current.shopId !== scope.shopId ||
+            current.installationGeneration !== scope.installationGeneration ||
+            current.productId !== scope.productId
+          )
+            return notFound();
+          return { catalog, wording };
+        },
+      );
+      if (!loaded) throw new BuyerStateError('RATE_LIMITED');
+      noteCache(loaded.cache);
+      const { catalog, wording } = loaded.value;
       if (catalog.variants.length > 250 || catalog.variants.some((v) => !/^[1-9][0-9]{0,19}$/.test(v.id)))
         throw new Error('Catalog boundary unavailable');
       const label = (kind: keyof typeof presentation.labels, id: string) => {
         const value = presentation.labels[kind]?.[id];
         return typeof value === 'string' ? value : id;
       };
+      // Presigned preview URLs live 60 s, so they are issued per request, never cached.
       const imageUrls = input.previewImages
-        ? await input.previewImages(scope, { productId: scope.productId, revisionId: config.revisionId, geometry })
+        ? await proposalStage('presentation', () =>
+            input.previewImages!(scope, { productId: scope.productId, revisionId: config.revisionId, geometry }),
+          )
         : contextual
           ? {}
           : catalog.imageUrls;
@@ -346,18 +388,7 @@ export function createBuyerServices(input: {
         }
       }
       const title = catalog.title ?? selected?.product.title;
-      const wording = contextual
-        ? await input.core.transactions.run((tx) => input.core.preferences.readWording(tx, scope))
-        : undefined;
       if (contextual && !wording) throw new Error('Customer wording unavailable');
-      const current = await input.guest.resolve(request);
-      if (
-        !current ||
-        current.shopId !== scope.shopId ||
-        current.installationGeneration !== scope.installationGeneration ||
-        current.productId !== scope.productId
-      )
-        return notFound();
       return {
         ...(selected ? { selectedSetup: publicSelectedSetup(selected, geometry, imageUrls) } : {}),
         ...(contextual
@@ -396,13 +427,8 @@ export function createBuyerServices(input: {
     async session(request: Request) {
       const grant = await input.guest.issue(new Request(request.url, { method: 'GET' }));
       if (!grant) return notFound();
-      const scope = await input.guest.verify(
-        new Request(request.url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ capability: grant.token }),
-        }),
-      );
+      // The grant's scope is derived from the token it just minted; no second verification.
+      const scope = grant.scope;
       if (!scope || scope.kind !== 'guest' || !scope.ownerHash) return notFound();
       const session = await store.issueSession({
         scope: scope as BuyerScope,
@@ -416,12 +442,12 @@ export function createBuyerServices(input: {
       const saved = await store.getDesign(scope, id, clock());
       if (!saved) return notFound();
       const group = BuyerDesiredGroupSchema.parse(saved.value);
-      const original = await input.core.configs.getValidatedPublishedRevision(scope.shopId, group.configRevisionId);
+      const original = await revisions.getValidatedPublishedRevision(scope.shopId, group.configRevisionId);
       if (!original || original.contentHash !== group.revisionContentHash) return notFound();
       const originalConfig = PublishedConfigSchema.parse(original.publishedValue);
       if (originalConfig.productId !== group.productId) return notFound();
-      const presentation = await input.core.configs.getRevisionPresentation(scope.shopId, group.configRevisionId);
-      const geometryRecord = await input.core.configs.getRevisionGeometry(scope.shopId, group.configRevisionId);
+      const presentation = await revisions.getRevisionPresentation(scope.shopId, group.configRevisionId);
+      const geometryRecord = await revisions.getRevisionGeometry(scope.shopId, group.configRevisionId);
       let compatibility:
         | 'current'
         | 'publication-changed'
@@ -754,10 +780,7 @@ export function createBuyerServices(input: {
         const candidates = request.groups
           .filter((v) => v.group.productId === economicLine.productId)
           .map((v) => v.group);
-        const published = await input.core.configs.getValidatedPublishedRevision(
-          scope.shopId,
-          economicLine.configRevisionId,
-        );
+        const published = await revisions.getValidatedPublishedRevision(scope.shopId, economicLine.configRevisionId);
         if (!published) return review();
         // Match exact canonical design, allowing quantities to be repaired independently.
         const normalized = normalizeCustomizationGroups(candidates, [
@@ -782,7 +805,7 @@ export function createBuyerServices(input: {
       const result = BuyerDesiredSchema.shape.groups.parse([...groups.values()]);
       const labels: Record<string, string> = {};
       for (const group of result) {
-        const presentation = await input.core.configs.getRevisionPresentation(scope.shopId, group.configRevisionId);
+        const presentation = await revisions.getRevisionPresentation(scope.shopId, group.configRevisionId);
         const title = presentation?.selectedSetup?.product.title;
         if (title?.trim()) labels[group.productId] = title;
       }

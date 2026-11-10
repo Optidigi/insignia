@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { setImmediate } from 'node:timers/promises';
 import type { BuyerDesired } from '@insignia/contracts';
 import type { BuyerFailureDiagnostic } from '@insignia/observability';
-import { Pool } from 'pg';
+import { Pool, type PoolClient } from 'pg';
 import { fixture } from './support/buyer-fixture.mts';
 
 const database = process.env.DATABASE_URL;
@@ -314,7 +314,7 @@ test('a held signing fence makes another acceptance fail fast with a retryable e
   let hold = false;
   const holder = new Pool({ connectionString: database, max: 1 });
   t.after(() => holder.end());
-  let client: Awaited<ReturnType<Pool['connect']>> | undefined;
+  const held: { client?: PoolClient } = {};
   const f = await fixture(t, {
     readiness: {
       assertReady: async () => {},
@@ -322,7 +322,8 @@ test('a held signing fence makes another acceptance fail fast with a retryable e
       // was reserved earlier, so only the signing fence itself waits for this lock.
       observe: async () => {
         if (hold) {
-          client = await holder.connect();
+          const client = await holder.connect();
+          held.client = client;
           await client.query('BEGIN');
           await client.query('SELECT 1 FROM shops WHERE shop_id = $1 FOR UPDATE', [f.shopId]);
         }
@@ -343,8 +344,8 @@ test('a held signing fence makes another acceptance fail fast with a retryable e
     assert.equal((await result.json()).code, 'UNAVAILABLE');
   } finally {
     hold = false;
-    await client?.query('ROLLBACK');
-    client?.release();
+    await held.client?.query('ROLLBACK');
+    held.client?.release();
   }
   assert.ok(elapsed >= 1900 && elapsed < 6000, `lock wait bounded near 2 s, observed ${elapsed} ms`);
   assert.equal(f.signings(), 0);

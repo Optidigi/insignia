@@ -58,6 +58,8 @@ export type ProductionBuyerInputs = {
   /** SELECT-only credentials for final checks; no claim or refresh fallback. */
   passiveCredentials?: AdminCredentialSource;
   readSubscription(target: { appId: string; shopId: string }): Promise<ActiveSubscriptionSnapshot>;
+  /** Background release-evidence refresh while buyers are active; never request-path authority. */
+  releaseRefresh?(scope: Scope, activeUntil: Date): void;
   artifactPorts: FunctionArtifactReadinessPorts;
   /** Independent stored evidence only; never collect while acceptance owns locks. */
   passiveArtifactPorts?: FunctionArtifactReadinessPorts;
@@ -418,6 +420,7 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
     core: input.core,
     guest,
     ports,
+    releaseRefresh: input.releaseRefresh,
     clock,
     previewImages:
       input.env.INSIGNIA_M8_MERCHANT_PREVIEWS_ENABLED === '1'

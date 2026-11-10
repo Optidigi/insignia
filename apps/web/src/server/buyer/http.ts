@@ -15,7 +15,13 @@ import {
 import { BuyerStateError } from '@insignia/database';
 import { type BuyerFailureDiagnostic, type BuyerTimingDiagnostic, createObservability } from '@insignia/observability';
 import { buyerJsonBody } from './body.ts';
-import { proposalDiagnostics, proposalFailureStage, proposalStage, proposalTiming } from './diagnostics.ts';
+import {
+  cacheStatus,
+  proposalDiagnostics,
+  proposalFailureStage,
+  proposalStage,
+  proposalTiming,
+} from './diagnostics.ts';
 import type { BuyerServices } from './service.ts';
 
 const logger = createObservability().logger;
@@ -31,8 +37,9 @@ class HttpError extends Error {
 }
 export function handleBuyerRequest(...args: Parameters<typeof handleRequest>): Promise<Response> {
   const [collection, id, action] = args[2].split('/');
-  return args[0].method === 'POST' &&
-    (args[2] === 'quote-proposals' || (collection === 'quote-proposals' && id && action === 'accept'))
+  return (args[0].method === 'POST' &&
+    (args[2] === 'quote-proposals' || (collection === 'quote-proposals' && id && action === 'accept'))) ||
+    (args[0].method === 'GET' && args[2] === 'config')
     ? proposalDiagnostics(() => handleRequest(...args))
     : handleRequest(...args);
 }
@@ -58,7 +65,11 @@ async function handleRequest(
   try {
     if (!services) throw new HttpError(503, 'UNAVAILABLE');
     if (route === 'eligibility' && request.method === 'GET') return respond(await services.eligibility(request));
-    if (route === 'config' && request.method === 'GET') return respond(await services.config(request));
+    if (route === 'config' && request.method === 'GET') {
+      const config = await services.config(request);
+      outcome = 'success';
+      return respond(config);
+    }
     const body = await buyerJsonBody(request);
     if (!body) throw new HttpError(400, 'INVALID_REQUEST');
     if (route === 'sessions' && request.method === 'POST') {
@@ -224,13 +235,17 @@ async function handleRequest(
     try {
       const timing = proposalTiming(
         requestId,
-        route === 'quote-proposals' ? 'proposal' : 'acceptance',
+        route === 'quote-proposals' ? 'proposal' : route === 'config' ? 'config' : 'acceptance',
         request.signal.aborted ? 'cancelled' : outcome,
       );
       if (timing) {
         // Diagnostic identity only; no command or buyer capability crosses here.
+        const cache = cacheStatus();
         response?.headers.set('X-Insignia-Request-Id', requestId);
-        response?.headers.set('Server-Timing', `insignia;dur=${timing.totalMs};desc="${requestId}"`);
+        response?.headers.set(
+          'Server-Timing',
+          `insignia;dur=${timing.totalMs};desc="${requestId}"${cache ? `, cache;desc="${cache}"` : ''}`,
+        );
         timingDiagnostic(timing);
       }
     } catch {

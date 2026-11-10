@@ -150,7 +150,18 @@ function releasePreparationFixture(
         getEffective: async () => ({
           configId: 'config',
           operationId: 'operation',
-          config: { revisionId: 'revision', revisionContentHash: 'a'.repeat(64) },
+          config: {
+            version: 'm2-published-config-v1',
+            shopId: 'tenant',
+            productId: '111',
+            revisionId: 'revision',
+            revisionContentHash: 'a'.repeat(64),
+            shopCurrency: 'USD',
+            methods: [],
+            placements: [],
+            productionOptions: [],
+            pricingRules: [],
+          },
         }),
       },
       signingKeys: {

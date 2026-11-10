@@ -22,6 +22,7 @@ test('proposal failures emit one bounded timing summary with the existing HTTP c
 });
 
 import {
+  noteCache,
   proposalDiagnostics,
   proposalFailureStage,
   proposalStage,
@@ -295,12 +296,42 @@ test('failure summaries distinguish an unfinished sibling from completed success
   );
 });
 
-test('presentation reads do not emit proposal timings or diagnostic response headers', async () => {
-  let summaries = 0;
-  const response = await handleBuyerRequest(
+test('configuration reads emit one timing summary and Server-Timing with their cache status', async () => {
+  const summaries: { operation: string }[] = [];
+  const unavailable = await handleBuyerRequest(
     new Request('https://app.invalid/v1/config'),
     undefined,
     'config',
+    () => {},
+    (value) => summaries.push(value),
+  );
+  assert.equal(unavailable.status, 503);
+  assert.match(unavailable.headers.get('Server-Timing') ?? '', /^insignia;dur=\d+;desc="[a-f0-9-]{36}"$/);
+  const services = buyerFixture({});
+  services.config = async () => {
+    noteCache('hit');
+    throw new Error('Synthetic presentation failure after a cache hit');
+  };
+  const cached = await handleBuyerRequest(
+    new Request('https://app.invalid/v1/config'),
+    services,
+    'config',
+    () => {},
+    (value) => summaries.push(value),
+  );
+  assert.match(cached.headers.get('Server-Timing') ?? '', /, cache;desc="hit"$/);
+  assert.deepEqual(
+    summaries.map((value) => value.operation),
+    ['config', 'config'],
+  );
+});
+
+test('other presentation reads do not emit timings or diagnostic response headers', async () => {
+  let summaries = 0;
+  const response = await handleBuyerRequest(
+    new Request('https://app.invalid/v1/eligibility'),
+    undefined,
+    'eligibility',
     () => {},
     () => {
       summaries++;

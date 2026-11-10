@@ -7,7 +7,11 @@ import { fixtureCore } from './admin/support/durable-core.mts';
 import { fixtureTransaction } from './admin/support/fixtures.mts';
 import { buyerFixture, effectiveRevision } from './http-fixtures.mts';
 
-function fixture(capturedImages = true, gates: { catalog?(): Promise<void> } = {}) {
+function fixture(
+  capturedImages = true,
+  gates: { catalog?(): Promise<void> } = {},
+  clock: () => Date = () => new Date(),
+) {
   const scope = { shopId: 'tenant', installationGeneration: '1', productId: '123' };
   const config: PublishedConfig = {
     ...effectiveRevision().config,
@@ -85,7 +89,8 @@ function fixture(capturedImages = true, gates: { catalog?(): Promise<void> } = {
       nl: { locale: 'nl', messages: { 'customer:steps.done': { message: 'Gereed' } } },
     },
   };
-  let wordingReads = 0;
+  let wordingReads = 0,
+    previews = 0;
   const contexts: ({ country: string } | undefined)[] = [];
   const core = fixtureCore({
     acceptedQuotes: {
@@ -127,9 +132,27 @@ function fixture(capturedImages = true, gates: { catalog?(): Promise<void> } = {
       contexts.push(context);
       return catalog;
     },
-    ...(capturedImages ? { previewImages: async () => ({ photo: 'https://captured.example.test/frozen.png' }) } : {}),
+    clock,
+    ...(capturedImages
+      ? {
+          previewImages: async () => {
+            previews++;
+            return { photo: `https://captured.example.test/frozen.png?signature=${previews}` };
+          },
+        }
+      : {}),
   });
-  return { service, core, config, catalog, wording, geometry, contexts, wordingReads: () => wordingReads };
+  return {
+    service,
+    core,
+    config,
+    catalog,
+    wording,
+    geometry,
+    contexts,
+    wordingReads: () => wordingReads,
+    previews: () => previews,
+  };
 }
 
 test('selection waits for complete catalogue facts and does not invoke purchase ports', async () => {
@@ -173,7 +196,7 @@ test('a published Lean configuration without selected authoring state exports ac
   assert.deepEqual(result.wording, f.wording);
   assert.deepEqual(result.variants, f.catalog.variants);
   assert.deepEqual(result.geometry, f.geometry);
-  assert.deepEqual(result.imageUrls, { photo: 'https://captured.example.test/frozen.png' });
+  assert.deepEqual(result.imageUrls, { photo: 'https://captured.example.test/frozen.png?signature=1' });
   assert.deepEqual(result.options, [
     {
       id: 'finish',
@@ -199,7 +222,10 @@ test('storefront eligibility reads only effective publication authority without 
   assert.deepEqual(f.contexts, [], 'No Shopify catalogue call for button placement');
   const geometry = await f.core.configs.getRevisionGeometry('tenant', f.config.revisionId);
   assert(geometry);
-  f.core.configs.getRevisionGeometry = async () => ({ ...geometry, mode: 'optional' });
+  // Revision geometry is immutable; a newly effective revision with optional geometry is not eligible.
+  f.core.configs.getRevisionGeometry = async (_shop, revisionId) =>
+    revisionId === 'optional-revision' ? { ...geometry, mode: 'optional' } : geometry;
+  f.config.revisionId = 'optional-revision';
   await assert.rejects(f.service.eligibility(new Request('https://app.example/eligibility')), /NOT_FOUND/);
   f.service.guest.resolve = async () => null;
   await assert.rejects(f.service.eligibility(new Request('https://app.example/eligibility')), /NOT_FOUND/);
@@ -429,4 +455,75 @@ test('missing current wording never becomes a fabricated default for a new UI ca
   assert.equal(old.ready, true);
   assert.equal(old.wording, undefined);
   assert.equal(old.decorationPrices, undefined);
+});
+
+test('configuration reuses provider reads for 30 s per exact revision and country, re-presigning previews', async () => {
+  let now = Date.parse('2026-11-10T12:00:00.000Z');
+  const f = fixture(true, {}, () => new Date(now));
+  const read = (country = 'US') =>
+    f.service
+      .config(new Request(`https://app.example/config?country=${country}`))
+      .then((value) => BuyerConfigSchema.parse(value));
+  const first = await read();
+  const second = await read();
+  assert.equal(f.contexts.length, 1, 'one catalogue read within 30 s');
+  assert.equal(f.wordingReads(), 1);
+  assert.equal(f.previews(), 2, 'short-lived preview URLs are issued per request');
+  assert.notEqual(second.imageUrls.photo, first.imageUrls.photo);
+  assert.deepEqual(
+    { ...second, imageUrls: {}, selectedSetup: undefined },
+    { ...first, imageUrls: {}, selectedSetup: undefined },
+  );
+  await read('NL');
+  assert.equal(f.contexts.length, 2, 'another country is a separate entry');
+  f.config.revisionId = 'republished';
+  await read();
+  assert.equal(f.contexts.length, 3, 'a new publication never reuses an older entry');
+  now += 30_000;
+  await read('NL');
+  assert.equal(f.contexts.length, 4, 'entries expire after 30 s');
+});
+
+test('uncached configuration reads are throttled per shop and failures are not reused', async () => {
+  const now = Date.parse('2026-11-10T12:00:00.000Z');
+  let fail = true;
+  const f = fixture(
+    false,
+    {
+      catalog: async () => {
+        if (fail) throw new Error('Synthetic catalogue outage');
+      },
+    },
+    () => new Date(now),
+  );
+  await assert.rejects(f.service.config(new Request('https://app.example/config?country=US')));
+  fail = false;
+  await f.service.config(new Request('https://app.example/config?country=US'));
+  assert.equal(f.contexts.length, 1, 'the failed read was not cached');
+  const countries = ['AD', 'AE', 'AF', 'AG', 'AI', 'AL', 'AM', 'AO', 'AQ', 'AR', 'AS', 'AT', 'AU', 'AW', 'AX', 'AZ'];
+  let throttled = 0;
+  for (let i = 0; i < 80; i++) {
+    const country = `${countries[i % 16]}`;
+    const url = `https://app.example/config?country=${country}&n=${i}`;
+    await f.service
+      .config(new Request(url))
+      .catch((error: { code?: string }) => (error.code === 'RATE_LIMITED' ? throttled++ : Promise.reject(error)));
+  }
+  // 16 distinct countries are cached after their first read; the budget is not spent on hits.
+  assert.equal(throttled, 0);
+  assert.equal(f.contexts.length, 17);
+});
+
+test('a burst of distinct uncached configurations beyond the per-shop budget is rejected as throttled', async () => {
+  const now = Date.parse('2026-11-10T12:00:00.000Z');
+  const f = fixture(false, {}, () => new Date(now));
+  let throttled = 0;
+  for (let i = 0; i < 70; i++) {
+    f.config.revisionId = `revision-${i}`;
+    await f.service
+      .config(new Request('https://app.example/config?country=US'))
+      .catch((error: { code?: string }) => (error.code === 'RATE_LIMITED' ? throttled++ : Promise.reject(error)));
+  }
+  assert.equal(f.contexts.length, 60);
+  assert.equal(throttled, 10);
 });

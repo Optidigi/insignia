@@ -8,14 +8,29 @@ const context = new AsyncLocalStorage<{
   path: readonly symbol[];
   timing: { start: number; now: () => number; spans: BuyerTimingSpan[]; truncated: boolean };
   parentId: number | null;
+  cache?: { status?: 'hit' | 'miss' };
 }>();
 // Attribution belongs to one HTTP request. Never mutate or wrap original errors:
 // typed handling and stock-first rejection precedence retain their contracts.
 export function proposalDiagnostics<T>(run: () => T, now = () => performance.now()): T {
   return context.run(
-    { failures: new Map(), path: [], parentId: null, timing: { start: now(), now, spans: [], truncated: false } },
+    {
+      failures: new Map(),
+      path: [],
+      parentId: null,
+      timing: { start: now(), now, spans: [], truncated: false },
+      cache: {},
+    },
     run,
   );
+}
+/** Records whether this request was served from a short cache, for its Server-Timing header. */
+export function noteCache(status: 'hit' | 'miss'): void {
+  const cache = context.getStore()?.cache;
+  if (cache) cache.status = status;
+}
+export function cacheStatus(): 'hit' | 'miss' | undefined {
+  return context.getStore()?.cache?.status;
 }
 export function proposalFailureStage(error: unknown): Stage | undefined {
   return context.getStore()?.failures.get(error)?.stage;
