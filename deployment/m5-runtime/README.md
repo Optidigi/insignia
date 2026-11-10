@@ -4,6 +4,12 @@ This directory retains the actual deployment configuration/data boundary; its `m
 
 Active VPS management custody is `%h/.local/share/insignia/runtime/`. Some live mounts and database Compose configuration still reference the older `insignia-m8-runtime-20261013-pr114` and `insignia-m5-verify-20261012-r2` directories. Their historical names do not make those dependencies disposable. Inspect current mounts/configuration before removing or relocating anything.
 
+## Cart repair candidate development transition
+
+`native-cart-repair-eb386d22` binds inactive version 1202503778305, the complete 32-version inventory in [native-cart-repair-release-binding.json](native-cart-repair-release-binding.json) and the exact 14-module [baseline](native-cart-repair-module-baseline.json). Canonical hash is `b90b62c0ebd602c4b20141379feaa9d3c6d33e615103e991da5d04bd13817064`. All 22 theme files, including 13 assets, match foundation run 42852820780/attempt1 and merge eb386d22/tree c2989b3f (PR289 artwork policy, PR290 cart repair/notice/stale-quote cleanup). The foundation build adds one storefront chunk, so the asset count grows from 12 to 13. All 14 identities, 13 non-theme configurations and original 9b941 Function bytes remain unchanged. Prior 1201385144321 remains sole Active; all NEVER_RELEASE versions remain inactive.
+
+Use matching final binding-head images and verifier manifest. Preserve schema 52/key 2/grants/current protected facts and private mounts/configuration; checkpoint and restore-verify before exclusive consumer replacement. Reconcile the single release, then obtain fresh independent admission. This binding is not activation or native acceptance. Expanded inventory intentionally makes `native-canonical-313b12ad` fail closed until the coherent transition completes; keep historical profiles/freshness unchanged.
+
 ## Canonical combined UI development transition
 
 `native-canonical-313b12ad` binds inactive version 1201385144321, the complete 31-version inventory and exact 14-module baseline. All 21 theme files/12 assets match frozen canonical foundation run 42725808639 and merge 313b12ad. All 14 identities, 13 non-theme configurations and original 9b941 Function bytes remain unchanged. Prior 1201192632321 remains sole Active; all NEVER_RELEASE versions remain inactive.

@@ -12,6 +12,12 @@ import canonicalModules from '../../deployment/m5-runtime/native-canonical-modul
 import canonicalBinding from '../../deployment/m5-runtime/native-canonical-release-binding.json' with { type: 'json' };
 import cartModules from '../../deployment/m5-runtime/native-cart-module-baseline.json' with { type: 'json' };
 import cartBinding from '../../deployment/m5-runtime/native-cart-release-binding.json' with { type: 'json' };
+import cartRepairModules from '../../deployment/m5-runtime/native-cart-repair-module-baseline.json' with {
+  type: 'json',
+};
+import cartRepairBinding from '../../deployment/m5-runtime/native-cart-repair-release-binding.json' with {
+  type: 'json',
+};
 import fixedModules from '../../deployment/m5-runtime/native-fixed-module-baseline.json' with { type: 'json' };
 import fixedBinding from '../../deployment/m5-runtime/native-fixed-release-binding.json' with { type: 'json' };
 import loadingModules from '../../deployment/m5-runtime/native-loading-module-baseline.json' with { type: 'json' };
@@ -312,7 +318,25 @@ test('canonical candidate preserves identities and extends the complete inventor
     if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
   }
 });
+test('cart repair candidate preserves identities and extends the complete inventory by one inactive version', () => {
+  assert.equal(cartRepairModules.length, 14);
+  assert.equal(cartRepairBinding.moduleHash, 'b90b62c0ebd602c4b20141379feaa9d3c6d33e615103e991da5d04bd13817064');
+  assert.equal(cartRepairBinding.versionIds.length, 32);
+  assert.deepEqual(new Set(cartRepairBinding.versionIds), new Set([...canonicalBinding.versionIds, '1202503778305']));
+  assert.deepEqual(
+    cartRepairModules.map((m) => m.handle),
+    cartRepairModules.map((m) => m.handle).sort(),
+  );
+  for (const module of cartRepairModules) {
+    const prior = required(canonicalModules.find((m) => m.handle === module.handle));
+    const { config, ...identity } = module,
+      { config: oldConfig, ...oldIdentity } = prior;
+    assert.deepEqual(identity, oldIdentity);
+    if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
+  }
+});
 for (const profile of [
+  'native-cart-repair-eb386d22',
   'native-canonical-313b12ad',
   'native-review-nav-8a7ee446',
   'native-loading-defd05b0',
@@ -337,7 +361,8 @@ for (const profile of [
   'lean-markets-7b17cd9',
   'lean-privacy-theme-23fd116',
 ]) {
-  const canonical = profile === 'native-canonical-313b12ad';
+  const cartRepair = profile === 'native-cart-repair-eb386d22';
+  const canonical = cartRepair || profile === 'native-canonical-313b12ad';
   const reviewNav = canonical || profile === 'native-review-nav-8a7ee446';
   const loading = reviewNav || profile === 'native-loading-defd05b0';
   const reviewCart = loading || profile === 'native-review-cart-1f4595f';
@@ -359,100 +384,113 @@ for (const profile of [
   const cookie = preview || profile === 'm8-cookie-91b35ab';
   const theme = cookie || profile === 'm8-theme-c8d8713';
   const proxy = profile !== 'm8-read-orders-617057f';
-  const versionId = canonical
-    ? '1201385144321'
-    : reviewNav
-      ? '1201192632321'
-      : loading
-        ? '1201128341505'
-        : reviewCart
-          ? '1200729554945'
-          : startup
-            ? '1200333160449'
-            : recovery
-              ? '1199953805313'
-              : speed
-                ? '1199807692801'
-                : performance
-                  ? '1199754706945'
-                  : parity
-                    ? '1199503441921'
-                    : behavior
-                      ? '1199244476417'
-                      : selectedOnly
-                        ? '1199166783489'
-                        : cart
-                          ? '1199122513921'
-                          : fixed
-                            ? '1198986199041'
-                            : nativeTheme
-                              ? '1198938357761'
-                              : refreshed
-                                ? '1197668466689'
-                                : selected
-                                  ? '1196974997505'
-                                  : privacy
-                                    ? '1171218169857'
-                                    : lean
-                                      ? '1169137696769'
-                                      : preview
-                                        ? '1168157736961'
-                                        : cookie
-                                          ? '1166710865921'
-                                          : theme
-                                            ? '1166552825857'
-                                            : proxy
-                                              ? '1166090010625'
-                                              : '1165513097217';
-  const modules = canonical
-    ? canonicalModules
-    : reviewNav
-      ? reviewNavModules
-      : loading
-        ? loadingModules
-        : reviewCart
-          ? reviewCartModules
-          : startup
-            ? startupModules
-            : recovery
-              ? recoveryModules
-              : speed
-                ? speedModules
-                : performance
-                  ? performanceModules
-                  : parity
-                    ? parityModules
-                    : behavior
-                      ? behaviorModules
-                      : selectedOnly
-                        ? selectedOnlyModules
-                        : cart
-                          ? cartModules
-                          : fixed
-                            ? fixedModules
-                            : nativeTheme
-                              ? nativeThemeModules
-                              : refreshed
-                                ? refreshModules
-                                : selected
-                                  ? selectedModules
-                                  : privacy
-                                    ? privacyModules
-                                    : lean
-                                      ? leanMarketsModules
-                                      : preview
-                                        ? previewThemeModules
-                                        : cookie
-                                          ? cookieThemeModules
-                                          : theme
-                                            ? themeModules
-                                            : proxy
-                                              ? proxyModules
-                                              : historicalM8Modules;
+  const versionId = cartRepair
+    ? '1202503778305'
+    : canonical
+      ? '1201385144321'
+      : reviewNav
+        ? '1201192632321'
+        : loading
+          ? '1201128341505'
+          : reviewCart
+            ? '1200729554945'
+            : startup
+              ? '1200333160449'
+              : recovery
+                ? '1199953805313'
+                : speed
+                  ? '1199807692801'
+                  : performance
+                    ? '1199754706945'
+                    : parity
+                      ? '1199503441921'
+                      : behavior
+                        ? '1199244476417'
+                        : selectedOnly
+                          ? '1199166783489'
+                          : cart
+                            ? '1199122513921'
+                            : fixed
+                              ? '1198986199041'
+                              : nativeTheme
+                                ? '1198938357761'
+                                : refreshed
+                                  ? '1197668466689'
+                                  : selected
+                                    ? '1196974997505'
+                                    : privacy
+                                      ? '1171218169857'
+                                      : lean
+                                        ? '1169137696769'
+                                        : preview
+                                          ? '1168157736961'
+                                          : cookie
+                                            ? '1166710865921'
+                                            : theme
+                                              ? '1166552825857'
+                                              : proxy
+                                                ? '1166090010625'
+                                                : '1165513097217';
+  const modules = cartRepair
+    ? cartRepairModules
+    : canonical
+      ? canonicalModules
+      : reviewNav
+        ? reviewNavModules
+        : loading
+          ? loadingModules
+          : reviewCart
+            ? reviewCartModules
+            : startup
+              ? startupModules
+              : recovery
+                ? recoveryModules
+                : speed
+                  ? speedModules
+                  : performance
+                    ? performanceModules
+                    : parity
+                      ? parityModules
+                      : behavior
+                        ? behaviorModules
+                        : selectedOnly
+                          ? selectedOnlyModules
+                          : cart
+                            ? cartModules
+                            : fixed
+                              ? fixedModules
+                              : nativeTheme
+                                ? nativeThemeModules
+                                : refreshed
+                                  ? refreshModules
+                                  : selected
+                                    ? selectedModules
+                                    : privacy
+                                      ? privacyModules
+                                      : lean
+                                        ? leanMarketsModules
+                                        : preview
+                                          ? previewThemeModules
+                                          : cookie
+                                            ? cookieThemeModules
+                                            : theme
+                                              ? themeModules
+                                              : proxy
+                                                ? proxyModules
+                                                : historicalM8Modules;
   const profileTest = (name: string, fn: TestFn) => test(`${profile}: ${name}`, fn);
   const prior = (versions: ReleaseAppendInput['activeObservation']['versions']) =>
     proxy
       ? [
+          ...(cartRepair
+            ? [
+                {
+                  versionId: 'gid://shopify/Version/1201385144321',
+                  versionTag: 'native-canonical-313b12ad',
+                  status: 'inactive' as const,
+                },
+              ]
+            : []),
           ...(canonical
             ? [
                 {
