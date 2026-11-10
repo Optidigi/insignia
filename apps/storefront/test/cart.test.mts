@@ -91,6 +91,12 @@ test('replaces only v2 members by current key and applies exact real-variant vec
       { url: '/nl/cart/update.js', method: 'POST', body: { attributes: { _insignia_quote_v2: 'new' } } },
     ],
   );
+  // One read before writing and one verifying the added lines before the quote attribute;
+  // the removal and quote writes return the complete cart and serve as their own witnesses.
+  assert.deepEqual(
+    remote.requests.slice(1).map((r) => r.url),
+    ['/nl/cart.js', '/nl/cart/update.js', '/nl/cart/add.js', '/nl/cart.js', '/nl/cart/update.js'],
+  );
 });
 
 test('lost acknowledgement refetches observed effects but never automatically redispatches', async () => {
@@ -153,9 +159,9 @@ test('inventory clipping never reports exact application success', async () => {
 
 test('ordinary changes between removal and add stop the sequence; malformed v2 markers are repairable', async () => {
   const malformed = { ...old, properties: { _insignia_member_v2: '' } };
-  const remote = provider([ordinary, malformed], ({ url, items, requests }) => {
-    if (url.endsWith('cart.js') && requests.some((r) => r.url.endsWith('cart/update.js')))
-      required(items[0]).quantity = 8;
+  // The removal write's own complete-cart response is the witness checked before add.js.
+  const remote = provider([ordinary, malformed], ({ url, items }) => {
+    if (url.endsWith('cart/update.js')) required(items[0]).quantity = 8;
     return undefined;
   });
   const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl });

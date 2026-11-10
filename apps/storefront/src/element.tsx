@@ -48,6 +48,10 @@ export class InsigniaBuyer extends HTMLElement {
   private prewarm(intent = false) {
     if (!this.isConnected || this.hasAttribute('repair') || this.mounting || this.liveFrame) return;
     if (!intent) {
+      // The cart page is not a product page: a product control there (e.g. a recommendation
+      // quick-add) loads its configuration on hover/focus or click, not on every cart view.
+      const cartRoot = this.getAttribute('cart-root') ?? '/';
+      if (location.pathname.replace(/\/+$/, '') === `${cartRoot}cart`) return;
       const button = this.querySelector<HTMLButtonElement>('button[slot="trigger"]');
       const rect = button?.getBoundingClientRect();
       if (

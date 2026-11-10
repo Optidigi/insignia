@@ -339,12 +339,15 @@ export function createAjaxCartAdapter({
       let expectedQuote = current.attributes[QUOTE] ?? '';
       if ((current.customized.length && !vectorAlready) || (!desired.length && current.attributes[QUOTE])) {
         dispatched = true;
-        await request('cart/update.js', {
-          updates: Object.fromEntries(current.customized.map((item) => [item.key, 0])),
-          attributes: { [QUOTE]: '' },
-        });
+        // update.js returns the complete post-mutation cart (as for the final quote write below);
+        // it is the removal witness, so no separate cart.js read is needed.
+        current = snapshot(
+          await request('cart/update.js', {
+            updates: Object.fromEntries(current.customized.map((item) => [item.key, 0])),
+            attributes: { [QUOTE]: '' },
+          }),
+        );
         expectedQuote = '';
-        current = await read();
         if (
           (current.attributes[QUOTE] ?? '') !== expectedQuote ||
           current.customized.length ||

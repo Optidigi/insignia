@@ -43,6 +43,8 @@ export async function mountLiveDesigner(input: {
   let initiallyHidden = input.initiallyHidden === true;
   let preparationFailed = false;
   let selectionGeneration = 0;
+  // Only an editable Designer will make private calls (upload, draft, quote).
+  let editable = false;
   const current = () => !destroyed && input.isCurrent();
   function openNativeCart() {
     if (current()) window.location.assign(`${input.cartRoot}cart`);
@@ -268,6 +270,7 @@ export async function mountLiveDesigner(input: {
     record = { frame, live };
     if (active && active !== record) discard(active);
     active = record;
+    editable = !repair;
   }
   async function retryInitialization(work: (signal: AbortSignal) => Promise<void>) {
     pendingRead?.abort();
@@ -352,8 +355,17 @@ export async function mountLiveDesigner(input: {
       active = record;
     }
   }
+  // A visible editable Designer is about to need a session (upload, draft, quote). Cart repair
+  // never warms one: a fresh session must not look like ownership of earlier accepted sets.
+  let sessionWarmed = false;
+  function warmSession() {
+    if (sessionWarmed || initiallyHidden || input.repair || !editable || !current()) return;
+    sessionWarmed = true;
+    void api.warmSession();
+  }
   if (input.repair) await showOwned();
   else await show();
+  warmSession();
   return {
     get ready() {
       return !preparationFailed && active?.frame.initialized === true;
@@ -363,7 +375,7 @@ export async function mountLiveDesigner(input: {
       initiallyHidden = false;
       const record = active;
       if (!record?.frame.open()) return false;
-
+      warmSession();
       return true;
     },
     destroy() {

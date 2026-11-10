@@ -8,6 +8,7 @@
     "src/inline-css.d.ts",
     "test/selected-removal.test.mts",
     "test/selected-quote-expiry.test.mts",
+    "test/selected-quote-latency.test.mts",
     "test/published-options.test.mts"
   ],
   "exclude": []

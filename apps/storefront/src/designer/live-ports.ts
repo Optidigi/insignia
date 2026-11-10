@@ -150,7 +150,11 @@ export function createLiveDesignerPorts(input: {
         input.onNeedsReview?.(false, false, canRemoveAll, request);
         throw error;
       });
-      const [observed, refreshed] = await Promise.all([observedRead, api.config(signal)]);
+      // The proposal does not wait for this read: the server re-checks the revision and re-prices
+      // every group. The fresh config still gates presentation and takes precedence when it changed.
+      const configRead = api.config(signal);
+      configRead.catch(() => {});
+      const observed = await observedRead;
       signal.throwIfAborted();
       // Show every owned group even if one cannot currently be repriced; unknown amounts stay unavailable.
       // Re-proposing an expired, displayed design keeps its total visible until the fresh proposal arrives.
@@ -198,6 +202,40 @@ export function createLiveDesignerPorts(input: {
           },
           request,
         );
+      // The current revision maps the design; an unchanged revision maps it identically after refresh.
+      const group: DesiredGroup = currentGroup;
+      const needsCartReview = request.operation === 'updated' && oldIndex < 0;
+      let quoting:
+        | Promise<{ labels: Map<string, string>; proposal: QuoteProposal; groups: DesiredGroup[] }>
+        | undefined;
+      if (!needsCartReview) {
+        const groups = [...pendingGroups];
+        draftSaves.set(request.design.id, { group, original: previous });
+        // The proposal does not read the draft: save and proposal run concurrently and both must succeed.
+        const saving = custody.save(request.design.id, group, previous, signal);
+        const proposing = refreshGroups(groups, signal).then(async (labels) => {
+          signal.throwIfAborted();
+          const proposal = await api.private<QuoteProposal>(
+            'quote-proposals',
+            {
+              country: input.country,
+              marketId: input.marketId,
+              groups,
+              capacity: {
+                ordinaryLineCount: observed.cart.ordinary.length,
+                inputBytes: new TextEncoder().encode(JSON.stringify(observed.cart.items)).byteLength,
+              },
+              observedFingerprint: await advisoryFingerprint(observed.cart.fingerprint),
+            },
+            signal,
+          );
+          return { labels, proposal, groups };
+        });
+        quoting = Promise.all([saving, proposing]).then(([, quoted]) => quoted);
+        quoting.catch(() => {});
+      }
+      const refreshed = await configRead;
+      signal.throwIfAborted();
       // Stable IDs and unchanged publication permit amount refresh without replacing the editing state.
       if (refreshed.revisionId !== source.revisionId || refreshed.contentHash !== source.contentHash) {
         let available = false;
@@ -208,37 +246,14 @@ export function createLiveDesignerPorts(input: {
         input.onNeedsReview?.(available, true, observed.cart.customized.length > 0, request);
         throw new Error('Published configuration changed; review the current product configuration');
       }
+      buildBuyerDesigner(refreshed, { locale: input.locale, storeName: input.storeName });
       source = refreshed;
       input.onPriceRefresh?.(refreshed, request);
-      const mapped = buildBuyerDesigner(source, { locale: input.locale, storeName: input.storeName });
-      const group: DesiredGroup = mapped.desired(request.design);
-      const old = designs.get(request.design.id);
-      const index = old ? observed.groups.findIndex((group) => desiredGroupKey(group) === desiredGroupKey(old)) : -1;
-      if (request.operation === 'updated' && index < 0) {
+      if (!quoting) {
         input.onNeedsReview?.(true, false, observed.cart.customized.length > 0, request);
         throw new Error('Design requires current-cart review');
       }
-      const groups = replaceGroup(observed.groups, group, index < 0 ? undefined : index);
-      draftSaves.set(request.design.id, { group, original: old });
-      const [, labels] = await Promise.all([
-        custody.save(request.design.id, group, old, signal),
-        refreshGroups(groups, signal),
-      ]);
-      signal.throwIfAborted();
-      const proposal = await api.private<QuoteProposal>(
-        'quote-proposals',
-        {
-          country: input.country,
-          marketId: input.marketId,
-          groups,
-          capacity: {
-            ordinaryLineCount: observed.cart.ordinary.length,
-            inputBytes: new TextEncoder().encode(JSON.stringify(observed.cart.items)).byteLength,
-          },
-          observedFingerprint: await advisoryFingerprint(observed.cart.fingerprint),
-        },
-        signal,
-      );
+      const { labels, proposal, groups } = await quoting;
       signal.throwIfAborted();
       if (
         proposal.currency !== source.shopCurrency ||
@@ -345,7 +360,6 @@ export function createLiveDesignerPorts(input: {
         const completedReceipt = completed.get(request.idempotencyKey);
         if (completedReceipt) return { ...completedReceipt, requestId: request.requestId };
         if (request.signal.aborted) throw new DOMException('Aborted', 'AbortError');
-        if (!issuanceAttempted.has(request.idempotencyKey)) request.onPreparing?.();
         let review = prepared.get(request.idempotencyKey);
         let accepted = acceptedAttempts.get(request.idempotencyKey);
         if (!accepted) {
@@ -367,7 +381,15 @@ export function createLiveDesignerPorts(input: {
               });
             review = fresh;
           }
-          const current = await cart.read();
+          // A prepared, current quote stays in "Adding to cart"; only actual re-preparation or a
+          // failure before issuance is reported as preparation (no "Preparing quote" flash).
+          let current: CartSnapshot;
+          try {
+            current = await cart.read();
+          } catch (error) {
+            if (!issuanceAttempted.has(request.idempotencyKey)) request.onPreparing?.();
+            throw error;
+          }
           if (!issuanceAttempted.has(request.idempotencyKey) && current.fingerprint !== review.baseline.fingerprint) {
             request.onPreparing?.();
             const presentation = await prepare(request);
