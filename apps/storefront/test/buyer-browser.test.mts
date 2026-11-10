@@ -13,6 +13,7 @@ type ProposalRequest = ReturnType<typeof BuyerProposalRequestSchema.parse>;
 type AcceptanceRequest = ReturnType<typeof BuyerAcceptanceSchema.parse>;
 
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { test } from 'node:test';
 import { chromium, firefox } from 'playwright';
 import {
@@ -769,9 +770,7 @@ async function withRetainedBuyer(
         proposals.push(request);
         const number = proposals.length;
         const proposalId = `bbbbbbbb-bbbb-4bbb-8bbb-${String(number).padStart(12, '0')}`;
-        const hash = String(number).padStart(64, '0');
         proposalIds.push(proposalId);
-        quotes.set(proposalId, { hash, desired: request.groups });
         const rows = request.groups.map((selection, index) => {
           const cfg = required(configurations.get(selection.productId));
           let base = 0n;
@@ -804,6 +803,11 @@ async function withRetainedBuyer(
             totalMinor: (base + unit * BigInt(quantity)).toString(),
           };
         });
+        // Like the server's material hash: identical economics and selections give the identical hash.
+        const hash = createHash('sha256')
+          .update(JSON.stringify([request.groups, rows]))
+          .digest('hex');
+        quotes.set(proposalId, { hash, desired: request.groups });
         return route.fulfill({
           json: {
             proposalId,
@@ -1282,7 +1286,7 @@ test('failed fallback removal preserves review and never opens the native cart',
     { unknownOwned: true, opening: 'repair' },
   );
 });
-test('known quote expiry prepares a fresh authoritative proposal and requires another acceptance gesture', async () => {
+test('expired quote with changed terms keeps Add, shows the fresh price and requires another acceptance gesture', async () => {
   await withRetainedBuyer(
     async ({ page, host, proposals, accepts, proposalIds, configure }) => {
       await reviewRetained(host);
@@ -1299,27 +1303,27 @@ test('known quote expiry prepares a fresh authoritative proposal and requires an
       repriced.variants = repriced.variants.map((variant) => ({ ...variant, baseUnitMinor: '9000' }));
       configure(repriced);
       await page.clock.fastForward(61000);
-      await host.getByRole('button', { name: 'Retry', exact: true }).waitFor();
-      assert.equal(proposals.length, 1, 'expiry retires presentation without periodic proposal dispatch');
-      assert.equal(await host.locator('.footer-price strong').innerText(), 'Unavailable');
-      assert.equal(await host.locator('.review-pricing summary bdi').innerText(), 'Unavailable');
-      assert.deepEqual(
-        await host.locator('.review-costs dd').allTextContents(),
-        ['Unavailable', 'Unavailable'],
-        'expired unit prices must retire with the single-design footer total',
+      await applyButton(host).waitFor();
+      assert.equal(proposals.length, 1, 'expiry dispatches no periodic proposal');
+      assert.equal(await host.getByRole('button', { name: 'Retry', exact: true }).count(), 0);
+      assert.equal(await applyButton(host).isEnabled(), true, 'Add stays available after proposal expiry');
+      assert.equal(
+        await host.locator('.footer-price strong').innerText(),
+        originalTotal,
+        'the last price stays visible',
       );
-      await host.getByRole('button', { name: 'Retry', exact: true }).click();
+      assert.deepEqual(await host.locator('.review-costs dd').allTextContents(), ['€20.00', '€10.00']);
+      await applyButton(host).click();
+      await host.locator('.footer-price strong').filter({ hasText: '300.00' }).waitFor({ timeout: 3000 });
       await applyButton(host).waitFor();
       assert.equal(await host.locator('.cart-submit-error').count(), 0, 'refresh is not a cart failure');
       assert.equal(proposals.length, 2);
-      await host.locator('.footer-price strong').filter({ hasText: '300.00' }).waitFor({ timeout: 3000 });
-      assert.notEqual(await host.locator('.footer-price strong').innerText(), originalTotal);
       assert.notEqual(proposalIds[1], proposalIds[0]);
-      assert.equal(accepts.length, 0, 'The expired proposal is never accepted');
+      assert.equal(accepts.length, 0, 'changed terms are never accepted without another gesture');
       await applyButton(host).click();
       await host.getByRole('button', { name: 'View cart', exact: true }).waitFor();
       assert.equal(accepts.length, 1);
-      assert.equal(required(accepts[0]).hash, String(2).padStart(64, '0'));
+      assert.equal(proposals.length, 2);
       const cart = record(await page.evaluate(async () => (await fetch('/cart.js')).json()));
       assert(Array.isArray(cart.items));
       const ordinary = cart.items.map(record).find((item) => item.key === 'ordinary-gift');
@@ -1334,19 +1338,69 @@ test('known quote expiry prepares a fresh authoritative proposal and requires an
   );
 });
 
+test('expired quote with unchanged terms is re-proposed and added in the same click', async () => {
+  await withRetainedBuyer(
+    async ({ page, host, proposals, accepts, proposalIds }) => {
+      await reviewRetained(host);
+      await applyButton(host).waitFor();
+      const originalTotal = await host.locator('.footer-price strong').innerText();
+      await page.clock.fastForward(61000);
+      await applyButton(host).waitFor();
+      assert.equal(await host.locator('.footer-price strong').innerText(), originalTotal);
+      await applyButton(host).click();
+      await host.getByRole('button', { name: 'View cart', exact: true }).waitFor();
+      assert.equal(proposals.length, 2, 'one fresh proposal replaced the expired one');
+      assert.equal(accepts.length, 1, 'a single click accepted');
+      assert.equal(new URL(page.url()).pathname, '/');
+      assert.equal(required(accepts[0]).hash.length, 64);
+      assert.notEqual(proposalIds[1], proposalIds[0]);
+    },
+    { clock: true },
+  );
+});
+
+test('returning to the tab silently re-proposes an expired quote once', async () => {
+  await withRetainedBuyer(
+    async ({ page, host, proposals, accepts }) => {
+      await reviewRetained(host);
+      await applyButton(host).waitFor();
+      const originalTotal = await host.locator('.footer-price strong').innerText();
+      await page.clock.fastForward(61000);
+      await applyButton(host).waitFor();
+      assert.equal(proposals.length, 1);
+      const busy: string[] = [];
+      await page.exposeFunction('recordBusy', (label: string) => busy.push(label));
+      await host.locator('body').evaluate((body) => {
+        new MutationObserver(() => {
+          const button = body.querySelector('.cart-button');
+          if (button?.getAttribute('aria-busy') === 'true') void Reflect.get(window, 'recordBusy')(button.textContent);
+        }).observe(body, { subtree: true, attributes: true, childList: true, characterData: true });
+        document.dispatchEvent(new Event('visibilitychange'));
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+      await host.locator('.footer-price strong').filter({ hasText: originalTotal }).waitFor();
+      for (let attempt = 0; attempt < 50 && proposals.length < 2; attempt++) await page.waitForTimeout(20);
+      assert.equal(proposals.length, 2, 'repeated visibility events start one proposal');
+      await applyButton(host).waitFor();
+      assert.deepEqual(busy, [], 'an unchanged refresh never shows a busy footer');
+      assert.equal(await host.locator('.footer-price strong').innerText(), originalTotal);
+      assert.equal(accepts.length, 0, 'a refresh never accepts');
+      await applyButton(host).click();
+      await host.getByRole('button', { name: 'View cart', exact: true }).waitFor();
+      assert.equal(proposals.length, 2, 'the refreshed proposal is accepted without another proposal');
+    },
+    { clock: true },
+  );
+});
+
 test('expired-offer recovery rejects a subsequent external cart change before acceptance or mutation', async () => {
   await withRetainedBuyer(
     async ({ page, host, proposals, accepts, editCart, mutations }) => {
       await reviewRetained(host);
       await applyButton(host).waitFor();
       await page.clock.fastForward(61000);
-      await host.getByRole('button', { name: 'Retry', exact: true }).waitFor();
-      assert.equal(proposals.length, 1, 'expiry retires presentation without periodic proposal dispatch');
-      assert.equal(await host.locator('.footer-price strong').innerText(), 'Unavailable');
-      await host.getByRole('button', { name: 'Retry', exact: true }).click();
       await applyButton(host).waitFor();
-      assert.equal(await host.locator('.cart-submit-error').count(), 0, 'refresh is not a cart failure');
-      assert.equal(proposals.length, 2);
+      assert.equal(proposals.length, 1, 'expiry dispatches no periodic proposal');
       editCart();
       const rejected = page.waitForResponse(
         (response) => response.url().endsWith('/cart-state') && response.status() === 409,
@@ -1354,7 +1408,7 @@ test('expired-offer recovery rejects a subsequent external cart change before ac
       await applyButton(host).click();
       await rejected;
       await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
-      assert.equal(proposals.length, 2);
+      assert.equal(proposals.length, 1);
       assert.equal(accepts.length, 0);
       assert.equal(mutations(), 0);
     },

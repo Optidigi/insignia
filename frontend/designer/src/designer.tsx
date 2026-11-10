@@ -332,12 +332,24 @@ function DesignerSession({
   }, [hostErrorSignal]);
   const quoteReview = incomingQuoteReview?.intentId === runtime.reviewIntentId ? incomingQuoteReview : undefined;
   const [, expirePresentation] = useState(0);
-  const quoteExpired = !runtime.prepared && !!quoteReview?.expiresAt && Date.parse(quoteReview.expiresAt) <= Date.now();
+  // An expired displayed proposal keeps its total and Add: the cart port re-proposes on Add and
+  // continues in the same click only for an unchanged material hash (owner decision, 10 Nov 2026).
+  const quoteExpired = !!quoteReview && runtime.expired;
   useEffect(() => {
     if (!quoteReview?.expiresAt || quoteExpired) return;
     const timer = window.setTimeout(() => expirePresentation((n) => n + 1), Math.max(0, Date.parse(quoteReview.expiresAt) - Date.now()));
     return () => clearTimeout(timer);
   }, [quoteReview?.expiresAt, quoteExpired]);
+  // Returning to the tab re-proposes an expired quote once. No periodic timer: an idle Designer must
+  // not spend the per-session proposal budget (128) while nobody is looking.
+  useEffect(() => {
+    if (!ports.review || !designerOpen || suspended) return;
+    const visible = () => {
+      if (document.visibilityState === 'visible') runtime.refreshExpired();
+    };
+    document.addEventListener('visibilitychange', visible);
+    return () => document.removeEventListener('visibilitychange', visible);
+  }, [designerOpen, suspended, runtime, ports]);
   useLayoutEffect(() => {
     if (requestCloseSignal) requestReturnToProduct();
   }, [requestCloseSignal]);
@@ -979,7 +991,11 @@ function DesignerSession({
   const unappliedDraft = hasUnappliedDraft(workflow);
   const quoteStatus = ports.review && (!editing || unappliedDraft) &&
     (!runtime.prepared || quoteReview?.totalMinor === undefined)
-    ? workflow.commit.kind === 'failed' || quoteExpired ? 'unavailable' : 'loading'
+    ? workflow.commit.kind === 'failed'
+      ? 'unavailable'
+      : quoteExpired
+        ? quoteReview?.totalMinor === undefined ? 'unavailable' : undefined
+        : 'loading'
     : undefined;
   const footerBusy = workflow.commit.kind === 'pending' || (step === 2 && workflow.commit.kind === 'preparing');
   const dirtyDraft = hasDraftChanges(workflow);
@@ -1893,7 +1909,7 @@ function DesignerSession({
                     (step === 1 && !quantitiesLayout.cells.some((cell) => cell.available))
                   }
                   aria-busy={footerBusy}
-                  onClick={step === 2 ? (quoteExpired || (workflow.commit.kind === 'failed' && workflow.commit.preparation) ? () => void runtime.commit(true) : editing && !unappliedDraft ? returnToProduct : addToCart) : goNext}
+                  onClick={step === 2 ? (workflow.commit.kind === 'failed' && workflow.commit.preparation ? () => void runtime.commit(true) : editing && !unappliedDraft ? returnToProduct : addToCart) : goNext}
                 >
                   {footerBusy
                     ? workflow.commit.kind === 'preparing'
@@ -1901,7 +1917,7 @@ function DesignerSession({
                       : editing
                         ? t('customer:steps.updatingCart')
                         : t('customer:steps.addingToCart')
-                    : quoteExpired || (workflow.commit.kind === 'failed' && workflow.commit.preparation)
+                    : workflow.commit.kind === 'failed' && workflow.commit.preparation
                       ? t('common:actions.retry')
                     : step === 0
                       ? t('customer:steps.chooseQuantities')

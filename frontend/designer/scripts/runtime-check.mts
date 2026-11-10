@@ -1279,3 +1279,144 @@ test('a stale close gesture cannot add a confirmation to a closed workflow durin
   assert.equal(resumed.open, true);
   assert.equal(resumed.modal.kind, 'closed');
 });
+
+function expiringHarness(ports: { prepare: DesignerPorts['review'] extends infer R ? R extends { prepare: infer P } ? P : never : never; commit(request: CartRequest): Promise<unknown> }) {
+  return harness({ artwork: { upload: async () => ({}) }, review: { prepare: ports.prepare }, cart: { commit: ports.commit } });
+}
+async function withClock<T>(offset: number, run: () => Promise<T> | T): Promise<T> {
+  const originalNow = Date.now;
+  Date.now = () => originalNow() + offset;
+  try { return await run(); } finally { Date.now = originalNow; }
+}
+
+test('an expired displayed quote stays addable and the port can re-propose and apply it in the same click', async () => {
+  const commits: CartRequest[] = [];
+  const app = expiringHarness({
+    prepare: async () => ({ expiresAt: new Date(Date.now() + 300_000).toISOString() }),
+    commit: async (request) => {
+      commits.push(request);
+      request.onPreparing?.();
+      request.onMutating?.();
+      return receipt(request);
+    },
+  });
+  await app.runtime.commit(true);
+  await withClock(301_000, async () => {
+    assert.equal(app.runtime.prepared, false);
+    assert.equal(app.runtime.expired, true, 'the displayed proposal is expired, not unavailable');
+    assert.equal(canCommitDesign(app.state), true);
+    const first = app.runtime.commit();
+    const doubleClick = app.runtime.commit();
+    await Promise.all([first, doubleClick]);
+  });
+  assert.equal(commits.length, 1, 'a double click cannot start a second application or proposal');
+  assert.equal((app.state.completion as CartReceipt | null)?.kind, 'applied');
+});
+
+test('an expired quote whose fresh terms changed returns to the normal review state and needs another click', async () => {
+  let calls = 0;
+  const app = expiringHarness({
+    prepare: async () => ({ expiresAt: new Date(Date.now() + 300_000).toISOString() }),
+    commit: async (request) => {
+      if (++calls === 1) {
+        request.onPreparing?.();
+        throw Object.assign(new Error('Review the refreshed quote'), { reviewRequired: true, expiresAt: new Date(Date.now() + 300_000).toISOString() });
+      }
+      return receipt(request);
+    },
+  });
+  await app.runtime.commit(true);
+  await withClock(301_000, async () => {
+    await app.runtime.commit();
+    assert.equal(app.state.commit.kind, 'idle');
+    assert.equal(app.state.completion, null);
+    assert.equal(app.runtime.prepared, true);
+    assert.equal(app.runtime.expired, false);
+    await app.runtime.commit();
+  });
+  assert.equal(calls, 2);
+  assert.equal((app.state.completion as CartReceipt | null)?.kind, 'applied');
+});
+
+test('returning to an expired quote refreshes it once, silently, without a busy state', async () => {
+  const preparations: CartRequest[] = [];
+  const held = delayed();
+  const app = expiringHarness({
+    prepare: async (request) => {
+      preparations.push(request);
+      if (preparations.length === 2) await held.promise;
+      return { expiresAt: new Date(Date.now() + 300_000).toISOString() };
+    },
+    commit: async () => { throw Error('no cart write'); },
+  });
+  assert.equal(app.runtime.refreshExpired(), false, 'nothing displayed yet');
+  await app.runtime.commit(true);
+  assert.equal(app.runtime.refreshExpired(), false, 'an unexpired quote is not re-proposed');
+  await withClock(301_000, async () => {
+    assert.equal(app.runtime.refreshExpired(), true);
+    assert.equal(app.runtime.refreshExpired(), false, 'repeated visibility events cannot stack proposals');
+    assert.equal(app.state.commit.kind, 'refreshing');
+    assert.equal(app.runtime.expired, true, 'the previous total stays displayed while refreshing');
+    held.resolve(undefined);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(app.state.commit.kind, 'idle');
+    assert.equal(app.runtime.prepared, true);
+    assert.equal(app.runtime.refreshExpired(), false);
+  });
+  assert.equal(preparations.length, 2);
+  assert.equal(preparations[1]?.idempotencyKey, preparations[0]?.idempotencyKey);
+});
+
+test('Add during a silent refresh supersedes it and its late result cannot change the add', async () => {
+  const held = delayed();
+  const commits: CartRequest[] = [];
+  let preparations = 0;
+  const app = expiringHarness({
+    prepare: async () => {
+      if (++preparations === 2) await held.promise;
+      return { expiresAt: new Date(Date.now() + 300_000).toISOString() };
+    },
+    commit: async (request) => {
+      commits.push(request);
+      request.onPreparing?.();
+      request.onMutating?.();
+      return receipt(request);
+    },
+  });
+  await app.runtime.commit(true);
+  await withClock(301_000, async () => {
+    assert.equal(app.runtime.refreshExpired(), true);
+    await app.runtime.commit();
+    held.resolve(undefined);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  assert.equal(commits.length, 1);
+  assert.equal((app.state.completion as CartReceipt | null)?.kind, 'applied');
+});
+
+test('a failed silent refresh shows the existing preparation retry state', async () => {
+  let preparations = 0;
+  const app = expiringHarness({
+    prepare: async () => {
+      if (++preparations === 2) throw Object.assign(Error('Entitlement unavailable'), { status: 503 });
+      return { expiresAt: new Date(Date.now() + 300_000).toISOString() };
+    },
+    commit: async () => { throw Error('no cart write'); },
+  });
+  await app.runtime.commit(true);
+  await withClock(301_000, async () => {
+    assert.equal(app.runtime.refreshExpired(), true);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  assert.equal(app.state.commit.kind === 'failed' && app.state.commit.preparation, true);
+});
+
+test('reducer: refreshing is cancellable and only its own request can fail it', () => {
+  const state = designerReducer(ready(), { type: 'step-selected', step: 2 });
+  const design = { id: 'design', prints: state.prints, quantities: state.quantities };
+  const refreshing = designerReducer(state, { type: 'cart-commit-requested', requestId: 'r', design, preparation: true, refresh: true });
+  assert.equal(refreshing.commit.kind, 'refreshing');
+  assert.equal(designerReducer(refreshing, { type: 'cart-commit-failed', requestId: 'other', reason: 'cart-commit-failed', preparation: true }), refreshing);
+  assert.equal(designerReducer(refreshing, { type: 'cart-commit-canceled' }).commit.kind, 'idle');
+  assert.equal(designerReducer(refreshing, { type: 'cart-commit-requested', requestId: 'add', design }).commit.kind, 'pending');
+});

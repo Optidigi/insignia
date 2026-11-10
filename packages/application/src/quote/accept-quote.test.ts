@@ -232,6 +232,53 @@ describe('acceptQuote', () => {
     expect(materialHash({ ...refreshed, shopTimezone: 'Europe/Amsterdam' })).not.toBe(materialHash(original));
   });
 
+  it('re-proposing an unchanged design minutes later yields the identical material hash', async () => {
+    // The Designer accepts a fresh proposal in the same click only when this hash equals the displayed one.
+    const first = fixture();
+    const original = (await prepareQuote(request, first.ports)).quote;
+    const later = new Date(+now + 6 * 60_000);
+    const second = fixture();
+    second.ports.clock = () => later;
+    second.ports.ids = { quoteId: () => '55555555-5555-4555-8555-555555555555' };
+    vi.mocked(second.ports.publication.getEffective).mockResolvedValue({
+      config,
+      configId: 'cfg',
+      operationId: 'op-2',
+    });
+    vi.mocked(second.ports.artwork.readUsability).mockImplementation(async (input) =>
+      input.choices.map((choice) => ({
+        ...choice,
+        shopId: input.shopId,
+        installationGeneration: input.installationGeneration,
+        status: 'usable' as const,
+        lastFullyUsableLocalDay: 20760,
+        observedAt: later.toISOString(),
+      })),
+    );
+    const snapshot = (await first.ports.catalog.resolveVariantContext({} as never)) as Awaited<
+      ReturnType<QuoteAuthorityPorts['catalog']['resolveVariantContext']>
+    >;
+    const freshSnapshot = snapshot.map((entry) => ({
+      ...entry,
+      observedAt: new Date(+later - 30_000).toISOString(),
+      freshUntil: new Date(+later + 4 * 60_000).toISOString(),
+      correlation: { requestId: 'second-observation' },
+    }));
+    vi.mocked(second.ports.catalog.resolveVariantContext).mockResolvedValue(freshSnapshot);
+    const refreshed = (await prepareQuote({ ...request, idempotencyKey: 'second-proposal-key' }, second.ports)).quote;
+    expect(refreshed.economics.effectiveAt).not.toBe(original.economics.effectiveAt);
+    expect(materialHash(refreshed)).toBe(materialHash(original));
+
+    const repriced = fixture();
+    repriced.ports.clock = () => later;
+    vi.mocked(repriced.ports.artwork.readUsability).mockImplementation(second.ports.artwork.readUsability);
+    vi.mocked(repriced.ports.catalog.resolveVariantContext).mockResolvedValue(
+      freshSnapshot.map((entry) => ({ ...entry, amount: '10.50' })),
+    );
+    const changed = (await prepareQuote({ ...request, idempotencyKey: 'third-proposal-key' }, repriced.ports)).quote;
+    expect(materialHash(changed)).not.toBe(materialHash(original));
+  });
+
   it('prepares authoritative pricing without issuing or persisting an accepted offer', async () => {
     const { ports, saved } = fixture();
     const candidate = await prepareQuote(request, ports);
