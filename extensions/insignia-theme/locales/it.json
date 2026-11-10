@@ -3,7 +3,11 @@
     "customise": "Personalizza",
     "cart_review": {
       "label": "Verifica articoli personalizzati",
-      "message": "I tuoi articoli personalizzati sono cambiati, quindi i prezzi di personalizzazione non vengono applicati. Verificali prima del pagamento."
+      "message": "I tuoi articoli personalizzati sono cambiati, quindi i prezzi di personalizzazione non vengono applicati. Verificali prima del pagamento.",
+      "renew_label": "Rinnova prezzi",
+      "expired_message": "I tuoi prezzi di personalizzazione sono scaduti e non vengono applicati. Rinnovali prima del pagamento.",
+      "context_message": "I prezzi sono cambiati perché il tuo paese o la tua valuta è cambiata. Verifica i tuoi articoli personalizzati per aggiornarli.",
+      "renew_failed_message": "Non è stato possibile rinnovare i prezzi. Verifica i tuoi articoli personalizzati prima del pagamento."
     }
   }
 }

@@ -39,6 +39,10 @@ async function renderTheme(t: TestContext, mode: 'required' | 'optional' | null,
     'insignia.customise': 'Customise',
     'insignia.cart_review.label': 'Review customized items',
     'insignia.cart_review.message': 'Customized items changed & need review.',
+    'insignia.cart_review.renew_label': 'Renew prices',
+    'insignia.cart_review.expired_message': 'Customization prices expired.',
+    'insignia.cart_review.context_message': 'Country or currency changed.',
+    'insignia.cart_review.renew_failed_message': 'Prices could not be renewed.',
   };
   engine.registerFilter('t', (key: unknown) => {
     assert.ok(typeof key === 'string' && key in translations, `unexpected translation key ${String(key)}`);
@@ -227,6 +231,197 @@ test('a leftover cart quote without designed lines is cleared unless this tab ha
       assert.deepEqual(updates, [], 'an unresolved Insignia operation keeps the cart for its own recovery');
     }
     assert.equal(await page.locator('insignia-cart-repair insignia-buyer').count(), 0);
+  }
+});
+
+function quoteEnvelope(context: { currency?: string; country?: string; marketId?: bigint; validThroughDay: number }) {
+  const bytes = Buffer.alloc(156);
+  bytes.write('ISG2', 0, 'ascii');
+  bytes[4] = 2;
+  bytes.write(context.currency ?? 'USD', 62, 'ascii');
+  bytes[65] = 2;
+  bytes.write(context.country ?? 'US', 66, 'ascii');
+  bytes.writeBigUInt64BE(context.marketId ?? 42n, 68);
+  bytes.writeUInt32BE(context.validThroughDay, 76);
+  return bytes.toString('base64url');
+}
+const utcDay = () => Math.floor(Date.now() / 86400000);
+
+test('cart repair names a currency or Market change and repairs in the current storefront context', async (t) => {
+  const html = await renderTheme(t, null);
+  const page = await browserFixture(t);
+  let cart = {
+    currency: 'EUR',
+    items: [
+      {
+        product_id: 111,
+        quantity: 1,
+        original_price: 920,
+        properties: {
+          _insignia_quote_v2: quoteEnvelope({ validThroughDay: utcDay() + 2 }),
+          _insignia_member_v2: memberCarrier(1, 1745),
+        },
+      },
+    ],
+  };
+  await page.route('**/cart.js', (route) => route.fulfill({ json: cart }));
+  await page.evaluate((markup) => document.body.insertAdjacentHTML('beforeend', markup), html);
+  const repair = page.locator('insignia-cart-repair');
+  await repair.getByText('Country or currency changed.').waitFor();
+  assert.equal(await repair.getByRole('button', { name: 'Renew prices' }).count(), 0);
+  // Designer repair quotes again with the storefront's current country and Market.
+  const buyer = repair.locator('insignia-buyer[repair]');
+  assert.equal(await buyer.getAttribute('country'), 'US');
+  assert.equal(await buyer.getAttribute('market-id'), '42');
+
+  // Same currency, but the signed Market is not the storefront's current Market.
+  const [line] = cart.items;
+  assert.ok(line);
+  cart = {
+    currency: 'USD',
+    items: [
+      {
+        ...line,
+        original_price: 995,
+        properties: {
+          ...line.properties,
+          _insignia_quote_v2: quoteEnvelope({ marketId: 7n, validThroughDay: utcDay() - 3 }),
+        },
+      },
+    ],
+  };
+  await page.evaluate(() => window.dispatchEvent(new Event('insignia-cart-updated')));
+  await page.waitForResponse((response) => response.url().endsWith('/cart.js'));
+  await repair.getByText('Country or currency changed.').waitFor();
+});
+
+test('an expired unchanged offer renews in one click from the owning tab and otherwise falls back to Designer repair', async (t) => {
+  const html = await renderTheme(t, null);
+  for (const outcome of ['renewed', 'review'] as const) {
+    const page = await browserFixture(t);
+    let items: Record<string, unknown>[] = [
+      { key: 'ordinary', product_id: 9, variant_id: 9, quantity: 1, properties: {} },
+      {
+        key: 'custom',
+        product_id: 111,
+        variant_id: 101,
+        quantity: 1,
+        original_price: 995,
+        properties: {
+          _insignia_quote_v2: quoteEnvelope({ validThroughDay: utcDay() - 3 }),
+          _insignia_member_v2: memberCarrier(1, 1745),
+        },
+      },
+    ];
+    const attributes: Record<string, string> = {};
+    const renewals: unknown[] = [];
+    await page.route('**/cart.js', (route) => route.fulfill({ json: { currency: 'USD', items, attributes } }));
+    await page.route('**/cart/update.js', (route) => {
+      const body = route.request().postDataJSON() as {
+        updates?: Record<string, number>;
+        attributes?: Record<string, string>;
+      };
+      items = items.filter((item) => body.updates?.[String(item.key)] !== 0);
+      Object.assign(attributes, body.attributes);
+      return route.fulfill({ json: { currency: 'USD', items, attributes } });
+    });
+    await page.route('**/cart/add.js', (route) => {
+      const body = route.request().postDataJSON() as {
+        items: { id: string; quantity: number; properties: Record<string, string> }[];
+      };
+      for (const item of body.items)
+        items.push({ key: 'renewed', product_id: 111, variant_id: Number(item.id), ...item });
+      return route.fulfill({ json: { items: body.items } });
+    });
+    const quoteId = '11111111-1111-4111-8111-111111111111';
+    const group = {
+      productId: '111',
+      configRevisionId: 'revision',
+      revisionContentHash: 'a'.repeat(64),
+      design: {
+        placements: [
+          { placementId: 'front', methodId: 'print', stepId: 'small', artwork: { kind: 'deferred', intentId: 'i' } },
+        ],
+        options: [],
+      },
+      variants: [{ variantId: '101', quantity: 1 }],
+    };
+    await page.route('**/apps/insignia/v1/cart-state', (route) =>
+      route.fulfill({
+        json: {
+          groups: [group],
+          quoteId,
+          repairRequired: true,
+          renewable: outcome === 'renewed',
+        },
+      }),
+    );
+    await page.route(`**/apps/insignia/v1/quotes/${quoteId}/renew`, (route) => {
+      renewals.push(route.request().postDataJSON());
+      return route.fulfill({
+        json: {
+          quoteId,
+          setId: '33333333-3333-4333-8333-333333333333',
+          validThroughDay: utcDay() + 2,
+          applicationId: '22222222-2222-4222-8222-222222222222',
+          buckets: [
+            {
+              variantId: '101',
+              quantity: 1,
+              properties: {
+                _insignia_quote_v2: quoteEnvelope({ validThroughDay: utcDay() + 2 }),
+                _insignia_member_v2: memberCarrier(1, 1745),
+              },
+            },
+          ],
+          desired: [group],
+        },
+      });
+    });
+    await page.route('**/apps/insignia/v1/cart-applications/*/confirm', (route) =>
+      route.fulfill({ json: { id: '22222222-2222-4222-8222-222222222222', status: 'APPLIED' } }),
+    );
+    await page.route('**/cart', (route) => route.fulfill({ contentType: 'text/html', body: '<p>Native cart</p>' }));
+    await page.evaluate((markup) => document.body.insertAdjacentHTML('beforeend', markup), html);
+    const repair = page.locator('insignia-cart-repair');
+    const renew = repair.getByRole('button', { name: 'Renew prices', exact: true });
+    // A returning buyer without the owning tab session cannot renew; the generic Designer repair remains.
+    await repair.getByText('Customized items changed & need review.').waitFor();
+    assert.equal(await renew.isVisible(), false);
+
+    await page.evaluate(() =>
+      sessionStorage.setItem(
+        'insignia-buyer-session:/apps/insignia',
+        JSON.stringify({
+          capability: 'abc.def',
+          sessionId: 's',
+          expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        }),
+      ),
+    );
+    await page.evaluate(() => window.dispatchEvent(new Event('insignia-cart-updated')));
+    await repair.getByText('Customization prices expired.').waitFor();
+    assert.equal(await repair.getByRole('button', { name: 'Review customized items', exact: true }).isVisible(), true);
+    assert.deepEqual(renewals, [], 'nothing is renewed before the buyer clicks');
+    if (outcome === 'renewed') {
+      await Promise.all([page.waitForURL('**/cart'), renew.click()]);
+      assert.equal(renewals.length, 1);
+      assert.deepEqual(
+        items.map((item) => item.key),
+        ['ordinary', 'renewed'],
+      );
+    } else {
+      await renew.click();
+      await repair.getByText('Prices could not be renewed.').waitFor();
+      assert.equal(await renew.isVisible(), false);
+      assert.deepEqual(renewals, []);
+      assert.equal(
+        await repair
+          .getByRole('button', { name: 'Review customized items', exact: true })
+          .evaluate((button) => document.activeElement === button),
+        true,
+      );
+    }
   }
 });
 

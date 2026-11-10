@@ -680,7 +680,8 @@ export function createBuyerServices(input: {
       const groups = new Map<string, BuyerDesiredGroup>(),
         sets = new Map<string, { count: number; indexes: Set<number> }>();
       const quoteIds = new Set<string>();
-      let repairRequired = false;
+      let changed = false,
+        expired = false;
       for (const line of lines) {
         if (line.sellingPlan) return review();
         const envelope = line.properties[ENVELOPE_ATTRIBUTE],
@@ -711,11 +712,8 @@ export function createBuyerServices(input: {
           member.variantId !== line.variantId
         )
           return review();
-        if (
-          line.quantity !== member.quantity ||
-          localDay(clock(), owned.quote.shopTimezone).ordinal > header.validThroughDay
-        )
-          repairRequired = true;
+        if (line.quantity !== member.quantity) changed = true;
+        if (localDay(clock(), owned.quote.shopTimezone).ordinal > header.validThroughDay) expired = true;
         const seen = sets.get(setId) ?? { count: header.count, indexes: new Set<number>() };
         if (seen.indexes.has(member.index)) return review();
         seen.indexes.add(member.index);
@@ -758,11 +756,14 @@ export function createBuyerServices(input: {
         const title = presentation?.selectedSetup?.product.title;
         if (title?.trim()) labels[group.productId] = title;
       }
+      const incomplete = sets.size !== 1 || [...sets.values()].some((v) => v.indexes.size !== v.count);
       return {
         groups: result,
         ...(Object.keys(labels).length ? { labels } : {}),
         ...(quoteIds.size === 1 ? { quoteId: [...quoteIds][0] } : {}),
-        repairRequired: repairRequired || sets.size !== 1 || [...sets.values()].some((v) => v.indexes.size !== v.count),
+        repairRequired: changed || expired || incomplete,
+        // Only the validity window lapsed; economics/context still need renewal's own full comparison.
+        renewable: expired && !changed && !incomplete && quoteIds.size === 1,
       };
     },
   };

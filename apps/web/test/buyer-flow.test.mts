@@ -133,6 +133,8 @@ test('buyer HTTP qualifies real durable proposal, acceptance replay, owned resto
   const restored = await restoredResponse.json();
   assert.deepEqual(restored.groups, [f.group]);
   assert.equal(restored.quoteId, accepted.quoteId);
+  assert.equal(restored.repairRequired, false);
+  assert.equal(restored.renewable, false);
   const paid = await f.http('cart-state', {
     capability: f.session.capability,
     lines: lines.map((line) => ({ ...line, sellingPlan: '99' })),
@@ -523,5 +525,52 @@ test('overlapping known rejection recovers the winning acceptance through servic
       ])
     ).rows[0].n,
     0,
+  );
+});
+
+test('cart-state marks a lapsed unchanged set renewable and renewal accepts the restored cart groups', {
+  skip: !connectionString,
+}, async (t) => {
+  // Retained artwork must cover the renewed window (D+3..D+5), as with production's 7-day retention.
+  const f = await fixture(t, { artworkRetentionDays: 7 });
+  const proposal = await (await f.http('quote-proposals', f.body)).json();
+  const accepted = BuyerAcceptedCartSchema.parse(
+    await (
+      await f.http(`quote-proposals/${proposal.proposalId}/accept`, {
+        capability: f.session.capability,
+        hash: proposal.hash,
+        idempotencyKey: randomUUID(),
+      })
+    ).json(),
+  );
+  const lines = accepted.buckets.map((bucket, index) => ({ ...bucket, key: `key${index}`, sellingPlan: null }));
+  // Shop-local day D+3: the cart's set lapsed while its signed vector is unchanged.
+  f.advance(3 * 86400000);
+  const lapsedResponse = await f.http('cart-state', { capability: f.session.capability, lines });
+  assert.equal(lapsedResponse.status, 200, await lapsedResponse.clone().text());
+  const lapsed = await lapsedResponse.json();
+  assert.equal(lapsed.repairRequired, true);
+  assert.equal(lapsed.renewable, true);
+  assert.equal(lapsed.quoteId, accepted.quoteId);
+  const drifted = await (
+    await f.http('cart-state', {
+      capability: f.session.capability,
+      lines: lines.map((line) => ({ ...line, quantity: line.quantity + 1 })),
+    })
+  ).json();
+  assert.equal(drifted.repairRequired, true);
+  assert.equal(drifted.renewable, false);
+  // The storefront renews with the observed cart's restored groups, not a client-held request.
+  const fromCart = await f.http(`quotes/${lapsed.quoteId}/renew`, {
+    ...f.body,
+    groups: lapsed.groups,
+    idempotencyKey: randomUUID(),
+  });
+  assert.equal(fromCart.status, 200, await fromCart.clone().text());
+  const cartRenewal = BuyerAcceptedCartSchema.parse(await fromCart.json());
+  assert.equal(cartRenewal.quoteId, accepted.quoteId);
+  assert.deepEqual(
+    cartRenewal.buckets.map(({ variantId, quantity }) => ({ variantId, quantity })),
+    accepted.buckets.map(({ variantId, quantity }) => ({ variantId, quantity })),
   );
 });

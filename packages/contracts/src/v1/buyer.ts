@@ -183,6 +183,8 @@ export const BuyerCartRestorationSchema = z.strictObject({
   groups: z.array(BuyerDesiredGroupSchema).max(32),
   quoteId: BuyerIdSchema.optional(),
   repairRequired: z.boolean(),
+  /** The owned complete set is unchanged but past its valid-through day: renewal may restore it. */
+  renewable: z.boolean().optional(),
   labels: z.record(z.string().max(128), label).optional(),
 });
 export const BuyerConfirmationResultSchema = z.strictObject({
