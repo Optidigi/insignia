@@ -1,13 +1,14 @@
-# Insignia — agent entry
+# Working on Insignia
 
-For the selected UI and example-only workflows, read [frontend/README.md](frontend/README.md). Keep demo packaging separate from backend integration; use the selected placement/Methods components identified there rather than rebuilding the older production editor.
+Start with the [active assignment](docs/delivery/state.md#active-assignment), not the delivery history. Verify checkout, branch, HEAD and dirty changes; preserve existing work. Use [README](README.md) for setup and package scripts for executable commands.
 
-Start with [README](README.md) and [current state and action checklist](docs/delivery/state.md). Refresh live refs, verify the intended project/worktree and preserve newer work and dirty edits. PR223 supplies the selected UI in `frontend/`; the selected frontend is mapped and integration is implemented on the working branch, with final qualification and bounded development deployment tracked in current state. Merchant UI remains **owner-unaccepted**. Read [confirmed integration target](docs/architecture/implementation-plan.md#15-confirmed-selected-frontend-integration-target) and [action map](docs/architecture/frontend-backend-map.md) for the new requirements and source owners; current state records the assignment.
+Inspect the affected code, tests and running behavior to establish what exists. The [specification](docs/architecture/implementation-plan.md) owns intended product behavior; read only affected sections. Report discrepancies rather than treating a bug as the intended contract.
 
-Read the affected sections of the [current specification](docs/architecture/implementation-plan.md) before changing behavior. It owns Lean V1 product, architecture, security, economics, data and interface contracts; the [wire contract](docs/architecture/WHOLE-QUOTE-V2-ADOPTED.md) owns exact authorization bytes. The [operating model](docs/delivery/operating-model.md) owns delivery conventions and effective resource permissions. Current state is the single mutable progress and owner/operator checklist.
+## Read by task
 
-Maintain strict TypeScript/Rust with effective compiler coverage; SQL/database, Liquid, CSS and thin platform launch formats keep their actual responsibilities. Preserve pure-domain and tenant/generation/authentication boundaries, exact money, immutable accepted history, real expiry, App Bridge host controls, Konva rendering and the separate buyer storefront. Merchant views use actual Shopify App Home Polaris Web Components; source tags and HTTP success do not establish composition acceptance.
+- Engineering priorities, workflow or external effects: [operating model](docs/delivery/operating-model.md).
+- UI: [frontend ownership map](frontend/README.md) and [UI state guidance](docs/delivery/operating-model.md#ui-state-and-effects).
+- Signed cart authorization: [exact wire contract](docs/architecture/WHOLE-QUOTE-V2-ADOPTED.md).
+- Diagnosis, tests, review or instruction edits: [project skill selection](.agents/skills/PROJECT-ADAPTATIONS.md); load only applicable skills and references.
 
-Use meaningful TDD for behavior changes, relevant regression and proportionate independent review. Select inspected project skills under `.agents/skills` explicitly when the host also advertises generic copies: `tdd` for test seams, `diagnosing-bugs` for diagnosis, `code-review` for implementation review and `writing-for-agents` for instructions. For frontend checks, CI routing and local prerequisites, read `.agents/skills/PROJECT-ADAPTATIONS.md`. Skills are techniques, not new permission gates. Check their support files and licensing when modifying them.
-
-Ordinary implementation, research, delegation and normal integration are locally owned. External effects require the actual resource grant; missing access, human verification, material product/risk changes and production rollout remain owner-held. Preserve `VAT 998524223812 UNRESOLVED_NO_RETRY`, protected rewrite-dev, unrelated services and exact retention obligations. Notify concrete missing access once, then continue independent work. Report implemented, integrated, deployed, tested, natively observed, visually accepted and release-approved states separately.
+Keep current status in the assignment document, workflow in the operating model and requirements in the specification. Historical evidence is consulted for a specific question, not replayed as session instructions. Resource permissions and protected installations remain in the operating model.

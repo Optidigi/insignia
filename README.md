@@ -4,7 +4,7 @@ Shopify product customization: a merchant App Home editor, separate buyer storef
 
 ## Designed UI handoff
 
-The UI and its optional demos are in [frontend](frontend/README.md). The selected components/reducers are composed with the authenticated backend in `apps/web` and `apps/storefront`. Native UI review is deployed; dedicated-product full E2E and automatic theme integration are the current assignment.
+The UI and its optional demos are in [frontend](frontend/README.md). The selected components/reducers are composed with the authenticated backend in `apps/web` and `apps/storefront`. Consult [current state](docs/delivery/state.md) for the active assignment, deployed baseline and remaining qualification.
 
 ## Start locally
 
@@ -47,4 +47,4 @@ Maintained tools live under responsibility-named `scripts/{boundaries,ci,databas
 
 PR223 supplied the selected merchant/customer UI, now integrated and deployed through the qualified development releases recorded in current state; merchant UI is **owner-unaccepted**. Current component/runtime checks and earlier internal visual observations do not establish owner acceptance. The source inventory is in the specification; the action checklist owns the assignment.
 
-Superseded development records remain in Git history. Necessary current effect/retention records and curated fixtures retain their explicit purpose; no historical prompt needs to be replayed to start work.
+Superseded development records are in linked delivery history and Git history. Necessary current effect/retention records and curated fixtures retain their explicit purpose; no historical prompt needs to be replayed to start work.

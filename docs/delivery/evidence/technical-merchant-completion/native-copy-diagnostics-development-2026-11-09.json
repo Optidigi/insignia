@@ -1,0 +1,120 @@
+{
+  "classification": "WEB_DIAGNOSTICS_DEPLOYED_NATIVE_QUOTE_BLOCKED_AT_RELEASE_PREPARATION",
+  "merge": "2f150eff86acfd8227dd2efb78d82bf92694e47d",
+  "head": "94aa7ee76254240b2418850190f223e16afc31f7",
+  "tree": "4ebbaaa9fac309327d1cb3593f29c94ad56cdf66",
+  "ciSynthetic": "79dd1647cf6d35fb2e6d5e157b58d9a968c1d789",
+  "ciRuns": {
+    "foundation": "42573062864",
+    "runtime": "42573062862",
+    "durable": "42573062930"
+  },
+  "allRequiredChecksPassed": true,
+  "localPnpmCheck": "PASS_PINNED_NODE_24_21_DATABASE_FREE",
+  "webImage": {
+    "manifestId": "sha256:b7fe8295b81b54aad3fb7d1c335508f0ca9a2cd20024e22ceb8a70c29ab34076",
+    "configId": "sha256:146d1de0aa353c5916f1160ad0836a531b1c0e0f105ceee12818e69bcb0f6dce",
+    "archiveSha256": "6af88c751c3329b5da1139057bf395fc4704c7751f3fdf771a15b1afb84473bb",
+    "sizeBytes": 497838080
+  },
+  "nativeReadback": {
+    "at": "2026-11-09T06:48:59.026259+00:00",
+    "classification": "WEB_ONLY_DEVELOPMENT_REPLACEMENT_HEALTHY_NATIVE_BEHAVIOR_PENDING",
+    "services": {
+      "insignia-rewrite-m5-019-web": {
+        "image": "sha256:b7fe8295b81b54aad3fb7d1c335508f0ca9a2cd20024e22ceb8a70c29ab34076",
+        "running": true,
+        "health": "healthy",
+        "restartCount": 0
+      },
+      "insignia-uninstall-m5-024-worker-1": {
+        "image": "sha256:ade9e2e4c19070aab351bfe263f611a0651542bbab5d0985ee1f37bbaeaf0356",
+        "running": true,
+        "health": "healthy",
+        "restartCount": 0
+      },
+      "insignia-release-verifier-verifier-1": {
+        "image": "sha256:5cba0edca2248886a3e72549311a1f2ea4b362a13a53b60df5a8b76c352671bf",
+        "running": true,
+        "health": null,
+        "restartCount": 0
+      },
+      "insignia-rewrite-m5-019-database": {
+        "image": "postgres:18.6-bookworm@sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d",
+        "running": true,
+        "health": "healthy",
+        "restartCount": 0
+      }
+    },
+    "mountsPreserved": true,
+    "schema": 52,
+    "protectedFactsUnchanged": true,
+    "pendingApplicationPreserved": true,
+    "workerVerifierDatabaseContainerIdentitiesUnchanged": true,
+    "inspectorOriginalActive": true,
+    "verifierSocketPresent": true,
+    "newShopifyRelease": false
+  },
+  "schema": 52,
+  "profile": "native-recovery-e2c3dc5",
+  "appVersion": "1199953805313",
+  "themeFilesByteIdentical": 21,
+  "newShopifyRelease": false,
+  "historicalFiniteReaderEvidence": {
+    "requestId": "b1118517-96b7-4f08-8e1f-e213c53ae3f9",
+    "recordId": "7749c8b0-cae2-4bec-ac4d-4f911dd442a9",
+    "appVersion": "1199953805313",
+    "functionsSourceCommit": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+    "observedAt": "2026-11-09T06:50:10.237Z",
+    "expiresAt": "2026-11-09T06:50:38.633Z"
+  },
+  "nativeColdStartup": {
+    "method": "FRESH_NAVIGATION_ACTUAL_CLICK_AND_IMMEDIATE_INSPECTION",
+    "loaderObserved": true,
+    "firstInspectionPageAgeMs": 845.5,
+    "modalCount": 1,
+    "appFramesBeforeEscape": 0,
+    "afterEscapeModalCount": 0,
+    "triggerFocusRestored": true,
+    "rootInlineStyleRestored": true,
+    "cancelledReadBrowserStatus": 0,
+    "reopenModalAndFrameCount": 1,
+    "successfulUncancelledLateResponse": "NOT_OBSERVED"
+  },
+  "nativeQuote": {
+    "observedAt": "2026-11-09T06:56:03.639Z",
+    "correlationId": "6fdf1dc5-8093-4cfe-8c9f-0869d9d86a07",
+    "proposalStage": "release-prepare",
+    "errorClass": "UnexpectedFailure",
+    "browserStatus": 500,
+    "requestDurationMs": 1878,
+    "failureTerminalMs": 3770,
+    "cartBaselineAndReadbackItems": 0,
+    "acceptanceCartOrderPaymentDispatched": false,
+    "rootCause": "UNDER_INVESTIGATION"
+  },
+  "signingMetadataLead": {
+    "utcDay": 20766,
+    "keyId": 1,
+    "state": "active",
+    "firstDay": 20736,
+    "lastDay": 20767,
+    "acceptedShopDayNotYetConfirmed": true,
+    "policyNotChanged": true
+  },
+  "nativeCopyVerification": {
+    "discoveredProductRowsVisible": true,
+    "validTimingEstablished": false,
+    "invalidTimingDiscarded": true,
+    "selectedReviewVerified": false,
+    "hostScrimRetainedAfterDismissal": true,
+    "moreActionsDisabled": false,
+    "moreActionsInert": false,
+    "pointerInterceptsTopScrim": true,
+    "copySavePublishInvoked": false,
+    "ownedTabClosed": true,
+    "cause": "UNDER_INVESTIGATION"
+  },
+  "ownerAcceptance": false,
+  "productionCutover": false
+}
