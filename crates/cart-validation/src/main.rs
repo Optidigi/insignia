@@ -20,12 +20,23 @@ mod schema {
 fn empty() -> schema::CartValidationsGenerateRunResult {
     schema::CartValidationsGenerateRunResult { operations: vec![] }
 }
-fn reject() -> schema::CartValidationsGenerateRunResult {
+/// Buyer-facing, shop-voiced wording in the storefront's shipped languages; English otherwise.
+fn review_message(language: &str) -> &'static str {
+    match language {
+        "NL" => "Je gepersonaliseerde artikelen moeten worden gecontroleerd voordat je afrekent. Ga terug naar je winkelwagen om ze bij te werken.",
+        "DE" => "Ihre personalisierten Artikel müssen vor dem Bezahlen überprüft werden. Kehren Sie zu Ihrem Warenkorb zurück, um sie zu aktualisieren.",
+        "FR" => "Vos articles personnalisés doivent être vérifiés avant le paiement. Revenez à votre panier pour les mettre à jour.",
+        "ES" => "Debes revisar tus artículos personalizados antes de pagar. Vuelve a tu carrito para actualizarlos.",
+        "IT" => "Devi controllare gli articoli personalizzati prima del pagamento. Torna al carrello per aggiornarli.",
+        _ => "Your customized items need review before checkout. Return to your cart to update them.",
+    }
+}
+fn reject_in(language: &str) -> schema::CartValidationsGenerateRunResult {
     schema::CartValidationsGenerateRunResult {
         operations: vec![schema::Operation::ValidationAdd(
             schema::ValidationAddOperation {
                 errors: vec![schema::ValidationError {
-                    message: "Review your Insignia customization before checkout.".into(),
+                    message: review_message(language).into(),
                     target: "$.cart".into(),
                 }],
             },
@@ -40,6 +51,7 @@ fn cart_validations_generate_run(
     if input.buyer_journey().step() == Some(&schema::BuyerJourneyStep::CartInteraction) {
         return Ok(empty()); // Leave cart repair available; checkout steps must pass below.
     }
+    let reject = || reject_in(input.localization().language().iso_code());
     let relevant = input.cart().lines().iter().any(|line| {
         line.member().is_some()
             || match line.merchandise() {
@@ -50,7 +62,8 @@ fn cart_validations_generate_run(
                 _ => false,
             }
     });
-    if !relevant && input.cart().quote().is_none() {
+    // A cart quote without any marked line authorizes nothing: it is a plain cart.
+    if !relevant {
         return Ok(empty());
     }
     let Some(raw_config) = input.shop().public_config().map(|m| m.value()) else {
@@ -173,8 +186,8 @@ fn cart_validations_generate_run(
             selling_plan: line.selling_plan_allocation().is_some(),
         });
     }
-    if lines.is_empty() && input.cart().quote().is_none() {
-        return Ok(empty());
+    if lines.is_empty() {
+        return Ok(empty()); // Unmarked lines passed product policy above.
     }
     let Some(currency) = currency else {
         return Ok(reject());
@@ -334,6 +347,87 @@ mod tests {
             line["member"] = serde_json::Value::Null;
         }
         input
+    }
+
+    /// Native theme removal drops every marked line but leaves the cart-level quote behind.
+    fn stale_quote(mut input: serde_json::Value, policy: Option<&str>) -> serde_json::Value {
+        for line in input["cart"]["lines"].as_array_mut().unwrap() {
+            line["member"] = serde_json::Value::Null;
+            line["merchandise"]["product"]["policy"] = match policy {
+                Some(p) => {
+                    serde_json::json!({ "value": format!("11111111111111111111111111111111:1:{p}") })
+                }
+                None => serde_json::Value::Null,
+            };
+            if policy.is_none() {
+                line["merchandise"]["product"]["registration"] = serde_json::Value::Null;
+            }
+        }
+        assert!(!input["cart"]["quote"].is_null());
+        input
+    }
+
+    #[test]
+    fn stale_quote_without_marked_lines_checks_out_as_plain_cart() {
+        for step in checkout_steps() {
+            let mut input = fixture();
+            input["buyerJourney"]["step"] = step.into();
+            assert!(
+                accepted(stale_quote(input.clone(), None)),
+                "unmanaged at {step}"
+            );
+            assert!(
+                accepted(stale_quote(input.clone(), Some("optional"))),
+                "optional at {step}"
+            );
+            let mut unhealthy = stale_quote(input, Some("optional"));
+            unhealthy["cart"]["quote"]["value"] = "bad".into();
+            unhealthy["shop"]["publicConfig"]["value"] = "{}".into();
+            assert!(
+                !accepted(unhealthy),
+                "managed plain still needs readable config at {step}"
+            );
+        }
+    }
+
+    #[test]
+    fn stale_quote_cannot_turn_required_or_uncertain_product_into_plain() {
+        for step in checkout_steps() {
+            let mut input = fixture();
+            input["buyerJourney"]["step"] = step.into();
+            assert!(!accepted(stale_quote(input.clone(), Some("required"))));
+            let mut lost_policy = stale_quote(input.clone(), Some("optional"));
+            lost_policy["cart"]["lines"][0]["merchandise"]["product"]["policy"] =
+                serde_json::Value::Null;
+            assert!(!accepted(lost_policy), "uncertain at {step}");
+            let mut partial = input;
+            partial["cart"]["lines"][1]["member"] = serde_json::Value::Null;
+            assert!(!accepted(partial), "one stripped marker at {step}");
+        }
+    }
+
+    #[test]
+    fn rejection_message_follows_buyer_language_in_shop_voice() {
+        let mut input = fixture();
+        input["cart"]["lines"][0]["quantity"] = 3.into();
+        for (code, start) in [
+            ("EN", "Your customized items need review"),
+            ("NL", "Je gepersonaliseerde artikelen"),
+            ("DE", "Ihre personalisierten Artikel"),
+            ("FR", "Vos articles personnalisés"),
+            ("ES", "Debes revisar tus artículos"),
+            ("IT", "Devi controllare gli articoli"),
+            ("PT_BR", "Your customized items need review"),
+            ("JA", "Your customized items need review"),
+        ] {
+            input["localization"]["language"]["isoCode"] = code.into();
+            let output = run(input.clone());
+            let error = &output["operations"][0]["validationAdd"]["errors"][0];
+            let message = error["message"].as_str().unwrap();
+            assert!(message.starts_with(start), "{code}: {message}");
+            assert!(!message.contains("Insignia"), "{code}: shop voice");
+            assert_eq!(error["target"], "$.cart");
+        }
     }
 
     #[test]
