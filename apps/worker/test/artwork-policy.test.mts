@@ -63,6 +63,19 @@ test('large representative exports fit the retuned element and expansion budgets
   await rejected(svg(Array.from({ length: 20_001 }, () => '<g/>').join('')), 'unbounded element count');
 });
 
+test('filter use is bounded per element so heavy filter graphs cannot hold a worker', async () => {
+  const filter = '<defs><filter id="f"><feGaussianBlur stdDeviation="2"/></filter></defs>';
+  const filtered = (count: number) =>
+    svg(`${filter}${Array.from({ length: count }, () => '<rect width="40" height="20" filter="url(#f)"/>').join('')}`);
+  assert.equal((await inspect(filtered(10))).mimeType, 'image/svg+xml');
+  await rejected(filtered(1_001), 'excessive filtered elements');
+  // Expansion through <use> counts every rendered application.
+  await rejected(
+    svg(`${filter}<rect id="r" width="40" height="20" filter="url(#f)"/>${'<use href="#r"/>'.repeat(1_000)}`),
+    'filtered element repeated through use',
+  );
+});
+
 test('embedded PNG/JPEG rasters are allowed only inside the decoded pixel budget', async () => {
   const png = await sharp({ create: { width: 4, height: 4, channels: 3, background: 'red' } })
     .png()

@@ -121,6 +121,8 @@ export const SVG_LIMITS = {
   text: 64 * 1024,
   references: 20_000,
   expansion: 100_000,
+  // Each filtered element is rasterized separately; this bounds blur/composite work well inside the wall clock.
+  filteredElements: 1_000,
   rasterPixels: 40_000_000,
   rasterEdge: 12_000,
 } as const;
@@ -324,6 +326,7 @@ export function assertSafeSvg(bytes: Uint8Array): void {
       for (const key of keys) addRefs(node, cssRules.get(key) ?? []);
     }
   let expanded = 0;
+  let filtered = 0;
   const ancestors = new Set<number>();
   const visit = (index: number, depth: number): void => {
     if (ancestors.has(index) || depth > SVG_LIMITS.depth || ++expanded > SVG_LIMITS.expansion)
@@ -335,7 +338,10 @@ export function assertSafeSvg(bytes: Uint8Array): void {
     for (const id of node.refs) {
       const target = ids.get(id);
       if (target === undefined) reject('Missing SVG reference');
-      else visit(target, depth + 1);
+      else {
+        if (nodes[target]?.tag === 'filter' && ++filtered > SVG_LIMITS.filteredElements) reject('SVG filter limit');
+        visit(target, depth + 1);
+      }
     }
     ancestors.delete(index);
   };
