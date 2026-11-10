@@ -101,6 +101,8 @@ export const BUYER_PROPOSAL_FAILURE_STAGES = [
   'positions',
   'availability',
   'release-prepare',
+  'readiness-observe',
+  'release-observe',
   'current-readiness',
   'tenant',
   'shop',

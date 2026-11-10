@@ -6,9 +6,9 @@ import {
   BuyerAcceptanceDeclinedError,
   localDay,
   materialHash,
-  prepareQuote,
+  proposeQuote,
   type QuoteAuthorityPorts,
-  QuoteContextChangedError,
+  type QuoteReadinessObservation,
   type QuoteRequest,
   quoteRequestDigest,
   renewQuote,
@@ -48,6 +48,8 @@ class BuyerPrecommitReviewError extends Error {
 }
 
 type GuestAuthority = ReturnType<typeof createArtworkGuestAuthority>;
+/** Proposal lifetime; acceptance after it requires a new proposal. */
+const PROPOSAL_TTL_MS = 300000;
 type Bucket = { variantId: string; quantity: number; properties: Record<string, string> };
 const notFound = (): never => {
   throw new BuyerStateError('NOT_FOUND');
@@ -117,6 +119,8 @@ export function createBuyerServices(input: {
     phase?: 'final',
   ): Promise<{ variants: readonly { id: string; available: boolean }[] }>;
   previewImages?: FrozenPreviewReader;
+  /** Background release-evidence refresh hint; never awaited and never issuance authority. */
+  releaseRefresh?(scope: { shopId: string; installationGeneration: string }, activeUntil: Date): void;
   clock?: () => Date;
 }) {
   const clock = input.clock ?? (() => new Date()),
@@ -145,71 +149,69 @@ export function createBuyerServices(input: {
       now: clock,
     });
   }
+  async function assertAvailable(scope: BuyerScope, groups: BuyerDesiredGroup[]) {
+    for (const productId of new Set(groups.map((group) => group.productId))) {
+      const selectedIds = [
+        ...new Set(
+          groups
+            .filter((group) => group.productId === productId)
+            .flatMap((group) => group.variants.map((variant) => variant.variantId)),
+        ),
+      ];
+      const current = input.availability
+        ? await input.availability(scope, productId, selectedIds)
+        : await input.catalog(scope, productId);
+      const available = new Map(current.variants.map((variant) => [variant.id, variant.available]));
+      if (
+        current.variants.length === available.size &&
+        groups
+          .filter((group) => group.productId === productId)
+          .some((group) => group.variants.some((variant) => available.get(variant.variantId) === false))
+      )
+        throw new BuyerPrecommitReviewError();
+      if (
+        current.variants.length !== available.size ||
+        groups
+          .filter((group) => group.productId === productId)
+          .some((group) => group.variants.some((variant) => available.get(variant.variantId) !== true))
+      )
+        return review();
+    }
+  }
+  /** Settle both started branches; stock denial retains precedence over readiness failure. */
+  async function stockFirst<T>(stock: Promise<void>, other: Promise<T>): Promise<T> {
+    const [stocked, result] = await Promise.allSettled([stock, other]);
+    if (stocked.status === 'rejected') throw stocked.reason;
+    if (result.status === 'rejected') throw result.reason;
+    return result.value;
+  }
   function checkedPorts(scope: BuyerScope, groups: BuyerDesiredGroup[]): QuoteAuthorityPorts {
     const ports = input.ports({ ...scope, kind: 'guest' });
-    let finalCheck = false;
+    const observe = async (target: {
+      quote: Parameters<QuoteAuthorityPorts['readiness']['assertReady']>[0]['quote'];
+    }) => {
+      const observation: QuoteReadinessObservation = ports.readiness.observe
+        ? await ports.readiness.observe(target)
+        : { assertCurrent: () => ports.readiness.assertReady(target) };
+      return { assertCurrent: () => proposalStage('current-readiness', () => observation.assertCurrent()) };
+    };
     return {
       ...ports,
-      store: {
-        ...ports.store,
-        findCompleted: (target) => ports.store.findCompleted(target),
-        accept: (target, commit) =>
-          ports.store.accept(target, async () => {
-            finalCheck = true;
-            try {
-              return await commit();
-            } finally {
-              finalCheck = false;
-            }
-          }),
-      },
       readiness: {
+        // Renewal: one complete check, serial after stock.
         async assertReady(target) {
           await proposalStage('positions', () => validatePositions(scope, groups));
-          const availability = async () => {
-            for (const productId of new Set(groups.map((group) => group.productId))) {
-              const selectedIds = [
-                ...new Set(
-                  groups
-                    .filter((group) => group.productId === productId)
-                    .flatMap((group) => group.variants.map((variant) => variant.variantId)),
-                ),
-              ];
-              const current = input.availability
-                ? await input.availability(scope, productId, selectedIds, finalCheck ? 'final' : undefined)
-                : await input.catalog(scope, productId, finalCheck ? 'final' : undefined);
-              const available = new Map(current.variants.map((variant) => [variant.id, variant.available]));
-              if (
-                current.variants.length === available.size &&
-                groups
-                  .filter((group) => group.productId === productId)
-                  .some((group) => group.variants.some((variant) => available.get(variant.variantId) === false))
-              )
-                throw new BuyerPrecommitReviewError();
-              if (
-                current.variants.length !== available.size ||
-                groups
-                  .filter((group) => group.productId === productId)
-                  .some((group) => group.variants.some((variant) => available.get(variant.variantId) !== true))
-              )
-                return review();
-            }
-          };
-          const prepare = finalCheck ? undefined : ports.readiness.prepare;
-          if (prepare) {
-            // Preparation owns its IO but grants no authority. Drain both branches;
-            // stock denial retains precedence if both fail.
-            const checks = await Promise.allSettled([
-              proposalStage('availability', availability),
-              Promise.resolve().then(() =>
-                proposalStage('release-prepare', () => prepare.call(ports.readiness, target)),
-              ),
-            ]);
-            for (const check of checks) if (check.status === 'rejected') throw check.reason;
-          } else await proposalStage('availability', availability);
-          // Current-time authority remains serial after stock, especially inside signing.
+          await proposalStage('availability', () => assertAvailable(scope, groups));
           await proposalStage('current-readiness', () => ports.readiness.assertReady(target));
         },
+        // Acceptance: stock and provider readiness are observed before the signing fence. Positions
+        // were validated by the proposal for this design and immutable revision; acceptance's artwork
+        // usability read still re-checks artwork state and lifetime.
+        observe: (target) =>
+          stockFirst(
+            proposalStage('availability', () => assertAvailable(scope, groups)),
+            proposalStage('readiness-observe', () => observe(target)),
+          ),
       },
     };
   }
@@ -497,10 +499,27 @@ export function createBuyerServices(input: {
       const id = randomUUID(),
         ports = checkedPorts(scope, body.groups),
         request = requestFor(scope, body, id);
-      const candidate = await proposalStage('prepare', () => prepareQuote(request, ports)),
+      // Buyer activity keeps release evidence warm for a later acceptance, off this request's path.
+      try {
+        input.releaseRefresh?.(scope, new Date(+clock() + PROPOSAL_TTL_MS));
+      } catch {
+        /* A refresh hint cannot change the proposal. */
+      }
+      // A proposal is display-only: no release or Function verification (owner decision 10 Nov 2026).
+      // Acceptance verifies both before signing.
+      // Request-shape and capacity bounds reject before any provider read, including stock.
+      quoteRequestDigest(request, ports);
+      await proposalStage('positions', () => validatePositions(scope, body.groups));
+      const [prepared, stock] = await Promise.allSettled([
+        proposalStage('prepare', () => proposeQuote(request, ports)),
+        proposalStage('availability', () => assertAvailable(scope, body.groups)),
+      ]);
+      if (prepared.status === 'rejected') throw prepared.reason;
+      if (stock.status === 'rejected') throw stock.reason;
+      const candidate = prepared.value,
         hash = materialHash(candidate.quote);
       const retainPrivateUntil = await proposalStage('private-retention', () => privateUntil(scope, body.groups));
-      const expiresAt = new Date(Math.min(+clock() + 300000, +retainPrivateUntil));
+      const expiresAt = new Date(Math.min(+clock() + PROPOSAL_TTL_MS, +retainPrivateUntil));
       await proposalStage('persistence', () =>
         store.putProposal(scope, {
           id,
@@ -588,8 +607,22 @@ export function createBuyerServices(input: {
       const request = { ...(proposal.request as QuoteRequest), idempotencyKey: key },
         ports = checkedPorts(scope, desired(request));
       await store.reserveCommand(scope, { ...command, now: clock() });
+      const unchanged = (quote: Parameters<QuoteAuthorityPorts['authorization']['issue']>[0]['quote']) => {
+        if (+clock() >= +proposal.expiresAt || materialHash(quote) !== proposal.materialHash)
+          throw new BuyerPrecommitReviewError();
+      };
       const guarded: QuoteAuthorityPorts = {
         ...ports,
+        readiness: {
+          ...ports.readiness,
+          // The proposal hash binds the fresh pass; a changed price or context stops before readiness IO.
+          observe: async (target) => {
+            unchanged(target.quote);
+            const observe = ports.readiness.observe;
+            if (!observe) throw new Error('Buyer acceptance readiness unavailable');
+            return observe(target);
+          },
+        },
         store: {
           ...ports.store,
           accept: (target, commit) =>
@@ -608,16 +641,13 @@ export function createBuyerServices(input: {
         authorization: {
           ...ports.authorization,
           async issue(value) {
-            if (+clock() >= +proposal.expiresAt || materialHash(value.quote) !== proposal.materialHash)
-              throw new BuyerPrecommitReviewError();
-            // acceptQuote revalidates live shop/catalog facts and the signing fence;
-            // compare its validated economics without preparing the whole quote again.
+            unchanged(value.quote);
             return ports.authorization.issue(value);
           },
         },
       };
       const result = await acceptQuote(request, guarded).catch(async (error: unknown) => {
-        if (error instanceof QuoteContextChangedError || error instanceof BuyerPrecommitReviewError) {
+        if (error instanceof BuyerPrecommitReviewError) {
           const resolve = ports.store.resolveBuyerAcceptance;
           if (!resolve) throw error;
           const tenant = await ports.tenant.getActive(scope.shopId, scope.installationGeneration);

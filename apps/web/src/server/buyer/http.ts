@@ -204,7 +204,8 @@ async function handleRequest(
                 : code === 'INVALID'
                   ? 422
                   : 503;
-    return respond(
+    const lockTimeout = !!error && typeof error === 'object' && 'code' in error && error.code === '55P03';
+    const failure = respond(
       {
         code,
         ...(error instanceof BuyerAcceptanceDeclinedError ? { acceptanceOutcome: 'declined' as const } : {}),
@@ -216,6 +217,9 @@ async function handleRequest(
       },
       status,
     );
+    // Another acceptance held the signing fence past lock_timeout; nothing was signed or stored.
+    if (lockTimeout) failure.headers.set('Retry-After', '1');
+    return failure;
   } finally {
     try {
       const timing = proposalTiming(

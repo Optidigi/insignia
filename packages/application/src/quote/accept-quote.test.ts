@@ -1,7 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import { artworkManifest, artworkRow } from '../../test/artwork-fixtures.js';
 import { createArtworkUsabilityPort } from '../artwork/artwork.js';
-import { acceptQuote, localDay, normalizeMarketId, prepareQuote, type QuoteAuthorityPorts } from './accept-quote.js';
+import {
+  acceptQuote,
+  localDay,
+  normalizeMarketId,
+  prepareQuote,
+  proposeQuote,
+  type QuoteAuthorityPorts,
+} from './accept-quote.js';
 
 import { materialHash } from './material.js';
 
@@ -292,6 +299,18 @@ describe('acceptQuote', () => {
     expect(saved).toEqual([]);
   });
 
+  it('proposes display-only pricing without signing readiness, release or Function observation', async () => {
+    const { ports, saved } = fixture();
+    ports.readiness.observe = vi.fn(async () => ({ assertCurrent: async () => {} }));
+    const candidate = await proposeQuote(request, ports);
+    expect(candidate.quote.economics.totalMinor).toBe('2002');
+    expect(ports.readiness.assertReady).not.toHaveBeenCalled();
+    expect(ports.readiness.observe).not.toHaveBeenCalled();
+    expect(ports.authorization.issue).not.toHaveBeenCalled();
+    expect(ports.store.accept).not.toHaveBeenCalled();
+    expect(saved).toEqual([]);
+  });
+
   it('cached authorization and transactional replay remain bound to verified artwork owner authority', async () => {
     const { ports } = fixture();
     const scope = { shopId: 'shop', installationGeneration: '1', kind: 'guest' as const, ownerHash: 'a'.repeat(64) };
@@ -502,41 +521,109 @@ describe('acceptQuote', () => {
     expect(result.quote.economics.totalMinor).toBe('2002');
   });
 
-  it('rechecks live shop and catalog facts inside the signing fence without another whole preparation', async () => {
+  it('performs every provider read once before the signing fence and only stored/pure checks inside it', async () => {
     const { ports } = fixture();
+    const providerCalls = () =>
+      [
+        ports.shop.getContext,
+        ports.catalog.resolveVariantContext,
+        ports.entitlement.getFresh,
+        ports.publication.getEffective,
+        ports.artwork.readUsability,
+        ports.tenant.getActive,
+        ports.leanContext?.assertSupported,
+      ].map((port) => vi.mocked(port as () => unknown).mock.calls.length);
+    const order: string[] = [];
+    const assertCurrent = vi.fn(async () => {
+      order.push('assert-current');
+    });
+    ports.readiness.observe = vi.fn(async () => {
+      order.push('observe');
+      return { assertCurrent };
+    });
+    let atFence: number[] = [];
+    const accept = ports.store.accept;
+    ports.store.accept = async (input, commit) => {
+      order.push('fence');
+      atFence = providerCalls();
+      return accept(input, commit);
+    };
     await acceptQuote(request, ports);
-    expect(ports.shop.getContext).toHaveBeenCalledTimes(2);
-    expect(ports.catalog.resolveVariantContext).toHaveBeenCalledTimes(2);
-    expect(ports.entitlement.getFresh).toHaveBeenCalledTimes(2);
-    expect(ports.publication.getEffective).toHaveBeenCalledTimes(1);
+    expect(atFence).toEqual([1, 1, 1, 1, 1, 1, 1]);
+    expect(providerCalls()).toEqual(atFence);
+    expect(order).toEqual(['observe', 'fence', 'assert-current']);
+    expect(ports.readiness.assertReady).not.toHaveBeenCalled();
+    expect(ports.authorization.issue).toHaveBeenCalledTimes(1);
+  });
+
+  it('without a two-phase observation, runs the complete readiness check inside the signing fence', async () => {
+    const { ports } = fixture();
+    let inside = false;
+    const accept = ports.store.accept;
+    ports.store.accept = (input, commit) =>
+      accept(input, async () => {
+        inside = true;
+        try {
+          return await commit();
+        } finally {
+          inside = false;
+        }
+      });
+    vi.mocked(ports.readiness.assertReady).mockImplementation(async () => {
+      expect(inside).toBe(true);
+    });
+    await acceptQuote(request, ports);
     expect(ports.readiness.assertReady).toHaveBeenCalledTimes(1);
   });
 
-  it.each(['price', 'shop'] as const)('rejects %s drift inside the signing fence before issuance', async (drift) => {
+  it('fails closed inside the fence when the readiness observation is no longer current', async () => {
     const { ports, saved } = fixture();
-    const snapshots = await ports.catalog.resolveVariantContext({
-      shopId: 'shop',
-      installationGeneration: '1',
-      productId: 'product',
-      variantIds: ['variant'],
-      context: { country: 'US' },
+    ports.readiness.observe = async () => ({
+      assertCurrent: async () => {
+        throw new Error('Public Function config unobserved or drifted');
+      },
     });
-    vi.mocked(ports.catalog.resolveVariantContext).mockClear();
-    if (drift === 'price')
-      vi.mocked(ports.catalog.resolveVariantContext)
-        .mockResolvedValueOnce(snapshots)
-        .mockResolvedValue(snapshots.map((value) => ({ ...value, amount: '99.00' })));
-    else {
-      const tenant = await ports.tenant.getActive('shop', '1');
-      if (!tenant) throw new Error('fixture tenant unavailable');
-      const shop = await ports.shop.getContext(tenant);
-      vi.mocked(ports.shop.getContext)
-        .mockResolvedValueOnce(shop)
-        .mockResolvedValue({ ...shop, timezone: 'Europe/Amsterdam' });
-    }
-    await expect(acceptQuote(request, ports)).rejects.toThrow(/changed during quote acceptance/);
+    await expect(acceptQuote(request, ports)).rejects.toThrow('Public Function config unobserved or drifted');
     expect(ports.authorization.issue).not.toHaveBeenCalled();
     expect(saved).toHaveLength(0);
+  });
+
+  it('a failed pre-fence readiness observation never takes the signing fence', async () => {
+    const { ports } = fixture();
+    ports.readiness.observe = async () => {
+      throw new Error('Buyer acceptance release unavailable');
+    };
+    await expect(acceptQuote(request, ports)).rejects.toThrow('Buyer acceptance release unavailable');
+    expect(ports.store.accept).not.toHaveBeenCalled();
+    expect(ports.authorization.issue).not.toHaveBeenCalled();
+  });
+
+  it('overlaps independent subscription, shop and catalog reads', async () => {
+    const { ports } = fixture();
+    const pending = new Set<string>();
+    let overlap = 0;
+    const track =
+      <T>(name: string, value: () => Promise<T>) =>
+      async () => {
+        pending.add(name);
+        overlap = Math.max(overlap, pending.size);
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        pending.delete(name);
+        return value();
+      };
+    const entitlement = vi.mocked(ports.entitlement.getFresh).getMockImplementation();
+    const shop = vi.mocked(ports.shop.getContext).getMockImplementation();
+    const catalog = vi.mocked(ports.catalog.resolveVariantContext).getMockImplementation();
+    if (!entitlement || !shop || !catalog) throw new Error('fixture ports missing');
+    const tenant = await ports.tenant.getActive('shop', '1');
+    if (!tenant) throw new Error('fixture tenant missing');
+    vi.mocked(ports.entitlement.getFresh).mockImplementation(track('entitlement', () => entitlement(tenant)));
+    vi.mocked(ports.shop.getContext).mockImplementation(track('shop', () => shop(tenant)));
+    vi.mocked(ports.catalog.resolveVariantContext).mockImplementation((input) =>
+      track('catalog', () => catalog(input))(),
+    );
+    await acceptQuote(request, ports);
+    expect(overlap).toBe(3);
   });
 
   it('replays a completed set without new provider reads or signing', async () => {
@@ -546,7 +633,7 @@ describe('acceptQuote', () => {
     vi.mocked(ports.entitlement.getFresh).mockRejectedValueOnce(new Error('provider unavailable'));
     const again = await acceptQuote(request, ports);
     expect(again).toEqual(first);
-    expect(ports.entitlement.getFresh).toHaveBeenCalledTimes(2);
+    expect(ports.entitlement.getFresh).toHaveBeenCalledTimes(1);
     expect(ports.authorization.issue).toHaveBeenCalledTimes(1);
   });
 
@@ -578,68 +665,6 @@ describe('acceptQuote', () => {
     expect(saved).toHaveLength(0);
   });
 
-  it('rechecks artwork inside acceptance and refuses a newly shortened lifetime', async () => {
-    const { ports, saved } = fixture();
-    vi.mocked(ports.artwork.readUsability)
-      .mockImplementationOnce(async (input) =>
-        input.choices.map((choice) => ({
-          ...choice,
-          shopId: input.shopId,
-          installationGeneration: input.installationGeneration,
-          status: 'usable' as const,
-          lastFullyUsableLocalDay: 20760,
-          observedAt: now.toISOString(),
-        })),
-      )
-      .mockImplementationOnce(async (input) =>
-        input.choices.map((choice) => ({
-          ...choice,
-          shopId: input.shopId,
-          installationGeneration: input.installationGeneration,
-          status: 'unavailable' as const,
-          lastFullyUsableLocalDay: 20759,
-          observedAt: now.toISOString(),
-        })),
-      );
-    await expect(acceptQuote(request, ports)).rejects.toThrow(/artwork unavailable/);
-    expect(ports.authorization.issue).not.toHaveBeenCalled();
-    expect(saved).toHaveLength(0);
-  });
-
-  it('rechecks tenant and entitlement after contextual provider reads, before issuing', async () => {
-    const { ports, saved } = fixture();
-    vi.mocked(ports.tenant.getActive)
-      .mockResolvedValueOnce(await ports.tenant.getActive('shop', '1'))
-      .mockResolvedValueOnce(null);
-    await expect(acceptQuote(request, ports)).rejects.toThrow(/inactive tenant/);
-    expect(ports.authorization.issue).not.toHaveBeenCalled();
-    expect(saved).toHaveLength(0);
-  });
-
-  it('stops when entitlement becomes stale after provider reads', async () => {
-    const { ports, saved } = fixture();
-    vi.mocked(ports.entitlement.getFresh)
-      .mockResolvedValueOnce({
-        active: true,
-        freshness: 'fresh',
-        recognizedPolicyId: 'synthetic',
-        policyVersion: 'test',
-        trial: true,
-        qualifyingUsageDisposition: 'NOT_METERED',
-      })
-      .mockResolvedValueOnce({
-        active: true,
-        freshness: 'stale',
-        recognizedPolicyId: 'synthetic',
-        policyVersion: 'test',
-        trial: true,
-        qualifyingUsageDisposition: 'NOT_METERED',
-      });
-    await expect(acceptQuote(request, ports)).rejects.toThrow(/fresh recognized entitlement/);
-    expect(ports.authorization.issue).not.toHaveBeenCalled();
-    expect(saved).toHaveLength(0);
-  });
-
   it.each(['WAIVE_TRIAL', 'REQUIRES_EVENT_TIME'] as const)(
     'does not issue a new Lean offer under a legacy %s usage contract',
     async (qualifyingUsageDisposition) => {
@@ -650,7 +675,7 @@ describe('acceptQuote', () => {
       vi.mocked(ports.entitlement.getFresh).mockResolvedValue({ ...entitlement, qualifyingUsageDisposition });
       await expect(prepareQuote(request, ports)).rejects.toThrow(/recurring-only entitlement required/);
       await expect(acceptQuote(request, ports)).rejects.toThrow(/recurring-only entitlement required/);
-      expect(ports.publication.getEffective).not.toHaveBeenCalled();
+      expect(ports.store.accept).not.toHaveBeenCalled();
       expect(ports.authorization.issue).not.toHaveBeenCalled();
       expect(saved).toHaveLength(0);
     },
@@ -675,36 +700,6 @@ describe('acceptQuote', () => {
     const result = await acceptQuote(request, ports);
     expect(result.quote.qualifyingUsageDisposition).toBe('NOT_METERED');
     expect(result.quote.economics.totalMinor).toBe('2002');
-    expect(saved).toHaveLength(1);
-  });
-
-  it('does not sign when the qualified Lean context changes while waiting for acceptance', async () => {
-    const { ports, saved } = fixture();
-    const assertSupported = vi.fn(async () => {});
-    ports.leanContext = { assertSupported };
-    ports.store.accept = async (_target, commit) => {
-      assertSupported.mockRejectedValue(new Error('primary Market changed'));
-      return commit();
-    };
-    await expect(acceptQuote(request, ports)).rejects.toThrow('primary Market changed');
-    expect(ports.authorization.issue).not.toHaveBeenCalled();
-    expect(saved).toHaveLength(0);
-  });
-
-  it('rejects a catalog change at the persistence fence and permits a fresh acceptance', async () => {
-    const { ports, saved } = fixture();
-    const tenant = await ports.tenant.getActive('shop', '1');
-    if (!tenant) throw new Error('fixture tenant missing');
-    const previous = await ports.entitlement.getFresh(tenant);
-    const updated = { ...previous, policyVersion: 'next-catalog' };
-    vi.mocked(ports.entitlement.getFresh).mockResolvedValueOnce(previous).mockResolvedValue(updated);
-
-    await expect(acceptQuote(request, ports)).rejects.toThrow(/entitlement changed during quote acceptance/);
-    expect(ports.authorization.issue).not.toHaveBeenCalled();
-    expect(saved).toHaveLength(0);
-
-    await acceptQuote(request, ports);
-    expect(ports.authorization.issue).toHaveBeenCalledTimes(1);
     expect(saved).toHaveLength(1);
   });
 
@@ -738,7 +733,7 @@ describe('acceptQuote', () => {
       timezone: 'America/New_York',
     });
     await expect(acceptQuote(request, ports)).rejects.toThrow(/shop context identity/);
-    expect(ports.catalog.resolveVariantContext).not.toHaveBeenCalled();
+    expect(ports.store.accept).not.toHaveBeenCalled();
   });
 
   it('rejects a paid selling plan before provider reads', async () => {

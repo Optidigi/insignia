@@ -32,6 +32,7 @@ export async function fixture(
     selectedBrowser?: boolean;
     clock?: () => Date;
     readiness?: QuoteAuthorityPorts['readiness'];
+    releaseRefresh?: (scope: { shopId: string; installationGeneration: string }, activeUntil: Date) => void;
     artworkRetentionDays?: number;
   } = {},
 ) {
@@ -256,6 +257,7 @@ export async function fixture(
     core,
     guest,
     ports,
+    releaseRefresh: options.releaseRefresh,
     clock: () => now,
     availability: options.narrowAvailability
       ? async (_scope, productId, selectedIds, phase) => options.narrowAvailability!(productId, selectedIds, phase)
