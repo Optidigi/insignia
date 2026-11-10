@@ -58,6 +58,8 @@ export type ProductionBuyerInputs = {
   /** SELECT-only credentials for final checks; no claim or refresh fallback. */
   passiveCredentials?: AdminCredentialSource;
   readSubscription(target: { appId: string; shopId: string }): Promise<ActiveSubscriptionSnapshot>;
+  /** Background release-evidence refresh while buyers are active; never request-path authority. */
+  releaseRefresh?(scope: Scope, activeUntil: Date): void;
   artifactPorts: FunctionArtifactReadinessPorts;
   /** Independent stored evidence only; never collect while acceptance owns locks. */
   passiveArtifactPorts?: FunctionArtifactReadinessPorts;
@@ -138,30 +140,50 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       throw new Error('Buyer installation authority unavailable');
     return current;
   }
+  /** One source per request: the first usable credential is reused while it has 30 s of validity,
+   * instead of re-acquiring and re-fencing the installation for every Admin read. */
   function credentials(scope: Scope, passive: () => boolean = () => false): AdminCredentialSource {
+    type Acquired = Awaited<ReturnType<AdminCredentialSource['acquire']>>;
+    const reused = new Map<boolean, Promise<Acquired>>();
+    async function acquire(role: boolean): Promise<Acquired> {
+      const before = await active(scope);
+      const source = role ? input.passiveCredentials : input.credentials;
+      if (!source) return { kind: 'temporarily_unavailable' };
+      const credential = await source.acquire({
+        shopId: scope.shopId,
+        installationGeneration: scope.installationGeneration,
+      });
+      if (credential.kind !== 'usable') return credential;
+      const after = await active(scope);
+      if (
+        after.authorizationGeneration !== before.authorizationGeneration ||
+        after.authorizationEpoch !== before.authorizationEpoch ||
+        credential.shopDomain !== after.shopDomain ||
+        !credential.accessToken ||
+        !(credential.accessExpiresAt instanceof Date) ||
+        !Number.isFinite(+credential.accessExpiresAt) ||
+        +credential.accessExpiresAt <= +clock() + 30000
+      )
+        return { kind: 'inactive' };
+      return credential;
+    }
     return {
       async acquire(target) {
         if (target.shopId !== scope.shopId || target.installationGeneration !== scope.installationGeneration)
           return { kind: 'inactive' };
-        const before = await active(scope);
-        const source = passive() ? input.passiveCredentials : input.credentials;
-        if (!source) return { kind: 'temporarily_unavailable' };
-        const credential = await source.acquire({
-          shopId: scope.shopId,
-          installationGeneration: scope.installationGeneration,
+        const role = passive();
+        const pending = reused.get(role);
+        if (pending) {
+          const credential = await pending.catch(() => null);
+          if (credential?.kind === 'usable' && +credential.accessExpiresAt > +clock() + 30000) return credential;
+        }
+        const next = acquire(role);
+        reused.set(role, next);
+        const credential = await next.catch((error: unknown) => {
+          if (reused.get(role) === next) reused.delete(role);
+          throw error;
         });
-        if (credential.kind !== 'usable') return credential;
-        const after = await active(scope);
-        if (
-          after.authorizationGeneration !== before.authorizationGeneration ||
-          after.authorizationEpoch !== before.authorizationEpoch ||
-          credential.shopDomain !== after.shopDomain ||
-          !credential.accessToken ||
-          !(credential.accessExpiresAt instanceof Date) ||
-          !Number.isFinite(+credential.accessExpiresAt) ||
-          +credential.accessExpiresAt <= +clock() + 30000
-        )
-          return { kind: 'inactive' };
+        if (credential.kind !== 'usable' && reused.get(role) === next) reused.delete(role);
         return credential;
       },
     };
@@ -324,8 +346,12 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       },
       currency: { exponent: (code) => currencyExponent(code) ?? null },
       readiness: {
-        prepare: async (target) =>
-          proposalStage('release-prepare', async () => (await compose()).readiness.prepare?.(target)),
+        observe: async (target) => {
+          const ports = await compose();
+          const observe = ports.readiness.observe;
+          if (!observe) throw new Error('Buyer acceptance readiness unavailable');
+          return proposalStage('release-observe', () => observe(target));
+        },
         assertReady: async (target) =>
           proposalStage('current-readiness', async () => (await compose()).readiness.assertReady(target)),
       },
@@ -343,16 +369,8 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
           const ports = await compose();
           if (!input.passiveCredentials || !input.passiveArtifactPorts)
             throw new Error('Passive buyer acceptance authority unavailable');
-          // Prepare writes before serialization; final callbacks still re-read provider
-          // facts, stored evidence and economics under the original acceptance fences.
-          const credential = await proposalStage('native-configuration', () => credentials(scope).acquire(scope));
-          if (credential.kind !== 'usable') throw new Error('Buyer acceptance credential unavailable');
-          const artifactScope = { ...scope, appClientId: apiKey };
-          const [build, evidence] = await Promise.all([
-            proposalStage('release-prepare', () => input.artifactPorts.expectedBuild.read(artifactScope)),
-            proposalStage('release-prepare', () => input.artifactPorts.trustedEvidence.read(artifactScope)),
-          ]);
-          if (!build || !evidence) throw new Error('Buyer acceptance release unavailable');
+          // Provider, credential and release reads completed before this fence. Inside it, any
+          // read stays SELECT-only: no credential refresh or release collection under the lock.
           return proposalStage('persistence', () =>
             ports.store.accept(target, () => acceptanceContext.run(true, commit)),
           );
@@ -361,12 +379,15 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
     };
   }
 
-  async function inventoryFor(target: Scope & { productId: string; variantIds: readonly string[] }, phase?: 'final') {
+  async function inventoryFor(
+    target: Scope & { productId: string; variantIds: readonly string[] },
+    credentialSource: AdminCredentialSource,
+  ) {
     const scope = target;
     const inventory = input.readVariantAvailability
       ? await input.readVariantAvailability(target)
       : await readAvailability(target, {
-          credentials: credentials(scope, () => phase === 'final'),
+          credentials: credentialSource,
           fetchImpl,
           clock,
         });
@@ -399,6 +420,7 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
     core: input.core,
     guest,
     ports,
+    releaseRefresh: input.releaseRefresh,
     clock,
     previewImages:
       input.env.INSIGNIA_M8_MERCHANT_PREVIEWS_ENABLED === '1'
@@ -426,7 +448,8 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
         variantIds.some((id) => !/^[1-9][0-9]{0,19}$/.test(id))
       )
         throw new Error('Buyer availability selection invalid');
-      const source = await credentials(scope, () => phase === 'final').acquire(scope);
+      const credentialSource = credentials(scope, () => phase === 'final');
+      const source = await credentialSource.acquire(scope);
       if (source.kind !== 'usable') throw new Error('Buyer catalog credential unavailable');
       const gid = `gid://shopify/Product/${productId}`;
       const product = await createCatalogReader(
@@ -443,7 +466,7 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
           productId: gid,
           variantIds: selected,
         },
-        phase,
+        credentialSource,
       );
       await active(scope);
       return {
@@ -454,7 +477,8 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       };
     },
     async catalog(scope, productId, phase, context) {
-      const source = await credentials(scope, () => phase === 'final').acquire(scope);
+      const credentialSource = credentials(scope, () => phase === 'final');
+      const source = await credentialSource.acquire(scope);
       if (source.kind !== 'usable') throw new Error('Buyer catalog credential unavailable');
       const catalog = createCatalogReader(
         createCatalogTransport({ shop: source.shopDomain, accessToken: source.accessToken, fetchImpl }),
@@ -475,7 +499,31 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
         productId: gid,
         variantIds: product.variants.map((variant) => variant.id),
       };
-      const inventory = await inventoryFor(target, phase);
+      // Inventory and contextual prices are independent reads; both settle before reporting.
+      const contextualPrices = async () => {
+        if (!context) return [];
+        const transport = createShopifyAdminGraphqlReadTransport({
+          credentials: credentialSource,
+          fetchImpl,
+          now: clock,
+        });
+        const batches: string[][] = [];
+        for (let offset = 0; offset < product.variants.length; offset += 100)
+          batches.push(product.variants.slice(offset, offset + 100).map((variant) => variant.id));
+        const results = await Promise.all(
+          batches.map((variantIds) =>
+            resolveVariantContext({ ...scope, productId: gid, variantIds, context }, { transport, now: clock }),
+          ),
+        );
+        return results.flat();
+      };
+      const [inventoryResult, pricesResult] = await Promise.allSettled([
+        inventoryFor(target, credentialSource),
+        contextualPrices(),
+      ]);
+      if (inventoryResult.status === 'rejected') throw inventoryResult.reason;
+      if (pricesResult.status === 'rejected') throw pricesResult.reason;
+      const inventory = inventoryResult.value;
       await active(scope);
       const imageUrls: Record<string, string> = {};
       if (product.image) {
@@ -485,29 +533,11 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       const availability = new Map(inventory.variants.map((variant) => [variant.id, variant.available]));
       const prices = new Map<string, { minor: string; currency: string }>();
       if (context) {
-        for (let offset = 0; offset < product.variants.length; offset += 100) {
-          const snapshots = await resolveVariantContext(
-            {
-              ...scope,
-              productId: gid,
-              variantIds: product.variants.slice(offset, offset + 100).map((variant) => variant.id),
-              context,
-            },
-            {
-              transport: createShopifyAdminGraphqlReadTransport({
-                credentials: credentials(scope, () => phase === 'final'),
-                fetchImpl,
-                now: clock,
-              }),
-              now: clock,
-            },
-          );
-          for (const snapshot of snapshots)
-            prices.set(snapshot.variantId, {
-              minor: parseMinor(snapshot.amount, 2).toString(),
-              currency: snapshot.currencyCode,
-            });
-        }
+        for (const snapshot of pricesResult.value)
+          prices.set(snapshot.variantId, {
+            minor: parseMinor(snapshot.amount, 2).toString(),
+            currency: snapshot.currencyCode,
+          });
         if (new Set([...prices.values()].map((price) => price.currency)).size !== 1)
           throw new Error('Mixed variant currency');
       }

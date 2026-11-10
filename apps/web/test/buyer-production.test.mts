@@ -119,7 +119,9 @@ test('production factory requires server-owned resource, commercial and readines
   assert.throws(() => createProductionBuyerServices({ ...input, readVariantAvailability: true }), /configuration/i);
 });
 
-test('valid Lean acceptance uses passive primary reads under its lock and rejects final context drift without a fact', async () => {
+const ACTIVE_ACQUISITIONS = 4;
+
+test('valid Lean acceptance reads provider facts once before its lock and rejects acceptance-time drift without a fact', async () => {
   for (const drift of [
     false,
     true,
@@ -130,7 +132,6 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
     'duplicate',
     'malformed',
     '251',
-    'passive-missing',
     'inventory-missing',
     'inventory-extra',
     'inventory-duplicate',
@@ -187,6 +188,7 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
       ],
     };
     let insideLock = false,
+      accepting = false,
       inventoryDispatches = 0,
       activeAcquisitions = 0,
       passiveAcquisitions = 0,
@@ -205,9 +207,8 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
     };
     input.passiveCredentials = {
       acquire: async (target) => {
-        assert.equal(insideLock, true);
+        // Provider reads complete before the signing fence; the SELECT-only source stays a guard.
         passiveAcquisitions++;
-        if (drift === 'passive-missing') return { kind: 'missing' };
         return { ...(await originalCredential(target)), accessToken: 'synthetic-passive-token' };
       },
     };
@@ -340,31 +341,30 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
     input.passiveArtifactPorts = {
       expectedBuild: {
         read: async () => {
-          assert.equal(insideLock, true);
-          return build;
+          throw new Error('Release evidence is read once, before the signing fence');
         },
       },
       trustedEvidence: {
         read: async () => {
-          assert.equal(insideLock, true);
-          return attestation;
+          throw new Error('Release evidence is read once, before the signing fence');
         },
       },
     };
     const originalAvailability = input.readVariantAvailability;
     input.readVariantAvailability = async (target) => {
       inventoryDispatches++;
-      if (insideLock) assert.notEqual(drift, 'overflow');
-      if (insideLock) assert.ok(!['deleted', 'duplicate', 'malformed', '251'].includes(String(drift)));
+      assert.equal(insideLock, false, 'no stock read under the signing fence');
+      if (accepting) assert.notEqual(drift, 'overflow');
+      if (accepting) assert.ok(!['deleted', 'duplicate', 'malformed', '251'].includes(String(drift)));
       assert.deepEqual(target.variantIds, ['gid://shopify/ProductVariant/222']);
       const result = await originalAvailability(target);
       const snapshot = {
         ...result,
         variants: result.variants.map((variant, index) =>
-          index === 0 ? { ...variant, available: !(insideLock && drift === 'stock') } : variant,
+          index === 0 ? { ...variant, available: !(accepting && drift === 'stock') } : variant,
         ),
       };
-      if (insideLock) {
+      if (accepting) {
         if (drift === 'inventory-missing') snapshot.variants = [];
         if (drift === 'inventory-extra')
           snapshot.variants.push({ id: 'gid://shopify/ProductVariant/333', available: true });
@@ -380,20 +380,18 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
     };
     input.fetchImpl = async (_url, options) => {
       assert(options);
-      assert.equal(
-        new Headers(options.headers).get('x-shopify-access-token'),
-        insideLock ? 'synthetic-passive-token' : 'synthetic-offline-token',
-      );
+      assert.equal(insideLock, false, 'no provider read under the signing fence');
+      assert.equal(new Headers(options.headers).get('x-shopify-access-token'), 'synthetic-offline-token');
       assert(typeof options.body === 'string');
       const query = text(record(JSON.parse(text(required(options).body))).query);
       assert.ok(query.trimStart().startsWith('query'));
       let data: unknown;
       if (query.includes('LeanPrimaryMarket')) {
-        if (insideLock) passivePrimaryReads++;
+        if (accepting) passivePrimaryReads++;
         data = {
           shop: { id: 'gid://shopify/Shop/9', currencyCode: 'USD' },
           primaryMarket: {
-            id: `gid://shopify/Market/${insideLock && drift === true ? '43' : '42'}`,
+            id: `gid://shopify/Market/${accepting && drift === true ? '43' : '42'}`,
             status: 'ACTIVE',
             conditions: {
               regionsCondition: {
@@ -454,15 +452,15 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
             status: 'ACTIVE',
             variants: {
               nodes: [
-                ...(insideLock && drift === 'deleted' ? [] : [{ id: 'gid://shopify/ProductVariant/222' }]),
+                ...(accepting && drift === 'deleted' ? [] : [{ id: 'gid://shopify/ProductVariant/222' }]),
                 { id: 'gid://shopify/ProductVariant/333' },
-                ...(insideLock && drift === 'duplicate' ? [{ id: 'gid://shopify/ProductVariant/222' }] : []),
-                ...(insideLock && drift === 'malformed' ? [{ id: 'bad' }] : []),
-                ...Array.from({ length: insideLock && drift === '251' ? 249 : 248 }, (_, i) => ({
+                ...(accepting && drift === 'duplicate' ? [{ id: 'gid://shopify/ProductVariant/222' }] : []),
+                ...(accepting && drift === 'malformed' ? [{ id: 'bad' }] : []),
+                ...Array.from({ length: accepting && drift === '251' ? 249 : 248 }, (_, i) => ({
                   id: `gid://shopify/ProductVariant/${1000 + i}`,
                 })),
               ],
-              pageInfo: { hasNextPage: insideLock && drift === 'overflow' },
+              pageInfo: { hasNextPage: accepting && drift === 'overflow' },
             },
           },
         };
@@ -487,7 +485,7 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
               id: 'gid://shopify/ProductVariant/222',
               product: { id: 'gid://shopify/Product/111' },
               contextualPricing: {
-                price: { amount: insideLock && drift === 'price' ? '11.00' : '10.00', currencyCode: 'USD' },
+                price: { amount: accepting && drift === 'price' ? '11.00' : '10.00', currencyCode: 'USD' },
               },
             },
           ],
@@ -496,6 +494,15 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
       return new Response(JSON.stringify({ data }), { headers: { 'x-shopify-api-version': '2026-07' } });
     };
     const services = createProductionBuyerServices(input);
+    const acceptNow = services.accept;
+    services.accept = async (...args) => {
+      accepting = true;
+      try {
+        return await acceptNow(...args);
+      } finally {
+        accepting = false;
+      }
+    };
     const desired: Parameters<typeof services.propose>[1] = {
       country: 'US',
       marketId: '42',
@@ -556,10 +563,8 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
           (query.includes('contextualPricing') &&
             ids.some((id) => id === 'gid://shopify/ProductVariant/444' || uniqueSelected.includes(String(id))))
         ) {
-          assert.equal(
-            new Headers(options?.headers).get('x-shopify-access-token'),
-            insideLock ? 'synthetic-passive-token' : 'synthetic-offline-token',
-          );
+          assert.equal(insideLock, false);
+          assert.equal(new Headers(options?.headers).get('x-shopify-access-token'), 'synthetic-offline-token');
           const data = query.includes('InsigniaAvailabilityProduct')
             ? {
                 product: {
@@ -594,7 +599,7 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
         return originalFetch(url, options);
       };
       input.readVariantAvailability = async (target) => {
-        inventoryTargets.push({ product: target.productId, variants: [...target.variantIds], final: insideLock });
+        inventoryTargets.push({ product: target.productId, variants: [...target.variantIds], final: accepting });
         if (target.productId === 'gid://shopify/Product/111' && target.variantIds.length === 32) {
           assert.deepEqual(target.variantIds, uniqueSelected);
           return {
@@ -708,9 +713,6 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
     } else if (drift === 'price') {
       await assert.rejects(accept, /REVIEW_REQUIRED/);
       assert.equal(facts, 0);
-    } else if (drift === 'passive-missing') {
-      await assert.rejects(accept, /credential_unavailable/);
-      assert.equal(facts, 0);
     } else if (
       String(drift).startsWith('inventory-') ||
       drift === 'duplicate' ||
@@ -731,12 +733,13 @@ test('valid Lean acceptance uses passive primary reads under its lock and reject
         '1300',
       );
     }
-    if (drift === 'price') assert.equal(passivePrimaryReads, 0, 'changed economics stop before further provider work');
-    else if (drift !== 'passive-missing') assert.ok(passivePrimaryReads >= 1);
-    assert.equal(activeAcquisitions, 10, 'exact refresh-capable acquisitions across proposal and acceptance');
-    const expectedPassive =
-      drift === false ? 6 : drift === true ? 3 : drift === 'price' ? 2 : drift === 'passive-missing' ? 2 : 4;
-    assert.equal(passiveAcquisitions, expectedPassive, String(drift));
+    // The acceptance's single fresh pass re-reads the primary Market before its lock.
+    assert.ok(passivePrimaryReads >= 1);
+    // One reused credential per request source (quote ports and stock) for proposal and acceptance;
+    // failures before the acceptance stock read need one fewer. Previously ten per journey.
+    if (drift === false) assert.equal(activeAcquisitions, ACTIVE_ACQUISITIONS);
+    else assert.ok(activeAcquisitions <= ACTIVE_ACQUISITIONS, String(drift));
+    assert.equal(passiveAcquisitions, 0, String(drift));
     assert.equal(refreshReadsInsideLock, 0);
   }
 });
@@ -1461,7 +1464,8 @@ test('production buyer reads actual primary context before Lean pricing on propo
       const current = await getActive(target);
       return current ? { ...current, authorizationEpoch: reauthorized ? 2 : 1 } : null;
     };
-    let primaryReads = 0;
+    let primaryReads = 0,
+      stockReads = 0;
     input.fetchImpl = async (_url, options) => {
       const body = record(JSON.parse(text(required(options).body)));
       assert.ok(text(body.query).trimStart().startsWith('query'), 'the production probe performs reads only');
@@ -1473,6 +1477,11 @@ test('production buyer reads actual primary context before Lean pricing on propo
             },
           }),
         );
+      // A proposal's stock read overlaps pricing; it is not a pricing (catalog) read.
+      if (text(body.query).includes('InsigniaAvailabilityProduct')) {
+        stockReads++;
+        return new Response('{}', { status: 503 });
+      }
       if (text(body.query).includes('LeanPrimaryMarket')) {
         primaryReads++;
         if (contextCase === 'provider-error') return new Response('{}', { status: 503 });
@@ -1533,9 +1542,11 @@ test('production buyer reads actual primary context before Lean pricing on propo
             ? /Buyer Lean context authority changed/
             : /Lean primary-Market context unavailable/;
     await assert.rejects(act, expected, scenario);
-    assert.equal(primaryReads, contextCase === 'currency' ? 0 : 1, scenario);
+    // The primary-Market read overlaps the catalog read, so it also runs when the catalog currency later fails.
+    assert.equal(primaryReads, 1, scenario);
     assert.equal(subscriptionReads, 1, operation);
     assert.equal(catalogReads, 1, operation);
+    assert.ok(stockReads <= (operation === 'propose' ? 1 : 0), operation);
     assert.equal(quoteWrites, 0, operation);
     assert.equal(proposalWrites, 0, operation);
     assert.equal(artworkReads, 0, operation);

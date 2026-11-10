@@ -78,7 +78,17 @@ export function createArtworkGuestAuthority(input: {
         expiresAt,
       };
       const body = Buffer.from(JSON.stringify(guest)).toString('base64url');
-      return { token: `${body}.${digest(body).toString('base64url')}`, expiresAt: new Date(expiresAt).toISOString() };
+      return {
+        token: `${body}.${digest(body).toString('base64url')}`,
+        expiresAt: new Date(expiresAt).toISOString(),
+        // Exactly what verify derives from this token.
+        scope: {
+          kind: 'guest' as const,
+          shopId: guest.shopId,
+          installationGeneration: guest.generation,
+          ownerHash: createHash('sha256').update(guest.nonce).digest('hex'),
+        },
+      };
     },
     async verify(request: Request): Promise<ArtworkScope | null> {
       if (

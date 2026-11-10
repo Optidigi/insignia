@@ -398,6 +398,9 @@ export class PgAcceptedQuoteRepository {
     )
       throw new Error('invalid accepted quote command');
     return this.database.transaction().execute(async (transaction) => {
+      // Provider IO completed before this fence, so the lock is held only for stored checks and
+      // signing. A waiter gives up quickly with SQLSTATE 55P03 (retryable) instead of queueing.
+      await sql`SET LOCAL lock_timeout = '2s'`.execute(transaction);
       const active = await sql<{ generation: string; authorization_generation: string; authorization_epoch: string }>`
         SELECT s.current_generation::text AS generation,
           i.authorization_generation::text AS authorization_generation,

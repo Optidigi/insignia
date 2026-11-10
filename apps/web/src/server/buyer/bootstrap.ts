@@ -12,12 +12,15 @@ import { credentialLifecycle } from '../../../../worker/src/handlers.ts';
 import { createDemandDrivenReleaseReader, type ReleaseVerificationCollector } from '../admin/release-evidence.ts';
 import { createReleaseVerificationClient } from '../admin/release-verification.ts';
 import { createProductionBuyerServices, type ProductionBuyerInputs } from './production.ts';
+import { createReleaseRefresher, RELEASE_FRESHNESS_MS, RELEASE_REFRESH_AFTER_MS } from './release-refresh.ts';
 import type { BuyerServices } from './service.ts';
+import { createSubscriptionCache } from './subscription-cache.ts';
 
 type BootstrapSeam = {
   createCore?(options: PoolConfig, config: { credentialKeys: CredentialKeyRing }): DurableCore;
   createServices?(input: ProductionBuyerInputs): BuyerServices;
   releaseCollector?: ReleaseVerificationCollector;
+  releaseRefreshTimer?: Parameters<typeof createReleaseRefresher>[0]['setTimer'];
   fetchImpl?: typeof fetch;
   clock?: () => Date;
 };
@@ -168,9 +171,13 @@ export async function createBuyerBootstrap(
       now: clock,
     });
     // All configuration and actual adapter constructors qualify before allocating a pool/core.
+    // Ten connections: an acceptance holds its fence transaction plus short pool reads for the
+    // signing key, beside concurrent buyer requests. Postgres keeps its default max_connections
+    // (100); the web process's other pools (runtime/admin 10 each, purchase 4, notification 2) and
+    // the worker/verifier pools stay well below it.
     const poolOptions = {
       connectionString,
-      max: 4,
+      max: 10,
       connectionTimeoutMillis: 5000,
       query_timeout: 10000,
       statement_timeout: 10000,
@@ -190,7 +197,8 @@ export async function createBuyerBootstrap(
     const collector =
       seam.releaseCollector ?? createReleaseVerificationClient(undefined, releaseProfile.activeVersionRef);
     const collecting = new Map<string, Promise<string | null>>();
-    const read = async (scope: { shopId: string; installationGeneration: string; appClientId: string }) => {
+    type ArtifactScope = { shopId: string; installationGeneration: string; appClientId: string };
+    const read = async (scope: ArtifactScope, refreshAhead = false) => {
       if (scope.appClientId !== clientId) return null;
       const current = await ownedCore.tenants.getActiveAuthorizationScope(scope);
       if (!current) return null;
@@ -212,7 +220,18 @@ export async function createBuyerBootstrap(
         return null;
       const deadlineMs = Math.min(+clock() + 300000, +credential.accessExpiresAt - 30000);
       const reader = createDemandDrivenReleaseReader({
-        records: ownedCore.trustedReleaseRecords,
+        // A background refresh treats a record older than RELEASE_REFRESH_AFTER_MS as missing, so
+        // it collects ahead of expiry. Shared `collecting` keeps it single-flight with acceptance,
+        // which still reads its own record under the unchanged 30-second bound.
+        records: refreshAhead
+          ? {
+              read: (request) =>
+                ownedCore.trustedReleaseRecords.read({
+                  ...request,
+                  now: new Date(+request.now + RELEASE_FRESHNESS_MS - RELEASE_REFRESH_AFTER_MS),
+                }),
+            }
+          : ownedCore.trustedReleaseRecords,
         releaseProfile: releaseProfile.name,
         collector,
         inFlight: collecting,
@@ -241,6 +260,33 @@ export async function createBuyerBootstrap(
         },
       });
       return reader.read({ scope, expectedActiveAppVersionRef: releaseProfile.activeVersionRef, now: clock() });
+    };
+    // The expected-build and evidence ports of one readiness observation read the same record:
+    // concurrent reads for one scope share a single read instead of repeating it.
+    const reading = new Map<string, ReturnType<typeof read>>();
+    const sharedRead = (scope: ArtifactScope) => {
+      const key = JSON.stringify([scope.shopId, scope.installationGeneration, scope.appClientId]);
+      const pending = reading.get(key);
+      if (pending) return pending;
+      const next = read(scope).finally(() => {
+        if (reading.get(key) === next) reading.delete(key);
+      });
+      reading.set(key, next);
+      return next;
+    };
+    const refresher = createReleaseRefresher({
+      refresh: async (scope) => {
+        const evidence = await read({ ...scope, appClientId: clientId }, true);
+        const observedAt = evidence ? Date.parse(evidence.record.attestation.observedAt) : Number.NaN;
+        return Number.isFinite(observedAt) ? observedAt : null;
+      },
+      clock: () => +clock(),
+      ...(seam.releaseRefreshTimer ? { setTimer: seam.releaseRefreshTimer } : {}),
+    });
+    const close = ownedCore.close.bind(ownedCore);
+    ownedCore.close = async () => {
+      refresher.close();
+      await close();
     };
     return (seam.createServices ?? createProductionBuyerServices)({
       core,
@@ -278,14 +324,18 @@ export async function createBuyerBootstrap(
             )?.record.attestation ?? null,
         },
       },
-      readSubscription: (target) => partner.read(target),
+      readSubscription: createSubscriptionCache(
+        (target) => partner.read(target),
+        () => +clock(),
+      ),
+      releaseRefresh: (scope, activeUntil) => refresher.touch(scope, activeUntil),
       expectedFunctions: functions,
       maxObservationAgeMs: 30000,
       clock,
       fetchImpl: seam.fetchImpl,
       artifactPorts: {
-        expectedBuild: { read: async (scope) => (await read(scope))?.expectedBuild ?? null },
-        trustedEvidence: { read: async (scope) => (await read(scope))?.record.attestation ?? null },
+        expectedBuild: { read: async (scope) => (await sharedRead(scope))?.expectedBuild ?? null },
+        trustedEvidence: { read: async (scope) => (await sharedRead(scope))?.record.attestation ?? null },
       },
     });
   } catch {

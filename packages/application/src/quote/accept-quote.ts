@@ -194,6 +194,8 @@ export interface CartAuthorizationPort {
   issue(input: { quote: AcceptedQuote; window?: QuoteIssuanceWindow }): Promise<QuoteAuthorizationSet>;
 }
 
+export type QuoteReadinessObservation = { assertCurrent(): Promise<void> };
+
 export interface QuoteAuthorityPorts {
   /** Independent server qualification, never buyer JSON or a currency-name allowlist. */
   leanContext?: {
@@ -214,21 +216,17 @@ export interface QuoteAuthorityPorts {
   artwork: QuoteArtworkPort;
   catalog: CatalogContextPort;
   currency: { exponent(code: string): number | null };
-  /** Trusted publication/key/Function observation, checked in the serialized signing window. */
+  /** Trusted publication/key/Function readiness for signing. Proposals are display-only and skip it. */
   readiness: {
-    /** Optional request-local release IO preparation; completion grants no issuance authority. */
-    prepare?(input: { quote: AcceptedQuote }): Promise<void>;
+    /** Complete check at once (renewal). */
     assertReady(input: { quote: AcceptedQuote }): Promise<void>;
+    /** Acceptance: provider IO (Admin, Function ownership, release evidence, stock) before the signing
+     * fence. The returned check runs inside the fence: stored facts only, with observation freshness
+     * applied at the signing instant. Without it, assertReady runs inside the fence. */
+    observe?(input: { quote: AcceptedQuote }): Promise<QuoteReadinessObservation>;
   };
   authorization: CartAuthorizationPort;
   store: QuoteAcceptanceStore;
-}
-
-export class QuoteContextChangedError extends Error {
-  constructor(context: 'shop context' | 'catalog') {
-    super(`${context} changed during quote acceptance`);
-    this.name = 'QuoteContextChangedError';
-  }
 }
 
 function requireTenant(value: ActiveQuoteTenant | null, request: QuoteRequest): ActiveQuoteTenant {
@@ -530,14 +528,27 @@ export function quoteRequestDigest(request: QuoteRequest, ports: QuoteAuthorityP
   return validatedRequest(request, ports).requestDigest;
 }
 
-export async function prepareQuote(request: QuoteRequest, ports: QuoteAuthorityPorts): Promise<PreparedQuote> {
+/** Display-only proposal candidate: authoritative pricing without signing readiness (owner decision
+ * 10 Nov 2026). Release/Function verification remains mandatory at acceptance and renewal. */
+export async function proposeQuote(request: QuoteRequest, ports: QuoteAuthorityPorts): Promise<PreparedQuote> {
   const { marketId, requestDigest } = validatedRequest(request, ports);
   const tenant = requireTenant(await ports.tenant.getActive(request.shopId, request.installationGeneration), request);
   const prepared = await prepareValidatedQuote(request, ports, tenant, marketId, requestDigest);
-  await ports.readiness.assertReady({ quote: prepared.quote });
   return { quote: prepared.quote, requestDigest: prepared.requestDigest };
 }
 
+/** Candidate plus complete signing readiness (renewal). */
+export async function prepareQuote(request: QuoteRequest, ports: QuoteAuthorityPorts): Promise<PreparedQuote> {
+  const prepared = await proposeQuote(request, ports);
+  await ports.readiness.assertReady({ quote: prepared.quote });
+  return prepared;
+}
+
+/** One fresh provider pass (including the one contextual price lookup per signing) runs before the
+ * signing fence. The store's fence re-checks stored facts: installation, authorization epoch,
+ * effective publication, idempotency and buyer command; readiness re-checks the signing key and
+ * applies observation freshness at signing. No provider IO runs while the shop row is locked
+ * (owner decision 10 Nov 2026: a provider change in the seconds between read and signing is accepted). */
 export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPorts): Promise<AcceptedQuoteResult> {
   const { marketId, requestDigest } = validatedRequest(request, ports);
   const tenant = requireTenant(await ports.tenant.getActive(request.shopId, request.installationGeneration), request);
@@ -551,7 +562,35 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
   });
   if (completed) return completed;
   const prepared = await prepareValidatedQuote(request, ports, tenant, marketId, requestDigest);
-  return ports.store.accept(prepared.fence, prepared.commit);
+  const { quote } = prepared;
+  const readiness: QuoteReadinessObservation = ports.readiness.observe
+    ? await ports.readiness.observe({ quote })
+    : { assertCurrent: () => ports.readiness.assertReady({ quote }) };
+  return ports.store.accept(prepared.fence, async () => {
+    if (localDay(ports.clock(), quote.shopTimezone).ordinal !== quote.acceptedDay)
+      throw new Error('shop-local acceptance day changed before signing');
+    // Pure re-check: contextual prices observed before the fence must still be fresh at signing.
+    for (const product of new Set(quote.catalogSnapshots.map((snapshot) => snapshot.productId))) {
+      const snapshots = quote.catalogSnapshots.filter((snapshot) => snapshot.productId === product);
+      await resolveFreshCatalogContext(
+        { resolveVariantContext: async () => snapshots },
+        {
+          shopId: request.shopId,
+          installationGeneration: request.installationGeneration,
+          productId: product,
+          variantIds: snapshots.map((snapshot) => snapshot.variantId),
+          context: { country: request.country },
+        },
+        ports.clock,
+      );
+    }
+    await readiness.assertCurrent();
+    if (localDay(ports.clock(), quote.shopTimezone).ordinal !== quote.acceptedDay)
+      throw new Error('shop-local acceptance day changed before signing');
+    const authorization = await ports.authorization.issue({ quote });
+    validAuthorization(quote, authorization);
+    return { quote, authorization };
+  });
 }
 
 async function freshCatalog(request: QuoteRequest, ports: QuoteAuthorityPorts, products: readonly string[]) {
@@ -583,6 +622,12 @@ async function freshCatalog(request: QuoteRequest, ports: QuoteAuthorityPorts, p
   return result;
 }
 
+/** Settle every started read before reporting, then report the first failure in dependency order. */
+function settledValue<T>(result: PromiseSettledResult<T>): T {
+  if (result.status === 'rejected') throw result.reason;
+  return result.value;
+}
+
 async function prepareValidatedQuote(
   request: QuoteRequest,
   ports: QuoteAuthorityPorts,
@@ -590,8 +635,59 @@ async function prepareValidatedQuote(
   marketId: string,
   requestDigest: string,
 ) {
-  const [entitlement, shop] = await Promise.all([ports.entitlement.getFresh(tenant), ports.shop.getContext(tenant)]);
+  const groups = request.groups.map((entry) => entry.group);
+  const products = [...new Set(groups.map((group) => group.productId))];
+  const effectiveRevisions = async () => {
+    const revisions = await Promise.all(
+      products.map((product) => ports.publication.getEffective(request.shopId, product)),
+    );
+    return revisions.map((revision, index) => {
+      const product = products[index];
+      if (
+        !revision ||
+        revision.config.shopId !== request.shopId ||
+        revision.config.productId !== product ||
+        !revision.configId ||
+        !revision.operationId ||
+        groups.some(
+          (group) =>
+            group.productId === product &&
+            (group.configRevisionId !== revision.config.revisionId ||
+              group.revisionContentHash !== revision.config.revisionContentHash),
+        )
+      )
+        throw new Error('no effective published revision for requested product');
+      return revision;
+    });
+  };
+  const leanContext = ports.leanContext;
+  // Independent reads overlap: subscription, shop context, effective revisions followed by the
+  // contextual catalog and primary-Market observation. The published shop currency selects the
+  // Market check; it is compared with the observed shop and presentment currencies below.
+  const revisionsRead = effectiveRevisions();
+  const shopRead = ports.shop.getContext(tenant);
+  const [entitlementResult, shopResult, revisionsResult, catalogResult, leanResult] = await Promise.allSettled([
+    ports.entitlement.getFresh(tenant),
+    shopRead,
+    revisionsRead,
+    revisionsRead.then(() => freshCatalog(request, ports, products)),
+    revisionsRead.then((revisions) => {
+      if (!leanContext) throw new Error('Lean primary-Market and currency qualification unavailable');
+      const currency = revisions[0]?.config.shopCurrency;
+      if (!currency || revisions.some((revision) => revision.config.shopCurrency !== currency))
+        throw new Error('published shop currency mismatch');
+      return leanContext.assertSupported({
+        tenant,
+        country: request.country,
+        marketId,
+        currency,
+        shopCurrency: currency,
+      });
+    }),
+  ]);
+  const entitlement = settledValue(entitlementResult);
   requireEntitlement(entitlement);
+  const shop = settledValue(shopResult);
   if (
     shop.shopId !== tenant.shopId ||
     shop.installationGeneration !== tenant.installationGeneration ||
@@ -599,45 +695,20 @@ async function prepareValidatedQuote(
     !/^[A-Z]{3}$/.test(shop.currency)
   )
     throw new Error('shop context identity or currency mismatch');
-  const groups = request.groups.map((entry) => entry.group);
-  const products = [...new Set(groups.map((group) => group.productId))];
-  const revisions: EffectiveQuoteRevision[] = [];
-  for (const product of products) {
-    const revision = await ports.publication.getEffective(request.shopId, product);
-    if (
-      !revision ||
-      revision.config.shopId !== request.shopId ||
-      revision.config.productId !== product ||
-      !revision.configId ||
-      !revision.operationId ||
-      groups.some(
-        (group) =>
-          group.productId === product &&
-          (group.configRevisionId !== revision.config.revisionId ||
-            group.revisionContentHash !== revision.config.revisionContentHash),
-      )
-    )
-      throw new Error('no effective published revision for requested product');
-    revisions.push(revision);
-  }
-  const catalogSnapshots = await freshCatalog(request, ports, products);
+  const revisions = settledValue(revisionsResult);
+  const catalogSnapshots = settledValue(catalogResult);
   const presentment = catalogSnapshots[0]?.currencyCode;
   if (!presentment || catalogSnapshots.some((snapshot) => snapshot.currencyCode !== presentment))
     throw new Error('mixed presentment currency');
-  if (!ports.leanContext) throw new Error('Lean primary-Market and currency qualification unavailable');
-  await ports.leanContext.assertSupported({
-    tenant,
-    country: request.country,
-    marketId,
-    currency: presentment,
-    shopCurrency: shop.currency,
-  });
+  if (revisions.some((revision) => revision.config.shopCurrency !== shop.currency))
+    throw new Error('published shop currency mismatch');
+  // The Market check ran for the published (= observed shop) currency; Lean requires presentment to match it.
+  if (presentment !== shop.currency) throw new Error('Lean primary-Market context unavailable');
+  settledValue(leanResult);
   const exponent = ports.currency.exponent(presentment);
   const shopExponent = ports.currency.exponent(shop.currency);
   if (exponent === null || shopExponent === null || ![0, 2, 3].includes(exponent) || ![0, 2, 3].includes(shopExponent))
     throw new Error('unsupported currency exponent');
-  if (revisions.some((revision) => revision.config.shopCurrency !== shop.currency))
-    throw new Error('published shop currency mismatch');
   // Price only the qualified shop-currency context with final per-garment surcharges.
   const pricing = {
     shopId: request.shopId,
@@ -734,73 +805,6 @@ async function prepareValidatedQuote(
       idempotencyKey: request.idempotencyKey,
       requestDigest,
       effectiveRevisions: quote.effectiveRevisions,
-    },
-    commit: async () => {
-      const current = requireTenant(
-        await ports.tenant.getActive(request.shopId, request.installationGeneration),
-        request,
-      );
-      if (
-        current.authorizationGeneration !== tenant.authorizationGeneration ||
-        current.authorizationEpoch !== tenant.authorizationEpoch
-      )
-        throw new Error('installation authorization identity changed');
-      if (localDay(ports.clock(), shop.timezone).ordinal !== quote.acceptedDay)
-        throw new Error('shop-local acceptance day changed before signing');
-      const [currentEntitlement, currentShop, finalCatalog] = await Promise.all([
-        ports.entitlement.getFresh(current),
-        ports.shop.getContext(current),
-        freshCatalog(request, ports, products),
-      ]);
-      if (canonical(currentShop) !== canonical(shop)) throw new QuoteContextChangedError('shop context');
-      if (materialHash({ ...quote, catalogSnapshots: finalCatalog }) !== materialHash(quote))
-        throw new QuoteContextChangedError('catalog');
-      requireEntitlement(currentEntitlement);
-      if (
-        currentEntitlement.policyVersion !== entitlement.policyVersion ||
-        currentEntitlement.recognizedPolicyId !== entitlement.recognizedPolicyId ||
-        currentEntitlement.trial !== entitlement.trial ||
-        currentEntitlement.qualifyingUsageDisposition !== entitlement.qualifyingUsageDisposition
-      )
-        throw new Error('entitlement changed during quote acceptance');
-      const finalTenant = requireTenant(
-        await ports.tenant.getActive(request.shopId, request.installationGeneration),
-        request,
-      );
-      if (
-        finalTenant.authorizationGeneration !== tenant.authorizationGeneration ||
-        finalTenant.authorizationEpoch !== tenant.authorizationEpoch
-      )
-        throw new Error('installation authorization identity changed');
-      for (const product of products) {
-        const snapshots = catalogSnapshots.filter((snapshot) => snapshot.productId === product);
-        await resolveFreshCatalogContext(
-          { resolveVariantContext: async () => snapshots },
-          {
-            shopId: request.shopId,
-            installationGeneration: request.installationGeneration,
-            productId: product,
-            variantIds: snapshots.map((snapshot) => snapshot.variantId),
-            context: { country: request.country },
-          },
-          ports.clock,
-        );
-      }
-      if (!ports.leanContext) throw new Error('Lean primary-Market and currency qualification unavailable');
-      await ports.leanContext.assertSupported({
-        tenant: finalTenant,
-        country: request.country,
-        marketId,
-        currency: presentment,
-        shopCurrency: shop.currency,
-      });
-      await ports.readiness.assertReady({ quote });
-      await usableArtwork(ports.artwork, request, shop.timezone, choices, quote.validThroughDay, ports.clock);
-      if (localDay(ports.clock(), shop.timezone).ordinal !== quote.acceptedDay)
-        throw new Error('shop-local acceptance day changed before signing');
-      const authorization = await ports.authorization.issue({ quote });
-      validAuthorization(quote, authorization);
-      return { quote, authorization };
     },
   };
 }

@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
-import { QuoteContextChangedError } from '@insignia/application';
 import { BuyerAcceptedCartSchema } from '@insignia/contracts';
 import { createPublicationRepository } from '../../../packages/database/dist/repositories/publication.js';
 import { fixture } from './support/buyer-fixture.mts';
@@ -67,15 +66,14 @@ test('unavailable variants deny new proposals, serialized acceptance and renewal
   f.availability(true);
   const proposal = await (await f.http('quote-proposals', f.body)).json();
   const body = { capability: f.session.capability, hash: proposal.hash, idempotencyKey: randomUUID() };
-  const availabilityPhases: (string | undefined)[] = [];
-  // Availability must fail at the actual serialized signing boundary, regardless
-  // of how many preparation reads the adapter needs.
-  f.availability((phase) => {
-    availabilityPhases.push(phase);
-    return phase !== 'final';
+  let stockReads = 0;
+  // Acceptance re-reads stock once, before its signing fence.
+  f.availability(() => {
+    stockReads++;
+    return false;
   });
   assert.equal((await f.http(`quote-proposals/${proposal.proposalId}/accept`, body)).status, 409);
-  assert.ok(availabilityPhases.includes('final'), 'stock was rechecked inside serialized acceptance');
+  assert.equal(stockReads, 1, 'stock was rechecked before signing');
   assert.equal(f.signings(), 0);
   assert.equal((await f.pool.query('SELECT 1 FROM accepted_quotes WHERE shop_id=$1', [f.shopId])).rowCount, 0);
   f.availability(true);
@@ -198,8 +196,13 @@ test('HTTP rejects forged capability, tenant injection, oversize and foreign dra
     availability = 0;
   const victim = await fixture(t, {
     readiness: {
-      prepare: async () => {
+      observe: async () => {
         preparations++;
+        return {
+          assertCurrent: async () => {
+            proofs++;
+          },
+        };
       },
       assertReady: async () => {
         proofs++;
@@ -478,7 +481,7 @@ test('overlapping known rejection recovers the winning acceptance through servic
     release = resolve;
   });
   f.core.acceptedQuotes.accept = async (input, commit) => {
-    if (++calls > 1) throw new QuoteContextChangedError('catalog');
+    if (++calls > 1) throw new Error('A known rejection must not reach the signing fence');
     return original(input, async () => {
       enter();
       await gate;
@@ -487,6 +490,8 @@ test('overlapping known rejection recovers the winning acceptance through servic
   };
   const winner = f.http(`quote-proposals/${proposal.proposalId}/accept`, body);
   await entered;
+  // The overlapping request observes a changed price before the fence: a known review rejection.
+  f.amount('99.00');
   const rejecting = f.http(`quote-proposals/${proposal.proposalId}/accept`, body);
   try {
     let blocked = false;

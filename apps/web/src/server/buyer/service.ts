@@ -6,9 +6,9 @@ import {
   BuyerAcceptanceDeclinedError,
   localDay,
   materialHash,
-  prepareQuote,
+  proposeQuote,
   type QuoteAuthorityPorts,
-  QuoteContextChangedError,
+  type QuoteReadinessObservation,
   type QuoteRequest,
   quoteRequestDigest,
   renewQuote,
@@ -38,8 +38,10 @@ import type { createArtworkGuestAuthority } from '../artwork/guest.ts';
 import { buyerGeometry } from '../merchant-preview/geometry.ts';
 import type { FrozenPreviewReader } from '../merchant-preview/read.ts';
 import { publicSelectedSetup } from '../merchant-preview/selected-public.ts';
-import { proposalStage } from './diagnostics.ts';
+import { createConfigCache } from './config-cache.ts';
+import { noteCache, proposalStage } from './diagnostics.ts';
 import { validateBuyerProductionPositions } from './production-position.ts';
+import { createRevisionReads } from './revision-cache.ts';
 
 class BuyerPrecommitReviewError extends Error {
   constructor() {
@@ -48,6 +50,10 @@ class BuyerPrecommitReviewError extends Error {
 }
 
 type GuestAuthority = ReturnType<typeof createArtworkGuestAuthority>;
+/** Proposal lifetime; acceptance after it requires a new proposal. */
+const PROPOSAL_TTL_MS = 300000;
+/** Buyers count as active (release evidence kept warm) for two minutes after a proposal. */
+const RELEASE_ACTIVITY_MS = 120000;
 type Bucket = { variantId: string; quantity: number; properties: Record<string, string> };
 const notFound = (): never => {
   throw new BuyerStateError('NOT_FOUND');
@@ -117,10 +123,16 @@ export function createBuyerServices(input: {
     phase?: 'final',
   ): Promise<{ variants: readonly { id: string; available: boolean }[] }>;
   previewImages?: FrozenPreviewReader;
+  /** Background release-evidence refresh hint; never awaited and never issuance authority. */
+  releaseRefresh?(scope: { shopId: string; installationGeneration: string }, activeUntil: Date): void;
   clock?: () => Date;
 }) {
   const clock = input.clock ?? (() => new Date()),
     store = input.core.buyers;
+  type CatalogView = Awaited<ReturnType<typeof input.catalog>>;
+  type Wording = Awaited<ReturnType<DurableCore['preferences']['readWording']>>;
+  const revisions = createRevisionReads(input.core.configs, () => +clock());
+  const configCache = createConfigCache<{ catalog: CatalogView; wording: Wording | undefined }>(() => +clock());
   const binding = (scope: BuyerScope, ports = input.ports({ ...scope, kind: 'guest' })) => {
     const value = ports.artwork.replayBinding?.(scope);
     if (!value || !/^[a-f0-9]{64}$/.test(value)) throw new Error('Resource authority missing');
@@ -139,77 +151,75 @@ export function createBuyerServices(input: {
   });
   function validatePositions(scope: BuyerScope, groups: BuyerDesiredGroup[]) {
     return validateBuyerProductionPositions(groups, {
-      presentation: (revisionId) => input.core.configs.getRevisionPresentation(scope.shopId, revisionId),
-      geometry: (revisionId) => input.core.configs.getRevisionGeometry(scope.shopId, revisionId),
+      presentation: (revisionId) => revisions.getRevisionPresentation(scope.shopId, revisionId),
+      geometry: (revisionId) => revisions.getRevisionGeometry(scope.shopId, revisionId),
       artwork: (assetId) => input.core.artwork.get({ ...scope, kind: 'guest' }, assetId),
       now: clock,
     });
   }
+  async function assertAvailable(scope: BuyerScope, groups: BuyerDesiredGroup[]) {
+    for (const productId of new Set(groups.map((group) => group.productId))) {
+      const selectedIds = [
+        ...new Set(
+          groups
+            .filter((group) => group.productId === productId)
+            .flatMap((group) => group.variants.map((variant) => variant.variantId)),
+        ),
+      ];
+      const current = input.availability
+        ? await input.availability(scope, productId, selectedIds)
+        : await input.catalog(scope, productId);
+      const available = new Map(current.variants.map((variant) => [variant.id, variant.available]));
+      if (
+        current.variants.length === available.size &&
+        groups
+          .filter((group) => group.productId === productId)
+          .some((group) => group.variants.some((variant) => available.get(variant.variantId) === false))
+      )
+        throw new BuyerPrecommitReviewError();
+      if (
+        current.variants.length !== available.size ||
+        groups
+          .filter((group) => group.productId === productId)
+          .some((group) => group.variants.some((variant) => available.get(variant.variantId) !== true))
+      )
+        return review();
+    }
+  }
+  /** Settle both started branches; stock denial retains precedence over readiness failure. */
+  async function stockFirst<T>(stock: Promise<void>, other: Promise<T>): Promise<T> {
+    const [stocked, result] = await Promise.allSettled([stock, other]);
+    if (stocked.status === 'rejected') throw stocked.reason;
+    if (result.status === 'rejected') throw result.reason;
+    return result.value;
+  }
   function checkedPorts(scope: BuyerScope, groups: BuyerDesiredGroup[]): QuoteAuthorityPorts {
     const ports = input.ports({ ...scope, kind: 'guest' });
-    let finalCheck = false;
+    const observe = async (target: {
+      quote: Parameters<QuoteAuthorityPorts['readiness']['assertReady']>[0]['quote'];
+    }) => {
+      const observation: QuoteReadinessObservation = ports.readiness.observe
+        ? await ports.readiness.observe(target)
+        : { assertCurrent: () => ports.readiness.assertReady(target) };
+      return { assertCurrent: () => proposalStage('current-readiness', () => observation.assertCurrent()) };
+    };
     return {
       ...ports,
-      store: {
-        ...ports.store,
-        findCompleted: (target) => ports.store.findCompleted(target),
-        accept: (target, commit) =>
-          ports.store.accept(target, async () => {
-            finalCheck = true;
-            try {
-              return await commit();
-            } finally {
-              finalCheck = false;
-            }
-          }),
-      },
       readiness: {
+        // Renewal: one complete check, serial after stock.
         async assertReady(target) {
           await proposalStage('positions', () => validatePositions(scope, groups));
-          const availability = async () => {
-            for (const productId of new Set(groups.map((group) => group.productId))) {
-              const selectedIds = [
-                ...new Set(
-                  groups
-                    .filter((group) => group.productId === productId)
-                    .flatMap((group) => group.variants.map((variant) => variant.variantId)),
-                ),
-              ];
-              const current = input.availability
-                ? await input.availability(scope, productId, selectedIds, finalCheck ? 'final' : undefined)
-                : await input.catalog(scope, productId, finalCheck ? 'final' : undefined);
-              const available = new Map(current.variants.map((variant) => [variant.id, variant.available]));
-              if (
-                current.variants.length === available.size &&
-                groups
-                  .filter((group) => group.productId === productId)
-                  .some((group) => group.variants.some((variant) => available.get(variant.variantId) === false))
-              )
-                throw new BuyerPrecommitReviewError();
-              if (
-                current.variants.length !== available.size ||
-                groups
-                  .filter((group) => group.productId === productId)
-                  .some((group) => group.variants.some((variant) => available.get(variant.variantId) !== true))
-              )
-                return review();
-            }
-          };
-          const prepare = finalCheck ? undefined : ports.readiness.prepare;
-          if (prepare) {
-            // Preparation owns its IO but grants no authority. Drain both branches;
-            // stock denial retains precedence if both fail.
-            const checks = await Promise.allSettled([
-              proposalStage('availability', availability),
-              Promise.resolve().then(() =>
-                proposalStage('release-prepare', () => prepare.call(ports.readiness, target)),
-              ),
-            ]);
-            for (const check of checks) if (check.status === 'rejected') throw check.reason;
-          } else await proposalStage('availability', availability);
-          // Current-time authority remains serial after stock, especially inside signing.
+          await proposalStage('availability', () => assertAvailable(scope, groups));
           await proposalStage('current-readiness', () => ports.readiness.assertReady(target));
         },
+        // Acceptance: stock and provider readiness are observed before the signing fence. Positions
+        // were validated by the proposal for this design and immutable revision; acceptance's artwork
+        // usability read still re-checks artwork state and lifetime.
+        observe: (target) =>
+          stockFirst(
+            proposalStage('availability', () => assertAvailable(scope, groups)),
+            proposalStage('readiness-observe', () => observe(target)),
+          ),
       },
     };
   }
@@ -261,17 +271,23 @@ export function createBuyerServices(input: {
       if (!scope) return notFound();
       const revision = await input.core.acceptedQuotes.getEffective(scope.shopId, scope.productId);
       if (!revision) return notFound();
-      const geometry = await input.core.configs.getRevisionGeometry(scope.shopId, revision.config.revisionId);
+      const geometry = await revisions.getRevisionGeometry(scope.shopId, revision.config.revisionId);
       if (!geometry || geometry.mode !== 'required') return notFound();
       return { productId: scope.productId, configured: true as const };
     },
     async config(request: Request) {
-      const scope = await input.guest.resolve(request);
+      const scope = await proposalStage('tenant', () => input.guest.resolve(request));
       if (!scope) return notFound();
-      const revision = await input.core.acceptedQuotes.getEffective(scope.shopId, scope.productId);
+      const revision = await proposalStage('revision', () =>
+        input.core.acceptedQuotes.getEffective(scope.shopId, scope.productId),
+      );
       if (!revision) return notFound();
-      const geometryRecord = await input.core.configs.getRevisionGeometry(scope.shopId, revision.config.revisionId);
-      const presentation = await input.core.configs.getRevisionPresentation(scope.shopId, revision.config.revisionId);
+      const [geometryRecord, presentation] = await proposalStage('revision', () =>
+        Promise.all([
+          revisions.getRevisionGeometry(scope.shopId, revision.config.revisionId),
+          revisions.getRevisionPresentation(scope.shopId, revision.config.revisionId),
+        ]),
+      );
       if (!geometryRecord || !presentation) throw new Error('Published presentation missing');
       const geometry = buyerGeometry(geometryRecord.value as GeometryV1),
         config = revision.config;
@@ -280,16 +296,46 @@ export function createBuyerServices(input: {
       if (presentation.selectedSetup && (!country || !/^[A-Z]{2}$/.test(country)))
         throw new Error('Country context required');
       // Selection reads complete published/contextual facts. Purchase authority is
-      // checked by proposal/acceptance, not by opening the editor.
-      const catalog = await input.catalog(scope, scope.productId, undefined, country ? { country } : undefined);
+      // checked by proposal/acceptance, not by opening the editor. Provider reads are reused for
+      // 30 s per exact revision and country; proposal and acceptance re-check and re-price.
+      const loaded = await configCache.read(
+        scope.shopId,
+        [scope.installationGeneration, scope.productId, config.revisionId, config.revisionContentHash, country ?? ''],
+        async () => {
+          const catalog = await proposalStage('variant', () =>
+            input.catalog(scope, scope.productId, undefined, country ? { country } : undefined),
+          );
+          const wording = contextual
+            ? await proposalStage('presentation', () =>
+                input.core.transactions.run((tx) => input.core.preferences.readWording(tx, scope)),
+              )
+            : undefined;
+          // Only a result whose installation and publication stayed current is reused.
+          const current = await proposalStage('tenant', () => input.guest.resolve(request));
+          if (
+            !current ||
+            current.shopId !== scope.shopId ||
+            current.installationGeneration !== scope.installationGeneration ||
+            current.productId !== scope.productId
+          )
+            return notFound();
+          return { catalog, wording };
+        },
+      );
+      if (!loaded) throw new BuyerStateError('RATE_LIMITED');
+      noteCache(loaded.cache);
+      const { catalog, wording } = loaded.value;
       if (catalog.variants.length > 250 || catalog.variants.some((v) => !/^[1-9][0-9]{0,19}$/.test(v.id)))
         throw new Error('Catalog boundary unavailable');
       const label = (kind: keyof typeof presentation.labels, id: string) => {
         const value = presentation.labels[kind]?.[id];
         return typeof value === 'string' ? value : id;
       };
+      // Presigned preview URLs live 60 s, so they are issued per request, never cached.
       const imageUrls = input.previewImages
-        ? await input.previewImages(scope, { productId: scope.productId, revisionId: config.revisionId, geometry })
+        ? await proposalStage('presentation', () =>
+            input.previewImages!(scope, { productId: scope.productId, revisionId: config.revisionId, geometry }),
+          )
         : contextual
           ? {}
           : catalog.imageUrls;
@@ -344,18 +390,7 @@ export function createBuyerServices(input: {
         }
       }
       const title = catalog.title ?? selected?.product.title;
-      const wording = contextual
-        ? await input.core.transactions.run((tx) => input.core.preferences.readWording(tx, scope))
-        : undefined;
       if (contextual && !wording) throw new Error('Customer wording unavailable');
-      const current = await input.guest.resolve(request);
-      if (
-        !current ||
-        current.shopId !== scope.shopId ||
-        current.installationGeneration !== scope.installationGeneration ||
-        current.productId !== scope.productId
-      )
-        return notFound();
       return {
         ...(selected ? { selectedSetup: publicSelectedSetup(selected, geometry, imageUrls) } : {}),
         ...(contextual
@@ -394,13 +429,8 @@ export function createBuyerServices(input: {
     async session(request: Request) {
       const grant = await input.guest.issue(new Request(request.url, { method: 'GET' }));
       if (!grant) return notFound();
-      const scope = await input.guest.verify(
-        new Request(request.url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ capability: grant.token }),
-        }),
-      );
+      // The grant's scope is derived from the token it just minted; no second verification.
+      const scope = grant.scope;
       if (!scope || scope.kind !== 'guest' || !scope.ownerHash) return notFound();
       const session = await store.issueSession({
         scope: scope as BuyerScope,
@@ -414,12 +444,12 @@ export function createBuyerServices(input: {
       const saved = await store.getDesign(scope, id, clock());
       if (!saved) return notFound();
       const group = BuyerDesiredGroupSchema.parse(saved.value);
-      const original = await input.core.configs.getValidatedPublishedRevision(scope.shopId, group.configRevisionId);
+      const original = await revisions.getValidatedPublishedRevision(scope.shopId, group.configRevisionId);
       if (!original || original.contentHash !== group.revisionContentHash) return notFound();
       const originalConfig = PublishedConfigSchema.parse(original.publishedValue);
       if (originalConfig.productId !== group.productId) return notFound();
-      const presentation = await input.core.configs.getRevisionPresentation(scope.shopId, group.configRevisionId);
-      const geometryRecord = await input.core.configs.getRevisionGeometry(scope.shopId, group.configRevisionId);
+      const presentation = await revisions.getRevisionPresentation(scope.shopId, group.configRevisionId);
+      const geometryRecord = await revisions.getRevisionGeometry(scope.shopId, group.configRevisionId);
       let compatibility:
         | 'current'
         | 'publication-changed'
@@ -497,10 +527,27 @@ export function createBuyerServices(input: {
       const id = randomUUID(),
         ports = checkedPorts(scope, body.groups),
         request = requestFor(scope, body, id);
-      const candidate = await proposalStage('prepare', () => prepareQuote(request, ports)),
+      // Buyer activity keeps release evidence warm for a later acceptance, off this request's path.
+      try {
+        input.releaseRefresh?.(scope, new Date(+clock() + RELEASE_ACTIVITY_MS));
+      } catch {
+        /* A refresh hint cannot change the proposal. */
+      }
+      // A proposal is display-only: no release or Function verification (owner decision 10 Nov 2026).
+      // Acceptance verifies both before signing.
+      // Request-shape and capacity bounds reject before any provider read, including stock.
+      quoteRequestDigest(request, ports);
+      await proposalStage('positions', () => validatePositions(scope, body.groups));
+      const [prepared, stock] = await Promise.allSettled([
+        proposalStage('prepare', () => proposeQuote(request, ports)),
+        proposalStage('availability', () => assertAvailable(scope, body.groups)),
+      ]);
+      if (prepared.status === 'rejected') throw prepared.reason;
+      if (stock.status === 'rejected') throw stock.reason;
+      const candidate = prepared.value,
         hash = materialHash(candidate.quote);
       const retainPrivateUntil = await proposalStage('private-retention', () => privateUntil(scope, body.groups));
-      const expiresAt = new Date(Math.min(+clock() + 300000, +retainPrivateUntil));
+      const expiresAt = new Date(Math.min(+clock() + PROPOSAL_TTL_MS, +retainPrivateUntil));
       await proposalStage('persistence', () =>
         store.putProposal(scope, {
           id,
@@ -588,8 +635,22 @@ export function createBuyerServices(input: {
       const request = { ...(proposal.request as QuoteRequest), idempotencyKey: key },
         ports = checkedPorts(scope, desired(request));
       await store.reserveCommand(scope, { ...command, now: clock() });
+      const unchanged = (quote: Parameters<QuoteAuthorityPorts['authorization']['issue']>[0]['quote']) => {
+        if (+clock() >= +proposal.expiresAt || materialHash(quote) !== proposal.materialHash)
+          throw new BuyerPrecommitReviewError();
+      };
       const guarded: QuoteAuthorityPorts = {
         ...ports,
+        readiness: {
+          ...ports.readiness,
+          // The proposal hash binds the fresh pass; a changed price or context stops before readiness IO.
+          observe: async (target) => {
+            unchanged(target.quote);
+            const observe = ports.readiness.observe;
+            if (!observe) throw new Error('Buyer acceptance readiness unavailable');
+            return observe(target);
+          },
+        },
         store: {
           ...ports.store,
           accept: (target, commit) =>
@@ -608,16 +669,13 @@ export function createBuyerServices(input: {
         authorization: {
           ...ports.authorization,
           async issue(value) {
-            if (+clock() >= +proposal.expiresAt || materialHash(value.quote) !== proposal.materialHash)
-              throw new BuyerPrecommitReviewError();
-            // acceptQuote revalidates live shop/catalog facts and the signing fence;
-            // compare its validated economics without preparing the whole quote again.
+            unchanged(value.quote);
             return ports.authorization.issue(value);
           },
         },
       };
       const result = await acceptQuote(request, guarded).catch(async (error: unknown) => {
-        if (error instanceof QuoteContextChangedError || error instanceof BuyerPrecommitReviewError) {
+        if (error instanceof BuyerPrecommitReviewError) {
           const resolve = ports.store.resolveBuyerAcceptance;
           if (!resolve) throw error;
           const tenant = await ports.tenant.getActive(scope.shopId, scope.installationGeneration);
@@ -724,10 +782,7 @@ export function createBuyerServices(input: {
         const candidates = request.groups
           .filter((v) => v.group.productId === economicLine.productId)
           .map((v) => v.group);
-        const published = await input.core.configs.getValidatedPublishedRevision(
-          scope.shopId,
-          economicLine.configRevisionId,
-        );
+        const published = await revisions.getValidatedPublishedRevision(scope.shopId, economicLine.configRevisionId);
         if (!published) return review();
         // Match exact canonical design, allowing quantities to be repaired independently.
         const normalized = normalizeCustomizationGroups(candidates, [
@@ -752,7 +807,7 @@ export function createBuyerServices(input: {
       const result = BuyerDesiredSchema.shape.groups.parse([...groups.values()]);
       const labels: Record<string, string> = {};
       for (const group of result) {
-        const presentation = await input.core.configs.getRevisionPresentation(scope.shopId, group.configRevisionId);
+        const presentation = await revisions.getRevisionPresentation(scope.shopId, group.configRevisionId);
         const title = presentation?.selectedSetup?.product.title;
         if (title?.trim()) labels[group.productId] = title;
       }

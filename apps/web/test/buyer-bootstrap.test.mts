@@ -89,7 +89,7 @@ function seam() {
     releaseCollector: { collect: async ({ requestId }) => ({ requestId, state: 'STOPPED', recordId: null }) },
     createCore: (options) => {
       allocated++;
-      assert.equal(options.max, 4);
+      assert.equal(options.max, 10);
       assert.equal(options.connectionTimeoutMillis, 5000);
       return core;
     },
@@ -405,4 +405,112 @@ test('legacy expected-Function query fields are accepted and ignored; the truste
   const env = { ...environment(), INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON: JSON.stringify(legacyExpectedFunctions) };
   assert.equal(await createBuyerBootstrap(env, value.dependencies), value.services);
   assert.deepEqual(required(value.getComposition()).expectedFunctions, { appKey: 'synthetic-app' });
+});
+
+test('acceptance release ports share one record read and background refresh collects ahead of expiry', async () => {
+  const value = seam();
+  let now = new Date('2026-10-13T22:00:05.000Z');
+  value.dependencies.clock = () => now;
+  const timers: { run: () => void; delayMs: number }[] = [];
+  value.dependencies.releaseRefreshTimer = (run, delayMs) => {
+    timers.push({ run, delayMs });
+    return {};
+  };
+  const source = releaseEvidenceFixture('2026-10-13T22:00:00.000Z', '2026-10-13T22:00:30.000Z');
+  let observedAt = Date.parse('2026-10-13T22:00:00.000Z'),
+    reads = 0,
+    collections = 0;
+  const recordId = '22222222-2222-4222-8222-222222222222';
+  const evidence = () => ({
+    ...source,
+    record: {
+      ...source.record,
+      recordId,
+      attestation: {
+        ...source.record.attestation,
+        observedAt: new Date(observedAt).toISOString(),
+        expiresAt: new Date(observedAt + 30000).toISOString(),
+      },
+    },
+  });
+  // The stored reader keeps its exact 30 s rule; it is evaluated at the instant it is given.
+  value.core.trustedReleaseRecords = {
+    read: async (target) => {
+      reads++;
+      return +target.now - observedAt <= 30000 ? evidence() : null;
+    },
+  };
+  value.dependencies.releaseCollector = {
+    async collect(request) {
+      collections++;
+      observedAt = +now;
+      return { requestId: request.requestId, state: 'COMPLETE', recordId };
+    },
+  };
+  await createBuyerBootstrap(environment(), value.dependencies);
+  const input = required(value.getComposition());
+  const scope = { shopId: 'tenant', installationGeneration: '1', appClientId: 'synthetic-app' };
+  const [build, attestation] = await Promise.all([
+    input.artifactPorts.expectedBuild.read(scope),
+    input.artifactPorts.trustedEvidence.read(scope),
+  ]);
+  assert.ok(build && attestation);
+  assert.equal(reads, 1, 'one stored read serves both release ports of an observation');
+  assert.equal(collections, 0);
+
+  // A proposal touches the refresher; nothing runs on the request path.
+  required(input.releaseRefresh)({ shopId: 'tenant', installationGeneration: '1' }, new Date(+now + 120000));
+  assert.equal(collections, 0);
+  assert.equal(timers.length, 1);
+  // The 5 s old record is fresh enough: no collection, next check when it turns 22 s old.
+  required(timers.shift()).run();
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  assert.equal(collections, 0);
+  assert.equal(required(timers[0]).delayMs, 25000);
+  now = new Date(+now + 25000);
+  required(timers.shift()).run();
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  assert.equal(collections, 1, 'a 30 s-near record is collected ahead of expiry');
+  assert.equal(observedAt, +now);
+  await input.core.close();
+});
+
+test('an acceptance that finds the release record stale collects synchronously and fails closed without one', async () => {
+  const value = seam();
+  const now = new Date('2026-10-13T22:01:00.000Z');
+  value.dependencies.clock = () => now;
+  let collections = 0;
+  value.core.trustedReleaseRecords = { read: async () => null };
+  value.dependencies.releaseCollector = {
+    async collect(request) {
+      collections++;
+      return { requestId: request.requestId, state: 'STOPPED', recordId: null };
+    },
+  };
+  await createBuyerBootstrap(environment(), value.dependencies);
+  const input = required(value.getComposition());
+  const scope = { shopId: 'tenant', installationGeneration: '1', appClientId: 'synthetic-app' };
+  assert.equal(await input.artifactPorts.trustedEvidence.read(scope), null);
+  assert.equal(collections, 1, 'the stale record triggered one synchronous collection');
+});
+
+test('bootstrap reuses one Partner subscription read per shop for 60 s', async () => {
+  const value = seam();
+  let now = new Date('2026-11-10T00:00:00.000Z'),
+    subscriptions = 0;
+  value.dependencies.clock = () => now;
+  value.dependencies.fetchImpl = async () => {
+    subscriptions++;
+    return new Response(JSON.stringify({ data: { activeSubscription: null } }));
+  };
+  await createBuyerBootstrap(environment(), value.dependencies);
+  const input = required(value.getComposition());
+  const target = { appId: 'gid://shopify/App/7', shopId: 'gid://shopify/Shop/11' };
+  await input.readSubscription(target);
+  await input.readSubscription(target);
+  assert.equal(subscriptions, 1);
+  now = new Date(+now + 60000);
+  await input.readSubscription(target);
+  assert.equal(subscriptions, 2);
+  await input.core.close();
 });
