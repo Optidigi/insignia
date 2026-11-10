@@ -76,7 +76,8 @@ GRANT UPDATE(state,updated_at) ON public.artwork_assets TO insignia_runtime;
 GRANT SELECT, INSERT ON public.buyer_admission,public.buyer_sessions,public.design_drafts,
  public.quote_proposals,public.buyer_quote_ownership,public.cart_applications,public.buyer_commands TO insignia_runtime;
 GRANT UPDATE(window_at,issued) ON public.buyer_admission TO insignia_runtime;
-GRANT UPDATE(write_window,write_count) ON public.buyer_sessions TO insignia_runtime;
+-- expires_at: the buyer_session_identity trigger permits only the one-time extension to grant_expires_at.
+GRANT UPDATE(write_window,write_count,expires_at) ON public.buyer_sessions TO insignia_runtime;
 GRANT UPDATE(version,payload,expires_at) ON public.design_drafts TO insignia_runtime;
 -- putProposal removes expired owned proposals before issuing another; cleanup remains worker-only.
 GRANT DELETE ON public.quote_proposals TO insignia_runtime;

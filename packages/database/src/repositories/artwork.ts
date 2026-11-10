@@ -158,18 +158,35 @@ export function createArtworkRepository(pool: Pool): ArtworkStore {
         fail('INVALID_INPUT');
       return transaction(async (c) => {
         if (!(await lockTenant(c, input.shopId, input.installationGeneration))) fail('NOT_FOUND');
+        // An abandoned upload stops counting when its upload link expires; completion is refused after it.
+        const unfinished = `((state='UPLOADING' AND upload_until>$2) OR (state IN ('QUEUED','INSPECTING','PROMOTING') AND expires_at>$2 AND collected_at>$2::timestamptz-interval '24 hours'))`;
+        const today = `collected_at>$2::timestamptz-interval '24 hours'`;
         const totals =
           (
-            await c.query<{ unfinished: string; daily: string; retained: string; admissions: string }>(
-              `SELECT count(*) FILTER(WHERE state IN ('UPLOADING','QUEUED','INSPECTING','PROMOTING') AND expires_at>$2 AND collected_at>$2::timestamptz-interval '24 hours') AS unfinished,count(*) FILTER(WHERE collected_at>$2::timestamptz-interval '24 hours') AS admissions,coalesce(sum(declared_bytes) FILTER(WHERE collected_at>$2::timestamptz-interval '24 hours'),0) AS daily,coalesce(sum(declared_bytes) FILTER(WHERE state!='DELETED'),0) AS retained FROM artwork_assets WHERE shop_id=$1`,
-              [input.shopId, input.collectedAt],
+            await c.query<{
+              unfinished: string;
+              admissions: string;
+              daily: string;
+              retained: string;
+              owner_unfinished: string;
+              owner_admissions: string;
+              owner_daily: string;
+            }>(
+              `SELECT count(*) FILTER(WHERE ${unfinished}) AS unfinished,count(*) FILTER(WHERE ${today}) AS admissions,coalesce(sum(declared_bytes) FILTER(WHERE ${today}),0) AS daily,coalesce(sum(declared_bytes) FILTER(WHERE state!='DELETED'),0) AS retained,
+                count(*) FILTER(WHERE owner_hash=$3 AND ${unfinished}) AS owner_unfinished,count(*) FILTER(WHERE owner_hash=$3 AND ${today}) AS owner_admissions,coalesce(sum(declared_bytes) FILTER(WHERE owner_hash=$3 AND ${today}),0) AS owner_daily
+              FROM artwork_assets WHERE shop_id=$1`,
+              [input.shopId, input.collectedAt, input.ownerHash],
             )
           ).rows[0] ?? fail('CONFLICT');
+        const { owner, shop } = ARTWORK_POLICY;
         if (
-          Number(totals.unfinished) >= 5 ||
-          Number(totals.admissions) >= ARTWORK_POLICY.maxDailyUploads ||
-          Number(totals.daily) + input.declaredBytes > 100 * 1024 * 1024 ||
-          Number(totals.retained) + input.declaredBytes > 500 * 1024 * 1024
+          Number(totals.owner_unfinished) >= owner.unfinished ||
+          Number(totals.owner_admissions) >= owner.dailyUploads ||
+          Number(totals.owner_daily) + input.declaredBytes > owner.dailyBytes ||
+          Number(totals.unfinished) >= shop.unfinished ||
+          Number(totals.admissions) >= shop.dailyUploads ||
+          Number(totals.daily) + input.declaredBytes > shop.dailyBytes ||
+          Number(totals.retained) + input.declaredBytes > shop.retainedBytes
         )
           fail('UNAVAILABLE');
         const r = await c.query<Row>(

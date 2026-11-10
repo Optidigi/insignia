@@ -5,7 +5,7 @@ import { sql } from 'kysely';
 import { afterAll, describe, expect, it } from 'vitest';
 import { withTransaction } from '../src/client/database.js';
 import { PgAcceptedQuoteRepository } from '../src/repositories/accepted-quote.js';
-import { createBuyerRepository } from '../src/repositories/buyer.js';
+import { BUYER_SESSION_POLICY, createBuyerRepository } from '../src/repositories/buyer.js';
 import { CONFIG_DRAFT_STORAGE_VERSION, createConfigRepositoryInternal } from '../src/repositories/config.js';
 import { createPublicationRepository } from '../src/repositories/publication.js';
 import { createTestShop, openTestDatabase } from './support/postgres.js';
@@ -350,7 +350,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
       now = new Date('2026-10-12T14:00:00Z');
     const scope = { shopId, installationGeneration: '1', ownerHash: '0'.repeat(64) };
     const repo = createBuyerRepository(db);
-    for (let i = 0; i < 60; i++)
+    for (let i = 0; i < BUYER_SESSION_POLICY.shopIssuancePerMinute; i++)
       await repo.issueSession({
         scope: { ...scope, ownerHash: i.toString(16).padStart(64, '0') },
         sessionId: randomUUID(),
@@ -378,7 +378,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
     await expect(
       createBuyerRepository(db).saveDesign(scope, { id: randomUUID(), expectedVersion: 0, value: {}, now }),
     ).rejects.toMatchObject({ code: 'RATE_LIMITED' });
-  });
+    // Cleanup budgets are global; leave no bulk sessions ahead of later expiry assertions.
+    await sql`DELETE FROM buyer_sessions WHERE shop_id=${shopId}`.execute(db);
+  }, 60_000);
   it('restores only owned persisted sets and reconciles application vectors without changing quote history', async () => {
     const value = await effectiveFixture();
     const quoteId = randomUUID();
