@@ -222,23 +222,24 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable artwork ownership and
       await db.destroy();
     }
   });
-  it('bounds daily admissions even when one-byte uploads are rejected and erased', async () => {
+  it('bounds daily admissions per owner when one-byte uploads are rejected', async () => {
     const db = await openTestDatabase();
     try {
       const { shopId } = await ownTestShop(db);
       const scope = { shopId, installationGeneration: '1', kind: 'merchant' as const };
-      for (let count = 0; count < 100; count++) {
+      for (let count = 0; count < 30; count++) {
         const row = { ...record(shopId), declaredBytes: 1 };
         await store.create(row);
         await store.complete(scope, row.assetId, now);
         const claim = randomUUID();
         await store.claim(row.assetId, claim, now, new Date(+now + 60000));
         await store.reject(row.assetId, claim, 'INSPECTION_REJECTED', now);
-        await store.markDeleting(row.assetId, now);
-        await store.finishDeleting(row.assetId, now);
       }
       await expect(store.create({ ...record(shopId), declaredBytes: 1 })).rejects.toMatchObject({
         code: 'UNAVAILABLE',
+      });
+      await expect(store.create({ ...record(shopId), ownerHash: 'b'.repeat(64) })).resolves.toMatchObject({
+        ownerHash: 'b'.repeat(64),
       });
       const nextDay = new Date(+now + 86400000),
         next = record(shopId);
@@ -254,6 +255,66 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable artwork ownership and
       await db.destroy();
     }
   });
+  it("one visitor's abandoned uploads block neither another visitor nor themselves once the links expire", async () => {
+    const db = await openTestDatabase();
+    try {
+      const { shopId } = await ownTestShop(db);
+      const visitorA = 'a'.repeat(64),
+        visitorB = 'b'.repeat(64);
+      for (let count = 0; count < 5; count++) await store.create({ ...record(shopId), ownerHash: visitorA });
+      await expect(store.create({ ...record(shopId), ownerHash: visitorA })).rejects.toMatchObject({
+        code: 'UNAVAILABLE',
+      });
+      await expect(store.create({ ...record(shopId), ownerHash: visitorB })).resolves.toMatchObject({
+        ownerHash: visitorB,
+      });
+      // The 5-minute upload link has expired: completion is refused, so the upload no longer counts.
+      const linkExpired = new Date(+now + ARTWORK_POLICY.uploadMs);
+      await expect(
+        store.create({
+          ...record(shopId),
+          ownerHash: visitorA,
+          collectedAt: linkExpired,
+          uploadUntil: new Date(+linkExpired + ARTWORK_POLICY.uploadMs),
+          expiresAt: new Date(+linkExpired + ARTWORK_POLICY.retainedMs),
+        }),
+      ).resolves.toMatchObject({ ownerHash: visitorA });
+    } finally {
+      await db.destroy();
+    }
+  });
+  it('keeps shop-wide unfinished and daily ceilings across many visitors', async () => {
+    const db = await openTestDatabase();
+    try {
+      const { shopId } = await ownTestShop(db);
+      const seed = (rows: number, state: 'UPLOADING' | 'DELETED') =>
+        pool.query(
+          `INSERT INTO artwork_assets(asset_id,shop_id,installation_generation,owner_hash,declared_mime,declared_bytes,state,quarantine_key,original_key,preview_key,collected_at,upload_until,expires_at,owner_kind)
+           SELECT id,$1,1,CASE WHEN $6='DELETED' THEN NULL ELSE lpad(to_hex(n),64,'0') END,'image/png',1,$6,'quarantine/'||id,'original/'||id,'preview/'||id,$2,$3,$4,'guest'
+           FROM (SELECT n,gen_random_uuid() id FROM generate_series(1,$5::int) n) g`,
+          [
+            shopId,
+            now,
+            new Date(+now + ARTWORK_POLICY.uploadMs),
+            new Date(+now + ARTWORK_POLICY.retainedMs),
+            rows,
+            state,
+          ],
+        );
+      const fresh = () => ({ ...record(shopId), ownerHash: 'f'.repeat(64) });
+      await seed(ARTWORK_POLICY.shop.unfinished, 'UPLOADING');
+      await expect(store.create(fresh())).rejects.toMatchObject({ code: 'UNAVAILABLE' });
+      await pool.query('DELETE FROM artwork_assets WHERE shop_id=$1', [shopId]);
+      // Rejected and erased uploads no longer carry an owner, but still count toward the shop's day.
+      await seed(ARTWORK_POLICY.shop.dailyUploads - 1, 'DELETED');
+      await expect(store.create(fresh())).resolves.toMatchObject({ ownerHash: 'f'.repeat(64) });
+      await expect(store.create({ ...fresh(), ownerHash: 'e'.repeat(64) })).rejects.toMatchObject({
+        code: 'UNAVAILABLE',
+      });
+    } finally {
+      await db.destroy();
+    }
+  }, 60_000);
   it('re-sweeps tombstones within the bounded late-write window without restoring owner identity', async () => {
     const db = await openTestDatabase();
     try {

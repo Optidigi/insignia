@@ -144,6 +144,63 @@ test('private session survives another instance without persisting design or URL
     'sessionId',
   ]);
 });
+test('a tab whose unused session expired server-side mints one replacement and retries', async () => {
+  const values = new Map<string, string>();
+  const storage: Pick<Storage, 'getItem' | 'setItem'> = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value),
+  };
+  // The capability is still within its grant, but the server already expired the unused session.
+  values.set(
+    'insignia-buyer-session:/apps/insignia',
+    JSON.stringify({
+      capability: 'stale.def',
+      sessionId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      expiresAt: new Date(Date.now() + 86400000).toISOString(),
+    }),
+  );
+  let sessions = 0;
+  const used: string[] = [];
+  const fetchImpl: typeof fetch = async (input, init) => {
+    if (requestUrl(input).includes('/sessions'))
+      return Response.json({
+        capability: `fresh${++sessions}.def`,
+        sessionId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        expiresAt: new Date(Date.now() + 604800000).toISOString(),
+      });
+    const capability = String(jsonRecord(String(init?.body)).capability);
+    used.push(capability);
+    return capability === 'stale.def'
+      ? Response.json({ code: 'UNAUTHORIZED', message: 'Unauthorized' }, { status: 401 })
+      : Response.json({ groups: [], repairRequired: false });
+  };
+  const api = createBuyerApi({ proxyBase: '/apps/insignia', productId: '12', fetchImpl, storage });
+  await api.private('cart-state', {});
+  await api.private('cart-state', {});
+  assert.equal(sessions, 1);
+  assert.deepEqual(used, ['stale.def', 'fresh1.def', 'fresh1.def']);
+  assert.equal(jsonRecord(required(values.get('insignia-buyer-session:/apps/insignia'))).capability, 'fresh1.def');
+});
+
+test('a replacement session that is also rejected surfaces the error without looping', async () => {
+  let sessions = 0;
+  let privateCalls = 0;
+  const fetchImpl: typeof fetch = async (input) => {
+    if (requestUrl(input).includes('/sessions'))
+      return Response.json({
+        capability: `cap${++sessions}.def`,
+        sessionId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        expiresAt: new Date(Date.now() + 60000).toISOString(),
+      });
+    privateCalls++;
+    return Response.json({ code: 'UNAUTHORIZED', message: 'Unauthorized' }, { status: 401 });
+  };
+  const api = createBuyerApi({ proxyBase: '/apps/insignia', productId: '12', fetchImpl });
+  await assert.rejects(api.private('cart-state', {}), { status: 401 });
+  assert.equal(sessions, 2);
+  assert.equal(privateCalls, 2);
+});
+
 test('simultaneous product controls share one owner session before any private request', async () => {
   const values = new Map<string, string>();
   const storage: Pick<Storage, 'getItem' | 'setItem'> = {

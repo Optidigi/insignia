@@ -66,8 +66,8 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       );
       const migrations = new URL('../migrations/', import.meta.url);
       const names = (await readdir(migrations)).filter((n) => n.endsWith('.sql')).sort();
-      expect(names).toHaveLength(52);
-      expect(names.slice(-14)).toEqual([
+      expect(names).toHaveLength(53);
+      expect(names.slice(-15)).toEqual([
         '20261017000200_privacy_merchant_export.sql',
         '20261017000300_shop_privacy_staging.sql',
         '20261018000100_method_catalog.sql',
@@ -82,6 +82,7 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
         '20261105000500_purchase_order_labels.sql',
         '20261107000100_restoration_no_dispatch_retry.sql',
         '20261109000100_buyer_acceptance_decline.sql',
+        '20261110000100_buyer_visitor_limits.sql',
       ]);
       for (const file of names.slice(0, 20))
         await owner.query((await readFile(new URL(file, migrations), 'utf8')).split('-- migrate:down')[0]!);
@@ -230,10 +231,18 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
         scope: buyerScope,
         sessionId: randomUUID(),
         now,
-        expiresAt: new Date(+now + 86400000),
+        expiresAt: new Date(+now + 2 * 86400000),
       });
       const design = randomUUID();
+      // The first design extends the unused 24-hour session to its grant through UPDATE(expires_at).
       await core.buyers.saveDesign(buyerScope, { id: design, expectedVersion: 0, value: { placements: [] }, now });
+      expect((await core.buyers.getDesign(buyerScope, design, now))?.expiresAt).toEqual(new Date(+now + 2 * 86400000));
+      // The web login cannot choose any other session deadline.
+      await expect(
+        web.query("UPDATE buyer_sessions SET expires_at=expires_at+interval '1 day' WHERE session_id=$1", [
+          session.sessionId,
+        ]),
+      ).rejects.toMatchObject({ code: '23514' });
       await core.buyers.saveDesign(buyerScope, {
         id: design,
         expectedVersion: 1,
@@ -324,7 +333,7 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       for (const bad of [
         { ...declineInput, buyerCommand: { ...declineInput.buyerCommand, ownerHash: 'b'.repeat(64) } },
         { ...declineInput, buyerCommand: { ...declineInput.buyerCommand, requestDigest: '4'.repeat(64) } },
-        { ...declineInput, buyerCommand: { ...declineInput.buyerCommand, now: new Date(+now + 86400000) } },
+        { ...declineInput, buyerCommand: { ...declineInput.buyerCommand, now: new Date(+now + 2 * 86400000) } },
         { ...declineInput, shopId: randomUUID() },
       ])
         await expect(core.acceptedQuotes.resolveBuyerAcceptance(bad)).rejects.toThrow();

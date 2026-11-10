@@ -27,6 +27,17 @@ function bounded(value: unknown, bytes: number) {
   if (!encoded || Buffer.byteLength(encoded) > bytes) fail('INVALID');
   return encoded;
 }
+/**
+ * Shop-wide safety ceilings sit far above legitimate traffic; the App Proxy signs no anonymous
+ * visitor identity, so per-visitor protection comes from short-lived unused sessions.
+ */
+export const BUYER_SESSION_POLICY = {
+  shopIssuancePerMinute: 600,
+  shopActiveSessions: 100_000,
+  unusedSessionMs: 86_400_000,
+  maxSessionMs: 604_800_000,
+  sessionWritesPerMinute: 60,
+} as const;
 function validScope(scope: BuyerScope) {
   if (!/^[a-f0-9]{64}$/.test(scope.ownerHash) || !/^[1-9][0-9]*$/.test(scope.installationGeneration)) fail('INVALID');
 }
@@ -35,7 +46,14 @@ export function createBuyerRepository(db: Kysely<Database>) {
   async function session(tx: Kysely<Database>, scope: BuyerScope, now: Date, lock = false) {
     validScope(scope);
     return (
-      await sql<{ session_id: string; expires_at: Date; created_at: Date; write_window: Date; write_count: number }>`
+      await sql<{
+        session_id: string;
+        expires_at: Date;
+        grant_expires_at: Date | null;
+        created_at: Date;
+        write_window: Date;
+        write_count: number;
+      }>`
       SELECT b.* FROM buyer_sessions b WHERE b.shop_id=${scope.shopId} AND b.installation_generation=${scope.installationGeneration}::bigint
       AND b.owner_hash=${scope.ownerHash} AND b.created_at<=${now} AND b.expires_at>${now} AND ${active} ${lock ? sql`FOR UPDATE` : sql``}`.execute(
         tx,
@@ -68,10 +86,18 @@ export function createBuyerRepository(db: Kysely<Database>) {
     now: Date,
   ) {
     const reset = +now >= +row.write_window + 60000;
-    if (!reset && row.write_count >= 60) fail('RATE_LIMITED');
+    if (!reset && row.write_count >= BUYER_SESSION_POLICY.sessionWritesPerMinute) fail('RATE_LIMITED');
     await sql`UPDATE buyer_sessions SET write_window=${reset ? now : row.write_window},write_count=${reset ? 1 : row.write_count + 1} WHERE session_id=${row.session_id}::uuid`.execute(
       tx,
     );
+  }
+  /** The first stored design or proposal extends an unused session once, to its capability grant. */
+  async function retain(tx: Transaction<Database>, row: NonNullable<Awaited<ReturnType<typeof session>>>) {
+    if (!row.grant_expires_at || +row.expires_at >= +row.grant_expires_at) return row;
+    await sql`UPDATE buyer_sessions SET expires_at=grant_expires_at WHERE session_id=${row.session_id}::uuid`.execute(
+      tx,
+    );
+    return { ...row, expires_at: row.grant_expires_at };
   }
   function validCommand(input: BuyerCommandIdentity) {
     if (
@@ -135,9 +161,24 @@ export function createBuyerRepository(db: Kysely<Database>) {
       if (row && row.request_digest !== input.requestDigest) fail('CONFLICT');
       return row?.declined_at != null;
     },
-    /** Commit admission before authoritative provider work, including failures in later commands. */
+    /**
+     * Commit admission before authoritative provider work, including failures in later commands.
+     * One atomic per-session counter update: no shop or installation row lock, so admission never
+     * waits behind an acceptance holding the shop.
+     */
     async admitRequest(scope: BuyerScope, now: Date) {
-      return write(scope, now, async () => undefined);
+      validScope(scope);
+      const limit = BUYER_SESSION_POLICY.sessionWritesPerMinute;
+      const charged = await sql`UPDATE buyer_sessions b SET
+          write_window=CASE WHEN ${now}::timestamptz>=b.write_window+interval '60 seconds' THEN ${now}::timestamptz ELSE b.write_window END,
+          write_count=CASE WHEN ${now}::timestamptz>=b.write_window+interval '60 seconds' THEN 1 ELSE b.write_count+1 END
+        WHERE b.shop_id=${scope.shopId} AND b.installation_generation=${scope.installationGeneration}::bigint
+          AND b.owner_hash=${scope.ownerHash} AND b.created_at<=${now} AND b.expires_at>${now} AND ${active}
+          AND (${now}::timestamptz>=b.write_window+interval '60 seconds' OR b.write_count<${limit})
+        RETURNING b.session_id`.execute(db);
+      if (charged.rows.length) return;
+      if (await session(db, scope, now)) fail('RATE_LIMITED');
+      fail('NOT_FOUND');
     },
     /** Pending reservations consume one of 64 session issuance slots; uncertainty never refunds a slot. */
     async reserveCommand(
@@ -239,7 +280,7 @@ export function createBuyerRepository(db: Kysely<Database>) {
     }): Promise<BuyerSession> {
       const { scope, now, expiresAt, sessionId } = input;
       validScope(scope);
-      if (!(+expiresAt > +now && +expiresAt <= +now + 604800000)) fail('INVALID');
+      if (!(+expiresAt > +now && +expiresAt <= +now + BUYER_SESSION_POLICY.maxSessionMs)) fail('INVALID');
       return db.transaction().execute(async (tx) => {
         const tenant =
           await sql`SELECT s.shop_id FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=${scope.shopId} AND s.current_generation=${scope.installationGeneration}::bigint AND i.deactivated_at IS NULL FOR UPDATE OF s,i`.execute(
@@ -247,7 +288,7 @@ export function createBuyerRepository(db: Kysely<Database>) {
           );
         if (!tenant.rows.length) fail('NOT_FOUND');
         const old = await session(tx, scope, now);
-        if (old) return { sessionId: old.session_id, expiresAt: old.expires_at };
+        if (old) return { sessionId: old.session_id, expiresAt: old.grant_expires_at ?? old.expires_at };
         // Expired owner tokens never revive or gain a new deadline.
         const used =
           await sql`SELECT 1 FROM buyer_sessions WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND owner_hash=${scope.ownerHash}`.execute(
@@ -263,7 +304,7 @@ export function createBuyerRepository(db: Kysely<Database>) {
           )
         ).rows[0];
         const reset = !admission || +now >= +admission.window_at + 60000;
-        if (admission && !reset && admission.issued >= 60) fail('RATE_LIMITED');
+        if (admission && !reset && admission.issued >= BUYER_SESSION_POLICY.shopIssuancePerMinute) fail('RATE_LIMITED');
         const n = (
           await sql<{
             n: string;
@@ -271,19 +312,22 @@ export function createBuyerRepository(db: Kysely<Database>) {
             tx,
           )
         ).rows[0];
-        if (Number(n?.n) >= 1000) fail('RATE_LIMITED');
+        if (Number(n?.n) >= BUYER_SESSION_POLICY.shopActiveSessions) fail('RATE_LIMITED');
+        // Unused sessions expire early; first use extends them to the full capability grant.
+        const unusedUntil = new Date(Math.min(+expiresAt, +now + BUYER_SESSION_POLICY.unusedSessionMs));
         await sql`INSERT INTO buyer_admission VALUES(${scope.shopId},${scope.installationGeneration}::bigint,${reset ? now : (admission?.window_at ?? now)},${reset ? 1 : (admission?.issued ?? 0) + 1}) ON CONFLICT(shop_id,installation_generation) DO UPDATE SET window_at=EXCLUDED.window_at,issued=EXCLUDED.issued`.execute(
           tx,
         );
-        await sql`INSERT INTO buyer_sessions(session_id,shop_id,installation_generation,owner_hash,created_at,expires_at,write_window) VALUES(${sessionId}::uuid,${scope.shopId},${scope.installationGeneration}::bigint,${scope.ownerHash},${now},${expiresAt},${now})`.execute(
+        await sql`INSERT INTO buyer_sessions(session_id,shop_id,installation_generation,owner_hash,created_at,expires_at,grant_expires_at,write_window) VALUES(${sessionId}::uuid,${scope.shopId},${scope.installationGeneration}::bigint,${scope.ownerHash},${now},${unusedUntil},${expiresAt},${now})`.execute(
           tx,
         );
         return { sessionId, expiresAt };
       });
     },
+    /** expiresAt is the lifetime private state may use; an unused session is live for 24 hours only. */
     async getSession(scope: BuyerScope, now: Date): Promise<BuyerSession | null> {
       const row = await session(db, scope, now);
-      return row ? { sessionId: row.session_id, expiresAt: row.expires_at } : null;
+      return row ? { sessionId: row.session_id, expiresAt: row.grant_expires_at ?? row.expires_at } : null;
     },
     async saveDesign(
       scope: BuyerScope,
@@ -296,7 +340,8 @@ export function createBuyerRepository(db: Kysely<Database>) {
         input.expectedVersion >= 2147483647
       )
         fail('INVALID');
-      return write(scope, input.now, async (tx, row) => {
+      return write(scope, input.now, async (tx, live) => {
+        const row = await retain(tx, live);
         const expiresAt = input.expiresAt ?? row.expires_at;
         if (!(+expiresAt > +input.now && +expiresAt <= +row.expires_at)) fail('INVALID');
         if (input.expectedVersion === 0) {
@@ -347,7 +392,8 @@ export function createBuyerRepository(db: Kysely<Database>) {
     ): Promise<BuyerProposal> {
       const request = bounded(input.request, 120000),
         candidate = bounded(input.candidate, 240000);
-      return write(scope, input.now, async (tx, row) => {
+      return write(scope, input.now, async (tx, live) => {
+        const row = await retain(tx, live);
         const retainPrivateUntil = input.retainPrivateUntil ?? row.expires_at;
         if (
           !(

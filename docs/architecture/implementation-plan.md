@@ -456,7 +456,7 @@ The buyer flow is implemented by `server/buyer/http.ts` behind `pages/api/artwor
 | Method/path | Input and result |
 |---|---|
 | GET `/v1/config` | Product and current selection context → current published revision ID, safe config DTO, image/placement choices and readiness |
-| POST `/v1/sessions` | Signed shop context → guest capability and expiry; rate-limited, no cookie reliance |
+| POST `/v1/sessions` | Signed shop context → guest capability and expiry; no cookie reliance. Shop-wide safety ceilings only (the App Proxy signs no anonymous visitor identity); a session that never stores a design or proposal expires after 24 hours, and first use extends it once to the capability grant (at most 7 days) |
 | POST `/api/artwork/guest` | Capability, declared metadata, idempotency key → upload ID, quarantine PUT URL, constraints and expiry |
 | POST `/api/artwork/guest/:id/complete` | Capability + upload ID → idempotently queue inspection, return status |
 | POST `/api/artwork/guest/:id/status` | Owner capability → inspection result and safe derivative reference; never arbitrary object-key access |
@@ -596,7 +596,7 @@ Jobs carry resource IDs and expected versions, not copies of full artwork, secre
 
 ### 12.1 Upload and immutable promotion
 
-1. Verify App Proxy plus guest/merchant resource capability, file declaration, tenant quotas and concurrent upload limit.
+1. Verify App Proxy plus guest/merchant resource capability, file declaration, per-owner quotas and concurrent upload limit, and shop-wide safety ceilings. An upload stops counting as unfinished when its upload link expires.
 2. Allocate random quarantine object key and short-lived presigned PUT. Pin allowed metadata where the storage signature supports it; do not rely on browser size checks or CORS for security.
 3. Complete is idempotent and only queues inspection. Observe object size/type; download through a bounded stream to an isolated temporary workspace.
 4. Inspect **those exact bytes**: original length/hash, magic/type, dimension/pixel/animation/resource checks, SVG structure/policy where applicable, successful decode and preview rendering.

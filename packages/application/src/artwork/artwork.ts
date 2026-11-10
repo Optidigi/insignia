@@ -3,7 +3,18 @@ import { localDay, type QuoteArtworkPort } from '../quote/accept-quote.js';
 
 export const ARTWORK_POLICY = {
   maxBytes: 5 * 1024 * 1024,
-  maxDailyUploads: 100,
+  /**
+   * Admission counts per owner (one buyer session or one merchant upload capability), with
+   * shop-wide safety ceilings far above legitimate traffic. An upload is unfinished while its
+   * upload link is valid or its completed bytes await inspection.
+   */
+  owner: { unfinished: 5, dailyUploads: 30, dailyBytes: 100 * 1024 * 1024 },
+  shop: {
+    unfinished: 200,
+    dailyUploads: 5_000,
+    dailyBytes: 5 * 1024 * 1024 * 1024,
+    retainedBytes: 50 * 1024 * 1024 * 1024,
+  },
   uploadMs: 300_000,
   incompleteMs: 86_400_000,
   retainedMs: 7 * 86_400_000,

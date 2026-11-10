@@ -156,6 +156,7 @@ export function createBuyerApi({
         try {
           const value = JSON.parse(saved);
           if (
+            value &&
             typeof value.capability === 'string' &&
             typeof value.sessionId === 'string' &&
             Date.parse(value.expiresAt) > Date.now()
@@ -202,6 +203,27 @@ export function createBuyerApi({
     );
     return value;
   }
+  /**
+   * The server expires a session that never stored a design or proposal after 24 hours, before
+   * its capability does. A 401 is returned before any command runs, so mint one replacement.
+   */
+  async function authorized<T>(run: (capability: string) => Promise<T>): Promise<T> {
+    const token = await grant();
+    const held = session;
+    try {
+      return await run(token.capability);
+    } catch (error) {
+      if ((error as { status?: unknown }).status !== 401) throw error;
+      const sessionMount = proxyBase.slice(proxyBase.lastIndexOf('/apps/'));
+      const storageKey = `insignia-buyer-session:${sessionMount}`;
+      if (session === held) session = undefined;
+      const shared = storage ? pendingSessions.get(storage) : undefined;
+      if (shared && shared.get(sessionMount) === held) shared.delete(sessionMount);
+      // Another instance may already have stored a replacement; only the rejected session is forgotten.
+      if (storage?.getItem(storageKey)?.includes(JSON.stringify(token.capability))) storage.setItem(storageKey, 'null');
+      return run((await grant()).capability);
+    }
+  }
   return {
     config: (signal?: AbortSignal, targetProduct = productId) => {
       if (!/^[1-9][0-9]{0,19}$/.test(targetProduct)) throw new Error('Invalid product');
@@ -218,8 +240,7 @@ export function createBuyerApi({
       method: 'POST' | 'PUT' = 'POST',
     ) {
       if (!/^[a-z-]+(?:\/[a-zA-Z0-9-]+)*(?:\/[a-z-]+)?$/.test(path)) throw new Error('Invalid buyer action');
-      const token = await grant();
-      return request<T>(`${proxyBase}/v1/${path}`, { ...body, capability: token.capability }, signal, method);
+      return authorized((capability) => request<T>(`${proxyBase}/v1/${path}`, { ...body, capability }, signal, method));
     },
     async confirmCartApplication(id: string, body: Record<string, unknown>): Promise<void> {
       if (!/^[a-zA-Z0-9-]{1,128}$/.test(id)) throw new Error('Invalid cart application');
@@ -247,11 +268,12 @@ export function createBuyerApi({
     artwork: async <T>(path: string, init: RequestInit = {}): Promise<T> => {
       if (!/^\/api\/artwork(?:\/[a-f0-9-]+\/(?:complete|status|preview))?$/.test(path))
         throw new Error('Invalid artwork action');
-      const token = await grant();
-      return request<T>(
-        `${proxyBase}/guest${path.slice('/api/artwork'.length)}`,
-        { ...(init.body ? JSON.parse(String(init.body)) : {}), capability: token.capability },
-        init.signal ?? undefined,
+      return authorized((capability) =>
+        request<T>(
+          `${proxyBase}/guest${path.slice('/api/artwork'.length)}`,
+          { ...(init.body ? JSON.parse(String(init.body)) : {}), capability },
+          init.signal ?? undefined,
+        ),
       );
     },
   };
