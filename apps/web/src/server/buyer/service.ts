@@ -13,7 +13,7 @@ import {
   quoteRequestDigest,
   renewQuote,
 } from '@insignia/application';
-import { decodeLineCarrierV3, LINE_ATTRIBUTE } from '@insignia/cart-authorization';
+import { decodeLineCarrierV3, LINE_ATTRIBUTE, PREFIX_V3_CHARS } from '@insignia/cart-authorization';
 import {
   type BuyerDesired,
   type BuyerDesiredGroup,
@@ -61,11 +61,14 @@ const desired = (request: QuoteRequest): BuyerDesiredGroup[] =>
     const { shopId: _shop, version: _version, ...value } = group;
     return value;
   });
-/** One cart bucket per economics line, in quote-global line order, carrying only its v3 line carrier. */
+/** One cart bucket per economics line, in quote-global line order, carrying only its v3 line carrier.
+ * A replayed pre-cutover (v2) acceptance has no v3 carriers: the buyer reviews again instead. */
 function buckets(result: AcceptedQuoteResult): Bucket[] {
+  if (result.authorization.envelopeCarrier.length !== PREFIX_V3_CHARS) return review();
   return result.quote.economics.lines.map((line, i) => {
     const member = result.authorization.members[i];
-    if (!member || member.lineIndex !== i) return review();
+    if (!member || member.lineIndex !== i || !member.carrier.startsWith(result.authorization.envelopeCarrier))
+      return review();
     return {
       variantId: line.variantId,
       quantity: line.quantity,
