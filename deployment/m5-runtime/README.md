@@ -4,6 +4,14 @@ This directory retains the actual deployment configuration/data boundary; its `m
 
 Active VPS management custody is `%h/.local/share/insignia/runtime/`. Some live mounts and database Compose configuration still reference the older `insignia-m8-runtime-20261013-pr114` and `insignia-m5-verify-20261012-r2` directories. Their historical names do not make those dependencies disposable. Inspect current mounts/configuration before removing or relocating anything.
 
+## Expected Function configuration
+
+Source from this change onward takes each Function's expected input-query fingerprint from the trusted release record (Active version plus module baseline, including the query), the same authority admin activation, signing and checkout admission already use. The private web value `INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON` needs only `{"appKey":"<SHOPIFY_CLIENT_ID>"}` and no longer changes at a Function release.
+
+Live Shopify Admin returns `inputQuery: null` for both owned Functions. Observation v2 records that as not observable (`inputQuerySha256: null`) and does not compare it; the trusted release record is the query gate, and readiness still fails closed without a fresh release-bound record. If Admin returns a query, it must equal the record's.
+
+Operator migration: none is required. The legacy `transformInputQuerySha256`, `validationInputQuerySha256` and `observationVersion` fields are still accepted (64-hex and `2` when present), then ignored. Images built before this change require them, so keep them until rollback to such an image is no longer needed, then reduce the value to `appKey` only.
+
 ## Functions renew candidate development transition
 
 `native-functions-renew-8fffc9de` binds inactive version 1202733449217, the complete 33-version inventory in [native-functions-renew-release-binding.json](native-functions-renew-release-binding.json) and the exact 14-module [baseline](native-functions-renew-module-baseline.json). Canonical hash is `6bbac54719093f8ab867fe199e70bddf5b7e40f4b6404c046d4deb74b573cb9a`. Source is merge 8fffc9de/tree 00b71102: PR293 (a stale quote with no marked line checks out as a plain cart; one checkout message localized by `localization.language`) and PR294 (cart renewal and context notice). All 23 theme files, including 14 assets, match foundation run 42887198952/attempt 1. Prior 1202503778305 remains sole Active; all NEVER_RELEASE versions remain inactive.
@@ -17,7 +25,7 @@ Active VPS management custody is `%h/.local/share/insignia/runtime/`. Some live 
 
 Shopify exposes no wasm hash. It reports `module_wasm_size_bytes` and a new `module_id`, and both match this build. The CI foundation wasm differs from these bytes because it embeds `/home/runner/.cargo` registry paths. It is not the release artifact. Each release profile now names its own Function source and artifacts (`scripts/release/profiles.mts`); every earlier profile keeps the original 9b94149 pins.
 
-At activation (Phase B) the operator must also change the private web `runtime.env` value `INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON`: set `validationInputQuerySha256` to `5baff05ac4b1967bc7c9b461b7d6a8956344ddd8c9233708534e8814b34ebcc4`. Keep `transformInputQuerySha256` at `8d93a086…`, and keep `appKey` and `observationVersion: 2`. That JSON contains no wasm hashes. Set `INSIGNIA_RELEASE_PROFILE=native-functions-renew-8fffc9de` in web, worker and verifier together. If an `eur-nl-qualification-v1` profile is configured, its `activeVersionRef`/`functionsSourceCommit` no longer match and EUR stays fail-closed; EUR is not currently enabled. Use matching binding-head images and verifier manifest, release once, then obtain fresh independent admission. This binding is not activation or native acceptance.
+At activation (Phase B) the operator must also change the private web `runtime.env` value `INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON` (required by images of this source; later source no longer reads the query fields, see [Expected Function configuration](#expected-function-configuration)): set `validationInputQuerySha256` to `5baff05ac4b1967bc7c9b461b7d6a8956344ddd8c9233708534e8814b34ebcc4`. Keep `transformInputQuerySha256` at `8d93a086…`, and keep `appKey` and `observationVersion: 2`. That JSON contains no wasm hashes. Set `INSIGNIA_RELEASE_PROFILE=native-functions-renew-8fffc9de` in web, worker and verifier together. If an `eur-nl-qualification-v1` profile is configured, its `activeVersionRef`/`functionsSourceCommit` no longer match and EUR stays fail-closed; EUR is not currently enabled. Use matching binding-head images and verifier manifest, release once, then obtain fresh independent admission. This binding is not activation or native acceptance.
 
 ## Cart repair candidate development transition
 

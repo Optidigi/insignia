@@ -7,7 +7,7 @@ import {
   type SupportedCheckoutPurchasePort,
 } from '@insignia/application';
 import type { AdminCredentialSource } from '../contextual-pricing.js';
-import { createFunctionOwnershipReconciler } from '../function-ownership.js';
+import { createFunctionOwnershipReconciler, expectedFunctionOwnership } from '../function-ownership.js';
 import { createPublicationAdminHttpTransport } from '../publication-admin.js';
 
 /** Trusted native qualification, never derived from a source label or browser input. */
@@ -104,12 +104,7 @@ export function createShopifyCheckoutPurchaseAdmission(config: CheckoutAdmission
             appId,
             shopifyShopId: `gid://shopify/Shop/${active.shopifyShopId}`,
           },
-          {
-            appKey: appClientId,
-            transformInputQuerySha256: expected.transform.inputQuerySha256,
-            validationInputQuerySha256: expected.validation.inputQuerySha256,
-            ...(expected.schemaVersion === 2 ? { observationVersion: 2 as const } : {}),
-          },
+          expectedFunctionOwnership(appClientId, expected),
         );
         if (owned.transform !== 'present' || owned.validation !== 'present') return null;
         const current = await config.tenants.getActiveProviderScope(target);

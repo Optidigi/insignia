@@ -4,7 +4,6 @@ import {
   createActiveSubscriptionClient,
   createPartnerGraphqlTransport,
   createShopifyOfflineRefreshTransport,
-  type ExpectedFunctionOwnership,
   resolveRuntimeReleaseProfile,
 } from '@insignia/shopify';
 import { Pool, type PoolConfig } from 'pg';
@@ -81,20 +80,26 @@ function policy(text: string): EntitlementPolicyConfig {
   }
   return value as unknown as EntitlementPolicyConfig;
 }
-function expectedFunctions(text: string, appKey: string): ExpectedFunctionOwnership {
+/**
+ * Only `appKey` is required. Expected Function input queries come from the
+ * trusted release record, so they change with each Function release without an
+ * operator edit. The former query fields are still accepted (shape-checked,
+ * then ignored) so an existing configuration keeps working; remove them at a
+ * convenient deployment.
+ */
+function expectedFunctions(text: string, appKey: string): { appKey: string } {
   if (text.length > 4096) throw new Error('Buyer configuration unavailable');
   const value = record(JSON.parse(text));
-  exact(value, ['appKey', 'transformInputQuerySha256', 'validationInputQuerySha256', 'observationVersion']);
+  exact(value, ['appKey'], ['transformInputQuerySha256', 'validationInputQuerySha256', 'observationVersion']);
+  const digest = (field: unknown) => field === undefined || (typeof field === 'string' && /^[a-f0-9]{64}$/.test(field));
   if (
     value.appKey !== appKey ||
-    value.observationVersion !== 2 ||
-    typeof value.transformInputQuerySha256 !== 'string' ||
-    !/^[a-f0-9]{64}$/.test(value.transformInputQuerySha256) ||
-    typeof value.validationInputQuerySha256 !== 'string' ||
-    !/^[a-f0-9]{64}$/.test(value.validationInputQuerySha256)
+    (value.observationVersion !== undefined && value.observationVersion !== 2) ||
+    !digest(value.transformInputQuerySha256) ||
+    !digest(value.validationInputQuerySha256)
   )
     throw new Error('Buyer configuration unavailable');
-  return value as unknown as ExpectedFunctionOwnership;
+  return { appKey };
 }
 
 /** Explicit runtime enable gate; no provisioning or manufactured release evidence.

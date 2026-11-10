@@ -30,14 +30,15 @@ function environment() {
         },
       ],
     }),
-    INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON: JSON.stringify({
-      appKey: 'synthetic-app',
-      transformInputQuerySha256: 'a'.repeat(64),
-      validationInputQuerySha256: 'b'.repeat(64),
-      observationVersion: 2,
-    }),
+    INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON: JSON.stringify({ appKey: 'synthetic-app' }),
   };
 }
+const legacyExpectedFunctions = {
+  appKey: 'synthetic-app',
+  transformInputQuerySha256: 'a'.repeat(64),
+  validationInputQuerySha256: 'b'.repeat(64),
+  observationVersion: 2,
+};
 function seam() {
   let allocated = 0,
     closed = 0,
@@ -126,12 +127,15 @@ test('missing or malformed actual resources fail before core allocation without 
     { INSIGNIA_CREDENTIAL_KEY_BASE64: 'invalid' },
     { INSIGNIA_PARTNER_ACCESS_TOKEN: undefined },
     { INSIGNIA_M5_ENTITLEMENT_POLICY_JSON: '{}' },
+    { INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON: JSON.stringify({ ...legacyExpectedFunctions, appKey: 'other' }) },
+    { INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON: JSON.stringify({ appKey: 'other' }) },
+    { INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON: JSON.stringify({}) },
+    { INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON: JSON.stringify({ appKey: 'synthetic-app', unknown: true }) },
+    { INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON: JSON.stringify({ ...legacyExpectedFunctions, observationVersion: 1 }) },
     {
       INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON: JSON.stringify({
-        appKey: 'other',
-        transformInputQuerySha256: 'a'.repeat(64),
-        validationInputQuerySha256: 'b'.repeat(64),
-        observationVersion: 2,
+        ...legacyExpectedFunctions,
+        validationInputQuerySha256: 'X',
       }),
     },
   ]) {
@@ -385,10 +389,7 @@ test('buyer bootstrap accepts bounded formatted JSON configuration used by the d
     required(value.getComposition()).entitlementPolicy,
     JSON.parse(env.INSIGNIA_M5_ENTITLEMENT_POLICY_JSON),
   );
-  assert.deepEqual(
-    required(value.getComposition()).expectedFunctions,
-    JSON.parse(env.INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON),
-  );
+  assert.deepEqual(required(value.getComposition()).expectedFunctions, { appKey: 'synthetic-app' });
   for (const invalid of ['\n', '\nnot-json\n', '[{}]', ' '.repeat(16385)]) {
     const denied = seam();
     assert.equal(
@@ -397,4 +398,11 @@ test('buyer bootstrap accepts bounded formatted JSON configuration used by the d
     );
     assert.deepEqual(denied.stats(), { allocated: 0, closed: 0 });
   }
+});
+
+test('legacy expected-Function query fields are accepted and ignored; the trusted release record supplies queries', async () => {
+  const value = seam();
+  const env = { ...environment(), INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON: JSON.stringify(legacyExpectedFunctions) };
+  assert.equal(await createBuyerBootstrap(env, value.dependencies), value.services);
+  assert.deepEqual(required(value.getComposition()).expectedFunctions, { appKey: 'synthetic-app' });
 });

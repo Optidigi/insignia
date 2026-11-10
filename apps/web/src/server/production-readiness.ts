@@ -11,7 +11,7 @@ import type { DurableCore } from '@insignia/database';
 import {
   createFunctionOwnershipReconciler,
   createPublicationAdminAdapter,
-  type ExpectedFunctionOwnership,
+  expectedFunctionOwnership,
   type PublicationAdminTransport,
 } from '@insignia/shopify';
 
@@ -45,7 +45,8 @@ export function createProductionQuoteReadiness(input: {
   ring: SigningKeyRing;
   selectedKeyId: number;
   appId: string;
-  expectedFunctions: ExpectedFunctionOwnership;
+  /** Only the app key: expected Function queries come from the trusted release record. */
+  expectedFunctions: { appKey: string };
   transport: PublicationAdminTransport;
   maxObservationAgeMs: number;
   clock?: () => Date;
@@ -109,12 +110,10 @@ export function createProductionQuoteReadiness(input: {
         artifactPorts.expectedBuild.read(artifactScope),
         artifactPorts.trustedEvidence.read(artifactScope),
       ]);
-      const functionObservation = artifacts.then(([expectedBuild]) =>
-        functions.read(tenant, {
-          ...input.expectedFunctions,
-          ...(expectedBuild?.schemaVersion === 2 ? { observationVersion: 2 as const } : {}),
-        }),
-      );
+      const functionObservation = artifacts.then(([expectedBuild]) => {
+        if (!expectedBuild) throw new Error('Function artifact expected build unavailable');
+        return functions.read(tenant, expectedFunctionOwnership(input.expectedFunctions.appKey, expectedBuild));
+      });
       const [observed, [expectedBuild, attestation], owned, effective] = await Promise.all([
         admin.read({ ...tenant, field: 'public_config' }).then((value) => {
           if (!value) throw new Error('Public Function config missing');

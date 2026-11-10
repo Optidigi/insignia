@@ -91,11 +91,7 @@ function fixture() {
       throw new Error('provider unavailable');
     },
     artifactPorts: { expectedBuild: { read: async () => null }, trustedEvidence: { read: async () => null } },
-    expectedFunctions: {
-      appKey: 'synthetic-app-key',
-      transformInputQuerySha256: 'a'.repeat(64),
-      validationInputQuerySha256: 'b'.repeat(64),
-    },
+    expectedFunctions: { appKey: 'synthetic-app-key' },
     readVariantAvailability: async () => {
       throw new Error('inventory unavailable');
     },
