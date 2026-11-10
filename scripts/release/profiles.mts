@@ -3,6 +3,8 @@
 import assert from 'node:assert/strict';
 import behaviorModules from '../../deployment/m5-runtime/native-behavior-module-baseline.json' with { type: 'json' };
 import behaviorCandidate from '../../deployment/m5-runtime/native-behavior-release-binding.json' with { type: 'json' };
+import canonicalModules from '../../deployment/m5-runtime/native-canonical-module-baseline.json' with { type: 'json' };
+import canonicalBinding from '../../deployment/m5-runtime/native-canonical-release-binding.json' with { type: 'json' };
 import cartModules from '../../deployment/m5-runtime/native-cart-module-baseline.json' with { type: 'json' };
 import cartCandidate from '../../deployment/m5-runtime/native-cart-release-binding.json' with { type: 'json' };
 import fixedModules from '../../deployment/m5-runtime/native-fixed-module-baseline.json' with { type: 'json' };
@@ -82,6 +84,14 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  'native-canonical-313b12ad': {
+    versionId: canonicalBinding.versionId,
+    versionTag: canonicalBinding.versionTag,
+    versionIds: canonicalBinding.versionIds,
+    moduleHash: canonicalBinding.moduleHash,
+    modules: canonicalModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+  },
   'native-review-nav-8a7ee446': {
     versionId: reviewNavBinding.versionId,
     versionTag: reviewNavBinding.versionTag,
