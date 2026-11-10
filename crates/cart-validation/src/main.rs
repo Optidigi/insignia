@@ -24,7 +24,7 @@ fn empty() -> schema::CartValidationsGenerateRunResult {
 fn review_message(language: &str) -> &'static str {
     match language {
         "NL" => "Je gepersonaliseerde artikelen moeten worden gecontroleerd voordat je afrekent. Ga terug naar je winkelwagen om ze bij te werken.",
-        "DE" => "Ihre personalisierten Artikel müssen vor dem Bezahlen überprüft werden. Kehren Sie zu Ihrem Warenkorb zurück, um sie zu aktualisieren.",
+        "DE" => "Deine personalisierten Artikel müssen vor dem Bezahlen überprüft werden. Kehre zu deinem Warenkorb zurück, um sie zu aktualisieren.",
         "FR" => "Vos articles personnalisés doivent être vérifiés avant le paiement. Revenez à votre panier pour les mettre à jour.",
         "ES" => "Debes revisar tus artículos personalizados antes de pagar. Vuelve a tu carrito para actualizarlos.",
         "IT" => "Devi controllare gli articoli personalizzati prima del pagamento. Torna al carrello per aggiornarli.",
@@ -413,7 +413,7 @@ mod tests {
         for (code, start) in [
             ("EN", "Your customized items need review"),
             ("NL", "Je gepersonaliseerde artikelen"),
-            ("DE", "Ihre personalisierten Artikel"),
+            ("DE", "Deine personalisierten Artikel"),
             ("FR", "Vos articles personnalisés"),
             ("ES", "Debes revisar tus artículos"),
             ("IT", "Devi controllare gli articoli"),
