@@ -460,15 +460,40 @@ export class InsigniaCartRepair extends HTMLElement {
     void fetch(`${cartRoot}cart.js`, { cache: 'no-store', signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) return;
-        const cart = (await response.json()) as { items?: CartJsLine[] };
+        const cart = (await response.json()) as { items?: CartJsLine[]; attributes?: Record<string, unknown> };
         if (controller.signal.aborted || this.abort !== controller) return;
         const customized = (cart.items ?? []).filter(isCustomized);
         const changed = customized.find(customizedLineNeedsReview);
         const line = changed ?? customized[0];
-        if (!line) this.replaceChildren();
-        else this.render(String(line.product_id), !!changed);
+        if (line) {
+          this.render(String(line.product_id), !!changed);
+          return;
+        }
+        this.replaceChildren();
+        if (cart.attributes?._insignia_quote_v2) this.clearStaleQuote(cartRoot, controller.signal);
       })
       .catch(() => {});
+  }
+  /**
+   * Native theme removal leaves the cart-level quote behind; checkout validation treats any quote as a
+   * customization claim, so an otherwise plain cart could not check out. Insignia's own cart writes clear
+   * the quote together with its lines and set it only after lines exist, so a quote with no designed line
+   * is stale. An unresolved Insignia operation in this tab keeps the cart untouched for its own recovery.
+   */
+  private clearStaleQuote(cartRoot: string, signal: AbortSignal) {
+    try {
+      // Same key as buyer.ts cartJournal.
+      if (sessionStorage.getItem('insignia-cart-unresolved-v2') === '1') return;
+    } catch {
+      return;
+    }
+    void fetch(`${cartRoot}cart/update.js`, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ attributes: { _insignia_quote_v2: '' } }),
+      signal,
+    }).catch(() => {});
   }
   private render(productId: string, needsReview: boolean) {
     let buyer = this.querySelector('insignia-buyer');

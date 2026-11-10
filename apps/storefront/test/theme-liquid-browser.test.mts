@@ -195,3 +195,42 @@ test('cart repair prompts with localized theme-styled review only after a native
   await message.waitFor({ state: 'hidden' });
   assert.equal(await notice.evaluate((element) => getComputedStyle(element).position), 'static');
 });
+
+test('a leftover cart quote without designed lines is cleared unless this tab has an unresolved Insignia write', async (t) => {
+  const html = await renderTheme(t, null);
+  for (const unresolved of [false, true]) {
+    const page = await browserFixture(t);
+    const updates: unknown[] = [];
+    let attributes: Record<string, string> = { _insignia_quote_v2: 'stale', gift: 'keep' };
+    await page.route('**/cart.js', (route) =>
+      route.fulfill({ json: { items: [{ product_id: 9, quantity: 1, properties: {} }], attributes } }),
+    );
+    await page.route('**/cart/update.js', (route) => {
+      const body = route.request().postDataJSON() as { attributes: Record<string, string> };
+      updates.push(body);
+      attributes = { ...attributes, ...body.attributes };
+      return route.fulfill({ json: { items: [], attributes } });
+    });
+    if (unresolved) await page.evaluate(() => sessionStorage.setItem('insignia-cart-unresolved-v2', '1'));
+    const loaded = page.waitForResponse((response) => response.url().endsWith('/cart.js'));
+    const cleared = unresolved
+      ? undefined
+      : page.waitForRequest((request) => request.url().endsWith('/cart/update.js'));
+    await page.evaluate((markup) => document.body.insertAdjacentHTML('beforeend', markup), html);
+    await loaded;
+    if (cleared) {
+      await cleared;
+      await expectEventually(() => updates.length === 1);
+      assert.deepEqual(updates, [{ attributes: { _insignia_quote_v2: '' } }], 'only the stale quote is cleared');
+    } else {
+      await page.waitForTimeout(300);
+      assert.deepEqual(updates, [], 'an unresolved Insignia operation keeps the cart for its own recovery');
+    }
+    assert.equal(await page.locator('insignia-cart-repair insignia-buyer').count(), 0);
+  }
+});
+
+async function expectEventually(check: () => boolean) {
+  for (let i = 0; i < 50 && !check(); i++) await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.ok(check());
+}
