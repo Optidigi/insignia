@@ -1,10 +1,11 @@
 import { createHash, randomUUID } from 'node:crypto';
-import type {
-  AcceptedQuote,
-  HistoricalPurchaseOffer,
-  PurchaseObservation,
-  QuoteAuthorizationSet,
-  QuoteRequest,
+import {
+  type AcceptedQuote,
+  type HistoricalPurchaseOffer,
+  orderedGroups,
+  type PurchaseObservation,
+  type QuoteAuthorizationSet,
+  type QuoteRequest,
 } from '@insignia/application';
 import { normalizeCustomizationGroups, type PublishedConfig } from '@insignia/domain';
 import { type Kysely, sql } from 'kysely';
@@ -146,6 +147,19 @@ function economics(quote: AcceptedQuote, evidence?: PurchaseObservation['binding
       variants,
     })),
   };
+}
+/**
+ * Signed designs in artwork-event order (set, then request position), each marked whether the order contains it.
+ * Indices stay the signed positions; designs that were not ordered need no artwork and are not production work.
+ */
+export function purchaseDesigns(record: Pick<PurchaseRecord, 'bindings'>) {
+  return record.bindings.flatMap((binding) => {
+    const ordered = orderedGroups(binding);
+    return (binding.designPayload?.request.groups ?? []).map((item, position) => ({
+      group: item.group,
+      ordered: ordered[position] ?? true,
+    }));
+  });
 }
 function canonicalWebhookId(value: unknown): value is string {
   return typeof value === 'string' && /^[1-9][0-9]{0,19}$/.test(value) && BigInt(value) <= 18446744073709551615n;
@@ -363,25 +377,22 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       0,
       ...record.artworkEvents.filter((e) => e.kind === 'ATTACH' && e.assetId === null).map((e) => e.version),
     );
-    let index = -1;
-    for (const binding of record.bindings) {
-      if (!binding.designPayload) return false;
-      for (const item of binding.designPayload.request.groups) {
-        index++;
-        for (const placement of item.group.design.placements) {
-          const replacement = record.artworkEvents
-            .filter((e) => e.kind === 'ATTACH' && e.groupIndex === index && e.placementId === placement.placementId)
-            .at(-1);
-          if (erasedVersion > 0 && (!replacement || replacement.version <= erasedVersion)) return false;
-          const assetId =
-            replacement?.assetId ?? (placement.artwork.kind === 'revision' ? placement.artwork.revisionId : null);
-          if (!assetId) return false;
-          const found =
-            await sql`SELECT 1 FROM artwork_assets WHERE asset_id=${assetId}::uuid AND shop_id=${record.shopId} AND state='USABLE' AND expires_at>clock_timestamp()`.execute(
-              executor,
-            );
-          if (!found.rows.length) return false;
-        }
+    if (record.bindings.some((binding) => !binding.designPayload)) return false;
+    for (const [index, item] of purchaseDesigns(record).entries()) {
+      if (!item.ordered) continue;
+      for (const placement of item.group.design.placements) {
+        const replacement = record.artworkEvents
+          .filter((e) => e.kind === 'ATTACH' && e.groupIndex === index && e.placementId === placement.placementId)
+          .at(-1);
+        if (erasedVersion > 0 && (!replacement || replacement.version <= erasedVersion)) return false;
+        const assetId =
+          replacement?.assetId ?? (placement.artwork.kind === 'revision' ? placement.artwork.revisionId : null);
+        if (!assetId) return false;
+        const found =
+          await sql`SELECT 1 FROM artwork_assets WHERE asset_id=${assetId}::uuid AND shop_id=${record.shopId} AND state='USABLE' AND expires_at>clock_timestamp()`.execute(
+            executor,
+          );
+        if (!found.rows.length) return false;
       }
     }
     return true;
@@ -859,8 +870,8 @@ export function createPurchaseRepository(db: Kysely<Database>) {
         if (!record) return fail('NOT_FOUND');
         if (record.artworkVersion !== input.expectedVersion) fail('CONFLICT');
         if (record.artworkState === 'ARTWORK_LOCKED') fail('LOCKED');
-        const groups = record.bindings.flatMap((b) => b.designPayload?.request.groups ?? []);
-        const placement = groups[input.groupIndex]?.group.design.placements.find(
+        const design = purchaseDesigns(record)[input.groupIndex];
+        const placement = (design?.ordered ? design.group : undefined)?.design.placements.find(
           (p) => p.placementId === input.placementId,
         );
         if (!placement) fail('EXPIRED');
@@ -898,16 +909,16 @@ export function createPurchaseRepository(db: Kysely<Database>) {
         if (record.artworkState === 'ARTWORK_LOCKED') return;
         if (record.artworkVersion >= 1000) fail('CONFLICT');
         if (record.artworkState !== 'READY') fail('NOT_READY');
-        const assets = record.bindings
-          .flatMap((b) => b.designPayload?.request.groups ?? [])
-          .flatMap((g, index) =>
-            g.group.design.placements.map(
-              (p) =>
-                record.artworkEvents
-                  .filter((e) => e.kind === 'ATTACH' && e.groupIndex === index && e.placementId === p.placementId)
-                  .at(-1)?.assetId ?? (p.artwork.kind === 'revision' ? p.artwork.revisionId : null),
-            ),
-          );
+        const assets = purchaseDesigns(record).flatMap(({ group, ordered }, index) =>
+          !ordered
+            ? []
+            : group.design.placements.map(
+                (p) =>
+                  record.artworkEvents
+                    .filter((e) => e.kind === 'ATTACH' && e.groupIndex === index && e.placementId === p.placementId)
+                    .at(-1)?.assetId ?? (p.artwork.kind === 'revision' ? p.artwork.revisionId : null),
+              ),
+        );
         for (const assetId of assets) {
           if (!assetId) fail('NOT_READY');
           if (
@@ -929,12 +940,10 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       if (scope.kind !== 'merchant') fail('INVALID');
       const record = await get(scope, input.purchaseId);
       if (!record) return null;
-      const original = record.bindings.some((b) =>
-        b.designPayload?.request.groups.some((g) =>
-          g.group.design.placements.some(
-            (p) => p.artwork.kind === 'revision' && p.artwork.revisionId === input.assetId,
-          ),
-        ),
+      const original = purchaseDesigns(record).some(
+        ({ group, ordered }) =>
+          ordered &&
+          group.design.placements.some((p) => p.artwork.kind === 'revision' && p.artwork.revisionId === input.assetId),
       );
       const attached = record.artworkEvents.some(
         (e) => e.kind === 'ATTACH' && e.assetId === input.assetId && e.expiresAt && new Date(e.expiresAt) > new Date(),

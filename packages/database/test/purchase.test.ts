@@ -944,4 +944,64 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
     );
     expect((await repo.get({ shopId: fixture.shopId, installationGeneration: '1' }, legacyId))?.isTest).toBeNull();
   });
+
+  it('a subset order needs artwork only for ordered designs and keeps signed design indices', async () => {
+    const { input, fixture, now } = await bound(),
+      repo = createPurchaseRepository(db),
+      scope = { shopId: fixture.shopId, installationGeneration: '1', kind: 'merchant' as const };
+    const binding = input.bindings[0];
+    if (!binding) throw new Error('missing binding');
+    const design = (variantId: string, placementId: string) => ({
+      group: {
+        productId: fixture.productId,
+        configRevisionId: fixture.revisionId,
+        variants: [{ variantId, quantity: 1 }],
+        design: { placements: [{ placementId, artwork: { kind: 'deferred', intentId: placementId } }] },
+      },
+    });
+    // Two signed designs; the v3 order contains only design 1 (economics line 1) at a new quantity.
+    input.bindings = [
+      {
+        ...binding,
+        lines: [
+          {
+            orderLineId: 'gid://shopify/LineItem/56',
+            lineIndex: 1,
+            productId: fixture.productId,
+            variantId: '2',
+            quantity: 3,
+            unitPriceMinor: '1000',
+          },
+        ],
+        designPayload: {
+          ...(binding.designPayload as Record<string, unknown>),
+          request: { groups: [design('1', 'front'), design('2', 'back')] },
+        },
+      },
+    ];
+    represented(input);
+    const purchase = requirePurchase(await repo.reconcile(input));
+    if ('kind' in purchase) throw new Error('missing customized purchase');
+    expect(purchase.bindings[0]?.lines.map((line) => [line.lineIndex, line.quantity])).toEqual([[1, 3]]);
+    expect(purchase.artworkState).toBe('PENDING_ARTWORK');
+    const usable = await asset(fixture.shopId, 'merchant', now);
+    const attach = (groupIndex: number, placementId: string, expectedVersion: number) =>
+      repo.appendArtwork(scope, {
+        purchaseId: purchase.purchaseId,
+        expectedVersion,
+        groupIndex,
+        placementId,
+        assetId: usable,
+        ownerHash: 'b'.repeat(64),
+      });
+    // The unordered design (signed index 0) is not production work: no attachment slot.
+    await expect(attach(0, 'front', 0)).rejects.toMatchObject({ code: 'EXPIRED' });
+    const attached = await attach(1, 'back', 0);
+    expect(attached.artworkState).toBe('READY');
+    expect(attached.artworkEvents[0]?.groupIndex).toBe(1);
+    const complete = await repo.list(scope, { artwork: 'complete' });
+    expect(complete.map((p) => p?.purchaseId)).toContain(purchase.purchaseId);
+    const locked = await repo.lockArtwork(scope, { purchaseId: purchase.purchaseId, expectedVersion: 1 });
+    expect(locked.artworkState).toBe('ARTWORK_LOCKED');
+  });
 });

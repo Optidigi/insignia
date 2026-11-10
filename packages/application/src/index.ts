@@ -23,6 +23,7 @@ export * from './purchase/artwork.js';
 export * from './purchase/customer-artwork.js';
 export * from './purchase/customer-artwork-notifications.js';
 export * from './purchase/model.js';
+export * from './purchase/ordered-groups.js';
 export * from './purchase/reconcile.js';
 export * from './quote/accept-quote.js';
 export * from './quote/material.js';

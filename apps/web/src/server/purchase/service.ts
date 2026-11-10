@@ -2,6 +2,7 @@ import type { ArtworkStorage } from '@insignia/application';
 import {
   attachPurchaseArtwork,
   lockPurchaseArtwork,
+  orderedGroupVariants,
   purchaseArtworkDownload,
   purchaseArtworkPreview,
 } from '@insignia/application';
@@ -20,7 +21,6 @@ import type { AdminActor } from '../admin/contracts.js';
 import { scopeCustomerArtworkGeometry } from '../customer-artwork/presentation.ts';
 import { buyerGeometry } from '../merchant-preview/geometry.ts';
 import type { FrozenPreviewReader } from '../merchant-preview/read.ts';
-import { orderedGroupVariants } from './ordered-groups.ts';
 
 const record = (value: unknown): Record<string, unknown> =>
   value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
