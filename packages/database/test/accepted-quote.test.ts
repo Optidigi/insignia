@@ -1,15 +1,12 @@
-import { createHash, generateKeyPairSync, randomUUID, sign, verify } from 'node:crypto';
+import { createHash, generateKeyPairSync, randomUUID, sign } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { acceptQuote, type QuoteAuthorityPorts } from '@insignia/application';
 import {
   admitCandidate,
   currencyExponent,
-  decodeEnvelope,
-  decodeMemberCarrier,
-  encodeHeader,
-  encodeMember,
-  issueWholeQuote,
-  wholeQuoteSignBytes,
+  issueLineSetV3,
+  linearLineRecordsV3,
+  verifyLineSetV3,
 } from '@insignia/cart-authorization';
 import { type Kysely, sql } from 'kysely';
 import { Pool } from 'pg';
@@ -21,6 +18,7 @@ import { PgAcceptedQuoteRepository } from '../src/repositories/accepted-quote.js
 import { CONFIG_DRAFT_STORAGE_VERSION, createConfigRepositoryInternal } from '../src/repositories/config.js';
 import { createPublicationRepository } from '../src/repositories/publication.js';
 import { createTenantRepository } from '../src/repositories/tenant.js';
+import { signLinesV3 } from './support/line-v3.js';
 import { createTestShop, openTestDatabase } from './support/postgres.js';
 
 describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL authority', () => {
@@ -182,18 +180,15 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
       epoch: value.authorizationEpoch,
       quoteHex: quoteId.replaceAll('-', ''),
       setHex: setId.replaceAll('-', ''),
-      count: 2,
       currency: 'USD',
       exponent: 2,
       country: 'US',
       marketId: '42',
       validThroughDay: acceptedDay + 2,
-      totalQuantity: 2,
-      totalMinor: '2001',
     };
     const signedMembers = [
-      { index: 0, variantId: '1', quantity: 1, unitMinor: '1001' },
-      { index: 1, variantId: '2', quantity: 1, unitMinor: '1000' },
+      { index: 0, variantId: '1', unitMinor: '1001' },
+      { index: 1, variantId: '2', unitMinor: '1000' },
     ];
     const authorization = {
       setId,
@@ -202,14 +197,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
       firstValidDay: 20000,
       lastValidDay: 21000,
       validThroughDay: acceptedDay + 2,
-      envelopeCarrier: Buffer.concat([
-        encodeHeader(signedHeader),
-        sign(null, wholeQuoteSignBytes(signedHeader, signedMembers), value.keys.privateKey),
-      ]).toString('base64url'),
-      members: signedMembers.map((member, lineIndex) => ({
-        lineIndex,
-        carrier: encodeMember(member).toString('base64url'),
-      })),
+      ...signLinesV3(signedHeader, signedMembers, value.keys.privateKey),
     };
     const input = {
       shopId: value.shopId,
@@ -256,13 +244,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
     await expect(
       repo.accept({ ...input, idempotencyKey: 'wrong-signer' }, async () => ({
         quote,
-        authorization: {
-          ...authorization,
-          envelopeCarrier: Buffer.concat([
-            encodeHeader(signedHeader),
-            sign(null, wholeQuoteSignBytes(signedHeader, signedMembers), wrongKey.privateKey),
-          ]).toString('base64url'),
-        },
+        authorization: { ...authorization, ...signLinesV3(signedHeader, signedMembers, wrongKey.privateKey) },
       })),
     ).rejects.toThrow(/signature does not match active durable key/);
     await expect(
@@ -289,28 +271,23 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
         authorization,
       })),
     ).rejects.toThrow(/header does not match immutable quote/);
+    const otherQuoteId = randomUUID();
     await expect(
       repo.accept({ ...input, idempotencyKey: 'wrong-member-metadata' }, async () => ({
-        quote: { ...quote, quoteId: randomUUID() },
+        quote: { ...quote, quoteId: otherQuoteId },
         authorization: {
           ...authorization,
-          envelopeCarrier: Buffer.concat([
-            encodeHeader({
-              ...decodeEnvelope(authorization.envelopeCarrier).header,
-              quoteHex: randomUUID().replaceAll('-', ''),
-            }),
-            Buffer.alloc(64),
-          ]).toString('base64url'),
-          members: [
-            ...(authorization.members[0] ? [authorization.members[0]] : []),
-            {
-              lineIndex: 1,
-              carrier: encodeMember({ index: 1, variantId: '2', quantity: 1, unitMinor: '999' }).toString('base64url'),
-            },
-          ],
+          ...signLinesV3(
+            { ...signedHeader, quoteHex: otherQuoteId.replaceAll('-', '') },
+            [
+              { index: 0, variantId: '1', unitMinor: '1001' },
+              { index: 1, variantId: '2', unitMinor: '999' },
+            ],
+            value.keys.privateKey,
+          ),
         },
       })),
-    ).rejects.toThrow(/set total mismatch|member does not match/);
+    ).rejects.toThrow(/member does not match/);
     await expect(
       repo.accept({ ...input, requestDigest: 'b'.repeat(64) }, async () => ({ quote, authorization })),
     ).rejects.toThrow(/idempotency digest conflict/);
@@ -617,40 +594,27 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
       },
       authorization: {
         admit: ({ economics, capacity }: Parameters<QuoteAuthorityPorts['authorization']['admit']>[0]) => {
-          const members = economics.lines.map((line) => ({
-            index: line.lineIndex,
-            variantId: line.variantId,
-            quantity: line.quantity,
-            unitMinor: line.unitPriceMinor,
-          }));
-          const decision = admitCandidate(members, { ordinaryLineHint: capacity.ordinaryLineCount });
+          const lines = economics.lines.map((line) => ({ index: line.lineIndex, quantity: line.quantity }));
+          const decision = admitCandidate(lines, { ordinaryLineHint: capacity.ordinaryLineCount });
           if (decision.status !== 'ADMIT') throw new Error(`candidate rejected: ${decision.reason}`);
         },
         issue: async ({ quote }: Parameters<QuoteAuthorityPorts['authorization']['issue']>[0]) => {
           const setId = randomUUID();
-          const members = quote.economics.lines.map((line) => ({
-            index: line.lineIndex,
-            variantId: line.variantId,
-            quantity: line.quantity,
-            unitMinor: line.unitPriceMinor,
-          }));
-          const issued = await issueWholeQuote(
+          const records = linearLineRecordsV3(quote.economics);
+          const issued = await issueLineSetV3(
             {
               keyId: 7,
               generationHex: quote.authorizationGeneration.replaceAll('-', ''),
               epoch: quote.authorizationEpoch,
               quoteHex: quote.quoteId.replaceAll('-', ''),
               setHex: setId.replaceAll('-', ''),
-              count: members.length,
               currency: quote.presentmentCurrency,
               exponent: quote.presentmentExponent,
               country: quote.country,
               marketId: quote.marketId,
               validThroughDay: quote.validThroughDay,
-              totalQuantity: quote.economics.customizedQuantity,
-              totalMinor: quote.economics.totalMinor,
             },
-            members,
+            records,
             quote.acceptedDay,
             {
               signWholeQuote: async (input) => {
@@ -672,8 +636,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
             firstValidDay: 20000,
             lastValidDay: 21000,
             validThroughDay: quote.validThroughDay,
-            envelopeCarrier: issued.envelope,
-            members: issued.members.map((carrier, lineIndex) => ({ lineIndex, carrier })),
+            envelopeCarrier: issued.prefix,
+            members: issued.carriers.map((carrier, lineIndex) => ({ lineIndex, carrier })),
           };
         },
       },
@@ -684,11 +648,13 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
       expect(accepted.quote.economics.groups[0]?.customizationUnitMinor).toBe('1');
       expect(accepted.quote.economics.totalMinor).toBe('2');
       expect(accepted.quote.economics.lines.map((line) => line.unitPriceMinor)).toEqual(['1']);
-      const envelope = decodeEnvelope(accepted.authorization.envelopeCarrier);
-      const members = accepted.authorization.members.map((item) => decodeMemberCarrier(item.carrier));
-      expect(verify(null, wholeQuoteSignBytes(envelope.header, members), keys.publicKey, envelope.signature)).toBe(
-        true,
+      const verified = verifyLineSetV3(
+        accepted.authorization.members.map((item) => item.carrier),
+        keys.publicKey.export({ format: 'der', type: 'spki' }).subarray(-32),
       );
+      expect(verified.records).toEqual([
+        { index: 0, variantId: accepted.quote.economics.lines[0]?.variantId, unitMinor: '1' },
+      ]);
       const persisted = await sql<{ quote_value: unknown; envelope_carrier: string; member_carriers: unknown }>`
         SELECT q.quote_value, a.envelope_carrier, a.member_carriers FROM accepted_quotes q
         JOIN quote_authorization_sets a ON a.quote_id = q.quote_id
@@ -716,10 +682,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
           lineUnitMinor: accepted.quote.economics.lines.map((line) => line.unitPriceMinor),
           functionVector: {
             name: 'pg_persisted_lean_unit_price',
-            header: envelope.header,
-            members,
-            envelope: accepted.authorization.envelopeCarrier,
-            memberCarriers: accepted.authorization.members.map((member) => member.carrier),
+            header: verified.header,
+            records: verified.records,
+            prefix: accepted.authorization.envelopeCarrier,
+            carriers: accepted.authorization.members.map((member) => member.carrier),
             publicHex: keys.publicKey.export({ format: 'der', type: 'spki' }).subarray(-32).toString('hex'),
             ordinaryLines: 0,
             acceptedDate: accepted.quote.acceptedDate,

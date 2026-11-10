@@ -1,6 +1,6 @@
-import { createHash, generateKeyPairSync, randomUUID, sign } from 'node:crypto';
+import { createHash, generateKeyPairSync, randomUUID } from 'node:crypto';
 import { type AcceptedQuote, materialHash } from '@insignia/application';
-import { decodeEnvelope, encodeHeader, encodeMember, wholeQuoteSignBytes } from '@insignia/cart-authorization';
+import { decodePrefixV3 } from '@insignia/cart-authorization';
 import { type Kysely, sql } from 'kysely';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { type Database, withTransaction } from '../src/client/database.js';
@@ -8,6 +8,7 @@ import { PgAcceptedQuoteRepository } from '../src/repositories/accepted-quote.js
 import { CONFIG_DRAFT_STORAGE_VERSION, createConfigRepositoryInternal } from '../src/repositories/config.js';
 import { createPublicationRepository } from '../src/repositories/publication.js';
 import { PgQuoteRenewalRepository } from '../src/repositories/quote-renewal.js';
+import { signLinesV3 } from './support/line-v3.js';
 import { createTestShop, openTestDatabase } from './support/postgres.js';
 
 describe.runIf(Boolean(process.env.DATABASE_URL))('immutable owned quote renewal PostgreSQL', () => {
@@ -215,18 +216,15 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('immutable owned quote renewal
       epoch: value.authorizationEpoch,
       quoteHex: quoteId.replaceAll('-', ''),
       setHex: setId.replaceAll('-', ''),
-      count: 2,
       currency: 'USD',
       exponent: 2,
       country: 'US',
       marketId: '42',
       validThroughDay: acceptedDay + 2,
-      totalQuantity: 2,
-      totalMinor: '2001',
     };
     const signedMembers = [
-      { index: 0, variantId: '1', quantity: 1, unitMinor: '1001' },
-      { index: 1, variantId: '2', quantity: 1, unitMinor: '1000' },
+      { index: 0, variantId: '1', unitMinor: '1001' },
+      { index: 1, variantId: '2', unitMinor: '1000' },
     ];
     const authorization = {
       setId,
@@ -235,14 +233,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('immutable owned quote renewal
       firstValidDay: 20000,
       lastValidDay: 21000,
       validThroughDay: acceptedDay + 2,
-      envelopeCarrier: Buffer.concat([
-        encodeHeader(signedHeader),
-        sign(null, wholeQuoteSignBytes(signedHeader, signedMembers), value.keys.privateKey),
-      ]).toString('base64url'),
-      members: signedMembers.map((member, lineIndex) => ({
-        lineIndex,
-        carrier: encodeMember(member).toString('base64url'),
-      })),
+      ...signLinesV3(signedHeader, signedMembers, value.keys.privateKey),
     };
     const input = {
       shopId: value.shopId,
@@ -289,10 +280,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('immutable owned quote renewal
         ...authorization,
         setId: renewedSetId,
         validThroughDay: issuance.validThroughDay,
-        envelopeCarrier: Buffer.concat([
-          encodeHeader(renewedHeader),
-          sign(null, wholeQuoteSignBytes(renewedHeader, signedMembers), value.keys.privateKey),
-        ]).toString('base64url'),
+        ...signLinesV3(renewedHeader, signedMembers, value.keys.privateKey),
       },
     };
     let signatures = 0;
@@ -346,6 +334,6 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('immutable owned quote renewal
       database,
     );
     await expect(repo.findCompleted(command)).rejects.toThrow('revoked');
-    expect(decodeEnvelope(result.authorization.envelopeCarrier).header.quoteHex).toBe(quoteId.replaceAll('-', ''));
+    expect(decodePrefixV3(result.authorization.envelopeCarrier).header.quoteHex).toBe(quoteId.replaceAll('-', ''));
   });
 });

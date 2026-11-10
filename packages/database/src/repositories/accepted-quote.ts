@@ -2,7 +2,11 @@ import { createHash, createPublicKey, verify } from 'node:crypto';
 import {
   checkCompleteSet,
   decodeEnvelope,
+  decodeLineCarrierV3,
   decodeMemberCarrier,
+  decodePrefixV3,
+  lineCarrierIncludedV3,
+  verifyLineSetV3,
   wholeQuoteSignBytes,
 } from '@insignia/cart-authorization';
 import { type Kysely, sql } from 'kysely';
@@ -130,14 +134,16 @@ export function validateEconomicConservation(value: StoredResult): void {
     throw new Error('accepted quote authorization is incomplete or nonconserving');
 }
 
+const isWholeQuoteV2 = (envelope: string) => envelope.length === 208 && envelope.startsWith('SVNHMg');
+
 function uuidHex(value: string): string {
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value))
     throw new Error('invalid authorization UUID');
   return value.replaceAll('-', '').toLowerCase();
 }
 
-/** Compare every persisted v2 claim to the immutable economic row before INSERT. */
-export function validateAuthorizationMetadata(value: StoredResult): void {
+/** Historical whole-quote v2 claims (pre-v3 records and fixtures). */
+function validateWholeQuoteV2Metadata(value: StoredResult): void {
   const { quote, authorization } = value;
   if (!Number.isSafeInteger(authorization.keyId) || authorization.keyId < 1 || authorization.keyId > 65535)
     throw new Error('authorization key ID is not numeric u16');
@@ -179,6 +185,52 @@ export function validateAuthorizationMetadata(value: StoredResult): void {
   }
 }
 
+/** Compare every persisted claim to the immutable economic row before INSERT. New issuance is cart-line v3;
+ * the protocol is identified by the ISG2/ISG3 magic of the stored envelope carrier. */
+export function validateAuthorizationMetadata(value: StoredResult): void {
+  const { quote, authorization } = value;
+  if (!Number.isSafeInteger(authorization.keyId) || authorization.keyId < 1 || authorization.keyId > 65535)
+    throw new Error('authorization key ID is not numeric u16');
+  if (isWholeQuoteV2(authorization.envelopeCarrier)) {
+    validateWholeQuoteV2Metadata(value);
+    return;
+  }
+  const { header } = decodePrefixV3(authorization.envelopeCarrier);
+  if (
+    header.keyId !== authorization.keyId ||
+    header.generationHex !== uuidHex(quote.authorizationGeneration) ||
+    header.epoch !== quote.authorizationEpoch ||
+    header.quoteHex !== uuidHex(quote.quoteId) ||
+    header.setHex !== uuidHex(authorization.setId) ||
+    header.count !== quote.economics.lines.length ||
+    header.currency !== quote.presentmentCurrency ||
+    header.exponent !== quote.presentmentExponent ||
+    header.country !== quote.country ||
+    header.marketId !== quote.marketId ||
+    header.validThroughDay !== quote.validThroughDay ||
+    authorization.firstValidDay > quote.acceptedDay ||
+    authorization.lastValidDay < quote.validThroughDay ||
+    authorization.validThroughDay !== quote.validThroughDay
+  )
+    throw new Error('persisted authorization header does not match immutable quote');
+  if (authorization.members.length !== header.count)
+    throw new Error('persisted authorization member does not match immutable quote');
+  for (const [index, { lineIndex, carrier }] of authorization.members.entries()) {
+    if (lineIndex !== index) throw new Error('authorization member order mismatch');
+    const decoded = decodeLineCarrierV3(carrier);
+    const line = quote.economics.lines[index];
+    if (
+      !line ||
+      decoded.prefix !== authorization.envelopeCarrier ||
+      decoded.record.index !== index ||
+      decoded.record.variantId !== line.variantId ||
+      decoded.record.unitMinor !== line.unitPriceMinor ||
+      !lineCarrierIncludedV3(decoded)
+    )
+      throw new Error('persisted authorization member does not match immutable quote');
+  }
+}
+
 export async function assertNewAuthorizationKey(transaction: Kysely<Database>, value: StoredResult): Promise<void> {
   const { quote, authorization } = value;
   const found = await sql<{
@@ -204,18 +256,29 @@ export async function assertNewAuthorizationKey(transaction: Kysely<Database>, v
     createHash('sha256').update(key.public_key).digest('hex') !== key.public_key_fingerprint
   )
     throw new Error('authorization signer does not match active durable key');
-  const { header, signature } = decodeEnvelope(authorization.envelopeCarrier);
-  const members = authorization.members.map(({ carrier }) => decodeMemberCarrier(carrier));
-  const spki = Buffer.concat([Buffer.from('302a300506032b6570032100', 'hex'), key.public_key]);
-  if (
-    !verify(
-      null,
-      wholeQuoteSignBytes(header, members),
-      createPublicKey({ key: spki, format: 'der', type: 'spki' }),
-      signature,
+  if (isWholeQuoteV2(authorization.envelopeCarrier)) {
+    const { header, signature } = decodeEnvelope(authorization.envelopeCarrier);
+    const members = authorization.members.map(({ carrier }) => decodeMemberCarrier(carrier));
+    const spki = Buffer.concat([Buffer.from('302a300506032b6570032100', 'hex'), key.public_key]);
+    if (
+      !verify(
+        null,
+        wholeQuoteSignBytes(header, members),
+        createPublicKey({ key: spki, format: 'der', type: 'spki' }),
+        signature,
+      )
     )
-  )
+      throw new Error('authorization signature does not match active durable key');
+    return;
+  }
+  try {
+    verifyLineSetV3(
+      authorization.members.map(({ carrier }) => carrier),
+      key.public_key,
+    );
+  } catch {
     throw new Error('authorization signature does not match active durable key');
+  }
 }
 
 /** Opaque PostgreSQL facade for the application quote service. The shop row lock serializes

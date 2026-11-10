@@ -12,9 +12,10 @@ import {
   type AuthorizationSigner,
   admitCandidate,
   currencyExponent,
-  type Header,
-  issueWholeQuote,
-  type Member,
+  type HeaderV3Claims,
+  issueLineSetV3,
+  type LineRecordV3,
+  linearLineRecordsV3,
 } from '@insignia/cart-authorization';
 import type { DurableCore } from '@insignia/database';
 import {
@@ -37,18 +38,21 @@ function uuidHex(uuid: string): string {
   return uuid.replaceAll('-', '').toLowerCase();
 }
 
-function membersFor(quote: {
-  economics: { lines: readonly { lineIndex: number; variantId: string; quantity: number; unitPriceMinor: string }[] };
-}): Member[] {
-  return quote.economics.lines.map((line, index) => {
-    if (line.lineIndex !== index) throw new Error('M2 lines are not quote-global ordered');
-    return {
-      index,
-      variantId: numericShopifyId(line.variantId),
-      quantity: line.quantity,
-      unitMinor: line.unitPriceMinor,
-    };
-  });
+type Economics = Parameters<typeof linearLineRecordsV3>[0];
+type EconomicsInput = Omit<Economics, 'lines'> & {
+  lines: readonly (Economics['lines'][number] & { canonicalIdentity?: string })[];
+};
+/** Cart-line v3 signs a per-unit price that holds at any quantity; non-linear economics are refused. */
+function lineRecordsFor(economics: EconomicsInput): LineRecordV3[] {
+  // Proposal economics carry the raw design identity, accepted economics its digest: either separates designs.
+  const lines = economics.lines.map((line) => ({
+    ...line,
+    canonicalIdentitySha256: line.canonicalIdentitySha256 ?? line.canonicalIdentity,
+  }));
+  return linearLineRecordsV3({ groups: economics.groups, lines }).map((record) => ({
+    ...record,
+    variantId: numericShopifyId(record.variantId),
+  }));
 }
 
 /** Server-only composition. Every provider and key access remains injected and installation scoped. */
@@ -159,33 +163,34 @@ export function createQuoteAuthorityPorts(input: {
     readiness: input.readiness,
     authorization: {
       admit({ economics, capacity }) {
-        const members = membersFor({ economics });
-        const result = admitCandidate(members, { ordinaryLineHint: capacity.ordinaryLineCount });
+        lineRecordsFor(economics);
+        const result = admitCandidate(
+          economics.lines.map((line) => ({ index: line.lineIndex, quantity: line.quantity })),
+          { ordinaryLineHint: capacity.ordinaryLineCount },
+        );
         if (result.status !== 'ADMIT') throw new Error(`candidate capacity rejected: ${result.reason}`);
         if (!Number.isSafeInteger(capacity.inputBytes) || capacity.inputBytes < 0 || capacity.inputBytes > 128_000)
           throw new Error('cart input availability estimate exceeds candidate reference');
       },
       async issue({ quote, window }) {
-        const members = membersFor(quote);
+        const records = lineRecordsFor(quote.economics);
         const setId = ids.setId();
-        const header: Header = {
+        const validThroughDay = window?.validThroughDay ?? quote.validThroughDay;
+        const claims: HeaderV3Claims = {
           keyId: input.signing.keyId,
           generationHex: uuidHex(quote.authorizationGeneration),
           epoch: quote.authorizationEpoch,
           quoteHex: uuidHex(quote.quoteId),
           setHex: uuidHex(setId),
-          count: members.length,
           currency: quote.presentmentCurrency,
           exponent: quote.presentmentExponent,
           country: quote.country,
           marketId: quote.marketId,
-          validThroughDay: window?.validThroughDay ?? quote.validThroughDay,
-          totalQuantity: quote.economics.customizedQuantity,
-          totalMinor: quote.economics.totalMinor,
+          validThroughDay,
         };
-        const signed = await issueWholeQuote(
-          header,
-          members,
+        const signed = await issueLineSetV3(
+          claims,
+          records,
           window?.issuedDay ?? quote.acceptedDay,
           input.signing.signer,
         );
@@ -195,9 +200,9 @@ export function createQuoteAuthorityPorts(input: {
           publicKeyFingerprint: signed.publicKeyFingerprint,
           firstValidDay: signed.firstValidDay,
           lastValidDay: signed.lastValidDay,
-          validThroughDay: window?.validThroughDay ?? quote.validThroughDay,
-          envelopeCarrier: signed.envelope,
-          members: signed.members.map((carrier, lineIndex) => ({ lineIndex, carrier })),
+          validThroughDay,
+          envelopeCarrier: signed.prefix,
+          members: signed.carriers.map((carrier, lineIndex) => ({ lineIndex, carrier })),
         };
       },
     },
