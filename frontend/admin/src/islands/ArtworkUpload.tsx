@@ -1,3 +1,4 @@
+import { ARTWORK_UPLOAD_ACCEPT } from '@insignia/contracts';
 import type { Ref } from 'preact';
 import AdminSkeleton from '../components/AdminSkeleton';
 import PrivatePreviewImage from '../components/PrivatePreviewImage';
@@ -79,7 +80,7 @@ export default function ArtworkUpload({
         <s-drop-zone
           label={t('artwork:upload.action')}
           accessibilityLabel={t('artwork:upload.action')}
-          accept="image/svg+xml,image/png,image/jpeg"
+          accept={ARTWORK_UPLOAD_ACCEPT}
           disabled={disabled || busy}
           onChange={(event) => {
             const file = event.currentTarget.files[0];

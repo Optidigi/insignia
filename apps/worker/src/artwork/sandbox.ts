@@ -60,6 +60,10 @@ export async function runArtworkSandbox(
     '--setenv',
     'UV_THREADPOOL_SIZE',
     '1',
+    // librsvg filters (e.g. feGaussianBlur) use a rayon pool sized to host CPUs, which would exceed TasksMax.
+    '--setenv',
+    'RAYON_NUM_THREADS',
+    '1',
     '--ro-bind',
     '/usr/lib',
     '/usr/lib',

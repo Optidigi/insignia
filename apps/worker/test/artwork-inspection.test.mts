@@ -48,12 +48,11 @@ isolatedTest('unsupported magic, resource limits and hostile XML never become ar
     '<image href="file:///etc/passwd"/>',
     '<image href="https://example.com/x.png"/>',
     '<foreignObject/>',
-    '<style>path {fill:red}</style>',
     '<g onclick="alert(1)"/>',
     '<use href="#a" id="a"/>',
     '<defs><g id="a"><use href="#b"/></g><g id="b"><use href="#a"/></g></defs><use href="#a"/>',
     '<rect fill="url(https://example.com/a)"/>',
-    '<text font-family="arial">x</text>',
+    '<style>@import url(https://example.com/a.css);</style>',
   ])
     cases.push(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20">${body}</svg>`));
   cases.push(
@@ -184,14 +183,34 @@ test('missing OS sandbox never silently executes the decoder unisolated', async 
   }
   await assert.rejects(promise, { code: 'UNAVAILABLE' });
 });
-isolatedTest('JPEG appended payloads and multiple-image containers are not accepted as a single frame', async () => {
-  const { default: sharp } = await import('sharp');
-  const jpeg = await sharp({ create: { width: 8, height: 8, channels: 3, background: 'red' } })
-    .jpeg()
-    .toBuffer();
-  await assert.rejects(inspectArtwork(Buffer.concat([jpeg, jpeg])));
-});
+isolatedTest(
+  'JPEG data after the primary EOI is inert: the primary image is inspected, the original kept',
+  async () => {
+    const { default: sharp } = await import('sharp');
+    const jpeg = await sharp({ create: { width: 8, height: 4, channels: 3, background: 'red' } })
+      .jpeg()
+      .toBuffer();
+    const secondary = await sharp({ create: { width: 2, height: 2, channels: 3, background: 'blue' } })
+      .jpeg()
+      .toBuffer();
+    const source = Buffer.concat([jpeg, secondary]);
+    const result = await inspectArtwork(source);
+    assert.deepEqual([result.width, result.height], [8, 4]);
+    assert.equal(result.originalSha256, createHash('sha256').update(source).digest('hex'));
+  },
+);
 isolatedTest('malformed artwork is terminal REJECTED while missing host capability is UNAVAILABLE', async () => {
   await assert.rejects(inspectArtwork(Buffer.from('invalid artwork')), { code: 'REJECTED' });
   await assert.rejects(inspectArtwork(Buffer.alloc(5 * 1024 * 1024 + 1)), { code: 'REJECTED' });
+});
+isolatedTest('representative editor exports, including text, render inside the isolated inspector', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { default: sharp } = await import('sharp');
+  for (const name of ['illustrator.svg', 'inkscape.svg', 'figma.svg']) {
+    const source = await readFile(new URL(`./fixtures/artwork/${name}`, import.meta.url));
+    const result = await inspectArtwork(source);
+    assert.equal(result.mimeType, 'image/svg+xml', name);
+    const preview = await sharp(result.preview).metadata();
+    assert.equal(Math.max(preview.width ?? 0, preview.height ?? 0), 512, name);
+  }
 });

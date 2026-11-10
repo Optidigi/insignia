@@ -1,4 +1,5 @@
 export * from './admin-view.js';
+export * from './artwork-file.js';
 export * from './buyer.js';
 export * from './customer-artwork.js';
 export * from './merchant-draft.js';

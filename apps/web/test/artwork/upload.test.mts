@@ -444,3 +444,35 @@ test('faster polling retains the complete processing wait budget and cancellatio
   );
   assert.equal(reads, 1);
 });
+
+test('files with an empty or alias browser type declare the supported type from their name or alias', async () => {
+  for (const [file, expected] of [
+    [new File(['x'], 'Photo.JFIF', { type: '' }), 'image/jpeg'],
+    [new File(['x'], 'scan.jpg', { type: 'image/pjpeg' }), 'image/jpeg'],
+    [new File(['x'], 'logo.svg', { type: 'application/octet-stream' }), 'image/svg+xml'],
+  ] as const) {
+    let declared: unknown;
+    const flow = createArtworkUpload({
+      api: async (path, init) => {
+        if (path === '/api/artwork') {
+          declared = JSON.parse(String(init?.body)).contentType;
+          return {};
+        }
+        throw new Error('unexpected request');
+      },
+      put: async () => new Response(null, { status: 200 }),
+      pause: async () => {},
+    });
+    await assert.rejects(
+      flow.upload(file, () => {}),
+      /Invalid private upload/,
+    );
+    assert.equal(declared, expected, file.name);
+  }
+  const unsupported = createArtworkUpload({
+    api: async () => assert.fail('unsupported files must not be admitted'),
+    put: async () => new Response(null, { status: 200 }),
+    pause: async () => {},
+  });
+  await assert.rejects(unsupported.upload(new File(['x'], 'logo.webp', { type: 'image/webp' }), () => {}));
+});

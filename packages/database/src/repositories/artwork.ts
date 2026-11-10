@@ -1,4 +1,5 @@
 import {
+  ARTWORK_MIME_TYPES,
   ARTWORK_POLICY,
   ArtworkError,
   type ArtworkManifest,
@@ -59,7 +60,7 @@ const fail = (code: ConstructorParameters<typeof ArtworkError>[0]): never => {
 function validManifest(m: ArtworkManifest, row: Row) {
   return (
     m.version === 'm6-inspection-v1' &&
-    m.mimeType === row.declared_mime &&
+    ARTWORK_MIME_TYPES.includes(m.mimeType) &&
     m.byteLength === row.declared_bytes &&
     /^[a-f0-9]{64}$/.test(m.sha256) &&
     /^[a-f0-9]{64}$/.test(m.previewSha256) &&

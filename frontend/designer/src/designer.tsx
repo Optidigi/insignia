@@ -1,3 +1,4 @@
+import { ARTWORK_UPLOAD_ACCEPT } from '@insignia/contracts';
 import type { SupportedLanguage } from '@insignia/ui-localization/core';
 import { selectedLanguagePreference } from '@insignia/ui-localization/core';
 import type { CustomerWordingOverlay } from '@insignia/ui-localization/customer';
@@ -2044,7 +2045,7 @@ function DesignerSession({
                 <input
                   ref={fileRef}
                   type="file"
-                  accept="image/png,image/jpeg,image/svg+xml"
+                  accept={ARTWORK_UPLOAD_ACCEPT}
                   className="sr-only"
                   aria-label={t('customer:artwork.uploadArtworkFile')}
                   aria-invalid={Boolean(error) || undefined}

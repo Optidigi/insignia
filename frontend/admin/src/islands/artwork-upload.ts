@@ -1,3 +1,5 @@
+import { artworkUploadMime } from '@insignia/contracts';
+
 export type ArtworkPreview = {
   assetId: string;
   url: string;
@@ -180,8 +182,8 @@ export function createArtworkUpload(input: {
       onState: (state: ArtworkUploadProgress) => void,
       signal?: AbortSignal,
     ): Promise<ArtworkPreview> {
-      if (!['image/svg+xml', 'image/png', 'image/jpeg'].includes(file.type))
-        throw new ArtworkUploadError('file-format-rejected');
+      const contentType = artworkUploadMime(file);
+      if (!contentType) throw new ArtworkUploadError('file-format-rejected');
       if (file.size < 1 || file.size > 5 * 1024 * 1024) throw new ArtworkUploadError('file-size-rejected');
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
       onState('allocating');
@@ -189,7 +191,7 @@ export function createArtworkUpload(input: {
         await input.api('/api/artwork', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contentType: file.type, byteLength: file.size }),
+          body: JSON.stringify({ contentType, byteLength: file.size }),
           signal,
         }),
       );

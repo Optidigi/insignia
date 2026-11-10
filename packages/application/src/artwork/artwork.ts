@@ -10,6 +10,7 @@ export const ARTWORK_POLICY = {
   leaseMs: 360_000,
   previewMaxBytes: 2 * 1024 * 1024,
 } as const;
+export const ARTWORK_MIME_TYPES: readonly string[] = ['image/svg+xml', 'image/png', 'image/jpeg'];
 export type ArtworkMime = 'image/svg+xml' | 'image/png' | 'image/jpeg';
 export type ArtworkState =
   | 'UPLOADING'
@@ -152,7 +153,7 @@ export function createArtworkService(input: {
   return {
     async begin(scope: ArtworkScope, declaration: { contentType: string; byteLength: number }) {
       if (
-        !['image/png', 'image/jpeg', 'image/svg+xml'].includes(declaration.contentType) ||
+        !ARTWORK_MIME_TYPES.includes(declaration.contentType) ||
         !Number.isSafeInteger(declaration.byteLength) ||
         declaration.byteLength < 1 ||
         declaration.byteLength > ARTWORK_POLICY.maxBytes
@@ -261,7 +262,7 @@ export function createArtworkService(input: {
         const originalHash = hash(original);
         if (
           inspected.originalSha256 !== originalHash ||
-          inspected.mimeType !== row.declaredMime ||
+          !ARTWORK_MIME_TYPES.includes(inspected.mimeType) ||
           inspected.previewMimeType !== 'image/png' ||
           inspected.preview.byteLength < 1 ||
           inspected.preview.byteLength > ARTWORK_POLICY.previewMaxBytes
