@@ -28,6 +28,7 @@ export interface FixtureOverrides {
   time?: number;
   binding?: Partial<CollectorBinding>;
   functionIds?: { transform?: string; validation?: string };
+  inputQueries?: { transform?: string; validation?: string };
 }
 export async function fixture(overrides: FixtureOverrides = {}) {
   const root = overrides.root ?? (await mkdtemp(join(tmpdir(), 'trusted-release-collector-')));
@@ -68,14 +69,16 @@ export async function fixture(overrides: FixtureOverrides = {}) {
         handle: 'insignia-experimental-v2-transform',
         apiType: 'cart_transform',
         apiVersion: '2026-07',
-        inputQuerySha256: '8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053',
+        inputQuerySha256:
+          overrides.inputQueries?.transform ?? '8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053',
       },
       validation: {
         functionId: overrides.functionIds?.validation ?? 'synthetic-validation',
         handle: 'insignia-experimental-v2-validation',
         apiType: 'cart_checkout_validation',
         apiVersion: '2026-07',
-        inputQuerySha256: 'a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5',
+        inputQuerySha256:
+          overrides.inputQueries?.validation ?? 'a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5',
       },
     },
   };

@@ -4,6 +4,21 @@ This directory retains the actual deployment configuration/data boundary; its `m
 
 Active VPS management custody is `%h/.local/share/insignia/runtime/`. Some live mounts and database Compose configuration still reference the older `insignia-m8-runtime-20261013-pr114` and `insignia-m5-verify-20261012-r2` directories. Their historical names do not make those dependencies disposable. Inspect current mounts/configuration before removing or relocating anything.
 
+## Functions renew candidate development transition
+
+`native-functions-renew-8fffc9de` binds inactive version 1202733449217, the complete 33-version inventory in [native-functions-renew-release-binding.json](native-functions-renew-release-binding.json) and the exact 14-module [baseline](native-functions-renew-module-baseline.json). Canonical hash is `6bbac54719093f8ab867fe199e70bddf5b7e40f4b6404c046d4deb74b573cb9a`. Source is merge 8fffc9de/tree 00b71102: PR293 (a stale quote with no marked line checks out as a plain cart; one checkout message localized by `localization.language`) and PR294 (cart renewal and context notice). All 23 theme files, including 14 assets, match foundation run 42887198952/attempt 1. Prior 1202503778305 remains sole Active; all NEVER_RELEASE versions remain inactive.
+
+**This transition changes Function bytes and behavior.** The owner authorized that change on 10 November 2026. Both Function modules keep their registration UUIDs and handles but carry new wasm, built from 8fffc9de with `node scripts/functions/build-wasm.mts {transform,validation}` (Rust 1.98.1, trampoline 2.0.1). The Function source is identical at PR293 merge c19069bc.
+
+| Function | wasm SHA256 (bytes) | input query SHA256 | Shopify module id |
+| --- | --- | --- | --- |
+| transform | `f5979b61ba46c9ca315324500b1bedf806949ebf8fb8979494e0bdaf68e392f6` (181233) | `8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053` (unchanged) | `cf3f4c5b-6e51-4140-a542-35aa352a7c9c` |
+| validation | `4a3e7495245e8716b976ff3c3816c4e144114883edd317afc38fdf84b369f9ec` (183624) | `5baff05ac4b1967bc7c9b461b7d6a8956344ddd8c9233708534e8814b34ebcc4` (was `a0cd5d72…`) | `4416125b-6b7d-40b2-a283-5090c0fe2540` |
+
+Shopify exposes no wasm hash. It reports `module_wasm_size_bytes` and a new `module_id`, and both match this build. The CI foundation wasm differs from these bytes because it embeds `/home/runner/.cargo` registry paths. It is not the release artifact. Each release profile now names its own Function source and artifacts (`scripts/release/profiles.mts`); every earlier profile keeps the original 9b94149 pins.
+
+At activation (Phase B) the operator must also change the private web `runtime.env` value `INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON`: set `validationInputQuerySha256` to `5baff05ac4b1967bc7c9b461b7d6a8956344ddd8c9233708534e8814b34ebcc4`. Keep `transformInputQuerySha256` at `8d93a086…`, and keep `appKey` and `observationVersion: 2`. That JSON contains no wasm hashes. Set `INSIGNIA_RELEASE_PROFILE=native-functions-renew-8fffc9de` in web, worker and verifier together. If an `eur-nl-qualification-v1` profile is configured, its `activeVersionRef`/`functionsSourceCommit` no longer match and EUR stays fail-closed; EUR is not currently enabled. Use matching binding-head images and verifier manifest, release once, then obtain fresh independent admission. This binding is not activation or native acceptance.
+
 ## Cart repair candidate development transition
 
 `native-cart-repair-eb386d22` binds inactive version 1202503778305, the complete 32-version inventory in [native-cart-repair-release-binding.json](native-cart-repair-release-binding.json) and the exact 14-module [baseline](native-cart-repair-module-baseline.json). Canonical hash is `b90b62c0ebd602c4b20141379feaa9d3c6d33e615103e991da5d04bd13817064`. All 22 theme files, including 13 assets, match foundation run 42852820780/attempt1 and merge eb386d22/tree c2989b3f (PR289 artwork policy, PR290 cart repair/notice/stale-quote cleanup). The foundation build adds one storefront chunk, so the asset count grows from 12 to 13. All 14 identities, 13 non-theme configurations and original 9b941 Function bytes remain unchanged. Prior 1201385144321 remains sole Active; all NEVER_RELEASE versions remain inactive.

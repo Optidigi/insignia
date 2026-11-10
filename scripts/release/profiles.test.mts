@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -20,6 +20,12 @@ import cartRepairBinding from '../../deployment/m5-runtime/native-cart-repair-re
 };
 import fixedModules from '../../deployment/m5-runtime/native-fixed-module-baseline.json' with { type: 'json' };
 import fixedBinding from '../../deployment/m5-runtime/native-fixed-release-binding.json' with { type: 'json' };
+import functionsRenewModules from '../../deployment/m5-runtime/native-functions-renew-module-baseline.json' with {
+  type: 'json',
+};
+import functionsRenewBinding from '../../deployment/m5-runtime/native-functions-renew-release-binding.json' with {
+  type: 'json',
+};
 import loadingModules from '../../deployment/m5-runtime/native-loading-module-baseline.json' with { type: 'json' };
 import loadingBinding from '../../deployment/m5-runtime/native-loading-release-binding.json' with { type: 'json' };
 import parityModules from '../../deployment/m5-runtime/native-parity-module-baseline.json' with { type: 'json' };
@@ -60,6 +66,7 @@ import privacyModules from '../../deployment/m8-journey/lean-privacy-module-base
 import previewThemeModules from '../../deployment/m8-journey/preview-theme-module-baseline.json' with { type: 'json' };
 import historicalM8Modules from '../../deployment/m8-journey/release-module-baseline.json' with { type: 'json' };
 import themeModules from '../../deployment/m8-journey/theme-module-baseline.json' with { type: 'json' };
+import { resolveRuntimeReleaseProfile } from '../../packages/shopify/src/runtime-release-profile.ts';
 import type { ReleaseAppendInput } from './append.mts';
 import { qualifyReleaseAppendInput } from './append.mts';
 import { SyntheticOwnerRequest, SyntheticOwnerResponse } from './boundary-fixture.mts';
@@ -69,6 +76,7 @@ import { fixture } from './collector-fixture.mts';
 import type { ManagementObservation, RemoteApp } from './management-worker.mts';
 import { runManagementReads } from './management-worker.mts';
 import { createOwnerHttps } from './owner-https.mts';
+import { releaseProfile } from './profiles.mts';
 import { createReleaseVerificationServer } from './server.mts';
 import { array, object, required, text } from './validation.mts';
 
@@ -335,7 +343,115 @@ test('cart repair candidate preserves identities and extends the complete invent
     if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
   }
 });
+test('functions renew candidate preserves identities and changes only theme and Function artifacts', () => {
+  assert.equal(functionsRenewModules.length, 14);
+  assert.equal(functionsRenewBinding.moduleHash, '6bbac54719093f8ab867fe199e70bddf5b7e40f4b6404c046d4deb74b573cb9a');
+  assert.equal(functionsRenewBinding.versionIds.length, 33);
+  assert.deepEqual(
+    new Set(functionsRenewBinding.versionIds),
+    new Set([...cartRepairBinding.versionIds, '1202733449217']),
+  );
+  assert.deepEqual(
+    functionsRenewModules.map((m) => m.handle),
+    functionsRenewModules.map((m) => m.handle).sort(),
+  );
+  const queryHash = (config: unknown) =>
+    createHash('sha256')
+      .update(String(required(array(object(config).targets)[0] as { input_query?: unknown }).input_query), 'utf8')
+      .digest('hex');
+  const renewed = {
+    'insignia-experimental-v2-transform': {
+      query: '8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053',
+      wasmBytes: 181233,
+    },
+    'insignia-experimental-v2-validation': {
+      query: '5baff05ac4b1967bc7c9b461b7d6a8956344ddd8c9233708534e8814b34ebcc4',
+      wasmBytes: 183624,
+    },
+  } as const;
+  for (const module of functionsRenewModules) {
+    const prior = required(cartRepairModules.find((m) => m.handle === module.handle));
+    const { config, ...identity } = module,
+      { config: oldConfig, ...oldIdentity } = prior;
+    assert.deepEqual(identity, oldIdentity);
+    if (module.type === 'function') {
+      const expected = renewed[module.handle as keyof typeof renewed];
+      assert(expected);
+      assert.equal(queryHash(config), expected.query);
+      const metadata = object(object(config).module_metadata);
+      assert.equal(metadata.module_wasm_size_bytes, expected.wasmBytes);
+      assert.notEqual(object(config).module_id, object(oldConfig).module_id);
+      const unversioned = (value: unknown) => {
+        const { module_id: _id, module_metadata, targets, ...rest } = object(value);
+        const { module_wasm_size_bytes: _w, module_compiled_size_bytes: _c, ...meta } = object(module_metadata);
+        const [target] = array(targets);
+        const { input_query: _q, ...targetRest } = object(target);
+        return { ...rest, meta, target: targetRest };
+      };
+      assert.deepEqual(unversioned(config), unversioned(oldConfig));
+    } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
+  }
+});
+const runtimeProfileNames = [
+  'native-functions-renew-8fffc9de',
+  'native-cart-repair-eb386d22',
+  'native-canonical-313b12ad',
+  'native-review-nav-8a7ee446',
+  'native-loading-defd05b0',
+  'native-review-cart-1f4595f',
+  'native-startup-771bb8f',
+  'native-recovery-e2c3dc5',
+  'native-speed-e52be93',
+  'native-performance-b2729a6',
+  'native-parity-466a687',
+  'native-behavior-6b6c15e',
+  'native-selected-fixed-81830c6',
+  'native-cart-fd9cc61',
+  'native-fixed-5c04fa8',
+  'native-theme-ced0143',
+  'selected-ui-aab4a4b',
+  'selected-ui-f48efa2',
+  'm5-functions-9c2e56b42fbf',
+  'm8-read-orders-617057f',
+  'm8-app-proxy-3d2a02e',
+  'm8-theme-c8d8713',
+  'm8-cookie-91b35ab',
+  'm8-preview-28443bd',
+  'lean-markets-7b17cd9',
+  'lean-privacy-theme-23fd116',
+] as const;
+test('each profile names the Function artifacts its runtime profile admits', () => {
+  const original = {
+    sourceCommit: '9b94149272d1b62c34f44dda3bde209e80b4ae22',
+    transform: {
+      inputQuerySha256: '8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053',
+      wasmSha256: '49248769ae4ce578af7c5e7fa77f8c230c8fd4f45b2d673c22cfed87ff946576',
+    },
+    validation: {
+      inputQuerySha256: 'a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5',
+      wasmSha256: '3193f60bbb29cdc473ce7ae73e88d1064ca7be2f03da2aade4e17ae1390366c6',
+    },
+  };
+  assert.deepEqual(releaseProfile('native-functions-renew-8fffc9de').functions, {
+    sourceCommit: '8fffc9debc2bad4914aaa22dca82d8fdf272de5d',
+    transform: {
+      inputQuerySha256: '8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053',
+      wasmSha256: 'f5979b61ba46c9ca315324500b1bedf806949ebf8fb8979494e0bdaf68e392f6',
+    },
+    validation: {
+      inputQuerySha256: '5baff05ac4b1967bc7c9b461b7d6a8956344ddd8c9233708534e8814b34ebcc4',
+      wasmSha256: '4a3e7495245e8716b976ff3c3816c4e144114883edd317afc38fdf84b369f9ec',
+    },
+  });
+  for (const name of runtimeProfileNames) {
+    const functions = releaseProfile(name).functions;
+    if (name !== 'native-functions-renew-8fffc9de') assert.deepEqual(functions, original);
+    assert.equal(functions.sourceCommit, resolveRuntimeReleaseProfile(name).functionsSourceCommit);
+    assert.equal(releaseProfile(name).versionId, resolveRuntimeReleaseProfile(name).activeVersionRef);
+  }
+});
 for (const profile of [
+  'native-functions-renew-8fffc9de',
   'native-cart-repair-eb386d22',
   'native-canonical-313b12ad',
   'native-review-nav-8a7ee446',
@@ -361,7 +477,11 @@ for (const profile of [
   'lean-markets-7b17cd9',
   'lean-privacy-theme-23fd116',
 ]) {
-  const cartRepair = profile === 'native-cart-repair-eb386d22';
+  const renew = profile === 'native-functions-renew-8fffc9de';
+  const cartRepair = renew || profile === 'native-cart-repair-eb386d22';
+  const inputQueries = renew
+    ? { validation: '5baff05ac4b1967bc7c9b461b7d6a8956344ddd8c9233708534e8814b34ebcc4' }
+    : undefined;
   const canonical = cartRepair || profile === 'native-canonical-313b12ad';
   const reviewNav = canonical || profile === 'native-review-nav-8a7ee446';
   const loading = reviewNav || profile === 'native-loading-defd05b0';
@@ -384,104 +504,117 @@ for (const profile of [
   const cookie = preview || profile === 'm8-cookie-91b35ab';
   const theme = cookie || profile === 'm8-theme-c8d8713';
   const proxy = profile !== 'm8-read-orders-617057f';
-  const versionId = cartRepair
-    ? '1202503778305'
-    : canonical
-      ? '1201385144321'
-      : reviewNav
-        ? '1201192632321'
-        : loading
-          ? '1201128341505'
-          : reviewCart
-            ? '1200729554945'
-            : startup
-              ? '1200333160449'
-              : recovery
-                ? '1199953805313'
-                : speed
-                  ? '1199807692801'
-                  : performance
-                    ? '1199754706945'
-                    : parity
-                      ? '1199503441921'
-                      : behavior
-                        ? '1199244476417'
-                        : selectedOnly
-                          ? '1199166783489'
-                          : cart
-                            ? '1199122513921'
-                            : fixed
-                              ? '1198986199041'
-                              : nativeTheme
-                                ? '1198938357761'
-                                : refreshed
-                                  ? '1197668466689'
-                                  : selected
-                                    ? '1196974997505'
-                                    : privacy
-                                      ? '1171218169857'
-                                      : lean
-                                        ? '1169137696769'
-                                        : preview
-                                          ? '1168157736961'
-                                          : cookie
-                                            ? '1166710865921'
-                                            : theme
-                                              ? '1166552825857'
-                                              : proxy
-                                                ? '1166090010625'
-                                                : '1165513097217';
-  const modules = cartRepair
-    ? cartRepairModules
-    : canonical
-      ? canonicalModules
-      : reviewNav
-        ? reviewNavModules
-        : loading
-          ? loadingModules
-          : reviewCart
-            ? reviewCartModules
-            : startup
-              ? startupModules
-              : recovery
-                ? recoveryModules
-                : speed
-                  ? speedModules
-                  : performance
-                    ? performanceModules
-                    : parity
-                      ? parityModules
-                      : behavior
-                        ? behaviorModules
-                        : selectedOnly
-                          ? selectedOnlyModules
-                          : cart
-                            ? cartModules
-                            : fixed
-                              ? fixedModules
-                              : nativeTheme
-                                ? nativeThemeModules
-                                : refreshed
-                                  ? refreshModules
-                                  : selected
-                                    ? selectedModules
-                                    : privacy
-                                      ? privacyModules
-                                      : lean
-                                        ? leanMarketsModules
-                                        : preview
-                                          ? previewThemeModules
-                                          : cookie
-                                            ? cookieThemeModules
-                                            : theme
-                                              ? themeModules
-                                              : proxy
-                                                ? proxyModules
-                                                : historicalM8Modules;
+  const versionId = renew
+    ? '1202733449217'
+    : cartRepair
+      ? '1202503778305'
+      : canonical
+        ? '1201385144321'
+        : reviewNav
+          ? '1201192632321'
+          : loading
+            ? '1201128341505'
+            : reviewCart
+              ? '1200729554945'
+              : startup
+                ? '1200333160449'
+                : recovery
+                  ? '1199953805313'
+                  : speed
+                    ? '1199807692801'
+                    : performance
+                      ? '1199754706945'
+                      : parity
+                        ? '1199503441921'
+                        : behavior
+                          ? '1199244476417'
+                          : selectedOnly
+                            ? '1199166783489'
+                            : cart
+                              ? '1199122513921'
+                              : fixed
+                                ? '1198986199041'
+                                : nativeTheme
+                                  ? '1198938357761'
+                                  : refreshed
+                                    ? '1197668466689'
+                                    : selected
+                                      ? '1196974997505'
+                                      : privacy
+                                        ? '1171218169857'
+                                        : lean
+                                          ? '1169137696769'
+                                          : preview
+                                            ? '1168157736961'
+                                            : cookie
+                                              ? '1166710865921'
+                                              : theme
+                                                ? '1166552825857'
+                                                : proxy
+                                                  ? '1166090010625'
+                                                  : '1165513097217';
+  const modules = renew
+    ? functionsRenewModules
+    : cartRepair
+      ? cartRepairModules
+      : canonical
+        ? canonicalModules
+        : reviewNav
+          ? reviewNavModules
+          : loading
+            ? loadingModules
+            : reviewCart
+              ? reviewCartModules
+              : startup
+                ? startupModules
+                : recovery
+                  ? recoveryModules
+                  : speed
+                    ? speedModules
+                    : performance
+                      ? performanceModules
+                      : parity
+                        ? parityModules
+                        : behavior
+                          ? behaviorModules
+                          : selectedOnly
+                            ? selectedOnlyModules
+                            : cart
+                              ? cartModules
+                              : fixed
+                                ? fixedModules
+                                : nativeTheme
+                                  ? nativeThemeModules
+                                  : refreshed
+                                    ? refreshModules
+                                    : selected
+                                      ? selectedModules
+                                      : privacy
+                                        ? privacyModules
+                                        : lean
+                                          ? leanMarketsModules
+                                          : preview
+                                            ? previewThemeModules
+                                            : cookie
+                                              ? cookieThemeModules
+                                              : theme
+                                                ? themeModules
+                                                : proxy
+                                                  ? proxyModules
+                                                  : historicalM8Modules;
   const profileTest = (name: string, fn: TestFn) => test(`${profile}: ${name}`, fn);
   const prior = (versions: ReleaseAppendInput['activeObservation']['versions']) =>
     proxy
       ? [
+          ...(renew
+            ? [
+                {
+                  versionId: 'gid://shopify/Version/1202503778305',
+                  versionTag: 'native-cart-repair-eb386d22',
+                  status: 'inactive' as const,
+                },
+              ]
+            : []),
           ...(cartRepair
             ? [
                 {
@@ -691,7 +824,7 @@ for (const profile of [
     'M8 scoped candidate requires its exact reviewed Active inventory and preserved module bytes',
     async () => {
       const time = Date.parse('2026-10-11T12:00:00.000Z');
-      const f = await fixture({ time });
+      const f = await fixture({ time, inputQueries });
       try {
         const opening = await f.ports.management.open(async () => ({ durable: true }));
         const binding = await f.ports.readTenant();
@@ -724,6 +857,11 @@ for (const profile of [
           },
         };
         assert.equal(qualifyReleaseAppendInput(input, time, profile).expected.appVersionRef, versionId);
+        const otherQuery = structuredClone(input);
+        otherQuery.readiness.functions.observation.validation.inputQuerySha256 = renew
+          ? 'a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5'
+          : '5baff05ac4b1967bc7c9b461b7d6a8956344ddd8c9233708534e8814b34ebcc4';
+        assert.throws(() => qualifyReleaseAppendInput(otherQuery, time, profile));
         const inactive = structuredClone(input);
         required(inactive.activeObservation.versions[0]).status = 'inactive';
         required(inactive.activeObservation.versions[1]).status = 'active';
@@ -798,7 +936,7 @@ for (const profile of [
         ...(lean ? ['missing_markets_grant'] : []),
       ]) {
         const time = Date.parse('2026-10-11T12:00:00.000Z');
-        const f = await fixture({ time, recordId: randomUUID() });
+        const f = await fixture({ time, recordId: randomUUID(), inputQueries });
         let appended = 0,
           authenticated = 0;
         const old = await f.ports.management.open(async () => ({ durable: true }));
