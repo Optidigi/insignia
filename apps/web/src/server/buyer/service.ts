@@ -52,6 +52,8 @@ class BuyerPrecommitReviewError extends Error {
 type GuestAuthority = ReturnType<typeof createArtworkGuestAuthority>;
 /** Proposal lifetime; acceptance after it requires a new proposal. */
 const PROPOSAL_TTL_MS = 300000;
+/** Buyers count as active (release evidence kept warm) for two minutes after a proposal. */
+const RELEASE_ACTIVITY_MS = 120000;
 type Bucket = { variantId: string; quantity: number; properties: Record<string, string> };
 const notFound = (): never => {
   throw new BuyerStateError('NOT_FOUND');
@@ -527,7 +529,7 @@ export function createBuyerServices(input: {
         request = requestFor(scope, body, id);
       // Buyer activity keeps release evidence warm for a later acceptance, off this request's path.
       try {
-        input.releaseRefresh?.(scope, new Date(+clock() + PROPOSAL_TTL_MS));
+        input.releaseRefresh?.(scope, new Date(+clock() + RELEASE_ACTIVITY_MS));
       } catch {
         /* A refresh hint cannot change the proposal. */
       }
