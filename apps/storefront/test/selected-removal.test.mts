@@ -6,7 +6,11 @@ import { after, test } from 'node:test';
 import { pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
 import type { BuyerConfig } from '../src/buyer.ts';
-import { type AjaxItem, fetchBody, requestUrl } from './support.mts';
+import { type AjaxItem, fetchBody, lineCarriers, requestUrl } from './support.mts';
+
+/** One-line v3 carrier for a variant; the storefront decodes but never verifies it. */
+const v3Carrier = (variantId: string, set = 1) =>
+  lineCarriers([{ variantId, unitMinor: '1000' }], { set }).carriers[0] ?? '';
 
 const bundle = await build({
   entryPoints: [new URL('../src/designer/live-ports.ts', import.meta.url).pathname],
@@ -47,7 +51,7 @@ test('lost-session remove-all uses only observed cart and journal, preserves ord
       key: 'custom',
       variant_id: 102,
       quantity: 2,
-      properties: { _insignia_quote_v2: 'old', _insignia_member_v2: 'member' },
+      properties: { _insignia_line_v3: v3Carrier('102', 1) },
     },
   ];
   const attributes: Record<string, string> = {};
@@ -125,7 +129,7 @@ test('removing one design reviews and preserves its sibling and retries identica
       key: 'old-custom',
       variant_id: 102,
       quantity: 2,
-      properties: { _insignia_quote_v2: 'old', _insignia_member_v2: 'old-member' },
+      properties: { _insignia_line_v3: v3Carrier('102', 1) },
     },
   ];
   const attributes: Record<string, string> = {};
@@ -208,7 +212,7 @@ test('removing one design reviews and preserves its sibling and retries identica
             {
               variantId: '102',
               quantity: 1,
-              properties: { _insignia_quote_v2: 'new', _insignia_member_v2: 'new-member' },
+              properties: { _insignia_line_v3: v3Carrier('102', 2) },
             },
           ],
           desired: [sibling],

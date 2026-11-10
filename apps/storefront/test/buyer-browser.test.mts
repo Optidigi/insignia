@@ -20,11 +20,15 @@ import {
   type AjaxItem,
   ajaxBody,
   createStorefrontTestServer as createServer,
+  lineCarriers,
   record,
   required,
   selectedFrameAssets,
   serverPort,
 } from './support.mts';
+
+/** One-line v3 carrier for a variant; the storefront decodes but never verifies it. */
+const v3Carrier = (variantId: string) => required(lineCarriers([{ variantId, unitMinor: '1000' }]).carriers[0]);
 
 const config: BuyerConfig = {
   version: 'm7-config-v1',
@@ -235,9 +239,7 @@ test('buyer reviews the full retained cart and opens the locale native cart only
             setId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
             validThroughDay: 22000,
             applicationId: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
-            buckets: [
-              { variantId: '222', quantity: 3, properties: { _insignia_quote_v2: 'q', _insignia_member_v2: 'm' } },
-            ],
+            buckets: [{ variantId: '222', quantity: 3, properties: { _insignia_line_v3: v3Carrier('222') } }],
             desired: required(proposalBody).groups,
           },
         });
@@ -639,7 +641,7 @@ async function withRetainedBuyer(
         variant_id: 222,
         product_id: 111,
         quantity: 3,
-        properties: { _insignia_quote_v2: 'q', _insignia_member_v2: 'm' },
+        properties: { _insignia_line_v3: v3Carrier('222') },
       },
       { key: 'ordinary-gift', variant_id: 999, quantity: 2, properties: { gift: true, note: 'Keep gift wrapping' } },
     ];
@@ -663,7 +665,7 @@ async function withRetainedBuyer(
         variant_id: 444,
         product_id: 333,
         quantity: 2,
-        properties: { _insignia_quote_v2: 'q', _insignia_member_v2: 'other-m' },
+        properties: { _insignia_line_v3: v3Carrier('444') },
       });
       configurations.set('333', {
         ...structuredClone(config),
@@ -749,7 +751,7 @@ async function withRetainedBuyer(
         if (
           items.some(
             (item) =>
-              item.properties._insignia_quote_v2 &&
+              item.properties._insignia_line_v3 &&
               expected
                 .filter((value) => value.variantId === String(item.variant_id))
                 .reduce((sum, value) => sum + value.quantity, 0) !== item.quantity,
@@ -839,16 +841,18 @@ async function withRetainedBuyer(
               setId: `dddddddd-dddd-4ddd-8ddd-${String(index).padStart(12, '0')}`,
               validThroughDay: 22000,
               applicationId: `eeeeeeee-eeee-4eee-8eee-${String(index).padStart(12, '0')}`,
-              buckets: quote.desired.flatMap((group) =>
-                group.variants.map((variant) => ({
+              buckets: (() => {
+                const variants = quote.desired.flatMap((group) => group.variants);
+                const set = lineCarriers(
+                  variants.map((variant) => ({ variantId: variant.variantId, unitMinor: '1000' })),
+                  { set: index + 1 },
+                );
+                return variants.map((variant, line) => ({
                   variantId: variant.variantId,
                   quantity: variant.quantity,
-                  properties: {
-                    _insignia_quote_v2: `q-${index}`,
-                    _insignia_member_v2: `m-${index}-${variant.variantId}`,
-                  },
-                })),
-              ),
+                  properties: { _insignia_line_v3: required(set.carriers[line]) },
+                }));
+              })(),
               desired: quote.desired,
             },
           };

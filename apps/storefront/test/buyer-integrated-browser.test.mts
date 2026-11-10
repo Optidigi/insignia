@@ -156,8 +156,10 @@ test('buyer purchases the EUR90 Lean quote through actual HTTP, real signing and
       3,
     );
     assert.ok(items.slice(1).every((item) => item.variant_id === '222'));
-    assert.ok(text(required(items[1]).properties._insignia_quote_v2).length > 100);
-    assert.ok(text(required(items[1]).properties._insignia_member_v2).length > 10);
+    // Each customized line carries its own v3 authorization; no v2 carrier or cart attribute is written.
+    assert.deepEqual(Object.keys(required(items[1]).properties), ['_insignia_line_v3']);
+    assert.ok(text(required(items[1]).properties._insignia_line_v3).length >= 259);
+    assert.deepEqual(attributes, {});
     assert.equal(f.signings(), 1);
     const accepted = (await f.pool.query('SELECT quote_value FROM accepted_quotes WHERE shop_id=$1', [f.shopId])).rows;
     assert.equal(accepted.length, 1);

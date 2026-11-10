@@ -2,9 +2,17 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { CartBucket, CartMutationIntent } from '../src/cart.ts';
 import { createAjaxCartAdapter } from '../src/cart.ts';
-import { type AjaxItem, ajaxBody, fetchBody, requestUrl, required, serverPort } from './support.mts';
+import { type AjaxItem, ajaxBody, fetchBody, lineCarriers, requestUrl, required, serverPort } from './support.mts';
 
+const LINE = '_insignia_line_v3';
+const signed = lineCarriers([
+  { variantId: '42', unitMinor: '3033' },
+  { variantId: '42', unitMinor: '3034' },
+]);
+const fresh = lineCarriers([{ variantId: '42', unitMinor: '3033' }], { set: 2 });
+const carrier = required(signed.carriers[0]);
 const ordinary = { key: '42:ordinary', variant_id: 42, quantity: 3, properties: { Gift: 'Yes' } };
+/** A leftover historical v2 line: still owned, so an apply replaces it. */
 const old = {
   key: '42:old-member',
   variant_id: 42,
@@ -15,8 +23,11 @@ const desired: [CartBucket] = [
   {
     variantId: 'gid://shopify/ProductVariant/42',
     quantity: 2,
-    properties: { _insignia_quote_v2: 'new', _insignia_member_v2: 'member-0' },
+    properties: { [LINE]: carrier },
   },
+];
+const freshDesired = (): CartBucket[] => [
+  { ...required(desired[0]), properties: { [LINE]: required(fresh.carriers[0]) } },
 ];
 type ProviderCall = { url: string; method: string; body?: ReturnType<typeof fetchBody> };
 function provider(
@@ -65,7 +76,7 @@ function provider(
     },
   };
 }
-test('replaces only v2 members by current key and applies exact real-variant vector on locale root', async () => {
+test('replaces owned lines by current key and applies the exact v3 vector with no cart attribute write', async () => {
   const remote = provider();
   const cart = createAjaxCartAdapter({ root: '/nl/', fetchImpl: remote.fetchImpl });
   const initial = await cart.read();
@@ -81,22 +92,37 @@ test('replaces only v2 members by current key and applies exact real-variant vec
       {
         url: '/nl/cart/update.js',
         method: 'POST',
-        body: { updates: { '42:old-member': 0 }, attributes: { _insignia_quote_v2: '' } },
+        body: { updates: { '42:old-member': 0 } },
       },
       {
         url: '/nl/cart/add.js',
         method: 'POST',
         body: { items: [{ id: '42', quantity: 2, properties: required(desired[0]).properties }] },
       },
-      { url: '/nl/cart/update.js', method: 'POST', body: { attributes: { _insignia_quote_v2: 'new' } } },
     ],
   );
-  // One read before writing and one verifying the added lines before the quote attribute;
-  // the removal and quote writes return the complete cart and serve as their own witnesses.
+  // One read before writing and one verifying the added lines; the removal write returns the complete
+  // cart and serves as its own witness. Each line carries its own authorization: no attribute write.
   assert.deepEqual(
     remote.requests.slice(1).map((r) => r.url),
-    ['/nl/cart.js', '/nl/cart/update.js', '/nl/cart/add.js', '/nl/cart.js', '/nl/cart/update.js'],
+    ['/nl/cart.js', '/nl/cart/update.js', '/nl/cart/add.js', '/nl/cart.js'],
   );
+});
+
+test('a leftover v2 quote attribute is cleared inside the removal write, never by an extra request', async () => {
+  const remote = provider([ordinary], undefined, { _insignia_quote_v2: 'stale', Gift: 'keep' });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl });
+  const initial = await cart.read();
+  const result = await cart.apply(desired, { expectedFingerprint: initial.fingerprint });
+  assert.equal(result.status, 'applied');
+  assert.deepEqual(
+    remote.requests.filter((r) => r.method === 'POST').map((r) => [r.url, r.body]),
+    [
+      ['/cart/update.js', { updates: {}, attributes: { _insignia_quote_v2: '' } }],
+      ['/cart/add.js', { items: [{ id: '42', quantity: 2, properties: { [LINE]: carrier } }] }],
+    ],
+  );
+  assert.deepEqual(required(result.cart).attributes, { Gift: 'keep' });
 });
 
 test('lost acknowledgement refetches observed effects but never automatically redispatches', async () => {
@@ -105,7 +131,8 @@ test('lost acknowledgement refetches observed effects but never automatically re
       items.push({
         key: '42:effect',
         variant_id: 42,
-        quantity: required(required(body.items)[0]).quantity,
+        // A partial effect: a complete one is the goal and reconciles as applied (see lost add acknowledgement).
+        quantity: required(required(body.items)[0]).quantity - 1,
         properties: required(required(body.items)[0]).properties,
       });
       throw new Error('connection lost after effect');
@@ -176,7 +203,7 @@ test('ordinary changes between removal and add stop the sequence; malformed v2 m
   );
 });
 
-test('remote roots, unsafe variants, duplicate members and mixed quote sets fail before effects', async () => {
+test('remote roots, unsafe variants, duplicate carriers, mixed sets and extra properties fail before effects', async () => {
   assert.throws(() => createAjaxCartAdapter({ root: '//evil.example/' }), /locale/);
   assert.throws(() => createAjaxCartAdapter({ root: '/en/?redirect=evil' }), /locale/);
   const remote = provider();
@@ -189,20 +216,27 @@ test('remote roots, unsafe variants, duplicate members and mixed quote sets fail
   await assert.rejects(cart.apply([required(desired[0]), required(desired[0])], { expectedFingerprint: '' }), /vector/);
   await assert.rejects(
     cart.apply(
-      [
-        required(desired[0]),
-        { ...required(desired[0]), properties: { _insignia_quote_v2: 'other', _insignia_member_v2: 'other' } },
-      ],
+      [required(desired[0]), { ...required(desired[0]), properties: { [LINE]: required(fresh.carriers[0]) } }],
       { expectedFingerprint: '' },
     ),
     /vector/,
   );
+  // Two lines of one set differ only after the shared 236-character prefix.
+  assert.equal(required(signed.carriers[1]).slice(0, 236), carrier.slice(0, 236));
+  const invalid: Record<string, string>[] = [
+    { [LINE]: carrier, _insignia_member_v2: 'member-0' },
+    { [LINE]: carrier, Summary: 'x' },
+    { [LINE]: signed.prefix },
+    { _insignia_quote_v2: 'new', _insignia_member_v2: 'member-0' },
+  ];
+  for (const properties of invalid)
+    await assert.rejects(cart.apply([{ ...required(desired[0]), properties }], { expectedFingerprint: '' }), /vector/);
   assert.equal(remote.requests.length, 0);
 });
 
 test('already-applied vector succeeds without duplicate addition and empty vector removes customization only', async () => {
   const line = { ...old, quantity: 2, properties: required(desired[0]).properties };
-  const remote = provider([ordinary, line], undefined, { _insignia_quote_v2: 'new' });
+  const remote = provider([ordinary, line]);
   const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl });
   const initial = await cart.read();
   assert.equal((await cart.apply(desired, { expectedFingerprint: initial.fingerprint })).status, 'applied');
@@ -213,14 +247,35 @@ test('already-applied vector succeeds without duplicate addition and empty vecto
   assert.equal(required(removed.cart).customized.length, 0);
 });
 
-test('oversized accepted properties are rejected before dispatch', async () => {
+test('oversized vectors are rejected before dispatch', async () => {
   const remote = provider();
   const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl });
-  const buckets = Array.from({ length: 8 }, (_, i) => ({
-    ...required(desired[0]),
-    properties: { ...required(desired[0]).properties, _insignia_member_v2: `member-${i}`, Summary: 'x'.repeat(10000) },
-  }));
-  await assert.rejects(cart.apply(buckets, { expectedFingerprint: '' }), /payload/);
+  const many = lineCarriers(Array.from({ length: 32 }, (_, i) => ({ variantId: String(42 + i), unitMinor: '1' })));
+  const bucket = (index: number) => ({
+    variantId: String(42 + index),
+    quantity: 1,
+    properties: { [LINE]: required(many.carriers[index]) },
+  });
+  const buckets = many.carriers.map((_, i) => bucket(i));
+  const extra = { ...bucket(0), properties: { [LINE]: `${required(many.carriers[0]).slice(0, -1)}B` } };
+  await assert.rejects(cart.apply([...buckets, extra], { expectedFingerprint: '' }), /vector/);
+  await assert.rejects(
+    cart.apply(
+      [
+        { ...bucket(0), quantity: 6000 },
+        { ...bucket(1), quantity: 4001 },
+      ],
+      { expectedFingerprint: '' },
+    ),
+    /vector/,
+  );
+  await assert.rejects(cart.apply([{ ...bucket(0), quantity: 10001 }], { expectedFingerprint: '' }), /vector/);
+  await assert.rejects(
+    cart.apply([{ ...bucket(0), properties: { [LINE]: `${carrier}${'A'.repeat(70000)}` } }], {
+      expectedFingerprint: '',
+    }),
+    /payload|properties/,
+  );
   assert.equal(remote.requests.length, 0);
 });
 
@@ -289,7 +344,8 @@ test('real HTTP lost-response reconciliation observes effect and persists the no
       items.push({
         key: '42:http-effect',
         variant_id: added.id,
-        quantity: added.quantity,
+        // Partial effect (inventory-clipped) with a lost response: observable, never the goal.
+        quantity: added.quantity - 1,
         properties: added.properties,
       });
       writes++;
@@ -315,7 +371,7 @@ test('real HTTP lost-response reconciliation observes effect and persists the no
     const initial = await cart.read();
     const result = await cart.apply(desired, { expectedFingerprint: initial.fingerprint });
     assert.equal(result.reason, 'mutation_unresolved');
-    assert.equal(required(required(result.cart).customized[0]).quantity, 2);
+    assert.equal(required(required(result.cart).customized[0]).quantity, 1);
     assert.equal(unresolved, true);
     await cart.apply(desired, { expectedFingerprint: required(result.cart).fingerprint });
     assert.equal(writes, 1);
@@ -521,56 +577,49 @@ test('the accepted vector is captured before asynchronous browser lock acquisiti
   const applying = cart.apply(buckets, { expectedFingerprint: initial.fingerprint });
   await started;
   required(buckets[0]).quantity = 99;
-  required(buckets[0]).properties._insignia_quote_v2 = 'changed-after-review';
+  required(buckets[0]).properties[LINE] = required(fresh.carriers[0]);
   release();
   const result = await applying;
   assert.equal(required(required(result.cart).customized[0]).quantity, 2);
-  assert.equal(required(required(result.cart).customized[0]).properties._insignia_quote_v2, 'new');
+  assert.equal(required(required(result.cart).customized[0]).properties[LINE], carrier);
 });
 
-test('accepted vector also installs the shared Function quote carrier while retaining line/order carriers', async () => {
+test('accepted vector keeps each line carrier and writes no cart-level quote attribute', async () => {
   const remote = provider([ordinary]);
   const adapter = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl });
   const before = await adapter.read();
   const result = await adapter.apply(desired, { expectedFingerprint: before.fingerprint });
   assert.equal(result.status, 'applied');
-  assert.equal(required(result.cart).attributes._insignia_quote_v2, 'new');
-  assert.equal(required(required(result.cart).customized[0]).properties._insignia_quote_v2, 'new');
-  assert.equal(required(required(result.cart).customized[0]).properties._insignia_member_v2, 'member-0');
+  assert.deepEqual(required(result.cart).attributes, {});
+  assert.deepEqual(required(required(result.cart).customized[0]).properties, { [LINE]: carrier });
+  assert.deepEqual(
+    remote.requests.filter((r) => r.method === 'POST').map((r) => r.url),
+    ['/cart/add.js'],
+  );
 });
 
-test('the full final update response verifies the goal without another cart GET', async () => {
+test('an Add into a cart without customization is one read, one add and one witness read', async () => {
   const remote = provider([ordinary]);
-  let finalAcknowledged = false;
-  const adapter = createAjaxCartAdapter({
-    root: '/',
-    fetchImpl: async (input, init) => {
-      const url = requestUrl(input);
-      if (finalAcknowledged && url.endsWith('cart.js')) throw new Error('Unnecessary extra read');
-      const response = await remote.fetchImpl(input, init);
-      if (url.endsWith('cart/update.js') && fetchBody(init ?? {}).attributes?._insignia_quote_v2 === 'new')
-        finalAcknowledged = true;
-      return response;
-    },
-  });
+  const adapter = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl });
   const before = await adapter.read();
+  const count = remote.requests.length;
   const result = await adapter.apply(desired, { expectedFingerprint: before.fingerprint });
   assert.equal(result.status, 'applied');
-  assert.equal(required(result.cart).currency, 'EUR');
-  assert.equal(required(result.cart).attributes._insignia_quote_v2, 'new');
+  assert.deepEqual(
+    remote.requests.slice(count).map((r) => r.url),
+    ['/cart.js', '/cart/add.js', '/cart.js'],
+  );
   assert.deepEqual(required(result.cart).ordinary[0]?.properties, ordinary.properties);
-  assert.equal(remote.requests.filter((r) => r.url.endsWith('cart.js')).length, 3);
 });
 
-for (const drift of ['currency', 'ordinary', 'foreign attribute', 'member'] as const) {
-  test(`the final update response cannot settle a changed ${drift}`, async () => {
+for (const drift of ['currency', 'ordinary', 'foreign attribute', 'line'] as const) {
+  test(`the witness read cannot settle a changed ${drift}`, async () => {
     let pending = false;
-    const remote = provider([ordinary], ({ url, body, items, attributes }) => {
-      if (!url.endsWith('cart/update.js') || body.attributes?._insignia_quote_v2 !== 'new') return undefined;
-      Object.assign(attributes, body.attributes);
+    const remote = provider([ordinary], ({ url, items, attributes, requests }) => {
+      if (!url.endsWith('cart.js') || !requests.some((r) => r.url.endsWith('cart/add.js'))) return undefined;
       if (drift === 'ordinary') required(items[0]).quantity++;
       if (drift === 'foreign attribute') attributes.Gift = 'Changed';
-      if (drift === 'member') required(items.find((item) => item.properties._insignia_member_v2)).quantity++;
+      if (drift === 'line') required(items.find((item) => item.properties[LINE])).quantity++;
       return Response.json({ items, attributes, currency: drift === 'currency' ? 'USD' : 'EUR' });
     });
     const adapter = createAjaxCartAdapter({
@@ -594,22 +643,24 @@ for (const drift of ['currency', 'ordinary', 'foreign attribute', 'member'] as c
   });
 }
 
-test('malformed final acknowledgement reconciles its actual effect without redispatch', async () => {
-  const remote = provider([ordinary], ({ url, body, attributes }) => {
-    if (!url.endsWith('cart/update.js') || body.attributes?._insignia_quote_v2 !== 'new') return undefined;
-    Object.assign(attributes, body.attributes);
+test('malformed witness read reconciles the actual effect without redispatch', async () => {
+  let malformed = true;
+  const remote = provider([ordinary], ({ url, requests }) => {
+    if (!malformed || !url.endsWith('cart.js') || !requests.some((r) => r.url.endsWith('cart/add.js')))
+      return undefined;
+    malformed = false;
     return Response.json({ items: 'not a complete cart' });
   });
   const adapter = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl });
   const before = await adapter.read();
   const result = await adapter.apply(desired, { expectedFingerprint: before.fingerprint });
   assert.equal(result.status, 'applied');
-  assert.equal(required(result.cart).attributes._insignia_quote_v2, 'new');
-  assert.equal(remote.requests.filter((r) => r.method === 'POST').length, 2);
+  assert.equal(required(required(result.cart).customized[0]).properties[LINE], carrier);
+  assert.equal(remote.requests.filter((r) => r.method === 'POST').length, 1);
   assert.equal(remote.requests.filter((r) => r.url.endsWith('cart.js')).length, 4);
 });
 
-test('lost final attribute acknowledgement settles exact full goal after reload without another mutation', async () => {
+test('lost add acknowledgement settles the exact full goal after reload without another mutation', async () => {
   let state: CartMutationIntent | null = null,
     flag = false;
   const journal = {
@@ -623,9 +674,10 @@ test('lost final attribute acknowledgement settles exact full goal after reload 
     },
   };
   let lose = true;
-  const remote = provider([ordinary], ({ url, body, attributes }) => {
-    if (lose && url.endsWith('cart/update.js') && body.attributes?._insignia_quote_v2 === 'new') {
-      Object.assign(attributes, body.attributes);
+  const remote = provider([ordinary], ({ url, body, items }) => {
+    if (lose && url.endsWith('cart/add.js')) {
+      const added = required(required(body.items)[0]);
+      items.push({ key: '42:lost', variant_id: 42, quantity: added.quantity, properties: added.properties });
       lose = false;
       throw new Error('response lost after effect');
     }
@@ -689,7 +741,7 @@ test('partial unknown delivery permits explicit observed removal, retains tombst
   assert.equal(required(required(remove.cart).ordinary[0]).quantity, 3);
   assert.equal(required<CartMutationIntent>(state).phase, 'abandoned');
   assert.equal(flag, true);
-  assert.ok(!JSON.stringify(state).includes('member-0'));
+  assert.ok(!JSON.stringify(state).includes(carrier.slice(0, 236)));
   assert.ok(!JSON.stringify(state).includes('Gift'));
   const count = remote.requests.filter((r) => r.method === 'POST').length;
   const reloaded = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
@@ -704,12 +756,9 @@ test('partial unknown delivery permits explicit observed removal, retains tombst
   assert.equal((await reloaded.reconcile()).status, 'review_required');
   assert.equal(
     (
-      await reloaded.apply(
-        [{ ...required(desired[0]), properties: { ...required(desired[0]).properties, _insignia_quote_v2: 'fresh' } }],
-        {
-          expectedFingerprint: after.fingerprint,
-        },
-      )
+      await reloaded.apply(freshDesired(), {
+        expectedFingerprint: after.fingerprint,
+      })
     ).reason,
     'mutation_unresolved',
   );
@@ -730,9 +779,10 @@ test('restart can read-reconcile a witnessed complete goal after both acknowledg
       state = structuredClone(v);
     },
   };
-  const remote = provider([ordinary], ({ url, body, attributes }) => {
-    if (url.endsWith('cart/update.js') && body.attributes?._insignia_quote_v2 === 'new') {
-      Object.assign(attributes, body.attributes);
+  const remote = provider([ordinary], ({ url, body, items }) => {
+    if (url.endsWith('cart/add.js')) {
+      const added = required(required(body.items)[0]);
+      items.push({ key: '42:lost', variant_id: 42, quantity: added.quantity, properties: added.properties });
       failRead = true;
       throw new Error('lost acknowledgement');
     }
@@ -780,17 +830,14 @@ test('unchanged before-state is not delivery proof; explicit removal permits fre
   assert.equal(remove.status, 'applied');
   assert.equal(remove.recovery, 'late_effects_possible');
   failAdd = false;
-  const fresh = [
-    { ...required(desired[0]), properties: { ...required(desired[0]).properties, _insignia_quote_v2: 'fresh' } },
-  ];
-  const applied = await first.apply(fresh, { expectedFingerprint: required(remove.cart).fingerprint });
+  const applied = await first.apply(freshDesired(), { expectedFingerprint: required(remove.cart).fingerprint });
   assert.equal(applied.status, 'applied');
   assert.equal(applied.recovery, 'late_effects_possible');
   assert.equal(required<CartMutationIntent>(state).phase, 'abandoned');
   assert.equal(required<CartMutationIntent>(state).abandoned.length, 1);
 });
 
-test('foreign cart attributes or currency changing during application prevent final shared-carrier write', async () => {
+test('foreign attributes, a foreign quote attribute or currency changing during application prevent settling', async () => {
   for (const changed of ['attributes', 'currency', 'carrier']) {
     const remote = provider(
       [ordinary],
@@ -808,7 +855,7 @@ test('foreign cart attributes or currency changing during application prevent fi
     const before = await cart.read();
     assert.equal((await cart.apply(desired, { expectedFingerprint: before.fingerprint })).reason, 'vector_mismatch');
     assert.equal(
-      remote.requests.some((r) => r.body?.attributes?._insignia_quote_v2 === 'new'),
+      remote.requests.some((r) => r.body?.attributes !== undefined),
       false,
     );
     assert.equal(required(remote.items[0]).quantity, 3);

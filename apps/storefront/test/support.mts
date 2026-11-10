@@ -4,6 +4,12 @@ import type { Server } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { InlineConfig, Plugin, ViteDevServer } from 'vite';
+import {
+  encodeHeaderV3,
+  encodeLineCarrierV3,
+  merkleProofV3,
+  merkleRootV3,
+} from '../../../packages/cart-authorization/src/line-v3.ts';
 import type { CartProperty } from '../src/cart.ts';
 
 /** Concurrent Vite configurations must not rewrite another fixture's optimizer cache. */
@@ -134,5 +140,42 @@ export function selectedFrameAssets(): Plugin {
           });
       });
     },
+  };
+}
+
+/**
+ * Structurally exact v3 line carriers for storefront tests. The browser never verifies signatures, so a
+ * fixed placeholder signature stands in; Function-authority tests use the signed shared vectors instead.
+ */
+export function lineCarriers(
+  lines: readonly { variantId: string; unitMinor: string }[],
+  context: {
+    set?: number;
+    currency?: string;
+    country?: string;
+    marketId?: string;
+    validThroughDay?: number;
+  } = {},
+): { prefix: string; carriers: string[] } {
+  const records = lines.map((line, index) => ({ index, variantId: line.variantId, unitMinor: line.unitMinor }));
+  const set = (context.set ?? 1).toString(16).padStart(8, '0');
+  const header = encodeHeaderV3({
+    keyId: 7,
+    generationHex: '11111111111141118111111111111111',
+    epoch: 4,
+    quoteHex: `${set}000040008000000000000001`,
+    setHex: `${set}000040008000000000000002`,
+    count: records.length,
+    currency: context.currency ?? 'EUR',
+    exponent: 2,
+    country: context.country ?? 'DE',
+    marketId: context.marketId ?? '42',
+    validThroughDay: context.validThroughDay ?? 20802,
+    rootHex: merkleRootV3(records).toString('hex'),
+  });
+  const prefix = Buffer.concat([header, Buffer.alloc(64, 7)]);
+  return {
+    prefix: prefix.toString('base64url'),
+    carriers: records.map((record) => encodeLineCarrierV3(prefix, record, merkleProofV3(records, record.index))),
   };
 }

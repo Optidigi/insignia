@@ -5,7 +5,11 @@ import { test } from 'node:test';
 import { build } from 'esbuild';
 import { chromium } from 'playwright';
 import type { BuyerConfig, DesiredGroup } from '../src/buyer.ts';
-import { serverPort } from './support.mts';
+import { lineCarriers, serverPort } from './support.mts';
+
+/** One-line v3 carrier for a variant; the storefront decodes but never verifies it. */
+const v3Carrier = (variantId: string, set = 1) =>
+  lineCarriers([{ variantId, unitMinor: '1000' }], { set }).carriers[0] ?? '';
 
 declare global {
   interface Window {
@@ -141,7 +145,7 @@ for (const mode of [
               variant_id: 303,
               product_id: 333,
               quantity: 2,
-              properties: { _insignia_quote_v2: 'q', _insignia_member_v2: 'm' },
+              properties: { _insignia_line_v3: v3Carrier('303', 1) },
             },
             { key: 'gift', variant_id: 999, quantity: 1, properties: { note: 'Keep ordinary gift' } },
           ]

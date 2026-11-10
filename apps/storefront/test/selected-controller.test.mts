@@ -5,7 +5,11 @@ import { test } from 'node:test';
 import { build } from 'esbuild';
 import { chromium } from 'playwright';
 import type { BuyerConfig } from '../src/buyer.ts';
-import { serverPort } from './support.mts';
+import { lineCarriers, serverPort } from './support.mts';
+
+/** One-line v3 carrier for a variant; the storefront decodes but never verifies it. */
+const v3Carrier = (variantId: string, set = 1) =>
+  lineCarriers([{ variantId, unitMinor: '1000' }], { set }).carriers[0] ?? '';
 
 test('failed target-product lookup never displays another product frozen config in selected repair', async (t) => {
   const source: BuyerConfig = {
@@ -119,7 +123,7 @@ test('failed target-product lookup never displays another product frozen config 
             product_id: 222,
             variant_id: 202,
             quantity: 1,
-            properties: { _insignia_quote_v2: 'old', _insignia_member_v2: 'member' },
+            properties: { _insignia_line_v3: v3Carrier('202', 1) },
           },
         ],
       },
@@ -203,7 +207,7 @@ test('failed target-product lookup never displays another product frozen config 
             product_id: 222,
             variant_id: 202,
             quantity: 1,
-            properties: { _insignia_quote_v2: 'old', _insignia_member_v2: 'member' },
+            properties: { _insignia_line_v3: v3Carrier('202', 1) },
           },
         ],
       },

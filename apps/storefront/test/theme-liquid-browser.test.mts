@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { type TestContext, test } from 'node:test';
 import { Liquid } from 'liquidjs';
 import { chromium } from 'playwright';
-import { createStorefrontTestServer, serverPort } from './support.mts';
+import { createStorefrontTestServer, lineCarriers, serverPort } from './support.mts';
 
 async function renderTheme(t: TestContext, mode: 'required' | 'optional' | null, manual = false) {
   const directory = await mkdtemp(join(tmpdir(), 'insignia-liquid-'));
@@ -157,25 +157,37 @@ test('rendered draft-only and retained optional products keep ordinary purchase 
   }
 });
 
-function memberCarrier(quantity: number, unitMinor: number) {
-  const bytes = Buffer.alloc(22);
-  bytes.writeUInt16BE(0, 0);
-  bytes.writeBigUInt64BE(101n, 2);
-  bytes.writeUInt32BE(quantity, 10);
-  bytes.writeBigUInt64BE(BigInt(unitMinor), 14);
-  return bytes.toString('base64url');
+/** One structurally exact v3 line carrier (variant 101); the storefront decodes but never verifies it. */
+function v3Line(context: {
+  currency?: string;
+  country?: string;
+  marketId?: string;
+  validThroughDay: number;
+  set?: number;
+}) {
+  return (
+    lineCarriers([{ variantId: '101', unitMinor: '1745' }], {
+      currency: context.currency ?? 'USD',
+      country: context.country ?? 'US',
+      marketId: context.marketId ?? '42',
+      validThroughDay: context.validThroughDay,
+      set: context.set ?? 1,
+    }).carriers[0] ?? ''
+  );
 }
+const utcDay = () => Math.floor(Date.now() / 86400000);
 
-test('cart repair prompts with localized theme-styled review only after a native cart edit voids customization', async (t) => {
+test('cart repair ignores native quantity edits and prompts only when a line loses its signed price', async (t) => {
   const html = await renderTheme(t, null);
   const page = await browserFixture(t);
   let line = {
     product_id: 111,
     quantity: 1,
     original_price: 1745,
-    properties: { _insignia_member_v2: memberCarrier(1, 1745) },
+    properties: { _insignia_line_v3: v3Line({ validThroughDay: utcDay() + 2 }) },
   };
-  await page.route('**/cart.js', (route) => route.fulfill({ json: { items: [line] } }));
+  let extra: (typeof line)[] = [];
+  await page.route('**/cart.js', (route) => route.fulfill({ json: { items: [line, ...extra] } }));
   await page.route('**/cart/change.js', (route) => route.fulfill({ json: {} }));
   await page.evaluate((markup) => document.body.insertAdjacentHTML('beforeend', markup), html);
   const repair = page.locator('insignia-cart-repair');
@@ -186,18 +198,39 @@ test('cart repair prompts with localized theme-styled review only after a native
   const message = repair.getByText('Customized items changed & need review.');
   assert.equal(await message.isVisible(), false);
 
-  // A native theme quantity change: Shopify reverts the line to its base price.
-  line = { ...line, quantity: 2, original_price: 995 };
+  // A native theme quantity change keeps the per-line authorization and price: no notice, no Insignia call.
+  line = { ...line, quantity: 2 };
+  const changed = page.waitForResponse((response) => response.url().endsWith('/cart.js'));
+  await page.evaluate(() => fetch('/cart/change.js', { method: 'POST', body: '{}' }));
+  await changed;
+  await page.waitForTimeout(200);
+  assert.equal(await message.isVisible(), false);
+
+  // A line that no longer shows its signed unit price (e.g. altered or stale) needs review.
+  line = { ...line, original_price: 995 };
   await page.evaluate(() => fetch('/cart/change.js', { method: 'POST', body: '{}' }));
   await message.waitFor();
   const notice = repair.getByRole('status');
   assert.equal(await notice.evaluate((element) => getComputedStyle(element).position), 'fixed');
 
   // A repaired, re-signed line clears the prompt.
-  line = { ...line, original_price: 1745, properties: { _insignia_member_v2: memberCarrier(2, 1745) } };
+  line = {
+    ...line,
+    original_price: 1745,
+    properties: { _insignia_line_v3: v3Line({ validThroughDay: utcDay() + 2 }) },
+  };
   await page.evaluate(() => window.dispatchEvent(new Event('insignia-cart-updated')));
   await message.waitFor({ state: 'hidden' });
   assert.equal(await notice.evaluate((element) => getComputedStyle(element).position), 'static');
+
+  // Checkout accepts one signed set per cart: a correctly priced line from another acceptance needs review.
+  extra = [{ ...line, properties: { _insignia_line_v3: v3Line({ set: 2, validThroughDay: utcDay() + 2 }) } }];
+  await page.evaluate(() => fetch('/cart/change.js', { method: 'POST', body: '{}' }));
+  await message.waitFor();
+  // Removing that line with the theme control leaves one valid set: the prompt clears without any Insignia call.
+  extra = [];
+  await page.evaluate(() => fetch('/cart/change.js', { method: 'POST', body: '{}' }));
+  await message.waitFor({ state: 'hidden' });
 });
 
 test('a leftover cart quote without designed lines is cleared unless this tab has an unresolved Insignia write', async (t) => {
@@ -234,19 +267,6 @@ test('a leftover cart quote without designed lines is cleared unless this tab ha
   }
 });
 
-function quoteEnvelope(context: { currency?: string; country?: string; marketId?: bigint; validThroughDay: number }) {
-  const bytes = Buffer.alloc(156);
-  bytes.write('ISG2', 0, 'ascii');
-  bytes[4] = 2;
-  bytes.write(context.currency ?? 'USD', 62, 'ascii');
-  bytes[65] = 2;
-  bytes.write(context.country ?? 'US', 66, 'ascii');
-  bytes.writeBigUInt64BE(context.marketId ?? 42n, 68);
-  bytes.writeUInt32BE(context.validThroughDay, 76);
-  return bytes.toString('base64url');
-}
-const utcDay = () => Math.floor(Date.now() / 86400000);
-
 test('cart repair names a currency or Market change and repairs in the current storefront context', async (t) => {
   const html = await renderTheme(t, null);
   const page = await browserFixture(t);
@@ -257,10 +277,7 @@ test('cart repair names a currency or Market change and repairs in the current s
         product_id: 111,
         quantity: 1,
         original_price: 920,
-        properties: {
-          _insignia_quote_v2: quoteEnvelope({ validThroughDay: utcDay() + 2 }),
-          _insignia_member_v2: memberCarrier(1, 1745),
-        },
+        properties: { _insignia_line_v3: v3Line({ validThroughDay: utcDay() + 2 }) },
       },
     ],
   };
@@ -283,10 +300,7 @@ test('cart repair names a currency or Market change and repairs in the current s
       {
         ...line,
         original_price: 995,
-        properties: {
-          ...line.properties,
-          _insignia_quote_v2: quoteEnvelope({ marketId: 7n, validThroughDay: utcDay() - 3 }),
-        },
+        properties: { _insignia_line_v3: v3Line({ marketId: '7', validThroughDay: utcDay() - 3 }) },
       },
     ],
   };
@@ -295,7 +309,7 @@ test('cart repair names a currency or Market change and repairs in the current s
   await repair.getByText('Country or currency changed.').waitFor();
 });
 
-test('an expired unchanged offer renews in one click from the owning tab and otherwise falls back to Designer repair', async (t) => {
+test('an expired offer renews in one click at the edited cart quantity and otherwise falls back to Designer repair', async (t) => {
   const html = await renderTheme(t, null);
   for (const outcome of ['renewed', 'review'] as const) {
     const page = await browserFixture(t);
@@ -305,12 +319,10 @@ test('an expired unchanged offer renews in one click from the owning tab and oth
         key: 'custom',
         product_id: 111,
         variant_id: 101,
-        quantity: 1,
+        // Accepted at 1; the buyer raised it with the theme control before the offer expired.
+        quantity: 3,
         original_price: 995,
-        properties: {
-          _insignia_quote_v2: quoteEnvelope({ validThroughDay: utcDay() - 3 }),
-          _insignia_member_v2: memberCarrier(1, 1745),
-        },
+        properties: { _insignia_line_v3: v3Line({ validThroughDay: utcDay() - 3 }) },
       },
     ];
     const attributes: Record<string, string> = {};
@@ -368,10 +380,7 @@ test('an expired unchanged offer renews in one click from the owning tab and oth
             {
               variantId: '101',
               quantity: 1,
-              properties: {
-                _insignia_quote_v2: quoteEnvelope({ validThroughDay: utcDay() + 2 }),
-                _insignia_member_v2: memberCarrier(1, 1745),
-              },
+              properties: { _insignia_line_v3: v3Line({ set: 2, validThroughDay: utcDay() + 2 }) },
             },
           ],
           desired: [group],
@@ -407,8 +416,11 @@ test('an expired unchanged offer renews in one click from the owning tab and oth
       await Promise.all([page.waitForURL('**/cart'), renew.click()]);
       assert.equal(renewals.length, 1);
       assert.deepEqual(
-        items.map((item) => item.key),
-        ['ordinary', 'renewed'],
+        items.map((item) => [item.key, item.quantity]),
+        [
+          ['ordinary', 1],
+          ['renewed', 3],
+        ],
       );
     } else {
       await renew.click();
