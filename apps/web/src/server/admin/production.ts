@@ -837,7 +837,7 @@ export function createProductionAdminServices(
         appKey: apiKey,
         ...(evidence?.expectedBuild.schemaVersion === 2 ? { observationVersion: 2 as const } : {}),
         transformInputQuerySha256: '8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053',
-        validationInputQuerySha256: 'a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5',
+        validationInputQuerySha256: '5baff05ac4b1967bc7c9b461b7d6a8956344ddd8c9233708534e8814b34ebcc4',
       });
       const publicConfig = await createPublicationAdminAdapter({ transport }).read({
         ...tenant,
