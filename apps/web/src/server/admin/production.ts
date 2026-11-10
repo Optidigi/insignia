@@ -31,6 +31,7 @@ import {
   createPublicationAdminAdapter,
   createPublicationAdminHttpTransport,
   createShopifyAvailabilityHoldV3Port,
+  expectedFunctionOwnership,
   type OnlineStaffGrant,
   readOrderPresentation,
   resolveRuntimeReleaseProfile,
@@ -425,12 +426,7 @@ export function createProductionAdminServices(
             await active(actor);
             const observed = await functions.read(
               { ...scope, appId, shopifyShopId: actor.shopId },
-              {
-                appKey: apiKey,
-                ...(expected.schemaVersion === 2 ? { observationVersion: 2 as const } : {}),
-                transformInputQuerySha256: expected.transform.inputQuerySha256,
-                validationInputQuerySha256: expected.validation.inputQuerySha256,
-              },
+              expectedFunctionOwnership(apiKey, expected),
             );
             await active(actor);
             return observed;
@@ -601,12 +597,7 @@ export function createProductionAdminServices(
           return {
             admin: createPublicationAdminAdapter({ transport }),
             observeFunctions: (input: typeof tenant, expected: signingApplication.ExpectedFunctionBuild) =>
-              functions.read(input, {
-                appKey: apiKey,
-                ...(expected.schemaVersion === 2 ? { observationVersion: 2 as const } : {}),
-                transformInputQuerySha256: expected.transform.inputQuerySha256,
-                validationInputQuerySha256: expected.validation.inputQuerySha256,
-              }),
+              functions.read(input, expectedFunctionOwnership(apiKey, expected)),
           };
         },
       })
@@ -831,20 +822,22 @@ export function createProductionAdminServices(
         expectedActiveAppVersionRef: releaseProfile.activeVersionRef,
         now: new Date(),
       });
-      // Query fingerprints only guide collection. These are not an
-      // Active-version/Wasm attestation or a replacement release authority.
-      // Trusted evidence names the queries the Active Function artifacts run;
-      // without it, the reviewed fingerprints of this source's queries apply.
-      const functions = await createFunctionOwnershipReconciler({ transport }).read(tenant, {
-        appKey: apiKey,
-        ...(evidence?.expectedBuild.schemaVersion === 2 ? { observationVersion: 2 as const } : {}),
-        transformInputQuerySha256:
-          evidence?.expectedBuild.transform.inputQuerySha256 ??
-          '8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053',
-        validationInputQuerySha256:
-          evidence?.expectedBuild.validation.inputQuerySha256 ??
-          '5baff05ac4b1967bc7c9b461b7d6a8956344ddd8c9233708534e8814b34ebcc4',
-      });
+      // Diagnostic only; not an Active-version/Wasm attestation or release
+      // authority. With trusted evidence, its release record supplies the query
+      // fingerprints (live Admin returns `inputQuery: null`, so they are then
+      // not compared; the record itself is the gate). Without it, a legacy
+      // observation applies: a null query reports missing/unknown, and the
+      // reviewed fingerprints of this source matter only if Admin returns one.
+      const functions = await createFunctionOwnershipReconciler({ transport }).read(
+        tenant,
+        evidence
+          ? expectedFunctionOwnership(apiKey, evidence.expectedBuild)
+          : {
+              appKey: apiKey,
+              transformInputQuerySha256: '8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053',
+              validationInputQuerySha256: '5baff05ac4b1967bc7c9b461b7d6a8956344ddd8c9233708534e8814b34ebcc4',
+            },
+      );
       const publicConfig = await createPublicationAdminAdapter({ transport }).read({
         ...tenant,
         field: 'public_config',

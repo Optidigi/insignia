@@ -22,7 +22,6 @@ import {
   createCatalogTransport,
   createPublicationAdminHttpTransport,
   createShopifyAdminGraphqlReadTransport,
-  type ExpectedFunctionOwnership,
   readVariantAvailability as readAvailability,
   readPrimaryMarketContext,
   readShopContext,
@@ -62,7 +61,8 @@ export type ProductionBuyerInputs = {
   artifactPorts: FunctionArtifactReadinessPorts;
   /** Independent stored evidence only; never collect while acceptance owns locks. */
   passiveArtifactPorts?: FunctionArtifactReadinessPorts;
-  expectedFunctions: ExpectedFunctionOwnership;
+  /** Only the app key: expected Function queries come from the trusted release record. */
+  expectedFunctions: { appKey: string };
   maxObservationAgeMs: number;
   /** Current provider inventory eligibility, not a guessed boolean from product status or variant existence. */
   readVariantAvailability?(

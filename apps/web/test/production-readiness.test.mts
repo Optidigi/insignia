@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { test } from 'node:test';
 import { setImmediate } from 'node:timers/promises';
 import { buildPublicConfig, publicKeyFingerprint, publicKeyFromSeed } from '@insignia/application';
 import { createProductionQuoteReadiness } from '../src/server/production-readiness.ts';
-import { coreFixture, releaseEvidenceFixture } from './http-fixtures.mts';
+import { coreFixture, effectiveRevision, releaseEvidenceFixture } from './http-fixtures.mts';
 
 for (const inactive of [false, true]) {
   test(`readiness retains the original public observation time and rejects inactive scope: inactive=${inactive}`, async () => {
@@ -60,11 +61,7 @@ for (const inactive of [false, true]) {
       ring: { currentKeyId: 'synthetic', keys: { synthetic: Buffer.alloc(32, 1) } },
       selectedKeyId: 7,
       appId: '7',
-      expectedFunctions: {
-        appKey: 'synthetic-app',
-        transformInputQuerySha256: 'a'.repeat(64),
-        validationInputQuerySha256: 'c'.repeat(64),
-      },
+      expectedFunctions: { appKey: 'synthetic-app' },
       maxObservationAgeMs: 30000,
       clock: () => current,
       artifactPorts: {
@@ -168,11 +165,7 @@ function releasePreparationFixture(
     ring: { currentKeyId: 'synthetic', keys: { synthetic: Buffer.alloc(32, 1) } },
     selectedKeyId: 7,
     appId: '7',
-    expectedFunctions: {
-      appKey: 'synthetic-app',
-      transformInputQuerySha256: 'a'.repeat(64),
-      validationInputQuerySha256: 'c'.repeat(64),
-    },
+    expectedFunctions: { appKey: 'synthetic-app' },
     maxObservationAgeMs: 30000,
     artifactPorts: artifacts,
     transport: {
@@ -324,5 +317,151 @@ for (const invalid of ['scope', 'key', 'missing build', 'missing evidence'] as c
     await assert.rejects(f.read.prepare({ quote: f.quote }));
     assert.equal(reads, invalid.startsWith('missing') ? 2 : 0);
     assert.equal(f.providerReads(), 0);
+  });
+}
+
+// Live Shopify Admin currently returns `inputQuery: null` (observation v2); the
+// trusted release record is then the only query authority. When Admin does
+// return a query, it is compared with that same record, never with a separately
+// maintained operator value that can drift at each Function release.
+for (const live of ['unobservable', 'release-query', 'other-query', 'missing-build'] as const) {
+  test(`buyer readiness derives Function query authority from the trusted release: ${live}`, async () => {
+    const queries = {
+      transform: 'query Transform { cart { lines { id } } }',
+      validation: 'query Validation { shop { id } }',
+    };
+    const digest = (value: string) => createHash('sha256').update(value).digest('hex');
+    const scope = {
+      shopId: 'tenant',
+      installationGeneration: '1',
+      authorizationGeneration: '11111111-1111-4111-8111-111111111111',
+      authorizationEpoch: 0,
+    };
+    const now = new Date();
+    const publicKey = publicKeyFromSeed(Buffer.alloc(32, 1));
+    const key = {
+      ...scope,
+      id: 7,
+      keyId: 7,
+      state: 'active' as const,
+      publicKey,
+      publicKeyFingerprint: publicKeyFingerprint(publicKey),
+      firstDay: 20000,
+      lastDay: 23000,
+      privateEnvelope: null,
+      wrappingKeyId: null,
+    };
+    const publicConfig = buildPublicConfig({ scope, keys: [key] });
+    const evidence = releaseEvidenceFixture(now.toISOString(), new Date(+now + 30000).toISOString());
+    const handles = {
+      transform: 'insignia-experimental-v2-transform',
+      validation: 'insignia-experimental-v2-validation',
+    };
+    const build = {
+      ...evidence.expectedBuild,
+      transform: {
+        ...evidence.expectedBuild.transform,
+        handle: handles.transform,
+        inputQuerySha256: digest(queries.transform),
+      },
+      validation: {
+        ...evidence.expectedBuild.validation,
+        handle: handles.validation,
+        inputQuerySha256: digest(queries.validation),
+      },
+    };
+    const attestation = { ...evidence.record.attestation, transform: build.transform, validation: build.validation };
+    const liveQuery = (surface: 'transform' | 'validation') =>
+      live === 'unobservable' || live === 'missing-build'
+        ? null
+        : live === 'other-query'
+          ? 'query Other { shop { id } }'
+          : queries[surface];
+    const functions = (['transform', 'validation'] as const).map((surface) => ({
+      id: build[surface].functionId,
+      handle: handles[surface],
+      appKey: 'synthetic-app',
+      apiType: build[surface].apiType,
+      apiVersion: '2026-07',
+      inputQuery: liveQuery(surface),
+    }));
+    const read = createProductionQuoteReadiness({
+      core: coreFixture({
+        tenants: {
+          getActiveAuthorizationScope: async () => ({
+            ...scope,
+            shopDomain: 'synthetic.myshopify.com',
+            shopifyShopId: '9',
+          }),
+        },
+        signingKeys: { getActiveScope: async () => scope, list: async () => [key] },
+        acceptedQuotes: {
+          getEffective: async () => effectiveRevision(),
+        },
+      }),
+      ring: { currentKeyId: 'synthetic', keys: { synthetic: Buffer.alloc(32, 1) } },
+      selectedKeyId: 7,
+      appId: '7',
+      expectedFunctions: { appKey: 'synthetic-app' },
+      maxObservationAgeMs: 30000,
+      clock: () => now,
+      artifactPorts: {
+        expectedBuild: { read: async () => (live === 'missing-build' ? null : build) },
+        trustedEvidence: { read: async () => attestation },
+      },
+      transport: {
+        execute: async (request) => ({
+          status: 200,
+          body: request.query.includes('InsigniaReadPublicConfig')
+            ? {
+                data: {
+                  shop: {
+                    id: 'gid://shopify/Shop/9',
+                    field: {
+                      owner: { id: 'gid://shopify/Shop/9' },
+                      namespace: 'app--7',
+                      key: 'insignia_public_config_v2',
+                      type: 'json',
+                      value: publicConfig.value,
+                      compareDigest: '1'.repeat(64),
+                    },
+                  },
+                },
+              }
+            : {
+                data: {
+                  shop: { id: 'gid://shopify/Shop/9' },
+                  shopifyFunctions: { nodes: functions, pageInfo: { hasNextPage: false } },
+                  cartTransforms: {
+                    nodes: [{ id: 'cart-transform', functionId: build.transform.functionId, blockOnFailure: true }],
+                    pageInfo: { hasNextPage: false },
+                  },
+                  validations: {
+                    nodes: [{ id: 'validation', enabled: true, blockOnFailure: true, shopifyFunction: functions[1] }],
+                    pageInfo: { hasNextPage: false },
+                  },
+                },
+              },
+        }),
+      },
+    });
+    const ready = read.assertReady({
+      quote: {
+        ...scope,
+        acceptedDay: 20758,
+        effectiveRevisions: [
+          {
+            configId: 'configuration',
+            operationId: 'publication',
+            productId: '123',
+            revisionId: 'revision',
+            contentHash: 'a'.repeat(64),
+          },
+        ],
+      },
+    });
+    if (live === 'other-query') await assert.rejects(ready, /Required Function pair not ready/);
+    else if (live === 'missing-build') await assert.rejects(ready, /expected build unavailable/);
+    else assert.equal(await ready, undefined);
   });
 }

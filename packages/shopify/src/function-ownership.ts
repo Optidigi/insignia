@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import type { ExpectedFunctionBuild } from '@insignia/application';
 import {
   FUNCTION_OWNERSHIP_QUERY,
   PublicationAdminError,
@@ -43,11 +44,26 @@ export type FunctionOwnership = {
 export type ExpectedFunctionOwnership = {
   /** The installed app's client ID, not an arbitrary merchant-supplied app key. */
   appKey: string;
+  /** Query fingerprints of the trusted release record; use {@link expectedFunctionOwnership}. */
   transformInputQuerySha256: string;
   validationInputQuerySha256: string;
   /** Native identity only; v2 release authority must be independently verified by the caller. */
   observationVersion?: 2;
 };
+/**
+ * The trusted release record (Active version + module baseline, including each
+ * Function's input query) is the single query authority. Deriving the expected
+ * fingerprints here avoids a second, separately maintained value that drifts at
+ * every Function release.
+ */
+export function expectedFunctionOwnership(appKey: string, build: ExpectedFunctionBuild): ExpectedFunctionOwnership {
+  return {
+    appKey,
+    ...(build.schemaVersion === 2 ? { observationVersion: 2 as const } : {}),
+    transformInputQuerySha256: build.transform.inputQuerySha256,
+    validationInputQuerySha256: build.validation.inputQuerySha256,
+  };
+}
 const record = (value: unknown): Record<string, unknown> | null =>
   value !== null && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
 const unknown: FunctionOwnership = {
@@ -75,6 +91,18 @@ function nodes(value: unknown): Record<string, unknown>[] | null {
 }
 function hash(value: string): string {
   return createHash('sha256').update(value, 'utf8').digest('hex');
+}
+/**
+ * Live Shopify Admin currently returns `inputQuery: null` for owned Functions.
+ * Observation v2 records that as `unobservable` instead of inventing a digest:
+ * the live query is then not compared here, and the trusted release record is
+ * the query gate (enforced by the artifact readiness check). A legacy (v1)
+ * observation still requires an observable query. Anything else is invalid.
+ */
+function liveQuery(found: Record<string, unknown>, expected: ExpectedFunctionOwnership) {
+  if (typeof found.inputQuery === 'string') return { kind: 'observed' as const, sha256: hash(found.inputQuery) };
+  if (expected.observationVersion === 2 && found.inputQuery === null) return { kind: 'unobservable' as const };
+  return null;
 }
 
 /** Read-only: an absent/partial/provider-uncertain observation never becomes READY. */
@@ -124,6 +152,7 @@ export function createFunctionOwnershipReconciler(config: {
       const objectIdentity = (kind: 'transform' | 'validation'): NullableObjectIdentity | null => {
         const matches = owned(handles[kind]);
         const found = matches[0];
+        const query = found ? liveQuery(found, expected) : null;
         if (
           matches.length !== 1 ||
           !found ||
@@ -131,7 +160,7 @@ export function createFunctionOwnershipReconciler(config: {
           typeof found.id !== 'string' ||
           !found.id ||
           typeof found.apiVersion !== 'string' ||
-          (typeof found.inputQuery !== 'string' && !(expected.observationVersion === 2 && found.inputQuery === null)) ||
+          !query ||
           (found.apiType !== 'cart_transform' && found.apiType !== 'cart_checkout_validation')
         )
           return null;
@@ -140,7 +169,7 @@ export function createFunctionOwnershipReconciler(config: {
           handle: handles[kind],
           apiType: found.apiType,
           apiVersion: found.apiVersion,
-          inputQuerySha256: typeof found.inputQuery === 'string' ? hash(found.inputQuery) : null,
+          inputQuerySha256: query.kind === 'observed' ? query.sha256 : null,
         });
       };
       const observation = Object.freeze({
@@ -173,11 +202,12 @@ export function createFunctionOwnershipReconciler(config: {
         // Complete deployment absence is independently known even when the
         // nullable legacy query cannot establish artifact identity. Never
         // manufacture an observed query digest from the expected build.
-        if (typeof found.inputQuery !== 'string' && !(expected.observationVersion === 2 && found.inputQuery === null))
-          return deployments.length === 0 ? 'missing' : 'unknown';
+        const query = liveQuery(found, expected);
+        if (!query) return deployments.length === 0 ? 'missing' : 'unknown';
         const expectedHash =
           kind === 'transform' ? expected.transformInputQuerySha256 : expected.validationInputQuerySha256;
-        if (typeof found.inputQuery === 'string' && hash(found.inputQuery) !== expectedHash) return 'drift';
+        // An unobservable query is not a match; the release record remains the gate.
+        if (query.kind === 'observed' && query.sha256 !== expectedHash) return 'drift';
         if (deployments.length > 1) return 'duplicate';
         const deployment = deployments[0];
         if (!deployment) return 'missing';

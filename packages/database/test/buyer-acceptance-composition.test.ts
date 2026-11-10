@@ -311,11 +311,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
             },
           },
           maxObservationAgeMs: 30000,
-          expectedFunctions: {
-            appKey: build.appClientId,
-            transformInputQuerySha256: build.transform.inputQuerySha256,
-            validationInputQuerySha256: build.validation.inputQuerySha256,
-          },
+          expectedFunctions: { appKey: build.appClientId },
           artifactPorts: {
             expectedBuild: {
               read: async (scope) =>
