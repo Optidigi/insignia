@@ -2,6 +2,14 @@ import { createHash } from 'node:crypto';
 import { withAdminDeadline } from '../admin-deadline.js';
 import type { AdminCredentialSource } from '../contextual-pricing.js';
 
+/** base64url(set UUID || index) of a v3 line carrier (layout: docs/architecture/CART-LINE-V3.md), or null. */
+function lineRefOf(carrier: string): string | null {
+  if (!/^[A-Za-z0-9_-]{259,472}$/.test(carrier)) return null;
+  const raw = Buffer.from(carrier, 'base64url');
+  if (raw.toString('base64url') !== carrier || raw.length < 194 || raw.toString('ascii', 0, 4) !== 'ISG3') return null;
+  return Buffer.concat([raw.subarray(44, 60), raw.subarray(177, 178)]).toString('base64url');
+}
+
 export type ShopifyOrderTarget = { shopId: string; installationGeneration: string; orderId: string };
 export type ShopifyOrderFacts = {
   shopId: string;
@@ -344,6 +352,16 @@ export async function readShopifyOrder(
               if (envelope && member && !childEnvelope) {
                 if (!envelope.value) return fail();
                 attributes.push(envelope);
+              }
+              // Cart-line v3: Transform copies only a short set/index reference to the child. The parent
+              // carrier is carried forward when that reference names it; reconciliation verifies it fully.
+              const lineCarrier = parent.find((a) => a.key === '_insignia_line_v3');
+              if (lineCarrier) {
+                const ref = attributes.find((a) => a.key === '_insignia_ref_v3');
+                const childCarrier = attributes.find((a) => a.key === '_insignia_line_v3');
+                if (!ref || ref.value !== lineRefOf(lineCarrier.value)) return fail();
+                if (childCarrier && childCarrier.value !== lineCarrier.value) return fail();
+                if (!childCarrier) attributes.push(lineCarrier);
               }
             }
 
