@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { DesiredGroup } from '../src/buyer.ts';
 import { createSelectedDesignCustody } from '../src/designer/design-custody.ts';
+import { restorableDesign } from '../src/designer/group-key.ts';
 
 const group: DesiredGroup = {
   productId: '11',
@@ -110,4 +111,18 @@ test('a foreign UUID hint does not supply ownership or trigger a replacement wri
   });
   assert.equal(await custody.restore(group), null);
   assert.equal(writes, 0);
+});
+
+test('reopening a cart line keeps saved draft choices but cart-edited quantities', () => {
+  const cart: DesiredGroup = { ...structuredClone(group), variants: [{ variantId: '22', quantity: 2 }] };
+  const draft: DesiredGroup = {
+    ...structuredClone(group),
+    design: { ...structuredClone(group.design), options: [{ optionId: 'pack', valueId: 'gift' }] },
+    variants: [{ variantId: '22', quantity: 1 }],
+  };
+  assert.deepEqual(restorableDesign(cart, undefined, true), cart);
+  assert.deepEqual(restorableDesign(cart, draft, false), draft, 'unchanged cart keeps the draft quantities');
+  const repaired = restorableDesign(cart, draft, true);
+  assert.deepEqual(repaired.variants, cart.variants);
+  assert.deepEqual(repaired.design, draft.design);
 });

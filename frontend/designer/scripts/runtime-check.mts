@@ -1215,6 +1215,25 @@ test('upload success or failure while interruption confirmation is open settles 
   }
 });
 
+test('an upload finishing while closing the customizer keeps the close decision with the real result', async () => {
+  for (const outcome of ['success', 'failure'] as const) {
+    const deferred = delayed();
+    const app = harness({ artwork: { upload: async () => deferred.promise }, cart: { commit: async () => { throw Error('unused'); } } });
+    app.dispatch({ type: 'modal-opened', modal: { kind: 'artwork', positionId: 'front' } });
+    const pending = app.runtime.upload(new File(['image'], 'pending.png', { type: 'image/png' }), 'front');
+    app.dispatch({ type: 'close-requested' });
+    assert.deepEqual(app.state.modal, { kind: 'confirm-upload-cancel', positionId: 'front', destination: 'customizer' });
+    if (outcome === 'success') deferred.resolve({ id: 'accepted', name: 'pending.png', url: '/pending.png', width: 10, height: 10 });
+    else deferred.reject(new Error('unavailable'));
+    await pending;
+    assert.equal(app.state.open, true);
+    // Success: the edited design asks the ordinary close question. Failure: the error stays visible.
+    assert.equal(app.state.modal.kind, outcome === 'success' ? 'confirm-close' : 'artwork');
+    assert.equal(app.state.prints[0].artworkId, outcome === 'success' ? 'accepted' : 'logo');
+    if (outcome === 'failure') assert.equal(app.state.upload.kind, 'failed');
+  }
+});
+
 test('confirmed upload cancellation retains previous artwork and ignores the late result', async () => {
   const deferred = delayed();
   let request!: UploadRequest;

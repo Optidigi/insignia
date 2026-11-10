@@ -1,5 +1,9 @@
 {
   "insignia": {
-    "customise": "Personaliseren"
+    "customise": "Personaliseren",
+    "cart_review": {
+      "label": "Gepersonaliseerde artikelen controleren",
+      "message": "Je gepersonaliseerde artikelen zijn gewijzigd, daarom worden de personalisatieprijzen niet toegepast. Controleer ze voordat je afrekent."
+    }
   }
 }

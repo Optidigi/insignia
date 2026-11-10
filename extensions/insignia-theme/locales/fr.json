@@ -1,5 +1,9 @@
 {
   "insignia": {
-    "customise": "Personnaliser"
+    "customise": "Personnaliser",
+    "cart_review": {
+      "label": "Vérifier les articles personnalisés",
+      "message": "Vos articles personnalisés ont changé : les prix de personnalisation ne sont pas appliqués. Vérifiez-les avant de passer commande."
+    }
   }
 }

@@ -1,4 +1,4 @@
-<insignia-cart-repair proxy-base="{{ routes.root_url }}apps/{{ block.settings.proxy_prefix | escape }}" cart-root="{{ routes.root_url }}" country="{{ localization.country.iso_code }}" market-id="{{ localization.market.id }}"></insignia-cart-repair>
+<insignia-cart-repair proxy-base="{{ routes.root_url }}apps/{{ block.settings.proxy_prefix | escape }}" cart-root="{{ routes.root_url }}" country="{{ localization.country.iso_code }}" market-id="{{ localization.market.id }}" review-label="{{ 'insignia.cart_review.label' | t | escape }}" review-message="{{ 'insignia.cart_review.message' | t | escape }}"></insignia-cart-repair>
 {% render 'customise-control', product: product, block: block, control: 'automatic' %}
 {% schema %}
 {

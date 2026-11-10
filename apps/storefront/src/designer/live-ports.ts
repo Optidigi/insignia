@@ -70,13 +70,19 @@ export function createLiveDesignerPorts(input: {
     const observed = await cart.read(signal);
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     const restore = observed.customized.length
-      ? await api.private<{ groups: DesiredGroup[]; labels?: Record<string, string> }>(
+      ? await api.private<{ groups: DesiredGroup[]; labels?: Record<string, string>; repairRequired?: boolean }>(
           'cart-state',
           { lines: observed.customized },
           signal,
         )
       : { groups: [] };
-    return { cart: observed, groups: restore.groups, labels: 'labels' in restore ? (restore.labels ?? {}) : {} };
+    return {
+      cart: observed,
+      groups: restore.groups,
+      labels: 'labels' in restore ? (restore.labels ?? {}) : {},
+      // The server rebuilt groups from current cart quantities; they differ from the signed set.
+      repairRequired: 'repairRequired' in restore && restore.repairRequired === true,
+    };
   }
   async function refreshGroups(groups: DesiredGroup[], signal?: AbortSignal) {
     const labels = new Map<string, string>();

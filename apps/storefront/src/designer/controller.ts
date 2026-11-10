@@ -1,7 +1,7 @@
 import type { BuyerConfig, DesiredGroup } from '../buyer';
 import { createBuyerApi } from '../buyer';
 import { createDesignerFrame } from './frame-host';
-import { desiredGroupKey } from './group-key';
+import { desiredGroupKey, restorableDesign } from './group-key';
 import { createLiveDesignerPorts } from './live-ports';
 import { createDesignerModal } from './modal';
 import { buildBuyerDesigner } from './published';
@@ -138,7 +138,7 @@ export async function mountLiveDesigner(input: {
                   }
                 : {}),
             }
-          : mapped.restore(retained?.value ?? original, id);
+          : mapped.restore(restorableDesign(original, retained?.value, observed.repairRequired), id);
         live.registerDesign(initialDesign.id, original);
         restored = {
           initialDesign,
