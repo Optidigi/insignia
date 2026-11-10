@@ -219,6 +219,66 @@ pub fn proof_root_v3(tail: &LineTailV3) -> [u8; HASH_LEN] {
     node
 }
 
+/// Tree nodes (leaves and inner nodes below the root) already proven to lead to the signed root,
+/// by level and position, including every sibling an accepted proof used.
+///
+/// A later line of the same cart stops hashing at the first proven node on its path, but each of its
+/// siblings must still equal the proven node at that position (byte comparison). Under collision
+/// resistance a tree has one value per position, so the accepted carriers are exactly those full
+/// verification accepts; this only removes repeated hashing (design fallback 2).
+#[derive(Default)]
+struct VerifiedNodes {
+    nodes: [[Option<[u8; HASH_LEN]>; MAX_LINES_V3 as usize]; MAX_DEPTH_V3 as usize],
+}
+
+impl VerifiedNodes {
+    fn includes(&mut self, tail: &LineTailV3, root: &[u8; HASH_LEN]) -> bool {
+        let depth = usize::from(tail.depth);
+        let index = usize::from(tail.index);
+        let proof = &tail.proof[..depth];
+        // Every sibling at an already proven position must be exactly that node.
+        for (level, sibling) in proof.iter().enumerate() {
+            if self.nodes[level][(index >> level) ^ 1].is_some_and(|known| known != *sibling) {
+                return false;
+            }
+        }
+        let mut path = [[0u8; HASH_LEN]; MAX_DEPTH_V3 as usize];
+        let mut node = leaf_hash_v3(&tail.raw);
+        let mut proven_from = depth;
+        for (level, sibling) in proof.iter().enumerate() {
+            if let Some(known) = self.nodes[level][index >> level] {
+                if known != node {
+                    return false;
+                }
+                // Proven node: its whole upward path and siblings were checked above.
+                if proof[level..]
+                    .iter()
+                    .enumerate()
+                    .any(|(k, s)| self.nodes[level + k][(index >> (level + k)) ^ 1] != Some(*s))
+                {
+                    return false;
+                }
+                proven_from = level;
+                break;
+            }
+            path[level] = node;
+            node = if (index >> level) & 1 == 1 {
+                node_hash_v3(sibling, &node)
+            } else {
+                node_hash_v3(&node, sibling)
+            };
+        }
+        if proven_from == depth && node != *root {
+            return false;
+        }
+        for level in 0..proven_from {
+            self.nodes[level][index >> level] = Some(path[level]);
+            self.nodes[level][(index >> level) ^ 1] = Some(proof[level]);
+        }
+        true
+    }
+}
+
 /// The short reference Transform copies to the expanded child: base64url(set UUID || index).
 pub fn ref_v3(set: &[u8; 16], index: u8) -> String {
     let mut raw = [0u8; REF_V3_LEN];
@@ -294,6 +354,7 @@ pub fn verify_lines_v3(
     let mut quantity = 0u32;
     let mut total = 0u64;
     let mut claims = Vec::with_capacity(lines.len());
+    let mut verified = VerifiedNodes::default();
     for line in lines {
         let carrier = line.carrier.as_bytes();
         if carrier.len() != line_chars || &carrier[..PREFIX_V3_CHARS] != prefix_chars {
@@ -328,7 +389,7 @@ pub fn verify_lines_v3(
                     .ok_or(Error::Overflow)?,
             )
             .ok_or(Error::Overflow)?;
-        if proof_root_v3(&tail) != h.root {
+        if !verified.includes(&tail, &h.root) {
             return Err(Error::Proof);
         }
         claims.push(LineClaimV3 {
@@ -366,5 +427,48 @@ mod tests {
             [0, 1, 2, 2, 3, 3, 4, 4, 5, 5]
         );
         assert_eq!(ref_v3(&[0; 16], 0).len(), REF_V3_CHARS);
+    }
+
+    /// Cached verification accepts exactly what full per-line verification accepts.
+    #[test]
+    fn proven_node_cache_matches_full_verification() {
+        let vector: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../packages/cart-authorization/fixtures/cart-line-v3.json"
+        ))
+        .unwrap();
+        for case in vector["cases"].as_array().unwrap() {
+            let carriers: Vec<&str> = case["carriers"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|c| c.as_str().unwrap())
+                .collect();
+            let prefix = decode_prefix_v3(&carriers[0].as_bytes()[..PREFIX_V3_CHARS]).unwrap();
+            let h = prefix.header;
+            let tails: Vec<LineTailV3> = carriers
+                .iter()
+                .map(|c| decode_tail_v3(&c.as_bytes()[PREFIX_V3_CHARS..], h.depth).unwrap())
+                .collect();
+            for order in [false, true] {
+                let mut cache = VerifiedNodes::default();
+                let mut indices: Vec<usize> = (0..tails.len()).collect();
+                if order {
+                    indices.reverse();
+                }
+                for &i in &indices {
+                    assert!(cache.includes(&tails[i], &h.root));
+                    // Any single flipped proof byte or record byte must still reject afterwards.
+                    for level in 0..usize::from(h.depth) {
+                        let mut forged = tails[i];
+                        forged.proof[level][31] ^= 1;
+                        assert!(!cache.includes(&forged, &h.root), "proof level {level}");
+                        assert_ne!(proof_root_v3(&forged), h.root);
+                    }
+                    let mut forged = tails[i];
+                    forged.raw[16] ^= 1;
+                    assert!(!cache.includes(&forged, &h.root));
+                }
+            }
+        }
     }
 }
