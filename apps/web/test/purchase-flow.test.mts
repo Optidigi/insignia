@@ -218,6 +218,21 @@ test('actual quote/signing/PG purchase authority is independent from cart confir
   assert.equal(view.isTest, false);
   assert.equal(required(view.groups[0]).configRevisionId, f.group.configRevisionId);
   assert.equal(required(required(view.groups[0]).variants[0]).quantity, 3);
+  // A whole-set order: ordered-line design vectors equal the accepted physical groups exactly.
+  assert.deepEqual(
+    view.groups.map(({ index, productId, configRevisionId, variants }) => ({
+      index,
+      productId,
+      configRevisionId,
+      variants,
+    })),
+    f.offer.quote.physicalGroups.map(({ productId, configRevisionId, variants }, index) => ({
+      index,
+      productId,
+      configRevisionId,
+      variants,
+    })),
+  );
   assert.equal(
     view.lines.reduce((sum, line) => sum + BigInt(line.unitPriceMinor) * BigInt(line.quantity), 0n),
     9000n,
