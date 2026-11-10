@@ -20,6 +20,7 @@ import type { AdminActor } from '../admin/contracts.js';
 import { scopeCustomerArtworkGeometry } from '../customer-artwork/presentation.ts';
 import { buyerGeometry } from '../merchant-preview/geometry.ts';
 import type { FrozenPreviewReader } from '../merchant-preview/read.ts';
+import { orderedGroupVariants } from './ordered-groups.ts';
 
 const record = (value: unknown): Record<string, unknown> =>
   value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
@@ -74,10 +75,16 @@ export function createPurchaseServices(input: {
     const groups: PurchaseView['groups'] = [];
     const authorized = new Map<string, Awaited<ReturnType<typeof store.getAuthorizedArtwork>>>();
     const events = purchase.artworkEvents;
+    // Artwork events key on the signed design position, including designs the order did not contain.
+    let index = -1;
     for (const binding of purchase.bindings) {
       if (!binding.designPayload) continue;
-      for (const { group: selected } of binding.designPayload.request.groups) {
-        const index = groups.length;
+      const ordered = orderedGroupVariants(binding);
+      for (const [position, { group: selected }] of binding.designPayload.request.groups.entries()) {
+        index++;
+        // Ordered lines are the production truth; a design with no ordered line is not shown.
+        const variants = ordered ? (ordered[position] ?? []) : selected.variants;
+        if (!variants.length) continue;
         const revision = binding.designPayload.revisions.find((r) => r.revisionId === selected.configRevisionId);
         let geometry: unknown | null = revision ? value(revision.geometry) : null;
         try {
@@ -126,7 +133,7 @@ export function createPurchaseServices(input: {
           index,
           productId: selected.productId,
           configRevisionId: selected.configRevisionId,
-          variants: selected.variants,
+          variants,
           placements,
           geometry,
           presentation: presentation.success ? presentation.data : null,
