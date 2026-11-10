@@ -16,6 +16,12 @@ import cartRepairBinding from '../../deployment/m5-runtime/native-cart-repair-re
 import fixedModules from '../../deployment/m5-runtime/native-fixed-module-baseline.json' with { type: 'json' };
 import fixedCandidate from '../../deployment/m5-runtime/native-fixed-release-binding.json' with { type: 'json' };
 import historicalModules from '../../deployment/m5-runtime/native-function-module-baseline.json' with { type: 'json' };
+import functionsRenewModules from '../../deployment/m5-runtime/native-functions-renew-module-baseline.json' with {
+  type: 'json',
+};
+import functionsRenewBinding from '../../deployment/m5-runtime/native-functions-renew-release-binding.json' with {
+  type: 'json',
+};
 import loadingModules from '../../deployment/m5-runtime/native-loading-module-baseline.json' with { type: 'json' };
 import loadingCandidate from '../../deployment/m5-runtime/native-loading-release-binding.json' with { type: 'json' };
 import parityModules from '../../deployment/m5-runtime/native-parity-module-baseline.json' with { type: 'json' };
@@ -79,6 +85,32 @@ const grants = [
   'write_cart_transforms',
   'write_validations',
 ];
+/** Function artifacts each profile's Active version runs. Profiles before the
+ * functions-renew transition preserve the original 9b94149 build. */
+const originalFunctions = {
+  sourceCommit: '9b94149272d1b62c34f44dda3bde209e80b4ae22',
+  transform: {
+    inputQuerySha256: '8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053',
+    wasmSha256: '49248769ae4ce578af7c5e7fa77f8c230c8fd4f45b2d673c22cfed87ff946576',
+  },
+  validation: {
+    inputQuerySha256: 'a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5',
+    wasmSha256: '3193f60bbb29cdc473ce7ae73e88d1064ca7be2f03da2aade4e17ae1390366c6',
+  },
+};
+/** Built from merge 8fffc9de (Function sources identical to PR293 merge c19069bc)
+ * with scripts/functions/build-wasm.mts; owner authorized the byte change. */
+const renewedFunctions = {
+  sourceCommit: '8fffc9debc2bad4914aaa22dca82d8fdf272de5d',
+  transform: {
+    inputQuerySha256: '8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053',
+    wasmSha256: 'f5979b61ba46c9ca315324500b1bedf806949ebf8fb8979494e0bdaf68e392f6',
+  },
+  validation: {
+    inputQuerySha256: '5baff05ac4b1967bc7c9b461b7d6a8956344ddd8c9233708534e8814b34ebcc4',
+    wasmSha256: '4a3e7495245e8716b976ff3c3816c4e144114883edd317afc38fdf84b369f9ec',
+  },
+};
 const oldIds = [
   '1163229200385',
   '1162611916801',
@@ -90,6 +122,15 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  'native-functions-renew-8fffc9de': {
+    versionId: functionsRenewBinding.versionId,
+    versionTag: functionsRenewBinding.versionTag,
+    versionIds: functionsRenewBinding.versionIds,
+    moduleHash: functionsRenewBinding.moduleHash,
+    modules: functionsRenewModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: renewedFunctions,
+  },
   'native-cart-repair-eb386d22': {
     versionId: cartRepairBinding.versionId,
     versionTag: cartRepairBinding.versionTag,
@@ -97,6 +138,7 @@ const profiles = {
     moduleHash: cartRepairBinding.moduleHash,
     modules: cartRepairModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: originalFunctions,
   },
   'native-canonical-313b12ad': {
     versionId: canonicalBinding.versionId,
@@ -105,6 +147,7 @@ const profiles = {
     moduleHash: canonicalBinding.moduleHash,
     modules: canonicalModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: originalFunctions,
   },
   'native-review-nav-8a7ee446': {
     versionId: reviewNavBinding.versionId,
@@ -113,6 +156,7 @@ const profiles = {
     moduleHash: reviewNavBinding.moduleHash,
     modules: reviewNavModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: originalFunctions,
   },
   'native-loading-defd05b0': {
     versionId: loadingCandidate.versionId,
@@ -121,6 +165,7 @@ const profiles = {
     moduleHash: loadingCandidate.moduleHash,
     modules: loadingModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: originalFunctions,
   },
   'native-review-cart-1f4595f': {
     versionId: reviewCartCandidate.versionId,
@@ -129,6 +174,7 @@ const profiles = {
     moduleHash: reviewCartCandidate.moduleHash,
     modules: reviewCartModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: originalFunctions,
   },
   'native-startup-771bb8f': {
     versionId: startupCandidate.versionId,
@@ -137,6 +183,7 @@ const profiles = {
     moduleHash: startupCandidate.moduleHash,
     modules: startupModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: originalFunctions,
   },
   'native-recovery-e2c3dc5': {
     versionId: recoveryCandidate.versionId,
@@ -145,6 +192,7 @@ const profiles = {
     moduleHash: recoveryCandidate.moduleHash,
     modules: recoveryModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: originalFunctions,
   },
   'native-speed-e52be93': {
     versionId: speedCandidate.versionId,
@@ -153,6 +201,7 @@ const profiles = {
     moduleHash: speedCandidate.moduleHash,
     modules: speedModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: originalFunctions,
   },
   'native-performance-b2729a6': {
     versionId: performanceCandidate.versionId,
@@ -161,6 +210,7 @@ const profiles = {
     moduleHash: performanceCandidate.moduleHash,
     modules: performanceModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: originalFunctions,
   },
   'native-parity-466a687': {
     versionId: parityCandidate.versionId,
@@ -169,6 +219,7 @@ const profiles = {
     moduleHash: parityCandidate.moduleHash,
     modules: parityModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: originalFunctions,
   },
   'native-behavior-6b6c15e': {
     versionId: behaviorCandidate.versionId,
@@ -177,6 +228,7 @@ const profiles = {
     moduleHash: behaviorCandidate.moduleHash,
     modules: behaviorModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: originalFunctions,
   },
   'native-selected-fixed-81830c6': {
     versionId: selectedOnlyCandidate.versionId,
@@ -185,6 +237,7 @@ const profiles = {
     moduleHash: selectedOnlyCandidate.moduleHash,
     modules: selectedOnlyModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: originalFunctions,
   },
   'native-cart-fd9cc61': {
     versionId: cartCandidate.versionId,
@@ -193,6 +246,7 @@ const profiles = {
     moduleHash: cartCandidate.moduleHash,
     modules: cartModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: originalFunctions,
   },
   'native-fixed-5c04fa8': {
     versionId: fixedCandidate.versionId,
@@ -201,6 +255,7 @@ const profiles = {
     moduleHash: fixedCandidate.moduleHash,
     modules: fixedModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: originalFunctions,
   },
   'native-theme-ced0143': {
     versionId: nativeThemeCandidate.versionId,
@@ -209,6 +264,7 @@ const profiles = {
     moduleHash: nativeThemeCandidate.moduleHash,
     modules: nativeThemeModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: originalFunctions,
   },
   'selected-ui-aab4a4b': {
     versionId: refreshCandidate.versionId,
@@ -217,6 +273,7 @@ const profiles = {
     moduleHash: refreshCandidate.moduleHash,
     modules: refreshModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: originalFunctions,
   },
   'selected-ui-f48efa2': {
     versionId: selectedCandidate.versionId,
@@ -225,6 +282,7 @@ const profiles = {
     moduleHash: selectedCandidate.moduleHash,
     modules: selectedModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: originalFunctions,
   },
   'lean-privacy-theme-23fd116': {
     versionId: privacyCandidate.versionId,
@@ -233,6 +291,7 @@ const profiles = {
     moduleHash: privacyCandidate.moduleHash,
     modules: privacyModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: originalFunctions,
   },
   'lean-markets-7b17cd9': {
     versionId: leanMarketsCandidate.versionId,
@@ -241,6 +300,7 @@ const profiles = {
     moduleHash: leanMarketsCandidate.moduleHash,
     modules: leanMarketsModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: originalFunctions,
   },
   'm5-functions-9c2e56b42fbf': {
     versionId: oldIds[0],
@@ -249,6 +309,7 @@ const profiles = {
     moduleHash: 'b04436bda3faad667ee70d00991572ae60949f5acd2cf0fef6b6075dac8f66d7',
     modules: historicalModules,
     grants,
+    functions: originalFunctions,
   },
   'm8-read-orders-617057f': {
     versionId: candidate.versionId,
@@ -257,6 +318,7 @@ const profiles = {
     moduleHash: candidate.moduleHash,
     modules: candidateModules,
     grants: [...grants, 'read_orders'],
+    functions: originalFunctions,
   },
   'm8-preview-28443bd': {
     versionId: previewThemeCandidate.versionId,
@@ -265,6 +327,7 @@ const profiles = {
     moduleHash: previewThemeCandidate.moduleHash,
     modules: previewThemeModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy'],
+    functions: originalFunctions,
   },
   'm8-cookie-91b35ab': {
     versionId: cookieThemeCandidate.versionId,
@@ -273,6 +336,7 @@ const profiles = {
     moduleHash: cookieThemeCandidate.moduleHash,
     modules: cookieThemeModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy'],
+    functions: originalFunctions,
   },
   'm8-theme-c8d8713': {
     versionId: themeCandidate.versionId,
@@ -281,6 +345,7 @@ const profiles = {
     moduleHash: themeCandidate.moduleHash,
     modules: themeModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy'],
+    functions: originalFunctions,
   },
   'm8-app-proxy-3d2a02e': {
     versionId: proxyCandidate.versionId,
@@ -289,6 +354,7 @@ const profiles = {
     moduleHash: proxyCandidate.moduleHash,
     modules: proxyModules,
     grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy'],
+    functions: originalFunctions,
   },
 };
 function required<T>(value: T | undefined): T {

@@ -55,6 +55,7 @@ test('observed native origin binds only the closed release profile and validated
 });
 
 for (const [releaseProfile, expectedVersion] of [
+  ['native-functions-renew-8fffc9de', '1202733449217'],
   ['native-cart-repair-eb386d22', '1202503778305'],
   ['native-canonical-313b12ad', '1201385144321'],
   ['native-review-nav-8a7ee446', '1201192632321'],

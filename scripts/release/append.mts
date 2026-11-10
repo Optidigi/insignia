@@ -127,20 +127,16 @@ export interface AppendDependencies<P extends AppendPool> {
 }
 
 const APP = '1443cf6d03d39edae7c101a943c5c684';
-const artifacts = {
+const functionIdentity = {
   transform: {
     handle: 'insignia-experimental-v2-transform',
     apiType: 'cart_transform',
     apiVersion: '2026-07',
-    inputQuerySha256: '8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053',
-    wasmSha256: '49248769ae4ce578af7c5e7fa77f8c230c8fd4f45b2d673c22cfed87ff946576',
   },
   validation: {
     handle: 'insignia-experimental-v2-validation',
     apiType: 'cart_checkout_validation',
     apiVersion: '2026-07',
-    inputQuerySha256: 'a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5',
-    wasmSha256: '3193f60bbb29cdc473ce7ae73e88d1064ca7be2f03da2aade4e17ae1390366c6',
   },
 } as const;
 function keys(value: object, expected: readonly string[]) {
@@ -193,6 +189,11 @@ export function qualifyReleaseAppendInput(input: unknown, now: number, profileNa
     TAG = profile.versionTag,
     VERSION_IDS = profile.versionIds,
     MODULE_HASH = profile.moduleHash;
+  // The selected profile names the Function artifacts its Active version runs.
+  const artifacts = {
+    transform: { ...functionIdentity.transform, ...profile.functions.transform },
+    validation: { ...functionIdentity.validation, ...profile.functions.validation },
+  };
   assert.ok(Number.isFinite(now));
   keys(input, ['recordId', 'operator', 'activeObservation', 'moduleObservation', 'readiness']);
   assert.match(input.recordId, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
@@ -260,8 +261,8 @@ export function qualifyReleaseAppendInput(input: unknown, now: number, profileNa
     ...scope,
     appVersionRef: VERSION,
     devPreviewRef: null,
-    // Preserved Function artifacts: this is their source, not the config runtime commit.
-    sourceCommit: '9b94149272d1b62c34f44dda3bde209e80b4ae22',
+    // Function artifact source for this profile, not the config runtime commit.
+    sourceCommit: profile.functions.sourceCommit,
     transform: { ...artifacts.transform, functionId: functions.transform.functionId },
     validation: { ...artifacts.validation, functionId: functions.validation.functionId },
   };

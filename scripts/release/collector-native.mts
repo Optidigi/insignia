@@ -87,7 +87,7 @@ async function main() {
   try {
     const profileName = process.argv[2];
     assert.ok(process.argv.length <= 3);
-    releaseProfile(profileName);
+    const profile = releaseProfile(profileName);
     let size = 0;
     for await (const chunk of process.stdin) {
       assert.ok(Buffer.isBuffer(chunk));
@@ -106,7 +106,7 @@ async function main() {
       process.env.INSIGNIA_RELEASE_VERIFICATION_FD === '3'
         ? parseReleaseVerificationRequest(
             JSON.parse((await readPrivatePacket(createReadStream('', { fd: 3, autoClose: true }))).toString('utf8')),
-            releaseProfile(profileName).versionId,
+            profile.versionId,
           )
         : undefined;
     const deadline = Math.min(Date.now() + 300000, verificationRequest?.deadlineMs ?? Infinity);
@@ -198,8 +198,8 @@ async function main() {
           }).read(tenant, {
             appKey: APP,
             observationVersion: 2,
-            transformInputQuerySha256: '8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053',
-            validationInputQuerySha256: 'a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5',
+            transformInputQuerySha256: profile.functions.transform.inputQuerySha256,
+            validationInputQuerySha256: profile.functions.validation.inputQuerySha256,
           });
         },
         append: (input: unknown) =>

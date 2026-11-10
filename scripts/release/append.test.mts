@@ -5,6 +5,12 @@ import { createRequire } from 'node:module';
 import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import baseline from '../../deployment/m5-runtime/native-function-module-baseline.json' with { type: 'json' };
+import renewModules from '../../deployment/m5-runtime/native-functions-renew-module-baseline.json' with {
+  type: 'json',
+};
+import renewBinding from '../../deployment/m5-runtime/native-functions-renew-release-binding.json' with {
+  type: 'json',
+};
 import { sha256CanonicalJson } from '../../packages/database/src/hash/canonical.ts';
 import { appendTrustedRelease, qualifyReleaseAppendInput, type ReleaseAppendInput } from './append.mts';
 import { currentSchemaFixture } from './current-schema-fixture.mts';
@@ -124,6 +130,55 @@ test('explicit target profile binds native registration, actual query and fresh 
     mutate(changed);
     assert.throws(() => qualifyReleaseAppendInput(changed, now));
   }
+});
+test('functions renew profile binds its own Function source, wasm and validation query', () => {
+  const profile = 'native-functions-renew-8fffc9de';
+  const renewedQuery = '5baff05ac4b1967bc7c9b461b7d6a8956344ddd8c9233708534e8814b34ebcc4';
+  const input = fixture() as unknown as ReleaseAppendInput & { moduleObservation: { modules: typeof renewModules } };
+  input.activeObservation.versions = renewBinding.versionIds.map((id) => ({
+    versionId: `gid://shopify/Version/${id}`,
+    status: id === renewBinding.versionId ? 'active' : 'inactive',
+    versionTag: id === renewBinding.versionId ? profile : 'historical',
+  }));
+  input.moduleObservation = {
+    ...input.moduleObservation,
+    versionId: renewBinding.versionId,
+    versionTag: profile,
+    observedAt: at(4000),
+    modules: structuredClone(renewModules),
+  };
+  const functions = input.readiness.functions.observation;
+  functions.schemaVersion = 2;
+  for (const kind of ['transform', 'validation'] as const)
+    functions[kind].functionId = required(
+      renewModules.find((m) => m.handle === functions[kind].handle),
+    ).registrationUuid;
+  functions.validation.inputQuerySha256 = renewedQuery;
+  const q = qualifyReleaseAppendInput(input, now, profile);
+  assert.equal(q.expected.appVersionRef, '1202733449217');
+  assert.equal(q.expected.sourceCommit, '8fffc9debc2bad4914aaa22dca82d8fdf272de5d');
+  assert.equal(q.expected.transform.wasmSha256, 'f5979b61ba46c9ca315324500b1bedf806949ebf8fb8979494e0bdaf68e392f6');
+  assert.equal(q.expected.validation.wasmSha256, '4a3e7495245e8716b976ff3c3816c4e144114883edd317afc38fdf84b369f9ec');
+  assert.equal(q.expected.validation.inputQuerySha256, renewedQuery);
+  assert.equal(
+    q.expected.transform.inputQuerySha256,
+    '8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053',
+  );
+  const nullQuery = structuredClone(input);
+  nullQuery.readiness.functions.observation.validation.inputQuerySha256 = null;
+  assert.equal(qualifyReleaseAppendInput(nullQuery, now, profile).expected.validation.inputQuerySha256, renewedQuery);
+  const originalQuery = structuredClone(input);
+  originalQuery.readiness.functions.observation.validation.inputQuerySha256 =
+    'a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5';
+  assert.throws(() => qualifyReleaseAppendInput(originalQuery, now, profile));
+  // The original 9b94149 profile still requires its own query and source.
+  assert.throws(() => qualifyReleaseAppendInput(input, now, 'native-cart-repair-eb386d22'));
+  const original = qualifyReleaseAppendInput(fixture(), now);
+  assert.equal(original.expected.sourceCommit, '9b94149272d1b62c34f44dda3bde209e80b4ae22');
+  assert.equal(
+    original.expected.validation.wasmSha256,
+    '3193f60bbb29cdc473ce7ae73e88d1064ca7be2f03da2aade4e17ae1390366c6',
+  );
 });
 const invalid: Record<string, (x: ReturnType<typeof fixture>) => unknown> = {
   'missing candidate': (x) => x.activeObservation.versions.shift(),
