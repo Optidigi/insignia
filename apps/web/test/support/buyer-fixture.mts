@@ -32,6 +32,7 @@ export async function fixture(
     selectedBrowser?: boolean;
     clock?: () => Date;
     readiness?: QuoteAuthorityPorts['readiness'];
+    artworkRetentionDays?: number;
   } = {},
 ) {
   const isolated = options.isolated ? await isolatedDatabase('buyer_cleanup') : undefined;
@@ -311,7 +312,7 @@ export async function fixture(
   assert.ok(scope);
   assert.ok(scope.ownerHash);
   const assetId = randomUUID(),
-    deadline = new Date(+now + 4 * 86400000),
+    deadline = new Date(+now + (options.artworkRetentionDays ?? 4) * 86400000),
     claimId = randomUUID();
   await core.artwork.create({
     assetId,
