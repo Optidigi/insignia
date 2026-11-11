@@ -255,6 +255,11 @@ function exactSnapshot(a: ProductAvailabilitySnapshot, b: ProductAvailabilitySna
     a.visibilityDigest === b.visibilityDigest
   );
 }
+/** Synchronous calendar work at an activation decision must finish within this
+ * window. A merchant day is equal at both ends of it, and local days only move
+ * forward, so the day also holds at every clock read inside it. Decisions in the
+ * window before merchant midnight are refused rather than raced. */
+const CALENDAR_DECISION_WINDOW_MS = 1000;
 function fresh(observedAt: string, now: Date, age: number): void {
   const time = Date.parse(observedAt);
   if (!Number.isFinite(now.getTime()) || !Number.isFinite(time) || time > now.getTime() || now.getTime() - time > age)
@@ -314,33 +319,25 @@ export function createPublicationActivation(input: {
     writeAuthorized();
     const calendarStartedAt = now();
     if (!Number.isFinite(calendarStartedAt.getTime())) throw new Error('Invalid activation decision clock');
-    let decisionAt = calendarStartedAt;
-    let acceptedDay: number | undefined;
-    let settled = false;
-    // Calendar work is synchronous but can consume the remaining freshness
-    // budget. Settle a day and instant together, without provider I/O or mutation retry.
-    // Three bounded samples tolerate a clock tick; unstable preparation denies.
-    for (let sample = 0; sample < 3; sample++) {
-      const day = input.readiness.currentDay(c, decisionAt);
-      if (acceptedDay !== undefined && day !== acceptedDay)
-        throw new Error('Merchant day changed during activation decision');
-      acceptedDay = day;
-      if (input.readiness.currentDay(c, decisionAt) !== acceptedDay)
-        throw new Error('Merchant day changed during activation decision');
-      const completedAt = now();
-      if (
-        !Number.isFinite(completedAt.getTime()) ||
-        completedAt.getTime() < decisionAt.getTime() ||
-        completedAt.getTime() - calendarStartedAt.getTime() > input.maxObservationAgeMs
-      )
-        throw new Error('Activation calendar calculation exceeded decision budget');
-      if (completedAt.getTime() === decisionAt.getTime()) {
-        settled = true;
-        break;
-      }
-      decisionAt = completedAt;
-    }
-    if (!settled || acceptedDay === undefined) throw new Error('Activation calendar calculation did not settle');
+    // Calendar work is synchronous but takes real time, so the clock moves
+    // while it runs. The accepted day must hold at the instant every check
+    // below uses, without provider I/O or mutation retry: it is proven for a
+    // bounded window, calendar work must finish inside that window, and the
+    // decision instant is the clock read after that work.
+    const window = Math.min(CALENDAR_DECISION_WINDOW_MS, input.maxObservationAgeMs);
+    const acceptedDay = input.readiness.currentDay(c, calendarStartedAt);
+    if (
+      input.readiness.currentDay(c, calendarStartedAt) !== acceptedDay ||
+      input.readiness.currentDay(c, new Date(calendarStartedAt.getTime() + window)) !== acceptedDay
+    )
+      throw new Error('Merchant day changed during activation decision');
+    const decisionAt = now();
+    if (
+      !Number.isFinite(decisionAt.getTime()) ||
+      decisionAt.getTime() < calendarStartedAt.getTime() ||
+      decisionAt.getTime() - calendarStartedAt.getTime() > window
+    )
+      throw new Error('Activation calendar calculation exceeded decision budget');
     requireIssuanceReady({ config: c.publicConfig, keyId: c.selectedKeyId, acceptedDay });
     // No awaited operation after this complete synchronous revalidation before commit/dispatch.
     assertProductionFunctionArtifactReady({

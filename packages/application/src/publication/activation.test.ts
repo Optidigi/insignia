@@ -48,6 +48,7 @@ const now = new Date('2026-10-01T12:00:00.000Z');
 function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'required' | 'optional' = 'required') {
   let clock = now;
   let delayFinalDay = false;
+  let busyCalendar = false;
   let delayRestorationProjection = false;
   let finalDayReads = 0;
   let midnightClockRead: number | null = null;
@@ -372,6 +373,8 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
           return { projection, observedAt: clock.toISOString() };
         },
         currentDay: (_candidate, at) => {
+          // Each calendar computation outlasts a clock tick, as on a busy process.
+          if (busyCalendar) clock = new Date(clock.getTime() + 1);
           if (midnightClockRead !== null) return Math.floor(at.getTime() / 86400000);
           if (delayFinalDay && ++finalDayReads > 1) clock = new Date(now.getTime() + 2000);
           return rollsDay && dayReads++ > 0 ? 20728 : 20727;
@@ -524,6 +527,9 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
     },
     set delayFinalDay(value: boolean) {
       delayFinalDay = value;
+    },
+    set busyCalendar(value: boolean) {
+      busyCalendar = value;
     },
     get candidate() {
       return candidate;
@@ -961,6 +967,30 @@ it('a delayed final day computation cannot commit expired release/projection evi
   const f = fixture('required');
   f.delayFinalDay = true;
   await expect(f.advance()).rejects.toThrow();
+  expect(f.evidence).toBeNull();
+});
+
+it.each(['activation', 'restoration'] as const)(
+  'the %s decision settles when every calendar computation crosses a clock tick',
+  async (phase) => {
+    const f = fixture(phase === 'activation' ? 'required' : null);
+    f.busyCalendar = true;
+    if (phase === 'activation') {
+      expect((await f.advance()).kind).toBe('ACTIVE');
+      expect(f.evidence).not.toBeNull();
+      return;
+    }
+    expect((await f.advance()).kind).toBe('WAITING_HOLD');
+    expect((await f.advance()).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+    expect((await f.advance()).kind).toBe('ACTIVE');
+    expect(f.restores).toBe(1);
+  },
+);
+
+it('a decision whose bounded calendar window reaches merchant midnight is refused', async () => {
+  const f = fixture('required');
+  f.armMidnightRead(Number.MAX_SAFE_INTEGER);
+  await expect(f.advance()).rejects.toThrow('Merchant day changed during activation decision');
   expect(f.evidence).toBeNull();
 });
 
