@@ -174,7 +174,9 @@ async function handleRequest(
                           'Trusted release source unavailable',
                         ].includes(error.message)
                       ? 'ReleaseEvidenceUnavailable'
-                      : 'UnexpectedFailure';
+                      : error instanceof Error && error.name === 'EntitlementObservationUnavailableError'
+                        ? 'EntitlementObservationUnavailable'
+                        : 'UnexpectedFailure';
       // Whitelisted classes/stages only: no exception message/stack, body, URL,
       // capability or signed carriers enter diagnostics or the public response.
       try {

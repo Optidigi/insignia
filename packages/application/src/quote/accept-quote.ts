@@ -246,17 +246,20 @@ function requireTenant(value: ActiveQuoteTenant | null, request: QuoteRequest): 
   return value;
 }
 
+/** No fresh Partner observation (stale or missing): retryable, unlike a recognized denial. */
+export class EntitlementObservationUnavailableError extends Error {
+  constructor() {
+    super('Fresh entitlement observation unavailable');
+    this.name = 'EntitlementObservationUnavailableError';
+  }
+}
+
 function requireEntitlement(value: QuoteEntitlement): asserts value is QuoteEntitlement & {
   recognizedPolicyId: string;
   qualifyingUsageDisposition: 'REQUIRES_EVENT_TIME' | 'WAIVE_TRIAL' | 'NOT_METERED';
 } {
-  if (
-    !value.active ||
-    value.freshness !== 'fresh' ||
-    !value.recognizedPolicyId ||
-    !value.policyVersion ||
-    value.qualifyingUsageDisposition === 'DENY'
-  )
+  if (value.freshness !== 'fresh') throw new EntitlementObservationUnavailableError();
+  if (!value.active || !value.recognizedPolicyId || !value.policyVersion || value.qualifyingUsageDisposition === 'DENY')
     throw new Error('fresh recognized entitlement required');
   if (value.qualifyingUsageDisposition !== 'NOT_METERED') throw new Error('Lean recurring-only entitlement required');
 }

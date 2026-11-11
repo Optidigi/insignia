@@ -326,6 +326,7 @@ export async function createBuyerBootstrap(
       },
       readSubscription: createSubscriptionCache(
         (target) => partner.read(target),
+        entitlementPolicy.maxAgeMs,
         () => +clock(),
       ),
       releaseRefresh: (scope, activeUntil) => refresher.touch(scope, activeUntil),
