@@ -1,4 +1,5 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import { sql } from 'kysely';
 import { describe, expect, it } from 'vitest';
 import { SigningKeyLifecycle } from '../../application/src/keys/lifecycle.js';
@@ -144,6 +145,55 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable signing key lifecycle
       const envelopes = await sql<{ key_id: number }>`SELECT key_id FROM signing_keys
         WHERE shop_id=${shopId} AND private_envelope IS NOT NULL ORDER BY key_id`.execute(db);
       expect(envelopes.rows.map((row) => row.key_id)).toEqual([2]);
+    } finally {
+      await db.destroy();
+    }
+  });
+
+  it('migration 57 scrubs existing retired envelopes on a table that still has the old constraint', async () => {
+    const db = await openTestDatabase();
+    const shopId = randomUUID();
+    const up = (
+      await readFile(new URL('../migrations/20261112000100_signing_key_private_scrub.sql', import.meta.url), 'utf8')
+    ).split('-- migrate:down')[0] as string;
+    const rollback = new Error('rollback');
+    try {
+      await db.transaction().execute(async (tx) => {
+        await createTenantRepository(tx).createShop(tx, {
+          shopId,
+          shopDomain: `${shopId}.myshopify.com`,
+          shopifyShopId: (BigInt(`0x${shopId.replaceAll('-', '').slice(0, 15)}`) + 9n).toString(),
+        });
+        // Recreate the pre-57 shape: old constraint, no destroy function, a retiring key with an envelope.
+        await sql`ALTER TABLE signing_keys DROP CONSTRAINT signing_keys_private_half_by_state`.execute(tx);
+        await sql`ALTER TABLE signing_keys ADD CONSTRAINT signing_keys_check1 CHECK (
+            (state = 'destroyed' AND private_envelope IS NULL AND wrapping_key_id IS NULL)
+            OR (state <> 'destroyed' AND private_envelope IS NOT NULL AND wrapping_key_id IS NOT NULL AND wrapping_key_id <> '')) NOT VALID`.execute(
+          tx,
+        );
+        await sql`DROP FUNCTION destroy_expired_signing_keys(integer)`.execute(tx);
+        for (const [keyId, state] of [
+          [1, 'retiring'],
+          [2, 'active'],
+        ] as const)
+          await sql`INSERT INTO signing_keys (shop_id, installation_generation, authorization_generation, key_id,
+              public_key, public_key_fingerprint, private_envelope, wrapping_key_id, state, first_valid_day, last_valid_day)
+              SELECT ${shopId}, 1, authorization_generation, ${keyId}, ${randomBytes(32)}, ${randomBytes(32).toString('hex')},
+                '{"v":1}'::jsonb, 'old-kek', ${state}, 100, 200
+              FROM installation_generations WHERE shop_id=${shopId} AND generation=1`.execute(tx);
+        await sql.raw(up).execute(tx);
+        const rows = await sql<{ key_id: number; held: boolean; kid: string | null }>`SELECT key_id,
+            private_envelope IS NOT NULL AS held, wrapping_key_id AS kid FROM signing_keys WHERE shop_id=${shopId} ORDER BY key_id`.execute(
+          tx,
+        );
+        expect(rows.rows).toEqual([
+          { key_id: 1, held: false, kid: null },
+          { key_id: 2, held: true, kid: 'old-kek' },
+        ]);
+        throw rollback;
+      });
+    } catch (error) {
+      if (error !== rollback) throw error;
     } finally {
       await db.destroy();
     }
