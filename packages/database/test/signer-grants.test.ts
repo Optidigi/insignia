@@ -45,7 +45,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('separate signer grants and is
         `GRANT USAGE ON SCHEMA public TO ${web}; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${web}`,
       );
       await raw.query(await delta('signing-key-runtime-grants.sql', { insignia_runtime: web }));
-      await raw.query(await delta('signer-runtime-grants.sql', { insignia_runtime: web, insignia_signer: signerRole }));
+      await raw.query(await delta('signer-runtime-grants.sql', { insignia_signer: signerRole }));
+      await raw.query(await delta('web-signing-envelope-revoke.sql', { insignia_runtime: web }));
       const shopId = randomUUID();
       await owner.transaction().execute(async (tx) => {
         await createTenantRepository(tx).createShop(tx, {
