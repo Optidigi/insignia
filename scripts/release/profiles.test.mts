@@ -8,6 +8,12 @@ import test from 'node:test';
 import { createReleaseVerificationClient } from '../../apps/web/src/server/admin/release-verification.ts';
 import behaviorModules from '../../deployment/m5-runtime/native-behavior-module-baseline.json' with { type: 'json' };
 import behaviorBinding from '../../deployment/m5-runtime/native-behavior-release-binding.json' with { type: 'json' };
+import canonicalHostModules from '../../deployment/m5-runtime/native-canonical-host-module-baseline.json' with {
+  type: 'json',
+};
+import canonicalHostBinding from '../../deployment/m5-runtime/native-canonical-host-release-binding.json' with {
+  type: 'json',
+};
 import canonicalModules from '../../deployment/m5-runtime/native-canonical-module-baseline.json' with { type: 'json' };
 import canonicalBinding from '../../deployment/m5-runtime/native-canonical-release-binding.json' with { type: 'json' };
 import cartLineV3Modules from '../../deployment/m5-runtime/native-cart-line-v3-module-baseline.json' with {
@@ -398,6 +404,37 @@ test('functions renew candidate preserves identities and changes only theme and 
     } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
   }
 });
+test('canonical-host candidate changes only the app host', () => {
+  assert.equal(canonicalHostModules.length, 14);
+  assert.equal(canonicalHostBinding.moduleHash, '6599faf690ed74df94e4b99204de391f49990a39021abf8196fe4fbafee27714');
+  assert.equal(canonicalHostBinding.versionId, '1203782746113');
+  assert.deepEqual(
+    new Set(canonicalHostBinding.versionIds),
+    new Set([...cartLineV3Binding.versionIds, '1203782746113']),
+  );
+  assert.deepEqual(
+    canonicalHostModules.map((m) => m.handle),
+    canonicalHostModules.map((m) => m.handle).sort(),
+  );
+  const swap = (value: unknown) =>
+    JSON.parse(
+      JSON.stringify(value).replaceAll('https://insignia-app.optidigi.nl', 'https://app.insigniacustomizer.com'),
+    );
+  // Webhook subscription registrations are keyed by topic and URI, so only their identities move with the host.
+  const key = (m: { type: string; handle: string; registrationId: string }) =>
+    m.type === 'webhook_subscription' ? swap(m.registrationId) : m.handle;
+  const prior = new Map(cartLineV3Modules.map((m) => [key(m), m]));
+  assert.equal(prior.size, 14);
+  for (const module of canonicalHostModules) {
+    const old = required(prior.get(key(module)));
+    assert.deepEqual(module.config, swap(old.config));
+    assert.equal(module.type, old.type);
+    if (module.type !== 'webhook_subscription') assert.deepEqual(module, swap(old));
+    if (module.type === 'function' || module.type === 'theme_app_extension') assert.deepEqual(module, old);
+  }
+  assert.ok(!JSON.stringify(canonicalHostModules).includes('insignia-app.optidigi.nl'));
+});
+
 test('cart-line v3 candidate preserves identities and changes only theme and Function artifacts', () => {
   assert.equal(cartLineV3Modules.length, 14);
   assert.equal(cartLineV3Binding.moduleHash, 'dd76c50a573e7c6cdb7b42555fdbc36e1edda5189c75b876f4f81d92f66c447f');

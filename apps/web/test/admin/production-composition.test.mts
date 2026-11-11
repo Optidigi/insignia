@@ -122,7 +122,7 @@ for (const releaseMode of [
     const lostAcknowledgement = releaseMode === 'demand-lost-ack';
     const successful = releaseMode === 'demand-success' || lostAcknowledgement;
     const signing = releaseMode === 'demand-signing' || successful;
-    const origin = signing ? 'https://insignia-app.optidigi.nl' : 'https://synthetic.example';
+    const origin = signing ? 'https://app.insigniacustomizer.com' : 'https://synthetic.example';
     const shop = signing ? 'insignia-rewrite-dev.myshopify.com' : `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
     let providerMode = 'current';
     let unexpectedUsageItem = false;

@@ -28,7 +28,7 @@ test('ordinary runtime overlays preserve canonical web boundaries and restrict w
     await writeFile(join(directory, 'database.env'), '');
     const workerEnvironment = {
       DATABASE_URL: 'postgres://synthetic_worker@database:5432/synthetic_db?sslmode=disable',
-      APP_URL: 'https://insignia-app.optidigi.nl',
+      APP_URL: 'https://app.insigniacustomizer.com',
       SHOPIFY_CLIENT_ID: 'synthetic-client',
       SHOPIFY_CLIENT_SECRET: 'synthetic-hmac',
       SHOPIFY_WEBHOOK_SECRET: 'synthetic-hmac',

@@ -80,7 +80,7 @@ export function qualifySigningRuntimeIdentity(input: SigningRuntimeIdentity) {
   assert.deepEqual(Object.keys(input).sort(), ['appClientId', 'appId', 'appOrigin']);
   assert.equal(input.appClientId, APP);
   assert.equal(input.appId, APP_ID);
-  assert.equal(input.appOrigin, 'https://insignia-app.optidigi.nl');
+  assert.equal(input.appOrigin, 'https://app.insigniacustomizer.com');
   return Object.freeze({ ...input });
 }
 

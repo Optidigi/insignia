@@ -13,7 +13,7 @@ import { array, record as object, required, text, unexpected } from './fixtures.
 export const acceptedRuntimeIdentity = {
   appClientId: binding.appClientId,
   appId: binding.appId,
-  appOrigin: 'https://insignia-app.optidigi.nl',
+  appOrigin: 'https://app.insigniacustomizer.com',
 };
 
 const _require = createRequire(new URL('../../../package.json', import.meta.url));

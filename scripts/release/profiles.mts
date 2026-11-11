@@ -3,6 +3,12 @@
 import assert from 'node:assert/strict';
 import behaviorModules from '../../deployment/m5-runtime/native-behavior-module-baseline.json' with { type: 'json' };
 import behaviorCandidate from '../../deployment/m5-runtime/native-behavior-release-binding.json' with { type: 'json' };
+import canonicalHostModules from '../../deployment/m5-runtime/native-canonical-host-module-baseline.json' with {
+  type: 'json',
+};
+import canonicalHostBinding from '../../deployment/m5-runtime/native-canonical-host-release-binding.json' with {
+  type: 'json',
+};
 import canonicalModules from '../../deployment/m5-runtime/native-canonical-module-baseline.json' with { type: 'json' };
 import canonicalBinding from '../../deployment/m5-runtime/native-canonical-release-binding.json' with { type: 'json' };
 import cartLineV3Modules from '../../deployment/m5-runtime/native-cart-line-v3-module-baseline.json' with {
@@ -142,6 +148,16 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  // Same Functions and theme as cart-line v3; only app URLs move to app.insigniacustomizer.com.
+  'native-canonical-host-aa3b6166': {
+    versionId: canonicalHostBinding.versionId,
+    versionTag: canonicalHostBinding.versionTag,
+    versionIds: canonicalHostBinding.versionIds,
+    moduleHash: canonicalHostBinding.moduleHash,
+    modules: canonicalHostModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   'native-cart-line-v3-aa3b6166': {
     versionId: cartLineV3Binding.versionId,
     versionTag: cartLineV3Binding.versionTag,
