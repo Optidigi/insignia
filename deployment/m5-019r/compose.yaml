@@ -16,7 +16,7 @@ services:
       NODE_ENV: production
       HOST: 0.0.0.0
       PORT: "3000"
-      APP_URL: https://insignia-app.optidigi.nl
+      APP_URL: https://app.insigniacustomizer.com
       SHOPIFY_CLIENT_ID: 1443cf6d03d39edae7c101a943c5c684
       INSIGNIA_SHOPIFY_APP_ID: "429028933633"
     networks: [proxy, private]

@@ -16,7 +16,7 @@ Keep the reusable API credential outside the checkout in an owner-readable regul
   "accountId": "<existing-account-id>",
   "apiToken": "<privately-supplied-account-scoped-token>",
   "from": "noreply@optidigi.nl",
-  "appOrigin": "https://insignia-app.optidigi.nl",
+  "appOrigin": "https://app.insigniacustomizer.com",
   "mode": "development"
 }
 ```
@@ -41,7 +41,7 @@ Customer mode requires `CUSTOMER_ARTWORK_EMAIL_QUALIFICATION_PROFILE`: a private
 {
   "version": "customer-artwork-email-qualification-v1",
   "accountId": "<existing-account-id>",
-  "appOrigin": "https://insignia-app.optidigi.nl",
+  "appOrigin": "https://app.insigniacustomizer.com",
   "sender": "noreply@optidigi.nl",
   "arbitraryRecipients": true,
   "protectedOrderEmail": true,
