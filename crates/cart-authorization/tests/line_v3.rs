@@ -289,3 +289,40 @@ fn leaf_node_and_padding_hashes_are_domain_separated() {
     assert_ne!(proof_root_v3(&tail), prefix.header.root);
     assert_eq!(node_hash_v3(&internal, &tail.proof[0]), prefix.header.root);
 }
+
+/// Owner decision, 11 November 2026: keys do not expire routinely. The TypeScript sentinel
+/// NON_EXPIRING_LAST_DAY (0x7fffffff, the largest PostgreSQL integer) must admit every realistic
+/// day, and a retirement-shortened window must stop at its last day.
+#[test]
+fn non_expiring_and_retirement_shortened_key_windows() {
+    const NON_EXPIRING_LAST_DAY: u32 = 0x7fff_ffff;
+    let v = vectors();
+    let public = parse_hex::<32>(v["publicHex"].as_str().unwrap()).unwrap();
+    let open_ended =
+        VerificationKey::new_with_admission(7, public, false, 20800, NON_EXPIRING_LAST_DAY)
+            .unwrap();
+    for day in [20800, 20801, 40_000, 1_000_000, NON_EXPIRING_LAST_DAY] {
+        assert!(open_ended.admitted(day), "day {day}");
+    }
+    assert!(!open_ended.admitted(20799));
+    // Rotation on shop day 20800 shortens the retiring key to 20803 (offers plus one day of slack).
+    let retired = VerificationKey::new_with_admission(7, public, false, 20800, 20803).unwrap();
+    assert!(retired.admitted(20803));
+    assert!(!retired.admitted(20804));
+    // Revocation is immediate regardless of the window.
+    let revoked =
+        VerificationKey::new_with_admission(7, public, true, 20800, NON_EXPIRING_LAST_DAY).unwrap();
+    assert!(!revoked.admitted(20800));
+}
+
+#[test]
+fn public_config_admits_the_non_expiring_sentinel() {
+    let v = vectors();
+    let config = format!(
+        "{{\"generationHex\":\"{}\",\"epoch\":0,\"maxBuckets\":32,\"maxPhysicalQuantity\":10000,\"allowNoMarket\":false,\"keys\":[{{\"id\":7,\"publicHex\":\"{}\",\"revoked\":false,\"firstDay\":20800,\"lastDay\":2147483647}}]}}",
+        "11".repeat(16),
+        v["publicHex"].as_str().unwrap()
+    );
+    let parsed = cart_authorization::parse_public_config(&config).unwrap();
+    assert!(parsed.keys[0].admitted(1_000_000));
+}

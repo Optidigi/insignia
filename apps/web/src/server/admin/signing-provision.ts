@@ -24,6 +24,7 @@ type Operation =
   | 'READ_INSTALLATION_CLOSE'
   | 'READ_FUNCTIONS_CLOSE'
   | 'READ_CONFIG_CLOSE'
+  | 'SCHEDULE_RETIREMENT'
   | 'ACTIVATE_KEY';
 type AmbiguousOperation = 'CREATE_PENDING' | 'PUBLISH_CONFIG' | 'ACTIVATE_KEY' | null;
 export type SigningProvisionResult = {
@@ -96,6 +97,7 @@ const operations = new Set<Operation>([
   'READ_INSTALLATION_CLOSE',
   'READ_FUNCTIONS_CLOSE',
   'READ_CONFIG_CLOSE',
+  'SCHEDULE_RETIREMENT',
   'ACTIVATE_KEY',
 ]);
 
@@ -106,7 +108,7 @@ export function qualifySigningProvisionPlan(plan: SigningProvisionPlan) {
     Number.isInteger(plan.firstDay) &&
       Number.isInteger(plan.lastDay) &&
       plan.firstDay >= 0 &&
-      plan.lastDay <= 0xffffffff &&
+      plan.lastDay <= 0x7fffffff &&
       plan.firstDay <= plan.lastDay,
   );
   return Object.freeze({ ...plan });
@@ -362,6 +364,23 @@ export async function provisionSigningKey(
     });
     const pending = (await ports.core.signingKeys.list(scope)).find((row) => row.id === plan.keyId);
     assert.ok(pending?.state === 'pending' && pending.privateEnvelope && pending.wrappingKeyId);
+    // Owner decision, 11 November 2026: keys do not expire routinely, so the key this rotation
+    // retires gets a bounded window now, before publication. Published and stored configs then
+    // agree when activation makes it retiring; its offers still verify through planned day + 2.
+    const retiring = (await ports.core.signingKeys.list(scope)).find((row) => row.state === 'active');
+    if (retiring) {
+      const retireThrough =
+        ports.app.localDay(ports.now(), provider.ianaTimezone).ordinal + ports.app.RETIREMENT_GRACE_DAYS;
+      if (retiring.lastDay > retireThrough)
+        await operation('SCHEDULE_RETIREMENT', async () => {
+          await currentScope();
+          dayCoverage();
+          assertCachedReadiness();
+          await lifecycle.scheduleRetirement(scope, retiring.id, retireThrough, beforeWrite);
+        });
+      const scheduled = (await ports.core.signingKeys.list(scope)).find((row) => row.id === retiring.id);
+      assert.ok(scheduled?.state === 'active' && scheduled.lastDay <= Math.max(retireThrough, scheduled.firstDay));
+    }
     const desired = await lifecycle.desiredPublicConfig(scope);
     await currentScope();
     dayCoverage();
