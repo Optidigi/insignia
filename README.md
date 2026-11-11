@@ -1,6 +1,6 @@
 # Insignia
 
-Shopify product customization: a merchant App Home editor, separate buyer storefront, signed whole-quote authorization and independent checkout validation. The [current specification](docs/architecture/implementation-plan.md) defines Lean V1. [Current state](docs/delivery/state.md) distinguishes integrated source, deployed artifacts, known defects and owner-held production gates.
+Shopify product customization: a merchant App Home editor, separate buyer storefront, signed cart-line authorization and independent checkout validation. The [current specification](docs/architecture/implementation-plan.md) defines Lean V1. [Current state](docs/delivery/state.md) distinguishes integrated source, deployed artifacts, known defects and owner-held production gates.
 
 ## Designed UI handoff
 

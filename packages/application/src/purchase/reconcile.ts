@@ -2,7 +2,14 @@ import { createHash, createPublicKey, verify } from 'node:crypto';
 import {
   checkCompleteSet,
   decodeEnvelope,
+  decodeLineCarrierV3,
   decodeMemberCarrier,
+  decodePrefixV3,
+  LINE_ATTRIBUTE,
+  lineRefV3,
+  PREFIX_V3_CHARS,
+  REF_ATTRIBUTE,
+  verifyLineSetV3,
   wholeQuoteSignBytes,
 } from '@insignia/cart-authorization';
 import { localDay } from '../quote/accept-quote.js';
@@ -14,8 +21,11 @@ import type {
   VerifiedOrder,
 } from './model.js';
 
+// Whole-quote v2 verification is permanent for historical orders; new orders carry cart-line v3.
 const envelopeKey = '_insignia_quote_v2';
 const memberKey = '_insignia_member_v2';
+/** Plain engineering bound shared with the Functions; quantity itself is not signed in v3. */
+const MAX_CUSTOMIZED_UNITS = 10000;
 function uuid(hex: string): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
@@ -79,17 +89,85 @@ export function firstFullyPaid(order: VerifiedOrder): string | null {
   }
   return firstPaidAt;
 }
-async function verifyOffer(
+/** Context evidence, retention metadata and the binding record; shared by v2 and v3 verification. */
+async function bind(
   order: VerifiedOrder,
   offer: HistoricalPurchaseOffer,
-  envelope: string,
-  lines: readonly VerifiedOrder['lines'][number][],
+  mapped: PurchaseBinding['lines'],
   checkout: PurchasePorts['checkout'],
 ): Promise<PurchaseBinding> {
+  let evidence: PurchaseBindingEvidence;
+  if (order.contextVerified && order.country !== null && order.marketId !== null) {
+    evidence = { kind: 'provider_context', country: order.country, marketId: order.marketId };
+  } else {
+    // Only wholly unavailable historical context may use the separate matching proof.
+    // Partial/contradictory context is never silently replaced by the signed quote.
+    if (order.contextVerified || order.country !== null || order.marketId !== null || !checkout)
+      fail('CONTEXT_UNVERIFIED');
+    const origin = order.checkoutOrigin;
+    if (
+      !origin ||
+      !origin.creatorAppId ||
+      !/^gid:\/\/shopify\/App\/[1-9][0-9]{0,19}$/.test(origin.creatorAppId) ||
+      origin.sourceName !== 'web' ||
+      !origin.checkoutTokenDigest ||
+      !/^[a-f0-9]{64}$/.test(origin.checkoutTokenDigest)
+    )
+      fail('CHECKOUT_ORIGIN_UNVERIFIED');
+    const admission = await checkout.admit({ order });
+    if (
+      !admission ||
+      admission.creatorAppId !== origin.creatorAppId ||
+      validTime(admission.enforcementObservedAt) < validTime(order.observedAt)
+    )
+      fail('CHECKOUT_ENFORCEMENT_UNVERIFIED');
+    evidence = {
+      kind: 'signed_offer_order_match',
+      creatorAppId: origin.creatorAppId,
+      checkoutTokenDigest: origin.checkoutTokenDigest,
+      enforcementObservedAt: admission.enforcementObservedAt,
+      checkoutContext: null,
+    };
+  }
+  const collectedAt = validTime(offer.payloadCollectedAt);
+  const expiresAt = validTime(offer.payloadExpiresAt);
+  if (collectedAt > validTime(order.createdAt) || expiresAt <= collectedAt)
+    fail('HISTORICAL_RETENTION_METADATA_UNAVAILABLE');
+  return {
+    quoteId: offer.quote.quoteId,
+    authorizationSetId: offer.authorization.setId,
+    quote: offer.quote,
+    lines: mapped,
+    // Erasure ends production detail, never the independently verified economic offer.
+    designPayload:
+      expiresAt <= validTime(order.observedAt) || offer.quote.installationGeneration !== order.installationGeneration
+        ? null
+        : (offer.designPayload ?? null),
+    payloadCollectedAt: offer.payloadCollectedAt,
+    payloadExpiresAt: offer.payloadExpiresAt,
+    evidence,
+  };
+}
+type SignedContext = {
+  quoteHex: string;
+  setHex: string;
+  generationHex: string;
+  epoch: number;
+  keyId: number;
+  currency: string;
+  exponent: number;
+  country: string;
+  marketId: string;
+  validThroughDay: number;
+};
+/** Installation window, key revocation, stored history, offer window, order context and key fingerprint. */
+function verifyHistory(
+  order: VerifiedOrder,
+  offer: HistoricalPurchaseOffer,
+  header: SignedContext,
+  protocolMismatch: boolean,
+): void {
   const { quote, authorization, issuance } = offer;
-  const { header, signature } = decodeEnvelope(envelope);
-  const members = authorization.members.map((member) => decodeMemberCarrier(member.carrier));
-  checkCompleteSet(header, members);
   const orderDay = localDay(new Date(order.createdAt), issuance.shopTimezone).ordinal;
   const installation = offer.installationWindow;
   if (
@@ -106,7 +184,7 @@ async function verifyOffer(
     fail('AUTHORIZATION_REVOKED_AT_PURCHASE');
   if (
     quote.shopId !== order.shopId ||
-    authorization.envelopeCarrier !== envelope ||
+    protocolMismatch ||
     header.quoteHex !== quote.quoteId.replaceAll('-', '') ||
     header.setHex !== authorization.setId.replaceAll('-', '') ||
     header.generationHex !== quote.authorizationGeneration.replaceAll('-', '') ||
@@ -116,8 +194,6 @@ async function verifyOffer(
     header.exponent !== quote.presentmentExponent ||
     header.country !== quote.country ||
     header.marketId !== quote.marketId ||
-    header.totalMinor !== quote.economics.totalMinor ||
-    header.totalQuantity !== quote.economics.customizedQuantity ||
     header.validThroughDay !== issuance.validThroughDay ||
     authorization.validThroughDay !== issuance.validThroughDay ||
     issuance.validThroughDay !== issuance.issuedDay + 2 ||
@@ -143,6 +219,26 @@ async function verifyOffer(
     createHash('sha256').update(offer.publicKey).digest('hex') !== authorization.publicKeyFingerprint
   )
     fail('HISTORICAL_KEY_MISMATCH');
+}
+async function verifyOffer(
+  order: VerifiedOrder,
+  offer: HistoricalPurchaseOffer,
+  envelope: string,
+  lines: readonly VerifiedOrder['lines'][number][],
+  checkout: PurchasePorts['checkout'],
+): Promise<PurchaseBinding> {
+  const { quote, authorization } = offer;
+  const { header, signature } = decodeEnvelope(envelope);
+  const members = authorization.members.map((member) => decodeMemberCarrier(member.carrier));
+  checkCompleteSet(header, members);
+  verifyHistory(
+    order,
+    offer,
+    header,
+    authorization.envelopeCarrier !== envelope ||
+      header.totalMinor !== quote.economics.totalMinor ||
+      header.totalQuantity !== quote.economics.customizedQuantity,
+  );
   const key = createPublicKey({
     key: Buffer.concat([Buffer.from('302a300506032b6570032100', 'hex'), Buffer.from(offer.publicKey)]),
     format: 'der',
@@ -185,57 +281,89 @@ async function verifyOffer(
     })
     .sort((a, b) => a.lineIndex - b.lineIndex);
   if (mapped.some((line, index) => line.lineIndex !== index)) fail('INCOMPLETE_AUTHORIZATION_SET');
-  let evidence: PurchaseBindingEvidence;
-  if (order.contextVerified && order.country !== null && order.marketId !== null) {
-    evidence = { kind: 'provider_context', country: order.country, marketId: order.marketId };
-  } else {
-    // Only wholly unavailable historical context may use the separate matching proof.
-    // Partial/contradictory context is never silently replaced by the signed quote.
-    if (order.contextVerified || order.country !== null || order.marketId !== null || !checkout)
-      fail('CONTEXT_UNVERIFIED');
-    const origin = order.checkoutOrigin;
-    if (
-      !origin ||
-      !origin.creatorAppId ||
-      !/^gid:\/\/shopify\/App\/[1-9][0-9]{0,19}$/.test(origin.creatorAppId) ||
-      origin.sourceName !== 'web' ||
-      !origin.checkoutTokenDigest ||
-      !/^[a-f0-9]{64}$/.test(origin.checkoutTokenDigest)
-    )
-      fail('CHECKOUT_ORIGIN_UNVERIFIED');
-    const admission = await checkout.admit({ order });
-    if (
-      !admission ||
-      admission.creatorAppId !== origin.creatorAppId ||
-      validTime(admission.enforcementObservedAt) < validTime(order.observedAt)
-    )
-      fail('CHECKOUT_ENFORCEMENT_UNVERIFIED');
-    evidence = {
-      kind: 'signed_offer_order_match',
-      creatorAppId: origin.creatorAppId,
-      checkoutTokenDigest: origin.checkoutTokenDigest,
-      enforcementObservedAt: admission.enforcementObservedAt,
-      checkoutContext: null,
-    };
+  return bind(order, offer, mapped, checkout);
+}
+/**
+ * Cart-line v3: every ordered line verifies independently against one signed set. The order's
+ * quantities are the truth (quantity is not signed); a subset of the accepted quote is admitted.
+ */
+async function verifyOfferV3(
+  order: VerifiedOrder,
+  offer: HistoricalPurchaseOffer,
+  prefix: string,
+  lines: readonly VerifiedOrder['lines'][number][],
+  checkout: PurchasePorts['checkout'],
+): Promise<PurchaseBinding> {
+  const { quote, authorization } = offer;
+  const carriers = lines.map((line) => {
+    const values = line.attributes.filter((attribute) => attribute.key === LINE_ATTRIBUTE);
+    const value = values[0]?.value;
+    if (values.length !== 1 || value === undefined) return fail('INVALID_ORDER_CARRIERS');
+    return value;
+  });
+  let decoded: ReturnType<typeof decodeLineCarrierV3>[];
+  try {
+    decoded = carriers.map(decodeLineCarrierV3);
+  } catch {
+    return fail('INVALID_ORDER_CARRIERS');
   }
-  const collectedAt = validTime(offer.payloadCollectedAt);
-  const expiresAt = validTime(offer.payloadExpiresAt);
-  if (collectedAt > validTime(order.createdAt) || expiresAt <= collectedAt)
-    fail('HISTORICAL_RETENTION_METADATA_UNAVAILABLE');
-  return {
-    quoteId: quote.quoteId,
-    authorizationSetId: authorization.setId,
-    quote,
-    lines: mapped,
-    // Erasure ends production detail, never the independently verified economic offer.
-    designPayload:
-      expiresAt <= validTime(order.observedAt) || quote.installationGeneration !== order.installationGeneration
-        ? null
-        : (offer.designPayload ?? null),
-    payloadCollectedAt: offer.payloadCollectedAt,
-    payloadExpiresAt: offer.payloadExpiresAt,
-    evidence,
-  };
+  const header = decoded[0]?.header;
+  if (!header) return fail('INVALID_ORDER_CARRIERS');
+  verifyHistory(
+    order,
+    offer,
+    header,
+    authorization.envelopeCarrier !== prefix ||
+      authorization.members.length !== header.count ||
+      quote.economics.lines.length !== header.count,
+  );
+  if (lines.length < 1 || lines.length > header.count) fail('INCOMPLETE_AUTHORIZATION_SET');
+  let records: ReturnType<typeof verifyLineSetV3>['records'];
+  try {
+    records = verifyLineSetV3(carriers, offer.publicKey).records;
+  } catch {
+    return fail('INVALID_AUTHORIZATION_SIGNATURE');
+  }
+  let units = 0;
+  const mapped = lines
+    .map((line, i) => {
+      const record = records[i];
+      const carrier = carriers[i];
+      if (!record || carrier === undefined) return fail('ORDER_LINE_MISMATCH');
+      const refs = line.attributes.filter((attribute) => attribute.key === REF_ATTRIBUTE);
+      const stored = authorization.members[record.index];
+      const economic = quote.economics.lines[record.index];
+      units += line.quantity;
+      if (
+        refs.length > 1 ||
+        (refs.length === 1 && refs[0]?.value !== lineRefV3(header.setHex, record.index)) ||
+        !stored ||
+        stored.lineIndex !== record.index ||
+        stored.carrier !== carrier ||
+        !economic ||
+        economic.lineIndex !== record.index ||
+        numericId(line.productId, 'Product') !== numericId(economic.productId, 'Product') ||
+        numericId(line.variantId, 'ProductVariant') !== record.variantId ||
+        economic.variantId !== record.variantId ||
+        economic.unitPriceMinor !== record.unitMinor ||
+        line.originalUnitPriceMinor !== record.unitMinor ||
+        line.sellingPlanId !== null ||
+        !Number.isSafeInteger(line.quantity) ||
+        line.quantity < 1 ||
+        units > MAX_CUSTOMIZED_UNITS
+      )
+        fail('ORDER_LINE_MISMATCH');
+      return {
+        orderLineId: line.lineId,
+        lineIndex: record.index,
+        productId: economic.productId,
+        variantId: record.variantId,
+        quantity: line.quantity,
+        unitPriceMinor: record.unitMinor,
+      };
+    })
+    .sort((a, b) => a.lineIndex - b.lineIndex);
+  return bind(order, offer, mapped, checkout);
 }
 /** Webhook identity selects a read; its body and browser cart claims never create purchase authority. */
 export async function reconcilePurchase(
@@ -270,23 +398,42 @@ export async function reconcilePurchase(
       fail('UNSUPPORTED_ORDER_BOUNDARY');
     if (order.edited) fail('UNSUPPORTED_ORDER_EDIT');
     const ids = new Set<string>();
-    const grouped = new Map<string, VerifiedOrder['lines'][number][]>();
+    const grouped = new Map<string, { protocol: 2 | 3; carrier: string; lines: VerifiedOrder['lines'][number][] }>();
     for (const line of order.lines) {
       if (!line.lineId || ids.has(line.lineId)) fail('DUPLICATE_ORDER_LINE');
       ids.add(line.lineId);
-      const envelopes = line.attributes.filter((attribute) => attribute.key === envelopeKey);
-      const members = line.attributes.filter((attribute) => attribute.key === memberKey);
       const marker = line.attributes.some((attribute) => attribute.key.startsWith('_insignia_'));
       if (!marker) continue;
-      if (envelopes.length !== 1 || members.length !== 1) fail('INVALID_ORDER_CARRIERS');
-      const envelope = envelopes[0]!.value;
-      const groupedLines = grouped.get(envelope) ?? [];
-      groupedLines.push(line);
-      grouped.set(envelope, groupedLines);
+      const envelopes = line.attributes.filter((attribute) => attribute.key === envelopeKey);
+      const members = line.attributes.filter((attribute) => attribute.key === memberKey);
+      const v3 = line.attributes.filter((attribute) => attribute.key === LINE_ATTRIBUTE);
+      let carrier: string;
+      let protocol: 2 | 3;
+      if (v3.length) {
+        if (v3.length !== 1 || envelopes.length || members.length) fail('INVALID_ORDER_CARRIERS');
+        // The signed prefix (header + signature) identifies one issued set.
+        carrier = String(v3[0]?.value).slice(0, PREFIX_V3_CHARS);
+        protocol = 3;
+      } else {
+        if (envelopes.length !== 1 || members.length !== 1) fail('INVALID_ORDER_CARRIERS');
+        carrier = String(envelopes[0]?.value);
+        protocol = 2;
+      }
+      const key = `${protocol}:${carrier}`;
+      const group = grouped.get(key) ?? { protocol, carrier, lines: [] };
+      group.lines.push(line);
+      grouped.set(key, group);
     }
     if (grouped.size > 1) fail('MIXED_AUTHORIZATION_SETS');
-    for (const [envelope, lines] of grouped) {
-      const { header } = decodeEnvelope(envelope);
+    for (const { protocol, carrier, lines } of grouped.values()) {
+      let header: { quoteHex: string; setHex: string };
+      if (protocol === 3) {
+        try {
+          header = decodePrefixV3(carrier).header;
+        } catch {
+          return fail('INVALID_ORDER_CARRIERS');
+        }
+      } else header = decodeEnvelope(carrier).header;
       const offer = await ports.offers.get({
         shopId: input.shopId,
         installationGeneration: input.installationGeneration,
@@ -294,7 +441,11 @@ export async function reconcilePurchase(
         authorizationSetId: uuid(header.setHex),
       });
       if (!offer) fail('AUTHORIZATION_HISTORY_UNAVAILABLE');
-      bindings.push(await verifyOffer(order, offer, envelope, lines, ports.checkout));
+      bindings.push(
+        protocol === 3
+          ? await verifyOfferV3(order, offer, carrier, lines, ports.checkout)
+          : await verifyOffer(order, offer, carrier, lines, ports.checkout),
+      );
     }
   } catch (error) {
     bindings.length = 0;

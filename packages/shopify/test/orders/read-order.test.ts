@@ -136,6 +136,77 @@ describe('independent Shopify order reconciliation', () => {
     }
   });
 
+  it('carries a v3 parent line carrier forward only to the child whose reference names it', async () => {
+    const raw = Buffer.alloc(194);
+    raw.write('ISG3', 0, 'ascii');
+    raw.fill(0x33, 44, 60);
+    raw[177] = 4;
+    const carrier = raw.toString('base64url');
+    const ref = Buffer.concat([Buffer.alloc(16, 0x33), Buffer.of(4)]).toString('base64url');
+    const parent = {
+      id: 'gid://shopify/LineItemGroup/701',
+      customAttributes: [{ key: '_insignia_line_v3', value: carrier }],
+    };
+    const d = fixture();
+    d.fetchImpl.mockImplementation(
+      async () =>
+        new Response(
+          JSON.stringify({
+            data: {
+              order: {
+                ...order(),
+                lineItems: connection([
+                  { ...line(), customAttributes: [{ key: '_insignia_ref_v3', value: ref }], lineItemGroup: parent },
+                ]),
+              },
+            },
+          }),
+        ),
+    );
+    expect((await readShopifyOrder(target, d)).lines[0]?.attributes).toEqual([
+      { key: '_insignia_ref_v3', value: ref },
+      { key: '_insignia_line_v3', value: carrier },
+    ]);
+    const otherIndex = Buffer.concat([Buffer.alloc(16, 0x33), Buffer.of(5)]).toString('base64url');
+    for (const customAttributes of [
+      [],
+      [{ key: '_insignia_ref_v3', value: otherIndex }],
+      [
+        { key: '_insignia_ref_v3', value: ref },
+        { key: '_insignia_line_v3', value: `${carrier.slice(0, -1)}B` },
+      ],
+    ]) {
+      d.fetchImpl.mockImplementation(
+        async () =>
+          new Response(
+            JSON.stringify({
+              data: {
+                order: { ...order(), lineItems: connection([{ ...line(), customAttributes, lineItemGroup: parent }]) },
+              },
+            }),
+          ),
+      );
+      await expect(readShopifyOrder(target, d)).rejects.toThrow('invalid_provider_shape');
+    }
+    const malformed = { ...parent, customAttributes: [{ key: '_insignia_line_v3', value: 'not-a-carrier' }] };
+    d.fetchImpl.mockImplementation(
+      async () =>
+        new Response(
+          JSON.stringify({
+            data: {
+              order: {
+                ...order(),
+                lineItems: connection([
+                  { ...line(), customAttributes: [{ key: '_insignia_ref_v3', value: ref }], lineItemGroup: malformed },
+                ]),
+              },
+            },
+          }),
+        ),
+    );
+    await expect(readShopifyOrder(target, d)).rejects.toThrow('invalid_provider_shape');
+  });
+
   it('provider-read parent/child carriers reach unchanged whole-quote purchase verification with original economics and unknown context', async () => {
     const vectors = jsonRecord(
       await readFile(new URL('../../../cart-authorization/fixtures/whole-quote-v2.json', import.meta.url), 'utf8'),

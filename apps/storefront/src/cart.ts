@@ -20,10 +20,18 @@ export type CartApplication = {
   recovery?: 'late_effects_possible';
   reason?: 'cart_changed' | 'mutation_unresolved' | 'vector_mismatch' | 'cart_unavailable' | 'busy';
 };
-const QUOTE = '_insignia_quote_v2';
-const MEMBER = '_insignia_member_v2';
+/** Per-line v3 authorization (layout owner: packages/cart-authorization/src/line-v3.ts). */
+const LINE = '_insignia_line_v3';
+/** Shared signed header + signature: the first 236 characters of every line carrier of one set. */
+const PREFIX_CHARS = 236;
+/** Historical v2 carriers. Never written any more; an apply replaces leftover lines and clears the attribute. */
+const LEGACY_QUOTE = '_insignia_quote_v2';
+const LEGACY_MEMBER = '_insignia_member_v2';
 const owned = (line: { properties: Record<string, unknown> }) =>
-  Object.hasOwn(line.properties, QUOTE) || Object.hasOwn(line.properties, MEMBER);
+  Object.hasOwn(line.properties, LINE) ||
+  Object.hasOwn(line.properties, LEGACY_QUOTE) ||
+  Object.hasOwn(line.properties, LEGACY_MEMBER);
+const prefixOf = (carrier: unknown) => (typeof carrier === 'string' ? carrier.slice(0, PREFIX_CHARS) : '');
 const stableProperties = <T>(properties: Record<string, T>): Record<string, T> =>
   Object.fromEntries(Object.entries(properties).sort(([a], [b]) => a.localeCompare(b)));
 function variantId(value: unknown): string {
@@ -105,7 +113,7 @@ function snapshot(value: unknown): CartSnapshot {
   if (new Set(items.map((item) => item.key)).size !== items.length) throw new Error('Duplicate cart key');
   const currency = 'currency' in value && typeof value.currency === 'string' ? value.currency : '';
   const attributes = properties('attributes' in value ? value.attributes : {});
-  if (attributes[QUOTE] === '') delete attributes[QUOTE];
+  if (attributes[LEGACY_QUOTE] === '') delete attributes[LEGACY_QUOTE];
   return {
     items,
     customized: items.filter(owned),
@@ -152,7 +160,7 @@ const digest = async (value: string) =>
   ).join('');
 const otherAttributes = (cart: CartSnapshot) =>
   JSON.stringify(
-    stableProperties(Object.fromEntries(Object.entries(cart.attributes).filter(([key]) => key !== QUOTE))),
+    stableProperties(Object.fromEntries(Object.entries(cart.attributes).filter(([key]) => key !== LEGACY_QUOTE))),
   );
 const logicalState = (cart: CartSnapshot) => JSON.stringify([cart.currency, normalized(cart.items), cart.attributes]);
 export type CartApplicationLock = { run<T>(action: () => Promise<T>): Promise<T | null> };
@@ -255,11 +263,11 @@ export function createAjaxCartAdapter({
           !Number.isSafeInteger(bucket.quantity) ||
           bucket.quantity < 1 ||
           bucket.quantity > 10000 ||
-          !bucket.properties[QUOTE] ||
-          !bucket.properties[MEMBER],
+          Object.keys(bucket.properties).join() !== LINE ||
+          (bucket.properties[LINE]?.length ?? 0) <= PREFIX_CHARS,
       ) ||
-      new Set(desired.map((bucket) => bucket.properties[MEMBER])).size !== desired.length ||
-      new Set(desired.map((bucket) => bucket.properties[QUOTE])).size > 1 ||
+      new Set(desired.map((bucket) => bucket.properties[LINE])).size !== desired.length ||
+      new Set(desired.map((bucket) => prefixOf(bucket.properties[LINE]))).size > 1 ||
       desired.reduce((sum, bucket) => sum + bucket.quantity, 0) > 10000
     )
       throw new Error('Invalid accepted cart vector');
@@ -277,8 +285,7 @@ export function createAjaxCartAdapter({
       if (prior?.phase === 'pending' && observed === prior.goal) {
         settle(prior);
         const same =
-          normalized(current.customized) === normalized(desired) &&
-          (current.attributes[QUOTE] ?? '') === (desired[0]?.properties[QUOTE] ?? '');
+          normalized(current.customized) === normalized(desired) && current.attributes[LEGACY_QUOTE] === undefined;
         if (!repair)
           return {
             status: same ? 'applied' : 'review_required',
@@ -290,7 +297,8 @@ export function createAjaxCartAdapter({
       }
       if (current.fingerprint !== expectedFingerprint)
         return { status: 'review_required', cart: current, reason: 'cart_changed' };
-      const quote = desired[0]?.properties[QUOTE] ?? '';
+      // The journal identifies an effect by its signed set: the shared v3 prefix.
+      const quote = prefixOf(desired[0]?.properties[LINE]);
       const quoteDigest = await digest(quote);
       let abandoned = prior?.abandoned ?? [];
       if (prior?.phase === 'pending' || ((unresolved || journal?.readUnresolved()) && !prior)) {
@@ -302,8 +310,11 @@ export function createAjaxCartAdapter({
       }
       if (!repair && prior?.phase === 'abandoned') {
         const carriers = [
-          current.attributes[QUOTE],
-          ...current.customized.map((line) => line.properties[QUOTE]),
+          current.attributes[LEGACY_QUOTE],
+          ...current.customized.map((line) => line.properties[LEGACY_QUOTE]),
+          ...current.customized.map((line) =>
+            Object.hasOwn(line.properties, LINE) ? prefixOf(line.properties[LINE]) : undefined,
+          ),
         ].filter((v) => typeof v === 'string');
         const carrierHashes = await Promise.all(carriers.map((v) => digest(String(v))));
         if (
@@ -319,9 +330,9 @@ export function createAjaxCartAdapter({
       const ordinary = normalized(current.ordinary),
         foreign = otherAttributes(current),
         currency = current.currency;
+      // v3 writes no cart attribute; a leftover v2 quote attribute is cleared with the removal.
       const attrs = { ...current.attributes };
-      if (quote) attrs[QUOTE] = quote;
-      else delete attrs[QUOTE];
+      delete attrs[LEGACY_QUOTE];
       const goal = await digest(
         JSON.stringify([current.currency, normalized([...current.ordinary, ...desired]), stableProperties(attrs)]),
       );
@@ -336,21 +347,20 @@ export function createAjaxCartAdapter({
       }
       saveIntent(pending); // Closed digest-only intent is durable before any mutation.
       const vectorAlready = normalized(current.customized) === normalized(desired);
-      let expectedQuote = current.attributes[QUOTE] ?? '';
-      if ((current.customized.length && !vectorAlready) || (!desired.length && current.attributes[QUOTE])) {
+      const legacyQuote = current.attributes[LEGACY_QUOTE] !== undefined;
+      if ((current.customized.length && !vectorAlready) || legacyQuote) {
         dispatched = true;
-        // update.js returns the complete post-mutation cart (as for the final quote write below);
-        // it is the removal witness, so no separate cart.js read is needed.
+        // update.js returns the complete post-mutation cart; it is the removal witness, so no separate
+        // cart.js read is needed. Only a leftover v2 quote attribute is cleared here, in the same request.
         current = snapshot(
           await request('cart/update.js', {
-            updates: Object.fromEntries(current.customized.map((item) => [item.key, 0])),
-            attributes: { [QUOTE]: '' },
+            updates: Object.fromEntries((vectorAlready ? [] : current.customized).map((item) => [item.key, 0])),
+            ...(legacyQuote ? { attributes: { [LEGACY_QUOTE]: '' } } : {}),
           }),
         );
-        expectedQuote = '';
         if (
-          (current.attributes[QUOTE] ?? '') !== expectedQuote ||
-          current.customized.length ||
+          current.attributes[LEGACY_QUOTE] !== undefined ||
+          (!vectorAlready && current.customized.length) ||
           current.currency !== currency ||
           normalized(current.ordinary) !== ordinary ||
           otherAttributes(current) !== foreign
@@ -369,19 +379,13 @@ export function createAjaxCartAdapter({
         current = await read();
       }
       if (
-        (current.attributes[QUOTE] ?? '') !== expectedQuote ||
+        current.attributes[LEGACY_QUOTE] !== undefined ||
         current.currency !== currency ||
         normalized(current.customized) !== normalized(desired) ||
         normalized(current.ordinary) !== ordinary ||
         otherAttributes(current) !== foreign
       )
         return { status: 'review_required', cart: current, reason: 'vector_mismatch' };
-      if ((current.attributes[QUOTE] ?? '') !== quote) {
-        dispatched = true;
-        // Shopify update.js returns the complete post-mutation cart. Normalize
-        // that witness and verify the same whole-cart goal below.
-        current = snapshot(await request('cart/update.js', { attributes: { [QUOTE]: quote } }));
-      }
       if ((await digest(logicalState(current))) !== goal)
         return { status: 'review_required', cart: current, reason: 'vector_mismatch' };
       settle(pending);

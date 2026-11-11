@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { after, test } from 'node:test';
 import { pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
-import { type AjaxItem, fetchBody, requestUrl } from './support.mts';
+import { type AjaxItem, fetchBody, lineCarriers, requestUrl } from './support.mts';
 
 const bundle = await build({
   entryPoints: [new URL('../src/renewal.ts', import.meta.url).pathname],
@@ -41,18 +41,26 @@ const group = {
   },
   variants: [{ variantId: '102', quantity: 2 }],
 };
+const LINE = '_insignia_line_v3';
+const records = [
+  { variantId: '102', unitMinor: '3033' },
+  { variantId: '103', unitMinor: '3033' },
+  { variantId: '104', unitMinor: '2000' },
+];
+/** Accepted quantities 2, 1, 1. The buyer then raised line 0 to 5 and removed line 1 with theme controls. */
+const expired = lineCarriers(records, { set: 1, validThroughDay: 20000 });
+const renewedSet = lineCarriers(records, { set: 2, validThroughDay: 30000 });
+const accepted = [2, 1, 1];
 
-function fixture(options: { renewable?: boolean; renew?: Response; renewedQuantity?: number } = {}) {
+function fixture(
+  options: { renewable?: boolean; renew?: Response; renewedBuckets?: { variantId: string; index: number }[] } = {},
+) {
   let items: AjaxItem[] = [
     { key: 'ordinary', variant_id: 101, quantity: 3, properties: { Gift: 'Yes' } },
-    {
-      key: 'custom',
-      variant_id: 102,
-      quantity: 2,
-      properties: { _insignia_quote_v2: 'old', _insignia_member_v2: 'old-member' },
-    },
+    { key: 'custom-0', variant_id: 102, quantity: 5, properties: { [LINE]: expired.carriers[0] ?? '' } },
+    { key: 'custom-2', variant_id: 104, quantity: 1, properties: { [LINE]: expired.carriers[2] ?? '' } },
   ];
-  const attributes: Record<string, string> = { _insignia_quote_v2: 'old' };
+  const attributes: Record<string, string> = {};
   const values = new Map<string, string>([
     [
       'insignia-buyer-session:/apps/insignia',
@@ -61,7 +69,8 @@ function fixture(options: { renewable?: boolean; renew?: Response; renewedQuanti
   ]);
   const calls: string[] = [],
     writes: string[] = [],
-    renewBodies: Record<string, unknown>[] = [];
+    renewBodies: Record<string, unknown>[] = [],
+    confirmBodies: Record<string, unknown>[] = [];
   const fetchImpl: typeof fetch = async (url, init = {}) => {
     const path = new URL(requestUrl(url), 'https://fixture.test').pathname;
     calls.push(path);
@@ -76,17 +85,18 @@ function fixture(options: { renewable?: boolean; renew?: Response; renewedQuanti
           setId: applicationId,
           validThroughDay: 30000,
           applicationId,
-          buckets: [
-            {
-              variantId: '102',
-              quantity: options.renewedQuantity ?? 2,
-              properties: { _insignia_quote_v2: 'new', _insignia_member_v2: 'new-member' },
-            },
-          ],
+          buckets: (
+            options.renewedBuckets ?? records.map((record, index) => ({ variantId: record.variantId, index }))
+          ).map(({ variantId, index }) => ({
+            variantId,
+            quantity: accepted[index] ?? 1,
+            properties: { [LINE]: renewedSet.carriers[index] ?? '' },
+          })),
           desired: [group],
         })
       );
     }
+    if (path.endsWith('/confirm')) confirmBodies.push(JSON.parse(String(init.body)));
     if (path.endsWith('/confirm')) return Response.json({ id: applicationId, status: 'APPLIED' });
     if (path.includes('/v1/')) throw new Error(`unexpected buyer call ${path}`);
     if (init.method === 'POST') {
@@ -97,7 +107,12 @@ function fixture(options: { renewable?: boolean; renew?: Response; renewedQuanti
         if (body.attributes) Object.assign(attributes, body.attributes);
       } else if (path.endsWith('/cart/add.js'))
         for (const item of body.items ?? [])
-          items.push({ key: 'renewed', variant_id: item.id, quantity: item.quantity, properties: item.properties });
+          items.push({
+            key: `renewed-${item.id}`,
+            variant_id: item.id,
+            quantity: item.quantity,
+            properties: item.properties,
+          });
     }
     return Response.json({ items, attributes, currency: 'USD' });
   };
@@ -123,10 +138,10 @@ function fixture(options: { renewable?: boolean; renew?: Response; renewedQuanti
       else Reflect.set(globalThis, 'window', previous);
     }
   };
-  return { run, calls, writes, renewBodies, items: () => items, attributes };
+  return { run, calls, writes, renewBodies, confirmBodies, items: () => items, attributes };
 }
 
-test('an expired unchanged set renews with the owned cart groups and applies through the verified cart adapter', async () => {
+test('an expired set renews per quote and keeps current cart quantities and removals', async () => {
   const f = fixture();
   const { result, events } = await f.run();
   assert.equal(result, true);
@@ -142,15 +157,23 @@ test('an expired unchanged set renews with the owned cart groups and applies thr
     inputBytes: (body.capacity as { inputBytes: number }).inputBytes,
   });
   assert.match(String(body.idempotencyKey), /^[0-9a-f-]{36}$/);
+  // The renewed carriers replace the current lines by signed index at the current quantities (5 and 1);
+  // the removed line 1 stays removed although the renewed set signs it too.
   assert.deepEqual(
-    f.items().map((item) => [item.key, item.quantity, item.properties]),
+    f.items().map((item) => [item.key, item.variant_id, item.quantity, item.properties]),
     [
-      ['ordinary', 3, { Gift: 'Yes' }],
-      ['renewed', 2, { _insignia_member_v2: 'new-member', _insignia_quote_v2: 'new' }],
+      ['ordinary', 101, 3, { Gift: 'Yes' }],
+      ['renewed-102', '102', 5, { [LINE]: renewedSet.carriers[0] }],
+      ['renewed-104', '104', 1, { [LINE]: renewedSet.carriers[2] }],
     ],
   );
-  assert.equal(f.attributes._insignia_quote_v2, 'new');
+  assert.deepEqual(f.attributes, {}, 'no cart-level quote attribute is written');
+  assert.deepEqual(f.writes, ['/cart/update.js', '/cart/add.js']);
   assert.ok(f.calls.includes(`/apps/insignia/v1/cart-applications/${applicationId}/confirm`));
+  assert.deepEqual(
+    (f.confirmBodies[0]?.vector as { quantity: number }[] | undefined)?.map((bucket) => bucket.quantity),
+    [5, 1],
+  );
   assert.deepEqual(events, ['insignia-cart-updated']);
 });
 
@@ -172,8 +195,19 @@ test('REVIEW_REQUIRED or entitlement denial never writes the cart', async () => 
   }
 });
 
-test('a renewed vector that differs from the observed cart is not applied', async () => {
-  const f = fixture({ renewedQuantity: 3 });
-  assert.equal((await f.run()).result, false);
-  assert.deepEqual(f.writes, []);
+test('a renewed set without a carrier for a current line, or for another variant, is not applied', async () => {
+  for (const renewedBuckets of [
+    [
+      { variantId: '102', index: 0 },
+      { variantId: '103', index: 1 },
+    ],
+    [
+      { variantId: '102', index: 0 },
+      { variantId: '999', index: 2 },
+    ],
+  ]) {
+    const f = fixture({ renewedBuckets });
+    assert.equal((await f.run()).result, false);
+    assert.deepEqual(f.writes, []);
+  }
 });

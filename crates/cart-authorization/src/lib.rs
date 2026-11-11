@@ -1,7 +1,9 @@
-//! Whole-quote v2 authorization and app-owned product-policy classification.
+//! Cart-line v3 authorization and app-owned product-policy classification.
 pub mod capacity;
+mod line_v3;
 pub mod product_policy;
 mod whole;
+pub use line_v3::*;
 pub use whole::*;
 
 pub fn parse_decimal_minor(value: &str, exponent: u8) -> Result<u64, Error> {

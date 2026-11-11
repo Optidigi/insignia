@@ -11,7 +11,7 @@ import type {
 import { type Kysely, sql, type Transaction } from 'kysely';
 import type { Database } from '../client/database.js';
 import { sha256CanonicalJson } from '../hash/canonical.js';
-import { createPurchaseRepository, type PurchaseRecord } from './purchase.js';
+import { createPurchaseRepository, type PurchaseRecord, purchaseDesigns } from './purchase.js';
 
 type Executor = Kysely<Database> | Transaction<Database>;
 type GrantRow = {
@@ -47,27 +47,25 @@ function missing(record: PurchaseRecord) {
   )
     unavailable();
   const slots: CustomerArtworkSlot[] = [];
-  let groupIndex = 0;
-  for (const binding of record.bindings) {
-    for (const { group } of binding.designPayload?.request.groups ?? []) {
-      for (const placement of group.design.placements) {
-        if (
-          placement.artwork.kind === 'deferred' &&
-          !record.artworkEvents.some(
-            (event) =>
-              event.kind === 'ATTACH' && event.groupIndex === groupIndex && event.placementId === placement.placementId,
-          )
+  // Only ordered designs need customer artwork; signed indices stay stable.
+  for (const [groupIndex, { group, ordered }] of purchaseDesigns(record).entries()) {
+    if (!ordered) continue;
+    for (const placement of group.design.placements) {
+      if (
+        placement.artwork.kind === 'deferred' &&
+        !record.artworkEvents.some(
+          (event) =>
+            event.kind === 'ATTACH' && event.groupIndex === groupIndex && event.placementId === placement.placementId,
         )
-          slots.push({
-            groupIndex,
-            placementId: placement.placementId,
-            productId: group.productId,
-            revisionId: group.configRevisionId,
-            methodId: placement.methodId,
-            stepId: placement.stepId,
-          });
-      }
-      groupIndex++;
+      )
+        slots.push({
+          groupIndex,
+          placementId: placement.placementId,
+          productId: group.productId,
+          revisionId: group.configRevisionId,
+          methodId: placement.methodId,
+          stepId: placement.stepId,
+        });
     }
   }
   return slots;

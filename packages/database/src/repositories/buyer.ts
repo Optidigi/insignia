@@ -549,6 +549,26 @@ export function createBuyerRepository(db: Kysely<Database>) {
       ).rows[0];
       return r ? { quote: r.quote_value, request: r.desired_request } : null;
     },
+    /** The reviewed request behind one owned accepted quote; renewal re-prices exactly this request. */
+    async getOwnedRequest(
+      scope: BuyerScope,
+      input: { quoteId: string; ownerBinding: string; now: Date },
+    ): Promise<{ quote: AcceptedQuote; request: unknown } | null> {
+      validScope(scope);
+      const r = (
+        await sql<{ quote_value: AcceptedQuote; desired_request: unknown }>`
+        SELECT q.quote_value,p.desired_request FROM buyer_quote_ownership o
+        JOIN accepted_quotes q ON q.quote_id=o.quote_id AND q.shop_id=o.shop_id AND q.installation_generation=o.installation_generation
+        JOIN quote_proposals p ON p.proposal_id=o.proposal_id AND p.shop_id=o.shop_id AND p.installation_generation=o.installation_generation
+        JOIN buyer_sessions b ON b.session_id=p.session_id
+        JOIN installation_generations i ON i.shop_id=q.shop_id AND i.generation=q.installation_generation
+        WHERE o.shop_id=${scope.shopId} AND o.installation_generation=${scope.installationGeneration}::bigint AND o.owner_binding=${input.ownerBinding}
+        AND o.quote_id=${input.quoteId}::uuid AND b.owner_hash=${scope.ownerHash} AND b.created_at<=${input.now} AND b.expires_at>${input.now} AND p.retain_private_until>${input.now} AND ${active}
+        AND i.authorization_generation=q.authorization_generation AND i.authorization_epoch=q.authorization_epoch
+      `.execute(db)
+      ).rows[0];
+      return r ? { quote: r.quote_value, request: r.desired_request } : null;
+    },
     async getOwnedSet(
       scope: BuyerScope,
       input: { quoteId: string; setId: string; ownerBinding: string; now: Date },

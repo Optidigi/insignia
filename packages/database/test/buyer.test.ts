@@ -1,6 +1,5 @@
-import { createHash, generateKeyPairSync, randomUUID, sign } from 'node:crypto';
+import { createHash, generateKeyPairSync, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { encodeHeader, encodeMember, wholeQuoteSignBytes } from '@insignia/cart-authorization';
 import { sql } from 'kysely';
 import { afterAll, describe, expect, it } from 'vitest';
 import { withTransaction } from '../src/client/database.js';
@@ -8,6 +7,7 @@ import { PgAcceptedQuoteRepository } from '../src/repositories/accepted-quote.js
 import { BUYER_SESSION_POLICY, createBuyerRepository } from '../src/repositories/buyer.js';
 import { CONFIG_DRAFT_STORAGE_VERSION, createConfigRepositoryInternal } from '../src/repositories/config.js';
 import { createPublicationRepository } from '../src/repositories/publication.js';
+import { signLinesV3 } from './support/line-v3.js';
 import { createTestShop, openTestDatabase } from './support/postgres.js';
 
 describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
@@ -432,18 +432,15 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
       epoch: value.authorizationEpoch,
       quoteHex: quoteId.replaceAll('-', ''),
       setHex: setId.replaceAll('-', ''),
-      count: 2,
       currency: 'USD',
       exponent: 2,
       country: 'US',
       marketId: '42',
       validThroughDay: acceptedDay + 2,
-      totalQuantity: 2,
-      totalMinor: '2001',
     };
     const signedMembers = [
-      { index: 0, variantId: '1', quantity: 1, unitMinor: '1001' },
-      { index: 1, variantId: '2', quantity: 1, unitMinor: '1000' },
+      { index: 0, variantId: '1', unitMinor: '1001' },
+      { index: 1, variantId: '2', unitMinor: '1000' },
     ];
     const authorization = {
       setId,
@@ -452,14 +449,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
       firstValidDay: 20000,
       lastValidDay: 21000,
       validThroughDay: acceptedDay + 2,
-      envelopeCarrier: Buffer.concat([
-        encodeHeader(signedHeader),
-        sign(null, wholeQuoteSignBytes(signedHeader, signedMembers), value.keys.privateKey),
-      ]).toString('base64url'),
-      members: signedMembers.map((member, lineIndex) => ({
-        lineIndex,
-        carrier: encodeMember(member).toString('base64url'),
-      })),
+      ...signLinesV3(signedHeader, signedMembers, value.keys.privateKey),
     };
     const input = {
       shopId: value.shopId,
@@ -541,6 +531,15 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
     ).toBeNull();
     expect(await buyer.getOwnedSet(scope, { quoteId, setId: randomUUID(), ownerBinding, now })).toBeNull();
     expect(await buyer.getOwnedSet(scope, { quoteId, setId, ownerBinding: 'f'.repeat(64), now })).toBeNull();
+    // Renewal's stored-request read is owner, session and quote scoped like the set read.
+    expect(await buyer.getOwnedRequest(scope, { quoteId, ownerBinding, now: later })).toMatchObject({
+      quote: { quoteId },
+    });
+    expect(
+      await buyer.getOwnedRequest({ ...scope, ownerHash: 'f'.repeat(64) }, { quoteId, ownerBinding, now }),
+    ).toBeNull();
+    expect(await buyer.getOwnedRequest(scope, { quoteId, ownerBinding: 'f'.repeat(64), now })).toBeNull();
+    expect(await buyer.getOwnedRequest(scope, { quoteId: randomUUID(), ownerBinding, now })).toBeNull();
     expect(await buyer.getQuoteDesign(scope, quoteId, ownerBinding, new Date(+now + 1200000))).toBeNull();
     const applicationId = randomUUID();
     await buyer.createApplication(scope, {

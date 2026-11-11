@@ -8,7 +8,11 @@ import { build } from 'esbuild';
 import type { DesignerQuoteReview } from '../../../frontend/designer/src/quote-review.ts';
 import type { CartReceipt, CartRequest } from '../../../frontend/designer/src/runtime.ts';
 import type { BuyerConfig } from '../src/buyer.ts';
-import { type AjaxItem, fetchBody, requestUrl } from './support.mts';
+import { type AjaxItem, fetchBody, lineCarriers, requestUrl } from './support.mts';
+
+/** One-line v3 carrier for a variant; the storefront decodes but never verifies it. */
+const v3Carrier = (variantId: string, set = 1) =>
+  lineCarriers([{ variantId, unitMinor: '1000' }], { set }).carriers[0] ?? '';
 
 const bundle = await build({
   stdin: {
@@ -138,9 +142,7 @@ function fixture(proposals: Proposal[]) {
           setId: '44444444-4444-4444-8444-444444444444',
           validThroughDay: 30000,
           applicationId: '22222222-2222-4222-8222-222222222222',
-          buckets: [
-            { variantId: '101', quantity: 1, properties: { _insignia_quote_v2: 'new', _insignia_member_v2: 'member' } },
-          ],
+          buckets: [{ variantId: '101', quantity: 1, properties: { _insignia_line_v3: v3Carrier('101', 2) } }],
           desired: proposedGroups,
         });
       }

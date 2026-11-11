@@ -19,7 +19,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('customer purchase artwork aut
   afterAll(async () => {
     await db?.destroy();
   });
-  async function fixture() {
+  async function fixture(subset = false) {
     const base = await purchaseFixture(db);
     const purchaseId = randomUUID();
     const expiresAt = new Date(Date.now() + 7 * 86400000);
@@ -27,32 +27,51 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('customer purchase artwork aut
     await sql`INSERT INTO purchase_orders(purchase_id,shop_id,installation_generation,order_id,order_created_at,currency,original_total_minor) VALUES(${purchaseId}::uuid,${base.shopId},${base.generation}::bigint,${`gid://shopify/Order/${BigInt(`0x${purchaseId.replaceAll('-', '').slice(0, 12)}`)}`},clock_timestamp(),'USD',2001)`.execute(
       db,
     );
-    await sql`INSERT INTO purchase_bindings(shop_id,installation_generation,purchase_id,quote_id,set_id,economics) VALUES(${base.shopId},${base.generation}::bigint,${purchaseId}::uuid,${base.quote.quoteId}::uuid,${base.authorization.setId}::uuid,'{}'::jsonb)`.execute(
+    await sql`INSERT INTO purchase_bindings(shop_id,installation_generation,purchase_id,quote_id,set_id,economics) VALUES(${base.shopId},${base.generation}::bigint,${purchaseId}::uuid,${base.quote.quoteId}::uuid,${base.authorization.setId}::uuid,${subset ? JSON.stringify({ economics: base.quote.economics }) : '{}'}::jsonb)`.execute(
       db,
     );
+    // Subset: two signed designs, only design 1 (economics line 1) ordered.
+    if (subset)
+      await sql`INSERT INTO purchase_lines VALUES(${base.shopId},${base.generation}::bigint,${purchaseId}::uuid,${base.authorization.setId}::uuid,'gid://shopify/LineItem/56',1,${base.productId},'2',4,1000)`.execute(
+        db,
+      );
+    const subsetGroups = ['front', 'back'].map((placementId, index) => ({
+      group: {
+        productId: base.productId,
+        configRevisionId: base.revisionId,
+        variants: [{ variantId: String(index + 1), quantity: 1 }],
+        design: {
+          placements: [
+            { placementId, methodId: 'print', stepId: 'small', artwork: { kind: 'deferred', intentId: placementId } },
+          ],
+        },
+      },
+    }));
     const payload = {
       version: 'm8-purchase-design-v1',
       collectedAt: new Date().toISOString(),
       revisions: [],
       request: {
-        groups: [
-          {
-            group: {
-              productId: base.productId,
-              configRevisionId: base.revisionId,
-              design: {
-                placements: [
-                  {
-                    placementId: 'front',
-                    methodId: 'print',
-                    stepId: 'small',
-                    artwork: { kind: 'deferred', intentId: 'later' },
+        groups: subset
+          ? subsetGroups
+          : [
+              {
+                group: {
+                  productId: base.productId,
+                  configRevisionId: base.revisionId,
+                  design: {
+                    placements: [
+                      {
+                        placementId: 'front',
+                        methodId: 'print',
+                        stepId: 'small',
+                        artwork: { kind: 'deferred', intentId: 'later' },
+                      },
+                    ],
                   },
-                ],
+                },
               },
-            },
-          },
-        ],
+            ],
       },
     };
     await sql`INSERT INTO purchase_design_payloads(shop_id,installation_generation,purchase_id,set_id,collected_at,expires_at,payload) VALUES(${base.shopId},${base.generation}::bigint,${purchaseId}::uuid,${base.authorization.setId}::uuid,clock_timestamp(),${expiresAt},${JSON.stringify(payload)}::jsonb)`.execute(
@@ -114,6 +133,11 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('customer purchase artwork aut
       await pool.end();
     }
   }
+  it('customer links ask only for artwork of ordered designs, at their signed index', async () => {
+    const f = await fixture(true);
+    const issued = await f.repo.issue(f.scope, f.request);
+    expect(issued?.slots.map((slot) => [slot.groupIndex, slot.placementId])).toEqual([[1, 'back']]);
+  });
   it('allows merchant links before payment, caps expiry and replays issuance without extending authority', async () => {
     const f = await fixture();
     const first = await f.repo.issue(f.scope, f.request);

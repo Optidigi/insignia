@@ -110,7 +110,7 @@ All `support/` shorthand below means `frontend/admin/examples/admin/support/`; `
 | Key | Exact source owners and supported boundary |
 |---|---|
 | SPEC | `docs/architecture/implementation-plan.md:9` scope; `:146` config/publication; `:170` geometry; `:192` money; `:214` Lean prices; `:311` cart context; `:351` recurring; `:379` admin; `:421` storefront; `:501` schema; `:547` retention; `:615` failures. |
-| WIRE | `docs/architecture/WHOLE-QUOTE-V2-ADOPTED.md:5` exact bytes/carriers; `:36` bounded admission guards; no new wire version authorized. |
+| WIRE | `docs/architecture/CART-LINE-V3.md` exact v3 bytes/carriers, verification and engineering bounds (owner-adopted 10 November 2026); `docs/architecture/WHOLE-QUOTE-V2-ADOPTED.md` historical v2 bytes kept for reconciliation. |
 | C-B | `apps/web/src/server/admin/contracts.ts:78` catalog/config ports; `apps/web/src/server/admin/http.ts:195` queries and subsequent command dispatch; `apps/web/src/server/merchant-config.ts:73` validation, `:313` read, `:393` create, `:437` save, `:484` copy, `:542` publish. |
 | C-DB | `packages/database/src/repositories/config.ts:90` creation, `:134` product lookup, `:154` draft CAS, `:178` revision; `packages/database/migrations/20260929000100_durable_core.sql:1`; geometry/presentation migrations `20260930000300_m5_revision_geometry.sql:1`, `20260930000400_m5_revision_presentation.sql:1`; activation migrations `20260930000900_m5_activation.sql:1`, `20261007000100_m5_availability_v3.sql:1`. |
 | C-SCHEMA | `packages/contracts/src/v1/merchant-draft.ts:19` labels, `:37` strict merchant draft; `packages/contracts/src/v1/pricing-config.ts:1`; `packages/domain/src/config/model.ts:27`; `packages/domain/src/pricing/lean.ts:1`. |

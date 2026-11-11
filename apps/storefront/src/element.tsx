@@ -404,36 +404,37 @@ type CartJsLine = {
   properties?: Record<string, unknown>;
 };
 const CART_MUTATION = /\/cart\/(?:add|change|update|clear)(?:\.js)?$/;
+const LINE = '_insignia_line_v3';
+const LEGACY = ['_insignia_quote_v2', '_insignia_member_v2'];
 const isCustomized = (line: CartJsLine) =>
-  !!line.properties &&
-  (Object.hasOwn(line.properties, '_insignia_quote_v2') || Object.hasOwn(line.properties, '_insignia_member_v2'));
+  !!line.properties && [LINE, ...LEGACY].some((key) => Object.hasOwn(line.properties ?? {}, key));
 
-/** Signed quantity/unit for presentation only. Layout owner: packages/cart-authorization/src/whole-quote.ts
- * (u16 index, u64 variant, u32 quantity, u64 unit minor). Shopify Functions remain the price/checkout authority. */
-export function signedMember(carrier: unknown): { quantity: number; unitMinor: bigint } | undefined {
-  if (typeof carrier !== 'string' || !/^[A-Za-z0-9_-]{30}$/.test(carrier)) return;
-  try {
-    const binary = atob(carrier.replace(/-/g, '+').replace(/_/g, '/'));
-    if (binary.length !== 22) return;
-    const view = new DataView(Uint8Array.from(binary, (char) => char.charCodeAt(0)).buffer);
-    return { quantity: view.getUint32(10), unitMinor: view.getBigUint64(14) };
-  } catch {
-    return;
-  }
-}
-
-/** Signed context for presentation only, decoded from the per-line `_insignia_quote_v2` envelope
- * (92-byte header + 64-byte signature; layout owner whole-quote.ts). Functions remain the authority. */
-export function signedContext(
-  carrier: unknown,
-): { currency: string; country: string; marketId: string; validThroughDay: number } | undefined {
-  if (typeof carrier !== 'string' || !/^[A-Za-z0-9_-]{208}$/.test(carrier)) return;
+/** A per-line v3 carrier decoded for presentation only. Layout owner: packages/cart-authorization/src/line-v3.ts
+ * (113-byte header, 64-byte signature, 17-byte record: u8 index, u64 variant, u64 unit minor; then the proof).
+ * Nothing is verified here: Shopify Functions remain the price/checkout authority. */
+type SignedLine = {
+  prefix: string;
+  index: number;
+  unitMinor: bigint;
+  currency: string;
+  country: string;
+  marketId: string;
+  validThroughDay: number;
+};
+export function signedLine(carrier: unknown): SignedLine | undefined {
+  if (typeof carrier !== 'string' || !/^[A-Za-z0-9_-]{259,472}$/.test(carrier)) return;
   try {
     const bytes = Uint8Array.from(atob(carrier.replace(/-/g, '+').replace(/_/g, '/')), (char) => char.charCodeAt(0));
     const ascii = (start: number, end: number) => String.fromCharCode(...bytes.subarray(start, end));
-    if (bytes.length !== 156 || ascii(0, 4) !== 'ISG2' || bytes[4] !== 2) return;
+    const count = bytes[60] ?? 0;
+    const depth = bytes[61] ?? 0;
+    if (ascii(0, 4) !== 'ISG3' || bytes[4] !== 3 || count < 1 || count > 32 || depth > 5) return;
+    if (bytes.length !== 194 + 32 * depth || (bytes[177] ?? 255) >= count) return;
     const view = new DataView(bytes.buffer);
     return {
+      prefix: carrier.slice(0, 236),
+      index: bytes[177] ?? 0,
+      unitMinor: view.getBigUint64(186),
       currency: ascii(62, 65),
       country: ascii(66, 68),
       marketId: view.getBigUint64(68).toString(),
@@ -446,20 +447,24 @@ export function signedContext(
 
 export type CartReviewReason = 'changed' | 'context' | 'expired';
 /**
- * Why designed lines no longer carry their signed prices, for presentation only:
+ * Why designed lines no longer carry their signed prices, for presentation only. Native quantity changes and
+ * removed lines are never a reason: each v3 line carries its own authorization and quantity is not signed.
  * - `context`: cart currency or the storefront country/Market differs from the signed context;
- * - `expired`: every signed quantity still matches and the shared valid-through day may have passed.
- *   The day is shop-local and the browser cannot know the shop zone, so this only excludes sets that
- *   are certainly still valid (any zone is within one day of UTC). The server decides renewal;
- * - `changed`: anything else.
+ * - `expired`: the shared valid-through day may have passed. The day is shop-local and the browser cannot know
+ *   the shop zone, so this only excludes sets that are certainly still valid (any zone is within one day of
+ *   UTC). The server decides renewal;
+ * - `changed`: anything else (an undecodable or legacy v2 line, mixed sets, a different observed unit price).
  */
 export function cartReviewReason(
   lines: CartJsLine[],
   context: { currency?: string; country?: string; marketId?: string },
   utcDay = Math.floor(Date.now() / 86400000),
 ): CartReviewReason | undefined {
-  if (!lines.some(customizedLineNeedsReview)) return;
-  const signed = lines.map((line) => signedContext(line.properties?._insignia_quote_v2));
+  const signed = lines.map((line) => signedLine(line.properties?.[LINE]));
+  const prefix = signed[0]?.prefix;
+  // Checkout accepts one signed set per cart, so lines from different sets need review too.
+  const oneSet = signed.every((line) => line?.prefix === prefix);
+  if (oneSet && !lines.some(customizedLineNeedsReview)) return;
   const market = context.marketId?.replace(/^gid:\/\/shopify\/Market\//, '');
   if (
     signed.some(
@@ -472,12 +477,7 @@ export function cartReviewReason(
   )
     return 'context';
   const day = signed[0]?.validThroughDay;
-  return day !== undefined &&
-    day <= utcDay &&
-    signed.every((header) => header?.validThroughDay === day) &&
-    lines.every((line) => signedMember(line.properties?._insignia_member_v2)?.quantity === line.quantity)
-    ? 'expired'
-    : 'changed';
+  return oneSet && day !== undefined && day <= utcDay ? 'expired' : 'changed';
 }
 
 /** Whether this tab still holds the buyer session that owns its accepted sets (same key as buyer.ts). */
@@ -492,16 +492,11 @@ function hasBuyerSession(proxyBase: string) {
   }
 }
 
-/** A designed line no longer shows the quantity and customization price it was accepted with. */
+/** A designed line no longer shows its signed customization price (quantity is never compared). */
 export function customizedLineNeedsReview(line: CartJsLine): boolean {
   if (!isCustomized(line)) return false;
-  const member = signedMember(line.properties?._insignia_member_v2);
-  return (
-    !member ||
-    member.quantity !== line.quantity ||
-    typeof line.original_price !== 'number' ||
-    BigInt(line.original_price) !== member.unitMinor
-  );
+  const signed = signedLine(line.properties?.[LINE]);
+  return !signed || typeof line.original_price !== 'number' || BigInt(line.original_price) !== signed.unitMinor;
 }
 
 export class InsigniaCartRepair extends HTMLElement {
@@ -562,10 +557,10 @@ export class InsigniaCartRepair extends HTMLElement {
       .catch(() => {});
   }
   /**
-   * Native theme removal leaves the cart-level quote behind; checkout validation treats any quote as a
-   * customization claim, so an otherwise plain cart could not check out. Insignia's own cart writes clear
-   * the quote together with its lines and set it only after lines exist, so a quote with no designed line
-   * is stale. An unresolved Insignia operation in this tab keeps the cart untouched for its own recovery.
+   * Harmless cleanup of a leftover historical v2 cart-level quote attribute once no designed line remains.
+   * v3 writes no cart attribute (each line carries its own authorization) and checkout ignores this one;
+   * it is cleared only so stale protocol data does not linger. An unresolved Insignia operation in this tab
+   * keeps the cart untouched for its own recovery.
    */
   private clearStaleQuote(cartRoot: string, signal: AbortSignal) {
     try {

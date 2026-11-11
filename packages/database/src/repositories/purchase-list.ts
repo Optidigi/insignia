@@ -82,10 +82,27 @@ const availableArtwork = sql<boolean>`
   AND EXISTS(SELECT 1 FROM purchase_design_payloads p WHERE p.purchase_id=o.purchase_id)
   AND NOT EXISTS(SELECT 1 FROM purchase_design_payloads p WHERE p.purchase_id=o.purchase_id AND (p.payload IS NULL OR p.erased_at IS NOT NULL OR p.expires_at<=clock_timestamp()
     OR NOT EXISTS(SELECT 1 FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=p.shop_id AND s.current_generation=p.installation_generation AND i.deactivated_at IS NULL)))
-  AND (WITH groups AS (
-    SELECT row_number() OVER(ORDER BY p.set_id,g.ordinality)-1 AS group_index,g.value#>'{group,design,placements}' AS placements
+  AND (WITH designs AS (
+    SELECT row_number() OVER(ORDER BY p.set_id,g.ordinality)-1 AS group_index,p.set_id,g.ordinality,g.value#>'{group,design,placements}' AS placements,
+      (SELECT COALESCE(sum((v->>'quantity')::bigint),0) FROM jsonb_array_elements(g.value#>'{group,variants}') v) AS quantity
     FROM purchase_design_payloads p CROSS JOIN LATERAL jsonb_array_elements(p.payload#>'{request,groups}') WITH ORDINALITY g(value,ordinality)
     WHERE p.purchase_id=o.purchase_id
+  ), spans AS (
+    SELECT d.*,sum(d.quantity) OVER(PARTITION BY d.set_id ORDER BY d.ordinality)-d.quantity AS first_unit FROM designs d
+  ), economic AS (
+    -- Accepted economics lines are priced contiguously per design in request order (ordered-groups.ts).
+    SELECT b.set_id,l.ordinality-1 AS line_index,
+      sum((l.value->>'quantity')::bigint) OVER(PARTITION BY b.set_id ORDER BY l.ordinality)-(l.value->>'quantity')::bigint AS first_unit
+    FROM purchase_bindings b CROSS JOIN LATERAL jsonb_array_elements(b.economics#>'{economics,lines}') WITH ORDINALITY l(value,ordinality)
+    WHERE b.purchase_id=o.purchase_id
+  ), groups AS (
+    -- Only designs with an ordered line need artwork. If the spans do not reconcile, every design counts.
+    SELECT s.group_index,s.placements,
+      EXISTS(SELECT 1 FROM economic e JOIN purchase_lines pl ON pl.purchase_id=o.purchase_id AND pl.set_id=e.set_id AND pl.line_index=e.line_index
+        WHERE e.set_id=s.set_id AND e.first_unit>=s.first_unit AND e.first_unit<s.first_unit+s.quantity)
+      OR (SELECT COALESCE(sum(quantity),0) FROM designs x WHERE x.set_id=s.set_id) IS DISTINCT FROM
+        (SELECT COALESCE(sum((l.value->>'quantity')::bigint),0) FROM purchase_bindings b CROSS JOIN LATERAL jsonb_array_elements(b.economics#>'{economics,lines}') l(value) WHERE b.purchase_id=o.purchase_id AND b.set_id=s.set_id) AS ordered
+    FROM spans s
   ), erased AS (
     SELECT COALESCE(max(version),0) AS version FROM purchase_artwork_events WHERE purchase_id=o.purchase_id AND kind='ATTACH' AND (erased_at IS NOT NULL OR asset_id IS NULL OR expires_at<=clock_timestamp())
   ) SELECT EXISTS(SELECT 1 FROM groups) AND NOT EXISTS(
@@ -93,5 +110,5 @@ const availableArtwork = sql<boolean>`
   ) AND NOT EXISTS(
     SELECT 1 FROM groups g CROSS JOIN LATERAL jsonb_array_elements(g.placements) p(value) CROSS JOIN erased e
     LEFT JOIN LATERAL (SELECT a.asset_id::text,a.version FROM purchase_artwork_events a WHERE a.purchase_id=o.purchase_id AND a.kind='ATTACH' AND a.group_index=g.group_index AND a.placement_id=p.value->>'placementId' AND a.version>e.version AND a.erased_at IS NULL AND a.expires_at>clock_timestamp() ORDER BY a.version DESC LIMIT 1) latest ON true
-    WHERE NOT EXISTS(SELECT 1 FROM artwork_assets asset WHERE asset.shop_id=o.shop_id AND asset.state='USABLE' AND asset.expires_at>clock_timestamp() AND asset.asset_id::text=COALESCE(latest.asset_id,CASE WHEN e.version=0 AND p.value#>>'{artwork,kind}'='revision' THEN p.value#>>'{artwork,revisionId}' END))
+    WHERE g.ordered AND NOT EXISTS(SELECT 1 FROM artwork_assets asset WHERE asset.shop_id=o.shop_id AND asset.state='USABLE' AND asset.expires_at>clock_timestamp() AND asset.asset_id::text=COALESCE(latest.asset_id,CASE WHEN e.version=0 AND p.value#>>'{artwork,kind}'='revision' THEN p.value#>>'{artwork,revisionId}' END))
   ))`;

@@ -22,7 +22,7 @@ import {
   publicKeyFromSeed,
   sealSigningSeed,
 } from '@insignia/application';
-import { decodeEnvelope, issueWholeQuote } from '@insignia/cart-authorization';
+import { decodeLineCarrierV3, issueLineSetV3 } from '@insignia/cart-authorization';
 import { createProductionBuyerServices, type ProductionBuyerInputs } from '../src/server/buyer/production.ts';
 import { fixtureTransaction } from './admin/support/fixtures.mts';
 import { coreFixture, effectiveRevision, type MutableCore, record, required, text } from './http-fixtures.mts';
@@ -637,9 +637,16 @@ test('valid Lean acceptance reads provider facts once before its lock and reject
           hash: reviewed.hash,
           idempotencyKey: 'two-products',
         });
-        assert.equal(
-          decodeEnvelope(required(required(applied.buckets[0]).properties._insignia_quote_v2)).header.totalMinor,
-          '3600',
+        // v3 signs per-line units, not totals; both lines carry one signed set.
+        const carriers = applied.buckets.map((bucket) => decodeLineCarrierV3(bucket.properties._insignia_line_v3));
+        assert.deepEqual(
+          carriers.map((carrier) => carrier.header.count),
+          [2, 2],
+        );
+        assert.equal(new Set(carriers.map((carrier) => carrier.prefix)).size, 1);
+        assert.deepEqual(
+          applied.buckets.map((bucket) => Object.keys(bucket.properties)),
+          [['_insignia_line_v3'], ['_insignia_line_v3']],
         );
         assert.deepEqual(
           applied.buckets
@@ -728,10 +735,8 @@ test('valid Lean acceptance reads provider facts once before its lock and reject
       const accepted = await accept();
       assert.equal(facts, 1);
       assert.ok(subscriptionReads <= 3, 'proposal and acceptance must not prepare the full quote a third time');
-      assert.equal(
-        decodeEnvelope(required(required(accepted.buckets[0]).properties._insignia_quote_v2)).header.totalMinor,
-        '1300',
-      );
+      const carrier = decodeLineCarrierV3(required(accepted.buckets[0]).properties._insignia_line_v3);
+      assert.equal(BigInt(carrier.record.unitMinor) * BigInt(required(accepted.buckets[0]).quantity), 1300n);
     }
     // The acceptance's single fresh pass re-reads the primary Market before its lock.
     assert.ok(passivePrimaryReads >= 1);
@@ -1343,26 +1348,22 @@ test('production buyer reads actual primary context before Lean pricing on propo
         type: 'pkcs8',
       });
       const setId = '33333333-3333-4333-8333-333333333333';
-      const issued = await issueWholeQuote(
+      const issued = await issueLineSetV3(
         {
           keyId: 7,
           generationHex: original.authorizationGeneration.replaceAll('-', ''),
           epoch: 1,
           quoteHex: original.quoteId.replaceAll('-', ''),
           setHex: setId.replaceAll('-', ''),
-          count: original.economics.lines.length,
           currency: 'USD',
           exponent: 2,
           country: 'US',
           marketId: '42',
           validThroughDay: acceptedDay + 2,
-          totalQuantity: original.economics.customizedQuantity,
-          totalMinor: original.economics.totalMinor,
         },
         original.economics.lines.map((line, index) => ({
           index,
           variantId: line.variantId,
-          quantity: line.quantity,
           unitMinor: line.unitPriceMinor,
         })),
         acceptedDay,
@@ -1382,8 +1383,8 @@ test('production buyer reads actual primary context before Lean pricing on propo
           ...issued,
           setId,
           validThroughDay: acceptedDay + 2,
-          envelopeCarrier: issued.envelope,
-          members: issued.members.map((carrier, lineIndex) => ({ lineIndex, carrier })),
+          envelopeCarrier: issued.prefix,
+          members: issued.carriers.map((carrier, lineIndex) => ({ lineIndex, carrier })),
         },
       };
       input.core.acceptedQuotes.findCompleted = async () => completed;
@@ -1406,7 +1407,7 @@ test('production buyer reads actual primary context before Lean pricing on propo
         {
           variantId: '222',
           quantity: 1,
-          properties: { _insignia_quote_v2: issued.envelope, _insignia_member_v2: required(issued.members[0]) },
+          properties: { _insignia_line_v3: required(issued.carriers[0]) },
         },
       ]);
       assert.equal(required(original.economics.groups[0]).setupMinor, '300');
@@ -1415,6 +1416,8 @@ test('production buyer reads actual primary context before Lean pricing on propo
       assert.equal(artworkReads, 0);
       continue;
     }
+    // Renewal re-prices the stored accepted request, never the client's groups.
+    input.core.buyers.getOwnedRequest = async () => ({ quote: original, request });
     input.core.renewalQuotes = {
       getOwned: async () => original,
       findCompleted: async () => null,

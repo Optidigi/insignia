@@ -1,3 +1,7 @@
+/**
+ * Historical whole-quote v2 (docs/architecture/WHOLE-QUOTE-V2-ADOPTED.md). New issuance and the Functions use
+ * cart-line v3 (line-v3.ts); purchase reconciliation keeps v2 verification permanently for historical orders.
+ */
 import { type KeyObject, sign } from 'node:crypto';
 import { currencyExponent } from './currency.ts';
 

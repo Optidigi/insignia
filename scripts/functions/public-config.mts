@@ -4,11 +4,11 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildPublicConfig, type PublicSigningKey } from '../../packages/application/dist/index.js';
-import vectors from '../../packages/cart-authorization/fixtures/whole-quote-v2.json' with { type: 'json' };
+import vectors from '../../packages/cart-authorization/fixtures/cart-line-v3.json' with { type: 'json' };
 import { fixture, hash, invoke, ROOT, required, TARGETS, targetPaths } from './runtime.mts';
 export function publicConfigReplay(runner: string) {
-  const one = required(vectors.cases.find((item) => item.name === 'one_bucket'));
-  assert(one.header.keyId === 7 && one.members.length === 1, 'Pinned one-bucket vector changed');
+  const one = required(vectors.cases.find((item) => item.name === 'one_line'));
+  assert(one.header.keyId === 7 && one.records.length === 1, 'Pinned one-line vector changed');
   const additional = [
     Buffer.from('c9a3f86aae465f0e56513864510f3997561fa2c9e85ea21dc2292309f3cd6022', 'hex'),
     Buffer.from('d4b4f5784868c3020403246717ec169ff79e26608ea126a1ab69ee77d1b16712', 'hex'),
@@ -47,19 +47,19 @@ export function publicConfigReplay(runner: string) {
     for (const target of TARGETS) {
       const input = fixture(target),
         header = one.header,
-        member = required(one.members[0]),
+        record = required(one.records[0]),
         line = required(input.cart.lines[0]);
       line.id = 'gid://shopify/CartLine/1';
-      line.quantity = member.quantity;
-      line.member = { value: required(one.memberCarriers[0]) };
-      line.merchandise.id = `gid://shopify/ProductVariant/${member.variantId}`;
+      line.quantity = 1;
+      line.line = { value: required(one.carriers[0]) };
+      line.legacy = null;
+      line.merchandise.id = `gid://shopify/ProductVariant/${record.variantId}`;
       line.merchandise.product.id = 'gid://shopify/Product/42';
       line.merchandise.product.policy = { value: `${header.generationHex}:1:required` };
       line.merchandise.product.registration = { value: `${header.generationHex}:1:ready` };
       line.cost.amountPerQuantity.currencyCode = header.currency;
       if (target === 'validation') line.cost.subtotalAmount = { amount: '19.99', currencyCode: header.currency };
       input.cart.lines = [line];
-      input.cart.quote = { value: one.envelope };
       input.shop.publicConfig.value = config.value;
       input.shop.localTime.date = '2026-12-13';
       input.localization.country.isoCode = header.country;

@@ -17,37 +17,31 @@ test('hard subset bounds and untrusted ordinary-line hints', () => {
   assert.equal(admitCandidate(members(1), { ordinaryLineHint: -1 }).status, 'REJECT');
   assert.ok(transformOutputUpperBytes(32) <= 16000);
 });
-test('33 buckets are refused before the signer is called', async () => {
-  const { issueAdmittedQuote } = await import('../src/admission.ts');
+test('33 lines are refused before the v3 signer is called', async () => {
+  const { issueLineSetV3 } = await import('../src/line-v3.ts');
   let called = 0;
-  const oversized = members(33);
-  const header = {
+  const claims = {
     keyId: 7,
     generationHex: '11'.repeat(16),
     epoch: 4,
     quoteHex: '22'.repeat(16),
     setHex: '33'.repeat(16),
-    count: 33,
     currency: 'EUR',
     exponent: 2,
     country: 'DE',
     marketId: '42',
     validThroughDay: 20802,
-    totalQuantity: 33,
-    totalMinor: '3300',
   };
-  const outcome = await issueAdmittedQuote(
-    header,
-    oversized,
-    20800,
-    {
+  await assert.rejects(
+    issueLineSetV3(claims, members(33), 20800, {
       signWholeQuote: async () => {
         called++;
         throw Error('must not sign');
       },
-    },
-    { ordinaryLineHint: 0 },
+    }),
   );
-  assert.deepEqual(outcome, { status: 'REJECT', reason: 'BUCKET_COUNT' });
   assert.equal(called, 0);
+});
+test('transform output bound uses the short v3 child reference', () => {
+  assert.equal(transformOutputUpperBytes(32), 11_312);
 });

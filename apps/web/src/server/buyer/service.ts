@@ -13,12 +13,7 @@ import {
   quoteRequestDigest,
   renewQuote,
 } from '@insignia/application';
-import {
-  decodeEnvelope,
-  decodeMemberCarrier,
-  ENVELOPE_ATTRIBUTE,
-  MEMBER_ATTRIBUTE,
-} from '@insignia/cart-authorization';
+import { decodeLineCarrierV3, LINE_ATTRIBUTE, PREFIX_V3_CHARS } from '@insignia/cart-authorization';
 import {
   type BuyerDesired,
   type BuyerDesiredGroup,
@@ -66,32 +61,25 @@ const desired = (request: QuoteRequest): BuyerDesiredGroup[] =>
     const { shopId: _shop, version: _version, ...value } = group;
     return value;
   });
+/** One cart bucket per economics line, in quote-global line order, carrying only its v3 line carrier.
+ * A replayed pre-cutover (v2) acceptance has no v3 carriers: the buyer reviews again instead. */
 function buckets(result: AcceptedQuoteResult): Bucket[] {
+  if (result.authorization.envelopeCarrier.length !== PREFIX_V3_CHARS) return review();
   return result.quote.economics.lines.map((line, i) => {
     const member = result.authorization.members[i];
-    if (!member || member.lineIndex !== i) return review();
+    if (!member || member.lineIndex !== i || !member.carrier.startsWith(result.authorization.envelopeCarrier))
+      return review();
     return {
       variantId: line.variantId,
       quantity: line.quantity,
-      properties: {
-        [ENVELOPE_ATTRIBUTE]: result.authorization.envelopeCarrier,
-        [MEMBER_ATTRIBUTE]: member.carrier,
-      },
+      properties: { [LINE_ATTRIBUTE]: member.carrier },
     };
   });
 }
+/** Quantity is not signed in v3, so the confirmation fingerprint covers only variants and carriers. */
 function vectorHash(vector: readonly Bucket[]): string {
-  if (
-    vector.some(
-      (v) => typeof v.properties[MEMBER_ATTRIBUTE] !== 'string' || typeof v.properties[ENVELOPE_ATTRIBUTE] !== 'string',
-    )
-  )
-    return review();
-  return sha256CanonicalJson(
-    [...vector].sort((a, b) =>
-      String(a.properties[MEMBER_ATTRIBUTE]).localeCompare(String(b.properties[MEMBER_ATTRIBUTE])),
-    ),
-  );
+  if (vector.some((v) => typeof v.properties[LINE_ATTRIBUTE] !== 'string')) return review();
+  return sha256CanonicalJson(vector.map((v) => `${v.variantId}\0${String(v.properties[LINE_ATTRIBUTE])}`).sort());
 }
 /** Server authority is injected once; client amounts, shop IDs and resource keys are never accepted. */
 export function createBuyerServices(input: {
@@ -705,9 +693,23 @@ export function createBuyerServices(input: {
       });
       return accepted(scope, result, request, command);
     },
+    /**
+     * Renewal re-prices the stored accepted request (the reviewed offer), not the client's groups: a cart
+     * whose quantities changed natively still renews, and the storefront applies the new line carriers to
+     * the cart's current quantities. Only country, Market, capacity and the idempotency key come from the client.
+     */
     async renew(scope: BuyerScope, id: string, body: BuyerDesired & { idempotencyKey: string }) {
-      const ports = checkedPorts(scope, body.groups),
-        request = requestFor(scope, body, body.idempotencyKey);
+      const owned = await store.getOwnedRequest(scope, { quoteId: id, ownerBinding: binding(scope), now: clock() });
+      if (!owned) return review();
+      const parsed = BuyerDesiredSchema.shape.groups.safeParse(desired(owned.request as QuoteRequest));
+      if (!parsed.success) return review();
+      const groups = parsed.data;
+      const ports = checkedPorts(scope, groups),
+        request = requestFor(
+          scope,
+          { country: body.country, marketId: body.marketId, capacity: body.capacity, groups },
+          body.idempotencyKey,
+        );
       const command = {
         kind: 'renew' as const,
         key: body.idempotencyKey,
@@ -736,27 +738,29 @@ export function createBuyerServices(input: {
     ) {
       if (!lines.length) return { groups: [], repairRequired: false };
       const groups = new Map<string, BuyerDesiredGroup>(),
-        sets = new Map<string, { count: number; indexes: Set<number> }>();
-      const quoteIds = new Set<string>();
-      let changed = false,
-        expired = false;
+        indexes = new Set<number>(),
+        sets = new Set<string>(),
+        quoteIds = new Set<string>();
+      let expired = false;
       for (const line of lines) {
         if (line.sellingPlan) return review();
-        const envelope = line.properties[ENVELOPE_ATTRIBUTE],
-          memberCarrier = line.properties[MEMBER_ATTRIBUTE];
-        if (typeof envelope !== 'string' || typeof memberCarrier !== 'string') return review();
-        let parsed: ReturnType<typeof decodeEnvelope>, member: ReturnType<typeof decodeMemberCarrier>;
+        // Historical v2 leftovers (or any other carrier) cannot be priced by the Functions: Designer repair.
+        const carrier = line.properties[LINE_ATTRIBUTE];
+        let decoded: ReturnType<typeof decodeLineCarrierV3>;
         try {
-          parsed = decodeEnvelope(envelope);
-          member = decodeMemberCarrier(memberCarrier);
+          decoded = decodeLineCarrierV3(carrier);
         } catch {
           return review();
         }
-        const { header } = parsed;
+        const { header, record } = decoded;
         const uuid = (hex: string) =>
           `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
         const id = uuid(header.quoteHex),
           setId = uuid(header.setHex);
+        sets.add(setId);
+        quoteIds.add(id);
+        // One acceptance per cart: the Functions verify a single signed set.
+        if (sets.size > 1) return review();
         const owned = await store.getOwnedSet(scope, {
           quoteId: id,
           setId,
@@ -765,18 +769,15 @@ export function createBuyerServices(input: {
         });
         if (
           !owned ||
-          owned.authorization.envelopeCarrier !== envelope ||
-          owned.authorization.members[member.index]?.carrier !== memberCarrier ||
-          member.variantId !== line.variantId
+          owned.authorization.envelopeCarrier !== decoded.prefix ||
+          owned.authorization.members[record.index]?.carrier !== carrier ||
+          record.variantId !== line.variantId
         )
           return review();
-        if (line.quantity !== member.quantity) changed = true;
+        if (indexes.has(record.index)) return review();
+        indexes.add(record.index);
         if (localDay(clock(), owned.quote.shopTimezone).ordinal > header.validThroughDay) expired = true;
-        const seen = sets.get(setId) ?? { count: header.count, indexes: new Set<number>() };
-        if (seen.indexes.has(member.index)) return review();
-        seen.indexes.add(member.index);
-        sets.set(setId, seen);
-        const economicLine = owned.quote.economics.lines[member.index];
+        const economicLine = owned.quote.economics.lines[record.index];
         if (!economicLine) return review();
         const request = owned.request as QuoteRequest;
         const candidates = request.groups
@@ -784,7 +785,7 @@ export function createBuyerServices(input: {
           .map((v) => v.group);
         const published = await revisions.getValidatedPublishedRevision(scope.shopId, economicLine.configRevisionId);
         if (!published) return review();
-        // Match exact canonical design, allowing quantities to be repaired independently.
+        // Match exact canonical design; observed cart quantities are the buyer's current choice.
         const normalized = normalizeCustomizationGroups(candidates, [
           published.publishedValue as Parameters<typeof normalizeCustomizationGroups>[1][number],
         ]);
@@ -802,7 +803,6 @@ export function createBuyerServices(input: {
         const variant = group.variants.find((v) => v.variantId === line.variantId);
         if (variant) variant.quantity += line.quantity;
         else group.variants.push({ variantId: line.variantId, quantity: line.quantity });
-        quoteIds.add(id);
       }
       const result = BuyerDesiredSchema.shape.groups.parse([...groups.values()]);
       const labels: Record<string, string> = {};
@@ -811,14 +811,14 @@ export function createBuyerServices(input: {
         const title = presentation?.selectedSetup?.product.title;
         if (title?.trim()) labels[group.productId] = title;
       }
-      const incomplete = sets.size !== 1 || [...sets.values()].some((v) => v.indexes.size !== v.count);
+      // A subset of the set or changed quantities is valid under v3: only expiry needs a buyer action here.
       return {
         groups: result,
         ...(Object.keys(labels).length ? { labels } : {}),
-        ...(quoteIds.size === 1 ? { quoteId: [...quoteIds][0] } : {}),
-        repairRequired: changed || expired || incomplete,
+        quoteId: [...quoteIds][0],
+        repairRequired: expired,
         // Only the validity window lapsed; economics/context still need renewal's own full comparison.
-        renewable: expired && !changed && !incomplete && quoteIds.size === 1,
+        renewable: expired,
       };
     },
   };

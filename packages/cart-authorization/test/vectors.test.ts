@@ -5,7 +5,6 @@ import matrix from '../fixtures/currency-matrix-v1.json' with { type: 'json' };
 import persisted from '../fixtures/persisted-negative-vector.json' with { type: 'json' };
 // Static JSON imports retain the exact immutable fixture values and expose their real DTO shapes to tsc.
 import vector from '../fixtures/whole-quote-v2.json' with { type: 'json' };
-import { issueAdmittedQuote } from '../src/admission.ts';
 import { CURRENCY_EXPONENTS, CURRENCY_MATRIX_VERSION, currencyExponent } from '../src/currency.ts';
 import { DOMAIN, decodeEnvelope, decodeMemberCarrier, encodeHeader, encodeMember } from '../src/whole-quote.ts';
 
@@ -81,24 +80,4 @@ test('PostgreSQL-persisted negative adjustment has exact signed quote and member
   });
   const message = Buffer.concat([DOMAIN, encodeHeader(entry.header), ...entry.members.map(encodeMember)]);
   assert.equal(verify(null, message, key, decoded.signature), true);
-});
-
-test('versioned 33-bucket vector rejects before any signing call', async () => {
-  const rejected = vector.rejections.find((entry: { name: string }) => entry.name === 'thirty_three_presign');
-  assert.ok(rejected);
-  let calls = 0;
-  const result = await issueAdmittedQuote(
-    rejected.header,
-    rejected.members,
-    20800,
-    {
-      signWholeQuote: async () => {
-        calls++;
-        throw Error('signer must not run');
-      },
-    },
-    { ordinaryLineHint: rejected.ordinaryLines },
-  );
-  assert.deepEqual(result, { status: 'REJECT', reason: rejected.reason });
-  assert.equal(calls, 0);
 });

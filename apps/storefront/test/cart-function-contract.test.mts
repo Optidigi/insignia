@@ -1,26 +1,25 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
-import transformInput from '../../../crates/cart-transform/fixtures/valid.json' with { type: 'json' };
-import validationInput from '../../../crates/cart-validation/fixtures/valid.json' with { type: 'json' };
-import vectors from '../../../packages/cart-authorization/fixtures/whole-quote-v2.json' with { type: 'json' };
+import vectors from '../../../packages/cart-authorization/fixtures/cart-line-v3.json' with { type: 'json' };
 import { createAjaxCartAdapter } from '../src/cart.ts';
 import { type AjaxItem, fetchBody, jsonRecord, record, requestUrl, required, text } from './support.mts';
 
 const root = resolve(import.meta.dirname, '../../..');
 const runner = process.env.INSIGNIA_FUNCTION_RUNNER;
 const artifacts = process.env.INSIGNIA_FUNCTION_ARTIFACT_ROOT ?? root;
-// Actual pinned Wasm/query runner, synthetic provider projection and signed golden carriers.
+const LINE = '_insignia_line_v3';
+// Actual pinned Wasm/query runner, synthetic provider projection and signed golden v3 carriers.
 // No native checkout, provider execution receipt or observed order is asserted.
-test('Ajax shared/line carriers satisfy actual production Functions; incomplete and altered vectors reject', {
+test('Ajax v3 line carriers satisfy actual production Functions at any quantity; missing and altered carriers reject', {
   skip: !runner,
 }, async () => {
-  const c = required(vectors.cases.find((value) => value.name === 'one_bucket'));
+  const c = required(vectors.cases.find((value) => value.name === 'two_lines'));
   let items: AjaxItem[] = [];
-  const attributes: Record<string, string> = {};
   const fetchImpl: typeof fetch = async (input, request = {}) => {
     const path = requestUrl(input);
     const body = fetchBody(request);
@@ -33,28 +32,33 @@ test('Ajax shared/line carriers satisfy actual production Functions; incomplete 
           properties: item.properties,
         })),
       );
-    if (path.endsWith('cart/update.js')) {
-      if (body.updates) items = items.filter((item) => body.updates?.[item.key] !== 0);
-      Object.assign(attributes, body.attributes ?? {});
-    }
-    return Response.json({ items, attributes, currency: 'EUR' });
+    if (path.endsWith('cart/update.js') && body.updates) items = items.filter((item) => body.updates?.[item.key] !== 0);
+    return Response.json({ items, attributes: {}, currency: 'EUR' });
   };
   const ajax = createAjaxCartAdapter({ root: '/', fetchImpl });
   const initial = await ajax.read();
   const result = await ajax.apply(
-    c.members.map((member, index) => ({
-      variantId: String(member.variantId),
-      quantity: member.quantity,
-      properties: { _insignia_quote_v2: c.envelope, _insignia_member_v2: required(c.memberCarriers[index]) },
+    c.records.map((line, index) => ({
+      variantId: line.variantId,
+      quantity: 1,
+      properties: { [LINE]: required(c.carriers[index]) },
     })),
     { expectedFingerprint: initial.fingerprint },
   );
   assert.equal(result.status, 'applied');
+  assert.deepEqual(required(result.cart).attributes, {});
+  const unit = new Map(c.records.map((line) => [line.variantId, BigInt(line.unitMinor)]));
+  const money = (minor: bigint) => `${minor / 100n}.${(minor % 100n).toString().padStart(2, '0')}`;
   const directory = await mkdtemp(join(tmpdir(), 'insignia-cart-functions-'));
   try {
-    for (const target of ['transform', 'validation']) {
-      const input = structuredClone(target === 'transform' ? transformInput : validationInput);
-      const config = jsonRecord(input.shop.publicConfig.value);
+    for (const target of ['transform', 'validation'] as const) {
+      // The Function fixtures are owned by the Function crates; only their stable outer shape is used here.
+      const input = jsonRecord(readFileSync(join(root, `crates/cart-${target}/fixtures/valid.json`), 'utf8'));
+      const shop = record(input.shop),
+        cart = record(input.cart),
+        localization = record(input.localization);
+      const publicConfig = record(shop.publicConfig);
+      const config = jsonRecord(text(publicConfig.value));
       Object.assign(config, {
         generationHex: c.header.generationHex,
         epoch: c.header.epoch,
@@ -62,18 +66,27 @@ test('Ajax shared/line carriers satisfy actual production Functions; incomplete 
         maxPhysicalQuantity: 10000,
         keys: [{ id: c.header.keyId, publicHex: vectors.publicHex, revoked: false, firstDay: 20800, lastDay: 20802 }],
       });
-      input.shop.publicConfig.value = JSON.stringify(config);
-      input.shop.localTime.date = '2026-12-13';
-      input.localization.country.isoCode = c.header.country;
-      input.localization.market.id = `gid://shopify/Market/${c.header.marketId}`;
-      input.cart.quote = { value: text(required(result.cart).attributes._insignia_quote_v2) };
-      const model = required(input.cart.lines[0]);
-      input.cart.lines = required(result.cart).customized.map((line, index) => ({
+      publicConfig.value = JSON.stringify(config);
+      record(shop.localTime).date = '2026-12-13';
+      record(localization.country).isoCode = c.header.country;
+      record(localization.market).id = `gid://shopify/Market/${c.header.marketId}`;
+      delete cart.quote;
+      const lines = cart.lines;
+      assert(Array.isArray(lines));
+      const model = record(lines[0]);
+      delete model.member;
+      cart.lines = required(result.cart).customized.map((line, index) => ({
         ...structuredClone(model),
         id: `gid://shopify/CartLine/${index + 1}`,
         quantity: line.quantity,
-        member: { value: text(line.properties._insignia_member_v2) },
-        cost: { amountPerQuantity: { currencyCode: 'EUR' }, subtotalAmount: { currencyCode: 'EUR', amount: '19.99' } },
+        line: { value: text(line.properties[LINE]) },
+        cost: {
+          amountPerQuantity: { currencyCode: 'EUR' },
+          subtotalAmount: {
+            currencyCode: 'EUR',
+            amount: money(required(unit.get(line.variantId)) * BigInt(line.quantity)),
+          },
+        },
         merchandise: {
           __typename: 'ProductVariant',
           id: `gid://shopify/ProductVariant/${line.variantId}`,
@@ -116,19 +129,38 @@ test('Ajax shared/line carriers satisfy actual production Functions; incomplete 
         assert(Array.isArray(operations));
         return operations;
       }
-      assert.equal((await invoke(input)).length, target === 'transform' ? 1 : 0);
+      const edit = (change: (lines: Record<string, unknown>[]) => void) => {
+        const value = structuredClone(input);
+        const changed = record(value.cart).lines;
+        assert(Array.isArray(changed));
+        change(changed.map(record));
+        return value;
+      };
+      assert.equal((await invoke(input)).length, target === 'transform' ? 2 : 0);
+      // A native quantity change or a removed size keeps the remaining lines priced and checkout open.
+      const requantified = edit((lines) => {
+        const first = required(lines[0]);
+        first.quantity = 4;
+        const variant = text(record(first.merchandise).id).split('/').at(-1) ?? '';
+        record(record(first.cost).subtotalAmount).amount = money(required(unit.get(variant)) * 4n);
+      });
+      assert.equal((await invoke(requantified)).length, target === 'transform' ? 2 : 0);
+      const removed = structuredClone(input);
+      const removedLines = record(removed.cart).lines;
+      assert(Array.isArray(removedLines));
+      removedLines.pop();
+      assert.equal((await invoke(removed)).length, target === 'transform' ? 1 : 0);
       for (const changed of [
-        (() => {
-          const value = structuredClone(input);
-          // @ts-expect-error Deliberate missing carrier validates actual Function rejection.
-          value.cart.quote = null;
-          return value;
-        })(),
-        (() => {
-          const value = structuredClone(input);
-          required(value.cart.lines[0]).quantity = 2;
-          return value;
-        })(),
+        edit((lines) => {
+          required(lines[0]).line = null;
+        }),
+        edit((lines) => {
+          const value = text(record(required(lines[0]).line).value);
+          required(lines[0]).line = { value: `${value.slice(0, -2)}${value.endsWith('AA') ? 'BA' : 'AA'}` };
+        }),
+        edit((lines) => {
+          required(lines[1]).line = structuredClone(required(lines[0]).line);
+        }),
       ])
         assert.equal((await invoke(changed)).length, target === 'transform' ? 0 : 1);
     }

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
-import { createHash, createPrivateKey, createPublicKey, sign, verify } from 'node:crypto';
+import { createHash, createPrivateKey, createPublicKey, sign } from 'node:crypto';
 import { test } from 'node:test';
 import type { AcceptedQuoteResult, EntitlementPolicyConfig, QuoteRequest } from '@insignia/application';
 import { acceptQuote } from '@insignia/application';
-import { decodeEnvelope, decodeMemberCarrier, wholeQuoteSignBytes } from '@insignia/cart-authorization';
+import { verifyLineSetV3 } from '@insignia/cart-authorization';
 import type { CustomizationGroup, PublishedConfig } from '@insignia/domain';
 import { createQuoteAuthorityPorts } from '../src/server/quote-composition.ts';
 import { artworkManifest, artworkRow, coreFixture, required } from './http-fixtures.mts';
@@ -245,17 +245,33 @@ test('production quote composition rejects unsupported prices and signs complete
   );
   assert.equal(result.quote.acceptedDate, '2026-11-01');
   assert.equal(result.quote.validThroughDay - result.quote.acceptedDay, 2);
-  const envelope = decodeEnvelope(result.authorization.envelopeCarrier);
-  const members = result.authorization.members.map((item) => decodeMemberCarrier(item.carrier));
-  assert.equal(envelope.header.marketId, '42');
-  assert.equal(envelope.header.generationHex, '11111111111141118111111111111111');
-  assert.ok(verify(null, wholeQuoteSignBytes(envelope.header, members), publicKey, envelope.signature));
-  assert.equal(envelope.header.totalMinor, '2');
-  assert.equal(envelope.header.totalQuantity, 2);
-  assert.deepEqual(
-    members.map(({ variantId, quantity, unitMinor }) => ({ variantId, quantity, unitMinor })),
-    [{ variantId, quantity: 2, unitMinor: '1' }],
+  // Cart-line v3: one signed prefix shared by every line carrier; quantity and totals are not signed.
+  const raw = Buffer.from(publicKey.export({ format: 'der', type: 'spki' })).subarray(-32);
+  const verified = verifyLineSetV3(
+    result.authorization.members.map((item) => item.carrier),
+    raw,
   );
+  assert.equal(result.authorization.envelopeCarrier.length, 236);
+  assert.ok(
+    result.authorization.members.every((item) => item.carrier.startsWith(result.authorization.envelopeCarrier)),
+  );
+  assert.equal(verified.header.marketId, '42');
+  assert.equal(verified.header.generationHex, '11111111111141118111111111111111');
+  assert.equal(verified.header.count, 1);
+  assert.equal(verified.header.validThroughDay, result.quote.validThroughDay);
+  assert.deepEqual(verified.records, [{ index: 0, variantId, unitMinor: '1' }]);
+  // v3 signs a unit price valid at any quantity: quantity-dependent economics never reach the signer.
+  const linear = result.quote.economics;
+  const nonLinear = [
+    { ...linear, groups: linear.groups.map((g) => ({ ...g, setupMinor: '1' })) },
+    { ...linear, lines: linear.lines.map((l) => ({ ...l, setupPerUnitMinor: '1' })) },
+    { ...linear, lines: linear.lines.map((l) => ({ ...l, lineTotalMinor: '3' })) },
+  ];
+  for (const economics of nonLinear)
+    assert.throws(
+      () => ports.authorization.admit({ economics: economics as never, capacity: request.capacity }),
+      /linear/,
+    );
   assert.equal(signatures, 1);
   assert.deepEqual(await acceptQuote(request, ports), result);
   // One fresh pass before the signing fence; completed replay reads nothing.

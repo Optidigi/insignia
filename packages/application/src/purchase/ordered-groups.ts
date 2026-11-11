@@ -1,6 +1,20 @@
-import type { PurchaseRecord } from '@insignia/database';
-
-type Binding = PurchaseRecord['bindings'][number];
+/** The parts of a stored purchase binding this mapping reads (structural; owned by the purchase repository). */
+export type OrderedGroupsBinding = {
+  economics: unknown;
+  designPayload: {
+    request: {
+      groups: readonly {
+        group: {
+          productId: string;
+          configRevisionId: string;
+          variants: readonly { variantId: string; quantity: number }[];
+        };
+      }[];
+    };
+  } | null;
+  lines: readonly { lineIndex: number; productId: string; variantId: string; quantity: number }[];
+};
+type Binding = OrderedGroupsBinding;
 type Variant = { variantId: string; quantity: number };
 type EconomicLine = {
   lineIndex: number;
@@ -50,6 +64,12 @@ export function orderedGroupVariants(binding: Binding): Variant[][] | null {
   if (!groups?.length || !economics?.length || !binding.lines.length) return null;
   const owner: number[] = [];
   for (const [index, group] of groups.entries()) {
+    // Stored payloads are historical JSON; an unexpected shape is an unverifiable mapping, never a throw.
+    if (
+      !Array.isArray(group?.variants) ||
+      group.variants.some((variant) => !Number.isSafeInteger(variant?.quantity) || variant.quantity <= 0)
+    )
+      return null;
     let remaining = group.variants.reduce((sum, variant) => sum + variant.quantity, 0);
     while (remaining > 0) {
       const line = economics[owner.length];
@@ -80,4 +100,16 @@ export function orderedGroupVariants(binding: Binding): Variant[][] | null {
       return quantity ? [{ variantId, quantity }] : [];
     }),
   );
+}
+
+/**
+ * Whether each signed design (aligned with `designPayload.request.groups`, signed indices kept) has at least
+ * one ordered line. Designs that were not ordered need no artwork and are not production work. When the mapping
+ * cannot be verified every design counts as ordered, so readiness stays conservative. Whole-quote v2 orders
+ * always contain every design.
+ */
+export function orderedGroups(binding: Binding): boolean[] {
+  const groups = binding.designPayload?.request.groups ?? [];
+  const ordered = orderedGroupVariants(binding);
+  return groups.map((_, index) => !ordered || (ordered[index]?.length ?? 0) > 0);
 }

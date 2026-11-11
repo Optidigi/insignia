@@ -130,7 +130,9 @@ export type QuoteAuthorizationSet = {
   firstValidDay: number;
   lastValidDay: number;
   validThroughDay: number;
+  /** Cart-line v3: the shared signed 236-character prefix (historical v2: the cart envelope). */
   envelopeCarrier: string;
+  /** Cart-line v3: one complete line carrier per economics line (historical v2: member records). */
   members: readonly { lineIndex: number; carrier: string }[];
 };
 export type AcceptedQuoteResult = { quote: AcceptedQuote; authorization: QuoteAuthorizationSet };
@@ -180,7 +182,7 @@ export interface QuoteAcceptanceStore {
   ): Promise<AcceptedQuoteResult>;
 }
 
-/** Inject the production whole-quote package here during integration. It receives the complete
+/** Inject the production cart-authorization package here during integration. It receives the complete
  * M2 economics, performs candidate admission, and emits exact protocol carriers. */
 export type QuoteIssuanceWindow = {
   issuedAt: string;
@@ -459,7 +461,7 @@ function validAuthorization(quote: AcceptedQuote, set: QuoteAuthorizationSet): v
     set.members.length !== quote.economics.lines.length ||
     set.members.some((member, index) => member.lineIndex !== index || !member.carrier)
   )
-    throw new Error('incomplete or invalid whole-quote authorization');
+    throw new Error('incomplete or invalid cart authorization');
 }
 
 function validatedRequest(

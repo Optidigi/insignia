@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { closeSync, mkdtempSync, openSync, readFileSync, readSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import type { Header, Member } from '../../packages/cart-authorization/src/whole-quote.ts';
+import type { HeaderV3, LineRecordV3 } from '../../packages/cart-authorization/src/line-v3.ts';
 export const ROOT = resolve(import.meta.dirname, '../..');
 export const TARGETS = ['transform', 'validation'] as const;
 export type Target = (typeof TARGETS)[number];
@@ -11,13 +11,16 @@ export type Attribute = { value: string } | null;
 export type FunctionLine = Record<string, unknown> & {
   id: string;
   quantity: number;
-  member: Attribute;
+  /** `_insignia_line_v3` carrier. */
+  line: Attribute;
+  /** A leftover `_insignia_member_v2` property; any value makes the cart need review. */
+  legacy: Attribute;
   cost: { amountPerQuantity: { currencyCode: string }; subtotalAmount?: { currencyCode: string; amount?: string } };
   sellingPlanAllocation: null | { sellingPlan: { id: string } };
   merchandise: { __typename: string; id: string; product: { id: string; policy: Attribute; registration: Attribute } };
 };
 export type FunctionInput = Record<string, unknown> & {
-  cart: { quote: Attribute; lines: FunctionLine[] };
+  cart: { lines: FunctionLine[] };
   localization: { country: { isoCode: string }; market: { id: string }; language?: { isoCode: string } };
   shop: { localTime: { date: string }; publicConfig: { value: string } };
   buyerJourney?: { step: string };
@@ -29,17 +32,14 @@ export type PublicConfig = Record<string, unknown> & {
   maxPhysicalQuantity: number;
   keys: { id: number; publicHex: string; revoked: boolean; firstDay: number; lastDay: number }[];
 };
+/** One issued v3 set from packages/cart-authorization/fixtures/cart-line-v3.json. */
 export type ReplayCase = {
   name: string;
   ordinaryLines: number;
-  header: Header;
-  members: Member[];
-  memberCarriers: string[];
-  envelope: string;
-  publicHex?: string;
-  firstValidDay?: number;
-  lastValidDay?: number;
-  acceptedDate?: string;
+  header: HeaderV3;
+  records: LineRecordV3[];
+  carriers: string[];
+  refs: string[];
 };
 export function required<T>(value: T | null | undefined): T {
   assert(value !== null && value !== undefined, 'Missing fixture member');
@@ -101,7 +101,6 @@ export function decodeInput(value: unknown): FunctionInput {
     ...raw,
     cart: {
       ...cart,
-      quote: attribute(cart.quote),
       lines: array(cart.lines).map((value) => {
         const line = record(value),
           cost = record(line.cost),
@@ -111,7 +110,8 @@ export function decodeInput(value: unknown): FunctionInput {
           ...line,
           id: text(line.id),
           quantity: number(line.quantity),
-          member: attribute(line.member),
+          line: attribute(line.line),
+          legacy: attribute(line.legacy),
           cost: {
             ...cost,
             amountPerQuantity: {

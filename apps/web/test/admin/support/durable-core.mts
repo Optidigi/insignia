@@ -130,6 +130,7 @@ export function fixtureCore(overrides: Overrides = {}): DurableCore {
       getOwnedQuote: unexpected,
       getQuoteDesign: unexpected,
       getLatestOwnedQuote: unexpected,
+      getOwnedRequest: unexpected,
       getOwnedSet: unexpected,
       getApplication: unexpected,
       createApplication: unexpected,
