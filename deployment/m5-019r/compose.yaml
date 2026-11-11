@@ -33,11 +33,10 @@ services:
       traefik.enable: "${INSIGNIA_ROUTE_ENABLED:-false}"
       traefik.docker.network: proxy
       traefik.http.routers.insignia-canonical-m5-019r.entrypoints: websecure
-      traefik.http.routers.insignia-canonical-m5-019r.rule: Host(`app.insigniacustomizer.com`) || Host(`insignia-app.optidigi.nl`)
+      traefik.http.routers.insignia-canonical-m5-019r.rule: Host(`app.insigniacustomizer.com`)
       traefik.http.routers.insignia-canonical-m5-019r.priority: "1000"
       traefik.http.routers.insignia-canonical-m5-019r.tls.certresolver: letsencrypt
       traefik.http.routers.insignia-canonical-m5-019r.tls.domains[0].main: app.insigniacustomizer.com
-      traefik.http.routers.insignia-canonical-m5-019r.tls.domains[1].main: insignia-app.optidigi.nl
       traefik.http.routers.insignia-canonical-m5-019r.service: insignia-rewrite-m5-019
       traefik.http.routers.insignia-canonical-m5-019r.middlewares: insignia-cloudflare-origin
       # Insignia-only origin lock: refuse connections that do not come from Cloudflare's edge.

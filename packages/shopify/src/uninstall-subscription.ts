@@ -16,6 +16,7 @@ export class UninstallSubscriptionError extends Error {
 const identityQuery = `query LifecycleIdentity { shop { id myshopifyDomain } currentAppInstallation { id app { apiKey } } }`;
 const createQuery = `mutation LifecycleSubscribe($uri: String!) { webhookSubscriptionCreate(topic: APP_UNINSTALLED, webhookSubscription: {uri: $uri, format: JSON}) { webhookSubscription {id topic uri} userErrors {field message} } }`;
 const readQuery = `query LifecycleReadback($id: ID!) { webhookSubscription(id: $id) {id topic uri} }`;
+const deleteQuery = `mutation LifecycleRetire($id: ID!) { webhookSubscriptionDelete(id: $id) { deletedWebhookSubscriptionId userErrors {field message} } }`;
 const findQuery = `query LifecycleSettle($uri: String!, $after: String) { webhookSubscriptions(first: 100, after: $after, topics: [APP_UNINSTALLED], uri: $uri) { nodes {id topic uri} pageInfo {hasNextPage endCursor} } }`;
 const fail = (): never => {
   throw new UninstallSubscriptionError();
@@ -206,6 +207,45 @@ export function createUninstallSubscriptionClient(input: { expectedOrigin: strin
       if (result && result.id !== id) return fail();
       await identity(grant, expected);
       return result;
+    },
+    /**
+     * Deletes this installation's uninstall subscription that points at another (retired) app origin.
+     * Only an exact https uninstall callback on a different origin qualifies. 'deleted' means Shopify
+     * confirmed this exact id; anything else is unknown and the caller must re-read before retiring.
+     */
+    async deleteForeign(
+      grant: UninstallSubscriptionGrant,
+      expected: UninstallSubscriptionContext,
+      subscription: UninstallSubscription,
+    ): Promise<'deleted' | 'unknown'> {
+      if (!gid('WebhookSubscription', subscription.id)) return fail();
+      let url: URL;
+      try {
+        url = new URL(subscription.uri);
+      } catch {
+        return fail();
+      }
+      if (
+        url.protocol !== 'https:' ||
+        url.origin === origin.origin ||
+        url.search ||
+        url.hash ||
+        !/^\/api\/webhooks\/uninstall\/[a-f0-9]{64}$/.test(url.pathname)
+      )
+        return fail();
+      await identity(grant, expected);
+      try {
+        const result = record(
+          record(await query(grant, deleteQuery, { id: subscription.id })).webhookSubscriptionDelete,
+        );
+        return Array.isArray(result.userErrors) &&
+          result.userErrors.length === 0 &&
+          result.deletedWebhookSubscriptionId === subscription.id
+          ? 'deleted'
+          : 'unknown';
+      } catch {
+        return 'unknown';
+      }
     },
     async reconcile(
       grant: UninstallSubscriptionGrant,

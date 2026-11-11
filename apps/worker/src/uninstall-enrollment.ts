@@ -48,9 +48,25 @@ export function createAutomaticUninstallEnrollment(input: {
       installationId: scope.externalInstallationId,
       appClientId: input.appClientId,
     };
+    // After the current-origin subscription is confirmed, an earlier origin's subscription for the
+    // same installation is deleted at Shopify and recorded as superseded, which does not change the
+    // repair version. That happens only once Shopify confirms the deletion or re-reads it as gone;
+    // ambiguous outcomes leave it registered.
+    const retireSuperseded = async () => {
+      for (const old of await input.core.uninstallLifecycle.listSuperseded(binding)) {
+        const oldBinding = { ...binding, capabilityDigest: old.capabilityDigest };
+        const observed = await client.read(grant, expected, old.subscriptionId);
+        if (observed && new URL(observed.uri).origin === origin) continue;
+        if (observed && (await client.deleteForeign(grant, expected, observed)) !== 'deleted') {
+          if ((await client.read(grant, expected, old.subscriptionId)) !== null) continue;
+        }
+        await input.core.uninstallLifecycle.supersede(oldBinding);
+      }
+    };
     const destination = await input.core.uninstallLifecycle.reserve(binding);
     if (destination.state === 'registered') {
       const current = await client.read(grant, expected, destination.subscriptionId!);
+      if (current?.uri === uri) await retireSuperseded();
       if (current?.uri !== uri) {
         // read() proves the same positive current installation before/after.
         // Definite missing/drifted subscription gets a new immutable capability;
@@ -65,6 +81,7 @@ export function createAutomaticUninstallEnrollment(input: {
       const found = await client.reconcile(grant, expected, uri);
       if (!found) throw new Error('Automatic lifecycle enrollment unresolved');
       await input.core.uninstallLifecycle.settle(binding, found.id);
+      await retireSuperseded();
       return;
     }
     if (destination.state !== 'prepared' || !(await input.core.uninstallLifecycle.dispatch(binding)))
@@ -74,6 +91,7 @@ export function createAutomaticUninstallEnrollment(input: {
       const confirmed = await client.read(grant, expected, result.subscription.id);
       if (confirmed?.uri !== uri) throw new Error('Automatic lifecycle enrollment unresolved');
       await input.core.uninstallLifecycle.settle(binding, confirmed.id);
+      await retireSuperseded();
       return;
     }
     if (result.kind === 'rejected') await input.core.uninstallLifecycle.settle(binding, null);

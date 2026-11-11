@@ -101,9 +101,8 @@ test('ordinary runtime overlays preserve canonical web boundaries and restrict w
       ...object(object(object(base.services).web).labels),
       'traefik.http.routers.insignia-uninstall-private.entrypoints': 'websecure',
       'traefik.http.routers.insignia-uninstall-private.rule':
-        '(Host(`app.insigniacustomizer.com`) || Host(`insignia-app.optidigi.nl`)) && PathPrefix(`/api/webhooks/uninstall/`)',
+        'Host(`app.insigniacustomizer.com`) && PathPrefix(`/api/webhooks/uninstall/`)',
       'traefik.http.routers.insignia-uninstall-private.tls.domains[0].main': 'app.insigniacustomizer.com',
-      'traefik.http.routers.insignia-uninstall-private.tls.domains[1].main': 'insignia-app.optidigi.nl',
       'traefik.http.routers.insignia-uninstall-private.priority': '1100',
       'traefik.http.routers.insignia-uninstall-private.tls.certresolver': 'letsencrypt',
       'traefik.http.routers.insignia-uninstall-private.service': 'insignia-rewrite-m5-019',
@@ -114,17 +113,14 @@ test('ordinary runtime overlays preserve canonical web boundaries and restrict w
     assert.equal(object(web.labels)['traefik.enable'], 'true');
     assert.equal(
       object(web.labels)['traefik.http.routers.insignia-canonical-m5-019r.rule'],
-      'Host(`app.insigniacustomizer.com`) || Host(`insignia-app.optidigi.nl`)',
+      'Host(`app.insigniacustomizer.com`)',
     );
-    // Each host gets its own certificate, so issuing the new host never re-issues the old one.
     assert.equal(
       object(web.labels)['traefik.http.routers.insignia-canonical-m5-019r.tls.domains[0].main'],
       'app.insigniacustomizer.com',
     );
-    assert.equal(
-      object(web.labels)['traefik.http.routers.insignia-canonical-m5-019r.tls.domains[1].main'],
-      'insignia-app.optidigi.nl',
-    );
+    // The old optidigi.nl host is retired (owner decision, 11 November 2026): no route or certificate.
+    assert.ok(!JSON.stringify(web.labels).includes('optidigi'));
     // Every Insignia router admits only Cloudflare's edge, from the single pinned range file.
     const cloudflare = JSON.parse(
       await readFile(new URL('../../deployment/m5-019r/cloudflare-ips.json', import.meta.url), 'utf8'),

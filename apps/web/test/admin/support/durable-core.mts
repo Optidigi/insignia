@@ -38,6 +38,8 @@ export function fixtureCore(overrides: Overrides = {}): DurableCore {
       coverGenericCleanup: unexpected,
       repairVersion: unexpected,
       retire: unexpected,
+      supersede: unexpected,
+      listSuperseded: unexpected,
       listActive: unexpected,
       reserve: unexpected,
       dispatch: unexpected,

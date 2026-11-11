@@ -64,13 +64,14 @@ async function fixture(t: TestContext) {
           'SELECT capability_digest,state,subscription_id FROM uninstall_destinations ORDER BY created_at,capability_digest',
         )
       ).rows,
-    enroll: (client: Client) =>
+    // Stubs that never see an earlier-origin destination need no deleteForeign; it fails closed.
+    enroll: (client: Omit<Client, 'deleteForeign'> & Partial<Pick<Client, 'deleteForeign'>>) =>
       createAutomaticUninstallEnrollment({
         core,
         appOrigin: origin,
         appClientId: 'synthetic-client',
         appSecret: 'synthetic-lifecycle-secret',
-        client,
+        client: { deleteForeign: async () => 'unknown' as const, ...client },
       }),
   };
 }
@@ -385,5 +386,91 @@ test(
     await assert.rejects(reconciliation.runOnce());
     assert.deepEqual(acquired, [unavailable.scope.shopId, available.scope.shopId, unavailable.scope.shopId]);
     assert.deepEqual(enrolled, [available.scope.shopId]);
+  },
+);
+
+test(
+  'an app origin move deletes the old-origin uninstall subscription and supersedes it only when Shopify confirms',
+  options,
+  async (t) => {
+    const f = await fixture(t),
+      shop = await f.shop('m', '303'),
+      remote = new Map<string, Subscription>();
+    let creates = 0,
+      deletes = 0,
+      ambiguousDelete = false;
+    const client = (expectedOrigin: string) =>
+      createUninstallSubscriptionClient({
+        expectedOrigin,
+        fetchImpl: async (_url, init) => {
+          assert(typeof init?.body === 'string');
+          const { query, variables: rawVariables } = record(JSON.parse(init.body));
+          assert(typeof query === 'string');
+          const variables = record(rawVariables);
+          if (query.includes('LifecycleIdentity'))
+            return Response.json({
+              data: {
+                shop: { id: shop.scope.providerShopId, myshopifyDomain: shop.grant.shop },
+                currentAppInstallation: { id: shop.scope.externalInstallationId, app: { apiKey: 'synthetic-client' } },
+              },
+            });
+          if (query.includes('LifecycleSubscribe')) {
+            const value = subscription(++creates, variables.uri);
+            remote.set(value.id, value);
+            return Response.json({
+              data: { webhookSubscriptionCreate: { webhookSubscription: value, userErrors: [] } },
+            });
+          }
+          if (query.includes('LifecycleReadback')) {
+            assert(typeof variables.id === 'string');
+            return Response.json({ data: { webhookSubscription: remote.get(variables.id) ?? null } });
+          }
+          if (query.includes('LifecycleRetire')) {
+            assert(typeof variables.id === 'string');
+            deletes++;
+            if (ambiguousDelete) return new Response('gateway', { status: 502 });
+            remote.delete(variables.id);
+            return Response.json({
+              data: { webhookSubscriptionDelete: { deletedWebhookSubscriptionId: variables.id, userErrors: [] } },
+            });
+          }
+          throw Error('Unexpected injected provider operation');
+        },
+      });
+    const enrollAt = (appOrigin: string) =>
+      createAutomaticUninstallEnrollment({
+        core: f.core,
+        appOrigin,
+        appClientId: 'synthetic-client',
+        appSecret: 'synthetic-lifecycle-secret',
+        client: client(appOrigin),
+      });
+    const oldOrigin = 'https://old-host.example.test',
+      newOrigin = 'https://new-host.example.test';
+    await enrollAt(oldOrigin)(shop.grant, shop.scope);
+    assert.equal(remote.size, 1);
+    // An ambiguous delete leaves the old destination registered; nothing is superseded on guesswork.
+    ambiguousDelete = true;
+    await enrollAt(newOrigin)(shop.grant, shop.scope);
+    assert.equal(remote.size, 2);
+    assert.deepEqual(
+      (await f.rows()).map((row) => row.state),
+      ['registered', 'registered'],
+    );
+    // A later pass deletes the old-origin subscription and only then retires its capability.
+    ambiguousDelete = false;
+    await enrollAt(newOrigin)(shop.grant, shop.scope);
+    assert.deepEqual(
+      [...remote.values()].map((value) => new URL(value.uri).origin),
+      [newOrigin],
+    );
+    assert.deepEqual(
+      (await f.rows()).map((row) => row.state),
+      ['superseded', 'registered'],
+    );
+    const before = deletes;
+    await enrollAt(newOrigin)(shop.grant, shop.scope);
+    assert.equal(deletes, before, 'a superseded destination is never deleted again');
+    assert.equal(creates, 2);
   },
 );
