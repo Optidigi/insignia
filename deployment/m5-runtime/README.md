@@ -12,6 +12,23 @@ Live Shopify Admin returns `inputQuery: null` for both owned Functions. Observat
 
 Operator migration: none is required. The legacy `transformInputQuerySha256`, `validationInputQuerySha256` and `observationVersion` fields are still accepted (64-hex and `2` when present), then ignored. Images built before this change require them, so keep them until rollback to such an image is no longer needed, then reduce the value to `appKey` only.
 
+## Canonical-host candidate development transition
+
+Owner decision, 11 November 2026: Insignia's canonical app origin becomes `https://app.insigniacustomizer.com`. `insignia-app.optidigi.nl` is still served, without a redirect, until its traffic stops.
+
+`native-canonical-host-aa3b6166` binds inactive version `1203782746113` in [native-canonical-host-release-binding.json](native-canonical-host-release-binding.json) (35 versions) and the 14-module [baseline](native-canonical-host-module-baseline.json) (canonical hash `6599faf690ed74df94e4b99204de391f49990a39021abf8196fe4fbafee27714`).
+- It was created once from the frozen `native-cart-line-v3-aa3b6166` staging. Only `shopify.app.toml` changed: `application_url`, the five webhook subscription URIs and the app proxy URL.
+- Theme and both Functions are identical, including module ids, wasm and input queries.
+- `app_home`, `app_proxy`, privacy compliance and the five webhook subscription modules differ only by host.
+- Webhook subscription registrations are keyed by topic and URI, so those five have new registration identities.
+
+Phase B operator changes, made together with the single release:
+1. Set `INSIGNIA_RELEASE_PROFILE=native-canonical-host-aa3b6166` in web, worker and verifier together, using binding-head images and the matching verifier manifest.
+2. Set `APP_URL=https://app.insigniacustomizer.com` in web and worker.
+   - Existing per-shop uninstall subscriptions on the old host are read as drift. The existing lifecycle retires their capability and enrolls a new subscription on the new origin, one Admin `webhookSubscriptionCreate` per installation.
+   - The old Shopify subscription stays, with a retired capability, until the old host is retired.
+3. No migration and no new grants. `INSIGNIA_CLIENT_CHAIN_DIAGNOSTIC=1` on web is temporary and is removed with the per-visitor limit.
+
 ## Cart-line v3 candidate development transition
 
 `native-cart-line-v3-aa3b6166` binds inactive version 1202999689217, the complete 34-version inventory in [native-cart-line-v3-release-binding.json](native-cart-line-v3-release-binding.json) and the exact 14-module [baseline](native-cart-line-v3-module-baseline.json). Canonical hash is `dd76c50a573e7c6cdb7b42555fdbc36e1edda5189c75b876f4f81d92f66c447f`. Source is main merge aa3b6166/tree dc58ec46, which ships everything merged since the functions-renew release, PRs 298–306:
