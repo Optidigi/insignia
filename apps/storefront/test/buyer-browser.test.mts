@@ -1101,11 +1101,31 @@ test('Review never shows the local design count before the whole retained cart c
         await route.fallback().catch(() => {});
       });
       try {
+        // A one-off isVisible() sample can miss a count shown for a single frame. Record the
+        // computed visibility synchronously after every footer mutation instead.
+        await host.locator('.footer-price').evaluate((price) => {
+          const shown: string[] = [];
+          Reflect.set(window, '__pendingCountShown', shown);
+          new MutationObserver(() => {
+            const count = price.querySelector(':scope > span');
+            if (
+              price.querySelector('strong')?.textContent === 'Calculating quote…' &&
+              count &&
+              getComputedStyle(count).visibility !== 'hidden'
+            )
+              shown.push(count.textContent ?? '');
+          }).observe(price, { subtree: true, childList: true, characterData: true, attributes: true });
+        });
         await reviewRetained(host);
         const count = host.locator('.footer-price > span');
         assert.equal(await host.locator('.footer-price strong').textContent(), 'Calculating quote…');
         assert.equal(await count.textContent(), '3 items', 'the local count of this design alone');
         assert.equal(await count.isVisible(), false, 'is not shown while the cart may hold other designs');
+        assert.deepEqual(
+          await host.locator('body').evaluate(() => Reflect.get(window, '__pendingCountShown')),
+          [],
+          'is not shown even for a frame while the cart may hold other designs',
+        );
         release();
         await count.filter({ hasText: '5 items' }).waitFor({ state: 'visible' });
       } finally {

@@ -965,6 +965,12 @@ button svg {
   font-size: 13px;
   color: var(--muted);
 }
+/* Hidden at once, never transitioned: the reduced-motion rule gives every element a transition
+   duration, and a visibility transition stays visible until its next frame, flashing the local count. */
+.footer-price > span[data-pending] {
+  visibility: hidden;
+  transition: none;
+}
 .footer-price strong {
   font-size: 22px;
   font-weight: 600;

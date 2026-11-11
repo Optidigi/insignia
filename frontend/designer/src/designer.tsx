@@ -1864,7 +1864,7 @@ function DesignerSession({
               )}
               <div className="footer-price">
                 {/* Until the whole-cart review arrives, the local count may omit retained cart designs. */}
-                <span {...(step === 2 && !quoteReview && quoteStatus === 'loading' ? { 'data-pending': '', style: { visibility: 'hidden' }, 'aria-hidden': true } : {})}>
+                <span {...(step === 2 && !quoteReview && quoteStatus === 'loading' ? { 'data-pending': '', 'aria-hidden': true } : {})}>
                   {qty
                     ? t('customer:quantities.quantityCount', {
                         count: step === 2 && quoteReview ? quoteReview.customizedQuantity : qty,
