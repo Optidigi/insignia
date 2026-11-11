@@ -7,6 +7,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { readShopifyOrder } from '../../src/orders/read-order.js';
 import { array, graphqlRequest, integer, jsonRecord, record, required, string } from '../fixture-assertions.js';
 
+/** Replaces the final character with a different one, so the tamper can never be a no-op. */
+function alterLastChar(value: string): string {
+  const altered = `${value.slice(0, -1)}${value.endsWith('A') ? 'B' : 'A'}`;
+  expect(altered).not.toBe(value);
+  return altered;
+}
+
 const now = new Date('2026-10-13T12:00:00Z');
 const target = { shopId: 'tenant', installationGeneration: '1', orderId: 'gid://shopify/Order/100' };
 const money = (amount: string) => ({ presentmentMoney: { amount, currencyCode: 'EUR' } });
@@ -173,7 +180,7 @@ describe('independent Shopify order reconciliation', () => {
       [{ key: '_insignia_ref_v3', value: otherIndex }],
       [
         { key: '_insignia_ref_v3', value: ref },
-        { key: '_insignia_line_v3', value: `${carrier.slice(0, -1)}B` },
+        { key: '_insignia_line_v3', value: alterLastChar(carrier) },
       ],
     ]) {
       d.fetchImpl.mockImplementation(
