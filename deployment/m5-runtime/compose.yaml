@@ -16,6 +16,7 @@ services:
       traefik.http.routers.insignia-uninstall-private.priority: "1100"
       traefik.http.routers.insignia-uninstall-private.tls.certresolver: letsencrypt
       traefik.http.routers.insignia-uninstall-private.service: insignia-rewrite-m5-019
+      traefik.http.routers.insignia-uninstall-private.middlewares: insignia-cloudflare-origin
       traefik.http.routers.insignia-uninstall-private.observability.accesslogs: "false"
       traefik.http.routers.insignia-uninstall-private.observability.tracing: "false"
     # cap_drop and security_opt inherit unchanged from the canonical base.
