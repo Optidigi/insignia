@@ -2,7 +2,85 @@
 
 ## Active assignment
 
-Updated 11 November 2026. The combined application and canonical agent documentation are integrated. The existing host alias `prod` serves the allocated rewrite-dev app/store. The cart-line v3 source is deployed there, its candidate is the released Shopify Active version (the single v3 cutover), and both were independently read back. On 11 November 2026 a web-only update deployed main `721bc6b6`: the 5-minute release refresh and the Cloudflare-only origin lock. No production resource migration, new scopes/markets, database reset, history erasure, protected VAT retry, checkout/order/payment or consumed sender/alert drill was performed. The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
+Updated 11 November 2026. Insignia now runs on canonical host `app.insigniacustomizer.com` (Active `1203782746113`). The combined application and canonical agent documentation are integrated. The existing host alias `prod` serves the allocated rewrite-dev app/store. The cart-line v3 source is deployed there, its candidate is the released Shopify Active version (the single v3 cutover), and both were independently read back. On 11 November 2026 a web-only update deployed main `721bc6b6`: the 5-minute release refresh and the Cloudflare-only origin lock. No production resource migration, new scopes/markets, database reset, history erasure, protected VAT retry, checkout/order/payment or consumed sender/alert drill was performed. The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
+
+### Canonical host app.insigniacustomizer.com — released and deployed
+
+**Owner decisions, 11 November 2026.**
+- Insignia's canonical app host is `https://app.insigniacustomizer.com`.
+- `insignia-app.optidigi.nl` stays served, without a redirect, until its traffic stops.
+- The per-visitor limit reads a Cloudflare header, not Traefik trust. Traefik static configuration is unchanged.
+- Insignia mail moves to `noreply@insigniacustomizer.com`.
+
+**Cloudflare, owner-configured.** Zone `insigniacustomizer.com` (id `dff06e0e2d0b2edd2aa9fad51c91bd3a`, Free, SSL strict, Always Use HTTPS):
+- `A app` record to the host, proxied.
+- `http_request_late_transform` ruleset `a7cc761b…`, scoped to `http.host eq "app.insigniacustomizer.com"`, with two rules:
+  - remove any client `X-Insignia-Client-Chain`;
+  - set it to `http.request.headers["x-forwarded-for"][0]`, which is the XFF before Cloudflare appends its hop.
+- At 11 November the zone had no other DNS records (no MX, SPF, DKIM or DMARC).
+
+**Origin and TLS (PR315).**
+- Both Insignia routers match both hosts, keep the Cloudflare-only `ipAllowList`, and carry one `tls.domains` entry per host.
+- Let's Encrypt issued `app.insigniacustomizer.com` through Cloudflare by HTTP-01 at `13:19:05Z`; it expires 9 Feb 2027. Cloudflare does not redirect `/.well-known/acme-challenge/`, so renewal uses the same path.
+- Direct-origin requests get 403 on both hosts.
+
+**Release (PR316, merge `e61a3a1d`, tree `798d8d6b`).**
+- Inactive candidate `1203782746113/native-canonical-host-aa3b6166` was created once at `13:15Z`.
+  - It came from the frozen `native-cart-line-v3-aa3b6166` staging, with only `shopify.app.toml` URLs changed.
+  - Theme and Functions are byte-identical, including module ids.
+  - Eight modules changed by host only. The five webhook subscription modules have new registrations because Shopify keys them by URI.
+  - The binding has 35 versions and module hash `6599faf6…`.
+- Phase B at `13:54:13Z`:
+  - non-draining checkpoint restore-verified (schema 53, facts 8/7/2/7/10);
+  - verifier, web and worker replaced with profile `native-canonical-host-aa3b6166` and `APP_URL` set to the new host (web `sha256:404afebb…`, worker `sha256:3b083cad…`, verifier `sha256:e8da2e53…`, manifest `2a8fb9d5…`);
+  - inspector and schema unchanged;
+  - exactly one `app release` (exit 0 at `13:54:19Z`).
+- Independent readback at `13:54:26Z`: Active `1203782746113`, 35 versions, NEVER_RELEASE versions inactive, Active modules equal the binding.
+- Fresh web collect and worker-role read matched record `31281065…` (version `1203782746113`, Functions `aa3b6166`).
+
+**Native checks on rewrite-dev (default profile; cart emptied afterwards).**
+- The embedded admin loads from `https://app.insigniacustomizer.com/admin/home`.
+- All app-proxy requests arrived on the new host: config, session, artwork upload, proposal, acceptance and cart confirm.
+- The Designer quoted XS×1 at $17.45 and Add to cart produced one `_insignia_line_v3` line at 1745.
+  - The first Add failed with `UnexpectedFailure` in acceptance prepare (correlation `e33174ff…`, after all traced sub-steps succeeded).
+  - The immediate retry succeeded with every stage passing. Cause not yet identified.
+- App webhook subscriptions are on the new URIs, per the version readback.
+- After `APP_URL` changed, the worker enrolled a new per-shop uninstall subscription on the new origin (registered `13:54:45Z`). The old-origin destination stays registered and valid.
+- No order was placed; protected facts are unchanged.
+
+**Per-visitor limit (decision B).** A temporary diagnostic logged only hash prefixes and entry counts.
+- Every app-proxy request on the new host carried exactly one chain entry: the buyer's real egress address (IPv6; browser and host matched).
+- A buyer-supplied `X-Forwarded-For` or `X-Insignia-Client-Chain` did not change it.
+- `CF-Connecting-IP` is Shopify's proxy egress.
+- PR317 implements the limit:
+  - last chain entry only; IPv6 counted by /64;
+  - keyed HMAC, no address stored, rows deleted within an hour;
+  - 20 sessions per address per hour, failing open without a trusted address;
+  - migration 54 and web grants.
+- Its required foundation check is blocked by a GitHub-runner DNS outage for the Ubuntu apt mirrors. PostgreSQL and runtime CI pass, and the limit is not yet deployed.
+
+**Mail sender.**
+- Code and both private email profiles now use `noreply@insigniacustomizer.com` and the new `appOrigin` (PR317 for code; profiles updated in place, pre-change copies kept, 0600).
+- Customer email stays disabled and no message was sent.
+- **Owner action:** onboard `insigniacustomizer.com` in Cloudflare (Compute → Email Service → Email Sending → Onboard Domain) on the account that owns the existing send token (same account as the zone).
+  - Cloudflare then adds `cf-bounce` MX, SPF and DKIM records.
+  - Add `_dmarc` with `p=none` first.
+  - A transport test needs a new explicit approval.
+
+**Still on optidigi.nl, and why.**
+- `insignia-app.optidigi.nl`: the fallback router host, which also carries the old-origin uninstall subscriptions.
+- The shared Traefik ACME contact `admin@optidigi.nl`: not Insignia-owned.
+- The operator-alert relay `insignia-alerts@optidigi.nl` → `admin@optidigi.nl`: a Cloudflare Email Routing worker on the optidigi zone, unqualified. Moving it needs Email Routing on the new zone first.
+- The development-mode recipient `admin@optidigi.nl`: the owner's mailbox.
+- The legacy `insignia.optidigi.nl` service and historical evidence.
+
+**Old-host retirement plan.**
+1. Measure traffic on `insignia-app.optidigi.nl`: weekly Traefik access-log counts by host, through Cloudflare.
+2. When it is quiet, delete the old-origin per-shop uninstall subscriptions.
+3. Remove `Host(insignia-app.optidigi.nl)` and its `tls.domains[1]` from both router label sets, and redeploy web only.
+4. Remove the old DNS record in the optidigi zone, then let its certificate lapse.
+
+**Future cloudflared tunnel.** If the origin moves behind a tunnel, replace the `ipAllowList` with tunnel-only access (no public port). The zone transform rule keeps working, because it runs at Cloudflare's edge.
 
 ### Combined cart-line v3 release — complete
 
@@ -30,7 +108,7 @@ Updated 11 November 2026. The combined application and canonical agent documenta
 - Local model with research-measured provider latencies: proposal 5.77 s → 0.65 s; acceptance within 30 s 2.56 s → 1.13 s; acceptance after 30 s 7.06 s → 1.08 s with a warm record (4.95 s if it must still collect). Native measurement on the deployed artifact is outstanding; client-side config/draft serialization is unchanged.
 - Background refresh cost: at most one collection (about eight provider reads and one `trusted_release_records` row) per shop per 25 s while active, at most twelve per isolated proposal (five-minute activity window, owner decision 11 November 2026; was six at two minutes), none when idle; per web process.
 - **Cloudflare-only origin — deployed, 11 November 2026 (owner decision A).** Both Insignia routers use the route-level `insignia-cloudflare-origin` `ipAllowList` of Cloudflare's published ranges, pinned in [cloudflare-ips.json](../../deployment/m5-019r/cloudflare-ips.json), with the refresh procedure in the [runtime README](../../deployment/m5-runtime/README.md#cloudflare-only-origin). Other sites, the shared entrypoint and Traefik's static configuration are unchanged. Before the change, 72 hours of logs showed every Insignia request (12,479) arriving from Cloudflare ranges.
-- **Per-visitor session limit by client IP — still held, 11 November 2026 (owner decision B).** The only buyer-address carrier Shopify documents for app-proxy requests is `X-Forwarded-For`; Shopify removed `X-Shopify-Client-IP`. Cloudflare appends to that header, and Traefik's shared `websecure` entrypoint deletes it for every router before any route middleware runs, because the entrypoint trusts no forwarded headers. No Insignia-only label, middleware or container can recover it. So the chain could not be observed, and nothing was built. Any one of these would make it observable: a Cloudflare Request Header Transform Rule for `insignia-app.optidigi.nl` that copies the incoming `X-Forwarded-For` to a custom header (a Cloudflare change); `forwardedHeaders.trustedIPs` with Cloudflare ranges on `websecure` (a global Traefik change for all sites); or a dedicated entrypoint with a Cloudflare Origin Rule port override (both). After that, verification still has to show that the address is the buyer's and at a stable position, and that a client-supplied prefix is not trusted, before a limit can be built.
+- **Per-visitor session limit (owner decision B):** the global Traefik trust plan was superseded by a Cloudflare header. See [Canonical host](#canonical-host-appinsigniacustomizercom--released-and-deployed).
 
 - **Native measurement, 11 November 2026:**
   - Quantities → Review: the proposal took 0.70 s, with config at 0.27 s (cached) and the draft save running alongside it. Before, it took 5.5–5.8 s.
