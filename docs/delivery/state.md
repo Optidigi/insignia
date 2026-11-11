@@ -43,7 +43,7 @@ Updated 11 November 2026. Insignia now runs only on `app.insigniacustomizer.com`
 - All app-proxy requests arrived on the new host: config, session, artwork upload, proposal, acceptance and cart confirm.
 - The Designer quoted XS×1 at $17.45 and Add to cart produced one `_insignia_line_v3` line at 1745.
   - The first Add failed with `UnexpectedFailure` in acceptance prepare (correlation `e33174ff…`, after all traced sub-steps succeeded).
-  - The immediate retry succeeded with every stage passing. Cause not yet identified.
+  - The immediate retry succeeded with every stage passing. Cause later identified: the 60 s billing cache outlived the 30 s entitlement policy (fixed in PR319; see the quote "Unavailable" fix).
 - App webhook subscriptions are on the new URIs, per the version readback.
 - After `APP_URL` changed, the worker enrolled a new per-shop uninstall subscription on the new origin (registered `13:54:45Z`). The old-origin destination stays registered and valid.
 - No order was placed; protected facts are unchanged.
@@ -95,7 +95,7 @@ Updated 11 November 2026. Insignia now runs only on `app.insigniacustomizer.com`
 - **One owner-approved transport test: approved and consumed, `2026-11-11T16:58:28Z`.**
   - From `noreply@insigniacustomizer.com` to `admin@optidigi.nl`, through the PR317 adapter and the development profile.
   - Cloudflare HTTP 200, `queued`, message id `<dl7W6JAZX8PxXh4ZbwdNMhsKng18ZZ3dwPOF@insigniacustomizer.com>`.
-  - Transport only; inbox delivery is not proven. Do not repeat without a new approval.
+  - The owner confirmed on 11 November 2026 that it arrived in the `admin@optidigi.nl` inbox, not in spam. Received authentication headers (SPF/DKIM/DMARC verdicts) were not inspected. Do not repeat without a new approval.
 
 **Still on optidigi.nl, and why.**
 - The operator-alert relay `insignia-alerts@optidigi.nl` → `admin@optidigi.nl`: owner decision to keep.
@@ -109,8 +109,8 @@ Updated 11 November 2026. Insignia now runs only on `app.insigniacustomizer.com`
 - Removed: its two crontab lines, both containers, the `insignia_internal` network and its data directory. The compose file was renamed `compose.yaml.removed-20261111` so it cannot be restarted by accident. `insignia.optidigi.nl` now returns 404.
 - Kept: the shared image `ghcr.io/optidigi/insignia-app:latest`, which the Superfunny and Custom apps also use.
 - Untouched (owner requirement): the Stitchs, Superfunny and Custom legacy stacks, including their cron jobs and secrets. All three returned 200 afterwards.
-- Outstanding: an external uptime monitor still probes `insignia.optidigi.nl/api/health` through Cloudflare; remove that entry wherever it is configured.
-- The VAT store's leftover per-shop uninstall subscription (above).
+- The external uptime monitor that probed `insignia.optidigi.nl/api/health` is the owner's Cloudflare custom status Worker; per the owner it detects the removed service by itself and needs no change.
+- The VAT store's leftover per-shop uninstall subscription (above). Owner decision 11 November 2026: leave it; it is harmless.
 
 **Future cloudflared tunnel.** If the origin moves behind a tunnel, replace the `ipAllowList` with tunnel-only access (no public port). The zone transform rule keeps working, because it runs at Cloudflare's edge.
 
