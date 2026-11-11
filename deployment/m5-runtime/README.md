@@ -198,14 +198,20 @@ Since keys no longer expire (spec §5.5), each key's Ed25519 seed is protected b
 - **Memory:** the seed exists only in signer memory while signing and is zeroed afterwards.
 
 **Separate signer** ([signer-compose.yaml](signer-compose.yaml)).
-- The `signer` service in project `insignia-rewrite-m5-019` runs the worker image with `node /srv/insignia/worker/dist/signer-main.js`, as `user: node` (uid 1000), read-only, `cap_drop: ALL`, on the `private` network only. It has no port and no Traefik labels.
-- It serves `POST /v1/sign` and `POST /v1/provision` (and `GET /health`) on `/run/insignia/signer/signer.sock`. The socket is mode 0600 in a 0700 directory owned by uid 1000. Web mounts that directory read-only, which is enough to connect.
+- The `signer` service in project `insignia-rewrite-m5-019` runs the worker image with `node /srv/insignia/worker/dist/signer-main.js`. It runs as its own uid with web's group (`user: "10101:1000"`), read-only, `cap_drop: ALL`, on the `private` network only. It has no port and no Traefik labels.
+- It serves `POST /v1/sign` and `POST /v1/provision` (and `GET /health`) on `/run/insignia/signer/signer.sock`.
+  - The socket is mode 0660 in a directory owned `10101:1000`, mode 0710.
+  - Web (uid 1000, group 1000) mounts that directory read-only and can connect. It can never read the key file.
+  - Host directory: `/home/serveradmin/.local/share/insignia/runtime/signer-socket`.
 - It logs one JSON line per request (`signer_sign`/`signer_provision`: outcome, shop, generation, key id, ms) and hourly counts. It never logs key material or messages.
 - If the signer is down, quotes fail closed with a retryable 503 (`SignerUnavailable` in diagnostics).
 
 **Where the KEK lives (for separate backup custody).**
-- **Host file (rewrite-dev on `prod`):** `/home/serveradmin/.local/share/insignia/runtime/signing-wrap-keys.json`, owner uid 1000, mode 0600, regular file, at most 4096 bytes. The compose variable is `INSIGNIA_SIGNING_WRAP_KEY_FILE`.
-- **In the container:** bind-mounted read-only at `/run/insignia/signing-wrap-keys.json`. The signer refuses a symlink, another owner, or any mode other than 0600.
+- **Host file (rewrite-dev on `prod`):** `/home/serveradmin/.local/share/insignia/runtime/signer-secrets/signing-wrap-keys.json`.
+  - It is a regular file, owner uid 10101 (the signer), mode 0400, at most 4096 bytes.
+  - The host login (uid 1000) and web cannot read it, so reading it needs root or docker.
+  - The compose variable is `INSIGNIA_SIGNING_WRAP_KEY_FILE`.
+- **In the container:** bind-mounted read-only at `/run/insignia/signing-wrap-keys.json`. The signer refuses a symlink, another owner, or any mode other than 0400/0600.
 - **Format** (UTF-8 JSON, 1 to 4 keys):
   ```json
   {"version":1,"currentKeyId":"signing-20261111","keys":{"signing-20261111":"<base64 of exactly 32 random bytes>"}}
@@ -227,7 +233,7 @@ Since keys no longer expire (spec §5.5), each key's Ed25519 seed is protected b
   3. [web-signing-envelope-revoke.sql](web-signing-envelope-revoke.sql), after web runs the signer-client image.
 
 **Re-wrap (KEK rotation).**
-1. Write the new key into the file as `currentKeyId` and keep the old key in `keys`.
+1. As root, write the new key into the file as `currentKeyId`, keep the old key in `keys`, and keep owner 10101 and mode 0400.
 2. Recreate the signer.
 3. Run `docker compose -p insignia-rewrite-m5-019 -f <web composition> run --rm --no-deps signer /usr/local/bin/node /srv/insignia/worker/dist/signer-main.js --rewrap`. It re-seals every pending or active envelope under the current key and prints `signer_rewrap` counts. Retired keys have no envelope and are skipped.
 4. Confirm that every remaining `wrapping_key_id` is the new id.
@@ -250,7 +256,7 @@ Since keys no longer expire (spec §5.5), each key's Ed25519 seed is protected b
 | Database or checkpoint only | Ciphertext of pending/active keys only; no seed. |
 | KEK file only | Nothing without the envelopes. |
 | Worker compromise | No KEK and no envelope access; no seed. |
-| Web compromise | No KEK and no envelope access. It can request signatures for real v3 headers of the active key, within the signer's rate limits and audit, for as long as it is compromised. Respond with an emergency epoch bump, then rotation. |
+| Web or host-login (uid 1000) compromise | No KEK and no envelope access. It can request signatures for real v3 headers of the active key, within the signer's rate limits and audit, for as long as it is compromised. Respond with an emergency epoch bump, then rotation. |
 | Signer compromise | KEK plus envelopes, so the active (and any pending) seed. Retired keys have no envelope. Respond with an epoch bump, then rotate the KEK and the key. |
 
 An HSM- or KMS-held KEK remains a recommendation for a later change.
