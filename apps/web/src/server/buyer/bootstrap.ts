@@ -11,6 +11,7 @@ import { loadCredentialKeys } from '../../../../worker/src/config.ts';
 import { credentialLifecycle } from '../../../../worker/src/handlers.ts';
 import { createDemandDrivenReleaseReader, type ReleaseVerificationCollector } from '../admin/release-evidence.ts';
 import { createReleaseVerificationClient } from '../admin/release-verification.ts';
+import { loadSigningKeyRing } from '../signing-key-ring.ts';
 import { createProductionBuyerServices, type ProductionBuyerInputs } from './production.ts';
 import { createReleaseRefresher, RELEASE_FRESHNESS_MS, RELEASE_REFRESH_AFTER_MS } from './release-refresh.ts';
 import type { BuyerServices } from './service.ts';
@@ -155,10 +156,7 @@ export async function createBuyerBootstrap(
     if (!/^[1-9][0-9]*$/.test(organizationId) || (env.INSIGNIA_CREDENTIAL_PREVIOUS_KEYS_JSON?.length ?? 0) > 8192)
       throw new Error('Buyer configuration unavailable');
     credentialKeys = loadCredentialKeys(env);
-    ring = {
-      currentKeyId: credentialKeys.currentKeyId,
-      keys: Object.fromEntries(Object.entries(credentialKeys.keys).map(([id, key]) => [id, Buffer.from(key)])),
-    };
+    ring = loadSigningKeyRing(env);
     const clock = seam.clock ?? (() => new Date());
     const refresh = createShopifyOfflineRefreshTransport({
       clientId,

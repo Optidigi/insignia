@@ -313,7 +313,9 @@ test('retained key rotation publishes both keys by CAS before activating fresh k
     });
     await f.lifecycle.activate(f.scope, 1);
     const old = required(f.rows.find((row) => row.id === 1));
-    const retained = digest({ ...old, state: undefined });
+    const retained = digest({ ...old, state: undefined, lastDay: undefined });
+    // The fixture shop is in Asia/Tokyo; the retiring key's window ends 3 shop days after rotation.
+    const retireThrough = f.ports.app.localDay(new Date(clockStart), 'Asia/Tokyo').ordinal + 3;
     const originalScope = { ...f.scope };
     const prior = await f.lifecycle.desiredPublicConfig(f.scope);
     assert.throws(
@@ -342,7 +344,9 @@ test('retained key rotation publishes both keys by CAS before activating fresh k
         assert.equal(config.epoch, originalScope.authorizationEpoch);
         assert.equal(config.generationHex, originalScope.authorizationGeneration.replaceAll('-', ''));
         assert.deepEqual(config.keys, [
-          ...JSON.parse(prior.value).keys,
+          ...JSON.parse(prior.value).keys.map((key: { id: number; lastDay: number }) =>
+            key.id === 1 ? { ...key, lastDay: Math.min(key.lastDay, retireThrough) } : key,
+          ),
           {
             id: 2,
             publicHex: Buffer.from(pending.publicKey).toString('hex'),
@@ -370,7 +374,8 @@ test('retained key rotation publishes both keys by CAS before activating fresh k
     assert.equal(result.quoteIssuanceAuthorized, false);
     assert.equal(f.requests.filter((operation) => operation === 'set').length, 1);
     assert.equal(old.state, 'retiring');
-    assert.equal(digest({ ...old, state: undefined }), retained);
+    assert.equal(digest({ ...old, state: undefined, lastDay: undefined }), retained);
+    assert.equal(old.lastDay, Math.min(f.plan.lastDay - 1, retireThrough));
     assert.deepEqual(f.scope, originalScope);
     assert.deepEqual(
       f.rows.filter((row) => row.state === 'active').map((row) => row.id),
@@ -380,6 +385,57 @@ test('retained key rotation publishes both keys by CAS before activating fresh k
     assert.equal(f.publicValue(), current.value);
     assert.doesNotThrow(() =>
       f.ports.app.requireIssuanceReady({ config: current, keyId: 2, acceptedDay: f.plan.firstDay }),
+    );
+  } finally {
+    await f.close();
+  }
+});
+
+test('non-expiring rotation shortens the retiring key before publication and keeps the new key open-ended', async () => {
+  const f = await fixture();
+  const NON_EXPIRING = f.ports.app.NON_EXPIRING_LAST_DAY;
+  try {
+    await f.lifecycle.createPending({ scope: f.scope, keyId: 1, firstDay: f.plan.firstDay - 1, lastDay: NON_EXPIRING });
+    await f.lifecycle.activate(f.scope, 1);
+    f.setPublicValue((await f.lifecycle.desiredPublicConfig(f.scope)).value);
+    f.plan.keyId = 2;
+    f.plan.lastDay = NON_EXPIRING;
+    f.ports.journal = await reserveSigningProvisionRun(join(f.directory, 'non-expiring-run'), f.plan);
+    const today = f.ports.app.localDay(new Date(clockStart), 'Asia/Tokyo').ordinal;
+    const execute = f.transport.execute;
+    let publishedKeys: { id: number; lastDay: number }[] = [];
+    f.transport.execute = async (request) => {
+      if (request.operation === 'set') {
+        const old = required(f.rows.find((row) => row.id === 1));
+        // The retirement window is stored before publication, while key 1 still signs.
+        assert.equal(old.state, 'active');
+        assert.equal(old.lastDay, today + 3);
+        const fields = request.variables.metafields as { value: string }[];
+        publishedKeys = JSON.parse(required(fields[0]).value).keys;
+      }
+      return execute(request);
+    };
+    const result = await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
+    assert.equal(result.classification, 'SIGNING_KEY_CONFIG_PROVISIONED');
+    assert.deepEqual(
+      publishedKeys.map(({ id, lastDay }) => ({ id, lastDay })),
+      [
+        { id: 1, lastDay: today + 3 },
+        { id: 2, lastDay: NON_EXPIRING },
+      ],
+    );
+    assert.deepEqual(
+      f.rows.map(({ id, state, lastDay }) => ({ id, state, lastDay })),
+      [
+        { id: 1, state: 'retiring', lastDay: today + 3 },
+        { id: 2, state: 'active', lastDay: NON_EXPIRING },
+      ],
+    );
+    assert.equal(f.publicValue(), (await f.lifecycle.desiredPublicConfig(f.scope)).value);
+    // A sentinel key is issuance ready on any later day; the retired key is not.
+    const current = await f.lifecycle.desiredPublicConfig(f.scope);
+    assert.doesNotThrow(() =>
+      f.ports.app.requireIssuanceReady({ config: current, keyId: 2, acceptedDay: today + 10_000 }),
     );
   } finally {
     await f.close();

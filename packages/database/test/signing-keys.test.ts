@@ -7,6 +7,70 @@ import { createTenantRepository } from '../src/repositories/tenant.js';
 import { openTestDatabase } from './support/postgres.js';
 
 describe.runIf(Boolean(process.env.DATABASE_URL))('durable signing key lifecycle', () => {
+  it('keys are non-expiring until retirement shortens their window; destruction follows the shortened window', async () => {
+    const db = await openTestDatabase();
+    const shopId = randomUUID();
+    const ring = { currentKeyId: 'test-wrap', keys: { 'test-wrap': randomBytes(32) } };
+    const SENTINEL = 0x7fffffff;
+    try {
+      await db.transaction().execute(async (tx) => {
+        await createTenantRepository(tx).createShop(tx, {
+          shopId,
+          shopDomain: `${shopId}.myshopify.com`,
+          shopifyShopId: (BigInt(`0x${shopId.replaceAll('-', '').slice(0, 15)}`) + 3n).toString(),
+        });
+      });
+      const store = new PgSigningKeyRepository(db);
+      const lifecycle = new SigningKeyLifecycle(store, ring);
+      const scope = await store.getActiveScope(shopId, '1');
+      if (!scope) throw new Error('Test installation missing');
+      await expect(lifecycle.createPending({ scope, keyId: 1, firstDay: 100, lastDay: 0xffffffff })).rejects.toThrow();
+      await lifecycle.createPending({ scope, keyId: 1, firstDay: 100, lastDay: SENTINEL });
+      // A pending key cannot be scheduled; only the active issuer can.
+      await expect(store.scheduleRetirement(scope, 1, 105)).rejects.toThrow(/Active signing key required/);
+      await lifecycle.activate(scope, 1);
+      expect((await store.list(scope)).find((key) => key.keyId === 1)?.lastDay).toBe(SENTINEL);
+      // Shorten only: a later day cannot extend it, and the trigger refuses any direct extension.
+      await lifecycle.scheduleRetirement(scope, 1, 105);
+      await lifecycle.scheduleRetirement(scope, 1, 2000);
+      expect((await store.list(scope)).find((key) => key.keyId === 1)?.lastDay).toBe(105);
+      await expect(
+        sql`UPDATE signing_keys SET last_valid_day=106 WHERE shop_id=${shopId} AND key_id=1`.execute(db),
+      ).rejects.toThrow(/may only shorten/);
+      // The window never ends before the key's first day.
+      await lifecycle.scheduleRetirement(scope, 1, 50);
+      expect((await store.list(scope)).find((key) => key.keyId === 1)?.lastDay).toBe(100);
+      await lifecycle.createPending({ scope, keyId: 2, firstDay: 100, lastDay: SENTINEL });
+      await lifecycle.activate(scope, 2);
+      expect((await store.list(scope)).map(({ keyId, state, lastDay }) => ({ keyId, state, lastDay }))).toEqual([
+        { keyId: 1, state: 'retiring', lastDay: 100 },
+        { keyId: 2, state: 'active', lastDay: SENTINEL },
+      ]);
+      // The shortened window is long past, so the retired key can be destroyed; the open-ended one cannot.
+      await lifecycle.destroy(scope, 1);
+      expect((await store.list(scope)).find((key) => key.keyId === 1)?.state).toBe('destroyed');
+      // Activation without a scheduled window still bounds the retiring key (UTC day + 4).
+      await lifecycle.createPending({ scope, keyId: 3, firstDay: 100, lastDay: SENTINEL });
+      await lifecycle.activate(scope, 3);
+      const utcDay = Math.floor(Date.now() / 86_400_000);
+      const bounded = (await store.list(scope)).find((key) => key.keyId === 2);
+      expect(bounded?.state).toBe('retiring');
+      expect(bounded?.lastDay).toBeGreaterThanOrEqual(utcDay + 3);
+      expect(bounded?.lastDay).toBeLessThanOrEqual(utcDay + 4);
+      await expect(lifecycle.destroy(scope, 2)).rejects.toThrow(/destruction window/);
+      // Revocation shortens an open-ended window to UTC day + 3, so destruction can close later.
+      await lifecycle.revoke(scope, 3, 'incident-key-3', 'suspected leak');
+      const today = Math.floor(Date.now() / 86_400_000);
+      const revoked = (await store.list(scope)).find((key) => key.keyId === 3);
+      expect(revoked?.state).toBe('revoked');
+      expect(revoked?.lastDay).toBeGreaterThanOrEqual(today + 2);
+      expect(revoked?.lastDay).toBeLessThanOrEqual(today + 3);
+      await expect(lifecycle.destroy(scope, 3)).rejects.toThrow(/destruction window/);
+    } finally {
+      await db.destroy();
+    }
+  });
+
   it('encrypts raw seed and fences rotation, epoch, and reinstall', async () => {
     const db = await openTestDatabase();
     const shopId = randomUUID();

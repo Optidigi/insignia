@@ -43,6 +43,12 @@ export async function fixture({ initial = clockStart } = {}) {
     async createPending(x) {
       rows.push({ ...x, ...x.scope, id: x.keyId, state: 'pending' });
     },
+    rewrap: unexpected,
+    async scheduleRetirement(_, keyId, lastDay) {
+      const row = rows.find((candidate) => candidate.id === keyId);
+      if (row?.state !== 'active') throw new Error('Active signing key required for retirement scheduling');
+      row.lastDay = Math.min(row.lastDay, Math.max(row.firstDay, lastDay));
+    },
     async activate(_, keyId) {
       for (const row of rows)
         if (row.id === keyId) row.state = 'active';

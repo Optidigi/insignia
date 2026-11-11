@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { closeSync, constants, fstatSync, openSync, readFileSync } from 'node:fs';
-import { loadCredentialKeys } from '../../../../worker/src/config.js';
+import { loadSigningKeyRing } from '../signing-key-ring.ts';
 import type { SigningOwnerConfiguration } from './signing-owner-action.js';
 
 const PLAN_PATH = '/run/insignia/signing-owner-plan.json';
@@ -12,14 +12,8 @@ export function parseSigningOwnerConfiguration(metadata: unknown, env: NodeJS.Pr
   const input = metadata as Record<string, unknown>;
   assert.deepEqual(Object.keys(input).sort(), ['binding', 'plan', 'version']);
   assert.equal(input.version, 'm5-signing-owner-plan-v1');
-  // Reuse original wrapping-key custody validation; no ID/online token is persisted.
-  const original = loadCredentialKeys(env);
-  const ring = {
-    currentKeyId: original.currentKeyId,
-    keys: Object.fromEntries(
-      Object.entries(original.keys as Readonly<Record<string, Uint8Array>>).map(([id, key]) => [id, Buffer.from(key)]),
-    ),
-  };
+  // The web runtime's signing wrapping-key ring; no ID/online token is persisted.
+  const ring = loadSigningKeyRing(env);
   return {
     directory: `${RUN_DIRECTORY}/attempt`,
     plan: input.plan as SigningOwnerConfiguration['plan'],

@@ -1,6 +1,17 @@
 import { createHash } from 'node:crypto';
 import { admitPublicKey, type KeyScope } from './crypto.js';
 
+/**
+ * Owner decision, 11 November 2026: signing keys do not expire routinely. A new key's last valid
+ * day is this sentinel (the largest PostgreSQL integer; the Functions read it as u32). A key loses
+ * it only when it is retired (rotation, revocation or reinstall): its window is then shortened so
+ * outstanding 3-day offers keep verifying and destruction can follow. Epoch bump remains the
+ * immediate emergency revocation.
+ */
+export const NON_EXPIRING_LAST_DAY = 0x7fffffff;
+/** A retired key verifies through its retirement shop day + 3 (3-day offers plus one day of slack). */
+export const RETIREMENT_GRACE_DAYS = 3;
+
 export type PublicSigningKey = {
   id: number;
   publicKey: Uint8Array;
@@ -45,7 +56,7 @@ export function buildPublicConfig(input: { scope: KeyScope; keys: readonly Publi
       !Number.isInteger(key.firstDay) ||
       !Number.isInteger(key.lastDay) ||
       key.firstDay < 0 ||
-      key.lastDay > 0xffffffff ||
+      key.lastDay > NON_EXPIRING_LAST_DAY ||
       key.firstDay > key.lastDay
     )
       throw new TypeError('Invalid Function key');
@@ -72,7 +83,7 @@ export function buildPublicConfig(input: { scope: KeyScope; keys: readonly Publi
 }
 
 export function requireIssuanceReady(input: { config: PublicConfig; keyId: number; acceptedDay: number }): void {
-  if (!Number.isInteger(input.acceptedDay) || input.acceptedDay < 0 || input.acceptedDay > 0xffffffff - 2)
+  if (!Number.isInteger(input.acceptedDay) || input.acceptedDay < 0 || input.acceptedDay > NON_EXPIRING_LAST_DAY - 2)
     throw new Error('Invalid accepted day');
   const key = input.config.keys.find((candidate) => candidate.id === input.keyId);
   if (key?.state !== 'active' || key.revoked || key.firstDay > input.acceptedDay || key.lastDay < input.acceptedDay + 2)

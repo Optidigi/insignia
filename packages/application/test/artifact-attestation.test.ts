@@ -124,6 +124,8 @@ const productionComposition = (profile?: 2) => {
     signingKeys: {
       createPending: unexpected,
       activate: unexpected,
+      scheduleRetirement: unexpected,
+      rewrap: unexpected,
       revoke: unexpected,
       destroy: unexpected,
       destroyInactiveInstallationKeys: unexpected,

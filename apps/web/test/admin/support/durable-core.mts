@@ -157,6 +157,8 @@ export function fixtureCore(overrides: Overrides = {}): DurableCore {
       list: unexpected,
       createPending: unexpected,
       activate: unexpected,
+      scheduleRetirement: unexpected,
+      rewrap: unexpected,
       revoke: unexpected,
       destroy: unexpected,
       destroyInactiveInstallationKeys: unexpected,

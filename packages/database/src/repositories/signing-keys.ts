@@ -148,7 +148,7 @@ export class PgSigningKeyRepository {
       !Number.isInteger(input.firstDay) ||
       !Number.isInteger(input.lastDay) ||
       input.firstDay < 0 ||
-      input.lastDay > 0xffffffff ||
+      input.lastDay > 0x7fffffff ||
       input.firstDay > input.lastDay ||
       !input.wrappingKeyId ||
       !input.privateEnvelope
@@ -195,7 +195,10 @@ export class PgSigningKeyRepository {
         throw new Error('Pending signing key required');
       if (beforeWrite && !beforeWrite()) throw new Error('Signing write authority expired');
       if (old.rows[0])
-        await sql`UPDATE signing_keys SET state='retiring', retired_at=clock_timestamp() WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND key_id=${old.rows[0].key_id}`.execute(
+        // Backstop: a retired key never stays verifiable forever. UTC day + 4 is never earlier than
+        // the owner flow's scheduled shop-local day + 3 (a shop-local day is at most UTC day + 1).
+        await sql`UPDATE signing_keys SET state='retiring', retired_at=clock_timestamp(),
+          last_valid_day=LEAST(last_valid_day, GREATEST(first_valid_day, floor(extract(epoch from clock_timestamp()) / 86400)::int + 4)) WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND key_id=${old.rows[0].key_id}`.execute(
           tx,
         );
       if (beforeWrite && !beforeWrite()) throw new Error('Signing write authority expired');
@@ -206,6 +209,52 @@ export class PgSigningKeyRepository {
     });
   }
 
+  /**
+   * Shortens the still-active key's window before a rotation publishes it, so the published and
+   * stored configs agree when activation makes it retiring. Only shortens; never extends.
+   */
+  async scheduleRetirement(scope: Scope, keyId: number, lastDay: number, beforeWrite?: () => boolean): Promise<void> {
+    checkedId(keyId);
+    if (!Number.isInteger(lastDay) || lastDay < 0 || lastDay > 0x7fffffff)
+      throw new TypeError('Invalid retirement day');
+    await this.database.transaction().execute(async (tx) => {
+      sameScope(await lockScope(tx, scope.shopId, scope.installationGeneration), scope);
+      if (beforeWrite && !beforeWrite()) throw new Error('Signing write authority expired');
+      const result = await sql`UPDATE signing_keys SET last_valid_day=GREATEST(first_valid_day, ${lastDay}::int)
+        WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint
+          AND authorization_generation=${scope.authorizationGeneration}::uuid AND key_id=${keyId}
+          AND state='active' AND last_valid_day > GREATEST(first_valid_day, ${lastDay}::int)`.execute(tx);
+      const row = (
+        await sql<{
+          state: string;
+          last_valid_day: number;
+          first_valid_day: number;
+        }>`SELECT state, last_valid_day, first_valid_day
+          FROM signing_keys WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint
+          AND key_id=${keyId}`.execute(tx)
+      ).rows[0];
+      if (row?.state !== 'active' || row.last_valid_day > Math.max(row.first_valid_day, lastDay))
+        throw new Error('Active signing key required for retirement scheduling');
+      if (result.numAffectedRows === undefined) throw new Error('Retirement scheduling unresolved');
+      if (beforeWrite && !beforeWrite()) throw new Error('Signing write authority expired');
+    });
+  }
+
+  /** Replaces an envelope sealed under `expectedWrappingKeyId` (KEK rotation); identity is untouched. */
+  async rewrap(scope: Scope, keyId: number, expectedWrappingKeyId: string, envelope: { kid: string }): Promise<void> {
+    checkedId(keyId);
+    if (!expectedWrappingKeyId || !envelope?.kid) throw new TypeError('Invalid signing envelope rewrap');
+    await this.database.transaction().execute(async (tx) => {
+      sameScope(await lockScope(tx, scope.shopId, scope.installationGeneration), scope);
+      const result =
+        await sql`UPDATE signing_keys SET private_envelope=${JSON.stringify(envelope)}::jsonb, wrapping_key_id=${envelope.kid}
+        WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint
+          AND authorization_generation=${scope.authorizationGeneration}::uuid AND key_id=${keyId}
+          AND state <> 'destroyed' AND wrapping_key_id=${expectedWrappingKeyId}`.execute(tx);
+      if (result.numAffectedRows !== 1n) throw new Error('Signing envelope changed during rewrap');
+    });
+  }
+
   async revoke(scope: Scope, keyId: number, commandKey: string, reason: string): Promise<void> {
     checkedId(keyId);
     if (!commandKey || commandKey.length > 200 || !reason.trim() || reason.length > 500)
@@ -213,7 +262,8 @@ export class PgSigningKeyRepository {
     await this.database.transaction().execute(async (tx) => {
       sameScope(await lockScope(tx, scope.shopId, scope.installationGeneration), scope);
       const result =
-        await sql`UPDATE signing_keys SET state='revoked', revoked_at=clock_timestamp(), revocation_command_key=${commandKey}, revocation_reason=${reason}
+        await sql`UPDATE signing_keys SET state='revoked', revoked_at=clock_timestamp(), revocation_command_key=${commandKey}, revocation_reason=${reason},
+          last_valid_day=LEAST(last_valid_day, GREATEST(first_valid_day, floor(extract(epoch from clock_timestamp()) / 86400)::int + 3))
         WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND key_id=${keyId}
           AND authorization_generation=${scope.authorizationGeneration}::uuid AND state IN ('pending','active','retiring')`.execute(
           tx,
