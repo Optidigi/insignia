@@ -2,6 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { resolveRuntimeReleaseProfile } from '../../src/runtime-release-profile.js';
 
 describe('closed server release targets', () => {
+  it('binds the cart-line v3 target to its v3 Function source without changing the functions renew profile', () => {
+    const profile = resolveRuntimeReleaseProfile('native-cart-line-v3-aa3b6166');
+    expect(profile.activeVersionRef).toBe('1202999689217');
+    expect(profile.functionsSourceCommit).toBe('aa3b6166eb2b4679f27e1b7f128d914137ba8412');
+    expect(Object.isFrozen(profile)).toBe(true);
+    const prior = resolveRuntimeReleaseProfile('native-functions-renew-8fffc9de');
+    expect(prior.activeVersionRef).toBe('1202733449217');
+    expect(prior.functionsSourceCommit).toBe('8fffc9debc2bad4914aaa22dca82d8fdf272de5d');
+  });
   it('binds the functions renew target to its renewed Function source without changing earlier profiles', () => {
     const profile = resolveRuntimeReleaseProfile('native-functions-renew-8fffc9de');
     expect(profile.activeVersionRef).toBe('1202733449217');
