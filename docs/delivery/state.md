@@ -10,18 +10,30 @@ Updated 11 November 2026. The combined application and canonical agent documenta
 - Phase A created inactive candidate `1202999689217/native-cart-line-v3-aa3b6166` once (CLI 4.9.4, Node 24.21.0) from merge `aa3b6166eb2b4679f27e1b7f128d914137ba8412`; PR307 bound it. [Runtime README](../../deployment/m5-runtime/README.md#cart-line-v3-candidate-development-transition) has the pins and operator changes. Phase A packet: `~/.local/share/insignia/recovery-release-20261110/cart-line-v3-42932707400-1`.
 - Phase B (migration 53, web grant, runtime deployment, release, fresh admission) completed on 11 November 2026; the result is recorded below. Open carts that still held v2 carriers now fail at checkout and need Designer repair, as the owner accepted.
 
-### Cart-line v3 — deployed, natively unqualified
+### Cart-line v3 — deployed and natively verified
 
 - **Owner decisions, 10 November 2026** ([wire contract](../architecture/CART-LINE-V3.md), [spec §5](../architecture/implementation-plan.md#5-signed-cart-authorization-protocol)): one Ed25519 signature per acceptance/renewal over a header committing to a Merkle root of per-line records; every customized cart line carries its own `_insignia_line_v3`; quantity and totals unsigned; one acceptance per cart; ordered quantities are the truth. Every guarantee given up is listed as owner-accepted in the wire contract.
 - **Single cutover:** the server issues v3 only and both Functions accept v3 only (a leftover v2 line is an invalid carrier and goes to review). There is no protocol flag and no dual-format Function. Reconciliation keeps v2 verification permanently.
 - **Measured (pinned function-runner 9.2.2, local build):** 32 signed + 168 ordinary lines take 8.43M instructions (Transform) and 8.34M (Validation). Small carts take 2.68–2.77M, and 10 signed + 190 ordinary take 6.78M / 7.04M. Worst-case input is 97 kB and the Transform output bound is 11,312 B. Stack peak remains unmeasured. Native qualification (theme quantity change, removed size, altered carrier, test order binding the ordered quantity, renewal after a quantity edit) is outstanding; no checkout or order was placed in this transition.
 
-### Buyer acceptance performance — deployed, natively unmeasured
+- **Native verification, 11 November 2026 (rewrite-dev storefront, default profile cart emptied afterwards):**
+  - Theme quantity change: XS 1→4 kept $17.45 each, with no review notice. Removing the M line kept XS priced. Checkout accepted $69.80.
+  - Altering one character of a `_insignia_line_v3` carrier dropped the line to the $9.95 base price, and checkout blocked with the localized review message. Restoring the carrier restored $17.45.
+  - Lines carry only `_insignia_line_v3` (302 characters for a 2-line set), and there is no cart attribute.
+  - **Owner-approved test order** (standing approval for rewrite-dev test-gateway orders, 11 November 2026). Quote XS×1 + M×1; native XS→3 and M removed. Bogus Gateway, confirmation `4MR0PUDG8`, total 6035 (5235 + 800 test shipping), about `2026-11-11T09:35:27Z`. Read-only readback: `is_test`, USD, bound to its quote, one line at index 0 with quantity **3** at unit 1745, paid. **Protected facts are now orders 8, paid 7, refunds 2, bindings 7, lines 10**; future preflights must expect these counts.
+  - Not exercised natively: renewal after expiry (needs shop-local day D+3) and per-visitor limits under load.
+
+### Buyer acceptance performance — deployed and natively measured
 
 - **Owner decisions, 10 November 2026** ([spec §8.4](../architecture/implementation-plan.md#84-acceptance-and-cart-application)): proposals skip release/Function verification; acceptance reads providers once before the shop lock and re-checks only stored facts inside it (2 s `lock_timeout`, retryable 503); the 30-second release freshness is unchanged and kept warm by a bounded background refresh; Partner subscription reads are reused for 60 s; `GET /v1/config` reuses provider reads for 30 s with a per-shop miss budget and `Server-Timing`.
 - Buyer DB pool raised from 4 to 10 connections. Deployed headroom: `max_connections` 100 (3 superuser-reserved) on the dedicated rewrite PostgreSQL; web pool ceilings total about 36 (runtime 10, admin 10, buyer 10, purchase 4, notification 2), worker 4, plus inspector and verifier.
 - Local model with research-measured provider latencies: proposal 5.77 s → 0.65 s; acceptance within 30 s 2.56 s → 1.13 s; acceptance after 30 s 7.06 s → 1.08 s with a warm record (4.95 s if it must still collect). Native measurement on the deployed artifact is outstanding; client-side config/draft serialization is unchanged.
 - Background refresh cost: at most one collection (about eight provider reads and one `trusted_release_records` row) per shop per 25 s while active, at most six per isolated proposal, none when idle; per web process.
+
+- **Native measurement, 11 November 2026:**
+  - Quantities → Review: the proposal took 0.70 s, with config at 0.27 s (cached) and the draft save running alongside it. Before, it took 5.5–5.8 s.
+  - Add to cart → cart page: 2.4 s, against 4.0 s before (8.8 s after a pause).
+  - A Designer left open for 336 s kept showing the price with Add enabled. One click re-proposed and reached the cart in 5.8 s, including a synchronous release collection, because the background refresh stops 2 minutes after the last proposal.
 
 ### Deployed source and runtime
 
