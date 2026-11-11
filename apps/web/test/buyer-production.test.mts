@@ -15,19 +15,43 @@ type Input = Omit<ProductionBuyerInputs, 'core' | 'clock' | 'readVariantAvailabi
 import assert from 'node:assert/strict';
 import { createHash, createHmac, createPrivateKey, sign } from 'node:crypto';
 import { test } from 'node:test';
-import {
-  buildPublicConfig,
-  materialHash,
-  publicKeyFingerprint,
-  publicKeyFromSeed,
-  sealSigningSeed,
-} from '@insignia/application';
+import { buildPublicConfig, materialHash, publicKeyFingerprint, publicKeyFromSeed } from '@insignia/application';
 import { decodeLineCarrierV3, issueLineSetV3 } from '@insignia/cart-authorization';
 import { createProductionBuyerServices, type ProductionBuyerInputs } from '../src/server/buyer/production.ts';
 import { fixtureTransaction } from './admin/support/fixtures.mts';
 import { coreFixture, effectiveRevision, type MutableCore, record, required, text } from './http-fixtures.mts';
 
 const secret = 'synthetic-m7-private-capability';
+/** Stands in for the signer process: signs the exact bytes with a fixed synthetic seed. */
+const signerSeed = Buffer.alloc(32, 2);
+function testSigner(): ProductionBuyerInputs['signer'] {
+  const key = createPrivateKey({
+    key: Buffer.concat([Buffer.from('302e020100300506032b657004220420', 'hex'), signerSeed]),
+    format: 'der',
+    type: 'pkcs8',
+  });
+  const publicKey = publicKeyFromSeed(signerSeed);
+  return {
+    sign: async () => {
+      throw new Error('unused');
+    },
+    provision: async () => {
+      throw new Error('unused');
+    },
+    authorizationSigner: (_scope, beforeSign) => ({
+      async signWholeQuote(input) {
+        await beforeSign?.(input);
+        return {
+          keyId: input.keyId,
+          publicKeyFingerprint: publicKeyFingerprint(publicKey),
+          firstValidDay: 20000,
+          lastValidDay: 23000,
+          signature: sign(null, input.message, key),
+        };
+      },
+    }),
+  };
+}
 function signed() {
   const values = {
     shop: 'buyer.myshopify.com',
@@ -84,7 +108,7 @@ function fixture() {
       ARTWORK_PROXY_PATH_PREFIX: '/apps/insignia',
       INSIGNIA_SHOPIFY_APP_ID: '7',
     },
-    ring: { currentKeyId: 'synthetic', keys: { synthetic: Buffer.alloc(32, 1) } },
+    signer: testSigner(),
     entitlementPolicy: { policyVersion: 'synthetic', maxAgeMs: 300000, plans: [] },
     credentials: { acquire: async () => ({ kind: 'missing' }) },
     readSubscription: async () => {
@@ -151,8 +175,7 @@ test('valid Lean acceptance reads provider facts once before its lock and reject
       authorizationGeneration: '11111111-1111-4111-8111-111111111111',
       authorizationEpoch: 1,
     };
-    const seed = Buffer.alloc(32, 2),
-      publicKey = publicKeyFromSeed(seed);
+    const publicKey = publicKeyFromSeed(signerSeed);
     const key: Awaited<ReturnType<MutableCore['signingKeys']['list']>>[number] = {
       ...keyScope,
       id: 7,
@@ -162,8 +185,8 @@ test('valid Lean acceptance reads provider facts once before its lock and reject
       publicKeyFingerprint: publicKeyFingerprint(publicKey),
       firstDay: 20000,
       lastDay: 23000,
-      privateEnvelope: sealSigningSeed(input.ring, keyScope, 7, seed),
-      wrappingKeyId: input.ring.currentKeyId,
+      privateEnvelope: null,
+      wrappingKeyId: 'synthetic-signer-wrap',
     };
     input.core.signingKeys.getActiveScope = async () => keyScope;
     input.core.signingKeys.list = async () => [key];

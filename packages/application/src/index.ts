@@ -10,6 +10,7 @@ export * from './keys/crypto.js';
 export * from './keys/lifecycle.js';
 export * from './keys/public-config.js';
 export * from './keys/readiness.js';
+export * from './keys/signer-protocol.js';
 export * from './keys/trusted-release.js';
 export * from './merchant-preview/assets.js';
 export * from './pricing/catalog-context.js';

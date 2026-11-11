@@ -11,7 +11,6 @@ export interface SigningOwnerConfiguration {
     authorizationGeneration: string;
     authorizationEpoch: number;
   };
-  ring: { currentKeyId: string; keys: Readonly<Record<string, Buffer>> };
 }
 export interface SigningOwnerStatus {
   version: 'm5-signing-owner-action-v1';
@@ -131,11 +130,11 @@ async function persist(directory: string, name: string, value: unknown) {
  * Tokens remain only in the original request/SDK invocation's memory. */
 export function createSigningOwnerAction(
   config: SigningOwnerConfiguration,
-  ports: Omit<SigningProvisionPorts, 'journal' | 'ring'>,
+  ports: Omit<SigningProvisionPorts, 'journal'>,
 ): SigningOwnerAction {
   const releaseProfile = resolveRuntimeReleaseProfile(ports.releaseProfile);
   const runtimeIdentity = qualifySigningRuntimeIdentity(ports.runtimeIdentity);
-  assert.deepEqual(Object.keys(config).sort(), ['binding', 'directory', 'plan', 'ring']);
+  assert.deepEqual(Object.keys(config).sort(), ['binding', 'directory', 'plan']);
   const plan = qualifySigningProvisionPlan(config.plan);
   assert.deepEqual(Object.keys(config.binding).sort(), [...bindingFields].sort());
   const binding = Object.freeze({ ...config.binding });
@@ -146,17 +145,6 @@ export function createSigningOwnerAction(
   assert.match(binding.installationGeneration, /^[1-9][0-9]*$/);
   assert.match(binding.authorizationGeneration, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
   assert.ok(Number.isSafeInteger(binding.authorizationEpoch) && binding.authorizationEpoch >= 0);
-  assert.deepEqual(Object.keys(config.ring).sort(), ['currentKeyId', 'keys']);
-  assert.ok(Object.keys(config.ring.keys).length > 0 && Object.keys(config.ring.keys).length <= 8);
-  for (const [id, key] of Object.entries(config.ring.keys)) {
-    assert.match(id, /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,63}$/);
-    assert.ok(Buffer.isBuffer(key) && key.length === 32);
-  }
-  assert.ok(Object.hasOwn(config.ring.keys, config.ring.currentKeyId));
-  const ring = {
-    currentKeyId: config.ring.currentKeyId,
-    keys: Object.fromEntries(Object.entries(config.ring.keys).map(([id, key]) => [id, Buffer.from(key)])),
-  };
   const directory = config.directory;
   const expectedReceipt = {
     version: 'm5-signing-owner-binding-v1',
@@ -306,12 +294,11 @@ export function createSigningOwnerAction(
     };
     // The durable run remains occupied after disconnect, restart, failure or expiry.
     // No recovered status can dispatch another attempt.
-    execution = provisionSigningKey(plan, idToken, { ...ports, core, identity, ring, journal, now })
+    execution = provisionSigningKey(plan, idToken, { ...ports, core, identity, journal, now })
       .then((result) => persist(directory, 'owner-result.json', completedReply(result, plan.keyId)))
       .catch(() => {})
       .finally(() => {
         running = false;
-        for (const key of Object.values(ring.keys)) key.fill(0);
       });
     return reply('PENDING');
   }

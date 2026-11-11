@@ -1,24 +1,20 @@
 import assert from 'node:assert/strict';
 import { closeSync, constants, fstatSync, openSync, readFileSync } from 'node:fs';
-import { loadSigningKeyRing } from '../signing-key-ring.ts';
 import type { SigningOwnerConfiguration } from './signing-owner-action.js';
 
 const PLAN_PATH = '/run/insignia/signing-owner-plan.json';
 const RUN_DIRECTORY = '/var/lib/insignia/signing-owner';
 
 /** Only private owner metadata. It cannot supply release observations or SDK ports. */
-export function parseSigningOwnerConfiguration(metadata: unknown, env: NodeJS.ProcessEnv): SigningOwnerConfiguration {
+export function parseSigningOwnerConfiguration(metadata: unknown, _env?: NodeJS.ProcessEnv): SigningOwnerConfiguration {
   assert.ok(metadata && typeof metadata === 'object' && !Array.isArray(metadata));
   const input = metadata as Record<string, unknown>;
   assert.deepEqual(Object.keys(input).sort(), ['binding', 'plan', 'version']);
   assert.equal(input.version, 'm5-signing-owner-plan-v1');
-  // The web runtime's signing wrapping-key ring; no ID/online token is persisted.
-  const ring = loadSigningKeyRing(env);
   return {
     directory: `${RUN_DIRECTORY}/attempt`,
     plan: input.plan as SigningOwnerConfiguration['plan'],
     binding: input.binding as SigningOwnerConfiguration['binding'],
-    ring,
   };
 }
 

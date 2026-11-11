@@ -31,7 +31,7 @@ type KeyRow = {
   key_id: number;
   public_key: Buffer;
   public_key_fingerprint: string;
-  private_envelope: unknown | null;
+  private_envelope?: unknown | null;
   wrapping_key_id: string | null;
   state: StoredSigningKey['state'];
   first_valid_day: number;
@@ -49,7 +49,7 @@ function mapKey(row: KeyRow): StoredSigningKey {
     id: row.key_id,
     publicKey: row.public_key,
     publicKeyFingerprint: row.public_key_fingerprint,
-    privateEnvelope: row.private_envelope,
+    privateEnvelope: row.private_envelope ?? null,
     wrappingKeyId: row.wrapping_key_id,
     state: row.state,
     firstDay: row.first_valid_day,
@@ -59,26 +59,39 @@ function mapKey(row: KeyRow): StoredSigningKey {
     revokedAt: row.revoked_at,
   };
 }
+type ScopeRow = {
+  shop_id: string;
+  installation_generation: string;
+  authorization_generation: string;
+  authorization_epoch: string;
+};
+function mapScope(row: ScopeRow | undefined): Scope | null {
+  return row
+    ? {
+        shopId: row.shop_id,
+        installationGeneration: row.installation_generation,
+        authorizationGeneration: row.authorization_generation,
+        authorizationEpoch: Number(row.authorization_epoch),
+      }
+    : null;
+}
+/** Active scope through the definer function (migration 58); `lock` holds shop and installation rows. */
+async function readScope(
+  executor: Kysely<Database> | Transaction<Database>,
+  shopId: string,
+  generation: string,
+  lock: boolean,
+): Promise<Scope | null> {
+  const result =
+    await sql<ScopeRow>`SELECT * FROM public.signing_key_scope(${shopId}, ${generation}::bigint, ${lock})`.execute(
+      executor,
+    );
+  return mapScope(result.rows[0]);
+}
 async function lockScope(tx: Transaction<Database>, shopId: string, generation: string): Promise<Scope> {
-  const result = await sql<{
-    shop_id: string;
-    installation_generation: string;
-    authorization_generation: string;
-    authorization_epoch: string;
-  }>`
-    SELECT s.shop_id, s.current_generation::text AS installation_generation,
-      i.authorization_generation::text AS authorization_generation, i.authorization_epoch::text AS authorization_epoch
-    FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation
-    WHERE s.shop_id=${shopId} AND s.current_generation=${generation}::bigint AND i.deactivated_at IS NULL
-      AND s.shopify_shop_id IS NOT NULL FOR UPDATE OF s, i`.execute(tx);
-  const row = result.rows[0];
-  if (!row) throw new Error('Inactive signing installation');
-  return {
-    shopId: row.shop_id,
-    installationGeneration: row.installation_generation,
-    authorizationGeneration: row.authorization_generation,
-    authorizationEpoch: Number(row.authorization_epoch),
-  };
+  const scope = await readScope(tx, shopId, generation, true);
+  if (!scope) throw new Error('Inactive signing installation');
+  return scope;
 }
 function sameScope(a: Scope, b: Scope): void {
   if (
@@ -95,36 +108,33 @@ function checkedId(keyId: number): void {
 
 /** All writes hold the shop and active installation locks until commit. */
 export class PgSigningKeyRepository {
-  constructor(private readonly database: Kysely<Database>) {}
+  /**
+   * `privateHalves` is for the signer process only: the web runtime has no SELECT on
+   * `private_envelope`, so by default the column is never read and `privateEnvelope` is null.
+   */
+  constructor(
+    private readonly database: Kysely<Database>,
+    private readonly options: { privateHalves?: boolean } = {},
+  ) {}
 
   async getActiveScope(shopId: string, installationGeneration: string): Promise<Scope | null> {
-    const row = await sql<{
-      shop_id: string;
-      installation_generation: string;
-      authorization_generation: string;
-      authorization_epoch: string;
-    }>`
-      SELECT s.shop_id, s.current_generation::text AS installation_generation,
-        i.authorization_generation::text AS authorization_generation, i.authorization_epoch::text AS authorization_epoch
-      FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation
-      WHERE s.shop_id=${shopId} AND s.current_generation=${installationGeneration}::bigint AND i.deactivated_at IS NULL
-        AND s.shopify_shop_id IS NOT NULL`.execute(this.database);
-    const value = row.rows[0];
-    return value
-      ? {
-          shopId: value.shop_id,
-          installationGeneration: value.installation_generation,
-          authorizationGeneration: value.authorization_generation,
-          authorizationEpoch: Number(value.authorization_epoch),
-        }
-      : null;
+    return readScope(this.database, shopId, installationGeneration, false);
+  }
+
+  private columns() {
+    return sql.raw(
+      `shop_id, installation_generation, authorization_generation, key_id, public_key, public_key_fingerprint,
+      wrapping_key_id, state, first_valid_day, last_valid_day, created_at, retired_at, revoked_at${
+        this.options.privateHalves ? ', private_envelope' : ''
+      }`,
+    );
   }
 
   async list(scope: Scope): Promise<StoredSigningKey[]> {
     const active = await this.getActiveScope(scope.shopId, scope.installationGeneration);
     if (!active) throw new Error('Inactive signing installation');
     sameScope(active, scope);
-    const result = await sql<KeyRow>`SELECT * FROM signing_keys WHERE shop_id=${scope.shopId}
+    const result = await sql<KeyRow>`SELECT ${this.columns()} FROM signing_keys WHERE shop_id=${scope.shopId}
       AND installation_generation=${scope.installationGeneration}::bigint AND authorization_generation=${scope.authorizationGeneration}::uuid
       ORDER BY key_id`.execute(this.database);
     return result.rows.map(mapKey);
@@ -177,12 +187,12 @@ export class PgSigningKeyRepository {
     await this.database.transaction().execute(async (tx) => {
       sameScope(await lockScope(tx, scope.shopId, scope.installationGeneration), scope);
       const old =
-        await sql<KeyRow>`SELECT * FROM signing_keys WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND state='active' FOR UPDATE`.execute(
+        await sql<KeyRow>`SELECT ${this.columns()} FROM signing_keys WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND state='active' FOR UPDATE`.execute(
           tx,
         );
       if (old.rows[0]?.key_id === keyId) return;
       const target =
-        await sql<KeyRow>`SELECT * FROM signing_keys WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND key_id=${keyId} FOR UPDATE`.execute(
+        await sql<KeyRow>`SELECT ${this.columns()} FROM signing_keys WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND key_id=${keyId} FOR UPDATE`.execute(
           tx,
         );
       const key = target.rows[0];
@@ -190,7 +200,7 @@ export class PgSigningKeyRepository {
         !key ||
         key.authorization_generation !== scope.authorizationGeneration ||
         key.state !== 'pending' ||
-        !key.private_envelope
+        !key.wrapping_key_id
       )
         throw new Error('Pending signing key required');
       if (beforeWrite && !beforeWrite()) throw new Error('Signing write authority expired');

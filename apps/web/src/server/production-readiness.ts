@@ -4,7 +4,6 @@ import {
   type FunctionArtifactReadinessPorts,
   type QuoteReadinessObservation,
   SigningKeyLifecycle,
-  type SigningKeyRing,
   type SigningKeyStore,
 } from '@insignia/application';
 import type { DurableCore } from '@insignia/database';
@@ -42,7 +41,6 @@ export function createProductionQuoteReadiness(input: {
       } | null>;
     };
   };
-  ring: SigningKeyRing;
   selectedKeyId: number;
   appId: string;
   /** Only the app key: expected Function queries come from the trusted release record. */
@@ -55,7 +53,7 @@ export function createProductionQuoteReadiness(input: {
   observe(input: { quote: QuoteReadinessTarget }): Promise<QuoteReadinessObservation>;
   assertReady(input: { quote: QuoteReadinessTarget }): Promise<void>;
 } {
-  const keys = new SigningKeyLifecycle(input.core.signingKeys, input.ring);
+  const keys = new SigningKeyLifecycle(input.core.signingKeys);
   const admin = createPublicationAdminAdapter({ transport: input.transport });
   const now = input.clock ?? (() => new Date());
   const functions = createFunctionOwnershipReconciler({ transport: input.transport, clock: now });
