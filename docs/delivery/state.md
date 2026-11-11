@@ -2,7 +2,7 @@
 
 ## Active assignment
 
-Updated 11 November 2026. Insignia now runs only on `app.insigniacustomizer.com` (Active `1203782746113`, web/worker/signer main `fb30b947`, verifier main `add83af7`, schema 58). Signing keys no longer expire routinely; rewrite-dev signs with non-expiring key 3 through a separate signer process, and retired keys hold no private half. The combined application and canonical agent documentation are integrated. The existing host alias `prod` serves the allocated rewrite-dev app/store. The cart-line v3 source is deployed there, its candidate is the released Shopify Active version (the single v3 cutover), and both were independently read back. On 11 November 2026 a web-only update deployed main `721bc6b6`: the 5-minute release refresh and the Cloudflare-only origin lock. No production resource migration, new scopes/markets, database reset, history erasure, protected VAT retry, checkout/order/payment or consumed sender/alert drill was performed. The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
+Updated 11 November 2026. Insignia now runs only on `app.insigniacustomizer.com` (Active `1203782746113`, web/signer main `fb30b947`, worker main `f4ae1f9e`, verifier main `add83af7`, schema 58). Signing keys no longer expire routinely; rewrite-dev signs with non-expiring key 3 through a separate signer process, and retired keys hold no private half. The combined application and canonical agent documentation are integrated. The existing host alias `prod` serves the allocated rewrite-dev app/store. The cart-line v3 source is deployed there, its candidate is the released Shopify Active version (the single v3 cutover), and both were independently read back. On 11 November 2026 a web-only update deployed main `721bc6b6`: the 5-minute release refresh and the Cloudflare-only origin lock. No production resource migration, new scopes/markets, database reset, history erasure, protected VAT retry, checkout/order/payment or consumed sender/alert drill was performed. The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
 
 ### Separate signer and retired-key scrub — deployed 11 November 2026
 
@@ -55,7 +55,7 @@ Updated 11 November 2026. Insignia now runs only on `app.insigniacustomizer.com`
 - That acceptance took 1547 ms end to end.
 - The added cost over in-process signing is the socket round trip, about 1 ms.
 
-**Known follow-up.** The worker's first destruction pass ran (0 keys due), but its success log used an event missing from the logger allow-list, so it reported `SIGNING_KEY_DESTRUCTION_UNAVAILABLE`. #328 fixes the log; destruction itself is unaffected.
+**Destruction log fix (#328).** The worker's first destruction pass ran (0 keys due), but its success log used an event missing from the logger allow-list, so it reported `SIGNING_KEY_DESTRUCTION_UNAVAILABLE`. Destruction itself was unaffected. #328 is merged (main `f4ae1f9e`). The worker-only image `sha256:7fcf6703…` was deployed at `22:23:58Z` and now logs `signing_key_destruction {count: 0}`. The signer keeps image `sha256:b5cdb5e8…`, since its code did not change.
 
 **Customer artwork email: one owner-approved test, consumed.**
 - Sent at `2026-11-11T22:02:08Z` through the customer artwork email sender (`createCloudflareCustomerArtworkSender`), with the development profile, from `noreply@insigniacustomizer.com` to `admin@optidigi.nl`.
