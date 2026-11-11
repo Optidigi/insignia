@@ -92,6 +92,7 @@ const BUYER_FAILURES = [
   'ProviderReadUnavailable',
   'ReleaseEvidenceUnavailable',
   'EntitlementObservationUnavailable',
+  'SignerUnavailable',
   'TypeError',
   'UnexpectedFailure',
 ] as const;

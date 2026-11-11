@@ -56,10 +56,15 @@ function requireScope(actual: KeyScope | null, expected: KeyScope): void {
 }
 
 export class SigningKeyLifecycle {
+  /** The ring (wrapping keys) exists only in the signer process; public operations need none. */
   constructor(
     private readonly store: SigningKeyStore,
-    private readonly ring: SigningKeyRing,
+    private readonly wrappingRing?: SigningKeyRing,
   ) {}
+  private get ring(): SigningKeyRing {
+    if (!this.wrappingRing?.currentKeyId) throw new Error('Signing wrapping keys are held only by the signer');
+    return this.wrappingRing;
+  }
 
   /** The seed exists only in caller memory and the authenticated envelope; durable storage receives ciphertext. */
   async createPending(input: {

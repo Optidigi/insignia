@@ -20,7 +20,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable signing key lifecycle
           shopifyShopId: (BigInt(`0x${shopId.replaceAll('-', '').slice(0, 15)}`) + 3n).toString(),
         });
       });
-      const store = new PgSigningKeyRepository(db);
+      const store = new PgSigningKeyRepository(db, { privateHalves: true });
       const lifecycle = new SigningKeyLifecycle(store, ring);
       const scope = await store.getActiveScope(shopId, '1');
       if (!scope) throw new Error('Test installation missing');
@@ -83,7 +83,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable signing key lifecycle
           shopifyShopId: (BigInt(`0x${shopId.replaceAll('-', '').slice(0, 15)}`) + 5n).toString(),
         });
       });
-      const store = new PgSigningKeyRepository(db);
+      const store = new PgSigningKeyRepository(db, { privateHalves: true });
       const lifecycle = new SigningKeyLifecycle(store, ring);
       const scope = await store.getActiveScope(shopId, '1');
       if (!scope) throw new Error('Test installation missing');
@@ -162,7 +162,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable signing key lifecycle
           shopifyShopId: (BigInt(`0x${shopId.replaceAll('-', '').slice(0, 15)}`) + 1n).toString(),
         });
       });
-      const store = new PgSigningKeyRepository(db);
+      const store = new PgSigningKeyRepository(db, { privateHalves: true });
       const lifecycle = new SigningKeyLifecycle(store, ring);
       const scope = await store.getActiveScope(shopId, '1');
       if (!scope) throw new Error('Test installation missing');
@@ -248,7 +248,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable signing key lifecycle
           shopifyShopId: (BigInt(`0x${shopId.replaceAll('-', '').slice(0, 15)}`) + 1n).toString(),
         });
       });
-      const store = new PgSigningKeyRepository(db);
+      const store = new PgSigningKeyRepository(db, { privateHalves: true });
       const ring = { currentKeyId: 'test-wrap', keys: { 'test-wrap': randomBytes(32) } };
       const lifecycle = new SigningKeyLifecycle(store, ring);
       const scope = await store.getActiveScope(shopId, '1');
@@ -278,7 +278,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable signing key lifecycle
           shopifyShopId: (BigInt(`0x${shopId.replaceAll('-', '').slice(0, 15)}`) + 1n).toString(),
         });
       });
-      const store = new PgSigningKeyRepository(db);
+      const store = new PgSigningKeyRepository(db, { privateHalves: true });
       const scope = await store.getActiveScope(shopId, '1');
       if (!scope) throw new Error('Test installation missing');
       const lifecycle = new SigningKeyLifecycle(store, {
@@ -306,7 +306,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable signing key lifecycle
           shopifyShopId: (BigInt(`0x${shopId.replaceAll('-', '').slice(0, 15)}`) + 1n).toString(),
         }),
       );
-      const store = new PgSigningKeyRepository(db);
+      const store = new PgSigningKeyRepository(db, { privateHalves: true });
       const lifecycle = new SigningKeyLifecycle(store, {
         currentKeyId: 'test-wrap',
         keys: { 'test-wrap': randomBytes(32) },

@@ -42,6 +42,7 @@ import { createAutomaticUninstallEnrollment, inspectArtworkPrivately } from '@in
 import { Pool } from 'pg';
 import { loadCredentialKeys } from '../../../../worker/src/config.ts';
 import { createMerchantConfigService } from '../merchant-config.js';
+import { createSignerClient, type SignerClient } from '../signer-client.ts';
 import { type AdminInstallation, AdminInstallationReconciliationError, createAdminAuthenticator } from './auth.js';
 import { createMerchantBillingReader } from './billing.js';
 import { type CatalogListInput, filteredCatalogPage } from './catalog-query.js';
@@ -124,6 +125,8 @@ export function createProductionAdminServices(
   activationReadiness?: Omit<ActivationReadinessPort, 'observeProjection'>,
   signingOwnerConfiguration?: SigningOwnerConfiguration,
   releaseCollector?: ReleaseVerificationCollector,
+  // The separate signer process; defaults to its fixed private socket.
+  signerClient: Pick<SignerClient, 'provision'> = createSignerClient(),
 ): AdminServices {
   const releaseProfile = resolveRuntimeReleaseProfile(env.INSIGNIA_RELEASE_PROFILE);
   const databaseUrl = required(env, 'DATABASE_URL');
@@ -568,6 +571,7 @@ export function createProductionAdminServices(
         core,
         identity: shopify,
         runtimeIdentity: { appClientId: apiKey, appId: appId!, appOrigin },
+        signer: signerClient,
         now: () => new Date(),
         bindProvider(
           online: OnlineStaffGrant,
@@ -872,7 +876,6 @@ export function createProductionAdminServices(
         signingKeyPresent: keys.some(
           (key) =>
             ['pending', 'active'].includes(key.state) &&
-            key.privateEnvelope !== null &&
             key.wrappingKeyId !== null &&
             key.firstDay <= merchantDay &&
             key.lastDay >= merchantDay,

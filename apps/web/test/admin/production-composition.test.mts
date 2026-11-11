@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { createHash, createHmac, generateKeyPairSync, randomBytes, randomUUID } from 'node:crypto';
+import { createHash, createHmac, generateKeyPairSync, randomUUID } from 'node:crypto';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { createDurableCore, sha256CanonicalJson } from '@insignia/database';
+import { createDurableCore, createSignerKeyStore, sha256CanonicalJson } from '@insignia/database';
 import { abstractFetch, setAbstractFetchFunc } from '@shopify/shopify-api/runtime';
 import { build } from 'esbuild';
 import { Pool } from 'pg';
@@ -17,8 +17,10 @@ import { qualifyReleaseAppendInput } from '../../../../scripts/release/append.mt
 import { collectFreshTrustedRelease } from '../../../../scripts/release/collector.mts';
 import { fixture as collectorFixture } from '../../../../scripts/release/collector-fixture.mts';
 import { createReleaseVerificationServer } from '../../../../scripts/release/server.mts';
+import { createSignerServer } from '../../../worker/dist/signer/server.js';
 import { handleAdminRequest } from '../../src/server/admin/http.ts';
 import { createReleaseVerificationClient } from '../../src/server/admin/release-verification.ts';
+import { createSignerClient } from '../../src/server/signer-client.ts';
 import { isolatedDatabase } from '../support/isolated-database.mts';
 import { uninstallSubscriptionFixture } from '../support/uninstall-subscription.mts';
 import { record as object, required, text } from './support/fixtures.mts';
@@ -140,7 +142,10 @@ for (const releaseMode of [
         | import('../../src/server/admin/signing-owner-action.ts').SigningOwnerConfiguration
         | undefined,
       ownerDirectory: string | undefined,
-      previewDirectory: string | undefined;
+      previewDirectory: string | undefined,
+      signerSocket: string | undefined,
+      signerStore: ReturnType<typeof createSignerKeyStore> | undefined,
+      closeSigner: (() => Promise<void>) | undefined;
     let collected = 0;
     const requestScope = new AsyncLocalStorage<number>();
     const collectionOwners = new Map<string, number>();
@@ -292,6 +297,8 @@ for (const releaseMode of [
         await pool.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO ${role}`);
         await pool.query(`GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO ${role}`);
         await pool.query(`REVOKE INSERT,UPDATE,DELETE ON trusted_release_records FROM ${role}`);
+        // Migration 58 grants the signing scope function to the deployed web role.
+        await pool.query(`GRANT EXECUTE ON FUNCTION signing_key_scope(text, bigint, boolean) TO ${role}`);
         runtimePool = new Pool({ connectionString: fixtureDatabase, options: `-c role=${role}` });
         observeTransactions(runtimePool);
         if (releaseMode.startsWith('demand-')) {
@@ -438,6 +445,15 @@ for (const releaseMode of [
           };
           if (signing) {
             ownerDirectory = await mkdtemp(join(tmpdir(), 'm5-signing-composition-'));
+            // Provisioning goes through a real signer process boundary on a private socket.
+            signerStore = createSignerKeyStore(new Pool({ connectionString: fixtureDatabase, max: 2 }));
+            const signerServer = createSignerServer({
+              store: signerStore.store,
+              ring: { currentKeyId: 'synthetic-wrap', keys: { 'synthetic-wrap': Buffer.alloc(32, 9) } },
+            });
+            signerSocket = join(ownerDirectory, 'signer.sock');
+            await new Promise<void>((resolve) => signerServer.listen(required(signerSocket), resolve));
+            closeSigner = () => new Promise<void>((resolve) => signerServer.close(() => resolve()));
             const day = Math.floor(Date.now() / 86400000);
             signingConfiguration = {
               directory: join(ownerDirectory, 'attempt'),
@@ -451,7 +467,6 @@ for (const releaseMode of [
                 authorizationGeneration: requestBinding.authorizationGeneration,
                 authorizationEpoch: 0,
               },
-              ring: { currentKeyId: 'synthetic-wrap', keys: { 'synthetic-wrap': randomBytes(32) } },
             };
           }
         }
@@ -743,6 +758,7 @@ for (const releaseMode of [
           undefined,
           signingConfiguration,
           verificationClient,
+          createSignerClient(signerSocket ? { socketPath: signerSocket } : {}),
         );
       let services = compose();
       const actor = await services.authenticate(
@@ -1037,6 +1053,8 @@ for (const releaseMode of [
       await writerPool?.end();
       if (verificationServer) await new Promise((resolve) => required(verificationServer).close(resolve));
       if (socketDirectory) await rm(socketDirectory, { recursive: true, force: true });
+      await closeSigner?.();
+      await signerStore?.close();
       if (ownerDirectory) await rm(ownerDirectory, { recursive: true, force: true });
       if (previewDirectory) await rm(previewDirectory, { recursive: true, force: true });
       await pool.query(`DROP OWNED BY ${role}_writer`).catch(() => {});

@@ -58,7 +58,6 @@ for (const inactive of [false, true]) {
     });
     const read = createProductionQuoteReadiness({
       core,
-      ring: { currentKeyId: 'synthetic', keys: { synthetic: Buffer.alloc(32, 1) } },
       selectedKeyId: 7,
       appId: '7',
       expectedFunctions: { appKey: 'synthetic-app' },
@@ -182,7 +181,6 @@ function releasePreparationFixture(
         ],
       },
     }),
-    ring: { currentKeyId: 'synthetic', keys: { synthetic: Buffer.alloc(32, 1) } },
     selectedKeyId: 7,
     appId: '7',
     expectedFunctions: { appKey: 'synthetic-app' },
@@ -477,7 +475,6 @@ for (const live of ['unobservable', 'release-query', 'other-query', 'missing-bui
           getEffective: async () => effectiveRevision(),
         },
       }),
-      ring: { currentKeyId: 'synthetic', keys: { synthetic: Buffer.alloc(32, 1) } },
       selectedKeyId: 7,
       appId: '7',
       expectedFunctions: { appKey: 'synthetic-app' },

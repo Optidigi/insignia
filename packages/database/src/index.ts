@@ -59,3 +59,4 @@ export {
   type UsageLedgerScope,
   UsageLedgerStateError,
 } from './repositories/usage-ledger.js';
+export { createSignerKeyStore } from './signer-store.js';

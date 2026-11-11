@@ -33,7 +33,6 @@ async function bound() {
     binding,
     plan: f.plan,
     directory: join(f.directory, 'owner-attempt'),
-    ring: f.ring,
   };
   return { ...f, config, actor, action: createSigningOwnerAction(config, f.ports) };
 }
@@ -113,28 +112,24 @@ test('a foreign runtime app cannot use the private signing capability or reserve
   }
 });
 
-test('original dotted current and previous wrapping-key IDs remain usable through signing lifecycle', async () => {
+test('the owner action provisions through the signer port and never holds a wrapping key', async () => {
   const f = await bound();
   try {
-    f.config.ring = {
-      currentKeyId: 'synthetic.wrap.current',
-      keys: { 'synthetic.wrap.current': Buffer.alloc(32, 7), 'synthetic.wrap.previous': Buffer.alloc(32, 8) },
-    };
-    f.action = createSigningOwnerAction(f.config, f.ports);
+    assert.equal('ring' in f.config, false);
+    assert.equal('ring' in f.ports, false);
     assert.equal((await f.action.start(f.actor, 'synthetic-token')).state, 'PENDING');
     assert.equal((await settled(f)).state, 'PROVISIONED');
     assert.equal(f.rows.length, 1);
     assert.equal(required(f.rows[0]).state, 'active');
-    assert.deepEqual(f.config.ring.keys['synthetic.wrap.current'], Buffer.alloc(32, 7));
-    assert.deepEqual(f.config.ring.keys['synthetic.wrap.previous'], Buffer.alloc(32, 8));
-    for (const id of ['.invalid', 'x'.repeat(65)]) {
-      assert.throws(() =>
-        createSigningOwnerAction(
-          { ...f.config, ring: { currentKeyId: id, keys: { [id]: Buffer.alloc(32, 1) } } },
-          f.ports,
-        ),
-      );
-    }
+    assert.deepEqual(f.provisioned, [
+      { version: 1, scope: f.scope, keyId: f.plan.keyId, firstDay: f.plan.firstDay, lastDay: f.plan.lastDay },
+    ]);
+    assert.throws(() =>
+      createSigningOwnerAction(
+        { ...f.config, ring: { currentKeyId: 'x', keys: { x: Buffer.alloc(32, 1) } } } as SigningOwnerConfiguration,
+        f.ports,
+      ),
+    );
   } finally {
     await f.close();
   }
@@ -347,7 +342,6 @@ test('an unbound installation never reserves or invokes signing', async () => {
         authorizationGeneration: '11111111-1111-4111-8111-111111111111',
         authorizationEpoch: 0,
       },
-      ring: { currentKeyId: 'test', keys: { test: Buffer.alloc(32, 1) } },
     };
     const action = createSigningOwnerAction(config, {
       ...fallback.ports,

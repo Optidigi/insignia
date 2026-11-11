@@ -1,5 +1,4 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { createPrivateKey } from 'node:crypto';
 import {
   type ArtworkScope,
   createArtworkUsabilityPort,
@@ -8,10 +7,8 @@ import {
   type KeyScope,
   localDay,
   type QuoteAuthorityPorts,
-  SigningKeyLifecycle,
-  type SigningKeyRing,
 } from '@insignia/application';
-import { currencyExponent, InjectedEd25519Signer } from '@insignia/cart-authorization';
+import { currencyExponent } from '@insignia/cart-authorization';
 import type { DurableCore } from '@insignia/database';
 import { parseMinor } from '@insignia/domain';
 import {
@@ -33,6 +30,7 @@ import { createArtworkGuestAuthority } from '../artwork/guest.ts';
 import { createFrozenPreviewReader } from '../merchant-preview/read.ts';
 import { createProductionQuoteReadiness } from '../production-readiness.ts';
 import { createQuoteAuthorityPorts } from '../quote-composition.ts';
+import type { SignerClient } from '../signer-client.ts';
 import { proposalStage } from './diagnostics.ts';
 import { createLeanPrimaryMarketAdmission, parseEurNetherlandsQualification } from './lean-primary-market.ts';
 import { createBuyerServices } from './service.ts';
@@ -51,7 +49,8 @@ export type BuyerVariantAvailability = Scope & {
 export type ProductionBuyerInputs = {
   core: DurableCore;
   env: NodeJS.ProcessEnv;
-  ring: SigningKeyRing;
+  /** The separate signer process; web holds no wrapping key and reads no private envelope. */
+  signer: SignerClient;
   entitlementPolicy: EntitlementPolicyConfig;
   /** Server-owned alternative for qualified deployments; default reads the current primary Market. */
   leanContext?: QuoteAuthorityPorts['leanContext'];
@@ -93,8 +92,7 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
     appOrigin.password ||
     !/^[1-9][0-9]*$/.test(appId) ||
     !input.core ||
-    !input.ring?.currentKeyId ||
-    input.ring.keys?.[input.ring.currentKeyId]?.byteLength !== 32 ||
+    typeof input.signer?.authorizationSigner !== 'function' ||
     !input.entitlementPolicy?.policyVersion ||
     !Array.isArray(input.entitlementPolicy.plans) ||
     typeof input.credentials?.acquire !== 'function' ||
@@ -112,7 +110,6 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
   const eurQualification = parseEurNetherlandsQualification(input.env.INSIGNIA_EUR_NL_QUALIFICATION);
   const fetchImpl: typeof fetch = (target, options) =>
     (input.fetchImpl ?? fetch)(target, { ...options, redirect: 'error' });
-  const keys = new SigningKeyLifecycle(input.core.signingKeys, input.ring);
   const guest = createArtworkGuestAuthority({
     core: input.core,
     secret,
@@ -236,41 +233,25 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
     const compose = () =>
       (pending ??= proposalStage('native-configuration', async () => {
         const { keyScope, selected } = await selection(scope);
-        const signer = new InjectedEd25519Signer({
-          async getSigningKey(statement) {
-            if (
-              statement.keyId !== selected.id ||
-              statement.generationHex !== keyScope.authorizationGeneration.replaceAll('-', '') ||
-              statement.epoch !== keyScope.authorizationEpoch
-            )
-              throw new Error('Buyer signing statement identity mismatch');
-            const current = await selection(scope);
-            if (
-              current.selected.id !== selected.id ||
-              current.keyScope.authorizationGeneration !== keyScope.authorizationGeneration ||
-              current.keyScope.authorizationEpoch !== keyScope.authorizationEpoch
-            )
-              throw new Error('Buyer signing key changed');
-            const seed = await keys.openActiveSeed(keyScope, selected.id);
-            const bytes = Buffer.concat([Buffer.from('302e020100300506032b657004220420', 'hex'), seed]);
-            try {
-              return {
-                key: createPrivateKey({ key: bytes, format: 'der', type: 'pkcs8' }),
-                keyId: selected.id,
-                publicKeyFingerprint: current.selected.publicKeyFingerprint,
-                revoked: false,
-                firstValidDay: current.selected.firstDay,
-                lastValidDay: current.selected.lastDay,
-              };
-            } finally {
-              seed.fill(0);
-              bytes.fill(0);
-            }
-          },
+        // The signer process checks the header, the active key and its window, and signs; web only
+        // re-confirms its own selection right before the request.
+        const signer = input.signer.authorizationSigner(keyScope, async (statement) => {
+          if (
+            statement.keyId !== selected.id ||
+            statement.generationHex !== keyScope.authorizationGeneration.replaceAll('-', '') ||
+            statement.epoch !== keyScope.authorizationEpoch
+          )
+            throw new Error('Buyer signing statement identity mismatch');
+          const current = await selection(scope);
+          if (
+            current.selected.id !== selected.id ||
+            current.keyScope.authorizationGeneration !== keyScope.authorizationGeneration ||
+            current.keyScope.authorizationEpoch !== keyScope.authorizationEpoch
+          )
+            throw new Error('Buyer signing key changed');
         });
         const readiness = createProductionQuoteReadiness({
           core: input.core,
-          ring: input.ring,
           selectedKeyId: selected.id,
           appId,
           expectedFunctions: input.expectedFunctions,

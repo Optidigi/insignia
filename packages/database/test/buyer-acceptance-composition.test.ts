@@ -1,12 +1,18 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createAdminReadCredentialSource, SigningKeyLifecycle } from '@insignia/application';
 import { createDemandDrivenReleaseReader } from '@insignia/shopify';
 import { Pool } from 'pg';
 import { describe, expect, it } from 'vitest';
 import { createProductionBuyerServices } from '../../../apps/web/src/server/buyer/production.ts';
+import { createSignerClient } from '../../../apps/web/src/server/signer-client.ts';
 import { fixture } from '../../../apps/web/test/support/buyer-fixture.mts';
 import { credentialLifecycle } from '../../../apps/worker/src/handlers.ts';
+import { createSignerServer } from '../../../apps/worker/src/signer/server.ts';
 import { createDurableCore } from '../dist/durable-core.js';
+import { createSignerKeyStore } from '../dist/signer-store.js';
 
 // Diagnostic only: real PostgreSQL repositories and production buyer composition;
 // all Shopify/provider facts and release identity are explicitly synthetic.
@@ -199,9 +205,19 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
           },
         });
         const shopGid = `gid://shopify/Shop/${scope.shopifyShopId}`;
+        // Signing goes through a real signer process boundary (Unix socket); web holds no key.
+        const signerStore = createSignerKeyStore(new Pool({ connectionString: process.env.DATABASE_URL, max: 2 }));
+        const signerDirectory = await mkdtemp(join(tmpdir(), 'insignia-composition-signer-'));
+        const signerServer = createSignerServer({ store: signerStore.store, ring: keys });
+        await new Promise<void>((resolve) => signerServer.listen(join(signerDirectory, 'signer.sock'), resolve));
+        cleanup.push(async () => {
+          await new Promise<void>((resolve) => signerServer.close(() => resolve()));
+          await signerStore.close();
+          await rm(signerDirectory, { recursive: true, force: true });
+        });
         const services = createProductionBuyerServices({
           core,
-          ring: keys,
+          signer: createSignerClient({ socketPath: join(signerDirectory, 'signer.sock') }),
           env: {
             SHOPIFY_CLIENT_ID: build.appClientId,
             SHOPIFY_CLIENT_SECRET: 'synthetic-private-secret',

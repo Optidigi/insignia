@@ -11,7 +11,7 @@ import { loadCredentialKeys } from '../../../../worker/src/config.ts';
 import { credentialLifecycle } from '../../../../worker/src/handlers.ts';
 import { createDemandDrivenReleaseReader, type ReleaseVerificationCollector } from '../admin/release-evidence.ts';
 import { createReleaseVerificationClient } from '../admin/release-verification.ts';
-import { loadSigningKeyRing } from '../signing-key-ring.ts';
+import { createSignerClient, type SignerClient } from '../signer-client.ts';
 import { createProductionBuyerServices, type ProductionBuyerInputs } from './production.ts';
 import { createReleaseRefresher, RELEASE_FRESHNESS_MS, RELEASE_REFRESH_AFTER_MS } from './release-refresh.ts';
 import type { BuyerServices } from './service.ts';
@@ -21,6 +21,7 @@ type BootstrapSeam = {
   createCore?(options: PoolConfig, config: { credentialKeys: CredentialKeyRing }): DurableCore;
   createServices?(input: ProductionBuyerInputs): BuyerServices;
   releaseCollector?: ReleaseVerificationCollector;
+  signer?: SignerClient;
   releaseRefreshTimer?: Parameters<typeof createReleaseRefresher>[0]['setTimer'];
   fetchImpl?: typeof fetch;
   clock?: () => Date;
@@ -117,7 +118,6 @@ export async function createBuyerBootstrap(
   let core: DurableCore | undefined;
   let pool: Pool | undefined;
   let credentialKeys: CredentialKeyRing | undefined;
-  let ring: ProductionBuyerInputs['ring'] | undefined;
   try {
     const releaseProfile = resolveRuntimeReleaseProfile(env.INSIGNIA_RELEASE_PROFILE);
     const required = (key: string, maximum = 8192) => {
@@ -156,7 +156,10 @@ export async function createBuyerBootstrap(
     if (!/^[1-9][0-9]*$/.test(organizationId) || (env.INSIGNIA_CREDENTIAL_PREVIOUS_KEYS_JSON?.length ?? 0) > 8192)
       throw new Error('Buyer configuration unavailable');
     credentialKeys = loadCredentialKeys(env);
-    ring = loadSigningKeyRing(env);
+    // Fail closed instead of starting with a wrapping key: signing belongs to the signer process.
+    if (env.INSIGNIA_SIGNING_WRAP_KEY_BASE64 || env.INSIGNIA_SIGNING_WRAP_KEY_ID)
+      throw new Error('Buyer configuration unavailable');
+    const signer = seam.signer ?? createSignerClient();
     const clock = seam.clock ?? (() => new Date());
     const refresh = createShopifyOfflineRefreshTransport({
       clientId,
@@ -289,7 +292,7 @@ export async function createBuyerBootstrap(
     return (seam.createServices ?? createProductionBuyerServices)({
       core,
       env,
-      ring,
+      signer,
       entitlementPolicy,
       credentials,
       passiveCredentials: {
@@ -340,7 +343,6 @@ export async function createBuyerBootstrap(
   } catch {
     if (core) await core.close().catch(() => {});
     else await pool?.end().catch(() => {});
-    for (const key of Object.values(ring?.keys ?? {})) key.fill(0);
     for (const key of Object.values(credentialKeys?.keys ?? {})) key.fill(0);
     return undefined;
   }

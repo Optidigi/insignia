@@ -1,0 +1,60 @@
+# Separate signer (owner decision, 11 November 2026). Render after the canonical base and the
+# runtime overlay. Only this service holds the signing wrapping-key file and a database role that
+# can read private envelopes. It has no proxy network, no published port and no route; web reaches
+# it only through the Unix socket in a directory web mounts read-only. The signer runs under its own
+# uid 10101 with web's group (1000): the key file is owned by 10101 and readable by it only (0400),
+# the socket directory is 10101:1000 0710 and the socket 0660, so web can connect but never read the
+# key. Host paths must already exist with that custody; they are never auto-created.
+services:
+  signer:
+    image: ${INSIGNIA_WORKER_IMAGE:?Set the qualified immutable worker image}
+    pull_policy: never
+    container_name: insignia-rewrite-m5-019-signer
+    restart: unless-stopped
+    init: true
+    user: "10101:1000"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    command: [/usr/local/bin/node, /srv/insignia/worker/dist/signer-main.js]
+    # signer.env holds only DATABASE_URL for the insignia_signer role.
+    env_file: signer.env
+    environment:
+      NODE_ENV: production
+    mem_limit: 256m
+    memswap_limit: 256m
+    pids_limit: 64
+    stop_grace_period: 10s
+    tmpfs:
+      - /tmp:size=8m,mode=1777
+    networks: [private]
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, /usr/local/bin/node, -e, "require('node:http').get({socketPath:'/run/insignia/signer/signer.sock',path:'/health'},(r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - type: bind
+        source: ${INSIGNIA_SIGNING_WRAP_KEY_FILE:?Set the owner-only signing wrapping-key file}
+        target: /run/insignia/signing-wrap-keys.json
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${INSIGNIA_SIGNER_SOCKET_DIRECTORY:?Set the owner-only signer socket directory}
+        target: /run/insignia/signer
+        read_only: false
+        bind:
+          create_host_path: false
+  web:
+    volumes:
+      - type: bind
+        source: ${INSIGNIA_SIGNER_SOCKET_DIRECTORY:?Set the owner-only signer socket directory}
+        target: /run/insignia/signer
+        read_only: true
+        bind:
+          create_host_path: false

@@ -54,7 +54,10 @@ export interface SigningProvisionPorts {
   identity: Pick<ReturnType<typeof createAdminOnlineIdentity>, 'verify' | 'exchangeOnline' | 'readInstallation'>;
   runtimeIdentity: SigningRuntimeIdentity;
   releaseProfile?: RuntimeReleaseProfileName;
-  ring: SigningApplication.SigningKeyRing;
+  /** The signer process creates the pending key; web receives only its public half. */
+  signer: {
+    provision(request: SigningApplication.SignerProvisionRequest): Promise<SigningApplication.SignerProvisionResponse>;
+  };
   now(): Date;
   journal: SigningProvisionJournal;
   bindProvider(
@@ -294,7 +297,7 @@ export async function provisionSigningKey(
     dayCoverage();
     await currentScope();
     const { admin, observeFunctions } = ports.bindProvider(grant, currentScope, tenant);
-    const lifecycle = new ports.app.SigningKeyLifecycle(ports.core.signingKeys, ports.ring);
+    const lifecycle = new ports.app.SigningKeyLifecycle(ports.core.signingKeys);
     const rows = await ports.core.signingKeys.list(scope);
     assert.ok(rows.filter((row) => row.state !== 'destroyed').length < 4 && !rows.some((row) => row.id === plan.keyId));
     const prior = await operation('READ_CONFIG_BEFORE', () => admin.read({ ...tenant, field: 'public_config' }));
@@ -358,12 +361,19 @@ export async function provisionSigningKey(
       assertCachedReadiness();
       flags.pendingCreateAttempted = true;
       uncertain = 'CREATE_PENDING';
-      await lifecycle.createPending({ scope, ...plan, beforeWrite });
+      if (!beforeWrite()) throw new Error('Signing write authority expired');
+      await ports.signer.provision({
+        version: 1,
+        scope,
+        keyId: plan.keyId,
+        firstDay: plan.firstDay,
+        lastDay: plan.lastDay,
+      });
       flags.pendingCreateAcknowledged = true;
       uncertain = null;
     });
     const pending = (await ports.core.signingKeys.list(scope)).find((row) => row.id === plan.keyId);
-    assert.ok(pending?.state === 'pending' && pending.privateEnvelope && pending.wrappingKeyId);
+    assert.ok(pending?.state === 'pending' && pending.wrappingKeyId);
     // Owner decision, 11 November 2026: keys do not expire routinely, so the key this rotation
     // retires gets a bounded window now, before publication. Published and stored configs then
     // agree when activation makes it retiring; its offers still verify through planned day + 2.

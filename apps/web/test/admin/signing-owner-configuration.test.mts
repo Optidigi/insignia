@@ -6,7 +6,7 @@ import test from 'node:test';
 import { pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
 
-test('built startup reuses original wrapping custody and refuses browser/path/release metadata', async () => {
+test('built startup holds no wrapping key and refuses browser/path/release metadata', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'signing-config-'));
   try {
     const output = join(directory, 'configuration.mjs');
@@ -29,7 +29,8 @@ test('built startup reuses original wrapping custody and refuses browser/path/re
     };
     const config = parseSigningOwnerConfiguration(metadata, env);
     assert.equal(config.directory, '/var/lib/insignia/signing-owner/attempt');
-    assert.deepEqual(config.ring.keys['synthetic-k1'], Buffer.alloc(32, 7));
+    // Wrapping keys live only in the signer process; the owner action configuration has none.
+    assert.deepEqual(Object.keys(config).sort(), ['binding', 'directory', 'plan']);
     for (const extra of [
       { directory: '/tmp/browser' },
       { idToken: 'synthetic' },
@@ -37,7 +38,6 @@ test('built startup reuses original wrapping custody and refuses browser/path/re
       { observation: {} },
     ])
       assert.throws(() => parseSigningOwnerConfiguration({ ...metadata, ...extra }, env));
-    assert.throws(() => parseSigningOwnerConfiguration(metadata, {}));
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

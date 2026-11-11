@@ -34,6 +34,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('signing key runtime grants', 
         )
       ).replaceAll('insignia_runtime', role);
       await raw.query(delta);
+      // Migration 58 grants the scope function to the deployed web role; mirror it for the copy.
+      await raw.query(`GRANT EXECUTE ON FUNCTION public.signing_key_scope(text, bigint, boolean) TO ${role}`);
       const shopId = randomUUID();
       await owner.transaction().execute(async (tx) => {
         await createTenantRepository(tx).createShop(tx, {
@@ -47,7 +49,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('signing key runtime grants', 
       webUrl.password = password;
       pool = new Pool({ connectionString: webUrl.href, max: 2 });
       const web = createDatabase(pool);
-      const store = new PgSigningKeyRepository(web);
+      // This legacy delta still let web read envelopes; the signer delta (signer-grants.test) removes it.
+      const store = new PgSigningKeyRepository(web, { privateHalves: true });
       const oldRing = { currentKeyId: 'credential-1', keys: { 'credential-1': randomBytes(32) } };
       const scope = await store.getActiveScope(shopId, '1');
       if (!scope) throw new Error('Test installation missing');

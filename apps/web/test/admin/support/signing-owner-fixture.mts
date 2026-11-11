@@ -180,9 +180,26 @@ export async function fixture({ initial = clockStart } = {}) {
       return { status: 200, body: { data: { metafieldsSet: { userErrors: [], metafields: [value()] } } } };
     },
   };
-  const ring: import('../../../src/server/admin/signing-owner-action.ts').SigningOwnerConfiguration['ring'] = {
-    currentKeyId: 'synthetic-wrap',
-    keys: { 'synthetic-wrap': randomBytes(32) },
+  // Stands in for the separate signer process: it alone holds a wrapping key and creates the
+  // pending key; the owner flow receives only the public half.
+  const signerRing = { currentKeyId: 'synthetic-wrap', keys: { 'synthetic-wrap': randomBytes(32) } };
+  const provisioned: app.SignerProvisionRequest[] = [];
+  const signer: SigningProvisionPorts['signer'] = {
+    async provision(request) {
+      provisioned.push(structuredClone(request));
+      const created = await new app.SigningKeyLifecycle(store, signerRing).createPending({
+        scope: request.scope,
+        keyId: request.keyId,
+        firstDay: request.firstDay,
+        lastDay: request.lastDay,
+      });
+      const row = rows.find((candidate) => candidate.id === request.keyId);
+      return {
+        keyId: request.keyId,
+        publicKeyFingerprint: created.publicKeyFingerprint,
+        publicKeyHex: Buffer.from(row?.publicKey ?? []).toString('hex'),
+      };
+    },
   };
   const plan = {
     keyId: 7,
@@ -190,13 +207,13 @@ export async function fixture({ initial = clockStart } = {}) {
     lastDay: app.localDay(new Date(initial), 'Asia/Tokyo').ordinal + 2,
   };
   const journal = await reserveSigningProvisionRun(join(directory, 'run'), plan);
-  const lifecycle = new app.SigningKeyLifecycle(store, ring);
+  const lifecycle = new app.SigningKeyLifecycle(store, signerRing);
   const ports: SigningProvisionPorts = {
     app,
     core,
     identity,
     runtimeIdentity: acceptedRuntimeIdentity,
-    ring,
+    signer,
     bindProvider: () => ({
       admin: createPublicationAdminAdapter({ transport }),
       observeFunctions: async () => ({
@@ -212,7 +229,7 @@ export async function fixture({ initial = clockStart } = {}) {
   };
   return {
     plan,
-    ring,
+    provisioned,
     setReleaseReader: (read: typeof releaseRead) => {
       releaseRead = read;
     },
