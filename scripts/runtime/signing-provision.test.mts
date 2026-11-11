@@ -123,11 +123,12 @@ test('generation drift after publication cannot activate the pending key', async
 });
 test('unknown pending-key commit never causes a new seed or publication attempt', async () => {
   const f = await fixture();
-  const create = f.ports.core.signingKeys.createPending;
+  const provision = f.ports.signer.provision;
   try {
-    f.ports.core.signingKeys.createPending = async (input) => {
-      await create(input);
-      throw Error('SYNTHETIC_PRIVATE_DB_ERROR');
+    // The signer committed the pending key but its acknowledgement was lost.
+    f.ports.signer.provision = async (input) => {
+      await provision(input);
+      throw Error('SYNTHETIC_SIGNER_TRANSPORT_ERROR');
     };
     const result = await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
     assert.equal(result.ambiguousOperation, 'CREATE_PENDING');
@@ -286,10 +287,11 @@ test('a pending-key wait cannot carry expired release authority into provider pu
   const f = await fixture();
   try {
     f.record.record.attestation.expiresAt = new Date(clockStart + 5000).toISOString();
-    const create = f.ports.core.signingKeys.createPending;
-    f.ports.core.signingKeys.createPending = async (x) => {
-      await create(x);
+    const provision = f.ports.signer.provision;
+    f.ports.signer.provision = async (x) => {
+      const created = await provision(x);
       f.clock(clockStart + 6000);
+      return created;
     };
     const result = await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
     assert.equal(result.classification, 'SIGNING_KEY_CONFIG_STOPPED');

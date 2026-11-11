@@ -42,7 +42,10 @@ export function parseSigningWrapKeys(text: string): SigningKeyRing & { keys: Rea
   return { currentKeyId: input.currentKeyId, keys };
 }
 
-/** Reads the file without following links; it must be a regular file owned by this process, mode 0600. */
+/**
+ * Reads the file without following links. It must be a regular file owned by the signer's own uid
+ * (not the web runtime's), readable by that owner only (mode 0400 or 0600).
+ */
 export function loadSigningWrapKeys(path = SIGNING_WRAP_KEY_FILE) {
   let descriptor: number;
   try {
@@ -52,7 +55,12 @@ export function loadSigningWrapKeys(path = SIGNING_WRAP_KEY_FILE) {
   }
   try {
     const stat = fstatSync(descriptor);
-    if (!stat.isFile() || stat.uid !== process.getuid?.() || (stat.mode & 0o777) !== 0o600 || stat.size > 4096)
+    if (
+      !stat.isFile() ||
+      stat.uid !== process.getuid?.() ||
+      ![0o400, 0o600].includes(stat.mode & 0o777) ||
+      stat.size > 4096
+    )
       throw new Error('Signing wrapping key file custody is invalid');
     const bytes = readFileSync(descriptor);
     try {

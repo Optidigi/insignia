@@ -44,15 +44,21 @@ class SignerRefusal extends Error {
   }
 }
 
-function bucketLimiter(capacity: number, refillPerMs: number, clock: () => number) {
+/** Token buckets keyed by a validated shop; least-recently-used entries are evicted, never all at once. */
+function bucketLimiter(capacity: number, refillPerMs: number, clock: () => number, maxKeys = 10_000) {
   const buckets = new Map<string, { tokens: number; at: number }>();
   return (key: string): boolean => {
     const now = clock();
     const bucket = buckets.get(key) ?? { tokens: capacity, at: now };
     bucket.tokens = Math.min(capacity, bucket.tokens + (now - bucket.at) * refillPerMs);
     bucket.at = now;
+    buckets.delete(key);
     buckets.set(key, bucket);
-    if (buckets.size > 10_000) buckets.clear();
+    while (buckets.size > maxKeys) {
+      const oldest = buckets.keys().next().value;
+      if (oldest === undefined) break;
+      buckets.delete(oldest);
+    }
     if (bucket.tokens < 1) return false;
     bucket.tokens -= 1;
     return true;
@@ -123,8 +129,10 @@ export function createSignerServer(input: {
     // The issuance day is the shop-local day; it is never more than one day from the UTC day.
     if (Math.abs(request.issuanceDay - Math.floor(now() / 86_400_000)) > 1)
       throw new SignerRefusal(400, 'INVALID_REQUEST');
+    // Charge the shop's bucket only once its scope is confirmed, so invented shops cannot evict real ones.
+    const keys = await keysFor(request.scope);
     if (!signAllowed(request.scope.shopId)) throw new SignerRefusal(429, 'RATE_LIMITED');
-    const key = (await keysFor(request.scope)).find((candidate) => candidate.id === request.keyId);
+    const key = keys.find((candidate) => candidate.id === request.keyId);
     if (
       key?.state !== 'active' ||
       key.firstDay > request.issuanceDay ||
@@ -163,6 +171,7 @@ export function createSignerServer(input: {
       installationGeneration: request.scope.installationGeneration,
       keyId: request.keyId,
     });
+    await keysFor(request.scope);
     if (!provisionAllowed(request.scope.shopId)) throw new SignerRefusal(429, 'RATE_LIMITED');
     let created: { publicKeyFingerprint: string };
     try {
@@ -189,7 +198,7 @@ export function createSignerServer(input: {
     };
   }
 
-  return createServer((request: IncomingMessage, response: ServerResponse) => {
+  const server = createServer((request: IncomingMessage, response: ServerResponse) => {
     const started = now();
     const event = request.url === '/v1/provision' ? 'provision' : 'sign';
     const audit: Partial<SignerAuditEntry> = {};
@@ -241,4 +250,8 @@ export function createSignerServer(input: {
       }
     })();
   });
+  // A stalled client cannot hold an in-flight slot for long.
+  server.headersTimeout = 5_000;
+  server.requestTimeout = 10_000;
+  return server;
 }

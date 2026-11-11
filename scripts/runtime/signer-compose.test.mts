@@ -46,7 +46,9 @@ test('signer overlay: only the signer holds the wrapping key; web reaches it onl
     const web = object(services.web);
     assert.equal(signer.image, image);
     assert.deepEqual(signer.command, ['/usr/local/bin/node', '/srv/insignia/worker/dist/signer-main.js']);
-    assert.equal(signer.user, 'node');
+    // Own uid (not web's), web's group only for the socket.
+    assert.equal(signer.user, '10101:1000');
+    assert.equal(web.user, 'node');
     assert.equal(signer.read_only, true);
     assert.deepEqual(signer.cap_drop, ['ALL']);
     assert.deepEqual(signer.security_opt, ['no-new-privileges:true']);

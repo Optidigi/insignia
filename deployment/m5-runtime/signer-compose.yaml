@@ -1,8 +1,10 @@
 # Separate signer (owner decision, 11 November 2026). Render after the canonical base and the
 # runtime overlay. Only this service holds the signing wrapping-key file and a database role that
 # can read private envelopes. It has no proxy network, no published port and no route; web reaches
-# it only through the Unix socket in a directory web mounts read-only. Host paths must already
-# exist with owner-only custody (directory 0700, key file 0600); they are never auto-created.
+# it only through the Unix socket in a directory web mounts read-only. The signer runs under its own
+# uid 10101 with web's group (1000): the key file is owned by 10101 and readable by it only (0400),
+# the socket directory is 10101:1000 0710 and the socket 0660, so web can connect but never read the
+# key. Host paths must already exist with that custody; they are never auto-created.
 services:
   signer:
     image: ${INSIGNIA_WORKER_IMAGE:?Set the qualified immutable worker image}
@@ -10,7 +12,7 @@ services:
     container_name: insignia-rewrite-m5-019-signer
     restart: unless-stopped
     init: true
-    user: node
+    user: "10101:1000"
     read_only: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]

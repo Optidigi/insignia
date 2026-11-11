@@ -6,7 +6,7 @@ import { loadSigningWrapKeys } from './signer/ring.js';
 import { createSignerServer, type SignerAuditEntry } from './signer/server.js';
 
 /**
- * Separate signer process. It alone holds the signing wrapping keys (a read-only 0600 file) and a
+ * Separate signer process, under its own uid. It alone holds the signing wrapping keys (a read-only owner-only file) and a
  * database role that can read private envelopes. It serves the web runtime on a Unix socket in an
  * owner-only directory; it has no TCP listener and no proxy route.
  *   node dist/signer-main.js           serve
@@ -55,12 +55,15 @@ async function main() {
     }
     return;
   }
+  // The signer runs under its own uid; the web runtime shares only its group, which may traverse the
+  // directory (0710) and connect to the socket (0660). Nobody else has access.
   const directory = await lstat(SIGNER_SOCKET_DIRECTORY);
   if (
     !directory.isDirectory() ||
     directory.isSymbolicLink() ||
     directory.uid !== process.getuid?.() ||
-    (directory.mode & 0o777) !== 0o700
+    directory.gid !== process.getgid?.() ||
+    ![0o700, 0o710].includes(directory.mode & 0o777)
   )
     throw new Error('Signer socket directory custody is invalid');
   try {
@@ -84,7 +87,7 @@ async function main() {
     server.once('error', reject);
     server.listen(SIGNER_SOCKET, () => resolve());
   });
-  await chmod(SIGNER_SOCKET, 0o600);
+  await chmod(SIGNER_SOCKET, 0o660);
   line({ event: 'signer_listening', currentKeyId: ring.currentKeyId, keyCount: Object.keys(ring.keys).length });
   const summary = setInterval(() => {
     if (counts.size === 0) return;
