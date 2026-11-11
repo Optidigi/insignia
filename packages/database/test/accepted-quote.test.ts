@@ -262,9 +262,12 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
     await expect(repo.findCompleted(input)).rejects.toThrow(/revoked signing key/);
     await expect(repo.accept(input, async () => ({ quote, authorization }))).rejects.toThrow(/revoked signing key/);
     // Restore only this isolated fixture to exercise the separate epoch race below.
+    // Revocation is final in production (identity trigger); the fixture bypasses it as schema owner.
+    await sql`ALTER TABLE signing_keys DISABLE TRIGGER signing_key_identity_guard`.execute(database);
     await sql`UPDATE signing_keys SET state='retiring', revoked_at=NULL,
       revocation_command_key=NULL, revocation_reason=NULL
       WHERE shop_id=${value.shopId} AND key_id=7`.execute(database);
+    await sql`ALTER TABLE signing_keys ENABLE TRIGGER signing_key_identity_guard`.execute(database);
     await expect(
       repo.accept({ ...input, idempotencyKey: 'wrong-set-metadata' }, async () => ({
         quote: { ...quote, quoteId: randomUUID() },

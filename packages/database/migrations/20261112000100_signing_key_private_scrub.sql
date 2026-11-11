@@ -45,6 +45,11 @@ BEGIN
   IF TG_OP = 'UPDATE' AND OLD.state IN ('retiring', 'revoked', 'destroyed') AND NEW.state IN ('pending', 'active') THEN
     RAISE EXCEPTION 'a retired signing key cannot sign again' USING ERRCODE = 'check_violation';
   END IF;
+  -- Revocation and destruction are final: a revoked key may only be destroyed; a destroyed key stays so.
+  IF TG_OP = 'UPDATE' AND ((OLD.state = 'revoked' AND NEW.state NOT IN ('revoked', 'destroyed'))
+    OR (OLD.state = 'destroyed' AND NEW.state <> 'destroyed')) THEN
+    RAISE EXCEPTION 'a revoked or destroyed signing key cannot be restored' USING ERRCODE = 'check_violation';
+  END IF;
   RETURN NEW;
 END;
 $$;

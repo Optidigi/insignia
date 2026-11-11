@@ -30,7 +30,7 @@ export function createWorkerReconciliation(input: {
     const day = Math.floor(clock().getTime() / 86_400_000);
     if (signingKeysDestroyedDay === day || !signingKeys.destroyExpired) return;
     let count = 0;
-    for (let batch = 0; batch < 10; batch += 1) {
+    for (let batch = 0; batch < 50; batch += 1) {
       const destroyed = await signingKeys.destroyExpired(100);
       count += destroyed;
       if (destroyed < 100) break;

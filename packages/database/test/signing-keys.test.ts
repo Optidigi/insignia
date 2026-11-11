@@ -135,6 +135,12 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable signing key lifecycle
       await store.destroyExpired(100);
       expect((await store.list(scope)).find((key) => key.keyId === 3)?.state).toBe('revoked');
       await expect(store.destroyExpired(0)).rejects.toThrow();
+      // Revocation and destruction are final.
+      for (const statement of [
+        sql`UPDATE signing_keys SET state='retiring' WHERE shop_id=${shopId} AND key_id=3`,
+        sql`UPDATE signing_keys SET state='retiring' WHERE shop_id=${shopId} AND key_id=1`,
+      ])
+        await expect(statement.execute(db)).rejects.toThrow(/cannot be restored/);
       const envelopes = await sql<{ key_id: number }>`SELECT key_id FROM signing_keys
         WHERE shop_id=${shopId} AND private_envelope IS NOT NULL ORDER BY key_id`.execute(db);
       expect(envelopes.rows.map((row) => row.key_id)).toEqual([2]);
