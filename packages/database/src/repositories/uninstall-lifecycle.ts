@@ -40,6 +40,32 @@ export function createUninstallLifecycleRepository(database: Kysely<Database>) {
         AND installation_generation=${scope.installationGeneration}::bigint
         AND external_installation_id=${scope.externalInstallationId} AND state='registered'`.execute(database);
     },
+    /** Other registered destinations of the same installation (for example an earlier app origin). */
+    async listSuperseded(
+      scope: DestinationScope,
+    ): Promise<Array<{ capabilityDigest: string; subscriptionId: string }>> {
+      validate(scope);
+      return (
+        await sql<{ capabilityDigest: string; subscriptionId: string }>`SELECT capability_digest AS "capabilityDigest",
+        subscription_id AS "subscriptionId" FROM uninstall_destinations
+        WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint
+        AND external_installation_id=${scope.externalInstallationId} AND state='registered'
+        AND capability_digest<>${scope.capabilityDigest}
+        AND NOT EXISTS(SELECT 1 FROM uninstall_delivery_authority a
+          WHERE a.capability_digest=uninstall_destinations.capability_digest)
+        ORDER BY registered_at`.execute(database)
+      ).rows;
+    },
+    /** Terminal: Shopify confirmed the earlier-origin subscription is gone. Not a drift repair. */
+    async supersede(scope: DestinationScope): Promise<void> {
+      validate(scope);
+      await sql`UPDATE uninstall_destinations SET state='superseded'
+        WHERE capability_digest=${scope.capabilityDigest} AND shop_id=${scope.shopId}
+        AND installation_generation=${scope.installationGeneration}::bigint
+        AND external_installation_id=${scope.externalInstallationId} AND state='registered'
+        AND NOT EXISTS(SELECT 1 FROM uninstall_delivery_authority a
+          WHERE a.capability_digest=uninstall_destinations.capability_digest)`.execute(database);
+    },
     async listActive(
       after: string | null,
       limit = 10,

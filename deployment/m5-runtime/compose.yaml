@@ -12,11 +12,10 @@ services:
     read_only: true
     labels:
       traefik.http.routers.insignia-uninstall-private.entrypoints: websecure
-      traefik.http.routers.insignia-uninstall-private.rule: (Host(`app.insigniacustomizer.com`) || Host(`insignia-app.optidigi.nl`)) && PathPrefix(`/api/webhooks/uninstall/`)
+      traefik.http.routers.insignia-uninstall-private.rule: Host(`app.insigniacustomizer.com`) && PathPrefix(`/api/webhooks/uninstall/`)
       traefik.http.routers.insignia-uninstall-private.priority: "1100"
       traefik.http.routers.insignia-uninstall-private.tls.certresolver: letsencrypt
       traefik.http.routers.insignia-uninstall-private.tls.domains[0].main: app.insigniacustomizer.com
-      traefik.http.routers.insignia-uninstall-private.tls.domains[1].main: insignia-app.optidigi.nl
       traefik.http.routers.insignia-uninstall-private.service: insignia-rewrite-m5-019
       traefik.http.routers.insignia-uninstall-private.middlewares: insignia-cloudflare-origin
       traefik.http.routers.insignia-uninstall-private.observability.accesslogs: "false"
