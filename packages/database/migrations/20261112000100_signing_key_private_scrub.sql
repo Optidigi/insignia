@@ -4,8 +4,7 @@
 -- Function config still verifies outstanding carts until the window closes, but their envelope is
 -- scrubbed. The scrub is one-way. Existing retiring/revoked envelopes are scrubbed here.
 LOCK TABLE signing_keys IN SHARE ROW EXCLUSIVE MODE;
-UPDATE signing_keys SET private_envelope = NULL, wrapping_key_id = NULL
-  WHERE state IN ('retiring', 'revoked') AND private_envelope IS NOT NULL;
+-- The previous constraint requires an envelope on every non-destroyed key, so it goes first.
 DO $$ DECLARE constraint_name text;
 BEGIN
   SELECT conname INTO STRICT constraint_name FROM pg_constraint
@@ -13,6 +12,8 @@ BEGIN
       AND pg_get_constraintdef(oid) LIKE '%private_envelope IS NULL%';
   EXECUTE format('ALTER TABLE public.signing_keys DROP CONSTRAINT %I', constraint_name);
 END $$;
+UPDATE signing_keys SET private_envelope = NULL, wrapping_key_id = NULL
+  WHERE state IN ('retiring', 'revoked') AND private_envelope IS NOT NULL;
 ALTER TABLE signing_keys ADD CONSTRAINT signing_keys_private_half_by_state CHECK (
   (state IN ('pending', 'active') AND private_envelope IS NOT NULL
     AND wrapping_key_id IS NOT NULL AND wrapping_key_id <> '')
