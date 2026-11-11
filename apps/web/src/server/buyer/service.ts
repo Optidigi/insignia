@@ -47,8 +47,8 @@ class BuyerPrecommitReviewError extends Error {
 type GuestAuthority = ReturnType<typeof createArtworkGuestAuthority>;
 /** Proposal lifetime; acceptance after it requires a new proposal. */
 const PROPOSAL_TTL_MS = 300000;
-/** Buyers count as active (release evidence kept warm) for two minutes after a proposal. */
-const RELEASE_ACTIVITY_MS = 120000;
+/** Buyers count as active (release evidence kept warm) for five minutes after a proposal (owner, 11 Nov 2026). */
+const RELEASE_ACTIVITY_MS = 300_000;
 type Bucket = { variantId: string; quantity: number; properties: Record<string, string> };
 const notFound = (): never => {
   throw new BuyerStateError('NOT_FOUND');
