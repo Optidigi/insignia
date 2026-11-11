@@ -10,6 +10,41 @@ import { loadCustomerEmailQualification } from './notification-qualification.ts'
 import { createCustomerArtworkNotificationRunner } from './notification-runner.ts';
 import { createCustomerArtworkRuntimeView } from './view.ts';
 
+/**
+ * Development mode never reads a customer address (the recipient is fixed to the allocated admin
+ * address) and, by default, processes no notice. A notice becomes eligible only when it is listed
+ * in `INSIGNIA_CUSTOMER_EMAIL_DEVELOPMENT_NOTICES` (JSON array of up to 10 UUIDs) or was planned
+ * at or after `INSIGNIA_CUSTOMER_EMAIL_DEVELOPMENT_SINCE` (canonical ISO instant), so enabling
+ * never backfills earlier notices. Returns undefined when nothing is eligible.
+ */
+export function developmentNoticeEligibility(
+  env: NodeJS.ProcessEnv,
+): ((notice: { notificationId: string; createdAt?: Date }) => boolean) | undefined {
+  const rawIds: unknown = env.INSIGNIA_CUSTOMER_EMAIL_DEVELOPMENT_NOTICES
+    ? JSON.parse(env.INSIGNIA_CUSTOMER_EMAIL_DEVELOPMENT_NOTICES)
+    : [];
+  if (
+    !Array.isArray(rawIds) ||
+    rawIds.length > 10 ||
+    rawIds.some(
+      (id) => typeof id !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id),
+    )
+  )
+    throw new Error('CUSTOMER_EMAIL_DEVELOPMENT_ALLOCATION_INVALID');
+  const allowed = new Set<string>(rawIds);
+  const sinceText = env.INSIGNIA_CUSTOMER_EMAIL_DEVELOPMENT_SINCE;
+  let since: number | undefined;
+  if (sinceText !== undefined) {
+    since = Date.parse(sinceText);
+    if (!Number.isFinite(since) || new Date(since).toISOString() !== sinceText)
+      throw new Error('CUSTOMER_EMAIL_DEVELOPMENT_ALLOCATION_INVALID');
+  }
+  if (!allowed.size && since === undefined) return undefined;
+  return (notice) =>
+    allowed.has(notice.notificationId) ||
+    (since !== undefined && notice.createdAt instanceof Date && notice.createdAt.getTime() >= since);
+}
+
 type Runtime =
   | { state: 'disabled' | 'unavailable'; reason?: string }
   | { state: 'configured'; runner: ReturnType<typeof createCustomerArtworkNotificationRunner> };
@@ -40,18 +75,7 @@ export function ensureCustomerArtworkNotificationRuntime(env: NodeJS.ProcessEnv 
         return loadCustomerEmailQualification(env.CUSTOMER_ARTWORK_EMAIL_QUALIFICATION_PROFILE, expected);
       };
       if (profile.mode === 'customer') await qualification();
-      const rawIds: unknown = env.INSIGNIA_CUSTOMER_EMAIL_DEVELOPMENT_NOTICES
-        ? JSON.parse(env.INSIGNIA_CUSTOMER_EMAIL_DEVELOPMENT_NOTICES)
-        : [];
-      if (
-        !Array.isArray(rawIds) ||
-        rawIds.length > 10 ||
-        rawIds.some(
-          (id) => typeof id !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id),
-        )
-      )
-        throw new Error('CUSTOMER_EMAIL_DEVELOPMENT_ALLOCATION_INVALID');
-      const allowed = new Set<string>(rawIds);
+      const developmentEligible = developmentNoticeEligibility(env);
       core = createDurableCore(
         new Pool({
           connectionString: env.DATABASE_URL,
@@ -135,12 +159,12 @@ export function ensureCustomerArtworkNotificationRuntime(env: NodeJS.ProcessEnv 
       const store = {
         ...owned.customerArtwork,
         async pendingNotifications(limit: number) {
-          if (profile.mode === 'development' && !allowed.size) return [];
+          if (profile.mode === 'development' && !developmentEligible) return [];
           const selected = await owned.customerArtwork.pendingNotifications(
             profile.mode === 'development' ? 100 : limit,
           );
           if (profile.mode === 'development')
-            return selected.filter((notice) => allowed.has(notice.notificationId)).slice(0, limit);
+            return selected.filter((notice) => developmentEligible?.(notice)).slice(0, limit);
           const approved = await qualification();
           return selected
             .filter((notice) =>

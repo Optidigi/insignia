@@ -5,7 +5,10 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { loadCustomerEmailQualification } from '../src/server/customer-artwork/notification-qualification.ts';
 import { createCustomerArtworkNotificationRunner } from '../src/server/customer-artwork/notification-runner.ts';
-import { ensureCustomerArtworkNotificationRuntime } from '../src/server/customer-artwork/notification-runtime.ts';
+import {
+  developmentNoticeEligibility,
+  ensureCustomerArtworkNotificationRuntime,
+} from '../src/server/customer-artwork/notification-runtime.ts';
 
 test('missing explicit notification profile is disabled without allocating a sender/core or timer', async () => {
   assert.deepEqual(await ensureCustomerArtworkNotificationRuntime({}), { state: 'disabled' });
@@ -115,4 +118,24 @@ test('known unavailable pending delivery reports an alert without losing known s
   assert.deepEqual(await runner.runOnce(), { state: 'unavailable', sent: 1 });
   assert.equal(alerts, 1);
   await runner.stop();
+});
+
+test('development eligibility is default deny, never backfills before its cut-off and validates input', () => {
+  assert.equal(developmentNoticeEligibility({}), undefined);
+  assert.equal(developmentNoticeEligibility({ INSIGNIA_CUSTOMER_EMAIL_DEVELOPMENT_NOTICES: '[]' }), undefined);
+  const id = '4da55deb-2f17-45ee-b89f-380936d95808';
+  const since = '2026-11-11T23:00:00.000Z';
+  const eligible = developmentNoticeEligibility({
+    INSIGNIA_CUSTOMER_EMAIL_DEVELOPMENT_SINCE: since,
+    INSIGNIA_CUSTOMER_EMAIL_DEVELOPMENT_NOTICES: JSON.stringify([id]),
+  });
+  assert.ok(eligible);
+  const other = '11111111-1111-4111-8111-111111111111';
+  assert.equal(eligible({ notificationId: other, createdAt: new Date('2026-11-11T22:59:59.999Z') }), false);
+  assert.equal(eligible({ notificationId: other, createdAt: new Date(since) }), true);
+  assert.equal(eligible({ notificationId: other }), false);
+  assert.equal(eligible({ notificationId: id, createdAt: new Date('2026-11-10T00:00:00.000Z') }), true);
+  for (const bad of ['2026-11-11', 'yesterday', '2026-11-11T23:00:00Z', ''])
+    assert.throws(() => developmentNoticeEligibility({ INSIGNIA_CUSTOMER_EMAIL_DEVELOPMENT_SINCE: bad }));
+  assert.throws(() => developmentNoticeEligibility({ INSIGNIA_CUSTOMER_EMAIL_DEVELOPMENT_NOTICES: '["x"]' }));
 });
