@@ -1,11 +1,18 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { projectEntitlement } from '../../../packages/application/src/entitlement/provider-policy.ts';
 import {
   createReleaseRefresher,
   RELEASE_REFRESH_AFTER_MS,
   RELEASE_REFRESH_INTERVAL_MS,
 } from '../src/server/buyer/release-refresh.ts';
-import { createSubscriptionCache, SUBSCRIPTION_CACHE_MS } from '../src/server/buyer/subscription-cache.ts';
+import {
+  createSubscriptionCache,
+  SUBSCRIPTION_CACHE_MS,
+  SUBSCRIPTION_FRESHNESS_MARGIN_MS,
+  subscriptionReuseMs,
+} from '../src/server/buyer/subscription-cache.ts';
 
 /** Deterministic timer queue: `advance` fires due timers in order and drains their async work. */
 function timers(start = 1_800_000_000_000) {
@@ -151,6 +158,7 @@ test('Partner subscription reads are reused per shop for 60 s, single-flight, an
       if (fail) throw new Error('Synthetic Partner outage');
       return { shopId: target.shopId, observedAt: new Date(now).toISOString() };
     },
+    65_000,
     () => now,
   );
   const target = { appId: 'gid://shopify/App/7', shopId: 'gid://shopify/Shop/9' };
@@ -170,6 +178,71 @@ test('Partner subscription reads are reused per shop for 60 s, single-flight, an
   const renewed = await cache(target);
   assert.notEqual(renewed, first);
   assert.equal(renewed.observedAt, new Date(now).toISOString(), 'the snapshot keeps its true observation time');
+});
+
+test('the subscription cache never serves a snapshot the entitlement policy would call stale', () => {
+  // The deployed policy keeps the owner's 60 s reuse with a 5 s margin.
+  const deployed = JSON.parse(
+    readFileSync(new URL('../../../deployment/m5-runtime/entitlement-policy.json', import.meta.url), 'utf8'),
+  ) as { maxAgeMs: number };
+  assert.equal(deployed.maxAgeMs, 65_000);
+  assert.equal(subscriptionReuseMs(deployed.maxAgeMs), SUBSCRIPTION_CACHE_MS);
+  for (const maxAgeMs of [1, 4_000, 5_000, 30_000, 64_999, 65_000, 300_000])
+    assert.ok(
+      subscriptionReuseMs(maxAgeMs) <= maxAgeMs - SUBSCRIPTION_FRESHNESS_MARGIN_MS ||
+        subscriptionReuseMs(maxAgeMs) === 0,
+      String(maxAgeMs),
+    );
+  assert.equal(subscriptionReuseMs(30_000), 25_000);
+  assert.throws(() => subscriptionReuseMs(0), /policy age invalid/);
+});
+
+test('a proposal 45 s after the last Partner read gets a fresh entitlement (regression: cached snapshot past maxAgeMs)', async () => {
+  const start = Date.parse('2026-11-11T12:00:00.000Z');
+  for (const maxAgeMs of [30_000, 65_000]) {
+    let now = start,
+      reads = 0;
+    const identity = {
+      appId: 'gid://shopify/App/7',
+      shopId: 'gid://shopify/Shop/9',
+      tenantShopId: 'tenant',
+      installationGeneration: '1',
+    };
+    const cache = createSubscriptionCache(
+      async () => {
+        reads++;
+        return {
+          ...identity,
+          schemaVersion: 'm4-active-subscription-v1' as const,
+          sourceApiVersion: '2026-07' as const,
+          observedAt: new Date(now).toISOString(),
+          active: true,
+          billingPeriod: 'EVERY_30_DAYS',
+          cancelAtEndOfCycle: false,
+          trialEndsAt: null,
+          currentBillingCycle: null,
+          items: [],
+          pendingUpdate: null,
+        };
+      },
+      maxAgeMs,
+      () => now,
+    );
+    await cache(identity);
+    now = start + 45_000;
+    const snapshot = await cache(identity);
+    const projected = projectEntitlement(
+      snapshot as never,
+      { policyVersion: 'p', maxAgeMs, plans: [] },
+      { ...identity, now: new Date(now) },
+    );
+    assert.equal(projected.freshness, 'fresh', `maxAgeMs ${maxAgeMs}`);
+    assert.equal(
+      reads,
+      maxAgeMs === 30_000 ? 2 : 1,
+      'a short policy forces a re-read instead of serving a stale snapshot',
+    );
+  }
 });
 
 test('immutable revision reads are reused per shop and revision; missing rows and failures are re-read', async () => {

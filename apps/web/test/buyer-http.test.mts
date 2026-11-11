@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { BuyerAcceptanceDeclinedError } from '@insignia/application';
+import { BuyerAcceptanceDeclinedError, EntitlementObservationUnavailableError } from '@insignia/application';
 import type { BuyerFailureDiagnostic } from '@insignia/observability';
 import { handleBuyerRequest } from '../src/server/buyer/http.ts';
 import { buyerFixture, coreFixture, record } from './http-fixtures.mts';
@@ -70,6 +70,25 @@ test('buyer failure diagnostics correlate safely without request or exception pa
   assert.equal(JSON.stringify(seen).includes(secret), false);
 });
 
+test('a stale or missing entitlement observation is a retryable 503 with its own class, not a denial', async () => {
+  const seen: BuyerFailureDiagnostic[] = [];
+  const result = await handleBuyerRequest(
+    new Request('https://app.invalid/v1/config'),
+    buyerFixture({
+      config: async () => {
+        throw new EntitlementObservationUnavailableError();
+      },
+    }),
+    'config',
+    (value) => seen.push(value),
+  );
+  const body = record(await result.json());
+  assert.equal(result.status, 503);
+  assert.equal(body.code, 'UNAVAILABLE');
+  assert.deepEqual(seen, [
+    { correlationId: body.requestId, buyerStage: 'config', errorClass: 'EntitlementObservationUnavailable' },
+  ]);
+});
 test('required cart review is diagnosed as a finite expected class without leaking exception details', async () => {
   const seen: BuyerFailureDiagnostic[] = [];
   const secret = 'private-cart-carrier-and-capability-SECRET';

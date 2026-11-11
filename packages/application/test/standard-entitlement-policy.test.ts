@@ -72,7 +72,7 @@ test('candidate keeps shop, generation, freshness and complete subscription memb
       { ...context, shopId: foreignShop },
     ],
     [valid, { ...context, installationGeneration: '2' }],
-    [valid, { ...context, now: new Date(now.getTime() + 30_001) }],
+    [valid, { ...context, now: new Date(now.getTime() + candidate.maxAgeMs + 1) }],
     [source('unrecognized-plan', true), context],
     [{ ...valid, items: [] }, context],
     [

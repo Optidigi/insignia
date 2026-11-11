@@ -90,6 +90,7 @@ const BUYER_FAILURES = [
   'DatabasePermissionDenied',
   'ProviderReadUnavailable',
   'ReleaseEvidenceUnavailable',
+  'EntitlementObservationUnavailable',
   'TypeError',
   'UnexpectedFailure',
 ] as const;

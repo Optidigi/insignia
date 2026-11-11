@@ -1,6 +1,6 @@
 {
   "policyVersion": "lean-v1-recurring-only",
-  "maxAgeMs": 30000,
+  "maxAgeMs": 65000,
   "plans": [
     {
       "planHandle": "insignia-standard-20261015",
