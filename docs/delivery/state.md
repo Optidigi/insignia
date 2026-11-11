@@ -2,7 +2,7 @@
 
 ## Active assignment
 
-Updated 10 November 2026. The combined application and canonical agent documentation are integrated. The existing host alias `prod` serves the allocated rewrite-dev app/store. The Functions renew source is deployed there, its candidate is the released Shopify Active version, and both were independently read back. No production resource migration, new scopes/markets, database reset, history erasure, protected VAT retry or consumed sender/alert drill was performed. One owner-approved test-gateway order followed the release (below). The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
+Updated 11 November 2026. The combined application and canonical agent documentation are integrated. The existing host alias `prod` serves the allocated rewrite-dev app/store. The Functions renew source is deployed there, its candidate is the released Shopify Active version, and both were independently read back. No production resource migration, new scopes/markets, database reset, history erasure, protected VAT retry or consumed sender/alert drill was performed. One owner-approved test-gateway order followed the release (below). The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
 
 ### Functions renew transition — complete
 
@@ -10,11 +10,19 @@ Updated 10 November 2026. The combined application and canonical agent documenta
 - Phase A created inactive candidate `1202733449217/native-functions-renew-8fffc9de` once (CLI 4.9.4, Node 24.21.0) from merge `8fffc9debc2bad4914aaa22dca82d8fdf272de5d`; PR295 bound it. [Runtime README](../../deployment/m5-runtime/README.md#functions-renew-candidate-development-transition) has the pins. Phase A packet: `~/.local/share/insignia/recovery-release-20261110/functions-renew-42887198952-1`.
 - Phase B (release, runtime deployment, operator config, fresh admission) completed on 10 November 2026; the result is recorded below.
 
+### Combined cart-line v3 release — Phase A candidate bound, not released
+
+- **Owner grant, 10–11 November 2026:** ship PRs 298–306 as one new rewrite-dev app version, release it as the single v3 cutover (no dual-format Function), then deploy the matching runtime to `prod`. The grant explicitly authorizes changing Function bytes, behavior and input queries for this release. It grants no new scopes, markets, database reset or rollout.
+- Phase A created inactive candidate `1202999689217/native-cart-line-v3-aa3b6166` once (CLI 4.9.4, Node 24.21.0) from merge `aa3b6166eb2b4679f27e1b7f128d914137ba8412`. Main CI on that commit passed: foundation 42932707400 on attempt 1, and runtime 42932707336 on attempt 2. Attempt 1 failed one concurrent-publish composition test with a 503; the same code passed on 9ea64011 and 4c6ed64c.
+- Independent readback found 34 versions with `1202733449217` still the sole Active version. All NEVER_RELEASE versions are inactive, all 14 identities are preserved, and the 11 non-theme non-Function configs are unchanged. The Function module ids and both input queries are new.
+- The [runtime README](../../deployment/m5-runtime/README.md#cart-line-v3-candidate-development-transition) has the pins and the Phase B operator changes: profile, migration 53, the web `buyer_sessions.expires_at` grant and the expected-Functions recommendation. Phase A packet: `~/.local/share/insignia/recovery-release-20261110/cart-line-v3-42932707400-1`.
+- Phase B (release, runtime deployment, operator config, fresh admission) has not started.
+
 ### Cart-line v3 — implemented, not deployed
 
 - **Owner decisions, 10 November 2026** ([wire contract](../architecture/CART-LINE-V3.md), [spec §5](../architecture/implementation-plan.md#5-signed-cart-authorization-protocol)): one Ed25519 signature per acceptance/renewal over a header committing to a Merkle root of per-line records; every customized cart line carries its own `_insignia_line_v3`; quantity and totals unsigned; one acceptance per cart; ordered quantities are the truth. Every guarantee given up is listed as owner-accepted in the wire contract.
 - **Single cutover:** the server issues v3 only and both Functions accept v3 only (a leftover v2 line is an invalid carrier and goes to review). There is no protocol flag and no dual-format Function. Reconciliation keeps v2 verification permanently.
-- **Not yet released:** shipping needs a new app version (both Functions plus theme extension) and the matching runtime image, which needs an explicit owner Function/release grant. Release-record and expected-query wiring must use the new input-query hashes: Transform `02ab5bce…`, Validation `5867e61f…`. Release the app version and the runtime together. Before that, open v2 carts fail at checkout and need Designer repair, as the owner accepted.
+- **Not yet released:** the combined candidate above carries both Functions and the theme extension, and its release profile carries the new input-query hashes: Transform `02ab5bce…`, Validation `5867e61f…`. Release the app version and the runtime together. Before that, open v2 carts fail at checkout and need Designer repair, as the owner accepted.
 - **Measured (pinned function-runner 9.2.2, local build):** 32 signed + 168 ordinary lines take 8.43M instructions (Transform) and 8.34M (Validation). Small carts take 2.68–2.77M, and 10 signed + 190 ordinary take 6.78M / 7.04M. Worst-case input is 97 kB and the Transform output bound is 11,312 B. Stack peak remains unmeasured. Native qualification (theme quantity change, removed size, altered carrier, test order binding the ordered quantity, renewal after a quantity edit) is outstanding.
 
 ### Buyer acceptance performance — implemented, not deployed

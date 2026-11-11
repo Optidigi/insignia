@@ -4,6 +4,8 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import v3Modules from '../../deployment/m5-runtime/native-cart-line-v3-module-baseline.json' with { type: 'json' };
+import v3Binding from '../../deployment/m5-runtime/native-cart-line-v3-release-binding.json' with { type: 'json' };
 import baseline from '../../deployment/m5-runtime/native-function-module-baseline.json' with { type: 'json' };
 import renewModules from '../../deployment/m5-runtime/native-functions-renew-module-baseline.json' with {
   type: 'json',
@@ -179,6 +181,56 @@ test('functions renew profile binds its own Function source, wasm and validation
     original.expected.validation.wasmSha256,
     '3193f60bbb29cdc473ce7ae73e88d1064ca7be2f03da2aade4e17ae1390366c6',
   );
+});
+test('cart-line v3 profile binds its own Function source, wasm and both input queries', () => {
+  const profile = 'native-cart-line-v3-aa3b6166';
+  const queries = {
+    transform: '02ab5bcee805fba94dff9309a2e55cb1998651ca42fdba8564872ba891fd16ac',
+    validation: '5867e61f07dbb4d6417df401b5ffbc47f0175eca1d00f7792621150713b18d7e',
+  };
+  const input = fixture() as unknown as ReleaseAppendInput & { moduleObservation: { modules: typeof v3Modules } };
+  input.activeObservation.versions = v3Binding.versionIds.map((id) => ({
+    versionId: `gid://shopify/Version/${id}`,
+    status: id === v3Binding.versionId ? 'active' : 'inactive',
+    versionTag: id === v3Binding.versionId ? profile : 'historical',
+  }));
+  input.moduleObservation = {
+    ...input.moduleObservation,
+    versionId: v3Binding.versionId,
+    versionTag: profile,
+    observedAt: at(4000),
+    modules: structuredClone(v3Modules),
+  };
+  const functions = input.readiness.functions.observation;
+  functions.schemaVersion = 2;
+  for (const kind of ['transform', 'validation'] as const) {
+    functions[kind].functionId = required(v3Modules.find((m) => m.handle === functions[kind].handle)).registrationUuid;
+    functions[kind].inputQuerySha256 = queries[kind];
+  }
+  const q = qualifyReleaseAppendInput(input, now, profile);
+  assert.equal(q.expected.appVersionRef, '1202999689217');
+  assert.equal(q.expected.sourceCommit, 'aa3b6166eb2b4679f27e1b7f128d914137ba8412');
+  assert.equal(q.expected.transform.wasmSha256, '5c8708b578383d54f78b79534a3141515296f7b3864bce9852af0c678dbed677');
+  assert.equal(q.expected.validation.wasmSha256, '6c362b36a5cf3eba77dcf9accc64bf0ae3225d77c97dd01bcc9d3e0e1ea83de4');
+  assert.equal(q.expected.transform.inputQuerySha256, queries.transform);
+  assert.equal(q.expected.validation.inputQuerySha256, queries.validation);
+  const nullQueries = structuredClone(input);
+  nullQueries.readiness.functions.observation.transform.inputQuerySha256 = null;
+  nullQueries.readiness.functions.observation.validation.inputQuerySha256 = null;
+  const fromRecord = qualifyReleaseAppendInput(nullQueries, now, profile).expected;
+  assert.equal(fromRecord.transform.inputQuerySha256, queries.transform);
+  assert.equal(fromRecord.validation.inputQuerySha256, queries.validation);
+  // Pre-v3 queries are rejected for the v3 profile.
+  for (const [kind, old] of [
+    ['transform', '8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053'],
+    ['validation', '5baff05ac4b1967bc7c9b461b7d6a8956344ddd8c9233708534e8814b34ebcc4'],
+  ] as const) {
+    const stale = structuredClone(input);
+    stale.readiness.functions.observation[kind].inputQuerySha256 = old;
+    assert.throws(() => qualifyReleaseAppendInput(stale, now, profile));
+  }
+  // The functions renew profile still requires its own Active version, queries and source.
+  assert.throws(() => qualifyReleaseAppendInput(input, now, 'native-functions-renew-8fffc9de'));
 });
 const invalid: Record<string, (x: ReturnType<typeof fixture>) => unknown> = {
   'missing candidate': (x) => x.activeObservation.versions.shift(),

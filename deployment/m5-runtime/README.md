@@ -12,6 +12,36 @@ Live Shopify Admin returns `inputQuery: null` for both owned Functions. Observat
 
 Operator migration: none is required. The legacy `transformInputQuerySha256`, `validationInputQuerySha256` and `observationVersion` fields are still accepted (64-hex and `2` when present), then ignored. Images built before this change require them, so keep them until rollback to such an image is no longer needed, then reduce the value to `appKey` only.
 
+## Cart-line v3 candidate development transition
+
+`native-cart-line-v3-aa3b6166` binds inactive version 1202999689217, the complete 34-version inventory in [native-cart-line-v3-release-binding.json](native-cart-line-v3-release-binding.json) and the exact 14-module [baseline](native-cart-line-v3-module-baseline.json). Canonical hash is `dd76c50a573e7c6cdb7b42555fdbc36e1edda5189c75b876f4f81d92f66c447f`. Source is main merge aa3b6166/tree dc58ec46, which ships everything merged since the functions-renew release, PRs 298–306:
+- expected Function queries derived from the release record;
+- reproducible Function builds;
+- Designer silent re-quote;
+- per-visitor limits (migration 53);
+- ordered-quantity views;
+- buyer client and server performance;
+- [signed-cart protocol v3](../../docs/architecture/CART-LINE-V3.md);
+- the review-count fix.
+
+All 23 theme files, including 14 assets, match foundation run 42932707400/attempt 1. Prior 1202733449217 remains the sole Active version; all NEVER_RELEASE versions remain inactive.
+
+**This transition changes Function bytes, behavior and both input queries, and it is the single v3 cutover.** The owner authorized it on 10–11 November 2026. There is no dual-format Function. Both Function modules keep their registration UUIDs and handles but carry new wasm, built from aa3b6166 with `node scripts/functions/build-wasm.mts {transform,validation}` (Rust 1.98.1, trampoline 2.0.1). The CI foundation wasm and raw wasm are byte-identical to the local build.
+
+| Function | wasm SHA256 (bytes) | input query SHA256 | Shopify module id |
+| --- | --- | --- | --- |
+| transform | `5c8708b578383d54f78b79534a3141515296f7b3864bce9852af0c678dbed677` (183604) | `02ab5bcee805fba94dff9309a2e55cb1998651ca42fdba8564872ba891fd16ac` (was `8d93a086…`) | `826a9059-f6c2-49ff-861a-7155b1f848fb` |
+| validation | `6c362b36a5cf3eba77dcf9accc64bf0ae3225d77c97dd01bcc9d3e0e1ea83de4` (181608) | `5867e61f07dbb4d6417df401b5ffbc47f0175eca1d00f7792621150713b18d7e` (was `5baff05a…`) | `076bfef2-e925-4f68-bcb8-7398df7305c6` |
+
+Phase B operator changes, made together with the single release:
+1. **Release profile.** Set `INSIGNIA_RELEASE_PROFILE=native-cart-line-v3-aa3b6166` in web, worker and verifier together, using binding-head images and the matching verifier manifest. Before the release, readiness fails closed, as in earlier transitions.
+2. **Migration 53.** Apply `20261110000100_buyer_visitor_limits.sql` through the existing schema owner before replacing consumers, so schema goes from 52 to 53. It widens the shop session ceiling, adds nullable `buyer_sessions.grant_expires_at` with an index, and replaces the `buyer_session_identity` trigger. A NULL grant keeps the old immutability rule, so the running pre-change writer stays compatible.
+3. **Web runtime grant.** The web role now needs `UPDATE(expires_at)` on `public.buyer_sessions` (see [web-runtime-grants.sql](../m8-journey/web-runtime-grants.sql)). Apply only that column grant to the actual web role as the schema owner; do not rerun the bootstrap file over later qualified APIs. Afterwards the column-ACL digest changes by exactly that column; relation, function, membership and schema ACL digests stay unchanged. Record the new digest as the expected value.
+4. **`INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON`.** Recommendation: leave it unchanged for this release (appKey, legacy `8d93a086…`/`5baff05a…` query fields, `observationVersion: 2`). This image accepts and ignores the legacy fields ([Expected Function configuration](#expected-function-configuration)). The rollback image (the deployed functions-renew build) still requires them, and they are correct for that image together with Active 1202733449217. Do not write the v3 query hashes into it. Reduce it to `{"appKey":…}` once rollback to a pre-PR298 image is retired.
+5. **No new environment variables.** The buyer database pool rises from 4 to 10 in code. Check headroom against the actual `max_connections` (default 100) and current consumers.
+
+Open carts still holding v2 carriers fail at checkout and need Designer repair, as the owner accepted. If an `eur-nl-qualification-v1` profile is configured, it no longer matches and EUR stays fail-closed; EUR is not enabled. Release once, then obtain fresh independent admission. This binding is not activation or native acceptance.
+
 ## Functions renew candidate development transition
 
 `native-functions-renew-8fffc9de` binds inactive version 1202733449217, the complete 33-version inventory in [native-functions-renew-release-binding.json](native-functions-renew-release-binding.json) and the exact 14-module [baseline](native-functions-renew-module-baseline.json). Canonical hash is `6bbac54719093f8ab867fe199e70bddf5b7e40f4b6404c046d4deb74b573cb9a`. Source is merge 8fffc9de/tree 00b71102: PR293 (a stale quote with no marked line checks out as a plain cart; one checkout message localized by `localization.language`) and PR294 (cart renewal and context notice). All 23 theme files, including 14 assets, match foundation run 42887198952/attempt 1. Prior 1202503778305 remains sole Active; all NEVER_RELEASE versions remain inactive.

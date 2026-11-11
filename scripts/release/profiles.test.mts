@@ -10,6 +10,12 @@ import behaviorModules from '../../deployment/m5-runtime/native-behavior-module-
 import behaviorBinding from '../../deployment/m5-runtime/native-behavior-release-binding.json' with { type: 'json' };
 import canonicalModules from '../../deployment/m5-runtime/native-canonical-module-baseline.json' with { type: 'json' };
 import canonicalBinding from '../../deployment/m5-runtime/native-canonical-release-binding.json' with { type: 'json' };
+import cartLineV3Modules from '../../deployment/m5-runtime/native-cart-line-v3-module-baseline.json' with {
+  type: 'json',
+};
+import cartLineV3Binding from '../../deployment/m5-runtime/native-cart-line-v3-release-binding.json' with {
+  type: 'json',
+};
 import cartModules from '../../deployment/m5-runtime/native-cart-module-baseline.json' with { type: 'json' };
 import cartBinding from '../../deployment/m5-runtime/native-cart-release-binding.json' with { type: 'json' };
 import cartRepairModules from '../../deployment/m5-runtime/native-cart-repair-module-baseline.json' with {
@@ -392,7 +398,58 @@ test('functions renew candidate preserves identities and changes only theme and 
     } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
   }
 });
+test('cart-line v3 candidate preserves identities and changes only theme and Function artifacts', () => {
+  assert.equal(cartLineV3Modules.length, 14);
+  assert.equal(cartLineV3Binding.moduleHash, 'dd76c50a573e7c6cdb7b42555fdbc36e1edda5189c75b876f4f81d92f66c447f');
+  assert.equal(cartLineV3Binding.versionIds.length, 34);
+  assert.deepEqual(
+    new Set(cartLineV3Binding.versionIds),
+    new Set([...functionsRenewBinding.versionIds, '1202999689217']),
+  );
+  assert.deepEqual(
+    cartLineV3Modules.map((m) => m.handle),
+    cartLineV3Modules.map((m) => m.handle).sort(),
+  );
+  const queryHash = (config: unknown) =>
+    createHash('sha256')
+      .update(String(required(array(object(config).targets)[0] as { input_query?: unknown }).input_query), 'utf8')
+      .digest('hex');
+  const v3 = {
+    'insignia-experimental-v2-transform': {
+      query: '02ab5bcee805fba94dff9309a2e55cb1998651ca42fdba8564872ba891fd16ac',
+      wasmBytes: 183604,
+    },
+    'insignia-experimental-v2-validation': {
+      query: '5867e61f07dbb4d6417df401b5ffbc47f0175eca1d00f7792621150713b18d7e',
+      wasmBytes: 181608,
+    },
+  } as const;
+  for (const module of cartLineV3Modules) {
+    const prior = required(functionsRenewModules.find((m) => m.handle === module.handle));
+    const { config, ...identity } = module,
+      { config: oldConfig, ...oldIdentity } = prior;
+    assert.deepEqual(identity, oldIdentity);
+    if (module.type === 'function') {
+      const expected = v3[module.handle as keyof typeof v3];
+      assert(expected);
+      assert.equal(queryHash(config), expected.query);
+      assert.notEqual(queryHash(config), queryHash(oldConfig));
+      const metadata = object(object(config).module_metadata);
+      assert.equal(metadata.module_wasm_size_bytes, expected.wasmBytes);
+      assert.notEqual(object(config).module_id, object(oldConfig).module_id);
+      const unversioned = (value: unknown) => {
+        const { module_id: _id, module_metadata, targets, ...rest } = object(value);
+        const { module_wasm_size_bytes: _w, module_compiled_size_bytes: _c, ...meta } = object(module_metadata);
+        const [target] = array(targets);
+        const { input_query: _q, ...targetRest } = object(target);
+        return { ...rest, meta, target: targetRest };
+      };
+      assert.deepEqual(unversioned(config), unversioned(oldConfig));
+    } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
+  }
+});
 const runtimeProfileNames = [
+  'native-cart-line-v3-aa3b6166',
   'native-functions-renew-8fffc9de',
   'native-cart-repair-eb386d22',
   'native-canonical-313b12ad',
@@ -432,6 +489,17 @@ test('each profile names the Function artifacts its runtime profile admits', () 
       wasmSha256: '3193f60bbb29cdc473ce7ae73e88d1064ca7be2f03da2aade4e17ae1390366c6',
     },
   };
+  assert.deepEqual(releaseProfile('native-cart-line-v3-aa3b6166').functions, {
+    sourceCommit: 'aa3b6166eb2b4679f27e1b7f128d914137ba8412',
+    transform: {
+      inputQuerySha256: '02ab5bcee805fba94dff9309a2e55cb1998651ca42fdba8564872ba891fd16ac',
+      wasmSha256: '5c8708b578383d54f78b79534a3141515296f7b3864bce9852af0c678dbed677',
+    },
+    validation: {
+      inputQuerySha256: '5867e61f07dbb4d6417df401b5ffbc47f0175eca1d00f7792621150713b18d7e',
+      wasmSha256: '6c362b36a5cf3eba77dcf9accc64bf0ae3225d77c97dd01bcc9d3e0e1ea83de4',
+    },
+  });
   assert.deepEqual(releaseProfile('native-functions-renew-8fffc9de').functions, {
     sourceCommit: '8fffc9debc2bad4914aaa22dca82d8fdf272de5d',
     transform: {
@@ -445,12 +513,14 @@ test('each profile names the Function artifacts its runtime profile admits', () 
   });
   for (const name of runtimeProfileNames) {
     const functions = releaseProfile(name).functions;
-    if (name !== 'native-functions-renew-8fffc9de') assert.deepEqual(functions, original);
+    if (name !== 'native-functions-renew-8fffc9de' && name !== 'native-cart-line-v3-aa3b6166')
+      assert.deepEqual(functions, original);
     assert.equal(functions.sourceCommit, resolveRuntimeReleaseProfile(name).functionsSourceCommit);
     assert.equal(releaseProfile(name).versionId, resolveRuntimeReleaseProfile(name).activeVersionRef);
   }
 });
 for (const profile of [
+  'native-cart-line-v3-aa3b6166',
   'native-functions-renew-8fffc9de',
   'native-cart-repair-eb386d22',
   'native-canonical-313b12ad',
@@ -477,11 +547,17 @@ for (const profile of [
   'lean-markets-7b17cd9',
   'lean-privacy-theme-23fd116',
 ]) {
-  const renew = profile === 'native-functions-renew-8fffc9de';
+  const v3 = profile === 'native-cart-line-v3-aa3b6166';
+  const renew = v3 || profile === 'native-functions-renew-8fffc9de';
   const cartRepair = renew || profile === 'native-cart-repair-eb386d22';
-  const inputQueries = renew
-    ? { validation: '5baff05ac4b1967bc7c9b461b7d6a8956344ddd8c9233708534e8814b34ebcc4' }
-    : undefined;
+  const inputQueries = v3
+    ? {
+        transform: '02ab5bcee805fba94dff9309a2e55cb1998651ca42fdba8564872ba891fd16ac',
+        validation: '5867e61f07dbb4d6417df401b5ffbc47f0175eca1d00f7792621150713b18d7e',
+      }
+    : renew
+      ? { validation: '5baff05ac4b1967bc7c9b461b7d6a8956344ddd8c9233708534e8814b34ebcc4' }
+      : undefined;
   const canonical = cartRepair || profile === 'native-canonical-313b12ad';
   const reviewNav = canonical || profile === 'native-review-nav-8a7ee446';
   const loading = reviewNav || profile === 'native-loading-defd05b0';
@@ -504,108 +580,121 @@ for (const profile of [
   const cookie = preview || profile === 'm8-cookie-91b35ab';
   const theme = cookie || profile === 'm8-theme-c8d8713';
   const proxy = profile !== 'm8-read-orders-617057f';
-  const versionId = renew
-    ? '1202733449217'
-    : cartRepair
-      ? '1202503778305'
-      : canonical
-        ? '1201385144321'
-        : reviewNav
-          ? '1201192632321'
-          : loading
-            ? '1201128341505'
-            : reviewCart
-              ? '1200729554945'
-              : startup
-                ? '1200333160449'
-                : recovery
-                  ? '1199953805313'
-                  : speed
-                    ? '1199807692801'
-                    : performance
-                      ? '1199754706945'
-                      : parity
-                        ? '1199503441921'
-                        : behavior
-                          ? '1199244476417'
-                          : selectedOnly
-                            ? '1199166783489'
-                            : cart
-                              ? '1199122513921'
-                              : fixed
-                                ? '1198986199041'
-                                : nativeTheme
-                                  ? '1198938357761'
-                                  : refreshed
-                                    ? '1197668466689'
-                                    : selected
-                                      ? '1196974997505'
-                                      : privacy
-                                        ? '1171218169857'
-                                        : lean
-                                          ? '1169137696769'
-                                          : preview
-                                            ? '1168157736961'
-                                            : cookie
-                                              ? '1166710865921'
-                                              : theme
-                                                ? '1166552825857'
-                                                : proxy
-                                                  ? '1166090010625'
-                                                  : '1165513097217';
-  const modules = renew
-    ? functionsRenewModules
-    : cartRepair
-      ? cartRepairModules
-      : canonical
-        ? canonicalModules
-        : reviewNav
-          ? reviewNavModules
-          : loading
-            ? loadingModules
-            : reviewCart
-              ? reviewCartModules
-              : startup
-                ? startupModules
-                : recovery
-                  ? recoveryModules
-                  : speed
-                    ? speedModules
-                    : performance
-                      ? performanceModules
-                      : parity
-                        ? parityModules
-                        : behavior
-                          ? behaviorModules
-                          : selectedOnly
-                            ? selectedOnlyModules
-                            : cart
-                              ? cartModules
-                              : fixed
-                                ? fixedModules
-                                : nativeTheme
-                                  ? nativeThemeModules
-                                  : refreshed
-                                    ? refreshModules
-                                    : selected
-                                      ? selectedModules
-                                      : privacy
-                                        ? privacyModules
-                                        : lean
-                                          ? leanMarketsModules
-                                          : preview
-                                            ? previewThemeModules
-                                            : cookie
-                                              ? cookieThemeModules
-                                              : theme
-                                                ? themeModules
-                                                : proxy
-                                                  ? proxyModules
-                                                  : historicalM8Modules;
+  const versionId = v3
+    ? '1202999689217'
+    : renew
+      ? '1202733449217'
+      : cartRepair
+        ? '1202503778305'
+        : canonical
+          ? '1201385144321'
+          : reviewNav
+            ? '1201192632321'
+            : loading
+              ? '1201128341505'
+              : reviewCart
+                ? '1200729554945'
+                : startup
+                  ? '1200333160449'
+                  : recovery
+                    ? '1199953805313'
+                    : speed
+                      ? '1199807692801'
+                      : performance
+                        ? '1199754706945'
+                        : parity
+                          ? '1199503441921'
+                          : behavior
+                            ? '1199244476417'
+                            : selectedOnly
+                              ? '1199166783489'
+                              : cart
+                                ? '1199122513921'
+                                : fixed
+                                  ? '1198986199041'
+                                  : nativeTheme
+                                    ? '1198938357761'
+                                    : refreshed
+                                      ? '1197668466689'
+                                      : selected
+                                        ? '1196974997505'
+                                        : privacy
+                                          ? '1171218169857'
+                                          : lean
+                                            ? '1169137696769'
+                                            : preview
+                                              ? '1168157736961'
+                                              : cookie
+                                                ? '1166710865921'
+                                                : theme
+                                                  ? '1166552825857'
+                                                  : proxy
+                                                    ? '1166090010625'
+                                                    : '1165513097217';
+  const modules = v3
+    ? cartLineV3Modules
+    : renew
+      ? functionsRenewModules
+      : cartRepair
+        ? cartRepairModules
+        : canonical
+          ? canonicalModules
+          : reviewNav
+            ? reviewNavModules
+            : loading
+              ? loadingModules
+              : reviewCart
+                ? reviewCartModules
+                : startup
+                  ? startupModules
+                  : recovery
+                    ? recoveryModules
+                    : speed
+                      ? speedModules
+                      : performance
+                        ? performanceModules
+                        : parity
+                          ? parityModules
+                          : behavior
+                            ? behaviorModules
+                            : selectedOnly
+                              ? selectedOnlyModules
+                              : cart
+                                ? cartModules
+                                : fixed
+                                  ? fixedModules
+                                  : nativeTheme
+                                    ? nativeThemeModules
+                                    : refreshed
+                                      ? refreshModules
+                                      : selected
+                                        ? selectedModules
+                                        : privacy
+                                          ? privacyModules
+                                          : lean
+                                            ? leanMarketsModules
+                                            : preview
+                                              ? previewThemeModules
+                                              : cookie
+                                                ? cookieThemeModules
+                                                : theme
+                                                  ? themeModules
+                                                  : proxy
+                                                    ? proxyModules
+                                                    : historicalM8Modules;
   const profileTest = (name: string, fn: TestFn) => test(`${profile}: ${name}`, fn);
   const prior = (versions: ReleaseAppendInput['activeObservation']['versions']) =>
     proxy
       ? [
+          ...(v3
+            ? [
+                {
+                  versionId: 'gid://shopify/Version/1202733449217',
+                  versionTag: 'native-functions-renew-8fffc9de',
+                  status: 'inactive' as const,
+                },
+              ]
+            : []),
           ...(renew
             ? [
                 {
@@ -858,9 +947,11 @@ for (const profile of [
         };
         assert.equal(qualifyReleaseAppendInput(input, time, profile).expected.appVersionRef, versionId);
         const otherQuery = structuredClone(input);
-        otherQuery.readiness.functions.observation.validation.inputQuerySha256 = renew
-          ? 'a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5'
-          : '5baff05ac4b1967bc7c9b461b7d6a8956344ddd8c9233708534e8814b34ebcc4';
+        otherQuery.readiness.functions.observation.validation.inputQuerySha256 = v3
+          ? '5baff05ac4b1967bc7c9b461b7d6a8956344ddd8c9233708534e8814b34ebcc4'
+          : renew
+            ? 'a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5'
+            : '5baff05ac4b1967bc7c9b461b7d6a8956344ddd8c9233708534e8814b34ebcc4';
         assert.throws(() => qualifyReleaseAppendInput(otherQuery, time, profile));
         const inactive = structuredClone(input);
         required(inactive.activeObservation.versions[0]).status = 'inactive';

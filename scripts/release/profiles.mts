@@ -5,6 +5,12 @@ import behaviorModules from '../../deployment/m5-runtime/native-behavior-module-
 import behaviorCandidate from '../../deployment/m5-runtime/native-behavior-release-binding.json' with { type: 'json' };
 import canonicalModules from '../../deployment/m5-runtime/native-canonical-module-baseline.json' with { type: 'json' };
 import canonicalBinding from '../../deployment/m5-runtime/native-canonical-release-binding.json' with { type: 'json' };
+import cartLineV3Modules from '../../deployment/m5-runtime/native-cart-line-v3-module-baseline.json' with {
+  type: 'json',
+};
+import cartLineV3Binding from '../../deployment/m5-runtime/native-cart-line-v3-release-binding.json' with {
+  type: 'json',
+};
 import cartModules from '../../deployment/m5-runtime/native-cart-module-baseline.json' with { type: 'json' };
 import cartCandidate from '../../deployment/m5-runtime/native-cart-release-binding.json' with { type: 'json' };
 import cartRepairModules from '../../deployment/m5-runtime/native-cart-repair-module-baseline.json' with {
@@ -111,6 +117,20 @@ const renewedFunctions = {
     wasmSha256: '4a3e7495245e8716b976ff3c3816c4e144114883edd317afc38fdf84b369f9ec',
   },
 };
+/** Built from merge aa3b6166 (cart-line v3 Functions and input queries) with
+ * scripts/functions/build-wasm.mts; CI foundation 42932707400 built identical bytes.
+ * Owner authorized the byte/behavior change and the single v3 cutover. */
+const cartLineV3Functions = {
+  sourceCommit: 'aa3b6166eb2b4679f27e1b7f128d914137ba8412',
+  transform: {
+    inputQuerySha256: '02ab5bcee805fba94dff9309a2e55cb1998651ca42fdba8564872ba891fd16ac',
+    wasmSha256: '5c8708b578383d54f78b79534a3141515296f7b3864bce9852af0c678dbed677',
+  },
+  validation: {
+    inputQuerySha256: '5867e61f07dbb4d6417df401b5ffbc47f0175eca1d00f7792621150713b18d7e',
+    wasmSha256: '6c362b36a5cf3eba77dcf9accc64bf0ae3225d77c97dd01bcc9d3e0e1ea83de4',
+  },
+};
 const oldIds = [
   '1163229200385',
   '1162611916801',
@@ -122,6 +142,15 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  'native-cart-line-v3-aa3b6166': {
+    versionId: cartLineV3Binding.versionId,
+    versionTag: cartLineV3Binding.versionTag,
+    versionIds: cartLineV3Binding.versionIds,
+    moduleHash: cartLineV3Binding.moduleHash,
+    modules: cartLineV3Modules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   'native-functions-renew-8fffc9de': {
     versionId: functionsRenewBinding.versionId,
     versionTag: functionsRenewBinding.versionTag,
