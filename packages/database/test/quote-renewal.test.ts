@@ -329,7 +329,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('immutable owned quote renewal
         quote: { ...result.quote, acceptedAt: issuance.issuedAt },
       })),
     ).rejects.toThrow('modified accepted history');
-    await sql`UPDATE signing_keys SET state='revoked',revoked_at=clock_timestamp(),
+    await sql`UPDATE signing_keys SET state='revoked',revoked_at=clock_timestamp(),private_envelope=NULL,wrapping_key_id=NULL,
       revocation_command_key='renew-test',revocation_reason='test' WHERE shop_id=${value.shopId} AND key_id=7`.execute(
       database,
     );

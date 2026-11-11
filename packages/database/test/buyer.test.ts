@@ -580,7 +580,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
     await expect(buyer.reserveCommand(scope, { ...command, key: 'new-accept' })).rejects.toMatchObject({
       code: 'RATE_LIMITED',
     });
-    await sql`UPDATE signing_keys SET state='retiring',retired_at=${now} WHERE shop_id=${value.shopId} AND key_id=7`.execute(
+    await sql`UPDATE signing_keys SET state='retiring',retired_at=${now},private_envelope=NULL,wrapping_key_id=NULL WHERE shop_id=${value.shopId} AND key_id=7`.execute(
       db,
     );
     expect(await buyer.getOwnedSet(scope, { quoteId, setId, ownerBinding, now })).not.toBeNull();

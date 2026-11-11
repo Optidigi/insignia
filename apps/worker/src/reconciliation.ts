@@ -16,9 +16,28 @@ export function createWorkerReconciliation(input: {
   usage?: { runOnce(): Promise<{ failed: number }>; stop(): Promise<void> };
   purchases?: { recover(): Promise<unknown>; discoverChanges(): Promise<unknown> };
   lifecycle?: { runOnce(): Promise<void> };
+  signingKeys?: { destroyExpired?(maximumRows?: number): Promise<number> };
+  clock?: () => Date;
 }) {
   let active: Promise<void> | undefined;
   let stopped = false;
+  const clock = input.clock ?? (() => new Date());
+  const signingKeys = input.signingKeys ?? input.core.signingKeys;
+  // Daily: retired or revoked signing keys whose window closed become destroyed. Idempotent; a
+  // failed day is retried on the next pass, a completed day is skipped until the UTC day changes.
+  let signingKeysDestroyedDay: number | undefined;
+  const destroyExpiredSigningKeys = async () => {
+    const day = Math.floor(clock().getTime() / 86_400_000);
+    if (signingKeysDestroyedDay === day || !signingKeys.destroyExpired) return;
+    let count = 0;
+    for (let batch = 0; batch < 50; batch += 1) {
+      const destroyed = await signingKeys.destroyExpired(100);
+      count += destroyed;
+      if (destroyed < 100) break;
+    }
+    signingKeysDestroyedDay = day;
+    input.queue.observability.logger.info('signing_key_destruction', { count });
+  };
   const runOnce = (): Promise<void> => {
     if (stopped) return Promise.resolve();
     if (active) return active;
@@ -48,6 +67,7 @@ export function createWorkerReconciliation(input: {
           run: () => input.core.buyers?.cleanupDue(100),
         },
         { errorClass: 'UNINSTALL_ENROLLMENT_UNAVAILABLE', run: () => input.lifecycle?.runOnce() },
+        { errorClass: 'SIGNING_KEY_DESTRUCTION_UNAVAILABLE', run: destroyExpiredSigningKeys },
       ];
       for (const operation of operations) {
         if (stopped) break;

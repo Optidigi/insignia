@@ -33,6 +33,11 @@ function fixture(): Omit<Input, 'queue'> & {
   const seen: string[] = [],
     errors: { event: RuntimeEvent; metadata?: RuntimeLogDetails }[] = [];
   const core = durableCoreFixture({
+    signingKeys: {
+      async destroyExpired() {
+        return 0;
+      },
+    },
     buyers: {
       async cleanupDue() {
         return 0;
@@ -397,4 +402,53 @@ test('usage maintenance exposes completed passes and failures without purchase d
   assert.match(metrics, /insignia_usage_qualification_pass_total\{outcome="failure"\} 2/);
   assert.doesNotMatch(metrics, /private source|purchaseId|shop_id/);
   await maintenance.stop();
+});
+
+test('signing key destruction runs once per UTC day, logs only a count, and retries a failed day', async () => {
+  const input = fixture();
+  const infos: { event: RuntimeEvent; metadata?: RuntimeLogDetails }[] = [];
+  input.queue.observability = {
+    ...input.queue.observability,
+    logger: {
+      info(event, metadata) {
+        infos.push({ event, metadata });
+      },
+      error(event, metadata) {
+        input.errors.push({ event, metadata });
+      },
+    },
+  };
+  let now = Date.parse('2026-11-12T00:05:00.000Z');
+  const calls: number[] = [];
+  let fail = true;
+  const batches = [100, 3, 0];
+  const reconciliation = createWorkerReconciliation({
+    ...input,
+    clock: () => new Date(now),
+    signingKeys: {
+      async destroyExpired(limit) {
+        calls.push(limit ?? -1);
+        if (fail) throw new Error('database unavailable');
+        return batches.shift() ?? 0;
+      },
+    },
+  });
+  await reconciliation.runOnce();
+  assert.deepEqual(
+    input.errors.filter((entry) => entry.metadata?.errorClass === 'SIGNING_KEY_DESTRUCTION_UNAVAILABLE').length,
+    1,
+  );
+  fail = false;
+  await reconciliation.runOnce();
+  assert.deepEqual(calls, [100, 100, 100]);
+  assert.deepEqual(
+    infos.filter((entry) => entry.event === 'signing_key_destruction'),
+    [{ event: 'signing_key_destruction', metadata: { count: 103 } }],
+  );
+  await reconciliation.runOnce();
+  assert.equal(calls.length, 3, 'same UTC day is skipped');
+  now += 86_400_000;
+  await reconciliation.runOnce();
+  assert.equal(calls.length, 4, 'next UTC day runs again (idempotent: zero destroyed)');
+  assert.deepEqual(infos.at(-1), { event: 'signing_key_destruction', metadata: { count: 0 } });
 });

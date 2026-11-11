@@ -197,7 +197,10 @@ export class PgSigningKeyRepository {
       if (old.rows[0])
         // Backstop: a retired key never stays verifiable forever. UTC day + 4 is never earlier than
         // the owner flow's scheduled shop-local day + 3 (a shop-local day is at most UTC day + 1).
+        // The retired key's private half is scrubbed in the same transaction (one-way); its public
+        // key and window stay so outstanding carts keep verifying until the window closes.
         await sql`UPDATE signing_keys SET state='retiring', retired_at=clock_timestamp(),
+          private_envelope=NULL, wrapping_key_id=NULL,
           last_valid_day=LEAST(last_valid_day, GREATEST(first_valid_day, floor(extract(epoch from clock_timestamp()) / 86400)::int + 4)) WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND key_id=${old.rows[0].key_id}`.execute(
           tx,
         );
@@ -250,7 +253,7 @@ export class PgSigningKeyRepository {
         await sql`UPDATE signing_keys SET private_envelope=${JSON.stringify(envelope)}::jsonb, wrapping_key_id=${envelope.kid}
         WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint
           AND authorization_generation=${scope.authorizationGeneration}::uuid AND key_id=${keyId}
-          AND state <> 'destroyed' AND wrapping_key_id=${expectedWrappingKeyId}`.execute(tx);
+          AND state IN ('pending','active') AND wrapping_key_id=${expectedWrappingKeyId}`.execute(tx);
       if (result.numAffectedRows !== 1n) throw new Error('Signing envelope changed during rewrap');
     });
   }
@@ -263,6 +266,7 @@ export class PgSigningKeyRepository {
       sameScope(await lockScope(tx, scope.shopId, scope.installationGeneration), scope);
       const result =
         await sql`UPDATE signing_keys SET state='revoked', revoked_at=clock_timestamp(), revocation_command_key=${commandKey}, revocation_reason=${reason},
+          private_envelope=NULL, wrapping_key_id=NULL,
           last_valid_day=LEAST(last_valid_day, GREATEST(first_valid_day, floor(extract(epoch from clock_timestamp()) / 86400)::int + 3))
         WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND key_id=${keyId}
           AND authorization_generation=${scope.authorizationGeneration}::uuid AND state IN ('pending','active','retiring')`.execute(
@@ -283,6 +287,19 @@ export class PgSigningKeyRepository {
           AND last_valid_day < (floor(extract(epoch from clock_timestamp()) / 86400)::int - 1)`.execute(tx);
       if (result.numAffectedRows !== 1n) throw new Error('Signing key destruction window is not closed');
     });
+  }
+
+  /**
+   * Worker maintenance: retired or revoked keys whose window closed become destroyed (same
+   * conservative UTC rule as `destroy`). Runs through a definer function; no key material is read.
+   */
+  async destroyExpired(maximumRows = 100): Promise<number> {
+    if (!Number.isInteger(maximumRows) || maximumRows < 1 || maximumRows > 100)
+      throw new TypeError('Invalid signing key destruction limit');
+    const result = await sql<{
+      count: number;
+    }>`SELECT public.destroy_expired_signing_keys(${maximumRows}) AS count`.execute(this.database);
+    return Number(result.rows[0]?.count ?? 0);
   }
 
   /** Deactivation itself invalidates all authorizations from that installation. */
