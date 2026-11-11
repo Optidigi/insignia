@@ -101,7 +101,15 @@ Updated 11 November 2026. Insignia now runs only on `app.insigniacustomizer.com`
 - The operator-alert relay `insignia-alerts@optidigi.nl` → `admin@optidigi.nl`: owner decision to keep.
 - The development recipient `admin@optidigi.nl`.
 - The shared Traefik ACME contact: not Insignia-owned.
-- The legacy `insignia.optidigi.nl` service and historical evidence.
+- Historical evidence (for example `deployment/m5-019`, kept as a retained record; nothing executes it).
+
+**Legacy generic app removed, 11 November 2026 (owner decision).** The separate legacy `insignia.optidigi.nl` stack (`insignia-app` and `insignia-postgres`, `/srv/saas/infra/stacks/insignia`) had its own Shopify app key and no installations; its one stored shop token returned 401. It had 0 orders, and in 14 days its only traffic was a health monitor, its own cleanup cron and bot scans.
+- A final `pg_dump` was restore-verified in a throwaway container: 1 product config, 1 shop, 11 logos.
+- The dump, compose file, private env and pre-change crontab are kept privately (0600) under `~/.local/share/insignia/legacy-generic-removal-20261111/` on prod.
+- Removed: its two crontab lines, both containers, the `insignia_internal` network and its data directory. The compose file was renamed `compose.yaml.removed-20261111` so it cannot be restarted by accident. `insignia.optidigi.nl` now returns 404.
+- Kept: the shared image `ghcr.io/optidigi/insignia-app:latest`, which the Superfunny and Custom apps also use.
+- Untouched (owner requirement): the Stitchs, Superfunny and Custom legacy stacks, including their cron jobs and secrets. All three returned 200 afterwards.
+- Outstanding: an external uptime monitor still probes `insignia.optidigi.nl/api/health` through Cloudflare; remove that entry wherever it is configured.
 - The VAT store's leftover per-shop uninstall subscription (above).
 
 **Future cloudflared tunnel.** If the origin moves behind a tunnel, replace the `ipAllowList` with tunnel-only access (no public port). The zone transform rule keeps working, because it runs at Cloudflare's edge.
