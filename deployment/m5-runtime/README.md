@@ -188,6 +188,55 @@ To refresh:
 
 A stale list fails closed for the new edge addresses only. Traefik's access log shows those requests as 403s from addresses outside the pinned list.
 
+## Signing wrapping-key (KEK) custody
+
+Since keys no longer expire (spec §5.5), each key's Ed25519 seed is protected only by its envelope and by custody of the wrapping key.
+- **Envelope:** `signing_keys.private_envelope` is AES-256-GCM with a random 96-bit nonce per seal and a 128-bit tag.
+- **Associated data:** the AAD binds `['insignia-signing-key', 1, shop, installation generation, authorization generation, key id]`, so an envelope cannot be moved to another key or shop.
+- **Kid:** `wrapping_key_id` equals the envelope `kid`. Opening checks that the derived public key equals the stored one.
+- **Memory:** the seed exists only in web memory while signing and is zeroed afterwards.
+
+**Where the KEK lives.**
+- `INSIGNIA_SIGNING_WRAP_KEY_ID/_BASE64` (plus optional `INSIGNIA_SIGNING_WRAP_PREVIOUS_KEYS_JSON`) is in the web private composition only (`web.private.json`, 0600, host-only). It is not in images, the repository or logs.
+- The worker, inspector and verifier never receive it.
+- Before the dedicated key, seeds were sealed under the shop-credential ring (`INSIGNIA_CREDENTIAL_KEY_*`), which the worker also holds.
+- `INSIGNIA_SIGNING_UNWRAP_CREDENTIAL_KEYS=1` lets web open those older envelopes during a transition. Credential keys never seal. Remove the flag once no active key is credential-sealed: after rotating to a dedicated-KEK key, or after re-wrapping.
+
+**Database access.**
+- Only the web role (`insignia_runtime`) and the schema owner can read `private_envelope`.
+- Apply [signing-key-runtime-grants.sql](signing-key-runtime-grants.sql) as the schema owner. It removes the legacy blanket `DELETE` and whole-row `UPDATE` from the web role and leaves only the lifecycle columns updatable.
+
+**Backups and checkpoints.**
+- Checkpoints contain envelopes, so they must never contain the KEK.
+- Capture the runtime private compositions (which hold the KEK) separately from the database dump, under a different recipient or custody.
+- A database-only or backup-only copy then yields no seed.
+
+**Re-wrap (KEK rotation).**
+1. Add the new key as current and keep the old one in `INSIGNIA_SIGNING_WRAP_PREVIOUS_KEYS_JSON`.
+2. Recreate web.
+3. For each non-destroyed key, call `SigningKeyLifecycle.rewrap(scope, keyId)` as the web role. This is a library operation; there is no packaged CLI yet, so run it as a one-off from a qualified checkout on the private network with the web role and the new ring. It opens with any ring key, checks the public key, seals under the current key, and is guarded on the expected kid.
+4. Confirm that every `wrapping_key_id` is the new id, then remove the old key and recreate web.
+
+**Non-expiring rotation (owner action).** Arm the [signing-owner overlay](signing-owner-compose.yaml) with a plan of `{keyId, firstDay: shop-local today, lastDay: 2147483647}` and start the action from the embedded admin. The flow runs:
+1. create pending;
+2. schedule the outgoing key to today + 3;
+3. publish to both Functions;
+4. read back;
+5. activate.
+
+Then disarm, and destroy the outgoing key once its window has closed.
+
+**Blast radius.**
+
+| Leak | What the attacker gets |
+| --- | --- |
+| Database or checkpoint only | Ciphertext, no seed. |
+| KEK only | Nothing without the envelopes. |
+| Worker compromise | The credential ring plus the worker role, which cannot read envelopes. With the dedicated KEK, no seed. |
+| Web container compromise | The KEK plus the envelopes, so every live seed. Respond with an emergency epoch bump, then rotate. |
+
+The owner-level mitigation for a web compromise is an HSM or KMS-held KEK, or a separate signing process. That is a recommendation, not deployed.
+
 ## Bounded deployment and recovery sequence
 
 1. Qualify exact candidate CI/artifact/Compose identity, current privileges, same-database endpoints, actual schema and current source compatibility. Verify any existing permission covers named services/effects; group genuinely missing owner inputs once. Secret-bearing renders, tokens and credentials stay private.
