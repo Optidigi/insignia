@@ -31,6 +31,7 @@ export type RuntimeEvent =
   | 'webhook_process_failed'
   | 'refresh_process_ok'
   | 'refresh_process_failed'
+  | 'signing_key_destruction'
   | 'queue_job_rejected';
 
 const ADMIN_AUTH_STAGES = [
@@ -194,7 +195,8 @@ function safeDetails(input: RuntimeLogDetails): RuntimeLogDetails {
     input.errorClass === 'PURCHASE_PAYLOAD_CLEANUP_UNAVAILABLE' ||
     input.errorClass === 'ARTWORK_CLEANUP_UNAVAILABLE' ||
     input.errorClass === 'MERCHANT_PREVIEW_CLEANUP_UNAVAILABLE' ||
-    input.errorClass === 'BUYER_PAYLOAD_CLEANUP_UNAVAILABLE'
+    input.errorClass === 'BUYER_PAYLOAD_CLEANUP_UNAVAILABLE' ||
+    input.errorClass === 'SIGNING_KEY_DESTRUCTION_UNAVAILABLE'
   )
     result.errorClass = input.errorClass;
   if (Number.isSafeInteger(input.count) && (input.count ?? -1) >= 0) result.count = input.count;

@@ -36,6 +36,8 @@ export interface SigningKeyStore {
   activate(scope: KeyScope, keyId: number, beforeWrite?: () => boolean): Promise<void>;
   scheduleRetirement(scope: KeyScope, keyId: number, lastDay: number, beforeWrite?: () => boolean): Promise<void>;
   rewrap(scope: KeyScope, keyId: number, expectedWrappingKeyId: string, envelope: SigningEnvelope): Promise<void>;
+  /** Worker maintenance; optional so web-only stores need not implement it. */
+  destroyExpired?(maximumRows?: number): Promise<number>;
   revoke(scope: KeyScope, keyId: number, commandKey: string, reason: string): Promise<void>;
   destroy(scope: KeyScope, keyId: number): Promise<void>;
   destroyInactiveInstallationKeys(shopId: string, installationGeneration: string): Promise<number>;
@@ -106,13 +108,18 @@ export class SigningKeyLifecycle {
   /**
    * Re-seals one key's seed under the ring's current wrapping key (KEK rotation). The seed is
    * opened with any ring key, checked against the stored public key, and never leaves memory.
+   * Only pending and active keys hold a private half; scrubbed keys return null.
    */
-  async rewrap(scope: KeyScope, keyId: number): Promise<{ from: string; to: string }> {
+  async rewrap(scope: KeyScope, keyId: number): Promise<{ from: string; to: string } | null> {
     requireScope(await this.store.getActiveScope(scope.shopId, scope.installationGeneration), scope);
     const key = (await this.store.list(scope)).find((candidate) => candidate.id === keyId);
+    if (!key) throw new Error('Signing envelope unavailable');
+    // A retired, revoked or destroyed key has no private half to re-wrap: skip it.
+    if (key.state !== 'pending' && key.state !== 'active') {
+      if (key.privateEnvelope !== null || key.wrappingKeyId !== null) throw new Error('Unscrubbed retired signing key');
+      return null;
+    }
     if (
-      !key ||
-      key.state === 'destroyed' ||
       !key.privateEnvelope ||
       !key.wrappingKeyId ||
       typeof key.privateEnvelope !== 'object' ||

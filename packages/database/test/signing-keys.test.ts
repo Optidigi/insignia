@@ -71,6 +71,78 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable signing key lifecycle
     }
   });
 
+  it('scrubs the private half when a key leaves active, one way, and the worker destroys closed windows', async () => {
+    const db = await openTestDatabase();
+    const shopId = randomUUID();
+    const ring = { currentKeyId: 'test-wrap', keys: { 'test-wrap': randomBytes(32) } };
+    try {
+      await db.transaction().execute(async (tx) => {
+        await createTenantRepository(tx).createShop(tx, {
+          shopId,
+          shopDomain: `${shopId}.myshopify.com`,
+          shopifyShopId: (BigInt(`0x${shopId.replaceAll('-', '').slice(0, 15)}`) + 5n).toString(),
+        });
+      });
+      const store = new PgSigningKeyRepository(db);
+      const lifecycle = new SigningKeyLifecycle(store, ring);
+      const scope = await store.getActiveScope(shopId, '1');
+      if (!scope) throw new Error('Test installation missing');
+      await lifecycle.createPending({ scope, keyId: 1, firstDay: 100, lastDay: 0x7fffffff });
+      await lifecycle.activate(scope, 1);
+      await lifecycle.scheduleRetirement(scope, 1, 105);
+      const before = await lifecycle.desiredPublicConfig(scope);
+      await lifecycle.createPending({ scope, keyId: 2, firstDay: 100, lastDay: 0x7fffffff });
+      const pendingConfig = await lifecycle.desiredPublicConfig(scope);
+      await lifecycle.activate(scope, 2);
+      const keys = await store.list(scope);
+      const retired = keys.find((key) => key.keyId === 1);
+      // Same public key, window and published bytes; only the private half is gone.
+      expect(retired).toMatchObject({ state: 'retiring', lastDay: 105, privateEnvelope: null, wrappingKeyId: null });
+      expect(
+        Buffer.from(retired?.publicKey ?? []).equals(
+          Buffer.from(before.keys[0] ? Buffer.from(before.keys[0].publicHex, 'hex') : []),
+        ),
+      ).toBe(true);
+      expect((await lifecycle.desiredPublicConfig(scope)).value).toBe(pendingConfig.value);
+      // No path opens a retired key's seed; re-wrap skips it.
+      await expect(lifecycle.openActiveSeed(scope, 1)).rejects.toThrow();
+      expect(await lifecycle.rewrap(scope, 1)).toBeNull();
+      // One way: neither a direct restore nor a return to signing is accepted.
+      await expect(
+        sql`UPDATE signing_keys SET private_envelope='{}'::jsonb, wrapping_key_id='test-wrap' WHERE shop_id=${shopId} AND key_id=1`.execute(
+          db,
+        ),
+      ).rejects.toThrow(/cannot be restored/);
+      await expect(
+        sql`UPDATE signing_keys SET state='active' WHERE shop_id=${shopId} AND key_id=1`.execute(db),
+      ).rejects.toThrow();
+      // Revocation of a pending key scrubs it too.
+      await lifecycle.createPending({ scope, keyId: 3, firstDay: 100, lastDay: 0x7fffffff });
+      await lifecycle.revoke(scope, 3, 'incident-3', 'suspected leak');
+      expect((await store.list(scope)).find((key) => key.keyId === 3)).toMatchObject({
+        state: 'revoked',
+        privateEnvelope: null,
+        wrappingKeyId: null,
+      });
+      // The daily job destroys only closed windows (key 1, day 105) and is idempotent.
+      const destroyed = await store.destroyExpired(100);
+      expect(destroyed).toBeGreaterThanOrEqual(1);
+      expect((await store.list(scope)).map(({ keyId, state }) => ({ keyId, state }))).toEqual([
+        { keyId: 1, state: 'destroyed' },
+        { keyId: 2, state: 'active' },
+        { keyId: 3, state: 'revoked' },
+      ]);
+      await store.destroyExpired(100);
+      expect((await store.list(scope)).find((key) => key.keyId === 3)?.state).toBe('revoked');
+      await expect(store.destroyExpired(0)).rejects.toThrow();
+      const envelopes = await sql<{ key_id: number }>`SELECT key_id FROM signing_keys
+        WHERE shop_id=${shopId} AND private_envelope IS NOT NULL ORDER BY key_id`.execute(db);
+      expect(envelopes.rows.map((row) => row.key_id)).toEqual([2]);
+    } finally {
+      await db.destroy();
+    }
+  });
+
   it('encrypts raw seed and fences rotation, epoch, and reinstall', async () => {
     const db = await openTestDatabase();
     const shopId = randomUUID();
@@ -99,7 +171,15 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable signing key lifecycle
       const retained = (await store.list(scope)).find((key) => key.keyId === 7);
       if (!retained) throw new Error('Retained key missing');
       const retainedDigest = createHash('sha256')
-        .update(JSON.stringify({ ...retained, state: undefined, retiredAt: undefined }))
+        .update(
+          JSON.stringify({
+            ...retained,
+            state: undefined,
+            retiredAt: undefined,
+            privateEnvelope: undefined,
+            wrappingKeyId: undefined,
+          }),
+        )
         .digest('hex');
       await lifecycle.createPending({ scope, keyId: 8, firstDay: 102, lastDay: 106 });
       expect((await store.list(scope)).find((key) => key.keyId === 8)?.state).toBe('pending');
@@ -110,9 +190,20 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable signing key lifecycle
       if (!old) throw new Error('Retained key missing after rotation');
       expect(
         createHash('sha256')
-          .update(JSON.stringify({ ...old, state: undefined, retiredAt: undefined }))
+          .update(
+            JSON.stringify({
+              ...old,
+              state: undefined,
+              retiredAt: undefined,
+              privateEnvelope: undefined,
+              wrappingKeyId: undefined,
+            }),
+          )
           .digest('hex'),
       ).toBe(retainedDigest);
+      // Retirement scrubs the private half in the same transaction; public key and window stay.
+      expect(old.privateEnvelope).toBeNull();
+      expect(old.wrappingKeyId).toBeNull();
       expect(old.retiredAt).toBeInstanceOf(Date);
       expect(rotated.filter((key) => key.state === 'active').map((key) => key.keyId)).toEqual([8]);
       expect(await store.getActiveScope(shopId, '1')).toEqual(scope);

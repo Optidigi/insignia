@@ -253,7 +253,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
         authorization: { ...authorization, publicKeyFingerprint: 'a'.repeat(64) },
       })),
     ).rejects.toThrow(/signer does not match active durable key/);
-    await sql`UPDATE signing_keys SET state='retiring', retired_at=clock_timestamp()
+    await sql`UPDATE signing_keys SET state='retiring', retired_at=clock_timestamp(), private_envelope=NULL, wrapping_key_id=NULL
       WHERE shop_id=${value.shopId} AND key_id=7`.execute(database);
     expect(await repo.findCompleted(input)).toEqual(results[0]);
     await sql`UPDATE signing_keys SET state='revoked', revoked_at=clock_timestamp(),

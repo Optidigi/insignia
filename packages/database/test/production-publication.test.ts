@@ -247,6 +247,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
     const operationId = randomUUID();
     await publisher.prepare({ ...f, operationId, mode: 'optional' });
     await sql`UPDATE signing_keys SET state='revoked', revoked_at=clock_timestamp(),
+      private_envelope=NULL, wrapping_key_id=NULL,
       revocation_command_key='emergency-test', revocation_reason='test'
       WHERE shop_id=${f.shopId} AND key_id=7`.execute(database);
     expect(await publisher.advance(f.shopId, f.configId, operationId)).toEqual({
