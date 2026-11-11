@@ -231,6 +231,12 @@ Earlier setup/tier/FX/scope/allocation algorithms and worked examples are histor
 
 Use Ed25519, installation-scoped keys, and one signature per issuance over a header that commits to a Merkle root of the line records; every customized cart line carries the signed header, its own record and its inclusion proof. Store private keys encrypted using authenticated encryption and a wrapping-key version held outside PostgreSQL. Use the Node crypto signer and maintained Rust Ed25519 verifier with strict verification; never implement curve arithmetic manually. Both Functions verify every customized line independently, against one set per cart.
 
+**Separate signer (owner decision, 11 November 2026).** Only the signer process holds the wrapping keys and reads private envelopes. It is a separate container from the worker image, reachable only through a Unix socket that web mounts read-only; it has no TCP listener or route.
+- It signs only an exact v3 header for the installation's active key inside that key's window, with an issuance day within one day of UTC.
+- It creates pending keys and returns only their public half, and re-wraps envelopes under a new wrapping key.
+- It applies per-shop rate limits and writes audit lines with scope, key, outcome and duration only.
+- Web never holds a wrapping key or reads `private_envelope`. If the signer is unavailable, quotes fail closed with a retryable error.
+
 ### 5.2 Adopted v3 wire contract
 
 [CART-LINE-V3.md](CART-LINE-V3.md) is the single authority for wire layout, domain separation, signature input, Merkle construction, exact lengths and canonical encoding. It specifies the per-line `_insignia_line_v3` carrier and the Transform child reference `_insignia_ref_v3`; there is no cart-level attribute. [WHOLE-QUOTE-V2-ADOPTED.md](WHOLE-QUOTE-V2-ADOPTED.md) keeps the historical `_insignia_quote_v2` envelope and `_insignia_member_v2` carrier for reconciliation. TypeScript/Rust golden vectors and real Function transport controls must agree with that document. Reject unknown versions/flags, alternate encodings, padding, trailing bytes and overflow. A changed wire contract needs its own version and owner decision.
@@ -275,7 +281,12 @@ Routine publication, renewal, billing loss and plan changes do not bump epoch: d
 - **Activation backstop:** activation caps any retiring key at UTC day + 4.
 - **Revocation:** stops verification at once, through the `revoked` flag or an epoch bump, and caps the window at UTC day + 3.
 
-Windows only ever shorten. The existing destruction rule (`last_valid_day` before UTC day − 1) then erases the private envelope. Because keys no longer age out, private-key custody carries the protection: see the runtime README's signing wrapping-key custody.
+Windows only ever shorten. Because keys no longer age out, private-key custody carries the protection: see the runtime README's signing wrapping-key custody.
+
+**Private half only while signing (owner decision, 11 November 2026).** A key holds its encrypted private half only while it is pending or active.
+- **Scrub:** when a key retires or is revoked, its envelope is erased in the same transaction. This is one-way: the database refuses restoring an envelope or returning a retired key to signing.
+- **Still verifies:** the public key and window stay, so the published Function configuration is unchanged and outstanding carts keep verifying until the window closes.
+- **Daily destruction:** the worker marks retired and revoked keys whose window has closed as destroyed, by the existing rule (`last_valid_day` before UTC day − 1).
 
 Rotation/epoch changes use a convergence workflow, not a fiction of a transaction across PostgreSQL and Shopify. Stop issuance while projections disagree. A Function mismatch fails closed. Maintain desired/observed hashes and safe overlap windows; never assume Shopify metafield writes are instantly visible to all Function invocations.
 
