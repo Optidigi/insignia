@@ -2,7 +2,66 @@
 
 ## Active assignment
 
-Updated 11 November 2026. Insignia now runs only on `app.insigniacustomizer.com` (Active `1203782746113`, web main `92a189e1`, worker/verifier main `add83af7`, schema 56). Signing keys no longer expire routinely; rewrite-dev signs with non-expiring key 3. The combined application and canonical agent documentation are integrated. The existing host alias `prod` serves the allocated rewrite-dev app/store. The cart-line v3 source is deployed there, its candidate is the released Shopify Active version (the single v3 cutover), and both were independently read back. On 11 November 2026 a web-only update deployed main `721bc6b6`: the 5-minute release refresh and the Cloudflare-only origin lock. No production resource migration, new scopes/markets, database reset, history erasure, protected VAT retry, checkout/order/payment or consumed sender/alert drill was performed. The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
+Updated 11 November 2026. Insignia now runs only on `app.insigniacustomizer.com` (Active `1203782746113`, web/worker/signer main `fb30b947`, verifier main `add83af7`, schema 58). Signing keys no longer expire routinely; rewrite-dev signs with non-expiring key 3 through a separate signer process, and retired keys hold no private half. The combined application and canonical agent documentation are integrated. The existing host alias `prod` serves the allocated rewrite-dev app/store. The cart-line v3 source is deployed there, its candidate is the released Shopify Active version (the single v3 cutover), and both were independently read back. On 11 November 2026 a web-only update deployed main `721bc6b6`: the 5-minute release refresh and the Cloudflare-only origin lock. No production resource migration, new scopes/markets, database reset, history erasure, protected VAT retry, checkout/order/payment or consumed sender/alert drill was performed. The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
+
+### Separate signer and retired-key scrub — deployed 11 November 2026
+
+**Owner approval, 11 November 2026.** Retired keys lose their private half, a daily worker job destroys closed windows, a separate signer process holds the signing KEK, and one development customer-artwork email test is allowed.
+
+**Code.**
+- #325 (scrub, migration 57, daily destruction) and #327 (migration 57 order fix, caught by the checkpoint dry run) are merged.
+- #326 (signer, migration 58, grant deltas, compose overlay) is merged. An independent security review found no path for web to reach a seed or the KEK. Its follow-ups are in #326:
+  - a dedicated signer uid for KEK custody;
+  - rate-limit buckets charged only after scope validation, with least-recently-used eviction;
+  - request timeouts;
+  - revocation and destruction made final.
+- Deployed main `fb30b947`, tree `dbc3ec30`, CI run 43105518442. Web image `sha256:045002c2…`; worker and signer image `sha256:b5cdb5e8…`. Verifier and inspector are unchanged, and no Shopify release was made.
+
+**Deploy sequence (prod).**
+1. A DB-only checkpoint was restore-verified with a dry run of migrations 57 and 58 on real data at `21:31:57Z` (schema 56, facts 8/7/2/7/10). Its encrypted copies were disposed at `21:58:41Z`.
+2. Migration 57 at `21:53:48Z`: keys 1 and 2 were scrubbed at once.
+3. The `insignia_signer` role, migration 58 and `signer-runtime-grants.sql` at `21:53:54Z`.
+4. Signer up at `21:54:06Z`: healthy, `signer_listening` with 1 key.
+5. Web recreated at `21:54:20Z`, with no KEK variables and the socket directory mounted read-only.
+6. `web-signing-envelope-revoke.sql` at `21:54:39Z`.
+7. Worker recreated at `21:54:40Z`.
+
+**Readback after the scrub (rewrite-dev).** No envelope remains under the old shared KEK id `m5-runtime-20261011`, and no non-active key holds an envelope.
+
+| Key | State | Days | Private half |
+| --- | --- | --- | --- |
+| 1 | retiring | 20736–20767 | none; destroyed by the worker from 12 Nov 00:00Z |
+| 2 | retiring | 20766–20771 | none; destroyed from 16 Nov 00:00Z |
+| 3 | active | 20768–2147483647 | `signing-20261111` |
+
+**Grants.**
+- The signer role reads `private_envelope`. Web does not, and has no INSERT on `signing_keys`.
+- The worker has no envelope access, and EXECUTE only on `destroy_expired_signing_keys`.
+- Web's environment has no `INSIGNIA_SIGNING_WRAP_*` variable. The key file is not visible in web.
+- **KEK custody:**
+  - The KEK lives only in `runtime/signer-secrets/signing-wrap-keys.json`, owned 10101, mode 0400. See the [runtime README](../../deployment/m5-runtime/README.md#signing-wrapping-key-kek-custody).
+  - Five older web compositions that still held the KEK value were shredded at `21:58:36Z`.
+- **Old shared KEK:** the worker still needs `INSIGNIA_CREDENTIAL_KEY_*` (`m5-runtime-20261011`), because that is the shop-credential ring for offline tokens. It no longer protects any signing key and cannot be dropped.
+
+**Storefront (default profile; cart emptied).**
+- The Designer quoted M×1 at $17.45.
+- Add to cart gave one `_insignia_line_v3` (259 chars) with key ID 3, valid through 20770, unit 1745. It was signed through the signer: audit line `signer_sign ok key 3`, 24 ms server-side.
+- Checkout showed $17.45 with no validation error. No order was placed.
+- The release admission read passed. Protected facts are 8/7/2/7/10. Other sites returned 200.
+
+**Latency.**
+- Socket round trip from web: median 0.48 ms, p90 2.0 ms, over 20 calls.
+- The first real signature took 24 ms in the signer: active-key read, decrypt and sign, on a newly opened pool.
+- That acceptance took 1547 ms end to end.
+- The added cost over in-process signing is the socket round trip, about 1 ms.
+
+**Known follow-up.** The worker's first destruction pass ran (0 keys due), but its success log used an event missing from the logger allow-list, so it reported `SIGNING_KEY_DESTRUCTION_UNAVAILABLE`. #328 fixes the log; destruction itself is unaffected.
+
+**Customer artwork email: one owner-approved test, consumed.**
+- Sent at `2026-11-11T22:02:08Z` through the customer artwork email sender (`createCloudflareCustomerArtworkSender`), with the development profile, from `noreply@insigniacustomizer.com` to `admin@optidigi.nl`.
+- Notification id `4da55deb-2f17-45ee-b89f-380936d95808`. Cloudflare acknowledged it as `sent`, message id `<lubIW02KieKU8MqVGX0zxlsoqHosdDYpQhoH@insigniacustomizer.com>`.
+- The upload link in it is synthetic and grants nothing.
+- Customer dispatch stays disabled (`INSIGNIA_CUSTOMER_EMAIL_ENABLED` is not set). Received SPF/DKIM/DMARC verdicts are pending from the owner. Do not resend without a new approval.
 
 ### Non-expiring signing keys and signing KEK — deployed, key 3 live
 
@@ -203,7 +262,7 @@ Operational proof custody: `/home/serveradmin/.local/share/insignia/recovery-rel
 
 - The deployed source takes expected Function query fingerprints from the trusted release record and ignores the legacy query fields in `INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON`. The functions-renew rollback image still requires them, so they stay until rollback to a pre-PR298 image is retired; then reduce the value to `appKey` only ([runtime README](../../deployment/m5-runtime/README.md#expected-function-configuration)). Rolling back would also need the prior app version re-released and a qualified v2/v3 cart decision; neither is authorized.
 - Q1 terminal-decline recovery is integrated. Unavailable, lost and postcommit acknowledgements retain exact operation identity. With schema52 terminal markers, use compatible recovery/fix-forward; schema51 or old acceptance writers are not a valid rollback. The original same-tab cart report remains unattributed; its time/browser/error ID is unavailable and must not be requested again or assigned a shared cause without evidence.
-- Development key 3 is active and non-expiring (see above); key 2 verifies through shop day 20771 and key 1 is past its window. Epoch 0 is unchanged. No rotation is scheduled or due. [Key 2 rotation receipt](evidence/technical-merchant-completion/native-signing-rotation-development-2026-11-09.json).
+- Development key 3 is active and non-expiring and signs only through the signer. Keys 1 and 2 have no private half: key 2 verifies through shop day 20771, and key 1 is past its window. Both are destroyed by the worker's daily job. Epoch 0 is unchanged. No rotation is scheduled or due. [Key 2 rotation receipt](evidence/technical-merchant-completion/native-signing-rotation-development-2026-11-09.json).
 - Native Copy discovery/review and Cancel/scrim removal with pointer reopening passed on the earlier startup artifact. Fields not displayed, precise chooser timing, busy-copy and native early-aftershow are not qualified by that result. QA009 early-aftershow/leave-resume and uncancellable late-response limits remain scoped in [history](history-2026-11-09-precutover.md). New close/upload behavior is deployed and covered by built-UI/CI checks; native observation on this exact artifact remains unqualified.
 - Retention reconciliation recorded ten expired capture paths disposed after 388 guards, four minimal projections retained, 363 operation records and five metadata inventories unchanged. Four local auth files remain held behind exact process-read access. Pathname absence does not prove physical erasure. Nov9 checkpoint payload was disposed before its deadline; Nov6 custody is not a fresh verified backup. Preserve active configurations, permanent inspector/verifier custody and minimal unresolved authority.
 - Customer email dispatch remains disabled. Connected Gmail search found no original transport test message; that proves neither non-delivery nor authentication. Retain the original receiver-evidence gate without resending. Owner visual acceptance, native EUR and complete off-host/object recovery remain separate.
