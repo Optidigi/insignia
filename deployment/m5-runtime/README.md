@@ -151,6 +151,19 @@ The staged theme assets come from foundation CI42140234608/attempt1. Preserve bo
 
 The [signing-owner overlay](signing-owner-compose.yaml) is one-time startup allocation. After independently settled provisioning, omit its two mounts from a later qualified ordinary web deployment. Preserve original plan/result/binding under actual retention; do not reprovision, rewrite old release receipts, extend validity or remove wrapping-key custody. Current trusted-release, Function, public-config, key and tenant admission checks remain mandatory.
 
+## Cloudflare-only origin
+
+Owner decision, 11 November 2026: Insignia's origin admits only Cloudflare's edge. Both Insignia routers (`insignia-canonical-m5-019r` and `insignia-uninstall-private`) use the route-level `insignia-cloudflare-origin` `ipAllowList` middleware, defined on the web container's labels in [the canonical base](../m5-019r/compose.yaml). It matches the TCP peer address; it sets no `ipStrategy`, so a client-supplied `X-Forwarded-For` cannot satisfy it. Other sites, the shared `websecure` entrypoint, Traefik's static configuration and its ACME HTTP-01 challenge on port 80 are unchanged. A direct request to the origin gets `403 Forbidden` from Traefik. Shopify (app proxy, webhooks, embedded admin, OAuth) reaches `insignia-app.optidigi.nl` through Cloudflare's proxied DNS. The container health check (`127.0.0.1`) and Traefik's load-balancer health check (container network) do not pass through a router. The verifier uses its socket.
+
+[cloudflare-ips.json](../m5-019r/cloudflare-ips.json) is the pinned copy of `https://api.cloudflare.com/client/v4/ips`, with its `etag`. The `sourcerange` label must equal its IPv4 then IPv6 CIDRs joined by commas; [the Compose control](../../scripts/runtime/web-compose.test.mts) enforces that. Cloudflare changes these ranges rarely and announces it in advance.
+
+To refresh:
+1. Fetch the API. If its `etag` equals the pinned one, stop.
+2. Otherwise update the JSON (`etag`, `retrievedAt`, both lists in API order) and the label together, and merge them through CI.
+3. Recreate only the web service (`--no-deps`). Check that a storefront app-proxy request succeeds and that a direct-origin request gets 403.
+
+A stale list fails closed for the new edge addresses only. Traefik's access log shows those requests as 403s from addresses outside the pinned list.
+
 ## Bounded deployment and recovery sequence
 
 1. Qualify exact candidate CI/artifact/Compose identity, current privileges, same-database endpoints, actual schema and current source compatibility. Verify any existing permission covers named services/effects; group genuinely missing owner inputs once. Secret-bearing renders, tokens and credentials stay private.

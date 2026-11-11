@@ -105,6 +105,7 @@ test('ordinary runtime overlays preserve canonical web boundaries and restrict w
       'traefik.http.routers.insignia-uninstall-private.priority': '1100',
       'traefik.http.routers.insignia-uninstall-private.tls.certresolver': 'letsencrypt',
       'traefik.http.routers.insignia-uninstall-private.service': 'insignia-rewrite-m5-019',
+      'traefik.http.routers.insignia-uninstall-private.middlewares': 'insignia-cloudflare-origin',
       'traefik.http.routers.insignia-uninstall-private.observability.accesslogs': 'false',
       'traefik.http.routers.insignia-uninstall-private.observability.tracing': 'false',
     });
@@ -113,6 +114,26 @@ test('ordinary runtime overlays preserve canonical web boundaries and restrict w
       object(web.labels)['traefik.http.routers.insignia-canonical-m5-019r.rule'],
       'Host(`insignia-app.optidigi.nl`)',
     );
+    // Every Insignia router admits only Cloudflare's edge, from the single pinned range file.
+    const cloudflare = JSON.parse(
+      await readFile(new URL('../../deployment/m5-019r/cloudflare-ips.json', import.meta.url), 'utf8'),
+    ) as { ipv4: string[]; ipv6: string[] };
+    const labels = object(web.labels);
+    assert.equal(
+      labels['traefik.http.middlewares.insignia-cloudflare-origin.ipallowlist.sourcerange'],
+      [...cloudflare.ipv4, ...cloudflare.ipv6].join(','),
+    );
+    assert.equal(
+      labels['traefik.http.middlewares.insignia-cloudflare-origin.ipallowlist.ipstrategy.depth'],
+      undefined,
+      'the allowlist must match the TCP peer, not a client-supplied header',
+    );
+    const routers = Object.keys(labels)
+      .map((key) => /^traefik\.http\.routers\.([^.]+)\.rule$/.exec(key)?.[1])
+      .filter((name): name is string => name !== undefined);
+    assert.deepEqual(routers.sort(), ['insignia-canonical-m5-019r', 'insignia-uninstall-private']);
+    for (const router of routers)
+      assert.equal(labels[`traefik.http.routers.${router}.middlewares`], 'insignia-cloudflare-origin', router);
     const intentional = new Set([
       'image',
       'init',
