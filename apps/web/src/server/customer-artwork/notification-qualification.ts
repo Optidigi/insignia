@@ -4,7 +4,7 @@ export type CustomerEmailQualification = {
   version: 'customer-artwork-email-qualification-v1';
   accountId: string;
   appOrigin: string;
-  sender: 'noreply@optidigi.nl';
+  sender: 'noreply@insigniacustomizer.com';
   arbitraryRecipients: true;
   protectedOrderEmail: true;
   qualifiedAt: string;
@@ -45,7 +45,7 @@ export async function loadCustomerEmailQualification(
       value.version !== 'customer-artwork-email-qualification-v1' ||
       value.accountId !== expected.accountId ||
       value.appOrigin !== new URL(expected.appOrigin).origin ||
-      value.sender !== 'noreply@optidigi.nl' ||
+      value.sender !== 'noreply@insigniacustomizer.com' ||
       value.arbitraryRecipients !== true ||
       value.protectedOrderEmail !== true ||
       typeof value.qualifiedAt !== 'string' ||

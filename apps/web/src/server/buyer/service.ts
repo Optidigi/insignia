@@ -113,6 +113,8 @@ export function createBuyerServices(input: {
   previewImages?: FrozenPreviewReader;
   /** Background release-evidence refresh hint; never awaited and never issuance authority. */
   releaseRefresh?(scope: { shopId: string; installationGeneration: string }, activeUntil: Date): void;
+  /** Keyed hash of the trusted visitor address, or null when none is available (fail open). */
+  visitorKey?(request: Request): Uint8Array | null;
   clock?: () => Date;
 }) {
   const clock = input.clock ?? (() => new Date()),
@@ -425,6 +427,7 @@ export function createBuyerServices(input: {
         sessionId: randomUUID(),
         expiresAt: new Date(grant.expiresAt),
         now: clock(),
+        visitorKey: input.visitorKey?.(request) ?? null,
       });
       return { capability: grant.token, sessionId: session.sessionId, expiresAt: session.expiresAt.toISOString() };
     },

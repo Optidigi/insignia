@@ -67,7 +67,7 @@ test('customer qualification is a durable reviewed private grant with exact bind
     version: 'customer-artwork-email-qualification-v1',
     accountId: 'a'.repeat(32),
     appOrigin: 'https://insignia.test',
-    sender: 'noreply@optidigi.nl',
+    sender: 'noreply@insigniacustomizer.com',
     arbitraryRecipients: true,
     protectedOrderEmail: true,
     qualifiedAt: '2026-11-05T12:00:00Z',

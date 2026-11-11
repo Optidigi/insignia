@@ -136,6 +136,7 @@ export function fixtureCore(overrides: Overrides = {}): DurableCore {
       createApplication: unexpected,
       confirmApplication: unexpected,
       cleanupDue: unexpected,
+      purgeVisitorAdmission: unexpected,
       cleanupExpired: unexpected,
       ...overrides.buyers,
     },

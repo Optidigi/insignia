@@ -25,9 +25,14 @@ Owner decision, 11 November 2026: Insignia's canonical app origin becomes `https
 Phase B operator changes, made together with the single release:
 1. Set `INSIGNIA_RELEASE_PROFILE=native-canonical-host-aa3b6166` in web, worker and verifier together, using binding-head images and the matching verifier manifest.
 2. Set `APP_URL=https://app.insigniacustomizer.com` in web and worker.
-   - Existing per-shop uninstall subscriptions on the old host are read as drift. The existing lifecycle retires their capability and enrolls a new subscription on the new origin, one Admin `webhookSubscriptionCreate` per installation.
-   - The old Shopify subscription stays, with a retired capability, until the old host is retired.
-3. No migration and no new grants. `INSIGNIA_CLIENT_CHAIN_DIAGNOSTIC=1` on web is temporary and is removed with the per-visitor limit.
+   - The capability is bound to the origin, so each installation enrolls a new uninstall subscription on the new origin, one Admin `webhookSubscriptionCreate`.
+   - The old-origin destination stays registered and valid. Delete those Shopify subscriptions when the old host is retired.
+3. No migration and no new grants. The temporary `INSIGNIA_CLIENT_CHAIN_DIAGNOSTIC=1` on web was removed with the per-visitor limit.
+
+Per-visitor session limit (owner decision B, 11 November 2026), deployed after the release:
+1. Apply migration `20261111000100_buyer_visitor_address_limit.sql` through the schema owner, so schema goes from 53 to 54.
+2. Apply only the new web grants from [web-runtime-grants.sql](../m8-journey/web-runtime-grants.sql): `SELECT, INSERT, DELETE` and `UPDATE(window_at,issued)` on `public.buyer_visitor_admission`.
+3. Replace web only, and remove `INSIGNIA_CLIENT_CHAIN_DIAGNOSTIC`. The previous web image ignores the new table, so rollback is web-only.
 
 ## Cart-line v3 candidate development transition
 

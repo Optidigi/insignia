@@ -4,7 +4,7 @@ export type CustomerArtworkEmailProfile = {
   version: 'cloudflare-customer-artwork-email-v1';
   accountId: string;
   apiToken: string;
-  from: 'noreply@optidigi.nl';
+  from: 'noreply@insigniacustomizer.com';
   appOrigin: string;
   mode: 'development' | 'customer';
 };
@@ -31,7 +31,7 @@ export function createCloudflareCustomerArtworkSender(input: {
     !/^(?:[a-f0-9]{32})$/.test(profile.accountId) ||
     !profile.apiToken ||
     /[\r\n\0]/.test(profile.apiToken) ||
-    profile.from !== 'noreply@optidigi.nl' ||
+    profile.from !== 'noreply@insigniacustomizer.com' ||
     !['development', 'customer'].includes(profile.mode)
   )
     throw new Error('CUSTOMER_EMAIL_CONFIGURATION');

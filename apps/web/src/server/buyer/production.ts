@@ -36,6 +36,7 @@ import { createQuoteAuthorityPorts } from '../quote-composition.ts';
 import { proposalStage } from './diagnostics.ts';
 import { createLeanPrimaryMarketAdmission, parseEurNetherlandsQualification } from './lean-primary-market.ts';
 import { createBuyerServices } from './service.ts';
+import { createVisitorKey } from './visitor-address.ts';
 
 // One context instance, isolated by async execution rather than mutable request flags.
 const acceptanceContext = new AsyncLocalStorage<true>();
@@ -416,11 +417,17 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
     return inventory;
   }
 
+  // Visitor windows are kept for at most one hour; an unref'ed sweep removes expired ones.
+  const purgeVisitors = setInterval(() => {
+    void input.core.buyers.purgeVisitorAdmission(clock()).catch(() => {});
+  }, 60_000);
+  purgeVisitors.unref();
   return createBuyerServices({
     core: input.core,
     guest,
     ports,
     releaseRefresh: input.releaseRefresh,
+    visitorKey: createVisitorKey(secret),
     clock,
     previewImages:
       input.env.INSIGNIA_M8_MERCHANT_PREVIEWS_ENABLED === '1'

@@ -456,7 +456,7 @@ The buyer flow is implemented by `server/buyer/http.ts` behind `pages/api/artwor
 | Method/path | Input and result |
 |---|---|
 | GET `/v1/config` | Product and current selection context → current published revision ID, safe config DTO, image/placement choices and readiness |
-| POST `/v1/sessions` | Signed shop context → guest capability and expiry; no cookie reliance. Shop-wide safety ceilings only (the App Proxy signs no anonymous visitor identity); a session that never stores a design or proposal expires after 24 hours, and first use extends it once to the capability grant (at most 7 days) |
+| POST `/v1/sessions` | Signed shop context → guest capability and expiry; no cookie reliance. Shop-wide safety ceilings, plus at most 20 new sessions per visitor address per hour when Cloudflare supplies a trusted address (§10.4); without one the limit fails open. A session that never stores a design or proposal expires after 24 hours, and first use extends it once to the capability grant (at most 7 days) |
 | POST `/api/artwork/guest` | Capability, declared metadata, idempotency key → upload ID, quarantine PUT URL, constraints and expiry |
 | POST `/api/artwork/guest/:id/complete` | Capability + upload ID → idempotently queue inspection, return status |
 | POST `/api/artwork/guest/:id/status` | Owner capability → inspection result and safe derivative reference; never arbitrary object-key access |
@@ -573,6 +573,13 @@ Do not issue an authorization that can outlive the usable lifetime of required a
 Warn merchants before deletion (initial schedule: 30 and 7 days) and provide authorized export/download. Do not delay deletion because an order is unfinished. Track references through previews, thumbnails, quote/design payloads and log/job payloads; deleting only the original is insufficient. Identifying strings and artwork digests may also be personal data depending on their linkage.
 
 Customer/shop redaction can require earlier deletion. Handle exports and identity lookup using minimal Shopify mappings; do not collect an extra guest email just for deletion. Strip unnecessary webhook PII quickly. Keep only permitted pseudonymized economic/audit records under a separately documented retention basis; no invented universal financial retention period. [S22, S23]
+
+Visitor addresses (owner decision, 11 November 2026). The per-visitor session limit reads only the `X-Insignia-Client-Chain` header that a Cloudflare transform rule sets on `app.insigniacustomizer.com`. The rule removes any client-supplied copy and copies the X-Forwarded-For that Shopify's app proxy sent, before Cloudflare appends its own hop.
+- The limit uses the last entry. On 11 November 2026 it was verified natively as the only entry, carrying the buyer's real egress address, unchanged by buyer-supplied headers. It never uses X-Forwarded-For, CF-Connecting-IP or another header.
+- IPv6 counts by its /64.
+- Only an HMAC keyed by a secret derived from the app secret is stored, in a per-shop hourly window. Rows are deleted within one hour.
+- The address itself is never stored, logged, exported or shown.
+- A request without a trusted address (for example on the old host) is not limited per visitor; the shop ceilings still apply.
 
 Deletion is idempotent across DB and R2, with tombstones and retryable tasks. Backup restores must reapply erasure tombstones and actual expiry cleanup before public service resumes. The 18 October owner clarification permits encrypted isolated backups for seven days, capped by original collection plus six calendar months and any already-promised cleanup deadline. Preserve original payload deadlines inside the archive and never extend existing receipts. Off-host copies retain the same archive expiry. Restores remain isolated/HOLD until current erasure/expiry replay, object cleanup and authority requalification complete. Merchant config/product mockups are not automatically subject to the buyer-artwork collection rule, but buyer-supplied artwork cannot be reclassified to evade it.
 

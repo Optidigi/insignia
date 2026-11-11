@@ -66,9 +66,8 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       );
       const migrations = new URL('../migrations/', import.meta.url);
       const names = (await readdir(migrations)).filter((n) => n.endsWith('.sql')).sort();
-      expect(names).toHaveLength(53);
+      expect(names).toHaveLength(54);
       expect(names.slice(-15)).toEqual([
-        '20261017000200_privacy_merchant_export.sql',
         '20261017000300_shop_privacy_staging.sql',
         '20261018000100_method_catalog.sql',
         '20261018000200_uninstall_destinations.sql',
@@ -83,6 +82,7 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
         '20261107000100_restoration_no_dispatch_retry.sql',
         '20261109000100_buyer_acceptance_decline.sql',
         '20261110000100_buyer_visitor_limits.sql',
+        '20261111000100_buyer_visitor_address_limit.sql',
       ]);
       for (const file of names.slice(0, 20))
         await owner.query((await readFile(new URL(file, migrations), 'utf8')).split('-- migrate:down')[0]!);
@@ -232,7 +232,17 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
         sessionId: randomUUID(),
         now,
         expiresAt: new Date(+now + 2 * 86400000),
+        // The web role maintains per-visitor windows (insert, counter update, hourly purge).
+        visitorKey: Buffer.alloc(32, 7),
       });
+      await core.buyers.issueSession({
+        scope: { ...buyerScope, ownerHash: 'c'.repeat(64) },
+        sessionId: randomUUID(),
+        now,
+        expiresAt: new Date(+now + 2 * 86400000),
+        visitorKey: Buffer.alloc(32, 7),
+      });
+      expect(await core.buyers.purgeVisitorAdmission(new Date(+now + 3600000))).toBe(1);
       const design = randomUUID();
       // The first design extends the unused 24-hour session to its grant through UPDATE(expires_at).
       await core.buyers.saveDesign(buyerScope, { id: design, expectedVersion: 0, value: { placements: [] }, now });
