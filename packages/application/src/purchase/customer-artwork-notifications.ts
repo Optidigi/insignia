@@ -7,6 +7,8 @@ export type CustomerArtworkNotification = {
   installationGeneration: string;
   purchaseId: string;
   orderId: string;
+  /** When the paid order planned the notice; development eligibility cut-offs use it. */
+  createdAt?: Date;
 };
 export type CustomerArtworkDeliveryOutcome =
   | { kind: 'sent'; receipt: string }

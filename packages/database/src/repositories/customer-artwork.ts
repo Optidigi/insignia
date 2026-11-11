@@ -235,7 +235,8 @@ export function createCustomerArtworkRepository(db: Kysely<Database>) {
           installation_generation: string;
           purchase_id: string;
           order_id: string;
-        }>`SELECT n.notification_id::text,n.shop_id,n.installation_generation::text,n.purchase_id::text,p.order_id FROM customer_artwork_notifications n JOIN purchase_orders p USING(purchase_id) JOIN shops s ON s.shop_id=n.shop_id AND s.current_generation=n.installation_generation JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation AND i.deactivated_at IS NULL WHERE n.state IN ('PENDING','NO_EFFECT') AND (n.retry_at IS NULL OR n.retry_at<=clock_timestamp()) AND EXISTS(SELECT 1 FROM purchase_design_payloads d WHERE d.purchase_id=n.purchase_id AND d.payload IS NOT NULL AND d.expires_at>clock_timestamp()) ORDER BY coalesce(n.retry_at,n.created_at),n.notification_id LIMIT ${limit}`.execute(
+          created_at: Date;
+        }>`SELECT n.notification_id::text,n.shop_id,n.installation_generation::text,n.purchase_id::text,p.order_id,n.created_at FROM customer_artwork_notifications n JOIN purchase_orders p USING(purchase_id) JOIN shops s ON s.shop_id=n.shop_id AND s.current_generation=n.installation_generation JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation AND i.deactivated_at IS NULL WHERE n.state IN ('PENDING','NO_EFFECT') AND (n.retry_at IS NULL OR n.retry_at<=clock_timestamp()) AND EXISTS(SELECT 1 FROM purchase_design_payloads d WHERE d.purchase_id=n.purchase_id AND d.payload IS NOT NULL AND d.expires_at>clock_timestamp()) ORDER BY coalesce(n.retry_at,n.created_at),n.notification_id LIMIT ${limit}`.execute(
           db,
         )
       ).rows.map(
@@ -245,6 +246,7 @@ export function createCustomerArtworkRepository(db: Kysely<Database>) {
           installationGeneration: row.installation_generation,
           purchaseId: row.purchase_id,
           orderId: row.order_id,
+          createdAt: row.created_at,
         }),
       );
       const pending: CustomerArtworkNotification[] = [];
