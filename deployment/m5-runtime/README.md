@@ -190,52 +190,70 @@ A stale list fails closed for the new edge addresses only. Traefik's access log 
 
 ## Signing wrapping-key (KEK) custody
 
-Since keys no longer expire (spec §5.5), each key's Ed25519 seed is protected only by its envelope and by custody of the wrapping key.
+Since keys no longer expire (spec §5.5), each key's Ed25519 seed is protected by its envelope, by custody of the wrapping key, and by holding a private half only while the key is pending or active.
 - **Envelope:** `signing_keys.private_envelope` is AES-256-GCM with a random 96-bit nonce per seal and a 128-bit tag.
 - **Associated data:** the AAD binds `['insignia-signing-key', 1, shop, installation generation, authorization generation, key id]`, so an envelope cannot be moved to another key or shop.
 - **Kid:** `wrapping_key_id` equals the envelope `kid`. Opening checks that the derived public key equals the stored one.
-- **Memory:** the seed exists only in web memory while signing and is zeroed afterwards.
+- **Scrub at retirement:** a retiring, revoked or destroyed key has no envelope (migration 57, one-way). The worker destroys closed windows once per UTC day.
+- **Memory:** the seed exists only in signer memory while signing and is zeroed afterwards.
 
-**Where the KEK lives.**
-- `INSIGNIA_SIGNING_WRAP_KEY_ID/_BASE64` (plus optional `INSIGNIA_SIGNING_WRAP_PREVIOUS_KEYS_JSON`) is in the web private composition only (`web.private.json`, 0600, host-only). It is not in images, the repository or logs.
-- The worker, inspector and verifier never receive it.
-- Before the dedicated key, seeds were sealed under the shop-credential ring (`INSIGNIA_CREDENTIAL_KEY_*`), which the worker also holds.
-- `INSIGNIA_SIGNING_UNWRAP_CREDENTIAL_KEYS=1` lets web open those older envelopes during a transition. Credential keys never seal. Remove the flag once no active key is credential-sealed: after rotating to a dedicated-KEK key, or after re-wrapping.
+**Separate signer** ([signer-compose.yaml](signer-compose.yaml)).
+- The `signer` service in project `insignia-rewrite-m5-019` runs the worker image with `node /srv/insignia/worker/dist/signer-main.js`, as `user: node` (uid 1000), read-only, `cap_drop: ALL`, on the `private` network only. It has no port and no Traefik labels.
+- It serves `POST /v1/sign` and `POST /v1/provision` (and `GET /health`) on `/run/insignia/signer/signer.sock`. The socket is mode 0600 in a 0700 directory owned by uid 1000. Web mounts that directory read-only, which is enough to connect.
+- It logs one JSON line per request (`signer_sign`/`signer_provision`: outcome, shop, generation, key id, ms) and hourly counts. It never logs key material or messages.
+- If the signer is down, quotes fail closed with a retryable 503 (`SignerUnavailable` in diagnostics).
+
+**Where the KEK lives (for separate backup custody).**
+- **Host file (rewrite-dev on `prod`):** `/home/serveradmin/.local/share/insignia/runtime/signing-wrap-keys.json`, owner uid 1000, mode 0600, regular file, at most 4096 bytes. The compose variable is `INSIGNIA_SIGNING_WRAP_KEY_FILE`.
+- **In the container:** bind-mounted read-only at `/run/insignia/signing-wrap-keys.json`. The signer refuses a symlink, another owner, or any mode other than 0600.
+- **Format** (UTF-8 JSON, 1 to 4 keys):
+  ```json
+  {"version":1,"currentKeyId":"signing-20261111","keys":{"signing-20261111":"<base64 of exactly 32 random bytes>"}}
+  ```
+  `currentKeyId` seals new envelopes; the other keys only open envelopes during a KEK rotation.
+- The file is the only copy outside the signer's memory. It is not in web or worker env, the images, the repository, logs or database checkpoints.
+- **Backup:** back it up separately from database backups, under a different recipient or custody, so a database backup alone never yields a seed. Losing it costs availability only: rotate to a new key with a new KEK.
 
 **Database access.**
-- Only the web role (`insignia_runtime`) and the schema owner can read `private_envelope`.
-- Apply [signing-key-runtime-grants.sql](signing-key-runtime-grants.sql) as the schema owner. It removes the legacy blanket `DELETE` and whole-row `UPDATE` from the web role and leaves only the lifecycle columns updatable.
-
-**Backups and checkpoints.**
-- Checkpoints contain envelopes, so they must never contain the KEK.
-- Capture the runtime private compositions (which hold the KEK) separately from the database dump, under a different recipient or custody.
-- A database-only or backup-only copy then yields no seed.
+- `insignia_signer` (LOGIN, password in the signer's private `DATABASE_URL`) is the only runtime role that reads `private_envelope`.
+  - It has SELECT and INSERT on `signing_keys`, and `UPDATE(private_envelope, wrapping_key_id)`.
+  - It has `SELECT(shop_id, generation, authorization_generation)` on `installation_generations`, for the identity trigger, and EXECUTE on `signing_key_scope`.
+  - It cannot delete keys or change state, window or identity.
+- Web (`insignia_runtime`) reads every signing-key column except `private_envelope`. It updates only lifecycle columns, including nulling the envelope at retirement, and cannot insert or delete keys.
+- The worker reaches signing keys only through `destroy_expired_signing_keys`, and cannot read envelopes.
+- **Apply as the schema owner:**
+  1. [signing-key-runtime-grants.sql](signing-key-runtime-grants.sql) (earlier delta);
+  2. [signer-runtime-grants.sql](signer-runtime-grants.sql), before the signer starts;
+  3. [web-signing-envelope-revoke.sql](web-signing-envelope-revoke.sql), after web runs the signer-client image.
 
 **Re-wrap (KEK rotation).**
-1. Add the new key as current and keep the old one in `INSIGNIA_SIGNING_WRAP_PREVIOUS_KEYS_JSON`.
-2. Recreate web.
-3. For each non-destroyed key, call `SigningKeyLifecycle.rewrap(scope, keyId)` as the web role. This is a library operation; there is no packaged CLI yet, so run it as a one-off from a qualified checkout on the private network with the web role and the new ring. It opens with any ring key, checks the public key, seals under the current key, and is guarded on the expected kid.
-4. Confirm that every `wrapping_key_id` is the new id, then remove the old key and recreate web.
+1. Write the new key into the file as `currentKeyId` and keep the old key in `keys`.
+2. Recreate the signer.
+3. Run `docker compose -p insignia-rewrite-m5-019 -f <web composition> run --rm --no-deps signer /usr/local/bin/node /srv/insignia/worker/dist/signer-main.js --rewrap`. It re-seals every pending or active envelope under the current key and prints `signer_rewrap` counts. Retired keys have no envelope and are skipped.
+4. Confirm that every remaining `wrapping_key_id` is the new id.
+5. Remove the old key from the file and recreate the signer.
 
-**Non-expiring rotation (owner action).** Arm the [signing-owner overlay](signing-owner-compose.yaml) with a plan of `{keyId, firstDay: shop-local today, lastDay: 2147483647}` and start the action from the embedded admin. The flow runs:
-1. create pending;
-2. schedule the outgoing key to today + 3;
-3. publish to both Functions;
-4. read back;
-5. activate.
-
-Then disarm, and destroy the outgoing key once its window has closed.
+**Non-expiring rotation (owner action).**
+1. Arm the [signing-owner overlay](signing-owner-compose.yaml) with a plan of `{keyId, firstDay: shop-local today, lastDay: 2147483647}`.
+2. Start the action from the embedded admin. The flow runs:
+   1. the signer creates the pending key and web receives only its public half;
+   2. the outgoing key is scheduled to today + 3;
+   3. both Functions are published;
+   4. web reads them back;
+   5. web activates, which scrubs the outgoing key's private half.
+3. Disarm. The worker destroys the outgoing key once its window has closed.
 
 **Blast radius.**
 
 | Leak | What the attacker gets |
 | --- | --- |
-| Database or checkpoint only | Ciphertext, no seed. |
-| KEK only | Nothing without the envelopes. |
-| Worker compromise | The credential ring plus the worker role, which cannot read envelopes. With the dedicated KEK, no seed. |
-| Web container compromise | The KEK plus the envelopes, so every live seed. Respond with an emergency epoch bump, then rotate. |
+| Database or checkpoint only | Ciphertext of pending/active keys only; no seed. |
+| KEK file only | Nothing without the envelopes. |
+| Worker compromise | No KEK and no envelope access; no seed. |
+| Web compromise | No KEK and no envelope access. It can request signatures for real v3 headers of the active key, within the signer's rate limits and audit, for as long as it is compromised. Respond with an emergency epoch bump, then rotation. |
+| Signer compromise | KEK plus envelopes, so the active (and any pending) seed. Retired keys have no envelope. Respond with an epoch bump, then rotate the KEK and the key. |
 
-The owner-level mitigation for a web compromise is an HSM or KMS-held KEK, or a separate signing process. That is a recommendation, not deployed.
+An HSM- or KMS-held KEK remains a recommendation for a later change.
 
 ## Bounded deployment and recovery sequence
 
