@@ -459,7 +459,7 @@ test('acceptance release ports share one record read and background refresh coll
   assert.equal(collections, 0);
 
   // A proposal touches the refresher; nothing runs on the request path.
-  required(input.releaseRefresh)({ shopId: 'tenant', installationGeneration: '1' }, new Date(+now + 120000));
+  required(input.releaseRefresh)({ shopId: 'tenant', installationGeneration: '1' }, new Date(+now + 300000));
   assert.equal(collections, 0);
   assert.equal(timers.length, 1);
   // The 5 s old record is fresh enough: no collection, next check when it turns 22 s old.

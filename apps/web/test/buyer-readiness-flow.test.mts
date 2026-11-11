@@ -70,7 +70,7 @@ test('buyer proposal is display-only: stock overlaps pricing and no release or F
       { observe: probe.calls.observe, assertReady: probe.calls.assertReady, signings: f.signings() },
       { observe: 0, assertReady: 0, signings: 0 },
     );
-    assert.deepEqual(hints, [{ shopId: f.shopId, activeUntil: before + 120000 }]);
+    assert.deepEqual(hints, [{ shopId: f.shopId, activeUntil: before + 300000 }]);
   } finally {
     held.release();
     await response;
