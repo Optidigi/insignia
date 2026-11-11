@@ -15,7 +15,7 @@ Keep the reusable API credential outside the checkout in an owner-readable regul
   "version": "cloudflare-customer-artwork-email-v1",
   "accountId": "<existing-account-id>",
   "apiToken": "<privately-supplied-account-scoped-token>",
-  "from": "noreply@optidigi.nl",
+  "from": "noreply@insigniacustomizer.com",
   "appOrigin": "https://app.insigniacustomizer.com",
   "mode": "development"
 }
@@ -42,7 +42,7 @@ Customer mode requires `CUSTOMER_ARTWORK_EMAIL_QUALIFICATION_PROFILE`: a private
   "version": "customer-artwork-email-qualification-v1",
   "accountId": "<existing-account-id>",
   "appOrigin": "https://app.insigniacustomizer.com",
-  "sender": "noreply@optidigi.nl",
+  "sender": "noreply@insigniacustomizer.com",
   "arbitraryRecipients": true,
   "protectedOrderEmail": true,
   "qualifiedAt": "<actual-original-observation-time>",

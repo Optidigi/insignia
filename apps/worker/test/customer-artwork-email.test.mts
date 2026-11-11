@@ -9,7 +9,7 @@ const profile: CustomerArtworkEmailProfile = {
   version: 'cloudflare-customer-artwork-email-v1',
   accountId: 'a'.repeat(32),
   apiToken: 'synthetic-email-test-only',
-  from: 'noreply@optidigi.nl',
+  from: 'noreply@insigniacustomizer.com',
   appOrigin: 'https://insignia.test',
   mode: 'development',
 };
@@ -47,7 +47,7 @@ test('scoped development sender permits only explicit admin test and parses actu
   });
   assert.deepEqual(await sender.send(message), { kind: 'sent', receipt: '<message-1@optidigi.nl>' });
   const body = JSON.parse(String(request?.body));
-  assert.equal(body.from, 'noreply@optidigi.nl');
+  assert.equal(body.from, 'noreply@insigniacustomizer.com');
   assert.equal(body.to, 'admin@optidigi.nl');
   assert.match(body.subject, /development/);
   assert.equal(body.headers['X-Insignia-Notification'], message.idempotencyKey);

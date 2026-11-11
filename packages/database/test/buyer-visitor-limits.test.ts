@@ -39,6 +39,67 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('buyer visitor limits', () => 
     ).resolves.toHaveProperty('sessionId');
   }, 30_000);
 
+  it('limits one visitor address to 20 new sessions an hour without affecting other addresses', async () => {
+    const { shopId } = await createTestShop(db);
+    const repo = createBuyerRepository(db);
+    const now = new Date('2026-11-11T12:00:00Z');
+    const flood = Buffer.alloc(32, 1),
+      other = Buffer.alloc(32, 2);
+    const issue = (n: number, visitorKey: Uint8Array | null, at = now) =>
+      repo.issueSession({
+        scope: { shopId, installationGeneration: '1', ownerHash: owner(n) },
+        sessionId: randomUUID(),
+        now: at,
+        expiresAt: new Date(+at + week),
+        visitorKey,
+      });
+    for (let i = 1; i <= 20; i++) await issue(i, flood);
+    await expect(issue(21, flood)).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+    // A rejected attempt neither creates a session nor consumes the window.
+    expect(
+      (await sql<{ n: string }>`SELECT count(*)::text n FROM buyer_sessions WHERE shop_id=${shopId}`.execute(db))
+        .rows[0]?.n,
+    ).toBe('20');
+    await expect(issue(22, other)).resolves.toHaveProperty('sessionId');
+    // No trusted address: only the shop ceilings apply (fail open).
+    await expect(issue(23, null)).resolves.toHaveProperty('sessionId');
+    // The window is per hour from its first session.
+    await expect(issue(24, flood, new Date(+now + 3_599_000))).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+    await expect(issue(25, flood, new Date(+now + 3_600_000))).resolves.toHaveProperty('sessionId');
+    await expect(issue(26, Buffer.alloc(16, 3))).rejects.toMatchObject({ code: 'INVALID' });
+  }, 30_000);
+
+  it('purges visitor windows once they are an hour old and keeps only keyed hashes', async () => {
+    const { shopId } = await createTestShop(db);
+    const repo = createBuyerRepository(db);
+    const now = new Date('2026-11-11T12:00:00Z');
+    await repo.issueSession({
+      scope: { shopId, installationGeneration: '1', ownerHash: owner(1) },
+      sessionId: randomUUID(),
+      now,
+      expiresAt: new Date(+now + week),
+      visitorKey: Buffer.alloc(32, 9),
+    });
+    const columns = await sql<{
+      column_name: string;
+    }>`SELECT column_name FROM information_schema.columns WHERE table_name='buyer_visitor_admission' ORDER BY ordinal_position`.execute(
+      db,
+    );
+    expect(columns.rows.map((row) => row.column_name)).toEqual([
+      'shop_id',
+      'installation_generation',
+      'visitor_key',
+      'window_at',
+      'issued',
+    ]);
+    const rows = () =>
+      sql<{ n: string }>`SELECT count(*)::text n FROM buyer_visitor_admission WHERE shop_id=${shopId}`.execute(db);
+    await repo.purgeVisitorAdmission(new Date(+now + 3_599_000));
+    expect((await rows()).rows[0]?.n).toBe('1');
+    await repo.purgeVisitorAdmission(new Date(+now + 3_600_000));
+    expect((await rows()).rows[0]?.n).toBe('0');
+  });
+
   it('still enforces the shop-wide issuance and active-session safety ceilings', async () => {
     const { shopId } = await createTestShop(db);
     const repo = createBuyerRepository(db);

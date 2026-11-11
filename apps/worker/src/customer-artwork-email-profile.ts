@@ -86,7 +86,7 @@ export async function loadCustomerArtworkEmailProfile(
       typeof data.apiToken !== 'string' ||
       !data.apiToken ||
       /[\r\n\0]/.test(data.apiToken) ||
-      data.from !== 'noreply@optidigi.nl' ||
+      data.from !== 'noreply@insigniacustomizer.com' ||
       data.appOrigin !== new URL(expected.appOrigin).origin ||
       (data.mode !== 'development' && data.mode !== 'customer') ||
       (expected.accountId && data.accountId !== expected.accountId)

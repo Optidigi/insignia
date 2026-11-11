@@ -12,7 +12,7 @@ const sender = {
   version: 'cloudflare-customer-artwork-email-v1',
   accountId: 'a'.repeat(32),
   apiToken: 'synthetic-custody-only',
-  from: 'noreply@optidigi.nl',
+  from: 'noreply@insigniacustomizer.com',
   appOrigin: 'https://insignia.test',
   mode: 'development',
 };

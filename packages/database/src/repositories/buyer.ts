@@ -28,8 +28,9 @@ function bounded(value: unknown, bytes: number) {
   return encoded;
 }
 /**
- * Shop-wide safety ceilings sit far above legitimate traffic; the App Proxy signs no anonymous
- * visitor identity, so per-visitor protection comes from short-lived unused sessions.
+ * Shop-wide safety ceilings sit far above legitimate traffic. Per-visitor protection comes from
+ * short-lived unused sessions and, when Cloudflare supplies a client address, an hourly
+ * per-address issuance limit keyed by an HMAC of that address (owner decision, 11 November 2026).
  */
 export const BUYER_SESSION_POLICY = {
   shopIssuancePerMinute: 600,
@@ -37,6 +38,8 @@ export const BUYER_SESSION_POLICY = {
   unusedSessionMs: 86_400_000,
   maxSessionMs: 604_800_000,
   sessionWritesPerMinute: 60,
+  visitorSessionsPerHour: 20,
+  visitorWindowMs: 3_600_000,
 } as const;
 function validScope(scope: BuyerScope) {
   if (!/^[a-f0-9]{64}$/.test(scope.ownerHash) || !/^[1-9][0-9]*$/.test(scope.installationGeneration)) fail('INVALID');
@@ -277,10 +280,14 @@ export function createBuyerRepository(db: Kysely<Database>) {
       sessionId: string;
       expiresAt: Date;
       now: Date;
+      /** Keyed HMAC of the visitor address; absent means no trusted address, so only shop ceilings apply. */
+      visitorKey?: Uint8Array | null;
     }): Promise<BuyerSession> {
       const { scope, now, expiresAt, sessionId } = input;
+      const visitorKey = input.visitorKey ? Buffer.from(input.visitorKey) : null;
       validScope(scope);
       if (!(+expiresAt > +now && +expiresAt <= +now + BUYER_SESSION_POLICY.maxSessionMs)) fail('INVALID');
+      if (visitorKey && visitorKey.byteLength !== 32) fail('INVALID');
       return db.transaction().execute(async (tx) => {
         const tenant =
           await sql`SELECT s.shop_id FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=${scope.shopId} AND s.current_generation=${scope.installationGeneration}::bigint AND i.deactivated_at IS NULL FOR UPDATE OF s,i`.execute(
@@ -313,6 +320,21 @@ export function createBuyerRepository(db: Kysely<Database>) {
           )
         ).rows[0];
         if (Number(n?.n) >= BUYER_SESSION_POLICY.shopActiveSessions) fail('RATE_LIMITED');
+        if (visitorKey) {
+          const visitor = (
+            await sql<{
+              window_at: Date;
+              issued: number;
+            }>`SELECT window_at,issued FROM buyer_visitor_admission WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND visitor_key=${visitorKey} FOR UPDATE`.execute(
+              tx,
+            )
+          ).rows[0];
+          const fresh = !visitor || +now >= +visitor.window_at + BUYER_SESSION_POLICY.visitorWindowMs;
+          if (!fresh && visitor.issued >= BUYER_SESSION_POLICY.visitorSessionsPerHour) fail('RATE_LIMITED');
+          await sql`INSERT INTO buyer_visitor_admission VALUES(${scope.shopId},${scope.installationGeneration}::bigint,${visitorKey},${fresh ? now : visitor.window_at},${fresh ? 1 : visitor.issued + 1}) ON CONFLICT(shop_id,installation_generation,visitor_key) DO UPDATE SET window_at=EXCLUDED.window_at,issued=EXCLUDED.issued`.execute(
+            tx,
+          );
+        }
         // Unused sessions expire early; first use extends them to the full capability grant.
         const unusedUntil = new Date(Math.min(+expiresAt, +now + BUYER_SESSION_POLICY.unusedSessionMs));
         await sql`INSERT INTO buyer_admission VALUES(${scope.shopId},${scope.installationGeneration}::bigint,${reset ? now : (admission?.window_at ?? now)},${reset ? 1 : (admission?.issued ?? 0) + 1}) ON CONFLICT(shop_id,installation_generation) DO UPDATE SET window_at=EXCLUDED.window_at,issued=EXCLUDED.issued`.execute(
@@ -677,6 +699,16 @@ export function createBuyerRepository(db: Kysely<Database>) {
         db,
       );
       return result.rows[0]?.erased ?? 0;
+    },
+    /** Visitor windows hold only keyed hashes and are kept for at most one hour. */
+    async purgeVisitorAdmission(now: Date, limit = 1000): Promise<number> {
+      if (!Number.isSafeInteger(limit) || limit < 1 || limit > 10000) fail('INVALID');
+      const cutoff = new Date(+now - BUYER_SESSION_POLICY.visitorWindowMs);
+      const result =
+        await sql`DELETE FROM buyer_visitor_admission WHERE (shop_id,installation_generation,visitor_key) IN(SELECT shop_id,installation_generation,visitor_key FROM buyer_visitor_admission WHERE window_at<=${cutoff} ORDER BY window_at LIMIT ${limit} FOR UPDATE SKIP LOCKED) RETURNING 1`.execute(
+          db,
+        );
+      return result.rows.length;
     },
     async cleanupExpired(now: Date, limit = 100): Promise<number> {
       if (!Number.isSafeInteger(limit) || limit < 1 || limit > 1000) fail('INVALID');
