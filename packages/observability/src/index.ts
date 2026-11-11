@@ -15,6 +15,7 @@ const EVENTS = new Set([
   'webhook_process_failed',
   'refresh_process_ok',
   'refresh_process_failed',
+  'signing_key_destruction',
   'queue_job_rejected',
 ]);
 

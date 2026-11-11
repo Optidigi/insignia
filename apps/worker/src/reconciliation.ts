@@ -36,7 +36,10 @@ export function createWorkerReconciliation(input: {
       if (destroyed < 100) break;
     }
     signingKeysDestroyedDay = day;
-    input.queue.observability.logger.info('signing_key_destruction', { count });
+    // Reporting cannot turn a completed pass into a failure.
+    try {
+      input.queue.observability.logger.info('signing_key_destruction', { count });
+    } catch {}
   };
   const runOnce = (): Promise<void> => {
     if (stopped) return Promise.resolve();

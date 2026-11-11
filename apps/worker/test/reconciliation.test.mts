@@ -452,3 +452,21 @@ test('signing key destruction runs once per UTC day, logs only a count, and retr
   assert.equal(calls.length, 4, 'next UTC day runs again (idempotent: zero destroyed)');
   assert.deepEqual(infos.at(-1), { event: 'signing_key_destruction', metadata: { count: 0 } });
 });
+
+test('signing key destruction is a known runtime event for the real logger', () => {
+  const lines: string[] = [];
+  const observability = createObservability({
+    stream: new Writable({
+      write(chunk, _encoding, done) {
+        lines.push(String(chunk));
+        done();
+      },
+    }),
+  });
+  observability.logger.info('signing_key_destruction', { count: 2 });
+  assert.equal(lines.length, 1);
+  assert.deepEqual((({ event, count }) => ({ event, count }))(JSON.parse(lines[0] ?? '{}')), {
+    event: 'signing_key_destruction',
+    count: 2,
+  });
+});
