@@ -4,6 +4,13 @@ import type { CartBucket, CartMutationIntent } from '../src/cart.ts';
 import { createAjaxCartAdapter } from '../src/cart.ts';
 import { type AjaxItem, ajaxBody, fetchBody, lineCarriers, requestUrl, required, serverPort } from './support.mts';
 
+/** Replaces the final character with a different one, so the tamper can never be a no-op. */
+function alterLastChar(value: string): string {
+  const altered = `${value.slice(0, -1)}${value.endsWith('A') ? 'B' : 'A'}`;
+  assert.notEqual(altered, value);
+  return altered;
+}
+
 const LINE = '_insignia_line_v3';
 const signed = lineCarriers([
   { variantId: '42', unitMinor: '3033' },
@@ -257,7 +264,7 @@ test('oversized vectors are rejected before dispatch', async () => {
     properties: { [LINE]: required(many.carriers[index]) },
   });
   const buckets = many.carriers.map((_, i) => bucket(i));
-  const extra = { ...bucket(0), properties: { [LINE]: `${required(many.carriers[0]).slice(0, -1)}B` } };
+  const extra = { ...bucket(0), properties: { [LINE]: alterLastChar(required(many.carriers[0])) } };
   await assert.rejects(cart.apply([...buckets, extra], { expectedFingerprint: '' }), /vector/);
   await assert.rejects(
     cart.apply(

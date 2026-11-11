@@ -5,6 +5,13 @@ import { BuyerAcceptedCartSchema } from '@insignia/contracts';
 import { createPublicationRepository } from '../../../packages/database/dist/repositories/publication.js';
 import { fixture } from './support/buyer-fixture.mts';
 
+/** Replaces the final character with a different one, so the tamper can never be a no-op. */
+function alterLastChar(value: string): string {
+  const altered = `${value.slice(0, -1)}${value.endsWith('A') ? 'B' : 'A'}`;
+  assert.notEqual(altered, value);
+  return altered;
+}
+
 const connectionString = process.env.DATABASE_URL;
 
 test('durable admission rejects saturated commands before signing and completed replay retains its application', {
@@ -570,7 +577,7 @@ test('cart-state ignores native quantity and removal edits, and renewal re-signs
   const carrier = String(first.properties._insignia_line_v3);
   assert.equal((await state([first, { ...first, key: 'copy' }])).status, 409, 'duplicate index');
   assert.equal(
-    (await state([{ ...first, properties: { _insignia_line_v3: `${carrier.slice(0, -2)}AA` } }])).status,
+    (await state([{ ...first, properties: { _insignia_line_v3: alterLastChar(carrier) } }])).status,
     409,
     'altered carrier',
   );

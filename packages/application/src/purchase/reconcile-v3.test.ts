@@ -15,6 +15,13 @@ import { localDay } from '../quote/accept-quote.js';
 import type { HistoricalPurchaseOffer, PurchaseObservation, VerifiedOrder } from './model.js';
 import { reconcilePurchase } from './reconcile.js';
 
+/** Replaces the final character with a different one, so the tamper can never be a no-op. */
+function alterLastChar(value: string): string {
+  const altered = `${value.slice(0, -1)}${value.endsWith('A') ? 'B' : 'A'}`;
+  expect(altered).not.toBe(value);
+  return altered;
+}
+
 const createdAt = '2026-10-20T10:00:00.000Z';
 const day = localDay(new Date(createdAt), 'Europe/Berlin').ordinal;
 const quoteId = '11111111-1111-4111-8111-111111111111';
@@ -326,7 +333,7 @@ describe('cart-line v3 purchase reconciliation', () => {
       'stored history differs',
       'AUTHORIZATION_HISTORY_MISMATCH',
       ({ offer }) => {
-        offer.authorization.envelopeCarrier = `${offer.authorization.envelopeCarrier.slice(0, -1)}A`;
+        offer.authorization.envelopeCarrier = alterLastChar(offer.authorization.envelopeCarrier);
       },
     ],
     [
