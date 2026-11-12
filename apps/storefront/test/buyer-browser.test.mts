@@ -1976,11 +1976,24 @@ test('#349: an artwork check that never finishes ends with a retryable message',
       ),
     });
     await ui.getByRole('status').getByText('Checking artwork…', { exact: true }).waitFor();
-    await page.clock.runFor(31000);
-    await ui
+    const timedOut = ui
       .getByRole('alert')
-      .getByText('Checking artwork is taking longer than expected. Try again.', { exact: true })
-      .waitFor();
+      .getByText('Checking artwork is taking longer than expected. Try again.', { exact: true });
+    // `false` only when the page closes first; never an unhandled rejection.
+    const shown = timedOut.waitFor({ timeout: 0 }).then(
+      () => true,
+      () => false,
+    );
+    // Advance one status poll at a time, as a real slow check does. One 31 s jump also expires the
+    // host page's 10 s per-request timeout while a real status read is in flight, which ends the
+    // check as "could not be checked" instead of reaching the Designer's 30 s check limit.
+    for (let advanced = 0; ; ) {
+      const read = page.waitForRequest((request) => request.url().endsWith('/status'));
+      await page.clock.runFor(2000);
+      advanced += 2000;
+      if (await Promise.race([shown, read.then(() => false)])) break;
+      assert.ok(advanced <= 32000, 'the artwork check outlived its 30 s limit');
+    }
     assert.ok(statusReads >= 1);
     finish = true;
     // Retrying the same file starts a fresh check, which now finishes.
@@ -1991,9 +2004,15 @@ test('#349: an artwork check that never finishes ends with a retryable message',
 
 test('reopening resumes the selected Designer without a developer host page', async () => {
   await withProductDesigner(config, async ({ page, ui, trigger }) => {
+    // Settled quantities start the Designer's eager review 350 ms later. Hold its proposals so the
+    // test starts from that state every time instead of racing the close against the timer.
+    await page.route('**/apps/insignia/v1/quote-proposals', () => new Promise<void>(() => {}));
+    const eager = page.waitForRequest('**/apps/insignia/v1/quote-proposals');
     await addDeferred(ui, 'Front');
     await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
     await ui.locator('input[type=number]:enabled').first().fill('3');
+    const proposal = await eager;
+    const cancelled = page.waitForEvent('requestfailed', (request) => request === proposal);
     await ui.getByRole('button', { name: 'Close customizer', exact: true }).click();
     await ui.getByRole('heading', { name: 'Close customization?', exact: true }).waitFor();
     await ui.getByRole('button', { name: 'Keep editing', exact: true }).click();
@@ -2001,6 +2020,7 @@ test('reopening resumes the selected Designer without a developer host page', as
     await ui.getByRole('button', { name: 'Close customizer', exact: true }).click();
     await ui.getByRole('button', { name: 'Close customization', exact: true }).click();
     await page.waitForFunction(() => document.querySelector('dialog:modal') === null);
+    await cancelled; // closing retires the speculative proposal
     await trigger.click();
     await ui.locator('.app').waitFor();
     assert.equal(await ui.locator('input[type=number]:enabled').first().inputValue(), '3');
