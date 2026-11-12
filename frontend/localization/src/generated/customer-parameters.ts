@@ -63,6 +63,8 @@ export const customerParameterContracts = {
   'customer:artwork.uploadErrorTitle': {},
   'customer:artwork.uploadFailed': {},
   'customer:artwork.uploadingFile': {},
+  'customer:artwork.uploadRateLimited': {},
+  'customer:artwork.uploadRateLimitedWait': { count: 'number' },
   'customer:artwork.uploadReadFailed': {},
   'customer:artwork.uploadTooLarge': { maxSizeMb: 'number' },
   'customer:artwork.uploadUnsupportedType': {},

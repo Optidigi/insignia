@@ -8,15 +8,15 @@ import {
   type DesignerState,
   type UploadFailureReason,
 } from "./designer-state";
-import { commitFailure } from "./commit-failure";
+import { type CommitFailure, commitFailure } from "./commit-failure";
 import { portFailure } from "./port-failure";
 
 export type UploadPhase = 'uploading' | 'processing';
 function uploadFailure(error: unknown, phase?: UploadPhase): { reason: Exclude<UploadFailureReason, 'file-too-large' | 'unsupported-file-type'>; retryAfterSeconds?: number } {
   const { status, code, retryAfter } = portFailure(error);
   // Neither a retry nor another file helps until the visitor window admits a new session.
-  if (code === 'SESSION_RATE_LIMITED')
-    return { reason: 'session-limited', ...(retryAfter ? { retryAfterSeconds: retryAfter } : {}) };
+  if (code === 'SESSION_RATE_LIMITED' || code === 'RATE_LIMITED')
+    return { reason: code === 'RATE_LIMITED' ? 'rate-limited' : 'session-limited', ...(retryAfter ? { retryAfterSeconds: retryAfter } : {}) };
   if (status === 410) return { reason: 'artwork-expired' };
   if (phase === 'processing') return { reason: status === 422 ? 'inspection-rejected' : 'processing-failed' };
   return { reason: phase === 'uploading' ? 'upload-failed' : 'read-failed' };
@@ -96,6 +96,22 @@ export function createDesignerRuntime(
   let commitController: AbortController | null = null;
   let attempt: { signature: string; designId: string; idempotencyKey: string; dispatched?: boolean } | null =
     null;
+  /** Retry-After: no review or Add to cart is sent before this time, and Retry stays held until the timer runs. */
+  let retryNotBefore = 0;
+  let retryTimer: ReturnType<typeof setTimeout> | undefined;
+  function fail(requestId: string, failure: CommitFailure) {
+    clearTimeout(retryTimer);
+    retryTimer = undefined;
+    retryNotBefore = 0;
+    dispatch({ type: "cart-commit-failed", requestId, failure });
+    if (!("waiting" in failure) || !failure.waiting || !failure.retryAfterSeconds) return;
+    retryNotBefore = Date.now() + failure.retryAfterSeconds * 1000;
+    retryTimer = setTimeout(() => {
+      retryTimer = undefined;
+      retryNotBefore = 0;
+      dispatch({ type: "cart-commit-retry-ready" });
+    }, failure.retryAfterSeconds * 1000);
+  }
   function cancelUpload() {
     uploadVersion += 1;
     uploadController?.abort();
@@ -122,7 +138,7 @@ export function createDesignerRuntime(
     }
     const observed = getState();
     const state = prepareOnly && observed.step === 1 ? {...observed,step:2 as const} : observed;
-    if (commitController || !canCommitDesign(state)) return;
+    if (commitController || !canCommitDesign(state) || Date.now() < retryNotBefore) return;
     const signature = designerIntentKey(state);
     const retryPreparation = prepareOnly && state.commit.kind === 'failed' && state.commit.preparation && !attempt?.dispatched;
     if (prepareOnly && !retryPreparation && preparedSignature === signature && (attempt?.dispatched || !preparedExpiresAt || Date.parse(preparedExpiresAt) > Date.now())) return;
@@ -196,14 +212,17 @@ export function createDesignerRuntime(
           // A definite refusal: the port dropped the accepted set, so Review and Add prepare afresh.
           if (attempt) attempt.dispatched = false;
           preparedSignature = null;
-          dispatch({ type: "cart-commit-failed", requestId, failure: commitFailure(failure, false) });
+          fail(requestId, commitFailure(failure, false));
           return;
         }
-        if (!prepareOnly && failure.acceptanceOutcome === 'declined' && attempt?.idempotencyKey === request.idempotencyKey) {
+        // REVIEW_REQUIRED at Add to cart (a committed decline or a plain 409) committed nothing: retire the
+        // acceptance key, so Retry reviews the current terms again instead of resending the same acceptance.
+        const reviewAgain = !prepareOnly && (failure.code === 'REVIEW_REQUIRED' || failure.acceptanceOutcome === 'declined');
+        if (reviewAgain && attempt?.idempotencyKey === request.idempotencyKey) {
           attempt = null;
           preparedSignature = null;
         }
-        dispatch({ type: "cart-commit-failed", requestId, failure: commitFailure(failure, prepareOnly || reviewing) });
+        fail(requestId, commitFailure(failure, prepareOnly || reviewing || reviewAgain));
       }
     } finally {
       if (commitController === controller) { commitController = null; reviewing = false; refreshing = false; }

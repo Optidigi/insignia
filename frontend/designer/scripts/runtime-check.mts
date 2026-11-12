@@ -11,7 +11,7 @@ import type { CartReceipt, CartRequest, DesignerPorts, UploadRequest } from '../
 const bundle = await build({
   stdin: {
     contents:
-      'export * from "./src/designer-state"; export * from "./src/runtime"; export * from "./src/demo/local-runtime"; export * from "./src/config"; export * from "./src/shopify-variant-matrix"; export * from "./src/model";',
+      'export * from "./src/designer-state"; export * from "./src/runtime"; export * from "./src/demo/local-runtime"; export * from "./src/config"; export * from "./src/shopify-variant-matrix"; export * from "./src/model"; export * from "./src/commit-failure";',
     resolveDir: fileURLToPath(new URL('../', import.meta.url)),
   },
   bundle: true,
@@ -35,7 +35,10 @@ const {
   createProductModel,
   buildShopifyVariantMatrix,
   createLocalRuntime,
+  commitFailure,
+  commitFailureView,
 } = (await import(pathToFileURL(moduleFile).href)) as typeof import('../src/designer-state') &
+  typeof import('../src/commit-failure') &
   typeof import('../src/runtime') &
   typeof import('../src/demo/local-runtime') &
   typeof import('../src/config') &
@@ -369,13 +372,13 @@ test('the per-visitor session limit fails the upload with its own reason and the
     retryAfterSeconds: 1500,
     fileName: 'new.png',
   });
-  // The owner's upload quota is a different limit and keeps the ordinary upload failure.
-  assert.equal(
-    ((await failWith(Object.assign(new Error('quota'), { status: 429, code: 'RATE_LIMITED', retryAfter: 60 }))) as {
-      reason?: string;
-    }).reason,
-    'upload-failed',
-  );
+  // The owner's upload quota is a different limit, with its own reason and wait (#337).
+  const quota = (await failWith(Object.assign(new Error('quota'), { status: 429, code: 'RATE_LIMITED', retryAfter: 60 }))) as {
+    reason?: string;
+    retryAfterSeconds?: number;
+  };
+  assert.equal(quota.reason, 'rate-limited');
+  assert.equal(quota.retryAfterSeconds, 60);
 });
 
 test('retrying an unchanged snapshot reuses its idempotency key and design identity, with a fresh UI request ID', async () => {
@@ -1210,7 +1213,8 @@ test('a cart over the signed-set capacity fails preparation as a cart limit, not
   assert.deepEqual(other.state.commit, { kind: 'failed', cause: 'unknown', preparation: true });
 });
 
-test('a buyer error code becomes one failure cause, with a bounded wait only where the cause names one (#337)', async () => {
+test('a buyer error code becomes one failure cause, with a bounded wait only where the cause names one (#337)', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
   const failing = (fields: Record<string, unknown>) => () => Promise.reject(Object.assign(Error('Raw English server message'), fields));
   const reviewing = harness({
     artwork: { upload: async () => ({}) },
@@ -1218,7 +1222,7 @@ test('a buyer error code becomes one failure cause, with a bounded wait only whe
     cart: { commit: async () => { throw Error('unused'); } },
   });
   await reviewing.runtime.commit(true);
-  assert.deepEqual(reviewing.state.commit, { kind: 'failed', cause: 'busy', preparation: true });
+  assert.deepEqual(reviewing.state.commit, { kind: 'failed', cause: 'busy', preparation: true, retryAfterSeconds: 2, waiting: true });
   // #362 follow-up: the session limit at Add to cart, with no upload before it.
   const adding = harness({
     artwork: { upload: async () => ({}) },
@@ -1229,7 +1233,7 @@ test('a buyer error code becomes one failure cause, with a bounded wait only whe
   // An unknown code is a generic failure; a wait beyond the one-hour window is capped.
   for (const [fields, expected] of [
     [{ code: 'NOT_A_BUYER_CODE' }, { kind: 'failed', cause: 'unknown', preparation: false }],
-    [{ code: 'RATE_LIMITED', retryAfter: 1e12 }, { kind: 'failed', cause: 'rate-limited', preparation: false, retryAfterSeconds: 3600 }],
+    [{ code: 'RATE_LIMITED', retryAfter: 1e12 }, { kind: 'failed', cause: 'rate-limited', preparation: false, retryAfterSeconds: 3600, waiting: true }],
     [{ code: 'CART_BUSY', retryAfter: -5 }, { kind: 'failed', cause: 'cart-busy', preparation: false }],
   ] as const) {
     const h = harness({ artwork: { upload: async () => ({}) }, cart: { commit: failing(fields) } });
@@ -1238,6 +1242,59 @@ test('a buyer error code becomes one failure cause, with a bounded wait only whe
   }
 });
 
+
+test('REVIEW_REQUIRED at Add to cart is a definite no-commit: Retry reviews again under a new key (#337)', async () => {
+  const commits: CartRequest[] = [];
+  const preparations: CartRequest[] = [];
+  const h = harness({
+    artwork: { upload: async () => ({}) },
+    review: { prepare: async (request) => { preparations.push(request); } },
+    cart: { commit: async (request) => { commits.push(request); throw Object.assign(Error('Review required'), { status: 409, code: 'REVIEW_REQUIRED' }); } },
+  });
+  await h.runtime.commit(true);
+  await h.runtime.commit();
+  assert.deepEqual(h.state.commit, { kind: 'failed', cause: 'review-required', preparation: true });
+  assert.equal(commitFailureView(h.state.commit as never, 'en').action, 'retry-review');
+  await h.runtime.commit(true);
+  assert.equal(preparations.length, 2, 'Retry prepares the current terms again');
+  assert.notEqual(preparations[1]?.idempotencyKey, commits[0]?.idempotencyKey, 'the rejected acceptance key is retired');
+  assert.equal(commits.length, 1);
+});
+
+test('Retry waits for Retry-After on BUSY and RATE_LIMITED; the runtime owns the timer (#337)', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+  let calls = 0;
+  const h = harness({
+    artwork: { upload: async () => ({}) },
+    cart: { commit: async () => { calls++; throw Object.assign(Error('Busy'), { status: 409, code: 'BUSY', retryAfter: 3 }); } },
+  });
+  await h.runtime.commit();
+  assert.deepEqual(h.state.commit, { kind: 'failed', cause: 'busy', preparation: false, retryAfterSeconds: 3, waiting: true });
+  assert.equal(commitFailureView(h.state.commit as never, 'en').waiting, true);
+  await h.runtime.commit();
+  assert.equal(calls, 1, 'nothing is re-sent while the wait runs');
+  t.mock.timers.tick(2999);
+  assert.equal(h.state.commit.kind === 'failed' && 'waiting' in h.state.commit && h.state.commit.waiting, true);
+  t.mock.timers.tick(1);
+  assert.deepEqual(h.state.commit, { kind: 'failed', cause: 'busy', preparation: false, retryAfterSeconds: 3, waiting: false });
+  await h.runtime.commit();
+  assert.equal(calls, 2, 'Add to cart repeats once the wait has passed');
+  // Without Retry-After there is nothing to wait for.
+  assert.deepEqual(commitFailure({ code: 'RATE_LIMITED' }, true), { cause: 'rate-limited', preparation: true, waiting: false });
+});
+
+test('each failure cause routes its own primary action; the cart lock is never a review failure (#337)', () => {
+  const action = (failure: Parameters<typeof commitFailureView>[0]) => commitFailureView(failure, 'en').action;
+  assert.equal(action(commitFailure({ code: 'UNAVAILABLE' }, true)), 'retry-review');
+  assert.equal(action(commitFailure({ code: 'UNAVAILABLE' }, false)), 'retry-add');
+  assert.equal(action(commitFailure({}, true)), 'retry-review');
+  assert.equal(action(commitFailure({ code: 'CART_BUSY' }, false)), 'retry-add');
+  // The cart lock is only taken while applying an accepted set, never while preparing.
+  assert.deepEqual(commitFailure({ code: 'CART_BUSY' }, true), { cause: 'unknown', preparation: true });
+  assert.equal(action(commitFailure({ code: 'CAPACITY_EXCEEDED' }, true)), 'edit-quantities');
+  assert.equal(action(commitFailure({ code: 'ARTWORK_EXPIRED' }, false)), 'replace-artwork');
+  assert.equal(action(commitFailure({ code: 'PRODUCT_UNAVAILABLE' }, true)), 'close');
+});
 test('explicit preparation Retry recovers a transient preflight read before quote expiry without accepting', async () => {
   const preparations: CartRequest[] = [];
   const commits: CartRequest[] = [];

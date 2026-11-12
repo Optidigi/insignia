@@ -82,6 +82,7 @@ test('every buyer error code crosses the frame bridge with its own copy and only
     }),
   ]);
   // `path=prepare`: the review (price) request fails. `path=commit`: the review succeeds and Add to cart fails.
+  // `path=upload`: the artwork upload fails.
   const html = (query: URLSearchParams) => {
     const failure = JSON.stringify({
       status: Number(query.get('status') ?? 0) || undefined,
@@ -93,7 +94,7 @@ test('every buyer error code crosses the frame bridge with its own copy and only
  import {createDesignerFrame} from '/host.js';
  window.preparations=0;window.commits=0;window.closes=0;
  const fail=()=>Object.assign(new Error(${JSON.stringify(SERVER_MESSAGE)}),${failure});
- createDesignerFrame({config:${JSON.stringify(config)},locale:${JSON.stringify(query.get('locale') ?? 'en')},initialPrints:[{id:'chest',method:'print',size:0,artworkId:'asset'}],initialArtworks:[{id:'asset',name:'Logo.png',url:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"/%3E',width:100,height:100}],ports:{artwork:{upload:()=>new Promise(()=>{})},review:{prepare:async()=>{window.preparations++;${prepare ? 'throw fail()' : 'return {expiresAt:new Date(Date.now()+600000).toISOString()}'}}},cart:{commit:async()=>{window.commits++;throw fail()}}},onClose(){window.closes++}});
+ createDesignerFrame({config:${JSON.stringify(config)},locale:${JSON.stringify(query.get('locale') ?? 'en')},initialPrints:[{id:'chest',method:'print',size:0,artworkId:'asset'}],initialArtworks:[{id:'asset',name:'Logo.png',url:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"/%3E',width:100,height:100}],ports:{artwork:{upload:${query.get('path') === 'upload' ? "async(file,request)=>{request.onProgress?.('uploading');throw fail()}" : '()=>new Promise(()=>{})'}},review:{prepare:async()=>{window.preparations++;${prepare ? 'throw fail()' : 'return {expiresAt:new Date(Date.now()+600000).toISOString()}'}}},cart:{commit:async()=>{window.commits++;throw fail()}}},onClose(){window.closes++}});
  </script></body></html>`;
   };
   const server = createServer((request, response) => {
@@ -164,6 +165,11 @@ test('every buyer error code crosses the frame bridge with its own copy and only
     assert.deepEqual(await counters(), before, 'a non-retryable failure is never re-sent');
   };
   const backToDesign = () => frame.locator('.app[data-step="0"]').waitFor();
+  // The only uploaded artwork is the expired one: Replace artwork opens its placement's artwork dialog.
+  const replaceChestArtwork = async () => {
+    await frame.locator('.app[data-step="0"]').waitFor();
+    await frame.getByText('Artwork for Chest', { exact: true }).waitFor();
+  };
   const closeRequested = () => frame.getByRole('button', { name: 'Close customization', exact: true }).waitFor();
 
   // Transient: Retry (review) or Add to cart (commit) repeats the request.
@@ -171,6 +177,8 @@ test('every buyer error code crosses the frame bridge with its own copy and only
     message: 'The store is busy right now. Your design is still here. Try again in a few seconds.',
     action: 'Retry',
   });
+  // Retry waits for Retry-After before it can repeat the request.
+  assert.equal(await primary.isDisabled(), true, 'Retry is held until the stated wait passes');
   await assertRetries('prepare');
   assert.deepEqual(await fail('prepare', { status: 503, code: 'UNAVAILABLE' }), {
     message: 'Customization is temporarily unavailable. Your design is still here. Try again later.',
@@ -181,7 +189,10 @@ test('every buyer error code crosses the frame bridge with its own copy and only
     message: 'Too many requests from your network. Try again in 2 minutes.',
     action: 'Retry',
   });
-  await assertRetries('prepare');
+  assert.equal(await primary.isDisabled(), true, 'Retry is held for the 90-second wait');
+  const held = await counters();
+  await primary.click({ force: true });
+  assert.deepEqual(await counters(), held, 'a held Retry sends nothing');
   // The buyer config throttle sends no Retry-After.
   assert.deepEqual(await fail('prepare', { status: 429, code: 'RATE_LIMITED' }), {
     message: 'Too many requests right now. Wait a moment, then try again.',
@@ -193,10 +204,23 @@ test('every buyer error code crosses the frame bridge with its own copy and only
     action: 'Retry',
   });
   await assertRetries('prepare');
+  // At Add to cart a 409 REVIEW_REQUIRED is a definite no-commit: Retry reviews again, never resends the add.
+  assert.deepEqual(await fail('commit', { status: 409, code: 'REVIEW_REQUIRED' }), {
+    message:
+      'This product changed since you opened it, for example its price or stock. Check your choices and try again.',
+    action: 'Retry',
+  });
+  {
+    const before = await counters();
+    await primary.click();
+    await page.waitForFunction((count) => Reflect.get(window, 'preparations') === count, before.preparations + 1);
+    assert.equal((await counters()).commits, before.commits, 'the rejected Add to cart is not resent');
+  }
   assert.deepEqual(await fail('commit', { status: 409, code: 'BUSY', retryAfter: 2 }), {
     message: 'The store is busy right now. Your design is still here. Try again in a few seconds.',
     action: 'Add to cart',
   });
+  assert.equal(await primary.isDisabled(), true, 'Add to cart is held until the stated wait passes');
   await assertRetries('commit');
   // Another tab or the repair view holds this browser's cart lock.
   assert.deepEqual(await fail('commit', { code: 'CART_BUSY' }), {
@@ -215,7 +239,7 @@ test('every buyer error code crosses the frame bridge with its own copy and only
       },
       path,
     );
-    await assertNoResend(backToDesign);
+    await assertNoResend(replaceChestArtwork);
   }
   assert.deepEqual(await fail('prepare', { status: 422, code: 'POSITION_INVALID' }), {
     message: 'Your artwork position is no longer allowed. Edit your design to continue.',
@@ -263,6 +287,35 @@ test('every buyer error code crosses the frame bridge with its own copy and only
   assert.deepEqual(await fail('prepare', { status: 429, code: 'SESSION_RATE_LIMITED', retryAfter: 1e9 }), {
     message: 'Too many new customization sessions from your network. Try again in 60 minutes.',
     action: 'Close',
+  });
+
+  // The owner's upload quota names its wait; neither a retry nor another file helps until then.
+  const failUpload = async (failure: Record<string, string | number>) => {
+    const query = new URLSearchParams({
+      path: 'upload',
+      locale: 'en',
+      ...Object.fromEntries(Object.entries(failure).map(([k, v]) => [k, String(v)])),
+    });
+    await page.goto(`http://127.0.0.1:${serverPort(server)}/products/shirt?${query}`);
+    await frame.locator('.app').waitFor({ timeout: 10000 });
+    await frame.locator('#artwork-chest').click();
+    await frame
+      .locator('input[type=file]')
+      .setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: Buffer.from('fixture') });
+    const alert = frame.locator('#artwork-upload-error');
+    await alert.waitFor();
+    return {
+      message: await alert.innerText(),
+      actions: await frame.locator('.upload-failure-actions button').allInnerTexts(),
+    };
+  };
+  assert.deepEqual(await failUpload({ status: 429, code: 'RATE_LIMITED', retryAfter: 150 }), {
+    message: "You've reached the upload limit. Try again in 3 minutes.",
+    actions: ['Close'],
+  });
+  assert.deepEqual(await failUpload({ status: 429, code: 'RATE_LIMITED' }), {
+    message: "You've reached the upload limit. Try again later.",
+    actions: ['Close'],
   });
 
   // German uses the formal "Sie".

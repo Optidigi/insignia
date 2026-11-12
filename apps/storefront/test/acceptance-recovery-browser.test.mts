@@ -274,7 +274,27 @@ for (const mode of [
       assert.equal(new URL(page.url()).pathname, '/');
       return;
     }
-    if (mode === 'ordinary409' || mode === 'network') {
+    if (mode === 'ordinary409') {
+      // A plain 409 REVIEW_REQUIRED at acceptance is a definite no-commit (#337): the Designer re-reviews the
+      // current terms instead of resending the same acceptance, and the next Add accepts the fresh proposal.
+      const until = async (condition: () => boolean) => {
+        for (let wait = 0; !condition(); wait++) {
+          if (wait > 400) throw new Error('Timed out waiting for the buyer API');
+          await new Promise((resolve) => setTimeout(resolve, 25));
+        }
+      };
+      await until(() => proposals.length === 2);
+      await frame.locator('.footer-price strong', { hasText: '$17.00' }).waitFor();
+      assert.equal(await frame.locator('.cart-submit-error').count(), 0, 'the refreshed quote is shown, not a failure');
+      await frame.getByRole('button', { name: 'Add to cart', exact: true }).click();
+      await until(() => attempts.length === 2 && proposals.length === 3);
+      assert.equal(attempts[0]?.id, proposals[0]);
+      assert.equal(attempts[1]?.id, proposals[1], 'the second Add accepts the re-reviewed proposal');
+      assert.notDeepEqual(attempts[0], attempts[1], 'the rejected acceptance is never resent');
+      assert.equal(writes, 0);
+      return;
+    }
+    if (mode === 'network') {
       await frame.locator('.cart-submit-error').waitFor();
       await frame.getByRole('button', { name: 'Previous step', exact: true }).click();
       await frame.getByRole('button', { name: 'Review', exact: true }).last().click();

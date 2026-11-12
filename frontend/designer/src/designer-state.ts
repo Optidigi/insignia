@@ -28,8 +28,11 @@ export type DesignerModal =
   /** "Continue your design?" for an unfinished design from an earlier page load (#347). */
   | { kind: 'resume-draft' };
 
-/** `session-limited`: the per-visitor session limit refused the session the upload needs (#348). */
-export type UploadFailureReason = 'file-too-large' | 'unsupported-file-type' | 'read-failed' | 'upload-failed' | 'processing-failed' | 'processing-timeout' | 'inspection-rejected' | 'artwork-expired' | 'session-limited';
+/**
+ * `session-limited`: the per-visitor session limit refused the session the upload needs (#348).
+ * `rate-limited`: the owner's artwork upload quota is used up until its Retry-After (#337).
+ */
+export type UploadFailureReason = 'file-too-large' | 'unsupported-file-type' | 'read-failed' | 'upload-failed' | 'processing-failed' | 'processing-timeout' | 'inspection-rejected' | 'artwork-expired' | 'session-limited' | 'rate-limited';
 
 export type UploadState =
   | { kind: 'idle' }
@@ -39,7 +42,7 @@ export type UploadState =
       token: number;
       target: PositionId;
       reason: UploadFailureReason;
-      /** session-limited only: the server's Retry-After when it sent one. */
+      /** session-limited and rate-limited only: the server's Retry-After when it sent one. */
       retryAfterSeconds?: number;
       fileName?: string;
     };
@@ -178,6 +181,8 @@ export type DesignerEvent =
   | { type: 'cart-preparation-started'; requestId: string }
   | { type: 'cart-commit-succeeded'; requestId: string; receipt: CartReceipt }
   | { type: 'cart-commit-failed'; requestId: string; failure: CommitFailure }
+  /** The runtime's Retry-After timer passed: the held Retry becomes available. */
+  | { type: 'cart-commit-retry-ready' }
   | { type: 'cart-commit-canceled' }
   | { type: 'product-design-edit-requested'; design: Design }
   | { type: 'product-design-switch-confirmed' }
@@ -437,6 +442,10 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
     case 'cart-commit-failed':
       return (state.commit.kind === 'pending' || state.commit.kind === 'preparing' || state.commit.kind === 'refreshing') && state.commit.requestId === event.requestId
         ? { ...state, commit: { kind: 'failed', ...event.failure } }
+        : state;
+    case 'cart-commit-retry-ready':
+      return state.commit.kind === 'failed' && 'waiting' in state.commit && state.commit.waiting
+        ? { ...state, commit: { ...state.commit, waiting: false } }
         : state;
     case 'cart-commit-canceled':
       return state.commit.kind === 'pending' || state.commit.kind === 'preparing' || state.commit.kind === 'refreshing' ? { ...state, commit: { kind: 'idle' } } : state;

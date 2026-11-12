@@ -2404,6 +2404,8 @@ export const adminParameterContracts = {
   'settings:translations.fields.customer_artwork_uploadErrorTitle': {},
   'settings:translations.fields.customer_artwork_uploadFailed': {},
   'settings:translations.fields.customer_artwork_uploadingFile': {},
+  'settings:translations.fields.customer_artwork_uploadRateLimited': {},
+  'settings:translations.fields.customer_artwork_uploadRateLimitedWait': {},
   'settings:translations.fields.customer_artwork_uploadReadFailed': {},
   'settings:translations.fields.customer_artwork_uploadTooLarge': {},
   'settings:translations.fields.customer_artwork_uploadUnsupportedType': {},

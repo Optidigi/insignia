@@ -73,8 +73,8 @@ const source: BuyerConfig = {
 };
 
 type Hooks = {
-  /** Runs when the server accepts; may change the cart (another tab) or throw (a timed-out accept). */
-  onAccept?(call: number, items: AjaxItem[]): void;
+  /** Runs when the server accepts; may change the cart (another tab), throw (a timed-out accept) or answer itself. */
+  onAccept?(call: number, items: AjaxItem[]): Response | undefined | void;
   /** Runs before Shopify processes an Ajax write; may throw (interrupted) or answer itself (a refusal). */
   onAjaxWrite?(path: string, items: AjaxItem[], body: AjaxBody): Response | undefined | void;
   /** Accepted lines in place of the single default one. */
@@ -154,7 +154,8 @@ function fixture(hooks: Hooks = {}) {
       if (path.endsWith('/accept')) {
         const proposalId = path.split('/').at(-2) ?? '';
         accepted.push(proposalId);
-        hooks.onAccept?.(accepted.length, items);
+        const answer = hooks.onAccept?.(accepted.length, items);
+        if (answer) return answer;
         return Response.json({
           quoteId: '33333333-3333-4333-8333-333333333333',
           setId: '44444444-4444-4444-8444-444444444444',
@@ -446,4 +447,63 @@ test('a cart lock held by another tab is CART_BUSY, and the retry applies the sa
   assert.equal((receipt as CartReceipt).kind, 'applied');
   assert.equal(app.accepted.length, 1, 'the retry reuses the accepted set instead of signing another');
   assert.equal(app.customized().length, 1);
+});
+
+test('a plain 409 REVIEW_REQUIRED at acceptance re-reviews; the next Add accepts the fresh proposal, never the same one (#337)', async () => {
+  const app = fixture({
+    // The merchant republished between review and Add: a definite no-commit, without a committed decline.
+    onAccept: (call) =>
+      call === 1
+        ? Response.json({ code: 'REVIEW_REQUIRED', message: 'Review required', requestId: 'r' }, { status: 409 })
+        : undefined,
+  });
+  await app.live.ports.review!.prepare(app.request);
+  await assert.rejects(
+    withWindow(() => app.live.ports.cart.commit(app.request)),
+    reviewRequired,
+  );
+  assert.equal(app.proposed.length, 2, 'the current terms are proposed again');
+  assert.equal(app.customized().length, 0);
+  const receipt = await withWindow(() => app.live.ports.cart.commit(app.request));
+  assert.equal((receipt as CartReceipt).kind, 'applied');
+  assert.deepEqual(app.accepted, app.proposed, 'the rejected acceptance is never resent');
+  assert.equal(app.customized().length, 1);
+});
+
+test('a cart changed by the tab that held the lock is re-reviewed after CART_BUSY, never reapplied (#337)', async () => {
+  const app = fixture();
+  await app.live.ports.review!.prepare(app.request);
+  let release!: () => void;
+  let held!: () => void;
+  const holding = new Promise<void>((resolve) => {
+    held = resolve;
+  });
+  const lock = navigator.locks.request(
+    'insignia-customized-cart-v2',
+    () =>
+      new Promise<void>((resolve) => {
+        release = resolve;
+        held();
+      }),
+  );
+  await holding;
+  await assert.rejects(
+    withWindow(() => app.live.ports.cart.commit(app.request)),
+    { code: 'CART_BUSY' },
+  );
+  // The other tab changes the cart before it releases the lock.
+  app.items.push(ordinaryItem('7:other-tab'));
+  release();
+  await lock;
+  await assert.rejects(
+    withWindow(() => app.live.ports.cart.commit(app.request)),
+    reviewRequired,
+  );
+  assert.equal(app.customized().length, 0, 'the accepted set was not applied to the changed cart');
+  assert.equal(app.proposed.length, 2, 'the changed cart is proposed again');
+  const receipt = await withWindow(() => app.live.ports.cart.commit(app.request));
+  assert.equal((receipt as CartReceipt).kind, 'applied');
+  assert.equal(app.accepted.at(-1), app.proposed[1]);
+  assert.equal(app.customized().length, 1);
+  assert.equal(app.items.length, 2, "the other tab's line is kept");
 });

@@ -569,6 +569,8 @@
       "customer_artwork_inspectionRejected": "Cette image a été refusée. Choisissez une image statique prise en charge.",
       "customer_artwork_artworkExpired": "Ce fichier a expiré. Envoyez-le à nouveau.",
       "customer_artwork_sessionLimited": "Message en cas de trop nombreuses sessions",
+      "customer_artwork_uploadRateLimited": "Message de limite d’envoi atteinte",
+      "customer_artwork_uploadRateLimitedWait": "Message de limite d’envoi atteinte (avec délai)",
       "customer_artwork_closeUploadError": "Bouton pour fermer l’erreur d’importation",
       "customer_host_personalise": "Bouton Personnaliser",
       "customer_host_savedDesigns": "Libellé des créations enregistrées",

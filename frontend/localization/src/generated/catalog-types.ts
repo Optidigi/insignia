@@ -2364,6 +2364,8 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_artwork_uploadErrorTitle': object;
   'settings:translations.fields.customer_artwork_uploadFailed': object;
   'settings:translations.fields.customer_artwork_uploadingFile': object;
+  'settings:translations.fields.customer_artwork_uploadRateLimited': object;
+  'settings:translations.fields.customer_artwork_uploadRateLimitedWait': object;
   'settings:translations.fields.customer_artwork_uploadReadFailed': object;
   'settings:translations.fields.customer_artwork_uploadTooLarge': object;
   'settings:translations.fields.customer_artwork_uploadUnsupportedType': object;
@@ -2735,6 +2737,8 @@ export interface CustomerMessageTable {
   'customer:artwork.uploadErrorTitle': object;
   'customer:artwork.uploadFailed': object;
   'customer:artwork.uploadingFile': object;
+  'customer:artwork.uploadRateLimited': object;
+  'customer:artwork.uploadRateLimitedWait': { count: number };
   'customer:artwork.uploadReadFailed': object;
   'customer:artwork.uploadTooLarge': { maxSizeMb: number };
   'customer:artwork.uploadUnsupportedType': object;
