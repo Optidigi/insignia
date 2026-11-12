@@ -227,6 +227,7 @@ function Frame({ initial }: { initial: Initial }) {
           }}
           onOpenChange={setOpen}
           retainViewForConfirmation={pendingGroup !== null || !initial.previewOnly}
+          ownsDocumentLanguage
           renderClosed={(state) => (
             <HostClosed
               state={state}
