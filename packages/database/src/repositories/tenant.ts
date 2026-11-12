@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { sql, type Transaction } from 'kysely';
 import type { Database, DatabaseExecutor } from '../client/database.js';
+import { fenceReader } from '../client/fence-reads.js';
 
 export interface ShopRecord {
   shopId: string;
@@ -280,7 +281,7 @@ export function createTenantRepository(executor: DatabaseExecutor) {
       shopId: string;
       installationGeneration: string;
     }): Promise<ActiveAuthorizationScope | null> {
-      return readAuthorizationScope(executor, input, false);
+      return readAuthorizationScope(fenceReader(executor), input, false);
     },
     async lockActiveAuthorizationScope(input: {
       shopId: string;
