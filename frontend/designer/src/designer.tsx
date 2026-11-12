@@ -351,7 +351,11 @@ function DesignerSession({
     return () => document.removeEventListener('visibilitychange', visible);
   }, [designerOpen, suspended, runtime, ports]);
   useLayoutEffect(() => {
-    if (requestCloseSignal) requestReturnToProduct();
+    if (!requestCloseSignal) return;
+    // A host close request (outer Escape, system back) follows the Escape rule:
+    // an open nested dialog closes first.
+    if (workflowRef.current.open && workflowRef.current.modal.kind !== 'closed') requestCloseModal();
+    else requestReturnToProduct();
   }, [requestCloseSignal]);
   const reviewIntent = designerIntentKey(workflow);
   const beforeQuantities = step === 0;

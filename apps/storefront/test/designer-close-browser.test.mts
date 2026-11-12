@@ -152,17 +152,41 @@ for (const engine of [chromium, firefox])
       await closeQuestion.waitFor({ state: 'detached' });
     }
 
-    // A rejected upload's error stays in the upload dialog: Escape closes that dialog first,
-    // and a host close request (the outer dialog's cancel) asks without the stale error.
+    // Focus on the host <body> (outside the dialog): a native close request must still ask.
+    const focusHostBody = () =>
+      page.waitForFunction(() => {
+        (document.activeElement as HTMLElement | null)?.blur();
+        window.focus();
+        return (
+          document.activeElement === document.body && !document.querySelector('iframe')?.contentDocument?.hasFocus()
+        );
+      });
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      await focusHostBody();
+      await page.keyboard.press('Escape');
+      await closeQuestion.waitFor({ timeout: 2000 }).catch(() => undefined);
+      assert.deepEqual(
+        { ...(await hostState()), asked: await closeQuestion.isVisible() },
+        { open: true, closed: 0, aborted: null, asked: true },
+        `body Escape ${attempt}`,
+      );
+      await page.keyboard.press('Escape');
+      await closeQuestion.waitFor({ state: 'detached' });
+    }
+
+    // A rejected upload's error stays in the upload dialog. Escape and a host close request
+    // (the outer dialog's cancel, e.g. Android back) both close that nested dialog first.
     for (const route of ['keyboard', 'host'] as const) {
       await frame.locator('#artwork-chest').click();
       await frame
         .locator('input[type=file]')
         .setInputFiles({ name: 'doc.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF') });
       await frame.getByText('Choose a PNG, JPG or SVG image.').waitFor();
+      if (route === 'keyboard') await page.keyboard.press('Escape');
+      else await page.locator('dialog').first().dispatchEvent('cancel');
+      await frame.locator('.artwork-dialog').waitFor({ state: 'detached', timeout: 2000 });
+      assert.equal(await closeQuestion.count(), 0, `nested dialog first: ${route}`);
       if (route === 'keyboard') {
-        await page.keyboard.press('Escape');
-        await frame.locator('.artwork-dialog').waitFor({ state: 'detached' });
         await frame.getByRole('button', { name: 'Close customizer', exact: true }).focus();
         await page.keyboard.press('Enter');
       } else await page.locator('dialog').first().dispatchEvent('cancel');
@@ -172,22 +196,33 @@ for (const engine of [chromium, firefox])
       await closeQuestion.waitFor({ state: 'detached' });
     }
 
-    // Unfinished upload: Escape asks about the upload first and keeps it running;
-    // a host close request asks the same upload question for the whole customizer.
+    // Unfinished upload: Escape and a host close request both ask about the upload first
+    // and keep it running until the customer cancels it.
     await frame.locator('#artwork-chest').click();
     await frame
       .locator('input[type=file]')
       .setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: Buffer.from('png') });
     await frame.getByText('Checking artwork…', { exact: true }).waitFor();
-    await page.keyboard.press('Escape');
-    await uploadQuestion.waitFor();
-    await page.keyboard.press('Escape');
-    await uploadQuestion.waitFor({ state: 'detached' });
-    await frame.getByText('Checking artwork…', { exact: true }).waitFor();
-    assert.deepEqual(await hostState(), { open: true, closed: 0, aborted: false });
+    for (const route of ['keyboard', 'host'] as const) {
+      if (route === 'keyboard') await page.keyboard.press('Escape');
+      else await page.locator('dialog').first().dispatchEvent('cancel');
+      await uploadQuestion.waitFor({ timeout: 2000 });
+      assert.deepEqual(await hostState(), { open: true, closed: 0, aborted: false }, route);
+      await page.keyboard.press('Escape');
+      await uploadQuestion.waitFor({ state: 'detached' });
+      await frame.getByText('Checking artwork…', { exact: true }).waitFor();
+    }
     await page.locator('dialog').first().dispatchEvent('cancel');
     await uploadQuestion.waitFor({ timeout: 2000 });
     await frame.getByRole('button', { name: 'Cancel upload', exact: true }).focus();
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => Reflect.get(window, 'uploadSignal')?.aborted === true);
+    // Cancelling the upload closes its dialog; the next host request asks about the customizer.
+    await frame.locator('.artwork-dialog').waitFor({ state: 'detached' });
+    assert.equal((await hostState()).closed, 0);
+    await page.locator('dialog').first().dispatchEvent('cancel');
+    await closeQuestion.waitFor({ timeout: 2000 });
+    await frame.getByRole('button', { name: 'Close customization', exact: true }).focus();
     await page.keyboard.press('Enter');
     await page.waitForFunction(() => Reflect.get(window, 'designerClosed') === 1);
     assert.deepEqual(await hostState(), { open: false, closed: 1, aborted: true });

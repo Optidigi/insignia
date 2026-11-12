@@ -67,17 +67,25 @@ export function createDesignerModal(input: {
   panel.append(message, retry);
   shadow.append(header, main);
   dialog.append(loading);
-  // Escape must do exactly what the close control does. Browsers make a repeated
-  // Escape's native cancel event uncancelable without new user activation, which
-  // would close this dialog without the Designer's close decision; a handled
-  // keydown never becomes a native close request.
+  // Escape must do exactly what the close control does. A handled keydown inside
+  // the dialog never becomes a native close request.
   dialog.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape' || event.defaultPrevented) return;
     event.preventDefault();
     cancel();
   });
   dialog.addEventListener('cancel', (event) => {
+    // An uncancelable request (a repeated Escape or system back without new user
+    // activation) closes natively; the close backstop below routes that one.
+    if (!event.cancelable) return;
     event.preventDefault();
+    cancel();
+  });
+  // Backstop: browsers may still close the dialog natively (focus outside it, system
+  // back). While it is owned, reopen it and route the request through the decision.
+  dialog.addEventListener('close', () => {
+    if (dialog.open || !owners.has(dialog) || !dialog.isConnected) return;
+    dialog.showModal();
     cancel();
   });
   if (input.initiallyHidden) {
