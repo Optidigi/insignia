@@ -183,3 +183,74 @@ test('product-only staff cannot obtain private originals or previews', async () 
   }
   assert.equal(reads, 0);
 });
+
+test('guest begin, complete and status emit one bounded timing line each; merchant routes emit none', async () => {
+  const { ArtworkError } = await import('@insignia/application');
+  const assetId = 'ae771020-1f54-47ab-a8af-48b1eb7de3d2';
+  const lines: Record<string, unknown>[] = [];
+  const timing = (value: object) => lines.push({ ...value });
+  const guestRequest = (body: Record<string, unknown> = {}) =>
+    new Request('https://app.example.test/api/artwork/guest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ capability: 'synthetic', ...body }),
+    });
+  let inspectionReady = true;
+  const guest: ArtworkHttpServices = {
+    ...services,
+    verifyGuest: async () => ({ kind: 'guest', shopId: 't', installationGeneration: '1', ownerHash: 'a'.repeat(64) }),
+    ensureInspectionReady: async () => {
+      if (!inspectionReady) throw new Error('worker unavailable');
+    },
+    artwork: artworkFixture({
+      begin: async () => artworkAdmission({ assetId, state: 'UPLOADING' }),
+      complete: async () => artworkStatus({ assetId, state: 'QUEUED' }),
+      status: async () => {
+        throw new ArtworkError('EXPIRED');
+      },
+    }),
+  };
+  const begin = await handleArtworkRequest(
+    guestRequest({ contentType: 'image/png', byteLength: 108 }),
+    guest,
+    { kind: 'begin', audience: 'guest' },
+    timing,
+  );
+  assert.equal(begin.status, 201);
+  await handleArtworkRequest(guestRequest(), guest, { kind: 'complete', assetId, audience: 'guest' }, timing);
+  await handleArtworkRequest(guestRequest(), guest, { kind: 'status', assetId, audience: 'guest' }, timing);
+  inspectionReady = false;
+  await handleArtworkRequest(
+    guestRequest({ contentType: 'image/png', byteLength: 108 }),
+    guest,
+    { kind: 'begin', audience: 'guest' },
+    timing,
+  );
+  await handleArtworkRequest(
+    guestRequest(),
+    { ...guest, verifyGuest: async () => null },
+    { kind: 'status', assetId, audience: 'guest' },
+    timing,
+  );
+  await handleArtworkRequest(
+    request({ contentType: 'image/png', byteLength: 108 }),
+    services,
+    { kind: 'begin', audience: 'merchant' },
+    timing,
+  );
+  assert.equal(lines.length, 5);
+  for (const line of lines) {
+    assert.match(String(line.correlationId), /^[0-9a-f-]{36}$/);
+    assert.ok(Number.isInteger(line.totalMs) && Number(line.totalMs) >= 0);
+  }
+  assert.deepEqual(
+    lines.map(({ correlationId: _id, totalMs: _ms, ...line }) => line),
+    [
+      { operation: 'begin', outcome: 'success', httpStatus: 201, assetId, state: 'UPLOADING' },
+      { operation: 'complete', outcome: 'success', httpStatus: 202, assetId, state: 'QUEUED' },
+      { operation: 'status', outcome: 'failure', httpStatus: 410, assetId, failure: 'EXPIRED' },
+      { operation: 'begin', outcome: 'failure', httpStatus: 503, failure: 'INSPECTION_UNAVAILABLE' },
+      { operation: 'status', outcome: 'failure', httpStatus: 401, assetId, failure: 'AUTHENTICATION_REQUIRED' },
+    ],
+  );
+});

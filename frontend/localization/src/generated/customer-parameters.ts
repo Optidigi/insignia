@@ -50,6 +50,7 @@ export const customerParameterContracts = {
   'customer:artwork.or': {},
   'customer:artwork.processingFailed': {},
   'customer:artwork.processingFile': {},
+  'customer:artwork.processingTimeout': {},
   'customer:artwork.provideArtworkLater': {},
   'customer:artwork.removeArtwork': {},
   'customer:artwork.retryUpload': {},

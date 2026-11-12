@@ -4,6 +4,7 @@ import { Counter, Gauge, Registry } from 'prom-client';
 
 const EVENTS = new Set([
   'admin_authentication',
+  'artwork_request_timing',
   'buyer_request_failed',
   'buyer_request_timing',
   'customer_artwork_notification',
@@ -22,6 +23,7 @@ const EVENTS = new Set([
 
 export type RuntimeEvent =
   | 'admin_authentication'
+  | 'artwork_request_timing'
   | 'buyer_request_failed'
   | 'buyer_request_timing'
   | 'customer_artwork_notification'
@@ -152,8 +154,47 @@ export type BuyerTimingDiagnostic = {
   spans: BuyerTimingSpan[];
 };
 
+const ARTWORK_OPERATIONS = ['begin', 'complete', 'status'] as const;
+const ARTWORK_STATES = [
+  'UPLOADING',
+  'QUEUED',
+  'INSPECTING',
+  'PROMOTING',
+  'USABLE',
+  'REJECTED',
+  'DELETING',
+  'DELETED',
+] as const;
+export const ARTWORK_REQUEST_FAILURES = [
+  'METHOD_NOT_ALLOWED',
+  'AUTHENTICATION_REQUIRED',
+  'AUTHENTICATION_UNAVAILABLE',
+  'INVALID_DECLARATION',
+  'INSPECTION_UNAVAILABLE',
+  'INVALID_INPUT',
+  'NOT_FOUND',
+  'EXPIRED',
+  'NOT_USABLE',
+  'CONFLICT',
+  'UNAVAILABLE',
+] as const;
+/** One line per guest artwork begin/complete/status request, so a stalled check can be matched to its requests. */
+export type ArtworkTimingDiagnostic = {
+  correlationId: string;
+  operation: (typeof ARTWORK_OPERATIONS)[number];
+  outcome: 'success' | 'failure';
+  httpStatus: number;
+  totalMs: number;
+  /** Opaque server-generated asset id; absent for begin failures. */
+  assetId?: string;
+  /** Asset state returned to the buyer (status/complete). */
+  state?: (typeof ARTWORK_STATES)[number];
+  failure?: (typeof ARTWORK_REQUEST_FAILURES)[number];
+};
+
 export interface RuntimeLogDetails {
   timing?: BuyerTimingDiagnostic;
+  artworkTiming?: ArtworkTimingDiagnostic;
   buyerStage?: BuyerFailureDiagnostic['buyerStage'];
   proposalStage?: BuyerFailureDiagnostic['proposalStage'];
   authStage?: AdminAuthenticationStage;
@@ -211,7 +252,38 @@ function safeDetails(input: RuntimeLogDetails): RuntimeLogDetails {
   return result;
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function artworkTimingDetails(t: ArtworkTimingDiagnostic | undefined) {
+  if (
+    !t ||
+    !UUID.test(t.correlationId) ||
+    !ARTWORK_OPERATIONS.includes(t.operation) ||
+    !['success', 'failure'].includes(t.outcome) ||
+    !Number.isInteger(t.httpStatus) ||
+    t.httpStatus < 100 ||
+    t.httpStatus > 599 ||
+    !Number.isInteger(t.totalMs) ||
+    t.totalMs < 0 ||
+    t.totalMs > 86400000 ||
+    (t.assetId !== undefined && !UUID.test(t.assetId)) ||
+    (t.state !== undefined && !ARTWORK_STATES.includes(t.state)) ||
+    (t.failure !== undefined && !ARTWORK_REQUEST_FAILURES.includes(t.failure))
+  )
+    throw new Error('Invalid artwork timing diagnostic');
+  return {
+    correlationId: t.correlationId,
+    operation: t.operation,
+    outcome: t.outcome,
+    httpStatus: t.httpStatus,
+    totalMs: t.totalMs,
+    ...(t.assetId === undefined ? {} : { assetId: t.assetId }),
+    ...(t.state === undefined ? {} : { state: t.state }),
+    ...(t.failure === undefined ? {} : { failure: t.failure }),
+  };
+}
+
 function eventDetails(event: RuntimeEvent, input: RuntimeLogDetails) {
+  if (event === 'artwork_request_timing') return artworkTimingDetails(input.artworkTiming);
   if (event === 'buyer_request_timing') {
     const t = input.timing;
     const ms = (v: number) => Number.isInteger(v) && v >= 0 && v <= 86400000;

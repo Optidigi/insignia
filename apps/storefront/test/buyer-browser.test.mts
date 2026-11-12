@@ -1668,6 +1668,119 @@ for (const engine of [chromium, firefox])
       );
     });
 
+test('#349: three rejected uploads, then a valid PNG is checked and applied through the live ports', async () => {
+  await withProductDesigner(config, async ({ page, ui }) => {
+    const expiresAt = new Date(Date.now() + 3600000).toISOString();
+    const assets = new Map<string, string>();
+    const begun: string[] = [];
+    await page.route('https://upload.example.test/**', (route) =>
+      route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*' } }),
+    );
+    await page.route('**/apps/insignia/guest**', (route) => {
+      const path = new URL(route.request().url()).pathname;
+      if (path.endsWith('/guest')) {
+        const assetId = `bbbbbbbb-bbbb-4bbb-8bbb-${String(begun.length + 1).padStart(12, '0')}`;
+        begun.push(assetId);
+        // The first server-checked file is the corrupt PNG; later ones are valid.
+        assets.set(assetId, begun.length === 1 ? 'REJECTED' : 'USABLE');
+        return route.fulfill({
+          json: { assetId, expiresAt, upload: { url: `https://upload.example.test/${assetId}`, headers: {} } },
+        });
+      }
+      const assetId = path.split('/').at(-2) ?? '';
+      if (path.endsWith('/complete')) return route.fulfill({ json: { state: 'QUEUED', expiresAt } });
+      if (path.endsWith('/status')) return route.fulfill({ json: { state: assets.get(assetId), expiresAt } });
+      if (path.endsWith('/preview'))
+        return route.fulfill({
+          json: { url: 'https://preview.example/uploaded.png', width: 100, height: 100, expiresAt },
+        });
+      throw Error('Unexpected artwork operation');
+    });
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC',
+      'base64',
+    );
+    await ui.getByRole('button', { name: 'Add artwork', exact: true }).click();
+    await ui.getByRole('button', { name: 'Choose artwork Choose', exact: true }).click();
+    const input = ui.locator('input[type=file]');
+    for (const [file, message] of [
+      [
+        { name: 'corrupt.png', mimeType: 'image/png', buffer: Buffer.from('not a png') },
+        'This image was rejected. Choose a supported static image.',
+      ],
+      [
+        { name: 'huge-noise.png', mimeType: 'image/png', buffer: Buffer.alloc(5 * 1024 * 1024 + 1) },
+        'This file is larger than 5 MiB. Try a smaller image.',
+      ],
+      [
+        { name: 'doc.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF') },
+        'Choose a PNG, JPG or SVG image.',
+      ],
+    ] as const) {
+      await input.setInputFiles(file);
+      await ui.getByRole('alert').getByText(message, { exact: true }).waitFor();
+    }
+    await input.setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: png });
+    await ui.getByRole('button', { name: 'logo.png Change', exact: true }).waitFor({ timeout: 10000 });
+    assert.equal(await ui.getByRole('dialog', { name: 'Artwork for Front', exact: true }).count(), 0);
+    assert.equal(begun.length, 2, 'client-rejected files never reach the server');
+  });
+});
+
+test('#349: an artwork check that never finishes ends with a retryable message', async () => {
+  await withProductDesigner(config, async ({ page, ui }) => {
+    await page.clock.install();
+    const expiresAt = new Date(Date.now() + 3600000).toISOString();
+    let statusReads = 0;
+    let finish = false;
+    await page.route('https://upload.example.test/**', (route) =>
+      route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*' } }),
+    );
+    await page.route('**/apps/insignia/guest**', (route) => {
+      const path = new URL(route.request().url()).pathname;
+      if (path.endsWith('/guest'))
+        return route.fulfill({
+          json: {
+            assetId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+            expiresAt,
+            upload: { url: 'https://upload.example.test/original', headers: {} },
+          },
+        });
+      if (path.endsWith('/complete')) return route.fulfill({ json: { state: 'QUEUED', expiresAt } });
+      if (path.endsWith('/status')) {
+        statusReads++;
+        return route.fulfill({ json: { state: finish ? 'USABLE' : 'INSPECTING', expiresAt } });
+      }
+      if (path.endsWith('/preview'))
+        return route.fulfill({
+          json: { url: 'https://preview.example/uploaded.png', width: 100, height: 100, expiresAt },
+        });
+      throw Error('Unexpected artwork operation');
+    });
+    await ui.getByRole('button', { name: 'Add artwork', exact: true }).click();
+    await ui.getByRole('button', { name: 'Choose artwork Choose', exact: true }).click();
+    await ui.locator('input[type=file]').setInputFiles({
+      name: 'logo.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC',
+        'base64',
+      ),
+    });
+    await ui.getByRole('status').getByText('Checking artwork…', { exact: true }).waitFor();
+    await page.clock.runFor(31000);
+    await ui
+      .getByRole('alert')
+      .getByText('Checking artwork is taking longer than expected. Try again.', { exact: true })
+      .waitFor();
+    assert.ok(statusReads >= 1);
+    finish = true;
+    // Retrying the same file starts a fresh check, which now finishes.
+    await ui.getByRole('button', { name: 'Try again', exact: true }).click();
+    await ui.getByRole('button', { name: 'logo.png Change', exact: true }).waitFor();
+  });
+});
+
 test('reopening resumes the selected Designer without a developer host page', async () => {
   await withProductDesigner(config, async ({ page, ui, trigger }) => {
     await addDeferred(ui, 'Front');

@@ -82,6 +82,7 @@
     "processingFile": "Bestand controleren…",
     "uploadFailed": "Uploaden is mislukt. Probeer het opnieuw of kies een ander bestand.",
     "processingFailed": "Het bestand kon niet worden gecontroleerd. Probeer opnieuw.",
+    "processingTimeout": "Het controleren duurt langer dan verwacht. Probeer opnieuw.",
     "inspectionRejected": "Deze afbeelding is afgewezen. Kies een ondersteunde statische afbeelding.",
     "artworkExpired": "Dit bestand is verlopen. Upload het opnieuw.",
     "cancelUpload": "Upload annuleren",

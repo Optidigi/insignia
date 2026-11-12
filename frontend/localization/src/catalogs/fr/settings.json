@@ -537,6 +537,7 @@
       "customer_artwork_processingFile": "Vérification du fichier…",
       "customer_artwork_uploadFailed": "Échec de l’envoi. Sélectionnez à nouveau le fichier.",
       "customer_artwork_processingFailed": "Le fichier n’a pas pu être vérifié. Réessayez.",
+      "customer_artwork_processingTimeout": "La vérification prend plus de temps que prévu. Réessayez.",
       "customer_artwork_inspectionRejected": "Cette image a été refusée. Choisissez une image statique prise en charge.",
       "customer_artwork_artworkExpired": "Ce fichier a expiré. Envoyez-le à nouveau.",
       "customer_host_personalise": "Bouton Personnaliser",

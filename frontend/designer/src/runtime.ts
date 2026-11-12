@@ -76,6 +76,8 @@ export function createDesignerRuntime(
   ports: DesignerPorts,
   getState: () => DesignerState,
   dispatch: (event: DesignerEvent) => void,
+  /** Checking usually takes 2–4 s; past this the customer gets a retryable message instead of a spinner. */
+  { processingTimeoutMs = 30_000 }: { processingTimeoutMs?: number } = {},
 ) {
   const renewing = new Map<string, AbortController>();
   let reviewController: AbortController | undefined;
@@ -283,6 +285,7 @@ export function createDesignerRuntime(
       }
       dispatch(started);
       let phase: UploadPhase | undefined;
+      let checkTimer: ReturnType<typeof setTimeout> | undefined;
       try {
         const artwork = await ports.artwork.upload(file, {
           target,
@@ -292,6 +295,12 @@ export function createDesignerRuntime(
             if (controller.signal.aborted || token !== uploadVersion) return;
             phase = next;
             dispatch({ type: 'upload-progress', token, target, phase: next });
+            if (next === 'processing' && checkTimer === undefined)
+              checkTimer = setTimeout(() => {
+                if (controller.signal.aborted || token !== uploadVersion) return;
+                controller.abort();
+                dispatch({ type: 'upload-failed', token, target, reason: 'processing-timeout' });
+              }, processingTimeoutMs);
           },
         });
         if (controller.signal.aborted || token !== uploadVersion) return;
@@ -314,6 +323,7 @@ export function createDesignerRuntime(
             reason: uploadFailure(error, phase),
           });
       } finally {
+        clearTimeout(checkTimer);
         if (uploadController === controller) uploadController = null;
       }
     },

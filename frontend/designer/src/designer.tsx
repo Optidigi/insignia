@@ -416,6 +416,7 @@ function DesignerSession({
         return t('customer:artwork.uploadUnsupportedType');
       case 'upload-failed': return t('customer:artwork.uploadFailed');
       case 'processing-failed': return t('customer:artwork.processingFailed');
+      case 'processing-timeout': return t('customer:artwork.processingTimeout');
       case 'inspection-rejected': return t('customer:artwork.inspectionRejected');
       case 'artwork-expired': return t('customer:artwork.artworkExpired');
       case 'read-failed':
@@ -2053,7 +2054,7 @@ function DesignerSession({
                   <>
                     <p className="upload-error" id="artwork-upload-error" role="alert">{error}</p>
                     <div className="upload-failure-actions">
-                      {workflow.upload.kind === 'failed' && ['upload-failed', 'processing-failed'].includes(workflow.upload.reason) && retryFile.current?.name === uploadFileName && (
+                      {workflow.upload.kind === 'failed' && ['upload-failed', 'processing-failed', 'processing-timeout'].includes(workflow.upload.reason) && retryFile.current?.name === uploadFileName && (
                         <button className="primary-button" onClick={() => void upload(retryFile.current ?? undefined)}>{t('customer:artwork.retryUpload')}</button>
                       )}
                       <button className="secondary-button" onClick={() => fileRef.current?.click()}>{t('customer:artwork.chooseAnotherFile')}</button>

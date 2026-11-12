@@ -83,12 +83,13 @@ function harness(
     cart: { commit(request: CartRequest): Promise<unknown> };
   },
   initial: DesignerState = ready(),
+  options?: Parameters<typeof createDesignerRuntime>[3],
 ) {
   let state = designerReducer(initial, { type: 'step-selected', step: 2 });
   const dispatch = (event: DesignerEvent) => {
     state = designerReducer(state, event);
   };
-  const runtime = createDesignerRuntime(ports as DesignerPorts, () => state, dispatch);
+  const runtime = createDesignerRuntime(ports as DesignerPorts, () => state, dispatch, options);
   return {
     runtime,
     dispatch,
@@ -1231,6 +1232,105 @@ test('an upload finishing while closing the customizer keeps the close decision 
     assert.equal(app.state.modal.kind, outcome === 'success' ? 'confirm-close' : 'artwork');
     assert.equal(app.state.prints[0].artworkId, outcome === 'success' ? 'accepted' : 'logo');
     if (outcome === 'failure') assert.equal(app.state.upload.kind, 'failed');
+  }
+});
+
+test('three rejected uploads in a row leave the next valid upload able to finish (#349 sequence)', async () => {
+  const requests: UploadRequest[] = [];
+  const app = harness({
+    artwork: {
+      upload: async (file, request) => {
+        requests.push(request);
+        request.onProgress?.('uploading');
+        request.onProgress?.('processing');
+        if (file.name === 'corrupt.png') throw Object.assign(new Error('rejected'), { status: 422 });
+        return { id: 'logo-asset', name: file.name, url: '/logo.png', width: 10, height: 10 };
+      },
+    },
+    cart: { commit: async () => { throw Error('unused'); } },
+  });
+  app.dispatch({ type: 'modal-opened', modal: { kind: 'artwork', positionId: 'front' } });
+  const rejected: string[] = [];
+  for (const file of [
+    new File(['not a png'], 'corrupt.png', { type: 'image/png' }),
+    new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'huge-noise.png', { type: 'image/png' }),
+    new File(['%PDF'], 'doc.pdf', { type: 'application/pdf' }),
+  ]) {
+    await app.runtime.upload(file, 'front');
+    assert.equal(app.state.upload.kind, 'failed');
+    if (app.state.upload.kind === 'failed') rejected.push(app.state.upload.reason);
+  }
+  assert.deepEqual(rejected, ['inspection-rejected', 'file-too-large', 'unsupported-file-type']);
+  await app.runtime.upload(new File(['png'], 'logo.png', { type: 'image/png' }), 'front');
+  assert.deepEqual(app.state.upload, { kind: 'idle' });
+  assert.equal(app.state.modal.kind, 'closed');
+  assert.equal(app.state.prints[0].artworkId, 'logo-asset');
+  assert.equal(requests.length, 2, 'only server-checked files reach the upload port');
+});
+
+test('an artwork check that outlasts the client timeout ends with a retryable message and aborts the check', { timeout: 5000 }, async () => {
+  let request!: UploadRequest;
+  const app = harness(
+    {
+      artwork: {
+        upload: async (_file, value) => {
+          request = value;
+          value.onProgress?.('uploading');
+          value.onProgress?.('processing');
+          return new Promise((_resolve, reject) =>
+            value.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), { once: true }),
+          );
+        },
+      },
+      cart: { commit: async () => { throw Error('unused'); } },
+    },
+    ready(),
+    { processingTimeoutMs: 20 },
+  );
+  app.dispatch({ type: 'modal-opened', modal: { kind: 'artwork', positionId: 'front' } });
+  const pending = app.runtime.upload(new File(['png'], 'logo.png', { type: 'image/png' }), 'front');
+  assert.equal(app.state.upload.kind, 'reading');
+  await pending;
+  assert.equal(request.signal.aborted, true);
+  // Read after the await; the earlier assertion narrowed the getter's type to 'reading'.
+  const settled = (): DesignerState['upload'] => app.state.upload;
+  const { token: _token, ...failure } = settled() as Extract<DesignerState['upload'], { kind: 'failed' }>;
+  assert.deepEqual(failure, { kind: 'failed', target: 'front', reason: 'processing-timeout', fileName: 'logo.png' });
+  assert.equal(app.state.modal.kind, 'artwork');
+});
+
+test('the client check timeout covers only the checking phase and is cleared by a result', { timeout: 5000 }, async () => {
+  for (const phase of ['uploading', 'settled'] as const) {
+    const deferred = delayed();
+    let request!: UploadRequest;
+    const app = harness(
+      {
+        artwork: {
+          upload: async (_file, value) => {
+            request = value;
+            value.onProgress?.('uploading');
+            if (phase === 'settled') {
+              value.onProgress?.('processing');
+              return { id: 'quick', name: 'logo.png', url: '/logo.png', width: 10, height: 10 };
+            }
+            return deferred.promise;
+          },
+        },
+        cart: { commit: async () => { throw Error('unused'); } },
+      },
+      ready(),
+      { processingTimeoutMs: 20 },
+    );
+    app.dispatch({ type: 'modal-opened', modal: { kind: 'artwork', positionId: 'front' } });
+    const pending = app.runtime.upload(new File(['png'], 'logo.png', { type: 'image/png' }), 'front');
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    assert.equal(request.signal.aborted, false, phase);
+    if (phase === 'uploading') {
+      assert.equal(app.state.upload.kind, 'reading');
+      deferred.resolve({ id: 'slow-transfer', name: 'logo.png', url: '/logo.png', width: 10, height: 10 });
+    }
+    await pending;
+    assert.deepEqual(app.state.upload, { kind: 'idle' }, phase);
   }
 });
 

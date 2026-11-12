@@ -535,6 +535,7 @@
       "customer_artwork_processingFile": "Datei wird geprüft…",
       "customer_artwork_uploadFailed": "Hochladen fehlgeschlagen. Wähle die Datei erneut aus.",
       "customer_artwork_processingFailed": "Die Datei konnte nicht geprüft werden. Versuche es erneut.",
+      "customer_artwork_processingTimeout": "Die Prüfung dauert länger als erwartet. Versuchen Sie es erneut.",
       "customer_artwork_inspectionRejected": "Dieses Bild wurde abgelehnt. Wähle ein unterstütztes statisches Bild.",
       "customer_artwork_artworkExpired": "Diese Datei ist abgelaufen. Lade sie erneut hoch.",
       "customer_host_personalise": "Schaltfläche personalisieren",
