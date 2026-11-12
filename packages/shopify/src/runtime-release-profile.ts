@@ -1,6 +1,7 @@
 /** Deployment selects a closed reviewed target, never release authority.
  * Every consumer still independently reads and qualifies trusted release evidence. */
 export type RuntimeReleaseProfileName =
+  | 'native-repair-messages-bf512171'
   | 'native-buyer-fixes-fb436e16'
   | 'native-canonical-host-aa3b6166'
   | 'native-cart-line-v3-aa3b6166'
@@ -31,6 +32,11 @@ export type RuntimeReleaseProfileName =
   | 'lean-markets-7b17cd9'
   | 'lean-privacy-theme-23fd116';
 const profiles = Object.freeze({
+  'native-repair-messages-bf512171': Object.freeze({
+    name: 'native-repair-messages-bf512171' as const,
+    activeVersionRef: '1205994881025',
+    functionsSourceCommit: 'aa3b6166eb2b4679f27e1b7f128d914137ba8412',
+  }),
   'native-buyer-fixes-fb436e16': Object.freeze({
     name: 'native-buyer-fixes-fb436e16' as const,
     activeVersionRef: '1205760688129',

@@ -31,6 +31,7 @@ export function resolveNativePurchaseQualification(input: {
   const profile = resolveRuntimeReleaseProfile(input.releaseProfile);
   if (
     ![
+      'native-repair-messages-bf512171',
       'native-buyer-fixes-fb436e16',
       'native-canonical-host-aa3b6166',
       'native-cart-line-v3-aa3b6166',
