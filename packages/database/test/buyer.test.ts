@@ -584,6 +584,25 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
       db,
     );
     expect(await buyer.getOwnedSet(scope, { quoteId, setId, ownerBinding, now })).not.toBeNull();
+    // Retirement shortens the outgoing key's window (retirement day + 3) below the window recorded on
+    // the sets it signed. A set whose valid-through day the shortened window still covers stays owned
+    // (renewable), and is returned exactly as stored.
+    await sql`UPDATE signing_keys SET last_valid_day=${quote.validThroughDay} WHERE shop_id=${value.shopId} AND key_id=7`.execute(
+      db,
+    );
+    expect(await buyer.getOwnedSet(scope, { quoteId, setId, ownerBinding, now })).toMatchObject({ authorization });
+    // A window that no longer covers the set's valid-through day does not restore it.
+    const rollback = new Error('rollback');
+    await expect(
+      db.transaction().execute(async (tx) => {
+        await sql`UPDATE signing_keys SET last_valid_day=${quote.validThroughDay - 1} WHERE shop_id=${value.shopId} AND key_id=7`.execute(
+          tx,
+        );
+        expect(await createBuyerRepository(tx).getOwnedSet(scope, { quoteId, setId, ownerBinding, now })).toBeNull();
+        throw rollback;
+      }),
+    ).rejects.toBe(rollback);
+    expect(await buyer.getOwnedSet(scope, { quoteId, setId, ownerBinding, now })).not.toBeNull();
     await sql`UPDATE signing_keys SET state='revoked',revoked_at=${now},revocation_reason='synthetic-test',revocation_command_key='synthetic-test' WHERE shop_id=${value.shopId} AND key_id=7`.execute(
       db,
     );
