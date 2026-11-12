@@ -73,6 +73,10 @@ Drop the legacy visitor count (#374; owner decision, 12 November 2026: no rollba
 
 If both migrations are applied before web is replaced, the old image fails every per-visitor session until the new image runs.
 
+Larger buyer session quotas (#371; owner decision, 12 November 2026):
+1. Apply `20261112000600_buyer_session_quota_indexes.sql` through the schema owner (schema 61 to 62) before replacing web or worker. It only adds indexes on `session_id` to `design_drafts`, `quote_proposals` and `cart_applications`, so no grant changes and the ACL digests stay unchanged. Without the indexes, each draft, proposal or cart write counts its session's rows by scanning the whole table, and erasing an expired session scans each of them.
+2. Replace web and worker with the images that contain #371. Web raises the per-session lifetime quotas (100 drafts, 1,000 proposals, 250 cart applications). Worker erases at most ten expired sessions per statement and keeps the 100-session pass. Previous images run unchanged on schema 62, so rollback is image-only. Do not roll back worker alone while sessions above the old quotas exist: its single 100-session statement can outlast the 10 s statement timeout.
+
 ## Cart-line v3 candidate development transition
 
 `native-cart-line-v3-aa3b6166` binds inactive version 1202999689217, the complete 34-version inventory in [native-cart-line-v3-release-binding.json](native-cart-line-v3-release-binding.json) and the exact 14-module [baseline](native-cart-line-v3-module-baseline.json). Canonical hash is `dd76c50a573e7c6cdb7b42555fdbc36e1edda5189c75b876f4f81d92f66c447f`. Source is main merge aa3b6166/tree dc58ec46, which ships everything merged since the functions-renew release, PRs 298–306:

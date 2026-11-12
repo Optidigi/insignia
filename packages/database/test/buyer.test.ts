@@ -345,7 +345,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
     expect(await repo.getSession(scope, expiresAt)).toBeNull();
     expect(await repo.getDesign(scope, design, expiresAt)).toBeNull();
   });
-  it('bounds tenant issuance and session draft cardinality across repository instances', async () => {
+  it('bounds tenant issuance across repository instances', async () => {
     const { shopId } = await createTestShop(db),
       now = new Date('2026-10-12T14:00:00Z');
     const scope = { shopId, installationGeneration: '1', ownerHash: '0'.repeat(64) };
@@ -374,14 +374,134 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
         expiresAt: new Date(+next + 604800000),
       }),
     ).resolves.toHaveProperty('sessionId');
-    for (let i = 0; i < 32; i++) await repo.saveDesign(scope, { id: randomUUID(), expectedVersion: 0, value: {}, now });
-    await expect(
-      createBuyerRepository(db).saveDesign(scope, { id: randomUUID(), expectedVersion: 0, value: {}, now }),
-    ).rejects.toMatchObject({ code: 'RATE_LIMITED' });
     // Cleanup budgets are global; leave no bulk sessions ahead of later expiry assertions.
     await sql`DELETE FROM buyer_sessions WHERE shop_id=${shopId}`.execute(db);
   }, 60_000);
-  it('restores only owned persisted sets and reconciles application vectors without changing quote history', async () => {
+  /** The i-th write of a session paced to stay inside the per-minute write limit. */
+  const paced = (start: Date, i: number) =>
+    new Date(+start + Math.floor(i / BUYER_SESSION_POLICY.sessionWritesPerMinute) * 60_000);
+  /** A minute whose write window is untouched, so a refusal there can only come from a lifetime quota. */
+  const freshMinute = (start: Date, writes: number) =>
+    new Date(+start + (Math.ceil(writes / BUYER_SESSION_POLICY.sessionWritesPerMinute) + 1) * 60_000);
+  it('sizes the lifetime quotas of one shared buyer session for days of re-quoting (#371)', () => {
+    // Owner decision, 12 November 2026: raise the limits rather than mint a replacement session.
+    // A pending accept or renew reservation holds one cart-application slot, so commands share it.
+    expect(BUYER_SESSION_POLICY).toMatchObject({
+      sessionDrafts: 100,
+      sessionProposals: 1000,
+      sessionCartApplications: 250,
+      sessionWritesPerMinute: 60,
+    });
+  });
+  it('admits exactly the policy number of drafts per session; updates never count', async () => {
+    const { shopId } = await createTestShop(db),
+      now = new Date('2026-10-12T14:00:00Z');
+    const scope = { shopId, installationGeneration: '1', ownerHash: '1'.repeat(64) };
+    const repo = createBuyerRepository(db),
+      limit = BUYER_SESSION_POLICY.sessionDrafts;
+    await repo.issueSession({ scope, sessionId: randomUUID(), now, expiresAt: new Date(+now + 604800000) });
+    const first = randomUUID();
+    for (let i = 0; i < limit; i++)
+      await repo.saveDesign(scope, { id: i ? randomUUID() : first, expectedVersion: 0, value: {}, now: paced(now, i) });
+    const after = freshMinute(now, limit);
+    await expect(
+      createBuyerRepository(db).saveDesign(scope, { id: randomUUID(), expectedVersion: 0, value: {}, now: after }),
+    ).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+    await expect(
+      repo.saveDesign(scope, { id: first, expectedVersion: 1, value: { edited: true }, now: after }),
+    ).resolves.toMatchObject({ version: 2 });
+    await sql`DELETE FROM buyer_sessions WHERE shop_id=${shopId}`.execute(db);
+  }, 60_000);
+  it('admits exactly the policy number of retained proposals per session', async () => {
+    const { shopId } = await createTestShop(db),
+      now = new Date('2026-10-12T14:00:00Z');
+    const scope = { shopId, installationGeneration: '1', ownerHash: '2'.repeat(64) };
+    const repo = createBuyerRepository(db),
+      limit = BUYER_SESSION_POLICY.sessionProposals;
+    await repo.issueSession({ scope, sessionId: randomUUID(), now, expiresAt: new Date(+now + 604800000) });
+    const propose = (at: Date) =>
+      repo.putProposal(scope, {
+        id: randomUUID(),
+        requestDigest: 'd'.repeat(64),
+        materialHash: 'e'.repeat(64),
+        request: { groups: [] },
+        candidate: { totalMinor: '5000' },
+        now: at,
+        expiresAt: new Date(+at + 300000),
+      });
+    // Each proposal is privately retained until the session ends, so expired quotes still count.
+    for (let i = 0; i < limit; i++) await propose(paced(now, i));
+    await expect(propose(freshMinute(now, limit))).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+    expect(
+      (await sql<{ n: string }>`SELECT count(*)::text n FROM quote_proposals WHERE shop_id=${shopId}`.execute(db))
+        .rows[0]?.n,
+    ).toBe(String(limit));
+    await sql`DELETE FROM buyer_sessions WHERE shop_id=${shopId}`.execute(db);
+  }, 120_000);
+  it('admits exactly the policy number of cart applications per session, pending reservations included', async () => {
+    const { value, quote, quoteId, authorization, input } = await acceptedQuoteFixture();
+    await new PgAcceptedQuoteRepository(db).accept(input, async () => ({ quote, authorization }));
+    const now = new Date('2026-10-12T15:00:00Z');
+    const scope = { shopId: value.shopId, installationGeneration: value.generation, ownerHash: '3'.repeat(64) };
+    const repo = createBuyerRepository(db),
+      limit = BUYER_SESSION_POLICY.sessionCartApplications,
+      ownerBinding = 'b'.repeat(64);
+    await repo.issueSession({ scope, sessionId: randomUUID(), now, expiresAt: new Date(+now + 604800000) });
+    const proposalId = randomUUID();
+    await repo.putProposal(scope, {
+      id: proposalId,
+      requestDigest: 'd'.repeat(64),
+      materialHash: 'e'.repeat(64),
+      request: { groups: [] },
+      candidate: { totalMinor: '2001' },
+      now,
+      expiresAt: new Date(+now + 300000),
+    });
+    await repo.linkQuote(scope, { quoteId, proposalId, ownerBinding, requestDigest: input.requestDigest, now });
+    // One write for the proposal, then one per reservation; completing an application is not charged.
+    for (let i = 0; i < limit; i++) {
+      const command = {
+        kind: 'accept' as const,
+        key: `apply-${i}`,
+        requestDigest: 'a'.repeat(64),
+        now: paced(now, i + 1),
+      };
+      await repo.reserveCommand(scope, command);
+      await repo.finishApplication(scope, {
+        ...command,
+        id: randomUUID(),
+        quoteId,
+        ownerBinding,
+        expectedFingerprint: 'd'.repeat(64),
+      });
+    }
+    const after = freshMinute(now, limit + 1);
+    await expect(
+      repo.reserveCommand(scope, { kind: 'renew', key: 'overflow', requestDigest: 'a'.repeat(64), now: after }),
+    ).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+    await expect(
+      repo.createApplication(scope, {
+        id: randomUUID(),
+        quoteId,
+        ownerBinding,
+        expectedFingerprint: 'd'.repeat(64),
+        now: after,
+      }),
+    ).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+    // A completed command still replays its application at the limit.
+    expect(
+      await repo.reserveCommand(scope, { kind: 'accept', key: 'apply-0', requestDigest: 'a'.repeat(64), now: after }),
+    ).toHaveProperty('applicationId');
+    expect(
+      (
+        await sql<{ n: string }>`SELECT count(*)::text n FROM cart_applications WHERE shop_id=${value.shopId}`.execute(
+          db,
+        )
+      ).rows[0]?.n,
+    ).toBe(String(limit));
+  }, 120_000);
+  /** A signed, accepted quote over the effective fixture; buyers link it to own carts. */
+  async function acceptedQuoteFixture() {
     const value = await effectiveFixture();
     const quoteId = randomUUID();
     const setId = randomUUID();
@@ -460,6 +580,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
       requestDigest: 'a'.repeat(64),
       effectiveRevisions,
     };
+    return { value, quote, quoteId, setId, authorization, input };
+  }
+  it('restores only owned persisted sets and reconciles application vectors without changing quote history', async () => {
+    const { value, quote, quoteId, setId, authorization, input } = await acceptedQuoteFixture();
 
     const buyer = createBuyerRepository(db),
       now = new Date('2026-10-12T15:00:00Z');
@@ -682,16 +806,28 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
       (await sql<{ n: string }>`SELECT count(*)::text n FROM buyer_commands WHERE shop_id=${shopId}`.execute(db))
         .rows[0]?.n,
     ).toBe('60');
-    const next = new Date(+later + 60000);
-    for (let i = 60; i < 64; i++)
-      await repo.reserveCommand(scope, { kind: 'renew', key: `renew-${i}`, requestDigest: 'a'.repeat(64), now: next });
+    // Pending reservations alone reach the policy limit, then the next command is refused.
+    const limit = BUYER_SESSION_POLICY.sessionCartApplications,
+      next = new Date(+later + 60000);
+    for (let i = 60; i < limit; i++)
+      await repo.reserveCommand(scope, {
+        kind: 'renew',
+        key: `renew-${i}`,
+        requestDigest: 'a'.repeat(64),
+        now: paced(next, i - 60),
+      });
     await expect(
-      repo.reserveCommand(scope, { kind: 'accept', key: 'overflow', requestDigest: 'a'.repeat(64), now: next }),
+      repo.reserveCommand(scope, {
+        kind: 'accept',
+        key: 'overflow',
+        requestDigest: 'a'.repeat(64),
+        now: freshMinute(next, limit - 60),
+      }),
     ).rejects.toMatchObject({ code: 'RATE_LIMITED' });
     expect(
       (await sql<{ n: string }>`SELECT count(*)::text n FROM buyer_commands WHERE shop_id=${shopId}`.execute(db))
         .rows[0]?.n,
-    ).toBe('64');
+    ).toBe(String(limit));
     await expect(
       repo.reserveCommand(
         { ...scope, ownerHash: 'f'.repeat(64) },
@@ -703,5 +839,5 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
       (await sql<{ n: string }>`SELECT count(*)::text n FROM buyer_commands WHERE shop_id=${shopId}`.execute(db))
         .rows[0]?.n,
     ).toBe('0');
-  });
+  }, 60_000);
 });

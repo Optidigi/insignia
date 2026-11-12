@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { decodeHeaderV3, encodeHeaderV3, HEADER_V3_BYTES, type HeaderV3 } from '@insignia/cart-authorization';
 import { BuyerAcceptedCartSchema } from '@insignia/contracts';
+import { BUYER_SESSION_POLICY } from '../../../packages/database/dist/repositories/buyer.js';
 import { createPublicationRepository } from '../../../packages/database/dist/repositories/publication.js';
 import { fixture } from './support/buyer-fixture.mts';
 
@@ -43,8 +44,10 @@ test('durable admission rejects saturated commands before signing and completed 
   );
   assert.equal(f.signings(), 1);
   await rate(0);
-  for (let i = 0; i < 63; i++) {
-    if (i === 50) f.advance(61000);
+  // Pending reservations fill the rest of the session's cart-application slots (#371).
+  const slots = BUYER_SESSION_POLICY.sessionCartApplications;
+  for (let i = 1; i < slots; i++) {
+    if (i % 50 === 0) f.advance(61000);
     await f.core.buyers.reserveCommand(f.scope, {
       kind: 'renew',
       key: randomUUID(),
@@ -52,9 +55,15 @@ test('durable admission rejects saturated commands before signing and completed 
       now: f.now(),
     });
   }
-  assert.equal(
-    (await f.http(`quotes/${result.quoteId}/renew`, { ...f.body, idempotencyKey: randomUUID() })).status,
-    429,
+  f.advance(61000);
+  // An exhausted lifetime quota is the generic RATE_LIMITED without Retry-After: the Designer's
+  // "too many requests, wait a moment" copy (#337), never the per-visitor SESSION_RATE_LIMITED.
+  const exhausted = await f.http(`quotes/${result.quoteId}/renew`, { ...f.body, idempotencyKey: randomUUID() });
+  assert.equal(exhausted.status, 429);
+  assert.equal(exhausted.headers.get('Retry-After'), null);
+  assert.deepEqual(
+    { ...(await exhausted.json()), requestId: 'request' },
+    { code: 'RATE_LIMITED', message: 'Customization request could not be completed.', requestId: 'request' },
   );
   assert.equal(f.signings(), 1);
   assert.equal(

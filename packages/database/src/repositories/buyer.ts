@@ -43,6 +43,22 @@ export const BUYER_SESSION_POLICY = {
   unusedSessionMs: 86_400_000,
   maxSessionMs: 604_800_000,
   sessionWritesPerMinute: 60,
+  /**
+   * Lifetime counts of one buyer session, which every tab shares for up to 7 days (#340). Sized for
+   * days of active editing, where each edit re-quotes (owner decision, 12 November 2026, #371):
+   * a 429 here lasts until the session expires and never mints a replacement.
+   */
+  sessionDrafts: 100,
+  /** Proposals are retained privately until the session or its artwork ends, so expired ones count. */
+  sessionProposals: 1000,
+  /** Cart applications plus pending accept/renew reservations; each reservation holds one slot. */
+  sessionCartApplications: 250,
+  /**
+   * Sessions one worker erasure statement may remove. Erasing a full session cascades to some 1,600
+   * rows and took 0.13–0.25 s on the development host, so ten stay well inside the worker's 10 s
+   * statement timeout; a timed-out statement rolls back and would retry the same oldest sessions.
+   */
+  cleanupSessionsPerStatement: 10,
   visitorSessionsPerHour: 60,
   visitorWindowMs: 3_600_000,
 } as const;
@@ -138,7 +154,7 @@ export function createBuyerRepository(db: Kysely<Database>) {
         tx,
       )
     ).rows[0];
-    if (Number(n?.n) >= 64) fail('RATE_LIMITED');
+    if (Number(n?.n) >= BUYER_SESSION_POLICY.sessionCartApplications) fail('RATE_LIMITED');
   }
   async function count(
     tx: Transaction<Database>,
@@ -188,7 +204,7 @@ export function createBuyerRepository(db: Kysely<Database>) {
       if (await session(db, scope, now)) fail('RATE_LIMITED');
       fail('NOT_FOUND');
     },
-    /** Pending reservations consume one of 64 session issuance slots; uncertainty never refunds a slot. */
+    /** Pending reservations consume one of the session's cart-application slots; uncertainty never refunds a slot. */
     async reserveCommand(
       scope: BuyerScope,
       input: BuyerCommandIdentity & { now: Date },
@@ -203,7 +219,7 @@ export function createBuyerRepository(db: Kysely<Database>) {
             if (!prior.application_id) await chargeWrite(tx, row, input.now);
             return { applicationId: prior.application_id };
           }
-          await count(tx, 'buyer_commands', row.session_id, 64);
+          await count(tx, 'buyer_commands', row.session_id, BUYER_SESSION_POLICY.sessionCartApplications);
           await applicationCapacity(tx, row.session_id);
           await chargeWrite(tx, row, input.now);
           await sql`INSERT INTO buyer_commands(shop_id,installation_generation,session_id,kind,idempotency_key,request_digest,created_at) VALUES(${scope.shopId},${scope.installationGeneration}::bigint,${row.session_id}::uuid,${input.kind},${input.key},${input.requestDigest},${input.now})`.execute(
@@ -268,7 +284,7 @@ export function createBuyerRepository(db: Kysely<Database>) {
               tx,
             );
           if (!own.rows.length) fail('NOT_FOUND');
-          await count(tx, 'cart_applications', row.session_id, 64);
+          await count(tx, 'cart_applications', row.session_id, BUYER_SESSION_POLICY.sessionCartApplications);
           await sql`INSERT INTO cart_applications(application_id,shop_id,installation_generation,session_id,quote_id,expected_fingerprint,created_at,expires_at) VALUES(${input.id}::uuid,${scope.shopId},${scope.installationGeneration}::bigint,${row.session_id}::uuid,${input.quoteId}::uuid,${input.expectedFingerprint},${input.now},${row.expires_at})`.execute(
             tx,
           );
@@ -379,7 +395,7 @@ export function createBuyerRepository(db: Kysely<Database>) {
         const expiresAt = input.expiresAt ?? row.expires_at;
         if (!(+expiresAt > +input.now && +expiresAt <= +row.expires_at)) fail('INVALID');
         if (input.expectedVersion === 0) {
-          await count(tx, 'design_drafts', row.session_id, 32);
+          await count(tx, 'design_drafts', row.session_id, BUYER_SESSION_POLICY.sessionDrafts);
           const inserted =
             await sql`INSERT INTO design_drafts VALUES(${input.id}::uuid,${scope.shopId},${scope.installationGeneration}::bigint,${row.session_id}::uuid,1,${payload}::jsonb,${expiresAt}) ON CONFLICT(design_id) DO NOTHING RETURNING design_id`.execute(
               tx,
@@ -442,7 +458,7 @@ export function createBuyerRepository(db: Kysely<Database>) {
         await sql`DELETE FROM quote_proposals WHERE session_id=${row.session_id}::uuid AND retain_private_until<=${input.now}`.execute(
           tx,
         );
-        await count(tx, 'quote_proposals', row.session_id, 128);
+        await count(tx, 'quote_proposals', row.session_id, BUYER_SESSION_POLICY.sessionProposals);
         const result =
           await sql`INSERT INTO quote_proposals VALUES(${input.id}::uuid,${scope.shopId},${scope.installationGeneration}::bigint,${row.session_id}::uuid,${input.requestDigest},${input.materialHash},${request}::jsonb,${candidate}::jsonb,${input.now},${input.expiresAt},${retainPrivateUntil}) ON CONFLICT(proposal_id) DO NOTHING RETURNING proposal_id`.execute(
             tx,
@@ -706,13 +722,22 @@ export function createBuyerRepository(db: Kysely<Database>) {
         return { id: input.id, status: result.status };
       });
     },
-    /** Production worker uses the database clock through an EXECUTE-only erasure capability. */
+    /**
+     * Production worker uses the database clock through an EXECUTE-only erasure capability. The
+     * budget is spent in statements of a few sessions each; every statement also erases as many due
+     * drafts and proposals as sessions, so a pass keeps its full budget for each.
+     */
     async cleanupDue(limit = 100): Promise<number> {
       if (!Number.isSafeInteger(limit) || limit < 1 || limit > 1000) fail('INVALID');
-      const result = await sql<{ erased: number }>`SELECT public.cleanup_buyer_payloads(${limit}) AS erased`.execute(
-        db,
-      );
-      return result.rows[0]?.erased ?? 0;
+      let erased = 0;
+      for (let left = limit; left > 0; left -= BUYER_SESSION_POLICY.cleanupSessionsPerStatement) {
+        const step = Math.min(left, BUYER_SESSION_POLICY.cleanupSessionsPerStatement);
+        const result = await sql<{
+          erased: number;
+        }>`SELECT public.cleanup_buyer_payloads(${step}) AS erased`.execute(db);
+        erased += result.rows[0]?.erased ?? 0;
+      }
+      return erased;
     },
     /** Visitor windows hold only keyed hashes and are kept until one hour after their latest session. */
     async purgeVisitorAdmission(now: Date, limit = 1000): Promise<number> {

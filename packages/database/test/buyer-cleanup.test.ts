@@ -1,7 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import { Kysely, PostgresDialect } from 'kysely';
 import { Pool } from 'pg';
 import { expect, test } from 'vitest';
+import type { Database } from '../src/client/database.js';
+import { BUYER_SESSION_POLICY, createBuyerRepository } from '../src/repositories/buyer.js';
 
 test('restricted worker erases only due buyer payloads without private-data or future-clock authority', async () => {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -50,5 +53,38 @@ test('restricted worker erases only due buyer payloads without private-data or f
     await client.query('RESET ROLE');
     client.release();
     await pool.end();
+  }
+});
+
+test('a worker erasure pass keeps its budget but erases at most a few full sessions per statement (#371)', async () => {
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const budgets: unknown[] = [];
+  const db = new Kysely<Database>({
+    dialect: new PostgresDialect({ pool }),
+    log: (event) => {
+      if (event.query.sql.includes('cleanup_buyer_payloads')) budgets.push(event.query.parameters[0]);
+    },
+  });
+  try {
+    const shopId = randomUUID();
+    await pool.query(
+      `WITH shop AS (INSERT INTO shops(shop_id,shop_domain,current_generation) VALUES($1,$1||'.cleanup.test',1))
+       INSERT INTO installation_generations(shop_id,generation) VALUES($1,1)`,
+      [shopId],
+    );
+    // One session holds up to 1,600 rows, so a statement may take only ten of them.
+    expect(BUYER_SESSION_POLICY.cleanupSessionsPerStatement).toBe(10);
+    // Expired long before any other test's sessions, so this pass takes them first.
+    await pool.query(
+      `INSERT INTO buyer_sessions(session_id,shop_id,installation_generation,owner_hash,created_at,expires_at,write_window)
+       SELECT gen_random_uuid(),$1,1,lpad(to_hex(n),64,'0'),'2000-01-01Z','2000-01-02Z','2000-01-01Z'
+       FROM generate_series(1,25) n`,
+      [shopId],
+    );
+    expect(await createBuyerRepository(db).cleanupDue(25)).toBe(25);
+    expect(budgets).toEqual([10, 10, 5]);
+    expect((await pool.query('SELECT 1 FROM buyer_sessions WHERE shop_id=$1', [shopId])).rowCount).toBe(0);
+  } finally {
+    await db.destroy();
   }
 });
