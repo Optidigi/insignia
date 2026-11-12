@@ -258,27 +258,78 @@ describe('immutable quote renewal', () => {
       ),
     ).rejects.toThrow('REVIEW_REQUIRED');
   });
-  it('checks changed facts again inside serialized signing and denies foreign ownership', async () => {
+  it('reads providers and observes readiness once before the fence; inside it only freshness and signing run (#386)', async () => {
     const { ports, original, renewalStore } = await renewalFixture();
-    vi.mocked(ports.authorization.issue).mockClear();
+    vi.mocked(ports.readiness.assertReady).mockClear();
+    let fenced = false;
+    const inFence: string[] = [];
+    const watch =
+      <A extends unknown[], R>(name: string, read: (...args: A) => R) =>
+      (...args: A): R => {
+        if (fenced) inFence.push(name);
+        return read(...args);
+      };
+    const watched: QuoteAuthorityPorts = {
+      ...ports,
+      tenant: { getActive: watch('tenant', ports.tenant.getActive) },
+      shop: { getContext: watch('shop', ports.shop.getContext) },
+      entitlement: { getFresh: watch('entitlement', ports.entitlement.getFresh) },
+      publication: { getEffective: watch('publication', ports.publication.getEffective) },
+      catalog: { resolveVariantContext: watch('catalog', ports.catalog.resolveVariantContext) },
+      artwork: { ...ports.artwork, readUsability: watch('artwork', ports.artwork.readUsability) },
+    };
+    const assertCurrent = vi.fn(async () => {
+      expect(fenced).toBe(true);
+    });
+    watched.readiness = {
+      ...ports.readiness,
+      observe: vi.fn(async () => {
+        expect(fenced).toBe(false);
+        return { assertCurrent };
+      }),
+    };
     renewalStore.renew.mockImplementation(async (_input, commit) => {
-      vi.mocked(ports.shop.getContext).mockImplementation(async (tenant) => ({
-        ...tenant,
-        currency: 'USD',
-        timezone: 'Europe/Amsterdam',
-      }));
+      fenced = true;
+      try {
+        return await commit();
+      } finally {
+        fenced = false;
+      }
+    });
+    const result = await renewQuote(
+      { quoteId: original.quoteId, desired: { ...request, idempotencyKey: 'split' } },
+      { ...watched, renewalStore },
+    );
+    expect(result.quote).toEqual(original);
+    expect(inFence).toEqual([]);
+    expect(watched.readiness.observe).toHaveBeenCalledTimes(1);
+    expect(ports.readiness.assertReady).not.toHaveBeenCalled();
+    expect(assertCurrent).toHaveBeenCalledTimes(1);
+    // The store fences on the revisions the renewal priced against.
+    expect(renewalStore.renew.mock.calls[0]?.[0].effectiveRevisions).toEqual(original.effectiveRevisions);
+  });
+
+  it('refuses to sign when a contextual price observed before the fence has lapsed at signing', async () => {
+    const { ports, original, renewalStore, later } = await renewalFixture();
+    vi.mocked(ports.authorization.issue).mockClear();
+    let current = later;
+    ports.clock = () => current;
+    renewalStore.renew.mockImplementation(async (_input, commit) => {
+      // The fence wait outlasts the contextual price observation (fresh for 5 minutes), within the same day.
+      current = new Date(+later + 300_001);
       return commit();
     });
     await expect(
       renewQuote(
-        { quoteId: original.quoteId, desired: { ...request, idempotencyKey: 'race' } },
-        {
-          ...ports,
-          renewalStore,
-        },
+        { quoteId: original.quoteId, desired: { ...request, idempotencyKey: 'lapsed' } },
+        { ...ports, renewalStore },
       ),
-    ).rejects.toThrow('REVIEW_REQUIRED');
+    ).rejects.toMatchObject({ name: 'CatalogContextUnavailable', reason: 'stale' });
     expect(ports.authorization.issue).not.toHaveBeenCalled();
+  });
+
+  it('denies foreign ownership', async () => {
+    const { ports, original, renewalStore } = await renewalFixture();
     renewalStore.getOwned.mockResolvedValue(null);
     await expect(
       renewQuote({ quoteId: original.quoteId, desired: request }, { ...ports, renewalStore }),

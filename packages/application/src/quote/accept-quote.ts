@@ -222,10 +222,10 @@ export interface QuoteAuthorityPorts {
   currency: { exponent(code: string): number | null };
   /** Trusted publication/key/Function readiness for signing. Proposals are display-only and skip it. */
   readiness: {
-    /** Complete check at once (renewal). */
+    /** Complete check at once. */
     assertReady(input: { quote: AcceptedQuote }): Promise<void>;
-    /** Acceptance: provider IO (Admin, Function ownership, release evidence, stock) before the signing
-     * fence. The returned check runs inside the fence: stored facts only, with observation freshness
+    /** Acceptance and renewal: provider IO (Admin, Function ownership, release evidence, stock) before the
+     * signing fence. The returned check runs inside the fence: stored facts only, with observation freshness
      * applied at the signing instant. Without it, assertReady runs inside the fence. */
     observe?(input: { quote: AcceptedQuote }): Promise<QuoteReadinessObservation>;
   };
@@ -554,7 +554,7 @@ export async function proposeQuote(request: QuoteRequest, ports: QuoteAuthorityP
   return { quote: prepared.quote, requestDigest: prepared.requestDigest };
 }
 
-/** Candidate plus complete signing readiness (renewal). */
+/** Candidate plus complete signing readiness at once. */
 export async function prepareQuote(request: QuoteRequest, ports: QuoteAuthorityPorts): Promise<PreparedQuote> {
   const prepared = await proposeQuote(request, ports);
   await ports.readiness.assertReady({ quote: prepared.quote });
@@ -580,32 +580,50 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
   if (completed) return completed;
   const prepared = await prepareValidatedQuote(request, ports, tenant, marketId, requestDigest);
   const { quote } = prepared;
-  const readiness: QuoteReadinessObservation = ports.readiness.observe
-    ? await ports.readiness.observe({ quote })
-    : { assertCurrent: () => ports.readiness.assertReady({ quote }) };
+  const readiness = await observeReadiness(quote, ports);
   return ports.store.accept(prepared.fence, async () => {
     if (localDay(ports.clock(), quote.shopTimezone).ordinal !== quote.acceptedDay) throw new ShopDayChangedError();
-    // Pure re-check: contextual prices observed before the fence must still be fresh at signing.
-    for (const product of new Set(quote.catalogSnapshots.map((snapshot) => snapshot.productId))) {
-      const snapshots = quote.catalogSnapshots.filter((snapshot) => snapshot.productId === product);
-      await resolveFreshCatalogContext(
-        { resolveVariantContext: async () => snapshots },
-        {
-          shopId: request.shopId,
-          installationGeneration: request.installationGeneration,
-          productId: product,
-          variantIds: snapshots.map((snapshot) => snapshot.variantId),
-          context: { country: request.country },
-        },
-        ports.clock,
-      );
-    }
-    await readiness.assertCurrent();
+    await assertCurrentAtSigning(request, quote, readiness, ports.clock);
     if (localDay(ports.clock(), quote.shopTimezone).ordinal !== quote.acceptedDay) throw new ShopDayChangedError();
     const authorization = await ports.authorization.issue({ quote });
     validAuthorization(quote, authorization);
     return { quote, authorization };
   });
+}
+
+/** Provider readiness observed before a signing fence (acceptance and renewal). */
+export async function observeReadiness(
+  quote: AcceptedQuote,
+  ports: QuoteAuthorityPorts,
+): Promise<QuoteReadinessObservation> {
+  return ports.readiness.observe
+    ? ports.readiness.observe({ quote })
+    : { assertCurrent: () => ports.readiness.assertReady({ quote }) };
+}
+
+/** Inside a signing fence: contextual prices observed before it must still be fresh (a pure re-check),
+ * then readiness checks stored facts and applies observation freshness at the signing instant. */
+export async function assertCurrentAtSigning(
+  request: QuoteRequest,
+  quote: AcceptedQuote,
+  readiness: QuoteReadinessObservation,
+  clock: () => Date,
+): Promise<void> {
+  for (const product of new Set(quote.catalogSnapshots.map((snapshot) => snapshot.productId))) {
+    const snapshots = quote.catalogSnapshots.filter((snapshot) => snapshot.productId === product);
+    await resolveFreshCatalogContext(
+      { resolveVariantContext: async () => snapshots },
+      {
+        shopId: request.shopId,
+        installationGeneration: request.installationGeneration,
+        productId: product,
+        variantIds: snapshots.map((snapshot) => snapshot.variantId),
+        context: { country: request.country },
+      },
+      clock,
+    );
+  }
+  await readiness.assertCurrent();
 }
 
 async function freshCatalog(request: QuoteRequest, ports: QuoteAuthorityPorts, products: readonly string[]) {

@@ -10,6 +10,7 @@ import {
   proposeQuote,
   type QuoteAuthorityPorts,
   type QuoteReadinessObservation,
+  type QuoteRenewalStore,
   type QuoteRequest,
   quoteRequestDigest,
   renewQuote,
@@ -82,11 +83,14 @@ function vectorHash(vector: readonly Bucket[]): string {
   if (vector.some((v) => typeof v.properties[LINE_ATTRIBUTE] !== 'string')) return review();
   return sha256CanonicalJson(vector.map((v) => `${v.variantId}\0${String(v.properties[LINE_ATTRIBUTE])}`).sort());
 }
+/** `renewalStore` defaults to the core's; production runs its signing fence in the SELECT-only context. */
+type BuyerQuotePorts = QuoteAuthorityPorts & { renewalStore?: QuoteRenewalStore };
+
 /** Server authority is injected once; client amounts, shop IDs and resource keys are never accepted. */
 export function createBuyerServices(input: {
   core: DurableCore;
   guest: GuestAuthority;
-  ports(scope: ArtworkScope): QuoteAuthorityPorts;
+  ports(scope: ArtworkScope): BuyerQuotePorts;
   catalog(
     scope: { shopId: string; installationGeneration: string },
     productId: string,
@@ -187,7 +191,7 @@ export function createBuyerServices(input: {
     if (result.status === 'rejected') throw result.reason;
     return result.value;
   }
-  function checkedPorts(scope: BuyerScope, groups: BuyerDesiredGroup[]): QuoteAuthorityPorts {
+  function checkedPorts(scope: BuyerScope, groups: BuyerDesiredGroup[]): BuyerQuotePorts {
     const ports = input.ports({ ...scope, kind: 'guest' });
     const observe = async (target: {
       quote: Parameters<QuoteAuthorityPorts['readiness']['assertReady']>[0]['quote'];
@@ -200,15 +204,15 @@ export function createBuyerServices(input: {
     return {
       ...ports,
       readiness: {
-        // Renewal: one complete check, serial after stock.
+        // One complete check at once, serial after stock.
         async assertReady(target) {
           await proposalStage('positions', () => validatePositions(scope, groups));
           await proposalStage('availability', () => assertAvailable(scope, groups));
           await proposalStage('current-readiness', () => ports.readiness.assertReady(target));
         },
-        // Acceptance: stock and provider readiness are observed before the signing fence. Positions
-        // were validated by the proposal for this design and immutable revision; acceptance's artwork
-        // usability read still re-checks artwork state and lifetime.
+        // Acceptance and renewal: stock and provider readiness are observed before the signing fence.
+        // Acceptance relies on its proposal's position validation for this design and immutable revision
+        // (renewal re-validates); the artwork usability read still re-checks artwork state and lifetime.
         observe: (target) =>
           stockFirst(
             proposalStage('availability', () => assertAvailable(scope, groups)),
@@ -730,9 +734,22 @@ export function createBuyerServices(input: {
         requestDigest: sha256CanonicalJson({ quoteId: id, request }),
       };
       await store.reserveCommand(scope, { ...command, now: clock() });
+      const observe = ports.readiness.observe;
+      if (!observe) throw new Error('Buyer renewal readiness unavailable');
       const result = await renewQuote(
         { quoteId: id, desired: request },
-        { ...ports, renewalStore: input.core.renewalQuotes },
+        {
+          ...ports,
+          readiness: {
+            ...ports.readiness,
+            // The stored request may predate the current geometry: positions are re-validated before the fence.
+            observe: async (target) => {
+              await proposalStage('positions', () => validatePositions(scope, groups));
+              return observe(target);
+            },
+          },
+          renewalStore: ports.renewalStore ?? input.core.renewalQuotes,
+        },
       );
       return accepted(scope, result, request, command);
     },

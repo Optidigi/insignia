@@ -8,6 +8,7 @@ import {
   type KeyScope,
   localDay,
   type QuoteAuthorityPorts,
+  type QuoteRenewalStore,
 } from '@insignia/application';
 import { currencyExponent } from '@insignia/cart-authorization';
 import type { DurableCore } from '@insignia/database';
@@ -210,7 +211,7 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       throw new Error('Buyer signing key identity mismatch');
     return { keyScope, selected };
   }
-  function ports(scope: ArtworkScope): QuoteAuthorityPorts {
+  function ports(scope: ArtworkScope): QuoteAuthorityPorts & { renewalStore: QuoteRenewalStore } {
     if (scope.kind !== 'guest' || !scope.ownerHash || !/^[a-f0-9]{64}$/.test(scope.ownerHash))
       throw new Error('Buyer resource ownership unavailable');
     const artwork = createArtworkUsabilityPort(input.core.artwork, clock, scope);
@@ -357,6 +358,20 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
           // read stays SELECT-only: no credential refresh or release collection under the lock.
           return proposalStage('persistence', () =>
             ports.store.accept(target, () => acceptanceContext.run(true, commit)),
+          );
+        },
+      },
+      // Renewal, like acceptance, re-prices and observes readiness before its fence (#386); its signing
+      // callback runs in the same SELECT-only context, so no credential refresh, release collection or
+      // shared release read can start under the shop lock.
+      renewalStore: {
+        getOwned: (target) => input.core.renewalQuotes.getOwned(target),
+        findCompleted: (target) => input.core.renewalQuotes.findCompleted(target),
+        async renew(target, commit) {
+          if (!input.passiveCredentials || !input.passiveArtifactPorts)
+            throw new Error('Passive buyer renewal authority unavailable');
+          return proposalStage('persistence', () =>
+            input.core.renewalQuotes.renew(target, () => acceptanceContext.run(true, commit)),
           );
         },
       },

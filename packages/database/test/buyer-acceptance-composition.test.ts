@@ -27,6 +27,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
     'price-drift-before-acceptance',
     'price-drift-after-preparation',
     'entitlement-failure-during-acceptance',
+    'renewal',
   ] as const) {
     it(`qualifies reviewed proposal acceptance with ${mode}`, async () => {
       const cleanup: (() => Promise<void>)[] = [];
@@ -58,7 +59,13 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
       };
       let refreshes = 0,
         passiveReads = 0,
-        fenceEntries = 0;
+        fenceEntries = 0,
+        inRenewalFence = false;
+      // Provider IO, active credential acquisition and release reads observed while renewal holds its fence (#386).
+      const renewalFenceReads: string[] = [];
+      const noteRead = (name: string) => {
+        if (inRenewalFence) renewalFenceReads.push(name);
+      };
       const credentialErrors: unknown[] = [];
       try {
         await f.pool.query('UPDATE shops SET shop_domain=$2 WHERE shop_id=$1', [f.shopId, `${f.shopId}.myshopify.com`]);
@@ -111,7 +118,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
           },
         });
         const acquireActive = credentials.acquire.bind(credentials);
-        credentials.acquire = (target) => trackRead(acquireActive(target));
+        credentials.acquire = (target) => {
+          noteRead('credential');
+          return trackRead(acquireActive(target));
+        };
         const query = { transform: 'synthetic-transform-input', validation: 'synthetic-validation-input' };
         const hash = (value: string) => createHash('sha256').update(value).digest('hex');
         const build = {
@@ -177,6 +187,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
           deadline: () => Date.now() + 10000,
           collector: {
             collect: async ({ requestId }) => {
+              noteRead('release-collect');
               collections++;
               try {
                 // Same real FK boundary as release-append.mjs; no provider or native effects.
@@ -283,14 +294,22 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
           expectedFunctions: { appKey: build.appClientId },
           artifactPorts: {
             expectedBuild: {
-              read: async (scope) =>
-                (await reader.read({ scope, expectedActiveAppVersionRef: build.appVersionRef, now: new Date() }))
-                  ?.expectedBuild ?? null,
+              read: async (scope) => {
+                noteRead('release-read');
+                return (
+                  (await reader.read({ scope, expectedActiveAppVersionRef: build.appVersionRef, now: new Date() }))
+                    ?.expectedBuild ?? null
+                );
+              },
             },
             trustedEvidence: {
-              read: async (scope) =>
-                (await reader.read({ scope, expectedActiveAppVersionRef: build.appVersionRef, now: new Date() }))
-                  ?.record.attestation ?? null,
+              read: async (scope) => {
+                noteRead('release-read');
+                return (
+                  (await reader.read({ scope, expectedActiveAppVersionRef: build.appVersionRef, now: new Date() }))
+                    ?.record.attestation ?? null
+                );
+              },
             },
           },
           readSubscription: async () => {
@@ -335,6 +354,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
           },
           fetchImpl: async (_url, init) => {
             const body = JSON.parse(String(init?.body));
+            noteRead(`provider:${String(body.query).match(/query\s+(\w+)/)?.[1] ?? 'unknown'}`);
             let data: unknown;
             if (body.query.includes('InsigniaShopContext'))
               data = { shop: { id: shopGid, currencyCode: 'EUR', ianaTimezone: 'UTC' } };
@@ -558,6 +578,33 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
             expect(refreshes).toBe(mode === 'near-expiry' ? 1 : 0);
             // No provider read, credential refresh or SELECT-only fallback runs under the lock.
             expect(passiveReads).toBe(0);
+            if (mode === 'renewal') {
+              // Renewal prices and observes readiness before its fence, like acceptance; inside it only
+              // stored-fact checks and signing run, so no shared release read can start there (#386).
+              const renew = core.renewalQuotes.renew.bind(core.renewalQuotes);
+              core.renewalQuotes.renew = (input, commit) =>
+                renew(input, async () => {
+                  inRenewalFence = true;
+                  try {
+                    return await commit();
+                  } finally {
+                    inRenewalFence = false;
+                  }
+                });
+              const renewalKey = randomUUID();
+              const renewed = await services.renew(f.scope, accepted.quoteId, {
+                ...f.body,
+                idempotencyKey: renewalKey,
+              });
+              expect(renewed.quoteId).toBe(accepted.quoteId);
+              expect(renewed.setId).not.toBe(accepted.setId);
+              expect(renewalFenceReads).toEqual([]);
+              expect(passiveReads).toBe(0);
+              // Idempotent replay returns the stored renewal without signing again.
+              expect(
+                (await services.renew(f.scope, accepted.quoteId, { ...f.body, idempotencyKey: renewalKey })).setId,
+              ).toBe(renewed.setId);
+            }
             if (mode === 'price-drift-after-preparation') expect(accepted.buckets.length).toBeGreaterThan(0);
           }
           expect(collections).toBe(mode === 'missing-release' ? 1 : 0);
