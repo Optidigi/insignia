@@ -233,6 +233,7 @@
     "repairRequired": "Your customization needs review",
     "repairHelp": "Your existing customized items stay in the cart until you confirm replacement or removal.",
     "startNew": "Start a new customization",
+    "reopenFromCart": "Discard changes and reopen from cart",
     "removeGroup": "Review removing this customization",
     "removeAll": "Review removing all customized items",
     "confirmRemoval": "Confirm cart update",

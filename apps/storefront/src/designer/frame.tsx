@@ -10,7 +10,7 @@ import { Designer } from '../../../../frontend/designer/src/index';
 import type { Artwork, Design, Print } from '../../../../frontend/designer/src/model';
 import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quote-review';
 import type { CartReceipt, CartRequest, DesignerPorts, UploadRequest } from '../../../../frontend/designer/src/runtime';
-import { DesignerRepair, type RepairAction } from './repair';
+import { DesignerRepair, type RepairAction, type RepairState } from './repair';
 
 const channel = window.name;
 // This sandboxed srcdoc frame deliberately shares its host origin. Firefox can
@@ -80,7 +80,7 @@ function invoke<T>(
 }
 type Initial = {
   config?: ProductConfig;
-  repair?: { canStart: boolean; canRemoveGroup: boolean; canRemoveAll?: boolean };
+  repair?: RepairState;
   wording?: MerchantCustomerWordingView;
   locale?: string;
   initialDesign?: Design;
@@ -130,6 +130,7 @@ function Frame({ initial }: { initial: Initial }) {
   const [hostError, setHostError] = useState(0);
   const [requestClose, setRequestClose] = useState(0);
   const [reviewed, setReviewed] = useState(0);
+  const [cartLine, setCartLine] = useState<{ design: Design }>();
   const [wording, setWording] = useState(initial.wording);
   const [language, setLanguage] = useState(readCustomerLanguagePreference());
   const wordingLocale = language ?? resolveCustomerHostLocale(initial.locale, navigator.languages);
@@ -163,6 +164,7 @@ function Frame({ initial }: { initial: Initial }) {
         setPendingGroup(null);
       }
       if (event.data.type === 'insignia:designer:host-error') setHostError((value) => value + 1);
+      if (event.data.type === 'insignia:designer:cart-line') setCartLine({ design: event.data.design });
       if (event.data.type === 'insignia:designer:cart-reviewed') {
         setQuote(undefined);
         setReviewed((value) => value + 1);
@@ -221,6 +223,7 @@ function Frame({ initial }: { initial: Initial }) {
           requestCloseSignal={requestClose}
           hostErrorSignal={hostError}
           cartReviewedSignal={reviewed}
+          observedCartLine={cartLine}
           onSelectQuoteGroup={(id) => {
             setPendingGroup(id);
             setOpen(false);
@@ -251,6 +254,7 @@ function Frame({ initial }: { initial: Initial }) {
           canStart={repair.canStart}
           canRemoveGroup={repair.canRemoveGroup}
           canRemoveAll={repair.canRemoveAll}
+          reopensCartLine={repair.reopensCartLine}
           onClose={() => send('insignia:designer:closed')}
           onAction={(action: RepairAction) => {
             const id = crypto.randomUUID();

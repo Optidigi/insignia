@@ -249,6 +249,7 @@ export const customerWordingLabels = {
   'customer:recovery.repairRequired': 'settings:translations.fields.customer_recovery_repairRequired',
   'customer:recovery.repairHelp': 'settings:translations.fields.customer_recovery_repairHelp',
   'customer:recovery.startNew': 'settings:translations.fields.customer_recovery_startNew',
+  'customer:recovery.reopenFromCart': 'settings:translations.fields.customer_recovery_reopenFromCart',
   'customer:recovery.removeGroup': 'settings:translations.fields.customer_recovery_removeGroup',
   'customer:recovery.removeAll': 'settings:translations.fields.customer_recovery_removeAll',
   'customer:recovery.confirmRemoval': 'settings:translations.fields.customer_recovery_confirmRemoval',

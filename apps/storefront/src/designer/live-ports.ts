@@ -38,7 +38,14 @@ export function createLiveDesignerPorts(input: {
   fetchImpl?: typeof fetch;
   storage: Pick<Storage, 'getItem' | 'setItem'>;
   onPriceRefresh?(source: BuyerConfig, request?: CartRequest): void;
-  onNeedsReview?(canStart: boolean, targetAvailable: boolean, canRemoveAll: boolean, request?: CartRequest): void;
+  onNeedsReview?(
+    canStart: boolean,
+    targetAvailable: boolean,
+    canRemoveAll: boolean,
+    request?: CartRequest,
+    /** This design is still in the cart, but its line changed outside the Designer. */
+    cartLineMoved?: boolean,
+  ): void;
   onReview?(review: DesignerQuoteReview, request?: CartRequest): void;
   onApplied?(groups: DesiredGroup[]): void;
 }) {
@@ -70,7 +77,7 @@ export function createLiveDesignerPorts(input: {
     const observed = await cart.read(signal);
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     const restore = observed.customized.length
-      ? await api.private<{ groups: DesiredGroup[]; labels?: Record<string, string>; repairRequired?: boolean }>(
+      ? await api.private<{ groups: DesiredGroup[]; labels?: Record<string, string> }>(
           'cart-state',
           { lines: observed.customized },
           signal,
@@ -80,8 +87,6 @@ export function createLiveDesignerPorts(input: {
       cart: observed,
       groups: restore.groups,
       labels: 'labels' in restore ? (restore.labels ?? {}) : {},
-      // The server rebuilt groups from current cart quantities; they differ from the signed set.
-      repairRequired: 'repairRequired' in restore && restore.repairRequired === true,
     };
   }
   async function refreshGroups(groups: DesiredGroup[], signal?: AbortSignal) {
@@ -250,7 +255,12 @@ export function createLiveDesignerPorts(input: {
       source = refreshed;
       input.onPriceRefresh?.(refreshed, request);
       if (!quoting) {
-        input.onNeedsReview?.(true, false, observed.cart.customized.length > 0, request);
+        const moved =
+          !!previous &&
+          observed.groups.some(
+            (candidate) => desiredGroupKey(candidate, false, false) === desiredGroupKey(previous, false, false),
+          );
+        input.onNeedsReview?.(true, false, observed.cart.customized.length > 0, request, moved);
         throw new Error('Design requires current-cart review');
       }
       const { labels, proposal, groups } = await quoting;
@@ -502,6 +512,7 @@ export function createLiveDesignerPorts(input: {
         );
         if (appliedGroups.length === 1 && appliedGroups[0]) {
           designs.set(request.design.id, appliedGroups[0]);
+          await custody.rebase(request.design.id, appliedGroups[0]).catch(() => {});
           if (desiredGroupKey(appliedGroups[0]) !== desiredGroupKey(selected))
             await custody
               .save(request.design.id, appliedGroups[0], appliedGroups[0], request.signal)

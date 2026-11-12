@@ -87,7 +87,9 @@ test('selected draft custody recovers a lost CAS acknowledgement through the sam
   });
   await custody.save(id, group, group);
   assert.equal(writes, 1);
-  assert([...data.values()].every((value) => value === id));
+  // Besides the UUID hint, only the SHA-256 of the cart quantities the draft is based on (#341).
+  assert([...data.values()].every((value) => value === id || /^[a-f0-9]{64}$/.test(value)));
+  assert.equal([...data.values()].filter((value) => value !== id).length, 1);
   assert.equal((await custody.restore(group))?.id, id);
   await custody.save(id, group, group);
   assert.equal(writes, 1);
@@ -125,4 +127,65 @@ test('reopening a cart line keeps saved draft choices but cart-edited quantities
   const repaired = restorableDesign(cart, draft, true);
   assert.deepEqual(repaired.variants, cart.variants);
   assert.deepEqual(repaired.design, draft.design);
+});
+
+test('a draft resumes its own quantities until the cart quantities it was based on change (#341)', async () => {
+  const data = new Map<string, string>();
+  let saved: unknown;
+  const custody = createSelectedDesignCustody({
+    namespace: '/apps/insignia',
+    storage: {
+      getItem: (key) => data.get(key) ?? null,
+      setItem: (key, value) => {
+        data.set(key, value);
+      },
+    },
+    api: {
+      async private<T>(path: string, body: Record<string, unknown>): Promise<T> {
+        if (path.endsWith('/restore'))
+          return {
+            ...(saved as object),
+            expiresAt: '2027-01-01T00:00:00Z',
+            compatibility: 'current',
+            retained: null,
+          } as T;
+        saved = { id, version: 1, value: body.group };
+        return saved as T;
+      },
+    },
+  });
+  const at = (quantity: number): DesiredGroup => ({ ...group, variants: [{ variantId: '101', quantity }] });
+  // An unsent Designer edit (2 -> 4) of the cart line at 2.
+  await custody.save(id, at(4), at(2));
+  assert.equal((await custody.restore(at(2)))?.cartQuantitiesChanged, false, 'the cart still holds the base');
+  assert.equal((await custody.restore(at(3)))?.cartQuantitiesChanged, true, 'a native cart edit is newer');
+  // After Update cart the accepted line is the base: a later native return to 2 is a change, not the old base.
+  await custody.rebase(id, at(4));
+  assert.equal((await custody.restore(at(4)))?.cartQuantitiesChanged, false);
+  assert.equal((await custody.restore(at(2)))?.cartQuantitiesChanged, true);
+  await custody.forget(id, at(4));
+  assert.equal(data.get(`insignia:selected-design-cart:v1:/apps/insignia:${id}`), '', 'abandoned drafts drop the base');
+  assert(
+    [...data.values()].every((value) => value === id || value === '' || /^[a-f0-9]{64}$/.test(value)),
+    'storage holds only the UUID hint and a quantity hash, never a snapshot',
+  );
+});
+test('forgetting a draft without a recorded base writes no storage (#341)', async () => {
+  const writes: string[] = [];
+  const custody = createSelectedDesignCustody({
+    namespace: '/apps/insignia',
+    storage: {
+      getItem: () => null,
+      setItem: (key) => {
+        writes.push(key);
+      },
+    },
+    api: {
+      async private<T>(): Promise<T> {
+        throw new Error('no network');
+      },
+    },
+  });
+  await custody.forget(id, group);
+  assert.deepEqual(writes, []);
 });

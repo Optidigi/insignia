@@ -78,6 +78,8 @@ export interface DesignerProps {
   requestCloseSignal?: number;
   hostErrorSignal?: number;
   cartReviewedSignal?: number;
+  /** The host observed this design's cart line change outside the Designer; each new object applies once. */
+  observedCartLine?: { design: Design };
   requiresCartReview?: boolean;
   onSelectQuoteGroup?: (id: string) => void;
   config: ProductConfig;
@@ -146,6 +148,7 @@ function DesignerSession({
   hostErrorSignal,
   requestCloseSignal,
   cartReviewedSignal,
+  observedCartLine,
   initialPrints = [],
   initialArtworks = [],
   initialDesign,
@@ -338,6 +341,9 @@ function DesignerSession({
   useLayoutEffect(() => {
     if (hostErrorSignal) dispatch({ type: 'review-navigation-failed' });
   }, [hostErrorSignal]);
+  useLayoutEffect(() => {
+    if (observedCartLine) dispatch({ type: 'cart-line-observed', design: observedCartLine.design });
+  }, [observedCartLine]);
   const quoteReview = incomingQuoteReview?.intentId === runtime.reviewIntentId ? incomingQuoteReview : undefined;
   const [, expirePresentation] = useState(0);
   // An expired displayed proposal keeps its total and Add: the cart port re-proposes on Add and

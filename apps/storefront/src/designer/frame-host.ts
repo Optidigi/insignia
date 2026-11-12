@@ -16,7 +16,7 @@ import {
   type UploadRequest,
 } from '../../../../frontend/designer/src/runtime';
 import { createDesignerModal } from './modal';
-import type { RepairAction } from './repair';
+import type { RepairAction, RepairState } from './repair';
 
 const escapeAttribute = (value: string) =>
   value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;');
@@ -69,7 +69,7 @@ export function createDesignerFrame(input: {
   initialBaseline?: Design;
   initialPrints?: Print[];
   initialArtworks?: Artwork[];
-  repair?: { canStart: boolean; canRemoveGroup: boolean; canRemoveAll?: boolean };
+  repair?: RepairState;
   onRepair?: (action: RepairAction) => Promise<DesignerQuoteReview | undefined>;
   onClose(): void;
   onPreviewFailure?(url: string): void;
@@ -95,12 +95,14 @@ export function createDesignerFrame(input: {
   let committing: AbortController | undefined;
   let pendingRepair:
     | {
-        value: { canStart: boolean; canRemoveGroup: boolean; canRemoveAll?: boolean };
+        value: RepairState;
         request: Pick<CartRequest, 'requestId' | 'signal'> | undefined;
       }
     | undefined;
   const focused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   let ready = false;
+  // The cart line a (re)initialized frame compares against; a native cart edit can move it (#341).
+  let baseline = input.initialBaseline;
   let initialized = false;
   let initializedMessage = false;
   let documentLoaded = false;
@@ -211,7 +213,7 @@ export function createDesignerFrame(input: {
           previewOnly: input.previewOnly,
           requiresCartReview: input.requiresCartReview,
           initialDesign: input.initialDesign,
-          initialBaseline: input.initialBaseline,
+          initialBaseline: baseline,
           initialPrints: input.initialPrints,
           initialArtworks: input.initialArtworks,
         },
@@ -355,7 +357,7 @@ export function createDesignerFrame(input: {
       send('insignia:designer:suspend');
       modal.hide();
     },
-    repair(value?: { canStart: boolean; canRemoveGroup: boolean; canRemoveAll?: boolean }, request?: CartRequest) {
+    repair(value?: RepairState, request?: CartRequest) {
       if (request?.signal.aborted) return;
       if (committing && value) pendingRepair = { value, request };
       else send('insignia:designer:repair', { repair: value, requestId: request?.requestId });
@@ -365,6 +367,11 @@ export function createDesignerFrame(input: {
     },
     reviewed() {
       send('insignia:designer:cart-reviewed');
+    },
+    /** This design's cart line changed outside the Designer: it becomes the unchanged state (#341). */
+    cartLine(design: Design) {
+      baseline = design;
+      send('insignia:designer:cart-line', { design });
     },
     open() {
       if (destroyed || failed) return false;

@@ -551,6 +551,7 @@
       "customer_recovery_repairRequired": "Je personalisatie moet worden gecontroleerd",
       "customer_recovery_repairHelp": "Je bestaande gepersonaliseerde artikelen blijven in de winkelwagen totdat je vervanging of verwijdering bevestigt.",
       "customer_recovery_startNew": "Nieuwe personalisatie starten",
+      "customer_recovery_reopenFromCart": "Wijzigingen verwerpen en heropenen vanuit winkelwagen",
       "customer_recovery_removeGroup": "Verwijdering van deze personalisatie controleren",
       "customer_recovery_removeAll": "Verwijdering van alle gepersonaliseerde artikelen controleren",
       "customer_recovery_confirmRemoval": "Winkelwagenwijziging bevestigen",

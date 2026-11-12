@@ -198,6 +198,7 @@ export const customerParameterContracts = {
   'customer:recovery.remainingItems': {},
   'customer:recovery.removeAll': {},
   'customer:recovery.removeGroup': {},
+  'customer:recovery.reopenFromCart': {},
   'customer:recovery.repairHelp': {},
   'customer:recovery.repairRequired': {},
   'customer:recovery.startNew': {},

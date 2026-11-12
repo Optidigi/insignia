@@ -3,12 +3,20 @@ import { useState } from 'preact/hooks';
 import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quote-review';
 import { quoteReviewMoney } from '../../../../frontend/designer/src/quote-review';
 export type RepairAction = 'start' | 'remove-group' | 'remove-all' | 'confirm' | 'retry';
+export type RepairState = {
+  canStart: boolean;
+  canRemoveGroup: boolean;
+  canRemoveAll?: boolean;
+  /** The cart line changed under the Designer: starting reopens its design from the cart (#341). */
+  reopensCartLine?: boolean;
+};
 export function DesignerRepair({
   locale,
   wording,
   canStart,
   canRemoveGroup,
   canRemoveAll = true,
+  reopensCartLine = false,
   onAction,
   onClose,
 }: {
@@ -17,6 +25,7 @@ export function DesignerRepair({
   canStart: boolean;
   canRemoveGroup: boolean;
   canRemoveAll?: boolean;
+  reopensCartLine?: boolean;
   onAction(action: RepairAction): Promise<DesignerQuoteReview | undefined>;
   onClose(): void;
 }) {
@@ -85,7 +94,7 @@ export function DesignerRepair({
             <>
               {canStart && (
                 <button type="button" className="primary-button" disabled={busy} onClick={() => void action('start')}>
-                  {t('customer:recovery.startNew')}
+                  {t(reopensCartLine ? 'customer:recovery.reopenFromCart' : 'customer:recovery.startNew')}
                 </button>
               )}
               {canRemoveGroup && (

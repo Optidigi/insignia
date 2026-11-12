@@ -18,6 +18,7 @@ const {
   quantityLayout,
   createDesignerState,
   designerReducer,
+  hasDraftChanges,
   buildCommitDesign,
   configSchema,
   buildShopifyVariantMatrix,
@@ -243,4 +244,57 @@ test("three actual axes retain every supplied name/value and sparse identity", a
     config.sizes.map((size) => size.label),
     ["Alpha", "Beta"],
   );
+});
+
+test("a cart line observed under the open Designer moves untouched quantities and the baseline, never edited ones or artwork", async () => {
+  const config = await fixture("phone-case-options");
+  const matte = config.colors[0],
+    gloss = config.colors[1];
+  const a = config.sizes[0],
+    b = config.sizes[1];
+  const print = { id: config.positions[0].id, method: config.methods[0].id, size: 0, artworkId: "logo" };
+  const line = (quantities: Record<string, number>) => ({ id: "cart-design", prints: [print], quantities });
+  const open = () =>
+    createDesignerState({
+      rules: {
+        positions: config.positions,
+        colorIds: config.colors.map((c) => c.id),
+        sizeIds: config.sizes.map((s) => s.id),
+        availableSizes: Object.fromEntries(config.colors.map((c) => [c.id, c.availableSizeIds])),
+        variantMatrix: config.variantMatrix,
+        maxQuantity: config.maxQuantity,
+        deferablePositions: [],
+      },
+      view: config.views[0].id,
+      color: matte.id,
+      active: config.positions[0].id,
+      expanded: config.positions[0].id,
+      prints: [],
+      artworks: [{ id: "logo", name: "Logo", url: "/logo.svg", width: 30, height: 20 }],
+      designerOpen: true,
+      initialDesign: line({ [`${matte.id}:${a.id}`]: 3 }),
+      requiresCartReview: true,
+    });
+  const moved = line({ [`${matte.id}:${a.id}`]: 1, [`${gloss.id}:${b.id}`]: 2 });
+  // Untouched: the cart's new quantities replace them and the line becomes the unchanged state.
+  let state = designerReducer(open(), { type: "cart-line-observed", design: moved });
+  assert.deepEqual(state.quantities, moved.quantities);
+  assert.deepEqual(state.baseline?.quantities, moved.quantities);
+  assert.deepEqual(state.colorRows, [matte.id, gloss.id]);
+  assert.equal(hasDraftChanges(state), false);
+  // Edited in the Designer: the buyer's quantity stays, compared against the new cart line.
+  state = designerReducer(open(), { type: "quantity-entered", color: matte.id, size: a.id, value: 4 });
+  state = designerReducer(state, { type: "cart-line-observed", design: moved });
+  assert.deepEqual(state.quantities, { [`${matte.id}:${a.id}`]: 4 });
+  assert.deepEqual(state.baseline?.quantities, moved.quantities);
+  assert.equal(hasDraftChanges(state), true);
+  // Unsaved artwork edits survive either way: only quantities and the baseline move.
+  state = designerReducer(open(), { type: "position-removed", positionId: print.id });
+  state = designerReducer(state, { type: "cart-line-observed", design: moved });
+  assert.deepEqual(state.prints, []);
+  assert.deepEqual(state.quantities, moved.quantities);
+  assert.equal(hasDraftChanges(state), true);
+  // A different design is not this Designer's cart line.
+  const other = open();
+  assert.equal(designerReducer(other, { type: "cart-line-observed", design: { ...moved, id: "other" } }), other);
 });
