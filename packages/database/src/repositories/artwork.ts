@@ -7,7 +7,10 @@ import {
   type ArtworkScope,
   type ArtworkStore,
 } from '@insignia/application';
+import { type Kysely, sql } from 'kysely';
 import type { Pool, PoolClient } from 'pg';
+import { createDatabase, type Database } from '../client/database.js';
+import { fenceReader } from '../client/fence-reads.js';
 
 type Row = {
   asset_id: string;
@@ -83,8 +86,9 @@ function sameManifest(a: ArtworkManifest, b: ArtworkManifest) {
   );
 }
 
-/** The pool remains private; callers receive only the scoped artwork port. */
-export function createArtworkRepository(pool: Pool): ArtworkStore {
+/** The pool remains private; callers receive only the scoped artwork port. `database` is the durable
+ * core's Kysely instance on the same pool, so a usability read inside a signing fence uses its connection. */
+export function createArtworkRepository(pool: Pool, database: Kysely<Database> = createDatabase(pool)): ArtworkStore {
   async function transaction<T>(run: (client: PoolClient) => Promise<T>) {
     const c = await pool.connect();
     try {
@@ -425,10 +429,13 @@ export function createArtworkRepository(pool: Pool): ArtworkStore {
     async readUsability(scope, ids, now) {
       if (ids.length === 0) return [];
       if (ids.length > 256) fail('INVALID_INPUT');
-      const r = await pool.query<Row>(
-        `SELECT a.* FROM artwork_assets a WHERE shop_id=$1 AND installation_generation=$2 AND asset_id=ANY($3::uuid[]) AND state='USABLE' AND manifest IS NOT NULL AND expires_at>$4 AND ($5='merchant' OR ($5='guest' AND owner_hash=$6)) AND ${active}`,
-        [scope.shopId, scope.installationGeneration, ids, now, scope.kind, scope.ownerHash ?? null],
-      );
+      // One primary-key read per quote set. Signing re-reads it inside its fence (#390): there it runs on
+      // the fence's own connection, never a second pool connection that lock waiters may hold (#381).
+      const r = await sql<Row>`SELECT a.* FROM artwork_assets a WHERE shop_id=${scope.shopId}
+        AND installation_generation=${scope.installationGeneration} AND asset_id=ANY(${ids}::uuid[])
+        AND state='USABLE' AND manifest IS NOT NULL AND expires_at>${now}
+        AND (${scope.kind}::text='merchant' OR (${scope.kind}::text='guest' AND owner_hash=${scope.ownerHash ?? null}))
+        AND ${sql.raw(active)}`.execute(fenceReader(database));
       return r.rows.map(map);
     },
   };

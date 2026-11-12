@@ -18,6 +18,7 @@ import { test } from 'node:test';
 import { buildPublicConfig, materialHash, publicKeyFingerprint, publicKeyFromSeed } from '@insignia/application';
 import { decodeLineCarrierV3, issueLineSetV3 } from '@insignia/cart-authorization';
 import { createProductionBuyerServices, type ProductionBuyerInputs } from '../src/server/buyer/production.ts';
+import { runSigningFence } from '../src/server/buyer/signing-fence.ts';
 import { fixtureTransaction } from './admin/support/fixtures.mts';
 import { coreFixture, effectiveRevision, type MutableCore, record, required, text } from './http-fixtures.mts';
 
@@ -358,18 +359,6 @@ test('valid Lean acceptance reads provider facts once before its lock and reject
         read: async () => {
           assert.equal(insideLock, false);
           return attestation;
-        },
-      },
-    };
-    input.passiveArtifactPorts = {
-      expectedBuild: {
-        read: async () => {
-          throw new Error('Release evidence is read once, before the signing fence');
-        },
-      },
-      trustedEvidence: {
-        read: async () => {
-          throw new Error('Release evidence is read once, before the signing fence');
         },
       },
     };
@@ -924,6 +913,31 @@ test('catalog is actual credential-scoped provider data with explicit unavailabl
   assert.deepEqual(config.variants, [{ id: '222', label: 'Blue M', available: false, selectedOptions: [] }]);
   assert.equal(config.imageUrls.product_111, 'https://cdn.shopify.com/synthetic/product.png');
   assert.equal(config.ready, true);
+});
+
+test('a catalog read started inside a signing fence acquires no credential and sends no provider request (#390)', async () => {
+  const { input } = catalogFixture();
+  let requests = 0,
+    acquisitions = 0;
+  const originalFetch = required(input.fetchImpl),
+    originalAcquire = input.credentials.acquire;
+  input.fetchImpl = async (...args) => {
+    requests++;
+    return originalFetch(...args);
+  };
+  input.credentials.acquire = async (target) => {
+    acquisitions++;
+    return originalAcquire(target);
+  };
+  const services = createProductionBuyerServices(input);
+  await assert.rejects(
+    runSigningFence(() => services.config(new Request(signed()))),
+    /Provider credential read is not allowed inside the signing fence/,
+  );
+  assert.equal(acquisitions, 0);
+  assert.equal(requests, 0);
+  assert.equal((await services.config(new Request(signed()))).ready, true);
+  assert.equal(requests, 1);
 });
 
 test('catalog rejects missing credentials, foreign credential tenant and foreign inventory snapshots without synthetic results', async () => {
