@@ -2,7 +2,7 @@
 
 ## Active assignment
 
-Updated 11 November 2026. Insignia now runs only on `app.insigniacustomizer.com` (Active `1203782746113`, web main `714e2e2d`, signer main `fb30b947`, worker main `f4ae1f9e`, verifier main `add83af7`, schema 58). Signing keys no longer expire routinely; rewrite-dev signs with non-expiring key 3 through a separate signer process, and retired keys hold no private half. Customer artwork email runs on rewrite-dev in development mode (admin recipient only, web main `714e2e2d`); protected facts are now 9/8/2/8/11 after test order #1009. The combined application and canonical agent documentation are integrated. The existing host alias `prod` serves the allocated rewrite-dev app/store. The cart-line v3 source is deployed there, its candidate is the released Shopify Active version (the single v3 cutover), and both were independently read back. On 11 November 2026 a web-only update deployed main `721bc6b6`: the 5-minute release refresh and the Cloudflare-only origin lock. No production resource migration, new scopes/markets, database reset, history erasure, protected VAT retry, checkout/order/payment or consumed sender/alert drill was performed. The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
+Updated 12 November 2026. Insignia now runs only on `app.insigniacustomizer.com` (Active `1205760688129`, web, worker and verifier main `9a577bb1` (the binding of application source `fb436e16`), signer main `fb30b947`, schema 59). Signing keys no longer expire routinely; rewrite-dev signs with non-expiring key 3 through a separate signer process, and retired keys hold no private half. Customer artwork email runs on rewrite-dev in development mode (admin recipient only); protected facts are 9/8/2/8/11 after test order #1009. The existing host alias `prod` serves the allocated rewrite-dev app/store. The storefront and Designer fixes up to `fb436e16` (#352–#365, #372, #373) are released there as theme-only version `1205760688129` and natively verified (see [below](#storefront-and-designer-fixes--deployed-and-released-12-november-2026)); #377 and later main commits are not deployed. No production resource migration, new scopes/markets, database reset, history erasure, protected VAT retry, checkout/order/payment or consumed sender/alert drill was performed. The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
 
 ### Remaining work and end shape (owner-agreed roadmap, 12 November 2026)
 
@@ -47,6 +47,46 @@ Updated 11 November 2026. Insignia now runs only on `app.insigniacustomizer.com`
 - The VAT store's leftover old-host uninstall webhook stays.
 - The Cloudflare status Worker detects removed services by itself.
 - Standing OK for rewrite-dev test-gateway orders.
+
+### Storefront and Designer fixes — deployed and released 12 November 2026
+
+**Owner approval, 12 November 2026:** deploy current main to rewrite-dev "in whichever shape is sensical", including one new app version for the theme assets; Functions must stay byte-identical. The lead approved the binding shape (candidate, binding PR, verifier/web/worker replacement, one release).
+
+**Source and CI.**
+- Server and theme source: main `fb436e16` (tree `7932f344`). Durable core 43264310599, foundation 43264310795 and runtime 43264310568 passed on attempt 1.
+- Binding head: main `9a577bb1` (#379; base includes the Spanish-only #378). Runtime 43270444801 passed on attempt 1. Foundation 43270444824 passed on attempt 2: attempt 1 failed only the #369-listed `#349: an artwork check that never finishes…` timeout test. No durable-core path changed after `fb436e16`.
+- An earlier attempt on `bb97e906` stopped before any effect: its foundation failed two different #369-listed tests and the then-allowed single rerun was used.
+
+**Server deploy (`fb436e16`).**
+1. A DB-only checkpoint was restore-verified at `17:13:40Z` (schema 58, facts 9/8/2/8/11) with a dry run of migration 59 and the grant. The live visitor table had 0 rows. Its encrypted copies were shredded at `18:07:08Z`.
+2. Migration `20261112000300_buyer_visitor_sliding_window.sql` at `17:13:45Z` through the guarded schema owner: schema 59.
+3. Web grant `UPDATE(window_at,issued,issued_at)` on `buyer_visitor_admission` at `17:13:45Z`. Web still cannot update `visitor_key`; the worker has no access. New expected column-ACL digest `022522c7f05c564b403aac2a7877800f`; relation and membership digests unchanged.
+4. Web `sha256:4770bab1…` at `17:13:52Z` (`--no-deps`), worker `sha256:b26392c8…` at `17:13:53Z`, profile unchanged. Readback: no error-level lines, KEK absent in web, signer socket/release-verification/email-profile mounts present, `/live` 200 through Cloudflare and 403 direct, other sites unchanged.
+- The worker logs `lifecycle_credential_unavailable` at warn (`LIFECYCLE_CREDENTIAL_MISSING`) for the protected VAT installation, once per process start and then at most hourly (the limit is in memory). It is not an error and nothing was done to that installation.
+- Signer and inspector are unchanged: no signer path changed (#373's key-lifecycle change is comments only), and the inspector's only dependency change is the logging allow-list.
+
+**Shopify version `1205760688129` (`native-buyer-fixes-fb436e16`).**
+- Created once at `17:15:23Z` (CLI 4.9.4) from the frozen `native-canonical-host-aa3b6166` staging with only the 15 theme assets replaced by the foundation build of `fb436e16` (byte-identical to a local build). Readback: inactive, 36 versions, only the theme assets differ, module hash `83f73e02…`.
+- Functions are byte-identical: the `fb436e16` foundation wasm equals the Active pins (transform `5c8708b5…`/183604, validation `6c362b36…`/181608), module ids `826a9059…`/`076bfef2…` and input queries `02ab5bce…`/`5867e61f…` unchanged. Function source stays `aa3b6166`.
+- Phase B at `17:57:21–23Z`: verifier `sha256:81734624…` (code manifest `15c13f41…`), web `sha256:0c91fa7b…`, worker `sha256:d4a5f8d6…`, all from `9a577bb1` with profile `native-buyer-fixes-fb436e16`; config delta image and profile only.
+- Exactly one `app release` (exit 0 at `17:58:05Z`). Independent readback at `17:58:09Z`: sole Active `1205760688129`, 36 versions equal the binding, all NEVER_RELEASE versions inactive, Active modules equal the committed baseline.
+- Fresh web collect and quiesced worker-role read matched record `d1a06360…` (observed `17:58:20.852Z`).
+- **Fail-closed window:** quotes were unavailable from candidate creation (`17:15:23Z`) to the fresh admission (`17:58:20Z`), about 43 minutes. No buyer request arrived in that window. First native acceptance: `18:01:56.868Z`.
+
+**Native verification (rewrite-dev storefront; carts emptied, no order).**
+- The storefront loads assets from the `native-buyer-fixes-fb436e16` extension.
+- Designer: Linkerborst artwork upload inspected (begin 46 ms, USABLE within 2.1 s), $17.45 per item; Quantities → Review in 1.09 s (proposal 600 ms server-side).
+- Reload after Review: the Designer opened on "Continue your design?" with focus on Continue; Continue restored placement, artwork and M×2, L×1. The restored artwork shows the label "Artwork" instead of the file name (drafts keep IDs only).
+- Add to cart: two lines (M×2, L×1) at 1745 each, each with one `_insignia_line_v3` (302 chars); $52.35. Click to cart page 5.5 s. Server acceptance 3957 ms, of which 3595 ms was a synchronous release observation because the admission record had expired; #377 (not deployed here) targets this. Signed by key 3 through the signer (8 ms).
+- Second tab: both tabs hold the same buyer session (shared `localStorage`). From the second tab, "Review customized items" opened the owned cart design, with no earlier-session dead end.
+- Cart-page quantity: L 1→2 natively kept $17.45 and its carrier; reopening the editor showed M 2, L 2.
+- Escape: with no edits it closes the Designer; with an unsaved edit it opens "Close customization?" (focus on Keep editing). Keep editing kept the edit; Close customization left the cart unchanged.
+- Skip link: "Skip to design controls" keeps the Designer in its frame and moves focus to `#design-controls`.
+- Session limit 429 was not exercised: reaching 60 new sessions per hour from one visitor would flood prod and lock out the verification (see small pending checks).
+- The visitor table now holds one sliding-window row with `issued` equal to the length of `issued_at`.
+- Protected facts stay 9/8/2/8/11; `/cart/clear.js` returned 0 in both tabs.
+
+**Custody.** `/home/serveradmin/.local/share/insignia/recovery-release-20261110/fb436e16-deploy-1/` on prod (`deployment-receipt.json`, intents, results, prior configs). Prior web, worker and verifier images stay loaded for rollback.
 
 ### Incident: quotes blocked by published-config drift — 12 November 2026, resolved
 
