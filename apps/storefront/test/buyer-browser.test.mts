@@ -1522,30 +1522,34 @@ for (const restoreUnavailable of [false, true])
   });
 
 test('an incompatible republish requires explicit selected design repair and never silently drops retained logo-later choices', async () => {
-  await withRetainedBuyer(async ({ page, host, accepts, mutations, configure, group }) => {
-    // Preparation sends its proposal without waiting for the fresh config read; the server re-checks
-    // the revision. Whether that proposal leaves before the changed publication is seen is a race,
-    // so hold proposals and assert the contract instead: a changed publication aborts it.
-    await page.route('**/apps/insignia/v1/quote-proposals', () => new Promise<void>(() => {}));
-    const dispatched: PlaywrightRequest[] = [];
-    const aborted = new Set<PlaywrightRequest>();
-    page.on('request', (request) => {
-      if (new URL(request.url()).pathname.endsWith('/quote-proposals')) dispatched.push(request);
-    });
-    page.on('requestfailed', (request) => aborted.add(request));
-    const cfg = structuredClone(config);
-    required(cfg.placements[0]).logoLaterAllowed = false;
-    cfg.revisionId = 'changed';
-    cfg.contentHash = 'e'.repeat(64);
-    configure(cfg);
-    await reviewRetained(host);
-    await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
-    for (const request of dispatched)
-      if (!aborted.has(request)) await page.waitForEvent('requestfailed', (failed) => failed === request);
-    assert.equal(accepts.length, 0);
-    assert.equal(mutations(), 0);
-    assert.equal(required(group.design.placements[0]).artwork.kind, 'deferred');
-  });
+  await withRetainedBuyer(
+    async ({ page, host, accepts, mutations, configure, group }) => {
+      // Preparation sends its proposal without waiting for the fresh config read; the server re-checks
+      // the revision. Whether that proposal leaves before the changed publication is seen is a race,
+      // so hold proposals and assert the contract instead: a changed publication aborts it.
+      await page.route('**/apps/insignia/v1/quote-proposals', () => new Promise<void>(() => {}));
+      const dispatched: PlaywrightRequest[] = [];
+      const aborted = new Set<PlaywrightRequest>();
+      page.on('request', (request) => {
+        if (new URL(request.url()).pathname.endsWith('/quote-proposals')) dispatched.push(request);
+      });
+      page.on('requestfailed', (request) => aborted.add(request));
+      const cfg = structuredClone(config);
+      required(cfg.placements[0]).logoLaterAllowed = false;
+      cfg.revisionId = 'changed';
+      cfg.contentHash = 'e'.repeat(64);
+      configure(cfg);
+      await freezeTimers(page);
+      await reviewRetained(host);
+      await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
+      for (const request of dispatched)
+        if (!aborted.has(request)) await page.waitForEvent('requestfailed', (failed) => failed === request);
+      assert.equal(accepts.length, 0);
+      assert.equal(mutations(), 0);
+      assert.equal(required(group.design.placements[0]).artwork.kind, 'deferred');
+    },
+    { clock: true },
+  );
 });
 
 for (const [action, unknownOwned] of [
@@ -1562,6 +1566,7 @@ for (const [action, unknownOwned] of [
           next.revisionId = 'changed';
           next.contentHash = 'e'.repeat(64);
           configure(next);
+          await freezeTimers(page);
           await reviewRetained(host);
         }
         await host.getByRole('button', { name: action, exact: true }).click();
@@ -1583,7 +1588,7 @@ for (const [action, unknownOwned] of [
           },
         ]);
       },
-      { unknownOwned, opening: unknownOwned ? 'repair' : 'editable' },
+      { unknownOwned, opening: unknownOwned ? 'repair' : 'editable', clock: true },
     );
   });
 }
