@@ -254,6 +254,10 @@ Since keys no longer expire (spec §5.5), each key's Ed25519 seed is protected b
    5. web activates, which scrubs the outgoing key's private half.
 3. Disarm. The worker destroys the outgoing key once its window has closed.
 
+**A stopped rotation.** While the pending key or the shortened window is stored but not published, quotes stop (`public_config_drift` after 5 minutes). Resume it: arm again with the same plan file and a new empty run root, keeping the stopped run root as evidence, and start the action again. It reuses the pending key (the signer creates no second seed) and publishes by compare-and-set. A different plan for that key id, or any other published difference, still stops it.
+
+**Emergency epoch bump or revocation.** Both change the expected public config without publishing it, so quotes stop until it is published. Follow them at once with a rotation (above). Its publication carries the higher epoch and the revoked flag; it accepts the earlier published config because these changes only tighten it.
+
 **Blast radius.**
 
 | Leak | What the attacker gets |

@@ -142,6 +142,60 @@ export function publishedConfigMatches(desired: PublicConfig, publishedValue: st
   return rebuilt === publishedValue;
 }
 
+/**
+ * Owner-rotation pre-check only; quote readiness stays on `publishedConfigMatches`. A published
+ * config may be replaced (compare-and-set) by the expected one when it matches, or when it is an
+ * earlier publication the database has since only tightened, which is what a stopped rotation or
+ * an emergency change leaves behind:
+ * - the pending key `pendingKeyId` of this rotation's plan is not published yet;
+ * - a key's published window ends later (rotation and revocation only shorten windows);
+ * - a key is not yet published as revoked;
+ * - the published epoch is lower (an epoch bump).
+ * Nothing else may differ: a published value stricter than the database, an unknown or swapped
+ * key, or any other field still stops the rotation.
+ */
+export function rotationMayRepublish(
+  desired: PublicConfig,
+  publishedValue: string | null | undefined,
+  pendingKeyId: number,
+): boolean {
+  if (publishedConfigMatches(desired, publishedValue)) return true;
+  const pending = desired.keys.find((key) => key.id === pendingKeyId && key.state === 'pending');
+  // First provisioning stopped before publishing: only this plan's pending key exists.
+  if (publishedValue === null || publishedValue === undefined) return !!pending && desired.keys.length === 1;
+  let published: { epoch?: unknown; keys?: unknown };
+  try {
+    published = JSON.parse(publishedValue);
+  } catch {
+    return false;
+  }
+  if (!published || typeof published !== 'object' || !Array.isArray(published.keys)) return false;
+  type Entry = { id?: unknown; lastDay?: unknown; revoked?: unknown };
+  const publishedKeys = new Map(
+    (published.keys as Entry[]).filter((entry) => entry && typeof entry === 'object').map((entry) => [entry.id, entry]),
+  );
+  const earlier = JSON.parse(desired.value) as {
+    epoch: number;
+    keys: { id: number; revoked: boolean; firstDay: number; lastDay: number }[];
+  };
+  if (
+    Number.isInteger(published.epoch) &&
+    (published.epoch as number) >= 0 &&
+    (published.epoch as number) < earlier.epoch
+  )
+    earlier.epoch = published.epoch as number;
+  if (pending && !publishedKeys.has(pending.id)) earlier.keys = earlier.keys.filter((key) => key.id !== pending.id);
+  for (const key of earlier.keys) {
+    const entry = publishedKeys.get(key.id);
+    const lastDay = entry?.lastDay;
+    if (Number.isInteger(lastDay) && (lastDay as number) > key.lastDay && (lastDay as number) <= NON_EXPIRING_LAST_DAY)
+      key.lastDay = lastDay as number;
+    if (key.revoked && entry?.revoked === false) key.revoked = false;
+  }
+  if (!earlier.keys.length) return false;
+  return publishedConfigMatches({ ...desired, value: JSON.stringify(earlier) }, publishedValue);
+}
+
 export function requireIssuanceReady(input: { config: PublicConfig; keyId: number; acceptedDay: number }): void {
   if (!Number.isInteger(input.acceptedDay) || input.acceptedDay < 0 || input.acceptedDay > NON_EXPIRING_LAST_DAY - 2)
     throw new Error('Invalid accepted day');

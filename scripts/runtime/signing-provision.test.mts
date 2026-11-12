@@ -485,3 +485,181 @@ test('rotation still stops when a destroyed key with an open window is published
     await f.close();
   }
 });
+
+// #334: an owner rotation that stopped part-way, or an emergency epoch bump or revocation, leaves the
+// stored config ahead of the published one. Quote readiness stops (exact comparison) until the
+// owner rotation publishes it; these cover that the rotation can.
+type Fixture = Awaited<ReturnType<typeof fixture>>;
+const NON_EXPIRING = 0x7fffffff;
+async function publishedActiveKey1(f: Fixture) {
+  await f.lifecycle.createPending({ scope: f.scope, keyId: 1, firstDay: f.plan.firstDay - 1, lastDay: NON_EXPIRING });
+  await f.lifecycle.activate(f.scope, 1);
+  f.setPublicValue((await f.lifecycle.desiredPublicConfig(f.scope)).value);
+}
+async function issuanceReady(f: Fixture, keyId: number, at = new Date(clockStart)) {
+  const desired = await f.lifecycle.desiredPublicConfig(f.scope, at);
+  if (!f.ports.app.publishedConfigMatches(desired, f.publicValue())) return false;
+  const acceptedDay = f.ports.app.localDay(at, 'Asia/Tokyo').ordinal;
+  f.ports.app.requireIssuanceReady({ config: desired, keyId, acceptedDay });
+  return true;
+}
+const interruptions: Record<string, (f: Fixture) => void> = {
+  'the pending-key acknowledgement was lost': (f) => {
+    const provision = f.ports.signer.provision;
+    f.ports.signer.provision = async (input) => {
+      await provision(input);
+      throw Error('SYNTHETIC_SIGNER_TRANSPORT_ERROR');
+    };
+  },
+  'it stopped before publishing': (f) => {
+    const reserve = f.ports.journal.reserve;
+    f.ports.journal.reserve = async (name) =>
+      name === 'PUBLISH_CONFIG' ? { durable: false, operation: name } : reserve(name);
+  },
+  'the publication was not dispatched': (f) => {
+    const execute = f.transport.execute;
+    f.transport.execute = async (x) => {
+      if (x.operation === 'set') throw new PublicationAdminError('network_or_timeout');
+      return execute(x);
+    };
+  },
+  'it stopped after publishing, before activation': (f) => {
+    const reserve = f.ports.journal.reserve;
+    f.ports.journal.reserve = async (name) =>
+      name === 'ACTIVATE_KEY' ? { durable: false, operation: name } : reserve(name);
+  },
+};
+for (const [name, interrupt] of Object.entries(interruptions))
+  test(`an interrupted rotation resumes with the same plan when ${name}, without a second key`, async () => {
+    const f = await fixture();
+    try {
+      await publishedActiveKey1(f);
+      assert.equal(await issuanceReady(f, 1), true);
+      const original = { journal: f.ports.journal, signer: f.ports.signer, execute: f.transport.execute };
+      interrupt(f);
+      const stopped = await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
+      assert.equal(stopped.classification, 'SIGNING_KEY_CONFIG_STOPPED');
+      assert.equal(required(f.rows.find((row) => row.id === 7)).state, 'pending');
+      f.ports.signer = original.signer;
+      f.transport.execute = original.execute;
+      f.ports.journal = await reserveSigningProvisionRun(join(f.directory, 'resume-run'), f.plan);
+      const resumed = await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
+      assert.equal(resumed.classification, 'SIGNING_KEY_CONFIG_PROVISIONED');
+      assert.equal(resumed.pendingCreateAttempted, false);
+      assert.equal(f.provisioned.length, 1);
+      assert.deepEqual(
+        f.rows.map(({ id, state }) => ({ id, state })),
+        [
+          { id: 1, state: 'retiring' },
+          { id: 7, state: 'active' },
+        ],
+      );
+      assert.equal(await issuanceReady(f, 7), true);
+    } finally {
+      await f.close();
+    }
+  });
+
+test('a rotation stopped after shortening the outgoing key blocks issuance until it is resumed', async () => {
+  const f = await fixture();
+  try {
+    await publishedActiveKey1(f);
+    interruptions['it stopped before publishing']?.(f);
+    await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
+    // The stored config now has the pending key and the shortened window; the published one has neither.
+    assert.equal(await issuanceReady(f, 1), false);
+    f.ports.journal = await reserveSigningProvisionRun(join(f.directory, 'resume-run'), f.plan);
+    assert.equal(
+      (await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports)).classification,
+      'SIGNING_KEY_CONFIG_PROVISIONED',
+    );
+    assert.equal(await issuanceReady(f, 7), true);
+  } finally {
+    await f.close();
+  }
+});
+
+test('resuming refuses a pending key with another window and unexplained published drift', async () => {
+  for (const change of ['plan window', 'published drift'] as const) {
+    const f = await fixture();
+    try {
+      await publishedActiveKey1(f);
+      interruptions['it stopped before publishing']?.(f);
+      await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
+      if (change === 'plan window') f.plan.lastDay += 1;
+      else f.setPublicValue(f.publicValue()?.replace('"maxBuckets":32', '"maxBuckets":31') ?? null);
+      f.ports.journal = await reserveSigningProvisionRun(join(f.directory, 'resume-run'), f.plan);
+      const result = await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
+      assert.equal(result.classification, 'SIGNING_KEY_CONFIG_STOPPED', change);
+      assert.equal(result.publicConfigWriteAttempted, false, change);
+      assert.equal(f.provisioned.length, 1, change);
+    } finally {
+      await f.close();
+    }
+  }
+});
+
+test('an active key cannot be resumed as a pending one', async () => {
+  const f = await fixture();
+  try {
+    assert.equal(
+      (await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports)).classification,
+      'SIGNING_KEY_CONFIG_PROVISIONED',
+    );
+    f.ports.journal = await reserveSigningProvisionRun(join(f.directory, 'again-run'), f.plan);
+    const again = await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
+    assert.equal(again.classification, 'SIGNING_KEY_CONFIG_STOPPED');
+    assert.equal(again.publicConfigWriteAttempted, false);
+  } finally {
+    await f.close();
+  }
+});
+
+test('an emergency epoch bump or revocation stops issuance; the following rotation publishes it and issuance is ready again', async () => {
+  for (const emergency of ['epoch bump', 'revocation', 'both'] as const) {
+    const f = await fixture();
+    try {
+      await publishedActiveKey1(f);
+      if (emergency !== 'revocation') f.scope.authorizationEpoch += 1;
+      if (emergency !== 'epoch bump') {
+        // As the store's revoke(): scrubbed, flagged and capped at UTC day + 3.
+        const row = required(f.rows.find((candidate) => candidate.id === 1));
+        Object.assign(row, {
+          state: 'revoked',
+          privateEnvelope: null,
+          wrappingKeyId: null,
+          lastDay: Math.floor(clockStart / 86_400_000) + 3,
+        });
+      }
+      assert.equal(await issuanceReady(f, 1).catch(() => false), false, emergency);
+      const result = await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
+      assert.equal(result.classification, 'SIGNING_KEY_CONFIG_PROVISIONED', emergency);
+      const published = JSON.parse(f.publicValue() ?? '{}');
+      assert.equal(published.epoch, f.scope.authorizationEpoch, emergency);
+      assert.equal(published.keys[0].revoked, emergency !== 'epoch bump', emergency);
+      assert.equal(await issuanceReady(f, 7), true, emergency);
+    } finally {
+      await f.close();
+    }
+  }
+});
+
+test('rotate, then the daily job destroys the outgoing key: issuance stays ready', async () => {
+  const f = await fixture();
+  try {
+    await publishedActiveKey1(f);
+    f.plan.lastDay = NON_EXPIRING;
+    f.ports.journal = await reserveSigningProvisionRun(join(f.directory, 'rotation-run'), f.plan);
+    assert.equal(
+      (await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports)).classification,
+      'SIGNING_KEY_CONFIG_PROVISIONED',
+    );
+    const outgoing = required(f.rows.find((row) => row.id === 1));
+    // Window closed (last day before UTC day − 1); the worker destroys it and nothing republishes.
+    const later = new Date((outgoing.lastDay + 2) * 86_400_000 + 3_600_000);
+    outgoing.state = 'destroyed';
+    assert.equal(await issuanceReady(f, 7, later), true);
+  } finally {
+    await f.close();
+  }
+});

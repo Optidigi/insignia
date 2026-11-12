@@ -1,7 +1,12 @@
 import { randomBytes } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { publicKeyFromSeed } from '../../src/keys/crypto.js';
-import { buildPublicConfig, type PublicSigningKey, publishedConfigMatches } from '../../src/keys/public-config.js';
+import {
+  buildPublicConfig,
+  type PublicSigningKey,
+  publishedConfigMatches,
+  rotationMayRepublish,
+} from '../../src/keys/public-config.js';
 import { assertQuoteIssuanceReady, PublicConfigDriftError } from '../../src/keys/readiness.js';
 
 const scope = {
@@ -80,5 +85,89 @@ describe('published Function config comparison', () => {
         artifact: { appClientId: 'app', expectedBuild: null, attestation: null },
       } as never),
     ).toThrow(PublicConfigDriftError);
+  });
+});
+
+describe('rotation republish pre-check (#334)', () => {
+  const NON_EXPIRING = 0x7fffffff;
+  const today = 20769;
+  const active = key(1, 'active', 20700, NON_EXPIRING);
+  // Rotation to key 2: the outgoing key is shortened to today + 3 before publication.
+  const shortened = { ...active, lastDay: today + 3 };
+  const pending = key(2, 'pending', today, NON_EXPIRING);
+  const before = buildPublicConfig({ scope, keys: [active] }).value;
+
+  it('accepts the exact expected config', () => {
+    const desired = buildPublicConfig({ scope, keys: [shortened, pending], now });
+    expect(rotationMayRepublish(desired, desired.value, 2)).toBe(true);
+  });
+
+  it('accepts what a rotation of this plan left when it stopped before publishing', () => {
+    // Stopped after creating the pending key, before shortening the outgoing key.
+    expect(rotationMayRepublish(buildPublicConfig({ scope, keys: [active, pending], now }), before, 2)).toBe(true);
+    // Stopped after shortening the outgoing key.
+    const desired = buildPublicConfig({ scope, keys: [shortened, pending], now });
+    expect(rotationMayRepublish(desired, before, 2)).toBe(true);
+    // Quote readiness stays exact: issuance stops until the rotation is resumed.
+    expect(publishedConfigMatches(desired, before)).toBe(false);
+    // Only the pending key of this plan may be missing.
+    expect(rotationMayRepublish(desired, before, 3)).toBe(false);
+    expect(rotationMayRepublish(desired, before, 1)).toBe(false);
+  });
+
+  it('accepts an earlier publication that an epoch bump or revocation has since tightened', () => {
+    const bumped = { ...scope, authorizationEpoch: 1 };
+    expect(rotationMayRepublish(buildPublicConfig({ scope: bumped, keys: [active], now }), before, 2)).toBe(true);
+    const revoked = { ...active, state: 'revoked' as const, lastDay: today + 3 };
+    expect(rotationMayRepublish(buildPublicConfig({ scope, keys: [revoked], now }), before, 2)).toBe(true);
+    // Both, and a pending key of this plan, together.
+    expect(rotationMayRepublish(buildPublicConfig({ scope: bumped, keys: [revoked, pending], now }), before, 2)).toBe(
+      true,
+    );
+  });
+
+  it('first provisioning stopped before publishing: nothing was published yet', () => {
+    const desired = buildPublicConfig({ scope, keys: [pending], now });
+    expect(rotationMayRepublish(desired, null, 2)).toBe(true);
+    expect(rotationMayRepublish(buildPublicConfig({ scope, keys: [active, pending], now }), null, 2)).toBe(false);
+  });
+
+  it('rejects anything looser in the database than in the published copy, and any other drift', () => {
+    const desired = buildPublicConfig({ scope, keys: [shortened, pending], now });
+    // A published epoch ahead of the database.
+    const ahead = buildPublicConfig({ scope: { ...scope, authorizationEpoch: 1 }, keys: [active] }).value;
+    expect(rotationMayRepublish(buildPublicConfig({ scope, keys: [active], now }), ahead, 2)).toBe(false);
+    // A published window shorter than the database's, or a published revocation the database lacks.
+    const narrower = buildPublicConfig({ scope, keys: [shortened] }).value;
+    expect(rotationMayRepublish(buildPublicConfig({ scope, keys: [active], now }), narrower, 2)).toBe(false);
+    const publishedRevoked = buildPublicConfig({ scope, keys: [{ ...active, state: 'revoked' }] }).value;
+    expect(rotationMayRepublish(buildPublicConfig({ scope, keys: [active], now }), publishedRevoked, 2)).toBe(false);
+    // An unknown key, a swapped public key, another generation, an earlier first day or garbage.
+    expect(
+      rotationMayRepublish(desired, buildPublicConfig({ scope, keys: [active, key(5, 'active', 1, 9)] }).value, 2),
+    ).toBe(false);
+    expect(
+      rotationMayRepublish(
+        desired,
+        buildPublicConfig({ scope, keys: [{ ...active, publicKey: pending.publicKey }] }).value,
+        2,
+      ),
+    ).toBe(false);
+    const otherGeneration = { ...scope, authorizationGeneration: '11111111-1111-4111-8111-111111111111' };
+    expect(rotationMayRepublish(desired, buildPublicConfig({ scope: otherGeneration, keys: [active] }).value, 2)).toBe(
+      false,
+    );
+    expect(
+      rotationMayRepublish(desired, buildPublicConfig({ scope, keys: [{ ...active, firstDay: 20699 }] }).value, 2),
+    ).toBe(false);
+    expect(rotationMayRepublish(desired, '{', 2)).toBe(false);
+    expect(rotationMayRepublish(desired, null, 2)).toBe(false);
+  });
+
+  it('still tolerates destroyed keys whose window closed', () => {
+    const closed = key(9, 'retiring', 20700, 20760);
+    const published = buildPublicConfig({ scope, keys: [closed, active] }).value;
+    const desired = buildPublicConfig({ scope, keys: [{ ...closed, state: 'destroyed' }, shortened, pending], now });
+    expect(rotationMayRepublish(desired, published, 2)).toBe(true);
   });
 });

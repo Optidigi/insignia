@@ -299,11 +299,26 @@ export async function provisionSigningKey(
     const { admin, observeFunctions } = ports.bindProvider(grant, currentScope, tenant);
     const lifecycle = new ports.app.SigningKeyLifecycle(ports.core.signingKeys);
     const rows = await ports.core.signingKeys.list(scope);
-    assert.ok(rows.filter((row) => row.state !== 'destroyed').length < 4 && !rows.some((row) => row.id === plan.keyId));
+    // A stopped run of this same plan left its pending key (#334): resume with it, never a new seed.
+    const resumed = rows.find((row) => row.id === plan.keyId);
+    assert.ok(
+      !resumed ||
+        (resumed.state === 'pending' &&
+          resumed.firstDay === plan.firstDay &&
+          resumed.lastDay === plan.lastDay &&
+          resumed.wrappingKeyId),
+    );
+    assert.ok(rows.filter((row) => row.state !== 'destroyed' && row.id !== plan.keyId).length < 4);
     const prior = await operation('READ_CONFIG_BEFORE', () => admin.read({ ...tenant, field: 'public_config' }));
+    // The published config is the expected one, or an earlier publication that this run's pending
+    // key, its retirement shortening, a revocation or an epoch bump has since only tightened.
     if (rows.some((row) => row.state !== 'destroyed'))
       assert.ok(
-        ports.app.publishedConfigMatches(await lifecycle.desiredPublicConfig(scope, ports.now()), prior?.value),
+        ports.app.rotationMayRepublish(
+          await lifecycle.desiredPublicConfig(scope, ports.now()),
+          prior?.value ?? null,
+          plan.keyId,
+        ),
       );
     else assert.equal(prior, null);
     let ready:
@@ -357,23 +372,26 @@ export async function provisionSigningKey(
       }
     };
     await readiness('READ_FUNCTIONS_BEFORE');
-    await operation('CREATE_PENDING', async () => {
-      await currentScope();
-      dayCoverage();
-      assertCachedReadiness();
-      flags.pendingCreateAttempted = true;
-      uncertain = 'CREATE_PENDING';
-      if (!beforeWrite()) throw new Error('Signing write authority expired');
-      await ports.signer.provision({
-        version: 1,
-        scope,
-        keyId: plan.keyId,
-        firstDay: plan.firstDay,
-        lastDay: plan.lastDay,
+    // A resumed pending key is acknowledged by the read above; it is not created again.
+    if (resumed) flags.pendingCreateAcknowledged = true;
+    else
+      await operation('CREATE_PENDING', async () => {
+        await currentScope();
+        dayCoverage();
+        assertCachedReadiness();
+        flags.pendingCreateAttempted = true;
+        uncertain = 'CREATE_PENDING';
+        if (!beforeWrite()) throw new Error('Signing write authority expired');
+        await ports.signer.provision({
+          version: 1,
+          scope,
+          keyId: plan.keyId,
+          firstDay: plan.firstDay,
+          lastDay: plan.lastDay,
+        });
+        flags.pendingCreateAcknowledged = true;
+        uncertain = null;
       });
-      flags.pendingCreateAcknowledged = true;
-      uncertain = null;
-    });
     const pending = (await ports.core.signingKeys.list(scope)).find((row) => row.id === plan.keyId);
     assert.ok(pending?.state === 'pending' && pending.wrappingKeyId);
     // Owner decision, 11 November 2026: keys do not expire routinely, so the key this rotation

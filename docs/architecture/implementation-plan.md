@@ -288,7 +288,7 @@ Windows only ever shorten. Because keys no longer age out, private-key custody c
 - **Still verifies:** the public key and window stay, so the published Function configuration is unchanged and outstanding carts keep verifying until the window closes.
 - **Daily destruction:** the worker marks retired and revoked keys whose window has closed as destroyed, by the existing rule (`last_valid_day` before UTC day − 1).
 
-Rotation/epoch changes use a convergence workflow, not a fiction of a transaction across PostgreSQL and Shopify. Stop issuance while projections disagree. A Function mismatch fails closed. Maintain desired/observed hashes and safe overlap windows; never assume Shopify metafield writes are instantly visible to all Function invocations.
+Rotation/epoch changes use a convergence workflow, not a fiction of a transaction across PostgreSQL and Shopify. Stop issuance while projections disagree. The owner rotation converges them: a stopped rotation is resumed by running the same plan again (it reuses the pending key), and its publication also carries an earlier epoch bump or revocation. Its pre-check accepts only a published config that the database has since tightened; quote readiness stays exact (#334). A Function mismatch fails closed. Maintain desired/observed hashes and safe overlap windows; never assume Shopify metafield writes are instantly visible to all Function invocations.
 
 ### 5.6 Exact decimal boundary
 
