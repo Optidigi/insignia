@@ -10,7 +10,11 @@ import { type RepairState, repairOffers } from './repair-state';
 type DesignerRecord = {
   frame: ReturnType<typeof createDesignerFrame>;
   live: ReturnType<typeof createLiveDesignerPorts>;
+  /** A design opened from its cart line re-reads that line before it is shown again (#397). */
+  reopen?(signal: AbortSignal): Promise<void>;
 };
+// Like the first opening's loading limit: a reopening never waits longer for the cart.
+const REOPEN_CART_READ_MS = 10_000;
 /** One selected state machine; switching cart designs confirms discarding unfinished edits. */
 export async function mountLiveDesigner(input: {
   modal?: ReturnType<typeof createDesignerModal>;
@@ -95,6 +99,8 @@ export async function mountLiveDesigner(input: {
     }
     let record: DesignerRecord;
     const refreshedPreviews = new Set<string>();
+    const sameDesign = (candidate: DesiredGroup) =>
+      !!group && desiredGroupKey(candidate, false, false) === desiredGroupKey(group, false, false);
     const live = createLiveDesignerPorts({
       ...input,
       source,
@@ -123,9 +129,7 @@ export async function mountLiveDesigner(input: {
     if (group) {
       try {
         const observed = await live.observe(signal);
-        const exact = observed.groups.filter(
-          (candidate) => desiredGroupKey(candidate, false, false) === desiredGroupKey(group, false, false),
-        );
+        const exact = observed.groups.filter(sameDesign);
         if (exact.length !== 1 || !exact[0]) throw new Error('Cart selection changed');
         original = exact[0];
         const retained = reset ? null : await live.restoreSaved(original, signal);
@@ -189,6 +193,14 @@ export async function mountLiveDesigner(input: {
           /* A draft that cannot be read now is not offered: the Designer starts clean. */
         }
     }
+    /** The cart line changed natively under this Designer (#341, #397): the edit now replaces it as it is. */
+    function followCartLine(line: DesiredGroup) {
+      if (!restored || !mapped) return;
+      original = line;
+      live.registerDesign(restored.initialDesign.id, original);
+      // Quantities the buyer did not edit follow the cart, so Update cart cannot revert it.
+      record.frame.cartLine(mapped.restore(original, restored.initialDesign.id));
+    }
     let canRemoveAll = !!original;
     if (!current() || signal.aborted || generation !== selectionGeneration) return;
     // Background preparation is only for a complete, brand-new product. A
@@ -225,11 +237,7 @@ export async function mountLiveDesigner(input: {
           }
           const latest = await api.config(lifetime.signal, source.productId);
           const observed = await live.observe();
-          const target = group
-            ? observed.groups.filter(
-                (candidate) => desiredGroupKey(candidate, false, false) === desiredGroupKey(group, false, false),
-              )
-            : [];
+          const target = group ? observed.groups.filter(sameDesign) : [];
           const targetAvailable = !group || target.length > 0;
           if (
             latest.revisionId !== source.revisionId ||
@@ -251,13 +259,7 @@ export async function mountLiveDesigner(input: {
             record.frame.repair(repairState);
             throw new Error('Explicit customization review required');
           }
-          // The cart line may have changed natively under the open Designer: the edit now replaces it as it is.
-          if (restored && mapped && target.length === 1 && target[0]) {
-            original = target[0];
-            live.registerDesign(restored.initialDesign.id, original);
-            // Quantities the buyer did not edit follow the cart, so Update cart cannot revert it.
-            record.frame.cartLine(mapped.restore(original, restored.initialDesign.id));
-          }
+          if (target.length === 1 && target[0]) followCartLine(target[0]);
           repairState = undefined;
           record.frame.repair();
           return;
@@ -274,11 +276,7 @@ export async function mountLiveDesigner(input: {
             throw new Error('Current customization unavailable');
           // A cart line changed natively under the Designer still holds this design: reopen it from the cart.
           const changed =
-            group && state.cause === 'cart-changed'
-              ? (await live.observe()).groups.filter(
-                  (candidate) => desiredGroupKey(candidate, false, false) === desiredGroupKey(group, false, false),
-                )
-              : [];
+            group && state.cause === 'cart-changed' ? (await live.observe()).groups.filter(sameDesign) : [];
           await live.discardDrafts();
           discard(record);
           active = undefined;
@@ -349,7 +347,24 @@ export async function mountLiveDesigner(input: {
         });
       },
     });
-    record = { frame, live };
+    record = {
+      frame,
+      live,
+      ...(restored
+        ? {
+            // The theme may have changed the cart without a reload since the Designer was last shown (#397).
+            async reopen(signal: AbortSignal) {
+              const exact = (await live.observe(signal)).groups.filter(sameDesign);
+              if (
+                exact.length === 1 &&
+                exact[0] &&
+                (!original || desiredGroupKey(exact[0]) !== desiredGroupKey(original))
+              )
+                followCartLine(exact[0]);
+            },
+          }
+        : {}),
+    };
     if (active && active !== record) discard(active);
     active = record;
     editable = !repair;
@@ -458,11 +473,20 @@ export async function mountLiveDesigner(input: {
     get ready() {
       return !preparationFailed && active?.frame.initialized === true;
     },
-    open() {
+    async open() {
       if (preparationFailed) return false;
       initiallyHidden = false;
       const record = active;
-      if (!record?.frame.open()) return false;
+      if (!record) return false;
+      if (record.reopen) {
+        try {
+          await record.reopen(AbortSignal.any([lifetime.signal, AbortSignal.timeout(REOPEN_CART_READ_MS)]));
+        } catch {
+          /* Shown as it was: preparing its review compares the cart line again. */
+        }
+        if (!current() || active !== record) return false;
+      }
+      if (!record.frame.open()) return false;
       warmSession();
       return true;
     },

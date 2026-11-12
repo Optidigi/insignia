@@ -1294,6 +1294,77 @@ test('a native cart quantity change reopens the design at the cart quantity, nev
     { observedQuantities: true },
   );
 });
+/** The theme's own Ajax quantity control: the cart changes and the page is not reloaded. */
+async function ajaxQuantity(page: Page, editCart: RetainedScenario['editCart'], quantity: number) {
+  await page.route('**/cart/change.js', (route) => {
+    editCart(quantity);
+    return route.fulfill({ json: {} });
+  });
+  await page.evaluate(
+    (value) =>
+      fetch('/cart/change.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: 'custom', quantity: value }),
+      }),
+    quantity,
+  );
+}
+async function reopenSamePage(page: Page, trigger: Locator, host: FrameLocator) {
+  await trigger.getByRole('button', { name: 'Review customized cart', exact: true }).click();
+  await page.locator('dialog:modal').waitFor();
+}
+test('reopening on the same cart page follows a native Ajax quantity change (#397)', async () => {
+  await withRetainedBuyer(
+    async ({ page, host, trigger, editCart, proposals, accepts, mutations }) => {
+      await host.getByRole('button', { name: 'Close customizer', exact: true }).click();
+      await page.locator('dialog:modal').waitFor({ state: 'detached' });
+      await ajaxQuantity(page, editCart, 5);
+      await reopenSamePage(page, trigger, host);
+      await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+      assert.equal(
+        await host.locator('input[type=number]:enabled').first().inputValue(),
+        '5',
+        'the cart quantity seeds the editor, as after a reload',
+      );
+      await host.getByRole('button', { name: 'Review', exact: true }).last().click();
+      await applyButton(host).waitFor();
+      assert.deepEqual(
+        proposals.at(-1)?.groups.map((group) => group.variants),
+        [[{ variantId: '222', quantity: 5 }]],
+        'Update cart replaces the cart line as it is now',
+      );
+      assert.equal(accepts.length, 0);
+      assert.equal(mutations(), 0);
+    },
+    { observedQuantities: true },
+  );
+});
+test('reopening on the same cart page keeps a Designer quantity edit over a native Ajax change (#397)', async () => {
+  await withRetainedBuyer(
+    async ({ page, host, trigger, editCart, proposals, accepts, mutations }) => {
+      await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+      await host.locator('input[type=number]:enabled').first().fill('4');
+      await host.getByRole('button', { name: 'Close customizer', exact: true }).click();
+      await host.getByRole('button', { name: 'Close customization', exact: true }).click();
+      await page.locator('dialog:modal').waitFor({ state: 'detached' });
+      await ajaxQuantity(page, editCart, 5);
+      await reopenSamePage(page, trigger, host);
+      // The Designer reopens where it was closed: on Quantities.
+      assert.equal(await host.locator('input[type=number]:enabled').first().inputValue(), '4');
+      await host.getByRole('button', { name: 'Review', exact: true }).last().click();
+      await applyButton(host).waitFor();
+      assert.deepEqual(
+        proposals.at(-1)?.groups.map((group) => group.variants),
+        [[{ variantId: '222', quantity: 4 }]],
+        'the buyer edited this quantity in the Designer',
+      );
+      assert.equal(accepts.length, 0);
+      assert.equal(mutations(), 0);
+    },
+    { observedQuantities: true },
+  );
+});
 test('a Designer quantity edit that cancels the eager draft save still reopens at the edit (#371)', async () => {
   await withRetainedBuyer(
     async ({ page, host, trigger }) => {
