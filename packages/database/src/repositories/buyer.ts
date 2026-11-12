@@ -342,7 +342,8 @@ export function createBuyerRepository(db: Kysely<Database>) {
             fail('SESSION_RATE_LIMITED', Math.max(1, Math.ceil((admitsAt - +now) / 1000)));
           }
           const issued = [...recent, now].map((at) => at.toISOString());
-          await sql`INSERT INTO buyer_visitor_admission(shop_id,installation_generation,visitor_key,window_at,issued,issued_at) VALUES(${scope.shopId},${scope.installationGeneration}::bigint,${visitorKey},${now},${issued.length},${issued}::timestamptz[]) ON CONFLICT(shop_id,installation_generation,visitor_key) DO UPDATE SET window_at=EXCLUDED.window_at,issued=EXCLUDED.issued,issued_at=EXCLUDED.issued_at`.execute(
+          // window_at only moves forward: a web instance whose clock lags must not let the purge drop the row early.
+          await sql`INSERT INTO buyer_visitor_admission(shop_id,installation_generation,visitor_key,window_at,issued,issued_at) VALUES(${scope.shopId},${scope.installationGeneration}::bigint,${visitorKey},${now},${issued.length},${issued}::timestamptz[]) ON CONFLICT(shop_id,installation_generation,visitor_key) DO UPDATE SET window_at=GREATEST(buyer_visitor_admission.window_at,EXCLUDED.window_at),issued=EXCLUDED.issued,issued_at=EXCLUDED.issued_at`.execute(
             tx,
           );
         }
