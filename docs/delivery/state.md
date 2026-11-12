@@ -38,6 +38,7 @@ Updated 12 November 2026. Insignia now runs only on `app.insigniacustomizer.com`
   - web can overwrite the active key's envelope (denial of service only);
   - a millisecond race between a revoke and a signature.
 - Remove the legacy query fields from `INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON` once the pre-PR298 rollback image is retired.
+- Next server deploy (#374): migrations 60 and 61 go on either side of the web image, in the order in the [runtime README](../../deployment/m5-runtime/README.md#canonical-host-candidate-development-transition).
 - Delete the owner-supplied Cloudflare Rules token when the domain work is final; the owner will say when.
 
 **Owner decisions in force (11–12 November 2026).**

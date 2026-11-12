@@ -65,6 +65,14 @@ Sliding per-visitor window (owner decision, 12 November 2026, #348), deployed wi
 2. Apply the changed web grant from [web-runtime-grants.sql](../m8-journey/web-runtime-grants.sql): `UPDATE(window_at,issued,issued_at)` on `public.buyer_visitor_admission`. Both steps come before the new web image, which writes `issued_at`.
 3. Replace web. The previous image still works on the migrated table (it writes only the old columns and counts at most 20), so rollback is web-only.
 
+Drop the legacy visitor count (#374; owner decision, 12 November 2026: no rollback to a web image from before #348). Web images up to `bf512171` still write `buyer_visitor_admission.issued`; the new image writes only `window_at` and `issued_at`. Apply the two migrations one at a time, not as one `dbmate up`:
+1. Apply only `20261112000400_buyer_visitor_issued_optional.sql` through the schema owner (schema 59 to 60). It drops `NOT NULL` from `issued`. The running `bf512171` image keeps working, because it still writes the column.
+2. Replace web with the image that contains #374. It works on schema 60 and 61. Rollback to `bf512171` is still possible until step 3.
+3. Once no web instance runs `bf512171` or older, apply `20261112000500_buyer_visitor_drop_issued.sql` (schema 60 to 61). It drops `issued` with its check. Dropping the column also removes the web role's `UPDATE(issued)`, so no grant or revoke statement runs. [web-runtime-grants.sql](../m8-journey/web-runtime-grants.sql) now reads `UPDATE(window_at,issued_at)`; re-running that line is a no-op.
+4. Record the new expected column-ACL digest: only `issued` leaves; relation, function, membership and schema digests stay unchanged. From here, `bf512171` and older web images can no longer start sessions for a visitor with a trusted address, so they are not rollback targets.
+
+If both migrations are applied before web is replaced, the old image fails every per-visitor session until the new image runs.
+
 ## Cart-line v3 candidate development transition
 
 `native-cart-line-v3-aa3b6166` binds inactive version 1202999689217, the complete 34-version inventory in [native-cart-line-v3-release-binding.json](native-cart-line-v3-release-binding.json) and the exact 14-module [baseline](native-cart-line-v3-module-baseline.json). Canonical hash is `dd76c50a573e7c6cdb7b42555fdbc36e1edda5189c75b876f4f81d92f66c447f`. Source is main merge aa3b6166/tree dc58ec46, which ships everything merged since the functions-renew release, PRs 298–306:
