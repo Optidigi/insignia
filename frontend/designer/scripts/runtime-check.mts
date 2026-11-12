@@ -1179,6 +1179,37 @@ test('verified inline completion retains media expiry and renewal while rejectin
 });
 
 
+test('a cart over the signed-set capacity fails preparation as a cart limit, not an unavailable quote (#335)', async () => {
+  const limit = () => Object.assign(Error('Cart limit reached'), { code: 'CAPACITY_EXCEEDED' });
+  const reviewing = harness({
+    artwork: { upload: async () => ({}) },
+    review: { prepare: async () => { throw limit(); } },
+    cart: { commit: async () => { throw Error('no purchase during preparation'); } },
+  });
+  await reviewing.runtime.commit(true);
+  assert.deepEqual(reviewing.state.commit, { kind: 'failed', reason: 'cart-commit-failed', preparation: true, cartLimit: 'signed-set' });
+  const adding = harness({
+    artwork: { upload: async () => ({}) },
+    cart: { commit: async request => { request.onPreparing?.(); throw limit(); } },
+  });
+  await adding.runtime.commit();
+  assert.deepEqual(adding.state.commit, { kind: 'failed', reason: 'cart-commit-failed', preparation: true, cartLimit: 'signed-set' });
+  const lines = harness({
+    artwork: { upload: async () => ({}) },
+    review: { prepare: async () => { throw Object.assign(limit(), { cartLines: true }); } },
+    cart: { commit: async () => { throw Error('unused'); } },
+  });
+  await lines.runtime.commit(true);
+  assert.deepEqual(lines.state.commit, { kind: 'failed', reason: 'cart-commit-failed', preparation: true, cartLimit: 'cart-lines' });
+  const other = harness({
+    artwork: { upload: async () => ({}) },
+    review: { prepare: async () => { throw Error('Quote unavailable'); } },
+    cart: { commit: async () => { throw Error('unused'); } },
+  });
+  await other.runtime.commit(true);
+  assert.deepEqual(other.state.commit, { kind: 'failed', reason: 'cart-commit-failed', preparation: true });
+});
+
 test('explicit preparation Retry recovers a transient preflight read before quote expiry without accepting', async () => {
   const preparations: CartRequest[] = [];
   const commits: CartRequest[] = [];

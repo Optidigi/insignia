@@ -497,6 +497,8 @@
       "customer_recovery_cartCommitFailed": "Cart commit failed",
       "customer_recovery_cartRejected": "Cart refused",
       "customer_recovery_cartRejectedStock": "Cart refused (stock)",
+      "customer_recovery_cartLimit": "Cart limit reached",
+      "customer_recovery_cartLineLimit": "Cart line limit reached",
       "customer_recovery_undo": "Undo",
       "customer_recovery_dismissNotification": "Dismiss notification",
       "common_actions_save": "Save",

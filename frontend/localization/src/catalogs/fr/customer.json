@@ -233,6 +233,8 @@
     "cartCommitFailed": "Impossible de mettre à jour le panier. Votre personnalisation est toujours disponible. Réessayez.",
     "cartRejected": "Shopify n'a pas pu mettre à jour votre panier. Votre panier n'a pas changé et votre personnalisation est toujours disponible. Réessayez plus tard.",
     "cartRejectedStock": "Le stock est insuffisant pour ajouter cet article au panier. Votre panier n'a pas changé et votre personnalisation est toujours disponible. Réduisez la quantité ou réessayez plus tard.",
+    "cartLimit": "Votre panier a atteint la limite de {{formattedMaxLines}} lignes personnalisées et {{formattedMaxItems}} articles personnalisés. Retirez des articles de votre panier ou réduisez les quantités pour continuer.",
+    "cartLineLimit": "Votre panier contient trop d’articles pour ajouter cette personnalisation. Retirez des articles de votre panier pour continuer.",
     "undo": "Annuler",
     "dismissNotification": "Fermer la notification",
     "repairRequired": "Votre personnalisation doit être vérifiée",

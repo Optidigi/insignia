@@ -228,6 +228,8 @@
     "cartCommitFailed": "Your cart could not be updated. Your design is still here. Try again.",
     "cartRejected": "Shopify couldn't update your cart. Your cart is unchanged and your design is still here. Try again later.",
     "cartRejectedStock": "There isn't enough stock to add this to your cart. Your cart is unchanged and your design is still here. Lower the quantity or try again later.",
+    "cartLimit": "Your cart has reached the customization limit of {{formattedMaxLines}} customized cart lines and {{formattedMaxItems}} customized items. Remove items from your cart or lower quantities to continue.",
+    "cartLineLimit": "Your cart has too many items to customize this design. Remove items from your cart to continue.",
     "undo": "Undo",
     "dismissNotification": "Dismiss notification",
     "repairRequired": "Your customization needs review",

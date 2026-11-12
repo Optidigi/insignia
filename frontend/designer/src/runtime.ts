@@ -211,6 +211,8 @@ export function createDesignerRuntime(
           requestId,
           reason: "cart-commit-failed",
           ...(prepareOnly || reviewing ? {preparation:true} : {}),
+          // The whole cart exceeds one signed set; only removing items or lowering quantities helps.
+          ...(error && typeof error === 'object' && 'code' in error && error.code === 'CAPACITY_EXCEEDED' ? {cartLimit: 'cartLines' in error && error.cartLines === true ? 'cart-lines' as const : 'signed-set' as const} : {}),
         });
       }
     } finally {

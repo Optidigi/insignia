@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash, createPrivateKey, createPublicKey, sign } from 'node:crypto';
 import { test } from 'node:test';
 import type { AcceptedQuoteResult, EntitlementPolicyConfig, QuoteRequest } from '@insignia/application';
-import { acceptQuote } from '@insignia/application';
+import { acceptQuote, BuyerRejectedError } from '@insignia/application';
 import { verifyLineSetV3 } from '@insignia/cart-authorization';
 import type { CustomizationGroup, PublishedConfig } from '@insignia/domain';
 import { createQuoteAuthorityPorts } from '../src/server/quote-composition.ts';
@@ -272,6 +272,21 @@ test('production quote composition rejects unsupported prices and signs complete
       () => ports.authorization.admit({ economics: economics as never, capacity: request.capacity }),
       /linear/,
     );
+  // #335: over-capacity candidates are buyer-actionable; an empty candidate is a defect, not a cart limit.
+  assert.throws(
+    () =>
+      ports.authorization.admit({ economics: linear as never, capacity: { ordinaryLineCount: 200, inputBytes: 100 } }),
+    (error: unknown) =>
+      error instanceof BuyerRejectedError && error.code === 'CAPACITY_EXCEEDED' && error.reason === 'CART_LINES',
+  );
+  assert.throws(
+    () =>
+      ports.authorization.admit({
+        economics: { ...linear, lines: [], groups: [] } as never,
+        capacity: request.capacity,
+      }),
+    (error: unknown) => error instanceof Error && !(error instanceof BuyerRejectedError),
+  );
   assert.equal(signatures, 1);
   assert.deepEqual(await acceptQuote(request, ports), result);
   // One fresh pass before the signing fence; completed replay reads nothing.

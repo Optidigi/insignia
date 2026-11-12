@@ -312,6 +312,136 @@ test('empty or malformed quote selections stop before proposal credential/provid
   }
 });
 
+test('a cart over one signed set is 422 CAPACITY_EXCEEDED stating the limit, before proposal work (#335)', async () => {
+  let reached = 0;
+  const services = buyerFixture({
+    guest: {
+      verify: async () => ({ kind: 'guest', shopId: 'tenant', installationGeneration: '1', ownerHash: 'f'.repeat(64) }),
+    },
+    store: coreFixture({
+      buyers: {
+        getSession: async () => ({ sessionId: 'synthetic', expiresAt: new Date('2099-01-01T00:00:00Z') }),
+        admitRequest: async () => {},
+      },
+    }).buyers,
+    propose: async () => {
+      reached++;
+      throw new BuyerRejectedError('CAPACITY_EXCEEDED');
+    },
+    renew: async () => {
+      reached++;
+      throw new Error('synthetic reached renewal');
+    },
+  });
+  const group = (variants: { variantId: string; quantity: number }[]) => ({
+    productId: '111',
+    configRevisionId: 'revision',
+    revisionContentHash: 'a'.repeat(64),
+    design: {
+      placements: [
+        { placementId: 'front', methodId: 'print', stepId: 'small', artwork: { kind: 'deferred', intentId: 'later' } },
+      ],
+      options: [],
+    },
+    variants,
+  });
+  const variants = (count: number, quantity = 1) =>
+    Array.from({ length: count }, (_, index) => ({ variantId: String(index + 1), quantity }));
+  const body = (groups: unknown[]) => ({
+    capability: 'synthetic.signature',
+    country: 'US',
+    marketId: '42',
+    capacity: { ordinaryLineCount: 0, inputBytes: 100 },
+    groups,
+  });
+  const expectCapacity = async (response: Response) => {
+    assert.equal(response.status, 422);
+    const error = record(await response.json());
+    assert.equal(error.code, 'CAPACITY_EXCEEDED');
+    assert.match(String(error.message), /32\b/);
+    assert.match(String(error.message), /10,000/);
+    assert.ok(error.requestId);
+    assert.equal(error.retryable, undefined);
+  };
+  const seen: { value: BuyerFailureDiagnostic; level: string }[] = [];
+  await expectCapacity(
+    await handleBuyerRequest(post(body([group(variants(1))])), services, 'quote-proposals', (value, level) =>
+      seen.push({ value, level }),
+    ),
+  );
+  assert.deepEqual(
+    seen.map(({ value, level }) => ({ errorClass: value.errorClass, level })),
+    [{ errorClass: 'CapacityExceeded', level: 'info' }],
+  );
+  reached = 0;
+  for (const groups of [
+    [group(variants(16)), group(variants(17))],
+    [group(variants(33))],
+    [group(variants(2, 6000))],
+  ]) {
+    await expectCapacity(await handleBuyerRequest(post(body(groups)), services, 'quote-proposals', () => {}));
+    await expectCapacity(
+      await handleBuyerRequest(
+        post(
+          { ...body(groups), idempotencyKey: '11111111-1111-4111-8111-111111111111' },
+          '/v1/quotes/22222222-2222-4222-8222-222222222222/renew',
+        ),
+        services,
+        'quotes/22222222-2222-4222-8222-222222222222/renew',
+        () => {},
+      ),
+    );
+  }
+  assert.equal(reached, 0, 'an oversized request never reaches proposal or renewal composition');
+
+  // More than 200 cart lines in total: the same code with its own reason and copy, not 32 / 10,000.
+  const expectCartLines = async (response: Response) => {
+    assert.equal(response.status, 422);
+    const error = record(await response.json());
+    assert.equal(error.code, 'CAPACITY_EXCEEDED');
+    assert.deepEqual(error.details, { reason: 'CART_LINES' });
+    assert.doesNotMatch(String(error.message), /\b32\b|10,000/);
+    assert.match(String(error.message), /too many/);
+  };
+  for (const [groups, ordinaryLineCount] of [
+    [[group(variants(11))], 190],
+    [[group(variants(1))], 201],
+  ] as const)
+    await expectCartLines(
+      await handleBuyerRequest(
+        post({ ...body([...groups]), capacity: { ordinaryLineCount, inputBytes: 100 } }),
+        services,
+        'quote-proposals',
+        () => {},
+      ),
+    );
+  assert.equal(reached, 0);
+  await expectCartLines(
+    await handleBuyerRequest(
+      post(body([group(variants(1))])),
+      {
+        ...services,
+        propose: async () => {
+          throw new BuyerRejectedError('CAPACITY_EXCEEDED', 'synthetic', 'CART_LINES');
+        },
+      },
+      'quote-proposals',
+      () => {},
+    ),
+  );
+
+  // A capacity issue alongside any other defect is a malformed request.
+  for (const malformed of [
+    { ...body([group(variants(33))]), country: 'us' },
+    { ...body([group(variants(2, 6000))]), marketId: 'x' },
+  ]) {
+    const response = await handleBuyerRequest(post(malformed), services, 'quote-proposals', () => {});
+    assert.equal(response.status, 400);
+    assert.equal(record(await response.json()).code, 'INVALID_REQUEST');
+  }
+  assert.equal(reached, 0);
+});
+
 /** Shopify's app proxy turns every app 5xx into a bare 500, so only 4xx carry `code` and `Retry-After` (#336). */
 const failure = async (error: unknown) => {
   const seen: { value: BuyerFailureDiagnostic; level: string }[] = [];

@@ -35,7 +35,7 @@ interface LocalizationTestApi {
   reviewRequests(): number;
   setQuoteReview(review: Omit<DesignerQuoteReview, "intentId">): void;
   resolveReview(expiresAt: string): void;
-  rejectReview(): void;
+  rejectReview(code?: string): void;
   selectedQuoteGroups(): string[];
   setLocale(locale: string): void;
   setMethod(method: { label: string; description: string }): void;
@@ -138,7 +138,8 @@ function CustomerLocalizationFixture() {
         if (latest) setQuoteReview({ ...review, intentId: latest.request.idempotencyKey });
       },
       resolveReview: (expiresAt) => reviews.current.at(-1)?.resolve({ expiresAt }),
-      rejectReview: () => reviews.current.at(-1)?.reject(new Error("fixture-review-failure")),
+      rejectReview: (code) =>
+        reviews.current.at(-1)?.reject(Object.assign(new Error("fixture-review-failure"), code ? { code } : {})),
       selectedQuoteGroups: () => [...selectedGroups.current],
       commitRequests: () => commits.current.map(({ requestId, idempotencyKey }) => ({ requestId, idempotencyKey })),
       languagePreferenceChanges: () => [...languagePreferences.current],

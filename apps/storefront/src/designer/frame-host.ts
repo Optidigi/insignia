@@ -308,6 +308,10 @@ export function createDesignerFrame(input: {
           ...(error && typeof error === 'object' && 'code' in error && error.code === 'SESSION_RATE_LIMITED'
             ? { sessionLimited: true, ...('retryAfter' in error ? { retryAfter: error.retryAfter } : {}) }
             : {}),
+          // #335: the cart is over one signed set (pre-check or the server's 422); only fewer items help.
+          ...(error && typeof error === 'object' && 'code' in error && error.code === 'CAPACITY_EXCEEDED'
+            ? { cartLimit: 'cartLines' in error && error.cartLines === true ? 'cart-lines' : 'signed-set' }
+            : {}),
           ...(data.action === 'commit' && error && typeof error === 'object' && 'cartRejected' in error
             ? {
                 cartRejected: true,

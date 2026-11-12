@@ -315,6 +315,9 @@ window.addEventListener('message', (event) => {
                   : {}),
               }
             : {}),
+          ...(event.data.cartLimit === 'signed-set' || event.data.cartLimit === 'cart-lines'
+            ? { code: 'CAPACITY_EXCEEDED', ...(event.data.cartLimit === 'cart-lines' ? { cartLines: true } : {}) }
+            : {}),
           ...(event.data.acceptanceOutcome === 'declined' ? { acceptanceOutcome: 'declined' as const } : {}),
           ...(event.data.cartRejected === true
             ? {

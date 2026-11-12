@@ -1,3 +1,4 @@
+import { buyerCartCapacityExceeded } from '@insignia/contracts';
 import { createCustomerTranslator } from '@insignia/ui-localization/customer';
 import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quote-review';
 import type { CartReceipt, CartRequest, DesignerPorts } from '../../../../frontend/designer/src/runtime';
@@ -28,6 +29,15 @@ type Prepared = {
 };
 const signature = (request: CartRequest) =>
   JSON.stringify([request.design, request.artworks.map((artwork) => artwork.id)]);
+/** Retained and edited groups share one signed set. The Designer names the limit for this code, as for the 422 (#335). */
+function assertCartCapacity(groups: readonly DesiredGroup[], ordinaryLineCount: number) {
+  const exceeded = buyerCartCapacityExceeded(groups, ordinaryLineCount);
+  if (exceeded)
+    throw Object.assign(new Error('Cart customization limit reached'), {
+      code: 'CAPACITY_EXCEEDED',
+      ...(exceeded === 'CART_LINES' ? { cartLines: true } : {}),
+    });
+}
 export function createLiveDesignerPorts(input: {
   source: BuyerConfig;
   productId: string;
@@ -230,6 +240,7 @@ export function createLiveDesignerPorts(input: {
         const saving = custody.save(request.design.id, group, previous, signal);
         const proposing = refreshGroups(groups, signal).then(async (labels) => {
           signal.throwIfAborted();
+          assertCartCapacity(groups, observed.cart.ordinary.length);
           const proposal = await api.private<QuoteProposal>(
             'quote-proposals',
             {

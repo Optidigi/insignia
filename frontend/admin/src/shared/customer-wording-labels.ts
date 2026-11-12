@@ -244,6 +244,8 @@ export const customerWordingLabels = {
   'customer:recovery.cartCommitFailed': 'settings:translations.fields.customer_recovery_cartCommitFailed',
   'customer:recovery.cartRejected': 'settings:translations.fields.customer_recovery_cartRejected',
   'customer:recovery.cartRejectedStock': 'settings:translations.fields.customer_recovery_cartRejectedStock',
+  'customer:recovery.cartLimit': 'settings:translations.fields.customer_recovery_cartLimit',
+  'customer:recovery.cartLineLimit': 'settings:translations.fields.customer_recovery_cartLineLimit',
   'customer:recovery.undo': 'settings:translations.fields.customer_recovery_undo',
   'customer:recovery.dismissNotification': 'settings:translations.fields.customer_recovery_dismissNotification',
   'customer:recovery.repairRequired': 'settings:translations.fields.customer_recovery_repairRequired',
