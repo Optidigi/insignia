@@ -1,0 +1,20 @@
+{
+  "version": "customer-email-received-authentication-v1",
+  "classification": "OWNER_SUPPLIED_RECEIVED_HEADERS_SUMMARY",
+  "messageId": "<lubIW02KieKU8MqVGX0zxlsoqHosdDYpQhoH@insigniacustomizer.com>",
+  "sentAt": "2026-11-11T22:02:08Z",
+  "receivedAt": "2026-11-11T22:02:14Z",
+  "receiver": "Microsoft 365 (mx.microsoft.com), development recipient mailbox",
+  "from": "noreply@insigniacustomizer.com",
+  "spf": { "result": "pass", "mailFrom": "cf-bounce.insigniacustomizer.com" },
+  "dkim": [
+    { "result": "pass", "d": "insigniacustomizer.com", "aligned": true },
+    { "result": "pass", "d": "cloudflare-email.net" }
+  ],
+  "dmarc": { "result": "pass", "action": "none", "headerFrom": "insigniacustomizer.com" },
+  "compauth": { "result": "pass", "reason": "100" },
+  "spamConfidenceLevel": 1,
+  "delivery": "Inbox",
+  "helo": "ba-h.cloudflare-email.net",
+  "note": "Summary only; full headers are not stored in the repository."
+}
