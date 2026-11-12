@@ -18,7 +18,14 @@ export type CartApplication = {
   status: 'applied' | 'review_required';
   cart: CartSnapshot | null;
   recovery?: 'late_effects_possible';
-  reason?: 'cart_changed' | 'mutation_unresolved' | 'vector_mismatch' | 'cart_unavailable' | 'busy';
+  /**
+   * `rejected`: Shopify refused a write with a 4xx (typically stock) and the cart is back at its starting
+   * customized lines, so nothing is left pending. `detail` carries Shopify's own explanation when it gave one.
+   */
+  reason?: 'cart_changed' | 'mutation_unresolved' | 'vector_mismatch' | 'cart_unavailable' | 'busy' | 'rejected';
+  /** The HTTP status of the refusal behind `rejected` (422 is Shopify's stock/limit refusal). */
+  refusal?: number;
+  detail?: string;
 };
 /** Per-line v3 authorization (layout owner: packages/cart-authorization/src/line-v3.ts). */
 const LINE = '_insignia_line_v3';
@@ -158,10 +165,6 @@ const digest = async (value: string) =>
   Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))), (v) =>
     v.toString(16).padStart(2, '0'),
   ).join('');
-const otherAttributes = (cart: CartSnapshot) =>
-  JSON.stringify(
-    stableProperties(Object.fromEntries(Object.entries(cart.attributes).filter(([key]) => key !== LEGACY_QUOTE))),
-  );
 const logicalState = (cart: CartSnapshot) => JSON.stringify([cart.currency, normalized(cart.items), cart.attributes]);
 export type CartApplicationLock = { run<T>(action: () => Promise<T>): Promise<T | null> };
 let samePageLocked = false;
@@ -218,7 +221,30 @@ export function createAjaxCartAdapter({
       headers: { Accept: 'application/json', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
-    if (!response.ok) throw new Error('Cart request failed');
+    if (!response.ok) {
+      // A 4xx refusal is a definite outcome; Shopify explains it (e.g. stock) in `description`, shown as plain
+      // text without control or bidi/format characters.
+      const failure: unknown = await bounded(response).then(JSON.parse, () => null);
+      const text =
+        failure && typeof failure === 'object' && 'description' in failure && typeof failure.description === 'string'
+          ? failure.description
+              .replace(/\p{Cf}+/gu, '')
+              .replace(/\p{Cc}+/gu, ' ')
+              .trim()
+              .slice(0, 300)
+          : '';
+      throw Object.assign(new Error('Cart request failed'), {
+        status: response.status,
+        ...(text ? { description: text } : {}),
+      });
+    }
+    const parsed: unknown = JSON.parse(await bounded(response));
+    if (parsed && typeof parsed === 'object' && 'errors' in parsed && parsed.errors)
+      throw new Error('Cart response error');
+    return parsed;
+  }
+  /** Reads a response body as text, refusing more than 1 MiB. */
+  async function bounded(response: Response): Promise<string> {
     if (!response.body) throw new Error('Missing cart response');
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
@@ -235,11 +261,7 @@ export function createAjaxCartAdapter({
         }
         bodyText += decoder.decode(value, { stream: true });
       }
-      bodyText += decoder.decode();
-      const parsed: unknown = JSON.parse(bodyText);
-      if (parsed && typeof parsed === 'object' && 'errors' in parsed && parsed.errors)
-        throw new Error('Cart response error');
-      return parsed;
+      return bodyText + decoder.decode();
     } finally {
       reader.releaseLock();
     }
@@ -327,9 +349,7 @@ export function createAjaxCartAdapter({
           return { status: 'review_required', cart: current, reason: 'mutation_unresolved' };
       }
       if (abandoned.length > 4) return { status: 'review_required', cart: current, reason: 'mutation_unresolved' };
-      const ordinary = normalized(current.ordinary),
-        foreign = otherAttributes(current),
-        currency = current.currency;
+      const currency = current.currency;
       // v3 writes no cart attribute; a leftover v2 quote attribute is cleared with the removal.
       const attrs = { ...current.attributes };
       delete attrs[LEGACY_QUOTE];
@@ -346,49 +366,189 @@ export function createAjaxCartAdapter({
         };
       }
       saveIntent(pending); // Closed digest-only intent is durable before any mutation.
-      const vectorAlready = normalized(current.customized) === normalized(desired);
-      const legacyQuote = current.attributes[LEGACY_QUOTE] !== undefined;
-      if ((current.customized.length && !vectorAlready) || legacyQuote) {
+      const own = pending;
+      // Add before remove (#339): a refused or interrupted add never costs the buyer the lines they had.
+      // Old and new sets side by side are a tolerated transient state (spec §6.3: cart interaction stays
+      // possible, checkout requires one set). A line already carrying a desired carrier is kept and only
+      // resized: adding identical properties again would merge into it.
+      const start = current;
+      const startKeys = new Set(start.customized.map((line) => line.key));
+      const sameLine = (line: CartLine, bucket: CartBucket) =>
+        line.variantId === bucket.variantId &&
+        line.sellingPlan === null &&
+        JSON.stringify(line.properties) === JSON.stringify(bucket.properties);
+      const keptLine = (bucket: CartBucket) => start.customized.find((line) => sameLine(line, bucket));
+      const kept = new Map(
+        desired.flatMap((bucket) => {
+          const line = keptLine(bucket);
+          return line ? [[line.key, bucket.quantity] as const] : [];
+        }),
+      );
+      const additions = desired.filter((bucket) => !keptLine(bucket));
+      const legacyQuote = start.attributes[LEGACY_QUOTE] !== undefined;
+      const items = (buckets: CartBucket[]) => ({
+        items: buckets.map((bucket) => ({
+          id: bucket.variantId,
+          quantity: bucket.quantity,
+          properties: bucket.properties,
+        })),
+      });
+      type Refusal = { status: number; detail?: string };
+      /** A 4xx is a definite refusal; any other failure (network, abort, timeout) stays unknown and propagates. */
+      const refusal = (error: unknown): Refusal => {
+        const status = error && typeof error === 'object' && 'status' in error ? Number(error.status) : 0;
+        if (status < 400 || status >= 500) throw error;
+        return error && typeof error === 'object' && 'description' in error && typeof error.description === 'string'
+          ? { status, detail: error.description }
+          : { status };
+      };
+      /** Buckets this application sends with add.js; only their lines are ever removed by compensation. */
+      let created: CartBucket[] = additions;
+      /** Old lines replaced in place by the stock fallback, newest last. */
+      const swapped: { line: CartLine; bucket: CartBucket }[] = [];
+      // After a definite failure, undo this application's own writes (B1): swapped lines get their old carrier
+      // back, then the lines it added go in one write. If any swapped line cannot be restored, nothing is removed
+      // (B3). Only a cart whose customized lines are back at the start settles the intent; anything else stays
+      // unresolved for explicit repair.
+      const failed = async (reason: 'rejected' | 'vector_mismatch', refused?: Refusal): Promise<CartApplication> => {
+        let restored = false;
+        try {
+          let now = await read();
+          let lost = false;
+          for (const { line, bucket } of swapped.reverse()) {
+            const replaced = now.customized.find((candidate) => sameLine(candidate, bucket));
+            if (!replaced) {
+              lost = true;
+              continue;
+            }
+            now = snapshot(
+              await request('cart/change.js', {
+                id: replaced.key,
+                quantity: line.quantity,
+                properties: line.properties,
+              }),
+            );
+          }
+          swapped.length = 0;
+          if (lost) throw new Error('A swapped line could not be restored');
+          const added = now.customized.filter(
+            (line) => !startKeys.has(line.key) && created.some((bucket) => sameLine(line, bucket)),
+          );
+          if (added.length)
+            now = snapshot(
+              await request('cart/update.js', { updates: Object.fromEntries(added.map((line) => [line.key, 0])) }),
+            );
+          current = now;
+          restored = normalized(now.customized) === normalized(start.customized);
+        } catch {
+          /* The compensation's own outcome is unknown, or it could not restore every line. */
+        }
+        if (!restored) return { status: 'review_required', cart: current, reason: 'mutation_unresolved' };
+        settle(own);
+        return {
+          status: 'review_required',
+          cart: current,
+          reason,
+          ...(refused ? { refusal: refused.status } : {}),
+          ...(refused?.detail ? { detail: refused.detail } : {}),
+        };
+      };
+      let removals = start.customized.filter((line) => !kept.has(line.key));
+      if (additions.length) {
         dispatched = true;
-        // update.js returns the complete post-mutation cart; it is the removal witness, so no separate
-        // cart.js read is needed. Only a leftover v2 quote attribute is cleared here, in the same request.
-        current = snapshot(
-          await request('cart/update.js', {
-            updates: Object.fromEntries((vectorAlready ? [] : current.customized).map((item) => [item.key, 0])),
-            ...(legacyQuote ? { attributes: { [LEGACY_QUOTE]: '' } } : {}),
-          }),
-        );
-        if (
-          current.attributes[LEGACY_QUOTE] !== undefined ||
-          (!vectorAlready && current.customized.length) ||
-          current.currency !== currency ||
-          normalized(current.ordinary) !== ordinary ||
-          otherAttributes(current) !== foreign
-        )
-          return { status: 'review_required', cart: current, reason: 'cart_changed' };
+        let refused: Refusal | undefined;
+        try {
+          await request('cart/add.js', items(additions));
+        } catch (error) {
+          refused = refusal(error);
+        }
+        if (!refused) {
+          try {
+            current = await read();
+          } catch (error) {
+            return failed('rejected', refusal(error));
+          }
+          // Remove nothing unless the witness shows exactly the added lines beside the untouched old ones.
+          if (normalized(current.customized) !== normalized([...start.customized, ...additions]))
+            return failed('vector_mismatch');
+        } else {
+          // Shopify checks stock against the variant's whole cart quantity, so a re-signed set needs the old
+          // lines' stock twice. Fall back once to replacing old lines of the same variant in place (change.js
+          // keeps the line and needs stock only for an increase), after undoing any partial add. The largest
+          // lines pair first and decreases run before increases, so a swap rarely needs stock still held elsewhere.
+          const byQuantity = <T extends { quantity: number }>(list: T[]) =>
+            [...list].sort((a, b) => b.quantity - a.quantity);
+          const pool = byQuantity(removals);
+          const pairs: { line: CartLine; bucket: CartBucket }[] = [];
+          const rest: CartBucket[] = [];
+          for (const bucket of byQuantity(additions)) {
+            const index = pool.findIndex((line) => line.variantId === bucket.variantId && line.sellingPlan === null);
+            if (index < 0) rest.push(bucket);
+            else pairs.push({ line: pool.splice(index, 1)[0] as CartLine, bucket });
+          }
+          pairs.sort((a, b) => a.bucket.quantity - a.line.quantity - (b.bucket.quantity - b.line.quantity));
+          if (refused.status !== 422 || !pairs.length) return failed('rejected', refused);
+          const undone = await failed('rejected', refused);
+          if (undone.reason !== 'rejected') return undone;
+          saveIntent(own); // The same intent covers the fallback.
+          created = rest;
+          try {
+            for (const pair of pairs) {
+              await request('cart/change.js', {
+                id: pair.line.key,
+                quantity: pair.bucket.quantity,
+                properties: pair.bucket.properties,
+              });
+              swapped.push(pair);
+            }
+            if (rest.length) await request('cart/add.js', items(rest));
+            current = await read();
+          } catch (error) {
+            const again = refusal(error);
+            return failed('rejected', again.detail ? again : { ...again, detail: refused.detail });
+          }
+          const expected = [
+            ...start.customized.map((line) => pairs.find((pair) => pair.line === line)?.bucket ?? line),
+            ...rest,
+          ];
+          if (normalized(current.customized) !== normalized(expected)) return failed('vector_mismatch');
+          removals = pool;
+        }
       }
-      if (desired.length && !vectorAlready) {
+      const updates = Object.fromEntries([
+        ...removals.map((line) => [line.key, 0] as const),
+        ...start.customized.flatMap((line) => {
+          const quantity = kept.get(line.key);
+          return quantity !== undefined && quantity !== line.quantity ? [[line.key, quantity] as const] : [];
+        }),
+      ]);
+      if (Object.keys(updates).length || legacyQuote) {
         dispatched = true;
-        await request('cart/add.js', {
-          items: desired.map((bucket) => ({
-            id: bucket.variantId,
-            quantity: bucket.quantity,
-            properties: bucket.properties,
-          })),
-        });
-        current = await read();
+        try {
+          // update.js returns the complete post-mutation cart, so it is its own witness. Only a leftover v2
+          // quote attribute is cleared here, in the same request.
+          current = snapshot(
+            await request('cart/update.js', {
+              updates,
+              ...(legacyQuote ? { attributes: { [LEGACY_QUOTE]: '' } } : {}),
+            }),
+          );
+        } catch (error) {
+          return failed('rejected', refusal(error));
+        }
       }
+      // An old line that survived an acknowledged removal leaves two signed sets: explicit repair (NB1).
+      if (desired.length && current.customized.some((line) => prefixOf(line.properties[LINE]) !== quote))
+        return { status: 'review_required', cart: current, reason: 'mutation_unresolved' };
+      // Every write above was acknowledged: nothing is in flight. The customized lines are what this
+      // application owns; ordinary lines and foreign attributes may change meanwhile (theme drawer, other tab).
+      settle(own);
       if (
         current.attributes[LEGACY_QUOTE] !== undefined ||
         current.currency !== currency ||
-        normalized(current.customized) !== normalized(desired) ||
-        normalized(current.ordinary) !== ordinary ||
-        otherAttributes(current) !== foreign
+        normalized(current.customized) !== normalized(desired)
       )
         return { status: 'review_required', cart: current, reason: 'vector_mismatch' };
-      if ((await digest(logicalState(current))) !== goal)
-        return { status: 'review_required', cart: current, reason: 'vector_mismatch' };
-      settle(pending);
       return {
         status: 'applied',
         cart: current,

@@ -301,6 +301,14 @@ window.addEventListener('message', (event) => {
           ...(event.data.reviewRequired === true ? { reviewRequired: true, expiresAt: event.data.expiresAt } : {}),
           status: [403, 404, 410, 422].includes(event.data.status) ? event.data.status : undefined,
           ...(event.data.acceptanceOutcome === 'declined' ? { acceptanceOutcome: 'declined' as const } : {}),
+          ...(event.data.cartRejected === true
+            ? {
+                cartRejected: true,
+                stock: event.data.stock === true,
+                // Shopify's own explanation, shown as plain text only.
+                ...(typeof event.data.detail === 'string' ? { detail: event.data.detail.slice(0, 300) } : {}),
+              }
+            : {}),
         }),
       );
   }

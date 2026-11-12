@@ -457,8 +457,43 @@ export function createLiveDesignerPorts(input: {
         request.signal.throwIfAborted();
         request.onMutating?.();
         const applied = await cart.apply(accepted.buckets, { expectedFingerprint: review?.baseline.fingerprint ?? '' });
-        if (applied.status !== 'applied' || applied.recovery || !applied.cart)
+        // `late_effects_possible` only repeats that an earlier unknown write was retired by explicit repair:
+        // the cart is at the reviewed state, and its tombstone still refuses a late carrier.
+        if (applied.status !== 'applied' || !applied.cart) {
+          const reason = applied.reason;
+          if (
+            reason === 'cart_changed' ||
+            reason === 'vector_mismatch' ||
+            reason === 'mutation_unresolved' ||
+            reason === 'rejected'
+          ) {
+            // Never reapply this accepted set: the baseline is stale, its outcome unknown or Shopify refused it.
+            acceptedAttempts.delete(request.idempotencyKey);
+            prepared.delete(request.idempotencyKey);
+            issuanceAttempted.delete(request.idempotencyKey);
+            issuedSignatures.delete(request.idempotencyKey);
+          }
+          if (reason === 'mutation_unresolved') {
+            // An unknown write blocks this tab until the buyer confirms a repair, even with no visible line (#339).
+            input.onNeedsReview?.(false, false, true, request);
+          } else if (reason === 'cart_changed' || reason === 'vector_mismatch') {
+            request.onPreparing?.();
+            const presentation = await prepare(request);
+            throw Object.assign(new Error('Cart changed; review the refreshed quote'), {
+              reviewRequired: true,
+              ...presentation,
+            });
+          } else if (reason === 'rejected') {
+            // A definite refusal (typically stock) with the buyer's lines intact: say so, never "uncertain".
+            throw Object.assign(new Error('Shopify refused the cart update'), {
+              cartRejected: true,
+              // Only Shopify's 422 is a stock or limit refusal; other 4xx get neutral wording.
+              stock: applied.refusal === 422,
+              ...(applied.detail ? { detail: applied.detail } : {}),
+            });
+          }
           throw new Error('Cart needs review; an uncertain update is never retried automatically');
+        }
         const selected =
           review?.group ??
           buildBuyerDesigner(source, { locale: input.locale, storeName: input.storeName }).desired(request.design);
@@ -536,7 +571,8 @@ export function createLiveDesignerPorts(input: {
     | undefined;
   async function prepareRemoval(target?: DesiredGroup): Promise<DesignerQuoteReview> {
     const baseline = await cart.read();
-    if (!baseline.customized.length) throw new Error('Customized cart changed');
+    // Removing everything stays available with no visible line: it retires an unknown earlier write (#339).
+    if (target && !baseline.customized.length) throw new Error('Customized cart changed');
     let groups: DesiredGroup[] = [];
     if (target) {
       const owned = await api.private<{ groups: DesiredGroup[] }>('cart-state', { lines: baseline.customized });
@@ -598,8 +634,8 @@ export function createLiveDesignerPorts(input: {
       expectedFingerprint: reviewed.baseline.fingerprint,
       repair: buckets.length === 0,
     });
-    if (result.status !== 'applied' || result.recovery || !result.cart)
-      throw new Error('Cart removal remains unresolved');
+    // Explicit removal is how an unknown earlier write is retired; its tombstone stays for late carriers.
+    if (result.status !== 'applied' || !result.cart) throw new Error('Cart removal remains unresolved');
     if (reviewed.accepted)
       await api
         .private(`cart-applications/${reviewed.accepted.applicationId}/confirm`, {

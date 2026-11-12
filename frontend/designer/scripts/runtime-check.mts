@@ -992,6 +992,20 @@ test('terminal decline retires only the failed attempt; unchanged intent needs f
   assert.equal(requests[1]?.idempotencyKey,preparations[1]?.idempotencyKey);
 });
 
+test('a definite cart refusal shows its own message and lets Review prepare again', async () => {
+  const preparations: CartRequest[] = [];
+  let refusal: Record<string, unknown> = {cartRejected:true,stock:true,detail:'Only 2 left.'};
+  const h = harness({artwork:{upload:async()=>{throw Error('unused')}},review:{prepare:async request=>{preparations.push(request)}},cart:{commit:async()=>{throw Object.assign(Error('refused'),refusal);}}});
+  await h.runtime.commit(true); await h.runtime.commit();
+  assert.deepEqual(h.state.commit, { kind: 'failed', reason: 'cart-rejected', stock: true, detail: 'Only 2 left.' });
+  // A refusal that is not about stock keeps neutral wording (NB3).
+  refusal = {cartRejected:true,stock:false};
+  await h.runtime.commit();
+  assert.deepEqual(h.state.commit, { kind: 'failed', reason: 'cart-rejected' });
+  await h.runtime.commit(true);
+  assert.equal(preparations.length, 2, 'Review is not a no-op after a refusal');
+});
+
 test('late declined response from a canceled commit cannot retire the resumed attempt', async () => {
   let reject!: (error: Error) => void;
   const requests: CartRequest[] = [];

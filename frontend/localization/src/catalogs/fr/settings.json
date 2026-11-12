@@ -497,6 +497,8 @@
       "customer_recovery_colorItemsRemoved": "Articles de cette couleur supprimés",
       "customer_recovery_itemsRestored": "Articles rétablis.",
       "customer_recovery_cartCommitFailed": "Impossible de mettre à jour le panier. Votre personnalisation est toujours disponible. Réessayez.",
+      "customer_recovery_cartRejected": "Panier refusé",
+      "customer_recovery_cartRejectedStock": "Panier refusé (stock)",
       "customer_recovery_undo": "Annuler",
       "customer_recovery_dismissNotification": "Fermer la notification",
       "common_actions_save": "Enregistrer",

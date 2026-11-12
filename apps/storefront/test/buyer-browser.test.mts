@@ -2062,6 +2062,72 @@ test('missing critical physical production facts require repair without issuing 
   );
 });
 
+test('unavailable-state removal succeeds in a tab whose earlier unknown write was retired (N2)', async () => {
+  const server = await createServer({
+    plugins: [selectedFrameAssets()],
+    server: { host: '127.0.0.1', port: 0, strictPort: true, watch: null },
+  });
+  let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
+  try {
+    await server.listen();
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    const origin = `http://127.0.0.1:${serverPort(server.httpServer)}`;
+    await prepareSelectedPage(page, origin);
+    let items: AjaxItem[] = [
+      { key: 'custom', variant_id: 222, quantity: 1, properties: { _insignia_line_v3: v3Carrier('222') } },
+    ];
+    let updates = 0;
+    await page.route('**/cart.js', (route) => route.fulfill({ json: { items, attributes: {}, currency: 'EUR' } }));
+    await page.route('**/cart/update.js', (route) => {
+      updates++;
+      const body = ajaxBody(route.request().postDataJSON());
+      items = items.filter((item) => body.updates?.[item.key] !== 0);
+      return route.fulfill({ json: { items, attributes: {}, currency: 'EUR' } });
+    });
+    // No configuration at all: only the unavailable Designer's observed removal is offered.
+    await page.route('**/apps/insignia/v1/config**', (route) => route.fulfill({ status: 503, json: {} }));
+    await installDesignBoundary(page);
+    await page.goto(origin);
+    await page.evaluate(() => {
+      // An unrelated abandoned set's tombstone stays for the session (late_effects_possible on every success).
+      const tombstone = 'c'.repeat(64);
+      sessionStorage.setItem(
+        'insignia-cart-intent-v1',
+        JSON.stringify({
+          version: 1,
+          phase: 'abandoned',
+          before: tombstone,
+          goal: tombstone,
+          quote: tombstone,
+          abandoned: [tombstone],
+        }),
+      );
+      sessionStorage.setItem('insignia-cart-unresolved-v2', '1');
+      const buyer = document.createElement('insignia-buyer');
+      buyer.setAttribute('product-id', '111');
+      buyer.setAttribute('country', 'NL');
+      buyer.setAttribute('market-id', '42');
+      document.body.append(buyer);
+    });
+    await page.locator('insignia-buyer').getByRole('button', { name: 'Customize this product' }).click();
+    const ui = page.frameLocator('iframe:not([hidden])');
+    await ui.getByRole('button', { name: 'Review removing all customized items', exact: true }).click();
+    await ui.getByRole('button', { name: 'Confirm cart update', exact: true }).click();
+    await page
+      .locator('dialog[open]')
+      .waitFor({ state: 'detached', timeout: 5000 })
+      .catch(() => {});
+    assert.equal(updates, 1);
+    assert.deepEqual(items, []);
+    assert.equal(await ui.getByRole('alert').count(), 0, 'the confirmed removal is not reported as a failure');
+    assert.equal(await page.locator('dialog[open]').count(), 0, 'the Designer closes after the removal');
+  } finally {
+    await browser?.close();
+    await server.close();
+  }
+});
+
 test('lost optional captured product preview keeps valid production choices and explicit authoritative quote review available', async () => {
   const cfg = structuredClone(config);
   cfg.imageUrls = {};

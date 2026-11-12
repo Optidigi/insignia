@@ -227,6 +227,8 @@
     "colorItemsRemoved": "Articoli di {{colorName}} rimossi.",
     "itemsRestored": "Articoli ripristinati.",
     "cartCommitFailed": "Non è stato possibile aggiornare il carrello. La personalizzazione è ancora disponibile. Riprova.",
+    "cartRejected": "Shopify non è riuscito ad aggiornare il carrello. Il carrello non è cambiato e la personalizzazione è ancora disponibile. Riprova più tardi.",
+    "cartRejectedStock": "Non c'è abbastanza disponibilità per aggiungere questo articolo al carrello. Il carrello non è cambiato e la personalizzazione è ancora disponibile. Riduci la quantità o riprova più tardi.",
     "undo": "Annulla",
     "dismissNotification": "Chiudi la notifica",
     "repairRequired": "La tua personalizzazione richiede una verifica",

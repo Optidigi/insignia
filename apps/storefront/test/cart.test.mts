@@ -52,6 +52,7 @@ function provider(
   let items = structuredClone(initial);
   const attributes = structuredClone(initialAttributes);
   const requests: ProviderCall[] = [];
+  let added = 0; // Shopify line keys stay unique across adds
   const fetchImpl: typeof fetch = async (input, init = {}) => {
     const url = requestUrl(input);
     const body = fetchBody(init);
@@ -61,13 +62,35 @@ function provider(
       if (result) return result;
     }
     if (url.endsWith('cart/update.js')) {
-      if (body.updates) items = items.filter((item) => body.updates?.[item.key] !== 0);
+      // Like Shopify: a positive quantity resizes the line by key, zero removes it.
+      if (body.updates)
+        items = items
+          .map((item) => {
+            const quantity = body.updates?.[item.key];
+            return quantity === undefined ? item : { ...item, quantity };
+          })
+          .filter((item) => item.quantity !== 0);
       if (body.attributes) Object.assign(attributes, body.attributes);
+    }
+    if (url.endsWith('cart/change.js')) {
+      // Like Shopify: properties are replaced in place, the line keeps its position and gets a new key.
+      items = items
+        .map((item) =>
+          item.key === body.id
+            ? {
+                ...item,
+                key: `${item.variant_id}:changed-${added++}`,
+                quantity: body.quantity ?? item.quantity,
+                properties: body.properties ?? item.properties,
+              }
+            : item,
+        )
+        .filter((item) => item.quantity !== 0);
     }
     if (url.endsWith('cart/add.js'))
       items.push(
-        ...required(body.items).map((item, i) => ({
-          key: `${item.id}:new-${i}`,
+        ...required(body.items).map((item) => ({
+          key: `${item.id}:new-${added++}`,
           variant_id: Number(item.id),
           quantity: item.quantity,
           properties: item.properties,
@@ -97,22 +120,23 @@ test('replaces owned lines by current key and applies the exact v3 vector with n
     remote.requests.filter((r) => r.method === 'POST'),
     [
       {
-        url: '/nl/cart/update.js',
-        method: 'POST',
-        body: { updates: { '42:old-member': 0 } },
-      },
-      {
         url: '/nl/cart/add.js',
         method: 'POST',
         body: { items: [{ id: '42', quantity: 2, properties: required(desired[0]).properties }] },
       },
+      {
+        url: '/nl/cart/update.js',
+        method: 'POST',
+        body: { updates: { '42:old-member': 0 } },
+      },
     ],
   );
-  // One read before writing and one verifying the added lines; the removal write returns the complete
-  // cart and serves as its own witness. Each line carries its own authorization: no attribute write.
+  // One read before writing and one verifying the added lines before anything is removed; the removal write
+  // returns the complete cart and serves as its own witness. Each line carries its own authorization: no
+  // attribute write.
   assert.deepEqual(
     remote.requests.slice(1).map((r) => r.url),
-    ['/nl/cart.js', '/nl/cart/update.js', '/nl/cart/add.js', '/nl/cart.js'],
+    ['/nl/cart.js', '/nl/cart/add.js', '/nl/cart.js', '/nl/cart/update.js'],
   );
 });
 
@@ -125,8 +149,8 @@ test('a leftover v2 quote attribute is cleared inside the removal write, never b
   assert.deepEqual(
     remote.requests.filter((r) => r.method === 'POST').map((r) => [r.url, r.body]),
     [
-      ['/cart/update.js', { updates: {}, attributes: { _insignia_quote_v2: '' } }],
       ['/cart/add.js', { items: [{ id: '42', quantity: 2, properties: { [LINE]: carrier } }] }],
+      ['/cart/update.js', { updates: {}, attributes: { _insignia_quote_v2: '' } }],
     ],
   );
   assert.deepEqual(required(result.cart).attributes, { Gift: 'keep' });
@@ -171,7 +195,7 @@ test('external edits invalidate review before any mutation', async () => {
   assert.equal(remote.requests.filter((r) => r.method === 'POST').length, 0);
 });
 
-test('inventory clipping never reports exact application success', async () => {
+test('inventory clipping never reports exact application success and takes the clipped line out again', async () => {
   const remote = provider([ordinary], ({ url, body, items }) => {
     if (url.endsWith('cart/add.js')) {
       items.push({
@@ -188,12 +212,12 @@ test('inventory clipping never reports exact application success', async () => {
   const initial = await cart.read();
   const result = await cart.apply(desired, { expectedFingerprint: initial.fingerprint });
   assert.equal(result.reason, 'vector_mismatch');
-  assert.equal(required(required(result.cart).customized[0]).quantity, 1);
+  assert.deepEqual(required(result.cart).customized, [], 'the cart is back at its starting lines');
 });
 
-test('ordinary changes between removal and add stop the sequence; malformed v2 markers are repairable', async () => {
+test('ordinary changes during the removal keep the applied lines; malformed v2 markers are repairable', async () => {
   const malformed = { ...old, properties: { _insignia_member_v2: '' } };
-  // The removal write's own complete-cart response is the witness checked before add.js.
+  // The removal write's own complete-cart response is the witness.
   const remote = provider([ordinary, malformed], ({ url, items }) => {
     if (url.endsWith('cart/update.js')) required(items[0]).quantity = 8;
     return undefined;
@@ -202,11 +226,14 @@ test('ordinary changes between removal and add stop the sequence; malformed v2 m
   const initial = await cart.read();
   assert.equal(initial.customized.length, 1);
   const result = await cart.apply(desired, { expectedFingerprint: initial.fingerprint });
-  assert.equal(result.reason, 'cart_changed');
-  assert.equal(remote.requests.filter((r) => r.method === 'POST').length, 1);
-  assert.equal(
-    remote.requests.some((r) => r.url.endsWith('cart/add.js')),
-    false,
+  assert.equal(result.status, 'applied');
+  assert.deepEqual(
+    remote.requests.filter((r) => r.method === 'POST').map((r) => r.url),
+    ['/cart/add.js', '/cart/update.js'],
+  );
+  assert.deepEqual(
+    required(result.cart).customized.map((line) => line.properties[LINE]),
+    [carrier],
   );
 });
 
@@ -620,7 +647,7 @@ test('an Add into a cart without customization is one read, one add and one witn
 });
 
 for (const drift of ['currency', 'ordinary', 'foreign attribute', 'line'] as const) {
-  test(`the witness read cannot settle a changed ${drift}`, async () => {
+  test(`a witness read with a changed ${drift}: only owned lines decide the outcome, nothing stays in flight`, async () => {
     let pending = false;
     const remote = provider([ordinary], ({ url, items, attributes, requests }) => {
       if (!url.endsWith('cart.js') || !requests.some((r) => r.url.endsWith('cart/add.js'))) return undefined;
@@ -641,12 +668,21 @@ for (const drift of ['currency', 'ordinary', 'foreign attribute', 'line'] as con
     });
     const before = await adapter.read();
     const result = await adapter.apply(desired, { expectedFingerprint: before.fingerprint });
-    assert.equal(result.status, 'review_required');
+    assert.equal(pending, false, 'every write was acknowledged: nothing is left in flight');
+    if (drift === 'ordinary' || drift === 'foreign attribute') {
+      // Foreign edits do not undo exactly landed customized lines.
+      assert.equal(result.status, 'applied');
+      return;
+    }
     assert.equal(result.reason, 'vector_mismatch');
-    assert.equal(pending, true);
-    const writes = remote.requests.filter((r) => r.method === 'POST').length;
+    if (drift === 'line') {
+      // A wrong added line is taken out again before anything else happens.
+      assert.deepEqual(required(result.cart).customized, []);
+      return;
+    }
+    const adds = remote.requests.filter((r) => r.url.endsWith('cart/add.js')).length;
     await adapter.apply(desired, { expectedFingerprint: required(result.cart).fingerprint });
-    assert.equal(remote.requests.filter((r) => r.method === 'POST').length, writes);
+    assert.equal(remote.requests.filter((r) => r.url.endsWith('cart/add.js')).length, adds, 'never added twice');
   });
 }
 
@@ -844,7 +880,7 @@ test('unchanged before-state is not delivery proof; explicit removal permits fre
   assert.equal(required<CartMutationIntent>(state).abandoned.length, 1);
 });
 
-test('foreign attributes, a foreign quote attribute or currency changing during application prevent settling', async () => {
+test('a foreign quote attribute or currency changing during application prevents success; other attributes do not', async () => {
   for (const changed of ['attributes', 'currency', 'carrier']) {
     const remote = provider(
       [ordinary],
@@ -860,7 +896,10 @@ test('foreign attributes, a foreign quote attribute or currency changing during 
     );
     const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl });
     const before = await cart.read();
-    assert.equal((await cart.apply(desired, { expectedFingerprint: before.fingerprint })).reason, 'vector_mismatch');
+    assert.equal(
+      (await cart.apply(desired, { expectedFingerprint: before.fingerprint })).status,
+      changed === 'attributes' ? 'applied' : 'review_required',
+    );
     assert.equal(
       remote.requests.some((r) => r.body?.attributes !== undefined),
       false,
@@ -901,6 +940,346 @@ test('legacy boolean-only uncertainty survives observed removal and restart with
     assert.equal(remote.requests.filter((r) => r.method === 'POST').length, posts);
     assert.deepEqual(remote.items, [ordinary]);
   }
+});
+
+/** An in-memory journal shaped like the sessionStorage one (buyer.ts cartJournal). */
+function memoryJournal() {
+  const journal = {
+    state: null as CartMutationIntent | null,
+    flag: false,
+    readUnresolved: () => journal.flag,
+    writeUnresolved: (value: boolean) => {
+      journal.flag = value;
+    },
+    readIntent: () => journal.state,
+    writeIntent: (value: CartMutationIntent | null) => {
+      journal.state = structuredClone(value);
+    },
+  };
+  return journal;
+}
+/** A customized line of the first signed set, already in the buyer's cart. */
+const existing = { key: '42:existing', variant_id: 42, quantity: 2, properties: { [LINE]: carrier } };
+const posts = (requests: ProviderCall[]) =>
+  requests.filter((r) => r.method === 'POST').map((r) => [r.url, r.body] as const);
+
+test('a refused add keeps the existing customized lines and does not block a later apply (#339)', async () => {
+  let refuse = true;
+  const journal = memoryJournal();
+  const remote = provider([ordinary, existing], ({ url }) => {
+    // Sold out: the add and the in-place fallback are both refused.
+    if (refuse && (url.endsWith('cart/add.js') || url.endsWith('cart/change.js')))
+      return Response.json({ status: 422, message: 'Cart Error', description: 'Not enough stock' }, { status: 422 });
+    return undefined;
+  });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  const before = await cart.read();
+  const seven = [{ ...required(freshDesired()[0]), quantity: 7 }];
+  const refused = await cart.apply(seven, { expectedFingerprint: before.fingerprint });
+  assert.equal(refused.status, 'review_required');
+  assert.equal(refused.reason, 'rejected');
+  assert.equal(refused.detail, 'Not enough stock');
+  assert.deepEqual(remote.items, [ordinary, existing], 'the buyer keeps the lines they already had');
+  assert.equal(journal.state, null, 'a definite refusal leaves no pending intent');
+  assert.equal(journal.flag, false);
+  refuse = false;
+  const retried = await cart.apply(seven, { expectedFingerprint: required(refused.cart).fingerprint });
+  assert.equal(retried.status, 'applied');
+  assert.deepEqual(
+    required(retried.cart).customized.map((line) => [line.quantity, line.properties[LINE]]),
+    [[7, required(fresh.carriers[0])]],
+  );
+});
+
+test('an add interrupted by navigation leaves the existing customized lines in place (#339)', async () => {
+  const journal = memoryJournal();
+  const remote = provider([ordinary, existing], ({ url }) => {
+    if (url.endsWith('cart/add.js')) throw new DOMException('The user aborted a request.', 'AbortError');
+    return undefined;
+  });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  const before = await cart.read();
+  const result = await cart.apply(freshDesired(), { expectedFingerprint: before.fingerprint });
+  assert.equal(result.reason, 'mutation_unresolved');
+  assert.deepEqual(remote.items, [ordinary, existing]);
+  assert.deepEqual(
+    posts(remote.requests).map(([url]) => url),
+    ['/cart/add.js'],
+    'nothing is removed before its replacement exists',
+  );
+  assert.equal(journal.state?.phase, 'pending', 'an unknown outcome stays recorded');
+});
+
+test('replacement adds the new set before removing the old one; an unchanged carrier keeps its line', async () => {
+  const remote = provider([ordinary, existing]);
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl });
+  const before = await cart.read();
+  const replaced = await cart.apply(freshDesired(), { expectedFingerprint: before.fingerprint });
+  assert.equal(replaced.status, 'applied');
+  assert.deepEqual(posts(remote.requests), [
+    ['/cart/add.js', { items: [{ id: '42', quantity: 2, properties: { [LINE]: required(fresh.carriers[0]) } }] }],
+    ['/cart/update.js', { updates: { '42:existing': 0 } }],
+  ]);
+  const line = required(required(replaced.cart).customized[0]);
+  remote.requests.length = 0;
+  // The same signed line at another quantity: Shopify would merge a second add into the line, so only the
+  // quantity changes and the line keeps its key.
+  const resized = await cart.apply([{ ...required(freshDesired()[0]), quantity: 5 }], {
+    expectedFingerprint: required(replaced.cart).fingerprint,
+  });
+  assert.equal(resized.status, 'applied');
+  assert.deepEqual(posts(remote.requests), [['/cart/update.js', { updates: { [line.key]: 5 } }]]);
+  assert.equal(required(required(resized.cart).customized[0]).key, line.key);
+});
+
+test('an ordinary edit racing the removal does not undo exactly landed customized lines (#338, N4)', async () => {
+  const journal = memoryJournal();
+  let raced = false;
+  const remote = provider([ordinary, existing], ({ url, items }) => {
+    if (url.endsWith('cart/update.js') && !raced) {
+      raced = true;
+      required(items[0]).quantity = 8; // another tab or the theme drawer edits an ordinary line
+    }
+    return undefined;
+  });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  const before = await cart.read();
+  const result = await cart.apply(freshDesired(), { expectedFingerprint: before.fingerprint });
+  assert.equal(result.status, 'applied', 'the customized lines are exactly the accepted ones');
+  assert.deepEqual(
+    required(result.cart).customized.map((line) => line.properties[LINE]),
+    [required(fresh.carriers[0])],
+  );
+  assert.equal(required(required(result.cart).ordinary[0]).quantity, 8, 'the foreign edit is kept');
+  assert.equal(journal.state, null);
+  assert.equal(journal.flag, false);
+  const later = await cart.apply(desired, { expectedFingerprint: required(result.cart).fingerprint });
+  assert.equal(later.status, 'applied');
+});
+
+/** Two-line signed sets over variants 42 and 43; each `set` is a separate acceptance. */
+const pairSet = (set: number) =>
+  lineCarriers(
+    [
+      { variantId: '42', unitMinor: '3033' },
+      { variantId: '43', unitMinor: '3034' },
+    ],
+    { set },
+  ).carriers.map((value) => required(value));
+const [a42, a43] = pairSet(4);
+const [b42, b43] = pairSet(5);
+const line42 = { key: '42:a', variant_id: 42, quantity: 3, properties: { [LINE]: required(a42) } };
+const line43 = { key: '43:a', variant_id: 43, quantity: 3, properties: { [LINE]: required(a43) } };
+const setB = (q42: number, q43: number): CartBucket[] => [
+  { variantId: '42', quantity: q42, properties: { [LINE]: required(b42) } },
+  { variantId: '43', quantity: q43, properties: { [LINE]: required(b43) } },
+];
+/**
+ * Shopify's inventory check: add.js and change.js may not raise a variant's cart quantity above its stock.
+ * `partial` models an add that keeps the items before the refused one.
+ */
+function stocked(initial: AjaxItem[], stock: Record<string, number>, { partial = false } = {}) {
+  let n = 0;
+  const inCart = (items: AjaxItem[], variant: string) =>
+    items.filter((item) => String(item.variant_id) === variant).reduce((sum, item) => sum + item.quantity, 0);
+  const refuse = (variant: string) =>
+    Response.json(
+      { status: 422, message: 'Cart Error', description: `Only ${stock[variant]} of variant ${variant} in stock.` },
+      { status: 422 },
+    );
+  return provider(initial, ({ url, body, items }) => {
+    if (url.endsWith('cart/add.js')) {
+      const pending = [...items];
+      for (const item of required(body.items)) {
+        const variant = String(item.id);
+        if (inCart(pending, variant) + item.quantity > (stock[variant] ?? Infinity)) {
+          if (partial) items.splice(0, items.length, ...pending);
+          return refuse(variant);
+        }
+        pending.push({
+          key: `${variant}:stock-${n++}`,
+          variant_id: Number(variant),
+          quantity: item.quantity,
+          properties: item.properties,
+        });
+      }
+      items.splice(0, items.length, ...pending);
+      return Response.json({ items: pending.slice(items.length - required(body.items).length) });
+    }
+    if (url.endsWith('cart/change.js')) {
+      const line = items.find((item) => item.key === body.id);
+      const variant = String(line?.variant_id);
+      if (line && inCart(items, variant) - line.quantity + (body.quantity ?? 0) > (stock[variant] ?? Infinity))
+        return refuse(variant);
+    }
+    return undefined;
+  });
+}
+const customizedOf = (items: AjaxItem[]) =>
+  items.filter((item) => item.properties[LINE]).map((item) => [item.variant_id, item.quantity, item.properties[LINE]]);
+
+test('a partially refused add removes the lines it did add and settles only back at the starting lines (B1)', async () => {
+  const journal = memoryJournal();
+  // Variant 43 is sold out; Shopify adds the 42 line of the new set before refusing 43.
+  const remote = stocked([ordinary, line42], { '42': 99, '43': 0 }, { partial: true });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  const before = await cart.read();
+  const result = await cart.apply(setB(3, 1), { expectedFingerprint: before.fingerprint });
+  assert.equal(result.status, 'review_required');
+  assert.equal(result.reason, 'rejected');
+  assert.equal(result.detail, 'Only 0 of variant 43 in stock.', "Shopify's own explanation is kept");
+  assert.deepEqual(customizedOf(remote.items), customizedOf([line42]), 'one signed set, as before the Add');
+  assert.equal(journal.state, null);
+  assert.equal(journal.flag, false);
+});
+
+test('a refused removal after a successful add takes the added lines out again (B1)', async () => {
+  const journal = memoryJournal();
+  let refusals = 0;
+  const remote = provider([ordinary, existing], ({ url, body }) => {
+    if (url.endsWith('cart/update.js') && body.updates?.['42:existing'] === 0 && refusals++ === 0)
+      return Response.json({ status: 429, message: 'Too many requests' }, { status: 429 });
+    return undefined;
+  });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  const before = await cart.read();
+  const result = await cart.apply(freshDesired(), { expectedFingerprint: before.fingerprint });
+  assert.equal(result.reason, 'rejected');
+  assert.deepEqual(customizedOf(remote.items), customizedOf([existing]));
+  assert.equal(journal.state, null);
+});
+
+test('a compensation that cannot finish leaves the outcome unresolved (B1)', async () => {
+  const journal = memoryJournal();
+  const remote = provider([ordinary, existing], ({ url }) =>
+    url.endsWith('cart/update.js') ? Response.json({ status: 429 }, { status: 429 }) : undefined,
+  );
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  const before = await cart.read();
+  const result = await cart.apply(freshDesired(), { expectedFingerprint: before.fingerprint });
+  assert.equal(result.reason, 'mutation_unresolved');
+  assert.equal(journal.state?.phase, 'pending', 'two sets remain, so the intent stays open for repair');
+});
+
+test('a stock refusal falls back once to replacing the old lines in place (B2)', async () => {
+  const journal = memoryJournal();
+  // Re-signing at the same quantities (the ordinary line is variant 42 too): add-first needs 9 of 42 and
+  // 6 of 43, an in-place swap needs only the 6 and 3 already in the cart.
+  const remote = stocked([ordinary, line42, line43], { '42': 8, '43': 5 });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  const before = await cart.read();
+  const result = await cart.apply(setB(3, 3), { expectedFingerprint: before.fingerprint });
+  assert.equal(result.status, 'applied');
+  assert.deepEqual(
+    remote.requests.filter((r) => r.method === 'POST').map((r) => r.url),
+    ['/cart/add.js', '/cart/change.js', '/cart/change.js'],
+  );
+  assert.deepEqual(customizedOf(remote.items), [
+    [42, 3, b42],
+    [43, 3, b43],
+  ]);
+  assert.equal(required(remote.items[0]).key, ordinary.key, 'lines keep their positions');
+  assert.equal(journal.state, null);
+});
+
+test('when the in-place replacement is refused too, every swapped line gets its old carrier back (B2)', async () => {
+  const journal = memoryJournal();
+  // 43 has exactly the 3 in the cart, so raising it to 4 is refused after 42 was already swapped.
+  const remote = stocked([ordinary, line42, line43], { '42': 8, '43': 3 });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  const before = await cart.read();
+  const result = await cart.apply(setB(3, 4), { expectedFingerprint: before.fingerprint });
+  assert.equal(result.reason, 'rejected');
+  assert.equal(result.detail, 'Only 3 of variant 43 in stock.');
+  assert.deepEqual(customizedOf(remote.items), customizedOf([line42, line43]));
+  assert.equal(journal.state, null);
+  assert.equal(journal.flag, false);
+});
+
+test('compensation never removes a swapped line it could not give its old carrier back (B3)', async () => {
+  const journal = memoryJournal();
+  let changes = 0;
+  let removedByBuyer = false;
+  const remote = provider([line42, line43], ({ url, items }) => {
+    if (url.endsWith('cart/add.js'))
+      return Response.json({ status: 422, description: 'Not enough stock' }, { status: 422 });
+    if (url.endsWith('cart/change.js')) changes++;
+    if (url.endsWith('/cart.js') && changes === 2 && !removedByBuyer) {
+      // Both lines were swapped; the buyer removes the 43 line in another tab before the witness read.
+      removedByBuyer = true;
+      items.splice(
+        items.findIndex((item) => item.variant_id === 43),
+        1,
+      );
+    }
+    return undefined;
+  });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  const before = await cart.read();
+  const result = await cart.apply(setB(3, 3), { expectedFingerprint: before.fingerprint });
+  assert.equal(result.reason, 'mutation_unresolved');
+  assert.deepEqual(
+    remote.items.filter((item) => item.variant_id === 42).map((item) => item.quantity),
+    [3],
+    'the 42 line is never removed',
+  );
+  assert.equal(journal.state?.phase, 'pending');
+});
+
+test('the stock fallback pairs the largest old line first (NB2)', async () => {
+  const small = { key: '42:small', variant_id: 42, quantity: 1, properties: { [LINE]: required(signed.carriers[0]) } };
+  const large = { key: '42:large', variant_id: 42, quantity: 5, properties: { [LINE]: required(signed.carriers[1]) } };
+  // Net 6 → 6 at stock 7: swapping the 1-line up to 6 would need 11; swapping the 5-line needs 7.
+  const remote = stocked([small, large], { '42': 7 });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl });
+  const before = await cart.read();
+  const result = await cart.apply([{ variantId: '42', quantity: 6, properties: { [LINE]: required(b42) } }], {
+    expectedFingerprint: before.fingerprint,
+  });
+  assert.equal(result.status, 'applied');
+  assert.deepEqual(customizedOf(remote.items), [[42, 6, b42]]);
+});
+
+test('an old line that survives an acknowledged removal leaves the outcome unresolved (NB1)', async () => {
+  const journal = memoryJournal();
+  const remote = provider([ordinary, existing], ({ url, body }) => {
+    // Shopify answers 200 but keeps the old line.
+    if (url.endsWith('cart/update.js') && body.updates) delete body.updates['42:existing'];
+    return undefined;
+  });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  const before = await cart.read();
+  const result = await cart.apply(freshDesired(), { expectedFingerprint: before.fingerprint });
+  assert.equal(result.reason, 'mutation_unresolved', 'two signed sets remain visible');
+  assert.equal(journal.state?.phase, 'pending');
+});
+
+test('a refusal reports its status; its explanation loses control and format characters (NB3, NB4)', async () => {
+  const remote = provider([ordinary], ({ url }) =>
+    url.endsWith('cart/add.js')
+      ? Response.json({ status: 429, description: 'Too\u202e many\u200b requests.\u0007' }, { status: 429 })
+      : undefined,
+  );
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl });
+  const before = await cart.read();
+  const result = await cart.apply(desired, { expectedFingerprint: before.fingerprint });
+  assert.equal(result.reason, 'rejected');
+  assert.equal(result.refusal, 429);
+  assert.equal(result.detail, 'Too many requests.');
+});
+
+test('an oversized refusal body is not read beyond the response cap (NB4)', async () => {
+  const remote = provider([ordinary], ({ url }) =>
+    url.endsWith('cart/add.js')
+      ? Response.json({ status: 422, description: 'x'.repeat(2 * 1048576) }, { status: 422 })
+      : undefined,
+  );
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl });
+  const before = await cart.read();
+  const result = await cart.apply(desired, { expectedFingerprint: before.fingerprint });
+  assert.equal(result.reason, 'rejected');
+  assert.equal(result.refusal, 422);
+  assert.equal(result.detail, undefined);
 });
 
 declare global {

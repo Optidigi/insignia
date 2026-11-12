@@ -240,6 +240,8 @@ export const customerWordingLabels = {
   'customer:recovery.colorItemsRemoved': 'settings:translations.fields.customer_recovery_colorItemsRemoved',
   'customer:recovery.itemsRestored': 'settings:translations.fields.customer_recovery_itemsRestored',
   'customer:recovery.cartCommitFailed': 'settings:translations.fields.customer_recovery_cartCommitFailed',
+  'customer:recovery.cartRejected': 'settings:translations.fields.customer_recovery_cartRejected',
+  'customer:recovery.cartRejectedStock': 'settings:translations.fields.customer_recovery_cartRejectedStock',
   'customer:recovery.undo': 'settings:translations.fields.customer_recovery_undo',
   'customer:recovery.dismissNotification': 'settings:translations.fields.customer_recovery_dismissNotification',
   'customer:recovery.repairRequired': 'settings:translations.fields.customer_recovery_repairRequired',

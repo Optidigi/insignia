@@ -497,6 +497,8 @@
       "customer_recovery_colorItemsRemoved": "Artículos de ese color quitados",
       "customer_recovery_itemsRestored": "Artículos restaurados",
       "customer_recovery_cartCommitFailed": "No se pudo actualizar el carrito",
+      "customer_recovery_cartRejected": "Carrito rechazado",
+      "customer_recovery_cartRejectedStock": "Carrito rechazado (stock)",
       "customer_recovery_undo": "Deshacer",
       "customer_recovery_dismissNotification": "Cerrar notificación",
       "common_actions_save": "Guardar",

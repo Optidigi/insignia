@@ -89,7 +89,9 @@ export interface DesignerState {
     /** Silent re-proposal of an expired, still-displayed quote; the footer stays usable. */
     | { kind: 'refreshing'; requestId: string; design: Design }
     | { kind: 'pending'; requestId: string; design: Design }
-    | { kind: 'failed'; reason: 'cart-commit-failed'; preparation?: boolean };
+    | { kind: 'failed'; reason: 'cart-commit-failed'; preparation?: boolean }
+    /** Shopify definitely refused the update (typically stock); `detail` is its own explanation. */
+    | { kind: 'failed'; reason: 'cart-rejected'; stock?: boolean; detail?: string; preparation?: undefined };
   completion: CartReceipt | null;
   editing: string | null;
   open: boolean;
@@ -161,6 +163,7 @@ export type DesignerEvent =
   | { type: 'cart-preparation-started'; requestId: string }
   | { type: 'cart-commit-succeeded'; requestId: string; receipt: CartReceipt }
   | { type: 'cart-commit-failed'; requestId: string; reason: 'cart-commit-failed'; preparation?: boolean }
+  | { type: 'cart-commit-failed'; requestId: string; reason: 'cart-rejected'; stock?: boolean; detail?: string }
   | { type: 'cart-commit-canceled' }
   | { type: 'product-design-edit-requested'; design: Design }
   | { type: 'product-design-switch-confirmed' }
@@ -408,7 +411,18 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
     }
     case 'cart-commit-failed':
       return (state.commit.kind === 'pending' || state.commit.kind === 'preparing' || state.commit.kind === 'refreshing') && state.commit.requestId === event.requestId
-        ? { ...state, commit: { kind: 'failed', reason: event.reason, ...(event.preparation ? {preparation:true} : {}) } }
+        ? {
+            ...state,
+            commit:
+              event.reason === 'cart-rejected'
+                ? {
+                    kind: 'failed',
+                    reason: event.reason,
+                    ...(event.stock ? { stock: true } : {}),
+                    ...(event.detail ? { detail: event.detail } : {}),
+                  }
+                : { kind: 'failed', reason: event.reason, ...(event.preparation ? { preparation: true } : {}) },
+          }
         : state;
     case 'cart-commit-canceled':
       return state.commit.kind === 'pending' || state.commit.kind === 'preparing' || state.commit.kind === 'refreshing' ? { ...state, commit: { kind: 'idle' } } : state;
