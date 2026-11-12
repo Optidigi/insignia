@@ -1249,6 +1249,16 @@ test('an upload finishing while closing the customizer keeps the close decision 
   }
 });
 
+test('closing the customizer from a rejected upload asks without carrying the stale upload error', async () => {
+  const app = harness({ artwork: { upload: async () => { throw Error('unused'); } }, cart: { commit: async () => { throw Error('unused'); } } });
+  app.dispatch({ type: 'modal-opened', modal: { kind: 'artwork', positionId: 'front' } });
+  await app.runtime.upload(new File(['%PDF'], 'doc.pdf', { type: 'application/pdf' }), 'front');
+  assert.equal(app.state.upload.kind, 'failed');
+  app.dispatch({ type: 'close-requested' });
+  assert.equal(app.state.modal.kind, 'confirm-close');
+  assert.deepEqual(app.state.upload, { kind: 'idle' }, 'the upload dialog closed, so its error must not follow');
+});
+
 test('three rejected uploads in a row leave the next valid upload able to finish (#349 sequence)', async () => {
   const requests: UploadRequest[] = [];
   const app = harness({

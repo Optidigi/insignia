@@ -184,15 +184,14 @@ for (const engine of [chromium, firefox]) {
       .locator('input[type=file]')
       .setInputFiles({ name: 'cancel-on-close.png', mimeType: 'image/png', buffer: Buffer.from('fixture') });
     await frame.getByText('Uploading artwork…', { exact: true }).waitFor();
+    // A host close request follows the Escape rule: the open upload dialog's decision comes first,
+    // and cancelling the upload closes only that dialog.
     await page.locator('dialog').dispatchEvent('cancel');
     await frame.getByRole('heading', { name: 'Cancel this upload?', exact: true }).waitFor();
     await frame.getByRole('button', { name: 'Cancel upload', exact: true }).click();
-    await page.waitForFunction(() => Reflect.get(window, 'designerClosed') === 1);
     await page.waitForFunction(() => Reflect.get(window, 'uploadSignal')?.aborted === true);
-    await page.evaluate(() => {
-      Reflect.set(window, 'designerClosed', 0);
-      Reflect.get(window, 'liveFrame').open();
-    });
+    await frame.locator('.artwork-dialog').waitFor({ state: 'detached' });
+    assert.equal(await page.evaluate(() => Reflect.get(window, 'designerClosed')), 0);
     await frame.locator('#artwork-chest').click();
     await frame
       .locator('input[type=file]')
