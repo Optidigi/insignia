@@ -18,7 +18,8 @@ export type CartApplication = {
   status: 'applied' | 'review_required';
   cart: CartSnapshot | null;
   recovery?: 'late_effects_possible';
-  reason?: 'cart_changed' | 'mutation_unresolved' | 'vector_mismatch' | 'cart_unavailable' | 'busy';
+  /** `rejected`: Shopify refused a write (4xx); every write was acknowledged, so nothing is left pending. */
+  reason?: 'cart_changed' | 'mutation_unresolved' | 'vector_mismatch' | 'cart_unavailable' | 'busy' | 'rejected';
 };
 /** Per-line v3 authorization (layout owner: packages/cart-authorization/src/line-v3.ts). */
 const LINE = '_insignia_line_v3';
@@ -218,7 +219,8 @@ export function createAjaxCartAdapter({
       headers: { Accept: 'application/json', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
-    if (!response.ok) throw new Error('Cart request failed');
+    // A status is an acknowledged outcome; only a thrown fetch (network, abort, timeout) leaves it unknown.
+    if (!response.ok) throw Object.assign(new Error('Cart request failed'), { status: response.status });
     if (!response.body) throw new Error('Missing cart response');
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
@@ -346,55 +348,82 @@ export function createAjaxCartAdapter({
         };
       }
       saveIntent(pending); // Closed digest-only intent is durable before any mutation.
-      const vectorAlready = normalized(current.customized) === normalized(desired);
-      const legacyQuote = current.attributes[LEGACY_QUOTE] !== undefined;
-      if ((current.customized.length && !vectorAlready) || legacyQuote) {
-        dispatched = true;
-        // update.js returns the complete post-mutation cart; it is the removal witness, so no separate
-        // cart.js read is needed. Only a leftover v2 quote attribute is cleared here, in the same request.
-        current = snapshot(
-          await request('cart/update.js', {
-            updates: Object.fromEntries((vectorAlready ? [] : current.customized).map((item) => [item.key, 0])),
-            ...(legacyQuote ? { attributes: { [LEGACY_QUOTE]: '' } } : {}),
-          }),
+      // Add before remove (#339): a refused or interrupted add never costs the buyer the lines they had.
+      // Old and new sets side by side are a valid cart-interaction state (spec §6.3); checkout validation
+      // still requires one set. A line already carrying a desired carrier is kept and only resized: adding
+      // identical properties again would merge into it, and keeping it avoids line-key churn.
+      const start = current;
+      const keptLine = (bucket: CartBucket) =>
+        start.customized.find(
+          (line) =>
+            line.variantId === bucket.variantId &&
+            line.sellingPlan === null &&
+            JSON.stringify(line.properties) === JSON.stringify(bucket.properties),
         );
-        if (
-          current.attributes[LEGACY_QUOTE] !== undefined ||
-          (!vectorAlready && current.customized.length) ||
-          current.currency !== currency ||
-          normalized(current.ordinary) !== ordinary ||
-          otherAttributes(current) !== foreign
-        )
-          return { status: 'review_required', cart: current, reason: 'cart_changed' };
-      }
-      if (desired.length && !vectorAlready) {
+      const kept = new Map(
+        desired.flatMap((bucket) => {
+          const line = keptLine(bucket);
+          return line ? [[line.key, bucket.quantity] as const] : [];
+        }),
+      );
+      const additions = desired.filter((bucket) => !keptLine(bucket));
+      const updates = Object.fromEntries(
+        start.customized.flatMap((line) => {
+          const quantity = kept.get(line.key) ?? 0;
+          return quantity === line.quantity ? [] : [[line.key, quantity] as const];
+        }),
+      );
+      const legacyQuote = start.attributes[LEGACY_QUOTE] !== undefined;
+      let verdict: CartApplication['reason'];
+      if (additions.length) {
         dispatched = true;
         await request('cart/add.js', {
-          items: desired.map((bucket) => ({
+          items: additions.map((bucket) => ({
             id: bucket.variantId,
             quantity: bucket.quantity,
             properties: bucket.properties,
           })),
         });
         current = await read();
+        // Remove nothing unless the witness shows exactly the added lines beside the untouched old ones.
+        if (normalized(current.customized) !== normalized([...start.customized, ...additions]))
+          verdict = 'vector_mismatch';
+      }
+      let removed = false;
+      if (!verdict && (Object.keys(updates).length || legacyQuote)) {
+        dispatched = true;
+        removed = true;
+        // update.js returns the complete post-mutation cart, so it is its own witness. Only a leftover v2
+        // quote attribute is cleared here, in the same request.
+        current = snapshot(
+          await request('cart/update.js', {
+            updates,
+            ...(legacyQuote ? { attributes: { [LEGACY_QUOTE]: '' } } : {}),
+          }),
+        );
       }
       if (
-        current.attributes[LEGACY_QUOTE] !== undefined ||
-        current.currency !== currency ||
-        normalized(current.customized) !== normalized(desired) ||
-        normalized(current.ordinary) !== ordinary ||
-        otherAttributes(current) !== foreign
+        !verdict &&
+        (current.attributes[LEGACY_QUOTE] !== undefined || normalized(current.customized) !== normalized(desired))
       )
-        return { status: 'review_required', cart: current, reason: 'vector_mismatch' };
-      if ((await digest(logicalState(current))) !== goal)
-        return { status: 'review_required', cart: current, reason: 'vector_mismatch' };
+        verdict = 'vector_mismatch';
+      if (
+        !verdict &&
+        (current.currency !== currency ||
+          normalized(current.ordinary) !== ordinary ||
+          otherAttributes(current) !== foreign)
+      )
+        verdict = removed ? 'cart_changed' : 'vector_mismatch';
+      if (!verdict && (await digest(logicalState(current))) !== goal) verdict = 'vector_mismatch';
+      // Every write above was acknowledged: no effect is in flight, so the intent never outlives this call.
       settle(pending);
+      if (verdict) return { status: 'review_required', cart: current, reason: verdict };
       return {
         status: 'applied',
         cart: current,
         ...(abandoned.length ? { recovery: 'late_effects_possible' as const } : {}),
       };
-    } catch {
+    } catch (error) {
       try {
         current = await read();
       } catch {
@@ -407,6 +436,12 @@ export function createAjaxCartAdapter({
           cart: current,
           ...(pending.abandoned.length ? { recovery: 'late_effects_possible' as const } : {}),
         };
+      }
+      const status = error && typeof error === 'object' && 'status' in error ? Number(error.status) : 0;
+      if (pending && status >= 400 && status < 500) {
+        // Shopify refused the write (stock, limits): a definite outcome. Earlier writes were acknowledged too.
+        settle(pending);
+        return { status: 'review_required', cart: current, reason: 'rejected' };
       }
       return {
         status: 'review_required',

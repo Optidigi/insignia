@@ -168,7 +168,8 @@ test('an expired set renews per quote and keeps current cart quantities and remo
     ],
   );
   assert.deepEqual(f.attributes, {}, 'no cart-level quote attribute is written');
-  assert.deepEqual(f.writes, ['/cart/update.js', '/cart/add.js']);
+  // The renewed lines are added before the expired ones are removed.
+  assert.deepEqual(f.writes, ['/cart/add.js', '/cart/update.js']);
   assert.ok(f.calls.includes(`/apps/insignia/v1/cart-applications/${applicationId}/confirm`));
   assert.deepEqual(
     (f.confirmBodies[0]?.vector as { quantity: number }[] | undefined)?.map((bucket) => bucket.quantity),
