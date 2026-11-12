@@ -48,6 +48,41 @@ Updated 11 November 2026. Insignia now runs only on `app.insigniacustomizer.com`
 - The Cloudflare status Worker detects removed services by itself.
 - Standing OK for rewrite-dev test-gateway orders.
 
+### Incident: quotes blocked by published-config drift — 12 November 2026, resolved
+
+**Window:** `00:00:29Z` to `00:30:31Z` (about 30 minutes). Rewrite-dev only.
+
+**Cause.**
+- The daily destruction job (#325) correctly destroyed key 1 at `00:00:29Z` (window closed at day 20767), and the expected public-config projection dropped it.
+- The published Function config (written 11 Nov `19:26:28Z` by the key 3 rotation) still listed key 1.
+- Quote readiness required exact equality, so every acceptance failed at `current-readiness`.
+- The Functions themselves were unaffected: key 1's window had closed, so it admitted nothing anyway.
+
+**Shopper impact.** Add to cart showed "Your cart could not be updated. Your design is still here. Try again." Two failed attempts are logged, at `00:07:01Z` and `00:28:23Z`. No order was affected.
+
+**The failure was silent.** It was logged only as a generic `UnexpectedFailure`, so neither the shopper nor we got a specific signal. It was found during an owner-requested verification.
+
+**Fix 1: unblock.**
+- One compare-guarded write of the published config through the existing publication adapter (`admin.set`, the path the rotation uses), with the app's offline credential.
+- Guarded on published `422748e2…` (keys 1, 2, 3) and expected `15821173…` (keys 2, 3).
+- Applied at `00:30:31Z`. Readback: `15821173…`, equal to the expected projection, with generation `d79cc783…` and epoch 0 unchanged.
+- An acceptance at `00:31:24Z` succeeded, signed with key 3 through the signer. Checkout showed no error.
+
+**Fix 2: permanent (#333, main `271de40d`).**
+- `publishedConfigMatches` in `packages/application/src/keys/public-config.ts` is now the single comparison, used by both quote readiness and the owner rotation pre-check.
+- It accepts the exact expected config, or the expected config plus keys that are destroyed in the database and whose window has closed. Anything else fails.
+- Drift now raises `PublicConfigDriftError` and is logged as buyer diagnostic `PublicConfigDrift`.
+- Drift lasting 5 minutes logs `public_config_drift`, at most every 5 minutes.
+- **Deploy:** web image `sha256:68572bc7…` (CI run 43130140555), recreated at `01:00:35Z`. The worker and signer are unchanged.
+- **Post-deploy live check, `01:01:52Z`:** acceptance succeeded with `signer_sign ok key 3`. The carrier has key ID 3, generation `d79cc783…`, epoch 0, valid through day 20770. Checkout showed $17.45 with no error, and the cart was emptied. No order was placed.
+
+**16 November check.** Key 2 (last day 20771) becomes destroyable from 16 Nov `00:00Z`. The published config will then still list it, and the fix tolerates that. Confirm on 16 Nov that:
+- the worker logs `signing_key_destruction` with count 1;
+- a Designer Add to cart still succeeds;
+- no `public_config_drift` line appears.
+
+The next owner rotation or publication rewrites the config without key 2.
+
 ### Separate signer and retired-key scrub — deployed 11 November 2026
 
 **Owner approval, 11 November 2026.** Retired keys lose their private half, a daily worker job destroys closed windows, a separate signer process holds the signing KEK, and one development customer-artwork email test is allowed.
