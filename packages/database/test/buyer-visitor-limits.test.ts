@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import { sql } from 'kysely';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { BUYER_SESSION_POLICY, createBuyerRepository } from '../src/repositories/buyer.js';
@@ -151,7 +152,6 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('buyer visitor limits', () => 
       'installation_generation',
       'visitor_key',
       'window_at',
-      'issued',
       'issued_at',
     ]);
     const rows = () =>
@@ -160,6 +160,74 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('buyer visitor limits', () => 
     expect((await rows()).rows[0]?.n).toBe('1');
     await repo.purgeVisitorAdmission(new Date(+now + 3_600_000));
     expect((await rows()).rows[0]?.n).toBe('0');
+  });
+
+  it('keeps issuing visitor sessions through the deploy that retires the legacy issued count (#374)', async () => {
+    const migration = async (file: string, direction: 'up' | 'down') =>
+      sql
+        .raw(
+          (await readFile(new URL(`../migrations/${file}`, import.meta.url), 'utf8')).split('-- migrate:down')[
+            direction === 'up' ? 0 : 1
+          ] as string,
+        )
+        .execute(db);
+    const optional = '20261112000400_buyer_visitor_issued_optional.sql',
+      drop = '20261112000500_buyer_visitor_drop_issued.sql';
+    const { shopId } = await createTestShop(db);
+    const repo = createBuyerRepository(db);
+    const now = new Date('2026-11-12T22:00:00Z');
+    const visitor = Buffer.alloc(32, 11);
+    let n = 0;
+    const issue = (visitorKey = visitor) =>
+      repo.issueSession({
+        scope: { shopId, installationGeneration: '1', ownerHash: owner(++n) },
+        sessionId: randomUUID(),
+        now,
+        expiresAt: new Date(+now + week),
+        visitorKey,
+      });
+    // The upsert of web image bf512171 (#362), which still writes the legacy count beside issued_at.
+    const previousImage = async () => {
+      const recent =
+        (
+          await sql<{
+            issued_at: Date[];
+          }>`SELECT issued_at FROM buyer_visitor_admission WHERE shop_id=${shopId} AND visitor_key=${visitor}`.execute(
+            db,
+          )
+        ).rows[0]?.issued_at ?? [];
+      const issued = [...recent, now].map((at) => at.toISOString());
+      await sql`INSERT INTO buyer_visitor_admission(shop_id,installation_generation,visitor_key,window_at,issued,issued_at) VALUES(${shopId},${'1'}::bigint,${visitor},${now},${issued.length},${issued}::timestamptz[]) ON CONFLICT(shop_id,installation_generation,visitor_key) DO UPDATE SET window_at=GREATEST(buyer_visitor_admission.window_at,EXCLUDED.window_at),issued=EXCLUDED.issued,issued_at=EXCLUDED.issued_at`.execute(
+        db,
+      );
+    };
+    const counted = async () =>
+      (
+        await sql<{
+          n: number;
+        }>`SELECT cardinality(issued_at) n FROM buyer_visitor_admission WHERE shop_id=${shopId} AND visitor_key=${visitor}`.execute(
+          db,
+        )
+      ).rows[0]?.n;
+    try {
+      await migration(drop, 'down');
+      await migration(optional, 'down');
+      // Schema 59 still requires the count, so the new image needs migration 60 before it starts.
+      await expect(issue()).rejects.toMatchObject({ code: '23502' });
+      await previousImage();
+      await migration(optional, 'up');
+      // Schema 60: the previous and the new image share one sliding window.
+      await previousImage();
+      await issue();
+      await expect(issue(Buffer.alloc(32, 12))).resolves.toHaveProperty('sessionId');
+      await previousImage();
+      expect(await counted()).toBe(4);
+      await migration(drop, 'up');
+      await issue();
+      expect(await counted()).toBe(5);
+    } finally {
+      await sql`ALTER TABLE buyer_visitor_admission DROP COLUMN IF EXISTS issued`.execute(db);
+    }
   });
 
   it('keeps a visitor window until an hour after its latest session when a lagging web clock issues after it', async () => {
