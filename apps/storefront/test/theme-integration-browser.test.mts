@@ -440,7 +440,7 @@ for (const engine of [chromium, firefox]) {
       );
       // The browser reports each transition it starts. Sampling for an in-between colour instead
       // misses a 0.2 s transition that finishes before the first sample on a loaded runner.
-      await trigger.evaluate((button) => {
+      await trigger.evaluate((button: HTMLElement) => {
         const started: string[] = [];
         Object.assign(window, { transitionsStarted: started });
         button.addEventListener('transitionrun', (event) => started.push(event.propertyName));
