@@ -87,7 +87,7 @@ test('selected draft custody recovers a lost CAS acknowledgement through the sam
   });
   await custody.save(id, group, group);
   assert.equal(writes, 1);
-  // Besides the UUID hint, only the opaque fingerprint of the cart quantities the draft is based on (#341).
+  // Besides the UUID hint, only the SHA-256 of the cart quantities the draft is based on (#341).
   assert([...data.values()].every((value) => value === id || /^[a-f0-9]{64}$/.test(value)));
   assert.equal([...data.values()].filter((value) => value !== id).length, 1);
   assert.equal((await custody.restore(group))?.id, id);
@@ -167,6 +167,25 @@ test('a draft resumes its own quantities until the cart quantities it was based 
   assert.equal(data.get(`insignia:selected-design-cart:v1:/apps/insignia:${id}`), '', 'abandoned drafts drop the base');
   assert(
     [...data.values()].every((value) => value === id || value === '' || /^[a-f0-9]{64}$/.test(value)),
-    'storage holds only the UUID hint and an opaque quantity fingerprint, never a snapshot',
+    'storage holds only the UUID hint and a quantity hash, never a snapshot',
   );
+});
+test('forgetting a draft without a recorded base writes no storage (#341)', async () => {
+  const writes: string[] = [];
+  const custody = createSelectedDesignCustody({
+    namespace: '/apps/insignia',
+    storage: {
+      getItem: () => null,
+      setItem: (key) => {
+        writes.push(key);
+      },
+    },
+    api: {
+      async private<T>(): Promise<T> {
+        throw new Error('no network');
+      },
+    },
+  });
+  await custody.forget(id, group);
+  assert.deepEqual(writes, []);
 });

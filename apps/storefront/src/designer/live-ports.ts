@@ -38,7 +38,14 @@ export function createLiveDesignerPorts(input: {
   fetchImpl?: typeof fetch;
   storage: Pick<Storage, 'getItem' | 'setItem'>;
   onPriceRefresh?(source: BuyerConfig, request?: CartRequest): void;
-  onNeedsReview?(canStart: boolean, targetAvailable: boolean, canRemoveAll: boolean, request?: CartRequest): void;
+  onNeedsReview?(
+    canStart: boolean,
+    targetAvailable: boolean,
+    canRemoveAll: boolean,
+    request?: CartRequest,
+    /** This design is still in the cart, but its line changed outside the Designer. */
+    cartLineMoved?: boolean,
+  ): void;
   onReview?(review: DesignerQuoteReview, request?: CartRequest): void;
   onApplied?(groups: DesiredGroup[]): void;
 }) {
@@ -248,7 +255,12 @@ export function createLiveDesignerPorts(input: {
       source = refreshed;
       input.onPriceRefresh?.(refreshed, request);
       if (!quoting) {
-        input.onNeedsReview?.(true, false, observed.cart.customized.length > 0, request);
+        const moved =
+          !!previous &&
+          observed.groups.some(
+            (candidate) => desiredGroupKey(candidate, false, false) === desiredGroupKey(previous, false, false),
+          );
+        input.onNeedsReview?.(true, false, observed.cart.customized.length > 0, request, moved);
         throw new Error('Design requires current-cart review');
       }
       const { labels, proposal, groups } = await quoting;

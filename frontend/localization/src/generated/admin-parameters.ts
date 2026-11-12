@@ -2537,6 +2537,7 @@ export const adminParameterContracts = {
   'settings:translations.fields.customer_recovery_remainingItems': {},
   'settings:translations.fields.customer_recovery_removeAll': {},
   'settings:translations.fields.customer_recovery_removeGroup': {},
+  'settings:translations.fields.customer_recovery_reopenFromCart': {},
   'settings:translations.fields.customer_recovery_repairHelp': {},
   'settings:translations.fields.customer_recovery_repairRequired': {},
   'settings:translations.fields.customer_recovery_startNew': {},

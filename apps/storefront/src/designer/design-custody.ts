@@ -7,7 +7,8 @@ type Api = {
 };
 /**
  * A UUID hint locates an owned retained draft; storage never supplies ownership or a configuration snapshot.
- * Beside it, an opaque fingerprint of the cart quantities the draft was based on detects later native cart edits.
+ * Beside it, an unsalted SHA-256 of the cart quantities the draft was based on detects later native cart edits;
+ * it reveals nothing beyond what /cart.js shows this origin and grants nothing.
  */
 export function createSelectedDesignCustody(input: {
   api: Api;
@@ -19,7 +20,7 @@ export function createSelectedDesignCustody(input: {
   const known = new Map<string, ReturnType<typeof BuyerDesignResultSchema.parse>>();
   const key = async (group: BuyerDesiredGroup) =>
     `insignia:selected-design:v1:${input.namespace}:${await advisoryFingerprint(desiredGroupKey(group, false, false))}`;
-  // The cart quantities a draft was based on, as an opaque fingerprint. A cart that no longer has them
+  // The cart quantities a draft was based on, as a SHA-256 of sorted [variantId, quantity] pairs. A cart that no longer has them
   // was edited natively since, and its quantities are the buyer's latest choice (#341).
   const baseKey = (id: string) => `insignia:selected-design-cart:v1:${input.namespace}:${id}`;
   const quantities = (group: BuyerDesiredGroup) =>
@@ -46,7 +47,7 @@ export function createSelectedDesignCustody(input: {
     async forget(id: string, group: BuyerDesiredGroup) {
       const pointer = await key(group);
       if (input.storage.getItem(pointer) === id) input.storage.setItem(pointer, '');
-      input.storage.setItem(baseKey(id), '');
+      if (input.storage.getItem(baseKey(id))) input.storage.setItem(baseKey(id), '');
     },
     /** After Update cart the accepted cart line is the draft's new base. */
     async rebase(id: string, cart: BuyerDesiredGroup) {
@@ -60,7 +61,9 @@ export function createSelectedDesignCustody(input: {
       onHint?.(id);
       const saved = await read(id, signal);
       if (!saved) return null;
-      // Without a recorded base (an older draft) the draft keeps its quantities, as before.
+      // Without a recorded base (an older draft) the draft keeps its quantities, as before. Only the
+      // current quantities are compared: a draft at 4 on base 2 still wins after the cart goes
+      // 2 -> 3 -> 2, since the cart again holds what the draft's edit started from. That is intended.
       const base = input.storage.getItem(baseKey(id));
       return { ...saved, cartQuantitiesChanged: !!base && base !== (await quantities(group)) };
     },

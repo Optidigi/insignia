@@ -2497,6 +2497,7 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_recovery_remainingItems': object;
   'settings:translations.fields.customer_recovery_removeAll': object;
   'settings:translations.fields.customer_recovery_removeGroup': object;
+  'settings:translations.fields.customer_recovery_reopenFromCart': object;
   'settings:translations.fields.customer_recovery_repairHelp': object;
   'settings:translations.fields.customer_recovery_repairRequired': object;
   'settings:translations.fields.customer_recovery_startNew': object;
@@ -2840,6 +2841,7 @@ export interface CustomerMessageTable {
   'customer:recovery.remainingItems': object;
   'customer:recovery.removeAll': object;
   'customer:recovery.removeGroup': object;
+  'customer:recovery.reopenFromCart': object;
   'customer:recovery.repairHelp': object;
   'customer:recovery.repairRequired': object;
   'customer:recovery.startNew': object;

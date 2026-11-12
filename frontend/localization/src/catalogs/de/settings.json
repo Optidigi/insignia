@@ -522,6 +522,7 @@
       "customer_recovery_repairRequired": "Deine Personalisierung muss geprüft werden",
       "customer_recovery_repairHelp": "Deine vorhandenen personalisierten Artikel bleiben im Warenkorb, bis du den Ersatz oder die Entfernung bestätigst.",
       "customer_recovery_startNew": "Neue Personalisierung starten",
+      "customer_recovery_reopenFromCart": "Änderungen verwerfen und aus dem Warenkorb neu öffnen",
       "customer_recovery_removeGroup": "Entfernung dieser Personalisierung prüfen",
       "customer_recovery_removeAll": "Entfernung aller personalisierten Artikel prüfen",
       "customer_recovery_confirmRemoval": "Warenkorbänderung bestätigen",

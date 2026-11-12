@@ -524,6 +524,7 @@
       "customer_recovery_repairRequired": "Tu personalización necesita revisión",
       "customer_recovery_repairHelp": "Tus artículos personalizados permanecen en el carrito hasta que confirmes su sustitución o eliminación.",
       "customer_recovery_startNew": "Iniciar una nueva personalización",
+      "customer_recovery_reopenFromCart": "Descartar cambios y reabrir desde el carrito",
       "customer_recovery_removeGroup": "Revisar la eliminación de esta personalización",
       "customer_recovery_removeAll": "Revisar la eliminación de todos los artículos personalizados",
       "customer_recovery_confirmRemoval": "Confirmar actualización del carrito",

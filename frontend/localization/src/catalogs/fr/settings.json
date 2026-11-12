@@ -524,6 +524,7 @@
       "customer_recovery_repairRequired": "Votre personnalisation doit être vérifiée",
       "customer_recovery_repairHelp": "Vos articles personnalisés restent dans le panier jusqu’à votre confirmation du remplacement ou du retrait.",
       "customer_recovery_startNew": "Créer une nouvelle personnalisation",
+      "customer_recovery_reopenFromCart": "Abandonner les modifications et rouvrir depuis le panier",
       "customer_recovery_removeGroup": "Vérifier le retrait de cette personnalisation",
       "customer_recovery_removeAll": "Vérifier le retrait de tous les articles personnalisés",
       "customer_recovery_confirmRemoval": "Confirmer la mise à jour du panier",

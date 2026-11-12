@@ -522,6 +522,7 @@
       "customer_recovery_repairRequired": "Your customization needs review",
       "customer_recovery_repairHelp": "Your existing customized items stay in the cart until you confirm replacement or removal.",
       "customer_recovery_startNew": "Start a new customization",
+      "customer_recovery_reopenFromCart": "Discard changes and reopen from cart",
       "customer_recovery_removeGroup": "Review removing this customization",
       "customer_recovery_removeAll": "Review removing all customized items",
       "customer_recovery_confirmRemoval": "Confirm cart update",

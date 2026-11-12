@@ -234,6 +234,7 @@
     "repairRequired": "Votre personnalisation doit être vérifiée",
     "repairHelp": "Vos articles personnalisés restent dans le panier jusqu’à votre confirmation du remplacement ou du retrait.",
     "startNew": "Créer une nouvelle personnalisation",
+    "reopenFromCart": "Abandonner les modifications et rouvrir depuis le panier",
     "removeGroup": "Vérifier le retrait de cette personnalisation",
     "removeAll": "Vérifier le retrait de tous les articles personnalisés",
     "confirmRemoval": "Confirmer la mise à jour du panier",

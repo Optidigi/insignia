@@ -139,6 +139,8 @@ export type DesignerEvent =
   | { type: 'quantity-entered'; color: ColorId; size: string; value: number }
   | { type: 'quantity-focused'; color: ColorId }
   | { type: 'quantity-removed'; key: string }
+  /** The host observed this design's cart line changed outside the Designer (a native cart edit). */
+  | { type: 'cart-line-observed'; design: Design }
   | { type: 'position-selected'; positionId: PositionId }
   | { type: 'position-expanded'; positionId: PositionId | null }
   | { type: 'position-added'; print: Print }
@@ -321,6 +323,8 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
     }
     case 'quantity-focused':
       return state.rules.colorIds.includes(event.color) ? { ...state, color: event.color } : state;
+    case 'cart-line-observed':
+      return observeCartLine(state, event.design);
     case 'quantity-removed':
       return Object.hasOwn(state.quantities, event.key)
         ? {
@@ -841,6 +845,22 @@ function loadCartDesign(state: DesignerState, design: Design): DesignerState {
   const selectedColor = firstColor ? { ...initial, color: firstColor } : initial;
   const firstPrint = design.prints[0];
   return firstPrint ? selectPosition(selectedColor, firstPrint.id) : selectedColor;
+}
+
+/**
+ * The cart line becomes the unchanged state. Quantities the buyer never edited follow it, so a
+ * later Update cart cannot revert the native edit; edited quantities and all print edits stay.
+ */
+function observeCartLine(state: DesignerState, design: Design): DesignerState {
+  if (!state.baseline || design.id !== state.editing) return state;
+  const untouched = quantitySignature(state.quantities) === quantitySignature(state.baseline.quantities);
+  const quantities = untouched ? { ...design.quantities } : state.quantities;
+  const added = state.rules.colorIds.filter(
+    (color) =>
+      !state.colorRows.includes(color) &&
+      state.rules.sizeIds.some((size) => (quantities[`${color}:${size}`] ?? 0) > 0),
+  );
+  return { ...state, quantities, colorRows: [...state.colorRows, ...added], baseline: copyDesign(design) };
 }
 
 function requestProductDesignEdit(state: DesignerState, design: Design): DesignerState {

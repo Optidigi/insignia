@@ -525,6 +525,7 @@
       "customer_recovery_repairRequired": "La tua personalizzazione richiede una verifica",
       "customer_recovery_repairHelp": "Gli articoli personalizzati restano nel carrello finché non confermi la sostituzione o la rimozione.",
       "customer_recovery_startNew": "Inizia una nuova personalizzazione",
+      "customer_recovery_reopenFromCart": "Scarta le modifiche e riapri dal carrello",
       "customer_recovery_removeGroup": "Verifica la rimozione di questa personalizzazione",
       "customer_recovery_removeAll": "Verifica la rimozione di tutti gli articoli personalizzati",
       "customer_recovery_confirmRemoval": "Conferma aggiornamento carrello",
