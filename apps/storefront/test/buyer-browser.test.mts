@@ -1,5 +1,5 @@
 import { BuyerAcceptanceSchema, BuyerDesiredGroupSchema, BuyerProposalRequestSchema } from '@insignia/contracts';
-import type { FrameLocator, Locator, Page } from 'playwright';
+import type { FrameLocator, Locator, Page, Request as PlaywrightRequest } from 'playwright';
 
 type ObservedCartRequest = {
   idempotencyKey: string;
@@ -73,6 +73,8 @@ const config: BuyerConfig = {
 };
 async function prepareSelectedPage(page: Page, origin: string) {
   page.setDefaultTimeout(7000);
+  // The first load compiles the storefront and Designer on demand; a loaded runner needs longer.
+  page.setDefaultNavigationTimeout(30_000);
   await page.route('**/*', (route) =>
     new URL(route.request().url()).origin === origin ? route.continue() : route.abort('blockedbyclient'),
   );
@@ -1495,7 +1497,17 @@ for (const restoreUnavailable of [false, true])
   });
 
 test('an incompatible republish requires explicit selected design repair and never silently drops retained logo-later choices', async () => {
-  await withRetainedBuyer(async ({ host, proposals, configure, group }) => {
+  await withRetainedBuyer(async ({ page, host, accepts, mutations, configure, group }) => {
+    // Preparation sends its proposal without waiting for the fresh config read; the server re-checks
+    // the revision. Whether that proposal leaves before the changed publication is seen is a race,
+    // so hold proposals and assert the contract instead: a changed publication aborts it.
+    await page.route('**/apps/insignia/v1/quote-proposals', () => new Promise<void>(() => {}));
+    const dispatched: PlaywrightRequest[] = [];
+    const aborted = new Set<PlaywrightRequest>();
+    page.on('request', (request) => {
+      if (new URL(request.url()).pathname.endsWith('/quote-proposals')) dispatched.push(request);
+    });
+    page.on('requestfailed', (request) => aborted.add(request));
     const cfg = structuredClone(config);
     required(cfg.placements[0]).logoLaterAllowed = false;
     cfg.revisionId = 'changed';
@@ -1503,7 +1515,10 @@ test('an incompatible republish requires explicit selected design repair and nev
     configure(cfg);
     await reviewRetained(host);
     await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
-    assert.equal(proposals.length, 0);
+    for (const request of dispatched)
+      if (!aborted.has(request)) await page.waitForEvent('requestfailed', (failed) => failed === request);
+    assert.equal(accepts.length, 0);
+    assert.equal(mutations(), 0);
     assert.equal(required(group.design.placements[0]).artwork.kind, 'deferred');
   });
 });
@@ -1753,6 +1768,9 @@ async function withProductDesigner(
           },
         });
       }
+      // Settled quantities start the Designer's eager review 350 ms later. These cases stop before
+      // Review, so its proposal stays unanswered (editing or closing cancels it) rather than racing.
+      if (path.endsWith('/quote-proposals')) return new Promise<void>(() => {});
       privateRequests++;
       throw new Error(`Unexpected product-designer API request: ${path}`);
     });
@@ -2004,9 +2022,7 @@ test('#349: an artwork check that never finishes ends with a retryable message',
 
 test('reopening resumes the selected Designer without a developer host page', async () => {
   await withProductDesigner(config, async ({ page, ui, trigger }) => {
-    // Settled quantities start the Designer's eager review 350 ms later. Hold its proposals so the
-    // test starts from that state every time instead of racing the close against the timer.
-    await page.route('**/apps/insignia/v1/quote-proposals', () => new Promise<void>(() => {}));
+    // Start from the eager review's held proposal every time instead of racing the close against it.
     const eager = page.waitForRequest('**/apps/insignia/v1/quote-proposals');
     await addDeferred(ui, 'Front');
     await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
@@ -2058,6 +2074,11 @@ test('selected desktop and mobile layouts retain the design and quantities when 
     await positionCard(ui, 'Front').getByText('Artwork to follow', { exact: true }).first().waitFor();
     await page.setViewportSize({ width: 390, height: 844 });
     const mobile = await ui.locator('.app').evaluate(async (app) => {
+      // The frame's viewport follows the page resize asynchronously on a loaded runner.
+      for (const deadline = Date.now() + 10000; innerWidth !== 390 || innerHeight !== 844; ) {
+        if (Date.now() > deadline) throw new Error(`Frame viewport stayed ${innerWidth}x${innerHeight}`);
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+      }
       // Media-query listeners update preview focus on the next render; take all bounds in one settled frame.
       await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
       const preview = app.querySelector('.preview-panel')?.getBoundingClientRect();
