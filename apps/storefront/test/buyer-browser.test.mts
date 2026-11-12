@@ -71,10 +71,12 @@ const config: BuyerConfig = {
   imageUrls: { photo: 'https://preview.example/fixture.png' },
   ready: true,
 };
+// The first page load and first Designer opening compile the storefront and Designer frame on
+// demand; on a loaded runner that readiness takes longer than the 7 s action default.
+const firstLoad = { timeout: 30_000 };
 async function prepareSelectedPage(page: Page, origin: string) {
   page.setDefaultTimeout(7000);
-  // The first load compiles the storefront and Designer on demand; a loaded runner needs longer.
-  page.setDefaultNavigationTimeout(30_000);
+  page.setDefaultNavigationTimeout(firstLoad.timeout);
   await page.route('**/*', (route) =>
     new URL(route.request().url()).origin === origin ? route.continue() : route.abort('blockedbyclient'),
   );
@@ -842,11 +844,19 @@ async function withRetainedBuyer(
           .update(JSON.stringify([request.groups, rows]))
           .digest('hex');
         quotes.set(proposalId, { hash, desired: request.groups });
+        // The quote expires on the page's clock (fake in clock tests). An eager proposal can still be
+        // here when the test reloads or closes the page; nobody then awaits its response.
+        let pageNow: number;
+        try {
+          pageNow = await page.evaluate(() => Date.now());
+        } catch {
+          return route.abort().catch(() => {});
+        }
         return route.fulfill({
           json: {
             proposalId,
             hash,
-            expiresAt: new Date(await page.evaluate(() => Date.now() + 60000)).toISOString(),
+            expiresAt: new Date(pageNow + 60000).toISOString(),
             currency: 'EUR',
             exponent: 2,
             customizedQuantity: rows.reduce((sum, row) => sum + row.quantity, 0),
@@ -929,10 +939,10 @@ async function withRetainedBuyer(
       .click();
     const host = page.frameLocator('iframe:not([hidden])');
     if (opening === 'repair') {
-      await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
+      await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor(firstLoad);
       await host.getByRole('button', { name: 'Review removing all customized items', exact: true }).waitFor();
       assert.equal(await host.locator('input,select,textarea').count(), 0);
-    } else await host.locator('.app').waitFor();
+    } else await host.locator('.app').waitFor(firstLoad);
     assert.equal(await page.locator('dialog[open]').isVisible(), true);
     assert.equal(await page.locator('dialog[open] > iframe').isVisible(), true);
     assert.equal(
@@ -961,6 +971,13 @@ async function withRetainedBuyer(
     await browser?.close();
     await server.close();
   }
+}
+/**
+ * Pauses page timers (needs `clock: true`) so the Designer's eager review, 350 ms after quantities
+ * settle, cannot run between a test's own edit, native cart change and Review click.
+ */
+async function freezeTimers(page: Page) {
+  await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 1000);
 }
 async function reviewRetained(host: FrameLocator) {
   await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
@@ -1214,14 +1231,18 @@ test('pending quote preparation keeps review editing responsive and cancels obso
 });
 
 test('selected full-cart review rejects external signed quantity drift without issuing or mutating the cart', async () => {
-  await withRetainedBuyer(async ({ host, editCart, proposals, accepts, mutations }) => {
-    editCart();
-    await reviewRetained(host);
-    await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
-    assert.equal(proposals.length, 0);
-    assert.equal(accepts.length, 0);
-    assert.equal(mutations(), 0);
-  });
+  await withRetainedBuyer(
+    async ({ page, host, editCart, proposals, accepts, mutations }) => {
+      await freezeTimers(page);
+      editCart();
+      await reviewRetained(host);
+      await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
+      assert.equal(proposals.length, 0);
+      assert.equal(accepts.length, 0);
+      assert.equal(mutations(), 0);
+    },
+    { clock: true },
+  );
 });
 /** The verified apply hands off to the native cart (204 here); reloading during it races that navigation. */
 const nativeCartHandoff = (page: Page) =>
@@ -1237,7 +1258,8 @@ async function reopenOwned(page: Page, trigger: Locator, host: FrameLocator) {
     document.body.append(buyer);
   });
   await trigger.getByRole('button', { name: 'Review customized cart', exact: true }).click();
-  await host.locator('.app').waitFor();
+  // After a full reload the Designer frame loads again, like a first opening.
+  await host.locator('.app').waitFor(firstLoad);
 }
 test('a native cart quantity change reopens the design at the cart quantity, never the saved draft quantity (#341)', async () => {
   await withRetainedBuyer(
@@ -1323,6 +1345,7 @@ test('after Update cart, a native return to the earlier quantity is still the ca
 test('after a cart quantity change during editing, Retry follows the cart when the buyer kept its quantity (#341)', async () => {
   await withRetainedBuyer(
     async ({ page, host, editCart, proposals, accepts, mutations }) => {
+      await freezeTimers(page);
       editCart();
       await reviewRetained(host);
       await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
@@ -1343,12 +1366,13 @@ test('after a cart quantity change during editing, Retry follows the cart when t
       assert.equal(accepts.length, 0);
       assert.equal(mutations(), 0);
     },
-    { observedQuantities: true },
+    { observedQuantities: true, clock: true },
   );
 });
 test('after a cart quantity change during editing, Retry keeps a quantity the buyer edited in the Designer (#341)', async () => {
   await withRetainedBuyer(
-    async ({ host, editCart, proposals, accepts, mutations }) => {
+    async ({ page, host, editCart, proposals, accepts, mutations }) => {
+      await freezeTimers(page);
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
       await host.locator('input[type=number]:enabled').first().fill('4');
       editCart();
@@ -1364,12 +1388,13 @@ test('after a cart quantity change during editing, Retry keeps a quantity the bu
       assert.equal(accepts.length, 0);
       assert.equal(mutations(), 0);
     },
-    { observedQuantities: true },
+    { observedQuantities: true, clock: true },
   );
 });
 test('after a cart quantity change during editing, the start action reopens the cart design at the cart quantity (#341)', async () => {
   await withRetainedBuyer(
-    async ({ host, editCart, proposals, accepts, mutations }) => {
+    async ({ page, host, editCart, proposals, accepts, mutations }) => {
+      await freezeTimers(page);
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
       await host.locator('input[type=number]:enabled').first().fill('7');
       editCart();
@@ -1393,7 +1418,7 @@ test('after a cart quantity change during editing, the start action reopens the 
       assert.equal(accepts.length, 0);
       assert.equal(mutations(), 0);
     },
-    { observedQuantities: true },
+    { observedQuantities: true, clock: true },
   );
 });
 test('selected acknowledgements rotate acceptance keys while uncertain API retries preserve the exact proposal and key', async () => {
@@ -1787,11 +1812,11 @@ async function withProductDesigner(
     await trigger.click();
     const ui = page.frameLocator('iframe:not([hidden])');
     if (opening === 'unavailable') {
-      await ui.getByRole('heading', { name: 'Unavailable', exact: true }).waitFor();
+      await ui.getByRole('heading', { name: 'Unavailable', exact: true }).waitFor(firstLoad);
       assert.equal(await ui.locator('input,select,textarea').count(), 0);
       assert.equal(await ui.locator('.app').count(), 0);
       assert.equal(await ui.getByRole('button', { name: /Review removing/ }).count(), 0);
-    } else await ui.locator('.app').waitFor();
+    } else await ui.locator('.app').waitFor(firstLoad);
     assert.equal(await page.locator('dialog[open]').isVisible(), true);
     assert.equal(await page.locator('dialog[open] > iframe').isVisible(), true);
     assert.equal(
@@ -2074,9 +2099,13 @@ test('selected desktop and mobile layouts retain the design and quantities when 
     await positionCard(ui, 'Front').getByText('Artwork to follow', { exact: true }).first().waitFor();
     await page.setViewportSize({ width: 390, height: 844 });
     const mobile = await ui.locator('.app').evaluate(async (app) => {
-      // The frame's viewport follows the page resize asynchronously on a loaded runner.
-      for (const deadline = Date.now() + 10000; innerWidth !== 390 || innerHeight !== 844; ) {
-        if (Date.now() > deadline) throw new Error(`Frame viewport stayed ${innerWidth}x${innerHeight}`);
+      // The page resize reaches the frame asynchronously on a loaded runner, and Chromium can keep the
+      // old 100dvh on existing elements for a few frames after the frame itself reports 844.
+      const resized = () =>
+        innerWidth === 390 && innerHeight === 844 && Math.round(app.getBoundingClientRect().height) === 844;
+      for (const deadline = Date.now() + 10000; !resized(); ) {
+        if (Date.now() > deadline)
+          throw new Error(`Layout stayed ${innerWidth}x${innerHeight}, app ${app.getBoundingClientRect().height}`);
         await new Promise((resolve) => requestAnimationFrame(resolve));
       }
       // Media-query listeners update preview focus on the next render; take all bounds in one settled frame.
