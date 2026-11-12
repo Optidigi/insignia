@@ -596,6 +596,8 @@ export function createBuyerRepository(db: Kysely<Database>) {
       input: { quoteId: string; setId: string; ownerBinding: string; now: Date },
     ): Promise<{ quote: AcceptedQuote; authorization: QuoteAuthorizationSet; request: unknown } | null> {
       validScope(scope);
+      // The set records its key's window at signing; retirement later shortens the key's last day, so the
+      // key need only still cover the set's valid-through day, not equal the recorded window (#342).
       const r = (
         await sql<{
           quote_value: AcceptedQuote;
@@ -621,7 +623,7 @@ export function createBuyerRepository(db: Kysely<Database>) {
         AND i.authorization_generation=q.authorization_generation AND i.authorization_epoch=q.authorization_epoch
         AND a.authorization_generation=i.authorization_generation AND a.authorization_epoch=i.authorization_epoch
         AND k.state IN ('active','retiring') AND k.revoked_at IS NULL AND k.public_key_fingerprint=a.public_key_fingerprint
-        AND k.first_valid_day=a.first_valid_day AND k.last_valid_day=a.last_valid_day AND k.last_valid_day>=a.valid_through_day
+        AND k.first_valid_day=a.first_valid_day AND k.last_valid_day>=a.valid_through_day
       `.execute(db)
       ).rows[0];
       return r
