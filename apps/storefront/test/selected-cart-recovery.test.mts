@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -82,11 +83,13 @@ type Hooks = {
   buckets?(set: number): { variantId: string; quantity: number; properties: Record<string, string> }[];
   /** Lines already in the buyer's cart. */
   initial?: AjaxItem[];
+  /** Tab storage written by an earlier page of this tab. */
+  storage?: Record<string, string>;
 };
 const ordinaryItem = (key: string): AjaxItem => ({ key, variant_id: 7, quantity: 1, properties: {} });
 
 function fixture(hooks: Hooks = {}) {
-  const values = new Map<string, string>();
+  const values = new Map<string, string>(Object.entries(hooks.storage ?? {}));
   let items: AjaxItem[] = structuredClone(hooks.initial ?? []);
   const proposed: string[] = [];
   const accepted: string[] = [];
@@ -306,6 +309,39 @@ test('an unknown cart outcome offers repair in the Designer even with no customi
   const receipt = await withWindow(() => app.live.ports.cart.commit(app.request));
   assert.equal((receipt as CartReceipt).kind, 'applied');
   assert.equal(app.customized().length, 1);
+});
+
+test('a tab holding four tombstones or a legacy one can Add again after the buyer confirms the repair (#371)', async () => {
+  const digest = (value: string) => createHash('sha256').update(value).digest('hex');
+  for (const tombstones of [[5, 6, 7, 8].map((set) => digest(v3Carrier('101', set).slice(0, 236))), [digest('')]]) {
+    const first = tombstones[0] ?? '';
+    // The per-tab journal as a tab wrote it before tombstones carried a date.
+    const app = fixture({
+      storage: {
+        'insignia-cart-unresolved-v2': '1',
+        'insignia-cart-intent-v1': JSON.stringify({
+          version: 1,
+          phase: 'abandoned',
+          before: first,
+          goal: first,
+          quote: first,
+          abandoned: tombstones,
+        }),
+      },
+    });
+    await app.live.ports.review!.prepare(app.request);
+    await assert.rejects(withWindow(() => app.live.ports.cart.commit(app.request)));
+    assert.deepEqual(app.needsReview, [true], 'the blocked tab offers the repair');
+    await app.live.prepareRemoval();
+    await withWindow(() => app.live.confirmRemoval());
+    await assert.rejects(
+      withWindow(() => app.live.ports.cart.commit(app.request)),
+      reviewRequired,
+    );
+    const receipt = await withWindow(() => app.live.ports.cart.commit(app.request));
+    assert.equal((receipt as CartReceipt).kind, 'applied', 'the tab is no longer blocked');
+    assert.equal(app.customized().length, 1);
+  }
 });
 
 test('a foreign edit racing the final removal still reports the exactly landed lines as applied', async () => {

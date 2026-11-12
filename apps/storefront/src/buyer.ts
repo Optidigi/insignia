@@ -337,7 +337,10 @@ export function cartJournal(storage: Pick<Storage, 'getItem' | 'setItem'>, root:
     readIntent: () => {
       const text = storage.getItem(intentKey);
       if (text && text.length > 1024) throw new Error('Invalid cart recovery state');
-      return parseCartMutationIntent(text ? JSON.parse(text) : null);
+      // Returned as stored: the cart adapter dates a version-1 entry on its first read and persists it.
+      const value: unknown = text ? JSON.parse(text) : null;
+      parseCartMutationIntent(value);
+      return value;
     },
     writeIntent: (value: CartMutationIntent | null) =>
       storage.setItem(intentKey, JSON.stringify(parseCartMutationIntent(value))),

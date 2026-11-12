@@ -722,12 +722,14 @@ export function createLiveDesignerPorts(input: {
     const result = await cart.apply(buckets, {
       expectedFingerprint: reviewed.baseline.fingerprint,
       repair: buckets.length === 0,
+      removal: true,
     });
     // Another tab or the Designer is applying the cart. The reviewed removal and its accepted set are kept, so Retry
     // applies the same set (#371).
     if (result.reason === 'busy')
       throw Object.assign(new Error('Cart update in progress elsewhere'), { code: 'CART_BUSY' });
-    // Explicit removal is how an unknown earlier write is retired; its tombstone stays for late carriers.
+    // Explicit removal is how an unknown earlier write is retired; its tombstone stays for late carriers until a
+    // later successful repair or removal observes none of its lines, or it expires (#371).
     if (result.status !== 'applied' || !result.cart) throw new Error('Cart removal remains unresolved');
     if (reviewed.accepted)
       await api
