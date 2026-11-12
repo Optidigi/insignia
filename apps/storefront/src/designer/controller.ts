@@ -5,6 +5,7 @@ import { desiredGroupKey, restorableDesign } from './group-key';
 import { createLiveDesignerPorts } from './live-ports';
 import { createDesignerModal } from './modal';
 import { buildBuyerDesigner } from './published';
+import { type RepairState, repairOffers } from './repair-state';
 
 type DesignerRecord = {
   frame: ReturnType<typeof createDesignerFrame>;
@@ -65,25 +66,32 @@ export async function mountLiveDesigner(input: {
     const generation = ++selectionGeneration;
     if (!current()) return;
     let source = input.source;
-    let canStart = true;
-    let cartTargetAvailable = true;
-    // Set by the review that found this design's cart line changed outside the Designer.
-    let cartLineMoved = false;
+    let configRead = true;
+    // What the repair view was last asked to show. Its offered actions also decide what Start does.
+    let repairState: RepairState | undefined;
     if (group || reset) {
       try {
         const currentSource = await api.config(signal, group?.productId ?? targetProduct);
         source = currentSource;
       } catch {
-        canStart = false;
+        configRead = false;
       }
     }
     if (!current() || signal.aborted || generation !== selectionGeneration) return;
     const options = { locale: input.locale, storeName: input.storeName };
     let mapped: ReturnType<typeof buildBuyerDesigner> | undefined;
     try {
-      if (canStart) mapped = buildBuyerDesigner(source, options);
+      if (configRead) mapped = buildBuyerDesigner(source, options);
     } catch {
-      canStart = false;
+      /* The current configuration cannot be shown: only repair is offered. */
+    }
+    // Only a design opened from the cart has its own cart line to remove or reopen.
+    function forSelection(state: RepairState): RepairState {
+      if (group) return state;
+      if (state.cause === 'cart-changed')
+        return { cause: 'review-required', canStart: true, canRemoveGroup: false, canRemoveAll: true };
+      if (state.cause === 'review-required') return { ...state, canRemoveGroup: false };
+      return state;
     }
     let record: DesignerRecord;
     const refreshedPreviews = new Set<string>();
@@ -91,27 +99,10 @@ export async function mountLiveDesigner(input: {
       ...input,
       source,
       productId: source.productId,
-      onNeedsReview(
-        available,
-        targetAvailable,
-        canRemoveAll,
-        request,
-        { cartLineMoved: moved = false, earlierSession } = {},
-      ) {
+      onNeedsReview(state, request) {
         if (request?.signal.aborted) return;
-        canStart = available;
-        cartTargetAvailable = targetAvailable;
-        cartLineMoved = !!group && moved;
-        record.frame.repair(
-          {
-            canStart: available,
-            canRemoveGroup: !!group && targetAvailable,
-            canRemoveAll,
-            reopensCartLine: cartLineMoved,
-            ...(earlierSession ? { earlierSession } : {}),
-          },
-          request,
-        );
+        repairState = forSelection(state);
+        record.frame.repair(repairState, request);
       },
       onPriceRefresh(next, request) {
         record.frame.prices(buildBuyerDesigner(next, options).config, next.wording, request);
@@ -138,7 +129,7 @@ export async function mountLiveDesigner(input: {
         if (exact.length !== 1 || !exact[0]) throw new Error('Cart selection changed');
         original = exact[0];
         const retained = reset ? null : await live.restoreSaved(original, signal);
-        if (!canStart || !mapped) throw new Error('Current configuration unavailable');
+        if (!mapped) throw new Error('Current configuration unavailable');
         if (retained && ['choice-unavailable', 'configuration-unavailable'].includes(retained.compatibility))
           throw new Error('Saved choices require review');
         const id = reset ? crypto.randomUUID() : (retained?.id ?? crypto.randomUUID());
@@ -211,15 +202,19 @@ export async function mountLiveDesigner(input: {
       }
     }
     if (!current() || signal.aborted || generation !== selectionGeneration) return;
+    if (repair)
+      repairState = original
+        ? { cause: 'review-required', canStart: !!mapped, canRemoveGroup: true, canRemoveAll }
+        : { cause: 'unavailable', canRemoveAll };
     const modal = openingModal;
     openingModal = undefined;
     const frame = createDesignerFrame({
       modal,
       initiallyHidden,
       ...(mapped ? { config: mapped.config } : {}),
-      title: canStart ? source.title : undefined,
+      title: mapped ? source.title : undefined,
       onInitializationRetry: () => retryInitialization((signal) => show(group, reset, targetProduct, signal)),
-      ...(repair ? { repair: { canStart: canStart && !!original, canRemoveGroup: !!original, canRemoveAll } } : {}),
+      ...(repairState ? { repair: repairState } : {}),
       async onRepair(action) {
         if (action === 'retry') {
           if (repair) {
@@ -235,24 +230,25 @@ export async function mountLiveDesigner(input: {
                 (candidate) => desiredGroupKey(candidate, false, false) === desiredGroupKey(group, false, false),
               )
             : [];
-          cartTargetAvailable = !group || target.length > 0;
-          try {
-            buildBuyerDesigner(latest, options);
-            canStart = true;
-          } catch {
-            canStart = false;
-          }
+          const targetAvailable = !group || target.length > 0;
           if (
             latest.revisionId !== source.revisionId ||
             latest.contentHash !== source.contentHash ||
-            !cartTargetAvailable
+            !targetAvailable
           ) {
-            cartLineMoved = false;
-            record.frame.repair({
+            let canStart = true;
+            try {
+              buildBuyerDesigner(latest, options);
+            } catch {
+              canStart = false;
+            }
+            repairState = {
+              cause: 'review-required',
               canStart,
-              canRemoveGroup: !!group && cartTargetAvailable,
+              canRemoveGroup: !!group && targetAvailable,
               canRemoveAll: observed.cart.customized.length > 0,
-            });
+            };
+            record.frame.repair(repairState);
             throw new Error('Explicit customization review required');
           }
           // The cart line may have changed natively under the open Designer: the edit now replaces it as it is.
@@ -262,16 +258,23 @@ export async function mountLiveDesigner(input: {
             // Quantities the buyer did not edit follow the cart, so Update cart cannot revert it.
             record.frame.cartLine(mapped.restore(original, restored.initialDesign.id));
           }
-          cartLineMoved = false;
+          repairState = undefined;
           record.frame.repair();
           return;
         }
         if (action === 'start') {
-          if (!canStart || (group && !original && cartTargetAvailable))
+          const state = repairState;
+          // Only an offered Start or Reopen proceeds. A design whose own cart line is there but was not restored
+          // cannot be started over in its place.
+          if (
+            !state ||
+            !repairOffers(state, 'start') ||
+            (group && !original && state.cause === 'review-required' && state.canRemoveGroup)
+          )
             throw new Error('Current customization unavailable');
           // A cart line changed natively under the Designer still holds this design: reopen it from the cart.
           const changed =
-            group && cartLineMoved
+            group && state.cause === 'cart-changed'
               ? (await live.observe()).groups.filter(
                   (candidate) => desiredGroupKey(candidate, false, false) === desiredGroupKey(group, false, false),
                 )
@@ -280,7 +283,12 @@ export async function mountLiveDesigner(input: {
           discard(record);
           active = undefined;
           if (changed.length === 1 && changed[0]) await show(changed[0], false, changed[0].productId);
-          else await show(cartTargetAvailable ? (original ?? group) : undefined, true, source.productId);
+          else
+            await show(
+              state.cause === 'review-required' && state.canRemoveGroup ? (original ?? group) : undefined,
+              true,
+              source.productId,
+            );
           return;
         }
         if (action === 'remove-group') {
@@ -389,7 +397,7 @@ export async function mountLiveDesigner(input: {
       // No owned choices are disclosed. Only an explicit journalled removal of observed customization is available,
       // and lines an earlier session accepted can be kept as they are (#340).
       if (!current() || signal.aborted || generation !== selectionGeneration) return;
-      const earlierSession = earlierSessionCart(error);
+      const lines = earlierSessionCart(error);
       let canRemoveAll = false;
       try {
         canRemoveAll = (await probe.readCart()).customized.length > 0;
@@ -405,7 +413,7 @@ export async function mountLiveDesigner(input: {
         title: input.source.title,
         ports: probe.ports,
         locale: input.locale,
-        repair: { canStart: false, canRemoveGroup: false, canRemoveAll, ...(earlierSession ? { earlierSession } : {}) },
+        repair: lines ? { cause: 'earlier-session', lines, canRemoveAll } : { cause: 'unavailable', canRemoveAll },
         onClose: close,
         async onRepair(action) {
           if (action === 'cart') {

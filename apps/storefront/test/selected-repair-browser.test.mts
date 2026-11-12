@@ -55,7 +55,7 @@ test('selected repair keeps cart unchanged until actual remaining-cart review is
     ],
     methods: [{ id: 'print', label: 'Print', surcharge: 0 }],
   };
-  const html = `<!doctype html><script type="module">import{createDesignerFrame}from'/host.js';window.prepared=0;window.confirmed=0;window.starts=0;window.closedRepair=0;window.repairFrame=createDesignerFrame({config:${JSON.stringify(config)},locale:'en',ports:{artwork:{upload:async()=>{throw Error('unused')}},cart:{commit:async()=>{throw Error('must not commit designer')}}},repair:{canStart:true,canRemoveGroup:true},onClose(){window.closedRepair++},async onRepair(action){if(action==='start'){window.starts++;return;}if(action==='confirm'){window.confirmed++;return;}window.prepared++;return{currency:'USD',exponent:2,totalMinor:'4200',customizedQuantity:2,groups:[{id:'sibling',label:'Retained sibling customization',quantity:2,totalMinor:'4200'}]};}});</script>`;
+  const html = `<!doctype html><script type="module">import{createDesignerFrame}from'/host.js';window.prepared=0;window.confirmed=0;window.starts=0;window.closedRepair=0;window.repairFrame=createDesignerFrame({config:${JSON.stringify(config)},locale:'en',ports:{artwork:{upload:async()=>{throw Error('unused')}},cart:{commit:async()=>{throw Error('must not commit designer')}}},repair:{cause:'review-required',canStart:true,canRemoveGroup:true,canRemoveAll:true},onClose(){window.closedRepair++},async onRepair(action){if(action==='start'){window.starts++;return;}if(action==='confirm'){window.confirmed++;return;}window.prepared++;return{currency:'USD',exponent:2,totalMinor:'4200',customizedQuantity:2,groups:[{id:'sibling',label:'Retained sibling customization',quantity:2,totalMinor:'4200'}]};}});</script>`;
   const server = createServer((req, res) => {
     void (async () => {
       const path = new URL(req.url ?? '/', 'http://fixture').pathname;
@@ -119,7 +119,7 @@ test('selected repair keeps cart unchanged until actual remaining-cart review is
       createDesignerFrame({
         title: 'Retained order',
         locale: 'en',
-        repair: { canStart: false, canRemoveGroup: false },
+        repair: { cause: 'unavailable', canRemoveAll: true },
         onClose() {},
         onRepair: async () => undefined,
       }),
@@ -138,8 +138,8 @@ test('selected repair keeps cart unchanged until actual remaining-cart review is
     1,
   );
   assert.doesNotMatch(await frame.locator('body').innerText(), /[$€]0[.,]00/, 'no dummy free quote is shown');
-  // #340 beside #341: an earlier session's lines win over a reopen offer; this session can neither reopen nor
-  // replace them. The two never arise together from the live ports, so this pins the precedence only.
+  // #340 beside #341: an earlier session's lines carry no reopen or start offer; this session can neither reopen
+  // nor replace them.
   for (const earlierSession of ['valid', 'expired'] as const) {
     await page.evaluate(async (earlierSession) => {
       Reflect.get(window, 'repairFrame').destroy();
@@ -150,7 +150,7 @@ test('selected repair keeps cart unchanged until actual remaining-cart review is
         createDesignerFrame({
           title: 'Retained order',
           locale: 'en',
-          repair: { canStart: true, canRemoveGroup: false, canRemoveAll: true, reopensCartLine: true, earlierSession },
+          repair: { cause: 'earlier-session', lines: earlierSession, canRemoveAll: true },
           onClose() {},
           onRepair: async () => undefined,
         }),

@@ -10,7 +10,6 @@ import {
   cartJournal,
   createBuyerApi,
   type DesiredGroup,
-  type EarlierSessionCart,
   earlierSessionCart,
   type QuoteProposal,
   replaceGroup,
@@ -20,6 +19,7 @@ import { type CartSnapshot, createAjaxCartAdapter } from '../cart';
 import { createSelectedDesignCustody } from './design-custody';
 import { desiredGroupKey } from './group-key';
 import { buildBuyerDesigner } from './published';
+import type { RepairState } from './repair-state';
 
 type Prepared = {
   signature: string;
@@ -55,22 +55,11 @@ export function createLiveDesignerPorts(input: {
    */
   storage: Pick<Storage, 'getItem' | 'setItem'>;
   onPriceRefresh?(source: BuyerConfig, request?: CartRequest): void;
-  onNeedsReview?(
-    canStart: boolean,
-    targetAvailable: boolean,
-    canRemoveAll: boolean,
-    request?: CartRequest,
-    /**
-     * Why the cart needs review, when known (the two never coincide: a moved line was read through this
-     * session's own cart-state, an earlier session's lines are refused by it).
-     */
-    cause?: {
-      /** This design is still in the cart, but its line changed outside the Designer (#341). */
-      cartLineMoved?: boolean;
-      /** An earlier session accepted the cart's customized lines; this one cannot change them (#340). */
-      earlierSession?: EarlierSessionCart;
-    },
-  ): void;
+  /**
+   * Why the cart needs review. `canRemoveGroup` says this design's own cart line is still there; the host offers it
+   * only for a design opened from the cart.
+   */
+  onNeedsReview?(state: RepairState, request?: CartRequest): void;
   onReview?(review: DesignerQuoteReview, request?: CartRequest): void;
   onApplied?(groups: DesiredGroup[]): void;
 }) {
@@ -183,7 +172,11 @@ export function createLiveDesignerPorts(input: {
           /* Unknown cart contents. */
         }
         signal.throwIfAborted();
-        input.onNeedsReview?.(false, false, canRemoveAll, request, { earlierSession: earlierSessionCart(error) });
+        const lines = earlierSessionCart(error);
+        input.onNeedsReview?.(
+          lines ? { cause: 'earlier-session', lines, canRemoveAll } : { cause: 'unavailable', canRemoveAll },
+          request,
+        );
         throw error;
       });
       // The proposal does not wait for this read: the server re-checks the revision and re-prices
@@ -282,7 +275,15 @@ export function createLiveDesignerPorts(input: {
           buildBuyerDesigner(refreshed, { locale: input.locale, storeName: input.storeName });
           available = true;
         } catch {}
-        input.onNeedsReview?.(available, true, observed.cart.customized.length > 0, request);
+        input.onNeedsReview?.(
+          {
+            cause: 'review-required',
+            canStart: available,
+            canRemoveGroup: true,
+            canRemoveAll: observed.cart.customized.length > 0,
+          },
+          request,
+        );
         throw new Error('Published configuration changed; review the current product configuration');
       }
       buildBuyerDesigner(refreshed, { locale: input.locale, storeName: input.storeName });
@@ -294,7 +295,17 @@ export function createLiveDesignerPorts(input: {
           observed.groups.some(
             (candidate) => desiredGroupKey(candidate, false, false) === desiredGroupKey(previous, false, false),
           );
-        input.onNeedsReview?.(true, false, observed.cart.customized.length > 0, request, { cartLineMoved: moved });
+        input.onNeedsReview?.(
+          moved
+            ? { cause: 'cart-changed' }
+            : {
+                cause: 'review-required',
+                canStart: true,
+                canRemoveGroup: false,
+                canRemoveAll: observed.cart.customized.length > 0,
+              },
+          request,
+        );
         throw new Error('Design requires current-cart review');
       }
       const { labels, proposal, groups } = await quoting;
@@ -492,7 +503,10 @@ export function createLiveDesignerPorts(input: {
               prepared.delete(request.idempotencyKey);
               issuanceAttempted.delete(request.idempotencyKey);
               issuedSignatures.delete(request.idempotencyKey);
-              input.onNeedsReview?.(canStart, targetAvailable, canRemoveAll, request);
+              input.onNeedsReview?.(
+                { cause: 'review-required', canStart, canRemoveGroup: targetAvailable, canRemoveAll },
+                request,
+              );
             } else if (
               error &&
               typeof error === 'object' &&
@@ -541,7 +555,7 @@ export function createLiveDesignerPorts(input: {
           }
           if (reason === 'mutation_unresolved') {
             // An unknown write blocks this tab until the buyer confirms a repair, even with no visible line (#339).
-            input.onNeedsReview?.(false, false, true, request);
+            input.onNeedsReview?.({ cause: 'unresolved-write' }, request);
           } else if (reason === 'cart_changed' || reason === 'vector_mismatch') {
             request.onPreparing?.();
             const presentation = await prepare(request);

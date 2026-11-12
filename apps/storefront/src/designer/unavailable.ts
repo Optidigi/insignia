@@ -31,7 +31,7 @@ export async function mountUnavailableDesigner(input: {
     title: input.title,
     locale: input.locale,
     wording: input.wording,
-    repair: { canStart: false, canRemoveGroup: false, canRemoveAll },
+    repair: { cause: 'unavailable', canRemoveAll },
     onClose: input.onClose,
     async onRepair(action) {
       if (action === 'retry') {

@@ -275,7 +275,7 @@ test('unlocked storefront loads buyer controls through its cookie-gated proxy an
           {
             type: 'insignia:designer:repair',
             channel: 'wrong-nonce',
-            repair: { canStart: false, canRemoveGroup: false },
+            repair: { cause: 'unavailable', canRemoveAll: true },
             probe: 'wrong-frame-channel',
           },
           location.origin,

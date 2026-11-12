@@ -2,39 +2,17 @@ import { createCustomerTranslator } from '@insignia/ui-localization/customer';
 import { useState } from 'preact/hooks';
 import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quote-review';
 import { quoteReviewMoney } from '../../../../frontend/designer/src/quote-review';
-import type { EarlierSessionCart } from '../buyer';
-export type RepairAction = 'start' | 'remove-group' | 'remove-all' | 'confirm' | 'retry' | 'cart';
-export type RepairState = {
-  canStart: boolean;
-  canRemoveGroup: boolean;
-  canRemoveAll?: boolean;
-  /** The cart line changed under the Designer: starting reopens its design from the cart (#341). */
-  reopensCartLine?: boolean;
-  /**
-   * The cart's customized lines were accepted in an earlier session and cannot be changed here (#340):
-   * `valid` lines can be kept for checkout, `expired` ones only removed. Never set with `reopensCartLine`,
-   * and it always comes with `canStart: false`, so no reopen or start action appears beside it.
-   */
-  earlierSession?: EarlierSessionCart;
-};
+import { type RepairAction, type RepairOffer, type RepairState, repairView } from './repair-state';
 export function DesignerRepair({
   locale,
   wording,
-  canStart,
-  canRemoveGroup,
-  canRemoveAll = true,
-  reopensCartLine = false,
-  earlierSession,
+  repair,
   onAction,
   onClose,
 }: {
   locale?: string;
   wording?: import('@insignia/contracts').MerchantCustomerWordingView;
-  canStart: boolean;
-  canRemoveGroup: boolean;
-  canRemoveAll?: boolean;
-  reopensCartLine?: boolean;
-  earlierSession?: EarlierSessionCart;
+  repair: RepairState;
   onAction(action: RepairAction): Promise<DesignerQuoteReview | undefined>;
   onClose(): void;
 }) {
@@ -57,28 +35,30 @@ export function DesignerRepair({
       setBusy(false);
     }
   }
-  const heading = earlierSession
-    ? 'customer:recovery.earlierSession'
-    : canRemoveAll
-      ? 'customer:recovery.repairRequired'
-      : 'customer:chrome.unavailable';
+  const view = repairView(repair);
+  // Fixed slots, so the buttons keep their places (and focus) when a removal review replaces them.
+  function offer(kind: RepairOffer['action']) {
+    const offered = view.actions.find((candidate) => candidate.action === kind);
+    return (
+      offered && (
+        <button
+          type="button"
+          className={offered.primary ? 'primary-button' : 'text-action'}
+          disabled={busy}
+          onClick={() => void action(kind)}
+        >
+          {t(offered.label)}
+        </button>
+      )
+    );
+  }
   return (
     <main className="admin-preview-message">
-      <section aria-label={t(earlierSession ? heading : 'customer:recovery.repairRequired')}>
+      <section aria-label={t(view.label)}>
         <div className="section-heading">
-          <h1>{t(heading)}</h1>
+          <h1>{t(view.heading)}</h1>
         </div>
-        {earlierSession ? (
-          <p>
-            {t(
-              earlierSession === 'valid'
-                ? 'customer:recovery.earlierSessionHelp'
-                : 'customer:recovery.earlierSessionExpiredHelp',
-            )}
-          </p>
-        ) : (
-          canRemoveAll && <p>{t('customer:recovery.repairHelp')}</p>
-        )}
+        {view.help && <p>{t(view.help)}</p>}
         {failed && (
           <p className="cart-submit-error" role="alert">
             {t('customer:recovery.cartCommitFailed')}
@@ -116,40 +96,13 @@ export function DesignerRepair({
             </>
           ) : (
             <>
-              {earlierSession === 'valid' && (
-                <button type="button" className="primary-button" disabled={busy} onClick={() => void action('cart')}>
-                  {t('customer:chrome.viewCart')}
-                </button>
-              )}
-              {/* An earlier session's lines win: this session can neither reopen nor replace them. */}
-              {canStart && !earlierSession && (
-                <button type="button" className="primary-button" disabled={busy} onClick={() => void action('start')}>
-                  {t(reopensCartLine ? 'customer:recovery.reopenFromCart' : 'customer:recovery.startNew')}
-                </button>
-              )}
-              {canRemoveGroup && (
-                <button
-                  type="button"
-                  className="text-action"
-                  disabled={busy}
-                  onClick={() => void action('remove-group')}
-                >
-                  {t('customer:recovery.removeGroup')}
-                </button>
-              )}
-              {canRemoveAll && (
-                <button type="button" className="text-action" disabled={busy} onClick={() => void action('remove-all')}>
-                  {t('customer:recovery.removeAll')}
-                </button>
-              )}
+              {offer('cart')}
+              {offer('start')}
+              {offer('remove-group')}
+              {offer('remove-all')}
             </>
           )}
-          {/* Another try cannot change which session owns the cart's lines. */}
-          {!review && !earlierSession && (
-            <button type="button" className="text-action" disabled={busy} onClick={() => void action('retry')}>
-              {t('common:actions.retry')}
-            </button>
-          )}
+          {!review && offer('retry')}
           <button type="button" className="text-action" disabled={busy} onClick={onClose}>
             {t('common:actions.close')}
           </button>

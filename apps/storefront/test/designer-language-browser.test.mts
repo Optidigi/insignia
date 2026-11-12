@@ -82,7 +82,7 @@ for (const engine of [chromium, firefox])
     // Cart repair without a current product configuration renders no Designer.
     const repairHtml = `<!doctype html><html><body><p>Shopify product page</p><script type="module">
  import {createDesignerFrame} from '/host.js';
- createDesignerFrame({title:'Shirt',locale:'de',repair:{canStart:false,canRemoveGroup:false,canRemoveAll:false},onRepair:async()=>undefined,onClose(){}});
+ createDesignerFrame({title:'Shirt',locale:'de',repair:{cause:'unavailable',canRemoveAll:false},onRepair:async()=>undefined,onClose(){}});
  </script></body></html>`;
     const server = createServer((request, response) => {
       void (async () => {
