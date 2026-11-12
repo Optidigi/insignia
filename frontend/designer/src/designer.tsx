@@ -1073,7 +1073,16 @@ function DesignerSession({
       lang={lang}
       dir={dir}
     >
-      <a className="skip-link" href="#design-controls">
+      <a
+        className="skip-link"
+        href="#design-controls"
+        onClick={(event) => {
+          // A srcdoc frame resolves fragments against the host page URL, so a
+          // default fragment navigation would replace this document.
+          event.preventDefault();
+          panelRef.current?.focus();
+        }}
+      >
         {t('customer:chrome.skipToDesignControls')}
       </a>
       <header className="app-header">
