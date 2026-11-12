@@ -272,14 +272,14 @@ Per-shop public configuration includes schema version, installation generation, 
 Routine publication, renewal, billing loss and plan changes do not bump epoch: doing so would contradict honoring old offers. Bump for emergency revocation or installation-security reset. Installing again creates a new generation and keys; do not revive an old installation's authorizations.
 
 **Key validity (owner decision, 11 November 2026, option C).** Signing keys do not expire routinely. A new key's last valid day is the sentinel `0x7fffffff`, the largest PostgreSQL integer; the Functions read it as u32. A key is rotated only in three cases:
-- **Suspected leak:** emergency epoch bump. This is immediate: every Function rejects signatures whose header epoch differs from the published config. Revocation of the affected key follows.
+- **Suspected leak:** revoke the affected key(s), including any pending key, and bump the epoch, then start the owner rotation at once. Its one publication carries all of it. Both take effect once published: every Function then rejects signatures whose header epoch differs from the published config, and lines of a revoked key.
 - **Reinstall:** a new installation generation. The old generation's keys are destroyed at deactivation.
 - **Explicit owner rotation:** for example, moving to a new wrapping key or algorithm.
 
 **Retirement shortening.** A retired key never stays verifiable forever.
 - **Rotation:** the owner flow first shortens the outgoing key to its shop-local rotation day + 3, which covers outstanding 3-day offers plus one day of slack. It then publishes that window with the new key and only then activates.
 - **Activation backstop:** activation caps any retiring key at UTC day + 4.
-- **Revocation:** stops verification at once, through the `revoked` flag or an epoch bump, and caps the window at UTC day + 3.
+- **Revocation:** stops verification through the `revoked` flag or an epoch bump, effective once published by the rotation that follows at once, and caps the window at UTC day + 3.
 
 Windows only ever shorten. Because keys no longer age out, private-key custody carries the protection: see the runtime README's signing wrapping-key custody.
 
@@ -288,7 +288,7 @@ Windows only ever shorten. Because keys no longer age out, private-key custody c
 - **Still verifies:** the public key and window stay, so the published Function configuration is unchanged and outstanding carts keep verifying until the window closes.
 - **Daily destruction:** the worker marks retired and revoked keys whose window has closed as destroyed, by the existing rule (`last_valid_day` before UTC day − 1).
 
-Rotation/epoch changes use a convergence workflow, not a fiction of a transaction across PostgreSQL and Shopify. Stop issuance while projections disagree. A Function mismatch fails closed. Maintain desired/observed hashes and safe overlap windows; never assume Shopify metafield writes are instantly visible to all Function invocations.
+Rotation/epoch changes use a convergence workflow, not a fiction of a transaction across PostgreSQL and Shopify. Stop issuance while projections disagree. The owner rotation converges them: a stopped rotation is resumed by running the same plan again (it reuses the pending key), and its publication also carries an earlier epoch bump or revocation. Its pre-check accepts only a published config that the database has since tightened (including revoked keys never published), and journals what it replaced; quote readiness stays exact (#334). A Function mismatch fails closed. Maintain desired/observed hashes and safe overlap windows; never assume Shopify metafield writes are instantly visible to all Function invocations.
 
 ### 5.6 Exact decimal boundary
 

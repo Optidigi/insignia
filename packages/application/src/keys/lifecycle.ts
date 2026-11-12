@@ -142,6 +142,11 @@ export class SigningKeyLifecycle {
       seed.fill(0);
     }
   }
+  /**
+   * Revocation and epoch bump change the expected public config but publish nothing: quote
+   * readiness then stops (drift) until the owner rotation that follows publishes it. That rotation
+   * accepts the earlier publication because these changes only tighten it (`rotationRepublishDifferences`).
+   */
   async revoke(scope: KeyScope, keyId: number, commandKey: string, reason: string): Promise<void> {
     await this.store.revoke(scope, keyId, commandKey, reason);
   }
@@ -152,6 +157,7 @@ export class SigningKeyLifecycle {
   async destroyInactiveInstallationKeys(shopId: string, installationGeneration: string): Promise<number> {
     return this.store.destroyInactiveInstallationKeys(shopId, installationGeneration);
   }
+  /** Publish through the following owner rotation; see `revoke`. */
   async incrementEpoch(input: { scope: KeyScope; commandKey: string; requestDigest: string }): Promise<number> {
     return this.store.incrementEpoch(input);
   }

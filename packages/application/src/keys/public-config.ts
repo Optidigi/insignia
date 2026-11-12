@@ -142,6 +142,95 @@ export function publishedConfigMatches(desired: PublicConfig, publishedValue: st
   return rebuilt === publishedValue;
 }
 
+/**
+ * Owner-rotation pre-check only; quote readiness stays on `publishedConfigMatches`. A published
+ * config may be replaced (compare-and-set) by the expected one when it matches, or when it is an
+ * earlier publication the database has since only tightened, which is what a stopped rotation or
+ * an emergency change leaves behind:
+ * - the published epoch is lower (an epoch bump);
+ * - the pending key `pendingKeyId` of this rotation's plan is not published yet;
+ * - a key the database has revoked is not published at all (for example an abandoned pending
+ *   key): the Functions reject a key they do not list;
+ * - a key's published window ends later (rotation and revocation only shorten windows);
+ * - a key is not yet published as revoked.
+ * Nothing else may differ: a published value stricter than the database, an unknown or swapped
+ * key, or any other field still stops the rotation. Returns the tolerated differences (empty when
+ * the published config matches), or null when the rotation must stop.
+ */
+export function rotationRepublishDifferences(
+  desired: PublicConfig,
+  publishedValue: string | null | undefined,
+  pendingKeyId: number,
+): string[] | null {
+  if (publishedValue === desired.value) return [];
+  const pending = desired.keys.find((key) => key.id === pendingKeyId && key.state === 'pending');
+  // Nothing published yet (a first provisioning stopped before publishing): every stored key must
+  // be this plan's pending key or a revoked one.
+  if (publishedValue === null || publishedValue === undefined)
+    return pending && desired.keys.every((key) => key.id === pending.id || key.revoked)
+      ? desired.keys.map((key) =>
+          key.revoked ? `revoked key ${key.id} not published` : `pending key ${key.id} not published`,
+        )
+      : null;
+  let published: { epoch?: unknown; keys?: unknown };
+  try {
+    published = JSON.parse(publishedValue);
+  } catch {
+    return null;
+  }
+  if (!published || typeof published !== 'object' || !Array.isArray(published.keys)) return null;
+  type Entry = { id?: unknown; lastDay?: unknown; revoked?: unknown };
+  const publishedKeys = new Map(
+    (published.keys as Entry[]).filter((entry) => entry && typeof entry === 'object').map((entry) => [entry.id, entry]),
+  );
+  const earlier = JSON.parse(desired.value) as {
+    epoch: number;
+    keys: { id: number; revoked: boolean; firstDay: number; lastDay: number }[];
+  };
+  const differences: string[] = [];
+  const publishedEpoch = published.epoch;
+  if (
+    typeof publishedEpoch === 'number' &&
+    Number.isInteger(publishedEpoch) &&
+    publishedEpoch >= 0 &&
+    publishedEpoch < earlier.epoch
+  ) {
+    earlier.epoch = publishedEpoch;
+    differences.push(`epoch ${publishedEpoch} published`);
+  }
+  if (pending && !publishedKeys.has(pending.id)) {
+    earlier.keys = earlier.keys.filter((key) => key.id !== pending.id);
+    differences.push(`pending key ${pending.id} not published`);
+  }
+  earlier.keys = earlier.keys.filter((key) => {
+    if (!key.revoked || publishedKeys.has(key.id)) return true;
+    differences.push(`revoked key ${key.id} not published`);
+    return false;
+  });
+  for (const key of earlier.keys) {
+    const entry = publishedKeys.get(key.id);
+    const lastDay = entry?.lastDay;
+    if (
+      typeof lastDay === 'number' &&
+      Number.isInteger(lastDay) &&
+      lastDay > key.lastDay &&
+      lastDay <= NON_EXPIRING_LAST_DAY
+    ) {
+      key.lastDay = lastDay;
+      differences.push(`key ${key.id} published through day ${lastDay}`);
+    }
+    if (key.revoked && entry?.revoked === false) {
+      key.revoked = false;
+      differences.push(`key ${key.id} revocation not published`);
+    }
+  }
+  if (!earlier.keys.length) return null;
+  const value = JSON.stringify(earlier);
+  if (!publishedConfigMatches({ ...desired, value }, publishedValue)) return null;
+  if (value !== publishedValue) differences.push('destroyed keys with closed windows still published');
+  return differences;
+}
+
 export function requireIssuanceReady(input: { config: PublicConfig; keyId: number; acceptedDay: number }): void {
   if (!Number.isInteger(input.acceptedDay) || input.acceptedDay < 0 || input.acceptedDay > NON_EXPIRING_LAST_DAY - 2)
     throw new Error('Invalid accepted day');
