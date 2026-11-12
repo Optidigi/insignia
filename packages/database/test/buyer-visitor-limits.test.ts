@@ -162,6 +162,31 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('buyer visitor limits', () => 
     expect((await rows()).rows[0]?.n).toBe('0');
   });
 
+  it('keeps a visitor window until an hour after its latest session when a lagging web clock issues after it', async () => {
+    const { shopId } = await createTestShop(db);
+    const repo = createBuyerRepository(db);
+    const latest = new Date('2026-11-12T12:00:00Z');
+    // A second web instance whose clock runs five minutes behind issues the next session.
+    const lagging = new Date(+latest - 300_000);
+    for (const [n, at] of [
+      [1, latest],
+      [2, lagging],
+    ] as const)
+      await repo.issueSession({
+        scope: { shopId, installationGeneration: '1', ownerHash: owner(n) },
+        sessionId: randomUUID(),
+        now: at,
+        expiresAt: new Date(+at + week),
+        visitorKey: Buffer.alloc(32, 10),
+      });
+    const rows = () =>
+      sql<{ n: string }>`SELECT count(*)::text n FROM buyer_visitor_admission WHERE shop_id=${shopId}`.execute(db);
+    await repo.purgeVisitorAdmission(new Date(+latest + 3_599_000));
+    expect((await rows()).rows[0]?.n).toBe('1');
+    await repo.purgeVisitorAdmission(new Date(+latest + 3_600_000));
+    expect((await rows()).rows[0]?.n).toBe('0');
+  });
+
   it('still enforces the shop-wide issuance and active-session safety ceilings', async () => {
     const { shopId } = await createTestShop(db);
     const repo = createBuyerRepository(db);
