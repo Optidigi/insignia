@@ -196,6 +196,7 @@ export const customerParameterContracts = {
   'customer:recovery.colorItemsRemoved': { colorName: 'string' },
   'customer:recovery.confirmRemoval': {},
   'customer:recovery.dismissNotification': {},
+  'customer:recovery.draftUnavailable': {},
   'customer:recovery.earlierSession': {},
   'customer:recovery.earlierSessionExpiredHelp': {},
   'customer:recovery.earlierSessionHelp': {},

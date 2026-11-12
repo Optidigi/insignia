@@ -230,6 +230,7 @@
     "artworkRestored": "Visuel rétabli.",
     "colorItemsRemoved": "Articles « {{colorName}} » retirés.",
     "itemsRestored": "Articles rétablis.",
+    "draftUnavailable": "Votre personnalisation précédente ne peut pas être rétablie, car les options de ce produit ont changé.",
     "cartCommitFailed": "Impossible de mettre à jour le panier. Votre personnalisation est toujours disponible. Réessayez.",
     "cartRejected": "Shopify n'a pas pu mettre à jour votre panier. Votre panier n'a pas changé et votre personnalisation est toujours disponible. Réessayez plus tard.",
     "cartRejectedStock": "Le stock est insuffisant pour ajouter cet article au panier. Votre panier n'a pas changé et votre personnalisation est toujours disponible. Réduisez la quantité ou réessayez plus tard.",
@@ -280,14 +281,14 @@
   },
   "close": {
     "title": "Fermer la personnalisation ?",
-    "help": "Vous pourrez reprendre votre personnalisation en la rouvrant. La fermer ne l’ajoute pas au panier.",
+    "help": "Votre création reste disponible tant que cette page est ouverte. Fermer la personnalisation ne l’ajoute pas au panier.",
     "keepEditing": "Continuer à modifier",
     "leave": "Fermer la personnalisation"
   },
   "resume": {
     "title": "Reprendre votre personnalisation ?",
-    "help": "Vous avez une personnalisation non terminée pour ce produit. Reprenez-la là où vous l’aviez laissée ou recommencez.",
+    "help": "Vous avez une personnalisation non terminée pour ce produit. Reprenez-la ou commencez-en une nouvelle.",
     "continue": "Reprendre",
-    "startNew": "Recommencer"
+    "startNew": "Commencer une nouvelle personnalisation"
   }
 }

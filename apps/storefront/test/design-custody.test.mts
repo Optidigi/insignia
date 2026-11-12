@@ -202,6 +202,10 @@ function memoryStorage() {
     removeItem: (key: string) => {
       data.delete(key);
     },
+    key: (index: number) => [...data.keys()][index] ?? null,
+    get length() {
+      return data.size;
+    },
   };
 }
 function draftServer(owner: { session: string }) {
@@ -258,16 +262,12 @@ test('the latest unfinished new design is kept per product and buyer session in 
   // Only IDs and hashes: a new design has no cart base, so nothing else is written to shared storage.
   assert.deepEqual([...shared.data.keys()], [LATEST]);
 
-  // A cart-line edit is not an unfinished new design, and its quantity base moves to shared storage with it.
+  // A cart-line edit is not an unfinished new design. Its quantity base stays in this tab, beside the hints that read it.
   const edit = '22222222-2222-4222-8222-222222222222';
   await custody.save(edit, { ...group, variants: [{ variantId: '101', quantity: 4 }] }, group);
   assert.equal(JSON.parse(shared.data.get(LATEST) ?? 'null').id, id);
-  assert.match(shared.data.get(`insignia:selected-design-cart:v1:/fr/apps/insignia:${edit}`) ?? '', /^[a-f0-9]{64}$/);
-  assert(![...tab.data.keys()].some((key) => key.startsWith('insignia:selected-design-cart:')));
-  assert(
-    [...shared.data.values()].every((value) => /^[a-f0-9]{64}$/.test(value) || value.startsWith('{"session"')),
-    'shared storage holds only IDs and a quantity hash, never a design snapshot',
-  );
+  assert.match(tab.data.get(`insignia:selected-design-cart:v1:/fr/apps/insignia:${edit}`) ?? '', /^[a-f0-9]{64}$/);
+  assert.deepEqual([...shared.data.keys()], [LATEST], 'shared storage holds only the latest pointer');
 
   // Adding it to the cart finishes the design; another design's completion leaves the pointer alone.
   custody.forgetLatest('11', edit);
@@ -288,8 +288,33 @@ test('discarding the latest draft forgets its pointer (#347)', async () => {
     api: draftServer(owner).api,
   });
   await custody.save(id, group, undefined);
+  assert.equal(custody.hasLatest('11'), true);
   await custody.forget(id, group);
   assert.equal(shared.data.has(LATEST), false);
+  assert.equal(custody.hasLatest('11'), false);
+});
+
+test('pointers of a session that is no longer current are swept for every product of the mount (#347)', async () => {
+  const shared = memoryStorage();
+  const other = 'insignia:selected-design-latest:v1:/apps/other:11';
+  shared.setItem(LATEST, JSON.stringify({ session: 'session-1', id }));
+  shared.setItem('insignia:selected-design-latest:v1:/apps/insignia:12', JSON.stringify({ session: 'session-1', id }));
+  shared.setItem('insignia:selected-design-latest:v1:/apps/insignia:13', JSON.stringify({ session: 'session-2', id }));
+  shared.setItem(other, JSON.stringify({ session: 'session-1', id }));
+  shared.setItem('unrelated', 'kept');
+  const custody = createSelectedDesignCustody({
+    namespace: '/apps/insignia',
+    storage: memoryStorage(),
+    shared,
+    session: () => 'session-2',
+    api: draftServer({ session: 'session-2' }).api,
+  });
+  // Opening product 11 also clears product 12's stale pointer, which may never be reopened.
+  assert.equal(custody.hasLatest('11'), false);
+  assert.deepEqual(
+    [...shared.data.keys()].sort(),
+    [other, 'insignia:selected-design-latest:v1:/apps/insignia:13', 'unrelated'].sort(),
+  );
 });
 
 test('a latest pointer from another or expired session is dropped without a server read (#347)', async () => {

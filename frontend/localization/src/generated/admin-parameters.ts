@@ -2537,6 +2537,7 @@ export const adminParameterContracts = {
   'settings:translations.fields.customer_recovery_colorItemsRemoved': {},
   'settings:translations.fields.customer_recovery_confirmRemoval': {},
   'settings:translations.fields.customer_recovery_dismissNotification': {},
+  'settings:translations.fields.customer_recovery_draftUnavailable': {},
   'settings:translations.fields.customer_recovery_earlierSession': {},
   'settings:translations.fields.customer_recovery_earlierSessionExpiredHelp': {},
   'settings:translations.fields.customer_recovery_earlierSessionHelp': {},

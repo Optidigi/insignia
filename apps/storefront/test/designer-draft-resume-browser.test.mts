@@ -3,7 +3,14 @@ import { test } from 'node:test';
 import type { BrowserContext, FrameLocator, Page } from 'playwright';
 import { chromium } from 'playwright';
 import type { BuyerConfig } from '../src/buyer.ts';
-import { createStorefrontTestServer as createServer, record, selectedFrameAssets, serverPort } from './support.mts';
+import {
+  createStorefrontTestServer as createServer,
+  lineCarriers,
+  record,
+  required,
+  selectedFrameAssets,
+  serverPort,
+} from './support.mts';
 
 /**
  * #347: an unfinished design survives a reload, another page and another tab. Opening the Designer offers to
@@ -63,9 +70,11 @@ async function withStorefront(
     context: BrowserContext;
     origin: string;
     openPage(): Promise<Page>;
-    drafts: Map<string, { capability: string; value: unknown }>;
+    drafts: Map<string, { capability: string; value: unknown; compatibility?: string }>;
     restores: string[];
     previews: string[];
+    /** Design groups this session owns in the cart; each adds one signed line. */
+    cartGroups: unknown[];
   }) => Promise<void>,
 ) {
   const server = await createServer({
@@ -91,16 +100,27 @@ async function withStorefront(
     const context = await browser.newContext();
     const origin = `http://127.0.0.1:${serverPort(server.httpServer)}`;
     let minted = 0;
-    const drafts = new Map<string, { capability: string; value: unknown }>();
+    const drafts = new Map<string, { capability: string; value: unknown; compatibility?: string }>();
     const restores: string[] = [];
     const previews: string[] = [];
+    const cartGroups: unknown[] = [];
+    const carrier = required(lineCarriers([{ variantId: '222', unitMinor: '3000' }], { set: 9 }).carriers[0]);
     await context.route('**/*', (route) =>
       new URL(route.request().url()).origin === origin ? route.continue() : route.abort('blockedbyclient'),
     );
     await context.route('**/cart.js', (route) =>
       route.fulfill({
         json: {
-          items: [{ key: 'ordinary', variant_id: 999, quantity: 1, properties: {}, product_id: 999 }],
+          items: [
+            { key: 'ordinary', variant_id: 999, quantity: 1, properties: {}, product_id: 999 },
+            ...cartGroups.map((_group, index) => ({
+              key: `custom-${index}`,
+              variant_id: 222,
+              quantity: 3,
+              properties: { _insignia_line_v3: carrier },
+              product_id: 111,
+            })),
+          ],
           attributes: {},
           currency: 'EUR',
         },
@@ -133,6 +153,7 @@ async function withStorefront(
           },
         });
       }
+      if (path.endsWith('/cart-state')) return route.fulfill({ json: { groups: cartGroups, repairRequired: false } });
       if (path.endsWith('/quote-proposals')) {
         const groups = (body.groups as unknown[]) ?? [];
         return route.fulfill({
@@ -168,7 +189,7 @@ async function withStorefront(
                 version: 1,
                 value: saved.value,
                 expiresAt: new Date(Date.now() + 3600000).toISOString(),
-                compatibility: 'current',
+                compatibility: saved.compatibility ?? 'current',
                 retained: null,
               },
             })
@@ -196,6 +217,7 @@ async function withStorefront(
       drafts,
       restores,
       previews,
+      cartGroups,
     });
   } finally {
     await browser?.close();
@@ -293,7 +315,7 @@ for (const route of ['reload', 'navigation away and back', 'new tab'] as const)
       current = await leave(route === 'new tab' ? context.pages()[0]! : current);
       ui = await openDesigner(current);
       await prompt(ui).waitFor();
-      await ui.getByRole('button', { name: 'Start new', exact: true }).click();
+      await ui.getByRole('button', { name: 'Start a new design', exact: true }).click();
       await expectCleanStart(ui, 'Start new opens a clean Designer');
       await expectEventually(
         async () => (await current.evaluate((key) => localStorage.getItem(key), LATEST_KEY)) === null,
@@ -383,7 +405,7 @@ test('closing and reopening on the same page load restores the design without as
     await buildToReview(ui);
     await ui.getByRole('button', { name: 'Close customizer', exact: true }).click();
     await ui.getByRole('heading', { name: 'Close customization?', exact: true }).waitFor();
-    await ui.getByText('You can continue this design when you reopen the customizer.', { exact: false }).waitFor();
+    await ui.getByText('Your design will stay here while this page is open.', { exact: false }).waitFor();
     await ui.getByRole('button', { name: 'Close customization', exact: true }).click();
     await page.locator('iframe:not([hidden])').waitFor({ state: 'detached' });
     const reopened = await openDesigner(page);
@@ -433,5 +455,75 @@ test('a draft the server no longer has falls back silently to a clean start', as
     await expectCleanStart(await openDesigner(page), 'expired draft');
     assert.equal(restores.length, 1);
     assert.equal(await page.evaluate((key) => localStorage.getItem(key), LATEST_KEY), null);
+  });
+});
+
+test('a design whose Add to cart reached Shopify, but not its answer, is not offered again', async () => {
+  await withStorefront(async ({ context, openPage, drafts, cartGroups }) => {
+    const page = await openPage();
+    await buildToReview(await openDesigner(page));
+    await expectEventually(() => drafts.size > 0, 'the eager review saves the draft');
+    // Shopify applied it, but the lost response left the pointer behind.
+    cartGroups.push(required([...drafts.values()].at(-1)).value);
+    assert.notEqual(await page.evaluate((key) => localStorage.getItem(key), LATEST_KEY), null);
+    const other = await context.newPage();
+    await other.goto(page.url());
+    await expectCleanStart(await openDesigner(other), 'the design is already in the cart');
+    assert.equal(await other.evaluate((key) => localStorage.getItem(key), LATEST_KEY), null, 'its pointer is dropped');
+  });
+});
+
+test('a design one tab added is not offered again after another tab continued and reviewed it', async () => {
+  await withStorefront(async ({ openPage, drafts, cartGroups }) => {
+    const first = await openPage();
+    await buildToReview(await openDesigner(first));
+    await expectEventually(() => drafts.size > 0, 'the eager review saves the draft');
+    await first.reload();
+    const second = await openPage();
+    for (const page of [first, second]) {
+      const ui = await openDesigner(page);
+      await prompt(ui).waitFor();
+      await ui.getByRole('button', { name: 'Continue', exact: true }).click();
+      await prompt(ui).waitFor({ state: 'detached' });
+    }
+    // The first tab adds it.
+    cartGroups.push(required([...drafts.values()].at(-1)).value);
+    const saved = drafts.size;
+    // The second tab's Review saves it again and writes the pointer back.
+    const ui = second.frameLocator('iframe:not([hidden])');
+    await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+    await ui.getByRole('button', { name: 'Review', exact: true }).last().click();
+    await expectEventually(() => drafts.size > saved, 'the second tab saves its review');
+    assert.notEqual(await second.evaluate((key) => localStorage.getItem(key), LATEST_KEY), null);
+    const third = await openPage();
+    await expectCleanStart(await openDesigner(third), 'the design is already in the cart');
+    assert.equal(await third.evaluate((key) => localStorage.getItem(key), LATEST_KEY), null);
+  });
+});
+
+test('a draft whose choices are no longer offered is discarded with a notice, and the Designer starts clean', async () => {
+  await withStorefront(async ({ openPage, drafts }) => {
+    const page = await openPage();
+    await buildToReview(await openDesigner(page));
+    await expectEventually(() => drafts.size > 0, 'the eager review saves the draft');
+    const saved = required([...drafts.values()].at(-1));
+    saved.compatibility = 'choice-unavailable';
+    await page.reload();
+    const ui = await openDesigner(page);
+    const notice = ui
+      .getByRole('status')
+      .filter({ hasText: "Your earlier design can't be restored because this product's options changed." });
+    await notice.waitFor();
+    await expectCleanStart(ui, 'no prompt for a draft that cannot be restored');
+    assert.equal(await page.evaluate((key) => localStorage.getItem(key), LATEST_KEY), null, 'the draft is discarded');
+    // It stays until dismissed.
+    await page.waitForTimeout(6500);
+    assert.equal(await notice.count(), 1);
+    await notice.getByRole('button', { name: 'Dismiss notification', exact: true }).click();
+    await notice.waitFor({ state: 'detached' });
+    await page.reload();
+    const again = await openDesigner(page);
+    await expectCleanStart(again, 'nothing is offered afterwards');
+    assert.equal(await again.getByRole('status').count(), 0, 'and the notice is not repeated');
   });
 });

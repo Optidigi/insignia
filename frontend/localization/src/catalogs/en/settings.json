@@ -537,6 +537,7 @@
       "customer_recovery_earlierSession": "Earlier session heading",
       "customer_recovery_earlierSessionHelp": "Earlier session explanation",
       "customer_recovery_earlierSessionExpiredHelp": "Earlier session explanation (expired)",
+      "customer_recovery_draftUnavailable": "Earlier design unavailable notice",
       "customer_startup_loading": "Loading message",
       "customer_startup_failure": "Loading failure message",
       "customer_startup_retry": "Retry button",

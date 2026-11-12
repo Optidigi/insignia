@@ -94,6 +94,8 @@ export interface DesignerProps {
   resumeDraft?: Design;
   /** The buyer chose Start new over the offered design. */
   onDraftDiscarded?: () => void;
+  /** An earlier unfinished design could not be restored and was discarded; the clean Designer says so. */
+  draftUnavailable?: boolean;
   previewOnly?: boolean;
   /** Active Shopify page language; missing context falls back to browser language, then English. */
   locale?: string | undefined;
@@ -159,6 +161,7 @@ function DesignerSession({
   initialBaseline,
   resumeDraft,
   onDraftDiscarded,
+  draftUnavailable = false,
   previewOnly = false,
   allowUnload = false,
   renderClosed,
@@ -245,6 +248,7 @@ function DesignerSession({
       ...(initialDesign ? { initialDesign } : {}),
       ...(initialBaseline ? { initialBaseline } : {}),
       ...(resumeDraft ? { resumeDraft } : {}),
+      ...(draftUnavailable ? { draftUnavailable } : {}),
     },
     createDesignerState,
   );
@@ -317,7 +321,9 @@ function DesignerSession({
                   ? t('customer:options.selectionFallback')
                   : recovery.colorName,
             })
-          : t(`customer:recovery.${recovery.reason === 'artwork-restored' ? 'artworkRestored' : 'itemsRestored'}`);
+          : recovery.reason === 'draft-unavailable'
+            ? t('customer:recovery.draftUnavailable')
+            : t(`customer:recovery.${recovery.reason === 'artwork-restored' ? 'artworkRestored' : 'itemsRestored'}`);
   const removed = recovery.kind === 'removed-position' ? recovery.print : null;
   const removedColor =
     recovery.kind === 'removed-color'
@@ -735,7 +741,8 @@ function DesignerSession({
     });
   }
   useEffect(() => {
-    if (recovery.kind === 'none') return;
+    // A design the buyer lost stays explained until dismissed; undo and restore confirmations expire.
+    if (recovery.kind === 'none' || (recovery.kind === 'message' && recovery.reason === 'draft-unavailable')) return;
     const token = recovery.token;
     const timer = window.setTimeout(() => {
       dispatch({ type: 'recovery-expired', token });
@@ -1980,7 +1987,11 @@ function DesignerSession({
       </main>
       {notice && (
         <div className="toast" role="status">
-          <IconCheck size={18} />
+          {recovery.kind === 'message' && recovery.reason === 'draft-unavailable' ? (
+            <IconAlertTriangle size={18} />
+          ) : (
+            <IconCheck size={18} />
+          )}
           {notice}
           {(removed || removedColor) && (
             <button

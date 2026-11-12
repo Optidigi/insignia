@@ -225,6 +225,7 @@
     "artworkRestored": "Ontwerp hersteld.",
     "colorItemsRemoved": "Artikelen in kleur {{colorName}} verwijderd.",
     "itemsRestored": "Artikelen hersteld.",
+    "draftUnavailable": "Je eerdere ontwerp kan niet worden hersteld, omdat de opties van dit product zijn gewijzigd.",
     "cartCommitFailed": "Je winkelwagen kon niet worden bijgewerkt. Je ontwerp is er nog. Probeer het opnieuw.",
     "cartRejected": "Shopify kon je winkelwagen niet bijwerken. Je winkelwagen is ongewijzigd en je ontwerp is er nog. Probeer het later opnieuw.",
     "cartRejectedStock": "Er is niet genoeg voorraad om dit aan je winkelwagen toe te voegen. Je winkelwagen is ongewijzigd en je ontwerp is er nog. Verlaag het aantal of probeer het later opnieuw.",
@@ -275,14 +276,14 @@
   },
   "close": {
     "title": "Personalisatievenster sluiten?",
-    "help": "Je kunt dit ontwerp afmaken als je het personalisatievenster opnieuw opent. Sluiten voegt het niet toe aan je winkelwagen.",
+    "help": "Je ontwerp blijft beschikbaar zolang deze pagina open is. Sluiten voegt het niet toe aan je winkelwagen.",
     "keepEditing": "Verder ontwerpen",
     "leave": "Personalisatievenster sluiten"
   },
   "resume": {
-    "title": "Verder met je ontwerp?",
-    "help": "Je hebt een onafgemaakt ontwerp voor dit product. Ga verder waar je gebleven was of begin opnieuw.",
+    "title": "Verdergaan met dit ontwerp?",
+    "help": "Je hebt een ontwerp voor dit product dat nog niet klaar is. Ga verder met dit ontwerp of begin een nieuw ontwerp.",
     "continue": "Verdergaan",
-    "startNew": "Opnieuw beginnen"
+    "startNew": "Nieuw ontwerp beginnen"
   }
 }

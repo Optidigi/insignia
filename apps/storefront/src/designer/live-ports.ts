@@ -706,10 +706,20 @@ export function createLiveDesignerPorts(input: {
     },
     /** Whether an unfinished design of this session may be offered; reads only browser storage (#347). */
     hasLatestDraft: () => custody.hasLatest(input.productId),
-    /** The product's latest unfinished design, registered for explicit abandonment (Start new). */
+    /**
+     * The product's latest unfinished design, registered for explicit abandonment (Start new). The server keeps a
+     * draft after it is applied, so one this session's cart already holds is not unfinished: an Add whose answer
+     * was lost, or another tab's Add after this one continued it, leaves its pointer behind. It is dropped here.
+     */
     async restoreLatest(signal?: AbortSignal) {
       const latest = await custody.latest(input.productId, signal);
-      if (latest) draftSaves.set(latest.id, { group: latest.value });
+      if (!latest) return null;
+      const draft = desiredGroupKey(latest.value, false, false);
+      if ((await observe(signal)).groups.some((group) => desiredGroupKey(group, false, false) === draft)) {
+        custody.forgetLatest(input.productId, latest.id);
+        return null;
+      }
+      draftSaves.set(latest.id, { group: latest.value });
       return latest;
     },
     async discardDrafts() {

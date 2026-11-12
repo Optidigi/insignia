@@ -263,6 +263,7 @@ export const customerWordingLabels = {
   'customer:recovery.earlierSession': 'settings:translations.fields.customer_recovery_earlierSession',
   'customer:recovery.earlierSessionHelp': 'settings:translations.fields.customer_recovery_earlierSessionHelp',
   'customer:recovery.earlierSessionExpiredHelp': 'settings:translations.fields.customer_recovery_earlierSessionExpiredHelp',
+  'customer:recovery.draftUnavailable': 'settings:translations.fields.customer_recovery_draftUnavailable',
   'common:actions.save': 'settings:translations.fields.common_actions_save',
   'common:actions.cancel': 'settings:translations.fields.common_actions_cancel',
   'common:actions.close': 'settings:translations.fields.common_actions_close',

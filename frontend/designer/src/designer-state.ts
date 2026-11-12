@@ -58,7 +58,8 @@ export type RecoveryState =
   | {
       kind: 'message';
       token: number;
-      reason: 'artwork-restored' | 'items-restored';
+      /** `draft-unavailable`: the earlier unfinished design could not be restored and was discarded (#347). */
+      reason: 'artwork-restored' | 'items-restored' | 'draft-unavailable';
     };
 
 export interface DesignerRules {
@@ -127,6 +128,8 @@ export interface CreateDesignerStateInput {
    * unsaved new design: closing the prompt continues it, `new-design-requested` starts clean.
    */
   resumeDraft?: Design;
+  /** The earlier unfinished design could not be restored (its choices are no longer offered): say so once. */
+  draftUnavailable?: boolean;
 }
 
 export type DesignerEvent =
@@ -254,6 +257,7 @@ export function createDesignerState(input: CreateDesignerStateInput): DesignerSt
       baseline: null,
       modal: { kind: 'resume-draft' },
     };
+  if (input.draftUnavailable) return setRecoveryMessage(initial, 'draft-unavailable');
   const loaded = input.initialDesign ? loadCartDesign(initial, input.initialDesign) : initial;
   return input.initialBaseline ? { ...loaded, baseline: copyDesign(input.initialBaseline) } : loaded;
 }
@@ -951,7 +955,10 @@ function isOpenUploadTarget(state: DesignerState, target: PositionId): boolean {
   return (state.modal.kind === 'artwork' || state.modal.kind === 'confirm-upload-cancel') && state.modal.positionId === target;
 }
 
-function setRecoveryMessage(state: DesignerState, reason: 'artwork-restored' | 'items-restored'): DesignerState {
+function setRecoveryMessage(
+  state: DesignerState,
+  reason: 'artwork-restored' | 'items-restored' | 'draft-unavailable',
+): DesignerState {
   const token = state.recoveryVersion + 1;
   return {
     ...state,

@@ -1298,6 +1298,25 @@ test('a resumable draft opens behind the continue prompt as an unsaved new desig
   assert.equal(hasDraftChanges(fresh), false);
 });
 
+test('a draft that could not be restored opens a clean Designer with a dismissible notice (#347)', () => {
+  const base = ready();
+  const notified = createDesignerState({
+    rules: base.rules,
+    view: 'front',
+    color: 'white',
+    prints: [],
+    active: 'front',
+    expanded: null,
+    artworks: [],
+    designerOpen: true,
+    draftUnavailable: true,
+  });
+  assert.equal(notified.recovery.kind === 'message' && notified.recovery.reason, 'draft-unavailable');
+  assert.equal(notified.modal.kind, 'closed', 'no continue prompt');
+  assert.equal(hasDraftChanges(notified), false, 'the Designer is clean');
+  assert.equal(designerReducer(notified, { type: 'recovery-dismissed' }).recovery.kind, 'none');
+});
+
 test('empty clean design closes without asking for confirmation', () => {
   const original = { ...ready(), prints: [], quantities: {}, artworks: [] };
   const closed = designerReducer(original, { type: 'close-requested' });

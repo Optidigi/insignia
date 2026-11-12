@@ -175,15 +175,18 @@ export async function mountLiveDesigner(input: {
           initialArtworks: Awaited<ReturnType<typeof live.restoreArtwork>>;
         }
       | undefined;
+    let draftUnavailable = false;
     if (!group && !reset && mapped) {
       // Reading it uses the buyer session, so it waits for the buyer to open the Designer.
       if (initiallyHidden && live.hasLatestDraft()) return;
       if (!initiallyHidden)
         try {
           const draft = await live.restoreLatest(signal);
-          if (draft && ['choice-unavailable', 'configuration-unavailable'].includes(draft.compatibility))
+          if (draft && ['choice-unavailable', 'configuration-unavailable'].includes(draft.compatibility)) {
+            // Its choices are no longer offered: it is discarded, and the clean Designer says why (owner decision).
             await live.discardDrafts();
-          else if (
+            draftUnavailable = true;
+          } else if (
             draft &&
             (draft.value.design.placements.length > 0 || draft.value.variants.some((variant) => variant.quantity > 0))
           )
@@ -323,6 +326,7 @@ export async function mountLiveDesigner(input: {
       requiresCartReview: !!group,
       ...restored,
       ...resumed,
+      ...(draftUnavailable ? { draftUnavailable } : {}),
       onDiscardDrafts() {
         void live.discardDrafts().catch(() => {});
       },

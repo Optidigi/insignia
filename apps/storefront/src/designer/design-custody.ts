@@ -5,21 +5,22 @@ import { desiredGroupKey } from './group-key.ts';
 type Api = {
   private<T>(path: string, body: Record<string, unknown>, signal?: AbortSignal, method?: 'POST' | 'PUT'): Promise<T>;
 };
-type SharedStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+type SharedStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem' | 'key' | 'length'>;
 /**
  * A UUID hint locates an owned retained draft; storage never supplies ownership or a configuration snapshot.
  * Beside it, an unsalted SHA-256 of the cart quantities the draft was based on detects later native cart edits;
  * it reveals nothing beyond what /cart.js shows this origin and grants nothing.
  *
- * Hints keyed by a cart line's contents stay in this tab (`storage`). The quantity base and, per product, the
- * latest unfinished new design (its UUID and the buyer session it belongs to) live in `shared` storage beside
+ * Those hints, keyed by a cart line's contents, and their bases stay in this tab (`storage`). Only the latest
+ * unfinished new design per product (its UUID and the buyer session it belongs to) lives in `shared` storage beside
  * the buyer session (buyer-session.ts), so a reload, another page or another tab can offer to continue it (#347).
+ * It expires with that session: a pointer of any other session is removed.
  */
 export function createSelectedDesignCustody(input: {
   api: Api;
   storage: Pick<Storage, 'getItem' | 'setItem'>;
   namespace: string;
-  /** Storage every tab shares; without it the base stays in `storage` and no latest design is kept. */
+  /** Storage every tab shares; without it no latest design is kept. */
   shared?: SharedStorage;
   /** The current buyer session's ID, if this browser holds one. */
   session?: () => string | undefined;
@@ -33,7 +34,6 @@ export function createSelectedDesignCustody(input: {
   // was edited natively since, and its quantities are the buyer's latest choice (#341).
   const baseKey = (id: string) => `insignia:selected-design-cart:v1:${input.namespace}:${id}`;
   const shared = input.shared;
-  const baseStorage = shared ?? input.storage;
   // Shared storage can be full or blocked; a hint it cannot hold is simply absent.
   const attempt = (write: () => void) => {
     try {
@@ -42,40 +42,46 @@ export function createSelectedDesignCustody(input: {
       /* The draft itself is saved on the server. */
     }
   };
-  const setBase = (id: string, value: string) =>
-    attempt(() =>
-      shared
-        ? value
-          ? shared.setItem(baseKey(id), value)
-          : shared.removeItem(baseKey(id))
-        : input.storage.setItem(baseKey(id), value),
-    );
   // One per product under the App Proxy mount (a locale prefix shares it), like the buyer session.
-  const latestKey = (productId: string) =>
-    `insignia:selected-design-latest:v1:${input.namespace.slice(input.namespace.lastIndexOf('/apps/'))}:${productId}`;
-  /** The latest unfinished design's UUID while it belongs to the current session; any other value is removed. */
+  const latestPrefix = `insignia:selected-design-latest:v1:${input.namespace.slice(input.namespace.lastIndexOf('/apps/'))}:`;
+  const latestKey = (productId: string) => `${latestPrefix}${productId}`;
+  /** A stored pointer's draft UUID while it belongs to the current session. */
+  function current(value: string | null, session: string | undefined) {
+    try {
+      const parsed: unknown = JSON.parse(value ?? 'null');
+      return session &&
+        parsed &&
+        typeof parsed === 'object' &&
+        'session' in parsed &&
+        parsed.session === session &&
+        'id' in parsed &&
+        typeof parsed.id === 'string'
+        ? parsed.id
+        : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+  /**
+   * The latest unfinished design's UUID for this product. Every pointer of this mount that does not belong to the
+   * current session is removed first, so products never reopened keep none either.
+   */
   function latestId(productId: string) {
     if (!shared) return undefined;
-    let value: unknown;
-    try {
-      value = JSON.parse(shared.getItem(latestKey(productId)) ?? 'null');
-    } catch {
-      value = undefined;
-    }
-    if (value === null) return undefined;
     const session = input.session?.();
-    if (
-      value &&
-      typeof value === 'object' &&
-      'session' in value &&
-      'id' in value &&
-      typeof value.id === 'string' &&
-      session &&
-      value.session === session
-    )
-      return value.id;
-    attempt(() => shared.removeItem(latestKey(productId)));
-    return undefined;
+    attempt(() => {
+      const stale: string[] = [];
+      for (let index = 0; index < shared.length; index++) {
+        const key = shared.key(index);
+        if (key?.startsWith(latestPrefix) && !current(shared.getItem(key), session)) stale.push(key);
+      }
+      for (const key of stale) shared.removeItem(key);
+    });
+    try {
+      return current(shared.getItem(latestKey(productId)), session);
+    } catch {
+      return undefined;
+    }
   }
   function forgetLatest(productId: string, id: string) {
     if (shared && latestId(productId) === id) attempt(() => shared.removeItem(latestKey(productId)));
@@ -104,12 +110,12 @@ export function createSelectedDesignCustody(input: {
     async forget(id: string, group: BuyerDesiredGroup) {
       const pointer = await key(group);
       if (input.storage.getItem(pointer) === id) input.storage.setItem(pointer, '');
-      if (baseStorage.getItem(baseKey(id))) setBase(id, '');
+      if (input.storage.getItem(baseKey(id))) input.storage.setItem(baseKey(id), '');
       forgetLatest(group.productId, id);
     },
     /** After Update cart the accepted cart line is the draft's new base. */
     async rebase(id: string, cart: BuyerDesiredGroup) {
-      setBase(id, await quantities(cart));
+      input.storage.setItem(baseKey(id), await quantities(cart));
     },
     /** Whether this product has an unfinished design of the current session to offer; reads no server. */
     hasLatest: (productId: string) => latestId(productId) !== undefined,
@@ -140,7 +146,7 @@ export function createSelectedDesignCustody(input: {
       // Without a recorded base (an older draft) the draft keeps its quantities, as before. Only the
       // current quantities are compared: a draft at 4 on base 2 still wins after the cart goes
       // 2 -> 3 -> 2, since the cart again holds what the draft's edit started from. That is intended.
-      const base = baseStorage.getItem(baseKey(id));
+      const base = input.storage.getItem(baseKey(id));
       return { ...saved, cartQuantitiesChanged: !!base && base !== (await quantities(group)) };
     },
     async save(id: string, group: BuyerDesiredGroup, original: BuyerDesiredGroup | undefined, signal?: AbortSignal) {
@@ -167,7 +173,7 @@ export function createSelectedDesignCustody(input: {
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
       input.storage.setItem(pointer, id);
       if (originalPointer) input.storage.setItem(originalPointer, id);
-      setBase(id, base);
+      input.storage.setItem(baseKey(id), base);
       // A design not yet in the cart becomes the product's latest unfinished one, for this session only.
       const session = input.session?.();
       if (!original && shared && session)

@@ -71,6 +71,8 @@ export function createDesignerFrame(input: {
   initialArtworks?: Artwork[];
   /** An unfinished design from an earlier page load, offered behind "Continue your design?" (#347). */
   resumeDraft?: Design;
+  /** The earlier unfinished design could not be restored and was discarded: the clean Designer says so. */
+  draftUnavailable?: boolean;
   /** The buyer chose Start new over the offered design. */
   onDiscardDrafts?(): void;
   repair?: RepairState;
@@ -221,6 +223,7 @@ export function createDesignerFrame(input: {
           initialPrints: input.initialPrints,
           initialArtworks: input.initialArtworks,
           resumeDraft: input.resumeDraft,
+          draftUnavailable: input.draftUnavailable,
         },
       });
       return;

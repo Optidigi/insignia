@@ -225,6 +225,7 @@
     "artworkRestored": "Artwork restored.",
     "colorItemsRemoved": "{{colorName}} items removed.",
     "itemsRestored": "Items restored.",
+    "draftUnavailable": "Your earlier design can't be restored because this product's options changed.",
     "cartCommitFailed": "Your cart could not be updated. Your design is still here. Try again.",
     "cartRejected": "Shopify couldn't update your cart. Your cart is unchanged and your design is still here. Try again later.",
     "cartRejectedStock": "There isn't enough stock to add this to your cart. Your cart is unchanged and your design is still here. Lower the quantity or try again later.",
@@ -275,14 +276,14 @@
   },
   "close": {
     "title": "Close customization?",
-    "help": "You can continue this design when you reopen the customizer. Closing will not add it to your cart.",
+    "help": "Your design will stay here while this page is open. Closing will not add it to your cart.",
     "keepEditing": "Keep editing",
     "leave": "Close customization"
   },
   "resume": {
     "title": "Continue your design?",
-    "help": "You have an unfinished design for this product. Continue where you left off, or start a new one.",
+    "help": "You have an unfinished design for this product. Continue it, or start a new one.",
     "continue": "Continue",
-    "startNew": "Start new"
+    "startNew": "Start a new design"
   }
 }
