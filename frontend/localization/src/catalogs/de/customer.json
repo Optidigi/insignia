@@ -82,7 +82,7 @@
     "processingFile": "Datei wird geprüft…",
     "uploadFailed": "Der Upload ist fehlgeschlagen. Versuchen Sie es erneut oder wählen Sie eine andere Datei.",
     "processingFailed": "Die Datei konnte nicht geprüft werden. Versuche es erneut.",
-    "processingTimeout": "Die Prüfung dauert länger als erwartet. Versuche es erneut.",
+    "processingTimeout": "Die Prüfung dauert länger als erwartet. Versuchen Sie es erneut.",
     "inspectionRejected": "Dieses Bild wurde abgelehnt. Wähle ein unterstütztes statisches Bild.",
     "artworkExpired": "Diese Datei ist abgelaufen. Lade sie erneut hoch.",
     "cancelUpload": "Upload abbrechen",
