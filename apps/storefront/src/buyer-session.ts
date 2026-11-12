@@ -11,7 +11,7 @@ export type BuyerSessionGrant = { capability: string; sessionId: string; expires
 export type BuyerSessionStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 /** Shared storage for buyer state that outlives one tab; undefined where the browser blocks it. */
-export function sharedBuyerStorage(): BuyerSessionStorage | undefined {
+export function sharedBuyerStorage(): Storage | undefined {
   try {
     return globalThis.localStorage ?? undefined;
   } catch {

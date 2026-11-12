@@ -69,6 +69,12 @@ export function createDesignerFrame(input: {
   initialBaseline?: Design;
   initialPrints?: Print[];
   initialArtworks?: Artwork[];
+  /** An unfinished design from an earlier page load, offered behind "Continue your design?" (#347). */
+  resumeDraft?: Design;
+  /** The earlier unfinished design could not be restored and was discarded: the clean Designer says so. */
+  draftUnavailable?: boolean;
+  /** The buyer chose Start new over the offered design. */
+  onDiscardDrafts?(): void;
   repair?: RepairState;
   onRepair?: (action: RepairAction) => Promise<DesignerQuoteReview | undefined>;
   onClose(): void;
@@ -216,6 +222,8 @@ export function createDesignerFrame(input: {
           initialBaseline: baseline,
           initialPrints: input.initialPrints,
           initialArtworks: input.initialArtworks,
+          resumeDraft: input.resumeDraft,
+          draftUnavailable: input.draftUnavailable,
         },
       });
       return;
@@ -249,6 +257,10 @@ export function createDesignerFrame(input: {
     }
     if (data.type === 'insignia:designer:select-group' && typeof data.id === 'string') {
       input.onSelectGroup?.(data.id);
+      return;
+    }
+    if (data.type === 'insignia:designer:discard-drafts') {
+      input.onDiscardDrafts?.();
       return;
     }
     if (data.type === 'insignia:designer:abort' && typeof data.id === 'string') {

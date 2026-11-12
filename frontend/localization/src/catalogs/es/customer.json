@@ -230,6 +230,7 @@
     "artworkRestored": "Diseño restaurado.",
     "colorItemsRemoved": "Artículos de {{colorName}} eliminados.",
     "itemsRestored": "Artículos restaurados.",
+    "draftUnavailable": "No se puede recuperar tu personalización anterior porque las opciones de este producto han cambiado.",
     "cartCommitFailed": "No se pudo actualizar tu carrito. Tu diseño sigue aquí. Vuelve a intentarlo.",
     "cartRejected": "Shopify no pudo actualizar tu carrito. Tu carrito no ha cambiado y tu diseño sigue aquí. Vuelve a intentarlo más tarde.",
     "cartRejectedStock": "No hay suficiente stock para añadir esto a tu carrito. Tu carrito no ha cambiado y tu diseño sigue aquí. Reduce la cantidad o vuelve a intentarlo más tarde.",
@@ -283,5 +284,11 @@
     "help": "Tu personalización seguirá disponible mientras esta página esté abierta. Al cerrar, no se añadirá al carrito.",
     "keepEditing": "Seguir editando",
     "leave": "Cerrar personalización"
+  },
+  "resume": {
+    "title": "¿Continuar tu personalización?",
+    "help": "Tienes una personalización sin terminar para este producto. Continúala o empieza una nueva.",
+    "continue": "Continuar",
+    "startNew": "Empezar una nueva personalización"
   }
 }

@@ -168,6 +168,36 @@ export async function mountLiveDesigner(input: {
         repair = true;
       }
     }
+    // An unfinished new design from an earlier page load, another tab or a browser restart (#347).
+    let resumed:
+      | {
+          resumeDraft: ReturnType<ReturnType<typeof buildBuyerDesigner>['restore']>;
+          initialArtworks: Awaited<ReturnType<typeof live.restoreArtwork>>;
+        }
+      | undefined;
+    let draftUnavailable = false;
+    if (!group && !reset && mapped) {
+      // Reading it uses the buyer session, so it waits for the buyer to open the Designer.
+      if (initiallyHidden && live.hasLatestDraft()) return;
+      if (!initiallyHidden)
+        try {
+          const draft = await live.restoreLatest(signal);
+          if (draft && ['choice-unavailable', 'configuration-unavailable'].includes(draft.compatibility)) {
+            // Its choices are no longer offered: it is discarded, and the clean Designer says why (owner decision).
+            await live.discardDrafts();
+            draftUnavailable = true;
+          } else if (
+            draft &&
+            (draft.value.design.placements.length > 0 || draft.value.variants.some((variant) => variant.quantity > 0))
+          )
+            resumed = {
+              resumeDraft: mapped.restore(draft.value, draft.id),
+              initialArtworks: await live.restoreArtwork(draft.value, signal),
+            };
+        } catch {
+          /* A draft that cannot be read now is not offered: the Designer starts clean. */
+        }
+    }
     let canRemoveAll = !!original;
     if (!current() || signal.aborted || generation !== selectionGeneration) return;
     // Background preparation is only for a complete, brand-new product. A
@@ -295,6 +325,11 @@ export async function mountLiveDesigner(input: {
       locale: options.locale,
       requiresCartReview: !!group,
       ...restored,
+      ...resumed,
+      ...(draftUnavailable ? { draftUnavailable } : {}),
+      onDiscardDrafts() {
+        void live.discardDrafts().catch(() => {});
+      },
       onClose: close,
       onAppliedClose: openNativeCart,
       onSelectGroup(id) {

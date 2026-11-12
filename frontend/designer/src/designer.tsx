@@ -90,6 +90,12 @@ export interface DesignerProps {
   initialDesign?: Design;
   initialBaseline?: Design;
   initialArtworks?: readonly Artwork[];
+  /** An unfinished design from an earlier page load; it opens behind "Continue your design?" (#347). */
+  resumeDraft?: Design;
+  /** The buyer chose Start new over the offered design. */
+  onDraftDiscarded?: () => void;
+  /** An earlier unfinished design could not be restored and was discarded; the clean Designer says so. */
+  draftUnavailable?: boolean;
   previewOnly?: boolean;
   /** Active Shopify page language; missing context falls back to browser language, then English. */
   locale?: string | undefined;
@@ -153,6 +159,9 @@ function DesignerSession({
   initialArtworks = [],
   initialDesign,
   initialBaseline,
+  resumeDraft,
+  onDraftDiscarded,
+  draftUnavailable = false,
   previewOnly = false,
   allowUnload = false,
   renderClosed,
@@ -238,6 +247,8 @@ function DesignerSession({
       ...(requiresCartReview ? { requiresCartReview: true } : {}),
       ...(initialDesign ? { initialDesign } : {}),
       ...(initialBaseline ? { initialBaseline } : {}),
+      ...(resumeDraft ? { resumeDraft } : {}),
+      ...(draftUnavailable ? { draftUnavailable } : {}),
     },
     createDesignerState,
   );
@@ -310,7 +321,9 @@ function DesignerSession({
                   ? t('customer:options.selectionFallback')
                   : recovery.colorName,
             })
-          : t(`customer:recovery.${recovery.reason === 'artwork-restored' ? 'artworkRestored' : 'itemsRestored'}`);
+          : recovery.reason === 'draft-unavailable'
+            ? t('customer:recovery.draftUnavailable')
+            : t(`customer:recovery.${recovery.reason === 'artwork-restored' ? 'artworkRestored' : 'itemsRestored'}`);
   const removed = recovery.kind === 'removed-position' ? recovery.print : null;
   const removedColor =
     recovery.kind === 'removed-color'
@@ -728,7 +741,8 @@ function DesignerSession({
     });
   }
   useEffect(() => {
-    if (recovery.kind === 'none') return;
+    // A design the buyer lost stays explained until dismissed; undo and restore confirmations expire.
+    if (recovery.kind === 'none' || (recovery.kind === 'message' && recovery.reason === 'draft-unavailable')) return;
     const token = recovery.token;
     const timer = window.setTimeout(() => {
       dispatch({ type: 'recovery-expired', token });
@@ -751,7 +765,7 @@ function DesignerSession({
     if (modal.kind === 'closed' || !designerOpen) return;
     const dialog = document.querySelector<HTMLDialogElement>('dialog');
     dialog?.showModal();
-    if (modal.kind === 'confirm-close' || modal.kind === 'confirm-upload-cancel') dialog?.querySelector<HTMLButtonElement>('[data-keep-editing]')?.focus();
+    if (modal.kind === 'confirm-close' || modal.kind === 'confirm-upload-cancel' || modal.kind === 'resume-draft') dialog?.querySelector<HTMLButtonElement>('[data-keep-editing]')?.focus();
     const listener = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
@@ -1056,7 +1070,7 @@ function DesignerSession({
     'dialog',
     modalKind === 'positions' && 'position-dialog',
     modalKind === 'artwork' && 'artwork-dialog',
-    (modalKind === 'confirm-close' || modalKind === 'confirm-upload-cancel') && 'close-dialog',
+    (modalKind === 'confirm-close' || modalKind === 'confirm-upload-cancel' || modalKind === 'resume-draft') && 'close-dialog',
     modalKind === 'colors' && 'color-dialog',
     modalKind === 'colors' && pickerColors.length > 12 && 'many-colors',
   ]
@@ -1973,7 +1987,11 @@ function DesignerSession({
       </main>
       {notice && (
         <div className="toast" role="status">
-          <IconCheck size={18} />
+          {recovery.kind === 'message' && recovery.reason === 'draft-unavailable' ? (
+            <IconAlertTriangle size={18} />
+          ) : (
+            <IconCheck size={18} />
+          )}
           {notice}
           {(removed || removedColor) && (
             <button
@@ -2012,7 +2030,7 @@ function DesignerSession({
               requestCloseModal();
           }}
           aria-labelledby="dialog-title"
-          aria-describedby={modalKind === 'confirm-close' || modalKind === 'confirm-upload-cancel' ? 'close-dialog-help' : undefined}
+          aria-describedby={modalKind === 'confirm-close' || modalKind === 'confirm-upload-cancel' || modalKind === 'resume-draft' ? 'close-dialog-help' : undefined}
         >
           <div className="dialog-header">
             <div>
@@ -2021,6 +2039,8 @@ function DesignerSession({
                   ? t('customer:artwork.cancelTitle')
                   : modalKind === 'confirm-close'
                   ? t('customer:close.title')
+                  : modalKind === 'resume-draft'
+                  ? t('customer:resume.title')
                   : modalKind === 'artwork'
                   ? t('customer:artwork.dialogArtworkTitle', {
                       positionName: positionFor(artworkTarget).name,
@@ -2047,6 +2067,15 @@ function DesignerSession({
               <div className="close-dialog-actions">
                 <button className="secondary-button" onClick={returnToProduct}>{t('customer:close.leave')}</button>
                 <button className="primary-button" data-keep-editing onClick={closeModal}>{t('customer:close.keepEditing')}</button>
+              </div>
+            </>
+          )}
+          {modalKind === 'resume-draft' && (
+            <>
+              <p id="close-dialog-help" className="close-dialog-help">{t('customer:resume.help')}</p>
+              <div className="close-dialog-actions">
+                <button className="secondary-button" onClick={() => { newDesign(); onDraftDiscarded?.(); }}>{t('customer:resume.startNew')}</button>
+                <button className="primary-button" data-keep-editing onClick={closeModal}>{t('customer:resume.continue')}</button>
               </div>
             </>
           )}

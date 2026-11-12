@@ -1263,6 +1263,60 @@ test('close confirmation keeps draft, cancels safely and resumes exact intent', 
   assert.equal(resumed.open, true);
 });
 
+test('a resumable draft opens behind the continue prompt as an unsaved new design (#347)', () => {
+  const draft = { id: 'draft', prints: [{ id: 'front', artworkId: 'logo', method: 'print', size: 0 }], quantities: { 'white:s': 3 } };
+  const base = ready();
+  const offered = createDesignerState({
+    rules: base.rules,
+    view: 'front',
+    color: 'white',
+    prints: [],
+    active: 'front',
+    expanded: null,
+    artworks: base.artworks,
+    designerOpen: true,
+    resumeDraft: draft,
+  });
+  assert.equal(offered.modal.kind, 'resume-draft');
+  assert.equal(JSON.stringify(offered.prints), JSON.stringify(draft.prints));
+  assert.deepEqual(offered.quantities, draft.quantities);
+  assert.equal(offered.editing, null, 'the draft is not in the cart: it is added, never updated');
+  assert.equal(offered.baseline, null);
+  assert.equal(hasDraftChanges(offered), true, 'close asks, and same-page reopen keeps it');
+  assert.equal(canCommitDesign({ ...offered, step: 2 }), false, 'no quote while the buyer decides');
+  // Continue, Escape and the close button all only close the prompt and keep the draft.
+  const continued = designerReducer(offered, { type: 'modal-closed' });
+  assert.equal(continued.modal.kind, 'closed');
+  assert.equal(JSON.stringify(continued.prints), JSON.stringify(draft.prints));
+  assert.deepEqual(continued.quantities, draft.quantities);
+  assert.equal(canCommitDesign({ ...continued, step: 2 }), true);
+  // Start new opens clean.
+  const fresh = designerReducer(offered, { type: 'new-design-requested' });
+  assert.equal(fresh.modal.kind, 'closed');
+  assert.deepEqual(fresh.prints, []);
+  assert.deepEqual(fresh.quantities, {});
+  assert.equal(hasDraftChanges(fresh), false);
+});
+
+test('a draft that could not be restored opens a clean Designer with a dismissible notice (#347)', () => {
+  const base = ready();
+  const notified = createDesignerState({
+    rules: base.rules,
+    view: 'front',
+    color: 'white',
+    prints: [],
+    active: 'front',
+    expanded: null,
+    artworks: [],
+    designerOpen: true,
+    draftUnavailable: true,
+  });
+  assert.equal(notified.recovery.kind === 'message' && notified.recovery.reason, 'draft-unavailable');
+  assert.equal(notified.modal.kind, 'closed', 'no continue prompt');
+  assert.equal(hasDraftChanges(notified), false, 'the Designer is clean');
+  assert.equal(designerReducer(notified, { type: 'recovery-dismissed' }).recovery.kind, 'none');
+});
+
 test('empty clean design closes without asking for confirmation', () => {
   const original = { ...ready(), prints: [], quantities: {}, artworks: [] };
   const closed = designerReducer(original, { type: 'close-requested' });
