@@ -123,12 +123,13 @@ test("cart failure keeps its stable reason while the attempted design remains av
   const failed = designerReducer(pending, {
     type: "cart-commit-failed",
     requestId: "request-1",
-    reason: "cart-commit-failed",
+    failure: { cause: "unknown", preparation: false },
   });
 
   assert.deepEqual(failed.commit, {
     kind: "failed",
-    reason: "cart-commit-failed",
+    cause: "unknown",
+    preparation: false,
   });
   assert.equal(failed.prints[0].artworkId, design.prints[0].artworkId);
   assert.deepEqual(failed.quantities, design.quantities);

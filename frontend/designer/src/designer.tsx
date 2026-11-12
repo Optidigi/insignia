@@ -1,10 +1,11 @@
-import { ARTWORK_UPLOAD_ACCEPT, BUYER_CART_CAPACITY } from '@insignia/contracts';
+import { ARTWORK_UPLOAD_ACCEPT } from '@insignia/contracts';
 import type { SupportedLanguage } from '@insignia/ui-localization/core';
 import { selectedLanguagePreference } from '@insignia/ui-localization/core';
 import type { CustomerWordingOverlay } from '@insignia/ui-localization/customer';
 import type { ComponentChildren, TargetedDragEvent, TargetedEvent } from 'preact';
 import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'preact/hooks';
 import { ColorPicker } from './color-picker';
+import { commitFailureView } from './commit-failure';
 import { FloatingSelect } from './compact-fields';
 import type { ProductConfig } from './config';
 import { LocaleProvider, useLocale } from './customer-locale';
@@ -174,7 +175,7 @@ function DesignerSession({
   languageChangeFailed,
   onLanguagePreferenceSelect,
 }: DesignerSessionProps) {
-  const { t, formatLocale, lang, dir } = useLocale();
+  const { t, message, formatLocale, lang, dir } = useLocale();
   useLayoutEffect(() => {
     if (!ownsDocumentLanguage) return;
     document.documentElement.lang = lang;
@@ -452,6 +453,11 @@ function DesignerSession({
       case 'artwork-expired': return t('customer:artwork.artworkExpired');
       // Whole minutes, rounded up; without Retry-After the one-hour window is the longest wait.
       case 'session-limited': return t('customer:artwork.sessionLimited', { count: Math.ceil((retryAfterSeconds ?? 3600) / 60) });
+      // The owner's upload quota: name its wait when the server sent one (#337).
+      case 'rate-limited':
+        return retryAfterSeconds
+          ? t('customer:artwork.uploadRateLimitedWait', { count: Math.ceil(retryAfterSeconds / 60) })
+          : t('customer:artwork.uploadRateLimited');
       case 'read-failed':
         return t('customer:artwork.uploadReadFailed');
     }
@@ -992,6 +998,21 @@ function DesignerSession({
       onOpenChange(false);
     }
   }
+  /**
+   * ARTWORK_EXPIRED does not say which artwork expired. With a single uploaded artwork, or a single one whose file
+   * is past its known expiry, open that placement's artwork dialog; otherwise return to the Design step.
+   */
+  function replaceExpiredArtwork() {
+    const state = workflowRef.current;
+    const uploaded = state.prints.filter((print) => print.artworkId !== null && print.artworkId !== 'later');
+    const expired = uploaded.filter((print) => {
+      const expiresAt = state.artworks.find((artwork) => artwork.id === print.artworkId)?.assetExpiresAt;
+      return !!expiresAt && Date.parse(expiresAt) <= Date.now();
+    });
+    const target = expired.length === 1 ? expired[0] : uploaded.length === 1 ? uploaded[0] : undefined;
+    dispatch({ type: 'step-selected', step: 0 });
+    if (target) openModal({ kind: 'artwork', positionId: target.id });
+  }
   function returnToProduct() {
     dispatch({ type: 'product-return-requested' });
     runtime.cancel();
@@ -1033,8 +1054,20 @@ function DesignerSession({
         : 'loading'
     : undefined;
   const footerBusy = workflow.commit.kind === 'pending' || (step === 2 && workflow.commit.kind === 'preparing');
-  // Retrying the same over-capacity cart cannot succeed (#335); the primary action returns to Quantities.
-  const cartLimited = workflow.commit.kind === 'failed' && workflow.commit.reason === 'cart-commit-failed' && !!workflow.commit.cartLimit;
+  // A failed review or Add to cart: its copy and the one action that helps come from its cause (#335, #337).
+  const failureView = workflow.commit.kind === 'failed' ? commitFailureView(workflow.commit, formatLocale) : undefined;
+  // The add/update action Review offers; after a failed add, Retry repeats it.
+  const addLabel = editing ? (unappliedDraft ? t('customer:steps.updateCart') : t('customer:steps.done')) : t('customer:steps.addToCart');
+  const failureActions = {
+    'retry-review': { label: t('common:actions.retry'), run: () => void runtime.commit(true), cart: true },
+    'retry-add': { label: addLabel, run: editing && !unappliedDraft ? returnToProduct : addToCart, cart: true },
+    'edit-quantities': { label: t('customer:review.editQuantities'), run: () => dispatch({ type: 'step-selected', step: 1 }), cart: false },
+    'replace-artwork': { label: t('customer:recovery.replaceArtwork'), run: replaceExpiredArtwork, cart: false },
+    'edit-design': { label: t('customer:recovery.editDesign'), run: () => dispatch({ type: 'step-selected', step: 0 }), cart: false },
+    close: { label: t('common:actions.close'), run: requestReturnToProduct, cart: false },
+  } as const;
+  // On Review, a failure's primary action comes only from its view (#337).
+  const failureAction = step === 2 && failureView ? failureActions[failureView.action] : undefined;
   const dirtyDraft = hasDraftChanges(workflow);
   useEffect(() => {
     if ((!dirtyDraft && !uploading) || allowUnload || previewOnly) return;
@@ -1895,10 +1928,10 @@ function DesignerSession({
             <footer className="panel-footer">
               {cartCompletion && <div role="status"><h2>{t('customer:chrome.added')}</h2><p>{t('customer:chrome.openingCart')}</p><button type="button" className="primary-button" onClick={() => onCartCompletion?.(cartCompletion, false)}>{t('customer:chrome.viewCart')}</button></div>}
               {!cartCompletion && <>
-              {workflow.commit.kind === 'failed' && (
+              {failureView && (
                 <div className="cart-submit-error" role="alert">
                   <IconAlertTriangle size={18} />
-                  <span>{workflow.commit.reason === 'cart-rejected' ? workflow.commit.detail || t(workflow.commit.stock ? 'customer:recovery.cartRejectedStock' : 'customer:recovery.cartRejected') : workflow.commit.cartLimit === 'cart-lines' ? t('customer:recovery.cartLineLimit') : workflow.commit.cartLimit ? t('customer:recovery.cartLimit', { formattedMaxLines: new Intl.NumberFormat(formatLocale).format(BUYER_CART_CAPACITY.variants), formattedMaxItems: new Intl.NumberFormat(formatLocale).format(BUYER_CART_CAPACITY.quantity) }) : t(workflow.commit.preparation ? 'common:summary.unavailable' : 'customer:recovery.cartCommitFailed')}</span>
+                  <span>{failureView.detail || message(failureView.message)}</span>
                 </div>
               )}
               {validationIssues.length > 0 && (
@@ -1953,10 +1986,12 @@ function DesignerSession({
                   disabled={
                     footerBusy ||
                     (step === 2 && !!ports.review && (!editing || unappliedDraft) && !runtime.prepared && !quoteExpired && workflow.commit.kind !== 'failed') ||
-                    (step === 1 && !quantitiesLayout.cells.some((cell) => cell.available))
+                    (step === 1 && !quantitiesLayout.cells.some((cell) => cell.available)) ||
+                    // Retry waits for the server's Retry-After; the runtime's timer releases it.
+                    (step === 2 && !!failureView?.waiting)
                   }
                   aria-busy={footerBusy}
-                  onClick={step === 2 ? (cartLimited ? () => dispatch({ type: 'step-selected', step: 1 }) : workflow.commit.kind === 'failed' && workflow.commit.preparation ? () => void runtime.commit(true) : editing && !unappliedDraft ? returnToProduct : addToCart) : goNext}
+                  onClick={step === 2 ? (failureAction?.run ?? (editing && !unappliedDraft ? returnToProduct : addToCart)) : goNext}
                 >
                   {footerBusy
                     ? workflow.commit.kind === 'preparing'
@@ -1964,20 +1999,14 @@ function DesignerSession({
                       : editing
                         ? t('customer:steps.updatingCart')
                         : t('customer:steps.addingToCart')
-                    : step === 2 && cartLimited
-                      ? t('customer:review.editQuantities')
-                    : workflow.commit.kind === 'failed' && workflow.commit.preparation
-                      ? t('common:actions.retry')
+                    : failureAction
+                      ? failureAction.label
                     : step === 0
                       ? t('customer:steps.chooseQuantities')
                       : step === 1
                         ? t('customer:steps.review')
-                        : editing
-                          ? unappliedDraft
-                            ? t('customer:steps.updateCart')
-                            : t('customer:steps.done')
-                          : t('customer:steps.addToCart')}
-                  {step === 2 && !cartLimited && <IconShoppingCart size={18} />}
+                        : addLabel}
+                  {step === 2 && (failureAction?.cart ?? true) && <IconShoppingCart size={18} />}
                 </button>
               </div>
               </>}
@@ -2107,7 +2136,7 @@ function DesignerSession({
                   <>
                     <p className="upload-error" id="artwork-upload-error" role="alert">{error}</p>
                     <div className="upload-failure-actions">
-                      {workflow.upload.kind === 'failed' && workflow.upload.reason === 'session-limited' ? (
+                      {workflow.upload.kind === 'failed' && (workflow.upload.reason === 'session-limited' || workflow.upload.reason === 'rate-limited') ? (
                         <button className="secondary-button" onClick={closeModal}>{t('customer:artwork.closeUploadError')}</button>
                       ) : (
                         <>

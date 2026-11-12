@@ -260,7 +260,7 @@ test('the proposal starts before the fresh config read resolves and the quote is
   assert.equal(app.reviews.at(-1)?.totalMinor, '1500');
 });
 
-test('the draft save runs concurrently with the proposal and a failed save still fails preparation', async () => {
+test('the draft save runs concurrently with the proposal and a failed save never blocks the quote (#337)', async () => {
   const designs = gate();
   const app = fixture({ held: { designs } });
   const preparing = app.live.ports.review!.prepare(app.request);
@@ -270,13 +270,10 @@ test('the draft save runs concurrently with the proposal and a failed save still
   await preparing;
   assert.equal(app.reviews.at(-1)?.totalMinor, '1500');
 
+  // The draft only lets the buyer reopen the design later; the proposal never reads it.
   const failing = fixture({ saveStatus: 500 });
-  await assert.rejects(failing.live.ports.review!.prepare(failing.request));
-  assert.equal(
-    failing.reviews.some((review) => review.totalMinor !== undefined),
-    false,
-    'no quote is presented when the draft was not saved',
-  );
+  await failing.live.ports.review!.prepare(failing.request);
+  assert.equal(failing.reviews.at(-1)?.totalMinor, '1500', 'the quote is presented although the draft was not saved');
 });
 
 test('a changed publication found by the fresh config takes precedence over an in-flight proposal', async () => {

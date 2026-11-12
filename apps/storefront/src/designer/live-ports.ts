@@ -247,8 +247,10 @@ export function createLiveDesignerPorts(input: {
       if (!needsCartReview) {
         const groups = [...pendingGroups];
         draftSaves.set(request.design.id, { group, original: previous });
-        // The proposal does not read the draft: save and proposal run concurrently and both must succeed.
-        const saving = custody.save(request.design.id, group, previous, signal);
+        // The proposal does not read the draft, so the two run concurrently. The draft only lets the buyer reopen
+        // this design later, so a failed save never blocks the quote (#337). It leaves the reopen pointer as it was:
+        // none, or an earlier save from this visit. The storefront has no logging channel to record it.
+        const saving = custody.save(request.design.id, group, previous, signal).catch(() => {});
         const proposing = refreshGroups(groups, signal).then(async (labels) => {
           signal.throwIfAborted();
           assertCartCapacity(groups, observed.cart.ordinary.length);
@@ -491,6 +493,28 @@ export function createLiveDesignerPorts(input: {
               issuanceAttempted.delete(request.idempotencyKey);
               issuedSignatures.delete(request.idempotencyKey);
               input.onNeedsReview?.(canStart, targetAvailable, canRemoveAll, request);
+            } else if (
+              error &&
+              typeof error === 'object' &&
+              'status' in error &&
+              error.status === 409 &&
+              'code' in error &&
+              error.code === 'REVIEW_REQUIRED' &&
+              prepared.get(request.idempotencyKey) === review &&
+              issuedSignatures.get(request.idempotencyKey) === signature(request)
+            ) {
+              // A plain 409 REVIEW_REQUIRED (republished, price or stock changed) committed nothing: like a changed
+              // cart, retire this proposal and show the current terms, never resend the same acceptance (#337).
+              // A changed publication routes to repair inside prepare.
+              prepared.delete(request.idempotencyKey);
+              issuanceAttempted.delete(request.idempotencyKey);
+              issuedSignatures.delete(request.idempotencyKey);
+              request.onPreparing?.();
+              const presentation = await prepare(request);
+              throw Object.assign(new Error('Review the current terms before applying them'), {
+                reviewRequired: true,
+                ...presentation,
+              });
             }
             throw error;
           }
@@ -525,6 +549,9 @@ export function createLiveDesignerPorts(input: {
               reviewRequired: true,
               ...presentation,
             });
+          } else if (reason === 'busy') {
+            // Another tab or the repair view is applying the cart. The accepted set is kept, so Retry applies it.
+            throw Object.assign(new Error('Cart update in progress elsewhere'), { code: 'CART_BUSY' });
           } else if (reason === 'rejected') {
             // A definite refusal (typically stock) with the buyer's lines intact: say so, never "uncertain".
             throw Object.assign(new Error('Shopify refused the cart update'), {
