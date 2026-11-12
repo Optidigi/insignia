@@ -1,5 +1,6 @@
 import { type Kysely, sql, type Transaction } from 'kysely';
 import type { Database } from '../client/database.js';
+import { fenceReader } from '../client/fence-reads.js';
 
 export type StoredSigningKey = {
   shopId: string;
@@ -118,7 +119,7 @@ export class PgSigningKeyRepository {
   ) {}
 
   async getActiveScope(shopId: string, installationGeneration: string): Promise<Scope | null> {
-    return readScope(this.database, shopId, installationGeneration, false);
+    return readScope(fenceReader(this.database), shopId, installationGeneration, false);
   }
 
   private columns() {
@@ -136,7 +137,7 @@ export class PgSigningKeyRepository {
     sameScope(active, scope);
     const result = await sql<KeyRow>`SELECT ${this.columns()} FROM signing_keys WHERE shop_id=${scope.shopId}
       AND installation_generation=${scope.installationGeneration}::bigint AND authorization_generation=${scope.authorizationGeneration}::uuid
-      ORDER BY key_id`.execute(this.database);
+      ORDER BY key_id`.execute(fenceReader(this.database));
     return result.rows.map(mapKey);
   }
 

@@ -8,6 +8,7 @@ import type {
 import { BuyerRejectedError, materialHash } from '@insignia/application';
 import { type Kysely, sql } from 'kysely';
 import type { Database } from '../client/database.js';
+import { runInsideFence } from '../client/fence-reads.js';
 import {
   assertNewAuthorizationKey,
   validateAuthorizationMetadata,
@@ -157,7 +158,7 @@ export class PgQuoteRenewalRepository implements QuoteRenewalStore {
         if (!fence.rows[0])
           throw new BuyerRejectedError('REVIEW_REQUIRED', 'effective publication changed before renewal');
       }
-      const result = await commit();
+      const result = await runInsideFence(this.database, transaction, commit);
       if (
         canonical(result.quote) !== canonical(quote) ||
         result.issuance.shopTimezone !== quote.shopTimezone ||

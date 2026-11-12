@@ -12,6 +12,7 @@ import {
 } from '@insignia/cart-authorization';
 import { type Kysely, sql } from 'kysely';
 import type { Database } from '../client/database.js';
+import { runInsideFence } from '../client/fence-reads.js';
 import { createConfigRepository } from './config.js';
 
 type RevisionFence = {
@@ -282,8 +283,11 @@ export async function assertNewAuthorizationKey(transaction: Kysely<Database>, v
   }
 }
 
-/** Opaque PostgreSQL facade for the application quote service. The shop row lock serializes
- * installation changes, publication activation and same-key acceptance until commit. */
+/** Opaque PostgreSQL facade for the application quote service. The exclusive shop and installation
+ * row lock holds installation changes (reinstall, uninstall), publication activation, authorization
+ * epoch bumps, signing key provisioning, rotation and revocation, and same-key acceptance until
+ * commit. It stays exclusive:
+ * a shared lock would let a stream of acceptances starve those writers (#381). */
 export class PgAcceptedQuoteRepository {
   constructor(private readonly database: Kysely<Database>) {}
 
@@ -464,6 +468,8 @@ export class PgAcceptedQuoteRepository {
     return this.database.transaction().execute(async (transaction) => {
       // Provider IO completed before this fence, so the lock is held only for stored checks and
       // signing. A waiter gives up quickly with SQLSTATE 55P03 (retryable) instead of queueing.
+      // Stored-fact reads inside `commit` run on this connection (runInsideFence): a holder that
+      // needed another pool connection would wait for waiters holding them all (#381).
       await sql`SET LOCAL lock_timeout = '2s'`.execute(transaction);
       const active = await sql<{ generation: string; authorization_generation: string; authorization_epoch: string }>`
         SELECT s.current_generation::text AS generation,
@@ -553,7 +559,7 @@ export class PgAcceptedQuoteRepository {
           throw new BuyerRejectedError('REVIEW_REQUIRED', 'effective publication changed before quote acceptance');
       }
 
-      const result = await commit();
+      const result = await runInsideFence(this.database, transaction, commit);
       validateEconomicConservation(result);
       validateAuthorizationMetadata(result);
       await assertNewAuthorizationKey(transaction, result);
