@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BuyerDesignRestorationSchema,
+  BuyerDesignResultSchema,
+  BuyerDesignSchema,
   BuyerDesiredSchema,
   BuyerProposalRequestSchema,
   BuyerRenewalSchema,
@@ -86,5 +89,40 @@ describe('whole-cart capacity of one signed set (#335)', () => {
     expect(violation({ ...desired([group(variants(33))]), country: 'us' })).toBeUndefined();
     expect(violation({ ...desired([group(variants(2, 6000))]), marketId: 'x' })).toBeUndefined();
     expect(violation(desired([group([{ variantId: '', quantity: 1 }])]))).toBeUndefined();
+  });
+});
+
+describe('saved drafts before quantities (#366)', () => {
+  it('stores a design that has artwork and a placement but no sizes or colours yet', () => {
+    expect(BuyerDesignSchema.safeParse({ capability, expectedVersion: 0, group: group([]) }).success).toBe(true);
+    const saved = { id: idempotencyKey, version: 1, value: group([]) };
+    expect(BuyerDesignResultSchema.safeParse(saved).success).toBe(true);
+    expect(
+      BuyerDesignRestorationSchema.safeParse({
+        ...saved,
+        expiresAt: '2026-11-12T12:00:00.000Z',
+        compatibility: 'current',
+        retained: null,
+      }).success,
+    ).toBe(true);
+  });
+
+  it('keeps a draft bounded and its quantities positive', () => {
+    expect(BuyerDesignSchema.safeParse({ capability, expectedVersion: 0, group: group(variants(33)) }).success).toBe(
+      false,
+    );
+    expect(
+      BuyerDesignSchema.safeParse({ capability, expectedVersion: 0, group: group([{ variantId: '1', quantity: 0 }]) })
+        .success,
+    ).toBe(false);
+    const placementless = { ...group([]), design: { placements: [], options: [] } };
+    expect(BuyerDesignSchema.safeParse({ capability, expectedVersion: 0, group: placementless }).success).toBe(false);
+  });
+
+  it('still requires at least one size or colour with a quantity for quotes and renewal', () => {
+    expect(BuyerProposalRequestSchema.safeParse({ ...desired([group([])]), capability }).success).toBe(false);
+    expect(
+      BuyerRenewalSchema.safeParse({ ...desired([group([])]), capability, idempotencyKey }).success,
+    ).toBe(false);
   });
 });

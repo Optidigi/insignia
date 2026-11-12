@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PublishedConfig } from '../config/model.js';
-import { canonicalDesignIdentity, normalizeCustomizationGroups } from './identity.js';
+import { canonicalDesignIdentity, normalizeCustomizationGroups, validateCustomizationDraft } from './identity.js';
 
 const config: PublishedConfig = {
   version: 'm2-published-config-v1',
@@ -222,4 +222,38 @@ it('preserves historical fixed-placement identity while binding normalized custo
       design: { ...shifted.design, placements: [{ ...front, position: { xMicros: 1000001, yMicros: 0 } }] },
     }),
   ).toThrow();
+});
+
+describe('saved drafts before quantities (#366)', () => {
+  it('accepts a valid design with no variants yet, which a quote still rejects', () => {
+    const draft = { ...group, variants: [] };
+    expect(() => validateCustomizationDraft(draft, config)).not.toThrow();
+    expect(() => validateCustomizationDraft(group, config)).not.toThrow();
+    expect(() => normalizeCustomizationGroups([draft], [config])).toThrow('empty variant quantity vector');
+  });
+
+  it('checks the design against its publication like a quote does', () => {
+    const draft = { ...group, variants: [] };
+    expect(() =>
+      validateCustomizationDraft(
+        { ...draft, design: { ...design, placements: [{ ...front, stepId: 'large' }] } },
+        config,
+      ),
+    ).toThrow('invalid selected placement/method/step reference');
+    expect(() => validateCustomizationDraft({ ...draft, design: { ...design, options: [] } }, config)).toThrow(
+      'incomplete production option selection',
+    );
+    expect(() => validateCustomizationDraft({ ...draft, design: { ...design, placements: [] } }, config)).toThrow(
+      'production design has no placements',
+    );
+    expect(() => validateCustomizationDraft({ ...draft, configRevisionId: 'rev-2' }, config)).toThrow(
+      'missing published config for group',
+    );
+    expect(() => validateCustomizationDraft({ ...draft, revisionContentHash: 'b'.repeat(64) }, config)).toThrow(
+      'published revision content hash mismatch',
+    );
+    expect(() => validateCustomizationDraft({ ...group, variants: [{ variantId: 'red-s', quantity: 0 }] }, config)).toThrow(
+      'invalid physical quantity',
+    );
+  });
 });

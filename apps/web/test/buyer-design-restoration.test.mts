@@ -29,3 +29,34 @@ test('owned design restoration preserves the original deadline and rejects forei
   f.advance(+saved.expiresAt - +f.now() + 1);
   assert([401, 404].includes((await f.http(`designs/${id}/restore`, { capability: f.session.capability })).status));
 });
+
+test('a draft saved before quantities is stored and restored with its artwork and placement (#366)', {
+  skip: !process.env.DATABASE_URL,
+}, async (t) => {
+  const f = await fixture(t);
+  const id = randomUUID();
+  const draft = { ...f.group, variants: [] };
+  const saved = await f.http(`designs/${id}`, { capability: f.session.capability, expectedVersion: 0, group: draft }, 'PUT');
+  assert.equal(saved.status, 200, await saved.clone().text());
+  assert.deepEqual((await saved.json()).value, draft);
+  // Later edits save to the same draft: an update, never another draft.
+  const edited = { ...f.group, variants: [{ variantId: '222', quantity: 4 }] };
+  for (const [version, group] of [
+    [1, edited],
+    [2, draft],
+  ] as const) {
+    const response = await f.http(`designs/${id}`, { capability: f.session.capability, expectedVersion: version, group }, 'PUT');
+    assert.equal(response.status, 200, await response.clone().text());
+  }
+  assert.equal(
+    (await f.pool.query('SELECT count(*)::int n FROM design_drafts WHERE session_id=$1', [f.session.sessionId])).rows[0].n,
+    1,
+  );
+  const response = await f.http(`designs/${id}/restore`, { capability: f.session.capability });
+  assert.equal(response.status, 200, await response.clone().text());
+  const restored = await response.json();
+  assert.equal(restored.version, 3);
+  assert.deepEqual(restored.value, draft);
+  // Quotes still need a size or colour with a quantity.
+  assert.equal((await f.http('quote-proposals', { ...f.body, groups: [draft] })).status, 400);
+});

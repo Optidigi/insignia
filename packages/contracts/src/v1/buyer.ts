@@ -18,6 +18,13 @@ export const BuyerDesiredGroupSchema = CustomizationGroupSchema.omit({ shopId: t
   variants: CustomizationGroupSchema.shape.variants.max(32),
 });
 /**
+ * A saved draft (`PUT designs/:id`) may have no sizes or colours yet: artwork and placement chosen before
+ * Quantities survive a reload (#366). Quotes, acceptance and renewal keep requiring at least one variant.
+ */
+export const BuyerDraftGroupSchema = BuyerDesiredGroupSchema.extend({
+  variants: z.array(CustomizationGroupSchema.shape.variants.element).max(32),
+});
+/**
  * One signed set covers the whole cart's customized lines (CART-LINE-V3): at most 32 variant entries and
  * 10,000 garments across every group, and the cart holds at most 200 lines in total. The published
  * Function config and candidate admission enforce the same numbers; the storefront pre-checks them.
@@ -107,7 +114,7 @@ export const BuyerRenewalSchema = BuyerDesiredSchema.safeExtend({
 export const BuyerDesignSchema = z.strictObject({
   capability: BuyerCapabilitySchema,
   expectedVersion: z.number().int().min(0).max(2147483646),
-  group: BuyerDesiredGroupSchema,
+  group: BuyerDraftGroupSchema,
 });
 export const BuyerCartBucketSchema = z.strictObject({
   variantId: z.string().regex(/^[1-9][0-9]{0,19}$/),
@@ -138,6 +145,7 @@ export const BuyerCartStateSchema = z.strictObject({
 });
 export type BuyerDesired = z.infer<typeof BuyerDesiredSchema>;
 export type BuyerDesiredGroup = z.infer<typeof BuyerDesiredGroupSchema>;
+export type BuyerDraftGroup = z.infer<typeof BuyerDraftGroupSchema>;
 
 const label = z.string().min(1).max(256);
 const choice = z.strictObject({ id: z.string().min(1).max(128), label });
@@ -259,7 +267,7 @@ export const BuyerConfirmationResultSchema = z.strictObject({
 export const BuyerDesignResultSchema = z.strictObject({
   id: BuyerIdSchema,
   version: z.number().int().positive(),
-  value: BuyerDesiredGroupSchema,
+  value: BuyerDraftGroupSchema,
 });
 export const BuyerDesignRestoreRequestSchema = z.strictObject({ capability: BuyerCapabilitySchema });
 export const BuyerDesignRestorationSchema = BuyerDesignResultSchema.extend({
