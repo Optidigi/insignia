@@ -1294,6 +1294,50 @@ test('a native cart quantity change reopens the design at the cart quantity, nev
     { observedQuantities: true },
   );
 });
+test('a Designer quantity edit that cancels the eager draft save still reopens at the edit (#371)', async () => {
+  await withRetainedBuyer(
+    async ({ page, host, trigger }) => {
+      // The eager review saves the cart line's quantity; its answer is held until the buyer's edit cancels it.
+      let release!: () => void;
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      let sent!: (request: PlaywrightRequest) => void;
+      const eagerSave = new Promise<PlaywrightRequest>((resolve) => {
+        sent = resolve;
+      });
+      let first = true;
+      await page.route('**/apps/insignia/v1/designs/*', async (route) => {
+        if (route.request().method() === 'PUT' && first) {
+          first = false;
+          sent(route.request());
+          await held;
+        }
+        // The draft server still applies the cancelled save, as a server that received it does.
+        await route.fallback();
+      });
+      await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+      const request = await eagerSave;
+      assert.deepEqual(BuyerDesiredGroupSchema.parse(record(request.postDataJSON()).group).variants, [
+        { variantId: '222', quantity: 3 },
+      ]);
+      const cancelled = page.waitForEvent('requestfailed', (failed) => failed === request);
+      await host.locator('input[type=number]:enabled').first().fill('4');
+      await cancelled;
+      release();
+      await host.getByRole('button', { name: 'Review', exact: true }).last().click();
+      await applyButton(host).waitFor();
+      await reopenOwned(page, trigger, host);
+      await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+      assert.equal(
+        await host.locator('input[type=number]:enabled').first().inputValue(),
+        '4',
+        'the reviewed Designer edit is resumed, not the cancelled eager save',
+      );
+    },
+    { observedQuantities: true },
+  );
+});
 test('a design added from the product page reopens at a later native cart quantity (#341)', async () => {
   await withRetainedBuyer(
     async ({ page, host, trigger, editCart, accepts }) => {
