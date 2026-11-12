@@ -105,6 +105,7 @@ if (process.argv.includes('--diagnostic')) {
       appClientId: clientId,
       appSecret: clientSecret,
     }),
+    logger: queue.observability.logger,
   });
   const reconciliation = createWorkerReconciliation({ core, queue, purchases: purchaseRunner, usage, lifecycle });
   const recoveryTimer = setInterval(() => {

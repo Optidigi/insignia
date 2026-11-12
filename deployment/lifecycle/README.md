@@ -6,6 +6,13 @@ same canonical HTTPS `APP_URL`, client ID and client secret. Use the qualified i
 runtime artifact and schema-owner migration/grant workflow; this document does
 not authorize a release, scope change, deployment or store uninstall.
 
+An active installation whose offline credential is missing, needs reauthorization or
+is no longer active is skipped and logged as `lifecycle_credential_unavailable` at
+warn level, with its `shopId` and a `LIFECYCLE_*` class, at most once per installation
+per hour (per worker process). It needs the merchant to reauthorize or the
+installation to be retired; retries cannot fix it. Every other enrollment failure
+stays an error: `queue_job_rejected` with `UNINSTALL_ENROLLMENT_UNAVAILABLE`.
+
 Before native qualification, verify that access, request, proxy and exception
 logs exclude `/api/webhooks/uninstall/*` destination values. Treat a leaked
 destination as a credential incident. Never expose subscription URIs through

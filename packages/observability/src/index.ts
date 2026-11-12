@@ -20,6 +20,7 @@ const EVENTS = new Set([
   'signing_key_destruction',
   'public_config_drift',
   'queue_job_rejected',
+  'lifecycle_credential_unavailable',
 ]);
 
 export type RuntimeEvent =
@@ -40,7 +41,9 @@ export type RuntimeEvent =
   | 'refresh_process_failed'
   | 'signing_key_destruction'
   | 'public_config_drift'
-  | 'queue_job_rejected';
+  | 'queue_job_rejected'
+  /** Warn: an active installation has no usable offline credential; it needs reauthorization, not a retry. */
+  | 'lifecycle_credential_unavailable';
 
 const ADMIN_AUTH_STAGES = [
   'BEARER_MISSING',
@@ -203,6 +206,47 @@ export type ArtworkTimingDiagnostic = {
   failure?: (typeof ARTWORK_REQUEST_FAILURES)[number];
 };
 
+/** Every errorClass a non-buyer event may carry. RuntimeLogDetails types errorClass against this list,
+ * so an emitter cannot introduce a class that the log envelope would silently drop. */
+const RUNTIME_ERROR_CLASSES = [
+  'CUSTOMER_EMAIL_RUNTIME_UNAVAILABLE',
+  'QueueStartupError',
+  'ProcessingError',
+  'RefreshError',
+  'TransientPayloadExpired',
+  'WebhookQueueExhausted',
+  'TransientPayloadExpiredUnresolved',
+  'PrivacyRetentionBlocked',
+  'UninstallPayloadRetentionBlocked',
+  'UnknownPayloadRetentionBlocked',
+  'UnsupportedPayloadRetentionBlocked',
+  'UninstallRecoveryUnresolved',
+  'WEBHOOK_RETENTION_UNAVAILABLE',
+  'UNINSTALL_RECOVERY_UNAVAILABLE',
+  'PURCHASE_RECOVERY_UNAVAILABLE',
+  'PURCHASE_DISCOVERY_UNAVAILABLE',
+  'PURCHASE_RECONCILIATION_UNAVAILABLE',
+  'PURCHASE_PAYLOAD_CLEANUP_UNAVAILABLE',
+  'ARTWORK_CLEANUP_UNAVAILABLE',
+  'MERCHANT_PREVIEW_CLEANUP_UNAVAILABLE',
+  'BUYER_PAYLOAD_CLEANUP_UNAVAILABLE',
+  'SIGNING_KEY_DESTRUCTION_UNAVAILABLE',
+  'PUBLIC_CONFIG_DRIFT',
+  'QueueRuntimeError',
+  'UNINSTALL_PRIVACY_RECOVERY_UNAVAILABLE',
+  'CUSTOMER_PRIVACY_CLEANUP_UNAVAILABLE',
+  'ShopPrivacyAuthorityRequired',
+  'USAGE_QUALIFICATION_UNAVAILABLE',
+  'UNINSTALL_ENROLLMENT_UNAVAILABLE',
+  'ARTWORK_RUNNER_UNAVAILABLE',
+  'ARTWORK_RUNNER_ABORTED',
+  'ARTWORK_RUNNER_DEADLINE',
+  'LIFECYCLE_CREDENTIAL_MISSING',
+  'LIFECYCLE_CREDENTIAL_REAUTH_REQUIRED',
+  'LIFECYCLE_INSTALLATION_INACTIVE',
+] as const;
+export type RuntimeErrorClass = (typeof RUNTIME_ERROR_CLASSES)[number];
+
 export interface RuntimeLogDetails {
   timing?: BuyerTimingDiagnostic;
   artworkTiming?: ArtworkTimingDiagnostic;
@@ -216,7 +260,7 @@ export interface RuntimeLogDetails {
   topic?: string;
   queue?: string;
   attempt?: number;
-  errorClass?: string;
+  errorClass?: RuntimeErrorClass | BuyerFailureDiagnostic['errorClass'];
   count?: number;
 }
 
@@ -231,32 +275,7 @@ function safeDetails(input: RuntimeLogDetails): RuntimeLogDetails {
   if (input.topic === 'app/uninstalled') result.topic = input.topic;
   if (input.queue === 'insignia.shopify-webhook.v1' || input.queue === 'insignia.token-refresh.v1')
     result.queue = input.queue;
-  if (
-    input.errorClass === 'CUSTOMER_EMAIL_RUNTIME_UNAVAILABLE' ||
-    input.errorClass === 'QueueStartupError' ||
-    input.errorClass === 'ProcessingError' ||
-    input.errorClass === 'RefreshError' ||
-    input.errorClass === 'TransientPayloadExpired' ||
-    input.errorClass === 'WebhookQueueExhausted' ||
-    input.errorClass === 'TransientPayloadExpiredUnresolved' ||
-    input.errorClass === 'PrivacyRetentionBlocked' ||
-    input.errorClass === 'UninstallPayloadRetentionBlocked' ||
-    input.errorClass === 'UnknownPayloadRetentionBlocked' ||
-    input.errorClass === 'UnsupportedPayloadRetentionBlocked' ||
-    input.errorClass === 'UninstallRecoveryUnresolved' ||
-    input.errorClass === 'WEBHOOK_RETENTION_UNAVAILABLE' ||
-    input.errorClass === 'UNINSTALL_RECOVERY_UNAVAILABLE' ||
-    input.errorClass === 'PURCHASE_RECOVERY_UNAVAILABLE' ||
-    input.errorClass === 'PURCHASE_DISCOVERY_UNAVAILABLE' ||
-    input.errorClass === 'PURCHASE_RECONCILIATION_UNAVAILABLE' ||
-    input.errorClass === 'PURCHASE_PAYLOAD_CLEANUP_UNAVAILABLE' ||
-    input.errorClass === 'ARTWORK_CLEANUP_UNAVAILABLE' ||
-    input.errorClass === 'MERCHANT_PREVIEW_CLEANUP_UNAVAILABLE' ||
-    input.errorClass === 'BUYER_PAYLOAD_CLEANUP_UNAVAILABLE' ||
-    input.errorClass === 'SIGNING_KEY_DESTRUCTION_UNAVAILABLE' ||
-    input.errorClass === 'PUBLIC_CONFIG_DRIFT'
-  )
-    result.errorClass = input.errorClass;
+  if (RUNTIME_ERROR_CLASSES.includes(input.errorClass as RuntimeErrorClass)) result.errorClass = input.errorClass;
   if (Number.isSafeInteger(input.count) && (input.count ?? -1) >= 0) result.count = input.count;
   if (Number.isInteger(input.attempt) && (input.attempt ?? -1) >= 0 && (input.attempt ?? 0) <= 1000)
     result.attempt = input.attempt;

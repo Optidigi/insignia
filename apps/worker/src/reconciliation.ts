@@ -1,5 +1,6 @@
 import type { createArtworkService } from '@insignia/application';
 import type { DurableCore } from '@insignia/database';
+import type { RuntimeErrorClass } from '@insignia/observability';
 import {
   maintainCustomerPrivacy,
   maintainWebhookRetention,
@@ -45,7 +46,7 @@ export function createWorkerReconciliation(input: {
     if (stopped) return Promise.resolve();
     if (active) return active;
     active = (async () => {
-      const operations = [
+      const operations: { errorClass: RuntimeErrorClass; run: () => unknown }[] = [
         { errorClass: 'UNINSTALL_PRIVACY_RECOVERY_UNAVAILABLE', run: () => recoverUninstallPrivacy(input.core) },
         {
           errorClass: 'CUSTOMER_PRIVACY_CLEANUP_UNAVAILABLE',

@@ -472,3 +472,81 @@ test('signing key destruction is a known runtime event for the real logger', () 
     count: 2,
   });
 });
+
+test('every class reconciliation reports reaches the operator through the real logger', async () => {
+  // The worker's own calls are the source of truth: tee each one through the real logger.
+  const lines: Record<string, unknown>[] = [];
+  const real = createObservability({
+    stream: new Writable({
+      write(chunk, _encoding, done) {
+        lines.push(JSON.parse(String(chunk)));
+        done();
+      },
+    }),
+  });
+  const input = fixture();
+  const emitted: unknown[] = [];
+  input.queue.observability = {
+    ...real,
+    logger: {
+      ...real.logger,
+      error(event, metadata) {
+        emitted.push(metadata?.errorClass);
+        real.logger.error(event, metadata);
+      },
+    },
+  };
+  const fail = async (): Promise<never> => {
+    throw new Error('synthetic failure');
+  };
+  // Pass 1: every maintenance operation fails.
+  input.core.uninstallPrivacy.recoverPending = fail;
+  input.core.customerPrivacy.cleanupInboxes = fail;
+  input.core.webhooks.eraseExpiredPayloads = fail;
+  input.core.webhooks.selectUninstallRecoveryIds = fail;
+  input.core.purchases.cleanupDue = fail;
+  input.core.buyers.cleanupDue = fail;
+  input.artwork.cleanup = fail;
+  input.purchases = { recover: fail, discoverChanges: fail };
+  input.usage = { runOnce: async () => ({ failed: 1 }), stop: async () => {} };
+  input.lifecycle = { runOnce: fail };
+  let keysFail = true;
+  input.signingKeys = { destroyExpired: async () => (keysFail ? fail() : 0) };
+  const maintenance = createWorkerReconciliation(input);
+  await maintenance.runOnce();
+  // Pass 2: operations complete but report blocked work they cannot resolve.
+  const clean = fixture();
+  Object.assign(input.core, clean.core);
+  input.artwork.cleanup = clean.artwork.cleanup;
+  input.purchases = { recover: async () => undefined, discoverChanges: async () => undefined };
+  input.usage = { runOnce: async () => ({ failed: 0 }), stop: async () => {} };
+  input.lifecycle = { runOnce: async () => {} };
+  keysFail = false;
+  input.core.uninstallPrivacy.status = async () => ({
+    blockedReceiptCount: 0,
+    legacyScopeReceiptCount: 0,
+    recoveryDecisionCount: 0,
+    activeGenerationHoldCount: 1,
+    unrecoveredBlockedReceiptCount: 0,
+  });
+  const erase = clean.core.webhooks.eraseExpiredPayloads;
+  input.core.webhooks.eraseExpiredPayloads = async (limit) => ({
+    ...(await erase(limit)),
+    unresolvedExpiredCount: 1,
+    blockedPrivacyCount: 1,
+    blockedUninstallCount: 1,
+    blockedUnknownCount: 1,
+    blockedUnsupportedCount: 1,
+  });
+  input.queue.removeExpiredWebhookJob = async () => true;
+  input.queue.ensureWebhookEnqueued = fail;
+  await maintenance.runOnce();
+  await maintenance.stop();
+
+  assert.equal(emitted.length, 19);
+  assert.ok(emitted.every((errorClass) => typeof errorClass === 'string'));
+  assert.deepEqual(
+    lines.filter((line) => line.level === 50).map((line) => [line.event, line.errorClass]),
+    emitted.map((errorClass) => ['queue_job_rejected', errorClass]),
+  );
+});

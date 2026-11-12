@@ -1,5 +1,6 @@
 import { createHash, createHmac } from 'node:crypto';
 import type { DurableCore } from '@insignia/database';
+import type { Observability } from '@insignia/observability';
 import { createUninstallSubscriptionClient, type UninstallSubscriptionGrant } from '@insignia/shopify';
 
 type Scope = {
@@ -120,9 +121,18 @@ export function createAutomaticUninstallEnrollment(input: {
   };
 }
 
+/** An active installation without a usable offline credential needs reauthorization or retirement, which
+ * no retry provides. It is a warning at most once per installation per hour, not an enrollment failure. */
+const LIFECYCLE_CREDENTIAL_SIGNAL_PERIOD_MS = 3_600_000;
+const CREDENTIAL_SIGNALS = {
+  missing: 'LIFECYCLE_CREDENTIAL_MISSING',
+  reauth_required: 'LIFECYCLE_CREDENTIAL_REAUTH_REQUIRED',
+  inactive: 'LIFECYCLE_INSTALLATION_INACTIVE',
+} as const;
+
 /** One tenant per pass; advance before IO so an unavailable shop cannot starve others. */
 export function createUninstallEnrollmentReconciliation(input: {
-  core: Pick<DurableCore, 'uninstallLifecycle'>;
+  core: { uninstallLifecycle: Pick<DurableCore['uninstallLifecycle'], 'listActive'> };
   credentials: {
     acquire(scope: {
       shopId: string;
@@ -133,7 +143,11 @@ export function createUninstallEnrollmentReconciliation(input: {
     >;
   };
   enroll: ReturnType<typeof createAutomaticUninstallEnrollment>;
+  logger: Pick<Observability['logger'], 'warn'>;
+  now?: () => number;
 }) {
+  const now = input.now ?? Date.now;
+  const signalledAt = new Map<string, number>();
   let after: string | null = null;
   return {
     async runOnce() {
@@ -146,9 +160,25 @@ export function createUninstallEnrollmentReconciliation(input: {
       if (!scope) return;
       after = scope.shopId;
       const acquired = await input.credentials.acquire(scope);
+      const installation = JSON.stringify([scope.shopId, scope.installationGeneration]);
+      if (acquired.kind === 'missing' || acquired.kind === 'reauth_required' || acquired.kind === 'inactive') {
+        const last = signalledAt.get(installation);
+        if (last === undefined || now() - last >= LIFECYCLE_CREDENTIAL_SIGNAL_PERIOD_MS) {
+          signalledAt.set(installation, now());
+          // Reporting cannot turn the skipped installation into an enrollment failure.
+          try {
+            input.logger.warn('lifecycle_credential_unavailable', {
+              shopId: scope.shopId,
+              errorClass: CREDENTIAL_SIGNALS[acquired.kind],
+            });
+          } catch {}
+        }
+        return;
+      }
+      signalledAt.delete(installation);
       if (
         acquired.kind !== 'usable' ||
-        acquired.accessExpiresAt.getTime() <= Date.now() ||
+        acquired.accessExpiresAt.getTime() <= now() ||
         acquired.shopDomain !== scope.shopDomain
       )
         throw new Error('Automatic lifecycle credential unavailable');

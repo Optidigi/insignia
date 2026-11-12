@@ -1,4 +1,4 @@
-import type { Observability } from '@insignia/observability';
+import type { Observability, RuntimeErrorClass } from '@insignia/observability';
 import type { inspectArtwork } from './artwork/inspection.js';
 import type { createArtworkRunner } from './artwork-runner.js';
 import { createWorkerHealthServer } from './health.js';
@@ -24,10 +24,15 @@ export async function startArtworkInspectionProcess(input: {
     if (maintenance) return maintenance;
     if (stopping) return Promise.resolve();
     maintenance = (async () => {
-      const tasks = [
+      const tasks: { run: () => unknown; errorClass: RuntimeErrorClass }[] = [
         { run: () => input.cleanup(), errorClass: 'ARTWORK_CLEANUP_UNAVAILABLE' },
         ...(input.cleanupMerchantPreviews
-          ? [{ run: () => input.cleanupMerchantPreviews?.(), errorClass: 'MERCHANT_PREVIEW_CLEANUP_UNAVAILABLE' }]
+          ? [
+              {
+                run: () => input.cleanupMerchantPreviews?.(),
+                errorClass: 'MERCHANT_PREVIEW_CLEANUP_UNAVAILABLE' as const,
+              },
+            ]
           : []),
       ];
       for (const task of tasks) {
