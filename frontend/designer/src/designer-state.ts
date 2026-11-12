@@ -1,3 +1,4 @@
+import type { CommitFailure } from './commit-failure';
 import {
   type Artwork,
   type ColorId,
@@ -95,10 +96,8 @@ export interface DesignerState {
     /** Silent re-proposal of an expired, still-displayed quote; the footer stays usable. */
     | { kind: 'refreshing'; requestId: string; design: Design }
     | { kind: 'pending'; requestId: string; design: Design }
-    /** `cartLimit`: the cart is over one signed set (32 lines / 10,000 items) or over 200 cart lines (#335). */
-    | { kind: 'failed'; reason: 'cart-commit-failed'; preparation?: boolean; cartLimit?: 'signed-set' | 'cart-lines' }
-    /** Shopify definitely refused the update (typically stock); `detail` is its own explanation. */
-    | { kind: 'failed'; reason: 'cart-rejected'; stock?: boolean; detail?: string; preparation?: undefined };
+    /** One cause per failure; its copy and action are derived in `commit-failure.ts` (#337). */
+    | ({ kind: 'failed' } & CommitFailure);
   completion: CartReceipt | null;
   editing: string | null;
   open: boolean;
@@ -178,8 +177,7 @@ export type DesignerEvent =
   | { type: 'cart-mutation-started'; requestId: string }
   | { type: 'cart-preparation-started'; requestId: string }
   | { type: 'cart-commit-succeeded'; requestId: string; receipt: CartReceipt }
-  | { type: 'cart-commit-failed'; requestId: string; reason: 'cart-commit-failed'; preparation?: boolean; cartLimit?: 'signed-set' | 'cart-lines' }
-  | { type: 'cart-commit-failed'; requestId: string; reason: 'cart-rejected'; stock?: boolean; detail?: string }
+  | { type: 'cart-commit-failed'; requestId: string; failure: CommitFailure }
   | { type: 'cart-commit-canceled' }
   | { type: 'product-design-edit-requested'; design: Design }
   | { type: 'product-design-switch-confirmed' }
@@ -399,7 +397,7 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
     case 'cart-review-satisfied':
       return { ...state, requiresCartReview: false };
     case 'review-navigation-failed':
-      return { ...state, commit: { kind: 'failed', reason: 'cart-commit-failed' } };
+      return { ...state, commit: { kind: 'failed', cause: 'unknown', preparation: false } };
     case 'cart-commit-requested': {
       const design = buildCommitDesign(event.preparation ? {...state,step:2} : state, event.design.id);
       const kind = !event.preparation ? 'pending' : event.refresh ? 'refreshing' : 'preparing';
@@ -438,23 +436,7 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
     }
     case 'cart-commit-failed':
       return (state.commit.kind === 'pending' || state.commit.kind === 'preparing' || state.commit.kind === 'refreshing') && state.commit.requestId === event.requestId
-        ? {
-            ...state,
-            commit:
-              event.reason === 'cart-rejected'
-                ? {
-                    kind: 'failed',
-                    reason: event.reason,
-                    ...(event.stock ? { stock: true } : {}),
-                    ...(event.detail ? { detail: event.detail } : {}),
-                  }
-                : {
-                    kind: 'failed',
-                    reason: event.reason,
-                    ...(event.preparation ? { preparation: true } : {}),
-                    ...(event.cartLimit ? { cartLimit: event.cartLimit } : {}),
-                  },
-          }
+        ? { ...state, commit: { kind: 'failed', ...event.failure } }
         : state;
     case 'cart-commit-canceled':
       return state.commit.kind === 'pending' || state.commit.kind === 'preparing' || state.commit.kind === 'refreshing' ? { ...state, commit: { kind: 'idle' } } : state;

@@ -512,6 +512,26 @@ Admin contracts cover draft get/save/publish/copy, authorized artwork inspection
 
 The storefront sends every retained cart group with the edited one, so it checks the same whole-cart limits (`BUYER_CART_CAPACITY` and `buyerCartCapacityExceeded` in the contracts package, which the published Function config and candidate admission match) before proposing. The Designer, through the iframe bridge, shows a translated message instead of "Unavailable": it names 32 lines and 10,000 items for the signed set, or says the cart has too many items for the 200-line case. Its primary action is Edit quantities (back to Quantities), never a Retry of the same cart. The per-size quantity field still allows 10,000; the whole-cart check covers several sizes of one design. Removing a design never needs the check, but a cart pushed over capacity by native cart edits can still end a single-design removal in the generic failure; Remove all still works. `retryable: true` appears only on `BUSY` and means the identical request may be repeated after `Retry-After` seconds. Each Shopify read error type states whether it is transient; the buyer API does not guess from kinds. The storefront repeats an acceptance (idempotent by its key) on `BUSY` at most twice, waiting `Retry-After` clamped to 1–10 s (1 s when a proxy strips the header) plus up to 250 ms jitter, abortable by the caller; it retries nothing else automatically. Expected outcomes are logged as `buyer_request_rejected` with their diagnostic class: buyer-actionable 4xx at info, `BUSY` at warn (it keeps `DatabaseLockTimeout`, `ShopDayChanged` or `ProviderReadUnavailable`, so sustained lock timeouts and throttling stay visible); only 503s are logged at error as `buyer_request_failed`. Shop-wide artwork ceilings remain 503: they sit far above legitimate traffic.
 
+**Designer wording and actions per code (#337).** The Designer words every failure by its `code`, in all six customer languages, and never shows the server's English `message`. The same copy and action apply wherever the code arrives: the review (quote preparation, including the silent re-proposal of an expired quote) or Add to cart / Update cart. Through the Designer iframe one validated failure crosses the frame: a whitelisted `code`, a `Retry-After` wait capped at 3,600 s, `details.reason` `CART_LINES`, and for a cart refusal Shopify's own explanation (300 characters at most). Any other code is the generic failure. The Designer keeps one failure cause per attempt; a single pure table (`frontend/designer/src/commit-failure.ts`) derives its copy and its one primary action. Only Retry repeats the request: after a failed review it prepares the quote again, after a failed add it repeats Add to cart with the same acceptance key. The other actions never re-send it. Previous step stays available.
+
+| `code` (or local condition) | Copy says | Primary action |
+|---|---|---|
+| `BUSY` (after the acceptance's two automatic retries) | The store is busy; the design is still here; try again in a few seconds | Retry |
+| `UNAVAILABLE` | Customization is temporarily unavailable; the design is still here | Retry |
+| No code (a proxied 5xx, network failure or timeout) | Review: "Unavailable"; add: the cart could not be updated, the design is still here | Retry |
+| `RATE_LIMITED` | Too many requests; the wait in whole minutes when `Retry-After` is sent, otherwise "wait a moment" | Retry |
+| `REVIEW_REQUIRED` outside the repair view | The product changed (price or stock); check your choices | Retry |
+| Cart lock held by another tab or the repair view (`CART_BUSY`, local) | The cart is being updated elsewhere; wait, then try again. The accepted set is kept, so Retry applies it without signing again | Retry |
+| Shopify refused the cart write (local) | Shopify's explanation, else stock or neutral refusal copy (#353) | Retry (prepares afresh) |
+| `CAPACITY_EXCEEDED` | 32 lines / 10,000 items, or the 200-line copy (#335) | Edit quantities |
+| `ARTWORK_EXPIRED` | The artwork has expired; replace it | Replace artwork (Design step) |
+| `POSITION_INVALID` | The artwork position is no longer allowed | Edit design (Design step) |
+| `PRODUCT_UNAVAILABLE`, `UNSUPPORTED_MARKET`, `ENTITLEMENT_DENIED` | Customization isn't possible here; the cart is unchanged | Close |
+| `COUNTRY_REQUIRED` | Choose a country or region in the store, then reopen | Close |
+| `SESSION_RATE_LIMITED` (review, add or upload) | The session limit and the wait in whole minutes (one hour without `Retry-After`) | Close |
+
+Close uses the Designer's usual close flow, which keeps the design. A failed draft save (`PUT /v1/designs/:id`) no longer fails the review: the proposal never reads the draft, which only lets the buyer reopen the design later, so a failed save just leaves nothing to reopen.
+
 ### 8.4 Acceptance and cart application
 
 Read the current cart, normalize its Insignia subset, and construct the *desired entire subset*, including the newly configured group. Retained groups remain in the complete acceptance vector; ordinary cart items stay untouched. The server verifies resources and current pricing independently of the browser's amounts.

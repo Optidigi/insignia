@@ -1,10 +1,11 @@
-import { ARTWORK_UPLOAD_ACCEPT, BUYER_CART_CAPACITY } from '@insignia/contracts';
+import { ARTWORK_UPLOAD_ACCEPT } from '@insignia/contracts';
 import type { SupportedLanguage } from '@insignia/ui-localization/core';
 import { selectedLanguagePreference } from '@insignia/ui-localization/core';
 import type { CustomerWordingOverlay } from '@insignia/ui-localization/customer';
 import type { ComponentChildren, TargetedDragEvent, TargetedEvent } from 'preact';
 import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'preact/hooks';
 import { ColorPicker } from './color-picker';
+import { commitFailureView } from './commit-failure';
 import { FloatingSelect } from './compact-fields';
 import type { ProductConfig } from './config';
 import { LocaleProvider, useLocale } from './customer-locale';
@@ -174,7 +175,7 @@ function DesignerSession({
   languageChangeFailed,
   onLanguagePreferenceSelect,
 }: DesignerSessionProps) {
-  const { t, formatLocale, lang, dir } = useLocale();
+  const { t, message, formatLocale, lang, dir } = useLocale();
   useLayoutEffect(() => {
     if (!ownsDocumentLanguage) return;
     document.documentElement.lang = lang;
@@ -1033,8 +1034,16 @@ function DesignerSession({
         : 'loading'
     : undefined;
   const footerBusy = workflow.commit.kind === 'pending' || (step === 2 && workflow.commit.kind === 'preparing');
-  // Retrying the same over-capacity cart cannot succeed (#335); the primary action returns to Quantities.
-  const cartLimited = workflow.commit.kind === 'failed' && workflow.commit.reason === 'cart-commit-failed' && !!workflow.commit.cartLimit;
+  // A failed review or Add to cart: its copy and the one action that helps come from its cause (#335, #337).
+  const failureView = workflow.commit.kind === 'failed' ? commitFailureView(workflow.commit, formatLocale) : undefined;
+  const failureActions = {
+    'edit-quantities': { label: t('customer:review.editQuantities'), run: () => dispatch({ type: 'step-selected', step: 1 }) },
+    'replace-artwork': { label: t('customer:recovery.replaceArtwork'), run: () => dispatch({ type: 'step-selected', step: 0 }) },
+    'edit-design': { label: t('customer:recovery.editDesign'), run: () => dispatch({ type: 'step-selected', step: 0 }) },
+    close: { label: t('common:actions.close'), run: requestReturnToProduct },
+  } as const;
+  // Retry keeps the existing primary action: re-prepare after a failed review, Add to cart after a failed add.
+  const helpingAction = step === 2 && failureView && failureView.action !== 'retry' ? failureActions[failureView.action] : undefined;
   const dirtyDraft = hasDraftChanges(workflow);
   useEffect(() => {
     if ((!dirtyDraft && !uploading) || allowUnload || previewOnly) return;
@@ -1895,10 +1904,10 @@ function DesignerSession({
             <footer className="panel-footer">
               {cartCompletion && <div role="status"><h2>{t('customer:chrome.added')}</h2><p>{t('customer:chrome.openingCart')}</p><button type="button" className="primary-button" onClick={() => onCartCompletion?.(cartCompletion, false)}>{t('customer:chrome.viewCart')}</button></div>}
               {!cartCompletion && <>
-              {workflow.commit.kind === 'failed' && (
+              {failureView && (
                 <div className="cart-submit-error" role="alert">
                   <IconAlertTriangle size={18} />
-                  <span>{workflow.commit.reason === 'cart-rejected' ? workflow.commit.detail || t(workflow.commit.stock ? 'customer:recovery.cartRejectedStock' : 'customer:recovery.cartRejected') : workflow.commit.cartLimit === 'cart-lines' ? t('customer:recovery.cartLineLimit') : workflow.commit.cartLimit ? t('customer:recovery.cartLimit', { formattedMaxLines: new Intl.NumberFormat(formatLocale).format(BUYER_CART_CAPACITY.variants), formattedMaxItems: new Intl.NumberFormat(formatLocale).format(BUYER_CART_CAPACITY.quantity) }) : t(workflow.commit.preparation ? 'common:summary.unavailable' : 'customer:recovery.cartCommitFailed')}</span>
+                  <span>{failureView.detail || message(failureView.message)}</span>
                 </div>
               )}
               {validationIssues.length > 0 && (
@@ -1956,7 +1965,7 @@ function DesignerSession({
                     (step === 1 && !quantitiesLayout.cells.some((cell) => cell.available))
                   }
                   aria-busy={footerBusy}
-                  onClick={step === 2 ? (cartLimited ? () => dispatch({ type: 'step-selected', step: 1 }) : workflow.commit.kind === 'failed' && workflow.commit.preparation ? () => void runtime.commit(true) : editing && !unappliedDraft ? returnToProduct : addToCart) : goNext}
+                  onClick={step === 2 ? (helpingAction ? helpingAction.run : workflow.commit.kind === 'failed' && workflow.commit.preparation ? () => void runtime.commit(true) : editing && !unappliedDraft ? returnToProduct : addToCart) : goNext}
                 >
                   {footerBusy
                     ? workflow.commit.kind === 'preparing'
@@ -1964,8 +1973,8 @@ function DesignerSession({
                       : editing
                         ? t('customer:steps.updatingCart')
                         : t('customer:steps.addingToCart')
-                    : step === 2 && cartLimited
-                      ? t('customer:review.editQuantities')
+                    : helpingAction
+                      ? helpingAction.label
                     : workflow.commit.kind === 'failed' && workflow.commit.preparation
                       ? t('common:actions.retry')
                     : step === 0
@@ -1977,7 +1986,7 @@ function DesignerSession({
                             ? t('customer:steps.updateCart')
                             : t('customer:steps.done')
                           : t('customer:steps.addToCart')}
-                  {step === 2 && !cartLimited && <IconShoppingCart size={18} />}
+                  {step === 2 && !helpingAction && <IconShoppingCart size={18} />}
                 </button>
               </div>
               </>}

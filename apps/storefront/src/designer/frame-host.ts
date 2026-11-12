@@ -7,6 +7,7 @@ import {
 } from '../../../../frontend/designer/src/customer-language-policy.ts';
 import { readCustomerLanguagePreference } from '../../../../frontend/designer/src/customer-language-preference.ts';
 import type { Artwork, Design, Print } from '../../../../frontend/designer/src/model';
+import { portFailure } from '../../../../frontend/designer/src/port-failure';
 import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quote-review';
 import {
   type CartReceipt,
@@ -304,41 +305,9 @@ export function createDesignerFrame(input: {
         send('insignia:designer:result', { id: data.id, ok: true, value });
       }
     } catch (error) {
-      const status =
-        error && typeof error === 'object' && 'status' in error && [403, 404, 410, 422].includes(Number(error.status))
-          ? Number(error.status)
-          : undefined;
+      // One validated, whitelisted failure crosses the frame (#337); the frame validates it again.
       if (!controller.signal.aborted)
-        send('insignia:designer:result', {
-          id: data.id,
-          ok: false,
-          ...(error && typeof error === 'object' && 'reviewRequired' in error && error.reviewRequired === true
-            ? { reviewRequired: true, expiresAt: 'expiresAt' in error ? error.expiresAt : undefined }
-            : {}),
-          ...(status ? { status } : {}),
-          // #348: the per-visitor session limit and its wait, so the Designer can name both.
-          ...(error && typeof error === 'object' && 'code' in error && error.code === 'SESSION_RATE_LIMITED'
-            ? { sessionLimited: true, ...('retryAfter' in error ? { retryAfter: error.retryAfter } : {}) }
-            : {}),
-          // #335: the cart is over one signed set (pre-check or the server's 422); only fewer items help.
-          ...(error && typeof error === 'object' && 'code' in error && error.code === 'CAPACITY_EXCEEDED'
-            ? { cartLimit: 'cartLines' in error && error.cartLines === true ? 'cart-lines' : 'signed-set' }
-            : {}),
-          ...(data.action === 'commit' && error && typeof error === 'object' && 'cartRejected' in error
-            ? {
-                cartRejected: true,
-                stock: 'stock' in error && error.stock === true,
-                ...('detail' in error && typeof error.detail === 'string' ? { detail: error.detail } : {}),
-              }
-            : {}),
-          ...(data.action === 'commit' &&
-          error &&
-          typeof error === 'object' &&
-          'acceptanceOutcome' in error &&
-          error.acceptanceOutcome === 'declined'
-            ? { acceptanceOutcome: 'declined' }
-            : {}),
-        });
+        send('insignia:designer:result', { id: data.id, ok: false, failure: portFailure(error) });
     } finally {
       controllers.delete(data.id);
       if (data.action === 'commit' && committing === controller) {

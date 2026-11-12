@@ -1038,11 +1038,11 @@ test('a definite cart refusal shows its own message and lets Review prepare agai
   let refusal: Record<string, unknown> = {cartRejected:true,stock:true,detail:'Only 2 left.'};
   const h = harness({artwork:{upload:async()=>{throw Error('unused')}},review:{prepare:async request=>{preparations.push(request)}},cart:{commit:async()=>{throw Object.assign(Error('refused'),refusal);}}});
   await h.runtime.commit(true); await h.runtime.commit();
-  assert.deepEqual(h.state.commit, { kind: 'failed', reason: 'cart-rejected', stock: true, detail: 'Only 2 left.' });
+  assert.deepEqual(h.state.commit, { kind: 'failed', cause: 'cart-rejected-stock', preparation: false, detail: 'Only 2 left.' });
   // A refusal that is not about stock keeps neutral wording (NB3).
   refusal = {cartRejected:true,stock:false};
   await h.runtime.commit();
-  assert.deepEqual(h.state.commit, { kind: 'failed', reason: 'cart-rejected' });
+  assert.deepEqual(h.state.commit, { kind: 'failed', cause: 'cart-rejected', preparation: false });
   await h.runtime.commit(true);
   assert.equal(preparations.length, 2, 'Review is not a no-op after a refusal');
 });
@@ -1187,27 +1187,55 @@ test('a cart over the signed-set capacity fails preparation as a cart limit, not
     cart: { commit: async () => { throw Error('no purchase during preparation'); } },
   });
   await reviewing.runtime.commit(true);
-  assert.deepEqual(reviewing.state.commit, { kind: 'failed', reason: 'cart-commit-failed', preparation: true, cartLimit: 'signed-set' });
+  assert.deepEqual(reviewing.state.commit, { kind: 'failed', cause: 'capacity', preparation: true });
   const adding = harness({
     artwork: { upload: async () => ({}) },
     cart: { commit: async request => { request.onPreparing?.(); throw limit(); } },
   });
   await adding.runtime.commit();
-  assert.deepEqual(adding.state.commit, { kind: 'failed', reason: 'cart-commit-failed', preparation: true, cartLimit: 'signed-set' });
+  assert.deepEqual(adding.state.commit, { kind: 'failed', cause: 'capacity', preparation: true });
   const lines = harness({
     artwork: { upload: async () => ({}) },
     review: { prepare: async () => { throw Object.assign(limit(), { cartLines: true }); } },
     cart: { commit: async () => { throw Error('unused'); } },
   });
   await lines.runtime.commit(true);
-  assert.deepEqual(lines.state.commit, { kind: 'failed', reason: 'cart-commit-failed', preparation: true, cartLimit: 'cart-lines' });
+  assert.deepEqual(lines.state.commit, { kind: 'failed', cause: 'cart-lines', preparation: true });
   const other = harness({
     artwork: { upload: async () => ({}) },
     review: { prepare: async () => { throw Error('Quote unavailable'); } },
     cart: { commit: async () => { throw Error('unused'); } },
   });
   await other.runtime.commit(true);
-  assert.deepEqual(other.state.commit, { kind: 'failed', reason: 'cart-commit-failed', preparation: true });
+  assert.deepEqual(other.state.commit, { kind: 'failed', cause: 'unknown', preparation: true });
+});
+
+test('a buyer error code becomes one failure cause, with a bounded wait only where the cause names one (#337)', async () => {
+  const failing = (fields: Record<string, unknown>) => () => Promise.reject(Object.assign(Error('Raw English server message'), fields));
+  const reviewing = harness({
+    artwork: { upload: async () => ({}) },
+    review: { prepare: failing({ status: 409, code: 'BUSY', retryAfter: 2 }) },
+    cart: { commit: async () => { throw Error('unused'); } },
+  });
+  await reviewing.runtime.commit(true);
+  assert.deepEqual(reviewing.state.commit, { kind: 'failed', cause: 'busy', preparation: true });
+  // #362 follow-up: the session limit at Add to cart, with no upload before it.
+  const adding = harness({
+    artwork: { upload: async () => ({}) },
+    cart: { commit: failing({ status: 429, code: 'SESSION_RATE_LIMITED', retryAfter: 1500.4 }) },
+  });
+  await adding.runtime.commit();
+  assert.deepEqual(adding.state.commit, { kind: 'failed', cause: 'session-limited', preparation: false, retryAfterSeconds: 1501 });
+  // An unknown code is a generic failure; a wait beyond the one-hour window is capped.
+  for (const [fields, expected] of [
+    [{ code: 'NOT_A_BUYER_CODE' }, { kind: 'failed', cause: 'unknown', preparation: false }],
+    [{ code: 'RATE_LIMITED', retryAfter: 1e12 }, { kind: 'failed', cause: 'rate-limited', preparation: false, retryAfterSeconds: 3600 }],
+    [{ code: 'CART_BUSY', retryAfter: -5 }, { kind: 'failed', cause: 'cart-busy', preparation: false }],
+  ] as const) {
+    const h = harness({ artwork: { upload: async () => ({}) }, cart: { commit: failing(fields) } });
+    await h.runtime.commit();
+    assert.deepEqual(h.state.commit, expected, JSON.stringify(fields));
+  }
 });
 
 test('explicit preparation Retry recovers a transient preflight read before quote expiry without accepting', async () => {
@@ -1666,7 +1694,7 @@ test('reducer: refreshing is cancellable and only its own request can fail it', 
   const design = { id: 'design', prints: state.prints, quantities: state.quantities };
   const refreshing = designerReducer(state, { type: 'cart-commit-requested', requestId: 'r', design, preparation: true, refresh: true });
   assert.equal(refreshing.commit.kind, 'refreshing');
-  assert.equal(designerReducer(refreshing, { type: 'cart-commit-failed', requestId: 'other', reason: 'cart-commit-failed', preparation: true }), refreshing);
+  assert.equal(designerReducer(refreshing, { type: 'cart-commit-failed', requestId: 'other', failure: { cause: 'unknown', preparation: true } }), refreshing);
   assert.equal(designerReducer(refreshing, { type: 'cart-commit-canceled' }).commit.kind, 'idle');
   assert.equal(designerReducer(refreshing, { type: 'cart-commit-requested', requestId: 'add', design }).commit.kind, 'pending');
 });

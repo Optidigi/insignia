@@ -416,3 +416,34 @@ test('a refusal that is not about stock is never presented as stock (NB3)', asyn
       error.cartRejected === true && error.stock === false && error.detail === undefined,
   );
 });
+
+test('a cart lock held by another tab is CART_BUSY, and the retry applies the same accepted set (#337)', async () => {
+  const app = fixture();
+  await app.live.ports.review!.prepare(app.request);
+  let release!: () => void;
+  let held!: () => void;
+  const holding = new Promise<void>((resolve) => {
+    held = resolve;
+  });
+  // Another tab (or the repair view) is applying the customized cart.
+  const lock = navigator.locks.request(
+    'insignia-customized-cart-v2',
+    () =>
+      new Promise<void>((resolve) => {
+        release = resolve;
+        held();
+      }),
+  );
+  await holding;
+  await assert.rejects(
+    withWindow(() => app.live.ports.cart.commit(app.request)),
+    { code: 'CART_BUSY' },
+  );
+  assert.equal(app.customized().length, 0, 'nothing was written while the lock was held');
+  release();
+  await lock;
+  const receipt = await withWindow(() => app.live.ports.cart.commit(app.request));
+  assert.equal((receipt as CartReceipt).kind, 'applied');
+  assert.equal(app.accepted.length, 1, 'the retry reuses the accepted set instead of signing another');
+  assert.equal(app.customized().length, 1);
+});

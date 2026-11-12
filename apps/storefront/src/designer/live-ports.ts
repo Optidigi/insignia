@@ -247,8 +247,9 @@ export function createLiveDesignerPorts(input: {
       if (!needsCartReview) {
         const groups = [...pendingGroups];
         draftSaves.set(request.design.id, { group, original: previous });
-        // The proposal does not read the draft: save and proposal run concurrently and both must succeed.
-        const saving = custody.save(request.design.id, group, previous, signal);
+        // The proposal does not read the draft, so the two run concurrently. The draft only lets the buyer reopen
+        // this design later: a failed save leaves no pointer to reopen and never blocks the quote (#337).
+        const saving = custody.save(request.design.id, group, previous, signal).catch(() => {});
         const proposing = refreshGroups(groups, signal).then(async (labels) => {
           signal.throwIfAborted();
           assertCartCapacity(groups, observed.cart.ordinary.length);
@@ -525,6 +526,9 @@ export function createLiveDesignerPorts(input: {
               reviewRequired: true,
               ...presentation,
             });
+          } else if (reason === 'busy') {
+            // Another tab or the repair view is applying the cart. The accepted set is kept, so Retry applies it.
+            throw Object.assign(new Error('Cart update in progress elsewhere'), { code: 'CART_BUSY' });
           } else if (reason === 'rejected') {
             // A definite refusal (typically stock) with the buyer's lines intact: say so, never "uncertain".
             throw Object.assign(new Error('Shopify refused the cart update'), {

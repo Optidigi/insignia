@@ -8,13 +8,15 @@ import {
   type DesignerState,
   type UploadFailureReason,
 } from "./designer-state";
+import { commitFailure } from "./commit-failure";
+import { portFailure } from "./port-failure";
 
 export type UploadPhase = 'uploading' | 'processing';
 function uploadFailure(error: unknown, phase?: UploadPhase): { reason: Exclude<UploadFailureReason, 'file-too-large' | 'unsupported-file-type'>; retryAfterSeconds?: number } {
-  const { status, code, retryAfter } = (error && typeof error === 'object' ? error : {}) as { status?: unknown; code?: unknown; retryAfter?: unknown };
+  const { status, code, retryAfter } = portFailure(error);
   // Neither a retry nor another file helps until the visitor window admits a new session.
   if (code === 'SESSION_RATE_LIMITED')
-    return { reason: 'session-limited', ...(typeof retryAfter === 'number' && retryAfter > 0 ? { retryAfterSeconds: retryAfter } : {}) };
+    return { reason: 'session-limited', ...(retryAfter ? { retryAfterSeconds: retryAfter } : {}) };
   if (status === 410) return { reason: 'artwork-expired' };
   if (phase === 'processing') return { reason: status === 422 ? 'inspection-rejected' : 'processing-failed' };
   return { reason: phase === 'uploading' ? 'upload-failed' : 'read-failed' };
@@ -182,38 +184,26 @@ export function createDesignerRuntime(
       dispatch({ type: "cart-commit-succeeded", requestId, receipt });
     } catch (error) {
       if (!controller.signal.aborted && commitController === controller) {
-        if (!prepareOnly && error && typeof error === 'object' && 'reviewRequired' in error && error.reviewRequired === true) {
+        const failure = portFailure(error);
+        if (!prepareOnly && failure.reviewRequired) {
           if (attempt) attempt.dispatched = false;
           preparedSignature = signature;
-          preparedExpiresAt = 'expiresAt' in error ? String(error.expiresAt) : undefined;
+          preparedExpiresAt = failure.expiresAt;
           dispatch({ type: 'cart-commit-canceled' });
           return;
         }
-        if (!prepareOnly && error && typeof error === 'object' && 'cartRejected' in error && error.cartRejected === true) {
+        if (!prepareOnly && failure.code === 'CART_REJECTED') {
           // A definite refusal: the port dropped the accepted set, so Review and Add prepare afresh.
           if (attempt) attempt.dispatched = false;
           preparedSignature = null;
-          dispatch({
-            type: "cart-commit-failed",
-            requestId,
-            reason: "cart-rejected",
-            ...('stock' in error && error.stock === true ? { stock: true } : {}),
-            ...('detail' in error && typeof error.detail === 'string' ? { detail: error.detail } : {}),
-          });
+          dispatch({ type: "cart-commit-failed", requestId, failure: commitFailure(failure, false) });
           return;
         }
-        if (!prepareOnly && error && typeof error === 'object' && 'acceptanceOutcome' in error && error.acceptanceOutcome === 'declined' && attempt?.idempotencyKey === request.idempotencyKey) {
+        if (!prepareOnly && failure.acceptanceOutcome === 'declined' && attempt?.idempotencyKey === request.idempotencyKey) {
           attempt = null;
           preparedSignature = null;
         }
-        dispatch({
-          type: "cart-commit-failed",
-          requestId,
-          reason: "cart-commit-failed",
-          ...(prepareOnly || reviewing ? {preparation:true} : {}),
-          // The whole cart exceeds one signed set; only removing items or lowering quantities helps.
-          ...(error && typeof error === 'object' && 'code' in error && error.code === 'CAPACITY_EXCEEDED' ? {cartLimit: 'cartLines' in error && error.cartLines === true ? 'cart-lines' as const : 'signed-set' as const} : {}),
-        });
+        dispatch({ type: "cart-commit-failed", requestId, failure: commitFailure(failure, prepareOnly || reviewing) });
       }
     } finally {
       if (commitController === controller) { commitController = null; reviewing = false; refreshing = false; }
@@ -250,7 +240,8 @@ export function createDesignerRuntime(
         dispatch({ type: 'artwork-preview-refreshed', artwork: fresh, expectedExpiry });
         return true;
       } catch (error) {
-        if (!controller.signal.aborted && error && typeof error === 'object' && 'status' in error && [403, 404, 410].includes(Number(error.status)))
+        const { status } = portFailure(error);
+        if (!controller.signal.aborted && (status === 403 || status === 404 || status === 410))
           dispatch({ type: 'artwork-unavailable', id: artwork.id, expectedExpiry });
         return false;
       } finally { if (renewing.get(artwork.id) === controller) renewing.delete(artwork.id); }

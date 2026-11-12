@@ -8,6 +8,7 @@ import { DesignerDesignSwitch } from '../../../../frontend/designer/src/design-s
 import type { ClosedDesignerProps } from '../../../../frontend/designer/src/designer';
 import { Designer } from '../../../../frontend/designer/src/index';
 import type { Artwork, Design, Print } from '../../../../frontend/designer/src/model';
+import { portFailure } from '../../../../frontend/designer/src/port-failure';
 import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quote-review';
 import type { CartReceipt, CartRequest, DesignerPorts, UploadRequest } from '../../../../frontend/designer/src/runtime';
 import { DesignerRepair, type RepairAction, type RepairState } from './repair';
@@ -306,34 +307,8 @@ window.addEventListener('message', (event) => {
     if (!request) return;
     pending.delete(event.data.id);
     if (event.data.ok === true) request.resolve(event.data.value);
-    else
-      request.reject(
-        Object.assign(new Error('Live operation unavailable'), {
-          ...(event.data.reviewRequired === true ? { reviewRequired: true, expiresAt: event.data.expiresAt } : {}),
-          status: [403, 404, 410, 422].includes(event.data.status) ? event.data.status : undefined,
-          ...(event.data.sessionLimited === true
-            ? {
-                code: 'SESSION_RATE_LIMITED',
-                // The visitor window is one hour; anything else is not a usable wait.
-                ...(Number.isSafeInteger(event.data.retryAfter) && event.data.retryAfter > 0
-                  ? { retryAfter: Math.min(event.data.retryAfter, 3600) }
-                  : {}),
-              }
-            : {}),
-          ...(event.data.cartLimit === 'signed-set' || event.data.cartLimit === 'cart-lines'
-            ? { code: 'CAPACITY_EXCEEDED', ...(event.data.cartLimit === 'cart-lines' ? { cartLines: true } : {}) }
-            : {}),
-          ...(event.data.acceptanceOutcome === 'declined' ? { acceptanceOutcome: 'declined' as const } : {}),
-          ...(event.data.cartRejected === true
-            ? {
-                cartRejected: true,
-                stock: event.data.stock === true,
-                // Shopify's own explanation, shown as plain text only.
-                ...(typeof event.data.detail === 'string' ? { detail: event.data.detail.slice(0, 300) } : {}),
-              }
-            : {}),
-        }),
-      );
+    // Only the validated, bounded failure fields reach the Designer; the server's message never does (#337).
+    else request.reject(Object.assign(new Error('Live operation unavailable'), portFailure(event.data.failure)));
   }
   if (event.data.type === 'insignia:designer:init' && !mounted) {
     mounted = true;
