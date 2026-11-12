@@ -82,6 +82,7 @@
     "processingFile": "Vérification du fichier…",
     "uploadFailed": "L’importation a échoué. Réessayez ou choisissez un autre fichier.",
     "processingFailed": "Le fichier n’a pas pu être vérifié. Réessayez.",
+    "processingTimeout": "La vérification prend plus de temps que prévu. Réessayez.",
     "inspectionRejected": "Cette image a été refusée. Choisissez une image statique prise en charge.",
     "artworkExpired": "Ce fichier a expiré. Envoyez-le à nouveau.",
     "cancelUpload": "Annuler l’importation",

@@ -2391,6 +2391,7 @@ export const adminParameterContracts = {
   'settings:translations.fields.customer_artwork_or': {},
   'settings:translations.fields.customer_artwork_processingFailed': {},
   'settings:translations.fields.customer_artwork_processingFile': {},
+  'settings:translations.fields.customer_artwork_processingTimeout': {},
   'settings:translations.fields.customer_artwork_provideArtworkLater': {},
   'settings:translations.fields.customer_artwork_removeArtwork': {},
   'settings:translations.fields.customer_artwork_retryUpload': {},

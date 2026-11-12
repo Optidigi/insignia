@@ -82,6 +82,7 @@
     "processingFile": "Verifica del file…",
     "uploadFailed": "Caricamento non riuscito. Riprova o scegli un altro file.",
     "processingFailed": "Impossibile verificare il file. Riprova.",
+    "processingTimeout": "La verifica richiede più tempo del previsto. Riprova.",
     "inspectionRejected": "Questa immagine è stata rifiutata. Scegli un’immagine statica supportata.",
     "artworkExpired": "Questo file è scaduto. Caricalo di nuovo.",
     "cancelUpload": "Annulla caricamento",

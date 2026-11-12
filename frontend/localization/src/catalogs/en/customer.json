@@ -82,6 +82,7 @@
     "processingFile": "Checking artwork…",
     "uploadFailed": "Upload failed. Try again or choose another file.",
     "processingFailed": "Artwork could not be checked. Try again.",
+    "processingTimeout": "Checking artwork is taking longer than expected. Try again.",
     "inspectionRejected": "This image was rejected. Choose a supported static image.",
     "artworkExpired": "This artwork has expired. Upload it again.",
     "cancelUpload": "Cancel upload",

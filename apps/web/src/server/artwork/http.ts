@@ -1,4 +1,6 @@
+import { randomUUID } from 'node:crypto';
 import { ARTWORK_POLICY, ArtworkError, type ArtworkScope, type createArtworkService } from '@insignia/application';
+import { type ArtworkTimingDiagnostic, createObservability } from '@insignia/observability';
 import { AdminOnlineIdentityError } from '@insignia/shopify';
 import type { AdminActor } from '../admin/contracts.js';
 import { adminJson, mutationOrigin, validActor } from '../admin/http.ts';
@@ -33,15 +35,75 @@ async function declaration(request: Request, guest: boolean) {
     : null;
 }
 
+const logger = createObservability().logger;
+type ArtworkNote = Partial<Pick<ArtworkTimingDiagnostic, 'assetId' | 'state' | 'failure'>>;
+const ARTWORK_STATES = new Set([
+  'UPLOADING',
+  'QUEUED',
+  'INSPECTING',
+  'PROMOTING',
+  'USABLE',
+  'REJECTED',
+  'DELETING',
+  'DELETED',
+]);
+function noteResult(note: ArtworkNote, value: unknown) {
+  if (!value || typeof value !== 'object') return value;
+  if ('assetId' in value && typeof value.assetId === 'string' && ASSET.test(value.assetId))
+    note.assetId = value.assetId;
+  if ('state' in value && typeof value.state === 'string' && ARTWORK_STATES.has(value.state))
+    note.state = value.state as ArtworkTimingDiagnostic['state'];
+  return value;
+}
+
+/** Guest begin/complete/status each log one timing line; merchant routes are unchanged. */
 export async function handleArtworkRequest(
   request: Request,
   services: ArtworkHttpServices | undefined,
   route: ArtworkRoute,
+  timing: (value: ArtworkTimingDiagnostic) => void = (value) =>
+    logger.info('artwork_request_timing', { artworkTiming: value }),
+): Promise<Response> {
+  if (route.audience !== 'guest' || (route.kind !== 'begin' && route.kind !== 'complete' && route.kind !== 'status'))
+    return respondArtwork(request, services, route, {});
+  const operation = route.kind;
+  const started = performance.now();
+  const note: ArtworkNote = 'assetId' in route && ASSET.test(route.assetId) ? { assetId: route.assetId } : {};
+  let httpStatus = 500;
+  try {
+    const response = await respondArtwork(request, services, route, note);
+    httpStatus = response.status;
+    return response;
+  } finally {
+    try {
+      timing({
+        correlationId: randomUUID(),
+        operation,
+        outcome: httpStatus < 400 ? 'success' : 'failure',
+        httpStatus,
+        totalMs: Math.round(performance.now() - started),
+        ...(note.assetId ? { assetId: note.assetId } : {}),
+        ...(httpStatus < 400 && note.state ? { state: note.state } : {}),
+        ...(httpStatus < 400 ? {} : { failure: note.failure ?? 'UNAVAILABLE' }),
+      });
+    } catch {
+      /* Diagnostics never change the buyer response. */
+    }
+  }
+}
+
+async function respondArtwork(
+  request: Request,
+  services: ArtworkHttpServices | undefined,
+  route: ArtworkRoute,
+  note: ArtworkNote,
 ): Promise<Response> {
   if (!services) return adminJson(503, { error: 'Artwork unavailable' });
   const write = route.kind === 'begin' || route.kind === 'complete';
-  if (request.method !== (write || route.audience === 'guest' ? 'POST' : 'GET'))
+  if (request.method !== (write || route.audience === 'guest' ? 'POST' : 'GET')) {
+    note.failure = 'METHOD_NOT_ALLOWED';
     return adminJson(405, { error: 'Method not allowed' });
+  }
   let scope: ArtworkScope;
   try {
     if (route.audience === 'merchant') {
@@ -59,11 +121,14 @@ export async function handleArtworkRequest(
     } else {
       if (route.kind === 'download') return adminJson(403, { error: 'Merchant access required' });
       const verified = await services.verifyGuest?.(request);
-      if (verified?.kind !== 'guest' || !/^[a-f0-9]{64}$/.test(verified.ownerHash ?? ''))
+      if (verified?.kind !== 'guest' || !/^[a-f0-9]{64}$/.test(verified.ownerHash ?? '')) {
+        note.failure = 'AUTHENTICATION_REQUIRED';
         return adminJson(401, { error: 'Authentication required' });
+      }
       scope = verified;
     }
   } catch (error) {
+    note.failure = 'AUTHENTICATION_UNAVAILABLE';
     const response = adminJson(
       error instanceof AdminOnlineIdentityError && error.stage === 'ONLINE_EXCHANGE_REFRESH_REQUIRED' ? 401 : 503,
       { error: 'Authentication unavailable' },
@@ -74,21 +139,30 @@ export async function handleArtworkRequest(
   try {
     if (route.kind === 'begin') {
       const body = await declaration(request, route.audience === 'guest');
-      if (!body) return adminJson(422, { error: 'Invalid artwork declaration' });
+      if (!body) {
+        note.failure = 'INVALID_DECLARATION';
+        return adminJson(422, { error: 'Invalid artwork declaration' });
+      }
+      note.failure = 'INSPECTION_UNAVAILABLE';
       if (!services.ensureInspectionReady) return adminJson(503, { error: 'Artwork inspection unavailable' });
       await services.ensureInspectionReady();
-      return adminJson(201, await services.artwork.begin(scope, body));
+      note.failure = undefined;
+      return adminJson(201, noteResult(note, await services.artwork.begin(scope, body)));
     }
-    if (!ASSET.test(route.assetId)) return adminJson(404, { error: 'Artwork not found' });
+    if (!ASSET.test(route.assetId)) {
+      note.failure = 'NOT_FOUND';
+      return adminJson(404, { error: 'Artwork not found' });
+    }
     if (route.kind === 'complete') {
       // Completion has no client-provided state, tenant, object key or inspection authority.
       if (route.audience === 'merchant' && !(await artworkEmptyBody(request)))
         return adminJson(422, { error: 'Completion body must be empty' });
-      return adminJson(202, await services.artwork.complete(scope, route.assetId));
+      return adminJson(202, noteResult(note, await services.artwork.complete(scope, route.assetId)));
     }
-    return adminJson(200, await services.artwork[route.kind](scope, route.assetId));
+    return adminJson(200, noteResult(note, await services.artwork[route.kind](scope, route.assetId)));
   } catch (error) {
     const code = error instanceof ArtworkError ? error.code : 'UNAVAILABLE';
+    note.failure ??= code;
     const status = {
       INVALID_INPUT: 422,
       NOT_FOUND: 404,

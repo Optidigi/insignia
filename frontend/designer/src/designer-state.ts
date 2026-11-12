@@ -25,7 +25,7 @@ export type DesignerModal =
   | { kind: 'confirm-upload-cancel'; positionId: PositionId; destination: 'artwork' | 'customizer' }
   | { kind: 'switch-design'; design: Design };
 
-export type UploadFailureReason = 'file-too-large' | 'unsupported-file-type' | 'read-failed' | 'upload-failed' | 'processing-failed' | 'inspection-rejected' | 'artwork-expired';
+export type UploadFailureReason = 'file-too-large' | 'unsupported-file-type' | 'read-failed' | 'upload-failed' | 'processing-failed' | 'processing-timeout' | 'inspection-rejected' | 'artwork-expired';
 
 export type UploadState =
   | { kind: 'idle' }

@@ -2351,6 +2351,7 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_artwork_or': object;
   'settings:translations.fields.customer_artwork_processingFailed': object;
   'settings:translations.fields.customer_artwork_processingFile': object;
+  'settings:translations.fields.customer_artwork_processingTimeout': object;
   'settings:translations.fields.customer_artwork_provideArtworkLater': object;
   'settings:translations.fields.customer_artwork_removeArtwork': object;
   'settings:translations.fields.customer_artwork_retryUpload': object;
@@ -2691,6 +2692,7 @@ export interface CustomerMessageTable {
   'customer:artwork.or': object;
   'customer:artwork.processingFailed': object;
   'customer:artwork.processingFile': object;
+  'customer:artwork.processingTimeout': object;
   'customer:artwork.provideArtworkLater': object;
   'customer:artwork.removeArtwork': object;
   'customer:artwork.retryUpload': object;

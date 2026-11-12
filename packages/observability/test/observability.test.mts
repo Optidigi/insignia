@@ -353,3 +353,55 @@ test('buyer timing summaries whitelist every nested span and reject unbounded pa
     /timing/,
   );
 });
+
+test('guest artwork timing lines whitelist a bounded vocabulary', () => {
+  let output = '';
+  const { logger } = createObservability({
+    stream: new Writable({
+      write(chunk, _encoding, callback) {
+        output += chunk;
+        callback();
+      },
+    }),
+  });
+  const artworkTiming = {
+    correlationId: '01234567-89ab-4cde-8123-456789abcdef',
+    operation: 'status' as const,
+    outcome: 'success' as const,
+    httpStatus: 200,
+    totalMs: 12,
+    assetId: 'ae771020-1f54-47ab-a8af-48b1eb7de3d2',
+    state: 'INSPECTING' as const,
+    secret: 'SECRET',
+  };
+  logger.info('artwork_request_timing', { artworkTiming });
+  const line = parseRecord(output.trim());
+  assert.equal(line.event, 'artwork_request_timing');
+  assert.equal(line.operation, 'status');
+  assert.equal(line.state, 'INSPECTING');
+  assert.equal(line.assetId, artworkTiming.assetId);
+  assert.doesNotMatch(output, /SECRET|secret/);
+  output = '';
+  logger.info('artwork_request_timing', {
+    artworkTiming: {
+      ...artworkTiming,
+      operation: 'begin',
+      outcome: 'failure',
+      httpStatus: 503,
+      failure: 'INSPECTION_UNAVAILABLE',
+      assetId: undefined,
+      state: undefined,
+    },
+  });
+  assert.match(output, /"failure":"INSPECTION_UNAVAILABLE"/);
+  for (const invalid of [
+    { ...artworkTiming, operation: 'download' },
+    { ...artworkTiming, totalMs: -1 },
+    { ...artworkTiming, httpStatus: 99 },
+    { ...artworkTiming, state: 'SECRET' },
+    { ...artworkTiming, failure: 'SECRET' },
+    { ...artworkTiming, assetId: 'not-an-asset' },
+    { ...artworkTiming, correlationId: 'SECRET' },
+  ])
+    assert.throws(() => logger.info('artwork_request_timing', { artworkTiming: invalid as never }), /artwork timing/);
+});

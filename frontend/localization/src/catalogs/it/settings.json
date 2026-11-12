@@ -538,6 +538,7 @@
       "customer_artwork_processingFile": "Verifica del file…",
       "customer_artwork_uploadFailed": "Caricamento non riuscito. Seleziona di nuovo il file.",
       "customer_artwork_processingFailed": "Impossibile verificare il file. Riprova.",
+      "customer_artwork_processingTimeout": "La verifica richiede più tempo del previsto. Riprova.",
       "customer_artwork_inspectionRejected": "Questa immagine è stata rifiutata. Scegli un’immagine statica supportata.",
       "customer_artwork_artworkExpired": "Questo file è scaduto. Caricalo di nuovo.",
       "customer_host_personalise": "Pulsante Personalizza",
