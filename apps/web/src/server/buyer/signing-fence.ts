@@ -17,6 +17,20 @@ export function assertOutsideSigningFence(operation: string): void {
   if (signingFence.getStore()) throw new Error(`${operation} is not allowed inside the signing fence`);
 }
 
+/**
+ * Guards a shared provider read (such as the single-flight subscription cache) at its entry: an in-fence
+ * call neither starts a read that buyers outside the fence would join, nor joins or reuses one silently.
+ */
+export function fenceGuarded<A extends unknown[], R>(
+  operation: string,
+  read: (...args: A) => Promise<R>,
+): (...args: A) => Promise<R> {
+  return async (...args) => {
+    assertOutsideSigningFence(operation);
+    return read(...args);
+  };
+}
+
 /** A provider transport's fetch that refuses to dispatch while a signing fence holds the shop lock. */
 export function fenceGuardedFetch(fetchImpl: typeof fetch = fetch): typeof fetch {
   return async (target, options) => {

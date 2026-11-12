@@ -35,7 +35,7 @@ import type { SignerClient } from '../signer-client.ts';
 import { proposalStage } from './diagnostics.ts';
 import { createLeanPrimaryMarketAdmission, parseEurNetherlandsQualification } from './lean-primary-market.ts';
 import { createBuyerServices } from './service.ts';
-import { assertOutsideSigningFence, fenceGuardedFetch, runSigningFence } from './signing-fence.ts';
+import { assertOutsideSigningFence, fenceGuarded, fenceGuardedFetch, runSigningFence } from './signing-fence.ts';
 import { createVisitorKey } from './visitor-address.ts';
 
 type Scope = { shopId: string; installationGeneration: string };
@@ -280,7 +280,8 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
           appId: `gid://shopify/App/${appId}`,
           entitlementPolicy: input.entitlementPolicy,
           leanContext,
-          readSubscription: input.readSubscription,
+          // Before the shared subscription cache, not only beneath it in the Partner fetch (#390).
+          readSubscription: fenceGuarded('Subscription read', (target) => input.readSubscription(target)),
           credentials: credentialSource,
           catalogTransport: createShopifyAdminGraphqlReadTransport({
             credentials: credentialSource,

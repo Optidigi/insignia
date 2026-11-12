@@ -329,6 +329,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
             },
           },
           readSubscription: async () => {
+            noteRead('subscription');
             if (mode === 'entitlement-failure-during-acceptance' && accepting)
               throw new Error('Synthetic entitlement failure');
             return {
@@ -514,8 +515,17 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
           if (mode === 'artwork-erased-after-preparation') await eraseArtwork();
           return accept(input, () => fence.run('acceptance', commit));
         };
+        const shopRows = async () =>
+          (
+            await f.pool.query(
+              `SELECT (SELECT count(*) FROM accepted_quotes WHERE shop_id=$1)::int AS quotes,
+                (SELECT count(*) FROM quote_authorization_sets WHERE shop_id=$1)::int AS sets`,
+              [f.shopId],
+            )
+          ).rows[0];
         try {
           const acceptanceKey = randomUUID();
+          const rowsBefore = await shopRows();
           accepting = true;
           const acceptance = services.accept(f.scope, proposal.proposalId, {
             hash: proposal.hash,
@@ -550,6 +560,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
                 : 0,
             );
             expect(signatures).toBe(0);
+            // Refused before signing: no accepted quote or authorization set was stored for the shop.
+            if (mode === 'artwork-erased-after-preparation') expect(await shopRows()).toEqual(rowsBefore);
             if (mode === 'price-drift-before-acceptance') {
               amount = '10.00';
               const retainedRead = core.buyers.getProposal;
