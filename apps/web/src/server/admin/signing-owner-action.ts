@@ -1,7 +1,11 @@
 import type { AdminActor } from './contracts.js';
+import type { SigningEmergencyPlan } from './signing-emergency.ts';
+/** Emergency plan file (#375): revocations, optional epoch bump; the epoch comes from the binding. */
+export type SigningEmergencyPlanFile = Omit<SigningEmergencyPlan, 'authorizationEpoch'>;
 export interface SigningOwnerConfiguration {
   directory: string;
-  plan: { keyId: number; firstDay: number; lastDay: number };
+  /** A rotation plan, or an emergency plan (revoke / epoch bump / publish-only). */
+  plan: { keyId: number; firstDay: number; lastDay: number } | SigningEmergencyPlanFile;
   binding: {
     shop: string;
     shopId: string;
@@ -30,7 +34,19 @@ import { constants } from 'node:fs';
 import { lstat, open } from 'node:fs/promises';
 import { join } from 'node:path';
 import { resolveRuntimeReleaseProfile } from '@insignia/shopify';
-import type { SigningProvisionJournal, SigningProvisionPorts, SigningProvisionResult } from './signing-provision.ts';
+import {
+  applySigningEmergency,
+  qualifySigningEmergencyPlan,
+  reserveSigningEmergencyRun,
+  type SigningEmergencyJournal,
+  type SigningEmergencyResult,
+} from './signing-emergency.ts';
+import type {
+  SigningProvisionJournal,
+  SigningProvisionPlan,
+  SigningProvisionPorts,
+  SigningProvisionResult,
+} from './signing-provision.ts';
 import {
   provisionSigningKey,
   qualifySigningProvisionPlan,
@@ -96,6 +112,16 @@ function completedReply(result: SigningProvisionResult, keyId: number) {
   assert.equal(result.classification, 'SIGNING_KEY_CONFIG_STOPPED');
   return reply(result.ambiguousOperation || !result.receiptDurable ? 'UNCERTAIN' : 'STOPPED');
 }
+function completedEmergencyReply(result: SigningEmergencyResult) {
+  assert.equal(result.retryAuthorized, false);
+  assert.equal(result.quoteIssuanceAuthorized, false);
+  if (result.classification === 'SIGNING_EMERGENCY_PUBLISHED') {
+    assert.ok(result.receiptDurable && result.ambiguousOperation === null);
+    return reply('PROVISIONED');
+  }
+  assert.equal(result.classification, 'SIGNING_EMERGENCY_STOPPED');
+  return reply(result.ambiguousOperation || !result.receiptDurable ? 'UNCERTAIN' : 'STOPPED');
+}
 async function privateJson(path: string) {
   const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   try {
@@ -135,9 +161,13 @@ export function createSigningOwnerAction(
   const releaseProfile = resolveRuntimeReleaseProfile(ports.releaseProfile);
   const runtimeIdentity = qualifySigningRuntimeIdentity(ports.runtimeIdentity);
   assert.deepEqual(Object.keys(config).sort(), ['binding', 'directory', 'plan']);
-  const plan = qualifySigningProvisionPlan(config.plan);
   assert.deepEqual(Object.keys(config.binding).sort(), [...bindingFields].sort());
   const binding = Object.freeze({ ...config.binding });
+  const emergency =
+    'revokeKeyIds' in config.plan
+      ? qualifySigningEmergencyPlan({ ...config.plan, authorizationEpoch: binding.authorizationEpoch })
+      : null;
+  const plan = emergency ?? qualifySigningProvisionPlan(config.plan as SigningProvisionPlan);
   assert.equal(binding.shop, 'insignia-rewrite-dev.myshopify.com');
   assert.match(binding.shopId, /^gid:\/\/shopify\/Shop\/[1-9][0-9]*$/);
   assert.match(binding.installationId, /^gid:\/\/shopify\/AppInstallation\/[1-9][0-9]*$/);
@@ -179,11 +209,17 @@ export function createSigningOwnerAction(
       installationGeneration: binding.installationGeneration,
     });
     assert.ok(scope);
+    // After an emergency plan's own bump the stored epoch is the binding's + 1; the run checks that
+    // the bump is this plan's (its idempotent epoch command), so another bump still stops it.
+    const epoch =
+      emergency?.bumpEpoch && scope.authorizationEpoch === binding.authorizationEpoch + 1
+        ? binding.authorizationEpoch + 1
+        : binding.authorizationEpoch;
     for (const [field, value] of Object.entries({
       shopId: binding.tenantShopId,
       installationGeneration: binding.installationGeneration,
       authorizationGeneration: binding.authorizationGeneration,
-      authorizationEpoch: binding.authorizationEpoch,
+      authorizationEpoch: epoch,
       shopDomain: binding.shop,
       shopifyShopId: binding.shopId.slice('gid://shopify/Shop/'.length),
     }))
@@ -203,6 +239,8 @@ export function createSigningOwnerAction(
       );
     } catch (error) {
       if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+        // An emergency only tightens the published config: it needs no Function release observation.
+        if (emergency) return reply('READY');
         const time = now();
         const trusted = await ports.core.trustedReleaseRecords.read({
           scope: {
@@ -244,9 +282,11 @@ export function createSigningOwnerAction(
     await current();
     const available = await status(actor);
     if (available.state !== 'READY') return available;
-    let journal: SigningProvisionJournal;
+    let journal: Awaited<ReturnType<typeof reserveSigningEmergencyRun | typeof reserveSigningProvisionRun>>;
     try {
-      journal = await reserveSigningProvisionRun(directory, plan);
+      journal = emergency
+        ? await reserveSigningEmergencyRun(directory, emergency)
+        : await reserveSigningProvisionRun(directory, plan as SigningProvisionPlan);
     } catch (error) {
       if (error && typeof error === 'object' && 'code' in error && error.code === 'EEXIST') return status(actor);
       throw new Error('Signing action unavailable');
@@ -294,8 +334,24 @@ export function createSigningOwnerAction(
     };
     // The durable run remains occupied after disconnect, restart, failure or expiry.
     // No recovered status can dispatch another attempt.
-    execution = provisionSigningKey(plan, idToken, { ...ports, core, identity, journal, now })
-      .then((result) => persist(directory, 'owner-result.json', completedReply(result, plan.keyId)))
+    execution = (
+      emergency
+        ? applySigningEmergency(emergency, idToken, {
+            ...ports,
+            core,
+            identity,
+            journal: journal as SigningEmergencyJournal,
+            now,
+          }).then(completedEmergencyReply)
+        : provisionSigningKey(plan as SigningProvisionPlan, idToken, {
+            ...ports,
+            core,
+            identity,
+            journal: journal as SigningProvisionJournal,
+            now,
+          }).then((result) => completedReply(result, (plan as SigningProvisionPlan).keyId))
+    )
+      .then((reply) => persist(directory, 'owner-result.json', reply))
       .catch(() => {})
       .finally(() => {
         running = false;
@@ -305,6 +361,8 @@ export function createSigningOwnerAction(
   async function prepare(actor: AdminActor, idToken: string): Promise<SigningOwnerStatus> {
     actorBound(actor);
     await current();
+    // Publication preparation never starts an emergency; only the owner's explicit start does.
+    if (emergency) return status(actor);
     if (!preparation) {
       preparation = (async () => {
         const initial = await start(actor, idToken);

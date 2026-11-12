@@ -42,14 +42,19 @@ export type SigningProvisionResult = {
   quoteIssuanceAuthorized: false;
   receiptDurable: boolean;
 };
-export type SigningProvisionJournal = {
+/** One private, append-only run root per owner plan; each step is reserved durably before it runs. */
+export type SigningRunJournal<O extends string, R> = {
   planSha256: string;
-  reserve(operation: Operation): Promise<{ durable: boolean; operation: Operation }>;
-  settle(operation: Operation, outcome: 'ACK' | 'STOP'): Promise<void>;
+  reserve(operation: O): Promise<{ durable: boolean; operation: O }>;
+  settle(operation: O, outcome: 'ACK' | 'STOP'): Promise<void>;
   /** Nonsecret evidence, such as the published config a tolerated pre-check replaces. */
-  record(name: 'published-config-tolerance', value: unknown): Promise<void>;
-  finish(result: SigningProvisionResult): Promise<void>;
+  record(
+    name: 'published-config-tolerance' | 'emergency-precheck' | 'emergency-publication' | 'emergency-readback',
+    value: unknown,
+  ): Promise<void>;
+  finish(result: R): Promise<void>;
 };
+export type SigningProvisionJournal = SigningRunJournal<Operation, SigningProvisionResult>;
 export interface SigningProvisionPorts {
   app: typeof SigningApplication;
   core: Pick<DurableCore, 'tenants' | 'signingKeys' | 'trustedReleaseRecords'>;
@@ -90,7 +95,7 @@ export function qualifySigningRuntimeIdentity(input: SigningRuntimeIdentity) {
   return Object.freeze({ ...input });
 }
 
-const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
+export const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const operations = new Set<Operation>([
   'VERIFY_IDENTITY',
   'EXCHANGE_ONLINE',
@@ -137,7 +142,19 @@ export async function reserveSigningProvisionRun(
   directory: string,
   inputPlan: SigningProvisionPlan,
 ): Promise<SigningProvisionJournal> {
-  const plan = qualifySigningProvisionPlan(inputPlan);
+  return reserveSigningRun(
+    directory,
+    'm5-signing-provision-reservation-v1',
+    qualifySigningProvisionPlan(inputPlan),
+    operations,
+  );
+}
+export async function reserveSigningRun<O extends string, R>(
+  directory: string,
+  version: string,
+  plan: unknown,
+  allowed: ReadonlySet<O>,
+): Promise<SigningRunJournal<O, R>> {
   assert.ok(isAbsolute(directory) && resolve(directory) === directory);
   const parent = dirname(directory);
   assert.equal(await realpath(parent), parent);
@@ -151,18 +168,13 @@ export async function reserveSigningProvisionRun(
     await parentHandle.close();
   }
   const planSha256 = hash(plan);
-  await writePrivate(directory, '000-reservation.json', {
-    version: 'm5-signing-provision-reservation-v1',
-    plan,
-    planSha256,
-    attempt: 1,
-  });
+  await writePrivate(directory, '000-reservation.json', { version, plan, planSha256, attempt: 1 });
   let sequence = 0;
-  const reserved = new Set<Operation>();
+  const reserved = new Set<O>();
   return {
     planSha256,
     async reserve(operation) {
-      assert.ok(operations.has(operation) && !reserved.has(operation));
+      assert.ok(allowed.has(operation) && !reserved.has(operation));
       reserved.add(operation);
       const index = ++sequence;
       await writePrivate(directory, `${String(index).padStart(3, '0')}-${operation}.json`, {
@@ -186,10 +198,30 @@ export async function reserveSigningProvisionRun(
   };
 }
 
+/** Runs one step under its durable reservation and settles it ACK or STOP; never retries. */
+export function journaledOperation<O extends string>(journal: Pick<SigningRunJournal<O, never>, 'reserve' | 'settle'>) {
+  return async function operation<T>(name: O, action: () => Promise<T>): Promise<T> {
+    const reserved = await journal.reserve(name);
+    assert.equal(reserved?.durable, true);
+    try {
+      const value = await action();
+      await journal.settle(name, 'ACK');
+      return value;
+    } catch (error) {
+      try {
+        await journal.settle(name, 'STOP');
+      } catch {
+        /* Never retry. */
+      }
+      throw error;
+    }
+  };
+}
+
 const APP = binding.appClientId;
-const APP_ID = binding.appId;
-const SHOP = 'insignia-rewrite-dev.myshopify.com';
-function sameScope(actual: SigningApplication.KeyScope | null, expected: SigningApplication.KeyScope) {
+export const APP_ID = binding.appId;
+export const SHOP = 'insignia-rewrite-dev.myshopify.com';
+export function sameScope(actual: SigningApplication.KeyScope | null, expected: SigningApplication.KeyScope) {
   assert.ok(actual);
   for (const field of ['shopId', 'installationGeneration', 'authorizationGeneration', 'authorizationEpoch'] as const)
     assert.equal(actual[field], expected[field]);
@@ -216,22 +248,7 @@ export async function provisionSigningKey(
   let uncertain: AmbiguousOperation = null,
     completed = false,
     keyId: number | null = null;
-  async function operation<T>(name: Operation, action: () => Promise<T>): Promise<T> {
-    const reserved = await ports.journal.reserve(name);
-    assert.equal(reserved?.durable, true);
-    try {
-      const value = await action();
-      await ports.journal.settle(name, 'ACK');
-      return value;
-    } catch (error) {
-      try {
-        await ports.journal.settle(name, 'STOP');
-      } catch {
-        /* Never retry. */
-      }
-      throw error;
-    }
-  }
+  const operation = journaledOperation(ports.journal);
   try {
     const plan = qualifySigningProvisionPlan(inputPlan);
     assert.equal(ports.journal.planSha256, hash(plan));

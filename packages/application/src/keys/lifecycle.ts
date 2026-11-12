@@ -144,8 +144,10 @@ export class SigningKeyLifecycle {
   }
   /**
    * Revocation and epoch bump change the expected public config but publish nothing: quote
-   * readiness then stops (drift) until the owner rotation that follows publishes it. That rotation
-   * accepts the earlier publication because these changes only tighten it (`rotationRepublishDifferences`).
+   * readiness then stops (drift) until it is published. The owner emergency run (web
+   * `signing-emergency.ts`, #375) calls both and publishes at once; a later owner rotation also
+   * publishes them. Both accept the earlier publication because these changes only tighten it
+   * (`rotationRepublishDifferences`).
    */
   async revoke(scope: KeyScope, keyId: number, commandKey: string, reason: string): Promise<void> {
     await this.store.revoke(scope, keyId, commandKey, reason);
@@ -157,7 +159,7 @@ export class SigningKeyLifecycle {
   async destroyInactiveInstallationKeys(shopId: string, installationGeneration: string): Promise<number> {
     return this.store.destroyInactiveInstallationKeys(shopId, installationGeneration);
   }
-  /** Publish through the following owner rotation; see `revoke`. */
+  /** Idempotent per command key (a re-run returns the recorded epoch); published as in `revoke`. */
   async incrementEpoch(input: { scope: KeyScope; commandKey: string; requestDigest: string }): Promise<number> {
     return this.store.incrementEpoch(input);
   }
