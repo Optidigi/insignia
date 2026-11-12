@@ -84,7 +84,7 @@ export function calendarCandidate(
     desiredProjection: {},
     desiredProjectionDigest: 'b'.repeat(64),
     observedProjectionDigest: null,
-    publicConfig: { value: '{}', digest: 'c'.repeat(64), scope: keyScope, keys: [] },
+    publicConfig: { value: '{}', digest: 'c'.repeat(64), scope: keyScope, keys: [], closedDestroyed: [] },
     selectedKeyId: 7,
     state: { kind: 'WAITING_RELEASE', hold: null, evidenceDigest: null },
   };

@@ -7,12 +7,51 @@ import {
   type SigningKeyStore,
 } from '@insignia/application';
 import type { DurableCore } from '@insignia/database';
+import { createObservability } from '@insignia/observability';
 import {
   createFunctionOwnershipReconciler,
   createPublicationAdminAdapter,
   expectedFunctionOwnership,
   type PublicationAdminTransport,
 } from '@insignia/shopify';
+
+/**
+ * Quote issuance fails closed while the published Function config differs from the expected
+ * projection. That failure is otherwise only a generic shopper error, so persistent drift (five
+ * minutes or more since first seen) logs `public_config_drift` for the shop, at most every five
+ * minutes, until a readiness check passes again.
+ */
+export function createPublicConfigDriftTracker(
+  log: (shopId: string, persistedMs: number) => void,
+  thresholdMs = 300_000,
+) {
+  const state = new Map<string, { since: number; loggedAt?: number }>();
+  return {
+    observe(shopId: string, at: Date) {
+      const t = at.getTime();
+      const entry = state.get(shopId) ?? { since: t };
+      state.set(shopId, entry);
+      if (t - entry.since >= thresholdMs && (entry.loggedAt === undefined || t - entry.loggedAt >= thresholdMs)) {
+        entry.loggedAt = t;
+        log(shopId, t - entry.since);
+      }
+    },
+    clear(shopId: string) {
+      state.delete(shopId);
+    },
+  };
+}
+let driftLogger: ReturnType<typeof createObservability>['logger'] | undefined;
+const publicConfigDrift = createPublicConfigDriftTracker((shopId, persistedMs) => {
+  try {
+    driftLogger ??= createObservability().logger;
+    driftLogger.error('public_config_drift', {
+      shopId,
+      errorClass: 'PUBLIC_CONFIG_DRIFT',
+      count: Math.floor(persistedMs / 60_000),
+    });
+  } catch {}
+});
 
 /** Configuration readiness uses actual scope/day/publication facts without manufacturing a quote. */
 export type QuoteReadinessTarget = Pick<
@@ -142,19 +181,26 @@ export function createProductionQuoteReadiness(input: {
       // Inside the fence: stored signing-key configuration only. Every observation's freshness
       // (public config, Function ownership and the 30-second release record) is applied at this instant.
       async assertCurrent() {
-        const desired = await keys.desiredPublicConfig(scope);
-        assertQuoteIssuanceReady({
-          scope,
-          selectedKeyId: input.selectedKeyId,
-          acceptedDay: quote.acceptedDay,
-          desired,
-          observed,
-          now: now(),
-          maxObservationAgeMs: input.maxObservationAgeMs,
-          functions: owned,
-          effectiveRevision,
-          artifact: { appClientId: artifactScope.appClientId, expectedBuild, attestation },
-        });
+        const desired = await keys.desiredPublicConfig(scope, now());
+        try {
+          assertQuoteIssuanceReady({
+            scope,
+            selectedKeyId: input.selectedKeyId,
+            acceptedDay: quote.acceptedDay,
+            desired,
+            observed,
+            now: now(),
+            maxObservationAgeMs: input.maxObservationAgeMs,
+            functions: owned,
+            effectiveRevision,
+            artifact: { appClientId: artifactScope.appClientId, expectedBuild, attestation },
+          });
+          publicConfigDrift.clear(scope.shopId);
+        } catch (error) {
+          if (error instanceof Error && error.name === 'PublicConfigDriftError')
+            publicConfigDrift.observe(scope.shopId, now());
+          throw error;
+        }
       },
     };
   }
