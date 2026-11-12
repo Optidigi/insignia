@@ -283,8 +283,8 @@
       "lockBody": "Dadurch werden die aktuellen Druckdaten festgeschrieben. Danach ist kein Austausch mehr möglich.",
       "locked": "Druckdaten gesperrt.",
       "requested": "Prüfung angefordert. Nach der Verarbeitung aktualisieren, um bestätigte Shopify-Daten zu sehen.",
-      "changed": "Druckdaten wurden geändert. Aktualisiere die Bestellung, bevor du fortfährst.",
-      "failed": "Die Aktion konnte nicht bestätigt werden. Aktualisiere die Bestellung, bevor du fortfährst."
+      "changed": "Druckdaten wurden geändert. Aktualisieren Sie die Bestellung, bevor Sie fortfahren.",
+      "failed": "Die Aktion konnte nicht bestätigt werden. Aktualisieren Sie die Bestellung, bevor Sie fortfahren."
     }
   }
 }
