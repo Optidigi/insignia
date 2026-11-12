@@ -18,6 +18,16 @@ describe('audience-scoped translators', () => {
     });
   });
 
+  it('counts the same customized items with one unit word on Quantities and Review', () => {
+    for (const locale of ['en', 'nl', 'de', 'fr', 'es', 'it'])
+      for (const count of [1, 3]) {
+        const { t } = createCustomerTranslator(locale);
+        expect(t('customer:quantities.quantityCount', { count }), `${locale} ${count}`).toBe(
+          t('customer:review.itemCount', { count }),
+        );
+      }
+  });
+
   it('uses an expanded pseudo catalog without changing interpolation values', () => {
     const pseudo = createCustomerTranslator('en-XA', { allowPseudoLocale: true });
 

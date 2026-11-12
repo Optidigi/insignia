@@ -105,6 +105,8 @@ export interface DesignerProps {
   renderClosed?: (props: ClosedDesignerProps) => ComponentChildren;
   /** Keep the selected view behind an external host confirmation, inert and paused. */
   retainViewForConfirmation?: boolean;
+  /** The Designer is its document's only content (the storefront srcdoc frame): mirror its language there. */
+  ownsDocumentLanguage?: boolean;
 }
 export function Designer(props: DesignerProps) {
   const language = useCustomerLanguage({
@@ -152,6 +154,7 @@ function DesignerSession({
   allowUnload = false,
   renderClosed,
   retainViewForConfirmation = false,
+  ownsDocumentLanguage = false,
   previewContextLabel,
   previewNotice,
   previewProductImageLabel,
@@ -160,6 +163,11 @@ function DesignerSession({
   onLanguagePreferenceSelect,
 }: DesignerSessionProps) {
   const { t, formatLocale, lang, dir } = useLocale();
+  useLayoutEffect(() => {
+    if (!ownsDocumentLanguage) return;
+    document.documentElement.lang = lang;
+    document.documentElement.dir = dir;
+  }, [ownsDocumentLanguage, lang, dir]);
   const config = useMemo(
     () =>
       sourceConfig.methods.some((method) => method.translations)

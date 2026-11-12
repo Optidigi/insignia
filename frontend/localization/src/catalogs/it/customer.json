@@ -270,7 +270,7 @@
   },
   "close": {
     "title": "Chiudere la personalizzazione?",
-    "help": "Il tuo design resta disponibile finché questa pagina è aperta. Chiudendo, non verrà aggiunto al carrello.",
+    "help": "La tua personalizzazione resta disponibile finché questa pagina è aperta. Chiudendo, non verrà aggiunta al carrello.",
     "keepEditing": "Continua a modificare",
     "leave": "Chiudi personalizzazione"
   }
