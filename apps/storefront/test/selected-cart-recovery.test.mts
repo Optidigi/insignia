@@ -337,8 +337,8 @@ test("a stock refusal shows Shopify's explanation, keeps no cached set and the n
   await app.live.ports.review!.prepare(app.request);
   await assert.rejects(
     withWindow(() => app.live.ports.cart.commit(app.request)),
-    (error: { cartRejected?: boolean; detail?: string }) =>
-      error.cartRejected === true && error.detail === 'Only 0 left in stock.',
+    (error: { cartRejected?: boolean; stock?: boolean; detail?: string }) =>
+      error.cartRejected === true && error.stock === true && error.detail === 'Only 0 left in stock.',
   );
   refuse = false;
   await assert.rejects(
@@ -402,4 +402,17 @@ test('after a partially refused add the cart holds one set again, so the next Ad
   );
   const receipt = await withWindow(() => app.live.ports.cart.commit(app.request));
   assert.equal((receipt as CartReceipt).kind, 'applied');
+});
+
+test('a refusal that is not about stock is never presented as stock (NB3)', async () => {
+  const app = fixture({
+    onAjaxWrite: (path) =>
+      path.endsWith('/cart/add.js') ? Response.json({ status: 429 }, { status: 429 }) : undefined,
+  });
+  await app.live.ports.review!.prepare(app.request);
+  await assert.rejects(
+    withWindow(() => app.live.ports.cart.commit(app.request)),
+    (error: { cartRejected?: boolean; stock?: boolean; detail?: string }) =>
+      error.cartRejected === true && error.stock === false && error.detail === undefined,
+  );
 });

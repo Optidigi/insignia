@@ -290,6 +290,7 @@ export function createDesignerFrame(input: {
           ...(data.action === 'commit' && error && typeof error === 'object' && 'cartRejected' in error
             ? {
                 cartRejected: true,
+                stock: 'stock' in error && error.stock === true,
                 ...('detail' in error && typeof error.detail === 'string' ? { detail: error.detail } : {}),
               }
             : {}),

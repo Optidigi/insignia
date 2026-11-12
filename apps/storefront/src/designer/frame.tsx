@@ -304,6 +304,7 @@ window.addEventListener('message', (event) => {
           ...(event.data.cartRejected === true
             ? {
                 cartRejected: true,
+                stock: event.data.stock === true,
                 // Shopify's own explanation, shown as plain text only.
                 ...(typeof event.data.detail === 'string' ? { detail: event.data.detail.slice(0, 300) } : {}),
               }

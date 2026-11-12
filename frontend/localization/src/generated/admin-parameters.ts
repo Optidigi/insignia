@@ -2528,6 +2528,7 @@ export const adminParameterContracts = {
   'settings:translations.fields.customer_recovery_artworkRestored': {},
   'settings:translations.fields.customer_recovery_cartCommitFailed': {},
   'settings:translations.fields.customer_recovery_cartRejected': {},
+  'settings:translations.fields.customer_recovery_cartRejectedStock': {},
   'settings:translations.fields.customer_recovery_colorItemsRemoved': {},
   'settings:translations.fields.customer_recovery_confirmRemoval': {},
   'settings:translations.fields.customer_recovery_dismissNotification': {},

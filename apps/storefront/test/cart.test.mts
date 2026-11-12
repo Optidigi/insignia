@@ -1196,6 +1196,92 @@ test('when the in-place replacement is refused too, every swapped line gets its 
   assert.equal(journal.flag, false);
 });
 
+test('compensation never removes a swapped line it could not give its old carrier back (B3)', async () => {
+  const journal = memoryJournal();
+  let changes = 0;
+  let removedByBuyer = false;
+  const remote = provider([line42, line43], ({ url, items }) => {
+    if (url.endsWith('cart/add.js'))
+      return Response.json({ status: 422, description: 'Not enough stock' }, { status: 422 });
+    if (url.endsWith('cart/change.js')) changes++;
+    if (url.endsWith('/cart.js') && changes === 2 && !removedByBuyer) {
+      // Both lines were swapped; the buyer removes the 43 line in another tab before the witness read.
+      removedByBuyer = true;
+      items.splice(
+        items.findIndex((item) => item.variant_id === 43),
+        1,
+      );
+    }
+    return undefined;
+  });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  const before = await cart.read();
+  const result = await cart.apply(setB(3, 3), { expectedFingerprint: before.fingerprint });
+  assert.equal(result.reason, 'mutation_unresolved');
+  assert.deepEqual(
+    remote.items.filter((item) => item.variant_id === 42).map((item) => item.quantity),
+    [3],
+    'the 42 line is never removed',
+  );
+  assert.equal(journal.state?.phase, 'pending');
+});
+
+test('the stock fallback pairs the largest old line first (NB2)', async () => {
+  const small = { key: '42:small', variant_id: 42, quantity: 1, properties: { [LINE]: required(signed.carriers[0]) } };
+  const large = { key: '42:large', variant_id: 42, quantity: 5, properties: { [LINE]: required(signed.carriers[1]) } };
+  // Net 6 → 6 at stock 7: swapping the 1-line up to 6 would need 11; swapping the 5-line needs 7.
+  const remote = stocked([small, large], { '42': 7 });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl });
+  const before = await cart.read();
+  const result = await cart.apply([{ variantId: '42', quantity: 6, properties: { [LINE]: required(b42) } }], {
+    expectedFingerprint: before.fingerprint,
+  });
+  assert.equal(result.status, 'applied');
+  assert.deepEqual(customizedOf(remote.items), [[42, 6, b42]]);
+});
+
+test('an old line that survives an acknowledged removal leaves the outcome unresolved (NB1)', async () => {
+  const journal = memoryJournal();
+  const remote = provider([ordinary, existing], ({ url, body }) => {
+    // Shopify answers 200 but keeps the old line.
+    if (url.endsWith('cart/update.js') && body.updates) delete body.updates['42:existing'];
+    return undefined;
+  });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  const before = await cart.read();
+  const result = await cart.apply(freshDesired(), { expectedFingerprint: before.fingerprint });
+  assert.equal(result.reason, 'mutation_unresolved', 'two signed sets remain visible');
+  assert.equal(journal.state?.phase, 'pending');
+});
+
+test('a refusal reports its status; its explanation loses control and format characters (NB3, NB4)', async () => {
+  const remote = provider([ordinary], ({ url }) =>
+    url.endsWith('cart/add.js')
+      ? Response.json({ status: 429, description: 'Too\u202e many\u200b requests.\u0007' }, { status: 429 })
+      : undefined,
+  );
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl });
+  const before = await cart.read();
+  const result = await cart.apply(desired, { expectedFingerprint: before.fingerprint });
+  assert.equal(result.reason, 'rejected');
+  assert.equal(result.refusal, 429);
+  assert.equal(result.detail, 'Too many requests.');
+});
+
+test('an oversized refusal body is not read beyond the response cap (NB4)', async () => {
+  const remote = provider([ordinary], ({ url }) =>
+    url.endsWith('cart/add.js')
+      ? Response.json({ status: 422, description: 'x'.repeat(2 * 1048576) }, { status: 422 })
+      : undefined,
+  );
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl });
+  const before = await cart.read();
+  const result = await cart.apply(desired, { expectedFingerprint: before.fingerprint });
+  assert.equal(result.reason, 'rejected');
+  assert.equal(result.refusal, 422);
+  assert.equal(result.detail, undefined);
+});
+
 declare global {
   interface Window {
     testCart: ReturnType<typeof createAjaxCartAdapter>;

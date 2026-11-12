@@ -487,6 +487,8 @@ export function createLiveDesignerPorts(input: {
             // A definite refusal (typically stock) with the buyer's lines intact: say so, never "uncertain".
             throw Object.assign(new Error('Shopify refused the cart update'), {
               cartRejected: true,
+              // Only Shopify's 422 is a stock or limit refusal; other 4xx get neutral wording.
+              stock: applied.refusal === 422,
               ...(applied.detail ? { detail: applied.detail } : {}),
             });
           }

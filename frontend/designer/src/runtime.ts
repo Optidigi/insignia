@@ -192,6 +192,7 @@ export function createDesignerRuntime(
             type: "cart-commit-failed",
             requestId,
             reason: "cart-rejected",
+            ...('stock' in error && error.stock === true ? { stock: true } : {}),
             ...('detail' in error && typeof error.detail === 'string' ? { detail: error.detail } : {}),
           });
           return;
