@@ -16,7 +16,8 @@ export type BuyerRejectionCode =
 /**
  * A finer, public reason for a rejection, sent as `details.reason`; never the rejected data itself.
  * NOT_OWNED: a cart line's signed set is not owned by this buyer session (an earlier one, #340).
- * NOT_OWNED_EXPIRED: the same, and its signed validity has certainly ended, so checkout rejects it.
+ * NOT_OWNED_EXPIRED: the same, and checkout certainly rejects it: its signed validity ended in the shop's
+ * time zone, or its key, authorization epoch or generation is no longer admitted (#371).
  * CART_LINES: CAPACITY_EXCEEDED because the cart would hold more than 200 lines in total, not because
  * of the 32-line / 10,000-garment signed set (#335).
  */

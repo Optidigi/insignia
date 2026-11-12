@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
+import { decodeHeaderV3, encodeHeaderV3, HEADER_V3_BYTES, type HeaderV3 } from '@insignia/cart-authorization';
 import { BuyerAcceptedCartSchema } from '@insignia/contracts';
 import { createPublicationRepository } from '../../../packages/database/dist/repositories/publication.js';
 import { fixture } from './support/buyer-fixture.mts';
@@ -658,4 +659,121 @@ test('buyer-actionable conditions reach the storefront as specific 4xx responses
   );
   assert.equal(design.status, 409, await design.clone().text());
   assert.equal((await design.json()).code, 'REVIEW_REQUIRED');
+});
+
+type Fixture = Awaited<ReturnType<typeof fixture>>;
+type CartLine = {
+  key: string;
+  variantId: string;
+  quantity: number;
+  properties: Record<string, string>;
+  sellingPlan: null;
+};
+/** The cart lines of one accepted set, as an earlier buyer session left them in the cart. */
+async function earlierSessionLines(f: Fixture): Promise<CartLine[]> {
+  const proposal = await (await f.http('quote-proposals', f.body)).json();
+  const response = await f.http(`quote-proposals/${proposal.proposalId}/accept`, {
+    capability: f.session.capability,
+    hash: proposal.hash,
+    idempotencyKey: randomUUID(),
+  });
+  assert.equal(response.status, 200, await response.clone().text());
+  const accepted = BuyerAcceptedCartSchema.parse(await response.json());
+  return accepted.buckets.map((b, index) => ({ ...b, key: `line${index}`, sellingPlan: null }));
+}
+/** What a new session's cart-state reports for lines it does not own: only the reason, never the design. */
+async function notOwnedReason(f: Fixture, lines: CartLine[]): Promise<unknown> {
+  const other = await (await f.http('sessions', {})).json();
+  const response = await f.http('cart-state', { capability: other.capability, lines });
+  assert.equal(response.status, 409, await response.clone().text());
+  const body = await response.json();
+  assert.equal(body.code, 'REVIEW_REQUIRED');
+  assert.equal(body.groups, undefined);
+  return body.details?.reason;
+}
+const headerOf = (lines: CartLine[]) =>
+  decodeHeaderV3(Buffer.from(String(lines[0]?.properties._insignia_line_v3), 'base64url').subarray(0, HEADER_V3_BYTES));
+/** A carrier whose header claims other values; its signature, record and proof are kept (never valid). */
+function forged(lines: CartLine[], change: Partial<HeaderV3>): CartLine[] {
+  return lines.map((line) => {
+    const raw = Buffer.from(String(line.properties._insignia_line_v3), 'base64url');
+    const header = decodeHeaderV3(raw.subarray(0, HEADER_V3_BYTES));
+    const carrier = Buffer.concat([encodeHeaderV3({ ...header, ...change }), raw.subarray(HEADER_V3_BYTES)]);
+    return { ...line, properties: { _insignia_line_v3: carrier.toString('base64url') } };
+  });
+}
+const otherSet = () => ({ setHex: randomUUID().replaceAll('-', '') });
+
+test('an earlier session keeps lines checkout still accepts; a forged or unknown set answers from its header alone (#371)', {
+  skip: !connectionString,
+}, async (t) => {
+  const f = await fixture(t);
+  const lines = await earlierSessionLines(f);
+  assert.equal(await notOwnedReason(f, lines), 'NOT_OWNED');
+  // No set with this ID exists: the same answer as the real set, so the reason never reveals existence.
+  assert.equal(await notOwnedReason(f, forged(lines, otherSet())), 'NOT_OWNED');
+  const header = headerOf(lines);
+  assert.equal(
+    await notOwnedReason(f, forged(lines, { ...otherSet(), validThroughDay: header.validThroughDay - 3 })),
+    'NOT_OWNED_EXPIRED',
+  );
+});
+
+test('earlier-session lines under a revoked or unknown key, an older epoch or another generation are removal only (#371)', {
+  skip: !connectionString,
+}, async (t) => {
+  const f = await fixture(t);
+  const lines = await earlierSessionLines(f);
+  const header = headerOf(lines);
+  // Header claims checkout no longer admits, whether or not such a set exists.
+  assert.equal(await notOwnedReason(f, forged(lines, { ...otherSet(), keyId: 8 })), 'NOT_OWNED_EXPIRED', 'unknown key');
+  assert.equal(
+    await notOwnedReason(f, forged(lines, { ...otherSet(), generationHex: randomUUID().replaceAll('-', '') })),
+    'NOT_OWNED_EXPIRED',
+    'other authorization generation',
+  );
+  assert.equal(
+    await notOwnedReason(f, forged(lines, { ...otherSet(), epoch: header.epoch + 1 })),
+    'NOT_OWNED_EXPIRED',
+    'other epoch',
+  );
+  assert.equal(await notOwnedReason(f, lines), 'NOT_OWNED');
+  await f.core.signingKeys.revoke(f.authorizationScope, 7, randomUUID(), 'synthetic leak');
+  assert.equal(await notOwnedReason(f, lines), 'NOT_OWNED_EXPIRED', 'revoked key');
+  assert.equal(await notOwnedReason(f, forged(lines, otherSet())), 'NOT_OWNED_EXPIRED', 'revoked key, unknown set');
+});
+
+test('earlier-session lines whose signing key window ended before the shop day are removal only (#371)', {
+  skip: !connectionString,
+}, async (t) => {
+  const f = await fixture(t);
+  const lines = await earlierSessionLines(f);
+  const day = Math.floor(+f.now() / 86400000);
+  await f.pool.query('UPDATE signing_keys SET last_valid_day=$2 WHERE shop_id=$1 AND key_id=7', [f.shopId, day - 1]);
+  assert.equal(await notOwnedReason(f, lines), 'NOT_OWNED_EXPIRED');
+});
+
+test('earlier-session lines signed under an older authorization epoch are removal only (#371)', {
+  skip: !connectionString,
+}, async (t) => {
+  const f = await fixture(t);
+  const lines = await earlierSessionLines(f);
+  await f.core.signingKeys.incrementEpoch({
+    scope: f.authorizationScope,
+    commandKey: randomUUID(),
+    requestDigest: 'a'.repeat(64),
+  });
+  assert.equal(await notOwnedReason(f, lines), 'NOT_OWNED_EXPIRED');
+});
+
+test('earlier-session lines expired in the shop time zone are removal only before UTC-12 catches up (#371)', {
+  skip: !connectionString,
+}, async (t) => {
+  // UTC+14: accepted 2026-10-13 local (12:00Z on the 12th), valid through the 15th local.
+  const f = await fixture(t, { timezone: 'Pacific/Kiritimati' });
+  const lines = await earlierSessionLines(f);
+  f.advance(2 * 86400000); // 15th, 02:00 local: the last valid day.
+  assert.equal(await notOwnedReason(f, lines), 'NOT_OWNED');
+  f.advance(86400000); // 16th, 02:00 local; still the 15th at UTC-12.
+  assert.equal(await notOwnedReason(f, lines), 'NOT_OWNED_EXPIRED');
 });

@@ -34,6 +34,8 @@ export async function fixture(
     readiness?: QuoteAuthorityPorts['readiness'];
     releaseRefresh?: (scope: { shopId: string; installationGeneration: string }, activeUntil: Date) => void;
     artworkRetentionDays?: number;
+    /** The shop's IANA time zone as the provider reports it; UTC by default. */
+    timezone?: string;
   } = {},
 ) {
   const isolated = options.isolated ? await isolatedDatabase('buyer_cleanup') : undefined;
@@ -216,7 +218,7 @@ export async function fixture(
           installationGeneration: '1',
           shopifyShopGid: `gid://shopify/Shop/${shopifyShopId}`,
           currency: 'EUR',
-          timezone: 'UTC',
+          timezone: options.timezone ?? 'UTC',
         }),
       },
       entitlement: {
@@ -410,5 +412,6 @@ export async function fixture(
     },
     signings: () => signings,
     now: () => now,
+    authorizationScope: identity,
   };
 }

@@ -15,7 +15,7 @@ import {
   quoteRequestDigest,
   renewQuote,
 } from '@insignia/application';
-import { decodeLineCarrierV3, LINE_ATTRIBUTE, PREFIX_V3_CHARS } from '@insignia/cart-authorization';
+import { decodeLineCarrierV3, type HeaderV3, LINE_ATTRIBUTE, PREFIX_V3_CHARS } from '@insignia/cart-authorization';
 import {
   type BuyerDesired,
   type BuyerDesiredGroup,
@@ -258,6 +258,51 @@ export function createBuyerServices(input: {
       buckets: vector,
       desired: desired(request),
     };
+  }
+  /**
+   * Whether checkout certainly rejects a line this session does not own (#340, #371): the Functions' own
+   * rules applied to the line's signed header and the shop's current public state (authorization identity,
+   * key registry, local day). Never whether its set exists or whose it is, so the answer is no oracle.
+   */
+  async function checkoutRejects(scope: BuyerScope, header: HeaderV3): Promise<boolean> {
+    // The earliest local day anywhere (UTC-12) needs no shop state.
+    const earliestDay = Math.floor((+clock() - 12 * 3600000) / 86400000);
+    if (earliestDay > header.validThroughDay) return true;
+    const current = await input.core.tenants.getActiveAuthorizationScope({
+      shopId: scope.shopId,
+      installationGeneration: scope.installationGeneration,
+    });
+    if (!current) return false;
+    if (
+      header.generationHex !== current.authorizationGeneration.replaceAll('-', '') ||
+      header.epoch !== current.authorizationEpoch
+    )
+      return true;
+    const keys = await input.core.signingKeys.list({
+      shopId: current.shopId,
+      installationGeneration: current.installationGeneration,
+      authorizationGeneration: current.authorizationGeneration,
+      authorizationEpoch: current.authorizationEpoch,
+    });
+    const key = keys.find((value) => value.id === header.keyId);
+    if (!key || key.state === 'revoked' || key.state === 'destroyed') return true;
+    // The shop's own day; without a fresh shop context only what is past at UTC-12 is certain.
+    const timezone = await input
+      .ports({ ...scope, kind: 'guest' })
+      .shop.getContext({
+        shopId: current.shopId,
+        installationGeneration: current.installationGeneration,
+        shopifyShopGid: `gid://shopify/Shop/${current.shopifyShopId}`,
+        authorizationGeneration: current.authorizationGeneration,
+        authorizationEpoch: current.authorizationEpoch,
+      })
+      .then(
+        (context) => context.timezone,
+        () => null,
+      );
+    if (timezone === null) return earliestDay > key.lastDay;
+    const day = localDay(clock(), timezone).ordinal;
+    return day > header.validThroughDay || day < key.firstDay || day > key.lastDay;
   }
   return {
     guest: input.guest,
@@ -800,15 +845,12 @@ export function createBuyerServices(input: {
         });
         // Not this session's set (an earlier or expired one, or none stored). Still a review: ownership is not
         // relaxed and nothing about the set is disclosed beyond its own signed header. The buyer can keep the
-        // lines while checkout can still accept them, else only remove them (#340). Without the shop's time
-        // zone, "certainly expired" uses the earliest local day anywhere (UTC-12).
+        // lines while checkout can still accept them, else only remove them (#340, #371).
         if (!owned)
           throw new BuyerRejectedError(
             'REVIEW_REQUIRED',
             'cart set not owned by this session',
-            Math.floor((+clock() - 12 * 3600000) / 86400000) > header.validThroughDay
-              ? 'NOT_OWNED_EXPIRED'
-              : 'NOT_OWNED',
+            (await checkoutRejects(scope, header)) ? 'NOT_OWNED_EXPIRED' : 'NOT_OWNED',
           );
         if (
           owned.authorization.envelopeCarrier !== decoded.prefix ||
