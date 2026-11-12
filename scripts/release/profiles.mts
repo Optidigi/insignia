@@ -52,6 +52,12 @@ import performanceCandidate from '../../deployment/m5-runtime/native-performance
 };
 import recoveryModules from '../../deployment/m5-runtime/native-recovery-module-baseline.json' with { type: 'json' };
 import recoveryCandidate from '../../deployment/m5-runtime/native-recovery-release-binding.json' with { type: 'json' };
+import repairMessagesModules from '../../deployment/m5-runtime/native-repair-messages-module-baseline.json' with {
+  type: 'json',
+};
+import repairMessagesBinding from '../../deployment/m5-runtime/native-repair-messages-release-binding.json' with {
+  type: 'json',
+};
 import reviewCartModules from '../../deployment/m5-runtime/native-review-cart-module-baseline.json' with {
   type: 'json',
 };
@@ -154,6 +160,16 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  // Same Functions as cart-line v3 and every non-theme module of buyer-fixes; only theme assets change.
+  'native-repair-messages-bf512171': {
+    versionId: repairMessagesBinding.versionId,
+    versionTag: repairMessagesBinding.versionTag,
+    versionIds: repairMessagesBinding.versionIds,
+    moduleHash: repairMessagesBinding.moduleHash,
+    modules: repairMessagesModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   // Same Functions as cart-line v3 and every non-theme module of canonical-host; only theme assets change.
   'native-buyer-fixes-fb436e16': {
     versionId: buyerFixesBinding.versionId,

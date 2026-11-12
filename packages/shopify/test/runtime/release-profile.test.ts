@@ -2,6 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { resolveRuntimeReleaseProfile } from '../../src/runtime-release-profile.js';
 
 describe('closed server release targets', () => {
+  it('binds the repair-messages target to the unchanged cart-line v3 Function source', () => {
+    const profile = resolveRuntimeReleaseProfile('native-repair-messages-bf512171');
+    expect(profile.activeVersionRef).toBe('1205994881025');
+    expect(profile.functionsSourceCommit).toBe('aa3b6166eb2b4679f27e1b7f128d914137ba8412');
+    expect(Object.isFrozen(profile)).toBe(true);
+    expect(resolveRuntimeReleaseProfile('native-buyer-fixes-fb436e16').activeVersionRef).toBe('1205760688129');
+  });
   it('binds the buyer-fixes target to the unchanged cart-line v3 Function source', () => {
     const profile = resolveRuntimeReleaseProfile('native-buyer-fixes-fb436e16');
     expect(profile.activeVersionRef).toBe('1205760688129');

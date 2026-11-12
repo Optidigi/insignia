@@ -56,6 +56,12 @@ import performanceBinding from '../../deployment/m5-runtime/native-performance-r
 };
 import recoveryModules from '../../deployment/m5-runtime/native-recovery-module-baseline.json' with { type: 'json' };
 import recoveryBinding from '../../deployment/m5-runtime/native-recovery-release-binding.json' with { type: 'json' };
+import repairMessagesModules from '../../deployment/m5-runtime/native-repair-messages-module-baseline.json' with {
+  type: 'json',
+};
+import repairMessagesBinding from '../../deployment/m5-runtime/native-repair-messages-release-binding.json' with {
+  type: 'json',
+};
 import reviewCartModules from '../../deployment/m5-runtime/native-review-cart-module-baseline.json' with {
   type: 'json',
 };
@@ -410,6 +416,35 @@ test('functions renew candidate preserves identities and changes only theme and 
     } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
   }
 });
+test('repair-messages candidate changes only theme assets', () => {
+  assert.equal(repairMessagesModules.length, 14);
+  assert.equal(repairMessagesBinding.moduleHash, 'eb500b6c214f220d99e63ba6eb41bc97054bf1d94d296226356672bda2892ef2');
+  assert.equal(repairMessagesBinding.versionId, '1205994881025');
+  assert.deepEqual(
+    new Set(repairMessagesBinding.versionIds),
+    new Set([...buyerFixesBinding.versionIds, '1205994881025']),
+  );
+  assert.deepEqual(
+    repairMessagesModules.map((m) => m.handle),
+    repairMessagesModules.map((m) => m.handle).sort(),
+  );
+  const prior = new Map(buyerFixesModules.map((m) => [m.handle, m]));
+  assert.equal(prior.size, 14);
+  for (const module of repairMessagesModules) {
+    const old = required(prior.get(module.handle));
+    if (module.type === 'theme_app_extension') {
+      assert.deepEqual({ ...module, config: undefined }, { ...old, config: undefined });
+      type ThemeConfig = { theme_extension: { files: Record<string, unknown> } };
+      const files = (module.config as unknown as ThemeConfig).theme_extension.files;
+      const oldFiles = (old.config as unknown as ThemeConfig).theme_extension.files;
+      assert.deepEqual(files.blocks, oldFiles.blocks);
+      assert.deepEqual(files.snippets, oldFiles.snippets);
+      assert.deepEqual(files.locales, oldFiles.locales);
+      assert.notDeepEqual(files.assets, oldFiles.assets);
+    } else assert.deepEqual(module, old);
+  }
+});
+
 test('buyer-fixes candidate changes only theme assets', () => {
   assert.equal(buyerFixesModules.length, 14);
   assert.equal(buyerFixesBinding.moduleHash, '83f73e0202c709902476dae6947257c981a6cadb41cfb5b82b0155144d616a81');

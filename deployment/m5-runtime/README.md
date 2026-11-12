@@ -12,6 +12,17 @@ Live Shopify Admin returns `inputQuery: null` for both owned Functions. Observat
 
 Operator migration: none is required. The legacy `transformInputQuerySha256`, `validationInputQuerySha256` and `observationVersion` fields are still accepted (64-hex and `2` when present), then ignored. Images built before this change require them, so keep them until rollback to such an image is no longer needed, then reduce the value to `appKey` only.
 
+## Repair-messages candidate development transition
+
+Owner approval, 12 November 2026 (deploy 2): ship the storefront and Designer changes merged up to main `bf512171` (#378, #380, #387, #389) to rewrite-dev as one theme-only app version. The server side of `bf512171` (#377 verifier reuse rule and release diagnostics, #384 listen-failure exit, #385/#388 fences; no migration) was deployed under `native-buyer-fixes-fb436e16` before the candidate was created.
+
+`native-repair-messages-bf512171` binds inactive version `1205994881025` in [native-repair-messages-release-binding.json](native-repair-messages-release-binding.json) (37 versions) and the 14-module [baseline](native-repair-messages-module-baseline.json) (canonical hash `eb500b6c214f220d99e63ba6eb41bc97054bf1d94d296226356672bda2892ef2`).
+- It was created once at `2026-11-12T20:40:22Z` (CLI 4.9.4) from the frozen `native-buyer-fixes-fb436e16` staging. Only `extensions/insignia-theme/assets` changed: its 15 files are the foundation build of `bf512171` (run 43297757028, attempt 2), byte-identical to a local build of the same tree. The frame host and the Designer frame (#387) therefore ship from one build.
+- Blocks, snippets, locales, every non-theme module and both Function modules are unchanged, including module ids, wasm and input queries. The foundation wasm of `bf512171` equals the Active pins (transform `5c8708b5…`/183604, validation `6c362b36…`/181608); the Function source still is `aa3b6166`.
+- `1205760688129` stays the sole Active version until the release; all NEVER_RELEASE versions are inactive.
+
+Phase B operator changes, made together with the single release: set `INSIGNIA_RELEASE_PROFILE=native-repair-messages-bf512171` in web and worker, and the same profile with the matching manifest in the verifier, using binding-head images. Creating the candidate makes `native-buyer-fixes-fb436e16` fail closed (inventory 37) until this step and the release complete. No migration, grant or other environment change.
+
 ## Buyer-fixes candidate development transition
 
 Owner approval, 12 November 2026: ship the storefront and Designer changes merged up to main `fb436e16` (#352–#365, #372, #373) to rewrite-dev as one theme-only app version.
