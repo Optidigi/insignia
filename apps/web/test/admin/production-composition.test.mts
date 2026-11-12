@@ -319,6 +319,7 @@ for (const releaseMode of [
           };
           verificationServer = createReleaseVerificationServer({
             readBinding: async () => requestBinding,
+            records: { read: async () => null },
             async collect(request) {
               collected++;
               if (releaseMode === 'demand-failure')

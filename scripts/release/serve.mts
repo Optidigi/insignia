@@ -29,7 +29,7 @@ async function main() {
   try {
     assert.ok(process.argv.length <= 3);
     const profileName = process.argv[2];
-    const profile = releaseProfile(profileName);
+    releaseProfile(profileName);
     const launchQualifiedTrustedRelease = await createQualifiedReleaseLauncher();
     const info = await lstat(DIRECTORY);
     assert.ok(
@@ -73,14 +73,7 @@ async function main() {
           externalInstallationId: managed.externalInstallationId,
         };
       },
-      async readRecord(binding, freshAt) {
-        const evidence = await required(core).trustedReleaseRecords.read({
-          scope: binding,
-          expectedActiveAppVersionRef: profile.versionId,
-          now: freshAt,
-        });
-        return evidence?.record.recordId ?? null;
-      },
+      records: required(core).trustedReleaseRecords,
       async collect(request) {
         // Fresh intent ID is independent of all prior sealed runs. The existing
         // launcher requalifies source and prior settlement before reserving IO.

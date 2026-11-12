@@ -1272,6 +1272,7 @@ for (const profile of [
       const server = createReleaseVerificationServer({
         profileName: profile,
         readBinding: async () => binding,
+        records: { read: async () => null },
         collect: async (input) => {
           calls++;
           return {

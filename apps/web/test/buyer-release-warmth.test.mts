@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { assertProductionFunctionArtifactReady } from '../../../packages/application/src/keys/artifact-attestation.ts';
 import { RELEASE_REFRESH_LEAD_MS } from '../src/server/admin/release-verification.ts';
 import { createBuyerBootstrap } from '../src/server/buyer/bootstrap.ts';
+import { RELEASE_FRESHNESS_MS, RELEASE_REFRESH_AFTER_MS } from '../src/server/buyer/release-refresh.ts';
 import { buyerFixture, coreFixture, releaseEvidenceFixture, required } from './http-fixtures.mts';
 
 /**
@@ -12,7 +13,7 @@ import { buyerFixture, coreFixture, releaseEvidenceFixture, required } from './h
  * - stored records follow `trusted_release_records` reads: the newest record is fresh while its
  *   closing Active-version observation is at most 30 s old and before its attestation `expiresAt`
  *   (the earliest of its observations + 30 s);
- * - the verifier receiver (`scripts/release/server.mts` + `serve.mts`) first answers with a stored
+ * - the verifier receiver (`scripts/release/server.mts`) first answers with a stored
  *   record that is fresh at `now + reuseLeadMs`, and otherwise collects once per binding.
  * Collection timing comes from deployed receipts: the earliest (module) observation comes about 1.7 s
  * before the closing one, and a collection lands about 4.6 s after it starts.
@@ -257,15 +258,16 @@ function summary(result: Awaited<ReturnType<typeof simulate>>) {
   };
 }
 
-test('receiver that reuses any fresh record (deployed before #345): no acceptance starts its own collection', async (t) => {
-  // Before #345 about 35% of acceptances collected on their own request path (139 of these 400).
+test('model fidelity: the pre-#345 receiver rule reproduces the stall QA measured', async (t) => {
+  // QA on rewrite-dev: 9 of 26 acceptances (35%) spent ~4.9 s in readiness-observe.
   const result = summary(await simulate({ reuseLeadMs: 0, flows: 400, seed: 345 }));
   t.diagnostic(JSON.stringify(result));
-  assert.equal(result.ownCollection, 0, 'no acceptance starts its own ~4.6 s collection');
-  assert.ok(result.maxWaitMs <= COLLECTION_MS, 'a wait only joins the refresh already collecting');
+  assert.ok(result.ownCollection >= 100, 'about a third of acceptances collect on their own request path');
 });
 
 test('refresh-ahead receiver: acceptance never waits for or outlives release evidence (#345)', async (t) => {
+  // The receiver's reuse window covers the buyer refresh's look-ahead, so that refresh always collects.
+  assert.ok(RELEASE_FRESHNESS_MS - RELEASE_REFRESH_AFTER_MS <= RELEASE_REFRESH_LEAD_MS);
   // The receiver's rule from scripts/release/server.mts (owner-boundaries test).
   const result = summary(await simulate({ reuseLeadMs: RELEASE_REFRESH_LEAD_MS, flows: 400, seed: 345 }));
   t.diagnostic(JSON.stringify(result));

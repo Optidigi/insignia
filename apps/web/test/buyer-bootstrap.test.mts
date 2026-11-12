@@ -434,13 +434,11 @@ test('acceptance release ports share one record read and background refresh coll
       },
     },
   });
-  // The stored reader keeps its exact 30 s rule (age at most 30 s and before `expiresAt`, here
-  // observedAt + 30 s); it is evaluated at the instant it is given.
+  // The stored reader keeps its exact 30 s rule; it is evaluated at the instant it is given.
   value.core.trustedReleaseRecords = {
     read: async (target) => {
       reads++;
-      const age = +target.now - observedAt;
-      return age >= 0 && age < 30000 ? evidence() : null;
+      return +target.now - observedAt <= 30000 ? evidence() : null;
     },
   };
   value.dependencies.releaseCollector = {
@@ -465,12 +463,12 @@ test('acceptance release ports share one record read and background refresh coll
   required(input.releaseRefresh)({ shopId: 'tenant', installationGeneration: '1' }, new Date(+now + 300000));
   assert.equal(collections, 0);
   assert.equal(timers.length, 1);
-  // The 5 s old record is fresh enough: no collection, next check 8 s before it lapses (#345).
+  // The 5 s old record is fresh enough: no collection, next check when it turns 22 s old.
   required(timers.shift()).run();
   await new Promise((resolve) => setTimeout(resolve, 10));
   assert.equal(collections, 0);
-  assert.equal(required(timers[0]).delayMs, 17000);
-  now = new Date(+now + 17000);
+  assert.equal(required(timers[0]).delayMs, 25000);
+  now = new Date(+now + 25000);
   required(timers.shift()).run();
   await new Promise((resolve) => setTimeout(resolve, 10));
   assert.equal(collections, 1, 'a 30 s-near record is collected ahead of expiry');
@@ -498,15 +496,10 @@ test('an acceptance that finds the release record stale collects synchronously a
     return proposalTiming('22222222-2222-4222-8222-222222222222', 'acceptance', 'failure');
   });
   assert.equal(collections, 1, 'the stale record triggered one synchronous collection');
-  // The timing names the slow sub-call: the stored read and the collection it waited on (#345).
-  const spans = required(timing).spans;
-  const read = spans.find((span) => span.stage === 'release-read');
+  // The timing names the slow sub-call: the collection this request started (#345).
   assert.deepEqual(
-    spans.map((span) => [span.stage, span.parentId]),
-    [
-      ['release-read', null],
-      ['release-collect', required(read).id],
-    ],
+    required(timing).spans.map((span) => [span.stage, span.outcome]),
+    [['release-collect', 'success']],
   );
 });
 

@@ -391,6 +391,7 @@ test('private verification receiver independently fences generation and admits o
   };
   const server = createReleaseVerificationServer({
     readBinding: async () => binding,
+    records: { read: async () => null },
     collect: async (input) => {
       calls++;
       return {
@@ -439,13 +440,22 @@ test('receiver reuses a stored record only while it stays fresh for the refresh 
     externalInstallationId: 'gid://shopify/AppInstallation/321',
   };
   const now = Date.parse('2026-11-12T02:00:00.000Z');
-  // A stored record valid until `storedUntil`, read by the same 30 s rule at the instant requested.
+  // The stored-record port answers by its own freshness rule at the instant it is asked about:
+  // here a record valid until `storedUntil`.
   let storedUntil = 0,
     collections = 0;
+  const asked: { now: number; ref: string; scope: unknown }[] = [];
   const server = createReleaseVerificationServer({
     now: () => now,
     readBinding: async () => binding,
-    readRecord: async (_binding, freshAt) => (+freshAt < storedUntil ? '33333333-3333-4333-8333-333333333333' : null),
+    records: {
+      read: async (request) => {
+        asked.push({ now: +request.now, ref: request.expectedActiveAppVersionRef, scope: request.scope });
+        return +request.now < storedUntil
+          ? ({ record: { recordId: '33333333-3333-4333-8333-333333333333' } } as never)
+          : null;
+      },
+    },
     collect: async (input) => {
       collections++;
       return {
@@ -484,6 +494,8 @@ test('receiver reuses a stored record only while it stays fresh for the refresh 
     storedUntil = now + 20_000;
     assert.equal((await verify()).recordId, '33333333-3333-4333-8333-333333333333');
     assert.equal(collections, 1);
+    // Asked about this binding's record for the reviewed release, `RELEASE_REFRESH_LEAD_MS` ahead.
+    assert.deepEqual(asked[0], { now: now + RELEASE_REFRESH_LEAD_MS, ref: '1163229200385', scope: binding });
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
@@ -520,6 +532,7 @@ test('collector transport awaits preparation beyond observation TTL within the a
   t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: new Date('2026-10-12T12:00:00Z') });
   const server = createReleaseVerificationServer({
     readBinding: async () => binding,
+    records: { read: async () => null },
     async collect(input) {
       started();
       await preparation;

@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { setImmediate } from 'node:timers/promises';
 import { buildPublicConfig, publicKeyFingerprint, publicKeyFromSeed } from '@insignia/application';
 import { createProductionQuoteReadiness } from '../src/server/production-readiness.ts';
-import { coreFixture, effectiveRevision, releaseEvidenceFixture } from './http-fixtures.mts';
+import { coreFixture, effectiveRevision, releaseEvidenceFixture, required } from './http-fixtures.mts';
 
 for (const inactive of [false, true]) {
   test(`readiness retains the original public observation time and rejects inactive scope: inactive=${inactive}`, async () => {
@@ -127,7 +127,7 @@ for (const inactive of [false, true]) {
 type ReadinessInput = Parameters<typeof createProductionQuoteReadiness>[0];
 function releasePreparationFixture(
   artifacts: NonNullable<ReadinessInput['artifactPorts']>,
-  options: { transport?: ReadinessInput['transport']; clock?: () => Date } = {},
+  options: { transport?: ReadinessInput['transport']; clock?: () => Date; stage?: ReadinessInput['stage'] } = {},
 ) {
   const scope = {
     shopId: 'tenant',
@@ -187,6 +187,7 @@ function releasePreparationFixture(
     maxObservationAgeMs: 30000,
     artifactPorts: artifacts,
     ...(options.clock ? { clock: options.clock } : {}),
+    ...(options.stage ? { stage: options.stage } : {}),
     transport: {
       execute: async (request) => {
         providerReads++;
@@ -308,6 +309,34 @@ test('observation reads provider and release evidence once; the fenced check app
     observed,
     'the fenced check reads no provider or release',
   );
+});
+
+test('every observation times its own release read and provider reads (#345)', async () => {
+  const { proposalDiagnostics, proposalStage, proposalTiming } = await import('../src/server/buyer/diagnostics.ts');
+  const evidence = releaseEvidenceFixture();
+  const held = preparationGate();
+  // One shared stored read, as the bootstrap shares it between concurrent observations.
+  const shared = held.promise.then(() => evidence);
+  const f = releasePreparationFixture(
+    {
+      expectedBuild: { read: async () => (await shared).expectedBuild },
+      trustedEvidence: { read: async () => (await shared).record.attestation },
+    },
+    { stage: proposalStage },
+  );
+  const timed = () =>
+    proposalDiagnostics(async () => {
+      await f.read.observe({ quote: f.quote }).catch(() => {});
+      return required(proposalTiming('22222222-2222-4222-8222-222222222222', 'acceptance', 'failure')).spans.map(
+        (span) => span.stage,
+      );
+    });
+  const both = Promise.all([timed(), timed()]);
+  await setImmediate();
+  held.release();
+  // Both requests record the wait, not only the one that started the shared read.
+  for (const stages of await both)
+    assert.deepEqual(stages.sort(), ['function-ownership', 'public-config', 'release-read']);
 });
 
 for (const fail of ['expected', 'evidence'] as const) {

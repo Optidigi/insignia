@@ -113,7 +113,7 @@ export function createProductionQuoteReadiness(input: {
   clock?: () => Date;
   artifactPorts?: FunctionArtifactReadinessPorts;
   /** Names a provider read in the caller's request timing (buyer `proposalStage`). */
-  stage?<T>(name: 'public-config' | 'function-ownership', run: () => Promise<T>): Promise<T>;
+  stage?<T>(name: 'release-read' | 'public-config' | 'function-ownership', run: () => Promise<T>): Promise<T>;
 }): {
   observe(input: { quote: QuoteReadinessTarget }): Promise<QuoteReadinessObservation>;
   assertReady(input: { quote: QuoteReadinessTarget }): Promise<void>;
@@ -155,15 +155,18 @@ export function createProductionQuoteReadiness(input: {
       installationGeneration: quote.installationGeneration,
       appClientId: input.expectedFunctions.appKey,
     };
-    // Drain both release reads before reporting either failure.
-    const artifacts = Promise.allSettled([
-      Promise.resolve().then(() => artifactPorts.expectedBuild.read(artifactScope)),
-      Promise.resolve().then(() => artifactPorts.trustedEvidence.read(artifactScope)),
-    ]).then(([build, evidence]) => {
-      if (build.status === 'rejected') throw build.reason;
-      if (evidence.status === 'rejected') throw evidence.reason;
-      return [build.value, evidence.value] as const;
-    });
+    // Drain both release reads before reporting either failure. Each observation times its own wait,
+    // also when it joins a read or collection another request started.
+    const artifacts = stage('release-read', () =>
+      Promise.allSettled([
+        Promise.resolve().then(() => artifactPorts.expectedBuild.read(artifactScope)),
+        Promise.resolve().then(() => artifactPorts.trustedEvidence.read(artifactScope)),
+      ]).then(([build, evidence]) => {
+        if (build.status === 'rejected') throw build.reason;
+        if (evidence.status === 'rejected') throw evidence.reason;
+        return [build.value, evidence.value] as const;
+      }),
+    );
     const functionObservation = artifacts.then(([expectedBuild]) => {
       if (!expectedBuild) throw new Error('Function artifact expected build unavailable');
       return stage('function-ownership', () =>
@@ -212,30 +215,40 @@ export function createProductionQuoteReadiness(input: {
       async assertCurrent() {
         const desired = await keys.desiredPublicConfig(scope, now());
         const signingAt = now();
-        try {
+        const check = (at: Date) =>
           assertQuoteIssuanceReady({
             scope,
             selectedKeyId: input.selectedKeyId,
             acceptedDay: quote.acceptedDay,
             desired,
             observed,
-            now: signingAt,
+            now: at,
             maxObservationAgeMs: input.maxObservationAgeMs,
             functions: owned,
             effectiveRevision,
             artifact: { appClientId: artifactScope.appClientId, expectedBuild, attestation },
           });
+        try {
+          check(signingAt);
           publicConfigDrift.clear(scope.shopId);
         } catch (error) {
           if (error instanceof Error && error.name === 'PublicConfigDriftError')
             publicConfigDrift.observe(scope.shopId, now());
-          // Same check, finer class: evidence that was fresh when read but lapsed by the signing instant.
+          // Retryable only when the lapse is the sole failure: the same check, just before the
+          // evidence lapsed, passes. A changed or mismatched release stays a hard failure.
+          const lapse = evidenceLapsesAt(attestation, owned.observation, input.maxObservationAgeMs);
           if (
             error instanceof Error &&
             error.message === 'Function artifact evidence invalid or mismatched' &&
-            +signingAt >= evidenceLapsesAt(attestation, owned.observation, input.maxObservationAgeMs)
-          )
+            +signingAt >= lapse
+          ) {
+            try {
+              check(new Date(Math.min(+signingAt, lapse) - 1));
+            } catch {
+              throw error;
+            }
             throw new ReleaseEvidenceExpiredError();
+          }
           throw error;
         }
       },
