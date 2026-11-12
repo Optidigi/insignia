@@ -123,6 +123,7 @@ export function createBuyerApi({
         {
           status: response.status,
           code: error?.code,
+          retryAfter: Number(response.headers.get('Retry-After')) || 0,
           ...(response.status === 409 && error?.code === 'REVIEW_REQUIRED' && error?.acceptanceOutcome === 'declined'
             ? { acceptanceOutcome: 'declined' as const }
             : {}),
@@ -246,7 +247,20 @@ export function createBuyerApi({
       method: 'POST' | 'PUT' = 'POST',
     ) {
       if (!/^[a-z-]+(?:\/[a-zA-Z0-9-]+)*(?:\/[a-z-]+)?$/.test(path)) throw new Error('Invalid buyer action');
-      return authorized((capability) => request<T>(`${proxyBase}/v1/${path}`, { ...body, capability }, signal, method));
+      const send = () =>
+        authorized((capability) => request<T>(`${proxyBase}/v1/${path}`, { ...body, capability }, signal, method));
+      if (!/^quote-proposals\/[a-zA-Z0-9-]+\/accept$/.test(path)) return send();
+      // Acceptance is idempotent by its key: a transient BUSY (signing fence, provider throttling)
+      // repeats the same command up to twice, after Retry-After plus jitter. Nothing else retries.
+      for (let attempt = 0; ; attempt++) {
+        try {
+          return await send();
+        } catch (error) {
+          const { status, code, retryAfter } = error as { status?: unknown; code?: unknown; retryAfter?: number };
+          if (attempt >= 2 || status !== 409 || code !== 'BUSY') throw error;
+          await waitFor(Math.min(retryAfter ?? 0, 10) * 1000 + Math.random() * 250, signal);
+        }
+      }
     },
     async confirmCartApplication(id: string, body: Record<string, unknown>): Promise<void> {
       if (!/^[a-zA-Z0-9-]{1,128}$/.test(id)) throw new Error('Invalid cart application');
@@ -283,6 +297,20 @@ export function createBuyerApi({
       );
     },
   };
+}
+function waitFor(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) return reject(signal.reason);
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', abort);
+      resolve();
+    }, ms);
+    const abort = () => {
+      clearTimeout(timer);
+      reject(signal?.reason);
+    };
+    signal?.addEventListener('abort', abort, { once: true });
+  });
 }
 export function cartJournal(storage: Pick<Storage, 'getItem' | 'setItem'>, root: string) {
   if (!/^\/(?:[A-Za-z0-9_-]+\/)*$/.test(root)) throw new Error('Invalid cart root');

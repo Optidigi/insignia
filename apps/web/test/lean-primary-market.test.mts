@@ -122,3 +122,23 @@ test('the existing USD path retains independent primary-Market admission without
     country: 'US',
   });
 });
+test('a country or currency the shop does not sell in is an unsupported market; drifted evidence is not (#336)', async () => {
+  const unsupported = { name: 'BuyerRejectedError', code: 'UNSUPPORTED_MARKET' };
+  await assert.rejects(() => setup(snapshot, null).assertSupported(target), unsupported);
+  await assert.rejects(() => setup().assertSupported({ ...target, country: 'BE' }), unsupported);
+  await assert.rejects(() => setup().assertSupported({ ...target, currency: 'GBP', shopCurrency: 'GBP' }), unsupported);
+  await assert.rejects(() => setup({ ...snapshot, countryCodes: ['BE'] }).assertSupported(target), unsupported);
+  const drifted = (error: unknown) => !(error instanceof Error && error.name === 'BuyerRejectedError');
+  await assert.rejects(
+    () =>
+      setup(
+        snapshot,
+        parseEurNetherlandsQualification(JSON.stringify({ ...profile, activeVersionRef: '99999' })),
+      ).assertSupported(target),
+    drifted,
+  );
+  await assert.rejects(
+    () => setup({ ...snapshot, freshUntil: '2026-11-05T11:01:00Z' }).assertSupported(target),
+    drifted,
+  );
+});

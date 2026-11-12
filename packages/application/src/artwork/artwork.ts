@@ -110,7 +110,18 @@ export type ArtworkInspection = {
   previewMimeType: 'image/png';
 };
 export class ArtworkError extends Error {
-  constructor(readonly code: 'INVALID_INPUT' | 'NOT_FOUND' | 'EXPIRED' | 'NOT_USABLE' | 'UNAVAILABLE' | 'CONFLICT') {
+  constructor(
+    readonly code:
+      | 'INVALID_INPUT'
+      | 'NOT_FOUND'
+      | 'EXPIRED'
+      | 'NOT_USABLE'
+      | 'UNAVAILABLE'
+      | 'CONFLICT'
+      | 'RATE_LIMITED',
+    /** RATE_LIMITED only: seconds until the owner's quota admits another upload. */
+    readonly retryAfterSeconds?: number,
+  ) {
     super(`Artwork: ${code}`);
   }
 }

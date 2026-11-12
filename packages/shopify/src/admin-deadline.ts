@@ -1,3 +1,11 @@
+/** A Shopify Admin request timed out or was throttled/refused transiently; a later retry can succeed. */
+export class ShopifyAdminUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ShopifyAdminUnavailableError';
+  }
+}
+
 /** Hard wall-clock bound even when an injected transport ignores AbortSignal. */
 export async function withAdminDeadline<T>(
   task: (signal: AbortSignal) => Promise<T>,
@@ -14,7 +22,7 @@ export async function withAdminDeadline<T>(
       } catch {
         /* cancellation is best effort */
       }
-      reject(new Error(label + ' timed out'));
+      reject(new ShopifyAdminUnavailableError(label + ' timed out'));
     }, 10_000);
   });
   try {

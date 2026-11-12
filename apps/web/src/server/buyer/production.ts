@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import {
   type ArtworkScope,
+  BuyerRejectedError,
   createArtworkUsabilityPort,
   type EntitlementPolicyConfig,
   type FunctionArtifactReadinessPorts,
@@ -444,7 +445,8 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
         createCatalogTransport({ shop: source.shopDomain, accessToken: source.accessToken, fetchImpl }),
       ).availabilityProduct(gid);
       const selected = variantIds.map((id) => `gid://shopify/ProductVariant/${id}`);
-      if (!product || product.status !== 'ACTIVE') throw new Error('Buyer catalog product unavailable');
+      if (!product || product.status !== 'ACTIVE')
+        throw new BuyerRejectedError('PRODUCT_UNAVAILABLE', 'Buyer catalog product unavailable');
       // Match the full-catalog caller's missing-membership classification, without inventory IO.
       if (selected.some((id) => !product.variantIds.includes(id))) return { variants: [] };
       const inventory = await inventoryFor(
@@ -473,13 +475,9 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       );
       const gid = `gid://shopify/Product/${productId}`;
       const product = await catalog.get(gid);
-      if (
-        !product ||
-        product.id !== gid ||
-        product.variantsTruncated ||
-        product.variants.length > 250 ||
-        product.status !== 'ACTIVE'
-      )
+      if (!product || product.status !== 'ACTIVE')
+        throw new BuyerRejectedError('PRODUCT_UNAVAILABLE', 'Buyer catalog product unavailable');
+      if (product.id !== gid || product.variantsTruncated || product.variants.length > 250)
         throw new Error('Buyer catalog product unavailable');
       const target = {
         shopId: scope.shopId,

@@ -430,7 +430,9 @@ describe('acceptQuote', () => {
   it('admits ISO country codes and rejects reserved two-letter claims before provider reads', async () => {
     for (const country of ['XX', 'ZZ', 'XK', 'us']) {
       const { ports } = fixture();
-      await expect(acceptQuote({ ...request, country }, ports)).rejects.toThrow(/invalid quote request/);
+      await expect(acceptQuote({ ...request, country }, ports)).rejects.toThrow(
+        /invalid quote request|unsupported country/,
+      );
       expect(ports.tenant.getActive).not.toHaveBeenCalled();
     }
     const { ports } = fixture();
@@ -931,5 +933,79 @@ describe('acceptQuote', () => {
       acceptQuote({ ...request, groups: [{ group: { ...group, design: nestedDesign } }] }, ports),
     ).rejects.toThrow(/candidate request complexity exceeded/);
     expect(ports.tenant.getActive).not.toHaveBeenCalled();
+  });
+});
+
+describe('buyer-actionable acceptance conditions are typed, not plain errors (#336)', () => {
+  const rejected = (code: string) => ({ name: 'BuyerRejectedError', code });
+
+  it('an ISO-shaped country outside the snapshot is an unsupported market before provider reads', async () => {
+    for (const country of ['XX', 'XK']) {
+      const { ports } = fixture();
+      await expect(acceptQuote({ ...request, country }, ports)).rejects.toMatchObject(rejected('UNSUPPORTED_MARKET'));
+      expect(ports.tenant.getActive).not.toHaveBeenCalled();
+    }
+    const { ports } = fixture();
+    await expect(acceptQuote({ ...request, country: 'us' }, ports)).rejects.toThrow(/invalid quote request/);
+  });
+
+  it('a republished product configuration requires review; an unpublished product is unavailable', async () => {
+    const { ports } = fixture();
+    vi.mocked(ports.publication.getEffective).mockResolvedValueOnce({
+      config: { ...config, revisionId: 'republished' },
+      configId: 'cfg',
+      operationId: 'op',
+    });
+    await expect(acceptQuote(request, ports)).rejects.toMatchObject(rejected('REVIEW_REQUIRED'));
+    vi.mocked(ports.publication.getEffective).mockResolvedValueOnce(null);
+    await expect(acceptQuote(request, ports)).rejects.toMatchObject(rejected('PRODUCT_UNAVAILABLE'));
+    expect(ports.authorization.issue).not.toHaveBeenCalled();
+  });
+
+  it('artwork that is unusable or ends before the quote window is expired artwork', async () => {
+    for (const [status, lastFullyUsableLocalDay] of [
+      ['usable', 20759],
+      ['unavailable', -1],
+    ] as const) {
+      const { ports } = fixture();
+      vi.mocked(ports.artwork.readUsability).mockImplementationOnce(async (input) =>
+        input.choices.map((choice) => ({
+          ...choice,
+          shopId: input.shopId,
+          installationGeneration: input.installationGeneration,
+          status,
+          lastFullyUsableLocalDay,
+          observedAt: now.toISOString(),
+        })),
+      );
+      await expect(acceptQuote(request, ports)).rejects.toMatchObject(rejected('ARTWORK_EXPIRED'));
+    }
+  });
+
+  it('a presentment currency other than the shop currency is an unsupported market', async () => {
+    const { ports } = fixture();
+    const [snapshot] = await ports.catalog.resolveVariantContext({} as never);
+    vi.mocked(ports.catalog.resolveVariantContext).mockResolvedValueOnce([{ ...snapshot!, currencyCode: 'EUR' }]);
+    await expect(acceptQuote(request, ports)).rejects.toMatchObject(rejected('UNSUPPORTED_MARKET'));
+  });
+
+  it('a denied entitlement is a typed denial, distinct from a stale observation', async () => {
+    const { ports } = fixture();
+    const tenant = await ports.tenant.getActive('shop', '1');
+    const entitlement = await ports.entitlement.getFresh(tenant!);
+    vi.mocked(ports.entitlement.getFresh).mockResolvedValue({ ...entitlement, active: false });
+    await expect(acceptQuote(request, ports)).rejects.toMatchObject(rejected('ENTITLEMENT_DENIED'));
+  });
+
+  it('a shop-local day change inside the signing fence is a retryable day boundary', async () => {
+    const { ports } = fixture();
+    let current = now;
+    ports.clock = () => current;
+    ports.store.accept = async (_input, commit) => {
+      current = new Date(+now + 86_400_000);
+      return commit();
+    };
+    await expect(acceptQuote(request, ports)).rejects.toMatchObject({ name: 'ShopDayChangedError' });
+    expect(ports.authorization.issue).not.toHaveBeenCalled();
   });
 });

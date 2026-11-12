@@ -1,3 +1,4 @@
+import { BuyerRejectedError } from '@insignia/application';
 import { type BuyerDesiredGroup, readSelectedStepIdentity, type SelectedProductSetup } from '@insignia/contracts';
 import type { GeometryV1 } from '@insignia/visualizer/geometry';
 import { buyerGeometry } from '../merchant-preview/geometry.ts';
@@ -30,7 +31,7 @@ export async function validateBuyerProductionPositions(
       );
       const match = matches.length === 1 ? matches[0] : undefined;
       if (!match?.placement.customPlacementAllowed || !match.placement.movementRect)
-        throw new Error('Movement not allowed');
+        throw new BuyerRejectedError('POSITION_INVALID', 'Movement not allowed');
       const selectedSize = match.placement.sizes.find(
         (size) => readSelectedStepIdentity(match.placement.id, size.id, [selection.stepId]) === selection.stepId,
       );
@@ -49,7 +50,7 @@ export async function validateBuyerProductionPositions(
           asset.manifest.width <= 0 ||
           asset.manifest.height <= 0
         )
-          throw new Error('Production artwork unavailable');
+          throw new BuyerRejectedError('ARTWORK_EXPIRED', 'Production artwork unavailable');
         artworkAspect = asset.manifest.width / asset.manifest.height;
       }
       const center = { x: selection.position.xMicros / 1000000, y: selection.position.yMicros / 1000000 };
@@ -96,7 +97,7 @@ export async function validateBuyerProductionPositions(
           center.y - height / 2 < movement.centerY - movement.height / 2 - 1e-9 ||
           center.y + height / 2 > movement.centerY + movement.height / 2 + 1e-9
         )
-          throw new Error('Artwork position outside allowed production area');
+          throw new BuyerRejectedError('POSITION_INVALID', 'Artwork position outside allowed production area');
       }
     }
   }

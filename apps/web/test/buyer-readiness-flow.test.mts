@@ -303,6 +303,11 @@ for (const change of ['authorization epoch', 'effective publication'] as const)
     };
     const result = await accepted.submit();
     assert.notEqual(result.status, 200);
+    // A republished product needs the buyer's review (#336); the epoch change stays an outage.
+    if (change === 'effective publication') {
+      assert.equal(result.status, 409);
+      assert.equal((await result.json()).code, 'REVIEW_REQUIRED');
+    }
     assert.equal(f.signings(), 0);
     assert.equal((await f.pool.query('SELECT 1 FROM accepted_quotes WHERE shop_id=$1', [f.shopId])).rowCount, 0);
   });
@@ -339,9 +344,12 @@ test('a held signing fence makes another acceptance fail fast with a retryable e
     const started = Date.now();
     const result = await accepted.submit(key);
     elapsed = Date.now() - started;
-    assert.equal(result.status, 503);
+    // 4xx so Shopify's app proxy passes the code and Retry-After through (#336).
+    assert.equal(result.status, 409);
     assert.equal(result.headers.get('Retry-After'), '1');
-    assert.equal((await result.json()).code, 'UNAVAILABLE');
+    const body = await result.json();
+    assert.equal(body.code, 'BUSY');
+    assert.equal(body.retryable, true);
   } finally {
     hold = false;
     await held.client?.query('ROLLBACK');

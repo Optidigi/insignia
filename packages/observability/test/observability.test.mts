@@ -265,6 +265,39 @@ test('buyer review-required logging retains only its finite diagnostic and corre
   assert.doesNotMatch(output, /SECRET|capability|carrier|properties|message/);
 });
 
+test('expected buyer outcomes log at info as rejections with the same finite fields', () => {
+  let output = '';
+  const { logger } = createObservability({
+    stream: new Writable({
+      write(chunk, _encoding, callback) {
+        output += chunk;
+        callback();
+      },
+    }),
+  });
+  logger.info('buyer_request_rejected', {
+    correlationId: '01234567-89ab-4cde-8123-456789abcdef',
+    buyerStage: 'quote-proposals',
+    errorClass: 'DatabaseLockTimeout',
+    // @ts-expect-error Private payloads must be omitted at runtime too.
+    message: 'exception-message-SECRET',
+  });
+  const entry = parseRecord(output.trim());
+  assert.equal(entry.level, 30);
+  assert.equal(entry.event, 'buyer_request_rejected');
+  assert.equal(entry.errorClass, 'DatabaseLockTimeout');
+  assert.doesNotMatch(output, /SECRET|message/);
+  assert.throws(
+    () =>
+      logger.info('buyer_request_rejected', {
+        correlationId: '01234567-89ab-4cde-8123-456789abcdef',
+        buyerStage: 'quote-proposals',
+        errorClass: 'SECRET-class',
+      }),
+    /Invalid buyer failure diagnostic/,
+  );
+});
+
 test('proposal failure stage is finite, optional, and never serializes secret-bearing errors', () => {
   let output = '';
   const { logger } = createObservability({

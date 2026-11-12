@@ -1,4 +1,4 @@
-import { withAdminDeadline } from './admin-deadline.js';
+import { ShopifyAdminUnavailableError, withAdminDeadline } from './admin-deadline.js';
 /** Bounded, read-only Admin catalog projection. The caller supplies a verified online grant. */
 export interface CatalogTransport {
   read<T>(
@@ -408,6 +408,8 @@ export function createCatalogTransport(input: {
             body: JSON.stringify({ query, variables }),
             signal,
           });
+          if (response.status === 429 || response.status >= 500)
+            throw new ShopifyAdminUnavailableError('Catalog read failed');
           if (!response.ok) throw new Error('Catalog read failed');
           reader = response.body?.getReader();
           if (!reader) throw new Error('Catalog response body missing');
@@ -439,10 +441,16 @@ export function createCatalogTransport(input: {
           } catch {
             throw new Error('Catalog JSON response invalid');
           }
+          const errors = (payload as { errors?: unknown } | null)?.errors;
+          if (
+            Array.isArray(errors) &&
+            errors.some((error) => (error as { extensions?: { code?: unknown } })?.extensions?.code === 'THROTTLED')
+          )
+            throw new ShopifyAdminUnavailableError('Catalog read throttled');
           if (
             !payload ||
             typeof payload !== 'object' ||
-            (payload as { errors?: unknown }).errors !== undefined ||
+            errors !== undefined ||
             (payload as { data?: unknown }).data === undefined
           )
             throw new Error('Catalog GraphQL response invalid');

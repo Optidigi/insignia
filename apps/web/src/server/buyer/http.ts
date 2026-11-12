@@ -1,5 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import { BuyerAcceptanceDeclinedError } from '@insignia/application';
+import {
+  BuyerAcceptanceDeclinedError,
+  BuyerRejectedError,
+  type BuyerRejectionCode,
+  CatalogContextUnavailable,
+  EntitlementObservationUnavailableError,
+  ShopDayChangedError,
+} from '@insignia/application';
 import {
   BuyerAcceptanceSchema,
   BuyerCapabilitySchema,
@@ -14,6 +21,13 @@ import {
 } from '@insignia/contracts';
 import { BuyerStateError } from '@insignia/database';
 import { type BuyerFailureDiagnostic, type BuyerTimingDiagnostic, createObservability } from '@insignia/observability';
+import {
+  ContextualPricingError,
+  PrimaryMarketError,
+  ShopContextError,
+  ShopifyAdminUnavailableError,
+  VariantAvailabilityError,
+} from '@insignia/shopify';
 import { buyerJsonBody } from './body.ts';
 import {
   cacheStatus,
@@ -25,6 +39,128 @@ import {
 import type { BuyerServices } from './service.ts';
 
 const logger = createObservability().logger;
+
+/**
+ * Shopify's app proxy replaces every app 5xx with a bare 500 (no body or headers), so conditions a
+ * buyer can act on, and transient ones a retry clears, must be 4xx. Only unexpected failures are 503.
+ */
+const REJECTIONS: Record<
+  BuyerRejectionCode,
+  { status: number; errorClass: BuyerFailureDiagnostic['errorClass']; message: string }
+> = {
+  REVIEW_REQUIRED: {
+    status: 409,
+    errorClass: 'ReviewRequired',
+    message: 'Prices or selections changed. Review the complete customization again.',
+  },
+  UNSUPPORTED_MARKET: {
+    status: 422,
+    errorClass: 'UnsupportedMarket',
+    message: 'Customization is not available for your country or currency.',
+  },
+  ARTWORK_EXPIRED: {
+    status: 409,
+    errorClass: 'ArtworkExpired',
+    message: 'Your artwork is no longer available. Upload it again.',
+  },
+  POSITION_INVALID: {
+    status: 422,
+    errorClass: 'PositionInvalid',
+    message: 'The artwork position is not allowed for this product. Adjust the position.',
+  },
+  PRODUCT_UNAVAILABLE: {
+    status: 410,
+    errorClass: 'ProductUnavailable',
+    message: 'This product or option is no longer available.',
+  },
+  COUNTRY_REQUIRED: {
+    status: 400,
+    errorClass: 'CountryRequired',
+    message: 'Your country is needed to customize this product.',
+  },
+  ENTITLEMENT_DENIED: {
+    status: 403,
+    errorClass: 'EntitlementDenied',
+    message: 'Customization is not available in this store right now.',
+  },
+};
+const FAILED = 'Customization request could not be completed.';
+/** Shopify reads that a later retry can complete: throttling, timeouts and provider outages. */
+function providerReadTransient(error: unknown): boolean | undefined {
+  if (error instanceof ShopifyAdminUnavailableError) return true;
+  if (error instanceof ContextualPricingError)
+    return ['throttled', 'network_or_timeout', 'provider_unavailable'].includes(error.kind);
+  if (error instanceof PrimaryMarketError) return error.kind === 'network' || error.kind === 'provider_error';
+  if (error instanceof VariantAvailabilityError) return error.kind === 'provider_unavailable';
+  if (error instanceof ShopContextError) return error.kind === 'provider_error';
+  if (error instanceof CatalogContextUnavailable) return error.reason === 'stale';
+  return undefined;
+}
+function classifyFailure(error: unknown): {
+  status: number;
+  code: string;
+  message: string;
+  /** Set only for 409 BUSY: the same request can be retried after this many seconds. */
+  retryAfter?: string;
+  /** Absent for request/state errors that were never logged. */
+  errorClass?: BuyerFailureDiagnostic['errorClass'];
+} {
+  if (error instanceof HttpError) return { status: error.status, code: error.code, message: FAILED };
+  if (error instanceof BuyerStateError)
+    return {
+      status: { NOT_FOUND: 404, CONFLICT: 409, RATE_LIMITED: 429, INVALID: 422 }[error.code],
+      code: error.code,
+      message: FAILED,
+    };
+  if (error instanceof BuyerRejectedError) return { ...REJECTIONS[error.code], code: error.code };
+  const databaseCode = error && typeof error === 'object' && 'code' in error ? error.code : null;
+  const provider = providerReadTransient(error);
+  // Nothing was signed or stored; the same request (acceptance: the same idempotency key) can retry.
+  const busy: BuyerFailureDiagnostic['errorClass'] | undefined =
+    databaseCode === '55P03'
+      ? 'DatabaseLockTimeout'
+      : error instanceof ShopDayChangedError
+        ? 'ShopDayChanged'
+        : provider
+          ? 'ProviderReadUnavailable'
+          : undefined;
+  if (busy)
+    return {
+      status: 409,
+      code: 'BUSY',
+      message: 'Customization is busy. Try again in a moment.',
+      retryAfter: provider ? '2' : '1',
+      errorClass: busy,
+    };
+  return {
+    status: 503,
+    code: 'UNAVAILABLE',
+    message: FAILED,
+    errorClass:
+      databaseCode === '57014' || (error instanceof Error && error.message === 'Query read timeout')
+        ? 'DatabaseQueryTimeout'
+        : databaseCode === '42501'
+          ? 'DatabasePermissionDenied'
+          : error instanceof TypeError
+            ? 'TypeError'
+            : provider === false
+              ? 'ProviderReadUnavailable'
+              : error instanceof Error &&
+                  [
+                    'Function artifact evidence invalid or mismatched',
+                    'Buyer acceptance release unavailable',
+                    'Trusted release source unavailable',
+                  ].includes(error.message)
+                ? 'ReleaseEvidenceUnavailable'
+                : error instanceof EntitlementObservationUnavailableError
+                  ? 'EntitlementObservationUnavailable'
+                  : error instanceof Error && error.name === 'SignerUnavailableError'
+                    ? 'SignerUnavailable'
+                    : error instanceof Error && error.name === 'PublicConfigDriftError'
+                      ? 'PublicConfigDrift'
+                      : 'UnexpectedFailure',
+  };
+}
 
 class HttpError extends Error {
   status: number;
@@ -48,7 +184,9 @@ async function handleRequest(
   request: Request,
   services: BuyerServices | undefined,
   route: string,
-  diagnostic: (value: BuyerFailureDiagnostic) => void = (value) => logger.error('buyer_request_failed', value),
+  /** `expected` marks a 4xx outcome (buyer-actionable or BUSY): logged at info, not as a failure. */
+  diagnostic: (value: BuyerFailureDiagnostic, expected: boolean) => void = (value, expected) =>
+    expected ? logger.info('buyer_request_rejected', value) : logger.error('buyer_request_failed', value),
   timingDiagnostic: (value: BuyerTimingDiagnostic) => void = (value) =>
     logger.info('buyer_request_timing', { timing: value }),
 ): Promise<Response> {
@@ -140,103 +278,51 @@ async function handleRequest(
     }
     throw new HttpError(404, 'NOT_FOUND');
   } catch (error) {
-    if (!(error instanceof HttpError) && !(error instanceof BuyerStateError)) {
-      const collection = route.split('/')[0] ?? 'request';
-      const buyerStage = [
-        'config',
-        'sessions',
-        'quote-proposals',
-        'quotes',
-        'designs',
-        'cart-applications',
-        'cart-state',
-      ].includes(collection)
-        ? (collection as BuyerFailureDiagnostic['buyerStage'])
-        : 'request';
-      const databaseCode = error && typeof error === 'object' && 'code' in error ? error.code : null;
-      const errorClass: BuyerFailureDiagnostic['errorClass'] =
-        error instanceof Error && error.message === 'REVIEW_REQUIRED'
-          ? 'ReviewRequired'
-          : databaseCode === '55P03'
-            ? 'DatabaseLockTimeout'
-            : databaseCode === '57014' || (error instanceof Error && error.message === 'Query read timeout')
-              ? 'DatabaseQueryTimeout'
-              : databaseCode === '42501'
-                ? 'DatabasePermissionDenied'
-                : error instanceof TypeError
-                  ? 'TypeError'
-                  : error instanceof Error && ['ShopContextError', 'CatalogContextError'].includes(error.name)
-                    ? 'ProviderReadUnavailable'
-                    : error instanceof Error &&
-                        [
-                          'Function artifact evidence invalid or mismatched',
-                          'Buyer acceptance release unavailable',
-                          'Trusted release source unavailable',
-                        ].includes(error.message)
-                      ? 'ReleaseEvidenceUnavailable'
-                      : error instanceof Error && error.name === 'EntitlementObservationUnavailableError'
-                        ? 'EntitlementObservationUnavailable'
-                        : error instanceof Error && error.name === 'SignerUnavailableError'
-                          ? 'SignerUnavailable'
-                          : error instanceof Error && error.name === 'PublicConfigDriftError'
-                            ? 'PublicConfigDrift'
-                            : 'UnexpectedFailure';
+    const failure = classifyFailure(error);
+    if (failure.errorClass) {
       // Whitelisted classes/stages only: no exception message/stack, body, URL,
       // capability or signed carriers enter diagnostics or the public response.
       try {
+        const collection = route.split('/')[0] ?? 'request';
+        const buyerStage = [
+          'config',
+          'sessions',
+          'quote-proposals',
+          'quotes',
+          'designs',
+          'cart-applications',
+          'cart-state',
+        ].includes(collection)
+          ? (collection as BuyerFailureDiagnostic['buyerStage'])
+          : 'request';
         const proposalStage =
           proposalFailureStage(error) ??
           (route === 'quote-proposals' && request.method === 'POST' ? 'request-setup' : undefined);
-        diagnostic({
-          correlationId: requestId,
-          buyerStage,
-          errorClass,
-          ...(proposalStage === undefined ? {} : { proposalStage }),
-        });
+        diagnostic(
+          {
+            correlationId: requestId,
+            buyerStage,
+            errorClass: failure.errorClass,
+            ...(proposalStage === undefined ? {} : { proposalStage }),
+          },
+          failure.status < 500,
+        );
       } catch {
         /* Diagnostics cannot change settlement. */
       }
     }
-    const code =
-      error instanceof HttpError
-        ? error.code
-        : error instanceof BuyerStateError
-          ? error.code
-          : error instanceof Error && error.message === 'REVIEW_REQUIRED'
-            ? 'REVIEW_REQUIRED'
-            : error instanceof Error && error.message === 'fresh recognized entitlement required'
-              ? 'ENTITLEMENT_DENIED'
-              : 'UNAVAILABLE';
-    const status =
-      error instanceof HttpError
-        ? error.status
-        : code === 'RATE_LIMITED'
-          ? 429
-          : code === 'ENTITLEMENT_DENIED'
-            ? 403
-            : ['REVIEW_REQUIRED', 'CONFLICT'].includes(code)
-              ? 409
-              : code === 'NOT_FOUND'
-                ? 404
-                : code === 'INVALID'
-                  ? 422
-                  : 503;
-    const lockTimeout = !!error && typeof error === 'object' && 'code' in error && error.code === '55P03';
-    const failure = respond(
+    const response = respond(
       {
-        code,
+        code: failure.code,
         ...(error instanceof BuyerAcceptanceDeclinedError ? { acceptanceOutcome: 'declined' as const } : {}),
-        message:
-          code === 'REVIEW_REQUIRED'
-            ? 'Prices or selections changed. Review the complete customization again.'
-            : 'Customization request could not be completed.',
+        message: failure.message,
         requestId,
+        ...(failure.retryAfter ? { retryable: true } : {}),
       },
-      status,
+      failure.status,
     );
-    // Another acceptance held the signing fence past lock_timeout; nothing was signed or stored.
-    if (lockTimeout) failure.headers.set('Retry-After', '1');
-    return failure;
+    if (failure.retryAfter) response.headers.set('Retry-After', failure.retryAfter);
+    return response;
   } finally {
     try {
       const timing = proposalTiming(

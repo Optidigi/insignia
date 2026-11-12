@@ -330,3 +330,59 @@ for (const [status, code, outcome, expected] of [
     });
   });
 }
+
+/** Scripted private responses after one session grant; records each private call's path and body. */
+function scripted(responses: (() => Response)[]) {
+  const calls: { path: string; body: Record<string, unknown> }[] = [];
+  const fetchImpl: typeof fetch = async (input, init) => {
+    if (requestUrl(input).includes('/sessions'))
+      return Response.json({
+        capability: 'cap.def',
+        sessionId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        expiresAt: new Date(Date.now() + 60000).toISOString(),
+      });
+    calls.push({
+      path: new URL(requestUrl(input), 'https://shop.invalid').pathname,
+      body: jsonRecord(String(init?.body)),
+    });
+    return required(responses[calls.length - 1] ?? responses.at(-1))();
+  };
+  return { calls, api: createBuyerApi({ proxyBase: '/apps/insignia', productId: '12', fetchImpl }) };
+}
+const busy =
+  (retryAfter = '0') =>
+  () =>
+    Response.json(
+      { code: 'BUSY', message: 'Busy', requestId: 'r', retryable: true },
+      { status: 409, headers: { 'Retry-After': retryAfter } },
+    );
+const review = () => Response.json({ code: 'REVIEW_REQUIRED', message: 'Review', requestId: 'r' }, { status: 409 });
+const accept = 'quote-proposals/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/accept';
+
+test('acceptance retries a BUSY response twice with the same idempotent command, then surfaces it', async () => {
+  const { api, calls } = scripted([busy()]);
+  await assert.rejects(api.private(accept, { hash: 'h', idempotencyKey: 'k1' }), { status: 409, code: 'BUSY' });
+  assert.equal(calls.length, 3);
+  assert.deepEqual(new Set(calls.map((call) => JSON.stringify(call))).size, 1, 'every retry repeats the same command');
+  assert.equal(calls[0]?.body.idempotencyKey, 'k1');
+});
+
+test('acceptance honours Retry-After before retrying and returns the next outcome', async () => {
+  const { api, calls } = scripted([busy('1'), review]);
+  const started = Date.now();
+  await assert.rejects(api.private(accept, { hash: 'h', idempotencyKey: 'k2' }), { code: 'REVIEW_REQUIRED' });
+  assert.ok(Date.now() - started >= 1000, 'waited for Retry-After');
+  assert.equal(calls.length, 2);
+});
+
+test('only acceptance BUSY is retried automatically', async () => {
+  const proposal = scripted([busy()]);
+  await assert.rejects(proposal.api.private('quote-proposals', {}), { code: 'BUSY' });
+  assert.equal(proposal.calls.length, 1);
+  const reviewed = scripted([review]);
+  await assert.rejects(reviewed.api.private(accept, { hash: 'h', idempotencyKey: 'k3' }), { code: 'REVIEW_REQUIRED' });
+  assert.equal(reviewed.calls.length, 1);
+  const outage = scripted([() => new Response('<html>theme</html>', { status: 500 })]);
+  await assert.rejects(outage.api.private(accept, { hash: 'h', idempotencyKey: 'k4' }), { status: 500 });
+  assert.equal(outage.calls.length, 1);
+});

@@ -492,6 +492,23 @@ The buyer flow is implemented by `server/buyer/http.ts` behind `pages/api/artwor
 
 Admin contracts cover draft get/save/publish/copy, authorized artwork inspection/download/attachment/lock, order queries and plan-state refresh. Commands have tenant/user context derived outside the body. Safe defaults: 400 malformed, 401 invalid capability/auth, 403 entitlement/permission, 409 stale/concurrent/review-needed, 422 domain-invalid, 429 throttled, 503 authoritative dependency unavailable.
 
+**Buyer error contract (owner decision, 12 November 2026, #336).** Shopify's app proxy replaces every app 5xx with a bare HTTP 500 (no JSON, sometimes the theme's HTML) while 4xx bodies and headers pass through. Buyer responses are therefore 4xx for every condition the buyer can act on or a retry clears; the body is `{code, message, requestId}` with a safe English `message` (the Designer localizes by `code`):
+
+| Condition | Status | `code` |
+|---|---|---|
+| Product configuration republished, price or selection changed, sold out | 409 | `REVIEW_REQUIRED` (`acceptanceOutcome: "declined"` after a committed decline) |
+| Country outside the ISO snapshot, country outside the primary Market, unsupported shop/presentment currency, EUR outside a qualified Netherlands shop | 422 | `UNSUPPORTED_MARKET` |
+| Artwork expired, rejected or not usable through the quote window | 409 | `ARTWORK_EXPIRED` |
+| Custom position not allowed or outside the movement area for a selected variant | 422 | `POSITION_INVALID` |
+| Product archived, deleted or unpublished from Insignia, selected variant deleted (stock is read first, as in acceptance) | 410 | `PRODUCT_UNAVAILABLE` |
+| `GET /v1/config` for a selected setup without `country` | 400 | `COUNTRY_REQUIRED` |
+| Recognized entitlement denied | 403 | `ENTITLEMENT_DENIED` |
+| Owner's artwork upload quota (`/api/artwork/guest`) | 429 + `Retry-After` | `RATE_LIMITED` |
+| Transient: signing-fence `lock_timeout`, shop-local day changed between preparing and signing, Shopify throttling/timeout/5xx | 409 + `Retry-After` | `BUSY`, with `retryable: true` |
+| Anything else | 503 | `UNAVAILABLE` |
+
+`retryable: true` appears only on `BUSY` and means the identical request may be repeated after `Retry-After` seconds. The storefront repeats an acceptance (idempotent by its key) on `BUSY` at most twice, waiting `Retry-After` plus up to 250 ms jitter; it retries nothing else automatically. Expected 4xx outcomes are logged at info as `buyer_request_rejected` with their diagnostic class (`BUSY` keeps `DatabaseLockTimeout`, `ShopDayChanged` or `ProviderReadUnavailable`); only 503s are logged at error as `buyer_request_failed`. Shop-wide artwork ceilings remain 503: they sit far above legitimate traffic.
+
 ### 8.4 Acceptance and cart application
 
 Read the current cart, normalize its Insignia subset, and construct the *desired entire subset*, including the newly configured group. Retained groups remain in the complete acceptance vector; ordinary cart items stay untouched. The server verifies resources and current pricing independently of the browser's amounts.
@@ -501,7 +518,7 @@ On acceptance, recheck proposal expiry/hash, current publication pointers, entit
 **Owner decisions, 10 November 2026 (buyer acceptance performance).** These supersede earlier wording that required provider re-reads inside the acceptance fence or freshly verified billing at every issuance:
 
 - A quote proposal is display-only. It skips release and Function verification (trusted release record, public configuration readback, Function ownership); acceptance and renewal, which sign, keep them. The trusted release record keeps its exact 30-second freshness, applied at the signing instant; it is not widened. While buyers are active (a proposal was created in the last five minutes; owner decision, 11 November 2026, replacing two minutes), the server refreshes that record in the background, at most once per shop per 25 seconds and single-flight with acceptance, so acceptance usually finds a fresh record. Acceptance that still finds it stale collects synchronously and fails closed without one.
-- Acceptance performs its provider reads once, before the shop-row lock: subscription, shop context, the one contextual price lookup per signing, primary Market, stock, public configuration, Function ownership and release evidence. The proposal hash binds that fresh pass; a changed price or context returns review before any readiness work. Inside the lock it re-checks only stored facts (installation generation, authorization epoch, effective publication, idempotency and buyer command, signing key) and observation freshness, then signs. A provider-side change in the seconds between that read and signing is accepted. The lock wait is bounded (`lock_timeout` 2 s) and returns a retryable 503 with `Retry-After`.
+- Acceptance performs its provider reads once, before the shop-row lock: subscription, shop context, the one contextual price lookup per signing, primary Market, stock, public configuration, Function ownership and release evidence. The proposal hash binds that fresh pass; a changed price or context returns review before any readiness work. Inside the lock it re-checks only stored facts (installation generation, authorization epoch, effective publication, idempotency and buyer command, signing key) and observation freshness, then signs. A provider-side change in the seconds between that read and signing is accepted. The lock wait is bounded (`lock_timeout` 2 s) and returns 409 `BUSY` with `retryable: true` and `Retry-After` (§8.3).
 - A shop's Partner subscription read is reused for 60 seconds (single-flight). A cancelled merchant can therefore receive new quotes for up to 60 seconds after cancellation; already issued offers are honored as before.
 - `GET /v1/config` reuses its provider and wording reads for 30 seconds per shop, installation, product, published revision/content hash and country, re-issues short-lived preview URLs per request, limits uncached reads per shop (burst 60, 2 per second; excess returns 429) and reports `Server-Timing`. Displayed prices may be up to 30 seconds old; proposal and acceptance re-check the revision and re-price.
 
@@ -666,7 +683,7 @@ Post-order upload uses the same inspection pipeline. Once USABLE, an authenticat
 
 | Failure | New commercial activity | Existing/purchased activity |
 |---|---|---|
-| Shopify pricing/context unavailable | No authoritative proposal/acceptance; 503, retryable | Existing offline offer may validate if its required Shopify Function inputs are available |
+| Shopify pricing/context unavailable | No authoritative proposal/acceptance; throttling, timeouts and provider 5xx are 409 `BUSY` with `Retry-After` (§8.3), other provider failures 503 | Existing offline offer may validate if its required Shopify Function inputs are available |
 | PostgreSQL unavailable | No new quote, signing issue, upload grant or successful webhook acknowledgement | Existing Function authorization can continue independently; no invented snapshot until DB recovery/reconciliation |
 | R2/inspection worker delayed | Artwork remains unusable; buyer sees processing | Existing retained originals remain accessible if storage responds; optional previews may degrade |
 | Invalid/stale/mixed authorization set | No accepted customized checkout; repair path shown | No customization production entitlement inferred from plain/invalid properties |

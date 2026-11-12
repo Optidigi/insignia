@@ -54,8 +54,8 @@ const map = (r: Row): ArtworkRecord => ({
   manifest: r.manifest,
   rejection: r.rejection,
 });
-const fail = (code: ConstructorParameters<typeof ArtworkError>[0]): never => {
-  throw new ArtworkError(code);
+const fail = (code: ConstructorParameters<typeof ArtworkError>[0], retryAfterSeconds?: number): never => {
+  throw new ArtworkError(code, retryAfterSeconds);
 };
 function validManifest(m: ArtworkManifest, row: Row) {
   return (
@@ -171,18 +171,33 @@ export function createArtworkRepository(pool: Pool): ArtworkStore {
               owner_unfinished: string;
               owner_admissions: string;
               owner_daily: string;
+              owner_unfinished_free_at: Date | null;
+              owner_daily_free_at: Date | null;
             }>(
               `SELECT count(*) FILTER(WHERE ${unfinished}) AS unfinished,count(*) FILTER(WHERE ${today}) AS admissions,coalesce(sum(declared_bytes) FILTER(WHERE ${today}),0) AS daily,coalesce(sum(declared_bytes) FILTER(WHERE state!='DELETED'),0) AS retained,
-                count(*) FILTER(WHERE owner_hash=$3 AND ${unfinished}) AS owner_unfinished,count(*) FILTER(WHERE owner_hash=$3 AND ${today}) AS owner_admissions,coalesce(sum(declared_bytes) FILTER(WHERE owner_hash=$3 AND ${today}),0) AS owner_daily
+                count(*) FILTER(WHERE owner_hash=$3 AND ${unfinished}) AS owner_unfinished,count(*) FILTER(WHERE owner_hash=$3 AND ${today}) AS owner_admissions,coalesce(sum(declared_bytes) FILTER(WHERE owner_hash=$3 AND ${today}),0) AS owner_daily,
+                min(CASE WHEN state='UPLOADING' THEN upload_until ELSE $2::timestamptz+interval '1 minute' END) FILTER(WHERE owner_hash=$3 AND ${unfinished}) AS owner_unfinished_free_at,
+                min(collected_at) FILTER(WHERE owner_hash=$3 AND ${today})+interval '24 hours' AS owner_daily_free_at
               FROM artwork_assets WHERE shop_id=$1`,
               [input.shopId, input.collectedAt, input.ownerHash],
             )
           ).rows[0] ?? fail('CONFLICT');
         const { owner, shop } = ARTWORK_POLICY;
-        if (
-          Number(totals.owner_unfinished) >= owner.unfinished ||
+        // The owner's own quota is a buyer-visible rate limit, retryable once an upload frees up
+        // (an inspection usually finishes within a minute; an upload link within its window).
+        const unfinishedLimit = Number(totals.owner_unfinished) >= owner.unfinished;
+        const dailyLimit =
           Number(totals.owner_admissions) >= owner.dailyUploads ||
-          Number(totals.owner_daily) + input.declaredBytes > owner.dailyBytes ||
+          Number(totals.owner_daily) + input.declaredBytes > owner.dailyBytes;
+        if (unfinishedLimit || dailyLimit) {
+          const freeAt = Math.max(
+            unfinishedLimit ? +(totals.owner_unfinished_free_at ?? 0) : 0,
+            dailyLimit ? +(totals.owner_daily_free_at ?? 0) : 0,
+          );
+          fail('RATE_LIMITED', Math.max(1, Math.ceil((freeAt - +input.collectedAt) / 1000)));
+        }
+        // Shop-wide ceilings sit far above legitimate traffic: reaching one is an outage, not a buyer limit.
+        if (
           Number(totals.unfinished) >= shop.unfinished ||
           Number(totals.admissions) >= shop.dailyUploads ||
           Number(totals.daily) + input.declaredBytes > shop.dailyBytes ||

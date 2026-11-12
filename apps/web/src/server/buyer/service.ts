@@ -4,6 +4,7 @@ import {
   type ArtworkScope,
   acceptQuote,
   BuyerAcceptanceDeclinedError,
+  BuyerRejectedError,
   localDay,
   materialHash,
   proposeQuote,
@@ -38,7 +39,7 @@ import { noteCache, proposalStage } from './diagnostics.ts';
 import { validateBuyerProductionPositions } from './production-position.ts';
 import { createRevisionReads } from './revision-cache.ts';
 
-class BuyerPrecommitReviewError extends Error {
+class BuyerPrecommitReviewError extends BuyerRejectedError {
   constructor() {
     super('REVIEW_REQUIRED');
   }
@@ -54,7 +55,7 @@ const notFound = (): never => {
   throw new BuyerStateError('NOT_FOUND');
 };
 const review = (): never => {
-  throw new Error('REVIEW_REQUIRED');
+  throw new BuyerRejectedError('REVIEW_REQUIRED');
 };
 const desired = (request: QuoteRequest): BuyerDesiredGroup[] =>
   request.groups.map(({ group }) => {
@@ -167,6 +168,9 @@ export function createBuyerServices(input: {
           .some((group) => group.variants.some((variant) => available.get(variant.variantId) === false))
       )
         throw new BuyerPrecommitReviewError();
+      // A variant missing from the product was deleted: the buyer chooses another one.
+      if (current.variants.length === available.size && selectedIds.some((variantId) => !available.has(variantId)))
+        throw new BuyerRejectedError('PRODUCT_UNAVAILABLE', 'selected variant no longer exists');
       if (
         current.variants.length !== available.size ||
         groups
@@ -221,7 +225,8 @@ export function createBuyerServices(input: {
       for (const placement of group.design.placements) {
         if (placement.artwork.kind !== 'revision') continue;
         const asset = await input.core.artwork.get({ ...scope, kind: 'guest' }, placement.artwork.revisionId);
-        if (!asset || asset.state !== 'USABLE' || +asset.expiresAt <= +clock()) return review();
+        if (!asset || asset.state !== 'USABLE' || +asset.expiresAt <= +clock())
+          throw new BuyerRejectedError('ARTWORK_EXPIRED');
         until = Math.min(until, +asset.expiresAt);
       }
     return new Date(until);
@@ -284,7 +289,7 @@ export function createBuyerServices(input: {
       const country = new URL(request.url).searchParams.get('country');
       const contextual = !!country && /^[A-Z]{2}$/.test(country);
       if (presentation.selectedSetup && (!country || !/^[A-Z]{2}$/.test(country)))
-        throw new Error('Country context required');
+        throw new BuyerRejectedError('COUNTRY_REQUIRED', 'Country context required');
       // Selection reads complete published/contextual facts. Purchase authority is
       // checked by proposal/acceptance, not by opening the editor. Provider reads are reused for
       // 30 s per exact revision and country; proposal and acceptance re-check and re-price.
@@ -499,7 +504,12 @@ export function createBuyerServices(input: {
     },
     async design(scope: BuyerScope, id: string, body: { expectedVersion: number; group: BuyerDesiredGroup }) {
       const revision = await input.core.acceptedQuotes.getEffective(scope.shopId, body.group.productId);
-      if (!revision) return review();
+      if (
+        !revision ||
+        revision.config.revisionId !== body.group.configRevisionId ||
+        revision.config.revisionContentHash !== body.group.revisionContentHash
+      )
+        return review();
       normalizeCustomizationGroups(
         [{ ...body.group, shopId: scope.shopId, version: 'm2-customization-group-v1' }],
         [revision.config],
@@ -533,8 +543,9 @@ export function createBuyerServices(input: {
         proposalStage('prepare', () => proposeQuote(request, ports)),
         proposalStage('availability', () => assertAvailable(scope, body.groups)),
       ]);
-      if (prepared.status === 'rejected') throw prepared.reason;
+      // Stock denial (sold out, deleted variant) takes precedence, as in acceptance.
       if (stock.status === 'rejected') throw stock.reason;
+      if (prepared.status === 'rejected') throw prepared.reason;
       const candidate = prepared.value,
         hash = materialHash(candidate.quote);
       const retainPrivateUntil = await proposalStage('private-retention', () => privateUntil(scope, body.groups));

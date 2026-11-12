@@ -1,7 +1,20 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { BuyerAcceptanceDeclinedError, EntitlementObservationUnavailableError } from '@insignia/application';
+import {
+  BuyerAcceptanceDeclinedError,
+  BuyerRejectedError,
+  CatalogContextUnavailable,
+  EntitlementObservationUnavailableError,
+  ShopDayChangedError,
+} from '@insignia/application';
 import type { BuyerFailureDiagnostic } from '@insignia/observability';
+import {
+  ContextualPricingError,
+  PrimaryMarketError,
+  ShopContextError,
+  ShopifyAdminUnavailableError,
+  VariantAvailabilityError,
+} from '@insignia/shopify';
 import { handleBuyerRequest } from '../src/server/buyer/http.ts';
 import { buyerFixture, coreFixture, record } from './http-fixtures.mts';
 
@@ -65,7 +78,7 @@ test('buyer failure diagnostics correlate safely without request or exception pa
     (value) => seen.push(value),
   );
   const body = record(await result.json());
-  assert.equal(result.status, 503);
+  assert.equal(result.status, 409);
   assert.deepEqual(seen, [{ correlationId: body.requestId, buyerStage: 'config', errorClass: 'DatabaseLockTimeout' }]);
   assert.equal(JSON.stringify(seen).includes(secret), false);
 });
@@ -124,7 +137,7 @@ test('required cart review is diagnosed as a finite expected class without leaki
         },
       }).buyers,
       cartState: async () => {
-        throw Object.assign(new Error('REVIEW_REQUIRED'), { cause: new Error(secret), payload: secret });
+        throw Object.assign(new BuyerRejectedError('REVIEW_REQUIRED'), { cause: new Error(secret), payload: secret });
       },
     }),
     'cart-state',
@@ -296,4 +309,101 @@ test('empty or malformed quote selections stop before proposal credential/provid
     assert.equal(response.status, 400);
     assert.equal(proposals, 0, 'rejected selections never enter the provider/credential composition');
   }
+});
+
+/** Shopify's app proxy turns every app 5xx into a bare 500, so only 4xx carry `code` and `Retry-After` (#336). */
+const failure = async (error: unknown) => {
+  const seen: { value: BuyerFailureDiagnostic; expected: boolean }[] = [];
+  const response = await handleBuyerRequest(
+    new Request('https://app.invalid/v1/config?productId=1'),
+    buyerFixture({
+      config: async () => {
+        throw error;
+      },
+    }),
+    'config',
+    (value, expected) => seen.push({ value, expected }),
+  );
+  const body = record(await response.json());
+  assert.equal(typeof body.message, 'string');
+  assert.ok(body.requestId);
+  return {
+    status: response.status,
+    code: body.code,
+    retryable: body.retryable,
+    retryAfter: response.headers.get('Retry-After'),
+    logged: seen.map(({ value, expected }) => ({ errorClass: value.errorClass, expected })),
+  };
+};
+
+test('buyer-actionable conditions are specific 4xx responses logged as expected outcomes', async () => {
+  const cases = [
+    ['REVIEW_REQUIRED', 409, 'ReviewRequired'],
+    ['UNSUPPORTED_MARKET', 422, 'UnsupportedMarket'],
+    ['ARTWORK_EXPIRED', 409, 'ArtworkExpired'],
+    ['POSITION_INVALID', 422, 'PositionInvalid'],
+    ['PRODUCT_UNAVAILABLE', 410, 'ProductUnavailable'],
+    ['COUNTRY_REQUIRED', 400, 'CountryRequired'],
+    ['ENTITLEMENT_DENIED', 403, 'EntitlementDenied'],
+  ] as const;
+  for (const [code, status, errorClass] of cases)
+    assert.deepEqual(await failure(new BuyerRejectedError(code)), {
+      status,
+      code,
+      retryable: undefined,
+      retryAfter: null,
+      logged: [{ errorClass, expected: true }],
+    });
+});
+
+test('transient conditions are 409 BUSY with a retryable flag and Retry-After, keeping their class', async () => {
+  const cases = [
+    [Object.assign(new Error('canceling statement due to lock timeout'), { code: '55P03' }), 'DatabaseLockTimeout'],
+    [new ShopDayChangedError(), 'ShopDayChanged'],
+    [new ContextualPricingError('throttled'), 'ProviderReadUnavailable'],
+    [new ContextualPricingError('network_or_timeout'), 'ProviderReadUnavailable'],
+    [new ContextualPricingError('provider_unavailable'), 'ProviderReadUnavailable'],
+    [new PrimaryMarketError('network'), 'ProviderReadUnavailable'],
+    [new PrimaryMarketError('provider_error'), 'ProviderReadUnavailable'],
+    [new VariantAvailabilityError('provider_unavailable'), 'ProviderReadUnavailable'],
+    [new ShopContextError('provider_error'), 'ProviderReadUnavailable'],
+    [new CatalogContextUnavailable('stale'), 'ProviderReadUnavailable'],
+    [new ShopifyAdminUnavailableError('Catalog read failed'), 'ProviderReadUnavailable'],
+  ] as const;
+  for (const [error, errorClass] of cases) {
+    const result = await failure(error);
+    assert.deepEqual(
+      result,
+      {
+        status: 409,
+        code: 'BUSY',
+        retryable: true,
+        retryAfter: result.retryAfter && /^[1-9]$/.test(result.retryAfter) ? result.retryAfter : 'a small integer',
+        logged: [{ errorClass, expected: true }],
+      },
+      error.message,
+    );
+  }
+});
+
+test('non-transient provider and unexpected failures stay 503 UNAVAILABLE and are logged as failures', async () => {
+  const cases = [
+    [new ContextualPricingError('credential_missing'), 'ProviderReadUnavailable'],
+    [new PrimaryMarketError('invalid_shape'), 'ProviderReadUnavailable'],
+    [new CatalogContextUnavailable('wrong_identity'), 'ProviderReadUnavailable'],
+    [new Error('Catalog read failed'), 'UnexpectedFailure'],
+    [new Error('REVIEW_REQUIRED'), 'UnexpectedFailure'],
+  ] as const;
+  for (const [error, errorClass] of cases)
+    assert.deepEqual(
+      await failure(error),
+      {
+        status: 503,
+        code: 'UNAVAILABLE',
+        retryable: undefined,
+        retryAfter: null,
+        logged: [{ errorClass, expected: false }],
+      },
+      error.message,
+    );
 });

@@ -13,6 +13,7 @@ import {
   type CatalogVariantContextSnapshot,
   resolveFreshCatalogContext,
 } from '../pricing/catalog-context.js';
+import { BuyerRejectedError, ShopDayChangedError } from './buyer-errors.js';
 import { materialHash } from './material.js';
 
 export type ActiveQuoteTenant = {
@@ -149,7 +150,7 @@ export type BuyerAcceptanceResolutionInput = {
   requestDigest: string;
   buyerCommand: BuyerAcceptanceFence;
 };
-export class BuyerAcceptanceDeclinedError extends Error {
+export class BuyerAcceptanceDeclinedError extends BuyerRejectedError {
   readonly acceptanceOutcome = 'declined' as const;
   constructor() {
     super('REVIEW_REQUIRED');
@@ -260,7 +261,7 @@ function requireEntitlement(value: QuoteEntitlement): asserts value is QuoteEnti
 } {
   if (value.freshness !== 'fresh') throw new EntitlementObservationUnavailableError();
   if (!value.active || !value.recognizedPolicyId || !value.policyVersion || value.qualifyingUsageDisposition === 'DENY')
-    throw new Error('fresh recognized entitlement required');
+    throw new BuyerRejectedError('ENTITLEMENT_DENIED', 'fresh recognized entitlement required');
   if (value.qualifyingUsageDisposition !== 'NOT_METERED') throw new Error('Lean recurring-only entitlement required');
 }
 
@@ -429,15 +430,16 @@ async function usableArtwork(
       item.installationGeneration !== request.installationGeneration ||
       item.kind !== choice.kind ||
       item.id !== choice.id ||
-      item.status !== 'usable' ||
       !Number.isSafeInteger(item.lastFullyUsableLocalDay) ||
-      item.lastFullyUsableLocalDay < throughDay ||
       !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(item.observedAt) ||
       !Number.isFinite(observed) ||
       observed > now.getTime() ||
       now.getTime() - observed > 5 * 60 * 1000
     )
       throw new Error('artwork unavailable through complete quote window');
+    // Expired, rejected or still-inspecting artwork: the buyer uploads it again.
+    if (item.status !== 'usable' || item.lastFullyUsableLocalDay < throughDay)
+      throw new BuyerRejectedError('ARTWORK_EXPIRED', 'artwork unavailable through complete quote window');
     checks.push({
       choiceSha256: identityDigest(`${choice.kind}:${choice.id}`),
       kind: choice.kind,
@@ -476,11 +478,13 @@ function validatedRequest(
     !/^[1-9][0-9]*$/.test(request.installationGeneration) ||
     !request.idempotencyKey ||
     request.idempotencyKey.length > 128 ||
-    !isIsoCountry(request.country) ||
+    typeof request.country !== 'string' ||
+    !/^[A-Z]{2}$/.test(request.country) ||
     !Array.isArray(request.groups) ||
     request.groups.length === 0
   )
     throw new Error('invalid quote request');
+  if (!isIsoCountry(request.country)) throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'unsupported country');
   if (
     request.groups.length > 32 ||
     !request.capacity ||
@@ -572,8 +576,7 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
     ? await ports.readiness.observe({ quote })
     : { assertCurrent: () => ports.readiness.assertReady({ quote }) };
   return ports.store.accept(prepared.fence, async () => {
-    if (localDay(ports.clock(), quote.shopTimezone).ordinal !== quote.acceptedDay)
-      throw new Error('shop-local acceptance day changed before signing');
+    if (localDay(ports.clock(), quote.shopTimezone).ordinal !== quote.acceptedDay) throw new ShopDayChangedError();
     // Pure re-check: contextual prices observed before the fence must still be fresh at signing.
     for (const product of new Set(quote.catalogSnapshots.map((snapshot) => snapshot.productId))) {
       const snapshots = quote.catalogSnapshots.filter((snapshot) => snapshot.productId === product);
@@ -590,8 +593,7 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
       );
     }
     await readiness.assertCurrent();
-    if (localDay(ports.clock(), quote.shopTimezone).ordinal !== quote.acceptedDay)
-      throw new Error('shop-local acceptance day changed before signing');
+    if (localDay(ports.clock(), quote.shopTimezone).ordinal !== quote.acceptedDay) throw new ShopDayChangedError();
     const authorization = await ports.authorization.issue({ quote });
     validAuthorization(quote, authorization);
     return { quote, authorization };
@@ -648,12 +650,16 @@ async function prepareValidatedQuote(
     );
     return revisions.map((revision, index) => {
       const product = products[index];
+      if (!revision)
+        throw new BuyerRejectedError('PRODUCT_UNAVAILABLE', 'no effective published revision for requested product');
       if (
-        !revision ||
         revision.config.shopId !== request.shopId ||
         revision.config.productId !== product ||
         !revision.configId ||
-        !revision.operationId ||
+        !revision.operationId
+      )
+        throw new Error('no effective published revision for requested product');
+      if (
         groups.some(
           (group) =>
             group.productId === product &&
@@ -661,7 +667,7 @@ async function prepareValidatedQuote(
               group.revisionContentHash !== revision.config.revisionContentHash),
         )
       )
-        throw new Error('no effective published revision for requested product');
+        throw new BuyerRejectedError('REVIEW_REQUIRED', 'product configuration republished');
       return revision;
     });
   };
@@ -708,7 +714,8 @@ async function prepareValidatedQuote(
   if (revisions.some((revision) => revision.config.shopCurrency !== shop.currency))
     throw new Error('published shop currency mismatch');
   // The Market check ran for the published (= observed shop) currency; Lean requires presentment to match it.
-  if (presentment !== shop.currency) throw new Error('Lean primary-Market context unavailable');
+  if (presentment !== shop.currency)
+    throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'Lean primary-Market context unavailable');
   settledValue(leanResult);
   const exponent = ports.currency.exponent(presentment);
   const shopExponent = ports.currency.exponent(shop.currency);

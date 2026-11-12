@@ -1,4 +1,5 @@
 import { createHash, createPublicKey, verify } from 'node:crypto';
+import { BuyerRejectedError } from '@insignia/application';
 import {
   checkCompleteSet,
   decodeEnvelope,
@@ -548,7 +549,8 @@ export class PgAcceptedQuoteRepository {
             AND p.observed_projection = p.expected_projection
             AND p.observed_projection_digest = p.expected_projection_digest
           FOR UPDATE OF c`.execute(transaction);
-        if (!effective.rows[0]) throw new Error('effective publication changed before quote acceptance');
+        if (!effective.rows[0])
+          throw new BuyerRejectedError('REVIEW_REQUIRED', 'effective publication changed before quote acceptance');
       }
 
       const result = await commit();

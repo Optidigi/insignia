@@ -1,4 +1,4 @@
-import type { QuoteAuthorityPorts } from '@insignia/application';
+import { BuyerRejectedError, type QuoteAuthorityPorts } from '@insignia/application';
 import { PRIMARY_MARKET_API_VERSION, PRIMARY_MARKET_FRESHNESS_MS, type PrimaryMarketSnapshot } from '@insignia/shopify';
 
 export type LeanMarketAuthority = {
@@ -104,15 +104,17 @@ export function createLeanPrimaryMarketAdmission(input: {
   return {
     async assertSupported(target) {
       if (target.shopCurrency !== target.currency || !['USD', 'EUR'].includes(target.currency))
-        throw new Error('Lean primary-Market context unavailable');
+        throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'Lean primary-Market context unavailable');
       const profile = input.eurQualification;
       const now = () => +input.clock();
+      // EUR is sold only to the Netherlands, and only by a shop qualified for it.
+      if (target.currency === 'EUR' && (!profile || target.country !== 'NL'))
+        throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'EUR Netherlands qualification unavailable');
       if (
         target.currency === 'EUR' &&
         (!profile ||
           profile.activeVersionRef !== input.expectedRelease.activeVersionRef ||
           profile.functionsSourceCommit !== input.expectedRelease.functionsSourceCommit ||
-          target.country !== 'NL' ||
           profile.shopId !== target.tenant.shopId ||
           profile.shopifyShopGid !== target.tenant.shopifyShopGid ||
           profile.installationGeneration !== target.tenant.installationGeneration ||
@@ -145,7 +147,6 @@ export function createLeanPrimaryMarketAdmission(input: {
         observed.shopifyShopId !== before.shopifyShopId ||
         observed.shopCurrency !== target.currency ||
         observed.primaryMarketId !== `gid://shopify/Market/${target.marketId}` ||
-        !observed.countryCodes.includes(target.country) ||
         !Number.isFinite(at) ||
         !Number.isFinite(observedAt) ||
         !Number.isFinite(freshUntil) ||
@@ -155,6 +156,9 @@ export function createLeanPrimaryMarketAdmission(input: {
         at >= freshUntil
       )
         throw new Error('Lean primary-Market context unavailable');
+      // The buyer's country is outside the shop's primary Market.
+      if (!observed.countryCodes.includes(target.country))
+        throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'Lean primary-Market context unavailable');
     },
   };
 }

@@ -169,10 +169,16 @@ async function respondArtwork(
       EXPIRED: 410,
       NOT_USABLE: 409,
       CONFLICT: 409,
+      // 4xx so Shopify's app proxy passes the code and Retry-After through to the storefront.
+      RATE_LIMITED: 429,
       UNAVAILABLE: 503,
     }[code];
-    return adminJson(status, {
+    const response = adminJson(status, {
+      code,
       error: code === 'UNAVAILABLE' ? 'Artwork unavailable' : `Artwork ${code.toLowerCase().replaceAll('_', ' ')}`,
     });
+    if (error instanceof ArtworkError && error.retryAfterSeconds)
+      response.headers.set('Retry-After', String(error.retryAfterSeconds));
+    return response;
   }
 }

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { ArtworkScope } from '@insignia/application';
+import { ArtworkError, type ArtworkScope } from '@insignia/application';
 import { type ArtworkHttpServices, handleArtworkRequest } from '../../src/server/artwork/http.ts';
 import { artworkAdmission, artworkFixture, artworkStatus, required } from '../http-fixtures.mts';
 
@@ -253,4 +253,20 @@ test('guest begin, complete and status emit one bounded timing line each; mercha
       { operation: 'status', outcome: 'failure', httpStatus: 401, assetId, failure: 'AUTHENTICATION_REQUIRED' },
     ],
   );
+test('an exhausted upload quota is a 429 with its code and Retry-After, which the app proxy passes through (#336)', async () => {
+  const limited: ArtworkHttpServices = {
+    ...services,
+    artwork: artworkFixture({
+      begin: async () => {
+        throw new ArtworkError('RATE_LIMITED', 120);
+      },
+    }),
+  };
+  const response = await handleArtworkRequest(request({ contentType: 'image/png', byteLength: 108 }), limited, {
+    kind: 'begin',
+    audience: 'merchant',
+  });
+  assert.equal(response.status, 429);
+  assert.equal(response.headers.get('Retry-After'), '120');
+  assert.equal((await response.json()).code, 'RATE_LIMITED');
 });

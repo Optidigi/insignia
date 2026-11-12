@@ -6,6 +6,7 @@ const EVENTS = new Set([
   'admin_authentication',
   'artwork_request_timing',
   'buyer_request_failed',
+  'buyer_request_rejected',
   'buyer_request_timing',
   'customer_artwork_notification',
   'worker_started',
@@ -25,6 +26,8 @@ export type RuntimeEvent =
   | 'admin_authentication'
   | 'artwork_request_timing'
   | 'buyer_request_failed'
+  /** An expected 4xx outcome: buyer-actionable, or BUSY (transient, retryable). Logged at info. */
+  | 'buyer_request_rejected'
   | 'buyer_request_timing'
   | 'customer_artwork_notification'
   | 'worker_started'
@@ -91,6 +94,13 @@ const BUYER_STAGES = [
 ] as const;
 const BUYER_FAILURES = [
   'ReviewRequired',
+  'UnsupportedMarket',
+  'ArtworkExpired',
+  'PositionInvalid',
+  'ProductUnavailable',
+  'CountryRequired',
+  'EntitlementDenied',
+  'ShopDayChanged',
   'DatabaseLockTimeout',
   'DatabaseQueryTimeout',
   'DatabasePermissionDenied',
@@ -331,7 +341,7 @@ function eventDetails(event: RuntimeEvent, input: RuntimeLogDetails) {
       spans,
     };
   }
-  if (event === 'buyer_request_failed') {
+  if (event === 'buyer_request_failed' || event === 'buyer_request_rejected') {
     if (
       !input.buyerStage ||
       !BUYER_STAGES.includes(input.buyerStage) ||
