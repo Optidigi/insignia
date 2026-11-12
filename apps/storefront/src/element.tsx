@@ -13,7 +13,7 @@ export class InsigniaBuyer extends HTMLElement {
   private static preparationOwner?: InsigniaBuyer;
   private readonly root = this.attachShadow({ mode: 'open' });
   private generation = 0;
-  private liveFrame?: { open(): boolean; destroy(): void };
+  private liveFrame?: { open(): boolean | Promise<boolean>; destroy(): void };
   private mounting = false;
   private cancelOpening?: () => void;
   private stopBusy?: () => void;
@@ -216,40 +216,8 @@ export class InsigniaBuyer extends HTMLElement {
       },
     });
   }
-  private async mount() {
-    this.cancelIdle?.();
-    this.cancelIdle = undefined;
-    if (this.liveFrame) {
-      if (this.liveFrame.open()) return;
-      this.liveFrame.destroy();
-      this.liveFrame = undefined;
-    }
-    if (this.mounting) return;
-    const generation = this.generation;
-    const productId = this.getAttribute('product-id') ?? '';
-    const proxyBase = this.getAttribute('proxy-base') ?? '/apps/insignia';
-    const cartRoot = this.getAttribute('cart-root') ?? '/';
-    if (!/^[1-9][0-9]{0,19}$/.test(productId)) {
-      this.root.textContent = 'Customization unavailable';
-      return;
-    }
-    const prepared =
-      this.preparation?.context === this.context() &&
-      !this.preparation.controller.signal.aborted &&
-      this.preparation.expiresAt > Date.now()
-        ? this.preparation
-        : undefined;
-    if (!prepared) this.clearPreparation();
-    if (prepared?.warm?.ready) {
-      const warm = prepared.warm;
-      prepared.warm = undefined;
-      this.clearPreparation();
-      this.liveFrame = warm;
-      if (warm.open()) return;
-      warm.destroy();
-      this.liveFrame = undefined;
-    }
-    this.mounting = true;
+  /** The trigger's busy state while the Designer opens. */
+  private busy() {
     const trigger = this.querySelector<HTMLButtonElement>('button[slot="trigger"]');
     const spinner = document.createElement('span');
     spinner.setAttribute('aria-hidden', 'true');
@@ -284,6 +252,54 @@ export class InsigniaBuyer extends HTMLElement {
       trigger?.removeAttribute('aria-busy');
     };
     this.stopBusy = stopBusy;
+    return stopBusy;
+  }
+  /** Shows an existing Designer again; true when nothing else is to be opened. */
+  private async reopen(frame: NonNullable<InsigniaBuyer['liveFrame']>, generation: number) {
+    this.liveFrame = frame;
+    // A cart design re-reads its cart line before it is shown again (#397).
+    this.mounting = true;
+    const stopBusy = this.busy();
+    let opened = false;
+    try {
+      opened = await frame.open();
+    } finally {
+      stopBusy();
+      if (generation === this.generation) this.mounting = false;
+    }
+    if (opened || generation !== this.generation || this.liveFrame !== frame) return true;
+    frame.destroy();
+    this.liveFrame = undefined;
+    return false;
+  }
+  private async mount() {
+    this.cancelIdle?.();
+    this.cancelIdle = undefined;
+    if (this.mounting) return;
+    const generation = this.generation;
+    if (this.liveFrame && (await this.reopen(this.liveFrame, generation))) return;
+    const productId = this.getAttribute('product-id') ?? '';
+    const proxyBase = this.getAttribute('proxy-base') ?? '/apps/insignia';
+    const cartRoot = this.getAttribute('cart-root') ?? '/';
+    if (!/^[1-9][0-9]{0,19}$/.test(productId)) {
+      this.root.textContent = 'Customization unavailable';
+      return;
+    }
+    const prepared =
+      this.preparation?.context === this.context() &&
+      !this.preparation.controller.signal.aborted &&
+      this.preparation.expiresAt > Date.now()
+        ? this.preparation
+        : undefined;
+    if (!prepared) this.clearPreparation();
+    if (prepared?.warm?.ready) {
+      const warm = prepared.warm;
+      prepared.warm = undefined;
+      this.clearPreparation();
+      if (await this.reopen(warm, generation)) return;
+    }
+    this.mounting = true;
+    const stopBusy = this.busy();
     const opening = new AbortController();
     opening.signal.addEventListener('abort', () => prepared?.controller.abort(), { once: true });
     const pending = createDesignerModal({
