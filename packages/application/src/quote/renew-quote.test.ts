@@ -325,3 +325,46 @@ describe('immutable quote renewal', () => {
     expect(renewalStore.getOwned).not.toHaveBeenCalled();
   });
 });
+
+describe('renewal outcomes are typed for the buyer API (#336)', () => {
+  it('a changed offer is a typed review requirement', async () => {
+    const { ports, original, renewalStore, later } = await renewalFixture();
+    vi.mocked(ports.catalog.resolveVariantContext).mockImplementation(async () =>
+      original.catalogSnapshots.map((row) => ({
+        ...row,
+        amount: '11.00',
+        observedAt: later.toISOString(),
+        freshUntil: new Date(+later + 300000).toISOString(),
+      })),
+    );
+    await expect(
+      renewQuote(
+        { quoteId: original.quoteId, desired: { ...request, idempotencyKey: 'typed' } },
+        {
+          ...ports,
+          renewalStore,
+        },
+      ),
+    ).rejects.toMatchObject({ name: 'BuyerRejectedError', code: 'REVIEW_REQUIRED' });
+  });
+  it('a shop-local day change during signing is a retryable day boundary', async () => {
+    const { ports, original, renewalStore, later } = await renewalFixture();
+    let current = later;
+    ports.clock = () => current;
+    const issue = ports.authorization.issue;
+    ports.authorization.issue = async (input) => {
+      const result = await issue(input);
+      current = new Date(+later + 86_400_000);
+      return result;
+    };
+    await expect(
+      renewQuote(
+        { quoteId: original.quoteId, desired: { ...request, idempotencyKey: 'midnight' } },
+        {
+          ...ports,
+          renewalStore,
+        },
+      ),
+    ).rejects.toMatchObject({ name: 'ShopDayChangedError' });
+  });
+});

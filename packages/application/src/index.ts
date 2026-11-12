@@ -27,6 +27,7 @@ export * from './purchase/model.js';
 export * from './purchase/ordered-groups.js';
 export * from './purchase/reconcile.js';
 export * from './quote/accept-quote.js';
+export * from './quote/buyer-errors.js';
 export * from './quote/material.js';
 export * from './quote/renew-quote.js';
 export * from './shopify/admin-credential-bridge.js';

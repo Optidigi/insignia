@@ -119,6 +119,7 @@ function fixture(): Omit<Input, 'queue'> & {
       metrics: { ...createObservability().metrics, queue() {}, usageQualification() {} },
       logger: {
         info() {},
+        warn() {},
         error(event, metadata) {
           errors.push({ event, metadata });
         },
@@ -413,6 +414,7 @@ test('signing key destruction runs once per UTC day, logs only a count, and retr
       info(event, metadata) {
         infos.push({ event, metadata });
       },
+      warn() {},
       error(event, metadata) {
         input.errors.push({ event, metadata });
       },

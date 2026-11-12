@@ -503,14 +503,17 @@ test('valid Lean acceptance reads provider facts once before its lock and reject
       else if (query.includes('contextualPricing'))
         data = {
           nodes: [
-            {
-              __typename: 'ProductVariant',
-              id: 'gid://shopify/ProductVariant/222',
-              product: { id: 'gid://shopify/Product/111' },
-              contextualPricing: {
-                price: { amount: accepting && drift === 'price' ? '11.00' : '10.00', currencyCode: 'USD' },
-              },
-            },
+            // Shopify returns a null node for a deleted variant, before acceptance reads stock.
+            accepting && drift === 'deleted'
+              ? null
+              : {
+                  __typename: 'ProductVariant',
+                  id: 'gid://shopify/ProductVariant/222',
+                  product: { id: 'gid://shopify/Product/111' },
+                  contextualPricing: {
+                    price: { amount: accepting && drift === 'price' ? '11.00' : '10.00', currencyCode: 'USD' },
+                  },
+                },
           ],
         };
       else assert.fail(`Unexpected boundary query: ${query}`);
@@ -752,7 +755,15 @@ test('valid Lean acceptance reads provider facts once before its lock and reject
       await assert.rejects(accept);
       assert.equal(facts, 0);
     } else if (drift === 'stock' || drift === 'overflow' || drift === 'deleted') {
-      await assert.rejects(accept, drift === 'deleted' || drift === 'stock' ? /REVIEW_REQUIRED/ : /incomplete/);
+      await assert.rejects(
+        accept,
+        // Pricing runs first and finds no node; the buyer API answers it with 410 PRODUCT_UNAVAILABLE.
+        drift === 'deleted'
+          ? { name: 'ContextualPricingError', kind: 'missing_variant' }
+          : drift === 'stock'
+            ? /REVIEW_REQUIRED/
+            : /incomplete/,
+      );
       assert.equal(facts, 0);
     } else {
       const accepted = await accept();
@@ -1492,6 +1503,12 @@ test('production buyer reads actual primary context before Lean pricing on propo
     };
     let primaryReads = 0,
       stockReads = 0;
+    input.readVariantAvailability = async (target) => ({
+      ...target,
+      observedAt: input.clock().toISOString(),
+      freshUntil: new Date(+input.clock() + 300000).toISOString(),
+      variants: target.variantIds.map((id) => ({ id, available: true })),
+    });
     input.fetchImpl = async (_url, options) => {
       const body = record(JSON.parse(text(required(options).body)));
       assert.ok(text(body.query).trimStart().startsWith('query'), 'the production probe performs reads only');
@@ -1503,10 +1520,19 @@ test('production buyer reads actual primary context before Lean pricing on propo
             },
           }),
         );
-      // A proposal's stock read overlaps pricing; it is not a pricing (catalog) read.
+      // A proposal's stock read overlaps pricing; it is not a pricing (catalog) read. Stock wins over a
+      // pricing failure (#336), so it reports the variant in stock to expose the context failure under test.
       if (text(body.query).includes('InsigniaAvailabilityProduct')) {
         stockReads++;
-        return new Response('{}', { status: 503 });
+        return Response.json({
+          data: {
+            product: {
+              id: 'gid://shopify/Product/111',
+              status: 'ACTIVE',
+              variants: { nodes: [{ id: 'gid://shopify/ProductVariant/222' }], pageInfo: { hasNextPage: false } },
+            },
+          },
+        });
       }
       if (text(body.query).includes('LeanPrimaryMarket')) {
         primaryReads++;
@@ -1563,7 +1589,7 @@ test('production buyer reads actual primary context before Lean pricing on propo
       contextCase === 'primary'
         ? /Lean prices require one final nonnegative/
         : contextCase === 'provider-error'
-          ? /Primary Market unavailable: provider_error/
+          ? /Primary Market unavailable: provider_unavailable/
           : contextCase === 'reauthorized'
             ? /Buyer Lean context authority changed/
             : /Lean primary-Market context unavailable/;
@@ -1691,4 +1717,32 @@ test('catalog swatches survive production buyer config parsing without changing 
       ],
     },
   ]);
+});
+
+test('an archived or deleted product is unavailable and a throttled catalog read is retryable, not an outage (#336)', async () => {
+  for (const product of [{ status: 'ARCHIVED' }, null]) {
+    const { input } = catalogFixture();
+    const originalFetch = input.fetchImpl;
+    input.fetchImpl = async (url, options) => {
+      const response = await required(originalFetch)(url, options);
+      const payload = record(await response.json());
+      const data = record(payload.data);
+      return Response.json({ data: { product: product && { ...record(data.product), ...product } } });
+    };
+    await assert.rejects(createProductionBuyerServices(input).config(new Request(signed())), {
+      name: 'BuyerRejectedError',
+      code: 'PRODUCT_UNAVAILABLE',
+    });
+  }
+  for (const response of [
+    () => new Response('{}', { status: 429 }),
+    () => new Response('{}', { status: 503 }),
+    () => Response.json({ errors: [{ message: 'Throttled', extensions: { code: 'THROTTLED' } }] }),
+  ]) {
+    const { input } = catalogFixture();
+    input.fetchImpl = async () => response();
+    await assert.rejects(createProductionBuyerServices(input).config(new Request(signed())), {
+      name: 'ShopifyAdminUnavailableError',
+    });
+  }
 });

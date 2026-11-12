@@ -624,3 +624,23 @@ test('cart-state ignores native quantity and removal edits, and renewal re-signs
   assert.equal((await state([renewedLine, first])).status, 409, 'two sets');
   assert.equal((await state([renewedLine])).status, 200, 'the renewed set alone is owned');
 });
+
+test('buyer-actionable conditions reach the storefront as specific 4xx responses (#336)', {
+  skip: !connectionString,
+}, async (t) => {
+  // A variant deleted from the product: the stock read takes precedence over a failing price read.
+  const f = await fixture(t, { narrowAvailability: async () => ({ variants: [] }) });
+  f.unavailable(true);
+  const deleted = await f.http('quote-proposals', f.body);
+  assert.equal(deleted.status, 410, await deleted.clone().text());
+  assert.equal((await deleted.json()).code, 'PRODUCT_UNAVAILABLE');
+  assert.equal(f.signings(), 0);
+  // A design kept from before the product configuration was republished needs review.
+  const design = await f.http(
+    `designs/${randomUUID()}`,
+    { capability: f.session.capability, expectedVersion: 0, group: { ...f.group, configRevisionId: randomUUID() } },
+    'PUT',
+  );
+  assert.equal(design.status, 409, await design.clone().text());
+  assert.equal((await design.json()).code, 'REVIEW_REQUIRED');
+});

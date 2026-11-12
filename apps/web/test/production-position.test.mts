@@ -113,3 +113,24 @@ test('old fixed-position groups need no new publication/asset lookup and retain 
     },
   });
 });
+test('buyer-correctable position failures are typed rejections, not outages (#336)', async () => {
+  const rejected = (code: string) => ({ name: 'BuyerRejectedError', code });
+  const outside = fixture();
+  const selected = outside.group.design.placements[0];
+  assert(selected);
+  selected.position = { xMicros: 750000, yMicros: 500000 };
+  await assert.rejects(validateBuyerProductionPositions([outside.group], outside.ports), rejected('POSITION_INVALID'));
+  const disallowed = fixture();
+  const placement = disallowed.selectedSetup.product.views[0]?.placements[0];
+  assert(placement);
+  placement.customPlacementAllowed = false;
+  await assert.rejects(
+    validateBuyerProductionPositions([disallowed.group], disallowed.ports),
+    rejected('POSITION_INVALID'),
+  );
+  const expired = fixture();
+  await assert.rejects(
+    validateBuyerProductionPositions([expired.group], { ...expired.ports, artwork: async () => null }),
+    rejected('ARTWORK_EXPIRED'),
+  );
+});

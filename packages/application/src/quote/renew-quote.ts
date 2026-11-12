@@ -8,6 +8,7 @@ import {
   type QuoteIssuanceWindow,
   type QuoteRequest,
 } from './accept-quote.js';
+import { BuyerRejectedError, ShopDayChangedError } from './buyer-errors.js';
 import { materialHash } from './material.js';
 
 export type RenewedQuoteResult = AcceptedQuoteResult & { issuance: QuoteIssuanceWindow };
@@ -110,22 +111,20 @@ export async function renewQuote(
   const completed = await ports.renewalStore.findCompleted(command);
   if (completed) return completed;
   const prepared = await prepareQuote(desired, ports);
-  if (materialHash(prepared.quote) !== command.materialHash) throw new Error('REVIEW_REQUIRED');
+  if (materialHash(prepared.quote) !== command.materialHash) throw new BuyerRejectedError('REVIEW_REQUIRED');
   return ports.renewalStore.renew({ ...command, effectiveRevisions: prepared.quote.effectiveRevisions }, async () => {
     if (ports.artwork.replayBinding?.(desired) !== ownerBinding) throw new Error('quote resource authority changed');
     const current = await prepareQuote(desired, ports);
-    if (materialHash(current.quote) !== command.materialHash) throw new Error('REVIEW_REQUIRED');
+    if (materialHash(current.quote) !== command.materialHash) throw new BuyerRejectedError('REVIEW_REQUIRED');
     const issuance: QuoteIssuanceWindow = {
       issuedAt: current.quote.acceptedAt,
       issuedDay: current.quote.acceptedDay,
       validThroughDay: current.quote.validThroughDay,
       shopTimezone: current.quote.shopTimezone,
     };
-    if (localDay(ports.clock(), issuance.shopTimezone).ordinal !== issuance.issuedDay)
-      throw new Error('renewal local day changed');
+    if (localDay(ports.clock(), issuance.shopTimezone).ordinal !== issuance.issuedDay) throw new ShopDayChangedError();
     const authorization = await ports.authorization.issue({ quote: original, window: issuance });
-    if (localDay(ports.clock(), issuance.shopTimezone).ordinal !== issuance.issuedDay)
-      throw new Error('renewal local day changed');
+    if (localDay(ports.clock(), issuance.shopTimezone).ordinal !== issuance.issuedDay) throw new ShopDayChangedError();
     if (
       !authorization.setId ||
       !authorization.envelopeCarrier ||

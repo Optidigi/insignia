@@ -122,3 +122,40 @@ test('the existing USD path retains independent primary-Market admission without
     country: 'US',
   });
 });
+test('a country or currency the shop does not sell in is an unsupported market; drifted evidence is not (#336)', async () => {
+  const unsupported = { name: 'BuyerRejectedError', code: 'UNSUPPORTED_MARKET' };
+  await assert.rejects(() => setup(snapshot, null).assertSupported(target), unsupported);
+  await assert.rejects(() => setup().assertSupported({ ...target, country: 'BE' }), unsupported);
+  await assert.rejects(() => setup().assertSupported({ ...target, currency: 'GBP', shopCurrency: 'GBP' }), unsupported);
+  await assert.rejects(() => setup({ ...snapshot, countryCodes: ['BE'] }).assertSupported(target), unsupported);
+  const drifted = (error: unknown) => !(error instanceof Error && error.name === 'BuyerRejectedError');
+  await assert.rejects(
+    () =>
+      setup(
+        snapshot,
+        parseEurNetherlandsQualification(JSON.stringify({ ...profile, activeVersionRef: '99999' })),
+      ).assertSupported(target),
+    drifted,
+  );
+  await assert.rejects(
+    () => setup({ ...snapshot, freshUntil: '2026-11-05T11:01:00Z' }).assertSupported(target),
+    drifted,
+  );
+});
+test('EUR at a shop the qualification profile does not cover is an unsupported market; epoch or release drift is not', async () => {
+  const unsupported = { name: 'BuyerRejectedError', code: 'UNSUPPORTED_MARKET' };
+  const withProfile = (change: Record<string, unknown>) =>
+    setup(snapshot, parseEurNetherlandsQualification(JSON.stringify({ ...profile, ...change })));
+  await assert.rejects(() => withProfile({ shopId: 'another-tenant' }).assertSupported(target), unsupported);
+  await assert.rejects(
+    () => withProfile({ shopifyShopGid: 'gid://shopify/Shop/999' }).assertSupported(target),
+    unsupported,
+  );
+  const drifted = (error: unknown) => error instanceof Error && error.name !== 'BuyerRejectedError';
+  await assert.rejects(() => withProfile({ authorizationEpoch: 2 }).assertSupported(target), drifted);
+  await assert.rejects(() => withProfile({ functionsSourceCommit: 'b'.repeat(40) }).assertSupported(target), drifted);
+  await assert.rejects(
+    () => withProfile({ primaryMarketGid: 'gid://shopify/Market/99' }).assertSupported(target),
+    drifted,
+  );
+});

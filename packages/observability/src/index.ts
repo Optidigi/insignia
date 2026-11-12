@@ -6,6 +6,7 @@ const EVENTS = new Set([
   'admin_authentication',
   'artwork_request_timing',
   'buyer_request_failed',
+  'buyer_request_rejected',
   'buyer_request_timing',
   'customer_artwork_notification',
   'worker_started',
@@ -25,6 +26,8 @@ export type RuntimeEvent =
   | 'admin_authentication'
   | 'artwork_request_timing'
   | 'buyer_request_failed'
+  /** An expected 4xx outcome: buyer-actionable (info) or BUSY, transient and retryable (warn). */
+  | 'buyer_request_rejected'
   | 'buyer_request_timing'
   | 'customer_artwork_notification'
   | 'worker_started'
@@ -91,6 +94,13 @@ const BUYER_STAGES = [
 ] as const;
 const BUYER_FAILURES = [
   'ReviewRequired',
+  'UnsupportedMarket',
+  'ArtworkExpired',
+  'PositionInvalid',
+  'ProductUnavailable',
+  'CountryRequired',
+  'EntitlementDenied',
+  'ShopDayChanged',
   'DatabaseLockTimeout',
   'DatabaseQueryTimeout',
   'DatabasePermissionDenied',
@@ -176,6 +186,7 @@ export const ARTWORK_REQUEST_FAILURES = [
   'EXPIRED',
   'NOT_USABLE',
   'CONFLICT',
+  'RATE_LIMITED',
   'UNAVAILABLE',
 ] as const;
 /** One line per guest artwork begin/complete/status request, so a stalled check can be matched to its requests. */
@@ -331,7 +342,7 @@ function eventDetails(event: RuntimeEvent, input: RuntimeLogDetails) {
       spans,
     };
   }
-  if (event === 'buyer_request_failed') {
+  if (event === 'buyer_request_failed' || event === 'buyer_request_rejected') {
     if (
       !input.buyerStage ||
       !BUYER_STAGES.includes(input.buyerStage) ||
@@ -408,6 +419,10 @@ export function createObservability(options: { stream?: Writable; level?: 'debug
     info(event: RuntimeEvent, details: RuntimeLogDetails = {}) {
       if (!EVENTS.has(event)) throw new Error('Invalid runtime event');
       rawLogger.info({ event, ...eventDetails(event, details) });
+    },
+    warn(event: RuntimeEvent, details: RuntimeLogDetails = {}) {
+      if (!EVENTS.has(event)) throw new Error('Invalid runtime event');
+      rawLogger.warn({ event, ...eventDetails(event, details) });
     },
     error(event: RuntimeEvent, details: RuntimeLogDetails = {}) {
       if (!EVENTS.has(event)) throw new Error('Invalid runtime event');

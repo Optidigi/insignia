@@ -534,4 +534,13 @@ test('the actual buyer HTTP read retains frozen prices and production dimensions
   assert.deepEqual(result.selectedSetup?.product.images, []);
   assert.equal(result.selectedSetup?.product.views[0]?.calibration, undefined);
   assert.deepEqual(f, before);
+  // A selected setup without the buyer's country is a client error, not an outage (#336).
+  const missing = await handleBuyerRequest(
+    new Request('https://app.example/v1/config?productId=111'),
+    service,
+    'config',
+    () => {},
+  );
+  assert.equal(missing.status, 400);
+  assert.equal((await missing.json()).code, 'COUNTRY_REQUIRED');
 });

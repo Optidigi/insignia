@@ -1,4 +1,5 @@
 export * from './active-subscription.js';
+export { ShopifyAdminUnavailableError } from './admin-deadline.js';
 export * from './admin-online-identity.js';
 export * from './app-proxy.js';
 export * from './availability-hold.js';

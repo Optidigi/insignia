@@ -235,8 +235,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable artwork ownership and
         await store.claim(row.assetId, claim, now, new Date(+now + 60000));
         await store.reject(row.assetId, claim, 'INSPECTION_REJECTED', now);
       }
+      // The owner's quota is a buyer-visible 429 that clears when the oldest admission leaves the window (#336).
       await expect(store.create({ ...record(shopId), declaredBytes: 1 })).rejects.toMatchObject({
-        code: 'UNAVAILABLE',
+        code: 'RATE_LIMITED',
+        retryAfterSeconds: 86400,
       });
       await expect(store.create({ ...record(shopId), ownerHash: 'b'.repeat(64) })).resolves.toMatchObject({
         ownerHash: 'b'.repeat(64),
@@ -263,7 +265,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable artwork ownership and
         visitorB = 'b'.repeat(64);
       for (let count = 0; count < 5; count++) await store.create({ ...record(shopId), ownerHash: visitorA });
       await expect(store.create({ ...record(shopId), ownerHash: visitorA })).rejects.toMatchObject({
-        code: 'UNAVAILABLE',
+        code: 'RATE_LIMITED',
+        retryAfterSeconds: ARTWORK_POLICY.uploadMs / 1000,
       });
       await expect(store.create({ ...record(shopId), ownerHash: visitorB })).resolves.toMatchObject({
         ownerHash: visitorB,

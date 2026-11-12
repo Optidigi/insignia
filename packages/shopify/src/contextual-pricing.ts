@@ -67,6 +67,10 @@ export class ContextualPricingError extends Error {
     this.kind = kind;
     this.correlation = { requestId: safeRequestId(requestId) };
   }
+  /** Throttling, timeouts and Shopify 5xx: a later retry can succeed. */
+  get transient(): boolean {
+    return this.kind === 'throttled' || this.kind === 'network_or_timeout' || this.kind === 'provider_unavailable';
+  }
 }
 
 export type AdminGraphqlRead = {
@@ -259,7 +263,8 @@ function classifyGraphqlErrors(body: Record<string, unknown>): ContextualPricing
   if (body.errors === undefined) return null;
   if (!Array.isArray(body.errors) || body.errors.length === 0) return 'invalid_provider_shape';
   const codes = body.errors.map((error) => record(record(error)?.extensions)?.code);
-  if (codes.some((code) => code === 'THROTTLED' || code === 'MAX_COST_EXCEEDED')) return 'throttled';
+  // MAX_COST_EXCEEDED is a query over Shopify's cost limit; unlike THROTTLED, a retry cannot fix it.
+  if (codes.some((code) => code === 'THROTTLED')) return 'throttled';
   if (codes.some((code) => code === 'ACCESS_DENIED')) return 'forbidden';
   return 'graphql_error';
 }
