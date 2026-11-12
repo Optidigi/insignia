@@ -160,10 +160,21 @@ export function createSelectedDesignCustody(input: {
     },
     /**
      * Saves of one draft run one after another, in call order, so a debounced autosave and a Review's save never
-     * race each other's CAS version (#366).
+     * race each other's CAS version (#366). With `onlyChanges` (autosave), a design the server already holds writes
+     * nothing at all: its hints and reopen pointer stay as they are, even if another tab has dropped the pointer.
      */
-    save(id: string, group: BuyerDraftGroup, original: BuyerDesiredGroup | undefined, signal?: AbortSignal) {
-      const run = (saving.get(id) ?? Promise.resolve()).then(() => write(id, group, original, signal));
+    save(
+      id: string,
+      group: BuyerDraftGroup,
+      original: BuyerDesiredGroup | undefined,
+      signal?: AbortSignal,
+      options: { onlyChanges?: boolean } = {},
+    ) {
+      const run = (saving.get(id) ?? Promise.resolve()).then(() => {
+        const saved = known.get(id);
+        if (options.onlyChanges && saved && desiredGroupKey(saved.value) === desiredGroupKey(group)) return;
+        return write(id, group, original, signal);
+      });
       const settled = run.then(
         () => {},
         () => {},

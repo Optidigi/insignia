@@ -452,3 +452,25 @@ test('a draft with artwork but no quantities is the latest unfinished design and
   assert.equal(restored?.cartQuantitiesChanged, false);
   assert.deepEqual(restorableDesign(group, restored?.value, true).variants, group.variants);
 });
+
+test('an autosave of what the server already holds writes nothing, not even a dropped pointer (#366)', async () => {
+  const shared = memoryStorage();
+  const owner = { session: 'session-1' };
+  const server = draftServer(owner);
+  const custody = createSelectedDesignCustody({
+    namespace: '/apps/insignia',
+    storage: memoryStorage(),
+    shared,
+    session: () => owner.session,
+    api: server.api,
+  });
+  await custody.save(id, group, undefined);
+  // Another tab found this design in the cart and dropped its pointer.
+  custody.forgetLatest('11', id);
+  await custody.save(id, group, undefined, undefined, { onlyChanges: true });
+  assert.equal(shared.data.get(LATEST), undefined, 'the unchanged autosave leaves it dropped');
+  assert.equal(server.calls.filter((call) => !call.endsWith('/restore')).length, 1);
+  // A changed design is unfinished again.
+  await custody.save(id, { ...group, variants: [] }, undefined, undefined, { onlyChanges: true });
+  assert.equal(JSON.parse(shared.data.get(LATEST) ?? 'null').id, id);
+});

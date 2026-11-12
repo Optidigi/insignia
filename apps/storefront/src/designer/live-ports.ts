@@ -135,8 +135,8 @@ export function createLiveDesignerPorts(input: {
     lastAutosave = Date.now();
     draftSaves.set(pending.design.id, { group, original });
     try {
-      // The same custody save as Review: same draft ID, CAS version and reopen pointers. Unchanged content sends nothing.
-      await custody.save(pending.design.id, group, original, controller.signal);
+      // The same custody save as Review: same draft ID, CAS version and reopen pointers. Unchanged content writes nothing.
+      await custody.save(pending.design.id, group, original, controller.signal, { onlyChanges: true });
     } catch (error) {
       if (error && typeof error === 'object' && 'status' in error && error.status === 429) autosaveStopped = true;
     } finally {
