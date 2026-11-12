@@ -438,38 +438,30 @@ for (const engine of [chromium, firefox]) {
           return button && getComputedStyle(button).padding === '12px';
         })(),
       );
+      // The browser reports each transition it starts. Sampling for an in-between colour instead
+      // misses a 0.2 s transition that finishes before the first sample on a loaded runner.
+      await trigger.evaluate((button) => {
+        const started: string[] = [];
+        Object.assign(window, { transitionsStarted: started });
+        button.addEventListener('transitionrun', (event) => started.push(event.propertyName));
+      });
       await trigger.hover();
-      await page.waitForFunction(
-        () => {
-          const button = document.querySelector('insignia-buyer button');
-          if (!button) return false;
-          const color = getComputedStyle(button).backgroundColor;
-          return color !== 'rgb(21, 22, 23)' && color !== 'rgb(210, 211, 212)';
-        },
-        undefined,
-        { timeout: 1000 },
+      await page.waitForFunction(() =>
+        (window as unknown as { transitionsStarted: string[] }).transitionsStarted.includes('background-color'),
       );
-      await page.waitForFunction(
-        () => {
-          const button = document.querySelector('insignia-buyer button');
-          if (!button) return false;
-          const s = getComputedStyle(button);
-          return s.backgroundColor === 'rgb(210, 211, 212)' && s.padding === '12px';
-        },
-        undefined,
-        { timeout: 2000 },
-      );
+      await page.waitForFunction(() => {
+        const button = document.querySelector('insignia-buyer button');
+        if (!button) return false;
+        const s = getComputedStyle(button);
+        return s.backgroundColor === 'rgb(210, 211, 212)' && s.padding === '12px';
+      });
       await page.mouse.move(800, 600);
-      await page.waitForFunction(
-        () => {
-          const button = document.querySelector('insignia-buyer button');
-          if (!button) return false;
-          const s = getComputedStyle(button);
-          return s.backgroundColor === 'rgb(21, 22, 23)' && s.padding === '12px';
-        },
-        undefined,
-        { timeout: 2000 },
-      );
+      await page.waitForFunction(() => {
+        const button = document.querySelector('insignia-buyer button');
+        if (!button) return false;
+        const s = getComputedStyle(button);
+        return s.backgroundColor === 'rgb(21, 22, 23)' && s.padding === '12px';
+      });
     });
   }
 }
