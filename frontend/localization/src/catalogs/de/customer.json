@@ -237,7 +237,10 @@
     "removeGroup": "Entfernung dieser Personalisierung prüfen",
     "removeAll": "Entfernung aller personalisierten Artikel prüfen",
     "confirmRemoval": "Warenkorbänderung bestätigen",
-    "remainingItems": "Verbleibende personalisierte Artikel"
+    "remainingItems": "Verbleibende personalisierte Artikel",
+    "earlierSession": "In einer früheren Sitzung personalisiert",
+    "earlierSessionHelp": "Ihr Warenkorb enthält personalisierte Artikel aus einer früheren Sitzung. Sie bleiben im Warenkorb, können hier aber nicht geändert werden. Öffnen Sie den Warenkorb, um zur Kasse zu gehen, oder entfernen Sie die Artikel, um erneut zu personalisieren.",
+    "earlierSessionExpiredHelp": "Ihr Warenkorb enthält personalisierte Artikel aus einer früheren Sitzung, deren Preise abgelaufen sind. Sie können daher nicht bestellt werden. Entfernen Sie die Artikel, um erneut zu personalisieren."
   },
   "language": {
     "label": "Sprache",

@@ -145,6 +145,7 @@ test('buyer HTTP qualifies real durable proposal, acceptance replay, owned resto
     lines: lines.map((line) => ({ ...line, sellingPlan: '99' })),
   });
   assert.equal(paid.status, 409);
+  assert.equal((await paid.json()).details, undefined, 'only an unowned set is reported as another session');
   assert.equal(f.signings(), 1);
   const confirm = await f.http(`cart-applications/${accepted.applicationId}/confirm`, {
     capability: f.session.capability,
@@ -320,7 +321,13 @@ test('concurrent acceptance is one immutable quote/set and expired review permit
   );
   const owner2 = await (await f.http('sessions', {})).json();
   const lines = first.buckets.map((b, index) => ({ ...b, key: `line${index}`, sellingPlan: null }));
-  assert.equal((await f.http('cart-state', { capability: owner2.capability, lines })).status, 409);
+  // #340: another session's set stays unrestorable; only the reason is reported, never its design.
+  const foreign = await f.http('cart-state', { capability: owner2.capability, lines });
+  assert.equal(foreign.status, 409);
+  const foreignBody = await foreign.json();
+  assert.equal(foreignBody.code, 'REVIEW_REQUIRED');
+  assert.deepEqual(foreignBody.details, { reason: 'NOT_OWNED' });
+  assert.equal(foreignBody.groups, undefined);
   const ownedRestore = await f.http('cart-state', { capability: f.session.capability, lines });
   assert.equal(ownedRestore.status, 200);
   assert.deepEqual((await ownedRestore.json()).groups, [f.group]);
@@ -623,6 +630,14 @@ test('cart-state ignores native quantity and removal edits, and renewal re-signs
   const renewedLine = { ...first, key: 'renewed', properties: { ...renewed.buckets[0]?.properties } };
   assert.equal((await state([renewedLine, first])).status, 409, 'two sets');
   assert.equal((await state([renewedLine])).status, 200, 'the renewed set alone is owned');
+  // #340: another session learns only whether the lines can still be checked out. D+4 is past the
+  // original set's D+2 in every shop time zone; the renewed set (issued D+3) is valid through D+5.
+  f.advance(86400000);
+  const other = await (await f.http('sessions', {})).json();
+  const foreign = async (body: typeof lines) =>
+    (await f.http('cart-state', { capability: other.capability, lines: body })).json();
+  assert.deepEqual((await foreign([first])).details, { reason: 'NOT_OWNED_EXPIRED' });
+  assert.deepEqual((await foreign([renewedLine])).details, { reason: 'NOT_OWNED' });
 });
 
 test('buyer-actionable conditions reach the storefront as specific 4xx responses (#336)', {

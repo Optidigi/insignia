@@ -242,7 +242,10 @@
     "removeGroup": "Verifica la rimozione di questa personalizzazione",
     "removeAll": "Verifica la rimozione di tutti gli articoli personalizzati",
     "confirmRemoval": "Conferma aggiornamento carrello",
-    "remainingItems": "Articoli personalizzati rimanenti"
+    "remainingItems": "Articoli personalizzati rimanenti",
+    "earlierSession": "Personalizzato in una sessione precedente",
+    "earlierSessionHelp": "Il carrello contiene articoli personalizzati in una sessione precedente. Restano nel carrello, ma non possono essere modificati qui. Apri il carrello per completare l’acquisto oppure rimuovili per personalizzare di nuovo.",
+    "earlierSessionExpiredHelp": "Il carrello contiene articoli personalizzati in una sessione precedente i cui prezzi sono scaduti, quindi non possono essere acquistati. Rimuovili per personalizzare di nuovo."
   },
   "language": {
     "label": "Lingua",

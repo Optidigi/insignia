@@ -3,7 +3,17 @@ import { test } from 'node:test';
 import type { GeometryV1 } from '@insignia/visualizer/geometry';
 import type { DesiredGroup } from '../src/buyer.ts';
 import { createBuyerApi, replaceGroup } from '../src/buyer.ts';
-import { jsonRecord, requestUrl, required } from './support.mts';
+import { jsonRecord, record, requestUrl, required } from './support.mts';
+
+/** One tab's view of the browser-wide store: a distinct object over the same entries. */
+function tabStorage(values: Map<string, string>) {
+  return {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => void values.set(key, value),
+    removeItem: (key: string) => void values.delete(key),
+  };
+}
+const SESSION_KEY = 'insignia-buyer-session:/apps/insignia';
 
 test('editing one group preserves siblings including same-product designs', () => {
   const first: DesiredGroup = {
@@ -117,10 +127,7 @@ test('buyer and artwork API use one private capability and locale proxy prefix',
 });
 test('private session survives another instance without persisting design or URLs', async () => {
   const values = new Map<string, string>();
-  const storage: Pick<Storage, 'getItem' | 'setItem'> = {
-    getItem: (key) => values.get(key) ?? null,
-    setItem: (key, value) => values.set(key, value),
-  };
+  const storage = tabStorage(values);
   let sessions = 0;
   const fetchImpl: typeof fetch = async (input) =>
     Response.json(
@@ -146,10 +153,7 @@ test('private session survives another instance without persisting design or URL
 });
 test('a tab whose unused session expired server-side mints one replacement and retries', async () => {
   const values = new Map<string, string>();
-  const storage: Pick<Storage, 'getItem' | 'setItem'> = {
-    getItem: (key) => values.get(key) ?? null,
-    setItem: (key, value) => values.set(key, value),
-  };
+  const storage = tabStorage(values);
   // The capability is still within its grant, but the server already expired the unused session.
   values.set(
     'insignia-buyer-session:/apps/insignia',
@@ -203,10 +207,7 @@ test('a replacement session that is also rejected surfaces the error without loo
 
 test('simultaneous product controls share one owner session before any private request', async () => {
   const values = new Map<string, string>();
-  const storage: Pick<Storage, 'getItem' | 'setItem'> = {
-    getItem: (key) => values.get(key) ?? null,
-    setItem: (key, value) => values.set(key, value),
-  };
+  const storage = tabStorage(values);
   let sessions = 0;
   const caps: unknown[] = [];
   const fetchImpl: typeof fetch = async (input, init = {}) => {
@@ -233,6 +234,92 @@ test('simultaneous product controls share one owner session before any private r
   );
   assert.equal(sessions, 1);
   assert.deepEqual(caps, ['cap1.def', 'cap1.def']);
+});
+test('tabs opening together create one shared session, and every tab follows the stored one (#340)', async () => {
+  const values = new Map<string, string>();
+  let sessions = 0;
+  const used: unknown[] = [];
+  const fetchImpl: typeof fetch = async (input, init = {}) => {
+    if (requestUrl(input).includes('/sessions')) {
+      const n = ++sessions;
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      return Response.json({
+        capability: `cap${n}.def`,
+        sessionId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        expiresAt: new Date(Date.now() + 60000).toISOString(),
+      });
+    }
+    used.push(jsonRecord(String(init.body)).capability);
+    return Response.json({ groups: [], repairRequired: false });
+  };
+  // Separate storage objects stand for separate tabs: nothing in memory is shared between them.
+  const [first, second] = [tabStorage(values), tabStorage(values)].map((storage) =>
+    createBuyerApi({ proxyBase: '/apps/insignia', productId: '12', fetchImpl, storage }),
+  );
+  await Promise.all([first, second].map((api) => required(api).private('cart-state', {})));
+  assert.equal(sessions, 1);
+  assert.deepEqual(used, ['cap1.def', 'cap1.def']);
+  // Another tab replaced the session: this instance follows it instead of its remembered one.
+  values.set(
+    SESSION_KEY,
+    JSON.stringify({ capability: 'other.def', sessionId: 's', expiresAt: new Date(Date.now() + 60000).toISOString() }),
+  );
+  await required(first).private('cart-state', {});
+  assert.equal(used.at(-1), 'other.def');
+});
+test('an expired or malformed stored session is removed and replaced', async () => {
+  for (const stored of [
+    JSON.stringify({ capability: 'old.def', sessionId: 's', expiresAt: new Date(Date.now() - 1).toISOString() }),
+    '{not json',
+  ]) {
+    const values = new Map([[SESSION_KEY, stored]]);
+    const used: unknown[] = [];
+    const api = createBuyerApi({
+      proxyBase: '/apps/insignia',
+      productId: '12',
+      storage: tabStorage(values),
+      fetchImpl: async (input, init = {}) => {
+        if (requestUrl(input).includes('/sessions'))
+          return Response.json({
+            capability: 'new.def',
+            sessionId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            expiresAt: new Date(Date.now() + 60000).toISOString(),
+          });
+        used.push(jsonRecord(String(init.body)).capability);
+        return Response.json({ groups: [], repairRequired: false });
+      },
+    });
+    await api.private('cart-state', {});
+    assert.deepEqual(used, ['new.def']);
+    assert.equal(jsonRecord(required(values.get(SESSION_KEY))).capability, 'new.def');
+  }
+});
+test('a cart set owned by another session is reported as such, other reviews are not', async () => {
+  const { earlierSessionCart } = await import('../src/buyer.ts');
+  for (const [details, earlier] of [
+    [{ reason: 'NOT_OWNED' }, 'valid'],
+    [{ reason: 'NOT_OWNED_EXPIRED' }, 'expired'],
+    [undefined, undefined],
+  ] as const) {
+    const api = createBuyerApi({
+      proxyBase: '/apps/insignia',
+      productId: '12',
+      fetchImpl: async (input) =>
+        requestUrl(input).includes('/sessions')
+          ? Response.json({
+              capability: 'abc.def',
+              sessionId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+              expiresAt: new Date(Date.now() + 60000).toISOString(),
+            })
+          : Response.json(
+              { code: 'REVIEW_REQUIRED', message: 'Review', requestId: 'r', ...(details ? { details } : {}) },
+              { status: 409 },
+            ),
+    });
+    const error = await api.private('cart-state', {}).catch((error: unknown) => error);
+    assert.equal(record(error).status, 409);
+    assert.equal(earlierSessionCart(error), earlier);
+  }
 });
 test('advisory cart fingerprints are bounded hashes and uncertainty persists across locales', async () => {
   const { advisoryFingerprint, cartJournal } = await import('../src/buyer.ts');

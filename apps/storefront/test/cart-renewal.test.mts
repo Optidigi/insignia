@@ -130,6 +130,11 @@ function fixture(
         country: 'US',
         marketId: '42',
         storage: { getItem: (key) => values.get(key) ?? null, setItem: (key, value) => void values.set(key, value) },
+        sessionStore: {
+          getItem: (key) => values.get(key) ?? null,
+          setItem: (key, value) => void values.set(key, value),
+          removeItem: (key) => void values.delete(key),
+        },
         fetchImpl,
       });
       return { result, events };

@@ -138,4 +138,34 @@ test('selected repair keeps cart unchanged until actual remaining-cart review is
     1,
   );
   assert.doesNotMatch(await frame.locator('body').innerText(), /[$€]0[.,]00/, 'no dummy free quote is shown');
+  // #340 beside #341: an earlier session's lines win over a reopen offer; this session can neither reopen nor
+  // replace them. The two never arise together from the live ports, so this pins the precedence only.
+  for (const earlierSession of ['valid', 'expired'] as const) {
+    await page.evaluate(async (earlierSession) => {
+      Reflect.get(window, 'repairFrame').destroy();
+      const { createDesignerFrame } = await import(/* @vite-ignore */ new URL('/host.js', location.href).href);
+      Reflect.set(
+        window,
+        'repairFrame',
+        createDesignerFrame({
+          title: 'Retained order',
+          locale: 'en',
+          repair: { canStart: true, canRemoveGroup: false, canRemoveAll: true, reopensCartLine: true, earlierSession },
+          onClose() {},
+          onRepair: async () => undefined,
+        }),
+      );
+    }, earlierSession);
+    await frame.getByRole('heading', { name: 'Customized in an earlier session' }).waitFor();
+    assert.equal(
+      await frame.getByRole('button', { name: 'Discard changes and reopen from cart', exact: true }).count(),
+      0,
+    );
+    assert.equal(await frame.getByRole('button', { name: 'Start a new customization', exact: true }).count(), 0);
+    assert.equal(
+      await frame.getByRole('button', { name: 'View cart', exact: true }).count(),
+      earlierSession === 'valid' ? 1 : 0,
+      earlierSession,
+    );
+  }
 });

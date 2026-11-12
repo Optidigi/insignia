@@ -781,8 +781,19 @@ export function createBuyerServices(input: {
           ownerBinding: binding(scope),
           now: clock(),
         });
+        // Not this session's set (an earlier or expired one, or none stored). Still a review: ownership is not
+        // relaxed and nothing about the set is disclosed beyond its own signed header. The buyer can keep the
+        // lines while checkout can still accept them, else only remove them (#340). Without the shop's time
+        // zone, "certainly expired" uses the earliest local day anywhere (UTC-12).
+        if (!owned)
+          throw new BuyerRejectedError(
+            'REVIEW_REQUIRED',
+            'cart set not owned by this session',
+            Math.floor((+clock() - 12 * 3600000) / 86400000) > header.validThroughDay
+              ? 'NOT_OWNED_EXPIRED'
+              : 'NOT_OWNED',
+          );
         if (
-          !owned ||
           owned.authorization.envelopeCarrier !== decoded.prefix ||
           owned.authorization.members[record.index]?.carrier !== carrier ||
           record.variantId !== line.variantId

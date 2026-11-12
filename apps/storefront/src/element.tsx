@@ -1,5 +1,6 @@
 import { render } from 'preact';
 import type { BuyerConfig } from './buyer';
+import { adoptTabSession, readBuyerSession, sharedBuyerStorage } from './buyer-session';
 import type { mountLiveDesigner } from './designer/controller';
 
 type LiveDesigner = Awaited<ReturnType<typeof mountLiveDesigner>>;
@@ -318,7 +319,7 @@ export class InsigniaBuyer extends HTMLElement {
     try {
       const { createBuyerApi } = await import('./buyer');
       const country = this.getAttribute('country') ?? '';
-      const api = createBuyerApi({ proxyBase, productId, country, storage: sessionStorage });
+      const api = createBuyerApi({ proxyBase, productId, country });
       const candidate = prepared ? await prepared.source : undefined;
       const source =
         candidate && prepared && prepared.expiresAt > Date.now() ? candidate : await api.config(opening.signal);
@@ -480,16 +481,10 @@ export function cartReviewReason(
   return oneSet && day !== undefined && day <= utcDay ? 'expired' : 'changed';
 }
 
-/** Whether this tab still holds the buyer session that owns its accepted sets (same key as buyer.ts). */
+/** Whether this browser still holds a buyer session that may own the cart's accepted sets. */
 function hasBuyerSession(proxyBase: string) {
-  try {
-    const saved = JSON.parse(
-      sessionStorage.getItem(`insignia-buyer-session:${proxyBase.slice(proxyBase.lastIndexOf('/apps/'))}`) ?? 'null',
-    );
-    return typeof saved?.capability === 'string' && Date.parse(saved.expiresAt) > Date.now();
-  } catch {
-    return false;
-  }
+  const storage = sharedBuyerStorage();
+  return !!(readBuyerSession(storage, proxyBase) ?? adoptTabSession(storage, proxyBase));
 }
 
 /** A designed line no longer shows its signed customization price (quantity is never compared). */
@@ -504,6 +499,8 @@ export class InsigniaCartRepair extends HTMLElement {
   private observer?: PerformanceObserver;
   private renewing = false;
   private renewFailed = false;
+  /** The stored session's cart-state called the cart's set renewable at the last load. */
+  private renewableNow = false;
   private readonly refresh = () => this.load();
   connectedCallback() {
     window.addEventListener('insignia-cart-updated', this.refresh);
@@ -548,6 +545,24 @@ export class InsigniaCartRepair extends HTMLElement {
         if (!reason) this.renewFailed = false;
         const line = customized.find(customizedLineNeedsReview) ?? customized[0];
         if (line) {
+          const proxyBase = this.getAttribute('proxy-base') ?? '/apps/insignia';
+          // Renew is offered only when the stored session can renew this set; asking never mints a session.
+          let renewable = false;
+          if (reason === 'expired' && !this.renewFailed && hasBuyerSession(proxyBase))
+            renewable = await import('./renewal')
+              .then(({ cartRenewable }) =>
+                cartRenewable({
+                  proxyBase,
+                  cartRoot,
+                  productId: String(line.product_id),
+                  country: this.getAttribute('country') ?? '',
+                  marketId: this.getAttribute('market-id') ?? '',
+                  storage: sessionStorage,
+                }),
+              )
+              .catch(() => false);
+          if (controller.signal.aborted || this.abort !== controller) return;
+          this.renewableNow = renewable;
           this.render(String(line.product_id), reason);
           return;
         }
@@ -611,8 +626,7 @@ export class InsigniaCartRepair extends HTMLElement {
   }
   private render(productId: string, reason: CartReviewReason | undefined) {
     const needsReview = !!reason;
-    const renewable =
-      reason === 'expired' && !this.renewFailed && hasBuyerSession(this.getAttribute('proxy-base') ?? '/apps/insignia');
+    const renewable = reason === 'expired' && !this.renewFailed && this.renewableNow;
     let buyer = this.querySelector('insignia-buyer');
     if (buyer?.getAttribute('product-id') !== productId) {
       // Light DOM keeps the theme's own button styling on the trigger.

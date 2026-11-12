@@ -223,7 +223,7 @@ export function createDesignerFrame(input: {
     if (
       data.type === 'insignia:designer:repair-action' &&
       typeof data.id === 'string' &&
-      ['start', 'remove-group', 'remove-all', 'confirm', 'retry'].includes(data.action)
+      ['start', 'remove-group', 'remove-all', 'confirm', 'retry', 'cart'].includes(data.action)
     ) {
       try {
         if (!input.onRepair) throw new Error('Repair unavailable');

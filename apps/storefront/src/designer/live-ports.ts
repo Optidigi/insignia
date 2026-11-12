@@ -9,6 +9,8 @@ import {
   cartJournal,
   createBuyerApi,
   type DesiredGroup,
+  type EarlierSessionCart,
+  earlierSessionCart,
   type QuoteProposal,
   replaceGroup,
 } from '../buyer';
@@ -36,6 +38,7 @@ export function createLiveDesignerPorts(input: {
   locale: string;
   storeName: string;
   fetchImpl?: typeof fetch;
+  /** This tab's cart journal and draft pointers; the session capability is shared (buyer-session.ts). */
   storage: Pick<Storage, 'getItem' | 'setItem'>;
   onPriceRefresh?(source: BuyerConfig, request?: CartRequest): void;
   onNeedsReview?(
@@ -43,8 +46,16 @@ export function createLiveDesignerPorts(input: {
     targetAvailable: boolean,
     canRemoveAll: boolean,
     request?: CartRequest,
-    /** This design is still in the cart, but its line changed outside the Designer. */
-    cartLineMoved?: boolean,
+    /**
+     * Why the cart needs review, when known (the two never coincide: a moved line was read through this
+     * session's own cart-state, an earlier session's lines are refused by it).
+     */
+    cause?: {
+      /** This design is still in the cart, but its line changed outside the Designer (#341). */
+      cartLineMoved?: boolean;
+      /** An earlier session accepted the cart's customized lines; this one cannot change them (#340). */
+      earlierSession?: EarlierSessionCart;
+    },
   ): void;
   onReview?(review: DesignerQuoteReview, request?: CartRequest): void;
   onApplied?(groups: DesiredGroup[]): void;
@@ -55,7 +66,6 @@ export function createLiveDesignerPorts(input: {
     productId: input.productId,
     country: input.country,
     fetchImpl,
-    storage: input.storage,
   });
   const custody = createSelectedDesignCustody({ api, storage: input.storage, namespace: input.proxyBase });
   const cart = createAjaxCartAdapter({
@@ -152,7 +162,7 @@ export function createLiveDesignerPorts(input: {
           /* Unknown cart contents. */
         }
         signal.throwIfAborted();
-        input.onNeedsReview?.(false, false, canRemoveAll, request);
+        input.onNeedsReview?.(false, false, canRemoveAll, request, { earlierSession: earlierSessionCart(error) });
         throw error;
       });
       // The proposal does not wait for this read: the server re-checks the revision and re-prices
@@ -260,7 +270,7 @@ export function createLiveDesignerPorts(input: {
           observed.groups.some(
             (candidate) => desiredGroupKey(candidate, false, false) === desiredGroupKey(previous, false, false),
           );
-        input.onNeedsReview?.(true, false, observed.cart.customized.length > 0, request, moved);
+        input.onNeedsReview?.(true, false, observed.cart.customized.length > 0, request, { cartLineMoved: moved });
         throw new Error('Design requires current-cart review');
       }
       const { labels, proposal, groups } = await quoting;

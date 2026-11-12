@@ -12,11 +12,19 @@ export type BuyerRejectionCode =
   | 'COUNTRY_REQUIRED'
   | 'ENTITLEMENT_DENIED';
 
+/**
+ * A finer, public reason for a rejection, sent as `details.reason`; never the rejected data itself.
+ * NOT_OWNED: a cart line's signed set is not owned by this buyer session (an earlier one, #340).
+ * NOT_OWNED_EXPIRED: the same, and its signed validity has certainly ended, so checkout rejects it.
+ */
+export type BuyerRejectionReason = 'NOT_OWNED' | 'NOT_OWNED_EXPIRED';
+
 export class BuyerRejectedError extends Error {
   /** `detail` is for tests and debugging only; it never reaches a response or log. */
   constructor(
     readonly code: BuyerRejectionCode,
     detail: string = code,
+    readonly reason?: BuyerRejectionReason,
   ) {
     super(detail);
     this.name = 'BuyerRejectedError';

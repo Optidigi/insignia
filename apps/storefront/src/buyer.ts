@@ -1,5 +1,15 @@
 import { type MerchantCustomerWordingView, parseBuyerResponse, type SelectedProductSetup } from '@insignia/contracts';
 import { type GeometryV1, validateGeometry } from '@insignia/visualizer/geometry';
+import {
+  adoptTabSession,
+  type BuyerSessionGrant,
+  type BuyerSessionStorage,
+  forgetBuyerSession,
+  readBuyerSession,
+  sharedBuyerStorage,
+  withBuyerSessionLock,
+  writeBuyerSession,
+} from './buyer-session.ts';
 import { type CartBucket, type CartMutationIntent, parseCartMutationIntent } from './cart.ts';
 export type DesiredGroup = {
   productId: string;
@@ -81,24 +91,33 @@ export function replaceGroup(groups: DesiredGroup[], group: DesiredGroup, index?
   if (!Number.isInteger(index) || index < 0 || index >= groups.length) throw new Error('Unknown group');
   return groups.map((old, i) => (i === index ? group : old));
 }
-type Session = { capability: string; sessionId: string; expiresAt: string };
-const pendingSessions = new WeakMap<Pick<Storage, 'getItem' | 'setItem'>, Map<string, Promise<Session>>>();
+type Session = BuyerSessionGrant;
+const pendingSessions = new WeakMap<BuyerSessionStorage, Map<string, Promise<Session>>>();
+const usable = (value: Session) =>
+  typeof value.capability === 'string' &&
+  value.capability.length <= 2048 &&
+  Number.isFinite(Date.parse(value.expiresAt)) &&
+  Date.parse(value.expiresAt) > Date.now();
+
 export function createBuyerApi({
   proxyBase,
   productId,
   fetchImpl = fetch,
-  storage,
+  storage = sharedBuyerStorage(),
   country,
 }: {
   proxyBase: string;
   productId: string;
   country?: string;
   fetchImpl?: typeof fetch;
-  storage?: Pick<Storage, 'getItem' | 'setItem'>;
+  /** Where the session capability lives; by default the store every tab shares (buyer-session.ts). */
+  storage?: BuyerSessionStorage;
 }) {
   if (!/^\/(?:[A-Za-z0-9_-]+\/)*apps\/[a-z0-9-]{1,64}$/.test(proxyBase) || !/^[1-9][0-9]{0,19}$/.test(productId))
     throw new Error('Buyer configuration unavailable');
-  let session: Promise<{ capability: string; sessionId: string; expiresAt: string }> | undefined;
+  let session: Promise<Session> | undefined;
+  /** Capability of the session this instance last used. */
+  let current: string | undefined;
   async function request<T>(
     url: string,
     body?: unknown,
@@ -127,6 +146,12 @@ export function createBuyerApi({
           ...(response.status === 409 && error?.code === 'REVIEW_REQUIRED' && error?.acceptanceOutcome === 'declined'
             ? { acceptanceOutcome: 'declined' as const }
             : {}),
+          // The cart's signed set belongs to a session this browser no longer holds (#340).
+          ...(response.status === 409 &&
+          error?.code === 'REVIEW_REQUIRED' &&
+          ['NOT_OWNED', 'NOT_OWNED_EXPIRED'].includes(error?.details?.reason)
+            ? { notOwned: error.details.reason === 'NOT_OWNED' ? ('valid' as const) : ('expired' as const) }
+            : {}),
         },
       );
     }
@@ -150,58 +175,35 @@ export function createBuyerApi({
   }
   async function grant() {
     const sessionMount = proxyBase.slice(proxyBase.lastIndexOf('/apps/'));
-    const storageKey = `insignia-buyer-session:${sessionMount}`;
-    if (!session && storage) {
-      const saved = storage.getItem(storageKey);
-      if (saved) {
-        try {
-          const value = JSON.parse(saved);
-          if (
-            value &&
-            typeof value.capability === 'string' &&
-            typeof value.sessionId === 'string' &&
-            Date.parse(value.expiresAt) > Date.now()
-          )
-            session = Promise.resolve({
-              capability: value.capability,
-              sessionId: value.sessionId,
-              expiresAt: value.expiresAt,
-            });
-        } catch {
-          /* Invalid local hints do not become authority. */
-        }
-      }
-    }
+    // Every tab follows the stored session, so the cart's accepted sets keep one owner.
+    const stored = readBuyerSession(storage, proxyBase);
+    if (stored && stored.capability !== current) session = Promise.resolve(stored);
     let shared = storage ? pendingSessions.get(storage) : undefined;
     if (storage && !shared) {
       shared = new Map();
       pendingSessions.set(storage, shared);
     }
     session ??= shared?.get(sessionMount);
-    session ??= request<{ capability: string; sessionId: string; expiresAt: string }>(
-      `${proxyBase}/v1/sessions?productId=${productId}`,
-      {},
-    ).catch((error) => {
+    session ??= withBuyerSessionLock(proxyBase, async () => {
+      // Another tab may have created the session while this one waited.
+      const created = readBuyerSession(storage, proxyBase) ?? adoptTabSession(storage, proxyBase);
+      if (created) return created;
+      const value = await request<Session>(`${proxyBase}/v1/sessions?productId=${productId}`, {});
+      if (usable(value)) writeBuyerSession(storage, proxyBase, value);
+      return value;
+    }).catch((error) => {
       session = undefined;
       shared?.delete(sessionMount);
       throw error;
     });
     shared?.set(sessionMount, session);
     const value = await session;
-    if (
-      typeof value.capability !== 'string' ||
-      value.capability.length > 2048 ||
-      !Number.isFinite(Date.parse(value.expiresAt)) ||
-      Date.parse(value.expiresAt) <= Date.now()
-    ) {
+    if (!usable(value)) {
       session = undefined;
       shared?.delete(sessionMount);
       throw new Error('Customization session expired. Reopen customization.');
     }
-    storage?.setItem(
-      storageKey,
-      JSON.stringify({ capability: value.capability, sessionId: value.sessionId, expiresAt: value.expiresAt }),
-    );
+    current = value.capability;
     return value;
   }
   /**
@@ -216,17 +218,16 @@ export function createBuyerApi({
     } catch (error) {
       if ((error as { status?: unknown }).status !== 401) throw error;
       const sessionMount = proxyBase.slice(proxyBase.lastIndexOf('/apps/'));
-      const storageKey = `insignia-buyer-session:${sessionMount}`;
       if (session === held) session = undefined;
       const shared = storage ? pendingSessions.get(storage) : undefined;
       if (shared && shared.get(sessionMount) === held) shared.delete(sessionMount);
-      // Another instance may already have stored a replacement; only the rejected session is forgotten.
-      if (storage?.getItem(storageKey)?.includes(JSON.stringify(token.capability))) storage.setItem(storageKey, 'null');
+      // Another tab may already have stored a replacement; only the rejected session is forgotten.
+      forgetBuyerSession(storage, proxyBase, token.capability);
       return run((await grant()).capability);
     }
   }
   return {
-    /** Create or reuse this tab's session ahead of the first private call; failures retry on that call. */
+    /** Create or reuse the browser's shared session ahead of the first private call; failures retry on that call. */
     warmSession: () =>
       grant().then(
         () => {},
@@ -313,6 +314,15 @@ function waitFor(ms: number, signal?: AbortSignal): Promise<void> {
     signal?.addEventListener('abort', abort, { once: true });
   });
 }
+/**
+ * A cart-state refusal because an earlier session, not this one, accepted the cart's customized lines:
+ * `valid` lines can still be checked out as they are, `expired` ones only removed.
+ */
+export function earlierSessionCart(error: unknown): EarlierSessionCart | undefined {
+  const value = error && typeof error === 'object' && 'notOwned' in error ? error.notOwned : undefined;
+  return value === 'valid' || value === 'expired' ? value : undefined;
+}
+export type EarlierSessionCart = 'valid' | 'expired';
 export function cartJournal(storage: Pick<Storage, 'getItem' | 'setItem'>, root: string) {
   if (!/^\/(?:[A-Za-z0-9_-]+\/)*$/.test(root)) throw new Error('Invalid cart root');
   const key = 'insignia-cart-unresolved-v2';

@@ -237,7 +237,10 @@
     "removeGroup": "Verwijdering van deze personalisatie controleren",
     "removeAll": "Verwijdering van alle gepersonaliseerde artikelen controleren",
     "confirmRemoval": "Winkelwagenwijziging bevestigen",
-    "remainingItems": "Resterende gepersonaliseerde artikelen"
+    "remainingItems": "Resterende gepersonaliseerde artikelen",
+    "earlierSession": "Gepersonaliseerd in een eerdere sessie",
+    "earlierSessionHelp": "Je winkelwagen bevat gepersonaliseerde artikelen uit een eerdere sessie. Ze blijven in je winkelwagen, maar kunnen hier niet worden gewijzigd. Bekijk je winkelwagen om af te rekenen, of verwijder ze om opnieuw te personaliseren.",
+    "earlierSessionExpiredHelp": "Je winkelwagen bevat gepersonaliseerde artikelen uit een eerdere sessie waarvan de prijzen zijn verlopen. Daardoor kun je ze niet afrekenen. Verwijder ze om opnieuw te personaliseren."
   },
   "language": {
     "label": "Taal",

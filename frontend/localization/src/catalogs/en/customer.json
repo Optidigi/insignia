@@ -237,7 +237,10 @@
     "removeGroup": "Review removing this customization",
     "removeAll": "Review removing all customized items",
     "confirmRemoval": "Confirm cart update",
-    "remainingItems": "Remaining customized items"
+    "remainingItems": "Remaining customized items",
+    "earlierSession": "Customized in an earlier session",
+    "earlierSessionHelp": "Your cart has customized items from an earlier session. They stay in your cart but can't be changed here. View your cart to check out, or remove them to customize again.",
+    "earlierSessionExpiredHelp": "Your cart has customized items from an earlier session, and their prices have expired, so they can't be checked out. Remove them to customize again."
   },
   "language": {
     "label": "Language",
