@@ -155,7 +155,8 @@ export class SigningKeyLifecycle {
   async incrementEpoch(input: { scope: KeyScope; commandKey: string; requestDigest: string }): Promise<number> {
     return this.store.incrementEpoch(input);
   }
-  async desiredPublicConfig(scope: KeyScope): Promise<PublicConfig> {
+  /** `now` lets the projection record destroyed keys whose window closed (tolerated in published copies). */
+  async desiredPublicConfig(scope: KeyScope, now: Date = new Date()): Promise<PublicConfig> {
     requireScope(await this.store.getActiveScope(scope.shopId, scope.installationGeneration), scope);
     const keys = await this.store.list(scope);
     for (const key of keys) {
@@ -168,7 +169,7 @@ export class SigningKeyLifecycle {
       )
         throw new Error('Signing key metadata drift');
     }
-    return buildPublicConfig({ scope, keys });
+    return buildPublicConfig({ scope, keys, now });
   }
   async openActiveSeed(scope: KeyScope, keyId: number): Promise<Buffer> {
     requireScope(await this.store.getActiveScope(scope.shopId, scope.installationGeneration), scope);

@@ -16,6 +16,7 @@ const EVENTS = new Set([
   'refresh_process_ok',
   'refresh_process_failed',
   'signing_key_destruction',
+  'public_config_drift',
   'queue_job_rejected',
 ]);
 
@@ -33,6 +34,7 @@ export type RuntimeEvent =
   | 'refresh_process_ok'
   | 'refresh_process_failed'
   | 'signing_key_destruction'
+  | 'public_config_drift'
   | 'queue_job_rejected';
 
 const ADMIN_AUTH_STAGES = [
@@ -94,6 +96,7 @@ const BUYER_FAILURES = [
   'ReleaseEvidenceUnavailable',
   'EntitlementObservationUnavailable',
   'SignerUnavailable',
+  'PublicConfigDrift',
   'TypeError',
   'UnexpectedFailure',
 ] as const;
@@ -198,7 +201,8 @@ function safeDetails(input: RuntimeLogDetails): RuntimeLogDetails {
     input.errorClass === 'ARTWORK_CLEANUP_UNAVAILABLE' ||
     input.errorClass === 'MERCHANT_PREVIEW_CLEANUP_UNAVAILABLE' ||
     input.errorClass === 'BUYER_PAYLOAD_CLEANUP_UNAVAILABLE' ||
-    input.errorClass === 'SIGNING_KEY_DESTRUCTION_UNAVAILABLE'
+    input.errorClass === 'SIGNING_KEY_DESTRUCTION_UNAVAILABLE' ||
+    input.errorClass === 'PUBLIC_CONFIG_DRIFT'
   )
     result.errorClass = input.errorClass;
   if (Number.isSafeInteger(input.count) && (input.count ?? -1) >= 0) result.count = input.count;

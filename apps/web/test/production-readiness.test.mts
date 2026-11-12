@@ -540,3 +540,23 @@ for (const live of ['unobservable', 'release-query', 'other-query', 'missing-bui
     else assert.equal(await ready, undefined);
   });
 }
+
+test('persistent public config drift logs once it lasts five minutes, at most every five minutes, and resets on success', async () => {
+  const { createPublicConfigDriftTracker } = await import('../src/server/production-readiness.ts');
+  const logged: [string, number][] = [];
+  const tracker = createPublicConfigDriftTracker((shopId, ms) => logged.push([shopId, ms]));
+  const at = (minutes: number) => new Date(Date.parse('2026-11-12T00:00:29.000Z') + minutes * 60_000);
+  tracker.observe('shop', at(0));
+  tracker.observe('shop', at(4));
+  assert.deepEqual(logged, []);
+  tracker.observe('shop', at(5));
+  tracker.observe('shop', at(7));
+  tracker.observe('shop', at(10));
+  assert.deepEqual(logged, [
+    ['shop', 300_000],
+    ['shop', 600_000],
+  ]);
+  tracker.clear('shop');
+  tracker.observe('shop', at(11));
+  assert.equal(logged.length, 2);
+});

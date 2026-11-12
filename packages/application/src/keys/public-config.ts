@@ -23,6 +23,11 @@ export type PublicConfig = {
   value: string;
   digest: string;
   scope: KeyScope;
+  /**
+   * Destroyed keys whose window has closed (UTC day − 1 rule). A published copy may still list them
+   * until the next publication: they admit nothing, so `publishedConfigMatches` tolerates them.
+   */
+  closedDestroyed: readonly PublicSigningKey[];
   keys: readonly {
     id: number;
     publicHex: string;
@@ -34,7 +39,12 @@ export type PublicConfig = {
 };
 
 /** Exact JSON field order is deliberate; the Rust parser admits at most four keys. */
-export function buildPublicConfig(input: { scope: KeyScope; keys: readonly PublicSigningKey[] }): PublicConfig {
+export function buildPublicConfig(input: {
+  scope: KeyScope;
+  keys: readonly PublicSigningKey[];
+  /** When given, destroyed keys whose window closed before this instant are recorded as tolerable extras. */
+  now?: Date;
+}): PublicConfig {
   const { scope } = input;
   if (
     !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(scope.authorizationGeneration) ||
@@ -79,7 +89,57 @@ export function buildPublicConfig(input: { scope: KeyScope; keys: readonly Publi
     keys: keys.map(({ state: _state, ...visible }) => visible),
   });
   if (Buffer.byteLength(value) > 8000) throw new Error('Function config exceeds publication headroom');
-  return { value, digest: createHash('sha256').update(value).digest('hex'), scope, keys };
+  const utcDay = input.now ? Math.floor(input.now.getTime() / 86_400_000) : undefined;
+  const closedDestroyed =
+    utcDay === undefined
+      ? []
+      : input.keys.filter(
+          (key) => key.state === 'destroyed' && Number.isInteger(key.lastDay) && key.lastDay < utcDay - 1,
+        );
+  return { value, digest: createHash('sha256').update(value).digest('hex'), scope, keys, closedDestroyed };
+}
+
+/**
+ * The one comparison between a published Function config and the expected projection. It matches
+ * when the published value is exactly the expected one, or exactly the expected one plus entries
+ * for keys that are destroyed in the database and whose window has closed (byte-identical public
+ * key and window; only their `revoked` flag is taken from the published copy). Any other
+ * difference — an unknown key, a destroyed key with an open window, a missing key, or any other
+ * field — does not match.
+ */
+export function publishedConfigMatches(desired: PublicConfig, publishedValue: string | null | undefined): boolean {
+  if (typeof publishedValue !== 'string') return false;
+  if (publishedValue === desired.value) return true;
+  if (!desired.closedDestroyed.length) return false;
+  let published: { keys?: unknown };
+  try {
+    published = JSON.parse(publishedValue);
+  } catch {
+    return false;
+  }
+  if (!published || typeof published !== 'object' || !Array.isArray(published.keys)) return false;
+  const expected = JSON.parse(desired.value) as { keys: { id: number }[] } & Record<string, unknown>;
+  const expectedIds = new Set(expected.keys.map((key) => key.id));
+  const closed = new Map(desired.closedDestroyed.map((key) => [key.id, key]));
+  const extras: { id: number; publicHex: string; revoked: boolean; firstDay: number; lastDay: number }[] = [];
+  for (const entry of published.keys as { id?: unknown; revoked?: unknown }[]) {
+    if (!entry || typeof entry !== 'object' || typeof entry.id !== 'number' || expectedIds.has(entry.id)) continue;
+    const key = closed.get(entry.id);
+    if (!key || typeof entry.revoked !== 'boolean') return false;
+    extras.push({
+      id: key.id,
+      publicHex: Buffer.from(key.publicKey).toString('hex'),
+      revoked: entry.revoked,
+      firstDay: key.firstDay,
+      lastDay: key.lastDay,
+    });
+  }
+  if (!extras.length) return false;
+  const rebuilt = JSON.stringify({
+    ...expected,
+    keys: [...expected.keys, ...extras].sort((a, b) => a.id - b.id),
+  });
+  return rebuilt === publishedValue;
 }
 
 export function requireIssuanceReady(input: { config: PublicConfig; keyId: number; acceptedDay: number }): void {

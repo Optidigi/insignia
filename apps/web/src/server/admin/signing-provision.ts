@@ -302,7 +302,9 @@ export async function provisionSigningKey(
     assert.ok(rows.filter((row) => row.state !== 'destroyed').length < 4 && !rows.some((row) => row.id === plan.keyId));
     const prior = await operation('READ_CONFIG_BEFORE', () => admin.read({ ...tenant, field: 'public_config' }));
     if (rows.some((row) => row.state !== 'destroyed'))
-      assert.equal(prior?.value, (await lifecycle.desiredPublicConfig(scope)).value);
+      assert.ok(
+        ports.app.publishedConfigMatches(await lifecycle.desiredPublicConfig(scope, ports.now()), prior?.value),
+      );
     else assert.equal(prior, null);
     let ready:
       | {

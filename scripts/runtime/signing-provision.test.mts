@@ -443,3 +443,45 @@ test('non-expiring rotation shortens the retiring key before publication and kee
     await f.close();
   }
 });
+
+test('rotation proceeds when the published config still lists a destroyed key whose window closed (12 Nov 2026)', async () => {
+  const f = await fixture();
+  try {
+    const today = f.ports.app.localDay(new Date(clockStart), 'Asia/Tokyo').ordinal;
+    await f.lifecycle.createPending({ scope: f.scope, keyId: 1, firstDay: today - 40, lastDay: today - 10 });
+    await f.lifecycle.activate(f.scope, 1);
+    await f.lifecycle.createPending({ scope: f.scope, keyId: 2, firstDay: today - 1, lastDay: 0x7fffffff });
+    await f.lifecycle.activate(f.scope, 2);
+    // Published while key 1 was still retiring; the daily job destroyed it afterwards.
+    f.setPublicValue((await f.lifecycle.desiredPublicConfig(f.scope)).value);
+    required(f.rows.find((row) => row.id === 1)).state = 'destroyed';
+    const result = await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
+    assert.equal(result.classification, 'SIGNING_KEY_CONFIG_PROVISIONED');
+    // The new publication drops the destroyed key.
+    const published = JSON.parse(f.publicValue() ?? '{}') as { keys: { id: number }[] };
+    assert.deepEqual(
+      published.keys.map((key) => key.id),
+      [2, 7],
+    );
+  } finally {
+    await f.close();
+  }
+});
+
+test('rotation still stops when a destroyed key with an open window is published', async () => {
+  const f = await fixture();
+  try {
+    const today = f.ports.app.localDay(new Date(clockStart), 'Asia/Tokyo').ordinal;
+    await f.lifecycle.createPending({ scope: f.scope, keyId: 1, firstDay: today - 40, lastDay: today + 5 });
+    await f.lifecycle.activate(f.scope, 1);
+    await f.lifecycle.createPending({ scope: f.scope, keyId: 2, firstDay: today - 1, lastDay: 0x7fffffff });
+    await f.lifecycle.activate(f.scope, 2);
+    f.setPublicValue((await f.lifecycle.desiredPublicConfig(f.scope)).value);
+    required(f.rows.find((row) => row.id === 1)).state = 'destroyed';
+    const result = await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
+    assert.equal(result.classification, 'SIGNING_KEY_CONFIG_STOPPED');
+    assert.equal(result.pendingCreateAttempted, false);
+  } finally {
+    await f.close();
+  }
+});

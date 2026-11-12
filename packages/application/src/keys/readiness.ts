@@ -6,7 +6,15 @@ import {
   type TrustedFunctionArtifactEvidencePort,
 } from './artifact-attestation.js';
 import type { KeyScope } from './crypto.js';
-import { type PublicConfig, requireIssuanceReady } from './public-config.js';
+import { type PublicConfig, publishedConfigMatches, requireIssuanceReady } from './public-config.js';
+
+/** The published Function config differs from the expected projection (beyond tolerated closed keys). */
+export class PublicConfigDriftError extends Error {
+  constructor() {
+    super('Public Function config unobserved or drifted');
+    this.name = 'PublicConfigDriftError';
+  }
+}
 
 export type FunctionPresence = 'present' | 'missing' | 'duplicate' | 'drift' | 'unknown';
 export type FunctionArtifactReadinessPorts = {
@@ -52,10 +60,10 @@ export function assertQuoteIssuanceReady(input: QuoteIssuanceReadinessInput): vo
     !Number.isFinite(input.now.getTime()) ||
     !Number.isFinite(observed.observedAt.getTime()) ||
     observed.observedAt.getTime() > input.now.getTime() ||
-    input.now.getTime() - observed.observedAt.getTime() > input.maxObservationAgeMs ||
-    observed.value !== desired.value
+    input.now.getTime() - observed.observedAt.getTime() > input.maxObservationAgeMs
   )
     throw new Error('Public Function config unobserved or drifted');
+  if (!publishedConfigMatches(desired, observed.value)) throw new PublicConfigDriftError();
   if (input.functions.transform !== 'present' || input.functions.validation !== 'present')
     throw new Error('Required Function pair not ready');
   if (!input.effectiveRevision) throw new Error('ProductConfig revision is not active');
