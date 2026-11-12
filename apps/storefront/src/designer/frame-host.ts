@@ -19,6 +19,14 @@ import {
 import { createDesignerModal } from './modal';
 import type { RepairAction, RepairState } from './repair-state';
 
+/**
+ * How long a loaded Designer may take to acknowledge a host close request before the host closes it
+ * itself (#368). The trade-off: a force-close discards the frame and with it any unsaved design, so a
+ * healthy frame on a low-end phone (decoding an image, finishing an upload) must not hit it; a frame
+ * whose script stopped keeps the buyer waiting this long before the dialog closes.
+ */
+const CLOSE_ACKNOWLEDGEMENT_DEADLINE_MS = 3000;
+
 const escapeAttribute = (value: string) =>
   value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;');
 function designerAssets() {
@@ -115,6 +123,13 @@ export function createDesignerFrame(input: {
   let documentLoaded = false;
   let failed = false;
   let destroyed = false;
+  // A loaded Designer acknowledges each close request at once. A frame whose script stopped
+  // after loading never does; the host then closes it itself so the buyer is not trapped (#368).
+  let closeRequest: { id: string; timer: ReturnType<typeof setTimeout> } | undefined;
+  function settleCloseRequest() {
+    if (closeRequest) clearTimeout(closeRequest.timer);
+    closeRequest = undefined;
+  }
   const cancel = () => {
     if (!initialized) {
       close();
@@ -122,7 +137,19 @@ export function createDesignerFrame(input: {
     }
     // The Designer answers with its own decision dialog; keyboard focus belongs there.
     frame.focus();
-    send('insignia:designer:request-close');
+    settleCloseRequest();
+    const id = crypto.randomUUID();
+    closeRequest = {
+      id,
+      timer: setTimeout(() => {
+        if (closeRequest?.id !== id || destroyed) return;
+        closeRequest = undefined;
+        close();
+        // Discarding the frame also fences any late acknowledgement or close from it.
+        destroy();
+      }, CLOSE_ACKNOWLEDGEMENT_DEADLINE_MS),
+    };
+    send('insignia:designer:request-close', { id });
   };
   const modal =
     input.modal ??
@@ -179,6 +206,7 @@ export function createDesignerFrame(input: {
     frame.contentWindow?.postMessage({ type, channel, ...data }, window.location.origin);
   }
   function close(receipt?: unknown) {
+    settleCloseRequest();
     const appliedClose =
       applied !== undefined && matchesCartReceipt(receipt, applied) && receipt.authority === 'shopify';
     if (appliedClose) {
@@ -207,6 +235,10 @@ export function createDesignerFrame(input: {
     if (data.type === 'insignia:designer:initialized' && !failed) {
       initializedMessage = true;
       finishInitialization();
+      return;
+    }
+    if (data.type === 'insignia:designer:close-acknowledged') {
+      if (typeof data.id === 'string' && data.id === closeRequest?.id) settleCloseRequest();
       return;
     }
     if (data.type === 'insignia:designer:ready') {
@@ -326,6 +358,7 @@ export function createDesignerFrame(input: {
     if (destroyed) return;
     destroyed = true;
     clearTimeout(initializationTimer);
+    settleCloseRequest();
     for (const controller of controllers.values()) controller.abort();
     window.removeEventListener('message', message);
     frame.remove();
@@ -338,6 +371,7 @@ export function createDesignerFrame(input: {
     },
     close,
     hide() {
+      settleCloseRequest();
       frame.hidden = true;
       send('insignia:designer:suspend');
       modal.hide();

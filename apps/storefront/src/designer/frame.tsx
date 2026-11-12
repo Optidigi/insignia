@@ -172,6 +172,8 @@ function Frame({ initial }: { initial: Initial }) {
       }
       if (event.data.type === 'insignia:designer:suspend') setVisible(false);
       if (event.data.type === 'insignia:designer:request-close') {
+        // Answer before any rendering: an unanswered request makes the host close the frame itself (#368).
+        if (typeof event.data.id === 'string') send('insignia:designer:close-acknowledged', { id: event.data.id });
         setRequestClose((value) => value + 1);
         setPendingGroup(null);
       }
