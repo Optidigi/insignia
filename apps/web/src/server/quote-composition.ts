@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
   type ArtworkScope,
+  BuyerRejectedError,
   bindProviderSubscription,
   createArtworkUsabilityPort,
   type EntitlementPolicyConfig,
@@ -168,7 +169,10 @@ export function createQuoteAuthorityPorts(input: {
           economics.lines.map((line) => ({ index: line.lineIndex, quantity: line.quantity })),
           { ordinaryLineHint: capacity.ordinaryLineCount },
         );
-        if (result.status !== 'ADMIT') throw new Error(`candidate capacity rejected: ${result.reason}`);
+        if (result.status !== 'ADMIT')
+          throw ['BUCKET_COUNT', 'CART_LINES', 'PHYSICAL_QUANTITY'].includes(result.reason)
+            ? new BuyerRejectedError('CAPACITY_EXCEEDED', `candidate capacity rejected: ${result.reason}`)
+            : new Error(`candidate capacity rejected: ${result.reason}`);
         if (!Number.isSafeInteger(capacity.inputBytes) || capacity.inputBytes < 0 || capacity.inputBytes > 128_000)
           throw new Error('cart input availability estimate exceeds candidate reference');
       },

@@ -500,6 +500,7 @@
       "customer_recovery_cartCommitFailed": "Impossibile aggiornare il carrello",
       "customer_recovery_cartRejected": "Carrello rifiutato",
       "customer_recovery_cartRejectedStock": "Carrello rifiutato (disponibilità)",
+      "customer_recovery_cartLimit": "Limite del carrello raggiunto",
       "customer_recovery_undo": "Annulla",
       "customer_recovery_dismissNotification": "Chiudi la notifica",
       "common_actions_save": "Salva",

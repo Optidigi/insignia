@@ -949,6 +949,37 @@ describe('buyer-actionable acceptance conditions are typed, not plain errors (#3
     await expect(acceptQuote({ ...request, country: 'us' }, ports)).rejects.toThrow(/invalid quote request/);
   });
 
+  it('a cart over 32 variant entries or 10,000 garments is capacity exceeded before provider reads (#335)', async () => {
+    const variants = (count: number, quantity: number) =>
+      Array.from({ length: count }, (_, index) => ({ variantId: `variant-${index}`, quantity }));
+    const split = (count: number, quantity: number) =>
+      [variants(count - 16, quantity), variants(16, quantity)].map((entries) => ({
+        group: { ...group, variants: entries },
+      }));
+    for (const groups of [
+      split(33, 1),
+      [{ group: { ...group, variants: variants(2, 6000) } }],
+      [
+        { group: { ...group, variants: variants(1, 10000) } },
+        { group: { ...group, variants: [{ variantId: 'more', quantity: 1 }] } },
+      ],
+      Array.from({ length: 33 }, () => ({ group })),
+    ]) {
+      const { ports } = fixture();
+      await expect(proposeQuote({ ...request, groups }, ports)).rejects.toMatchObject(rejected('CAPACITY_EXCEEDED'));
+      await expect(acceptQuote({ ...request, groups }, ports)).rejects.toMatchObject(rejected('CAPACITY_EXCEEDED'));
+      expect(ports.tenant.getActive).not.toHaveBeenCalled();
+    }
+    const { ports } = fixture();
+    await expect(
+      acceptQuote({ ...request, capacity: { ordinaryLineCount: 200, inputBytes: 100 } }, ports),
+    ).rejects.toMatchObject(rejected('CAPACITY_EXCEEDED'));
+    expect(ports.authorization.issue).not.toHaveBeenCalled();
+    await expect(
+      acceptQuote({ ...request, capacity: { ordinaryLineCount: -1, inputBytes: 100 } }, ports),
+    ).rejects.not.toMatchObject(rejected('CAPACITY_EXCEEDED'));
+  });
+
   it('a republished product configuration requires review; an unpublished product is unavailable', async () => {
     const { ports } = fixture();
     vi.mocked(ports.publication.getEffective).mockResolvedValueOnce({

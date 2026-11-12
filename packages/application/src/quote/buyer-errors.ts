@@ -10,7 +10,8 @@ export type BuyerRejectionCode =
   | 'POSITION_INVALID'
   | 'PRODUCT_UNAVAILABLE'
   | 'COUNTRY_REQUIRED'
-  | 'ENTITLEMENT_DENIED';
+  | 'ENTITLEMENT_DENIED'
+  | 'CAPACITY_EXCEEDED';
 
 /**
  * A finer, public reason for a rejection, sent as `details.reason`; never the rejected data itself.

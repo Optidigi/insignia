@@ -92,7 +92,7 @@ export interface DesignerState {
     /** Silent re-proposal of an expired, still-displayed quote; the footer stays usable. */
     | { kind: 'refreshing'; requestId: string; design: Design }
     | { kind: 'pending'; requestId: string; design: Design }
-    | { kind: 'failed'; reason: 'cart-commit-failed'; preparation?: boolean }
+    | { kind: 'failed'; reason: 'cart-commit-failed'; preparation?: boolean; cartLimit?: boolean }
     /** Shopify definitely refused the update (typically stock); `detail` is its own explanation. */
     | { kind: 'failed'; reason: 'cart-rejected'; stock?: boolean; detail?: string; preparation?: undefined };
   completion: CartReceipt | null;
@@ -167,7 +167,7 @@ export type DesignerEvent =
   | { type: 'cart-mutation-started'; requestId: string }
   | { type: 'cart-preparation-started'; requestId: string }
   | { type: 'cart-commit-succeeded'; requestId: string; receipt: CartReceipt }
-  | { type: 'cart-commit-failed'; requestId: string; reason: 'cart-commit-failed'; preparation?: boolean }
+  | { type: 'cart-commit-failed'; requestId: string; reason: 'cart-commit-failed'; preparation?: boolean; cartLimit?: boolean }
   | { type: 'cart-commit-failed'; requestId: string; reason: 'cart-rejected'; stock?: boolean; detail?: string }
   | { type: 'cart-commit-canceled' }
   | { type: 'product-design-edit-requested'; design: Design }
@@ -429,7 +429,12 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
                     ...(event.stock ? { stock: true } : {}),
                     ...(event.detail ? { detail: event.detail } : {}),
                   }
-                : { kind: 'failed', reason: event.reason, ...(event.preparation ? { preparation: true } : {}) },
+                : {
+                    kind: 'failed',
+                    reason: event.reason,
+                    ...(event.preparation ? { preparation: true } : {}),
+                    ...(event.cartLimit ? { cartLimit: true } : {}),
+                  },
           }
         : state;
     case 'cart-commit-canceled':

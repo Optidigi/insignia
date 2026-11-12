@@ -10,6 +10,7 @@
     "test/selected-quote-expiry.test.mts",
     "test/selected-cart-recovery.test.mts",
     "test/selected-quote-latency.test.mts",
+    "test/selected-cart-capacity.test.mts",
     "test/published-options.test.mts"
   ],
   "exclude": []

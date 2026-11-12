@@ -17,16 +17,52 @@ export const BuyerDesiredGroupSchema = CustomizationGroupSchema.omit({ shopId: t
   }),
   variants: CustomizationGroupSchema.shape.variants.max(32),
 });
-export const BuyerDesiredSchema = z.strictObject({
-  country: z.string().regex(/^[A-Z]{2}$/),
-  marketId: z.string().regex(/^(?:gid:\/\/shopify\/Market\/)?[1-9][0-9]{0,19}$/),
-  groups: z.array(BuyerDesiredGroupSchema).min(1).max(32),
-  capacity: z.strictObject({
-    ordinaryLineCount: z.number().int().min(0).max(200),
-    inputBytes: z.number().int().min(0).max(128000),
-  }),
-});
-export const BuyerProposalRequestSchema = BuyerDesiredSchema.extend({
+/**
+ * One signed set covers the whole cart's customized lines (CART-LINE-V3): at most 32 variant entries and
+ * 10,000 garments across every group. The storefront pre-checks the same rule before proposing.
+ */
+export const BUYER_CART_CAPACITY = { variants: 32, quantity: 10000 } as const;
+export function exceedsBuyerCartCapacity(groups: readonly { variants: readonly { quantity: number }[] }[]): boolean {
+  let variants = 0;
+  let quantity = 0;
+  for (const group of groups) {
+    variants += group.variants.length;
+    for (const variant of group.variants) quantity += variant.quantity;
+  }
+  return variants > BUYER_CART_CAPACITY.variants || quantity > BUYER_CART_CAPACITY.quantity;
+}
+const CART_CAPACITY_ISSUE = 'BUYER_CART_CAPACITY_EXCEEDED';
+/** The buyer API answers a request with this issue as 422 CAPACITY_EXCEEDED rather than 400. */
+export function isBuyerCartCapacityIssue(issue: { code: string; params?: unknown }): boolean {
+  return (
+    issue.code === 'custom' &&
+    typeof issue.params === 'object' &&
+    issue.params !== null &&
+    'reason' in issue.params &&
+    issue.params.reason === CART_CAPACITY_ISSUE
+  );
+}
+// Runs after the continuable per-group and group-count bounds too, so any oversized cart carries the issue.
+export const BuyerDesiredSchema = z
+  .strictObject({
+    country: z.string().regex(/^[A-Z]{2}$/),
+    marketId: z.string().regex(/^(?:gid:\/\/shopify\/Market\/)?[1-9][0-9]{0,19}$/),
+    groups: z.array(BuyerDesiredGroupSchema).min(1).max(32),
+    capacity: z.strictObject({
+      ordinaryLineCount: z.number().int().min(0).max(200),
+      inputBytes: z.number().int().min(0).max(128000),
+    }),
+  })
+  .superRefine((value, context) => {
+    if (exceedsBuyerCartCapacity(value.groups))
+      context.addIssue({
+        code: 'custom',
+        path: ['groups'],
+        message: 'cart capacity exceeded',
+        params: { reason: CART_CAPACITY_ISSUE },
+      });
+  });
+export const BuyerProposalRequestSchema = BuyerDesiredSchema.safeExtend({
   capability: BuyerCapabilitySchema,
   observedFingerprint: z.string().max(2048).optional(),
 });
@@ -35,7 +71,7 @@ export const BuyerAcceptanceSchema = z.strictObject({
   hash: BuyerHashSchema,
   idempotencyKey: BuyerIdSchema,
 });
-export const BuyerRenewalSchema = BuyerDesiredSchema.extend({
+export const BuyerRenewalSchema = BuyerDesiredSchema.safeExtend({
   capability: BuyerCapabilitySchema,
   idempotencyKey: BuyerIdSchema,
 });

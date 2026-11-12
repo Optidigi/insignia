@@ -646,6 +646,32 @@ test("pending and unavailable reviews mask stale group totals and per-item price
 });
 
 
+test("a cart over the signed-set capacity names the limit in every language instead of Unavailable (#335)", async () => {
+  const page = await openQuoteReview();
+  try {
+    await page.evaluate(() => window.__customerLocalizationTest.rejectReview("CAPACITY_EXCEEDED"));
+    const alert = page.locator(".cart-submit-error");
+    await alert.waitFor();
+    const messages = new Set<string>();
+    for (const [language, quantity] of [
+      ["en", "10,000"],
+      ["nl", "10.000"],
+      ["de", "10.000"],
+      ["fr", "10\u202f000"],
+      ["es", "10.000"],
+      ["it", "10.000"],
+    ]) {
+      await setLocale(page, language);
+      const text = await alert.innerText();
+      assert.ok(text.includes("32") && text.includes(quantity), `${language} names both limits: ${text}`);
+      assert.doesNotMatch(text, /Unavailable|Niet beschikbaar|Nicht verfügbar|Indisponible|No disponible|Non disponibile/);
+      if (language === "de") assert.match(text, /\bSie\b/, "German uses formal Sie");
+      messages.add(text);
+    }
+    assert.equal(messages.size, 6, "each language has its own message");
+  } finally { await page.close(); }
+});
+
 test("design totals retain translated labels and fit narrow and desktop review layouts", async () => {
   const page = await openQuoteReview();
   try {

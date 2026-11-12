@@ -189,6 +189,7 @@ export const customerParameterContracts = {
   'customer:recovery.artworkRemoved': {},
   'customer:recovery.artworkRestored': {},
   'customer:recovery.cartCommitFailed': {},
+  'customer:recovery.cartLimit': { formattedMaxItems: 'string', formattedMaxLines: 'string' },
   'customer:recovery.cartRejected': {},
   'customer:recovery.cartRejectedStock': {},
   'customer:recovery.colorItemsRemoved': { colorName: 'string' },

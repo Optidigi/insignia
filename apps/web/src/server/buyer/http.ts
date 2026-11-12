@@ -9,6 +9,7 @@ import {
   ShopDayChangedError,
 } from '@insignia/application';
 import {
+  BUYER_CART_CAPACITY,
   BuyerAcceptanceSchema,
   BuyerCapabilitySchema,
   BuyerCartStateSchema,
@@ -18,6 +19,7 @@ import {
   BuyerIdSchema,
   BuyerProposalRequestSchema,
   BuyerRenewalSchema,
+  isBuyerCartCapacityIssue,
   parseBuyerResponse,
 } from '@insignia/contracts';
 import { BuyerStateError } from '@insignia/database';
@@ -83,6 +85,11 @@ const REJECTIONS: Record<
     status: 403,
     errorClass: 'EntitlementDenied',
     message: 'Customization is not available in this store right now.',
+  },
+  CAPACITY_EXCEEDED: {
+    status: 422,
+    errorClass: 'CapacityExceeded',
+    message: `Your cart has reached the customization limit of ${BUYER_CART_CAPACITY.variants} customized cart lines and ${BUYER_CART_CAPACITY.quantity.toLocaleString('en-US')} customized items. Remove items from your cart or lower quantities to continue.`,
   },
 };
 const FAILED = 'Customization request could not be completed.';
@@ -189,6 +196,12 @@ class HttpError extends Error {
     this.code = code;
   }
 }
+/** An over-capacity cart is buyer-actionable (422), even alongside the per-group bounds it also breaks. */
+function invalidDesired(issues: readonly { code: string; params?: unknown }[]): Error {
+  return issues.some(isBuyerCartCapacityIssue)
+    ? new BuyerRejectedError('CAPACITY_EXCEEDED')
+    : new HttpError(400, 'INVALID_REQUEST');
+}
 export function handleBuyerRequest(...args: Parameters<typeof handleRequest>): Promise<Response> {
   const [collection, id, action] = args[2].split('/');
   return (args[0].method === 'POST' &&
@@ -256,7 +269,7 @@ async function handleRequest(
     if (!issuance) await services.store.admitRequest(scope, services.clock());
     if (request.method === 'POST' && route === 'quote-proposals') {
       const parsed = BuyerProposalRequestSchema.safeParse(body);
-      if (!parsed.success) throw new HttpError(400, 'INVALID_REQUEST');
+      if (!parsed.success) throw invalidDesired(parsed.error.issues);
       const proposal = await proposalStage('prepare', () => services.propose(scope, parsed.data));
       const response = await proposalStage('response-validation', () => respond(proposal));
       outcome = 'success';
@@ -272,7 +285,7 @@ async function handleRequest(
     }
     if (request.method === 'POST' && collection === 'quotes' && id && action === 'renew') {
       const parsed = BuyerRenewalSchema.safeParse(body);
-      if (!parsed.success) throw new HttpError(400, 'INVALID_REQUEST');
+      if (!parsed.success) throw invalidDesired(parsed.error.issues);
       return respond(await services.renew(scope, id, parsed.data));
     }
     if (request.method === 'POST' && collection === 'designs' && id && action === 'restore') {

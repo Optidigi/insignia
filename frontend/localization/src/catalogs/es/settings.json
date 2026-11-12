@@ -499,6 +499,7 @@
       "customer_recovery_cartCommitFailed": "No se pudo actualizar el carrito",
       "customer_recovery_cartRejected": "Carrito rechazado",
       "customer_recovery_cartRejectedStock": "Carrito rechazado (stock)",
+      "customer_recovery_cartLimit": "Límite del carrito alcanzado",
       "customer_recovery_undo": "Deshacer",
       "customer_recovery_dismissNotification": "Cerrar notificación",
       "common_actions_save": "Guardar",

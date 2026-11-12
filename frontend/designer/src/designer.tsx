@@ -1,4 +1,4 @@
-import { ARTWORK_UPLOAD_ACCEPT } from '@insignia/contracts';
+import { ARTWORK_UPLOAD_ACCEPT, BUYER_CART_CAPACITY } from '@insignia/contracts';
 import type { SupportedLanguage } from '@insignia/ui-localization/core';
 import { selectedLanguagePreference } from '@insignia/ui-localization/core';
 import type { CustomerWordingOverlay } from '@insignia/ui-localization/customer';
@@ -1882,7 +1882,7 @@ function DesignerSession({
               {workflow.commit.kind === 'failed' && (
                 <div className="cart-submit-error" role="alert">
                   <IconAlertTriangle size={18} />
-                  <span>{workflow.commit.reason === 'cart-rejected' ? workflow.commit.detail || t(workflow.commit.stock ? 'customer:recovery.cartRejectedStock' : 'customer:recovery.cartRejected') : t(workflow.commit.preparation ? 'common:summary.unavailable' : 'customer:recovery.cartCommitFailed')}</span>
+                  <span>{workflow.commit.reason === 'cart-rejected' ? workflow.commit.detail || t(workflow.commit.stock ? 'customer:recovery.cartRejectedStock' : 'customer:recovery.cartRejected') : workflow.commit.cartLimit ? t('customer:recovery.cartLimit', { formattedMaxLines: new Intl.NumberFormat(formatLocale).format(BUYER_CART_CAPACITY.variants), formattedMaxItems: new Intl.NumberFormat(formatLocale).format(BUYER_CART_CAPACITY.quantity) }) : t(workflow.commit.preparation ? 'common:summary.unavailable' : 'customer:recovery.cartCommitFailed')}</span>
                 </div>
               )}
               {validationIssues.length > 0 && (

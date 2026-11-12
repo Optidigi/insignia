@@ -228,6 +228,7 @@
     "cartCommitFailed": "Je winkelwagen kon niet worden bijgewerkt. Je ontwerp is er nog. Probeer het opnieuw.",
     "cartRejected": "Shopify kon je winkelwagen niet bijwerken. Je winkelwagen is ongewijzigd en je ontwerp is er nog. Probeer het later opnieuw.",
     "cartRejectedStock": "Er is niet genoeg voorraad om dit aan je winkelwagen toe te voegen. Je winkelwagen is ongewijzigd en je ontwerp is er nog. Verlaag het aantal of probeer het later opnieuw.",
+    "cartLimit": "Je winkelwagen heeft de limiet van {{formattedMaxLines}} gepersonaliseerde regels en {{formattedMaxItems}} gepersonaliseerde artikelen bereikt. Verwijder artikelen uit je winkelwagen of verlaag de aantallen om verder te gaan.",
     "undo": "Ongedaan maken",
     "dismissNotification": "Melding verbergen",
     "repairRequired": "Je personalisatie moet worden gecontroleerd",
