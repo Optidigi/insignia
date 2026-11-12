@@ -1,5 +1,5 @@
 import { BuyerAcceptanceSchema, BuyerDesiredGroupSchema, BuyerProposalRequestSchema } from '@insignia/contracts';
-import type { FrameLocator, Locator, Page } from 'playwright';
+import type { FrameLocator, Locator, Page, Request as PlaywrightRequest } from 'playwright';
 
 type ObservedCartRequest = {
   idempotencyKey: string;
@@ -71,8 +71,12 @@ const config: BuyerConfig = {
   imageUrls: { photo: 'https://preview.example/fixture.png' },
   ready: true,
 };
+// The first page load and first Designer opening compile the storefront and Designer frame on
+// demand; on a loaded runner that readiness takes longer than the 7 s action default.
+const firstLoad = { timeout: 30_000 };
 async function prepareSelectedPage(page: Page, origin: string) {
   page.setDefaultTimeout(7000);
+  page.setDefaultNavigationTimeout(firstLoad.timeout);
   await page.route('**/*', (route) =>
     new URL(route.request().url()).origin === origin ? route.continue() : route.abort('blockedbyclient'),
   );
@@ -840,11 +844,19 @@ async function withRetainedBuyer(
           .update(JSON.stringify([request.groups, rows]))
           .digest('hex');
         quotes.set(proposalId, { hash, desired: request.groups });
+        // The quote expires on the page's clock (fake in clock tests). An eager proposal can still be
+        // here when the test reloads or closes the page; nobody then awaits its response.
+        let pageNow: number;
+        try {
+          pageNow = await page.evaluate(() => Date.now());
+        } catch {
+          return route.abort().catch(() => {});
+        }
         return route.fulfill({
           json: {
             proposalId,
             hash,
-            expiresAt: new Date(await page.evaluate(() => Date.now() + 60000)).toISOString(),
+            expiresAt: new Date(pageNow + 60000).toISOString(),
             currency: 'EUR',
             exponent: 2,
             customizedQuantity: rows.reduce((sum, row) => sum + row.quantity, 0),
@@ -927,10 +939,10 @@ async function withRetainedBuyer(
       .click();
     const host = page.frameLocator('iframe:not([hidden])');
     if (opening === 'repair') {
-      await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
+      await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor(firstLoad);
       await host.getByRole('button', { name: 'Review removing all customized items', exact: true }).waitFor();
       assert.equal(await host.locator('input,select,textarea').count(), 0);
-    } else await host.locator('.app').waitFor();
+    } else await host.locator('.app').waitFor(firstLoad);
     assert.equal(await page.locator('dialog[open]').isVisible(), true);
     assert.equal(await page.locator('dialog[open] > iframe').isVisible(), true);
     assert.equal(
@@ -959,6 +971,13 @@ async function withRetainedBuyer(
     await browser?.close();
     await server.close();
   }
+}
+/**
+ * Pauses page timers (needs `clock: true`) so the Designer's eager review, 350 ms after quantities
+ * settle, cannot run between a test's own edit, native cart change and Review click.
+ */
+async function freezeTimers(page: Page) {
+  await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 1000);
 }
 async function reviewRetained(host: FrameLocator) {
   await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
@@ -1212,14 +1231,18 @@ test('pending quote preparation keeps review editing responsive and cancels obso
 });
 
 test('selected full-cart review rejects external signed quantity drift without issuing or mutating the cart', async () => {
-  await withRetainedBuyer(async ({ host, editCart, proposals, accepts, mutations }) => {
-    editCart();
-    await reviewRetained(host);
-    await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
-    assert.equal(proposals.length, 0);
-    assert.equal(accepts.length, 0);
-    assert.equal(mutations(), 0);
-  });
+  await withRetainedBuyer(
+    async ({ page, host, editCart, proposals, accepts, mutations }) => {
+      await freezeTimers(page);
+      editCart();
+      await reviewRetained(host);
+      await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
+      assert.equal(proposals.length, 0);
+      assert.equal(accepts.length, 0);
+      assert.equal(mutations(), 0);
+    },
+    { clock: true },
+  );
 });
 /** The verified apply hands off to the native cart (204 here); reloading during it races that navigation. */
 const nativeCartHandoff = (page: Page) =>
@@ -1235,7 +1258,8 @@ async function reopenOwned(page: Page, trigger: Locator, host: FrameLocator) {
     document.body.append(buyer);
   });
   await trigger.getByRole('button', { name: 'Review customized cart', exact: true }).click();
-  await host.locator('.app').waitFor();
+  // After a full reload the Designer frame loads again, like a first opening.
+  await host.locator('.app').waitFor(firstLoad);
 }
 test('a native cart quantity change reopens the design at the cart quantity, never the saved draft quantity (#341)', async () => {
   await withRetainedBuyer(
@@ -1321,6 +1345,7 @@ test('after Update cart, a native return to the earlier quantity is still the ca
 test('after a cart quantity change during editing, Retry follows the cart when the buyer kept its quantity (#341)', async () => {
   await withRetainedBuyer(
     async ({ page, host, editCart, proposals, accepts, mutations }) => {
+      await freezeTimers(page);
       editCart();
       await reviewRetained(host);
       await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
@@ -1341,12 +1366,13 @@ test('after a cart quantity change during editing, Retry follows the cart when t
       assert.equal(accepts.length, 0);
       assert.equal(mutations(), 0);
     },
-    { observedQuantities: true },
+    { observedQuantities: true, clock: true },
   );
 });
 test('after a cart quantity change during editing, Retry keeps a quantity the buyer edited in the Designer (#341)', async () => {
   await withRetainedBuyer(
-    async ({ host, editCart, proposals, accepts, mutations }) => {
+    async ({ page, host, editCart, proposals, accepts, mutations }) => {
+      await freezeTimers(page);
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
       await host.locator('input[type=number]:enabled').first().fill('4');
       editCart();
@@ -1362,12 +1388,13 @@ test('after a cart quantity change during editing, Retry keeps a quantity the bu
       assert.equal(accepts.length, 0);
       assert.equal(mutations(), 0);
     },
-    { observedQuantities: true },
+    { observedQuantities: true, clock: true },
   );
 });
 test('after a cart quantity change during editing, the start action reopens the cart design at the cart quantity (#341)', async () => {
   await withRetainedBuyer(
-    async ({ host, editCart, proposals, accepts, mutations }) => {
+    async ({ page, host, editCart, proposals, accepts, mutations }) => {
+      await freezeTimers(page);
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
       await host.locator('input[type=number]:enabled').first().fill('7');
       editCart();
@@ -1391,7 +1418,7 @@ test('after a cart quantity change during editing, the start action reopens the 
       assert.equal(accepts.length, 0);
       assert.equal(mutations(), 0);
     },
-    { observedQuantities: true },
+    { observedQuantities: true, clock: true },
   );
 });
 test('selected acknowledgements rotate acceptance keys while uncertain API retries preserve the exact proposal and key', async () => {
@@ -1495,17 +1522,34 @@ for (const restoreUnavailable of [false, true])
   });
 
 test('an incompatible republish requires explicit selected design repair and never silently drops retained logo-later choices', async () => {
-  await withRetainedBuyer(async ({ host, proposals, configure, group }) => {
-    const cfg = structuredClone(config);
-    required(cfg.placements[0]).logoLaterAllowed = false;
-    cfg.revisionId = 'changed';
-    cfg.contentHash = 'e'.repeat(64);
-    configure(cfg);
-    await reviewRetained(host);
-    await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
-    assert.equal(proposals.length, 0);
-    assert.equal(required(group.design.placements[0]).artwork.kind, 'deferred');
-  });
+  await withRetainedBuyer(
+    async ({ page, host, accepts, mutations, configure, group }) => {
+      // Preparation sends its proposal without waiting for the fresh config read; the server re-checks
+      // the revision. Whether that proposal leaves before the changed publication is seen is a race,
+      // so hold proposals and assert the contract instead: a changed publication aborts it.
+      await page.route('**/apps/insignia/v1/quote-proposals', () => new Promise<void>(() => {}));
+      const dispatched: PlaywrightRequest[] = [];
+      const aborted = new Set<PlaywrightRequest>();
+      page.on('request', (request) => {
+        if (new URL(request.url()).pathname.endsWith('/quote-proposals')) dispatched.push(request);
+      });
+      page.on('requestfailed', (request) => aborted.add(request));
+      const cfg = structuredClone(config);
+      required(cfg.placements[0]).logoLaterAllowed = false;
+      cfg.revisionId = 'changed';
+      cfg.contentHash = 'e'.repeat(64);
+      configure(cfg);
+      await freezeTimers(page);
+      await reviewRetained(host);
+      await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
+      for (const request of dispatched)
+        if (!aborted.has(request)) await page.waitForEvent('requestfailed', (failed) => failed === request);
+      assert.equal(accepts.length, 0);
+      assert.equal(mutations(), 0);
+      assert.equal(required(group.design.placements[0]).artwork.kind, 'deferred');
+    },
+    { clock: true },
+  );
 });
 
 for (const [action, unknownOwned] of [
@@ -1522,6 +1566,7 @@ for (const [action, unknownOwned] of [
           next.revisionId = 'changed';
           next.contentHash = 'e'.repeat(64);
           configure(next);
+          await freezeTimers(page);
           await reviewRetained(host);
         }
         await host.getByRole('button', { name: action, exact: true }).click();
@@ -1543,7 +1588,7 @@ for (const [action, unknownOwned] of [
           },
         ]);
       },
-      { unknownOwned, opening: unknownOwned ? 'repair' : 'editable' },
+      { unknownOwned, opening: unknownOwned ? 'repair' : 'editable', clock: true },
     );
   });
 }
@@ -1753,6 +1798,9 @@ async function withProductDesigner(
           },
         });
       }
+      // Settled quantities start the Designer's eager review 350 ms later. These cases stop before
+      // Review, so its proposal stays unanswered (editing or closing cancels it) rather than racing.
+      if (path.endsWith('/quote-proposals')) return new Promise<void>(() => {});
       privateRequests++;
       throw new Error(`Unexpected product-designer API request: ${path}`);
     });
@@ -1769,11 +1817,11 @@ async function withProductDesigner(
     await trigger.click();
     const ui = page.frameLocator('iframe:not([hidden])');
     if (opening === 'unavailable') {
-      await ui.getByRole('heading', { name: 'Unavailable', exact: true }).waitFor();
+      await ui.getByRole('heading', { name: 'Unavailable', exact: true }).waitFor(firstLoad);
       assert.equal(await ui.locator('input,select,textarea').count(), 0);
       assert.equal(await ui.locator('.app').count(), 0);
       assert.equal(await ui.getByRole('button', { name: /Review removing/ }).count(), 0);
-    } else await ui.locator('.app').waitFor();
+    } else await ui.locator('.app').waitFor(firstLoad);
     assert.equal(await page.locator('dialog[open]').isVisible(), true);
     assert.equal(await page.locator('dialog[open] > iframe').isVisible(), true);
     assert.equal(
@@ -1976,11 +2024,24 @@ test('#349: an artwork check that never finishes ends with a retryable message',
       ),
     });
     await ui.getByRole('status').getByText('Checking artwork…', { exact: true }).waitFor();
-    await page.clock.runFor(31000);
-    await ui
+    const timedOut = ui
       .getByRole('alert')
-      .getByText('Checking artwork is taking longer than expected. Try again.', { exact: true })
-      .waitFor();
+      .getByText('Checking artwork is taking longer than expected. Try again.', { exact: true });
+    // `false` only when the page closes first; never an unhandled rejection.
+    const shown = timedOut.waitFor({ timeout: 0 }).then(
+      () => true,
+      () => false,
+    );
+    // Advance one status poll at a time, as a real slow check does. One 31 s jump also expires the
+    // host page's 10 s per-request timeout while a real status read is in flight, which ends the
+    // check as "could not be checked" instead of reaching the Designer's 30 s check limit.
+    for (let advanced = 0; ; ) {
+      const read = page.waitForRequest((request) => request.url().endsWith('/status'));
+      await page.clock.runFor(2000);
+      advanced += 2000;
+      if (await Promise.race([shown, read.then(() => false)])) break;
+      assert.ok(advanced <= 32000, 'the artwork check outlived its 30 s limit');
+    }
     assert.ok(statusReads >= 1);
     finish = true;
     // Retrying the same file starts a fresh check, which now finishes.
@@ -1991,9 +2052,13 @@ test('#349: an artwork check that never finishes ends with a retryable message',
 
 test('reopening resumes the selected Designer without a developer host page', async () => {
   await withProductDesigner(config, async ({ page, ui, trigger }) => {
+    // Start from the eager review's held proposal every time instead of racing the close against it.
+    const eager = page.waitForRequest('**/apps/insignia/v1/quote-proposals');
     await addDeferred(ui, 'Front');
     await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
     await ui.locator('input[type=number]:enabled').first().fill('3');
+    const proposal = await eager;
+    const cancelled = page.waitForEvent('requestfailed', (request) => request === proposal);
     await ui.getByRole('button', { name: 'Close customizer', exact: true }).click();
     await ui.getByRole('heading', { name: 'Close customization?', exact: true }).waitFor();
     await ui.getByRole('button', { name: 'Keep editing', exact: true }).click();
@@ -2001,6 +2066,7 @@ test('reopening resumes the selected Designer without a developer host page', as
     await ui.getByRole('button', { name: 'Close customizer', exact: true }).click();
     await ui.getByRole('button', { name: 'Close customization', exact: true }).click();
     await page.waitForFunction(() => document.querySelector('dialog:modal') === null);
+    await cancelled; // closing retires the speculative proposal
     await trigger.click();
     await ui.locator('.app').waitFor();
     assert.equal(await ui.locator('input[type=number]:enabled').first().inputValue(), '3');
@@ -2038,6 +2104,15 @@ test('selected desktop and mobile layouts retain the design and quantities when 
     await positionCard(ui, 'Front').getByText('Artwork to follow', { exact: true }).first().waitFor();
     await page.setViewportSize({ width: 390, height: 844 });
     const mobile = await ui.locator('.app').evaluate(async (app) => {
+      // The page resize reaches the frame asynchronously on a loaded runner, and Chromium can keep the
+      // old 100dvh on existing elements for a few frames after the frame itself reports 844.
+      const resized = () =>
+        innerWidth === 390 && innerHeight === 844 && Math.round(app.getBoundingClientRect().height) === 844;
+      for (const deadline = Date.now() + 10000; !resized(); ) {
+        if (Date.now() > deadline)
+          throw new Error(`Layout stayed ${innerWidth}x${innerHeight}, app ${app.getBoundingClientRect().height}`);
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+      }
       // Media-query listeners update preview focus on the next render; take all bounds in one settled frame.
       await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
       const preview = app.querySelector('.preview-panel')?.getBoundingClientRect();

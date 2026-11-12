@@ -200,6 +200,8 @@ async function withStorefront(
       async openPage() {
         const page = await context.newPage();
         page.setDefaultTimeout(7000);
+        // The first load compiles the storefront and Designer on demand; a loaded runner needs longer.
+        page.setDefaultNavigationTimeout(30_000);
         await page.goto(origin);
         return page;
       },

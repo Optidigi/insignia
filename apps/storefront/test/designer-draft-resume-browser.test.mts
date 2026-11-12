@@ -211,6 +211,8 @@ async function withStorefront(
       async openPage() {
         const page = await context.newPage();
         page.setDefaultTimeout(7000);
+        // The first load compiles the storefront and Designer on demand; a loaded runner needs longer.
+        page.setDefaultNavigationTimeout(30_000);
         await page.goto(origin);
         return page;
       },
@@ -239,7 +241,8 @@ async function openDesigner(page: Page): Promise<FrameLocator> {
   });
   await page.locator('insignia-buyer').getByRole('button').first().click();
   const ui = page.frameLocator('iframe:not([hidden])');
-  await ui.locator('.app').waitFor();
+  // Each new page loads the Designer frame again; a loaded runner needs longer than the action default.
+  await ui.locator('.app').waitFor({ timeout: 30_000 });
   return ui;
 }
 
@@ -258,13 +261,14 @@ async function buildToReview(ui: FrameLocator) {
 }
 
 async function expectEventually(check: () => boolean | Promise<boolean>, message: string) {
-  const deadline = Date.now() + 5000;
+  const deadline = Date.now() + 15000;
   while (!(await check())) {
     if (Date.now() > deadline) assert.fail(message);
     await new Promise((resolve) => setTimeout(resolve, 25));
   }
 }
 
+const latestDraft = (page: Page) => page.evaluate((key) => localStorage.getItem(key), LATEST_KEY);
 const prompt = (ui: FrameLocator) => ui.getByRole('heading', { name: 'Continue your design?', exact: true });
 /** The opened Designer offers no draft: it is at its first step with no placement. */
 async function expectCleanStart(ui: FrameLocator, message: string) {
@@ -308,8 +312,16 @@ for (const route of ['reload', 'navigation away and back', 'new tab'] as const)
         () => continueButton.evaluate((button) => button === document.activeElement),
         'focus starts on Continue, as on the other Designer decisions',
       );
+      const resumedFrom = await latestDraft(current);
       await continueButton.click();
       await expectResumedDraft(ui);
+      // Quantities start the resumed design's eager review, which saves it under its own id and points
+      // the latest draft at it. Wait for that: a tab opened before it reads the old id, and Start new
+      // there then leaves this tab's newer unfinished design offered.
+      await expectEventually(
+        async () => ![null, resumedFrom].includes(await latestDraft(current)),
+        'the resumed design becomes the latest draft',
+      );
 
       // The draft stays unfinished: leaving again offers it again. Start new opens clean and discards it.
       current = await leave(route === 'new tab' ? context.pages()[0]! : current);
@@ -317,10 +329,7 @@ for (const route of ['reload', 'navigation away and back', 'new tab'] as const)
       await prompt(ui).waitFor();
       await ui.getByRole('button', { name: 'Start a new design', exact: true }).click();
       await expectCleanStart(ui, 'Start new opens a clean Designer');
-      await expectEventually(
-        async () => (await current.evaluate((key) => localStorage.getItem(key), LATEST_KEY)) === null,
-        'Start new discards the draft pointer',
-      );
+      await expectEventually(async () => (await latestDraft(current)) === null, 'Start new discards the draft pointer');
       const later = await leave(current);
       await expectCleanStart(await openDesigner(later), 'a discarded draft is not offered again');
     });

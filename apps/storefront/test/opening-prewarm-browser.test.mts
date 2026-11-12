@@ -4,6 +4,10 @@ import { chromium, firefox } from 'playwright';
 import type { BuyerConfig } from '../src/buyer.ts';
 import { createStorefrontTestServer, selectedFrameAssets, serverPort } from './support.mts';
 
+// Covers launching the engine and Vite's on-demand first compile on a loaded runner;
+// each wait inside still fails on its own condition.
+const BROWSER_TEST_TIMEOUT_MS = 60_000;
+
 function deferred() {
   let resolve: () => void = () => {
     throw new Error('Deferred not initialized');
@@ -121,8 +125,6 @@ for (const engine of [chromium, firefox]) {
       () =>
         document.querySelector<HTMLIFrameElement>('dialog:not([open]) > iframe[srcdoc]')?.style.visibility ===
         'visible',
-      undefined,
-      { timeout: 10000 },
     );
     await page.waitForFunction(() => {
       const frame = document.querySelector<HTMLIFrameElement>('dialog:not([open]) > iframe[srcdoc]');
@@ -226,7 +228,7 @@ for (const engine of [chromium, firefox]) {
 
 for (const engine of [chromium, firefox])
   test(`${engine.name()}: a cart page view loads no product configuration until the buyer shows intent`, {
-    timeout: 20000,
+    timeout: BROWSER_TEST_TIMEOUT_MS,
   }, async (t) => {
     const server = await createStorefrontTestServer({
       plugins: [selectedFrameAssets()],
@@ -271,7 +273,7 @@ for (const engine of [chromium, firefox])
 
 for (const engine of [chromium, firefox])
   test(`${engine.name()}: presentation preparation expires, aborts on disconnect, and never prewarms cart repair`, {
-    timeout: 20000,
+    timeout: BROWSER_TEST_TIMEOUT_MS,
   }, async (t) => {
     const server = await createStorefrontTestServer({
       plugins: [selectedFrameAssets()],
@@ -364,7 +366,7 @@ for (const engine of [chromium, firefox])
 
 for (const engine of [chromium, firefox])
   test(`${engine.name()}: failed background stylesheet keeps the theme usable and a real click initializes a fresh frame`, {
-    timeout: 20000,
+    timeout: BROWSER_TEST_TIMEOUT_MS,
   }, async (t) => {
     const server = await createStorefrontTestServer({
       plugins: [selectedFrameAssets()],
@@ -408,8 +410,6 @@ for (const engine of [chromium, firefox])
     });
     await page.waitForFunction(
       () => !!document.querySelector('dialog > div')?.shadowRoot?.querySelector('[role=alert]'),
-      undefined,
-      { timeout: 5000 },
     );
     assert.ok(blockedStyles.length > 0, 'exercise an actual failed stylesheet request');
     assert.equal(await page.locator('dialog:modal').count(), 0);
@@ -429,7 +429,7 @@ for (const engine of [chromium, firefox])
 
 for (const engine of [chromium, firefox])
   test(`${engine.name()}: failed background photos stop preparation instead of refreshing rotating URLs`, {
-    timeout: 15000,
+    timeout: BROWSER_TEST_TIMEOUT_MS,
   }, async (t) => {
     const server = await createStorefrontTestServer({
       plugins: [selectedFrameAssets()],
@@ -494,7 +494,7 @@ for (const engine of [chromium, firefox])
 
 for (const engine of [chromium, firefox])
   test(`${engine.name()}: one visible idle owner yields to explicit intent without retiring an opened Designer`, {
-    timeout: 20000,
+    timeout: BROWSER_TEST_TIMEOUT_MS,
   }, async (t) => {
     const server = await createStorefrontTestServer({
       plugins: [selectedFrameAssets()],

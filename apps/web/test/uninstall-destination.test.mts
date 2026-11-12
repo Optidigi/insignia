@@ -1,6 +1,4 @@
 import assert from 'node:assert/strict';
-import type { ChildProcess } from 'node:child_process';
-import { spawn } from 'node:child_process';
 import { createHash, createHmac, randomBytes, randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -9,6 +7,7 @@ import { createDurableCore } from '@insignia/database';
 import { Pool } from 'pg';
 import { installQueue } from '../../../scripts/database/install-queue.mts';
 import { record, required, text } from './http-fixtures.mts';
+import { type BuiltProcess, startBuilt } from './support/built-process.mts';
 import { isolatedDatabase } from './support/isolated-database.mts';
 
 test('built exclusive uninstall callback authenticates its bound generation, settles through queue before create acknowledgement and cannot deactivate a reinstall', {
@@ -20,26 +19,23 @@ test('built exclusive uninstall callback authenticates its bound generation, set
   const connectionString = database.connectionString;
   let core: DurableCore | undefined;
   let pool: Pool | undefined;
-  const children: { process: ChildProcess; closed: Promise<unknown> }[] = [],
-    output: string[] = [];
-  async function child(path: string, env: NodeJS.ProcessEnv, cwd?: string | URL, args: string[] = []) {
-    const process = spawn(globalThis.process.execPath, [path, ...args], {
-      ...(cwd ? { cwd } : {}),
-      env,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-    const closed = new Promise((resolve) => process.once('close', resolve));
-    process.stdout.on('data', (chunk) => output.push(String(chunk)));
-    process.stderr.on('data', (chunk) => output.push(String(chunk)));
-    children.push({ process, closed });
-    return process;
+  const children: BuiltProcess[] = [];
+  async function child(kind: 'web' | 'worker', env: NodeJS.ProcessEnv) {
+    const started = await startBuilt(kind, env);
+    children.push(started);
+    return started;
   }
   async function waitFor(predicate: () => Promise<unknown>, message: string, maximum = 180) {
     for (let attempt = 0; attempt < maximum; attempt++) {
       if (await predicate().catch(() => false)) return;
       await delay(100);
     }
-    assert.fail(`${message}: ${output.join('').slice(-1200)}`);
+    assert.fail(
+      `${message}: ${children
+        .map((started) => started.output())
+        .join('')
+        .slice(-1200)}`,
+    );
   }
   try {
     await installQueue(connectionString);
@@ -68,17 +64,14 @@ test('built exclusive uninstall callback authenticates its bound generation, set
       }),
     );
     const secret = 'synthetic-exclusive-uninstall-hmac';
-    const port = 48000 + Math.floor(Math.random() * 800),
-      origin = `http://127.0.0.1:${port}`;
-    const env = {
-      ...process.env,
-      DATABASE_URL: connectionString,
-      HOST: '127.0.0.1',
-      PORT: String(port),
-      SHOPIFY_WEBHOOK_SECRET: secret,
-      APP_URL: 'https://lifecycle.example.test',
-    };
-    await child('dist/server/entry.mjs', env, new URL('..', import.meta.url));
+    const origin = (
+      await child('web', {
+        ...process.env,
+        DATABASE_URL: connectionString,
+        SHOPIFY_WEBHOOK_SECRET: secret,
+        APP_URL: 'https://lifecycle.example.test',
+      })
+    ).url;
     await waitFor(async () => required(await fetch(`${origin}/live`)).ok, 'built server readiness');
     const body = Buffer.from(JSON.stringify({ id: Number(providerId), myshopify_domain: domain }));
     async function post(path: string, overrides: Record<string, string> = {}, raw = body) {
@@ -134,21 +127,15 @@ test('built exclusive uninstall callback authenticates its bound generation, set
       'dispatched',
       'provider create has not been acknowledged',
     );
-    await child(
-      new URL('../../worker/dist/main.js', import.meta.url).pathname,
-      {
-        ...process.env,
-        DATABASE_URL: connectionString,
-        PORT: String(port + 1000),
-        APP_URL: 'https://lifecycle.example.test',
-        INSIGNIA_CREDENTIAL_KEY_ID: 'synthetic-lifecycle-key',
-        INSIGNIA_CREDENTIAL_KEY_BASE64: Buffer.alloc(32, 7).toString('base64'),
-        SHOPIFY_CLIENT_ID: 'synthetic-client',
-        SHOPIFY_CLIENT_SECRET: secret,
-      },
-      undefined,
-      [`--port=${port + 1000}`],
-    );
+    await child('worker', {
+      ...process.env,
+      DATABASE_URL: connectionString,
+      APP_URL: 'https://lifecycle.example.test',
+      INSIGNIA_CREDENTIAL_KEY_ID: 'synthetic-lifecycle-key',
+      INSIGNIA_CREDENTIAL_KEY_BASE64: Buffer.alloc(32, 7).toString('base64'),
+      SHOPIFY_CLIENT_ID: 'synthetic-client',
+      SHOPIFY_CLIENT_SECRET: secret,
+    });
     await waitFor(
       async () => !required(await required(core).tenants.getCurrentAdminInstallation(shopId)).active,
       'exclusive callback worker deactivation',
@@ -210,14 +197,7 @@ test('built exclusive uninstall callback authenticates its bound generation, set
       2,
     );
   } finally {
-    for (const child of children.reverse()) {
-      if (child.process.exitCode === null && child.process.signalCode === null) {
-        child.process.kill('SIGTERM');
-        await Promise.race([child.closed, delay(5000)]);
-        if (child.process.exitCode === null && child.process.signalCode === null) child.process.kill('SIGKILL');
-      }
-      await child.closed;
-    }
+    for (const started of children.reverse()) await started.stop();
     if (core) await required(core).close();
     if (pool) await required(pool).end();
     await database.close();

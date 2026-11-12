@@ -1,6 +1,4 @@
 import assert from 'node:assert/strict';
-import type { ChildProcess } from 'node:child_process';
-import { spawn } from 'node:child_process';
 import { createHmac, randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -8,6 +6,7 @@ import { createDurableCore } from '@insignia/database';
 import { Pool } from 'pg';
 import { installQueue } from '../../../scripts/database/install-queue.mts';
 import { record, required, text } from './http-fixtures.mts';
+import { type BuiltProcess, startBuilt } from './support/built-process.mts';
 import { isolatedDatabase } from './support/isolated-database.mts';
 
 // Source-only quarantine. A genuine identical-body uninstall remains unresolved.
@@ -21,20 +20,11 @@ test('M5-025 generic replay and identical later uninstall remain pending without
   const { connectionString } = database;
   await installQueue(connectionString);
   const secret = 'synthetic-m5025-captured-body';
-  const port = 46000 + Math.floor(Math.random() * 500);
-  const env = {
+  const server = await startBuilt('web', {
     ...process.env,
     DATABASE_URL: connectionString,
-    HOST: '127.0.0.1',
-    PORT: String(port),
     SHOPIFY_WEBHOOK_SECRET: secret,
-  };
-  const server = spawn(process.execPath, ['dist/server/entry.mjs'], {
-    cwd: new URL('..', import.meta.url),
-    env,
-    stdio: 'ignore',
   });
-  const serverClosed = new Promise((resolve) => server.once('close', resolve));
   const pool = new Pool({ connectionString });
   const core = createDurableCore(new Pool({ connectionString }));
   const shopId = randomUUID();
@@ -51,8 +41,7 @@ test('M5-025 generic replay and identical later uninstall remain pending without
     'x-shopify-event-id': randomUUID(),
     'x-shopify-triggered-at': new Date().toISOString(),
   };
-  let worker: ChildProcess | undefined;
-  let workerClosed: Promise<unknown> | undefined;
+  let worker: BuiltProcess | undefined;
   async function waitFor(predicate: () => Promise<unknown>) {
     for (let i = 0; i < 100; i++) {
       if (await predicate().catch(() => false)) return;
@@ -61,14 +50,14 @@ test('M5-025 generic replay and identical later uninstall remain pending without
     throw new Error('bounded local observation did not settle');
   }
   async function post(overrides = {}, raw = body) {
-    return fetch(`http://127.0.0.1:${port}/api/webhooks/shopify`, {
+    return fetch(`${server.url}/api/webhooks/shopify`, {
       method: 'POST',
       headers: { ...headers, ...overrides },
       body: raw,
     });
   }
   try {
-    await waitFor(async () => required(await fetch(`http://127.0.0.1:${port}/live`)).ok);
+    await waitFor(async () => required(await fetch(`${server.url}/live`)).ok);
     await core.transactions.run((tx) =>
       core.tenants.createShop(tx, { shopId, shopDomain: domain, shopifyShopId: providerId }),
     );
@@ -133,23 +122,15 @@ test('M5-025 generic replay and identical later uninstall remain pending without
     const bound = await core.webhooks.getById(receipt.inboxId);
     assert.equal(required(bound).installationGeneration, null);
     assert.equal(required(bound).resolution, 'unqualified');
-    worker = spawn(
-      process.execPath,
-      [new URL('../../worker/dist/main.js', import.meta.url).pathname, `--port=${port + 1000}`],
-      {
-        env: {
-          ...process.env,
-          DATABASE_URL: connectionString,
-          APP_URL: 'https://synthetic.example',
-          INSIGNIA_CREDENTIAL_KEY_ID: 'synthetic-k1',
-          INSIGNIA_CREDENTIAL_KEY_BASE64: Buffer.alloc(32, 7).toString('base64'),
-          SHOPIFY_CLIENT_ID: 'synthetic-client-id',
-          SHOPIFY_CLIENT_SECRET: secret,
-        },
-        stdio: 'ignore',
-      },
-    );
-    workerClosed = new Promise((resolve) => required(worker).once('close', resolve));
+    worker = await startBuilt('worker', {
+      ...process.env,
+      DATABASE_URL: connectionString,
+      APP_URL: 'https://synthetic.example',
+      INSIGNIA_CREDENTIAL_KEY_ID: 'synthetic-k1',
+      INSIGNIA_CREDENTIAL_KEY_BASE64: Buffer.alloc(32, 7).toString('base64'),
+      SHOPIFY_CLIENT_ID: 'synthetic-client-id',
+      SHOPIFY_CLIENT_SECRET: secret,
+    });
     await waitFor(
       async () =>
         required(await pool.query('select state from pgboss.job where id=$1', [receipt.inboxId])).rows[0]?.state ===
@@ -217,18 +198,8 @@ test('M5-025 generic replay and identical later uninstall remain pending without
       'M5-025 QUARANTINE_LOCAL: generations2 and3 remain active; generic receipts pending; genuine uninstall/privacy authority still BLOCKED; no provider used',
     );
   } finally {
-    for (const [child, closed] of [
-      [worker, workerClosed],
-      [server, serverClosed],
-    ] as const) {
-      if (!child) continue;
-      if (child.exitCode === null && child.signalCode === null) {
-        child.kill('SIGTERM');
-        await Promise.race([closed, delay(5000)]);
-        if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
-      }
-      await closed;
-    }
+    await worker?.stop();
+    await server.stop();
     await core.close();
     await pool.end();
   }
