@@ -17,6 +17,7 @@ import {
   VariantAvailabilityError,
 } from '@insignia/shopify';
 import { handleBuyerRequest } from '../src/server/buyer/http.ts';
+import { ReleaseEvidenceExpiredError } from '../src/server/production-readiness.ts';
 import { buyerFixture, coreFixture, record } from './http-fixtures.mts';
 
 const post = (body: unknown, path = '/v1/quote-proposals') =>
@@ -523,6 +524,8 @@ test('transient conditions are 409 BUSY with a retryable flag and Retry-After, l
     [new ShopContextError('provider_unavailable'), 'ProviderReadUnavailable'],
     [new CatalogContextUnavailable('stale'), 'ProviderReadUnavailable'],
     [new ShopifyAdminUnavailableError('Catalog read failed'), 'ProviderReadUnavailable'],
+    // Release evidence read before the fence lapsed before signing; the retry reads a newer record (#345).
+    [new ReleaseEvidenceExpiredError(), 'ReleaseEvidenceExpired'],
   ] as const;
   for (const [error, errorClass] of cases) {
     const result = await failure(error);
@@ -589,6 +592,10 @@ test('a revoked token, missing scope or retired API version stays 503 UNAVAILABL
     [new CatalogContextUnavailable('wrong_identity'), 'ProviderReadUnavailable'],
     [new Error('Catalog read failed'), 'UnexpectedFailure'],
     [new Error('REVIEW_REQUIRED'), 'UnexpectedFailure'],
+    // Each release evidence failure keeps its own class (#345).
+    [new Error('Function artifact evidence invalid or mismatched'), 'ReleaseEvidenceMismatch'],
+    [new Error('Function artifact expected build unavailable'), 'ReleaseEvidenceMissing'],
+    [new Error('Trusted release source unavailable'), 'ReleaseSourceUnavailable'],
   ] as const;
   for (const [error, errorClass] of cases)
     assert.deepEqual(

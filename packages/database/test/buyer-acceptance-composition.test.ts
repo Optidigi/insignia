@@ -23,6 +23,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
     'near-expiry',
     'credential-expiring-after-preparation',
     'release-expired-after-preparation',
+    'release-mismatched-and-expired-after-preparation',
     'price-drift-before-acceptance',
     'price-drift-after-preparation',
     'entitlement-failure-during-acceptance',
@@ -452,8 +453,18 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
               "UPDATE shop_credentials SET access_expires_at=clock_timestamp()+interval '20 seconds' WHERE shop_id=$1",
               [f.shopId],
             );
-          if (mode === 'release-expired-after-preparation')
+          if (
+            (mode === 'release-expired-after-preparation' ||
+              mode === 'release-mismatched-and-expired-after-preparation') &&
+            fenceEntries === 1
+          ) {
+            // Lapse after the pre-fence observations completed, before the signing instant.
+            await new Promise((resolve) => setTimeout(resolve, 5));
             record.attestation.expiresAt = new Date(Date.now() - 1).toISOString();
+          }
+          // A changed release is a mismatch whether or not it has also lapsed: never retryable (#345).
+          if (mode === 'release-mismatched-and-expired-after-preparation')
+            record.attestation.sourceCommit = 'f'.repeat(40);
           if (mode === 'price-drift-after-preparation') amount = '11.00';
           return accept(input, commit);
         };
@@ -466,13 +477,27 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
           });
           if (
             mode === 'release-expired-after-preparation' ||
+            mode === 'release-mismatched-and-expired-after-preparation' ||
             mode === 'price-drift-before-acceptance' ||
             mode === 'entitlement-failure-during-acceptance'
           ) {
             if (mode === 'price-drift-before-acceptance')
               await expect(acceptance).rejects.toMatchObject({ acceptanceOutcome: 'declined' });
+            // Lapsed between the pre-fence read and signing: a retryable class, never a mismatch (#345).
+            else if (mode === 'release-expired-after-preparation')
+              await expect(acceptance).rejects.toMatchObject({ name: 'ReleaseEvidenceExpiredError' });
+            else if (mode === 'release-mismatched-and-expired-after-preparation')
+              await expect(acceptance).rejects.toMatchObject({
+                name: 'Error',
+                message: 'Function artifact evidence invalid or mismatched',
+              });
             else await expect(acceptance).rejects.toThrow();
-            expect(fenceEntries).toBe(mode === 'release-expired-after-preparation' ? 1 : 0);
+            expect(fenceEntries).toBe(
+              mode === 'release-expired-after-preparation' ||
+                mode === 'release-mismatched-and-expired-after-preparation'
+                ? 1
+                : 0,
+            );
             if (mode === 'price-drift-before-acceptance') {
               amount = '10.00';
               const retainedRead = core.buyers.getProposal;
@@ -496,6 +521,18 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
               f.shopId,
             ]);
             expect(applications.rows).toEqual([]);
+            if (mode === 'release-expired-after-preparation') {
+              // Nothing was signed or stored: the BUSY retry of the same key reads a fresh record and signs.
+              const renewedAt = Date.now();
+              record.attestation.observedAt = new Date(renewedAt).toISOString();
+              record.attestation.expiresAt = new Date(renewedAt + 30000).toISOString();
+              const retried = await services.accept(f.scope, proposal.proposalId, {
+                hash: proposal.hash,
+                idempotencyKey: acceptanceKey,
+              });
+              expect(retried.quoteId).toBeTruthy();
+              expect(fenceEntries).toBe(2);
+            }
           } else {
             const accepted = await acceptance;
             expect(accepted.quoteId).toBeTruthy();

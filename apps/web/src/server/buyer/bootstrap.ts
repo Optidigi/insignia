@@ -12,6 +12,7 @@ import { credentialLifecycle } from '../../../../worker/src/handlers.ts';
 import { createDemandDrivenReleaseReader, type ReleaseVerificationCollector } from '../admin/release-evidence.ts';
 import { createReleaseVerificationClient } from '../admin/release-verification.ts';
 import { createSignerClient, type SignerClient } from '../signer-client.ts';
+import { proposalStage } from './diagnostics.ts';
 import { createProductionBuyerServices, type ProductionBuyerInputs } from './production.ts';
 import { createReleaseRefresher, RELEASE_FRESHNESS_MS, RELEASE_REFRESH_AFTER_MS } from './release-refresh.ts';
 import type { BuyerServices } from './service.ts';
@@ -234,7 +235,10 @@ export async function createBuyerBootstrap(
             }
           : ownedCore.trustedReleaseRecords,
         releaseProfile: releaseProfile.name,
-        collector,
+        // A request-path collection is its own timing span; a background refresh has none.
+        collector: refreshAhead
+          ? collector
+          : { collect: (request) => proposalStage('release-collect', () => collector.collect(request)) },
         inFlight: collecting,
         binding: {
           shopId: scope.shopId,

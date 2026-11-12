@@ -16,6 +16,30 @@ import {
 } from '@insignia/shopify';
 
 /**
+ * The release evidence (or Function observation) read before the signing fence lapsed before the
+ * signing instant. Nothing was signed or stored; repeating the request reads a newer record (#345).
+ */
+export class ReleaseEvidenceExpiredError extends Error {
+  constructor() {
+    super('Release evidence expired before signing');
+    this.name = 'ReleaseEvidenceExpiredError';
+  }
+}
+/** When the evidence observed before the fence stops satisfying the signing-time freshness rule. */
+function evidenceLapsesAt(attestation: unknown, observation: unknown, maxObservationAgeMs: number): number {
+  const instant = (value: unknown, field: string) =>
+    value && typeof value === 'object' ? Date.parse(String(Reflect.get(value, field))) : Number.NaN;
+  return Math.min(
+    ...[
+      instant(attestation, 'expiresAt'),
+      instant(attestation, 'observedAt') + maxObservationAgeMs,
+      instant(attestation, 'targetObservedAt') + maxObservationAgeMs,
+      instant(observation, 'observedAt') + maxObservationAgeMs,
+    ].filter(Number.isFinite),
+  );
+}
+
+/**
  * Quote issuance fails closed while the published Function config differs from the expected
  * projection. That failure is otherwise only a generic shopper error, so persistent drift (five
  * minutes or more since first seen) logs `public_config_drift` for the shop, at most every five
@@ -88,6 +112,8 @@ export function createProductionQuoteReadiness(input: {
   maxObservationAgeMs: number;
   clock?: () => Date;
   artifactPorts?: FunctionArtifactReadinessPorts;
+  /** Names a provider read in the caller's request timing (buyer `proposalStage`). */
+  stage?<T>(name: 'release-read' | 'public-config' | 'function-ownership', run: () => Promise<T>): Promise<T>;
 }): {
   observe(input: { quote: QuoteReadinessTarget }): Promise<QuoteReadinessObservation>;
   assertReady(input: { quote: QuoteReadinessTarget }): Promise<void>;
@@ -96,6 +122,7 @@ export function createProductionQuoteReadiness(input: {
   const admin = createPublicationAdminAdapter({ transport: input.transport });
   const now = input.clock ?? (() => new Date());
   const functions = createFunctionOwnershipReconciler({ transport: input.transport, clock: now });
+  const stage = input.stage ?? ((_name, run) => run());
   /** Provider and release IO before the signing fence. Active artifact ports may refresh expired
    * release evidence synchronously; nothing here is retained beyond the returned single check. */
   async function observe(quote: QuoteReadinessTarget): Promise<QuoteReadinessObservation> {
@@ -128,21 +155,26 @@ export function createProductionQuoteReadiness(input: {
       installationGeneration: quote.installationGeneration,
       appClientId: input.expectedFunctions.appKey,
     };
-    // Drain both release reads before reporting either failure.
-    const artifacts = Promise.allSettled([
-      Promise.resolve().then(() => artifactPorts.expectedBuild.read(artifactScope)),
-      Promise.resolve().then(() => artifactPorts.trustedEvidence.read(artifactScope)),
-    ]).then(([build, evidence]) => {
-      if (build.status === 'rejected') throw build.reason;
-      if (evidence.status === 'rejected') throw evidence.reason;
-      return [build.value, evidence.value] as const;
-    });
+    // Drain both release reads before reporting either failure. Each observation times its own wait,
+    // also when it joins a read or collection another request started.
+    const artifacts = stage('release-read', () =>
+      Promise.allSettled([
+        Promise.resolve().then(() => artifactPorts.expectedBuild.read(artifactScope)),
+        Promise.resolve().then(() => artifactPorts.trustedEvidence.read(artifactScope)),
+      ]).then(([build, evidence]) => {
+        if (build.status === 'rejected') throw build.reason;
+        if (evidence.status === 'rejected') throw evidence.reason;
+        return [build.value, evidence.value] as const;
+      }),
+    );
     const functionObservation = artifacts.then(([expectedBuild]) => {
       if (!expectedBuild) throw new Error('Function artifact expected build unavailable');
-      return functions.read(tenant, expectedFunctionOwnership(input.expectedFunctions.appKey, expectedBuild));
+      return stage('function-ownership', () =>
+        functions.read(tenant, expectedFunctionOwnership(input.expectedFunctions.appKey, expectedBuild)),
+      );
     });
     const settled = await Promise.allSettled([
-      admin.read({ ...tenant, field: 'public_config' }).then((value) => {
+      stage('public-config', () => admin.read({ ...tenant, field: 'public_config' })).then((value) => {
         if (!value) throw new Error('Public Function config missing');
         // Timestamp the completed observation, not the later end of unrelated IO.
         return { value: value.value, observedAt: now() };
@@ -182,23 +214,41 @@ export function createProductionQuoteReadiness(input: {
       // (public config, Function ownership and the 30-second release record) is applied at this instant.
       async assertCurrent() {
         const desired = await keys.desiredPublicConfig(scope, now());
-        try {
+        const signingAt = now();
+        const check = (at: Date) =>
           assertQuoteIssuanceReady({
             scope,
             selectedKeyId: input.selectedKeyId,
             acceptedDay: quote.acceptedDay,
             desired,
             observed,
-            now: now(),
+            now: at,
             maxObservationAgeMs: input.maxObservationAgeMs,
             functions: owned,
             effectiveRevision,
             artifact: { appClientId: artifactScope.appClientId, expectedBuild, attestation },
           });
+        try {
+          check(signingAt);
           publicConfigDrift.clear(scope.shopId);
         } catch (error) {
           if (error instanceof Error && error.name === 'PublicConfigDriftError')
             publicConfigDrift.observe(scope.shopId, now());
+          // Retryable only when the lapse is the sole failure: the same check, just before the
+          // evidence lapsed, passes. A changed or mismatched release stays a hard failure.
+          const lapse = evidenceLapsesAt(attestation, owned.observation, input.maxObservationAgeMs);
+          if (
+            error instanceof Error &&
+            error.message === 'Function artifact evidence invalid or mismatched' &&
+            +signingAt >= lapse
+          ) {
+            try {
+              check(new Date(Math.min(+signingAt, lapse) - 1));
+            } catch {
+              throw error;
+            }
+            throw new ReleaseEvidenceExpiredError();
+          }
           throw error;
         }
       },

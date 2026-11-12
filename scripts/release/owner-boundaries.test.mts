@@ -391,6 +391,7 @@ test('private verification receiver independently fences generation and admits o
   };
   const server = createReleaseVerificationServer({
     readBinding: async () => binding,
+    records: { read: async () => null },
     collect: async (input) => {
       calls++;
       return {
@@ -427,6 +428,79 @@ test('private verification receiver independently fences generation and admits o
   }
 });
 
+test('receiver reuses a stored record only while it stays fresh for the refresh lead (#345)', async () => {
+  const { createReleaseVerificationServer } = await import('./server.mts');
+  const { RELEASE_REFRESH_LEAD_MS } = await import('../../apps/web/src/server/admin/release-verification.ts');
+  const binding = {
+    shopId: 'synthetic-tenant',
+    installationGeneration: '1',
+    appClientId: '1443cf6d03d39edae7c101a943c5c684',
+    authorizationGeneration: '22222222-2222-4222-8222-222222222222',
+    authorizationEpoch: 0,
+    externalInstallationId: 'gid://shopify/AppInstallation/321',
+  };
+  const now = Date.parse('2026-11-12T02:00:00.000Z');
+  // The stored-record port answers by its own freshness rule at the instant it is asked about:
+  // here a record valid until `storedUntil`.
+  let storedUntil = 0,
+    collections = 0;
+  const asked: { now: number; ref: string; scope: unknown }[] = [];
+  const server = createReleaseVerificationServer({
+    now: () => now,
+    readBinding: async () => binding,
+    records: {
+      read: async (request) => {
+        asked.push({ now: +request.now, ref: request.expectedActiveAppVersionRef, scope: request.scope });
+        return +request.now < storedUntil
+          ? ({ record: { recordId: '33333333-3333-4333-8333-333333333333' } } as never)
+          : null;
+      },
+    },
+    collect: async (input) => {
+      collections++;
+      return {
+        classification: 'TRUSTED_RELEASE_COLLECT_APPEND_ACK',
+        appendAttempted: true,
+        appendAcknowledged: true,
+        ambiguousWrite: false,
+        retryAuthorized: false,
+        recordId: input.requestId,
+      };
+    },
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const verify = async () => {
+    const address = server.address();
+    assert(address && typeof address !== 'string');
+    const response = await fetch(`http://127.0.0.1:${address.port}/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requestId: '11111111-1111-4111-8111-111111111111',
+        binding,
+        expectedActiveAppVersionRef: '1163229200385',
+        deadlineMs: now + 60_000,
+      }),
+    });
+    assert.equal(response.status, 200);
+    return object(await response.json());
+  };
+  try {
+    // A record that lapses within the lead is what a refresh ahead of expiry asks about: collect.
+    storedUntil = now + RELEASE_REFRESH_LEAD_MS - 1;
+    assert.equal((await verify()).recordId, '11111111-1111-4111-8111-111111111111');
+    assert.equal(collections, 1);
+    // A sibling's just-collected record still answers an on-demand request without collecting again.
+    storedUntil = now + 20_000;
+    assert.equal((await verify()).recordId, '33333333-3333-4333-8333-333333333333');
+    assert.equal(collections, 1);
+    // Asked about this binding's record for the reviewed release, `RELEASE_REFRESH_LEAD_MS` ahead.
+    assert.deepEqual(asked[0], { now: now + RELEASE_REFRESH_LEAD_MS, ref: '1163229200385', scope: binding });
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test('collector transport awaits preparation beyond observation TTL within the authenticated deadline', async (t) => {
   const { createReleaseVerificationClient } = await import('../../apps/web/src/server/admin/release-verification.ts');
   const { createReleaseVerificationServer } = await import('./server.mts');
@@ -458,6 +532,7 @@ test('collector transport awaits preparation beyond observation TTL within the a
   t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: new Date('2026-10-12T12:00:00Z') });
   const server = createReleaseVerificationServer({
     readBinding: async () => binding,
+    records: { read: async () => null },
     async collect(input) {
       started();
       await preparation;

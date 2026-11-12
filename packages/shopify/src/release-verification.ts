@@ -5,6 +5,13 @@ import { resolveRuntimeReleaseProfile } from './runtime-release-profile.js';
 
 export type ReleaseVerificationRequest = Parameters<ReleaseVerificationCollector['collect']>[0];
 export const RELEASE_VERIFICATION_SOCKET = '/run/insignia/release-verification/collector.sock';
+/**
+ * Background refresh asks for a new trusted release record once the stored one would lapse within
+ * this lead, so a ~5 s collection lands before it expires. The receiver therefore reuses a stored
+ * record only while it stays fresh for this long; otherwise it would answer the refresh with the
+ * record that is about to lapse and nothing would be collected ahead of expiry (#345).
+ */
+export const RELEASE_REFRESH_LEAD_MS = 8_000;
 
 /** Closed metadata-only protocol. Staff credentials, provider observations,
  * executable paths and append credentials cannot be selected by this request. */

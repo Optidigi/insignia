@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import type { ReleaseVerificationRequest } from '../../apps/web/src/server/admin/release-verification.ts';
-import { parseReleaseVerificationRequest } from '../../apps/web/src/server/admin/release-verification.ts';
+import {
+  parseReleaseVerificationRequest,
+  RELEASE_REFRESH_LEAD_MS,
+} from '../../apps/web/src/server/admin/release-verification.ts';
 import { releaseProfile } from './profiles.mts';
 
 /** Private request receiver for the existing qualified collector. Startup ports
@@ -17,13 +20,20 @@ export interface CollectorCompletion {
 }
 export function createReleaseVerificationServer({
   readBinding,
-  readRecord,
+  records,
   collect,
   now = Date.now,
   profileName,
 }: {
   readBinding(): Promise<unknown>;
-  readRecord?(binding: ReleaseVerificationRequest['binding']): Promise<string | null>;
+  /** The SELECT-only trusted release records: a record fresh at `now`, else null. */
+  records: {
+    read(request: {
+      scope: ReleaseVerificationRequest['binding'];
+      expectedActiveAppVersionRef: string;
+      now: Date;
+    }): Promise<{ record: { recordId: string } } | null>;
+  };
   collect(request: ReleaseVerificationRequest): Promise<CollectorCompletion>;
   now?: () => number;
   profileName?: string;
@@ -56,7 +66,15 @@ export function createReleaseVerificationServer({
       assert.equal(JSON.stringify(input), text, 'canonical_request_required');
       assert.ok(input.deadlineMs <= now() + 300_000, 'request_deadline_unqualified');
       await current(input);
-      const existing = await readRecord?.(input.binding);
+      // Reuse only a stored record that stays fresh for the refresh lead: the buyer refresh asks
+      // ahead of expiry and must get a new record, not the one about to lapse (#345).
+      const existing = (
+        await records.read({
+          scope: input.binding,
+          expectedActiveAppVersionRef: expectedVersion,
+          now: new Date(now() + RELEASE_REFRESH_LEAD_MS),
+        })
+      )?.record.recordId;
       await current(input);
       if (existing) {
         response.end(JSON.stringify({ requestId: input.requestId, recordId: existing, state: 'COMPLETE' }));

@@ -110,6 +110,12 @@ function providerReadTransient(error: unknown): boolean | undefined {
     ? error.transient
     : undefined;
 }
+/** Release evidence failures by their fixed message; each keeps its own diagnostic class (#345). */
+const RELEASE_FAILURES: Readonly<Record<string, BuyerFailureDiagnostic['errorClass']>> = {
+  'Function artifact evidence invalid or mismatched': 'ReleaseEvidenceMismatch',
+  'Function artifact expected build unavailable': 'ReleaseEvidenceMissing',
+  'Trusted release source unavailable': 'ReleaseSourceUnavailable',
+};
 function classifyFailure(error: unknown): {
   status: number;
   code: string;
@@ -151,7 +157,9 @@ function classifyFailure(error: unknown): {
         ? 'ShopDayChanged'
         : provider
           ? 'ProviderReadUnavailable'
-          : undefined;
+          : error instanceof Error && error.name === 'ReleaseEvidenceExpiredError'
+            ? 'ReleaseEvidenceExpired'
+            : undefined;
   if (busy)
     return {
       status: 409,
@@ -174,13 +182,8 @@ function classifyFailure(error: unknown): {
             ? 'TypeError'
             : provider === false
               ? 'ProviderReadUnavailable'
-              : error instanceof Error &&
-                  [
-                    'Function artifact evidence invalid or mismatched',
-                    'Buyer acceptance release unavailable',
-                    'Trusted release source unavailable',
-                  ].includes(error.message)
-                ? 'ReleaseEvidenceUnavailable'
+              : error instanceof Error && Object.hasOwn(RELEASE_FAILURES, error.message)
+                ? RELEASE_FAILURES[error.message]
                 : error instanceof EntitlementObservationUnavailableError
                   ? 'EntitlementObservationUnavailable'
                   : error instanceof Error && error.name === 'SignerUnavailableError'

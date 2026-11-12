@@ -3,6 +3,7 @@ type Dependencies = NonNullable<Parameters<typeof createBuyerBootstrap>[1]>;
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createBuyerBootstrap } from '../src/server/buyer/bootstrap.ts';
+import { proposalDiagnostics, proposalTiming } from '../src/server/buyer/diagnostics.ts';
 import { buyerFixture, coreFixture, releaseEvidenceFixture, required } from './http-fixtures.mts';
 
 function environment() {
@@ -490,8 +491,16 @@ test('an acceptance that finds the release record stale collects synchronously a
   await createBuyerBootstrap(environment(), value.dependencies);
   const input = required(value.getComposition());
   const scope = { shopId: 'tenant', installationGeneration: '1', appClientId: 'synthetic-app' };
-  assert.equal(await input.artifactPorts.trustedEvidence.read(scope), null);
+  const timing = await proposalDiagnostics(async () => {
+    assert.equal(await input.artifactPorts.trustedEvidence.read(scope), null);
+    return proposalTiming('22222222-2222-4222-8222-222222222222', 'acceptance', 'failure');
+  });
   assert.equal(collections, 1, 'the stale record triggered one synchronous collection');
+  // The timing names the slow sub-call: the collection this request started (#345).
+  assert.deepEqual(
+    required(timing).spans.map((span) => [span.stage, span.outcome]),
+    [['release-collect', 'success']],
+  );
 });
 
 test('bootstrap reuses one Partner subscription read per shop for 60 s', async () => {

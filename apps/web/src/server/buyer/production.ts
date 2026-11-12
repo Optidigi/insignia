@@ -258,6 +258,7 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
           expectedFunctions: input.expectedFunctions,
           transport: createPublicationAdminHttpTransport({ credentials: credentialSource, fetchImpl }),
           maxObservationAgeMs: input.maxObservationAgeMs,
+          stage: proposalStage,
           artifactPorts: {
             expectedBuild: {
               read: async (target) =>
