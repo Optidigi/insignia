@@ -8,6 +8,12 @@ import test from 'node:test';
 import { createReleaseVerificationClient } from '../../apps/web/src/server/admin/release-verification.ts';
 import behaviorModules from '../../deployment/m5-runtime/native-behavior-module-baseline.json' with { type: 'json' };
 import behaviorBinding from '../../deployment/m5-runtime/native-behavior-release-binding.json' with { type: 'json' };
+import buyerFixesModules from '../../deployment/m5-runtime/native-buyer-fixes-module-baseline.json' with {
+  type: 'json',
+};
+import buyerFixesBinding from '../../deployment/m5-runtime/native-buyer-fixes-release-binding.json' with {
+  type: 'json',
+};
 import canonicalHostModules from '../../deployment/m5-runtime/native-canonical-host-module-baseline.json' with {
   type: 'json',
 };
@@ -404,6 +410,35 @@ test('functions renew candidate preserves identities and changes only theme and 
     } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
   }
 });
+test('buyer-fixes candidate changes only theme assets', () => {
+  assert.equal(buyerFixesModules.length, 14);
+  assert.equal(buyerFixesBinding.moduleHash, '83f73e0202c709902476dae6947257c981a6cadb41cfb5b82b0155144d616a81');
+  assert.equal(buyerFixesBinding.versionId, '1205760688129');
+  assert.deepEqual(
+    new Set(buyerFixesBinding.versionIds),
+    new Set([...canonicalHostBinding.versionIds, '1205760688129']),
+  );
+  assert.deepEqual(
+    buyerFixesModules.map((m) => m.handle),
+    buyerFixesModules.map((m) => m.handle).sort(),
+  );
+  const prior = new Map(canonicalHostModules.map((m) => [m.handle, m]));
+  assert.equal(prior.size, 14);
+  for (const module of buyerFixesModules) {
+    const old = required(prior.get(module.handle));
+    if (module.type === 'theme_app_extension') {
+      assert.deepEqual({ ...module, config: undefined }, { ...old, config: undefined });
+      type ThemeConfig = { theme_extension: { files: Record<string, unknown> } };
+      const files = (module.config as unknown as ThemeConfig).theme_extension.files;
+      const oldFiles = (old.config as unknown as ThemeConfig).theme_extension.files;
+      assert.deepEqual(files.blocks, oldFiles.blocks);
+      assert.deepEqual(files.snippets, oldFiles.snippets);
+      assert.deepEqual(files.locales, oldFiles.locales);
+      assert.notDeepEqual(files.assets, oldFiles.assets);
+    } else assert.deepEqual(module, old);
+  }
+});
+
 test('canonical-host candidate changes only the app host', () => {
   assert.equal(canonicalHostModules.length, 14);
   assert.equal(canonicalHostBinding.moduleHash, '6599faf690ed74df94e4b99204de391f49990a39021abf8196fe4fbafee27714');

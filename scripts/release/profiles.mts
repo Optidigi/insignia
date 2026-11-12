@@ -3,6 +3,12 @@
 import assert from 'node:assert/strict';
 import behaviorModules from '../../deployment/m5-runtime/native-behavior-module-baseline.json' with { type: 'json' };
 import behaviorCandidate from '../../deployment/m5-runtime/native-behavior-release-binding.json' with { type: 'json' };
+import buyerFixesModules from '../../deployment/m5-runtime/native-buyer-fixes-module-baseline.json' with {
+  type: 'json',
+};
+import buyerFixesBinding from '../../deployment/m5-runtime/native-buyer-fixes-release-binding.json' with {
+  type: 'json',
+};
 import canonicalHostModules from '../../deployment/m5-runtime/native-canonical-host-module-baseline.json' with {
   type: 'json',
 };
@@ -148,6 +154,16 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  // Same Functions as cart-line v3 and every non-theme module of canonical-host; only theme assets change.
+  'native-buyer-fixes-fb436e16': {
+    versionId: buyerFixesBinding.versionId,
+    versionTag: buyerFixesBinding.versionTag,
+    versionIds: buyerFixesBinding.versionIds,
+    moduleHash: buyerFixesBinding.moduleHash,
+    modules: buyerFixesModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   // Same Functions and theme as cart-line v3; only app URLs move to app.insigniacustomizer.com.
   'native-canonical-host-aa3b6166': {
     versionId: canonicalHostBinding.versionId,
