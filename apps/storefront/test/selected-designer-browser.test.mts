@@ -243,7 +243,14 @@ for (const engine of [chromium, firefox]) {
       'footer actions retain their full-grid span',
     );
     await quantity.fill('2');
-    await page.evaluate(() => Reflect.get(window, 'liveFrame').repair({ canStart: true, canRemoveGroup: false }));
+    await page.evaluate(() =>
+      Reflect.get(window, 'liveFrame').repair({
+        cause: 'review-required',
+        canStart: true,
+        canRemoveGroup: false,
+        canRemoveAll: true,
+      }),
+    );
     await frame.getByRole('heading', { name: 'Your customization needs review' }).waitFor();
     assert.equal(await quantity.inputValue(), '2');
     assert.equal(await frame.getByLabel('Packaging', { exact: true }).inputValue(), 'gift');
@@ -285,7 +292,7 @@ for (const engine of [chromium, firefox]) {
           type: 'insignia:designer:quote',
           quote: { currency: 'USD', exponent: 2, totalMinor: '9999', customizedQuantity: 99, groups: [] },
         },
-        { type: 'insignia:designer:repair', repair: { canStart: false, canRemoveGroup: false } },
+        { type: 'insignia:designer:repair', repair: { cause: 'unavailable', canRemoveAll: true } },
       ])
         frame.contentWindow?.postMessage({ ...data, requestId, channel: frame.name }, location.origin);
     });
@@ -410,7 +417,7 @@ test('frame handoff consumes only the completion matching its verified Shopify r
   const html = `<!doctype html><body><script type="module">
 import {createDesignerFrame} from '/host.js';
 window.protocolClosed=0;window.protocolApplied=0;
-const frame=createDesignerFrame({ports:{artwork:{upload:async()=>{throw Error('unused')}},cart:{commit:async(request)=>{if(window.protocolRepairMode){const owner=new AbortController();frame.repair({canStart:false,canRemoveGroup:false},{...request,signal:owner.signal});if(window.protocolRepairMode==='retired')owner.abort();}return{kind:'applied',requestId:request.requestId,designId:request.design.id,operation:request.operation,authority:'shopify'};}}},onClose(){window.protocolClosed++},onAppliedClose(){window.protocolApplied++}});
+const frame=createDesignerFrame({ports:{artwork:{upload:async()=>{throw Error('unused')}},cart:{commit:async(request)=>{if(window.protocolRepairMode){const owner=new AbortController();frame.repair({cause:'unavailable',canRemoveAll:true},{...request,signal:owner.signal});if(window.protocolRepairMode==='retired')owner.abort();}return{kind:'applied',requestId:request.requestId,designId:request.design.id,operation:request.operation,authority:'shopify'};}}},onClose(){window.protocolClosed++},onAppliedClose(){window.protocolApplied++}});
 frame.frame.id='protocol-frame';frame.frame.srcdoc='<!doctype html><body>Protocol fixture</body>';
 </script></body>`;
   const server = createServer((request, response) => {

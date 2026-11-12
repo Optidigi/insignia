@@ -11,7 +11,8 @@ import type { Artwork, Design, Print } from '../../../../frontend/designer/src/m
 import { portFailure } from '../../../../frontend/designer/src/port-failure';
 import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quote-review';
 import type { CartReceipt, CartRequest, DesignerPorts, UploadRequest } from '../../../../frontend/designer/src/runtime';
-import { DesignerRepair, type RepairAction, type RepairState } from './repair';
+import { DesignerRepair } from './repair';
+import { parseRepairState, type RepairAction, type RepairState } from './repair-state';
 
 const channel = window.name;
 // This sandboxed srcdoc frame deliberately shares its host origin. Firefox can
@@ -79,9 +80,17 @@ function invoke<T>(
     });
   });
 }
+/**
+ * A repair state from the host. `undefined` or `null` clears it; anything else that is not a valid state still keeps
+ * the Designer suspended, offering no capability.
+ */
+function hostRepair(value: unknown): RepairState | undefined {
+  if (value === undefined || value === null) return undefined;
+  return parseRepairState(value) ?? { cause: 'unavailable', canRemoveAll: false };
+}
 type Initial = {
   config?: ProductConfig;
-  repair?: RepairState;
+  repair?: unknown;
   wording?: MerchantCustomerWordingView;
   locale?: string;
   initialDesign?: Design;
@@ -125,7 +134,7 @@ function HostClosed({
 
 function Frame({ initial }: { initial: Initial }) {
   const [config, setConfig] = useState(initial.config);
-  const [repair, setRepair] = useState(initial.repair);
+  const [repair, setRepair] = useState(() => hostRepair(initial.repair));
   const [open, setOpen] = useState(true);
   const [visible, setVisible] = useState(true);
   const [pendingGroup, setPendingGroup] = useState<string | null>(null);
@@ -156,7 +165,7 @@ function Frame({ initial }: { initial: Initial }) {
     function update(event: MessageEvent) {
       if (event.source !== parent || event.origin !== parentOrigin || event.data?.channel !== channel) return;
       if (event.data.requestId !== undefined && event.data.requestId !== reviewRequestId) return;
-      if (event.data.type === 'insignia:designer:repair') setRepair(event.data.repair);
+      if (event.data.type === 'insignia:designer:repair') setRepair(hostRepair(event.data.repair));
       if (event.data.type === 'insignia:designer:open') {
         setVisible(true);
         setOpen(true);
@@ -257,11 +266,7 @@ function Frame({ initial }: { initial: Initial }) {
         <DesignerRepair
           locale={wordingLocale}
           wording={wording}
-          canStart={repair.canStart}
-          canRemoveGroup={repair.canRemoveGroup}
-          canRemoveAll={repair.canRemoveAll}
-          reopensCartLine={repair.reopensCartLine}
-          {...(repair.earlierSession ? { earlierSession: repair.earlierSession } : {})}
+          repair={repair}
           onClose={() => send('insignia:designer:closed')}
           onAction={(action: RepairAction) => {
             const id = crypto.randomUUID();

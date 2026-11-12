@@ -17,7 +17,7 @@ import {
   type UploadRequest,
 } from '../../../../frontend/designer/src/runtime';
 import { createDesignerModal } from './modal';
-import type { RepairAction, RepairState } from './repair';
+import type { RepairAction, RepairState } from './repair-state';
 
 const escapeAttribute = (value: string) =>
   value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;');

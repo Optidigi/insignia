@@ -7,6 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
 import type { CartReceipt, CartRequest } from '../../../frontend/designer/src/runtime.ts';
 import type { BuyerConfig } from '../src/buyer.ts';
+import { repairOffers } from '../src/designer/repair-state.ts';
 import { type AjaxBody, type AjaxItem, fetchBody, lineCarriers, requestUrl } from './support.mts';
 
 /** One-line v3 carrier for a variant; the storefront decodes but never verifies it. */
@@ -101,7 +102,7 @@ function fixture(hooks: Hooks = {}) {
     locale: 'en',
     storeName: 'Store',
     storage: { getItem: (key) => values.get(key) ?? null, setItem: (key, value) => void values.set(key, value) },
-    onNeedsReview: (_canStart, _target, canRemoveAll) => needsReview.push(canRemoveAll),
+    onNeedsReview: (state) => needsReview.push(repairOffers(state, 'remove-all')),
     fetchImpl: async (url, init = {}) => {
       const path = new URL(requestUrl(url), 'https://fixture.test').pathname;
       const body = fetchBody(init);

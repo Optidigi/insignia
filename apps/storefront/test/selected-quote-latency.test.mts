@@ -8,6 +8,7 @@ import { build } from 'esbuild';
 import type { DesignerQuoteReview } from '../../../frontend/designer/src/quote-review.ts';
 import type { CartRequest } from '../../../frontend/designer/src/runtime.ts';
 import type { BuyerConfig } from '../src/buyer.ts';
+import type { RepairState } from '../src/designer/repair-state.ts';
 import { type AjaxItem, fetchBody, lineCarriers, requestUrl } from './support.mts';
 
 /** One-line v3 carrier for a variant; the storefront decodes but never verifies it. */
@@ -113,7 +114,7 @@ function fixture(options: {
   const items: AjaxItem[] = [];
   const attributes: Record<string, string> = {};
   const reviews: DesignerQuoteReview[] = [];
-  const needsReview: unknown[][] = [];
+  const needsReview: RepairState[] = [];
   const priceRefreshes: BuyerConfig[] = [];
   let failCartRead = false;
   let proposals = 0;
@@ -143,7 +144,7 @@ function fixture(options: {
     storeName: 'Store',
     storage: { getItem: (key) => values.get(key) ?? null, setItem: (key, value) => void values.set(key, value) },
     onReview: (review) => reviews.push(review),
-    onNeedsReview: (...args) => needsReview.push(args.slice(0, 3)),
+    onNeedsReview: (state) => needsReview.push(state),
     onPriceRefresh: (next) => priceRefreshes.push(next),
     fetchImpl: async (url, init = {}) => {
       const path = new URL(requestUrl(url), 'https://fixture.test').pathname;
@@ -287,7 +288,11 @@ test('a changed publication found by the fresh config takes precedence over an i
   await until(() => app.log.includes('start quote-proposals'));
   config.open();
   await assert.rejects(preparing, /Published configuration changed/);
-  assert.deepEqual(app.needsReview, [[true, true, false]], 'the existing republish review path is followed');
+  assert.deepEqual(
+    app.needsReview,
+    [{ cause: 'review-required', canStart: true, canRemoveGroup: true, canRemoveAll: false }],
+    'the existing republish review path is followed',
+  );
   assert.ok(app.aborted.includes('quote-proposals'), 'the stale in-flight proposal is abandoned');
   assert.equal(app.priceRefreshes.length, 0);
   assert.equal(
