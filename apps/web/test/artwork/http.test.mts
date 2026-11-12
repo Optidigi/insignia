@@ -253,20 +253,31 @@ test('guest begin, complete and status emit one bounded timing line each; mercha
       { operation: 'status', outcome: 'failure', httpStatus: 401, assetId, failure: 'AUTHENTICATION_REQUIRED' },
     ],
   );
+});
 test('an exhausted upload quota is a 429 with its code and Retry-After, which the app proxy passes through (#336)', async () => {
+  const lines: Record<string, unknown>[] = [];
   const limited: ArtworkHttpServices = {
     ...services,
+    verifyGuest: async () => ({ kind: 'guest', shopId: 't', installationGeneration: '1', ownerHash: 'a'.repeat(64) }),
     artwork: artworkFixture({
       begin: async () => {
         throw new ArtworkError('RATE_LIMITED', 120);
       },
     }),
   };
-  const response = await handleArtworkRequest(request({ contentType: 'image/png', byteLength: 108 }), limited, {
-    kind: 'begin',
-    audience: 'merchant',
-  });
+  const response = await handleArtworkRequest(
+    new Request('https://app.example.test/api/artwork/guest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ capability: 'synthetic', contentType: 'image/png', byteLength: 108 }),
+    }),
+    limited,
+    { kind: 'begin', audience: 'guest' },
+    (value) => lines.push({ ...value }),
+  );
   assert.equal(response.status, 429);
   assert.equal(response.headers.get('Retry-After'), '120');
   assert.equal((await response.json()).code, 'RATE_LIMITED');
+  assert.equal(lines.length, 1);
+  assert.equal(lines[0]?.failure, 'RATE_LIMITED');
 });

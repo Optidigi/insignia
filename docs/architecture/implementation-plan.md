@@ -496,18 +496,18 @@ Admin contracts cover draft get/save/publish/copy, authorized artwork inspection
 
 | Condition | Status | `code` |
 |---|---|---|
-| Product configuration republished, price or selection changed, sold out | 409 | `REVIEW_REQUIRED` (`acceptanceOutcome: "declined"` after a committed decline) |
-| Country outside the ISO snapshot, country outside the primary Market, unsupported shop/presentment currency, EUR outside a qualified Netherlands shop | 422 | `UNSUPPORTED_MARKET` |
+| Product configuration republished (including between the pre-fence read and signing, at acceptance or renewal), price or selection changed, sold out | 409 | `REVIEW_REQUIRED` (`acceptanceOutcome: "declined"` after a committed decline) |
+| Country outside the ISO snapshot, country outside the primary Market, unsupported shop/presentment currency, EUR for a country other than NL or at a shop no EUR qualification profile covers (shop ID or Shopify shop differs) | 422 | `UNSUPPORTED_MARKET` |
 | Artwork expired, rejected or not usable through the quote window | 409 | `ARTWORK_EXPIRED` |
 | Custom position not allowed or outside the movement area for a selected variant | 422 | `POSITION_INVALID` |
-| Product archived, deleted or unpublished from Insignia, selected variant deleted (stock is read first, as in acceptance) | 410 | `PRODUCT_UNAVAILABLE` |
+| Product archived, deleted or unpublished from Insignia; selected variant deleted (a proposal reads stock first; acceptance prices first, and Shopify returns no price node for it) | 410 | `PRODUCT_UNAVAILABLE` |
 | `GET /v1/config` for a selected setup without `country` | 400 | `COUNTRY_REQUIRED` |
 | Recognized entitlement denied | 403 | `ENTITLEMENT_DENIED` |
 | Owner's artwork upload quota (`/api/artwork/guest`) | 429 + `Retry-After` | `RATE_LIMITED` |
-| Transient: signing-fence `lock_timeout`, shop-local day changed between preparing and signing, Shopify throttling/timeout/5xx | 409 + `Retry-After` | `BUSY`, with `retryable: true` |
-| Anything else | 503 | `UNAVAILABLE` |
+| Transient: signing-fence `lock_timeout`, shop-local day changed between preparing and signing, Shopify 429, 5xx, `THROTTLED`, network failure or timeout | 409 + `Retry-After` | `BUSY`, with `retryable: true` |
+| Shopify 401/403, `ACCESS_DENIED` (missing scope), `MAX_COST_EXCEEDED`, a substituted API version or malformed response; EUR qualification drift (release, installation epoch, Market); database statement timeout; anything else | 503 | `UNAVAILABLE` |
 
-`retryable: true` appears only on `BUSY` and means the identical request may be repeated after `Retry-After` seconds. The storefront repeats an acceptance (idempotent by its key) on `BUSY` at most twice, waiting `Retry-After` plus up to 250 ms jitter; it retries nothing else automatically. Expected 4xx outcomes are logged at info as `buyer_request_rejected` with their diagnostic class (`BUSY` keeps `DatabaseLockTimeout`, `ShopDayChanged` or `ProviderReadUnavailable`); only 503s are logged at error as `buyer_request_failed`. Shop-wide artwork ceilings remain 503: they sit far above legitimate traffic.
+`retryable: true` appears only on `BUSY` and means the identical request may be repeated after `Retry-After` seconds. Each Shopify read error type states whether it is transient; the buyer API does not guess from kinds. The storefront repeats an acceptance (idempotent by its key) on `BUSY` at most twice, waiting `Retry-After` clamped to 1–10 s (1 s when a proxy strips the header) plus up to 250 ms jitter, abortable by the caller; it retries nothing else automatically. Expected outcomes are logged as `buyer_request_rejected` with their diagnostic class: buyer-actionable 4xx at info, `BUSY` at warn (it keeps `DatabaseLockTimeout`, `ShopDayChanged` or `ProviderReadUnavailable`, so sustained lock timeouts and throttling stay visible); only 503s are logged at error as `buyer_request_failed`. Shop-wide artwork ceilings remain 503: they sit far above legitimate traffic.
 
 ### 8.4 Acceptance and cart application
 

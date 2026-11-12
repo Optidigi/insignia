@@ -265,7 +265,7 @@ test('buyer review-required logging retains only its finite diagnostic and corre
   assert.doesNotMatch(output, /SECRET|capability|carrier|properties|message/);
 });
 
-test('expected buyer outcomes log at info as rejections with the same finite fields', () => {
+test('expected buyer outcomes log as rejections with the same finite fields; BUSY logs at warn', () => {
   let output = '';
   const { logger } = createObservability({
     stream: new Writable({
@@ -286,6 +286,19 @@ test('expected buyer outcomes log at info as rejections with the same finite fie
   assert.equal(entry.level, 30);
   assert.equal(entry.event, 'buyer_request_rejected');
   assert.equal(entry.errorClass, 'DatabaseLockTimeout');
+  assert.doesNotMatch(output, /SECRET|message/);
+  output = '';
+  // Sustained lock timeouts and Shopify throttling stay visible above info.
+  logger.warn('buyer_request_rejected', {
+    correlationId: '01234567-89ab-4cde-8123-456789abcdef',
+    buyerStage: 'quote-proposals',
+    errorClass: 'ProviderReadUnavailable',
+    // @ts-expect-error Private payloads must be omitted at runtime too.
+    message: 'exception-message-SECRET',
+  });
+  const warned = parseRecord(output.trim());
+  assert.equal(warned.level, 40);
+  assert.equal(warned.errorClass, 'ProviderReadUnavailable');
   assert.doesNotMatch(output, /SECRET|message/);
   assert.throws(
     () =>
@@ -427,6 +440,19 @@ test('guest artwork timing lines whitelist a bounded vocabulary', () => {
     },
   });
   assert.match(output, /"failure":"INSPECTION_UNAVAILABLE"/);
+  output = '';
+  logger.info('artwork_request_timing', {
+    artworkTiming: {
+      ...artworkTiming,
+      operation: 'begin',
+      outcome: 'failure',
+      httpStatus: 429,
+      failure: 'RATE_LIMITED',
+      assetId: undefined,
+      state: undefined,
+    },
+  });
+  assert.match(output, /"failure":"RATE_LIMITED"/);
   for (const invalid of [
     { ...artworkTiming, operation: 'download' },
     { ...artworkTiming, totalMs: -1 },

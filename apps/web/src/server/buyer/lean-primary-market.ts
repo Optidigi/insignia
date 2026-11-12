@@ -107,16 +107,21 @@ export function createLeanPrimaryMarketAdmission(input: {
         throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'Lean primary-Market context unavailable');
       const profile = input.eurQualification;
       const now = () => +input.clock();
-      // EUR is sold only to the Netherlands, and only by a shop qualified for it.
-      if (target.currency === 'EUR' && (!profile || target.country !== 'NL'))
+      // EUR is sold only to the Netherlands, and only by a shop its qualification profile covers.
+      if (
+        target.currency === 'EUR' &&
+        (!profile ||
+          target.country !== 'NL' ||
+          profile.shopId !== target.tenant.shopId ||
+          profile.shopifyShopGid !== target.tenant.shopifyShopGid)
+      )
         throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'EUR Netherlands qualification unavailable');
+      // The covered shop's profile no longer matches its release, installation epoch or Market: an outage.
       if (
         target.currency === 'EUR' &&
         (!profile ||
           profile.activeVersionRef !== input.expectedRelease.activeVersionRef ||
           profile.functionsSourceCommit !== input.expectedRelease.functionsSourceCommit ||
-          profile.shopId !== target.tenant.shopId ||
-          profile.shopifyShopGid !== target.tenant.shopifyShopGid ||
           profile.installationGeneration !== target.tenant.installationGeneration ||
           profile.authorizationGeneration !== target.tenant.authorizationGeneration ||
           profile.authorizationEpoch !== target.tenant.authorizationEpoch ||

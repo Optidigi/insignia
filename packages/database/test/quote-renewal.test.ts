@@ -295,6 +295,19 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('immutable owned quote renewal
     expect(await repo.getOwned({ ...command, ownerBinding: 'e'.repeat(64) })).toBeNull();
     await expect(repo.findCompleted({ ...command, ownerBinding: 'e'.repeat(64) })).rejects.toThrow('ownership');
     await expect(repo.renew({ ...command, requestDigest: 'e'.repeat(64) }, commit)).rejects.toThrow('digest');
+    // Republished between the pre-fence read and signing: the buyer reviews again, as at acceptance (#336).
+    await expect(
+      repo.renew(
+        {
+          ...command,
+          idempotencyKey: 'renew-after-republish',
+          requestDigest: 'd'.repeat(64),
+          effectiveRevisions: effectiveRevisions.map((revision) => ({ ...revision, operationId: randomUUID() })),
+        },
+        commit,
+      ),
+    ).rejects.toMatchObject({ name: 'BuyerRejectedError', code: 'REVIEW_REQUIRED' });
+    expect(signatures).toBe(1);
     expect(await initialRepo.findCompleted(input)).toEqual({ quote, authorization });
     const persisted = await sql<{
       quote_value: unknown;

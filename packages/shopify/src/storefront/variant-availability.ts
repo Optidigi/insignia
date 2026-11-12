@@ -1,4 +1,4 @@
-import { withAdminDeadline } from '../admin-deadline.js';
+import { graphqlThrottled, transientStatus, withAdminDeadline } from '../admin-deadline.js';
 import type { AdminCredentialSource } from '../contextual-pricing.js';
 
 export type VariantAvailabilityTarget = {
@@ -20,12 +20,17 @@ export class VariantAvailabilityError extends Error {
     readonly kind:
       | 'invalid_request'
       | 'credential_unavailable'
+      /** Shopify 429/5xx, a THROTTLED GraphQL error, network failure or deadline: a later retry can succeed. */
       | 'provider_unavailable'
+      | 'provider_error'
       | 'invalid_provider_shape'
       | 'wrong_identity',
   ) {
     super(`Variant availability unavailable: ${kind}`);
     this.name = 'VariantAvailabilityError';
+  }
+  get transient(): boolean {
+    return this.kind === 'provider_unavailable';
   }
 }
 const QUERY = `query InsigniaVariantAvailability($ids: [ID!]!) {
@@ -74,10 +79,11 @@ export async function readVariantAvailability(
   try {
     return await withAdminDeadline(
       async (signal) => {
-        const credential = await dependencies.credentials.acquire({
-          shopId: target.shopId,
-          installationGeneration: target.installationGeneration,
-        });
+        const credential = await dependencies.credentials
+          .acquire({ shopId: target.shopId, installationGeneration: target.installationGeneration })
+          .catch(() => {
+            throw new VariantAvailabilityError('credential_unavailable');
+          });
         if (
           credential.kind !== 'usable' ||
           !/^[a-z0-9][a-z0-9-]{0,62}\.myshopify\.com$/.test(credential.shopDomain) ||
@@ -101,7 +107,8 @@ export async function readVariantAvailability(
             signal,
           },
         );
-        if (response.status !== 200) throw new VariantAvailabilityError('provider_unavailable');
+        if (transientStatus(response.status)) throw new VariantAvailabilityError('provider_unavailable');
+        if (response.status !== 200) throw new VariantAvailabilityError('provider_error');
         reader = response.body?.getReader();
         if (!reader) throw new VariantAvailabilityError('invalid_provider_shape');
         let bytes = 0;
@@ -127,6 +134,8 @@ export async function readVariantAvailability(
         } catch {
           throw new VariantAvailabilityError('invalid_provider_shape');
         }
+        if (graphqlThrottled(payload?.errors)) throw new VariantAvailabilityError('provider_unavailable');
+        if (payload?.errors !== undefined) throw new VariantAvailabilityError('provider_error');
         const nodes = record(payload?.data)?.nodes;
         if (
           !payload ||
@@ -153,7 +162,7 @@ export async function readVariantAvailability(
           byId.set(node.id, node.availableForSale);
         }
         const observed = clock();
-        if (!Number.isFinite(+observed)) throw new VariantAvailabilityError('provider_unavailable');
+        if (!Number.isFinite(+observed)) throw new VariantAvailabilityError('invalid_request');
         return {
           shopId: target.shopId,
           installationGeneration: target.installationGeneration,

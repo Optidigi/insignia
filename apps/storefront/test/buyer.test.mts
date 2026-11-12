@@ -350,11 +350,11 @@ function scripted(responses: (() => Response)[]) {
   return { calls, api: createBuyerApi({ proxyBase: '/apps/insignia', productId: '12', fetchImpl }) };
 }
 const busy =
-  (retryAfter = '0') =>
+  (retryAfter: string | null = '0') =>
   () =>
     Response.json(
       { code: 'BUSY', message: 'Busy', requestId: 'r', retryable: true },
-      { status: 409, headers: { 'Retry-After': retryAfter } },
+      { status: 409, headers: retryAfter === null ? {} : { 'Retry-After': retryAfter } },
     );
 const review = () => Response.json({ code: 'REVIEW_REQUIRED', message: 'Review', requestId: 'r' }, { status: 409 });
 const accept = 'quote-proposals/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/accept';
@@ -385,4 +385,54 @@ test('only acceptance BUSY is retried automatically', async () => {
   const outage = scripted([() => new Response('<html>theme</html>', { status: 500 })]);
   await assert.rejects(outage.api.private(accept, { hash: 'h', idempotencyKey: 'k4' }), { status: 500 });
   assert.equal(outage.calls.length, 1);
+});
+
+/** Settles the scripted fetch, session grant and body reads between mocked timer ticks. */
+async function settle() {
+  for (let i = 0; i < 20; i++) await new Promise((resolve) => setImmediate(resolve));
+}
+
+test('a BUSY whose Retry-After was stripped still waits at least one second before retrying', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { api, calls } = scripted([busy(null), review]);
+  const pending = api.private(accept, { hash: 'h', idempotencyKey: 'k5' }).catch((error: unknown) => error);
+  await settle();
+  assert.equal(calls.length, 1);
+  t.mock.timers.tick(999);
+  await settle();
+  assert.equal(calls.length, 1, 'no retry inside the server lock_timeout window');
+  t.mock.timers.tick(251);
+  await settle();
+  assert.equal(calls.length, 2);
+  assert.equal(((await pending) as { code?: unknown }).code, 'REVIEW_REQUIRED');
+});
+
+test('a long Retry-After is capped at ten seconds', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { api, calls } = scripted([busy('3600'), review]);
+  const pending = api.private(accept, { hash: 'h', idempotencyKey: 'k6' }).catch((error: unknown) => error);
+  await settle();
+  t.mock.timers.tick(9_999);
+  await settle();
+  assert.equal(calls.length, 1);
+  t.mock.timers.tick(251);
+  await settle();
+  assert.equal(calls.length, 2);
+  assert.equal(((await pending) as { code?: unknown }).code, 'REVIEW_REQUIRED');
+});
+
+test('aborting during the BUSY wait stops the acceptance without another attempt', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { api, calls } = scripted([busy('5'), review]);
+  const controller = new AbortController();
+  const pending = api
+    .private(accept, { hash: 'h', idempotencyKey: 'k7' }, controller.signal)
+    .catch((error: unknown) => error);
+  await settle();
+  assert.equal(calls.length, 1);
+  controller.abort(new Error('closed'));
+  assert.equal(((await pending) as Error).message, 'closed');
+  t.mock.timers.tick(10_000);
+  await settle();
+  assert.equal(calls.length, 1);
 });

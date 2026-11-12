@@ -34,6 +34,10 @@ export class CatalogContextUnavailable extends Error {
     super(`Catalog context unavailable: ${reason}`);
     this.name = 'CatalogContextUnavailable';
   }
+  /** A stale observation is re-read on retry; the other reasons repeat. */
+  get transient(): boolean {
+    return this.reason === 'stale';
+  }
 }
 
 const DECIMAL = /^(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/;

@@ -193,7 +193,7 @@ test('merchant cleanup runs despite buyer cleanup failure and shutdown retains b
     socketPath: join(directory, 'ready.sock'),
     observability: {
       ...createObservability(),
-      logger: { info: () => {}, error: (_event, value) => errors.push(value) },
+      logger: { info: () => {}, warn: () => {}, error: (_event, value) => errors.push(value) },
     },
     cleanup: async () => {
       throw Error('private storage diagnostic');

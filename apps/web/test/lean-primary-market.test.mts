@@ -142,3 +142,20 @@ test('a country or currency the shop does not sell in is an unsupported market; 
     drifted,
   );
 });
+test('EUR at a shop the qualification profile does not cover is an unsupported market; epoch or release drift is not', async () => {
+  const unsupported = { name: 'BuyerRejectedError', code: 'UNSUPPORTED_MARKET' };
+  const withProfile = (change: Record<string, unknown>) =>
+    setup(snapshot, parseEurNetherlandsQualification(JSON.stringify({ ...profile, ...change })));
+  await assert.rejects(() => withProfile({ shopId: 'another-tenant' }).assertSupported(target), unsupported);
+  await assert.rejects(
+    () => withProfile({ shopifyShopGid: 'gid://shopify/Shop/999' }).assertSupported(target),
+    unsupported,
+  );
+  const drifted = (error: unknown) => error instanceof Error && error.name !== 'BuyerRejectedError';
+  await assert.rejects(() => withProfile({ authorizationEpoch: 2 }).assertSupported(target), drifted);
+  await assert.rejects(() => withProfile({ functionsSourceCommit: 'b'.repeat(40) }).assertSupported(target), drifted);
+  await assert.rejects(
+    () => withProfile({ primaryMarketGid: 'gid://shopify/Market/99' }).assertSupported(target),
+    drifted,
+  );
+});

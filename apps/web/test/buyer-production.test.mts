@@ -503,14 +503,17 @@ test('valid Lean acceptance reads provider facts once before its lock and reject
       else if (query.includes('contextualPricing'))
         data = {
           nodes: [
-            {
-              __typename: 'ProductVariant',
-              id: 'gid://shopify/ProductVariant/222',
-              product: { id: 'gid://shopify/Product/111' },
-              contextualPricing: {
-                price: { amount: accepting && drift === 'price' ? '11.00' : '10.00', currencyCode: 'USD' },
-              },
-            },
+            // Shopify returns a null node for a deleted variant, before acceptance reads stock.
+            accepting && drift === 'deleted'
+              ? null
+              : {
+                  __typename: 'ProductVariant',
+                  id: 'gid://shopify/ProductVariant/222',
+                  product: { id: 'gid://shopify/Product/111' },
+                  contextualPricing: {
+                    price: { amount: accepting && drift === 'price' ? '11.00' : '10.00', currencyCode: 'USD' },
+                  },
+                },
           ],
         };
       else assert.fail(`Unexpected boundary query: ${query}`);
@@ -754,8 +757,9 @@ test('valid Lean acceptance reads provider facts once before its lock and reject
     } else if (drift === 'stock' || drift === 'overflow' || drift === 'deleted') {
       await assert.rejects(
         accept,
+        // Pricing runs first and finds no node; the buyer API answers it with 410 PRODUCT_UNAVAILABLE.
         drift === 'deleted'
-          ? { name: 'BuyerRejectedError', code: 'PRODUCT_UNAVAILABLE' }
+          ? { name: 'ContextualPricingError', kind: 'missing_variant' }
           : drift === 'stock'
             ? /REVIEW_REQUIRED/
             : /incomplete/,
@@ -1585,7 +1589,7 @@ test('production buyer reads actual primary context before Lean pricing on propo
       contextCase === 'primary'
         ? /Lean prices require one final nonnegative/
         : contextCase === 'provider-error'
-          ? /Primary Market unavailable: provider_error/
+          ? /Primary Market unavailable: provider_unavailable/
           : contextCase === 'reauthorized'
             ? /Buyer Lean context authority changed/
             : /Lean primary-Market context unavailable/;

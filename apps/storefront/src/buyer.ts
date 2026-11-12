@@ -258,7 +258,8 @@ export function createBuyerApi({
         } catch (error) {
           const { status, code, retryAfter } = error as { status?: unknown; code?: unknown; retryAfter?: number };
           if (attempt >= 2 || status !== 409 || code !== 'BUSY') throw error;
-          await waitFor(Math.min(retryAfter ?? 0, 10) * 1000 + Math.random() * 250, signal);
+          // At least 1 s even when a proxy strips Retry-After: the server's lock_timeout is 2 s.
+          await waitFor(Math.min(Math.max(retryAfter ?? 0, 1), 10) * 1000 + Math.random() * 250, signal);
         }
       }
     },

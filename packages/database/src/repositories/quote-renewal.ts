@@ -5,7 +5,7 @@ import type {
   QuoteRenewalStore,
   RenewedQuoteResult,
 } from '@insignia/application';
-import { materialHash } from '@insignia/application';
+import { BuyerRejectedError, materialHash } from '@insignia/application';
 import { type Kysely, sql } from 'kysely';
 import type { Database } from '../client/database.js';
 import {
@@ -154,7 +154,8 @@ export class PgQuoteRenewalRepository implements QuoteRenewalStore {
             AND p.installation_generation=${input.installationGeneration}::bigint AND p.status='activated'
             AND p.operation_sequence=c.publication_sequence AND p.observed_projection=p.expected_projection
             AND p.observed_projection_digest=p.expected_projection_digest FOR UPDATE OF c`.execute(transaction);
-        if (!fence.rows[0]) throw new Error('effective publication changed before renewal');
+        if (!fence.rows[0])
+          throw new BuyerRejectedError('REVIEW_REQUIRED', 'effective publication changed before renewal');
       }
       const result = await commit();
       if (

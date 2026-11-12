@@ -85,16 +85,19 @@ const REJECTIONS: Record<
   },
 };
 const FAILED = 'Customization request could not be completed.';
-/** Shopify reads that a later retry can complete: throttling, timeouts and provider outages. */
+/**
+ * A provider read failure, and whether a later retry can complete it. Each error type owns that
+ * knowledge: only throttling, Shopify 5xx and network/abort are transient, never 401/403 or a scope.
+ */
 function providerReadTransient(error: unknown): boolean | undefined {
-  if (error instanceof ShopifyAdminUnavailableError) return true;
-  if (error instanceof ContextualPricingError)
-    return ['throttled', 'network_or_timeout', 'provider_unavailable'].includes(error.kind);
-  if (error instanceof PrimaryMarketError) return error.kind === 'network' || error.kind === 'provider_error';
-  if (error instanceof VariantAvailabilityError) return error.kind === 'provider_unavailable';
-  if (error instanceof ShopContextError) return error.kind === 'provider_error';
-  if (error instanceof CatalogContextUnavailable) return error.reason === 'stale';
-  return undefined;
+  return error instanceof ShopifyAdminUnavailableError ||
+    error instanceof ContextualPricingError ||
+    error instanceof PrimaryMarketError ||
+    error instanceof VariantAvailabilityError ||
+    error instanceof ShopContextError ||
+    error instanceof CatalogContextUnavailable
+    ? error.transient
+    : undefined;
 }
 function classifyFailure(error: unknown): {
   status: number;
@@ -113,6 +116,9 @@ function classifyFailure(error: unknown): {
       message: FAILED,
     };
   if (error instanceof BuyerRejectedError) return { ...REJECTIONS[error.code], code: error.code };
+  // Shopify prices no node for a deleted variant; acceptance prices before it reads stock.
+  if (error instanceof ContextualPricingError && error.kind === 'missing_variant')
+    return { ...REJECTIONS.PRODUCT_UNAVAILABLE, code: 'PRODUCT_UNAVAILABLE' };
   const databaseCode = error && typeof error === 'object' && 'code' in error ? error.code : null;
   const provider = providerReadTransient(error);
   // Nothing was signed or stored; the same request (acceptance: the same idempotency key) can retry.
@@ -184,9 +190,9 @@ async function handleRequest(
   request: Request,
   services: BuyerServices | undefined,
   route: string,
-  /** `expected` marks a 4xx outcome (buyer-actionable or BUSY): logged at info, not as a failure. */
-  diagnostic: (value: BuyerFailureDiagnostic, expected: boolean) => void = (value, expected) =>
-    expected ? logger.info('buyer_request_rejected', value) : logger.error('buyer_request_failed', value),
+  /** Buyer-actionable 4xx log at info and BUSY at warn (concurrency pressure stays visible); 503s at error. */
+  diagnostic: (value: BuyerFailureDiagnostic, level: 'info' | 'warn' | 'error') => void = (value, level) =>
+    level === 'error' ? logger.error('buyer_request_failed', value) : logger[level]('buyer_request_rejected', value),
   timingDiagnostic: (value: BuyerTimingDiagnostic) => void = (value) =>
     logger.info('buyer_request_timing', { timing: value }),
 ): Promise<Response> {
@@ -305,7 +311,7 @@ async function handleRequest(
             errorClass: failure.errorClass,
             ...(proposalStage === undefined ? {} : { proposalStage }),
           },
-          failure.status < 500,
+          failure.status >= 500 ? 'error' : failure.retryAfter ? 'warn' : 'info',
         );
       } catch {
         /* Diagnostics cannot change settlement. */

@@ -23,7 +23,11 @@ export class BuyerRejectedError extends Error {
   }
 }
 
-/** The shop-local day ended between preparing and signing. Nothing was signed; a plain retry re-prepares. */
+/**
+ * The shop-local day ended between preparing and signing. The transaction rolls back, so nothing is
+ * stored or returned (in renewal the second check follows signing, whose result is discarded); a
+ * plain retry re-prepares for the new day.
+ */
 export class ShopDayChangedError extends Error {
   constructor() {
     super('shop-local day changed before signing');
