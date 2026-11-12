@@ -47,6 +47,7 @@ test('structured runtime events cannot emit arbitrary payload or credential fiel
   logger.info('webhook_enqueued', {
     inboxId: 'synthetic-access-SECRET',
     topic: 'customer/SECRET',
+    // @ts-expect-error Deliberately inject an unlisted class to prove runtime omission.
     errorClass: 'synthetic-refresh-SECRET',
   });
   assert.doesNotMatch(output, /SECRET|customer|Bearer|rawBody|payload|clientSecret/);
@@ -305,6 +306,7 @@ test('expected buyer outcomes log as rejections with the same finite fields; BUS
       logger.info('buyer_request_rejected', {
         correlationId: '01234567-89ab-4cde-8123-456789abcdef',
         buyerStage: 'quote-proposals',
+        // @ts-expect-error Deliberately inject an unlisted class to prove runtime rejection.
         errorClass: 'SECRET-class',
       }),
     /Invalid buyer failure diagnostic/,

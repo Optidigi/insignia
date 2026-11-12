@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { Writable } from 'node:stream';
 import { type TestContext, test } from 'node:test';
 
 type Client = ReturnType<typeof createUninstallSubscriptionClient>;
@@ -14,6 +15,7 @@ function record(value: unknown): Record<string, unknown> {
 }
 
 import { createDurableCore } from '@insignia/database';
+import { createObservability } from '@insignia/observability';
 import { createUninstallSubscriptionClient } from '@insignia/shopify';
 import { Pool } from 'pg';
 import { isolatedDatabase } from '../../web/test/support/isolated-database.mts';
@@ -360,7 +362,8 @@ test(
       unavailable = await f.shop('a', '201'),
       available = await f.shop('b', '202');
     const acquired: string[] = [],
-      enrolled: string[] = [];
+      enrolled: string[] = [],
+      warnings: string[] = [];
     const reconciliation = createUninstallEnrollmentReconciliation({
       core: f.core,
       credentials: {
@@ -380,12 +383,15 @@ test(
         enrolled.push(scope.shopId);
         assert.deepEqual(grant, available.grant);
       },
+      logger: { warn: (event) => warnings.push(event) },
     });
-    await assert.rejects(reconciliation.runOnce());
+    // Reauthorization is the operator's action: the pass moves on with one warning, not a failure.
     await reconciliation.runOnce();
-    await assert.rejects(reconciliation.runOnce());
+    await reconciliation.runOnce();
+    await reconciliation.runOnce();
     assert.deepEqual(acquired, [unavailable.scope.shopId, available.scope.shopId, unavailable.scope.shopId]);
     assert.deepEqual(enrolled, [available.scope.shopId]);
+    assert.deepEqual(warnings, ['lifecycle_credential_unavailable']);
   },
 );
 
@@ -474,3 +480,111 @@ test(
     assert.equal(creates, 2);
   },
 );
+
+function lifecycleScopes(count: number) {
+  return Array.from({ length: count }, (_, index) => ({
+    shopId: randomUUID(),
+    installationGeneration: '1',
+    externalInstallationId: `gid://shopify/AppInstallation/${index + 1}`,
+    providerShopId: `gid://shopify/Shop/${index + 1}`,
+    shopDomain: `lifecycle-${index + 1}.myshopify.com`,
+  }));
+}
+function listActiveFrom(scopes: ReturnType<typeof lifecycleScopes>) {
+  return {
+    uninstallLifecycle: {
+      async listActive(after: string | null, limit = 10) {
+        const start = after === null ? 0 : scopes.findIndex((scope) => scope.shopId === after) + 1;
+        return scopes.slice(start, start + limit);
+      },
+    },
+  };
+}
+function logLines() {
+  const lines: Record<string, unknown>[] = [];
+  const observability = createObservability({
+    stream: new Writable({
+      write(chunk, _encoding, done) {
+        lines.push(record(JSON.parse(String(chunk))));
+        done();
+      },
+    }),
+  });
+  return { lines, logger: observability.logger };
+}
+
+test('an installation without a usable credential is a warning at most once per hour, not an enrollment failure', async () => {
+  const scopes = lifecycleScopes(2);
+  const missing = required(scopes[0]),
+    usable = required(scopes[1]);
+  const { lines, logger } = logLines();
+  let now = Date.parse('2026-11-12T00:00:00.000Z');
+  const enrolled: string[] = [];
+  const reconciliation = createUninstallEnrollmentReconciliation({
+    core: listActiveFrom([missing, usable]),
+    credentials: {
+      acquire: async (scope) =>
+        scope.shopId === missing.shopId
+          ? { kind: 'missing' }
+          : {
+              kind: 'usable',
+              shopDomain: usable.shopDomain,
+              accessToken: 'synthetic-offline-only-token',
+              accessExpiresAt: new Date(now + 60_000),
+            },
+    },
+    enroll: async (_grant, scope) => {
+      enrolled.push(scope.shopId);
+    },
+    logger,
+    now: () => now,
+  });
+  // Two hours of the worker's 30-second passes; each installation is visited every minute.
+  const reportedAt: number[] = [];
+  for (let pass = 0; pass < 240; pass++) {
+    const before = lines.length;
+    await reconciliation.runOnce();
+    if (lines.length > before) reportedAt.push(pass * 30_000);
+    now += 30_000;
+  }
+  assert.deepEqual(reportedAt, [0, 3_600_000]);
+  assert.equal(enrolled.length, 120);
+  assert.deepEqual(
+    lines.map(({ level, event, shopId, errorClass }) => ({ level, event, shopId, errorClass })),
+    [0, 1].map(() => ({
+      level: 40,
+      event: 'lifecycle_credential_unavailable',
+      shopId: missing.shopId,
+      errorClass: 'LIFECYCLE_CREDENTIAL_MISSING',
+    })),
+  );
+});
+
+test('transient credential and enrollment failures stay enrollment failures without the credential warning', async () => {
+  const scope = required(lifecycleScopes(1)[0]);
+  const { lines, logger } = logLines();
+  const now = Date.parse('2026-11-12T00:00:00.000Z');
+  const usable = {
+    kind: 'usable' as const,
+    shopDomain: scope.shopDomain,
+    accessToken: 'synthetic-offline-only-token',
+    accessExpiresAt: new Date(now + 60_000),
+  };
+  const outcomes = [
+    { kind: 'temporarily_unavailable' as const },
+    { ...usable, shopDomain: 'other.myshopify.com' },
+    { ...usable, accessExpiresAt: new Date(now) },
+    usable,
+  ];
+  const reconciliation = createUninstallEnrollmentReconciliation({
+    core: listActiveFrom([scope]),
+    credentials: { acquire: async () => required(outcomes.shift()) },
+    enroll: async () => {
+      throw new Error('synthetic enrollment failure');
+    },
+    logger,
+    now: () => now,
+  });
+  for (let pass = 0; pass < 4; pass++) await assert.rejects(reconciliation.runOnce());
+  assert.deepEqual(lines, []);
+});

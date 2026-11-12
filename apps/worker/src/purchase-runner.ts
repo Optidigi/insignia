@@ -11,7 +11,7 @@ export function createPurchaseRunner(input: {
     read(target: { shopId: string; installationGeneration: string; orderId: string }): Promise<VerifiedOrder>;
     changes?(target: ShopifyOrderChangesTarget): Promise<ShopifyOrderChangesPage>;
   };
-  onError?: (errorClass: string) => void;
+  onError?: (errorClass: 'PURCHASE_DISCOVERY_UNAVAILABLE' | 'PURCHASE_RECONCILIATION_UNAVAILABLE') => void;
 }) {
   const orders = {
     ...input.orders,
