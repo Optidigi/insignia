@@ -3,10 +3,27 @@ import node from '@astrojs/node';
 import preact from '@astrojs/preact';
 import { defineConfig } from 'astro/config';
 
+// Middleware mode only disables the adapter's autostart; src/server/entry.ts starts its standalone server and
+// reports a failed bind, which the adapter's autostart would drop silently. Replacing `serverEntrypoint` through
+// `setAdapter` is not a documented Astro API: verified against @astrojs/node 11.1.6 (pinned); re-check on any adapter
+// upgrade. If it stopped applying, entry.mjs would exit without listening; the runtime/app-entry tests catch that.
+const nodeAdapter = node({ mode: 'middleware' });
+const serverEntrypoint = fileURLToPath(new URL('./src/server/entry.ts', import.meta.url));
+
 export default defineConfig({
   output: 'server',
   publicDir: '../../frontend/admin/public',
-  adapter: node({ mode: 'standalone' }),
+  adapter: {
+    ...nodeAdapter,
+    hooks: {
+      ...nodeAdapter.hooks,
+      'astro:config:done': (params) =>
+        nodeAdapter.hooks['astro:config:done']?.({
+          ...params,
+          setAdapter: (adapter) => params.setAdapter({ ...adapter, serverEntrypoint }),
+        }),
+    },
+  },
   integrations: [
     preact(),
     {

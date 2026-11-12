@@ -21,6 +21,7 @@ const EVENTS = new Set([
   'public_config_drift',
   'queue_job_rejected',
   'lifecycle_credential_unavailable',
+  'web_listen_failed',
 ]);
 
 export type RuntimeEvent =
@@ -43,7 +44,9 @@ export type RuntimeEvent =
   | 'public_config_drift'
   | 'queue_job_rejected'
   /** Warn: an active installation has no usable offline credential; it needs reauthorization, not a retry. */
-  | 'lifecycle_credential_unavailable';
+  | 'lifecycle_credential_unavailable'
+  /** Error: the web server could not bind its address; the process exits non-zero. */
+  | 'web_listen_failed';
 
 const ADMIN_AUTH_STAGES = [
   'BEARER_MISSING',
@@ -252,6 +255,10 @@ const RUNTIME_ERROR_CLASSES = [
   'LIFECYCLE_CREDENTIAL_MISSING',
   'LIFECYCLE_CREDENTIAL_REAUTH_REQUIRED',
   'LIFECYCLE_INSTALLATION_INACTIVE',
+  'EADDRINUSE',
+  'EADDRNOTAVAIL',
+  'EACCES',
+  'LISTEN_FAILED',
 ] as const;
 export type RuntimeErrorClass = (typeof RUNTIME_ERROR_CLASSES)[number];
 
