@@ -140,7 +140,7 @@ export async function mountLiveDesigner(input: {
                   }
                 : {}),
             }
-          : mapped.restore(restorableDesign(original, retained?.value, observed.repairRequired), id);
+          : mapped.restore(restorableDesign(original, retained?.value, retained?.cartQuantitiesChanged === true), id);
         live.registerDesign(initialDesign.id, original);
         restored = {
           initialDesign,
@@ -183,11 +183,12 @@ export async function mountLiveDesigner(input: {
           }
           const latest = await api.config(lifetime.signal, source.productId);
           const observed = await live.observe();
-          cartTargetAvailable =
-            !group ||
-            observed.groups.some(
-              (candidate) => desiredGroupKey(candidate, false, false) === desiredGroupKey(group, false, false),
-            );
+          const target = group
+            ? observed.groups.filter(
+                (candidate) => desiredGroupKey(candidate, false, false) === desiredGroupKey(group, false, false),
+              )
+            : [];
+          cartTargetAvailable = !group || target.length > 0;
           try {
             buildBuyerDesigner(latest, options);
             canStart = true;
@@ -206,16 +207,29 @@ export async function mountLiveDesigner(input: {
             });
             throw new Error('Explicit customization review required');
           }
+          // The cart line may have changed natively under the open Designer: the edit now replaces it as it is.
+          if (restored && target.length === 1 && target[0]) {
+            original = target[0];
+            live.registerDesign(restored.initialDesign.id, original);
+          }
           record.frame.repair();
           return;
         }
         if (action === 'start') {
           if (!canStart || (group && !original && cartTargetAvailable))
             throw new Error('Current customization unavailable');
+          // A cart line changed natively under the Designer still holds this design: reopen it from the cart.
+          const changed =
+            group && !cartTargetAvailable
+              ? (await live.observe()).groups.filter(
+                  (candidate) => desiredGroupKey(candidate, false, false) === desiredGroupKey(group, false, false),
+                )
+              : [];
           await live.discardDrafts();
           discard(record);
           active = undefined;
-          await show(cartTargetAvailable ? (original ?? group) : undefined, true, source.productId);
+          if (changed.length === 1 && changed[0]) await show(changed[0], false, changed[0].productId);
+          else await show(cartTargetAvailable ? (original ?? group) : undefined, true, source.productId);
           return;
         }
         if (action === 'remove-group') {

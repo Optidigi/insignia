@@ -588,7 +588,7 @@ type RetainedScenario = {
   accepts: AcceptanceRequest[];
   proposalIds: string[];
   group: DesiredGroup;
-  editCart(): void;
+  editCart(quantity?: number): void;
   mutations(): number;
   cartNavigations(): number;
   failAcceptance(value: boolean): void;
@@ -602,6 +602,8 @@ async function withRetainedBuyer(
     unknownOwned = false,
     productionOptions = false,
     opening = 'editable' as 'editable' | 'repair',
+    // Like the v3 server: native quantity edits need no review and groups carry the cart's observed quantities.
+    observedQuantities = false,
   } = {},
 ) {
   const server = await createServer({
@@ -747,6 +749,25 @@ async function withRetainedBuyer(
       assert.equal(body.capability, 'abc.def');
       if (path.endsWith('/cart-state')) {
         if (unknownOwned) return route.fulfill({ status: 503, json: { error: 'Owned session unavailable' } });
+        if (observedQuantities) {
+          const observed = groups.map((group) => ({
+            ...group,
+            variants: group.variants.flatMap((variant) => {
+              const quantity = items
+                .filter((item) => item.properties._insignia_line_v3 && String(item.variant_id) === variant.variantId)
+                .reduce((sum, item) => sum + item.quantity, 0);
+              return quantity ? [{ variantId: variant.variantId, quantity }] : [];
+            }),
+          }));
+          return route.fulfill({
+            json: {
+              groups: observed,
+              labels: { '111': 'Synthetic shirt', '333': 'Other synthetic shirt' },
+              quoteId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+              repairRequired: false,
+            },
+          });
+        }
         const expected = groups.flatMap((group) => group.variants);
         if (
           items.some(
@@ -910,8 +931,8 @@ async function withRetainedBuyer(
       proposals,
       accepts,
       proposalIds,
-      editCart: () => {
-        required(items[0]).quantity = 5;
+      editCart: (quantity = 5) => {
+        required(items[0]).quantity = quantity;
       },
       mutations: () => mutations,
       cartNavigations: () => cartNavigations,
@@ -1185,6 +1206,100 @@ test('selected full-cart review rejects external signed quantity drift without i
     assert.equal(accepts.length, 0);
     assert.equal(mutations(), 0);
   });
+});
+async function reopenOwned(page: Page, trigger: Locator, host: FrameLocator) {
+  await page.reload();
+  await page.evaluate(() => {
+    const buyer = document.createElement('insignia-buyer');
+    buyer.setAttribute('product-id', '111');
+    buyer.setAttribute('country', 'NL');
+    buyer.setAttribute('market-id', '1');
+    buyer.setAttribute('repair', '');
+    document.body.append(buyer);
+  });
+  await trigger.getByRole('button', { name: 'Review customized cart', exact: true }).click();
+  await host.locator('.app').waitFor();
+}
+test('a native cart quantity change reopens the design at the cart quantity, never the saved draft quantity (#341)', async () => {
+  await withRetainedBuyer(
+    async ({ page, host, trigger, editCart, proposals, accepts, mutations }) => {
+      // An unsent Designer edit (3 -> 4) is still resumed: the cart keeps its accepted quantity.
+      await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+      await host.locator('input[type=number]:enabled').first().fill('4');
+      await host.getByRole('button', { name: 'Review', exact: true }).last().click();
+      await applyButton(host).waitFor();
+      await reopenOwned(page, trigger, host);
+      await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+      assert.equal(await host.locator('input[type=number]:enabled').first().inputValue(), '4');
+      // The buyer then changes the cart line to 5 with the theme's controls: that is the latest choice.
+      editCart();
+      await reopenOwned(page, trigger, host);
+      await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+      assert.equal(
+        await host.locator('input[type=number]:enabled').first().inputValue(),
+        '5',
+        'the cart quantity seeds the editor',
+      );
+      await host.getByRole('button', { name: 'Review', exact: true }).last().click();
+      await applyButton(host).waitFor();
+      assert.deepEqual(
+        proposals.at(-1)?.groups.map((group) => group.variants),
+        [[{ variantId: '222', quantity: 5 }]],
+        'Update cart keeps the cart quantity instead of reverting it',
+      );
+      assert.equal(accepts.length, 0);
+      assert.equal(mutations(), 0);
+    },
+    { observedQuantities: true },
+  );
+});
+test('after a cart quantity change during editing, Retry continues the edit instead of repeating the review (#341)', async () => {
+  await withRetainedBuyer(
+    async ({ host, editCart, proposals, accepts, mutations }) => {
+      editCart();
+      await reviewRetained(host);
+      await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
+      assert.equal(proposals.length, 0);
+      // Retry resumes the suspended review, which prepares again against the current cart.
+      await host.getByRole('button', { name: 'Retry', exact: true }).click();
+      await applyButton(host).waitFor();
+      assert.deepEqual(
+        proposals.map((proposal) => proposal.groups.map((group) => group.variants)),
+        [[[{ variantId: '222', quantity: 3 }]]],
+        'the edit replaces the cart design instead of adding another',
+      );
+      assert.equal(accepts.length, 0);
+      assert.equal(mutations(), 0);
+    },
+    { observedQuantities: true },
+  );
+});
+test('after a cart quantity change during editing, Start reopens the cart design at the cart quantity (#341)', async () => {
+  await withRetainedBuyer(
+    async ({ host, editCart, proposals, accepts, mutations }) => {
+      await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+      await host.locator('input[type=number]:enabled').first().fill('7');
+      editCart();
+      await host.getByRole('button', { name: 'Review', exact: true }).last().click();
+      await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
+      await host.getByRole('button', { name: 'Start a new customization', exact: true }).click();
+      await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+      assert.equal(
+        await host.locator('input[type=number]:enabled').first().inputValue(),
+        '5',
+        'Start reopens the cart design, not a blank one',
+      );
+      await host.getByRole('button', { name: 'Review', exact: true }).last().click();
+      await applyButton(host).waitFor();
+      assert.deepEqual(
+        proposals.map((proposal) => proposal.groups.map((group) => [group.design.placements.length, group.variants])),
+        [[[1, [{ variantId: '222', quantity: 5 }]]]],
+      );
+      assert.equal(accepts.length, 0);
+      assert.equal(mutations(), 0);
+    },
+    { observedQuantities: true },
+  );
 });
 test('selected acknowledgements rotate acceptance keys while uncertain API retries preserve the exact proposal and key', async () => {
   await withRetainedBuyer(async ({ page, host, trigger, accepts, proposals, failAcceptance }) => {

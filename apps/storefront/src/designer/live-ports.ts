@@ -70,7 +70,7 @@ export function createLiveDesignerPorts(input: {
     const observed = await cart.read(signal);
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     const restore = observed.customized.length
-      ? await api.private<{ groups: DesiredGroup[]; labels?: Record<string, string>; repairRequired?: boolean }>(
+      ? await api.private<{ groups: DesiredGroup[]; labels?: Record<string, string> }>(
           'cart-state',
           { lines: observed.customized },
           signal,
@@ -80,8 +80,6 @@ export function createLiveDesignerPorts(input: {
       cart: observed,
       groups: restore.groups,
       labels: 'labels' in restore ? (restore.labels ?? {}) : {},
-      // The server rebuilt groups from current cart quantities; they differ from the signed set.
-      repairRequired: 'repairRequired' in restore && restore.repairRequired === true,
     };
   }
   async function refreshGroups(groups: DesiredGroup[], signal?: AbortSignal) {
@@ -502,6 +500,7 @@ export function createLiveDesignerPorts(input: {
         );
         if (appliedGroups.length === 1 && appliedGroups[0]) {
           designs.set(request.design.id, appliedGroups[0]);
+          await custody.rebase(request.design.id, appliedGroups[0]).catch(() => {});
           if (desiredGroupKey(appliedGroups[0]) !== desiredGroupKey(selected))
             await custody
               .save(request.design.id, appliedGroups[0], appliedGroups[0], request.signal)
