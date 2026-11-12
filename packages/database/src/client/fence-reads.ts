@@ -6,7 +6,7 @@ type Fence = { database: Kysely<Database>; transaction: Kysely<Database> };
 const fence = new AsyncLocalStorage<Fence>();
 
 /**
- * Runs the acceptance fence's signing callback so that stored-fact reads made inside it (active
+ * Runs the acceptance (or renewal) fence's signing callback so that stored-fact reads made inside it (active
  * authorization scope and signing keys) use the fence transaction's own connection (#381). The fence
  * holder then never waits for a second pool connection, which lock waiters may all be holding.
  */

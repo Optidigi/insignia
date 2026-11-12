@@ -173,8 +173,8 @@ export async function createBuyerBootstrap(
       now: clock,
     });
     // All configuration and actual adapter constructors qualify before allocating a pool/core.
-    // Ten connections: an acceptance holds its fence transaction plus short pool reads for the
-    // signing key, beside concurrent buyer requests. Postgres keeps its default max_connections
+    // Ten connections: an acceptance's fence holder reads only on its own fence connection (#381),
+    // beside concurrent buyer requests. Postgres keeps its default max_connections
     // (100); the web process's other pools (runtime/admin 10 each, purchase 4, notification 2) and
     // the worker/verifier pools stay well below it.
     const poolOptions = {
