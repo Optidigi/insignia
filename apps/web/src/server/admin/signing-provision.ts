@@ -46,6 +46,8 @@ export type SigningProvisionJournal = {
   planSha256: string;
   reserve(operation: Operation): Promise<{ durable: boolean; operation: Operation }>;
   settle(operation: Operation, outcome: 'ACK' | 'STOP'): Promise<void>;
+  /** Nonsecret evidence, such as the published config a tolerated pre-check replaces. */
+  record(name: 'published-config-tolerance', value: unknown): Promise<void>;
   finish(result: SigningProvisionResult): Promise<void>;
 };
 export interface SigningProvisionPorts {
@@ -174,6 +176,9 @@ export async function reserveSigningProvisionRun(
     async settle(operation, outcome) {
       assert.ok(reserved.has(operation) && ['ACK', 'STOP'].includes(outcome));
       await writePrivate(directory, `${operation}-settled.json`, { operation, outcome, retryAuthorized: false });
+    },
+    async record(name, value) {
+      await writePrivate(directory, `${name}.json`, value);
     },
     async finish(result) {
       await writePrivate(directory, 'result.json', result);
@@ -312,15 +317,19 @@ export async function provisionSigningKey(
     const prior = await operation('READ_CONFIG_BEFORE', () => admin.read({ ...tenant, field: 'public_config' }));
     // The published config is the expected one, or an earlier publication that this run's pending
     // key, its retirement shortening, a revocation or an epoch bump has since only tightened.
-    if (rows.some((row) => row.state !== 'destroyed'))
-      assert.ok(
-        ports.app.rotationMayRepublish(
-          await lifecycle.desiredPublicConfig(scope, ports.now()),
-          prior?.value ?? null,
-          plan.keyId,
-        ),
-      );
-    else assert.equal(prior, null);
+    if (rows.some((row) => row.state !== 'destroyed')) {
+      const expected = await lifecycle.desiredPublicConfig(scope, ports.now());
+      const differences = ports.app.rotationRepublishDifferences(expected, prior?.value ?? null, plan.keyId);
+      assert.ok(differences);
+      // The public config holds no secrets; keep what the publication below replaces, and why.
+      if (differences.length)
+        await ports.journal.record('published-config-tolerance', {
+          publishedSha256:
+            typeof prior?.value === 'string' ? createHash('sha256').update(prior.value).digest('hex') : null,
+          compareDigest: prior?.compareDigest ?? null,
+          differences,
+        });
+    } else assert.equal(prior, null);
     let ready:
       | {
           artifactScope: SigningApplication.FunctionArtifactScope;

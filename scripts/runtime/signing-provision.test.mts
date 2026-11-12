@@ -315,7 +315,10 @@ test('retained key rotation publishes both keys by CAS before activating fresh k
     });
     await f.lifecycle.activate(f.scope, 1);
     const old = required(f.rows.find((row) => row.id === 1));
-    const retained = digest({ ...old, state: undefined, lastDay: undefined });
+    // Activation scrubs the outgoing private half; the public half and identity are retained.
+    const publicHalf = () =>
+      digest({ ...old, state: undefined, lastDay: undefined, privateEnvelope: undefined, wrappingKeyId: undefined });
+    const retained = publicHalf();
     // The fixture shop is in Asia/Tokyo; the retiring key's window ends 3 shop days after rotation.
     const retireThrough = f.ports.app.localDay(new Date(clockStart), 'Asia/Tokyo').ordinal + 3;
     const originalScope = { ...f.scope };
@@ -376,7 +379,9 @@ test('retained key rotation publishes both keys by CAS before activating fresh k
     assert.equal(result.quoteIssuanceAuthorized, false);
     assert.equal(f.requests.filter((operation) => operation === 'set').length, 1);
     assert.equal(old.state, 'retiring');
-    assert.equal(digest({ ...old, state: undefined, lastDay: undefined }), retained);
+    assert.equal(publicHalf(), retained);
+    assert.equal(old.privateEnvelope, null);
+    assert.equal(old.wrappingKeyId, null);
     assert.equal(old.lastDay, Math.min(f.plan.lastDay - 1, retireThrough));
     assert.deepEqual(f.scope, originalScope);
     assert.deepEqual(
@@ -564,6 +569,8 @@ test('a rotation stopped after shortening the outgoing key blocks issuance until
   const f = await fixture();
   try {
     await publishedActiveKey1(f);
+    f.plan.lastDay = NON_EXPIRING;
+    f.ports.journal = await reserveSigningProvisionRun(join(f.directory, 'non-expiring-run'), f.plan);
     interruptions['it stopped before publishing']?.(f);
     await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
     // The stored config now has the pending key and the shortened window; the published one has neither.
@@ -574,8 +581,93 @@ test('a rotation stopped after shortening the outgoing key blocks issuance until
       'SIGNING_KEY_CONFIG_PROVISIONED',
     );
     assert.equal(await issuanceReady(f, 7), true);
+    assert.equal(required(f.rows.find((row) => row.id === 7)).lastDay, NON_EXPIRING);
+    // The tolerated differences and the replaced published value are journaled.
+    const tolerance = JSON.parse(
+      await readFile(join(f.directory, 'resume-run', 'published-config-tolerance.json'), 'utf8'),
+    );
+    assert.match(tolerance.publishedSha256, /^[0-9a-f]{64}$/);
+    assert.equal(tolerance.compareDigest, 'a'.repeat(64));
+    assert.deepEqual(tolerance.differences, [
+      'pending key 7 not published',
+      `key 1 published through day ${NON_EXPIRING}`,
+    ]);
   } finally {
     await f.close();
+  }
+});
+
+test('an exact published config journals no tolerance', async () => {
+  const f = await fixture();
+  try {
+    await publishedActiveKey1(f);
+    assert.equal(
+      (await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports)).classification,
+      'SIGNING_KEY_CONFIG_PROVISIONED',
+    );
+    await assert.rejects(readFile(join(f.directory, 'run', 'published-config-tolerance.json')), { code: 'ENOENT' });
+  } finally {
+    await f.close();
+  }
+});
+
+test('a suspected leak after a stopped rotation: revoke both keys, bump the epoch, rotate to a third key', async () => {
+  for (const bump of [true, false]) {
+    const f = await fixture();
+    try {
+      await publishedActiveKey1(f);
+      f.plan.keyId = 2;
+      f.ports.journal = await reserveSigningProvisionRun(join(f.directory, 'stopped-run'), f.plan);
+      interruptions['it stopped before publishing']?.(f);
+      await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
+      assert.equal(required(f.rows.find((row) => row.id === 2)).state, 'pending');
+      // The abandoned pending key can only be revoked; it was never published.
+      await f.lifecycle.revoke(f.scope, 2, 'incident-2', 'abandoned pending key');
+      if (bump) {
+        await f.lifecycle.revoke(f.scope, 1, 'incident-1', 'suspected leak');
+        await f.lifecycle.incrementEpoch({ scope: f.scope, commandKey: 'incident', requestDigest: 'e'.repeat(64) });
+      }
+      f.plan.keyId = 3;
+      f.ports.journal = await reserveSigningProvisionRun(join(f.directory, 'incident-run'), f.plan);
+      const result = await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
+      assert.equal(result.classification, 'SIGNING_KEY_CONFIG_PROVISIONED', `bump ${bump}`);
+      const published = JSON.parse(f.publicValue() ?? '{}');
+      assert.equal(published.epoch, f.scope.authorizationEpoch);
+      assert.deepEqual(
+        published.keys.map(({ id, revoked }: { id: number; revoked: boolean }) => ({ id, revoked })),
+        [
+          { id: 1, revoked: bump },
+          { id: 2, revoked: true },
+          { id: 3, revoked: false },
+        ],
+      );
+      assert.equal(await issuanceReady(f, 3), true);
+      assert.equal(f.provisioned.length, 2);
+    } finally {
+      await f.close();
+    }
+  }
+});
+
+test('a key with the plan id that is not a pending key holding its envelope is never resumed', async () => {
+  for (const state of ['revoked with envelope', 'pending without envelope'] as const) {
+    const f = await fixture();
+    try {
+      await publishedActiveKey1(f);
+      interruptions['it stopped before publishing']?.(f);
+      await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
+      const row = required(f.rows.find((candidate) => candidate.id === 7));
+      if (state === 'revoked with envelope') row.state = 'revoked';
+      else row.wrappingKeyId = null;
+      f.ports.journal = await reserveSigningProvisionRun(join(f.directory, 'resume-run'), f.plan);
+      const result = await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
+      assert.equal(result.classification, 'SIGNING_KEY_CONFIG_STOPPED', state);
+      assert.equal(result.pendingCreateAcknowledged, false, state);
+      assert.equal(result.publicConfigWriteAttempted, false, state);
+      assert.equal(f.requests.includes('set'), false, state);
+    } finally {
+      await f.close();
+    }
   }
 });
 
@@ -620,17 +712,10 @@ test('an emergency epoch bump or revocation stops issuance; the following rotati
     const f = await fixture();
     try {
       await publishedActiveKey1(f);
-      if (emergency !== 'revocation') f.scope.authorizationEpoch += 1;
-      if (emergency !== 'epoch bump') {
-        // As the store's revoke(): scrubbed, flagged and capped at UTC day + 3.
-        const row = required(f.rows.find((candidate) => candidate.id === 1));
-        Object.assign(row, {
-          state: 'revoked',
-          privateEnvelope: null,
-          wrappingKeyId: null,
-          lastDay: Math.floor(clockStart / 86_400_000) + 3,
-        });
-      }
+      // Runbook order: revoke the leaked key and bump the epoch, then rotate.
+      if (emergency !== 'epoch bump') await f.lifecycle.revoke(f.scope, 1, 'incident-1', 'suspected leak');
+      if (emergency !== 'revocation')
+        await f.lifecycle.incrementEpoch({ scope: f.scope, commandKey: 'incident-1', requestDigest: 'e'.repeat(64) });
       assert.equal(await issuanceReady(f, 1).catch(() => false), false, emergency);
       const result = await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
       assert.equal(result.classification, 'SIGNING_KEY_CONFIG_PROVISIONED', emergency);

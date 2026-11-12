@@ -254,9 +254,17 @@ Since keys no longer expire (spec §5.5), each key's Ed25519 seed is protected b
    5. web activates, which scrubs the outgoing key's private half.
 3. Disarm. The worker destroys the outgoing key once its window has closed.
 
-**A stopped rotation.** While the pending key or the shortened window is stored but not published, quotes stop (`public_config_drift` after 5 minutes). Resume it: arm again with the same plan file and a new empty run root, keeping the stopped run root as evidence, and start the action again. It reuses the pending key (the signer creates no second seed) and publishes by compare-and-set. A different plan for that key id, or any other published difference, still stops it.
+**A stopped rotation.** While the pending key or the shortened window is stored but not published, Add to cart fails; `public_config_drift` is logged once Add to cart has been failing on drift for 5 minutes (buyer requests raise it, so a quiet shop logs nothing). Resume it: arm again with the same plan file and a new empty run root, keeping the stopped run root as evidence, and start the action again. It reuses the pending key (the signer creates no second seed) and publishes by compare-and-set. It journals the replaced published config's digest and each tolerated difference in `published-config-tolerance.json`. A different plan for that key id, or any other published difference, still stops it.
+- **Activation went through but its acknowledgement was lost** (`ACTIVATE_KEY` uncertain): re-running stops, because an active key cannot be resumed. Check the key's state in `signing_keys`: if it is `active` and the published config equals the expected one, nothing more is needed.
+- **Lost plan file:** rebuild the plan from the pending key's row (`key_id`, `first_valid_day`, `last_valid_day`) with the current binding.
+- **Abandoning a pending key:** it cannot be deleted, only revoked. The next rotation (with another key id) accepts a revoked key that was never published and publishes it as revoked.
 
-**Emergency epoch bump or revocation.** Both change the expected public config without publishing it, so quotes stop until it is published. Follow them at once with a rotation (above). Its publication carries the higher epoch and the revoked flag; it accepts the earlier published config because these changes only tighten it.
+**Emergency (suspected leak).** An epoch bump or revocation changes the expected config without publishing it, so it takes effect only once published, and Add to cart fails until then. In this order:
+1. Revoke the leaked key(s), including any pending key.
+2. Bump the epoch.
+3. Start a rotation (above) at once, with the plan file's binding carrying the bumped `authorizationEpoch`. Its one publication carries the higher epoch and every revoked flag; it accepts the earlier published config because these changes only tighten it.
+
+Bumping the epoch without revoking the leaked key is not enough: the rotation only retires it (window to today + 3), so lines minted with it at the new epoch would verify for days.
 
 **Blast radius.**
 
@@ -265,8 +273,8 @@ Since keys no longer expire (spec §5.5), each key's Ed25519 seed is protected b
 | Database or checkpoint only | Ciphertext of pending/active keys only; no seed. |
 | KEK file only | Nothing without the envelopes. |
 | Worker compromise | No KEK and no envelope access; no seed. |
-| Web or host-login (uid 1000) compromise | No KEK and no envelope access. It can request signatures for real v3 headers of the active key, within the signer's rate limits and audit, for as long as it is compromised. Respond with an emergency epoch bump, then rotation. |
-| Signer compromise | KEK plus envelopes, so the active (and any pending) seed. Retired keys have no envelope. Respond with an epoch bump, then rotate the KEK and the key. |
+| Web or host-login (uid 1000) compromise | No KEK and no envelope access. It can request signatures for real v3 headers of the active key, within the signer's rate limits and audit, for as long as it is compromised. Respond as under **Emergency**: revoke the active (and any pending) key, bump the epoch, then rotate. |
+| Signer compromise | KEK plus envelopes, so the active (and any pending) seed. Retired keys have no envelope. Revoke the active and any pending key and bump the epoch; install a new KEK (re-wrap steps 1–2; revoked keys have nothing to re-wrap); then rotate the key, which publishes it all. |
 
 An HSM- or KMS-held KEK remains a recommendation for a later change.
 

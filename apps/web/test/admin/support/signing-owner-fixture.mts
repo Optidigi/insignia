@@ -29,11 +29,32 @@ export async function fixture({ initial = clockStart } = {}) {
   let current = initial,
     publicValue: string | null = null;
   const rows: app.DurableSigningKey[] = [];
+  const epochCommands = new Map<string, { requestDigest: string; epoch: number }>();
+  // In-memory stand-in with the durable store's rules (packages/database signing-keys repository).
   const store: app.SigningKeyStore = {
-    revoke: unexpected,
+    async revoke(_, keyId) {
+      const row = rows.find((candidate) => candidate.id === keyId);
+      if (!row || !['pending', 'active', 'retiring'].includes(row.state))
+        throw new Error('Revocable signing key required');
+      Object.assign(row, {
+        state: 'revoked',
+        privateEnvelope: null,
+        wrappingKeyId: null,
+        lastDay: Math.min(row.lastDay, Math.max(row.firstDay, Math.floor(current / 86_400_000) + 3)),
+      });
+    },
     destroy: unexpected,
     destroyInactiveInstallationKeys: unexpected,
-    incrementEpoch: unexpected,
+    async incrementEpoch({ commandKey, requestDigest }) {
+      const previous = epochCommands.get(commandKey);
+      if (previous) {
+        if (previous.requestDigest !== requestDigest) throw new Error('Epoch command digest conflict');
+        return previous.epoch;
+      }
+      scope.authorizationEpoch += 1;
+      epochCommands.set(commandKey, { requestDigest, epoch: scope.authorizationEpoch });
+      return scope.authorizationEpoch;
+    },
     async getActiveScope() {
       return scope;
     },
@@ -50,9 +71,13 @@ export async function fixture({ initial = clockStart } = {}) {
       row.lastDay = Math.min(row.lastDay, Math.max(row.firstDay, lastDay));
     },
     async activate(_, keyId) {
+      const target = rows.find((candidate) => candidate.id === keyId);
+      if (target?.state !== 'pending' || !target.privateEnvelope || !target.wrappingKeyId)
+        throw new Error('Pending signing key required');
       for (const row of rows)
         if (row.id === keyId) row.state = 'active';
-        else if (row.state === 'active') row.state = 'retiring';
+        else if (row.state === 'active')
+          Object.assign(row, { state: 'retiring', privateEnvelope: null, wrappingKeyId: null });
     },
   };
   const identity: SigningProvisionPorts['identity'] = {

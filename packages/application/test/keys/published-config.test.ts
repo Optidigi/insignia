@@ -5,7 +5,7 @@ import {
   buildPublicConfig,
   type PublicSigningKey,
   publishedConfigMatches,
-  rotationMayRepublish,
+  rotationRepublishDifferences,
 } from '../../src/keys/public-config.js';
 import { assertQuoteIssuanceReady, PublicConfigDriftError } from '../../src/keys/readiness.js';
 
@@ -89,6 +89,8 @@ describe('published Function config comparison', () => {
 });
 
 describe('rotation republish pre-check (#334)', () => {
+  const rotationMayRepublish = (...input: Parameters<typeof rotationRepublishDifferences>) =>
+    rotationRepublishDifferences(...input) !== null;
   const NON_EXPIRING = 0x7fffffff;
   const today = 20769;
   const active = key(1, 'active', 20700, NON_EXPIRING);
@@ -130,6 +132,11 @@ describe('rotation republish pre-check (#334)', () => {
     const desired = buildPublicConfig({ scope, keys: [pending], now });
     expect(rotationMayRepublish(desired, null, 2)).toBe(true);
     expect(rotationMayRepublish(buildPublicConfig({ scope, keys: [active, pending], now }), null, 2)).toBe(false);
+    // That pending key was abandoned and revoked; the next plan's key is the only other one.
+    const abandoned = { ...key(5, 'revoked', today, today + 3) };
+    expect(
+      rotationRepublishDifferences(buildPublicConfig({ scope, keys: [abandoned, pending], now }), null, 2),
+    ).toEqual(['pending key 2 not published', 'revoked key 5 not published']);
   });
 
   it('rejects anything looser in the database than in the published copy, and any other drift', () => {
@@ -169,5 +176,46 @@ describe('rotation republish pre-check (#334)', () => {
     const published = buildPublicConfig({ scope, keys: [closed, active] }).value;
     const desired = buildPublicConfig({ scope, keys: [{ ...closed, state: 'destroyed' }, shortened, pending], now });
     expect(rotationMayRepublish(desired, published, 2)).toBe(true);
+  });
+});
+
+describe('rotation republish differences (#334 review)', () => {
+  const NON_EXPIRING = 0x7fffffff;
+  const today = 20769;
+  const active = key(1, 'active', 20700, NON_EXPIRING);
+  const before = buildPublicConfig({ scope, keys: [active] }).value;
+
+  it('lists nothing for the exact config and each tolerated difference otherwise', () => {
+    const exact = buildPublicConfig({ scope, keys: [active], now });
+    expect(rotationRepublishDifferences(exact, before, 2)).toEqual([]);
+    const pending = key(2, 'pending', today, NON_EXPIRING);
+    const desired = buildPublicConfig({ scope, keys: [{ ...active, lastDay: today + 3 }, pending], now });
+    expect(rotationRepublishDifferences(desired, before, 2)).toEqual([
+      'pending key 2 not published',
+      `key 1 published through day ${NON_EXPIRING}`,
+    ]);
+  });
+
+  it('drops a revoked key that was never published, such as an abandoned pending key (suspected leak)', () => {
+    // A rotation to key 2 stopped before publishing; then keys 1 and 2 are revoked, the epoch is
+    // bumped, and the next rotation is to key 3.
+    const revoked1 = { ...active, state: 'revoked' as const, lastDay: today + 3 };
+    const revoked2 = { ...key(2, 'revoked', today, today + 3) };
+    const pending3 = key(3, 'pending', today, NON_EXPIRING);
+    const desired = buildPublicConfig({
+      scope: { ...scope, authorizationEpoch: 1 },
+      keys: [revoked1, revoked2, pending3],
+      now,
+    });
+    expect(rotationRepublishDifferences(desired, before, 3)).toEqual([
+      'epoch 0 published',
+      'pending key 3 not published',
+      'revoked key 2 not published',
+      `key 1 published through day ${NON_EXPIRING}`,
+      'key 1 revocation not published',
+    ]);
+    // Without the revocation, a missing key that is not this plan's pending key still stops it.
+    const unrevoked = buildPublicConfig({ scope, keys: [active, key(2, 'pending', today, today + 3), pending3], now });
+    expect(rotationRepublishDifferences(unrevoked, before, 3)).toBeNull();
   });
 });
