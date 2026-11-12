@@ -170,6 +170,44 @@ test('a draft resumes its own quantities until the cart quantities it was based 
     'storage holds only the UUID hint and a quantity hash, never a snapshot',
   );
 });
+test('a cancelled draft save that still reached the server never blocks the next save (#371)', async () => {
+  const storage = memoryStorage();
+  let stored: { version: number; value: DesiredGroup } | undefined;
+  const custody = createSelectedDesignCustody({
+    namespace: '/apps/insignia',
+    storage,
+    api: {
+      async private<T>(path: string, body: Record<string, unknown>, signal?: AbortSignal): Promise<T> {
+        if (path.endsWith('/restore')) {
+          if (!stored) throw Object.assign(new Error('missing'), { status: 404 });
+          return { id, ...stored, expiresAt: '2027-01-01T00:00:00Z', compatibility: 'current', retained: null } as T;
+        }
+        if (body.expectedVersion !== (stored?.version ?? 0))
+          throw Object.assign(new Error('Draft changed'), { status: 409 });
+        stored = { version: (stored?.version ?? 0) + 1, value: body.group as DesiredGroup };
+        // The server applied the write, but the buyer's next edit cancelled the request before its answer.
+        signal?.throwIfAborted();
+        return { id, ...stored } as T;
+      },
+    },
+  });
+  const at = (quantity: number): DesiredGroup => ({ ...group, variants: [{ variantId: '101', quantity }] });
+  // The eager review saves the cart line's 3; the buyer types 4, which cancels that preparation.
+  const cancelled = new AbortController();
+  cancelled.abort();
+  await assert.rejects(custody.save(id, at(3), at(3), cancelled.signal));
+  assert.equal(stored?.version, 1, 'the cancelled save reached the server');
+  // The explicit Review saves the buyer's 4: it replaces this tab's own earlier write.
+  await custody.save(id, at(4), at(3));
+  assert.deepEqual(stored?.value.variants, at(4).variants);
+  const restored = await custody.restore(at(3));
+  assert.deepEqual(restored?.value.variants, at(4).variants, 'reopening resumes the edit');
+  assert.equal(restored?.cartQuantitiesChanged, false, 'the cart still holds the base');
+  // A draft this tab never sent (another tab's) is still never overwritten.
+  stored = { version: stored.version + 1, value: at(7) };
+  await assert.rejects(custody.save(id, at(5), at(3)));
+  assert.deepEqual(stored.value.variants, at(7).variants);
+});
 test('forgetting a draft without a recorded base writes no storage (#341)', async () => {
   const writes: string[] = [];
   const custody = createSelectedDesignCustody({

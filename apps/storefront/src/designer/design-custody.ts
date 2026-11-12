@@ -28,6 +28,8 @@ export function createSelectedDesignCustody(input: {
   // Actor-local CAS metadata, never ownership or purchase authority. Restoration
   // always reads the server; changed writes still use its acknowledged version.
   const known = new Map<string, ReturnType<typeof BuyerDesignResultSchema.parse>>();
+  // Per draft, the groups this tab sent whose writes were never acknowledged: the server may still have applied them.
+  const unacknowledged = new Map<string, Set<string>>();
   const key = async (group: BuyerDesiredGroup) =>
     `insignia:selected-design:v1:${input.namespace}:${await advisoryFingerprint(desiredGroupKey(group, false, false))}`;
   // The cart quantities a draft was based on, as a SHA-256 of sorted [variantId, quantity] pairs. A cart that no longer has them
@@ -153,20 +155,34 @@ export function createSelectedDesignCustody(input: {
       // Unknown UUIDs can only create with CAS0; they never overwrite a row.
       // Conflict/lost-response recovery performs the scoped ownership read.
       const saved = known.get(id);
-      if (!saved || desiredGroupKey(saved.value) !== desiredGroupKey(group)) {
-        try {
-          const acknowledged = BuyerDesignResultSchema.parse(
-            await input.api.private(`designs/${id}`, { expectedVersion: saved?.version ?? 0, group }, signal, 'PUT'),
-          );
-          known.set(id, acknowledged);
-        } catch (error) {
-          known.delete(id);
-          if (signal?.aborted) throw error;
-          // Lost acknowledgement is recovered through the same owned UUID, never an unconditional rewrite.
-          const observed = await read(id, signal);
-          if (!observed || desiredGroupKey(observed.value) !== desiredGroupKey(group)) throw error;
+      const wanted = desiredGroupKey(group);
+      let expectedVersion = saved?.version ?? 0;
+      if (!saved || desiredGroupKey(saved.value) !== wanted)
+        for (let replaced = false; ; replaced = true) {
+          try {
+            const acknowledged = BuyerDesignResultSchema.parse(
+              await input.api.private(`designs/${id}`, { expectedVersion, group }, signal, 'PUT'),
+            );
+            known.set(id, acknowledged);
+            unacknowledged.delete(id);
+            break;
+          } catch (error) {
+            known.delete(id);
+            const sent = unacknowledged.get(id) ?? new Set<string>();
+            unacknowledged.set(id, sent.add(wanted));
+            if (signal?.aborted) throw error;
+            // Lost acknowledgement is recovered through the same owned UUID, never an unconditional rewrite.
+            const observed = await read(id, signal);
+            if (observed && desiredGroupKey(observed.value) === wanted) {
+              unacknowledged.delete(id);
+              break;
+            }
+            // The owned draft holds a write this tab sent without an answer, typically a preparation cancelled
+            // by the buyer's next edit (#371): it is older than this one, so replace it once at its version.
+            if (replaced || !observed || !sent.has(desiredGroupKey(observed.value))) throw error;
+            expectedVersion = observed.version;
+          }
         }
-      }
       const pointer = await key(group);
       const originalPointer = original ? await key(original) : undefined;
       const base = original ? await quantities(original) : '';
