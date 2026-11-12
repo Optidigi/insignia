@@ -222,6 +222,7 @@
     "colorItemsRemoved": "{{colorName}} items removed.",
     "itemsRestored": "Items restored.",
     "cartCommitFailed": "Your cart could not be updated. Your design is still here. Try again.",
+    "cartRejected": "There isn't enough stock to add this to your cart. Your cart is unchanged and your design is still here. Lower the quantity or try again later.",
     "undo": "Undo",
     "dismissNotification": "Dismiss notification",
     "repairRequired": "Your customization needs review",

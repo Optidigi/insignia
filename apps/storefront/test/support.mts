@@ -69,6 +69,10 @@ export type AjaxBody = {
   items?: { id: string | number; quantity: number; properties: Record<string, string> }[];
   updates?: Record<string, number>;
   attributes?: Record<string, string>;
+  /** cart/change.js: the line key, its new quantity and its replacement properties. */
+  id?: string;
+  quantity?: number;
+  properties?: Record<string, CartProperty>;
 };
 export function ajaxBody(value: unknown): AjaxBody {
   const body = record(value);
@@ -95,6 +99,9 @@ export function ajaxBody(value: unknown): AjaxBody {
       result.updates[key] = value;
     }
   }
+  if (typeof body.id === 'string') result.id = body.id;
+  if (typeof body.quantity === 'number') result.quantity = body.quantity;
+  if (body.properties !== undefined) result.properties = record(body.properties) as Record<string, CartProperty>;
   if (body.attributes !== undefined) {
     result.attributes = {};
     for (const [key, value] of Object.entries(record(body.attributes))) {

@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
 import type { CartReceipt, CartRequest } from '../../../frontend/designer/src/runtime.ts';
 import type { BuyerConfig } from '../src/buyer.ts';
-import { type AjaxItem, fetchBody, lineCarriers, requestUrl } from './support.mts';
+import { type AjaxBody, type AjaxItem, fetchBody, lineCarriers, requestUrl } from './support.mts';
 
 /** One-line v3 carrier for a variant; the storefront decodes but never verifies it. */
 const v3Carrier = (variantId: string, set = 1) =>
@@ -75,8 +75,10 @@ const source: BuyerConfig = {
 type Hooks = {
   /** Runs when the server accepts; may change the cart (another tab) or throw (a timed-out accept). */
   onAccept?(call: number, items: AjaxItem[]): void;
-  /** Runs before Shopify processes an Ajax write; may throw (an interrupted request). */
-  onAjaxWrite?(path: string, items: AjaxItem[]): void;
+  /** Runs before Shopify processes an Ajax write; may throw (interrupted) or answer itself (a refusal). */
+  onAjaxWrite?(path: string, items: AjaxItem[], body: AjaxBody): Response | undefined | void;
+  /** Accepted lines in place of the single default one. */
+  buckets?(set: number): { variantId: string; quantity: number; properties: Record<string, string> }[];
   /** Lines already in the buyer's cart. */
   initial?: AjaxItem[];
 };
@@ -112,13 +114,18 @@ function fixture(hooks: Hooks = {}) {
       if (path.endsWith('/config')) return Response.json(source);
       if (/\/designs\/[^/]+$/.test(path))
         return Response.json({ id: path.split('/').at(-1), version: 1, value: JSON.parse(String(init.body)).group });
-      if (path.endsWith('/cart-state'))
+      if (path.endsWith('/cart-state')) {
+        // Like the server: one acceptance per cart, so lines of two signed sets need review.
+        const lines: { properties: Record<string, string> }[] = JSON.parse(String(init.body)).lines;
+        if (new Set(lines.map((line) => line.properties._insignia_line_v3?.slice(0, 236))).size > 1)
+          return Response.json({ code: 'REVIEW_REQUIRED', message: 'Review the customized cart' }, { status: 409 });
         return Response.json({
           groups: [],
           labels: {},
           quoteId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
           repairRequired: false,
         });
+      }
       if (path.endsWith('/quote-proposals')) {
         const proposalId = `11111111-1111-4111-8111-${String(proposed.length + 1).padStart(12, '0')}`;
         proposed.push(proposalId);
@@ -154,7 +161,7 @@ function fixture(hooks: Hooks = {}) {
           validThroughDay: 30000,
           applicationId: '22222222-2222-4222-8222-222222222222',
           // Each proposal is signed as its own set.
-          buckets: [
+          buckets: hooks.buckets?.(proposed.indexOf(proposalId) + 2) ?? [
             {
               variantId: '101',
               quantity: 1,
@@ -167,9 +174,21 @@ function fixture(hooks: Hooks = {}) {
       if (path.endsWith('/confirm'))
         return Response.json({ id: '22222222-2222-4222-8222-222222222222', status: 'APPLIED' });
       if (init.method === 'POST') {
-        hooks.onAjaxWrite?.(path, items);
+        const answer = hooks.onAjaxWrite?.(path, items, body);
+        if (answer) return answer;
         if (path.endsWith('/cart/update.js')) {
           if (body.updates) items = items.filter((item) => body.updates?.[item.key] !== 0);
+        } else if (path.endsWith('/cart/change.js')) {
+          items = items.map((item) =>
+            item.key === body.id
+              ? {
+                  ...item,
+                  key: `changed-${proposed.length}-${items.length}`,
+                  quantity: body.quantity ?? item.quantity,
+                  properties: body.properties ?? item.properties,
+                }
+              : item,
+          );
         } else if (path.endsWith('/cart/add.js'))
           for (const item of body.items ?? [])
             items.push({
@@ -305,4 +324,82 @@ test('a foreign edit racing the final removal still reports the exactly landed l
     ['line-1-1'],
     'the old line was replaced by the accepted one',
   );
+});
+
+const refusal = (description: string) =>
+  Response.json({ status: 422, message: 'Cart Error', description }, { status: 422 });
+
+test("a stock refusal shows Shopify's explanation, keeps no cached set and the next Add re-reviews (B2)", async () => {
+  let refuse = true;
+  const app = fixture({
+    onAjaxWrite: (path) => (refuse && path.endsWith('/cart/add.js') ? refusal('Only 0 left in stock.') : undefined),
+  });
+  await app.live.ports.review!.prepare(app.request);
+  await assert.rejects(
+    withWindow(() => app.live.ports.cart.commit(app.request)),
+    (error: { cartRejected?: boolean; detail?: string }) =>
+      error.cartRejected === true && error.detail === 'Only 0 left in stock.',
+  );
+  refuse = false;
+  await assert.rejects(
+    withWindow(() => app.live.ports.cart.commit(app.request)),
+    reviewRequired,
+  );
+  assert.equal(app.proposed.length, 2, 'the refused set is not reapplied');
+  const receipt = await withWindow(() => app.live.ports.cart.commit(app.request));
+  assert.equal((receipt as CartReceipt).kind, 'applied');
+});
+
+test('after a partially refused add the cart holds one set again, so the next Add can still review it (B1)', async () => {
+  // Shopify adds the retained 101 line of the new set, then refuses the new 102 line.
+  let refuse = true;
+  const retained = (set: number) =>
+    lineCarriers(
+      [
+        { variantId: '101', unitMinor: '1000' },
+        { variantId: '102', unitMinor: '1000' },
+      ],
+      { set },
+    ).carriers;
+  const app = fixture({
+    initial: [
+      { key: 'line-old', variant_id: 101, quantity: 1, properties: { _insignia_line_v3: v3Carrier('101', 9) } },
+    ],
+    buckets: (set) =>
+      retained(set).map((carrier, index) => ({
+        variantId: String(101 + index),
+        quantity: 1,
+        properties: { _insignia_line_v3: carrier ?? '' },
+      })),
+    onAjaxWrite: (path, items, body) => {
+      if (!refuse || !path.endsWith('/cart/add.js')) return undefined;
+      for (const item of body.items ?? []) {
+        if (String(item.id) === '102') return refusal('Only 0 left in stock.');
+        items.push({
+          key: `partial-${items.length}`,
+          variant_id: item.id,
+          quantity: item.quantity,
+          properties: item.properties,
+        });
+      }
+      return undefined;
+    },
+  });
+  await app.live.ports.review!.prepare(app.request);
+  await assert.rejects(
+    withWindow(() => app.live.ports.cart.commit(app.request)),
+    (error: { cartRejected?: boolean }) => error.cartRejected === true,
+  );
+  assert.deepEqual(
+    app.customized().map((line) => line.properties._insignia_line_v3),
+    [v3Carrier('101', 9)],
+    'the buyer keeps exactly the lines they had',
+  );
+  refuse = false;
+  await assert.rejects(
+    withWindow(() => app.live.ports.cart.commit(app.request)),
+    reviewRequired,
+  );
+  const receipt = await withWindow(() => app.live.ports.cart.commit(app.request));
+  assert.equal((receipt as CartReceipt).kind, 'applied');
 });

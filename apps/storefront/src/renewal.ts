@@ -71,7 +71,8 @@ export async function renewCartPrices(input: {
     buckets.push({ variantId: line.variantId, quantity: line.quantity, properties: renewedLine.properties });
   }
   const applied = await cart.apply(buckets, { expectedFingerprint: baseline.fingerprint });
-  if (applied.status !== 'applied' || applied.recovery || !applied.cart) return false;
+  // late_effects_possible only repeats that an earlier unknown write was retired by explicit repair.
+  if (applied.status !== 'applied' || !applied.cart) return false;
   await api
     .confirmCartApplication(renewed.applicationId, {
       fingerprint: await advisoryFingerprint(applied.cart.fingerprint),

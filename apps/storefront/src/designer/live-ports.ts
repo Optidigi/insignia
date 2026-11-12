@@ -457,24 +457,17 @@ export function createLiveDesignerPorts(input: {
         request.signal.throwIfAborted();
         request.onMutating?.();
         const applied = await cart.apply(accepted.buckets, { expectedFingerprint: review?.baseline.fingerprint ?? '' });
-        const buckets = accepted.buckets;
-        // A foreign edit that raced the final removal does not undo accepted lines that landed exactly.
-        const landed =
-          applied.reason === 'cart_changed' &&
-          applied.cart?.customized.length === buckets.length &&
-          buckets.every((bucket) =>
-            applied.cart?.customized.some(
-              (line) =>
-                line.properties._insignia_line_v3 === bucket.properties._insignia_line_v3 &&
-                line.quantity === bucket.quantity,
-            ),
-          );
         // `late_effects_possible` only repeats that an earlier unknown write was retired by explicit repair:
         // the cart is at the reviewed state, and its tombstone still refuses a late carrier.
-        if ((applied.status !== 'applied' && !landed) || !applied.cart) {
+        if (applied.status !== 'applied' || !applied.cart) {
           const reason = applied.reason;
-          if (reason === 'cart_changed' || reason === 'vector_mismatch' || reason === 'mutation_unresolved') {
-            // Never reapply this accepted set against a stale baseline or after an unknown outcome (#338).
+          if (
+            reason === 'cart_changed' ||
+            reason === 'vector_mismatch' ||
+            reason === 'mutation_unresolved' ||
+            reason === 'rejected'
+          ) {
+            // Never reapply this accepted set: the baseline is stale, its outcome unknown or Shopify refused it.
             acceptedAttempts.delete(request.idempotencyKey);
             prepared.delete(request.idempotencyKey);
             issuanceAttempted.delete(request.idempotencyKey);
@@ -489,6 +482,12 @@ export function createLiveDesignerPorts(input: {
             throw Object.assign(new Error('Cart changed; review the refreshed quote'), {
               reviewRequired: true,
               ...presentation,
+            });
+          } else if (reason === 'rejected') {
+            // A definite refusal (typically stock) with the buyer's lines intact: say so, never "uncertain".
+            throw Object.assign(new Error('Shopify refused the cart update'), {
+              cartRejected: true,
+              ...(applied.detail ? { detail: applied.detail } : {}),
             });
           }
           throw new Error('Cart needs review; an uncertain update is never retried automatically');

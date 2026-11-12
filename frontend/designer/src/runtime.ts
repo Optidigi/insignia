@@ -184,6 +184,18 @@ export function createDesignerRuntime(
           dispatch({ type: 'cart-commit-canceled' });
           return;
         }
+        if (!prepareOnly && error && typeof error === 'object' && 'cartRejected' in error && error.cartRejected === true) {
+          // A definite refusal: the port dropped the accepted set, so Review and Add prepare afresh.
+          if (attempt) attempt.dispatched = false;
+          preparedSignature = null;
+          dispatch({
+            type: "cart-commit-failed",
+            requestId,
+            reason: "cart-rejected",
+            ...('detail' in error && typeof error.detail === 'string' ? { detail: error.detail } : {}),
+          });
+          return;
+        }
         if (!prepareOnly && error && typeof error === 'object' && 'acceptanceOutcome' in error && error.acceptanceOutcome === 'declined' && attempt?.idempotencyKey === request.idempotencyKey) {
           attempt = null;
           preparedSignature = null;

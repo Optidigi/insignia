@@ -2487,6 +2487,7 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_recovery_artworkRemoved': object;
   'settings:translations.fields.customer_recovery_artworkRestored': object;
   'settings:translations.fields.customer_recovery_cartCommitFailed': object;
+  'settings:translations.fields.customer_recovery_cartRejected': object;
   'settings:translations.fields.customer_recovery_colorItemsRemoved': object;
   'settings:translations.fields.customer_recovery_confirmRemoval': object;
   'settings:translations.fields.customer_recovery_dismissNotification': object;
@@ -2827,6 +2828,7 @@ export interface CustomerMessageTable {
   'customer:recovery.artworkRemoved': object;
   'customer:recovery.artworkRestored': object;
   'customer:recovery.cartCommitFailed': object;
+  'customer:recovery.cartRejected': object;
   'customer:recovery.colorItemsRemoved': { colorName: string };
   'customer:recovery.confirmRemoval': object;
   'customer:recovery.dismissNotification': object;

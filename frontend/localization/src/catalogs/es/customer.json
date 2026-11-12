@@ -226,6 +226,7 @@
     "colorItemsRemoved": "Artículos de {{colorName}} eliminados.",
     "itemsRestored": "Artículos restaurados.",
     "cartCommitFailed": "No se pudo actualizar tu carrito. Tu diseño sigue aquí. Vuelve a intentarlo.",
+    "cartRejected": "No hay suficiente stock para añadir esto a tu carrito. Tu carrito no ha cambiado y tu diseño sigue aquí. Reduce la cantidad o vuelve a intentarlo más tarde.",
     "undo": "Deshacer",
     "dismissNotification": "Cerrar notificación",
     "repairRequired": "Tu personalización necesita revisión",

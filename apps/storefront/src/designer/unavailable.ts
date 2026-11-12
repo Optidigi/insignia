@@ -53,8 +53,8 @@ export async function mountUnavailableDesigner(input: {
       }
       if (action !== 'confirm' || !reviewed) throw new Error('Observed removal review required');
       const applied = await cart.apply([], { expectedFingerprint: reviewed.fingerprint, repair: true });
-      if (applied.status !== 'applied' || applied.recovery || !applied.cart)
-        throw new Error('Cart removal remains unresolved');
+      // Explicit removal is how an unknown earlier write is retired; its tombstone stays for late carriers.
+      if (applied.status !== 'applied' || !applied.cart) throw new Error('Cart removal remains unresolved');
       reviewed = undefined;
       window.dispatchEvent(new CustomEvent('insignia-cart-updated'));
       frame.close();

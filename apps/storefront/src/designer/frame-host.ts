@@ -287,6 +287,12 @@ export function createDesignerFrame(input: {
             ? { reviewRequired: true, expiresAt: 'expiresAt' in error ? error.expiresAt : undefined }
             : {}),
           ...(status ? { status } : {}),
+          ...(data.action === 'commit' && error && typeof error === 'object' && 'cartRejected' in error
+            ? {
+                cartRejected: true,
+                ...('detail' in error && typeof error.detail === 'string' ? { detail: error.detail } : {}),
+              }
+            : {}),
           ...(data.action === 'commit' &&
           error &&
           typeof error === 'object' &&

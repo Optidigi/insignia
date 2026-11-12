@@ -498,6 +498,7 @@
       "customer_recovery_colorItemsRemoved": "Articoli del colore rimossi",
       "customer_recovery_itemsRestored": "Articoli ripristinati",
       "customer_recovery_cartCommitFailed": "Impossibile aggiornare il carrello",
+      "customer_recovery_cartRejected": "Carrello rifiutato (disponibilità)",
       "customer_recovery_undo": "Annulla",
       "customer_recovery_dismissNotification": "Chiudi la notifica",
       "common_actions_save": "Salva",

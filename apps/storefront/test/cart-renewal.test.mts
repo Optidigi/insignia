@@ -138,7 +138,7 @@ function fixture(
       else Reflect.set(globalThis, 'window', previous);
     }
   };
-  return { run, calls, writes, renewBodies, confirmBodies, items: () => items, attributes };
+  return { run, calls, writes, renewBodies, confirmBodies, items: () => items, attributes, storage: values };
 }
 
 test('an expired set renews per quote and keeps current cart quantities and removals', async () => {
@@ -211,4 +211,25 @@ test('a renewed set without a carrier for a current line, or for another variant
     assert.equal((await f.run()).result, false);
     assert.deepEqual(f.writes, []);
   }
+});
+
+test('renewal still succeeds in a tab whose earlier unknown write was retired by explicit repair (N2)', async () => {
+  const f = fixture();
+  // The tombstone of an abandoned, unrelated set stays for the session and is reported as late_effects_possible.
+  const tombstone = 'c'.repeat(64);
+  f.storage.set(
+    'insignia-cart-intent-v1',
+    JSON.stringify({
+      version: 1,
+      phase: 'abandoned',
+      before: tombstone,
+      goal: tombstone,
+      quote: tombstone,
+      abandoned: [tombstone],
+    }),
+  );
+  f.storage.set('insignia-cart-unresolved-v2', '1');
+  const { result } = await f.run();
+  assert.equal(result, true);
+  assert.deepEqual(f.writes, ['/cart/add.js', '/cart/update.js']);
 });

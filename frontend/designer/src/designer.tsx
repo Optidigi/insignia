@@ -1852,7 +1852,7 @@ function DesignerSession({
               {workflow.commit.kind === 'failed' && (
                 <div className="cart-submit-error" role="alert">
                   <IconAlertTriangle size={18} />
-                  <span>{t(workflow.commit.preparation ? 'common:summary.unavailable' : 'customer:recovery.cartCommitFailed')}</span>
+                  <span>{workflow.commit.reason === 'cart-rejected' ? workflow.commit.detail || t('customer:recovery.cartRejected') : t(workflow.commit.preparation ? 'common:summary.unavailable' : 'customer:recovery.cartCommitFailed')}</span>
                 </div>
               )}
               {validationIssues.length > 0 && (

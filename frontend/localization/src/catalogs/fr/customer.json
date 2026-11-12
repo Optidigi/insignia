@@ -226,6 +226,7 @@
     "colorItemsRemoved": "Articles « {{colorName}} » retirés.",
     "itemsRestored": "Articles rétablis.",
     "cartCommitFailed": "Impossible de mettre à jour le panier. Votre personnalisation est toujours disponible. Réessayez.",
+    "cartRejected": "Le stock est insuffisant pour ajouter cet article au panier. Votre panier n'a pas changé et votre personnalisation est toujours disponible. Réduisez la quantité ou réessayez plus tard.",
     "undo": "Annuler",
     "dismissNotification": "Fermer la notification",
     "repairRequired": "Votre personnalisation doit être vérifiée",
