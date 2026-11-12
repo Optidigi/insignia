@@ -1,5 +1,11 @@
 import type { MerchantCustomerWordingView } from '@insignia/contracts';
+import { createCustomerTranslator } from '@insignia/ui-localization/customer';
 import type { ProductConfig } from '../../../../frontend/designer/src/config';
+import {
+  customerBrowserLanguages,
+  resolveCustomerHostLocale,
+} from '../../../../frontend/designer/src/customer-language-policy.ts';
+import { readCustomerLanguagePreference } from '../../../../frontend/designer/src/customer-language-preference.ts';
 import type { Artwork, Design, Print } from '../../../../frontend/designer/src/model';
 import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quote-review';
 import {
@@ -80,7 +86,11 @@ export function createDesignerFrame(input: {
   frame.style.cssText =
     'position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483000;background:transparent;';
   const { entry, css } = designerAssets();
-  frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="origin"><link rel="stylesheet" href="${escapeAttribute(css.href)}"></head><body><script type="module" src="${escapeAttribute(entry.href)}"></script></body></html>`;
+  // Baseline document language (e.g. a repair-only frame); a mounted Designer then mirrors its active language.
+  const language = createCustomerTranslator(
+    readCustomerLanguagePreference() ?? resolveCustomerHostLocale(input.locale, customerBrowserLanguages()),
+  );
+  frame.srcdoc = `<!doctype html><html lang="${escapeAttribute(language.lang)}" dir="${escapeAttribute(language.dir)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="origin"><link rel="stylesheet" href="${escapeAttribute(css.href)}"></head><body><script type="module" src="${escapeAttribute(entry.href)}"></script></body></html>`;
   const controllers = new Map<string, AbortController>();
   let committing: AbortController | undefined;
   let pendingRepair:

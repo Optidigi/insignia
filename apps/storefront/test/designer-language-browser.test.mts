@@ -79,12 +79,17 @@ for (const engine of [chromium, firefox])
  window.designerClosed=0;
  window.liveFrame=createDesignerFrame({config:${JSON.stringify(config)},locale:'de',initialPrints:[{id:'chest',method:'print',size:0,artworkId:'asset'}],initialArtworks:[{id:'asset',name:'Logo.png',url:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"/%3E',width:100,height:100}],ports:{artwork:{upload:()=>new Promise(()=>{})},cart:{commit:()=>new Promise(()=>{})}},onClose(){window.designerClosed++}});
  </script></body></html>`;
+    // Cart repair without a current product configuration renders no Designer.
+    const repairHtml = `<!doctype html><html><body><p>Shopify product page</p><script type="module">
+ import {createDesignerFrame} from '/host.js';
+ createDesignerFrame({title:'Shirt',locale:'de',repair:{canStart:false,canRemoveGroup:false,canRemoveAll:false},onRepair:async()=>undefined,onClose(){}});
+ </script></body></html>`;
     const server = createServer((request, response) => {
       void (async () => {
         const path = new URL(request.url ?? '/', 'http://fixture.test').pathname;
-        if (path === '/' || path === '/products/shirt') {
+        if (path === '/' || path === '/products/shirt' || path === '/products/repair') {
           response.setHeader('Content-Type', 'text/html');
-          response.end(html);
+          response.end(path === '/products/repair' ? repairHtml : html);
         } else if (path === '/host.js' || path === '/insignia-designer-frame.js') {
           response.setHeader('Content-Type', 'text/javascript');
           response.end((path === '/host.js' ? host : frameSource).outputFiles[0]?.text);
@@ -139,9 +144,18 @@ for (const engine of [chromium, firefox])
     await frame.locator('#customer-language').selectOption('es');
     await frame.locator('.app[lang="es"]').waitFor();
     assert.equal(await documentLanguage(), 'es');
-    assert.equal((await closeDialog()).title, '¿Cerrar la personalización?');
+    const spanish = await closeDialog();
+    assert.equal(spanish.title, '¿Cerrar la personalización?');
+    // "diseño" is the artwork in Spanish; the help names the whole customization like its title.
+    assert.match(spanish.help, /personalización/);
+    assert.doesNotMatch(spanish.help, /diseño/);
 
     await frame.locator('#customer-language').selectOption('');
     await frame.locator('.app[lang="de"]').waitFor();
     assert.equal(await documentLanguage(), 'de');
+
+    // A repair-only frame has no Designer to mirror its language; the srcdoc carries a baseline.
+    await page.goto(`http://127.0.0.1:${serverPort(server)}/products/repair`);
+    await page.frameLocator('dialog > iframe').locator('body > *').first().waitFor({ timeout: 10000 });
+    assert.equal(await documentLanguage(), 'de', 'repair-only frame language');
   });
