@@ -540,6 +540,8 @@
       "customer_artwork_processingTimeout": "Die Prüfung dauert länger als erwartet. Versuchen Sie es erneut.",
       "customer_artwork_inspectionRejected": "Dieses Bild wurde abgelehnt. Wähle ein unterstütztes statisches Bild.",
       "customer_artwork_artworkExpired": "Diese Datei ist abgelaufen. Lade sie erneut hoch.",
+      "customer_artwork_sessionLimited": "Meldung bei zu vielen Sitzungen",
+      "customer_artwork_closeUploadError": "Schaltfläche Uploadfehler schließen",
       "customer_host_personalise": "Schaltfläche personalisieren",
       "customer_host_savedDesigns": "Beschriftung gespeicherter Designs",
       "customer_host_openSaved": "Schaltfläche Design öffnen",

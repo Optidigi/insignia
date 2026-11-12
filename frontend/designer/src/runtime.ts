@@ -10,11 +10,14 @@ import {
 } from "./designer-state";
 
 export type UploadPhase = 'uploading' | 'processing';
-function uploadFailure(error: unknown, phase?: UploadPhase): Exclude<UploadFailureReason, 'file-too-large' | 'unsupported-file-type'> {
-  const status = error && typeof error === 'object' && 'status' in error ? error.status : undefined;
-  if (status === 410) return 'artwork-expired';
-  if (phase === 'processing') return status === 422 ? 'inspection-rejected' : 'processing-failed';
-  return phase === 'uploading' ? 'upload-failed' : 'read-failed';
+function uploadFailure(error: unknown, phase?: UploadPhase): { reason: Exclude<UploadFailureReason, 'file-too-large' | 'unsupported-file-type'>; retryAfterSeconds?: number } {
+  const { status, code, retryAfter } = (error && typeof error === 'object' ? error : {}) as { status?: unknown; code?: unknown; retryAfter?: unknown };
+  // Neither a retry nor another file helps until the visitor window admits a new session.
+  if (code === 'SESSION_RATE_LIMITED')
+    return { reason: 'session-limited', ...(typeof retryAfter === 'number' && retryAfter > 0 ? { retryAfterSeconds: retryAfter } : {}) };
+  if (status === 410) return { reason: 'artwork-expired' };
+  if (phase === 'processing') return { reason: status === 422 ? 'inspection-rejected' : 'processing-failed' };
+  return { reason: phase === 'uploading' ? 'upload-failed' : 'read-failed' };
 }
 
 export interface UploadRequest {
@@ -265,7 +268,7 @@ export function createDesignerRuntime(
         if(controller.signal.aborted||token!==uploadVersion)return;
         if(applied.id!==artwork.id||!applied.url||!Number.isFinite(applied.width)||!Number.isFinite(applied.height)||applied.width<=0||applied.height<=0)throw new Error('Invalid applied artwork');
         dispatch({type:'upload-succeeded',token,target,artwork:applied});
-      }catch(error){if(!controller.signal.aborted&&token===uploadVersion)dispatch({type:'upload-failed',token,target,reason:uploadFailure(error)});}
+      }catch(error){if(!controller.signal.aborted&&token===uploadVersion)dispatch({type:'upload-failed',token,target,...uploadFailure(error)});}
       finally{if(uploadController===controller)uploadController=null;}
     },
     async upload(file: File, target: PositionId) {
@@ -333,7 +336,7 @@ export function createDesignerRuntime(
             type: "upload-failed",
             token,
             target,
-            reason: uploadFailure(error, phase),
+            ...uploadFailure(error, phase),
           });
       } finally {
         clearTimeout(checkTimer);

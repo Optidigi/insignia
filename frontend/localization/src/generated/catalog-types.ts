@@ -2332,6 +2332,7 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_artwork_chooseOption': object;
   'settings:translations.fields.customer_artwork_choosePosition': object;
   'settings:translations.fields.customer_artwork_closeDialog': object;
+  'settings:translations.fields.customer_artwork_closeUploadError': object;
   'settings:translations.fields.customer_artwork_decorationSize': object;
   'settings:translations.fields.customer_artwork_dialogArtworkTitle': object;
   'settings:translations.fields.customer_artwork_dialogOptionTitle': object;
@@ -2357,6 +2358,7 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_artwork_retryUpload': object;
   'settings:translations.fields.customer_artwork_samples': object;
   'settings:translations.fields.customer_artwork_selectedPreviewFailed': object;
+  'settings:translations.fields.customer_artwork_sessionLimited': object;
   'settings:translations.fields.customer_artwork_unavailable': object;
   'settings:translations.fields.customer_artwork_uploadArtworkFile': object;
   'settings:translations.fields.customer_artwork_uploadErrorTitle': object;
@@ -2675,6 +2677,7 @@ export interface CustomerMessageTable {
   'customer:artwork.chooseOption': object;
   'customer:artwork.choosePosition': object;
   'customer:artwork.closeDialog': object;
+  'customer:artwork.closeUploadError': object;
   'customer:artwork.decorationSize': object;
   'customer:artwork.dialogArtworkTitle': { positionName: string };
   'customer:artwork.dialogOptionTitle': object;
@@ -2700,6 +2703,7 @@ export interface CustomerMessageTable {
   'customer:artwork.retryUpload': object;
   'customer:artwork.samples': object;
   'customer:artwork.selectedPreviewFailed': object;
+  'customer:artwork.sessionLimited': { count: number };
   'customer:artwork.unavailable': object;
   'customer:artwork.uploadArtworkFile': object;
   'customer:artwork.uploadErrorTitle': object;

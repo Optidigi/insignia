@@ -277,7 +277,7 @@ function DesignerSession({
   const uploading = workflow.upload.kind === 'reading';
   const uploadFileName = workflow.upload.kind === 'idle' ? undefined : workflow.upload.fileName;
   const retryFile = useRef<File | null>(null);
-  const error = workflow.upload.kind === 'failed' ? uploadFailureMessage(workflow.upload.reason) : '';
+  const error = workflow.upload.kind === 'failed' ? uploadFailureMessage(workflow.upload.reason, workflow.upload.retryAfterSeconds) : '';
   useEffect(() => {
     if (workflow.upload.kind !== 'failed' || modal.kind !== 'artwork') return;
     // Recovery autofocus must yield to a newer keyboard or pointer focus choice.
@@ -420,7 +420,7 @@ function DesignerSession({
     return () => timers.forEach(clearTimeout);
   }, [artworks, designerOpen, suspended, modal.kind, prints, view, runtime, ports]);
 
-  function uploadFailureMessage(reason: UploadFailureReason): string {
+  function uploadFailureMessage(reason: UploadFailureReason, retryAfterSeconds?: number): string {
     switch (reason) {
       case 'file-too-large':
         return t('customer:artwork.uploadTooLarge', { maxSizeMb: 5 });
@@ -431,6 +431,8 @@ function DesignerSession({
       case 'processing-timeout': return t('customer:artwork.processingTimeout');
       case 'inspection-rejected': return t('customer:artwork.inspectionRejected');
       case 'artwork-expired': return t('customer:artwork.artworkExpired');
+      // Whole minutes, rounded up; without Retry-After the one-hour window is the longest wait.
+      case 'session-limited': return t('customer:artwork.sessionLimited', { count: Math.ceil((retryAfterSeconds ?? 3600) / 60) });
       case 'read-failed':
         return t('customer:artwork.uploadReadFailed');
     }
@@ -2066,10 +2068,16 @@ function DesignerSession({
                   <>
                     <p className="upload-error" id="artwork-upload-error" role="alert">{error}</p>
                     <div className="upload-failure-actions">
-                      {workflow.upload.kind === 'failed' && ['upload-failed', 'processing-failed', 'processing-timeout'].includes(workflow.upload.reason) && retryFile.current?.name === uploadFileName && (
-                        <button className="primary-button" onClick={() => void upload(retryFile.current ?? undefined)}>{t('customer:artwork.retryUpload')}</button>
+                      {workflow.upload.kind === 'failed' && workflow.upload.reason === 'session-limited' ? (
+                        <button className="secondary-button" onClick={closeModal}>{t('customer:artwork.closeUploadError')}</button>
+                      ) : (
+                        <>
+                          {workflow.upload.kind === 'failed' && ['upload-failed', 'processing-failed', 'processing-timeout'].includes(workflow.upload.reason) && retryFile.current?.name === uploadFileName && (
+                            <button className="primary-button" onClick={() => void upload(retryFile.current ?? undefined)}>{t('customer:artwork.retryUpload')}</button>
+                          )}
+                          <button className="secondary-button" onClick={() => fileRef.current?.click()}>{t('customer:artwork.chooseAnotherFile')}</button>
+                        </>
                       )}
-                      <button className="secondary-button" onClick={() => fileRef.current?.click()}>{t('customer:artwork.chooseAnotherFile')}</button>
                     </div>
                   </>
                 ) : uploading ? (

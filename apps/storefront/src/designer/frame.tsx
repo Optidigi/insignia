@@ -301,6 +301,15 @@ window.addEventListener('message', (event) => {
         Object.assign(new Error('Live operation unavailable'), {
           ...(event.data.reviewRequired === true ? { reviewRequired: true, expiresAt: event.data.expiresAt } : {}),
           status: [403, 404, 410, 422].includes(event.data.status) ? event.data.status : undefined,
+          ...(event.data.sessionLimited === true
+            ? {
+                code: 'SESSION_RATE_LIMITED',
+                // The visitor window is one hour; anything else is not a usable wait.
+                ...(Number.isSafeInteger(event.data.retryAfter) && event.data.retryAfter > 0
+                  ? { retryAfter: Math.min(event.data.retryAfter, 3600) }
+                  : {}),
+              }
+            : {}),
           ...(event.data.acceptanceOutcome === 'declined' ? { acceptanceOutcome: 'declined' as const } : {}),
           ...(event.data.cartRejected === true
             ? {

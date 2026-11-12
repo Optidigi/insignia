@@ -25,7 +25,8 @@ export type DesignerModal =
   | { kind: 'confirm-upload-cancel'; positionId: PositionId; destination: 'artwork' | 'customizer' }
   | { kind: 'switch-design'; design: Design };
 
-export type UploadFailureReason = 'file-too-large' | 'unsupported-file-type' | 'read-failed' | 'upload-failed' | 'processing-failed' | 'processing-timeout' | 'inspection-rejected' | 'artwork-expired';
+/** `session-limited`: the per-visitor session limit refused the session the upload needs (#348). */
+export type UploadFailureReason = 'file-too-large' | 'unsupported-file-type' | 'read-failed' | 'upload-failed' | 'processing-failed' | 'processing-timeout' | 'inspection-rejected' | 'artwork-expired' | 'session-limited';
 
 export type UploadState =
   | { kind: 'idle' }
@@ -35,6 +36,8 @@ export type UploadState =
       token: number;
       target: PositionId;
       reason: UploadFailureReason;
+      /** session-limited only: the server's Retry-After when it sent one. */
+      retryAfterSeconds?: number;
       fileName?: string;
     };
 
@@ -197,6 +200,7 @@ export type DesignerEvent =
       token: number;
       target: PositionId;
       reason: Exclude<UploadFailureReason, 'file-too-large' | 'unsupported-file-type'>;
+      retryAfterSeconds?: number;
     }
   | { type: 'recovery-undone' }
   | { type: 'recovery-dismissed' }
@@ -539,6 +543,7 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
           token: event.token,
           target: event.target,
           reason: event.reason,
+          ...(event.retryAfterSeconds ? { retryAfterSeconds: event.retryAfterSeconds } : {}),
           ...(state.upload.fileName ? { fileName: state.upload.fileName } : {}),
         },
         modal: state.modal.kind === 'confirm-upload-cancel' ? { kind: 'artwork', positionId: state.modal.positionId } : state.modal,

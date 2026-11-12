@@ -103,17 +103,20 @@ function classifyFailure(error: unknown): {
   status: number;
   code: string;
   message: string;
-  /** Set only for 409 BUSY: the same request can be retried after this many seconds. */
+  /** Seconds until a retry can succeed: 409 BUSY, and 429 SESSION_RATE_LIMITED from the visitor window. */
   retryAfter?: string;
+  /** Only BUSY: the identical request may be repeated after `retryAfter`. */
+  retryable?: true;
   /** Absent for request/state errors that were never logged. */
   errorClass?: BuyerFailureDiagnostic['errorClass'];
 } {
   if (error instanceof HttpError) return { status: error.status, code: error.code, message: FAILED };
   if (error instanceof BuyerStateError)
     return {
-      status: { NOT_FOUND: 404, CONFLICT: 409, RATE_LIMITED: 429, INVALID: 422 }[error.code],
+      status: { NOT_FOUND: 404, CONFLICT: 409, RATE_LIMITED: 429, SESSION_RATE_LIMITED: 429, INVALID: 422 }[error.code],
       code: error.code,
       message: FAILED,
+      ...(error.retryAfterSeconds ? { retryAfter: String(error.retryAfterSeconds) } : {}),
     };
   if (error instanceof BuyerRejectedError) return { ...REJECTIONS[error.code], code: error.code };
   // Shopify prices no node for a deleted variant; acceptance prices before it reads stock.
@@ -136,6 +139,7 @@ function classifyFailure(error: unknown): {
       code: 'BUSY',
       message: 'Customization is busy. Try again in a moment.',
       retryAfter: provider ? '2' : '1',
+      retryable: true,
       errorClass: busy,
     };
   return {
@@ -311,7 +315,7 @@ async function handleRequest(
             errorClass: failure.errorClass,
             ...(proposalStage === undefined ? {} : { proposalStage }),
           },
-          failure.status >= 500 ? 'error' : failure.retryAfter ? 'warn' : 'info',
+          failure.status >= 500 ? 'error' : failure.retryable ? 'warn' : 'info',
         );
       } catch {
         /* Diagnostics cannot change settlement. */
@@ -323,7 +327,7 @@ async function handleRequest(
         ...(error instanceof BuyerAcceptanceDeclinedError ? { acceptanceOutcome: 'declined' as const } : {}),
         message: failure.message,
         requestId,
-        ...(failure.retryAfter ? { retryable: true } : {}),
+        ...(failure.retryable ? { retryable: true } : {}),
       },
       failure.status,
     );

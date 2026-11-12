@@ -7,6 +7,7 @@ import {
   EntitlementObservationUnavailableError,
   ShopDayChangedError,
 } from '@insignia/application';
+import { BuyerStateError } from '@insignia/database';
 import type { BuyerFailureDiagnostic } from '@insignia/observability';
 import {
   ContextualPricingError,
@@ -395,6 +396,40 @@ test('transient conditions are 409 BUSY with a retryable flag and Retry-After, l
       error.message,
     );
   }
+});
+
+test('the per-visitor session limit is 429 SESSION_RATE_LIMITED with Retry-After and is not marked retryable (#348)', async () => {
+  const session = async (error: BuyerStateError) => {
+    const response = await handleBuyerRequest(
+      post({}, '/v1/sessions?productId=1'),
+      buyerFixture({
+        session: async () => {
+          throw error;
+        },
+      }),
+      'sessions',
+    );
+    const body = record(await response.json());
+    return {
+      status: response.status,
+      code: body.code,
+      retryable: body.retryable,
+      retryAfter: response.headers.get('Retry-After'),
+    };
+  };
+  assert.deepEqual(await session(new BuyerStateError('SESSION_RATE_LIMITED', 1500)), {
+    status: 429,
+    code: 'SESSION_RATE_LIMITED',
+    retryable: undefined,
+    retryAfter: '1500',
+  });
+  // Shop-wide safety ceilings keep the generic code; nothing tells the buyer when they lift.
+  assert.deepEqual(await session(new BuyerStateError('RATE_LIMITED')), {
+    status: 429,
+    code: 'RATE_LIMITED',
+    retryable: undefined,
+    retryAfter: null,
+  });
 });
 
 test('a revoked token, missing scope or retired API version stays 503 UNAVAILABLE at error level, never BUSY', async () => {

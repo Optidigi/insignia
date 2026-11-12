@@ -337,6 +337,47 @@ test('upload through an injected port applies artwork and a newer rejected file 
   assert.equal(calls, 2);
 });
 
+test('the per-visitor session limit fails the upload with its own reason and the server wait (#348)', async () => {
+  const failWith = async (error: unknown) => {
+    const app = harness({
+      artwork: {
+        upload: async (_file, request) => {
+          request.onProgress?.('uploading');
+          throw error;
+        },
+      },
+      cart: {
+        commit: async () => {
+          throw Error();
+        },
+      },
+    });
+    app.dispatch({ type: 'modal-opened', modal: { kind: 'artwork', positionId: 'front' } });
+    await app.runtime.upload(new File(['test'], 'new.png', { type: 'image/png' }), 'front');
+    return app.state.upload;
+  };
+  const limited = Object.assign(new Error('Customization request could not be completed.'), {
+    status: 429,
+    code: 'SESSION_RATE_LIMITED',
+    retryAfter: 1500,
+  });
+  const { token: _token, ...failed } = (await failWith(limited)) as { token?: number };
+  assert.deepEqual(failed, {
+    kind: 'failed',
+    target: 'front',
+    reason: 'session-limited',
+    retryAfterSeconds: 1500,
+    fileName: 'new.png',
+  });
+  // The owner's upload quota is a different limit and keeps the ordinary upload failure.
+  assert.equal(
+    ((await failWith(Object.assign(new Error('quota'), { status: 429, code: 'RATE_LIMITED', retryAfter: 60 }))) as {
+      reason?: string;
+    }).reason,
+    'upload-failed',
+  );
+});
+
 test('retrying an unchanged snapshot reuses its idempotency key and design identity, with a fresh UI request ID', async () => {
   const requests: CartRequest[] = [];
   const app = harness({

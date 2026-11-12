@@ -302,6 +302,10 @@ export function createDesignerFrame(input: {
             ? { reviewRequired: true, expiresAt: 'expiresAt' in error ? error.expiresAt : undefined }
             : {}),
           ...(status ? { status } : {}),
+          // #348: the per-visitor session limit and its wait, so the Designer can name both.
+          ...(error && typeof error === 'object' && 'code' in error && error.code === 'SESSION_RATE_LIMITED'
+            ? { sessionLimited: true, ...('retryAfter' in error ? { retryAfter: error.retryAfter } : {}) }
+            : {}),
           ...(data.action === 'commit' && error && typeof error === 'object' && 'cartRejected' in error
             ? {
                 cartRejected: true,

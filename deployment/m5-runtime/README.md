@@ -36,6 +36,11 @@ Per-visitor session limit (owner decision B, 11 November 2026), deployed after t
 2. Apply only the new web grants from [web-runtime-grants.sql](../m8-journey/web-runtime-grants.sql): `SELECT, INSERT, DELETE` and `UPDATE(window_at,issued)` on `public.buyer_visitor_admission`.
 3. Replace web only, and remove `INSIGNIA_CLIENT_CHAIN_DIAGNOSTIC`. The previous web image ignores the new table, so rollback is web-only.
 
+Sliding per-visitor window (owner decision, 12 November 2026, #348), deployed with the web image that contains it:
+1. Apply migration `20261112000300_buyer_visitor_sliding_window.sql` through the schema owner (schema 58 to 59). It adds `issued_at`, backfills open windows so their sessions keep counting until the fixed window would have ended, and relaxes the `issued` bound.
+2. Apply the changed web grant from [web-runtime-grants.sql](../m8-journey/web-runtime-grants.sql): `UPDATE(window_at,issued,issued_at)` on `public.buyer_visitor_admission`. Both steps come before the new web image, which writes `issued_at`.
+3. Replace web. The previous image still works on the migrated table (it writes only the old columns and counts at most 20), so rollback is web-only.
+
 ## Cart-line v3 candidate development transition
 
 `native-cart-line-v3-aa3b6166` binds inactive version 1202999689217, the complete 34-version inventory in [native-cart-line-v3-release-binding.json](native-cart-line-v3-release-binding.json) and the exact 14-module [baseline](native-cart-line-v3-module-baseline.json). Canonical hash is `dd76c50a573e7c6cdb7b42555fdbc36e1edda5189c75b876f4f81d92f66c447f`. Source is main merge aa3b6166/tree dc58ec46, which ships everything merged since the functions-renew release, PRs 298–306:

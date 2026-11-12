@@ -542,6 +542,8 @@
       "customer_artwork_processingTimeout": "La vérification prend plus de temps que prévu. Réessayez.",
       "customer_artwork_inspectionRejected": "Cette image a été refusée. Choisissez une image statique prise en charge.",
       "customer_artwork_artworkExpired": "Ce fichier a expiré. Envoyez-le à nouveau.",
+      "customer_artwork_sessionLimited": "Message en cas de trop nombreuses sessions",
+      "customer_artwork_closeUploadError": "Bouton pour fermer l’erreur d’importation",
       "customer_host_personalise": "Bouton Personnaliser",
       "customer_host_savedDesigns": "Libellé des créations enregistrées",
       "customer_host_openSaved": "Bouton Ouvrir la création",

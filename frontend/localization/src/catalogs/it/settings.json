@@ -543,6 +543,8 @@
       "customer_artwork_processingTimeout": "La verifica richiede più tempo del previsto. Riprova.",
       "customer_artwork_inspectionRejected": "Questa immagine è stata rifiutata. Scegli un’immagine statica supportata.",
       "customer_artwork_artworkExpired": "Questo file è scaduto. Caricalo di nuovo.",
+      "customer_artwork_sessionLimited": "Messaggio per troppe sessioni",
+      "customer_artwork_closeUploadError": "Pulsante per chiudere l’errore di caricamento",
       "customer_host_personalise": "Pulsante Personalizza",
       "customer_host_savedDesigns": "Etichetta dei design salvati",
       "customer_host_openSaved": "Pulsante Apri design",

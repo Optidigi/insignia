@@ -569,6 +569,8 @@
       "customer_artwork_processingTimeout": "Het controleren duurt langer dan verwacht. Probeer opnieuw.",
       "customer_artwork_inspectionRejected": "Deze afbeelding is afgewezen. Kies een ondersteunde statische afbeelding.",
       "customer_artwork_artworkExpired": "Dit bestand is verlopen. Upload het opnieuw.",
+      "customer_artwork_sessionLimited": "Melding bij te veel sessies",
+      "customer_artwork_closeUploadError": "Knop uploadfout sluiten",
       "customer_host_personalise": "Knop personaliseren",
       "customer_host_savedDesigns": "Label opgeslagen ontwerpen",
       "customer_host_openSaved": "Knop ontwerp openen",
