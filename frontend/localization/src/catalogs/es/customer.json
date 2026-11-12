@@ -242,7 +242,10 @@
     "removeGroup": "Revisar la eliminación de esta personalización",
     "removeAll": "Revisar la eliminación de todos los artículos personalizados",
     "confirmRemoval": "Confirmar actualización del carrito",
-    "remainingItems": "Artículos personalizados restantes"
+    "remainingItems": "Artículos personalizados restantes",
+    "earlierSession": "Personalizado en una sesión anterior",
+    "earlierSessionHelp": "Tu carrito tiene artículos personalizados en una sesión anterior. Permanecen en el carrito, pero no se pueden cambiar aquí. Consulta tu carrito para finalizar la compra o elimínalos para volver a personalizar.",
+    "earlierSessionExpiredHelp": "Tu carrito tiene artículos personalizados en una sesión anterior cuyos precios han caducado, por lo que no se pueden comprar. Elimínalos para volver a personalizar."
   },
   "language": {
     "label": "Idioma",

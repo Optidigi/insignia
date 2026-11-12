@@ -2,13 +2,20 @@ import { createCustomerTranslator } from '@insignia/ui-localization/customer';
 import { useState } from 'preact/hooks';
 import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quote-review';
 import { quoteReviewMoney } from '../../../../frontend/designer/src/quote-review';
-export type RepairAction = 'start' | 'remove-group' | 'remove-all' | 'confirm' | 'retry';
+import type { EarlierSessionCart } from '../buyer';
+export type RepairAction = 'start' | 'remove-group' | 'remove-all' | 'confirm' | 'retry' | 'cart';
 export type RepairState = {
   canStart: boolean;
   canRemoveGroup: boolean;
   canRemoveAll?: boolean;
   /** The cart line changed under the Designer: starting reopens its design from the cart (#341). */
   reopensCartLine?: boolean;
+  /**
+   * The cart's customized lines were accepted in an earlier session and cannot be changed here (#340):
+   * `valid` lines can be kept for checkout, `expired` ones only removed. Never set with `reopensCartLine`,
+   * and it always comes with `canStart: false`, so no reopen or start action appears beside it.
+   */
+  earlierSession?: EarlierSessionCart;
 };
 export function DesignerRepair({
   locale,
@@ -17,6 +24,7 @@ export function DesignerRepair({
   canRemoveGroup,
   canRemoveAll = true,
   reopensCartLine = false,
+  earlierSession,
   onAction,
   onClose,
 }: {
@@ -26,6 +34,7 @@ export function DesignerRepair({
   canRemoveGroup: boolean;
   canRemoveAll?: boolean;
   reopensCartLine?: boolean;
+  earlierSession?: EarlierSessionCart;
   onAction(action: RepairAction): Promise<DesignerQuoteReview | undefined>;
   onClose(): void;
 }) {
@@ -48,13 +57,28 @@ export function DesignerRepair({
       setBusy(false);
     }
   }
+  const heading = earlierSession
+    ? 'customer:recovery.earlierSession'
+    : canRemoveAll
+      ? 'customer:recovery.repairRequired'
+      : 'customer:chrome.unavailable';
   return (
     <main className="admin-preview-message">
-      <section aria-label={t('customer:recovery.repairRequired')}>
+      <section aria-label={t(earlierSession ? heading : 'customer:recovery.repairRequired')}>
         <div className="section-heading">
-          <h1>{t(canRemoveAll ? 'customer:recovery.repairRequired' : 'customer:chrome.unavailable')}</h1>
+          <h1>{t(heading)}</h1>
         </div>
-        {canRemoveAll && <p>{t('customer:recovery.repairHelp')}</p>}
+        {earlierSession ? (
+          <p>
+            {t(
+              earlierSession === 'valid'
+                ? 'customer:recovery.earlierSessionHelp'
+                : 'customer:recovery.earlierSessionExpiredHelp',
+            )}
+          </p>
+        ) : (
+          canRemoveAll && <p>{t('customer:recovery.repairHelp')}</p>
+        )}
         {failed && (
           <p className="cart-submit-error" role="alert">
             {t('customer:recovery.cartCommitFailed')}
@@ -92,7 +116,13 @@ export function DesignerRepair({
             </>
           ) : (
             <>
-              {canStart && (
+              {earlierSession === 'valid' && (
+                <button type="button" className="primary-button" disabled={busy} onClick={() => void action('cart')}>
+                  {t('customer:chrome.viewCart')}
+                </button>
+              )}
+              {/* An earlier session's lines win: this session can neither reopen nor replace them. */}
+              {canStart && !earlierSession && (
                 <button type="button" className="primary-button" disabled={busy} onClick={() => void action('start')}>
                   {t(reopensCartLine ? 'customer:recovery.reopenFromCart' : 'customer:recovery.startNew')}
                 </button>
@@ -114,7 +144,8 @@ export function DesignerRepair({
               )}
             </>
           )}
-          {!review && (
+          {/* Another try cannot change which session owns the cart's lines. */}
+          {!review && !earlierSession && (
             <button type="button" className="text-action" disabled={busy} onClick={() => void action('retry')}>
               {t('common:actions.retry')}
             </button>

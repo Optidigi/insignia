@@ -334,6 +334,7 @@ const failure = async (error: unknown) => {
     retryable: body.retryable,
     retryAfter: response.headers.get('Retry-After'),
     logged: seen.map(({ value, level }) => ({ errorClass: value.errorClass, level })),
+    ...(body.details === undefined ? {} : { details: body.details }),
   };
 };
 
@@ -355,6 +356,17 @@ test('buyer-actionable conditions are specific 4xx responses logged at info as e
       retryAfter: null,
       logged: [{ errorClass, level: 'info' }],
     });
+});
+
+test('a rejection reason is public detail of the same mapped code, never the rejected data (#340)', async () => {
+  assert.deepEqual(await failure(new BuyerRejectedError('REVIEW_REQUIRED', 'set 1234 owned elsewhere', 'NOT_OWNED')), {
+    status: 409,
+    code: 'REVIEW_REQUIRED',
+    retryable: undefined,
+    retryAfter: null,
+    logged: [{ errorClass: 'ReviewRequired', level: 'info' }],
+    details: { reason: 'NOT_OWNED' },
+  });
 });
 
 test('a variant Shopify no longer prices (deleted) is 410 PRODUCT_UNAVAILABLE, not an outage', async () => {

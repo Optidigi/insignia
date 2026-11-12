@@ -255,6 +255,7 @@ function Frame({ initial }: { initial: Initial }) {
           canRemoveGroup={repair.canRemoveGroup}
           canRemoveAll={repair.canRemoveAll}
           reopensCartLine={repair.reopensCartLine}
+          {...(repair.earlierSession ? { earlierSession: repair.earlierSession } : {})}
           onClose={() => send('insignia:designer:closed')}
           onAction={(action: RepairAction) => {
             const id = crypto.randomUUID();

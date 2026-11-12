@@ -311,7 +311,8 @@ test('cart repair names a currency or Market change and repairs in the current s
 
 test('an expired offer renews in one click at the edited cart quantity and otherwise falls back to Designer repair', async (t) => {
   const html = await renderTheme(t, null);
-  for (const outcome of ['renewed', 'review'] as const) {
+  // #340: Renew is offered only when the stored session's cart-state calls the set renewable.
+  for (const outcome of ['renewed', 'renew-refused', 'not-renewable', 'other-session'] as const) {
     const page = await browserFixture(t);
     let items: Record<string, unknown>[] = [
       { key: 'ordinary', product_id: 9, variant_id: 9, quantity: 1, properties: {} },
@@ -359,17 +360,29 @@ test('an expired offer renews in one click at the edited cart quantity and other
       variants: [{ variantId: '101', quantity: 1 }],
     };
     await page.route('**/apps/insignia/v1/cart-state', (route) =>
-      route.fulfill({
-        json: {
-          groups: [group],
-          quoteId,
-          repairRequired: true,
-          renewable: outcome === 'renewed',
-        },
-      }),
+      outcome === 'other-session'
+        ? route.fulfill({
+            status: 409,
+            json: {
+              code: 'REVIEW_REQUIRED',
+              message: 'Review',
+              requestId: 'r',
+              details: { reason: 'NOT_OWNED_EXPIRED' },
+            },
+          })
+        : route.fulfill({
+            json: {
+              groups: [group],
+              quoteId,
+              repairRequired: true,
+              renewable: outcome !== 'not-renewable',
+            },
+          }),
     );
     await page.route(`**/apps/insignia/v1/quotes/${quoteId}/renew`, (route) => {
       renewals.push(route.request().postDataJSON());
+      if (outcome === 'renew-refused')
+        return route.fulfill({ status: 409, json: { code: 'REVIEW_REQUIRED', message: 'Review', requestId: 'r' } });
       return route.fulfill({
         json: {
           quoteId,
@@ -394,12 +407,12 @@ test('an expired offer renews in one click at the edited cart quantity and other
     await page.evaluate((markup) => document.body.insertAdjacentHTML('beforeend', markup), html);
     const repair = page.locator('insignia-cart-repair');
     const renew = repair.getByRole('button', { name: 'Renew prices', exact: true });
-    // A returning buyer without the owning tab session cannot renew; the generic Designer repair remains.
+    // A returning buyer without a stored session cannot renew; the generic Designer repair remains.
     await repair.getByText('Customized items changed & need review.').waitFor();
     assert.equal(await renew.isVisible(), false);
 
     await page.evaluate(() =>
-      sessionStorage.setItem(
+      localStorage.setItem(
         'insignia-buyer-session:/apps/insignia',
         JSON.stringify({
           capability: 'abc.def',
@@ -408,7 +421,17 @@ test('an expired offer renews in one click at the edited cart quantity and other
         }),
       ),
     );
+    const checked = page.waitForRequest('**/apps/insignia/v1/cart-state');
     await page.evaluate(() => window.dispatchEvent(new Event('insignia-cart-updated')));
+    if (outcome === 'not-renewable' || outcome === 'other-session') {
+      // A session that cannot renew these lines is not offered Renew: only the Designer review remains.
+      await checked;
+      await repair.getByText('Customized items changed & need review.').waitFor();
+      assert.equal(await renew.isVisible(), false, outcome);
+      assert.equal(await repair.getByText('Customization prices expired.').isVisible(), false, outcome);
+      assert.deepEqual(renewals, []);
+      continue;
+    }
     await repair.getByText('Customization prices expired.').waitFor();
     assert.equal(await repair.getByRole('button', { name: 'Review customized items', exact: true }).isVisible(), true);
     assert.deepEqual(renewals, [], 'nothing is renewed before the buyer clicks');
@@ -426,7 +449,12 @@ test('an expired offer renews in one click at the edited cart quantity and other
       await renew.click();
       await repair.getByText('Prices could not be renewed.').waitFor();
       assert.equal(await renew.isVisible(), false);
-      assert.deepEqual(renewals, []);
+      assert.equal(renewals.length, 1);
+      assert.deepEqual(
+        items.map((item) => item.key),
+        ['ordinary', 'custom'],
+        'a refused renewal leaves the cart unchanged',
+      );
       assert.equal(
         await repair
           .getByRole('button', { name: 'Review customized items', exact: true })

@@ -1,4 +1,5 @@
 import { type AcceptedCart, advisoryFingerprint, cartJournal, createBuyerApi, type DesiredGroup } from './buyer.ts';
+import type { BuyerSessionStorage } from './buyer-session.ts';
 import { createAjaxCartAdapter } from './cart.ts';
 
 const LINE = '_insignia_line_v3';
@@ -21,20 +22,25 @@ function lineIndex(carrier: unknown): number | undefined {
  * The vector goes through the Designer's verified cart adapter. `false` means the buyer must use the
  * Designer repair instead; no outcome here is purchase authority.
  */
-export async function renewCartPrices(input: {
+type RenewalInput = {
   proxyBase: string;
   cartRoot: string;
   productId: string;
   country: string;
   marketId: string;
+  /** This tab's cart journal. */
   storage: Pick<Storage, 'getItem' | 'setItem'>;
+  /** The session capability store; by default the one every tab shares. */
+  sessionStore?: BuyerSessionStorage;
   fetchImpl?: typeof fetch;
-}): Promise<boolean> {
+};
+/** The current cart and what the stored session's cart-state says about renewing it. */
+async function readRenewal(input: RenewalInput) {
   const api = createBuyerApi({
     proxyBase: input.proxyBase,
     productId: input.productId,
     country: input.country,
-    storage: input.storage,
+    storage: input.sessionStore,
     ...(input.fetchImpl ? { fetchImpl: input.fetchImpl } : {}),
   });
   const cart = createAjaxCartAdapter({
@@ -43,11 +49,24 @@ export async function renewCartPrices(input: {
     journal: cartJournal(input.storage, input.cartRoot),
   });
   const baseline = await cart.read();
-  if (!baseline.customized.length) return false;
-  const state = await api.private<{ groups: DesiredGroup[]; quoteId?: string; renewable?: boolean }>('cart-state', {
-    lines: baseline.customized,
-  });
-  if (state.renewable !== true || !state.quoteId) return false;
+  const state = baseline.customized.length
+    ? await api.private<{ groups: DesiredGroup[]; quoteId?: string; renewable?: boolean }>('cart-state', {
+        lines: baseline.customized,
+      })
+    : undefined;
+  return { api, cart, baseline, state };
+}
+/**
+ * Whether this browser's session can renew the cart's set: it owns the set and only the validity lapsed.
+ * Asked before Renew is offered, so a session that cannot renew it never sees the button (#340).
+ */
+export async function cartRenewable(input: RenewalInput): Promise<boolean> {
+  const { state } = await readRenewal(input);
+  return state?.renewable === true && !!state.quoteId;
+}
+export async function renewCartPrices(input: RenewalInput): Promise<boolean> {
+  const { api, cart, baseline, state } = await readRenewal(input);
+  if (state?.renewable !== true || !state.quoteId) return false;
   const renewed = await api.private<AcceptedCart>(`quotes/${state.quoteId}/renew`, {
     country: input.country,
     marketId: input.marketId,

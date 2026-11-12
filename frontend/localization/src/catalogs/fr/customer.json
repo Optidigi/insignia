@@ -242,7 +242,10 @@
     "removeGroup": "Vérifier le retrait de cette personnalisation",
     "removeAll": "Vérifier le retrait de tous les articles personnalisés",
     "confirmRemoval": "Confirmer la mise à jour du panier",
-    "remainingItems": "Articles personnalisés restants"
+    "remainingItems": "Articles personnalisés restants",
+    "earlierSession": "Personnalisé lors d’une session précédente",
+    "earlierSessionHelp": "Votre panier contient des articles personnalisés lors d’une session précédente. Ils restent dans le panier, mais ne peuvent pas être modifiés ici. Consultez votre panier pour passer commande, ou retirez-les pour personnaliser à nouveau.",
+    "earlierSessionExpiredHelp": "Votre panier contient des articles personnalisés lors d’une session précédente dont les prix ont expiré : ils ne peuvent donc pas être commandés. Retirez-les pour personnaliser à nouveau."
   },
   "language": {
     "label": "Langue",

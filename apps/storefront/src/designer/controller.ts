@@ -1,5 +1,5 @@
 import type { BuyerConfig, DesiredGroup } from '../buyer';
-import { createBuyerApi } from '../buyer';
+import { createBuyerApi, earlierSessionCart } from '../buyer';
 import { createDesignerFrame } from './frame-host';
 import { desiredGroupKey, restorableDesign } from './group-key';
 import { createLiveDesignerPorts } from './live-ports';
@@ -32,7 +32,6 @@ export async function mountLiveDesigner(input: {
     proxyBase: input.proxyBase,
     productId: input.source.productId,
     country: input.country,
-    storage: input.storage,
   });
   const lifetime = new AbortController();
   let pendingModal: ReturnType<typeof createDesignerModal> | undefined;
@@ -92,7 +91,13 @@ export async function mountLiveDesigner(input: {
       ...input,
       source,
       productId: source.productId,
-      onNeedsReview(available, targetAvailable, canRemoveAll, request, moved = false) {
+      onNeedsReview(
+        available,
+        targetAvailable,
+        canRemoveAll,
+        request,
+        { cartLineMoved: moved = false, earlierSession } = {},
+      ) {
         if (request?.signal.aborted) return;
         canStart = available;
         cartTargetAvailable = targetAvailable;
@@ -103,6 +108,7 @@ export async function mountLiveDesigner(input: {
             canRemoveGroup: !!group && targetAvailable,
             canRemoveAll,
             reopensCartLine: cartLineMoved,
+            ...(earlierSession ? { earlierSession } : {}),
           },
           request,
         );
@@ -253,6 +259,10 @@ export async function mountLiveDesigner(input: {
           return live.prepareRemoval(target);
         }
         if (action === 'remove-all') return live.prepareRemoval();
+        if (action === 'cart') {
+          openNativeCart();
+          return;
+        }
         await live.confirmRemoval();
         discard(record);
         close();
@@ -340,9 +350,11 @@ export async function mountLiveDesigner(input: {
       const group = observed.groups.find((group) => group.productId === input.source.productId) ?? observed.groups[0];
       if (!group) throw new Error('Customized cart group unavailable');
       await show(group, false, group.productId, signal);
-    } catch {
-      // No owned choices are disclosed. Only an explicit journalled removal of observed customization is available.
+    } catch (error) {
+      // No owned choices are disclosed. Only an explicit journalled removal of observed customization is available,
+      // and lines an earlier session accepted can be kept as they are (#340).
       if (!current() || signal.aborted || generation !== selectionGeneration) return;
+      const earlierSession = earlierSessionCart(error);
       let canRemoveAll = false;
       try {
         canRemoveAll = (await probe.readCart()).customized.length > 0;
@@ -358,9 +370,13 @@ export async function mountLiveDesigner(input: {
         title: input.source.title,
         ports: probe.ports,
         locale: input.locale,
-        repair: { canStart: false, canRemoveGroup: false, canRemoveAll },
+        repair: { canStart: false, canRemoveGroup: false, canRemoveAll, ...(earlierSession ? { earlierSession } : {}) },
         onClose: close,
         async onRepair(action) {
+          if (action === 'cart') {
+            openNativeCart();
+            return;
+          }
           if (action === 'retry') {
             const observed = await probe.observe();
             const group =

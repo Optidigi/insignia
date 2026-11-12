@@ -3,6 +3,7 @@ import {
   BuyerAcceptanceDeclinedError,
   BuyerRejectedError,
   type BuyerRejectionCode,
+  type BuyerRejectionReason,
   CatalogContextUnavailable,
   EntitlementObservationUnavailableError,
   ShopDayChangedError,
@@ -107,6 +108,8 @@ function classifyFailure(error: unknown): {
   retryAfter?: string;
   /** Only BUSY: the identical request may be repeated after `retryAfter`. */
   retryable?: true;
+  /** A rejection's public reason, such as a cart set owned by an earlier session (#340). */
+  details?: { reason: BuyerRejectionReason };
   /** Absent for request/state errors that were never logged. */
   errorClass?: BuyerFailureDiagnostic['errorClass'];
 } {
@@ -118,7 +121,12 @@ function classifyFailure(error: unknown): {
       message: FAILED,
       ...(error.retryAfterSeconds ? { retryAfter: String(error.retryAfterSeconds) } : {}),
     };
-  if (error instanceof BuyerRejectedError) return { ...REJECTIONS[error.code], code: error.code };
+  if (error instanceof BuyerRejectedError)
+    return {
+      ...REJECTIONS[error.code],
+      code: error.code,
+      ...(error.reason ? { details: { reason: error.reason } } : {}),
+    };
   // Shopify prices no node for a deleted variant; acceptance prices before it reads stock.
   if (error instanceof ContextualPricingError && error.kind === 'missing_variant')
     return { ...REJECTIONS.PRODUCT_UNAVAILABLE, code: 'PRODUCT_UNAVAILABLE' };
@@ -326,6 +334,7 @@ async function handleRequest(
         code: failure.code,
         ...(error instanceof BuyerAcceptanceDeclinedError ? { acceptanceOutcome: 'declined' as const } : {}),
         message: failure.message,
+        ...(failure.details ? { details: failure.details } : {}),
         requestId,
         ...(failure.retryable ? { retryable: true } : {}),
       },

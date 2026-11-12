@@ -2495,6 +2495,9 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_recovery_colorItemsRemoved': object;
   'settings:translations.fields.customer_recovery_confirmRemoval': object;
   'settings:translations.fields.customer_recovery_dismissNotification': object;
+  'settings:translations.fields.customer_recovery_earlierSession': object;
+  'settings:translations.fields.customer_recovery_earlierSessionExpiredHelp': object;
+  'settings:translations.fields.customer_recovery_earlierSessionHelp': object;
   'settings:translations.fields.customer_recovery_itemsRestored': object;
   'settings:translations.fields.customer_recovery_remainingItems': object;
   'settings:translations.fields.customer_recovery_removeAll': object;
@@ -2841,6 +2844,9 @@ export interface CustomerMessageTable {
   'customer:recovery.colorItemsRemoved': { colorName: string };
   'customer:recovery.confirmRemoval': object;
   'customer:recovery.dismissNotification': object;
+  'customer:recovery.earlierSession': object;
+  'customer:recovery.earlierSessionExpiredHelp': object;
+  'customer:recovery.earlierSessionHelp': object;
   'customer:recovery.itemsRestored': object;
   'customer:recovery.remainingItems': object;
   'customer:recovery.removeAll': object;
