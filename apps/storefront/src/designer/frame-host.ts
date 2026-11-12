@@ -97,8 +97,13 @@ export function createDesignerFrame(input: {
   let failed = false;
   let destroyed = false;
   const cancel = () => {
-    if (initialized) send('insignia:designer:request-close');
-    else close();
+    if (!initialized) {
+      close();
+      return;
+    }
+    // The Designer answers with its own decision dialog; keyboard focus belongs there.
+    frame.focus();
+    send('insignia:designer:request-close');
   };
   const modal =
     input.modal ??

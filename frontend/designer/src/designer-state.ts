@@ -426,8 +426,9 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
         return designerReducer(state, { type: 'product-return-requested' });
       if (state.upload.kind === 'reading')
         return { ...state, modal: { kind: 'confirm-upload-cancel', positionId: state.upload.target, destination: 'customizer' } };
+      // The upload dialog closes here, so a rejected upload's error ends with it.
       if (hasDraftChanges(state))
-        return { ...state, modal: { kind: 'confirm-close' } };
+        return { ...state, modal: { kind: 'confirm-close' }, upload: noUpload };
       // An untouched design can return straight to its Shopify host.
       return designerReducer(state, { type: 'product-return-requested' });
     case 'upload-close-requested':
