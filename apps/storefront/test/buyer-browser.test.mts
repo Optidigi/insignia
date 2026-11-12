@@ -588,7 +588,7 @@ type RetainedScenario = {
   accepts: AcceptanceRequest[];
   proposalIds: string[];
   group: DesiredGroup;
-  editCart(quantity?: number): void;
+  editCart(): void;
   mutations(): number;
   cartNavigations(): number;
   failAcceptance(value: boolean): void;
@@ -931,8 +931,8 @@ async function withRetainedBuyer(
       proposals,
       accepts,
       proposalIds,
-      editCart: (quantity = 5) => {
-        required(items[0]).quantity = quantity;
+      editCart: () => {
+        required(items[0]).quantity = 5;
       },
       mutations: () => mutations,
       cartNavigations: () => cartNavigations,
