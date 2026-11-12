@@ -1,23 +1,27 @@
+import { RELEASE_REFRESH_LEAD_MS } from '@insignia/shopify';
+
 type Scope = { shopId: string; installationGeneration: string };
 type Timer = object;
 
-/** Trusted release records are fresh for 30 s; this never changes that bound. */
-export const RELEASE_FRESHNESS_MS = 30_000;
-/** A record older than this is refreshed ahead of expiry, leaving room for a ~4.5 s collection. */
-export const RELEASE_REFRESH_AFTER_MS = 22_000;
-/** At most one refresh start per shop per interval. */
+/** Trusted release records are fresh for 30 s from their earliest observation; this never changes that bound. */
+const RELEASE_FRESHNESS_MS = 30_000;
+/** At most one collecting refresh per shop per interval, and the retry delay after a failed refresh. */
 export const RELEASE_REFRESH_INTERVAL_MS = 25_000;
 
 /**
  * Keeps one shop's release evidence warm while its buyers are active, so acceptance usually finds a
  * fresh record instead of collecting on its request path. Off every request path: `touch` never
- * awaits or throws. Per shop: one refresh in flight, at most one start per interval, none after
- * `activeUntil`. A refresh result is a scheduling hint only; acceptance still reads and checks
- * its own record and collects synchronously when that record is stale.
+ * awaits or throws. Per shop: one refresh in flight, none after `activeUntil`. The next refresh
+ * starts `RELEASE_REFRESH_LEAD_MS` before the stored record lapses (its attestation `expiresAt`,
+ * the earliest observation + 30 s), at most one interval after the previous refresh that collected
+ * (a record observed after that refresh started). When a refresh brings no record
+ * that outlasts the lead (a failed collection, or a receiver that still reuses the old record), the
+ * next one starts as the stored record lapses. A refresh result is a scheduling hint only:
+ * acceptance still reads and checks its own record and collects synchronously when it is stale.
  */
 export function createReleaseRefresher(input: {
-  /** Refresh if the current record is older than RELEASE_REFRESH_AFTER_MS; resolve to the current
-   * record's observation time (ms), or null when none is available. */
+  /** Refresh if the stored record lapses within RELEASE_REFRESH_LEAD_MS; resolve to the instant (ms)
+   * the newest fresh stored record lapses, or null when none is fresh. */
   refresh(scope: Scope): Promise<number | null>;
   clock?: () => number;
   setTimer?: (run: () => void, delayMs: number) => Timer;
@@ -28,7 +32,14 @@ export function createReleaseRefresher(input: {
   const clearTimer = input.clearTimer ?? ((timer) => clearTimeout(timer as ReturnType<typeof setTimeout>));
   const shops = new Map<
     string,
-    { scope: Scope; activeUntil: number; lastStart: number; running: boolean; timer?: Timer }
+    {
+      scope: Scope;
+      activeUntil: number;
+      lastStart: number;
+      lastCollection: number;
+      running: boolean;
+      timer?: Timer;
+    }
   >();
   function schedule(key: string, at: number) {
     const state = shops.get(key);
@@ -47,11 +58,11 @@ export function createReleaseRefresher(input: {
     }
     state.running = true;
     state.lastStart = clock();
-    let observedAt: number | null = null;
+    let validUntil: number | null = null;
     try {
-      observedAt = await input.refresh(state.scope);
+      validUntil = await input.refresh(state.scope);
     } catch {
-      observedAt = null;
+      validUntil = null;
     } finally {
       state.running = false;
     }
@@ -59,9 +70,17 @@ export function createReleaseRefresher(input: {
       shops.delete(key);
       return;
     }
-    const due =
-      observedAt !== null && Number.isFinite(observedAt) ? observedAt + RELEASE_REFRESH_AFTER_MS : state.lastStart;
-    schedule(key, Math.max(state.lastStart + RELEASE_REFRESH_INTERVAL_MS, due));
+    const now = clock();
+    if (validUntil === null || !Number.isFinite(validUntil) || validUntil <= now)
+      schedule(key, state.lastStart + RELEASE_REFRESH_INTERVAL_MS);
+    else if (validUntil - RELEASE_REFRESH_LEAD_MS > now) {
+      // Only a refresh that collected this record counts against the interval; finding a sibling's
+      // record must not postpone the next refresh past the record's lapse.
+      if (validUntil - RELEASE_FRESHNESS_MS >= state.lastStart) state.lastCollection = state.lastStart;
+      schedule(key, Math.max(state.lastCollection + RELEASE_REFRESH_INTERVAL_MS, validUntil - RELEASE_REFRESH_LEAD_MS));
+    }
+    // Nothing outlasting the lead was collected: the receiver collects once the stored record lapses.
+    else schedule(key, validUntil);
   }
   return {
     touch(scope: Scope, activeUntil: Date) {
@@ -77,6 +96,7 @@ export function createReleaseRefresher(input: {
           scope: { shopId: scope.shopId, installationGeneration: scope.installationGeneration },
           activeUntil: until,
           lastStart: Number.NEGATIVE_INFINITY,
+          lastCollection: Number.NEGATIVE_INFINITY,
           running: false,
         });
       schedule(key, Math.max(clock(), (shops.get(key)?.lastStart ?? 0) + RELEASE_REFRESH_INTERVAL_MS));

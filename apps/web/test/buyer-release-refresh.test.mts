@@ -2,11 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { projectEntitlement } from '../../../packages/application/src/entitlement/provider-policy.ts';
-import {
-  createReleaseRefresher,
-  RELEASE_REFRESH_AFTER_MS,
-  RELEASE_REFRESH_INTERVAL_MS,
-} from '../src/server/buyer/release-refresh.ts';
+import { RELEASE_REFRESH_LEAD_MS } from '../src/server/admin/release-verification.ts';
+import { createReleaseRefresher, RELEASE_REFRESH_INTERVAL_MS } from '../src/server/buyer/release-refresh.ts';
 import {
   createSubscriptionCache,
   SUBSCRIPTION_CACHE_MS,
@@ -49,20 +46,21 @@ function timers(start = 1_800_000_000_000) {
 }
 const scope = { shopId: 'tenant', installationGeneration: '1' };
 
-/** A synthetic verifier: collecting takes `durationMs` and observes the Active version 1 s in. */
+/** A synthetic verifier: collecting takes `durationMs`; the record's earliest observation is 1 s in,
+ * so it stays fresh until 31 s after the collection started. */
 function verifier(t: ReturnType<typeof timers>, durationMs = 4500) {
-  let observedAt: number | null = null;
+  let validUntil: number | null = null;
   const starts: number[] = [];
   return {
     starts,
-    record: () => observedAt,
+    validUntil: () => validUntil,
     refresh: async () => {
-      if (observedAt !== null && t.clock() - observedAt <= RELEASE_REFRESH_AFTER_MS) return observedAt;
+      if (validUntil !== null && validUntil - t.clock() > RELEASE_REFRESH_LEAD_MS) return validUntil;
       starts.push(t.clock());
       const begun = t.clock();
       await new Promise<void>((resolve) => t.setTimer(resolve, durationMs));
-      observedAt = begun + 1000;
-      return observedAt;
+      validUntil = begun + 1000 + 30_000;
+      return validUntil;
     },
   };
 }
@@ -81,8 +79,8 @@ test('buyer activity refreshes release evidence off the request path and keeps i
   let stale = 0;
   for (let at = 5_000; at < 120_000; at += 500) {
     await t.advance(500);
-    const observed = v.record();
-    if (observed === null || t.clock() - observed > 30_000) stale++;
+    const until = v.validUntil();
+    if (until === null || t.clock() >= until) stale++;
   }
   assert.equal(stale, 0, 'acceptance finds a fresh record throughout buyer activity');
   const gaps = v.starts.slice(1).map((value, index) => value - (v.starts[index] ?? 0));
@@ -120,30 +118,82 @@ test('repeated activity extends one shop schedule without overlapping or extra r
   assert.equal(refresher.activeShops(), 0);
 });
 
-test('a fresh record is not collected again, and failures retry no sooner than the interval', async () => {
+test("a sibling's fresh record is not collected again but refreshed before it lapses; failures retry no sooner than the interval", async () => {
   const t = timers();
   let calls = 0;
-  const observed = t.clock() - 5_000;
+  // Collected by someone else 5 s before this shop's first refresh: fresh for another 25 s.
+  const validUntil = t.clock() + 25_000;
   const refresher = createReleaseRefresher({
     clock: t.clock,
     setTimer: t.setTimer,
     refresh: async () => {
       calls++;
-      if (calls === 1) return observed;
+      if (calls === 1) return validUntil;
       throw new Error('Synthetic verifier unavailable');
     },
   });
-  refresher.touch(scope, new Date(t.clock() + 60_000));
+  refresher.touch(scope, new Date(t.clock() + 120_000));
   await t.advance(0);
   assert.equal(calls, 1);
-  await t.advance(RELEASE_REFRESH_INTERVAL_MS - 1);
-  assert.equal(calls, 1, 'next check waits for the interval');
+  // Not an interval later: the record would lapse before then (#345).
+  await t.advance(25_000 - RELEASE_REFRESH_LEAD_MS - 1);
+  assert.equal(calls, 1, 'next check waits until the lead before the record lapses');
   await t.advance(1);
   assert.equal(calls, 2);
   await t.advance(RELEASE_REFRESH_INTERVAL_MS - 1);
   assert.equal(calls, 2, 'a failure does not retry early');
   await t.advance(1);
   assert.equal(calls, 3);
+  refresher.close();
+});
+
+test('a refresh ahead that brings no newer record tries again as the record lapses, not an interval later (#345)', async () => {
+  const t = timers();
+  const calls: number[] = [];
+  let validUntil = t.clock() + 5_000;
+  const refresher = createReleaseRefresher({
+    clock: t.clock,
+    setTimer: t.setTimer,
+    refresh: async () => {
+      calls.push(t.clock());
+      // The first attempt is inside the lead but the verifier still answers with the stored record.
+      if (calls.length === 1) return validUntil;
+      validUntil = t.clock() + 31_000;
+      return validUntil;
+    },
+  });
+  const start = t.clock();
+  refresher.touch(scope, new Date(start + 120_000));
+  await t.advance(0);
+  await t.advance(5_000);
+  assert.deepEqual(calls, [start, start + 5_000], 'retried when the stored record lapsed');
+  // A record fresh for 31 s is refreshed `RELEASE_REFRESH_LEAD_MS` before it lapses, and never
+  // sooner than the interval after the previous start.
+  await t.advance(RELEASE_REFRESH_INTERVAL_MS - 1);
+  assert.equal(calls.length, 2);
+  await t.advance(1);
+  assert.deepEqual(calls.slice(2), [start + 5_000 + RELEASE_REFRESH_INTERVAL_MS]);
+  refresher.close();
+});
+
+test('the next refresh starts its lead before the record lapses when that is later than the interval', async () => {
+  const t = timers();
+  const calls: number[] = [];
+  const refresher = createReleaseRefresher({
+    clock: t.clock,
+    setTimer: t.setTimer,
+    refresh: async () => {
+      calls.push(t.clock());
+      return t.clock() + 40_000;
+    },
+  });
+  const start = t.clock();
+  refresher.touch(scope, new Date(start + 120_000));
+  await t.advance(0);
+  await t.advance(40_000 - RELEASE_REFRESH_LEAD_MS - 1);
+  assert.equal(calls.length, 1);
+  await t.advance(1);
+  assert.deepEqual(calls, [start, start + 40_000 - RELEASE_REFRESH_LEAD_MS]);
   refresher.close();
 });
 

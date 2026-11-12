@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import type { ReleaseVerificationRequest } from '../../apps/web/src/server/admin/release-verification.ts';
-import { parseReleaseVerificationRequest } from '../../apps/web/src/server/admin/release-verification.ts';
+import {
+  parseReleaseVerificationRequest,
+  RELEASE_REFRESH_LEAD_MS,
+} from '../../apps/web/src/server/admin/release-verification.ts';
 import { releaseProfile } from './profiles.mts';
 
 /** Private request receiver for the existing qualified collector. Startup ports
@@ -23,7 +26,8 @@ export function createReleaseVerificationServer({
   profileName,
 }: {
   readBinding(): Promise<unknown>;
-  readRecord?(binding: ReleaseVerificationRequest['binding']): Promise<string | null>;
+  /** The stored record ID if it is still fresh at `freshAt`, else null. */
+  readRecord?(binding: ReleaseVerificationRequest['binding'], freshAt: Date): Promise<string | null>;
   collect(request: ReleaseVerificationRequest): Promise<CollectorCompletion>;
   now?: () => number;
   profileName?: string;
@@ -56,7 +60,8 @@ export function createReleaseVerificationServer({
       assert.equal(JSON.stringify(input), text, 'canonical_request_required');
       assert.ok(input.deadlineMs <= now() + 300_000, 'request_deadline_unqualified');
       await current(input);
-      const existing = await readRecord?.(input.binding);
+      // Reuse only a record that outlasts the refresh lead: a refresh ahead of expiry must collect.
+      const existing = await readRecord?.(input.binding, new Date(now() + RELEASE_REFRESH_LEAD_MS));
       await current(input);
       if (existing) {
         response.end(JSON.stringify({ requestId: input.requestId, recordId: existing, state: 'COMPLETE' }));

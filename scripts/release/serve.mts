@@ -73,11 +73,11 @@ async function main() {
           externalInstallationId: managed.externalInstallationId,
         };
       },
-      async readRecord(binding) {
+      async readRecord(binding, freshAt) {
         const evidence = await required(core).trustedReleaseRecords.read({
           scope: binding,
           expectedActiveAppVersionRef: profile.versionId,
-          now: new Date(),
+          now: freshAt,
         });
         return evidence?.record.recordId ?? null;
       },

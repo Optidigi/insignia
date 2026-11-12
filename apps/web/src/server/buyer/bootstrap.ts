@@ -10,10 +10,11 @@ import { Pool, type PoolConfig } from 'pg';
 import { loadCredentialKeys } from '../../../../worker/src/config.ts';
 import { credentialLifecycle } from '../../../../worker/src/handlers.ts';
 import { createDemandDrivenReleaseReader, type ReleaseVerificationCollector } from '../admin/release-evidence.ts';
-import { createReleaseVerificationClient } from '../admin/release-verification.ts';
+import { createReleaseVerificationClient, RELEASE_REFRESH_LEAD_MS } from '../admin/release-verification.ts';
 import { createSignerClient, type SignerClient } from '../signer-client.ts';
+import { proposalStage } from './diagnostics.ts';
 import { createProductionBuyerServices, type ProductionBuyerInputs } from './production.ts';
-import { createReleaseRefresher, RELEASE_FRESHNESS_MS, RELEASE_REFRESH_AFTER_MS } from './release-refresh.ts';
+import { createReleaseRefresher } from './release-refresh.ts';
 import type { BuyerServices } from './service.ts';
 import { createSubscriptionCache } from './subscription-cache.ts';
 
@@ -221,20 +222,23 @@ export async function createBuyerBootstrap(
         return null;
       const deadlineMs = Math.min(+clock() + 300000, +credential.accessExpiresAt - 30000);
       const reader = createDemandDrivenReleaseReader({
-        // A background refresh treats a record older than RELEASE_REFRESH_AFTER_MS as missing, so
-        // it collects ahead of expiry. Shared `collecting` keeps it single-flight with acceptance,
+        // A background refresh treats a record that lapses within RELEASE_REFRESH_LEAD_MS as missing,
+        // so it collects ahead of expiry. Shared `collecting` keeps it single-flight with acceptance,
         // which still reads its own record under the unchanged 30-second bound.
         records: refreshAhead
           ? {
               read: (request) =>
                 ownedCore.trustedReleaseRecords.read({
                   ...request,
-                  now: new Date(+request.now + RELEASE_FRESHNESS_MS - RELEASE_REFRESH_AFTER_MS),
+                  now: new Date(+request.now + RELEASE_REFRESH_LEAD_MS),
                 }),
             }
           : ownedCore.trustedReleaseRecords,
         releaseProfile: releaseProfile.name,
-        collector,
+        // A request-path collection is its own timing span; a background refresh has none.
+        collector: refreshAhead
+          ? collector
+          : { collect: (request) => proposalStage('release-collect', () => collector.collect(request)) },
         inFlight: collecting,
         binding: {
           shopId: scope.shopId,
@@ -269,17 +273,27 @@ export async function createBuyerBootstrap(
       const key = JSON.stringify([scope.shopId, scope.installationGeneration, scope.appClientId]);
       const pending = reading.get(key);
       if (pending) return pending;
-      const next = read(scope).finally(() => {
+      const next = proposalStage('release-read', () => read(scope)).finally(() => {
         if (reading.get(key) === next) reading.delete(key);
       });
       reading.set(key, next);
       return next;
     };
+    /** SELECT-only read of the stored record at this instant: no collection. */
+    const stored = (scope: ArtifactScope) =>
+      ownedCore.trustedReleaseRecords.read({
+        scope,
+        expectedActiveAppVersionRef: releaseProfile.activeVersionRef,
+        now: clock(),
+      });
     const refresher = createReleaseRefresher({
+      // Resolves to when the newest fresh record lapses: the refreshed one, or else the stored one
+      // that this refresh could not replace ahead of expiry.
       refresh: async (scope) => {
-        const evidence = await read({ ...scope, appClientId: clientId }, true);
-        const observedAt = evidence ? Date.parse(evidence.record.attestation.observedAt) : Number.NaN;
-        return Number.isFinite(observedAt) ? observedAt : null;
+        const target = { ...scope, appClientId: clientId };
+        const evidence = (await read(target, true)) ?? (await stored(target));
+        const lapses = evidence ? Date.parse(evidence.record.attestation.expiresAt) : Number.NaN;
+        return Number.isFinite(lapses) ? lapses : null;
       },
       clock: () => +clock(),
       ...(seam.releaseRefreshTimer ? { setTimer: seam.releaseRefreshTimer } : {}),
@@ -304,26 +318,8 @@ export async function createBuyerBootstrap(
         },
       },
       passiveArtifactPorts: {
-        expectedBuild: {
-          read: async (scope) =>
-            (
-              await ownedCore.trustedReleaseRecords.read({
-                scope,
-                expectedActiveAppVersionRef: releaseProfile.activeVersionRef,
-                now: clock(),
-              })
-            )?.expectedBuild ?? null,
-        },
-        trustedEvidence: {
-          read: async (scope) =>
-            (
-              await ownedCore.trustedReleaseRecords.read({
-                scope,
-                expectedActiveAppVersionRef: releaseProfile.activeVersionRef,
-                now: clock(),
-              })
-            )?.record.attestation ?? null,
-        },
+        expectedBuild: { read: async (scope) => (await stored(scope))?.expectedBuild ?? null },
+        trustedEvidence: { read: async (scope) => (await stored(scope))?.record.attestation ?? null },
       },
       readSubscription: createSubscriptionCache(
         (target) => partner.read(target),
