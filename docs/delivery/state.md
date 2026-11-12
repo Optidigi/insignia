@@ -4,6 +4,50 @@
 
 Updated 11 November 2026. Insignia now runs only on `app.insigniacustomizer.com` (Active `1203782746113`, web main `714e2e2d`, signer main `fb30b947`, worker main `f4ae1f9e`, verifier main `add83af7`, schema 58). Signing keys no longer expire routinely; rewrite-dev signs with non-expiring key 3 through a separate signer process, and retired keys hold no private half. Customer artwork email runs on rewrite-dev in development mode (admin recipient only, web main `714e2e2d`); protected facts are now 9/8/2/8/11 after test order #1009. The combined application and canonical agent documentation are integrated. The existing host alias `prod` serves the allocated rewrite-dev app/store. The cart-line v3 source is deployed there, its candidate is the released Shopify Active version (the single v3 cutover), and both were independently read back. On 11 November 2026 a web-only update deployed main `721bc6b6`: the 5-minute release refresh and the Cloudflare-only origin lock. No production resource migration, new scopes/markets, database reset, history erasure, protected VAT retry, checkout/order/payment or consumed sender/alert drill was performed. The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
 
+### Remaining work and end shape (owner-agreed roadmap, 12 November 2026)
+
+**End shape.** Insignia is a public Shopify app on `app.insigniacustomizer.com`:
+- The storefront Designer quotes per-line, quantity-independent signed prices (cart-line v3). Checkout Functions verify them.
+- Per-shop signing keys never expire; they live only in the separate signer.
+- Customer artwork email goes from `noreply@insigniacustomizer.com` to real buyers.
+- Merchants pay the Lean plan ($49.99 / 30 days, with a trial) through Shopify billing.
+- Production runs with scoped credentials, off-host encrypted backups (signing wrapping key in separate custody), installed monitoring and alerts to `@optidigi.nl`, a qualified restart and rollback, and a working uninstall/privacy lifecycle.
+- Rollout to real merchants happens only after the owner approves.
+
+**Picking this up.**
+- Read this section, then the [owner/operator checklist](#owneroperator-checklist) (exact closing evidence per gate) and the [operating model](operating-model.md) (permissions, standing approvals, protected resources).
+- Development host alias `prod`; store `insignia-rewrite-dev`.
+- Deploy with the [runtime README](../../deployment/m5-runtime/README.md) bounded sequence (checkpoint and restore-verify, migrations and grants, images, readback).
+- Release only through the documented profile/binding procedure.
+
+| Phase | Status | What remains | Needs the owner | Done when |
+| --- | --- | --- | --- | --- |
+| 1 Storefront flow on the new domain | **Done** 12 Nov | — | — | Owner ran the full flow; no deltas. |
+| Signing hardening | **Done** 11 Nov | Automatic: key 1 is destroyed from 12 Nov 00:00Z and key 2 from 16 Nov 00:00Z by the worker job. | Optional later: HSM/KMS (e.g. AWS KMS Ed25519) instead of the local signer. | Non-expiring key 3 signs via the signer; retired keys hold no private half. |
+| 4 Customer email (development) | **Done** 11 Nov | — | — | Received SPF/DKIM/DMARC pass and order #1009 mailed `admin@optidigi.nl` only. |
+| 2 UI acceptance | **Next** | Agent prepares a review checklist of merchant-admin and Designer screens and states (wide and narrow, both themes); fixes findings. | Review and accept (checklist rows "Merchant UI" and "Selected Designer visual fidelity"). | Explicit owner acceptance recorded. |
+| 5 Production foundations | Open | Production storage and credentials cutover; off-host encrypted backup plus a full loss-recovery rehearsal (RPO 24 h / RTO 4 h); installed monitoring and alert relay with receiver authentication; restart and rollback qualification. | Allocate credentials and storage. The owner implements server backup in a separate session; it must back up `runtime/signer-secrets/signing-wrap-keys.json` in custody separate from database backups. | The matching checklist rows close with their stated evidence. |
+| 6 Commercial readiness | Open | Real $49.99 / 30-day plan, invoice and trial-to-paid; public-app/distribution settings; merchant, market and currency eligibility (EUR); **email proof:** Cloudflare arbitrary-recipient sending entitlement evidence so customer mode can mail real buyers (development mode stays admin-only until then). | Billing, distribution and market choices; obtain the Cloudflare entitlement evidence. | The "Native/commercial eligibility" row closes and customer mode is enabled with real evidence. |
+| 7 Uninstall and privacy | Open | Reconcile the VAT installation's original uninstall dispatch against actual provider state; qualify erasure and reinstall fencing end to end. | A concrete allocation for any new effect. | The "Genuine uninstall/privacy" row closes. |
+| 8 Rollout | Not approved | First real merchant. | Explicit go. | Owner authorization after the gates above. |
+
+**Small pending checks.**
+- From 14 Nov: renewal of an expired quote (needs a cart at least three shop days old).
+- Per-visitor and shop limits under load: test locally, not by flooding prod.
+- Two minor signer review items remain:
+  - web can overwrite the active key's envelope (denial of service only);
+  - a millisecond race between a revoke and a signature.
+- Remove the legacy query fields from `INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON` once the pre-PR298 rollback image is retired.
+- Delete the owner-supplied Cloudflare Rules token when the domain work is final; the owner will say when.
+
+**Owner decisions in force (11–12 November 2026).**
+- Signing keys do not expire.
+- Insignia lives only on `insigniacustomizer.com`; alert inboxes stay on `@optidigi.nl`.
+- The legacy generic `insignia.optidigi.nl` stack is removed. The legacy Stitchs, Superfunny and Custom stacks must keep running untouched.
+- The VAT store's leftover old-host uninstall webhook stays.
+- The Cloudflare status Worker detects removed services by itself.
+- Standing OK for rewrite-dev test-gateway orders.
+
 ### Separate signer and retired-key scrub — deployed 11 November 2026
 
 **Owner approval, 11 November 2026.** Retired keys lose their private half, a daily worker job destroys closed windows, a separate signer process holds the signing KEK, and one development customer-artwork email test is allowed.
