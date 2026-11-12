@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { test } from 'node:test';
 import type { CartBucket, CartMutationIntent } from '../src/cart.ts';
 import { createAjaxCartAdapter } from '../src/cart.ts';
@@ -1280,6 +1281,211 @@ test('an oversized refusal body is not read beyond the response cap (NB4)', asyn
   assert.equal(result.reason, 'rejected');
   assert.equal(result.refusal, 422);
   assert.equal(result.detail, undefined);
+});
+
+/** Owner decision 12 Nov 2026 (#371 item 1): when an abandoned-set tombstone may be cleared or expires. */
+const DAY = 86_400_000;
+const setDigest = (value: string) => createHash('sha256').update(value).digest('hex');
+/** The tombstone a tab keeps for a signed set: the digest of its shared v3 prefix. */
+const tombstoneOf = (lineCarrier: string) => setDigest(lineCarrier.slice(0, 236));
+/** The identity-free tombstone an earlier tab wrote for a legacy boolean-only uncertainty. */
+const LEGACY_TOMBSTONE = setDigest('');
+/** A journal entry as tabs wrote it before tombstones carried a date (format version 1). */
+function undatedJournal(tombstones: string[]) {
+  const journal = memoryJournal();
+  journal.flag = true;
+  journal.state = {
+    version: 1,
+    phase: 'abandoned',
+    before: required(tombstones[0]),
+    goal: required(tombstones[0]),
+    quote: required(tombstones[0]),
+    abandoned: tombstones,
+  } as unknown as CartMutationIntent;
+  return journal;
+}
+const otherSets = [3, 4, 5, 6].map((set) =>
+  required(lineCarriers([{ variantId: '42', unitMinor: '3033' }], { set }).carriers[0]),
+);
+
+test('four tombstones then a successful repair: a later Add works (#371)', async () => {
+  const journal = undatedJournal(otherSets.map(tombstoneOf));
+  const remote = provider([ordinary, existing]);
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  const before = await cart.read();
+  assert.equal(
+    (await cart.apply(freshDesired(), { expectedFingerprint: before.fingerprint })).reason,
+    'mutation_unresolved',
+    'the full journal refuses a new set until an explicit repair',
+  );
+  const repair = await cart.apply([], { expectedFingerprint: before.fingerprint, repair: true });
+  assert.equal(repair.status, 'applied');
+  assert.equal(required(repair.cart).customized.length, 0);
+  assert.equal(journal.state, null, 'every tombstone written before the repair, with no line in the cart, is cleared');
+  assert.equal(journal.flag, false);
+  const added = await cart.apply(freshDesired(), { expectedFingerprint: required(repair.cart).fingerprint });
+  assert.equal(added.status, 'applied');
+});
+
+test('a repair whose own outcome is unknown clears no tombstone; the next successful one does (#371)', async () => {
+  let interrupt = true;
+  const journal = undatedJournal(otherSets.map(tombstoneOf));
+  const remote = provider([ordinary, existing], ({ url }) => {
+    if (interrupt && url.endsWith('cart/update.js')) throw new Error('network');
+    return undefined;
+  });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  const before = await cart.read();
+  assert.equal(
+    (await cart.apply([], { expectedFingerprint: before.fingerprint, repair: true })).reason,
+    'mutation_unresolved',
+  );
+  assert.equal(journal.state?.phase, 'pending');
+  assert.equal(journal.state?.abandoned.length, 4, 'an unresolved repair keeps every tombstone');
+  interrupt = false;
+  const observed = await cart.read();
+  const repair = await cart.apply([], { expectedFingerprint: observed.fingerprint, repair: true });
+  assert.equal(repair.status, 'applied');
+  assert.equal(journal.state, null);
+  assert.equal(
+    (await cart.apply(freshDesired(), { expectedFingerprint: required(repair.cart).fingerprint })).status,
+    'applied',
+  );
+});
+
+test('a legacy tombstone then a successful repair: a later Add works (#371)', async () => {
+  const journal = undatedJournal([LEGACY_TOMBSTONE]);
+  const remote = provider([ordinary]);
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  const before = await cart.read();
+  assert.equal(
+    (await cart.apply(freshDesired(), { expectedFingerprint: before.fingerprint })).reason,
+    'mutation_unresolved',
+  );
+  const repair = await cart.apply([], { expectedFingerprint: before.fingerprint, repair: true });
+  assert.equal(repair.status, 'applied');
+  assert.equal(journal.state, null, 'the repair observed no customized line at all');
+  assert.equal(journal.flag, false);
+  assert.equal(
+    (await cart.apply(freshDesired(), { expectedFingerprint: required(repair.cart).fingerprint })).status,
+    'applied',
+  );
+});
+
+test('a tombstone is kept while its set has a line in the cart, even past its lifetime (#371)', async () => {
+  let now = Date.UTC(2026, 10, 12);
+  const late = { key: '42:late', variant_id: 42, quantity: 1, properties: { [LINE]: required(otherSets[0]) } };
+  const journal = undatedJournal([tombstoneOf(required(otherSets[0]))]);
+  const remote = provider([ordinary, late]);
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal, now: () => now });
+  const before = await cart.read();
+  assert.equal(
+    (await cart.apply(freshDesired(), { expectedFingerprint: before.fingerprint })).reason,
+    'mutation_unresolved',
+  );
+  now += 4 * DAY;
+  assert.equal(
+    (await cart.apply(freshDesired(), { expectedFingerprint: before.fingerprint })).reason,
+    'mutation_unresolved',
+    'the set is still in the cart',
+  );
+  assert.deepEqual(
+    journal.state?.abandoned.map((entry) => entry.set),
+    [tombstoneOf(required(otherSets[0]))],
+  );
+  // A repair that sees the late set land again is not a success, so the tombstone stays.
+  const relanding = provider([ordinary, late], ({ url, items }) => {
+    if (url.endsWith('cart/update.js')) {
+      items.length = 0;
+      items.push(ordinary, late);
+      return Response.json({ items, attributes: {}, currency: 'EUR' });
+    }
+    return undefined;
+  });
+  const racing = createAjaxCartAdapter({ root: '/', fetchImpl: relanding.fetchImpl, journal, now: () => now });
+  const raced = await racing.apply([], { expectedFingerprint: before.fingerprint, repair: true });
+  assert.notEqual(raced.status, 'applied');
+  assert.ok(journal.state?.abandoned.some((entry) => entry.set === tombstoneOf(required(otherSets[0]))));
+});
+
+test('a tombstone expires three days after it was written; an undated one counts from its first read (#371)', async () => {
+  // A full journal and the legacy tombstone each refuse every new set while they live.
+  for (const tombstones of [otherSets.map(tombstoneOf), [LEGACY_TOMBSTONE]]) {
+    let now = Date.UTC(2026, 10, 12, 9);
+    const journal = undatedJournal(tombstones);
+    const remote = provider([ordinary]);
+    const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal, now: () => now });
+    const before = await cart.read();
+    assert.equal(
+      (await cart.apply(freshDesired(), { expectedFingerprint: before.fingerprint })).reason,
+      'mutation_unresolved',
+    );
+    assert.deepEqual(
+      journal.state?.abandoned,
+      tombstones.map((set) => ({ set, at: now })),
+      'the first read dates each entry',
+    );
+    now += 3 * DAY - 1;
+    assert.equal(
+      (await cart.apply(freshDesired(), { expectedFingerprint: before.fingerprint })).reason,
+      'mutation_unresolved',
+    );
+    now += 1;
+    const added = await cart.apply(freshDesired(), { expectedFingerprint: before.fingerprint });
+    assert.equal(added.status, 'applied');
+    assert.equal(journal.state, null);
+  }
+});
+
+test('a late add of a tombstoned set within its lifetime is still refused (#371)', async () => {
+  let now = Date.UTC(2026, 10, 12);
+  let late: (() => void) | undefined;
+  const journal = memoryJournal();
+  const remote = provider([ordinary], ({ url, body }) => {
+    if (url.endsWith('cart/add.js') && !late) {
+      const line = required(required(body.items)[0]);
+      late = () =>
+        remote.items.push({ key: '42:late', variant_id: 42, quantity: line.quantity, properties: line.properties });
+      throw new Error('unknown delivery');
+    }
+    return undefined;
+  });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal, now: () => now });
+  const before = await cart.read();
+  assert.equal((await cart.apply(desired, { expectedFingerprint: before.fingerprint })).reason, 'mutation_unresolved');
+  const repair = await cart.apply([], { expectedFingerprint: before.fingerprint, repair: true });
+  assert.equal(repair.status, 'applied');
+  assert.deepEqual(journal.state?.abandoned, [{ set: tombstoneOf(carrier), at: now }], 'the repair keeps its own');
+  now += 2 * DAY;
+  assert.equal(
+    (await cart.apply(desired, { expectedFingerprint: before.fingerprint })).reason,
+    'mutation_unresolved',
+    'the abandoned set itself is never applied again',
+  );
+  required(late)();
+  const landed = await cart.read();
+  assert.equal(
+    (await cart.apply(freshDesired(), { expectedFingerprint: landed.fingerprint })).reason,
+    'mutation_unresolved',
+    'a late carrier of the abandoned set is refused',
+  );
+  assert.deepEqual(
+    journal.state?.abandoned.map((entry) => entry.set),
+    [tombstoneOf(carrier)],
+  );
+});
+
+test('an explicit removal clears earlier tombstones; an ordinary Add does not (#371)', async () => {
+  const tombstone = tombstoneOf(required(otherSets[0]));
+  for (const removal of [false, true]) {
+    const journal = undatedJournal([tombstone]);
+    const remote = provider([ordinary, existing]);
+    const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+    const before = await cart.read();
+    const applied = await cart.apply(freshDesired(), { expectedFingerprint: before.fingerprint, removal });
+    assert.equal(applied.status, 'applied');
+    assert.deepEqual(journal.state?.abandoned.map((entry) => entry.set) ?? [], removal ? [] : [tombstone]);
+  }
 });
 
 declare global {

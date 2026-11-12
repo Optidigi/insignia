@@ -130,30 +130,55 @@ function snapshot(value: unknown): CartSnapshot {
     fingerprint: JSON.stringify([currency, normalized(items, true), attributes]),
   };
 }
+/**
+ * An abandoned signed set whose write had an unknown outcome and might still land: the digest of its shared v3
+ * prefix (`LEGACY_SET` for an identity-free legacy uncertainty) and when this tab wrote it (epoch milliseconds).
+ */
+export type CartTombstone = { set: string; at: number };
 export type CartMutationIntent = {
-  version: 1;
+  version: 2;
   phase: 'pending' | 'abandoned';
   before: string;
   goal: string;
   quote: string;
-  abandoned: string[];
+  abandoned: CartTombstone[];
 };
-export function parseCartMutationIntent(value: unknown): CartMutationIntent | null {
+/** A journal holds at most this many tombstones; a full journal refuses new sets until an explicit repair. */
+const TOMBSTONES = 4;
+/** A signed line is never valid after D+2 (CART-LINE-V3), so three days after a tombstone was written its set can no longer be admitted anywhere. */
+const TOMBSTONE_LIFETIME_MS = 3 * 86_400_000;
+/** SHA-256 of the empty string: the tombstone of a legacy boolean-only uncertainty, which has no carrier identity. */
+const LEGACY_SET = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+const isDigest = (v: unknown) => typeof v === 'string' && /^[a-f0-9]{64}$/.test(v);
+/**
+ * Validates a journal entry. A version-1 entry predates dated tombstones: each of its tombstones counts as written
+ * at `now`, so a caller that persists the result lets it expire three days after this first read.
+ */
+export function parseCartMutationIntent(value: unknown, now = Date.now()): CartMutationIntent | null {
   if (value === null) return null;
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid cart recovery state');
-  const input = value as CartMutationIntent;
+  const input = value as Omit<CartMutationIntent, 'version' | 'abandoned'> & { version: unknown; abandoned: unknown };
+  const abandoned: unknown[] = Array.isArray(input.abandoned) ? input.abandoned : [];
+  const entries =
+    input.version === 1
+      ? abandoned.map((set) => ({ set, at: now }))
+      : abandoned.map((entry) =>
+          entry && typeof entry === 'object' && Object.keys(entry).sort().join(',') === 'at,set'
+            ? (entry as { set: unknown; at: unknown })
+            : { set: null, at: null },
+        );
   if (
     Object.keys(input).sort().join(',') !== 'abandoned,before,goal,phase,quote,version' ||
-    input.version !== 1 ||
+    (input.version !== 1 && input.version !== 2) ||
     !['pending', 'abandoned'].includes(input.phase) ||
-    ![input.before, input.goal, input.quote].every((v) => typeof v === 'string' && /^[a-f0-9]{64}$/.test(v)) ||
+    ![input.before, input.goal, input.quote].every(isDigest) ||
     !Array.isArray(input.abandoned) ||
-    input.abandoned.length > 4 ||
-    input.abandoned.some((v) => typeof v !== 'string' || !/^[a-f0-9]{64}$/.test(v)) ||
-    new Set(input.abandoned).size !== input.abandoned.length
+    entries.length > TOMBSTONES ||
+    entries.some((entry) => !isDigest(entry.set) || !Number.isSafeInteger(entry.at) || Number(entry.at) < 0) ||
+    new Set(entries.map((entry) => entry.set)).size !== entries.length
   )
     throw new Error('Invalid cart recovery state');
-  return structuredClone(input);
+  return structuredClone({ ...input, version: 2, abandoned: entries as CartTombstone[] });
 }
 export type CartMutationJournal = {
   readUnresolved(): boolean;
@@ -165,6 +190,17 @@ const digest = async (value: string) =>
   Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))), (v) =>
     v.toString(16).padStart(2, '0'),
   ).join('');
+/** Digests of every signed set with a carrier in the cart: v3 prefixes and historical v2 quotes. */
+async function observedSets(cart: CartSnapshot): Promise<Set<string>> {
+  const carriers = [
+    cart.attributes[LEGACY_QUOTE],
+    ...cart.customized.map((line) => line.properties[LEGACY_QUOTE]),
+    ...cart.customized.map((line) =>
+      Object.hasOwn(line.properties, LINE) ? prefixOf(line.properties[LINE]) : undefined,
+    ),
+  ].filter((v) => typeof v === 'string');
+  return new Set(await Promise.all(carriers.map((v) => digest(String(v)))));
+}
 const logicalState = (cart: CartSnapshot) => JSON.stringify([cart.currency, normalized(cart.items), cart.attributes]);
 export type CartApplicationLock = { run<T>(action: () => Promise<T>): Promise<T | null> };
 let samePageLocked = false;
@@ -191,18 +227,27 @@ export function createAjaxCartAdapter({
   fetchImpl = fetch,
   journal,
   lock = defaultCartLock,
+  now = Date.now,
 }: {
   root: string;
   fetchImpl?: typeof fetch;
   journal?: CartMutationJournal;
   lock?: CartApplicationLock;
+  now?: () => number;
 }) {
   // Shopify.routes.root is a same-origin locale path, never a remote URL.
   if (!/^\/(?:[A-Za-z0-9_-]+\/)*$/.test(root)) throw new Error('Invalid locale cart root');
   let applying = false;
   let unresolved = false;
   let intent: CartMutationIntent | null = null;
-  const loadIntent = () => (journal?.readIntent ? parseCartMutationIntent(journal.readIntent()) : intent);
+  function loadIntent() {
+    if (!journal?.readIntent) return intent;
+    const stored = journal.readIntent();
+    const value = parseCartMutationIntent(stored, now());
+    // An entry written before tombstones carried a date is dated by this first read, so it expires three days later.
+    if (value && (stored as { version?: unknown }).version !== value.version) saveIntent(value);
+    return value;
+  }
   function saveIntent(value: CartMutationIntent | null) {
     journal?.writeIntent?.(value);
     journal?.writeUnresolved(value !== null);
@@ -210,7 +255,21 @@ export function createAjaxCartAdapter({
     unresolved = value !== null;
   }
   function settle(value: CartMutationIntent) {
-    saveIntent(value.abandoned.length ? { ...value, phase: 'abandoned', quote: value.abandoned[0]! } : null);
+    saveIntent(value.abandoned[0] ? { ...value, phase: 'abandoned', quote: value.abandoned[0].set } : null);
+  }
+  /**
+   * Owner decision, 12 November 2026 (#371): a tombstone is kept while a line of its set may be in `cart` (any
+   * customized line for the identity-free legacy one). Otherwise it is dropped three days after it was written, or
+   * when it is in `retired`: the tombstones a successful explicit repair or removal found when it began.
+   */
+  async function prune(list: CartTombstone[], cart: CartSnapshot, retired: ReadonlySet<string> = new Set()) {
+    const sets = await observedSets(cart);
+    const time = now();
+    return list.filter(
+      (entry) =>
+        (entry.set === LEGACY_SET ? cart.customized.length > 0 : sets.has(entry.set)) ||
+        (time - entry.at < TOMBSTONE_LIFETIME_MS && !retired.has(entry.set)),
+    );
   }
   async function request(path: string, body?: unknown, signal?: AbortSignal): Promise<unknown> {
     const response = await fetchImpl(`${root}${path}`, {
@@ -269,7 +328,11 @@ export function createAjaxCartAdapter({
   const read = async (signal?: AbortSignal) => snapshot(await request('cart.js', undefined, signal));
   async function applyUnlocked(
     buckets: CartBucket[],
-    { expectedFingerprint, repair = false }: { expectedFingerprint: string; repair?: boolean },
+    {
+      expectedFingerprint,
+      repair = false,
+      removal = false,
+    }: { expectedFingerprint: string; repair?: boolean; removal?: boolean },
   ): Promise<CartApplication> {
     if (applying) return { status: 'review_required', cart: null, reason: 'busy' };
     // Validate the captured vector before dispatch.
@@ -300,9 +363,29 @@ export function createAjaxCartAdapter({
     let current: CartSnapshot | null = null;
     let dispatched = false;
     let pending: CartMutationIntent | null = null;
+    /** Explicit repair or removal of customized lines: on success it retires the tombstones it found (#371). */
+    const explicit = repair || removal;
+    let inherited: ReadonlySet<string> = new Set();
+    /** The intent to settle on success: an explicit operation drops the tombstones it may clear in `cart`. */
+    const succeeded = async (value: CartMutationIntent, cart: CartSnapshot) =>
+      explicit ? { ...value, abandoned: await prune(value.abandoned, cart, inherited) } : value;
     try {
       current = await read();
       let prior = loadIntent();
+      if (prior) {
+        const kept = await prune(prior.abandoned, current);
+        if (kept.length !== prior.abandoned.length) {
+          const first = kept[0];
+          prior =
+            prior.phase === 'pending'
+              ? { ...prior, abandoned: kept }
+              : first
+                ? { ...prior, abandoned: kept, quote: first.set }
+                : null;
+          saveIntent(prior);
+        }
+      }
+      inherited = new Set(prior?.abandoned.map((entry) => entry.set));
       const observed = await digest(logicalState(current));
       if (prior?.phase === 'pending' && observed === prior.goal) {
         settle(prior);
@@ -323,32 +406,28 @@ export function createAjaxCartAdapter({
       const quote = prefixOf(desired[0]?.properties[LINE]);
       const quoteDigest = await digest(quote);
       let abandoned = prior?.abandoned ?? [];
+      const tombstone = (set: string) =>
+        abandoned.some((entry) => entry.set === set) ? abandoned : [...abandoned, { set, at: now() }];
       if (prior?.phase === 'pending' || ((unresolved || journal?.readUnresolved()) && !prior)) {
         if (!repair) return { status: 'review_required', cart: current, reason: 'mutation_unresolved' };
-        if (prior && prior.quote !== (await digest(''))) abandoned = [...new Set([...abandoned, prior.quote])];
-        // A legacy boolean has no carrier identity. Retain an empty-carrier
-        // digest as an unknown-effect tombstone; observed removal cannot close it.
-        if (!prior) abandoned = [...new Set([...abandoned, await digest('')])];
+        if (prior && prior.quote !== LEGACY_SET) abandoned = tombstone(prior.quote);
+        // A legacy boolean has no carrier identity. Retain an empty-carrier digest as an unknown-effect
+        // tombstone; only a later successful explicit repair that observes no customized line clears it.
+        if (!prior) abandoned = tombstone(LEGACY_SET);
       }
       if (!repair && prior?.phase === 'abandoned') {
-        const carriers = [
-          current.attributes[LEGACY_QUOTE],
-          ...current.customized.map((line) => line.properties[LEGACY_QUOTE]),
-          ...current.customized.map((line) =>
-            Object.hasOwn(line.properties, LINE) ? prefixOf(line.properties[LINE]) : undefined,
-          ),
-        ].filter((v) => typeof v === 'string');
-        const carrierHashes = await Promise.all(carriers.map((v) => digest(String(v))));
+        const carrierHashes = await observedSets(current);
         if (
           !abandoned.length ||
-          abandoned.includes(await digest('')) ||
-          abandoned.includes(quoteDigest) ||
-          carrierHashes.some((v) => abandoned.includes(v)) ||
-          abandoned.length >= 4
+          abandoned.some(
+            (entry) => entry.set === LEGACY_SET || entry.set === quoteDigest || carrierHashes.has(entry.set),
+          ) ||
+          abandoned.length >= TOMBSTONES
         )
           return { status: 'review_required', cart: current, reason: 'mutation_unresolved' };
       }
-      if (abandoned.length > 4) return { status: 'review_required', cart: current, reason: 'mutation_unresolved' };
+      if (abandoned.length > TOMBSTONES)
+        return { status: 'review_required', cart: current, reason: 'mutation_unresolved' };
       const currency = current.currency;
       // v3 writes no cart attribute; a leftover v2 quote attribute is cleared with the removal.
       const attrs = { ...current.attributes };
@@ -356,9 +435,9 @@ export function createAjaxCartAdapter({
       const goal = await digest(
         JSON.stringify([current.currency, normalized([...current.ordinary, ...desired]), stableProperties(attrs)]),
       );
-      pending = { version: 1, phase: 'pending', before: observed, goal, quote: quoteDigest, abandoned };
+      pending = { version: 2, phase: 'pending', before: observed, goal, quote: quoteDigest, abandoned };
       if (observed === goal) {
-        if (repair && (prior || abandoned.length)) saveIntent({ ...pending, phase: 'abandoned' });
+        if (explicit && (prior || abandoned.length)) settle(await succeeded(pending, current));
         return {
           status: 'applied',
           cart: current,
@@ -542,13 +621,12 @@ export function createAjaxCartAdapter({
         return { status: 'review_required', cart: current, reason: 'mutation_unresolved' };
       // Every write above was acknowledged: nothing is in flight. The customized lines are what this
       // application owns; ordinary lines and foreign attributes may change meanwhile (theme drawer, other tab).
-      settle(own);
-      if (
+      const mismatch =
         current.attributes[LEGACY_QUOTE] !== undefined ||
         current.currency !== currency ||
-        normalized(current.customized) !== normalized(desired)
-      )
-        return { status: 'review_required', cart: current, reason: 'vector_mismatch' };
+        normalized(current.customized) !== normalized(desired);
+      settle(mismatch ? own : await succeeded(own, current));
+      if (mismatch) return { status: 'review_required', cart: current, reason: 'vector_mismatch' };
       return {
         status: 'applied',
         cart: current,
@@ -561,7 +639,7 @@ export function createAjaxCartAdapter({
         current = null;
       }
       if (dispatched && pending && current && (await digest(logicalState(current))) === pending.goal) {
-        settle(pending);
+        settle(await succeeded(pending, current));
         return {
           status: 'applied',
           cart: current,
@@ -579,7 +657,7 @@ export function createAjaxCartAdapter({
   }
   async function apply(
     buckets: CartBucket[],
-    options: { expectedFingerprint: string; repair?: boolean },
+    options: { expectedFingerprint: string; repair?: boolean; removal?: boolean },
   ): Promise<CartApplication> {
     // Lock acquisition is asynchronous too: capture reviewed input first.
     const captured = buckets.map((bucket) => ({
@@ -589,8 +667,9 @@ export function createAjaxCartAdapter({
     }));
     const fingerprint = options.expectedFingerprint;
     const repair = options.repair === true;
+    const removal = options.removal === true;
     return (
-      (await lock.run(() => applyUnlocked(captured, { expectedFingerprint: fingerprint, repair }))) ?? {
+      (await lock.run(() => applyUnlocked(captured, { expectedFingerprint: fingerprint, repair, removal }))) ?? {
         status: 'review_required',
         cart: null,
         reason: 'busy',
