@@ -1,7 +1,9 @@
 import { createCustomerTranslator } from '@insignia/ui-localization/customer';
 import { useState } from 'preact/hooks';
+import { portFailure } from '../../../../frontend/designer/src/port-failure';
 import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quote-review';
 import { quoteReviewMoney } from '../../../../frontend/designer/src/quote-review';
+import { repairFailureView } from './repair-failure';
 import { type RepairAction, type RepairOffer, type RepairState, repairView } from './repair-state';
 export function DesignerRepair({
   locale,
@@ -16,21 +18,21 @@ export function DesignerRepair({
   onAction(action: RepairAction): Promise<DesignerQuoteReview | undefined>;
   onClose(): void;
 }) {
-  const { t, formatLocale } = createCustomerTranslator(locale, {
+  const { t, message, formatLocale } = createCustomerTranslator(locale, {
     wordingOverlay: wording?.overlays[createCustomerTranslator(locale).canonicalRequestedLocale ?? 'en'] ?? null,
   });
   const [busy, setBusy] = useState(false),
-    [failed, setFailed] = useState(false),
+    [failure, setFailure] = useState<ReturnType<typeof repairFailureView>>(),
     [review, setReview] = useState<DesignerQuoteReview>();
   async function action(kind: RepairAction) {
     if (busy) return;
     setBusy(true);
-    setFailed(false);
+    setFailure(undefined);
     try {
       const next = await onAction(kind);
       if (next) setReview(next);
-    } catch {
-      setFailed(true);
+    } catch (error) {
+      setFailure(repairFailureView(portFailure(error), formatLocale));
     } finally {
       setBusy(false);
     }
@@ -59,9 +61,9 @@ export function DesignerRepair({
           <h1>{t(view.heading)}</h1>
         </div>
         {view.help && <p>{t(view.help)}</p>}
-        {failed && (
+        {failure && (
           <p className="cart-submit-error" role="alert">
-            {t('customer:recovery.cartCommitFailed')}
+            {message(failure.message)}
           </p>
         )}
         <div className="dialog-actions">
@@ -88,7 +90,7 @@ export function DesignerRepair({
                   : quoteReviewMoney(review.totalMinor, review.currency, review.exponent, formatLocale)}
               </strong>
               <button type="button" className="primary-button" disabled={busy} onClick={() => void action('confirm')}>
-                {t('customer:recovery.confirmRemoval')}
+                {t(failure?.retry ? 'common:actions.retry' : 'customer:recovery.confirmRemoval')}
               </button>
               <button type="button" className="text-action" disabled={busy} onClick={() => setReview(undefined)}>
                 {t('common:actions.cancel')}

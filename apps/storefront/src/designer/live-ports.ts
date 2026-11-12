@@ -199,6 +199,12 @@ export function createLiveDesignerPorts(input: {
         ? observed.groups.findIndex((group) => desiredGroupKey(group) === desiredGroupKey(previous))
         : -1;
       const pendingGroups = replaceGroup(observed.groups, currentGroup, oldIndex < 0 ? undefined : oldIndex);
+      // This design's own cart line, even with quantities changed natively; another tab may have removed it.
+      const inCart =
+        !!previous &&
+        observed.groups.some(
+          (candidate) => desiredGroupKey(candidate, false, false) === desiredGroupKey(previous, false, false),
+        );
       const pendingRows = [];
       let currentGroupId: string | undefined;
       const currentKey = desiredGroupKey(currentGroup);
@@ -279,7 +285,7 @@ export function createLiveDesignerPorts(input: {
           {
             cause: 'review-required',
             canStart: available,
-            canRemoveGroup: true,
+            canRemoveGroup: inCart,
             canRemoveAll: observed.cart.customized.length > 0,
           },
           request,
@@ -290,13 +296,8 @@ export function createLiveDesignerPorts(input: {
       source = refreshed;
       input.onPriceRefresh?.(refreshed, request);
       if (!quoting) {
-        const moved =
-          !!previous &&
-          observed.groups.some(
-            (candidate) => desiredGroupKey(candidate, false, false) === desiredGroupKey(previous, false, false),
-          );
         input.onNeedsReview?.(
-          moved
+          inCart
             ? { cause: 'cart-changed' }
             : {
                 cause: 'review-required',
@@ -671,6 +672,8 @@ export function createLiveDesignerPorts(input: {
     const labels = await refreshGroups(groups);
     let proposal: QuoteProposal | undefined;
     if (groups.length) {
+      // Native cart edits may have taken the retained designs over the limit: named as when adding (#371).
+      assertCartCapacity(groups, baseline.ordinary.length);
       proposal = await api.private<QuoteProposal>('quote-proposals', {
         country: input.country,
         marketId: input.marketId,
@@ -720,6 +723,10 @@ export function createLiveDesignerPorts(input: {
       expectedFingerprint: reviewed.baseline.fingerprint,
       repair: buckets.length === 0,
     });
+    // Another tab or the Designer is applying the cart. The reviewed removal and its accepted set are kept, so Retry
+    // applies the same set (#371).
+    if (result.reason === 'busy')
+      throw Object.assign(new Error('Cart update in progress elsewhere'), { code: 'CART_BUSY' });
     // Explicit removal is how an unknown earlier write is retired; its tombstone stays for late carriers.
     if (result.status !== 'applied' || !result.cart) throw new Error('Cart removal remains unresolved');
     if (reviewed.accepted)

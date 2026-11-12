@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
 import type { DesignerQuoteReview } from '../../../frontend/designer/src/quote-review.ts';
 import type { CartRequest } from '../../../frontend/designer/src/runtime.ts';
-import type { BuyerConfig } from '../src/buyer.ts';
+import type { BuyerConfig, DesiredGroup } from '../src/buyer.ts';
 import type { RepairState } from '../src/designer/repair-state.ts';
 import { type AjaxItem, fetchBody, lineCarriers, requestUrl } from './support.mts';
 
@@ -107,6 +107,8 @@ function fixture(options: {
   held?: Record<string, ReturnType<typeof gate>>;
   config?: BuyerConfig;
   saveStatus?: number;
+  /** The owned groups the server reads from the cart's customized lines. */
+  cartGroups?: DesiredGroup[];
 }) {
   const log: string[] = [];
   const aborted: string[] = [];
@@ -132,7 +134,9 @@ function fixture(options: {
               ? 'accept'
               : path.endsWith('/confirm')
                 ? 'confirm'
-                : `${method === 'POST' ? 'write' : 'read'} ${path.split('/').at(-1)}`;
+                : path.endsWith('/cart-state')
+                  ? 'cart-state'
+                  : `${method === 'POST' ? 'write' : 'read'} ${path.split('/').at(-1)}`;
   const live = createLiveDesignerPorts({
     source,
     productId: '111',
@@ -163,6 +167,13 @@ function fixture(options: {
           expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
         });
       if (name === 'config') return Response.json(options.config ?? source);
+      if (name === 'cart-state')
+        return Response.json({
+          groups: options.cartGroups ?? [],
+          labels: {},
+          quoteId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+          repairRequired: false,
+        });
       if (name === 'designs') {
         if (options.saveStatus) return Response.json({ error: 'conflict' }, { status: options.saveStatus });
         return Response.json({ id: path.split('/').at(-1), version: 1, value: JSON.parse(String(init.body)).group });
@@ -220,6 +231,11 @@ function fixture(options: {
     reviews,
     needsReview,
     priceRefreshes,
+    items,
+    /** The groups the last proposal priced. */
+    get proposedGroups() {
+      return proposedGroups as DesiredGroup[];
+    },
     failCartReads() {
       failCartRead = true;
     },
@@ -290,8 +306,8 @@ test('a changed publication found by the fresh config takes precedence over an i
   await assert.rejects(preparing, /Published configuration changed/);
   assert.deepEqual(
     app.needsReview,
-    [{ cause: 'review-required', canStart: true, canRemoveGroup: true, canRemoveAll: false }],
-    'the existing republish review path is followed',
+    [{ cause: 'review-required', canStart: true, canRemoveGroup: false, canRemoveAll: false }],
+    'the republish review path offers no removal of a line the cart does not hold (#371)',
   );
   assert.ok(app.aborted.includes('quote-proposals'), 'the stale in-flight proposal is abandoned');
   assert.equal(app.priceRefreshes.length, 0);
@@ -300,6 +316,45 @@ test('a changed publication found by the fresh config takes precedence over an i
     false,
   );
   proposals.open();
+});
+
+test('after a republish, Remove this customization is offered only while the cart still holds its line (#371)', async () => {
+  const options: Parameters<typeof fixture>[0] = {};
+  const app = fixture(options);
+  await app.live.ports.review!.prepare(app.request);
+  const group = app.proposedGroups[0];
+  assert.ok(group);
+  // The design was opened from its cart line; then the product is republished.
+  app.live.registerDesign(app.request.design.id, group);
+  app.items.push({ key: 'own', variant_id: 101, quantity: 1, properties: { _insignia_line_v3: v3Carrier('101') } });
+  options.config = { ...source, revisionId: 'republished', contentHash: 'f'.repeat(64) };
+  const republished = async (cartGroups: DesiredGroup[]) => {
+    options.cartGroups = cartGroups;
+    app.needsReview.length = 0;
+    await assert.rejects(app.live.ports.review!.prepare(app.request), /Published configuration changed/);
+    return app.needsReview;
+  };
+  assert.deepEqual(
+    await republished([group]),
+    [{ cause: 'review-required', canStart: true, canRemoveGroup: true, canRemoveAll: true }],
+    'its own line is still in the cart',
+  );
+  // Another tab removed this design's line; a different customization is in the cart.
+  const sibling: DesiredGroup = {
+    ...group,
+    design: {
+      ...group.design,
+      placements: group.design.placements.map((placement) => ({
+        ...placement,
+        artwork: { kind: 'deferred' as const, intentId: 'sibling' },
+      })),
+    },
+  };
+  assert.deepEqual(
+    await republished([sibling]),
+    [{ cause: 'review-required', canStart: true, canRemoveGroup: false, canRemoveAll: true }],
+    'a line removed elsewhere is never offered for removal',
+  );
 });
 
 test('Add on a current prepared quote never reports "Preparing quote"; a failed pre-acceptance read still does', async () => {

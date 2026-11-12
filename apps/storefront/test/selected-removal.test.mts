@@ -257,3 +257,177 @@ test('removing one design reviews and preserves its sibling and retries identica
   assert.equal(items.find((item) => item.key === 'ordinary')?.quantity, 3);
   assert.equal(items.find((item) => item.key === 'new-custom')?.quantity, 1);
 });
+
+/** Two owned designs in the cart; `removed` is the one the buyer removes. Every request is counted by route. */
+function siblingRemoval(cart: { ordinaryLines?: number; siblingQuantity?: number } = {}) {
+  const group = (intentId: string, quantity = 1) => ({
+    productId: '11',
+    configRevisionId: 'revision',
+    revisionContentHash: 'a'.repeat(64),
+    design: {
+      placements: [
+        { placementId: 'front', methodId: 'print', stepId: 'small', artwork: { kind: 'deferred' as const, intentId } },
+      ],
+      options: [],
+    },
+    variants: [{ variantId: '102', quantity }],
+  });
+  const removed = group('remove'),
+    sibling = group('retain', cart.siblingQuantity);
+  let items: AjaxItem[] = [
+    // Native cart edits since the design was added.
+    ...Array.from({ length: cart.ordinaryLines ?? 1 }, (_, index) => ({
+      key: `ordinary-${index}`,
+      variant_id: 101,
+      quantity: 1,
+      properties: {},
+    })),
+    { key: 'old-custom', variant_id: 102, quantity: 2, properties: { _insignia_line_v3: v3Carrier('102', 1) } },
+  ];
+  const calls = { proposals: 0, accepts: 0, writes: 0 };
+  const values = new Map<string, string>();
+  const applicationId = '22222222-2222-4222-8222-222222222222';
+  const live = createLiveDesignerPorts({
+    source: {
+      ...config,
+      title: 'Shirt',
+      placements: [
+        { id: 'front', label: 'Front', allowedMethodIds: ['print'], allowedStepIds: ['small'], logoLaterAllowed: true },
+      ],
+    },
+    productId: '11',
+    proxyBase: '/apps/insignia',
+    cartRoot: '/',
+    country: 'US',
+    marketId: '42',
+    locale: 'en',
+    storeName: 'Store',
+    storage: { getItem: (key) => values.get(key) ?? null, setItem: (key, value) => void values.set(key, value) },
+    fetchImpl: async (url, init = {}) => {
+      const path = new URL(requestUrl(url), 'https://fixture.test').pathname,
+        body = fetchBody(init);
+      if (path.endsWith('/sessions'))
+        return Response.json({
+          capability: 'abc.def',
+          sessionId: applicationId,
+          expiresAt: new Date(Date.now() + 60000).toISOString(),
+        });
+      if (path.endsWith('/cart-state')) return Response.json({ groups: [removed, sibling], repairRequired: true });
+      if (path.endsWith('/quote-proposals')) {
+        calls.proposals++;
+        return Response.json({
+          proposalId: '11111111-1111-4111-8111-111111111111',
+          hash: 'b'.repeat(64),
+          expiresAt: new Date(Date.now() + 60000).toISOString(),
+          currency: 'USD',
+          exponent: 2,
+          customizedQuantity: 1,
+          totalMinor: '1500',
+          groups: [
+            {
+              productId: '11',
+              quantity: 1,
+              setupMinor: '0',
+              customizationUnitMinor: '500',
+              baseTotalMinor: '1000',
+              totalMinor: '1500',
+            },
+          ],
+          changedGroups: [],
+        });
+      }
+      if (path.endsWith('/accept')) {
+        calls.accepts++;
+        return Response.json({
+          quoteId: '11111111-1111-4111-8111-111111111111',
+          setId: applicationId,
+          validThroughDay: 30000,
+          applicationId,
+          buckets: [{ variantId: '102', quantity: 1, properties: { _insignia_line_v3: v3Carrier('102', 2) } }],
+          desired: [sibling],
+        });
+      }
+      if (path.endsWith('/confirm')) return Response.json({ id: applicationId, status: 'APPLIED' });
+      if (init.method === 'POST') {
+        calls.writes++;
+        if (path.endsWith('/cart/update.js') && body.updates)
+          items = items.filter((item) => body.updates?.[item.key] !== 0);
+        else if (path.endsWith('/cart/add.js'))
+          for (const item of body.items ?? [])
+            items.push({
+              key: 'new-custom',
+              variant_id: item.id,
+              quantity: item.quantity,
+              properties: item.properties,
+            });
+      }
+      return Response.json({ items, attributes: {}, currency: 'USD' });
+    },
+  });
+  return {
+    live,
+    removed,
+    calls,
+    customized: () => items.filter((item) => item.properties._insignia_line_v3),
+  };
+}
+async function withWindow<T>(run: () => Promise<T>): Promise<T> {
+  const previous = Reflect.get(globalThis, 'window');
+  Reflect.set(globalThis, 'window', new EventTarget());
+  try {
+    return await run();
+  } finally {
+    if (previous === undefined) Reflect.deleteProperty(globalThis, 'window');
+    else Reflect.set(globalThis, 'window', previous);
+  }
+}
+
+test('removing one design from a cart that native edits pushed over capacity names the limit; Remove all still works (#371)', async () => {
+  // 200 ordinary lines plus the retained sibling's line: over the 200-line cart limit.
+  const lines = siblingRemoval({ ordinaryLines: 200 });
+  await assert.rejects(lines.live.prepareRemoval(lines.removed), { code: 'CAPACITY_EXCEEDED', cartLines: true });
+  assert.equal(lines.calls.proposals, 0, 'the limit is named before any proposal, as when adding');
+  const review = await lines.live.prepareRemoval();
+  assert.equal(review.groups.length, 0, 'Remove all needs no signed set, so the limit never blocks it');
+  // The retained sibling alone is over the signed set's 10,000 items.
+  const items = siblingRemoval({ siblingQuantity: 10_001 });
+  await assert.rejects(items.live.prepareRemoval(items.removed), (error: object) => {
+    assert.equal((error as { code?: string }).code, 'CAPACITY_EXCEEDED');
+    assert.equal('cartLines' in error, false);
+    return true;
+  });
+  assert.equal(items.calls.proposals, 0);
+});
+
+test('confirming a removal while another tab holds the cart lock is CART_BUSY; the retry applies the same accepted set (#371)', async () => {
+  const app = siblingRemoval();
+  await app.live.prepareRemoval(app.removed);
+  let release!: () => void;
+  let held!: () => void;
+  const holding = new Promise<void>((resolve) => {
+    held = resolve;
+  });
+  const lock = navigator.locks.request(
+    'insignia-customized-cart-v2',
+    () =>
+      new Promise<void>((resolve) => {
+        release = resolve;
+        held();
+      }),
+  );
+  await holding;
+  await assert.rejects(
+    withWindow(() => app.live.confirmRemoval()),
+    { code: 'CART_BUSY' },
+  );
+  assert.equal(app.calls.writes, 0, 'nothing was written while the lock was held');
+  release();
+  await lock;
+  await withWindow(() => app.live.confirmRemoval());
+  assert.equal(app.calls.accepts, 1, 'the retry reuses the accepted set instead of signing another');
+  assert.equal(app.calls.proposals, 1);
+  assert.deepEqual(
+    app.customized().map((item) => item.key),
+    ['new-custom'],
+  );
+});

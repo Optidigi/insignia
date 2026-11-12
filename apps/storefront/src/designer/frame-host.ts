@@ -270,8 +270,9 @@ export function createDesignerFrame(input: {
         if (!input.onRepair) throw new Error('Repair unavailable');
         const value = await input.onRepair(data.action);
         send('insignia:designer:repair-result', { id: data.id, ok: true, value });
-      } catch {
-        send('insignia:designer:repair-result', { id: data.id, ok: false });
+      } catch (error) {
+        // The same validated, whitelisted failure as a Designer port call (#371).
+        send('insignia:designer:repair-result', { id: data.id, ok: false, failure: portFailure(error) });
       }
       return;
     }
