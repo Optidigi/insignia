@@ -542,6 +542,8 @@
       "customer_artwork_processingTimeout": "La comprobación está tardando más de lo esperado. Inténtalo de nuevo.",
       "customer_artwork_inspectionRejected": "Esta imagen fue rechazada. Elige una imagen estática compatible.",
       "customer_artwork_artworkExpired": "Este archivo ha caducado. Súbelo de nuevo.",
+      "customer_artwork_sessionLimited": "Mensaje de demasiadas sesiones",
+      "customer_artwork_closeUploadError": "Botón para cerrar el error de carga",
       "customer_host_personalise": "Botón Personalizar",
       "customer_host_savedDesigns": "Etiqueta de diseños guardados",
       "customer_host_openSaved": "Botón Abrir diseño",

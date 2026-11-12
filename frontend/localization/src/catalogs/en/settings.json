@@ -540,6 +540,8 @@
       "customer_artwork_processingTimeout": "Checking artwork is taking longer than expected. Try again.",
       "customer_artwork_inspectionRejected": "This image was rejected. Choose a supported static image.",
       "customer_artwork_artworkExpired": "This artwork has expired. Upload it again.",
+      "customer_artwork_sessionLimited": "Too many sessions message",
+      "customer_artwork_closeUploadError": "Close upload error button",
       "customer_host_personalise": "Personalise button",
       "customer_host_savedDesigns": "Saved designs label",
       "customer_host_openSaved": "Open design button",

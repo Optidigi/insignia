@@ -479,7 +479,7 @@ The buyer flow is implemented by `server/buyer/http.ts` behind `pages/api/artwor
 | Method/path | Input and result |
 |---|---|
 | GET `/v1/config` | Product and current selection context → current published revision ID, safe config DTO, image/placement choices and readiness |
-| POST `/v1/sessions` | Signed shop context → guest capability and expiry; no cookie reliance. Shop-wide safety ceilings, plus at most 20 new sessions per visitor address per hour when Cloudflare supplies a trusted address (§10.4); without one the limit fails open. A session that never stores a design or proposal expires after 24 hours, and first use extends it once to the capability grant (at most 7 days) |
+| POST `/v1/sessions` | Signed shop context → guest capability and expiry; no cookie reliance. Shop-wide safety ceilings, plus at most 60 new sessions per visitor address in any rolling hour when Cloudflare supplies a trusted address (§10.4); without one the limit fails open. The limit is a sliding window (owner decision, 12 November 2026, #348): each session stops counting one hour after it was issued, and a refusal is 429 `SESSION_RATE_LIMITED` with `Retry-After` set to the seconds until the window admits another session. A session that never stores a design or proposal expires after 24 hours, and first use extends it once to the capability grant (at most 7 days) |
 | POST `/api/artwork/guest` | Capability, declared metadata, idempotency key → upload ID, quarantine PUT URL, constraints and expiry |
 | POST `/api/artwork/guest/:id/complete` | Capability + upload ID → idempotently queue inspection, return status |
 | POST `/api/artwork/guest/:id/status` | Owner capability → inspection result and safe derivative reference; never arbitrary object-key access |
@@ -504,6 +504,7 @@ Admin contracts cover draft get/save/publish/copy, authorized artwork inspection
 | `GET /v1/config` for a selected setup without `country` | 400 | `COUNTRY_REQUIRED` |
 | Recognized entitlement denied | 403 | `ENTITLEMENT_DENIED` |
 | Owner's artwork upload quota (`/api/artwork/guest`) | 429 + `Retry-After` | `RATE_LIMITED` |
+| Per-visitor session limit (`POST /v1/sessions`, §10.4); the Designer names the limit and the wait in minutes and offers only Close, since neither a retry nor another file can succeed until then | 429 + `Retry-After` | `SESSION_RATE_LIMITED` |
 | Transient: signing-fence `lock_timeout`, shop-local day changed between preparing and signing, Shopify 429, 5xx, `THROTTLED`, network failure or timeout | 409 + `Retry-After` | `BUSY`, with `retryable: true` |
 | Shopify 401/403, `ACCESS_DENIED` (missing scope), `MAX_COST_EXCEEDED`, a substituted API version or malformed response; EUR qualification drift (release, installation epoch, Market); database statement timeout; anything else | 503 | `UNAVAILABLE` |
 
@@ -617,7 +618,7 @@ Customer/shop redaction can require earlier deletion. Handle exports and identit
 Visitor addresses (owner decision, 11 November 2026). The per-visitor session limit reads only the `X-Insignia-Client-Chain` header that a Cloudflare transform rule sets on `app.insigniacustomizer.com`. The rule removes any client-supplied copy and copies the X-Forwarded-For that Shopify's app proxy sent, before Cloudflare appends its own hop.
 - The limit uses the last entry. On 11 November 2026 it was verified natively as the only entry, carrying the buyer's real egress address, unchanged by buyer-supplied headers. It never uses X-Forwarded-For, CF-Connecting-IP or another header.
 - IPv6 counts by its /64.
-- Only an HMAC keyed by a secret derived from the app secret is stored, in a per-shop hourly window. Rows are deleted within one hour.
+- Only an HMAC keyed by a secret derived from the app secret is stored, per shop, with the issue times of that address's sessions in the last hour (a sliding window). A row is deleted one hour after its latest session.
 - The address itself is never stored, logged, exported or shown.
 - A request without a trusted address (for example on the old host) is not limited per visitor; the shop ceilings still apply.
 

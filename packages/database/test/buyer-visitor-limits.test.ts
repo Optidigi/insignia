@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { sql } from 'kysely';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createBuyerRepository } from '../src/repositories/buyer.js';
+import { BUYER_SESSION_POLICY, createBuyerRepository } from '../src/repositories/buyer.js';
 import { createTestShop, openTestDatabase } from './support/postgres.js';
 
 const day = 86_400_000;
@@ -39,7 +39,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('buyer visitor limits', () => 
     ).resolves.toHaveProperty('sessionId');
   }, 30_000);
 
-  it('limits one visitor address to 20 new sessions an hour without affecting other addresses', async () => {
+  it('limits one visitor address to 60 new sessions in any rolling hour without affecting other addresses', async () => {
     const { shopId } = await createTestShop(db);
     const repo = createBuyerRepository(db);
     const now = new Date('2026-11-11T12:00:00Z');
@@ -53,33 +53,94 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('buyer visitor limits', () => 
         expiresAt: new Date(+at + week),
         visitorKey,
       });
-    for (let i = 1; i <= 20; i++) await issue(i, flood);
-    await expect(issue(21, flood)).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+    expect(BUYER_SESSION_POLICY.visitorSessionsPerHour).toBe(60);
+    for (let i = 1; i <= 60; i++) await issue(i, flood);
+    await expect(issue(61, flood)).rejects.toMatchObject({ code: 'SESSION_RATE_LIMITED', retryAfterSeconds: 3600 });
     // A rejected attempt neither creates a session nor consumes the window.
     expect(
       (await sql<{ n: string }>`SELECT count(*)::text n FROM buyer_sessions WHERE shop_id=${shopId}`.execute(db))
         .rows[0]?.n,
-    ).toBe('20');
-    await expect(issue(22, other)).resolves.toHaveProperty('sessionId');
+    ).toBe('60');
+    await expect(issue(62, other)).resolves.toHaveProperty('sessionId');
     // No trusted address: only the shop ceilings apply (fail open).
-    await expect(issue(23, null)).resolves.toHaveProperty('sessionId');
-    // The window is per hour from its first session.
-    await expect(issue(24, flood, new Date(+now + 3_599_000))).rejects.toMatchObject({ code: 'RATE_LIMITED' });
-    await expect(issue(25, flood, new Date(+now + 3_600_000))).resolves.toHaveProperty('sessionId');
-    await expect(issue(26, Buffer.alloc(16, 3))).rejects.toMatchObject({ code: 'INVALID' });
+    await expect(issue(63, null)).resolves.toHaveProperty('sessionId');
+    await expect(issue(64, flood, new Date(+now + 3_599_000))).rejects.toMatchObject({
+      code: 'SESSION_RATE_LIMITED',
+      retryAfterSeconds: 1,
+    });
+    await expect(issue(65, flood, new Date(+now + 3_600_000))).resolves.toHaveProperty('sessionId');
+    await expect(issue(66, Buffer.alloc(16, 3))).rejects.toMatchObject({ code: 'INVALID' });
   }, 30_000);
 
-  it('purges visitor windows once they are an hour old and keeps only keyed hashes', async () => {
+  it('slides the visitor window: each session stops counting exactly one hour after it was issued', async () => {
     const { shopId } = await createTestShop(db);
     const repo = createBuyerRepository(db);
+    const start = new Date('2026-11-12T02:00:00Z');
+    const half = new Date(+start + 1_800_000);
+    const visitor = Buffer.alloc(32, 4);
+    let n = 0;
+    const issue = (at: Date) =>
+      repo.issueSession({
+        scope: { shopId, installationGeneration: '1', ownerHash: owner(++n) },
+        sessionId: randomUUID(),
+        now: at,
+        expiresAt: new Date(+at + week),
+        visitorKey: visitor,
+      });
+    for (let i = 0; i < 30; i++) await issue(start);
+    for (let i = 0; i < 30; i++) await issue(half);
+    // Retry-After points at the moment the oldest counted session leaves the window.
+    await expect(issue(half)).rejects.toMatchObject({ code: 'SESSION_RATE_LIMITED', retryAfterSeconds: 1800 });
+    await expect(issue(new Date(+start + 3_599_500))).rejects.toMatchObject({ retryAfterSeconds: 1 });
+    // A fixed window would reopen fully at start+1h; the sliding window frees only the 30 from start.
+    const hour = new Date(+start + 3_600_000);
+    for (let i = 0; i < 30; i++) await issue(hour);
+    await expect(issue(hour)).rejects.toMatchObject({ code: 'SESSION_RATE_LIMITED', retryAfterSeconds: 1800 });
+    await expect(issue(new Date(+half + 3_600_000))).resolves.toHaveProperty('sessionId');
+  }, 30_000);
+
+  it('admits exactly the hourly limit when one visitor starts many sessions concurrently', async () => {
+    const { shopId } = await createTestShop(db);
+    const repo = createBuyerRepository(db);
+    const now = new Date('2026-11-12T03:00:00Z');
+    const visitor = Buffer.alloc(32, 5);
+    const outcomes = await Promise.allSettled(
+      Array.from({ length: 75 }, (_, i) =>
+        repo.issueSession({
+          scope: { shopId, installationGeneration: '1', ownerHash: owner(1000 + i) },
+          sessionId: randomUUID(),
+          now,
+          expiresAt: new Date(+now + week),
+          visitorKey: visitor,
+        }),
+      ),
+    );
+    expect(outcomes.filter((outcome) => outcome.status === 'fulfilled')).toHaveLength(60);
+    expect(
+      outcomes.filter((outcome) => outcome.status === 'rejected' && outcome.reason?.code === 'SESSION_RATE_LIMITED'),
+    ).toHaveLength(15);
+    expect(
+      (await sql<{ n: string }>`SELECT count(*)::text n FROM buyer_sessions WHERE shop_id=${shopId}`.execute(db))
+        .rows[0]?.n,
+    ).toBe('60');
+  }, 30_000);
+
+  it('purges a visitor window an hour after its latest session and keeps only keyed hashes', async () => {
+    const { shopId } = await createTestShop(db);
+    const repo = createBuyerRepository(db);
+    const first = new Date('2026-11-11T11:30:00Z');
     const now = new Date('2026-11-11T12:00:00Z');
-    await repo.issueSession({
-      scope: { shopId, installationGeneration: '1', ownerHash: owner(1) },
-      sessionId: randomUUID(),
-      now,
-      expiresAt: new Date(+now + week),
-      visitorKey: Buffer.alloc(32, 9),
-    });
+    for (const [n, at] of [
+      [1, first],
+      [2, now],
+    ] as const)
+      await repo.issueSession({
+        scope: { shopId, installationGeneration: '1', ownerHash: owner(n) },
+        sessionId: randomUUID(),
+        now: at,
+        expiresAt: new Date(+at + week),
+        visitorKey: Buffer.alloc(32, 9),
+      });
     const columns = await sql<{
       column_name: string;
     }>`SELECT column_name FROM information_schema.columns WHERE table_name='buyer_visitor_admission' ORDER BY ordinal_position`.execute(
@@ -91,6 +152,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('buyer visitor limits', () => 
       'visitor_key',
       'window_at',
       'issued',
+      'issued_at',
     ]);
     const rows = () =>
       sql<{ n: string }>`SELECT count(*)::text n FROM buyer_visitor_admission WHERE shop_id=${shopId}`.execute(db);

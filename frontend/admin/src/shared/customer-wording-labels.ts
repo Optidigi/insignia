@@ -109,6 +109,8 @@ export const customerWordingLabels = {
   'customer:artwork.processingTimeout': 'settings:translations.fields.customer_artwork_processingTimeout',
   'customer:artwork.inspectionRejected': 'settings:translations.fields.customer_artwork_inspectionRejected',
   'customer:artwork.artworkExpired': 'settings:translations.fields.customer_artwork_artworkExpired',
+  'customer:artwork.sessionLimited': 'settings:translations.fields.customer_artwork_sessionLimited',
+  'customer:artwork.closeUploadError': 'settings:translations.fields.customer_artwork_closeUploadError',
   'customer:artwork.openingFile': 'settings:translations.fields.customer_artwork_openingFile',
   'customer:artwork.dropFile': 'settings:translations.fields.customer_artwork_dropFile',
   'customer:artwork.or': 'settings:translations.fields.customer_artwork_or',

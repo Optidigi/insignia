@@ -14,12 +14,16 @@ export type BuyerProposal = {
   expiresAt: Date;
 };
 export class BuyerStateError extends Error {
-  constructor(public readonly code: 'NOT_FOUND' | 'CONFLICT' | 'RATE_LIMITED' | 'INVALID') {
+  constructor(
+    public readonly code: 'NOT_FOUND' | 'CONFLICT' | 'RATE_LIMITED' | 'SESSION_RATE_LIMITED' | 'INVALID',
+    /** SESSION_RATE_LIMITED only: whole seconds until the visitor window admits another session. */
+    public readonly retryAfterSeconds?: number,
+  ) {
     super(code);
   }
 }
-const fail = (code: BuyerStateError['code']): never => {
-  throw new BuyerStateError(code);
+const fail = (code: BuyerStateError['code'], retryAfterSeconds?: number): never => {
+  throw new BuyerStateError(code, retryAfterSeconds);
 };
 const active = sql`EXISTS(SELECT 1 FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=b.shop_id AND s.current_generation=b.installation_generation AND i.deactivated_at IS NULL)`;
 function bounded(value: unknown, bytes: number) {
@@ -29,8 +33,9 @@ function bounded(value: unknown, bytes: number) {
 }
 /**
  * Shop-wide safety ceilings sit far above legitimate traffic. Per-visitor protection comes from
- * short-lived unused sessions and, when Cloudflare supplies a client address, an hourly
- * per-address issuance limit keyed by an HMAC of that address (owner decision, 11 November 2026).
+ * short-lived unused sessions and, when Cloudflare supplies a client address, a per-address
+ * issuance limit keyed by an HMAC of that address (owner decision, 11 November 2026). The limit is
+ * a sliding hour: a session stops counting one hour after it was issued (owner decision, 12 November 2026).
  */
 export const BUYER_SESSION_POLICY = {
   shopIssuancePerMinute: 600,
@@ -38,7 +43,7 @@ export const BUYER_SESSION_POLICY = {
   unusedSessionMs: 86_400_000,
   maxSessionMs: 604_800_000,
   sessionWritesPerMinute: 60,
-  visitorSessionsPerHour: 20,
+  visitorSessionsPerHour: 60,
   visitorWindowMs: 3_600_000,
 } as const;
 function validScope(scope: BuyerScope) {
@@ -323,15 +328,21 @@ export function createBuyerRepository(db: Kysely<Database>) {
         if (visitorKey) {
           const visitor = (
             await sql<{
-              window_at: Date;
-              issued: number;
-            }>`SELECT window_at,issued FROM buyer_visitor_admission WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND visitor_key=${visitorKey} FOR UPDATE`.execute(
+              issued_at: Date[];
+            }>`SELECT ARRAY(SELECT t FROM unnest(issued_at) t WHERE t>${new Date(+now - BUYER_SESSION_POLICY.visitorWindowMs)} ORDER BY t) issued_at
+            FROM buyer_visitor_admission WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND visitor_key=${visitorKey} FOR UPDATE`.execute(
               tx,
             )
           ).rows[0];
-          const fresh = !visitor || +now >= +visitor.window_at + BUYER_SESSION_POLICY.visitorWindowMs;
-          if (!fresh && visitor.issued >= BUYER_SESSION_POLICY.visitorSessionsPerHour) fail('RATE_LIMITED');
-          await sql`INSERT INTO buyer_visitor_admission VALUES(${scope.shopId},${scope.installationGeneration}::bigint,${visitorKey},${fresh ? now : visitor.window_at},${fresh ? 1 : visitor.issued + 1}) ON CONFLICT(shop_id,installation_generation,visitor_key) DO UPDATE SET window_at=EXCLUDED.window_at,issued=EXCLUDED.issued`.execute(
+          // Sessions issued within the last hour, oldest first; the shop row lock serializes issuance.
+          const recent = visitor?.issued_at ?? [];
+          const limit = BUYER_SESSION_POLICY.visitorSessionsPerHour;
+          if (recent.length >= limit) {
+            const admitsAt = +(recent[recent.length - limit] as Date) + BUYER_SESSION_POLICY.visitorWindowMs;
+            fail('SESSION_RATE_LIMITED', Math.max(1, Math.ceil((admitsAt - +now) / 1000)));
+          }
+          const issued = [...recent, now].map((at) => at.toISOString());
+          await sql`INSERT INTO buyer_visitor_admission(shop_id,installation_generation,visitor_key,window_at,issued,issued_at) VALUES(${scope.shopId},${scope.installationGeneration}::bigint,${visitorKey},${now},${issued.length},${issued}::timestamptz[]) ON CONFLICT(shop_id,installation_generation,visitor_key) DO UPDATE SET window_at=EXCLUDED.window_at,issued=EXCLUDED.issued,issued_at=EXCLUDED.issued_at`.execute(
             tx,
           );
         }
@@ -702,7 +713,7 @@ export function createBuyerRepository(db: Kysely<Database>) {
       );
       return result.rows[0]?.erased ?? 0;
     },
-    /** Visitor windows hold only keyed hashes and are kept for at most one hour. */
+    /** Visitor windows hold only keyed hashes and are kept until one hour after their latest session. */
     async purgeVisitorAdmission(now: Date, limit = 1000): Promise<number> {
       if (!Number.isSafeInteger(limit) || limit < 1 || limit > 10000) fail('INVALID');
       const cutoff = new Date(+now - BUYER_SESSION_POLICY.visitorWindowMs);
