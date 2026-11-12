@@ -1,13 +1,13 @@
 {
   "chrome": {
-    "skipToDesignControls": "Ir a los controles del diseño",
+    "skipToDesignControls": "Ir a los controles de personalización",
     "closeCustomizer": "Cerrar personalizador",
     "closeArtworkPreview": "Cerrar vista previa del diseño",
     "productPreview": "Vista previa del producto",
     "productView": "Vista del producto",
     "productViewAlt": "{{colorName}} {{productName}}, {{viewName}}",
     "allViews": "Todas las vistas",
-    "designControls": "Controles del diseño",
+    "designControls": "Controles de personalización",
     "unavailable": "No disponible",
     "included": "Incluido",
     "added": "Añadido",
@@ -203,11 +203,11 @@
     "itemCount_one": "{{count}} artículo",
     "itemCount_other": "{{count}} artículos",
     "itemCount_many": "{{count}} artículos",
-    "designTotals": "Totales por diseño",
-    "currentDesign": "Diseño actual"
+    "designTotals": "Totales por personalización",
+    "currentDesign": "Personalización actual"
   },
   "validation": {
-    "checkDesign": "Revisa tu diseño",
+    "checkDesign": "Revisa tu personalización",
     "chooseArtworkForPosition": "Elige un diseño para {{positionName}}.",
     "adjustArtworkForPosition": "Ajusta el tamaño o la posición del diseño de {{positionName}} para que quepa en el área permitida.",
     "quantityForSelection": "{{rowName}}, {{sizeLabel}}: usa un número entero de 0 a {{maxQuantity}}.",
@@ -235,9 +235,9 @@
     "colorItemsRemoved": "Artículos de {{colorName}} eliminados.",
     "itemsRestored": "Artículos restaurados.",
     "draftUnavailable": "No se puede recuperar tu personalización anterior porque las opciones de este producto han cambiado.",
-    "cartCommitFailed": "No se pudo actualizar tu carrito. Tu diseño sigue aquí. Vuelve a intentarlo.",
-    "cartRejected": "Shopify no pudo actualizar tu carrito. Tu carrito no ha cambiado y tu diseño sigue aquí. Vuelve a intentarlo más tarde.",
-    "cartRejectedStock": "No hay suficiente stock para añadir esto a tu carrito. Tu carrito no ha cambiado y tu diseño sigue aquí. Reduce la cantidad o vuelve a intentarlo más tarde.",
+    "cartCommitFailed": "No se pudo actualizar tu carrito. Tu personalización sigue aquí. Vuelve a intentarlo.",
+    "cartRejected": "Shopify no pudo actualizar tu carrito. Tu carrito no ha cambiado y tu personalización sigue aquí. Vuelve a intentarlo más tarde.",
+    "cartRejectedStock": "No hay suficiente stock para añadir esto a tu carrito. Tu carrito no ha cambiado y tu personalización sigue aquí. Reduce la cantidad o vuelve a intentarlo más tarde.",
     "cartLimit": "Tu carrito ha alcanzado el límite de {{formattedMaxLines}} líneas personalizadas y {{formattedMaxItems}} artículos personalizados. Elimina artículos de tu carrito o reduce las cantidades para continuar.",
     "cartLineLimit": "Tu carrito tiene demasiados artículos para añadir esta personalización. Elimina artículos de tu carrito para continuar.",
     "reviewRequired": "Este producto ha cambiado desde que lo abriste, por ejemplo su precio o su stock. Revisa tus opciones y vuelve a intentarlo.",
@@ -251,8 +251,8 @@
     "rateLimitedWait_one": "Demasiadas solicitudes desde tu red. Inténtalo de nuevo dentro de {{count}} minuto.",
     "rateLimitedWait_many": "Demasiadas solicitudes desde tu red. Inténtalo de nuevo dentro de {{count}} minutos.",
     "rateLimitedWait_other": "Demasiadas solicitudes desde tu red. Inténtalo de nuevo dentro de {{count}} minutos.",
-    "busy": "La tienda está muy ocupada en este momento. Tu diseño sigue aquí. Vuelve a intentarlo en unos segundos.",
-    "unavailable": "La personalización no está disponible temporalmente. Tu diseño sigue aquí. Vuelve a intentarlo más tarde.",
+    "busy": "La tienda está muy ocupada en este momento. Tu personalización sigue aquí. Vuelve a intentarlo en unos segundos.",
+    "unavailable": "El personalizador no está disponible temporalmente. Tu personalización sigue aquí. Vuelve a intentarlo más tarde.",
     "cartBusy": "Tu carrito se está actualizando en otra pestaña o ventana. Espera a que termine y vuelve a intentarlo.",
     "replaceArtwork": "Sustituir diseño",
     "editDesign": "Editar diseño",
@@ -291,13 +291,13 @@
   },
   "host": {
     "discardTitle": "¿Descartar cambios?",
-    "discardHelp": "Descarta tus cambios para editar otro diseño. Los artículos del carrito no cambiarán.",
+    "discardHelp": "Descarta tus cambios para editar otra personalización. Los artículos del carrito no cambiarán.",
     "cancel": "Cancelar",
     "discardEdit": "Descartar y editar",
     "personalise": "Personalizar",
-    "savedDesigns": "Diseños guardados",
-    "openSaved": "Abrir diseño guardado",
-    "startNew": "Empezar un nuevo diseño"
+    "savedDesigns": "Personalizaciones guardadas",
+    "openSaved": "Abrir personalización guardada",
+    "startNew": "Empezar una nueva personalización"
   },
   "close": {
     "title": "¿Cerrar la personalización?",

@@ -681,7 +681,7 @@ test("design totals retain translated labels and fit narrow and desktop review l
       ["nl", "Totalen per ontwerp", "Huidig ontwerp"],
       ["de", "Summen je Design", "Aktuelles Design"],
       ["fr", "Totaux par création", "Création actuelle"],
-      ["es", "Totales por diseño", "Diseño actual"],
+      ["es", "Totales por personalización", "Personalización actual"],
       ["it", "Totali per design", "Design attuale"],
     ];
     for (const [language, heading, current] of labels) {
