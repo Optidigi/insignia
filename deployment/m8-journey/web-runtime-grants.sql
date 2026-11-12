@@ -78,7 +78,7 @@ GRANT SELECT, INSERT ON public.buyer_admission,public.buyer_sessions,public.desi
 GRANT UPDATE(window_at,issued) ON public.buyer_admission TO insignia_runtime;
 -- Per-visitor sliding issuance window (keyed HMAC only); DELETE purges windows an hour after their latest session.
 GRANT SELECT, INSERT, DELETE ON public.buyer_visitor_admission TO insignia_runtime;
-GRANT UPDATE(window_at,issued,issued_at) ON public.buyer_visitor_admission TO insignia_runtime;
+GRANT UPDATE(window_at,issued_at) ON public.buyer_visitor_admission TO insignia_runtime;
 -- expires_at: the buyer_session_identity trigger permits only the one-time extension to grant_expires_at.
 GRANT UPDATE(write_window,write_count,expires_at) ON public.buyer_sessions TO insignia_runtime;
 GRANT UPDATE(version,payload,expires_at) ON public.design_drafts TO insignia_runtime;
