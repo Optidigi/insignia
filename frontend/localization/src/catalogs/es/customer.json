@@ -280,8 +280,14 @@
   },
   "close": {
     "title": "¿Cerrar la personalización?",
-    "help": "Tu personalización seguirá disponible mientras esta página esté abierta. Al cerrar, no se añadirá al carrito.",
+    "help": "Podrás continuar tu personalización cuando vuelvas a abrirla. Al cerrar, no se añadirá al carrito.",
     "keepEditing": "Seguir editando",
     "leave": "Cerrar personalización"
+  },
+  "resume": {
+    "title": "¿Continuar tu personalización?",
+    "help": "Tienes una personalización sin terminar para este producto. Continúa donde lo dejaste o empieza de nuevo.",
+    "continue": "Continuar",
+    "startNew": "Empezar de nuevo"
   }
 }

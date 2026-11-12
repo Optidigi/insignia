@@ -275,8 +275,14 @@
   },
   "close": {
     "title": "Personalisierung schließen?",
-    "help": "Ihr Entwurf bleibt erhalten, solange diese Seite geöffnet ist. Beim Schließen wird er nicht zum Warenkorb hinzugefügt.",
+    "help": "Sie können Ihre Gestaltung fortsetzen, wenn Sie die Personalisierung wieder öffnen. Beim Schließen wird sie nicht zum Warenkorb hinzugefügt.",
     "keepEditing": "Weiter bearbeiten",
     "leave": "Personalisierung schließen"
+  },
+  "resume": {
+    "title": "Gestaltung fortsetzen?",
+    "help": "Sie haben eine nicht abgeschlossene Gestaltung für dieses Produkt. Setzen Sie sie fort oder beginnen Sie neu.",
+    "continue": "Fortsetzen",
+    "startNew": "Neu beginnen"
   }
 }

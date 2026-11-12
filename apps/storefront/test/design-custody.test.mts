@@ -189,3 +189,151 @@ test('forgetting a draft without a recorded base writes no storage (#341)', asyn
   await custody.forget(id, group);
   assert.deepEqual(writes, []);
 });
+
+/** A Storage stand-in that records every key it holds. */
+function memoryStorage() {
+  const data = new Map<string, string>();
+  return {
+    data,
+    getItem: (key: string) => data.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      data.set(key, value);
+    },
+    removeItem: (key: string) => {
+      data.delete(key);
+    },
+  };
+}
+function draftServer(owner: { session: string }) {
+  const drafts = new Map<string, { session: string; value: unknown }>();
+  const calls: string[] = [];
+  return {
+    drafts,
+    calls,
+    api: {
+      async private<T>(path: string, body: Record<string, unknown>): Promise<T> {
+        calls.push(path);
+        const draftId = path.split('/')[1] ?? '';
+        if (path.endsWith('/restore')) {
+          const saved = drafts.get(draftId);
+          if (!saved || saved.session !== owner.session) throw Object.assign(new Error('missing'), { status: 404 });
+          return {
+            id: draftId,
+            version: 1,
+            value: saved.value,
+            expiresAt: '2027-01-01T00:00:00Z',
+            compatibility: 'current',
+            retained: null,
+          } as T;
+        }
+        drafts.set(draftId, { session: owner.session, value: body.group });
+        return { id: draftId, version: 1, value: body.group } as T;
+      },
+    },
+  };
+}
+const LATEST = 'insignia:selected-design-latest:v1:/apps/insignia:11';
+
+test('the latest unfinished new design is kept per product and buyer session in shared storage (#347)', async () => {
+  const tab = memoryStorage();
+  const shared = memoryStorage();
+  const owner = { session: 'session-1' };
+  const server = draftServer(owner);
+  const custody = createSelectedDesignCustody({
+    namespace: '/fr/apps/insignia',
+    storage: tab,
+    shared,
+    session: () => owner.session,
+    api: server.api,
+  });
+  assert.equal(custody.hasLatest('11'), false);
+  await custody.save(id, group, undefined);
+  assert.deepEqual(JSON.parse(shared.data.get(LATEST) ?? 'null'), { session: 'session-1', id });
+  assert.equal(custody.hasLatest('11'), true);
+  assert.equal(custody.hasLatest('12'), false, 'one pointer per product');
+  // The pointer is independent of the group contents a fresh page load starts from.
+  const resumed = await custody.latest('11');
+  assert.equal(resumed?.id, id);
+  assert.deepEqual(resumed?.value, group);
+  // Only IDs and hashes: a new design has no cart base, so nothing else is written to shared storage.
+  assert.deepEqual([...shared.data.keys()], [LATEST]);
+
+  // A cart-line edit is not an unfinished new design, and its quantity base moves to shared storage with it.
+  const edit = '22222222-2222-4222-8222-222222222222';
+  await custody.save(edit, { ...group, variants: [{ variantId: '101', quantity: 4 }] }, group);
+  assert.equal(JSON.parse(shared.data.get(LATEST) ?? 'null').id, id);
+  assert.match(shared.data.get(`insignia:selected-design-cart:v1:/fr/apps/insignia:${edit}`) ?? '', /^[a-f0-9]{64}$/);
+  assert(![...tab.data.keys()].some((key) => key.startsWith('insignia:selected-design-cart:')));
+  assert(
+    [...shared.data.values()].every((value) => /^[a-f0-9]{64}$/.test(value) || value.startsWith('{"session"')),
+    'shared storage holds only IDs and a quantity hash, never a design snapshot',
+  );
+
+  // Adding it to the cart finishes the design; another design's completion leaves the pointer alone.
+  custody.forgetLatest('11', edit);
+  assert.equal(custody.hasLatest('11'), true);
+  custody.forgetLatest('11', id);
+  assert.equal(custody.hasLatest('11'), false);
+  assert.equal(await custody.latest('11'), null);
+});
+
+test('discarding the latest draft forgets its pointer (#347)', async () => {
+  const shared = memoryStorage();
+  const owner = { session: 'session-1' };
+  const custody = createSelectedDesignCustody({
+    namespace: '/apps/insignia',
+    storage: memoryStorage(),
+    shared,
+    session: () => owner.session,
+    api: draftServer(owner).api,
+  });
+  await custody.save(id, group, undefined);
+  await custody.forget(id, group);
+  assert.equal(shared.data.has(LATEST), false);
+});
+
+test('a latest pointer from another or expired session is dropped without a server read (#347)', async () => {
+  const shared = memoryStorage();
+  const owner = { session: 'session-1' };
+  const server = draftServer(owner);
+  let current: string | undefined = 'session-1';
+  const custody = createSelectedDesignCustody({
+    namespace: '/apps/insignia',
+    storage: memoryStorage(),
+    shared,
+    session: () => current,
+    api: server.api,
+  });
+  await custody.save(id, group, undefined);
+  server.calls.length = 0;
+  current = 'session-2';
+  assert.equal(custody.hasLatest('11'), false);
+  assert.equal(await custody.latest('11'), null);
+  assert.deepEqual(server.calls, [], 'a foreign pointer never reaches the server');
+  assert.equal(shared.data.has(LATEST), false);
+
+  current = undefined;
+  shared.setItem(LATEST, JSON.stringify({ session: 'session-1', id }));
+  assert.equal(await custody.latest('11'), null, 'no session: nothing to restore');
+  assert.equal(shared.data.has(LATEST), false);
+});
+
+test('a latest draft the server no longer has falls back to a clean start and drops its pointer (#347)', async () => {
+  const shared = memoryStorage();
+  const owner = { session: 'session-1' };
+  const server = draftServer(owner);
+  const custody = createSelectedDesignCustody({
+    namespace: '/apps/insignia',
+    storage: memoryStorage(),
+    shared,
+    session: () => owner.session,
+    api: server.api,
+  });
+  await custody.save(id, group, undefined);
+  server.drafts.clear();
+  assert.equal(await custody.latest('11'), null);
+  assert.equal(shared.data.has(LATEST), false);
+  shared.setItem(LATEST, 'not json');
+  assert.equal(custody.hasLatest('11'), false);
+  assert.equal(await custody.latest('11'), null);
+});

@@ -1277,11 +1277,18 @@ test('a design added from the product page reopens at a later native cart quanti
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
       await host.locator('input[type=number]:enabled').first().fill('3');
       await host.getByRole('button', { name: 'Review', exact: true }).last().click();
+      const latest = () =>
+        page.evaluate(() =>
+          Object.keys(localStorage).filter((key) => key.startsWith('insignia:selected-design-latest:')),
+        );
+      await applyButton(host).and(host.locator(':enabled')).waitFor();
+      assert.equal((await latest()).length, 1, 'the unfinished design can be continued after a reload (#347)');
       const handoff = nativeCartHandoff(page);
       await host.getByRole('button', { name: 'Add to cart', exact: true }).click();
       await host.getByRole('button', { name: 'View cart', exact: true }).waitFor();
       await handoff;
       assert.equal(accepts.length, 1);
+      assert.deepEqual(await latest(), [], 'a design in the cart is no longer offered to continue (#347)');
       // The draft had no cart line when it was saved; Add to cart makes the accepted line its base.
       editCart(5);
       await reopenOwned(page, trigger, host);

@@ -280,8 +280,14 @@
   },
   "close": {
     "title": "Fermer la personnalisation ?",
-    "help": "Votre création reste disponible tant que cette page est ouverte. Fermer la personnalisation ne l’ajoute pas au panier.",
+    "help": "Vous pourrez reprendre votre personnalisation en la rouvrant. La fermer ne l’ajoute pas au panier.",
     "keepEditing": "Continuer à modifier",
     "leave": "Fermer la personnalisation"
+  },
+  "resume": {
+    "title": "Reprendre votre personnalisation ?",
+    "help": "Vous avez une personnalisation non terminée pour ce produit. Reprenez-la là où vous l’aviez laissée ou recommencez.",
+    "continue": "Reprendre",
+    "startNew": "Recommencer"
   }
 }

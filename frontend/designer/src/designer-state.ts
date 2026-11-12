@@ -23,7 +23,9 @@ export type DesignerModal =
   | { kind: 'colors'; mode: 'choose' | 'add' }
   | { kind: 'confirm-close' }
   | { kind: 'confirm-upload-cancel'; positionId: PositionId; destination: 'artwork' | 'customizer' }
-  | { kind: 'switch-design'; design: Design };
+  | { kind: 'switch-design'; design: Design }
+  /** "Continue your design?" for an unfinished design from an earlier page load (#347). */
+  | { kind: 'resume-draft' };
 
 /** `session-limited`: the per-visitor session limit refused the session the upload needs (#348). */
 export type UploadFailureReason = 'file-too-large' | 'unsupported-file-type' | 'read-failed' | 'upload-failed' | 'processing-failed' | 'processing-timeout' | 'inspection-rejected' | 'artwork-expired' | 'session-limited';
@@ -120,6 +122,11 @@ export interface CreateDesignerStateInput {
   /** Accepted cart intent when the restored editable draft differs from it. */
   initialBaseline?: Design;
   requiresCartReview?: boolean;
+  /**
+   * An unfinished design from an earlier page load, not in the cart. It opens behind the resume prompt as an
+   * unsaved new design: closing the prompt continues it, `new-design-requested` starts clean.
+   */
+  resumeDraft?: Design;
 }
 
 export type DesignerEvent =
@@ -240,6 +247,13 @@ export function createDesignerState(input: CreateDesignerStateInput): DesignerSt
     recovery: noRecovery,
     recoveryVersion: 0,
   };
+  if (input.resumeDraft)
+    return {
+      ...loadCartDesign(initial, input.resumeDraft),
+      editing: null,
+      baseline: null,
+      modal: { kind: 'resume-draft' },
+    };
   const loaded = input.initialDesign ? loadCartDesign(initial, input.initialDesign) : initial;
   return input.initialBaseline ? { ...loaded, baseline: copyDesign(input.initialBaseline) } : loaded;
 }

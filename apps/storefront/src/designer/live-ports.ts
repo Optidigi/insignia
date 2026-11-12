@@ -15,6 +15,7 @@ import {
   type QuoteProposal,
   replaceGroup,
 } from '../buyer';
+import { readBuyerSession, sharedBuyerStorage } from '../buyer-session';
 import { type CartSnapshot, createAjaxCartAdapter } from '../cart';
 import { createSelectedDesignCustody } from './design-custody';
 import { desiredGroupKey } from './group-key';
@@ -48,7 +49,10 @@ export function createLiveDesignerPorts(input: {
   locale: string;
   storeName: string;
   fetchImpl?: typeof fetch;
-  /** This tab's cart journal and draft pointers; the session capability is shared (buyer-session.ts). */
+  /**
+   * This tab's cart journal and cart-line draft hints. The session capability, draft quantity bases and the
+   * latest unfinished design are shared by every tab (buyer-session.ts).
+   */
   storage: Pick<Storage, 'getItem' | 'setItem'>;
   onPriceRefresh?(source: BuyerConfig, request?: CartRequest): void;
   onNeedsReview?(
@@ -77,7 +81,14 @@ export function createLiveDesignerPorts(input: {
     country: input.country,
     fetchImpl,
   });
-  const custody = createSelectedDesignCustody({ api, storage: input.storage, namespace: input.proxyBase });
+  const shared = sharedBuyerStorage();
+  const custody = createSelectedDesignCustody({
+    api,
+    storage: input.storage,
+    namespace: input.proxyBase,
+    shared,
+    session: () => readBuyerSession(shared, input.proxyBase)?.sessionId,
+  });
   const cart = createAjaxCartAdapter({
     root: input.cartRoot,
     fetchImpl,
@@ -540,6 +551,8 @@ export function createLiveDesignerPorts(input: {
               .catch(async () => custody.forget(request.design.id, appliedGroups[0]!))
               .catch(() => {});
         } else designs.delete(request.design.id);
+        // In the cart now, it is no longer the product's unfinished design (#347).
+        custody.forgetLatest(selected.productId, request.design.id);
         await api
           .confirmCartApplication(accepted.applicationId, {
             fingerprint: await advisoryFingerprint(applied.cart.fingerprint),
@@ -690,6 +703,14 @@ export function createLiveDesignerPorts(input: {
       });
       if (restored) draftSaves.set(restored.id, { group: restored.value, original: group });
       return restored;
+    },
+    /** Whether an unfinished design of this session may be offered; reads only browser storage (#347). */
+    hasLatestDraft: () => custody.hasLatest(input.productId),
+    /** The product's latest unfinished design, registered for explicit abandonment (Start new). */
+    async restoreLatest(signal?: AbortSignal) {
+      const latest = await custody.latest(input.productId, signal);
+      if (latest) draftSaves.set(latest.id, { group: latest.value });
+      return latest;
     },
     async discardDrafts() {
       for (const [id, saved] of draftSaves) {

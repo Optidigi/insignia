@@ -275,8 +275,14 @@
   },
   "close": {
     "title": "Personalisatievenster sluiten?",
-    "help": "Je ontwerp blijft beschikbaar zolang deze pagina open is. Sluiten voegt het niet toe aan je winkelwagen.",
+    "help": "Je kunt dit ontwerp afmaken als je het personalisatievenster opnieuw opent. Sluiten voegt het niet toe aan je winkelwagen.",
     "keepEditing": "Verder ontwerpen",
     "leave": "Personalisatievenster sluiten"
+  },
+  "resume": {
+    "title": "Verder met je ontwerp?",
+    "help": "Je hebt een onafgemaakt ontwerp voor dit product. Ga verder waar je gebleven was of begin opnieuw.",
+    "continue": "Verdergaan",
+    "startNew": "Opnieuw beginnen"
   }
 }

@@ -292,6 +292,7 @@
     "sourceLanguage": "Inglés",
     "groups": {
       "close": "Cerrar la personalización",
+      "resume": "Continuar la personalización",
       "chrome": "General",
       "steps": "Navegación",
       "artwork": "Diseño",
@@ -322,6 +323,10 @@
       "customer_close_help": "Explicación del cierre de la personalización",
       "customer_close_keepEditing": "Botón para seguir editando",
       "customer_close_leave": "Botón para cerrar la personalización",
+      "customer_resume_title": "Título para continuar la personalización",
+      "customer_resume_help": "Explicación para continuar la personalización",
+      "customer_resume_continue": "Botón para continuar la personalización",
+      "customer_resume_startNew": "Botón para empezar de nuevo",
       "customer_chrome_skipToDesignControls": "Ir a los controles del diseño",
       "customer_chrome_closeCustomizer": "Cerrar el personalizador",
       "customer_chrome_closeArtworkPreview": "Cerrar la vista previa del diseño",

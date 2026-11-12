@@ -290,6 +290,7 @@
     "sourceLanguage": "Englisch",
     "groups": {
       "close": "Personalisierung schließen",
+      "resume": "Gestaltung fortsetzen",
       "chrome": "Allgemein",
       "steps": "Navigation",
       "artwork": "Motive",
@@ -320,6 +321,10 @@
       "customer_close_help": "Erklärung zum Schließen der Personalisierung",
       "customer_close_keepEditing": "Schaltfläche weiter bearbeiten",
       "customer_close_leave": "Schaltfläche Personalisierung schließen",
+      "customer_resume_title": "Überschrift zum Fortsetzen der Gestaltung",
+      "customer_resume_help": "Erklärung zum Fortsetzen der Gestaltung",
+      "customer_resume_continue": "Schaltfläche Gestaltung fortsetzen",
+      "customer_resume_startNew": "Schaltfläche neu beginnen",
       "customer_chrome_skipToDesignControls": "Zu den Gestaltungseinstellungen springen",
       "customer_chrome_closeCustomizer": "Produktanpassung schließen",
       "customer_chrome_closeArtworkPreview": "Motivvorschau schließen",

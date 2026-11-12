@@ -14,6 +14,10 @@ export const customerWordingLabels = {
   'customer:close.help': 'settings:translations.fields.customer_close_help',
   'customer:close.keepEditing': 'settings:translations.fields.customer_close_keepEditing',
   'customer:close.leave': 'settings:translations.fields.customer_close_leave',
+  'customer:resume.title': 'settings:translations.fields.customer_resume_title',
+  'customer:resume.help': 'settings:translations.fields.customer_resume_help',
+  'customer:resume.continue': 'settings:translations.fields.customer_resume_continue',
+  'customer:resume.startNew': 'settings:translations.fields.customer_resume_startNew',
 
   'customer:artwork.addPositionArtwork': 'settings:translations.fields.customer_artwork_addPositionArtwork',
   'customer:positioning.adjustPosition': 'settings:translations.fields.customer_positioning_adjustPosition',

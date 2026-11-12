@@ -275,8 +275,14 @@
   },
   "close": {
     "title": "Close customization?",
-    "help": "Your design will stay here while this page is open. Closing will not add it to your cart.",
+    "help": "You can continue this design when you reopen the customizer. Closing will not add it to your cart.",
     "keepEditing": "Keep editing",
     "leave": "Close customization"
+  },
+  "resume": {
+    "title": "Continue your design?",
+    "help": "You have an unfinished design for this product. Continue where you left off, or start a new one.",
+    "continue": "Continue",
+    "startNew": "Start new"
   }
 }

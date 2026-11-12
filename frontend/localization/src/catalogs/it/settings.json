@@ -293,6 +293,7 @@
     "sourceLanguage": "Inglese",
     "groups": {
       "close": "Chiusura della personalizzazione",
+      "resume": "Ripresa della personalizzazione",
       "chrome": "Generale",
       "steps": "Navigazione",
       "artwork": "Grafica",
@@ -323,6 +324,10 @@
       "customer_close_help": "Spiegazione della chiusura della personalizzazione",
       "customer_close_keepEditing": "Pulsante per continuare a modificare",
       "customer_close_leave": "Pulsante per chiudere la personalizzazione",
+      "customer_resume_title": "Titolo per continuare la personalizzazione",
+      "customer_resume_help": "Spiegazione per continuare la personalizzazione",
+      "customer_resume_continue": "Pulsante per continuare la personalizzazione",
+      "customer_resume_startNew": "Pulsante per ricominciare",
       "customer_chrome_skipToDesignControls": "Vai ai controlli della personalizzazione",
       "customer_chrome_closeCustomizer": "Chiudi la finestra di personalizzazione",
       "customer_chrome_closeArtworkPreview": "Chiudi l'anteprima della grafica",

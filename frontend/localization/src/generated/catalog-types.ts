@@ -2509,6 +2509,10 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_recovery_repairRequired': object;
   'settings:translations.fields.customer_recovery_startNew': object;
   'settings:translations.fields.customer_recovery_undo': object;
+  'settings:translations.fields.customer_resume_continue': object;
+  'settings:translations.fields.customer_resume_help': object;
+  'settings:translations.fields.customer_resume_startNew': object;
+  'settings:translations.fields.customer_resume_title': object;
   'settings:translations.fields.customer_review_artwork': object;
   'settings:translations.fields.customer_review_artworkRequiredBeforeProduction': object;
   'settings:translations.fields.customer_review_artworkToFollow': object;
@@ -2567,6 +2571,7 @@ export interface AdminMessageTable {
   'settings:translations.groups.postOrder': object;
   'settings:translations.groups.quantities': object;
   'settings:translations.groups.recovery': object;
+  'settings:translations.groups.resume': object;
   'settings:translations.groups.review': object;
   'settings:translations.groups.startup': object;
   'settings:translations.groups.steps': object;
@@ -2860,6 +2865,10 @@ export interface CustomerMessageTable {
   'customer:recovery.repairRequired': object;
   'customer:recovery.startNew': object;
   'customer:recovery.undo': object;
+  'customer:resume.continue': object;
+  'customer:resume.help': object;
+  'customer:resume.startNew': object;
+  'customer:resume.title': object;
   'customer:review.artwork': object;
   'customer:review.artworkRequiredBeforeProduction': object;
   'customer:review.artworkToFollow': object;

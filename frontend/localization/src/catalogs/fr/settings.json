@@ -292,6 +292,7 @@
     "sourceLanguage": "Anglais",
     "groups": {
       "close": "Fermeture de la personnalisation",
+      "resume": "Reprise de la personnalisation",
       "chrome": "Général",
       "steps": "Navigation",
       "artwork": "Visuels",
@@ -322,6 +323,10 @@
       "customer_close_help": "Explication de la fermeture de la personnalisation",
       "customer_close_keepEditing": "Bouton pour continuer la personnalisation",
       "customer_close_leave": "Bouton pour fermer la personnalisation",
+      "customer_resume_title": "Titre pour reprendre la personnalisation",
+      "customer_resume_help": "Explication pour reprendre la personnalisation",
+      "customer_resume_continue": "Bouton pour reprendre la personnalisation",
+      "customer_resume_startNew": "Bouton pour recommencer",
       "customer_chrome_skipToDesignControls": "Aller aux commandes de personnalisation",
       "customer_chrome_closeCustomizer": "Fermer la fenêtre de personnalisation",
       "customer_chrome_closeArtworkPreview": "Fermer l’aperçu du visuel",

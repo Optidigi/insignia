@@ -87,6 +87,7 @@ type Initial = {
   initialBaseline?: Design;
   initialPrints?: Print[];
   initialArtworks?: Artwork[];
+  resumeDraft?: Design;
   previewOnly?: boolean;
   requiresCartReview?: boolean;
 };
@@ -217,6 +218,8 @@ function Frame({ initial }: { initial: Initial }) {
           initialBaseline={initial.initialBaseline}
           initialPrints={initial.initialPrints}
           initialArtworks={initial.initialArtworks}
+          resumeDraft={initial.resumeDraft}
+          onDraftDiscarded={() => send('insignia:designer:discard-drafts')}
           previewOnly={initial.previewOnly}
           requiresCartReview={initial.requiresCartReview}
           quoteReview={quote}
