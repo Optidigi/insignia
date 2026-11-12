@@ -4,6 +4,11 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
+import {
+  applySigningEmergency,
+  qualifySigningEmergencyPlan,
+  reserveSigningEmergencyRun,
+} from '../../apps/web/src/server/admin/signing-emergency.ts';
 import { provisionSigningKey, reserveSigningProvisionRun } from '../../apps/web/src/server/admin/signing-provision.ts';
 import { required } from '../../apps/web/test/admin/support/fixtures.mts';
 import { fixture } from '../../apps/web/test/admin/support/signing-owner-fixture.mts';
@@ -746,5 +751,385 @@ test('rotate, then the daily job destroys the outgoing key: issuance stays ready
     assert.equal(await issuanceReady(f, 7, later), true);
   } finally {
     await f.close();
+  }
+});
+
+// #375: one owner command revokes named keys, optionally bumps the epoch, and publishes the stricter
+// config by compare-and-set with an exact readback. Publish-only mode changes no key.
+type EmergencyPlan = Parameters<typeof applySigningEmergency>[0];
+const leak = (overrides: Partial<EmergencyPlan> = {}): EmergencyPlan => ({
+  authorizationEpoch: 0,
+  revokeKeyIds: [1],
+  bumpEpoch: true,
+  allowNoActiveKey: true,
+  reason: 'suspected leak',
+  ...overrides,
+});
+/** `stopBefore` makes the journal refuse that step, as a crash before it would. */
+async function emergency(f: Fixture, plan: EmergencyPlan, run = 'emergency-run', stopBefore?: string) {
+  const journal = await reserveSigningEmergencyRun(join(f.directory, run), plan);
+  const reserve = journal.reserve;
+  journal.reserve = async (name) => (name === stopBefore ? { durable: false, operation: name } : reserve(name));
+  return applySigningEmergency(plan, 'SYNTHETIC_ID_TOKEN', { ...f.ports, journal });
+}
+const published = (f: Fixture) =>
+  JSON.parse(f.publicValue() ?? '{}') as { epoch: number; keys: { id: number; revoked: boolean }[] };
+const sha256 = (value: string | null) =>
+  createHash('sha256')
+    .update(value ?? '')
+    .digest('hex');
+/** Counts every way a key could be created or activated; an emergency must reach none of them. */
+function keyCreationProbe(f: Fixture) {
+  const calls: string[] = [];
+  const { provision } = f.ports.signer;
+  const { createPending, activate } = f.ports.core.signingKeys;
+  f.ports.signer.provision = async (...args) => {
+    calls.push('provision');
+    return provision(...args);
+  };
+  f.ports.core.signingKeys.createPending = async (...args) => {
+    calls.push('createPending');
+    return createPending(...args);
+  };
+  f.ports.core.signingKeys.activate = async (...args) => {
+    calls.push('activate');
+    return activate(...args);
+  };
+  return calls;
+}
+
+test('a leaked active key: revoke plus epoch bump publishes by compare-and-set; issuance stops until the following rotation', async () => {
+  const f = await fixture();
+  try {
+    await publishedActiveKey1(f);
+    f.strictCompareAndSet();
+    const before = f.publicValue();
+    const calls = keyCreationProbe(f);
+    const result = await emergency(f, leak());
+    assert.equal(result.classification, 'SIGNING_EMERGENCY_PUBLISHED');
+    assert.equal(result.epochBumped, true);
+    assert.deepEqual(result.revokedKeyIds, [1]);
+    assert.equal(result.publicConfigWriteAcknowledged, true);
+    assert.equal(result.activeKeyId, null);
+    assert.equal(result.issuanceReady, false);
+    assert.equal(f.scope.authorizationEpoch, 1);
+    assert.equal(published(f).epoch, 1);
+    assert.deepEqual(published(f).keys, [
+      { ...JSON.parse(before ?? '{}').keys[0], revoked: true, lastDay: required(f.rows[0]).lastDay },
+    ]);
+    assert.equal(f.requests.filter((operation) => operation === 'set').length, 1);
+    assert.deepEqual(calls, []);
+    // No active key remains: issuance is blocked, which is the intended emergency result.
+    assert.equal(await issuanceReady(f, 1).catch(() => false), false);
+    // Journal: prior published digest, differences, new digest and readback.
+    const read = async (name: string) => JSON.parse(await readFile(join(f.directory, 'emergency-run', name), 'utf8'));
+    const precheck = await read('emergency-precheck.json');
+    assert.equal(precheck.publishedSha256, sha256(before));
+    assert.equal(precheck.compareDigest, sha256(before));
+    assert.deepEqual(precheck.differences, []);
+    const publication = await read('emergency-publication.json');
+    assert.equal(publication.priorPublishedSha256, sha256(before));
+    assert.equal(publication.desiredSha256, sha256(f.publicValue()));
+    assert.deepEqual(publication.differences, [
+      'epoch 0 published',
+      `key 1 published through day ${NON_EXPIRING}`,
+      'key 1 revocation not published',
+    ]);
+    const readback = await read('emergency-readback.json');
+    assert.equal(readback.observedSha256, sha256(f.publicValue()));
+    assert.equal(readback.issuanceReady, false);
+    assert.equal(
+      JSON.parse(await readFile(join(f.directory, 'emergency-run', 'result.json'), 'utf8')).classification,
+      'SIGNING_EMERGENCY_PUBLISHED',
+    );
+    // Then rotate to a fresh key with the bumped epoch: issuance continues.
+    assert.equal(
+      (await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports)).classification,
+      'SIGNING_KEY_CONFIG_PROVISIONED',
+    );
+    assert.equal(await issuanceReady(f, 7), true);
+    assert.equal(published(f).epoch, 1);
+  } finally {
+    await f.close();
+  }
+});
+
+test('an emergency that keeps an active key leaves issuance ready with it', async () => {
+  for (const scenario of ['epoch bump only', 'leaked pending key of a stopped rotation'] as const) {
+    const f = await fixture();
+    try {
+      await publishedActiveKey1(f);
+      let plan = leak({ revokeKeyIds: [], allowNoActiveKey: false });
+      if (scenario === 'leaked pending key of a stopped rotation') {
+        interruptions['it stopped before publishing']?.(f);
+        await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
+        assert.equal(required(f.rows.find((row) => row.id === 7)).state, 'pending');
+        plan = leak({ revokeKeyIds: [7], allowNoActiveKey: false });
+      }
+      const result = await emergency(f, plan);
+      assert.equal(result.classification, 'SIGNING_EMERGENCY_PUBLISHED', scenario);
+      assert.equal(result.activeKeyId, 1, scenario);
+      assert.equal(result.issuanceReady, true, scenario);
+      assert.equal(published(f).epoch, 1, scenario);
+      assert.equal(await issuanceReady(f, 1), true, scenario);
+      if (scenario !== 'epoch bump only')
+        assert.deepEqual(
+          published(f).keys.map(({ id, revoked }) => ({ id, revoked })),
+          [
+            { id: 1, revoked: false },
+            { id: 7, revoked: true },
+          ],
+        );
+    } finally {
+      await f.close();
+    }
+  }
+});
+
+test('an emergency refuses to leave no active key unless the plan says so, and writes nothing', async () => {
+  const f = await fixture();
+  try {
+    await publishedActiveKey1(f);
+    const before = f.publicValue();
+    const result = await emergency(f, leak({ allowNoActiveKey: false }));
+    assert.equal(result.classification, 'SIGNING_EMERGENCY_STOPPED');
+    assert.equal(result.epochBumped, false);
+    assert.equal(f.scope.authorizationEpoch, 0);
+    assert.equal(required(f.rows[0]).state, 'active');
+    assert.equal(f.publicValue(), before);
+    assert.equal(f.requests.includes('set'), false);
+  } finally {
+    await f.close();
+  }
+});
+
+const emergencyInterruptions: Record<string, string | ((f: Fixture) => void)> = {
+  'it stopped before the epoch bump': 'BUMP_EPOCH',
+  'it stopped after the epoch bump, before revoking': 'REVOKE_KEYS',
+  'it stopped before publishing': 'PUBLISH_CONFIG',
+  'the publication was not dispatched': (f) => {
+    const execute = f.transport.execute;
+    f.transport.execute = async (x) => {
+      if (x.operation === 'set') throw new PublicationAdminError('not_dispatched');
+      return execute(x);
+    };
+  },
+  'it stopped after publishing, before the readback': 'READ_CONFIG_CLOSE',
+};
+for (const [name, interrupt] of Object.entries(emergencyInterruptions))
+  test(`an interrupted emergency resumes with the same plan when ${name}, without a second epoch bump`, async () => {
+    const f = await fixture();
+    try {
+      await publishedActiveKey1(f);
+      const execute = f.transport.execute;
+      if (typeof interrupt === 'function') interrupt(f);
+      const stopped = await emergency(f, leak(), 'stopped-run', typeof interrupt === 'string' ? interrupt : undefined);
+      assert.equal(stopped.classification, 'SIGNING_EMERGENCY_STOPPED');
+      f.transport.execute = execute;
+      const resumed = await emergency(f, leak(), 'resume-run');
+      assert.equal(resumed.classification, 'SIGNING_EMERGENCY_PUBLISHED');
+      assert.equal(resumed.epochBumped, true);
+      assert.equal(f.scope.authorizationEpoch, 1);
+      assert.equal(published(f).epoch, 1);
+      assert.equal(required(published(f).keys[0]).revoked, true);
+      assert.equal(required(f.rows[0]).state, 'revoked');
+    } finally {
+      await f.close();
+    }
+  });
+
+test('publish-only publishes a saved but unpublished revocation and epoch bump, and changes no key', async () => {
+  const f = await fixture();
+  try {
+    await publishedActiveKey1(f);
+    await f.lifecycle.revoke(f.scope, 1, 'incident-1', 'suspected leak');
+    await f.lifecycle.incrementEpoch({ scope: f.scope, commandKey: 'incident-1', requestDigest: 'e'.repeat(64) });
+    const calls = keyCreationProbe(f);
+    const stored = (await f.lifecycle.desiredPublicConfig(f.scope)).value;
+    const publishOnly = leak({ authorizationEpoch: 1, revokeKeyIds: [], bumpEpoch: false });
+    const result = await emergency(f, publishOnly);
+    assert.equal(result.classification, 'SIGNING_EMERGENCY_PUBLISHED');
+    assert.equal(result.epochBumped, false);
+    assert.equal(f.scope.authorizationEpoch, 1);
+    assert.equal(f.publicValue(), stored);
+    assert.deepEqual(calls, []);
+    // Already published: a second run reads back only.
+    const again = await emergency(f, publishOnly, 'again-run');
+    assert.equal(again.classification, 'SIGNING_EMERGENCY_PUBLISHED');
+    assert.equal(again.publicConfigWriteAttempted, false);
+    assert.equal(f.requests.filter((operation) => operation === 'set').length, 1);
+  } finally {
+    await f.close();
+  }
+});
+
+test('publish-only stops when the published config differs other than by tightening', async () => {
+  for (const drift of ['another field', 'published epoch ahead of the database']) {
+    const f = await fixture();
+    try {
+      await publishedActiveKey1(f);
+      const value = required(f.publicValue());
+      f.setPublicValue(
+        drift === 'another field'
+          ? value.replace('"maxBuckets":32', '"maxBuckets":31')
+          : value.replace('"epoch":0', '"epoch":1'),
+      );
+      const result = await emergency(f, leak({ revokeKeyIds: [], bumpEpoch: false }));
+      assert.equal(result.classification, 'SIGNING_EMERGENCY_STOPPED', drift);
+      assert.equal(result.publicConfigWriteAttempted, false, drift);
+      assert.equal(f.requests.includes('set'), false, drift);
+    } finally {
+      await f.close();
+    }
+  }
+});
+
+test('an emergency never creates or activates a key', async () => {
+  // A plan is only revocations, an optional epoch bump and the no-active-key consent.
+  for (const plan of [
+    { ...leak(), activateKeyId: 7 },
+    { ...leak(), keyId: 7, firstDay: 0, lastDay: NON_EXPIRING },
+    leak({ revokeKeyIds: [0] }),
+    leak({ revokeKeyIds: [1, 1] }),
+    leak({ reason: '' }),
+  ])
+    assert.throws(() => qualifySigningEmergencyPlan(plan as EmergencyPlan), JSON.stringify(plan));
+  for (const pending of ['unpublished', 'published'] as const) {
+    const f = await fixture();
+    try {
+      await publishedActiveKey1(f);
+      interruptions[
+        pending === 'unpublished' ? 'it stopped before publishing' : 'it stopped after publishing, before activation'
+      ]?.(f);
+      await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
+      const calls = keyCreationProbe(f);
+      const before = f.publicValue();
+      // The plan does not name pending key 7.
+      const result = await emergency(f, leak({ revokeKeyIds: [], bumpEpoch: true, allowNoActiveKey: false }));
+      assert.deepEqual(calls, [], pending);
+      assert.equal(required(f.rows.find((row) => row.id === 7)).state, 'pending', pending);
+      if (pending === 'unpublished') {
+        // Publishing would make the never-published pending key verifiable: refused before any write.
+        assert.equal(result.classification, 'SIGNING_EMERGENCY_STOPPED');
+        assert.equal(f.scope.authorizationEpoch, 0);
+        assert.equal(f.publicValue(), before);
+      } else {
+        assert.equal(result.classification, 'SIGNING_EMERGENCY_PUBLISHED');
+        assert.equal(result.activeKeyId, 1);
+        assert.deepEqual(
+          published(f).keys.map(({ id, revoked }) => ({ id, revoked })),
+          [
+            { id: 1, revoked: false },
+            { id: 7, revoked: false },
+          ],
+        );
+      }
+    } finally {
+      await f.close();
+    }
+  }
+});
+
+test('an emergency and a concurrent rotation are serialized: the later writer stops without overwriting', async () => {
+  // A rotation paused before publishing; the emergency revokes its pending key too.
+  for (const pendingInPlan of [false, true]) {
+    const f = await fixture();
+    try {
+      await publishedActiveKey1(f);
+      f.strictCompareAndSet();
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      let paused!: () => void;
+      const reached = new Promise<void>((resolve) => {
+        paused = resolve;
+      });
+      const reserve = f.ports.journal.reserve;
+      f.ports.journal.reserve = async (name) => {
+        if (name === 'PUBLISH_CONFIG') {
+          paused();
+          await gate;
+        }
+        return reserve(name);
+      };
+      const rotation = provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports);
+      await reached;
+      const result = await emergency(f, leak({ revokeKeyIds: pendingInPlan ? [1, 7] : [1] }));
+      release();
+      const rotated = await rotation;
+      if (!pendingInPlan) {
+        // The rotation's pending key is not in the plan, so the emergency refuses before any write.
+        assert.equal(result.classification, 'SIGNING_EMERGENCY_STOPPED');
+        assert.equal(rotated.classification, 'SIGNING_KEY_CONFIG_PROVISIONED');
+        assert.equal(await issuanceReady(f, 7), true);
+      } else {
+        assert.equal(result.classification, 'SIGNING_EMERGENCY_PUBLISHED');
+        // The rotation sees the bumped epoch and stops: no publication, no activation.
+        // The rotation's compare-and-set is stale (in production its credential check also sees the
+        // bumped epoch): it stops without publishing or activating.
+        assert.equal(rotated.classification, 'SIGNING_KEY_CONFIG_STOPPED');
+        assert.equal(rotated.publicConfigWriteAcknowledged, false);
+        assert.equal(rotated.activationAttempted, false);
+        assert.equal(required(f.rows.find((row) => row.id === 7)).state, 'revoked');
+        assert.deepEqual(
+          published(f).keys.map(({ id, revoked }) => ({ id, revoked })),
+          [
+            { id: 1, revoked: true },
+            { id: 7, revoked: true },
+          ],
+        );
+        assert.equal(published(f).epoch, 1);
+      }
+    } finally {
+      await f.close();
+    }
+  }
+  // A rotation completes while the emergency is paused after reading the published config.
+  for (const writer of ['rotation', 'another compare-and-set writer'] as const) {
+    const f = await fixture();
+    try {
+      await publishedActiveKey1(f);
+      f.strictCompareAndSet();
+      const rotationJournal = f.ports.journal;
+      const journal = await reserveSigningEmergencyRun(join(f.directory, 'paused-run'), leak());
+      const settle = journal.settle;
+      journal.settle = async (name, outcome) => {
+        await settle(name, outcome);
+        if (name !== 'READ_CONFIG_BEFORE') return;
+        if (writer === 'rotation')
+          assert.equal(
+            (await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', { ...f.ports, journal: rotationJournal }))
+              .classification,
+            'SIGNING_KEY_CONFIG_PROVISIONED',
+          );
+        else f.setPublicValue(required(f.publicValue()).replace('"maxBuckets":32', '"maxBuckets":31'));
+      };
+      const raced = await applySigningEmergency(leak(), 'SYNTHETIC_ID_TOKEN', { ...f.ports, journal });
+      assert.equal(raced.classification, 'SIGNING_EMERGENCY_STOPPED', writer);
+      assert.equal(raced.publicConfigWriteAcknowledged, false, writer);
+      assert.equal(raced.ambiguousOperation, null, writer);
+      // The concurrent writer's publication stands.
+      assert.equal(published(f).epoch, 0, writer);
+      assert.equal(required(published(f).keys[0]).revoked, false, writer);
+      if (writer !== 'rotation') assert.match(required(f.publicValue()), /"maxBuckets":31/);
+      if (writer === 'rotation') {
+        // Its pre-check saw the rotation's key in the database: it stopped before any write.
+        assert.equal(f.scope.authorizationEpoch, 0);
+        // Re-running the same plan completes against the rotation's publication.
+        const again = await emergency(f, leak(), 'again-run');
+        assert.equal(again.classification, 'SIGNING_EMERGENCY_PUBLISHED');
+        assert.equal(again.activeKeyId, 7);
+        assert.equal(again.issuanceReady, true);
+        assert.equal(f.scope.authorizationEpoch, 1);
+        assert.equal(await issuanceReady(f, 7), true);
+      } else {
+        // The compare-and-set was refused after the database changes; the same plan completes them.
+        assert.equal(raced.publicConfigWriteAttempted, true);
+        assert.equal(f.scope.authorizationEpoch, 1);
+      }
+    } finally {
+      await f.close();
+    }
   }
 });

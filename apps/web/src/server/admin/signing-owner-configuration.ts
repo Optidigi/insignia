@@ -10,7 +10,11 @@ export function parseSigningOwnerConfiguration(metadata: unknown, _env?: NodeJS.
   assert.ok(metadata && typeof metadata === 'object' && !Array.isArray(metadata));
   const input = metadata as Record<string, unknown>;
   assert.deepEqual(Object.keys(input).sort(), ['binding', 'plan', 'version']);
-  assert.equal(input.version, 'm5-signing-owner-plan-v1');
+  // A rotation plan, or an emergency plan (#375) armed the same way; each version has its own shape.
+  assert.ok(input.version === 'm5-signing-owner-plan-v1' || input.version === 'm5-signing-emergency-plan-v1');
+  const plan = input.plan;
+  assert.ok(plan && typeof plan === 'object' && !Array.isArray(plan));
+  assert.equal('revokeKeyIds' in plan, input.version === 'm5-signing-emergency-plan-v1');
   return {
     directory: `${RUN_DIRECTORY}/attempt`,
     plan: input.plan as SigningOwnerConfiguration['plan'],

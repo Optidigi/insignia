@@ -289,14 +289,49 @@ Since keys no longer expire (spec §5.5), each key's Ed25519 seed is protected b
 **A stopped rotation.** While the pending key or the shortened window is stored but not published, Add to cart fails; `public_config_drift` is logged once Add to cart has been failing on drift for 5 minutes (buyer requests raise it, so a quiet shop logs nothing). Resume it: arm again with the same plan file and a new empty run root, keeping the stopped run root as evidence, and start the action again. It reuses the pending key (the signer creates no second seed) and publishes by compare-and-set. It journals the replaced published config's digest and each tolerated difference in `published-config-tolerance.json`. A different plan for that key id, or any other published difference, still stops it.
 - **Activation went through but its acknowledgement was lost** (`ACTIVATE_KEY` uncertain): re-running stops, because an active key cannot be resumed. Check the key's state in `signing_keys`: if it is `active` and the published config equals the expected one, nothing more is needed.
 - **Lost plan file:** rebuild the plan from the pending key's row (`key_id`, `first_valid_day`, `last_valid_day`) with the current binding.
-- **Abandoning a pending key:** it cannot be deleted, only revoked. The next rotation (with another key id) accepts a revoked key that was never published and publishes it as revoked.
+- **Abandoning a pending key:** it cannot be deleted, only revoked (an emergency plan listing it, with `bumpEpoch: false`). The next rotation (with another key id) accepts a revoked key that was never published and publishes it as revoked.
 
-**Emergency (suspected leak).** An epoch bump or revocation changes the expected config without publishing it, so it takes effect only once published, and Add to cart fails until then. In this order:
-1. Revoke the leaked key(s), including any pending key.
-2. Bump the epoch.
-3. Start a rotation (above) at once, with the plan file's binding carrying the bumped `authorizationEpoch`. Its one publication carries the higher epoch and every revoked flag; it accepts the earlier published config because these changes only tighten it.
+**Emergency (suspected leak): one owner run.** The emergency plan revokes the named keys, optionally bumps the authorization epoch, and publishes the resulting stricter config by compare-and-set with an exact readback (`signing-emergency.ts`, #375).
+1. Write the plan file and arm the [signing-owner overlay](signing-owner-compose.yaml) with it and a new empty run root:
+   ```json
+   {"version":"m5-signing-emergency-plan-v1",
+    "plan":{"revokeKeyIds":[1,2],"bumpEpoch":true,"allowNoActiveKey":true,"reason":"suspected leak <date>"},
+    "binding":{ ... the current binding, authorizationEpoch before the bump ... }}
+   ```
+   - List every leaked key, including any pending key of a stopped rotation.
+   - `allowNoActiveKey: true` is required when the plan revokes the active key. Issuance then stops: Add to cart fails until the rotation in step 3. That is the intended emergency result. Without it, a plan that would leave no active key stops before any write.
+2. Start the action from the embedded admin's signing page, as for a rotation. `PROVISIONED` means the run published and read back the stricter config. The run:
+   1. reads the published config and checks that it differs from the stored one only by tightening. A pending key that the plan does not revoke and that is not published yet stops the run, because publishing would make it verifiable;
+   2. bumps the epoch (if planned);
+   3. revokes the listed keys;
+   4. repeats the owner rotation's pre-check with no pending key;
+   5. publishes by compare-and-set and reads back.
 
-Bumping the epoch without revoking the leaked key is not enough: the rotation only retires it (window to today + 3), so lines minted with it at the new epoch would verify for days.
+   Each step is reserved and settled in the run root. `emergency-precheck.json`, `emergency-publication.json` and `emergency-readback.json` record the replaced published digest and compare digest, the tolerated differences, the new digest, epoch and remaining active key, and the readback digest.
+3. Disarm. If issuance should continue, rotate to a fresh key at once (above). The rotation's binding must carry the bumped `authorizationEpoch`.
+
+**Publish-only.** Use the same plan with `revokeKeyIds: []` and `bumpEpoch: false` when the stored config is already stricter than the published one, for example a revocation that was saved but never published. It changes no key or epoch. The same pre-check gates it, and it publishes by compare-and-set and reads back. If the published config already equals the stored one, it only reads back.
+
+**Interrupted or uncertain run.** Re-arm the same plan file with a new empty run root and start again. Every database step is idempotent for the plan:
+- the epoch command is keyed by the plan digest (which includes the binding epoch), so a re-run returns the epoch this plan produced and never bumps twice;
+- an already revoked key is skipped.
+
+`UNCERTAIN` means only the publication's acknowledgement was lost; the re-run reads it back. A plan bound to an epoch another command has since bumped stops before any write.
+
+**Boundaries.**
+- The run never creates or activates a key, and needs no private key material. The signer and the KEK are not involved.
+- It needs no Function release observation, because it only tightens what the Functions already verify.
+- Product publication never starts it. While an emergency plan is armed, publication preparation waits until the run has completed.
+- A concurrent writer is serialized by compare-and-set. A rotation that started before the bump stops at its next scope check or stale compare-and-set, and an emergency started during a rotation stops at its pre-check unless it revokes that rotation's pending key.
+- The embedded signing page latches read-only in a browser after a start. For the next run (a resume, or the rotation that follows), use another browser profile or clear that page's site data. The server's run root, not the browser, enforces one run per plan.
+
+**Why it still needs a staff session.** Every Shopify Admin write in the web app uses the staff's online grant; the publication needs one. An operator-only command would need two things that do not exist today:
+- **A new owner write authority.** The command would publish with the stored offline token, which exists only with buyer mode on and serves only the buyer path today. No owner write uses it.
+- **A new executable in the web image.** The image has one Astro server entry, and only web's database role (`insignia_runtime`) may revoke keys and bump the epoch. The worker and signer roles cannot.
+
+Both are owner decisions; until then the staff-session route stays.
+
+Bumping the epoch without revoking the leaked key is not enough: the following rotation only retires it (window to today + 3), so lines minted with it at the new epoch would verify for days.
 
 **Blast radius.**
 
@@ -305,8 +340,8 @@ Bumping the epoch without revoking the leaked key is not enough: the rotation on
 | Database or checkpoint only | Ciphertext of pending/active keys only; no seed. |
 | KEK file only | Nothing without the envelopes. |
 | Worker compromise | No KEK and no envelope access; no seed. |
-| Web or host-login (uid 1000) compromise | No KEK and no envelope access. It can request signatures for real v3 headers of the active key, within the signer's rate limits and audit, for as long as it is compromised. Respond as under **Emergency**: revoke the active (and any pending) key, bump the epoch, then rotate. |
-| Signer compromise | KEK plus envelopes, so the active (and any pending) seed. Retired keys have no envelope. Revoke the active and any pending key and bump the epoch; install a new KEK (re-wrap steps 1–2; revoked keys have nothing to re-wrap); then rotate the key, which publishes it all. |
+| Web or host-login (uid 1000) compromise | No KEK and no envelope access. It can request signatures for real v3 headers of the active key, within the signer's rate limits and audit, for as long as it is compromised. Respond as under **Emergency**: one emergency run revokes the active (and any pending) key and bumps the epoch, then rotate. |
+| Signer compromise | KEK plus envelopes, so the active (and any pending) seed. Retired keys have no envelope. Run the emergency plan for the active and any pending key with an epoch bump; install a new KEK (re-wrap steps 1–2; revoked keys have nothing to re-wrap); then rotate the key. |
 
 An HSM- or KMS-held KEK remains a recommendation for a later change.
 

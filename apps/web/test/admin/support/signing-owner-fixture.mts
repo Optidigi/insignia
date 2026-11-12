@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
@@ -32,7 +32,9 @@ export async function fixture({ initial = clockStart } = {}) {
   const epochCommands = new Map<string, { requestDigest: string; epoch: number }>();
   // In-memory stand-in with the durable store's rules (packages/database signing-keys repository).
   const store: app.SigningKeyStore = {
-    async revoke(_, keyId) {
+    async revoke(input, keyId) {
+      if (input.authorizationEpoch !== scope.authorizationEpoch)
+        throw new Error('Inactive or stale signing installation');
       const row = rows.find((candidate) => candidate.id === keyId);
       if (!row || !['pending', 'active', 'retiring'].includes(row.state))
         throw new Error('Revocable signing key required');
@@ -45,12 +47,13 @@ export async function fixture({ initial = clockStart } = {}) {
     },
     destroy: unexpected,
     destroyInactiveInstallationKeys: unexpected,
-    async incrementEpoch({ commandKey, requestDigest }) {
+    async incrementEpoch({ scope: input, commandKey, requestDigest }) {
       const previous = epochCommands.get(commandKey);
       if (previous) {
         if (previous.requestDigest !== requestDigest) throw new Error('Epoch command digest conflict');
         return previous.epoch;
       }
+      if (input.authorizationEpoch !== scope.authorizationEpoch) throw new Error('Stale authorization identity');
       scope.authorizationEpoch += 1;
       epochCommands.set(commandKey, { requestDigest, epoch: scope.authorizationEpoch });
       return scope.authorizationEpoch;
@@ -185,6 +188,15 @@ export async function fixture({ initial = clockStart } = {}) {
     },
   });
   const requests: string[] = [];
+  // Off by default (a constant digest); `strictCompareAndSet()` makes the digest follow the value and
+  // rejects a write whose compareDigest is stale, as Shopify does.
+  let strictCas = false;
+  const compareDigest = () =>
+    strictCas
+      ? createHash('sha256')
+          .update(publicValue ?? '')
+          .digest('hex')
+      : 'a'.repeat(64);
   const transport: PublicationAdminTransport = {
     async execute(x) {
       requests.push(x.operation);
@@ -194,14 +206,20 @@ export async function fixture({ initial = clockStart } = {}) {
         key: 'insignia_public_config_v2',
         type: 'json',
         value: publicValue,
-        compareDigest: 'a'.repeat(64),
+        compareDigest: compareDigest(),
       });
       if (x.operation === 'read_shop')
         return {
           status: 200,
           body: { data: { shop: { id: 'gid://shopify/Shop/123', field: publicValue === null ? null : value() } } },
         };
-      publicValue = text(object(required(array(x.variables.metafields)[0])).value);
+      const field = object(required(array(x.variables.metafields)[0]));
+      if (strictCas && field.compareDigest !== (publicValue === null ? null : compareDigest()))
+        return {
+          status: 200,
+          body: { data: { metafieldsSet: { userErrors: [{ code: 'STALE_OBJECT', field: [] }], metafields: [] } } },
+        };
+      publicValue = text(field.value);
       return { status: 200, body: { data: { metafieldsSet: { userErrors: [], metafields: [value()] } } } };
     },
   };
@@ -272,6 +290,9 @@ export async function fixture({ initial = clockStart } = {}) {
       current = value;
     },
     publicValue: () => publicValue,
+    strictCompareAndSet: () => {
+      strictCas = true;
+    },
     setPublicValue: (value: string | null) => {
       publicValue = value;
     },

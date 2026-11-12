@@ -425,3 +425,44 @@ for (const [profile, version] of [
     }
   });
 }
+
+test('an armed emergency plan runs from the owner action, never from publication preparation, without release verification', async () => {
+  const f = await bound();
+  try {
+    await f.lifecycle.createPending({ scope: f.scope, keyId: 1, firstDay: f.plan.firstDay - 1, lastDay: 0x7fffffff });
+    await f.lifecycle.activate(f.scope, 1);
+    f.setPublicValue((await f.lifecycle.desiredPublicConfig(f.scope)).value);
+    // No trusted release record: the emergency only tightens the published config.
+    f.setReleaseReader(async () => null);
+    const config: SigningOwnerConfiguration = {
+      ...f.config,
+      plan: { revokeKeyIds: [1], bumpEpoch: true, allowNoActiveKey: true, reason: 'suspected leak' },
+    };
+    const action = createSigningOwnerAction(config, f.ports);
+    const settledAction = async (candidate: typeof action) => settled({ ...f, action: candidate });
+    assert.equal((await action.status(f.actor)).state, 'READY');
+    // Publication preparation reports status only; it never starts an emergency.
+    assert.equal((await action.prepare(f.actor, 'synthetic-token')).state, 'READY');
+    assert.equal(f.scope.authorizationEpoch, 0);
+    assert.equal((await action.start(f.actor, 'synthetic-token')).state, 'PENDING');
+    // After the bump the binding still holds: the epoch is the one this plan produced.
+    assert.equal((await settledAction(action)).state, 'PROVISIONED');
+    assert.equal(f.scope.authorizationEpoch, 1);
+    assert.equal(JSON.parse(f.publicValue() ?? '{}').keys[0].revoked, true);
+    // A rotation plan bound to the old epoch is refused; the next rotation carries the bumped one.
+    await assert.rejects(
+      createSigningOwnerAction({ ...f.config, directory: join(f.directory, 'rotation') }, f.ports).status(f.actor),
+    );
+    // Another emergency plan bound to the old epoch cannot reuse this plan's bump.
+    const other = createSigningOwnerAction(
+      { ...config, directory: join(f.directory, 'other'), plan: { ...config.plan, revokeKeyIds: [] } },
+      f.ports,
+    );
+    assert.equal((await other.status(f.actor)).state, 'READY');
+    assert.equal((await other.start(f.actor, 'synthetic-token')).state, 'PENDING');
+    assert.equal((await settledAction(other)).state, 'STOPPED');
+    assert.equal(f.scope.authorizationEpoch, 1);
+  } finally {
+    await f.close();
+  }
+});

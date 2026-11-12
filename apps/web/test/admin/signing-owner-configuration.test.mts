@@ -38,6 +38,15 @@ test('built startup holds no wrapping key and refuses browser/path/release metad
       { observation: {} },
     ])
       assert.throws(() => parseSigningOwnerConfiguration({ ...metadata, ...extra }, env));
+    // An emergency plan (#375) is armed the same way, under its own version.
+    const emergency = {
+      version: 'm5-signing-emergency-plan-v1',
+      binding: metadata.binding,
+      plan: { revokeKeyIds: [1], bumpEpoch: true, allowNoActiveKey: true, reason: 'suspected leak' },
+    };
+    assert.deepEqual(parseSigningOwnerConfiguration(emergency, env).plan, emergency.plan);
+    assert.throws(() => parseSigningOwnerConfiguration({ ...emergency, version: 'm5-signing-owner-plan-v1' }, env));
+    assert.throws(() => parseSigningOwnerConfiguration({ ...metadata, version: 'm5-signing-emergency-plan-v1' }, env));
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
