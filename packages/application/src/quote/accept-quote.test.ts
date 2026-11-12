@@ -971,10 +971,15 @@ describe('buyer-actionable acceptance conditions are typed, not plain errors (#3
       expect(ports.tenant.getActive).not.toHaveBeenCalled();
     }
     const { ports } = fixture();
-    await expect(
-      acceptQuote({ ...request, capacity: { ordinaryLineCount: 200, inputBytes: 100 } }, ports),
-    ).rejects.toMatchObject(rejected('CAPACITY_EXCEEDED'));
+    // More than 200 cart lines in total has its own public reason, so the buyer is not told 32 / 10,000.
+    for (const ordinaryLineCount of [200, 201])
+      await expect(
+        acceptQuote({ ...request, capacity: { ordinaryLineCount, inputBytes: 100 } }, ports),
+      ).rejects.toMatchObject({ ...rejected('CAPACITY_EXCEEDED'), reason: 'CART_LINES' });
     expect(ports.authorization.issue).not.toHaveBeenCalled();
+    await expect(proposeQuote({ ...request, groups: split(33, 1) }, fixture().ports)).rejects.toMatchObject({
+      reason: undefined,
+    });
     await expect(
       acceptQuote({ ...request, capacity: { ordinaryLineCount: -1, inputBytes: 100 } }, ports),
     ).rejects.not.toMatchObject(rejected('CAPACITY_EXCEEDED'));

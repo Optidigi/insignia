@@ -92,7 +92,8 @@ export interface DesignerState {
     /** Silent re-proposal of an expired, still-displayed quote; the footer stays usable. */
     | { kind: 'refreshing'; requestId: string; design: Design }
     | { kind: 'pending'; requestId: string; design: Design }
-    | { kind: 'failed'; reason: 'cart-commit-failed'; preparation?: boolean; cartLimit?: boolean }
+    /** `cartLimit`: the cart is over one signed set (32 lines / 10,000 items) or over 200 cart lines (#335). */
+    | { kind: 'failed'; reason: 'cart-commit-failed'; preparation?: boolean; cartLimit?: 'signed-set' | 'cart-lines' }
     /** Shopify definitely refused the update (typically stock); `detail` is its own explanation. */
     | { kind: 'failed'; reason: 'cart-rejected'; stock?: boolean; detail?: string; preparation?: undefined };
   completion: CartReceipt | null;
@@ -167,7 +168,7 @@ export type DesignerEvent =
   | { type: 'cart-mutation-started'; requestId: string }
   | { type: 'cart-preparation-started'; requestId: string }
   | { type: 'cart-commit-succeeded'; requestId: string; receipt: CartReceipt }
-  | { type: 'cart-commit-failed'; requestId: string; reason: 'cart-commit-failed'; preparation?: boolean; cartLimit?: boolean }
+  | { type: 'cart-commit-failed'; requestId: string; reason: 'cart-commit-failed'; preparation?: boolean; cartLimit?: 'signed-set' | 'cart-lines' }
   | { type: 'cart-commit-failed'; requestId: string; reason: 'cart-rejected'; stock?: boolean; detail?: string }
   | { type: 'cart-commit-canceled' }
   | { type: 'product-design-edit-requested'; design: Design }
@@ -433,7 +434,7 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
                     kind: 'failed',
                     reason: event.reason,
                     ...(event.preparation ? { preparation: true } : {}),
-                    ...(event.cartLimit ? { cartLimit: true } : {}),
+                    ...(event.cartLimit ? { cartLimit: event.cartLimit } : {}),
                   },
           }
         : state;

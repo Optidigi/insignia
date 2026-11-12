@@ -19,7 +19,7 @@ import {
   BuyerIdSchema,
   BuyerProposalRequestSchema,
   BuyerRenewalSchema,
-  isBuyerCartCapacityIssue,
+  buyerCartCapacityViolation,
   parseBuyerResponse,
 } from '@insignia/contracts';
 import { BuyerStateError } from '@insignia/database';
@@ -92,6 +92,9 @@ const REJECTIONS: Record<
     message: `Your cart has reached the customization limit of ${BUYER_CART_CAPACITY.variants} customized cart lines and ${BUYER_CART_CAPACITY.quantity.toLocaleString('en-US')} customized items. Remove items from your cart or lower quantities to continue.`,
   },
 };
+/** CAPACITY_EXCEEDED for over 200 cart lines in total: 32 / 10,000 is not what the buyer exceeded. */
+const CART_LINES_MESSAGE =
+  'Your cart has too many items to customize this design. Remove items from your cart to continue.';
 const FAILED = 'Customization request could not be completed.';
 /**
  * A provider read failure, and whether a later retry can complete it. Each error type owns that
@@ -131,6 +134,7 @@ function classifyFailure(error: unknown): {
   if (error instanceof BuyerRejectedError)
     return {
       ...REJECTIONS[error.code],
+      ...(error.reason === 'CART_LINES' ? { message: CART_LINES_MESSAGE } : {}),
       code: error.code,
       ...(error.reason ? { details: { reason: error.reason } } : {}),
     };
@@ -196,10 +200,15 @@ class HttpError extends Error {
     this.code = code;
   }
 }
-/** An over-capacity cart is buyer-actionable (422), even alongside the per-group bounds it also breaks. */
-function invalidDesired(issues: readonly { code: string; params?: unknown }[]): Error {
-  return issues.some(isBuyerCartCapacityIssue)
-    ? new BuyerRejectedError('CAPACITY_EXCEEDED')
+/** An over-capacity cart is buyer-actionable (422) when nothing else is wrong with the request. */
+function invalidDesired(issues: Parameters<typeof buyerCartCapacityViolation>[0]): Error {
+  const violation = buyerCartCapacityViolation(issues);
+  return violation
+    ? new BuyerRejectedError(
+        'CAPACITY_EXCEEDED',
+        'cart capacity',
+        violation === 'CART_LINES' ? 'CART_LINES' : undefined,
+      )
     : new HttpError(400, 'INVALID_REQUEST');
 }
 export function handleBuyerRequest(...args: Parameters<typeof handleRequest>): Promise<Response> {

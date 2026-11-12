@@ -152,6 +152,10 @@ export function createBuyerApi({
           ['NOT_OWNED', 'NOT_OWNED_EXPIRED'].includes(error?.details?.reason)
             ? { notOwned: error.details.reason === 'NOT_OWNED' ? ('valid' as const) : ('expired' as const) }
             : {}),
+          // Over 200 cart lines in total, rather than the 32-line / 10,000-item signed set (#335).
+          ...(response.status === 422 && error?.code === 'CAPACITY_EXCEEDED' && error?.details?.reason === 'CART_LINES'
+            ? { cartLines: true }
+            : {}),
         },
       );
     }

@@ -19,28 +19,56 @@ export const BuyerDesiredGroupSchema = CustomizationGroupSchema.omit({ shopId: t
 });
 /**
  * One signed set covers the whole cart's customized lines (CART-LINE-V3): at most 32 variant entries and
- * 10,000 garments across every group. The storefront pre-checks the same rule before proposing.
+ * 10,000 garments across every group, and the cart holds at most 200 lines in total. The published
+ * Function config and candidate admission enforce the same numbers; the storefront pre-checks them.
  */
-export const BUYER_CART_CAPACITY = { variants: 32, quantity: 10000 } as const;
-export function exceedsBuyerCartCapacity(groups: readonly { variants: readonly { quantity: number }[] }[]): boolean {
+export const BUYER_CART_CAPACITY = { variants: 32, quantity: 10000, cartLines: 200 } as const;
+/** `SIGNED_SET`: over 32 variant entries or 10,000 garments; `CART_LINES`: over 200 cart lines in total. */
+export type BuyerCartCapacityExceeded = 'SIGNED_SET' | 'CART_LINES';
+export function buyerCartCapacityExceeded(
+  groups: readonly { variants: readonly { quantity: number }[] }[],
+  ordinaryLineCount = 0,
+): BuyerCartCapacityExceeded | undefined {
   let variants = 0;
   let quantity = 0;
   for (const group of groups) {
     variants += group.variants.length;
     for (const variant of group.variants) quantity += variant.quantity;
   }
-  return variants > BUYER_CART_CAPACITY.variants || quantity > BUYER_CART_CAPACITY.quantity;
+  if (variants > BUYER_CART_CAPACITY.variants || quantity > BUYER_CART_CAPACITY.quantity) return 'SIGNED_SET';
+  return variants + ordinaryLineCount > BUYER_CART_CAPACITY.cartLines ? 'CART_LINES' : undefined;
 }
 const CART_CAPACITY_ISSUE = 'BUYER_CART_CAPACITY_EXCEEDED';
-/** The buyer API answers a request with this issue as 422 CAPACITY_EXCEEDED rather than 400. */
-export function isBuyerCartCapacityIssue(issue: { code: string; params?: unknown }): boolean {
+type Issue = { code: string; path?: readonly PropertyKey[]; params?: unknown };
+function capacityKind(issue: Issue): BuyerCartCapacityExceeded | undefined {
+  if (issue.code !== 'custom' || typeof issue.params !== 'object' || issue.params === null) return undefined;
+  const params = issue.params as { reason?: unknown; kind?: unknown };
+  return params.reason === CART_CAPACITY_ISSUE && (params.kind === 'SIGNED_SET' || params.kind === 'CART_LINES')
+    ? params.kind
+    : undefined;
+}
+export function isBuyerCartCapacityIssue(issue: Issue): boolean {
+  return capacityKind(issue) !== undefined;
+}
+/** Bounds that a capacity issue always accompanies: too many groups, variants per group or ordinary lines. */
+function impliedByCapacity(issue: Issue): boolean {
+  const path = issue.path ?? [];
   return (
-    issue.code === 'custom' &&
-    typeof issue.params === 'object' &&
-    issue.params !== null &&
-    'reason' in issue.params &&
-    issue.params.reason === CART_CAPACITY_ISSUE
+    issue.code === 'too_big' &&
+    ((path.length === 1 && path[0] === 'groups') ||
+      (path.length === 3 && path[0] === 'groups' && typeof path[1] === 'number' && path[2] === 'variants') ||
+      (path.length === 2 && path[0] === 'capacity' && path[1] === 'ordinaryLineCount'))
   );
+}
+/**
+ * The buyer API answers 422 CAPACITY_EXCEEDED only when every issue is the cart capacity or a bound it
+ * implies; any other defect keeps the request a malformed 400.
+ */
+export function buyerCartCapacityViolation(issues: readonly Issue[]): BuyerCartCapacityExceeded | undefined {
+  const kinds = issues.map(capacityKind).filter((kind) => kind !== undefined);
+  if (!kinds.length || !issues.every((issue) => isBuyerCartCapacityIssue(issue) || impliedByCapacity(issue)))
+    return undefined;
+  return kinds.includes('SIGNED_SET') ? 'SIGNED_SET' : 'CART_LINES';
 }
 // Runs after the continuable per-group and group-count bounds too, so any oversized cart carries the issue.
 export const BuyerDesiredSchema = z
@@ -54,12 +82,13 @@ export const BuyerDesiredSchema = z
     }),
   })
   .superRefine((value, context) => {
-    if (exceedsBuyerCartCapacity(value.groups))
+    const kind = buyerCartCapacityExceeded(value.groups, value.capacity.ordinaryLineCount);
+    if (kind)
       context.addIssue({
         code: 'custom',
         path: ['groups'],
         message: 'cart capacity exceeded',
-        params: { reason: CART_CAPACITY_ISSUE },
+        params: { reason: CART_CAPACITY_ISSUE, kind },
       });
   });
 export const BuyerProposalRequestSchema = BuyerDesiredSchema.safeExtend({

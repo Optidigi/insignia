@@ -393,6 +393,53 @@ test('a cart over one signed set is 422 CAPACITY_EXCEEDED stating the limit, bef
     );
   }
   assert.equal(reached, 0, 'an oversized request never reaches proposal or renewal composition');
+
+  // More than 200 cart lines in total: the same code with its own reason and copy, not 32 / 10,000.
+  const expectCartLines = async (response: Response) => {
+    assert.equal(response.status, 422);
+    const error = record(await response.json());
+    assert.equal(error.code, 'CAPACITY_EXCEEDED');
+    assert.deepEqual(error.details, { reason: 'CART_LINES' });
+    assert.doesNotMatch(String(error.message), /\b32\b|10,000/);
+    assert.match(String(error.message), /too many/);
+  };
+  for (const [groups, ordinaryLineCount] of [
+    [[group(variants(11))], 190],
+    [[group(variants(1))], 201],
+  ] as const)
+    await expectCartLines(
+      await handleBuyerRequest(
+        post({ ...body([...groups]), capacity: { ordinaryLineCount, inputBytes: 100 } }),
+        services,
+        'quote-proposals',
+        () => {},
+      ),
+    );
+  assert.equal(reached, 0);
+  await expectCartLines(
+    await handleBuyerRequest(
+      post(body([group(variants(1))])),
+      {
+        ...services,
+        propose: async () => {
+          throw new BuyerRejectedError('CAPACITY_EXCEEDED', 'synthetic', 'CART_LINES');
+        },
+      },
+      'quote-proposals',
+      () => {},
+    ),
+  );
+
+  // A capacity issue alongside any other defect is a malformed request.
+  for (const malformed of [
+    { ...body([group(variants(33))]), country: 'us' },
+    { ...body([group(variants(2, 6000))]), marketId: 'x' },
+  ]) {
+    const response = await handleBuyerRequest(post(malformed), services, 'quote-proposals', () => {});
+    assert.equal(response.status, 400);
+    assert.equal(record(await response.json()).code, 'INVALID_REQUEST');
+  }
+  assert.equal(reached, 0);
 });
 
 /** Shopify's app proxy turns every app 5xx into a bare 500, so only 4xx carry `code` and `Retry-After` (#336). */

@@ -80,13 +80,15 @@ const retained = (entries: number, quantity = 1): DesiredGroup => ({
   variants: Array.from({ length: entries }, (_, index) => ({ variantId: String(900 + index), quantity })),
 });
 
-function fixture(cartGroups: DesiredGroup[]) {
+function fixture(cartGroups: DesiredGroup[], options: { ordinary?: number; proposalError?: unknown } = {}) {
   const routes: string[] = [];
   const values = new Map<string, string>();
   const carrier = lineCarriers([{ variantId: '900', unitMinor: '1500' }]).carriers[0] ?? '';
   const items = cartGroups.length
     ? [{ key: 'line-0', variant_id: 900, quantity: 1, properties: { _insignia_line_v3: carrier } }]
     : [];
+  for (let index = 0; index < (options.ordinary ?? 0); index++)
+    items.push({ key: `ordinary-${index}`, variant_id: 5000 + index, quantity: 1, properties: {} } as never);
   const live = createLiveDesignerPorts({
     source,
     productId: '111',
@@ -110,6 +112,8 @@ function fixture(cartGroups: DesiredGroup[]) {
       if (path.endsWith('/cart-state')) return Response.json({ groups: cartGroups, repairRequired: false });
       if (/\/designs\/[^/]+$/.test(path))
         return Response.json({ id: path.split('/').at(-1), version: 1, value: JSON.parse(String(init.body)).group });
+      if (path.endsWith('/quote-proposals') && options.proposalError)
+        return Response.json(options.proposalError, { status: 422 });
       if (path.endsWith('/quote-proposals'))
         return Response.json({
           proposalId: '11111111-1111-4111-8111-000000000001',
@@ -186,4 +190,31 @@ test('a cart at exactly 32 variant entries and 10,000 garments is still proposed
     ]),
   );
   assert.equal(app.routes.includes('quote-proposals'), true);
+});
+
+test('more than 200 cart lines in total is reported as its own cart limit, before or from the server (#335)', async () => {
+  const app = fixture([], { ordinary: 199 });
+  await assert.rejects(
+    app.live.ports.review!.prepare(
+      request([
+        { variantId: '101', quantity: 1 },
+        { variantId: '102', quantity: 1 },
+      ]),
+    ),
+    { code: 'CAPACITY_EXCEEDED', cartLines: true },
+  );
+  assert.equal(app.routes.includes('quote-proposals'), false);
+  const server = fixture([], {
+    proposalError: {
+      code: 'CAPACITY_EXCEEDED',
+      message: 'Your cart has too many items to customize.',
+      requestId: 'r',
+      details: { reason: 'CART_LINES' },
+    },
+  });
+  await assert.rejects(server.live.ports.review!.prepare(request([{ variantId: '101', quantity: 1 }])), {
+    status: 422,
+    code: 'CAPACITY_EXCEEDED',
+    cartLines: true,
+  });
 });

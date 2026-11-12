@@ -3,7 +3,8 @@ import {
   BuyerDesiredSchema,
   BuyerProposalRequestSchema,
   BuyerRenewalSchema,
-  exceedsBuyerCartCapacity,
+  buyerCartCapacityExceeded,
+  buyerCartCapacityViolation,
   isBuyerCartCapacityIssue,
 } from './buyer.js';
 
@@ -21,11 +22,11 @@ const group = (variants: { variantId: string; quantity: number }[]) => ({
 });
 const variants = (count: number, quantity = 1) =>
   Array.from({ length: count }, (_, index) => ({ variantId: String(index + 1), quantity }));
-const desired = (groups: unknown[]) => ({
+const desired = (groups: unknown[], ordinaryLineCount = 0) => ({
   country: 'US',
   marketId: '42',
   groups,
-  capacity: { ordinaryLineCount: 0, inputBytes: 100 },
+  capacity: { ordinaryLineCount, inputBytes: 100 },
 });
 const capability = 'synthetic.signature';
 const idempotencyKey = '11111111-1111-4111-8111-111111111111';
@@ -62,8 +63,28 @@ describe('whole-cart capacity of one signed set (#335)', () => {
   });
 
   it('exposes the same rule for the storefront pre-check', () => {
-    expect(exceedsBuyerCartCapacity([{ variants: variants(32) }])).toBe(false);
-    expect(exceedsBuyerCartCapacity([{ variants: variants(31) }, { variants: variants(2) }])).toBe(true);
-    expect(exceedsBuyerCartCapacity([{ variants: variants(2, 6000) }])).toBe(true);
+    expect(buyerCartCapacityExceeded([{ variants: variants(32) }])).toBeUndefined();
+    expect(buyerCartCapacityExceeded([{ variants: variants(31) }, { variants: variants(2) }])).toBe('SIGNED_SET');
+    expect(buyerCartCapacityExceeded([{ variants: variants(2, 6000) }])).toBe('SIGNED_SET');
+    expect(buyerCartCapacityExceeded([{ variants: variants(10) }], 190)).toBeUndefined();
+    expect(buyerCartCapacityExceeded([{ variants: variants(11) }], 190)).toBe('CART_LINES');
+  });
+
+  it('answers capacity only when every issue is the capacity or a bound it implies', () => {
+    const violation = (body: unknown) => {
+      const parsed = BuyerDesiredSchema.safeParse(body);
+      expect(parsed.success).toBe(false);
+      return buyerCartCapacityViolation(parsed.error?.issues ?? []);
+    };
+    expect(violation(desired([group(variants(16)), group(variants(17))]))).toBe('SIGNED_SET');
+    expect(violation(desired([group(variants(33))]))).toBe('SIGNED_SET');
+    expect(violation(desired(Array.from({ length: 33 }, () => group(variants(1)))))).toBe('SIGNED_SET');
+    // More than 200 cart lines in total: customized lines added to the ordinary ones.
+    expect(violation(desired([group(variants(11))], 190))).toBe('CART_LINES');
+    expect(violation(desired([group(variants(1))], 201))).toBe('CART_LINES');
+    // Any other defect keeps the generic 400.
+    expect(violation({ ...desired([group(variants(33))]), country: 'us' })).toBeUndefined();
+    expect(violation({ ...desired([group(variants(2, 6000))]), marketId: 'x' })).toBeUndefined();
+    expect(violation(desired([group([{ variantId: '', quantity: 1 }])]))).toBeUndefined();
   });
 });

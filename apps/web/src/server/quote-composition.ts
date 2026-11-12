@@ -169,10 +169,14 @@ export function createQuoteAuthorityPorts(input: {
           economics.lines.map((line) => ({ index: line.lineIndex, quantity: line.quantity })),
           { ordinaryLineHint: capacity.ordinaryLineCount },
         );
-        if (result.status !== 'ADMIT')
-          throw ['BUCKET_COUNT', 'CART_LINES', 'PHYSICAL_QUANTITY'].includes(result.reason)
-            ? new BuyerRejectedError('CAPACITY_EXCEEDED', `candidate capacity rejected: ${result.reason}`)
-            : new Error(`candidate capacity rejected: ${result.reason}`);
+        if (result.status !== 'ADMIT') {
+          const detail = `candidate capacity rejected: ${result.reason}`;
+          // BUCKET_COUNT also covers an empty candidate, which is a defect rather than a full cart.
+          if (result.reason === 'CART_LINES') throw new BuyerRejectedError('CAPACITY_EXCEEDED', detail, 'CART_LINES');
+          if (result.reason === 'PHYSICAL_QUANTITY' || (result.reason === 'BUCKET_COUNT' && economics.lines.length > 0))
+            throw new BuyerRejectedError('CAPACITY_EXCEEDED', detail);
+          throw new Error(detail);
+        }
         if (!Number.isSafeInteger(capacity.inputBytes) || capacity.inputBytes < 0 || capacity.inputBytes > 128_000)
           throw new Error('cart input availability estimate exceeds candidate reference');
       },

@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { BUYER_CART_CAPACITY } from '@insignia/contracts';
 import {
   CURRENCY_RESOLUTION_VERSION,
   type CustomizationGroup,
@@ -469,6 +470,11 @@ function validAuthorization(quote: AcceptedQuote, set: QuoteAuthorizationSet): v
     throw new Error('incomplete or invalid cart authorization');
 }
 
+/** Over one signed set, or (`CART_LINES`) over the cart's 200 lines in total: removing items helps. */
+function capacityExceeded(stage: string, reason?: 'CART_LINES'): BuyerRejectedError {
+  return new BuyerRejectedError('CAPACITY_EXCEEDED', `candidate capacity exceeded ${stage}`, reason);
+}
+
 function validatedRequest(
   request: QuoteRequest,
   ports: QuoteAuthorityPorts,
@@ -495,8 +501,7 @@ function validatedRequest(
   )
     throw new Error('invalid candidate capacity before provider reads');
   // One signed set covers the whole cart: the buyer can act on these by removing items.
-  if (request.groups.length > 32 || request.capacity.ordinaryLineCount > 200)
-    throw new BuyerRejectedError('CAPACITY_EXCEEDED', 'candidate capacity exceeded before provider reads');
+  if (request.groups.length > BUYER_CART_CAPACITY.variants) throw capacityExceeded('before provider reads');
   let requestedVariants = 0;
   let requestedQuantity = 0;
   for (const entry of request.groups) {
@@ -508,16 +513,16 @@ function validatedRequest(
     )
       throw new Error('invalid quote group');
     requestedVariants += entry.group.variants.length;
-    if (requestedVariants > 32)
-      throw new BuyerRejectedError('CAPACITY_EXCEEDED', 'candidate capacity exceeded before provider reads');
+    if (requestedVariants > BUYER_CART_CAPACITY.variants) throw capacityExceeded('before provider reads');
     for (const variant of entry.group.variants) {
       if (!variant || !Number.isSafeInteger(variant.quantity) || variant.quantity < 1)
         throw new Error('invalid quote physical quantity');
       requestedQuantity += variant.quantity;
     }
-    if (requestedQuantity > 10000)
-      throw new BuyerRejectedError('CAPACITY_EXCEEDED', 'candidate capacity exceeded before provider reads');
+    if (requestedQuantity > BUYER_CART_CAPACITY.quantity) throw capacityExceeded('before provider reads');
   }
+  if (requestedVariants + request.capacity.ordinaryLineCount > BUYER_CART_CAPACITY.cartLines)
+    throw capacityExceeded('before provider reads', 'CART_LINES');
   boundedRequestBytes(request);
   const marketId = normalizeMarketId(request.marketId);
   if (request.groups.some((entry) => entry.sellingPlanId !== undefined && entry.sellingPlanId !== null))
@@ -748,11 +753,12 @@ async function prepareValidatedQuote(
   };
   const economics = priceLeanProposal(pricing);
   if (
-    economics.lines.length > 32 ||
-    economics.customizedQuantity > 10000 ||
-    economics.lines.length + request.capacity.ordinaryLineCount > 200
+    economics.lines.length > BUYER_CART_CAPACITY.variants ||
+    economics.customizedQuantity > BUYER_CART_CAPACITY.quantity
   )
-    throw new BuyerRejectedError('CAPACITY_EXCEEDED', 'candidate capacity exceeded');
+    throw capacityExceeded('after pricing');
+  if (economics.lines.length + request.capacity.ordinaryLineCount > BUYER_CART_CAPACITY.cartLines)
+    throw capacityExceeded('after pricing', 'CART_LINES');
   ports.authorization.admit({ economics, capacity: request.capacity });
   const acceptedInstant = ports.clock();
   const day = localDay(acceptedInstant, shop.timezone);

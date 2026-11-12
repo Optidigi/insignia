@@ -1019,6 +1019,8 @@ function DesignerSession({
         : 'loading'
     : undefined;
   const footerBusy = workflow.commit.kind === 'pending' || (step === 2 && workflow.commit.kind === 'preparing');
+  // Retrying the same over-capacity cart cannot succeed (#335); the primary action returns to Quantities.
+  const cartLimited = workflow.commit.kind === 'failed' && workflow.commit.reason === 'cart-commit-failed' && !!workflow.commit.cartLimit;
   const dirtyDraft = hasDraftChanges(workflow);
   useEffect(() => {
     if ((!dirtyDraft && !uploading) || allowUnload || previewOnly) return;
@@ -1882,7 +1884,7 @@ function DesignerSession({
               {workflow.commit.kind === 'failed' && (
                 <div className="cart-submit-error" role="alert">
                   <IconAlertTriangle size={18} />
-                  <span>{workflow.commit.reason === 'cart-rejected' ? workflow.commit.detail || t(workflow.commit.stock ? 'customer:recovery.cartRejectedStock' : 'customer:recovery.cartRejected') : workflow.commit.cartLimit ? t('customer:recovery.cartLimit', { formattedMaxLines: new Intl.NumberFormat(formatLocale).format(BUYER_CART_CAPACITY.variants), formattedMaxItems: new Intl.NumberFormat(formatLocale).format(BUYER_CART_CAPACITY.quantity) }) : t(workflow.commit.preparation ? 'common:summary.unavailable' : 'customer:recovery.cartCommitFailed')}</span>
+                  <span>{workflow.commit.reason === 'cart-rejected' ? workflow.commit.detail || t(workflow.commit.stock ? 'customer:recovery.cartRejectedStock' : 'customer:recovery.cartRejected') : workflow.commit.cartLimit === 'cart-lines' ? t('customer:recovery.cartLineLimit') : workflow.commit.cartLimit ? t('customer:recovery.cartLimit', { formattedMaxLines: new Intl.NumberFormat(formatLocale).format(BUYER_CART_CAPACITY.variants), formattedMaxItems: new Intl.NumberFormat(formatLocale).format(BUYER_CART_CAPACITY.quantity) }) : t(workflow.commit.preparation ? 'common:summary.unavailable' : 'customer:recovery.cartCommitFailed')}</span>
                 </div>
               )}
               {validationIssues.length > 0 && (
@@ -1940,7 +1942,7 @@ function DesignerSession({
                     (step === 1 && !quantitiesLayout.cells.some((cell) => cell.available))
                   }
                   aria-busy={footerBusy}
-                  onClick={step === 2 ? (workflow.commit.kind === 'failed' && workflow.commit.preparation ? () => void runtime.commit(true) : editing && !unappliedDraft ? returnToProduct : addToCart) : goNext}
+                  onClick={step === 2 ? (cartLimited ? () => dispatch({ type: 'step-selected', step: 1 }) : workflow.commit.kind === 'failed' && workflow.commit.preparation ? () => void runtime.commit(true) : editing && !unappliedDraft ? returnToProduct : addToCart) : goNext}
                 >
                   {footerBusy
                     ? workflow.commit.kind === 'preparing'
@@ -1948,6 +1950,8 @@ function DesignerSession({
                       : editing
                         ? t('customer:steps.updatingCart')
                         : t('customer:steps.addingToCart')
+                    : step === 2 && cartLimited
+                      ? t('customer:review.editQuantities')
                     : workflow.commit.kind === 'failed' && workflow.commit.preparation
                       ? t('common:actions.retry')
                     : step === 0
@@ -1959,7 +1963,7 @@ function DesignerSession({
                             ? t('customer:steps.updateCart')
                             : t('customer:steps.done')
                           : t('customer:steps.addToCart')}
-                  {step === 2 && <IconShoppingCart size={18} />}
+                  {step === 2 && !cartLimited && <IconShoppingCart size={18} />}
                 </button>
               </div>
               </>}
