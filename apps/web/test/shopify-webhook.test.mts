@@ -1,6 +1,4 @@
 import assert from 'node:assert/strict';
-import type { ChildProcess } from 'node:child_process';
-import { spawn } from 'node:child_process';
 import { createHmac, randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -8,6 +6,7 @@ import { createDurableCore } from '@insignia/database';
 import { Pool } from 'pg';
 import { installQueue } from '../../../scripts/database/install-queue.mts';
 import { record, required, text } from './http-fixtures.mts';
+import { type BuiltProcess, startBuilt } from './support/built-process.mts';
 import { isolatedDatabase } from './support/isolated-database.mts';
 
 test('built HTTP ingress authenticates raw bytes and durably deduplicates through PostgreSQL and queue', {
@@ -20,29 +19,18 @@ test('built HTTP ingress authenticates raw bytes and durably deduplicates throug
   const { connectionString } = database;
   await installQueue(connectionString);
   const secret = 'synthetic-webhook-hmac-test-secret';
-  const port = 44000 + Math.floor(Math.random() * 1000);
-  const server = spawn(process.execPath, ['dist/server/entry.mjs'], {
-    cwd: new URL('..', import.meta.url),
-    env: {
-      ...process.env,
-      DATABASE_URL: connectionString,
-      HOST: '127.0.0.1',
-      PORT: String(port),
-      SHOPIFY_WEBHOOK_SECRET: secret,
-      INSIGNIA_METRICS_TOKEN: 'synthetic-metrics-token',
-    },
-    stdio: ['ignore', 'pipe', 'pipe'],
+  const server = await startBuilt('web', {
+    ...process.env,
+    DATABASE_URL: connectionString,
+    SHOPIFY_WEBHOOK_SECRET: secret,
+    INSIGNIA_METRICS_TOKEN: 'synthetic-metrics-token',
   });
-  const serverClosed = new Promise((resolve) => server.once('close', resolve));
-  const output: string[] = [];
-  server.stderr.on('data', (chunk) => output.push(String(chunk)));
   const pool = new Pool({ connectionString });
   const core = createDurableCore(new Pool({ connectionString }));
   const domain = `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
   const shopId = randomUUID();
   const shopifyShopId = (BigInt(`0x${randomUUID().replaceAll('-', '').slice(0, 12)}`) + 1n).toString();
-  let worker: ChildProcess | undefined;
-  let workerClosed: Promise<unknown> | undefined;
+  let worker: BuiltProcess | undefined;
   const id = randomUUID();
   const body = Buffer.from(JSON.stringify({ id: Number(shopifyShopId), myshopify_domain: domain }));
   const headers = {
@@ -54,30 +42,16 @@ test('built HTTP ingress authenticates raw bytes and durably deduplicates throug
     'x-shopify-webhook-id': id,
     'x-shopify-triggered-at': new Date().toISOString(),
   };
-  const endpoint = `http://127.0.0.1:${port}/api/webhooks/shopify`;
+  const endpoint = `${server.url}/api/webhooks/shopify`;
   try {
-    let ready = false;
-    for (let i = 0; i < 100; i++) {
-      if (server.exitCode !== null) break;
-      try {
-        const response = await fetch(`http://127.0.0.1:${port}/live`);
-        if (response.ok) {
-          ready = true;
-          break;
-        }
-      } catch {
-        /* the server is still starting */
-      }
-      await delay(100);
-    }
-    assert.ok(ready, `web server did not become ready: ${output.join('').slice(0, 500)}`);
+    assert.equal((await fetch(`${server.url}/live`)).status, 200, server.output());
     const invalid = await fetch(endpoint, {
       method: 'POST',
       headers: { ...headers, 'x-shopify-hmac-sha256': `${'A'.repeat(43)}=` },
       body,
     });
     assert.equal(invalid.status, 401);
-    assert.equal(required(await fetch(`http://127.0.0.1:${port}/api/internal/metrics`)).status, 403);
+    assert.equal(required(await fetch(`${server.url}/api/internal/metrics`)).status, 403);
     await core.transactions.run((tx) => core.tenants.createShop(tx, { shopId, shopDomain: domain, shopifyShopId }));
     headers['x-shopify-triggered-at'] = new Date().toISOString();
     const first = await fetch(endpoint, { method: 'POST', headers, body });
@@ -120,7 +94,7 @@ test('built HTTP ingress authenticates raw bytes and durably deduplicates throug
     const thirdReplay = await fetch(endpoint, { method: 'POST', headers, body });
     assert.equal(thirdReplay.status, 200);
     assert.equal(text(record(await thirdReplay.json()).inboxId), receipt.inboxId);
-    const metricsResponse = await fetch(`http://127.0.0.1:${port}/api/internal/metrics`, {
+    const metricsResponse = await fetch(`${server.url}/api/internal/metrics`, {
       headers: { authorization: 'Bearer synthetic-metrics-token' },
     });
     assert.equal(metricsResponse.status, 200);
@@ -130,29 +104,20 @@ test('built HTTP ingress authenticates raw bytes and durably deduplicates throug
     assert.match(metrics, /insignia_webhook_total\{outcome="duplicate"\} 2/);
     assert.match(metrics, /insignia_inbox_ingress_resolution_total\{outcome="unresolved"\} 3/);
     assert.match(metrics, /insignia_unresolved_inbox_backlog 1/);
-    const workerPort = port + 1000;
-    worker = spawn(
-      process.execPath,
-      [new URL('../../worker/dist/main.js', import.meta.url).pathname, `--port=${workerPort}`],
-      {
-        env: {
-          ...process.env,
-          DATABASE_URL: connectionString,
-          APP_URL: 'https://synthetic.example',
-          INSIGNIA_CREDENTIAL_KEY_ID: 'synthetic-k1',
-          INSIGNIA_CREDENTIAL_KEY_BASE64: Buffer.alloc(32, 7).toString('base64'),
-          SHOPIFY_CLIENT_ID: 'synthetic-client-id',
-          SHOPIFY_CLIENT_SECRET: 'synthetic-client-secret',
-        },
-        stdio: ['ignore', 'pipe', 'pipe'],
-      },
-    );
-    workerClosed = new Promise((resolve) => required(worker).once('close', resolve));
+    worker = await startBuilt('worker', {
+      ...process.env,
+      DATABASE_URL: connectionString,
+      APP_URL: 'https://synthetic.example',
+      INSIGNIA_CREDENTIAL_KEY_ID: 'synthetic-k1',
+      INSIGNIA_CREDENTIAL_KEY_BASE64: Buffer.alloc(32, 7).toString('base64'),
+      SHOPIFY_CLIENT_ID: 'synthetic-client-id',
+      SHOPIFY_CLIENT_SECRET: 'synthetic-client-secret',
+    });
     let workerReady = false;
     for (let i = 0; i < 100; i++) {
-      if (worker.exitCode !== null) break;
+      if (worker.child.exitCode !== null) break;
       try {
-        if (required(await fetch(`http://127.0.0.1:${workerPort}/ready`)).status === 200) {
+        if (required(await fetch(`${worker.url}/ready`)).status === 200) {
           workerReady = true;
           break;
         }
@@ -188,18 +153,8 @@ test('built HTTP ingress authenticates raw bytes and durably deduplicates throug
       1,
     );
   } finally {
-    for (const [child, closed] of [
-      [worker, workerClosed],
-      [server, serverClosed],
-    ] as const) {
-      if (!child) continue;
-      if (child.exitCode === null && child.signalCode === null) {
-        child.kill('SIGTERM');
-        await Promise.race([closed, delay(5000)]);
-        if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
-      }
-      await closed;
-    }
+    await worker?.stop();
+    await server.stop();
     await core.close();
     await pool.end();
   }
