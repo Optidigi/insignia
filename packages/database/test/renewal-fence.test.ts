@@ -115,17 +115,16 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('renewal fence', () => {
       },
       artwork: {
         replayBinding: () => ownerBinding,
-        readUsability: (input) =>
-          provider('artwork', () =>
-            input.choices.map((choice) => ({
-              ...choice,
-              shopId: input.shopId,
-              installationGeneration: input.installationGeneration,
-              status: 'usable' as const,
-              lastFullyUsableLocalDay: 99999,
-              observedAt: new Date().toISOString(),
-            })),
-          ),
+        // A stored fact, re-read inside the fence at signing (#390); not a provider read.
+        readUsability: async (input) =>
+          input.choices.map((choice) => ({
+            ...choice,
+            shopId: input.shopId,
+            installationGeneration: input.installationGeneration,
+            status: 'usable' as const,
+            lastFullyUsableLocalDay: 99999,
+            observedAt: new Date().toISOString(),
+          })),
       },
       signing: {
         keyId: 7,

@@ -563,8 +563,8 @@ export async function prepareQuote(request: QuoteRequest, ports: QuoteAuthorityP
 
 /** One fresh provider pass (including the one contextual price lookup per signing) runs before the
  * signing fence. The store's fence re-checks stored facts: installation, authorization epoch,
- * effective publication, idempotency and buyer command; readiness re-checks the signing key and
- * applies observation freshness at signing. No provider IO runs while the shop row is locked
+ * effective publication, idempotency and buyer command; stored artwork usability is re-read;
+ * readiness re-checks the signing key and applies observation freshness at signing. No provider IO runs while the shop row is locked
  * (owner decision 10 Nov 2026: a provider change in the seconds between read and signing is accepted). */
 export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPorts): Promise<AcceptedQuoteResult> {
   const { marketId, requestDigest } = validatedRequest(request, ports);
@@ -583,7 +583,7 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
   const readiness = await observeReadiness(quote, ports);
   return ports.store.accept(prepared.fence, async () => {
     if (localDay(ports.clock(), quote.shopTimezone).ordinal !== quote.acceptedDay) throw new ShopDayChangedError();
-    await assertCurrentAtSigning(request, quote, readiness, ports.clock);
+    await assertCurrentAtSigning(request, quote, readiness, ports);
     if (localDay(ports.clock(), quote.shopTimezone).ordinal !== quote.acceptedDay) throw new ShopDayChangedError();
     const authorization = await ports.authorization.issue({ quote });
     validAuthorization(quote, authorization);
@@ -602,13 +602,15 @@ export async function observeReadiness(
 }
 
 /** Inside a signing fence: contextual prices observed before it must still be fresh (a pure re-check),
- * then readiness checks stored facts and applies observation freshness at the signing instant. */
+ * the stored artwork must still be usable through the quote window, then readiness checks stored facts
+ * and applies observation freshness at the signing instant. */
 export async function assertCurrentAtSigning(
   request: QuoteRequest,
   quote: AcceptedQuote,
   readiness: QuoteReadinessObservation,
-  clock: () => Date,
+  ports: Pick<QuoteAuthorityPorts, 'artwork' | 'clock'>,
 ): Promise<void> {
+  const clock = ports.clock;
   for (const product of new Set(quote.catalogSnapshots.map((snapshot) => snapshot.productId))) {
     const snapshots = quote.catalogSnapshots.filter((snapshot) => snapshot.productId === product);
     await resolveFreshCatalogContext(
@@ -623,6 +625,17 @@ export async function assertCurrentAtSigning(
       clock,
     );
   }
+  // Stored artwork usability again at the signing instant (#390): an erasure or expiry committed after
+  // the read before the fence rejects here as ARTWORK_EXPIRED, before signing. A stored read only: the
+  // store answers it with one indexed query on the fence connection.
+  await usableArtwork(
+    ports.artwork,
+    request,
+    quote.shopTimezone,
+    artworkChoices(request.groups.map((entry) => entry.group)),
+    quote.validThroughDay,
+    clock,
+  );
   await readiness.assertCurrent();
 }
 

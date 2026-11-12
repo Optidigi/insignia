@@ -531,10 +531,10 @@ describe('acceptQuote', () => {
         ports.catalog.resolveVariantContext,
         ports.entitlement.getFresh,
         ports.publication.getEffective,
-        ports.artwork.readUsability,
         ports.tenant.getActive,
         ports.leanContext?.assertSupported,
       ].map((port) => vi.mocked(port as () => unknown).mock.calls.length);
+    const artworkReads = () => vi.mocked(ports.artwork.readUsability).mock.calls.length;
     const order: string[] = [];
     const assertCurrent = vi.fn(async () => {
       order.push('assert-current');
@@ -543,19 +543,54 @@ describe('acceptQuote', () => {
       order.push('observe');
       return { assertCurrent };
     });
-    let atFence: number[] = [];
+    let atFence: number[] = [],
+      artworkAtFence = 0;
     const accept = ports.store.accept;
     ports.store.accept = async (input, commit) => {
       order.push('fence');
       atFence = providerCalls();
+      artworkAtFence = artworkReads();
       return accept(input, commit);
     };
     await acceptQuote(request, ports);
-    expect(atFence).toEqual([1, 1, 1, 1, 1, 1, 1]);
+    expect(atFence).toEqual([1, 1, 1, 1, 1, 1]);
     expect(providerCalls()).toEqual(atFence);
+    // Stored artwork usability is read before the fence and again at signing (#390).
+    expect(artworkAtFence).toBe(1);
+    expect(artworkReads()).toBe(2);
     expect(order).toEqual(['observe', 'fence', 'assert-current']);
     expect(ports.readiness.assertReady).not.toHaveBeenCalled();
     expect(ports.authorization.issue).toHaveBeenCalledTimes(1);
+  });
+
+  it('artwork that became unusable after the pre-fence read is expired artwork, refused before signing (#390)', async () => {
+    for (const [status, lastFullyUsableLocalDay] of [
+      ['unavailable', -1],
+      ['usable', 20759],
+    ] as const) {
+      const { ports, saved } = fixture();
+      const accept = ports.store.accept;
+      ports.store.accept = async (input, commit) => {
+        // An erasure or shorter retention committed between the pre-fence read and the fence.
+        vi.mocked(ports.artwork.readUsability).mockImplementationOnce(async (read) =>
+          read.choices.map((choice) => ({
+            ...choice,
+            shopId: read.shopId,
+            installationGeneration: read.installationGeneration,
+            status,
+            lastFullyUsableLocalDay,
+            observedAt: now.toISOString(),
+          })),
+        );
+        return accept(input, commit);
+      };
+      await expect(acceptQuote(request, ports)).rejects.toMatchObject({
+        name: 'BuyerRejectedError',
+        code: 'ARTWORK_EXPIRED',
+      });
+      expect(ports.authorization.issue).not.toHaveBeenCalled();
+      expect(saved).toHaveLength(0);
+    }
   });
 
   it('without a two-phase observation, runs the complete readiness check inside the signing fence', async () => {

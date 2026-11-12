@@ -16,6 +16,7 @@ import { proposalStage } from './diagnostics.ts';
 import { createProductionBuyerServices, type ProductionBuyerInputs } from './production.ts';
 import { createReleaseRefresher, RELEASE_FRESHNESS_MS, RELEASE_REFRESH_AFTER_MS } from './release-refresh.ts';
 import type { BuyerServices } from './service.ts';
+import { fenceGuardedFetch } from './signing-fence.ts';
 import { createSubscriptionCache } from './subscription-cache.ts';
 
 type BootstrapSeam = {
@@ -162,14 +163,16 @@ export async function createBuyerBootstrap(
       throw new Error('Buyer configuration unavailable');
     const signer = seam.signer ?? createSignerClient();
     const clock = seam.clock ?? (() => new Date());
+    // Token refresh and Partner reads are provider IO too: refused inside a signing fence (#390).
+    const providerFetch = fenceGuardedFetch(seam.fetchImpl ?? fetch);
     const refresh = createShopifyOfflineRefreshTransport({
       clientId,
       clientSecret,
-      fetchImpl: seam.fetchImpl,
+      fetchImpl: providerFetch,
       now: clock,
     });
     const partner = createActiveSubscriptionClient({
-      transport: createPartnerGraphqlTransport({ organizationId, accessToken, fetchImpl: seam.fetchImpl }),
+      transport: createPartnerGraphqlTransport({ organizationId, accessToken, fetchImpl: providerFetch }),
       now: clock,
     });
     // All configuration and actual adapter constructors qualify before allocating a pool/core.
@@ -299,34 +302,14 @@ export async function createBuyerBootstrap(
       signer,
       entitlementPolicy,
       credentials,
+      // Final pre-signing catalog and stock checks only. Never inside a signing fence, where production
+      // refuses every credential acquisition, so these reads need no fence routing (#390).
       passiveCredentials: {
         async acquire(scope) {
           const current = await ownedCore.tenants.getActiveProviderScope(scope);
           if (!current) return { kind: 'inactive' };
           const pair = await ownedCore.credentials.readUsable({ ...scope, minimumRemainingMs: 30000 });
           return pair ? { ...pair, shopDomain: current.shopDomain } : { kind: 'temporarily_unavailable' };
-        },
-      },
-      passiveArtifactPorts: {
-        expectedBuild: {
-          read: async (scope) =>
-            (
-              await ownedCore.trustedReleaseRecords.read({
-                scope,
-                expectedActiveAppVersionRef: releaseProfile.activeVersionRef,
-                now: clock(),
-              })
-            )?.expectedBuild ?? null,
-        },
-        trustedEvidence: {
-          read: async (scope) =>
-            (
-              await ownedCore.trustedReleaseRecords.read({
-                scope,
-                expectedActiveAppVersionRef: releaseProfile.activeVersionRef,
-                now: clock(),
-              })
-            )?.record.attestation ?? null,
         },
       },
       readSubscription: createSubscriptionCache(

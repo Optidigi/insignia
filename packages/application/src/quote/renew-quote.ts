@@ -68,8 +68,8 @@ function canonical(value: unknown, depth = 0, budget = { nodes: 0, bytes: 0 }): 
 /** Renewal extends only an independently qualified issuance window; accepted history stays immutable.
  * Like acceptance, its one provider pass (re-pricing and readiness observation) runs before the shop
  * fence; inside it the store re-checks stored facts (installation, authorization epoch, ownership,
- * effective publication, idempotency) and readiness re-checks the signing key and observation freshness
- * at the signing instant, then signs (#386). */
+ * effective publication, idempotency), stored artwork usability is re-read and readiness re-checks the
+ * signing key and observation freshness at the signing instant, then signs (#386, #390). */
 export async function renewQuote(
   request: { quoteId: string; desired: QuoteRequest },
   ports: QuoteRenewalPorts,
@@ -128,7 +128,7 @@ export async function renewQuote(
   return ports.renewalStore.renew({ ...command, effectiveRevisions: prepared.effectiveRevisions }, async () => {
     if (ports.artwork.replayBinding?.(desired) !== ownerBinding) throw new Error('quote resource authority changed');
     if (localDay(ports.clock(), issuance.shopTimezone).ordinal !== issuance.issuedDay) throw new ShopDayChangedError();
-    await assertCurrentAtSigning(desired, prepared, readiness, ports.clock);
+    await assertCurrentAtSigning(desired, prepared, readiness, ports);
     if (localDay(ports.clock(), issuance.shopTimezone).ordinal !== issuance.issuedDay) throw new ShopDayChangedError();
     const authorization = await ports.authorization.issue({ quote: original, window: issuance });
     if (localDay(ports.clock(), issuance.shopTimezone).ordinal !== issuance.issuedDay) throw new ShopDayChangedError();

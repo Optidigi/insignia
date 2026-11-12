@@ -1,4 +1,3 @@
-import { AsyncLocalStorage } from 'node:async_hooks';
 import {
   type ArtworkScope,
   BuyerRejectedError,
@@ -36,10 +35,8 @@ import type { SignerClient } from '../signer-client.ts';
 import { proposalStage } from './diagnostics.ts';
 import { createLeanPrimaryMarketAdmission, parseEurNetherlandsQualification } from './lean-primary-market.ts';
 import { createBuyerServices } from './service.ts';
+import { assertOutsideSigningFence, fenceGuarded, fenceGuardedFetch, runSigningFence } from './signing-fence.ts';
 import { createVisitorKey } from './visitor-address.ts';
-
-// One context instance, isolated by async execution rather than mutable request flags.
-const acceptanceContext = new AsyncLocalStorage<true>();
 
 type Scope = { shopId: string; installationGeneration: string };
 export type BuyerVariantAvailability = Scope & {
@@ -57,14 +54,12 @@ export type ProductionBuyerInputs = {
   /** Server-owned alternative for qualified deployments; default reads the current primary Market. */
   leanContext?: QuoteAuthorityPorts['leanContext'];
   credentials: AdminCredentialSource;
-  /** SELECT-only credentials for final checks; no claim or refresh fallback. */
+  /** SELECT-only credentials for final pre-signing checks; no claim or refresh fallback. */
   passiveCredentials?: AdminCredentialSource;
   readSubscription(target: { appId: string; shopId: string }): Promise<ActiveSubscriptionSnapshot>;
   /** Background release-evidence refresh while buyers are active; never request-path authority. */
   releaseRefresh?(scope: Scope, activeUntil: Date): void;
   artifactPorts: FunctionArtifactReadinessPorts;
-  /** Independent stored evidence only; never collect while acceptance owns locks. */
-  passiveArtifactPorts?: FunctionArtifactReadinessPorts;
   /** Only the app key: expected Function queries come from the trusted release record. */
   expectedFunctions: { appKey: string };
   maxObservationAgeMs: number;
@@ -110,8 +105,10 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
     throw new Error('Buyer production configuration incomplete');
   const clock = input.clock ?? (() => new Date());
   const eurQualification = parseEurNetherlandsQualification(input.env.INSIGNIA_EUR_NL_QUALIFICATION);
-  const fetchImpl: typeof fetch = (target, options) =>
-    (input.fetchImpl ?? fetch)(target, { ...options, redirect: 'error' });
+  // Every Shopify Admin/Storefront request; none may leave while a signing fence holds the shop lock.
+  const fetchImpl = fenceGuardedFetch((target, options) =>
+    (input.fetchImpl ?? fetch)(target, { ...options, redirect: 'error' }),
+  );
   const guest = createArtworkGuestAuthority({
     core: input.core,
     secret,
@@ -169,6 +166,8 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
     }
     return {
       async acquire(target) {
+        // Credentials only serve provider requests, which happen before the signing fence (#390).
+        assertOutsideSigningFence('Provider credential read');
         if (target.shopId !== scope.shopId || target.installationGeneration !== scope.installationGeneration)
           return { kind: 'inactive' };
         const role = passive();
@@ -215,8 +214,7 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
     if (scope.kind !== 'guest' || !scope.ownerHash || !/^[a-f0-9]{64}$/.test(scope.ownerHash))
       throw new Error('Buyer resource ownership unavailable');
     const artwork = createArtworkUsabilityPort(input.core.artwork, clock, scope);
-    // A rejecting sibling must not change the role of final reads still in flight.
-    const credentialSource = credentials(scope, () => acceptanceContext.getStore() === true);
+    const credentialSource = credentials(scope);
     const leanContext: NonNullable<QuoteAuthorityPorts['leanContext']> =
       input.leanContext ??
       createLeanPrimaryMarketAdmission({
@@ -260,18 +258,19 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
           transport: createPublicationAdminHttpTransport({ credentials: credentialSource, fetchImpl }),
           maxObservationAgeMs: input.maxObservationAgeMs,
           stage: proposalStage,
+          // Release evidence is observed before the fence; at signing only its freshness is applied.
           artifactPorts: {
             expectedBuild: {
-              read: async (target) =>
-                (acceptanceContext.getStore() ? input.passiveArtifactPorts : input.artifactPorts)?.expectedBuild.read(
-                  target,
-                ) ?? null,
+              read: async (target) => {
+                assertOutsideSigningFence('Release evidence read');
+                return input.artifactPorts.expectedBuild.read(target);
+              },
             },
             trustedEvidence: {
-              read: async (target) =>
-                (acceptanceContext.getStore() ? input.passiveArtifactPorts : input.artifactPorts)?.trustedEvidence.read(
-                  target,
-                ) ?? null,
+              read: async (target) => {
+                assertOutsideSigningFence('Release evidence read');
+                return input.artifactPorts.trustedEvidence.read(target);
+              },
             },
           },
           clock,
@@ -281,7 +280,8 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
           appId: `gid://shopify/App/${appId}`,
           entitlementPolicy: input.entitlementPolicy,
           leanContext,
-          readSubscription: input.readSubscription,
+          // Before the shared subscription cache, not only beneath it in the Partner fetch (#390).
+          readSubscription: fenceGuarded('Subscription read', (target) => input.readSubscription(target)),
           credentials: credentialSource,
           catalogTransport: createShopifyAdminGraphqlReadTransport({
             credentials: credentialSource,
@@ -352,28 +352,19 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
         findCompleted: async (target) => (await compose()).store.findCompleted(target),
         async accept(target, commit) {
           const ports = await compose();
-          if (!input.passiveCredentials || !input.passiveArtifactPorts)
-            throw new Error('Passive buyer acceptance authority unavailable');
-          // Provider, credential and release reads completed before this fence. Inside it, any
-          // read stays SELECT-only: no credential refresh or release collection under the lock.
-          return proposalStage('persistence', () =>
-            ports.store.accept(target, () => acceptanceContext.run(true, commit)),
-          );
+          // Provider, credential and release reads completed before this fence. Inside it only stored
+          // facts (on the fence connection) and the signer run; provider IO is refused (#390).
+          return proposalStage('persistence', () => ports.store.accept(target, () => runSigningFence(commit)));
         },
       },
       // Renewal, like acceptance, re-prices and observes readiness before its fence (#386); its signing
-      // callback runs in the same SELECT-only context, so no credential refresh, release collection or
-      // shared release read can start under the shop lock.
+      // callback runs in the same signing-fence context, so no provider request, credential acquisition
+      // or release read can start under the shop lock.
       renewalStore: {
         getOwned: (target) => input.core.renewalQuotes.getOwned(target),
         findCompleted: (target) => input.core.renewalQuotes.findCompleted(target),
-        async renew(target, commit) {
-          if (!input.passiveCredentials || !input.passiveArtifactPorts)
-            throw new Error('Passive buyer renewal authority unavailable');
-          return proposalStage('persistence', () =>
-            input.core.renewalQuotes.renew(target, () => acceptanceContext.run(true, commit)),
-          );
-        },
+        renew: (target, commit) =>
+          proposalStage('persistence', () => input.core.renewalQuotes.renew(target, () => runSigningFence(commit))),
       },
     };
   }

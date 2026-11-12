@@ -534,7 +534,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
     customerArtwork: createCustomerArtworkRepository(database),
     usageLedger: createUsageLedgerRepository(database),
     usageDeliveryIntents: createUsageDeliveryIntentRepository(database),
-    artwork: createArtworkRepository(pool),
+    artwork: createArtworkRepository(pool, database),
     merchantPreviews: createMerchantPreviewRepository(pool),
     buyers: createBuyerRepository(database),
     renewalQuotes: new PgQuoteRenewalRepository(database),

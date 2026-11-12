@@ -258,7 +258,7 @@ describe('immutable quote renewal', () => {
       ),
     ).rejects.toThrow('REVIEW_REQUIRED');
   });
-  it('reads providers and observes readiness once before the fence; inside it only freshness and signing run (#386)', async () => {
+  it('reads providers and observes readiness once before the fence; inside it only stored checks, freshness and signing run (#386)', async () => {
     const { ports, original, renewalStore } = await renewalFixture();
     vi.mocked(ports.readiness.assertReady).mockClear();
     let fenced = false;
@@ -301,7 +301,8 @@ describe('immutable quote renewal', () => {
       { ...watched, renewalStore },
     );
     expect(result.quote).toEqual(original);
-    expect(inFence).toEqual([]);
+    // Only the stored artwork usability is re-read at signing (#390); no provider port runs there.
+    expect(inFence).toEqual(['artwork']);
     expect(watched.readiness.observe).toHaveBeenCalledTimes(1);
     expect(ports.readiness.assertReady).not.toHaveBeenCalled();
     expect(assertCurrent).toHaveBeenCalledTimes(1);
@@ -325,6 +326,32 @@ describe('immutable quote renewal', () => {
         { ...ports, renewalStore },
       ),
     ).rejects.toMatchObject({ name: 'CatalogContextUnavailable', reason: 'stale' });
+    expect(ports.authorization.issue).not.toHaveBeenCalled();
+  });
+
+  it('refuses to sign when the artwork became unusable after the pre-fence read (#390)', async () => {
+    const { ports, original, renewalStore, later } = await renewalFixture();
+    vi.mocked(ports.authorization.issue).mockClear();
+    renewalStore.renew.mockImplementation(async (_input, commit) => {
+      // An erasure committed between the pre-fence read and the fence.
+      vi.mocked(ports.artwork.readUsability).mockImplementationOnce(async (read) =>
+        read.choices.map((choice) => ({
+          ...choice,
+          shopId: read.shopId,
+          installationGeneration: read.installationGeneration,
+          status: 'unavailable',
+          lastFullyUsableLocalDay: -1,
+          observedAt: later.toISOString(),
+        })),
+      );
+      return commit();
+    });
+    await expect(
+      renewQuote(
+        { quoteId: original.quoteId, desired: { ...request, idempotencyKey: 'erased' } },
+        { ...ports, renewalStore },
+      ),
+    ).rejects.toMatchObject({ name: 'BuyerRejectedError', code: 'ARTWORK_EXPIRED' });
     expect(ports.authorization.issue).not.toHaveBeenCalled();
   });
 

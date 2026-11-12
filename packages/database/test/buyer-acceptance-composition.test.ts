@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -28,19 +29,34 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
     'price-drift-after-preparation',
     'entitlement-failure-during-acceptance',
     'renewal',
+    'artwork-erased-after-preparation',
+    'renewal-artwork-erased-after-preparation',
   ] as const) {
     it(`qualifies reviewed proposal acceptance with ${mode}`, async () => {
       const cleanup: (() => Promise<void>)[] = [];
       const f = await fixture({ after: (fn: () => Promise<void>) => cleanup.push(fn) }, { clock: () => new Date() });
       const keys = { currentKeyId: 'composition', keys: { composition: Buffer.alloc(32, 23) } };
-      const core = createDurableCore(
-        new Pool({
-          connectionString: process.env.DATABASE_URL,
-          max: 8,
-          options: '-c lock_timeout=500ms -c statement_timeout=2000ms',
-        }),
-        { credentialKeys: keys },
-      );
+      // The signing fence (acceptance or renewal) the current async context runs in, if any.
+      const fence = new AsyncLocalStorage<'acceptance' | 'renewal'>();
+      // Provider IO, credential acquisition, release reads and pool checkouts observed inside a fence (#386, #390).
+      const fenceReads: string[] = [];
+      const noteRead = (name: string) => {
+        const inside = fence.getStore();
+        if (inside) fenceReads.push(`${inside}:${name}`);
+      };
+      const corePool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        max: 8,
+        options: '-c lock_timeout=500ms -c statement_timeout=2000ms',
+      });
+      // The fence holder already has its connection; a stored read inside it that checks out
+      // another pool connection is unrouted and can starve behind lock waiters (#381).
+      const connect = corePool.connect.bind(corePool);
+      corePool.connect = ((...args: unknown[]) => {
+        noteRead('pool-connect');
+        return Reflect.apply(connect, corePool, args);
+      }) as typeof corePool.connect;
+      const core = createDurableCore(corePool, { credentialKeys: keys });
       const append = new Pool({
         connectionString: process.env.DATABASE_URL,
         max: 1,
@@ -60,12 +76,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
       let refreshes = 0,
         passiveReads = 0,
         fenceEntries = 0,
-        inRenewalFence = false;
-      // Provider IO, active credential acquisition and release reads observed while renewal holds its fence (#386).
-      const renewalFenceReads: string[] = [];
-      const noteRead = (name: string) => {
-        if (inRenewalFence) renewalFenceReads.push(name);
-      };
+        signatures = 0;
       const credentialErrors: unknown[] = [];
       try {
         await f.pool.query('UPDATE shops SET shop_domain=$2 WHERE shop_id=$1', [f.shopId, `${f.shopId}.myshopify.com`]);
@@ -227,9 +238,22 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
           await signerStore.close();
           await rm(signerDirectory, { recursive: true, force: true });
         });
+        const signerClient = createSignerClient({ socketPath: join(signerDirectory, 'signer.sock') });
         const services = createProductionBuyerServices({
           core,
-          signer: createSignerClient({ socketPath: join(signerDirectory, 'signer.sock') }),
+          signer: {
+            ...signerClient,
+            authorizationSigner(keyScope, beforeSign) {
+              const signer = signerClient.authorizationSigner(keyScope, beforeSign);
+              return {
+                async signWholeQuote(input) {
+                  const result = await signer.signWholeQuote(input);
+                  signatures++;
+                  return result;
+                },
+              };
+            },
+          },
           env: {
             SHOPIFY_CLIENT_ID: build.appClientId,
             SHOPIFY_CLIENT_SECRET: 'synthetic-private-secret',
@@ -266,6 +290,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
             acquire(target) {
               return trackRead(
                 (async () => {
+                  noteRead('passive-credential');
                   try {
                     const current = await core.tenants.getActiveProviderScope(target);
                     if (!current) return { kind: 'inactive' };
@@ -279,15 +304,6 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
                   }
                 })(),
               );
-            },
-          },
-          passiveArtifactPorts: {
-            expectedBuild: {
-              read: async () => (!missing && Date.now() < Date.parse(record.attestation.expiresAt) ? build : null),
-            },
-            trustedEvidence: {
-              read: async () =>
-                !missing && Date.now() < Date.parse(record.attestation.expiresAt) ? record.attestation : null,
             },
           },
           maxObservationAgeMs: 30000,
@@ -313,6 +329,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
             },
           },
           readSubscription: async () => {
+            noteRead('subscription');
             if (mode === 'entitlement-failure-during-acceptance' && accepting)
               throw new Error('Synthetic entitlement failure');
             return {
@@ -456,6 +473,14 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
           },
         });
         const proposal = await services.propose(f.scope, f.body);
+        const artwork = f.body.groups[0]?.design.placements[0]?.artwork;
+        if (artwork?.kind !== 'revision') throw new Error('fixture artwork missing');
+        // The state a committed customer-privacy erasure leaves (customer_privacy_fence_asset).
+        const eraseArtwork = () =>
+          f.pool.query(
+            "UPDATE artwork_assets SET state='DELETING',updated_at=clock_timestamp() WHERE shop_id=$1 AND asset_id=$2",
+            [f.shopId, artwork.revisionId],
+          );
         if (mode === 'missing-release') missing = true;
         if (mode === 'near-expiry')
           await f.pool.query(
@@ -486,10 +511,21 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
           if (mode === 'release-mismatched-and-expired-after-preparation')
             record.attestation.sourceCommit = 'f'.repeat(40);
           if (mode === 'price-drift-after-preparation') amount = '11.00';
-          return accept(input, commit);
+          // Committed after the pre-fence artwork read, before the fence: noticed at signing (#390).
+          if (mode === 'artwork-erased-after-preparation') await eraseArtwork();
+          return accept(input, () => fence.run('acceptance', commit));
         };
+        const shopRows = async () =>
+          (
+            await f.pool.query(
+              `SELECT (SELECT count(*) FROM accepted_quotes WHERE shop_id=$1)::int AS quotes,
+                (SELECT count(*) FROM quote_authorization_sets WHERE shop_id=$1)::int AS sets`,
+              [f.shopId],
+            )
+          ).rows[0];
         try {
           const acceptanceKey = randomUUID();
+          const rowsBefore = await shopRows();
           accepting = true;
           const acceptance = services.accept(f.scope, proposal.proposalId, {
             hash: proposal.hash,
@@ -499,13 +535,17 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
             mode === 'release-expired-after-preparation' ||
             mode === 'release-mismatched-and-expired-after-preparation' ||
             mode === 'price-drift-before-acceptance' ||
-            mode === 'entitlement-failure-during-acceptance'
+            mode === 'entitlement-failure-during-acceptance' ||
+            mode === 'artwork-erased-after-preparation'
           ) {
             if (mode === 'price-drift-before-acceptance')
               await expect(acceptance).rejects.toMatchObject({ acceptanceOutcome: 'declined' });
             // Lapsed between the pre-fence read and signing: a retryable class, never a mismatch (#345).
             else if (mode === 'release-expired-after-preparation')
               await expect(acceptance).rejects.toMatchObject({ name: 'ReleaseEvidenceExpiredError' });
+            // The stored artwork check inside the fence maps to the buyer's re-upload answer (#358), not 503.
+            else if (mode === 'artwork-erased-after-preparation')
+              await expect(acceptance).rejects.toMatchObject({ name: 'BuyerRejectedError', code: 'ARTWORK_EXPIRED' });
             else if (mode === 'release-mismatched-and-expired-after-preparation')
               await expect(acceptance).rejects.toMatchObject({
                 name: 'Error',
@@ -514,10 +554,14 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
             else await expect(acceptance).rejects.toThrow();
             expect(fenceEntries).toBe(
               mode === 'release-expired-after-preparation' ||
-                mode === 'release-mismatched-and-expired-after-preparation'
+                mode === 'release-mismatched-and-expired-after-preparation' ||
+                mode === 'artwork-erased-after-preparation'
                 ? 1
                 : 0,
             );
+            expect(signatures).toBe(0);
+            // Refused before signing: no accepted quote or authorization set was stored for the shop.
+            if (mode === 'artwork-erased-after-preparation') expect(await shopRows()).toEqual(rowsBefore);
             if (mode === 'price-drift-before-acceptance') {
               amount = '10.00';
               const retainedRead = core.buyers.getProposal;
@@ -578,19 +622,25 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
             expect(refreshes).toBe(mode === 'near-expiry' ? 1 : 0);
             // No provider read, credential refresh or SELECT-only fallback runs under the lock.
             expect(passiveReads).toBe(0);
+            // Renewal prices and observes readiness before its fence, like acceptance; inside it only
+            // stored-fact checks and signing run, so no shared release read can start there (#386).
+            const renew = core.renewalQuotes.renew.bind(core.renewalQuotes);
+            core.renewalQuotes.renew = async (input, commit) => {
+              if (mode === 'renewal-artwork-erased-after-preparation') await eraseArtwork();
+              return renew(input, () => fence.run('renewal', commit));
+            };
+            if (mode === 'renewal-artwork-erased-after-preparation') {
+              const signed = signatures;
+              const sets = () =>
+                f.pool.query('SELECT set_id FROM quote_authorization_sets WHERE shop_id=$1', [f.shopId]);
+              const before = (await sets()).rows;
+              await expect(
+                services.renew(f.scope, accepted.quoteId, { ...f.body, idempotencyKey: randomUUID() }),
+              ).rejects.toMatchObject({ name: 'BuyerRejectedError', code: 'ARTWORK_EXPIRED' });
+              expect(signatures).toBe(signed);
+              expect((await sets()).rows).toEqual(before);
+            }
             if (mode === 'renewal') {
-              // Renewal prices and observes readiness before its fence, like acceptance; inside it only
-              // stored-fact checks and signing run, so no shared release read can start there (#386).
-              const renew = core.renewalQuotes.renew.bind(core.renewalQuotes);
-              core.renewalQuotes.renew = (input, commit) =>
-                renew(input, async () => {
-                  inRenewalFence = true;
-                  try {
-                    return await commit();
-                  } finally {
-                    inRenewalFence = false;
-                  }
-                });
               const renewalKey = randomUUID();
               const renewed = await services.renew(f.scope, accepted.quoteId, {
                 ...f.body,
@@ -598,7 +648,6 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
               });
               expect(renewed.quoteId).toBe(accepted.quoteId);
               expect(renewed.setId).not.toBe(accepted.setId);
-              expect(renewalFenceReads).toEqual([]);
               expect(passiveReads).toBe(0);
               // Idempotent replay returns the stored renewal without signing again.
               expect(
@@ -608,6 +657,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('production buyer acceptance c
             if (mode === 'price-drift-after-preparation') expect(accepted.buckets.length).toBeGreaterThan(0);
           }
           expect(collections).toBe(mode === 'missing-release' ? 1 : 0);
+          // No provider request, credential acquisition, release read or second pool connection inside either fence.
+          expect(fenceReads).toEqual([]);
         } catch (error) {
           if (appendError) console.error('Synthetic release append error', appendError);
           if (credentialErrors.length) console.error('Synthetic credential errors', credentialErrors);

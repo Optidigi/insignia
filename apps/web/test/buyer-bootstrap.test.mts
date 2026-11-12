@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createBuyerBootstrap } from '../src/server/buyer/bootstrap.ts';
 import { proposalDiagnostics, proposalTiming } from '../src/server/buyer/diagnostics.ts';
+import { runSigningFence } from '../src/server/buyer/signing-fence.ts';
 import { buyerFixture, coreFixture, releaseEvidenceFixture, required } from './http-fixtures.mts';
 
 function environment() {
@@ -521,5 +522,23 @@ test('bootstrap reuses one Partner subscription read per shop for 60 s', async (
   now = new Date(+now + 60000);
   await input.readSubscription(target);
   assert.equal(subscriptions, 2);
+  await input.core.close();
+});
+
+test('bootstrap provider transports refuse to dispatch inside a signing fence (#390)', async () => {
+  const value = seam();
+  let requests = 0;
+  value.dependencies.fetchImpl = async () => {
+    requests++;
+    return new Response(JSON.stringify({ data: { activeSubscription: null } }));
+  };
+  await createBuyerBootstrap(environment(), value.dependencies);
+  const input = required(value.getComposition());
+  const target = { appId: 'gid://shopify/App/7', shopId: 'gid://shopify/Shop/11' };
+  await assert.rejects(runSigningFence(() => input.readSubscription(target)));
+  assert.equal(requests, 0);
+  // Nothing is cached from the refused read: outside the fence the same read dispatches.
+  assert.equal((await input.readSubscription(target)).active, false);
+  assert.equal(requests, 1);
   await input.core.close();
 });
