@@ -25,7 +25,8 @@ function validateIdentity(input: QuoteRenewalIdentity) {
     throw new Error('invalid owned quote renewal');
 }
 
-async function owned(database: Kysely<Database>, input: QuoteRenewalIdentity, update: boolean) {
+/** `lock`: none for the unlocked ownership read, share for the replay lookup, update for the renewal fence. */
+async function owned(database: Kysely<Database>, input: QuoteRenewalIdentity, lock: 'none' | 'share' | 'update') {
   validateIdentity(input);
   const result = await sql<{ quote_value: AcceptedQuote }>`
     SELECT q.quote_value FROM accepted_quotes q
@@ -37,7 +38,7 @@ async function owned(database: Kysely<Database>, input: QuoteRenewalIdentity, up
       AND q.quote_id=${input.quoteId}::uuid AND i.deactivated_at IS NULL
       AND q.authorization_generation=${input.authorizationGeneration}::uuid AND q.authorization_epoch=${input.authorizationEpoch}
       AND i.authorization_generation=q.authorization_generation AND i.authorization_epoch=q.authorization_epoch
-    ${update ? sql`FOR UPDATE OF s,i` : sql`FOR SHARE OF s,i`}`.execute(database);
+    ${lock === 'update' ? sql`FOR UPDATE OF s,i` : lock === 'share' ? sql`FOR SHARE OF s,i` : sql``}`.execute(database);
   return result.rows[0]?.quote_value ?? null;
 }
 
@@ -119,12 +120,14 @@ export class PgQuoteRenewalRepository implements QuoteRenewalStore {
   constructor(private readonly database: Kysely<Database>) {}
 
   getOwned(input: QuoteRenewalIdentity) {
-    return owned(this.database, input, false);
+    return owned(this.database, input, 'none');
   }
 
   findCompleted(input: QuoteRenewalCommand) {
     return this.database.transaction().execute(async (transaction) => {
-      const quote = await owned(transaction, input, false);
+      // As at acceptance: a waiter behind the shop fence gives up with SQLSTATE 55P03 (409 BUSY, retryable).
+      await sql`SET LOCAL lock_timeout = '2s'`.execute(transaction);
+      const quote = await owned(transaction, input, 'share');
       if (!quote) throw new Error('quote ownership unavailable');
       return completed(transaction, input, quote);
     });
@@ -140,7 +143,9 @@ export class PgQuoteRenewalRepository implements QuoteRenewalStore {
     )
       throw new Error('invalid renewal command');
     return this.database.transaction().execute(async (transaction) => {
-      const quote = await owned(transaction, input, true);
+      // Provider IO completed before this fence (#386); a waiter gives up with SQLSTATE 55P03 instead of queueing.
+      await sql`SET LOCAL lock_timeout = '2s'`.execute(transaction);
+      const quote = await owned(transaction, input, 'update');
       if (!quote) throw new Error('quote ownership unavailable');
       const replay = await completed(transaction, input, quote);
       if (replay) return replay;

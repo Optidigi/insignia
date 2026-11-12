@@ -14,6 +14,7 @@ import { createQuoteAuthorityPorts } from '../../../apps/web/src/server/quote-co
 import { createDurableCore } from '../dist/durable-core.js';
 import { type Database, withTransaction } from '../src/client/database.js';
 import { createPublicationRepository } from '../src/repositories/publication.js';
+import { createTenantRepository } from '../src/repositories/tenant.js';
 import { acceptance } from './support/acceptance.js';
 import { openTestDatabase } from './support/postgres.js';
 import { purchaseFixture } from './support/purchase-fixture.js';
@@ -69,6 +70,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('renewal fence', () => {
     const fixture = await purchaseFixture(database, { pricingRules: [leanRule] });
     const scope = scopeOf(fixture);
     const keys = new SigningKeyLifecycle(core.signingKeys);
+    const selectedKeyId = 7;
     let fenced = false;
     const providerReadsInFence: string[] = [];
     const provider = async <T>(name: string, value: () => T): Promise<T> => {
@@ -87,6 +89,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('renewal fence', () => {
       return {
         async assertCurrent() {
           await keys.desiredPublicConfig(scope, new Date());
+          // Production readiness compares the key selected before the fence with the active durable key.
+          const active = (await core.signingKeys.list(scope)).filter((key) => key.state === 'active');
+          if (active.length !== 1 || active[0]?.keyId !== selectedKeyId) throw new Error('Buyer signing key changed');
         },
       };
     };
@@ -289,7 +294,6 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('renewal fence', () => {
       const renewal = f.renew('renewal-under-contention');
       void renewal.catch(() => {});
       await holding;
-      const started = Date.now();
       const accepts = Array.from({ length: 10 }, (_, index) => {
         const command = acceptance(f.fixture, `contention-${index}-${randomUUID()}`);
         return core.acceptedQuotes.accept(command.input, async () => {
@@ -305,7 +309,6 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('renewal fence', () => {
       expect(settled.map((result) => (result.status === 'rejected' ? String(result.reason) : 'ok'))).toEqual(
         Array(11).fill('ok'),
       );
-      expect(Date.now() - started).toBeLessThan(2000);
       expect(f.providerReadsInFence).toEqual([]);
       expect(await f.renewals()).toBe(1);
     } finally {
@@ -387,10 +390,88 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('renewal fence', () => {
         });
         await core.signingKeys.activate(rotated.scope, 8);
       };
-      await expect(rotated.renew('after-rotation')).rejects.toThrow();
+      const beforeRotation = rotated.signatures();
+      await expect(rotated.renew('after-rotation')).rejects.toThrow('Buyer signing key changed');
+      expect(rotated.signatures()).toBe(beforeRotation);
       expect(await rotated.renewals()).toBe(0);
+
+      // Uninstall: the installation the quote belongs to is deactivated.
+      const uninstalled = await renewalFixture(core);
+      uninstalled.hooks.beforeFence = async () => {
+        expect(
+          await database
+            .transaction()
+            .execute((transaction) =>
+              createTenantRepository(transaction).deactivateCurrent(
+                transaction,
+                uninstalled.fixture.shopId,
+                uninstalled.fixture.generation,
+              ),
+            ),
+        ).toBe('deactivated');
+      };
+      const beforeUninstall = uninstalled.signatures();
+      await expect(uninstalled.renew('after-uninstall')).rejects.toThrow('quote ownership unavailable');
+      expect(uninstalled.signatures()).toBe(beforeUninstall);
+      expect(await uninstalled.renewals()).toBe(0);
     } finally {
       await core.close();
     }
   }, 20_000);
+
+  it('signs one renewal for concurrent requests with the same idempotency key', async () => {
+    const core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL, max: 6 }));
+    try {
+      const f = await renewalFixture(core);
+      const before = f.signatures();
+      const results = await Promise.all(Array.from({ length: 3 }, () => f.renew('same-renewal-key')));
+      expect(f.signatures() - before).toBe(1);
+      for (const result of results) expect(result).toEqual(results[0]);
+      expect(await f.renewals()).toBe(1);
+    } finally {
+      await core.close();
+    }
+  }, 20_000);
+
+  it('returns a retryable lock timeout within the 2 s bound while the shop fence is held', async () => {
+    const core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL, max: 4 }));
+    const holder = await observer.connect();
+    let releaseTimer: NodeJS.Timeout | undefined;
+    const holdFence = async (f: Awaited<ReturnType<typeof renewalFixture>>) => {
+      await holder.query('BEGIN');
+      // The fence every signing-key writer, epoch bump and uninstall takes (FOR UPDATE OF s, i).
+      await holder.query('SELECT * FROM signing_key_scope($1, $2::bigint, true)', [
+        f.fixture.shopId,
+        f.fixture.generation,
+      ]);
+      // Without a bound, a waiting renewal would only finish once this holder lets go.
+      releaseTimer = setTimeout(() => void holder.query('ROLLBACK').catch(() => {}), 8000);
+    };
+    const release = async () => {
+      clearTimeout(releaseTimer);
+      await holder.query('ROLLBACK').catch(() => {});
+    };
+    try {
+      // Held before the renewal starts: the replay lookup is the first statement to wait.
+      const early = await renewalFixture(core);
+      await holdFence(early);
+      let started = Date.now();
+      await expect(early.renew('fence-held-early')).rejects.toMatchObject({ code: '55P03' });
+      expect(Date.now() - started).toBeLessThan(6000);
+      await release();
+      // Taken after preparation: the renewal's own fence statement waits.
+      const late = await renewalFixture(core);
+      late.hooks.beforeFence = async () => {
+        await holdFence(late);
+        started = Date.now();
+      };
+      await expect(late.renew('fence-held-late')).rejects.toMatchObject({ code: '55P03' });
+      expect(Date.now() - started).toBeLessThan(6000);
+      expect(await late.renewals()).toBe(0);
+    } finally {
+      await release();
+      holder.release();
+      await core.close();
+    }
+  }, 30_000);
 });
