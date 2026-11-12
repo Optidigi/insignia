@@ -1,5 +1,6 @@
 import {
   type BuyerDesiredGroup,
+  type BuyerDraftGroup,
   type CustomerCanonicalProduct,
   readSelectedStepIdentity,
   selectedStepIdentity,
@@ -299,6 +300,10 @@ export function buildPublishedDesigner(
   });
   function desired(design: Design): BuyerDesiredGroup {
     if (!design.variants?.length) throw new Error('Real variant selections required');
+    return draft(design);
+  }
+  /** A saved draft may have no sizes or colours yet (#366); a quote still requires them (`desired`). */
+  function draft(design: Design): BuyerDraftGroup {
     const chosen = design.options ?? [];
     if (
       chosen.length !== source.options.length ||
@@ -344,7 +349,7 @@ export function buildPublishedDesigner(
         }),
         options: selectedOptions,
       },
-      variants: design.variants.map((variant) => ({ ...variant })),
+      variants: (design.variants ?? []).map((variant) => ({ ...variant })),
     };
   }
   function restore(group: BuyerDesiredGroup, designId: string): Design {
@@ -390,7 +395,7 @@ export function buildPublishedDesigner(
       ...(restoredOptions.length ? { options: restoredOptions } : {}),
     };
   }
-  return { config, desired, restore, placements, methods };
+  return { config, desired, draft, restore, placements, methods };
 }
 
 export function designerMethod(method: SelectedProductSetup['product']['methods'][number]) {

@@ -352,6 +352,10 @@ function DesignerSession({
   useLayoutEffect(() => {
     if (cartReviewedSignal) dispatch({ type: 'cart-review-satisfied' });
   }, [cartReviewedSignal]);
+  // The host saves the unfinished design shortly after it changes, not only at Review (#366).
+  useEffect(() => {
+    runtime.reportDraft();
+  }, [workflow, runtime]);
   useLayoutEffect(() => {
     if (hostErrorSignal) dispatch({ type: 'review-navigation-failed' });
   }, [hostErrorSignal]);
@@ -985,6 +989,7 @@ function DesignerSession({
     } else onOpenChange(false);
   }, [workflow.completion]);
   function newDesign() {
+    runtime.startNewDesign();
     dispatch({ type: 'new-design-requested' });
     closeModal();
   }

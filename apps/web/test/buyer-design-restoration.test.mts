@@ -36,7 +36,11 @@ test('a draft saved before quantities is stored and restored with its artwork an
   const f = await fixture(t);
   const id = randomUUID();
   const draft = { ...f.group, variants: [] };
-  const saved = await f.http(`designs/${id}`, { capability: f.session.capability, expectedVersion: 0, group: draft }, 'PUT');
+  const saved = await f.http(
+    `designs/${id}`,
+    { capability: f.session.capability, expectedVersion: 0, group: draft },
+    'PUT',
+  );
   assert.equal(saved.status, 200, await saved.clone().text());
   assert.deepEqual((await saved.json()).value, draft);
   // Later edits save to the same draft: an update, never another draft.
@@ -45,11 +49,16 @@ test('a draft saved before quantities is stored and restored with its artwork an
     [1, edited],
     [2, draft],
   ] as const) {
-    const response = await f.http(`designs/${id}`, { capability: f.session.capability, expectedVersion: version, group }, 'PUT');
+    const response = await f.http(
+      `designs/${id}`,
+      { capability: f.session.capability, expectedVersion: version, group },
+      'PUT',
+    );
     assert.equal(response.status, 200, await response.clone().text());
   }
   assert.equal(
-    (await f.pool.query('SELECT count(*)::int n FROM design_drafts WHERE session_id=$1', [f.session.sessionId])).rows[0].n,
+    (await f.pool.query('SELECT count(*)::int n FROM design_drafts WHERE session_id=$1', [f.session.sessionId])).rows[0]
+      .n,
     1,
   );
   const response = await f.http(`designs/${id}/restore`, { capability: f.session.capability });

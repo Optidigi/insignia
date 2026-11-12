@@ -121,8 +121,6 @@ describe('saved drafts before quantities (#366)', () => {
 
   it('still requires at least one size or colour with a quantity for quotes and renewal', () => {
     expect(BuyerProposalRequestSchema.safeParse({ ...desired([group([])]), capability }).success).toBe(false);
-    expect(
-      BuyerRenewalSchema.safeParse({ ...desired([group([])]), capability, idempotencyKey }).success,
-    ).toBe(false);
+    expect(BuyerRenewalSchema.safeParse({ ...desired([group([])]), capability, idempotencyKey }).success).toBe(false);
   });
 });

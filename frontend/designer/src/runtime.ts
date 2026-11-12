@@ -3,6 +3,8 @@ import type { Artwork, Design, PositionId } from "./model";
 import {
   canCommitDesign,
   buildCommitDesign,
+  buildDraftDesign,
+  hasDraftChanges,
   designerReducer,
   type DesignerEvent,
   type DesignerState,
@@ -54,6 +56,11 @@ export interface DesignerPorts {
   artwork: { upload(file: File, request: UploadRequest): Promise<Artwork>; apply?(artwork:Artwork,request:UploadRequest):Promise<Artwork>; renew?(artwork:Artwork,request:UploadRequest):Promise<Artwork> };
   /** Resolve only after the requested cart application has been verified by the adapter. */
   cart: { commit(request: CartRequest): Promise<CartReceipt> };
+  /**
+   * The unfinished design changed (#366). The host decides when to save its draft; the design ID is the one the
+   * review and cart requests of this design use.
+   */
+  draft?: { changed(design: Design): void };
 }
 
 export function matchesCartReceipt(
@@ -96,6 +103,9 @@ export function createDesignerRuntime(
   let commitController: AbortController | null = null;
   let attempt: { signature: string; designId: string; idempotencyKey: string; dispatched?: boolean } | null =
     null;
+  /** One unfinished new design keeps one draft ID across edits and reviews (#366); an edited cart line uses its own. */
+  let newDesignId = crypto.randomUUID();
+  let reportedDraft: string | undefined;
   /** Retry-After: no review or Add to cart is sent before this time, and Retry stays held until the timer runs. */
   let retryNotBefore = 0;
   let retryTimer: ReturnType<typeof setTimeout> | undefined;
@@ -147,7 +157,7 @@ export function createDesignerRuntime(
       preparedExpiresAt = undefined;
       attempt = {
         signature,
-        designId: state.editing ?? crypto.randomUUID(),
+        designId: state.editing ?? newDesignId,
         idempotencyKey: crypto.randomUUID(),
       };
     }
@@ -197,6 +207,8 @@ export function createDesignerRuntime(
       if (!matchesCartReceipt(receipt, request))
         throw new Error("Missing cart application receipt");
       attempt = null;
+      // In the cart now, it is edited under this ID; another new design needs its own.
+      if (design.id === newDesignId) newDesignId = crypto.randomUUID();
       dispatch({ type: "cart-commit-succeeded", requestId, receipt });
     } catch (error) {
       if (!controller.signal.aborted && commitController === controller) {
@@ -229,6 +241,22 @@ export function createDesignerRuntime(
     }
   }
   return {
+    /** Report the design to the host when it holds something new worth keeping; the host debounces the save. */
+    reportDraft() {
+      const state = getState();
+      if (!ports.draft || state.modal.kind === 'resume-draft' || state.completion || !hasDraftChanges(state)) return;
+      const design = buildDraftDesign(state, state.editing ?? newDesignId);
+      if (!design) return;
+      const key = JSON.stringify(design);
+      if (key === reportedDraft) return;
+      reportedDraft = key;
+      ports.draft.changed(design);
+    },
+    /** The buyer starts another design: it gets its own draft. */
+    startNewDesign() {
+      newDesignId = crypto.randomUUID();
+      reportedDraft = undefined;
+    },
     get reviewIntentId() { return attempt?.signature === designerIntentKey(getState()) ? attempt.idempotencyKey : undefined; },
     get reviewing() { return reviewing; },
     get expired() { return preparedExpired(); },

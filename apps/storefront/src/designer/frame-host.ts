@@ -293,6 +293,10 @@ export function createDesignerFrame(input: {
       input.onSelectGroup?.(data.id);
       return;
     }
+    if (data.type === 'insignia:designer:draft' && data.design && typeof data.design === 'object') {
+      if (!input.previewOnly) input.ports?.draft?.changed(data.design);
+      return;
+    }
     if (data.type === 'insignia:designer:discard-drafts') {
       input.onDiscardDrafts?.();
       return;

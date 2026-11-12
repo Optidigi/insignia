@@ -1,5 +1,6 @@
 import { buyerCartCapacityExceeded } from '@insignia/contracts';
 import { createCustomerTranslator } from '@insignia/ui-localization/customer';
+import type { Design } from '../../../../frontend/designer/src/model';
 import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quote-review';
 import type { CartReceipt, CartRequest, DesignerPorts } from '../../../../frontend/designer/src/runtime';
 import { createArtworkUpload } from '../../../web/src/islands/artwork-upload';
@@ -21,6 +22,12 @@ import { desiredGroupKey } from './group-key';
 import { buildBuyerDesigner } from './published';
 import type { RepairState } from './repair-state';
 
+/**
+ * Autosave of the unfinished design (#366): this long after its last change, and at least this long after the
+ * previous autosave began, so normal editing stays far below the session's 60 writes per minute (about ten).
+ */
+const AUTOSAVE_DELAY_MS = 2_000;
+const AUTOSAVE_SPACING_MS = 5_000;
 type Prepared = {
   signature: string;
   proposal: QuoteProposal;
@@ -93,6 +100,49 @@ export function createLiveDesignerPorts(input: {
   const prepared = new Map<string, Prepared>();
   const reviewSelections = new Map<string, DesiredGroup>();
   const draftSaves = new Map<string, { group: DesiredGroup; original?: DesiredGroup }>();
+  let autosave: { design: Design; timer: ReturnType<typeof setTimeout> } | undefined;
+  const autosaving = new Set<AbortController>();
+  let lastAutosave = Number.NEGATIVE_INFINITY;
+  // The session refused a write (its per-minute or draft limit): further autosaves would only spend the writes a
+  // quote or Add to cart needs. Review still saves the draft as before.
+  let autosaveStopped = false;
+  /** Drop the pending autosave and fence any in flight: its late answer no longer sets a reopen pointer. */
+  function cancelAutosave() {
+    if (autosave) clearTimeout(autosave.timer);
+    autosave = undefined;
+    for (const controller of autosaving) controller.abort();
+    autosaving.clear();
+  }
+  function scheduleAutosave(design: Design) {
+    if (autosaveStopped) return;
+    if (autosave) clearTimeout(autosave.timer);
+    const wait = Math.max(AUTOSAVE_DELAY_MS, lastAutosave + AUTOSAVE_SPACING_MS - Date.now());
+    autosave = { design, timer: setTimeout(() => void flushAutosave(), wait) };
+  }
+  async function flushAutosave() {
+    const pending = autosave;
+    autosave = undefined;
+    if (!pending || autosaveStopped) return;
+    let group: DesiredGroup;
+    try {
+      group = buildBuyerDesigner(source, { locale: input.locale, storeName: input.storeName }).draft(pending.design);
+    } catch {
+      return;
+    }
+    const original = designs.get(pending.design.id);
+    const controller = new AbortController();
+    autosaving.add(controller);
+    lastAutosave = Date.now();
+    draftSaves.set(pending.design.id, { group, original });
+    try {
+      // The same custody save as Review: same draft ID, CAS version and reopen pointers. Unchanged content sends nothing.
+      await custody.save(pending.design.id, group, original, controller.signal);
+    } catch (error) {
+      if (error && typeof error === 'object' && 'status' in error && error.status === 429) autosaveStopped = true;
+    } finally {
+      autosaving.delete(controller);
+    }
+  }
   async function observe(signal?: AbortSignal) {
     const observed = await cart.read(signal);
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
@@ -386,6 +436,7 @@ export function createLiveDesignerPorts(input: {
   };
   const ports: DesignerPorts = {
     review: { prepare },
+    draft: { changed: scheduleAutosave },
     artwork: {
       renew: renewArtwork,
       apply: renewArtwork,
@@ -408,6 +459,8 @@ export function createLiveDesignerPorts(input: {
     },
     cart: {
       async commit(request) {
+        // Review saved this design; a late autosave must not race the cart write or re-point it as unfinished.
+        cancelAutosave();
         const issuedSignature = issuedSignatures.get(request.idempotencyKey);
         if (issuedSignature !== undefined && issuedSignature !== signature(request))
           throw new Error(
@@ -773,6 +826,7 @@ export function createLiveDesignerPorts(input: {
       return latest;
     },
     async discardDrafts() {
+      cancelAutosave();
       for (const [id, saved] of draftSaves) {
         await custody.forget(id, saved.group);
         if (saved.original) await custody.forget(id, saved.original);

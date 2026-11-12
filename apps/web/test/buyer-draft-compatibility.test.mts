@@ -35,13 +35,19 @@ const draft = {
 
 test('a draft without quantities is as restorable as one with them (#366)', () => {
   assert.equal(draftCompatibility('shop', draft, config), 'current');
-  assert.equal(draftCompatibility('shop', { ...draft, variants: [{ variantId: '222', quantity: 2 }] }, config), 'current');
+  assert.equal(
+    draftCompatibility('shop', { ...draft, variants: [{ variantId: '222', quantity: 2 }] }, config),
+    'current',
+  );
   assert.equal(
     draftCompatibility('shop', draft, { ...config, revisionId: 'r2', revisionContentHash: 'b'.repeat(64) }),
     'publication-changed',
   );
   assert.equal(
-    draftCompatibility('shop', draft, { ...config, placements: [{ ...config.placements[0]!, allowedStepIds: ['large'] }] }),
+    draftCompatibility('shop', draft, {
+      ...config,
+      placements: [{ ...config.placements[0]!, allowedStepIds: ['large'] }],
+    }),
     'choice-unavailable',
   );
   assert.equal(draftCompatibility('shop', draft, null), 'configuration-unavailable');

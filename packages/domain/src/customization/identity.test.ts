@@ -252,8 +252,8 @@ describe('saved drafts before quantities (#366)', () => {
     expect(() => validateCustomizationDraft({ ...draft, revisionContentHash: 'b'.repeat(64) }, config)).toThrow(
       'published revision content hash mismatch',
     );
-    expect(() => validateCustomizationDraft({ ...group, variants: [{ variantId: 'red-s', quantity: 0 }] }, config)).toThrow(
-      'invalid physical quantity',
-    );
+    expect(() =>
+      validateCustomizationDraft({ ...group, variants: [{ variantId: 'red-s', quantity: 0 }] }, config),
+    ).toThrow('invalid physical quantity');
   });
 });

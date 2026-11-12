@@ -495,14 +495,15 @@ test('a design one tab added is not offered again after another tab continued an
       await ui.getByRole('button', { name: 'Continue', exact: true }).click();
       await prompt(ui).waitFor({ state: 'detached' });
     }
+    // Each continued design is saved under its own draft ID shortly after it continues (#366).
+    await expectEventually(() => drafts.size === 3, 'each tab saves the design it continued');
     // The first tab adds it.
     cartGroups.push(required([...drafts.values()].at(-1)).value);
-    const saved = drafts.size;
-    // The second tab's Review saves it again and writes the pointer back.
+    // The second tab's Review saves it again and its pointer stays.
     const ui = second.frameLocator('iframe:not([hidden])');
     await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
     await ui.getByRole('button', { name: 'Review', exact: true }).last().click();
-    await expectEventually(() => drafts.size > saved, 'the second tab saves its review');
+    await ui.getByText('€90.00', { exact: true }).filter({ visible: true }).first().waitFor();
     assert.notEqual(await second.evaluate((key) => localStorage.getItem(key), LATEST_KEY), null);
     const third = await openPage();
     await expectCleanStart(await openDesigner(third), 'the design is already in the cart');
@@ -534,5 +535,89 @@ test('a draft whose choices are no longer offered is discarded with a notice, an
     const again = await openDesigner(page);
     await expectCleanStart(again, 'nothing is offered afterwards');
     assert.equal(await again.getByRole('status').count(), 0, 'and the notice is not repeated');
+  });
+});
+
+/** The real upload path: allocation, transfer, inspection and preview, as the guest artwork API answers it. */
+async function routeUpload(context: BrowserContext, assetId: string) {
+  const expiresAt = new Date(Date.now() + 3600000).toISOString();
+  await context.route('https://upload.example.test/**', (route) =>
+    route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*' } }),
+  );
+  await context.route('**/apps/insignia/guest**', (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/guest'))
+      return route.fulfill({
+        json: { assetId, expiresAt, upload: { url: 'https://upload.example.test/original', headers: {} } },
+      });
+    if (path.endsWith('/complete')) return route.fulfill({ json: { state: 'QUEUED', expiresAt } });
+    if (path.endsWith('/status')) return route.fulfill({ json: { state: 'USABLE', expiresAt } });
+    if (path.endsWith('/preview'))
+      return route.fulfill({
+        json: { url: `https://preview.example/${assetId}.png`, width: 100, height: 100, expiresAt },
+      });
+    return route.fallback();
+  });
+}
+type SavedGroup = {
+  design: { placements: { placementId: string; artwork: { kind: string; revisionId?: string } }[] };
+  variants: { variantId: string; quantity: number }[];
+};
+
+test('artwork uploaded and placed before choosing quantities is offered again after a reload (#366)', async () => {
+  await withStorefront(async ({ context, openPage, drafts }) => {
+    const assetId = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
+    await routeUpload(context, assetId);
+    const page = await openPage();
+    const ui = await openDesigner(page);
+    await ui.getByRole('button', { name: 'Add artwork', exact: true }).first().click();
+    const card = ui.locator('article.print-card').first();
+    const heading = card.locator('.print-card-heading');
+    if ((await heading.getAttribute('aria-expanded')) === 'false') await heading.click();
+    await card.locator('.artwork-choice').click();
+    await ui.locator('input[type=file]').setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: png });
+    await ui.getByRole('button', { name: 'logo.png Change', exact: true }).waitFor({ timeout: 10000 });
+    // No sizes or colours chosen: the draft is still saved, shortly after the last change.
+    await expectEventually(() => drafts.size === 1, 'the placed artwork is saved without quantities');
+    const saved = required([...drafts.values()][0]).value as SavedGroup;
+    assert.deepEqual(saved.variants, []);
+    assert.deepEqual(
+      saved.design.placements.map((placement) => [placement.placementId, placement.artwork]),
+      [['front', { kind: 'revision', revisionId: assetId }]],
+    );
+    await page.reload();
+    const resumed = await openDesigner(page);
+    await prompt(resumed).waitFor();
+    await resumed.getByRole('button', { name: 'Continue', exact: true }).click();
+    await prompt(resumed).waitFor({ state: 'detached' });
+    // The artwork and its placement are back, through the session that owns them.
+    await resumed.locator('article.print-card img').first().waitFor();
+    assert.equal(await resumed.locator('article.print-card').count(), 1);
+    await resumed.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+    assert.equal(await resumed.locator('input[type=number]:enabled').first().inputValue(), '0', 'no quantities yet');
+  });
+});
+
+test('an edit made after Review is restored after a reload (#366)', async () => {
+  await withStorefront(async ({ openPage, drafts }) => {
+    const page = await openPage();
+    const ui = await openDesigner(page);
+    await buildToReview(ui);
+    await expectEventually(() => drafts.size === 1, 'Review saves the draft');
+    await ui.getByRole('button', { name: 'Previous step', exact: true }).last().click();
+    await ui.locator('input[type=number]:enabled').first().fill('5');
+    await expectEventually(
+      () =>
+        drafts.size === 1 &&
+        (required([...drafts.values()][0]).value as SavedGroup).variants.some((variant) => variant.quantity === 5),
+      'the edit is saved to the same draft without another Review',
+    );
+    await page.reload();
+    const resumed = await openDesigner(page);
+    await prompt(resumed).waitFor();
+    await resumed.getByRole('button', { name: 'Continue', exact: true }).click();
+    await prompt(resumed).waitFor({ state: 'detached' });
+    await resumed.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+    assert.equal(await resumed.locator('input[type=number]:enabled').first().inputValue(), '5');
   });
 });

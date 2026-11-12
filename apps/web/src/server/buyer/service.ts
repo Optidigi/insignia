@@ -19,8 +19,8 @@ import { decodeLineCarrierV3, type HeaderV3, LINE_ATTRIBUTE, PREFIX_V3_CHARS } f
 import {
   type BuyerDesired,
   type BuyerDesiredGroup,
-  type BuyerDraftGroup,
   BuyerDesiredSchema,
+  type BuyerDraftGroup,
   BuyerDraftGroupSchema,
   PublishedConfigSchema,
 } from '@insignia/contracts';

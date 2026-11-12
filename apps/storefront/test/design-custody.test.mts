@@ -400,3 +400,55 @@ test('a latest draft the server no longer has falls back to a clean start and dr
   assert.equal(custody.hasLatest('11'), false);
   assert.equal(await custody.latest('11'), null);
 });
+
+test('saves to one draft run in order at acknowledged versions, so an autosave never conflicts with Review (#366)', async () => {
+  let version = 0;
+  const stored: DesiredGroup[] = [];
+  const custody = createSelectedDesignCustody({
+    namespace: '/apps/insignia',
+    storage: memoryStorage(),
+    api: {
+      async private<T>(path: string, body: Record<string, unknown>): Promise<T> {
+        if (path.endsWith('/restore')) throw Object.assign(new Error('missing'), { status: 404 });
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        // A real CAS: a write at a stale version is a conflict.
+        if (body.expectedVersion !== version) throw Object.assign(new Error('conflict'), { status: 409 });
+        stored.push(body.group as DesiredGroup);
+        return { id, version: ++version, value: body.group } as T;
+      },
+    },
+  });
+  const artworkOnly: DesiredGroup = { ...group, variants: [] };
+  await Promise.all([
+    custody.save(id, artworkOnly, undefined),
+    custody.save(id, group, undefined),
+    custody.save(id, { ...group, variants: [{ variantId: '101', quantity: 5 }] }, undefined),
+  ]);
+  assert.deepEqual(
+    stored.map((value) => value.variants),
+    [[], [{ variantId: '101', quantity: 1 }], [{ variantId: '101', quantity: 5 }]],
+  );
+});
+
+test('a draft with artwork but no quantities is the latest unfinished design and restores as saved (#366)', async () => {
+  const shared = memoryStorage();
+  const owner = { session: 'session-1' };
+  const server = draftServer(owner);
+  const custody = createSelectedDesignCustody({
+    namespace: '/apps/insignia',
+    storage: memoryStorage(),
+    shared,
+    session: () => owner.session,
+    api: server.api,
+  });
+  const artworkOnly: DesiredGroup = { ...group, variants: [] };
+  await custody.save(id, artworkOnly, undefined);
+  assert.deepEqual((await custody.latest('11'))?.value, artworkOnly);
+  // A cart line edited down to no quantities keeps its base: an unchanged cart still resumes the draft.
+  const edit = '22222222-2222-4222-8222-222222222222';
+  await custody.save(edit, artworkOnly, group);
+  const restored = await custody.restore(group);
+  assert.deepEqual(restored?.value.variants, []);
+  assert.equal(restored?.cartQuantitiesChanged, false);
+  assert.deepEqual(restorableDesign(group, restored?.value, true).variants, group.variants);
+});
