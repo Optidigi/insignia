@@ -12,6 +12,19 @@ Live Shopify Admin returns `inputQuery: null` for both owned Functions. Observat
 
 Operator migration: none is required. The legacy `transformInputQuerySha256`, `validationInputQuerySha256` and `observationVersion` fields are still accepted (64-hex and `2` when present), then ignored. Images built before this change require them, so keep them until rollback to such an image is no longer needed, then reduce the value to `appKey` only.
 
+## Buyer-fixes candidate development transition
+
+Owner approval, 12 November 2026: ship the storefront and Designer changes merged up to main `fb436e16` (#352–#365, #372, #373) to rewrite-dev as one theme-only app version.
+
+`native-buyer-fixes-fb436e16` binds inactive version `1205760688129` in [native-buyer-fixes-release-binding.json](native-buyer-fixes-release-binding.json) (36 versions) and the 14-module [baseline](native-buyer-fixes-module-baseline.json) (canonical hash `83f73e0202c709902476dae6947257c981a6cadb41cfb5b82b0155144d616a81`).
+- It was created once at `2026-11-12T17:15:23Z` (CLI 4.9.4, Node 24.21.0) from the frozen `native-canonical-host-aa3b6166` staging. Only `extensions/insignia-theme/assets` changed: its 15 files are the foundation build of `fb436e16` (run 43264310795, attempt 1), byte-identical to a local build of the same tree. The new chunk `insignia-buyer-session-*.js` raises the asset count from 14 to 15.
+- Blocks, snippets, locales, every non-theme module and both Function modules are unchanged, including module ids, wasm and input queries. The foundation wasm of `fb436e16` equals the Active pins (transform `5c8708b5…`/183604, validation `6c362b36…`/181608), and the Function source still is `aa3b6166`.
+- `1203782746113` stays the sole Active version until the release; all NEVER_RELEASE versions are inactive.
+
+Phase B operator changes, made together with the single release:
+1. Set `INSIGNIA_RELEASE_PROFILE=native-buyer-fixes-fb436e16` in web and worker, and the same profile with the matching manifest in the verifier, using binding-head images. Creating the candidate makes `native-canonical-host-aa3b6166` fail closed (inventory 36), so quotes fail until this step and the release complete.
+2. No migration, grant or other environment change. Migration 59 and its web grant were applied with the `fb436e16` server deploy before the candidate was created.
+
 ## Canonical-host candidate development transition
 
 Owner decision, 11 November 2026: Insignia's only app origin is `https://app.insigniacustomizer.com`. The old host `insignia-app.optidigi.nl` was served as a temporary fallback after the release, then removed from both routers (owner decision, same day).
