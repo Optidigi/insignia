@@ -9,7 +9,11 @@ import { CONFIG_DRAFT_STORAGE_VERSION, createConfigRepositoryInternal } from '..
 import { createPublicationRepository } from '../../src/repositories/publication.js';
 import { createTestShop, type openTestDatabase } from '../support/postgres.js';
 
-export async function purchaseFixture(db: Awaited<ReturnType<typeof openTestDatabase>>) {
+/** `pricingRules` replaces the historical advanced rules, e.g. with a Lean final surcharge that real pricing accepts. */
+export async function purchaseFixture(
+  db: Awaited<ReturnType<typeof openTestDatabase>>,
+  options: { pricingRules?: readonly Record<string, unknown>[] } = {},
+) {
   const { shopId, generation } = await createTestShop(db);
   const shopifyShopId = (BigInt(`0x${shopId.replaceAll('-', '').slice(0, 15)}`) + 1n).toString();
   await sql`UPDATE shops SET shopify_shop_id = ${shopifyShopId} WHERE shop_id = ${shopId}`.execute(db);
@@ -38,7 +42,7 @@ export async function purchaseFixture(db: Awaited<ReturnType<typeof openTestData
       methods: [{ id: 'method' }],
       placements: [{ id: 'front', allowedMethodIds: ['method'], allowedStepIds: ['step'], logoLaterAllowed: false }],
       productionOptions: [],
-      pricingRules: [
+      pricingRules: options.pricingRules ?? [
         {
           id: 'negative-placement',
           scope: { kind: 'placement', placementId: 'front' },
