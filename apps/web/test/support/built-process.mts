@@ -32,8 +32,8 @@ function reportedUrl(kind: keyof typeof entries, stdout: string): string | undef
 
 /**
  * Starts the built web server or worker on a port the OS assigns and resolves with the address it
- * reports. A port picked by the test can already be in use on a busy runner: the built web server
- * then exits 0 without output, and a concurrent test can reach another test's process.
+ * reports. A port picked by the test can already be in use on a busy runner: the process then
+ * fails to bind, or a concurrent test reaches another test's process.
  */
 export async function startBuilt(
   kind: keyof typeof entries,
