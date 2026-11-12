@@ -2,7 +2,7 @@
 
 ## Active assignment
 
-Updated 12 November 2026. Insignia now runs only on `app.insigniacustomizer.com` (Active `1205760688129`, web, worker and verifier main `9a577bb1` (the binding of application source `fb436e16`), signer main `fb30b947`, schema 59). Signing keys no longer expire routinely; rewrite-dev signs with non-expiring key 3 through a separate signer process, and retired keys hold no private half. Customer artwork email runs on rewrite-dev in development mode (admin recipient only); protected facts are 9/8/2/8/11 after test order #1009. The existing host alias `prod` serves the allocated rewrite-dev app/store. The storefront and Designer fixes up to `fb436e16` (#352–#365, #372, #373) are released there as theme-only version `1205760688129` and natively verified (see [below](#storefront-and-designer-fixes--deployed-and-released-12-november-2026)); #377 and later main commits are not deployed. No production resource migration, new scopes/markets, database reset, history erasure, protected VAT retry, checkout/order/payment or consumed sender/alert drill was performed. The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
+Updated 12 November 2026. Insignia now runs only on `app.insigniacustomizer.com` (Active `1205994881025`, web, worker and verifier main `3ca7b253` (the binding of application source `bf512171`), signer main `fb30b947`, schema 59). Signing keys no longer expire routinely; rewrite-dev signs with non-expiring key 3 through a separate signer process, and retired keys hold no private half. Customer artwork email runs on rewrite-dev in development mode (admin recipient only); protected facts are 9/8/2/8/11 after test order #1009. The existing host alias `prod` serves the allocated rewrite-dev app/store. Main up to `bf512171` is deployed and released there as theme-only version `1205994881025` and natively verified (see [Deploy 2](#deploy-2-main-bf512171--deployed-and-released-12-november-2026)); later main commits (#394, #395 and the held #391) are not deployed. No production resource migration, new scopes/markets, database reset, history erasure, protected VAT retry, checkout/order/payment or consumed sender/alert drill was performed. The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
 
 ### Remaining work and end shape (owner-agreed roadmap, 12 November 2026)
 
@@ -47,6 +47,41 @@ Updated 12 November 2026. Insignia now runs only on `app.insigniacustomizer.com`
 - The VAT store's leftover old-host uninstall webhook stays.
 - The Cloudflare status Worker detects removed services by itself.
 - Standing OK for rewrite-dev test-gateway orders.
+
+### Deploy 2: main `bf512171` — deployed and released 12 November 2026
+
+Same owner approval and procedure as the first 12 November deploy below. Ships #377 (verifier reuse only while a record stays fresh for 8 s more, release diagnostics), #384 (web listen-failure exit), #385 and #388 (acceptance and renewal fences), and the theme changes #378, #380, #387 and #389. No migration; schema stays 59.
+
+**CI.** `bf512171` (tree `2f0be957`): durable core 43297757560 and runtime 43297757316 on attempt 1, foundation 43297757028 on attempt 2 (attempt 1 failed only the #369-listed `#349` timeout test). Binding head `3ca7b253` (#393; base includes the test-only #376): runtime 43306121518 and foundation 43306121537 on attempt 1; no durable-core path changed.
+
+**Server side first (`bf512171`, profile `native-buyer-fixes-fb436e16` unchanged).**
+- Baseline frozen (schema 59 equal to the 59 repository migrations, facts 9/8/2/8/11, ACL digests unchanged) and a DB-only checkpoint restore-verified at `20:24:00Z`; its encrypted copies were shredded at `21:23:16Z`.
+- #384 on the built web image, in a disposable network-less container: a failed bind logs one `web_listen_failed` (`EADDRNOTAVAIL`, level 50) and exits 1; a normal start logs "Server listening" and stops on SIGTERM under init in 0.2 s (exit 143), like the previous image.
+- Verifier `sha256:fb4cd37a…` with its code manifest re-pinned to `a705e14a…`, then web `sha256:3e72c25a…` and worker `sha256:f208877a…`, at `20:38:15–17Z`. Web and quiesced worker reads matched record `3a0ae507…` (`1205760688129`). No error-level lines.
+- Signer and inspector unchanged: #385's `fenceReader` diverts reads only inside the web acceptance fence, and the inspector's only dependency change is the logging allow-list.
+
+**Shopify version `1205994881025` (`native-repair-messages-bf512171`).**
+- Created once at `20:40:22Z` from the frozen `native-buyer-fixes-fb436e16` staging; only the 15 theme assets differ (foundation build of `bf512171`, byte-identical to a local build). Functions unchanged: wasm `5c8708b5…`/`6c362b36…`, module ids `826a9059…`/`076bfef2…`, queries `02ab5bce…`/`5867e61f…`. Module hash `eb500b6c…`, 37 versions.
+- Phase B at `21:13:04–05Z`: verifier `sha256:8bdeeda2…` (code manifest `bc902ab8…`), web `sha256:3828d88a…`, worker `sha256:7050f543…`, all from `3ca7b253` with the new profile.
+- Exactly one `app release` (exit 0 at `21:13:37Z`). Readback at `21:13:39Z`: sole Active `1205994881025`, 37 versions equal the binding, NEVER_RELEASE versions inactive, Active modules equal the committed baseline.
+- Fresh web and quiesced worker reads matched record `95884ffc…` at `21:13:45.768Z`.
+- **Fail-closed window:** `20:40:22Z` to `21:13:45.8Z` (about 33 minutes). The database shows no buyer session, proposal, command or artwork in it. The window's web logs went with the replaced container, and Traefik's access log does not cover the Insignia routers.
+
+**Native verification (rewrite-dev storefront; carts emptied, no order).**
+- **Acceptance latency (#345):** seven acceptances between `21:15:47Z` and `21:19:43Z`, at intervals of 13–28 s, plus one 12 s wait on Review. Server totals were 793–840 ms; `release-observe` 248–269 ms, `release-read` 4–7 ms, and **no `release-collect` span in any acceptance**, so none hit a synchronous collection (the first deploy's acceptance took 3957 ms, 3595 ms of it in one). Proposals took 517–739 ms; Review rendered in 0.94–1.46 s; Add to cart reached the cart page in about 4 s. All were signed by key 3 through the signer.
+- Upload (Linkerborst, $17.45), Review, reload → "Continue your design?" (focus on Continue) → Continue restored M 2, L 1 → Add to cart: two lines at 1745, each with a 302-char `_insignia_line_v3`.
+- Spanish: after choosing Español the artwork step uses "diseño" ("Diseño", "Añade tu diseño", "Añadir diseño", "Eliminar diseño"), and the whole design uses "personalización" ("Ir a los controles de personalización", "Pasos de personalización", "¿Cerrar la personalización?", "Cerrar personalización").
+- Escape with an edit opens the close confirmation (focus on Keep editing); Keep editing keeps it and Close customization closes. The skip link keeps the Designer in its frame and focuses `#design-controls`.
+- A second tab opened the owned cart design from "Review customized items" with no earlier-session dead end. A native cart quantity change (4XL 1→2) is seeded into the editor after a page load.
+- **Repair view (#389):** altering one character of a carrier dropped that line to $9.95. The cart block said "Your customized items changed, so customization prices are not applied…"; the repair view said "Your customization needs review… stay in the cart until you confirm replacement or removal" with Review removing all customized items, Retry and Close. No removal was made.
+- Logs: no error-level lines in web, worker, signer or verifier. None of the new release classes (`ReleaseEvidenceExpired/Mismatch/Missing`, `ReleaseSourceUnavailable`) occurred; the only buyer rejection was the expected `ReviewRequired` at `cart-state` from the altered carrier. The worker logs `lifecycle_credential_unavailable` (warn) once per process start.
+- Protected facts stay 9/8/2/8/11.
+
+**Found, not fixed.**
+- Reopening the cart editor on the same page after a native Ajax quantity change shows the quantity from the earlier opening (4XL 1 while the cart held 2); after a page load it shows the cart quantity.
+- One Add to cart reached the cart server-side but the page stayed on Review. That was a tool artifact: the browser automation call exceeded its 15 s limit while the page was waiting. Repeated with the wait outside the call, the page went to the cart.
+
+**Custody.** `/home/serveradmin/.local/share/insignia/recovery-release-20261110/bf512171-deploy-1/` on prod. Prior images remain loaded for rollback.
 
 ### Storefront and Designer fixes — deployed and released 12 November 2026
 
