@@ -28,6 +28,40 @@ describe('audience-scoped translators', () => {
       }
   });
 
+  it('keeps Spanish diseño for the artwork and personalización for the whole or saved design', () => {
+    const { t } = createCustomerTranslator('es');
+    const artwork = [
+      t('customer:steps.artwork'),
+      t('customer:artwork.chooseArtwork'),
+      t('customer:review.artwork'),
+      t('customer:recovery.editDesign'),
+    ];
+    for (const text of artwork) expect(text).toMatch(/diseño/i);
+    const wholeDesign = [
+      t('customer:chrome.skipToDesignControls'),
+      t('customer:chrome.designControls'),
+      t('customer:review.designTotals'),
+      t('customer:review.currentDesign'),
+      t('customer:validation.checkDesign'),
+      t('customer:recovery.cartCommitFailed'),
+      t('customer:recovery.cartRejected'),
+      t('customer:recovery.cartRejectedStock'),
+      t('customer:recovery.busy'),
+      t('customer:recovery.unavailable'),
+      t('customer:host.discardHelp'),
+      t('customer:host.savedDesigns'),
+      t('customer:host.openSaved'),
+      t('customer:host.startNew'),
+      t('customer:close.help'),
+      t('customer:resume.help'),
+    ];
+    for (const text of wholeDesign) {
+      expect(text).toMatch(/personalizaci(ón|ones)/i);
+      expect(text).not.toMatch(/diseño/i);
+    }
+    expect(t('customer:host.startNew')).toBe(t('customer:resume.startNew'));
+  });
+
   it('uses an expanded pseudo catalog without changing interpolation values', () => {
     const pseudo = createCustomerTranslator('en-XA', { allowPseudoLocale: true });
 
