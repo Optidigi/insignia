@@ -77,7 +77,10 @@ export function createSignerServer(input: {
   clock?: () => Date;
   audit?: (entry: SignerAuditEntry) => void;
   limits?: Partial<SignerLimits>;
-  /** Test seam: runs after every check, immediately before the signature is made. */
+  /**
+   * @internal Test seam only; production (`signer-main`) never passes it. It runs after every check, immediately
+   * before the signature is made, while the key row is locked.
+   */
   beforeSign?: () => Promise<void>;
 }): Server {
   const limits = { ...DEFAULT_LIMITS, ...input.limits };

@@ -130,7 +130,7 @@ The [signing-owner overlay](signing-owner-compose.yaml) is armed only for an own
   - It has `SELECT(shop_id, generation, authorization_generation)` on `installation_generations`, for the identity trigger, and EXECUTE on `signing_key_scope`.
   - It cannot delete keys or change state, window or identity.
 - Web (`insignia_runtime`) reads every signing-key column except `private_envelope`. It updates only lifecycle columns, including nulling the envelope at retirement, and cannot insert or delete keys.
-- Migration 64's trigger enforces the envelope split: a role that cannot SELECT `private_envelope` (web) may only clear the envelope and `wrapping_key_id`, and only in the statement that retires, revokes or destroys the key. It cannot overwrite the active key's envelope to stop signing.
+- Migration 64's trigger enforces the envelope split: a role that cannot SELECT `private_envelope` (web) may only clear the envelope and `wrapping_key_id`, and only in the statement that retires, revokes or destroys the key. It cannot overwrite the active key's envelope to stop signing silently. Web can still stop signing by revoking or retiring the active key (it keeps `UPDATE(state)`), but that change is visible and recorded, with a command key for a revoke; the guard closes only the silent form, where the key still looks active.
 - The worker reaches signing keys only through `destroy_expired_signing_keys`, and cannot read envelopes.
 - **Apply as the schema owner:**
   1. [signing-key-runtime-grants.sql](signing-key-runtime-grants.sql) (earlier delta);

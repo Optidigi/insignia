@@ -317,6 +317,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('signing-key envelope writer a
         const until = Date.now() + 5_000;
         while (!settled && !(await signerWaits()) && Date.now() < until) await new Promise((r) => setTimeout(r, 10));
         expect(settled).toBe(false);
+        expect(await signerWaits()).toBe(true);
         await pending.query('COMMIT');
         expect(await blocked).toBe('refused');
       } finally {
