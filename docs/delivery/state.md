@@ -43,7 +43,7 @@ Updated 13 November 2026. Insignia runs only on `app.insigniacustomizer.com`, on
 | 8 Rollout | Not approved | First real merchant. | Explicit go. | Owner authorization after the gates above. |
 
 **Small pending checks.**
-- Renewal of an expired quote, natively: needs a cart at least three shop days old, and no such cart existed on 13 Nov (the default and incognito profiles had empty carts). Seed one, then renew it three shop days later.
+- Renewal of an expired quote, natively, from 16–17 Nov (with the key 2 check): a test cart was seeded on 13 Nov `20:15Z` in the dev host's **default** T3 preview browser profile (1 × Zwart / M, $17.45, `_insignia_line_v3`; T-shirt demo). Open the cart page in that profile, renew it, check out or empty it, and record the result. Do not empty that profile's cart before then.
 - **End-to-end purchase after deploy 4 (13 Nov, about `20:05–20:11Z`):** Designer (upload on Linkerborst, typed quantity 2) → Review $34.90 → cart line 2 × $17.45 with a `_insignia_line_v3` carrier (transform priced it; variant $9.95) → checkout loaded without validation errors → test-gateway order `FXUC9QZLM`, $42.90 with shipping. Insignia recorded the order, paid fact, binding and line. No artwork notification, as expected: notifications are planned only for "artwork later" placements.
 - 16 Nov: key 2's destruction. Confirm that the worker logs `signing_key_destruction` with count 1, a Designer Add to cart still succeeds and no `public_config_drift` line appears. The published config still lists key 2 until the next owner rotation or publication, and quote readiness tolerates that (#333).
 - Per-visitor and shop limits under load: test locally, not by flooding prod.
