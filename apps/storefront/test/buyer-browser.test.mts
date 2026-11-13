@@ -274,7 +274,7 @@ test('buyer reviews the full retained cart and opens the locale native cart only
     await ui.locator('.app').waitFor();
     await addDeferred(ui);
     await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-    await ui.locator('input[type=number]:enabled').first().fill('3');
+    await ui.locator('input[inputmode=numeric]:enabled').first().fill('3');
     await ui.getByRole('button', { name: 'Review', exact: true }).last().click();
     await ui.getByText('€91.00', { exact: true }).filter({ visible: true }).first().waitFor();
     assert.equal(await ui.getByRole('columnheader', { name: 'Setup once' }).count(), 0);
@@ -416,7 +416,7 @@ test('selected mobile positions keep independent logo-later choices and exact ph
     await positionCard(host, 'Back').locator('.artwork-choice').click();
     await host.getByRole('button', { name: 'Provide artwork later', exact: true }).click();
     await host.getByRole('button', { name: 'Choose quantities', exact: true }).tap();
-    await host.locator('input[type=number]:enabled').first().fill('1');
+    await host.locator('input[inputmode=numeric]:enabled').first().fill('1');
     const proposalResponse = page.waitForResponse((response) => response.url().endsWith('/quote-proposals'));
     await host.getByRole('button', { name: 'Review', exact: true }).last().tap();
     await proposalResponse;
@@ -512,7 +512,7 @@ test('selected photo views retain size choices when another view has no placemen
     await host.getByRole('button', { name: 'front', exact: true }).click();
     await host.getByRole('button', { name: 'Add artwork for Front', exact: true }).waitFor();
     await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-    assert.equal(await host.locator('input[type=number]:enabled').first().isVisible(), true);
+    assert.equal(await host.locator('input[inputmode=numeric]:enabled').first().isVisible(), true);
   } finally {
     await browser?.close();
     await server.close();
@@ -994,7 +994,7 @@ test('direct Artwork to Review starts one current preparation without passive cl
   await withRetainedBuyer(async ({ page, host, accepts, mutations }) => {
     await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
     await host.locator('body').evaluate((body) => {
-      const input = body.querySelector<HTMLInputElement>('input[type=number]:enabled');
+      const input = body.querySelector<HTMLInputElement>('input[inputmode=numeric]:enabled');
       if (!input) throw new Error('Quantity field was not rendered');
       input.value = '4';
       input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -1034,12 +1034,12 @@ test('quantity editing speculates once instead of spending a proposal slot on ev
     async ({ page, host, proposals, accepts, mutations }) => {
       const first = page.waitForResponse('**/quote-proposals');
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-      await host.locator('input[type=number]:enabled').first().fill('4');
+      await host.locator('input[inputmode=numeric]:enabled').first().fill('4');
       await page.clock.runFor(700);
       await first;
       await page.clock.runFor(100);
       for (const value of ['5', '6']) {
-        await host.locator('input[type=number]:enabled').first().fill(value);
+        await host.locator('input[inputmode=numeric]:enabled').first().fill(value);
         await page.clock.runFor(700);
       }
       assert.equal(proposals.length, 1, 'typing pauses must not exhaust the bounded session draft/proposal budget');
@@ -1094,7 +1094,7 @@ test('Quantities footer enters Review while its speculative quote is still prepa
     });
     try {
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-      await host.locator('input[type=number]:enabled').first().fill('4');
+      await host.locator('input[inputmode=numeric]:enabled').first().fill('4');
       await started;
       const next = host.locator('.footer-buttons .primary-button');
       assert.equal(await next.textContent(), 'Review', 'background preparation cannot replace the navigation action');
@@ -1209,12 +1209,12 @@ test('pending quote preparation keeps review editing responsive and cancels obso
     });
     try {
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-      await host.locator('input[type=number]:enabled').first().fill('4');
+      await host.locator('input[inputmode=numeric]:enabled').first().fill('4');
       await started;
       await host.getByRole('button', { name: 'Review', exact: true }).last().click();
       assert.equal(await host.locator('.footer-buttons .primary-button').isEnabled(), false);
       await host.getByRole('button', { name: 'Edit quantities', exact: true }).click();
-      await host.locator('input[type=number]:enabled').first().fill('5');
+      await host.locator('input[inputmode=numeric]:enabled').first().fill('5');
       release();
       await host.getByRole('button', { name: 'Review', exact: true }).last().click();
       await applyButton(host).waitFor();
@@ -1227,7 +1227,7 @@ test('pending quote preparation keeps review editing responsive and cancels obso
       assert.equal(accepts.length, 0);
       assert.equal(mutations(), 0);
       await host.getByRole('button', { name: 'Edit quantities', exact: true }).click();
-      assert.equal(await host.locator('input[type=number]:enabled').first().inputValue(), '5');
+      assert.equal(await host.locator('input[inputmode=numeric]:enabled').first().inputValue(), '5');
     } finally {
       release();
       await page.unrouteAll({ behavior: 'ignoreErrors' });
@@ -1271,18 +1271,18 @@ test('a native cart quantity change reopens the design at the cart quantity, nev
     async ({ page, host, trigger, editCart, proposals, accepts, mutations }) => {
       // An unsent Designer edit (3 -> 4) is still resumed: the cart keeps its accepted quantity.
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-      await host.locator('input[type=number]:enabled').first().fill('4');
+      await host.locator('input[inputmode=numeric]:enabled').first().fill('4');
       await host.getByRole('button', { name: 'Review', exact: true }).last().click();
       await applyButton(host).waitFor();
       await reopenOwned(page, trigger, host);
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-      assert.equal(await host.locator('input[type=number]:enabled').first().inputValue(), '4');
+      assert.equal(await host.locator('input[inputmode=numeric]:enabled').first().inputValue(), '4');
       // The buyer then changes the cart line to 5 with the theme's controls: that is the latest choice.
       editCart();
       await reopenOwned(page, trigger, host);
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
       assert.equal(
-        await host.locator('input[type=number]:enabled').first().inputValue(),
+        await host.locator('input[inputmode=numeric]:enabled').first().inputValue(),
         '5',
         'the cart quantity seeds the editor',
       );
@@ -1334,15 +1334,15 @@ test('a cart line edited and then changed back to the cart reopens from the cart
       );
     await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
     const edited = saved(4);
-    await host.locator('input[type=number]:enabled').first().fill('4');
+    await host.locator('input[inputmode=numeric]:enabled').first().fill('4');
     await edited;
     // Undo by hand: the line is as the cart holds it again. Its draft must say so too.
     const undone = saved(3);
-    await host.locator('input[type=number]:enabled').first().fill('3');
+    await host.locator('input[inputmode=numeric]:enabled').first().fill('3');
     await undone;
     await reopenOwned(page, trigger, host);
     await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-    assert.equal(await host.locator('input[type=number]:enabled').first().inputValue(), '3');
+    assert.equal(await host.locator('input[inputmode=numeric]:enabled').first().inputValue(), '3');
   });
 });
 test('reopening on the same cart page follows a native Ajax quantity change (#397)', async () => {
@@ -1354,7 +1354,7 @@ test('reopening on the same cart page follows a native Ajax quantity change (#39
       await reopenSamePage(page, trigger, host);
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
       assert.equal(
-        await host.locator('input[type=number]:enabled').first().inputValue(),
+        await host.locator('input[inputmode=numeric]:enabled').first().inputValue(),
         '5',
         'the cart quantity seeds the editor, as after a reload',
       );
@@ -1375,14 +1375,14 @@ test('reopening on the same cart page keeps a Designer quantity edit over a nati
   await withRetainedBuyer(
     async ({ page, host, trigger, editCart, proposals, accepts, mutations }) => {
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-      await host.locator('input[type=number]:enabled').first().fill('4');
+      await host.locator('input[inputmode=numeric]:enabled').first().fill('4');
       await host.getByRole('button', { name: 'Close customizer', exact: true }).click();
       await host.getByRole('button', { name: 'Close customization', exact: true }).click();
       await page.locator('dialog:modal').waitFor({ state: 'detached' });
       await ajaxQuantity(page, editCart, 5);
       await reopenSamePage(page, trigger, host);
       // The Designer reopens where it was closed: on Quantities.
-      assert.equal(await host.locator('input[type=number]:enabled').first().inputValue(), '4');
+      assert.equal(await host.locator('input[inputmode=numeric]:enabled').first().inputValue(), '4');
       await host.getByRole('button', { name: 'Review', exact: true }).last().click();
       await applyButton(host).waitFor();
       assert.deepEqual(
@@ -1424,7 +1424,7 @@ test('a Designer quantity edit that cancels the eager draft save still reopens a
         { variantId: '222', quantity: 3 },
       ]);
       const cancelled = page.waitForEvent('requestfailed', (failed) => failed === request);
-      await host.locator('input[type=number]:enabled').first().fill('4');
+      await host.locator('input[inputmode=numeric]:enabled').first().fill('4');
       await cancelled;
       release();
       await host.getByRole('button', { name: 'Review', exact: true }).last().click();
@@ -1432,7 +1432,7 @@ test('a Designer quantity edit that cancels the eager draft save still reopens a
       await reopenOwned(page, trigger, host);
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
       assert.equal(
-        await host.locator('input[type=number]:enabled').first().inputValue(),
+        await host.locator('input[inputmode=numeric]:enabled').first().inputValue(),
         '4',
         'the reviewed Designer edit is resumed, not the cancelled eager save',
       );
@@ -1445,7 +1445,7 @@ test('a design added from the product page reopens at a later native cart quanti
     async ({ page, host, trigger, editCart, accepts }) => {
       await addDeferred(host);
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-      await host.locator('input[type=number]:enabled').first().fill('3');
+      await host.locator('input[inputmode=numeric]:enabled').first().fill('3');
       await host.getByRole('button', { name: 'Review', exact: true }).last().click();
       const latest = () =>
         page.evaluate(() =>
@@ -1463,7 +1463,7 @@ test('a design added from the product page reopens at a later native cart quanti
       editCart(5);
       await reopenOwned(page, trigger, host);
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-      assert.equal(await host.locator('input[type=number]:enabled').first().inputValue(), '5');
+      assert.equal(await host.locator('input[inputmode=numeric]:enabled').first().inputValue(), '5');
     },
     { observedQuantities: true, opening: 'product' },
   );
@@ -1472,7 +1472,7 @@ test('after Update cart, a native return to the earlier quantity is still the ca
   await withRetainedBuyer(
     async ({ page, host, trigger, editCart, accepts }) => {
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-      await host.locator('input[type=number]:enabled').first().fill('4');
+      await host.locator('input[inputmode=numeric]:enabled').first().fill('4');
       await host.getByRole('button', { name: 'Review', exact: true }).last().click();
       const handoff = nativeCartHandoff(page);
       await applyButton(host).click();
@@ -1483,7 +1483,7 @@ test('after Update cart, a native return to the earlier quantity is still the ca
       editCart(3);
       await reopenOwned(page, trigger, host);
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-      assert.equal(await host.locator('input[type=number]:enabled').first().inputValue(), '3');
+      assert.equal(await host.locator('input[inputmode=numeric]:enabled').first().inputValue(), '3');
     },
     { observedQuantities: true },
   );
@@ -1505,7 +1505,7 @@ test('after a cart quantity change during editing, Retry follows the cart when t
         'an unedited Designer quantity never reverts the cart line',
       );
       await host.getByRole('button', { name: 'Edit quantities', exact: true }).click();
-      assert.equal(await host.locator('input[type=number]:enabled').first().inputValue(), '5');
+      assert.equal(await host.locator('input[inputmode=numeric]:enabled').first().inputValue(), '5');
       // The cart line is the new unchanged state: closing asks nothing.
       await host.getByRole('button', { name: 'Close customizer', exact: true }).click();
       await page.locator('dialog:modal').waitFor({ state: 'detached' });
@@ -1520,7 +1520,7 @@ test('after a cart quantity change during editing, Retry keeps a quantity the bu
     async ({ page, host, editCart, proposals, accepts, mutations }) => {
       await freezeTimers(page);
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-      await host.locator('input[type=number]:enabled').first().fill('4');
+      await host.locator('input[inputmode=numeric]:enabled').first().fill('4');
       editCart();
       await host.getByRole('button', { name: 'Review', exact: true }).last().click();
       await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
@@ -1542,7 +1542,7 @@ test('after a cart quantity change during editing, the start action reopens the 
     async ({ page, host, editCart, proposals, accepts, mutations }) => {
       await freezeTimers(page);
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-      await host.locator('input[type=number]:enabled').first().fill('7');
+      await host.locator('input[inputmode=numeric]:enabled').first().fill('7');
       editCart();
       await host.getByRole('button', { name: 'Review', exact: true }).last().click();
       await host.getByRole('heading', { name: 'Your customization needs review', exact: true }).waitFor();
@@ -1551,7 +1551,7 @@ test('after a cart quantity change during editing, the start action reopens the 
       await host.getByRole('button', { name: 'Discard changes and reopen from cart', exact: true }).click();
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
       assert.equal(
-        await host.locator('input[type=number]:enabled').first().inputValue(),
+        await host.locator('input[inputmode=numeric]:enabled').first().inputValue(),
         '5',
         'it reopens the cart design, not a blank one',
       );
@@ -1586,7 +1586,7 @@ test('selected acknowledgements rotate acceptance keys while uncertain API retri
     await page.locator('body').evaluate((body, markup) => body.insertAdjacentHTML('beforeend', markup), placement);
     await trigger.getByRole('button', { name: 'Review customized cart', exact: true }).click();
     await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-    await host.locator('input[type=number]:enabled').first().fill('4');
+    await host.locator('input[inputmode=numeric]:enabled').first().fill('4');
     await host.getByRole('button', { name: 'Review', exact: true }).last().click();
     await applyButton(host).waitFor();
     await applyButton(host).click();
@@ -1636,7 +1636,7 @@ for (const restoreUnavailable of [false, true])
         else await host.locator('.app').waitFor();
       };
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-      await host.locator('input[type=number]:enabled').first().fill('4');
+      await host.locator('input[inputmode=numeric]:enabled').first().fill('4');
       await host.getByRole('button', { name: 'Review', exact: true }).last().click();
       await applyButton(host).waitFor();
       page.on('dialog', (dialog) => dialog.accept());
@@ -1648,7 +1648,7 @@ for (const restoreUnavailable of [false, true])
       await reloadOwned(restoreUnavailable);
       if (!restoreUnavailable) {
         await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-        assert.equal(await host.locator('input[type=number]:enabled').first().inputValue(), '4');
+        assert.equal(await host.locator('input[inputmode=numeric]:enabled').first().inputValue(), '4');
         const published = structuredClone(config);
         published.revisionId = 'new-publication';
         published.contentHash = 'e'.repeat(64);
@@ -1661,7 +1661,7 @@ for (const restoreUnavailable of [false, true])
       if (restoreUnavailable) await page.unroute(restoreRoute);
       await reloadOwned();
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-      assert.equal(await host.locator('input[type=number]:enabled').first().inputValue(), '3');
+      assert.equal(await host.locator('input[inputmode=numeric]:enabled').first().inputValue(), '3');
       assert.equal(accepts.length, 0);
       assert.equal(mutations(), 0);
     });
@@ -1994,8 +1994,8 @@ test('Firefox opens the selected Designer when srcdoc has no document referrer',
       );
       await addDeferred(ui, 'Front');
       await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-      await ui.locator('input[type=number]:enabled').first().fill('2');
-      assert.equal(await ui.locator('input[type=number]:enabled').first().inputValue(), '2');
+      await ui.locator('input[inputmode=numeric]:enabled').first().fill('2');
+      assert.equal(await ui.locator('input[inputmode=numeric]:enabled').first().inputValue(), '2');
     },
     false,
     firefox,
@@ -2202,20 +2202,20 @@ test('reopening resumes the selected Designer without a developer host page', as
     const eager = page.waitForRequest('**/apps/insignia/v1/quote-proposals');
     await addDeferred(ui, 'Front');
     await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-    await ui.locator('input[type=number]:enabled').first().fill('3');
+    await ui.locator('input[inputmode=numeric]:enabled').first().fill('3');
     const proposal = await eager;
     const cancelled = page.waitForEvent('requestfailed', (request) => request === proposal);
     await ui.getByRole('button', { name: 'Close customizer', exact: true }).click();
     await ui.getByRole('heading', { name: 'Close customization?', exact: true }).waitFor();
     await ui.getByRole('button', { name: 'Keep editing', exact: true }).click();
-    assert.equal(await ui.locator('input[type=number]:enabled').first().inputValue(), '3');
+    assert.equal(await ui.locator('input[inputmode=numeric]:enabled').first().inputValue(), '3');
     await ui.getByRole('button', { name: 'Close customizer', exact: true }).click();
     await ui.getByRole('button', { name: 'Close customization', exact: true }).click();
     await page.waitForFunction(() => document.querySelector('dialog:modal') === null);
     await cancelled; // closing retires the speculative proposal
     await trigger.click();
     await ui.locator('.app').waitFor();
-    assert.equal(await ui.locator('input[type=number]:enabled').first().inputValue(), '3');
+    assert.equal(await ui.locator('input[inputmode=numeric]:enabled').first().inputValue(), '3');
     assert.equal(await ui.getByRole('button', { name: 'Personalise', exact: true }).count(), 0);
     assert.equal(await ui.getByRole('button', { name: 'Start a new design', exact: true }).count(), 0);
   });
@@ -2231,7 +2231,7 @@ test('selected desktop and mobile layouts retain the design and quantities when 
     assert.equal(Math.round(preview.x + preview.width), Math.round(controls.x));
     await addDeferred(ui, 'Front');
     await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-    const quantity = ui.locator('input[type=number]:enabled').first();
+    const quantity = ui.locator('input[inputmode=numeric]:enabled').first();
     await quantity.fill('3');
     await ui.getByRole('button', { name: 'Close customizer', exact: true }).click();
     await ui.getByRole('button', { name: 'Close customization', exact: true }).click();
@@ -2356,7 +2356,7 @@ for (const engine of [chromium, firefox]) {
           await opener.click();
           await ui.getByRole('button', { name: 'Provide artwork later', exact: true }).click();
           await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-          const quantity = ui.locator('input[type=number]:enabled').first();
+          const quantity = ui.locator('input[inputmode=numeric]:enabled').first();
           await quantity.fill('3');
           await ui.getByRole('button', { name: 'Close customizer', exact: true }).click();
           await ui.getByRole('button', { name: 'Close customization', exact: true }).click();
@@ -2417,7 +2417,7 @@ test('selected mobile artwork dialog rejects unsupported files locally and real 
       await viewSelect.selectOption({ label: 'front' });
       await positionCard(ui, 'Front').getByText('Artwork to follow', { exact: true }).first().waitFor();
       await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-      assert.equal(await ui.locator('input[type=number]:enabled').first().isVisible(), true);
+      assert.equal(await ui.locator('input[inputmode=numeric]:enabled').first().isVisible(), true);
       assert.deepEqual(await ui.locator('.steps .step-label').allTextContents(), ['Artwork', 'Quantities', 'Review']);
       assert.equal(
         await ui.locator('.steps button').first().locator('svg').count(),
@@ -2461,7 +2461,7 @@ test('republishing during a new empty-cart customization never offers removal of
     });
     await addDeferred(ui, 'Front');
     await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-    await ui.locator('input[type=number]:enabled').first().fill('1');
+    await ui.locator('input[inputmode=numeric]:enabled').first().fill('1');
     await ui.getByRole('button', { name: 'Review', exact: true }).last().click();
     await ui.getByRole('heading', { name: 'Unavailable', exact: true }).waitFor();
     assert.equal(
@@ -2608,7 +2608,7 @@ test('lost optional captured product preview keeps valid production choices and 
     });
     await addDeferred(ui);
     await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-    await ui.locator('input[type=number]:enabled').first().fill('2');
+    await ui.locator('input[inputmode=numeric]:enabled').first().fill('2');
     const response = page.waitForResponse((response) => new URL(response.url()).pathname.endsWith('/quote-proposals'));
     await ui.getByRole('button', { name: 'Review', exact: true }).last().click();
     assert.equal((await response).status(), 200);
@@ -2642,7 +2642,7 @@ test('an expired product preview renews only media from the same publication wit
     await positionCard(ui, 'Front').getByText('Artwork to follow', { exact: true }).first().waitFor();
     assert.equal(reads, 1);
     await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-    await ui.locator('input[type=number]:enabled').first().fill('2');
+    await ui.locator('input[inputmode=numeric]:enabled').first().fill('2');
     assert.equal(await ui.getByText('€99.99', { exact: true }).count(), 0);
   });
 });
@@ -2732,7 +2732,7 @@ test('switching a dirty cart design offers the baseline cancel/discard decision 
   await withRetainedBuyer(
     async ({ page, trigger, host, mutations, accepts }) => {
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-      await host.locator('input[type=number]:enabled').first().fill('4');
+      await host.locator('input[inputmode=numeric]:enabled').first().fill('4');
       await host.getByRole('button', { name: 'Review', exact: true }).last().click();
       await host.getByRole('region', { name: 'Design totals', exact: true }).waitFor();
       await host
@@ -2745,7 +2745,7 @@ test('switching a dirty cart design offers the baseline cancel/discard decision 
       assert.equal(await host.locator('.app').getAttribute('inert'), '');
       await page.keyboard.press('Escape');
       await host.getByRole('button', { name: 'Edit quantities', exact: true }).click();
-      assert.equal(await host.locator('input[type=number]:enabled').first().inputValue(), '4');
+      assert.equal(await host.locator('input[inputmode=numeric]:enabled').first().inputValue(), '4');
       await host.getByRole('button', { name: 'Review', exact: true }).last().click();
       await host.getByRole('region', { name: 'Design totals', exact: true }).waitFor();
       await host
@@ -2762,7 +2762,7 @@ test('switching a dirty cart design offers the baseline cancel/discard decision 
         .click();
       await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
       assert.equal(
-        await host.locator('input[type=number]:enabled').first().inputValue(),
+        await host.locator('input[inputmode=numeric]:enabled').first().inputValue(),
         '3',
         'discard restores the accepted cart quantity, never the staged dirty draft',
       );

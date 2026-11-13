@@ -255,7 +255,7 @@ async function buildToReview(ui: FrameLocator) {
   await card.locator('.artwork-choice').click();
   await ui.getByRole('button', { name: 'Provide artwork later', exact: true }).click();
   await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-  await ui.locator('input[type=number]:enabled').first().fill('3');
+  await ui.locator('input[inputmode=numeric]:enabled').first().fill('3');
   await ui.getByRole('button', { name: 'Review', exact: true }).last().click();
   await ui.getByText('€90.00', { exact: true }).filter({ visible: true }).first().waitFor();
 }
@@ -281,7 +281,7 @@ async function expectResumedDraft(ui: FrameLocator) {
   await prompt(ui).waitFor({ state: 'detached' });
   await ui.locator('article.print-card').first().waitFor();
   await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-  assert.equal(await ui.locator('input[type=number]:enabled').first().inputValue(), '3');
+  assert.equal(await ui.locator('input[inputmode=numeric]:enabled').first().inputValue(), '3');
 }
 
 for (const route of ['reload', 'navigation away and back', 'new tab'] as const)
@@ -387,7 +387,7 @@ test('Continue restores uploaded artwork through the session that owns it', asyn
     assert.deepEqual(previews, ['dddddddd-dddd-4ddd-8ddd-dddddddddddd']);
     await ui.locator('article.print-card img').first().waitFor();
     await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-    assert.equal(await ui.locator('input[type=number]:enabled').first().inputValue(), '2');
+    assert.equal(await ui.locator('input[inputmode=numeric]:enabled').first().inputValue(), '2');
   });
 });
 
@@ -589,7 +589,11 @@ test('artwork uploaded and placed before choosing quantities is offered again af
     await resumed.locator('article.print-card img').first().waitFor();
     assert.equal(await resumed.locator('article.print-card').count(), 1);
     await resumed.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-    assert.equal(await resumed.locator('input[type=number]:enabled').first().inputValue(), '0', 'no quantities yet');
+    assert.equal(
+      await resumed.locator('input[inputmode=numeric]:enabled').first().inputValue(),
+      '0',
+      'no quantities yet',
+    );
   });
 });
 
@@ -600,7 +604,7 @@ test('an edit made after Review is restored after a reload (#366)', async () => 
     await buildToReview(ui);
     await expectEventually(() => drafts.size === 1, 'Review saves the draft');
     await ui.getByRole('button', { name: 'Previous step', exact: true }).last().click();
-    await ui.locator('input[type=number]:enabled').first().fill('5');
+    await ui.locator('input[inputmode=numeric]:enabled').first().fill('5');
     await expectEventually(
       () =>
         drafts.size === 1 &&
@@ -613,7 +617,7 @@ test('an edit made after Review is restored after a reload (#366)', async () => 
     await resumed.getByRole('button', { name: 'Continue', exact: true }).click();
     await prompt(resumed).waitFor({ state: 'detached' });
     await resumed.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-    assert.equal(await resumed.locator('input[type=number]:enabled').first().inputValue(), '5');
+    assert.equal(await resumed.locator('input[inputmode=numeric]:enabled').first().inputValue(), '5');
   });
 });
 

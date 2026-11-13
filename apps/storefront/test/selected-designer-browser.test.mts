@@ -214,7 +214,7 @@ for (const engine of [chromium, firefox]) {
     await frame.getByRole('button', { name: 'Choose quantities', exact: true }).click();
     assert.equal(await frame.getByLabel('Packaging', { exact: true }).inputValue(), 'plain');
     await frame.getByLabel('Packaging', { exact: true }).selectOption('gift');
-    const quantity = frame.locator('input[type=number]:enabled').first();
+    const quantity = frame.locator('input[inputmode=numeric]:enabled').first();
     await quantity.fill('0');
     await frame.getByRole('button', { name: 'Review', exact: true }).last().click();
     await frame.locator('.validation-return').waitFor();

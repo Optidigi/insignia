@@ -251,7 +251,7 @@ for (const mode of [
     await frame.locator('.artwork-choice').click();
     await frame.locator('.later-button').click();
     await frame.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-    await frame.locator('input[type=number]:enabled').first().fill('1');
+    await frame.locator('input[inputmode=numeric]:enabled').first().fill('1');
     await frame.getByRole('button', { name: 'Review', exact: true }).last().click();
     await frame.getByRole('button', { name: 'Add to cart', exact: true }).click();
 
