@@ -2,7 +2,7 @@
 
 ## Active assignment
 
-Updated 12 November 2026. Insignia now runs only on `app.insigniacustomizer.com` (Active `1205994881025`, web, worker and verifier main `3ca7b253` (the binding of application source `bf512171`), signer main `fb30b947`, schema 59). Signing keys no longer expire routinely; rewrite-dev signs with non-expiring key 3 through a separate signer process, and retired keys hold no private half. Customer artwork email runs on rewrite-dev in development mode (admin recipient only); protected facts are 9/8/2/8/11 after test order #1009. The existing host alias `prod` serves the allocated rewrite-dev app/store. Main up to `bf512171` is deployed and released there as theme-only version `1205994881025` and natively verified (see [Deploy 2](#deploy-2-main-bf512171--deployed-and-released-12-november-2026)); later main commits (#394, #395 and the held #391) are not deployed. No production resource migration, new scopes/markets, database reset, history erasure, protected VAT retry, checkout/order/payment or consumed sender/alert drill was performed. The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
+Updated 13 November 2026. Insignia now runs only on `app.insigniacustomizer.com` (Active `1206211837953`, web, worker and verifier main `04e8a411` (the binding of application source `c78a8179`), signer main `fb30b947`, schema 62). Signing keys no longer expire routinely; rewrite-dev signs with non-expiring key 3 through a separate signer process, and retired keys hold no private half. Customer artwork email runs on rewrite-dev in development mode (admin recipient only); protected facts are 9/8/2/8/11 after test order #1009. The existing host alias `prod` serves the allocated rewrite-dev app/store. Main up to `c78a8179` is deployed and released there as version `1206211837953` and natively verified (see [Deploy 3](#deploy-3-main-c78a8179--deployed-and-released-13-november-2026)). No production resource migration, new scopes/markets, database reset, history erasure, protected VAT retry, checkout/order/payment or consumed sender/alert drill was performed. The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
 
 ### Remaining work and end shape (owner-agreed roadmap, 12 November 2026)
 
@@ -48,6 +48,40 @@ Updated 12 November 2026. Insignia now runs only on `app.insigniacustomizer.com`
 - The VAT store's leftover old-host uninstall webhook stays.
 - The Cloudflare status Worker detects removed services by itself.
 - Standing OK for rewrite-dev test-gateway orders.
+
+### Deploy 3: main `c78a8179` — deployed and released 13 November 2026
+
+Same owner approval and procedure as deploys 1 and 2. Ships #394 (signing fence without provider IO), #395 (draft write recovery), #399 (earlier-session expiry checks), #402 (owner emergency revoke), #404/#407 (larger session quotas, batched cleanup, `SESSION_QUOTA`), #405 (drafts without quantities, autosave) and the theme changes #391 (German theme locale, *Sie*), #395, #397/#403, #399, #401, #405 and #407; #398 is admin-only German.
+
+**CI.** `c78a8179` (tree `5f55487e`): runtime 43340293805 and foundation 43340293913 on attempt 1; durable core 43335585727 on `2e582750`, after which no durable-core path changed. Binding head `04e8a411` (#408): runtime 43344839878 and foundation 43344839872 on attempt 1. No reruns.
+
+**Database: migrations 60 → 62 → 61, one at a time.**
+- A DB-only checkpoint was restore-verified at `01:03:19Z` with a dry run of 60, 62, 61 and the grant on the restored copy; its encrypted copies were shredded at `01:39:48Z`.
+- 60 (`issued` nullable) and 62 (`session_id` indexes on `design_drafts`, `quote_proposals`, `cart_applications`; 207, 552 and 452 rows) at `01:03:36Z`, both through the guarded schema owner with an explicit expected ledger.
+- 61 (drop `issued`) at `01:04:20Z`, after the new web was running and no earlier web image was left. The `web-runtime-grants.sql` line `UPDATE(window_at,issued_at)` ran as a no-op.
+- Schema 62. **New expected column-ACL digest `ae2043f790171fa854016a8679e5b155`** (only `issued` left). The relation digest of this readback moves only because it lists the three new indexes, which have no ACL; without them it is unchanged (`449736942…`). Memberships unchanged. Web images `bf512171` and older are no longer rollback targets, and the worker must not be rolled back alone while sessions exceed the old quotas.
+
+**Server side (`c78a8179`, profile `native-repair-messages-bf512171` unchanged), between 62 and 61.** Verifier `sha256:abf52667…` (code manifest `c9d546f1…`; its package bundles the changed shared code), web `sha256:32110e0c…` and worker `sha256:6e1ad74d…` at `01:03:39–40Z`. Web and quiesced worker reads matched record `17412575…`. Signer and inspector unchanged (key lifecycle change is comments only; observability adds one allow-list entry).
+
+**Shopify version `1206211837953` (`native-session-drafts-c78a8179`).**
+- Created once at `01:06:36Z` from the frozen `native-repair-messages-bf512171` staging. Only the theme module differs: the 15 foundation-built assets of `c78a8179` (byte-identical to a local build) and `locales/de.json` (the #391 *Sie* text, recorded in the module baseline). Functions unchanged (wasm `5c8708b5…`/`6c362b36…`, module ids `826a9059…`/`076bfef2…`, queries `02ab5bce…`/`5867e61f…`). Module hash `dc980bc1…`, 38 versions.
+- Phase B at `01:38:51–53Z`: verifier `sha256:2fd64493…` (code manifest `a3e8fa58…`), web `sha256:9a482301…`, worker `sha256:33c04e12…` from `04e8a411` with the new profile.
+- One `app release` (exit 0 at `01:39:27Z`). Readback at `01:39:31Z`: sole Active `1206211837953`, 38 versions equal the binding, NEVER_RELEASE versions inactive, Active modules equal the committed baseline.
+- Fresh web and quiesced worker reads matched record `fcf6ec10…` at `01:39:37.411Z`.
+- **Fail-closed window:** `01:06:36Z` to `01:39:37.4Z` (about 33 minutes); no buyer session, proposal, command or artwork rows in it.
+
+**Native verification (rewrite-dev storefront; carts emptied, no order).**
+- **Latency:** six acceptances between `01:42:16Z` and `01:45:45Z` (the last after 40 s idle): 777–841 ms server-side, `release-read` 4–7 ms, no `release-collect`. Proposals 486–612 ms, Review 1.2–1.5 s, cart page about 3.7 s after the click. Six signer signatures, all ok.
+- **#405:** artwork placed on Linkerborst with no quantities; after more than 3 s and a reload, "Continue your design?" (focus on Continue) restored the placement and artwork at $17.45.
+- **#405 B1:** after removing that artwork ("Artwork removed. Undo"), waiting and reloading, the Designer opened clean with no prompt.
+- **#397:** on the same cart page, the editor was opened and closed, L was raised 1→2 with the theme control, and reopening showed L 2, M 2 (4 items, $69.80). The deploy 2 finding is fixed.
+- **German:** the store publishes only English (`/de/cart` 404), so the theme's cart block renders in English; its released `de.json` equals the #391 *Sie* text. With the Designer set to Deutsch, the Designer and the cart repair view use *Sie* ("Fügen Sie Ihr Motiv hinzu"; "Ihre Personalisierung muss geprüft werden … bis Sie den Ersatz oder die Entfernung bestätigen"). The language was reset afterwards.
+- Deploy 2 repeat: upload and Review ($17.45; 3 items $52.35), Add to cart with 302-char v3 carriers, Escape with an edit → "Close customization?" (focus on Keep editing) and Close leaves the cart unchanged, skip link keeps the frame and focuses `#design-controls`, a second tab shares the buyer session and opens the owned repair view with no earlier-session dead end.
+- Logs: no error-level lines in web, worker, signer or verifier. Buyer rejections: only the expected `ReviewRequired` at `cart-state` from an altered carrier. The worker logs `lifecycle_credential_unavailable` (warn) once per process start.
+- The per-visitor admission path was not exercised natively: this browser reused its 7-day buyer session, so no new session (and no visitor row) was created.
+- Protected facts stay 9/8/2/8/11.
+
+**Custody.** `/home/serveradmin/.local/share/insignia/recovery-release-20261110/c78a8179-deploy-1/` on prod (`deployment-receipt.json`). Prior images stay loaded.
 
 ### Deploy 2: main `bf512171` — deployed and released 12 November 2026
 
