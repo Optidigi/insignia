@@ -1868,7 +1868,7 @@ function DesignerSession({
                       ...(nameSource ? { nameSource } : {}),
                     });
                     window.requestAnimationFrame(() =>
-                      panelRef.current?.querySelector<HTMLInputElement>('input[type="number"]:enabled')?.focus(),
+                      panelRef.current?.querySelector<HTMLInputElement>('input[inputmode="numeric"]:enabled')?.focus(),
                     );
                   }}
                   onAddRow={() => openModal({ kind: 'colors', mode: 'add' })}
@@ -1924,7 +1924,7 @@ function DesignerSession({
                 onEditQuantities={() => {
                   dispatch({ type: 'step-selected', step: 1 });
                   window.requestAnimationFrame(() => {
-                    const field = panelRef.current?.querySelector<HTMLInputElement>('input[type="number"]:enabled');
+                    const field = panelRef.current?.querySelector<HTMLInputElement>('input[inputmode="numeric"]:enabled');
                     field?.scrollIntoView({ block: 'nearest' });
                     field?.focus({ preventScroll: true });
                   });

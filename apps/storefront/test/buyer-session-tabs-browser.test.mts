@@ -240,7 +240,7 @@ async function buildToReview(ui: FrameLocator) {
   await card.locator('.artwork-choice').click();
   await ui.getByRole('button', { name: 'Provide artwork later', exact: true }).click();
   await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-  await ui.locator('input[type=number]:enabled').first().fill('3');
+  await ui.locator('input[inputmode=numeric]:enabled').first().fill('3');
   await ui.getByRole('button', { name: 'Review', exact: true }).last().click();
 }
 

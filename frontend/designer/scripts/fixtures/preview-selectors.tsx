@@ -13,6 +13,12 @@ const parameters = new URLSearchParams(location.search);
 const named = parameters.get('palette') === 'named';
 const missingSwatches = parameters.get('palette') === 'missing';
 const count = Number(parameters.get('views') ?? 3);
+// Four sizes switch the quantity step from the compact stepper layout to the plain grid.
+const sizes = [
+  { id: 'small', label: 'Small' }, { id: 'medium', label: 'Medium' },
+  { id: 'large', label: 'Large' }, { id: 'xl', label: 'XL' },
+].slice(0, Number(parameters.get('sizes') ?? 1));
+const sizeIds = sizes.map((size) => size.id);
 const config = configSchema.parse({
   id: 'preview-selector-fixture', name: 'Preview selector fixture',
   description: 'Product preview selector regression fixture.',
@@ -24,10 +30,10 @@ const config = configSchema.parse({
     rowOption: { label: 'Colour', display: named ? 'named-choice' : 'swatch' },
     columnOption: { label: 'Size' },
   },
-  sizes: [{ id: 'small', label: 'Small' }],
+  sizes,
   colors: [
-    { id: 'white', name: 'Warm white with a very long merchant supplied finish name', ...(!named && !missingSwatches && { hex: '#ffffff' }), availableSizeIds: ['small'] },
-    { id: 'navy', name: 'Midnight navy with a very long merchant supplied finish name', ...(!named && !missingSwatches && { hex: '#102030' }), availableSizeIds: ['small'] },
+    { id: 'white', name: 'Warm white with a very long merchant supplied finish name', ...(!named && !missingSwatches && { hex: '#ffffff' }), availableSizeIds: sizeIds },
+    { id: 'navy', name: 'Midnight navy with a very long merchant supplied finish name', ...(!named && !missingSwatches && { hex: '#102030' }), availableSizeIds: sizeIds },
   ],
   views: [
     { id: 'front', label: 'Front with a very long merchant supplied view name', illustration: 'front' },

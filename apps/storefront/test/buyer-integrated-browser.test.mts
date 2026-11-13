@@ -131,7 +131,7 @@ test('buyer purchases the EUR90 Lean quote through actual HTTP, real signing and
     await frame.locator('.artwork-choice').first().click();
     await frame.getByRole('button', { name: 'Provide artwork later', exact: true }).click();
     await frame.getByRole('button', { name: 'Choose quantities', exact: true }).click();
-    await frame.locator('input[type=number]:enabled').first().fill('3');
+    await frame.locator('input[inputmode=numeric]:enabled').first().fill('3');
     const proposed = page.waitForResponse((response) => new URL(response.url()).pathname.endsWith('/quote-proposals'));
     await frame.getByRole('button', { name: 'Review', exact: true }).last().click();
     const proposalResponse = await proposed;

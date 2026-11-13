@@ -22,6 +22,16 @@ interface QuantityEntryProps {
   onAddRow: () => void;
 }
 
+/**
+ * The quantity a field's text means: 0 when empty, NaN unless it is plain digits. The field is a
+ * text input because a number input rewrites or drops typed separators ("1,5" became 15) (#416).
+ */
+function enteredQuantity(text: string): number {
+  const trimmed = text.trim();
+  if (trimmed === "") return 0;
+  return /^\d+$/.test(trimmed) ? Number(trimmed) : Number.NaN;
+}
+
 export function QuantityEntry({
   config,
   quantities,
@@ -42,6 +52,9 @@ export function QuantityEntry({
   const [search, setSearch] = useState("");
   const [focusedSize, setFocusedSize] = useState<string | null>(null);
   const entryRef = useRef<HTMLDivElement>(null);
+  // Text the shopper typed, per field, while it differs from what the stored quantity would show.
+  // Rewriting a field mid-entry moved the caret, so typing "1.5" stored 51 (#416).
+  const [typed, setTyped] = useState<Readonly<Record<string, string>>>({});
   const unavailable = Object.entries(quantities).filter(
     ([key, value]) => (value ?? 0) !== 0 && !cells.get(key)?.available,
   );
@@ -78,6 +91,16 @@ export function QuantityEntry({
     const error = invalid
       ? t("customer:quantities.useWholeNumbers", { maxQuantity: config.maxQuantity })
       : issue?.message;
+    // Typed text shows while it still means the stored quantity: during entry, and after blur when
+    // it is invalid. A quantity changed elsewhere (stepper, restore) replaces it.
+    const text = typed[key];
+    const shown = !cell.available
+      ? ""
+      : text !== undefined && Object.is(enteredQuantity(text), value)
+        ? text
+        : Number.isFinite(value)
+          ? `${value || (stepper ? 0 : "")}`
+          : "";
     const name = t("customer:quantities.fieldLabel", {
       rowName: rowName(row),
       sizeLabel: size.label,
@@ -85,11 +108,8 @@ export function QuantityEntry({
     const input = (
       <input
         id={target}
-        type="number"
+        type="text"
         inputMode="numeric"
-        step="1"
-        min="0"
-        max={config.maxQuantity}
         name={`${row.id}-${size.id}-quantity`}
         disabled={!cell.available}
         title={!cell.available ? t("customer:quantities.unavailableForSelection") : undefined}
@@ -97,31 +117,35 @@ export function QuantityEntry({
         aria-label={name}
         aria-invalid={invalid || !!issue || undefined}
         aria-describedby={error ? `${target}-error` : undefined}
-        value={cell.available && Number.isFinite(value) ? value || (stepper ? 0 : "") : ""}
+        value={shown}
         placeholder={cell.available ? "0" : "—"}
         onFocus={(event) => {
           setFocusedSize(size.id);
           onSelectRow(row.id);
           event.currentTarget.select();
         }}
-        onBlur={() => setFocusedSize(null)}
-        onInput={(event) =>
-          onChange(
-            row.id,
-            size.id,
-            event.currentTarget.validity.badInput
-              ? Number.NaN
-              : event.currentTarget.value === ""
-                ? 0
-                : event.currentTarget.valueAsNumber,
-          )
-        }
+        onBlur={() => {
+          setFocusedSize(null);
+          // Valid text settles to the stored quantity ("012" shows 12); invalid text stays visible.
+          setTyped((current) => {
+            const text = current[key];
+            if (text === undefined || !Number.isFinite(enteredQuantity(text))) return current;
+            const next = { ...current };
+            delete next[key];
+            return next;
+          });
+        }}
+        onInput={(event) => {
+          const text = event.currentTarget.value;
+          setTyped((current) => ({ ...current, [key]: text }));
+          onChange(row.id, size.id, enteredQuantity(text));
+        }}
         onKeyDown={(event) => {
           if (event.key !== "Enter") return;
           event.preventDefault();
           const panel = event.currentTarget.closest(".panel-content");
           const fields = Array.from(
-            panel?.querySelectorAll<HTMLInputElement>('input[type="number"]:enabled') ?? [],
+            panel?.querySelectorAll<HTMLInputElement>('input[inputmode="numeric"]:enabled') ?? [],
           );
           const next =
             fields[fields.indexOf(event.currentTarget) + 1] ??
@@ -214,7 +238,7 @@ export function QuantityEntry({
                     window.requestAnimationFrame(() =>
                       (
                         entryRef.current?.querySelector<HTMLElement>(
-                          'input[type="number"]:enabled, .quantity-recovery-row button',
+                          'input[inputmode="numeric"]:enabled, .quantity-recovery-row button',
                         ) ?? entryRef.current
                       )?.focus(),
                     );

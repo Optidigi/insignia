@@ -93,7 +93,7 @@ test("the customer language picker retains edits, persists choices, and resets t
     assert.equal(await page.locator("html").getAttribute("lang"), "en");
 
     await page.locator(".steps button").nth(1).click();
-    const quantity = page.locator('input[type="number"]:enabled').first();
+    const quantity = page.locator('input[inputmode="numeric"]:enabled').first();
     await quantity.fill("3");
     await page.locator(".app").evaluate((node) => { node.dataset.localeIdentity = "retained-design"; });
     await picker.selectOption("it");
@@ -464,7 +464,7 @@ test("the actual customer preview forwards its language without remounting the d
     await page.goto(`${origin}/?scenario=classic&example=accordion&locale=de`);
     await page.locator('.app[lang="de"]').waitFor();
     await page.locator('.steps button').nth(1).click();
-    await page.locator('input[type="number"]:enabled').first().fill('3');
+    await page.locator('input[inputmode="numeric"]:enabled').first().fill('3');
     await page.locator('.app').evaluate((node) => { node.dataset.localeIdentity = 'retained-design'; });
     await page.evaluate(() => {
       const url = new URL(location.href);
@@ -475,7 +475,7 @@ test("the actual customer preview forwards its language without remounting the d
     await page.locator('.app[lang="it"]').waitFor();
     assert.equal(await page.locator('.app').getAttribute('data-locale-identity'), 'retained-design');
     assert.equal(await page.locator('.app').getAttribute('dir'), 'ltr');
-    assert.equal(await page.locator('input[type="number"]:enabled').first().inputValue(), '3');
+    assert.equal(await page.locator('input[inputmode="numeric"]:enabled').first().inputValue(), '3');
   } finally { await page.close(); }
 });
 
