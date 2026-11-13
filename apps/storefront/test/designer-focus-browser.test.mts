@@ -289,6 +289,11 @@ for (const engine of [chromium, firefox]) {
     }
     await page.keyboard.press('Escape');
     await frame.getByRole('heading', { name: 'Close customization?', exact: true }).waitFor({ state: 'detached' });
+    // The Designer restores focus on the next frame; wait for that state rather than a delay.
+    await page.waitForFunction(() => {
+      const inner = document.querySelector<HTMLIFrameElement>('dialog > iframe')?.contentDocument;
+      return Boolean(inner?.activeElement && inner.activeElement !== inner.body);
+    });
     const after = await focusState(page);
     assert.equal(after.host === 'iframe' && after.inFrame, true, 'focus stays inside the Designer after Keep editing');
   });
