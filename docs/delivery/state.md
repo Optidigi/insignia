@@ -2,7 +2,7 @@
 
 ## Active assignment
 
-Updated 13 November 2026. Insignia runs only on `app.insigniacustomizer.com`, on rewrite-dev (host alias `prod`, store `insignia-rewrite-dev`). The 12–13 November bug batch is complete: every issue is fixed, deployed and natively verified except #406, which is deferred to phase 7. Main up to `c78a8179` is deployed and released as version `1206211837953`; exact identities are in [Deployed identities](#deployed-identities). **Next: phase 2, UI acceptance.** The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
+Updated 13 November 2026. Insignia runs only on `app.insigniacustomizer.com`, on rewrite-dev (host alias `prod`, store `insignia-rewrite-dev`). The 12–13 November bug batch is complete. Main up to `c78a8179` is deployed and released as version `1206211837953`; exact identities are in [Deployed identities](#deployed-identities). **Now: the [pre-public fix batch](#pre-public-fix-batch-13-november-2026)** (#412–#417 from the 13 November native QA pass, plus #406); **then phase 2, UI acceptance.** The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
 
 ### Picking this up
 
@@ -38,7 +38,7 @@ Updated 13 November 2026. Insignia runs only on `app.insigniacustomizer.com`, on
 | 2 UI acceptance | **Next** | Agent prepares a review checklist of merchant-admin and Designer screens and states (wide and narrow, both themes); fixes findings. | Review and accept (checklist rows "Merchant UI" and "Selected Designer visual fidelity"). | Explicit owner acceptance recorded. |
 | 5 Production foundations | Open | Production storage and credentials cutover; off-host encrypted backup plus a full loss-recovery rehearsal (RPO 24 h / RTO 4 h); installed monitoring and alert relay with receiver authentication; restart and rollback qualification. | Allocate credentials and storage. The owner implements server backup in a separate session; it must back up `runtime/signer-secrets/signing-wrap-keys.json` in custody separate from database backups. | The matching checklist rows close with their stated evidence. |
 | 6 Commercial readiness | Open | Real $49.99 / 30-day plan, invoice and trial-to-paid; public-app/distribution settings; merchant, market and currency eligibility (EUR); **email proof:** Cloudflare arbitrary-recipient sending entitlement evidence so customer mode can mail real buyers (development mode stays admin-only until then). | Billing, distribution and market choices; obtain the Cloudflare entitlement evidence. | The "Native/commercial eligibility" row closes and customer mode is enabled with real evidence. |
-| 7 Uninstall and privacy | Open | Reconcile the VAT installation's original uninstall dispatch against actual provider state; qualify erasure and reinstall fencing end to end; batch the erasure of a shop's buyer sessions (#406). | A concrete allocation for any new effect. | The "Genuine uninstall/privacy" row closes. |
+| 7 Uninstall and privacy | Open | Reconcile the VAT installation's original uninstall dispatch against actual provider state; qualify erasure and reinstall fencing end to end. (#406, batched erasure of a shop's buyer sessions, moved to the pre-public fix batch.) | A concrete allocation for any new effect. | The "Genuine uninstall/privacy" row closes. |
 | 8 Rollout | Not approved | First real merchant. | Explicit go. | Owner authorization after the gates above. |
 
 **Small pending checks.**
@@ -58,6 +58,22 @@ Updated 13 November 2026. Insignia runs only on `app.insigniacustomizer.com`, on
 - The VAT store's leftover old-host uninstall webhook stays.
 - The Cloudflare status Worker detects removed services by itself.
 - Standing OK for rewrite-dev test-gateway orders.
+
+### Pre-public fix batch, 13 November 2026
+
+Owner-approved 13 November 2026, before the public app. A native keyboard and six-language QA pass on version `1206211837953` (evidence under `~/insignia-qa/runs/2026-11-13/` on the dev host) filed #412–#417; the owner also pulled #406 forward from phase 7. Deploy to rewrite-dev afterwards under the standing [dev store and app grant](operating-model.md#effective-resource-scope), then verify natively.
+
+| Issue | Severity | Summary | Stream |
+| --- | --- | --- | --- |
+| #416 | S1 | Typing `1.5` into a quantity stores 51 and prices 51 items; Review stays enabled | A |
+| #412 | S3 | Designer opens with focus on the iframe, no visible ring | B |
+| #413 | S3 | Tab from the empty Artwork step leaves the dialog for the storefront | B |
+| #414 | S3 | Colour overflow "+1" is named "All 6 options" | B |
+| #415 | S4 | Empty placement control is named "Choose artwork Choose" | B |
+| #417 | S4 | File list keeps English "Artwork" in other Designer languages | B |
+| #406 | — | Uninstall/privacy erasure deletes all of a shop's buyer sessions in one statement | C |
+
+Next web deploy also reduces `INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON` to `appKey` (small pending checks).
 
 ### Bug batch, 12–13 November 2026
 
@@ -128,8 +144,7 @@ The signing wrapping key lives only in `runtime/signer-secrets/signing-wrap-keys
 
 ### Known behaviour, limits and open follow-ups
 
-**Open issue.**
-- #406: uninstall/privacy erasure deletes all of a shop's buyer sessions in one statement. Deferred to phase 7.
+**Open issues.** #406 and #412–#417, in the [pre-public fix batch](#pre-public-fix-batch-13-november-2026).
 
 **Released but not visible to buyers.**
 - German theme cart messages: the *Sie* text (#391) is released, but the store publishes English only (`/de/cart` returns 404), so buyers don't see it.
