@@ -281,6 +281,11 @@ Owner decision, 12 November 2026 (deploy 3):
 1. Apply `20261112000600_buyer_session_quota_indexes.sql` through the schema owner (schema 61 to 62) before replacing web or worker. It only adds indexes on `session_id` to `design_drafts`, `quote_proposals` and `cart_applications`, so no grant changes and the ACL digests stay unchanged. Without the indexes, each draft, proposal or cart write counts its session's rows by scanning the whole table, and erasing an expired session scans each of them.
 2. Replace web and worker with the images that contain #371. Web raises the per-session lifetime quotas (100 drafts, 1,000 proposals, 250 cart applications). Worker erases at most ten expired sessions per statement and keeps the 100-session pass. Previous images run unchanged on schema 62, so rollback is image-only. Do not roll back worker alone while sessions above the old quotas exist: its single 100-session statement can outlast the 10 s statement timeout.
 
+### Batched erasure of a shop's buyer sessions (#406)
+
+1. Apply `20261113000100_batched_buyer_session_erasure.sql` through the schema owner (schema 62 to 63). It replaces only the bodies of `stage_shop_privacy_inbox` and `recover_uninstall_privacy`; signatures, owners and grants are unchanged, so the ACL digests stay unchanged. Neither function deletes buyer sessions any more, because a full session cascades to some 1,600 rows and a shop's sessions in one statement outlast the worker's 10 s statement timeout. Each still records the `shop_privacy_fences` row, so the generation cannot take private data again. The worker's existing `cleanup_buyer_payloads` pass removes the sessions ten per statement (it already removes sessions of every deactivated or superseded generation).
+2. No image change. Apply it before or after the worker; a worker that predates it only runs the unchanged cleanup. Rolling the migration back restores the single-statement deletion.
+
 ### Drop the legacy visitor count (#374)
 
 Owner decision, 12 November 2026: no rollback to a web image from before #348 (deploy 3). Web images up to `bf512171` still write `buyer_visitor_admission.issued`; the new image writes only `window_at` and `issued_at`. Apply the two migrations one at a time, not as one `dbmate up`:
