@@ -6,6 +6,7 @@ import type {
 } from "preact";
 import { IconArrowLeft, IconArrowRight, IconChevronDown } from "./legacy-icons";
 import { useLocale } from "./customer-locale";
+import { useArtworkName } from "./file-name";
 import type { ProductConfig } from "./config";
 import type { Artwork, Position, Print } from "./model";
 import {
@@ -183,6 +184,7 @@ export function InlineArtwork({
   onArtworkError,
 }: InlineArtworkProps) {
   const { t } = useLocale();
+  const artworkName = useArtworkName();
   const imageRef = useRef<HTMLImageElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -431,11 +433,11 @@ export function InlineArtwork({
         aria-label={
           selected
       ? t("customer:positioning.moveArtwork", {
-          artworkName: artwork.name,
+          artworkName: artworkName(artwork.name),
           positionName: position.name,
         })
       : t("customer:positioning.selectArtwork", {
-          artworkName: artwork.name,
+          artworkName: artworkName(artwork.name),
           positionName: position.name,
         })
         }

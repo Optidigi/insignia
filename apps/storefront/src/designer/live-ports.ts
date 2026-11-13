@@ -723,7 +723,8 @@ export function createLiveDesignerPorts(input: {
           continue;
         assets.push({
           id,
-          name: createCustomerTranslator(input.locale).t('customer:steps.artwork'),
+          // Drafts keep IDs only, never file names; the Designer labels a nameless artwork in its current language.
+          name: '',
           url: preview.url,
           width: preview.width,
           height: preview.height,

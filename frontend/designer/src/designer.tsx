@@ -22,7 +22,7 @@ import {
   productDesignEditRequiresConfirmation,
   type UploadFailureReason,
 } from './designer-state';
-import { ArtworkFile, FileName } from './file-name';
+import { ArtworkFile, FileName, useArtworkName } from './file-name';
 import { GarmentIllustration, swatchInk } from './garment-preview';
 import { InlineArtwork, InlinePositionControls } from './inline-positioning';
 import { CustomerLanguagePicker } from './language-picker';
@@ -176,6 +176,7 @@ function DesignerSession({
   onLanguagePreferenceSelect,
 }: DesignerSessionProps) {
   const { t, message, formatLocale, lang, dir } = useLocale();
+  const artworkName = useArtworkName();
   useLayoutEffect(() => {
     if (!ownsDocumentLanguage) return;
     document.documentElement.lang = lang;
@@ -1453,7 +1454,7 @@ function DesignerSession({
                     })}
                   >
                     {art ? (
-                      <img src={art.url} alt={art.name} />
+                      <img src={art.url} alt={artworkName(art.name)} />
                     ) : (
                       <span className="placeholder-print" aria-hidden="true">
                         +

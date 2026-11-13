@@ -391,6 +391,60 @@ test('Continue restores uploaded artwork through the session that owns it', asyn
   });
 });
 
+test('a restored artwork without a file name is labelled in the current Designer language (#417)', async () => {
+  await withStorefront(async ({ openPage, drafts }) => {
+    const page = await openPage();
+    await openDesigner(page);
+    const session = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? 'null'), SESSION_KEY);
+    const id = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+    drafts.set(id, {
+      capability: session.capability,
+      value: {
+        productId: '111',
+        configRevisionId: 'r1',
+        revisionContentHash: 'a'.repeat(64),
+        design: {
+          placements: [
+            {
+              placementId: 'front',
+              methodId: 'print',
+              stepId: 'small',
+              artwork: { kind: 'revision', revisionId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd' },
+            },
+          ],
+          options: [],
+        },
+        variants: [{ variantId: '222', quantity: 2 }],
+      },
+    });
+    await page.evaluate(([key, value]) => localStorage.setItem(key, value), [
+      LATEST_KEY,
+      JSON.stringify({ session: session.sessionId, id }),
+    ] as const);
+    await page.reload();
+    const ui = await openDesigner(page);
+    await ui.getByRole('button', { name: 'Continue', exact: true }).click();
+    await ui.locator('article.print-card img').first().waitFor();
+    // Drafts keep no file names. The label is chosen when it is shown, so it follows each language switch.
+    const labels = { '': 'Artwork', nl: 'Ontwerp', de: 'Motiv', fr: 'Visuels', es: 'Diseño', it: 'Grafica' };
+    for (const [language, label] of Object.entries(labels)) {
+      await ui.locator('#customer-language').selectOption(language);
+      if (language) await ui.locator(`.app[lang="${language}"]`).waitFor();
+      assert.equal(
+        (await ui.locator('.artwork-choice .file-stem').first().innerText()).trim(),
+        label,
+        `placement in ${language || 'English'}`,
+      );
+      await ui.locator('.artwork-choice').first().click();
+      const chip = ui.locator('dialog[open] .artwork-library .artwork-file .file-stem');
+      await chip.waitFor();
+      assert.equal((await chip.innerText()).trim(), label, `file chip in ${language || 'English'}`);
+      await page.keyboard.press('Escape');
+      await ui.locator('dialog[open]').waitFor({ state: 'detached' });
+    }
+  });
+});
+
 test('a Designer opened without designing anything offers nothing after a reload', async () => {
   await withStorefront(async ({ openPage, drafts, restores }) => {
     const page = await openPage();

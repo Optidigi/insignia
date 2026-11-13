@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
 import type { ProductConfig } from './config';
 import { useLocale } from './customer-locale';
-import { FileName } from './file-name';
+import { FileName, useArtworkName } from './file-name';
 import { IconChevronDown, IconChevronUp, IconCloudUpload } from './legacy-icons';
 import type { Artwork, Print, Quantities } from './model';
 import { createProductModel } from './model';
@@ -277,6 +277,7 @@ function ReviewArtwork({
   onEdit,
 }: ReviewArtworkProps) {
   const { t } = useLocale();
+  const artworkName = useArtworkName();
   const [truncated, setTruncated] = useState(false);
   return (
     <article className="review-artwork">
@@ -317,7 +318,7 @@ function ReviewArtwork({
             {t('customer:files.fullFilename')}
             <DisclosureIcon />
           </summary>
-          <div className="full-review-filename">{artwork.name}</div>
+          <div className="full-review-filename">{artworkName(artwork.name)}</div>
         </details>
       )}
     </article>
