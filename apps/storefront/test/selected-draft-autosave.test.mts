@@ -120,7 +120,10 @@ function sharedStorage() {
 }
 const LATEST = 'insignia:selected-design-latest:v1:/apps/insignia:111';
 
-function fixture(options: { saveStatus?: number; statuses?: number[] } = {}) {
+/** One refused draft write, as the API sends it (spec §8.2/§8.3). A missing `code` is a 429 from something else. */
+type Refusal = { retryAfter?: number; reason?: 'SESSION_QUOTA'; code?: string };
+
+function fixture(options: { statuses?: number[]; refusals?: Refusal[] } = {}) {
   const saves: { expectedVersion: number; group: { variants: unknown[] } }[] = [];
   const shared = sharedStorage();
   let version = 0;
@@ -149,10 +152,16 @@ function fixture(options: { saveStatus?: number; statuses?: number[] } = {}) {
         saves.push(body);
         const status = options.statuses?.shift();
         if (status) return Response.json({ code: 'UNAVAILABLE' }, { status });
-        if (options.saveStatus)
+        const refusal = options.refusals?.shift();
+        if (refusal)
           return Response.json(
-            { code: 'RATE_LIMITED', message: 'limited', requestId: 'r' },
-            { status: options.saveStatus },
+            {
+              ...('code' in refusal ? (refusal.code ? { code: refusal.code } : {}) : { code: 'RATE_LIMITED' }),
+              message: 'limited',
+              requestId: 'r',
+              ...(refusal.reason ? { details: { reason: refusal.reason } } : {}),
+            },
+            { status: 429, headers: refusal.retryAfter ? { 'Retry-After': String(refusal.retryAfter) } : {} },
           );
         if (body.expectedVersion !== version) return Response.json({ code: 'CONFLICT' }, { status: 409 });
         return Response.json({ id: DESIGN_ID, version: ++version, value: body.group });
@@ -243,8 +252,8 @@ test('an unchanged design is not saved again', async () => {
   assert.equal(saves.length, 1);
 });
 
-test('after the session refuses a draft write, autosave stops so it cannot use up quotes and cart writes', async () => {
-  const { changed, saves } = fixture({ saveStatus: 429 });
+test('after the session quota is exhausted, autosave stops for the page load so it cannot use up quotes and cart writes', async () => {
+  const { changed, saves } = fixture({ refusals: [{ reason: 'SESSION_QUOTA' }] });
   changed(design(1));
   await advance(3_000);
   assert.equal(saves.length, 1);
@@ -252,6 +261,66 @@ test('after the session refuses a draft write, autosave stops so it cannot use u
     changed(design(quantity));
     await advance(6_000);
   }
+  await advance(600_000);
+  assert.equal(saves.length, 1);
+});
+
+test('after a transient 429 with Retry-After, autosave pauses until then and saves the latest design (§8.2)', async () => {
+  const { changed, saves } = fixture({ refusals: [{ retryAfter: 90 }] });
+  changed(design(1));
+  await advance(3_000);
+  assert.equal(saves.length, 1, 'the refused write');
+  // Edits during the pause replace the pending design; none is sent before Retry-After.
+  changed(design(2));
+  await advance(30_000);
+  changed(design(3));
+  await advance(50_000);
+  assert.equal(saves.length, 1, 'paused: 83 s after the refusal');
+  await advance(10_000);
+  assert.equal(saves.length, 2, 'one save once Retry-After has passed');
+  assert.deepEqual(saves[1]?.group.variants, [{ variantId: '101', quantity: 3 }], 'the latest design');
+  assert.equal(saves[1]?.expectedVersion, 0);
+  changed(design(4));
+  await advance(10_000);
+  assert.equal(saves.length, 3, 'autosave continues normally');
+  assert.equal(saves[2]?.expectedVersion, 1);
+});
+
+test('a transient 429 without Retry-After pauses for a minute, then saves the refused design again', async () => {
+  const { changed, saves } = fixture({ refusals: [{}] });
+  changed(design(1));
+  await advance(3_000);
+  assert.equal(saves.length, 1);
+  await advance(50_000);
+  assert.equal(saves.length, 1, 'still paused 53 s after the refusal');
+  await advance(15_000);
+  assert.equal(saves.length, 2);
+  assert.deepEqual(saves[1]?.group.variants, [{ variantId: '101', quantity: 1 }]);
+  await advance(60_000);
+  assert.equal(saves.length, 2, 'saved: nothing more to send');
+});
+
+test('a long Retry-After is capped at five minutes, and a repeated refusal pauses again', async () => {
+  const { changed, saves } = fixture({ refusals: [{ retryAfter: 3_600 }, { retryAfter: 120 }] });
+  changed(design(1));
+  await advance(3_000);
+  await advance(290_000);
+  assert.equal(saves.length, 1, 'paused 293 s after the refusal');
+  await advance(15_000);
+  assert.equal(saves.length, 2, 'resumed at the cap, refused again');
+  await advance(100_000);
+  assert.equal(saves.length, 2, 'paused again for the new Retry-After');
+  await advance(30_000);
+  assert.equal(saves.length, 3);
+});
+
+test('a 429 that is not clearly transient (no code, no Retry-After) stops autosave', async () => {
+  const { changed, saves } = fixture({ refusals: [{ code: '' }] });
+  changed(design(1));
+  await advance(3_000);
+  assert.equal(saves.length, 1);
+  changed(design(2));
+  await advance(600_000);
   assert.equal(saves.length, 1);
 });
 

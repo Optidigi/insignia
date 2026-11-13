@@ -29,6 +29,10 @@ import type { RepairState } from './repair-state';
  */
 const AUTOSAVE_DELAY_MS = 2_000;
 const AUTOSAVE_SPACING_MS = 10_000;
+/** A refused write that names no `Retry-After` is the session's per-minute limit: its window is a minute long. */
+const AUTOSAVE_PAUSE_DEFAULT_MS = 60_000;
+/** Longest pause for one refusal, whatever `Retry-After` asks: a shorter wait than a visit, never a lasting stop. */
+const AUTOSAVE_PAUSE_MAX_MS = 300_000;
 type Prepared = {
   signature: string;
   proposal: QuoteProposal;
@@ -106,9 +110,13 @@ export function createLiveDesignerPorts(input: {
   let autosave: (PendingAutosave & { timer: ReturnType<typeof setTimeout> }) | undefined;
   const autosaving = new Set<AbortController>();
   let lastAutosave = Number.NEGATIVE_INFINITY;
-  // The session refused a write (its per-minute or draft limit): further autosaves would only spend the writes a
-  // quote or Add to cart needs. Review still saves the draft as before.
+  // The session's lifetime quota is exhausted (429 SESSION_QUOTA), or a 429 is not clearly the transient per-minute
+  // limit: further autosaves would only spend the writes a quote or Add to cart needs, so they stop for the rest of
+  // the page load. Review still saves the draft as before.
   let autosaveStopped = false;
+  // The transient per-minute limit (429 RATE_LIMITED, normally with no Retry-After) only pauses autosave: nothing is
+  // sent before this time, then the latest pending design is saved (§8.2).
+  let autosaveNotBefore = Number.NEGATIVE_INFINITY;
   /** Drop the pending autosave and fence any in flight: its late answer no longer sets a reopen pointer. */
   function cancelAutosave() {
     if (autosave) clearTimeout(autosave.timer);
@@ -119,7 +127,8 @@ export function createLiveDesignerPorts(input: {
   function queueAutosave(pending: PendingAutosave) {
     if (autosaveStopped) return;
     if (autosave) clearTimeout(autosave.timer);
-    const wait = Math.max(AUTOSAVE_DELAY_MS, lastAutosave + AUTOSAVE_SPACING_MS - Date.now());
+    const now = Date.now();
+    const wait = Math.max(AUTOSAVE_DELAY_MS, lastAutosave + AUTOSAVE_SPACING_MS - now, autosaveNotBefore - now);
     autosave = { ...pending, timer: setTimeout(() => void flushAutosave(), wait) };
   }
   function scheduleAutosave(design: Design) {
@@ -145,6 +154,19 @@ export function createLiveDesignerPorts(input: {
     if (saved) void custody.forget(id, saved.group).catch(() => {});
     else custody.forgetLatest(input.productId, id);
   }
+  /**
+   * How a failed draft write was refused with 429: `stop` for the lifetime session quota (nothing succeeds until the
+   * session expires) and for a 429 that is not clearly the transient limit; otherwise the pause until a retry can
+   * succeed, from `Retry-After` when sent. Not a rate limit: undefined.
+   */
+  function rateLimit(error: unknown): 'stop' | { pauseMs: number } | undefined {
+    if (!error || typeof error !== 'object' || !('status' in error) || error.status !== 429) return undefined;
+    const { code, reason, retryAfter } = error as { code?: unknown; reason?: unknown; retryAfter?: unknown };
+    const seconds = typeof retryAfter === 'number' && retryAfter > 0 ? retryAfter : 0;
+    if (reason === 'SESSION_QUOTA' || !(seconds || code === 'RATE_LIMITED' || code === 'SESSION_RATE_LIMITED'))
+      return 'stop';
+    return { pauseMs: Math.min(seconds ? seconds * 1000 : AUTOSAVE_PAUSE_DEFAULT_MS, AUTOSAVE_PAUSE_MAX_MS) };
+  }
   async function flushAutosave() {
     const pending = autosave;
     autosave = undefined;
@@ -164,7 +186,15 @@ export function createLiveDesignerPorts(input: {
       // The same custody save as Review: same draft ID, CAS version and reopen pointers. Unchanged content writes nothing.
       await custody.save(pending.id, group, original, controller.signal, { onlyChanges: true });
     } catch (error) {
-      if (error && typeof error === 'object' && 'status' in error && error.status === 429) autosaveStopped = true;
+      const refusal = rateLimit(error);
+      if (refusal === 'stop') autosaveStopped = true;
+      else if (refusal) {
+        // Pause, then send the latest design: a newer change already waiting is moved to after the pause, otherwise
+        // this refused one waits (its refusal does not use up the retry), unless a cancellation has dropped it.
+        autosaveNotBefore = Date.now() + refusal.pauseMs;
+        const latest = autosave ?? (controller.signal.aborted ? undefined : pending);
+        if (latest) queueAutosave(latest);
+      }
       // Any other failure is retried once, unless a newer change or a cancellation has replaced it.
       else if (!controller.signal.aborted && !autosave && !pending.retried)
         queueAutosave({ ...pending, retried: true });
