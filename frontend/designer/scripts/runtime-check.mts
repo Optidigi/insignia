@@ -1862,7 +1862,7 @@ test('a design offered behind "Continue your design?" is not reported until the 
     {
       artwork: { upload: async () => ({ id: 'x', name: 'x', url: '/x', width: 1, height: 1 }) },
       cart: { commit: async (request) => receipt(request) },
-      draft: { changed: (design) => reports.push(design) },
+      draft: { changed: (design) => reports.push(design), reverted: () => {} },
     },
     () => state,
     (event) => {
