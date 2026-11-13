@@ -141,6 +141,7 @@ function Frame({ initial }: { initial: Initial }) {
   const [quote, setQuote] = useState<DesignerQuoteReview>();
   const [hostError, setHostError] = useState(0);
   const [requestClose, setRequestClose] = useState(0);
+  const [entryFocus, setEntryFocus] = useState(0);
   const [reviewed, setReviewed] = useState(0);
   const [cartLine, setCartLine] = useState<{ design: Design }>();
   const [wording, setWording] = useState(initial.wording);
@@ -177,6 +178,7 @@ function Frame({ initial }: { initial: Initial }) {
       if (event.data.type === 'insignia:designer:open') {
         setVisible(true);
         setOpen(true);
+        setEntryFocus((value) => value + 1);
       }
       if (event.data.type === 'insignia:designer:suspend') setVisible(false);
       if (event.data.type === 'insignia:designer:request-close') {
@@ -246,6 +248,7 @@ function Frame({ initial }: { initial: Initial }) {
           requiresCartReview={initial.requiresCartReview}
           quoteReview={quote}
           requestCloseSignal={requestClose}
+          entryFocusSignal={entryFocus}
           hostErrorSignal={hostError}
           cartReviewedSignal={reviewed}
           observedCartLine={cartLine}

@@ -193,7 +193,11 @@ export function createDesignerFrame(input: {
     clearTimeout(initializationTimer);
     modal.loaded();
     frame.style.visibility = 'visible';
-    if (!frame.hidden && modal.dialog.open) frame.focus();
+    // The shown Designer takes focus: the frame element first, then a control inside it.
+    if (!frame.hidden && modal.dialog.open) {
+      frame.focus();
+      send('insignia:designer:open');
+    }
   }
   frame.addEventListener('load', () => {
     if (frame.contentDocument?.URL !== 'about:srcdoc') return;
