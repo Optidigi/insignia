@@ -74,7 +74,7 @@ Owner-approved 13 November 2026, before the public app. A native keyboard and si
 
 **Deploy 4** (13 Nov, standing [dev store and app grant](operating-model.md#effective-resource-scope)): source `9b5dbdee`, binding `1bd804a2` (#425), version `1207622696961` (`native-a11y-quantity-9b5dbdee`), schema 63, fail-closed window `19:05:02Z`–`19:34:38.0Z` (about 30 min, no buyer rows in it). Web's `INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON` is `appKey` only. Record in the [deploy history](history-2026-11-12-bug-batch.md#deploy-4-main-9b5dbdee--deployed-and-released-13-november-2026).
 
-**Follow-up.** #424 (S4): a cart-review row for a product without a title falls back to "Artwork" in the page locale, not the Designer language.
+**Follow-up.** #424 (S4): a cart-review row for a product without a title fell back to "Artwork" in the page locale. Fixed on main by #430; ships with the next theme release.
 
 ### Bug batch, 12–13 November 2026
 
@@ -145,7 +145,7 @@ The signing wrapping key lives only in `runtime/signer-secrets/signing-wrap-keys
 
 ### Known behaviour, limits and open follow-ups
 
-**Open issues.** #424 (S4, see the [pre-public fix batch](#pre-public-fix-batch-13-november-2026)); in progress with the autosave fix.
+**Open issues.** None. **Merged, not yet deployed** (needs a theme release; planned with the phase 2 fixes): #430, which fixes #424 (untitled cart-review rows read "Customized product" in the Designer language; unnamed artwork gets its own singular label) and makes autosave stop only on `SESSION_QUOTA`, pausing until `Retry-After` for other 429s.
 
 **Released but not visible to buyers.**
 - German theme cart messages: the *Sie* text (#391) is released, but the store publishes English only (`/de/cart` returns 404), so buyers don't see it.
@@ -159,7 +159,7 @@ The signing wrapping key lives only in `runtime/signer-secrets/signing-wrap-keys
 **Noted in the #405 review.**
 - Accepted (owner, 13 November 2026): Review can wait behind an in-flight autosave. Saves to one draft run in order at acknowledged versions, which is what prevents CAS conflicts; it costs one short request.
 - Accepted (owner, 13 November 2026): two tabs editing the same cart line overwrite each other; the last write wins, bounded. Detecting it would need a new buyer-facing conflict step.
-- In progress (with #424): after any 429 on a draft write, autosave stops for the rest of the page load ([spec §8.2](../architecture/implementation-plan.md#82-state-model)); it will stop only on `SESSION_QUOTA` and otherwise resume after `Retry-After`.
+- Deployed behaviour until the next theme release: after any 429 on a draft write, autosave stops for the rest of the page load. Fixed on main by #430 ([spec §8.2](../architecture/implementation-plan.md#82-state-model)).
 
 **Known behaviour.**
 - A restored draft labels its artwork with the translated word for artwork ("Artwork", "Ontwerp", …) instead of the file name: drafts store IDs only (#423).
