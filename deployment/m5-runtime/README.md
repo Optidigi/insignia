@@ -20,7 +20,7 @@ As of 13 November 2026 (rewrite-dev on host alias `prod`). [Delivery state](../.
 
 ## Deploy next
 
-Check for a current owner approval in the [operating model](../../docs/delivery/operating-model.md#effective-resource-scope) before any effect; the 12–13 November approval is consumed. The three deploys of 12–13 November followed these steps; their exact records are in [past transitions](#past-transitions) and the [deploy history](../../docs/delivery/history-2026-11-12-bug-batch.md).
+Rewrite-dev deploys and theme releases run autonomously under the standing 13 November owner approval in the [operating model](../../docs/delivery/operating-model.md#effective-resource-scope); check its limits before any effect outside them. The three deploys of 12–13 November followed these steps; their exact records are in [past transitions](#past-transitions) and the [deploy history](../../docs/delivery/history-2026-11-12-bug-batch.md).
 
 **Server images (web, worker, verifier)** follow the [bounded deployment and recovery sequence](#bounded-deployment-and-recovery-sequence):
 1. Freeze the baseline: applied migration ledger, ACL digests, protected facts, prior images and configurations.
