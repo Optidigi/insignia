@@ -123,7 +123,9 @@ const LATEST = 'insignia:selected-design-latest:v1:/apps/insignia:111';
 /** One refused draft write, as the API sends it (spec §8.2/§8.3). A missing `code` is a 429 from something else. */
 type Refusal = { retryAfter?: number; reason?: 'SESSION_QUOTA'; code?: string };
 
-function fixture(options: { statuses?: number[]; refusals?: Refusal[] } = {}) {
+function fixture(options: { statuses?: number[]; refusals?: Refusal[]; hold?: Promise<void> } = {}) {
+  // The first draft write is answered only when `hold` settles, so a later save can start while it is in flight.
+  let hold = options.hold;
   const saves: { expectedVersion: number; group: { variants: unknown[] } }[] = [];
   const shared = sharedStorage();
   let version = 0;
@@ -150,6 +152,11 @@ function fixture(options: { statuses?: number[]; refusals?: Refusal[] } = {}) {
       if (/\/designs\/[^/]+$/.test(path)) {
         const body = JSON.parse(String(init.body));
         saves.push(body);
+        if (hold) {
+          const held = hold;
+          hold = undefined;
+          await held;
+        }
         const status = options.statuses?.shift();
         if (status) return Response.json({ code: 'UNAVAILABLE' }, { status });
         const refusal = options.refusals?.shift();
@@ -312,6 +319,74 @@ test('a long Retry-After is capped at five minutes, and a repeated refusal pause
   assert.equal(saves.length, 2, 'paused again for the new Retry-After');
   await advance(30_000);
   assert.equal(saves.length, 3);
+});
+
+/** Resolves a promise from outside, to let a held request answer at a chosen moment. */
+function gate() {
+  let open = () => {};
+  const opened = new Promise<void>((resolve) => {
+    open = resolve;
+  });
+  return { opened, open };
+}
+
+test('overlapping saves refused with a 429 end with the newest design, never an older one', async () => {
+  const first = gate();
+  const { changed, saves } = fixture({ hold: first.opened, refusals: [{ retryAfter: 30 }, { retryAfter: 30 }] });
+  changed(design(1));
+  await advance(3_000);
+  assert.equal(saves.length, 1, 'save 1 is in flight');
+  // The next save starts while save 1 is still unanswered; it waits behind it for the draft's CAS version.
+  changed(design(2));
+  await advance(15_000);
+  assert.equal(saves.length, 1, 'save 2 is queued behind save 1');
+  first.open();
+  await eventually(() => saves.length === 2, 'save 2 is sent once save 1 is refused');
+  await advance(10_000);
+  assert.equal(saves.length, 2, 'paused after both refusals');
+  await advance(40_000);
+  assert.deepEqual(
+    saves.map((save) => save.group.variants),
+    [[{ variantId: '101', quantity: 1 }], [{ variantId: '101', quantity: 2 }], [{ variantId: '101', quantity: 2 }]],
+    'the design saved after the pause is the newest',
+  );
+});
+
+test('a failed older save is not retried once a newer save has started', async () => {
+  const first = gate();
+  const { changed, saves } = fixture({ hold: first.opened, statuses: [503] });
+  changed(design(1));
+  await advance(3_000);
+  changed(design(2));
+  await advance(15_000);
+  first.open();
+  await eventually(() => saves.length === 2, 'save 2 is sent once save 1 has failed');
+  await advance(60_000);
+  assert.deepEqual(
+    saves.map((save) => save.group.variants),
+    [[{ variantId: '101', quantity: 1 }], [{ variantId: '101', quantity: 2 }]],
+    'design 1 is not saved again after design 2',
+  );
+});
+
+test('Start a new design drops the save waiting for a 429 pause, so nothing is sent when it ends', async () => {
+  const { changed, saves, live } = fixture({ refusals: [{ retryAfter: 90 }] });
+  changed(design(1));
+  await advance(3_000);
+  assert.equal(saves.length, 1);
+  await live.discardDrafts();
+  await advance(400_000);
+  assert.equal(saves.length, 1);
+});
+
+test('a design emptied during a 429 pause drops the save waiting for it, so nothing is sent when it ends', async () => {
+  const { changed, reverted, saves } = fixture({ refusals: [{ retryAfter: 90 }] });
+  changed(design(1));
+  await advance(3_000);
+  assert.equal(saves.length, 1);
+  reverted();
+  await advance(400_000);
+  assert.equal(saves.length, 1);
 });
 
 test('a 429 that is not clearly transient (no code, no Retry-After) stops autosave', async () => {

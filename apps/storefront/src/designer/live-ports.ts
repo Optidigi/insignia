@@ -118,6 +118,10 @@ export function createLiveDesignerPorts(input: {
   // The transient per-minute limit (429 RATE_LIMITED, normally with no Retry-After) only pauses autosave: nothing is
   // sent before this time, then the latest pending design is saved (§8.2).
   let autosaveNotBefore = Number.NEGATIVE_INFINITY;
+  // Counts the saves started. Saves of one draft run one after another, so an older one can still be waiting or failing
+  // when a newer one has started: only the newest started save recovers its design, or an older design would be saved
+  // last.
+  let autosaveStarted = 0;
   /** Drop the pending autosave and fence any in flight: its late answer no longer sets a reopen pointer. */
   function cancelAutosave() {
     if (autosave) clearTimeout(autosave.timer);
@@ -180,6 +184,7 @@ export function createLiveDesignerPorts(input: {
     }
     const original = designs.get(pending.id);
     const controller = new AbortController();
+    const started = ++autosaveStarted;
     autosaving.add(controller);
     lastAutosave = Date.now();
     draftSaves.set(pending.id, { group, original });
@@ -191,13 +196,14 @@ export function createLiveDesignerPorts(input: {
       if (refusal === 'stop') autosaveStopped = true;
       else if (refusal) {
         // Pause, then send the latest design: a newer change already waiting is moved to after the pause, otherwise
-        // this refused one waits (its refusal does not use up the retry), unless a cancellation has dropped it.
+        // this refused one waits (its refusal does not use up the retry), unless a cancellation has dropped it or a
+        // newer save has started, which recovers its own design.
         autosaveNotBefore = Date.now() + refusal.pauseMs;
-        const latest = autosave ?? (controller.signal.aborted ? undefined : pending);
+        const latest = autosave ?? (started === autosaveStarted && !controller.signal.aborted ? pending : undefined);
         if (latest) queueAutosave(latest);
       }
-      // Any other failure is retried once, unless a newer change or a cancellation has replaced it.
-      else if (!controller.signal.aborted && !autosave && !pending.retried)
+      // Any other failure is retried once, unless a newer change, a newer save or a cancellation has replaced it.
+      else if (started === autosaveStarted && !controller.signal.aborted && !autosave && !pending.retried)
         queueAutosave({ ...pending, retried: true });
     } finally {
       autosaving.delete(controller);
