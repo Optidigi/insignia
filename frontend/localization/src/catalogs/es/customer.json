@@ -204,7 +204,8 @@
     "itemCount_other": "{{count}} artículos",
     "itemCount_many": "{{count}} artículos",
     "designTotals": "Totales por personalización",
-    "currentDesign": "Personalización actual"
+    "currentDesign": "Personalización actual",
+    "customizedProduct": "Producto personalizado"
   },
   "validation": {
     "checkDesign": "Revisa tu personalización",
@@ -222,7 +223,8 @@
     "checkIssueCount_many": "Revisar {{count}} problemas"
   },
   "files": {
-    "fullFilename": "Nombre completo del archivo"
+    "fullFilename": "Nombre completo del archivo",
+    "unnamedArtwork": "Diseño"
   },
   "theme": {
     "darkMode": "Modo oscuro",

@@ -200,7 +200,8 @@
     "itemCount_one": "{{count}} Artikel",
     "itemCount_other": "{{count}} Artikel",
     "designTotals": "Summen je Design",
-    "currentDesign": "Aktuelles Design"
+    "currentDesign": "Aktuelles Design",
+    "customizedProduct": "Personalisiertes Produkt"
   },
   "validation": {
     "checkDesign": "Prüfen Sie Ihre Gestaltung",
@@ -216,7 +217,8 @@
     "checkIssueCount_other": "{{count}} Probleme prüfen"
   },
   "files": {
-    "fullFilename": "Vollständiger Dateiname"
+    "fullFilename": "Vollständiger Dateiname",
+    "unnamedArtwork": "Motiv"
   },
   "theme": {
     "darkMode": "Dunkelmodus",

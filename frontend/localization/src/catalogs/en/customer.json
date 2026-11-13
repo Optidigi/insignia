@@ -200,7 +200,8 @@
     "itemCount_one": "{{count}} item",
     "itemCount_other": "{{count}} items",
     "designTotals": "Design totals",
-    "currentDesign": "Current design"
+    "currentDesign": "Current design",
+    "customizedProduct": "Customized product"
   },
   "validation": {
     "checkDesign": "Check your design",
@@ -216,7 +217,8 @@
     "checkIssueCount_other": "Check {{count}} issues"
   },
   "files": {
-    "fullFilename": "Full filename"
+    "fullFilename": "Full filename",
+    "unnamedArtwork": "Artwork"
   },
   "theme": {
     "darkMode": "Dark mode",

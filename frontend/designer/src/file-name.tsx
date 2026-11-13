@@ -14,7 +14,7 @@ interface FileNameProps {
  */
 export function useArtworkName() {
   const { t } = useLocale();
-  return (name: string) => name || t("customer:steps.artwork");
+  return (name: string) => name || t("customer:files.unnamedArtwork");
 }
 
 // The accessible name and stored filename stay intact. Only the visible stem

@@ -1,5 +1,4 @@
 import { buyerCartCapacityExceeded } from '@insignia/contracts';
-import { createCustomerTranslator } from '@insignia/ui-localization/customer';
 import type { Design } from '../../../../frontend/designer/src/model';
 import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quote-review';
 import type { CartReceipt, CartRequest, DesignerPorts } from '../../../../frontend/designer/src/runtime';
@@ -29,6 +28,12 @@ import type { RepairState } from './repair-state';
  */
 const AUTOSAVE_DELAY_MS = 2_000;
 const AUTOSAVE_SPACING_MS = 10_000;
+/** A refused write that names no `Retry-After` is the session's per-minute limit: its window is a minute long. */
+const AUTOSAVE_PAUSE_DEFAULT_MS = 60_000;
+/** Longest pause for one refusal, whatever `Retry-After` asks: a shorter wait than a visit, never a lasting stop. */
+const AUTOSAVE_PAUSE_MAX_MS = 300_000;
+/** A review row's name only when the product has a real title; the Designer words the fallback itself (#424). */
+const labelled = (label: string | undefined) => (label ? { label } : {});
 type Prepared = {
   signature: string;
   proposal: QuoteProposal;
@@ -106,9 +111,17 @@ export function createLiveDesignerPorts(input: {
   let autosave: (PendingAutosave & { timer: ReturnType<typeof setTimeout> }) | undefined;
   const autosaving = new Set<AbortController>();
   let lastAutosave = Number.NEGATIVE_INFINITY;
-  // The session refused a write (its per-minute or draft limit): further autosaves would only spend the writes a
-  // quote or Add to cart needs. Review still saves the draft as before.
+  // The session's lifetime quota is exhausted (429 SESSION_QUOTA), or a 429 is not clearly the transient per-minute
+  // limit: further autosaves would only spend the writes a quote or Add to cart needs, so they stop for the rest of
+  // the page load. Review still saves the draft as before.
   let autosaveStopped = false;
+  // The transient per-minute limit (429 RATE_LIMITED, normally with no Retry-After) only pauses autosave: nothing is
+  // sent before this time, then the latest pending design is saved (§8.2).
+  let autosaveNotBefore = Number.NEGATIVE_INFINITY;
+  // Counts the saves started. Saves of one draft run one after another, so an older one can still be waiting or failing
+  // when a newer one has started: only the newest started save recovers its design, or an older design would be saved
+  // last.
+  let autosaveStarted = 0;
   /** Drop the pending autosave and fence any in flight: its late answer no longer sets a reopen pointer. */
   function cancelAutosave() {
     if (autosave) clearTimeout(autosave.timer);
@@ -119,7 +132,8 @@ export function createLiveDesignerPorts(input: {
   function queueAutosave(pending: PendingAutosave) {
     if (autosaveStopped) return;
     if (autosave) clearTimeout(autosave.timer);
-    const wait = Math.max(AUTOSAVE_DELAY_MS, lastAutosave + AUTOSAVE_SPACING_MS - Date.now());
+    const now = Date.now();
+    const wait = Math.max(AUTOSAVE_DELAY_MS, lastAutosave + AUTOSAVE_SPACING_MS - now, autosaveNotBefore - now);
     autosave = { ...pending, timer: setTimeout(() => void flushAutosave(), wait) };
   }
   function scheduleAutosave(design: Design) {
@@ -145,6 +159,19 @@ export function createLiveDesignerPorts(input: {
     if (saved) void custody.forget(id, saved.group).catch(() => {});
     else custody.forgetLatest(input.productId, id);
   }
+  /**
+   * How a failed draft write was refused with 429: `stop` for the lifetime session quota (nothing succeeds until the
+   * session expires) and for a 429 that is not clearly the transient limit; otherwise the pause until a retry can
+   * succeed, from `Retry-After` when sent. Not a rate limit: undefined.
+   */
+  function rateLimit(error: unknown): 'stop' | { pauseMs: number } | undefined {
+    if (!error || typeof error !== 'object' || !('status' in error) || error.status !== 429) return undefined;
+    const { code, reason, retryAfter } = error as { code?: unknown; reason?: unknown; retryAfter?: unknown };
+    const seconds = typeof retryAfter === 'number' && retryAfter > 0 ? retryAfter : 0;
+    if (reason === 'SESSION_QUOTA' || !(seconds || code === 'RATE_LIMITED' || code === 'SESSION_RATE_LIMITED'))
+      return 'stop';
+    return { pauseMs: Math.min(seconds ? seconds * 1000 : AUTOSAVE_PAUSE_DEFAULT_MS, AUTOSAVE_PAUSE_MAX_MS) };
+  }
   async function flushAutosave() {
     const pending = autosave;
     autosave = undefined;
@@ -157,6 +184,7 @@ export function createLiveDesignerPorts(input: {
     }
     const original = designs.get(pending.id);
     const controller = new AbortController();
+    const started = ++autosaveStarted;
     autosaving.add(controller);
     lastAutosave = Date.now();
     draftSaves.set(pending.id, { group, original });
@@ -164,9 +192,18 @@ export function createLiveDesignerPorts(input: {
       // The same custody save as Review: same draft ID, CAS version and reopen pointers. Unchanged content writes nothing.
       await custody.save(pending.id, group, original, controller.signal, { onlyChanges: true });
     } catch (error) {
-      if (error && typeof error === 'object' && 'status' in error && error.status === 429) autosaveStopped = true;
-      // Any other failure is retried once, unless a newer change or a cancellation has replaced it.
-      else if (!controller.signal.aborted && !autosave && !pending.retried)
+      const refusal = rateLimit(error);
+      if (refusal === 'stop') autosaveStopped = true;
+      else if (refusal) {
+        // Pause, then send the latest design: a newer change already waiting is moved to after the pause, otherwise
+        // this refused one waits (its refusal does not use up the retry), unless a cancellation has dropped it or a
+        // newer save has started, which recovers its own design.
+        autosaveNotBefore = Date.now() + refusal.pauseMs;
+        const latest = autosave ?? (started === autosaveStarted && !controller.signal.aborted ? pending : undefined);
+        if (latest) queueAutosave(latest);
+      }
+      // Any other failure is retried once, unless a newer change, a newer save or a cancellation has replaced it.
+      else if (started === autosaveStarted && !controller.signal.aborted && !autosave && !pending.retried)
         queueAutosave({ ...pending, retried: true });
     } finally {
       autosaving.delete(controller);
@@ -227,7 +264,8 @@ export function createLiveDesignerPorts(input: {
             configRevisionId: config.revisionId,
             revisionContentHash: config.contentHash,
           };
-          labels.set(candidate.productId, config.title ?? config.selectedSetup?.product.title ?? candidate.productId);
+          const title = config.title ?? config.selectedSetup?.product.title;
+          if (title) labels.set(candidate.productId, title);
         }),
       );
     }
@@ -296,12 +334,13 @@ export function createLiveDesignerPorts(input: {
         pendingRows.push({
           id,
           editable: true,
-          label:
+          // No real title: leave it out. The Designer names the row in its current language (#424).
+          ...labelled(
             observed.labels[candidate.productId] ??
-            (candidate.productId === source.productId
-              ? (source.title ?? source.selectedSetup?.product.title)
-              : createCustomerTranslator(input.locale).t('customer:steps.artwork')) ??
-            createCustomerTranslator(input.locale).t('customer:steps.artwork'),
+              (candidate.productId === source.productId
+                ? (source.title ?? source.selectedSetup?.product.title)
+                : undefined),
+          ),
           quantity: candidate.variants.reduce((total, variant) => total + variant.quantity, 0),
         });
       }
@@ -422,7 +461,7 @@ export function createLiveDesignerPorts(input: {
           groups: proposal.groups.map((group, index) => ({
             id: group.canonicalIdentitySha256 ?? `${group.productId}-${index}`,
             editable: !!group.selection,
-            label: labels.get(group.productId) ?? group.productId,
+            ...labelled(labels.get(group.productId)),
             quantity: group.quantity,
             totalMinor: group.totalMinor,
           })),
@@ -784,7 +823,7 @@ export function createLiveDesignerPorts(input: {
       groups:
         proposal?.groups.map((group) => ({
           id: group.canonicalIdentitySha256 ?? group.productId,
-          label: labels.get(group.productId) ?? group.productId,
+          ...labelled(labels.get(group.productId)),
           quantity: group.quantity,
           totalMinor: group.totalMinor,
         })) ?? [],

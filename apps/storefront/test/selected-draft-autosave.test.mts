@@ -120,7 +120,12 @@ function sharedStorage() {
 }
 const LATEST = 'insignia:selected-design-latest:v1:/apps/insignia:111';
 
-function fixture(options: { saveStatus?: number; statuses?: number[] } = {}) {
+/** One refused draft write, as the API sends it (spec §8.2/§8.3). A missing `code` is a 429 from something else. */
+type Refusal = { retryAfter?: number; reason?: 'SESSION_QUOTA'; code?: string };
+
+function fixture(options: { statuses?: number[]; refusals?: Refusal[]; hold?: Promise<void> } = {}) {
+  // The first draft write is answered only when `hold` settles, so a later save can start while it is in flight.
+  let hold = options.hold;
   const saves: { expectedVersion: number; group: { variants: unknown[] } }[] = [];
   const shared = sharedStorage();
   let version = 0;
@@ -147,12 +152,23 @@ function fixture(options: { saveStatus?: number; statuses?: number[] } = {}) {
       if (/\/designs\/[^/]+$/.test(path)) {
         const body = JSON.parse(String(init.body));
         saves.push(body);
+        if (hold) {
+          const held = hold;
+          hold = undefined;
+          await held;
+        }
         const status = options.statuses?.shift();
         if (status) return Response.json({ code: 'UNAVAILABLE' }, { status });
-        if (options.saveStatus)
+        const refusal = options.refusals?.shift();
+        if (refusal)
           return Response.json(
-            { code: 'RATE_LIMITED', message: 'limited', requestId: 'r' },
-            { status: options.saveStatus },
+            {
+              ...('code' in refusal ? (refusal.code ? { code: refusal.code } : {}) : { code: 'RATE_LIMITED' }),
+              message: 'limited',
+              requestId: 'r',
+              ...(refusal.reason ? { details: { reason: refusal.reason } } : {}),
+            },
+            { status: 429, headers: refusal.retryAfter ? { 'Retry-After': String(refusal.retryAfter) } : {} },
           );
         if (body.expectedVersion !== version) return Response.json({ code: 'CONFLICT' }, { status: 409 });
         return Response.json({ id: DESIGN_ID, version: ++version, value: body.group });
@@ -243,8 +259,8 @@ test('an unchanged design is not saved again', async () => {
   assert.equal(saves.length, 1);
 });
 
-test('after the session refuses a draft write, autosave stops so it cannot use up quotes and cart writes', async () => {
-  const { changed, saves } = fixture({ saveStatus: 429 });
+test('after the session quota is exhausted, autosave stops for the page load so it cannot use up quotes and cart writes', async () => {
+  const { changed, saves } = fixture({ refusals: [{ reason: 'SESSION_QUOTA' }] });
   changed(design(1));
   await advance(3_000);
   assert.equal(saves.length, 1);
@@ -252,6 +268,134 @@ test('after the session refuses a draft write, autosave stops so it cannot use u
     changed(design(quantity));
     await advance(6_000);
   }
+  await advance(600_000);
+  assert.equal(saves.length, 1);
+});
+
+test('after a transient 429 with Retry-After, autosave pauses until then and saves the latest design (§8.2)', async () => {
+  const { changed, saves } = fixture({ refusals: [{ retryAfter: 90 }] });
+  changed(design(1));
+  await advance(3_000);
+  assert.equal(saves.length, 1, 'the refused write');
+  // Edits during the pause replace the pending design; none is sent before Retry-After.
+  changed(design(2));
+  await advance(30_000);
+  changed(design(3));
+  await advance(50_000);
+  assert.equal(saves.length, 1, 'paused: 83 s after the refusal');
+  await advance(10_000);
+  assert.equal(saves.length, 2, 'one save once Retry-After has passed');
+  assert.deepEqual(saves[1]?.group.variants, [{ variantId: '101', quantity: 3 }], 'the latest design');
+  assert.equal(saves[1]?.expectedVersion, 0);
+  changed(design(4));
+  await advance(10_000);
+  assert.equal(saves.length, 3, 'autosave continues normally');
+  assert.equal(saves[2]?.expectedVersion, 1);
+});
+
+test('a transient 429 without Retry-After pauses for a minute, then saves the refused design again', async () => {
+  const { changed, saves } = fixture({ refusals: [{}] });
+  changed(design(1));
+  await advance(3_000);
+  assert.equal(saves.length, 1);
+  await advance(50_000);
+  assert.equal(saves.length, 1, 'still paused 53 s after the refusal');
+  await advance(15_000);
+  assert.equal(saves.length, 2);
+  assert.deepEqual(saves[1]?.group.variants, [{ variantId: '101', quantity: 1 }]);
+  await advance(60_000);
+  assert.equal(saves.length, 2, 'saved: nothing more to send');
+});
+
+test('a long Retry-After is capped at five minutes, and a repeated refusal pauses again', async () => {
+  const { changed, saves } = fixture({ refusals: [{ retryAfter: 3_600 }, { retryAfter: 120 }] });
+  changed(design(1));
+  await advance(3_000);
+  await advance(290_000);
+  assert.equal(saves.length, 1, 'paused 293 s after the refusal');
+  await advance(15_000);
+  assert.equal(saves.length, 2, 'resumed at the cap, refused again');
+  await advance(100_000);
+  assert.equal(saves.length, 2, 'paused again for the new Retry-After');
+  await advance(30_000);
+  assert.equal(saves.length, 3);
+});
+
+/** Resolves a promise from outside, to let a held request answer at a chosen moment. */
+function gate() {
+  let open = () => {};
+  const opened = new Promise<void>((resolve) => {
+    open = resolve;
+  });
+  return { opened, open };
+}
+
+test('overlapping saves refused with a 429 end with the newest design, never an older one', async () => {
+  const first = gate();
+  const { changed, saves } = fixture({ hold: first.opened, refusals: [{ retryAfter: 30 }, { retryAfter: 30 }] });
+  changed(design(1));
+  await advance(3_000);
+  assert.equal(saves.length, 1, 'save 1 is in flight');
+  // The next save starts while save 1 is still unanswered; it waits behind it for the draft's CAS version.
+  changed(design(2));
+  await advance(15_000);
+  assert.equal(saves.length, 1, 'save 2 is queued behind save 1');
+  first.open();
+  await eventually(() => saves.length === 2, 'save 2 is sent once save 1 is refused');
+  await advance(10_000);
+  assert.equal(saves.length, 2, 'paused after both refusals');
+  await advance(40_000);
+  assert.deepEqual(
+    saves.map((save) => save.group.variants),
+    [[{ variantId: '101', quantity: 1 }], [{ variantId: '101', quantity: 2 }], [{ variantId: '101', quantity: 2 }]],
+    'the design saved after the pause is the newest',
+  );
+});
+
+test('a failed older save is not retried once a newer save has started', async () => {
+  const first = gate();
+  const { changed, saves } = fixture({ hold: first.opened, statuses: [503] });
+  changed(design(1));
+  await advance(3_000);
+  changed(design(2));
+  await advance(15_000);
+  first.open();
+  await eventually(() => saves.length === 2, 'save 2 is sent once save 1 has failed');
+  await advance(60_000);
+  assert.deepEqual(
+    saves.map((save) => save.group.variants),
+    [[{ variantId: '101', quantity: 1 }], [{ variantId: '101', quantity: 2 }]],
+    'design 1 is not saved again after design 2',
+  );
+});
+
+test('Start a new design drops the save waiting for a 429 pause, so nothing is sent when it ends', async () => {
+  const { changed, saves, live } = fixture({ refusals: [{ retryAfter: 90 }] });
+  changed(design(1));
+  await advance(3_000);
+  assert.equal(saves.length, 1);
+  await live.discardDrafts();
+  await advance(400_000);
+  assert.equal(saves.length, 1);
+});
+
+test('a design emptied during a 429 pause drops the save waiting for it, so nothing is sent when it ends', async () => {
+  const { changed, reverted, saves } = fixture({ refusals: [{ retryAfter: 90 }] });
+  changed(design(1));
+  await advance(3_000);
+  assert.equal(saves.length, 1);
+  reverted();
+  await advance(400_000);
+  assert.equal(saves.length, 1);
+});
+
+test('a 429 that is not clearly transient (no code, no Retry-After) stops autosave', async () => {
+  const { changed, saves } = fixture({ refusals: [{ code: '' }] });
+  changed(design(1));
+  await advance(3_000);
+  assert.equal(saves.length, 1);
+  changed(design(2));
+  await advance(600_000);
   assert.equal(saves.length, 1);
 });
 

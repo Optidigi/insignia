@@ -247,7 +247,7 @@ async function openDesigner(page: Page): Promise<FrameLocator> {
 }
 
 /** Artwork later on the front, three items, Review: the eager quote saves the draft. */
-async function buildToReview(ui: FrameLocator) {
+async function buildToReview(ui: FrameLocator, { quoted = true } = {}) {
   await ui.getByRole('button', { name: 'Add artwork', exact: true }).first().click();
   const card = ui.locator('article.print-card').first();
   const heading = card.locator('.print-card-heading');
@@ -257,7 +257,7 @@ async function buildToReview(ui: FrameLocator) {
   await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
   await ui.locator('input[inputmode=numeric]:enabled').first().fill('3');
   await ui.getByRole('button', { name: 'Review', exact: true }).last().click();
-  await ui.getByText('€90.00', { exact: true }).filter({ visible: true }).first().waitFor();
+  if (quoted) await ui.getByText('€90.00', { exact: true }).filter({ visible: true }).first().waitFor();
 }
 
 async function expectEventually(check: () => boolean | Promise<boolean>, message: string) {
@@ -426,7 +426,8 @@ test('a restored artwork without a file name is labelled in the current Designer
     await ui.getByRole('button', { name: 'Continue', exact: true }).click();
     await ui.locator('article.print-card img').first().waitFor();
     // Drafts keep no file names. The label is chosen when it is shown, so it follows each language switch.
-    const labels = { '': 'Artwork', nl: 'Ontwerp', de: 'Motiv', fr: 'Visuels', es: 'Diseño', it: 'Grafica' };
+    // An unnamed file has its own singular wording (#424): French says "Visuel", not the plural step heading.
+    const labels = { '': 'Artwork', nl: 'Ontwerp', de: 'Motiv', fr: 'Visuel', es: 'Diseño', it: 'Grafica' };
     for (const [language, label] of Object.entries(labels)) {
       await ui.locator('#customer-language').selectOption(language);
       if (language) await ui.locator(`.app[lang="${language}"]`).waitFor();
@@ -441,6 +442,91 @@ test('a restored artwork without a file name is labelled in the current Designer
       assert.equal((await chip.innerText()).trim(), label, `file chip in ${language || 'English'}`);
       await page.keyboard.press('Escape');
       await ui.locator('dialog[open]').waitFor({ state: 'detached' });
+    }
+  });
+});
+
+test('a cart-review row for a product with no title is named in the current Designer language (#424)', async () => {
+  await withStorefront(async ({ context, openPage, cartGroups }) => {
+    // Another customized design in the cart whose product Shopify and the config give no title.
+    let quoteGate: Promise<void> = Promise.resolve();
+    await context.route('**/apps/insignia/v1/config?*', (route, request) =>
+      new URL(request.url()).searchParams.get('productId') === '333'
+        ? route.fulfill({ json: { ...config, productId: '333', title: undefined } })
+        : route.fallback(),
+    );
+    await context.route('**/apps/insignia/v1/quote-proposals', async (route, request) => {
+      await quoteGate;
+      const groups = (request.postDataJSON().groups as { productId: string }[]) ?? [];
+      return route.fulfill({
+        json: {
+          proposalId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+          hash: 'b'.repeat(64),
+          expiresAt: new Date(Date.now() + 60000).toISOString(),
+          currency: 'EUR',
+          exponent: 2,
+          customizedQuantity: 3 * groups.length,
+          totalMinor: String(9000 * groups.length),
+          groups: groups.map((group) => ({
+            productId: group.productId,
+            quantity: 3,
+            setupMinor: '0',
+            customizationUnitMinor: '1000',
+            baseTotalMinor: '6000',
+            totalMinor: '9000',
+          })),
+          changedGroups: [],
+        },
+      });
+    });
+    cartGroups.push({
+      productId: '333',
+      configRevisionId: 'r1',
+      revisionContentHash: 'a'.repeat(64),
+      design: {
+        placements: [
+          {
+            placementId: 'front',
+            methodId: 'print',
+            stepId: 'small',
+            artwork: { kind: 'deferred', intentId: 'later-intent' },
+            position: { xMicros: 500_000, yMicros: 500_000 },
+          },
+        ],
+        options: [],
+      },
+      variants: [{ variantId: '222', quantity: 3 }],
+    });
+    // The quote is held back, so the rows show the names they have while it is calculated.
+    let release = () => {};
+    quoteGate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const ui = await openDesigner(await openPage());
+    await buildToReview(ui, { quoted: false });
+    const rows = ui.locator('.review-design-totals .review-group-name');
+    await rows.nth(1).waitFor();
+    const labels = {
+      '': 'Customized product',
+      nl: 'Gepersonaliseerd product',
+      de: 'Personalisiertes Produkt',
+      fr: 'Produit personnalisé',
+      es: 'Producto personalizado',
+      it: 'Prodotto personalizzato',
+    };
+    // The product's own name is data and never follows the language; only the fallback does.
+    for (const [language, label] of Object.entries(labels)) {
+      await ui.locator('#customer-language').selectOption(language);
+      if (language) await ui.locator(`.app[lang="${language}"]`).waitFor();
+      assert.deepEqual(await rows.allInnerTexts(), [label, 'Synthetic shirt'], `pending quote in ${language}`);
+    }
+    await ui.locator('#customer-language').selectOption('');
+    release();
+    await ui.getByText('€180.00', { exact: true }).filter({ visible: true }).first().waitFor();
+    for (const [language, label] of Object.entries(labels)) {
+      await ui.locator('#customer-language').selectOption(language);
+      if (language) await ui.locator(`.app[lang="${language}"]`).waitFor();
+      assert.deepEqual(await rows.allInnerTexts(), [label, 'Synthetic shirt'], `quoted in ${language}`);
     }
   });
 });
