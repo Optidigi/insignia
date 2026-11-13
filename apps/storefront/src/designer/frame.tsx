@@ -157,6 +157,14 @@ function Frame({ initial }: { initial: Initial }) {
         ? undefined
         : { prepare: (request) => invoke<void | { expiresAt: string }>('prepare', request) },
       cart: { commit: (request) => invoke<CartReceipt>('commit', request) },
+      ...(initial.previewOnly
+        ? {}
+        : {
+            draft: {
+              changed: (design: Design) => send('insignia:designer:draft', { design }),
+              reverted: (id: string) => send('insignia:designer:draft-reverted', { id }),
+            },
+          }),
     }),
     [],
   );

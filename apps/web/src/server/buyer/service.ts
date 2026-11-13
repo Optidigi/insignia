@@ -19,8 +19,9 @@ import { decodeLineCarrierV3, type HeaderV3, LINE_ATTRIBUTE, PREFIX_V3_CHARS } f
 import {
   type BuyerDesired,
   type BuyerDesiredGroup,
-  BuyerDesiredGroupSchema,
   BuyerDesiredSchema,
+  type BuyerDraftGroup,
+  BuyerDraftGroupSchema,
   PublishedConfigSchema,
 } from '@insignia/contracts';
 import { type BuyerScope, BuyerStateError, type DurableCore, sha256CanonicalJson } from '@insignia/database';
@@ -28,6 +29,7 @@ import {
   canonicalDesignIdentity,
   normalizeCustomizationGroups,
   parseMinor,
+  validateCustomizationDraft,
   validateLeanConfig,
 } from '@insignia/domain';
 import type { GeometryV1 } from '@insignia/visualizer/geometry';
@@ -37,6 +39,7 @@ import type { FrozenPreviewReader } from '../merchant-preview/read.ts';
 import { publicSelectedSetup } from '../merchant-preview/selected-public.ts';
 import { createConfigCache } from './config-cache.ts';
 import { noteCache, proposalStage } from './diagnostics.ts';
+import { draftCompatibility } from './draft-compatibility.ts';
 import { validateBuyerProductionPositions } from './production-position.ts';
 import { createRevisionReads } from './revision-cache.ts';
 
@@ -488,39 +491,19 @@ export function createBuyerServices(input: {
     async restoreDesign(scope: BuyerScope, id: string) {
       const saved = await store.getDesign(scope, id, clock());
       if (!saved) return notFound();
-      const group = BuyerDesiredGroupSchema.parse(saved.value);
+      const group = BuyerDraftGroupSchema.parse(saved.value);
       const original = await revisions.getValidatedPublishedRevision(scope.shopId, group.configRevisionId);
       if (!original || original.contentHash !== group.revisionContentHash) return notFound();
       const originalConfig = PublishedConfigSchema.parse(original.publishedValue);
       if (originalConfig.productId !== group.productId) return notFound();
       const presentation = await revisions.getRevisionPresentation(scope.shopId, group.configRevisionId);
       const geometryRecord = await revisions.getRevisionGeometry(scope.shopId, group.configRevisionId);
-      let compatibility:
-        | 'current'
-        | 'publication-changed'
-        | 'choice-unavailable'
-        | 'configuration-unavailable'
-        | 'legacy' = 'configuration-unavailable';
       const current = await input.core.acceptedQuotes.getEffective(scope.shopId, group.productId);
-      if (current) {
-        try {
-          normalizeCustomizationGroups(
-            [
-              {
-                ...group,
-                shopId: scope.shopId,
-                version: 'm2-customization-group-v1',
-                configRevisionId: current.config.revisionId,
-                revisionContentHash: current.config.revisionContentHash,
-              },
-            ],
-            [current.config],
-          );
-          compatibility = current.config.revisionId === group.configRevisionId ? 'current' : 'publication-changed';
-        } catch {
-          compatibility = 'choice-unavailable';
-        }
-      }
+      let compatibility: ReturnType<typeof draftCompatibility> | 'legacy' = draftCompatibility(
+        scope.shopId,
+        group,
+        current?.config ?? null,
+      );
       let retained = null;
       if (presentation?.selectedSetup && geometryRecord && input.previewImages) {
         const geometry = buyerGeometry(geometryRecord.value as GeometryV1);
@@ -551,7 +534,7 @@ export function createBuyerServices(input: {
         retained,
       };
     },
-    async design(scope: BuyerScope, id: string, body: { expectedVersion: number; group: BuyerDesiredGroup }) {
+    async design(scope: BuyerScope, id: string, body: { expectedVersion: number; group: BuyerDraftGroup }) {
       const revision = await input.core.acceptedQuotes.getEffective(scope.shopId, body.group.productId);
       if (
         !revision ||
@@ -559,9 +542,10 @@ export function createBuyerServices(input: {
         revision.config.revisionContentHash !== body.group.revisionContentHash
       )
         return review();
-      normalizeCustomizationGroups(
-        [{ ...body.group, shopId: scope.shopId, version: 'm2-customization-group-v1' }],
-        [revision.config],
+      // A draft may have no sizes or colours yet (#366); quotes still require them.
+      validateCustomizationDraft(
+        { ...body.group, shopId: scope.shopId, version: 'm2-customization-group-v1' },
+        revision.config,
       );
       await validatePositions(scope, [body.group]);
       const expiresAt = await privateUntil(scope, [body.group]);

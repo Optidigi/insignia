@@ -1067,6 +1067,51 @@ export function buildCommitDesign(state: DesignerState, id: string): Design | nu
   };
 }
 
+/**
+ * What an unfinished design holds now, for its saved draft (#366): only placed artwork (uploaded or "later") and
+ * valid quantities, which may still be none. Null while there is nothing to keep or the production choices are
+ * incomplete. It never decides purchase readiness; `buildCommitDesign` does.
+ */
+export function buildDraftDesign(state: DesignerState, id: string): Design | null {
+  if (!id || !isProductionChoicesValid(state)) return null;
+  const prints = state.prints.filter(
+    (print) =>
+      isAllowedPrint(state, print) &&
+      ((print.artworkId === 'later' && state.rules.deferablePositions.includes(print.id)) ||
+        state.artworks.some((artwork) => artwork.id === print.artworkId)),
+  );
+  if (!prints.length) return null;
+  const available = new Set(
+    state.colorRows.flatMap((color) =>
+      state.rules.sizeIds.filter((size) => isAvailableSize(state, color, size)).map((size) => `${color}:${size}`),
+    ),
+  );
+  const quantities = Object.fromEntries(
+    Object.entries(state.quantities).filter(
+      ([key, value]) => available.has(key) && isValidQuantity(value ?? 0, state.rules.maxQuantity),
+    ),
+  );
+  const variants = state.rules.variantMatrix?.flatMap((cell) => {
+    const key = `${cell.rowId}:${cell.columnId}`;
+    const quantity = quantities[key] ?? 0;
+    return cell.available && quantity > 0 ? [{ variantId: cell.variantId, quantity }] : [];
+  });
+  return {
+    id,
+    prints: prints.map(copyPrint),
+    quantities,
+    ...(variants === undefined ? {} : { variants }),
+    ...(Object.keys(state.productionChoices).length
+      ? {
+          options: (state.rules.productionOptions ?? []).map((option) => ({
+            optionId: option.id,
+            valueId: state.productionChoices[option.id]!,
+          })),
+        }
+      : {}),
+  };
+}
+
 function hasPrint(state: DesignerState, positionId: PositionId): boolean {
   return state.prints.some((print) => print.id === positionId);
 }

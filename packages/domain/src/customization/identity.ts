@@ -131,11 +131,23 @@ function validateSelection(group: CustomizationGroup, config: PublishedConfig): 
   }
 }
 
-export function normalizeCustomizationGroups(
-  groups: CustomizationGroup[],
-  configs: PublishedConfig[],
-): NormalizedCustomizationGroup[] {
-  if (!Array.isArray(groups) || !Array.isArray(configs)) throw new Error('invalid group/config inputs');
+/** One group's identity, publication and positive variant quantities; returns its config and canonical identity. */
+function checkGroup(group: CustomizationGroup, configByKey: Map<string, PublishedConfig>) {
+  const canonicalIdentity = canonicalDesignIdentity(group);
+  const config = configByKey.get(JSON.stringify([group.shopId, group.productId, group.configRevisionId]));
+  if (!config) throw new Error('missing published config for group');
+  if (group.revisionContentHash !== config.revisionContentHash)
+    throw new Error('published revision content hash mismatch');
+  validateSelection(group, config);
+  if (!Array.isArray(group.variants)) throw new Error('invalid variant quantity vector');
+  for (const variant of group.variants) {
+    requireId(variant.variantId, 'variant ID');
+    if (!Number.isSafeInteger(variant.quantity) || variant.quantity <= 0) throw new Error('invalid physical quantity');
+  }
+  return canonicalIdentity;
+}
+
+function configsByKey(configs: PublishedConfig[]) {
   const configByKey = new Map<string, PublishedConfig>();
   for (const config of configs) {
     const checked = validatePublishedConfig(config);
@@ -143,21 +155,30 @@ export function normalizeCustomizationGroups(
     if (configByKey.has(key)) throw new Error('duplicate published config identity');
     configByKey.set(key, checked);
   }
+  return configByKey;
+}
+
+/**
+ * A saved draft against its publication: the same checks as a quote, but it may have no variants yet, so artwork
+ * and placement chosen before Quantities can be kept (#366). Quotes use `normalizeCustomizationGroups`.
+ */
+export function validateCustomizationDraft(group: CustomizationGroup, config: PublishedConfig): void {
+  checkGroup(group, configsByKey([config]));
+}
+
+export function normalizeCustomizationGroups(
+  groups: CustomizationGroup[],
+  configs: PublishedConfig[],
+): NormalizedCustomizationGroup[] {
+  if (!Array.isArray(groups) || !Array.isArray(configs)) throw new Error('invalid group/config inputs');
+  const configByKey = configsByKey(configs);
   const byIdentity = new Map<string, NormalizedCustomizationGroup>();
   for (const group of groups) {
-    const canonicalIdentity = canonicalDesignIdentity(group);
-    const config = configByKey.get(JSON.stringify([group.shopId, group.productId, group.configRevisionId]));
-    if (!config) throw new Error('missing published config for group');
-    if (group.revisionContentHash !== config.revisionContentHash)
-      throw new Error('published revision content hash mismatch');
-    validateSelection(group, config);
-    if (!Array.isArray(group.variants) || group.variants.length === 0) throw new Error('empty variant quantity vector');
+    const canonicalIdentity = checkGroup(group, configByKey);
+    if (group.variants.length === 0) throw new Error('empty variant quantity vector');
     const existing = byIdentity.get(canonicalIdentity);
     const variants = new Map((existing?.variants ?? []).map((variant) => [variant.variantId, variant.quantity]));
     for (const variant of group.variants) {
-      requireId(variant.variantId, 'variant ID');
-      if (!Number.isSafeInteger(variant.quantity) || variant.quantity <= 0)
-        throw new Error('invalid physical quantity');
       const total = (variants.get(variant.variantId) ?? 0) + variant.quantity;
       if (!Number.isSafeInteger(total)) throw new Error('physical quantity overflow');
       variants.set(variant.variantId, total);

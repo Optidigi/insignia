@@ -1,4 +1,9 @@
-import { BuyerDesignRestorationSchema, BuyerDesignResultSchema, type BuyerDesiredGroup } from '@insignia/contracts';
+import {
+  BuyerDesignRestorationSchema,
+  BuyerDesignResultSchema,
+  type BuyerDesiredGroup,
+  type BuyerDraftGroup,
+} from '@insignia/contracts';
 import { advisoryFingerprint } from '../buyer.ts';
 import { desiredGroupKey } from './group-key.ts';
 
@@ -30,6 +35,10 @@ export function createSelectedDesignCustody(input: {
   const known = new Map<string, ReturnType<typeof BuyerDesignResultSchema.parse>>();
   // Per draft, the groups this tab sent whose writes were never acknowledged: the server may still have applied them.
   const unacknowledged = new Map<string, Set<string>>();
+  // Per draft, the tab hints (storage keys) this page load wrote for it.
+  const hints = new Map<string, Set<string>>();
+  // Per draft, the save in progress; the next save of that draft waits for it.
+  const saving = new Map<string, Promise<void>>();
   const key = async (group: BuyerDesiredGroup) =>
     `insignia:selected-design:v1:${input.namespace}:${await advisoryFingerprint(desiredGroupKey(group, false, false))}`;
   // The cart quantities a draft was based on, as a SHA-256 of sorted [variantId, quantity] pairs. A cart that no longer has them
@@ -110,8 +119,10 @@ export function createSelectedDesignCustody(input: {
   }
   return {
     async forget(id: string, group: BuyerDesiredGroup) {
-      const pointer = await key(group);
-      if (input.storage.getItem(pointer) === id) input.storage.setItem(pointer, '');
+      // Every hint of this design in this tab, not only the one for these contents (#366).
+      for (const pointer of new Set([await key(group), ...(hints.get(id) ?? [])]))
+        if (input.storage.getItem(pointer) === id) input.storage.setItem(pointer, '');
+      hints.delete(id);
       if (input.storage.getItem(baseKey(id))) input.storage.setItem(baseKey(id), '');
       forgetLatest(group.productId, id);
     },
@@ -151,49 +162,90 @@ export function createSelectedDesignCustody(input: {
       const base = input.storage.getItem(baseKey(id));
       return { ...saved, cartQuantitiesChanged: !!base && base !== (await quantities(group)) };
     },
-    async save(id: string, group: BuyerDesiredGroup, original: BuyerDesiredGroup | undefined, signal?: AbortSignal) {
-      // Unknown UUIDs can only create with CAS0; they never overwrite a row.
-      // Conflict/lost-response recovery performs the scoped ownership read.
-      const saved = known.get(id);
-      const wanted = desiredGroupKey(group);
-      let expectedVersion = saved?.version ?? 0;
-      if (!saved || desiredGroupKey(saved.value) !== wanted)
-        for (let replaced = false; ; replaced = true) {
-          try {
-            const acknowledged = BuyerDesignResultSchema.parse(
-              await input.api.private(`designs/${id}`, { expectedVersion, group }, signal, 'PUT'),
-            );
-            known.set(id, acknowledged);
-            unacknowledged.delete(id);
-            break;
-          } catch (error) {
-            known.delete(id);
-            const sent = unacknowledged.get(id) ?? new Set<string>();
-            unacknowledged.set(id, sent.add(wanted));
-            if (signal?.aborted) throw error;
-            // Lost acknowledgement is recovered through the same owned UUID, never an unconditional rewrite.
-            const observed = await read(id, signal);
-            if (observed && desiredGroupKey(observed.value) === wanted) {
-              unacknowledged.delete(id);
-              break;
-            }
-            // The owned draft holds a write this tab sent without an answer, typically a preparation cancelled
-            // by the buyer's next edit (#371): it is older than this one, so replace it once at its version.
-            if (replaced || !observed || !sent.has(desiredGroupKey(observed.value))) throw error;
-            expectedVersion = observed.version;
-          }
-        }
-      const pointer = await key(group);
-      const originalPointer = original ? await key(original) : undefined;
-      const base = original ? await quantities(original) : '';
-      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
-      input.storage.setItem(pointer, id);
-      if (originalPointer) input.storage.setItem(originalPointer, id);
-      input.storage.setItem(baseKey(id), base);
-      // A design not yet in the cart becomes the product's latest unfinished one, for this session only.
-      const session = input.session?.();
-      if (!original && shared && session)
-        attempt(() => shared.setItem(latestKey(group.productId), JSON.stringify({ session, id })));
+    /**
+     * Saves of one draft run one after another, in call order, so a debounced autosave and a Review's save never
+     * race each other's CAS version (#366). With `onlyChanges` (autosave), a design the server already holds writes
+     * nothing at all: its hints and reopen pointer stay as they are, even if another tab has dropped the pointer.
+     */
+    save(
+      id: string,
+      group: BuyerDraftGroup,
+      original: BuyerDesiredGroup | undefined,
+      signal?: AbortSignal,
+      options: { onlyChanges?: boolean } = {},
+    ) {
+      const run = (saving.get(id) ?? Promise.resolve()).then(() => {
+        // Cancelled while it waited: it was never sent, so the acknowledged version stays known (#366).
+        signal?.throwIfAborted();
+        const saved = known.get(id);
+        if (options.onlyChanges && saved && desiredGroupKey(saved.value) === desiredGroupKey(group)) return;
+        return write(id, group, original, signal);
+      });
+      const settled = run.then(
+        () => {},
+        () => {},
+      );
+      saving.set(id, settled);
+      void settled.then(() => {
+        if (saving.get(id) === settled) saving.delete(id);
+      });
+      return run;
     },
   };
+  async function write(
+    id: string,
+    group: BuyerDraftGroup,
+    original: BuyerDesiredGroup | undefined,
+    signal?: AbortSignal,
+  ) {
+    // Unknown UUIDs can only create with CAS0; they never overwrite a row.
+    // Conflict/lost-response recovery performs the scoped ownership read.
+    const saved = known.get(id);
+    const previousValue = saved?.value;
+    const wanted = desiredGroupKey(group);
+    let expectedVersion = saved?.version ?? 0;
+    if (!saved || desiredGroupKey(saved.value) !== wanted)
+      for (let replaced = false; ; replaced = true) {
+        try {
+          const acknowledged = BuyerDesignResultSchema.parse(
+            await input.api.private(`designs/${id}`, { expectedVersion, group }, signal, 'PUT'),
+          );
+          known.set(id, acknowledged);
+          unacknowledged.delete(id);
+          break;
+        } catch (error) {
+          known.delete(id);
+          const sent = unacknowledged.get(id) ?? new Set<string>();
+          unacknowledged.set(id, sent.add(wanted));
+          if (signal?.aborted) throw error;
+          // Lost acknowledgement is recovered through the same owned UUID, never an unconditional rewrite.
+          const observed = await read(id, signal);
+          if (observed && desiredGroupKey(observed.value) === wanted) {
+            unacknowledged.delete(id);
+            break;
+          }
+          // The owned draft holds a write this tab sent without an answer, typically a preparation cancelled
+          // by the buyer's next edit (#371): it is older than this one, so replace it once at its version.
+          if (replaced || !observed || !sent.has(desiredGroupKey(observed.value))) throw error;
+          expectedVersion = observed.version;
+        }
+      }
+    const pointer = await key(group);
+    const originalPointer = original ? await key(original) : undefined;
+    const base = original ? await quantities(original) : '';
+    const previous = previousValue ? await key(previousValue) : undefined;
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+    // Earlier contents of this draft no longer lead to it: only the current contents and the cart line do (#366).
+    for (const stale of new Set([...(hints.get(id) ?? []), ...(previous ? [previous] : [])]))
+      if (stale !== pointer && stale !== originalPointer && input.storage.getItem(stale) === id)
+        input.storage.setItem(stale, '');
+    hints.set(id, new Set([pointer, ...(originalPointer ? [originalPointer] : [])]));
+    input.storage.setItem(pointer, id);
+    if (originalPointer) input.storage.setItem(originalPointer, id);
+    input.storage.setItem(baseKey(id), base);
+    // A design not yet in the cart becomes the product's latest unfinished one, for this session only.
+    const session = input.session?.();
+    if (!original && shared && session)
+      attempt(() => shared.setItem(latestKey(group.productId), JSON.stringify({ session, id })));
+  }
 }

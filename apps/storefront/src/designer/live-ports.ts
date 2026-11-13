@@ -1,5 +1,6 @@
 import { buyerCartCapacityExceeded } from '@insignia/contracts';
 import { createCustomerTranslator } from '@insignia/ui-localization/customer';
+import type { Design } from '../../../../frontend/designer/src/model';
 import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quote-review';
 import type { CartReceipt, CartRequest, DesignerPorts } from '../../../../frontend/designer/src/runtime';
 import { createArtworkUpload } from '../../../web/src/islands/artwork-upload';
@@ -21,6 +22,13 @@ import { desiredGroupKey } from './group-key';
 import { buildBuyerDesigner } from './published';
 import type { RepairState } from './repair-state';
 
+/**
+ * Autosave of the unfinished design (#366): this long after its last change, and at least this long after the
+ * previous autosave began. A draft save costs two of the session's 60 writes a minute (request admission and the
+ * save), so continuous editing spends about 12 of them.
+ */
+const AUTOSAVE_DELAY_MS = 2_000;
+const AUTOSAVE_SPACING_MS = 10_000;
 type Prepared = {
   signature: string;
   proposal: QuoteProposal;
@@ -93,6 +101,77 @@ export function createLiveDesignerPorts(input: {
   const prepared = new Map<string, Prepared>();
   const reviewSelections = new Map<string, DesiredGroup>();
   const draftSaves = new Map<string, { group: DesiredGroup; original?: DesiredGroup }>();
+  /** The save waiting for its debounce: the design's draft group, computed when it is sent. */
+  type PendingAutosave = { id: string; group(): DesiredGroup; retried: boolean };
+  let autosave: (PendingAutosave & { timer: ReturnType<typeof setTimeout> }) | undefined;
+  const autosaving = new Set<AbortController>();
+  let lastAutosave = Number.NEGATIVE_INFINITY;
+  // The session refused a write (its per-minute or draft limit): further autosaves would only spend the writes a
+  // quote or Add to cart needs. Review still saves the draft as before.
+  let autosaveStopped = false;
+  /** Drop the pending autosave and fence any in flight: its late answer no longer sets a reopen pointer. */
+  function cancelAutosave() {
+    if (autosave) clearTimeout(autosave.timer);
+    autosave = undefined;
+    for (const controller of autosaving) controller.abort();
+    autosaving.clear();
+  }
+  function queueAutosave(pending: PendingAutosave) {
+    if (autosaveStopped) return;
+    if (autosave) clearTimeout(autosave.timer);
+    const wait = Math.max(AUTOSAVE_DELAY_MS, lastAutosave + AUTOSAVE_SPACING_MS - Date.now());
+    autosave = { ...pending, timer: setTimeout(() => void flushAutosave(), wait) };
+  }
+  function scheduleAutosave(design: Design) {
+    queueAutosave({
+      id: design.id,
+      group: () => buildBuyerDesigner(source, { locale: input.locale, storeName: input.storeName }).draft(design),
+      retried: false,
+    });
+  }
+  /**
+   * A design saved earlier is empty again, or back at its cart line (#366). A new design is no longer offered after a
+   * reload; a cart line's draft becomes the cart version again, so reopening the line starts from the cart.
+   */
+  function revertDraft(id: string) {
+    cancelAutosave();
+    const original = designs.get(id);
+    if (original) {
+      queueAutosave({ id, group: () => original, retried: false });
+      return;
+    }
+    const saved = draftSaves.get(id);
+    draftSaves.delete(id);
+    if (saved) void custody.forget(id, saved.group).catch(() => {});
+    else custody.forgetLatest(input.productId, id);
+  }
+  async function flushAutosave() {
+    const pending = autosave;
+    autosave = undefined;
+    if (!pending || autosaveStopped) return;
+    let group: DesiredGroup;
+    try {
+      group = pending.group();
+    } catch {
+      return;
+    }
+    const original = designs.get(pending.id);
+    const controller = new AbortController();
+    autosaving.add(controller);
+    lastAutosave = Date.now();
+    draftSaves.set(pending.id, { group, original });
+    try {
+      // The same custody save as Review: same draft ID, CAS version and reopen pointers. Unchanged content writes nothing.
+      await custody.save(pending.id, group, original, controller.signal, { onlyChanges: true });
+    } catch (error) {
+      if (error && typeof error === 'object' && 'status' in error && error.status === 429) autosaveStopped = true;
+      // Any other failure is retried once, unless a newer change or a cancellation has replaced it.
+      else if (!controller.signal.aborted && !autosave && !pending.retried)
+        queueAutosave({ ...pending, retried: true });
+    } finally {
+      autosaving.delete(controller);
+    }
+  }
   async function observe(signal?: AbortSignal) {
     const observed = await cart.read(signal);
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
@@ -386,6 +465,7 @@ export function createLiveDesignerPorts(input: {
   };
   const ports: DesignerPorts = {
     review: { prepare },
+    draft: { changed: scheduleAutosave, reverted: revertDraft },
     artwork: {
       renew: renewArtwork,
       apply: renewArtwork,
@@ -408,6 +488,8 @@ export function createLiveDesignerPorts(input: {
     },
     cart: {
       async commit(request) {
+        // Review saved this design; a late autosave must not race the cart write or re-point it as unfinished.
+        cancelAutosave();
         const issuedSignature = issuedSignatures.get(request.idempotencyKey);
         if (issuedSignature !== undefined && issuedSignature !== signature(request))
           throw new Error(
@@ -773,6 +855,7 @@ export function createLiveDesignerPorts(input: {
       return latest;
     },
     async discardDrafts() {
+      cancelAutosave();
       for (const [id, saved] of draftSaves) {
         await custody.forget(id, saved.group);
         if (saved.original) await custody.forget(id, saved.original);
