@@ -8,13 +8,23 @@ interface FileNameProps {
   onTruncationChange?: (truncated: boolean) => void;
 }
 
+/**
+ * A restored design keeps no file names (drafts store IDs only), so its artwork has an empty name. The label is
+ * chosen here, when shown, so it follows the Designer language instead of the language at restore time.
+ */
+export function useArtworkName() {
+  const { t } = useLocale();
+  return (name: string) => name || t("customer:steps.artwork");
+}
+
 // The accessible name and stored filename stay intact. Only the visible stem
 // can shrink; keeping the extension helps distinguish similarly named files.
 export function FileName({
-  name,
+  name: storedName,
   multiline = false,
   onTruncationChange,
 }: FileNameProps) {
+  const name = useArtworkName()(storedName);
   const stemRef = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
     const stem = stemRef.current;
@@ -54,6 +64,7 @@ export function ArtworkFile({
   onChoose: (id: string) => void;
 }) {
   const { t } = useLocale();
+  const artworkName = useArtworkName();
   const [truncated, setTruncated] = useState(false);
   return (
     <div className="artwork-file">
@@ -78,7 +89,7 @@ export function ArtworkFile({
       {truncated && (
         <details className="file-details">
           <summary>{t("customer:files.fullFilename")}</summary>
-          <span>{artwork.name}</span>
+          <span>{artworkName(artwork.name)}</span>
         </details>
       )}
     </div>
