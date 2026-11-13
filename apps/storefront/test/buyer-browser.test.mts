@@ -2035,7 +2035,7 @@ for (const engine of [chromium, firefox])
             throw Error('Unexpected artwork operation');
           });
           await ui.getByRole('button', { name: 'Add artwork', exact: true }).click();
-          await ui.getByRole('button', { name: 'Choose artwork Choose', exact: true }).click();
+          await ui.getByRole('button', { name: 'Choose artwork', exact: true }).click();
           await ui.locator('input[type=file]').setInputFiles({
             name: 'progress.png',
             mimeType: 'image/png',
@@ -2103,7 +2103,7 @@ test('#349: three rejected uploads, then a valid PNG is checked and applied thro
       'base64',
     );
     await ui.getByRole('button', { name: 'Add artwork', exact: true }).click();
-    await ui.getByRole('button', { name: 'Choose artwork Choose', exact: true }).click();
+    await ui.getByRole('button', { name: 'Choose artwork', exact: true }).click();
     const input = ui.locator('input[type=file]');
     for (const [file, message] of [
       [
@@ -2160,7 +2160,7 @@ test('#349: an artwork check that never finishes ends with a retryable message',
       throw Error('Unexpected artwork operation');
     });
     await ui.getByRole('button', { name: 'Add artwork', exact: true }).click();
-    await ui.getByRole('button', { name: 'Choose artwork Choose', exact: true }).click();
+    await ui.getByRole('button', { name: 'Choose artwork', exact: true }).click();
     await ui.locator('input[type=file]').setInputFiles({
       name: 'logo.png',
       mimeType: 'image/png',
