@@ -7,9 +7,10 @@ Active VPS management custody is `%h/.local/share/insignia/runtime/`. Some live 
 ## Current state
 
 As of 13 November 2026 (rewrite-dev on host alias `prod`). [Delivery state](../../docs/delivery/state.md#deployed-identities) holds the exact image digests and custody locators.
-- **Release profile:** `native-session-drafts-c78a8179`, set as `INSIGNIA_RELEASE_PROFILE` in web and worker and, with its matching code manifest, in the verifier. It binds Active version `1206211837953` in [native-session-drafts-release-binding.json](native-session-drafts-release-binding.json) (38 versions) and the 14-module [baseline](native-session-drafts-module-baseline.json).
+- **Release profile:** `native-a11y-quantity-9b5dbdee`, set as `INSIGNIA_RELEASE_PROFILE` in web and worker and, with its matching code manifest, in the verifier. It binds version `1207622696961` in [native-a11y-quantity-release-binding.json](native-a11y-quantity-release-binding.json) (39 versions) and the 14-module [baseline](native-a11y-quantity-module-baseline.json); see [A11y-quantity candidate](#a11y-quantity-candidate-development-transition).
 - **Functions:** source `aa3b6166`, unchanged since the cart-line v3 cutover; pins in [Cart-line v3](#cart-line-v3-candidate-development-transition).
-- **Schema 62**, equal to the 62 migrations in `packages/database/migrations`.
+- **Schema 63**, equal to the 63 migrations in `packages/database/migrations`.
+- **`INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON`** in web is `{"appKey":…}` only since 13 November 2026 ([Expected Function configuration](#expected-function-configuration)). Worker and verifier never carried it.
 - **Web grants on `buyer_visitor_admission`:** `SELECT, INSERT, DELETE` and `UPDATE(window_at,issued_at)`, as in [web-runtime-grants.sql](../m8-journey/web-runtime-grants.sql). The worker has no access.
 - **Expected column-ACL digest:** `ae2043f790171fa854016a8679e5b155`.
 - **Rollback limits:**
@@ -20,7 +21,7 @@ As of 13 November 2026 (rewrite-dev on host alias `prod`). [Delivery state](../.
 
 ## Deploy next
 
-Rewrite-dev deploys and theme releases run autonomously under the standing 13 November owner approval in the [operating model](../../docs/delivery/operating-model.md#effective-resource-scope); check its limits before any effect outside them. The three deploys of 12–13 November followed these steps; their exact records are in [past transitions](#past-transitions) and the [deploy history](../../docs/delivery/history-2026-11-12-bug-batch.md).
+Rewrite-dev deploys and theme releases run autonomously under the standing 13 November owner approval in the [operating model](../../docs/delivery/operating-model.md#effective-resource-scope); check its limits before any effect outside them. The deploys of 12–13 November followed these steps; their exact records are in [past transitions](#past-transitions) and the [deploy history](../../docs/delivery/history-2026-11-12-bug-batch.md).
 
 **Server images (web, worker, verifier)** follow the [bounded deployment and recovery sequence](#bounded-deployment-and-recovery-sequence):
 1. Freeze the baseline: applied migration ledger, ACL digests, protected facts, prior images and configurations.
@@ -49,7 +50,7 @@ Source from this change onward takes each Function's expected input-query finger
 
 Live Shopify Admin returns `inputQuery: null` for both owned Functions. Observation v2 records that as not observable (`inputQuerySha256: null`) and does not compare it; the trusted release record is the query gate, and readiness still fails closed without a fresh release-bound record. If Admin returns a query, it must equal the record's.
 
-Operator migration: none is required. The legacy `transformInputQuerySha256`, `validationInputQuerySha256` and `observationVersion` fields are still accepted (64-hex and `2` when present), then ignored. Images built before this change require them. Those images predate `bf512171`, so since #374 they are no longer rollback targets ([Current state](#current-state)); the value can be reduced to `appKey` only at the next web deploy.
+Operator migration: none is required. The legacy `transformInputQuerySha256`, `validationInputQuerySha256` and `observationVersion` fields are still accepted (64-hex and `2` when present), then ignored. Images built before this change require them. Those images predate `bf512171`, so since #374 they are no longer rollback targets ([Current state](#current-state)). The rewrite-dev value was reduced to `appKey` only with the `9b5dbdee` web deploy (13 November 2026).
 
 ## Qualify an immutable candidate
 
@@ -239,6 +240,17 @@ The earlier read-only observation of `stitchs-vat-verification-20261004.myshopif
 ## Past transitions
 
 Each section below records one past transition: what it changed and the operator steps it needed then. They are history, not current instructions; [Current state](#current-state) and [Deploy next](#deploy-next) are current. Newest first.
+
+### A11y-quantity candidate development transition
+
+Standing owner grant, 13 November 2026 (pre-public fix batch): ship the Designer and storefront changes merged up to main `9b5dbdee` (#419/#416 quantity field, #420/#412/#413 focus on open and Tab wrap, #421/#414/#415 accessible names, #423/#417 artwork fallback label) to rewrite-dev as one theme-only app version. The server side of `9b5dbdee` was deployed under `native-session-drafts-c78a8179` before the candidate was created, with migration 63 ([Batched erasure](#batched-erasure-of-a-shops-buyer-sessions-406)) applied first (schema 63, ACL digests unchanged) and web's `INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON` reduced to `appKey`.
+
+`native-a11y-quantity-9b5dbdee` binds inactive version `1207622696961` in [native-a11y-quantity-release-binding.json](native-a11y-quantity-release-binding.json) (39 versions) and the 14-module [baseline](native-a11y-quantity-module-baseline.json) (canonical hash `43ee5457162e96740d3a2e2553b18388dc0e23e1fd16c3c34371267c4e10b6b9`).
+- It was created once at `2026-11-13T19:05:02Z` (CLI 4.9.4) from the frozen `native-session-drafts-c78a8179` staging. Only `extensions/insignia-theme/assets` changed: its 15 files are the foundation build of `9b5dbdee` (run 43486269787, attempt 1), byte-identical to a local build of the same tree; six files differ from the Active version (three renamed chunks).
+- Blocks, snippets, locales, every non-theme module and both Function modules are unchanged, including module ids, wasm and input queries. The foundation wasm of `9b5dbdee` equals the Active pins (transform `5c8708b5…`/183604, validation `6c362b36…`/181608); the Function source still is `aa3b6166`.
+- `1206211837953` stays the sole Active version until the release; all NEVER_RELEASE versions are inactive.
+
+Phase B operator changes, made together with the single release: set `INSIGNIA_RELEASE_PROFILE=native-a11y-quantity-9b5dbdee` in web and worker, and the same profile with the matching manifest in the verifier, using binding-head images. Creating the candidate makes `native-session-drafts-c78a8179` fail closed (inventory 39) until this step and the release complete. No migration, grant or other environment change.
 
 ### Session-drafts candidate development transition
 

@@ -6,6 +6,12 @@ import { join } from 'node:path';
 import type { TestFn } from 'node:test';
 import test from 'node:test';
 import { createReleaseVerificationClient } from '../../apps/web/src/server/admin/release-verification.ts';
+import a11yQuantityModules from '../../deployment/m5-runtime/native-a11y-quantity-module-baseline.json' with {
+  type: 'json',
+};
+import a11yQuantityBinding from '../../deployment/m5-runtime/native-a11y-quantity-release-binding.json' with {
+  type: 'json',
+};
 import behaviorModules from '../../deployment/m5-runtime/native-behavior-module-baseline.json' with { type: 'json' };
 import behaviorBinding from '../../deployment/m5-runtime/native-behavior-release-binding.json' with { type: 'json' };
 import buyerFixesModules from '../../deployment/m5-runtime/native-buyer-fixes-module-baseline.json' with {
@@ -422,6 +428,35 @@ test('functions renew candidate preserves identities and changes only theme and 
     } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
   }
 });
+test('a11y-quantity candidate changes only theme assets', () => {
+  assert.equal(a11yQuantityModules.length, 14);
+  assert.equal(a11yQuantityBinding.moduleHash, '43ee5457162e96740d3a2e2553b18388dc0e23e1fd16c3c34371267c4e10b6b9');
+  assert.equal(a11yQuantityBinding.versionId, '1207622696961');
+  assert.deepEqual(
+    new Set(a11yQuantityBinding.versionIds),
+    new Set([...sessionDraftsBinding.versionIds, '1207622696961']),
+  );
+  assert.deepEqual(
+    a11yQuantityModules.map((m) => m.handle),
+    a11yQuantityModules.map((m) => m.handle).sort(),
+  );
+  const prior = new Map(sessionDraftsModules.map((m) => [m.handle, m]));
+  assert.equal(prior.size, 14);
+  for (const module of a11yQuantityModules) {
+    const old = required(prior.get(module.handle));
+    if (module.type === 'theme_app_extension') {
+      assert.deepEqual({ ...module, config: undefined }, { ...old, config: undefined });
+      type ThemeConfig = { theme_extension: { files: Record<string, unknown> } };
+      const files = (module.config as unknown as ThemeConfig).theme_extension.files;
+      const oldFiles = (old.config as unknown as ThemeConfig).theme_extension.files;
+      assert.deepEqual(files.blocks, oldFiles.blocks);
+      assert.deepEqual(files.snippets, oldFiles.snippets);
+      assert.deepEqual(files.locales, oldFiles.locales);
+      assert.notDeepEqual(files.assets, oldFiles.assets);
+    } else assert.deepEqual(module, old);
+  }
+});
+
 test('session-drafts candidate changes only theme assets and the German locale', () => {
   assert.equal(sessionDraftsModules.length, 14);
   assert.equal(sessionDraftsBinding.moduleHash, 'dc980bc16e722a846d63ded7e3443cb88dba9527d7cf3d30022385f6af598179');
