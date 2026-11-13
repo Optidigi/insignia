@@ -174,6 +174,17 @@ function fixture(options: { saveStatus?: number; statuses?: number[] } = {}) {
 async function settle() {
   for (let i = 0; i < 20; i++) await new Promise((resolve) => setImmediate(resolve));
 }
+/**
+ * Waits, in real time, for work that no mocked timer drives (fetch and SHA-256 digests on the thread pool), which a
+ * loaded runner can take longer than a fixed number of turns to finish.
+ */
+async function eventually(check: () => boolean, message: string) {
+  const deadline = performance.now() + 5_000;
+  while (!check()) {
+    assert.ok(performance.now() < deadline, message);
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+}
 async function advance(ms: number) {
   for (let left = ms; left > 0; left -= 100) {
     mock.timers.tick(Math.min(100, left));
@@ -258,14 +269,17 @@ test('a new design emptied after its autosave cancels the pending save and is no
   changed(design(0));
   await advance(3_000);
   assert.equal(saves.length, 1);
-  assert.equal(JSON.parse(shared.data.get(LATEST) ?? 'null')?.id, DESIGN_ID, 'offered after a reload');
+  await eventually(
+    () => JSON.parse(shared.data.get(LATEST) ?? 'null')?.id === DESIGN_ID,
+    'the saved design is offered after a reload',
+  );
   changed(design(2));
   await advance(1_000);
   // The buyer removes the artwork before that edit is saved.
   reverted();
   await advance(15_000);
+  await eventually(() => shared.data.get(LATEST) === undefined, 'nothing is offered after a reload');
   assert.equal(saves.length, 1, 'the pending edit is not saved');
-  assert.equal(shared.data.get(LATEST), undefined, 'nothing is offered after a reload');
 });
 
 test('a cart line undone back to the cart saves the cart version, so reopening it starts from the cart (#366)', async () => {
