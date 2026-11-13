@@ -52,7 +52,9 @@ export function QuantityEntry({
   const [search, setSearch] = useState("");
   const [focusedSize, setFocusedSize] = useState<string | null>(null);
   const entryRef = useRef<HTMLDivElement>(null);
-  const inputs = useRef(new Map<string, HTMLInputElement>());
+  // Text the shopper typed, per field, while it differs from what the stored quantity would show.
+  // Rewriting a field mid-entry moved the caret, so typing "1.5" stored 51 (#416).
+  const [typed, setTyped] = useState<Readonly<Record<string, string>>>({});
   const unavailable = Object.entries(quantities).filter(
     ([key, value]) => (value ?? 0) !== 0 && !cells.get(key)?.available,
   );
@@ -89,18 +91,13 @@ export function QuantityEntry({
     const error = invalid
       ? t("customer:quantities.useWholeNumbers", { maxQuantity: config.maxQuantity })
       : issue?.message;
-    const own = inputs.current.get(key);
-    // Text that already means the stored quantity stays as typed while the shopper edits it, and
-    // invalid text stays visible after blur. Rewriting it mid-entry moved the caret, so typing
-    // "1.5" stored 51 (#416). Otherwise the field shows the stored quantity.
-    const kept =
-      own !== undefined &&
-      Object.is(enteredQuantity(own.value), value) &&
-      ((own.getRootNode() as Document | ShadowRoot).activeElement === own || !Number.isFinite(value));
+    // Typed text shows while it still means the stored quantity: during entry, and after blur when
+    // it is invalid. A quantity changed elsewhere (stepper, restore) replaces it.
+    const text = typed[key];
     const shown = !cell.available
       ? ""
-      : kept
-        ? own.value
+      : text !== undefined && Object.is(enteredQuantity(text), value)
+        ? text
         : Number.isFinite(value)
           ? `${value || (stepper ? 0 : "")}`
           : "";
@@ -120,10 +117,6 @@ export function QuantityEntry({
         aria-label={name}
         aria-invalid={invalid || !!issue || undefined}
         aria-describedby={error ? `${target}-error` : undefined}
-        ref={(input) => {
-          if (input) inputs.current.set(key, input);
-          else inputs.current.delete(key);
-        }}
         value={shown}
         placeholder={cell.available ? "0" : "—"}
         onFocus={(event) => {
@@ -131,8 +124,22 @@ export function QuantityEntry({
           onSelectRow(row.id);
           event.currentTarget.select();
         }}
-        onBlur={() => setFocusedSize(null)}
-        onInput={(event) => onChange(row.id, size.id, enteredQuantity(event.currentTarget.value))}
+        onBlur={() => {
+          setFocusedSize(null);
+          // Valid text settles to the stored quantity ("012" shows 12); invalid text stays visible.
+          setTyped((current) => {
+            const text = current[key];
+            if (text === undefined || !Number.isFinite(enteredQuantity(text))) return current;
+            const next = { ...current };
+            delete next[key];
+            return next;
+          });
+        }}
+        onInput={(event) => {
+          const text = event.currentTarget.value;
+          setTyped((current) => ({ ...current, [key]: text }));
+          onChange(row.id, size.id, enteredQuantity(text));
+        }}
         onKeyDown={(event) => {
           if (event.key !== "Enter") return;
           event.preventDefault();
