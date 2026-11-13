@@ -2,11 +2,11 @@
 
 ## Active assignment
 
-Updated 13 November 2026. Insignia runs only on `app.insigniacustomizer.com`, on rewrite-dev (host alias `prod`, store `insignia-rewrite-dev`). The 12–13 November bug batch and the 13 November [pre-public fix batch](#pre-public-fix-batch-13-november-2026) (#406, #412–#417) are complete: fixed, deployed and natively verified. Main up to `9b5dbdee` is deployed and released as version `1207622696961`; exact identities are in [Deployed identities](#deployed-identities). **Next: phase 2, UI acceptance.** The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
+Updated 13 November 2026. Insignia runs only on `app.insigniacustomizer.com`, on rewrite-dev (host alias `prod`, store `insignia-rewrite-dev`). The 12–13 November bug batch and the 13 November [pre-public fix batch](#pre-public-fix-batch-13-november-2026) (#406, #412–#417) are complete: fixed, deployed and natively verified. Main up to `9b5dbdee` is deployed and released as version `1207622696961`; the signer hardening (#431, `afc3c1da`: migration 64 and the signer image) is deployed server-only on top; #430 (fixes #424 and the autosave 429 pause) is merged but waits for the next theme release. Exact identities are in [Deployed identities](#deployed-identities). **Next: the 16–17 November checks (small pending checks), then phase 2, UI acceptance, whose theme release also ships #430.** The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
 
 ### Picking this up
 
-1. **Verify the checkout.** `git fetch origin`, then check branch, `HEAD` and `git status -sb`; start new work from current `origin/main` and preserve dirty work and other worktrees. Deployed application source is main `9b5dbdee` (binding `1bd804a2`). `git diff --stat 1bd804a2 origin/main -- . ':!*.md'` lists non-Markdown changes since then; Markdown-only commits are not code drift.
+1. **Verify the checkout.** `git fetch origin`, then check branch, `HEAD` and `git status -sb`; start new work from current `origin/main` and preserve dirty work and other worktrees. Deployed application source is main `9b5dbdee` (binding `1bd804a2`) for web, worker, verifier and theme, and `afc3c1da` for the signer and schema 64. `git diff --stat 1bd804a2 origin/main -- . ':!*.md'` lists non-Markdown changes since then: #431 (deployed: migration 64 and the signer) and #430 (not deployed; storefront and Designer, needs a theme release). Anything else is undeployed drift; Markdown-only commits are not code drift.
 2. **Read** this section, [Known behaviour, limits and open follow-ups](#known-behaviour-limits-and-open-follow-ups) and the [checklist](#owneroperator-checklist) rows your task touches.
 3. **Find the owner of a fact.**
    - This file: status, deployed identities, known limits and owner/operator actions.
@@ -50,7 +50,9 @@ Updated 13 November 2026. Insignia runs only on `app.insigniacustomizer.com`, on
 - Per-visitor 429 through Shopify's app proxy: run `~/insignia-qa/load/limitprobe.mjs` (raise its cap to about 60) at the end of the 16–17 Nov session. It blocks new buyer sessions from this host's visitor address for up to an hour.
 - Delete the owner-supplied Cloudflare Rules token when the domain work is final; the owner will say when.
 
-**Owner decisions in force (11–12 November 2026).**
+**Owner decisions in force (11–13 November 2026).**
+- Standing grant (13 Nov): deploy, install and change rewrite-dev and the Insignia app without asking, within the limits in the [operating model](operating-model.md#effective-resource-scope).
+- Accepted limits (13 Nov): Review may wait behind an in-flight autosave; two tabs on one cart line, last write wins.
 - Signing keys do not expire.
 - Insignia lives only on `insigniacustomizer.com`; alert inboxes stay on `@optidigi.nl`.
 - The legacy generic `insignia.optidigi.nl` stack is removed. The legacy Stitchs, Superfunny and Custom stacks must keep running untouched.
