@@ -55,6 +55,7 @@ test('observed native origin binds only the closed release profile and validated
 });
 
 for (const [releaseProfile, expectedVersion] of [
+  ['native-session-drafts-c78a8179', '1206211837953'],
   ['native-repair-messages-bf512171', '1205994881025'],
   ['native-buyer-fixes-fb436e16', '1205760688129'],
   ['native-canonical-host-aa3b6166', '1203782746113'],

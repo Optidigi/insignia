@@ -76,6 +76,12 @@ import selectedOnlyModules from '../../deployment/m5-runtime/native-selected-fix
 import selectedOnlyBinding from '../../deployment/m5-runtime/native-selected-fixed-release-binding.json' with {
   type: 'json',
 };
+import sessionDraftsModules from '../../deployment/m5-runtime/native-session-drafts-module-baseline.json' with {
+  type: 'json',
+};
+import sessionDraftsBinding from '../../deployment/m5-runtime/native-session-drafts-release-binding.json' with {
+  type: 'json',
+};
 import speedModules from '../../deployment/m5-runtime/native-speed-module-baseline.json' with { type: 'json' };
 import speedBinding from '../../deployment/m5-runtime/native-speed-release-binding.json' with { type: 'json' };
 import startupModules from '../../deployment/m5-runtime/native-startup-module-baseline.json' with { type: 'json' };
@@ -416,6 +422,41 @@ test('functions renew candidate preserves identities and changes only theme and 
     } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
   }
 });
+test('session-drafts candidate changes only theme assets and the German locale', () => {
+  assert.equal(sessionDraftsModules.length, 14);
+  assert.equal(sessionDraftsBinding.moduleHash, 'dc980bc16e722a846d63ded7e3443cb88dba9527d7cf3d30022385f6af598179');
+  assert.equal(sessionDraftsBinding.versionId, '1206211837953');
+  assert.deepEqual(
+    new Set(sessionDraftsBinding.versionIds),
+    new Set([...repairMessagesBinding.versionIds, '1206211837953']),
+  );
+  assert.deepEqual(
+    sessionDraftsModules.map((m) => m.handle),
+    sessionDraftsModules.map((m) => m.handle).sort(),
+  );
+  const prior = new Map(repairMessagesModules.map((m) => [m.handle, m]));
+  assert.equal(prior.size, 14);
+  for (const module of sessionDraftsModules) {
+    const old = required(prior.get(module.handle));
+    if (module.type === 'theme_app_extension') {
+      assert.deepEqual({ ...module, config: undefined }, { ...old, config: undefined });
+      type ThemeConfig = { theme_extension: { files: Record<string, unknown> } };
+      const files = (module.config as unknown as ThemeConfig).theme_extension.files;
+      const oldFiles = (old.config as unknown as ThemeConfig).theme_extension.files;
+      assert.deepEqual(files.blocks, oldFiles.blocks);
+      assert.deepEqual(files.snippets, oldFiles.snippets);
+      const locales = files.locales as Record<string, unknown>;
+      const oldLocales = oldFiles.locales as Record<string, unknown>;
+      assert.deepEqual(Object.keys(locales).sort(), Object.keys(oldLocales).sort());
+      assert.deepEqual(
+        Object.keys(locales).filter((name) => JSON.stringify(locales[name]) !== JSON.stringify(oldLocales[name])),
+        ['de.json'],
+      );
+      assert.notDeepEqual(files.assets, oldFiles.assets);
+    } else assert.deepEqual(module, old);
+  }
+});
+
 test('repair-messages candidate changes only theme assets', () => {
   assert.equal(repairMessagesModules.length, 14);
   assert.equal(repairMessagesBinding.moduleHash, 'eb500b6c214f220d99e63ba6eb41bc97054bf1d94d296226356672bda2892ef2');
