@@ -74,7 +74,8 @@ export function DesignerRepair({
                 {review.groups.map((group) => (
                   <div key={group.id}>
                     <dt>
-                      {group.label} · {t('customer:quantities.quantityCount', { count: group.quantity })}
+                      {group.label || t('customer:review.customizedProduct')} ·{' '}
+                      {t('customer:quantities.quantityCount', { count: group.quantity })}
                     </dt>
                     <dd>
                       {group.totalMinor === undefined

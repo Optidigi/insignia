@@ -1,5 +1,4 @@
 import { buyerCartCapacityExceeded } from '@insignia/contracts';
-import { createCustomerTranslator } from '@insignia/ui-localization/customer';
 import type { Design } from '../../../../frontend/designer/src/model';
 import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quote-review';
 import type { CartReceipt, CartRequest, DesignerPorts } from '../../../../frontend/designer/src/runtime';
@@ -33,6 +32,8 @@ const AUTOSAVE_SPACING_MS = 10_000;
 const AUTOSAVE_PAUSE_DEFAULT_MS = 60_000;
 /** Longest pause for one refusal, whatever `Retry-After` asks: a shorter wait than a visit, never a lasting stop. */
 const AUTOSAVE_PAUSE_MAX_MS = 300_000;
+/** A review row's name only when the product has a real title; the Designer words the fallback itself (#424). */
+const labelled = (label: string | undefined) => (label ? { label } : {});
 type Prepared = {
   signature: string;
   proposal: QuoteProposal;
@@ -257,7 +258,8 @@ export function createLiveDesignerPorts(input: {
             configRevisionId: config.revisionId,
             revisionContentHash: config.contentHash,
           };
-          labels.set(candidate.productId, config.title ?? config.selectedSetup?.product.title ?? candidate.productId);
+          const title = config.title ?? config.selectedSetup?.product.title;
+          if (title) labels.set(candidate.productId, title);
         }),
       );
     }
@@ -326,12 +328,13 @@ export function createLiveDesignerPorts(input: {
         pendingRows.push({
           id,
           editable: true,
-          label:
+          // No real title: leave it out. The Designer names the row in its current language (#424).
+          ...labelled(
             observed.labels[candidate.productId] ??
-            (candidate.productId === source.productId
-              ? (source.title ?? source.selectedSetup?.product.title)
-              : createCustomerTranslator(input.locale).t('customer:steps.artwork')) ??
-            createCustomerTranslator(input.locale).t('customer:steps.artwork'),
+              (candidate.productId === source.productId
+                ? (source.title ?? source.selectedSetup?.product.title)
+                : undefined),
+          ),
           quantity: candidate.variants.reduce((total, variant) => total + variant.quantity, 0),
         });
       }
@@ -452,7 +455,7 @@ export function createLiveDesignerPorts(input: {
           groups: proposal.groups.map((group, index) => ({
             id: group.canonicalIdentitySha256 ?? `${group.productId}-${index}`,
             editable: !!group.selection,
-            label: labels.get(group.productId) ?? group.productId,
+            ...labelled(labels.get(group.productId)),
             quantity: group.quantity,
             totalMinor: group.totalMinor,
           })),
@@ -814,7 +817,7 @@ export function createLiveDesignerPorts(input: {
       groups:
         proposal?.groups.map((group) => ({
           id: group.canonicalIdentitySha256 ?? group.productId,
-          label: labels.get(group.productId) ?? group.productId,
+          ...labelled(labels.get(group.productId)),
           quantity: group.quantity,
           totalMinor: group.totalMinor,
         })) ?? [],

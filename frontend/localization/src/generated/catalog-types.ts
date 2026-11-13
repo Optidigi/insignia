@@ -2399,6 +2399,7 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_close_leave': object;
   'settings:translations.fields.customer_close_title': object;
   'settings:translations.fields.customer_files_fullFilename': object;
+  'settings:translations.fields.customer_files_unnamedArtwork': object;
   'settings:translations.fields.customer_host_cancel': object;
   'settings:translations.fields.customer_host_discardEdit': object;
   'settings:translations.fields.customer_host_discardHelp': object;
@@ -2536,6 +2537,7 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_review_artworkToFollow': object;
   'settings:translations.fields.customer_review_baseItem': object;
   'settings:translations.fields.customer_review_currentDesign': object;
+  'settings:translations.fields.customer_review_customizedProduct': object;
   'settings:translations.fields.customer_review_customPosition': object;
   'settings:translations.fields.customer_review_designTotals': object;
   'settings:translations.fields.customer_review_edit': object;
@@ -2773,6 +2775,7 @@ export interface CustomerMessageTable {
   'customer:close.leave': object;
   'customer:close.title': object;
   'customer:files.fullFilename': object;
+  'customer:files.unnamedArtwork': object;
   'customer:host.cancel': object;
   'customer:host.discardEdit': object;
   'customer:host.discardHelp': object;
@@ -2910,6 +2913,7 @@ export interface CustomerMessageTable {
   'customer:review.artworkToFollow': object;
   'customer:review.baseItem': object;
   'customer:review.currentDesign': object;
+  'customer:review.customizedProduct': object;
   'customer:review.customPosition': object;
   'customer:review.designTotals': object;
   'customer:review.edit': object;

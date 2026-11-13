@@ -207,7 +207,9 @@ export function ReviewPanel({
               const content = (
                 <>
                   <span className="review-group-info">
-                    <strong className="review-group-name">{group.label}</strong>
+                    <strong className="review-group-name">
+                      {group.label || t('customer:review.customizedProduct')}
+                    </strong>
                     <span className="review-group-meta">
                       <span>{t('customer:review.itemCount', { count: group.quantity })}</span>
                       {current && <span>{t('customer:review.currentDesign')}</span>}
