@@ -1641,8 +1641,21 @@ function DesignerSession({
                                 )}
                               </strong>
                             </span>
-                            {/* Empty: "Choose artwork" already says the action; the trailing "Choose" is decoration. */}
-                            <span className="text-action" aria-hidden={!art && p.artworkId !== 'later' ? true : undefined}>
+                            {/* Empty: "Choose artwork" already says the action, so the trailing "Choose" is
+                                decoration. A merchant wording whose heading lacks the action word keeps it in the
+                                name (label in name). */}
+                            <span
+                              className="text-action"
+                              aria-hidden={
+                                !art &&
+                                p.artworkId !== 'later' &&
+                                t('customer:artwork.chooseArtwork')
+                                  .toLocaleLowerCase(formatLocale)
+                                  .includes(t('customer:artwork.choose').toLocaleLowerCase(formatLocale).trim())
+                                  ? true
+                                  : undefined
+                              }
+                            >
                               {art ? t('customer:artwork.change') : t('customer:artwork.choose')}
                             </span>
                           </button>

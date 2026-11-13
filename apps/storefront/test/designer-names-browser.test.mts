@@ -79,11 +79,11 @@ const buildSources = () =>
   ]).then(([host, frame]) => [host.outputFiles[0]?.text ?? '', frame.outputFiles[0]?.text ?? '']));
 
 /** The Designer opened in one customer language, as the storefront frame does. */
-async function openDesigner(t: TestContext, engine: BrowserType, locale: string) {
+async function openDesigner(t: TestContext, engine: BrowserType, locale: string, wording?: unknown) {
   const [host, frameSource] = await buildSources();
   const html = `<!doctype html><html><body><script type="module">
  import {createDesignerFrame} from '/host.js';
- createDesignerFrame({config:${JSON.stringify({ ...config, locale })},locale:'${locale}',ports:{artwork:{upload:()=>new Promise(()=>{})},cart:{commit:()=>new Promise(()=>{})}},onClose(){}});
+ createDesignerFrame({config:${JSON.stringify({ ...config, locale })},locale:'${locale}',${wording ? `wording:${JSON.stringify(wording)},` : ''}ports:{artwork:{upload:()=>new Promise(()=>{})},cart:{commit:()=>new Promise(()=>{})}},onClose(){}});
  </script></body></html>`;
   const server = createServer((request, response) => {
     void (async () => {
@@ -151,3 +151,24 @@ for (const engine of [chromium, firefox])
       );
       await frame.getByRole('button', { name: language.artwork, exact: true }).waitFor({ timeout: 2000 });
     });
+
+// Merchant wording can rename the heading and the action separately; a heading without the action word must keep the
+// visible action in the name, so speech input still matches it (label in name, #415 review).
+for (const engine of [chromium, firefox])
+  test(`${engine.name()}: merchant wording without the action word in the heading keeps the action in the name`, async (t) => {
+    const frame = await openDesigner(t, engine, 'en', {
+      wordingVersion: '1',
+      overlays: {
+        en: {
+          locale: 'en',
+          messages: {
+            'customer:artwork.chooseArtwork': { message: 'Your logo' },
+            'customer:artwork.choose': { message: 'Upload' },
+          },
+        },
+      },
+    });
+    await frame.locator('.empty-state button').click();
+    await frame.locator('.artwork-choice').waitFor();
+    await frame.getByRole('button', { name: 'Your logo Upload', exact: true }).waitFor({ timeout: 2000 });
+  });
