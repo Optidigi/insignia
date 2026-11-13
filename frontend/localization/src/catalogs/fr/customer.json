@@ -251,6 +251,7 @@
     "rateLimitedWait_one": "Trop de demandes depuis votre réseau. Réessayez dans {{count}} minute.",
     "rateLimitedWait_many": "Trop de demandes depuis votre réseau. Réessayez dans {{count}} minutes.",
     "rateLimitedWait_other": "Trop de demandes depuis votre réseau. Réessayez dans {{count}} minutes.",
+    "sessionQuota": "Vous avez atteint la limite de cette session de personnalisation. Revenez plus tard pour continuer.",
     "busy": "La boutique est très sollicitée en ce moment. Votre personnalisation est toujours disponible. Réessayez dans quelques secondes.",
     "unavailable": "La personnalisation est temporairement indisponible. Votre création est toujours disponible. Réessayez plus tard.",
     "cartBusy": "Votre panier est en cours de mise à jour dans un autre onglet ou une autre fenêtre. Attendez la fin de l’opération, puis réessayez.",

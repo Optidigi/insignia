@@ -107,6 +107,7 @@ const BUYER_FAILURES = [
   'CountryRequired',
   'EntitlementDenied',
   'CapacityExceeded',
+  'SessionQuotaExhausted',
   'ShopDayChanged',
   'DatabaseLockTimeout',
   'DatabaseQueryTimeout',

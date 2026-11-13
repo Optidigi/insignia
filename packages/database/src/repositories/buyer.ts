@@ -1,4 +1,4 @@
-import type { AcceptedQuote, QuoteAuthorizationSet } from '@insignia/application';
+import { type AcceptedQuote, BuyerRejectedError, type QuoteAuthorizationSet } from '@insignia/application';
 import { type Kysely, sql, type Transaction } from 'kysely';
 import type { Database } from '../client/database.js';
 
@@ -25,6 +25,10 @@ export class BuyerStateError extends Error {
 const fail = (code: BuyerStateError['code'], retryAfterSeconds?: number): never => {
   throw new BuyerStateError(code, retryAfterSeconds);
 };
+/** A lifetime quota of the session is exhausted: RATE_LIMITED until the session expires (#371). */
+const quotaExhausted = (): never => {
+  throw new BuyerRejectedError('RATE_LIMITED', 'buyer session quota exhausted', 'SESSION_QUOTA');
+};
 const active = sql`EXISTS(SELECT 1 FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=b.shop_id AND s.current_generation=b.installation_generation AND i.deactivated_at IS NULL)`;
 function bounded(value: unknown, bytes: number) {
   const encoded = JSON.stringify(value);
@@ -46,7 +50,7 @@ export const BUYER_SESSION_POLICY = {
   /**
    * Lifetime counts of one buyer session, which every tab shares for up to 7 days (#340). Sized for
    * days of active editing, where each edit re-quotes (owner decision, 12 November 2026, #371):
-   * a 429 here lasts until the session expires and never mints a replacement.
+   * a 429 here (`details.reason` SESSION_QUOTA) lasts until the session expires and never mints a replacement.
    */
   sessionDrafts: 100,
   /** Proposals are retained privately until the session or its artwork ends, so expired ones count. */
@@ -154,7 +158,7 @@ export function createBuyerRepository(db: Kysely<Database>) {
         tx,
       )
     ).rows[0];
-    if (Number(n?.n) >= BUYER_SESSION_POLICY.sessionCartApplications) fail('RATE_LIMITED');
+    if (Number(n?.n) >= BUYER_SESSION_POLICY.sessionCartApplications) quotaExhausted();
   }
   async function count(
     tx: Transaction<Database>,
@@ -167,7 +171,7 @@ export function createBuyerRepository(db: Kysely<Database>) {
         tx,
       )
     ).rows[0];
-    if (Number(n?.n) >= maximum) fail('RATE_LIMITED');
+    if (Number(n?.n) >= maximum) quotaExhausted();
   }
   return {
     /** A committed terminal marker can be replayed without preparing or reserving again. */

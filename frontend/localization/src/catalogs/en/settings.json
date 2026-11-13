@@ -513,6 +513,7 @@
       "customer_recovery_entitlementDenied": "Store not accepting customizations message",
       "customer_recovery_rateLimited": "Too many requests message",
       "customer_recovery_rateLimitedWait": "Too many requests message (with wait)",
+      "customer_recovery_sessionQuota": "Customization session limit message",
       "customer_recovery_busy": "Store busy message",
       "customer_recovery_unavailable": "Temporarily unavailable message",
       "customer_recovery_cartBusy": "Cart busy message",

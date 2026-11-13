@@ -251,6 +251,7 @@
     "rateLimitedWait_one": "Troppe richieste dalla tua rete. Riprova tra {{count}} minuto.",
     "rateLimitedWait_many": "Troppe richieste dalla tua rete. Riprova tra {{count}} minuti.",
     "rateLimitedWait_other": "Troppe richieste dalla tua rete. Riprova tra {{count}} minuti.",
+    "sessionQuota": "Hai raggiunto il limite di questa sessione di personalizzazione. Torna più tardi per continuare.",
     "busy": "Il negozio è molto occupato in questo momento. La personalizzazione è ancora disponibile. Riprova tra qualche secondo.",
     "unavailable": "Il servizio di personalizzazione è temporaneamente non disponibile. La tua personalizzazione è ancora disponibile. Riprova più tardi.",
     "cartBusy": "Il carrello è in fase di aggiornamento in un’altra scheda o finestra. Attendi il completamento, poi riprova.",

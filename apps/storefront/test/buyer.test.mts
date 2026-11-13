@@ -321,6 +321,29 @@ test('a cart set owned by another session is reported as such, other reviews are
     assert.equal(earlierSessionCart(error), earlier);
   }
 });
+test('an exhausted session quota keeps its reason on the port error; other 429s carry none (#371)', async () => {
+  for (const [body, reason] of [
+    [{ code: 'RATE_LIMITED', details: { reason: 'SESSION_QUOTA' } }, 'SESSION_QUOTA'],
+    [{ code: 'RATE_LIMITED' }, undefined],
+    [{ code: 'BUSY', details: { reason: 'SESSION_QUOTA' } }, undefined],
+  ] as const) {
+    const api = createBuyerApi({
+      proxyBase: '/apps/insignia',
+      productId: '12',
+      fetchImpl: async (input) =>
+        requestUrl(input).includes('/sessions')
+          ? Response.json({
+              capability: 'abc.def',
+              sessionId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+              expiresAt: new Date(Date.now() + 60000).toISOString(),
+            })
+          : Response.json({ ...body, message: 'Limit', requestId: 'r' }, { status: 429 }),
+    });
+    const error = record(await api.private('quote-proposals', {}).catch((error: unknown) => error));
+    assert.equal(error.code, body.code);
+    assert.equal(error.reason, reason, JSON.stringify(body));
+  }
+});
 test('advisory cart fingerprints are bounded hashes and uncertainty persists across locales', async () => {
   const { advisoryFingerprint, cartJournal } = await import('../src/buyer.ts');
   assert.equal(await advisoryFingerprint('abc'), 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');

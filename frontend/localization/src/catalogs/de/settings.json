@@ -513,6 +513,7 @@
       "customer_recovery_entitlementDenied": "Meldung, wenn der Shop keine Personalisierungen annimmt",
       "customer_recovery_rateLimited": "Meldung bei zu vielen Anfragen",
       "customer_recovery_rateLimitedWait": "Meldung bei zu vielen Anfragen (mit Wartezeit)",
+      "customer_recovery_sessionQuota": "Meldung bei erreichtem Limit der Personalisierungssitzung",
       "customer_recovery_busy": "Meldung bei ausgelastetem Shop",
       "customer_recovery_unavailable": "Meldung bei vorübergehender Nichtverfügbarkeit",
       "customer_recovery_cartBusy": "Meldung bei belegtem Warenkorb",
