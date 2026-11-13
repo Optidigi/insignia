@@ -47,9 +47,10 @@ Updated 13 November 2026. Insignia runs only on `app.insigniacustomizer.com`, on
 - **End-to-end purchase after deploy 4 (13 Nov, about `20:05–20:11Z`):** Designer (upload on Linkerborst, typed quantity 2) → Review $34.90 → cart line 2 × $17.45 with a `_insignia_line_v3` carrier (transform priced it; variant $9.95) → checkout loaded without validation errors → test-gateway order `FXUC9QZLM`, $42.90 with shipping. Insignia recorded the order, paid fact, binding and line. No artwork notification, as expected: notifications are planned only for "artwork later" placements.
 - 16 Nov: key 2's destruction. Confirm that the worker logs `signing_key_destruction` with count 1, a Designer Add to cart still succeeds and no `public_config_drift` line appears. The published config still lists key 2 until the next owner rotation or publication, and quote readiness tolerates that (#333).
 - Per-visitor and shop limits under load: test locally, not by flooding prod.
-- Two minor signer review items remain:
+- Two minor signer review items are in progress (one PR: a trigger so only the signer can write a non-NULL envelope, and the sign path reading the key `FOR SHARE` so a revoke waits for in-flight signatures):
   - web can overwrite the active key's envelope (denial of service only);
   - a millisecond race between a revoke and a signature.
+- Per-visitor 429 through Shopify's app proxy: run `~/insignia-qa/load/limitprobe.mjs` (raise its cap to about 60) at the end of the 16–17 Nov session. It blocks new buyer sessions from this host's visitor address for up to an hour.
 - Delete the owner-supplied Cloudflare Rules token when the domain work is final; the owner will say when.
 
 **Owner decisions in force (11–12 November 2026).**
@@ -147,20 +148,21 @@ The signing wrapping key lives only in `runtime/signer-secrets/signing-wrap-keys
 
 ### Known behaviour, limits and open follow-ups
 
-**Open issues.** #424 (S4, see the [pre-public fix batch](#pre-public-fix-batch-13-november-2026)).
+**Open issues.** #424 (S4, see the [pre-public fix batch](#pre-public-fix-batch-13-november-2026)); in progress with the autosave fix.
 
 **Released but not visible to buyers.**
 - German theme cart messages: the *Sie* text (#391) is released, but the store publishes English only (`/de/cart` returns 404), so buyers don't see it.
 
 **Not natively verified.**
-- The per-visitor 429 arriving through Shopify's app proxy with `Retry-After` (#348).
-- A brand-new visitor session: the deploy 3 verification browser reused its 7-day session, so no session or visitor row was created.
+- The per-visitor 429 arriving through Shopify's app proxy with `Retry-After` (#348); planned for 16–17 Nov (small pending checks).
+
+**Natively verified since deploy 3.** A brand-new visitor session: fresh incognito sessions on 13 Nov created buyer sessions at `19:48:17Z` and `20:09:30Z`, and the visitor-admission row holds both issue times in its sliding window, so the trusted Cloudflare client-chain header works end to end.
 - Renewal of an expired quote (from 14 Nov, see small pending checks).
 
-**Noted in the #405 review, not fixed.**
-- Review can wait behind an in-flight autosave.
-- After any 429 on a draft write, autosave stops for the rest of the page load ([spec §8.2](../architecture/implementation-plan.md#82-state-model)).
-- Two tabs editing the same cart line overwrite each other: the last write wins, bounded.
+**Noted in the #405 review.**
+- Accepted (owner, 13 November 2026): Review can wait behind an in-flight autosave. Saves to one draft run in order at acknowledged versions, which is what prevents CAS conflicts; it costs one short request.
+- Accepted (owner, 13 November 2026): two tabs editing the same cart line overwrite each other; the last write wins, bounded. Detecting it would need a new buyer-facing conflict step.
+- In progress (with #424): after any 429 on a draft write, autosave stops for the rest of the page load ([spec §8.2](../architecture/implementation-plan.md#82-state-model)); it will stop only on `SESSION_QUOTA` and otherwise resume after `Retry-After`.
 
 **Known behaviour.**
 - A restored draft labels its artwork with the translated word for artwork ("Artwork", "Ontwerp", …) instead of the file name: drafts store IDs only (#423).
