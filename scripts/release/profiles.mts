@@ -1,6 +1,12 @@
 /** Closed reviewed profiles. Selection changes expected observations, never grants
  * access or attests that the candidate is Active. No caller supplied baseline. */
 import assert from 'node:assert/strict';
+import a11yQuantityModules from '../../deployment/m5-runtime/native-a11y-quantity-module-baseline.json' with {
+  type: 'json',
+};
+import a11yQuantityBinding from '../../deployment/m5-runtime/native-a11y-quantity-release-binding.json' with {
+  type: 'json',
+};
 import behaviorModules from '../../deployment/m5-runtime/native-behavior-module-baseline.json' with { type: 'json' };
 import behaviorCandidate from '../../deployment/m5-runtime/native-behavior-release-binding.json' with { type: 'json' };
 import buyerFixesModules from '../../deployment/m5-runtime/native-buyer-fixes-module-baseline.json' with {
@@ -166,6 +172,16 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  // Same Functions as cart-line v3 and every non-theme module of session-drafts; only theme assets change.
+  'native-a11y-quantity-9b5dbdee': {
+    versionId: a11yQuantityBinding.versionId,
+    versionTag: a11yQuantityBinding.versionTag,
+    versionIds: a11yQuantityBinding.versionIds,
+    moduleHash: a11yQuantityBinding.moduleHash,
+    modules: a11yQuantityModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   // Same Functions as cart-line v3 and every non-theme module of repair-messages; only theme assets and the German locale change.
   'native-session-drafts-c78a8179': {
     versionId: sessionDraftsBinding.versionId,
