@@ -10,6 +10,7 @@ import {
   publicKeyFingerprint,
   publicKeyFromSeed,
   SignerUnavailableError,
+  type SigningKeyHold,
   type SigningKeyStore,
   sealSigningSeed,
 } from '@insignia/application';
@@ -26,7 +27,7 @@ const scope = {
 const today = Math.floor(Date.now() / 86_400_000);
 const ring = { currentKeyId: 'signing-test', keys: { 'signing-test': randomBytes(32) } };
 
-function memoryStore(): SigningKeyStore & { rows: DurableSigningKey[] } {
+function memoryStore(): SigningKeyStore & SigningKeyHold & { rows: DurableSigningKey[] } {
   const seed = randomBytes(32);
   const publicKey = publicKeyFromSeed(seed);
   const rows: DurableSigningKey[] = [
@@ -54,6 +55,10 @@ function memoryStore(): SigningKeyStore & { rows: DurableSigningKey[] } {
     async list(target) {
       if (JSON.stringify(target) !== JSON.stringify(scope)) throw new Error('Stale authorization identity');
       return rows;
+    },
+    async holdForSigning(target, keyId, use) {
+      if (JSON.stringify(target) !== JSON.stringify(scope)) throw new Error('Stale authorization identity');
+      return use(rows.find((row) => row.id === keyId));
     },
     async createPending(input) {
       rows.push({ ...input, ...input.scope, id: input.keyId, state: 'pending' });

@@ -108,6 +108,7 @@ The [signing-owner overlay](signing-owner-compose.yaml) is armed only for an own
   - Host directory: `/home/serveradmin/.local/share/insignia/runtime/signer-socket`.
 - It logs one JSON line per request (`signer_sign`/`signer_provision`: outcome, shop, generation, key id, ms) and hourly counts. It never logs key material or messages.
 - If the signer is down, quotes fail closed with a retryable 503 (`SignerUnavailable` in diagnostics).
+- Each signature holds its key row `FOR SHARE` in a short transaction, from the active-key check until the signature exists, with no IO in between. A revoke, retirement or re-wrap therefore commits either before the check (which then refuses) or after the signature.
 
 **Where the KEK lives (for separate backup custody).**
 - **Host file (rewrite-dev on `prod`):** `/home/serveradmin/.local/share/insignia/runtime/signer-secrets/signing-wrap-keys.json`.
@@ -129,6 +130,7 @@ The [signing-owner overlay](signing-owner-compose.yaml) is armed only for an own
   - It has `SELECT(shop_id, generation, authorization_generation)` on `installation_generations`, for the identity trigger, and EXECUTE on `signing_key_scope`.
   - It cannot delete keys or change state, window or identity.
 - Web (`insignia_runtime`) reads every signing-key column except `private_envelope`. It updates only lifecycle columns, including nulling the envelope at retirement, and cannot insert or delete keys.
+- Migration 64's trigger enforces the envelope split: a role that cannot SELECT `private_envelope` (web) may only clear the envelope and `wrapping_key_id`, and only in the statement that retires, revokes or destroys the key. It cannot overwrite the active key's envelope to stop signing.
 - The worker reaches signing keys only through `destroy_expired_signing_keys`, and cannot read envelopes.
 - **Apply as the schema owner:**
   1. [signing-key-runtime-grants.sql](signing-key-runtime-grants.sql) (earlier delta);
@@ -240,6 +242,13 @@ The earlier read-only observation of `stitchs-vat-verification-20261004.myshopif
 ## Past transitions
 
 Each section below records one past transition: what it changed and the operator steps it needed then. They are history, not current instructions; [Current state](#current-state) and [Deploy next](#deploy-next) are current. Newest first.
+
+### Signing envelope writer guard and signer revoke lock
+
+Closes two signer review items: web could overwrite the active key's envelope (denial of service, no forgery), and a revoke could commit between the signer's key check and its signature.
+1. Apply `20261113000200_signing_key_envelope_writer.sql` through the schema owner (schema 63 to 64). It adds the trigger `signing_keys_envelope_writer` and its invoker function `enforce_signing_key_envelope_writer()`, with EXECUTE revoked from PUBLIC. Running web, worker and signer images already write envelopes only as it allows, so it can go before any image. No grant changes: the column, relation, membership and schema ACL digests stay unchanged. The function ACL digest changes by exactly the new function's row; record the new value.
+2. Recreate only the `signer` service from a worker image that contains this change. Web and worker need no new image for it. The previous signer image works on schema 64, so rollback is image-only.
+3. Read back: a Designer Add to cart still signs (`signer_sign` `ok`), and no `key_unavailable` lines appear for the active key.
 
 ### A11y-quantity candidate development transition
 

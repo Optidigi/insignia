@@ -141,6 +141,30 @@ export class PgSigningKeyRepository {
     return result.rows.map(mapKey);
   }
 
+  /**
+   * Signer: `FOR SHARE` conflicts with every lifecycle UPDATE (they take FOR NO KEY UPDATE; FOR KEY
+   * SHARE would not), so a revoke waits for an in-flight signature and the signature waits for an
+   * uncommitted revoke, then re-reads the committed row. The scope is read unlocked: a web fence
+   * holds the shop and installation rows while it calls the signer, and nothing that holds a
+   * conflicting key-row lock waits on the fence, so no lock cycle forms.
+   */
+  async holdForSigning<T>(
+    scope: Scope,
+    keyId: number,
+    use: (key: StoredSigningKey | undefined) => Promise<T>,
+  ): Promise<T> {
+    checkedId(keyId);
+    return this.database.transaction().execute(async (tx) => {
+      const active = await readScope(tx, scope.shopId, scope.installationGeneration, false);
+      if (!active) throw new Error('Inactive signing installation');
+      sameScope(active, scope);
+      const result = await sql<KeyRow>`SELECT ${this.columns()} FROM signing_keys WHERE shop_id=${scope.shopId}
+        AND installation_generation=${scope.installationGeneration}::bigint AND authorization_generation=${scope.authorizationGeneration}::uuid
+        AND key_id=${keyId} FOR SHARE`.execute(tx);
+      return use(result.rows[0] ? mapKey(result.rows[0]) : undefined);
+    });
+  }
+
   async createPending(input: {
     scope: Scope;
     keyId: number;
