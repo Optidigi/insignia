@@ -1,0 +1,457 @@
+[
+  {
+    "registrationId": "refunds/create::::https://app.insigniacustomizer.com/api/webhooks/shopify",
+    "registrationUuid": "01a1cac6-3087-7bb8-ba1b-8975a7cf8a3f",
+    "handle": "13490999d8012bce72288cc5fd514340675fbca2",
+    "type": "webhook_subscription",
+    "config": {
+      "topic": "refunds/create",
+      "api_version": "2026-07",
+      "uri": "https://app.insigniacustomizer.com/api/webhooks/shopify",
+      "include_fields": ["id", "admin_graphql_api_id", "order_id", "created_at"]
+    },
+    "target": "",
+    "specification": {
+      "identifier": "webhook_subscription",
+      "externalIdentifier": "webhook_subscription",
+      "name": "Webhooks Subscriptions",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "app/uninstalled::::https://app.insigniacustomizer.com/api/webhooks/shopify",
+    "registrationUuid": "01a1cac6-3087-7d62-9fe1-db03072e6459",
+    "handle": "4c5f490719d1659aefb5248d3ec77dce1e8e3a2b",
+    "type": "webhook_subscription",
+    "config": {
+      "topic": "app/uninstalled",
+      "api_version": "2026-07",
+      "uri": "https://app.insigniacustomizer.com/api/webhooks/shopify",
+      "include_fields": ["id", "myshopify_domain"]
+    },
+    "target": "",
+    "specification": {
+      "identifier": "webhook_subscription",
+      "externalIdentifier": "webhook_subscription",
+      "name": "Webhooks Subscriptions",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "orders/updated::::https://app.insigniacustomizer.com/api/webhooks/shopify",
+    "registrationUuid": "01a1cac6-3087-7544-9f94-c23c96808dfd",
+    "handle": "4d73c90cc8d69044efa3bdd6442d8121cfff60b0",
+    "type": "webhook_subscription",
+    "config": {
+      "topic": "orders/updated",
+      "api_version": "2026-07",
+      "uri": "https://app.insigniacustomizer.com/api/webhooks/shopify",
+      "include_fields": ["id", "admin_graphql_api_id", "updated_at"]
+    },
+    "target": "",
+    "specification": {
+      "identifier": "webhook_subscription",
+      "externalIdentifier": "webhook_subscription",
+      "name": "Webhooks Subscriptions",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "app_access",
+    "registrationUuid": "01a0e7ed-3119-7dce-81d4-7aabc1b62f9f",
+    "handle": "app_access",
+    "type": "app_access",
+    "config": {
+      "scopes": "read_orders,write_app_proxy",
+      "optional_scopes": [
+        "write_products",
+        "read_publications",
+        "read_product_listings",
+        "read_cart_transforms",
+        "read_validations",
+        "write_cart_transforms",
+        "write_validations",
+        "read_markets"
+      ],
+      "use_legacy_install_flow": false,
+      "redirect_url_allowlist": []
+    },
+    "target": "",
+    "specification": {
+      "identifier": "app_access",
+      "externalIdentifier": "app_access",
+      "name": "App access",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "app_home",
+    "registrationUuid": "01a0e7ed-3119-7229-92f1-2eab7eb456c8",
+    "handle": "app_home",
+    "type": "app_home",
+    "config": {
+      "app_url": "https://app.insigniacustomizer.com/admin/home",
+      "embedded": true
+    },
+    "target": "",
+    "specification": {
+      "identifier": "app_home",
+      "externalIdentifier": "app_home",
+      "name": "App Home",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "app_proxy",
+    "registrationUuid": "01a137a9-b4be-7137-b2f7-07ebaf8fff32",
+    "handle": "app_proxy",
+    "type": "app_proxy",
+    "config": {
+      "url": "https://app.insigniacustomizer.com/api/artwork",
+      "subpath": "insignia",
+      "prefix": "apps"
+    },
+    "target": "",
+    "specification": {
+      "identifier": "app_proxy",
+      "externalIdentifier": "app_proxy",
+      "name": "App Proxy",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "branding",
+    "registrationUuid": "01a0e7ed-3119-7f99-a441-ba954ed80654",
+    "handle": "branding",
+    "type": "branding",
+    "config": {
+      "name": "Insignia"
+    },
+    "target": "",
+    "specification": {
+      "identifier": "branding",
+      "externalIdentifier": "branding",
+      "name": "Branding",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "orders/paid::::https://app.insigniacustomizer.com/api/webhooks/shopify",
+    "registrationUuid": "01a1cac6-3087-77ac-8018-c1a419a28ed9",
+    "handle": "cfe1bd87ea7b04490367e0c15020c9bd6f931d64",
+    "type": "webhook_subscription",
+    "config": {
+      "topic": "orders/paid",
+      "api_version": "2026-07",
+      "uri": "https://app.insigniacustomizer.com/api/webhooks/shopify",
+      "include_fields": ["id", "admin_graphql_api_id", "updated_at"]
+    },
+    "target": "",
+    "specification": {
+      "identifier": "webhook_subscription",
+      "externalIdentifier": "webhook_subscription",
+      "name": "Webhooks Subscriptions",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "orders/create::::https://app.insigniacustomizer.com/api/webhooks/shopify",
+    "registrationUuid": "01a1cac6-3087-74fa-ae0f-864905567927",
+    "handle": "d131de8fdd3cd96e897263a123708c37bd21cac7",
+    "type": "webhook_subscription",
+    "config": {
+      "topic": "orders/create",
+      "api_version": "2026-07",
+      "uri": "https://app.insigniacustomizer.com/api/webhooks/shopify",
+      "include_fields": ["id", "admin_graphql_api_id", "updated_at"]
+    },
+    "target": "",
+    "specification": {
+      "identifier": "webhook_subscription",
+      "externalIdentifier": "webhook_subscription",
+      "name": "Webhooks Subscriptions",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "6bb35abe-6702-3ad7-9bec-96adcae9be142e91ff97",
+    "registrationUuid": "01a13996-ce86-7b3c-9bac-1f2605986f7f",
+    "handle": "insignia",
+    "type": "theme_app_extension",
+    "config": {
+      "theme_extension": {
+        "files": {
+          "assets": {
+            "insignia-buyer-c7xg_BRC.js": {
+              "sha256": "GpeNZInv7wWNur+/q0D+jzgi4cGlLnvIf3mRPvm7ptE=",
+              "size": 25619
+            },
+            "insignia-buyer-session-D-HETgjf.js": {
+              "sha256": "3TOGMYAqz4o+mjU51axbv7exqwVHWyoxKB+QuDFGxxs=",
+              "size": 1300
+            },
+            "insignia-controller-4oTxQjiU.js": {
+              "sha256": "TjWhJaenC0kS33HdjCzGv9rziFEBQp1LvBbFFendprw=",
+              "size": 52661
+            },
+            "insignia-designer-frame.js": {
+              "sha256": "dmpWvjEPiXc41d6aA8ZWd8S5kFUDwSSeWeuLt5EH6uI=",
+              "size": 141252
+            },
+            "insignia-element.js": {
+              "sha256": "wCLnwtyqnjDICtanpJRIxFm6PE5RDmzFvYdiOjCukA8=",
+              "size": 29551
+            },
+            "insignia-modal-HTU6YGtu.js": {
+              "sha256": "aEVLqXTMImgQjpNr+bYdIpnP53l3m85jWvt4r+VOQhI=",
+              "size": 12906
+            },
+            "insignia-renewal-unD6bp_R.js": {
+              "sha256": "7sMEgkfN4m3uNM7/M8IhKuZ1/K4y6zX/w3B+jq9cZdw=",
+              "size": 2158
+            },
+            "insignia-repair-state-C1y0Zrm5.js": {
+              "sha256": "De8MkgWxiHZz+3PhIgrmVdcQ8PaP0o4HhzOXM4DwU88=",
+              "size": 101758
+            },
+            "insignia-runtime-DTYhvHlc.js": {
+              "sha256": "aU8273qqG8VTrorCQnj6tP3g7cw7paim82PiDlrdn6M=",
+              "size": 45908
+            },
+            "insignia-frame-host-CGsZoBVW.js": {
+              "sha256": "mIx5SsO9uxi56cICm7GiQwqz4ISn7IuCaCAk1E8KzUA=",
+              "size": 9250
+            },
+            "insignia-theme-preference-CEFKb8Js.js": {
+              "sha256": "M2xTIksQM+2kpt1y3sypsaANt+sX+I7TEz6LbmEEtxg=",
+              "size": 206936
+            },
+            "insignia-storefront.js": {
+              "sha256": "boUmVITdrJv5suwvj1GPyWkInO8OxeakKs7978lXQao=",
+              "size": 393
+            },
+            "insignia-unavailable-DH9-gfB-.js": {
+              "sha256": "pa1VJmiH1IBP4wxrIRZTPNvoGiYGjcRwcYqqa+PO86M=",
+              "size": 1512
+            },
+            "insignia-v1-C69VyHcW.js": {
+              "sha256": "vx3SVabfN7BUlJNotl7hzwDTAcFamys5vX4VIB+0SvI=",
+              "size": 159626
+            },
+            "insignia-designer.css": {
+              "sha256": "RjDn47EjosQr3M9EcW9W5SZWIdINFuq15Mz5GwV1684=",
+              "size": 365269
+            }
+          },
+          "blocks": {
+            "cart-repair.liquid": {
+              "value": "<insignia-cart-repair proxy-base=\"{{ routes.root_url }}apps/{{ block.settings.proxy_prefix | escape }}\" cart-root=\"{{ routes.root_url }}\" country=\"{{ localization.country.iso_code }}\" market-id=\"{{ localization.market.id }}\" review-label=\"{{ 'insignia.cart_review.label' | t | escape }}\" review-message=\"{{ 'insignia.cart_review.message' | t | escape }}\" renew-label=\"{{ 'insignia.cart_review.renew_label' | t | escape }}\" expired-message=\"{{ 'insignia.cart_review.expired_message' | t | escape }}\" context-message=\"{{ 'insignia.cart_review.context_message' | t | escape }}\" renew-failed-message=\"{{ 'insignia.cart_review.renew_failed_message' | t | escape }}\"></insignia-cart-repair>\n{% render 'customise-control', product: product, block: block, control: 'automatic' %}\n{% schema %}\n{\n  \"name\": \"Insignia storefront\",\n  \"target\": \"body\",\n  \"javascript\": \"insignia-storefront.js\",\n  \"settings\": [\n    {\n      \"type\": \"paragraph\",\n      \"content\": \"Enable once, then save your theme. Published Insignia products automatically use Customise in place of purchase buttons. Ordinary products keep their theme controls.\"\n    },\n    {\n      \"type\": \"checkbox\",\n      \"id\": \"auto_placement\",\n      \"label\": \"Place Customise automatically\",\n      \"default\": true,\n      \"info\": \"Turn off only when using the Insignia customization app block for placement.\"\n    },\n    {\n      \"type\": \"text\",\n      \"id\": \"button_label\",\n      \"label\": \"Button label\",\n      \"info\": \"Leave blank to use the storefront language.\"\n    },\n    {\n      \"type\": \"select\",\n      \"id\": \"button_style\",\n      \"label\": \"Button style\",\n      \"default\": \"auto\",\n      \"options\": [\n        {\n          \"value\": \"auto\",\n          \"label\": \"Match theme purchase button\"\n        },\n        {\n          \"value\": \"primary\",\n          \"label\": \"Primary\"\n        },\n        {\n          \"value\": \"secondary\",\n          \"label\": \"Secondary\"\n        }\n      ]\n    },\n    {\n      \"type\": \"select\",\n      \"id\": \"button_width\",\n      \"label\": \"Button width\",\n      \"default\": \"theme\",\n      \"options\": [\n        {\n          \"value\": \"theme\",\n          \"label\": \"Match theme\"\n        },\n        {\n          \"value\": \"full\",\n          \"label\": \"Full width\"\n        },\n        {\n          \"value\": \"content\",\n          \"label\": \"Fit text\"\n        }\n      ]\n    },\n    {\n      \"type\": \"color\",\n      \"id\": \"button_background\",\n      \"label\": \"Background override\"\n    },\n    {\n      \"type\": \"color\",\n      \"id\": \"button_color\",\n      \"label\": \"Text color override\"\n    },\n    {\n      \"type\": \"checkbox\",\n      \"id\": \"override_radius\",\n      \"label\": \"Override corner radius\",\n      \"default\": false\n    },\n    {\n      \"type\": \"range\",\n      \"id\": \"button_radius\",\n      \"label\": \"Corner radius\",\n      \"min\": 0,\n      \"max\": 40,\n      \"step\": 1,\n      \"unit\": \"px\",\n      \"default\": 6\n    },\n    {\n      \"type\": \"checkbox\",\n      \"id\": \"override_border\",\n      \"label\": \"Override border width\",\n      \"default\": false\n    },\n    {\n      \"type\": \"range\",\n      \"id\": \"button_border_width\",\n      \"label\": \"Border width\",\n      \"min\": 0,\n      \"max\": 6,\n      \"step\": 1,\n      \"unit\": \"px\",\n      \"default\": 1\n    },\n    {\n      \"type\": \"color\",\n      \"id\": \"button_border_color\",\n      \"label\": \"Border color override\"\n    },\n    {\n      \"type\": \"range\",\n      \"id\": \"button_spacing\",\n      \"label\": \"Vertical spacing\",\n      \"min\": 0,\n      \"max\": 40,\n      \"step\": 1,\n      \"unit\": \"px\",\n      \"default\": 0\n    },\n    {\n      \"type\": \"text\",\n      \"id\": \"proxy_prefix\",\n      \"label\": \"App proxy prefix\",\n      \"default\": \"insignia\"\n    }\n  ]\n}\n{% endschema %}\n"
+            },
+            "customize.liquid": {
+              "value": "{% render 'customise-control', product: product, block: block, control: 'manual' %}\n{% schema %}\n{\n  \"name\": \"Insignia customization\",\n  \"target\": \"section\",\n  \"javascript\": \"insignia-storefront.js\",\n  \"settings\": [\n    {\n      \"type\": \"paragraph\",\n      \"content\": \"Optional manual placement. Enable the Insignia storefront app embed to replace native purchase controls. The button appears for products with published required customization.\"\n    },\n    {\n      \"type\": \"text\",\n      \"id\": \"button_label\",\n      \"label\": \"Button label\",\n      \"info\": \"Leave blank to use the storefront language.\"\n    },\n    {\n      \"type\": \"select\",\n      \"id\": \"button_style\",\n      \"label\": \"Button style\",\n      \"default\": \"auto\",\n      \"options\": [\n        {\n          \"value\": \"auto\",\n          \"label\": \"Match theme purchase button\"\n        },\n        {\n          \"value\": \"primary\",\n          \"label\": \"Primary\"\n        },\n        {\n          \"value\": \"secondary\",\n          \"label\": \"Secondary\"\n        }\n      ]\n    },\n    {\n      \"type\": \"select\",\n      \"id\": \"button_width\",\n      \"label\": \"Button width\",\n      \"default\": \"theme\",\n      \"options\": [\n        {\n          \"value\": \"theme\",\n          \"label\": \"Match theme\"\n        },\n        {\n          \"value\": \"full\",\n          \"label\": \"Full width\"\n        },\n        {\n          \"value\": \"content\",\n          \"label\": \"Fit text\"\n        }\n      ]\n    },\n    {\n      \"type\": \"color\",\n      \"id\": \"button_background\",\n      \"label\": \"Background override\"\n    },\n    {\n      \"type\": \"color\",\n      \"id\": \"button_color\",\n      \"label\": \"Text color override\"\n    },\n    {\n      \"type\": \"checkbox\",\n      \"id\": \"override_radius\",\n      \"label\": \"Override corner radius\",\n      \"default\": false\n    },\n    {\n      \"type\": \"range\",\n      \"id\": \"button_radius\",\n      \"label\": \"Corner radius\",\n      \"min\": 0,\n      \"max\": 40,\n      \"step\": 1,\n      \"unit\": \"px\",\n      \"default\": 6\n    },\n    {\n      \"type\": \"checkbox\",\n      \"id\": \"override_border\",\n      \"label\": \"Override border width\",\n      \"default\": false\n    },\n    {\n      \"type\": \"range\",\n      \"id\": \"button_border_width\",\n      \"label\": \"Border width\",\n      \"min\": 0,\n      \"max\": 6,\n      \"step\": 1,\n      \"unit\": \"px\",\n      \"default\": 1\n    },\n    {\n      \"type\": \"color\",\n      \"id\": \"button_border_color\",\n      \"label\": \"Border color override\"\n    },\n    {\n      \"type\": \"range\",\n      \"id\": \"button_spacing\",\n      \"label\": \"Vertical spacing\",\n      \"min\": 0,\n      \"max\": 40,\n      \"step\": 1,\n      \"unit\": \"px\",\n      \"default\": 0\n    },\n    {\n      \"type\": \"text\",\n      \"id\": \"proxy_prefix\",\n      \"label\": \"App proxy prefix\",\n      \"default\": \"insignia\"\n    }\n  ]\n}\n{% endschema %}\n"
+            }
+          },
+          "locales": {
+            "de.json": {
+              "value": "{\n  \"insignia\": {\n    \"customise\": \"Anpassen\",\n    \"cart_review\": {\n      \"label\": \"Personalisierte Artikel prüfen\",\n      \"message\": \"Ihre personalisierten Artikel wurden geändert, daher werden keine Personalisierungspreise angewendet. Prüfen Sie sie vor dem Checkout.\",\n      \"renew_label\": \"Preise erneuern\",\n      \"expired_message\": \"Ihre Personalisierungspreise sind abgelaufen und werden nicht angewendet. Erneuern Sie sie vor dem Checkout.\",\n      \"context_message\": \"Die Preise haben sich geändert, weil sich Ihr Land oder Ihre Währung geändert hat. Prüfen Sie Ihre personalisierten Artikel, um sie zu aktualisieren.\",\n      \"renew_failed_message\": \"Die Preise konnten nicht erneuert werden. Prüfen Sie Ihre personalisierten Artikel vor dem Checkout.\"\n    }\n  }\n}\n"
+            },
+            "en.default.json": {
+              "value": "{\n  \"insignia\": {\n    \"customise\": \"Customise\",\n    \"cart_review\": {\n      \"label\": \"Review customized items\",\n      \"message\": \"Your customized items changed, so customization prices are not applied. Review them before checkout.\",\n      \"renew_label\": \"Renew prices\",\n      \"expired_message\": \"Your customization prices expired and are not applied. Renew them before checkout.\",\n      \"context_message\": \"Prices changed because your country or currency changed. Review customized items to update them.\",\n      \"renew_failed_message\": \"Prices could not be renewed. Review your customized items before checkout.\"\n    }\n  }\n}\n"
+            },
+            "es.json": {
+              "value": "{\n  \"insignia\": {\n    \"customise\": \"Personalizar\",\n    \"cart_review\": {\n      \"label\": \"Revisar artículos personalizados\",\n      \"message\": \"Tus artículos personalizados han cambiado, así que no se aplican los precios de personalización. Revísalos antes de pagar.\",\n      \"renew_label\": \"Renovar precios\",\n      \"expired_message\": \"Tus precios de personalización han caducado y no se aplican. Renuévalos antes de pagar.\",\n      \"context_message\": \"Los precios han cambiado porque cambió tu país o tu moneda. Revisa tus artículos personalizados para actualizarlos.\",\n      \"renew_failed_message\": \"No se pudieron renovar los precios. Revisa tus artículos personalizados antes de pagar.\"\n    }\n  }\n}\n"
+            },
+            "fr.json": {
+              "value": "{\n  \"insignia\": {\n    \"customise\": \"Personnaliser\",\n    \"cart_review\": {\n      \"label\": \"Vérifier les articles personnalisés\",\n      \"message\": \"Vos articles personnalisés ont changé : les prix de personnalisation ne sont pas appliqués. Vérifiez-les avant de passer commande.\",\n      \"renew_label\": \"Renouveler les prix\",\n      \"expired_message\": \"Vos prix de personnalisation ont expiré et ne sont pas appliqués. Renouvelez-les avant de passer commande.\",\n      \"context_message\": \"Les prix ont changé, car votre pays ou votre devise a changé. Vérifiez vos articles personnalisés pour les mettre à jour.\",\n      \"renew_failed_message\": \"Les prix n’ont pas pu être renouvelés. Vérifiez vos articles personnalisés avant de passer commande.\"\n    }\n  }\n}\n"
+            },
+            "it.json": {
+              "value": "{\n  \"insignia\": {\n    \"customise\": \"Personalizza\",\n    \"cart_review\": {\n      \"label\": \"Verifica articoli personalizzati\",\n      \"message\": \"I tuoi articoli personalizzati sono cambiati, quindi i prezzi di personalizzazione non vengono applicati. Verificali prima del pagamento.\",\n      \"renew_label\": \"Rinnova prezzi\",\n      \"expired_message\": \"I tuoi prezzi di personalizzazione sono scaduti e non vengono applicati. Rinnovali prima del pagamento.\",\n      \"context_message\": \"I prezzi sono cambiati perché il tuo paese o la tua valuta è cambiata. Verifica i tuoi articoli personalizzati per aggiornarli.\",\n      \"renew_failed_message\": \"Non è stato possibile rinnovare i prezzi. Verifica i tuoi articoli personalizzati prima del pagamento.\"\n    }\n  }\n}\n"
+            },
+            "nl.json": {
+              "value": "{\n  \"insignia\": {\n    \"customise\": \"Personaliseren\",\n    \"cart_review\": {\n      \"label\": \"Gepersonaliseerde artikelen controleren\",\n      \"message\": \"Je gepersonaliseerde artikelen zijn gewijzigd, daarom worden de personalisatieprijzen niet toegepast. Controleer ze voordat je afrekent.\",\n      \"renew_label\": \"Prijzen vernieuwen\",\n      \"expired_message\": \"Je personalisatieprijzen zijn verlopen en worden niet toegepast. Vernieuw ze voordat je afrekent.\",\n      \"context_message\": \"De prijzen zijn gewijzigd omdat je land of valuta is gewijzigd. Controleer je gepersonaliseerde artikelen om ze bij te werken.\",\n      \"renew_failed_message\": \"De prijzen konden niet worden vernieuwd. Controleer je gepersonaliseerde artikelen voordat je afrekent.\"\n    }\n  }\n}\n"
+            }
+          },
+          "snippets": {
+            "customise-control.liquid": {
+              "value": "{%- liquid\n  assign policy = product.metafields['$app'].insignia_policy_v2.value | split: ':'\n  assign generation = shop.metafields['$app'].insignia_public_config_v2.value.generationHex\n  assign required = false\n  if generation != blank and policy.size == 3 and policy[0] == generation and policy[2] == 'required'\n    assign required = true\n  endif\n  assign control_tag = 'insignia-buyer'\n  if control == 'automatic'\n    assign control_tag = 'insignia-theme-integration'\n  endif\n  assign default_label = 'insignia.customise' | t\n-%}\n{%- if control == 'automatic' or required -%}\n  <{{ control_tag }}\n    product-id=\"{{ product.id }}\"\n    {% if control == 'automatic' %}\n      variant-ids=\"{{ product.variants | map: 'id' | join: ',' }}\"\n      auto-placement=\"{{ block.settings.auto_placement }}\"\n    {% else %}\n      {{ block.shopify_attributes }}\n    {% endif %}\n    {% if required %}known-required{% endif %}\n    proxy-base=\"{{ routes.root_url }}apps/{{ block.settings.proxy_prefix | escape }}\"\n    cart-root=\"{{ routes.root_url }}\" country=\"{{ localization.country.iso_code }}\" market-id=\"{{ localization.market.id }}\"\n    language=\"{{ request.locale.iso_code | escape }}\" store-name=\"{{ shop.name | escape }}\"\n    trigger-label=\"{{ block.settings.button_label | default: default_label | escape }}\"\n    button-style=\"{{ block.settings.button_style | escape }}\"\n    button-width=\"{{ block.settings.button_width | escape }}\"\n    {% if block.settings.button_background != blank %}button-background=\"{{ block.settings.button_background | escape }}\"{% endif %}\n    {% if block.settings.button_color != blank %}button-color=\"{{ block.settings.button_color | escape }}\"{% endif %}\n    {% if block.settings.override_radius %}button-radius=\"{{ block.settings.button_radius }}px\"{% endif %}\n    {% if block.settings.override_border %}button-border-width=\"{{ block.settings.button_border_width }}px\"{% endif %}\n    {% if block.settings.button_border_color != blank %}button-border-color=\"{{ block.settings.button_border_color | escape }}\"{% endif %}\n    {% if block.settings.button_spacing > 0 %}button-spacing=\"{{ block.settings.button_spacing }}px\"{% endif %}\n  ></{{ control_tag }}>\n{%- elsif request.design_mode -%}\n  <p {{ block.shopify_attributes }}>Publish required customization for this product to show Customise.</p>\n{%- endif -%}\n"
+            }
+          }
+        }
+      }
+    },
+    "target": "",
+    "specification": {
+      "identifier": "theme_app_extension",
+      "externalIdentifier": "theme_app_extension",
+      "name": "Online Store - App Theme Extension",
+      "experience": "extension",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "c56038d4-146a-405e-b47d-a055249eeeb3",
+    "registrationUuid": "01a1182f-15a0-78e4-8d71-fb20283ef34e",
+    "handle": "insignia-experimental-v2-transform",
+    "type": "function",
+    "config": {
+      "title": "Insignia experimental-v2 cart transform",
+      "module_id": "826a9059-f6c2-49ff-861a-7155b1f848fb",
+      "description": "Local preproduction candidate only",
+      "app_key": "1443cf6d03d39edae7c101a943c5c684",
+      "api_version": "2026-07",
+      "enable_creation_ui": true,
+      "localization": {},
+      "targets": [
+        {
+          "handle": "cart.transform.run",
+          "export": "cart_transform_run",
+          "input_query": "query CartTransformRunInput {\n  cart {\n    lines {\n      id\n      quantity\n      line: attribute(key: \"_insignia_line_v3\") { value }\n      legacy: attribute(key: \"_insignia_member_v2\") { value }\n      cost { amountPerQuantity { currencyCode } }\n      sellingPlanAllocation { sellingPlan { id } }\n      merchandise {\n        __typename\n        ... on ProductVariant {\n          id\n          product {\n            id\n            registration: metafield(key: \"insignia_registration_v2\") { value }\n            policy: metafield(key: \"insignia_policy_v2\") { value }\n          }\n        }\n      }\n    }\n  }\n  localization { country { isoCode } market { id } }\n  shop {\n    localTime { date }\n    publicConfig: metafield(key: \"insignia_public_config_v2\") { value }\n  }\n}\n"
+        }
+      ],
+      "module_metadata": {
+        "standard_modules": ["shopify_function_v2"],
+        "sdks": [],
+        "processed_by": ["walrus#0.23.3"],
+        "languages": [],
+        "module_wasm_size_bytes": 183604,
+        "module_compiled_size_bytes": 513416
+      },
+      "api_type": "cart_transform"
+    },
+    "target": "cart.transform.run",
+    "specification": {
+      "identifier": "function",
+      "externalIdentifier": "function",
+      "name": "function",
+      "experience": "extension",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "552059da-2dc1-47f8-8fc0-14a5ccb6f665",
+    "registrationUuid": "01a1182f-15a0-74a3-a5ac-88800606d379",
+    "handle": "insignia-experimental-v2-validation",
+    "type": "function",
+    "config": {
+      "title": "Insignia experimental-v2 cart validation",
+      "module_id": "076bfef2-e925-4f68-bcb8-7398df7305c6",
+      "description": "Local preproduction candidate only",
+      "app_key": "1443cf6d03d39edae7c101a943c5c684",
+      "api_version": "2026-07",
+      "enable_creation_ui": true,
+      "localization": {},
+      "targets": [
+        {
+          "handle": "cart.validations.generate.run",
+          "export": "cart_validations_generate_run",
+          "input_query": "query Input {\n  buyerJourney { step }\n  cart {\n    lines {\n      id\n      quantity\n      line: attribute(key: \"_insignia_line_v3\") { value }\n      legacy: attribute(key: \"_insignia_member_v2\") { value }\n      cost {\n        amountPerQuantity { currencyCode }\n        subtotalAmount { amount currencyCode }\n      }\n      sellingPlanAllocation { sellingPlan { id } }\n      merchandise {\n        __typename\n        ... on ProductVariant {\n          id\n          product {\n            id\n            registration: metafield(key: \"insignia_registration_v2\") { value }\n            policy: metafield(key: \"insignia_policy_v2\") { value }\n          }\n        }\n      }\n    }\n  }\n  localization { country { isoCode } language { isoCode } market { id } }\n  shop {\n    localTime { date }\n    publicConfig: metafield(key: \"insignia_public_config_v2\") { value }\n  }\n}\n"
+        }
+      ],
+      "module_metadata": {
+        "standard_modules": ["shopify_function_v2"],
+        "sdks": [],
+        "processed_by": ["walrus#0.23.3"],
+        "languages": [],
+        "module_wasm_size_bytes": 181608,
+        "module_compiled_size_bytes": 499784
+      },
+      "api_type": "cart_checkout_validation"
+    },
+    "target": "cart.validations.generate.run",
+    "specification": {
+      "identifier": "function",
+      "externalIdentifier": "function",
+      "name": "function",
+      "experience": "extension",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "privacy_compliance_webhooks",
+    "registrationUuid": "01a14c18-b90e-7308-9fdb-7ad86619b40d",
+    "handle": "privacy_compliance_webhooks",
+    "type": "privacy_compliance_webhooks",
+    "config": {
+      "api_version": "2026-07",
+      "customers_redact_url": "https://app.insigniacustomizer.com/api/webhooks/shopify",
+      "customers_data_request_url": "https://app.insigniacustomizer.com/api/webhooks/shopify",
+      "shop_redact_url": "https://app.insigniacustomizer.com/api/webhooks/shopify"
+    },
+    "target": "",
+    "specification": {
+      "identifier": "privacy_compliance_webhooks",
+      "externalIdentifier": "privacy_compliance_webhooks",
+      "name": "Privacy Compliance Webhooks",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "webhooks",
+    "registrationUuid": "01a0e7ed-3119-7dc5-8c7a-868166591889",
+    "handle": "webhooks",
+    "type": "webhooks",
+    "config": {
+      "api_version": "2026-07"
+    },
+    "target": "",
+    "specification": {
+      "identifier": "webhooks",
+      "externalIdentifier": "webhooks",
+      "name": "Imperative Webhooks Api Version",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  }
+]

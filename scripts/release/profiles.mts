@@ -72,6 +72,12 @@ import selectedOnlyModules from '../../deployment/m5-runtime/native-selected-fix
 import selectedOnlyCandidate from '../../deployment/m5-runtime/native-selected-fixed-release-binding.json' with {
   type: 'json',
 };
+import sessionDraftsModules from '../../deployment/m5-runtime/native-session-drafts-module-baseline.json' with {
+  type: 'json',
+};
+import sessionDraftsBinding from '../../deployment/m5-runtime/native-session-drafts-release-binding.json' with {
+  type: 'json',
+};
 import speedModules from '../../deployment/m5-runtime/native-speed-module-baseline.json' with { type: 'json' };
 import speedCandidate from '../../deployment/m5-runtime/native-speed-release-binding.json' with { type: 'json' };
 import startupModules from '../../deployment/m5-runtime/native-startup-module-baseline.json' with { type: 'json' };
@@ -160,6 +166,16 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  // Same Functions as cart-line v3 and every non-theme module of repair-messages; only theme assets and the German locale change.
+  'native-session-drafts-c78a8179': {
+    versionId: sessionDraftsBinding.versionId,
+    versionTag: sessionDraftsBinding.versionTag,
+    versionIds: sessionDraftsBinding.versionIds,
+    moduleHash: sessionDraftsBinding.moduleHash,
+    modules: sessionDraftsModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   // Same Functions as cart-line v3 and every non-theme module of buyer-fixes; only theme assets change.
   'native-repair-messages-bf512171': {
     versionId: repairMessagesBinding.versionId,

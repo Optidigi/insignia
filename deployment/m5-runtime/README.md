@@ -12,6 +12,17 @@ Live Shopify Admin returns `inputQuery: null` for both owned Functions. Observat
 
 Operator migration: none is required. The legacy `transformInputQuerySha256`, `validationInputQuerySha256` and `observationVersion` fields are still accepted (64-hex and `2` when present), then ignored. Images built before this change require them, so keep them until rollback to such an image is no longer needed, then reduce the value to `appKey` only.
 
+## Session-drafts candidate development transition
+
+Owner approval, 12 November 2026 (deploy 3): ship the storefront and Designer changes merged up to main `c78a8179` (#395, #397/#403, #399, #401, #405, #407) and the German theme locale (#391, *Sie*) to rewrite-dev as one theme-only app version. The server side of `c78a8179` was deployed under `native-repair-messages-bf512171` before the candidate was created, with migrations 60 and 62 before it and 61 after it (schema 62; see "Drop the legacy visitor count" and "Larger buyer session quotas" above).
+
+`native-session-drafts-c78a8179` binds inactive version `1206211837953` in [native-session-drafts-release-binding.json](native-session-drafts-release-binding.json) (38 versions) and the 14-module [baseline](native-session-drafts-module-baseline.json) (canonical hash `dc980bc16e722a846d63ded7e3443cb88dba9527d7cf3d30022385f6af598179`).
+- It was created once at `2026-11-13T01:06:36Z` (CLI 4.9.4) from the frozen `native-repair-messages-bf512171` staging. Two things changed: the 15 files in `extensions/insignia-theme/assets` (the foundation build of `c78a8179`, run 43340293913, attempt 1, byte-identical to a local build of the same tree) and `locales/de.json` (from that source). The module baseline records the new German locale value.
+- Blocks, snippets, the other five locales, every non-theme module and both Function modules are unchanged, including module ids, wasm and input queries. The foundation wasm of `c78a8179` equals the Active pins (transform `5c8708b5…`/183604, validation `6c362b36…`/181608); the Function source still is `aa3b6166`.
+- `1205994881025` stays the sole Active version until the release; all NEVER_RELEASE versions are inactive.
+
+Phase B operator changes, made together with the single release: set `INSIGNIA_RELEASE_PROFILE=native-session-drafts-c78a8179` in web and worker, and the same profile with the matching manifest in the verifier, using binding-head images. Creating the candidate makes `native-repair-messages-bf512171` fail closed (inventory 38) until this step and the release complete. No migration, grant or other environment change.
+
 ## Repair-messages candidate development transition
 
 Owner approval, 12 November 2026 (deploy 2): ship the storefront and Designer changes merged up to main `bf512171` (#378, #380, #387, #389) to rewrite-dev as one theme-only app version. The server side of `bf512171` (#377 verifier reuse rule and release diagnostics, #384 listen-failure exit, #385/#388 fences; no migration) was deployed under `native-buyer-fixes-fb436e16` before the candidate was created.

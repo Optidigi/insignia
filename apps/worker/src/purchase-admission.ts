@@ -31,6 +31,7 @@ export function resolveNativePurchaseQualification(input: {
   const profile = resolveRuntimeReleaseProfile(input.releaseProfile);
   if (
     ![
+      'native-session-drafts-c78a8179',
       'native-repair-messages-bf512171',
       'native-buyer-fixes-fb436e16',
       'native-canonical-host-aa3b6166',
