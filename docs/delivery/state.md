@@ -14,9 +14,10 @@ Updated 13 November 2026. Insignia runs only on `app.insigniacustomizer.com`, on
    - [Specification](../architecture/implementation-plan.md): requirements and the owner decisions behind them.
    - [Runtime README](../../deployment/m5-runtime/README.md): deploy mechanics.
    - History files (linked at the end of this section): consult them for a specific question.
-4. **Deploy** only under a current owner approval ([effective resource scope](operating-model.md#effective-resource-scope); the 12–13 November approval is consumed, and that batch asked the owner before each deploy). Follow the runtime README's [current state](../../deployment/m5-runtime/README.md#current-state) and [deploy next](../../deployment/m5-runtime/README.md#deploy-next). A theme or app-version release makes quotes fail closed from candidate creation until fresh admission after the release, about 35 minutes.
+4. **Deploy** autonomously to rewrite-dev under the standing 13 November approval in the [effective resource scope](operating-model.md#effective-resource-scope) (its limits are listed there; anything outside them still needs the owner). Follow the runtime README's [current state](../../deployment/m5-runtime/README.md#current-state) and [deploy next](../../deployment/m5-runtime/README.md#deploy-next). A theme or app-version release makes quotes fail closed from candidate creation until fresh admission after the release, about 35 minutes.
 5. **Standing approvals** are in the operating model's [effective resource scope](operating-model.md#effective-resource-scope), for example rewrite-dev test-gateway orders (then update the protected facts below). Consumed approvals are not reusable.
 6. **Local tests on the dev host:** use the toolchain pins in the [README](../../README.md), and set `TMPDIR` to a directory under your home. `/tmp` there is a small per-user tmpfs that is nearly full.
+7. **Native QA on the dev host:** `~/insignia-qa/RECIPE.md` (outside the repo) drives the Designer iframe with T3 preview tools; `~/insignia-qa/load/loadtest.mjs` is a bounded scripted-buyer load test. All browsers on the host share one visitor address, so new buyer sessions count against the 60-per-hour per-visitor limit; leave headroom, empty every cart and place no orders unless a task explicitly needs a test order.
 
 ### Remaining work and end shape (owner-agreed roadmap, 12 November 2026)
 
@@ -47,7 +48,7 @@ Updated 13 November 2026. Insignia runs only on `app.insigniacustomizer.com`, on
 - Two minor signer review items remain:
   - web can overwrite the active key's envelope (denial of service only);
   - a millisecond race between a revoke and a signature.
-- Reduce `INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON` to `appKey` only at the next web deploy. Its legacy query fields were kept for rollback to a pre-PR298 web image, and since #374 no such image is a rollback target ([runtime README](../../deployment/m5-runtime/README.md#expected-function-configuration)).
+- Reduce `INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON` to `appKey` only at the next web deploy (owner confirmed 13 November 2026: the legacy fields are not needed). Its legacy query fields were kept for rollback to a pre-PR298 web image, and since #374 no such image is a rollback target ([runtime README](../../deployment/m5-runtime/README.md#expected-function-configuration)).
 - Delete the owner-supplied Cloudflare Rules token when the domain work is final; the owner will say when.
 
 **Owner decisions in force (11–12 November 2026).**
