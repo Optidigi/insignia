@@ -15,6 +15,26 @@ Read the sections below with these later changes in mind:
 - **Found in deploy 2.** The same-page reopen quantity was fixed by #403 in deploy 3. The synchronous release collection seen in deploy 1 was addressed by #377 in deploy 2.
 - **Rollback.** Web images up to `bf512171` (every image below except deploy 3's) are no longer rollback targets (#374).
 
+## Deploy 4: main `9b5dbdee` — deployed and released 13 November 2026
+
+Pre-public fix batch under the standing 13 November dev store and app grant: #419 (#416 decimal quantity), #420 (#412/#413 focus), #421 (#414/#415 names), #422 (#406 batched erasure, migration 63) and #423 (#417 artwork label), plus web's `INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON` reduced to `appKey` only (worker and verifier never carried it).
+
+**CI.** `9b5dbdee`: runtime 43486269921/1, foundation 43486269787/1; durable core 43477584688/1 on `8cfa4699` (#422), after which no durable-core path changed. Binding `1bd804a2` (#425): PR runs 43489260866, 43489260745 and 43489260934 passed; main runtime 43491313745/1; main foundation 43491313736 failed attempt 1 on the flaky "chromium: Escape routes every close through the close and upload decisions" (5/5 locally) and passed attempt 2. Phase B and the release ran at 19:34Z on the passed runtime images while foundation attempt 2 was still running; the merge tree equals the PR head tree that passed foundation.
+
+**Database.** DB-only checkpoint restore-verified at `19:03:49Z` with a dry run of migration 63; encrypted copies shredded at `19:48:21Z`. Migration 63 applied at `19:04:08Z` through the guarded schema owner: schema 63, column/function/relation ACL digests unchanged (column `ae2043f790171fa854016a8679e5b155`), both function bodies equal the dry run and no longer delete sessions.
+
+**Server side (stage 1, profile `native-session-drafts-c78a8179`), `19:04:18–20Z`.** Verifier `sha256:00d9a320…` (code manifest `f321379d…`), web `sha256:a1072080…`, worker `sha256:082bd092…`; signer and inspector unchanged. Web and quiesced worker read record `a3e69ff7…`.
+
+**Shopify version `1207622696961` (`native-a11y-quantity-9b5dbdee`).** Created once at `19:05:02Z` from the frozen `native-session-drafts-c78a8179` staging; only the 15 theme assets (6 differ from Active), byte-identical to a local build; Functions unchanged. Inventory 39, module hash `43ee5457…`. Phase B `19:34:04–06Z`: verifier `sha256:1d407588…` (code manifest `70442dd1…`), web `sha256:cd998369…`, worker `sha256:8653b9af…`. One `app release`, exit 0 at `19:34:25.6Z`; readback at `19:34:28Z`: sole Active is the candidate, inventory equals the binding, NEVER_RELEASE inactive, Active modules equal the baseline. Fresh admission: record `0e335396-abf5-4c97-b007-4118247af787` at `19:34:37.985Z`.
+
+**Fail-closed window** `19:05:02Z`–`19:34:38.0Z` (about 30 min): 0 sessions, proposals, cart applications, commands and artwork rows (last buyer activity `14:47:52Z`).
+
+**Readback.** No error-level lines in web, worker, signer or verifier; the worker's two warns are the expected `lifecycle_credential_unavailable`, one per process start. `/live` 200, direct origin 403, other sites unchanged. Protected facts 9/8/2/8/11 before and after. A helper script aborted once on a Python formatting bug before writing an intent or sending SQL, and ran once after the fix.
+
+**Native verification** (incognito Chromium, T-shirt demo, about `19:40–19:50Z`; cart emptied, no order): keyboard open focuses the skip link with a 3 px ring (#412); Tab from the last control wraps to the skip link and Shift+Tab back (#413); "+1, All 6 options" (#414); empty placement named "Choose artwork" (#415); typed `1.5` and `1,5` stay invalid and unpriced, Review blocked, `2` prices 2 items $34.90 (#416); after a reload the resume prompt focuses Continue, the skip link stays hidden on a pointer open, and the restored artwork reads "Ontwerp" in Nederlands (#417). #406 is verified by database readback only.
+
+**Custody.** `/home/serveradmin/.local/share/insignia/recovery-release-20261110/9b5dbdee-deploy-1/deployment-receipt.json` on prod (sha256 `eb140e2b…`), copy on the dev host. Prior images stay loaded.
+
 ## Deploy 3: main `c78a8179` — deployed and released 13 November 2026
 
 Same owner approval and procedure as deploys 1 and 2. Ships #394 (signing fence without provider IO), #395 (draft write recovery), #399 (earlier-session expiry checks), #402 (owner emergency revoke), #404/#407 (larger session quotas, batched cleanup, `SESSION_QUOTA`), #405 (drafts without quantities, autosave) and the theme changes #391 (German theme locale, *Sie*), #395, #397/#403, #399, #401, #405 and #407; #398 is admin-only German.

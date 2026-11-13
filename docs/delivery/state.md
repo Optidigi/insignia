@@ -2,11 +2,11 @@
 
 ## Active assignment
 
-Updated 13 November 2026. Insignia runs only on `app.insigniacustomizer.com`, on rewrite-dev (host alias `prod`, store `insignia-rewrite-dev`). The 12–13 November bug batch is complete. Main up to `c78a8179` is deployed and released as version `1206211837953`; exact identities are in [Deployed identities](#deployed-identities). **Now: the [pre-public fix batch](#pre-public-fix-batch-13-november-2026)** (#412–#417 from the 13 November native QA pass, plus #406); **then phase 2, UI acceptance.** The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
+Updated 13 November 2026. Insignia runs only on `app.insigniacustomizer.com`, on rewrite-dev (host alias `prod`, store `insignia-rewrite-dev`). The 12–13 November bug batch and the 13 November [pre-public fix batch](#pre-public-fix-batch-13-november-2026) (#406, #412–#417) are complete: fixed, deployed and natively verified. Main up to `9b5dbdee` is deployed and released as version `1207622696961`; exact identities are in [Deployed identities](#deployed-identities). **Next: phase 2, UI acceptance.** The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
 
 ### Picking this up
 
-1. **Verify the checkout.** `git fetch origin`, then check branch, `HEAD` and `git status -sb`; start new work from current `origin/main` and preserve dirty work and other worktrees. Deployed application source is main `c78a8179` (binding `04e8a411`). `git diff --stat 04e8a411 origin/main -- . ':!*.md'` lists non-Markdown changes since then; Markdown-only commits are not code drift.
+1. **Verify the checkout.** `git fetch origin`, then check branch, `HEAD` and `git status -sb`; start new work from current `origin/main` and preserve dirty work and other worktrees. Deployed application source is main `9b5dbdee` (binding `1bd804a2`). `git diff --stat 1bd804a2 origin/main -- . ':!*.md'` lists non-Markdown changes since then; Markdown-only commits are not code drift.
 2. **Read** this section, [Known behaviour, limits and open follow-ups](#known-behaviour-limits-and-open-follow-ups) and the [checklist](#owneroperator-checklist) rows your task touches.
 3. **Find the owner of a fact.**
    - This file: status, deployed identities, known limits and owner/operator actions.
@@ -34,11 +34,12 @@ Updated 13 November 2026. Insignia runs only on `app.insigniacustomizer.com`, on
 | 1 Storefront flow on the new domain | **Done** 12 Nov | — | — | Owner ran the full flow; no deltas. |
 | Signing hardening | **Done** 11 Nov | Automatic: the worker job destroyed key 1 at 12 Nov `00:00:29Z` and destroys key 2 from 16 Nov 00:00Z. | Optional later: HSM/KMS (e.g. AWS KMS Ed25519) instead of the local signer. | Non-expiring key 3 signs via the signer; retired keys hold no private half. |
 | 4 Customer email (development) | **Done** 11 Nov | — | — | Received SPF/DKIM/DMARC pass and order #1009 mailed `admin@optidigi.nl` only. |
-| Bug batch (#334–#351 and follow-ups) | **Done** 12–13 Nov | Only #406, in phase 7. | — | 17 original issues and their follow-ups fixed, deployed in three rewrite-dev deploys and natively verified ([batch summary](#bug-batch-1213-november-2026)). |
+| Bug batch (#334–#351 and follow-ups) | **Done** 12–13 Nov | — | — | 17 original issues and their follow-ups fixed, deployed in three rewrite-dev deploys and natively verified ([batch summary](#bug-batch-1213-november-2026)). |
+| Pre-public fix batch (#406, #412–#417) | **Done** 13 Nov | Follow-up #424 (S4). | — | Fixed, deployed in deploy 4 and natively verified ([batch summary](#pre-public-fix-batch-13-november-2026)). |
 | 2 UI acceptance | **Next** | Agent prepares a review checklist of merchant-admin and Designer screens and states (wide and narrow, both themes); fixes findings. | Review and accept (checklist rows "Merchant UI" and "Selected Designer visual fidelity"). | Explicit owner acceptance recorded. |
 | 5 Production foundations | Open | Production storage and credentials cutover; off-host encrypted backup plus a full loss-recovery rehearsal (RPO 24 h / RTO 4 h); installed monitoring and alert relay with receiver authentication; restart and rollback qualification. | Allocate credentials and storage. The owner implements server backup in a separate session; it must back up `runtime/signer-secrets/signing-wrap-keys.json` in custody separate from database backups. | The matching checklist rows close with their stated evidence. |
 | 6 Commercial readiness | Open | Real $49.99 / 30-day plan, invoice and trial-to-paid; public-app/distribution settings; merchant, market and currency eligibility (EUR); **email proof:** Cloudflare arbitrary-recipient sending entitlement evidence so customer mode can mail real buyers (development mode stays admin-only until then). | Billing, distribution and market choices; obtain the Cloudflare entitlement evidence. | The "Native/commercial eligibility" row closes and customer mode is enabled with real evidence. |
-| 7 Uninstall and privacy | Open | Reconcile the VAT installation's original uninstall dispatch against actual provider state; qualify erasure and reinstall fencing end to end. (#406, batched erasure of a shop's buyer sessions, moved to the pre-public fix batch.) | A concrete allocation for any new effect. | The "Genuine uninstall/privacy" row closes. |
+| 7 Uninstall and privacy | Open | Reconcile the VAT installation's original uninstall dispatch against actual provider state; qualify erasure and reinstall fencing end to end. (#406, batched erasure of a shop's buyer sessions, is done in the pre-public fix batch.) | A concrete allocation for any new effect. | The "Genuine uninstall/privacy" row closes. |
 | 8 Rollout | Not approved | First real merchant. | Explicit go. | Owner authorization after the gates above. |
 
 **Small pending checks.**
@@ -48,7 +49,6 @@ Updated 13 November 2026. Insignia runs only on `app.insigniacustomizer.com`, on
 - Two minor signer review items remain:
   - web can overwrite the active key's envelope (denial of service only);
   - a millisecond race between a revoke and a signature.
-- Reduce `INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON` to `appKey` only at the next web deploy (owner confirmed 13 November 2026: the legacy fields are not needed). Its legacy query fields were kept for rollback to a pre-PR298 web image, and since #374 no such image is a rollback target ([runtime README](../../deployment/m5-runtime/README.md#expected-function-configuration)).
 - Delete the owner-supplied Cloudflare Rules token when the domain work is final; the owner will say when.
 
 **Owner decisions in force (11–12 November 2026).**
@@ -61,19 +61,21 @@ Updated 13 November 2026. Insignia runs only on `app.insigniacustomizer.com`, on
 
 ### Pre-public fix batch, 13 November 2026
 
-Owner-approved 13 November 2026, before the public app. A native keyboard and six-language QA pass on version `1206211837953` (evidence under `~/insignia-qa/runs/2026-11-13/` on the dev host) filed #412–#417; the owner also pulled #406 forward from phase 7. Deploy to rewrite-dev afterwards under the standing [dev store and app grant](operating-model.md#effective-resource-scope), then verify natively.
+Owner-approved 13 November 2026, before the public app. A native keyboard and six-language QA pass on version `1206211837953` (evidence under `~/insignia-qa/runs/2026-11-13/` on the dev host) filed #412–#417; the owner also pulled #406 forward from phase 7. All are fixed, deployed in deploy 4 and closed.
 
-| Issue | Severity | Summary | Stream |
+| Issue | Severity | Fix | Native result (13 Nov, about 19:40–19:50Z) |
 | --- | --- | --- | --- |
-| #416 | S1 | Typing `1.5` into a quantity stores 51 and prices 51 items; Review stays enabled | A |
-| #412 | S3 | Designer opens with focus on the iframe, no visible ring | B |
-| #413 | S3 | Tab from the empty Artwork step leaves the dialog for the storefront | B |
-| #414 | S3 | Colour overflow "+1" is named "All 6 options" | B |
-| #415 | S4 | Empty placement control is named "Choose artwork Choose" | B |
-| #417 | S4 | File list keeps English "Artwork" in other Designer languages | B |
-| #406 | — | Uninstall/privacy erasure deletes all of a shop's buyer sessions in one statement | C |
+| #416 | S1 | #419: the quantity field is a text input with a numeric keypad; only plain digits count | Typed `1.5` and `1,5` stay as typed, invalid and unpriced; Review stays on Quantities; `2` prices 2 items |
+| #412 | S3 | #420: a keyboard open focuses the visible skip link; a pointer open focuses the Designer without showing it | Skip link focused with a 3 px ring |
+| #413 | S3 | #420: Tab wraps inside the Designer | Tab from "Add artwork" (last stop) reaches the skip link; Shift+Tab wraps back |
+| #414 | S3 | #421: name "+n, All N options" | "+1, All 6 options" |
+| #415 | S4 | #421: the trailing action is hidden from the name when the heading already contains it | Named "Choose artwork" |
+| #417 | S4 | #423: an unnamed (restored) artwork is labelled at render time in the current language | Restored draft reads "Ontwerp" in Nederlands; the rejected-upload path was not repeated natively |
+| #406 | — | #422, migration 63: erasure fences only; bounded cleanup removes the sessions | Readback only: both functions no longer delete sessions; no uninstall run |
 
-Next web deploy also reduces `INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON` to `appKey` (small pending checks).
+**Deploy 4** (13 Nov, standing [dev store and app grant](operating-model.md#effective-resource-scope)): source `9b5dbdee`, binding `1bd804a2` (#425), version `1207622696961` (`native-a11y-quantity-9b5dbdee`), schema 63, fail-closed window `19:05:02Z`–`19:34:38.0Z` (about 30 min, no buyer rows in it). Web's `INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON` is `appKey` only. Record in the [deploy history](history-2026-11-12-bug-batch.md#deploy-4-main-9b5dbdee--deployed-and-released-13-november-2026).
+
+**Follow-up.** #424 (S4): a cart-review row for a product without a title falls back to "Artwork" in the page locale, not the Designer language.
 
 ### Bug batch, 12–13 November 2026
 
@@ -108,20 +110,20 @@ No buyer traffic arrived in any window, and no deploy made a production resource
 
 ### Deployed identities
 
-Rewrite-dev on host alias `prod`, as of 13 November 2026 `01:39Z`.
+Rewrite-dev on host alias `prod`, as of 13 November 2026 `19:34Z`.
 
 | Component | Identity | Source |
 | --- | --- | --- |
-| Shopify Active version | `1206211837953`, profile `native-session-drafts-c78a8179`; 38 versions, module hash `dc980bc1…`; NEVER_RELEASE versions inactive | theme from main `c78a8179` |
+| Shopify Active version | `1207622696961`, profile `native-a11y-quantity-9b5dbdee`; 39 versions, module hash `43ee5457…`; NEVER_RELEASE versions inactive | theme from main `9b5dbdee` |
 | Functions | transform wasm `5c8708b5…` (module `826a9059…`, query `02ab5bce…`), validation wasm `6c362b36…` (module `076bfef2…`, query `5867e61f…`) | `aa3b6166` |
-| Web | `sha256:9a482301…` | main `04e8a411` |
-| Worker | `sha256:33c04e12…` | main `04e8a411` |
-| Verifier | `sha256:2fd64493…`, code manifest `a3e8fa58…` | main `04e8a411` |
+| Web | `sha256:cd998369…` | main `1bd804a2` |
+| Worker | `sha256:8653b9af…` | main `1bd804a2` |
+| Verifier | `sha256:1d407588…`, code manifest `70442dd1…` | main `1bd804a2` |
 | Signer | `sha256:b5cdb5e8…` | main `fb30b947` |
 | Host inspector | `~/insignia-artwork-releases/b2d631706dcd3ae05afb2b63a1bd1868e523bb46/` | `b2d63170` |
-| Database | PostgreSQL 18.6, schema 62; expected column-ACL digest `ae2043f790171fa854016a8679e5b155` | 62 repository migrations |
+| Database | PostgreSQL 18.6, schema 63; expected column-ACL digest `ae2043f790171fa854016a8679e5b155` | 63 repository migrations |
 
-`04e8a411` is the binding of application source `c78a8179`. Fresh web and quiesced worker reads matched release record `fcf6ec10…` at `01:39:37.411Z`; that proof is finite, and every purchase still needs live checks. Deploy receipt: `/home/serveradmin/.local/share/insignia/recovery-release-20261110/c78a8179-deploy-1/deployment-receipt.json` on prod. Prior images stay loaded.
+`1bd804a2` is the binding of application source `9b5dbdee`. Fresh web and quiesced worker reads matched release record `0e335396…` at `19:34:37.985Z`; that proof is finite, and every purchase still needs live checks. Deploy receipt: `/home/serveradmin/.local/share/insignia/recovery-release-20261110/9b5dbdee-deploy-1/deployment-receipt.json` on prod (copy at the same path on the dev host). Prior images stay loaded.
 
 **Protected facts:** orders 9, paid 8, refunds 2, bindings 8, lines 11 (after test order #1009). Every preflight expects these; update them after each test order.
 
@@ -138,13 +140,13 @@ The signing wrapping key lives only in `runtime/signer-secrets/signing-wrap-keys
 **Customer artwork email** runs in development mode since 11 Nov `23:45:02Z`: recipient fixed to `admin@optidigi.nl`, no backfill (the two earlier PENDING notices stay untouched). Customer mode for real buyers stays disabled.
 
 **Custody locators** on prod (for an authorized operator; not fresh-clone prerequisites or execution authority), under `/home/serveradmin/.local/share/insignia/`:
-- `recovery-release-20261110/`: deploy receipts `c78a8179-deploy-1` (current), `bf512171-deploy-1`, `fb436e16-deploy-1`, `origin-lock-20261111-1`, `cart-line-v3-final-42943190043-1`, Phase A `cart-line-v3-42932707400-1` and `functions-renew-final-42893217931-1`.
+- `recovery-release-20261110/`: deploy receipts `9b5dbdee-deploy-1` (current), `c78a8179-deploy-1`, `bf512171-deploy-1`, `fb436e16-deploy-1`, `origin-lock-20261111-1`, `cart-line-v3-final-42943190043-1`, Phase A `cart-line-v3-42932707400-1` and `functions-renew-final-42893217931-1`.
 - `legacy-generic-removal-20261111/`: final dump, compose file, env and crontab of the removed `insignia.optidigi.nl` stack (0600).
 - The host has no mutable checkout; services use immutable images and packages.
 
 ### Known behaviour, limits and open follow-ups
 
-**Open issues.** #406 and #412–#417, in the [pre-public fix batch](#pre-public-fix-batch-13-november-2026).
+**Open issues.** #424 (S4, see the [pre-public fix batch](#pre-public-fix-batch-13-november-2026)).
 
 **Released but not visible to buyers.**
 - German theme cart messages: the *Sie* text (#391) is released, but the store publishes English only (`/de/cart` returns 404), so buyers don't see it.
@@ -160,14 +162,14 @@ The signing wrapping key lives only in `runtime/signer-secrets/signing-wrap-keys
 - Two tabs editing the same cart line overwrite each other: the last write wins, bounded.
 
 **Known behaviour.**
-- A restored draft labels its artwork "Artwork" instead of the file name: drafts store IDs only.
+- A restored draft labels its artwork with the translated word for artwork ("Artwork", "Ontwerp", …) instead of the file name: drafts store IDs only (#423).
 - On a same-page reopen, an unapplied Designer quantity edit is kept; after a reload the cart quantity is used (#397, #403).
 - Cart replacement adds new lines before removing old ones (#353), so it briefly needs extra stock. After a 422 it falls back to `cart/change.js`; that pairing is heuristic and can still refuse when stock is tight ([spec §8.4](../architecture/implementation-plan.md#84-acceptance-and-cart-application)).
 
 **Limits.**
 - The signer's 120 signatures per minute per shop (burst 60) is the next per-shop throughput cap, now that #381 removed the acceptance-fence starvation.
 - Emergency revoke (#375) needs a staff session in the embedded admin. The signing page locks itself read-only in a browser after one start, so a second run needs another browser profile or cleared site data. An operator-only path without a staff session would need new owner decisions ([runtime README](../../deployment/m5-runtime/README.md#signing-wrapping-key-kek-custody)).
-- Each theme release makes quotes fail closed for about 35 minutes on rewrite-dev with the current binding procedure.
+- Each theme release makes quotes fail closed for about 30–35 minutes on rewrite-dev with the current binding procedure.
 - The protected VAT installation (`stitchs-vat-verification`) has no stored credential. Since #361 the worker logs `lifecycle_credential_unavailable` at warn, once per process start and then at most hourly. It stays `UNRESOLVED_NO_RETRY`; its leftover old-host per-shop uninstall subscription stays by owner decision.
 
 **Dev host.**
