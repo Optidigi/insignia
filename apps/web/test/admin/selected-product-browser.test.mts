@@ -344,7 +344,7 @@ test('unsaved merchant preview accepts a viewBox-only SVG without production upl
     if (request.method() !== 'GET') requests.push(new URL(request.url()).pathname);
   });
   await preview.getByRole('button', { name: 'Add artwork', exact: true }).click();
-  await preview.getByRole('button', { name: 'Choose artwork Choose', exact: true }).click();
+  await preview.getByRole('button', { name: 'Choose artwork', exact: true }).click();
   await preview
     .locator('input[type=file]')
     .setInputFiles(new URL('../../../../frontend/designer/public/trail-logo.svg', import.meta.url).pathname);

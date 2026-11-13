@@ -1526,9 +1526,10 @@ function DesignerSession({
                 {colors.length > visibleColors.length && (
                   <button
                     className="more-colors"
-                    aria-label={t('customer:options.allOptions', {
+                    // The name starts with the visible "+n" (label in name), then says what it opens.
+                    aria-label={`+${colors.length - visibleColors.length}, ${t('customer:options.allOptions', {
                       count: colors.length,
-                    })}
+                    })}`}
                     onClick={() => {
                       openModal({ kind: 'colors', mode: 'choose' });
                     }}
@@ -1640,7 +1641,8 @@ function DesignerSession({
                                 )}
                               </strong>
                             </span>
-                            <span className="text-action">
+                            {/* Empty: "Choose artwork" already says the action; the trailing "Choose" is decoration. */}
+                            <span className="text-action" aria-hidden={!art && p.artworkId !== 'later' ? true : undefined}>
                               {art ? t('customer:artwork.change') : t('customer:artwork.choose')}
                             </span>
                           </button>
