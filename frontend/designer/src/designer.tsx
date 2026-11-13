@@ -77,6 +77,11 @@ export interface DesignerProps {
   suspended?: boolean;
   /** Host Escape/close intent. The reducer decides whether to confirm or close. */
   requestCloseSignal?: number;
+  /**
+   * The host shows the Designer to the buyer; each new object applies once. Focus enters the Designer unless a
+   * dialog already owns it: the visible skip link when opened by keyboard, the Designer itself when by pointer.
+   */
+  entryFocusSignal?: { keyboard: boolean };
   hostErrorSignal?: number;
   cartReviewedSignal?: number;
   /** The host observed this design's cart line change outside the Designer; each new object applies once. */
@@ -117,6 +122,37 @@ export interface DesignerProps {
   /** The Designer is its document's only content (the storefront srcdoc frame): mirror its language there. */
   ownsDocumentLanguage?: boolean;
 }
+/** The controls Tab visits inside `root`, in order. */
+function tabStops(root: HTMLElement) {
+  return [
+    ...root.querySelectorAll<HTMLElement>(
+      'button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href],summary,[tabindex]',
+    ),
+  ].filter(
+    (target) =>
+      target.tabIndex >= 0 &&
+      !(target instanceof HTMLInputElement && target.type === 'radio' && !target.checked) &&
+      target.getClientRects().length > 0 &&
+      !target.closest('[hidden],[inert]'),
+  );
+}
+/** Tab from the last control (Shift+Tab from the first) wraps inside `root` instead of leaving it. */
+function wrapTab(event: KeyboardEvent, root: HTMLElement) {
+  const targets = tabStops(root);
+  const first = targets[0];
+  const last = targets.at(-1);
+  if (
+    first &&
+    last &&
+    (event.shiftKey
+      ? document.activeElement === first || !root.contains(document.activeElement)
+      : document.activeElement === last || !root.contains(document.activeElement))
+  ) {
+    event.preventDefault();
+    (event.shiftKey ? last : first).focus();
+  }
+}
+
 export function Designer(props: DesignerProps) {
   const language = useCustomerLanguage({
     hostLocale: props.locale,
@@ -154,6 +190,7 @@ function DesignerSession({
   onPreviewFailure,
   hostErrorSignal,
   requestCloseSignal,
+  entryFocusSignal,
   cartReviewedSignal,
   observedCartLine,
   initialPrints = [],
@@ -345,6 +382,8 @@ function DesignerSession({
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const appRef = useRef<HTMLDivElement>(null);
+  const skipLinkRef = useRef<HTMLAnchorElement>(null);
   const opener = useRef<HTMLElement | null>(null);
   const previousStep = useRef(step);
   const workflowRef = useRef(workflow);
@@ -399,6 +438,14 @@ function DesignerSession({
     if (workflowRef.current.open && workflowRef.current.modal.kind !== 'closed') requestCloseModal();
     else requestReturnToProduct();
   }, [requestCloseSignal]);
+  useEffect(() => {
+    // Opening moves focus from the host's iframe element to a visible control inside the Designer. A dialog
+    // that opened with it (resume prompt, close decision) has already chosen its own control.
+    if (!entryFocusSignal || suspended || !workflowRef.current.open || workflowRef.current.modal.kind !== 'closed')
+      return;
+    // A pointer open must not pop the skip link over the header; Tab from the Designer still reaches it first.
+    (entryFocusSignal.keyboard ? skipLinkRef.current : appRef.current)?.focus({ preventScroll: true });
+  }, [entryFocusSignal]);
   const reviewIntent = designerIntentKey(workflow);
   const beforeQuantities = step === 0;
   const eagerReviewStarted = useRef(false);
@@ -791,31 +838,22 @@ function DesignerSession({
         event.preventDefault();
         requestCloseModal();
       }
-      if (event.key === 'Tab' && dialog) {
-        const targets = [
-          ...dialog.querySelectorAll<HTMLElement>(
-            'button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href],[tabindex]',
-          ),
-        ].filter(
-          (target) => target.tabIndex >= 0 && target.getClientRects().length > 0 && !target.closest('[hidden],[inert]'),
-        );
-        const first = targets[0],
-          last = targets.at(-1);
-        if (
-          first &&
-          last &&
-          (event.shiftKey
-            ? document.activeElement === first || !dialog.contains(document.activeElement)
-            : document.activeElement === last || !dialog.contains(document.activeElement))
-        ) {
-          event.preventDefault();
-          (event.shiftKey ? last : first).focus();
-        }
-      }
+      if (event.key === 'Tab' && dialog) wrapTab(event, dialog);
     };
     document.addEventListener('keydown', listener);
     return () => document.removeEventListener('keydown', listener);
   }, [modal, designerOpen]);
+  useEffect(() => {
+    // The host dialog cannot see keys pressed in this frame: Tab past the last control would leave
+    // the dialog for the page behind it, so the Designer wraps focus itself.
+    const root = appRef.current;
+    if (!root || modal.kind !== 'closed' || !designerOpen || suspended || artworkOnly) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Tab' && !event.defaultPrevented) wrapTab(event, root);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [modal, designerOpen, suspended, artworkOnly]);
   useEffect(() => {
     if (modal.kind !== 'closed' || !designerOpen || artworkOnly) return;
     const onKey = (event: KeyboardEvent) => {
@@ -1151,6 +1189,8 @@ function DesignerSession({
   return (
     <>
     <div
+      ref={appRef}
+      tabIndex={-1}
       inert={!designerOpen}
       className={`app ${artworkOnly ? 'admin-preview' : ''} ${previewExpanded && focusPolicy?.movementArea ? 'preview-expanded' : ''}`}
       style={suspended ? { display: 'none' } : undefined}
@@ -1159,6 +1199,7 @@ function DesignerSession({
       dir={dir}
     >
       <a
+        ref={skipLinkRef}
         className="skip-link"
         href="#design-controls"
         onClick={(event) => {
