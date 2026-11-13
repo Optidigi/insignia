@@ -141,7 +141,7 @@ function Frame({ initial }: { initial: Initial }) {
   const [quote, setQuote] = useState<DesignerQuoteReview>();
   const [hostError, setHostError] = useState(0);
   const [requestClose, setRequestClose] = useState(0);
-  const [entryFocus, setEntryFocus] = useState(0);
+  const [entryFocus, setEntryFocus] = useState<{ keyboard: boolean }>();
   const [reviewed, setReviewed] = useState(0);
   const [cartLine, setCartLine] = useState<{ design: Design }>();
   const [wording, setWording] = useState(initial.wording);
@@ -178,7 +178,7 @@ function Frame({ initial }: { initial: Initial }) {
       if (event.data.type === 'insignia:designer:open') {
         setVisible(true);
         setOpen(true);
-        setEntryFocus((value) => value + 1);
+        setEntryFocus({ keyboard: event.data.keyboard === true });
       }
       if (event.data.type === 'insignia:designer:suspend') setVisible(false);
       if (event.data.type === 'insignia:designer:request-close') {

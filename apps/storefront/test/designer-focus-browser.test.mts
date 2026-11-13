@@ -195,6 +195,37 @@ for (const engine of [chromium, firefox]) {
     assert.equal((await focusState(page)).hostId, 'trigger');
   });
 
+  test(`${engine.name()}: a pointer-opened Designer takes focus without popping the skip link over its header`, async (t) => {
+    const page = await openProductPage(t, engine, {});
+    await page.locator('#trigger').click();
+    await page.frameLocator('dialog > iframe').locator('.app').waitFor({ timeout: 10000 });
+    await page.waitForFunction(
+      () =>
+        document
+          .querySelector<HTMLIFrameElement>('dialog > iframe')
+          ?.contentDocument?.activeElement?.classList.contains('app'),
+      undefined,
+      { timeout: 2000 },
+    );
+    const skipTop = () =>
+      page.evaluate(() => {
+        const inner = document.querySelector<HTMLIFrameElement>('dialog > iframe')?.contentDocument;
+        const link = inner?.querySelector('.skip-link');
+        return link ? link.getBoundingClientRect().bottom : Number.NaN;
+      });
+    const state = await focusState(page);
+    assert.equal(state.host, 'iframe');
+    assert.equal(state.frameFocused, true);
+    assert.equal(state.outline, false, 'the Designer itself shows no ring');
+    assert.ok((await skipTop()) <= 0, 'the skip link stays off screen');
+    // The keyboard still starts inside the Designer: the first Tab reaches the skip link, now visible.
+    await page.keyboard.press('Tab');
+    const next = await focusState(page);
+    assert.equal(next.name, 'Skip to design controls');
+    assert.equal(next.outline, true);
+    assert.ok((await skipTop()) > 0, 'the focused skip link is shown');
+  });
+
   test(`${engine.name()}: a prepared hidden Designer does not take focus until it is opened`, async (t) => {
     const page = await openProductPage(t, engine, { hidden: true });
     await page.locator('#trigger').focus();

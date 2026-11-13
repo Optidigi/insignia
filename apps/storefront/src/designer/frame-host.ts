@@ -64,6 +64,14 @@ export function prewarmDesignerAssets(): () => void {
 }
 
 /** Run the selected CSS and event handlers in their own document, never in the Shopify theme. */
+// Whether the buyer last used the keyboard on this page. A keyboard-opened Designer shows where focus
+// landed; a pointer-opened one does not reveal its skip link (#412).
+let keyboardInput = false;
+if (typeof document !== 'undefined') {
+  document.addEventListener('keydown', () => (keyboardInput = true), true);
+  document.addEventListener('pointerdown', () => (keyboardInput = false), true);
+}
+
 export function createDesignerFrame(input: {
   modal?: ReturnType<typeof createDesignerModal>;
   config?: ProductConfig;
@@ -196,7 +204,7 @@ export function createDesignerFrame(input: {
     // The shown Designer takes focus: the frame element first, then a control inside it.
     if (!frame.hidden && modal.dialog.open) {
       frame.focus();
-      send('insignia:designer:open');
+      send('insignia:designer:open', { keyboard: keyboardInput });
     }
   }
   frame.addEventListener('load', () => {
@@ -409,7 +417,7 @@ export function createDesignerFrame(input: {
       if (destroyed || failed) return false;
       frame.hidden = false;
       modal.show();
-      if (ready) send('insignia:designer:open');
+      if (ready) send('insignia:designer:open', { keyboard: keyboardInput });
       if (initialized) frame.focus();
       return true;
     },

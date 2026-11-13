@@ -77,8 +77,11 @@ export interface DesignerProps {
   suspended?: boolean;
   /** Host Escape/close intent. The reducer decides whether to confirm or close. */
   requestCloseSignal?: number;
-  /** The host shows the Designer to the buyer: focus enters its first control, unless a dialog already owns focus. */
-  entryFocusSignal?: number;
+  /**
+   * The host shows the Designer to the buyer; each new object applies once. Focus enters the Designer unless a
+   * dialog already owns it: the visible skip link when opened by keyboard, the Designer itself when by pointer.
+   */
+  entryFocusSignal?: { keyboard: boolean };
   hostErrorSignal?: number;
   cartReviewedSignal?: number;
   /** The host observed this design's cart line change outside the Designer; each new object applies once. */
@@ -439,7 +442,8 @@ function DesignerSession({
     // that opened with it (resume prompt, close decision) has already chosen its own control.
     if (!entryFocusSignal || suspended || !workflowRef.current.open || workflowRef.current.modal.kind !== 'closed')
       return;
-    skipLinkRef.current?.focus({ preventScroll: true });
+    // A pointer open must not pop the skip link over the header; Tab from the Designer still reaches it first.
+    (entryFocusSignal.keyboard ? skipLinkRef.current : appRef.current)?.focus({ preventScroll: true });
   }, [entryFocusSignal]);
   const reviewIntent = designerIntentKey(workflow);
   const beforeQuantities = step === 0;
@@ -1185,6 +1189,7 @@ function DesignerSession({
     <>
     <div
       ref={appRef}
+      tabIndex={-1}
       inert={!designerOpen}
       className={`app ${artworkOnly ? 'admin-preview' : ''} ${previewExpanded && focusPolicy?.movementArea ? 'preview-expanded' : ''}`}
       style={suspended ? { display: 'none' } : undefined}

@@ -14,6 +14,10 @@
 .skip-link:focus {
   top: 8px;
 }
+/* Focus target of a pointer-opened Designer (#412): not a control, so no ring. */
+.app:focus {
+  outline: none;
+}
 p,
 h1,
 h2,
