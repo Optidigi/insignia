@@ -60,7 +60,14 @@ export interface DesignerPorts {
    * The unfinished design changed (#366). The host decides when to save its draft; the design ID is the one the
    * review and cart requests of this design use.
    */
-  draft?: { changed(design: Design): void };
+  draft?: {
+    changed(design: Design): void;
+    /**
+     * A design reported earlier is empty again, or back at its starting state (a cart line undone to the cart): what
+     * was saved is no longer the buyer's design.
+     */
+    reverted(designId: string): void;
+  };
 }
 
 export function matchesCartReceipt(
@@ -89,7 +96,14 @@ export function createDesignerRuntime(
   getState: () => DesignerState,
   dispatch: (event: DesignerEvent) => void,
   /** Checking usually takes 2–4 s; past this the customer gets a retryable message instead of a spinner. */
-  { processingTimeoutMs = 30_000 }: { processingTimeoutMs?: number } = {},
+  {
+    processingTimeoutMs = 30_000,
+    resumeDraftId,
+  }: {
+    processingTimeoutMs?: number;
+    /** The saved draft behind "Continue your design?": continuing keeps editing it, without saving it again (#366). */
+    resumeDraftId?: string;
+  } = {},
 ) {
   const renewing = new Map<string, AbortController>();
   let reviewController: AbortController | undefined;
@@ -104,8 +118,10 @@ export function createDesignerRuntime(
   let attempt: { signature: string; designId: string; idempotencyKey: string; dispatched?: boolean } | null =
     null;
   /** One unfinished new design keeps one draft ID across edits and reviews (#366); an edited cart line uses its own. */
-  let newDesignId = crypto.randomUUID();
-  let reportedDraft: string | undefined;
+  let newDesignId = resumeDraftId ?? crypto.randomUUID();
+  /** The last design reported to the host, and its ID; undefined while there is nothing saved to keep current. */
+  let reported: { id: string; key: string } | undefined;
+  let resuming = resumeDraftId !== undefined;
   /** Retry-After: no review or Add to cart is sent before this time, and Retry stays held until the timer runs. */
   let retryNotBefore = 0;
   let retryTimer: ReturnType<typeof setTimeout> | undefined;
@@ -209,6 +225,9 @@ export function createDesignerRuntime(
       attempt = null;
       // In the cart now, it is edited under this ID; another new design needs its own.
       if (design.id === newDesignId) newDesignId = crypto.randomUUID();
+      // The cart line is now the starting state; only later edits are drafts.
+      reported = undefined;
+      resuming = false;
       dispatch({ type: "cart-commit-succeeded", requestId, receipt });
     } catch (error) {
       if (!controller.signal.aborted && commitController === controller) {
@@ -244,18 +263,29 @@ export function createDesignerRuntime(
     /** Report the design to the host when it holds something new worth keeping; the host debounces the save. */
     reportDraft() {
       const state = getState();
-      if (!ports.draft || state.modal.kind === 'resume-draft' || state.completion || !hasDraftChanges(state)) return;
-      const design = buildDraftDesign(state, state.editing ?? newDesignId);
-      if (!design) return;
+      if (!ports.draft || state.modal.kind === 'resume-draft' || state.completion) return;
+      const id = state.editing ?? newDesignId;
+      const design = hasDraftChanges(state) ? buildDraftDesign(state, id) : null;
+      if (resuming) {
+        // The continued design is its saved draft already.
+        resuming = false;
+        if (design) reported = { id, key: JSON.stringify(design) };
+      }
+      if (!design) {
+        if (reported?.id === id) ports.draft.reverted(id);
+        reported = undefined;
+        return;
+      }
       const key = JSON.stringify(design);
-      if (key === reportedDraft) return;
-      reportedDraft = key;
+      if (reported?.id === id && reported.key === key) return;
+      reported = { id, key };
       ports.draft.changed(design);
     },
     /** The buyer starts another design: it gets its own draft. */
     startNewDesign() {
       newDesignId = crypto.randomUUID();
-      reportedDraft = undefined;
+      reported = undefined;
+      resuming = false;
     },
     get reviewIntentId() { return attempt?.signature === designerIntentKey(getState()) ? attempt.idempotencyKey : undefined; },
     get reviewing() { return reviewing; },

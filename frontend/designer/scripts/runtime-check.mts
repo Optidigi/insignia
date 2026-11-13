@@ -1875,3 +1875,93 @@ test('a design offered behind "Continue your design?" is not reported until the 
   runtime.reportDraft();
   assert.equal(reports.length, 1);
 });
+
+function draftReports() {
+  const events: string[] = [];
+  const ports = {
+    artwork: { upload: async () => ({ id: 'x', name: 'x', url: '/x', width: 1, height: 1 }) },
+    cart: { commit: async (request: CartRequest) => receipt(request) },
+    draft: {
+      changed: (design: { id: string; prints: unknown[] }) => events.push(`changed ${design.id} ${design.prints.length}`),
+      reverted: (id: string) => events.push(`reverted ${id}`),
+    },
+  } as unknown as DesignerPorts;
+  return { events, ports };
+}
+
+test('a reported design that is emptied again tells the host, so a reload does not offer what was removed (#366)', () => {
+  const { events, ports } = draftReports();
+  let state = designerReducer(ready(), { type: 'quantity-entered', color: 'white', size: 's', value: 0 });
+  const runtime = createDesignerRuntime(ports, () => state, (event) => {
+    state = designerReducer(state, event);
+  });
+  runtime.reportDraft();
+  const id = String(events[0]).split(' ')[1];
+  state = designerReducer(state, { type: 'position-removed', positionId: 'front' });
+  runtime.reportDraft();
+  runtime.reportDraft();
+  assert.deepEqual(events, [`changed ${id} 1`, `reverted ${id}`], 'reported once');
+  // Placed again, it is reported again under the same draft.
+  state = designerReducer(state, { type: 'position-restored' });
+  runtime.reportDraft();
+  assert.deepEqual(events.at(-1), `changed ${id} 1`);
+});
+
+test('a cart line edited and then undone back to the cart tells the host (#366)', () => {
+  const { events, ports } = draftReports();
+  const line = { id: 'line', prints: [{ id: 'front', artworkId: 'logo', method: 'print', size: 0 }], quantities: { 'white:s': 2 } };
+  let state = createDesignerState({
+    rules: ready().rules,
+    view: 'front',
+    color: 'white',
+    prints: [],
+    active: 'front',
+    expanded: 'front',
+    artworks: [{ id: 'logo', name: 'Logo', url: '/logo.svg', width: 30, height: 20 }],
+    designerOpen: true,
+    initialDesign: line,
+  });
+  const runtime = createDesignerRuntime(ports, () => state, (event) => {
+    state = designerReducer(state, event);
+  });
+  runtime.reportDraft();
+  assert.deepEqual(events, [], 'the unchanged cart line is not a draft');
+  state = designerReducer(state, { type: 'quantity-entered', color: 'white', size: 's', value: 5 });
+  runtime.reportDraft();
+  state = designerReducer(state, { type: 'quantity-entered', color: 'white', size: 's', value: 2 });
+  runtime.reportDraft();
+  assert.deepEqual(events, ['changed line 1', 'reverted line']);
+});
+
+test('a continued design keeps its draft and is not saved again until the buyer changes it (#366)', () => {
+  const { events, ports } = draftReports();
+  const draft = { id: 'earlier', prints: [{ id: 'front', artworkId: 'logo', method: 'print', size: 0 }], quantities: {} };
+  let state = createDesignerState({
+    rules: ready().rules,
+    view: 'front',
+    color: 'white',
+    prints: [],
+    active: 'front',
+    expanded: 'front',
+    artworks: [{ id: 'logo', name: 'Logo', url: '/logo.svg', width: 30, height: 20 }],
+    designerOpen: true,
+    resumeDraft: draft,
+  });
+  const runtime = createDesignerRuntime(
+    ports,
+    () => state,
+    (event) => {
+      state = designerReducer(state, event);
+    },
+    { resumeDraftId: 'earlier' },
+  );
+  state = designerReducer(state, { type: 'modal-closed' });
+  runtime.reportDraft();
+  assert.deepEqual(events, [], 'Continue alone writes nothing');
+  state = designerReducer(state, { type: 'quantity-entered', color: 'white', size: 's', value: 3 });
+  runtime.reportDraft();
+  assert.deepEqual(events, ['changed earlier 1'], 'its edits update the same draft');
+  state = designerReducer(state, { type: 'position-removed', positionId: 'front' });
+  runtime.reportDraft();
+  assert.deepEqual(events.at(-1), 'reverted earlier');
+});

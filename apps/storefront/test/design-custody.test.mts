@@ -186,6 +186,7 @@ test('a cancelled draft save that still reached the server never blocks the next
           throw Object.assign(new Error('Draft changed'), { status: 409 });
         stored = { version: (stored?.version ?? 0) + 1, value: body.group as DesiredGroup };
         // The server applied the write, but the buyer's next edit cancelled the request before its answer.
+        if (signal === cancelled.signal) cancelled.abort();
         signal?.throwIfAborted();
         return { id, ...stored } as T;
       },
@@ -194,7 +195,6 @@ test('a cancelled draft save that still reached the server never blocks the next
   const at = (quantity: number): DesiredGroup => ({ ...group, variants: [{ variantId: '101', quantity }] });
   // The eager review saves the cart line's 3; the buyer types 4, which cancels that preparation.
   const cancelled = new AbortController();
-  cancelled.abort();
   await assert.rejects(custody.save(id, at(3), at(3), cancelled.signal));
   assert.equal(stored?.version, 1, 'the cancelled save reached the server');
   // The explicit Review saves the buyer's 4: it replaces this tab's own earlier write.
@@ -473,4 +473,80 @@ test('an autosave of what the server already holds writes nothing, not even a dr
   // A changed design is unfinished again.
   await custody.save(id, { ...group, variants: [] }, undefined, undefined, { onlyChanges: true });
   assert.equal(JSON.parse(shared.data.get(LATEST) ?? 'null').id, id);
+});
+
+test('a queued save cancelled before it is sent leaves the next save at the acknowledged version (#366)', async () => {
+  const trace: string[] = [];
+  let version = 0;
+  let hold: Promise<void> | undefined;
+  const custody = createSelectedDesignCustody({
+    namespace: '/apps/insignia',
+    storage: memoryStorage(),
+    api: {
+      async private<T>(path: string, body: Record<string, unknown>, signal?: AbortSignal): Promise<T> {
+        if (path.endsWith('/restore')) {
+          trace.push('restore');
+          return {
+            id,
+            version,
+            value: group,
+            expiresAt: '2027-01-01T00:00:00Z',
+            compatibility: 'current',
+            retained: null,
+          } as T;
+        }
+        // Like fetch: an aborted request is never sent.
+        if (signal?.aborted) {
+          trace.push('aborted-before-send');
+          throw new DOMException('Aborted', 'AbortError');
+        }
+        await hold;
+        if (body.expectedVersion !== version) {
+          trace.push(`PUT@${body.expectedVersion} 409`);
+          throw Object.assign(new Error('Draft changed'), { status: 409 });
+        }
+        trace.push(`PUT@${body.expectedVersion} ok`);
+        return { id, version: ++version, value: body.group } as T;
+      },
+    },
+  });
+  const at = (quantity: number): DesiredGroup => ({ ...group, variants: [{ variantId: '101', quantity }] });
+  await custody.save(id, at(1), undefined);
+  let release!: () => void;
+  hold = new Promise((resolve) => {
+    release = resolve;
+  });
+  const second = custody.save(id, at(2), undefined);
+  // An autosave queued behind it is cancelled before its turn (Start new, Add to cart or a newer edit).
+  const cancelled = new AbortController();
+  const third = custody.save(id, at(3), undefined, cancelled.signal);
+  cancelled.abort();
+  release();
+  await second;
+  await assert.rejects(third, { name: 'AbortError' });
+  await custody.save(id, at(4), undefined);
+  assert.deepEqual(trace, ['PUT@0 ok', 'PUT@1 ok', 'PUT@2 ok']);
+});
+
+test('a draft keeps one tab hint for its current contents and Start new forgets every one (#366)', async () => {
+  const storage = memoryStorage();
+  const server = draftServer({ session: 'session-1' });
+  const custody = createSelectedDesignCustody({ namespace: '/apps/insignia', storage, api: server.api });
+  const moved = (intentId: string): DesiredGroup => ({
+    ...group,
+    design: {
+      ...group.design,
+      placements: [
+        { placementId: 'front', methodId: 'print', stepId: 'small', artwork: { kind: 'deferred', intentId } },
+      ],
+    },
+  });
+  const hints = () =>
+    [...storage.data].filter(([key, value]) => key.startsWith('insignia:selected-design:v1:') && value === id);
+  // A cart line (the original) edited twice: the original's hint stays, only the latest edit's beside it.
+  await custody.save(id, moved('first-edit'), group);
+  await custody.save(id, moved('second-edit'), group);
+  assert.equal(hints().length, 2, 'the original and the current contents');
+  await custody.forget(id, group);
+  assert.equal(hints().length, 0, 'forgetting the design forgets every hint of it');
 });

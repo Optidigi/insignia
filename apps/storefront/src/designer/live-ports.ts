@@ -24,10 +24,11 @@ import type { RepairState } from './repair-state';
 
 /**
  * Autosave of the unfinished design (#366): this long after its last change, and at least this long after the
- * previous autosave began, so normal editing stays far below the session's 60 writes per minute (about ten).
+ * previous autosave began. A draft save costs two of the session's 60 writes a minute (request admission and the
+ * save), so continuous editing spends about 12 of them.
  */
 const AUTOSAVE_DELAY_MS = 2_000;
-const AUTOSAVE_SPACING_MS = 5_000;
+const AUTOSAVE_SPACING_MS = 10_000;
 type Prepared = {
   signature: string;
   proposal: QuoteProposal;
@@ -100,7 +101,9 @@ export function createLiveDesignerPorts(input: {
   const prepared = new Map<string, Prepared>();
   const reviewSelections = new Map<string, DesiredGroup>();
   const draftSaves = new Map<string, { group: DesiredGroup; original?: DesiredGroup }>();
-  let autosave: { design: Design; timer: ReturnType<typeof setTimeout> } | undefined;
+  /** The save waiting for its debounce: the design's draft group, computed when it is sent. */
+  type PendingAutosave = { id: string; group(): DesiredGroup; retried: boolean };
+  let autosave: (PendingAutosave & { timer: ReturnType<typeof setTimeout> }) | undefined;
   const autosaving = new Set<AbortController>();
   let lastAutosave = Number.NEGATIVE_INFINITY;
   // The session refused a write (its per-minute or draft limit): further autosaves would only spend the writes a
@@ -113,11 +116,34 @@ export function createLiveDesignerPorts(input: {
     for (const controller of autosaving) controller.abort();
     autosaving.clear();
   }
-  function scheduleAutosave(design: Design) {
+  function queueAutosave(pending: PendingAutosave) {
     if (autosaveStopped) return;
     if (autosave) clearTimeout(autosave.timer);
     const wait = Math.max(AUTOSAVE_DELAY_MS, lastAutosave + AUTOSAVE_SPACING_MS - Date.now());
-    autosave = { design, timer: setTimeout(() => void flushAutosave(), wait) };
+    autosave = { ...pending, timer: setTimeout(() => void flushAutosave(), wait) };
+  }
+  function scheduleAutosave(design: Design) {
+    queueAutosave({
+      id: design.id,
+      group: () => buildBuyerDesigner(source, { locale: input.locale, storeName: input.storeName }).draft(design),
+      retried: false,
+    });
+  }
+  /**
+   * A design saved earlier is empty again, or back at its cart line (#366). A new design is no longer offered after a
+   * reload; a cart line's draft becomes the cart version again, so reopening the line starts from the cart.
+   */
+  function revertDraft(id: string) {
+    cancelAutosave();
+    const original = designs.get(id);
+    if (original) {
+      queueAutosave({ id, group: () => original, retried: false });
+      return;
+    }
+    const saved = draftSaves.get(id);
+    draftSaves.delete(id);
+    if (saved) void custody.forget(id, saved.group).catch(() => {});
+    else custody.forgetLatest(input.productId, id);
   }
   async function flushAutosave() {
     const pending = autosave;
@@ -125,20 +151,23 @@ export function createLiveDesignerPorts(input: {
     if (!pending || autosaveStopped) return;
     let group: DesiredGroup;
     try {
-      group = buildBuyerDesigner(source, { locale: input.locale, storeName: input.storeName }).draft(pending.design);
+      group = pending.group();
     } catch {
       return;
     }
-    const original = designs.get(pending.design.id);
+    const original = designs.get(pending.id);
     const controller = new AbortController();
     autosaving.add(controller);
     lastAutosave = Date.now();
-    draftSaves.set(pending.design.id, { group, original });
+    draftSaves.set(pending.id, { group, original });
     try {
       // The same custody save as Review: same draft ID, CAS version and reopen pointers. Unchanged content writes nothing.
-      await custody.save(pending.design.id, group, original, controller.signal, { onlyChanges: true });
+      await custody.save(pending.id, group, original, controller.signal, { onlyChanges: true });
     } catch (error) {
       if (error && typeof error === 'object' && 'status' in error && error.status === 429) autosaveStopped = true;
+      // Any other failure is retried once, unless a newer change or a cancellation has replaced it.
+      else if (!controller.signal.aborted && !autosave && !pending.retried)
+        queueAutosave({ ...pending, retried: true });
     } finally {
       autosaving.delete(controller);
     }
@@ -436,7 +465,7 @@ export function createLiveDesignerPorts(input: {
   };
   const ports: DesignerPorts = {
     review: { prepare },
-    draft: { changed: scheduleAutosave },
+    draft: { changed: scheduleAutosave, reverted: revertDraft },
     artwork: {
       renew: renewArtwork,
       apply: renewArtwork,

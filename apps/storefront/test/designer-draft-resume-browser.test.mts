@@ -315,13 +315,8 @@ for (const route of ['reload', 'navigation away and back', 'new tab'] as const)
       const resumedFrom = await latestDraft(current);
       await continueButton.click();
       await expectResumedDraft(ui);
-      // Quantities start the resumed design's eager review, which saves it under its own id and points
-      // the latest draft at it. Wait for that: a tab opened before it reads the old id, and Start new
-      // there then leaves this tab's newer unfinished design offered.
-      await expectEventually(
-        async () => ![null, resumedFrom].includes(await latestDraft(current)),
-        'the resumed design becomes the latest draft',
-      );
+      // Continuing keeps editing the same draft: it is not saved again, and the pointer stays on it (#366).
+      assert.equal(await latestDraft(current), resumedFrom, 'the continued design is the same draft');
 
       // The draft stays unfinished: leaving again offers it again. Start new opens clean and discards it.
       current = await leave(route === 'new tab' ? context.pages()[0]! : current);
@@ -495,8 +490,8 @@ test('a design one tab added is not offered again after another tab continued an
       await ui.getByRole('button', { name: 'Continue', exact: true }).click();
       await prompt(ui).waitFor({ state: 'detached' });
     }
-    // Each continued design is saved under its own draft ID shortly after it continues (#366).
-    await expectEventually(() => drafts.size === 3, 'each tab saves the design it continued');
+    // Both tabs continue the same draft; continuing alone saves nothing (#366).
+    assert.equal(drafts.size, 1);
     // The first tab adds it.
     cartGroups.push(required([...drafts.values()].at(-1)).value);
     // The second tab's Review saves it again and its pointer stays.
@@ -619,5 +614,26 @@ test('an edit made after Review is restored after a reload (#366)', async () => 
     await prompt(resumed).waitFor({ state: 'detached' });
     await resumed.getByRole('button', { name: 'Choose quantities', exact: true }).click();
     assert.equal(await resumed.locator('input[type=number]:enabled').first().inputValue(), '5');
+  });
+});
+
+test('artwork removed after its autosave is not offered after a reload (#366)', async () => {
+  await withStorefront(async ({ openPage, drafts }) => {
+    const page = await openPage();
+    const ui = await openDesigner(page);
+    await ui.getByRole('button', { name: 'Add artwork', exact: true }).first().click();
+    const card = ui.locator('article.print-card').first();
+    const heading = card.locator('.print-card-heading');
+    if ((await heading.getAttribute('aria-expanded')) === 'false') await heading.click();
+    await card.locator('.artwork-choice').click();
+    await ui.getByRole('button', { name: 'Provide artwork later', exact: true }).click();
+    await expectEventually(
+      async () => drafts.size === 1 && (await latestDraft(page)) !== null,
+      'the placement is saved',
+    );
+    await ui.getByRole('button', { name: 'Remove artwork', exact: true }).click();
+    await expectEventually(async () => (await latestDraft(page)) === null, 'the removed design is no longer offered');
+    await page.reload();
+    await expectCleanStart(await openDesigner(page), 'nothing the buyer removed comes back');
   });
 });

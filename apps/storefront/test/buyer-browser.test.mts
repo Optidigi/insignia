@@ -1,4 +1,9 @@
-import { BuyerAcceptanceSchema, BuyerDesiredGroupSchema, BuyerProposalRequestSchema } from '@insignia/contracts';
+import {
+  BuyerAcceptanceSchema,
+  BuyerDesiredGroupSchema,
+  BuyerDraftGroupSchema,
+  BuyerProposalRequestSchema,
+} from '@insignia/contracts';
 import type { FrameLocator, Locator, Page, Request as PlaywrightRequest } from 'playwright';
 
 type ObservedCartRequest = {
@@ -114,7 +119,7 @@ async function installDesignBoundary(page: Page) {
         : route.fulfill({ status: 404, json: { error: 'Owned draft not found' } });
     if (body.expectedVersion !== (previous?.version ?? 0))
       return route.fulfill({ status: 409, json: { error: 'Draft changed' } });
-    const value = BuyerDesiredGroupSchema.parse(body.group);
+    const value = BuyerDraftGroupSchema.parse(body.group);
     const draft = { id, version: (previous?.version ?? 0) + 1, value };
     drafts.set(id, draft);
     return route.fulfill({ json: draft });
@@ -1314,6 +1319,32 @@ async function reopenSamePage(page: Page, trigger: Locator, host: FrameLocator) 
   await trigger.getByRole('button', { name: 'Review customized cart', exact: true }).click();
   await page.locator('dialog:modal').waitFor();
 }
+test('a cart line edited and then changed back to the cart reopens from the cart after a reload (#366)', async () => {
+  await withRetainedBuyer(async ({ page, host, trigger }) => {
+    const saved = (quantity: number) =>
+      page.waitForRequest(
+        (request) =>
+          request.method() === 'PUT' &&
+          /\/designs\/[a-f0-9-]+$/.test(new URL(request.url()).pathname) &&
+          JSON.stringify(
+            record(request.postDataJSON()).group && record(record(request.postDataJSON()).group).variants,
+          ) === JSON.stringify([{ variantId: '222', quantity }]),
+        // An autosave waits at least 10 s after the previous one.
+        { timeout: 20_000 },
+      );
+    await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+    const edited = saved(4);
+    await host.locator('input[type=number]:enabled').first().fill('4');
+    await edited;
+    // Undo by hand: the line is as the cart holds it again. Its draft must say so too.
+    const undone = saved(3);
+    await host.locator('input[type=number]:enabled').first().fill('3');
+    await undone;
+    await reopenOwned(page, trigger, host);
+    await host.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+    assert.equal(await host.locator('input[type=number]:enabled').first().inputValue(), '3');
+  });
+});
 test('reopening on the same cart page follows a native Ajax quantity change (#397)', async () => {
   await withRetainedBuyer(
     async ({ page, host, trigger, editCart, proposals, accepts, mutations }) => {

@@ -297,6 +297,10 @@ export function createDesignerFrame(input: {
       if (!input.previewOnly) input.ports?.draft?.changed(data.design);
       return;
     }
+    if (data.type === 'insignia:designer:draft-reverted' && typeof data.id === 'string') {
+      if (!input.previewOnly) input.ports?.draft?.reverted(data.id);
+      return;
+    }
     if (data.type === 'insignia:designer:discard-drafts') {
       input.onDiscardDrafts?.();
       return;

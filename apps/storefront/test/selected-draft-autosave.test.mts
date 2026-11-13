@@ -72,6 +72,25 @@ const source: BuyerConfig = {
   ready: true,
 };
 const DESIGN_ID = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+/** The design as its cart line holds it. */
+const lineGroup = (quantity: number) => ({
+  productId: '111',
+  configRevisionId: 'x-revision',
+  revisionContentHash: 'a'.repeat(64),
+  design: {
+    placements: [
+      {
+        placementId: 'front',
+        methodId: 'print',
+        stepId: 'small',
+        artwork: { kind: 'deferred' as const, intentId: 'later-intent' },
+        position: { xMicros: 500_000, yMicros: 500_000 },
+      },
+    ],
+    options: [],
+  },
+  variants: [{ variantId: '101', quantity }],
+});
 const design = (quantity: number, x = 50): Design => ({
   id: DESIGN_ID,
   options: [],
@@ -82,8 +101,28 @@ const design = (quantity: number, x = 50): Design => ({
   variants: quantity ? [{ variantId: '101', quantity }] : [],
 });
 
-function fixture(options: { saveStatus?: number } = {}) {
+/** Storage every tab shares (`localStorage`), where the latest unfinished design's pointer lives. */
+function sharedStorage() {
+  const data = new Map<string, string>();
+  const storage = {
+    data,
+    getItem: (key: string) => data.get(key) ?? null,
+    setItem: (key: string, value: string) => void data.set(key, value),
+    removeItem: (key: string) => void data.delete(key),
+    key: (index: number) => [...data.keys()][index] ?? null,
+    get length() {
+      return data.size;
+    },
+    clear: () => data.clear(),
+  };
+  Object.defineProperty(globalThis, 'localStorage', { value: storage, configurable: true, writable: true });
+  return storage;
+}
+const LATEST = 'insignia:selected-design-latest:v1:/apps/insignia:111';
+
+function fixture(options: { saveStatus?: number; statuses?: number[] } = {}) {
   const saves: { expectedVersion: number; group: { variants: unknown[] } }[] = [];
+  const shared = sharedStorage();
   let version = 0;
   const live = createLiveDesignerPorts({
     source,
@@ -108,6 +147,8 @@ function fixture(options: { saveStatus?: number } = {}) {
       if (/\/designs\/[^/]+$/.test(path)) {
         const body = JSON.parse(String(init.body));
         saves.push(body);
+        const status = options.statuses?.shift();
+        if (status) return Response.json({ code: 'UNAVAILABLE' }, { status });
         if (options.saveStatus)
           return Response.json(
             { code: 'RATE_LIMITED', message: 'limited', requestId: 'r' },
@@ -123,7 +164,11 @@ function fixture(options: { saveStatus?: number } = {}) {
     assert.ok(live.ports.draft, 'the live host takes design changes');
     live.ports.draft.changed(value);
   };
-  return { live, saves, changed };
+  const reverted = (id = DESIGN_ID) => {
+    assert.ok(live.ports.draft);
+    live.ports.draft.reverted(id);
+  };
+  return { live, saves, changed, reverted, shared };
 }
 /** Lets fetch, digest and promise chains run between mocked timer ticks. */
 async function settle() {
@@ -172,7 +217,8 @@ test('a minute of rapid editing stays far below the 60 writes per minute and end
     await advance(150);
   }
   await advance(10_000);
-  assert.ok(saves.length <= 14, `${saves.length} draft writes in 70 seconds`);
+  // Each draft write costs two of the session's 60 writes a minute (admission and the save itself).
+  assert.ok(saves.length <= 8, `${saves.length} draft writes in 70 seconds`);
   const last = saves.at(-1)?.group as unknown as { design: { placements: { position?: { xMicros: number } }[] } };
   assert.equal(last.design.placements[0]?.position?.xMicros, (x - 1) * 10_000, 'the last edit is saved');
 });
@@ -205,4 +251,50 @@ test('Start a new design cancels the pending save of the design it discards', as
   await live.discardDrafts();
   await advance(10_000);
   assert.equal(saves.length, 0);
+});
+
+test('a new design emptied after its autosave cancels the pending save and is no longer offered (#366)', async () => {
+  const { changed, reverted, saves, shared } = fixture();
+  changed(design(0));
+  await advance(3_000);
+  assert.equal(saves.length, 1);
+  assert.equal(JSON.parse(shared.data.get(LATEST) ?? 'null')?.id, DESIGN_ID, 'offered after a reload');
+  changed(design(2));
+  await advance(1_000);
+  // The buyer removes the artwork before that edit is saved.
+  reverted();
+  await advance(15_000);
+  assert.equal(saves.length, 1, 'the pending edit is not saved');
+  assert.equal(shared.data.get(LATEST), undefined, 'nothing is offered after a reload');
+});
+
+test('a cart line undone back to the cart saves the cart version, so reopening it starts from the cart (#366)', async () => {
+  const { live, changed, reverted, saves, shared } = fixture();
+  const cartLine = lineGroup(3);
+  live.registerDesign(DESIGN_ID, cartLine);
+  changed(design(5));
+  await advance(3_000);
+  assert.deepEqual(saves.at(-1)?.group.variants, [{ variantId: '101', quantity: 5 }]);
+  reverted();
+  await advance(12_000);
+  assert.equal(saves.length, 2);
+  assert.deepEqual(saves.at(-1)?.group.variants, [{ variantId: '101', quantity: 3 }]);
+  assert.equal(shared.data.get(LATEST), undefined, 'a cart line is never offered as an unfinished new design');
+});
+
+test('a failed autosave is retried once after the spacing, then waits for the next change (#366)', async () => {
+  const { changed, saves } = fixture({ statuses: [503, 503, 503] });
+  changed(design(1));
+  await advance(3_000);
+  assert.equal(saves.length, 1);
+  await advance(11_000);
+  assert.equal(saves.length, 2, 'retried once');
+  await advance(30_000);
+  assert.equal(saves.length, 2, 'only once');
+  changed(design(2));
+  await advance(3_000);
+  assert.equal(saves.length, 3);
+  await advance(11_000);
+  assert.equal(saves.length, 4, 'the next change gets its own retry');
+  assert.deepEqual(saves.at(-1)?.group.variants, [{ variantId: '101', quantity: 2 }]);
 });

@@ -348,7 +348,16 @@ function DesignerSession({
   const previousStep = useRef(step);
   const workflowRef = useRef(workflow);
   workflowRef.current = workflow;
-  const runtime = useMemo(() => createDesignerRuntime(ports, () => workflowRef.current, dispatch), [ports]);
+  const runtime = useMemo(
+    () =>
+      createDesignerRuntime(
+        ports,
+        () => workflowRef.current,
+        dispatch,
+        resumeDraft ? { resumeDraftId: resumeDraft.id } : undefined,
+      ),
+    [ports],
+  );
   useLayoutEffect(() => {
     if (cartReviewedSignal) dispatch({ type: 'cart-review-satisfied' });
   }, [cartReviewedSignal]);
