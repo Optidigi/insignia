@@ -9,7 +9,7 @@ Active VPS management custody is `%h/.local/share/insignia/runtime/`. Some live 
 As of 13 November 2026 (rewrite-dev on host alias `prod`). [Delivery state](../../docs/delivery/state.md#deployed-identities) holds the exact image digests and custody locators.
 - **Release profile:** `native-a11y-quantity-9b5dbdee`, set as `INSIGNIA_RELEASE_PROFILE` in web and worker and, with its matching code manifest, in the verifier. It binds version `1207622696961` in [native-a11y-quantity-release-binding.json](native-a11y-quantity-release-binding.json) (39 versions) and the 14-module [baseline](native-a11y-quantity-module-baseline.json); see [A11y-quantity candidate](#a11y-quantity-candidate-development-transition).
 - **Functions:** source `aa3b6166`, unchanged since the cart-line v3 cutover; pins in [Cart-line v3](#cart-line-v3-candidate-development-transition).
-- **Schema 63**, equal to the 63 migrations in `packages/database/migrations`.
+- **Schema 64**, equal to the 64 migrations in `packages/database/migrations`. Migration 64 (signing envelope writer guard) and the signer image with the revoke lock were deployed on 13 November 2026 (`afc3c1da`); expected function-ACL digest `bda94d7ecad6c07dc0cecd83d79983d0`.
 - **`INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON`** in web is `{"appKey":…}` only since 13 November 2026 ([Expected Function configuration](#expected-function-configuration)). Worker and verifier never carried it.
 - **Web grants on `buyer_visitor_admission`:** `SELECT, INSERT, DELETE` and `UPDATE(window_at,issued_at)`, as in [web-runtime-grants.sql](../m8-journey/web-runtime-grants.sql). The worker has no access.
 - **Expected column-ACL digest:** `ae2043f790171fa854016a8679e5b155`.

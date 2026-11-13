@@ -15,6 +15,17 @@ Read the sections below with these later changes in mind:
 - **Found in deploy 2.** The same-page reopen quantity was fixed by #403 in deploy 3. The synchronous release collection seen in deploy 1 was addressed by #377 in deploy 2.
 - **Rollback.** Web images up to `bf512171` (every image below except deploy 3's) are no longer rollback targets (#374).
 
+## Signer hardening (#431), main `afc3c1da` — deployed 13 November 2026 (server only)
+
+Closes the two minor signer review items: migration 64 adds a trigger so only a role that can read `private_envelope` (the signer, the owner) may write a non-NULL envelope, and web may only clear it in the statement that retires, revokes or destroys a key; the signer reads the key `FOR SHARE` across the in-memory signature, so a revoke waits for in-flight signatures. No app version, no fail-closed window; web, worker and verifier unchanged.
+
+- **CI** on `afc3c1da`: runtime 43513038031, foundation 43513037422, durable-core 43513037187 (attempt 1).
+- **Checkpoint** created `21:47:39Z`, restore-verified `21:48:11Z` with a dry run of 64 under the real grants (web overwrite refused, web retire/revoke scrubs, signer re-wrap and hold, worker destruction allowed); copies shredded `21:55:35Z`.
+- **Migration 64** at `21:54:49Z`: schema 64, trigger `signing_keys_envelope_writer`; function-ACL digest `bda94d7ecad6c07dc0cecd83d79983d0` (was `ec974b27…`); column, relation, membership and schema digests unchanged.
+- **Signer** recreated at `21:54:55Z` with `sha256:e9b1f153…` (worker image of runtime 43513038031, tree `148b82be`); config delta image only; `signer_listening` with key `signing-20261111`. Prior image `b5cdb5e8…` stays loaded (rollback is image-only).
+- **Live check:** a key-2 sign probe was refused (`KEY_UNAVAILABLE`); a Designer Add to cart at `21:57:07Z` signed with key 3 (`signer_sign ok`, 23 ms), cart line 1 × $17.45 with `_insignia_line_v3`, cart emptied. No error lines in web, worker, signer or verifier. Protected facts 10/9/2/9/12.
+- **Receipt:** `~/.local/share/insignia/recovery-release-20261110/afc3c1da-signer-1/deployment-receipt.json` on prod (copy on the dev host).
+
 ## Deploy 4: main `9b5dbdee` — deployed and released 13 November 2026
 
 Pre-public fix batch under the standing 13 November dev store and app grant: #419 (#416 decimal quantity), #420 (#412/#413 focus), #421 (#414/#415 names), #422 (#406 batched erasure, migration 63) and #423 (#417 artwork label), plus web's `INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON` reduced to `appKey` only (worker and verifier never carried it).

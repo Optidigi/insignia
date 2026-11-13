@@ -47,9 +47,6 @@ Updated 13 November 2026. Insignia runs only on `app.insigniacustomizer.com`, on
 - **End-to-end purchase after deploy 4 (13 Nov, about `20:05–20:11Z`):** Designer (upload on Linkerborst, typed quantity 2) → Review $34.90 → cart line 2 × $17.45 with a `_insignia_line_v3` carrier (transform priced it; variant $9.95) → checkout loaded without validation errors → test-gateway order `FXUC9QZLM`, $42.90 with shipping. Insignia recorded the order, paid fact, binding and line. No artwork notification, as expected: notifications are planned only for "artwork later" placements.
 - 16 Nov: key 2's destruction. Confirm that the worker logs `signing_key_destruction` with count 1, a Designer Add to cart still succeeds and no `public_config_drift` line appears. The published config still lists key 2 until the next owner rotation or publication, and quote readiness tolerates that (#333).
 - Per-visitor and shop limits under load: test locally, not by flooding prod.
-- Two minor signer review items are in progress (one PR: a trigger so only the signer can write a non-NULL envelope, and the sign path reading the key `FOR SHARE` so a revoke waits for in-flight signatures):
-  - web can overwrite the active key's envelope (denial of service only);
-  - a millisecond race between a revoke and a signature.
 - Per-visitor 429 through Shopify's app proxy: run `~/insignia-qa/load/limitprobe.mjs` (raise its cap to about 60) at the end of the 16–17 Nov session. It blocks new buyer sessions from this host's visitor address for up to an hour.
 - Delete the owner-supplied Cloudflare Rules token when the domain work is final; the owner will say when.
 
@@ -121,11 +118,11 @@ Rewrite-dev on host alias `prod`, as of 13 November 2026 `19:34Z`.
 | Web | `sha256:cd998369…` | main `1bd804a2` |
 | Worker | `sha256:8653b9af…` | main `1bd804a2` |
 | Verifier | `sha256:1d407588…`, code manifest `70442dd1…` | main `1bd804a2` |
-| Signer | `sha256:b5cdb5e8…` | main `fb30b947` |
+| Signer | `sha256:e9b1f153…` (since 13 Nov `21:54:55Z`, #431) | main `afc3c1da` |
 | Host inspector | `~/insignia-artwork-releases/b2d631706dcd3ae05afb2b63a1bd1868e523bb46/` | `b2d63170` |
-| Database | PostgreSQL 18.6, schema 63; expected column-ACL digest `ae2043f790171fa854016a8679e5b155` | 63 repository migrations |
+| Database | PostgreSQL 18.6, schema 64; expected column-ACL digest `ae2043f790171fa854016a8679e5b155`, function-ACL digest `bda94d7ecad6c07dc0cecd83d79983d0` | 64 repository migrations |
 
-`1bd804a2` is the binding of application source `9b5dbdee`. Fresh web and quiesced worker reads matched release record `0e335396…` at `19:34:37.985Z`; that proof is finite, and every purchase still needs live checks. Deploy receipt: `/home/serveradmin/.local/share/insignia/recovery-release-20261110/9b5dbdee-deploy-1/deployment-receipt.json` on prod (copy at the same path on the dev host). Prior images stay loaded.
+`1bd804a2` is the binding of application source `9b5dbdee`. Fresh web and quiesced worker reads matched release record `0e335396…` at `19:34:37.985Z`; that proof is finite, and every purchase still needs live checks. Deploy receipt: `/home/serveradmin/.local/share/insignia/recovery-release-20261110/9b5dbdee-deploy-1/deployment-receipt.json` on prod (copy at the same path on the dev host). The later server-only signer deploy (#431: migration 64 and the signer image) has its receipt in `afc3c1da-signer-1/`. Prior images stay loaded.
 
 **Protected facts:** orders 10, paid 9, refunds 2, bindings 9, lines 12 (after the 13 November post-deploy test order, confirmation `FXUC9QZLM`, recorded `20:11:26Z`). Every preflight expects these; update them after each test order.
 
@@ -142,7 +139,7 @@ The signing wrapping key lives only in `runtime/signer-secrets/signing-wrap-keys
 **Customer artwork email** runs in development mode since 11 Nov `23:45:02Z`: recipient fixed to `admin@optidigi.nl`, no backfill (the two earlier PENDING notices stay untouched). Customer mode for real buyers stays disabled.
 
 **Custody locators** on prod (for an authorized operator; not fresh-clone prerequisites or execution authority), under `/home/serveradmin/.local/share/insignia/`:
-- `recovery-release-20261110/`: deploy receipts `9b5dbdee-deploy-1` (current), `c78a8179-deploy-1`, `bf512171-deploy-1`, `fb436e16-deploy-1`, `origin-lock-20261111-1`, `cart-line-v3-final-42943190043-1`, Phase A `cart-line-v3-42932707400-1` and `functions-renew-final-42893217931-1`.
+- `recovery-release-20261110/`: deploy receipts `afc3c1da-signer-1` (signer only), `9b5dbdee-deploy-1` (current release), `c78a8179-deploy-1`, `bf512171-deploy-1`, `fb436e16-deploy-1`, `origin-lock-20261111-1`, `cart-line-v3-final-42943190043-1`, Phase A `cart-line-v3-42932707400-1` and `functions-renew-final-42893217931-1`.
 - `legacy-generic-removal-20261111/`: final dump, compose file, env and crontab of the removed `insignia.optidigi.nl` stack (0600).
 - The host has no mutable checkout; services use immutable images and packages.
 
