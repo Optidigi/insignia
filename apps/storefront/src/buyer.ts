@@ -156,6 +156,10 @@ export function createBuyerApi({
           ...(response.status === 422 && error?.code === 'CAPACITY_EXCEEDED' && error?.details?.reason === 'CART_LINES'
             ? { cartLines: true }
             : {}),
+          // An exhausted lifetime quota of the buyer session: no retry helps until it expires (#371).
+          ...(response.status === 429 && error?.code === 'RATE_LIMITED' && error?.details?.reason === 'SESSION_QUOTA'
+            ? { reason: 'SESSION_QUOTA' as const }
+            : {}),
         },
       );
     }

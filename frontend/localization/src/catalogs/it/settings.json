@@ -516,6 +516,7 @@
       "customer_recovery_entitlementDenied": "Messaggio di negozio che non accetta personalizzazioni",
       "customer_recovery_rateLimited": "Messaggio per troppe richieste",
       "customer_recovery_rateLimitedWait": "Messaggio per troppe richieste (con attesa)",
+      "customer_recovery_sessionQuota": "Messaggio per limite della sessione di personalizzazione raggiunto",
       "customer_recovery_busy": "Messaggio di negozio molto occupato",
       "customer_recovery_unavailable": "Messaggio di non disponibilità temporanea",
       "customer_recovery_cartBusy": "Messaggio di carrello occupato",

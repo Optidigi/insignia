@@ -577,6 +577,31 @@ test('the per-visitor session limit is 429 SESSION_RATE_LIMITED with Retry-After
   });
 });
 
+test('an exhausted session quota is 429 RATE_LIMITED with reason SESSION_QUOTA, logged at info (#371)', async () => {
+  const seen: { value: BuyerFailureDiagnostic; level: string }[] = [];
+  const response = await handleBuyerRequest(
+    post({}, '/v1/sessions?productId=1'),
+    buyerFixture({
+      session: async () => {
+        throw new BuyerRejectedError('RATE_LIMITED', 'synthetic quota', 'SESSION_QUOTA');
+      },
+    }),
+    'sessions',
+    (value, level) => seen.push({ value, level }),
+  );
+  assert.equal(response.status, 429);
+  assert.equal(response.headers.get('Retry-After'), null);
+  const body = record(await response.json());
+  assert.deepEqual(
+    { code: body.code, details: body.details, retryable: body.retryable },
+    { code: 'RATE_LIMITED', details: { reason: 'SESSION_QUOTA' }, retryable: undefined },
+  );
+  assert.deepEqual(
+    seen.map(({ value, level }) => ({ errorClass: value.errorClass, level })),
+    [{ errorClass: 'SessionQuotaExhausted', level: 'info' }],
+  );
+});
+
 test('a revoked token, missing scope or retired API version stays 503 UNAVAILABLE at error level, never BUSY', async () => {
   const cases = [
     // 401, 403, ACCESS_DENIED, other non-200 or a substituted API version from each provider read.

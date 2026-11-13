@@ -32,6 +32,8 @@ export type CommitFailure =
   | { cause: 'busy' | 'rate-limited'; preparation: boolean; retryAfterSeconds?: number; waiting: boolean }
   /** `retryAfterSeconds`: when the visitor window admits a new session, if the server said. */
   | { cause: 'session-limited'; preparation: boolean; retryAfterSeconds?: number }
+  /** A lifetime quota of the buyer session is exhausted; nothing helps until the session expires (#371). */
+  | { cause: 'session-quota'; preparation: boolean }
   /** Another tab or the repair view holds the cart lock, which only applying an accepted set takes. */
   | { cause: 'cart-busy'; preparation: false }
   /** Shopify definitely refused the cart write (only Add to cart reaches it); `detail` is its own explanation. */
@@ -66,7 +68,10 @@ export function commitFailure(
     case 'CART_BUSY': return preparation ? { cause: 'unknown', preparation } : { cause: 'cart-busy', preparation };
     case 'CAPACITY_EXCEEDED': return { cause: reason === 'CART_LINES' ? 'cart-lines' : 'capacity', preparation };
     case 'SESSION_RATE_LIMITED': return { cause: 'session-limited', preparation, ...wait };
-    case 'RATE_LIMITED': return { cause: 'rate-limited', preparation, ...wait, waiting: !!retryAfter };
+    case 'RATE_LIMITED':
+      return reason === 'SESSION_QUOTA'
+        ? { cause: 'session-quota', preparation }
+        : { cause: 'rate-limited', preparation, ...wait, waiting: !!retryAfter };
     case 'BUSY': return { cause: 'busy', preparation, ...wait, waiting: !!retryAfter };
     case 'REVIEW_REQUIRED': return { cause: 'review-required', preparation };
     case 'ARTWORK_EXPIRED': return { cause: 'artwork-expired', preparation };
@@ -146,5 +151,7 @@ export function commitFailureView(
         customerMessage('customer:artwork.sessionLimited', { count: minutes(failure.retryAfterSeconds ?? 3600) }),
         'close',
       );
+    // The session's own lifetime quota: neither Retry nor a new file helps until it expires (#371).
+    case 'session-quota': return view(customerMessage('customer:recovery.sessionQuota'), 'close');
   }
 }

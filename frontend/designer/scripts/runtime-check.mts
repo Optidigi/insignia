@@ -1295,6 +1295,46 @@ test('each failure cause routes its own primary action; the cart lock is never a
   assert.equal(action(commitFailure({ code: 'ARTWORK_EXPIRED' }, false)), 'replace-artwork');
   assert.equal(action(commitFailure({ code: 'PRODUCT_UNAVAILABLE' }, true)), 'close');
 });
+
+test('an exhausted session quota names the session limit and offers only Close, never Retry (#371)', async () => {
+  // The buyer API marks a lifetime quota with `details.reason`; a bridged failure carries it as `reason`.
+  for (const fields of [
+    { status: 429, code: 'RATE_LIMITED', details: { reason: 'SESSION_QUOTA' } },
+    { status: 429, code: 'RATE_LIMITED', reason: 'SESSION_QUOTA' },
+  ]) {
+    const failing = () => Promise.reject(Object.assign(Error('Raw English server message'), fields));
+    const reviewing = harness({
+      artwork: { upload: async () => ({}) },
+      review: { prepare: failing },
+      cart: { commit: async () => { throw Error('unused'); } },
+    });
+    await reviewing.runtime.commit(true);
+    assert.deepEqual(reviewing.state.commit, { kind: 'failed', cause: 'session-quota', preparation: true });
+    const adding = harness({ artwork: { upload: async () => ({}) }, cart: { commit: failing } });
+    await adding.runtime.commit();
+    assert.deepEqual(adding.state.commit, { kind: 'failed', cause: 'session-quota', preparation: false });
+  }
+  for (const preparation of [true, false])
+    assert.deepEqual(commitFailureView({ cause: 'session-quota', preparation }, 'en'), {
+      message: { key: 'customer:recovery.sessionQuota', args: [] },
+      action: 'close',
+      waiting: false,
+    });
+  // The reason is whitelisted for RATE_LIMITED only; without it the per-minute limit keeps Retry.
+  for (const [fields, expected] of [
+    [{ status: 409, code: 'BUSY', reason: 'SESSION_QUOTA' }, { kind: 'failed', cause: 'busy', preparation: false, waiting: false }],
+    [{ status: 429, code: 'RATE_LIMITED', reason: 'OTHER' }, { kind: 'failed', cause: 'rate-limited', preparation: false, waiting: false }],
+    [{ status: 429, code: 'RATE_LIMITED' }, { kind: 'failed', cause: 'rate-limited', preparation: false, waiting: false }],
+  ] as const) {
+    const h = harness({
+      artwork: { upload: async () => ({}) },
+      cart: { commit: () => Promise.reject(Object.assign(Error('Raw English server message'), fields)) },
+    });
+    await h.runtime.commit();
+    assert.deepEqual(h.state.commit, expected, JSON.stringify(fields));
+  }
+  assert.equal(commitFailureView(commitFailure({ code: 'RATE_LIMITED' }, false), 'en').action, 'retry-add');
+});
 test('explicit preparation Retry recovers a transient preflight read before quote expiry without accepting', async () => {
   const preparations: CartRequest[] = [];
   const commits: CartRequest[] = [];

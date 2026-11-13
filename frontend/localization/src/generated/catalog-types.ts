@@ -2522,6 +2522,7 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_recovery_repairRequired': object;
   'settings:translations.fields.customer_recovery_replaceArtwork': object;
   'settings:translations.fields.customer_recovery_reviewRequired': object;
+  'settings:translations.fields.customer_recovery_sessionQuota': object;
   'settings:translations.fields.customer_recovery_startNew': object;
   'settings:translations.fields.customer_recovery_unavailable': object;
   'settings:translations.fields.customer_recovery_undo': object;
@@ -2895,6 +2896,7 @@ export interface CustomerMessageTable {
   'customer:recovery.repairRequired': object;
   'customer:recovery.replaceArtwork': object;
   'customer:recovery.reviewRequired': object;
+  'customer:recovery.sessionQuota': object;
   'customer:recovery.startNew': object;
   'customer:recovery.unavailable': object;
   'customer:recovery.undo': object;

@@ -542,6 +542,7 @@
       "customer_recovery_entitlementDenied": "Melding winkel neemt geen personalisaties aan",
       "customer_recovery_rateLimited": "Melding te veel verzoeken",
       "customer_recovery_rateLimitedWait": "Melding te veel verzoeken (met wachttijd)",
+      "customer_recovery_sessionQuota": "Melding limiet personalisatiesessie bereikt",
       "customer_recovery_busy": "Melding winkel druk",
       "customer_recovery_unavailable": "Melding tijdelijk niet beschikbaar",
       "customer_recovery_cartBusy": "Melding winkelwagen bezet",

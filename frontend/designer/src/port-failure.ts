@@ -34,8 +34,11 @@ export interface PortFailure {
   status?: 403 | 404 | 410 | 422;
   /** Whole seconds to wait, from `Retry-After`; at most one hour. */
   retryAfter?: number;
-  /** `CAPACITY_EXCEEDED` over 200 cart lines rather than the signed set (#335). */
-  reason?: 'CART_LINES';
+  /**
+   * `CART_LINES`: `CAPACITY_EXCEEDED` over 200 cart lines rather than the signed set (#335). `SESSION_QUOTA`:
+   * `RATE_LIMITED` because a lifetime quota of the buyer session is exhausted (#371).
+   */
+  reason?: 'CART_LINES' | 'SESSION_QUOTA';
   /** `CART_REJECTED`: Shopify's 422 (stock or limit), and its own explanation as plain text. */
   stock?: true;
   detail?: string;
@@ -59,10 +62,9 @@ export function portFailure(error: unknown): PortFailure {
   const expiresAt = field(error, 'expiresAt');
   // Port errors mark these with their own flags; a bridged failure carries the code.
   const rejected = field(error, 'cartRejected') === true || code === 'CART_REJECTED';
-  const cartLines =
-    field(error, 'cartLines') === true ||
-    field(error, 'reason') === 'CART_LINES' ||
-    (!!details && typeof details === 'object' && field(details, 'reason') === 'CART_LINES');
+  const detailsReason = details && typeof details === 'object' ? field(details, 'reason') : undefined;
+  const reason = (value: string) => field(error, 'reason') === value || detailsReason === value;
+  const cartLines = field(error, 'cartLines') === true || reason('CART_LINES');
   const known = rejected ? 'CART_REJECTED' : PORT_FAILURE_CODES.find((candidate) => candidate === code);
   return {
     ...(known ? { code: known } : {}),
@@ -71,6 +73,7 @@ export function portFailure(error: unknown): PortFailure {
       ? { retryAfter: Math.min(Math.ceil(retryAfter), MAX_RETRY_AFTER_SECONDS) }
       : {}),
     ...(known === 'CAPACITY_EXCEEDED' && cartLines ? { reason: 'CART_LINES' as const } : {}),
+    ...(known === 'RATE_LIMITED' && reason('SESSION_QUOTA') ? { reason: 'SESSION_QUOTA' as const } : {}),
     ...(rejected && field(error, 'stock') === true ? { stock: true as const } : {}),
     ...(rejected && typeof detail === 'string' && detail ? { detail: detail.slice(0, 300) } : {}),
     ...(field(error, 'reviewRequired') === true

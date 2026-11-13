@@ -261,6 +261,7 @@ export const customerWordingLabels = {
   'customer:recovery.entitlementDenied': 'settings:translations.fields.customer_recovery_entitlementDenied',
   'customer:recovery.rateLimited': 'settings:translations.fields.customer_recovery_rateLimited',
   'customer:recovery.rateLimitedWait': 'settings:translations.fields.customer_recovery_rateLimitedWait',
+  'customer:recovery.sessionQuota': 'settings:translations.fields.customer_recovery_sessionQuota',
   'customer:recovery.busy': 'settings:translations.fields.customer_recovery_busy',
   'customer:recovery.unavailable': 'settings:translations.fields.customer_recovery_unavailable',
   'customer:recovery.cartBusy': 'settings:translations.fields.customer_recovery_cartBusy',

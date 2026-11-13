@@ -337,9 +337,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
     await repo.saveDesign(scope, { id: design, expectedVersion: 0, value: {}, now });
     for (let version = 1; version < 59; version++)
       await repo.saveDesign(scope, { id: design, expectedVersion: version, value: {}, now });
-    await expect(repo.saveDesign(scope, { id: design, expectedVersion: 59, value: {}, now })).rejects.toMatchObject({
-      code: 'RATE_LIMITED',
-    });
+    // The per-minute write limit is not a lifetime quota: it carries no SESSION_QUOTA reason.
+    const perMinute = await repo.saveDesign(scope, { id: design, expectedVersion: 59, value: {}, now }).catch((e) => e);
+    expect(perMinute).toMatchObject({ code: 'RATE_LIMITED' });
+    expect(perMinute.reason).toBeUndefined();
     expect(await repo.getDesign(scope, design, now)).toMatchObject({ version: 59 });
     await repo.cleanupExpired(expiresAt);
     expect(await repo.getSession(scope, expiresAt)).toBeNull();
@@ -406,7 +407,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
     const after = freshMinute(now, limit);
     await expect(
       createBuyerRepository(db).saveDesign(scope, { id: randomUUID(), expectedVersion: 0, value: {}, now: after }),
-    ).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+    ).rejects.toMatchObject({ code: 'RATE_LIMITED', reason: 'SESSION_QUOTA' });
     await expect(
       repo.saveDesign(scope, { id: first, expectedVersion: 1, value: { edited: true }, now: after }),
     ).resolves.toMatchObject({ version: 2 });
@@ -431,7 +432,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
       });
     // Each proposal is privately retained until the session ends, so expired quotes still count.
     for (let i = 0; i < limit; i++) await propose(paced(now, i));
-    await expect(propose(freshMinute(now, limit))).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+    await expect(propose(freshMinute(now, limit))).rejects.toMatchObject({
+      code: 'RATE_LIMITED',
+      reason: 'SESSION_QUOTA',
+    });
     expect(
       (await sql<{ n: string }>`SELECT count(*)::text n FROM quote_proposals WHERE shop_id=${shopId}`.execute(db))
         .rows[0]?.n,
@@ -478,7 +482,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
     const after = freshMinute(now, limit + 1);
     await expect(
       repo.reserveCommand(scope, { kind: 'renew', key: 'overflow', requestDigest: 'a'.repeat(64), now: after }),
-    ).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+    ).rejects.toMatchObject({ code: 'RATE_LIMITED', reason: 'SESSION_QUOTA' });
     await expect(
       repo.createApplication(scope, {
         id: randomUUID(),
@@ -487,7 +491,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
         expectedFingerprint: 'd'.repeat(64),
         now: after,
       }),
-    ).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+    ).rejects.toMatchObject({ code: 'RATE_LIMITED', reason: 'SESSION_QUOTA' });
     // A completed command still replays its application at the limit.
     expect(
       await repo.reserveCommand(scope, { kind: 'accept', key: 'apply-0', requestDigest: 'a'.repeat(64), now: after }),

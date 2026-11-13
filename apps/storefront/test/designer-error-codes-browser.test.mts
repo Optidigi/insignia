@@ -88,6 +88,7 @@ test('every buyer error code crosses the frame bridge with its own copy and only
       status: Number(query.get('status') ?? 0) || undefined,
       code: query.get('code') ?? undefined,
       retryAfter: Number(query.get('retryAfter') ?? 0),
+      reason: query.get('reason') ?? undefined,
     });
     const prepare = query.get('path') === 'prepare';
     return `<!doctype html><html><body><p>Shopify product page</p><script type="module">
@@ -278,6 +279,33 @@ test('every buyer error code crosses the frame bridge with its own copy and only
     action: 'Close',
   });
   await assertNoResend(closeRequested);
+
+  // #371: an exhausted lifetime quota of the buyer session. No retry helps until the session expires, so the
+  // copy names the session limit and Close is the only action, at review and at Add to cart.
+  for (const path of ['prepare', 'commit'] as const) {
+    assert.deepEqual(
+      await fail(path, { status: 429, code: 'RATE_LIMITED', reason: 'SESSION_QUOTA' }),
+      {
+        message: "You've reached the limit for this customization session. Come back later to continue.",
+        action: 'Close',
+      },
+      path,
+    );
+    assert.deepEqual(
+      await frame
+        .locator('.panel-footer button')
+        .allInnerTexts()
+        .then((texts) => texts.filter((text) => /Retry/.test(text))),
+      [],
+      'no Retry is offered',
+    );
+    await assertNoResend(closeRequested);
+  }
+  assert.deepEqual(await fail('commit', { status: 429, code: 'RATE_LIMITED', reason: 'SESSION_QUOTA' }, 'de'), {
+    message:
+      'Sie haben das Limit für diese Personalisierungssitzung erreicht. Kommen Sie später wieder, um fortzufahren.',
+    action: 'Schließen',
+  });
 
   // Only whitelisted codes cross the frame, and a wait is bounded to the one-hour window.
   assert.deepEqual(await fail('commit', { status: 409, code: 'SOMETHING_ELSE' }), {

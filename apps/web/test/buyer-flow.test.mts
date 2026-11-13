@@ -25,7 +25,14 @@ test('durable admission rejects saturated commands before signing and completed 
   const rate = (count: number) =>
     f.pool.query('UPDATE buyer_sessions SET write_count=$2 WHERE session_id=$1', [f.session.sessionId, count]);
   await rate(60);
-  assert.equal((await f.http(`quote-proposals/${proposal.proposalId}/accept`, body)).status, 429);
+  // The per-minute write limit passes within a minute: the plain RATE_LIMITED, with no reason.
+  const perMinute = await f.http(`quote-proposals/${proposal.proposalId}/accept`, body);
+  assert.equal(perMinute.status, 429);
+  assert.equal(perMinute.headers.get('Retry-After'), null);
+  assert.deepEqual(
+    { ...(await perMinute.json()), requestId: 'request' },
+    { code: 'RATE_LIMITED', message: 'Customization request could not be completed.', requestId: 'request' },
+  );
   assert.equal(f.signings(), 0);
   assert.equal((await f.pool.query('SELECT 1 FROM accepted_quotes WHERE shop_id=$1', [f.shopId])).rowCount, 0);
   f.unavailable(true);
@@ -56,14 +63,20 @@ test('durable admission rejects saturated commands before signing and completed 
     });
   }
   f.advance(61000);
-  // An exhausted lifetime quota is the generic RATE_LIMITED without Retry-After: the Designer's
-  // "too many requests, wait a moment" copy (#337), never the per-visitor SESSION_RATE_LIMITED.
+  // An exhausted lifetime quota is RATE_LIMITED without Retry-After, marked SESSION_QUOTA: no retry helps
+  // until the session expires, so the Designer says so and offers only Close (#371). Never the per-visitor
+  // SESSION_RATE_LIMITED.
   const exhausted = await f.http(`quotes/${result.quoteId}/renew`, { ...f.body, idempotencyKey: randomUUID() });
   assert.equal(exhausted.status, 429);
   assert.equal(exhausted.headers.get('Retry-After'), null);
   assert.deepEqual(
     { ...(await exhausted.json()), requestId: 'request' },
-    { code: 'RATE_LIMITED', message: 'Customization request could not be completed.', requestId: 'request' },
+    {
+      code: 'RATE_LIMITED',
+      message: 'This customization session has reached its limit. Come back later to continue.',
+      details: { reason: 'SESSION_QUOTA' },
+      requestId: 'request',
+    },
   );
   assert.equal(f.signings(), 1);
   assert.equal(

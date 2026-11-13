@@ -244,6 +244,7 @@
     "rateLimited": "Te veel verzoeken op dit moment. Wacht even en probeer het dan opnieuw.",
     "rateLimitedWait_one": "Te veel verzoeken vanaf dit netwerk. Probeer het over {{count}} minuut opnieuw.",
     "rateLimitedWait_other": "Te veel verzoeken vanaf dit netwerk. Probeer het over {{count}} minuten opnieuw.",
+    "sessionQuota": "Je hebt de limiet voor deze personalisatiesessie bereikt. Kom later terug om verder te gaan.",
     "busy": "De winkel is op dit moment erg druk. Je ontwerp is er nog. Probeer het over een paar seconden opnieuw.",
     "unavailable": "Personaliseren is tijdelijk niet beschikbaar. Je ontwerp is er nog. Probeer het later opnieuw.",
     "cartBusy": "Je winkelwagen wordt bijgewerkt in een ander tabblad of venster. Wacht tot dat klaar is en probeer het dan opnieuw.",

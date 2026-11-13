@@ -244,6 +244,7 @@
     "rateLimited": "Too many requests right now. Wait a moment, then try again.",
     "rateLimitedWait_one": "Too many requests from your network. Try again in {{count}} minute.",
     "rateLimitedWait_other": "Too many requests from your network. Try again in {{count}} minutes.",
+    "sessionQuota": "You've reached the limit for this customization session. Come back later to continue.",
     "busy": "The store is busy right now. Your design is still here. Try again in a few seconds.",
     "unavailable": "Customization is temporarily unavailable. Your design is still here. Try again later.",
     "cartBusy": "Your cart is being updated in another tab or window. Wait until it finishes, then try again.",

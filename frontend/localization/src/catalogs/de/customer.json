@@ -244,6 +244,7 @@
     "rateLimited": "Zu viele Anfragen. Warten Sie einen Moment und versuchen Sie es dann erneut.",
     "rateLimitedWait_one": "Zu viele Anfragen aus Ihrem Netzwerk. Versuchen Sie es in {{count}} Minute erneut.",
     "rateLimitedWait_other": "Zu viele Anfragen aus Ihrem Netzwerk. Versuchen Sie es in {{count}} Minuten erneut.",
+    "sessionQuota": "Sie haben das Limit für diese Personalisierungssitzung erreicht. Kommen Sie später wieder, um fortzufahren.",
     "busy": "Der Shop ist gerade stark ausgelastet. Ihre Gestaltung ist weiterhin vorhanden. Versuchen Sie es in einigen Sekunden erneut.",
     "unavailable": "Die Personalisierung ist vorübergehend nicht verfügbar. Ihre Gestaltung ist weiterhin vorhanden. Versuchen Sie es später erneut.",
     "cartBusy": "Ihr Warenkorb wird gerade in einem anderen Tab oder Fenster aktualisiert. Warten Sie, bis der Vorgang abgeschlossen ist, und versuchen Sie es dann erneut.",

@@ -221,6 +221,7 @@ export const customerParameterContracts = {
   'customer:recovery.repairRequired': {},
   'customer:recovery.replaceArtwork': {},
   'customer:recovery.reviewRequired': {},
+  'customer:recovery.sessionQuota': {},
   'customer:recovery.startNew': {},
   'customer:recovery.unavailable': {},
   'customer:recovery.undo': {},

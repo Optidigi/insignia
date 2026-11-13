@@ -251,6 +251,7 @@
     "rateLimitedWait_one": "Demasiadas solicitudes desde tu red. Inténtalo de nuevo dentro de {{count}} minuto.",
     "rateLimitedWait_many": "Demasiadas solicitudes desde tu red. Inténtalo de nuevo dentro de {{count}} minutos.",
     "rateLimitedWait_other": "Demasiadas solicitudes desde tu red. Inténtalo de nuevo dentro de {{count}} minutos.",
+    "sessionQuota": "Has alcanzado el límite de esta sesión de personalización. Vuelve más tarde para continuar.",
     "busy": "La tienda está muy ocupada en este momento. Tu personalización sigue aquí. Vuelve a intentarlo en unos segundos.",
     "unavailable": "El personalizador no está disponible temporalmente. Tu personalización sigue aquí. Vuelve a intentarlo más tarde.",
     "cartBusy": "Tu carrito se está actualizando en otra pestaña o ventana. Espera a que termine y vuelve a intentarlo.",

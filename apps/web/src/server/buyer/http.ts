@@ -91,6 +91,12 @@ const REJECTIONS: Record<
     errorClass: 'CapacityExceeded',
     message: `Your cart has reached the customization limit of ${BUYER_CART_CAPACITY.variants} customized cart lines and ${BUYER_CART_CAPACITY.quantity.toLocaleString('en-US')} customized items. Remove items from your cart or lower quantities to continue.`,
   },
+  /** Only an exhausted lifetime session quota (reason SESSION_QUOTA): no Retry-After, nothing helps until it expires. */
+  RATE_LIMITED: {
+    status: 429,
+    errorClass: 'SessionQuotaExhausted',
+    message: 'This customization session has reached its limit. Come back later to continue.',
+  },
 };
 /** CAPACITY_EXCEEDED for over 200 cart lines in total: 32 / 10,000 is not what the buyer exceeded. */
 const CART_LINES_MESSAGE =
