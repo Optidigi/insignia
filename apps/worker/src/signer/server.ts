@@ -9,6 +9,7 @@ import {
   publicKeyFromSeed,
   SIGNER_MAX_BODY_BYTES,
   type SignerErrorCode,
+  type SigningKeyHold,
   SigningKeyLifecycle,
   type SigningKeyRing,
   type SigningKeyStore,
@@ -71,11 +72,16 @@ function bucketLimiter(capacity: number, refillPerMs: number, clock: () => numbe
  * Audit entries carry scope, key ID, outcome and duration only; never key material or messages.
  */
 export function createSignerServer(input: {
-  store: SigningKeyStore;
+  store: SigningKeyStore & SigningKeyHold;
   ring: SigningKeyRing;
   clock?: () => Date;
   audit?: (entry: SignerAuditEntry) => void;
   limits?: Partial<SignerLimits>;
+  /**
+   * @internal Test seam only; production (`signer-main`) never passes it. It runs after every check, immediately
+   * before the signature is made, while the key row is locked.
+   */
+  beforeSign?: () => Promise<void>;
 }): Server {
   const limits = { ...DEFAULT_LIMITS, ...input.limits };
   const clock = input.clock ?? (() => new Date());
@@ -107,14 +113,17 @@ export function createSignerServer(input: {
       throw new SignerRefusal(400, 'INVALID_REQUEST');
     }
   }
+  // A stale or inactive scope is a key-selection refusal; anything else is unavailability.
+  function scopeRefusal(error: unknown): never {
+    if (error instanceof Error && /Inactive signing installation|Stale authorization identity/.test(error.message))
+      throw new SignerRefusal(409, 'KEY_UNAVAILABLE');
+    throw error;
+  }
   async function keysFor(scope: KeyScope) {
     try {
       return await input.store.list(scope);
     } catch (error) {
-      // A stale or inactive scope is a key-selection refusal; anything else is unavailability.
-      if (error instanceof Error && /Inactive signing installation|Stale authorization identity/.test(error.message))
-        throw new SignerRefusal(409, 'KEY_UNAVAILABLE');
-      throw error;
+      scopeRefusal(error);
     }
   }
 
@@ -129,39 +138,45 @@ export function createSignerServer(input: {
     // The issuance day is the shop-local day; it is never more than one day from the UTC day.
     if (Math.abs(request.issuanceDay - Math.floor(now() / 86_400_000)) > 1)
       throw new SignerRefusal(400, 'INVALID_REQUEST');
-    // Charge the shop's bucket only once its scope is confirmed, so invented shops cannot evict real ones.
-    const keys = await keysFor(request.scope);
-    if (!signAllowed(request.scope.shopId)) throw new SignerRefusal(429, 'RATE_LIMITED');
-    const key = keys.find((candidate) => candidate.id === request.keyId);
-    if (
-      key?.state !== 'active' ||
-      key.firstDay > request.issuanceDay ||
-      key.lastDay < request.issuanceDay + 2 ||
-      !key.privateEnvelope ||
-      typeof key.privateEnvelope !== 'object' ||
-      (key.privateEnvelope as { kid?: unknown }).kid !== key.wrappingKeyId
-    )
-      throw new SignerRefusal(409, 'KEY_UNAVAILABLE');
-    const seed = openSigningSeed(input.ring, request.scope, request.keyId, key.privateEnvelope);
-    const der = Buffer.concat([PKCS8_ED25519_PREFIX, seed]);
-    try {
-      if (
-        !publicKeyFromSeed(seed).equals(Buffer.from(key.publicKey)) ||
-        publicKeyFingerprint(key.publicKey) !== key.publicKeyFingerprint
-      )
-        throw new SignerRefusal(409, 'KEY_UNAVAILABLE');
-      const signature = sign(null, message, createPrivateKey({ key: der, format: 'der', type: 'pkcs8' }));
-      return {
-        keyId: key.id,
-        publicKeyFingerprint: key.publicKeyFingerprint,
-        firstValidDay: key.firstDay,
-        lastValidDay: key.lastDay,
-        signature: signature.toString('base64url'),
-      };
-    } finally {
-      seed.fill(0);
-      der.fill(0);
-    }
+    // The key row is held from this check until the signature exists, so a concurrent revoke,
+    // retirement or re-wrap commits either before the check (and is seen) or after the signature.
+    // Only in-memory work happens while it is held.
+    return input.store
+      .holdForSigning(request.scope, request.keyId, async (key) => {
+        // Charge the shop's bucket only once its scope is confirmed, so invented shops cannot evict real ones.
+        if (!signAllowed(request.scope.shopId)) throw new SignerRefusal(429, 'RATE_LIMITED');
+        if (
+          key?.state !== 'active' ||
+          key.firstDay > request.issuanceDay ||
+          key.lastDay < request.issuanceDay + 2 ||
+          !key.privateEnvelope ||
+          typeof key.privateEnvelope !== 'object' ||
+          (key.privateEnvelope as { kid?: unknown }).kid !== key.wrappingKeyId
+        )
+          throw new SignerRefusal(409, 'KEY_UNAVAILABLE');
+        const seed = openSigningSeed(input.ring, request.scope, request.keyId, key.privateEnvelope);
+        const der = Buffer.concat([PKCS8_ED25519_PREFIX, seed]);
+        try {
+          if (
+            !publicKeyFromSeed(seed).equals(Buffer.from(key.publicKey)) ||
+            publicKeyFingerprint(key.publicKey) !== key.publicKeyFingerprint
+          )
+            throw new SignerRefusal(409, 'KEY_UNAVAILABLE');
+          await input.beforeSign?.();
+          const signature = sign(null, message, createPrivateKey({ key: der, format: 'der', type: 'pkcs8' }));
+          return {
+            keyId: key.id,
+            publicKeyFingerprint: key.publicKeyFingerprint,
+            firstValidDay: key.firstDay,
+            lastValidDay: key.lastDay,
+            signature: signature.toString('base64url'),
+          };
+        } finally {
+          seed.fill(0);
+          der.fill(0);
+        }
+      })
+      .catch((error: unknown) => scopeRefusal(error));
   }
 
   async function handleProvision(body: unknown, audit: Partial<SignerAuditEntry>) {

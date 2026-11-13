@@ -43,6 +43,18 @@ export interface SigningKeyStore {
   destroyInactiveInstallationKeys(shopId: string, installationGeneration: string): Promise<number>;
   incrementEpoch(input: { scope: KeyScope; commandKey: string; requestDigest: string }): Promise<number>;
 }
+/**
+ * Signer only. Runs `use` with the scope's key `keyId` (undefined when absent) while that key row is
+ * held against concurrent revocation, retirement and re-wrap, so a signature is made either before
+ * such a change commits or not at all. `use` must not perform network or provider IO.
+ */
+export interface SigningKeyHold {
+  holdForSigning<T>(
+    scope: KeyScope,
+    keyId: number,
+    use: (key: DurableSigningKey | undefined) => Promise<T>,
+  ): Promise<T>;
+}
 
 function requireScope(actual: KeyScope | null, expected: KeyScope): void {
   if (
