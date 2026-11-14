@@ -37,6 +37,7 @@ import type {
   ProductAvailabilityHoldV3Port as ProductAvailabilityHoldPort,
   ProductAvailabilitySnapshotV3 as ProductAvailabilitySnapshot,
 } from './availability-v3.js';
+import { AvailabilityProviderUnavailableError } from './availability-v3.js';
 
 function record(value: unknown): Record<string, unknown> {
   const isRecord = (input: unknown): input is Record<string, unknown> =>
@@ -117,6 +118,7 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
   let fenced = false;
   let observations = 0;
   let failObservations = 0;
+  let observationFailure: 'transient' | 'deterministic' = 'transient';
   let acquisitions = 0;
   let restores = 0;
   let current: ProductAvailabilitySnapshot = {
@@ -181,7 +183,8 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
       observations++;
       if (failObservations > 0) {
         failObservations--;
-        throw new Error('synthetic throttled observation');
+        if (observationFailure === 'deterministic') throw new Error('synthetic deterministic observation failure');
+        throw new AvailabilityProviderUnavailableError('throttled');
       }
       return current.state === 'unavailable'
         ? {
@@ -417,6 +420,9 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
     },
     set failObservations(value: number) {
       failObservations = value;
+    },
+    set observationFailure(value: 'transient' | 'deterministic') {
+      observationFailure = value;
     },
     get observations() {
       return observations;
@@ -809,7 +815,7 @@ describe('production activation coordinator with injected synthetic boundary fix
       hold: { held: { state: 'unavailable' }, acquisitionAcknowledgement: expect.any(Object) },
     });
     f.failObservations = 1;
-    await expect(f.advance()).rejects.toThrow('synthetic throttled observation');
+    await expect(f.advance()).rejects.toBeInstanceOf(AvailabilityProviderUnavailableError);
     expect(f.candidate.state.kind).toBe('HELD');
     expect((await f.advance()).kind).toBe('HELD');
     f.phase = 'activation-pending';
@@ -817,6 +823,29 @@ describe('production activation coordinator with injected synthetic boundary fix
     expect((await f.advance()).kind).toBe('ACTIVE');
     expect(f.acquisitions).toBe(1);
     expect(f.current.state).toBe('available');
+  });
+  it('#446 review: a deterministic failure right after acquisition still ends in operator hold', async () => {
+    const f = fixture();
+    f.phase = 'prepared';
+    expect((await f.advance()).kind).toBe('WAITING_HOLD');
+    f.observationFailure = 'deterministic';
+    f.failObservations = 1;
+    await expect(f.advance()).rejects.toThrow('synthetic deterministic observation failure');
+    expect(f.candidate.state.kind).toBe('ACQUISITION_PENDING');
+    expect((await f.advance()).kind).toBe('OPERATOR_HOLD');
+    expect(f.acquisitions).toBe(1);
+  });
+  it('#446 review: a throttled observation after the committed restore claim records operator hold', async () => {
+    const f = fixture();
+    expect((await f.advance()).kind).toBe('WAITING_HOLD');
+    expect((await f.advance()).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+    f.failObservations = 1;
+    // Before: the claim was consumed, the throw rolled back, and every later run reported
+    // ACTIVATED_RESTORATION_PENDING with no restore and no operator signal.
+    expect((await f.advance()).kind).toBe('OPERATOR_HOLD');
+    expect(f.candidate.state.kind).toBe('OPERATOR_HOLD');
+    expect(f.restores).toBe(0);
+    expect((await f.advance()).kind).toBe('OPERATOR_HOLD');
   });
   it('crash between evidence insertion and effective activation rolls both back', async () => {
     const f = fixture('required');

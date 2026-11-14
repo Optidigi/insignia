@@ -1,6 +1,7 @@
 import {
   type AnyAvailabilityRestoreResult,
   type AnyProductAvailabilitySnapshot,
+  AvailabilityProviderUnavailableError,
   isAvailabilityV3,
   type ProductAvailabilitySnapshotV3,
 } from '@insignia/application';
@@ -164,12 +165,12 @@ test('acquire preserves the hidden anchor and accepts distinct ACK/readback upda
 });
 
 /** #446: Shopify throttling during hold reads (two merchant sessions on a dev store). */
-function throttledStore(throttle: (read: number, state: string) => boolean) {
+function throttledStore(throttle: (read: number, state: string) => boolean, code = 'THROTTLED') {
   let state = 'ACTIVE',
     reads = 0,
     writes = 0;
   const throttled = {
-    errors: [{ message: 'Throttled', extensions: { code: 'THROTTLED' } }],
+    errors: [{ message: 'Throttled', extensions: { code } }],
     extensions: { cost: { requestedQueryCost: 2, throttleStatus: { currentlyAvailable: 0, restoreRate: 100 } } },
   };
   const fetchImpl = vi.fn<typeof fetch>(async (_url: unknown, init?: RequestInit) => {
@@ -249,10 +250,31 @@ test('#446: a still-throttled hold observation is a retryable failure, not a con
   if (acquired.kind !== 'HELD' || acquired.hold.version !== 'm5-availability-hold-v3') throw new Error('not held');
   throttling = true;
   // Before the fix this resolved { kind: 'CONFLICT', current: null } and activation recorded OPERATOR_HOLD.
-  await expect(store.port().observe(scope, acquired.hold)).rejects.toMatchObject({ kind: 'throttled' });
+  const failure = store.port().observe(scope, acquired.hold);
+  await expect(failure).rejects.toBeInstanceOf(AvailabilityProviderUnavailableError);
+  await expect(failure).rejects.toMatchObject({ kind: 'throttled', transient: true });
   throttling = false;
   await expect(store.port().observe(scope, acquired.hold)).resolves.toMatchObject({ kind: 'HELD' });
   expect(store.writes).toBe(1);
+});
+
+test('#446 review: MAX_COST_EXCEEDED is not retried and an observation reports a conflict', async () => {
+  let failing = false;
+  const store = throttledStore(() => failing, 'MAX_COST_EXCEEDED');
+  const port = store.port();
+  const before = v3Snapshot(await port.snapshot(scope, productId));
+  if (before.version !== 'm5-product-availability-snapshot-v3') throw new Error('wrong snapshot');
+  const acquired = await port.acquire(scope, {
+    version: 'm5-availability-hold-v3',
+    operationId: 'op-446-cost',
+    before,
+    held: null,
+  });
+  if (acquired.kind !== 'HELD' || acquired.hold.version !== 'm5-availability-hold-v3') throw new Error('not held');
+  failing = true;
+  const reads = store.reads;
+  await expect(store.port().observe(scope, acquired.hold)).resolves.toMatchObject({ kind: 'CONFLICT', current: null });
+  expect(store.reads - reads).toBe(1);
 });
 
 type Scenario = {

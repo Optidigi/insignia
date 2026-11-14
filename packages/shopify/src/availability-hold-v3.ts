@@ -4,6 +4,7 @@ import {
   type AvailabilityHoldV3,
   type AvailabilityMutationAcknowledgementV3,
   type AvailabilityObservationV3,
+  AvailabilityProviderUnavailableError,
   type AvailabilityRestoreResultV3,
   type AvailabilityScope,
   activationDigest,
@@ -119,7 +120,7 @@ function unwrap(status: number, raw: unknown): Record<string, unknown> {
         Object.assign(error, { retryAfterMs: Math.ceil((Math.max(0, requested - available) / rate) * 1000) });
       throw error;
     }
-    if (codes.includes('MAX_COST_EXCEEDED')) return fail('throttled');
+    if (codes.includes('MAX_COST_EXCEEDED')) return fail('query_cost_exceeded');
     if (codes.includes('ACCESS_DENIED')) return fail('forbidden');
     return fail('graphql_error');
   }
@@ -509,7 +510,8 @@ export function createShopifyAvailabilityHoldV3Port(
       current = await read(scope, hold.before.productId, budget, originalAnchors(hold));
     } catch (error) {
       // Throttling or an outage observed nothing: it is retryable, not evidence of a conflict.
-      if (error instanceof ShopifyAvailabilityHoldError && TRANSIENT_READ_FAILURES.has(error.kind)) throw error;
+      if (error instanceof ShopifyAvailabilityHoldError && TRANSIENT_READ_FAILURES.has(error.kind))
+        throw new AvailabilityProviderUnavailableError(error.kind as AvailabilityProviderUnavailableError['kind']);
       if (error instanceof ShopifyAvailabilityHoldError) return { kind: 'CONFLICT', current: null };
       throw error;
     }

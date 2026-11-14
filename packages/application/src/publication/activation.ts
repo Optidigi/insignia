@@ -29,6 +29,7 @@ import type {
 } from './availability-v3.js';
 import {
   type AvailabilityHoldV3,
+  AvailabilityProviderUnavailableError,
   availabilityV3AcknowledgementQualified,
   availabilityV3HeldSafe,
   availabilityV3OwnedHeld,
@@ -570,7 +571,16 @@ export function createPublicationActivation(input: {
               return result('OPERATOR_HOLD', c);
             }
             // A restore response may have been lost. Never overwrite a changed remote snapshot.
-            const observation = await input.availability.observe(c.availabilityScope, c.state.hold);
+            let observation: Awaited<ReturnType<typeof input.availability.observe>>;
+            try {
+              observation = await input.availability.observe(c.availabilityScope, c.state.hold);
+            } catch (error) {
+              // The one-use claim is already committed; without this observation it cannot
+              // dispatch, so make the stop visible exactly as an unobservable hold was before.
+              if (!(error instanceof AvailabilityProviderUnavailableError)) throw error;
+              await session.save({ ...c.state, kind: 'OPERATOR_HOLD' });
+              return result('OPERATOR_HOLD', c);
+            }
             if (observation.kind !== 'HELD' || !exactSnapshot(observation.current, c.state.hold.held)) {
               await session.save({ ...c.state, kind: 'OPERATOR_HOLD' });
               return result('OPERATOR_HOLD', c);
@@ -687,7 +697,8 @@ export function createPublicationActivation(input: {
               // The owned acquisition receipt is evidence on its own. A follow-up read that
               // observed nothing (e.g. Shopify throttling) must not roll it back; commit HELD
               // and let the next invocation observe again.
-              if (acquired) return result('HELD', session.candidate);
+              if (acquired && error instanceof AvailabilityProviderUnavailableError)
+                return result('HELD', session.candidate);
               throw error;
             }
             if (!holdObservation) return result('OPERATOR_HOLD', c);

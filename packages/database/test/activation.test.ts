@@ -6,7 +6,11 @@ import type {
   ProductAvailabilityHoldV3Port as ProductAvailabilityHoldPort,
   ProductAvailabilitySnapshotV3 as ProductAvailabilitySnapshot,
 } from '@insignia/application';
-import { activationDigest, availabilitySnapshotIdentityDigest } from '@insignia/application';
+import {
+  AvailabilityProviderUnavailableError,
+  activationDigest,
+  availabilitySnapshotIdentityDigest,
+} from '@insignia/application';
 import {
   createPublicationAdminAdapter,
   createPublicationAdminHttpTransport,
@@ -375,7 +379,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       observe: async (_scope, hold) => {
         if (observeFailures > 0) {
           observeFailures--;
-          throw new Error('synthetic Shopify throttling');
+          throw new AvailabilityProviderUnavailableError('throttled');
         }
         return current.state === 'unavailable' &&
           hold.version === 'm5-availability-hold-v3' &&
@@ -1508,7 +1512,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       hold: { held: { state: 'unavailable' }, acquisitionAcknowledgement: { state: 'unavailable' } },
     });
     f.observeFailures = 1;
-    await expect(f.restart().advance(f.identity)).rejects.toThrow('synthetic Shopify throttling');
+    await expect(f.restart().advance(f.identity)).rejects.toThrow(/Availability provider unavailable/);
     expect((await f.restart().read(f.identity))?.state.kind).toBe('HELD');
     await f.publish();
     expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVATED_RESTORATION_PENDING');
