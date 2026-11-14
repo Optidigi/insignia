@@ -641,6 +641,9 @@ export function createProductionAdminServices(
     recordAuthenticationRejection(authStage) {
       authenticationLogger.info('admin_authentication', { authStage, correlationId: randomUUID() });
     },
+    recordConfigRejection({ action, code }) {
+      authenticationLogger.info('admin_config_rejected', { configAction: action, rejectionCode: code });
+    },
     async authenticate(request) {
       const correlationId = randomUUID();
       const diagnostic = (authStage: AdminAuthenticationStage) =>
