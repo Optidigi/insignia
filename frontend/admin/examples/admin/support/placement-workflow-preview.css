@@ -336,9 +336,6 @@
 .placement-workflow .placement-canvas-toolbar > div:first-child {
   overflow: hidden;
 }
-.placement-workflow .placement-canvas-toolbar > div:first-child > s-stack {
-  flex: 0 0 auto;
-}
 .placement-workflow .placement-canvas-toolbar:has([data-placement-view-overview]) {
   padding-inline-start: 4px;
 }

@@ -111,3 +111,71 @@ test('#441: a publish of a saved draft leaves no "Unsaved changes" bar or save s
   assert.notEqual(await lastBarEvent(f.page), 'show', 'the draft is saved, so the host bar stays hidden');
   assert.equal(await f.page.locator('ui-save-bar button[variant="primary"][loading]').count(), 0);
 });
+
+test('#441: publishing with unsaved edits shows no save spinner for a write that is not a save', {
+  timeout: 30000,
+}, async (t) => {
+  const f = await fixture(t);
+  let publishSeen: () => void = () => {};
+  const dispatched = new Promise<void>((resolve) => {
+    publishSeen = resolve;
+  });
+  await f.page.route('**/api/admin/products/111/config', async (route) => {
+    const request = route.request();
+    if (request.method() === 'POST' && JSON.parse(request.postData() ?? '{}').action === 'publish') {
+      publishSeen();
+      return;
+    }
+    return route.fallback();
+  });
+  await f.open();
+  await editName(f.page, 'Published with this edit');
+  await f.page
+    .locator('s-button[slot="primary-action"]')
+    .filter({ hasText: /^Publish$/ })
+    .evaluate((button: HTMLElementTagNameMap['s-button']) => button.click());
+  const modal = f.page.locator('s-modal').filter({ hasText: 'Publish setup' });
+  await modal.getByRole('button', { name: /^Publish/ }).click();
+  await dispatched;
+  await f.page.waitForTimeout(300);
+  assert.equal(await f.page.locator('ui-save-bar button[variant="primary"][loading]').count(), 0);
+  assert.equal(await f.page.locator('ui-save-bar button[variant="primary"]').isDisabled(), true);
+});
+
+test('#441: when the host save bar cannot be shown, a Polaris Save takes its place and saves', {
+  timeout: 20000,
+}, async (t) => {
+  const f = await fixture(t);
+  await f.page.addInitScript(() => {
+    const bar = window.shopify.saveBar;
+    if (bar) bar.show = async () => Promise.reject(new Error('host save bar unavailable'));
+  });
+  await f.open();
+  await editName(f.page, 'Saved without the host bar');
+  const save = f.page.getByRole('button', { name: 'Save draft', exact: true });
+  await save.waitFor();
+  const saved = f.page.waitForResponse((response) => response.request().method() === 'PUT');
+  await save.click();
+  assert.equal((await saved).status(), 200);
+  assert.equal(f.read().selectedSetup?.product.views[0]?.placements[0]?.name, 'Saved without the host bar');
+});
+
+test('#441: the panel and history controls stay on one line at 320 px and carry tooltips', {
+  timeout: 20000,
+}, async (t) => {
+  const f = await fixture(t);
+  await f.open();
+  await f.page.setViewportSize({ width: 320, height: 640 });
+  const tops = await f.page.evaluate(() =>
+    ['undo', 'redo'].map((icon) => {
+      const button = document.querySelector(`[data-placement-editor] s-button[icon="${icon}"]`);
+      const inner = button?.shadowRoot?.querySelector('button') ?? button;
+      return Math.round(inner?.getBoundingClientRect().top ?? -1);
+    }),
+  );
+  assert.equal(tops[0], tops[1], 'Undo and Redo share one row');
+  assert.ok((tops[0] ?? -1) >= 0);
+  assert.equal(await f.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+  for (const id of ['placement-undo-help', 'placement-redo-help'])
+    assert.equal(await f.page.locator(`s-tooltip#${id}`).count(), 1, id);
+});

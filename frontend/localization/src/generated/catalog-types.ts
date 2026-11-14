@@ -980,7 +980,6 @@ export interface AdminMessageTable {
   'editor:placementWorkflowPreview.noViewsOrPlacementsFound': object;
   'editor:placementWorkflowPreview.outlineActions': object;
   'editor:placementWorkflowPreview.outlineSummary': { placements: string; views: string };
-  'editor:placementWorkflowPreview.panelsAndHistoryActions': object;
   'editor:placementWorkflowPreview.perItem': object;
   'editor:placementWorkflowPreview.perItemAtThisPlacementLeaveBlankToExcludeASizeEnter0ForFree': object;
   'editor:placementWorkflowPreview.perLocationPerItem': object;

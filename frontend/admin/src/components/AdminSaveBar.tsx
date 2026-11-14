@@ -40,7 +40,7 @@ export default function AdminSaveBar({
   const [guard, dispatch] = useReducer(leaveGuardReducer, undefined, initialLeaveGuardState);
   const confirming = guard.phase === 'confirming';
   const leaving = useRef(false);
-  const [hostAvailable, setHostAvailable] = useState(false);
+  const [hostAvailable, setHostAvailable] = useState(() => !!(window as unknown as { shopify?: Bridge }).shopify?.saveBar);
   const pending = useRef<number | null>(null);
   const sequence = useRef(0);
   const mounted = useRef(true);

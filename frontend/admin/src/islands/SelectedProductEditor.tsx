@@ -2697,7 +2697,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
             ? translateUi('editor:placementWorkflowPreview.history.changeRedone')
             : ''}
       </span>
-      {adapter.kind === 'production' && <AdminSaveBar dirty={dirty} saving={dirty && writeBusy} canSave={dirty && !writeBusy && !adapter.pending() && !adapter.readOnly} canDiscard={!writeBusy && !adapter.pending()} onSave={save} onDiscard={discard} showFallback={false} manageNavigation={false}/>}
+      {adapter.kind === 'production' && <AdminSaveBar dirty={dirty} saving={dirty && writeBusy && dialog.kind !== 'publish'} canSave={dirty && !writeBusy && !adapter.pending() && !adapter.readOnly} canDiscard={!writeBusy && !adapter.pending()} onSave={save} onDiscard={discard} manageNavigation={false}/>}
       <s-page heading={product.title} inlineSize="large">
         <s-link slot="breadcrumb-actions" href={returnTo}>
           {translateUi(
@@ -3143,11 +3143,12 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
           >
             <div>
               {adapter.kind === 'production' && (
-                <s-stack direction="inline" gap="none" alignItems="center">
+                <>
                   {wideEditor && (
                     <s-button
                       variant="tertiary"
                       icon="layout-sidebar-left"
+                      interestFor="placement-panel-toggle-help"
                       accessibilityLabel={translateUi(outlineHidden ? 'editor:placementWorkflowPreview.showViewsAndPlacements' : 'editor:placementWorkflowPreview.hideViewsAndPlacements')}
                       disabled={!view || writeBusy || adapter.pending()}
                       onClick={() => setOutlineHidden((hidden) => !hidden)}
@@ -3156,6 +3157,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                   <s-button
                     variant="tertiary"
                     icon="undo"
+                    interestFor="placement-undo-help"
                     accessibilityLabel={translateUi('editor:placementWorkflowPreview.undo')}
                     disabled={movementEditing || calibrationEditing || writeBusy || adapter.pending() || (!geometryInput && !history.current.past.length)}
                     onClick={() => restoreHistory('undo')}
@@ -3163,11 +3165,19 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                   <s-button
                     variant="tertiary"
                     icon="redo"
+                    interestFor="placement-redo-help"
                     accessibilityLabel={translateUi('editor:placementWorkflowPreview.redo')}
                     disabled={movementEditing || calibrationEditing || writeBusy || adapter.pending() || !!geometryInput || !history.current.future.length}
                     onClick={() => restoreHistory('redo')}
                   />
-                </s-stack>
+                  {wideEditor && (
+                    <s-tooltip id="placement-panel-toggle-help">
+                      {translateUi(outlineHidden ? 'editor:placementWorkflowPreview.showViewsAndPlacements' : 'editor:placementWorkflowPreview.hideViewsAndPlacements')}
+                    </s-tooltip>
+                  )}
+                  <s-tooltip id="placement-undo-help">{translateUi('editor:placementWorkflowPreview.undo')}</s-tooltip>
+                  <s-tooltip id="placement-redo-help">{translateUi('editor:placementWorkflowPreview.redo')}</s-tooltip>
+                </>
               )}
               {view && placement && !movementEditing && !drawing && !calibrationEditing ? (
                 <AdminResourceName text={view.name}>
