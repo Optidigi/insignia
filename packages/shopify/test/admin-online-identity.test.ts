@@ -393,6 +393,29 @@ describe('installation read under Shopify throttling (#446)', () => {
     expect(Date.now() - started).toBeLessThan(INSTALLATION_READ_BUDGET_MS);
     expect(INSTALLATION_READ_BUDGET_MS).toBeLessThan(10_000);
   });
+  it('#480: a caller-supplied remaining budget bounds the retries', async () => {
+    let calls = 0;
+    const provider = createAdminOnlineIdentity({
+      apiKey: key,
+      apiSecret: secret,
+      hostName: 'example.test',
+      async fetchImpl() {
+        calls++;
+        return new Response('', { status: 429, headers: { 'Retry-After': '0.5' } });
+      },
+    });
+    // 1.2 s left: one attempt, and a 0.5 s wait plus a 1 s minimum attempt would pass it.
+    await expect(provider.readInstallation({ shop, accessToken: 'synthetic' }, 1200)).rejects.toMatchObject({
+      transient: true,
+      providerCode: 'HTTP_429',
+    });
+    expect(calls).toBe(1);
+    calls = 0;
+    await expect(provider.readInstallation({ shop, accessToken: 'synthetic' })).rejects.toMatchObject({
+      providerCode: 'HTTP_429',
+    });
+    expect(calls).toBe(3);
+  });
   it('does not retry a denied read and marks it non-transient', async () => {
     let calls = 0;
     const provider = createAdminOnlineIdentity({
