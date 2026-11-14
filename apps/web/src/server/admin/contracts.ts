@@ -11,6 +11,8 @@ import type { MerchantMediaService } from './merchant-media.js';
 import type { SigningOwnerAction } from './signing-owner-action.js';
 
 export type { CatalogProduct, CommandOutcome, ConfigView, PublicationState } from '../../shared/admin-view.js';
+/** The configuration command a 422 rejected; 'command' when the request named none validly. */
+export type ConfigRejectionAction = import('@insignia/observability').AdminConfigAction;
 export interface AdminActor {
   shop: string;
   shopId: string;
@@ -88,6 +90,11 @@ export interface AdminServices {
   authenticate(request: Request, options?: { fresh?: boolean }): Promise<AdminActor | null>;
   /** HTTP-only rejected boundary observation; no request, claims or error crosses this port. */
   recordAuthenticationRejection?(stage: 'BEARER_MISSING' | 'BEARER_MALFORMED' | 'AUTHENTICATED_ACTOR_REJECTED'): void;
+  /** Configuration-route 422 observation: action and reason code only, never request or draft content. */
+  recordConfigRejection?(rejection: {
+    action: ConfigRejectionAction;
+    code: import('../../shared/config-rejection.js').ConfigRejectionCode;
+  }): void;
   /** Read-only technical observations; presence alone is never activation admission. */
   inspectReadiness?(actor: AdminActor): Promise<{
     version: 'm5-admin-technical-readiness-v1';

@@ -6,6 +6,7 @@ import type { DurableTransaction } from '@insignia/database';
 import { CONFIG_DRAFT_STORAGE_VERSION, type DurableCore, sha256CanonicalJson } from '@insignia/database';
 import { parseSignedMinor, validateLeanConfig, validatePublishedConfig } from '@insignia/domain';
 import { GEOMETRY_VERSION, type GeometryV1, validateGeometryBridge } from '@insignia/visualizer/geometry';
+import { CONFIG_REJECTION_CODES, type ConfigRejectionCode } from '../shared/config-rejection.ts';
 import { projectActivationPublicationState } from './admin/activation-state.ts';
 import type { AdminActor as Actor, CatalogProduct } from './admin/contracts.js';
 import {
@@ -15,7 +16,7 @@ import {
 } from './selected-method-reconciliation.ts';
 import {
   SelectedSetupAuthorityError,
-  SelectedSetupCapacityError,
+  SelectedSetupValidationError,
   selectedProductDraft,
   selectedPublicationProblems,
 } from './selected-product.ts';
@@ -25,7 +26,13 @@ type Outcome =
   | { kind: 'saved'; draftVersion: string }
   | { kind: 'accepted'; state: ReturnType<typeof projectActivationPublicationState>; revisionId: string }
   | {
-      kind: 'conflict' | 'invalid' | 'forbidden';
+      kind: 'conflict' | 'forbidden';
+      noEffect?: true;
+      message: string;
+    }
+  | {
+      kind: 'invalid';
+      code: ConfigRejectionCode;
       noEffect?: true;
       message: string;
       validationIssues?: { path: string; message: string }[];
@@ -67,14 +74,17 @@ function draftPublished(draft: MerchantDraft, actor: Actor, productId: string, r
 }
 class DraftValidationError extends Error {
   readonly path: string;
-  constructor(path: string, message: string) {
+  readonly code: ConfigRejectionCode;
+  constructor(path: string, message: string, code: ConfigRejectionCode) {
     super(message);
     this.path = path;
+    this.code = code;
   }
 }
 function invalidDraft(error: unknown): Outcome {
   return {
     kind: 'invalid',
+    code: error instanceof DraftValidationError ? error.code : 'DRAFT_INVALID',
     noEffect: true,
     message: 'Review the configuration validation errors before saving or publishing.',
     validationIssues:
@@ -97,17 +107,25 @@ function validatedDraft(
         .map((part) => String(part))
         .filter((part) => /^[A-Za-z0-9_]+$/.test(part))
         .join('.') ?? 'configuration';
-    throw new DraftValidationError(path || 'configuration', 'This field does not satisfy the configuration contract.');
+    throw new DraftValidationError(
+      path || 'configuration',
+      'This field does not satisfy the configuration contract.',
+      'DRAFT_SCHEMA_INVALID',
+    );
   }
   let draft = parsed.data;
   if (draft.selectedSetup) {
     if (draft.selectedSetup.product.id.replace(/^gid:\/\/shopify\/Product\//, '') !== productNumber(productId))
-      throw new DraftValidationError('selectedSetup.product.id', 'Product identity changed. Reload the editor.');
+      throw new DraftValidationError(
+        'selectedSetup.product.id',
+        'Product identity changed. Reload the editor.',
+        'PRODUCT_IDENTITY_CHANGED',
+      );
     try {
       draft = selectedProductDraft(draft.selectedSetup, draft);
     } catch (error) {
-      if (error instanceof SelectedSetupCapacityError)
-        throw new DraftValidationError('selectedSetup.product', error.message);
+      if (error instanceof SelectedSetupValidationError)
+        throw new DraftValidationError('selectedSetup.product', error.message, error.code);
       throw error;
     }
   }
@@ -132,12 +150,20 @@ function validatedDraft(
       throw new DraftValidationError(
         `pricingRules.${index}.rate`,
         'Review amount precision and supported currencies; amounts are never rounded.',
+        'PRICE_AMOUNT_INVALID',
       );
     }
   }
-  const published = validatePublishedConfig(
-    PublishedConfigSchema.parse(draftPublished(draft, actor, productId, 'draft')),
-  );
+  let published: ReturnType<typeof validatePublishedConfig>;
+  try {
+    published = validatePublishedConfig(PublishedConfigSchema.parse(draftPublished(draft, actor, productId, 'draft')));
+  } catch {
+    throw new DraftValidationError(
+      'configuration',
+      'Configuration choices or references are invalid.',
+      'CONFIG_POLICY_INVALID',
+    );
+  }
   if (lean) {
     try {
       validateLeanConfig(published);
@@ -145,13 +171,18 @@ function validatedDraft(
       throw new DraftValidationError(
         'pricingRules',
         'Lean prices need final nonnegative per-garment method, placement and size amounts in shop currency.',
+        'LEAN_PRICING_INVALID',
       );
     }
   }
   try {
     validateGeometryBridge(geometry, published);
   } catch {
-    throw new DraftValidationError('geometry', 'Review placement bounds and view, variant and step references.');
+    throw new DraftValidationError(
+      'geometry',
+      'Review placement bounds and view, variant and step references.',
+      'GEOMETRY_INVALID',
+    );
   }
   const references = [
     ['methods', draft.methods.map((item) => item.id)],
@@ -163,11 +194,19 @@ function validatedDraft(
   ] as const;
   for (const [kind, ids] of references)
     if (Object.keys(draft.labels?.[kind] ?? {}).some((id) => !ids.includes(id)))
-      throw new Error('Draft label references an unknown configuration choice');
+      throw new DraftValidationError(
+        'labels.' + kind,
+        'A label references an unknown configuration choice.',
+        'LABEL_REFERENCE_INVALID',
+      );
   for (const [optionId, valueLabels] of Object.entries(draft.labels?.values ?? {})) {
     const option = draft.productionOptions.find((item) => item.id === optionId);
     if (!option || Object.keys(valueLabels).some((id) => !option.allowedValueIds.includes(id)))
-      throw new Error('Draft value label references an unknown option choice');
+      throw new DraftValidationError(
+        'labels.values',
+        'A label references an unknown option choice.',
+        'LABEL_REFERENCE_INVALID',
+      );
   }
   return { ...draft, geometry };
 }
@@ -579,6 +618,7 @@ export function createMerchantConfigService(input: {
       if (draft.mode !== 'required')
         return {
           kind: 'invalid',
+          code: 'REQUIRED_MODE_REQUIRED',
           noEffect: true,
           message:
             'All configured products require customization. Review and save the required policy before publishing.',
@@ -586,64 +626,78 @@ export function createMerchantConfigService(input: {
       if (draft.selectedSetup && !data.authority)
         throw new SelectedSetupAuthorityError('Selected setup authority required');
       const shopCurrency = await input.catalog.shopCurrency(actor);
-      const result = await executeCommand(
-        commandTransactions(actor, data.authority),
-        core.commands,
-        command(actor, 'm5-save-draft', data.idempotencyKey, {
-          productId,
-          configId: data.configId,
-          draftVersion: data.draftVersion,
-          draft,
-          ...(data.authority ? { authority: data.authority } : {}),
-        }),
-        async (tx) => {
-          if (draft.shopCurrency !== shopCurrency) return 'currency';
-          const config = await core.configs.getConfigForUpdate(tx, actor.tenantShopId, data.configId);
-          if (!config || config.externalProductId !== productNumber(productId)) return 'conflict';
-          if (config.draftVersion !== data.draftVersion) return 'conflict';
-          const previousSetup = MerchantDraftSchema.parse(config.draftValue).selectedSetup;
-          if (previousSetup && !draft.selectedSetup) return 'method-links';
-          let resolvedDraft: MerchantDraft;
-          try {
-            resolvedDraft = draft.selectedSetup
-              ? validatedDraft(
-                  {
-                    ...draft,
-                    selectedSetup: await reconcileIncomingSelectedSetup(
-                      core,
-                      tx,
-                      actor,
-                      draft.selectedSetup,
-                      draft.shopCurrency,
-                      catalogProduct.tags,
-                      previousSetup,
-                    ),
-                  },
-                  actor,
-                  productId,
-                )
-              : draft;
-          } catch (error) {
-            if (error instanceof SelectedMethodBindingContinuityError) return 'method-links';
-            throw error;
-          }
-          const updated = await core.configs.updateDraft(tx, {
-            shopId: actor.tenantShopId,
+      let result: { kind: 'executed' | 'replayed'; resultRef: string };
+      try {
+        result = await executeCommand(
+          commandTransactions(actor, data.authority),
+          core.commands,
+          command(actor, 'm5-save-draft', data.idempotencyKey, {
+            productId,
             configId: data.configId,
-            expectedVersion: data.draftVersion,
-            schemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
-            draftValue: resolvedDraft,
-          });
-          return updated.kind === 'updated' ? `saved:${updated.config.draftVersion}` : 'conflict';
-        },
-      );
+            draftVersion: data.draftVersion,
+            draft,
+            ...(data.authority ? { authority: data.authority } : {}),
+          }),
+          async (tx) => {
+            if (draft.shopCurrency !== shopCurrency) return 'currency';
+            const config = await core.configs.getConfigForUpdate(tx, actor.tenantShopId, data.configId);
+            if (!config || config.externalProductId !== productNumber(productId)) return 'conflict';
+            if (config.draftVersion !== data.draftVersion) return 'conflict';
+            const previousSetup = MerchantDraftSchema.parse(config.draftValue).selectedSetup;
+            if (previousSetup && !draft.selectedSetup) return 'method-links';
+            let resolvedDraft: MerchantDraft;
+            try {
+              resolvedDraft = draft.selectedSetup
+                ? validatedDraft(
+                    {
+                      ...draft,
+                      selectedSetup: await reconcileIncomingSelectedSetup(
+                        core,
+                        tx,
+                        actor,
+                        draft.selectedSetup,
+                        draft.shopCurrency,
+                        catalogProduct.tags,
+                        previousSetup,
+                      ),
+                    },
+                    actor,
+                    productId,
+                  )
+                : draft;
+            } catch (error) {
+              if (error instanceof SelectedMethodBindingContinuityError) return 'method-links';
+              throw error;
+            }
+            const updated = await core.configs.updateDraft(tx, {
+              shopId: actor.tenantShopId,
+              configId: data.configId,
+              expectedVersion: data.draftVersion,
+              schemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
+              draftValue: resolvedDraft,
+            });
+            return updated.kind === 'updated' ? `saved:${updated.config.draftVersion}` : 'conflict';
+          },
+        );
+      } catch (error) {
+        // Re-validation after Method reconciliation rolls back the whole command, including its key,
+        // and reports the same coded rejection as the pre-transaction check.
+        if (error instanceof DraftValidationError) return invalidDraft(error);
+        throw error;
+      }
       return result.resultRef === 'conflict'
         ? { kind: 'conflict', noEffect: true, message: 'Draft changed. Reload and review the current version.' }
         : result.resultRef === 'currency'
-          ? { kind: 'invalid', noEffect: true, message: 'Shop currency changed. Reload and review the draft.' }
+          ? {
+              kind: 'invalid',
+              code: 'SHOP_CURRENCY_CHANGED',
+              noEffect: true,
+              message: 'Shop currency changed. Reload and review the draft.',
+            }
           : result.resultRef === 'method-links'
             ? {
                 kind: 'invalid',
+                code: 'METHOD_LINKS_CHANGED',
                 noEffect: true,
                 message: 'Configured Method inheritance metadata changed. Reload and review the draft.',
               }
@@ -652,7 +706,8 @@ export function createMerchantConfigService(input: {
     async copy(actor: Actor, sourceProductId: string, targetProductId: string, key: string): Promise<Outcome> {
       await product(actor, sourceProductId);
       await product(actor, targetProductId);
-      if (sourceProductId === targetProductId) return { kind: 'invalid', message: 'Copy target must differ' };
+      if (sourceProductId === targetProductId)
+        return { kind: 'invalid', code: 'COPY_TARGET_SAME', message: 'Copy target must differ' };
       let result: { kind: 'executed' | 'replayed'; resultRef: string };
       try {
         result = await executeCommand(
@@ -678,8 +733,10 @@ export function createMerchantConfigService(input: {
             const targetDraft = cloneForProduct(draft, id);
             try {
               validatedDraft(targetDraft, actor, targetProductId);
-            } catch {
-              return 'lean-review';
+            } catch (error) {
+              // Only the Lean price rule asks for a price review; every other rule keeps its own code.
+              if (error instanceof DraftValidationError && error.code === 'LEAN_PRICING_INVALID') return 'lean-review';
+              return `invalid-target:${error instanceof DraftValidationError ? error.code : 'DRAFT_INVALID'}`;
             }
             await core.configs.createConfig(tx, {
               shopId: actor.tenantShopId,
@@ -697,14 +754,28 @@ export function createMerchantConfigService(input: {
       }
       if (result.resultRef === 'occupied')
         return { kind: 'conflict', message: 'Target product already has a configuration' };
-      if (result.resultRef === 'missing') return { kind: 'invalid', message: 'Source configuration does not exist' };
+      if (result.resultRef === 'missing')
+        return { kind: 'invalid', code: 'COPY_SOURCE_MISSING', message: 'Source configuration does not exist' };
       if (result.resultRef === 'lean-review')
         return {
           kind: 'invalid',
+          code: 'COPY_LEAN_REVIEW_REQUIRED',
           message: 'Create and review a Lean price proposal before copying this historical configuration.',
         };
       if (result.resultRef === 'invalid')
-        return { kind: 'invalid', message: 'Source draft needs review before copying' };
+        return {
+          kind: 'invalid',
+          code: 'COPY_SOURCE_NEEDS_REVIEW',
+          message: 'Source draft needs review before copying',
+        };
+      if (result.resultRef.startsWith('invalid-target:')) {
+        const code = result.resultRef.slice('invalid-target:'.length);
+        return {
+          kind: 'invalid',
+          code: CONFIG_REJECTION_CODES.find((known) => known === code) ?? 'DRAFT_INVALID',
+          message: 'The copied configuration does not satisfy the target product. Review it before copying.',
+        };
+      }
       return { kind: 'created', configId: result.resultRef };
     },
     async publish(
@@ -751,6 +822,7 @@ export function createMerchantConfigService(input: {
         if (snapshot.mode !== 'required')
           return {
             kind: 'invalid',
+            code: 'REQUIRED_MODE_REQUIRED',
             noEffect: true,
             message: 'All configured products require customization. Save the required policy before publishing.',
           };
@@ -761,6 +833,7 @@ export function createMerchantConfigService(input: {
         )
           return {
             kind: 'invalid',
+            code: 'PRODUCTION_DIMENSIONS_REQUIRED',
             noEffect: true,
             message:
               'Actual production dimensions are required for every configured decoration size before publication.',
@@ -795,6 +868,7 @@ export function createMerchantConfigService(input: {
           if (methodAdmission === 'review')
             return {
               kind: 'invalid',
+              code: 'METHOD_REVIEW_REQUIRED',
               noEffect: true,
               message: 'Method defaults or assignments changed. Save and review the current draft before publishing.',
             };
@@ -803,14 +877,23 @@ export function createMerchantConfigService(input: {
         if (selectedProblems.length)
           return {
             kind: 'invalid',
+            code: 'PUBLICATION_INCOMPLETE',
             message: selectedProblems[0]!,
             validationIssues: selectedProblems.map((message) => ({ path: 'selectedSetup', message })),
           };
         if (snapshot.geometry.views.length === 0 || snapshot.placements.length === 0 || snapshot.methods.length === 0)
-          return { kind: 'invalid', message: 'At least one view, placement and method is required' };
+          return {
+            kind: 'invalid',
+            code: 'PUBLICATION_INCOMPLETE',
+            message: 'At least one view, placement and method is required',
+          };
         const shopCurrency = await input.catalog.shopCurrency(actor);
         if (snapshot.shopCurrency !== shopCurrency)
-          return { kind: 'invalid', message: 'Shop currency changed. Reload and review the draft.' };
+          return {
+            kind: 'invalid',
+            code: 'SHOP_CURRENCY_CHANGED',
+            message: 'Shop currency changed. Reload and review the draft.',
+          };
         const eligibility = await input
           .eligibility(actor, snapshot)
           .catch(() => ({ allowed: false, reason: 'Entitlement unavailable' }));
@@ -934,9 +1017,17 @@ export function createMerchantConfigService(input: {
       if (resultRef === 'conflict') return { kind: 'conflict', message: 'Draft changed. Reload before publication.' };
       if (resultRef === 'open') return { kind: 'conflict', message: 'A publication request is already in progress' };
       if (resultRef === 'invalid')
-        return { kind: 'invalid', message: 'At least one view, placement and method is required' };
+        return {
+          kind: 'invalid',
+          code: 'PUBLICATION_INCOMPLETE',
+          message: 'At least one view, placement and method is required',
+        };
       if (resultRef === 'currency')
-        return { kind: 'invalid', message: 'Shop currency changed. Reload and review the draft.' };
+        return {
+          kind: 'invalid',
+          code: 'SHOP_CURRENCY_CHANGED',
+          message: 'Shop currency changed. Reload and review the draft.',
+        };
       const [revisionId, mode] = resultRef.split(':');
       if (!revisionId || (mode !== 'required' && mode !== 'optional'))
         throw new Error('Invalid durable publish result');
@@ -974,7 +1065,11 @@ export function createMerchantConfigService(input: {
         throw new Error('Immutable publication revision unavailable');
       const published = PublishedConfigSchema.parse(revision.publishedValue);
       if (published.shopCurrency !== (await input.catalog.shopCurrency(actor)))
-        return { kind: 'invalid', message: 'Shop currency changed. Reload and review the draft.' };
+        return {
+          kind: 'invalid',
+          code: 'SHOP_CURRENCY_CHANGED',
+          message: 'Shop currency changed. Reload and review the draft.',
+        };
       const presentation = await core.configs.getRevisionPresentation(actor.tenantShopId, revisionId);
       if (presentation?.selectedSetup) {
         const frozen = await core.merchantPreviews.getForRevision(

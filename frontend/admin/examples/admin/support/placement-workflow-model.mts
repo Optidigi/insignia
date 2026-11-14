@@ -1,5 +1,6 @@
 /** Selected editor geometry helpers; data validation is shared with the server. */
-import { parsePrice } from './method-workflow-prices.mts';
+import { canonicalDecimalText, parseDecimalNumber } from './decimal-input.mts';
+import { canonicalPriceText, parsePrice } from './method-workflow-prices.mts';
 import {
   minimumRectSize,
   movementRectContainsPlacementRect,
@@ -426,9 +427,35 @@ function nonblank(value: string): boolean {
 }
 
 function positiveDecimal(value: string): boolean {
-  if (!/^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(value.trim())) return false;
-  const number = Number(value);
-  return Number.isFinite(number) && number > 0;
+  const number = parseDecimalNumber(value);
+  return number !== null && number > 0;
+}
+
+function validSizeFactor(value: string): boolean {
+  const number = parseDecimalNumber(value);
+  return number !== null && number > 0 && number <= 100;
+}
+
+/** Typed decimals ("7,5", "62,5") become the dot-separated text the server contract and exact-money paths read. */
+export function canonicalPlacementDecimals(product: PlacementProduct): PlacementProduct {
+  return {
+    ...product,
+    methods: product.methods.map((method) =>
+      method.pricing === 'fixed' ? { ...method, amount: canonicalPriceText(method.amount) } : method,
+    ),
+    views: product.views.map((view) => ({
+      ...view,
+      placements: view.placements.map((placement) => ({
+        ...placement,
+        sizes: placement.sizes.map((size) => ({
+          ...size,
+          widthPercent: canonicalDecimalText(size.widthPercent),
+          ...(size.heightPercent === undefined ? {} : { heightPercent: canonicalDecimalText(size.heightPercent) }),
+          prices: Object.fromEntries(Object.entries(size.prices).map(([id, price]) => [id, canonicalPriceText(price)])),
+        })),
+      })),
+    })),
+  };
 }
 
 export function validatePlacementProduct(product: PlacementProduct): Record<string, PlacementValidationError> {
@@ -479,21 +506,8 @@ export function validatePlacementProduct(product: PlacementProduct): Record<stri
       for (const size of placement.sizes) {
         const sizePath = `${placementPath}.sizes.${size.id}`;
         if (!nonblank(size.name)) addError(errors, `${sizePath}.name`, 'size-name-required');
-        const widthPercent = Number(size.widthPercent);
-        if (
-          !/^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(size.widthPercent.trim()) ||
-          !Number.isFinite(widthPercent) ||
-          widthPercent <= 0 ||
-          widthPercent > 100
-        )
-          addError(errors, `${sizePath}.widthPercent`, 'size-factor-invalid');
-        if (
-          size.heightPercent !== undefined &&
-          (!/^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(size.heightPercent.trim()) ||
-            !Number.isFinite(Number(size.heightPercent)) ||
-            Number(size.heightPercent) <= 0 ||
-            Number(size.heightPercent) > 100)
-        )
+        if (!validSizeFactor(size.widthPercent)) addError(errors, `${sizePath}.widthPercent`, 'size-factor-invalid');
+        if (size.heightPercent !== undefined && !validSizeFactor(size.heightPercent))
           addError(errors, `${sizePath}.heightPercent`, 'size-factor-invalid');
 
         for (const methodId of placement.methodIds) {

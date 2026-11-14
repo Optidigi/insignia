@@ -1,11 +1,12 @@
 import { CommandDigestConflictError } from '@insignia/application';
 import { MethodConfigurationSchema } from '@insignia/contracts';
 import { AdminOnlineIdentityError, ShopifyAdminUnavailableError } from '@insignia/shopify';
+import type { ConfigRejectionCode } from '../../shared/config-rejection.ts';
 import { SelectedSetupAuthorityError } from '../selected-product.ts';
 import { selectedMediaUrlsValid } from '../selected-product-media-urls.ts';
 import { AdminAuthenticationBusyError } from './auth.ts';
 import { CatalogQueryError } from './catalog-query.ts';
-import type { AdminActor, AdminServices, CommandOutcome } from './contracts.js';
+import type { AdminActor, AdminServices, CommandOutcome, ConfigRejectionAction } from './contracts.js';
 import { MethodAuthorizationError, MethodCurrencyConflictError } from './methods.ts';
 
 export type AdminRoute =
@@ -125,7 +126,7 @@ async function bodyObject(request: Request): Promise<Record<string, unknown> | n
   }
 }
 
-function outcome(result: CommandOutcome): Response {
+function outcome(services: AdminServices, action: ConfigRejectionAction, result: CommandOutcome): Response {
   switch (result.kind) {
     case 'created':
       return adminJson(201, result);
@@ -136,6 +137,7 @@ function outcome(result: CommandOutcome): Response {
     case 'conflict':
       return adminJson(409, result);
     case 'invalid':
+      services.recordConfigRejection?.({ action, code: result.code });
       return adminJson(422, result);
     case 'forbidden':
       return adminJson(403, result);
@@ -164,6 +166,17 @@ async function authenticateAdmin(
     return adminJson(401, { error: 'Authentication required' });
   }
   return actor;
+}
+
+/** A 422 from the configuration route: observable by reason code only, never by request content. */
+function configRejected(
+  services: AdminServices,
+  action: ConfigRejectionAction,
+  code: ConfigRejectionCode,
+  body: Record<string, unknown>,
+): Response {
+  services.recordConfigRejection?.({ action, code });
+  return adminJson(422, { ...body, code });
 }
 
 /** Authenticated API boundary. A bare document route contains no private data. */
@@ -322,10 +335,11 @@ export async function handleAdminRequest(
     if (!mutationOrigin(request, services.appOrigin)) return adminJson(403, { error: 'Origin denied' });
     if (!actor.canEdit) return adminJson(403, { error: 'Edit permission required' });
     const key = request.headers.get('Idempotency-Key') ?? '';
-    if (!KEY.test(key)) return adminJson(422, { error: 'Idempotency key required' });
+    if (!KEY.test(key))
+      return configRejected(services, 'command', 'IDEMPOTENCY_KEY_REQUIRED', { error: 'Idempotency key required' });
     const body = await bodyObject(request);
     if (!body || 'shop' in body || 'shopId' in body || 'staffId' in body)
-      return adminJson(422, { error: 'Invalid command' });
+      return configRejected(services, 'command', 'INVALID_COMMAND', { error: 'Invalid command' });
     const source = await services.catalog.get(actor, route.productId);
     if (!source || source.id !== route.productId) return adminJson(404, { error: 'Product not found' });
     if (request.method === 'POST' && body.action === 'reconcile') {
@@ -338,7 +352,9 @@ export async function handleAdminRequest(
         key !== `${body.operationKey}:reconcile` ||
         !/^[a-f0-9]{64}$/.test(authority)
       )
-        return adminJson(422, { error: 'Invalid reconciliation identity' });
+        return configRejected(services, 'reconcile', 'INVALID_RECONCILIATION_IDENTITY', {
+          error: 'Invalid reconciliation identity',
+        });
       return services.configs.reconcile
         ? adminJson(
             200,
@@ -352,6 +368,8 @@ export async function handleAdminRequest(
     }
     if (request.method === 'POST' && body.action === 'create' && Object.keys(body).length === 1)
       return outcome(
+        services,
+        'create',
         await services.configs.create(
           actor,
           route.productId,
@@ -369,7 +387,7 @@ export async function handleAdminRequest(
     ) {
       const target = await services.catalog.get(actor, body.targetProductId);
       if (!target || target.id !== body.targetProductId) return adminJson(404, { error: 'Target product not found' });
-      return outcome(await services.configs.copy(actor, route.productId, body.targetProductId, key));
+      return outcome(services, 'copy', await services.configs.copy(actor, route.productId, body.targetProductId, key));
     }
     if (
       request.method === 'POST' &&
@@ -388,6 +406,8 @@ export async function handleAdminRequest(
       if (!fresh.canEdit) return adminJson(403, { error: 'Edit permission required' });
       actor = fresh;
       return outcome(
+        services,
+        'publish',
         await services.configs.publish(actor, route.productId, {
           configId: body.configId,
           draftVersion: body.draftVersion,
@@ -403,7 +423,7 @@ export async function handleAdminRequest(
       body.action === 'save' &&
       !selectedMediaUrlsValid(body.draft, services.appOrigin, route.productId)
     )
-      return adminJson(422, {
+      return configRejected(services, 'save', 'MEDIA_URL_NOT_CANONICAL', {
         kind: 'invalid',
         noEffect: true,
         message: 'Reload owned preview media before saving. Delivery URLs cannot be stored in product configuration.',
@@ -421,6 +441,8 @@ export async function handleAdminRequest(
       Object.keys(body).length === 4
     )
       return outcome(
+        services,
+        'save',
         await services.configs.save(actor, route.productId, {
           configId: body.configId,
           draftVersion: body.draftVersion,
@@ -431,7 +453,7 @@ export async function handleAdminRequest(
             : {}),
         }),
       );
-    return adminJson(422, { error: 'Invalid command' });
+    return configRejected(services, 'command', 'INVALID_COMMAND', { error: 'Invalid command' });
   } catch (error) {
     if (error instanceof SelectedSetupAuthorityError)
       return adminJson(403, { error: 'Current setup authority required' });

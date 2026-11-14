@@ -1,3 +1,5 @@
+import type { ConfigRejectionCode } from './config-rejection.ts';
+
 /** Browser-safe Admin response shapes. Values are produced by authenticated server commands. */
 export interface CatalogProduct {
   id: string;
@@ -68,5 +70,12 @@ export type CommandOutcome =
   | { kind: 'saved'; draftVersion: string }
   | { kind: 'accepted'; state: PublicationState; revisionId?: string }
   | { kind: 'conflict'; message: string }
-  | { kind: 'invalid'; message: string; validationIssues?: { path: string; message: string }[] }
+  | {
+      kind: 'invalid';
+      /** Stable reason; see config-rejection.ts. */
+      code: ConfigRejectionCode;
+      noEffect?: true;
+      message: string;
+      validationIssues?: { path: string; message: string }[];
+    }
   | { kind: 'forbidden'; message: string };

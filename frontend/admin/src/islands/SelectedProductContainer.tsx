@@ -22,6 +22,7 @@ import {
   applyMethodImport,
   currentProductMethodReviews,
   bindNewProductCells,
+  canonicalBindingPrices,
   overrideProductPrice,
   reviewProductMethod,
   type ProductMethodBindings,
@@ -436,7 +437,7 @@ function SelectedProductContainer({ productId }: { productId: string }) {
               const value = await owned.save({
                 version: 'selected-product-setup-v1',
                 product: media.current!.canonical(product),
-                methodBindings: bindings.current,
+                methodBindings: canonicalBindingPrices(bindings.current),
               });
               const confirmed = await observe(value);
               setRemote('idle');
@@ -453,7 +454,7 @@ function SelectedProductContainer({ productId }: { productId: string }) {
               const value = await owned.publish({
                 version: 'selected-product-setup-v1',
                 product: media.current!.canonical(product),
-                methodBindings: bindings.current,
+                methodBindings: canonicalBindingPrices(bindings.current),
               });
               const confirmed = await observe(value);
               if (value.config?.publication.state === 'FAILED' && !owned.hasPending()) {

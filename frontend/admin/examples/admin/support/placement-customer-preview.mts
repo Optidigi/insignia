@@ -1,3 +1,4 @@
+import { parseDecimalNumber } from './decimal-input.mts';
 import { parsePrice } from './method-workflow-prices.mts';
 import { getVariantPhotoGroups, resolveVariantPhotoView } from './placement-variant-photos.mts';
 import { type PlacementProduct, placementProductSchema, placementSetupIssue } from './placement-workflow-model.mts';
@@ -77,7 +78,7 @@ function placementReadyForCustomerPreview(
       : placement.sizes.some((size) => parsePrice(size.prices[method.id] ?? '').kind === 'valid');
   });
   if (!hasNamedPricedMethod) return false;
-  const factors = placement.sizes.map((size) => Number(size.widthPercent));
+  const factors = placement.sizes.map((size) => parseDecimalNumber(size.widthPercent) ?? Number.NaN);
   const names = placement.sizes.map((size) => size.name.trim().toLowerCase());
   return (
     placement.sizes.every((size) => size.name.trim().length > 0) &&

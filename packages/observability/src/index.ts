@@ -4,6 +4,7 @@ import { Counter, Gauge, Registry } from 'prom-client';
 
 const EVENTS = new Set([
   'admin_authentication',
+  'admin_config_rejected',
   'artwork_request_timing',
   'buyer_request_failed',
   'buyer_request_rejected',
@@ -26,6 +27,8 @@ const EVENTS = new Set([
 
 export type RuntimeEvent =
   | 'admin_authentication'
+  /** Info: a product configuration command was rejected (422) by one named validation rule. */
+  | 'admin_config_rejected'
   | 'artwork_request_timing'
   | 'buyer_request_failed'
   /** An expected 4xx outcome: buyer-actionable (info) or BUSY, transient and retryable (warn). */
@@ -107,6 +110,11 @@ const ADMIN_PROVIDER_CODES = [
   'NETWORK',
 ] as const;
 export type AdminProviderDiagnosticCode = (typeof ADMIN_PROVIDER_CODES)[number];
+
+const ADMIN_CONFIG_ACTIONS = ['create', 'save', 'publish', 'copy', 'reconcile', 'command'] as const;
+export type AdminConfigAction = (typeof ADMIN_CONFIG_ACTIONS)[number];
+/** The web app owns the code vocabulary; the log admits only its bounded upper-snake-case shape. */
+const REJECTION_CODE = /^[A-Z][A-Z0-9_]{2,63}$/;
 
 const BUYER_STAGES = [
   'config',
@@ -290,6 +298,8 @@ export interface RuntimeLogDetails {
   proposalStage?: BuyerFailureDiagnostic['proposalStage'];
   authStage?: AdminAuthenticationStage;
   providerCode?: AdminProviderDiagnosticCode;
+  configAction?: AdminConfigAction;
+  rejectionCode?: string;
   correlationId?: string;
   inboxId?: string;
   shopId?: string;
@@ -415,6 +425,15 @@ function eventDetails(event: RuntimeEvent, input: RuntimeLogDetails) {
       errorClass: input.errorClass,
       ...(input.proposalStage === undefined ? {} : { proposalStage: input.proposalStage }),
     };
+  }
+  if (event === 'admin_config_rejected') {
+    if (
+      !ADMIN_CONFIG_ACTIONS.includes(input.configAction!) ||
+      typeof input.rejectionCode !== 'string' ||
+      !REJECTION_CODE.test(input.rejectionCode)
+    )
+      throw new Error('Invalid configuration rejection diagnostic');
+    return { configAction: input.configAction, rejectionCode: input.rejectionCode };
   }
   if (event !== 'admin_authentication') return safeDetails(input);
   if (
