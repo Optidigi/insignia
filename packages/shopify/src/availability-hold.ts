@@ -47,6 +47,8 @@ export type AvailabilityHoldFailureKind =
   | 'unauthorized'
   | 'forbidden'
   | 'throttled'
+  /** The query is over Shopify's cost limit; a retry cannot fix it. */
+  | 'query_cost_exceeded'
   | 'not_dispatched'
   | 'network_or_timeout'
   | 'provider_unavailable'

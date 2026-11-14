@@ -6,7 +6,11 @@ import type {
   ProductAvailabilityHoldV3Port as ProductAvailabilityHoldPort,
   ProductAvailabilitySnapshotV3 as ProductAvailabilitySnapshot,
 } from '@insignia/application';
-import { activationDigest, availabilitySnapshotIdentityDigest } from '@insignia/application';
+import {
+  AvailabilityProviderUnavailableError,
+  activationDigest,
+  availabilitySnapshotIdentityDigest,
+} from '@insignia/application';
 import {
   createPublicationAdminAdapter,
   createPublicationAdminHttpTransport,
@@ -327,6 +331,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     const originalAvailability = current;
     let acquireNotSent = false;
     let acquireLost = false;
+    let observeFailures = 0;
     let restoreLost = false;
     let restoreUnsettled: 'pending' | 'throw' | 'original' | 'not-dispatched' | null = null;
     let restoreSettled = false;
@@ -371,12 +376,17 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
           },
         };
       },
-      observe: async (_scope, hold) =>
-        current.state === 'unavailable' &&
-        hold.version === 'm5-availability-hold-v3' &&
-        current.anchorDigest === hold.before.anchorDigest
+      observe: async (_scope, hold) => {
+        if (observeFailures > 0) {
+          observeFailures--;
+          throw new AvailabilityProviderUnavailableError('throttled');
+        }
+        return current.state === 'unavailable' &&
+          hold.version === 'm5-availability-hold-v3' &&
+          current.anchorDigest === hold.before.anchorDigest
           ? { kind: 'HELD', current, hold: { ...hold, held: current } }
-          : { kind: 'CONFLICT', current },
+          : { kind: 'CONFLICT', current };
+      },
       restore: async (_scope, hold) => {
         if (hold.version !== 'm5-availability-hold-v3') throw new Error('new restoration requires v3');
         const record = await core.productionActivations
@@ -589,6 +599,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       cells,
       set acquireNotSent(value: boolean) {
         acquireNotSent = value;
+      },
+      set observeFailures(value: number) {
+        observeFailures = value;
       },
       set acquireLost(value: boolean) {
         acquireLost = value;
@@ -1487,6 +1500,26 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     );
   });
 
+  it('#446: a throttled observation right after the hold mutation commits HELD, and the publication resumes', async () => {
+    const f = await fixture();
+    expect((await f.restart().advance(f.identity)).kind).toBe('WAITING_HOLD');
+    f.observeFailures = 1;
+    // Before the fix the transaction rolled back to ACQUISITION_PENDING with the product Draft.
+    expect((await f.restart().advance(f.identity)).kind).toBe('HELD');
+    const held = await f.restart().read(f.identity);
+    expect(held?.state).toMatchObject({
+      kind: 'HELD',
+      hold: { held: { state: 'unavailable' }, acquisitionAcknowledgement: { state: 'unavailable' } },
+    });
+    f.observeFailures = 1;
+    await expect(f.restart().advance(f.identity)).rejects.toThrow(/Availability provider unavailable/);
+    expect((await f.restart().read(f.identity))?.state.kind).toBe('HELD');
+    await f.publish();
+    expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+    expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVE');
+    expect(f.acquisitions).toBe(1);
+    expect(f.restores).toBe(1);
+  });
   it('first publication stays pending until the owned hold is reobserved', async () => {
     const f = await fixture();
     expect(

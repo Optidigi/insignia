@@ -8,6 +8,17 @@ import type {
   VersionedProductAvailabilitySnapshot,
 } from './availability-v2.js';
 
+/** Port contract: a read observed nothing because the provider was throttling, timed
+ * out or was unavailable. It is retryable and is never evidence of a conflict. Every
+ * other port failure keeps its existing meaning. */
+export class AvailabilityProviderUnavailableError extends Error {
+  readonly transient = true;
+  constructor(readonly kind: 'throttled' | 'network_or_timeout' | 'provider_unavailable') {
+    super(`Availability provider unavailable: ${kind}`);
+    this.name = 'AvailabilityProviderUnavailableError';
+  }
+}
+
 export const AVAILABILITY_V3_ANCHOR_LIMIT = 64;
 export type EffectivePublicationAnchorV3 = Readonly<{
   publicationId: string;

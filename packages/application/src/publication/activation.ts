@@ -29,6 +29,7 @@ import type {
 } from './availability-v3.js';
 import {
   type AvailabilityHoldV3,
+  AvailabilityProviderUnavailableError,
   availabilityV3AcknowledgementQualified,
   availabilityV3HeldSafe,
   availabilityV3OwnedHeld,
@@ -570,7 +571,16 @@ export function createPublicationActivation(input: {
               return result('OPERATOR_HOLD', c);
             }
             // A restore response may have been lost. Never overwrite a changed remote snapshot.
-            const observation = await input.availability.observe(c.availabilityScope, c.state.hold);
+            let observation: Awaited<ReturnType<typeof input.availability.observe>>;
+            try {
+              observation = await input.availability.observe(c.availabilityScope, c.state.hold);
+            } catch (error) {
+              // The one-use claim is already committed; without this observation it cannot
+              // dispatch, so make the stop visible exactly as an unobservable hold was before.
+              if (!(error instanceof AvailabilityProviderUnavailableError)) throw error;
+              await session.save({ ...c.state, kind: 'OPERATOR_HOLD' });
+              return result('OPERATOR_HOLD', c);
+            }
             if (observation.kind !== 'HELD' || !exactSnapshot(observation.current, c.state.hold.held)) {
               await session.save({ ...c.state, kind: 'OPERATOR_HOLD' });
               return result('OPERATOR_HOLD', c);
@@ -655,6 +665,7 @@ export function createPublicationActivation(input: {
           let holdObservation: ProductAvailabilitySnapshot | null = null;
           if (admission !== 'SAME_MODE') {
             if (!c.state.hold) return result('WAITING_HOLD', c);
+            let acquired = false;
             if (dispatchAcquisition && c.state.kind === 'ACQUISITION_PENDING') {
               writeAuthorized();
               const observed = await input.availability.acquire(c.availabilityScope, c.state.hold);
@@ -665,6 +676,7 @@ export function createPublicationActivation(input: {
                 activationDigest(observed.hold.before) === activationDigest(c.state.hold.before)
               ) {
                 await session.save({ ...c.state, kind: 'HELD', hold: observed.hold });
+                acquired = true;
               } else {
                 const acknowledgement = observed.kind === 'CONFLICT' ? observed.acknowledgement : undefined;
                 await session.save({
@@ -679,7 +691,16 @@ export function createPublicationActivation(input: {
                 return result('OPERATOR_HOLD', c);
               }
             }
-            holdObservation = await held(session);
+            try {
+              holdObservation = await held(session);
+            } catch (error) {
+              // The owned acquisition receipt is evidence on its own. A follow-up read that
+              // observed nothing (e.g. Shopify throttling) must not roll it back; commit HELD
+              // and let the next invocation observe again.
+              if (acquired && error instanceof AvailabilityProviderUnavailableError)
+                return result('HELD', session.candidate);
+              throw error;
+            }
             if (!holdObservation) return result('OPERATOR_HOLD', c);
             c = session.candidate;
           }

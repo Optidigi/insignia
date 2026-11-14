@@ -4,6 +4,7 @@ import {
   type AvailabilityHoldV3,
   type AvailabilityMutationAcknowledgementV3,
   type AvailabilityObservationV3,
+  AvailabilityProviderUnavailableError,
   type AvailabilityRestoreResultV3,
   type AvailabilityScope,
   activationDigest,
@@ -28,6 +29,14 @@ import {
 } from './availability-hold.js';
 import { createShopifyAvailabilityHoldV2Port } from './availability-hold-v2.js';
 
+/** Read failures that observed nothing and may succeed later. */
+const TRANSIENT_READ_FAILURES = new Set<ShopifyAvailabilityHoldError['kind']>([
+  'throttled',
+  'network_or_timeout',
+  'provider_unavailable',
+]);
+/** Budget kept for the rest of an operation (and its readback) when waiting out throttling. */
+const THROTTLE_RETRY_RESERVE_MS = 3000;
 const fail = (kind: ConstructorParameters<typeof ShopifyAvailabilityHoldError>[0]): never => {
   throw new ShopifyAvailabilityHoldError(kind);
 };
@@ -100,7 +109,18 @@ function unwrap(status: number, raw: unknown): Record<string, unknown> {
     if (!Array.isArray(body.errors) || !body.errors.length) return fail('provider_shape');
     if (!body.errors.every((e: unknown) => typeof record(e)?.message === 'string')) return fail('provider_shape');
     const codes = body.errors.map((e: unknown) => record(record(e)?.extensions)?.code);
-    if (codes.includes('THROTTLED') || codes.includes('MAX_COST_EXCEEDED')) return fail('throttled');
+    if (codes.includes('THROTTLED')) {
+      const error = new ShopifyAvailabilityHoldError('throttled');
+      const cost = record(record(body.extensions)?.cost);
+      const throttle = record(cost?.throttleStatus);
+      const requested = Number(cost?.requestedQueryCost),
+        available = Number(throttle?.currentlyAvailable),
+        rate = Number(throttle?.restoreRate);
+      if ([requested, available, rate].every(Number.isFinite) && rate > 0)
+        Object.assign(error, { retryAfterMs: Math.ceil((Math.max(0, requested - available) / rate) * 1000) });
+      throw error;
+    }
+    if (codes.includes('MAX_COST_EXCEEDED')) return fail('query_cost_exceeded');
     if (codes.includes('ACCESS_DENIED')) return fail('forbidden');
     return fail('graphql_error');
   }
@@ -236,6 +256,27 @@ export function createShopifyAvailabilityHoldV3Port(
     check(budget);
     return token;
   };
+  /** Reads only (never the status mutation): a THROTTLED reply is retried at most twice,
+   * after Shopify's advertised restore time, while enough of the operation budget remains. */
+  async function executeRead(
+    scope: AvailabilityScope,
+    budget: Budget,
+    query: string,
+    variables: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return await execute(scope, budget, query, variables);
+      } catch (error) {
+        if (!(error instanceof ShopifyAvailabilityHoldError) || error.kind !== 'throttled' || attempt >= 3) throw error;
+        const hinted = (error as { retryAfterMs?: unknown }).retryAfterMs;
+        const delay = Math.min(1000, Math.max(100, typeof hinted === 'number' ? hinted : 250 * attempt));
+        if (budget.expires - performance.now() < delay + THROTTLE_RETRY_RESERVE_MS) throw error;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        check(budget);
+      }
+    }
+  }
   async function execute(
     scope: AvailabilityScope,
     budget: Budget,
@@ -376,14 +417,14 @@ export function createShopifyAvailabilityHoldV3Port(
     assertScope(scope, productId);
     if (!canonicalPublicationIdsV3(required)) return fail('invalid_request');
     const observedAt = time();
-    const first = await execute(scope, budget, READ, { productId });
+    const first = await executeRead(scope, budget, READ, { productId });
     identity(first, scope);
     let projection = productProjection(first.node, productId);
     const ids = [...new Set([...required, ...projection.effectiveVisibility.publishedPublicationIds])].sort();
     if (ids.length > AVAILABILITY_V3_ANCHOR_LIMIT) return fail('provider_shape');
     const anchors: ProductAvailabilitySnapshotV3['effectiveAnchors'][number][] = [];
     for (const publicationId of ids) {
-      const data = await execute(scope, budget, ANCHOR, {
+      const data = await executeRead(scope, budget, ANCHOR, {
         publicationId,
         productQuery: `id:${productId.split('/').at(-1)}`,
       });
@@ -404,7 +445,7 @@ export function createShopifyAvailabilityHoldV3Port(
     }
     let receivedAt = time();
     if (ids.length) {
-      const final = await execute(scope, budget, READ, { productId });
+      const final = await executeRead(scope, budget, READ, { productId });
       identity(final, scope);
       const after = productProjection(final.node, productId);
       receivedAt = time();
@@ -468,6 +509,9 @@ export function createShopifyAvailabilityHoldV3Port(
     try {
       current = await read(scope, hold.before.productId, budget, originalAnchors(hold));
     } catch (error) {
+      // Throttling or an outage observed nothing: it is retryable, not evidence of a conflict.
+      if (error instanceof ShopifyAvailabilityHoldError && TRANSIENT_READ_FAILURES.has(error.kind))
+        throw new AvailabilityProviderUnavailableError(error.kind as AvailabilityProviderUnavailableError['kind']);
       if (error instanceof ShopifyAvailabilityHoldError) return { kind: 'CONFLICT', current: null };
       throw error;
     }
