@@ -37,7 +37,8 @@ Rewrite-dev deploys and theme releases run autonomously under the standing 13 No
 4. Deploy web (ABANDONED short-circuits, projection, editor states), then the worker with `INSIGNIA_PUBLICATION_ABANDONMENT=off` (the default). Publish one test product to Active and confirm nothing else changed.
 5. Set the worker to `flag`: it flags nothing on a healthy store and leaves `OPERATOR_HOLD` rows (such as `QA cover B – Tee`) untouched.
 6. Set it to `restore` and run the native check with `INSIGNIA_PUBLICATION_ABANDON_AFTER_MS=300000`: stop a test publish after the hold (close the tab); the product returns to Active, the editor shows "Publishing didn't finish, so your product is back as it was", and Publish works again. Then remove the override (default 10 minutes).
-7. Rollback: set the worker to `off` first; that stops every worker effect. A web rollback is possible while no `ABANDON_*` row exists; after the first one, recovery is fix-forward. The down migration refuses once abandonment evidence exists.
+7. While the worker is `off` (the default), nothing is flagged either: a post-activation `RESTORATION_CLAIMED` whose one no-dispatch retry (the N2 fix) is used up stays `ACTIVATED_RESTORATION_PENDING` until `flag` or `restore` applies the stale-claim rule.
+8. Rollback: set the worker to `off` first; that stops every worker effect. A web rollback is possible while no `ABANDON_*` row exists; after the first one, recovery is fix-forward. The down migration refuses once abandonment evidence exists.
 
 Bounds (startup errors when out of range): `INSIGNIA_PUBLICATION_ABANDON_AFTER_MS` 300000–86400000 (default 600000), `INSIGNIA_PUBLICATION_RELEASE_WAIT_FLAG_MS` (default 86400000), `ABANDON_CLAIM_STALE_MS` (default 120000). Log event `publication_abandonment` (info for restored/finalized, warn otherwise), counter `insignia_publication_abandonment_total{outcome}`, gauge `insignia_publication_holds_flagged`.
 

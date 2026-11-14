@@ -1216,7 +1216,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     const f = await fixture('required', 'ACTIVE');
     await f.prepareHold();
     expect(f.providerWrites).toEqual(['DRAFT']);
-    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({
+    expect(await f.abandonment().runPass({ shopIds: [f.identity.shopId] })).toMatchObject({
       restored: 1,
       finalized: 1,
       flagged: 0,
@@ -1247,7 +1247,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     expect(await advanceBoth(f)).toEqual(['ABANDONED', 'ABANDONED']);
     expect(f.remoteReads).toBe(reads);
     expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
-    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({
+    expect(await f.abandonment().runPass({ shopIds: [f.identity.shopId] })).toMatchObject({
       restored: 0,
       finalized: 0,
       flagged: 0,
@@ -1279,7 +1279,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     await f.restart().publications.prepare({ ...second, revisionId: revision, mode: 'optional' });
     expect((await f.restart().advance(second)).kind).toBe('WAITING_HOLD');
     expect((await f.restart().advance(second)).kind).toBe('HELD');
-    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 1, finalized: 1 });
+    expect(await f.abandonment().runPass({ shopIds: [f.identity.shopId] })).toMatchObject({
+      restored: 1,
+      finalized: 1,
+    });
     expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE', 'DRAFT', 'ACTIVE']);
     expect((await core.configs.getCurrentPublication(f.identity.shopId, f.identity.configId))?.operationId).toBe(
       f.identity.operationId,
@@ -1295,7 +1298,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     const f = await fixture('required', 'ACTIVE');
     await f.prepareHold();
     f.failProviderRead(1); // T1 observes; restore()'s pre-write read fails: nothing dispatched.
-    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 0, flagged: 0 });
+    expect(await f.abandonment().runPass({ shopIds: [f.identity.shopId] })).toMatchObject({ restored: 0, flagged: 0 });
     const claimed = await activationRow(f);
     expect(claimed).toMatchObject({
       kind: 'ABANDON_CLAIMED',
@@ -1324,7 +1327,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       f.restart().publications.prepare({ ...f.identity, operationId: other, revisionId: other, mode: 'required' }),
     ).rejects.toThrow('Availability hold requires recovery');
     // The one rearm restores; T3 still commits after the drift.
-    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 1, finalized: 1 });
+    expect(await f.abandonment().runPass({ shopIds: [f.identity.shopId] })).toMatchObject({
+      restored: 1,
+      finalized: 1,
+    });
     expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
     expect(await progressPhase(f)).toBe('abandoned');
   });
@@ -1336,10 +1342,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       (await f.restart().publications.advance(f.identity.shopId, f.identity.configId, f.identity.operationId)).kind,
     ).toBe('PENDING');
     expect(await progressPhase(f)).toBe('shop-config-written');
-    expect(await f.abandonment({ abandonAfterMs: 3_600_000 }).runPass({ shopId: f.identity.shopId })).toMatchObject({
+    expect(await f.abandonment({ abandonAfterMs: 3_600_000 }).runPass({ shopIds: [f.identity.shopId] })).toMatchObject({
       flagged: 0,
     });
-    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 0, flagged: 1 });
+    expect(await f.abandonment().runPass({ shopIds: [f.identity.shopId] })).toMatchObject({ restored: 0, flagged: 1 });
     expect((await activationRow(f))?.kind).toBe('OPERATOR_HOLD');
     expect(await auditRows(f)).toMatchObject([
       { event: 'FLAGGED', from_kind: 'HELD', to_kind: 'OPERATOR_HOLD', detail: { reasons: ['fields_written'] } },
@@ -1352,22 +1358,22 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
   it('#466 B: flag mode flags only; off does nothing; a throttled E8 read skips without a claim', async () => {
     const f = await fixture('required', 'ACTIVE');
     await f.prepareHold();
-    expect(await f.abandonment({ mode: 'off' }).runPass({ shopId: f.identity.shopId })).toEqual({
+    expect(await f.abandonment({ mode: 'off' }).runPass({ shopIds: [f.identity.shopId] })).toEqual({
       restored: 0,
       finalized: 0,
       flagged: 0,
       flaggedHolds: 0,
     });
-    expect(await f.abandonment({ mode: 'flag' }).runPass({ shopId: f.identity.shopId })).toMatchObject({
+    expect(await f.abandonment({ mode: 'flag' }).runPass({ shopIds: [f.identity.shopId] })).toMatchObject({
       restored: 0,
       flagged: 0,
     });
     expect((await activationRow(f))?.kind).toBe('HELD');
     f.failProviderRead(0);
-    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 0, flagged: 0 });
+    expect(await f.abandonment().runPass({ shopIds: [f.identity.shopId] })).toMatchObject({ restored: 0, flagged: 0 });
     expect((await activationRow(f))?.kind).toBe('HELD');
     expect(await auditRows(f)).toEqual([]);
-    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 1 });
+    expect(await f.abandonment().runPass({ shopIds: [f.identity.shopId] })).toMatchObject({ restored: 1 });
   });
 
   it('#466 B late completion: T1 waits on the shop lock held by a merchant write and never claims after it', async () => {
@@ -1390,7 +1396,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     let workerDone = false;
     const worker = f
       .abandonment()
-      .runPass({ shopId: f.identity.shopId })
+      .runPass({ shopIds: [f.identity.shopId] })
       .finally(() => {
         workerDone = true;
       });
@@ -1406,12 +1412,107 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     expect(f.providerWrites).toEqual(['DRAFT']);
   });
 
+  it('#466 B review H1: a crash after a rearmed restore was sent never dispatches it again', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    f.failProviderRead(1); // T2's pre-write read fails: a current:null NOT_DISPATCHED receipt
+    await f.abandonment().runPass({ shopIds: [f.identity.shopId] });
+    expect((await activationRow(f))?.hold).toMatchObject({ restorationReceipt: { kind: 'NOT_DISPATCHED' } });
+    // The rearmed attempt sends its write, then crashes before its receipt commits.
+    let receiptUpdates = 0;
+    afterSql = (text) => {
+      if (
+        text.startsWith('UPDATE m5_activation_state SET hold=') &&
+        f.providerWrites.length === 2 &&
+        ++receiptUpdates === 1
+      )
+        throw new Error('crash after the rearmed write was sent');
+    };
+    try {
+      await f.abandonment().runPass({ shopIds: [f.identity.shopId] });
+    } finally {
+      afterSql = undefined;
+    }
+    expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
+    // Someone puts the product back to Draft: an unconditional replay would now succeed.
+    f.providerProductStatus = 'DRAFT';
+    expect(await f.abandonment().runPass({ shopIds: [f.identity.shopId] })).toMatchObject({ restored: 0 });
+    expect(await f.abandonment({ claimStaleMs: 0 }).runPass({ shopIds: [f.identity.shopId] })).toMatchObject({
+      restored: 0,
+      flagged: 1,
+    });
+    expect((await activationRow(f))?.kind).toBe('OPERATOR_HOLD');
+    expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
+  });
+
+  it('#466 B review M1: rows quiet past field writes are flagged, never superseded-skipped', async () => {
+    // WAITING_RELEASE with an owned hold (release evidence missing at activation-pending, status observed).
+    const waiting = await fixture();
+    await waiting.prepareHold();
+    await waiting.publish();
+    waiting.releaseMissing = true;
+    expect((await waiting.restart().advance(waiting.identity)).kind).toBe('WAITING_RELEASE');
+    expect(await operationRow(waiting)).toMatchObject({ status: 'observed' });
+    const scope = { shopIds: [waiting.identity.shopId] };
+    expect(await waiting.abandonment({ releaseWaitFlagMs: 86_400_000 }).runPass(scope)).toMatchObject({ flagged: 0 });
+    expect(await waiting.abandonment().runPass(scope)).toMatchObject({ flagged: 1, restored: 0 });
+    expect(await auditRows(waiting)).toMatchObject([
+      { event: 'FLAGGED', from_kind: 'WAITING_RELEASE', detail: { reasons: ['release_wait_after_writes'] } },
+    ]);
+    // HELD abandoned at activation-pending: product fields were written, so flag, never claim.
+    const held = await fixture();
+    await held.prepareHold();
+    await held.publish();
+    expect(await progressPhase(held)).toBe('activation-pending');
+    expect(await held.abandonment().runPass({ shopIds: [held.identity.shopId] })).toMatchObject({ flagged: 1 });
+    expect(await auditRows(held)).toMatchObject([
+      { event: 'FLAGGED', from_kind: 'HELD', detail: { reasons: ['fields_written'] } },
+    ]);
+    expect(held.restores).toBe(0);
+  });
+
+  it('#466 B review M2: more than a scan of unchanged rows cannot starve a newer eligible row', {
+    timeout: 120_000,
+  }, async () => {
+    // 51 quiet held rows the pass skips without a state change (no usable offline token)...
+    const stuck: string[] = [];
+    for (let i = 0; i < 51; i++) {
+      const f = await fixture();
+      await f.prepareHold();
+      stuck.push(f.identity.shopId);
+    }
+    // ...older than one eligible row.
+    const eligible = await fixture('required', 'ACTIVE');
+    await eligible.prepareHold();
+    const pass = eligible.abandonment({
+      acquireToken: async ({ shopId }) =>
+        shopId === eligible.identity.shopId
+          ? {
+              kind: 'usable',
+              shopDomain: 'synthetic.myshopify.com',
+              accessToken: 'synthetic-offline-token',
+              accessExpiresAt: new Date('2099-01-01T00:00:00Z'),
+            }
+          : { kind: 'reauth_required' },
+    });
+    const scope = { shopIds: [...stuck, eligible.identity.shopId] };
+    // The first pass reads the 50 oldest; the next resumes after them instead of rereading them.
+    expect(await pass.runPass(scope)).toMatchObject({ restored: 0 });
+    expect(await pass.runPass(scope)).toMatchObject({ restored: 1, finalized: 1 });
+    expect(eligible.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
+    // The rotation wraps: the stuck rows are visited again, unchanged.
+    expect(await pass.runPass(scope)).toMatchObject({ restored: 0, flagged: 0 });
+    const kinds = await sql<{ kind: string }>`SELECT DISTINCT kind FROM m5_activation_state
+      WHERE shop_id = ANY(${stuck}::text[])`.execute(database);
+    expect(kinds.rows).toEqual([{ kind: 'HELD' }]);
+  });
+
   it('#466 B: two workers claim and restore once', async () => {
     const f = await fixture('required', 'ACTIVE');
     await f.prepareHold();
     const [a, b] = await Promise.all([
-      f.abandonment().runPass({ shopId: f.identity.shopId }),
-      f.abandonment().runPass({ shopId: f.identity.shopId }),
+      f.abandonment().runPass({ shopIds: [f.identity.shopId] }),
+      f.abandonment().runPass({ shopIds: [f.identity.shopId] }),
     ]);
     expect(a.restored + b.restored).toBe(1);
     expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
@@ -1422,13 +1523,13 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     const f = await fixture('required', 'ACTIVE');
     await f.prepareHold();
     f.failMutation = true;
-    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 0, flagged: 1 });
+    expect(await f.abandonment().runPass({ shopIds: [f.identity.shopId] })).toMatchObject({ restored: 0, flagged: 1 });
     expect(await activationRow(f)).toMatchObject({
       kind: 'OPERATOR_HOLD',
       hold: { restorationReceipt: { kind: 'RESTORATION_PENDING' } },
     });
     expect((await auditRows(f)).map((r) => r.event)).toEqual(['CLAIMED', 'RECEIPT', 'FLAGGED']);
-    expect(await f.abandonment({ claimStaleMs: 0 }).runPass({ shopId: f.identity.shopId })).toMatchObject({
+    expect(await f.abandonment({ claimStaleMs: 0 }).runPass({ shopIds: [f.identity.shopId] })).toMatchObject({
       restored: 0,
       flagged: 0,
     });
@@ -1439,12 +1540,12 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     const f = await fixture('required', 'ACTIVE');
     await f.prepareHold();
     f.failProviderRead(1);
-    await f.abandonment().runPass({ shopId: f.identity.shopId });
+    await f.abandonment().runPass({ shopIds: [f.identity.shopId] });
     f.failProviderRead(0); // the rearmed attempt's pre-write read fails the same way
-    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 0, flagged: 0 });
+    expect(await f.abandonment().runPass({ shopIds: [f.identity.shopId] })).toMatchObject({ restored: 0, flagged: 0 });
     expect((await activationRow(f))?.kind).toBe('ABANDON_CLAIMED');
-    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 0, flagged: 0 });
-    expect(await f.abandonment({ claimStaleMs: 0 }).runPass({ shopId: f.identity.shopId })).toMatchObject({
+    expect(await f.abandonment().runPass({ shopIds: [f.identity.shopId] })).toMatchObject({ restored: 0, flagged: 0 });
+    expect(await f.abandonment({ claimStaleMs: 0 }).runPass({ shopIds: [f.identity.shopId] })).toMatchObject({
       flagged: 1,
     });
     expect((await activationRow(f))?.kind).toBe('OPERATOR_HOLD');
@@ -1464,15 +1565,15 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       if (text.startsWith('UPDATE m5_activation_state SET hold=')) throw new Error('crash before the receipt commits');
     };
     try {
-      expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 0 });
+      expect(await f.abandonment().runPass({ shopIds: [f.identity.shopId] })).toMatchObject({ restored: 0 });
     } finally {
       afterSql = undefined;
     }
     expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
     expect(await activationRow(f)).toMatchObject({ kind: 'ABANDON_CLAIMED' });
     expect((await activationRow(f))?.hold).not.toHaveProperty('restorationReceipt');
-    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 0, flagged: 0 });
-    expect(await f.abandonment({ claimStaleMs: 0 }).runPass({ shopId: f.identity.shopId })).toMatchObject({
+    expect(await f.abandonment().runPass({ shopIds: [f.identity.shopId] })).toMatchObject({ restored: 0, flagged: 0 });
+    expect(await f.abandonment({ claimStaleMs: 0 }).runPass({ shopIds: [f.identity.shopId] })).toMatchObject({
       restored: 0,
       flagged: 1,
     });
@@ -1484,11 +1585,11 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     const f = await fixture('required', 'ACTIVE');
     await f.prepareHold();
     f.failProviderRead(1);
-    await f.abandonment().runPass({ shopId: f.identity.shopId });
+    await f.abandonment().runPass({ shopIds: [f.identity.shopId] });
     await sql`UPDATE installation_generations SET deactivated_at=now() WHERE shop_id=${f.identity.shopId}`.execute(
       database,
     );
-    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 0, flagged: 1 });
+    expect(await f.abandonment().runPass({ shopIds: [f.identity.shopId] })).toMatchObject({ restored: 0, flagged: 1 });
     expect((await auditRows(f)).at(-1)).toMatchObject({ event: 'FLAGGED', detail: { reasons: ['claim_fenced'] } });
     expect(f.providerWrites).toEqual(['DRAFT']);
   });
@@ -1497,7 +1598,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     const f = await fixture('required', 'ACTIVE');
     await f.prepareHold();
     f.providerProductStatus = 'ARCHIVED';
-    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ flagged: 1, restored: 0 });
+    expect(await f.abandonment().runPass({ shopIds: [f.identity.shopId] })).toMatchObject({ flagged: 1, restored: 0 });
     f.providerProductStatus = 'DRAFT';
     const version = Number((await activationRow(f))?.version);
     await sql`SELECT m5_operator_claim_abandoned_hold(${f.identity.shopId}, ${f.identity.configId}, ${f.identity.operationId},
@@ -1509,7 +1610,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     await sql`UPDATE installation_generations SET deactivated_at=now() WHERE shop_id=${f.identity.shopId}`.execute(
       database,
     );
-    await f.abandonment().runPass({ shopId: f.identity.shopId });
+    await f.abandonment().runPass({ shopIds: [f.identity.shopId] });
     const audit = await auditRows(f);
     expect(audit.map((r) => [r.event, r.detail])).toEqual([
       ['FLAGGED', { reasons: ['product_changed'] }],
@@ -1635,7 +1736,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       const errors: unknown[] = [];
       const pass = await f
         .abandonment({ onRowError: (error) => errors.push(error) }, worker)
-        .runPass({ shopId: f.identity.shopId });
+        .runPass({ shopIds: [f.identity.shopId] });
       expect(errors).toEqual([]);
       expect(pass).toMatchObject({ restored: 1, finalized: 1 });
       expect(await progressPhase(f)).toBe('abandoned');
@@ -1721,7 +1822,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       await f.restart().publications.prepare({ ...second, revisionId: revision, mode: 'optional' });
       await f.restart().advance(second);
       await f.restart().advance(second);
-      expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ finalized: 1 });
+      expect(await f.abandonment().runPass({ shopIds: [f.identity.shopId] })).toMatchObject({ finalized: 1 });
       const audit = shopLockAudit;
       expect(audit.length).toBeGreaterThan(8);
       expect(audit.filter((entry) => !entry.locked)).toEqual([]);
@@ -1739,8 +1840,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     await f.freshProviderRestart().advance(f.identity);
     f.failProviderRead(1);
     await f.freshProviderRestart().advance(f.identity);
-    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ flagged: 0 });
-    expect(await f.abandonment({ claimStaleMs: 0 }).runPass({ shopId: f.identity.shopId })).toMatchObject({
+    expect(await f.abandonment().runPass({ shopIds: [f.identity.shopId] })).toMatchObject({ flagged: 0 });
+    expect(await f.abandonment({ claimStaleMs: 0 }).runPass({ shopIds: [f.identity.shopId] })).toMatchObject({
       flagged: 1,
       restored: 0,
     });

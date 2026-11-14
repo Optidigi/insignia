@@ -50,6 +50,8 @@ export type PublicationAbandonmentOptions = {
   onEvent?(event: PublicationAbandonmentEvent): void;
   /** One row's database or provider failure; the pass continues with the next row. */
   onRowError?(error: unknown): void;
+  /** Rows read per pass (default ABANDONMENT_PASS_LIMITS.scan); tests lower it. */
+  scanLimit?: number;
   now?: () => number;
 };
 export const ABANDONMENT_PASS_LIMITS = { claims: 2, finalizes: 10, flags: 10, budgetMs: 20_000, scan: 50 } as const;
@@ -246,11 +248,69 @@ export function createPublicationAbandonment(database: Kysely<Database>, options
     });
   }
 
+  /** T2 recheck: the claim, phase, status, sequence and installation are still the claimed ones. */
+  const claimFenced = (row: Locked, hold: AbandonedHold) =>
+    hold?.version !== 'm5-availability-hold-v3' ||
+    !hold.abandonmentClaim ||
+    !hold.held ||
+    row.phase !== 'prepared' ||
+    row.status !== 'requested' ||
+    row.operationSequence !== row.configSequence ||
+    !row.installationCurrent;
+
+  /**
+   * T2a, its own transaction: settle a claim this invocation did not make. An unconsumed
+   * NOT_DISPATCHED receipt is rearmed by committing its digest into the claim (the migration-51
+   * rule, once per digest) before anything is sent; then a crash at any later point leaves
+   * "consumed and nothing newer", which the stale rule sends to the operator, never to a second
+   * write. No receipt, or a consumed one, waits for the stale bound.
+   */
+  async function rearm(id: Identity & { operationGeneration: string }, canDispatch: boolean) {
+    return database.transaction().execute(async (tx) => {
+      const row = await lockSix(tx, id);
+      if (!row || row.kind !== 'ABANDON_CLAIMED') return 'skipped' as const;
+      const hold = row.hold as AbandonedHold;
+      if (claimFenced(row, hold)) {
+        await flag(tx, row, ['claim_fenced']);
+        return 'flagged' as const;
+      }
+      const receipt = hold.restorationReceipt;
+      if (!receipt || !abandonmentRearmable(hold)) {
+        const next = settleAbandonmentReceipt({
+          hold,
+          receipt,
+          claimUpdatedAt: row.activationUpdatedAt,
+          now: row.now,
+          staleMs: options.claimStaleMs,
+        });
+        if (next === 'OPERATOR_HOLD') {
+          // A crash after T1 or after a consumption may have dispatched: never restore again.
+          await flag(tx, row, ['claim_unsettled']);
+          return 'flagged' as const;
+        }
+        if (next === 'ABANDON_RESTORED') {
+          await setKind(tx, row, 'ABANDON_RESTORED');
+          return 'restored' as const;
+        }
+        emit(row, 'skipped', ['claim_in_flight']);
+        return 'skipped' as const;
+      }
+      if (!canDispatch) return 'skipped' as const;
+      const consumed: AbandonedHold = {
+        ...hold,
+        restorationClaim: { ...hold.restorationClaim!, settledNoDispatchReceiptDigest: activationDigest(receipt) },
+      };
+      await sql`UPDATE m5_activation_state SET hold=${JSON.stringify(consumed)}::jsonb, version=version+1
+        WHERE shop_id=${row.shopId} AND config_id=${row.configId} AND operation_id=${row.operationId}`.execute(tx);
+      return 'rearmed' as const;
+    });
+  }
+
   /**
    * T2: recheck the claim, then the unchanged v3 restore with the per-row port. The receipt and
-   * the resulting kind commit together. `claimedHere` is true only for the invocation whose T1
-   * committed the claim; any other invocation dispatches only by rearming an unconsumed
-   * NOT_DISPATCHED receipt (one retry), otherwise it waits for the stale bound.
+   * the resulting kind commit together. Only the invocation that committed the authority for this
+   * attempt dispatches: its T1 claim (no receipt yet), or its T2a consumption (the claim's
+   * consumed digest equals the stored receipt's, so no newer receipt exists).
    */
   async function restore(
     id: Identity & { operationGeneration: string },
@@ -258,66 +318,27 @@ export function createPublicationAbandonment(database: Kysely<Database>, options
     prebound: (OfflineToken & { kind: 'usable' }) | null,
   ) {
     const bound = prebound ?? (options.mode === 'restore' ? await token(id) : null);
+    if (!claimedHere) {
+      const authority = await rearm(id, options.mode === 'restore' && bound !== null);
+      if (authority !== 'rearmed') return authority;
+    }
     return database.transaction().execute(async (tx) => {
       const row = await lockSix(tx, id);
       if (!row || row.kind !== 'ABANDON_CLAIMED') return 'skipped' as const;
       const hold = row.hold as AbandonedHold;
-      if (
-        hold?.version !== 'm5-availability-hold-v3' ||
-        !hold.abandonmentClaim ||
-        !hold.held ||
-        row.phase !== 'prepared' ||
-        row.status !== 'requested' ||
-        row.operationSequence !== row.configSequence ||
-        !row.installationCurrent
-      ) {
+      if (claimFenced(row, hold)) {
         await flag(tx, row, ['claim_fenced']);
         return 'flagged' as const;
       }
-      let dispatchHold: AbandonedHold = hold;
-      const settle = () =>
-        settleAbandonmentReceipt({
-          hold,
-          receipt: hold.restorationReceipt,
-          claimUpdatedAt: row.activationUpdatedAt,
-          now: row.now,
-          staleMs: options.claimStaleMs,
-        });
-      if (hold.restorationReceipt) {
-        if (!abandonmentRearmable(hold)) {
-          const next = settle();
-          if (next === 'OPERATOR_HOLD') {
-            await flag(tx, row, ['claim_unsettled']);
-            return 'flagged' as const;
-          }
-          if (next === 'ABANDON_RESTORED') {
-            await setKind(tx, row, 'ABANDON_RESTORED');
-            return 'restored' as const;
-          }
-          emit(row, 'skipped', ['claim_in_flight']);
-          return 'skipped' as const;
-        }
-        if (options.mode !== 'restore' || !bound) return 'skipped' as const;
-        // Rearm once: the migration-51 rule consumes this receipt digest into the claim.
-        dispatchHold = {
-          ...hold,
-          restorationClaim: {
-            ...hold.restorationClaim!,
-            settledNoDispatchReceiptDigest: activationDigest(hold.restorationReceipt),
-          },
-        };
-        await sql`UPDATE m5_activation_state SET hold=${JSON.stringify(dispatchHold)}::jsonb, version=version+1
-          WHERE shop_id=${row.shopId} AND config_id=${row.configId} AND operation_id=${row.operationId}`.execute(tx);
-      } else if (!claimedHere) {
-        if (settle() === 'OPERATOR_HOLD') {
-          // A crash after T1 (or inside T2) may have dispatched: never restore again.
-          await flag(tx, row, ['claim_unsettled']);
-          return 'flagged' as const;
-        }
+      const stored = hold.restorationReceipt;
+      const authorized = claimedHere
+        ? stored === undefined
+        : stored?.kind === 'NOT_DISPATCHED' &&
+          hold.restorationClaim?.settledNoDispatchReceiptDigest === activationDigest(stored);
+      if (!authorized || !bound) {
         emit(row, 'skipped', ['claim_in_flight']);
         return 'skipped' as const;
       }
-      if (!bound) return 'skipped' as const;
       let open = true;
       const scope = hold.before.scope;
       const beforeSend = () =>
@@ -327,10 +348,9 @@ export function createPublicationAbandonment(database: Kysely<Database>, options
         bound.accessExpiresAt.getTime() > clock() + 30_000;
       let outcome: Awaited<ReturnType<ProductAvailabilityHoldV3Port['restore']>>;
       try {
-        outcome = await portFor(row, bound).restore(scope, dispatchHold, hold.held, beforeSend);
+        outcome = await portFor(row, bound).restore(scope, hold, hold.held!, beforeSend);
       } catch {
-        // No receipt: a write may have been dispatched. Commit the stop with the claim (and any
-        // consumed rearm) so nothing can replay it.
+        // No receipt: a write may have been dispatched. Stop here; nothing can replay it.
         await setKind(tx, row, 'OPERATOR_HOLD', undefined, ['restore_ambiguous']);
         emit(row, 'ambiguous', ['restore_ambiguous']);
         return 'flagged' as const;
@@ -351,23 +371,23 @@ export function createPublicationAbandonment(database: Kysely<Database>, options
         current: outcome.current as ProductAvailabilitySnapshotV3 | null,
         ...('compensation' in outcome && outcome.compensation ? { compensation: outcome.compensation } : {}),
       } as AvailabilityRestorationReceiptV3;
-      const stored: AbandonedHold = { ...dispatchHold, restorationReceipt: receipt };
+      const next: AbandonedHold = { ...hold, restorationReceipt: receipt };
       // Receipt first (audit RECEIPT), then the kind it settles to, in this same transaction.
-      await sql`UPDATE m5_activation_state SET hold=${JSON.stringify(stored)}::jsonb, version=version+1
+      await sql`UPDATE m5_activation_state SET hold=${JSON.stringify(next)}::jsonb, version=version+1
         WHERE shop_id=${row.shopId} AND config_id=${row.configId} AND operation_id=${row.operationId}`.execute(tx);
-      const next = settleAbandonmentReceipt({
-        hold: stored,
+      const settled = settleAbandonmentReceipt({
+        hold: next,
         receipt,
         claimUpdatedAt: row.now,
         now: row.now,
         staleMs: options.claimStaleMs,
       });
-      if (next === 'ABANDON_RESTORED') {
+      if (settled === 'ABANDON_RESTORED') {
         await setKind(tx, row, 'ABANDON_RESTORED');
         emit(row, 'restored');
         return 'restored' as const;
       }
-      if (next === 'ABANDON_CLAIMED') {
+      if (settled === 'ABANDON_CLAIMED') {
         emit(row, 'not_dispatched');
         return 'not_dispatched' as const;
       }
@@ -419,26 +439,40 @@ export function createPublicationAbandonment(database: Kysely<Database>, options
     });
   }
 
+  type Cursor = { at: string; shopId: string; configId: string; operationId: string };
+  // Rotation across passes (review M2): a row that stays unchanged (not quiet enough to flag, no
+  // usable offline token, flag mode, a receipt waiting for the merchant) keeps its updated_at, so a
+  // fixed "oldest first" window could starve every newer row. Each pass resumes after the last
+  // row it visited and wraps around at the end, so every candidate is visited in turn.
+  let cursor: Cursor | null = null;
   return {
     /** One bounded pass: at most 2 restores, 10 finalizes and 10 flags within 20 s. `scope`
-     * limits it to one shop (the operator command and tests); the worker passes none. */
+     * limits it to given shops (the operator command and tests); the worker passes none. */
     async runPass(
-      scope: { shopId: string } | null = null,
+      scope: { shopIds: readonly string[] } | null = null,
     ): Promise<{ restored: number; finalized: number; flagged: number; flaggedHolds: number }> {
       const result = { restored: 0, finalized: 0, flagged: 0, flaggedHolds: 0 };
       let claims = 0;
       if (options.mode === 'off') return result;
       const started = clock();
       const limits = ABANDONMENT_PASS_LIMITS;
-      const rows = await sql<Identity & { kind: ActivationStateKind; operationGeneration: string }>`
+      const scanLimit = options.scanLimit ?? limits.scan;
+      const scan = (after: Cursor | null) =>
+        sql<Identity & { kind: ActivationStateKind; operationGeneration: string; cursorAt: string }>`
         SELECT a.shop_id AS "shopId", a.config_id AS "configId", a.operation_id AS "operationId", a.kind,
-          o.installation_generation::text AS "operationGeneration"
+          o.installation_generation::text AS "operationGeneration", a.updated_at::text AS "cursorAt"
         FROM m5_activation_state a
         JOIN publication_operations o USING (shop_id, config_id, operation_id)
         JOIN m4_publication_progress p USING (shop_id, config_id, operation_id)
         JOIN shops s ON s.shop_id=a.shop_id
         WHERE a.hold IS NOT NULL AND a.kind NOT IN ('RESTORED','RESOLVED')
-          ${scope ? sql`AND a.shop_id=${scope.shopId}` : sql``} AND (
+          ${scope ? sql`AND a.shop_id = ANY(${[...scope.shopIds]}::text[])` : sql``}
+          ${
+            after
+              ? sql`AND (a.updated_at, a.shop_id, a.config_id, a.operation_id)
+                  > (${after.at}::timestamptz, ${after.shopId}, ${after.configId}, ${after.operationId})`
+              : sql``
+          } AND (
           (a.kind IN ('HELD','ACQUISITION_PENDING') AND s.current_generation=o.installation_generation
             AND greatest(o.requested_at,p.updated_at,a.updated_at) <= clock_timestamp() - ${options.abandonAfterMs} * interval '1 millisecond')
           OR (a.kind='WAITING_RELEASE' AND s.current_generation=o.installation_generation
@@ -447,9 +481,17 @@ export function createPublicationAbandonment(database: Kysely<Database>, options
           OR (a.kind='ABANDON_RESTORED' AND p.phase='prepared')
           OR (a.kind='RESTORATION_CLAIMED'
             AND a.updated_at <= clock_timestamp() - ${options.claimStaleMs} * interval '1 millisecond'))
-        ORDER BY a.updated_at LIMIT ${limits.scan}`.execute(database);
+        ORDER BY a.updated_at, a.shop_id, a.config_id, a.operation_id LIMIT ${scanLimit}`.execute(database);
+      let rows = await scan(cursor);
+      if (rows.rows.length === 0 && cursor) {
+        cursor = null; // wrap around
+        rows = await scan(null);
+      }
+      let visited = 0;
       for (const row of rows.rows) {
         if (clock() - started >= limits.budgetMs) break;
+        cursor = { at: row.cursorAt, shopId: row.shopId, configId: row.configId, operationId: row.operationId };
+        visited++;
         try {
           if (row.kind === 'ABANDON_RESTORED') {
             if (result.finalized < limits.finalizes && (await finalize(row))) result.finalized++;
@@ -482,8 +524,11 @@ export function createPublicationAbandonment(database: Kysely<Database>, options
           } catch {}
         }
       }
+      // A short page visited to its end is the end of the rotation: start over next pass.
+      if (rows.rows.length < scanLimit && visited === rows.rows.length) cursor = null;
       const flagged = await sql<{ count: string }>`SELECT count(*)::text AS count FROM m5_activation_state
-        WHERE kind='OPERATOR_HOLD' AND hold IS NOT NULL`.execute(database);
+        WHERE kind='OPERATOR_HOLD' AND hold IS NOT NULL
+          ${scope ? sql`AND shop_id = ANY(${[...scope.shopIds]}::text[])` : sql``}`.execute(database);
       result.flaggedHolds = Number(flagged.rows[0]?.count ?? 0);
       return result;
     },

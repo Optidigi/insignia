@@ -107,16 +107,35 @@ test('the not-eligible table: flags need no observation; skips change nothing', 
   const rows: [Partial<AbandonmentCandidate>, unknown][] = [
     [{ quietSince: new Date(now.getTime() - 599_999) }, { kind: 'SKIP', reason: 'not_quiet' }],
     [{ phase: 'shop-config-written' }, { kind: 'FLAG', reasons: ['fields_written'] }],
-    [{ phase: 'activation-pending' }, { kind: 'FLAG', reasons: ['fields_written'] }],
-    [{ kind: 'ACQUISITION_PENDING' }, { kind: 'FLAG', reasons: ['acquisition_unsettled'] }],
-    [{ kind: 'WAITING_RELEASE' }, { kind: 'SKIP', reason: 'not_quiet' }],
+    // A HELD row abandoned at activation-pending (status observed) is flagged, not skipped (review M1).
     [
-      { kind: 'WAITING_RELEASE', quietSince: new Date(now.getTime() - 86_400_000) },
+      { phase: 'activation-pending', status: 'observed' },
+      { kind: 'FLAG', reasons: ['fields_written'] },
+    ],
+    [
+      { phase: 'ready-written', status: 'acknowledged' },
+      { kind: 'FLAG', reasons: ['fields_written'] },
+    ],
+    [{ kind: 'ACQUISITION_PENDING' }, { kind: 'FLAG', reasons: ['acquisition_unsettled'] }],
+    // WAITING_RELEASE with a hold exists only at activation-pending, status observed.
+    [
+      { kind: 'WAITING_RELEASE', phase: 'activation-pending', status: 'observed' },
+      { kind: 'SKIP', reason: 'not_quiet' },
+    ],
+    [
+      {
+        kind: 'WAITING_RELEASE',
+        phase: 'activation-pending',
+        status: 'observed',
+        quietSince: new Date(now.getTime() - 86_400_000),
+      },
       { kind: 'FLAG', reasons: ['release_wait_after_writes'] },
     ],
     [{ hold: { ...hold, acquisitionAcknowledgement: undefined } }, { kind: 'FLAG', reasons: ['hold_not_owned'] }],
     [{ hold: { ...hold, restorationClaim: claim } }, { kind: 'FLAG', reasons: ['hold_not_owned'] }],
     [{ status: 'superseded' }, { kind: 'SKIP', reason: 'superseded' }],
+    [{ status: 'failed' }, { kind: 'SKIP', reason: 'superseded' }],
+    [{ status: 'activated' }, { kind: 'SKIP', reason: 'superseded' }],
     [{ operationSequence: '2' }, { kind: 'SKIP', reason: 'superseded' }],
     [{ installationCurrent: false }, { kind: 'SKIP', reason: 'superseded' }],
     [{ kind: 'OPERATOR_HOLD' }, { kind: 'SKIP', reason: 'not_candidate' }],

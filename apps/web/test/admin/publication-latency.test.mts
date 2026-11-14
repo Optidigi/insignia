@@ -647,7 +647,7 @@ test('#466 B with #468: an abandoned request is answered, never resent or resume
     assert.equal((await core.configs.getCurrentPublication(f.shopId, f.configId))?.phase, 'prepared');
     // After the quiet period the worker restores the product exactly and finalizes the request.
     assert.deepEqual(
-      { ...(await f.worker().runPass({ shopId: f.shopId })), flaggedHolds: 0 },
+      { ...(await f.worker().runPass({ shopIds: [f.shopId] })), flaggedHolds: 0 },
       { restored: 1, finalized: 1, flagged: 0, flaggedHolds: 0 },
     );
     assert.equal(f.status(), 'ACTIVE');

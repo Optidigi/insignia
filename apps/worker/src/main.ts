@@ -41,7 +41,10 @@ if (process.argv.includes('--diagnostic')) {
   const { core, queue } = createWorkerDatabase(connectionString, keys);
   const usage = createWorkerUsageRuntime({ env: process.env, core });
   const transport = createShopifyOfflineRefreshTransport({ clientId, clientSecret });
-  const purchaseCredentials = createAdminReadCredentialSource({
+  // The shop's offline token (the app's granted scopes) through M3's fenced refresh lifecycle.
+  // Purchase and lifecycle reads use it; so does #466's abandoned-hold restore, for exactly one
+  // status-only product write (spec §6.1 offline-token exception).
+  const offlineCredentials = createAdminReadCredentialSource({
     tenants: core.tenants,
     credentials: credentialLifecycle(core),
     refresh: transport,
@@ -51,7 +54,7 @@ if (process.argv.includes('--diagnostic')) {
     core,
     env: process.env,
     appClientId: clientId,
-    credentials: purchaseCredentials,
+    credentials: offlineCredentials,
     observability: queue.observability,
   });
   const releaseProfile =
@@ -68,7 +71,7 @@ if (process.argv.includes('--diagnostic')) {
   const checkout = releaseProfile
     ? createProductionPurchaseAdmission({
         core,
-        credentials: purchaseCredentials,
+        credentials: offlineCredentials,
         qualification,
         releaseProfile: releaseProfile.name,
       })
@@ -91,10 +94,10 @@ if (process.argv.includes('--diagnostic')) {
           orders: {
             read: (target) =>
               readShopifyOrder(target, {
-                credentials: purchaseCredentials,
+                credentials: offlineCredentials,
                 currency: { exponent: (code) => currencyExponent(code) ?? null },
               }),
-            changes: (target) => readShopifyOrderChanges(target, { credentials: purchaseCredentials }),
+            changes: (target) => readShopifyOrderChanges(target, { credentials: offlineCredentials }),
           },
           onError: (errorClass) => queue.observability.logger.error('queue_job_rejected', { errorClass }),
         })
@@ -107,7 +110,7 @@ if (process.argv.includes('--diagnostic')) {
   console.log(JSON.stringify({ url: running.url, durableReady: running.durableReady }));
   const lifecycle = createUninstallEnrollmentReconciliation({
     core,
-    credentials: purchaseCredentials,
+    credentials: offlineCredentials,
     enroll: createAutomaticUninstallEnrollment({
       core,
       appOrigin: required('APP_URL'),

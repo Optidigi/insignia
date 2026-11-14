@@ -73,6 +73,8 @@ export class PgActivationStore implements ActivationStore {
     const p = progress.rows[0];
     // #466: an abandoned operation stops before every fence below (they throw for `failed`) and
     // before any provider IO. A plain read is stable: ABANDON_* is entered only under the shop lock.
+    // After a reinstall the inactive-installation fence above runs first, so such a request reports
+    // OPERATOR_HOLD instead of ABANDONED. That is harmless: the fence catch leaves ABANDON_* unchanged.
     const abandoned = await sql<{ kind: string }>`SELECT kind FROM m5_activation_state
       WHERE shop_id=${identity.shopId} AND config_id=${identity.configId} AND operation_id=${identity.operationId}`.execute(
       tx,

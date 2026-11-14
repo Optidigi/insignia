@@ -100,14 +100,20 @@ export function decideAbandonment(input: {
   if (!['HELD', 'WAITING_RELEASE', 'ACQUISITION_PENDING'].includes(c.kind) || !c.hold)
     return { kind: 'SKIP', reason: 'not_candidate' };
   // Installation changed or operation superseded: the existing activation fence records OPERATOR_HOLD.
-  if (c.status !== 'requested' || c.operationSequence !== c.configSequence || !c.installationCurrent)
+  // `acknowledged` and `observed` are live statuses past field writes (flagged below, never claimed).
+  if (
+    !['requested', 'acknowledged', 'observed'].includes(c.status) ||
+    c.operationSequence !== c.configSequence ||
+    !c.installationCurrent
+  )
     return { kind: 'SKIP', reason: 'superseded' };
   const bound = c.kind === 'WAITING_RELEASE' ? input.releaseWaitFlagMs : input.abandonAfterMs;
   if (c.now.getTime() - c.quietSince.getTime() < bound) return { kind: 'SKIP', reason: 'not_quiet' };
   if (c.kind === 'ACQUISITION_PENDING') return { kind: 'FLAG', reasons: ['acquisition_unsettled'] };
   if (c.kind === 'WAITING_RELEASE') return { kind: 'FLAG', reasons: ['release_wait_after_writes'] };
   if (c.evidenceDigest !== null || c.resolutionDigest !== null) return { kind: 'SKIP', reason: 'not_candidate' };
-  if (c.phase !== 'prepared') return { kind: 'FLAG', reasons: ['fields_written'] };
+  // Claiming requires the committed `prepared` phase of a still `requested` operation (P1, E3).
+  if (c.phase !== 'prepared' || c.status !== 'requested') return { kind: 'FLAG', reasons: ['fields_written'] };
   if (!ownedHold(c.hold, c.operationId)) return { kind: 'FLAG', reasons: ['hold_not_owned'] };
   const observation = input.observation;
   if (!observation) return { kind: 'OBSERVE' };
