@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { authenticatedJson as selectedJson } from '../../../../frontend/admin/src/shared/admin-request.ts';
+import {
+  isUnansweredRequest,
+  authenticatedJson as selectedJson,
+} from '../../../../frontend/admin/src/shared/admin-request.ts';
 import { authenticatedJson } from '../../src/shared/admin-request.ts';
 import { replaceWindow } from './support/browser-node.mts';
 import { required } from './support/fixtures.mts';
@@ -24,12 +27,47 @@ for (const [name, request] of [
         method: 'POST',
         body: JSON.stringify({ action: 'publish' }),
       });
-      const rejected = assert.rejects(result, /Admin request timed out/);
+      const rejected = assert.rejects(result, (error) => {
+        assert.match(String(error), /Admin request timed out/);
+        // #436: nothing was sent, so the editor must not follow it as a possibly running publish.
+        assert.equal(isUnansweredRequest(error), false);
+        return true;
+      });
       await new Promise((resolve) => setImmediate(resolve));
       t.mock.timers.tick(60000);
       await rejected;
       await new Promise((resolve) => setImmediate(resolve));
       assert.equal(sent, 0);
+    } finally {
+      restore();
+      globalThis.fetch = originalFetch;
+    }
+  });
+  test(`${name}: #436 a sent publication without an answer by its deadline is marked unanswered`, async (t) => {
+    t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: new Date('2026-11-07T12:00:00Z') });
+    const originalFetch = globalThis.fetch;
+    const token = `synthetic.${Buffer.from(JSON.stringify({ exp: Date.now() / 1000 + 60 })).toString('base64url')}.synthetic`;
+    const restore = replaceWindow({ shopify: { idToken: async () => token } });
+    let sent = 0;
+    globalThis.fetch = (_path, init) =>
+      new Promise((_resolve, reject) => {
+        sent++;
+        init?.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+      });
+    try {
+      const result = request('/api/admin/products/111/config', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'publish' }),
+      });
+      const rejected = assert.rejects(result, (error) => {
+        assert.match(String(error), /Admin request timed out/);
+        assert.equal(isUnansweredRequest(error), true);
+        return true;
+      });
+      await new Promise((resolve) => setImmediate(resolve));
+      t.mock.timers.tick(60000);
+      await rejected;
+      assert.equal(sent, 1);
     } finally {
       restore();
       globalThis.fetch = originalFetch;

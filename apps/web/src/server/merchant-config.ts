@@ -38,6 +38,9 @@ type Outcome =
       validationIssues?: { path: string; message: string }[];
     };
 type Publication = Pick<ReturnType<DurableCore['productionPublications']['create']>, 'prepare' | 'advance'>;
+/** Within one publish request, an allowed subscription check for the same draft is reused for this
+ * long instead of being read again before every publication step (#436). */
+export const PUBLICATION_ELIGIBILITY_REUSE_MS = 30_000;
 const targetOccupied = (error: unknown) =>
   !!error &&
   typeof error === 'object' &&
@@ -790,6 +793,22 @@ export function createMerchantConfigService(input: {
     ): Promise<Outcome> {
       const catalogProduct = await product(actor, productId);
       if (data.authority) await core.transactions.run((tx) => currentLocked(actor, tx, data.authority));
+      const allowed = new Map<string, number>();
+      async function eligible(draft: MerchantDraft) {
+        const key = sha256CanonicalJson(draft);
+        const checkedAt = Date.now();
+        const reused = allowed.get(key);
+        if (reused !== undefined && checkedAt - reused < PUBLICATION_ELIGIBILITY_REUSE_MS)
+          return { allowed: true, reason: null };
+        const result = await input
+          .eligibility(actor, draft)
+          .catch(() => ({ allowed: false, reason: 'Entitlement unavailable' }));
+        if (result.allowed) allowed.set(key, checkedAt);
+        else allowed.delete(key);
+        return result;
+      }
+      // Set when this request admits a new intent; a replay or recovery reads the currency again.
+      let requestShopCurrency: string | null = null;
       const identity = command(actor, 'm5-publish-config', data.idempotencyKey, {
         productId,
         configId: data.configId,
@@ -894,9 +913,7 @@ export function createMerchantConfigService(input: {
             code: 'SHOP_CURRENCY_CHANGED',
             message: 'Shop currency changed. Reload and review the draft.',
           };
-        const eligibility = await input
-          .eligibility(actor, snapshot)
-          .catch(() => ({ allowed: false, reason: 'Entitlement unavailable' }));
+        const eligibility = await eligible(snapshot);
         if (!eligibility.allowed)
           return { kind: 'forbidden', message: eligibility.reason ?? 'Publication feature unavailable' };
         if (!input.capturePublicationPreviews) throw new Error('Complete customer previews are unavailable');
@@ -1013,6 +1030,7 @@ export function createMerchantConfigService(input: {
           },
         );
         resultRef = result.resultRef;
+        requestShopCurrency = shopCurrency;
       }
       if (resultRef === 'conflict') return { kind: 'conflict', message: 'Draft changed. Reload before publication.' };
       if (resultRef === 'open') return { kind: 'conflict', message: 'A publication request is already in progress' };
@@ -1064,7 +1082,7 @@ export function createMerchantConfigService(input: {
       if (!revision || revision.configId !== data.configId || !geometry || geometry.mode !== mode)
         throw new Error('Immutable publication revision unavailable');
       const published = PublishedConfigSchema.parse(revision.publishedValue);
-      if (published.shopCurrency !== (await input.catalog.shopCurrency(actor)))
+      if (published.shopCurrency !== (requestShopCurrency ?? (await input.catalog.shopCurrency(actor))))
         return {
           kind: 'invalid',
           code: 'SHOP_CURRENCY_CHANGED',
@@ -1096,9 +1114,7 @@ export function createMerchantConfigService(input: {
         pricingRules: published.pricingRules,
         geometry: geometry.value,
       });
-      const currentEligibility = await input
-        .eligibility(actor, immutableDraft)
-        .catch(() => ({ allowed: false, reason: 'Entitlement unavailable' }));
+      const currentEligibility = await eligible(immutableDraft);
       if (!currentEligibility.allowed)
         return { kind: 'forbidden', message: currentEligibility.reason ?? 'Publication feature unavailable' };
       await current(actor);
@@ -1115,14 +1131,13 @@ export function createMerchantConfigService(input: {
       let reconciliationFailure: 'CONFLICT' | 'OPERATOR_HOLD' | null = null;
       let progressToken = phase;
       let unchanged = 0;
+      let activationKind: ActivationResult['kind'] | null = null;
       for (let attempt = 0; attempt < 16; attempt++) {
         if (activation) {
           await current(actor);
           if (actor.expiresAtMs <= Date.now())
             return { kind: 'forbidden', message: 'Current staff identity expired. Refresh before continuing.' };
-          const eligibility = await input
-            .eligibility(actor, immutableDraft)
-            .catch(() => ({ allowed: false, reason: 'Entitlement unavailable' }));
+          const eligibility = await eligible(immutableDraft);
           if (!eligibility.allowed)
             return { kind: 'forbidden', message: eligibility.reason ?? 'Publication feature unavailable' };
         }
@@ -1132,13 +1147,24 @@ export function createMerchantConfigService(input: {
           reconciliationFailure = advanced.kind;
           break;
         }
-        const activated = activation
-          ? await activation.advance({
-              shopId: actor.tenantShopId,
-              configId: data.configId,
-              operationId: prepared.operationId,
-            })
+        // While activation is HELD (or a same-mode PUBLICATION_PENDING), a PENDING step leaves it
+        // where it was: activation only waits for the remaining field writes. PENDING means a field
+        // was written and read back, or a write was retryable (network/ambiguous) or not dispatched.
+        // Either way the next step re-checks its admission (the owned hold) before any write, so
+        // re-running activation here would only repeat that observation (#436). Every other outcome,
+        // including ADMISSION_PENDING, runs activation.
+        const activationWaiting: boolean =
+          advanced.kind === 'PENDING' && (activationKind === 'HELD' || activationKind === 'PUBLICATION_PENDING');
+        const activated: Pick<ActivationResult, 'kind'> | null = activation
+          ? activationWaiting
+            ? { kind: activationKind! }
+            : await activation.advance({
+                shopId: actor.tenantShopId,
+                configId: data.configId,
+                operationId: prepared.operationId,
+              })
           : null;
+        activationKind = activated?.kind ?? null;
         const token = `${phase}:${activated?.kind ?? advanced.kind}`;
         unchanged = token === progressToken ? unchanged + 1 : 0;
         progressToken = token;

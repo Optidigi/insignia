@@ -10,7 +10,7 @@ import {
 import { calibratedDimensions } from '@insignia/visualizer/geometry';
 import { withAdminLocale, useAdminLocale } from '../shared/admin-i18n';
 import { useAdminPageReady } from '../shared/admin-page-ready';
-import { authenticatedJson } from '../shared/admin-request';
+import { authenticatedJson, isUnansweredRequest } from '../shared/admin-request';
 import type { ConfigView } from '../shared/admin-view';
 import {
   configRejectionFrom,
@@ -44,6 +44,11 @@ import {
 type Remote = 'idle' | 'pending' | 'failed' | 'conflict' | { kind: 'rejected'; rejection: ConfigRejection };
 type Client = ReturnType<typeof createSelectedProductClient>;
 type Media = ReturnType<typeof createSelectedProductMedia>;
+/** A publish request that ended without an answer (client deadline or lost response) may still be
+ * running on the server, which stops at the staff session's expiry. Follow it this long before
+ * offering to continue the original request (#436). */
+const PUBLICATION_FOLLOW_MS = 45_000;
+const PUBLICATION_POLL_MS = 5_000;
 function SelectedProductContainer({ productId }: { productId: string }) {
   const { t } = useAdminLocale();
   const [initial, setInitial] = useState<PlacementProduct | null>(null);
@@ -51,6 +56,12 @@ function SelectedProductContainer({ productId }: { productId: string }) {
   const [failed, setFailed] = useState(false);
   const [historicalReview, setHistoricalReview] = useState<'pricing' | 'appearance' | null>(null);
   const [remote, setRemote] = useState<Remote>('idle');
+  const [followUntil, setFollowUntil] = useState(0);
+  useEffect(() => {
+    if (!followUntil) return;
+    const timer = setTimeout(() => setFollowUntil(0), Math.max(0, followUntil - Date.now()));
+    return () => clearTimeout(timer);
+  }, [followUntil]);
   const [settled, setSettled] = useState<PlacementProduct | undefined>();
   const [adopted, setAdopted] = useState(false);
   const [, renderMetadata] = useState(0);
@@ -99,8 +110,17 @@ function SelectedProductContainer({ productId }: { productId: string }) {
           owned.isUnverified()
         )
           return;
+        const publishing = owned.hasPendingPublication();
         if (!owned.adoptObservation(fresh)) {
           setRemote('conflict');
+          return;
+        }
+        if (publishing && !owned.hasPending()) {
+          // The followed publication settled: adopt the server's confirmed draft, as a direct answer would.
+          await observe(fresh);
+          if (version !== requestVersion.current || started !== activity.current) return;
+          setFollowUntil(0);
+          setRemote(fresh.config?.publication.state === 'FAILED' ? 'failed' : 'idle');
           return;
         }
         // Publication/readiness metadata can advance without replacing the local authoring draft or CAS base.
@@ -133,11 +153,17 @@ function SelectedProductContainer({ productId }: { productId: string }) {
     }
     const timer = setInterval(() => {
       if (document.visibilityState === 'visible') void inspect();
-    }, 5000);
+    }, PUBLICATION_POLL_MS);
+    // A background tab skips the interval; check at once when it becomes visible again.
+    const visible = () => {
+      if (document.visibilityState === 'visible') void inspect();
+    };
     window.addEventListener('focus', inspect);
+    document.addEventListener('visibilitychange', visible);
     return () => {
       clearInterval(timer);
       window.removeEventListener('focus', inspect);
+      document.removeEventListener('visibilitychange', visible);
     };
   }, [productId]);
   function denied() {
@@ -297,6 +323,8 @@ function SelectedProductContainer({ productId }: { productId: string }) {
       methodId: id,
       name: currentProduct.current?.methods.find((method) => method.id === id)?.name ?? id,
     }));
+  const publicationProgressing = followUntil > 0 && !!client.current?.hasPendingPublication();
+  const publicationNeedsReview = !!view?.config && isMerchantPublicationOperatorBlocked(view.config.publication.state);
   async function retry() {
     if (!client.current) return;
     const owned = client.current;
@@ -305,9 +333,12 @@ function SelectedProductContainer({ productId }: { productId: string }) {
       setRemote('pending');
       const value = await owned.retry();
       await observe(value);
+      setFollowUntil(0);
       setRemote(owned.hasPending() ? 'pending' : value.config?.publication.state === 'FAILED' ? 'failed' : 'idle');
     } catch (error) {
-      if (client.current === owned) setRemote(failedRemote(owned, error, 'failed'));
+      if (client.current !== owned) return;
+      setFollowUntil(0);
+      setRemote(failedRemote(owned, error, 'failed'));
     }
   }
   /** A write that is still unresolved stays pending; a server rejection is final; anything else is `otherwise`. */
@@ -329,6 +360,8 @@ function SelectedProductContainer({ productId }: { productId: string }) {
           readOnly: !canEdit.current || currencyReview,
           hasPublished: !!view.config?.publication.activeRevisionId,
           publicationFailed: view.config?.publication.state === 'FAILED' && !client.current?.hasPending(),
+          publicationProgressing,
+          publicationNeedsReview,
           publicationBlocked:
             remote === 'conflict' ||
             remote === 'failed' ||
@@ -502,6 +535,12 @@ function SelectedProductContainer({ productId }: { productId: string }) {
                 setRemote('conflict');
                 return { status: 'changed', product };
               }
+              if (client.current === owned && owned.hasPendingPublication() && isUnansweredRequest(error)) {
+                // No answer arrived (deadline or lost response): the request may still be publishing.
+                setFollowUntil(Date.now() + PUBLICATION_FOLLOW_MS);
+                setRemote('pending');
+                return { status: 'pending' };
+              }
               if (client.current === owned) setRemote(failedRemote(owned, error, 'failed'));
               throw error;
             }
@@ -543,23 +582,23 @@ function SelectedProductContainer({ productId }: { productId: string }) {
           </s-button>
         </s-banner>
       )}
-      {(remote !== 'idle' ||
-        (!!view.config && isMerchantPublicationOperatorBlocked(view.config.publication.state))) && (
-        <s-banner tone={remote === 'pending' ? 'warning' : 'critical'}>
-          {rejected && !(view.config && isMerchantPublicationOperatorBlocked(view.config.publication.state))
+      {(remote !== 'idle' || publicationNeedsReview) && (
+        <s-banner tone={publicationProgressing && !publicationNeedsReview ? 'info' : remote === 'pending' ? 'warning' : 'critical'}>
+          {rejected && !publicationNeedsReview
             ? configRejectionText(rejected, t)
             : t(
-                view.config && (isMerchantPublicationOperatorBlocked(view.config.publication.state) ||
-                  (remote === 'failed' && !view.config.publishEligibility.allowed))
+                view.config && (publicationNeedsReview || (remote === 'failed' && !view.config.publishEligibility.allowed))
                   ? 'editor:placementWorkflowPreview.realPublicationBlocked'
                   : view.config?.publication.state === 'FAILED' && !client.current?.hasPending()
                     ? 'editor:placementWorkflowPreview.realPublicationFailed'
-                    : 'editor:placementWorkflowPreview.realSaveFailed',
+                    : publicationProgressing
+                      ? 'editor:placementWorkflowPreview.realPublicationProgress'
+                      : 'editor:placementWorkflowPreview.realSaveFailed',
               )}
           {!rejected && (view.config?.publication.reason || view.config?.publishEligibility.reason) && (
             <s-paragraph>{view.config.publication.reason ?? view.config.publishEligibility.reason}</s-paragraph>
           )}
-          {client.current?.hasPending() && (
+          {client.current?.hasPending() && !publicationProgressing && (
             <s-button onClick={() => void retry()}>{t('common:actions.retry')}</s-button>
           )}
           {!client.current?.hasPending() && (!rejected || configRejectionNeedsReload(rejected)) && (

@@ -1049,6 +1049,7 @@ export interface AdminMessageTable {
   'editor:placementWorkflowPreview.realPublicationFailed': object;
   'editor:placementWorkflowPreview.realPublicationNotice': object;
   'editor:placementWorkflowPreview.realPublicationPending': object;
+  'editor:placementWorkflowPreview.realPublicationProgress': object;
   'editor:placementWorkflowPreview.realPublished': object;
   'editor:placementWorkflowPreview.realReloadDraft': object;
   'editor:placementWorkflowPreview.realRemoveMethod': object;
