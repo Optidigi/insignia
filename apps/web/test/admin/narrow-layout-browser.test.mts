@@ -243,14 +243,15 @@ for (const scheme of ['light', 'dark'] as const) {
   });
 }
 
-test('the editor header group has a merchant-facing label instead of the bridge default', {
+test('the editor header exports no unlabelled button group to the host', {
   timeout: 30000,
 }, async (t) => {
   const f = await fixture(t);
   await f.open();
-  // App Bridge exports an s-button-group as `label` attribute || "Button Group" (see issue #444).
-  const label = await f.page
+  // App Bridge exports an s-button-group as `label` attribute || "Button Group" (see issue #444). The panel and
+  // history controls now live in the editor, so the page header has no group to label (#441).
+  const unlabelled = await f.page
     .locator('s-page > s-button-group[slot="secondary-actions"]')
-    .evaluate((group) => group.getAttribute('label'));
-  assert.equal(label, 'Panels and history');
+    .evaluateAll((groups) => groups.filter((group) => !group.getAttribute('label')).length);
+  assert.equal(unlabelled, 0);
 });

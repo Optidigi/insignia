@@ -26,8 +26,8 @@ test('selected desktop and mobile layouts retain their workspace columns, image 
     .evaluateAll((buttons) => buttons.map((button) => button.textContent?.trim()));
   assert.deepEqual(
     nativeLabels,
-    ['Hide views and placements', 'Undo', 'Redo', 'More actions'],
-    'Bridge native-header export needs text labels even when controls render as icons',
+    ['More actions'],
+    'The panel and history controls live in the editor, clear of the host save bar (#441)',
   );
   const bounds = await f.page.locator('.placement-editor').evaluate((editor) => {
     const outline = editor.querySelector('.placement-outline')?.getBoundingClientRect();
@@ -110,7 +110,7 @@ test('delayed saves fence keyboard, programmatic native/header actions and input
   await f.page.keyboard.press('Control+s');
   await hostSave(f.page);
   await f.page
-    .locator('s-button-group[slot="secondary-actions"] s-button[icon="undo"]')
+    .locator('[data-placement-editor] s-button[icon="undo"]')
     .evaluate((button: HTMLElementTagNameMap['s-button']) => button.click());
   await f.page
     .locator('s-button[slot="primary-action"]')
@@ -299,7 +299,7 @@ test('equal-valued explicit Method edits become dirty metadata and undo restores
   await makeEqualOverride();
   assert.equal(f.mutations.length, 0);
   await f.page
-    .locator('s-button-group[slot="secondary-actions"] s-button[icon="undo"]')
+    .locator('[data-placement-editor] s-button[icon="undo"]')
     .evaluate((button: HTMLElementTagNameMap['s-button']) => button.click());
   await f.page.waitForFunction(() => {
     const button = document.querySelector('ui-save-bar button[variant="primary"]');
