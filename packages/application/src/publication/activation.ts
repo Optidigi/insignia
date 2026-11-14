@@ -655,6 +655,7 @@ export function createPublicationActivation(input: {
           let holdObservation: ProductAvailabilitySnapshot | null = null;
           if (admission !== 'SAME_MODE') {
             if (!c.state.hold) return result('WAITING_HOLD', c);
+            let acquired = false;
             if (dispatchAcquisition && c.state.kind === 'ACQUISITION_PENDING') {
               writeAuthorized();
               const observed = await input.availability.acquire(c.availabilityScope, c.state.hold);
@@ -665,6 +666,7 @@ export function createPublicationActivation(input: {
                 activationDigest(observed.hold.before) === activationDigest(c.state.hold.before)
               ) {
                 await session.save({ ...c.state, kind: 'HELD', hold: observed.hold });
+                acquired = true;
               } else {
                 const acknowledgement = observed.kind === 'CONFLICT' ? observed.acknowledgement : undefined;
                 await session.save({
@@ -679,7 +681,15 @@ export function createPublicationActivation(input: {
                 return result('OPERATOR_HOLD', c);
               }
             }
-            holdObservation = await held(session);
+            try {
+              holdObservation = await held(session);
+            } catch (error) {
+              // The owned acquisition receipt is evidence on its own. A follow-up read that
+              // observed nothing (e.g. Shopify throttling) must not roll it back; commit HELD
+              // and let the next invocation observe again.
+              if (acquired) return result('HELD', session.candidate);
+              throw error;
+            }
             if (!holdObservation) return result('OPERATOR_HOLD', c);
             c = session.candidate;
           }

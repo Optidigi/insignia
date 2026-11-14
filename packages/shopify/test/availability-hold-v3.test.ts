@@ -163,6 +163,98 @@ test('acquire preserves the hidden anchor and accepts distinct ACK/readback upda
   expect(result.hold.held?.providerUpdatedAt).toBe('2026-10-07T11:00:02.000Z');
 });
 
+/** #446: Shopify throttling during hold reads (two merchant sessions on a dev store). */
+function throttledStore(throttle: (read: number, state: string) => boolean) {
+  let state = 'ACTIVE',
+    reads = 0,
+    writes = 0;
+  const throttled = {
+    errors: [{ message: 'Throttled', extensions: { code: 'THROTTLED' } }],
+    extensions: { cost: { requestedQueryCost: 2, throttleStatus: { currentlyAvailable: 0, restoreRate: 100 } } },
+  };
+  const fetchImpl = vi.fn<typeof fetch>(async (_url: unknown, init?: RequestInit) => {
+    const r = graphqlRequest(String(init?.body));
+    if (r.query.startsWith('mutation')) {
+      writes++;
+      state = string(record(r.variables.product).status);
+      return new Response(JSON.stringify({ data: { productUpdate: { product: product(state), userErrors: [] } } }));
+    }
+    reads++;
+    if (throttle(reads, state)) return new Response(JSON.stringify(throttled));
+    return new Response(
+      JSON.stringify({
+        data: r.query.includes('publication(id:')
+          ? { ...identity, publication: anchor() }
+          : { ...identity, node: product(state) },
+      }),
+    );
+  });
+  const port = () =>
+    createShopifyAvailabilityHoldV3Port({
+      credentials: {
+        acquire: async () => ({
+          kind: 'usable',
+          shopDomain: 'synthetic.myshopify.com',
+          accessToken: 'synthetic-token',
+          accessExpiresAt: new Date('2099-01-01T00:00:00Z'),
+        }),
+      },
+      isCurrent: async () => true,
+      fetchImpl,
+      now,
+      timeoutMs: 10000,
+    });
+  return {
+    port,
+    get reads() {
+      return reads;
+    },
+    get writes() {
+      return writes;
+    },
+    set state(value: string) {
+      state = value;
+    },
+  };
+}
+
+test('#446: a briefly throttled read after the hold mutation is retried and yields an owned held receipt', async () => {
+  let throttledReads = 0;
+  const store = throttledStore((_read, state) => state === 'DRAFT' && throttledReads++ < 1);
+  const port = store.port();
+  const before = v3Snapshot(await port.snapshot(scope, productId));
+  if (before.version !== 'm5-product-availability-snapshot-v3') throw new Error('wrong snapshot');
+  const result = await port.acquire(scope, {
+    version: 'm5-availability-hold-v3',
+    operationId: 'op-446',
+    before,
+    held: null,
+  });
+  expect(result.kind).toBe('HELD');
+  expect(store.writes).toBe(1);
+});
+
+test('#446: a still-throttled hold observation is a retryable failure, not a conflict', async () => {
+  let throttling = false;
+  const store = throttledStore(() => throttling);
+  const port = store.port();
+  const before = v3Snapshot(await port.snapshot(scope, productId));
+  if (before.version !== 'm5-product-availability-snapshot-v3') throw new Error('wrong snapshot');
+  const acquired = await port.acquire(scope, {
+    version: 'm5-availability-hold-v3',
+    operationId: 'op-446',
+    before,
+    held: null,
+  });
+  if (acquired.kind !== 'HELD' || acquired.hold.version !== 'm5-availability-hold-v3') throw new Error('not held');
+  throttling = true;
+  // Before the fix this resolved { kind: 'CONFLICT', current: null } and activation recorded OPERATOR_HOLD.
+  await expect(store.port().observe(scope, acquired.hold)).rejects.toMatchObject({ kind: 'throttled' });
+  throttling = false;
+  await expect(store.port().observe(scope, acquired.hold)).resolves.toMatchObject({ kind: 'HELD' });
+  expect(store.writes).toBe(1);
+});
+
 type Scenario = {
   beforeWrite?: () => boolean;
   ackNonEffective?: 'acquire' | 'restore' | 'compensate';
