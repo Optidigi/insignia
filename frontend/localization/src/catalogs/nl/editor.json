@@ -335,6 +335,7 @@
     },
     "checkAppearanceOnView": "Controleer {{appearanceName}} in aanzicht {{viewName}}.",
     "realPublicationPending": "Publicatie wordt nog verwerkt. Ga door met het oorspronkelijke verzoek om de status te controleren.",
+    "realPublicationProgress": "Bezig met publiceren. Dit kan tot een minuut duren; deze pagina wordt bijgewerkt zodra het klaar is.",
     "realPublicationNotice": "Na validatie en activering werkt publiceren je Shopify-winkel bij.",
     "realSaveFailed": "Je wijzigingen konden niet worden bevestigd. Probeer het oorspronkelijke verzoek opnieuw voordat je andere wijzigingen opslaat.",
     "realPublished": "Gepubliceerd",

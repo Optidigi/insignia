@@ -107,6 +107,10 @@ export type ProductPublicationResult = PublishPlacementPreviewResult | { status:
 export interface ProductEditorAdapter {
   kind: 'demo' | 'production'; currency: string; selectionScope: string;
   readOnly?: boolean; hasPublished?: boolean; publicationBlocked?: boolean; publicationFailed?: boolean;
+  /** A publish request ended without an answer and is being followed until it settles. */
+  publicationProgressing?: boolean;
+  /** The publication stopped in a state only operator review can resolve. */
+  publicationNeedsReview?: boolean;
   productChanging?(previous: PlacementProduct, next: PlacementProduct): PlacementProduct;
   reviews?: { methodId: string; name: string }[];
   reviewMethod?(product: PlacementProduct, methodId: string, decision: 'keep'|'remove'): PlacementProduct;
@@ -502,11 +506,13 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
   const [dialog, dispatchDialog] = useReducer(placementDialogReducer, initialPlacementDialogState);
   const methodDialog = dialog.kind === 'method-manager' ? dialog : null;
   const publishReview = dialog.kind === 'publish' ? dialog : null;
-  useEffect(() => { if (dialog.kind === 'publish' && dialog.error === 'pending' && !adapter.pending() && (adapter.publicationFailed || adapter.publication?.published)) { dispatchDialog({ type: 'dialog-closed', id: dialog.id }); setNotice({ kind: 'message', reason: adapter.publicationFailed ? 'publish-failed' : 'publish-succeeded' }); } }, [adapter.publication]);
+  useEffect(() => { if (dialog.kind === 'publish' && dialog.error === 'pending' && !adapter.pending() && (adapter.publicationFailed || adapter.publication?.published)) { dispatchDialog({ type: 'dialog-closed', id: dialog.id }); setNotice({ kind: 'message', reason: adapter.publicationFailed ? 'publish-failed' : 'publish-succeeded' }); } else if (dialog.kind === 'publish' && dialog.error === 'pending' && adapter.publicationNeedsReview) dispatchDialog({ type: 'dialog-closed', id: dialog.id }); }, [adapter.publication, adapter.publicationNeedsReview]);
   const publishError = publishReview?.error
     ? translateUi(
         publishReview.error === 'pending'
-          ? 'editor:placementWorkflowPreview.realPublicationPending'
+          ? adapter.publicationProgressing
+            ? 'editor:placementWorkflowPreview.realPublicationProgress'
+            : 'editor:placementWorkflowPreview.realPublicationPending'
           : publishReview.error === 'conflict'
           ? 'editor:placementWorkflowPreview.publishErrors.conflict'
           : publishReview.error === 'busy'
@@ -2691,7 +2697,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
             ? translateUi('editor:placementWorkflowPreview.history.changeRedone')
             : ''}
       </span>
-      {adapter.kind === 'production' && <AdminSaveBar dirty={dirty || adapter.pending()} saving={writeBusy || adapter.pending()} canSave={dirty && !writeBusy && !adapter.pending() && !adapter.readOnly} canDiscard={!writeBusy && !adapter.pending()} onSave={save} onDiscard={discard} showFallback={false} manageNavigation={false}/>}
+      {adapter.kind === 'production' && <AdminSaveBar dirty={dirty || adapter.pending()} saving={writeBusy || (adapter.pending() && !adapter.publicationNeedsReview)} canSave={dirty && !writeBusy && !adapter.pending() && !adapter.readOnly} canDiscard={!writeBusy && !adapter.pending()} onSave={save} onDiscard={discard} showFallback={false} manageNavigation={false}/>}
       <s-page heading={product.title} inlineSize="large">
         {adapter.kind === 'production' && <s-button-group slot="secondary-actions">
           <s-button variant="secondary" icon="layout-sidebar-left" accessibilityLabel={translateUi(outlineHidden ? 'editor:placementWorkflowPreview.showViewsAndPlacements' : 'editor:placementWorkflowPreview.hideViewsAndPlacements')} disabled={!view || writeBusy || adapter.pending()} onClick={()=>setOutlineHidden((hidden)=>!hidden)}>{translateUi(outlineHidden ? 'editor:placementWorkflowPreview.showViewsAndPlacements' : 'editor:placementWorkflowPreview.hideViewsAndPlacements')}</s-button>
@@ -4177,6 +4183,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                 </s-paragraph>
               </>
             )}
+            {writeBusy && !publishReview.error && adapter.kind === 'production' && <s-banner tone="info">{translateUi('editor:placementWorkflowPreview.realPublicationProgress')}</s-banner>}
             {publishError && <s-banner tone={publishReview.error === 'pending' ? 'info' : 'critical'}>{publishError}</s-banner>}
             {!publishReview.issues.length && (
               <s-text color="subdued">

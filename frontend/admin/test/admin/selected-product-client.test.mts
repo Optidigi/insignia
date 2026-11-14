@@ -754,3 +754,51 @@ test('a 422 for a retried write whose fence cannot be sent keeps the original id
   await assert.rejects(client.retry(), { status: 422 });
   assert.equal(client.hasPending(), true, 'An earlier attempt of this key may still have committed');
 });
+
+for (const outcome of ['ACTIVE', 'FAILED'] as const)
+  test(`#436: an unanswered publish settles from a later read by its exact request key: ${outcome}`, async () => {
+    const f = fixture();
+    let saved = false,
+      published = false;
+    const candidate = {
+      ...setup,
+      product: { ...setup.product, methods: [{ id: 'print', name: 'Print', pricing: 'product' as const, amount: '' }] },
+    };
+    // The server keeps its own canonical form of the saved setup, not byte-identical to the journal.
+    const canonical = { ...candidate, product: { ...candidate.product, title: `${candidate.product.title} (stored)` } };
+    const client = createSelectedProductClient({
+      productId: product.id,
+      storage: f.storage,
+      newKey: () => key,
+      request: async (path, init) => {
+        if (path.endsWith('preferences')) return preferences;
+        if (init?.method === 'PUT') {
+          saved = true;
+          return { kind: 'saved', draftVersion: '2' };
+        }
+        if (init) throw new Error('Admin request timed out');
+        const value = configView(saved ? '2' : '1', published ? outcome : 'DRAFT');
+        value.config.draft = { ...draft, selectedSetup: published ? canonical : candidate };
+        if (published) {
+          value.config.publication.revisionId = 'new-revision';
+          value.config.publication.activeRevisionId = outcome === 'ACTIVE' ? 'new-revision' : 'old-revision';
+          value.config.publication.sourceDraftVersion = '2';
+          Object.assign(value.config.publication, { requestKey: `${key}:publish` });
+          value.config.publishedSetup = outcome === 'ACTIVE' ? canonical : null;
+        }
+        return value;
+      },
+    });
+    await client.load();
+    await assert.rejects(client.publish(candidate), /timed out/);
+    assert.equal(client.hasPendingPublication(), true, 'the unanswered request keeps its custody');
+    published = true;
+    const later = await client.peek();
+    // Another request's outcome for the same draft does not settle this one.
+    const other = structuredClone(later);
+    other.config!.publication.requestKey = 'another-key:publish';
+    assert.equal(client.adoptObservation(other), true);
+    assert.equal(client.hasPending(), true);
+    assert.equal(client.adoptObservation(later), true);
+    assert.equal(client.hasPending(), false);
+  });

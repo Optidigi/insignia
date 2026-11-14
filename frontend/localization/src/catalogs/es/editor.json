@@ -1188,6 +1188,7 @@
     "checkAppearanceOnView": "Comprueba {{appearanceName}} en {{viewName}}.",
     "selectedImage": "Seleccionada",
     "realPublicationPending": "La publicación sigue en curso. Continúa la solicitud original para comprobar su estado.",
+    "realPublicationProgress": "Publicando. Puede tardar hasta un minuto; esta página se actualizará cuando termine.",
     "realPublicationNotice": "La publicación actualiza tu tienda Shopify después de la validación y activación.",
     "realSaveFailed": "No se pudieron confirmar los cambios. Reintenta la solicitud original antes de guardar otros cambios.",
     "realPublished": "Publicado",

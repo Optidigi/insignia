@@ -1057,6 +1057,7 @@
     },
     "checkAppearanceOnView": "Prüfen Sie {{appearanceName}} in der Ansicht {{viewName}}.",
     "realPublicationPending": "Die Veröffentlichung wird noch verarbeitet. Setzen Sie die ursprüngliche Anfrage fort, um den Status zu prüfen.",
+    "realPublicationProgress": "Wird veröffentlicht. Das kann bis zu einer Minute dauern; diese Seite wird aktualisiert, sobald es abgeschlossen ist.",
     "realPublicationNotice": "Nach Prüfung und Aktivierung aktualisiert die Veröffentlichung Ihren Shopify-Shop.",
     "realSaveFailed": "Ihre Änderungen konnten nicht bestätigt werden. Wiederholen Sie die ursprüngliche Anfrage, bevor Sie andere Änderungen speichern.",
     "realPublished": "Veröffentlicht",

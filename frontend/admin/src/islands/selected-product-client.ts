@@ -320,35 +320,28 @@ export function createSelectedProductClient(input: {
     const config = view.config,
       publication = config?.publication;
     if (
-      value?.stage === 'publish' &&
-      config?.configId === value.configId &&
-      config.installationGeneration === value.installationGeneration &&
-      publication?.state === 'FAILED' &&
-      publication.sourceDraftVersion === value.draftVersion &&
-      value.acceptedRevisionId &&
-      publication.revisionId === value.acceptedRevisionId
-    ) {
-      input.storage.removeItem(key());
-      return true;
-    }
-    if (
-      value?.stage === 'publish' &&
-      config?.configId === value.configId &&
-      config.installationGeneration === value.installationGeneration &&
-      publication?.state === 'ACTIVE' &&
-      publication.sourceDraftVersion === value.draftVersion &&
-      publication.revisionId &&
-      publication.activeRevisionId === publication.revisionId &&
-      (!value.acceptedRevisionId || publication.revisionId === value.acceptedRevisionId) &&
-      view.config?.publishedSetup &&
-      ('setup' in value
-        ? sameJson(view.config.publishedSetup.product, value.setup.product)
-        : !!value.acceptedRevisionId)
-    ) {
-      input.storage.removeItem(key());
-      return true;
-    }
-    return false;
+      value?.stage !== 'publish' ||
+      !config ||
+      !publication?.revisionId ||
+      config.configId !== value.configId ||
+      config.installationGeneration !== value.installationGeneration ||
+      publication.sourceDraftVersion !== value.draftVersion ||
+      (value.acceptedRevisionId && publication.revisionId !== value.acceptedRevisionId)
+    )
+      return false;
+    // The original request's idempotency key, or the revision it was accepted with, identifies this
+    // exact operation even when its response was lost (#436). The server's stored setup is then
+    // authoritative, so it need not match the locally journaled bytes.
+    const exact = !!value.acceptedRevisionId || publication.requestKey === `${value.key}:publish`;
+    const settled =
+      publication.state === 'FAILED'
+        ? exact
+        : publication.state === 'ACTIVE' &&
+          publication.activeRevisionId === publication.revisionId &&
+          !!config.publishedSetup &&
+          (exact || ('setup' in value && sameJson(config.publishedSetup.product, value.setup.product)));
+    if (settled) input.storage.removeItem(key());
+    return settled;
   }
   async function write(setupInput: SelectedProductSetup, publish: boolean) {
     if (busy) throw new Error('A product write is already running');
@@ -478,6 +471,14 @@ export function createSelectedProductClient(input: {
         return !!pending();
       } catch {
         return true;
+      }
+    },
+    /** The unresolved write is a publish request whose draft save was already confirmed. */
+    hasPendingPublication: () => {
+      try {
+        return pending()?.stage === 'publish';
+      } catch {
+        return false;
       }
     },
   };

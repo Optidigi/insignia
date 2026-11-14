@@ -1093,6 +1093,7 @@
     "imageForGroupList_many": "{{groupNames}} · {{formattedVariantCount}} variantes",
     "sameImageForGroupCount_many": "Même image pour {{formattedCount}} groupes",
     "realPublicationPending": "La publication est toujours en cours. Reprenez la demande initiale pour vérifier son état.",
+    "realPublicationProgress": "Publication en cours. Cela peut prendre jusqu’à une minute ; cette page se met à jour une fois la publication terminée.",
     "realPublicationNotice": "La publication met à jour votre boutique Shopify après validation et activation.",
     "realSaveFailed": "Vos modifications n’ont pas pu être confirmées. Réessayez la demande initiale avant d’enregistrer d’autres modifications.",
     "realPublished": "Publié",

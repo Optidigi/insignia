@@ -1074,6 +1074,7 @@ export const adminParameterContracts = {
   'editor:placementWorkflowPreview.realPublicationFailed': {},
   'editor:placementWorkflowPreview.realPublicationNotice': {},
   'editor:placementWorkflowPreview.realPublicationPending': {},
+  'editor:placementWorkflowPreview.realPublicationProgress': {},
   'editor:placementWorkflowPreview.realPublished': {},
   'editor:placementWorkflowPreview.realReloadDraft': {},
   'editor:placementWorkflowPreview.realRemoveMethod': {},
