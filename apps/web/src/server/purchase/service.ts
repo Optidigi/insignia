@@ -33,7 +33,7 @@ export type PurchaseServices = ReturnType<typeof createPurchaseServices>;
 export function createPurchaseServices(input: {
   core: DurableCore;
   appOrigin: string;
-  authenticate(request: Request): Promise<AdminActor | null>;
+  authenticate(request: Request, options?: { fresh?: boolean }): Promise<AdminActor | null>;
   assertCurrentAccess?: (actor: AdminActor) => Promise<void>;
   orderNames?: (actor: AdminActor, orderIds: string[]) => Promise<Record<string, string | null>>;
   orderPresentation?: (

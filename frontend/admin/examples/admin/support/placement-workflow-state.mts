@@ -264,7 +264,7 @@ export type PlacementDialogState =
       product: PlacementProduct;
       revision: number;
       issues: PlacementPublicationIssue[];
-      error: 'conflict' | 'storage-error' | 'pending' | null;
+      error: 'conflict' | 'storage-error' | 'busy' | 'pending' | null;
     };
 
 export const initialPlacementDialogState: PlacementDialogState = { kind: 'closed' };
@@ -303,7 +303,7 @@ export type PlacementDialogEvent =
       issues: PlacementPublicationIssue[];
     }
   | { type: 'publish-issues-updated'; id: string; issues: PlacementPublicationIssue[] }
-  | { type: 'publish-failed'; id: string; reason: 'conflict' | 'storage-error' | 'pending' }
+  | { type: 'publish-failed'; id: string; reason: 'conflict' | 'storage-error' | 'busy' | 'pending' }
   | { type: 'dialog-closed'; id: string };
 
 /** A single overlay owner prevents unrelated confirmation and staging sessions from overlapping. */

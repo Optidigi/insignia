@@ -53,6 +53,7 @@ function sessionToken(forceFresh = false, policy = adminRequestPolicy('')): Prom
 
 async function jsonResponse<T>(response: Response): Promise<T> {
   let body: T & {
+    code?: string;
     error?: string;
     message?: string;
     validationIssues?: { path: string; message: string }[];
@@ -73,8 +74,13 @@ async function jsonResponse<T>(response: Response): Promise<T> {
       status: response.status,
       validationIssues: body.validationIssues,
       noEffect: body.noEffect === true,
+      ...(body.code === 'BUSY' ? { code: 'BUSY' as const } : {}),
     });
   return body;
+}
+/** Shopify was throttling or degraded; nothing happened and the same action can be retried. */
+export function isShopifyBusy(error: unknown): boolean {
+  return !!error && typeof error === 'object' && 'code' in error && error.code === 'BUSY';
 }
 export async function authenticatedJson<T>(path: string, init: RequestInit = {}, forceFresh = false): Promise<T> {
   const policy = adminRequestPolicy(path, init);

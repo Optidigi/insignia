@@ -174,6 +174,24 @@ test('admin auth diagnostics emit only a bounded stage and independent correlati
   );
   assert.throws(() => logger.info('admin_authentication', { authStage, correlationId: 'SECRET' }));
   assert.doesNotMatch(output, /SECRET/);
+  output = '';
+  logger.warn('admin_authentication', {
+    authStage: 'INSTALLATION_PROVIDER_READ_FAILED',
+    providerCode: 'THROTTLED',
+    correlationId: record.correlationId,
+  });
+  const provider = parseRecord(output.trim());
+  assert.equal(provider.providerCode, 'THROTTLED');
+  assert.equal(provider.level, 40);
+  assert.throws(() =>
+    logger.warn('admin_authentication', {
+      authStage: 'INSTALLATION_PROVIDER_READ_FAILED',
+      // @ts-expect-error Provider messages never become a diagnostic code.
+      providerCode: 'Throttled: SECRET',
+      correlationId: String(record.correlationId),
+    }),
+  );
+  assert.doesNotMatch(output, /SECRET/);
   for (const stage of [
     'BEARER_MISSING',
     'BEARER_MALFORMED',

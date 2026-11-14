@@ -926,7 +926,8 @@
     },
     "publishErrors": {
       "conflict": "This preview changed while you were reviewing. Close this dialog and review the latest setup.",
-      "storageError": "Your browser could not publish this preview. Your work and the previous published preview are kept. Try again or save a draft."
+      "storageError": "This preview could not be published. Your work and the previous published preview are kept. Try again or save a draft.",
+      "shopifyBusy": "Shopify is busy right now, so this preview was not published. Your work and the previous published preview are kept. Wait a few seconds and try again."
     },
     "history": {
       "changeUndone": "Change undone.",

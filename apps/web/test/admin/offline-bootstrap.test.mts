@@ -171,7 +171,7 @@ for (const mode of ['success', 'lost-response', 'non-owner', 'wrong-installation
           await services.authenticate(request());
           assert.equal(offline, 1);
           assert.equal(offlineReads, 1);
-          assert.equal(online, 2);
+          assert.equal(online, 1, '#435: the same staff session reuses its verified online grant');
           const rows = (await pool.query('select * from shop_credentials')).rows;
           assert.equal(rows.length, 1);
           assert.equal(JSON.stringify(rows).includes('synthetic-offline-access'), false);

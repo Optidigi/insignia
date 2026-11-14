@@ -4,6 +4,7 @@ import { useEffect, useReducer, useRef, useState } from 'preact/hooks';
 import AdminResourceName from '../components/AdminResourceName.tsx';
 import AdminTruncatedLabel from '../components/AdminTruncatedLabel.tsx';
 import { useAdminLocale } from '../shared/admin-i18n.js';
+import { isShopifyBusy } from '../shared/admin-request.ts';
 import { productEditorReturnPath } from '../shared/products-return-path.ts';
 import { storefrontProductTestSetupHref } from '../shared/storefront-product-test.ts';
 import Dialog from '../../examples/admin/support/method-dialog.tsx';
@@ -502,6 +503,8 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
           ? 'editor:placementWorkflowPreview.realPublicationPending'
           : publishReview.error === 'conflict'
           ? 'editor:placementWorkflowPreview.publishErrors.conflict'
+          : publishReview.error === 'busy'
+          ? 'editor:placementWorkflowPreview.publishErrors.shopifyBusy'
           : 'editor:placementWorkflowPreview.publishErrors.storageError',
       )
     : '';
@@ -2357,8 +2360,9 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     writeBusyRef.current = true;
     setWriteBusy(true);
     let result: ProductPublicationResult;
+    let shopifyBusy = false;
     try { result = await adapter.publish(publishReview.product, publishReview.revision); }
-    catch { result = { status: 'storage-error', reason: 'write-failed' }; }
+    catch (error) { shopifyBusy = isShopifyBusy(error); result = { status: 'storage-error', reason: 'write-failed' }; }
     finally { writeBusyRef.current = false; setWriteBusy(false); }
     if (result.status === 'changed') {
       setProduct(result.product); setSaved(result.product); savedBindings.current = adapter.getBindings?.() ?? currentBindings.current;
@@ -2379,7 +2383,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
       dispatchDialog({
         type: 'publish-failed',
         id: publishReview.id,
-        reason: result.status === 'conflict' ? 'conflict' : 'storage-error',
+        reason: result.status === 'conflict' ? 'conflict' : shopifyBusy ? 'busy' : 'storage-error',
       });
       return;
     }

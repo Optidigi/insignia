@@ -49,7 +49,7 @@ export async function createProductionArtworkServices(
   return {
     appOrigin,
     artwork,
-    authenticate: async (request) => (await adminServices()?.authenticate(request)) ?? null,
+    authenticate: async (request, options) => (await adminServices()?.authenticate(request, options)) ?? null,
     verifyGuest: guest?.verify,
     issueGuest: guest?.issue,
     async ensureInspectionReady() {

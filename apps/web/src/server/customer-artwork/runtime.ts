@@ -31,7 +31,8 @@ export async function customerArtworkServices(): Promise<CustomerArtworkHttpServ
         links,
         view,
         artwork: upload?.artwork,
-        authenticate: async (request: Request) => (await adminServices()?.authenticate(request)) ?? null,
+        authenticate: async (request: Request, options?: { fresh?: boolean }) =>
+          (await adminServices()?.authenticate(request, options)) ?? null,
         async assertMerchantAccess(actor) {
           const assertAccess = adminServices()?.assertPurchaseAccess;
           if (!assertAccess) throw new Error('Current merchant authority unavailable');

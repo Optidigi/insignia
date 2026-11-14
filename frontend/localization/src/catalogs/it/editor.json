@@ -950,7 +950,8 @@
     },
     "publishErrors": {
       "conflict": "Questa anteprima è cambiata mentre la controllavi. Chiudi la finestra di dialogo e controlla la configurazione più recente.",
-      "storageError": "Il browser non è riuscito a pubblicare questa anteprima. Il tuo lavoro e l'anteprima pubblicata in precedenza sono ancora disponibili. Riprova o salva una bozza."
+      "storageError": "Non è stato possibile pubblicare questa anteprima. Il tuo lavoro e l'anteprima pubblicata in precedenza sono ancora disponibili. Riprova o salva una bozza.",
+      "shopifyBusy": "Shopify è occupato in questo momento, quindi questa anteprima non è stata pubblicata. Il tuo lavoro e l'anteprima pubblicata in precedenza sono ancora disponibili. Attendi qualche secondo e riprova."
     },
     "history": {
       "changeUndone": "Modifica annullata.",

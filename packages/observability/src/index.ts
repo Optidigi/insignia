@@ -79,6 +79,10 @@ const ADMIN_AUTH_STAGES = [
   'INSTALLATION_PROVIDER_READ_SUCCEEDED',
   'TENANT_RECONCILIATION_SUCCEEDED',
   'AUTHENTICATION_SUCCEEDED',
+  /** A verified online grant for the same shop, staff and session was reused within its expiry. */
+  'ONLINE_GRANT_REUSED_SUCCEEDED',
+  /** A recent installation observation was reused after its durable generation fence matched. */
+  'INSTALLATION_OBSERVATION_REUSED_SUCCEEDED',
   'OFFLINE_BOOTSTRAP_INSTALLED_SUCCEEDED',
   'OFFLINE_BOOTSTRAP_EXISTING_SUCCEEDED',
   'OFFLINE_BOOTSTRAP_BUSY',
@@ -87,6 +91,22 @@ const ADMIN_AUTH_STAGES = [
   'OFFLINE_BOOTSTRAP_REJECTED',
 ] as const;
 export type AdminAuthenticationStage = (typeof ADMIN_AUTH_STAGES)[number];
+/** Bounded Shopify failure codes; never a provider message or body. */
+const ADMIN_PROVIDER_CODES = [
+  'THROTTLED',
+  'MAX_COST_EXCEEDED',
+  'ACCESS_DENIED',
+  'INTERNAL_SERVER_ERROR',
+  'GRAPHQL_ERROR',
+  'HTTP_401',
+  'HTTP_403',
+  'HTTP_429',
+  'HTTP_5XX',
+  'HTTP_OTHER',
+  'TIMEOUT',
+  'NETWORK',
+] as const;
+export type AdminProviderDiagnosticCode = (typeof ADMIN_PROVIDER_CODES)[number];
 
 const BUYER_STAGES = [
   'config',
@@ -269,6 +289,7 @@ export interface RuntimeLogDetails {
   buyerStage?: BuyerFailureDiagnostic['buyerStage'];
   proposalStage?: BuyerFailureDiagnostic['proposalStage'];
   authStage?: AdminAuthenticationStage;
+  providerCode?: AdminProviderDiagnosticCode;
   correlationId?: string;
   inboxId?: string;
   shopId?: string;
@@ -402,8 +423,11 @@ function eventDetails(event: RuntimeEvent, input: RuntimeLogDetails) {
     !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input.correlationId)
   )
     throw new Error('Invalid authentication diagnostic');
+  if (input.providerCode !== undefined && !ADMIN_PROVIDER_CODES.includes(input.providerCode))
+    throw new Error('Invalid authentication provider code');
   return {
     authStage: input.authStage,
+    ...(input.providerCode === undefined ? {} : { providerCode: input.providerCode }),
     correlationId: input.correlationId,
     statusClass:
       input.authStage === 'ONLINE_EXCHANGE_REFRESH_REQUIRED'

@@ -15,7 +15,7 @@ import {
   shopifyApi,
 } from '@shopify/shopify-api';
 import { abstractFetch, setAbstractFetchFunc } from '@shopify/shopify-api/runtime';
-import { withAdminDeadline } from './admin-deadline.js';
+import { graphqlThrottled, ShopifyAdminUnavailableError, withAdminDeadline } from './admin-deadline.js';
 
 export type AdminOnlineIdentityStage =
   | 'SESSION_TOKEN_SIGNATURE_REJECTED'
@@ -43,12 +43,34 @@ const stageMessages: Record<AdminOnlineIdentityStage, string> = {
   INSTALLATION_PROVIDER_READ_FAILED: 'Installation read failed',
   INSTALLATION_PROVIDER_SHAPE_OR_IDENTITY_MISMATCH: 'Installation response mismatch',
 };
+/** Bounded Shopify failure code for diagnostics; never a provider message or body. */
+export type AdminProviderCode =
+  | 'THROTTLED'
+  | 'MAX_COST_EXCEEDED'
+  | 'ACCESS_DENIED'
+  | 'INTERNAL_SERVER_ERROR'
+  | 'GRAPHQL_ERROR'
+  | 'HTTP_401'
+  | 'HTTP_403'
+  | 'HTTP_429'
+  | 'HTTP_5XX'
+  | 'HTTP_OTHER'
+  | 'TIMEOUT'
+  | 'NETWORK';
 /** Only bounded classification survives the SDK/provider boundary; no cause/body/token. */
 export class AdminOnlineIdentityError extends Error {
-  constructor(readonly stage: AdminOnlineIdentityStage) {
+  /** Shopify was throttling or degraded; the same request can succeed later. */
+  readonly transient: boolean;
+  readonly providerCode?: AdminProviderCode;
+  constructor(
+    readonly stage: AdminOnlineIdentityStage,
+    detail: { transient?: boolean; providerCode?: AdminProviderCode } = {},
+  ) {
     super(stageMessages[stage]);
     if (!Object.hasOwn(stageMessages, stage)) throw new Error('Invalid authentication classification');
     this.name = 'AdminOnlineIdentityError';
+    this.transient = detail.transient === true;
+    if (detail.providerCode) this.providerCode = detail.providerCode;
   }
 }
 
@@ -219,7 +241,19 @@ export function createAdminOnlineIdentity(input: {
         );
       } catch (error) {
         if (refreshableExchangeError(error)) throw new AdminOnlineIdentityError('ONLINE_EXCHANGE_REFRESH_REQUIRED');
-        throw new AdminOnlineIdentityError('ONLINE_EXCHANGE_FAILED');
+        const code = error instanceof HttpResponseError ? error.response.code : undefined;
+        throw new AdminOnlineIdentityError(
+          'ONLINE_EXCHANGE_FAILED',
+          code === 429
+            ? { transient: true, providerCode: 'HTTP_429' }
+            : code !== undefined && code >= 500
+              ? { transient: true, providerCode: 'HTTP_5XX' }
+              : error instanceof ShopifyAdminUnavailableError
+                ? { transient: true, providerCode: 'TIMEOUT' }
+                : code === 401 || code === 403
+                  ? { providerCode: code === 401 ? 'HTTP_401' : 'HTTP_403' }
+                  : {},
+        );
       }
       const associated = session.onlineAccessInfo?.associated_user;
       if (
@@ -333,8 +367,32 @@ export function createAdminOnlineIdentity(input: {
         throw new OfflineExchangeError();
       }
     },
+    /** Retries only throttled or 5xx reads, at most twice, waiting for Shopify's advertised restore time. */
     async readInstallation(grant: Pick<OnlineStaffGrant, 'shop' | 'accessToken'>): Promise<AdminInstallationRead> {
       if (!shopDomain.test(grant.shop) || !grant.accessToken) throw new Error('Invalid online grant');
+      for (let attempt = 1; ; attempt++) {
+        const failure: { retryAfterMs?: number } = {};
+        try {
+          return await readInstallationOnce(grant, failure);
+        } catch (error) {
+          if (
+            !(error instanceof AdminOnlineIdentityError) ||
+            !error.transient ||
+            !RETRYABLE_READ_CODES.has(error.providerCode as AdminProviderCode) ||
+            attempt >= INSTALLATION_READ_ATTEMPTS
+          )
+            throw error;
+          const delay = Math.min(2000, Math.max(100, failure.retryAfterMs ?? 250 * attempt));
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+      }
+    },
+  };
+  async function readInstallationOnce(
+    grant: Pick<OnlineStaffGrant, 'shop' | 'accessToken'>,
+    failure: { retryAfterMs?: number },
+  ): Promise<AdminInstallationRead> {
+    {
       let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
       return withAdminDeadline(
         async (signal) => {
@@ -345,7 +403,24 @@ export function createAdminOnlineIdentity(input: {
             redirect: 'error',
             signal,
           });
-          if (!response.ok) throw new Error('Installation read denied');
+          if (!response.ok) {
+            await response.body?.cancel().catch(() => {});
+            if (response.status === 429) {
+              const seconds = Number(response.headers.get('Retry-After'));
+              if (Number.isFinite(seconds) && seconds >= 0) failure.retryAfterMs = seconds * 1000;
+            }
+            throw readFailure(
+              response.status === 429
+                ? 'HTTP_429'
+                : response.status >= 500
+                  ? 'HTTP_5XX'
+                  : response.status === 401
+                    ? 'HTTP_401'
+                    : response.status === 403
+                      ? 'HTTP_403'
+                      : 'HTTP_OTHER',
+            );
+          }
           const length = response.headers.get('content-length');
           if (length && Number(length) > 32_000) throw new Error('Installation response too large');
           reader = response.body?.getReader();
@@ -380,7 +455,26 @@ export function createAdminOnlineIdentity(input: {
           }
           if (!body || typeof body !== 'object' || Array.isArray(body))
             throw new AdminOnlineIdentityError('INSTALLATION_PROVIDER_SHAPE_OR_IDENTITY_MISMATCH');
-          if ('errors' in body) throw new AdminOnlineIdentityError('INSTALLATION_PROVIDER_READ_FAILED');
+          if ('errors' in body) {
+            const errors = (body as { errors?: unknown }).errors;
+            const codes = Array.isArray(errors)
+              ? errors.map((error) => (error as { extensions?: { code?: unknown } } | null)?.extensions?.code)
+              : [];
+            if (graphqlThrottled(errors)) {
+              const delay = throttleRestoreMs(body);
+              if (delay !== undefined) failure.retryAfterMs = delay;
+              throw readFailure('THROTTLED');
+            }
+            throw readFailure(
+              codes.includes('MAX_COST_EXCEEDED')
+                ? 'MAX_COST_EXCEEDED'
+                : codes.includes('ACCESS_DENIED')
+                  ? 'ACCESS_DENIED'
+                  : codes.includes('INTERNAL_SERVER_ERROR')
+                    ? 'INTERNAL_SERVER_ERROR'
+                    : 'GRAPHQL_ERROR',
+            );
+          }
           const data = (body as { data?: unknown }).data;
           if (!data || typeof data !== 'object')
             throw new AdminOnlineIdentityError('INSTALLATION_PROVIDER_SHAPE_OR_IDENTITY_MISMATCH');
@@ -424,8 +518,30 @@ export function createAdminOnlineIdentity(input: {
         },
       ).catch((error: unknown) => {
         if (error instanceof AdminOnlineIdentityError) throw error;
+        if (error instanceof ShopifyAdminUnavailableError) throw readFailure('TIMEOUT');
+        if (error instanceof TypeError) throw readFailure('NETWORK');
         throw new AdminOnlineIdentityError('INSTALLATION_PROVIDER_READ_FAILED');
       });
-    },
-  };
+    }
+  }
+}
+
+const INSTALLATION_READ_ATTEMPTS = 3;
+const RETRYABLE_READ_CODES = new Set<AdminProviderCode>(['THROTTLED', 'HTTP_429', 'HTTP_5XX', 'INTERNAL_SERVER_ERROR']);
+const TRANSIENT_READ_CODES = new Set<AdminProviderCode>([...RETRYABLE_READ_CODES, 'TIMEOUT', 'NETWORK']);
+function readFailure(providerCode: AdminProviderCode): AdminOnlineIdentityError {
+  return new AdminOnlineIdentityError('INSTALLATION_PROVIDER_READ_FAILED', {
+    providerCode,
+    transient: TRANSIENT_READ_CODES.has(providerCode),
+  });
+}
+/** Time until the bucket again holds the requested cost, from Shopify's GraphQL cost extension. */
+function throttleRestoreMs(body: object): number | undefined {
+  const cost = (body as { extensions?: { cost?: Record<string, unknown> } }).extensions?.cost;
+  const status = cost?.throttleStatus as Record<string, unknown> | undefined;
+  const requested = Number(cost?.requestedQueryCost);
+  const available = Number(status?.currentlyAvailable);
+  const rate = Number(status?.restoreRate);
+  if (![requested, available, rate].every(Number.isFinite) || rate <= 0) return undefined;
+  return Math.ceil((Math.max(0, requested - available) / rate) * 1000);
 }

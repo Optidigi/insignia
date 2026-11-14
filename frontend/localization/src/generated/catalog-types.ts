@@ -1008,6 +1008,7 @@ export interface AdminMessageTable {
   'editor:placementWorkflowPreview.publicationActions.setMovementArea': object;
   'editor:placementWorkflowPreview.publish': object;
   'editor:placementWorkflowPreview.publishErrors.conflict': object;
+  'editor:placementWorkflowPreview.publishErrors.shopifyBusy': object;
   'editor:placementWorkflowPreview.publishErrors.storageError': object;
   'editor:placementWorkflowPreview.publishHeadings.addProductView': object;
   'editor:placementWorkflowPreview.publishHeadings.finishSetup': object;

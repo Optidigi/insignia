@@ -1033,6 +1033,7 @@ export const adminParameterContracts = {
   'editor:placementWorkflowPreview.publicationActions.setMovementArea': {},
   'editor:placementWorkflowPreview.publish': {},
   'editor:placementWorkflowPreview.publishErrors.conflict': {},
+  'editor:placementWorkflowPreview.publishErrors.shopifyBusy': {},
   'editor:placementWorkflowPreview.publishErrors.storageError': {},
   'editor:placementWorkflowPreview.publishHeadings.addProductView': {},
   'editor:placementWorkflowPreview.publishHeadings.finishSetup': {},
