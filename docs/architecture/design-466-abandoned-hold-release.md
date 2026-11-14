@@ -360,7 +360,7 @@ Concurrency (two real connections, gated fake Shopify):
    - The composition counts every `remote.set` and `availability.restore` call.
 10. Activated path: a throttled pre-write read after `RESTORATION_CLAIMED` stores `NOT_DISPATCHED`/`current: null`. The next invocation rearms once and restores. A second such receipt cannot rearm, and the worker moves it to `OPERATOR_HOLD` after the stale bound. First reproduce the main defect (claim without receipt, `ACTIVATED_RESTORATION_PENDING` forever).
 11. E8: `observe()` returning `CONFLICT` with `current: null` (credential inactive, query cost) is a `SKIP`, not a flag.
-12. Operator claim: the invoker trigger rejects `OPERATOR_HOLD → ABANDON_CLAIMED` from the worker and web roles and accepts it from the operator function. The function locks the six rows in canonical order, concurrently with a merchant `advance`, without deadlock.
+12. Operator claim: the invoker trigger rejects `OPERATOR_HOLD → ABANDON_CLAIMED` from the worker and web roles and accepts it from the operator function. The function locks the six rows in canonical order, concurrently with a merchant `advance`, without deadlock. Part A `restore` on a product that differs from the owned held snapshot, or on an operation from a reinstalled store, refuses before claiming. The row stays `OPERATOR_HOLD` with no claim or receipt, and `resolve` still works afterwards.
 13. Every existing writer of progress and operation rows holds the shop lock (the freeze-rule assumption).
 
 Application/adapter:
@@ -397,16 +397,17 @@ insignia-publication-hold resolve --shop <shopId> --config <configId> --operatio
   - held since, activation kind and version, and a hold summary (`before`/`held`, acknowledgement, claims, receipts);
   - the committed phase, and B's verdict and reasons;
   - a live Shopify read (offline token) of the product's availability and of `registration`, `policy` and `public_config`, each compared with the progress row's `prior_*_digest` (`public_config` for information only, §2.2);
-  - "safe to restore: yes/no, because …";
+  - "safe to restore: yes/no, because …". It is "yes" only if the live product equals the owned held snapshot exactly, live `registration` and `policy` match the prior digests, and the installation is the current one (E4);
   - an `inspectDigest` over (activation version, hold digest, live product snapshot digest, live field digests).
 - **`restore`:**
   - Allowed only for `OPERATOR_HOLD` with an owned held receipt and no earlier restoration claim or receipt.
+  - Before claiming, re-reads the product and **refuses without claiming** if it does not equal the owned held snapshot. Claiming first would end in a `CONFLICT` receipt, which blocks any later `restore` and leaves only `resolve`.
   - Recomputes the digest and **hard-refuses** if it differs from `--inspect-digest`, if the activation version moved, if the inspect is older than 10 minutes, or if live `registration` or `policy` differs from the prior digests.
   - Then calls `m5_operator_claim_abandoned_hold(...)`. This `SECURITY DEFINER` function is owned by the schema owner, and only the dedicated operator role can execute it (not web, not worker). It locks the six rows `FOR UPDATE` in canonical order, rechecks the activation version, and writes `OPERATOR_HOLD → ABANDON_CLAIMED` with `SETTLED_BY_TRUSTED_OPERATOR`, the command key and the inspect digest.
   - Then runs B's T2 and T3. Outcomes and states are B's.
 - **`resolve`:** the existing observation-only path (`createAvailabilityRecovery` → `RESOLVED`). The CLI supplies the trusted authority port from the confirmed command. Use it when Shopify already shows the original state.
 - **Audit:** every run, including `inspect`, writes one structured log line. `restore` and `resolve` are also recorded in the database (abandonment audit, resolution row). A command key is single-use per shop.
-- **Runbook** (`deployment/m5-runtime/README.md`): when to use each subcommand, and what "safe" means. For holds where product fields were already written (`registration` or `policy` differ from prior), `restore` refuses. Then either the merchant continues the publish, or the owner restores the product by hand in Shopify admin and runs `resolve`.
+- **Runbook** (`deployment/m5-runtime/README.md`): when to use each subcommand, and what "safe" means. For holds where product fields were already written (`registration` or `policy` differ from prior), `restore` refuses. Then either the merchant continues the publish, or the owner restores the product by hand in Shopify admin and runs `resolve`. If the store was reinstalled since the hold (E4 fails, the operation belongs to an old installation), `restore` also refuses. Only the manual route is open: restore the product by hand in Shopify admin, then run `resolve`. The same applies when the product no longer equals the held snapshot.
 
 First use: `QA cover B – Tee`. It is `OPERATOR_HOLD`, committed `prepared`, with an owned held receipt and a first publication (prior field digests null). If `inspect` shows `registration` and `policy` still absent, it reports safe, and the owner can confirm `restore`.
 
