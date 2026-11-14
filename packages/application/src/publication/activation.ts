@@ -82,7 +82,9 @@ export type ActivationStateKind =
   | 'RESTORATION_CLAIMED'
   | 'RESTORED'
   | 'RESOLVED'
-  | 'OPERATOR_HOLD';
+  | 'OPERATOR_HOLD'
+  | 'ABANDON_CLAIMED'
+  | 'ABANDON_RESTORED';
 export type ActivationState = Readonly<{
   kind: ActivationStateKind;
   hold: AvailabilityHold | null;
@@ -186,10 +188,57 @@ export type ActivationResult = Readonly<{
     | 'PUBLICATION_PENDING'
     | 'ACTIVATED_RESTORATION_PENDING'
     | 'ACTIVE'
-    | 'OPERATOR_HOLD';
+    | 'OPERATOR_HOLD'
+    /** #466: the operation was abandoned (claimed or restored); nothing was observed or written. */
+    | 'ABANDONED';
   evidenceDigest: string | null;
 }>;
 export class ActivationFenceError extends Error {}
+/** #466: thrown by the store before any fence or provider IO when the activation is ABANDON_* or
+ * the phase is `abandoned`. The coordinator returns ABANDONED and never rewrites the state. */
+export class PublicationAbandoned extends Error {
+  constructor() {
+    super('Publication was abandoned');
+    this.name = 'PublicationAbandoned';
+  }
+}
+
+/** One acknowledgement rule for every restore of an owned v3 hold (after activation and after
+ * abandonment): an unavailable original needs no write, otherwise a qualified ACK of that state. */
+export function restorationAcknowledgementQualified(
+  hold: AvailabilityHoldV3,
+  acknowledgement: unknown,
+  productId: string,
+  scope: AvailabilityScope,
+): boolean {
+  if (hold.before.state === 'unavailable' && (acknowledgement === undefined || acknowledgement === null)) return true;
+  return (
+    availabilityV3AcknowledgementQualified(acknowledgement) &&
+    acknowledgement.productId === productId &&
+    acknowledgement.state === hold.before.state &&
+    activationDigest(acknowledgement.scope) === activationDigest(scope)
+  );
+}
+/** A restore outcome that returned the product exactly to its original state. */
+export function restorationSettled(
+  hold: AvailabilityHoldV3,
+  outcome: { kind: string; current: unknown; acknowledgement?: unknown },
+  productId: string,
+  scope: AvailabilityScope,
+): boolean {
+  const current = outcome.current;
+  return (
+    outcome.kind === 'RESTORED' &&
+    isAvailabilityV3(current) &&
+    validAvailabilityV3(current) &&
+    current.productId === productId &&
+    activationDigest(current.scope) === activationDigest(scope) &&
+    current.state === hold.before.state &&
+    isAvailabilityV3(hold.before) &&
+    sameAvailabilityV3(current, hold.before) &&
+    restorationAcknowledgementQualified(hold, outcome.acknowledgement, productId, scope)
+  );
+}
 
 /** Stable, JSON-only digest; rejects credentials/classes/accessors instead of serializing them implicitly. */
 export function activationDigest(value: unknown): string {
@@ -411,7 +460,7 @@ export function createPublicationActivation(input: {
           if (
             c.state.hold &&
             c.state.hold.version !== 'm5-availability-hold-v3' &&
-            !['RESTORED', 'RESOLVED'].includes(c.state.kind)
+            !['RESTORED', 'RESOLVED', 'ABANDON_RESTORED'].includes(c.state.kind)
           ) {
             await session.save({ ...c.state, kind: 'OPERATOR_HOLD' });
             return result('OPERATOR_HOLD', c);
@@ -610,12 +659,12 @@ export function createPublicationActivation(input: {
               observation.current,
               beforeSend,
             );
-            const acknowledgementQualified =
-              (c.state.hold.before.state === 'unavailable' && response.acknowledgement === undefined) ||
-              (availabilityV3AcknowledgementQualified(response.acknowledgement) &&
-                response.acknowledgement.productId === c.productId &&
-                response.acknowledgement.state === c.state.hold.before.state &&
-                activationDigest(response.acknowledgement.scope) === activationDigest(c.availabilityScope));
+            const acknowledgementQualified = restorationAcknowledgementQualified(
+              c.state.hold as AvailabilityHoldV3,
+              response.acknowledgement,
+              c.productId,
+              c.availabilityScope,
+            );
             // A clean no-write DRAFT readback cannot erase scheduling in a supplied ACK.
             const restored =
               response.kind === 'RESTORED' && !acknowledgementQualified
@@ -645,16 +694,12 @@ export function createPublicationActivation(input: {
             }
             if (restored.kind === 'RESTORATION_PENDING' || restored.kind === 'NOT_DISPATCHED')
               return result('ACTIVATED_RESTORATION_PENDING', c);
-            const valid =
-              restored.kind === 'RESTORED' &&
-              snapshotShape(restored.current) &&
-              restored.current.productId === c.productId &&
-              activationDigest(restored.current.scope) === activationDigest(c.availabilityScope) &&
-              restored.current.state === c.state.hold.before.state &&
-              isAvailabilityV3(restored.current) &&
-              isAvailabilityV3(c.state.hold.before) &&
-              sameAvailabilityV3(restored.current, c.state.hold.before) &&
-              acknowledgementQualified;
+            const valid = restorationSettled(
+              c.state.hold as AvailabilityHoldV3,
+              restored,
+              c.productId,
+              c.availabilityScope,
+            );
             if (valid && restored.current) fresh(restored.current.observedAt, now(), input.maxObservationAgeMs);
             await session.save({ ...session.candidate.state, kind: valid ? 'RESTORED' : 'OPERATOR_HOLD' });
             return result(valid ? 'ACTIVE' : 'OPERATOR_HOLD', c);
@@ -798,6 +843,7 @@ export function createPublicationActivation(input: {
         // concurrent activation. Claimed/ambiguous writes never enter this path.
         return resumeAfterConcurrentActivation ? coordinator.advance(identity) : outcome;
       } catch (error) {
+        if (error instanceof PublicationAbandoned) return { kind: 'ABANDONED', evidenceDigest: null };
         if (error instanceof ActivationFenceError) return { kind: 'OPERATOR_HOLD', evidenceDigest: null };
         throw error;
       }

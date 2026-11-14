@@ -11,6 +11,7 @@ import {
   buildPublicConfig,
   classifyPublicationAdmission,
   isAvailabilityV3,
+  PublicationAbandoned,
   publicKeyFingerprint,
   sameAvailabilityV3,
 } from '@insignia/application';
@@ -59,14 +60,6 @@ export class PgActivationStore implements ActivationStore {
       .where('operation_id', '=', identity.operationId)
       .forUpdate()
       .executeTakeFirst();
-    if (
-      !config ||
-      !operation ||
-      operation.installation_generation !== scope.installationGeneration ||
-      operation.operation_sequence !== config.publication_sequence ||
-      !['requested', 'acknowledged', 'observed', 'activated'].includes(operation.status)
-    )
-      throw new ActivationFenceError('Publication superseded or inactive');
     const progress = await sql<{
       phase: string;
       mode: 'required' | 'optional';
@@ -78,6 +71,22 @@ export class PgActivationStore implements ActivationStore {
       tx,
     );
     const p = progress.rows[0];
+    // #466: an abandoned operation stops before every fence below (they throw for `failed`) and
+    // before any provider IO. A plain read is stable: ABANDON_* is entered only under the shop lock.
+    const abandoned = await sql<{ kind: string }>`SELECT kind FROM m5_activation_state
+      WHERE shop_id=${identity.shopId} AND config_id=${identity.configId} AND operation_id=${identity.operationId}`.execute(
+      tx,
+    );
+    if (p?.phase === 'abandoned' || ['ABANDON_CLAIMED', 'ABANDON_RESTORED'].includes(abandoned.rows[0]?.kind ?? ''))
+      throw new PublicationAbandoned();
+    if (
+      !config ||
+      !operation ||
+      operation.installation_generation !== scope.installationGeneration ||
+      operation.operation_sequence !== config.publication_sequence ||
+      !['requested', 'acknowledged', 'observed', 'activated'].includes(operation.status)
+    )
+      throw new ActivationFenceError('Publication superseded or inactive');
     if (!p || ['operator-hold', 'conflict'].includes(p.phase))
       throw new ActivationFenceError('Publication not eligible');
     if (
@@ -321,7 +330,9 @@ export class PgActivationStore implements ActivationStore {
           // including when an old-generation hold survives reinstall or supersession.
           await sql`UPDATE m5_activation_state SET kind='OPERATOR_HOLD', version=version+1
           WHERE shop_id=${identity.shopId} AND config_id=${identity.configId} AND operation_id=${identity.operationId}
-            AND kind NOT IN ('RESTORED','RESOLVED','OPERATOR_HOLD')`.execute(this.database);
+            AND kind NOT IN ('RESTORED','RESOLVED','OPERATOR_HOLD','ABANDON_CLAIMED','ABANDON_RESTORED')`.execute(
+            this.database,
+          );
         }
         throw error;
       });

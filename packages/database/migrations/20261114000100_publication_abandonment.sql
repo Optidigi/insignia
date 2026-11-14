@@ -380,7 +380,8 @@ DO $role$ BEGIN
 END $role$;
 CREATE FUNCTION public.m5_operator_claim_abandoned_hold(p_shop_id text, p_config_id text, p_operation_id text,
  p_expected_version bigint, p_command_key text, p_inspect_digest text) RETURNS bigint
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+-- The existing activation triggers it fires resolve unqualified names through public.
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog, public, pg_temp AS $$
 DECLARE v_generation bigint; v_kind text; v_version bigint; quiet timestamptz; claimed timestamptz; result bigint;
  instant text:='YYYY-MM-DD"T"HH24:MI:SS.MS"Z"';
 BEGIN

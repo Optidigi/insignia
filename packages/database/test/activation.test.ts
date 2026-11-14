@@ -86,6 +86,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     let restoreCredentialDelay: { afterReads: number; ms: number } | null = null;
     // Provider reads (1-based count) that answer 503: an outage that observed nothing.
     const failedReads = new Set<number>();
+    // The next status mutation is sent but its response is lost (an ambiguous write).
+    let failMutation = false;
     const shopId = randomUUID();
     const providerShop = BigInt(`0x${shopId.replaceAll('-', '').slice(0, 12)}`).toString();
     const configId = randomUUID();
@@ -428,6 +430,78 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     };
     let responsePending = false,
       restoreMismatch = false;
+    const providerFetch = (async (_url: unknown, init?: RequestInit) => {
+      const request = JSON.parse(String(init?.body));
+      const mutation = request.query.startsWith('mutation');
+      if (!mutation) availabilityReads++;
+      if (!mutation && failedReads.delete(availabilityReads)) return new Response('', { status: 503 });
+      if (mutation && failMutation) {
+        failMutation = false;
+        providerWrites.push(`lost:${request.variables.product.status}`);
+        return new Response('', { status: 503 });
+      }
+      if (mutation) {
+        status = request.variables.product.status;
+        providerWrites.push(status);
+        providerMutations.push({ status, at: providerClock.getTime() });
+        version = status === 'DRAFT' ? '2026-10-01T11:01:00.000Z' : '2026-10-01T11:02:00.000Z';
+      }
+      const product = {
+        __typename: 'Product',
+        id: 'gid://shopify/Product/42',
+        status,
+        updatedAt: version,
+        publishedAt:
+          restoreMismatch && providerWrites.includes('ACTIVE') && status === 'ACTIVE'
+            ? '2026-10-01T11:02:00.000Z'
+            : null,
+        onlineStoreUrl:
+          restoreMismatch && providerWrites.includes('ACTIVE') && status === 'ACTIVE'
+            ? 'https://synthetic.example/products/fixture'
+            : null,
+        resourcePublications: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false } },
+        unpublishedPublications: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false } },
+      };
+      const data = mutation
+        ? { productUpdate: { product, userErrors: [] } }
+        : {
+            shop: { id: availabilityScope.shopifyShopId },
+            currentAppInstallation: {
+              app: { apiKey: availabilityScope.appClientId },
+              accessScopes: [
+                { handle: 'read_products' },
+                { handle: 'write_products' },
+                { handle: 'read_publications' },
+              ],
+            },
+            node: product,
+            publications: {
+              nodes: [],
+              pageInfo: { hasNextPage: false, hasPreviousPage: false, endCursor: null },
+            },
+          };
+      const bytes = new TextEncoder().encode(JSON.stringify({ data }));
+      if (providerDelay?.point === 'fetch') {
+        providerClock = new Date(providerClock.getTime() + providerDelay.ms);
+        providerDelay = null;
+      }
+      responsePending = true;
+      return new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(bytes);
+          },
+          pull(controller) {
+            if (providerDelay?.point === 'body') {
+              providerClock = new Date(providerClock.getTime() + providerDelay.ms);
+              providerDelay = null;
+            }
+            controller.close();
+          },
+        }),
+        { status: 200 },
+      );
+    }) as typeof fetch;
     const makeAvailability = () =>
       providerStatus
         ? createShopifyAvailabilityHoldV3Port({
@@ -453,73 +527,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
                 };
               },
             },
-            fetchImpl: (async (_url, init) => {
-              const request = JSON.parse(String(init?.body));
-              const mutation = request.query.startsWith('mutation');
-              if (!mutation) availabilityReads++;
-              if (!mutation && failedReads.delete(availabilityReads)) return new Response('', { status: 503 });
-              if (mutation) {
-                status = request.variables.product.status;
-                providerWrites.push(status);
-                providerMutations.push({ status, at: providerClock.getTime() });
-                version = status === 'DRAFT' ? '2026-10-01T11:01:00.000Z' : '2026-10-01T11:02:00.000Z';
-              }
-              const product = {
-                __typename: 'Product',
-                id: 'gid://shopify/Product/42',
-                status,
-                updatedAt: version,
-                publishedAt:
-                  restoreMismatch && providerWrites.includes('ACTIVE') && status === 'ACTIVE'
-                    ? '2026-10-01T11:02:00.000Z'
-                    : null,
-                onlineStoreUrl:
-                  restoreMismatch && providerWrites.includes('ACTIVE') && status === 'ACTIVE'
-                    ? 'https://synthetic.example/products/fixture'
-                    : null,
-                resourcePublications: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false } },
-                unpublishedPublications: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false } },
-              };
-              const data = mutation
-                ? { productUpdate: { product, userErrors: [] } }
-                : {
-                    shop: { id: availabilityScope.shopifyShopId },
-                    currentAppInstallation: {
-                      app: { apiKey: availabilityScope.appClientId },
-                      accessScopes: [
-                        { handle: 'read_products' },
-                        { handle: 'write_products' },
-                        { handle: 'read_publications' },
-                      ],
-                    },
-                    node: product,
-                    publications: {
-                      nodes: [],
-                      pageInfo: { hasNextPage: false, hasPreviousPage: false, endCursor: null },
-                    },
-                  };
-              const bytes = new TextEncoder().encode(JSON.stringify({ data }));
-              if (providerDelay?.point === 'fetch') {
-                providerClock = new Date(providerClock.getTime() + providerDelay.ms);
-                providerDelay = null;
-              }
-              responsePending = true;
-              return new Response(
-                new ReadableStream({
-                  start(controller) {
-                    controller.enqueue(bytes);
-                  },
-                  pull(controller) {
-                    if (providerDelay?.point === 'body') {
-                      providerClock = new Date(providerClock.getTime() + providerDelay.ms);
-                      providerDelay = null;
-                    }
-                    controller.close();
-                  },
-                }),
-                { status: 200 },
-              );
-            }) as typeof fetch,
+            fetchImpl: providerFetch,
           })
         : availability;
     const providerAvailability = makeAvailability();
@@ -551,6 +559,32 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         requestDeadline = providerClock.getTime();
       },
       httpMutations,
+      set failMutation(value: boolean) {
+        failMutation = value;
+      },
+      /** #466 B worker pass on this fixture's fake Shopify, with a per-row port. */
+      abandonment: (options: Partial<Parameters<DurableCore['publicationAbandonment']['create']>[0]> = {}) =>
+        core.publicationAbandonment.create({
+          appClientId: artifactScope.appClientId,
+          mode: 'restore',
+          abandonAfterMs: 0,
+          releaseWaitFlagMs: 0,
+          claimStaleMs: 60_000,
+          acquireToken: async () => ({
+            kind: 'usable',
+            shopDomain: 'synthetic.myshopify.com',
+            accessToken: 'synthetic-offline-token',
+            accessExpiresAt: new Date('2099-01-01T00:00:00Z'),
+          }),
+          availability: ({ credentials, isCurrent }) =>
+            createShopifyAvailabilityHoldV3Port({
+              now: () => new Date(providerClock),
+              isCurrent,
+              credentials,
+              fetchImpl: providerFetch,
+            }),
+          ...options,
+        }),
       /** The next provider read after `afterReads` more reads answers 503 (nothing observed). */
       failProviderRead: (afterReads: number) => {
         failedReads.add(availabilityReads + afterReads + 1);
@@ -591,6 +625,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       restart,
       freshProviderRestart: () =>
         core.productionActivations.create({ ...options, availability: makeAvailability(), recoveryAuthority }),
+      /** Someone else changes the product's status in Shopify. */
+      set providerProductStatus(value: string) {
+        status = value;
+      },
       set restoreMismatch(value: boolean) {
         restoreMismatch = value;
       },
@@ -1070,9 +1108,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     // One rearm of that receipt digest, then the restore completes.
     expect((await f.freshProviderRestart().advance(f.identity)).kind).toBe('ACTIVE');
     expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
-    const consumed = await sql`SELECT FROM m5_restoration_no_dispatch_consumptions WHERE shop_id=${f.identity.shopId}`.execute(
-      database,
-    );
+    const consumed =
+      await sql`SELECT FROM m5_restoration_no_dispatch_consumptions WHERE shop_id=${f.identity.shopId}`.execute(
+        database,
+      );
     expect(consumed.rows).toHaveLength(1);
   });
 
@@ -1094,6 +1133,431 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     expect(state.hold.restorationClaim?.settledNoDispatchReceiptDigest).toBe(
       activationDigest(state.hold.restorationReceipt),
     );
+  });
+
+  // #466 part B: automatic release of an abandoned publication hold (design §8, tests 1-13).
+  type Fixture = Awaited<ReturnType<typeof fixture>>;
+  const activationRow = async (f: Fixture, operationId = f.identity.operationId) =>
+    (
+      await sql<{ kind: string; version: string; hold: Record<string, unknown> }>`SELECT kind, version::text, hold
+        FROM m5_activation_state WHERE shop_id=${f.identity.shopId} AND operation_id=${operationId}`.execute(database)
+    ).rows[0];
+  const progressPhase = async (f: Fixture, operationId = f.identity.operationId) =>
+    (
+      await sql<{ phase: string }>`SELECT phase FROM m4_publication_progress
+        WHERE shop_id=${f.identity.shopId} AND operation_id=${operationId}`.execute(database)
+    ).rows[0]?.phase;
+  const operationRow = async (f: Fixture, operationId = f.identity.operationId) =>
+    (
+      await sql<{ status: string; failure_class: string | null; availability_resolved_at: Date | null }>`
+        SELECT status, failure_class, availability_resolved_at FROM publication_operations
+        WHERE shop_id=${f.identity.shopId} AND operation_id=${operationId}`.execute(database)
+    ).rows[0];
+  const auditRows = async (f: Fixture) =>
+    (
+      await sql<{ event: string; from_kind: string; to_kind: string; detail: unknown; activation_version: string }>`
+        SELECT event, from_kind, to_kind, detail, activation_version::text FROM m5_publication_abandonment_audit
+        WHERE shop_id=${f.identity.shopId} ORDER BY activation_version`.execute(database)
+    ).rows;
+  /** A schema-owner claim built like the worker's (direct SQL, for the trigger table). */
+  const directClaim = (f: Fixture, authority = 'PROVED_NOT_DISPATCHED') =>
+    sql`UPDATE m5_activation_state a SET kind='ABANDON_CLAIMED', version=a.version+1, hold=a.hold||jsonb_build_object(
+        'abandonmentClaim',jsonb_build_object('version','m5-publication-abandonment-claim-v1','operationId',a.operation_id,
+          'scope',a.hold#>'{before,scope}','productId',a.hold#>>'{before,productId}','authority',${authority}::text,
+          'quietSince','2026-11-14T12:00:00.000Z','claimedAt','2026-11-14T12:10:00.000Z'),
+        'restorationClaim',jsonb_build_object('version','m5-availability-restoration-claim-v3','operationId',a.operation_id,
+          'scope',a.hold#>'{before,scope}','productId',a.hold#>>'{before,productId}','restoreReserved',true,'compensationReserved',true))
+      WHERE a.shop_id=${f.identity.shopId} AND a.operation_id=${f.identity.operationId}`.execute(database);
+  const advanceBoth = async (f: Fixture) => [
+    (await f.restart().publications.advance(f.identity.shopId, f.identity.configId, f.identity.operationId)).kind,
+    (await f.restart().advance(f.identity)).kind,
+  ];
+
+  it('#466 B: a quiet prepared owned hold is claimed, restored exactly, finalized, and publishing is allowed again', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    expect(f.providerWrites).toEqual(['DRAFT']);
+    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({
+      restored: 1,
+      finalized: 1,
+      flagged: 0,
+    });
+    expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
+    const row = await activationRow(f);
+    expect(row).toMatchObject({
+      kind: 'ABANDON_RESTORED',
+      hold: {
+        abandonmentClaim: { authority: 'PROVED_NOT_DISPATCHED', operationId: f.identity.operationId },
+        restorationClaim: { restoreReserved: true },
+        restorationReceipt: { kind: 'RESTORED', current: { state: 'available' } },
+      },
+    });
+    expect(await progressPhase(f)).toBe('abandoned');
+    expect(await operationRow(f)).toMatchObject({ status: 'failed', failure_class: 'publication-abandoned' });
+    expect((await operationRow(f))?.availability_resolved_at).not.toBeNull();
+    expect((await auditRows(f)).map((r) => [r.event, r.from_kind, r.to_kind])).toEqual([
+      ['CLAIMED', 'HELD', 'ABANDON_CLAIMED'],
+      ['RECEIPT', 'ABANDON_CLAIMED', 'ABANDON_CLAIMED'],
+      ['RESTORED', 'ABANDON_CLAIMED', 'ABANDON_RESTORED'],
+    ]);
+    // Test plan 2: the abandoned request leaves every current-publication read.
+    expect(await core.configs.getCurrentPublication(f.identity.shopId, f.identity.configId)).toBeNull();
+    expect(await core.configs.getAvailabilityRecovery(f.identity.shopId, f.identity.configId)).toBeNull();
+    // A late merchant retry and the #452 resume path stop before any IO.
+    const reads = f.remoteReads;
+    expect(await advanceBoth(f)).toEqual(['ABANDONED', 'ABANDONED']);
+    expect(f.remoteReads).toBe(reads);
+    expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
+    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({
+      restored: 0,
+      finalized: 0,
+      flagged: 0,
+    });
+    await expect(
+      sql`UPDATE m5_activation_state SET kind='OPERATOR_HOLD', version=version+1
+      WHERE shop_id=${f.identity.shopId}`.execute(database),
+    ).rejects.toThrow('terminal');
+    await expect(
+      sql`UPDATE m4_publication_progress SET phase='operator-hold', version=version+1
+      WHERE shop_id=${f.identity.shopId}`.execute(database),
+    ).rejects.toThrow(/terminal|only finalizes/);
+    const next = randomUUID();
+    await f.createRevision(next, 'required');
+    await expect(
+      f.restart().publications.prepare({ ...f.identity, operationId: next, revisionId: next, mode: 'required' }),
+    ).resolves.toMatchObject({ phase: 'prepared' });
+  });
+
+  it('#466 B: a mode change abandoned after an effective publication passes the next prepare gap check', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    await f.publish();
+    await f.restart().advance(f.identity);
+    expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVE');
+    const second = { ...f.identity, operationId: randomUUID() };
+    const revision = randomUUID();
+    await f.createRevision(revision, 'optional');
+    await f.restart().publications.prepare({ ...second, revisionId: revision, mode: 'optional' });
+    expect((await f.restart().advance(second)).kind).toBe('WAITING_HOLD');
+    expect((await f.restart().advance(second)).kind).toBe('HELD');
+    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 1, finalized: 1 });
+    expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE', 'DRAFT', 'ACTIVE']);
+    expect((await core.configs.getCurrentPublication(f.identity.shopId, f.identity.configId))?.operationId).toBe(
+      f.identity.operationId,
+    );
+    const third = randomUUID();
+    await f.createRevision(third, 'optional');
+    await expect(
+      f.restart().publications.prepare({ ...f.identity, operationId: third, revisionId: third, mode: 'optional' }),
+    ).resolves.toMatchObject({ phase: 'prepared' });
+  });
+
+  it('#466 B: while claimed, publication and activation return ABANDONED, key drift writes nothing, rows are frozen', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    f.failProviderRead(1); // T1 observes; restore()'s pre-write read fails: nothing dispatched.
+    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 0, flagged: 0 });
+    const claimed = await activationRow(f);
+    expect(claimed).toMatchObject({
+      kind: 'ABANDON_CLAIMED',
+      hold: { restorationReceipt: { kind: 'NOT_DISPATCHED', current: null } },
+    });
+    // Signing provisioning bumps the epoch: publication.advance would hit current() drift and
+    // write `operator-hold`; it short-circuits instead and the freeze would reject the write.
+    await sql`UPDATE installation_generations SET authorization_epoch=authorization_epoch+1
+      WHERE shop_id=${f.identity.shopId}`.execute(database);
+    const reads = f.remoteReads;
+    expect(await advanceBoth(f)).toEqual(['ABANDONED', 'ABANDONED']);
+    expect(f.remoteReads).toBe(reads);
+    expect((await activationRow(f))?.version).toBe(claimed?.version);
+    expect(await progressPhase(f)).toBe('prepared');
+    await expect(
+      sql`UPDATE m4_publication_progress SET phase='operator-hold', version=version+1
+      WHERE shop_id=${f.identity.shopId}`.execute(database),
+    ).rejects.toThrow('frozen');
+    await expect(
+      sql`UPDATE publication_operations SET status='superseded', superseded_at=now()
+      WHERE shop_id=${f.identity.shopId}`.execute(database),
+    ).rejects.toThrow('frozen');
+    const other = randomUUID();
+    await f.createRevision(other, 'required');
+    await expect(
+      f.restart().publications.prepare({ ...f.identity, operationId: other, revisionId: other, mode: 'required' }),
+    ).rejects.toThrow('Availability hold requires recovery');
+    // The one rearm restores; T3 still commits after the drift.
+    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 1, finalized: 1 });
+    expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
+    expect(await progressPhase(f)).toBe('abandoned');
+  });
+
+  it('#466 B: a merchant who advanced first is never restored; the quiet row is flagged fields_written', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    expect(
+      (await f.restart().publications.advance(f.identity.shopId, f.identity.configId, f.identity.operationId)).kind,
+    ).toBe('PENDING');
+    expect(await progressPhase(f)).toBe('shop-config-written');
+    expect(await f.abandonment({ abandonAfterMs: 3_600_000 }).runPass({ shopId: f.identity.shopId })).toMatchObject({
+      flagged: 0,
+    });
+    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 0, flagged: 1 });
+    expect((await activationRow(f))?.kind).toBe('OPERATOR_HOLD');
+    expect(await auditRows(f)).toMatchObject([
+      { event: 'FLAGGED', from_kind: 'HELD', to_kind: 'OPERATOR_HOLD', detail: { reasons: ['fields_written'] } },
+    ]);
+    expect(f.providerWrites).toEqual(['DRAFT']);
+    // A direct claim past `prepared` is rejected by the trigger too.
+    await expect(directClaim(f, 'SETTLED_BY_TRUSTED_OPERATOR')).rejects.toThrow('committed phase prepared');
+  });
+
+  it('#466 B: flag mode flags only; off does nothing; a throttled E8 read skips without a claim', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    expect(await f.abandonment({ mode: 'off' }).runPass({ shopId: f.identity.shopId })).toEqual({
+      restored: 0,
+      finalized: 0,
+      flagged: 0,
+      flaggedHolds: 0,
+    });
+    expect(await f.abandonment({ mode: 'flag' }).runPass({ shopId: f.identity.shopId })).toMatchObject({
+      restored: 0,
+      flagged: 0,
+    });
+    expect((await activationRow(f))?.kind).toBe('HELD');
+    f.failProviderRead(0);
+    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 0, flagged: 0 });
+    expect((await activationRow(f))?.kind).toBe('HELD');
+    expect(await auditRows(f)).toEqual([]);
+    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 1 });
+  });
+
+  it('#466 B: two workers claim and restore once', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    const [a, b] = await Promise.all([
+      f.abandonment().runPass({ shopId: f.identity.shopId }),
+      f.abandonment().runPass({ shopId: f.identity.shopId }),
+    ]);
+    expect(a.restored + b.restored).toBe(1);
+    expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
+    expect(await progressPhase(f)).toBe('abandoned');
+  });
+
+  it('#466 B: an ambiguous restore goes to OPERATOR_HOLD and is never retried', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    f.failMutation = true;
+    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 0, flagged: 1 });
+    expect(await activationRow(f)).toMatchObject({
+      kind: 'OPERATOR_HOLD',
+      hold: { restorationReceipt: { kind: 'RESTORATION_PENDING' } },
+    });
+    expect((await auditRows(f)).map((r) => r.event)).toEqual(['CLAIMED', 'RECEIPT', 'FLAGGED']);
+    expect(await f.abandonment({ claimStaleMs: 0 }).runPass({ shopId: f.identity.shopId })).toMatchObject({
+      restored: 0,
+      flagged: 0,
+    });
+    expect(f.providerWrites).toEqual(['DRAFT', 'lost:ACTIVE']);
+  });
+
+  it('#466 B: one retry of a no-current NOT_DISPATCHED, then OPERATOR_HOLD after the stale bound', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    f.failProviderRead(1);
+    await f.abandonment().runPass({ shopId: f.identity.shopId });
+    f.failProviderRead(0); // the rearmed attempt's pre-write read fails the same way
+    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 0, flagged: 0 });
+    expect((await activationRow(f))?.kind).toBe('ABANDON_CLAIMED');
+    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 0, flagged: 0 });
+    expect(await f.abandonment({ claimStaleMs: 0 }).runPass({ shopId: f.identity.shopId })).toMatchObject({
+      flagged: 1,
+    });
+    expect((await activationRow(f))?.kind).toBe('OPERATOR_HOLD');
+    expect((await auditRows(f)).at(-1)).toMatchObject({ event: 'FLAGGED', detail: { reasons: ['claim_unsettled'] } });
+    expect(f.providerWrites).toEqual(['DRAFT']);
+    const consumed =
+      await sql`SELECT FROM m5_restoration_no_dispatch_consumptions WHERE shop_id=${f.identity.shopId}`.execute(
+        database,
+      );
+    expect(consumed.rows).toHaveLength(1);
+  });
+
+  it('#466 B: a crash after the restore was dispatched leaves the claim, which goes stale and is never replayed', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    afterSql = (text) => {
+      if (text.startsWith('UPDATE m5_activation_state SET hold=')) throw new Error('crash before the receipt commits');
+    };
+    try {
+      expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 0 });
+    } finally {
+      afterSql = undefined;
+    }
+    expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
+    expect(await activationRow(f)).toMatchObject({ kind: 'ABANDON_CLAIMED' });
+    expect((await activationRow(f))?.hold).not.toHaveProperty('restorationReceipt');
+    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 0, flagged: 0 });
+    expect(await f.abandonment({ claimStaleMs: 0 }).runPass({ shopId: f.identity.shopId })).toMatchObject({
+      restored: 0,
+      flagged: 1,
+    });
+    expect((await activationRow(f))?.kind).toBe('OPERATOR_HOLD');
+    expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
+  });
+
+  it('#466 B: a reinstall between claim and restore fences the claim without a dispatch', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    f.failProviderRead(1);
+    await f.abandonment().runPass({ shopId: f.identity.shopId });
+    await sql`UPDATE installation_generations SET deactivated_at=now() WHERE shop_id=${f.identity.shopId}`.execute(
+      database,
+    );
+    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 0, flagged: 1 });
+    expect((await auditRows(f)).at(-1)).toMatchObject({ event: 'FLAGGED', detail: { reasons: ['claim_fenced'] } });
+    expect(f.providerWrites).toEqual(['DRAFT']);
+  });
+
+  it('#466 B: an observed different product is flagged; the operator claim then gives a second FLAGGED row', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    f.providerProductStatus = 'ARCHIVED';
+    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ flagged: 1, restored: 0 });
+    f.providerProductStatus = 'DRAFT';
+    const version = Number((await activationRow(f))?.version);
+    await sql`SELECT m5_operator_claim_abandoned_hold(${f.identity.shopId}, ${f.identity.configId}, ${f.identity.operationId},
+      ${version}, 'cmd-1', ${'d'.repeat(64)})`.execute(database);
+    expect(await activationRow(f)).toMatchObject({
+      kind: 'ABANDON_CLAIMED',
+      hold: { abandonmentClaim: { authority: 'SETTLED_BY_TRUSTED_OPERATOR', commandKey: 'cmd-1' } },
+    });
+    await sql`UPDATE installation_generations SET deactivated_at=now() WHERE shop_id=${f.identity.shopId}`.execute(
+      database,
+    );
+    await f.abandonment().runPass({ shopId: f.identity.shopId });
+    const audit = await auditRows(f);
+    expect(audit.map((r) => [r.event, r.detail])).toEqual([
+      ['FLAGGED', { reasons: ['product_changed'] }],
+      ['CLAIMED', {}],
+      ['FLAGGED', { reasons: ['claim_fenced'] }],
+    ]);
+    expect(new Set(audit.map((r) => r.activation_version)).size).toBe(3);
+  });
+
+  it('#466 B: trigger table — claims, receipts, terminal states and immutability', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    // Without an activation row (nothing held yet) nothing is frozen.
+    await sql`UPDATE m4_publication_progress SET retry_count=1, version=version+1 WHERE shop_id=${f.identity.shopId}`.execute(
+      database,
+    );
+    await f.prepareHold();
+    await expect(
+      sql`UPDATE m4_publication_progress SET phase='abandoned', version=version+1 WHERE shop_id=${f.identity.shopId}`.execute(
+        database,
+      ),
+    ).rejects.toThrow('requires a restored abandoned hold');
+    await expect(
+      sql`UPDATE publication_operations SET status='failed', failed_at=now(), failure_class='publication-abandoned'
+        WHERE shop_id=${f.identity.shopId}`.execute(database),
+    ).rejects.toThrow('requires a restored abandoned hold');
+    // An operator authority from HELD, or a claim with a settled digest, is rejected.
+    await expect(directClaim(f, 'SETTLED_BY_TRUSTED_OPERATOR')).rejects.toThrow();
+    await directClaim(f);
+    await expect(
+      sql`UPDATE m5_activation_state SET hold=jsonb_set(hold,'{abandonmentClaim,claimedAt}','"2026-11-14T12:11:00.000Z"'),
+        version=version+1 WHERE shop_id=${f.identity.shopId}`.execute(database),
+    ).rejects.toThrow('immutable');
+    await expect(
+      sql`UPDATE m5_activation_state SET kind='ABANDON_RESTORED', version=version+1 WHERE shop_id=${f.identity.shopId}`.execute(
+        database,
+      ),
+    ).rejects.toThrow('settled RESTORED receipt');
+    await expect(
+      sql`UPDATE m5_activation_state SET kind='HELD', version=version+1 WHERE shop_id=${f.identity.shopId}`.execute(
+        database,
+      ),
+    ).rejects.toThrow('invalid activation state transition');
+    await expect(
+      sql`UPDATE m5_publication_abandonment_audit SET detail='{}' WHERE shop_id=${f.identity.shopId}`.execute(database),
+    ).rejects.toThrow('append-only');
+    await expect(
+      sql`DELETE FROM m5_publication_abandonment_audit WHERE shop_id=${f.identity.shopId}`.execute(database),
+    ).rejects.toThrow('append-only');
+  });
+
+  it('#466 B: runtime roles cannot claim from OPERATOR_HOLD, run the operator function or read the audit', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    await sql`UPDATE m5_activation_state SET kind='OPERATOR_HOLD', version=version+1 WHERE shop_id=${f.identity.shopId}`.execute(
+      database,
+    );
+    const version = Number((await activationRow(f))?.version);
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const client = await pool.connect();
+    const runtime = `abandon_runtime_${randomUUID().replaceAll('-', '')}`;
+    const operator = `abandon_operator_${randomUUID().replaceAll('-', '')}`;
+    try {
+      await client.query('BEGIN');
+      await client.query(`CREATE ROLE ${runtime} NOLOGIN`);
+      await client.query(`GRANT USAGE ON SCHEMA public TO ${runtime}`);
+      await client.query(
+        `GRANT SELECT, UPDATE ON public.m5_activation_state, public.m4_publication_progress, public.publication_operations,
+          public.product_configs, public.shops, public.installation_generations TO ${runtime}`,
+      );
+      await client.query(`CREATE ROLE ${operator} NOLOGIN IN ROLE insignia_publication_operator`);
+      await client.query(`SET LOCAL ROLE ${runtime}`);
+      const access = await client.query(
+        `SELECT has_table_privilege(current_user,'public.m5_publication_abandonment_audit','SELECT,INSERT,UPDATE,DELETE') AS audit,
+          has_function_privilege(current_user,'public.m5_operator_claim_abandoned_hold(text,text,text,bigint,text,text)','EXECUTE') AS fn`,
+      );
+      expect(access.rows[0]).toEqual({ audit: false, fn: false });
+      await client.query('SAVEPOINT direct');
+      await expect(
+        client.query(
+          `UPDATE public.m5_activation_state a SET kind='ABANDON_CLAIMED', version=a.version+1, hold=a.hold||jsonb_build_object(
+            'abandonmentClaim',jsonb_build_object('version','m5-publication-abandonment-claim-v1','operationId',a.operation_id,
+              'scope',a.hold#>'{before,scope}','productId',a.hold#>>'{before,productId}','authority','SETTLED_BY_TRUSTED_OPERATOR',
+              'quietSince','2026-11-14T12:00:00.000Z','claimedAt','2026-11-14T12:10:00.000Z','commandKey','k','inspectDigest',$2::text),
+            'restorationClaim',jsonb_build_object('version','m5-availability-restoration-claim-v3','operationId',a.operation_id,
+              'scope',a.hold#>'{before,scope}','productId',a.hold#>>'{before,productId}','restoreReserved',true,'compensationReserved',true))
+          WHERE a.shop_id=$1`,
+          [f.identity.shopId, 'e'.repeat(64)],
+        ),
+      ).rejects.toThrow('requires the operator function');
+      await client.query('ROLLBACK TO SAVEPOINT direct');
+      await client.query('RESET ROLE');
+      await client.query(`SET LOCAL ROLE ${operator}`);
+      const claimed = await client.query(
+        'SELECT public.m5_operator_claim_abandoned_hold($1,$2,$3,$4,$5,$6) AS version',
+        [f.identity.shopId, f.identity.configId, f.identity.operationId, version, 'cmd-2', 'e'.repeat(64)],
+      );
+      expect(Number(claimed.rows[0]?.version)).toBe(version + 1);
+    } finally {
+      await client.query('ROLLBACK');
+      client.release();
+      await pool.end();
+    }
+  });
+
+  it('#466 B: a stale activated RESTORATION_CLAIMED with a consumed no-current receipt goes to the operator', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    await f.publish();
+    expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+    f.failProviderRead(1);
+    await f.freshProviderRestart().advance(f.identity);
+    f.failProviderRead(1);
+    await f.freshProviderRestart().advance(f.identity);
+    expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ flagged: 0 });
+    expect(await f.abandonment({ claimStaleMs: 0 }).runPass({ shopId: f.identity.shopId })).toMatchObject({
+      flagged: 1,
+      restored: 0,
+    });
+    expect((await activationRow(f))?.kind).toBe('OPERATOR_HOLD');
+    expect(await auditRows(f)).toMatchObject([
+      { event: 'FLAGGED', from_kind: 'RESTORATION_CLAIMED', detail: { reasons: ['claim_unsettled'] } },
+    ]);
+    expect(f.providerWrites).toEqual(['DRAFT']);
   });
 
   it('a crash after compensation leaves the committed v3 claim and never replays either write', async () => {

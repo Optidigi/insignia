@@ -45,6 +45,10 @@ import { createMerchantPreviewRepository } from './repositories/merchant-preview
 import { createMethodCatalogRepository, type MethodTemplate } from './repositories/method-catalog.js';
 import { createProductionActivation, type ProductionActivationOptions } from './repositories/production-activation.js';
 import { PgProductionPublication, type ProductionPublicationRemote } from './repositories/production-publication.js';
+import {
+  createPublicationAbandonment,
+  type PublicationAbandonmentOptions,
+} from './repositories/publication-abandonment.js';
 import { createPurchaseRepository, type PurchaseRepository } from './repositories/purchase.js';
 import { PgQuoteRenewalRepository } from './repositories/quote-renewal.js';
 import {
@@ -155,6 +159,10 @@ export interface DurableCore {
   };
   readonly productionActivations: {
     create(options: ProductionActivationOptions): ReturnType<typeof createProductionActivation>;
+  };
+  /** #466 B worker pass: automatic release of an abandoned publication hold. */
+  readonly publicationAbandonment: {
+    create(options: PublicationAbandonmentOptions): ReturnType<typeof createPublicationAbandonment>;
   };
   readonly acceptedQuotes: QuoteAcceptanceStore &
     Required<Pick<QuoteAcceptanceStore, 'resolveBuyerAcceptance'>> & {
@@ -412,7 +420,9 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
           SELECT state.operation_id, state.kind, operation.installation_generation::text
           FROM m5_activation_state state JOIN publication_operations operation USING (shop_id, config_id, operation_id)
           WHERE state.shop_id=${shopId} AND state.config_id=${configId}
-            AND state.hold IS NOT NULL AND state.kind NOT IN ('RESTORED','RESOLVED') LIMIT 1`.execute(executor);
+            AND state.hold IS NOT NULL AND state.kind NOT IN ('RESTORED','RESOLVED','ABANDON_RESTORED') LIMIT 1`.execute(
+      executor,
+    );
     const row = rows.rows[0];
     return row
       ? { operationId: row.operation_id, kind: row.kind, installationGeneration: row.installation_generation }
@@ -553,6 +563,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       },
     },
     productionActivations: { create: (options) => createProductionActivation(database, options) },
+    publicationAbandonment: { create: (options) => createPublicationAbandonment(database, options) },
     acceptedQuotes: {
       getEffective: (shopId, productId) => acceptedQuotes.getEffective(shopId, productId),
       findCompleted: (input) => acceptedQuotes.findCompleted<AcceptedQuoteResult>(input),
