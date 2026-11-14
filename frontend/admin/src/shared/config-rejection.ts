@@ -99,10 +99,6 @@ export function configRejectionText(rejection: ConfigRejection, t: Translate): s
     case 'REQUIRED_MODE_REQUIRED':
     case 'PRODUCTION_DIMENSIONS_REQUIRED':
     case 'METHOD_REVIEW_REQUIRED':
-    case 'COPY_TARGET_SAME':
-    case 'COPY_SOURCE_MISSING':
-    case 'COPY_SOURCE_NEEDS_REVIEW':
-    case 'COPY_LEAN_REVIEW_REQUIRED':
     case null:
       return generic();
     default: {

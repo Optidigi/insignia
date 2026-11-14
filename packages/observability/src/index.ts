@@ -111,7 +111,7 @@ const ADMIN_PROVIDER_CODES = [
 ] as const;
 export type AdminProviderDiagnosticCode = (typeof ADMIN_PROVIDER_CODES)[number];
 
-const ADMIN_CONFIG_ACTIONS = ['create', 'save', 'publish', 'copy', 'reconcile', 'command'] as const;
+const ADMIN_CONFIG_ACTIONS = ['create', 'save', 'publish', 'reconcile', 'command'] as const;
 export type AdminConfigAction = (typeof ADMIN_CONFIG_ACTIONS)[number];
 /** The web app owns the code vocabulary; the log admits only its bounded upper-snake-case shape. */
 const REJECTION_CODE = /^[A-Z][A-Z0-9_]{2,63}$/;

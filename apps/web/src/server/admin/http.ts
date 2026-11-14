@@ -386,18 +386,6 @@ export async function handleAdminRequest(
       );
     if (
       request.method === 'POST' &&
-      body.action === 'copy' &&
-      typeof body.targetProductId === 'string' &&
-      PRODUCT_ID.test(body.targetProductId) &&
-      body.targetProductId !== route.productId &&
-      Object.keys(body).length === 2
-    ) {
-      const target = await services.catalog.get(actor, body.targetProductId);
-      if (!target || target.id !== body.targetProductId) return adminJson(404, { error: 'Target product not found' });
-      return outcome(services, 'copy', await services.configs.copy(actor, route.productId, body.targetProductId, key));
-    }
-    if (
-      request.method === 'POST' &&
       body.action === 'publish' &&
       typeof body.configId === 'string' &&
       CONFIG_ID.test(body.configId) &&

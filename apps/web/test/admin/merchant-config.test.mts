@@ -273,7 +273,7 @@ test('currency precision rejects invalid saved and legacy publication amounts wi
     await core.close();
   }
 });
-test('durable editor CAS, exact-key replay, independent copy, immutable geometry, and reinstall fence', {
+test('durable editor CAS, exact-key replay, independent products, immutable geometry, and reinstall fence', {
   skip: !database,
   timeout: 30000,
 }, async () => {
@@ -439,93 +439,65 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
       'invalid',
     );
     currentCurrency = 'USD';
-    const copy = await service.copy(staff, productA, productB, 'copy-key-01');
-    assert.equal(copy.kind, 'created');
-    assert.equal((await service.copy(staff, productA, productB, 'copy-key-02')).kind, 'conflict');
-    const copied = readConfig(await service.read(staff, productB));
-    assert.notEqual(required(copied).configId, created.configId);
-    assert.notEqual(required(required(copied).draft.placements[0]).id, required(draft.placements[0]).id);
-    assert.deepEqual(required(required(copied).draft.geometry.views[0]).variantImages, []);
-    assert.equal(required(copied).draft.labels.methods[required(required(copied).draft.methods[0]).id], 'Screen print');
-    assert.equal(
-      required(copied).draft.labels.placements[required(required(copied).draft.placements[0]).id],
-      'Front chest',
-    );
-    assert.equal(required(copied).draft.labels.steps[required(required(copied).draft.geometry.steps[0]).id], 'Small');
-    assert.equal(
-      required(copied).draft.labels.options[required(required(copied).draft.productionOptions[0]).id],
-      'Thread color',
-    );
-    assert.equal(
-      required(required(copied).draft.labels.values[required(required(copied).draft.productionOptions[0]).id])[
-        required(required(required(copied).draft.productionOptions[0]).allowedValueIds[0])
-      ],
-      'Navy thread',
-    );
-    assert.equal(
-      required(required(copied).draft.labels.values[required(required(copied).draft.productionOptions[1]).id])[
-        required(required(required(copied).draft.productionOptions[1]).allowedValueIds[0])
-      ],
-      'Navy ink',
-    );
-    assert.equal(required(copied).draft.labels.methods[sharedId], undefined);
-    assert.deepEqual(required(required(required(copied).draft.geometry.views[0]).placements[0]).variantOverrides, []);
-    assert.equal(required(required(copied).draft.geometry.views[0]).image, undefined);
-    // Copy remains independent and image-free; add the target's own complete preview before publishing.
-    const copyReady = structuredClone(required(copied).draft);
-    required(copyReady.geometry.views[0]).image = { revisionId: 'product_222', width: 800, height: 1000 };
-    const readyCopy = await service.save(staff, productB, {
-      configId: copy.configId,
+    // A second product's own complete configuration, with its own preview, publishes independently.
+    const second = await service.create(staff, productB, 'create-productB-key');
+    assert.equal(second.kind, 'created');
+    const secondDraft = baseDraft();
+    required(required(secondDraft.geometry.views[0]).image).revisionId = 'product_222';
+    required(secondDraft.geometry.views[0]).variantImages = [];
+    required(required(secondDraft.geometry.views[0]).placements[0]).variantOverrides = [];
+    const readySecond = await service.save(staff, productB, {
+      configId: second.configId,
       draftVersion: '1',
-      draft: copyReady,
-      idempotencyKey: 'save-copy-preview',
+      draft: secondDraft,
+      idempotencyKey: 'save-productB-preview',
     });
-    assert.equal(readyCopy.kind, 'saved');
+    assert.equal(readySecond.kind, 'saved');
     const competing = await Promise.all([
       service.publish(staff, productB, {
-        configId: copy.configId,
-        draftVersion: readyCopy.draftVersion,
-        idempotencyKey: 'publish-copy-race-01',
+        configId: second.configId,
+        draftVersion: readySecond.draftVersion,
+        idempotencyKey: 'publish-productB-race-01',
       }),
       service.publish(staff, productB, {
-        configId: copy.configId,
-        draftVersion: readyCopy.draftVersion,
-        idempotencyKey: 'publish-copy-race-02',
+        configId: second.configId,
+        draftVersion: readySecond.draftVersion,
+        idempotencyKey: 'publish-productB-race-02',
       }),
     ]);
     assert.deepEqual(competing.map((result) => result.kind).sort(), ['accepted', 'conflict']);
-    const winningKey = competing[0].kind === 'accepted' ? 'publish-copy-race-01' : 'publish-copy-race-02';
+    const winningKey = competing[0].kind === 'accepted' ? 'publish-productB-race-01' : 'publish-productB-race-02';
     const winningRevision = required(competing.find((result) => result.kind === 'accepted')).revisionId;
-    const copyIntent = await core.configs.getCurrentPublication(shopId, copy.configId);
-    assert.equal(required(copyIntent).revisionId, winningRevision);
-    assert.equal(required(copyIntent).requestKey, winningKey);
-    const copyHistory = new Pool({ connectionString: database });
+    const secondIntent = await core.configs.getCurrentPublication(shopId, second.configId);
+    assert.equal(required(secondIntent).revisionId, winningRevision);
+    assert.equal(required(secondIntent).requestKey, winningKey);
+    const secondHistory = new Pool({ connectionString: database });
     try {
-      const count = await copyHistory.query(
+      const count = await secondHistory.query(
         'SELECT count(*)::int AS count FROM config_revisions WHERE shop_id=$1 AND config_id=$2',
-        [shopId, copy.configId],
+        [shopId, second.configId],
       );
       assert.equal(count.rows[0].count, 1, 'different publish keys must commit only one immutable intent');
       // Retained synthetic history exercises the keyed current pointer without altering old rows.
-      await copyHistory.query(
+      await secondHistory.query(
         `INSERT INTO config_revisions
           (shop_id, config_id, revision_id, schema_version, published_value, content_hash, created_by_ref)
           SELECT shop_id, config_id, 'retained-history-' || n::text || '-' || $3,
             schema_version, published_value, content_hash, created_by_ref
           FROM config_revisions CROSS JOIN generate_series(1, 128) AS n
           WHERE shop_id=$1 AND config_id=$2 AND revision_id=$3`,
-        [shopId, copy.configId, winningRevision],
+        [shopId, second.configId, winningRevision],
       );
       assert.equal(
-        required(await core.configs.getCurrentPublication(shopId, copy.configId)).revisionId,
+        required(await core.configs.getCurrentPublication(shopId, second.configId)).revisionId,
         winningRevision,
       );
     } finally {
-      await copyHistory.end();
+      await secondHistory.end();
     }
     const recovered = await service.publish(staff, productB, {
-      configId: copy.configId,
-      draftVersion: readyCopy.draftVersion,
+      configId: second.configId,
+      draftVersion: readySecond.draftVersion,
       idempotencyKey: winningKey,
     });
     assert.equal(recovered.kind, 'accepted');
@@ -541,11 +513,6 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
         })
       ).kind,
       'saved',
-    );
-    assert.deepEqual(await service.copy(staff, productA, productB, 'copy-key-01'), copy);
-    assert.equal(
-      MerchantDraftSchema.parse(required((await service.read(staff, productB)).config).draft).mode,
-      'required',
     );
     failPrepareOnce = true;
     await assert.rejects(
@@ -735,7 +702,7 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
       'intent',
     );
     paused = true;
-    const racing = service.copy(staff, productA, productC, 'copy-key-race');
+    const racing = service.create(staff, productC, 'create-key-race');
     await enteredPromise;
     await core.transactions.run((tx) =>
       core.tenants.startInstallation(tx, shopId, 'gid://shopify/AppInstallation/456'),
@@ -772,52 +739,4 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
   } finally {
     await core.close();
   }
-});
-
-test('copy of historical advanced prices returns Lean review without creating a target', async () => {
-  const staff = actor('shop', 'fixture.myshopify.com', '123');
-  const scope = {
-    shopId: staff.tenantShopId,
-    installationGeneration: '1',
-    authorizationGeneration: '11111111-1111-4111-8111-111111111111',
-    authorizationEpoch: 0,
-    shopDomain: staff.shop,
-    shopifyShopId: '123',
-  };
-  const legacy = baseDraft();
-  legacy.pricingRules = [
-    {
-      id: 'old-setup',
-      role: 'setup',
-      scope: { kind: 'general' },
-      rate: { kind: 'fixed', amount: { shopDecimal: '5.00', presentmentOverrides: [] } },
-    },
-  ];
-  let creates = 0;
-  const core = fixtureCore({
-    transactions: { run: (work) => work(fixtureTransaction) },
-    commands: { reserve: async () => ({ kind: 'reserved' }), complete: async () => {} },
-    tenants: { getActiveAuthorizationScope: async () => scope, lockActiveAuthorizationScope: async () => scope },
-    configs: {
-      getByProductForUpdate: async (_tx, _shop, product) =>
-        product === '111'
-          ? configRecord({ shopId: staff.tenantShopId, externalProductId: '111', draftValue: legacy })
-          : null,
-      createConfig: async () => {
-        creates++;
-        return configRecord({ shopId: staff.tenantShopId });
-      },
-    },
-  });
-  const service = createMerchantConfigService({
-    core,
-    catalog: { get: async (_actor, id) => item(id), shopCurrency: async () => 'USD' },
-    eligibility: async () => ({ allowed: true, reason: null }),
-    publication: () => ({ prepare: unexpected, advance: unexpected }),
-  });
-  const result = await service.copy(staff, productA, productB, 'copy-legacy-lean');
-  assert.equal(result.kind, 'invalid');
-  assert.match(result.message, /Lean/);
-  assert.equal(creates, 0);
-  assert.equal(required(legacy.pricingRules[0]).role, 'setup');
 });

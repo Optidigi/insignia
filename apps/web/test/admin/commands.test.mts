@@ -43,10 +43,6 @@ function deps(overrides: Parameters<typeof adminServices>[0] = {}) {
           calls.push(['save', actor.shopId, id, input]);
           return { kind: 'saved', draftVersion: '2' };
         },
-        copy: async (actor, id, target, key) => {
-          calls.push(['copy', actor.shopId, id, target, key]);
-          return { kind: 'created', configId: 'config-2' };
-        },
         publish: async (actor, id, input) => {
           calls.push(['publish', actor.shopId, id, input]);
           return { kind: 'accepted', state: 'REMOTE_READY_ACTIVATION_PENDING' };

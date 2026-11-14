@@ -137,12 +137,6 @@ export interface AdminServices {
       productId: string,
       input: { configId: string; draftVersion: string; draft: unknown; idempotencyKey: string; authority?: string },
     ): Promise<CommandOutcome>;
-    copy(
-      actor: AdminActor,
-      sourceProductId: string,
-      targetProductId: string,
-      idempotencyKey: string,
-    ): Promise<CommandOutcome>;
     publish(
       actor: AdminActor,
       productId: string,
