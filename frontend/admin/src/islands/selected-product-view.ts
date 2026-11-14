@@ -10,8 +10,56 @@ import { legacyVariantPhotos } from './legacy-variant-photos.ts';
 
 export class UnsupportedHistoricalPricingError extends Error {}
 
+const featuredOrVariantPhoto = /^(?:product|variant)_[1-9][0-9]{0,19}$/;
+
+/**
+ * Shopify lists a featured or variant photo (`product_<id>`, `variant_<id>`) and the same photo as product media
+ * (`image_<id>`) at one URL. Show each photo once under its stable media identity and move saved appearance
+ * references to it; the catalogue keeps every identity, so earlier drafts and published setups still resolve.
+ */
+function eachPhotoOnce(product: PlacementProduct): PlacementProduct {
+  const owner = new Map<string, string>();
+  for (const { id, url } of product.images) {
+    const current = owner.get(url);
+    if (
+      !id.startsWith('upload_') &&
+      (!current || (featuredOrVariantPhoto.test(current) && !featuredOrVariantPhoto.test(id)))
+    )
+      owner.set(url, id);
+  }
+  const moved = new Map<string, string>();
+  const images = product.images.filter(({ id, url }) => {
+    const keep = owner.get(url);
+    if (!keep || keep === id || !featuredOrVariantPhoto.test(id)) return true;
+    moved.set(id, keep);
+    return false;
+  });
+  if (!moved.size) return product;
+  const { variantPhotos } = product;
+  return {
+    ...product,
+    images,
+    ...(variantPhotos
+      ? {
+          variantPhotos: {
+            ...variantPhotos,
+            assignments: variantPhotos.assignments.map((assignment) =>
+              assignment.imageId && moved.has(assignment.imageId)
+                ? { ...assignment, imageId: moved.get(assignment.imageId) }
+                : assignment,
+            ),
+          },
+        }
+      : {}),
+  };
+}
+
 /** Project real persisted authoring state. Legacy copied values remain product-owned, never inferred inherited. */
 export function selectedProductFromConfig(view: ConfigView): PlacementProduct {
+  return eachPhotoOnce(projectConfig(view));
+}
+
+function projectConfig(view: ConfigView): PlacementProduct {
   const catalog = view.product;
   const images = catalog.images ?? [];
   if (!view.config)

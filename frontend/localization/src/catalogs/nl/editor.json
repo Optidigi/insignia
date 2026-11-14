@@ -626,6 +626,7 @@
       "tooDetailed": "Deze afbeelding is te gedetailleerd om toe te voegen. Kies een eenvoudigere afbeelding.",
       "invalidDimensions": "Deze afbeelding heeft ongeldige afmetingen.",
       "processingFailed": "De afbeelding kon niet worden verwerkt.",
+      "previewUnreadable": "De afbeelding is geüpload, maar het voorbeeld kon niet worden geladen. Probeer het opnieuw.",
       "fileIssue": "{{fileName}}: {{reason}}",
       "moreFailures": "Nog {{formattedCount}} afbeeldingsfouten",
       "imagesFailed_one": "{{formattedCount}} afbeelding kon niet worden toegevoegd: {{details}}",

@@ -491,6 +491,7 @@
       "tooDetailed": "Cette image est trop détaillée pour être ajoutée. Choisissez une image plus simple.",
       "invalidDimensions": "Les dimensions de cette image sont invalides.",
       "processingFailed": "Impossible de traiter l’image.",
+      "previewUnreadable": "L’image a été importée, mais son aperçu n’a pas pu être chargé. Réessayez.",
       "fileIssue": "{{fileName}} : {{reason}}",
       "moreFailures": "{{formattedCount}} autres erreurs d’image",
       "imagesFailed_one": "Impossible d’ajouter {{formattedCount}} image : {{details}}",

@@ -1,6 +1,7 @@
 import { type EditorProductImage, editorProductImageSchema, type PlacementProduct } from '@insignia/contracts';
 import { z } from 'zod';
 import { authenticatedJson } from '../shared/admin-request.ts';
+import { StoredPreviewUnreadableError } from '../shared/stored-preview-error.ts';
 
 const descriptorSchema = z.object({
   image: editorProductImageSchema,
@@ -128,7 +129,11 @@ export function createSelectedProductMedia(
         body: png,
       }),
     );
-    const image = await prepare(result);
+    // The server already stored this photo; a failed read-back must not read as a failed upload.
+    const image = await prepare(result).catch((cause: unknown) => {
+      active();
+      throw new StoredPreviewUnreadableError({ cause });
+    });
     return { ...image, alt: prepared.alt };
   }
   function canonical(product: PlacementProduct): PlacementProduct {

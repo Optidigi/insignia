@@ -74,6 +74,33 @@ test('selected setup persists actual physical sizes and final prices without tre
   assert.deepEqual(selectedPublicationProblems(draft), []);
 });
 
+test('a featured photo that Shopify also lists as media validates under either identity, so the editor may show it once', () => {
+  const url = setup.product.images[0]!.url;
+  const catalog = {
+    id: setup.product.id,
+    title: setup.product.title,
+    status: 'ACTIVE' as const,
+    imageUrl: url,
+    images: [
+      { id: 'product_111', url, width: 1000, height: 1200, alt: 'Front' },
+      { id: 'image_9', url, width: 1000, height: 1200, alt: 'Front' },
+    ],
+    variants: [],
+    variantsTruncated: false,
+  };
+  // An existing draft keeps resolving through the featured identity it saved.
+  assert.deepEqual(selectedPublicationProblems(selectedProductDraft(setup, previous), catalog), []);
+  // A draft saved after the editor de-duplicated the picker references the stable media identity.
+  const deduplicated = structuredClone(setup);
+  deduplicated.product.images = [{ id: 'image_9', url, width: 1000, height: 1200, alt: 'Front' }];
+  const saved = selectedProductDraft(deduplicated, previous);
+  assert.equal(
+    (saved.geometry as { views: { image: { revisionId: string } }[] }).views[0]?.image.revisionId,
+    'image_9',
+  );
+  assert.deepEqual(selectedPublicationProblems(saved, catalog), []);
+});
+
 test('price-only adoption retains exact known production dimensions without inventing image calibration', () => {
   const old = MerchantDraftSchema.parse({
     ...previous,
