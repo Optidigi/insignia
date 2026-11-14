@@ -1004,6 +1004,7 @@ export const adminParameterContracts = {
   'editor:placementWorkflowPreview.noViewsOrPlacementsFound': {},
   'editor:placementWorkflowPreview.outlineActions': {},
   'editor:placementWorkflowPreview.outlineSummary': { placements: 'string', views: 'string' },
+  'editor:placementWorkflowPreview.panelsAndHistoryActions': {},
   'editor:placementWorkflowPreview.perItem': {},
   'editor:placementWorkflowPreview.perItemAtThisPlacementLeaveBlankToExcludeASizeEnter0ForFree': {},
   'editor:placementWorkflowPreview.perLocationPerItem': {},

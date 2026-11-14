@@ -899,6 +899,7 @@
   }
   .placement-workflow .placement-workspace.is-expanded {
     height: 76dvh;
+    position: static;
   }
   .placement-workflow .placement-expand {
     display: inline-block;
@@ -998,6 +999,35 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 8px 12px;
+  }
+}
+/* On a phone the canvas stays pinned above the scrolling settings so a change can be seen as it
+   is made. The pinned height is the same figure that keeps focused fields clear of it, and the page
+   ends with room for a host action bar. Only the viewport height decides the pinning: mobile
+   browsers do not shrink the layout viewport or dvh when the on-screen keyboard opens, so the
+   canvas stays pinned while a field is edited. Short screens (landscape) keep the canvas in the
+   flow so the settings are not squeezed out. The expanded canvas is never pinned and adds no
+   scroll padding. */
+@media (max-width: 800px) {
+  html:has(.placement-workflow) {
+    --placement-pinned-canvas: clamp(230px, 32dvh, 320px);
+    --placement-bottom-clearance: calc(72px + env(safe-area-inset-bottom, 0px));
+    scroll-padding-block-end: var(--placement-bottom-clearance);
+  }
+  .placement-workflow .placement-editor {
+    padding-block-end: var(--placement-bottom-clearance);
+  }
+}
+@media (max-width: 800px) and (min-height: 560px) {
+  html:has(.placement-workflow .placement-editor:not(.is-empty)):not(:has(.placement-workspace.is-expanded)) {
+    scroll-padding-block-start: var(--placement-pinned-canvas);
+  }
+  .placement-workflow .placement-editor:not(.is-empty) > .placement-workspace:not(.is-expanded) {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 4;
+    height: var(--placement-pinned-canvas);
+    box-shadow: 0 2px 6px rgb(0 0 0 / 10%);
   }
 }
 @media (prefers-reduced-motion: reduce) {
