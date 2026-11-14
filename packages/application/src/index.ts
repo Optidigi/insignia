@@ -14,6 +14,7 @@ export * from './keys/signer-protocol.js';
 export * from './keys/trusted-release.js';
 export * from './merchant-preview/assets.js';
 export * from './pricing/catalog-context.js';
+export * from './publication/abandonment.js';
 export * from './publication/activation.js';
 export * from './publication/availability.js';
 export * from './publication/availability-recovery.js';

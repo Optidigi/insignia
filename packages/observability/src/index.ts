@@ -23,6 +23,7 @@ const EVENTS = new Set([
   'queue_job_rejected',
   'lifecycle_credential_unavailable',
   'web_listen_failed',
+  'publication_abandonment',
 ]);
 
 export type RuntimeEvent =
@@ -49,7 +50,39 @@ export type RuntimeEvent =
   /** Warn: an active installation has no usable offline credential; it needs reauthorization, not a retry. */
   | 'lifecycle_credential_unavailable'
   /** Error: the web server could not bind its address; the process exits non-zero. */
-  | 'web_listen_failed';
+  | 'web_listen_failed'
+  /** #466 abandoned publication hold: restored/finalized at info; flagged/ambiguous/conflict at warn. */
+  | 'publication_abandonment';
+
+export const PUBLICATION_ABANDONMENT_OUTCOMES = [
+  'restored',
+  'flagged',
+  'not_dispatched',
+  'ambiguous',
+  'conflict',
+  'skipped',
+  'finalized',
+] as const;
+export type PublicationAbandonmentOutcome = (typeof PUBLICATION_ABANDONMENT_OUTCOMES)[number];
+const PUBLICATION_ABANDONMENT_REASONS = [
+  'fields_written',
+  'release_wait_after_writes',
+  'acquisition_unsettled',
+  'hold_not_owned',
+  'product_changed',
+  'claim_fenced',
+  'claim_unsettled',
+  'restore_ambiguous',
+  'restore_conflict',
+  'not_quiet',
+  'superseded',
+  'not_candidate',
+  'observation_unavailable',
+  'observation_empty',
+  'credential_unavailable',
+  'claim_in_flight',
+] as const;
+export type PublicationAbandonmentReason = (typeof PUBLICATION_ABANDONMENT_REASONS)[number];
 
 const ADMIN_AUTH_STAGES = [
   'BEARER_MISSING',
@@ -273,6 +306,7 @@ const RUNTIME_ERROR_CLASSES = [
   'MERCHANT_PREVIEW_CLEANUP_UNAVAILABLE',
   'BUYER_PAYLOAD_CLEANUP_UNAVAILABLE',
   'SIGNING_KEY_DESTRUCTION_UNAVAILABLE',
+  'PUBLICATION_ABANDONMENT_UNAVAILABLE',
   'PUBLIC_CONFIG_DRIFT',
   'QueueRuntimeError',
   'UNINSTALL_PRIVACY_RECOVERY_UNAVAILABLE',
@@ -311,6 +345,11 @@ export interface RuntimeLogDetails {
   attempt?: number;
   errorClass?: RuntimeErrorClass | BuyerFailureDiagnostic['errorClass'];
   count?: number;
+  /** publication_abandonment only: internal identifiers and bounded codes. */
+  configId?: string;
+  operationId?: string;
+  outcome?: PublicationAbandonmentOutcome;
+  reasons?: readonly PublicationAbandonmentReason[];
 }
 
 /** Whitelist the complete event envelope; no merchant payload or error object enters Pino. */
@@ -437,6 +476,29 @@ function eventDetails(event: RuntimeEvent, input: RuntimeLogDetails) {
       throw new Error('Invalid configuration rejection diagnostic');
     return { configAction: input.configAction, rejectionCode: input.rejectionCode };
   }
+  if (event === 'publication_abandonment') {
+    const id = /^[A-Za-z0-9_-]{1,128}$/;
+    if (
+      typeof input.shopId !== 'string' ||
+      !id.test(input.shopId) ||
+      typeof input.configId !== 'string' ||
+      !id.test(input.configId) ||
+      typeof input.operationId !== 'string' ||
+      !id.test(input.operationId) ||
+      !PUBLICATION_ABANDONMENT_OUTCOMES.includes(input.outcome!) ||
+      !Array.isArray(input.reasons) ||
+      input.reasons.length > 8 ||
+      !input.reasons.every((reason) => PUBLICATION_ABANDONMENT_REASONS.includes(reason))
+    )
+      throw new Error('Invalid publication abandonment diagnostic');
+    return {
+      shopId: input.shopId,
+      configId: input.configId,
+      operationId: input.operationId,
+      outcome: input.outcome,
+      reasons: [...input.reasons],
+    };
+  }
   if (event !== 'admin_authentication') return safeDetails(input);
   if (
     !ADMIN_AUTH_STAGES.includes(input.authStage!) ||
@@ -551,6 +613,17 @@ export function createObservability(options: { stream?: Writable; level?: 'debug
     labelNames: ['outcome'],
     registers: [registry],
   });
+  const abandonment = new Counter({
+    name: 'insignia_publication_abandonment_total',
+    help: 'Abandoned publication hold outcomes',
+    labelNames: ['outcome'],
+    registers: [registry],
+  });
+  const flaggedHolds = new Gauge({
+    name: 'insignia_publication_holds_flagged',
+    help: 'Publication availability holds waiting for the operator',
+    registers: [registry],
+  });
   const backlog = new Gauge({
     name: 'insignia_unresolved_inbox_backlog',
     help: 'Number of unresolved inbox rows',
@@ -578,6 +651,13 @@ export function createObservability(options: { stream?: Writable; level?: 'debug
     },
     resolution(outcome: ResolutionOutcome) {
       resolution.labels(checkedOutcome(['resolved', 'unresolved', 'failed'], outcome)).inc();
+    },
+    publicationAbandonment(outcome: PublicationAbandonmentOutcome) {
+      abandonment.labels(checkedOutcome(PUBLICATION_ABANDONMENT_OUTCOMES, outcome)).inc();
+    },
+    publicationHoldsFlagged(count: number) {
+      if (!Number.isSafeInteger(count) || count < 0) throw new Error('Invalid flagged hold count');
+      flaggedHolds.set(count);
     },
     unresolvedBacklog(count: number) {
       if (!Number.isSafeInteger(count) || count < 0) throw new Error('Invalid unresolved backlog');

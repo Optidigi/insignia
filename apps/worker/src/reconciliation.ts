@@ -18,6 +18,8 @@ export function createWorkerReconciliation(input: {
   purchases?: { recover(): Promise<unknown>; discoverChanges(): Promise<unknown> };
   lifecycle?: { runOnce(): Promise<void> };
   signingKeys?: { destroyExpired?(maximumRows?: number): Promise<number> };
+  /** #466 B, absent when INSIGNIA_PUBLICATION_ABANDONMENT=off. */
+  publicationAbandonment?: { runOnce(): Promise<unknown> };
   clock?: () => Date;
 }) {
   let active: Promise<void> | undefined;
@@ -72,6 +74,11 @@ export function createWorkerReconciliation(input: {
         },
         { errorClass: 'UNINSTALL_ENROLLMENT_UNAVAILABLE', run: () => input.lifecycle?.runOnce() },
         { errorClass: 'SIGNING_KEY_DESTRUCTION_UNAVAILABLE', run: destroyExpiredSigningKeys },
+        // Bounded (2 restores, 20 s), so it cannot starve the recovery passes above.
+        {
+          errorClass: 'PUBLICATION_ABANDONMENT_UNAVAILABLE',
+          run: () => input.publicationAbandonment?.runOnce(),
+        },
       ];
       for (const operation of operations) {
         if (stopped) break;

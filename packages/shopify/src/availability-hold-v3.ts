@@ -631,7 +631,15 @@ export function createShopifyAvailabilityHoldV3Port(
     if (restorationAttempts.has(key)) return fail('ambiguous_write');
     if (!isAvailabilityV3(expected) || !validAvailabilityV3(expected)) return fail('invalid_request');
     const owned = hold.held ?? (hold.before.state === 'unavailable' ? hold.before : null);
-    const current = await read(scope, hold.before.productId, budget, originalAnchors(hold));
+    let current: ProductAvailabilitySnapshotV3;
+    try {
+      current = await read(scope, hold.before.productId, budget, originalAnchors(hold));
+    } catch (error) {
+      // No status mutation was started: a failed pre-write read proves nothing was dispatched.
+      // It observed nothing, so the receipt carries no current snapshot (#466).
+      if (error instanceof ShopifyAvailabilityHoldError) return { kind: 'NOT_DISPATCHED', current: null };
+      throw error;
+    }
     if (
       !owned ||
       !sameAvailabilityV3(owned, expected) ||

@@ -126,7 +126,10 @@ test('new edits cannot replace an unresolved save and missing journal custody se
   assert.equal(f.keys.length, 1);
 });
 
-function configView(version = '1', state: 'DRAFT' | 'ACTIVE' | 'OPERATOR_HOLD' | 'FAILED' = 'DRAFT') {
+function configView(
+  version = '1',
+  state: 'DRAFT' | 'ACTIVE' | 'OPERATOR_HOLD' | 'FAILED' | 'ABANDONED_RESTORED' = 'DRAFT',
+) {
   return {
     product,
     config: {
@@ -756,7 +759,8 @@ test('a 422 for a retried write whose fence cannot be sent keeps the original id
   assert.equal(client.hasPending(), true, 'An earlier attempt of this key may still have committed');
 });
 
-for (const outcome of ['ACTIVE', 'FAILED'] as const)
+// #466: an abandoned request whose product was restored settles its journal like a failed one.
+for (const outcome of ['ACTIVE', 'FAILED', 'ABANDONED_RESTORED'] as const)
   test(`#436: an unanswered publish settles from a later read by its exact request key: ${outcome}`, async () => {
     const f = fixture();
     let saved = false,
