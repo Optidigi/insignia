@@ -1,6 +1,6 @@
 import { type EditorProductImage, editorProductImageSchema, type PlacementProduct } from '@insignia/contracts';
 import { z } from 'zod';
-import { authenticatedJson } from '../shared/admin-request.ts';
+import { authenticatedImage, authenticatedJson } from '../shared/admin-request.ts';
 import { StoredPreviewUnreadableError } from '../shared/stored-preview-error.ts';
 
 const descriptorSchema = z.object({
@@ -11,13 +11,19 @@ const descriptorSchema = z.object({
 const responseSchema = z.object({ media: z.array(descriptorSchema).max(100) });
 type Descriptor = z.infer<typeof descriptorSchema>;
 
-/** Private URLs/bytes live only in memory; durable setup and write journals contain stable media identity URIs. */
+/** Private URLs/bytes live only in memory; durable setup and write journals contain stable media identity URIs.
+ * Previews are read from Insignia's own authenticated route, never from private storage (#434). */
 export function createSelectedProductMedia(
   productId: string,
   authority: string,
-  options: { request?: (path: string, init?: RequestInit) => Promise<unknown>; fetchImpl?: typeof fetch } = {},
+  options: {
+    request?: (path: string, init?: RequestInit) => Promise<unknown>;
+    readImage?: (path: string, init?: RequestInit) => Promise<Blob>;
+    fetchImpl?: typeof fetch;
+  } = {},
 ) {
   const request = options.request ?? authenticatedJson;
+  const readImage = options.readImage ?? authenticatedImage;
   const fetchImpl = options.fetchImpl ?? fetch;
   const number = /^gid:\/\/shopify\/Product\/([1-9][0-9]*)$/.exec(productId)?.[1];
   if (!number || !/^[a-f0-9]{64}$/.test(authority)) throw new Error('Invalid product authority');
@@ -49,15 +55,15 @@ export function createSelectedProductMedia(
   const objectUrls = new Set<string>();
   async function prepare(descriptor: Descriptor) {
     active();
-    if (!descriptor.image.id.startsWith('upload_') || Date.parse(descriptor.expiresAt) <= Date.now())
+    if (
+      !/^upload_[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(descriptor.image.id) ||
+      Date.parse(descriptor.expiresAt) <= Date.now()
+    )
       throw new Error('Preview media is unavailable');
-    const response = await read(descriptor.previewUrl);
-    const length = Number(response.headers.get('Content-Length') ?? 0);
-    if (!response.ok || !response.headers.get('Content-Type')?.startsWith('image/') || length > 10 * 1024 * 1024)
-      throw new Error('Private preview unavailable');
-    const blob = await response.blob();
+    const blob = await readImage(`${endpoint}/${descriptor.image.id}/preview`, { signal: lifetime.signal });
     active();
-    if (!blob.size || blob.size > 10 * 1024 * 1024) throw new Error('Private preview unavailable');
+    if (!blob.size || blob.size > 10 * 1024 * 1024 || !blob.type.startsWith('image/'))
+      throw new Error('Private preview unavailable');
     const url = URL.createObjectURL(blob);
     objectUrls.add(url);
     originals.set(descriptor.image.id, descriptor.image);

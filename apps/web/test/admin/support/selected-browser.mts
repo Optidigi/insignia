@@ -196,6 +196,8 @@ async function startBrowser() {
       HOST: '127.0.0.1',
       PORT: '0',
       SHOPIFY_CLIENT_ID: '11111111111111111111111111111111',
+      // Private storage is configured, yet the product editor's connect-src must not name it (#434).
+      ARTWORK_R2_ENDPOINT: 'https://private-storage.example',
     },
   });
   const exited = new Promise((resolve) => child.once('close', resolve));

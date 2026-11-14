@@ -234,6 +234,21 @@ export function createMerchantMediaService(input: {
       await current(actor);
       return { media };
     },
+    /** The stored preview's bytes for the admin's same-origin preview route; the browser never reads storage. */
+    async readPreview(actor: AdminActor, productId: string, id: string): Promise<Uint8Array> {
+      await authorize(actor, productId);
+      if (!imageId.test(id)) throw new MerchantMediaError('INVALID_INPUT');
+      const referenced = new Set(await input.draftImages(actor, productId));
+      const row = await owned(actor, productId, id, referenced);
+      if (!row.manifest) throw new MerchantMediaError('NOT_FOUND');
+      const storage = await input.storage();
+      await current(actor);
+      const bytes = await storage.read({ key: row.previewKey, maxBytes: row.manifest.previewByteLength });
+      if (bytes.byteLength !== row.manifest.previewByteLength || digest(bytes) !== row.manifest.previewSha256)
+        throw new MerchantMediaError('CONFLICT');
+      await current(actor);
+      return bytes;
+    },
     async readOriginal(actor: AdminActor, productId: string, id: string): Promise<Uint8Array> {
       await authorize(actor, productId, true);
       const referenced = new Set(await input.draftImages(actor, productId));

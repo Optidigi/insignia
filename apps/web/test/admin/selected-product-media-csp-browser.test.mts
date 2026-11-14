@@ -5,7 +5,7 @@ import { build } from 'esbuild';
 import { chromium } from 'playwright';
 import { record, required } from './support/fixtures.mts';
 
-test('picker-prepared data images upload without a data connection under the product CSP', async (t) => {
+test('picker-prepared data images upload and preview through the same origin under the product CSP', async (t) => {
   const bundle = await build({
     entryPoints: [
       new URL('../../../../frontend/admin/src/islands/selected-product-media.ts', import.meta.url).pathname,
@@ -19,7 +19,9 @@ test('picker-prepared data images upload without a data connection under the pro
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC',
     'base64',
   );
+  const previews: { path: string; authorization: string | undefined }[] = [];
   const script = `import { createSelectedProductMedia } from '/helper.js';
+    window.shopify = { idToken: async () => 'synthetic-session-token' };
     window.result = (async () => {
       const violations = [];
       document.addEventListener('securitypolicyviolation', event => {
@@ -37,21 +39,23 @@ test('picker-prepared data images upload without a data connection under the pro
           writes.push({ path, type: init.body.type, size: init.body.size,
             key: new Headers(init.headers).get('Idempotency-Key') });
           return { image: { id: 'upload_' + prepared.id, url: location.origin + '/owned-photo', width: 1, height: 1, alt: '' },
-            previewUrl: location.origin + '/preview.png', expiresAt: new Date(Date.now() + 60000).toISOString() };
+            previewUrl: 'https://private-storage.example/preview.png', expiresAt: new Date(Date.now() + 60000).toISOString() };
         }
       });
       try {
         const image = await media.upload(prepared);
-        return { ok: true, imageId: image.id, writes, violations };
+        return { ok: true, imageId: image.id, preview: image.url.slice(0, 5), writes, violations };
       } catch (error) {
         return { ok: false, error: error.message, writes, violations };
       } finally { media.dispose(); }
     })();`;
   const server = createServer((request, response) => {
     const path = new URL(request.url ?? '/', 'http://fixture').pathname;
+    const preview = path.endsWith('/preview');
+    if (preview) previews.push({ path, authorization: request.headers.authorization });
     response.setHeader(
       'Content-Type',
-      path.endsWith('.js') ? 'text/javascript' : path.endsWith('.png') ? 'image/png' : 'text/html',
+      path.endsWith('.js') ? 'text/javascript' : path.endsWith('.png') || preview ? 'image/png' : 'text/html',
     );
     // The real editor permits data images in img-src, not data requests in connect-src.
     response.setHeader(
@@ -63,7 +67,7 @@ test('picker-prepared data images upload without a data connection under the pro
         ? required(bundle.outputFiles[0]).text
         : path === '/run.js'
           ? script
-          : path.endsWith('.png')
+          : path.endsWith('.png') || preview
             ? pixel
             : '<!doctype html><script type="module" src="/run.js"></script>',
     );
@@ -90,4 +94,11 @@ test('picker-prepared data images upload without a data connection under the pro
   assert.equal(write.key, '11111111-1111-4111-8111-111111111111');
   assert.equal(write.path, '/api/admin/products/111/media');
   assert.equal(result.imageId, 'upload_11111111-1111-4111-8111-111111111111');
+  assert.equal(result.preview, 'blob:');
+  assert.deepEqual(previews, [
+    {
+      path: '/api/admin/products/111/media/upload_11111111-1111-4111-8111-111111111111/preview',
+      authorization: 'Bearer synthetic-session-token',
+    },
+  ]);
 });

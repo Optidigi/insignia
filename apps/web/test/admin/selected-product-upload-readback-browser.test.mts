@@ -4,18 +4,19 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { type TestContext, test } from 'node:test';
 import { fixture } from './support/selected-browser.mts';
 
-// Scope: real built UI/client/Polaris in an isolated browser with synthetic provider HTTP. The preview read-back is
-// blocked the way a missing bucket CORS rule blocks it: the media POST succeeds, then the browser's GET fails.
+// Scope: real built UI/client/Polaris in an isolated browser with synthetic provider HTTP. The private storage host
+// in the descriptor's previewUrl is unreachable (as a bucket without a CORS rule for the admin origin is, #434); the
+// preview is read through Insignia's own authenticated route. Its first read can be made to fail.
 const png = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC',
   'base64',
 );
 
-async function pickerFixture(t: TestContext, options: { conflictOnPost?: number } = {}) {
+async function pickerFixture(t: TestContext, options: { conflictOnPost?: number; failFirstPreview?: boolean } = {}) {
   const f = await fixture(t);
   const posts: { key: string | null; digest: string }[] = [];
   const stored = new Set<string>();
-  const state = { previewReads: 0 };
+  const state = { previewReads: 0, storageReads: 0 };
   await f.page.route('**/api/admin/products/111/media', async (route) => {
     const request = route.request();
     if (request.method() !== 'POST') return route.fulfill({ status: 404, json: { error: 'No synthetic endpoint' } });
@@ -43,15 +44,30 @@ async function pickerFixture(t: TestContext, options: { conflictOnPost?: number 
           height: 1,
           alt: '',
         },
-        previewUrl: `${f.base}/synthetic-private-preview.png`,
+        previewUrl: `https://synthetic-bucket.r2.example/previews/${key}.png?X-Amz-Signature=synthetic`,
         expiresAt: new Date(Date.now() + 60_000).toISOString(),
       },
     });
   });
-  await f.page.route('**/synthetic-private-preview.png', (route) => {
+  await f.page.route('https://synthetic-bucket.r2.example/**', (route) => {
+    state.storageReads += 1;
+    return route.abort('accessdenied');
+  });
+  await f.page.route('**/api/admin/products/111/media/*/preview', (route) => {
+    const request = route.request();
+    assert.equal(request.method(), 'GET');
+    assert.equal(request.headers().authorization, 'Bearer synthetic-selected-token');
+    assert.match(
+      new URL(request.url()).pathname,
+      /^\/api\/admin\/products\/111\/media\/upload_[0-9a-f-]{36}\/preview$/,
+    );
     state.previewReads += 1;
-    if (state.previewReads === 1) return route.abort('failed');
-    return route.fulfill({ body: png, contentType: 'image/png' });
+    if (state.previewReads === 1 && options.failFirstPreview !== false) return route.abort('failed');
+    return route.fulfill({
+      body: png,
+      contentType: 'image/png',
+      headers: { 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' },
+    });
   });
   await f.open();
   await f.page.getByRole('button', { name: 'Add view', exact: true }).click();
@@ -71,6 +87,20 @@ async function pickerFixture(t: TestContext, options: { conflictOnPost?: number 
     );
   return { f, posts, stored, state, input, file, banner, settled };
 }
+
+test('an uploaded photo previews through the same-origin admin route while the storage host is unreachable', {
+  timeout: 45000,
+}, async (t) => {
+  const { f, posts, state, input, file, banner, settled } = await pickerFixture(t, { failFirstPreview: false });
+
+  await input.setInputFiles(file);
+  await settled();
+  assert.equal(await banner.count(), 0, await f.page.locator('.placement-image-picker').innerText());
+  assert.equal(posts.length, 1);
+  assert.equal(state.previewReads, 1);
+  assert.equal(state.storageReads, 0, 'the browser never reads private storage directly');
+  await f.page.locator('.placement-image-picker img[src^="blob:"]').first().waitFor();
+});
 
 test('a stored photo whose preview cannot be read says so, and retrying the same file stores no second media row', {
   timeout: 45000,

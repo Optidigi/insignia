@@ -8,7 +8,10 @@ import {
   type MerchantPreviewStore,
 } from '@insignia/application';
 import { createMerchantMediaService, MerchantMediaError } from '../../src/server/admin/merchant-media.ts';
-import { handleMerchantMediaRequest } from '../../src/server/admin/merchant-media-http.ts';
+import {
+  handleMerchantMediaPreviewRequest,
+  handleMerchantMediaRequest,
+} from '../../src/server/admin/merchant-media-http.ts';
 import { adminActor, adminServices, unexpected } from './support/fixtures.mts';
 
 const png = Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10]);
@@ -29,6 +32,7 @@ function fixture() {
   const rows = new Map<string, MerchantPreviewRecord>();
   const objects = new Map<string, Uint8Array>();
   const referenced = new Set<string>();
+  const readLimits: number[] = [];
   const store: MerchantPreviewStore = {
     getForRevision: unexpected,
     selectCleanup: unexpected,
@@ -73,9 +77,10 @@ function fixture() {
       if (old && sha(old) !== sha(bytes)) throw new Error('Immutable key conflict');
       objects.set(key, Uint8Array.from(bytes));
     },
-    async read({ key }) {
+    async read({ key, maxBytes }) {
       const data = objects.get(key);
       if (!data) throw new Error('Missing fixture object');
+      readLimits.push(maxBytes);
       return Uint8Array.from(data);
     },
     async remove({ key }) {
@@ -113,6 +118,8 @@ function fixture() {
     objects,
     referenced,
     inspections: () => inspections,
+    readLimits,
+    setRow: (id: string, row: MerchantPreviewRecord) => rows.set(id, row),
     advance: (days: number) => {
       now = new Date(+now + days * 86400000);
     },
@@ -274,4 +281,57 @@ test('session expiry after inspection cannot dispatch private object writes', as
   await assert.rejects(f.service.upload(actor, product, randomUUID(), png), /NOT_FOUND/);
   assert.equal(f.rows.size, 0);
   assert.equal(f.objects.size, 0);
+});
+
+test('the stored preview streams from Insignia only to its own shop, product and usable media row', async () => {
+  const f = fixture();
+  let actor = f.actor;
+  const services = adminServices({
+    appOrigin: 'https://app.example',
+    authenticate: async () => actor,
+    media: f.service,
+  });
+  const id = randomUUID();
+  const image = (await f.service.upload(f.actor, product, id, png)).image.id;
+  const get = (path: string, productId = product, reference = image, headers = { Authorization: 'Bearer synthetic' }) =>
+    handleMerchantMediaPreviewRequest(
+      new Request(`https://app.example${path}`, { headers }),
+      services,
+      productId,
+      reference,
+    );
+  const path = `/api/admin/products/111/media/${image}/preview`;
+
+  const ok = await get(path);
+  assert.equal(ok.status, 200);
+  assert.equal(ok.headers.get('Content-Type'), 'image/png');
+  assert.equal(ok.headers.get('Cache-Control'), 'private, no-store');
+  assert.equal(ok.headers.get('X-Content-Type-Options'), 'nosniff');
+  assert.equal(ok.headers.get('Content-Length'), String(png.byteLength));
+  assert.deepEqual(new Uint8Array(await ok.arrayBuffer()), png);
+  assert.deepEqual(f.readLimits, [png.byteLength], 'storage reads are bounded by the stored preview length');
+
+  assert.equal((await get(path, product, image, { Authorization: '' })).status, 401);
+  assert.equal((await get(`${path}?ids=${image}`)).status, 422);
+  assert.equal((await get(path, 'gid://shopify/Product/222')).status, 404, 'another product');
+  assert.equal((await get(path, product, `upload_${randomUUID()}`)).status, 404, 'unknown media');
+  assert.equal((await get(path, product, 'product_111')).status, 422, 'not an Insignia upload');
+  actor = { ...f.actor, tenantShopId: 'foreign-shop' };
+  assert.equal((await get(path)).status, 404, 'another shop');
+  actor = { ...f.actor, canRead: false };
+  assert.equal((await get(path)).status, 403);
+  actor = f.actor;
+
+  const row = f.rows.get(id);
+  assert.ok(row);
+  f.setRow(id, { ...row, state: 'RETIRED' });
+  assert.equal((await get(path)).status, 404, 'a row that is no longer usable');
+  f.setRow(id, row);
+
+  f.objects.set(row.previewKey, Uint8Array.from([...png, 0]));
+  const oversized = await get(path);
+  assert.equal(oversized.status, 409, 'bytes beyond the stored preview length are never served');
+  assert.equal(oversized.headers.get('Content-Type'), 'application/json; charset=utf-8');
+  f.objects.set(row.previewKey, Uint8Array.from([...png.slice(0, 7), 0]));
+  assert.equal((await get(path)).status, 409, 'bytes that differ from the stored digest are refused');
 });

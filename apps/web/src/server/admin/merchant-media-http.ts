@@ -25,12 +25,23 @@ async function pngBody(request: Request): Promise<Uint8Array | null> {
   return size >= 8 ? Buffer.concat(chunks, size) : null;
 }
 
+/** One stored upload's preview image, read by Insignia so the admin browser never connects to private storage. */
+export function handleMerchantMediaPreviewRequest(
+  request: Request,
+  services: AdminServices | undefined,
+  productId: string,
+  reference: string,
+): Promise<Response> {
+  return handleMerchantMediaRequest(request, services, productId, reference, true);
+}
+
 /** Product identity is route-owned; tenant and generation come only from verified staff auth. */
 export async function handleMerchantMediaRequest(
   request: Request,
   services: AdminServices | undefined,
   productId: string,
   reference?: string,
+  preview = false,
 ): Promise<Response> {
   if (!services?.media) return adminJson(503, { error: 'Product media unavailable' });
   if (!/^Bearer [^\s]{1,8192}$/.test(request.headers.get('Authorization') ?? ''))
@@ -45,6 +56,20 @@ export async function handleMerchantMediaRequest(
     if (request.method === 'GET') {
       if ([...url.searchParams.keys()].some((key) => key !== 'ids') || (reference && url.searchParams.size))
         return adminJson(422, { error: 'Invalid product media query' });
+      if (preview && reference) {
+        const bytes = await services.media.readPreview(actor, productId, reference);
+        return new Response(Buffer.from(bytes), {
+          status: 200,
+          headers: {
+            // Stored previews are always PNG (the inspector's preview type).
+            'Content-Type': 'image/png',
+            'Content-Length': String(bytes.byteLength),
+            'Cache-Control': 'private, no-store',
+            Vary: 'Authorization, Origin',
+            'X-Content-Type-Options': 'nosniff',
+          },
+        });
+      }
       const values = url.searchParams.getAll('ids');
       if (!reference && (values.length !== 1 || (values[0]?.length ?? 0) > 5000))
         return adminJson(422, { error: 'Media identities required' });
@@ -78,7 +103,7 @@ export async function handleMerchantMediaRequest(
               : 503,
         {
           error:
-            error.code === 'CONFLICT'
+            error.code === 'CONFLICT' && request.method === 'POST'
               ? 'Upload identity already belongs to different image bytes. Review the original request.'
               : 'Product media unavailable',
         },

@@ -27,9 +27,9 @@ test('disposing while authenticated media metadata is pending aborts it and neve
       signal = init?.signal;
       return metadata.promise;
     },
-    fetchImpl: async () => {
+    readImage: async () => {
       reads++;
-      return new Response(new Blob(['image']), { headers: { 'Content-Type': 'image/png' } });
+      return new Blob(['image'], { type: 'image/png' });
     },
   });
   const pending = media.hydrate([image]);
@@ -39,30 +39,25 @@ test('disposing while authenticated media metadata is pending aborts it and neve
   assert.equal(signal?.aborted, true);
   assert.equal(reads, 0);
 });
-test('disposing after private response headers rejects late body bytes before publishing a blob URL', async () => {
+test('disposing while the private preview is being read rejects late bytes before publishing a blob URL', async () => {
   const began = latch<void>();
-  const body = latch<Uint8Array>();
+  const body = latch<Blob>();
   let signal: AbortSignal | null | undefined;
+  let path = '';
   const media = createSelectedProductMedia('gid://shopify/Product/111', 'a'.repeat(64), {
     request: async () => ({ media: [descriptor] }),
-    fetchImpl: async (_url, init) => {
+    readImage: async (requested, init) => {
+      path = requested;
       signal = init?.signal;
-      return new Response(
-        new ReadableStream({
-          async start(controller) {
-            began.release();
-            controller.enqueue(await body.promise);
-            controller.close();
-          },
-        }),
-        { headers: { 'Content-Type': 'image/png' } },
-      );
+      began.release();
+      return body.promise;
     },
   });
   const pending = media.hydrate([image]);
   await began.promise;
+  assert.equal(path, `/api/admin/products/111/media/${id}/preview`, 'previews come from Insignia, not storage');
   media.dispose();
-  body.release(new Uint8Array([1, 2, 3]));
+  body.release(new Blob([new Uint8Array([1, 2, 3])], { type: 'image/png' }));
   await assert.rejects(pending, /abort|context|available/i);
   assert.equal(signal?.aborted, true);
   assert.throws(
@@ -77,7 +72,7 @@ test('owned media is canonicalized while active and all private blob access is r
       requests++;
       return { media: [descriptor] };
     },
-    fetchImpl: async () => new Response(new Blob(['preview']), { headers: { 'Content-Type': 'image/png' } }),
+    readImage: async () => new Blob(['preview'], { type: 'image/png' }),
   });
   const [preview] = await media.hydrate([image]);
   assert(preview);
@@ -101,7 +96,7 @@ test('all JSON ownership requests use the caller denial boundary and preserve it
       denied++;
       throw error;
     },
-    fetchImpl: async () => {
+    readImage: async () => {
       fetched++;
       throw new Error('Must not read private pixels');
     },

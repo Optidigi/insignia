@@ -89,10 +89,35 @@ export function isUnansweredRequest(error: unknown): boolean {
   return !!error && typeof error === 'object' && !('status' in error) && 'dispatched' in error && error.dispatched === true;
 }
 export async function authenticatedJson<T>(path: string, init: RequestInit = {}, forceFresh = false): Promise<T> {
+  return authenticatedRead(path, init, forceFresh, jsonResponse<T>);
+}
+/** A private image Insignia serves to this admin session (same origin, session token, ordinary deadline). */
+export async function authenticatedImage(path: string, init: RequestInit = {}, maxBytes = 10 * 1024 * 1024) {
+  return authenticatedRead(path, init, false, async (response) => {
+    const length = Number(response.headers.get('Content-Length') ?? 0);
+    if (!response.ok) {
+      await response.body?.cancel();
+      throw Object.assign(new Error(`Request failed (${response.status})`), { status: response.status });
+    }
+    if (!response.headers.get('Content-Type')?.startsWith('image/') || !(length <= maxBytes)) {
+      await response.body?.cancel();
+      throw new Error('Private image unavailable');
+    }
+    const blob = await response.blob();
+    if (!blob.size || blob.size > maxBytes) throw new Error('Private image unavailable');
+    return blob;
+  });
+}
+async function authenticatedRead<T>(
+  path: string,
+  init: RequestInit,
+  forceFresh: boolean,
+  read: (response: Response) => Promise<T>,
+): Promise<T> {
   const policy = adminRequestPolicy(path, init);
   let dispatched = false;
   try {
-    return await authenticatedRequest<T>(path, init, forceFresh, policy, (sent) => {
+    return await authenticatedRequest<T>(path, init, forceFresh, policy, read, (sent) => {
       dispatched = sent;
     });
   } catch (error) {
@@ -110,6 +135,7 @@ function authenticatedRequest<T>(
   init: RequestInit,
   forceFresh: boolean,
   policy: ReturnType<typeof adminRequestPolicy>,
+  read: (response: Response) => Promise<T>,
   dispatching: (sent: boolean) => void,
 ): Promise<T> {
   return browserDeadline(
@@ -136,7 +162,7 @@ function authenticatedRequest<T>(
       // Signing setup consumes a single-use owner allocation, including ambiguous replies.
       const singleAttempt = path === '/api/admin/signing' && init.method?.toUpperCase() === 'POST';
       if (response.status === 401 && !singleAttempt) response = await send(true);
-      return jsonResponse<T>(response);
+      return read(response);
     },
     init.signal,
     policy.timeoutMs,
