@@ -223,7 +223,7 @@ test('a rejection while publishing closes the review and shows what to fix, keep
     .filter({ hasText: /^Publish$/ })
     .evaluate((button: HTMLElementTagNameMap['s-button']) => button.click());
   const modal = f.page.locator('s-modal').filter({ hasText: 'Publish setup' });
-  await modal.getByRole('button', { name: 'Publish preview', exact: true }).click();
+  await modal.getByRole('button', { name: 'Publish', exact: true }).click();
   await f.page
     .getByText(
       'A decoration size must be more than 0% and at most 100% of the area. Correct the size, then save again.',
@@ -245,7 +245,7 @@ async function confirmPublish(page: Page) {
     .filter({ hasText: /^Publish$/ })
     .evaluate((button: HTMLElementTagNameMap['s-button']) => button.click());
   const modal = page.locator('s-modal').filter({ hasText: 'Publish setup' });
-  await modal.getByRole('button', { name: 'Publish preview', exact: true }).click();
+  await modal.getByRole('button', { name: 'Publish', exact: true }).click();
   return modal;
 }
 const publishRequest = (route: Route) =>

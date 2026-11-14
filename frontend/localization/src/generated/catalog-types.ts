@@ -815,7 +815,6 @@ export interface AdminMessageTable {
   'editor:placementWorkflowPreview.chooseAMethodBeforeOfferingThisPlacement': object;
   'editor:placementWorkflowPreview.chooseAnImageForThisView': object;
   'editor:placementWorkflowPreview.chooseAnImageForThisViewBeforeSettingAMovementArea': object;
-  'editor:placementWorkflowPreview.chooseAProductImageToStartNextMarkTheArtworkAreaCustomersCanCustomize': object;
   'editor:placementWorkflowPreview.chooseCustomerOptionsForPlacement': object;
   'editor:placementWorkflowPreview.chooseImage': object;
   'editor:placementWorkflowPreview.chooseImageForCopiedView': object;
@@ -1008,7 +1007,6 @@ export interface AdminMessageTable {
   'editor:placementWorkflowPreview.publicationActions.addPlacement': object;
   'editor:placementWorkflowPreview.publicationActions.addPrice': object;
   'editor:placementWorkflowPreview.publicationActions.addSize': object;
-  'editor:placementWorkflowPreview.publicationActions.addView': object;
   'editor:placementWorkflowPreview.publicationActions.chooseImage': object;
   'editor:placementWorkflowPreview.publicationActions.chooseMethods': object;
   'editor:placementWorkflowPreview.publicationActions.editPlacementName': object;
@@ -1030,9 +1028,9 @@ export interface AdminMessageTable {
   'editor:placementWorkflowPreview.publishErrors.conflict': object;
   'editor:placementWorkflowPreview.publishErrors.shopifyBusy': object;
   'editor:placementWorkflowPreview.publishErrors.storageError': object;
-  'editor:placementWorkflowPreview.publishHeadings.addProductView': object;
   'editor:placementWorkflowPreview.publishHeadings.finishSetup': object;
   'editor:placementWorkflowPreview.publishHeadings.publishSetup': object;
+  'editor:placementWorkflowPreview.publishNeedsView': object;
   'editor:placementWorkflowPreview.publishPreview': object;
   'editor:placementWorkflowPreview.publishQuestions.publishPreview': object;
   'editor:placementWorkflowPreview.publishQuestions.replacePublishedPreview': object;
@@ -1051,9 +1049,12 @@ export interface AdminMessageTable {
   'editor:placementWorkflowPreview.realPublicationNotice': object;
   'editor:placementWorkflowPreview.realPublicationPending': object;
   'editor:placementWorkflowPreview.realPublicationProgress': object;
+  'editor:placementWorkflowPreview.realPublish': object;
   'editor:placementWorkflowPreview.realPublished': object;
+  'editor:placementWorkflowPreview.realPublishQuestion': object;
   'editor:placementWorkflowPreview.realReloadDraft': object;
   'editor:placementWorkflowPreview.realRemoveMethod': object;
+  'editor:placementWorkflowPreview.realReplacePublishedQuestion': object;
   'editor:placementWorkflowPreview.realReviewCurrency': object;
   'editor:placementWorkflowPreview.realReviewMethods': object;
   'editor:placementWorkflowPreview.realSaveFailed': object;

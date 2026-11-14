@@ -189,7 +189,7 @@ for (const state of ['OPERATOR_HOLD', 'RESTORATION_CONFLICT', 'CONFLICT'] as con
     await f.open();
     const modal = await openPublication(f.page);
     if (await modal.isVisible()) {
-      const publish = modal.getByRole('button', { name: 'Publish preview', exact: true });
+      const publish = modal.getByRole('button', { name: 'Publish', exact: true });
       if (await publish.count()) await publish.evaluate((button: HTMLElementTagNameMap['s-button']) => button.click());
     }
     await settleFrame(f.page);
@@ -292,7 +292,7 @@ test('an older ACTIVE revision cannot settle a newer selected publication intent
   });
   await f.open();
   const modal = await openPublication(f.page);
-  await modal.getByRole('button', { name: 'Publish preview', exact: true }).click();
+  await modal.getByRole('button', { name: 'Publish', exact: true }).click();
   await f.page
     .getByText('Publication is still processing. Continue the original request to check its status.', { exact: true })
     .waitFor();
@@ -437,7 +437,7 @@ for (const readback of ['failed', 'stale'] as const)
     );
     const modal = await openPublication(f.page);
     if (await modal.isVisible()) {
-      const publish = modal.getByRole('button', { name: 'Publish preview', exact: true });
+      const publish = modal.getByRole('button', { name: 'Publish', exact: true });
       if (await publish.count()) await publish.evaluate((button: HTMLElementTagNameMap['s-button']) => button.click());
     }
     await settleFrame(f.page);

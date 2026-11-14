@@ -37,7 +37,7 @@ test('terminal failed publication releases draft editing and never reports the p
     .filter({ hasText: /^Publish$/ })
     .evaluate((button: HTMLElementTagNameMap['s-button']) => button.click());
   const modal = f.page.locator('s-modal').filter({ hasText: 'Publish setup' });
-  await modal.getByRole('button', { name: 'Publish preview', exact: true }).click();
+  await modal.getByRole('button', { name: 'Publish', exact: true }).click();
   await f.page
     .getByText('Publication failed. Review the saved draft and publication status before trying again.', {
       exact: true,

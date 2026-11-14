@@ -77,6 +77,7 @@ import {
   moveEditorItemTo,
   movementRectContainsPlacementRect,
   nextItemName,
+  defaultNewSizeScale,
   canonicalPlacementDecimals,
   type PlacementProduct,
   type PlacementRect,
@@ -395,6 +396,13 @@ function placementNoticeText(notice: PlacementNotice, product: PlacementProduct,
 }
 const uid = () => crypto.randomUUID();
 
+/** Long enough to read a sentence; the host toast and the in-page fallback use the same time. */
+const FEEDBACK_MS = 8000;
+type HostToast = { show(message: string, options?: { duration?: number }): unknown };
+/** Shopify's toast sits above its own bottom bar; the in-page banner is only the fallback without a host. */
+const hostToast = (): HostToast | undefined =>
+  (window as unknown as { shopify?: { toast?: HostToast } }).shopify?.toast;
+
 // Names update the draft as you type. Enter finishes this field, not the whole configuration.
 function finishNameEdit(event: KeyboardEvent) {
   if (event.key !== 'Enter' || event.isComposing) return;
@@ -506,6 +514,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
   const [dialog, dispatchDialog] = useReducer(placementDialogReducer, initialPlacementDialogState);
   const methodDialog = dialog.kind === 'method-manager' ? dialog : null;
   const publishReview = dialog.kind === 'publish' ? dialog : null;
+  const production = adapter.kind === 'production';
   useEffect(() => { if (dialog.kind === 'publish' && dialog.error === 'pending' && !adapter.pending() && (adapter.publicationFailed || adapter.publication?.published)) { dispatchDialog({ type: 'dialog-closed', id: dialog.id }); setNotice({ kind: 'message', reason: adapter.publicationFailed ? 'publish-failed' : 'publish-succeeded' }); } else if (dialog.kind === 'publish' && dialog.error === 'pending' && adapter.publicationNeedsReview) dispatchDialog({ type: 'dialog-closed', id: dialog.id }); }, [adapter.publication, adapter.publicationNeedsReview]);
   const publishError = publishReview?.error
     ? translateUi(
@@ -980,8 +989,6 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
         : 'editor:placementWorkflowPreview.status.draftChanges'
       : 'editor:placementWorkflowPreview.status.draft',
   );
-  const missingViewIssue =
-    publishReview?.issues.length === 1 && publishReview.issues[0]?.key === 'views' ? publishReview.issues[0] : null;
   const publishViewCount = publishReview?.product.views.length ?? 0;
   const publishPlacementCount =
     publishReview?.product.views.reduce((sum, item) => sum + item.placements.length, 0) ?? 0;
@@ -2349,7 +2356,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     saveDraft();
   }
   function openPublishReview() {
-    if (adapter.readOnly || adapter.publicationBlocked || writeBusyRef.current || adapter.pending()) return;
+    if (!product.views.length || adapter.readOnly || adapter.publicationBlocked || writeBusyRef.current || adapter.pending()) return;
     if (movementEditing) {
       setNotice({ kind: 'message', reason: 'movement-edit-before-publish' });
       return;
@@ -2429,7 +2436,6 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     const { key } = issue;
     if (key.endsWith('.calibration')) return translateUi('editor:placementWorkflowPreview.realCalibrateImage');
     if (key.endsWith('.review')) return translateUi('editor:placementWorkflowPreview.realReviewMethods');
-    if (key === 'views') return translateUi('editor:placementWorkflowPreview.publicationActions.addView');
     if (key.endsWith('.placements'))
       return translateUi('editor:placementWorkflowPreview.publicationActions.addPlacement');
     if (key.endsWith('.imageUrl')) return translateUi('editor:placementWorkflowPreview.publicationActions.chooseImage');
@@ -2477,12 +2483,6 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     if (dialog.kind === 'publish') dispatchDialog({ type: 'dialog-closed', id: dialog.id });
     if (issue.groupKey) {
       setActivePhotoGroup(issue.groupKey);
-    }
-    if (issue.key === 'views' && product.views.length === 0) {
-      setErrors({});
-      setNotice(null);
-      openViewDialog();
-      return;
     }
     const target = product.views.find((item) => item.id === issue.viewId) ?? product.views[0];
     if (target) select(target, issue.placementId ?? null, true, false);
@@ -2645,9 +2645,18 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
   }, []);
   useEffect(() => {
     if (!feedback) return;
-    const timer = window.setTimeout(() => setNotice(null), 4000);
+    // The host toast is not ours to retire; this only ends the in-page notice and its live-region text.
+    const timer = window.setTimeout(() => setNotice(null), FEEDBACK_MS);
     return () => window.clearTimeout(timer);
   }, [notice, feedback]);
+  useEffect(() => {
+    if (!feedback || !noticeText || !hostToast()) return;
+    try {
+      hostToast()?.show(noticeText, { duration: FEEDBACK_MS });
+    } catch {
+      // The live region still announces it.
+    }
+  }, [notice]);
   function showSize(id: string) {
     if (movementEditing) {
       setNotice({ kind: 'message', reason: 'movement-edit-before-preview' });
@@ -2688,7 +2697,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
         role="status"
         aria-live="polite"
       >
-        {noticeText}
+        {feedback && hostToast() ? '' : noticeText}
       </span>
       <span class="placement-announcement" role="status" aria-live="polite">
         {historyNotice === 'change-undone'
@@ -2706,7 +2715,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
               : 'editor:placementWorkflowPreview.products',
           )}
         </s-link>
-        <s-button slot="primary-action" variant="primary" disabled={publishedCurrent || !!adapter.readOnly || !!adapter.publicationBlocked || writeBusy || adapter.pending()} onClick={openPublishReview}>
+        <s-button slot="primary-action" variant="primary" disabled={publishedCurrent || !product.views.length || !!adapter.readOnly || !!adapter.publicationBlocked || writeBusy || adapter.pending()} onClick={openPublishReview}>
           {translateUi('editor:placementWorkflowPreview.publish')}
         </s-button>
         <s-button
@@ -3515,6 +3524,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                       'editor:placementWorkflowPreview.aViewIsAProductPhotoSuchAsTheFrontOrBackNextMarkWhereCustomersCanAddArtwork',
                     )}
                   </p>
+                  <s-text color="subdued">{translateUi('editor:placementWorkflowPreview.publishNeedsView')}</s-text>
                   <s-button variant="primary" onClick={() => openViewDialog()}>
                     {translateUi('editor:placementWorkflowPreview.addView')}
                   </s-button>
@@ -3606,7 +3616,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
               </s-button>
             </div>
           )}
-          {notice && (
+          {notice && !(feedback && hostToast()) && (
             <div class={`placement-notice${feedback ? ' is-feedback' : ''}`}>
               <s-banner tone={Object.keys(errors).length ? 'critical' : feedback ? 'success' : 'info'}>
                 {noticeText}
@@ -3924,7 +3934,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                             translateUi('editor:placementWorkflowPreview.defaultNames.size'),
                             placement.sizes.map((size) => size.name),
                           ),
-                          widthPercent: '100',
+                          widthPercent: defaultNewSizeScale(placement.sizes),
                           prices: {},
                         },
                       ],
@@ -4152,46 +4162,32 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
       {publishReview && (
         <Dialog
           heading={
-            missingViewIssue
-              ? translateUi('editor:placementWorkflowPreview.publishHeadings.addProductView')
-              : publishReview.issues.length
-                ? translateUi('editor:placementWorkflowPreview.publishHeadings.finishSetup')
-                : translateUi('editor:placementWorkflowPreview.publishHeadings.publishSetup')
+            publishReview.issues.length
+              ? translateUi('editor:placementWorkflowPreview.publishHeadings.finishSetup')
+              : translateUi('editor:placementWorkflowPreview.publishHeadings.publishSetup')
           }
-          size={missingViewIssue || !publishReview.issues.length ? 'small-100' : 'base'}
+          size={!publishReview.issues.length ? 'small-100' : 'base'}
           onClose={() => dispatchDialog({ type: 'dialog-closed', id: publishReview.id })}
           actions={
-            missingViewIssue ? (
-              <s-button slot="primary-action" variant="primary" onClick={() => reviewPublishIssue(missingViewIssue)}>
-                {translateUi('editor:placementWorkflowPreview.addView')}
-              </s-button>
-            ) : publishReview.issues.length ? null : (
+            publishReview.issues.length ? null : (
               <s-button slot="primary-action" variant="primary" onClick={confirmPublish}>
-                {translateUi('editor:placementWorkflowPreview.publishPreview')}
+                {translateUi(production ? 'editor:placementWorkflowPreview.realPublish' : 'editor:placementWorkflowPreview.publishPreview')}
               </s-button>
             )
           }
         >
           <s-stack gap="base">
             {publishReview.issues.length ? (
-              missingViewIssue ? (
-                <s-paragraph>
-                  {translateUi(
-                    'editor:placementWorkflowPreview.chooseAProductImageToStartNextMarkTheArtworkAreaCustomersCanCustomize',
-                  )}
-                </s-paragraph>
-              ) : (
-                <div class="placement-publication-issues">
-                  {publishReview.issues.map((issue) => (
-                    <div class="placement-publication-issue" key={issue.key}>
-                      <s-text>{publicationIssueText(issue, publishReview.product, translateUi)}</s-text>
-                      <s-button variant="secondary" onClick={() => reviewPublishIssue(issue)}>
-                        {publicationIssueAction(issue)}
-                      </s-button>
-                    </div>
-                  ))}
-                </div>
-              )
+              <div class="placement-publication-issues">
+                {publishReview.issues.map((issue) => (
+                  <div class="placement-publication-issue" key={issue.key}>
+                    <s-text>{publicationIssueText(issue, publishReview.product, translateUi)}</s-text>
+                    <s-button variant="secondary" onClick={() => reviewPublishIssue(issue)}>
+                      {publicationIssueAction(issue)}
+                    </s-button>
+                  </div>
+                ))}
+              </div>
             ) : (
               <>
                 <div class="placement-publish-summary">
@@ -4211,8 +4207,12 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                 <s-paragraph>
                   {translateUi(
                     publication?.published
-                      ? 'editor:placementWorkflowPreview.publishQuestions.replacePublishedPreview'
-                      : 'editor:placementWorkflowPreview.publishQuestions.publishPreview',
+                      ? production
+                        ? 'editor:placementWorkflowPreview.realReplacePublishedQuestion'
+                        : 'editor:placementWorkflowPreview.publishQuestions.replacePublishedPreview'
+                      : production
+                        ? 'editor:placementWorkflowPreview.realPublishQuestion'
+                        : 'editor:placementWorkflowPreview.publishQuestions.publishPreview',
                   )}
                 </s-paragraph>
               </>

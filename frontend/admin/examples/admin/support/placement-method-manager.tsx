@@ -129,6 +129,20 @@ export default function PlacementMethodManager({
   const [filter, setFilter] = useState<'all' | 'enabled'>('all');
   const unavailableIds = draft.methodIds.filter((id) => !methods.some((method) => method.id === id));
   const list = useRef<HTMLDivElement>(null);
+  // Enter in the name field adds the method, like the primary action. Polaris types carry no key handler.
+  const nameField = useRef<HTMLElementTagNameMap['s-text-field']>(null);
+  const addByEnter = useRef(() => {});
+  useEffect(() => {
+    const field = nameField.current;
+    if (!field) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Enter' || event.isComposing) return;
+      event.preventDefault();
+      addByEnter.current();
+    };
+    field.addEventListener('keydown', onKeyDown);
+    return () => field.removeEventListener('keydown', onKeyDown);
+  }, [screen.kind]);
   const savedScrollTop = useRef(0);
   const returnFocusMethodId = useRef<string | null>(null);
   const restoreList = useRef(false);
@@ -234,6 +248,8 @@ export default function PlacementMethodManager({
     focusPriceInput.current = 'first';
   }
 
+  addByEnter.current = createProductMethod;
+
   function openPrices(methodId: string) {
     if (!stateRef.current.draft.methodIds.includes(methodId)) return;
     savedScrollTop.current = list.current?.scrollTop ?? 0;
@@ -328,6 +344,7 @@ export default function PlacementMethodManager({
               maxLength={80}
               error={nameErrorMessage(nameError, translateUi)}
               onInput={(event) => send({ type: 'create-name-edited', sessionId, value: event.currentTarget.value })}
+              ref={nameField}
               details={translateUi('editor:placementMethodManager.methodNameDetails')}
             />
           </div>
@@ -495,7 +512,7 @@ export default function PlacementMethodManager({
                         )}
                       </s-paragraph>
                       {onOpenLibrary && (
-                        <s-button variant="tertiary" onClick={onOpenLibrary}>
+                        <s-button variant="secondary" onClick={onOpenLibrary}>
                           {translateUi('editor:placementMethodManager.saveDraftAndOpenLibrary')}
                         </s-button>
                       )}

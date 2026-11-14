@@ -90,7 +90,6 @@
     "shownToCustomersForExampleFrontOrBack": "Zichtbaar voor klanten, bijvoorbeeld Voorkant of Achterkant.",
     "removeView": "Aanzicht verwijderen",
     "publishPreview": "Voorbeeld publiceren",
-    "chooseAProductImageToStartNextMarkTheArtworkAreaCustomersCanCustomize": "Kies eerst een productafbeelding. Geef daarna het ontwerpgebied aan dat klanten kunnen aanpassen.",
     "localPreviewOnlyShopifyIsnTUpdated": "Alleen lokaal voorbeeld. Shopify is niet bijgewerkt.",
     "discardChanges2": "Wijzigingen verwerpen?",
     "yourChangesSinceTheLastSaveWillBeLost": "Wijzigingen sinds de laatste keer opslaan gaan verloren.",
@@ -127,7 +126,6 @@
     "reduceCanvas": "Canvas verkleinen",
     "expandCanvas": "Canvas vergroten",
     "publicationActions": {
-      "addView": "Aanzicht toevoegen",
       "addPlacement": "Decoratieplek toevoegen",
       "chooseImage": "Afbeelding kiezen",
       "reviewAlignment": "Uitlijning controleren",
@@ -203,9 +201,9 @@
       "previewSendFailed": "Het huidige concept kon niet naar het klantvoorbeeld worden verzonden."
     },
     "publishErrors": {
-      "conflict": "Dit voorbeeld is gewijzigd terwijl je het controleerde. Sluit dit dialoogvenster en controleer de nieuwste configuratie.",
-      "storageError": "Dit voorbeeld kon niet worden gepubliceerd. Je werk en het vorige gepubliceerde voorbeeld zijn behouden. Probeer het opnieuw of sla een concept op.",
-      "shopifyBusy": "Shopify is op dit moment druk, dus dit voorbeeld is niet gepubliceerd. Je werk en het vorige gepubliceerde voorbeeld zijn behouden. Wacht een paar seconden en probeer het opnieuw."
+      "conflict": "Deze configuratie is gewijzigd terwijl je bezig was met controleren. Sluit dit dialoogvenster en controleer de nieuwste configuratie.",
+      "storageError": "Deze configuratie kon niet worden gepubliceerd. Je werk en de vorige gepubliceerde configuratie zijn behouden. Probeer het opnieuw of sla een concept op.",
+      "shopifyBusy": "Shopify is op dit moment druk, dus deze configuratie is niet gepubliceerd. Je werk en de vorige gepubliceerde configuratie zijn behouden. Wacht een paar seconden en probeer het opnieuw."
     },
     "history": {
       "changeUndone": "Wijziging ongedaan gemaakt.",
@@ -296,7 +294,6 @@
     "addPlacementToBeginDetails": "Voeg een decoratieplek toe en pas daarna het formaat en de positie van het ontwerpgebied op de afbeelding aan.",
     "placementAccessibilityName": "Decoratieplek {{placementName}}",
     "publishHeadings": {
-      "addProductView": "Productaanzicht toevoegen",
       "finishSetup": "Rond de configuratie af voordat je publiceert",
       "publishSetup": "Configuratie publiceren"
     },
@@ -337,13 +334,17 @@
     "realPublicationPending": "Publicatie wordt nog verwerkt. Ga door met het oorspronkelijke verzoek om de status te controleren.",
     "realPublicationProgress": "Bezig met publiceren. Dit kan tot een minuut duren; deze pagina wordt bijgewerkt zodra het klaar is.",
     "realPublicationNotice": "Na validatie en activering werkt publiceren je Shopify-winkel bij.",
+    "realPublish": "Publiceren",
+    "realPublishQuestion": "Deze configuratie publiceren? Zodra die live staat, kunnen klanten dit product in je winkel aanpassen. Latere wijzigingen blijven een concept totdat je ze publiceert.",
+    "realReplacePublishedQuestion": "De live configuratie vervangen door deze? Zodra de nieuwe live staat, kunnen klanten dit product ermee aanpassen. Latere wijzigingen blijven een concept totdat je ze publiceert.",
+    "publishNeedsView": "Publiceren is beschikbaar zodra het product een aanzicht heeft.",
     "realSaveFailed": "Je wijzigingen konden niet worden bevestigd. Probeer het oorspronkelijke verzoek opnieuw voordat je andere wijzigingen opslaat.",
     "realPublished": "Gepubliceerd",
     "realDraftChanged": "Overgenomen standaardwaarden zijn gewijzigd. Controleer de opgeslagen wijzigingen voordat je opnieuw publiceert.",
     "realCurrencyReview": "De winkelvaluta is nu {{currency}}. Controleer alle prijzen voordat je een nieuw voorstel opslaat.",
     "realReviewCurrency": "Prijzen in de winkelvaluta controleren",
     "realCalibrateImage": "Afbeelding kalibreren",
-    "realDimensionsRequired": "Kalibreer deze afbeelding om de productiematen vast te leggen.",
+    "realDimensionsRequired": "Kalibreer deze afbeelding om de productiematen vast te leggen. Meet een bekende breedte op het kledingstuk, zoals de borstbreedte.",
     "realReviewMethods": "Controleer niet-toegewezen of verwijderde methoden voordat je publiceert.",
     "realKeepMethod": "Methode behouden",
     "realRemoveMethod": "Methode verwijderen",
