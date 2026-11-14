@@ -1112,7 +1112,22 @@
     "legacyWidthScale": "Scala larghezza (%)",
     "legacyHeightScale": "Scala altezza (%)",
     "realHistoricalPricingReview": "Questa configurazione usa prezzi che l’editor non può rappresentare in modo sicuro. La bozza salvata e i prezzi pubblicati restano invariati. Controlla i prezzi prima della conversione.",
-    "realHistoricalAppearanceReview": "Le foto delle varianti o i posizionamenti esistenti devono essere verificati con il catalogo Shopify completo. La configurazione salvata resta invariata."
+    "realHistoricalAppearanceReview": "Le foto delle varianti o i posizionamenti esistenti devono essere verificati con il catalogo Shopify completo. La configurazione salvata resta invariata.",
+    "configRejection": {
+      "generic": "Questa modifica non può essere salvata: {{reason}}",
+      "draftSchemaInvalid": "Un valore di questa configurazione non è valido ({{path}}). Correggilo e salva di nuovo.",
+      "mediaNotOwned": "Un'immagine di una vista o di un'opzione non è tra le immagini Shopify di questo prodotto, oppure la stessa immagine è usata due volte. Scegli le immagini del prodotto stesso e salva di nuovo.",
+      "sizeInvalid": "Una dimensione di decorazione deve essere maggiore di 0% e al massimo 100% dell'area. Correggi la dimensione e salva di nuovo.",
+      "priceAmountInvalid": "Un prezzo ha più decimali di quelli consentiti dalla valuta del negozio, oppure non è un numero. I prezzi non vengono mai arrotondati; correggi il prezzo e salva di nuovo.",
+      "leanPricingInvalid": "Ogni prezzo deve essere un importo finale per articolo e non può essere negativo. Correggi il prezzo e salva di nuovo.",
+      "geometryInvalid": "Una posizione non rientra nella sua vista oppure fa riferimento a una vista o a una variante che non esiste più. Modifica l'area e salva di nuovo.",
+      "publicationIncomplete": "Questa configurazione non è ancora pronta per la pubblicazione: {{reason}}",
+      "shopCurrencyChanged": "La valuta del negozio è cambiata dopo la creazione di questa bozza. Ricarica la pagina per controllare i prezzi nella nuova valuta. Ricaricando si perdono le modifiche non salvate.",
+      "methodLinksChanged": "I metodi collegati a questo prodotto sono cambiati dopo la creazione di questa bozza. Ricarica la pagina per controllarli. Ricaricando si perdono le modifiche non salvate.",
+      "productIdentityChanged": "Questa bozza appartiene a un altro prodotto. Ricarica la pagina per aprire la bozza giusta. Ricaricando si perdono le modifiche non salvate.",
+      "mediaUrlNotCanonical": "Un'immagine del prodotto in questa bozza non è aggiornata. Ricarica la pagina per aggiornare le immagini. Ricaricando si perdono le modifiche non salvate.",
+      "reloadAndDiscard": "Scarta le modifiche e ricarica"
+    }
   },
   "placementValidation": {
     "errors": {

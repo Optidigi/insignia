@@ -6,6 +6,7 @@ import AdminResourceName from '../components/AdminResourceName.tsx';
 import AdminTruncatedLabel from '../components/AdminTruncatedLabel.tsx';
 import { useAdminLocale } from '../shared/admin-i18n.js';
 import { isShopifyBusy } from '../shared/admin-request.ts';
+import { configRejectionFrom } from '../shared/config-rejection.ts';
 import { productEditorReturnPath } from '../shared/products-return-path.ts';
 import { storefrontProductTestSetupHref } from '../shared/storefront-product-test.ts';
 import Dialog from '../../examples/admin/support/method-dialog.tsx';
@@ -2325,8 +2326,9 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     candidate = canonicalPlacementDecimals(candidate);
     writeBusyRef.current = true;
     setWriteBusy(true);
-    try { const confirmed = await adapter.save(candidate); if (confirmed) candidate = confirmed; } catch {
-      setNotice({ kind: 'message', reason: 'storage-save-failed' });
+    try { const confirmed = await adapter.save(candidate); if (confirmed) candidate = confirmed; } catch (error) {
+      // A server rejection is explained by the host's own banner; it is not an unconfirmed write.
+      setNotice(configRejectionFrom(error) ? null : { kind: 'message', reason: 'storage-save-failed' });
       return false;
     } finally { writeBusyRef.current = false; setWriteBusy(false); }
     setProduct(candidate);
@@ -2371,7 +2373,16 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     let result: ProductPublicationResult;
     let shopifyBusy = false;
     try { result = await adapter.publish(publishReview.product, publishReview.revision); }
-    catch (error) { shopifyBusy = isShopifyBusy(error); result = { status: 'storage-error', reason: 'write-failed' }; }
+    catch (error) {
+      if (configRejectionFrom(error)) {
+        // Refused, not lost: close the review so the merchant can fix the edit the host's banner names.
+        dispatchDialog({ type: 'dialog-closed', id: publishReview.id });
+        setNotice(null);
+        return;
+      }
+      shopifyBusy = isShopifyBusy(error);
+      result = { status: 'storage-error', reason: 'write-failed' };
+    }
     finally { writeBusyRef.current = false; setWriteBusy(false); }
     if (result.status === 'changed') {
       setProduct(result.product); setSaved(result.product); savedBindings.current = adapter.getBindings?.() ?? currentBindings.current;

@@ -56,6 +56,7 @@ async function jsonResponse<T>(response: Response): Promise<T> {
     code?: string;
     error?: string;
     message?: string;
+    code?: unknown;
     validationIssues?: { path: string; message: string }[];
     noEffect?: boolean;
   };
@@ -72,6 +73,8 @@ async function jsonResponse<T>(response: Response): Promise<T> {
   if (!response.ok)
     throw Object.assign(new Error(body.message ?? body.error ?? `Request failed (${response.status})`), {
       status: response.status,
+      // The server's stable reason for a rejection (see config-rejection.ts); callers validate it.
+      code: typeof body.code === 'string' ? body.code : undefined,
       validationIssues: body.validationIssues,
       noEffect: body.noEffect === true,
       ...(body.code === 'BUSY' ? { code: 'BUSY' as const } : {}),

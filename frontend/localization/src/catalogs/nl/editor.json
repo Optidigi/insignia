@@ -354,7 +354,22 @@
     "legacyWidthScale": "Breedteschaal (%)",
     "legacyHeightScale": "Hoogteschaal (%)",
     "realHistoricalPricingReview": "Deze configuratie gebruikt prijzen die deze editor niet veilig kan weergeven. Het opgeslagen concept en de gepubliceerde prijzen blijven ongewijzigd. Controleer de prijzen vóór omzetting.",
-    "realHistoricalAppearanceReview": "Bestaande variantfoto’s of plaatsingen moeten worden gecontroleerd met de volledige Shopify-catalogus. De opgeslagen configuratie blijft ongewijzigd."
+    "realHistoricalAppearanceReview": "Bestaande variantfoto’s of plaatsingen moeten worden gecontroleerd met de volledige Shopify-catalogus. De opgeslagen configuratie blijft ongewijzigd.",
+    "configRejection": {
+      "generic": "Deze wijziging kan niet worden opgeslagen: {{reason}}",
+      "draftSchemaInvalid": "Een waarde in deze instelling is ongeldig ({{path}}). Corrigeer de waarde en sla daarna opnieuw op.",
+      "mediaNotOwned": "Een afbeelding van een weergave of optie hoort niet bij de Shopify-afbeeldingen van dit product, of dezelfde afbeelding wordt twee keer gebruikt. Kies afbeeldingen van het product zelf en sla daarna opnieuw op.",
+      "sizeInvalid": "Een decoratieformaat moet groter zijn dan 0% en hoogstens 100% van het gebied. Corrigeer het formaat en sla daarna opnieuw op.",
+      "priceAmountInvalid": "Een prijs heeft meer decimalen dan de winkelvaluta toestaat, of is geen getal. Prijzen worden nooit afgerond; corrigeer de prijs en sla daarna opnieuw op.",
+      "leanPricingInvalid": "Elke prijs moet één eindbedrag per artikel zijn en mag niet negatief zijn. Corrigeer de prijs en sla daarna opnieuw op.",
+      "geometryInvalid": "Een decoratieplek past niet binnen de weergave of verwijst naar een weergave of variant die niet meer bestaat. Pas het gebied aan en sla daarna opnieuw op.",
+      "publicationIncomplete": "Deze instelling is nog niet klaar om te publiceren: {{reason}}",
+      "shopCurrencyChanged": "De winkelvaluta is gewijzigd nadat dit concept is gemaakt. Laad de pagina opnieuw om je prijzen in de nieuwe valuta te controleren. Opnieuw laden verwerpt de wijzigingen die je nog niet hebt opgeslagen.",
+      "methodLinksChanged": "De methoden die aan dit product zijn gekoppeld, zijn gewijzigd nadat dit concept is gemaakt. Laad de pagina opnieuw om ze te controleren. Opnieuw laden verwerpt de wijzigingen die je nog niet hebt opgeslagen.",
+      "productIdentityChanged": "Dit concept hoort bij een ander product. Laad de pagina opnieuw om het juiste concept te openen. Opnieuw laden verwerpt de wijzigingen die je nog niet hebt opgeslagen.",
+      "mediaUrlNotCanonical": "Een productafbeelding in dit concept is verouderd. Laad de pagina opnieuw om de afbeeldingen te vernieuwen. Opnieuw laden verwerpt de wijzigingen die je nog niet hebt opgeslagen.",
+      "reloadAndDiscard": "Wijzigingen verwerpen en opnieuw laden"
+    }
   },
   "placementValidation": {
     "errors": {
