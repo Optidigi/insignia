@@ -652,6 +652,37 @@ s-drop-zone:not(:defined) {
 .resource-table-scroll {
   overflow: auto;
   overscroll-behavior-inline: contain;
+  --resource-table-fade: 0px;
+}
+/* Columns that do not fit a phone are signalled by fading the trailing edge while more
+   remain to the inline-end; the fade is gone once the last column is fully in view. A
+   scroll that does not overflow has no timeline, so wide screens never fade. */
+@property --resource-table-fade {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@keyframes resource-table-fade {
+  from {
+    --resource-table-fade: 32px;
+  }
+  to {
+    --resource-table-fade: 0px;
+  }
+}
+@supports (animation-timeline: scroll()) {
+  .resource-table-scroll {
+    /* Longhands on purpose: the animation shorthand has no stable cross-browser timeline slot. */
+    animation-name: resource-table-fade;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: scroll(self inline);
+    animation-range: calc(100% - 32px) 100%;
+    mask-image: linear-gradient(to right, #000 calc(100% - var(--resource-table-fade)), transparent);
+  }
+  .resource-table-scroll:dir(rtl) {
+    mask-image: linear-gradient(to left, #000 calc(100% - var(--resource-table-fade)), transparent);
+  }
 }
 [data-pinned-primary] .resource-table-scroll {
   scroll-padding-inline-start: calc(var(--resource-table-primary-width) + 8px);

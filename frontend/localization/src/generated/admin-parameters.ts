@@ -1152,6 +1152,7 @@ export const adminParameterContracts = {
   'editor:placementWorkflowPreview.variantGroupFallback': {},
   'editor:placementWorkflowPreview.variantImages': {},
   'editor:placementWorkflowPreview.viewAccessibilityName': { viewName: 'string' },
+  'editor:placementWorkflowPreview.viewAndHistoryActions': {},
   'editor:placementWorkflowPreview.viewCount': { count: 'number', formattedCount: 'string' },
   'editor:placementWorkflowPreview.viewName': {},
   'editor:placementWorkflowPreview.viewNameFallback': {},

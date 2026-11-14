@@ -1123,6 +1123,7 @@ export interface AdminMessageTable {
   'editor:placementWorkflowPreview.variantGroupFallback': object;
   'editor:placementWorkflowPreview.variantImages': object;
   'editor:placementWorkflowPreview.viewAccessibilityName': { viewName: string };
+  'editor:placementWorkflowPreview.viewAndHistoryActions': object;
   'editor:placementWorkflowPreview.viewCount': { count: number; formattedCount: string };
   'editor:placementWorkflowPreview.viewName': object;
   'editor:placementWorkflowPreview.viewNameFallback': object;
