@@ -49,6 +49,10 @@ import {
   createPublicationAbandonment,
   type PublicationAbandonmentOptions,
 } from './repositories/publication-abandonment.js';
+import {
+  createPublicationHoldOperator,
+  type PublicationHoldOperatorOptions,
+} from './repositories/publication-hold-operator.js';
 import { createPurchaseRepository, type PurchaseRepository } from './repositories/purchase.js';
 import { PgQuoteRenewalRepository } from './repositories/quote-renewal.js';
 import {
@@ -163,6 +167,10 @@ export interface DurableCore {
   /** #466 B worker pass: automatic release of an abandoned publication hold. */
   readonly publicationAbandonment: {
     create(options: PublicationAbandonmentOptions): ReturnType<typeof createPublicationAbandonment>;
+  };
+  /** #466 A owner-run operator command (inspect, restore, resolve); one shop and config per call. */
+  readonly publicationHoldOperator: {
+    create(options: PublicationHoldOperatorOptions): ReturnType<typeof createPublicationHoldOperator>;
   };
   readonly acceptedQuotes: QuoteAcceptanceStore &
     Required<Pick<QuoteAcceptanceStore, 'resolveBuyerAcceptance'>> & {
@@ -618,6 +626,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
     },
     productionActivations: { create: (options) => createProductionActivation(database, options) },
     publicationAbandonment: { create: (options) => createPublicationAbandonment(database, options) },
+    publicationHoldOperator: { create: (options) => createPublicationHoldOperator(database, options) },
     acceptedQuotes: {
       getEffective: (shopId, productId) => acceptedQuotes.getEffective(shopId, productId),
       findCompleted: (input) => acceptedQuotes.findCompleted<AcceptedQuoteResult>(input),

@@ -44,6 +44,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
   // whether its transaction holds a FOR UPDATE row lock on `shops` (the freeze rule's premise).
   let shopLockAudit: { text: string; locked: boolean }[] | undefined;
   const publicationWrite = /^\s*update\s+"?(m4_publication_progress|publication_operations)"?\s/i;
+  // #466 A: when set, a query whose text it answers with a promise waits for that promise first.
+  let sqlGate: ((text: string) => Promise<void> | undefined) | undefined;
   beforeAll(async () => {
     database = await openTestDatabase();
     const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 8 });
@@ -57,6 +59,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
             : input && typeof input === 'object' && 'text' in input && typeof input.text === 'string'
               ? input.text
               : '';
+        const gate = sqlGate?.(sqlText);
+        if (gate) return gate.then(() => Reflect.apply(original, client, args));
         if (shopLockAudit && publicationWrite.test(sqlText)) {
           const audit = shopLockAudit;
           return (
@@ -617,6 +621,42 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
               credentials,
               fetchImpl: providerFetch,
             }),
+          ...options,
+        }),
+      /** #466 A operator command on this fixture's fake Shopify; fields read the synthetic cells. */
+      operator: (
+        options: Partial<Parameters<DurableCore['publicationHoldOperator']['create']>[0]> & {
+          beforeRestore?: () => Promise<void>;
+        } = {},
+        via: DurableCore = core,
+      ) =>
+        via.publicationHoldOperator.create({
+          appId: '101',
+          appClientId: artifactScope.appClientId,
+          acquireToken: async () => ({
+            kind: 'usable',
+            shopDomain: 'synthetic.myshopify.com',
+            accessToken: 'synthetic-offline-token',
+            accessExpiresAt: new Date('2099-01-01T00:00:00Z'),
+          }),
+          availability: ({ credentials, isCurrent }) => {
+            const port = createShopifyAvailabilityHoldV3Port({
+              now: () => new Date(providerClock),
+              isCurrent,
+              credentials,
+              fetchImpl: providerFetch,
+            });
+            return {
+              snapshot: port.snapshot,
+              observe: port.observe,
+              restore: async (...args) => {
+                await options.beforeRestore?.();
+                return port.restore(...args);
+              },
+            };
+          },
+          fields: () => ({ read: (target) => syntheticRemote.read(target as Parameters<typeof remote.read>[0]) }),
+          now: () => new Date(providerClock),
           ...options,
         }),
       /** The next provider read after `afterReads` more reads answers 503 (nothing observed). */
@@ -1610,7 +1650,15 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     await sql`UPDATE installation_generations SET deactivated_at=now() WHERE shop_id=${f.identity.shopId}`.execute(
       database,
     );
-    await f.abandonment().runPass({ shopIds: [f.identity.shopId] });
+    // #466 A: B's worker never touches an operator claim; the command's resume runs B's T2 recheck.
+    expect(await f.abandonment().runPass({ shopIds: [f.identity.shopId] })).toMatchObject({ flagged: 0 });
+    expect(
+      await f.operator().restore({
+        ...f.identity,
+        inspectDigest: `${Date.now()}.${'d'.repeat(64)}`,
+        commandKey: 'cmd-1',
+      }),
+    ).toMatchObject({ outcome: 'flagged', reasons: ['claim_fenced'], kind: 'OPERATOR_HOLD' });
     const audit = await auditRows(f);
     expect(audit.map((r) => [r.event, r.detail])).toEqual([
       ['FLAGGED', { reasons: ['product_changed'] }],
@@ -3193,6 +3241,484 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         .restart()
         .publications.prepare({ ...f.identity, operationId: randomUUID(), revisionId: f.revisionId, mode: 'required' }),
     ).rejects.toThrow('Availability hold requires recovery');
+  });
+
+  // #466 part A: the owner-run operator command (design §9), on real migrations, triggers and the
+  // operator claim function, with the fixture's fake Shopify behind the real v3 adapter.
+  const toOperatorHold = (f: Fixture) =>
+    sql`UPDATE m5_activation_state SET kind='OPERATOR_HOLD', version=version+1
+      WHERE shop_id=${f.identity.shopId} AND operation_id=${f.identity.operationId}`.execute(database);
+  const inspectOne = async (f: Fixture, operator = f.operator()) => {
+    const report = await operator.inspect({ shopId: f.identity.shopId, configId: f.identity.configId });
+    expect(report.holds).toHaveLength(1);
+    return report.holds[0]!;
+  };
+  const restoreWith = (f: Fixture, inspectDigest: string, commandKey = 'owner-cmd-1', operator = f.operator()) =>
+    operator.restore({ ...f.identity, inspectDigest, commandKey });
+  const fieldCell = (field: 'registration' | 'policy', value: string) => ({
+    ownerId: 'gid://shopify/Product/42',
+    namespace: 'app--101',
+    key: fieldKeys[field],
+    type: 'single_line_text_field',
+    value,
+    compareDigest: createHash('sha256').update(value).digest('hex'),
+  });
+  const lockWaiters = async (pattern: string) =>
+    Number(
+      (
+        await sql<{ count: string }>`SELECT count(*)::text AS count FROM pg_stat_activity
+          WHERE wait_event_type='Lock' AND query ILIKE ${pattern}`.execute(database)
+      ).rows[0]?.count,
+    );
+  const waitFor = async (check: () => Promise<boolean>) => {
+    for (let i = 0; i < 200; i++) {
+      if (await check()) return;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    throw new Error('Condition not reached');
+  };
+  const gated = () => {
+    let reached!: () => void;
+    let release!: () => void;
+    const atGate = new Promise<void>((resolve) => {
+      reached = resolve;
+    });
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    return { atGate, release, wait: () => (reached(), gate) };
+  };
+  /** The command's offline token through the command identity's own credential grants. */
+  const commandToken = (command: DurableCore) => async (input: { shopId: string; installationGeneration: string }) => {
+    const acquired = await command.credentials.acquire({ ...input, minimumRemainingMs: 30_000, claimLeaseMs: 30_000 });
+    return acquired.kind === 'usable'
+      ? {
+          kind: 'usable' as const,
+          shopDomain: 'synthetic.myshopify.com',
+          accessToken: acquired.accessToken,
+          accessExpiresAt: acquired.accessExpiresAt,
+        }
+      : { kind: 'temporarily_unavailable' as const };
+  };
+  const deactivate = (f: Fixture) =>
+    sql`UPDATE installation_generations SET deactivated_at=now() WHERE shop_id=${f.identity.shopId}`.execute(database);
+
+  it('#466 A: inspect reports a quiet prepared owned OPERATOR_HOLD safe, with a digest, and changes nothing', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    await toOperatorHold(f);
+    const before = await activationRow(f);
+    const hold = await inspectOne(f);
+    expect(hold).toMatchObject({
+      operationId: f.identity.operationId,
+      activation: { kind: 'OPERATOR_HOLD', version: before?.version },
+      hold: {
+        version: 'm5-availability-hold-v3',
+        before: 'available',
+        held: 'unavailable',
+        acquisitionAcknowledged: true,
+        abandonmentClaim: null,
+        restorationClaim: false,
+        restorationReceipt: null,
+      },
+      publication: { phase: 'prepared', status: 'requested', current: true },
+      installation: { operationGeneration: '1', currentGeneration: '1', current: true },
+      shopify: {
+        product: { state: 'unavailable', equalsHeld: true, equalsBefore: false },
+        registration: { present: false, matchesPrior: true },
+        policy: { present: false, matchesPrior: true },
+        publicConfig: { present: false, matchesPrior: true },
+      },
+      safeToRestore: true,
+      reasons: [],
+    });
+    expect(hold.hold.heldSince).toMatch(/^2026-.*Z$/);
+    expect(hold.inspectDigest).toMatch(/^[1-9][0-9]*\.[a-f0-9]{64}$/);
+    expect(await activationRow(f)).toEqual(before);
+    expect(f.providerWrites).toEqual(['DRAFT']);
+    expect(await auditRows(f)).toEqual([]);
+  });
+
+  it.each([
+    ['the product changed in Shopify', 'product_changed', (f: Fixture) => (f.providerProductStatus = 'ARCHIVED')],
+    [
+      'registration was written',
+      'registration_changed',
+      (f: Fixture) => f.cells.set('registration', fieldCell('registration', 'x')),
+    ],
+    ['policy was written', 'policy_changed', (f: Fixture) => f.cells.set('policy', fieldCell('policy', 'y'))],
+    ['the store was reinstalled', 'installation_changed', deactivate],
+    ['the hold is still the worker one (HELD)', 'not_operator_hold', async () => undefined],
+  ])('#466 A: inspect reports unsafe when %s', async (_name, reason, change) => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    if (reason !== 'not_operator_hold') await toOperatorHold(f);
+    await change(f);
+    const hold = await inspectOne(f);
+    expect(hold.safeToRestore).toBe(false);
+    expect(hold.inspectDigest).toBeNull();
+    expect(hold.reasons).toContain(reason);
+    if (reason === 'product_changed')
+      expect(hold.shopify.product).toEqual({ state: 'archived', equalsHeld: false, equalsBefore: false });
+    if (reason === 'registration_changed')
+      expect(hold.shopify.registration).toEqual({ present: true, matchesPrior: false });
+  });
+
+  it.each([
+    ['the product changed after inspect', ['product_changed'], (f: Fixture) => (f.providerProductStatus = 'ARCHIVED')],
+    [
+      'a product field was written after inspect',
+      ['registration_changed'],
+      (f: Fixture) => f.cells.set('registration', fieldCell('registration', 'x')),
+    ],
+    ['the store was reinstalled after inspect', ['installation_changed', 'credential_unavailable'], deactivate],
+    [
+      'the activation version moved after inspect',
+      ['inspection_mismatch'],
+      (f: Fixture) =>
+        sql`UPDATE m5_activation_state SET version=version+1 WHERE shop_id=${f.identity.shopId}`.execute(database),
+    ],
+  ])('#466 A: restore refuses without claiming when %s', async (_name, reasons, change) => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    await toOperatorHold(f);
+    const { inspectDigest } = await inspectOne(f);
+    await change(f);
+    const before = await activationRow(f);
+    expect(await restoreWith(f, inspectDigest!)).toMatchObject({ outcome: 'refused', reasons, kind: 'OPERATOR_HOLD' });
+    expect(await activationRow(f)).toEqual(before);
+    expect(before?.hold).not.toHaveProperty('abandonmentClaim');
+    expect(before?.hold).not.toHaveProperty('restorationClaim');
+    expect(f.providerWrites).toEqual(['DRAFT']);
+    expect(await auditRows(f)).toEqual([]);
+  });
+
+  it('#466 A: restore refuses a stale, mismatched or malformed digest without claiming', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    await toOperatorHold(f);
+    const { inspectDigest } = await inspectOne(f);
+    const [at, digest] = inspectDigest!.split('.') as [string, string];
+    const before = await activationRow(f);
+    // Older than 10 minutes, or from the future, by the database clock.
+    expect(await restoreWith(f, `${Number(at) - 600_001}.${digest}`)).toMatchObject({
+      outcome: 'refused',
+      reasons: ['inspection_stale'],
+    });
+    expect(await restoreWith(f, `${Number(at) + 600_000_000}.${digest}`)).toMatchObject({
+      reasons: ['inspection_stale'],
+    });
+    const flipped = digest.replace(/.$/, (c) => (c === '0' ? '1' : '0'));
+    expect(await restoreWith(f, `${at}.${flipped}`)).toMatchObject({
+      outcome: 'refused',
+      reasons: ['inspection_mismatch'],
+    });
+    // The time is part of the digest: it cannot be moved forward to look recent.
+    expect(await restoreWith(f, `${Number(at) - 1}.${digest}`)).toMatchObject({ reasons: ['inspection_mismatch'] });
+    await expect(restoreWith(f, digest)).rejects.toThrow('invalid_inspect_digest');
+    await expect(restoreWith(f, inspectDigest!, 'bad key')).rejects.toThrow('invalid_command_key');
+    expect(await activationRow(f)).toEqual(before);
+    expect(f.providerWrites).toEqual(['DRAFT']);
+    expect(await auditRows(f)).toEqual([]);
+  });
+
+  it("#466 A: restore claims on operator authority and runs B's restore and finalize, OPERATOR_HOLD to finalized", async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    await toOperatorHold(f);
+    const { inspectDigest } = await inspectOne(f);
+    const events: unknown[] = [];
+    const result = await restoreWith(
+      f,
+      inspectDigest!,
+      'owner-2026-11-14',
+      f.operator({ onEvent: (event) => events.push(event) }),
+    );
+    expect(result).toEqual({
+      outcome: 'restored',
+      reasons: [],
+      kind: 'ABANDON_RESTORED',
+      phase: 'abandoned',
+      status: 'failed',
+    });
+    expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
+    expect(events).toMatchObject([{ outcome: 'restored' }, { outcome: 'finalized' }]);
+    expect(await activationRow(f)).toMatchObject({
+      kind: 'ABANDON_RESTORED',
+      hold: {
+        abandonmentClaim: {
+          authority: 'SETTLED_BY_TRUSTED_OPERATOR',
+          commandKey: 'owner-2026-11-14',
+          inspectDigest: inspectDigest!.split('.')[1],
+        },
+        restorationReceipt: { kind: 'RESTORED', current: { state: 'available' } },
+      },
+    });
+    expect((await auditRows(f)).map((r) => [r.event, r.from_kind, r.to_kind])).toEqual([
+      ['CLAIMED', 'OPERATOR_HOLD', 'ABANDON_CLAIMED'],
+      ['RECEIPT', 'ABANDON_CLAIMED', 'ABANDON_CLAIMED'],
+      ['RESTORED', 'ABANDON_CLAIMED', 'ABANDON_RESTORED'],
+    ]);
+    expect(await operationRow(f)).toMatchObject({ status: 'failed', failure_class: 'publication-abandoned' });
+    expect(await core.configs.getAvailabilityRecovery(f.identity.shopId, f.identity.configId)).toBeNull();
+    // Nothing is left to inspect; re-running the command finds no hold and writes nothing.
+    expect((await f.operator().inspect({ shopId: f.identity.shopId, configId: f.identity.configId })).holds).toEqual(
+      [],
+    );
+    expect(await restoreWith(f, inspectDigest!, 'owner-2026-11-14')).toMatchObject({
+      outcome: 'refused',
+      reasons: ['hold_not_found'],
+    });
+    expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
+    // The command key is spent for this shop.
+    await expect(
+      f.operator().resolve({ ...f.identity, operationId: randomUUID(), commandKey: 'owner-2026-11-14' }),
+    ).rejects.toThrow('command_key_used');
+    const next = randomUUID();
+    await f.createRevision(next, 'required');
+    await expect(
+      f.restart().publications.prepare({ ...f.identity, operationId: next, revisionId: next, mode: 'required' }),
+    ).resolves.toMatchObject({ phase: 'prepared' });
+  });
+
+  it("#466 A: B's worker never touches an operator claim; re-running the command resumes it by B's rules", async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    await toOperatorHold(f);
+    const version = Number((await activationRow(f))?.version);
+    // The command claimed and then died before its T2: claimed, nothing sent.
+    await sql`SELECT m5_operator_claim_abandoned_hold(${f.identity.shopId}, ${f.identity.configId}, ${f.identity.operationId},
+      ${version}, 'crash-1', ${'c'.repeat(64)})`.execute(database);
+    const claimed = await activationRow(f);
+    expect(
+      await f.abandonment({ claimStaleMs: 0, abandonAfterMs: 0 }).runPass({ shopIds: [f.identity.shopId] }),
+    ).toMatchObject({ restored: 0, finalized: 0, flagged: 0 });
+    expect(await activationRow(f)).toEqual(claimed);
+    expect(f.providerWrites).toEqual(['DRAFT']);
+    const token = `${Date.now()}.${'c'.repeat(64)}`;
+    expect(await restoreWith(f, token, 'other-key')).toMatchObject({
+      outcome: 'refused',
+      reasons: ['claimed_by_another_command'],
+    });
+    // Within B's stale bound a claim without a receipt may still be in flight: wait.
+    expect(await restoreWith(f, token, 'crash-1')).toMatchObject({
+      outcome: 'skipped',
+      reasons: ['claim_in_flight'],
+      kind: 'ABANDON_CLAIMED',
+    });
+    // Past it, a crash may have dispatched: B's stale rule hands it to the operator, never a write.
+    expect(await restoreWith(f, token, 'crash-1', f.operator({ claimStaleMs: 0 }))).toMatchObject({
+      outcome: 'flagged',
+      reasons: ['claim_unsettled'],
+      kind: 'OPERATOR_HOLD',
+    });
+    expect(f.providerWrites).toEqual(['DRAFT']);
+  });
+
+  it("#466 A: B's worker passes untouched while the command restores; one write", async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    await toOperatorHold(f);
+    const { inspectDigest } = await inspectOne(f);
+    const t2 = gated();
+    const running = restoreWith(f, inspectDigest!, 'owner-cmd-2', f.operator({ beforeRestore: t2.wait }));
+    await t2.atGate;
+    // T2 holds the six row locks; a worker pass that would flag a stale claim neither waits nor acts.
+    expect(
+      await f.abandonment({ claimStaleMs: 0, abandonAfterMs: 0 }).runPass({ shopIds: [f.identity.shopId] }),
+    ).toMatchObject({ restored: 0, finalized: 0, flagged: 0 });
+    t2.release();
+    expect(await running).toMatchObject({ outcome: 'restored', kind: 'ABANDON_RESTORED', phase: 'abandoned' });
+    expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
+    expect(await f.abandonment({ claimStaleMs: 0 }).runPass({ shopIds: [f.identity.shopId] })).toMatchObject({
+      restored: 0,
+      finalized: 0,
+      flagged: 0,
+    });
+  });
+
+  it('#466 A: a merchant publish racing the command writes nothing, in either order, without deadlock', async () => {
+    // Merchant first: its advance holds the shop lock while the operator claim waits behind it.
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    await toOperatorHold(f);
+    const { inspectDigest } = await inspectOne(f);
+    const merchantGate = gated();
+    sqlGate = (text) => {
+      if (!text.trimStart().startsWith('SELECT kind FROM m5_activation_state')) return undefined;
+      sqlGate = undefined;
+      return merchantGate.wait();
+    };
+    const writes = f.remoteWrites;
+    const merchant = f.restart().publications.advance(f.identity.shopId, f.identity.configId, f.identity.operationId);
+    await merchantGate.atGate;
+    const operator = restoreWith(f, inspectDigest!, 'owner-cmd-3');
+    await waitFor(async () => (await lockWaiters('%m5_operator_claim_abandoned_hold%')) > 0);
+    merchantGate.release();
+    const [merchantResult, operatorResult] = await Promise.all([merchant, operator]);
+    expect(merchantResult.kind).toBe('ADMISSION_PENDING');
+    expect(operatorResult).toMatchObject({ outcome: 'restored', kind: 'ABANDON_RESTORED' });
+    expect(f.remoteWrites).toBe(writes);
+    expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
+
+    // Command first: a merchant retry arriving during T2 waits for it, then stops before any IO.
+    const g = await fixture('required', 'ACTIVE');
+    await g.prepareHold();
+    await toOperatorHold(g);
+    const second = await inspectOne(g);
+    const t2 = gated();
+    const restoring = restoreWith(g, second.inspectDigest!, 'owner-cmd-4', g.operator({ beforeRestore: t2.wait }));
+    await t2.atGate;
+    const reads = g.remoteReads;
+    const retries = Promise.all([
+      g.restart().publications.advance(g.identity.shopId, g.identity.configId, g.identity.operationId),
+      g.restart().advance(g.identity),
+    ]);
+    await waitFor(async () => (await lockWaiters('%for update%')) >= 2);
+    t2.release();
+    expect(await restoring).toMatchObject({ outcome: 'restored', kind: 'ABANDON_RESTORED' });
+    expect((await retries).map((r) => r.kind)).toEqual(['ABANDONED', 'ABANDONED']);
+    expect(g.remoteReads).toBe(reads);
+    expect(g.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
+  }, 30_000);
+
+  it('#466 A: resolve records the observation-only resolution after a by-hand restore in Shopify admin', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    await toOperatorHold(f);
+    const { inspectDigest } = await inspectOne(f);
+    // The product changed, so restore refuses and claims nothing.
+    f.providerProductStatus = 'ARCHIVED';
+    expect(await restoreWith(f, inspectDigest!, 'r-1')).toMatchObject({
+      outcome: 'refused',
+      reasons: ['product_changed'],
+    });
+    // While Shopify does not show the original state, resolve refuses too.
+    await expect(f.operator().resolve({ ...f.identity, commandKey: 'r-2' })).rejects.toThrow('operator hold retained');
+    expect((await activationRow(f))?.kind).toBe('OPERATOR_HOLD');
+    // The owner restores the product by hand in Shopify admin; inspect shows the original state.
+    f.providerProductStatus = 'ACTIVE';
+    expect((await inspectOne(f)).shopify.product).toEqual({
+      state: 'available',
+      equalsHeld: false,
+      equalsBefore: true,
+    });
+    const resolved = await f.operator().resolve({ ...f.identity, commandKey: 'r-2' });
+    expect(resolved).toMatchObject({
+      kind: 'RESOLVED',
+      resolution: {
+        version: 'm5-availability-resolution-v3',
+        commandKey: 'r-2',
+        outcome: 'ORIGINAL_STATE_OBSERVED',
+        decision: { outstandingWrites: 'SETTLED_BY_TRUSTED_OPERATOR', actorRef: 'publication-hold-command' },
+      },
+    });
+    expect(await operationRow(f)).toMatchObject({ status: 'failed', failure_class: 'availability-resolved' });
+    expect(f.providerWrites).toEqual(['DRAFT']);
+    // Idempotent for the same command; nothing is left to restore.
+    expect((await f.operator().resolve({ ...f.identity, commandKey: 'r-2' })).resolution).toEqual(resolved.resolution);
+    expect(await restoreWith(f, `${Date.now()}.${'a'.repeat(64)}`, 'r-3')).toMatchObject({
+      outcome: 'refused',
+      reasons: ['hold_not_found'],
+    });
+    // A key used for a resolution is spent for any other operation of the shop.
+    await expect(f.operator().resolve({ ...f.identity, operationId: randomUUID(), commandKey: 'r-2' })).rejects.toThrow(
+      'command_key_used',
+    );
+  });
+
+  it('#466 A: the command runs as its own LOGIN identity with only the granted privileges', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    await toOperatorHold(f);
+    const role = `hold_command_${randomUUID().replaceAll('-', '')}`;
+    const password = randomUUID();
+    const owner = new Pool({ connectionString: process.env.DATABASE_URL });
+    await owner.query(
+      await readFile(new URL('../../../scripts/database/publication-operator-role.sql', import.meta.url), 'utf8'),
+    );
+    await owner.query(
+      `CREATE ROLE ${role} LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS`,
+    );
+    const grants = await readFile(
+      new URL('../../../deployment/m5-runtime/publication-hold-command-grants.sql', import.meta.url),
+      'utf8',
+    );
+    await owner.query(grants.replaceAll(':"command_role"', `"${role}"`).replaceAll(":'command_role'", `'${role}'`));
+    const url = new URL(process.env.DATABASE_URL!);
+    url.username = role;
+    url.password = password;
+    const credentialKeys = { currentKeyId: 'hold-test', keys: { 'hold-test': Buffer.alloc(32, 41) } };
+    const ownerCore = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }), { credentialKeys });
+    const commandPool = new Pool({ connectionString: url.href, max: 2 });
+    const command = createDurableCore(commandPool, { credentialKeys });
+    const install = (shopId: string) =>
+      ownerCore.credentials.install({
+        shopId,
+        installationGeneration: '1',
+        pair: {
+          accessToken: `synthetic-hold-access-${shopId}`,
+          refreshToken: `synthetic-hold-refresh-${shopId}`,
+          accessExpiresAt: new Date(Date.now() + 3600000),
+          refreshExpiresAt: new Date(Date.now() + 86400000),
+          scopes: 'write_products',
+        },
+      });
+    try {
+      await install(f.identity.shopId);
+      const identity = await commandPool.query(`SELECT current_user AS who,
+          pg_has_role(current_user,'insignia_publication_operator','MEMBER') AS operator,
+          has_function_privilege(current_user,'public.m5_operator_claim_abandoned_hold(text,text,text,bigint,text,text)','EXECUTE') AS fn,
+          has_table_privilege(current_user,'public.m5_publication_abandonment_audit','SELECT,INSERT,UPDATE,DELETE') AS audit,
+          has_table_privilege(current_user,'public.m5_restoration_no_dispatch_consumptions','SELECT,INSERT,UPDATE,DELETE') AS consumptions,
+          has_column_privilege(current_user,'public.installation_generations','deactivated_at','UPDATE') AS deactivate,
+          has_column_privilege(current_user,'public.shops','current_generation','UPDATE') AS generation,
+          has_table_privilege(current_user,'public.signing_keys','SELECT') AS keys,
+          has_table_privilege(current_user,'public.publication_operations','INSERT,DELETE') AS operations`);
+      expect(identity.rows[0]).toEqual({
+        who: role,
+        operator: true,
+        fn: true,
+        audit: false,
+        consumptions: false,
+        deactivate: false,
+        generation: false,
+        keys: false,
+        operations: false,
+      });
+      const operator = f.operator({ acquireToken: commandToken(command) }, command);
+      const { inspectDigest } = await inspectOne(f, operator);
+      expect(inspectDigest).not.toBeNull();
+      expect(await restoreWith(f, inspectDigest!, 'role-cmd-1', operator)).toMatchObject({
+        outcome: 'restored',
+        kind: 'ABANDON_RESTORED',
+        phase: 'abandoned',
+        status: 'failed',
+      });
+      // The resolution path, through the same identity.
+      const g = await fixture('required', 'ACTIVE');
+      await g.prepareHold();
+      await toOperatorHold(g);
+      await install(g.identity.shopId);
+      g.providerProductStatus = 'ACTIVE';
+      expect(
+        (
+          await g
+            .operator({ acquireToken: commandToken(command) }, command)
+            .resolve({ ...g.identity, commandKey: 'role-cmd-2' })
+        ).kind,
+      ).toBe('RESOLVED');
+      await expect(
+        commandPool.query('UPDATE public.shops SET current_generation=current_generation WHERE shop_id=$1', [
+          f.identity.shopId,
+        ]),
+      ).rejects.toThrow('permission denied');
+    } finally {
+      await command.close();
+      await ownerCore.close();
+      await owner.query(`DROP OWNED BY ${role}; DROP ROLE ${role}`);
+      await owner.end();
+    }
   });
 });
 

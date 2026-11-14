@@ -20,6 +20,7 @@ export * from './publication/availability.js';
 export * from './publication/availability-recovery.js';
 export * from './publication/availability-v2.js';
 export * from './publication/availability-v3.js';
+export * from './publication/operator-hold.js';
 export * from './publication/projection.js';
 export * from './purchase/artwork.js';
 export * from './purchase/customer-artwork.js';

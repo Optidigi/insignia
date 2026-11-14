@@ -159,6 +159,13 @@ async function setKind(
 
 /** Worker pass of the reconciliation loop (design §6). Never exported beyond the facade. */
 export function createPublicationAbandonment(database: Kysely<Database>, options: PublicationAbandonmentOptions) {
+  const { runPass } = createAbandonmentFence(database, options);
+  return { runPass };
+}
+
+/** B's fence. The worker gets only `runPass`; part A's operator command also gets
+ * `settleOperatorClaim` (publication-hold-operator.ts). */
+export function createAbandonmentFence(database: Kysely<Database>, options: PublicationAbandonmentOptions) {
   if (!/^[A-Za-z0-9_-]{1,128}$/.test(options.appClientId)) throw new Error('Invalid trusted app client identity');
   const clock = options.now ?? (() => Date.now());
   const emit = (row: Identity, outcome: PublicationAbandonmentEvent['outcome'], reasons: readonly string[] = []) => {
@@ -446,6 +453,22 @@ export function createPublicationAbandonment(database: Kysely<Database>, options
   // row it visited and wraps around at the end, so every candidate is visited in turn.
   let cursor: Cursor | null = null;
   return {
+    /**
+     * #466 A: B's T2 and T3, unchanged, for one row claimed on operator authority. `claimedHere`
+     * when this invocation's operator claim just committed (no receipt yet); otherwise it resumes
+     * an earlier claim by B's rules (one rearm of an unconsumed NOT_DISPATCHED receipt, or the
+     * stale rule). A NOT_DISPATCHED outcome gets its one rearm at once. Never claims.
+     */
+    async settleOperatorClaim(
+      id: Identity & { operationGeneration: string },
+      claimedHere: boolean,
+      prebound: (OfflineToken & { kind: 'usable' }) | null,
+    ) {
+      let outcome = await restore(id, claimedHere, prebound);
+      if (outcome === 'not_dispatched') outcome = await restore(id, false, prebound);
+      const finalized = await finalize(id);
+      return { outcome, finalized };
+    },
     /** One bounded pass: at most 2 restores, 10 finalizes and 10 flags within 20 s. `scope`
      * limits it to given shops (the operator command and tests); the worker passes none. */
     async runPass(
@@ -466,6 +489,8 @@ export function createPublicationAbandonment(database: Kysely<Database>, options
         JOIN m4_publication_progress p USING (shop_id, config_id, operation_id)
         JOIN shops s ON s.shop_id=a.shop_id
         WHERE a.hold IS NOT NULL AND a.kind NOT IN ('RESTORED','RESOLVED')
+          -- #466 A: a claim made on operator authority belongs to the operator command alone.
+          AND a.hold#>>'{abandonmentClaim,authority}' IS DISTINCT FROM 'SETTLED_BY_TRUSTED_OPERATOR'
           ${scope ? sql`AND a.shop_id = ANY(${[...scope.shopIds]}::text[])` : sql``}
           ${
             after
