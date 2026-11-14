@@ -46,6 +46,7 @@ export default function HomeGettingStarted({
 }) {
   const { t, formatLocale } = useAdminLocale();
   const completed = guidance.completedSteps ?? [];
+  const observed = guidance.observedSteps ?? [];
   const [expanded, setExpanded] = useState(completed.length < 3 && (guidance.initiallyExpanded ?? true));
   const [activeStep, setActiveStep] = useState<HomeGuidanceStepId | undefined>(() =>
     preferredStep && !completed.includes(preferredStep)
@@ -150,7 +151,7 @@ export default function HomeGettingStarted({
                             type="checkbox"
                             class="home-guide__check"
                             checked={complete}
-                            disabled={!onCompleteStep}
+                            disabled={!onCompleteStep || observed.includes(step.id)}
                             aria-label={t(complete ? 'home:guidance.markIncomplete' : 'home:guidance.markComplete', {
                               step: t(`home:guidance.stepLabels.${step.id}`),
                             })}

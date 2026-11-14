@@ -93,9 +93,9 @@
     },
     "metrics": {
       "customizedOrders": "Pedidos con personalizaciones",
-      "customizedOrdersDefinition": "Pedidos que contienen al menos un diseño de Insignia.",
+      "customizedOrdersDefinition": "Pedidos que contienen al menos un diseño de Insignia. Los pedidos de prueba y los cancelados no se cuentan.",
       "customizedItems": "Artículos personalizados pedidos",
-      "customizedItemsDefinition": "Cantidad total de artículos personalizados pedidos."
+      "customizedItemsDefinition": "Cantidad total de artículos personalizados pedidos. Los pedidos de prueba y los cancelados no se cuentan."
     },
     "orders": "Ver pedidos",
     "unavailable": "Las estadísticas no están disponibles en este momento.",

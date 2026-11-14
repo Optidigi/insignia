@@ -7,6 +7,7 @@ import type {
   HomeOrdersPanel,
   HomePanel,
   HomeProductsPanel,
+  HomeGuidanceStepId,
   HomeSetup,
   HomeStatistics,
   MerchantHomeModel,
@@ -15,6 +16,8 @@ import {
   homeHasPublishedProduct,
   homeOrdersFromResponse,
   homeProductsFromResponse,
+  homeGuidanceWithObservedSteps,
+  homeObservedGuidanceSteps,
   homeSetupFromTheme,
   homeStatisticsFromResponse,
   homeStatisticsFromAggregate,
@@ -27,6 +30,7 @@ function MerchantHomeContainer() {
   const [products, setProducts] = useState<HomeProductsPanel>({ state: 'loading' });
   const [orders, setOrders] = useState<HomeOrdersPanel>({ state: 'loading' });
   const [setup, setSetup] = useState<HomeSetup>();
+  const [observedSteps, setObservedSteps] = useState<HomeGuidanceStepId[]>([]);
   const [restrictedPlan, setRestrictedPlan] = useState(false);
   const [sessionLost, setSessionLost] = useState(false);
   const [statistics, setStatistics] = useState<HomeStatistics | undefined>({ state: 'loading' });
@@ -42,7 +46,10 @@ function MerchantHomeContainer() {
   const mounted = useRef(false);
   const requests = useRef<Partial<Record<HomePanel, AbortController>>>({});
   const facts = useRef({ theme: unknownThemeSetup(), published: false });
-  const refreshSetup = () => setSetup(homeSetupFromTheme(facts.current.theme, facts.current.published));
+  const refreshSetup = () => {
+    setSetup(homeSetupFromTheme(facts.current.theme, facts.current.published));
+    setObservedSteps(homeObservedGuidanceSteps(facts.current.theme, facts.current.published));
+  };
   async function load(panel: HomePanel) {
     requests.current[panel]?.abort();
     const controller = new AbortController();
@@ -203,7 +210,12 @@ function MerchantHomeContainer() {
         orders,
         ...(statistics ? { statistics } : {}),
         ...(products.state === 'ready'
-          ? { guidance: { dismissed: guidanceDismissed, completedSteps: guidanceCompletedSteps } }
+          ? {
+              guidance: homeGuidanceWithObservedSteps(
+                { dismissed: guidanceDismissed, completedSteps: guidanceCompletedSteps },
+                observedSteps,
+              ),
+            }
           : {}),
         ...(setup
           ? { setup: { ...setup, initiallyCollapsed: orders.state === 'ready' && orders.items.length > 0 } }

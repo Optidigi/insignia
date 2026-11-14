@@ -92,9 +92,9 @@
     },
     "metrics": {
       "customizedOrders": "Bestellungen mit Produktanpassungen",
-      "customizedOrdersDefinition": "Bestellungen mit mindestens einer Insignia-Gestaltung.",
+      "customizedOrdersDefinition": "Bestellungen mit mindestens einer Insignia-Gestaltung. Testbestellungen und stornierte Bestellungen werden nicht mitgezählt.",
       "customizedItems": "Bestellte Artikel mit Produktanpassungen",
-      "customizedItemsDefinition": "Gesamtzahl der bestellten Artikel mit Produktanpassungen."
+      "customizedItemsDefinition": "Gesamtzahl der bestellten Artikel mit Produktanpassungen. Testbestellungen und stornierte Bestellungen werden nicht mitgezählt."
     },
     "orders": "Bestellungen ansehen",
     "unavailable": "Statistiken sind momentan nicht verfügbar.",

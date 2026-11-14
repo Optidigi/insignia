@@ -1,7 +1,16 @@
 import { PurchaseStatisticsSchema } from '@insignia/contracts';
 import { z } from 'zod';
-import type { HomeOrdersPanel, HomeProductsPanel, HomeSetup, HomeStatistics } from './merchant-home.js';
+import {
+  type HomeGuidance,
+  type HomeGuidanceStepId,
+  type HomeOrdersPanel,
+  type HomeProductsPanel,
+  type HomeSetup,
+  type HomeStatistics,
+  homeGuidanceStepIds,
+} from './merchant-home.ts';
 import { PurchaseListViewSchema } from './purchase-presentation.ts';
+import { type ThemeSetupStatus, themeConnected } from './storefront-setup.ts';
 import { offsetCalendarDay, orderCalendarDay, orderDayBoundary } from './purchase-view.ts';
 
 const productsSchema = z.object({
@@ -108,12 +117,8 @@ function exactItemCount(lines: readonly { quantity: number }[]): bigint {
   }, 0n);
 }
 
-export function homeSetupFromTheme(
-  input: { button: string; cart: string },
-  hasPublishedProduct: boolean,
-): HomeSetup | undefined {
-  const complete = input.button === 'active' && input.cart === 'active';
-  if (complete)
+export function homeSetupFromTheme(input: ThemeSetupStatus, hasPublishedProduct: boolean): HomeSetup | undefined {
+  if (themeConnected(input))
     return hasPublishedProduct
       ? {
           initiallyCollapsed: true,
@@ -153,6 +158,30 @@ export function homeSetupFromTheme(
 
 export function homeHasPublishedProduct(input: unknown): boolean {
   return productsSchema.parse(input).products.some((p) => p.configurationSummary?.state === 'published');
+}
+
+/** Getting-started steps the store itself proves done; an unknown observation never counts. */
+export function homeObservedGuidanceSteps(
+  theme: ThemeSetupStatus,
+  hasPublishedProduct: boolean,
+): HomeGuidanceStepId[] {
+  return homeGuidanceStepIds.filter((step) =>
+    step === 'product' ? hasPublishedProduct : step === 'storefront' && themeConnected(theme),
+  );
+}
+
+/** Merchant acknowledgements and observed facts form one completed list, in step order. */
+export function homeGuidanceWithObservedSteps(
+  guidance: { dismissed: boolean; completedSteps: HomeGuidanceStepId[] },
+  observedSteps: HomeGuidanceStepId[],
+): HomeGuidance {
+  return {
+    dismissed: guidance.dismissed,
+    completedSteps: homeGuidanceStepIds.filter(
+      (step) => guidance.completedSteps.includes(step) || observedSteps.includes(step),
+    ),
+    observedSteps,
+  };
 }
 
 /** Exact metrics are available from this bounded read only when the entire collection was returned. */

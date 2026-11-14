@@ -99,7 +99,10 @@ export type HomeStatistics =
 export interface HomeGuidance {
   dismissed: boolean;
   initiallyExpanded?: boolean;
+  /** Steps shown as done: merchant acknowledgements plus `observedSteps`. */
   completedSteps?: HomeGuidanceStepId[];
+  /** Steps done because the store says so (published product, connected theme); the merchant cannot untick them. */
+  observedSteps?: HomeGuidanceStepId[];
 }
 
 export const homeGuidanceStepIds = ['product', 'storefront', 'test'] as const;
