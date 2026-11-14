@@ -49,6 +49,9 @@ type Media = ReturnType<typeof createSelectedProductMedia>;
  * offering to continue the original request (#436). */
 const PUBLICATION_FOLLOW_MS = 45_000;
 const PUBLICATION_POLL_MS = 5_000;
+/** Nothing is pending, but another session can still save, publish or change the product, shop or permissions; a
+ * slow read notices that (and a lost session) without hammering the API. */
+const IDLE_POLL_MS = 30_000;
 function SelectedProductContainer({ productId }: { productId: string }) {
   const { t } = useAdminLocale();
   const [initial, setInitial] = useState<PlacementProduct | null>(null);
@@ -63,11 +66,14 @@ function SelectedProductContainer({ productId }: { productId: string }) {
     return () => clearTimeout(timer);
   }, [followUntil]);
   /** An unresolved write (`remote` is pending while custody is held), a followed unanswered publish, or a publication
-   * the server is still carrying out. Nothing else changes by itself, so nothing else needs a timer. */
+   * the server is still carrying out: these settle on the server, so they are read often. Everything else (another
+   * session's save or publication, product, shop or permission changes) is noticed by the slow idle read. */
   const following =
     remote === 'pending' ||
     followUntil > 0 ||
     (!!view?.config && isMerchantPublicationContinuing(view.config.publication.state));
+  /** One status read at a time for the editor's life, across effect runs (a poll-rate change must not overlap). */
+  const inspecting = useRef(false);
   const [settled, setSettled] = useState<PlacementProduct | undefined>();
   const [adopted, setAdopted] = useState(false);
   const [, renderMetadata] = useState(0);
@@ -100,11 +106,11 @@ function SelectedProductContainer({ productId }: { productId: string }) {
     };
   }, [productId]);
   useEffect(() => {
-    let running = false;
     async function inspect() {
       const owned = client.current;
-      if (!owned || running) return;
-      running = true;
+      // A read begun during a write could resolve after it with a draft older than the write's own result.
+      if (!owned || inspecting.current || owned.isBusy()) return;
+      inspecting.current = true;
       const version = requestVersion.current,
         started = activity.current;
       try {
@@ -154,16 +160,15 @@ function SelectedProductContainer({ productId }: { productId: string }) {
       } catch {
         /* The request boundary removes private state on authorization loss. Transient reads preserve edits. */
       } finally {
-        running = false;
+        inspecting.current = false;
       }
     }
-    // Only a write or publication that is still unresolved needs repeated reads. An idle editor reads again
-    // when the tab regains focus or visibility, not on a timer.
-    const timer = following
-      ? setInterval(() => {
-          if (document.visibilityState === 'visible') void inspect();
-        }, PUBLICATION_POLL_MS)
-      : undefined;
+    const timer = setInterval(
+      () => {
+        if (document.visibilityState === 'visible') void inspect();
+      },
+      following ? PUBLICATION_POLL_MS : IDLE_POLL_MS,
+    );
     // A background tab skips the interval; check at once when it becomes visible again.
     const visible = () => {
       if (document.visibilityState === 'visible') void inspect();

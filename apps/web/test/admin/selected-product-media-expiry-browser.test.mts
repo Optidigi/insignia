@@ -38,11 +38,45 @@ window.scenario = async (previews, expiresAt) => {
   media.dispose();
   return { requests: requests.length, ...outcome };
 };
+const names = ['a', 'b', 'c'].map((letter) => 'upload_' + letter.repeat(8) + '-1111-4111-8111-111111111111');
+const images = names.map((name) => ({ ...image, id: name, url: location.origin + '/api/admin/products/111/media/' + name }));
+/** Three photos whose first descriptors are all refused: they must be re-described together. */
+window.batch = async () => {
+  const requests = [];
+  const media = createSelectedProductMedia('gid://shopify/Product/111', 'a'.repeat(64), {
+    request: async (path) => {
+      requests.push(path);
+      const preview = requests.length === 1 ? '/p/expired.png' : '/p/ok.png';
+      return { media: images.map((entry) => ({ image: entry, previewUrl: location.origin + preview + '?' + entry.id, expiresAt: new Date(Date.now() + 180000).toISOString() })) };
+    },
+  });
+  const hydrated = await media.hydrate(images);
+  media.dispose();
+  return { requests: requests.length, loaded: hydrated.filter((entry) => entry.url.startsWith('blob:')).length };
+};
+/** A preview that never answers: a disposed editor (abort) or the 10 s read deadline (timeout) is not a refusal. */
+window.stalled = async (mode) => {
+  let requests = 0;
+  const media = createSelectedProductMedia('gid://shopify/Product/111', 'a'.repeat(64), {
+    request: async () => {
+      requests++;
+      return { media: [{ image, previewUrl: location.origin + '/p/hang.png', expiresAt: new Date(Date.now() + 180000).toISOString() }] };
+    },
+  });
+  const pending = media.hydrate([image]).then(() => null, (error) => error);
+  if (mode === 'abort') {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    media.dispose();
+  }
+  const error = await pending;
+  media.dispose();
+  return { requests, failed: !!error, name: error?.name ?? null };
+};
 window.past = () => new Date(Date.now() - hour).toISOString();
 window.future = () => new Date(Date.now() + 180000).toISOString();
 `;
 
-test('preview media follows the storage provider, not the browser clock', { timeout: 30000 }, async (t) => {
+test('preview media follows the storage provider, not the browser clock', { timeout: 60000 }, async (t) => {
   const bundled = await build({
     entryPoints: [
       new URL('../../../../frontend/admin/src/islands/selected-product-media.ts', import.meta.url).pathname,
@@ -70,6 +104,7 @@ test('preview media follows the storage provider, not the browser clock', { time
       response.statusCode = 403;
       return response.end('<Error><Code>AccessDenied</Code></Error>');
     }
+    if (path === '/p/hang.png') return;
     // A refusal that carries no cross-origin permission surfaces in the browser as a failed fetch.
     if (path === '/p/dropped.png') return request.socket.destroy();
     response.setHeader('Content-Type', 'image/png');
@@ -81,6 +116,7 @@ test('preview media follows the storage provider, not the browser clock', { time
   const browser = await chromium.launch({ headless: true });
   t.after(async () => {
     await browser.close();
+    server.closeAllConnections();
     await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
   });
   const page = await browser.newPage();
@@ -113,4 +149,14 @@ test('preview media follows the storage provider, not the browser clock', { time
   assert.equal(refused.ok, false);
   assert.equal(refused.requests, 2);
   assert.equal(hits['/p/expired.png'], 3);
+
+  // Several refused photos are re-described in one request, not one per photo.
+  const batch = record(await page.evaluate(() => Reflect.get(window, 'batch')()));
+  assert.deepEqual(batch, { requests: 2, loaded: 3 });
+
+  // An abort (the editor went away) and the read deadline are not refusals: no second descriptor request.
+  const aborted = record(await page.evaluate(() => Reflect.get(window, 'stalled')('abort')));
+  assert.deepEqual(aborted, { requests: 1, failed: true, name: 'AbortError' });
+  const timedOut = record(await page.evaluate(() => Reflect.get(window, 'stalled')('timeout')));
+  assert.deepEqual(timedOut, { requests: 1, failed: true, name: 'TimeoutError' });
 });
