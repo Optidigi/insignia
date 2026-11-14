@@ -86,7 +86,7 @@ async function openDesignerPage(t: TestContext, engine: BrowserType) {
   const html = `<!doctype html><html><body><p>Shopify product page</p><script type="module">
  import {createDesignerFrame} from '/host.js';
  window.designerClosed=0;
- window.openDesigner=()=>{window.liveFrame=createDesignerFrame({config:${JSON.stringify(config)},locale:'en',initialPrints:[{id:'chest',method:'print',size:0,artworkId:'asset'}],initialArtworks:[{id:'asset',name:'Logo.png',url:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"/%3E',width:100,height:100}],ports:{artwork:{upload:(file,request)=>{request.onProgress?.('processing');window.uploadSignal=request.signal;return new Promise((resolve,reject)=>{request.signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true})})}},cart:{commit:()=>new Promise(()=>{})}},onClose(){window.designerClosed++}})};
+ window.openDesigner=()=>{window.liveFrame=createDesignerFrame({config:${JSON.stringify(config)},locale:'en',initialPrints:[{id:'chest',method:'print',size:0,artworkId:'asset'}],initialArtworks:[{id:'asset',name:'Logo.png',url:'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"/%3E',width:100,height:100}],ports:{artwork:{upload:(file,request)=>{request.onProgress?.('uploading');window.uploadSignal=request.signal;return new Promise((resolve,reject)=>{request.signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true})})}},cart:{commit:()=>new Promise(()=>{})}},onClose(){window.designerClosed++}})};
  window.openDesigner();
  </script></body></html>`;
   const server = createServer((request, response) => {
@@ -141,18 +141,28 @@ for (const engine of [chromium, firefox])
     await frame.locator('.app').waitFor({ timeout: 10000 });
     const closeQuestion = frame.getByRole('heading', { name: 'Close customization?', exact: true });
     const uploadQuestion = frame.getByRole('heading', { name: 'Cancel this upload?', exact: true });
+    // The Designer finishes each step on a later frame: it takes entry focus when it opens, a question
+    // moves focus to its safe button, and closing a question or a nested dialog returns focus to where the
+    // buyer was (#478). A key press or a focus move made before that lands races the Designer's own focus.
+    // On a slow runner it took focus back from the host dialog, so Escape went into the Designer instead of
+    // its close question, or it moved focus off the button the test had just chosen. Wait for the focus.
+    const designerFocused = () => frame.locator('.app:focus').waitFor();
+    const questionFocused = () => frame.locator('[data-keep-editing]:focus').waitFor();
     const hostState = () =>
       page.evaluate(() => ({
         open: document.querySelector('dialog')?.open,
         closed: Reflect.get(window, 'designerClosed'),
         aborted: Reflect.get(window, 'uploadSignal')?.aborted ?? null,
       }));
+    await designerFocused();
     // Edited design, focus inside the Designer: Escape asks, Escape again keeps editing.
     await frame.locator('h1').click();
     await page.keyboard.press('Escape');
     await closeQuestion.waitFor();
+    await questionFocused();
     await page.keyboard.press('Escape');
     await closeQuestion.waitFor({ state: 'detached' });
+    await designerFocused();
 
     // Focus on the host dialog: every Escape asks, never a native close.
     for (let attempt = 1; attempt <= 2; attempt++) {
@@ -164,6 +174,7 @@ for (const engine of [chromium, firefox])
         { open: true, closed: 0, aborted: null, asked: true },
         `host Escape ${attempt}`,
       );
+      await questionFocused();
       await page.keyboard.press('Escape');
       await closeQuestion.waitFor({ state: 'detached' });
     }
@@ -186,6 +197,7 @@ for (const engine of [chromium, firefox])
         { open: true, closed: 0, aborted: null, asked: true },
         `body Escape ${attempt}`,
       );
+      await questionFocused();
       await page.keyboard.press('Escape');
       await closeQuestion.waitFor({ state: 'detached' });
     }
@@ -201,35 +213,41 @@ for (const engine of [chromium, firefox])
       if (route === 'keyboard') await page.keyboard.press('Escape');
       else await page.locator('dialog').first().dispatchEvent('cancel');
       await frame.locator('.artwork-dialog').waitFor({ state: 'detached', timeout: 2000 });
+      await frame.locator('#artwork-chest:focus').waitFor();
       assert.equal(await closeQuestion.count(), 0, `nested dialog first: ${route}`);
       if (route === 'keyboard') {
         await frame.getByRole('button', { name: 'Close customizer', exact: true }).focus();
         await page.keyboard.press('Enter');
       } else await page.locator('dialog').first().dispatchEvent('cancel');
       await closeQuestion.waitFor({ timeout: 2000 });
+      await questionFocused();
       assert.equal(await frame.getByText('Choose a PNG, JPG or SVG image.').count(), 0, `stale upload error: ${route}`);
       await page.keyboard.press('Escape');
       await closeQuestion.waitFor({ state: 'detached' });
     }
 
     // Unfinished upload: Escape and a host close request both ask about the upload first
-    // and keep it running until the customer cancels it.
+    // and keep it running until the customer cancels it. The port reports the uploading phase and never
+    // settles: the Designer's 30 s check timeout belongs to the processing phase, and a stalled runner
+    // could otherwise reach it in the middle of this test and fail the upload itself.
     await frame.locator('#artwork-chest').click();
     await frame
       .locator('input[type=file]')
       .setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: Buffer.from('png') });
-    await frame.getByText('Checking artwork…', { exact: true }).waitFor();
+    await frame.getByText('Uploading artwork…', { exact: true }).waitFor();
     for (const route of ['keyboard', 'host'] as const) {
       if (route === 'keyboard') await page.keyboard.press('Escape');
       else await page.locator('dialog').first().dispatchEvent('cancel');
       await uploadQuestion.waitFor({ timeout: 2000 });
+      await questionFocused();
       assert.deepEqual(await hostState(), { open: true, closed: 0, aborted: false }, route);
       await page.keyboard.press('Escape');
       await uploadQuestion.waitFor({ state: 'detached' });
-      await frame.getByText('Checking artwork…', { exact: true }).waitFor();
+      await frame.getByText('Uploading artwork…', { exact: true }).waitFor();
     }
     await page.locator('dialog').first().dispatchEvent('cancel');
     await uploadQuestion.waitFor({ timeout: 2000 });
+    await questionFocused();
     await frame.getByRole('button', { name: 'Cancel upload', exact: true }).focus();
     await page.keyboard.press('Enter');
     await page.waitForFunction(() => Reflect.get(window, 'uploadSignal')?.aborted === true);
@@ -238,6 +256,7 @@ for (const engine of [chromium, firefox])
     assert.equal((await hostState()).closed, 0);
     await page.locator('dialog').first().dispatchEvent('cancel');
     await closeQuestion.waitFor({ timeout: 2000 });
+    await questionFocused();
     await frame.getByRole('button', { name: 'Close customization', exact: true }).focus();
     await page.keyboard.press('Enter');
     await page.waitForFunction(() => Reflect.get(window, 'designerClosed') === 1);
