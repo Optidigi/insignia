@@ -96,7 +96,11 @@ test('failed immutable request is explicit while unresolved availability still t
     activationKind: 'RESOLVED',
   };
   assert.equal(projectActivationPublicationState(failed), 'FAILED');
-  assert.equal(projectActivationPublicationState({ ...failed, recoveryFromAnotherOperation: true }), 'OPERATOR_HOLD');
+  // #466: an unresolved hold on another operation needs support.
+  assert.equal(
+    projectActivationPublicationState({ ...failed, recoveryFromAnotherOperation: true }),
+    'HOLD_NEEDS_SUPPORT',
+  );
 });
 
 test('#466: abandoned-hold states project before the failed branch; support copy only where a hold exists', () => {
