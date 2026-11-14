@@ -65,6 +65,7 @@ for (const language of languages)
       assert.ok(text.length > 20, `${code}: ${text}`);
       assert.notEqual(text, lost, `${code} must not claim the write is unconfirmed`);
       assert.doesNotMatch(text, /\{\{|\}\}/, `${code} leaves a placeholder unfilled`);
+      assert.ok(!text.includes('selectedSetup.field'), `${code} must not show the internal field path`);
     }
   });
 
@@ -72,11 +73,23 @@ test('en: merchant-actionable codes name what to fix and the generic fallback sh
   const { t } = createAdminTranslator('en');
   const say = (code: (typeof CONFIG_REJECTION_CODES)[number] | null, path: string | null = null) =>
     configRejectionText({ code, reason: 'The server reason', path }, t);
-  assert.equal(
-    say('DRAFT_SCHEMA_INVALID', 'selectedSetup.product.title'),
-    'A value in this setup isn’t valid (selectedSetup.product.title). Correct it, then save again.',
-  );
-  assert.equal(say('DRAFT_SCHEMA_INVALID'), 'This change can’t be saved: The server reason', 'No path, no field claim');
+  const schema = (path: string | null) => say('DRAFT_SCHEMA_INVALID', path);
+  for (const [path, item] of [
+    ['selectedSetup.product.views.0.name', 'view'],
+    ['selectedSetup.product.views.0.placements.1.name', 'placement'],
+    ['selectedSetup.product.views.0.placements.1.sizes.0.widthPercent', 'decoration size'],
+    ['selectedSetup.product.views.0.placements.1.sizes.0.prices', 'price'],
+    ['selectedSetup.product.methods.0.name', 'method'],
+    ['selectedSetup.methodBindings', 'method'],
+    ['pricingRules.2.rate', 'price'],
+    ['selectedSetup.product.title', 'value'],
+    ['configuration', 'value'],
+    [null, 'value'],
+  ] as const) {
+    const text = schema(path);
+    assert.match(text, new RegExp(`^An? ${item} in this setup isn’t valid\\. Correct it, then save again\\.$`));
+    assert.ok(!path || !text.includes(path), 'The raw path is never shown');
+  }
   assert.equal(say('PUBLICATION_INCOMPLETE'), 'This setup isn’t ready to publish: The server reason');
   assert.equal(say('CONFIG_POLICY_INVALID'), 'This change can’t be saved: The server reason');
   assert.equal(say(null), 'This change can’t be saved: The server reason');

@@ -42,6 +42,18 @@ export function configRejectionFrom(error: unknown): ConfigRejection | null {
   };
 }
 
+/** The kind of item a draft field path points into; the raw path is internal and never shown. */
+function invalidItem(path: string | null): 'view' | 'placement' | 'size' | 'method' | 'price' | 'other' {
+  for (const part of (path ?? '').split('.').reverse()) {
+    if (part === 'prices' || part === 'pricingRules' || part === 'amount') return 'price';
+    if (part === 'sizes') return 'size';
+    if (part === 'placements') return 'placement';
+    if (part === 'views') return 'view';
+    if (part === 'methods' || part === 'methodBindings') return 'method';
+  }
+  return 'other';
+}
+
 /** True when saving again cannot help until the merchant reloads the saved draft. */
 export const configRejectionNeedsReload = (rejection: ConfigRejection): boolean =>
   rejection.code !== null && needsReload.has(rejection.code);
@@ -51,9 +63,7 @@ export function configRejectionText(rejection: ConfigRejection, t: Translate): s
   const generic = () => t('editor:placementWorkflowPreview.configRejection.generic', { reason: rejection.reason });
   switch (rejection.code) {
     case 'DRAFT_SCHEMA_INVALID':
-      return rejection.path
-        ? t('editor:placementWorkflowPreview.configRejection.draftSchemaInvalid', { path: rejection.path })
-        : generic();
+      return t(`editor:placementWorkflowPreview.configRejection.draftSchemaInvalid.${invalidItem(rejection.path)}`);
     case 'SETUP_CAPACITY_EXCEEDED':
       return t('editor:placementWorkflowPreview.realCapacityExceeded');
     case 'SETUP_MEDIA_NOT_OWNED':

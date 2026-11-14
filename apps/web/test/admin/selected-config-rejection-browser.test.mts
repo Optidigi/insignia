@@ -52,7 +52,7 @@ const actionable: [ConfigRejectionCode, Rejection, string][] = [
         { path: 'selectedSetup.product.views.0.name', message: 'String must contain at least 1 character' },
       ],
     },
-    'A value in this setup isn’t valid (selectedSetup.product.views.0.name). Correct it, then save again.',
+    'A view in this setup isn’t valid. Correct it, then save again.',
   ],
   [
     'SETUP_CAPACITY_EXCEEDED',
@@ -237,6 +237,74 @@ test('a rejection while publishing closes the review and shows what to fix, keep
   assert.equal(await retry(f.page).count(), 0);
   assert.equal(await storedIntent(f.page), null);
   assert.equal(await nameField(f.page).inputValue(), 'Rejected while publishing');
+});
+
+async function confirmPublish(page: Page) {
+  await page
+    .locator('s-button[slot="primary-action"]')
+    .filter({ hasText: /^Publish$/ })
+    .evaluate((button: HTMLElementTagNameMap['s-button']) => button.click());
+  const modal = page.locator('s-modal').filter({ hasText: 'Publish setup' });
+  await modal.getByRole('button', { name: 'Publish preview', exact: true }).click();
+  return modal;
+}
+const publishRequest = (route: Route) =>
+  route.request().method() === 'POST' && route.request().postDataJSON().action === 'publish';
+
+test('a rejection of the publish request itself closes the review with the specific message and no pending write', {
+  timeout: 30000,
+}, async (t) => {
+  const f = await fixture(t);
+  await f.page.route('**/api/admin/products/111/config', (route) =>
+    publishRequest(route)
+      ? route.fulfill({
+          status: 422,
+          json: {
+            kind: 'invalid',
+            code: 'PUBLICATION_INCOMPLETE',
+            noEffect: true,
+            message: 'Setup is not ready to publish.',
+            validationIssues: [{ path: 'selectedSetup', message: 'Configure methods and decoration sizes.' }],
+          },
+        })
+      : route.fallback(),
+  );
+  await f.open();
+  await editName(f.page, 'Incomplete at publish');
+  const modal = await confirmPublish(f.page);
+  await f.page
+    .getByText('This setup isn’t ready to publish: Configure methods and decoration sizes.')
+    .first()
+    .waitFor();
+  await modal.waitFor({ state: 'hidden' });
+  assert.equal(await retry(f.page).count(), 0);
+  assert.equal(await storedIntent(f.page), null);
+  assert.equal(await nameField(f.page).inputValue(), 'Incomplete at publish');
+});
+
+test('a rejection after the publication was recorded keeps the review open on its pending state', {
+  timeout: 30000,
+}, async (t) => {
+  const f = await fixture(t);
+  await f.page.route('**/api/admin/products/111/config', (route) => {
+    if (publishRequest(route))
+      return route.fulfill({
+        status: 422,
+        json: { kind: 'invalid', code: 'SHOP_CURRENCY_CHANGED', noEffect: true, message: 'Shop currency changed.' },
+      });
+    if (route.request().method() === 'POST' && route.request().postDataJSON().action === 'reconcile')
+      return route.fulfill({ json: { kind: 'resolved', publicationRecorded: true } });
+    return route.fallback();
+  });
+  await f.open();
+  await editName(f.page, 'Recorded before the rejection');
+  const modal = await confirmPublish(f.page);
+  await modal
+    .getByText('Publication is still processing. Continue the original request to check its status.')
+    .waitFor();
+  assert.equal(await modal.isVisible(), true);
+  assert.ok(await storedIntent(f.page), 'The recorded publication stays in custody');
+  await retry(f.page).first().waitFor();
 });
 
 for (const [name, lose] of [

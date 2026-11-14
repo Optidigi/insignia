@@ -1115,7 +1115,14 @@
     "realHistoricalAppearanceReview": "Les photos de variantes ou les placements existants doivent être vérifiés avec le catalogue Shopify complet. La configuration enregistrée reste inchangée.",
     "configRejection": {
       "generic": "Cette modification ne peut pas être enregistrée : {{reason}}",
-      "draftSchemaInvalid": "Une valeur de cette configuration n’est pas valide ({{path}}). Corrigez-la, puis enregistrez à nouveau.",
+      "draftSchemaInvalid": {
+        "view": "Une vue de cette configuration n’est pas valide. Corrigez ce point, puis enregistrez à nouveau.",
+        "placement": "Un emplacement de cette configuration n’est pas valide. Corrigez ce point, puis enregistrez à nouveau.",
+        "size": "Une taille de décoration de cette configuration n’est pas valide. Corrigez ce point, puis enregistrez à nouveau.",
+        "method": "Une technique de cette configuration n’est pas valide. Corrigez ce point, puis enregistrez à nouveau.",
+        "price": "Un prix de cette configuration n’est pas valide. Corrigez ce point, puis enregistrez à nouveau.",
+        "other": "Une valeur de cette configuration n’est pas valide. Corrigez ce point, puis enregistrez à nouveau."
+      },
       "mediaNotOwned": "Une image de vue ou d’option ne fait pas partie des images Shopify de ce produit, ou une même image est utilisée deux fois. Choisissez les images du produit, puis enregistrez à nouveau.",
       "sizeInvalid": "Une taille de décoration doit être supérieure à 0 % et inférieure ou égale à 100 % de la zone. Corrigez la taille, puis enregistrez à nouveau.",
       "priceAmountInvalid": "Un prix comporte plus de décimales que la devise de la boutique ne l’autorise, ou n’est pas un nombre. Les prix ne sont jamais arrondis ; corrigez le prix, puis enregistrez à nouveau.",
@@ -1123,7 +1130,7 @@
       "geometryInvalid": "Un emplacement ne tient pas dans sa vue, ou fait référence à une vue ou à une variante qui n’existe plus. Ajustez la zone, puis enregistrez à nouveau.",
       "publicationIncomplete": "Cette configuration n’est pas encore prête à être publiée : {{reason}}",
       "shopCurrencyChanged": "La devise de la boutique a changé après la création de ce brouillon. Rechargez la page pour vérifier vos prix dans la nouvelle devise. Le rechargement abandonne les modifications non enregistrées.",
-      "methodLinksChanged": "Les méthodes liées à ce produit ont changé après la création de ce brouillon. Rechargez la page pour les vérifier. Le rechargement abandonne les modifications non enregistrées.",
+      "methodLinksChanged": "Les techniques liées à ce produit ont changé après la création de ce brouillon. Rechargez la page pour les vérifier. Le rechargement abandonne les modifications non enregistrées.",
       "productIdentityChanged": "Ce brouillon appartient à un autre produit. Rechargez la page pour ouvrir le bon brouillon. Le rechargement abandonne les modifications non enregistrées.",
       "mediaUrlNotCanonical": "Une image de produit de ce brouillon est obsolète. Rechargez la page pour actualiser les images. Le rechargement abandonne les modifications non enregistrées.",
       "reloadAndDiscard": "Abandonner les modifications et recharger"

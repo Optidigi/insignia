@@ -2375,13 +2375,17 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     try { result = await adapter.publish(publishReview.product, publishReview.revision); }
     catch (error) {
       if (configRejectionFrom(error)) {
-        // Refused, not lost: close the review so the merchant can fix the edit the host's banner names.
-        dispatchDialog({ type: 'dialog-closed', id: publishReview.id });
-        setNotice(null);
-        return;
+        if (adapter.pending()) result = { status: 'pending' }; // The write may have committed: keep the pending flow.
+        else {
+          // Refused, not lost: close the review so the merchant can fix the edit the host's banner names.
+          dispatchDialog({ type: 'dialog-closed', id: publishReview.id });
+          setNotice(null);
+          return;
+        }
+      } else {
+        shopifyBusy = isShopifyBusy(error);
+        result = { status: 'storage-error', reason: 'write-failed' };
       }
-      shopifyBusy = isShopifyBusy(error);
-      result = { status: 'storage-error', reason: 'write-failed' };
     }
     finally { writeBusyRef.current = false; setWriteBusy(false); }
     if (result.status === 'changed') {

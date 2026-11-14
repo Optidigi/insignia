@@ -825,7 +825,12 @@ export interface AdminMessageTable {
   'editor:placementWorkflowPreview.clearSearch': object;
   'editor:placementWorkflowPreview.collapseOtherViews': object;
   'editor:placementWorkflowPreview.collapseView': { viewName: string };
-  'editor:placementWorkflowPreview.configRejection.draftSchemaInvalid': { path: string };
+  'editor:placementWorkflowPreview.configRejection.draftSchemaInvalid.method': object;
+  'editor:placementWorkflowPreview.configRejection.draftSchemaInvalid.other': object;
+  'editor:placementWorkflowPreview.configRejection.draftSchemaInvalid.placement': object;
+  'editor:placementWorkflowPreview.configRejection.draftSchemaInvalid.price': object;
+  'editor:placementWorkflowPreview.configRejection.draftSchemaInvalid.size': object;
+  'editor:placementWorkflowPreview.configRejection.draftSchemaInvalid.view': object;
   'editor:placementWorkflowPreview.configRejection.generic': { reason: string };
   'editor:placementWorkflowPreview.configRejection.geometryInvalid': object;
   'editor:placementWorkflowPreview.configRejection.leanPricingInvalid': object;

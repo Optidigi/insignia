@@ -1079,7 +1079,14 @@
     "realHistoricalAppearanceReview": "Existing variant photos or placement alignments need review against the complete Shopify catalogue. The saved configuration remains unchanged.",
     "configRejection": {
       "generic": "This change can’t be saved: {{reason}}",
-      "draftSchemaInvalid": "A value in this setup isn’t valid ({{path}}). Correct it, then save again.",
+      "draftSchemaInvalid": {
+        "view": "A view in this setup isn’t valid. Correct it, then save again.",
+        "placement": "A placement in this setup isn’t valid. Correct it, then save again.",
+        "size": "A decoration size in this setup isn’t valid. Correct it, then save again.",
+        "method": "A method in this setup isn’t valid. Correct it, then save again.",
+        "price": "A price in this setup isn’t valid. Correct it, then save again.",
+        "other": "A value in this setup isn’t valid. Correct it, then save again."
+      },
       "mediaNotOwned": "A view or option image isn’t one of this product’s Shopify images, or one image is used twice. Choose the product’s own images, then save again.",
       "sizeInvalid": "A decoration size must be more than 0% and at most 100% of the area. Correct the size, then save again.",
       "priceAmountInvalid": "A price has more decimal places than the shop currency allows, or isn’t a number. Prices are never rounded; correct the price, then save again.",

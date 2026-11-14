@@ -357,7 +357,14 @@
     "realHistoricalAppearanceReview": "Bestaande variantfoto’s of plaatsingen moeten worden gecontroleerd met de volledige Shopify-catalogus. De opgeslagen configuratie blijft ongewijzigd.",
     "configRejection": {
       "generic": "Deze wijziging kan niet worden opgeslagen: {{reason}}",
-      "draftSchemaInvalid": "Een waarde in deze instelling is ongeldig ({{path}}). Corrigeer de waarde en sla daarna opnieuw op.",
+      "draftSchemaInvalid": {
+        "view": "Een weergave in deze instelling is ongeldig. Corrigeer dit en sla daarna opnieuw op.",
+        "placement": "Een decoratieplek in deze instelling is ongeldig. Corrigeer dit en sla daarna opnieuw op.",
+        "size": "Een decoratieformaat in deze instelling is ongeldig. Corrigeer dit en sla daarna opnieuw op.",
+        "method": "Een decoratiemethode in deze instelling is ongeldig. Corrigeer dit en sla daarna opnieuw op.",
+        "price": "Een prijs in deze instelling is ongeldig. Corrigeer dit en sla daarna opnieuw op.",
+        "other": "Een waarde in deze instelling is ongeldig. Corrigeer dit en sla daarna opnieuw op."
+      },
       "mediaNotOwned": "Een afbeelding van een weergave of optie hoort niet bij de Shopify-afbeeldingen van dit product, of dezelfde afbeelding wordt twee keer gebruikt. Kies afbeeldingen van het product zelf en sla daarna opnieuw op.",
       "sizeInvalid": "Een decoratieformaat moet groter zijn dan 0% en hoogstens 100% van het gebied. Corrigeer het formaat en sla daarna opnieuw op.",
       "priceAmountInvalid": "Een prijs heeft meer decimalen dan de winkelvaluta toestaat, of is geen getal. Prijzen worden nooit afgerond; corrigeer de prijs en sla daarna opnieuw op.",
