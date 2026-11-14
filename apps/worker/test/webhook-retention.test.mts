@@ -560,6 +560,124 @@ test(
   },
 );
 
+test(
+  'real PostgreSQL expired failed order deliveries stop alerting once their order, paid fact and later observation are recorded (#488)',
+  postgres,
+  async () => {
+    let output = '';
+    const observability = createObservability({
+      stream: new Writable({
+        write(chunk, _encoding, callback) {
+          output += chunk;
+          callback();
+        },
+      }),
+    });
+    const f = await fixture({ observability });
+    const alerts = () =>
+      output
+        .trim()
+        .split('\n')
+        .filter(Boolean)
+        .map(logRecord)
+        .filter((record) => record.errorClass === 'UnsupportedPayloadRetentionBlocked');
+    try {
+      const shopDomain = `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
+      await f.core.transactions.run((tx) =>
+        f.core.tenants.createShop(tx, {
+          shopId: randomUUID(),
+          shopDomain,
+          shopifyShopId: '123',
+          externalInstallationId: 'gid://shopify/AppInstallation/111',
+        }),
+      );
+      // The 7 Nov shape: three order topics for one order, each failed after
+      // five attempts, then its bytes erased at the 7-day retention.
+      const ids: string[] = [];
+      for (const topic of ['orders/updated', 'orders/paid', 'orders/create']) {
+        const receipt = await f.core.webhooks.receive({
+          shopDomain,
+          topic,
+          deliveryId: randomUUID(),
+          apiVersion: '2026-07',
+          triggeredAt: new Date(),
+          eventId: null,
+          name: null,
+          rawBody: Buffer.from(JSON.stringify({ id: '7570906415387' })),
+        });
+        ids.push(receipt.id);
+      }
+      await f.pool.query(
+        `UPDATE inbox_messages SET state='failed',attempts=5,last_error_class='PURCHASE_RECONCILIATION_UNAVAILABLE',
+          purge_after=clock_timestamp()+interval '20 milliseconds' WHERE id=ANY($1::uuid[])`,
+        [ids],
+      );
+      await new Promise((resolve) => setTimeout(resolve, 40));
+      // Before discovery covers them they are real unresolved obligations.
+      const uncovered = await durableHandlers.maintainWebhookRetention(f.core, f.queue);
+      assert.deepEqual(uncovered.erasedIds.filter((id) => ids.includes(id)).sort(), [...ids].sort());
+      assert.equal(uncovered.blockedUnsupportedCount, 3);
+      assert.equal(required(alerts().at(-1)).count, 3);
+      assert.equal(required(alerts().at(-1)).level, 50);
+      // A discovery watermark past them is no evidence: they stay open.
+      await f.pool.query(
+        `INSERT INTO purchase_reconciliation_cursors(shop_id,installation_generation,watermark)
+         SELECT shop_id,installation_generation,max(received_at)+interval '90 minutes' FROM inbox_messages
+         WHERE id=ANY($1::uuid[]) GROUP BY shop_id,installation_generation`,
+        [ids],
+      );
+      const stillOpen = await durableHandlers.maintainWebhookRetention(f.core, f.queue);
+      assert.equal(stillOpen.blockedUnsupportedCount, 3);
+      assert.equal(required(alerts().at(-1)).level, 50);
+      // As on rewrite-dev: discovery recorded #1005 (created 2 s before the
+      // deliveries), its paid fact and one observation about 90 minutes later.
+      const purchaseId = randomUUID();
+      await f.pool.query(
+        `INSERT INTO purchase_orders(purchase_id,shop_id,installation_generation,order_id,order_created_at,currency,original_total_minor)
+         SELECT $2,shop_id,installation_generation,'gid://shopify/Order/7570906415387',min(received_at)-interval '2 seconds','USD',2050
+         FROM inbox_messages WHERE id=ANY($1::uuid[]) GROUP BY shop_id,installation_generation`,
+        [ids, purchaseId],
+      );
+      await f.pool.query(
+        `INSERT INTO purchase_paid_facts(purchase_id,shop_id,installation_generation,occurred_at)
+         SELECT purchase_id,shop_id,installation_generation,order_created_at FROM purchase_orders WHERE purchase_id=$1`,
+        [purchaseId],
+      );
+      await f.pool.query(
+        `INSERT INTO purchase_observations(observation_id,shop_id,installation_generation,purchase_id,source_updated_at,observed_at,digest,financial_status)
+         SELECT $2,shop_id,installation_generation,purchase_id,order_created_at,order_created_at+interval '90 minutes',$3,'PAID'
+         FROM purchase_orders WHERE purchase_id=$1`,
+        [purchaseId, randomUUID(), 'a'.repeat(64)],
+      );
+      const alertsBefore = alerts().length;
+      for (let pass = 0; pass < 3; pass++) {
+        const result = await durableHandlers.maintainWebhookRetention(f.core, f.queue);
+        assert.equal(result.blockedUnsupportedCount, 0);
+        assert.deepEqual(result.blockedUnsupportedIds, []);
+      }
+      assert.equal(alerts().length, alertsBefore);
+      assert.deepEqual(
+        required(
+          await f.pool.query(
+            `SELECT DISTINCT state,attempts,last_error_class,erasure_state FROM inbox_messages WHERE id=ANY($1::uuid[])`,
+            [ids],
+          ),
+        ).rows,
+        [
+          {
+            state: 'failed',
+            attempts: 5,
+            last_error_class: 'PURCHASE_RECONCILIATION_UNAVAILABLE',
+            erasure_state: 'erased',
+          },
+        ],
+      );
+    } finally {
+      await f.close();
+    }
+  },
+);
+
 test('real pg-boss lost ACK and handoff rollback cannot recreate a deleted job retry budget', postgres, async () => {
   const f = await fixture();
   try {

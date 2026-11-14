@@ -376,9 +376,7 @@ test('complete diagnostic category counts expose newer privacy obligations beyon
       });
       ids.push(receipt.id);
     }
-    await pool.query("update inbox_messages set purge_after=clock_timestamp(),state='processed' where id=any($1)", [
-      ids,
-    ]);
+    await pool.query("update inbox_messages set purge_after=clock_timestamp(),state='failed' where id=any($1)", [ids]);
     await core.webhooks.eraseExpiredPayloads(100);
     await core.webhooks.eraseExpiredPayloads(100);
     await pool.query('update webhook_obligation_facts set forget_after=clock_timestamp() where inbox_id=any($1)', [
