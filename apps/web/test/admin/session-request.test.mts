@@ -338,6 +338,44 @@ for (const [name, request] of [
       restoreWindow();
     }
   });
+  test(`${name}: a configuration rejection reaches the caller with its code, message and field issues`, async () => {
+    const current = `synthetic.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 60 })).toString('base64url')}.synthetic`;
+    const originalFetch = globalThis.fetch;
+    const restoreWindow = replaceWindow({ shopify: { idToken: async () => current } });
+    const issues = [{ path: 'selectedSetup.product.views.0.name', message: 'Too short' }];
+    let reply: Response;
+    globalThis.fetch = async () => reply;
+    try {
+      reply = Response.json(
+        {
+          kind: 'invalid',
+          code: 'DRAFT_SCHEMA_INVALID',
+          noEffect: true,
+          message: 'Review the draft.',
+          validationIssues: issues,
+        },
+        { status: 422 },
+      );
+      await assert.rejects(request('/api/admin/products/111/config'), {
+        status: 422,
+        code: 'DRAFT_SCHEMA_INVALID',
+        noEffect: true,
+        message: 'Review the draft.',
+        validationIssues: issues,
+      });
+      reply = Response.json({ error: 'Idempotency-Key required', code: 'IDEMPOTENCY_KEY_REQUIRED' }, { status: 422 });
+      await assert.rejects(request('/api/admin/products/111/config'), {
+        status: 422,
+        code: 'IDEMPOTENCY_KEY_REQUIRED',
+        message: 'Idempotency-Key required',
+      });
+      reply = Response.json({ error: 'Admin service unavailable', code: 12 }, { status: 503 });
+      await assert.rejects(request('/api/admin/products/111/config'), { status: 503, code: undefined });
+    } finally {
+      globalThis.fetch = originalFetch;
+      restoreWindow();
+    }
+  });
 }
 
 for (const [name, request] of [

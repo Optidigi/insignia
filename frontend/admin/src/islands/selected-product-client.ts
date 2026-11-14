@@ -10,6 +10,7 @@ import { placementDraftEqual } from '../../examples/admin/support/placement-hist
 
 import { authenticatedJson } from '../shared/admin-request.ts';
 import type { ConfigView } from '../shared/admin-view.ts';
+import { configRejectionFrom } from '../shared/config-rejection.ts';
 import {
   isMerchantPublicationContinuing,
   isMerchantPublicationOperatorBlocked,
@@ -356,12 +357,14 @@ export function createSelectedProductClient(input: {
     if (unverified) throw new Error('Reload the unverified saved draft before continuing');
     busy = true;
     let applying = false;
+    let resumed = false; // The write continues an earlier attempt of the same key.
     try {
       const authority = await verifyAuthority();
       if (authority.canEdit !== true) throw new Error('Edit permission required');
       const setup = SelectedProductSetupSchema.parse(setupInput);
       if (setup.product.id !== input.productId) throw new Error('Product identity changed');
       const existing = pending();
+      resumed = !!existing;
       if (existing && !('setup' in existing)) throw new Error('Reconcile the original operation before editing');
       if (
         publish &&
@@ -409,6 +412,9 @@ export function createSelectedProductClient(input: {
             if (!recorded || original.stage !== 'publish') input.storage.removeItem(key());
           } catch {
             // A rejected duplicate cannot prove a concurrent original did not commit. Keep custody until the barrier settles.
+            // The first dispatch of a key has no earlier attempt: the server's own 422 is its final answer, so a
+            // fence that cannot be sent must not leave a rejected save looking like a lost one.
+            if (!resumed && original.stage !== 'publish' && configRejectionFrom(error)) input.storage.removeItem(key());
           }
         }
       }

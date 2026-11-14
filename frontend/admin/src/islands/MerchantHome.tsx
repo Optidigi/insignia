@@ -396,14 +396,20 @@ export default function MerchantHome({
     }
   };
 
-  const failure = (panel: HomePanel) => (
+  const failure = (panel: HomePanel, reason?: 'busy') => (
     <div class="merchant-home__recovery">
       <div class="merchant-home__task-copy">
         <s-text fontWeight="medium">
           {t(panel === 'products' ? 'home:failure.productsHeading' : 'home:failure.ordersHeading')}
         </s-text>
         <s-paragraph color="subdued">
-          {t(panel === 'products' ? 'home:failure.productsBody' : 'home:failure.ordersBody')}
+          {t(
+            reason === 'busy'
+              ? 'admin-shell:errors.shopifyBusy'
+              : panel === 'products'
+                ? 'home:failure.productsBody'
+                : 'home:failure.ordersBody',
+          )}
         </s-paragraph>
       </div>
       <div class="merchant-home__actions">
@@ -467,7 +473,7 @@ export default function MerchantHome({
         </s-section>
       );
     if (panel.state === 'failed')
-      return <s-section heading={t('home:sections.products')}>{failure('products')}</s-section>;
+      return <s-section heading={t('home:sections.products')}>{failure('products', panel.reason)}</s-section>;
     if (panel.state === 'restricted') {
       return (
         <s-section heading={t('home:sections.products')}>
@@ -553,7 +559,7 @@ export default function MerchantHome({
         </s-section>
       );
     if (panel.state === 'failed')
-      return <s-section heading={t('home:sections.recentOrders')}>{failure('orders')}</s-section>;
+      return <s-section heading={t('home:sections.recentOrders')}>{failure('orders', panel.reason)}</s-section>;
     if (panel.state === 'restricted') {
       return (
         <s-section heading={t('home:sections.orders')}>
@@ -698,7 +704,13 @@ export default function MerchantHome({
                 ) : undefined
               }
             >
-              {t(model.reason === 'session-lost' ? 'home:unavailable.sessionLost' : 'home:unavailable.body')}
+              {t(
+                model.reason === 'session-lost'
+                  ? 'home:unavailable.sessionLost'
+                  : model.reason === 'busy'
+                    ? 'admin-shell:errors.shopifyBusy'
+                    : 'home:unavailable.body',
+              )}
             </EmptyState>
           </s-section>
         </section>

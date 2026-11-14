@@ -14,6 +14,7 @@ import {
   isCustomerTranslationsDirty,
   isCustomerTranslationsSaving,
 } from './customer-translations-state.ts';
+import { isShopifyBusy } from '../shared/admin-request.ts';
 
 export type CustomerTranslationsStoredRecord = {
   version: 1;
@@ -179,8 +180,8 @@ export function createCustomerTranslationsWorkflow(
         if (!isCurrentLoad(request)) return false;
         if (!resolved || (shop !== null && shop !== resolved)) throw new Error('Customer wording shop authority changed');
         shop = resolved;
-      } catch {
-        dispatch({ type: 'load-failed', request, reason: 'storage-read-failed' });
+      } catch (error) {
+        dispatch({ type: 'load-failed', request, reason: isShopifyBusy(error) ? 'busy' : 'storage-read-failed' });
         return false;
       }
     }
@@ -210,7 +211,9 @@ export function createCustomerTranslationsWorkflow(
       const reason: CustomerTranslationsLoadError =
         error instanceof CustomerTranslationsMalformedStorageError || error instanceof InvalidJsonError
           ? 'invalid-record'
-          : 'storage-read-failed';
+          : isShopifyBusy(error)
+            ? 'busy'
+            : 'storage-read-failed';
       dispatch({ type: 'load-failed', request, reason });
       return false;
     }
@@ -279,8 +282,8 @@ export function createCustomerTranslationsWorkflow(
       await options.storage.write({ version: 1, shop, overlays });
       dispatch({ type: 'save-succeeded', request });
       return !disposed && state.saveError === null && !isCustomerTranslationsDirty(state);
-    } catch {
-      dispatch({ type: 'save-failed', request });
+    } catch (error) {
+      dispatch({ type: 'save-failed', request, reason: isShopifyBusy(error) ? 'busy' : 'storage-write-failed' });
       return false;
     }
   }

@@ -1076,7 +1076,29 @@
     "legacyWidthScale": "Width scale (%)",
     "legacyHeightScale": "Height scale (%)",
     "realHistoricalPricingReview": "This configuration uses prices that this editor cannot represent safely. Its saved draft and published prices remain unchanged. Review the pricing before converting it.",
-    "realHistoricalAppearanceReview": "Existing variant photos or placement alignments need review against the complete Shopify catalogue. The saved configuration remains unchanged."
+    "realHistoricalAppearanceReview": "Existing variant photos or placement alignments need review against the complete Shopify catalogue. The saved configuration remains unchanged.",
+    "configRejection": {
+      "generic": "This change can’t be saved: {{reason}}",
+      "draftSchemaInvalid": {
+        "view": "A view in this setup isn’t valid. Correct it, then save again.",
+        "placement": "A placement in this setup isn’t valid. Correct it, then save again.",
+        "size": "A decoration size in this setup isn’t valid. Correct it, then save again.",
+        "method": "A method in this setup isn’t valid. Correct it, then save again.",
+        "price": "A price in this setup isn’t valid. Correct it, then save again.",
+        "other": "A value in this setup isn’t valid. Correct it, then save again."
+      },
+      "mediaNotOwned": "A view or option image isn’t one of this product’s Shopify images, or one image is used twice. Choose the product’s own images, then save again.",
+      "sizeInvalid": "A decoration size must be more than 0% and at most 100% of the area. Correct the size, then save again.",
+      "priceAmountInvalid": "A price has more decimal places than the shop currency allows, or isn’t a number. Prices are never rounded; correct the price, then save again.",
+      "leanPricingInvalid": "Each price must be one final amount per item and cannot be negative. Correct the price, then save again.",
+      "geometryInvalid": "A placement area doesn’t fit its view, or refers to a view or variant that no longer exists. Adjust the area, then save again.",
+      "publicationIncomplete": "This setup isn’t ready to publish: {{reason}}",
+      "shopCurrencyChanged": "The shop currency changed after this draft was made. Reload to review your prices in the new currency. Reloading discards the changes you have not saved.",
+      "methodLinksChanged": "The methods linked to this product changed after this draft was made. Reload to review them. Reloading discards the changes you have not saved.",
+      "productIdentityChanged": "This draft belongs to a different product. Reload this page to open the right draft. Reloading discards the changes you have not saved.",
+      "mediaUrlNotCanonical": "A product image in this draft is out of date. Reload to refresh the images. Reloading discards the changes you have not saved.",
+      "reloadAndDiscard": "Discard changes and reload"
+    }
   },
   "placementValidation": {
     "errors": {

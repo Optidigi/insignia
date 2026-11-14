@@ -12,6 +12,12 @@ import { withAdminLocale, useAdminLocale } from '../shared/admin-i18n';
 import { useAdminPageReady } from '../shared/admin-page-ready';
 import { authenticatedJson } from '../shared/admin-request';
 import type { ConfigView } from '../shared/admin-view';
+import {
+  configRejectionFrom,
+  configRejectionNeedsReload,
+  configRejectionText,
+  type ConfigRejection,
+} from '../shared/config-rejection';
 import { launchCustomerPreview } from '../../examples/admin/support/placement-customer-preview.mts';
 import type { PlacementPublicationIssue } from './selected-product-publication';
 import { PlacementEditor, type ProductEditorAdapter, type ProductPublicationResult } from './SelectedProductEditor';
@@ -34,6 +40,8 @@ import {
   isMerchantPublicationOperatorBlocked,
 } from './publication-state';
 
+/** `rejected`: the server refused the write and nothing is pending, so the merchant fixes the edit and saves anew. */
+type Remote = 'idle' | 'pending' | 'failed' | 'conflict' | { kind: 'rejected'; rejection: ConfigRejection };
 type Client = ReturnType<typeof createSelectedProductClient>;
 type Media = ReturnType<typeof createSelectedProductMedia>;
 function SelectedProductContainer({ productId }: { productId: string }) {
@@ -42,7 +50,7 @@ function SelectedProductContainer({ productId }: { productId: string }) {
   const [view, setView] = useState<ConfigView | null>(null);
   const [failed, setFailed] = useState(false);
   const [historicalReview, setHistoricalReview] = useState<'pricing' | 'appearance' | null>(null);
-  const [remote, setRemote] = useState<'idle' | 'pending' | 'failed' | 'conflict'>('idle');
+  const [remote, setRemote] = useState<Remote>('idle');
   const [settled, setSettled] = useState<PlacementProduct | undefined>();
   const [adopted, setAdopted] = useState(false);
   const [, renderMetadata] = useState(0);
@@ -298,10 +306,17 @@ function SelectedProductContainer({ productId }: { productId: string }) {
       const value = await owned.retry();
       await observe(value);
       setRemote(owned.hasPending() ? 'pending' : value.config?.publication.state === 'FAILED' ? 'failed' : 'idle');
-    } catch {
-      if (client.current === owned) setRemote(owned.hasPending() ? 'pending' : 'failed');
+    } catch (error) {
+      if (client.current === owned) setRemote(failedRemote(owned, error, 'failed'));
     }
   }
+  /** A write that is still unresolved stays pending; a server rejection is final; anything else is `otherwise`. */
+  function failedRemote(owned: Client, error: unknown, otherwise: 'failed' | 'conflict'): Remote {
+    if (owned.hasPending()) return 'pending';
+    const rejection = configRejectionFrom(error);
+    return rejection ? { kind: 'rejected', rejection } : otherwise;
+  }
+  const rejected = typeof remote === 'object' ? remote.rejection : null;
   const adapter: ProductEditorAdapter | null =
     initial && view && copyPorts
       ? {
@@ -317,6 +332,7 @@ function SelectedProductContainer({ productId }: { productId: string }) {
           publicationBlocked:
             remote === 'conflict' ||
             remote === 'failed' ||
+            (!!rejected && configRejectionNeedsReload(rejected)) ||
             (!!view.config &&
               (isMerchantPublicationOperatorBlocked(view.config.publication.state) ||
                 isMerchantPublicationContinuing(view.config.publication.state))),
@@ -443,7 +459,7 @@ function SelectedProductContainer({ productId }: { productId: string }) {
               setRemote('idle');
               return confirmed;
             } catch (error) {
-              if (client.current === owned) setRemote(owned.hasPending() ? 'pending' : 'conflict');
+              if (client.current === owned) setRemote(failedRemote(owned, error, 'conflict'));
               throw error;
             }
           },
@@ -486,7 +502,7 @@ function SelectedProductContainer({ productId }: { productId: string }) {
                 setRemote('conflict');
                 return { status: 'changed', product };
               }
-              if (client.current === owned) setRemote(owned.hasPending() ? 'pending' : 'failed');
+              if (client.current === owned) setRemote(failedRemote(owned, error, 'failed'));
               throw error;
             }
           },
@@ -530,23 +546,29 @@ function SelectedProductContainer({ productId }: { productId: string }) {
       {(remote !== 'idle' ||
         (!!view.config && isMerchantPublicationOperatorBlocked(view.config.publication.state))) && (
         <s-banner tone={remote === 'pending' ? 'warning' : 'critical'}>
-          {t(
-            view.config && (isMerchantPublicationOperatorBlocked(view.config.publication.state) ||
-              (remote === 'failed' && !view.config.publishEligibility.allowed))
-              ? 'editor:placementWorkflowPreview.realPublicationBlocked'
-              : view.config?.publication.state === 'FAILED' && !client.current?.hasPending()
-                ? 'editor:placementWorkflowPreview.realPublicationFailed'
-                : 'editor:placementWorkflowPreview.realSaveFailed',
-          )}
-          {(view.config?.publication.reason || view.config?.publishEligibility.reason) && (
+          {rejected && !(view.config && isMerchantPublicationOperatorBlocked(view.config.publication.state))
+            ? configRejectionText(rejected, t)
+            : t(
+                view.config && (isMerchantPublicationOperatorBlocked(view.config.publication.state) ||
+                  (remote === 'failed' && !view.config.publishEligibility.allowed))
+                  ? 'editor:placementWorkflowPreview.realPublicationBlocked'
+                  : view.config?.publication.state === 'FAILED' && !client.current?.hasPending()
+                    ? 'editor:placementWorkflowPreview.realPublicationFailed'
+                    : 'editor:placementWorkflowPreview.realSaveFailed',
+              )}
+          {!rejected && (view.config?.publication.reason || view.config?.publishEligibility.reason) && (
             <s-paragraph>{view.config.publication.reason ?? view.config.publishEligibility.reason}</s-paragraph>
           )}
           {client.current?.hasPending() && (
             <s-button onClick={() => void retry()}>{t('common:actions.retry')}</s-button>
           )}
-          {!client.current?.hasPending() && (
+          {!client.current?.hasPending() && (!rejected || configRejectionNeedsReload(rejected)) && (
             <s-button onClick={() => location.reload()}>
-              {t('editor:placementWorkflowPreview.realReloadDraft')}
+              {t(
+                rejected
+                  ? 'editor:placementWorkflowPreview.configRejection.reloadAndDiscard'
+                  : 'editor:placementWorkflowPreview.realReloadDraft',
+              )}
             </s-button>
           )}
         </s-banner>

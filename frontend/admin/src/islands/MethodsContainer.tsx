@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { type MethodProduct, methodProductSchema } from '../../examples/admin/support/method-configuration.mts';
 import { useAdminLocale, withAdminLocale } from '../shared/admin-i18n.js';
 import { useAdminPageReady } from '../shared/admin-page-ready.js';
-import { authenticatedJson } from '../shared/admin-request.js';
+import { authenticatedJson, isShopifyBusy } from '../shared/admin-request.js';
 import { createMethodCatalogTransport, methodConfigurationForPicker } from './method-catalog-transport';
 import SelectedMethods from './SelectedMethods';
 
@@ -32,7 +32,7 @@ type Ready = {
 /** Real data/persistence boundary; the selected presentation and reducer are unchanged. */
 function MethodsContainer() {
   const { t } = useAdminLocale();
-  const [state, setState] = useState<Ready | { kind: 'loading' | 'failed' }>({ kind: 'loading' });
+  const [state, setState] = useState<Ready | { kind: 'loading' } | { kind: 'failed'; busy?: true }>({ kind: 'loading' });
   const requestVersion = useRef(0);
   const activeRead = useRef<AbortController | null>(null);
   useAdminPageReady(state.kind !== 'loading');
@@ -145,8 +145,9 @@ function MethodsContainer() {
           }
         },
       });
-    } catch {
-      if (current()) setState({ kind: 'failed' });
+    } catch (error) {
+      // Shopify throttling had no effect; anything else keeps the general failure wording.
+      if (current()) setState(isShopifyBusy(error) ? { kind: 'failed', busy: true } : { kind: 'failed' });
     }
   }
   if (state.kind === 'ready')
@@ -167,7 +168,9 @@ function MethodsContainer() {
     <s-page heading={t('methods:workflow.title')}>
       <s-section>
         <s-stack gap="base">
-          <s-banner tone="critical">{t('methods:workflow.empty.loadFailure')}</s-banner>
+          <s-banner tone="critical">
+            {t(state.busy ? 'admin-shell:errors.shopifyBusy' : 'methods:workflow.empty.loadFailure')}
+          </s-banner>
           <s-button onClick={() => void load()}>{t('common:actions.retry')}</s-button>
         </s-stack>
       </s-section>

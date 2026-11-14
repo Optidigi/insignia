@@ -130,5 +130,8 @@
       "columnsFor": "Spalten für {{tableName}}"
     }
   },
-  "hostBack": "Zurück: {{destination}}"
+  "hostBack": "Zurück: {{destination}}",
+  "errors": {
+    "shopifyBusy": "Shopify ist gerade ausgelastet, daher wurde nichts geändert. Warten Sie einige Sekunden und versuchen Sie es erneut."
+  }
 }

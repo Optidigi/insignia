@@ -681,3 +681,76 @@ test('a matching terminal failed publication releases custody without claiming t
   assert.equal(result.config?.publication.activeRevisionId, 'old-revision');
   assert.equal(client.hasPending(), false);
 });
+
+/** Scripted save answers: `lose` is a 503, `reject` the server's coded 422; the fence (reconcile) works or is down. */
+function scriptedSaves(writes: ('lose' | 'reject' | 'ok')[], fence: 'ok' | 'down') {
+  const sent: { key: string; action: string }[] = [];
+  let saved = false;
+  const request = async (path: string, init?: RequestInit) => {
+    if (path.endsWith('preferences')) return preferences;
+    if (!init) return configView(saved ? '2' : '1');
+    const action = JSON.parse(String(init.body)).action;
+    sent.push({ key: new Headers(init.headers).get('Idempotency-Key')!, action });
+    if (action === 'reconcile') {
+      if (fence === 'down') throw Object.assign(new Error('Admin service unavailable'), { status: 503 });
+      return { kind: 'resolved' };
+    }
+    const next = writes.shift();
+    if (next === 'lose') throw Object.assign(new Error('Admin service unavailable'), { status: 503 });
+    if (next === 'reject')
+      throw Object.assign(new Error('Review the configuration validation errors before saving or publishing.'), {
+        status: 422,
+        code: 'SETUP_SIZE_INVALID',
+        noEffect: true,
+      });
+    saved = true;
+    return { kind: 'saved', draftVersion: '2' };
+  };
+  return { request, sent };
+}
+
+test('a first save the server rejects with a 422 leaves no pending write, even when its fence cannot be sent', async () => {
+  const f = fixture();
+  const server = scriptedSaves(['reject'], 'down');
+  const client = createSelectedProductClient({ productId: product.id, storage: f.storage, request: server.request, newKey: () => key });
+  await client.load();
+  await assert.rejects(client.save(setup), { status: 422, code: 'SETUP_SIZE_INVALID' });
+  assert.equal(client.hasPending(), false, 'The rejected request is final; a corrected save is a new request');
+});
+
+test('after a 422 the corrected save is a new request with its own key', async () => {
+  const f = fixture();
+  const server = scriptedSaves(['reject', 'ok'], 'ok');
+  const keys = ['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'];
+  const client = createSelectedProductClient({ productId: product.id, storage: f.storage, request: server.request, newKey: () => keys.shift()! });
+  await client.load();
+  await assert.rejects(client.save(setup), { status: 422 });
+  assert.equal(client.hasPending(), false);
+  await client.save({ ...setup, product: { ...setup.product, title: 'Corrected' } });
+  assert.deepEqual(
+    server.sent.filter((entry) => entry.action === 'save').map((entry) => entry.key),
+    ['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa:save', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb:save'],
+  );
+  assert.equal(client.hasPending(), false);
+});
+
+test('a lost reply (503) keeps the write pending for Retry; a later 422 for that retry closes it once the fence is recorded', async () => {
+  const f = fixture();
+  const server = scriptedSaves(['lose', 'reject'], 'ok');
+  const client = createSelectedProductClient({ productId: product.id, storage: f.storage, request: server.request, newKey: () => key });
+  await client.load();
+  await assert.rejects(client.save(setup), { status: 503 });
+  assert.equal(client.hasPending(), true, 'An unconfirmed write stays in custody for Retry');
+  await assert.rejects(client.retry(), { status: 422 });
+  assert.equal(client.hasPending(), false);
+});
+
+test('a 422 for a retried write whose fence cannot be sent keeps the original identity in custody', async () => {
+  const f = fixture();
+  const server = scriptedSaves(['lose', 'reject'], 'down');
+  const client = createSelectedProductClient({ productId: product.id, storage: f.storage, request: server.request, newKey: () => key });
+  await client.load();
+  await assert.rejects(client.save(setup), { status: 503 });
+  await assert.rejects(client.retry(), { status: 422 });
+  assert.equal(client.hasPending(), true, 'An earlier attempt of this key may still have committed');
+});

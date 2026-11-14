@@ -1199,7 +1199,7 @@
     "realReviewMethods": "Revisa los métodos no asignados o eliminados antes de publicar.",
     "realKeepMethod": "Conservar método",
     "realRemoveMethod": "Eliminar método",
-    "realCapacityExceeded": "Esta configuración supera los límites admitidos: 16 vistas, 32 ubicaciones, 32 métodos, 64 tamaños de decoración, 250 variantes y 100 ajustes de imagen o alineación por vista o ubicación.",
+    "realCapacityExceeded": "Esta configuración supera los límites admitidos: 16 vistas, 32 posiciones, 32 técnicas, 64 tamaños del diseño, 250 variantes y 100 ajustes de imagen o alineación por vista o posición.",
     "realReloadDraft": "Recargar el borrador actual",
     "realDraftSaved": "Borrador guardado. Publica por separado para actualizar la tienda.",
     "realPublicationFailed": "La publicación ha fallado. Revisa el borrador guardado y el estado antes de intentarlo de nuevo.",
@@ -1207,7 +1207,29 @@
     "legacyWidthScale": "Escala de anchura (%)",
     "legacyHeightScale": "Escala de altura (%)",
     "realHistoricalPricingReview": "Esta configuración usa precios que el editor no puede representar de forma segura. El borrador guardado y los precios publicados permanecen sin cambios. Revisa los precios antes de convertirla.",
-    "realHistoricalAppearanceReview": "Las fotos de variantes o las ubicaciones existentes deben revisarse con el catálogo completo de Shopify. La configuración guardada permanece sin cambios."
+    "realHistoricalAppearanceReview": "Las fotos de variantes o las ubicaciones existentes deben revisarse con el catálogo completo de Shopify. La configuración guardada permanece sin cambios.",
+    "configRejection": {
+      "generic": "No se puede guardar este cambio: {{reason}}",
+      "draftSchemaInvalid": {
+        "view": "Una vista de esta configuración no es válida. Corrígelo y vuelve a guardar.",
+        "placement": "Una posición de esta configuración no es válida. Corrígelo y vuelve a guardar.",
+        "size": "Un tamaño del diseño de esta configuración no es válido. Corrígelo y vuelve a guardar.",
+        "method": "Una técnica de esta configuración no es válida. Corrígelo y vuelve a guardar.",
+        "price": "Un precio de esta configuración no es válido. Corrígelo y vuelve a guardar.",
+        "other": "Un valor de esta configuración no es válido. Corrígelo y vuelve a guardar."
+      },
+      "mediaNotOwned": "Una imagen de una vista u opción no es una de las imágenes de Shopify de este producto, o una misma imagen se usa dos veces. Elige imágenes del propio producto y vuelve a guardar.",
+      "sizeInvalid": "Un tamaño del diseño debe ser mayor que 0 % y como máximo 100 % del área. Corrige el tamaño y vuelve a guardar.",
+      "priceAmountInvalid": "Un precio tiene más decimales de los que permite la moneda de la tienda, o no es un número. Los precios nunca se redondean; corrige el precio y vuelve a guardar.",
+      "leanPricingInvalid": "Cada precio debe ser un importe final por artículo y no puede ser negativo. Corrige el precio y vuelve a guardar.",
+      "geometryInvalid": "Una posición no cabe en su vista, o hace referencia a una vista o variante que ya no existe. Ajusta el área y vuelve a guardar.",
+      "publicationIncomplete": "Esta configuración aún no está lista para publicarse: {{reason}}",
+      "shopCurrencyChanged": "La moneda de la tienda cambió después de crear este borrador. Recarga la página para revisar tus precios en la nueva moneda. Al recargar se descartan los cambios que no hayas guardado.",
+      "methodLinksChanged": "Las técnicas vinculadas a este producto cambiaron después de crear este borrador. Recarga la página para revisarlas. Al recargar se descartan los cambios que no hayas guardado.",
+      "productIdentityChanged": "Este borrador pertenece a otro producto. Recarga la página para abrir el borrador correcto. Al recargar se descartan los cambios que no hayas guardado.",
+      "mediaUrlNotCanonical": "Una imagen de producto de este borrador está desactualizada. Recarga la página para actualizar las imágenes. Al recargar se descartan los cambios que no hayas guardado.",
+      "reloadAndDiscard": "Descartar cambios y recargar"
+    }
   },
   "placementSetupCopyEntry": {}
 }

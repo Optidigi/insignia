@@ -1068,7 +1068,7 @@
     "realReviewMethods": "Prüfen Sie nicht zugewiesene oder gelöschte Methoden vor der Veröffentlichung.",
     "realKeepMethod": "Methode behalten",
     "realRemoveMethod": "Methode entfernen",
-    "realCapacityExceeded": "Diese Konfiguration überschreitet die unterstützten Grenzen: 16 Ansichten, 32 Positionen, 32 Methoden, 64 Dekorationsgrößen, 250 Varianten und 100 Bild- oder Ausrichtungsanpassungen pro Ansicht oder Position.",
+    "realCapacityExceeded": "Diese Konfiguration überschreitet die unterstützten Grenzen: 16 Ansichten, 32 Veredelungspositionen, 32 Verfahren, 64 Veredelungsgrößen, 250 Varianten und 100 Bild- oder Ausrichtungsanpassungen pro Ansicht oder Veredelungsposition.",
     "realReloadDraft": "Aktuellen Entwurf neu laden",
     "realDraftSaved": "Entwurf gespeichert. Separat veröffentlichen, um den Store zu aktualisieren.",
     "realPublicationFailed": "Veröffentlichung fehlgeschlagen. Prüfen Sie den gespeicherten Entwurf und den Status, bevor Sie es erneut versuchen.",
@@ -1076,7 +1076,29 @@
     "legacyWidthScale": "Breitenskalierung (%)",
     "legacyHeightScale": "Höhenskalierung (%)",
     "realHistoricalPricingReview": "Diese Konfiguration verwendet Preise, die dieser Editor nicht sicher abbilden kann. Der gespeicherte Entwurf und die veröffentlichten Preise bleiben unverändert. Prüfen Sie die Preise vor der Umstellung.",
-    "realHistoricalAppearanceReview": "Vorhandene Variantenbilder oder Platzierungen müssen mit dem vollständigen Shopify-Katalog geprüft werden. Die gespeicherte Konfiguration bleibt unverändert."
+    "realHistoricalAppearanceReview": "Vorhandene Variantenbilder oder Platzierungen müssen mit dem vollständigen Shopify-Katalog geprüft werden. Die gespeicherte Konfiguration bleibt unverändert.",
+    "configRejection": {
+      "generic": "Diese Änderung kann nicht gespeichert werden: {{reason}}",
+      "draftSchemaInvalid": {
+        "view": "Eine Ansicht in dieser Konfiguration ist ungültig. Korrigieren Sie dies und speichern Sie danach erneut.",
+        "placement": "Eine Veredelungsposition in dieser Konfiguration ist ungültig. Korrigieren Sie dies und speichern Sie danach erneut.",
+        "size": "Eine Veredelungsgröße in dieser Konfiguration ist ungültig. Korrigieren Sie dies und speichern Sie danach erneut.",
+        "method": "Ein Veredelungsverfahren in dieser Konfiguration ist ungültig. Korrigieren Sie dies und speichern Sie danach erneut.",
+        "price": "Ein Preis in dieser Konfiguration ist ungültig. Korrigieren Sie dies und speichern Sie danach erneut.",
+        "other": "Ein Wert in dieser Konfiguration ist ungültig. Korrigieren Sie dies und speichern Sie danach erneut."
+      },
+      "mediaNotOwned": "Ein Bild einer Ansicht oder Option gehört nicht zu den Shopify-Bildern dieses Produkts, oder ein Bild wird doppelt verwendet. Wählen Sie Bilder des Produkts selbst und speichern Sie danach erneut.",
+      "sizeInvalid": "Eine Veredelungsgröße muss größer als 0 % und höchstens 100 % des Bereichs sein. Korrigieren Sie die Größe und speichern Sie danach erneut.",
+      "priceAmountInvalid": "Ein Preis hat mehr Dezimalstellen, als die Shopwährung zulässt, oder ist keine Zahl. Preise werden nie gerundet; korrigieren Sie den Preis und speichern Sie danach erneut.",
+      "leanPricingInvalid": "Jeder Preis muss ein Endbetrag pro Artikel sein und darf nicht negativ sein. Korrigieren Sie den Preis und speichern Sie danach erneut.",
+      "geometryInvalid": "Eine Veredelungsposition passt nicht in ihre Ansicht oder verweist auf eine Ansicht oder Variante, die es nicht mehr gibt. Passen Sie den Bereich an und speichern Sie danach erneut.",
+      "publicationIncomplete": "Diese Konfiguration ist noch nicht bereit zur Veröffentlichung: {{reason}}",
+      "shopCurrencyChanged": "Die Shopwährung hat sich geändert, nachdem dieser Entwurf erstellt wurde. Laden Sie die Seite neu, um Ihre Preise in der neuen Währung zu prüfen. Beim Neuladen gehen die nicht gespeicherten Änderungen verloren.",
+      "methodLinksChanged": "Die mit diesem Produkt verknüpften Veredelungsverfahren haben sich geändert, nachdem dieser Entwurf erstellt wurde. Laden Sie die Seite neu, um sie zu prüfen. Beim Neuladen gehen die nicht gespeicherten Änderungen verloren.",
+      "productIdentityChanged": "Dieser Entwurf gehört zu einem anderen Produkt. Laden Sie die Seite neu, um den richtigen Entwurf zu öffnen. Beim Neuladen gehen die nicht gespeicherten Änderungen verloren.",
+      "mediaUrlNotCanonical": "Ein Produktbild in diesem Entwurf ist veraltet. Laden Sie die Seite neu, um die Bilder zu aktualisieren. Beim Neuladen gehen die nicht gespeicherten Änderungen verloren.",
+      "reloadAndDiscard": "Änderungen verwerfen und neu laden"
+    }
   },
   "placementValidation": {
     "errors": {

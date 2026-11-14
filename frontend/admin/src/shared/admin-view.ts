@@ -1,4 +1,6 @@
 /** Browser-safe Admin response shapes. Values are produced by authenticated server commands. */
+import type { ConfigRejectionCode } from '../../../../apps/web/src/shared/config-rejection.ts';
+
 export type ProductConfigurationSummary = {
   state: 'not_configured' | 'draft' | 'published';
   methods: string[] | null;
@@ -70,5 +72,12 @@ export type CommandOutcome =
   | { kind: 'saved'; draftVersion: string }
   | { kind: 'accepted'; state: PublicationState; revisionId?: string }
   | { kind: 'conflict'; message: string }
-  | { kind: 'invalid'; message: string; validationIssues?: { path: string; message: string }[] }
+  | {
+      kind: 'invalid';
+      /** Stable reason; see apps/web/src/shared/config-rejection.ts. */
+      code: ConfigRejectionCode;
+      noEffect?: true;
+      message: string;
+      validationIssues?: { path: string; message: string }[];
+    }
   | { kind: 'forbidden'; message: string };
