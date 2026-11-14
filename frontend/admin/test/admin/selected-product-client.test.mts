@@ -806,17 +806,17 @@ for (const outcome of ['ACTIVE', 'FAILED'] as const)
     assert.equal(client.hasPending(), false);
   });
 
-/** #468: a publish whose staff session ended between steps; the server answers `continue` `stops` times. */
+/** #468: a publish whose staff session ended between steps; the server answers `resend` `stops` times. */
 function continuingPublication(stops: number) {
   const f = fixture();
   let saved = false,
     published = false;
-  const sent: { key: string | null; body: string; continuationValidityMs: number | undefined }[] = [];
+  const sent: { key: string | null; body: string; resendValidityMs: number | undefined }[] = [];
   const client = createSelectedProductClient({
     productId: product.id,
     storage: f.storage,
     newKey: () => key,
-    request: async (path, init, continuationValidityMs) => {
+    request: async (path, init, resendValidityMs) => {
       if (path.endsWith('preferences')) return preferences;
       if (init?.method === 'PUT') {
         saved = true;
@@ -826,11 +826,11 @@ function continuingPublication(stops: number) {
         sent.push({
           key: new Headers(init.headers).get('Idempotency-Key'),
           body: String(init.body),
-          continuationValidityMs,
+          resendValidityMs,
         });
         if (sent.length <= stops)
           return {
-            kind: 'continue',
+            kind: 'resend',
             revisionId: 'new-revision',
             minimumValidityMs: 30000,
             message: 'Publication is still in progress.',
@@ -851,30 +851,30 @@ function continuingPublication(stops: number) {
   return { client, sent, storage: f.storage };
 }
 
-test('#468: a continue answer re-sends the same publish once with the requested token validity', async () => {
+test('#468: a resend answer re-sends the same publish once with the requested token validity', async () => {
   const f = continuingPublication(1);
   await f.client.load();
   const view = await f.client.publish(setup);
   assert.equal(view.config?.publication.state, 'ACTIVE');
   assert.equal(f.sent.length, 2);
   const [first, second] = f.sent;
-  assert.equal(first?.continuationValidityMs, undefined, 'the first send uses the ordinary token window');
-  assert.equal(second?.continuationValidityMs, 30000);
+  assert.equal(first?.resendValidityMs, undefined, 'the first send uses the ordinary token window');
+  assert.equal(second?.resendValidityMs, 30000);
   assert.equal(second?.key, `${key}:publish`);
   assert.equal(second?.key, first?.key);
   assert.equal(second?.body, first?.body, 'the same request bytes');
   assert.equal(f.client.hasPending(), false, 'settled');
 });
 
-test('#468: a publish that keeps answering continue is followed, not failed or re-sent forever', async () => {
+test('#468: a publish that keeps answering resend offers Retry at once, not a followed wait or endless resends', async () => {
   const f = continuingPublication(Number.POSITIVE_INFINITY);
   await f.client.load();
   await assert.rejects(f.client.publish(setup), (error) => {
-    assert.equal(isUnansweredRequest(error), true, 'the editor follows it like a sent publish without an answer');
+    assert.equal(isUnansweredRequest(error), false, 'the server answered: it is stopped, not running unseen');
     return true;
   });
-  assert.equal(f.sent.length, 4, 'three continuations');
-  assert.equal(f.client.hasPendingPublication(), true, 'the original request keeps its custody');
+  assert.equal(f.sent.length, 4, 'three resends');
+  assert.equal(f.client.hasPendingPublication(), true, 'Retry continues the original request');
   const stored = JSON.parse(f.storage.getItem(`insignia:selected-product-write:v1:${preferences.shop}:${product.id}`)!);
   assert.equal(stored.acceptedRevisionId, 'new-revision', 'its operation identity is kept for settlement');
 });

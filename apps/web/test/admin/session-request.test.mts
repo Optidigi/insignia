@@ -12,7 +12,7 @@ for (const [name, request] of [
   ['retained', authenticatedJson],
   ['selected', selectedJson],
 ] as const) {
-  test(`${name}: #468 a publish is sent with the ordinary token window; its continuation waits for the requested one`, async (t) => {
+  test(`${name}: #468 a publish is sent with the ordinary token window; its resend waits for the requested one`, async (t) => {
     t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: new Date('2026-11-07T12:00:00Z') });
     const originalFetch = globalThis.fetch;
     const token = `synthetic.${Buffer.from(JSON.stringify({ exp: Date.now() / 1000 + 20 })).toString('base64url')}.synthetic`;
@@ -26,7 +26,7 @@ for (const [name, request] of [
       const init = { method: 'POST', body: JSON.stringify({ action: 'publish' }) };
       await request('/api/admin/products/111/config', init);
       assert.equal(sent, 1, 'a 20 s token is enough to send a publish');
-      // The continuation asks for 30 s; the host keeps returning the 20 s token, so nothing is sent.
+      // The resend asks for 30 s; the host keeps returning the 20 s token, so nothing is sent.
       const result = request('/api/admin/products/111/config', init, false, 30000);
       const rejected = assert.rejects(result, (error) => {
         assert.match(String(error), /Admin request timed out/);
@@ -114,7 +114,7 @@ for (const [name, request] of [
     }
   });
 
-  test(`${name}: a publication continuation's 401 refresh retains its token window and original bytes`, async () => {
+  test(`${name}: a resent publication's 401 refresh retains its token window and original bytes`, async () => {
     const token = (seconds: number) =>
       `synthetic.${Buffer.from(JSON.stringify({ exp: Date.now() / 1000 + seconds })).toString('base64url')}.synthetic`;
     const short = token(20),

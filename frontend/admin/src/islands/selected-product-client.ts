@@ -30,8 +30,8 @@ function jsonBody(value: unknown) {
   return encoded;
 }
 
-/** `continuationValidityMs`: the session-token validity a publish continuation waits for (#468). */
-type Request = (path: string, init?: RequestInit, continuationValidityMs?: number) => Promise<unknown>;
+/** `resendValidityMs`: the session-token validity a resent publish waits for (#468). */
+type Request = (path: string, init?: RequestInit, resendValidityMs?: number) => Promise<unknown>;
 type StoragePort = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 const custodyBase = z.strictObject({
   authority: z.string(),
@@ -50,14 +50,14 @@ const custodySchema = z.union([journalSchema, markerSchema]);
 const savedSchema = z.strictObject({ kind: z.literal('saved'), draftVersion: z.string() });
 const createdSchema = z.strictObject({ kind: z.literal('created'), configId: z.string() });
 const acceptedSchema = z.object({ kind: z.literal('accepted'), state: z.string(), revisionId: z.string().optional() });
-const continueSchema = z.object({
-  kind: z.literal('continue'),
+const resendSchema = z.object({
+  kind: z.literal('resend'),
   revisionId: z.string().optional(),
   minimumValidityMs: z.number(),
 });
-const publishSchema = z.discriminatedUnion('kind', [acceptedSchema, continueSchema]);
-// Each continuation waits for a new session token; the server makes progress with every one.
-const maxContinuations = 3;
+const publishSchema = z.discriminatedUnion('kind', [acceptedSchema, resendSchema]);
+// Each resend waits for a new session token; the server makes progress with every one.
+const maxResends = 3;
 
 /** Local custody contains only the exact unresolved write intent, never an authoritative product draft. */
 export class SelectedProductReviewChanged extends Error {
@@ -89,7 +89,7 @@ export function createSelectedProductClient(input: {
   const endpoint = `/api/admin/products/${number}/config`;
   const transport: Request =
     input.request ??
-    ((path, init, continuationValidityMs) => authenticatedJson(path, init, false, continuationValidityMs));
+    ((path, init, resendValidityMs) => authenticatedJson(path, init, false, resendValidityMs));
   const now = input.now ?? Date.now;
   let current: ConfigView | null = null;
   let scope: { shop: string; authority: string } | null = null;
@@ -114,10 +114,10 @@ export function createSelectedProductClient(input: {
     current = null;
     if (denied) input.onDenied?.();
   }
-  async function request(path: string, init?: RequestInit, continuationValidityMs?: number): Promise<unknown> {
+  async function request(path: string, init?: RequestInit, resendValidityMs?: number): Promise<unknown> {
     assertCurrent();
     try {
-      const value = await transport(path, init, continuationValidityMs);
+      const value = await transport(path, init, resendValidityMs);
       assertCurrent();
       return value;
     } catch (error) {
@@ -308,7 +308,7 @@ export function createSelectedProductClient(input: {
     if (current?.config && isMerchantPublicationOperatorBlocked(current.config.publication.state))
       throw new Error('The existing publication requires operator reconciliation');
     if (!value.configId || !value.draftVersion) throw new Error('Publication identity unavailable');
-    const send = (continuationValidityMs?: number) =>
+    const send = (resendValidityMs?: number) =>
       request(
         endpoint,
         {
@@ -320,19 +320,19 @@ export function createSelectedProductClient(input: {
           },
           body: jsonBody({ action: 'publish', configId: value.configId, draftVersion: value.draftVersion }),
         },
-        continuationValidityMs,
+        resendValidityMs,
       );
     let accepted = publishSchema.parse(await send());
     // #468: the staff session ended between publication steps. Re-send the same request (same key and
     // bytes) as soon as a new session token is available; the server resumes from its persisted step.
-    for (let continued = 0; accepted.kind === 'continue'; continued++) {
+    for (let resent = 0; accepted.kind === 'resend'; resent++) {
       if (accepted.revisionId && accepted.revisionId !== value.acceptedRevisionId) {
         value = { ...value, acceptedRevisionId: accepted.revisionId };
         store(value);
       }
-      if (continued === maxContinuations)
-        // Sent and still running: the editor follows it like a publish that got no answer.
-        throw Object.assign(new Error('Publication is still in progress'), { dispatched: true });
+      if (resent === maxResends)
+        // The server stopped it and is not running it: keep custody and offer Retry at once.
+        throw new Error('Publication is still in progress');
       accepted = publishSchema.parse(await send(accepted.minimumValidityMs));
     }
     if (accepted.revisionId) {

@@ -71,7 +71,7 @@ export type CommandOutcome =
   | { kind: 'created'; configId: string }
   | { kind: 'saved'; draftVersion: string }
   | { kind: 'accepted'; state: PublicationState; revisionId?: string }
-  | { kind: 'continue'; revisionId?: string; minimumValidityMs: number; message: string }
+  | { kind: 'resend'; revisionId?: string; minimumValidityMs: number; message: string }
   | { kind: 'conflict'; message: string }
   | {
       kind: 'invalid';

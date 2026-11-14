@@ -89,14 +89,14 @@ export function isShopifyBusy(error: unknown): boolean {
 export function isUnansweredRequest(error: unknown): boolean {
   return !!error && typeof error === 'object' && !('status' in error) && 'dispatched' in error && error.dispatched === true;
 }
-/** `continuationValidityMs`: a publish continuation's required session-token validity (#468). */
+/** `resendValidityMs`: a resent publish's required session-token validity (#468). */
 export async function authenticatedJson<T>(
   path: string,
   init: RequestInit = {},
   forceFresh = false,
-  continuationValidityMs?: number,
+  resendValidityMs?: number,
 ): Promise<T> {
-  const policy = adminRequestPolicy(path, init, continuationValidityMs);
+  const policy = adminRequestPolicy(path, init, resendValidityMs);
   let dispatched = false;
   try {
     return await authenticatedRequest<T>(path, init, forceFresh, policy, (sent) => {

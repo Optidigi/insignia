@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { type TestContext, test } from 'node:test';
-import { PUBLICATION_CONTINUATION_VALIDITY_MS, PUBLICATION_STEP_MARGIN_MS } from '../../src/server/merchant-config.ts';
+import { PUBLICATION_RESEND_VALIDITY_MS, PUBLICATION_STEP_MARGIN_MS } from '../../src/server/merchant-config.ts';
 import { fixture, storedIntent } from './support/selected-browser.mts';
 
 const progress = 'Publishing. This can take up to a minute; this page updates when it finishes.';
@@ -17,7 +17,7 @@ const tokenExpiry = (authorization: string | undefined) => {
  * #468: the built editor publishes with App Bridge's caching (the current session token is returned
  * until it expires; only then is a new 60 s token issued). The synthetic server works in persisted
  * steps and, like the real one, stops between steps once less than PUBLICATION_STEP_MARGIN_MS of the
- * request's staff session remains, answering `continue`.
+ * request's staff session remains, answering `resend`.
  */
 async function timedPublication(t: TestContext, remainingMs: number, workMs: number) {
   const f = await fixture(t);
@@ -45,9 +45,9 @@ async function timedPublication(t: TestContext, remainingMs: number, workMs: num
         return route.fulfill({
           status: 202,
           json: {
-            kind: 'continue',
+            kind: 'resend',
             revisionId: 'revision-selected-111',
-            minimumValidityMs: PUBLICATION_CONTINUATION_VALIDITY_MS,
+            minimumValidityMs: PUBLICATION_RESEND_VALIDITY_MS,
             message: 'Publication is still in progress.',
           },
         });
@@ -76,7 +76,7 @@ async function published(f: Awaited<ReturnType<typeof timedPublication>>) {
   return Date.now() - f.clicked;
 }
 
-test('#468: publish is sent at once; a session ending mid-publish continues the same request with a new token', {
+test('#468: publish is sent at once; a session ending mid-publish is resent as the same request with a new token', {
   timeout: 120_000,
 }, async (t) => {
   const f = await timedPublication(t, 20_000, 12_000);
@@ -96,12 +96,12 @@ test('#468: publish is sent at once; a session ending mid-publish continues the 
     await sleep(100);
   }
   const total = await published(f);
-  assert.equal(f.publishes.length, 2, 'one continuation');
+  assert.equal(f.publishes.length, 2, 'one resend');
   const [, second] = f.publishes;
   assert.ok(second);
-  assert.equal(second.key, first.key, 'the continuation re-sends the same idempotent request');
+  assert.equal(second.key, first.key, 'the resend is the same idempotent request');
   assert.ok(second.expiresAt > first.expiresAt, 'with a new session token');
-  assert.ok(second.expiresAt - second.at >= PUBLICATION_CONTINUATION_VALIDITY_MS);
+  assert.ok(second.expiresAt - second.at >= PUBLICATION_RESEND_VALIDITY_MS);
   assert.ok(second.at - first.expiresAt < 3_000, 'immediately once the new token is available');
   assert.equal(await f.page.getByText(/could not be published/).count(), 0);
   t.diagnostic(`remaining 20 s, work 12 s: sent after ${first.at - f.clicked} ms, Published after ${total} ms`);

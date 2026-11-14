@@ -4,14 +4,14 @@ import { test } from 'node:test';
 import type { ExpectedFunctionBuild, FunctionArtifactIdentity } from '@insignia/application';
 import { SigningKeyLifecycle } from '@insignia/application';
 import { createDurableCore, type DurableCore } from '@insignia/database';
-import { createShopifyAvailabilityHoldV3Port } from '@insignia/shopify';
+import { createShopifyAvailabilityHoldV3Port, PublicationAdminError } from '@insignia/shopify';
 import { Pool } from 'pg';
 import type { AdminActor } from '../../src/server/admin/contracts.ts';
 import { handleAdminRequest } from '../../src/server/admin/http.ts';
 import { createServerActivationReadiness } from '../../src/server/admin/release-evidence.ts';
 import {
   createMerchantConfigService,
-  PUBLICATION_CONTINUATION_VALIDITY_MS,
+  PUBLICATION_RESEND_VALIDITY_MS,
   PUBLICATION_STEP_MARGIN_MS,
 } from '../../src/server/merchant-config.ts';
 import { adminServices } from './support/fixtures.mts';
@@ -23,6 +23,8 @@ const database = process.env.DATABASE_URL;
 // Every synthetic provider call waits this long, so the request time reflects its serial provider work.
 const latencyMs = Number(process.env.PUBLICATION_LATENCY_MS ?? 100);
 const delay = () => new Promise((resolve) => setTimeout(resolve, latencyMs));
+// #468: the largest step, in serial provider rounds; see PUBLICATION_STEP_MARGIN_MS.
+const LARGEST_STEP_ROUNDS = 15;
 
 /**
  * A first publication (ACTIVE product, so the owned availability hold and restore really
@@ -30,7 +32,8 @@ const delay = () => new Promise((resolve) => setTimeout(resolve, latencyMs));
  * Every provider port is a counted double with the same latency, so the provider-call budget is
  * the request's serial wait. `authenticate` answers the current `actor` (one per request session).
  */
-async function firstPublication(core: DurableCore) {
+type Preparation = (actor: AdminActor) => Promise<{ ready: boolean; reason: string | null }>;
+async function firstPublication(core: DurableCore, options: { preparePublication?: Preparation } = {}) {
   const shopId = randomUUID();
   const configId = randomUUID();
   const clientId = 'a'.repeat(32);
@@ -84,11 +87,14 @@ async function firstPublication(core: DurableCore) {
   const calls = new Map<string, number>();
   // Runs after each acknowledged provider write, between two persisted publication steps.
   let afterWrite: ((label: string) => void) | undefined;
+  // Runs as each provider call starts, inside a publication step.
+  let beforeCall: ((label: string) => void) | undefined;
   // A round is a stretch of time with at least one provider call in flight: calls made
   // concurrently share a round, so rounds x latency is the request's provider wait.
   let inFlight = 0;
   let rounds = 0;
   const count = async (label: string) => {
+    beforeCall?.(label);
     calls.set(label, (calls.get(label) ?? 0) + 1);
     if (inFlight++ === 0) rounds++;
     try {
@@ -108,7 +114,9 @@ async function firstPublication(core: DurableCore) {
       await count('metafield read');
       return cells.get(target.field) ?? null;
     },
-    set: async (target) => {
+    set: async (target, beforeSend?: () => boolean) => {
+      // As composed in production.ts: a field write is sent only while the staff session is current.
+      if (!authorityFresh() || beforeSend?.() === false) throw new PublicationAdminError('not_dispatched');
       await count('metafield write');
       assert.equal(cells.get(target.field)?.compareDigest ?? null, target.compareDigest);
       const observed = {
@@ -149,6 +157,7 @@ async function firstPublication(core: DurableCore) {
   });
   const availability = createShopifyAvailabilityHoldV3Port({
     now,
+    beforeWrite: () => authorityFresh(),
     isCurrent: async (supplied) =>
       supplied.shopifyShopId === `gid://shopify/Shop/${providerShop}` && supplied.appClientId === clientId,
     credentials: {
@@ -254,7 +263,26 @@ async function firstPublication(core: DurableCore) {
     readiness,
     now,
     maxObservationAgeMs: 1000,
+    beforeWrite: () => authorityFresh(),
   });
+  // Each publication or activation advance is one step between persisted states (#468 margin).
+  const steps: { kind: string; ms: number; rounds: number }[] = [];
+  const step =
+    <A extends unknown[], R>(kind: string, advance: (...args: A) => Promise<R>) =>
+    async (...args: A): Promise<R> => {
+      const started = performance.now();
+      const before = rounds;
+      try {
+        return await advance(...args);
+      } finally {
+        steps.push({ kind, ms: Math.round(performance.now() - started), rounds: rounds - before });
+      }
+    };
+  const measured = {
+    ...activation,
+    advance: step('activation', activation.advance),
+    publications: { ...activation.publications, advance: step('publication', activation.publications.advance) },
+  };
   let actor: AdminActor = {
     shop: `s${shopId.replaceAll('-', '')}.myshopify.com`,
     shopId: `gid://shopify/Shop/${providerShop}`,
@@ -267,6 +295,8 @@ async function firstPublication(core: DurableCore) {
     canRead: true,
     canEdit: true,
   };
+  // The session part of production.ts's publicationAuthorityFresh, checked before every write.
+  const authorityFresh = () => actor.expiresAtMs > Date.now();
   const catalog = {
     get: async (_actor: unknown, gid: string) => {
       await count('product read');
@@ -291,9 +321,10 @@ async function firstPublication(core: DurableCore) {
       }
       return { allowed: true, reason: null };
     },
-    publication: () => activation.publications,
-    activation: () => activation,
+    publication: () => measured.publications,
+    activation: () => measured,
     capturePublicationPreviews: (owner, input) => captureSyntheticPublicationPreviews(core, owner, input),
+    ...(options.preparePublication ? { preparePublication: options.preparePublication } : {}),
   });
   const services = adminServices({
     appOrigin: 'https://synthetic.example',
@@ -330,6 +361,10 @@ async function firstPublication(core: DurableCore) {
     afterWrite: (hook: (label: string) => void) => {
       afterWrite = hook;
     },
+    beforeCall: (hook: (label: string) => void) => {
+      beforeCall = hook;
+    },
+    steps,
     publish,
     setDenials: (value: number) => {
       denials = value;
@@ -343,7 +378,14 @@ test('#436: a first publication spends its provider calls on sequencing, not rep
 }, async (t) => {
   const core = createDurableCore(new Pool({ connectionString: database }));
   try {
-    const { publish, calls, rounds: roundCount, status: currentStatus, setDenials } = await firstPublication(core);
+    const {
+      publish,
+      calls,
+      rounds: roundCount,
+      status: currentStatus,
+      setDenials,
+      steps,
+    } = await firstPublication(core);
     const started = performance.now();
     const response = await publish('m5-436-first-publication');
     const rounds = roundCount();
@@ -357,6 +399,11 @@ test('#436: a first publication spends its provider calls on sequencing, not rep
     t.diagnostic(
       `latency ${latencyMs} ms/call: ${elapsed} ms, ${rounds} serial provider rounds, ${total} calls ${JSON.stringify(budget)}`,
     );
+    // #468: the step margin must cover the largest single step (one publication or activation advance).
+    const largest = steps.reduce((max, entry) => (entry.rounds > max.rounds ? entry : max));
+    t.diagnostic(`steps ${JSON.stringify(steps.map((entry) => `${entry.kind[0]}${entry.rounds}r/${entry.ms}ms`))}`);
+    t.diagnostic(`largest step: ${largest.kind} ${largest.rounds} serial provider rounds, ${largest.ms} ms`);
+    assert.ok(largest.rounds <= LARGEST_STEP_ROUNDS, JSON.stringify(largest));
     // Sequencing work stays: hold and restore status writes, four field writes, each read back.
     assert.equal(calls.get('product status write'), 2);
     assert.equal(calls.get('metafield write'), 4);
@@ -383,7 +430,7 @@ test('#436: a first publication spends its provider calls on sequencing, not rep
   }
 });
 
-/** #468: the staff session ends while a step runs; the server answers `continue` at the next stop point. */
+/** #468: the staff session ends while a step runs; the server answers `resend` at the next stop point. */
 async function interruptedPublication(core: DurableCore, key: string) {
   const f = await firstPublication(core);
   let writes = 0;
@@ -392,22 +439,43 @@ async function interruptedPublication(core: DurableCore, key: string) {
     if (++writes === 2) f.actor().expiresAtMs = Date.now() + 50;
   });
   const response = await f.publish(key);
+  f.afterWrite(() => {});
   assert.equal(response.status, 202, await response.clone().text());
   const body = await response.json();
-  assert.equal(body.kind, 'continue', JSON.stringify(body));
-  assert.equal(body.minimumValidityMs, PUBLICATION_CONTINUATION_VALIDITY_MS);
+  assert.equal(body.kind, 'resend', JSON.stringify(body));
+  assert.equal(body.minimumValidityMs, PUBLICATION_RESEND_VALIDITY_MS);
   assert.match(body.revisionId, /^[a-f0-9-]{36}$/);
   // Its progress is persisted: the publication operation stays open, not failed or held.
   const progress = await core.configs.getCurrentPublication(f.shopId, f.configId);
   assert.equal(progress?.operationId, body.revisionId);
   assert.notEqual(progress?.phase, 'active');
   assert.notEqual(progress?.status, 'failed');
-  const writesSoFar = () => (f.calls.get('product status write') ?? 0) + (f.calls.get('metafield write') ?? 0);
-  assert.equal(writesSoFar(), 2, 'it stopped at the step boundary after the write in flight');
-  return { ...f, revisionId: body.revisionId as string, writesSoFar };
+  assert.equal(writesSoFar(f), 2, 'it stopped at the step boundary after the write in flight');
+  return { ...f, revisionId: body.revisionId as string };
+}
+const writesSoFar = (f: Awaited<ReturnType<typeof firstPublication>>) =>
+  (f.calls.get('product status write') ?? 0) + (f.calls.get('metafield write') ?? 0);
+async function resumesOnce(
+  core: DurableCore,
+  f: Awaited<ReturnType<typeof firstPublication>>,
+  key: string,
+  revisionId: string,
+) {
+  const resumed = await f.publish(key);
+  assert.equal(resumed.status, 202, await resumed.clone().text());
+  const body = await resumed.json();
+  assert.equal(body.kind, 'accepted', JSON.stringify(body));
+  assert.equal(body.state, 'ACTIVE');
+  assert.equal(body.revisionId, revisionId);
+  assert.equal(f.status(), 'ACTIVE', 'the owned hold was acquired once and restored');
+  // The writes of one uninterrupted publication, each exactly once: none repeated or replayed.
+  assert.equal(f.calls.get('product status write'), 2);
+  assert.equal(f.calls.get('metafield write'), 4);
+  const config = await core.configs.getConfig(f.shopId, f.configId);
+  assert.equal(config?.effectiveOperationId, revisionId);
 }
 
-test('#468: a session that ends between publication steps continues with the next session, exactly once', {
+test('#468: a session that ends between publication steps is resent with the next session, exactly once', {
   skip: !database,
   timeout: 120000,
 }, async () => {
@@ -416,43 +484,29 @@ test('#468: a session that ends between publication steps continues with the nex
     const f = await interruptedPublication(core, 'm5-468-continue');
     // Same staff member, new session token: the same idempotent request resumes from the persisted step.
     f.session({ sessionId: 'synthetic-session-2', expiresAtMs: Date.now() + 60000 });
-    const resumed = await f.publish('m5-468-continue');
-    assert.equal(resumed.status, 202);
-    const body = await resumed.json();
-    assert.equal(body.kind, 'accepted');
-    assert.equal(body.state, 'ACTIVE');
-    assert.equal(body.revisionId, f.revisionId);
-    assert.equal(f.status(), 'ACTIVE', 'the owned hold was acquired once and restored');
-    // The writes of one uninterrupted publication, each exactly once: none repeated or replayed.
-    assert.equal(f.calls.get('product status write'), 2);
-    assert.equal(f.calls.get('metafield write'), 4);
-    const config = await core.configs.getConfig(f.shopId, f.configId);
-    assert.equal(config?.effectiveOperationId, f.revisionId);
+    await resumesOnce(core, f, 'm5-468-continue', f.revisionId);
   } finally {
     await core.close();
   }
 });
 
-test('#468: another staff member cannot continue a publication', { skip: !database, timeout: 120000 }, async () => {
+test('#468: another staff member with edit permission can resend and finish the publication', {
+  skip: !database,
+  timeout: 120000,
+}, async () => {
   const core = createDurableCore(new Pool({ connectionString: database }));
   try {
     const f = await interruptedPublication(core, 'm5-468-other-staff');
+    // Custody is keyed by shop and product, so another staff member in the same browser profile
+    // resends it; the route's fresh online exchange proves their own authority.
     f.session({ staffId: 'synthetic-other-staff', sessionId: 'synthetic-session-3', expiresAtMs: Date.now() + 60000 });
-    const refused = await f.publish('m5-468-other-staff');
-    assert.equal(refused.status, 403);
-    assert.match((await refused.json()).message, /another staff member/);
-    assert.equal(f.writesSoFar(), 2, 'nothing was written for the other staff member');
-    // The original staff member still can.
-    f.session({ staffId: 'synthetic-staff', sessionId: 'synthetic-session-4', expiresAtMs: Date.now() + 60000 });
-    const resumed = await f.publish('m5-468-other-staff');
-    assert.equal((await resumed.json()).state, 'ACTIVE');
-    assert.equal(f.writesSoFar(), 6);
+    await resumesOnce(core, f, 'm5-468-other-staff', f.revisionId);
   } finally {
     await core.close();
   }
 });
 
-test('#468: a publication cannot be continued after a reinstall', { skip: !database, timeout: 120000 }, async () => {
+test('#468: a publication cannot be resent after a reinstall', { skip: !database, timeout: 120000 }, async () => {
   const core = createDurableCore(new Pool({ connectionString: database }));
   try {
     const f = await interruptedPublication(core, 'm5-468-reinstall');
@@ -464,7 +518,7 @@ test('#468: a publication cannot be continued after a reinstall', { skip: !datab
     });
     const refused = await f.publish('m5-468-reinstall');
     assert.equal(refused.status, 403, await refused.clone().text());
-    assert.equal(f.writesSoFar(), 2, 'nothing was written under the new installation');
+    assert.equal(writesSoFar(f), 2, 'nothing was written under the new installation');
   } finally {
     await core.close();
   }
@@ -478,10 +532,75 @@ test('#468: a session too short for the next step stops before any work', { skip
     const response = await f.publish('m5-468-short');
     const body = await response.json();
     assert.equal(response.status, 202);
-    assert.equal(body.kind, 'continue');
+    assert.equal(body.kind, 'resend');
     assert.equal(body.revisionId, undefined, 'nothing was admitted yet');
     // Only the route's own product check ran; no publication read, capture or write.
     assert.deepEqual(Object.fromEntries(f.calls), { 'product read': 1 });
+  } finally {
+    await core.close();
+  }
+});
+
+test('#468: a session that ends inside a step: the provider write is refused before dispatch, then resent cleanly', {
+  skip: !database,
+  timeout: 120000,
+}, async () => {
+  const core = createDurableCore(new Pool({ connectionString: database }));
+  try {
+    const f = await firstPublication(core);
+    let armed = true;
+    f.beforeCall((label) => {
+      // The step started with enough session; it runs out during the read that precedes the hold mutation.
+      if (armed && label === 'product availability read') {
+        armed = false;
+        f.actor().expiresAtMs = Date.now() + 50;
+      }
+    });
+    const response = await f.publish('m5-468-refused');
+    const body = await response.json();
+    assert.equal(response.status, 202, JSON.stringify(body));
+    assert.equal(body.kind, 'resend', JSON.stringify(body));
+    assert.equal(writesSoFar(f), 0, 'the refused hold mutation was never dispatched');
+    const held = await core.configs.getCurrentPublication(f.shopId, f.configId);
+    assert.notEqual(held?.activationKind, 'OPERATOR_HOLD');
+    f.session({ sessionId: 'synthetic-session-6', expiresAtMs: Date.now() + 60000 });
+    await resumesOnce(core, f, 'm5-468-refused', body.revisionId);
+  } finally {
+    await core.close();
+  }
+});
+
+test('#468: preparation cut short by the ending session is resent, not denied; a genuine denial stays 403', {
+  skip: !database,
+  timeout: 120000,
+}, async () => {
+  const core = createDurableCore(new Pool({ connectionString: database }));
+  try {
+    let cutShort = true;
+    const f = await firstPublication(core, {
+      async preparePublication(actor) {
+        if (!cutShort) return { ready: true, reason: null };
+        // Release collection is bounded by the session deadline: it reaches it and reports not ready.
+        cutShort = false;
+        actor.expiresAtMs = Date.now() + 20;
+        await new Promise((resolve) => setTimeout(resolve, 40));
+        return { ready: false, reason: 'Publication verification is unavailable. Contact support.' };
+      },
+    });
+    const first = await f.publish('m5-468-preparation');
+    const body = await first.json();
+    assert.equal(first.status, 202, JSON.stringify(body));
+    assert.equal(body.kind, 'resend');
+    assert.equal(body.revisionId, undefined, 'the durable command was not committed');
+    f.session({ sessionId: 'synthetic-session-7', expiresAtMs: Date.now() + 60000 });
+    const resumed = await f.publish('m5-468-preparation');
+    assert.equal((await resumed.json()).state, 'ACTIVE');
+
+    const denied = await firstPublication(core, {
+      preparePublication: async () => ({ ready: false, reason: 'Publication verification is unavailable.' }),
+    });
+    const refused = await denied.publish('m5-468-denied');
+    assert.equal(refused.status, 403, 'with session time left a denial is reported, not resent');
   } finally {
     await core.close();
   }
