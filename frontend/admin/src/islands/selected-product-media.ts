@@ -47,11 +47,39 @@ export function createSelectedProductMedia(
   const originals = new Map<string, EditorProductImage>();
   const visible = new Map<string, EditorProductImage>();
   const objectUrls = new Set<string>();
-  async function prepare(descriptor: Descriptor) {
+  /** Ask the server for current preview descriptors; `ids` are upload identities owned by this product. */
+  async function describe(ids: readonly string[]) {
+    const result = responseSchema.parse(await json(`${endpoint}?ids=${encodeURIComponent(ids.join(','))}`));
+    if (
+      result.media.length !== ids.length ||
+      new Set(result.media.map((entry) => entry.image.id)).size !== ids.length ||
+      result.media.some((entry) => !ids.includes(entry.image.id))
+    )
+      throw new Error('Preview media ownership changed');
+    return result.media;
+  }
+  /**
+   * `expiresAt` is the presigned URL's lifetime on the server's clock, so the browser clock is no judge of it
+   * (a merchant whose clock runs fast must still be able to use uploads). The storage provider is: a presigned
+   * URL that has expired is refused (403, or a blocked cross-origin answer). That asks once for a fresh
+   * descriptor of the same photo; a second refusal is final.
+   */
+  async function prepare(descriptor: Descriptor, refreshed = false): Promise<EditorProductImage> {
     active();
-    if (!descriptor.image.id.startsWith('upload_') || Date.parse(descriptor.expiresAt) <= Date.now())
-      throw new Error('Preview media is unavailable');
-    const response = await read(descriptor.previewUrl);
+    if (!descriptor.image.id.startsWith('upload_')) throw new Error('Preview media is unavailable');
+    let response: Response | undefined;
+    try {
+      response = await read(descriptor.previewUrl);
+    } catch (cause) {
+      active();
+      if (!(cause instanceof TypeError) || refreshed) throw cause;
+    }
+    if (!response || response.status === 403) {
+      if (refreshed) throw new Error('Private preview unavailable');
+      const fresh = (await describe([descriptor.image.id]))[0];
+      if (!fresh) throw new Error('Preview media ownership changed');
+      return prepare(fresh, true);
+    }
     const length = Number(response.headers.get('Content-Length') ?? 0);
     if (!response.ok || !response.headers.get('Content-Type')?.startsWith('image/') || length > 10 * 1024 * 1024)
       throw new Error('Private preview unavailable');
@@ -70,14 +98,7 @@ export function createSelectedProductMedia(
     const ids = [...new Set(images.filter((image) => image.id.startsWith('upload_')).map((image) => image.id))];
     if (!ids.length) return [];
     if (ids.length > 100) throw new Error('Preview media library exceeds supported size');
-    const result = responseSchema.parse(await json(`${endpoint}?ids=${encodeURIComponent(ids.join(','))}`));
-    if (
-      result.media.length !== ids.length ||
-      new Set(result.media.map((entry) => entry.image.id)).size !== ids.length ||
-      result.media.some((entry) => !ids.includes(entry.image.id))
-    )
-      throw new Error('Preview media ownership changed');
-    return Promise.all(result.media.map(prepare));
+    return Promise.all((await describe(ids)).map((descriptor) => prepare(descriptor)));
   }
   async function upload(prepared: EditorProductImage) {
     active();
