@@ -32,11 +32,13 @@ import AdminIndexToolbar from '../components/AdminIndexToolbar.tsx';
 import AdminSaveBar from '../components/AdminSaveBar.tsx';
 import { DecimalField } from '../components/DecimalField.tsx';
 import { useAdminLocale } from '../shared/admin-i18n.js';
+import { isShopifyBusy } from '../shared/admin-request.ts';
 
 const indexPath = '/admin/methods';
 type MethodNotice =
   | { kind: 'method-unavailable' }
   | { kind: 'storage-failure' }
+  | { kind: 'busy' }
   | { kind: 'saved'; created: boolean }
   | { kind: 'duplicated' }
   | { kind: 'deleted'; count: number };
@@ -44,6 +46,7 @@ type MethodNotice =
 function formatMethodNotice(notice: MethodNotice, t: ReturnType<typeof useAdminLocale>['t'], locale: string): string {
   if (notice.kind === 'method-unavailable') return t('methods:workflow.notices.methodUnavailable');
   if (notice.kind === 'storage-failure') return t('methods:workflow.notices.storageFailure');
+  if (notice.kind === 'busy') return t('admin-shell:errors.shopifyBusy');
   if (notice.kind === 'saved')
     return t(notice.created ? 'methods:workflow.notices.created' : 'methods:workflow.notices.saved');
   if (notice.kind === 'duplicated') return t('methods:workflow.notices.duplicated');
@@ -282,23 +285,25 @@ export default function SelectedMethods({
       document.removeEventListener('click', links, true);
     };
   }, []);
-  async function persistMethods(next: MethodConfiguration[]): Promise<boolean> {
-    if (writing.current || readOnly) return false;
+  /** `busy`: Shopify was throttling and nothing happened; the same save can simply be tried again. */
+  async function persistMethods(next: MethodConfiguration[]): Promise<'saved' | 'busy' | 'failed'> {
+    if (writing.current || readOnly) return 'failed';
     writing.current = true;
     setPending(true);
     try {
       await persist(next);
-      return true;
-    } catch {
-      setNotice({ kind: 'storage-failure' });
-      return false;
+      return 'saved';
+    } catch (error) {
+      const throttled = isShopifyBusy(error);
+      setNotice({ kind: throttled ? 'busy' : 'storage-failure' });
+      return throttled ? 'busy' : 'failed';
     } finally {
       writing.current = false;
       setPending(false);
     }
   }
   useEffect(() => {
-    if (!notice || notice.kind === 'storage-failure') return;
+    if (!notice || notice.kind === 'storage-failure' || notice.kind === 'busy') return;
     const timer = setTimeout(() => setNotice(null), 5000);
     return () => clearTimeout(timer);
   }, [notice]);
@@ -348,7 +353,7 @@ export default function SelectedMethods({
     const next = currentEditor.id
       ? currentState.methods.map((item) => (item.id === currentEditor.id ? value : item))
       : [...currentState.methods, value];
-    if (!(await persistMethods(next))) return;
+    if ((await persistMethods(next)) !== 'saved') return;
     sendWorkflow({ type: 'method-saved', sessionId: currentState.editorSessionId, method: value });
     history.replaceState(
       { methodPosition: historyPosition.current },
@@ -404,12 +409,13 @@ export default function SelectedMethods({
     }
     const next = [...currentState.methods, copy];
     claimedDialogCommits.current.add(dialog.id);
-    if (!(await persistMethods(next))) {
+    const outcome = await persistMethods(next);
+    if (outcome !== 'saved') {
       claimedDialogCommits.current.delete(dialog.id);
       sendWorkflow({
         type: 'duplicate-failed',
         id: dialog.id,
-        reason: 'storage-failure',
+        reason: outcome === 'busy' ? 'busy' : 'storage-failure',
       });
       return;
     }
@@ -429,7 +435,7 @@ export default function SelectedMethods({
     const ids = new Set(removedIds);
     const next = currentState.methods.filter((method) => !ids.has(method.id));
     claimedDialogCommits.current.add(dialog.id);
-    if (!(await persistMethods(next))) {
+    if ((await persistMethods(next)) !== 'saved') {
       claimedDialogCommits.current.delete(dialog.id);
       return;
     }
@@ -539,7 +545,7 @@ export default function SelectedMethods({
               <div role="status">
                 <s-banner
                   tone={
-                    notice.kind === 'storage-failure'
+                    notice.kind === 'storage-failure' || notice.kind === 'busy'
                       ? 'critical'
                       : notice.kind === 'method-unavailable'
                         ? 'info'
@@ -1157,9 +1163,11 @@ export default function SelectedMethods({
               error={
                 duplicateError === 'invalid-name'
                   ? t('methods:workflow.copy.duplicateNameError')
-                  : duplicateError === 'storage-failure'
-                    ? t('methods:workflow.copy.duplicateStorageError')
-                    : ''
+                  : duplicateError === 'busy'
+                    ? t('admin-shell:errors.shopifyBusy')
+                    : duplicateError === 'storage-failure'
+                      ? t('methods:workflow.copy.duplicateStorageError')
+                      : ''
               }
               onInput={(event) =>
                 sendWorkflow({

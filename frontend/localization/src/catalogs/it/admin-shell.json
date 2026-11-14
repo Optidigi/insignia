@@ -130,5 +130,8 @@
       "columnsFor": "Colonne della tabella {{tableName}}"
     }
   },
-  "hostBack": "Torna a {{destination}}"
+  "hostBack": "Torna a {{destination}}",
+  "errors": {
+    "shopifyBusy": "Shopify è occupato in questo momento, quindi non è stato modificato nulla. Attendi qualche secondo e riprova."
+  }
 }

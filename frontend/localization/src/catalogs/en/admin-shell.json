@@ -130,5 +130,8 @@
       "columnsFor": "{{tableName}} columns"
     }
   },
-  "hostBack": "Back to {{destination}}"
+  "hostBack": "Back to {{destination}}",
+  "errors": {
+    "shopifyBusy": "Shopify is busy right now, so nothing was changed. Wait a few seconds and try again."
+  }
 }

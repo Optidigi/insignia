@@ -13,8 +13,10 @@ export type CustomerTranslationsLoadError =
   | 'storage-unavailable'
   | 'storage-read-failed'
   | 'invalid-record'
-  | 'storage-clear-failed';
-export type CustomerTranslationsSaveError = 'storage-write-failed';
+  | 'storage-clear-failed'
+  /** Shopify was throttling: nothing was read or changed, and the same request can be tried again. */
+  | 'busy';
+export type CustomerTranslationsSaveError = 'storage-write-failed' | 'busy';
 export type CustomerTranslationsIssue = CustomerWordingValidationIssue & { locale: string };
 export type CustomerTranslationsPhase = 'loading' | 'ready' | 'error';
 
@@ -48,7 +50,7 @@ export type CustomerTranslationsEvent =
   | { type: 'validation-cleared'; locale: string }
   | { type: 'save-started'; request: number; revision: number; overlays: Record<string, CustomerWordingOverlay> }
   | { type: 'save-succeeded'; request: number }
-  | { type: 'save-failed'; request: number }
+  | { type: 'save-failed'; request: number; reason?: CustomerTranslationsSaveError }
   | { type: 'invalid-record-cleared' }
   | { type: 'invalid-record-clear-failed' };
 
@@ -274,7 +276,7 @@ export function customerTranslationsReducer(
       return state.saveSnapshot &&
         event.request === state.saveRequestId &&
         event.request === state.saveSnapshot.requestId
-        ? { ...state, saveSnapshot: null, saveError: 'storage-write-failed' }
+        ? { ...state, saveSnapshot: null, saveError: event.reason ?? 'storage-write-failed' }
         : state;
     case 'invalid-record-cleared':
       if (state.phase !== 'error' || (state.error !== 'invalid-record' && state.error !== 'storage-clear-failed'))

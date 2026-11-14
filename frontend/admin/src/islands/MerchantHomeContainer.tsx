@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'preact/hooks';
 import { withAdminLocale } from '../shared/admin-i18n';
-import { authenticatedJson } from '../shared/admin-request';
+import { authenticatedJson, isShopifyBusy } from '../shared/admin-request';
 import { createMerchantPreferencesClient } from '../shared/merchant-preferences-client';
 import { homeGuidanceReducer, initialHomeGuidanceState } from '../shared/home-workflow-state';
 import type {
@@ -35,7 +35,8 @@ function MerchantHomeContainer() {
   guidanceRef.current = guidance;
   const guidanceQueue = useRef<Promise<void>>(Promise.resolve());
   const preferences = useMemo(() => createMerchantPreferencesClient(), []);
-  const [guidanceFailed, setGuidanceFailed] = useState(false);
+  /** One owner for the guidance read/write outcome: `busy` is Shopify throttling, which a retry can clear. */
+  const [guidanceFailure, setGuidanceFailure] = useState<null | 'failed' | 'busy'>(null);
   const [guidanceEditable, setGuidanceEditable] = useState(false);
   const guidanceDismissed = guidance.dismissed;
   const guidanceCompletedSteps = guidance.completedSteps;
@@ -75,7 +76,7 @@ function MerchantHomeContainer() {
       if (status === 401) setSessionLost(true);
       if (panel === 'orders') setStatistics(undefined);
       if (status === 403) update({ state: 'restricted' });
-      else update({ state: 'failed' });
+      else update(isShopifyBusy(error) ? { state: 'failed', reason: 'busy' } : { state: 'failed' });
     }
   }
   useEffect(() => {
@@ -87,9 +88,9 @@ function MerchantHomeContainer() {
         guidanceRef.current = homeGuidanceReducer(guidanceRef.current, { type: 'preferences-loaded', ...value.guidance });
         dispatchGuidance({ type: 'preferences-loaded', ...value.guidance });
         setGuidanceEditable(value.canEdit === true);
-        setGuidanceFailed(false);
-      } catch {
-        if (mounted.current) setGuidanceFailed(true);
+        setGuidanceFailure(null);
+      } catch (error) {
+        if (mounted.current) setGuidanceFailure(isShopifyBusy(error) ? 'busy' : 'failed');
       }
     }
     let departed = false;
@@ -189,14 +190,22 @@ function MerchantHomeContainer() {
         if (!mounted.current) return;
         guidanceRef.current = homeGuidanceReducer(guidanceRef.current, { type: 'preferences-loaded', ...saved.guidance });
         dispatchGuidance({ type: 'preferences-loaded', ...saved.guidance });
-        setGuidanceFailed(false);
-      } catch {
-        if (mounted.current) setGuidanceFailed(true);
+        setGuidanceFailure(null);
+      } catch (error) {
+        if (mounted.current) setGuidanceFailure(isShopifyBusy(error) ? 'busy' : 'failed');
       }
     });
   }
-  const model: MerchantHomeModel = sessionLost || guidanceFailed
-    ? { state: 'unavailable', reopenHref: '/admin/home', ...(sessionLost ? { reason: 'session-lost' as const } : {}) }
+  const model: MerchantHomeModel = sessionLost || guidanceFailure
+    ? {
+        state: 'unavailable',
+        reopenHref: '/admin/home',
+        ...(sessionLost
+          ? { reason: 'session-lost' as const }
+          : guidanceFailure === 'busy'
+            ? { reason: 'busy' as const }
+            : {}),
+      }
     : {
         state: 'ready',
         products: products.state === 'ready' ? { ...products, canConfigure: !restrictedPlan } : products,

@@ -35,6 +35,7 @@ export const adminParameterContracts = {
   'admin-shell:adminPageSkeleton.loadingProductConfiguration': {},
   'admin-shell:adminPageSkeleton.loadingProducts': {},
   'admin-shell:adminPageSkeleton.method': {},
+  'admin-shell:errors.shopifyBusy': {},
   'admin-shell:failure.body': {},
   'admin-shell:failure.heading': {},
   'admin-shell:hostBack': { destination: 'string' },

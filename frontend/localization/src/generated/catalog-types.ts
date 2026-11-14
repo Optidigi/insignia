@@ -31,6 +31,7 @@ export interface AdminMessageTable {
   'admin-shell:adminPageSkeleton.loadingProductConfiguration': object;
   'admin-shell:adminPageSkeleton.loadingProducts': object;
   'admin-shell:adminPageSkeleton.method': object;
+  'admin-shell:errors.shopifyBusy': object;
   'admin-shell:failure.body': object;
   'admin-shell:failure.heading': object;
   'admin-shell:hostBack': { destination: string };

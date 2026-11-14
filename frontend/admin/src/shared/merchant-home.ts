@@ -13,7 +13,8 @@ export interface HomeProduct {
   published?: boolean;
 }
 
-export type HomeReadState = { state: 'loading' } | { state: 'failed' } | { state: 'restricted' };
+/** `busy`: Shopify was throttling, so nothing was read; the same read can be tried again. */
+export type HomeReadState = { state: 'loading' } | { state: 'failed'; reason?: 'busy' } | { state: 'restricted' };
 
 export type HomeProductsPanel =
   | HomeReadState
@@ -126,7 +127,7 @@ export interface HomeNotice {
 
 export type MerchantHomeModel =
   | { state: 'loading' }
-  | { state: 'unavailable'; reason?: 'session-lost'; reopenHref?: string }
+  | { state: 'unavailable'; reason?: 'session-lost' | 'busy'; reopenHref?: string }
   | {
       state: 'ready';
       products: HomeProductsPanel;

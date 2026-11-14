@@ -367,7 +367,9 @@ function MerchantTranslations({
                       ? 'settings:translations.invalidRecordDescription'
                       : state.error === 'invalid-shop'
                         ? 'settings:translations.sessionUnavailable'
-                        : 'settings:translations.loadFailedDescription',
+                        : state.error === 'busy'
+                          ? 'admin-shell:errors.shopifyBusy'
+                          : 'settings:translations.loadFailedDescription',
                   )}
                 </s-paragraph>
               </s-banner>
@@ -394,7 +396,13 @@ function MerchantTranslations({
           {state.saveError && (
             <div id="translation-save-error" class="translations-notice" tabIndex={-1}>
               <s-banner tone="critical" heading={t('settings:translations.saveFailed')}>
-                <s-paragraph>{t('settings:translations.saveFailedDescription')}</s-paragraph>
+                <s-paragraph>
+                  {t(
+                    state.saveError === 'busy'
+                      ? 'admin-shell:errors.shopifyBusy'
+                      : 'settings:translations.saveFailedDescription',
+                  )}
+                </s-paragraph>
               </s-banner>
             </div>
           )}

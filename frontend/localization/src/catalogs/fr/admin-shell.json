@@ -130,5 +130,8 @@
       "columnsFor": "Colonnes de {{tableName}}"
     }
   },
-  "hostBack": "Retour : {{destination}}"
+  "hostBack": "Retour : {{destination}}",
+  "errors": {
+    "shopifyBusy": "Shopify est actuellement surchargé, rien n’a donc été modifié. Patientez quelques secondes et réessayez."
+  }
 }

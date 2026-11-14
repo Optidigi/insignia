@@ -1,7 +1,7 @@
 /** The local Methods explorer owns saved method observations, its active draft, and staged dialogs. */
 import type { MethodConfiguration, MethodErrors } from './method-configuration.mts';
 
-export type MethodDuplicateFailureReason = 'invalid-name' | 'storage-failure';
+export type MethodDuplicateFailureReason = 'invalid-name' | 'storage-failure' | 'busy';
 
 export type MethodWorkflowNavigationTarget =
   | { kind: 'method-route'; path: string }

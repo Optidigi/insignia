@@ -130,5 +130,8 @@
       "columnsFor": "Kolommen voor {{tableName}}"
     }
   },
-  "hostBack": "Terug naar {{destination}}"
+  "hostBack": "Terug naar {{destination}}",
+  "errors": {
+    "shopifyBusy": "Shopify is op dit moment druk, dus er is niets gewijzigd. Wacht een paar seconden en probeer het opnieuw."
+  }
 }
