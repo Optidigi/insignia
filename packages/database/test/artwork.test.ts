@@ -520,29 +520,42 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable artwork ownership and
       previewByteLength: 15,
     };
     /** Drive the real service sweep as the inspector does: limit 20, every 30 seconds. */
-    async function sweep(from: Date, durationMs: number, unavailable: (at: number) => boolean = () => false) {
+    async function sweep(
+      from: Date,
+      durationMs: number,
+      unavailable: (at: number, key: string) => boolean = () => false,
+    ) {
       let clock = from;
       const removed: { key: string; at: number }[] = [];
+      const tried: { key: string; at: number }[] = [];
       const storage = {
         remove: async ({ key }: { key: string }) => {
-          if (unavailable(+clock)) throw new Error('storage unavailable');
+          tried.push({ key, at: +clock });
+          if (unavailable(+clock, key)) throw new Error('storage unavailable');
           removed.push({ key, at: +clock });
         },
       } as unknown as ArtworkStorage;
       const failures: number[] = [];
+      const reports: { code: string; attempts: number | undefined; at: number }[] = [];
+      const review: number[] = [];
       const service = createArtworkService({
         store,
         storage,
         clock: () => clock,
         inspect: () => Promise.reject(new Error('unused')),
-        onCleanupError: () => failures.push(+clock),
+        onCleanupError: (code, attempts) => {
+          failures.push(+clock);
+          reports.push({ code, attempts, at: +clock });
+        },
+        onCleanupReview: (count) => review.push(count),
       });
       for (let at = +from; at <= +from + durationMs; at += 30000) {
         clock = new Date(at);
         await service.cleanup(20);
       }
       const times = (key: string) => removed.filter((r) => r.key === key).map((r) => r.at);
-      return { removed, failures, times };
+      const attempts = (key: string) => tried.filter((r) => r.key === key).map((r) => r.at);
+      return { removed, failures, times, attempts, reports, review };
     }
     async function usable(shopId: string) {
       const scope = { shopId, installationGeneration: '1', kind: 'merchant' as const };
@@ -565,6 +578,25 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable artwork ownership and
       await store.reject(input.assetId, claim, 'INSPECTION_REJECTED', now);
       return input;
     }
+    /** Per-kind failure bookkeeping, as an operator reads it (#474). */
+    async function bookkeeping(assetId: string) {
+      return (
+        await pool.query(
+          `SELECT state,cleanup_attempts,cleanup_failure,cleanup_review_at,
+            quarantine_cleanup_attempts,quarantine_cleanup_failure,quarantine_cleanup_review_at
+           FROM artwork_assets WHERE asset_id=$1`,
+          [assetId],
+        )
+      ).rows[0];
+    }
+    const cleared = {
+      cleanup_attempts: 0,
+      cleanup_failure: null,
+      cleanup_review_at: null,
+      quarantine_cleanup_attempts: 0,
+      quarantine_cleanup_failure: null,
+      quarantine_cleanup_review_at: null,
+    };
     async function expectSettledTombstone(input: ArtworkRecord, at: Date) {
       expect(await store.selectExpired(100, at)).not.toContainEqual(
         expect.objectContaining({ assetId: input.assetId }),
@@ -662,9 +694,140 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable artwork ownership and
           expect(Math.max(...times(key))).toBeGreaterThan(windowEnd + 120000);
         await expectSettledTombstone(tombstone, new Date(+now + 3600000));
         expect(await store.markQuarantineCleanupAttempt(kept.assetId, new Date(+now + 3600000))).toBe(false);
+        // A success resets both kinds' failure bookkeeping (#474).
+        for (const id of [tombstone.assetId, kept.assetId]) expect(await bookkeeping(id)).toMatchObject(cleared);
       } finally {
         await db.destroy();
       }
+    });
+    describe('failed cleanup backs off exponentially and escalates to review (#474)', () => {
+      // Spec §11: 5 s doubling to a 15-minute cap; the inspector sweeps every 30 s, so each delay is
+      // observed at the first sweep at or after it: 5, 10, 20, 40, 80, 160, 320, 640, 900, 900, 900 s.
+      const firstElevenGaps = [30, 30, 30, 60, 90, 180, 330, 660, 900, 900, 900];
+      const gaps = (times: number[]) => times.slice(1).map((at, i) => (at - (times[i] ?? at)) / 1000);
+      const reviewAt = (times: number[]) => new Date(times[11] ?? Number.NaN);
+      it('retries a failing deletion at the 15-minute cap after 12 failures, flagged for review (rejected and privacy DELETING)', async () => {
+        const db = await openTestDatabase();
+        try {
+          const { shopId } = await ownTestShop(db);
+          const rejectedAsset = await rejected(shopId);
+          const erased = await usable(shopId);
+          // What customer_privacy_fence_asset does to a live asset: DELETING, retention unchanged.
+          await pool.query("UPDATE artwork_assets SET state='DELETING',updated_at=$2 WHERE asset_id=$1", [
+            erased.assetId,
+            now,
+          ]);
+          const failing = new Set([rejectedAsset.quarantineKey, erased.quarantineKey]);
+          const outage = 5 * 3600000;
+          const failed = await sweep(now, outage, (_at, key) => failing.has(key));
+          for (const asset of [rejectedAsset, erased]) {
+            const tries = failed.attempts(asset.quarantineKey);
+            expect(gaps(tries).slice(0, 11)).toEqual(firstElevenGaps);
+            // An erasure obligation never stops: it keeps retrying at the cap past the 12th failure.
+            expect(tries.length).toBeGreaterThan(20);
+            expect(new Set(gaps(tries).slice(11))).toEqual(new Set([900]));
+            expect(failed.times(asset.originalKey)).toEqual([]);
+            expect(await bookkeeping(asset.assetId)).toEqual({
+              state: 'DELETING',
+              cleanup_attempts: tries.length,
+              cleanup_failure: 'STORAGE_UNAVAILABLE',
+              cleanup_review_at: reviewAt(tries),
+              quarantine_cleanup_attempts: 0,
+              quarantine_cleanup_failure: null,
+              quarantine_cleanup_review_at: null,
+            });
+          }
+          // Codes only: attempts 1-11 warn as unavailable, the 12th and later as needing review.
+          expect(failed.reports.filter((r) => (r.attempts ?? 0) < 12).map((r) => r.code)).toEqual(
+            Array(22).fill('ARTWORK_CLEANUP_UNAVAILABLE'),
+          );
+          expect(new Set(failed.reports.filter((r) => (r.attempts ?? 0) >= 12).map((r) => r.code))).toEqual(
+            new Set(['ARTWORK_CLEANUP_NEEDS_REVIEW']),
+          );
+          expect(failed.review[0]).toBe(0);
+          expect(failed.review.at(-1)).toBe(2);
+          // Storage recovers: one success deletes, resets the bookkeeping and the tombstones still settle (#472).
+          const from = new Date(+now + outage + 30000);
+          const recovered = await sweep(from, 3600000);
+          for (const asset of [rejectedAsset, erased]) {
+            expect(recovered.times(asset.originalKey)[0]).toBeLessThanOrEqual(+from + 900000);
+            expect(await bookkeeping(asset.assetId)).toMatchObject({ state: 'DELETED', ...cleared });
+            await expectSettledTombstone(asset, new Date(+from + 3600000));
+          }
+          expect(recovered.review.at(-1)).toBe(0);
+        } finally {
+          await db.destroy();
+        }
+      }, 300_000);
+      it('stops a failing USABLE quarantine cleanup after 12 attempts; retention deletion still removes the key', async () => {
+        const db = await openTestDatabase();
+        try {
+          const { shopId } = await ownTestShop(db);
+          const scope = { shopId, installationGeneration: '1', kind: 'merchant' as const };
+          const kept = await usable(shopId);
+          const failed = await sweep(kept.uploadUntil, 4 * 3600000, (_at, key) => key === kept.quarantineKey);
+          const tries = failed.attempts(kept.quarantineKey);
+          expect(gaps(tries)).toEqual(firstElevenGaps);
+          expect(await bookkeeping(kept.assetId)).toEqual({
+            state: 'USABLE',
+            cleanup_attempts: 0,
+            cleanup_failure: null,
+            cleanup_review_at: null,
+            quarantine_cleanup_attempts: 12,
+            quarantine_cleanup_failure: 'STORAGE_UNAVAILABLE',
+            quarantine_cleanup_review_at: reviewAt(tries),
+          });
+          expect(failed.reports.at(-1)).toEqual({ code: 'ARTWORK_CLEANUP_NEEDS_REVIEW', attempts: 12, at: tries[11] });
+          expect(failed.review.at(-1)).toBe(1);
+          // Retained artwork stays usable and untouched.
+          const after = new Date(+kept.uploadUntil + 4 * 3600000);
+          expect(await store.readUsability(scope, [kept.assetId], after)).toHaveLength(1);
+          expect(await store.markQuarantineCleanupAttempt(kept.assetId, after)).toBe(false);
+          expect(failed.removed).toEqual([]);
+          // The quarantine key is a copy of retained bytes: retention deletion removes it with the rest.
+          const expiry = await sweep(kept.expiresAt, 0);
+          expect(expiry.times(kept.quarantineKey)).toEqual([+kept.expiresAt]);
+          expect(expiry.times(kept.originalKey)).toEqual([+kept.expiresAt]);
+          expect(await bookkeeping(kept.assetId)).toMatchObject({ state: 'DELETED', ...cleared });
+          expect(expiry.review.at(-1)).toBe(0);
+        } finally {
+          await db.destroy();
+        }
+      }, 300_000);
+      it('keeps a tombstone whose re-sweep fails unsettled and retrying at the cap until a sweep succeeds', async () => {
+        const db = await openTestDatabase();
+        try {
+          const { shopId } = await ownTestShop(db);
+          const tombstone = await rejected(shopId);
+          // Deleted by the first sweep; every re-sweep (late-write reconciliation) then fails.
+          const outage = 3 * 3600000;
+          const failed = await sweep(now, outage, (at) => at > +now);
+          const tries = failed.attempts(tombstone.quarantineKey);
+          expect(tries[0]).toBe(+now);
+          expect(gaps(tries)[0]).toBe(60);
+          expect(gaps(tries.slice(1)).slice(0, 11)).toEqual(firstElevenGaps);
+          expect(new Set(gaps(tries.slice(1)).slice(11))).toEqual(new Set([900]));
+          const end = new Date(+now + outage);
+          expect(await store.selectExpired(100, new Date(+end + 900000))).toContainEqual(
+            expect.objectContaining({ assetId: tombstone.assetId }),
+          );
+          expect(await bookkeeping(tombstone.assetId)).toEqual({
+            state: 'DELETED',
+            cleanup_attempts: tries.length - 1,
+            cleanup_failure: 'STORAGE_UNAVAILABLE',
+            cleanup_review_at: reviewAt(tries.slice(1)),
+            quarantine_cleanup_attempts: 0,
+            quarantine_cleanup_failure: null,
+            quarantine_cleanup_review_at: null,
+          });
+          const recovered = await sweep(new Date(+end + 30000), 3600000);
+          expect(recovered.times(tombstone.quarantineKey)).toHaveLength(1);
+          expect(await bookkeeping(tombstone.assetId)).toMatchObject(cleared);
+          await expectSettledTombstone(tombstone, new Date(+end + 30000 + 3600000));
+        } finally {
+          await db.destroy();
+        }
+      }, 300_000);
     });
   });
 });

@@ -112,7 +112,15 @@ it.runIf(process.env.M6_RUNTIME_GRANTS === '1')(
         assetId,
       );
       expect(await store.markQuarantineCleanupAttempt(assetId, input.uploadUntil)).toBe(true);
-      await store.markQuarantineCleaned(assetId, input.uploadUntil);
+      // Failure bookkeeping and the review gauge run under the same restricted role (#474).
+      expect(await store.recordCleanupFailure(assetId, 'quarantine', 'STORAGE_UNAVAILABLE', input.uploadUntil)).toEqual(
+        { attempts: 1, review: false },
+      );
+      expect(await store.countCleanupReview()).toBe(0);
+      const retryAt = new Date(+input.uploadUntil + 5000);
+      expect(await store.markQuarantineCleanupAttempt(assetId, new Date(+retryAt - 1))).toBe(false);
+      expect(await store.markQuarantineCleanupAttempt(assetId, retryAt)).toBe(true);
+      await store.markQuarantineCleaned(assetId, retryAt);
       expect((await store.selectExpired(100, input.expiresAt)).map((row) => row.assetId)).toContain(assetId);
       expect((await store.markDeleting(assetId, input.expiresAt))?.state).toBe('DELETING');
       await store.finishDeleting(assetId, input.expiresAt);

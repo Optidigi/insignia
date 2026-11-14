@@ -72,7 +72,9 @@ END $$;
 GRANT SELECT(asset_id,shop_id,state,expires_at) ON public.artwork_assets TO insignia_queue_consume;
 GRANT SELECT ON public.artwork_assets TO insignia_artwork_inspect;
 GRANT UPDATE(state, claim_id, claim_until, manifest, rejection, owner_hash,
-  quarantine_cleaned_at, retry_at, cleanup_attempt_at, quarantine_cleanup_attempt_at, updated_at)
+  quarantine_cleaned_at, retry_at, cleanup_attempt_at, quarantine_cleanup_attempt_at, updated_at,
+  cleanup_attempts, cleanup_failure, cleanup_review_at,
+  quarantine_cleanup_attempts, quarantine_cleanup_failure, quarantine_cleanup_review_at)
   ON public.artwork_assets TO insignia_artwork_inspect;
 -- This is a table/column privilege boundary, not per-row or expiry-only SQL isolation.
 -- Scoped repositories and the immutable-identity trigger enforce the application contract.
@@ -89,7 +91,9 @@ DO $$ BEGIN
         (c.relname='shops' AND a.attname='updated_at') OR
         (c.relname='installation_generations' AND a.attname='deactivated_at') OR
         (c.relname='artwork_assets' AND a.attname=ANY(ARRAY['state','claim_id','claim_until','manifest','rejection','owner_hash',
-          'quarantine_cleaned_at','retry_at','cleanup_attempt_at','quarantine_cleanup_attempt_at','updated_at']))
+          'quarantine_cleaned_at','retry_at','cleanup_attempt_at','quarantine_cleanup_attempt_at','updated_at',
+          'cleanup_attempts','cleanup_failure','cleanup_review_at',
+          'quarantine_cleanup_attempts','quarantine_cleanup_failure','quarantine_cleanup_review_at']))
       ))) THEN RAISE EXCEPTION 'unqualified_artwork_mutation_access'; END IF;
 END $$;
 COMMIT;

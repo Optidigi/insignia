@@ -247,6 +247,8 @@ export function fixtureCore(overrides: Overrides = {}): DurableCore {
       selectQuarantineCleanup: unexpected,
       markQuarantineCleanupAttempt: unexpected,
       markQuarantineCleaned: unexpected,
+      recordCleanupFailure: unexpected,
+      countCleanupReview: unexpected,
       readUsability: unexpected,
       ...overrides.artwork,
     },
