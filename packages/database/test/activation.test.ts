@@ -177,6 +177,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     let remoteReads = 0;
     let remoteWrites = 0;
     const dispatches: { field: string; committedPhase: string | null }[] = [];
+    let beforeSet: ((field: string) => Promise<void>) | undefined;
     let beforeRead: (() => Promise<void>) | undefined;
     const syntheticRemote: ProductionPublicationRemote = {
       read: async (target) => {
@@ -186,6 +187,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       },
       set: async (target) => {
         remoteWrites++;
+        await beforeSet?.(target.field);
         // #466 test 9: the committed phase (another connection sees only committed rows).
         const committed = await sql<{ phase: string }>`SELECT phase FROM m4_publication_progress
           WHERE shop_id=${shopId} AND operation_id=${operationId}`.execute(database);
@@ -712,6 +714,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         return remoteWrites;
       },
       dispatches,
+      /** Gates the synthetic provider write (inside advance, while it holds the shop lock). */
+      set beforeSet(value: ((field: string) => Promise<void>) | undefined) {
+        beforeSet = value;
+      },
       get remoteReads() {
         return remoteReads;
       },
@@ -1362,6 +1368,42 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     expect((await activationRow(f))?.kind).toBe('HELD');
     expect(await auditRows(f)).toEqual([]);
     expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ restored: 1 });
+  });
+
+  it('#466 B late completion: T1 waits on the shop lock held by a merchant write and never claims after it', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    let entered!: () => void;
+    let release!: () => void;
+    const inside = new Promise<void>((resolve) => {
+      entered = resolve;
+    });
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    f.beforeSet = async () => {
+      entered();
+      await gate;
+    };
+    const merchant = f.restart().publications.advance(f.identity.shopId, f.identity.configId, f.identity.operationId);
+    await inside; // the merchant's public_config write is in flight; advance holds the shop lock
+    let workerDone = false;
+    const worker = f
+      .abandonment()
+      .runPass({ shopId: f.identity.shopId })
+      .finally(() => {
+        workerDone = true;
+      });
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(workerDone).toBe(false);
+    release();
+    expect((await merchant).kind).toBe('PENDING');
+    // T1 saw the committed shop-config-written phase: product fields may follow, so it never claims.
+    expect(await worker).toMatchObject({ restored: 0 });
+    f.beforeSet = undefined;
+    expect(await progressPhase(f)).toBe('shop-config-written');
+    expect((await activationRow(f))?.kind).not.toMatch(/^ABANDON/);
+    expect(f.providerWrites).toEqual(['DRAFT']);
   });
 
   it('#466 B: two workers claim and restore once', async () => {
