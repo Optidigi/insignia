@@ -55,10 +55,8 @@ export function createSelectedProductMedia(
   const objectUrls = new Set<string>();
   async function prepare(descriptor: Descriptor) {
     active();
-    if (
-      !/^upload_[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(descriptor.image.id) ||
-      Date.parse(descriptor.expiresAt) <= Date.now()
-    )
+    // The preview is read through the same-origin route, so the presigned URL's expiry does not apply.
+    if (!/^upload_[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(descriptor.image.id))
       throw new Error('Preview media is unavailable');
     const blob = await readImage(`${endpoint}/${descriptor.image.id}/preview`, { signal: lifetime.signal });
     active();
@@ -83,7 +81,17 @@ export function createSelectedProductMedia(
       result.media.some((entry) => !ids.includes(entry.image.id))
     )
       throw new Error('Preview media ownership changed');
-    return Promise.all(result.media.map(prepare));
+    // Each preview is an authenticated server read: load at most four at a time.
+    const prepared: EditorProductImage[] = new Array(result.media.length);
+    let next = 0;
+    const lane = async () => {
+      while (next < result.media.length) {
+        const index = next++;
+        prepared[index] = await prepare(result.media[index]!);
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(4, result.media.length) }, lane));
+    return prepared;
   }
   async function upload(prepared: EditorProductImage) {
     active();

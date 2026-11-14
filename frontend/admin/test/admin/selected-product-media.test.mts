@@ -106,3 +106,36 @@ test('all JSON ownership requests use the caller denial boundary and preserve it
   assert.equal(fetched, 0);
   media.dispose();
 });
+test('hydration reads previews through Insignia at most four at a time and ignores the presigned URL expiry', async () => {
+  const ids = Array.from(
+    { length: 9 },
+    (_, index) => `upload_11111111-1111-4111-8111-${String(index).padStart(12, '0')}`,
+  );
+  const images = ids.map((imageId) => ({
+    ...image,
+    id: imageId,
+    url: `https://insignia.test/api/admin/products/111/media/${imageId}`,
+  }));
+  const expired = new Date(Date.now() - 600000).toISOString();
+  let active = 0;
+  let peak = 0;
+  const media = createSelectedProductMedia('gid://shopify/Product/111', 'a'.repeat(64), {
+    request: async () => ({
+      media: images.map((entry) => ({ image: entry, previewUrl: 'https://private.test/p.png', expiresAt: expired })),
+    }),
+    readImage: async () => {
+      active++;
+      peak = Math.max(peak, active);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      active--;
+      return new Blob([new Uint8Array([1, 2, 3])], { type: 'image/png' });
+    },
+  });
+  const result = await media.hydrate(images);
+  assert.deepEqual(
+    result.map((entry) => entry.id),
+    ids,
+  );
+  assert.equal(peak, 4);
+  media.dispose();
+});
