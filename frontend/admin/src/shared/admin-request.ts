@@ -92,8 +92,8 @@ export async function authenticatedJson<T>(path: string, init: RequestInit = {},
   const policy = adminRequestPolicy(path, init);
   let dispatched = false;
   try {
-    return await authenticatedRequest<T>(path, init, forceFresh, policy, () => {
-      dispatched = true;
+    return await authenticatedRequest<T>(path, init, forceFresh, policy, (sent) => {
+      dispatched = sent;
     });
   } catch (error) {
     if (error && typeof error === 'object' && !('status' in error))
@@ -110,14 +110,16 @@ function authenticatedRequest<T>(
   init: RequestInit,
   forceFresh: boolean,
   policy: ReturnType<typeof adminRequestPolicy>,
-  dispatching: () => void,
+  dispatching: (sent: boolean) => void,
 ): Promise<T> {
   return browserDeadline(
     async (signal) => {
       const send = async (fresh = forceFresh) => {
+        // A request answered 401 had no effect: a retry that fails before it is sent is not dispatched.
+        dispatching(false);
         const token = await sessionToken(fresh, policy);
         signal.throwIfAborted();
-        dispatching();
+        dispatching(true);
         return fetch(path, {
           ...init,
           headers: {

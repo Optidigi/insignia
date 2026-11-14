@@ -38,7 +38,8 @@ const TRANSIENT_READ_FAILURES = new Set<ShopifyAvailabilityHoldError['kind']>([
 /** Budget kept for the rest of an operation (and its readback) when waiting out throttling. */
 const THROTTLE_RETRY_RESERVE_MS = 3000;
 // Direct sales-channel reads in flight at once within one availability observation (#436).
-const ANCHOR_READ_CONCURRENCY = 8;
+// Each read also takes admin database connections (pool max 10), so keep the fan-out small.
+const ANCHOR_READ_CONCURRENCY = 4;
 const fail = (kind: ConstructorParameters<typeof ShopifyAvailabilityHoldError>[0]): never => {
   throw new ShopifyAvailabilityHoldError(kind);
 };
