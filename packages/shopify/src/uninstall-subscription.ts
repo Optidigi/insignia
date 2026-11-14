@@ -1,4 +1,5 @@
 import { withAdminDeadline } from './admin-deadline.js';
+import type { AdminProviderCode } from './admin-online-identity.js';
 
 export type UninstallSubscriptionGrant = { shop: string; accessToken: string };
 export type UninstallSubscriptionContext = { shopId: string; installationId: string; appClientId: string };
@@ -8,9 +9,12 @@ export type UninstallSubscriptionCreateResult =
   | { kind: 'rejected'; reason: 'not_dispatched' | 'provider_rejected' }
   | { kind: 'unknown' };
 export class UninstallSubscriptionError extends Error {
-  constructor() {
+  /** Bounded HTTP status class when Shopify refused the call; never a provider message or body. */
+  readonly providerCode?: AdminProviderCode;
+  constructor(providerCode?: AdminProviderCode) {
     super('Uninstall subscription unavailable');
     this.name = 'UninstallSubscriptionError';
+    if (providerCode) this.providerCode = providerCode;
   }
 }
 const identityQuery = `query LifecycleIdentity { shop { id myshopifyDomain } currentAppInstallation { id app { apiKey } } }`;
@@ -83,7 +87,21 @@ export function createUninstallSubscriptionClient(input: { expectedOrigin: strin
             body: JSON.stringify({ query: queryText, variables }),
             signal,
           });
-          if (!response.ok) return fail();
+          if (!response.ok) {
+            await response.body?.cancel().catch(() => {});
+            const status = response.status;
+            throw new UninstallSubscriptionError(
+              status === 401
+                ? 'HTTP_401'
+                : status === 403
+                  ? 'HTTP_403'
+                  : status === 429
+                    ? 'HTTP_429'
+                    : status >= 500
+                      ? 'HTTP_5XX'
+                      : 'HTTP_OTHER',
+            );
+          }
           reader = response.body?.getReader();
           if (!reader) return fail();
           const chunks: Uint8Array[] = [];
@@ -115,7 +133,8 @@ export function createUninstallSubscriptionClient(input: { expectedOrigin: strin
           void reader?.cancel().catch(() => {});
         },
       );
-    } catch {
+    } catch (error) {
+      if (error instanceof UninstallSubscriptionError) throw error;
       return fail();
     }
   }

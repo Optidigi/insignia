@@ -32,10 +32,12 @@ import {
   createPublicationAdminHttpTransport,
   createShopifyAvailabilityHoldV3Port,
   expectedFunctionOwnership,
+  INSTALLATION_READ_BUDGET_MS,
   type OnlineStaffGrant,
   readOrderPresentation,
   resolveRuntimeReleaseProfile,
   type CatalogProduct as ShopifyCatalogProduct,
+  type UninstallSubscriptionError,
 } from '@insignia/shopify';
 import { loadArtworkStorageProfile } from '@insignia/storage';
 import { createAutomaticUninstallEnrollment, inspectArtworkPrivately } from '@insignia/worker';
@@ -683,14 +685,15 @@ export function createProductionAdminServices(
               'gid://shopify/Shop/' + state.shopifyShopId === observed.shopId
             );
           },
-          async readInstallation(online): Promise<AdminInstallation> {
+          async readInstallation(online, budgetMs = INSTALLATION_READ_BUDGET_MS): Promise<AdminInstallation> {
+            const readDeadline = Date.now() + budgetMs;
             // Capture durable state before provider IO. A stale observation may
             // not reverse a generation committed while that IO was in flight.
             const expected = await core.tenants.getManagedInstallationState(online.shop).catch(() => {
               throw new AdminInstallationReconciliationError('TENANT_READ_FAILED');
             });
             const observationStartedAt = new Date();
-            const provider = await shopify.readInstallation(online);
+            const provider = await shopify.readInstallation(online, readDeadline - Date.now());
             diagnostic('INSTALLATION_PROVIDER_READ_SUCCEEDED');
             const identity: ManagedInstallationIdentity = {
               shopDomain: provider.shop,
@@ -699,7 +702,7 @@ export function createProductionAdminServices(
             };
             let confirmation: ManagedInstallationIdentity | undefined;
             if (expected && expected.externalInstallationId !== provider.installationId) {
-              const confirmed = await shopify.readInstallation(online);
+              const confirmed = await shopify.readInstallation(online, readDeadline - Date.now());
               if (
                 confirmed.ianaTimezone !== provider.ianaTimezone ||
                 [...confirmed.grantedScopes].sort().join(',') !== [...provider.grantedScopes].sort().join(',')
@@ -743,6 +746,17 @@ export function createProductionAdminServices(
               installationGeneration: installed.state.currentGeneration,
               externalInstallationId: provider.installationId,
               providerShopId: provider.shopId,
+            }).catch((error: unknown) => {
+              // Logged under its own stage; a refused online token keeps its provider code
+              // so a revoked reused grant is replaced (#480).
+              const providerCode =
+                error instanceof Error && error.name === 'UninstallSubscriptionError'
+                  ? (error as UninstallSubscriptionError).providerCode
+                  : undefined;
+              throw new AdminInstallationReconciliationError(
+                'UNINSTALL_ENROLLMENT_FAILED',
+                providerCode ? { providerCode } : {},
+              );
             });
             return {
               shop: provider.shop,
