@@ -255,7 +255,8 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
     diagnostic(reusedGrant ? 'ONLINE_GRANT_REUSED_SUCCEEDED' : 'ONLINE_EXCHANGE_SUCCEEDED');
     const reusedInstallation = installation !== undefined;
     if (!installation) {
-      for (let attempt = 1; !installation; attempt++) {
+      // At most two reads: the first, and one retry for a revoked or joined grant.
+      for (let attempt = 1; !installation && attempt <= 2; attempt++) {
         let joined = false;
         try {
           const read = () => port.readInstallation(grant!);
@@ -291,6 +292,7 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
           }
         }
       }
+      if (!installation) unavailable(new Error('Installation read returned no result'));
     } else diagnostic('INSTALLATION_OBSERVATION_REUSED_SUCCEEDED');
     if (
       installation.shop !== identity.shop ||
