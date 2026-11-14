@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { test, type TestContext } from 'node:test';
+import { type TestContext, test } from 'node:test';
 import { fixture } from './support/selected-browser.mts';
 
 // Scope: real built UI/client/Polaris in an isolated browser with synthetic provider HTTP. The preview read-back is
