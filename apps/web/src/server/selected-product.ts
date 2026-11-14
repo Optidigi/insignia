@@ -48,8 +48,12 @@ export function selectedProductDraft(setupInput: SelectedProductSetup, previous:
     throw new Error('Repeated product preview media identity');
   const exponent = previous.shopCurrency === 'USD' || previous.shopCurrency === 'EUR' ? 2 : null;
   if (exponent === null) throw new Error('Selected product currency is not qualified');
+  // A placement without a method or a size is unfinished authoring work: it stays in selectedSetup
+  // and blocks publication readiness, but never enters the commerce projection (#438).
+  const projected = (placement: SelectedProductSetup['product']['views'][number]['placements'][number]) =>
+    placement.methodIds.length > 0 && placement.sizes.length > 0;
   const usedMethodIds = new Set(
-    product.views.flatMap((view) => view.placements.flatMap((placement) => placement.methodIds)),
+    product.views.flatMap((view) => view.placements.filter(projected).flatMap((placement) => placement.methodIds)),
   );
   const placements: MerchantDraft['placements'] = [];
   const pricingRules: MerchantDraft['pricingRules'] = [];
@@ -97,6 +101,10 @@ export function selectedProductDraft(setupInput: SelectedProductSetup, previous:
     };
     for (const placement of view.placements) {
       claim(placement.id);
+      if (!projected(placement)) {
+        for (const size of placement.sizes) claim(selectedStepIdentity(placement.id, size.id));
+        continue;
+      }
       if (placement.name.trim()) labels.placements![placement.id] = placement.name.trim();
       const steps: string[] = [];
       for (const size of placement.sizes) {
@@ -211,7 +219,8 @@ export function selectedProductDraft(setupInput: SelectedProductSetup, previous:
             image: { revisionId: image.id, width: image.width, height: image.height },
           });
         for (const area of resolved.view.placements) {
-          const shared = mapped.placements.find((item) => item.id === area.id)!;
+          const shared = mapped.placements.find((item) => item.id === area.id);
+          if (!shared) continue; // Unfinished placements have no projected area to override.
           if (
             ['centerX', 'centerY', 'width', 'height'].some(
               (key) => shared.rect[key as keyof typeof shared.rect] !== area.rect[key as keyof typeof area.rect],
