@@ -74,6 +74,8 @@ test('metric labels are fixed outcomes and never contain tenant or delivery IDs'
   metrics.resolution('resolved');
   metrics.resolution('unresolved');
   metrics.unresolvedBacklog(3);
+  metrics.artworkCleanupReview(2);
+  assert.throws(() => metrics.artworkCleanupReview(-1), /artwork cleanup review/);
   // @ts-expect-error Tenant identifiers must never become metric labels.
   assert.throws(() => metrics.webhook('shop_105501393179'), /metric outcome/);
   assert.throws(() => metrics.unresolvedBacklog(-1), /backlog/);
@@ -82,6 +84,7 @@ test('metric labels are fixed outcomes and never contain tenant or delivery IDs'
   assert.match(text, /insignia_usage_qualification_pass_total\{outcome="failure"\} 1/);
   assert.match(text, /insignia_webhook_total\{outcome="enqueue_failure"\} 1/);
   assert.match(text, /insignia_unresolved_inbox_backlog 3/);
+  assert.match(text, /insignia_artwork_cleanup_review_rows 2/);
   assert.doesNotMatch(text, /105501393179|shop_id|domain|delivery_id/);
 });
 
@@ -129,6 +132,13 @@ test('running cleanup failures retain actionable categories without arbitrary er
     logger.error('queue_job_rejected', { errorClass, error: new Error('SECRET'), rawBody: 'SECRET' });
     assert.equal(parseRecord(lastLine(output)).errorClass, errorClass);
   }
+  // One asset's failure is a warning with its consecutive attempt count; review is its own class (#474).
+  logger.warn('queue_job_rejected', { errorClass: 'ARTWORK_CLEANUP_NEEDS_REVIEW', attempt: 12 });
+  const { event, errorClass, attempt, level } = parseRecord(lastLine(output));
+  assert.deepEqual(
+    { event, errorClass, attempt, level },
+    { event: 'queue_job_rejected', errorClass: 'ARTWORK_CLEANUP_NEEDS_REVIEW', attempt: 12, level: 40 },
+  );
   // @ts-expect-error Deliberately inject an arbitrary Error to verify omission.
   logger.error('queue_job_rejected', { errorClass: 'UNTRUSTED_SECRET', error: new Error('SECRET') });
   assert.equal(parseRecord(lastLine(output)).errorClass, undefined);

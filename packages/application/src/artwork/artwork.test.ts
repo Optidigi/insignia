@@ -414,11 +414,16 @@ describe('private artwork lifecycle at the application seam', () => {
         originalKey: `originals/${assetId}`,
         previewKey: `previews/${assetId}`,
       });
+    const recorded: string[] = [];
     const service = createArtworkService({
       onCleanupError: (code) => {
         failures.push(code);
       },
       store: artworkStore({
+        recordCleanupFailure: async (id, kind, failure) => {
+          recorded.push(`${id}:${kind}:${failure}`);
+          return { attempts: 1, review: false };
+        },
         selectQuarantineCleanup: async () => [row('quarantine-fails'), row('quarantine-ok')],
         markQuarantineCleanupAttempt: async (id: string) => {
           attempted.push(id);
@@ -445,8 +450,41 @@ describe('private artwork lifecycle at the application seam', () => {
     expect(attempted).toEqual(['quarantine-fails', 'quarantine-ok']);
     expect(finished).toEqual(['expired-ok']);
     expect(failures).toEqual(['ARTWORK_CLEANUP_UNAVAILABLE', 'ARTWORK_CLEANUP_UNAVAILABLE']);
+    // Each failed attempt is recorded against its own asset and kind, with a bounded code (#474).
+    expect(recorded).toEqual([
+      'quarantine-fails:quarantine:STORAGE_UNAVAILABLE',
+      'expired-fails:deletion:STORAGE_UNAVAILABLE',
+    ]);
     expect(removed).toContain('quarantine/quarantine-ok');
     expect(removed).toContain('previews/expired-ok');
+  });
+  it('completes a sweep and reports a code when the review count is unavailable', async () => {
+    const failures: [string, number | undefined][] = [],
+      reviews: number[] = [];
+    const service = createArtworkService({
+      onCleanupError: (code, attempts) => {
+        failures.push([code, attempts]);
+      },
+      onCleanupReview: (count) => {
+        reviews.push(count);
+      },
+      store: artworkStore({
+        selectQuarantineCleanup: async () => [],
+        selectExpired: async () => [artworkRow({ assetId: 'expired' })],
+        markDeleting: async () => artworkRow({ assetId: 'expired' }),
+        finishDeleting: async () => {},
+        countCleanupReview: async () => {
+          throw new Error('database unavailable');
+        },
+      }),
+      storage: artworkStorage({ remove: async () => {} }),
+      inspect: async () => {
+        throw new Error('must not inspect');
+      },
+    });
+    await expect(service.cleanup(20)).resolves.toBe(1);
+    expect(failures).toEqual([['ARTWORK_CLEANUP_UNAVAILABLE', undefined]]);
+    expect(reviews).toEqual([]);
   });
   it('keeps the authenticated guest session owner instead of returning an unrelated capability', async () => {
     const service = createArtworkService({

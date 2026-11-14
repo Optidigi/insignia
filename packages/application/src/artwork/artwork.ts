@@ -20,7 +20,25 @@ export const ARTWORK_POLICY = {
   retainedMs: 7 * 86_400_000,
   leaseMs: 360_000,
   previewMaxBytes: 2 * 1024 * 1024,
+  /**
+   * Cleanup retries (spec §11): after a failed attempt, wait 5 s doubling to a 15-minute cap; the 12th
+   * consecutive failure flags the row for review. A deletion keeps retrying at the cap after that (§10.4,
+   * §11 delete-expired-data: retry until completed); a USABLE row's quarantine cleanup stops, because
+   * retention deletion removes that key with the rest of the asset. Without a failure, an attempted row is
+   * re-swept at most once a minute (#465).
+   */
+  cleanup: { retryBaseMs: 5_000, retryCapMs: 900_000, reviewAfterAttempts: 12, resweepMs: 60_000 },
 } as const;
+/** Bounded last-failure vocabulary stored per cleanup kind; never keys, provider text or personal data. */
+export type ArtworkCleanupFailure = 'STORAGE_UNAVAILABLE' | 'STATE_UNAVAILABLE';
+/** Deletion (and tombstone re-sweep) of an asset's keys, or a USABLE asset's quarantine key. */
+export type ArtworkCleanupKind = 'deletion' | 'quarantine';
+/** Delay before the next cleanup attempt after `attempts` consecutive unsuccessful attempts. */
+export function artworkCleanupDelayMs(attempts: number): number {
+  const { retryBaseMs, retryCapMs, resweepMs } = ARTWORK_POLICY.cleanup;
+  if (attempts <= 0) return resweepMs;
+  return Math.min(retryBaseMs * 2 ** (Math.min(attempts, 20) - 1), retryCapMs);
+}
 export const ARTWORK_MIME_TYPES: readonly string[] = ['image/svg+xml', 'image/png', 'image/jpeg'];
 export type ArtworkMime = 'image/svg+xml' | 'image/png' | 'image/jpeg';
 export type ArtworkState =
@@ -86,6 +104,15 @@ export interface ArtworkStore {
   selectQuarantineCleanup(limit: number, now: Date): Promise<ArtworkRecord[]>;
   markQuarantineCleanupAttempt(assetId: string, now: Date): Promise<boolean>;
   markQuarantineCleaned(assetId: string, now: Date): Promise<void>;
+  /** Records a failed attempt's code; flags review at the attempt limit. Null when the row is gone. */
+  recordCleanupFailure(
+    assetId: string,
+    kind: ArtworkCleanupKind,
+    failure: ArtworkCleanupFailure,
+    now: Date,
+  ): Promise<{ attempts: number; review: boolean } | null>;
+  /** Rows of either cleanup kind currently flagged for review. */
+  countCleanupReview(): Promise<number>;
   readUsability(scope: ArtworkScope, assetIds: readonly string[], now: Date): Promise<ArtworkRecord[]>;
 }
 export interface ArtworkStorage {
@@ -155,12 +182,25 @@ export function createArtworkService(input: {
   storage: ArtworkStorage;
   inspect: (bytes: Uint8Array, options?: { signal?: AbortSignal }) => Promise<ArtworkInspection>;
   clock?: () => Date;
-  onCleanupError?: (code: 'ARTWORK_CLEANUP_UNAVAILABLE') => void;
+  /** One asset's failed cleanup: codes and its consecutive attempt count only (unknown if unrecorded). */
+  onCleanupError?: (code: 'ARTWORK_CLEANUP_UNAVAILABLE' | 'ARTWORK_CLEANUP_NEEDS_REVIEW', attempts?: number) => void;
+  /** After each sweep: the number of rows flagged for review, for a gauge. */
+  onCleanupReview?: (count: number) => void;
 }) {
   const clock = input.clock ?? (() => new Date());
-  const cleanupFailed = () => {
+  /** Records an accepted attempt's failure, then reports it; neither stops the sweep. Without an
+   * accepted attempt (`failure` undefined) there is nothing to back off, only the report. */
+  const cleanupFailed = async (assetId: string, kind: ArtworkCleanupKind, failure?: ArtworkCleanupFailure) => {
+    let recorded: { attempts: number; review: boolean } | null = null;
+    if (failure)
+      try {
+        recorded = await input.store.recordCleanupFailure(assetId, kind, failure, clock());
+      } catch {}
     try {
-      input.onCleanupError?.('ARTWORK_CLEANUP_UNAVAILABLE');
+      input.onCleanupError?.(
+        recorded?.review ? 'ARTWORK_CLEANUP_NEEDS_REVIEW' : 'ARTWORK_CLEANUP_UNAVAILABLE',
+        recorded?.attempts,
+      );
     } catch {}
   };
   function bound(scope: ArtworkScope, normal: Date): Date {
@@ -377,30 +417,51 @@ export function createArtworkService(input: {
     },
     async cleanup(limit = 100) {
       for (const row of await input.store.selectQuarantineCleanup(Math.min(Math.max(limit, 1), 100), clock())) {
+        let failure: ArtworkCleanupFailure | undefined;
         try {
           if (!(await input.store.markQuarantineCleanupAttempt(row.assetId, clock()))) continue;
+          failure = 'STORAGE_UNAVAILABLE';
           await input.storage.remove({ key: row.quarantineKey });
+          failure = 'STATE_UNAVAILABLE';
           await input.store.markQuarantineCleaned(row.assetId, clock());
         } catch {
-          // The attempt is durable, the failed obligation remains eligible after
-          // its cooldown, and unrelated retention deletions still progress.
-          cleanupFailed();
+          // The attempt is durable, the failed obligation backs off, and unrelated
+          // retention deletions still progress.
+          await cleanupFailed(row.assetId, 'quarantine', failure);
         }
       }
       const rows = await input.store.selectExpired(Math.min(Math.max(limit, 1), 100), clock());
       let completed = 0;
       for (const selected of rows) {
+        let failure: ArtworkCleanupFailure | undefined;
         try {
           const row = await input.store.markDeleting(selected.assetId, clock());
           if (!row) continue;
+          failure = 'STORAGE_UNAVAILABLE';
           for (const key of [row.quarantineKey, row.originalKey, row.previewKey]) await input.storage.remove({ key });
+          failure = 'STATE_UNAVAILABLE';
           await input.store.finishDeleting(row.assetId, clock());
           completed++;
         } catch {
           // Never acknowledge partial deletion; leave DELETING durable and move
           // to the next independent asset instead of blocking the entire sweep.
-          cleanupFailed();
+          await cleanupFailed(selected.assetId, 'deletion', failure);
         }
+      }
+      if (input.onCleanupReview) {
+        // The gauge is advisory: a failed count never fails a sweep whose deletions completed.
+        let count: number | undefined;
+        try {
+          count = await input.store.countCleanupReview();
+        } catch {
+          try {
+            input.onCleanupError?.('ARTWORK_CLEANUP_UNAVAILABLE');
+          } catch {}
+        }
+        if (count !== undefined)
+          try {
+            input.onCleanupReview(count);
+          } catch {}
       }
       return completed;
     },

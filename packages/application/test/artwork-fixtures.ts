@@ -51,6 +51,8 @@ export function artworkStore(overrides: Partial<ArtworkStore> = {}): ArtworkStor
     selectQuarantineCleanup: unexpected,
     markQuarantineCleanupAttempt: unexpected,
     markQuarantineCleaned: unexpected,
+    recordCleanupFailure: unexpected,
+    countCleanupReview: unexpected,
     readUsability: unexpected,
     ...overrides,
   };

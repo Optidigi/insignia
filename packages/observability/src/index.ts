@@ -303,6 +303,7 @@ const RUNTIME_ERROR_CLASSES = [
   'PURCHASE_RECONCILIATION_UNAVAILABLE',
   'PURCHASE_PAYLOAD_CLEANUP_UNAVAILABLE',
   'ARTWORK_CLEANUP_UNAVAILABLE',
+  'ARTWORK_CLEANUP_NEEDS_REVIEW',
   'MERCHANT_PREVIEW_CLEANUP_UNAVAILABLE',
   'BUYER_PAYLOAD_CLEANUP_UNAVAILABLE',
   'SIGNING_KEY_DESTRUCTION_UNAVAILABLE',
@@ -624,6 +625,11 @@ export function createObservability(options: { stream?: Writable; level?: 'debug
     help: 'Publication availability holds waiting for the operator',
     registers: [registry],
   });
+  const artworkCleanupReview = new Gauge({
+    name: 'insignia_artwork_cleanup_review_rows',
+    help: 'Artwork rows whose cleanup failed 12 consecutive times and needs review',
+    registers: [registry],
+  });
   const backlog = new Gauge({
     name: 'insignia_unresolved_inbox_backlog',
     help: 'Number of unresolved inbox rows',
@@ -658,6 +664,10 @@ export function createObservability(options: { stream?: Writable; level?: 'debug
     publicationHoldsFlagged(count: number) {
       if (!Number.isSafeInteger(count) || count < 0) throw new Error('Invalid flagged hold count');
       flaggedHolds.set(count);
+    },
+    artworkCleanupReview(count: number) {
+      if (!Number.isSafeInteger(count) || count < 0) throw new Error('Invalid artwork cleanup review count');
+      artworkCleanupReview.set(count);
     },
     unresolvedBacklog(count: number) {
       if (!Number.isSafeInteger(count) || count < 0) throw new Error('Invalid unresolved backlog');

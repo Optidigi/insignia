@@ -13,6 +13,13 @@ const updates: Readonly<Record<string, readonly string[]>> = {
     'cleanup_attempt_at',
     'quarantine_cleanup_attempt_at',
     'updated_at',
+    // Cleanup backoff bookkeeping (#474, migration 67).
+    'cleanup_attempts',
+    'cleanup_failure',
+    'cleanup_review_at',
+    'quarantine_cleanup_attempts',
+    'quarantine_cleanup_failure',
+    'quarantine_cleanup_review_at',
   ],
   shops: ['updated_at'],
   installation_generations: ['deactivated_at'],

@@ -37,9 +37,11 @@ try {
     store: core.artwork,
     storage,
     inspect: inspectArtwork,
-    // One asset's failed delete stays durable and is retried after its cooldown: warn, code only (#465).
-    onCleanupError: () =>
-      observability.logger.warn('queue_job_rejected', { errorClass: 'ARTWORK_CLEANUP_UNAVAILABLE' }),
+    // One asset's failed cleanup stays durable and backs off; codes and its attempt count only (#465, #474).
+    // The failure reason and the review flag are on the row.
+    onCleanupError: (errorClass, attempt) =>
+      observability.logger.warn('queue_job_rejected', { errorClass, ...(attempt === undefined ? {} : { attempt }) }),
+    onCleanupReview: (count) => observability.metrics.artworkCleanupReview(count),
   });
   const merchantPreviews = merchantPreviewsEnabled
     ? createMerchantPreviewCapture({
