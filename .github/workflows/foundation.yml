@@ -63,6 +63,9 @@ jobs:
           corepack pnpm --filter @insignia/designer exec playwright install --with-deps chromium firefox
       - name: Build and check actual workspace
         if: steps.changes.outputs.route == 'full'
+        env:
+          # Read-only job token: authenticates only the pinned Function trampoline download (GitHub API rate limit).
+          INSIGNIA_GITHUB_DOWNLOAD_TOKEN: ${{ github.token }}
         run: corepack pnpm check
       - name: Qualify Ajax carriers against actual production Functions
         if: steps.changes.outputs.route == 'full'

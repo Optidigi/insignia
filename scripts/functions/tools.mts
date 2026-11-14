@@ -15,9 +15,13 @@ export async function ensurePinnedTool(destination: string, kind: 'runner' | 'tr
       kind === 'runner'
         ? 'https://github.com/Shopify/function-runner/releases/download/v9.2.2/function-runner-x86_64-linux-v9.2.2.gz'
         : 'https://api.github.com/repos/Shopify/shopify-function-wasm-api/releases/assets/298980878';
+    // The trampoline is a GitHub API asset: unauthenticated API calls share a 60/h per-IP limit on CI runners.
+    const token = process.env.INSIGNIA_GITHUB_DOWNLOAD_TOKEN;
     const response = await fetch(
       url,
-      kind === 'trampoline' ? { headers: { Accept: 'application/octet-stream' } } : undefined,
+      kind === 'trampoline'
+        ? { headers: { Accept: 'application/octet-stream', ...(token ? { Authorization: `Bearer ${token}` } : {}) } }
+        : undefined,
     );
     assert(response.ok && response.body, `Pinned Function tool download failed (HTTP ${response.status})`);
     const chunks: Buffer[] = [],
