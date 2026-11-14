@@ -40,12 +40,35 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
   let database: Kysely<Database>;
   let core: DurableCore;
   let afterSql: ((text: string) => void) | undefined;
+  // #466 test 13: when set, every UPDATE of publication progress or operation rows first records
+  // whether its transaction holds a FOR UPDATE row lock on `shops` (the freeze rule's premise).
+  let shopLockAudit: { text: string; locked: boolean }[] | undefined;
+  const publicationWrite = /^\s*update\s+"?(m4_publication_progress|publication_operations)"?\s/i;
   beforeAll(async () => {
     database = await openTestDatabase();
     const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 8 });
     pool.on('connect', (client) => {
       const original = client.query.bind(client);
       client.query = ((...args: unknown[]) => {
+        const input = args[0];
+        const sqlText =
+          typeof input === 'string'
+            ? input
+            : input && typeof input === 'object' && 'text' in input && typeof input.text === 'string'
+              ? input.text
+              : '';
+        if (shopLockAudit && publicationWrite.test(sqlText)) {
+          const audit = shopLockAudit;
+          return (
+            Reflect.apply(original, client, [
+              `SELECT EXISTS(SELECT FROM pg_locks WHERE pid=pg_backend_pid() AND locktype='relation'
+                AND relation='public.shops'::regclass AND mode='RowShareLock' AND granted) AS locked`,
+            ]) as Promise<{ rows: { locked: boolean }[] }>
+          ).then((check) => {
+            audit.push({ text: sqlText.trim().slice(0, 60), locked: check.rows[0]?.locked === true });
+            return Reflect.apply(original, client, args);
+          });
+        }
         const result: unknown = Reflect.apply(original, client, args);
         if (result instanceof Promise)
           return result.then((rows) => {
@@ -153,6 +176,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     >();
     let remoteReads = 0;
     let remoteWrites = 0;
+    const dispatches: { field: string; committedPhase: string | null }[] = [];
     let beforeRead: (() => Promise<void>) | undefined;
     const syntheticRemote: ProductionPublicationRemote = {
       read: async (target) => {
@@ -162,6 +186,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       },
       set: async (target) => {
         remoteWrites++;
+        // #466 test 9: the committed phase (another connection sees only committed rows).
+        const committed = await sql<{ phase: string }>`SELECT phase FROM m4_publication_progress
+          WHERE shop_id=${shopId} AND operation_id=${operationId}`.execute(database);
+        dispatches.push({ field: target.field, committedPhase: committed.rows[0]?.phase ?? null });
         if ((cells.get(target.field)?.compareDigest ?? null) !== target.compareDigest)
           throw new Error('Synthetic CAS mismatch');
         const observed = {
@@ -683,6 +711,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       get remoteWrites() {
         return remoteWrites;
       },
+      dispatches,
       get remoteReads() {
         return remoteReads;
       },
@@ -1573,6 +1602,89 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       await worker.close();
       await owner.query(`DROP OWNED BY ${role}; DROP ROLE ${role}`);
       await owner.end();
+    }
+  });
+
+  it('#466 B structural: product fields are dispatched only from a committed phase past prepared, by advance only', async () => {
+    // Source boundary: the only provider write of registration/policy is PgProductionPublication.advance.
+    const root = new URL('../../../', import.meta.url);
+    const { readdir } = await import('node:fs/promises');
+    const sources: string[] = [];
+    const walk = async (dir: URL) => {
+      for (const entry of await readdir(dir, { withFileTypes: true })) {
+        if (['node_modules', 'dist', 'test', '.astro'].includes(entry.name)) continue;
+        const next = new URL(`${entry.name}${entry.isDirectory() ? '/' : ''}`, dir);
+        if (entry.isDirectory()) await walk(next);
+        else if (/\.(ts|tsx|mts)$/.test(entry.name) && !/\.test\./.test(entry.name)) sources.push(next.pathname);
+      }
+    };
+    for (const scope of ['apps/web/src/', 'apps/worker/src/', 'packages/database/src/', 'packages/application/src/'])
+      await walk(new URL(scope, root));
+    const writers: string[] = [];
+    for (const file of sources) {
+      const text = await readFile(file, 'utf8');
+      if (/remote\.set\(/.test(text)) writers.push(file.slice(root.pathname.length));
+      if (!file.endsWith('repositories/production-publication.ts'))
+        expect([file, /field:\s*'(registration|policy)'[^}]*value:/.test(text)]).toEqual([file, false]);
+    }
+    expect(writers).toEqual(['packages/database/src/repositories/production-publication.ts']);
+    const publication = await readFile(
+      new URL('packages/database/src/repositories/production-publication.ts', root),
+      'utf8',
+    );
+    expect(publication.indexOf('this.remote.set(')).toBeGreaterThan(publication.indexOf('  async advance('));
+
+    // Runtime: through the real composition, record the committed phase at every dispatch, for a
+    // first publication and a mode change (all phases), and count every set and restore.
+    const f = await fixture('required');
+    await f.prepareHold();
+    await f.publish();
+    await f.restart().advance(f.identity);
+    expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVE');
+    const second = { ...f.identity, operationId: randomUUID() };
+    const revision = randomUUID();
+    await f.createRevision(revision, 'optional');
+    await f.restart().publications.prepare({ ...second, revisionId: revision, mode: 'optional' });
+    await f.restart().advance(second);
+    await f.restart().advance(second);
+    await f.publish(second);
+    expect(f.dispatches.map((d) => d.field)).toEqual([
+      'public_config',
+      'registration',
+      'policy',
+      'registration',
+      'registration',
+      'policy',
+      'registration',
+    ]);
+    for (const dispatch of f.dispatches.slice(0, 4))
+      if (dispatch.field !== 'public_config') expect(dispatch.committedPhase).not.toBe('prepared');
+    expect(f.dispatches[0]?.committedPhase).toBe('prepared');
+    expect(f.remoteWrites).toBe(f.dispatches.length);
+    expect(f.restores).toBe(1);
+  });
+
+  it('#466 test 13: every writer of publication progress and operation rows holds the shop lock', async () => {
+    shopLockAudit = [];
+    try {
+      const f = await fixture('required', 'ACTIVE');
+      await f.prepareHold();
+      await f.publish();
+      await f.restart().advance(f.identity);
+      expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVE');
+      // Drift writes operator-hold through advance; activation records evidence; the worker finalizes.
+      const second = { ...f.identity, operationId: randomUUID() };
+      const revision = randomUUID();
+      await f.createRevision(revision, 'optional');
+      await f.restart().publications.prepare({ ...second, revisionId: revision, mode: 'optional' });
+      await f.restart().advance(second);
+      await f.restart().advance(second);
+      expect(await f.abandonment().runPass({ shopId: f.identity.shopId })).toMatchObject({ finalized: 1 });
+      const audit = shopLockAudit;
+      expect(audit.length).toBeGreaterThan(8);
+      expect(audit.filter((entry) => !entry.locked)).toEqual([]);
+    } finally {
+      shopLockAudit = undefined;
     }
   });
 
