@@ -309,6 +309,7 @@ test('a published geometry that references the featured identity still resolves 
   assert.equal(product.views[0]?.needsAlignmentReview, undefined);
   assert.deepEqual(
     product.images.map((item) => item.id),
-    ['image_1'],
+    ['product_111'],
+    'the identity the saved geometry uses is kept, so a save still recognises its prior image',
   );
 });

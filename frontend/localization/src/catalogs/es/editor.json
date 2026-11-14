@@ -587,7 +587,7 @@
       "tooDetailed": "La imagen tiene demasiados detalles para añadirla. Elige una imagen más sencilla.",
       "invalidDimensions": "Las dimensiones de esta imagen no son válidas.",
       "processingFailed": "No se pudo procesar la imagen.",
-      "previewUnreadable": "La imagen se ha subido, pero no se pudo cargar su vista previa. Inténtalo de nuevo.",
+      "previewUnreadable": "La imagen se ha subido, pero no se pudo cargar su vista previa. Sube el mismo archivo de nuevo.",
       "fileIssue": "{{fileName}}: {{reason}}",
       "moreFailures": "{{formattedCount}} errores de imagen más",
       "imagesFailed_one": "No se pudo añadir {{formattedCount}} imagen: {{details}}",

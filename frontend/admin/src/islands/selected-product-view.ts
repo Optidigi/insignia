@@ -16,21 +16,21 @@ const featuredOrVariantPhoto = /^(?:product|variant)_[1-9][0-9]{0,19}$/;
  * Shopify lists a featured or variant photo (`product_<id>`, `variant_<id>`) and the same photo as product media
  * (`image_<id>`) at one URL. Show each photo once under its stable media identity and move saved appearance
  * references to it; the catalogue keeps every identity, so earlier drafts and published setups still resolve.
+ * An identity the saved geometry already uses wins, so a save keeps recognising its prior image (retained
+ * production dimensions depend on that identity).
  */
-function eachPhotoOnce(product: PlacementProduct): PlacementProduct {
+function eachPhotoOnce(product: PlacementProduct, referenced: ReadonlySet<string>): PlacementProduct {
+  const rank = (id: string) => (referenced.has(id) ? 2 : featuredOrVariantPhoto.test(id) ? 0 : 1);
   const owner = new Map<string, string>();
   for (const { id, url } of product.images) {
     const current = owner.get(url);
-    if (
-      !id.startsWith('upload_') &&
-      (!current || (featuredOrVariantPhoto.test(current) && !featuredOrVariantPhoto.test(id)))
-    )
-      owner.set(url, id);
+    if (!id.startsWith('upload_') && (!current || rank(id) > rank(current))) owner.set(url, id);
   }
   const moved = new Map<string, string>();
   const images = product.images.filter(({ id, url }) => {
     const keep = owner.get(url);
-    if (!keep || keep === id || !featuredOrVariantPhoto.test(id)) return true;
+    // Distinct media identities are never merged; only a featured/variant alias and the media entry for one photo.
+    if (!keep || keep === id || !(featuredOrVariantPhoto.test(id) || featuredOrVariantPhoto.test(keep))) return true;
     moved.set(id, keep);
     return false;
   });
@@ -56,7 +56,22 @@ function eachPhotoOnce(product: PlacementProduct): PlacementProduct {
 
 /** Project real persisted authoring state. Legacy copied values remain product-owned, never inferred inherited. */
 export function selectedProductFromConfig(view: ConfigView): PlacementProduct {
-  return eachPhotoOnce(projectConfig(view));
+  return eachPhotoOnce(projectConfig(view), geometryPhotos(view));
+}
+
+function geometryPhotos(view: ConfigView): ReadonlySet<string> {
+  if (!view.config) return new Set();
+  try {
+    const geometry = validateGeometry(MerchantDraftSchema.parse(view.config.draft).geometry as GeometryV1);
+    return new Set(
+      geometry.views.flatMap((item) => [
+        ...(item.image ? [item.image.revisionId] : []),
+        ...item.variantImages.map((variant) => variant.image.revisionId),
+      ]),
+    );
+  } catch {
+    return new Set();
+  }
 }
 
 function projectConfig(view: ConfigView): PlacementProduct {

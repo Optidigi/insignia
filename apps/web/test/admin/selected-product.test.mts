@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { MerchantDraftSchema, resolveVariantPhotoView, SelectedProductSetupSchema } from '@insignia/contracts';
 import { type GeometryV1, validateGeometry } from '@insignia/visualizer/geometry';
+import { selectedProductFromConfig } from '../../../../frontend/admin/src/islands/selected-product-view.ts';
 import { selectedProductDraft, selectedPublicationProblems } from '../../src/server/selected-product.ts';
+import type { ConfigView } from '../../src/shared/admin-view.ts';
 
 const previous = MerchantDraftSchema.parse({
   version: 'm5-merchant-draft-v1',
@@ -75,7 +77,8 @@ test('selected setup persists actual physical sizes and final prices without tre
 });
 
 test('a featured photo that Shopify also lists as media validates under either identity, so the editor may show it once', () => {
-  const url = setup.product.images[0]!.url;
+  const url = 'https://cdn.shopify.com/front.jpg';
+  assert.equal(setup.product.images[0]?.url, url);
   const catalog = {
     id: setup.product.id,
     title: setup.product.title,
@@ -99,6 +102,68 @@ test('a featured photo that Shopify also lists as media validates under either i
     'image_9',
   );
   assert.deepEqual(selectedPublicationProblems(saved, catalog), []);
+});
+
+test('a legacy uncalibrated draft keeps its production dimensions through the de-duplicated editor and a price-only save', () => {
+  const url = 'https://cdn.shopify.com/front.jpg';
+  const legacy = MerchantDraftSchema.parse({
+    ...previous,
+    methods: [{ id: 'print' }],
+    placements: [{ id: 'chest', allowedMethodIds: ['print'], allowedStepIds: ['small'], logoLaterAllowed: true }],
+    geometry: {
+      version: 'm5-geometry-v1',
+      views: [
+        {
+          id: 'front',
+          image: { revisionId: 'product_111', width: 1000, height: 1200 },
+          variantImages: [],
+          placements: [{ id: 'chest', rect: { centerX: 0.5, centerY: 0.5, width: 0.2, height: 0.2 } }],
+        },
+      ],
+      steps: [{ id: 'small', widthFraction: 0.5, heightFraction: 0.5, physicalMm: { width: 72, height: 91 } }],
+    },
+  });
+  const view: ConfigView = {
+    product: {
+      id: 'gid://shopify/Product/111',
+      title: 'T-shirt',
+      status: 'ACTIVE',
+      imageUrl: url,
+      images: [
+        { id: 'product_111', url, width: 1000, height: 1200, alt: 'Front' },
+        { id: 'image_9', url, width: 1000, height: 1200, alt: 'Front' },
+      ],
+      variants: [],
+      variantsTruncated: false,
+    },
+    config: {
+      configId: 'cfg',
+      installationGeneration: '1',
+      draftVersion: '1',
+      currentShopCurrency: 'USD',
+      draft: legacy,
+      publication: {
+        state: 'DRAFT',
+        revisionId: null,
+        sourceDraftVersion: null,
+        requestKey: null,
+        reason: null,
+        requiresAllChannelHold: null,
+        functionReadiness: null,
+      },
+      publishEligibility: { allowed: false, reason: 'Incomplete' },
+    },
+  };
+  const product = selectedProductFromConfig(view);
+  const saved = selectedProductDraft(
+    SelectedProductSetupSchema.parse({ version: 'selected-product-setup-v1', product, methodBindings: {} }),
+    legacy,
+  );
+  assert.deepEqual((saved.geometry as GeometryV1).steps[0]?.physicalMm, { width: 72, height: 91 });
+  assert.deepEqual(
+    product.images.map((image) => image.id),
+    ['product_111'],
+  );
 });
 
 test('price-only adoption retains exact known production dimensions without inventing image calibration', () => {

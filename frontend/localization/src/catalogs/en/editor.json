@@ -484,7 +484,7 @@
       "tooDetailed": "This image is too detailed to add. Choose a simpler image.",
       "invalidDimensions": "This image has invalid dimensions.",
       "processingFailed": "The image could not be processed.",
-      "previewUnreadable": "The image was uploaded, but its preview could not be loaded. Try again.",
+      "previewUnreadable": "The image was uploaded, but its preview could not be loaded. Upload the same file again.",
       "fileIssue": "{{fileName}}: {{reason}}",
       "moreFailures": "{{formattedCount}} more image errors",
       "imagesFailed_one": "{{formattedCount}} image could not be added: {{details}}",

@@ -275,7 +275,7 @@ export default function PlacementImagePicker({
 
         // After a stored photo's preview could not be read, retrying the same file reuses its upload identity so the
         // server returns the media it already stored instead of adding another row.
-        const fileKey = JSON.stringify([file.name, file.type, file.size]);
+        const fileKey = JSON.stringify([file.name, file.type, file.size, file.lastModified]);
         const uploadId = uploadIds.current.get(fileKey) ?? crypto.randomUUID();
         let bitmap: ImageBitmap | undefined;
         try {
@@ -296,6 +296,7 @@ export default function PlacementImagePicker({
           additions.push(stored);
         } catch (cause) {
           if (cause instanceof StoredPreviewUnreadableError) uploadIds.current.set(fileKey, uploadId);
+          else uploadIds.current.delete(fileKey);
           errors.push({
             fileName: file.name,
             reason:
