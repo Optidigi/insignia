@@ -84,6 +84,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     let version = '2026-10-01T11:00:00.000Z';
     let availabilityReads = 0;
     let restoreCredentialDelay: { afterReads: number; ms: number } | null = null;
+    // Provider reads (1-based count) that answer 503: an outage that observed nothing.
+    const failedReads = new Set<number>();
     const shopId = randomUUID();
     const providerShop = BigInt(`0x${shopId.replaceAll('-', '').slice(0, 12)}`).toString();
     const configId = randomUUID();
@@ -455,6 +457,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
               const request = JSON.parse(String(init?.body));
               const mutation = request.query.startsWith('mutation');
               if (!mutation) availabilityReads++;
+              if (!mutation && failedReads.delete(availabilityReads)) return new Response('', { status: 503 });
               if (mutation) {
                 status = request.variables.product.status;
                 providerWrites.push(status);
@@ -548,6 +551,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         requestDeadline = providerClock.getTime();
       },
       httpMutations,
+      /** The next provider read after `afterReads` more reads answers 503 (nothing observed). */
+      failProviderRead: (afterReads: number) => {
+        failedReads.add(availabilityReads + afterReads + 1);
+      },
       expireRestoreCredential: (ms: number) => {
         // Caller observes held status once; restore rereads it before status mutation preparation.
         restoreCredentialDelay = { afterReads: availabilityReads + 2, ms };
@@ -1043,6 +1050,50 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       client.release();
       await pool.end();
     }
+  });
+
+  it('#466 N2: a failed pre-write read after activation stores NOT_DISPATCHED and the claim rearms once', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    await f.publish();
+    expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+    // The claim is committed. The coordinator observes the held product, then restore() rereads it
+    // before the status write; that reread fails (outage), so nothing was dispatched.
+    f.failProviderRead(1);
+    expect((await f.freshProviderRestart().advance(f.identity)).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+    const stored = await f.restart().read(f.identity);
+    expect(stored?.state).toMatchObject({
+      kind: 'RESTORATION_CLAIMED',
+      hold: { restorationReceipt: { kind: 'NOT_DISPATCHED', acknowledgement: null, current: null } },
+    });
+    expect(f.providerWrites).toEqual(['DRAFT']);
+    // One rearm of that receipt digest, then the restore completes.
+    expect((await f.freshProviderRestart().advance(f.identity)).kind).toBe('ACTIVE');
+    expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
+    const consumed = await sql`SELECT FROM m5_restoration_no_dispatch_consumptions WHERE shop_id=${f.identity.shopId}`.execute(
+      database,
+    );
+    expect(consumed.rows).toHaveLength(1);
+  });
+
+  it('#466 N2: a second no-current NOT_DISPATCHED cannot rearm the same claim again', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    await f.publish();
+    expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+    f.failProviderRead(1);
+    expect((await f.freshProviderRestart().advance(f.identity)).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+    // The rearmed attempt fails the same way: same receipt digest, so no second rearm.
+    f.failProviderRead(1);
+    expect((await f.freshProviderRestart().advance(f.identity)).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+    expect((await f.freshProviderRestart().advance(f.identity)).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+    expect(f.providerWrites).toEqual(['DRAFT']);
+    const state = (await f.restart().read(f.identity))?.state;
+    expect(state?.kind).toBe('RESTORATION_CLAIMED');
+    if (state?.hold?.version !== 'm5-availability-hold-v3') throw new Error('v3 hold expected');
+    expect(state.hold.restorationClaim?.settledNoDispatchReceiptDigest).toBe(
+      activationDigest(state.hold.restorationReceipt),
+    );
   });
 
   it('a crash after compensation leaves the committed v3 claim and never replays either write', async () => {

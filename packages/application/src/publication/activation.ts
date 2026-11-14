@@ -430,12 +430,14 @@ export function createPublicationActivation(input: {
               receipt.kind === 'NOT_DISPATCHED' &&
               receipt.acknowledgement === null &&
               receipt.compensation === undefined &&
-              receipt.current &&
-              isAvailabilityV3(receipt.current) &&
-              exactSnapshot(receipt.current, hold.held) &&
-              receipt.current.state === 'unavailable' &&
-              receipt.current.productId === c.productId &&
-              activationDigest(receipt.current.scope) === activationDigest(c.availabilityScope) &&
+              // A failed pre-write read observed nothing (current null); restore() rereads and
+              // requires the owned held snapshot before any write, so it may rearm too (#466).
+              (receipt.current === null ||
+                (isAvailabilityV3(receipt.current) &&
+                  exactSnapshot(receipt.current, hold.held) &&
+                  receipt.current.state === 'unavailable' &&
+                  receipt.current.productId === c.productId &&
+                  activationDigest(receipt.current.scope) === activationDigest(c.availabilityScope))) &&
               claim.version === 'm5-availability-restoration-claim-v3' &&
               claim.operationId === c.operationId &&
               claim.productId === c.productId &&
