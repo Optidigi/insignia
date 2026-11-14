@@ -571,6 +571,7 @@
       "customer_artwork_processingFailed": "Impossibile verificare il file. Riprova.",
       "customer_artwork_processingTimeout": "La verifica richiede più tempo del previsto. Riprova.",
       "customer_artwork_inspectionRejected": "Questa immagine è stata rifiutata. Scegli un’immagine statica supportata.",
+      "customer_artwork_dimensionsTooLarge": "Immagine troppo grande",
       "customer_artwork_artworkExpired": "Questo file è scaduto. Caricalo di nuovo.",
       "customer_artwork_sessionLimited": "Messaggio per troppe sessioni",
       "customer_artwork_uploadRateLimited": "Messaggio di limite di caricamenti",

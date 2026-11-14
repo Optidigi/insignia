@@ -15,12 +15,14 @@ import { portFailure } from "./port-failure";
 
 export type UploadPhase = 'uploading' | 'processing';
 function uploadFailure(error: unknown, phase?: UploadPhase): { reason: Exclude<UploadFailureReason, 'file-too-large' | 'unsupported-file-type'>; retryAfterSeconds?: number } {
-  const { status, code, retryAfter } = portFailure(error);
+  const { status, code, retryAfter, reason } = portFailure(error);
   // Neither a retry nor another file helps until the visitor window admits a new session.
   if (code === 'SESSION_RATE_LIMITED' || code === 'RATE_LIMITED')
     return { reason: code === 'RATE_LIMITED' ? 'rate-limited' : 'session-limited', ...(retryAfter ? { retryAfterSeconds: retryAfter } : {}) };
   if (status === 410) return { reason: 'artwork-expired' };
-  if (phase === 'processing') return { reason: status === 422 ? 'inspection-rejected' : 'processing-failed' };
+  if (phase === 'processing' && status === 422)
+    return { reason: reason === 'DIMENSIONS_TOO_LARGE' ? 'dimensions-too-large' : 'inspection-rejected' };
+  if (phase === 'processing') return { reason: 'processing-failed' };
   return { reason: phase === 'uploading' ? 'upload-failed' : 'read-failed' };
 }
 

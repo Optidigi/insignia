@@ -36,6 +36,7 @@ export const customerParameterContracts = {
   'customer:artwork.dialogArtworkTitle': { positionName: 'string' },
   'customer:artwork.dialogOptionTitle': {},
   'customer:artwork.dialogPositionsTitle': {},
+  'customer:artwork.dimensionsTooLarge': { maxEdgePx: 'number', maxMegapixels: 'number' },
   'customer:artwork.dropFile': {},
   'customer:artwork.editPositionArtwork': { positionName: 'string' },
   'customer:artwork.emptyDescription': {},

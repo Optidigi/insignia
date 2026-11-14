@@ -32,7 +32,7 @@ export type DesignerModal =
  * `session-limited`: the per-visitor session limit refused the session the upload needs (#348).
  * `rate-limited`: the owner's artwork upload quota is used up until its Retry-After (#337).
  */
-export type UploadFailureReason = 'file-too-large' | 'unsupported-file-type' | 'read-failed' | 'upload-failed' | 'processing-failed' | 'processing-timeout' | 'inspection-rejected' | 'artwork-expired' | 'session-limited' | 'rate-limited';
+export type UploadFailureReason = 'file-too-large' | 'unsupported-file-type' | 'read-failed' | 'upload-failed' | 'processing-failed' | 'processing-timeout' | 'inspection-rejected' | 'dimensions-too-large' | 'artwork-expired' | 'session-limited' | 'rate-limited';
 
 export type UploadState =
   | { kind: 'idle' }

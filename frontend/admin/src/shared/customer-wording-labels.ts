@@ -112,6 +112,7 @@ export const customerWordingLabels = {
   'customer:artwork.processingFailed': 'settings:translations.fields.customer_artwork_processingFailed',
   'customer:artwork.processingTimeout': 'settings:translations.fields.customer_artwork_processingTimeout',
   'customer:artwork.inspectionRejected': 'settings:translations.fields.customer_artwork_inspectionRejected',
+  'customer:artwork.dimensionsTooLarge': 'settings:translations.fields.customer_artwork_dimensionsTooLarge',
   'customer:artwork.artworkExpired': 'settings:translations.fields.customer_artwork_artworkExpired',
   'customer:artwork.sessionLimited': 'settings:translations.fields.customer_artwork_sessionLimited',
   'customer:artwork.uploadRateLimited': 'settings:translations.fields.customer_artwork_uploadRateLimited',

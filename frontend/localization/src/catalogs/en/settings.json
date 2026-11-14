@@ -568,6 +568,7 @@
       "customer_artwork_processingFailed": "Artwork could not be checked. Try again.",
       "customer_artwork_processingTimeout": "Checking artwork is taking longer than expected. Try again.",
       "customer_artwork_inspectionRejected": "This image was rejected. Choose a supported static image.",
+      "customer_artwork_dimensionsTooLarge": "Image too large",
       "customer_artwork_artworkExpired": "This artwork has expired. Upload it again.",
       "customer_artwork_sessionLimited": "Too many sessions message",
       "customer_artwork_uploadRateLimited": "Upload limit message",

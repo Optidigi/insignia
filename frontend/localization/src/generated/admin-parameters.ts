@@ -2380,6 +2380,7 @@ export const adminParameterContracts = {
   'settings:translations.fields.customer_artwork_dialogArtworkTitle': {},
   'settings:translations.fields.customer_artwork_dialogOptionTitle': {},
   'settings:translations.fields.customer_artwork_dialogPositionsTitle': {},
+  'settings:translations.fields.customer_artwork_dimensionsTooLarge': {},
   'settings:translations.fields.customer_artwork_dropFile': {},
   'settings:translations.fields.customer_artwork_editPositionArtwork': {},
   'settings:translations.fields.customer_artwork_emptyDescription': {},
