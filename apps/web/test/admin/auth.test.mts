@@ -572,3 +572,130 @@ test('#451 review: a waiter that joined a failed shared read retries once with i
   assert.ok(await other);
   assert.equal(reads, 2);
 });
+
+/** Fake Shopify session that, like the observed provider, revokes a staff session's previous
+ * online token when a new one is exchanged for the same shop, staff and session (#480). */
+function revokingSession() {
+  type TokenGrant = OnlineAdminGrant & { token: number };
+  let clock = now;
+  let current = 0;
+  let exchanges = 0;
+  let release: (() => void) | undefined;
+  let gated = false;
+  let failGated = false;
+  const events: { stage: string; providerCode?: string }[] = [];
+  const cache = createAdminAuthenticationCache<TokenGrant>();
+  const revoked = () => new AdminOnlineIdentityError('INSTALLATION_PROVIDER_READ_FAILED', { providerCode: 'HTTP_401' });
+  const auth = createAdminAuthenticator<TokenGrant>(
+    {
+      verifySessionToken: async () => ({ ...identity, expiresAtMs: clock + 60_000 }),
+      exchangeOnlineGrant: async () => {
+        exchanges++;
+        return { ...grant, expiresAtMs: now + 3_600_000, token: ++current };
+      },
+      readInstallation: async (online) => {
+        if (online.token !== current) throw revoked(); // provider read
+        if (gated) {
+          gated = false;
+          await new Promise<void>((resolve) => {
+            release = resolve;
+          });
+          if (failGated) throw new Error('Synthetic database failure');
+        }
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        // Later stage on the same online token (uninstall enrollment in production).
+        if (online.token !== current)
+          throw new AdminInstallationReconciliationError('UNINSTALL_ENROLLMENT_FAILED', { providerCode: 'HTTP_401' });
+        return installation;
+      },
+      confirmInstallation: async () => true,
+    },
+    () => clock,
+    (stage, detail) => events.push({ stage, ...detail }),
+    cache,
+  );
+  return {
+    auth,
+    events,
+    exchanges: () => exchanges,
+    advance(ms: number) {
+      clock += ms;
+    },
+    gateNextRead(fail = false) {
+      gated = true;
+      failGated = fail;
+    },
+    /** Another process exchanged a new token; nothing newer is cached here. */
+    revokeOutside() {
+      current++;
+    },
+    release: () => release?.(),
+  };
+}
+
+test('#480: a fresh exchange that revokes the reused online token does not fail concurrent requests', async () => {
+  const h = revokingSession();
+  assert.ok(await h.auth(request));
+  // The installation observation expired; the remembered grant is still reusable.
+  h.advance(ADMIN_INSTALLATION_REUSE_MS);
+  h.gateNextRead();
+  const reused = [h.auth(request), h.auth(request), h.auth(request)];
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  // Home's billing read: staff-sensitive, always a fresh exchange, which revokes the reused token.
+  h.advance(50);
+  const fresh = h.auth(request, { fresh: true });
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  h.release();
+  const results = await Promise.allSettled([...reused, fresh]);
+  assert.deepEqual(
+    results.map((result) => result.status),
+    ['fulfilled', 'fulfilled', 'fulfilled', 'fulfilled'],
+  );
+  assert.ok(results.every((result) => result.status === 'fulfilled' && result.value?.canEdit === true));
+  // The recovering requests take the newest grant instead of exchanging again,
+  // which would in turn revoke the fresh request's token.
+  assert.equal(h.exchanges(), 2);
+  // The failing later stage is logged under its own name with its provider code.
+  assert.ok(
+    h.events.some((event) => event.stage === 'UNINSTALL_ENROLLMENT_FAILED' && event.providerCode === 'HTTP_401'),
+  );
+  // Later reuse picks the newest token without another exchange.
+  h.advance(ADMIN_INSTALLATION_REUSE_MS);
+  assert.ok(await h.auth(request));
+  assert.equal(h.exchanges(), 2);
+});
+
+test('#480: a revoked reused grant gets one shared fresh exchange when no newer grant is cached', async () => {
+  const h = revokingSession();
+  assert.ok(await h.auth(request));
+  h.advance(ADMIN_INSTALLATION_REUSE_MS);
+  h.gateNextRead();
+  const reused = [h.auth(request), h.auth(request)];
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  h.revokeOutside();
+  h.release();
+  const results = await Promise.allSettled(reused);
+  assert.deepEqual(
+    results.map((result) => result.status),
+    ['fulfilled', 'fulfilled'],
+  );
+  // Both requests share one fresh exchange for the same shop, staff and session.
+  assert.equal(h.exchanges(), 2);
+});
+
+test('#480: a joined waiter whose own reused grant is then rejected still gets one fresh exchange', async () => {
+  const h = revokingSession();
+  assert.ok(await h.auth(request));
+  h.advance(ADMIN_INSTALLATION_REUSE_MS);
+  h.gateNextRead(true);
+  const leader = h.auth(request);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const waiter = h.auth(request);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  h.revokeOutside();
+  h.release();
+  // The leader's own failure is not a rejected grant: unchanged, it answers unavailable.
+  await assert.rejects(leader, { message: 'Authentication unavailable' });
+  assert.equal(required(await waiter).canEdit, true);
+  assert.equal(h.exchanges(), 2);
+});

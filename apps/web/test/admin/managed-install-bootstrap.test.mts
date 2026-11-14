@@ -14,6 +14,9 @@ type Model = {
   catalogReads: number;
   exchanges: number;
   afterRead: (() => void | Promise<void>) | null;
+  /** Like Shopify (#480): a new online exchange revokes the session's previous online token. */
+  revokeOnExchange: boolean;
+  currentToken: string;
 };
 type Fixture = {
   core: DurableCore;
@@ -98,6 +101,8 @@ async function fixture(run: (fixture: Fixture) => Promise<void>) {
     catalogReads: 0,
     exchanges: 0,
     afterRead: null,
+    revokeOnExchange: false,
+    currentToken: '',
   };
   try {
     setAbstractFetchFunc(async (url, init) => {
@@ -105,8 +110,12 @@ async function fixture(run: (fixture: Fixture) => Promise<void>) {
       assert.equal(String(url), `https://${shop}/admin/oauth/access_token`);
       assert.equal(JSON.parse(String(init?.body)).client_id, client);
       if (model.exchangeFailed) return Response.json({ error: 'server_error' }, { status: 503 });
+      const token = model.revokeOnExchange
+        ? `synthetic-bootstrap-online-${model.exchanges}`
+        : 'synthetic-bootstrap-online';
+      model.currentToken = token;
       return Response.json({
-        access_token: 'synthetic-bootstrap-online',
+        access_token: token,
         scope: 'read_products,write_products',
         expires_in: 3600,
         associated_user_scope: model.userScopes,
@@ -122,6 +131,8 @@ async function fixture(run: (fixture: Fixture) => Promise<void>) {
     globalThis.fetch = async (url, init) => {
       assert.equal(String(url), `https://${shop}/admin/api/2026-07/graphql.json`);
       const { query, variables } = JSON.parse(String(init?.body));
+      if (model.revokeOnExchange && new Headers(init?.headers).get('X-Shopify-Access-Token') !== model.currentToken)
+        return new Response('revoked', { status: 401 });
       const enrolled = lifecycle(query, variables);
       if (enrolled) return enrolled;
       assert.ok(query.startsWith('query '), 'only explicit lifecycle enrollment may mutate in bootstrap');
@@ -305,6 +316,44 @@ test(
       await assert.rejects(services.authenticate(request()), { message: 'Authentication unavailable' });
       assert.equal(model.installationReads, 2, 'the cached observation is not reused after uninstall');
       assert.equal(model.exchanges, exchanges + 1, 'the reused grant is dropped with it');
+    }),
+);
+
+test(
+  '#480: a fresh exchange that revokes the reused online token does not fail concurrent requests',
+  { skip: !database, timeout: 30000 },
+  async () =>
+    fixture(async ({ services, model, request }) => {
+      model.revokeOnExchange = true;
+      assert.ok(await services.authenticate(request()));
+      // Session tokens are minted on the real clock: JWT verification reads it through new Date().
+      const [first, second, third, billing] = [request(), request(), request(), request()];
+      const realNow = Date.now;
+      // The installation observation expired; the remembered grant is still reusable.
+      Date.now = () => realNow() + 31_000;
+      try {
+        let fresh: Promise<unknown> | undefined;
+        model.afterRead = async () => {
+          model.afterRead = null;
+          // Home's billing read exchanges fresh while the shared read is still enrolling.
+          fresh = services.authenticate(billing, { fresh: true });
+          await fresh;
+        };
+        const results = await Promise.allSettled([
+          services.authenticate(first),
+          services.authenticate(second),
+          services.authenticate(third),
+        ]);
+        assert.deepEqual(
+          results.map((result) => result.status),
+          ['fulfilled', 'fulfilled', 'fulfilled'],
+        );
+        assert.ok(results.every((result) => result.status === 'fulfilled' && result.value !== null));
+        assert.ok(await fresh);
+        assert.equal(model.exchanges, 2, 'recovering requests take the fresh grant instead of exchanging again');
+      } finally {
+        Date.now = realNow;
+      }
     }),
 );
 

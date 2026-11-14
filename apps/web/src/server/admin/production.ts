@@ -36,6 +36,7 @@ import {
   readOrderPresentation,
   resolveRuntimeReleaseProfile,
   type CatalogProduct as ShopifyCatalogProduct,
+  type UninstallSubscriptionError,
 } from '@insignia/shopify';
 import { loadArtworkStorageProfile } from '@insignia/storage';
 import { createAutomaticUninstallEnrollment, inspectArtworkPrivately } from '@insignia/worker';
@@ -743,6 +744,17 @@ export function createProductionAdminServices(
               installationGeneration: installed.state.currentGeneration,
               externalInstallationId: provider.installationId,
               providerShopId: provider.shopId,
+            }).catch((error: unknown) => {
+              // Logged under its own stage; a refused online token keeps its provider code
+              // so a revoked reused grant is replaced (#480).
+              const providerCode =
+                error instanceof Error && error.name === 'UninstallSubscriptionError'
+                  ? (error as UninstallSubscriptionError).providerCode
+                  : undefined;
+              throw new AdminInstallationReconciliationError(
+                'UNINSTALL_ENROLLMENT_FAILED',
+                providerCode ? { providerCode } : {},
+              );
             });
             return {
               shop: provider.shop,

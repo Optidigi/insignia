@@ -1,6 +1,6 @@
 import { expect, test, vi } from 'vitest';
 import { graphqlRequest } from '../test/fixture-assertions.js';
-import { createUninstallSubscriptionClient } from './uninstall-subscription.js';
+import { createUninstallSubscriptionClient, UninstallSubscriptionError } from './uninstall-subscription.js';
 
 const grant = { shop: 'fixture.myshopify.com', accessToken: 'synthetic' };
 const context = {
@@ -173,4 +173,20 @@ test('malformed user errors cannot assert definite rejection after dispatch', as
     identity,
   ]);
   expect(await f.client.create(grant, context, uri)).toEqual({ kind: 'unknown' });
+});
+
+test('#480: a refused call carries only its bounded HTTP status class', async () => {
+  for (const [status, providerCode] of [
+    [401, 'HTTP_401'],
+    [403, 'HTTP_403'],
+    [429, 'HTTP_429'],
+    [503, 'HTTP_5XX'],
+    [404, 'HTTP_OTHER'],
+  ] as const) {
+    const f = fixture([new Response('secret body', { status })]);
+    const error = await f.client.read(grant, context, subscription.id).catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(UninstallSubscriptionError);
+    expect(error).toMatchObject({ providerCode, message: 'Uninstall subscription unavailable' });
+    expect(String((error as Error).message)).not.toContain('secret');
+  }
 });
