@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'preact/hooks';
 import AdminTruncatedLabel from '../../../src/components/AdminTruncatedLabel.tsx';
 import { useAdminLocale } from '../../../src/shared/admin-i18n.js';
+import { StoredPreviewUnreadableError } from '../../../src/shared/stored-preview-error.ts';
 import type { EditorProductImage } from './placement-workflow-model.mts';
 
 const maxFileSize = 5 * 1024 * 1024;
@@ -13,7 +14,10 @@ type ImagePreparationFailure =
   | 'too-detailed'
   | 'invalid-dimensions'
   | 'processing-failed';
-type ImageUploadIssue = { fileName?: string; reason: ImagePreparationFailure | 'format-rejected' | 'size-rejected' };
+type ImageUploadIssue = {
+  fileName?: string;
+  reason: ImagePreparationFailure | 'format-rejected' | 'size-rejected' | 'preview-unreadable';
+};
 
 class ImagePreparationError extends Error {
   constructor(readonly reason: Exclude<ImagePreparationFailure, 'processing-failed'>) {
@@ -78,6 +82,8 @@ function imageIssueReason(reason: ImageUploadIssue['reason'], t: ReturnType<type
       return t('editor:placementImagePicker.errors.invalidDimensions');
     case 'processing-failed':
       return t('editor:placementImagePicker.errors.processingFailed');
+    case 'preview-unreadable':
+      return t('editor:placementImagePicker.errors.previewUnreadable');
   }
 }
 
@@ -141,6 +147,7 @@ export default function PlacementImagePicker({
   const gallery = useRef<HTMLElement>(null);
   const emptyUpload = useRef<HTMLInputElement>(null);
   const uploadInFlight = useRef(false);
+  const uploadIds = useRef(new Map<string, string>());
   const [uploadIssues, setUploadIssues] = useState<ImageUploadIssue[]>([]);
   const [filter, setFilter] = useState<ImageFilter>('all');
   const [query, setQuery] = useState('');
@@ -266,6 +273,10 @@ export default function PlacementImagePicker({
           continue;
         }
 
+        // After a stored photo's preview could not be read, retrying the same file reuses its upload identity so the
+        // server returns the media it already stored instead of adding another row.
+        const fileKey = JSON.stringify([file.name, file.type, file.size, file.lastModified]);
+        const uploadId = uploadIds.current.get(fileKey) ?? crypto.randomUUID();
         let bitmap: ImageBitmap | undefined;
         try {
           bitmap = await createImageBitmap(file);
@@ -273,19 +284,27 @@ export default function PlacementImagePicker({
           const encoded = encodeWebp(bitmap);
           if (!inputIsActive.current) return;
           const prepared: EditorProductImage = {
-            id: crypto.randomUUID(),
+            id: uploadId,
             url: encoded.dataUrl,
             width: encoded.width,
             height: encoded.height,
             alt: file.name.slice(0, 160),
           };
           const stored = upload ? await upload(prepared) : prepared;
+          uploadIds.current.delete(fileKey);
           if (!inputIsActive.current) return;
           additions.push(stored);
         } catch (cause) {
+          if (cause instanceof StoredPreviewUnreadableError) uploadIds.current.set(fileKey, uploadId);
+          else uploadIds.current.delete(fileKey);
           errors.push({
             fileName: file.name,
-            reason: cause instanceof ImagePreparationError ? cause.reason : 'processing-failed',
+            reason:
+              cause instanceof ImagePreparationError
+                ? cause.reason
+                : cause instanceof StoredPreviewUnreadableError
+                  ? 'preview-unreadable'
+                  : 'processing-failed',
           });
         } finally {
           bitmap?.close();

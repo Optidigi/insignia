@@ -237,3 +237,79 @@ test('first selected load retains the actual variant photo and placement alignme
   assert.deepEqual(resolved.view.placements[0]?.rect, rect);
   assert.equal(product.views[0]?.placements[0]?.heightCm, '20');
 });
+
+// Shopify lists the featured photo (product_<id>) and the same photo as media (image_<id>) at one URL.
+// The picker must show that photo once, while drafts that reference either identity keep resolving.
+const featured = { ...image, id: 'product_111' };
+const second = { ...image, id: 'image_2', url: 'https://cdn.shopify.com/back.jpg', alt: 'Back' };
+
+test('a featured photo listed twice appears once in a new setup, keeping the stable media identity', () => {
+  const current = view();
+  current.config = null;
+  current.product.images = [featured, image, second];
+  assert.deepEqual(
+    selectedProductFromConfig(current).images.map((item) => item.id),
+    ['image_1', 'image_2'],
+  );
+});
+
+test('a saved draft that references the featured identity shows the photo once and keeps its view and appearances', () => {
+  const current = view();
+  assert.ok(current.config);
+  const draft = MerchantDraftSchema.parse(current.config.draft);
+  assert.ok(draft.selectedSetup);
+  draft.selectedSetup.product = placementProductSchema.parse({
+    ...saved,
+    images: [featured, image],
+    variantPhotos: {
+      ...saved.variantPhotos,
+      assignments: [{ groupKey: '[["colour","Blue"]]', viewId: 'front', imageId: 'product_111' }],
+    },
+  });
+  current.config.draft = draft;
+  current.product.images = [featured, image, second];
+  const product = selectedProductFromConfig(current);
+  assert.deepEqual(
+    product.images.map((item) => item.id),
+    ['image_1', 'image_2'],
+  );
+  assert.equal(product.views[0]?.imageUrl, image.url);
+  assert.deepEqual(product.variantPhotos?.assignments, [
+    { groupKey: '[["colour","Blue"]]', viewId: 'front', imageId: 'image_1' },
+  ]);
+});
+
+test('a published geometry that references the featured identity still resolves its view image', () => {
+  const current = view();
+  assert.ok(current.config);
+  current.product.images = [featured, image];
+  current.config.draft = MerchantDraftSchema.parse({
+    version: 'm5-merchant-draft-v1',
+    mode: 'required',
+    shopCurrency: 'USD',
+    methods: [{ id: 'print' }],
+    placements: [{ id: 'chest', allowedMethodIds: ['print'], allowedStepIds: ['small'], logoLaterAllowed: true }],
+    productionOptions: [],
+    pricingRules: [],
+    geometry: {
+      version: 'm5-geometry-v1',
+      views: [
+        {
+          id: 'front',
+          image: { revisionId: 'product_111', width: 1000, height: 1000 },
+          variantImages: [],
+          placements: [{ id: 'chest', rect: { centerX: 0.5, centerY: 0.5, width: 0.2, height: 0.2 } }],
+        },
+      ],
+      steps: [{ id: 'small', widthFraction: 0.5, heightFraction: 0.5, physicalMm: { width: 100, height: 100 } }],
+    },
+  });
+  const product = selectedProductFromConfig(current);
+  assert.equal(product.views[0]?.imageUrl, image.url);
+  assert.equal(product.views[0]?.needsAlignmentReview, undefined);
+  assert.deepEqual(
+    product.images.map((item) => item.id),
+    ['product_111'],
+    'the identity the saved geometry uses is kept, so a save still recognises its prior image',
+  );
+});

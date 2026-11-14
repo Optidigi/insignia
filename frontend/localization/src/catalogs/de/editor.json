@@ -484,6 +484,7 @@
       "tooDetailed": "Dieses Bild enthält zu viele Details. Wählen Sie ein einfacheres Bild aus.",
       "invalidDimensions": "Dieses Bild hat ungültige Abmessungen.",
       "processingFailed": "Das Bild konnte nicht verarbeitet werden.",
+      "previewUnreadable": "Das Bild wurde hochgeladen, aber die Vorschau konnte nicht geladen werden. Laden Sie dieselbe Datei erneut hoch.",
       "fileIssue": "{{fileName}}: {{reason}}",
       "moreFailures": "{{formattedCount}} weitere Bildfehler",
       "imagesFailed_one": "{{formattedCount}} Bild konnte nicht hinzugefügt werden: {{details}}",

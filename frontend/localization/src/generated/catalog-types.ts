@@ -553,6 +553,7 @@ export interface AdminMessageTable {
   'editor:placementImagePicker.errors.imagesFailed': { count: number; details: string; formattedCount: string };
   'editor:placementImagePicker.errors.invalidDimensions': object;
   'editor:placementImagePicker.errors.moreFailures': { formattedCount: string };
+  'editor:placementImagePicker.errors.previewUnreadable': object;
   'editor:placementImagePicker.errors.processingFailed': object;
   'editor:placementImagePicker.errors.sizeRejected': object;
   'editor:placementImagePicker.errors.tooDetailed': object;

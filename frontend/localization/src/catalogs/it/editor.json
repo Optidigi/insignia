@@ -491,6 +491,7 @@
       "tooDetailed": "Questa immagine contiene troppi dettagli per essere aggiunta. Scegli un'immagine più semplice.",
       "invalidDimensions": "Le dimensioni di questa immagine non sono valide.",
       "processingFailed": "Non è stato possibile elaborare l'immagine.",
+      "previewUnreadable": "L'immagine è stata caricata, ma non è stato possibile visualizzarne l'anteprima. Carica di nuovo lo stesso file.",
       "fileIssue": "{{fileName}}: {{reason}}",
       "moreFailures": "Altri {{formattedCount}} errori delle immagini",
       "imagesFailed_one": "Non è stato possibile aggiungere {{formattedCount}} immagine: {{details}}",

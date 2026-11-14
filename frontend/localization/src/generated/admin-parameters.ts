@@ -576,6 +576,7 @@ export const adminParameterContracts = {
   'editor:placementImagePicker.errors.imagesFailed': { count: 'number', details: 'string', formattedCount: 'string' },
   'editor:placementImagePicker.errors.invalidDimensions': {},
   'editor:placementImagePicker.errors.moreFailures': { formattedCount: 'string' },
+  'editor:placementImagePicker.errors.previewUnreadable': {},
   'editor:placementImagePicker.errors.processingFailed': {},
   'editor:placementImagePicker.errors.sizeRejected': {},
   'editor:placementImagePicker.errors.tooDetailed': {},
