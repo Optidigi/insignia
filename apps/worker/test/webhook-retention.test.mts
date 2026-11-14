@@ -561,7 +561,7 @@ test(
 );
 
 test(
-  'real PostgreSQL expired failed order deliveries covered by order discovery stop alerting; uncovered ones still alert (#488)',
+  'real PostgreSQL expired failed order deliveries stop alerting once their order is recorded and discovery passed them (#488)',
   postgres,
   async () => {
     let output = '';
@@ -619,12 +619,22 @@ test(
       assert.equal(uncovered.blockedUnsupportedCount, 3);
       assert.equal(required(alerts().at(-1)).count, 3);
       assert.equal(required(alerts().at(-1)).level, 50);
-      // Recurring discovery completes a window past their arrival.
+      // Discovery passing them alone is not enough: the order must be recorded.
       await f.pool.query(
         `INSERT INTO purchase_reconciliation_cursors(shop_id,installation_generation,watermark)
          SELECT shop_id,installation_generation,max(received_at)+interval '90 minutes' FROM inbox_messages
          WHERE id=ANY($1::uuid[]) GROUP BY shop_id,installation_generation`,
         [ids],
+      );
+      const stillOpen = await durableHandlers.maintainWebhookRetention(f.core, f.queue);
+      assert.equal(stillOpen.blockedUnsupportedCount, 3);
+      assert.equal(required(alerts().at(-1)).level, 50);
+      // Recurring discovery recorded the order (#1005) two seconds before the deliveries arrived.
+      await f.pool.query(
+        `INSERT INTO purchase_orders(purchase_id,shop_id,installation_generation,order_id,order_created_at,currency,original_total_minor)
+         SELECT $2,shop_id,installation_generation,'gid://shopify/Order/7570906415387',min(received_at)-interval '2 seconds','USD',2050
+         FROM inbox_messages WHERE id=ANY($1::uuid[]) GROUP BY shop_id,installation_generation`,
+        [ids, randomUUID()],
       );
       const alertsBefore = alerts().length;
       for (let pass = 0; pass < 3; pass++) {

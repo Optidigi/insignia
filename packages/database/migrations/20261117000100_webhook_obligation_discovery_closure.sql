@@ -1,12 +1,20 @@
 -- migrate:up
--- #488. An erased receipt in the "unsupported" category is no longer an open
--- obligation when it was processed, or when it is an order-topic hint whose
--- order recurring discovery has independently read: that shop generation's
--- discovery watermark (advanced only by a fully completed window) has passed
--- the receipt's arrival. Nothing is written: the receipt keeps its state,
--- attempts and failure class, and its immutable facts are untouched. Uninstall,
--- privacy and unknown categories keep their complete counts. CREATE OR REPLACE
--- keeps the owner, SECURITY DEFINER and the existing EXECUTE grants.
+-- #488. In the "unsupported" category an erased receipt stops counting as an
+-- open obligation only when it is settled:
+-- - processed (any topic); or
+-- - orders/create, orders/paid or orders/updated, when that order is recorded
+--   in purchase_orders for the receipt's shop generation (order ID from the
+--   captured `id` fact), was created no more than 60 days before the receipt
+--   arrived (so order discovery, which sees only that window without
+--   read_all_orders, could return it), and that generation's discovery
+--   watermark (advanced only by a completed window) has passed the arrival.
+-- refunds/create closes only when processed: its captured facts hold no order
+-- ID. Once the 180-day fact erasure empties captured_fields the order ID is
+-- gone and an unprocessed receipt counts again: an alert that returns is
+-- acceptable, a silent closure is not. Nothing is written: the receipt keeps
+-- its state, attempts and failure class, and its facts are untouched.
+-- Uninstall, privacy and unknown categories keep their complete counts.
+-- CREATE OR REPLACE keeps the owner, SECURITY DEFINER and EXECUTE grants.
 CREATE OR REPLACE FUNCTION pending_shopify_webhook_obligations(maximum_rows integer)
 RETURNS TABLE(id uuid, state text, topic text, category_count bigint, unresolved_count bigint)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public AS $$
@@ -24,7 +32,12 @@ BEGIN
     WHERE delivery.topic IS NULL
       OR delivery.topic IN ('app/uninstalled','customers/data_request','customers/redact','shop/redact')
       OR NOT (inbox.state='processed' OR (
-        delivery.topic IN ('orders/create','orders/paid','orders/updated','refunds/create')
+        delivery.topic IN ('orders/create','orders/paid','orders/updated')
+        AND EXISTS (SELECT 1 FROM public.purchase_orders purchase
+          WHERE purchase.shop_id=inbox.shop_id
+            AND purchase.installation_generation=inbox.installation_generation
+            AND purchase.order_id='gid://shopify/Order/'||(facts.captured_fields->>'id')
+            AND purchase.order_created_at>=inbox.received_at-interval '60 days')
         AND EXISTS (SELECT 1 FROM public.purchase_reconciliation_cursors discovery
           WHERE discovery.shop_id=inbox.shop_id
             AND discovery.installation_generation=inbox.installation_generation
