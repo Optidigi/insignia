@@ -81,6 +81,8 @@ export interface AdminServices {
   appOrigin: string;
   /** Read-only authoritative subscription observation; never creates or changes a plan. */
   billing?(actor: AdminActor): Promise<BillingView>;
+  /** Database-only setup facts for Home's getting-started steps; makes no Shopify call. */
+  setupStatus?(actor: AdminActor): Promise<{ hasPublishedProduct: boolean }>;
   /** Fixed private owner allocation; absence does not authorize key setup. */
   signingOwner?: SigningOwnerAction;
   /** Must verify the Shopify session token on every request and bind it to an online

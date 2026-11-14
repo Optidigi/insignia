@@ -112,9 +112,10 @@ test('getting-started steps are observed from the published product and a fully 
   });
 });
 
-test('the filtered published read proves publication, and only an exhausted empty answer proves absence', async () => {
-  const { homePublishedProductFromResponse } = await import('../../src/shared/merchant-home-source.ts');
-  assert.equal(homePublishedProductFromResponse({ products: [product('published')], nextCursor: null }), true);
-  assert.equal(homePublishedProductFromResponse({ products: [], nextCursor: null }), false);
-  assert.equal(homePublishedProductFromResponse({ products: [], nextCursor: 'more' }), undefined);
+test('the setup status is a strict database-only boolean', async () => {
+  const { homeHasPublishedProductFromSetupStatus } = await import('../../src/shared/merchant-home-source.ts');
+  assert.equal(homeHasPublishedProductFromSetupStatus({ hasPublishedProduct: true }), true);
+  assert.equal(homeHasPublishedProductFromSetupStatus({ hasPublishedProduct: false }), false);
+  assert.throws(() => homeHasPublishedProductFromSetupStatus({ hasPublishedProduct: 'yes' }));
+  assert.throws(() => homeHasPublishedProductFromSetupStatus({ hasPublishedProduct: true, extra: 1 }));
 });

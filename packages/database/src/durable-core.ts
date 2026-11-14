@@ -35,7 +35,7 @@ import {
   createConfigRepositoryInternal,
   type RevisionRecord,
 } from './repositories/config.js';
-import { type ConfigSummaryRecord, readConfigSummaries } from './repositories/config-summary.js';
+import { type ConfigSummaryRecord, hasPublishedConfig, readConfigSummaries } from './repositories/config-summary.js';
 import { createCustomerArtworkRepository } from './repositories/customer-artwork.js';
 import { type CustomerPrivacyRepository, createCustomerPrivacyRepository } from './repositories/customer-privacy.js';
 import { PgInboxRepository } from './repositories/delivery/pg-inbox-repository.js';
@@ -178,6 +178,7 @@ export interface DurableCore {
       lock?: boolean,
     ): Promise<ConfigRecord[]>;
     summaries(shopId: string, productIds: readonly string[]): Promise<ConfigSummaryRecord[]>;
+    hasPublished(shopId: string): Promise<boolean>;
     createConfig(transaction: DurableTransaction, input: ConfigInput): Promise<ConfigRecord>;
     getConfig(shopId: string, configId: string): Promise<ConfigRecord | null>;
     getConfigInTransaction(
@@ -613,6 +614,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       listSelectedForMethod: (tx, shopId, methodId, lock = false) =>
         createConfigRepositoryInternal(resolve(tx)).listSelectedForMethod(shopId, methodId, lock),
       summaries: (shopId, productIds) => readConfigSummaries(database, shopId, productIds),
+      hasPublished: (shopId) => hasPublishedConfig(database, shopId),
       createConfig: async (handle, input) => createConfigRepository(resolve(handle)).createConfig(input),
       getConfig: (shopId, configId) => configs.getConfig(shopId, configId),
       getConfigInTransaction: async (handle, shopId, configId) =>

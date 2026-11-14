@@ -156,11 +156,9 @@ export function homeSetupFromTheme(input: ThemeSetupStatus, hasPublishedProduct:
   };
 }
 
-/** Result of the dedicated `configuration=published&limit=1` read; `undefined` when the answer is not complete. */
-export function homePublishedProductFromResponse(input: unknown): boolean | undefined {
-  const page = productsSchema.parse(input);
-  if (page.products.some((p) => p.configurationSummary?.state === 'published')) return true;
-  return page.products.length === 0 && page.nextCursor === null ? false : undefined;
+/** Store-wide publication fact from Insignia's own database (`/api/admin/setup-status`). */
+export function homeHasPublishedProductFromSetupStatus(input: unknown): boolean {
+  return z.strictObject({ hasPublishedProduct: z.boolean() }).parse(input).hasPublishedProduct;
 }
 
 /** Getting-started steps the store itself proves done; an unknown observation never counts. */

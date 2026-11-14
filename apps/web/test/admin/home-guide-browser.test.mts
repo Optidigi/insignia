@@ -91,6 +91,8 @@ async function openMerchantPage(
     product?: 'not_configured' | 'draft' | 'published';
     /** The only published product is not on the first catalog page. */
     publishedBeyondFirstPage?: boolean;
+    /** The database-only setup-status read is unavailable. */
+    setupStatusFails?: boolean;
     /** Receives the body of every saved guidance command. */
     saves?: unknown[];
     acknowledged?: GuideStep[];
@@ -138,15 +140,16 @@ async function openMerchantPage(
   });
   await page.route(/\/api\/admin\/products(\?.*)?$/, (route) => {
     const state = scenario.product ?? 'not_configured';
-    // The filtered read answers for the whole catalog; the default read is only the first page.
-    if (new URL(route.request().url()).searchParams.get('configuration') === 'published')
-      return route.fulfill({
-        json: { products: state === 'published' ? [product('published')] : [], nextCursor: null },
-      });
     return scenario.publishedBeyondFirstPage
       ? route.fulfill({ json: { products: [product('not_configured')], nextCursor: 'page-2' } })
       : route.fulfill({ json: { products: [product(state)], nextCursor: null } });
   });
+  // Publication comes from Insignia's database, not from paging the Shopify catalog.
+  await page.route(/\/api\/admin\/setup-status$/, (route) =>
+    scenario.setupStatusFails
+      ? route.fulfill({ status: 503, json: { error: 'Setup status unavailable' } })
+      : route.fulfill({ json: { hasPublishedProduct: scenario.product === 'published' } }),
+  );
   await page.route(/\/api\/admin\/billing$/, (route) => route.fulfill({ json: { newActionsAllowed: true } }));
   await page.route(/\/api\/purchases\/v1\/statistics$/, (route) => route.fulfill({ json: statistics }));
   await page.route(/\/api\/purchases\/v1\?/, (route) =>
@@ -315,4 +318,35 @@ test('saving guidance writes only the merchant acknowledgements, never observed 
   const [command] = saves as { action: string; guidance: { completedSteps: string[] } }[];
   assert.equal(command?.action, 'guidance');
   assert.deepEqual(command?.guidance.completedSteps, ['test']);
+});
+
+test('Home reads publication from the database-only setup status and never pages the catalog for it', {
+  timeout: 30000,
+}, async (t) => {
+  const page = await openMerchantPage(t, '/admin/home', { embed: 'active', product: 'published' });
+  const catalog: string[] = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/admin/products') catalog.push(request.url());
+  });
+  await page.getByText('2 of 3 complete', { exact: true }).waitFor();
+  await page.reload();
+  await page.getByText('2 of 3 complete', { exact: true }).waitFor();
+  assert.deepEqual(
+    catalog.filter((url) => new URL(url).search !== ''),
+    [],
+    'no filtered catalog read',
+  );
+});
+
+test('an unanswered setup status never ticks the product step beyond what the first page proves', {
+  timeout: 30000,
+}, async (t) => {
+  const page = await openMerchantPage(t, '/admin/home', {
+    embed: 'available',
+    product: 'published',
+    publishedBeyondFirstPage: true,
+    setupStatusFails: true,
+  });
+  await page.getByText('0 of 3 complete', { exact: true }).waitFor();
+  assert.equal(await stepCheckbox(page, 'Mark product setup as complete').isChecked(), false);
 });

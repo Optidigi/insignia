@@ -11,7 +11,7 @@ import type {
   MerchantHomeModel,
 } from '../shared/merchant-home';
 import {
-  homePublishedProductFromResponse,
+  homeHasPublishedProductFromSetupStatus,
   homeOrdersFromResponse,
   homeProductsFromResponse,
   homeGuidanceWithObservedSteps,
@@ -59,16 +59,14 @@ function MerchantHomeContainer() {
       );
       if (!mounted.current || controller.signal.aborted) return;
       if (panel === 'products') {
-        // The default list is one page; only the dedicated filtered read can say whether any product is published.
+        // The default list is one page; Insignia's database alone says whether any product is published.
         let anyPublished: boolean | undefined;
         try {
-          anyPublished = homePublishedProductFromResponse(
-            await authenticatedJson<unknown>('/api/admin/products?configuration=published&limit=1', {
-              signal: controller.signal,
-            }),
+          anyPublished = homeHasPublishedProductFromSetupStatus(
+            await authenticatedJson<unknown>('/api/admin/setup-status', { signal: controller.signal }),
           );
         } catch {
-          /* An unanswered filter read leaves publication to what the first page proves. */
+          /* An unanswered read leaves publication to what the first page proves; unknown never ticks the step. */
         }
         if (!mounted.current || controller.signal.aborted) return;
         const { hasPublishedProduct: firstPage, ...ready } = homeProductsFromResponse(value);
