@@ -25,6 +25,7 @@ type Outcome =
   | { kind: 'created'; configId: string }
   | { kind: 'saved'; draftVersion: string }
   | { kind: 'accepted'; state: ReturnType<typeof projectActivationPublicationState>; revisionId: string }
+  | { kind: 'continue'; revisionId?: string; minimumValidityMs: number; message: string }
   | {
       kind: 'conflict' | 'forbidden';
       noEffect?: true;
@@ -41,6 +42,13 @@ type Publication = Pick<ReturnType<DurableCore['productionPublications']['create
 /** Within one publish request, an allowed subscription check for the same draft is reused for this
  * long instead of being read again before every publication step (#436). */
 export const PUBLICATION_ELIGIBILITY_REUSE_MS = 30_000;
+/** #468: a publish starts a step (admission work or one publication/activation advance) only while
+ * the request's staff session has at least this long left; otherwise it stops between persisted
+ * steps and answers `continue`. One step natively takes about 1-6 s (a release collection ~6 s). */
+export const PUBLICATION_STEP_MARGIN_MS = 10_000;
+/** Session-token validity the client waits for before it continues: more than the margin, so the
+ * continuation has room for at least one step (App Bridge then hands out a new 60 s token). */
+export const PUBLICATION_CONTINUATION_VALIDITY_MS = 30_000;
 const targetOccupied = (error: unknown) =>
   !!error &&
   typeof error === 'object' &&
@@ -619,6 +627,21 @@ export function createMerchantConfigService(input: {
         authority?: string;
       },
     ): Promise<Outcome> {
+      // #468: the publish runs under this request's staff session. It starts the next step only
+      // while the session can cover it, so it stops between persisted steps, never inside one; the
+      // client re-sends the same idempotent request with a new session token and the work resumes
+      // from the persisted command, previews, release evidence and publication state.
+      const continuing = (revisionId?: string): Outcome | null =>
+        actor.expiresAtMs - Date.now() < PUBLICATION_STEP_MARGIN_MS
+          ? {
+              kind: 'continue',
+              ...(revisionId ? { revisionId } : {}),
+              minimumValidityMs: PUBLICATION_CONTINUATION_VALIDITY_MS,
+              message: 'Publication is still in progress. Continue it with a new session.',
+            }
+          : null;
+      const stop = continuing();
+      if (stop) return stop;
       const catalogProduct = await product(actor, productId);
       if (data.authority) await core.transactions.run((tx) => currentLocked(actor, tx, data.authority));
       const allowed = new Map<string, number>();
@@ -745,6 +768,8 @@ export function createMerchantConfigService(input: {
         if (!eligibility.allowed)
           return { kind: 'forbidden', message: eligibility.reason ?? 'Publication feature unavailable' };
         if (!input.capturePublicationPreviews) throw new Error('Complete customer previews are unavailable');
+        const beforeCapture = continuing();
+        if (beforeCapture) return beforeCapture;
         const previewAssets = input.capturePublicationPreviews
           ? await input.capturePublicationPreviews(actor, {
               productId,
@@ -768,6 +793,8 @@ export function createMerchantConfigService(input: {
           if (!stillCurrent) return { kind: 'conflict', message: 'Draft changed. Reload before publication.' };
           if (!(await selectedPreviewCoverage(actor, productNumber(productId), snapshot.geometry, previewAssets)))
             throw new Error('Complete customer previews are unavailable');
+          const beforePreparation = continuing();
+          if (beforePreparation) return beforePreparation;
           if (input.preparePublication) {
             const preparation = await input.preparePublication(actor);
             if (!preparation.ready)
@@ -880,9 +907,14 @@ export function createMerchantConfigService(input: {
       const sourceScope = await core.configs.getRevisionSourceScope(actor.tenantShopId, revisionId);
       if (!sourceScope || sourceScope.installationGeneration !== actor.installationGeneration)
         return { kind: 'forbidden', message: 'Publication belongs to a prior installation' };
+      // A continuation (or Retry) carries the original staff member's authority forward only for them.
+      if (sourceScope.createdByRef !== actor.staffId)
+        return { kind: 'forbidden', message: 'Publication belongs to another staff member' };
       const existing = await core.configs.getCurrentPublication(actor.tenantShopId, data.configId);
       if (existing && existing.operationId !== revisionId && existing.phase !== 'active')
         return { kind: 'conflict', message: 'A newer publication request exists' };
+      const beforeRecovery = continuing(revisionId);
+      if (beforeRecovery) return beforeRecovery;
       if (
         !input.activation &&
         existing &&
@@ -961,10 +993,11 @@ export function createMerchantConfigService(input: {
       let unchanged = 0;
       let activationKind: ActivationResult['kind'] | null = null;
       for (let attempt = 0; attempt < 16; attempt++) {
+        // The stop point: between persisted steps, before this step's reads and writes.
+        const beforeStep = continuing(revisionId);
+        if (beforeStep) return beforeStep;
         if (activation) {
           await current(actor);
-          if (actor.expiresAtMs <= Date.now())
-            return { kind: 'forbidden', message: 'Current staff identity expired. Refresh before continuing.' };
           const eligibility = await eligible(immutableDraft);
           if (!eligibility.allowed)
             return { kind: 'forbidden', message: eligibility.reason ?? 'Publication feature unavailable' };

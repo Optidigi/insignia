@@ -234,7 +234,7 @@ export interface DurableCore {
     getRevisionSourceScope(
       shopId: string,
       revisionId: string,
-    ): Promise<{ draftVersion: string; installationGeneration: string } | null>;
+    ): Promise<{ draftVersion: string; installationGeneration: string; createdByRef: string | null } | null>;
     getCurrentPublication(
       shopId: string,
       configId: string,
@@ -747,14 +747,24 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
         return MerchantPresentationSchema.parse(row.presentation_value);
       },
       getRevisionSourceScope: async (shopId, revisionId) => {
-        const rows = await sql<{ draft_version: string; installation_generation: string }>`
-          SELECT source_draft_version::text AS draft_version,
-            source_installation_generation::text AS installation_generation
-          FROM config_revision_presentation
-          WHERE shop_id=${shopId} AND revision_id=${revisionId}
-            AND source_draft_version IS NOT NULL AND source_installation_generation IS NOT NULL`.execute(database);
-        return rows.rows[0]
-          ? { draftVersion: rows.rows[0].draft_version, installationGeneration: rows.rows[0].installation_generation }
+        const rows = await sql<{
+          draft_version: string;
+          installation_generation: string;
+          created_by_ref: string | null;
+        }>`
+          SELECT p.source_draft_version::text AS draft_version,
+            p.source_installation_generation::text AS installation_generation, r.created_by_ref
+          FROM config_revision_presentation p
+          JOIN config_revisions r ON r.shop_id=p.shop_id AND r.revision_id=p.revision_id
+          WHERE p.shop_id=${shopId} AND p.revision_id=${revisionId}
+            AND p.source_draft_version IS NOT NULL AND p.source_installation_generation IS NOT NULL`.execute(database);
+        const row = rows.rows[0];
+        return row
+          ? {
+              draftVersion: row.draft_version,
+              installationGeneration: row.installation_generation,
+              createdByRef: row.created_by_ref,
+            }
           : null;
       },
       getAvailabilityRecovery: (shopId, configId) => availabilityRecovery(database, shopId, configId),

@@ -184,7 +184,11 @@ function fixture(
         return revisionRecord({ revisionId: value.revisionId, publishedValue: value.publishedValue });
       },
       setCurrentPublicationPointer: async () => {},
-      getRevisionSourceScope: async () => ({ draftVersion: '2', installationGeneration: '1' }),
+      getRevisionSourceScope: async () => ({
+        draftVersion: '2',
+        installationGeneration: '1',
+        createdByRef: actor.staffId,
+      }),
       getValidatedPublishedRevision: async () => {
         const value = required(revisions[0]);
         return revisionRecord({

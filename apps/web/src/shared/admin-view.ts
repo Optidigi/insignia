@@ -69,6 +69,9 @@ export type CommandOutcome =
   | { kind: 'created'; configId: string }
   | { kind: 'saved'; draftVersion: string }
   | { kind: 'accepted'; state: PublicationState; revisionId?: string }
+  /** #468: the staff session ended between publication steps; re-send the same request with a
+   * session token valid for at least `minimumValidityMs`. */
+  | { kind: 'continue'; revisionId?: string; minimumValidityMs: number; message: string }
   | { kind: 'conflict'; message: string }
   | {
       kind: 'invalid';
