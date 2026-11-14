@@ -25,6 +25,7 @@ type Outcome =
   | { kind: 'created'; configId: string }
   | { kind: 'saved'; draftVersion: string }
   | { kind: 'accepted'; state: ReturnType<typeof projectActivationPublicationState>; revisionId: string }
+  | { kind: 'resend'; revisionId?: string; minimumValidityMs: number; message: string }
   | {
       kind: 'conflict' | 'forbidden';
       noEffect?: true;
@@ -41,6 +42,26 @@ type Publication = Pick<ReturnType<DurableCore['productionPublications']['create
 /** Within one publish request, an allowed subscription check for the same draft is reused for this
  * long instead of being read again before every publication step (#436). */
 export const PUBLICATION_ELIGIBILITY_REUSE_MS = 30_000;
+/** #468: a publish starts a step (preview capture, preparation plus the durable command, or one
+ * publication or activation advance) only while the request's staff session has at least this long
+ * left; otherwise it stops between persisted steps and answers `resend`. The largest advance is 13
+ * serial Admin calls (publication-latency test; bounded there at 15), about 7.5 s at 0.5 s a call,
+ * and a stale release record adds a ~6 s collection before it. */
+export const PUBLICATION_STEP_MARGIN_MS = 15_000;
+/** Session-token validity the client waits for before it re-sends: more than the margin, so the
+ * next request has room for at least one step (App Bridge then hands out a new 60 s token). */
+export const PUBLICATION_RESEND_VALIDITY_MS = 30_000;
+/** `resend` when the request's staff session is too short for another publication step. */
+function resendWhenSessionEnds(actor: Actor, revisionId?: string): Extract<Outcome, { kind: 'resend' }> | null {
+  return actor.expiresAtMs - Date.now() < PUBLICATION_STEP_MARGIN_MS
+    ? {
+        kind: 'resend',
+        ...(revisionId ? { revisionId } : {}),
+        minimumValidityMs: PUBLICATION_RESEND_VALIDITY_MS,
+        message: 'Publication is still in progress. Send it again with a new session.',
+      }
+    : null;
+}
 const targetOccupied = (error: unknown) =>
   !!error &&
   typeof error === 'object' &&
@@ -331,7 +352,7 @@ export function createMerchantConfigService(input: {
   function command(actor: Actor, namespace: string, key: string, request: unknown) {
     return { shopId: actor.tenantShopId, namespace, key, requestDigest: sha256CanonicalJson(request) };
   }
-  return {
+  const service = {
     async reconcile(
       actor: Actor,
       productId: string,
@@ -619,6 +640,13 @@ export function createMerchantConfigService(input: {
         authority?: string;
       },
     ): Promise<Outcome> {
+      // #468: the publish runs under this request's staff session. It starts the next step only
+      // while the session can cover it, so it stops between persisted steps, never inside one; the
+      // client re-sends the same idempotent request with a new session token and the work resumes
+      // from the persisted command, previews, release evidence and publication state.
+      const continuing = (revisionId?: string) => resendWhenSessionEnds(actor, revisionId);
+      const stop = continuing();
+      if (stop) return stop;
       const catalogProduct = await product(actor, productId);
       if (data.authority) await core.transactions.run((tx) => currentLocked(actor, tx, data.authority));
       const allowed = new Map<string, number>();
@@ -745,6 +773,8 @@ export function createMerchantConfigService(input: {
         if (!eligibility.allowed)
           return { kind: 'forbidden', message: eligibility.reason ?? 'Publication feature unavailable' };
         if (!input.capturePublicationPreviews) throw new Error('Complete customer previews are unavailable');
+        const beforeCapture = continuing();
+        if (beforeCapture) return beforeCapture;
         const previewAssets = input.capturePublicationPreviews
           ? await input.capturePublicationPreviews(actor, {
               productId,
@@ -768,12 +798,23 @@ export function createMerchantConfigService(input: {
           if (!stillCurrent) return { kind: 'conflict', message: 'Draft changed. Reload before publication.' };
           if (!(await selectedPreviewCoverage(actor, productNumber(productId), snapshot.geometry, previewAssets)))
             throw new Error('Complete customer previews are unavailable');
+          const beforePreparation = continuing();
+          if (beforePreparation) return beforePreparation;
           if (input.preparePublication) {
             const preparation = await input.preparePublication(actor);
+            // Release collection is bounded by the session: one cut short by it is resent, not denied.
             if (!preparation.ready)
-              return { kind: 'forbidden', message: preparation.reason ?? 'Publication preparation unavailable' };
+              return (
+                continuing() ?? {
+                  kind: 'forbidden',
+                  message: preparation.reason ?? 'Publication preparation unavailable',
+                }
+              );
           }
         }
+        // Preparation and the durable command are one span: the command commits under the session.
+        const beforeCommand = continuing();
+        if (beforeCommand) return beforeCommand;
         const result = await executeCommand(
           commandTransactions(actor, data.authority),
           core.commands,
@@ -883,6 +924,8 @@ export function createMerchantConfigService(input: {
       const existing = await core.configs.getCurrentPublication(actor.tenantShopId, data.configId);
       if (existing && existing.operationId !== revisionId && existing.phase !== 'active')
         return { kind: 'conflict', message: 'A newer publication request exists' };
+      const beforeRecovery = continuing(revisionId);
+      if (beforeRecovery) return beforeRecovery;
       if (
         !input.activation &&
         existing &&
@@ -963,12 +1006,13 @@ export function createMerchantConfigService(input: {
       for (let attempt = 0; attempt < 16; attempt++) {
         if (activation) {
           await current(actor);
-          if (actor.expiresAtMs <= Date.now())
-            return { kind: 'forbidden', message: 'Current staff identity expired. Refresh before continuing.' };
           const eligibility = await eligible(immutableDraft);
           if (!eligibility.allowed)
             return { kind: 'forbidden', message: eligibility.reason ?? 'Publication feature unavailable' };
         }
+        // The stop points: between persisted steps, before each advance that can write to a provider.
+        const beforePublicationStep = continuing(revisionId);
+        if (beforePublicationStep) return beforePublicationStep;
         const advanced = await publication.advance(actor.tenantShopId, data.configId, prepared.operationId);
         phase = advanced.phase;
         if (advanced.kind === 'CONFLICT' || advanced.kind === 'OPERATOR_HOLD') {
@@ -983,6 +1027,8 @@ export function createMerchantConfigService(input: {
         // including ADMISSION_PENDING, runs activation.
         const activationWaiting: boolean =
           advanced.kind === 'PENDING' && (activationKind === 'HELD' || activationKind === 'PUBLICATION_PENDING');
+        const beforeActivationStep = activation && !activationWaiting ? continuing(revisionId) : null;
+        if (beforeActivationStep) return beforeActivationStep;
         const activated: Pick<ActivationResult, 'kind'> | null = activation
           ? activationWaiting
             ? { kind: activationKind! }
@@ -1015,6 +1061,35 @@ export function createMerchantConfigService(input: {
             operationStatus: observed?.operationId === revisionId ? observed.status : undefined,
           }),
       };
+    },
+  };
+  return {
+    ...service,
+    /** #468: a step the ending session cut short (a write its pre-dispatch check refused, an expired
+     * command lock, a release collection that reached the session deadline) dispatched nothing new;
+     * the request is resent with a new session. Any other failure, or one with session time left,
+     * is reported as before; a resend re-authenticates, so a genuine denial is reported then. */
+    async publish(actor: Actor, productId: string, data: Parameters<typeof service.publish>[2]): Promise<Outcome> {
+      try {
+        return await service.publish(actor, productId, data);
+      } catch (error) {
+        const resend = resendWhenSessionEnds(actor);
+        if (!resend) throw error;
+        const receipt = await core.commands
+          .lookup(
+            command(actor, 'm5-publish-config', data.idempotencyKey, {
+              productId,
+              configId: data.configId,
+              draftVersion: data.draftVersion,
+            }),
+          )
+          .catch(() => null);
+        const committed =
+          receipt?.status === 'completed'
+            ? /^([a-f0-9-]{36}):(?:required|optional)$/.exec(receipt.resultRef ?? '')
+            : null;
+        return committed?.[1] ? { ...resend, revisionId: committed[1] } : resend;
+      }
     },
   };
 }

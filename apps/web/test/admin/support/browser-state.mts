@@ -37,6 +37,8 @@ declare global {
     dismissShopifyModal(): void;
     finishShopifyModalDismiss(): void;
     syntheticTokenCount: number;
+    /** Expire the current synthetic session token after this many milliseconds. */
+    syntheticTokenRemaining(ms: number): void;
     __tokenCount: number;
     __tokenCalls: number;
     __releaseInitialToken: () => void;

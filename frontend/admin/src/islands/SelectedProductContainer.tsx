@@ -259,8 +259,8 @@ function SelectedProductContainer({ productId }: { productId: string }) {
         onDenied: () => {
           if (version === requestVersion.current) denied();
         },
-        request: async (path, init) => {
-          const value = await authenticatedJson<unknown>(path, init);
+        request: async (path, init, resendValidityMs) => {
+          const value = await authenticatedJson<unknown>(path, init, false, resendValidityMs);
           if (path === '/api/admin/preferences') observed.current = MerchantPreferencesViewSchema.parse(value);
           return value;
         },

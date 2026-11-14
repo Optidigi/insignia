@@ -134,6 +134,7 @@ function outcome(services: AdminServices, action: ConfigRejectionAction, result:
     case 'saved':
       return adminJson(200, result);
     case 'accepted':
+    case 'resend':
       return adminJson(202, result);
     case 'conflict':
       return adminJson(409, result);

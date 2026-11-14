@@ -352,7 +352,8 @@ async function fixture(t: TestContext, scenario: Scenario = {}) {
       });
     if (url.origin !== server.base) return route.abort('blockedbyclient');
     if (!url.pathname.startsWith('/api/')) return route.continue();
-    assert.equal(route.request().headers().authorization, 'Bearer synthetic-selected-token');
+    // A test may mint expiring tokens (`synthetic-selected-token.<payload>.sig`) with App Bridge's caching.
+    assert.match(route.request().headers().authorization ?? '', /^Bearer synthetic-selected-token(?:\.|$)/);
     if (url.pathname === '/api/admin/preferences')
       return route.fulfill({ json: { ...preferences, canEdit: !scenario.readOnly } });
     if (url.pathname === '/api/admin/methods') return route.fulfill({ json: catalog });

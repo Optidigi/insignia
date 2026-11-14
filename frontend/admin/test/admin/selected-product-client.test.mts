@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createSelectedProductClient, SelectedProductPublicationBlocked } from '../../src/islands/selected-product-client.ts';
 import { MerchantDraftSchema, SelectedProductSetupSchema } from '@insignia/contracts';
+import { isUnansweredRequest } from '../../src/shared/admin-request.ts';
 
 const product = { id: 'gid://shopify/Product/111', title: 'T-shirt', status: 'ACTIVE', imageUrl: null, variants: [] };
 const draft = MerchantDraftSchema.parse({
@@ -804,3 +805,76 @@ for (const outcome of ['ACTIVE', 'FAILED'] as const)
     assert.equal(client.adoptObservation(later), true);
     assert.equal(client.hasPending(), false);
   });
+
+/** #468: a publish whose staff session ended between steps; the server answers `resend` `stops` times. */
+function continuingPublication(stops: number) {
+  const f = fixture();
+  let saved = false,
+    published = false;
+  const sent: { key: string | null; body: string; resendValidityMs: number | undefined }[] = [];
+  const client = createSelectedProductClient({
+    productId: product.id,
+    storage: f.storage,
+    newKey: () => key,
+    request: async (path, init, resendValidityMs) => {
+      if (path.endsWith('preferences')) return preferences;
+      if (init?.method === 'PUT') {
+        saved = true;
+        return { kind: 'saved', draftVersion: '2' };
+      }
+      if (init) {
+        sent.push({
+          key: new Headers(init.headers).get('Idempotency-Key'),
+          body: String(init.body),
+          resendValidityMs,
+        });
+        if (sent.length <= stops)
+          return {
+            kind: 'resend',
+            revisionId: 'new-revision',
+            minimumValidityMs: 30000,
+            message: 'Publication is still in progress.',
+          };
+        published = true;
+        return { kind: 'accepted', state: 'ACTIVE', revisionId: 'new-revision' };
+      }
+      const value = configView(saved ? '2' : '1', published ? 'ACTIVE' : 'DRAFT');
+      if (published) {
+        value.config.publication.revisionId = 'new-revision';
+        value.config.publication.activeRevisionId = 'new-revision';
+        value.config.publication.sourceDraftVersion = '2';
+        Object.assign(value.config.publication, { requestKey: `${key}:publish` });
+      }
+      return value;
+    },
+  });
+  return { client, sent, storage: f.storage };
+}
+
+test('#468: a resend answer re-sends the same publish once with the requested token validity', async () => {
+  const f = continuingPublication(1);
+  await f.client.load();
+  const view = await f.client.publish(setup);
+  assert.equal(view.config?.publication.state, 'ACTIVE');
+  assert.equal(f.sent.length, 2);
+  const [first, second] = f.sent;
+  assert.equal(first?.resendValidityMs, undefined, 'the first send uses the ordinary token window');
+  assert.equal(second?.resendValidityMs, 30000);
+  assert.equal(second?.key, `${key}:publish`);
+  assert.equal(second?.key, first?.key);
+  assert.equal(second?.body, first?.body, 'the same request bytes');
+  assert.equal(f.client.hasPending(), false, 'settled');
+});
+
+test('#468: a publish that keeps answering resend offers Retry at once, not a followed wait or endless resends', async () => {
+  const f = continuingPublication(Number.POSITIVE_INFINITY);
+  await f.client.load();
+  await assert.rejects(f.client.publish(setup), (error) => {
+    assert.equal(isUnansweredRequest(error), false, 'the server answered: it is stopped, not running unseen');
+    return true;
+  });
+  assert.equal(f.sent.length, 4, 'three resends');
+  assert.equal(f.client.hasPendingPublication(), true, 'Retry continues the original request');
+  const stored = JSON.parse(f.storage.getItem(`insignia:selected-product-write:v1:${preferences.shop}:${product.id}`)!);
+  assert.equal(stored.acceptedRevisionId, 'new-revision', 'its operation identity is kept for settlement');
+});
