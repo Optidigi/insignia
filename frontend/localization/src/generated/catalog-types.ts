@@ -1004,6 +1004,8 @@ export interface AdminMessageTable {
   'editor:placementWorkflowPreview.productCouldNotBeLoaded': object;
   'editor:placementWorkflowPreview.products': object;
   'editor:placementWorkflowPreview.productSetup': object;
+  'editor:placementWorkflowPreview.publicationAbandonedRestored': object;
+  'editor:placementWorkflowPreview.publicationAbandonmentRestoring': object;
   'editor:placementWorkflowPreview.publicationActions.addPlacement': object;
   'editor:placementWorkflowPreview.publicationActions.addPrice': object;
   'editor:placementWorkflowPreview.publicationActions.addSize': object;
@@ -1024,6 +1026,7 @@ export interface AdminMessageTable {
   'editor:placementWorkflowPreview.publicationActions.reviewSize': object;
   'editor:placementWorkflowPreview.publicationActions.reviewView': object;
   'editor:placementWorkflowPreview.publicationActions.setMovementArea': object;
+  'editor:placementWorkflowPreview.publicationHoldNeedsSupport': object;
   'editor:placementWorkflowPreview.publish': object;
   'editor:placementWorkflowPreview.publishErrors.conflict': object;
   'editor:placementWorkflowPreview.publishErrors.shopifyBusy': object;

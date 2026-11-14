@@ -66,8 +66,8 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       );
       const migrations = new URL('../migrations/', import.meta.url);
       const names = (await readdir(migrations)).filter((n) => n.endsWith('.sql')).sort();
-      expect(names).toHaveLength(64);
-      expect(names.slice(-15)).toEqual([
+      expect(names).toHaveLength(65);
+      expect(names.slice(-16)).toEqual([
         '20261105000500_purchase_order_labels.sql',
         '20261107000100_restoration_no_dispatch_retry.sql',
         '20261109000100_buyer_acceptance_decline.sql',
@@ -83,6 +83,7 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
         '20261112000600_buyer_session_quota_indexes.sql',
         '20261113000100_batched_buyer_session_erasure.sql',
         '20261113000200_signing_key_envelope_writer.sql',
+        '20261114000100_publication_abandonment.sql',
       ]);
       for (const file of names.slice(0, 20))
         await owner.query((await readFile(new URL(file, migrations), 'utf8')).split('-- migrate:down')[0]!);

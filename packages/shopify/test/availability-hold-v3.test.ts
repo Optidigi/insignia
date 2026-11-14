@@ -258,6 +258,42 @@ test('#446: a still-throttled hold observation is a retryable failure, not a con
   expect(store.writes).toBe(1);
 });
 
+test('#466: a failed pre-write restore read is NOT_DISPATCHED with no current and leaves the write slot', async () => {
+  let throttling = false;
+  const store = throttledStore(() => throttling);
+  const port = store.port();
+  const before = v3Snapshot(await port.snapshot(scope, productId));
+  const acquired = await port.acquire(scope, {
+    version: 'm5-availability-hold-v3',
+    operationId: 'op-466',
+    before,
+    held: null,
+  });
+  if (acquired.kind !== 'HELD' || acquired.hold.version !== 'm5-availability-hold-v3') throw new Error('not held');
+  const hold = {
+    ...acquired.hold,
+    restorationClaim: {
+      version: 'm5-availability-restoration-claim-v3' as const,
+      scope,
+      operationId: 'op-466',
+      productId,
+      restoreReserved: true as const,
+      compensationReserved: true as const,
+    },
+  };
+  throttling = true;
+  const restorer = store.port();
+  expect(await restorer.restore(scope, hold, acquired.current, () => true)).toEqual({
+    kind: 'NOT_DISPATCHED',
+    current: null,
+  });
+  expect(store.writes).toBe(1);
+  throttling = false;
+  // The same port may still restore: nothing was dispatched and the budget did not expire.
+  expect((await restorer.restore(scope, hold, acquired.current, () => true)).kind).toBe('RESTORED');
+  expect(store.writes).toBe(2);
+});
+
 test('#446 review: MAX_COST_EXCEEDED is not retried and an observation reports a conflict', async () => {
   let failing = false;
   const store = throttledStore(() => failing, 'MAX_COST_EXCEEDED');

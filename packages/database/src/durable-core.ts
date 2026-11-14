@@ -45,6 +45,10 @@ import { createMerchantPreviewRepository } from './repositories/merchant-preview
 import { createMethodCatalogRepository, type MethodTemplate } from './repositories/method-catalog.js';
 import { createProductionActivation, type ProductionActivationOptions } from './repositories/production-activation.js';
 import { PgProductionPublication, type ProductionPublicationRemote } from './repositories/production-publication.js';
+import {
+  createPublicationAbandonment,
+  type PublicationAbandonmentOptions,
+} from './repositories/publication-abandonment.js';
 import { createPurchaseRepository, type PurchaseRepository } from './repositories/purchase.js';
 import { PgQuoteRenewalRepository } from './repositories/quote-renewal.js';
 import {
@@ -156,6 +160,10 @@ export interface DurableCore {
   readonly productionActivations: {
     create(options: ProductionActivationOptions): ReturnType<typeof createProductionActivation>;
   };
+  /** #466 B worker pass: automatic release of an abandoned publication hold. */
+  readonly publicationAbandonment: {
+    create(options: PublicationAbandonmentOptions): ReturnType<typeof createPublicationAbandonment>;
+  };
   readonly acceptedQuotes: QuoteAcceptanceStore &
     Required<Pick<QuoteAcceptanceStore, 'resolveBuyerAcceptance'>> & {
       getEffective(shopId: string, productId: string): Promise<EffectiveQuoteRevision | null>;
@@ -249,6 +257,21 @@ export interface DurableCore {
       status: string;
       activationKind: string | null;
       reconciliationKind?: string | null;
+      /** The activation row still carries an availability hold (#466: support copy only then). */
+      holdPresent?: boolean;
+    } | null>;
+    /** #466: the config's newest operation (current generation) when its hold was claimed or
+     * restored as abandoned. A derived input; the next publication's sequence ends it. */
+    getPublicationAbandonment(
+      shopId: string,
+      configId: string,
+    ): Promise<{
+      operationId: string;
+      revisionId: string;
+      kind: 'ABANDON_CLAIMED' | 'ABANDON_RESTORED';
+      status: string;
+      sourceDraftVersion: string | null;
+      requestKey: string | null;
     } | null>;
     getAvailabilityRecovery(
       shopId: string,
@@ -412,7 +435,9 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
           SELECT state.operation_id, state.kind, operation.installation_generation::text
           FROM m5_activation_state state JOIN publication_operations operation USING (shop_id, config_id, operation_id)
           WHERE state.shop_id=${shopId} AND state.config_id=${configId}
-            AND state.hold IS NOT NULL AND state.kind NOT IN ('RESTORED','RESOLVED') LIMIT 1`.execute(executor);
+            AND state.hold IS NOT NULL AND state.kind NOT IN ('RESTORED','RESOLVED','ABANDON_RESTORED') LIMIT 1`.execute(
+      executor,
+    );
     const row = rows.rows[0];
     return row
       ? { operationId: row.operation_id, kind: row.kind, installationGeneration: row.installation_generation }
@@ -430,9 +455,11 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       status: string | null;
       activation_kind: string | null;
       reconciliation_kind: string | null;
+      hold_present: boolean | null;
     }>`SELECT pointer.revision_id, pointer.source_draft_version::text,
         pointer.idempotency_key, geometry.mode, operation.operation_id,
         progress.phase, progress.prior_mode, operation.status, activation.kind AS activation_kind,
+        activation.hold IS NOT NULL AS hold_present,
         CASE WHEN progress.last_observed->'adminReconciliation'->>'version'='m5-admin-reconciliation-v1'
           THEN progress.last_observed->'adminReconciliation'->>'kind' END AS reconciliation_kind
       FROM m5_current_publication_pointer pointer
@@ -465,6 +492,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
         status: selected.status ?? 'intent',
         activationKind: selected.activation_kind,
         reconciliationKind: selected.reconciliation_kind,
+        holdPresent: selected.hold_present === true,
       };
     }
     const historical = await sql<{
@@ -477,8 +505,10 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       activation_kind: string | null;
       reconciliation_kind: string | null;
       source_draft_version: string | null;
+      hold_present: boolean | null;
     }>`SELECT operation.operation_id, operation.revision_id,
         progress.phase, progress.mode, progress.prior_mode, operation.status, activation.kind AS activation_kind,
+        activation.hold IS NOT NULL AS hold_present,
         CASE WHEN progress.last_observed->'adminReconciliation'->>'version'='m5-admin-reconciliation-v1'
           THEN progress.last_observed->'adminReconciliation'->>'kind' END AS reconciliation_kind,
         presentation.source_draft_version::text
@@ -510,6 +540,40 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
           status: row.status,
           activationKind: row.activation_kind,
           reconciliationKind: row.reconciliation_kind,
+          holdPresent: row.hold_present === true,
+        }
+      : null;
+  }
+  async function publicationAbandonment(executor: DatabaseExecutor, shopId: string, configId: string) {
+    const rows = await sql<{
+      operation_id: string;
+      revision_id: string;
+      kind: 'ABANDON_CLAIMED' | 'ABANDON_RESTORED';
+      status: string;
+      source_draft_version: string | null;
+      request_key: string | null;
+    }>`SELECT o.operation_id, o.revision_id, a.kind, o.status, presentation.source_draft_version::text,
+        (SELECT r.idempotency_key FROM idempotency_records r WHERE r.shop_id=o.shop_id
+          AND r.namespace='m5-publish-config' AND r.status='completed'
+          AND r.result_ref IN (o.revision_id||':required', o.revision_id||':optional') LIMIT 1) AS request_key
+      FROM product_configs c JOIN shops s ON s.shop_id=c.shop_id
+      JOIN publication_operations o ON o.shop_id=c.shop_id AND o.config_id=c.config_id
+        AND o.operation_sequence=c.publication_sequence AND o.installation_generation=s.current_generation
+      JOIN m5_activation_state a ON a.shop_id=o.shop_id AND a.config_id=o.config_id AND a.operation_id=o.operation_id
+      LEFT JOIN config_revision_presentation presentation ON presentation.shop_id=o.shop_id
+        AND presentation.config_id=o.config_id AND presentation.revision_id=o.revision_id
+      WHERE c.shop_id=${shopId} AND c.config_id=${configId} AND a.kind IN ('ABANDON_CLAIMED','ABANDON_RESTORED')`.execute(
+      executor,
+    );
+    const row = rows.rows[0];
+    return row
+      ? {
+          operationId: row.operation_id,
+          revisionId: row.revision_id,
+          kind: row.kind,
+          status: row.status,
+          sourceDraftVersion: row.source_draft_version,
+          requestKey: row.request_key,
         }
       : null;
   }
@@ -553,6 +617,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       },
     },
     productionActivations: { create: (options) => createProductionActivation(database, options) },
+    publicationAbandonment: { create: (options) => createPublicationAbandonment(database, options) },
     acceptedQuotes: {
       getEffective: (shopId, productId) => acceptedQuotes.getEffective(shopId, productId),
       findCompleted: (input) => acceptedQuotes.findCompleted<AcceptedQuoteResult>(input),
@@ -761,6 +826,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       getAvailabilityRecoveryInTransaction: (handle, shopId, configId) =>
         availabilityRecovery(resolve(handle), shopId, configId),
       getCurrentPublication: (shopId, configId) => currentPublication(database, shopId, configId),
+      getPublicationAbandonment: (shopId, configId) => publicationAbandonment(database, shopId, configId),
       getCurrentPublicationInTransaction: async (handle, shopId, configId) =>
         currentPublication(resolve(handle), shopId, configId),
       setCurrentPublicationPointer: async (handle, input) => {

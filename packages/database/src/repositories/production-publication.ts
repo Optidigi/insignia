@@ -47,7 +47,8 @@ type ProgressPhase =
   | 'activation-pending'
   | 'conflict'
   | 'operator-hold'
-  | 'active';
+  | 'active'
+  | 'abandoned';
 type Progress = {
   phase: ProgressPhase;
   version: string;
@@ -78,7 +79,9 @@ export type PublicationAdvanceResult =
   | { kind: 'ACTIVE'; phase: 'active' }
   | { kind: 'ADMISSION_PENDING'; phase: ProgressPhase }
   | { kind: 'REMOTE_READY_ACTIVATION_PENDING'; phase: 'activation-pending' }
-  | { kind: 'CONFLICT' | 'OPERATOR_HOLD'; phase: ProgressPhase };
+  | { kind: 'CONFLICT' | 'OPERATOR_HOLD'; phase: ProgressPhase }
+  /** #466: the operation's hold was claimed or restored as abandoned; nothing was read or written. */
+  | { kind: 'ABANDONED'; phase: ProgressPhase };
 
 const uuidHex = (uuid: string) => uuid.replaceAll('-', '');
 const productGid = (id: string) => `gid://shopify/Product/${id}`;
@@ -279,7 +282,9 @@ export class PgProductionPublication {
         // or the exact effective remote anchors checked below.
         const closed = await sql<{ count: string; valid: boolean | null }>`SELECT count(*)::text AS count,
           bool_and(COALESCE(o.status IN ('failed','superseded') AND o.availability_resolved_at IS NOT NULL
-            AND a.kind='RESOLVED' AND a.resolution_digest=r.resolution_digest, false)) AS valid
+            AND a.kind='RESOLVED' AND a.resolution_digest=r.resolution_digest, false)
+            OR COALESCE(o.status='failed' AND o.availability_resolved_at IS NOT NULL
+            AND a.kind='ABANDON_RESTORED', false)) AS valid
           FROM publication_operations o
           LEFT JOIN m5_activation_state a USING(shop_id,config_id,operation_id)
           LEFT JOIN m5_availability_resolutions r USING(shop_id,config_id,operation_id)
@@ -349,7 +354,8 @@ export class PgProductionPublication {
       if (row.publication_sequence !== first.publication_sequence)
         throw new Error('Publication installation or revision changed while preparing');
       const unresolvedHold = await sql<{ operation_id: string }>`SELECT operation_id FROM m5_activation_state
-        WHERE shop_id=${input.shopId} AND config_id=${input.configId} AND hold IS NOT NULL AND kind NOT IN ('RESTORED','RESOLVED')
+        WHERE shop_id=${input.shopId} AND config_id=${input.configId} AND hold IS NOT NULL
+          AND kind NOT IN ('RESTORED','RESOLVED','ABANDON_RESTORED')
         LIMIT 1`.execute(tx);
       if (unresolvedHold.rows[0]) throw new Error('Availability hold requires recovery before another publication');
       const open = await sql<{ operation_id: string }>`SELECT p.operation_id FROM m4_publication_progress p
@@ -539,6 +545,17 @@ export class PgProductionPublication {
       FOR UPDATE OF s, i, c`.execute(tx);
       const stored = await this.load(shopId, configId, operationId, tx);
       if (!stored) return { kind: 'OPERATOR_HOLD', phase: 'operator-hold' };
+      // #466: before `resolved`, current() and hold(): a drift write would hit the freeze.
+      const activationKind = (
+        await sql<{ kind: string }>`SELECT kind FROM m5_activation_state
+        WHERE shop_id=${shopId} AND config_id=${configId} AND operation_id=${operationId}`.execute(tx)
+      ).rows[0]?.kind;
+      if (
+        stored.progress.phase === 'abandoned' ||
+        activationKind === 'ABANDON_CLAIMED' ||
+        activationKind === 'ABANDON_RESTORED'
+      )
+        return { kind: 'ABANDONED', phase: stored.progress.phase };
       const resolved = (
         await sql<{ resolved: boolean }>`SELECT true AS resolved FROM m5_availability_resolutions
         WHERE shop_id=${shopId} AND config_id=${configId} AND operation_id=${operationId}`.execute(tx)

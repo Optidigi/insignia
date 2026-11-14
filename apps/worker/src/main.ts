@@ -12,6 +12,7 @@ import { createWorkerDatabase } from './database.js';
 import { runLocalDiagnostic } from './diagnostic.js';
 import { createDurableWorkerHandlers, credentialLifecycle } from './handlers.js';
 import { startWorkerProcess } from './process.js';
+import { createWorkerPublicationAbandonment } from './publication-abandonment.js';
 import { createProductionPurchaseAdmission, resolveNativePurchaseQualification } from './purchase-admission.js';
 import { createPurchaseReleasePreparation } from './purchase-release.js';
 import { createPurchaseRunner } from './purchase-runner.js';
@@ -40,10 +41,21 @@ if (process.argv.includes('--diagnostic')) {
   const { core, queue } = createWorkerDatabase(connectionString, keys);
   const usage = createWorkerUsageRuntime({ env: process.env, core });
   const transport = createShopifyOfflineRefreshTransport({ clientId, clientSecret });
-  const purchaseCredentials = createAdminReadCredentialSource({
+  // The shop's offline token (the app's granted scopes) through M3's fenced refresh lifecycle.
+  // Purchase and lifecycle reads use it; so does #466's abandoned-hold restore, for exactly one
+  // status-only product write (spec §6.1 offline-token exception).
+  const offlineCredentials = createAdminReadCredentialSource({
     tenants: core.tenants,
     credentials: credentialLifecycle(core),
     refresh: transport,
+  });
+  // #466 B. Validated before the worker starts: a bound outside its range is a startup error.
+  const publicationAbandonment = createWorkerPublicationAbandonment({
+    core,
+    env: process.env,
+    appClientId: clientId,
+    credentials: offlineCredentials,
+    observability: queue.observability,
   });
   const releaseProfile =
     process.env.INSIGNIA_M8_PURCHASE_ENABLED === '1'
@@ -59,7 +71,7 @@ if (process.argv.includes('--diagnostic')) {
   const checkout = releaseProfile
     ? createProductionPurchaseAdmission({
         core,
-        credentials: purchaseCredentials,
+        credentials: offlineCredentials,
         qualification,
         releaseProfile: releaseProfile.name,
       })
@@ -82,10 +94,10 @@ if (process.argv.includes('--diagnostic')) {
           orders: {
             read: (target) =>
               readShopifyOrder(target, {
-                credentials: purchaseCredentials,
+                credentials: offlineCredentials,
                 currency: { exponent: (code) => currencyExponent(code) ?? null },
               }),
-            changes: (target) => readShopifyOrderChanges(target, { credentials: purchaseCredentials }),
+            changes: (target) => readShopifyOrderChanges(target, { credentials: offlineCredentials }),
           },
           onError: (errorClass) => queue.observability.logger.error('queue_job_rejected', { errorClass }),
         })
@@ -98,7 +110,7 @@ if (process.argv.includes('--diagnostic')) {
   console.log(JSON.stringify({ url: running.url, durableReady: running.durableReady }));
   const lifecycle = createUninstallEnrollmentReconciliation({
     core,
-    credentials: purchaseCredentials,
+    credentials: offlineCredentials,
     enroll: createAutomaticUninstallEnrollment({
       core,
       appOrigin: required('APP_URL'),
@@ -107,7 +119,14 @@ if (process.argv.includes('--diagnostic')) {
     }),
     logger: queue.observability.logger,
   });
-  const reconciliation = createWorkerReconciliation({ core, queue, purchases: purchaseRunner, usage, lifecycle });
+  const reconciliation = createWorkerReconciliation({
+    core,
+    queue,
+    purchases: purchaseRunner,
+    usage,
+    lifecycle,
+    publicationAbandonment,
+  });
   const recoveryTimer = setInterval(() => {
     void reconciliation.runOnce();
   }, 30_000);

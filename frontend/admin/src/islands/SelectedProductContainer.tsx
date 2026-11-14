@@ -38,6 +38,8 @@ import { createSelectedProductMedia } from './selected-product-media';
 import {
   isMerchantPublicationContinuing,
   isMerchantPublicationOperatorBlocked,
+  isMerchantPublicationSettledFailure,
+  publicationNotice,
 } from './publication-state';
 
 /** `rejected`: the server refused the write and nothing is pending, so the merchant fixes the edit and saves anew. */
@@ -343,6 +345,10 @@ function SelectedProductContainer({ productId }: { productId: string }) {
     }));
   const publicationProgressing = followUntil > 0 && !!client.current?.hasPendingPublication();
   const publicationNeedsReview = !!view?.config && isMerchantPublicationOperatorBlocked(view.config.publication.state);
+  /** #466: the server-projected abandoned-hold or support notice, shown whatever the local write state. */
+  const notice = view?.config ? publicationNotice(view.config.publication.state) : null;
+  /** The existing review states stay in the write-state banner; a state with its own notice does not. */
+  const reviewInBanner = publicationNeedsReview && !notice;
   async function retry() {
     if (!client.current) return;
     const owned = client.current;
@@ -377,7 +383,8 @@ function SelectedProductContainer({ productId }: { productId: string }) {
           copyPorts,
           readOnly: !canEdit.current || currencyReview,
           hasPublished: !!view.config?.publication.activeRevisionId,
-          publicationFailed: view.config?.publication.state === 'FAILED' && !client.current?.hasPending(),
+          publicationFailed:
+            !!view.config && isMerchantPublicationSettledFailure(view.config.publication.state) && !client.current?.hasPending(),
           publicationProgressing,
           publicationNeedsReview,
           publicationBlocked:
@@ -524,8 +531,13 @@ function SelectedProductContainer({ productId }: { productId: string }) {
                 methodBindings: canonicalBindingPrices(bindings.current),
               });
               const confirmed = await observe(value);
-              if (value.config?.publication.state === 'FAILED' && !owned.hasPending()) {
-                setRemote('failed');
+              if (
+                value.config &&
+                isMerchantPublicationSettledFailure(value.config.publication.state) &&
+                !owned.hasPending()
+              ) {
+                // #466: an abandoned request is settled and its product restored; Publish stays allowed.
+                setRemote(value.config.publication.state === 'FAILED' ? 'failed' : 'idle');
                 return { status: 'rejected' };
               }
               if (value.config?.publication.state !== 'ACTIVE' || owned.hasPending()) {
@@ -600,12 +612,17 @@ function SelectedProductContainer({ productId }: { productId: string }) {
           </s-button>
         </s-banner>
       )}
-      {(remote !== 'idle' || publicationNeedsReview) && (
-        <s-banner tone={publicationProgressing && !publicationNeedsReview ? 'info' : remote === 'pending' ? 'warning' : 'critical'}>
-          {rejected && !publicationNeedsReview
+      {/* #466: the server-projected publication notice has its own banner; the write-state banner below
+          keeps its own retry, rejection and reload behaviour (one owner per state). */}
+      {notice && (
+        <s-banner tone={notice.tone}>{t(`editor:placementWorkflowPreview.${notice.key}`)}</s-banner>
+      )}
+      {(remote !== 'idle' || reviewInBanner) && (
+        <s-banner tone={publicationProgressing && !reviewInBanner ? 'info' : remote === 'pending' ? 'warning' : 'critical'}>
+          {rejected && !reviewInBanner
             ? configRejectionText(rejected, t)
             : t(
-                view.config && (publicationNeedsReview || (remote === 'failed' && !view.config.publishEligibility.allowed))
+                view.config && (reviewInBanner || (remote === 'failed' && !view.config.publishEligibility.allowed))
                   ? 'editor:placementWorkflowPreview.realPublicationBlocked'
                   : view.config?.publication.state === 'FAILED' && !client.current?.hasPending()
                     ? 'editor:placementWorkflowPreview.realPublicationFailed'

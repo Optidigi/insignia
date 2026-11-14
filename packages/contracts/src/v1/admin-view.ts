@@ -68,6 +68,10 @@ export const AdminPublicationStateSchema = z.enum([
   'CONFLICT',
   'OPERATOR_HOLD',
   'FAILED',
+  // #466: abandoned publication hold states.
+  'ABANDONMENT_RESTORING',
+  'ABANDONED_RESTORED',
+  'HOLD_NEEDS_SUPPORT',
 ]);
 export const AdminConfigViewSchema = z.object({
   product: AdminCatalogProductSchema,

@@ -42,7 +42,13 @@ export type PublicationState =
   | 'ACTIVE'
   | 'CONFLICT'
   | 'OPERATOR_HOLD'
-  | 'FAILED';
+  | 'FAILED'
+  /** #466: Insignia is putting an abandoned publication's product back as it was. */
+  | 'ABANDONMENT_RESTORING'
+  /** #466: an abandoned publication was undone; the product is back as it was. Publish again. */
+  | 'ABANDONED_RESTORED'
+  /** #466: a publication hold may keep the product unavailable; Insignia support has to check it. */
+  | 'HOLD_NEEDS_SUPPORT';
 
 export interface ConfigView {
   product: CatalogProduct;
