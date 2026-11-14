@@ -2697,13 +2697,8 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
             ? translateUi('editor:placementWorkflowPreview.history.changeRedone')
             : ''}
       </span>
-      {adapter.kind === 'production' && <AdminSaveBar dirty={dirty || adapter.pending()} saving={writeBusy || (adapter.pending() && !adapter.publicationNeedsReview)} canSave={dirty && !writeBusy && !adapter.pending() && !adapter.readOnly} canDiscard={!writeBusy && !adapter.pending()} onSave={save} onDiscard={discard} showFallback={false} manageNavigation={false}/>}
+      {adapter.kind === 'production' && <AdminSaveBar dirty={dirty} saving={dirty && writeBusy} canSave={dirty && !writeBusy && !adapter.pending() && !adapter.readOnly} canDiscard={!writeBusy && !adapter.pending()} onSave={save} onDiscard={discard} showFallback={false} manageNavigation={false}/>}
       <s-page heading={product.title} inlineSize="large">
-        {adapter.kind === 'production' && <s-button-group slot="secondary-actions" {...{ label: translateUi('editor:placementWorkflowPreview.panelsAndHistoryActions') }}>
-          <s-button variant="secondary" icon="layout-sidebar-left" accessibilityLabel={translateUi(outlineHidden ? 'editor:placementWorkflowPreview.showViewsAndPlacements' : 'editor:placementWorkflowPreview.hideViewsAndPlacements')} disabled={!view || writeBusy || adapter.pending()} onClick={()=>setOutlineHidden((hidden)=>!hidden)}>{translateUi(outlineHidden ? 'editor:placementWorkflowPreview.showViewsAndPlacements' : 'editor:placementWorkflowPreview.hideViewsAndPlacements')}</s-button>
-          <s-button variant="secondary" icon="undo" accessibilityLabel={translateUi('editor:placementWorkflowPreview.undo')} disabled={movementEditing || calibrationEditing || writeBusy || adapter.pending() || (!geometryInput && !history.current.past.length)} onClick={()=>restoreHistory('undo')}>{translateUi('editor:placementWorkflowPreview.undo')}</s-button>
-          <s-button variant="secondary" icon="redo" accessibilityLabel={translateUi('editor:placementWorkflowPreview.redo')} disabled={movementEditing || calibrationEditing || writeBusy || adapter.pending() || !!geometryInput || !history.current.future.length} onClick={()=>restoreHistory('redo')}>{translateUi('editor:placementWorkflowPreview.redo')}</s-button>
-        </s-button-group>}
         <s-link slot="breadcrumb-actions" href={returnTo}>
           {translateUi(
             returnTo === '/admin/settings/storefront'
@@ -2757,16 +2752,18 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
             {translateUi('editor:placementWorkflowPreview.discardChanges')}
           </s-button>
         </s-menu>
-        <s-button
-          slot="secondary-actions"
-          data-preview-keep-visible
-          data-editor-save-draft
-          variant="secondary"
-          disabled={!dirty || !!adapter.readOnly || writeBusy || adapter.pending()}
-          onClick={save}
-        >
-          {translateUi('editor:placementWorkflowPreview.saveDraft')}
-        </s-button>
+        {adapter.kind !== 'production' && (
+          <s-button
+            slot="secondary-actions"
+            data-preview-keep-visible
+            data-editor-save-draft
+            variant="secondary"
+            disabled={!dirty || !!adapter.readOnly || writeBusy || adapter.pending()}
+            onClick={save}
+          >
+            {translateUi('editor:placementWorkflowPreview.saveDraft')}
+          </s-button>
+        )}
       </s-page>
       {!!adapter.reviews?.length && <div class="placement-method-review" role="region" aria-label={translateUi('editor:placementWorkflowPreview.realReviewMethods')}>
         <s-banner tone="warning">{translateUi('editor:placementWorkflowPreview.realReviewMethods')}
@@ -3145,6 +3142,33 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
             class={`placement-canvas-toolbar ${photoGroups.length ? 'has-variant-photos' : ''} ${preview && placement && placement.sizes.length > 1 ? 'is-size-preview' : ''} ${movementEditing || drawing || calibrationEditing ? 'is-editing-task' : ''}`}
           >
             <div>
+              {adapter.kind === 'production' && (
+                <s-stack direction="inline" gap="none" alignItems="center">
+                  {wideEditor && (
+                    <s-button
+                      variant="tertiary"
+                      icon="layout-sidebar-left"
+                      accessibilityLabel={translateUi(outlineHidden ? 'editor:placementWorkflowPreview.showViewsAndPlacements' : 'editor:placementWorkflowPreview.hideViewsAndPlacements')}
+                      disabled={!view || writeBusy || adapter.pending()}
+                      onClick={() => setOutlineHidden((hidden) => !hidden)}
+                    />
+                  )}
+                  <s-button
+                    variant="tertiary"
+                    icon="undo"
+                    accessibilityLabel={translateUi('editor:placementWorkflowPreview.undo')}
+                    disabled={movementEditing || calibrationEditing || writeBusy || adapter.pending() || (!geometryInput && !history.current.past.length)}
+                    onClick={() => restoreHistory('undo')}
+                  />
+                  <s-button
+                    variant="tertiary"
+                    icon="redo"
+                    accessibilityLabel={translateUi('editor:placementWorkflowPreview.redo')}
+                    disabled={movementEditing || calibrationEditing || writeBusy || adapter.pending() || !!geometryInput || !history.current.future.length}
+                    onClick={() => restoreHistory('redo')}
+                  />
+                </s-stack>
+              )}
               {view && placement && !movementEditing && !drawing && !calibrationEditing ? (
                 <AdminResourceName text={view.name}>
                   {({ textRef, interestFor, tooltip }) => (
