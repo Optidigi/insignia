@@ -37,8 +37,9 @@ try {
     store: core.artwork,
     storage,
     inspect: inspectArtwork,
+    // One asset's failed delete stays durable and is retried after its cooldown: warn, code only (#465).
     onCleanupError: () =>
-      observability.logger.error('queue_job_rejected', { errorClass: 'ARTWORK_CLEANUP_UNAVAILABLE' }),
+      observability.logger.warn('queue_job_rejected', { errorClass: 'ARTWORK_CLEANUP_UNAVAILABLE' }),
   });
   const merchantPreviews = merchantPreviewsEnabled
     ? createMerchantPreviewCapture({
