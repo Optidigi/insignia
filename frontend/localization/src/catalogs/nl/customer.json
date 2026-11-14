@@ -84,6 +84,7 @@
     "processingFailed": "Het bestand kon niet worden gecontroleerd. Probeer opnieuw.",
     "processingTimeout": "Het controleren duurt langer dan verwacht. Probeer opnieuw.",
     "inspectionRejected": "Deze afbeelding is afgewezen. Kies een ondersteunde statische afbeelding.",
+    "dimensionsTooLarge": "Deze afbeelding is te groot (maximaal {{maxEdgePx}} px per zijde en {{maxMegapixels}} megapixels). Verklein de afbeelding en probeer het opnieuw.",
     "artworkExpired": "Dit bestand is verlopen. Upload het opnieuw.",
     "sessionLimited_one": "Te veel nieuwe personalisatiesessies vanaf dit netwerk. Probeer het over {{count}} minuut opnieuw.",
     "sessionLimited_other": "Te veel nieuwe personalisatiesessies vanaf dit netwerk. Probeer het over {{count}} minuten opnieuw.",

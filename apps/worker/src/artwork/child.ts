@@ -15,6 +15,12 @@ const ORIENTATION: Record<number, { rotate: number; flip?: boolean; flop?: boole
   8: { rotate: 270 },
 };
 
+/** Exit codes: 0 accepted, 65 policy rejection, 66 pixel limit (its own buyer reason, #445), 70 inspector unavailable. */
+const EXIT_DIMENSION_LIMIT = 66;
+class DimensionLimitError extends Error {}
+const MAX_EDGE = 12_000;
+const MAX_PIXELS = 40_000_000;
+
 sharp.cache(false);
 sharp.concurrency(1);
 process.stderr.write('INSIGNIA_INSPECTION_STARTED\n');
@@ -55,20 +61,18 @@ try {
   }
   if (jpeg) assertSingleJpeg(bytes);
   phase = 'decode';
-  const options = { limitInputPixels: 40_000_000, failOn: 'warning', animated: true, sequentialRead: true } as const;
+  const options = { limitInputPixels: MAX_PIXELS, failOn: 'warning', animated: true, sequentialRead: true } as const;
   const image = sharp(bytes, options);
-  const metadata = await image.metadata();
+  // sharp refuses a header over limitInputPixels itself, before the explicit checks below can run.
+  const metadata = await image.metadata().catch((error: unknown) => {
+    if (/exceeds pixel limit/i.test(String((error as Error | undefined)?.message))) throw new DimensionLimitError();
+    throw error;
+  });
   const expected = png ? 'png' : jpeg ? 'jpeg' : 'svg';
-  if (
-    metadata.format !== expected ||
-    !metadata.width ||
-    !metadata.height ||
-    metadata.width > 12000 ||
-    metadata.height > 12000 ||
-    metadata.width * metadata.height > 40_000_000 ||
-    (metadata.pages ?? 1) !== 1
-  )
-    throw new Error('Artwork format/dimension/animation limit');
+  if (metadata.format !== expected || !metadata.width || !metadata.height || (metadata.pages ?? 1) !== 1)
+    throw new Error('Artwork format/animation limit');
+  if (metadata.width > MAX_EDGE || metadata.height > MAX_EDGE || metadata.width * metadata.height > MAX_PIXELS)
+    throw new DimensionLimitError();
   const orientation = ORIENTATION[metadata.orientation ?? 1];
   const turned = orientation?.rotate === 90 || orientation?.rotate === 270;
   let preview: Buffer;
@@ -115,6 +119,13 @@ try {
     phase === 'input' ||
     phase === 'output' ||
     ['ENOMEM', 'ENOENT', 'EIO', 'EMFILE', 'ENFILE', 'EACCES'].includes(code ?? '');
-  process.stderr.write(unavailable ? 'Artwork inspector unavailable' : 'Artwork rejected by inspection policy');
-  process.exitCode = unavailable ? 70 : 65;
+  const dimensions = !unavailable && error instanceof DimensionLimitError;
+  process.stderr.write(
+    unavailable
+      ? 'Artwork inspector unavailable'
+      : dimensions
+        ? 'Artwork exceeds the pixel limit'
+        : 'Artwork rejected by inspection policy',
+  );
+  process.exitCode = unavailable ? 70 : dimensions ? EXIT_DIMENSION_LIMIT : 65;
 }

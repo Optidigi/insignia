@@ -1009,6 +1009,23 @@ for (const [phase, status, reason] of [
   assert.equal(app.state.modal.kind, 'artwork');
 });
 
+test('an upload rejected for its pixel size reports its own reason only for that 422 (#445)', async () => {
+  for (const [error, reason] of [
+    [{ status: 422, reason: 'DIMENSIONS_TOO_LARGE' }, 'dimensions-too-large'],
+    [{ status: 422, reason: 'SOMETHING_ELSE' }, 'inspection-rejected'],
+    [{ status: 422 }, 'inspection-rejected'],
+    // Only a processing rejection is about the image; a 503 never says it is too large.
+    [{ status: 503, reason: 'DIMENSIONS_TOO_LARGE' }, 'processing-failed'],
+  ] as const) {
+    const app = harness({ artwork: { upload: async (_file, request) => { request.onProgress?.('processing'); throw Object.assign(Error('private provider detail'), error); } }, cart: { commit: async () => { throw Error('unused'); } } });
+    app.dispatch({ type: 'step-selected', step: 0 });
+    app.dispatch({ type: 'modal-opened', modal: { kind: 'artwork', positionId: 'front' } });
+    await app.runtime.upload(new File(['image'], 'huge.png', { type: 'image/png' }), 'front');
+    assert.equal(app.state.upload.kind === 'failed' && app.state.upload.reason, reason, JSON.stringify(error));
+    assert.equal(app.state.modal.kind, 'artwork');
+  }
+});
+
 test('restored unpurchased edits compare against accepted cart intent, and reverting removes only the dirty warning', () => {
   const original = ready();
   const baseline = { id: 'restored', prints: structuredClone(original.prints), quantities: structuredClone(original.quantities), variants: [] };

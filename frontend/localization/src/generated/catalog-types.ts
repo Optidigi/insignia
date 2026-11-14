@@ -2359,6 +2359,7 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_artwork_dialogArtworkTitle': object;
   'settings:translations.fields.customer_artwork_dialogOptionTitle': object;
   'settings:translations.fields.customer_artwork_dialogPositionsTitle': object;
+  'settings:translations.fields.customer_artwork_dimensionsTooLarge': object;
   'settings:translations.fields.customer_artwork_dropFile': object;
   'settings:translations.fields.customer_artwork_editPositionArtwork': object;
   'settings:translations.fields.customer_artwork_emptyDescription': object;
@@ -2735,6 +2736,7 @@ export interface CustomerMessageTable {
   'customer:artwork.dialogArtworkTitle': { positionName: string };
   'customer:artwork.dialogOptionTitle': object;
   'customer:artwork.dialogPositionsTitle': object;
+  'customer:artwork.dimensionsTooLarge': { maxEdgePx: number; maxMegapixels: number };
   'customer:artwork.dropFile': object;
   'customer:artwork.editPositionArtwork': { positionName: string };
   'customer:artwork.emptyDescription': object;

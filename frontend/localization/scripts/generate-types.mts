@@ -35,6 +35,8 @@ const numericParameterNames = new Set([
   'max',
   'maximum',
   'maxCount',
+  'maxEdgePx',
+  'maxMegapixels',
   'maxQuantity',
   'maxSizeMb',
   'min',

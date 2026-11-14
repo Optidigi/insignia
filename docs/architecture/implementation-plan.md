@@ -702,7 +702,7 @@ SVG must parse under a policy rejecting DTD/entities, scripts, event handlers, r
 
 Sharp/libvips performs decoding/rasterization and PNG/WebP derivatives. Set explicit pixel/error options; a library option is not an OS sandbox. Disable external network access and unnecessary filesystem access in the child, bound CPU/memory/time, kill the entire child process tree on timeout, and keep the native stack patched. Specific host mechanics can wait; the process-isolation requirement cannot. [S30]
 
-Failures mean rejected artwork, not automatically accepted logo-later. The buyer can explicitly choose logo-later only when the merchant allows it. Pending inspection never becomes valid production artwork merely because a local browser preview succeeded.
+Failures mean rejected artwork, not automatically accepted logo-later. The buyer can explicitly choose logo-later only when the merchant allows it. Pending inspection never becomes valid production artwork merely because a local browser preview succeeded. A rejection for exceeding the pixel budget (edge or megapixels) is stored and reported as its own reason, `DIMENSIONS_TOO_LARGE`, so the Designer can tell the buyer the image is too large and should be resized; every other policy failure keeps the generic `INSPECTION_REJECTED` reason.
 
 ### 12.3 Delivery and replacements
 

@@ -2070,7 +2070,7 @@ for (const engine of [chromium, firefox])
       );
     });
 
-test('#349: three rejected uploads, then a valid PNG is checked and applied through the live ports', async () => {
+test('#349, #445: four rejected uploads, then a valid PNG is checked and applied through the live ports', async () => {
   await withProductDesigner(config, async ({ page, ui }) => {
     const expiresAt = new Date(Date.now() + 3600000).toISOString();
     const assets = new Map<string, string>();
@@ -2083,15 +2083,25 @@ test('#349: three rejected uploads, then a valid PNG is checked and applied thro
       if (path.endsWith('/guest')) {
         const assetId = `bbbbbbbb-bbbb-4bbb-8bbb-${String(begun.length + 1).padStart(12, '0')}`;
         begun.push(assetId);
-        // The first server-checked file is the corrupt PNG; later ones are valid.
-        assets.set(assetId, begun.length === 1 ? 'REJECTED' : 'USABLE');
+        // The first server-checked file is the corrupt PNG, the second a valid image over the pixel limit (#445);
+        // later ones are valid.
+        assets.set(assetId, begun.length <= 2 ? 'REJECTED' : 'USABLE');
         return route.fulfill({
           json: { assetId, expiresAt, upload: { url: `https://upload.example.test/${assetId}`, headers: {} } },
         });
       }
       const assetId = path.split('/').at(-2) ?? '';
       if (path.endsWith('/complete')) return route.fulfill({ json: { state: 'QUEUED', expiresAt } });
-      if (path.endsWith('/status')) return route.fulfill({ json: { state: assets.get(assetId), expiresAt } });
+      if (path.endsWith('/status'))
+        return route.fulfill({
+          json: {
+            state: assets.get(assetId),
+            expiresAt,
+            ...(assets.get(assetId) === 'REJECTED'
+              ? { rejection: begun.indexOf(assetId) === 1 ? 'DIMENSIONS_TOO_LARGE' : 'INSPECTION_REJECTED' }
+              : {}),
+          },
+        });
       if (path.endsWith('/preview'))
         return route.fulfill({
           json: { url: 'https://preview.example/uploaded.png', width: 100, height: 100, expiresAt },
@@ -2115,6 +2125,10 @@ test('#349: three rejected uploads, then a valid PNG is checked and applied thro
         'This file is larger than 5 MiB. Try a smaller image.',
       ],
       [
+        { name: 'huge-dimensions.png', mimeType: 'image/png', buffer: png },
+        'This image is too large (max 12000 px per side and 40 megapixels). Resize it and try again.',
+      ],
+      [
         { name: 'doc.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF') },
         'Choose a PNG, JPG or SVG image.',
       ],
@@ -2125,7 +2139,7 @@ test('#349: three rejected uploads, then a valid PNG is checked and applied thro
     await input.setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: png });
     await ui.getByRole('button', { name: 'logo.png Change', exact: true }).waitFor({ timeout: 10000 });
     assert.equal(await ui.getByRole('dialog', { name: 'Artwork for Front', exact: true }).count(), 0);
-    assert.equal(begun.length, 2, 'client-rejected files never reach the server');
+    assert.equal(begun.length, 3, 'client-rejected files never reach the server');
   });
 });
 

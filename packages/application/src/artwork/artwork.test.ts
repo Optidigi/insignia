@@ -335,6 +335,34 @@ describe('private artwork lifecycle at the application seam', () => {
     },
   );
 
+  it.each([
+    [
+      'an image over the pixel limit keeps its own reason (#445)',
+      { reason: 'DIMENSIONS_TOO_LARGE' },
+      'DIMENSIONS_TOO_LARGE',
+    ],
+    ['any other policy failure keeps the generic reason', {}, 'INSPECTION_REJECTED'],
+    ['an unknown reason is never stored as given', { reason: 'SOMETHING_ELSE' }, 'INSPECTION_REJECTED'],
+  ] as const)('%s', async (_label, extra, expected) => {
+    const row = artworkRow({ manifest: null });
+    const rejected: string[] = [];
+    const service = createArtworkService({
+      clock: () => new Date('2026-10-12T12:00:00Z'),
+      store: artworkStore({
+        claim: async () => row,
+        reject: async (_id: string, _claim: string, reason: string) => {
+          rejected.push(reason);
+        },
+      }),
+      storage: artworkStorage({ read: async () => new Uint8Array([1, 2, 3]), remove: async () => {} }),
+      inspect: async () => {
+        throw Object.assign(new Error('Artwork rejected'), { code: 'REJECTED', ...extra });
+      },
+    });
+    await expect(service.process(row.assetId)).resolves.toBe('rejected');
+    expect(rejected).toEqual([expected]);
+  });
+
   it('bounds missing upload retries by the grant deadline without inspecting absent bytes', async () => {
     let now = new Date('2026-10-12T12:00:00Z');
     const row = artworkRow({

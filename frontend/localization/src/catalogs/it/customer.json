@@ -84,6 +84,7 @@
     "processingFailed": "Impossibile verificare il file. Riprova.",
     "processingTimeout": "La verifica richiede più tempo del previsto. Riprova.",
     "inspectionRejected": "Questa immagine è stata rifiutata. Scegli un’immagine statica supportata.",
+    "dimensionsTooLarge": "Questa immagine è troppo grande (massimo {{maxEdgePx}} px per lato e {{maxMegapixels}} megapixel). Ridimensionala e riprova.",
     "artworkExpired": "Questo file è scaduto. Caricalo di nuovo.",
     "sessionLimited_one": "Troppe nuove sessioni di personalizzazione dalla tua rete. Riprova tra {{count}} minuto.",
     "sessionLimited_many": "Troppe nuove sessioni di personalizzazione dalla tua rete. Riprova tra {{count}} minuti.",

@@ -36,9 +36,10 @@ export interface PortFailure {
   retryAfter?: number;
   /**
    * `CART_LINES`: `CAPACITY_EXCEEDED` over 200 cart lines rather than the signed set (#335). `SESSION_QUOTA`:
-   * `RATE_LIMITED` because a lifetime quota of the buyer session is exhausted (#371).
+   * `RATE_LIMITED` because a lifetime quota of the buyer session is exhausted (#371). `DIMENSIONS_TOO_LARGE`: a 422
+   * upload whose image is over the pixel limit (#445).
    */
-  reason?: 'CART_LINES' | 'SESSION_QUOTA';
+  reason?: 'CART_LINES' | 'SESSION_QUOTA' | 'DIMENSIONS_TOO_LARGE';
   /** `CART_REJECTED`: Shopify's 422 (stock or limit), and its own explanation as plain text. */
   stock?: true;
   detail?: string;
@@ -74,6 +75,7 @@ export function portFailure(error: unknown): PortFailure {
       : {}),
     ...(known === 'CAPACITY_EXCEEDED' && cartLines ? { reason: 'CART_LINES' as const } : {}),
     ...(known === 'RATE_LIMITED' && reason('SESSION_QUOTA') ? { reason: 'SESSION_QUOTA' as const } : {}),
+    ...(status === 422 && reason('DIMENSIONS_TOO_LARGE') ? { reason: 'DIMENSIONS_TOO_LARGE' as const } : {}),
     ...(rejected && field(error, 'stock') === true ? { stock: true as const } : {}),
     ...(rejected && typeof detail === 'string' && detail ? { detail: detail.slice(0, 300) } : {}),
     ...(field(error, 'reviewRequired') === true

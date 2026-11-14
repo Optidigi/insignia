@@ -84,6 +84,7 @@
     "processingFailed": "Die Datei konnte nicht geprüft werden. Versuchen Sie es erneut.",
     "processingTimeout": "Die Prüfung dauert länger als erwartet. Versuchen Sie es erneut.",
     "inspectionRejected": "Dieses Bild wurde abgelehnt. Wählen Sie ein unterstütztes statisches Bild.",
+    "dimensionsTooLarge": "Dieses Bild ist zu groß (maximal {{maxEdgePx}} px pro Seite und {{maxMegapixels}} Megapixel). Verkleinern Sie das Bild und versuchen Sie es erneut.",
     "artworkExpired": "Diese Datei ist abgelaufen. Laden Sie sie erneut hoch.",
     "sessionLimited_one": "Zu viele neue Personalisierungssitzungen aus Ihrem Netzwerk. Versuchen Sie es in {{count}} Minute erneut.",
     "sessionLimited_other": "Zu viele neue Personalisierungssitzungen aus Ihrem Netzwerk. Versuchen Sie es in {{count}} Minuten erneut.",

@@ -511,6 +511,7 @@ function DesignerSession({
       case 'processing-failed': return t('customer:artwork.processingFailed');
       case 'processing-timeout': return t('customer:artwork.processingTimeout');
       case 'inspection-rejected': return t('customer:artwork.inspectionRejected');
+      case 'dimensions-too-large': return t('customer:artwork.dimensionsTooLarge', { maxEdgePx: 12000, maxMegapixels: 40 });
       case 'artwork-expired': return t('customer:artwork.artworkExpired');
       // Whole minutes, rounded up; without Retry-After the one-hour window is the longest wait.
       case 'session-limited': return t('customer:artwork.sessionLimited', { count: Math.ceil((retryAfterSeconds ?? 3600) / 60) });

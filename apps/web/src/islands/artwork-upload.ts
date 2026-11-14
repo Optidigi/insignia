@@ -16,7 +16,7 @@ function object(value: unknown, message: string): Record<string, unknown> {
 function statusResponse(value: unknown) {
   const status = object(value, 'Invalid artwork status');
   if (typeof status.state !== 'string') throw new Error('Invalid artwork status');
-  return { state: status.state, expiresAt: status.expiresAt };
+  return { state: status.state, expiresAt: status.expiresAt, rejection: status.rejection };
 }
 function admissionResponse(value: unknown) {
   const invalid = 'Invalid private upload';
@@ -112,9 +112,11 @@ export function createArtworkUpload(input: {
       const status = statusResponse(await input.api(`/api/artwork/${asset.assetId}/status`, { signal }));
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
       if (status.state === 'REJECTED')
-        throw Object.assign(new Error('Artwork was rejected by inspection. Choose a supported, static image.'), {
-          status: 422,
-        });
+        throw Object.assign(
+          new Error('Artwork was rejected by inspection. Choose a supported, static image.'),
+          // Only the one reason the buyer can act on crosses; any other rejection stays the generic 422.
+          status.rejection === 'DIMENSIONS_TOO_LARGE' ? { status: 422, reason: status.rejection } : { status: 422 },
+        );
       if (
         status.state === 'DELETED' ||
         status.state === 'DELETING' ||

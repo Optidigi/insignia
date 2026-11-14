@@ -63,6 +63,21 @@ isolatedTest('unsupported magic, resource limits and hostile XML never become ar
   cases.push(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><g></svg>'));
   for (const input of cases) await assert.rejects(inspectArtwork(input));
 });
+isolatedTest(
+  'a valid image over the pixel limit is rejected with its own reason; other rejections have none (#445)',
+  async () => {
+    const { default: sharp } = await import('sharp');
+    const huge = await sharp({ create: { width: 8000, height: 8000, channels: 3, background: 'white' } })
+      .png()
+      .toBuffer();
+    await assert.rejects(inspectArtwork(huge), { code: 'REJECTED', reason: 'DIMENSIONS_TOO_LARGE' });
+    await assert.rejects(inspectArtwork(Buffer.from('not an image')), (error: Record<string, unknown>) => {
+      assert.equal(error.code, 'REJECTED');
+      assert.equal(error.reason, undefined);
+      return true;
+    });
+  },
+);
 isolatedTest('bounded local fragment reuse remains valid', async () => {
   const source = Buffer.from(
     '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><defs><rect id="box" width="10" height="10" fill="blue"/></defs><use href="#box" x="2"/></svg>',
