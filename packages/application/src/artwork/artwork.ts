@@ -449,10 +449,19 @@ export function createArtworkService(input: {
         }
       }
       if (input.onCleanupReview) {
-        const count = await input.store.countCleanupReview();
+        // The gauge is advisory: a failed count never fails a sweep whose deletions completed.
+        let count: number | undefined;
         try {
-          input.onCleanupReview(count);
-        } catch {}
+          count = await input.store.countCleanupReview();
+        } catch {
+          try {
+            input.onCleanupError?.('ARTWORK_CLEANUP_UNAVAILABLE');
+          } catch {}
+        }
+        if (count !== undefined)
+          try {
+            input.onCleanupReview(count);
+          } catch {}
       }
       return completed;
     },
