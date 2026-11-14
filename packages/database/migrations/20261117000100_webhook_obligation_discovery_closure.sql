@@ -1,13 +1,16 @@
 -- migrate:up
 -- #488. In the "unsupported" category an erased receipt stops counting as an
--- open obligation only when it is settled:
--- - processed (any topic); or
--- - orders/create, orders/paid or orders/updated, when that order is recorded
---   in purchase_orders for the receipt's shop generation (order ID from the
---   captured `id` fact), was created no more than 60 days before the receipt
---   arrived (so order discovery, which sees only that window without
---   read_all_orders, could return it), and that generation's discovery
---   watermark (advanced only by a completed window) has passed the arrival.
+-- open obligation only when it is settled by evidence of its own effect:
+-- - processed (any topic);
+-- - orders/create: its order (the captured `id`) is in purchase_orders for the
+--   receipt's shop generation;
+-- - orders/paid: that purchase also has its purchase_paid_facts row;
+-- - orders/updated: that purchase has a purchase_observations row observed at
+--   or after the receipt arrived (stays open when nothing observable changed:
+--   noise, never a silent closure).
+-- A discovery watermark alone is no evidence: Shopify returns only orders
+-- created in the 60 days before the query, so a stalled discovery can pass a
+-- receipt whose order it can no longer read.
 -- refunds/create closes only when processed: its captured facts hold no order
 -- ID. Once the 180-day fact erasure empties captured_fields the order ID is
 -- gone and an unprocessed receipt counts again: an alert that returns is
@@ -31,17 +34,16 @@ BEGIN
     LEFT JOIN public.shopify_webhook_deliveries delivery ON delivery.inbox_id=inbox.id
     WHERE delivery.topic IS NULL
       OR delivery.topic IN ('app/uninstalled','customers/data_request','customers/redact','shop/redact')
-      OR NOT (inbox.state='processed' OR (
-        delivery.topic IN ('orders/create','orders/paid','orders/updated')
-        AND EXISTS (SELECT 1 FROM public.purchase_orders purchase
-          WHERE purchase.shop_id=inbox.shop_id
-            AND purchase.installation_generation=inbox.installation_generation
-            AND purchase.order_id='gid://shopify/Order/'||(facts.captured_fields->>'id')
-            AND purchase.order_created_at>=inbox.received_at-interval '60 days')
-        AND EXISTS (SELECT 1 FROM public.purchase_reconciliation_cursors discovery
-          WHERE discovery.shop_id=inbox.shop_id
-            AND discovery.installation_generation=inbox.installation_generation
-            AND discovery.watermark>=inbox.received_at)))
+      OR NOT (inbox.state='processed' OR EXISTS (
+        SELECT 1 FROM public.purchase_orders purchase
+        WHERE purchase.shop_id=inbox.shop_id
+          AND purchase.installation_generation=inbox.installation_generation
+          AND purchase.order_id='gid://shopify/Order/'||(facts.captured_fields->>'id')
+          AND (delivery.topic='orders/create'
+            OR (delivery.topic='orders/paid' AND EXISTS (SELECT 1 FROM public.purchase_paid_facts paid
+              WHERE paid.purchase_id=purchase.purchase_id))
+            OR (delivery.topic='orders/updated' AND EXISTS (SELECT 1 FROM public.purchase_observations observation
+              WHERE observation.purchase_id=purchase.purchase_id AND observation.observed_at>=inbox.received_at)))))
   ), ranked AS (
     SELECT classified.*,
       count(*) OVER (PARTITION BY category) AS total,

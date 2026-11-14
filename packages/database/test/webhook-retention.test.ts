@@ -481,8 +481,8 @@ test.each(['orders/paid', 'orders/create', 'refunds/create'])(
 
 // #488: an order delivery whose processing failed and exhausted its attempts
 // (7 Nov: a missing grant rolled back ingestion) and whose bytes were then
-// erased at the 7-day retention. Recurring discovery recorded its order
-// independently.
+// erased at the 7-day retention. Only recorded evidence of the topic's own
+// effect closes it; a discovery watermark alone never does.
 type Fixture = Awaited<ReturnType<typeof fixture>>;
 const ORDER = '7570906415387';
 
@@ -512,13 +512,34 @@ async function discoveredThrough(f: Fixture, inboxId: string, offset: string) {
   );
 }
 
-/** The order is recorded, created `age` before the receipt arrived. */
+/** The order is recorded, created `age` before the receipt arrived; returns its purchase ID. */
 async function orderRecorded(f: Fixture, inboxId: string, age: string) {
+  const purchaseId = randomUUID();
   await f.pool.query(
     `INSERT INTO purchase_orders(purchase_id,shop_id,installation_generation,order_id,order_created_at,currency,original_total_minor)
      SELECT $2,shop_id,installation_generation,$3,received_at-$4::interval,'USD',2050
      FROM inbox_messages WHERE id=$1`,
-    [inboxId, randomUUID(), `gid://shopify/Order/${ORDER}`, age],
+    [inboxId, purchaseId, `gid://shopify/Order/${ORDER}`, age],
+  );
+  return purchaseId;
+}
+
+async function paidRecorded(f: Fixture, purchaseId: string) {
+  await f.pool.query(
+    `INSERT INTO purchase_paid_facts(purchase_id,shop_id,installation_generation,occurred_at)
+     SELECT purchase_id,shop_id,installation_generation,order_created_at FROM purchase_orders WHERE purchase_id=$1`,
+    [purchaseId],
+  );
+}
+
+/** Discovery observed the order `offset` after the receipt arrived. */
+async function observed(f: Fixture, purchaseId: string, inboxId: string, offset: string) {
+  await f.pool.query(
+    `INSERT INTO purchase_observations(observation_id,shop_id,installation_generation,purchase_id,source_updated_at,observed_at,digest,financial_status)
+     SELECT $3,purchase.shop_id,purchase.installation_generation,purchase.purchase_id,inbox.received_at,
+       inbox.received_at+$4::interval,$5,'PAID'
+     FROM purchase_orders purchase, inbox_messages inbox WHERE purchase.purchase_id=$1 AND inbox.id=$2`,
+    [purchaseId, inboxId, randomUUID(), offset, randomUUID().replaceAll('-', '').repeat(2)],
   );
 }
 
@@ -543,7 +564,7 @@ const receiptAudit = (f: Fixture, id: string) =>
 const isOpen = async (f: Fixture, id: string) =>
   (await f.core.webhooks.eraseExpiredPayloads(100)).blockedUnsupportedIds.includes(id);
 
-test('the three 7 Nov failed order deliveries close once their order is recorded and discovery passed them (#488)', async () => {
+test('the three 7 Nov failed order deliveries close on the recorded order, paid fact and later observation (#488)', async () => {
   const f = await fixture();
   try {
     const updated = await orderDelivery(f, 'orders/updated');
@@ -554,8 +575,11 @@ test('the three 7 Nov failed order deliveries close once their order is recorded
     const first = await f.core.webhooks.eraseExpiredPayloads(100);
     expect(first.erasedIds).toEqual(expect.arrayContaining(ids));
     expect(first.blockedUnsupportedIds).toEqual(expect.arrayContaining(ids));
-    await orderRecorded(f, updated, '2 seconds');
-    await discoveredThrough(f, created, '90 minutes');
+    // As on rewrite-dev: discovery recorded #1005 (created 2 s before the
+    // first delivery), its paid fact and one observation about 90 minutes later.
+    const purchase = await orderRecorded(f, updated, '2 seconds');
+    await paidRecorded(f, purchase);
+    await observed(f, purchase, created, '90 minutes');
     const audits = await Promise.all(ids.map((id) => receiptAudit(f, id)));
     for (let pass = 0; pass < 2; pass++) {
       const result = await f.core.webhooks.eraseExpiredPayloads(100);
@@ -582,22 +606,29 @@ test('the three 7 Nov failed order deliveries close once their order is recorded
 });
 
 test.each(['orders/create', 'orders/paid', 'orders/updated'])(
-  'expired failed %s stays open until its order is recorded within discovery reach and discovery passed it (#488)',
+  'expired failed %s stays open until the evidence of its own effect is recorded (#488)',
   async (topic) => {
     const f = await fixture();
     try {
       const id = await orderDelivery(f, topic);
       await expireAll(f, [id]);
       expect(await isOpen(f, id)).toBe(true);
-      // Discovery passing the receipt alone proves nothing: it never returned the order.
+      // A discovery watermark past the receipt is no evidence.
       await discoveredThrough(f, id, '1 hour');
       expect(await isOpen(f, id)).toBe(true);
-      // A discovery window that completed before the receipt arrived proves nothing either.
-      await orderRecorded(f, id, '1 day');
-      await discoveredThrough(f, id, '-1 minute');
-      expect(await isOpen(f, id)).toBe(true);
-      await discoveredThrough(f, id, '1 second');
-      expect(await isOpen(f, id)).toBe(false);
+      const purchase = await orderRecorded(f, id, '1 day');
+      expect(await isOpen(f, id)).toBe(topic !== 'orders/create');
+      if (topic === 'orders/paid') {
+        await paidRecorded(f, purchase);
+        expect(await isOpen(f, id)).toBe(false);
+      }
+      if (topic === 'orders/updated') {
+        // An observation from before the receipt arrived did not read this change.
+        await observed(f, purchase, id, '-1 minute');
+        expect(await isOpen(f, id)).toBe(true);
+        await observed(f, purchase, id, '1 second');
+        expect(await isOpen(f, id)).toBe(false);
+      }
       expect(await receiptAudit(f, id)).toMatchObject({ state: 'failed', attempts: 5 });
     } finally {
       await f.close();
@@ -605,30 +636,34 @@ test.each(['orders/create', 'orders/paid', 'orders/updated'])(
   },
 );
 
-test.each(['orders/paid', 'orders/updated'])(
-  'expired failed %s for an order created beyond discovery reach stays open (#488)',
-  async (topic) => {
-    const f = await fixture();
-    try {
-      const id = await orderDelivery(f, topic);
-      // Without read_all_orders discovery cannot return an order created more
-      // than 60 days earlier, so this later change was never read.
-      await orderRecorded(f, id, '61 days');
-      await discoveredThrough(f, id, '1 hour');
-      await expireAll(f, [id]);
-      expect(await isOpen(f, id)).toBe(true);
-      expect(await isOpen(f, id)).toBe(true);
-    } finally {
-      await f.close();
+test('stalled discovery: a watermark that jumps past a payment it could no longer read keeps the receipt open (#488)', async () => {
+  const f = await fixture();
+  try {
+    // Order created day 0 and recorded then; paid day 55 (delivery failed);
+    // discovery stalled from day 50 to 70, when Shopify no longer returns
+    // the order, yet its watermark now passes the receipt.
+    const paid = await orderDelivery(f, 'orders/paid');
+    const updated = await orderDelivery(f, 'orders/updated');
+    const purchase = await orderRecorded(f, paid, '55 days');
+    await observed(f, purchase, paid, '-5 days');
+    await discoveredThrough(f, paid, '15 days');
+    await expireAll(f, [paid, updated]);
+    for (let pass = 0; pass < 2; pass++) {
+      expect(await isOpen(f, paid)).toBe(true);
+      expect(await isOpen(f, updated)).toBe(true);
     }
-  },
-);
+  } finally {
+    await f.close();
+  }
+});
 
-test('expired failed refunds/create stays open even when its order is recorded and discovery passed it (#488)', async () => {
+test('expired failed refunds/create stays open even with every order fact recorded (#488)', async () => {
   const f = await fixture();
   try {
     const id = await orderDelivery(f, 'refunds/create');
-    await orderRecorded(f, id, '1 day');
+    const purchase = await orderRecorded(f, id, '1 day');
+    await paidRecorded(f, purchase);
+    await observed(f, purchase, id, '1 hour');
     await discoveredThrough(f, id, '1 hour');
     await expireAll(f, [id]);
     expect(await isOpen(f, id)).toBe(true);
@@ -659,8 +694,7 @@ test('a closed failed order delivery reopens once the 180-day fact erasure remov
   const f = await fixture();
   try {
     const id = await orderDelivery(f, 'orders/paid');
-    await orderRecorded(f, id, '1 day');
-    await discoveredThrough(f, id, '1 hour');
+    await paidRecorded(f, await orderRecorded(f, id, '1 day'));
     await expireAll(f, [id]);
     expect(await isOpen(f, id)).toBe(false);
     await f.pool.query('UPDATE webhook_obligation_facts SET forget_after=clock_timestamp() WHERE inbox_id=$1', [id]);

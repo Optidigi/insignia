@@ -561,7 +561,7 @@ test(
 );
 
 test(
-  'real PostgreSQL expired failed order deliveries stop alerting once their order is recorded and discovery passed them (#488)',
+  'real PostgreSQL expired failed order deliveries stop alerting once their order, paid fact and later observation are recorded (#488)',
   postgres,
   async () => {
     let output = '';
@@ -619,7 +619,7 @@ test(
       assert.equal(uncovered.blockedUnsupportedCount, 3);
       assert.equal(required(alerts().at(-1)).count, 3);
       assert.equal(required(alerts().at(-1)).level, 50);
-      // Discovery passing them alone is not enough: the order must be recorded.
+      // A discovery watermark past them is no evidence: they stay open.
       await f.pool.query(
         `INSERT INTO purchase_reconciliation_cursors(shop_id,installation_generation,watermark)
          SELECT shop_id,installation_generation,max(received_at)+interval '90 minutes' FROM inbox_messages
@@ -629,12 +629,25 @@ test(
       const stillOpen = await durableHandlers.maintainWebhookRetention(f.core, f.queue);
       assert.equal(stillOpen.blockedUnsupportedCount, 3);
       assert.equal(required(alerts().at(-1)).level, 50);
-      // Recurring discovery recorded the order (#1005) two seconds before the deliveries arrived.
+      // As on rewrite-dev: discovery recorded #1005 (created 2 s before the
+      // deliveries), its paid fact and one observation about 90 minutes later.
+      const purchaseId = randomUUID();
       await f.pool.query(
         `INSERT INTO purchase_orders(purchase_id,shop_id,installation_generation,order_id,order_created_at,currency,original_total_minor)
          SELECT $2,shop_id,installation_generation,'gid://shopify/Order/7570906415387',min(received_at)-interval '2 seconds','USD',2050
          FROM inbox_messages WHERE id=ANY($1::uuid[]) GROUP BY shop_id,installation_generation`,
-        [ids, randomUUID()],
+        [ids, purchaseId],
+      );
+      await f.pool.query(
+        `INSERT INTO purchase_paid_facts(purchase_id,shop_id,installation_generation,occurred_at)
+         SELECT purchase_id,shop_id,installation_generation,order_created_at FROM purchase_orders WHERE purchase_id=$1`,
+        [purchaseId],
+      );
+      await f.pool.query(
+        `INSERT INTO purchase_observations(observation_id,shop_id,installation_generation,purchase_id,source_updated_at,observed_at,digest,financial_status)
+         SELECT $2,shop_id,installation_generation,purchase_id,order_created_at,order_created_at+interval '90 minutes',$3,'PAID'
+         FROM purchase_orders WHERE purchase_id=$1`,
+        [purchaseId, randomUUID(), 'a'.repeat(64)],
       );
       const alertsBefore = alerts().length;
       for (let pass = 0; pass < 3; pass++) {
