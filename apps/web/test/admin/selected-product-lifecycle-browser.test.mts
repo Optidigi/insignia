@@ -473,6 +473,56 @@ test('authorization denial during a pending save fences its late completion from
   }
 });
 
+test('a status read begun during a save and answered after it is discarded, not reported as a conflict', {
+  timeout: 20000,
+}, async (t) => {
+  const f = await fixture(t, { holdSave: true });
+  let gate: Promise<void> | undefined;
+  let release: (() => void) | undefined;
+  let held: (() => void) | undefined;
+  const heldRead = new Promise<void>((resolve) => {
+    held = resolve;
+  });
+  await f.page.route('**/api/admin/products/111/config', async (route) => {
+    if (gate && route.request().method() === 'GET') {
+      const waiting = gate;
+      gate = undefined;
+      // The server's answer as it stood before the save, delivered after it.
+      const before = f.view();
+      held?.();
+      await waiting;
+      return route.fulfill({ json: before });
+    }
+    return route.fallback();
+  });
+  await f.open();
+  await editName(f.page, 'Saved while a read was in flight');
+  await hostSave(f.page);
+  await f.saveReceived;
+  gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await f.page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await heldRead;
+  const saved = f.page.waitForResponse((response) => response.request().method() === 'PUT');
+  f.release();
+  await saved;
+  await f.page.waitForFunction(
+    () =>
+      !sessionStorage.getItem(
+        'insignia:selected-product-write:v1:selected-browser.myshopify.com:gid://shopify/Product/111',
+      ),
+  );
+  // The read was answered with the draft from before the save; it must not be taken for another session's change.
+  release?.();
+  await settleFrame(f.page);
+  assert.equal(await f.page.getByRole('button', { name: /^Reload/ }).count(), 0);
+  assert.equal(
+    await f.page.getByRole('textbox', { name: /^Placement name/ }).inputValue(),
+    'Saved while a read was in flight',
+  );
+});
+
 test('adding a real catalogue Method changes only the unsaved selected product and records explicit inheritance', {
   timeout: 20000,
 }, async (t) => {

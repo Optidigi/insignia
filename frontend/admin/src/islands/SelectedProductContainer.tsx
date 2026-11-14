@@ -108,14 +108,17 @@ function SelectedProductContainer({ productId }: { productId: string }) {
   useEffect(() => {
     async function inspect() {
       const owned = client.current;
-      // A read begun during a write could resolve after it with a draft older than the write's own result.
-      if (!owned || inspecting.current || owned.isBusy()) return;
+      if (!owned || inspecting.current) return;
       inspecting.current = true;
       const version = requestVersion.current,
         started = activity.current;
+      // A read begun during a write still runs, so a lost session is noticed and private state cleared (the request
+      // boundary does that on 401/403). Its observation may predate the write's own result, so it is never adopted.
+      const duringWrite = owned.isBusy();
       try {
         const fresh = await owned.peek();
         if (
+          duringWrite ||
           version !== requestVersion.current ||
           started !== activity.current ||
           owned.isBusy() ||
