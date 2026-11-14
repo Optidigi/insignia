@@ -168,7 +168,10 @@ async function firstPublication(core: DurableCore, options: { preparePublication
         accessExpiresAt: new Date('2026-10-02T00:00:00Z'),
       }),
     },
-    fetchImpl: async (_url, init) => {
+    fetchImpl: (url, init) => providerFetch(url, init),
+  });
+  async function providerFetch(_url: unknown, init?: RequestInit): Promise<Response> {
+    {
       const body = JSON.parse(String(init?.body));
       if (body.query.startsWith('mutation')) {
         await count('product status write');
@@ -202,8 +205,8 @@ async function firstPublication(core: DurableCore, options: { preparePublication
             : {}),
         },
       });
-    },
-  });
+    }
+  }
   const object = (kind: 'transform' | 'validation'): FunctionArtifactIdentity => ({
     functionId: `gid://shopify/ShopifyFunction/${kind === 'transform' ? '1' : '2'}`,
     handle: `synthetic-${kind}`,
@@ -350,6 +353,25 @@ async function firstPublication(core: DurableCore, options: { preparePublication
   return {
     shopId,
     configId,
+    configs,
+    productGid: `gid://shopify/Product/${productId}`,
+    /** #466 B: the worker pass with a per-row port on this store's synthetic Shopify. */
+    worker: () =>
+      core.publicationAbandonment.create({
+        appClientId: clientId,
+        mode: 'restore',
+        abandonAfterMs: 0,
+        releaseWaitFlagMs: 0,
+        claimStaleMs: 60_000,
+        acquireToken: async () => ({
+          kind: 'usable',
+          shopDomain: 'synthetic.myshopify.com',
+          accessToken: 'synthetic-offline-token',
+          accessExpiresAt: new Date(Date.now() + 3_600_000),
+        }),
+        availability: ({ credentials, isCurrent }) =>
+          createShopifyAvailabilityHoldV3Port({ now, credentials, isCurrent, fetchImpl: providerFetch }),
+      }),
     calls,
     rounds: () => rounds,
     status: () => status,
@@ -601,6 +623,59 @@ test('#468: preparation cut short by the ending session is resent, not denied; a
     });
     const refused = await denied.publish('m5-468-denied');
     assert.equal(refused.status, 403, 'with session time left a denial is reported, not resent');
+  } finally {
+    await core.close();
+  }
+});
+
+test('#466 B with #468: an abandoned request is answered, never resent or resumed; Publish works again', {
+  skip: !database,
+  timeout: 120000,
+}, async () => {
+  const core = createDurableCore(new Pool({ connectionString: database }));
+  try {
+    const f = await firstPublication(core);
+    let writes = 0;
+    // The session ends right after the hold (the first product status write); then the tab closes.
+    f.afterWrite(() => {
+      if (++writes === 1) f.actor().expiresAtMs = Date.now() + 50;
+    });
+    const first = await (await f.publish('m5-466-abandon')).json();
+    f.afterWrite(() => {});
+    assert.equal(first.kind, 'resend', JSON.stringify(first));
+    assert.equal(f.status(), 'DRAFT');
+    assert.equal((await core.configs.getCurrentPublication(f.shopId, f.configId))?.phase, 'prepared');
+    // After the quiet period the worker restores the product exactly and finalizes the request.
+    assert.deepEqual(
+      { ...(await f.worker().runPass({ shopId: f.shopId })), flaggedHolds: 0 },
+      { restored: 1, finalized: 1, flagged: 0, flaggedHolds: 0 },
+    );
+    assert.equal(f.status(), 'ACTIVE');
+    const writesAfterRestore = writesSoFar(f);
+    assert.equal(writesAfterRestore, 2, 'hold and restore only; no metafield write');
+    // The journal resends the original request with a new session: answered, not resumed.
+    f.session({ sessionId: 'synthetic-session-466', expiresAtMs: Date.now() + 60000 });
+    const resent = await (await f.publish('m5-466-abandon')).json();
+    assert.deepEqual(
+      [resent.kind, resent.state, resent.revisionId],
+      ['accepted', 'ABANDONED_RESTORED', first.revisionId],
+    );
+    // A session too short for a step does not turn the abandoned request into `resend` either.
+    f.session({ expiresAtMs: Date.now() + PUBLICATION_STEP_MARGIN_MS - 1000 });
+    const short = await (await f.publish('m5-466-abandon')).json();
+    assert.deepEqual([short.kind, short.state], ['accepted', 'ABANDONED_RESTORED']);
+    assert.equal(writesSoFar(f), writesAfterRestore);
+    // The editor names the abandoned request (so its journal settles) and allows Publish.
+    f.session({ expiresAtMs: Date.now() + 60000 });
+    const view = await f.configs.read(f.actor(), f.productGid);
+    assert.equal(view.config?.publication.state, 'ABANDONED_RESTORED');
+    assert.equal(view.config?.publication.revisionId, first.revisionId);
+    assert.equal(view.config?.publication.requestKey, 'm5-466-abandon');
+    assert.equal(view.config?.publication.reason, null);
+    assert.equal(view.config?.publishEligibility.allowed, true);
+    // Publish again: a new request runs to ACTIVE.
+    const again = await (await f.publish('m5-466-again')).json();
+    assert.deepEqual([again.kind, again.state], ['accepted', 'ACTIVE']);
   } finally {
     await core.close();
   }

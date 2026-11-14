@@ -8,11 +8,26 @@ export function projectActivationPublicationState(input: {
   operationStatus?: string;
   reconciliationKind?: string | null;
   recoveryFromAnotherOperation?: boolean;
+  /** #466: the config's newest operation was abandoned and its product restored (derived input). */
+  abandonedLatest?: boolean;
+  /** #466: the current operation's activation row still carries an availability hold. */
+  holdPresent?: boolean;
 }): PublicationState {
   if (input.reconciliationKind === 'OPERATOR_HOLD') return 'OPERATOR_HOLD';
-  if (input.recoveryFromAnotherOperation) return 'OPERATOR_HOLD';
+  // #466, before the `failed` branch. The abandoned request is invisible after finalize, so the
+  // restoring state comes from the current operation and the restored one from the derived input.
+  if (
+    input.activationKind === 'ABANDON_CLAIMED' ||
+    (input.activationKind === 'ABANDON_RESTORED' && input.operationStatus === 'requested')
+  )
+    return 'ABANDONMENT_RESTORING';
+  if (input.abandonedLatest) return 'ABANDONED_RESTORED';
+  // A hold another operation of this config still carries (an older request, a prior installation).
+  if (input.recoveryFromAnotherOperation) return 'HOLD_NEEDS_SUPPORT';
+  if (input.activationKind === 'OPERATOR_HOLD' && input.operationStatus !== 'activated' && input.holdPresent)
+    return 'HOLD_NEEDS_SUPPORT';
   if (input.operationStatus === 'failed' || input.operationStatus === 'superseded')
-    return input.activationKind === null || ['RESOLVED', 'RESTORED'].includes(input.activationKind)
+    return input.activationKind === null || ['RESOLVED', 'RESTORED', 'ABANDON_RESTORED'].includes(input.activationKind)
       ? 'FAILED'
       : 'OPERATOR_HOLD';
   if (input.phase === 'operator-hold') return 'OPERATOR_HOLD';

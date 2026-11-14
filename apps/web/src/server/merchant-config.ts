@@ -352,6 +352,23 @@ export function createMerchantConfigService(input: {
   function command(actor: Actor, namespace: string, key: string, request: unknown) {
     return { shopId: actor.tenantShopId, namespace, key, requestDigest: sha256CanonicalJson(request) };
   }
+  /** #466: the projected state of this request when its hold was claimed or restored as abandoned. */
+  async function abandonedOutcome(actor: Actor, configId: string, requestKey: string): Promise<Outcome | null> {
+    const abandoned = await core.configs.getPublicationAbandonment(actor.tenantShopId, configId);
+    if (!abandoned || abandoned.requestKey !== requestKey) return null;
+    return {
+      kind: 'accepted',
+      revisionId: abandoned.revisionId,
+      state: projectActivationPublicationState({
+        phase: null,
+        effectiveOperationId: null,
+        operationId: abandoned.operationId,
+        activationKind: abandoned.kind,
+        operationStatus: abandoned.status,
+        abandonedLatest: abandoned.kind === 'ABANDON_RESTORED',
+      }),
+    };
+  }
   const service = {
     async reconcile(
       actor: Actor,
@@ -391,6 +408,7 @@ export function createMerchantConfigService(input: {
       if (!config) return { product: item, config: null };
       const progress = await core.configs.getCurrentPublication(actor.tenantShopId, config.configId);
       const recovery = await core.configs.getAvailabilityRecovery(actor.tenantShopId, config.configId);
+      const abandonment = await core.configs.getPublicationAbandonment(actor.tenantShopId, config.configId);
       const otherRecovery =
         recovery !== null &&
         (recovery.operationId !== progress?.operationId ||
@@ -427,7 +445,12 @@ export function createMerchantConfigService(input: {
         reconciliationKind: progress?.reconciliationKind,
         operationStatus: progress?.status,
         recoveryFromAnotherOperation: otherRecovery,
+        abandonedLatest: abandonment?.kind === 'ABANDON_RESTORED',
+        holdPresent: progress?.holdPresent,
       });
+      // #466: after finalize the abandoned request leaves every current read; the view still names it,
+      // so a journaled request for it settles as a terminal failure does.
+      const abandonedView = publicationState === 'ABANDONED_RESTORED' ? abandonment : null;
       let publishedSetup: MerchantDraft['selectedSetup'] | null = null;
       const selectedRead = MerchantDraftSchema.safeParse(config.draftValue);
       if (config.effectiveRevisionId && selectedRead.success && selectedRead.data.selectedSetup) {
@@ -448,9 +471,11 @@ export function createMerchantConfigService(input: {
           currentShopCurrency,
           publication: {
             state: publicationState,
-            revisionId: progress?.revisionId ?? config.effectiveRevisionId,
-            sourceDraftVersion: progress?.sourceDraftVersion ?? null,
-            requestKey: progress?.requestKey ?? null,
+            revisionId: abandonedView?.revisionId ?? progress?.revisionId ?? config.effectiveRevisionId,
+            sourceDraftVersion: abandonedView
+              ? abandonedView.sourceDraftVersion
+              : (progress?.sourceDraftVersion ?? null),
+            requestKey: abandonedView ? abandonedView.requestKey : (progress?.requestKey ?? null),
             activeRevisionId: config.effectiveRevisionId,
             reason: otherRecovery
               ? 'A prior installation or publication retains an availability hold. Operator recovery is required.'
@@ -645,6 +670,9 @@ export function createMerchantConfigService(input: {
       // client re-sends the same idempotent request with a new session token and the work resumes
       // from the persisted command, previews, release evidence and publication state.
       const continuing = (revisionId?: string) => resendWhenSessionEnds(actor, revisionId);
+      // #466: an abandoned request is answered before any resend, and never resent or resumed.
+      const abandoned = await abandonedOutcome(actor, data.configId, data.idempotencyKey);
+      if (abandoned) return abandoned;
       const stop = continuing();
       if (stop) return stop;
       const catalogProduct = await product(actor, productId);
@@ -1015,6 +1043,7 @@ export function createMerchantConfigService(input: {
         if (beforePublicationStep) return beforePublicationStep;
         const advanced = await publication.advance(actor.tenantShopId, data.configId, prepared.operationId);
         phase = advanced.phase;
+        if (advanced.kind === 'ABANDONED') break; // #466: claimed or restored; nothing was read or written
         if (advanced.kind === 'CONFLICT' || advanced.kind === 'OPERATOR_HOLD') {
           reconciliationFailure = advanced.kind;
           break;
@@ -1039,6 +1068,7 @@ export function createMerchantConfigService(input: {
               })
           : null;
         activationKind = activated?.kind ?? null;
+        if (activated?.kind === 'ABANDONED') break;
         const token = `${phase}:${activated?.kind ?? advanced.kind}`;
         unchanged = token === progressToken ? unchanged + 1 : 0;
         progressToken = token;
@@ -1047,12 +1077,14 @@ export function createMerchantConfigService(input: {
       }
       const observed = await core.configs.getCurrentPublication(actor.tenantShopId, data.configId);
       const recorded = await core.configs.getConfig(actor.tenantShopId, data.configId);
+      const abandonment = await core.configs.getPublicationAbandonment(actor.tenantShopId, data.configId);
       return {
         kind: 'accepted',
         revisionId,
         state:
           reconciliationFailure ??
           projectActivationPublicationState({
+            abandonedLatest: abandonment?.revisionId === revisionId && abandonment.kind === 'ABANDON_RESTORED',
             phase: activation && observed?.operationId === revisionId ? observed.phase : phase,
             effectiveOperationId: recorded?.effectiveOperationId ?? null,
             operationId: revisionId,

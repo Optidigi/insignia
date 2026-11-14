@@ -222,6 +222,8 @@ export function fixtureCore(overrides: Overrides = {}): DurableCore {
       getRevisionSourceScope: unexpected,
       getCurrentPublication: unexpected,
       getAvailabilityRecovery: unexpected,
+      // #466: no abandoned hold unless a test supplies one.
+      getPublicationAbandonment: async () => null,
       getAvailabilityRecoveryInTransaction: unexpected,
       getCurrentPublicationInTransaction: unexpected,
       setCurrentPublicationPointer: unexpected,

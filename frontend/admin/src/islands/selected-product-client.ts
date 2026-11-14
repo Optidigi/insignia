@@ -14,6 +14,7 @@ import { configRejectionFrom } from '../shared/config-rejection.ts';
 import {
   isMerchantPublicationContinuing,
   isMerchantPublicationOperatorBlocked,
+  isMerchantPublicationSettledFailure,
 } from './publication-state.ts';
 
 // Compare persisted JSON values without depending on database object-key order.
@@ -360,9 +361,8 @@ export function createSelectedProductClient(input: {
     // exact operation even when its response was lost (#436). The server's stored setup is then
     // authoritative, so it need not match the locally journaled bytes.
     const exact = !!value.acceptedRevisionId || publication.requestKey === `${value.key}:publish`;
-    const settled =
-      publication.state === 'FAILED'
-        ? exact
+    const settled = isMerchantPublicationSettledFailure(publication.state)
+      ? exact
         : publication.state === 'ACTIVE' &&
           publication.activeRevisionId === publication.revisionId &&
           !!config.publishedSetup &&

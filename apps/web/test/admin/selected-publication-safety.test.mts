@@ -177,6 +177,7 @@ function fixture(
       getCurrentPublication: async () => null,
       getCurrentPublicationInTransaction: async () => null,
       getAvailabilityRecovery: async () => null,
+      getPublicationAbandonment: async () => null,
       getAvailabilityRecoveryInTransaction: async () => null,
       createValidatedRevision: async (_tx, value) => {
         sequence.push('revision');
