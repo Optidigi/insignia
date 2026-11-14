@@ -1047,9 +1047,9 @@
       "previewSendFailed": "No se pudo enviar el borrador actual a la vista previa para clientes."
     },
     "publishErrors": {
-      "conflict": "Esta vista previa cambió mientras la revisabas. Cierra este cuadro de diálogo y revisa la configuración más reciente.",
-      "storageError": "No se pudo publicar esta vista previa. Se conservarán tu trabajo y la vista previa publicada anterior. Vuelve a intentarlo o guarda un borrador.",
-      "shopifyBusy": "Shopify está ocupado en este momento, así que esta vista previa no se publicó. Se conservarán tu trabajo y la vista previa publicada anterior. Espera unos segundos y vuelve a intentarlo."
+      "conflict": "Esta configuración cambió mientras la revisabas. Cierra este cuadro de diálogo y revisa la configuración más reciente.",
+      "storageError": "No se pudo publicar esta configuración. Se conservarán tu trabajo y la configuración publicada anterior. Vuelve a intentarlo o guarda un borrador.",
+      "shopifyBusy": "Shopify está ocupado en este momento, así que esta configuración no se publicó. Se conservarán tu trabajo y la configuración publicada anterior. Espera unos segundos y vuelve a intentarlo."
     },
     "history": {
       "changeUndone": "Cambio deshecho.",
@@ -1191,13 +1191,17 @@
     "realPublicationPending": "La publicación sigue en curso. Continúa la solicitud original para comprobar su estado.",
     "realPublicationProgress": "Publicando. Puede tardar hasta un minuto; esta página se actualizará cuando termine.",
     "realPublicationNotice": "La publicación actualiza tu tienda Shopify después de la validación y activación.",
+    "realPublish": "Publicar",
+    "realPublishQuestion": "¿Publicar esta configuración? Cuando esté activa, los clientes podrán personalizar este producto en tu tienda. Los cambios posteriores permanecerán en un borrador hasta que los publiques.",
+    "realReplacePublishedQuestion": "¿Reemplazar la configuración activa por esta? Cuando la nueva esté activa, los clientes podrán personalizar este producto con ella. Los cambios posteriores permanecerán en un borrador hasta que los publiques.",
+    "publishNeedsView": "La publicación estará disponible cuando el producto tenga una vista.",
     "realSaveFailed": "No se pudieron confirmar los cambios. Reintenta la solicitud original antes de guardar otros cambios.",
     "realPublished": "Publicado",
     "realDraftChanged": "Los valores heredados han cambiado. Revisa los cambios guardados antes de volver a publicar.",
     "realCurrencyReview": "La moneda de la tienda es ahora {{currency}}. Revisa todos los precios antes de guardar una nueva propuesta.",
     "realReviewCurrency": "Revisar precios en la moneda de la tienda",
     "realCalibrateImage": "Calibrar imagen",
-    "realDimensionsRequired": "Calibra esta imagen para definir las dimensiones de producción.",
+    "realDimensionsRequired": "Calibra esta imagen para definir las dimensiones de producción. Mide un ancho conocido de la prenda, como el ancho del pecho.",
     "realReviewMethods": "Revisa los métodos no asignados o eliminados antes de publicar.",
     "realKeepMethod": "Conservar método",
     "realRemoveMethod": "Eliminar método",

@@ -926,9 +926,9 @@
       "previewSendFailed": "Der aktuelle Entwurf konnte nicht an die Kundenvorschau gesendet werden."
     },
     "publishErrors": {
-      "conflict": "Diese Vorschau wurde geändert, während Sie sie geprüft haben. Schließen Sie den Dialog und prüfen Sie die neueste Einrichtung.",
-      "storageError": "Diese Vorschau konnte nicht veröffentlicht werden. Ihre Arbeit und die vorherige veröffentlichte Vorschau bleiben erhalten. Versuchen Sie es erneut oder speichern Sie einen Entwurf.",
-      "shopifyBusy": "Shopify ist gerade ausgelastet, daher wurde diese Vorschau nicht veröffentlicht. Ihre Arbeit und die vorherige veröffentlichte Vorschau bleiben erhalten. Warten Sie einige Sekunden und versuchen Sie es erneut."
+      "conflict": "Diese Einrichtung wurde geändert, während Sie sie geprüft haben. Schließen Sie den Dialog und prüfen Sie die neueste Einrichtung.",
+      "storageError": "Diese Einrichtung konnte nicht veröffentlicht werden. Ihre Arbeit und die vorherige veröffentlichte Einrichtung bleiben erhalten. Versuchen Sie es erneut oder speichern Sie einen Entwurf.",
+      "shopifyBusy": "Shopify ist gerade ausgelastet, daher wurde diese Einrichtung nicht veröffentlicht. Ihre Arbeit und die vorherige veröffentlichte Einrichtung bleiben erhalten. Warten Sie einige Sekunden und versuchen Sie es erneut."
     },
     "history": {
       "changeUndone": "Änderung rückgängig gemacht.",
@@ -1060,13 +1060,17 @@
     "realPublicationPending": "Die Veröffentlichung wird noch verarbeitet. Setzen Sie die ursprüngliche Anfrage fort, um den Status zu prüfen.",
     "realPublicationProgress": "Wird veröffentlicht. Das kann bis zu einer Minute dauern; diese Seite wird aktualisiert, sobald es abgeschlossen ist.",
     "realPublicationNotice": "Nach Prüfung und Aktivierung aktualisiert die Veröffentlichung Ihren Shopify-Shop.",
+    "realPublish": "Veröffentlichen",
+    "realPublishQuestion": "Diese Einrichtung veröffentlichen? Sobald sie live ist, kann die Kundschaft dieses Produkt in Ihrem Shop anpassen. Spätere Änderungen bleiben bis zur Veröffentlichung im Entwurf.",
+    "realReplacePublishedQuestion": "Die live geschaltete Einrichtung durch diese ersetzen? Sobald die neue Einrichtung live ist, kann die Kundschaft dieses Produkt damit anpassen. Spätere Änderungen bleiben bis zur Veröffentlichung im Entwurf.",
+    "publishNeedsView": "Das Veröffentlichen ist verfügbar, sobald das Produkt eine Ansicht hat.",
     "realSaveFailed": "Ihre Änderungen konnten nicht bestätigt werden. Wiederholen Sie die ursprüngliche Anfrage, bevor Sie andere Änderungen speichern.",
     "realPublished": "Veröffentlicht",
     "realDraftChanged": "Übernommene Standardwerte haben sich geändert. Prüfen Sie die gespeicherten Änderungen vor der Veröffentlichung.",
     "realCurrencyReview": "Die Shopwährung ist jetzt {{currency}}. Prüfen Sie alle Preise, bevor Sie einen neuen Vorschlag speichern.",
     "realReviewCurrency": "Preise in Shopwährung prüfen",
     "realCalibrateImage": "Bild kalibrieren",
-    "realDimensionsRequired": "Kalibrieren Sie dieses Bild, um die Produktionsmaße festzulegen.",
+    "realDimensionsRequired": "Kalibrieren Sie dieses Bild, um die Produktionsmaße festzulegen. Messen Sie eine bekannte Breite am Kleidungsstück, zum Beispiel die Brustbreite.",
     "realReviewMethods": "Prüfen Sie nicht zugewiesene oder gelöschte Methoden vor der Veröffentlichung.",
     "realKeepMethod": "Methode behalten",
     "realRemoveMethod": "Methode entfernen",

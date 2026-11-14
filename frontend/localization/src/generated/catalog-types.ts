@@ -1033,6 +1033,7 @@ export interface AdminMessageTable {
   'editor:placementWorkflowPreview.publishHeadings.addProductView': object;
   'editor:placementWorkflowPreview.publishHeadings.finishSetup': object;
   'editor:placementWorkflowPreview.publishHeadings.publishSetup': object;
+  'editor:placementWorkflowPreview.publishNeedsView': object;
   'editor:placementWorkflowPreview.publishPreview': object;
   'editor:placementWorkflowPreview.publishQuestions.publishPreview': object;
   'editor:placementWorkflowPreview.publishQuestions.replacePublishedPreview': object;
@@ -1051,9 +1052,12 @@ export interface AdminMessageTable {
   'editor:placementWorkflowPreview.realPublicationNotice': object;
   'editor:placementWorkflowPreview.realPublicationPending': object;
   'editor:placementWorkflowPreview.realPublicationProgress': object;
+  'editor:placementWorkflowPreview.realPublish': object;
   'editor:placementWorkflowPreview.realPublished': object;
+  'editor:placementWorkflowPreview.realPublishQuestion': object;
   'editor:placementWorkflowPreview.realReloadDraft': object;
   'editor:placementWorkflowPreview.realRemoveMethod': object;
+  'editor:placementWorkflowPreview.realReplacePublishedQuestion': object;
   'editor:placementWorkflowPreview.realReviewCurrency': object;
   'editor:placementWorkflowPreview.realReviewMethods': object;
   'editor:placementWorkflowPreview.realSaveFailed': object;

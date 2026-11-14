@@ -466,9 +466,9 @@ export default function SelectedMethods({
       {production && editor && (
         <AdminSaveBar
           id="method-draft-save-bar"
-          dirty={dirty}
+          dirty={dirty || !editor.id}
           saving={pending}
-          canSave={dirty && !pending && !readOnly}
+          canSave={(dirty || !editor.id) && !pending && !readOnly}
           canDiscard={dirty && !pending && !readOnly}
           onSave={() => void save()}
           onDiscard={discardEditor}
@@ -569,7 +569,7 @@ export default function SelectedMethods({
                 })}
               </s-banner>
             )}
-            {dirty && (
+            {(dirty || !editor.id) && (
               <section hidden data-preview-save-bar aria-label={t('methods:workflow.copy.unsavedChanges')}>
                 <s-button onClick={discardEditor}>{t('admin-shell:shared.actions.discard')}</s-button>
                 <s-button

@@ -62,7 +62,7 @@ async function noAnswerPublication(
     'requestfailed',
     (request) => request.method() === 'POST' && JSON.parse(request.postData() ?? '{}').action === 'publish',
   );
-  await modal.getByRole('button', { name: 'Publish preview', exact: true }).click();
+  await modal.getByRole('button', { name: 'Publish', exact: true }).click();
   await unanswered;
   assert.ok(publishKey, 'the publish request was dispatched');
   // The dialog keeps following the request instead of reporting a failure.
@@ -177,7 +177,7 @@ test('#436: a publish that was never sent is a failure, not followed progress', 
     .filter({ hasText: /^Publish$/ })
     .evaluate((button: HTMLElementTagNameMap['s-button']) => button.click());
   const modal = f.page.locator('s-modal').filter({ hasText: 'Publish setup' });
-  await modal.getByRole('button', { name: 'Publish preview', exact: true }).click();
+  await modal.getByRole('button', { name: 'Publish', exact: true }).click();
   await modal.getByText(/could not be published/).waitFor();
   assert.equal(publishes, 0, 'no publish request was sent');
   assert.equal(await f.page.getByText(progress, { exact: true }).count(), 0);

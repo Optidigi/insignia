@@ -75,6 +75,15 @@ export function nextItemName(base: string, names: readonly string[]): string {
   return `${base} ${number}`;
 }
 
+/**
+ * A new decoration size starts at half the smallest existing scale, so a merchant who forgets to edit it
+ * does not end up with two identical sizes. The result stays a whole percent of at least 1.
+ */
+export function defaultNewSizeScale(sizes: readonly Pick<PlacementSize, 'widthPercent'>[]): string {
+  const scales = sizes.flatMap((size) => parseDecimalNumber(size.widthPercent) ?? []);
+  return scales.length ? String(Math.max(1, Math.floor(Math.min(...scales) / 2))) : '50';
+}
+
 export function duplicatePlacement(view: EditorView, sourceId: string, id: string): EditorView {
   const index = view.placements.findIndex((area) => area.id === sourceId);
   const source = view.placements[index];

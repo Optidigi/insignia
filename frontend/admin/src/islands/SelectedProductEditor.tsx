@@ -77,6 +77,7 @@ import {
   moveEditorItemTo,
   movementRectContainsPlacementRect,
   nextItemName,
+  defaultNewSizeScale,
   canonicalPlacementDecimals,
   type PlacementProduct,
   type PlacementRect,
@@ -395,6 +396,13 @@ function placementNoticeText(notice: PlacementNotice, product: PlacementProduct,
 }
 const uid = () => crypto.randomUUID();
 
+/** Long enough to read a sentence; the host toast and the in-page fallback use the same time. */
+const FEEDBACK_MS = 8000;
+type HostToast = { show(message: string, options?: { duration?: number }): unknown };
+/** Shopify's toast sits above its own bottom bar; the in-page banner is only the fallback without a host. */
+const hostToast = (): HostToast | undefined =>
+  (window as unknown as { shopify?: { toast?: HostToast } }).shopify?.toast;
+
 // Names update the draft as you type. Enter finishes this field, not the whole configuration.
 function finishNameEdit(event: KeyboardEvent) {
   if (event.key !== 'Enter' || event.isComposing) return;
@@ -506,6 +514,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
   const [dialog, dispatchDialog] = useReducer(placementDialogReducer, initialPlacementDialogState);
   const methodDialog = dialog.kind === 'method-manager' ? dialog : null;
   const publishReview = dialog.kind === 'publish' ? dialog : null;
+  const production = adapter.kind === 'production';
   useEffect(() => { if (dialog.kind === 'publish' && dialog.error === 'pending' && !adapter.pending() && (adapter.publicationFailed || adapter.publication?.published)) { dispatchDialog({ type: 'dialog-closed', id: dialog.id }); setNotice({ kind: 'message', reason: adapter.publicationFailed ? 'publish-failed' : 'publish-succeeded' }); } else if (dialog.kind === 'publish' && dialog.error === 'pending' && adapter.publicationNeedsReview) dispatchDialog({ type: 'dialog-closed', id: dialog.id }); }, [adapter.publication, adapter.publicationNeedsReview]);
   const publishError = publishReview?.error
     ? translateUi(
@@ -2645,9 +2654,18 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
   }, []);
   useEffect(() => {
     if (!feedback) return;
-    const timer = window.setTimeout(() => setNotice(null), 4000);
+    // The host toast is not ours to retire; this only ends the in-page notice and its live-region text.
+    const timer = window.setTimeout(() => setNotice(null), FEEDBACK_MS);
     return () => window.clearTimeout(timer);
   }, [notice, feedback]);
+  useEffect(() => {
+    if (!feedback || !noticeText || !hostToast()) return;
+    try {
+      hostToast()?.show(noticeText, { duration: FEEDBACK_MS });
+    } catch {
+      // The live region still announces it.
+    }
+  }, [notice]);
   function showSize(id: string) {
     if (movementEditing) {
       setNotice({ kind: 'message', reason: 'movement-edit-before-preview' });
@@ -2706,7 +2724,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
               : 'editor:placementWorkflowPreview.products',
           )}
         </s-link>
-        <s-button slot="primary-action" variant="primary" disabled={publishedCurrent || !!adapter.readOnly || !!adapter.publicationBlocked || writeBusy || adapter.pending()} onClick={openPublishReview}>
+        <s-button slot="primary-action" variant="primary" disabled={publishedCurrent || !product.views.length || !!adapter.readOnly || !!adapter.publicationBlocked || writeBusy || adapter.pending()} onClick={openPublishReview}>
           {translateUi('editor:placementWorkflowPreview.publish')}
         </s-button>
         <s-button
@@ -3515,6 +3533,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                       'editor:placementWorkflowPreview.aViewIsAProductPhotoSuchAsTheFrontOrBackNextMarkWhereCustomersCanAddArtwork',
                     )}
                   </p>
+                  <s-text color="subdued">{translateUi('editor:placementWorkflowPreview.publishNeedsView')}</s-text>
                   <s-button variant="primary" onClick={() => openViewDialog()}>
                     {translateUi('editor:placementWorkflowPreview.addView')}
                   </s-button>
@@ -3606,7 +3625,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
               </s-button>
             </div>
           )}
-          {notice && (
+          {notice && !(feedback && hostToast()) && (
             <div class={`placement-notice${feedback ? ' is-feedback' : ''}`}>
               <s-banner tone={Object.keys(errors).length ? 'critical' : feedback ? 'success' : 'info'}>
                 {noticeText}
@@ -3924,7 +3943,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                             translateUi('editor:placementWorkflowPreview.defaultNames.size'),
                             placement.sizes.map((size) => size.name),
                           ),
-                          widthPercent: '100',
+                          widthPercent: defaultNewSizeScale(placement.sizes),
                           prices: {},
                         },
                       ],
@@ -4167,7 +4186,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
               </s-button>
             ) : publishReview.issues.length ? null : (
               <s-button slot="primary-action" variant="primary" onClick={confirmPublish}>
-                {translateUi('editor:placementWorkflowPreview.publishPreview')}
+                {translateUi(production ? 'editor:placementWorkflowPreview.realPublish' : 'editor:placementWorkflowPreview.publishPreview')}
               </s-button>
             )
           }
@@ -4211,8 +4230,12 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                 <s-paragraph>
                   {translateUi(
                     publication?.published
-                      ? 'editor:placementWorkflowPreview.publishQuestions.replacePublishedPreview'
-                      : 'editor:placementWorkflowPreview.publishQuestions.publishPreview',
+                      ? production
+                        ? 'editor:placementWorkflowPreview.realReplacePublishedQuestion'
+                        : 'editor:placementWorkflowPreview.publishQuestions.replacePublishedPreview'
+                      : production
+                        ? 'editor:placementWorkflowPreview.realPublishQuestion'
+                        : 'editor:placementWorkflowPreview.publishQuestions.publishPreview',
                   )}
                 </s-paragraph>
               </>

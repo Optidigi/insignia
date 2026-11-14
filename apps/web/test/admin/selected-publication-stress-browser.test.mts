@@ -90,9 +90,12 @@ for (let iteration = 1; iteration <= iterations; iteration++) {
       );
       const modal = await openPublication(f.page);
       await modal
-        .getByText('Replace the published preview with this setup? Later edits stay in a draft until published.', {
-          exact: true,
-        })
+        .getByText(
+          'Replace the live setup with this one? Shoppers can customize this product with the new setup once it is live. Later edits stay in a draft until published.',
+          {
+            exact: true,
+          },
+        )
         .waitFor();
       assert.equal(f.mutations.length, 0);
     },
@@ -107,7 +110,7 @@ for (let iteration = 1; iteration <= iterations; iteration++) {
       const f = await fixture(t, { publicationPending: true });
       await f.open();
       const modal = await openPublication(f.page);
-      await modal.getByRole('button', { name: 'Publish preview', exact: true }).click();
+      await modal.getByRole('button', { name: 'Publish', exact: true }).click();
       await f.page
         .getByText('Publication is still processing. Continue the original request to check its status.', {
           exact: true,
@@ -171,7 +174,7 @@ for (let iteration = 1; iteration <= iterations; iteration++) {
       await waiting;
       try {
         const modal = await openPublication(f.page);
-        await modal.getByRole('button', { name: 'Publish preview', exact: true }).click();
+        await modal.getByRole('button', { name: 'Publish', exact: true }).click();
         await f.page
           .getByText('Publication is still processing. Continue the original request to check its status.', {
             exact: true,

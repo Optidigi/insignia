@@ -139,7 +139,7 @@ test('a pending publication remains visibly pending and reuses its original publ
     .filter({ hasText: /^Publish$/ })
     .evaluate((button: HTMLElementTagNameMap['s-button']) => button.click());
   const modal = f.page.locator('s-modal').filter({ hasText: 'Publish setup' });
-  await modal.getByRole('button', { name: 'Publish preview', exact: true }).click();
+  await modal.getByRole('button', { name: 'Publish', exact: true }).click();
   await f.page
     .getByText('Publication is still processing. Continue the original request to check its status.', { exact: true })
     .waitFor();
@@ -196,7 +196,7 @@ test('read-only selected views cannot dispatch save/publication through syntheti
   const publish = f.page.locator('s-modal').filter({ hasText: 'Publish setup' });
   if (await publish.isVisible()) {
     await publish
-      .getByRole('button', { name: 'Publish preview', exact: true })
+      .getByRole('button', { name: 'Publish', exact: true })
       .evaluate((button: HTMLElementTagNameMap['s-button']) => button.click());
   }
   await f.page.evaluate(

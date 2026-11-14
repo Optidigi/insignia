@@ -926,9 +926,9 @@
       "previewSendFailed": "Could not send the current draft to the customer preview."
     },
     "publishErrors": {
-      "conflict": "This preview changed while you were reviewing. Close this dialog and review the latest setup.",
-      "storageError": "This preview could not be published. Your work and the previous published preview are kept. Try again or save a draft.",
-      "shopifyBusy": "Shopify is busy right now, so this preview was not published. Your work and the previous published preview are kept. Wait a few seconds and try again."
+      "conflict": "This setup changed while you were reviewing. Close this dialog and review the latest setup.",
+      "storageError": "This setup could not be published. Your work and the previous published setup are kept. Try again or save a draft.",
+      "shopifyBusy": "Shopify is busy right now, so this setup was not published. Your work and the previous published setup are kept. Wait a few seconds and try again."
     },
     "history": {
       "changeUndone": "Change undone.",
@@ -1060,13 +1060,17 @@
     "realPublicationPending": "Publication is still processing. Continue the original request to check its status.",
     "realPublicationProgress": "Publishing. This can take up to a minute; this page updates when it finishes.",
     "realPublicationNotice": "Publishing updates your Shopify store after validation and activation complete.",
+    "realPublish": "Publish",
+    "realPublishQuestion": "Publish this setup? Shoppers will be able to customize this product on your store once it is live. Later edits stay in a draft until published.",
+    "realReplacePublishedQuestion": "Replace the live setup with this one? Shoppers can customize this product with the new setup once it is live. Later edits stay in a draft until published.",
+    "publishNeedsView": "Publishing becomes available once the product has a view.",
     "realSaveFailed": "Your changes could not be confirmed. Retry the original request before saving different changes.",
     "realPublished": "Published",
     "realDraftChanged": "Inherited defaults changed. Review the saved changes before publishing again.",
     "realCurrencyReview": "The shop currency is now {{currency}}. Review every price before saving a new proposal.",
     "realReviewCurrency": "Review prices in the shop currency",
     "realCalibrateImage": "Calibrate image",
-    "realDimensionsRequired": "Calibrate this image to define production dimensions.",
+    "realDimensionsRequired": "Calibrate this image to define production dimensions. Measure a known width on the garment, such as the chest width.",
     "realReviewMethods": "Review unassigned or deleted methods before publication.",
     "realKeepMethod": "Keep method",
     "realRemoveMethod": "Remove method",

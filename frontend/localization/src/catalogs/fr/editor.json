@@ -951,9 +951,9 @@
       "previewSendFailed": "Impossible d’envoyer le brouillon actuel à l’aperçu client."
     },
     "publishErrors": {
-      "conflict": "Cet aperçu a changé pendant votre vérification. Fermez cette boîte de dialogue et vérifiez la dernière configuration.",
-      "storageError": "Cet aperçu n’a pas pu être publié. Votre travail et l’aperçu publié précédent sont conservés. Réessayez ou enregistrez un brouillon.",
-      "shopifyBusy": "Shopify est actuellement surchargé, cet aperçu n’a donc pas été publié. Votre travail et l’aperçu publié précédent sont conservés. Patientez quelques secondes et réessayez."
+      "conflict": "Cette configuration a changé pendant votre vérification. Fermez cette boîte de dialogue et vérifiez la dernière configuration.",
+      "storageError": "Cette configuration n’a pas pu être publiée. Votre travail et la configuration publiée précédente sont conservés. Réessayez ou enregistrez un brouillon.",
+      "shopifyBusy": "Shopify est actuellement surchargé, cette configuration n’a donc pas été publiée. Votre travail et la configuration publiée précédente sont conservés. Patientez quelques secondes et réessayez."
     },
     "history": {
       "changeUndone": "Modification annulée.",
@@ -1096,13 +1096,17 @@
     "realPublicationPending": "La publication est toujours en cours. Reprenez la demande initiale pour vérifier son état.",
     "realPublicationProgress": "Publication en cours. Cela peut prendre jusqu’à une minute ; cette page se met à jour une fois la publication terminée.",
     "realPublicationNotice": "La publication met à jour votre boutique Shopify après validation et activation.",
+    "realPublish": "Publier",
+    "realPublishQuestion": "Publier cette configuration ? Une fois en ligne, les clients pourront personnaliser ce produit dans votre boutique. Les modifications suivantes resteront dans un brouillon jusqu’à leur publication.",
+    "realReplacePublishedQuestion": "Remplacer la configuration en ligne par celle-ci ? Une fois en ligne, les clients pourront personnaliser ce produit avec la nouvelle configuration. Les modifications suivantes resteront dans un brouillon jusqu’à leur publication.",
+    "publishNeedsView": "La publication sera disponible dès que le produit aura une vue.",
     "realSaveFailed": "Vos modifications n’ont pas pu être confirmées. Réessayez la demande initiale avant d’enregistrer d’autres modifications.",
     "realPublished": "Publié",
     "realDraftChanged": "Les valeurs héritées ont changé. Vérifiez les modifications enregistrées avant de publier à nouveau.",
     "realCurrencyReview": "La devise de la boutique est maintenant {{currency}}. Vérifiez tous les prix avant d’enregistrer une nouvelle proposition.",
     "realReviewCurrency": "Vérifier les prix dans la devise de la boutique",
     "realCalibrateImage": "Calibrer l’image",
-    "realDimensionsRequired": "Calibrez cette image pour définir les dimensions de production.",
+    "realDimensionsRequired": "Calibrez cette image pour définir les dimensions de production. Mesurez une largeur connue sur le vêtement, par exemple la largeur de poitrine.",
     "realReviewMethods": "Vérifiez les méthodes non attribuées ou supprimées avant de publier.",
     "realKeepMethod": "Conserver la méthode",
     "realRemoveMethod": "Supprimer la méthode",
