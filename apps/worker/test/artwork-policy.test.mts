@@ -23,6 +23,9 @@ async function inspect(bytes: Buffer): Promise<Inspection> {
 }
 const rejected = (bytes: Buffer, label: string) =>
   assert.rejects(inspect(bytes), { exitCode: 65 }, `${label} must be rejected by policy`);
+/** The pixel limit is its own buyer-actionable outcome (#445): exit 66, never the generic policy exit 65. */
+const tooLarge = (bytes: Buffer, label: string) =>
+  assert.rejects(inspect(bytes), { exitCode: 66 }, `${label} must be rejected for its pixel size`);
 const svg = (body: string, attributes = '') =>
   Buffer.from(
     `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="40" height="20"${attributes}>${body}</svg>`,
@@ -94,6 +97,32 @@ test('embedded PNG/JPEG rasters are allowed only inside the decoded pixel budget
   await rejected(image('image/png', jpeg), 'embedded raster with mismatched type');
   await rejected(image('image/svg+xml', Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>')), 'embedded SVG');
   await rejected(image('text/html', Buffer.from('<script>alert(1)</script>')), 'embedded non-image data');
+});
+
+test('a valid image over the pixel limit is rejected for its size, not as an unsupported file (#445)', async () => {
+  // Real 8000x8000 PNG: 64 megapixels, a few hundred KB. sharp refuses it while reading the header.
+  const huge = await sharp({ create: { width: 8000, height: 8000, channels: 3, background: 'white' } })
+    .png()
+    .toBuffer();
+  assert.ok(huge.length < 5 * 1024 * 1024, 'the fixture is under the 5 MiB file limit');
+  await tooLarge(huge, '8000x8000 PNG');
+  // Edge limit: within 40 megapixels (12001 x 1) but over 12000 on one side.
+  const png = await sharp({ create: { width: 4, height: 4, channels: 3, background: 'red' } })
+    .png()
+    .toBuffer();
+  const wide = Buffer.from(png);
+  wide.writeUInt32BE(12_001, 16);
+  wide.writeUInt32BE(1, 20);
+  await tooLarge(wide, '12001x1 PNG header');
+  await tooLarge(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="12001" height="2"/>'), '12001px SVG');
+});
+
+test('other policy failures keep the generic rejection', async () => {
+  await rejected(Buffer.from('not an image'), 'unrecognized bytes');
+  const small = await sharp({ create: { width: 4, height: 4, channels: 3, background: 'red' } })
+    .png()
+    .toBuffer();
+  await rejected(small.subarray(0, small.length - 5), 'truncated PNG');
 });
 
 test('hostile SVG constructs remain rejected', async () => {

@@ -147,6 +147,8 @@ export async function runArtworkSandbox(
       try {
         if (!failure && code === 65 && started)
           failure = new ArtworkInspectionError('REJECTED', 'Artwork rejected by inspection policy');
+        if (!failure && code === 66 && started)
+          failure = new ArtworkInspectionError('REJECTED', 'Artwork exceeds the pixel limit', 'DIMENSIONS_TOO_LARGE');
         if (!failure && started) {
           const { stdout } = await promisify(execFile)(
             '/usr/bin/systemctl',

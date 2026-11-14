@@ -222,6 +222,28 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable artwork ownership and
       await db.destroy();
     }
   });
+  it('stores a buyer-actionable rejection reason and reads it back; anything else is stored generically (#445)', async () => {
+    const db = await openTestDatabase();
+    try {
+      const { shopId } = await ownTestShop(db);
+      const scope = { shopId, installationGeneration: '1', kind: 'merchant' as const };
+      for (const [reason, stored] of [
+        ['DIMENSIONS_TOO_LARGE', 'DIMENSIONS_TOO_LARGE'],
+        ['INSPECTION_REJECTED', 'INSPECTION_REJECTED'],
+        ['not a code', 'INSPECTION_REJECTED'],
+      ] as const) {
+        const row = { ...record(shopId), declaredBytes: 1 };
+        await store.create(row);
+        await store.complete(scope, row.assetId, now);
+        const claim = randomUUID();
+        await store.claim(row.assetId, claim, now, new Date(+now + 60000));
+        await store.reject(row.assetId, claim, reason, now);
+        expect(await store.get(scope, row.assetId)).toMatchObject({ state: 'REJECTED', rejection: stored });
+      }
+    } finally {
+      await db.destroy();
+    }
+  });
   it('bounds daily admissions per owner when one-byte uploads are rejected', async () => {
     const db = await openTestDatabase();
     try {

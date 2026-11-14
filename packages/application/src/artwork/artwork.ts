@@ -125,6 +125,11 @@ export class ArtworkError extends Error {
     super(`Artwork: ${code}`);
   }
 }
+/** The stored reason for a terminal inspection failure: a buyer-actionable one when the inspector named it (#445). */
+const rejectionReason = (error: unknown) =>
+  !!error && typeof error === 'object' && 'reason' in error && error.reason === 'DIMENSIONS_TOO_LARGE'
+    ? 'DIMENSIONS_TOO_LARGE'
+    : 'INSPECTION_REJECTED';
 const hash = (bytes: Uint8Array | string) => createHash('sha256').update(bytes).digest('hex');
 const datePlus = (now: Date, ms: number) => new Date(now.getTime() + ms);
 const missing = (error: unknown) =>
@@ -354,7 +359,7 @@ export function createArtworkService(input: {
               'code' in error &&
               ['REJECTED', 'TOO_LARGE', 'INVALID_INPUT', 'CONFLICT'].includes(String(error.code)));
         if (terminal) {
-          await input.store.reject(assetId, claimId, absent ? 'UPLOAD_MISSING' : 'INSPECTION_REJECTED', now);
+          await input.store.reject(assetId, claimId, absent ? 'UPLOAD_MISSING' : rejectionReason(error), now);
           await input.storage.remove({ key: row.quarantineKey }).catch(() => {});
           return 'rejected' as const;
         }

@@ -105,6 +105,39 @@ test('oversize, inspection rejection and cancelled uploads never expose a previe
   assert.equal(calls, prior);
 });
 
+test('a pixel-limit rejection carries its reason to the caller; other rejections do not (#445)', async () => {
+  const flow = (status: Record<string, unknown>) =>
+    createArtworkUpload({
+      api: async (path) =>
+        path === '/api/artwork'
+          ? {
+              assetId: 'a',
+              expiresAt: '2099-01-01T00:00:00Z',
+              upload: { url: 'https://private.example/q', headers: {} },
+            }
+          : { state: 'REJECTED', expiresAt: '2099-01-01T00:00:00Z', ...status },
+      put: async () => new Response(null, { status: 200 }),
+      pause: async () => {},
+    });
+  const file = () => new File(['abc'], 'image.png', { type: 'image/png' });
+  await assert.rejects(
+    flow({ rejection: 'DIMENSIONS_TOO_LARGE' }).upload(file(), () => {}),
+    {
+      status: 422,
+      reason: 'DIMENSIONS_TOO_LARGE',
+    },
+  );
+  for (const rejection of ['INSPECTION_REJECTED', 'UPLOAD_MISSING', null, 7, undefined])
+    await assert.rejects(
+      flow({ rejection }).upload(file(), () => {}),
+      (error: Record<string, unknown>) => {
+        assert.equal(error.status, 422);
+        assert.equal('reason' in error, false);
+        return true;
+      },
+    );
+});
+
 test('expired derivative is renewed for the same retained artwork without uploading again', async () => {
   const calls: string[] = [];
   const flow = createArtworkUpload({
