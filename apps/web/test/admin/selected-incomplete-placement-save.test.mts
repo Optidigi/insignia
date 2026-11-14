@@ -58,6 +58,7 @@ test('a draft with a newly added placement that has no method or size yet saves,
   timeout: 15000,
 }, async () => {
   const core = createDurableCore(new Pool({ connectionString: database }));
+  const pool = new Pool({ connectionString: database });
   const shopId = randomUUID();
   const shopifyShopId = uniqueShopifyShopId();
   const actor = adminActor({
@@ -133,6 +134,54 @@ test('a draft with a newly added placement that has no method or size yet saves,
       selectedPublicationProblems(saved).includes('Configure methods and decoration sizes.'),
       'publication still requires methods and sizes for every placement',
     );
+    const published = await service.publish(actor, productId, {
+      configId,
+      draftVersion,
+      idempotencyKey: `${randomUUID()}:publish`,
+      authority,
+    });
+    assert.equal(published.kind, 'invalid');
+    assert.equal(published.kind === 'invalid' && published.code, 'PUBLICATION_INCOMPLETE');
+    const durable = await pool.query<{ revisions: string; operations: string }>(
+      `SELECT (SELECT count(*) FROM config_revisions WHERE shop_id = $1) AS revisions,
+              (SELECT count(*) FROM publication_operations WHERE shop_id = $1) AS operations`,
+      [shopId],
+    );
+    assert.deepEqual(durable.rows[0], { revisions: '0', operations: '0' }, 'a refused publish writes nothing');
+    const config = required(await core.configs.getConfig(shopId, configId));
+    assert.equal(config.effectiveRevisionId, null);
+    assert.equal(config.publicationSequence, '0');
+
+    // Only completeness is deferred: values of an unfinished placement are still validated.
+    const rejected = async (placements: unknown[], code: string) => {
+      const result = await save(placements);
+      assert.equal(result.kind, 'invalid');
+      assert.equal(result.kind === 'invalid' && result.code, code);
+    };
+    await rejected(
+      [newPlacement(chest, { sizes: [{ id: 'zero', name: 'Zero', widthPercent: '0', prices: {} }] })],
+      'SETUP_SIZE_INVALID',
+    );
+    await rejected(
+      [
+        newPlacement(chest, {
+          sizes: [{ id: 'tall', name: 'Tall', widthPercent: '50', heightPercent: '101', prices: {} }],
+        }),
+      ],
+      'SETUP_SIZE_INVALID',
+    );
+    await rejected([newPlacement(chest, { methodIds: ['embroidery'], sizes: [] })], 'SETUP_METHOD_UNKNOWN');
+    const precise = setupWith([newPlacement(chest, { methodIds: ['print'], sizes: [] })]);
+    precise.product.methods[0]!.amount = '3.501';
+    const preciseResult = await service.save(actor, productId, {
+      configId,
+      draftVersion,
+      draft: { ...MerchantDraftSchema.parse(required(view.config).draft), selectedSetup: precise },
+      idempotencyKey: `${randomUUID()}:save`,
+      authority,
+    });
+    assert.equal(preciseResult.kind === 'invalid' && preciseResult.code, 'PRICE_AMOUNT_INVALID');
+    assert.equal(required((await service.read(actor, productId)).config).draftVersion, draftVersion);
 
     // Completing the placement projects it as before.
     const complete = await save([newPlacement(chest, { methodIds: ['print'] })]);
@@ -143,6 +192,7 @@ test('a draft with a newly added placement that has no method or size yet saves,
       [[chest, ['print']]],
     );
   } finally {
+    await pool.end();
     await core.close();
   }
 });
@@ -238,6 +288,185 @@ test('config validation rejections carry a stable reason code and are recorded w
       { action: 'command', code: 'IDEMPOTENCY_KEY_REQUIRED' },
     ]);
     assert.equal(required((await service.read(actor, productId)).config).draftVersion, '1', 'rejections write nothing');
+  } finally {
+    await core.close();
+  }
+});
+
+async function tenant(core: ReturnType<typeof createDurableCore>, prefix: string) {
+  const shopId = randomUUID();
+  const shopifyShopId = uniqueShopifyShopId();
+  const actor = adminActor({
+    tenantShopId: shopId,
+    shop: `${prefix}-${randomUUID().replaceAll('-', '')}.myshopify.com`,
+    shopId: `gid://shopify/Shop/${shopifyShopId}`,
+    installationGeneration: '1',
+  });
+  await core.transactions.run((tx) =>
+    core.tenants.createShop(tx, {
+      shopId,
+      shopDomain: actor.shop,
+      shopifyShopId,
+      externalInstallationId: actor.installationId,
+    }),
+  );
+  const authority = sha256CanonicalJson(
+    required(await core.tenants.getActiveAuthorizationScope({ shopId, installationGeneration: '1' })),
+  );
+  return { actor, authority };
+}
+const catalogItem = (id: string) => ({ id, title: 'QA tee', status: 'DRAFT', imageUrl: front, variants: [] });
+
+test('a draft that becomes invalid after Method reconciliation is a coded 422 and rolls back its command', {
+  skip: !database,
+  timeout: 15000,
+}, async () => {
+  const base = createDurableCore(new Pool({ connectionString: database }));
+  const catalogMethodId = randomUUID();
+  let inheritedAmount = '5.001';
+  // The library price is applied only inside the save transaction, after the pre-transaction check.
+  const core = {
+    ...base,
+    methodCatalog: {
+      ...base.methodCatalog,
+      listConfigurations: async () => [
+        {
+          configuration: {
+            id: catalogMethodId,
+            name: 'Print',
+            explanation: '',
+            pricing: 'fixed' as const,
+            amount: inheritedAmount,
+            assignment: 'manual' as const,
+            productIds: ['111'],
+            tags: [],
+            tagMatch: 'any' as const,
+          },
+          version: '2',
+          currency: 'USD' as const,
+        },
+      ],
+    },
+  } as typeof base;
+  try {
+    const { actor, authority } = await tenant(base, 'reconciled');
+    const service = createMerchantConfigService({
+      core,
+      catalog: { get: async () => catalogItem(productId), shopCurrency: async () => 'USD' },
+      eligibility: async () => ({ allowed: false, reason: 'Incomplete' }),
+      publication: () => {
+        throw new Error('Saving never publishes');
+      },
+    });
+    const created = await service.create(actor, productId, `${randomUUID()}:create`, authority);
+    const configId = created.kind === 'created' ? created.configId : '';
+    const draft = MerchantDraftSchema.parse(required((await service.read(actor, productId)).config).draft);
+    const base_ = setupWith([
+      newPlacement('chest', {
+        methodIds: ['print'],
+        sizes: [
+          { id: 'small', name: 'Small', widthPercent: '50', prices: { print: '3.50' } },
+          { id: 'large', name: 'Large', widthPercent: '100', prices: { print: '3.50' } },
+        ],
+      }),
+    ]);
+    const selectedSetup = SelectedProductSetupSchema.parse({
+      ...base_,
+      methodBindings: {
+        print: {
+          catalogMethodId,
+          observedVersion: '1',
+          name: { value: 'Print', source: 'catalog' },
+          explanation: { value: '', source: 'catalog' },
+          translations: {},
+          prices: {
+            default: { value: '3.50', source: 'catalog' },
+            '["chest","small"]': { value: '3.50', source: 'product' },
+            '["chest","large"]': { value: '3.50', source: 'catalog' },
+          },
+          review: null,
+        },
+      },
+      product: {
+        ...base_.product,
+        methods: [{ id: 'print', name: 'Print', explanation: '', pricing: 'product', amount: '' }],
+      },
+    });
+    const idempotencyKey = `${randomUUID()}:save`;
+    const recorded: unknown[] = [];
+    const origin = 'https://synthetic-admin.example.test';
+    const services = adminServices({
+      appOrigin: origin,
+      authenticate: async () => actor,
+      catalog: { get: async () => catalogItem(productId) },
+      configs: service,
+      recordConfigRejection: (rejection) => recorded.push(rejection),
+    });
+    const put = () =>
+      handleAdminRequest(
+        new Request(`${origin}/api/admin/products/111/config`, {
+          method: 'PUT',
+          headers: {
+            Authorization: 'Bearer synthetic',
+            Origin: origin,
+            'Content-Type': 'application/json',
+            'X-Insignia-Setup-Authority': authority,
+            'Idempotency-Key': idempotencyKey,
+          },
+          body: JSON.stringify({ action: 'save', configId, draftVersion: '1', draft: { ...draft, selectedSetup } }),
+        }),
+        services,
+        { kind: 'config', productId },
+      );
+    const rejected = await put();
+    assert.equal(rejected.status, 422, 'not the 503 an escaped validation error produced');
+    const body = await rejected.json();
+    assert.equal(body.code, 'PRICE_AMOUNT_INVALID');
+    assert.equal(body.noEffect, true);
+    assert.deepEqual(recorded, [{ action: 'save', code: 'PRICE_AMOUNT_INVALID' }]);
+    assert.equal(required((await service.read(actor, productId)).config).draftVersion, '1');
+    // Nothing durable kept the key: once the library price is valid the same request saves.
+    inheritedAmount = '5.00';
+    const saved = await put();
+    assert.equal(saved.status, 200);
+    assert.deepEqual(await saved.json(), { kind: 'saved', draftVersion: '2' });
+  } finally {
+    await base.close();
+  }
+});
+
+test('copy reports the target rule that failed instead of a Lean price review', {
+  skip: !database,
+  timeout: 15000,
+}, async () => {
+  const core = createDurableCore(new Pool({ connectionString: database }));
+  const target = 'gid://shopify/Product/222';
+  try {
+    const { actor, authority } = await tenant(core, 'copy');
+    const service = createMerchantConfigService({
+      core,
+      catalog: { get: async (_actor, id) => catalogItem(id), shopCurrency: async () => 'USD' },
+      eligibility: async () => ({ allowed: false, reason: 'Incomplete' }),
+      publication: () => {
+        throw new Error('Copy never publishes');
+      },
+    });
+    const created = await service.create(actor, productId, `${randomUUID()}:create`, authority);
+    const configId = created.kind === 'created' ? created.configId : '';
+    const draft = MerchantDraftSchema.parse(required((await service.read(actor, productId)).config).draft);
+    const saved = await service.save(actor, productId, {
+      configId,
+      draftVersion: '1',
+      draft: { ...draft, selectedSetup: setupWith([newPlacement('chest', { methodIds: ['print'] })]) },
+      idempotencyKey: `${randomUUID()}:save`,
+      authority,
+    });
+    assert.equal(saved.kind, 'saved');
+    // The copied draft still names the source product in its selected setup.
+    const copied = await service.copy(actor, productId, target, `${randomUUID()}:copy`);
+    assert.equal(copied.kind, 'invalid');
+    assert.equal(copied.kind === 'invalid' && copied.code, 'PRODUCT_IDENTITY_CHANGED');
+    assert.equal((await service.read(actor, target)).config, null, 'no target configuration is created');
   } finally {
     await core.close();
   }

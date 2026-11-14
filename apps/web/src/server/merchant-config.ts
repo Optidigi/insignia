@@ -6,7 +6,7 @@ import type { DurableTransaction } from '@insignia/database';
 import { CONFIG_DRAFT_STORAGE_VERSION, type DurableCore, sha256CanonicalJson } from '@insignia/database';
 import { parseSignedMinor, validateLeanConfig, validatePublishedConfig } from '@insignia/domain';
 import { GEOMETRY_VERSION, type GeometryV1, validateGeometryBridge } from '@insignia/visualizer/geometry';
-import type { ConfigRejectionCode } from '../shared/config-rejection.ts';
+import { CONFIG_REJECTION_CODES, type ConfigRejectionCode } from '../shared/config-rejection.ts';
 import { projectActivationPublicationState } from './admin/activation-state.ts';
 import type { AdminActor as Actor, CatalogProduct } from './admin/contracts.js';
 import {
@@ -16,7 +16,6 @@ import {
 } from './selected-method-reconciliation.ts';
 import {
   SelectedSetupAuthorityError,
-  SelectedSetupCapacityError,
   SelectedSetupValidationError,
   selectedProductDraft,
   selectedPublicationProblems,
@@ -125,8 +124,6 @@ function validatedDraft(
     try {
       draft = selectedProductDraft(draft.selectedSetup, draft);
     } catch (error) {
-      if (error instanceof SelectedSetupCapacityError)
-        throw new DraftValidationError('selectedSetup.product', error.message, 'SETUP_CAPACITY_EXCEEDED');
       if (error instanceof SelectedSetupValidationError)
         throw new DraftValidationError('selectedSetup.product', error.message, error.code);
       throw error;
@@ -629,57 +626,65 @@ export function createMerchantConfigService(input: {
       if (draft.selectedSetup && !data.authority)
         throw new SelectedSetupAuthorityError('Selected setup authority required');
       const shopCurrency = await input.catalog.shopCurrency(actor);
-      const result = await executeCommand(
-        commandTransactions(actor, data.authority),
-        core.commands,
-        command(actor, 'm5-save-draft', data.idempotencyKey, {
-          productId,
-          configId: data.configId,
-          draftVersion: data.draftVersion,
-          draft,
-          ...(data.authority ? { authority: data.authority } : {}),
-        }),
-        async (tx) => {
-          if (draft.shopCurrency !== shopCurrency) return 'currency';
-          const config = await core.configs.getConfigForUpdate(tx, actor.tenantShopId, data.configId);
-          if (!config || config.externalProductId !== productNumber(productId)) return 'conflict';
-          if (config.draftVersion !== data.draftVersion) return 'conflict';
-          const previousSetup = MerchantDraftSchema.parse(config.draftValue).selectedSetup;
-          if (previousSetup && !draft.selectedSetup) return 'method-links';
-          let resolvedDraft: MerchantDraft;
-          try {
-            resolvedDraft = draft.selectedSetup
-              ? validatedDraft(
-                  {
-                    ...draft,
-                    selectedSetup: await reconcileIncomingSelectedSetup(
-                      core,
-                      tx,
-                      actor,
-                      draft.selectedSetup,
-                      draft.shopCurrency,
-                      catalogProduct.tags,
-                      previousSetup,
-                    ),
-                  },
-                  actor,
-                  productId,
-                )
-              : draft;
-          } catch (error) {
-            if (error instanceof SelectedMethodBindingContinuityError) return 'method-links';
-            throw error;
-          }
-          const updated = await core.configs.updateDraft(tx, {
-            shopId: actor.tenantShopId,
+      let result: { kind: 'executed' | 'replayed'; resultRef: string };
+      try {
+        result = await executeCommand(
+          commandTransactions(actor, data.authority),
+          core.commands,
+          command(actor, 'm5-save-draft', data.idempotencyKey, {
+            productId,
             configId: data.configId,
-            expectedVersion: data.draftVersion,
-            schemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
-            draftValue: resolvedDraft,
-          });
-          return updated.kind === 'updated' ? `saved:${updated.config.draftVersion}` : 'conflict';
-        },
-      );
+            draftVersion: data.draftVersion,
+            draft,
+            ...(data.authority ? { authority: data.authority } : {}),
+          }),
+          async (tx) => {
+            if (draft.shopCurrency !== shopCurrency) return 'currency';
+            const config = await core.configs.getConfigForUpdate(tx, actor.tenantShopId, data.configId);
+            if (!config || config.externalProductId !== productNumber(productId)) return 'conflict';
+            if (config.draftVersion !== data.draftVersion) return 'conflict';
+            const previousSetup = MerchantDraftSchema.parse(config.draftValue).selectedSetup;
+            if (previousSetup && !draft.selectedSetup) return 'method-links';
+            let resolvedDraft: MerchantDraft;
+            try {
+              resolvedDraft = draft.selectedSetup
+                ? validatedDraft(
+                    {
+                      ...draft,
+                      selectedSetup: await reconcileIncomingSelectedSetup(
+                        core,
+                        tx,
+                        actor,
+                        draft.selectedSetup,
+                        draft.shopCurrency,
+                        catalogProduct.tags,
+                        previousSetup,
+                      ),
+                    },
+                    actor,
+                    productId,
+                  )
+                : draft;
+            } catch (error) {
+              if (error instanceof SelectedMethodBindingContinuityError) return 'method-links';
+              throw error;
+            }
+            const updated = await core.configs.updateDraft(tx, {
+              shopId: actor.tenantShopId,
+              configId: data.configId,
+              expectedVersion: data.draftVersion,
+              schemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
+              draftValue: resolvedDraft,
+            });
+            return updated.kind === 'updated' ? `saved:${updated.config.draftVersion}` : 'conflict';
+          },
+        );
+      } catch (error) {
+        // Re-validation after Method reconciliation rolls back the whole command, including its key,
+        // and reports the same coded rejection as the pre-transaction check.
+        if (error instanceof DraftValidationError) return invalidDraft(error);
+        throw error;
+      }
       return result.resultRef === 'conflict'
         ? { kind: 'conflict', noEffect: true, message: 'Draft changed. Reload and review the current version.' }
         : result.resultRef === 'currency'
@@ -728,8 +733,10 @@ export function createMerchantConfigService(input: {
             const targetDraft = cloneForProduct(draft, id);
             try {
               validatedDraft(targetDraft, actor, targetProductId);
-            } catch {
-              return 'lean-review';
+            } catch (error) {
+              // Only the Lean price rule asks for a price review; every other rule keeps its own code.
+              if (error instanceof DraftValidationError && error.code === 'LEAN_PRICING_INVALID') return 'lean-review';
+              return `invalid-target:${error instanceof DraftValidationError ? error.code : 'DRAFT_INVALID'}`;
             }
             await core.configs.createConfig(tx, {
               shopId: actor.tenantShopId,
@@ -761,6 +768,14 @@ export function createMerchantConfigService(input: {
           code: 'COPY_SOURCE_NEEDS_REVIEW',
           message: 'Source draft needs review before copying',
         };
+      if (result.resultRef.startsWith('invalid-target:')) {
+        const code = result.resultRef.slice('invalid-target:'.length);
+        return {
+          kind: 'invalid',
+          code: CONFIG_REJECTION_CODES.find((known) => known === code) ?? 'DRAFT_INVALID',
+          message: 'The copied configuration does not satisfy the target product. Review it before copying.',
+        };
+      }
       return { kind: 'created', configId: result.resultRef };
     },
     async publish(

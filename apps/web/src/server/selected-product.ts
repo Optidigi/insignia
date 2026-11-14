@@ -21,7 +21,6 @@ import type { CatalogProduct } from '../shared/admin-view.js';
 import type { ConfigRejectionCode } from '../shared/config-rejection.ts';
 
 export class SelectedSetupAuthorityError extends Error {}
-export class SelectedSetupCapacityError extends Error {}
 /** A selected setup that breaks one identifiable authoring rule; the message carries no merchant content. */
 export class SelectedSetupValidationError extends Error {
   readonly code: ConfigRejectionCode;
@@ -31,6 +30,17 @@ export class SelectedSetupValidationError extends Error {
   }
 }
 const invalid = (code: ConfigRejectionCode, message: string) => new SelectedSetupValidationError(code, message);
+type SelectedPlacement = SelectedProductSetup['product']['views'][number]['placements'][number];
+type SelectedSize = SelectedPlacement['sizes'][number];
+
+/**
+ * The single owner of "placement is complete": it has at least one method and one size. An incomplete
+ * placement is unfinished authoring work. Drafts keep it (its values are still validated), the
+ * commerce projection leaves it out, and publication readiness reports it (#438).
+ */
+export function placementIsComplete(placement: Pick<SelectedPlacement, 'methodIds' | 'sizes'>): boolean {
+  return placement.methodIds.length > 0 && placement.sizes.length > 0;
+}
 
 const validId = (value: string) => /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(value);
 const positive = (value: string) =>
@@ -51,20 +61,47 @@ export function selectedProductDraft(setupInput: SelectedProductSetup, previous:
     0,
   );
   if (product.views.length > 16 || steps > 64)
-    throw new SelectedSetupCapacityError(
+    throw invalid(
+      'SETUP_CAPACITY_EXCEEDED',
       'This configuration exceeds the qualified geometry capacity (16 views and 64 sizes).',
     );
   if (new Set(product.images.map((image) => image.id)).size !== product.images.length)
     throw invalid('SETUP_MEDIA_NOT_OWNED', 'Repeated product preview media identity');
   const exponent = previous.shopCurrency === 'USD' || previous.shopCurrency === 'EUR' ? 2 : null;
   if (exponent === null) throw invalid('SETUP_CURRENCY_UNSUPPORTED', 'Selected product currency is not qualified');
-  // A placement without a method or a size is unfinished authoring work: it stays in selectedSetup
-  // and blocks publication readiness, but never enters the commerce projection (#438).
-  const projected = (placement: SelectedProductSetup['product']['views'][number]['placements'][number]) =>
-    placement.methodIds.length > 0 && placement.sizes.length > 0;
   const usedMethodIds = new Set(
-    product.views.flatMap((view) => view.placements.filter(projected).flatMap((placement) => placement.methodIds)),
+    product.views.flatMap((view) =>
+      view.placements.filter(placementIsComplete).flatMap((placement) => placement.methodIds),
+    ),
   );
+  const sizeFractions = (size: SelectedSize) => {
+    if (!positive(size.widthPercent) || Number(size.widthPercent) > 100)
+      throw invalid('SETUP_SIZE_INVALID', 'Invalid decoration size');
+    const heightFraction = Number(size.heightPercent ?? size.widthPercent) / 100;
+    if (!positive(size.heightPercent ?? size.widthPercent) || heightFraction > 1)
+      throw invalid('SETUP_SIZE_INVALID', 'Invalid decoration height');
+    return { fraction: Number(size.widthPercent) / 100, heightFraction };
+  };
+  const selectedMethod = (methodId: string) => {
+    const method = product.methods.find((item) => item.id === methodId);
+    if (!method) throw invalid('SETUP_METHOD_UNKNOWN', 'Unknown selected method');
+    return method;
+  };
+  const exactDecimal = (amount: string) => {
+    if (amount === '') return '';
+    const decimal = amount.trim().replace(',', '.');
+    try {
+      parseMinor(decimal, exponent);
+    } catch {
+      throw invalid('PRICE_AMOUNT_INVALID', 'Review amount precision; amounts are never rounded.');
+    }
+    return decimal;
+  };
+  /** The exact configured amount for a method and size; '' is unavailable and never becomes free. */
+  const priceDecimal = (methodId: string, size: SelectedSize) => {
+    const method = selectedMethod(methodId);
+    return exactDecimal(method.pricing === 'fixed' ? method.amount : (size.prices[methodId] ?? ''));
+  };
   const placements: MerchantDraft['placements'] = [];
   const pricingRules: MerchantDraft['pricingRules'] = [];
   const labels: NonNullable<MerchantDraft['labels']> = {
@@ -112,8 +149,17 @@ export function selectedProductDraft(setupInput: SelectedProductSetup, previous:
     };
     for (const placement of view.placements) {
       claim(placement.id);
-      if (!projected(placement)) {
-        for (const size of placement.sizes) claim(selectedStepIdentity(placement.id, size.id));
+      if (!placementIsComplete(placement)) {
+        // Only completeness is deferred to publication; stored values still satisfy every rule.
+        for (const methodId of placement.methodIds) {
+          const method = selectedMethod(methodId);
+          if (method.pricing === 'fixed') exactDecimal(method.amount);
+        }
+        for (const size of placement.sizes) {
+          claim(selectedStepIdentity(placement.id, size.id));
+          sizeFractions(size);
+          for (const methodId of placement.methodIds) priceDecimal(methodId, size);
+        }
         continue;
       }
       if (placement.name.trim()) labels.placements![placement.id] = placement.name.trim();
@@ -121,12 +167,7 @@ export function selectedProductDraft(setupInput: SelectedProductSetup, previous:
       for (const size of placement.sizes) {
         const id = selectedStepIdentity(placement.id, size.id);
         claim(id);
-        if (!positive(size.widthPercent) || Number(size.widthPercent) > 100)
-          throw invalid('SETUP_SIZE_INVALID', 'Invalid decoration size');
-        const fraction = Number(size.widthPercent) / 100;
-        const heightFraction = Number(size.heightPercent ?? size.widthPercent) / 100;
-        if (!positive(size.heightPercent ?? size.widthPercent) || heightFraction > 1)
-          throw invalid('SETUP_SIZE_INVALID', 'Invalid decoration height');
+        const { fraction, heightFraction } = sizeFractions(size);
         steps.push(id);
         if (size.name.trim()) labels.steps![id] = size.name.trim();
         const dimensions =
@@ -178,16 +219,8 @@ export function selectedProductDraft(setupInput: SelectedProductSetup, previous:
               : {}),
         });
         for (const methodId of placement.methodIds) {
-          const method = product.methods.find((item) => item.id === methodId);
-          if (!method) throw invalid('SETUP_METHOD_UNKNOWN', 'Unknown selected method');
-          const amount = method.pricing === 'fixed' ? method.amount : (size.prices[methodId] ?? '');
-          if (amount === '') continue; // Missing is unavailable; it never becomes free.
-          const decimal = amount.trim().replace(',', '.');
-          try {
-            parseMinor(decimal, exponent);
-          } catch {
-            throw invalid('PRICE_AMOUNT_INVALID', 'Review amount precision; amounts are never rounded.');
-          }
+          const decimal = priceDecimal(methodId, size);
+          if (decimal === '') continue; // Missing is unavailable; it never becomes free.
           const priceId = selectedPriceIdentity(id, methodId);
           const priorRules = previous.pricingRules.filter(
             (rule) =>
@@ -252,7 +285,8 @@ export function selectedProductDraft(setupInput: SelectedProductSetup, previous:
       mapped.variantImages.length > 100 ||
       mapped.placements.some((item) => (item.variantOverrides?.length ?? 0) > 100)
     )
-      throw new SelectedSetupCapacityError(
+      throw invalid(
+        'SETUP_CAPACITY_EXCEEDED',
         'This configuration exceeds the qualified appearance capacity (100 image overrides per view and 100 alignment overrides per placement).',
       );
     geometry.views.push(mapped);
@@ -328,8 +362,7 @@ export function selectedPublicationProblems(draft: MerchantDraft, catalog?: Cata
     for (const placement of view.placements) {
       if (!view.calibration || !calibratedDimensions(view.calibration, placement.rect))
         problems.push('Calibrate the source image to define production dimensions.');
-      if (!placement.methodIds.length || !placement.sizes.length)
-        problems.push('Configure methods and decoration sizes.');
+      if (!placementIsComplete(placement)) problems.push('Configure methods and decoration sizes.');
       for (const methodId of placement.methodIds) {
         const method = product.methods.find((entry) => entry.id === methodId);
         if (

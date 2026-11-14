@@ -12,7 +12,7 @@ import type { SigningOwnerAction } from './signing-owner-action.js';
 
 export type { CatalogProduct, CommandOutcome, ConfigView, PublicationState } from '../../shared/admin-view.js';
 /** The configuration command a 422 rejected; 'command' when the request named none validly. */
-export type ConfigRejectionAction = 'create' | 'save' | 'publish' | 'copy' | 'reconcile' | 'command';
+export type ConfigRejectionAction = import('@insignia/observability').AdminConfigAction;
 export interface AdminActor {
   shop: string;
   shopId: string;
