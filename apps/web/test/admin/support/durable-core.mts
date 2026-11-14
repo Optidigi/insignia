@@ -205,6 +205,7 @@ export function fixtureCore(overrides: Overrides = {}): DurableCore {
     },
     configs: {
       summaries: unexpected,
+      hasPublished: unexpected,
       listSelectedForMethod: async () => [],
       createConfig: unexpected,
       getConfig: unexpected,

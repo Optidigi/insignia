@@ -3,6 +3,8 @@ import { z } from 'zod';
 export type ThemeTaskStatus = 'active' | 'available' | 'unavailable' | 'unknown';
 export type ThemeSetupStatus = { button: ThemeTaskStatus; cart: ThemeTaskStatus };
 export const unknownThemeSetup = (): ThemeSetupStatus => ({ button: 'unknown', cart: 'unknown' });
+/** The single definition of "the theme is connected" for Home's setup card and getting-started steps. */
+export const themeConnected = (status: ThemeSetupStatus) => status.button === 'active' && status.cart === 'active';
 
 const extensionList = z.array(z.object({ type: z.string(), activations: z.array(z.unknown()) }));
 const themeBlock = z.object({

@@ -93,9 +93,9 @@
     },
     "metrics": {
       "customizedOrders": "Ordini con personalizzazioni",
-      "customizedOrdersDefinition": "Ordini che contengono almeno una personalizzazione Insignia.",
+      "customizedOrdersDefinition": "Ordini che contengono almeno una personalizzazione Insignia. Gli ordini di prova e quelli annullati non vengono conteggiati.",
       "customizedItems": "Articoli personalizzati ordinati",
-      "customizedItemsDefinition": "Quantità totale di articoli personalizzati ordinati."
+      "customizedItemsDefinition": "Quantità totale di articoli personalizzati ordinati. Gli ordini di prova e quelli annullati non vengono conteggiati."
     },
     "orders": "Visualizza gli ordini",
     "unavailable": "Le statistiche non sono disponibili al momento.",
@@ -118,6 +118,8 @@
     "show": "Mostra la guida introduttiva",
     "markIncomplete": "Segna il passaggio {{step}} come da completare",
     "markComplete": "Segna il passaggio {{step}} come completato",
+    "observedComplete": "Completato: {{step}} (rilevato nel tuo negozio)",
+    "observedNote": "Rilevato nel tuo negozio",
     "steps": {
       "product": "Configura un prodotto",
       "storefront": "Collega il tema",

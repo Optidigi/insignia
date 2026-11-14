@@ -95,3 +95,27 @@ test('Home uses exact whole-store aggregates and cannot present unavailable evid
   assert.equal(homeStatisticsFromAggregate({ ...value, available: false }), undefined);
   assert.equal(homeStatisticsFromAggregate({ ...value, series: [{ ...value.series[0], orders: '9007199254740993' }] }), undefined);
 });
+
+test('getting-started steps are observed from the published product and a fully connected theme only', async () => {
+  const { homeGuidanceWithObservedSteps, homeObservedGuidanceSteps } = await import(
+    '../../src/shared/merchant-home-source.ts'
+  );
+  const connected = { button: 'active', cart: 'active' } as const;
+  assert.deepEqual(homeObservedGuidanceSteps(connected, true), ['product', 'storefront']);
+  assert.deepEqual(homeObservedGuidanceSteps(connected, false), ['storefront']);
+  assert.deepEqual(homeObservedGuidanceSteps({ button: 'active', cart: 'available' }, true), ['product']);
+  assert.deepEqual(homeObservedGuidanceSteps({ button: 'unknown', cart: 'unknown' }, false), []);
+  assert.deepEqual(homeGuidanceWithObservedSteps({ dismissed: false, completedSteps: ['test'] }, ['product']), {
+    dismissed: false,
+    completedSteps: ['product', 'test'],
+    observedSteps: ['product'],
+  });
+});
+
+test('the setup status is a strict database-only boolean', async () => {
+  const { homeHasPublishedProductFromSetupStatus } = await import('../../src/shared/merchant-home-source.ts');
+  assert.equal(homeHasPublishedProductFromSetupStatus({ hasPublishedProduct: true }), true);
+  assert.equal(homeHasPublishedProductFromSetupStatus({ hasPublishedProduct: false }), false);
+  assert.throws(() => homeHasPublishedProductFromSetupStatus({ hasPublishedProduct: 'yes' }));
+  assert.throws(() => homeHasPublishedProductFromSetupStatus({ hasPublishedProduct: true, extra: 1 }));
+});

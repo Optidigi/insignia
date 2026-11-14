@@ -92,9 +92,9 @@
     },
     "metrics": {
       "customizedOrders": "Bestellingen met personalisaties",
-      "customizedOrdersDefinition": "Bestellingen met ten minste één Insignia-ontwerp.",
+      "customizedOrdersDefinition": "Bestellingen met ten minste één Insignia-ontwerp. Testbestellingen en geannuleerde bestellingen worden niet meegeteld.",
       "customizedItems": "Bestelde artikelen met personalisatie",
-      "customizedItemsDefinition": "Totaal aantal bestelde artikelen met personalisatie."
+      "customizedItemsDefinition": "Totaal aantal bestelde artikelen met personalisatie. Testbestellingen en geannuleerde bestellingen worden niet meegeteld."
     },
     "orders": "Bestellingen bekijken",
     "unavailable": "Statistieken zijn nu niet beschikbaar.",
@@ -117,6 +117,8 @@
     "show": "Instelgids weergeven",
     "markIncomplete": "{{step}} markeren als niet voltooid",
     "markComplete": "{{step}} markeren als voltooid",
+    "observedComplete": "Voltooid: {{step}} (herkend in je winkel)",
+    "observedNote": "Herkend in je winkel",
     "steps": {
       "product": "Product configureren",
       "storefront": "Je thema koppelen",

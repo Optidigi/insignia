@@ -616,6 +616,12 @@ export function createProductionAdminServices(
     : undefined;
   return {
     billing,
+    async setupStatus(actor) {
+      await active(actor);
+      const hasPublishedProduct = await core.configs.hasPublished(actor.tenantShopId);
+      await active(actor);
+      return { hasPublishedProduct };
+    },
     appOrigin,
     media,
     preferences: createMerchantPreferences(core),

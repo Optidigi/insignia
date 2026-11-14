@@ -46,12 +46,23 @@ export default function HomeGettingStarted({
 }) {
   const { t, formatLocale } = useAdminLocale();
   const completed = guidance.completedSteps ?? [];
+  const observed = guidance.observedSteps ?? [];
   const [expanded, setExpanded] = useState(completed.length < 3 && (guidance.initiallyExpanded ?? true));
   const [activeStep, setActiveStep] = useState<HomeGuidanceStepId | undefined>(() =>
     preferredStep && !completed.includes(preferredStep)
       ? preferredStep
       : homeGuidanceStepIds.find((id) => !completed.includes(id)),
   );
+  const observedKey = observed.join();
+  useEffect(() => {
+    // A step proven done after mount must not stay highlighted as the one to work on.
+    if (activeStep && observed.includes(activeStep))
+      setActiveStep(
+        preferredStep && !completed.includes(preferredStep)
+          ? preferredStep
+          : homeGuidanceStepIds.find((id) => !completed.includes(id)),
+      );
+  }, [observedKey]);
   useEffect(() => {
     if (preferredStep)
       setActiveStep(
@@ -137,6 +148,7 @@ export default function HomeGettingStarted({
               const context = baseStep.id === 'product' ? productStep?.context : undefined;
               const actionContent = baseStep.id === 'product' ? productStep?.content : undefined;
               const complete = completed.includes(step.id);
+              const locked = observed.includes(step.id);
               const active = activeStep === step.id;
               const detailId = `${contentId}-${step.id}`;
               return (
@@ -148,12 +160,17 @@ export default function HomeGettingStarted({
                         <label class="home-guide__check-hit">
                           <input
                             type="checkbox"
-                            class="home-guide__check"
+                            class={locked ? 'home-guide__check home-guide__check--observed' : 'home-guide__check'}
                             checked={complete}
-                            disabled={!onCompleteStep}
-                            aria-label={t(complete ? 'home:guidance.markIncomplete' : 'home:guidance.markComplete', {
-                              step: t(`home:guidance.stepLabels.${step.id}`),
-                            })}
+                            disabled={!onCompleteStep || locked}
+                            aria-label={t(
+                              locked
+                                ? 'home:guidance.observedComplete'
+                                : complete
+                                  ? 'home:guidance.markIncomplete'
+                                  : 'home:guidance.markComplete',
+                              { step: t(`home:guidance.stepLabels.${step.id}`) },
+                            )}
                             onChange={() => {
                               if (!complete && completed.length === 2) pendingFocus.current = 'guide';
                               onCompleteStep?.(step.id, !complete);
@@ -175,6 +192,13 @@ export default function HomeGettingStarted({
                           <s-icon type={active ? 'chevron-up' : 'chevron-down'} />
                         </button>
                       </div>
+                      {locked && (
+                        <div class="home-guide__observed">
+                          <s-text color="subdued" fontSize="small">
+                            {t('home:guidance.observedNote')}
+                          </s-text>
+                        </div>
+                      )}
                       <div class="home-guide__detail" id={detailId} hidden={!active}>
                         <div
                           class={

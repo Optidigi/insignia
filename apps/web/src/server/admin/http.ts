@@ -14,6 +14,7 @@ export type AdminRoute =
   | { kind: 'config'; productId: string }
   | { kind: 'readiness' }
   | { kind: 'billing' }
+  | { kind: 'setup-status' }
   | { kind: 'methods' }
   | { kind: 'method'; methodId: string }
   | { kind: 'signing' };
@@ -278,6 +279,12 @@ export async function handleAdminRequest(
       return services.billing
         ? adminJson(200, await services.billing(actor))
         : adminJson(503, { error: 'Billing status unavailable' });
+    }
+    if (route.kind === 'setup-status') {
+      if (request.method !== 'GET') return adminJson(405, { error: 'Method not allowed' });
+      return services.setupStatus
+        ? adminJson(200, await services.setupStatus(actor))
+        : adminJson(503, { error: 'Setup status unavailable' });
     }
     if (route.kind === 'signing') {
       if (!services.signingOwner) return adminJson(503, { error: 'Signing setup unavailable' });

@@ -107,6 +107,8 @@ function StorefrontSetup() {
     setRetrying(false);
   }, [phase, retrying]);
 
+  // Only the Add/Enable links lead to a theme edit that Shopify keeps unsaved until the merchant saves it.
+  const themeSaveNeeded = phase === 'ready' && Object.values(status).includes('available');
   const unknown = phase === 'unsupported' || (phase === 'ready' && Object.values(status).includes('unknown'));
   return (
     <s-page inlineSize="small" heading={translateUi('settings:storefrontSetup.storefrontSetup')}>
@@ -154,9 +156,11 @@ function StorefrontSetup() {
         >
           <s-section heading={translateUi('settings:storefrontSetup.publishedTheme')}>
             <s-stack gap="large">
-              <s-paragraph color="subdued">
-                {translateUi('settings:storefrontSetup.saveThemeChangesInShopify')}
-              </s-paragraph>
+              {themeSaveNeeded && (
+                <s-paragraph color="subdued">
+                  {translateUi('settings:storefrontSetup.saveThemeChangesInShopify')}
+                </s-paragraph>
+              )}
               <div aria-busy={phase === 'loading'}>
                 <ThemeTask kind="button" status={status.button} links={links} phase={phase} />
                 <s-divider />

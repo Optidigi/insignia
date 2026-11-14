@@ -92,9 +92,9 @@
     },
     "metrics": {
       "customizedOrders": "Orders with customizations",
-      "customizedOrdersDefinition": "Orders containing at least one Insignia design.",
+      "customizedOrdersDefinition": "Orders containing at least one Insignia design. Test and cancelled orders are not counted.",
       "customizedItems": "Customized items ordered",
-      "customizedItemsDefinition": "Total quantity of customized items ordered."
+      "customizedItemsDefinition": "Total quantity of customized items ordered. Test and cancelled orders are not counted."
     },
     "orders": "View orders",
     "unavailable": "Statistics are unavailable right now.",
@@ -117,6 +117,8 @@
     "show": "Show getting started guide",
     "markIncomplete": "Mark {{step}} as incomplete",
     "markComplete": "Mark {{step}} as complete",
+    "observedComplete": "Complete: {{step}} (detected from your store)",
+    "observedNote": "Detected from your store",
     "steps": {
       "product": "Configure a product",
       "storefront": "Connect your theme",
