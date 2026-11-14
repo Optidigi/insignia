@@ -7,6 +7,7 @@ import type {
 } from '@insignia/contracts';
 import { methodAssignedToProduct, methodAssignmentReviewKey } from '@insignia/contracts';
 import { reconcileMethodBinding } from '@insignia/domain';
+import { canonicalPriceText } from '../../examples/admin/support/method-workflow-prices.mts';
 
 export type ProductMethodBindings = Record<string, MethodDraftBinding>;
 const cellKey = (placementId: string, sizeId: string) => JSON.stringify([placementId, sizeId]);
@@ -111,6 +112,24 @@ export function applyMethodImport(input: {
       };
   }
   return bindings;
+}
+
+/** Typed prices ("7,5") leave the editor as the exact dot-decimal text the server and reconciliation read. */
+export function canonicalBindingPrices(bindings: ProductMethodBindings): ProductMethodBindings {
+  return Object.fromEntries(
+    Object.entries(bindings).map(([methodId, binding]) => [
+      methodId,
+      {
+        ...binding,
+        prices: Object.fromEntries(
+          Object.entries(binding.prices).map(([key, price]) => [
+            key,
+            { ...price, value: canonicalPriceText(price.value) },
+          ]),
+        ),
+      },
+    ]),
+  );
 }
 
 export function overrideProductPrice(

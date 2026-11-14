@@ -137,6 +137,21 @@ test('a typed comma per-size price saves the exact 7.50 amount', { timeout: 3000
   assert.equal(f.read().selectedSetup?.product.views[0]?.placements[0]?.sizes[0]?.prices[methodId], '7.50');
 });
 
+test('a per-size price saved without leaving the field reaches the server as 7.50 in the product and its bindings', {
+  timeout: 30000,
+}, async (t) => {
+  const f = await fixture(t, { initialDraft: productSpecific() });
+  await f.open();
+  const price = f.page.getByRole('textbox', { name: 'Price for Small', exact: true });
+  await price.pressSequentially('7,5');
+  assert.equal(await price.inputValue(), '7,5', 'No blur happened before saving');
+  assert.equal((await acknowledgedSave(f.page)).status(), 200);
+  const dispatched = JSON.parse(required(f.mutations.at(-1)).body).draft.selectedSetup;
+  assert.equal(dispatched.product.views[0].placements[0].sizes[0].prices[methodId], '7.50');
+  assert.equal(dispatched.methodBindings[methodId].prices['["chest","small"]'].value, '7.50');
+  assert.equal(f.read().selectedSetup?.methodBindings[methodId]?.prices['["chest","small"]']?.value, '7.50');
+});
+
 test('a per-size price save is not possible while the field holds 1.234,5', { timeout: 30000 }, async (t) => {
   const f = await fixture(t, { initialDraft: productSpecific() });
   await f.open();

@@ -22,30 +22,14 @@ type Props = Omit<TextFieldProps, 'value' | 'onInput' | 'onChange' | 'ref'> & {
 export function DecimalField({ onValue, onCommit, kind = 'number', ...field }: Props) {
   const host = useRef<HTMLElementTagNameMap['s-text-field']>(null);
   useLayoutEffect(() => {
-    let cancelled = false;
-    const request = () => {
-      const input = host.current?.shadowRoot?.querySelector('input');
-      if (!input) return false;
-      input.inputMode = 'decimal';
-      return true;
-    };
-    if (!request())
-      void customElements.whenDefined('s-text-field').then(() => {
-        if (!cancelled) requestAnimationFrame(() => !cancelled && request());
-      });
-    return () => {
-      cancelled = true;
-    };
+    const input = host.current?.shadowRoot?.querySelector('input');
+    if (input) input.inputMode = 'decimal';
   }, []);
   const settle = kind === 'price' ? canonicalPriceText : canonicalDecimalText;
   return (
     <s-text-field
       {...field}
       ref={host}
-      onFocus={() => {
-        const input = host.current?.shadowRoot?.querySelector('input');
-        if (input) input.inputMode = 'decimal';
-      }}
       onInput={(event) => onValue(event.currentTarget.value)}
       onChange={(event) => {
         const typed = event.currentTarget.value;
