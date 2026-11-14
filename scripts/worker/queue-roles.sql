@@ -70,4 +70,16 @@ DO $$ BEGIN
   GRANT EXECUTE ON FUNCTION public.expire_shopify_webhook_bytes(uuid), public.expire_shopify_webhook_facts(integer), public.pending_shopify_webhook_obligations(integer) TO insignia_queue_consume;
  END IF;
 END $$;
+-- #466 B (schema 65): the abandoned-hold pass locks the six publication rows, claims and settles the
+-- activation row, finalizes progress and operation and clears that request's current pointer.
+-- Triggers guard every transition; the audit and the operator claim function stay owner-only.
+DO $$ BEGIN
+ IF to_regclass('public.m5_publication_abandonment_audit') IS NOT NULL THEN
+  GRANT SELECT, UPDATE ON public.m5_activation_state, public.m4_publication_progress TO insignia_queue_consume;
+  GRANT UPDATE(status, failed_at, failure_class, availability_resolved_at) ON public.publication_operations TO insignia_queue_consume;
+  GRANT SELECT, DELETE ON public.m5_current_publication_pointer TO insignia_queue_consume;
+  -- Read by the existing invoker transition triggers the pass fires.
+  GRANT SELECT ON public.m5_availability_resolutions, public.m5_activation_evidence TO insignia_queue_consume;
+ END IF;
+END $$;
 COMMIT;

@@ -12,6 +12,7 @@ import { createWorkerDatabase } from './database.js';
 import { runLocalDiagnostic } from './diagnostic.js';
 import { createDurableWorkerHandlers, credentialLifecycle } from './handlers.js';
 import { startWorkerProcess } from './process.js';
+import { createWorkerPublicationAbandonment } from './publication-abandonment.js';
 import { createProductionPurchaseAdmission, resolveNativePurchaseQualification } from './purchase-admission.js';
 import { createPurchaseReleasePreparation } from './purchase-release.js';
 import { createPurchaseRunner } from './purchase-runner.js';
@@ -44,6 +45,14 @@ if (process.argv.includes('--diagnostic')) {
     tenants: core.tenants,
     credentials: credentialLifecycle(core),
     refresh: transport,
+  });
+  // #466 B. Validated before the worker starts: a bound outside its range is a startup error.
+  const publicationAbandonment = createWorkerPublicationAbandonment({
+    core,
+    env: process.env,
+    appClientId: clientId,
+    credentials: purchaseCredentials,
+    observability: queue.observability,
   });
   const releaseProfile =
     process.env.INSIGNIA_M8_PURCHASE_ENABLED === '1'
@@ -107,7 +116,14 @@ if (process.argv.includes('--diagnostic')) {
     }),
     logger: queue.observability.logger,
   });
-  const reconciliation = createWorkerReconciliation({ core, queue, purchases: purchaseRunner, usage, lifecycle });
+  const reconciliation = createWorkerReconciliation({
+    core,
+    queue,
+    purchases: purchaseRunner,
+    usage,
+    lifecycle,
+    publicationAbandonment,
+  });
   const recoveryTimer = setInterval(() => {
     void reconciliation.runOnce();
   }, 30_000);

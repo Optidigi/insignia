@@ -1,4 +1,5 @@
 import { createHash, generateKeyPairSync, randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import type {
   ActivationReadinessPort,
   ExpectedFunctionBuild,
@@ -563,8 +564,11 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         failMutation = value;
       },
       /** #466 B worker pass on this fixture's fake Shopify, with a per-row port. */
-      abandonment: (options: Partial<Parameters<DurableCore['publicationAbandonment']['create']>[0]> = {}) =>
-        core.publicationAbandonment.create({
+      abandonment: (
+        options: Partial<Parameters<DurableCore['publicationAbandonment']['create']>[0]> = {},
+        via: DurableCore = core,
+      ) =>
+        via.publicationAbandonment.create({
           appClientId: artifactScope.appClientId,
           mode: 'restore',
           abandonAfterMs: 0,
@@ -1536,6 +1540,39 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       await client.query('ROLLBACK');
       client.release();
       await pool.end();
+    }
+  });
+
+  it('#466 B: the worker role from queue-roles.sql runs a whole pass; it cannot reach the audit', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    const role = `abandon_worker_${randomUUID().replaceAll('-', '')}`;
+    const grants = (await readFile(new URL('../../../scripts/worker/queue-roles.sql', import.meta.url), 'utf8'))
+      .split('-- Existing M3 uninstall/credential consumers, through the reviewed durable repositories.')[1]!
+      .replace(/\nCOMMIT;\s*$/, '')
+      .replaceAll('insignia_queue_consume', role);
+    const owner = new Pool({ connectionString: process.env.DATABASE_URL });
+    await owner.query(`CREATE ROLE ${role} NOLOGIN`);
+    await owner.query(grants);
+    const workerPool = new Pool({ connectionString: process.env.DATABASE_URL, options: `-c role=${role}` });
+    const worker = createDurableCore(workerPool);
+    try {
+      const denied = await workerPool.query(
+        `SELECT has_table_privilege(current_user,'public.m5_publication_abandonment_audit','SELECT') AS audit`,
+      );
+      expect(denied.rows[0]?.audit).toBe(false);
+      const errors: unknown[] = [];
+      const pass = await f
+        .abandonment({ onRowError: (error) => errors.push(error) }, worker)
+        .runPass({ shopId: f.identity.shopId });
+      expect(errors).toEqual([]);
+      expect(pass).toMatchObject({ restored: 1, finalized: 1 });
+      expect(await progressPhase(f)).toBe('abandoned');
+      expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
+    } finally {
+      await worker.close();
+      await owner.query(`DROP OWNED BY ${role}; DROP ROLE ${role}`);
+      await owner.end();
     }
   });
 

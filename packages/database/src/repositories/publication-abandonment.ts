@@ -48,6 +48,8 @@ export type PublicationAbandonmentOptions = {
     isCurrent(scope: AvailabilityScope): Promise<boolean>;
   }): Pick<ProductAvailabilityHoldV3Port, 'observe' | 'restore'>;
   onEvent?(event: PublicationAbandonmentEvent): void;
+  /** One row's database or provider failure; the pass continues with the next row. */
+  onRowError?(error: unknown): void;
   now?: () => number;
 };
 export const ABANDONMENT_PASS_LIMITS = { claims: 2, finalizes: 10, flags: 10, budgetMs: 20_000, scan: 50 } as const;
@@ -473,8 +475,11 @@ export function createPublicationAbandonment(database: Kysely<Database>, options
               if (await finalize(row)) result.finalized++;
             } else if (outcome === 'flagged') result.flagged++;
           }
-        } catch {
+        } catch (error) {
           // One row's database or provider failure changes nothing for the others (next pass).
+          try {
+            options.onRowError?.(error);
+          } catch {}
         }
       }
       const flagged = await sql<{ count: string }>`SELECT count(*)::text AS count FROM m5_activation_state

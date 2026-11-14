@@ -16,7 +16,8 @@ BEGIN
  definition:=pg_get_functiondef('public.enforce_availability_resolution_marker()'::regprocedure);
  EXECUTE replace(definition,'FUNCTION public.enforce_availability_resolution_marker()','FUNCTION public.enforce_availability_resolution_marker_before_abandonment()');
 END $copy$;
-REVOKE ALL ON FUNCTION public.m5_v3_hold_before_abandonment(jsonb), public.enforce_activation_v3_audit_before_abandonment(),
+-- The copied validator stays executable: the hold CHECK constraint calls it as every writer.
+REVOKE ALL ON FUNCTION public.enforce_activation_v3_audit_before_abandonment(),
  public.enforce_activation_state_before_abandonment(), public.enforce_m4_publication_progress_before_abandonment(),
  public.enforce_availability_resolution_marker_before_abandonment() FROM PUBLIC;
 
