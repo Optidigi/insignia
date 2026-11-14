@@ -263,7 +263,12 @@ test('#466: a failed pre-write restore read is NOT_DISPATCHED with no current an
   const store = throttledStore(() => throttling);
   const port = store.port();
   const before = v3Snapshot(await port.snapshot(scope, productId));
-  const acquired = await port.acquire(scope, { version: 'm5-availability-hold-v3', operationId: 'op-466', before, held: null });
+  const acquired = await port.acquire(scope, {
+    version: 'm5-availability-hold-v3',
+    operationId: 'op-466',
+    before,
+    held: null,
+  });
   if (acquired.kind !== 'HELD' || acquired.hold.version !== 'm5-availability-hold-v3') throw new Error('not held');
   const hold = {
     ...acquired.hold,
