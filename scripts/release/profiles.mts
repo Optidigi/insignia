@@ -48,6 +48,12 @@ import functionsRenewBinding from '../../deployment/m5-runtime/native-functions-
 };
 import loadingModules from '../../deployment/m5-runtime/native-loading-module-baseline.json' with { type: 'json' };
 import loadingCandidate from '../../deployment/m5-runtime/native-loading-release-binding.json' with { type: 'json' };
+import merchantBatchModules from '../../deployment/m5-runtime/native-merchant-batch-module-baseline.json' with {
+  type: 'json',
+};
+import merchantBatchBinding from '../../deployment/m5-runtime/native-merchant-batch-release-binding.json' with {
+  type: 'json',
+};
 import parityModules from '../../deployment/m5-runtime/native-parity-module-baseline.json' with { type: 'json' };
 import parityCandidate from '../../deployment/m5-runtime/native-parity-release-binding.json' with { type: 'json' };
 import performanceModules from '../../deployment/m5-runtime/native-performance-module-baseline.json' with {
@@ -172,6 +178,16 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  // Same Functions as cart-line v3 and every non-theme module of a11y-quantity; only theme assets change.
+  'native-merchant-batch-a03b41ba': {
+    versionId: merchantBatchBinding.versionId,
+    versionTag: merchantBatchBinding.versionTag,
+    versionIds: merchantBatchBinding.versionIds,
+    moduleHash: merchantBatchBinding.moduleHash,
+    modules: merchantBatchModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   // Same Functions as cart-line v3 and every non-theme module of session-drafts; only theme assets change.
   'native-a11y-quantity-9b5dbdee': {
     versionId: a11yQuantityBinding.versionId,

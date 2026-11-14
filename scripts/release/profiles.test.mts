@@ -52,6 +52,12 @@ import functionsRenewBinding from '../../deployment/m5-runtime/native-functions-
 };
 import loadingModules from '../../deployment/m5-runtime/native-loading-module-baseline.json' with { type: 'json' };
 import loadingBinding from '../../deployment/m5-runtime/native-loading-release-binding.json' with { type: 'json' };
+import merchantBatchModules from '../../deployment/m5-runtime/native-merchant-batch-module-baseline.json' with {
+  type: 'json',
+};
+import merchantBatchBinding from '../../deployment/m5-runtime/native-merchant-batch-release-binding.json' with {
+  type: 'json',
+};
 import parityModules from '../../deployment/m5-runtime/native-parity-module-baseline.json' with { type: 'json' };
 import parityBinding from '../../deployment/m5-runtime/native-parity-release-binding.json' with { type: 'json' };
 import performanceModules from '../../deployment/m5-runtime/native-performance-module-baseline.json' with {
@@ -426,6 +432,34 @@ test('functions renew candidate preserves identities and changes only theme and 
       };
       assert.deepEqual(unversioned(config), unversioned(oldConfig));
     } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
+  }
+});
+test('merchant-batch candidate changes only theme assets', () => {
+  assert.equal(merchantBatchModules.length, 14);
+  assert.equal(merchantBatchBinding.moduleHash, 'a3809ff58bcec22361d845c75fb7769f09f0b0f84ebfb1d7f67dad8f6eda72cd');
+  assert.equal(merchantBatchBinding.versionId, '1211378860033');
+  assert.deepEqual(
+    new Set(merchantBatchBinding.versionIds),
+    new Set([...a11yQuantityBinding.versionIds, '1211378860033']),
+  );
+  assert.deepEqual(
+    merchantBatchModules.map((m) => m.handle),
+    merchantBatchModules.map((m) => m.handle).sort(),
+  );
+  const prior = new Map(a11yQuantityModules.map((m) => [m.handle, m]));
+  assert.equal(prior.size, 14);
+  for (const module of merchantBatchModules) {
+    const old = required(prior.get(module.handle));
+    if (module.type === 'theme_app_extension') {
+      assert.deepEqual({ ...module, config: undefined }, { ...old, config: undefined });
+      type ThemeConfig = { theme_extension: { files: Record<string, unknown> } };
+      const files = (module.config as unknown as ThemeConfig).theme_extension.files;
+      const oldFiles = (old.config as unknown as ThemeConfig).theme_extension.files;
+      assert.deepEqual(files.blocks, oldFiles.blocks);
+      assert.deepEqual(files.snippets, oldFiles.snippets);
+      assert.deepEqual(files.locales, oldFiles.locales);
+      assert.notDeepEqual(files.assets, oldFiles.assets);
+    } else assert.deepEqual(module, old);
   }
 });
 test('a11y-quantity candidate changes only theme assets', () => {
