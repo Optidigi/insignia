@@ -174,6 +174,7 @@ export function fixtureCore(overrides: Overrides = {}): DurableCore {
       ...overrides.productionActivations,
     },
     publicationAbandonment: { create: unexpected },
+    publicationHoldOperator: { create: unexpected },
     acceptedQuotes: {
       resolveBuyerAcceptance: unexpected,
       findCompleted: unexpected,

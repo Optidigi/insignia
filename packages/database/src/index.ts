@@ -12,6 +12,11 @@ export { CONFIG_DRAFT_STORAGE_VERSION, type ConfigRecord, type RevisionRecord } 
 export type { CustomerPrivacyProcessing, CustomerPrivacyRepository } from './repositories/customer-privacy.js';
 export { createMerchantPreviewRepository } from './repositories/merchant-preview.js';
 export {
+  OperatorCommandError,
+  type OperatorHoldInspection,
+  type OperatorRestoreResult,
+} from './repositories/publication-hold-operator.js';
+export {
   type PurchaseDesignPayload,
   type PurchaseRecord,
   type PurchaseRepository,
