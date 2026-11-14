@@ -403,7 +403,8 @@ test('complete diagnostic category counts expose newer privacy obligations beyon
     const result = await core.webhooks.eraseExpiredPayloads(100);
     expect(result.blockedPrivacyIds).toContain(privacy.id);
     expect(result.blockedPrivacyCount).toBe(before.blockedPrivacyCount + 1);
-    expect(result.blockedUnsupportedCount).toBe(before.blockedUnsupportedCount + 105);
+    // Processed order receipts are settled history, not outstanding obligations (#488).
+    expect(result.blockedUnsupportedCount).toBe(before.blockedUnsupportedCount);
     expect(result.blockedUnsupportedIds.length).toBeLessThanOrEqual(100);
     expect(
       (

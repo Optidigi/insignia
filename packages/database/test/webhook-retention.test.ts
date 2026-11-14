@@ -479,6 +479,118 @@ test.each(['orders/paid', 'orders/create', 'refunds/create'])(
   },
 );
 
+// #488: an order delivery whose processing failed and exhausted its attempts
+// (7 Nov: a missing grant rolled back ingestion) and whose bytes were then
+// erased at the 7-day retention. Its order was read independently by
+// recurring discovery, whose completed window covers the receipt.
+async function failedOrderDelivery(f: Awaited<ReturnType<typeof fixture>>, topic: string) {
+  const receipt = await f.core.webhooks.receive({
+    ...f.input,
+    topic,
+    deliveryId: randomUUID(),
+    rawBody: Buffer.from(JSON.stringify({ id: '7570906415387' })),
+  });
+  await f.pool.query(
+    `UPDATE inbox_messages SET state='failed',attempts=5,last_error_class='PURCHASE_RECONCILIATION_UNAVAILABLE' WHERE id=$1`,
+    [receipt.id],
+  );
+  return receipt.id;
+}
+
+async function discoveredThrough(f: Awaited<ReturnType<typeof fixture>>, inboxId: string, offset: string) {
+  await f.pool.query(
+    `INSERT INTO purchase_reconciliation_cursors(shop_id,installation_generation,watermark)
+     SELECT shop_id,installation_generation,received_at+$2::interval FROM inbox_messages WHERE id=$1
+     ON CONFLICT(shop_id,installation_generation) DO UPDATE SET watermark=EXCLUDED.watermark`,
+    [inboxId, offset],
+  );
+}
+
+const receiptAudit = (f: Awaited<ReturnType<typeof fixture>>, id: string) =>
+  f.pool
+    .query(
+      `SELECT inbox.state,inbox.attempts,inbox.last_error_class,inbox.erasure_state,inbox.purge_after,
+        facts.captured_fields,facts.fulfill_by,facts.facts_erased_at
+       FROM inbox_messages inbox JOIN webhook_obligation_facts facts ON facts.inbox_id=inbox.id WHERE inbox.id=$1`,
+      [id],
+    )
+    .then((result) => result.rows[0]);
+
+test.each(['orders/create', 'orders/paid', 'orders/updated'])(
+  'expired failed %s covered by independent order discovery closes without rewriting its audit (#488)',
+  async (topic) => {
+    const f = await fixture();
+    try {
+      const id = await failedOrderDelivery(f, topic);
+      await discoveredThrough(f, id, '2 hours');
+      await expire(f.pool, id);
+      const first = await f.core.webhooks.eraseExpiredPayloads(100);
+      expect(first.erasedIds).toContain(id);
+      expect(first.blockedUnsupportedIds).not.toContain(id);
+      const audit = await receiptAudit(f, id);
+      // Honest closure: still failed with its original reason and attempts,
+      // never relabelled processed; only the 7-day bytes are gone.
+      expect(audit).toMatchObject({
+        state: 'failed',
+        attempts: 5,
+        last_error_class: 'PURCHASE_RECONCILIATION_UNAVAILABLE',
+        erasure_state: 'erased',
+        captured_fields: { id: '7570906415387' },
+        facts_erased_at: null,
+      });
+      // Later passes keep it closed and leave every recorded fact unchanged.
+      const later = await f.core.webhooks.eraseExpiredPayloads(100);
+      expect(later.blockedUnsupportedIds).not.toContain(id);
+      expect(await receiptAudit(f, id)).toEqual(audit);
+      // No retry path remains: the purchase runner never reselects it.
+      expect((await f.core.purchases.selectPurchaseRecoveryHints(100)).map((hint) => hint.inboxId)).not.toContain(id);
+    } finally {
+      await f.close();
+    }
+  },
+);
+
+test.each(['orders/create', 'orders/paid', 'orders/updated'])(
+  'expired failed %s not yet covered by order discovery stays an unresolved obligation (#488)',
+  async (topic) => {
+    const f = await fixture();
+    try {
+      const uncovered = await failedOrderDelivery(f, topic);
+      await expire(f.pool, uncovered);
+      expect((await f.core.webhooks.eraseExpiredPayloads(100)).blockedUnsupportedIds).toContain(uncovered);
+      // A discovery window that completed before the receipt arrived proves nothing about it.
+      await discoveredThrough(f, uncovered, '-1 minute');
+      expect((await f.core.webhooks.eraseExpiredPayloads(100)).blockedUnsupportedIds).toContain(uncovered);
+      // Once discovery's completed window passes the receipt, the obligation closes.
+      await discoveredThrough(f, uncovered, '1 second');
+      expect((await f.core.webhooks.eraseExpiredPayloads(100)).blockedUnsupportedIds).not.toContain(uncovered);
+      expect(await receiptAudit(f, uncovered)).toMatchObject({ state: 'failed', attempts: 5 });
+    } finally {
+      await f.close();
+    }
+  },
+);
+
+test('expired processed order delivery is not an outstanding obligation (#488)', async () => {
+  const f = await fixture();
+  try {
+    const receipt = await f.core.webhooks.receive({
+      ...f.input,
+      topic: 'orders/paid',
+      deliveryId: randomUUID(),
+      rawBody: Buffer.from(JSON.stringify({ id: '7570906415387' })),
+    });
+    await f.pool.query(`UPDATE inbox_messages SET state='processed' WHERE id=$1`, [receipt.id]);
+    await expire(f.pool, receipt.id);
+    const result = await f.core.webhooks.eraseExpiredPayloads(100);
+    expect(result.erasedIds).toContain(receipt.id);
+    expect(result.blockedUnsupportedIds).not.toContain(receipt.id);
+    expect(await receiptAudit(f, receipt.id)).toMatchObject({ state: 'processed', erasure_state: 'erased' });
+  } finally {
+    await f.close();
+  }
+});
+
 test('unindexed overdue Shopify bytes remain an explicit unknown blocker', async () => {
   const f = await fixture();
   try {
