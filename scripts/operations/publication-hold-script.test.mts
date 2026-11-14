@@ -85,6 +85,19 @@ test('refuses a URL file that is not private or not the command identity, before
     assert.equal(result.status, 2);
     assert.match(result.stderr, /command identity/);
     assert.throws(() => readFileSync(join(h.root, 'args')));
+    // Both refusals are audited: one line each, with a bounded reason and no secret.
+    const lines = readFileSync(join(h.runtime, 'publication-hold-audit.jsonl'), 'utf8')
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line) as Record<string, unknown>);
+    assert.deepEqual(
+      lines.map((line) => [line.event, line.command, line.outcome, line.reasons, line.by]),
+      [
+        ['publication_hold_command', 'inspect', 'refused', ['private_file_required'], 'wrapper'],
+        ['publication_hold_command', 'inspect', 'refused', ['command_identity_required'], 'wrapper'],
+      ],
+    );
+    assert.ok(!JSON.stringify(lines).includes(':x@'));
   } finally {
     h.cleanup();
   }

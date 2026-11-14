@@ -446,6 +446,28 @@ export function createAbandonmentFence(database: Kysely<Database>, options: Publ
     });
   }
 
+  /**
+   * #466 A, the worker's part in an operator claim: only B's stale rule, never a rearm or a
+   * dispatch (those stay with the command). A claim the command left without a settled receipt
+   * past the bound may have dispatched, so it goes to the operator (`claim_unsettled`); a fenced
+   * claim goes there at once (`claim_fenced`). T3 of a restored operator claim runs as for B.
+   */
+  async function staleOperatorClaim(id: Identity) {
+    return database.transaction().execute(async (tx) => {
+      const row = await lockSix(tx, id);
+      const hold = row?.hold as AbandonedHold | null | undefined;
+      if (!row || row.kind !== 'ABANDON_CLAIMED' || hold?.abandonmentClaim?.authority !== 'SETTLED_BY_TRUSTED_OPERATOR')
+        return false;
+      if (claimFenced(row, hold)) {
+        await flag(tx, row, ['claim_fenced']);
+        return true;
+      }
+      if (row.now.getTime() - row.activationUpdatedAt.getTime() < options.claimStaleMs) return false;
+      await flag(tx, row, ['claim_unsettled']);
+      return true;
+    });
+  }
+
   type Cursor = { at: string; shopId: string; configId: string; operationId: string };
   // Rotation across passes (review M2): a row that stays unchanged (not quiet enough to flag, no
   // usable offline token, flag mode, a receipt waiting for the merchant) keeps its updated_at, so a
@@ -481,16 +503,18 @@ export function createAbandonmentFence(database: Kysely<Database>, options: Publ
       const limits = ABANDONMENT_PASS_LIMITS;
       const scanLimit = options.scanLimit ?? limits.scan;
       const scan = (after: Cursor | null) =>
-        sql<Identity & { kind: ActivationStateKind; operationGeneration: string; cursorAt: string }>`
+        sql<Identity & { kind: ActivationStateKind; operationGeneration: string; cursorAt: string; operator: boolean }>`
         SELECT a.shop_id AS "shopId", a.config_id AS "configId", a.operation_id AS "operationId", a.kind,
-          o.installation_generation::text AS "operationGeneration", a.updated_at::text AS "cursorAt"
+          o.installation_generation::text AS "operationGeneration", a.updated_at::text AS "cursorAt",
+          a.hold#>>'{abandonmentClaim,authority}' IS NOT DISTINCT FROM 'SETTLED_BY_TRUSTED_OPERATOR' AS operator
         FROM m5_activation_state a
         JOIN publication_operations o USING (shop_id, config_id, operation_id)
         JOIN m4_publication_progress p USING (shop_id, config_id, operation_id)
         JOIN shops s ON s.shop_id=a.shop_id
         WHERE a.hold IS NOT NULL AND a.kind NOT IN ('RESTORED','RESOLVED')
-          -- #466 A: a claim made on operator authority belongs to the operator command alone.
-          AND a.hold#>>'{abandonmentClaim,authority}' IS DISTINCT FROM 'SETTLED_BY_TRUSTED_OPERATOR'
+          -- #466 A: an operator claim is the command's until B's stale bound; then only the stale rule.
+          AND NOT (a.kind='ABANDON_CLAIMED' AND a.hold#>>'{abandonmentClaim,authority}'='SETTLED_BY_TRUSTED_OPERATOR'
+            AND a.updated_at > clock_timestamp() - ${options.claimStaleMs} * interval '1 millisecond')
           ${scope ? sql`AND a.shop_id = ANY(${[...scope.shopIds]}::text[])` : sql``}
           ${
             after
@@ -522,6 +546,8 @@ export function createAbandonmentFence(database: Kysely<Database>, options: Publ
             if (result.finalized < limits.finalizes && (await finalize(row))) result.finalized++;
           } else if (row.kind === 'RESTORATION_CLAIMED') {
             if (result.flagged < limits.flags && (await staleActivated(row))) result.flagged++;
+          } else if (row.kind === 'ABANDON_CLAIMED' && row.operator) {
+            if (result.flagged < limits.flags && (await staleOperatorClaim(row))) result.flagged++;
           } else if (row.kind === 'ABANDON_CLAIMED') {
             if (claims >= limits.claims || result.flagged >= limits.flags) continue;
             claims++;

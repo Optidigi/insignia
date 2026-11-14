@@ -38,9 +38,12 @@ GRANT USAGE ON SCHEMA public TO :"command_role";
 GRANT SELECT ON public.shops, public.installation_generations, public.product_configs, public.publication_operations,
   public.m4_publication_progress, public.m5_activation_state, public.m5_current_publication_pointer,
   public.m5_availability_resolutions, public.m5_activation_evidence TO :"command_role";
--- Row locks (FOR UPDATE) need UPDATE on one column; these columns carry no authority.
+-- Row locks (FOR UPDATE) in B's unchanged T2/T3 and in the existing resolution need UPDATE on one
+-- column. These are provenance timestamps nothing reads as authority (installation activated_at is
+-- read by webhook routing and purchases, so it is not used). A SECURITY DEFINER lock function would
+-- fork B's restore and the resolution, which must run unchanged for the worker and the command.
 GRANT UPDATE(updated_at) ON public.shops, public.product_configs TO :"command_role";
-GRANT UPDATE(activated_at) ON public.installation_generations TO :"command_role";
+GRANT UPDATE(created_at) ON public.installation_generations TO :"command_role";
 -- B's T2/T3 and the observation-only resolution; the triggers decide every transition.
 GRANT UPDATE(kind, version, hold, resolution_digest) ON public.m5_activation_state TO :"command_role";
 GRANT UPDATE(phase, version) ON public.m4_publication_progress TO :"command_role";
@@ -56,6 +59,7 @@ DO $$ DECLARE role text := current_setting('insignia.command_role'); BEGIN
  OR has_table_privilege(role,'public.m5_restoration_no_dispatch_consumptions','SELECT,INSERT,UPDATE,DELETE')
  OR has_table_privilege(role,'public.signing_keys','SELECT,INSERT,UPDATE,DELETE')
  OR has_column_privilege(role,'public.installation_generations','deactivated_at','UPDATE')
+ OR has_column_privilege(role,'public.installation_generations','activated_at','UPDATE')
  OR has_column_privilege(role,'public.shops','current_generation','UPDATE')
  OR has_table_privilege(role,'public.publication_operations','INSERT,DELETE') THEN
   RAISE EXCEPTION 'publication hold command grants are not least privilege';

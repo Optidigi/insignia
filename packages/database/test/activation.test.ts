@@ -3481,7 +3481,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     ).resolves.toMatchObject({ phase: 'prepared' });
   });
 
-  it("#466 A: B's worker never touches an operator claim; re-running the command resumes it by B's rules", async () => {
+  it('#466 A: a command killed after its claim: the worker hands it to the operator after the stale bound, never writing', async () => {
     const f = await fixture('required', 'ACTIVE');
     await f.prepareHold();
     await toOperatorHold(f);
@@ -3490,29 +3490,90 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     await sql`SELECT m5_operator_claim_abandoned_hold(${f.identity.shopId}, ${f.identity.configId}, ${f.identity.operationId},
       ${version}, 'crash-1', ${'c'.repeat(64)})`.execute(database);
     const claimed = await activationRow(f);
-    expect(
-      await f.abandonment({ claimStaleMs: 0, abandonAfterMs: 0 }).runPass({ shopIds: [f.identity.shopId] }),
-    ).toMatchObject({ restored: 0, finalized: 0, flagged: 0 });
+    // inspect shows the claim and the digest that resumes it.
+    const shown = await inspectOne(f);
+    expect(shown.hold.abandonmentClaim).toMatchObject({
+      authority: 'SETTLED_BY_TRUSTED_OPERATOR',
+      commandKey: 'crash-1',
+      inspectDigest: 'c'.repeat(64),
+    });
+    const token = shown.hold.abandonmentClaim!.resumeInspectDigest!;
+    expect(token).toMatch(new RegExp(`^[1-9][0-9]*\\.${'c'.repeat(64)}$`));
+    // Within B's stale bound the claim may still be in flight: the worker leaves it alone.
+    expect(await f.abandonment({ abandonAfterMs: 0 }).runPass({ shopIds: [f.identity.shopId] })).toMatchObject({
+      restored: 0,
+      finalized: 0,
+      flagged: 0,
+    });
     expect(await activationRow(f)).toEqual(claimed);
-    expect(f.providerWrites).toEqual(['DRAFT']);
-    const token = `${Date.now()}.${'c'.repeat(64)}`;
     expect(await restoreWith(f, token, 'other-key')).toMatchObject({
       outcome: 'refused',
       reasons: ['claimed_by_another_command'],
     });
-    // Within B's stale bound a claim without a receipt may still be in flight: wait.
     expect(await restoreWith(f, token, 'crash-1')).toMatchObject({
       outcome: 'skipped',
       reasons: ['claim_in_flight'],
       kind: 'ABANDON_CLAIMED',
     });
-    // Past it, a crash may have dispatched: B's stale rule hands it to the operator, never a write.
-    expect(await restoreWith(f, token, 'crash-1', f.operator({ claimStaleMs: 0 }))).toMatchObject({
+    // Past it, a crash may have dispatched: the worker applies the stale rule only, never a write.
+    expect(
+      await f.abandonment({ claimStaleMs: 0, abandonAfterMs: 0 }).runPass({ shopIds: [f.identity.shopId] }),
+    ).toMatchObject({ restored: 0, finalized: 0, flagged: 1 });
+    expect((await activationRow(f))?.kind).toBe('OPERATOR_HOLD');
+    expect((await auditRows(f)).at(-1)).toMatchObject({ event: 'FLAGGED', detail: { reasons: ['claim_unsettled'] } });
+    expect(f.providerWrites).toEqual(['DRAFT']);
+    // Then only the manual route is open: restore refuses, resolve after a by-hand restore.
+    expect((await inspectOne(f)).reasons).toContain('restoration_started');
+    f.providerProductStatus = 'ACTIVE';
+    expect((await f.operator().resolve({ ...f.identity, commandKey: 'crash-2' })).kind).toBe('RESOLVED');
+  });
+
+  it('#466 A: the same stale rule runs from a re-run of the command, never a write', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    await toOperatorHold(f);
+    const version = Number((await activationRow(f))?.version);
+    await sql`SELECT m5_operator_claim_abandoned_hold(${f.identity.shopId}, ${f.identity.configId}, ${f.identity.operationId},
+      ${version}, 'crash-3', ${'e'.repeat(64)})`.execute(database);
+    expect(
+      await restoreWith(f, `${Date.now()}.${'e'.repeat(64)}`, 'crash-3', f.operator({ claimStaleMs: 0 })),
+    ).toMatchObject({
       outcome: 'flagged',
       reasons: ['claim_unsettled'],
       kind: 'OPERATOR_HOLD',
     });
     expect(f.providerWrites).toEqual(['DRAFT']);
+  });
+
+  it('#466 A: a command killed between the restore and its finalize: the worker finalizes', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    await toOperatorHold(f);
+    const { inspectDigest } = await inspectOne(f);
+    sqlGate = (text) => {
+      if (!/^UPDATE m4_publication_progress SET phase='abandoned'/.test(text.trimStart())) return undefined;
+      sqlGate = undefined;
+      return Promise.reject(new Error('command killed before T3'));
+    };
+    await expect(restoreWith(f, inspectDigest!, 'owner-cmd-5')).rejects.toThrow('command killed before T3');
+    expect((await activationRow(f))?.kind).toBe('ABANDON_RESTORED');
+    expect(await progressPhase(f)).toBe('prepared');
+    expect(await f.abandonment({ abandonAfterMs: 0 }).runPass({ shopIds: [f.identity.shopId] })).toMatchObject({
+      restored: 0,
+      finalized: 1,
+      flagged: 0,
+    });
+    expect(await progressPhase(f)).toBe('abandoned');
+    expect(await operationRow(f)).toMatchObject({ status: 'failed', failure_class: 'publication-abandoned' });
+    expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
+  });
+
+  it('#466 A: a claim command key is unique per shop in the database, not only in the command', async () => {
+    const index = await sql<{ indexdef: string }>`SELECT indexdef FROM pg_indexes
+      WHERE schemaname='public' AND indexname='m5_activation_operator_command_key'`.execute(database);
+    expect(index.rows[0]?.indexdef).toMatch(
+      /^CREATE UNIQUE INDEX m5_activation_operator_command_key ON public\.m5_activation_state USING btree \(shop_id, \(\(hold #>> '\{abandonmentClaim,commandKey\}'::text\[\]\)\)\) WHERE/,
+    );
   });
 
   it("#466 A: B's worker passes untouched while the command restores; one write", async () => {
@@ -3523,10 +3584,12 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     const t2 = gated();
     const running = restoreWith(f, inspectDigest!, 'owner-cmd-2', f.operator({ beforeRestore: t2.wait }));
     await t2.atGate;
-    // T2 holds the six row locks; a worker pass that would flag a stale claim neither waits nor acts.
-    expect(
-      await f.abandonment({ claimStaleMs: 0, abandonAfterMs: 0 }).runPass({ shopIds: [f.identity.shopId] }),
-    ).toMatchObject({ restored: 0, finalized: 0, flagged: 0 });
+    // T2 holds the six row locks on a fresh operator claim: the worker neither waits nor acts.
+    expect(await f.abandonment({ abandonAfterMs: 0 }).runPass({ shopIds: [f.identity.shopId] })).toMatchObject({
+      restored: 0,
+      finalized: 0,
+      flagged: 0,
+    });
     t2.release();
     expect(await running).toMatchObject({ outcome: 'restored', kind: 'ABANDON_RESTORED', phase: 'abandoned' });
     expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
@@ -3672,6 +3735,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
           has_table_privilege(current_user,'public.m5_publication_abandonment_audit','SELECT,INSERT,UPDATE,DELETE') AS audit,
           has_table_privilege(current_user,'public.m5_restoration_no_dispatch_consumptions','SELECT,INSERT,UPDATE,DELETE') AS consumptions,
           has_column_privilege(current_user,'public.installation_generations','deactivated_at','UPDATE') AS deactivate,
+          has_column_privilege(current_user,'public.installation_generations','activated_at','UPDATE') AS activated,
           has_column_privilege(current_user,'public.shops','current_generation','UPDATE') AS generation,
           has_table_privilege(current_user,'public.signing_keys','SELECT') AS keys,
           has_table_privilege(current_user,'public.publication_operations','INSERT,DELETE') AS operations`);
@@ -3682,6 +3746,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         audit: false,
         consumptions: false,
         deactivate: false,
+        activated: false,
         generation: false,
         keys: false,
         operations: false,

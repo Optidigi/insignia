@@ -89,7 +89,14 @@ export type OperatorHoldInspection = {
     before: string | null;
     held: string | null;
     acquisitionAcknowledged: boolean;
-    abandonmentClaim: { authority: string; commandKey: string | null; claimedAt: string } | null;
+    abandonmentClaim: {
+      authority: string;
+      commandKey: string | null;
+      claimedAt: string;
+      inspectDigest: string | null;
+      /** For an operator claim: pass it with the same command key to re-run (resume) that restore. */
+      resumeInspectDigest: string | null;
+    } | null;
     restorationClaim: boolean;
     restorationReceipt: string | null;
   };
@@ -323,6 +330,10 @@ export function createPublicationHoldOperator(database: Kysely<Database>, option
               authority: v3.abandonmentClaim.authority,
               commandKey: v3.abandonmentClaim.commandKey ?? null,
               claimedAt: v3.abandonmentClaim.claimedAt,
+              inspectDigest: v3.abandonmentClaim.inspectDigest ?? null,
+              resumeInspectDigest: v3.abandonmentClaim.inspectDigest
+                ? `${Date.parse(v3.abandonmentClaim.claimedAt)}.${v3.abandonmentClaim.inspectDigest}`
+                : null,
             }
           : null,
         restorationClaim: Boolean(v3?.restorationClaim),
@@ -478,8 +489,10 @@ export function createPublicationHoldOperator(database: Kysely<Database>, option
       try {
         await sql`SELECT m5_operator_claim_abandoned_hold(${row.shopId}, ${row.configId}, ${row.operationId},
           ${row.activationVersion}::bigint, ${input.commandKey}, ${parsed.digest})`.execute(database);
-      } catch {
-        // The activation version moved after the reads, or a trigger refused: nothing was claimed.
+      } catch (error) {
+        // A concurrent claim with this key (unique per shop), the activation version moved after
+        // the reads, or a trigger refused: nothing was claimed.
+        if ((error as { code?: unknown })?.code === '23505') return refused(['command_key_used'], row);
         return refused(['claim_refused'], row);
       }
       return finish(await abandonment(events).settleOperatorClaim(row, true, bound));
