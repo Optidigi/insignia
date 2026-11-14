@@ -12,7 +12,7 @@ for (const [name, request] of [
   ['retained', authenticatedJson],
   ['selected', selectedJson],
 ] as const) {
-  test(`${name}: publication scheduling stops at its finite deadline without sending a short token`, async (t) => {
+  test(`${name}: #468 a publish is sent with the ordinary token window; its continuation waits for the requested one`, async (t) => {
     t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: new Date('2026-11-07T12:00:00Z') });
     const originalFetch = globalThis.fetch;
     const token = `synthetic.${Buffer.from(JSON.stringify({ exp: Date.now() / 1000 + 20 })).toString('base64url')}.synthetic`;
@@ -23,10 +23,11 @@ for (const [name, request] of [
       return Response.json({ ok: true });
     };
     try {
-      const result = request('/api/admin/products/111/config', {
-        method: 'POST',
-        body: JSON.stringify({ action: 'publish' }),
-      });
+      const init = { method: 'POST', body: JSON.stringify({ action: 'publish' }) };
+      await request('/api/admin/products/111/config', init);
+      assert.equal(sent, 1, 'a 20 s token is enough to send a publish');
+      // The continuation asks for 30 s; the host keeps returning the 20 s token, so nothing is sent.
+      const result = request('/api/admin/products/111/config', init, false, 30000);
       const rejected = assert.rejects(result, (error) => {
         assert.match(String(error), /Admin request timed out/);
         // #436: nothing was sent, so the editor must not follow it as a possibly running publish.
@@ -37,7 +38,7 @@ for (const [name, request] of [
       t.mock.timers.tick(60000);
       await rejected;
       await new Promise((resolve) => setImmediate(resolve));
-      assert.equal(sent, 0);
+      assert.equal(sent, 1);
     } finally {
       restore();
       globalThis.fetch = originalFetch;
@@ -113,7 +114,7 @@ for (const [name, request] of [
     }
   });
 
-  test(`${name}: publication401 refresh retains its real token window and original bytes`, async () => {
+  test(`${name}: a publication continuation's 401 refresh retains its token window and original bytes`, async () => {
     const token = (seconds: number) =>
       `synthetic.${Buffer.from(JSON.stringify({ exp: Date.now() / 1000 + seconds })).toString('base64url')}.synthetic`;
     const short = token(20),
@@ -130,7 +131,12 @@ for (const [name, request] of [
       return seen.length === 1 ? Response.json({}, { status: 401 }) : Response.json({ ok: true });
     };
     try {
-      await request('/api/admin/products/111/config', { method: 'POST', body, headers: { 'Idempotency-Key': 'same' } });
+      await request(
+        '/api/admin/products/111/config',
+        { method: 'POST', body, headers: { 'Idempotency-Key': 'same' } },
+        false,
+        30000,
+      );
       assert.deepEqual(seen, [`Bearer ${sufficient}`, `Bearer ${sufficient}`]);
       assert.equal(tokens, 4);
     } finally {
