@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { PurchaseListViewSchema } from '@insignia/contracts';
 import type { Page } from 'playwright';
 import { fixture, product } from './support/selected-browser.mts';
 
@@ -28,11 +29,120 @@ async function openProducts(f: Awaited<ReturnType<typeof fixture>>, width: numbe
   await f.page.waitForFunction(() => document.documentElement.dataset.adminReady === 'true');
   await f.page.getByRole('link', { name: 'Plain tee' }).waitFor();
 }
-const fade = (page: Page) =>
-  page
-    .locator('#admin-route-content .resource-table-scroll')
-    .evaluate((scroller) => Number.parseFloat(getComputedStyle(scroller).getPropertyValue('--resource-table-fade')));
+const scrollerSelector = '#admin-route-content .resource-table-scroll';
+// The fade is a mask on the scroll region: a gradient with a `calc(100% - Npx)` stop while columns
+// are hidden to the right, a plain opaque gradient once the last column is in view, and none while
+// keyboard focus draws the region's own ring.
+const mask = (page: Page) =>
+  page.locator(scrollerSelector).evaluate((el) => {
+    const { maskImage, outlineStyle } = getComputedStyle(el);
+    const hit = /calc\(100% - ([\d.]+)px\)/.exec(maskImage);
+    return { maskImage, fadePx: hit ? Number(hit[1]) : 0, outlineStyle };
+  });
 const overflowsPage = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
+
+type Fixture = Awaited<ReturnType<typeof fixture>>;
+const orderItem = (n: number) => ({
+  version: 'm8-purchase-v1',
+  isTest: true,
+  purchaseId: `d841ee12-2075-4101-b3bc-429ad31a40${50 + n}`,
+  orderId: `gid://shopify/Order/${n}`,
+  orderName: `#100${n}`,
+  orderCreatedAt: '2026-11-13T12:00:00Z',
+  currency: 'USD',
+  exponent: 2,
+  originalTotalMinor: '4500',
+  firstPaidAt: null,
+  financialStatus: 'PENDING',
+  cancelledAt: null,
+  exceptions: [],
+  canUploadArtwork: true,
+  canShareCustomerArtwork: false,
+  artworkVersion: 0,
+  artworkState: 'PENDING_ARTWORK',
+  refunds: [],
+  lines: [
+    {
+      orderLineId: 'line1',
+      title: 'Purchased shirt',
+      variantTitle: 'Blue / M',
+      productId: '111',
+      variantId: '11',
+      quantity: 2,
+      unitPriceMinor: '4500',
+    },
+  ],
+  groups: [],
+  artworkEvents: [],
+});
+async function openOrders(f: Fixture, width: number, height: number) {
+  await f.page.setViewportSize({ width, height });
+  const items = [orderItem(1), orderItem(2)];
+  await f.page.route('**/api/purchases/v1?*', (route) =>
+    route.fulfill({
+      json: PurchaseListViewSchema.parse({ version: 'm8-purchase-list-v1', items, nextCursor: null, timeZone: 'UTC' }),
+    }),
+  );
+  await f.page.goto(`${f.base}/admin/orders?locale=en`);
+  await f.page.waitForFunction(() => document.documentElement.dataset.adminReady === 'true');
+  await f.page.getByText('#1002', { exact: true }).first().waitFor();
+}
+
+/** Shared phone-width contract of the app's resource table (Products and Orders). */
+async function assertPhoneTable(f: Fixture, lastColumn: string) {
+  const { page } = f;
+  assert.equal(await overflowsPage(page), false, 'the page itself never scrolls sideways');
+  const scroller = page.locator(scrollerSelector);
+  assert.equal(
+    await scroller.evaluate((el) => el.scrollWidth > el.clientWidth),
+    true,
+    'a phone cannot show every column, so the table scrolls inside its own region',
+  );
+  const start = await mask(page);
+  assert.match(start.maskImage, /^linear-gradient/, 'hidden columns to the right are signalled by a fade');
+  assert.equal(start.fadePx, 32);
+  await page.locator(`${scrollerSelector} tbody tr`).first().hover();
+  assert.equal(await overflowsPage(page), false);
+  // Keyboard focus draws the region's own ring, which a mask would fade at the trailing edge.
+  await scroller.focus();
+  await page.keyboard.press('ArrowRight');
+  await page.waitForFunction((selector) => (document.querySelector(selector)?.scrollLeft ?? 0) > 0, scrollerSelector);
+  const focused = await mask(page);
+  assert.equal(focused.maskImage, 'none');
+  assert.equal(focused.outlineStyle, 'solid', 'the focus ring is fully visible');
+  await scroller.evaluate((el) => {
+    (el as HTMLElement).blur();
+    el.scrollTo({ left: el.scrollWidth });
+  });
+  await page.waitForFunction((selector) => {
+    const el = document.querySelector(selector);
+    return !!el && Math.abs(el.scrollLeft + el.clientWidth - el.scrollWidth) < 1;
+  }, scrollerSelector);
+  await page.waitForFunction((selector) => {
+    const m = getComputedStyle(document.querySelector(selector) as Element).maskImage;
+    return m.startsWith('linear-gradient') && !/calc\(100% - /.test(m);
+  }, scrollerSelector);
+  const reachable = await page.evaluate(
+    ({ selector, column }) => {
+      const box = (document.querySelector(selector) as Element).getBoundingClientRect();
+      const headers = [...document.querySelectorAll('#admin-route-content .admin-resource-table th')];
+      const target = headers.find((th) => th.textContent?.trim() === column);
+      const pinned = headers[0]?.getBoundingClientRect();
+      if (!target || !pinned) throw new Error(`${column} header missing`);
+      target.scrollIntoView({ inline: 'start', block: 'nearest' });
+      const rect = target.getBoundingClientRect();
+      return { fits: rect.right <= box.right + 1, clear: rect.left >= pinned.right - 1 };
+    },
+    { selector: scrollerSelector, column: lastColumn },
+  );
+  assert.deepEqual(reachable, { fits: true, clear: true }, `the ${lastColumn} column can be scrolled fully into view`);
+}
+async function assertWideTable(f: Fixture) {
+  assert.equal(await overflowsPage(f.page), false);
+  assert.equal(await f.page.locator(scrollerSelector).evaluate((el) => el.scrollWidth > el.clientWidth), false);
+  const wide = await mask(f.page);
+  assert.equal(wide.fadePx, 0, 'nothing is hidden, so nothing fades');
+}
 
 for (const scheme of ['light', 'dark'] as const) {
   test(`${scheme}: the Products table stays reachable on a phone and signals the hidden columns`, {
@@ -41,45 +151,7 @@ for (const scheme of ['light', 'dark'] as const) {
     const f = await fixture(t);
     await f.page.emulateMedia({ colorScheme: scheme });
     await openProducts(f, 390, 844);
-    assert.equal(await overflowsPage(f.page), false, 'the page itself never scrolls sideways');
-    const scroller = f.page.locator('#admin-route-content .resource-table-scroll');
-    const wider = await scroller.evaluate((el) => el.scrollWidth > el.clientWidth);
-    assert.equal(wider, true, 'a phone cannot show every column, so the table scrolls inside its own region');
-    assert.ok((await fade(f.page)) > 0, 'unseen columns to the right are signalled at the start');
-    // Hover keeps the pinned identity opaque and the layout still.
-    await f.page.getByRole('link', { name: 'Insignia M5 acceptance — 27c397e10c26' }).hover();
-    assert.equal(await overflowsPage(f.page), false);
-    await scroller.focus();
-    await f.page.keyboard.press('ArrowRight');
-    await f.page.waitForFunction(
-      () => (document.querySelector('#admin-route-content .resource-table-scroll')?.scrollLeft ?? 0) > 0,
-    );
-    await scroller.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
-    await f.page.waitForFunction(() => {
-      const el = document.querySelector('#admin-route-content .resource-table-scroll');
-      return !!el && Math.abs(el.scrollLeft + el.clientWidth - el.scrollWidth) < 1;
-    });
-    await f.page.waitForFunction(
-      () =>
-        Number.parseFloat(
-          getComputedStyle(
-            document.querySelector('#admin-route-content .resource-table-scroll') as Element,
-          ).getPropertyValue('--resource-table-fade'),
-        ) === 0,
-    );
-    const reachable = await f.page.evaluate(() => {
-      const box = (
-        document.querySelector('#admin-route-content .resource-table-scroll') as Element
-      ).getBoundingClientRect();
-      const headers = [...document.querySelectorAll('#admin-route-content .admin-resource-table th')];
-      const methods = headers.find((th) => th.textContent?.trim() === 'Methods');
-      const pinned = headers[0]?.getBoundingClientRect();
-      if (!methods || !pinned) throw new Error('Methods header missing');
-      methods.scrollIntoView({ inline: 'start', block: 'nearest' });
-      const rect = methods.getBoundingClientRect();
-      return { fits: rect.right <= box.right + 1, clear: rect.left >= pinned.right - 1 };
-    });
-    assert.deepEqual(reachable, { fits: true, clear: true }, 'the Methods column can be scrolled fully into view');
+    await assertPhoneTable(f, 'Methods');
   });
 
   test(`${scheme}: the Products table shows every column without a scroll hint on a wide screen`, {
@@ -88,14 +160,18 @@ for (const scheme of ['light', 'dark'] as const) {
     const f = await fixture(t);
     await f.page.emulateMedia({ colorScheme: scheme });
     await openProducts(f, 1440, 900);
-    assert.equal(await overflowsPage(f.page), false);
-    assert.equal(
-      await f.page
-        .locator('#admin-route-content .resource-table-scroll')
-        .evaluate((el) => el.scrollWidth > el.clientWidth),
-      false,
-    );
-    assert.equal(await fade(f.page), 0, 'nothing is hidden, so nothing fades');
+    await assertWideTable(f);
+  });
+
+  test(`${scheme}: the Orders table shares the phone fade and the wide-screen absence`, {
+    timeout: 60000,
+  }, async (t) => {
+    const f = await fixture(t);
+    await f.page.emulateMedia({ colorScheme: scheme });
+    await openOrders(f, 390, 844);
+    await assertPhoneTable(f, 'Customized items');
+    await f.page.setViewportSize({ width: 1440, height: 900 });
+    await assertWideTable(f);
   });
 
   test(`${scheme}: the editor keeps the canvas in view beside the settings and clear of a bottom bar on a phone`, {
@@ -153,6 +229,17 @@ for (const scheme of ['light', 'dark'] as const) {
       return innerHeight - last.getBoundingClientRect().bottom;
     });
     assert.ok(clearance >= 56, `the last control stays above a bottom action bar (${clearance}px clear)`);
+    // The pin shows a separation from the settings that scroll beneath it.
+    await f.page.evaluate(() => scrollTo(0, 0));
+    assert.notEqual(await workspace.evaluate((el) => getComputedStyle(el).boxShadow), 'none');
+    // The expanded canvas is not pinned and adds no scroll padding.
+    await f.page.getByRole('button', { name: 'Expand canvas', exact: true }).click();
+    await f.page.locator('.placement-workspace.is-expanded').waitFor();
+    const expanded = await f.page.evaluate(() => ({
+      position: getComputedStyle(document.querySelector('.placement-workspace') as Element).position,
+      padding: getComputedStyle(document.documentElement).scrollPaddingTop,
+    }));
+    assert.deepEqual(expanded, { position: 'static', padding: 'auto' });
   });
 }
 
@@ -165,5 +252,5 @@ test('the editor header group has a merchant-facing label instead of the bridge 
   const label = await f.page
     .locator('s-page > s-button-group[slot="secondary-actions"]')
     .evaluate((group) => group.getAttribute('label'));
-  assert.equal(label, 'View and history');
+  assert.equal(label, 'Panels and history');
 });

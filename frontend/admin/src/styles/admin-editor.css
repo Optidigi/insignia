@@ -690,6 +690,8 @@ s-drop-zone:not(:defined) {
 .resource-table-scroll:focus-visible {
   outline: 2px solid var(--p-color-border-focus, #005bd3);
   outline-offset: -2px;
+  /* A mask would fade the ring itself at the trailing edge; keyboard focus shows the ring instead. */
+  mask-image: none;
 }
 .product-resource-identity {
   display: grid;

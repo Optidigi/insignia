@@ -979,6 +979,7 @@ export interface AdminMessageTable {
   'editor:placementWorkflowPreview.noViewsOrPlacementsFound': object;
   'editor:placementWorkflowPreview.outlineActions': object;
   'editor:placementWorkflowPreview.outlineSummary': { placements: string; views: string };
+  'editor:placementWorkflowPreview.panelsAndHistoryActions': object;
   'editor:placementWorkflowPreview.perItem': object;
   'editor:placementWorkflowPreview.perItemAtThisPlacementLeaveBlankToExcludeASizeEnter0ForFree': object;
   'editor:placementWorkflowPreview.perLocationPerItem': object;
@@ -1123,7 +1124,6 @@ export interface AdminMessageTable {
   'editor:placementWorkflowPreview.variantGroupFallback': object;
   'editor:placementWorkflowPreview.variantImages': object;
   'editor:placementWorkflowPreview.viewAccessibilityName': { viewName: string };
-  'editor:placementWorkflowPreview.viewAndHistoryActions': object;
   'editor:placementWorkflowPreview.viewCount': { count: number; formattedCount: string };
   'editor:placementWorkflowPreview.viewName': object;
   'editor:placementWorkflowPreview.viewNameFallback': object;
