@@ -1,6 +1,6 @@
 # Design: automatic release of an abandoned publication hold (#466 part B)
 
-Status: **proposed, needs owner approval before implementation.** No runtime code exists for this design. Revision 2 addresses the independent review of PR #471. The proposed requirement text is in the [specification](implementation-plan.md) (§3.1, §6.1, §6.2, §7.2, §10.1, §10.3, §11, §13.1, §13.2). This document holds the mechanism, state tables, fence sequence, UI states, test plan, migration outline and the interface for part A.
+Status: **proposed, needs owner approval before implementation.** No runtime code exists for this design. Revision 3 addresses two independent reviews of PR #471. The proposed requirement text is in the [specification](implementation-plan.md) (§3.1, §6.1, §6.2, §7.2, §10.1, §10.3, §11, §13.1, §13.2). This document holds the mechanism, state tables, fence sequence, UI states, test plan, migration outline and the interface for part A.
 
 Owner decisions this design follows (14 November 2026):
 - Build B. When a publish is abandoned, the system heals itself: after a bounded quiet time, if durable records **prove** that no policy, registration or shop-config write could have reached Shopify for that operation and Insignia owns the hold receipt, the worker restores the product's prior availability exactly as held, marks the publication failed and tells the merchant "Publishing didn't finish; your product is back as it was. Publish again."
@@ -9,7 +9,7 @@ Owner decisions this design follows (14 November 2026):
 - Every new state and transition is an explicit state machine: database states with trigger-enforced transitions, one application transition function, and the admin UI state through the existing server projection and client classifier.
 - Part A is server-only: a CLI run over SSH on the host, like the signing emergency revoke. It reuses B's states and checks and adds no state.
 
-Q6 (§12) asks whether the owner accepts a simpler evidence rule that drops the dispatch gate. If the answer is yes, §2, the gate rows of §3.2, H1/H3 concerns and migration step 1 disappear; everything else stays.
+Q6 (§12) asks whether the owner accepts a simpler evidence rule without the dispatch gate. The reviewer verified it as safe. The main text specifies the gate; §13 is a self-contained replacement that applies if the answer is yes.
 
 ## 1. Problem and evidence
 
@@ -77,11 +77,11 @@ Not eligible, and what happens once quiet:
 | Case | Outcome |
 |---|---|
 | `HELD` with gate `OPENED` or `UNKNOWN` | Flag: `→ OPERATOR_HOLD`, reason `dispatch_possible` / `dispatch_unknown` |
-| `WAITING_RELEASE` carrying an owned held receipt. This arises from `HELD → WAITING_RELEASE` at phase `activation-pending`, so the gate is always `OPENED`. | Flag: `→ OPERATOR_HOLD`, reason `release_wait_after_writes` |
+| `WAITING_RELEASE` carrying an owned held receipt. This arises from `HELD → WAITING_RELEASE` at phase `activation-pending`, so the gate is always `OPENED`. It can be a legitimate wait for a Function release deploy. | Flag after the longer `INSIGNIA_PUBLICATION_RELEASE_WAIT_FLAG_MS` (proposed 24 h; see Q3): `→ OPERATOR_HOLD`, reason `release_wait_after_writes` |
 | `ACQUISITION_PENDING` | Flag: `→ OPERATOR_HOLD`, reason `acquisition_unsettled` |
 | `HELD` failing E6 (legacy hold version, no owned receipt) | Flag: reason `hold_not_owned` |
-| E8 observation throttled or failed | `SKIP` (no change; next pass) |
-| E8 observation is a definite conflict (product changed by someone else) | Flag: reason `product_changed` |
+| E8 observation throttled or failed (`AvailabilityProviderUnavailableError`), or `CONFLICT` with `current: null` (non-transient read failures such as `credential_inactive` or `query_cost_exceeded`, which observe nothing) | `SKIP` (no change; next pass; warn log when it repeats) |
+| E8 observation `CONFLICT` with a non-null `current` that differs from the owned held snapshot (product changed by someone else) | Flag: reason `product_changed` |
 | Installation changed, operation superseded | The existing activation fence already records `OPERATOR_HOLD`; B does nothing |
 | `OPERATOR_HOLD` (any cause) | B does nothing; part A only |
 | `HOLD_INTENT`, `WAITING_HOLD`, `WAITING_RELEASE` without a hold (product never changed), stuck same-mode publishes | B does nothing; see Q4 |
@@ -98,8 +98,8 @@ New values: `ABANDON_CLAIMED`, and `ABANDON_RESTORED` (terminal). "Needs operato
 | From | To | Who | Trigger-enforced precondition |
 |---|---|---|---|
 | `HELD` | `ABANDON_CLAIMED` | worker | E1–E6 on the current rows; `hold.abandonmentClaim.authority = 'PROVED_NOT_DISPATCHED'`; `hold.restorationClaim` added in the same update |
-| `OPERATOR_HOLD` | `ABANDON_CLAIMED` | part A only | `current_user` is the schema owner, i.e. the update runs inside the operator `SECURITY DEFINER` function (§9). E2–E4 and E6 hold, with no earlier restoration claim or receipt; `abandonmentClaim.authority = 'SETTLED_BY_TRUSTED_OPERATOR'` with `commandKey` and `inspectDigest` |
-| `ABANDON_CLAIMED` | `ABANDON_CLAIMED` | worker / A | Only to add `restorationReceipt`, or to consume a `NOT_DISPATCHED` receipt digest once (migration-51 rule, extended to this kind; §4.5) |
+| `OPERATOR_HOLD` | `ABANDON_CLAIMED` | part A only | A separate **`SECURITY INVOKER`** trigger checks that `current_user` is the schema owner, which is true only inside the operator `SECURITY DEFINER` function (§9). The check cannot live in the existing `SECURITY DEFINER` audit trigger, where `current_user` is always the owner. E2–E4 and E6 hold (the gate may be `UNKNOWN`), with no earlier restoration claim or receipt; `abandonmentClaim.authority = 'SETTLED_BY_TRUSTED_OPERATOR'` with `commandKey` and `inspectDigest` |
+| `ABANDON_CLAIMED` | `ABANDON_CLAIMED` | worker / A | Only to add `restorationReceipt`, or to consume a `NOT_DISPATCHED` receipt digest (migration-51 rule, extended to this kind and to `current: null`; one rearm per distinct digest, §4.5) |
 | `ABANDON_CLAIMED` | `ABANDON_RESTORED` | worker / A | `restorationReceipt.kind = 'RESTORED'`, `m5_v3_same(receipt.current, hold.before)` and a qualified acknowledgement (or `before` already `unavailable`) |
 | `ABANDON_CLAIMED` | `OPERATOR_HOLD` | worker / A | A receipt other than `RESTORED`/`NOT_DISPATCHED`, a pre-dispatch recheck failure in T2, or a stale claim (§4.5) |
 | `HELD`, `WAITING_RELEASE`, `ACQUISITION_PENDING` | `OPERATOR_HOLD` | worker | Already allowed (any → `OPERATOR_HOLD`) |
@@ -123,7 +123,7 @@ New progress phase `abandoned` (terminal) and the `remote_dispatch` column (§2)
 | progress | any phase change out of `prepared` | `remote_dispatch <> 'NONE'` (so `UNKNOWN` rows from old code and rows already in flight still advance) |
 | progress | `remote_dispatch NONE → OPENED` | same-mode operation (`prior_mode IS NOT NULL AND prior_mode = mode`), or activation `kind = 'HELD'` |
 | progress | any other `remote_dispatch` change | rejected |
-| progress, operation | any update while activation is `ABANDON_CLAIMED` | rejected. This freezes the rows against signing-provision drift writing `operator-hold`, `request()` superseding, and every other path. |
+| progress, operation | any update while activation is `ABANDON_CLAIMED` | rejected. This freezes the rows against signing-provision drift writing `operator-hold`, `request()` superseding, and every other path. If there is no activation row (same-mode operation), nothing is frozen. |
 | progress | `prepared → abandoned` | activation `ABANDON_RESTORED` |
 | operation | `requested → failed`, `failure_class = 'publication-abandoned'`, `availability_resolved_at` set in the same update | activation `ABANDON_RESTORED`; `availability_resolved_at = restorationReceipt.current.observedAt` |
 | progress, operation | any other update while activation is `ABANDON_RESTORED` and the phase is not yet `abandoned` | rejected |
@@ -151,15 +151,16 @@ Every predicate that names terminal activation kinds or terminal phases, and wha
 
 ### 3.4 Cross-row trigger reads and lock order
 
-Two transitions read the other row, and only these. The rule is attached through `WHEN` clauses on the specific old/new values, so no other update pays for it or takes the extra lock:
-- progress `remote_dispatch NONE → OPENED` reads the activation row `FOR SHARE`;
-- activation `→ ABANDON_CLAIMED` and the freeze rule read progress and operation `FOR SHARE`.
+`WHEN` clauses can only see the row being updated, so the triggers are scoped as follows:
+- **Locking reads** (`FOR SHARE`) happen only in two transitions, each selected by a `WHEN` clause on the updated row's own old/new values:
+  - progress `remote_dispatch NONE → OPENED`, which reads the activation row;
+  - activation `→ ABANDON_CLAIMED`, which reads progress and operation.
+- **The freeze rule** (§3.2) cannot be selected by `WHEN`, because it depends on the activation row. It therefore runs on every progress and operation update, as a plain non-locking read of the activation `kind`. A plain read is enough: every writer of progress and operation rows holds the shop lock (`advance`, `prepare`/`request()`, activation `load`, operator recovery, the worker), and `ABANDON_*` is entered only under that same lock, so the kind it reads cannot change underneath it. A missing activation row means no freeze. New writers of these rows must keep taking the shop lock; a test asserts it for the existing ones.
 
 Canonical order: `shops` → installation → `product_configs` → `publication_operations` → `m4_publication_progress` → `m5_activation_state`.
 - The gate update runs in `advance`, which holds the shop lock, locks progress, then the trigger takes activation `FOR SHARE`. That is in order.
-- The worker's T1 and T2, and part A, lock all six `FOR UPDATE` in order before any update. The trigger's `FOR SHARE` reads are then already covered.
-- The existing fence `catch` updates activation to `OPERATOR_HOLD` without the shop lock. That transition has no cross-row read, so it holds only the activation row and cannot wait on progress. A concurrent gate update holding progress and waiting for activation `FOR SHARE` simply waits for it to commit. No cycle.
-- Any other writer that updates progress or operation while abandonment holds the activation row waits; after the claim commits, the freeze rule rejects it.
+- The worker's T1, T2 and T3, and the operator function, lock all six `FOR UPDATE` in order before any update. The trigger's `FOR SHARE` reads are then already covered.
+- The existing fence `catch` updates activation to `OPERATOR_HOLD` without the shop lock. That transition takes no cross-row lock, so it holds only the activation row and cannot wait on progress. A concurrent gate update holding progress and waiting for activation `FOR SHARE` simply waits for it to commit. No cycle.
 
 ### 3.5 Audit and archival
 
@@ -203,7 +204,9 @@ for each candidate (scan without locks):
   T1 COMMIT                                               no Shopify write yet
   T2 BEGIN; lock six rows FOR UPDATE
     require ABANDON_CLAIMED, this invocation's claim, no receipt (or a consumed NOT_DISPATCHED one),
-      progress phase prepared and gate NONE, operation requested and current, installation current
+      progress phase prepared, operation requested and current, installation current,
+      and gate NONE only when abandonmentClaim.authority = PROVED_NOT_DISPATCHED
+      (an operator claim may carry gate UNKNOWN, e.g. QA cover B)
       -> any mismatch: kind=OPERATOR_HOLD (reason claim_fenced), no dispatch
     restore(scope, hold, expected = hold.held, beforeSend)  -> read; status-only write; read back
     UPDATE activation: restorationReceipt; then kind by settleAbandonmentReceipt()
@@ -212,7 +215,7 @@ for each candidate (scan without locks):
       PENDING/CONFLICT/REHELD      -> OPERATOR_HOLD       (never retried)
   T2 COMMIT
   T3 (idempotent; also picked up by later scans of ABANDON_RESTORED rows not yet finalized)
-    lock six rows; if kind=ABANDON_RESTORED and phase=prepared:
+    lock six rows; if kind=ABANDON_RESTORED and phase=prepared (UI shows ABANDONMENT_RESTORING until then):
       progress phase=abandoned
       operation status=failed, failure_class='publication-abandoned', availability_resolved_at
       DELETE m5_current_publication_pointer (as availability-recovery.ts)
@@ -239,10 +242,14 @@ The provider write happens only in T2, after T1 committed the one-use claim. Thi
 - **One port per claimed row.** The v3 adapter quarantines itself after any budget expiry and refuses all later calls. A per-row port keeps one timeout from poisoning the rest of the pass. Replay protection for the same operation remains the database claim.
 - **E8 in T1:** a throttled or failed observation is a `SKIP` before any claim, so the common throttle case never reaches `OPERATOR_HOLD`.
 - **Pre-write read failure in `restore()`:** today it throws from outside the adapter's `try`. The adapter change: catch a provider failure of the pre-write read and return `{ kind: 'NOT_DISPATCHED', current: null }`. No mutation fetch was started, so this is proved non-dispatch. Any throw after the mutation call still becomes `RESTORATION_PENDING` as today.
+- **The activated path shares this change.** `restore()` is also used after activation (`RESTORATION_CLAIMED`). Main has a defect there today: a throwing pre-write read rolls back the activation transaction and leaves the committed claim without a receipt. Every later invocation then observes `HELD` and reports `ACTIVATED_RESTORATION_PENDING` forever, with no stale rule. With only the adapter change, the coordinator still could not rearm, because its rearm (`activation.ts` ~432) and migration 51 require `receipt.current` to equal the held snapshot. B's implementation fixes both kinds the same way:
+  - The coordinator's rearm and the migration-51 consumption rule accept a `NOT_DISPATCHED` receipt with `current: null` for `RESTORATION_CLAIMED` and `ABANDON_CLAIMED`. That is safe because `restore()` re-reads and requires the owned held snapshot before any write.
+  - Rearm is limited to one per distinct receipt digest (§4.5).
+  - The worker's stale-claim rule (§4.5) also covers `RESTORATION_CLAIMED`: no receipt, or a consumed `NOT_DISPATCHED` digest with no newer receipt, past `ABANDON_CLAIM_STALE_MS` → `OPERATOR_HOLD` (reason `claim_unsettled`) and a warn line. This fixes the main defect: the product no longer sits in "restoration pending" with no signal.
 
 ### 4.5 Ambiguous restore, rearm and stale claims
 
-- `NOT_DISPATCHED`: the receipt is stored and the row stays `ABANDON_CLAIMED`. On a later pass, T2 may rearm by consuming that receipt's digest into the claim (migration-51 rule, extended to `ABANDON_CLAIMED`). For this kind the rearm also accepts `current = null`, because `restore()` re-reads and requires the owned `held` snapshot before any write. Each receipt is consumed once. There is no cap on proven non-dispatches: each retry is safe and happens at most once per pass.
+- `NOT_DISPATCHED`: the receipt is stored and the row stays `ABANDON_CLAIMED`. On a later pass, T2 may rearm by consuming that receipt's digest into the claim (migration-51 rule, extended as in §4.4). Every `current: null` receipt has the same digest. Migration 51's `IS DISTINCT FROM` check and the consumptions primary key therefore allow exactly **one** rearm for that receipt shape. The rule is: **one retry, then `OPERATOR_HOLD` (`claim_unsettled`)** via the stale rule. A receipt with a non-null `current` (pre-write read succeeded, then a proved pre-fetch stop) has its own digest and follows the existing rule. Making receipts distinct per attempt would need a schema key change; it is not worth it, because E8 in T1 already turns most throttles into a `SKIP` before any claim.
 - `RESTORATION_PENDING`, `CONFLICT`, `REHELD_CONFLICT`: the row goes to `OPERATOR_HOLD` and is never retried. Part A resolves it by observation only (§9).
 - **Stale claim:** after `ABANDON_CLAIM_STALE_MS` (default 2 minutes; above the 8 s adapter budget plus lock waits) the worker moves `ABANDON_CLAIMED` to `OPERATOR_HOLD` with reason `claim_unsettled` in either case:
   - there is no receipt;
@@ -272,7 +279,7 @@ The provider write happens only in T2, after T1 committed the one-use claim. Thi
 
 - **Where:** a new pass in the existing 30-second reconciliation loop (`apps/worker/src/reconciliation.ts`), error class `PUBLICATION_ABANDONMENT_UNAVAILABLE`. No pg-boss queue.
 - **Bounded pass:** at most 2 claims (T1 → T2 → T3) and a 20-second budget per pass, so restores never starve the other recovery passes. The pass also finalizes up to 10 pending T3s and flags up to 10 rows; neither of those calls Shopify except for E8. Flagging needs no observation.
-- **Scan:** `kind IN ('HELD','WAITING_RELEASE','ACQUISITION_PENDING','ABANDON_CLAIMED','ABANDON_RESTORED')` with `hold IS NOT NULL`, current installation, quiet or stale or not finalized, ordered by `updated_at`. The partial index `m5_activation_unresolved_hold` covers it.
+- **Scan:** `kind IN ('HELD','WAITING_RELEASE','ACQUISITION_PENDING','ABANDON_CLAIMED','ABANDON_RESTORED','RESTORATION_CLAIMED')` with `hold IS NOT NULL`, current installation, quiet or stale or not finalized, ordered by `updated_at`. `RESTORATION_CLAIMED` is only checked by the stale-claim rule (§4.4); the worker never restores an activated publication. The partial index `m5_activation_unresolved_hold` covers it.
 - **Bound:** `INSIGNIA_PUBLICATION_ABANDON_AFTER_MS`, default 900000 (15 min), accepted range 5 minutes to 24 hours; anything else is a startup error.
 - **Switch:** `INSIGNIA_PUBLICATION_ABANDONMENT=off|flag|restore`, default `off`. `flag` records only `OPERATOR_HOLD` flags; `restore` also claims and restores.
 - **Idempotency:** one-use claim, immutable receipt, terminal kinds and the idempotent T3.
@@ -288,7 +295,7 @@ The provider write happens only in T2, after T1 committed the one-use claim. Thi
 
 | Condition (server) | `PublicationState` | Classifier (`publication-state.ts`) |
 |---|---|---|
-| current operation's activation `ABANDON_CLAIMED` | `ABANDONMENT_RESTORING` | continuing: blocks Publish, keeps polling |
+| current operation's activation `ABANDON_CLAIMED`, or `ABANDON_RESTORED` before T3 has finalized (operation still `requested`) | `ABANDONMENT_RESTORING` | continuing: blocks Publish, keeps polling |
 | `abandonedLatest`: the config's newest operation (`operation_sequence = product_configs.publication_sequence`, current generation) has activation `ABANDON_RESTORED` | `ABANDONED_RESTORED` | settled: Publish allowed; a journaled publish request settles (cleared) as for `FAILED` |
 | activation `OPERATOR_HOLD`, operation not activated, `holdPresent` (`hold IS NOT NULL`); also a hold on another operation of this config | `HOLD_NEEDS_SUPPORT` | operator-blocked |
 
@@ -354,6 +361,9 @@ Concurrency (two real connections, gated fake Shopify):
 9. Crash injection: kill T2 after the adapter's fetch began → claim without receipt → `OPERATOR_HOLD` after the stale bound, never a second restore. Same after a consumed `NOT_DISPATCHED` digest.
 10. Gate opening inside `advance`: admission throttled, `observe` throttled and a metafield read throttled each leave `NONE`. The first passing `advance` sets `OPENED` and writes nothing; the next one writes.
 11. Composition test: count every `remote.set` and `availability.restore` dispatch through the real production composition; any field dispatch while the stored gate is `NONE` fails the test.
+11a. Activated path (N2): a throttled pre-write read after `RESTORATION_CLAIMED` stores `NOT_DISPATCHED`/`current: null`; the next invocation rearms once and restores; a second such receipt cannot rearm, and the worker moves it to `OPERATOR_HOLD` after the stale bound. Reproduce the main defect first (claim without receipt, `ACTIVATED_RESTORATION_PENDING` forever).
+11b. E8: `observe()` returning `CONFLICT` with `current: null` (credential inactive, query cost) is a `SKIP`, not a flag.
+11c. Operator claim (N6): the invoker trigger rejects `OPERATOR_HOLD → ABANDON_CLAIMED` from the worker and web roles and accepts it from the operator function; the function locks the six rows in canonical order (concurrent with a merchant `advance`, no deadlock).
 
 Application/adapter:
 
@@ -388,8 +398,8 @@ insignia-publication-hold resolve --shop <shopId> --config <configId> --operatio
 - **`restore`:**
   - Allowed only for `OPERATOR_HOLD` with an owned held receipt and no earlier restoration claim or receipt.
   - Recomputes the digest and **hard-refuses** if it differs from the given `--inspect-digest`, if the activation version moved, if the inspect is older than 10 minutes, or if live `registration` or `policy` differs from the prior digests.
-  - Then calls `m5_operator_claim_abandoned_hold(...)`. This `SECURITY DEFINER` function is owned by the schema owner, and only the dedicated operator role can execute it (not web, not worker). It writes `OPERATOR_HOLD → ABANDON_CLAIMED` with `SETTLED_BY_TRUSTED_OPERATOR`, the command key and the inspect digest.
-  - Then runs B's T2 and T3 unchanged. Outcomes and states are B's.
+  - Then calls `m5_operator_claim_abandoned_hold(...)`. This `SECURITY DEFINER` function is owned by the schema owner, and only the dedicated operator role can execute it (not web, not worker). It locks the six rows `FOR UPDATE` in canonical order, rechecks the inspect digest's activation version, and writes `OPERATOR_HOLD → ABANDON_CLAIMED` with `SETTLED_BY_TRUSTED_OPERATOR`, the command key and the inspect digest.
+  - Then runs B's T2 and T3. T2 does not require gate `NONE` for an operator claim (§4.2). Outcomes and states are B's.
 - **`resolve`:** the existing observation-only path (`createAvailabilityRecovery` → `RESOLVED`). The CLI supplies the trusted authority port from the confirmed command. It is used when Shopify already shows the original state.
 - **Audit:** every run, including `inspect`, writes one structured log line. `restore` and `resolve` are also recorded in the database (abandonment audit, resolution row). A command key is single-use per shop.
 - **Runbook** (`deployment/m5-runtime/README.md`): when to use each subcommand and what "safe" means. For holds where product fields were already written (`registration` or `policy` differ from prior), `restore` refuses. The options are: the merchant continues the publish, or the owner restores the product by hand in Shopify admin and then runs `resolve`.
@@ -436,6 +446,7 @@ Q1. **Time bound.** 15 minutes of no activity before the worker acts, configurab
 Q2. **Copy.** The drafts in §7.2, especially "Contact support and mention this product", given that no alert reaches support automatically until phase 5. *Recommendation:* approve the English now; translations go through the translation review before release.
 
 Q3. **Flagging ends merchant resume.** An unprovable `HELD` row becomes `OPERATOR_HOLD`. A merchant who returns later with the original request still journaled in the browser (up to 1 hour) can no longer continue it. *Recommendation:* accept. Keeping it `HELD` leaves today's "already in progress" dead end.
+Sub-question: a `WAITING_RELEASE` row with an owned hold is also flagged once quiet. That state can be a legitimate wait for a Function release deploy. Flagging it at 15 minutes would stop that publication from completing once the release lands, and push it to the operator. *Recommendation:* flag it only after the separate, longer `INSIGNIA_PUBLICATION_RELEASE_WAIT_FLAG_MS` (proposed 24 hours). A release deploy is an owner action normally completed well within that, and the product is offline either way while it waits. Alternatively, never flag it automatically. Owner: 24 hours, or never?
 
 Q4. **Stale intents without product effect.** Operations stuck in `HOLD_INTENT`, `WAITING_HOLD` or `WAITING_RELEASE` without a hold (product never changed), and stuck same-mode publishes, also block the next publish. A `WAITING_RELEASE` row that carries an owned hold is not in this group: B flags it (§2.3). *Recommendation:* leave these out of B. A small follow-up can close them as `failed` with no Shopify call, using the same quiet bound and the same resolve-path visibility.
 
@@ -453,6 +464,53 @@ Q6. **Simpler evidence rule: drop the dispatch gate?** The reviewer's proposal: 
 - **Yes:** remove §2 (gate), the gate rows of §3.2, review items H1/H3 and migration step 1. The extra `advance` round disappears and rollback needs no gate caveat. More holds qualify: any `prepared` + owned `HELD` row, including ones written before migration 65. Part A's `inspect` still shows `public_config` for information.
 - **No:** keep the gate as designed. Only operations whose gate stayed `NONE` qualify; pre-migration rows and rows where a `public_config` write may have started go to the operator.
 
-*Recommendation:* **yes**. The analysis shows a landed `public_config` cannot change the restored product's plain or signed decision or roll back keys. This removes the largest moving part of B. It differs from the owner's original wording ("no … shop-config write"), so it needs an explicit owner decision. Until then this document specifies the gate.
+*Recommendation:* **yes; the independent reviewer verified it safe in code.** The reviewer's strongest argument: the restore never touches `public_config`. That field is shop-wide, so its state is identical immediately before and after the restore, and the restore cannot make it any more or less safe than it already is for every other product of the shop. A landed `public_config` also cannot change the restored product's plain or signed decision or roll back keys. This removes the largest moving part of B. It differs from the owner's original wording ("no … shop-config write"), so it needs an explicit owner decision. Until then the main text specifies the gate; §13 is the replacement.
+
+
+## 13. If Q6 = yes: eligibility without the dispatch gate
+
+This section is self-contained. If the owner answers Q6 yes, it replaces the gate parts of §2–§11 as listed. Everything not listed stays as specified: states, freeze rule, `ABANDONED` short-circuits, fence, restore, worker, UI, part A, and N2/N3.
+
+**Removed:**
+- the `remote_dispatch` column, its default/backfill (the gate part of migration step 1), and its value table (§2.1);
+- the gate opening inside `advance` and the extra `advance` round per publish (§2.2);
+- the gate rows of §3.2 (`NONE → OPENED`; "phase may leave `prepared` only when the gate is not `NONE`") and the gate's `FOR SHARE` cross-row read (§3.4). Only the claim transition's locking read remains;
+- the H3 rollout and rollback caveat: no "worker off before web rollback" rule and no `NONE`-row re-marking;
+- N1: T2 has no gate condition for either claim authority;
+- test 10 (gate opening) and test 11 (dispatch while `NONE`); test 1 loses its gate rows;
+- the flag reasons `dispatch_possible` and `dispatch_unknown`.
+
+**Eligibility, read under the six-row lock:**
+
+| # | Fact |
+|---|---|
+| P1 | committed `phase = 'prepared'` |
+| E3 | `status = 'requested'`, `operation_sequence = product_configs.publication_sequence` |
+| E4 | current, active installation generation |
+| E5 | `kind = 'HELD'`, no evidence, no resolution |
+| E6 | v3 hold for this operation, owned `held` receipt, no restoration claim or receipt |
+| E7 | quiet for `ABANDON_AFTER` |
+| E8 | fresh observation equals the owned held snapshot (`SKIP` on throttle or `current: null`) |
+
+`ACQUISITION_PENDING` stays excluded and is flagged (`acquisition_unsettled`). A `HELD` row past `prepared` is flagged with reason `fields_written`. `WAITING_RELEASE` with a hold is flagged under the Q3 bound. The `HELD → ABANDON_CLAIMED` trigger checks P1 and E3–E6 instead of the gate.
+
+**Why P1 suffices.**
+- Product-level `registration` and `policy` are written only by an `advance` transaction that read a committed phase past `prepared`, and the progress trigger never moves a phase back. So a committed `prepared` proves neither was dispatched.
+- The only write possible at `prepared` is the shop-wide `public_config`. The restore never touches it, so its state is the same before and after the restore.
+- If it did land, it is the current registry (built by `buildPublicConfig` from the database keys, CAS-guarded). The Functions classify the restored product only from its unchanged product fields and the unchanged generation (§12 Q6).
+- Older rows qualify too, for example any pre-migration `prepared` + owned `HELD` row. `QA cover B – Tee` still stays with part A, because it is `OPERATOR_HOLD`.
+
+**Test replacing test 11:** a structural test.
+- Through the real composition, assert that `registration` and `policy` are dispatched only from an `advance` whose committed phase is past `prepared`. A fake remote records the stored phase at each `set`, and the test drives every phase.
+- Assert that nothing but `PgProductionPublication.advance` calls `remote.set` for those fields: a source-level boundary check on the remote port's callers, plus the composition count.
+
+**Spec text changes** (owner-approved change of wording):
+- §6.2: replace the "Dispatch gate" bullet with: "**Evidence.** A committed phase `prepared` proves that no product-level registration or policy write was dispatched: those writes run only from a committed later phase, and phases never move back. The only write possible at `prepared` is the shop-wide `public_config` registry. The restore does not touch it, and the Functions classify the restored product from its unchanged product fields and installation generation, so a landed `public_config` cannot change that product's plain or signed behavior."
+- §6.2 "Eligible": replace "the gate is `NONE` and the phase is `prepared`" with "the phase is `prepared` (committed)"; drop "gate `OPENED` or `UNKNOWN`" from the unprovable list (replace with "a phase past `prepared`").
+- §6.1 and this document's header: replace "no policy, registration or shop-config write could have reached Shopify" / "durable proof that no field write was dispatched" with "durable proof that no product policy or registration write was dispatched (a shop-wide `public_config` write may have been; the restore neither touches nor depends on it)".
+- §10.3: drop the gate sentence; keep the rule about writes inside rolled-back transactions as general guidance.
+- §10.1: drop `remote_dispatch` from the progress row.
+
+**Migration 65 without the gate:** step 1 adds only the `abandoned` phase and the freeze rule. Steps 2–6 are unchanged. Rollout stays `off`, then `flag`, then `restore`. A web rollback needs only "no `ABANDON_*` rows yet, or fix-forward".
 
 Needs owner approval before implementation.
